@@ -13,12 +13,19 @@ from contextlib import contextmanager, nullcontext
 import mimetypes
 import random
 import math
-import csv
 
 import k_diffusion as K
 from ldm.util import instantiate_from_config
 from ldm.models.diffusion.ddim import DDIMSampler
 from ldm.models.diffusion.plms import PLMSSampler
+
+try:
+    # this silences the annoying "Some weights of the model checkpoint were not used when initializing..." message at start.
+
+    from transformers import logging
+    logging.set_verbosity_error()
+except:
+    pass
 
 # this is a fix for Windows users. Without it, javascript files will be served with text/html content-type and the bowser will not show any UI
 mimetypes.init()
@@ -28,7 +35,7 @@ mimetypes.add_type('application/javascript', '.js')
 opt_C = 4
 opt_f = 8
 
-invalid_filename_chars = '<>:"/\|?*'
+invalid_filename_chars = '<>:"/\|?*\n'
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--outdir", type=str, nargs="?", help="dir to write results to", default=None)
@@ -120,7 +127,6 @@ if os.path.exists(GFPGAN_dir):
         import traceback
         print("Error loading GFPGAN:", file=sys.stderr)
         print(traceback.format_exc(), file=sys.stderr)
-
 
 config = OmegaConf.load("configs/stable-diffusion/v1-inference.yaml")
 model = load_model_from_config(config, "models/ldm/stable-diffusion-v1/model.ckpt")
@@ -296,7 +302,9 @@ class Flagging(gr.FlaggingCallback):
     def setup(self, components, flagging_dir: str):
         pass
 
-    def flag(self, flag_data, flag_option=None, flag_index=None, username=None) -> int:
+    def flag(self, flag_data, flag_option=None, flag_index=None, username=None):
+        import csv
+
         os.makedirs("log/images", exist_ok=True)
 
         # those must match the "dream" function
@@ -341,7 +349,7 @@ dream_interface = gr.Interface(
         gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label="DDIM ETA", value=0.0, visible=False),
         gr.Slider(minimum=1, maximum=16, step=1, label='Batch count (how many batches of images to generate)', value=1),
         gr.Slider(minimum=1, maximum=4, step=1, label='Batch size (how many images are in a batch; memory-hungry)', value=1),
-        gr.Slider(minimum=1.0, maximum=15.0, step=0.5, label='Classifier Free Guidance Scale (how strongly should the image follow the prompt)', value=7.0),
+        gr.Slider(minimum=1.0, maximum=15.0, step=0.5, label='Classifier Free Guidance Scale (how strongly the image should follow the prompt)', value=7.0),
         gr.Number(label='Seed', value=-1),
         gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512),
         gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512),
@@ -456,13 +464,13 @@ img2img_interface = gr.Interface(
         gr.Slider(minimum=1, maximum=150, step=1, label="Sampling Steps", value=50),
         gr.Checkbox(label='Fix faces using GFPGAN', value=False, visible=GFPGAN is not None),
         gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label="DDIM ETA", value=0.0, visible=False),
-        gr.Slider(minimum=1, maximum=16, step=1, label='Sampling iterations', value=1),
-        gr.Slider(minimum=1, maximum=4, step=1, label='Samples per iteration', value=1),
-        gr.Slider(minimum=1.0, maximum=15.0, step=0.5, label='Classifier Free Guidance Scale', value=7.0),
+        gr.Slider(minimum=1, maximum=16, step=1, label='Batch count (how many batches of images to generate)', value=1),
+        gr.Slider(minimum=1, maximum=4, step=1, label='Batch size (how many images are in a batch; memory-hungry)', value=1),
+        gr.Slider(minimum=1.0, maximum=15.0, step=0.5, label='Classifier Free Guidance Scale (how strongly the image should follow the prompt)', value=7.0),
         gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising Strength', value=0.75),
         gr.Number(label='Seed', value=-1),
-        gr.Slider(minimum=64, maximum=2048, step=64, label="Resize Height", value=512),
-        gr.Slider(minimum=64, maximum=2048, step=64, label="Resize Width", value=512),
+        gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512),
+        gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512),
     ],
     outputs=[
         gr.Gallery(),
@@ -470,11 +478,12 @@ img2img_interface = gr.Interface(
     ],
     title="Stable Diffusion Image-to-Image",
     description="Generate images from images with Stable Diffusion",
+    allow_flagging="never",
 )
 
 interfaces = [
-    (dream_interface, "Dream"),
-    (img2img_interface, "Image Translation")
+    (dream_interface, "txt2img"),
+    (img2img_interface, "img2img")
 ]
 
 def run_GFPGAN(image, strength):
@@ -501,6 +510,7 @@ if GFPGAN is not None:
         ],
         title="GFPGAN",
         description="Fix faces on images",
+        allow_flagging="never",
     ), "GFPGAN"))
 
 demo = gr.TabbedInterface(interface_list=[x[0] for x in interfaces], tab_names=[x[1] for x in interfaces])
