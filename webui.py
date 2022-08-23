@@ -34,6 +34,7 @@ mimetypes.add_type('application/javascript', '.js')
 opt_C = 4
 opt_f = 8
 
+LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
 invalid_filename_chars = '<>:"/\|?*\n'
 
 parser = argparse.ArgumentParser()
@@ -490,7 +491,7 @@ def img2img(prompt: str, init_img, ddim_steps: int, use_GFPGAN: bool, prompt_mat
 
     def init():
         image = init_img.convert("RGB")
-        image = image.resize((width, height), resample=Image.Resampling.LANCZOS)
+        image = image.resize((width, height), resample=LANCZOS)
         image = np.array(image).astype(np.float32) / 255.0
         image = image[None].transpose(0, 3, 1, 2)
         image = torch.from_numpy(image)
