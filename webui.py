@@ -46,6 +46,7 @@ parser.add_argument("--ckpt", type=str, default="models/ldm/stable-diffusion-v1/
 parser.add_argument("--precision", type=str, help="evaluate at this precision", choices=["full", "autocast"], default="autocast")
 parser.add_argument("--gfpgan-dir", type=str, help="GFPGAN directory", default='./GFPGAN')
 parser.add_argument("--no-verify-input", action='store_true', help="do not verify input to check if it's too long")
+parser.add_argument("--no-half", action='store_true', help="do not switch the model to 16-bit floats")
 opt = parser.parse_args()
 
 GFPGAN_dir = opt.gfpgan_dir
@@ -144,7 +145,7 @@ config = OmegaConf.load("configs/stable-diffusion/v1-inference.yaml")
 model = load_model_from_config(config, "models/ldm/stable-diffusion-v1/model.ckpt")
 
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-model = model.half().to(device)
+model = (model if opt.no_half else model.half()).to(device)
 
 
 def image_grid(imgs, batch_size, round_down=False):
