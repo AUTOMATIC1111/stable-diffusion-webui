@@ -83,8 +83,10 @@ For example, if you use `a house in a field of grass|at dawn|illustration` promp
 - `a house in a field of grass, at dawn, illustration`
 
 Four images will be produced, in this order, all with same seed and each with corresponding prompt:
-
 ![](images/prompt-matrix.png)
+
+Another example, this time with 5 prompts and 16 variations, (text added manually):
+![](images/prompt_matrix.jpg)
 
 ### Flagging
 Click the Flag button under the output section, and generated images will be saved to `log/images` directory, and generation parameters
