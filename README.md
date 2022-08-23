@@ -75,17 +75,17 @@ Pick out of three sampling methods for txt2img: DDIM, PLMS, k-diffusion:
 
 ### Prompt matrix
 Separate multiple prompts using the `|` character, and the system will produce an image for every combination of them.
-For example, if you use `a house in a field of grass|at dawn|illustration` prompt, there are four combinations possible (first part of prompt is always kept):
+For example, if you use `a busy city street in a modern city|illustration|cinematic lighting` prompt, there are four combinations possible (first part of prompt is always kept):
 
-- `a house in a field of grass`
-- `a house in a field of grass, at dawn`
-- `a house in a field of grass, illustration`
-- `a house in a field of grass, at dawn, illustration`
+- `a busy city street in a modern city`
+- `a busy city street in a modern city, illustration`
+- `a busy city street in a modern city, cinematic lighting`
+- `a busy city street in a modern city, illustration, cinematic lighting`
 
 Four images will be produced, in this order, all with same seed and each with corresponding prompt:
 ![](images/prompt-matrix.png)
 
-Another example, this time with 5 prompts and 16 variations, (text added manually):
+Another example, this time with 5 prompts and 16 variations:
 ![](images/prompt_matrix.jpg)
 
 ### Flagging
