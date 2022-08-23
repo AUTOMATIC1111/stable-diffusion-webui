@@ -88,6 +88,11 @@ Four images will be produced, in this order, all with same seed and each with co
 Another example, this time with 5 prompts and 16 variations:
 ![](images/prompt_matrix.jpg)
 
+If you use this feature, batch count will be ignored, because the number of pictures to produce
+depends on your prompts, but batch size will still work (generating multiple pictures at the
+same time for a small speed boost).
+
+
 ### Flagging
 Click the Flag button under the output section, and generated images will be saved to `log/images` directory, and generation parameters
 will be appended to a csv file `log/log.csv` in the `/sd` directory.
@@ -96,6 +101,8 @@ will be appended to a csv file `log/log.csv` in the `/sd` directory.
 A text output provides generation parameters in an easy to copy-paste form for easy sharing.
 
 ![](images/kopipe.png)
+
+If you generate multiple pictures, the displayed seed will be the seed of the first one.
 
 ### Correct seeds for batches
 If you use a seed of 1000 to generate two batches of two images each, four generated images will have seeds: `1000, 1001, 1002, 1003`.
