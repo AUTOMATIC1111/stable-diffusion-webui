@@ -96,6 +96,13 @@ same time for a small speed boost).
 Click the Flag button under the output section, and generated images will be saved to `log/images` directory, and generation parameters
 will be appended to a csv file `log/log.csv` in the `/sd` directory.
 
+> but every image is saved, why would I need this?
+
+If you're like me, you experiment a lot with prompts and settings, and only few images are worth saving. You can
+just save them using right click in browser, but then you won't be able to reproduce them later because you will not
+know what exact prompt created the image. If you use the flag button, generation paramerters will be written to csv file,
+and you can easily find parameters for an image by searching for its filename.
+
 ### Copy-paste generation parameters
 A text output provides generation parameters in an easy to copy-paste form for easy sharing.
 
