@@ -377,7 +377,7 @@ def check_prompt_length(prompt, comments):
     comments.append(f"Warning: too many input tokens; some ({len(overflowing_words)}) have been truncated:\n{overflowing_text}\n")
 
 
-def process_images(outpath, func_init, func_sample, prompt, seed, sampler_name, batch_size, n_iter, steps, cfg_scale, width, height, prompt_matrix, use_GFPGAN):
+def process_images(outpath, func_init, func_sample, prompt, seed, sampler_name, batch_size, n_iter, steps, cfg_scale, width, height, prompt_matrix, use_GFPGAN, do_not_save_grid=False):
     """this is the main loop that both txt2img and img2img use; it calls func_init once inside all the scopes and func_sample once per batch"""
     assert prompt is not None
     torch_gc()
@@ -474,7 +474,7 @@ def process_images(outpath, func_init, func_sample, prompt, seed, sampler_name, 
                     output_images.append(image)
                     base_count += 1
 
-        if prompt_matrix or not opt.skip_grid:
+        if (prompt_matrix or not opt.skip_grid) and not do_not_save_grid:
             grid = image_grid(output_images, batch_size, round_down=prompt_matrix)
 
             if prompt_matrix:
