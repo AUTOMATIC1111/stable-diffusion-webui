@@ -634,7 +634,8 @@ txt2img_interface = gr.Interface(
     ],
     title="Stable Diffusion Text-to-Image Unified",
     description="Generate images from text with Stable Diffusion",
-    flagging_callback=Flagging()
+    flagging_callback=Flagging(),
+    theme="default",
 )
 
 
@@ -777,6 +778,7 @@ img2img_interface = gr.Interface(
     title="Stable Diffusion Image-to-Image Unified",
     description="Generate images from images with Stable Diffusion",
     allow_flagging="never",
+    theme="default",
 )
 
 interfaces = [
@@ -809,12 +811,14 @@ if GFPGAN is not None:
         title="GFPGAN",
         description="Fix faces on images",
         allow_flagging="never",
+        theme="default",
     ), "GFPGAN"))
 
 demo = gr.TabbedInterface(
     interface_list=[x[0] for x in interfaces],
     tab_names=[x[1] for x in interfaces],
-    css=("" if opt.no_progressbar_hiding else css_hide_progressbar)
+    css=("" if opt.no_progressbar_hiding else css_hide_progressbar),
+    theme="default",
 )
 
 demo.launch()
