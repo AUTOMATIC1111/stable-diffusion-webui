@@ -237,8 +237,10 @@ device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cp
 model = (model if opt.no_half else model.half()).to(device)
 
 
-def image_grid(imgs, batch_size, round_down=False):
-    if opt.n_rows > 0:
+def image_grid(imgs, batch_size, round_down=False, force_n_rows=None):
+    if force_n_rows is not None:
+        rows = force_n_rows
+    elif opt.n_rows > 0:
         rows = opt.n_rows
     elif opt.n_rows == 0:
         rows = batch_size
@@ -255,6 +257,7 @@ def image_grid(imgs, batch_size, round_down=False):
         grid.paste(img, box=(i % cols * w, i // cols * h))
 
     return grid
+
 
 
 def draw_prompt_matrix(im, width, height, all_prompts):
