@@ -53,6 +53,8 @@ parser.add_argument("--gfpgan-dir", type=str, help="GFPGAN directory", default=(
 parser.add_argument("--no-verify-input", action='store_true', help="do not verify input to check if it's too long")
 parser.add_argument("--no-half", action='store_true', help="do not switch the model to 16-bit floats")
 parser.add_argument("--no-progressbar-hiding", action='store_true', help="do not hide progressbar in gradio UI (we hide it because it slows down ML if you have hardware accleration in browser)")
+parser.add_argument("--max-batch-count",  type=int, default=16, help="maximum batch count value for the UI")
+parser.add_argument("--grid-format",  type=str, default='png', help="file format for saved grids; can be png or jpg")
 opt = parser.parse_args()
 
 GFPGAN_dir = opt.gfpgan_dir
@@ -207,8 +209,10 @@ device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cp
 model = (model if opt.no_half else model.half()).to(device)
 
 
-def image_grid(imgs, batch_size, round_down=False):
-    if opt.n_rows > 0:
+def image_grid(imgs, batch_size, round_down=False, force_n_rows=None):
+    if force_n_rows is not None:
+        rows = force_n_rows
+    elif opt.n_rows > 0:
         rows = opt.n_rows
     elif opt.n_rows == 0:
         rows = batch_size
@@ -347,7 +351,7 @@ def check_prompt_length(prompt, comments):
     comments.append(f"Warning: too many input tokens; some ({len(overflowing_words)}) have been truncated:\n{overflowing_text}\n")
 
 
-def process_images(outpath, func_init, func_sample, prompt, seed, sampler_name, batch_size, n_iter, steps, cfg_scale, width, height, prompt_matrix, use_GFPGAN):
+def process_images(outpath, func_init, func_sample, prompt, seed, sampler_name, batch_size, n_iter, steps, cfg_scale, width, height, prompt_matrix, use_GFPGAN, do_not_save_grid=False):
     """this is the main loop that both txt2img and img2img use; it calls func_init once inside all the scopes and func_sample once per batch"""
     mem_mon = MemUsageMonitor('MemMon')
     mem_mon.start()
@@ -443,7 +447,7 @@ def process_images(outpath, func_init, func_sample, prompt, seed, sampler_name, 
                     output_images.append(image)
                     base_count += 1
 
-        if prompt_matrix or not opt.skip_grid:
+        if (prompt_matrix or not opt.skip_grid) and not do_not_save_grid:
             grid = image_grid(output_images, batch_size, round_down=prompt_matrix)
 
             if prompt_matrix:
@@ -456,7 +460,7 @@ def process_images(outpath, func_init, func_sample, prompt, seed, sampler_name, 
 
                 output_images.insert(0, grid)
 
-            grid_file = f"grid-{grid_count:05}-{seed}_{prompts[i].replace(' ', '_').translate({ord(x): '' for x in invalid_filename_chars})[:128]}.jpg"
+            grid.save(os.path.join(outpath, f'grid-{grid_count:04}.{opt.grid_format}'))
             grid_count += 1
         toc = time.time()
 
@@ -577,7 +581,7 @@ txt2img_interface = gr.Interface(
         gr.Checkbox(label='Fix faces using GFPGAN', value=False, visible=GFPGAN is not None),
         gr.Checkbox(label='Create prompt matrix (separate multiple prompts using |, and get all combinations of them)', value=False),
         gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label="DDIM ETA", value=0.0, visible=False),
-        gr.Slider(minimum=1, maximum=16, step=1, label='Batch count (how many batches of images to generate)', value=1),
+        gr.Slider(minimum=1, maximum=opt.max_batch_count, step=1, label='Batch count (how many batches of images to generate)', value=1),
         gr.Slider(minimum=1, maximum=8, step=1, label='Batch size (how many images are in a batch; memory-hungry)', value=1),
         gr.Slider(minimum=1.0, maximum=15.0, step=0.5, label='Classifier Free Guidance Scale (how strongly the image should follow the prompt)', value=7.0),
         gr.Number(label='Seed', value=-1),
@@ -596,14 +600,13 @@ txt2img_interface = gr.Interface(
 )
 
 
-def img2img(prompt: str, init_img, ddim_steps: int, use_GFPGAN: bool, prompt_matrix, n_iter: int, batch_size: int, cfg_scale: float, denoising_strength: float, seed: int, height: int, width: int, resize_mode: int):
+def img2img(prompt: str, init_img, ddim_steps: int, use_GFPGAN: bool, prompt_matrix, loopback: bool, n_iter: int, batch_size: int, cfg_scale: float, denoising_strength: float, seed: int, height: int, width: int, resize_mode: int):
     outpath = opt.outdir or "outputs/img2img-samples"
     err = False
 
     sampler = KDiffusionSampler(model)
 
     assert 0. <= denoising_strength <= 1., 'can only work with strength in [0.0, 1.0]'
-    t_enc = int(denoising_strength * ddim_steps)
 
     def init():
         image = init_img.convert("RGB")
@@ -620,6 +623,8 @@ def img2img(prompt: str, init_img, ddim_steps: int, use_GFPGAN: bool, prompt_mat
         return init_latent,
 
     def sample(init_data, x, conditioning, unconditional_conditioning):
+        t_enc = int(denoising_strength * ddim_steps)
+
         x0, = init_data
 
         sigmas = sampler.model_wrap.get_sigmas(ddim_steps)
@@ -632,23 +637,63 @@ def img2img(prompt: str, init_img, ddim_steps: int, use_GFPGAN: bool, prompt_mat
         return samples_ddim
 
     try:
-        output_images, seed, info, stats = process_images(
-            outpath=outpath,
-            func_init=init,
-            func_sample=sample,
-            prompt=prompt,
-            seed=seed,
-            sampler_name='k-diffusion',
-            batch_size=batch_size,
-            n_iter=n_iter,
-            steps=ddim_steps,
-            cfg_scale=cfg_scale,
-            width=width,
-            height=height,
-            prompt_matrix=prompt_matrix,
-            use_GFPGAN=use_GFPGAN
-        )
+        if loopback:
+            output_images, info = None, None
+            history = []
+            initial_seed = None
 
+            for i in range(n_iter):
+                output_images, seed, info = process_images(
+                    outpath=outpath,
+                    func_init=init,
+                    func_sample=sample,
+                    prompt=prompt,
+                    seed=seed,
+                    sampler_name='k-diffusion',
+                    batch_size=1,
+                    n_iter=1,
+                    steps=ddim_steps,
+                    cfg_scale=cfg_scale,
+                    width=width,
+                    height=height,
+                    prompt_matrix=prompt_matrix,
+                    use_GFPGAN=use_GFPGAN,
+                    do_not_save_grid=True
+                )
+
+                if initial_seed is None:
+                    initial_seed = seed
+
+                init_img = output_images[0]
+                seed = seed + 1
+                denoising_strength = max(denoising_strength * 0.95, 0.1)
+                history.append(init_img)
+
+            grid_count = len(os.listdir(outpath)) - 1
+            grid = image_grid(history, batch_size, force_n_rows=1)
+            grid.save(os.path.join(outpath, f'grid-{grid_count:04}.{opt.grid_format}'))
+
+            output_images = history
+            seed = initial_seed
+
+        else:
+            output_images, seed, info = process_images(
+                outpath=outpath,
+                func_init=init,
+                func_sample=sample,
+                prompt=prompt,
+                seed=seed,
+                sampler_name='k-diffusion',
+                batch_size=batch_size,
+                n_iter=n_iter,
+                steps=ddim_steps,
+                cfg_scale=cfg_scale,
+                width=width,
+                height=height,
+                prompt_matrix=prompt_matrix,
+                use_GFPGAN=use_GFPGAN
+            )
+        
         del sampler
 
         return output_images, seed, info, stats
@@ -671,7 +716,8 @@ img2img_interface = gr.Interface(
         gr.Slider(minimum=1, maximum=150, step=1, label="Sampling Steps", value=50),
         gr.Checkbox(label='Fix faces using GFPGAN', value=False, visible=GFPGAN is not None),
         gr.Checkbox(label='Create prompt matrix (separate multiple prompts using |, and get all combinations of them)', value=False),
-        gr.Slider(minimum=1, maximum=16, step=1, label='Batch count (how many batches of images to generate)', value=1),
+        gr.Checkbox(label='Loopback (use images from previous batch when creating next batch)', value=False),
+        gr.Slider(minimum=1, maximum=opt.max_batch_count, step=1, label='Batch count (how many batches of images to generate)', value=1),
         gr.Slider(minimum=1, maximum=8, step=1, label='Batch size (how many images are in a batch; memory-hungry)', value=1),
         gr.Slider(minimum=1.0, maximum=15.0, step=0.5, label='Classifier Free Guidance Scale (how strongly the image should follow the prompt)', value=7.0),
         gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising Strength', value=0.75),
