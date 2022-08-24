@@ -48,10 +48,17 @@ parser.add_argument("--precision", type=str, help="evaluate at this precision", 
 parser.add_argument("--gfpgan-dir", type=str, help="GFPGAN directory", default='./GFPGAN')
 parser.add_argument("--no-verify-input", action='store_true', help="do not verify input to check if it's too long")
 parser.add_argument("--no-half", action='store_true', help="do not switch the model to 16-bit floats")
+parser.add_argument("--no-progressbar-hiding", action='store_true', help="do not hide progressbar in gradio UI (we hide it because it slows down ML if you have hardware accleration in browser)")
 opt = parser.parse_args()
 
 GFPGAN_dir = opt.gfpgan_dir
 
+css_hide_progressbar = """
+.wrap .m-12 svg { display:none!important; }
+.wrap .m-12::before { content:"Loading..." }
+.progress-bar { display:none!important; }
+.meta-text { display:none!important; }
+"""
 
 def chunk(it, size):
     it = iter(it)
@@ -595,6 +602,10 @@ if GFPGAN is not None:
         allow_flagging="never",
     ), "GFPGAN"))
 
-demo = gr.TabbedInterface(interface_list=[x[0] for x in interfaces], tab_names=[x[1] for x in interfaces])
+demo = gr.TabbedInterface(
+    interface_list=[x[0] for x in interfaces],
+    tab_names=[x[1] for x in interfaces],
+    css=("" if opt.no_progressbar_hiding else css_hide_progressbar)
+)
 
 demo.launch()
