@@ -236,6 +236,9 @@ model = load_model_from_config(config, "models/ldm/stable-diffusion-v1/model.ckp
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 model = (model if opt.no_half else model.half()).to(device)
 
+def load_embeddings(fp):
+    if fp is not None and hasattr(model, "embedding_manager"):
+        model.embedding_manager.load(fp.name)
 
 def image_grid(imgs, batch_size, round_down=False, force_n_rows=None):
     if force_n_rows is not None:
@@ -386,7 +389,7 @@ def check_prompt_length(prompt, comments):
     comments.append(f"Warning: too many input tokens; some ({len(overflowing_words)}) have been truncated:\n{overflowing_text}\n")
 
 
-def process_images(outpath, func_init, func_sample, prompt, seed, sampler_name, skip_grid, skip_save, batch_size, n_iter, steps, cfg_scale, width, height, prompt_matrix, use_GFPGAN, do_not_save_grid=False, normalize_prompt_weights=True):
+def process_images(outpath, func_init, func_sample, prompt, seed, sampler_name, skip_grid, skip_save, batch_size, n_iter, steps, cfg_scale, width, height, prompt_matrix, use_GFPGAN, fp, do_not_save_grid=False, normalize_prompt_weights=True):
     """this is the main loop that both txt2img and img2img use; it calls func_init once inside all the scopes and func_sample once per batch"""
     assert prompt is not None
     torch_gc()
@@ -395,6 +398,9 @@ def process_images(outpath, func_init, func_sample, prompt, seed, sampler_name, 
 
     mem_mon = MemUsageMonitor('MemMon')
     mem_mon.start()
+
+    if hasattr(model, "embedding_manager"):
+        load_embeddings(fp)
 
     os.makedirs(outpath, exist_ok=True)
 
@@ -537,7 +543,7 @@ Peak memory usage: { -(mem_max_used // -1_048_576) } MiB / { -(mem_total // -1_0
     return output_images, seed, info, stats
 
 
-def txt2img(prompt: str, ddim_steps: int, sampler_name: str, use_GFPGAN: bool, prompt_matrix: bool, skip_grid: bool, skip_save: bool, ddim_eta: float, n_iter: int, batch_size: int, cfg_scale: float, seed: int, height: int, width: int, normalize_prompt_weights: bool):
+def txt2img(prompt: str, ddim_steps: int, sampler_name: str, use_GFPGAN: bool, prompt_matrix: bool, skip_grid: bool, skip_save: bool, ddim_eta: float, n_iter: int, batch_size: int, cfg_scale: float, seed: int, height: int, width: int, normalize_prompt_weights: bool, fp):
     outpath = opt.outdir or "outputs/txt2img-samples"
     err = False
     seed = seed_to_int(seed)
@@ -576,6 +582,7 @@ def txt2img(prompt: str, ddim_steps: int, sampler_name: str, use_GFPGAN: bool, p
             height=height,
             prompt_matrix=prompt_matrix,
             use_GFPGAN=use_GFPGAN,
+            fp=fp,
             normalize_prompt_weights=normalize_prompt_weights
         )
 
@@ -651,6 +658,7 @@ txt2img_interface = gr.Interface(
         gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512),
         gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512),
         gr.Checkbox(label="Normalize Prompt Weights (ensure sum of weights add up to 1.0)", value=True),
+        gr.File(label = "Embeddings file for textual inversion", visible=hasattr(model, "embedding_manager")),
     ],
     outputs=[
         gr.Gallery(label="Images"),
@@ -665,7 +673,7 @@ txt2img_interface = gr.Interface(
 )
 
 
-def img2img(prompt: str, init_img, ddim_steps: int, sampler_name: str, use_GFPGAN: bool, prompt_matrix, loopback: bool, skip_grid: bool, skip_save: bool,  n_iter: int, batch_size: int, cfg_scale: float, denoising_strength: float, seed: int, height: int, width: int, resize_mode: int, normalize_prompt_weights: bool):
+def img2img(prompt: str, init_img, ddim_steps: int, sampler_name: str, use_GFPGAN: bool, prompt_matrix, loopback: bool, skip_grid: bool, skip_save: bool,  n_iter: int, batch_size: int, cfg_scale: float, denoising_strength: float, seed: int, height: int, width: int, resize_mode: int, normalize_prompt_weights: bool, fp):
     outpath = opt.outdir or "outputs/img2img-samples"
     err = False
     seed = seed_to_int(seed)
@@ -740,6 +748,7 @@ def img2img(prompt: str, init_img, ddim_steps: int, sampler_name: str, use_GFPGA
                     height=height,
                     prompt_matrix=prompt_matrix,
                     use_GFPGAN=use_GFPGAN,
+                    fp=fp,
                     do_not_save_grid=True
                 )
 
@@ -779,7 +788,8 @@ def img2img(prompt: str, init_img, ddim_steps: int, sampler_name: str, use_GFPGA
                 height=height,
                 prompt_matrix=prompt_matrix,
                 use_GFPGAN=use_GFPGAN,
-                normalize_prompt_weights=normalize_prompt_weights
+                fp=fp,
+                normalize_prompt_weights=normalize_prompt_weights                
             )
         
         del sampler
@@ -820,6 +830,7 @@ img2img_interface = gr.Interface(
         gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512),
         gr.Radio(label="Resize mode", choices=["Just resize", "Crop and resize", "Resize and fill"], type="index", value="Just resize"),
         gr.Checkbox(label="Normalize Prompt Weights (ensure sum of weights add up to 1.0)", value=True),
+        gr.File(label = "Embeddings file for textual inversion", visible=hasattr(model, "embedding_manager")),
     ],
     outputs=[
         gr.Gallery(),
