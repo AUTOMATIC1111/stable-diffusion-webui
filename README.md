@@ -133,3 +133,16 @@ the same effect. Use the --no-progressbar-hiding commandline option to revert th
 ### Prompt validation
 Stable Diffusion has a limit for input text length. If your prompt is too long, you will get a
 warning in the text output field, showing which parts of your text were truncated and ignored by the model.
+
+### Loopback
+A checkbox for img2img allowing to automatically feed output image as input for the next batch. Equivalent to
+saving output image, and replacing input image with it. Batch count setting controls how many iterations of
+this you get.
+
+Usually, when doing this, you would choose one of many images for the next iteration yourself, so the usefulness
+of this feature may be questionable, but I've managed to get some very nice outputs with it that I wasn't abble
+to get otherwise.
+
+Example: (cherrypicked result; original picture by anon)
+
+![](images/loopback.jpg)
