@@ -544,11 +544,14 @@ def img2img(prompt: str, init_img, ddim_steps: int, use_GFPGAN: bool, prompt_mat
     return output_images, seed, info
 
 
+sample_img2img = "assets/stable-samples/img2img/sketch-mountains-input.jpg"
+sample_img2img = sample_img2img if os.path.exists(sample_img2img) else None
+
 img2img_interface = gr.Interface(
     img2img,
     inputs=[
         gr.Textbox(placeholder="A fantasy landscape, trending on artstation.", lines=1),
-        gr.Image(value="https://raw.githubusercontent.com/CompVis/stable-diffusion/main/assets/stable-samples/img2img/sketch-mountains-input.jpg", source="upload", interactive=True, type="pil"),
+        gr.Image(value=sample_img2img, source="upload", interactive=True, type="pil"),
         gr.Slider(minimum=1, maximum=150, step=1, label="Sampling Steps", value=50),
         gr.Checkbox(label='Fix faces using GFPGAN', value=False, visible=GFPGAN is not None),
         gr.Checkbox(label='Create prompt matrix (separate multiple prompts using |, and get all combinations of them)', value=False),
