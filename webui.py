@@ -462,23 +462,22 @@ def process_images(outpath, func_init, func_sample, prompt, seed, sampler_name, 
 
             x_samples_ddim = model.decode_first_stage(samples_ddim)
             x_samples_ddim = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
-            # removed or not skip_grid, both skip = benchmark ;)
-            if prompt_matrix or not skip_save:
-                for i, x_sample in enumerate(x_samples_ddim):
-                    x_sample = 255. * rearrange(x_sample.cpu().numpy(), 'c h w -> h w c')
-                    x_sample = x_sample.astype(np.uint8)
+            for i, x_sample in enumerate(x_samples_ddim):
+                x_sample = 255. * rearrange(x_sample.cpu().numpy(), 'c h w -> h w c')
+                x_sample = x_sample.astype(np.uint8)
 
-                    if use_GFPGAN and GFPGAN is not None:
-                        cropped_faces, restored_faces, restored_img = GFPGAN.enhance(x_sample, has_aligned=False, only_center_face=False, paste_back=True)
-                        x_sample = restored_img
+                if use_GFPGAN and GFPGAN is not None:
+                    cropped_faces, restored_faces, restored_img = GFPGAN.enhance(x_sample, has_aligned=False, only_center_face=False, paste_back=True)
+                    x_sample = restored_img
 
-                    image = Image.fromarray(x_sample)
-                    filename = f"{base_count:05}-{seeds[i]}_{prompts[i].replace(' ', '_').translate({ord(x): '' for x in invalid_filename_chars})[:128]}.png"
 
+                image = Image.fromarray(x_sample)
+                filename = f"{base_count:05}-{seeds[i]}_{prompts[i].replace(' ', '_').translate({ord(x): '' for x in invalid_filename_chars})[:128]}.png"
+                if not skip_save:
                     image.save(os.path.join(sample_path, filename))
 
-                    output_images.append(image)
-                    base_count += 1
+                output_images.append(image)
+                base_count += 1
 
         if (prompt_matrix or not skip_grid) and not do_not_save_grid:
             grid = image_grid(output_images, batch_size, round_down=prompt_matrix)
@@ -558,6 +557,7 @@ def txt2img(prompt: str, ddim_steps: int, sampler_name: str, use_GFPGAN: bool, p
             height=height,
             prompt_matrix=prompt_matrix,
             use_GFPGAN=use_GFPGAN
+            
         )
 
         del sampler
@@ -731,10 +731,12 @@ def img2img(prompt: str, init_img, ddim_steps: int, sampler_name: str, use_GFPGA
                 denoising_strength = max(denoising_strength * 0.95, 0.1)
                 history.append(init_img)
 
-            grid_count = len(os.listdir(outpath)) - 1
-            grid = image_grid(history, batch_size, force_n_rows=1)
-            grid_file = f"grid-{grid_count:05}-{seed}_{prompt.replace(' ', '_').translate({ord(x): '' for x in invalid_filename_chars})[:128]}.jpg"
-            grid.save(os.path.join(outpath, grid_file), 'jpeg', quality=100, optimize=True)
+            if not skip_grid:
+                grid_count = len(os.listdir(outpath)) - 1
+                grid = image_grid(history, batch_size, force_n_rows=1)
+                grid_file = f"grid-{grid_count:05}-{seed}_{prompt.replace(' ', '_').translate({ord(x): '' for x in invalid_filename_chars})[:128]}.jpg"
+                grid.save(os.path.join(outpath, grid_file), 'jpeg', quality=100, optimize=True)
+
 
             output_images = history
             seed = initial_seed
