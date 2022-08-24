@@ -241,6 +241,42 @@ def draw_prompt_matrix(im, width, height, all_prompts):
     return result
 
 
+def resize_image(resize_mode, im, width, height):
+    if resize_mode == 0:
+        res = im.resize((width, height), resample=LANCZOS)
+    elif resize_mode == 1:
+        ratio = width / height
+        src_ratio = im.width / im.height
+
+        src_w = width if ratio > src_ratio else im.width * height // im.height
+        src_h = height if ratio <= src_ratio else im.height * width // im.width
+
+        resized = im.resize((src_w, src_h), resample=LANCZOS)
+        res = Image.new("RGB", (width, height))
+        res.paste(resized, box=(width // 2 - src_w // 2, height // 2 - src_h // 2))
+    else:
+        ratio = width / height
+        src_ratio = im.width / im.height
+
+        src_w = width if ratio < src_ratio else im.width * height // im.height
+        src_h = height if ratio >= src_ratio else im.height * width // im.width
+
+        resized = im.resize((src_w, src_h), resample=LANCZOS)
+        res = Image.new("RGB", (width, height))
+        res.paste(resized, box=(width // 2 - src_w // 2, height // 2 - src_h // 2))
+
+        if ratio < src_ratio:
+            fill_height = height // 2 - src_h // 2
+            res.paste(resized.resize((width, fill_height), box=(0, 0, width, 0)), box=(0, 0))
+            res.paste(resized.resize((width, fill_height), box=(0, resized.height, width, resized.height)), box=(0, fill_height + src_h))
+        else:
+            fill_width = width // 2 - src_w // 2
+            res.paste(resized.resize((fill_width, height), box=(0, 0, 0, height)), box=(0, 0))
+            res.paste(resized.resize((fill_width, height), box=(resized.width, 0, resized.width, height)), box=(fill_width + src_w, 0))
+
+    return res
+
+
 def check_prompt_length(prompt, comments):
     """this function tests if prompt is too long, and if so, adds a message to comments"""
 
@@ -488,7 +524,7 @@ txt2img_interface = gr.Interface(
 )
 
 
-def img2img(prompt: str, init_img, ddim_steps: int, use_GFPGAN: bool, prompt_matrix, n_iter: int, batch_size: int, cfg_scale: float, denoising_strength: float, seed: int, height: int, width: int):
+def img2img(prompt: str, init_img, ddim_steps: int, use_GFPGAN: bool, prompt_matrix, n_iter: int, batch_size: int, cfg_scale: float, denoising_strength: float, seed: int, height: int, width: int, resize_mode: int):
     outpath = opt.outdir or "outputs/img2img-samples"
 
     sampler = KDiffusionSampler(model)
@@ -498,7 +534,7 @@ def img2img(prompt: str, init_img, ddim_steps: int, use_GFPGAN: bool, prompt_mat
 
     def init():
         image = init_img.convert("RGB")
-        image = image.resize((width, height), resample=LANCZOS)
+        image = resize_image(resize_mode, image, width, height)
         image = np.array(image).astype(np.float32) / 255.0
         image = image[None].transpose(0, 3, 1, 2)
         image = torch.from_numpy(image)
@@ -562,6 +598,7 @@ img2img_interface = gr.Interface(
         gr.Number(label='Seed', value=-1),
         gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512),
         gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512),
+        gr.Radio(label="Resize mode", choices=["Just resize", "Crop and resize", "Resize and fill"], type="index", value="Just resize")
     ],
     outputs=[
         gr.Gallery(),
