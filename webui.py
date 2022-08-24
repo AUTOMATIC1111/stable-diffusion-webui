@@ -126,6 +126,9 @@ def create_random_tensors(shape, seeds):
     x = torch.stack(xs)
     return x
 
+def torch_gc():
+    torch.cuda.empty_cache()
+    torch.cuda.ipc_collect()
 
 def load_GFPGAN():
     model_name = 'GFPGANv1.3'
@@ -300,7 +303,7 @@ def process_images(outpath, func_init, func_sample, prompt, seed, sampler_name, 
     """this is the main loop that both txt2img and img2img use; it calls func_init once inside all the scopes and func_sample once per batch"""
 
     assert prompt is not None
-    torch.cuda.empty_cache()
+    torch_gc()
 
     if seed == -1:
         seed = random.randrange(4294967294)
@@ -412,7 +415,7 @@ Steps: {steps}, Sampler: {sampler_name}, CFG scale: {cfg_scale}, Seed: {seed}{',
 
     for comment in comments:
         info += "\n\n" + comment
-
+    torch_gc()
     return output_images, seed, info
 
 
