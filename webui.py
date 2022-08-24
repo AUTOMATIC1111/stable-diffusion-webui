@@ -17,7 +17,6 @@ from itertools import islice
 from omegaconf import OmegaConf
 from PIL import Image, ImageFont, ImageDraw
 from torch import autocast
-
 from ldm.models.diffusion.ddim import DDIMSampler
 from ldm.models.diffusion.plms import PLMSSampler
 from ldm.util import instantiate_from_config
@@ -53,8 +52,6 @@ parser.add_argument("--gfpgan-dir", type=str, help="GFPGAN directory", default=(
 parser.add_argument("--no-verify-input", action='store_true', help="do not verify input to check if it's too long")
 parser.add_argument("--no-half", action='store_true', help="do not switch the model to 16-bit floats")
 parser.add_argument("--no-progressbar-hiding", action='store_true', help="do not hide progressbar in gradio UI (we hide it because it slows down ML if you have hardware accleration in browser)")
-parser.add_argument("--max-batch-count",  type=int, default=16, help="maximum batch count value for the UI")
-parser.add_argument("--grid-format",  type=str, default='png', help="file format for saved grids; can be png or jpg")
 opt = parser.parse_args()
 
 GFPGAN_dir = opt.gfpgan_dir
@@ -162,6 +159,37 @@ class KDiffusionSampler:
 
         return samples_ddim, None
 
+class MemUsageMonitor(threading.Thread):
+    stop_flag = False
+    max_usage = 0
+    total = 0
+    
+    def __init__(self, name):
+        threading.Thread.__init__(self)
+        self.name = name
+    
+    def run(self):
+        print(f"[{self.name}] Recording max memory usage...\n")
+        pynvml.nvmlInit()
+        handle = pynvml.nvmlDeviceGetHandleByIndex(0)
+        self.total = pynvml.nvmlDeviceGetMemoryInfo(handle).total
+        while not self.stop_flag:
+            m = pynvml.nvmlDeviceGetMemoryInfo(handle)
+            self.max_usage = max(self.max_usage, m.used)
+            # print(self.max_usage)
+            time.sleep(0.1)
+        print(f"[{self.name}] Stopped recording.\n")
+        pynvml.nvmlShutdown()
+    
+    def read(self):
+        return self.max_usage, self.total
+    
+    def stop(self):
+        self.stop_flag = True
+    
+    def read_and_stop(self):
+        self.stop_flag = True
+        return self.max_usage, self.total
 
 def create_random_tensors(shape, seeds):
     xs = []
@@ -229,6 +257,7 @@ def image_grid(imgs, batch_size, round_down=False, force_n_rows=None):
         grid.paste(img, box=(i % cols * w, i // cols * h))
 
     return grid
+
 
 
 def draw_prompt_matrix(im, width, height, all_prompts):
@@ -353,12 +382,13 @@ def check_prompt_length(prompt, comments):
 
 def process_images(outpath, func_init, func_sample, prompt, seed, sampler_name, batch_size, n_iter, steps, cfg_scale, width, height, prompt_matrix, use_GFPGAN, do_not_save_grid=False):
     """this is the main loop that both txt2img and img2img use; it calls func_init once inside all the scopes and func_sample once per batch"""
-    mem_mon = MemUsageMonitor('MemMon')
-    mem_mon.start()
+    assert prompt is not None
+    torch_gc()
+    # start time after garbage collection (or before?)
     start_time = time.time()
 
-    assert prompt is not None
-    torch.cuda.empty_cache()
+    mem_mon = MemUsageMonitor('MemMon')
+    mem_mon.start()
 
     if seed == -1:
         seed = random.randrange(4294967294)
@@ -460,9 +490,14 @@ def process_images(outpath, func_init, func_sample, prompt, seed, sampler_name, 
 
                 output_images.insert(0, grid)
 
-            grid.save(os.path.join(outpath, f'grid-{grid_count:04}.{opt.grid_format}'))
+
+            grid_file = f"grid-{grid_count:05}-{seed}_{prompts[i].replace(' ', '_').translate({ord(x): '' for x in invalid_filename_chars})[:128]}.jpg"
+            grid.save(os.path.join(outpath, grid_file), 'jpeg', quality=80, optimize=True)
             grid_count += 1
         toc = time.time()
+
+    mem_max_used, mem_total = mem_mon.read_and_stop()
+    time_diff = time.time()-start_time
 
     mem_max_used, mem_total = mem_mon.read_and_stop()
     time_diff = time.time()-start_time
@@ -480,7 +515,9 @@ Peak memory usage: { -(mem_max_used // -1_048_576) } MiB / { -(mem_total // -1_0
     #mem_mon.stop()
     #del mem_mon
     torch_gc()
+
     return output_images, seed, info, stats
+
 
 def txt2img(prompt: str, ddim_steps: int, sampler_name: str, use_GFPGAN: bool, prompt_matrix: bool, ddim_eta: float, n_iter: int, batch_size: int, cfg_scale: float, seed: int, height: int, width: int):
     outpath = opt.outdir or "outputs/txt2img-samples"
@@ -525,12 +562,10 @@ def txt2img(prompt: str, ddim_steps: int, sampler_name: str, use_GFPGAN: bool, p
     except RuntimeError as e:
         err = e
         err_msg = f'CRASHED:<br><textarea rows="5" style="background: black;width: -webkit-fill-available;font-family: monospace;font-size: small;font-weight: bold;">{str(e)}</textarea><br><br>Please wait while the program restarts.'
-        stats = err_msg
-        return [], 1
+        return [], 0, "", err_msg
     finally:
         if err:
             crash(err, '!!Runtime error (txt2img)!!')
-
 
 
 class Flagging(gr.FlaggingCallback):
@@ -583,7 +618,7 @@ txt2img_interface = gr.Interface(
         gr.Checkbox(label='Fix faces using GFPGAN', value=False, visible=GFPGAN is not None),
         gr.Checkbox(label='Create prompt matrix (separate multiple prompts using |, and get all combinations of them)', value=False),
         gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label="DDIM ETA", value=0.0, visible=False),
-        gr.Slider(minimum=1, maximum=opt.max_batch_count, step=1, label='Batch count (how many batches of images to generate)', value=1),
+        gr.Slider(minimum=1, maximum=16, step=1, label='Batch count (how many batches of images to generate)', value=1),
         gr.Slider(minimum=1, maximum=8, step=1, label='Batch size (how many images are in a batch; memory-hungry)', value=1),
         gr.Slider(minimum=1.0, maximum=15.0, step=0.5, label='Classifier Free Guidance Scale (how strongly the image should follow the prompt)', value=7.0),
         gr.Number(label='Seed', value=-1),
@@ -598,7 +633,8 @@ txt2img_interface = gr.Interface(
     ],
     title="Stable Diffusion Text-to-Image Unified",
     description="Generate images from text with Stable Diffusion",
-    flagging_callback=Flagging()
+    flagging_callback=Flagging(),
+    theme="default",
 )
 
 
@@ -609,6 +645,7 @@ def img2img(prompt: str, init_img, ddim_steps: int, use_GFPGAN: bool, prompt_mat
     sampler = KDiffusionSampler(model)
 
     assert 0. <= denoising_strength <= 1., 'can only work with strength in [0.0, 1.0]'
+    t_enc = int(denoising_strength * ddim_steps)
 
     def init():
         image = init_img.convert("RGB")
@@ -625,8 +662,6 @@ def img2img(prompt: str, init_img, ddim_steps: int, use_GFPGAN: bool, prompt_mat
         return init_latent,
 
     def sample(init_data, x, conditioning, unconditional_conditioning):
-        t_enc = int(denoising_strength * ddim_steps)
-
         x0, = init_data
 
         sigmas = sampler.model_wrap.get_sigmas(ddim_steps)
@@ -637,6 +672,7 @@ def img2img(prompt: str, init_img, ddim_steps: int, use_GFPGAN: bool, prompt_mat
         model_wrap_cfg = CFGDenoiser(sampler.model_wrap)
         samples_ddim = K.sampling.sample_lms(model_wrap_cfg, xi, sigma_sched, extra_args={'cond': conditioning, 'uncond': unconditional_conditioning, 'cond_scale': cfg_scale}, disable=False)
         return samples_ddim
+
 
     try:
         if loopback:
@@ -673,7 +709,8 @@ def img2img(prompt: str, init_img, ddim_steps: int, use_GFPGAN: bool, prompt_mat
 
             grid_count = len(os.listdir(outpath)) - 1
             grid = image_grid(history, batch_size, force_n_rows=1)
-            grid.save(os.path.join(outpath, f'grid-{grid_count:04}.{opt.grid_format}'))
+            grid_file = f"grid-{grid_count:05}-{seed}_{prompt.replace(' ', '_').translate({ord(x): '' for x in invalid_filename_chars})[:128]}.jpg"
+            grid.save(os.path.join(outpath, grid_file), 'jpeg', quality=80, optimize=True)
 
             output_images = history
             seed = initial_seed
@@ -702,11 +739,11 @@ def img2img(prompt: str, init_img, ddim_steps: int, use_GFPGAN: bool, prompt_mat
     except RuntimeError as e:
         err = e
         err_msg = f'CRASHED:<br><textarea rows="5" style="background: black;width: -webkit-fill-available;font-family: monospace;font-size: small;font-weight: bold;">{str(e)}</textarea><br><br>Please wait while the program restarts.'
-        stats = err_msg
-        return [], 1
+        return [], 0, "", err_msg
     finally:
         if err:
             crash(err, '!!Runtime error (img2img)!!')
+
 
 
 sample_img2img = "assets/stable-samples/img2img/sketch-mountains-input.jpg"
@@ -721,7 +758,7 @@ img2img_interface = gr.Interface(
         gr.Checkbox(label='Fix faces using GFPGAN', value=False, visible=GFPGAN is not None),
         gr.Checkbox(label='Create prompt matrix (separate multiple prompts using |, and get all combinations of them)', value=False),
         gr.Checkbox(label='Loopback (use images from previous batch when creating next batch)', value=False),
-        gr.Slider(minimum=1, maximum=opt.max_batch_count, step=1, label='Batch count (how many batches of images to generate)', value=1),
+        gr.Slider(minimum=1, maximum=16, step=1, label='Batch count (how many batches of images to generate)', value=1),
         gr.Slider(minimum=1, maximum=8, step=1, label='Batch size (how many images are in a batch; memory-hungry)', value=1),
         gr.Slider(minimum=1.0, maximum=15.0, step=0.5, label='Classifier Free Guidance Scale (how strongly the image should follow the prompt)', value=7.0),
         gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising Strength', value=0.75),
@@ -739,6 +776,7 @@ img2img_interface = gr.Interface(
     title="Stable Diffusion Image-to-Image Unified",
     description="Generate images from images with Stable Diffusion",
     allow_flagging="never",
+    theme="default",
 )
 
 interfaces = [
@@ -771,12 +809,14 @@ if GFPGAN is not None:
         title="GFPGAN",
         description="Fix faces on images",
         allow_flagging="never",
+        theme="default",
     ), "GFPGAN"))
 
 demo = gr.TabbedInterface(
     interface_list=[x[0] for x in interfaces],
     tab_names=[x[1] for x in interfaces],
-    css=("" if opt.no_progressbar_hiding else css_hide_progressbar)
+    css=("" if opt.no_progressbar_hiding else css_hide_progressbar),
+    theme="default",
 )
 
-demo.launch()
+demo.launch(show_error=True, server_name='0.0.0.0')
