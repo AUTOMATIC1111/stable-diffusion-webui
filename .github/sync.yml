@@ -1,0 +1,3 @@
+hlky/stable-diffusion:
+  - source: webui.py
+  - dest: scripts/webui.py
