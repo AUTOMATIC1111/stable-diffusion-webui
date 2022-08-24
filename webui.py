@@ -258,7 +258,13 @@ def image_grid(imgs, batch_size, round_down=False, force_n_rows=None):
 
     return grid
 
-
+def seed_to_int(s):
+    if s == 'random':
+        return random.randint(0,2**32)
+    n = abs(int(s) if s.isdigit() else hash(s))
+    while n > 2**32:
+        n = n >> 32
+    return n
 
 def draw_prompt_matrix(im, width, height, all_prompts):
     def wrap(text, d, font, line_length):
@@ -380,7 +386,7 @@ def check_prompt_length(prompt, comments):
     comments.append(f"Warning: too many input tokens; some ({len(overflowing_words)}) have been truncated:\n{overflowing_text}\n")
 
 
-def process_images(outpath, func_init, func_sample, prompt, seed, sampler_name, batch_size, n_iter, steps, cfg_scale, width, height, prompt_matrix, use_GFPGAN, do_not_save_grid=False):
+def process_images(outpath, func_init, func_sample, prompt, seed, sampler_name, skip_grid, skip_save, batch_size, n_iter, steps, cfg_scale, width, height, prompt_matrix, use_GFPGAN, do_not_save_grid=False):
     """this is the main loop that both txt2img and img2img use; it calls func_init once inside all the scopes and func_sample once per batch"""
     assert prompt is not None
     torch_gc()
@@ -389,10 +395,6 @@ def process_images(outpath, func_init, func_sample, prompt, seed, sampler_name, 
 
     mem_mon = MemUsageMonitor('MemMon')
     mem_mon.start()
-
-    if seed == -1:
-        seed = random.randrange(4294967294)
-    seed = int(seed)
 
     os.makedirs(outpath, exist_ok=True)
 
@@ -451,16 +453,17 @@ def process_images(outpath, func_init, func_sample, prompt, seed, sampler_name, 
             if isinstance(prompts, tuple):
                 prompts = list(prompts)
             c = model.get_learned_conditioning(prompts)
+            shape = [opt_C, height // opt_f, width // opt_f]
 
             # we manually generate all input noises because each one should have a specific seed
             x = create_random_tensors([opt_C, height // opt_f, width // opt_f], seeds=seeds)
-
-            samples_ddim = func_sample(init_data=init_data, x=x, conditioning=c, unconditional_conditioning=uc)
+            samples_ddim = func_sample(init_data=init_data, x=x, conditioning=c, unconditional_conditioning=uc, sampler_name=sampler_name)
+            
 
             x_samples_ddim = model.decode_first_stage(samples_ddim)
             x_samples_ddim = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
-
-            if prompt_matrix or not opt.skip_save or not opt.skip_grid:
+            # removed or not skip_grid, both skip = benchmark ;)
+            if prompt_matrix or not skip_save:
                 for i, x_sample in enumerate(x_samples_ddim):
                     x_sample = 255. * rearrange(x_sample.cpu().numpy(), 'c h w -> h w c')
                     x_sample = x_sample.astype(np.uint8)
@@ -477,7 +480,7 @@ def process_images(outpath, func_init, func_sample, prompt, seed, sampler_name, 
                     output_images.append(image)
                     base_count += 1
 
-        if (prompt_matrix or not opt.skip_grid) and not do_not_save_grid:
+        if (prompt_matrix or not skip_grid) and not do_not_save_grid:
             grid = image_grid(output_images, batch_size, round_down=prompt_matrix)
 
             if prompt_matrix:
@@ -492,12 +495,9 @@ def process_images(outpath, func_init, func_sample, prompt, seed, sampler_name, 
 
 
             grid_file = f"grid-{grid_count:05}-{seed}_{prompts[i].replace(' ', '_').translate({ord(x): '' for x in invalid_filename_chars})[:128]}.jpg"
-            grid.save(os.path.join(outpath, grid_file), 'jpeg', quality=80, optimize=True)
+            grid.save(os.path.join(outpath, grid_file), 'jpeg', quality=100, optimize=True)
             grid_count += 1
         toc = time.time()
-
-    mem_max_used, mem_total = mem_mon.read_and_stop()
-    time_diff = time.time()-start_time
 
     mem_max_used, mem_total = mem_mon.read_and_stop()
     time_diff = time.time()-start_time
@@ -519,9 +519,10 @@ Peak memory usage: { -(mem_max_used // -1_048_576) } MiB / { -(mem_total // -1_0
     return output_images, seed, info, stats
 
 
-def txt2img(prompt: str, ddim_steps: int, sampler_name: str, use_GFPGAN: bool, prompt_matrix: bool, ddim_eta: float, n_iter: int, batch_size: int, cfg_scale: float, seed: int, height: int, width: int):
+def txt2img(prompt: str, ddim_steps: int, sampler_name: str, use_GFPGAN: bool, prompt_matrix: bool, skip_grid: bool, skip_save: bool, ddim_eta: float, n_iter: int, batch_size: int, cfg_scale: float, seed: int, height: int, width: int):
     outpath = opt.outdir or "outputs/txt2img-samples"
     err = False
+    seed = seed_to_int(seed)
 
     if sampler_name == 'PLMS':
         sampler = PLMSSampler(model)
@@ -535,9 +536,10 @@ def txt2img(prompt: str, ddim_steps: int, sampler_name: str, use_GFPGAN: bool, p
     def init():
         pass
 
-    def sample(init_data, x, conditioning, unconditional_conditioning):
+    def sample(init_data, x, conditioning, unconditional_conditioning, sampler_name):
         samples_ddim, _ = sampler.sample(S=ddim_steps, conditioning=conditioning, batch_size=int(x.shape[0]), shape=x[0].shape, verbose=False, unconditional_guidance_scale=cfg_scale, unconditional_conditioning=unconditional_conditioning, eta=ddim_eta, x_T=x)
         return samples_ddim
+
     try:
         output_images, seed, info, stats = process_images(
             outpath=outpath,
@@ -546,6 +548,8 @@ def txt2img(prompt: str, ddim_steps: int, sampler_name: str, use_GFPGAN: bool, p
             prompt=prompt,
             seed=seed,
             sampler_name=sampler_name,
+            skip_save=skip_save,
+            skip_grid=skip_grid,
             batch_size=batch_size,
             n_iter=n_iter,
             steps=ddim_steps,
@@ -562,7 +566,8 @@ def txt2img(prompt: str, ddim_steps: int, sampler_name: str, use_GFPGAN: bool, p
     except RuntimeError as e:
         err = e
         err_msg = f'CRASHED:<br><textarea rows="5" style="background: black;width: -webkit-fill-available;font-family: monospace;font-size: small;font-weight: bold;">{str(e)}</textarea><br><br>Please wait while the program restarts.'
-        return [], 0, "", err_msg
+        stats = err_msg
+        return [], 1
     finally:
         if err:
             crash(err, '!!Runtime error (txt2img)!!')
@@ -617,11 +622,13 @@ txt2img_interface = gr.Interface(
         gr.Radio(label='Sampling method', choices=["DDIM", "PLMS", "k-diffusion"], value="k-diffusion"),
         gr.Checkbox(label='Fix faces using GFPGAN', value=False, visible=GFPGAN is not None),
         gr.Checkbox(label='Create prompt matrix (separate multiple prompts using |, and get all combinations of them)', value=False),
+        gr.Checkbox(label='Skip grid', value=False),
+        gr.Checkbox(label='Skip save individual images', value=False),
         gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label="DDIM ETA", value=0.0, visible=False),
         gr.Slider(minimum=1, maximum=16, step=1, label='Batch count (how many batches of images to generate)', value=1),
         gr.Slider(minimum=1, maximum=8, step=1, label='Batch size (how many images are in a batch; memory-hungry)', value=1),
         gr.Slider(minimum=1.0, maximum=15.0, step=0.5, label='Classifier Free Guidance Scale (how strongly the image should follow the prompt)', value=7.0),
-        gr.Number(label='Seed', value=-1),
+        gr.Textbox(label="Seed ('random' to randomize)", lines=1, value="random"),
         gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512),
         gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512),
     ],
@@ -638,11 +645,17 @@ txt2img_interface = gr.Interface(
 )
 
 
-def img2img(prompt: str, init_img, ddim_steps: int, use_GFPGAN: bool, prompt_matrix, loopback: bool, n_iter: int, batch_size: int, cfg_scale: float, denoising_strength: float, seed: int, height: int, width: int, resize_mode: int):
+def img2img(prompt: str, init_img, ddim_steps: int, sampler_name: str, use_GFPGAN: bool, prompt_matrix, loopback: bool, skip_grid: bool, skip_save: bool,  n_iter: int, batch_size: int, cfg_scale: float, denoising_strength: float, seed: int, height: int, width: int, resize_mode: int):
     outpath = opt.outdir or "outputs/img2img-samples"
     err = False
+    seed = seed_to_int(seed)
 
-    sampler = KDiffusionSampler(model)
+    if sampler_name == 'DDIM':
+        sampler = DDIMSampler(model)
+    elif sampler_name == 'k-diffusion':
+        sampler = KDiffusionSampler(model)
+    else:
+        raise Exception("Unknown sampler: " + sampler_name)
 
     assert 0. <= denoising_strength <= 1., 'can only work with strength in [0.0, 1.0]'
     t_enc = int(denoising_strength * ddim_steps)
@@ -661,16 +674,25 @@ def img2img(prompt: str, init_img, ddim_steps: int, use_GFPGAN: bool, prompt_mat
 
         return init_latent,
 
-    def sample(init_data, x, conditioning, unconditional_conditioning):
-        x0, = init_data
+    def sample(init_data, x, conditioning, unconditional_conditioning, sampler_name):
+        if sampler_name == 'k-diffusion':
+            x0, = init_data
 
-        sigmas = sampler.model_wrap.get_sigmas(ddim_steps)
-        noise = x * sigmas[ddim_steps - t_enc - 1]
+            sigmas = sampler.model_wrap.get_sigmas(ddim_steps)
+            noise = x * sigmas[ddim_steps - t_enc - 1]
 
-        xi = x0 + noise
-        sigma_sched = sigmas[ddim_steps - t_enc - 1:]
-        model_wrap_cfg = CFGDenoiser(sampler.model_wrap)
-        samples_ddim = K.sampling.sample_lms(model_wrap_cfg, xi, sigma_sched, extra_args={'cond': conditioning, 'uncond': unconditional_conditioning, 'cond_scale': cfg_scale}, disable=False)
+            xi = x0 + noise
+            sigma_sched = sigmas[ddim_steps - t_enc - 1:]
+            model_wrap_cfg = CFGDenoiser(sampler.model_wrap)
+            samples_ddim = K.sampling.sample_lms(model_wrap_cfg, xi, sigma_sched, extra_args={'cond': conditioning, 'uncond': unconditional_conditioning, 'cond_scale': cfg_scale}, disable=False)
+        else:
+            x0, = init_data
+            sampler.make_schedule(ddim_num_steps=ddim_steps, ddim_eta=0.0, verbose=False)
+            z_enc = sampler.stochastic_encode(x0, torch.tensor([t_enc]*batch_size).to(device))
+                                # decode it
+            samples_ddim = sampler.decode(z_enc, conditioning, t_enc,
+                                            unconditional_guidance_scale=cfg_scale,
+                                            unconditional_conditioning=unconditional_conditioning,)
         return samples_ddim
 
 
@@ -687,7 +709,9 @@ def img2img(prompt: str, init_img, ddim_steps: int, use_GFPGAN: bool, prompt_mat
                     func_sample=sample,
                     prompt=prompt,
                     seed=seed,
-                    sampler_name='k-diffusion',
+                    sampler_name=sampler_name,
+                    skip_save=skip_save,
+                    skip_grid=skip_grid,
                     batch_size=1,
                     n_iter=1,
                     steps=ddim_steps,
@@ -710,7 +734,7 @@ def img2img(prompt: str, init_img, ddim_steps: int, use_GFPGAN: bool, prompt_mat
             grid_count = len(os.listdir(outpath)) - 1
             grid = image_grid(history, batch_size, force_n_rows=1)
             grid_file = f"grid-{grid_count:05}-{seed}_{prompt.replace(' ', '_').translate({ord(x): '' for x in invalid_filename_chars})[:128]}.jpg"
-            grid.save(os.path.join(outpath, grid_file), 'jpeg', quality=80, optimize=True)
+            grid.save(os.path.join(outpath, grid_file), 'jpeg', quality=100, optimize=True)
 
             output_images = history
             seed = initial_seed
@@ -722,7 +746,9 @@ def img2img(prompt: str, init_img, ddim_steps: int, use_GFPGAN: bool, prompt_mat
                 func_sample=sample,
                 prompt=prompt,
                 seed=seed,
-                sampler_name='k-diffusion',
+                sampler_name=sampler_name,
+                skip_save=skip_save,
+                skip_grid=skip_grid,
                 batch_size=batch_size,
                 n_iter=n_iter,
                 steps=ddim_steps,
@@ -739,7 +765,8 @@ def img2img(prompt: str, init_img, ddim_steps: int, use_GFPGAN: bool, prompt_mat
     except RuntimeError as e:
         err = e
         err_msg = f'CRASHED:<br><textarea rows="5" style="background: black;width: -webkit-fill-available;font-family: monospace;font-size: small;font-weight: bold;">{str(e)}</textarea><br><br>Please wait while the program restarts.'
-        return [], 0, "", err_msg
+        stats = err_msg
+        return [], 1
     finally:
         if err:
             crash(err, '!!Runtime error (img2img)!!')
@@ -755,14 +782,17 @@ img2img_interface = gr.Interface(
         gr.Textbox(placeholder="A fantasy landscape, trending on artstation.", lines=1),
         gr.Image(value=sample_img2img, source="upload", interactive=True, type="pil"),
         gr.Slider(minimum=1, maximum=150, step=1, label="Sampling Steps", value=50),
+        gr.Radio(label='Sampling method', choices=["DDIM", "k-diffusion"], value="k-diffusion"),
         gr.Checkbox(label='Fix faces using GFPGAN', value=False, visible=GFPGAN is not None),
         gr.Checkbox(label='Create prompt matrix (separate multiple prompts using |, and get all combinations of them)', value=False),
         gr.Checkbox(label='Loopback (use images from previous batch when creating next batch)', value=False),
+        gr.Checkbox(label='Skip grid', value=False),
+        gr.Checkbox(label='Skip save individual images', value=False),
         gr.Slider(minimum=1, maximum=16, step=1, label='Batch count (how many batches of images to generate)', value=1),
         gr.Slider(minimum=1, maximum=8, step=1, label='Batch size (how many images are in a batch; memory-hungry)', value=1),
         gr.Slider(minimum=1.0, maximum=15.0, step=0.5, label='Classifier Free Guidance Scale (how strongly the image should follow the prompt)', value=7.0),
         gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising Strength', value=0.75),
-        gr.Number(label='Seed', value=-1),
+        gr.Textbox(label="Seed ('random' to randomize)", lines=1, value="random"),
         gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512),
         gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512),
         gr.Radio(label="Resize mode", choices=["Just resize", "Crop and resize", "Resize and fill"], type="index", value="Just resize")
