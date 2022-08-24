@@ -401,7 +401,8 @@ def process_images(outpath, func_init, func_sample, prompt, seed, sampler_name, 
 
                 output_images.insert(0, grid)
 
-            grid.save(os.path.join(outpath, f'grid-{grid_count:04}.png'))
+            grid_file = f"grid-{grid_count:05}-{seed}_{prompts[i].replace(' ', '_').translate({ord(x): '' for x in invalid_filename_chars})[:128]}.jpg"
+            grid.save(os.path.join(outpath, grid_file), 'jpeg', quality=80, optimize=True)
             grid_count += 1
 
     info = f"""
