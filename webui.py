@@ -50,7 +50,10 @@ parser.add_argument("--no-verify-input", action='store_true', help="do not verif
 parser.add_argument("--no-half", action='store_true', help="do not switch the model to 16-bit floats")
 parser.add_argument("--no-progressbar-hiding", action='store_true', help="do not hide progressbar in gradio UI (we hide it because it slows down ML if you have hardware accleration in browser)")
 parser.add_argument("--max-batch-count",  type=int, default=16, help="maximum batch count value for the UI")
+parser.add_argument("--save-format",  type=str, default='png', help="file format for saved indiviual samples; can be png or jpg")
 parser.add_argument("--grid-format",  type=str, default='png', help="file format for saved grids; can be png or jpg")
+parser.add_argument("--grid-extended-filename",  action='store_true', help="save grid images to filenames with extended info: seed, prompt")
+parser.add_argument("--jpeg-quality",  type=int, default=80, help="quality for saved jpeg images")
 opt = parser.parse_args()
 
 GFPGAN_dir = opt.gfpgan_dir
@@ -128,9 +131,26 @@ def create_random_tensors(shape, seeds):
     x = torch.stack(xs)
     return x
 
+
 def torch_gc():
     torch.cuda.empty_cache()
     torch.cuda.ipc_collect()
+
+
+def sanitize_filename_part(text):
+    return text.replace(' ', '_').translate({ord(x): '' for x in invalid_filename_chars})[:128]
+
+
+def save_image(image, path, basename, seed, prompt, extension, short_filename=False):
+    prompt = sanitize_filename_part(prompt)
+
+    if short_filename:
+        filename = f"{basename}.{extension}"
+    else:
+        filename = f"{basename}-{seed}-{prompt[:128]}.{extension}"
+
+    image.save(os.path.join(path, filename), quality=opt.jpeg_quality)
+
 
 def load_GFPGAN():
     model_name = 'GFPGANv1.3'
@@ -387,9 +407,7 @@ def process_images(outpath, func_init, func_sample, prompt, seed, sampler_name, 
                         x_sample = restored_img
 
                     image = Image.fromarray(x_sample)
-                    filename = f"{base_count:05}-{seeds[i]}_{prompts[i].replace(' ', '_').translate({ord(x): '' for x in invalid_filename_chars})[:128]}.png"
-
-                    image.save(os.path.join(sample_path, filename))
+                    save_image(image, sample_path, f"{base_count:05}", seeds[i], prompts[i], opt.save_format)
 
                     output_images.append(image)
                     base_count += 1
@@ -408,8 +426,7 @@ def process_images(outpath, func_init, func_sample, prompt, seed, sampler_name, 
 
                 output_images.insert(0, grid)
 
-
-            grid.save(os.path.join(outpath, f'grid-{grid_count:04}.{opt.grid_format}'))
+            save_image(grid, outpath, f"grid-{grid_count:04}", seed, prompt, opt.grid_format, short_filename=not opt.grid_extended_filename)
             grid_count += 1
 
     info = f"""
@@ -601,7 +618,8 @@ def img2img(prompt: str, init_img, ddim_steps: int, use_GFPGAN: bool, prompt_mat
 
         grid_count = len(os.listdir(outpath)) - 1
         grid = image_grid(history, batch_size, force_n_rows=1)
-        grid.save(os.path.join(outpath, f'grid-{grid_count:04}.{opt.grid_format}'))
+
+        save_image(grid, outpath, f"grid-{grid_count:04}", initial_seed, prompt, opt.grid_format, short_filename=not opt.grid_extended_filename)
 
         output_images = history
         seed = initial_seed
