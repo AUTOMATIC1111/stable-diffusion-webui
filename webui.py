@@ -402,6 +402,7 @@ def process_images(outpath, func_init, func_sample, prompt, seed, sampler_name, 
 
     precision_scope = autocast if opt.precision == "autocast" else nullcontext
     output_images = []
+    stats = []
     with torch.no_grad(), precision_scope("cuda"), model.ema_scope():
         init_data = func_init()
         tic = time.time()
@@ -464,17 +465,18 @@ def process_images(outpath, func_init, func_sample, prompt, seed, sampler_name, 
 
     info = f"""
 {prompt}
-Steps: {steps}, Sampler: {sampler_name}, CFG scale: {cfg_scale}, Seed: {seed}{', GFPGAN' if use_GFPGAN and GFPGAN is not None else ''}{', Prompt Matrix Mode.' if prompt_matrix else ''}
-Took { round(time_diff, 2) }s total ({ round(time_diff/(len(all_prompts)),2) }s per image)<br>
-Peak memory usage: { -(mem_max_used // -1_048_576) } MiB / { -(mem_total // -1_048_576) } MiB / { round(mem_max_used/mem_total*100, 3) }%""".strip()
+Steps: {steps}, Sampler: {sampler_name}, CFG scale: {cfg_scale}, Seed: {seed}{', GFPGAN' if use_GFPGAN and GFPGAN is not None else ''}{', Prompt Matrix Mode.' if prompt_matrix else ''}""".strip()
+    stats = f'''
+Took { round(time_diff, 2) }s total ({ round(time_diff/(len(all_prompts)),2) }s per image)
+Peak memory usage: { -(mem_max_used // -1_048_576) } MiB / { -(mem_total // -1_048_576) } MiB / { round(mem_max_used/mem_total*100, 3) }%'''
     
     for comment in comments:
         info += "\n\n" + comment
         
-    mem_mon.stop()
-    del mem_mon
+    #mem_mon.stop()
+    #del mem_mon
     torch_gc()
-    return output_images, seed, info
+    return output_images, seed, info, stats
 
 def txt2img(prompt: str, ddim_steps: int, sampler_name: str, use_GFPGAN: bool, prompt_matrix: bool, ddim_eta: float, n_iter: int, batch_size: int, cfg_scale: float, seed: int, height: int, width: int):
     outpath = opt.outdir or "outputs/txt2img-samples"
@@ -496,7 +498,7 @@ def txt2img(prompt: str, ddim_steps: int, sampler_name: str, use_GFPGAN: bool, p
         samples_ddim, _ = sampler.sample(S=ddim_steps, conditioning=conditioning, batch_size=int(x.shape[0]), shape=x[0].shape, verbose=False, unconditional_guidance_scale=cfg_scale, unconditional_conditioning=unconditional_conditioning, eta=ddim_eta, x_T=x)
         return samples_ddim
     try:
-        output_images, seed, info = process_images(
+        output_images, seed, info, stats = process_images(
             outpath=outpath,
             func_init=init,
             func_sample=sample,
@@ -514,8 +516,8 @@ def txt2img(prompt: str, ddim_steps: int, sampler_name: str, use_GFPGAN: bool, p
         )
 
         del sampler
-        
-        return output_images, seed, info
+
+        return output_images, seed, info, stats
     except RuntimeError as e:
         err = e
         return [], f'CRASHED:<br><textarea rows="5" style="background: black;width: -webkit-fill-available;font-family: monospace;font-size: small;font-weight: bold;">{str(e)}</textarea><br><br>Please wait while the program restarts.'
@@ -674,6 +676,7 @@ img2img_interface = gr.Interface(
         gr.Gallery(),
         gr.Number(label='Seed'),
         gr.Textbox(label="Copy-paste generation parameters"),
+        gr.HTML(label='Stats'),
     ],
     title="Stable Diffusion Image-to-Image Unified",
     description="Generate images from images with Stable Diffusion",
