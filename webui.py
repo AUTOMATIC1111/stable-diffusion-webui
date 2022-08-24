@@ -354,7 +354,7 @@ def process_images(outpath, func_init, func_sample, prompt, seed, sampler_name, 
     start_time = time.time()
 
     assert prompt is not None
-    torch.cuda.empty_cache()
+    torch_gc()
 
     if seed == -1:
         seed = random.randrange(4294967294)
