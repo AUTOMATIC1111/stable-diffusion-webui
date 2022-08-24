@@ -258,7 +258,13 @@ def image_grid(imgs, batch_size, round_down=False, force_n_rows=None):
 
     return grid
 
-
+def seed_to_int(s):
+    if s == 'random':
+        return random.randint(0,2**32)
+    n = abs(int(s) if s.isdigit() else hash(s))
+    while n > 2**32:
+        n = n >> 32
+    return n
 
 def draw_prompt_matrix(im, width, height, all_prompts):
     def wrap(text, d, font, line_length):
@@ -390,10 +396,6 @@ def process_images(outpath, func_init, func_sample, prompt, seed, sampler_name, 
     mem_mon = MemUsageMonitor('MemMon')
     mem_mon.start()
 
-    if seed == -1:
-        seed = random.randrange(4294967294)
-    seed = int(seed)
-
     os.makedirs(outpath, exist_ok=True)
 
     sample_path = os.path.join(outpath, "samples")
@@ -468,6 +470,7 @@ def process_images(outpath, func_init, func_sample, prompt, seed, sampler_name, 
                     cropped_faces, restored_faces, restored_img = GFPGAN.enhance(x_sample, has_aligned=False, only_center_face=False, paste_back=True)
                     x_sample = restored_img
 
+
                 image = Image.fromarray(x_sample)
                 filename = f"{base_count:05}-{seeds[i]}_{prompts[i].replace(' ', '_').translate({ord(x): '' for x in invalid_filename_chars})[:128]}.png"
                 if not skip_save:
@@ -518,6 +521,7 @@ Peak memory usage: { -(mem_max_used // -1_048_576) } MiB / { -(mem_total // -1_0
 def txt2img(prompt: str, ddim_steps: int, sampler_name: str, use_GFPGAN: bool, prompt_matrix: bool, skip_grid: bool, skip_save: bool, ddim_eta: float, n_iter: int, batch_size: int, cfg_scale: float, seed: int, height: int, width: int):
     outpath = opt.outdir or "outputs/txt2img-samples"
     err = False
+    seed = seed_to_int(seed)
 
     if sampler_name == 'PLMS':
         sampler = PLMSSampler(model)
@@ -624,7 +628,7 @@ txt2img_interface = gr.Interface(
         gr.Slider(minimum=1, maximum=16, step=1, label='Batch count (how many batches of images to generate)', value=1),
         gr.Slider(minimum=1, maximum=8, step=1, label='Batch size (how many images are in a batch; memory-hungry)', value=1),
         gr.Slider(minimum=1.0, maximum=15.0, step=0.5, label='Classifier Free Guidance Scale (how strongly the image should follow the prompt)', value=7.0),
-        gr.Number(label='Seed', value=-1),
+        gr.Textbox(label="Seed ('random' to randomize)", lines=1, value="random"),
         gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512),
         gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512),
     ],
@@ -644,6 +648,7 @@ txt2img_interface = gr.Interface(
 def img2img(prompt: str, init_img, ddim_steps: int, sampler_name: str, use_GFPGAN: bool, prompt_matrix, loopback: bool, skip_grid: bool, skip_save: bool,  n_iter: int, batch_size: int, cfg_scale: float, denoising_strength: float, seed: int, height: int, width: int, resize_mode: int):
     outpath = opt.outdir or "outputs/img2img-samples"
     err = False
+    seed = seed_to_int(seed)
 
     if sampler_name == 'DDIM':
         sampler = DDIMSampler(model)
@@ -725,11 +730,13 @@ def img2img(prompt: str, init_img, ddim_steps: int, sampler_name: str, use_GFPGA
                 seed = seed + 1
                 denoising_strength = max(denoising_strength * 0.95, 0.1)
                 history.append(init_img)
+
             if not skip_grid:
                 grid_count = len(os.listdir(outpath)) - 1
                 grid = image_grid(history, batch_size, force_n_rows=1)
                 grid_file = f"grid-{grid_count:05}-{seed}_{prompt.replace(' ', '_').translate({ord(x): '' for x in invalid_filename_chars})[:128]}.jpg"
                 grid.save(os.path.join(outpath, grid_file), 'jpeg', quality=100, optimize=True)
+
 
             output_images = history
             seed = initial_seed
@@ -787,7 +794,7 @@ img2img_interface = gr.Interface(
         gr.Slider(minimum=1, maximum=8, step=1, label='Batch size (how many images are in a batch; memory-hungry)', value=1),
         gr.Slider(minimum=1.0, maximum=15.0, step=0.5, label='Classifier Free Guidance Scale (how strongly the image should follow the prompt)', value=7.0),
         gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising Strength', value=0.75),
-        gr.Number(label='Seed', value=-1),
+        gr.Textbox(label="Seed ('random' to randomize)", lines=1, value="random"),
         gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512),
         gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512),
         gr.Radio(label="Resize mode", choices=["Just resize", "Crop and resize", "Resize and fill"], type="index", value="Just resize")
