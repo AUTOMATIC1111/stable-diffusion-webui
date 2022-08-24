@@ -146,3 +146,12 @@ to get otherwise.
 Example: (cherrypicked result; original picture by anon)
 
 ![](images/loopback.jpg)
+
+### Png info
+Adds information about generation parameters to PNG as a text chunk. You
+can view this information later using any software that supports viewing
+PNG chunk info, for example: https://www.nayuki.io/page/png-file-chunk-inspector
+
+This can be disabled using the `--disable-pnginfo` command line option.
+
+![](images/pnginfo.png)
