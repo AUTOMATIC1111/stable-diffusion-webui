@@ -493,7 +493,7 @@ def process_images(outpath, func_init, func_sample, prompt, seed, sampler_name, 
 
 
             grid_file = f"grid-{grid_count:05}-{seed}_{prompts[i].replace(' ', '_').translate({ord(x): '' for x in invalid_filename_chars})[:128]}.jpg"
-            grid.save(os.path.join(outpath, grid_file), 'jpeg', quality=80, optimize=True)
+            grid.save(os.path.join(outpath, grid_file), 'jpeg', quality=100, optimize=True)
             grid_count += 1
         toc = time.time()
 
@@ -731,7 +731,7 @@ def img2img(prompt: str, init_img, ddim_steps: int, sampler_name: str, use_GFPGA
             grid_count = len(os.listdir(outpath)) - 1
             grid = image_grid(history, batch_size, force_n_rows=1)
             grid_file = f"grid-{grid_count:05}-{seed}_{prompt.replace(' ', '_').translate({ord(x): '' for x in invalid_filename_chars})[:128]}.jpg"
-            grid.save(os.path.join(outpath, grid_file), 'jpeg', quality=80, optimize=True)
+            grid.save(os.path.join(outpath, grid_file), 'jpeg', quality=100, optimize=True)
 
             output_images = history
             seed = initial_seed
