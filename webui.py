@@ -821,4 +821,4 @@ demo = gr.TabbedInterface(
     theme="default",
 )
 
-demo.launch()
+demo.launch(server_name='0.0.0.0')
