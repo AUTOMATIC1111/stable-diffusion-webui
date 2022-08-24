@@ -380,7 +380,7 @@ def check_prompt_length(prompt, comments):
     comments.append(f"Warning: too many input tokens; some ({len(overflowing_words)}) have been truncated:\n{overflowing_text}\n")
 
 
-def process_images(outpath, func_init, func_sample, prompt, seed, sampler_name, skip_grid, skip_save, batch_size, n_iter, steps, cfg_scale, width, height, prompt_matrix, use_GFPGAN, do_not_save_grid=False):
+def process_images(outpath, func_init, func_sample, prompt, seed, sampler_name, skip_grid, skip_save, batch_size, n_iter, steps, cfg_scale, width, height, prompt_matrix, use_GFPGAN, do_not_save_grid=False, normalize_prompt_weights=True):
     """this is the main loop that both txt2img and img2img use; it calls func_init once inside all the scopes and func_sample once per batch"""
     assert prompt is not None
     torch_gc()
@@ -450,7 +450,26 @@ def process_images(outpath, func_init, func_sample, prompt, seed, sampler_name, 
                 uc = model.get_learned_conditioning(len(prompts) * [""])
             if isinstance(prompts, tuple):
                 prompts = list(prompts)
-            c = model.get_learned_conditioning(prompts)
+                
+            # split the prompt if it has : for weighting
+            # TODO for speed it might help to have this occur when all_prompts filled??
+            subprompts,weights = split_weighted_subprompts(prompts[0])
+            # get total weight for normalizing, this gets weird if large negative values used
+            totalPromptWeight = sum(weights)
+
+            # sub-prompt weighting used if more than 1
+            if len(subprompts) > 1:
+                c = torch.zeros_like(uc) # i dont know if this is correct.. but it works
+                for i in range(0,len(subprompts)): # normalize each prompt and add it
+                    weight = weights[i]
+                    if normalize_prompt_weights:
+                        weight = weight / totalPromptWeight
+                    #print(f"{subprompts[i]} {weight*100.0}%")
+                    # note if alpha negative, it functions same as torch.sub
+                    c = torch.add(c,model.get_learned_conditioning(subprompts[i]), alpha=weight) 
+            else: # just behave like usual
+                c = model.get_learned_conditioning(prompts)
+                
             shape = [opt_C, height // opt_f, width // opt_f]
 
             # we manually generate all input noises because each one should have a specific seed
@@ -517,7 +536,7 @@ Peak memory usage: { -(mem_max_used // -1_048_576) } MiB / { -(mem_total // -1_0
     return output_images, seed, info, stats
 
 
-def txt2img(prompt: str, ddim_steps: int, sampler_name: str, use_GFPGAN: bool, prompt_matrix: bool, skip_grid: bool, skip_save: bool, ddim_eta: float, n_iter: int, batch_size: int, cfg_scale: float, seed: int, height: int, width: int):
+def txt2img(prompt: str, ddim_steps: int, sampler_name: str, use_GFPGAN: bool, prompt_matrix: bool, skip_grid: bool, skip_save: bool, ddim_eta: float, n_iter: int, batch_size: int, cfg_scale: float, seed: int, height: int, width: int, normalize_prompt_weights: bool):
     outpath = opt.outdir or "outputs/txt2img-samples"
     err = False
 
@@ -554,8 +573,8 @@ def txt2img(prompt: str, ddim_steps: int, sampler_name: str, use_GFPGAN: bool, p
             width=width,
             height=height,
             prompt_matrix=prompt_matrix,
-            use_GFPGAN=use_GFPGAN
-            
+            use_GFPGAN=use_GFPGAN,
+            normalize_prompt_weights=normalize_prompt_weights
         )
 
         del sampler
@@ -629,6 +648,7 @@ txt2img_interface = gr.Interface(
         gr.Number(label='Seed', value=-1),
         gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512),
         gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512),
+        gr.Checkbox(label="Normalize Prompt Weights (ensure sum of weights add up to 1.0)", value=True),
     ],
     outputs=[
         gr.Gallery(label="Images"),
@@ -643,7 +663,7 @@ txt2img_interface = gr.Interface(
 )
 
 
-def img2img(prompt: str, init_img, ddim_steps: int, sampler_name: str, use_GFPGAN: bool, prompt_matrix, loopback: bool, skip_grid: bool, skip_save: bool,  n_iter: int, batch_size: int, cfg_scale: float, denoising_strength: float, seed: int, height: int, width: int, resize_mode: int):
+def img2img(prompt: str, init_img, ddim_steps: int, sampler_name: str, use_GFPGAN: bool, prompt_matrix, loopback: bool, skip_grid: bool, skip_save: bool,  n_iter: int, batch_size: int, cfg_scale: float, denoising_strength: float, seed: int, height: int, width: int, resize_mode: int, normalize_prompt_weights: bool):
     outpath = opt.outdir or "outputs/img2img-samples"
     err = False
 
@@ -753,7 +773,8 @@ def img2img(prompt: str, init_img, ddim_steps: int, sampler_name: str, use_GFPGA
                 width=width,
                 height=height,
                 prompt_matrix=prompt_matrix,
-                use_GFPGAN=use_GFPGAN
+                use_GFPGAN=use_GFPGAN,
+                normalize_prompt_weights=normalize_prompt_weights
             )
         
         del sampler
@@ -792,7 +813,8 @@ img2img_interface = gr.Interface(
         gr.Number(label='Seed', value=-1),
         gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512),
         gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512),
-        gr.Radio(label="Resize mode", choices=["Just resize", "Crop and resize", "Resize and fill"], type="index", value="Just resize")
+        gr.Radio(label="Resize mode", choices=["Just resize", "Crop and resize", "Resize and fill"], type="index", value="Just resize"),
+        gr.Checkbox(label="Normalize Prompt Weights (ensure sum of weights add up to 1.0)", value=True),
     ],
     outputs=[
         gr.Gallery(),
@@ -810,6 +832,52 @@ interfaces = [
     (txt2img_interface, "txt2img"),
     (img2img_interface, "img2img")
 ]
+
+# grabs all text up to the first occurrence of ':' as sub-prompt
+# takes the value following ':' as weight
+# if ':' has no value defined, defaults to 1.0
+# repeats until no text remaining
+# TODO this could probably be done with less code
+def split_weighted_subprompts(text):
+    print(text)
+    remaining = len(text)
+    prompts = []
+    weights = []
+    while remaining > 0:
+        if ":" in text:
+            idx = text.index(":") # first occurrence from start
+            # grab up to index as sub-prompt
+            prompt = text[:idx]
+            remaining -= idx
+            # remove from main text
+            text = text[idx+1:]
+            # find value for weight, assume it is followed by a space or comma
+            idx = len(text) # default is read to end of text
+            if " " in text:
+                idx = min(idx,text.index(" ")) # want the closer idx
+            if "," in text:
+                idx = min(idx,text.index(",")) # want the closer idx
+            if idx != 0:
+                try:
+                    weight = float(text[:idx])
+                except: # couldn't treat as float
+                    print(f"Warning: '{text[:idx]}' is not a value, are you missing a space or comma after a value?")
+                    weight = 1.0
+            else: # no value found
+                weight = 1.0
+            # remove from main text
+            remaining -= idx
+            text = text[idx+1:]
+            # append the sub-prompt and its weight
+            prompts.append(prompt)
+            weights.append(weight)
+        else: # no : found
+            if len(text) > 0: # there is still text though
+                # take remainder as weight 1
+                prompts.append(text)
+                weights.append(1.0)
+            remaining = 0
+    return prompts, weights
 
 def run_GFPGAN(image, strength):
     image = image.convert("RGB")
