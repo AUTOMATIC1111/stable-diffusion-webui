@@ -469,8 +469,9 @@ def process_images(outpath, func_init, func_sample, prompt, seed, sampler_name, 
 
 
 def load_embeddings(fp):
+    if fp is not None and hasattr(model, "embedding_manager"):
     # load the file
-    model.embedding_manager.load(fp.name)
+        model.embedding_manager.load(fp.name)
     
 
 def txt2img(prompt: str, ddim_steps: int, sampler_name: str, use_GFPGAN: bool, prompt_matrix: bool, ddim_eta: float, n_iter: int, batch_size: int, cfg_scale: float, seed: int, height: int, width: int, embeddings_fp):
