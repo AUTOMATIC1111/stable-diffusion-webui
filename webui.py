@@ -12,6 +12,8 @@ from contextlib import contextmanager, nullcontext
 import mimetypes
 import random
 import math
+import html
+import time
 
 import k_diffusion as K
 from ldm.util import instantiate_from_config
@@ -158,6 +160,11 @@ def save_image(image, path, basename, seed, prompt, extension, info=None, short_
         pnginfo = None
 
     image.save(os.path.join(path, filename), quality=opt.jpeg_quality, pnginfo=pnginfo)
+
+
+def plaintext_to_html(text):
+    text = "".join([f"<p>{html.escape(x)}</p>\n" for x in text.split('\n')])
+    return text
 
 
 def load_GFPGAN():
@@ -331,6 +338,20 @@ def check_prompt_length(prompt, comments):
     comments.append(f"Warning: too many input tokens; some ({len(overflowing_words)}) have been truncated:\n{overflowing_text}\n")
 
 
+def wrap_gradio_call(func):
+    def f(*p1, **p2):
+        t = time.perf_counter()
+        res = list(func(*p1, **p2))
+        elapsed = time.perf_counter() - t
+
+        # last item is always HTML
+        res[-1] = res[-1] + f"<p class='performance'>Time taken: {elapsed:.2f}s</p>"
+
+        return tuple(res)
+
+    return f
+
+
 def process_images(outpath, func_init, func_sample, prompt, seed, sampler_name, batch_size, n_iter, steps, cfg_scale, width, height, prompt_matrix, use_GFPGAN, do_not_save_grid=False):
     """this is the main loop that both txt2img and img2img use; it calls func_init once inside all the scopes and func_sample once per batch"""
 
@@ -484,7 +505,7 @@ def txt2img(prompt: str, ddim_steps: int, sampler_name: str, use_GFPGAN: bool, p
 
     del sampler
 
-    return output_images, seed, info
+    return output_images, seed, plaintext_to_html(info)
 
 
 class Flagging(gr.FlaggingCallback):
@@ -529,7 +550,7 @@ class Flagging(gr.FlaggingCallback):
 
 
 txt2img_interface = gr.Interface(
-    txt2img,
+    wrap_gradio_call(txt2img),
     inputs=[
         gr.Textbox(label="Prompt", placeholder="A corgi wearing a top hat as an oil painting.", lines=1),
         gr.Slider(minimum=1, maximum=150, step=1, label="Sampling Steps", value=50),
@@ -547,7 +568,7 @@ txt2img_interface = gr.Interface(
     outputs=[
         gr.Gallery(label="Images"),
         gr.Number(label='Seed'),
-        gr.Textbox(label="Copy-paste generation parameters"),
+        gr.HTML(),
     ],
     title="Stable Diffusion Text-to-Image K",
     description="Generate images from text with Stable Diffusion (using K-LMS)",
@@ -650,14 +671,14 @@ def img2img(prompt: str, init_img, ddim_steps: int, use_GFPGAN: bool, prompt_mat
 
     del sampler
 
-    return output_images, seed, info
+    return output_images, seed, plaintext_to_html(info)
 
 
 sample_img2img = "assets/stable-samples/img2img/sketch-mountains-input.jpg"
 sample_img2img = sample_img2img if os.path.exists(sample_img2img) else None
 
 img2img_interface = gr.Interface(
-    img2img,
+    wrap_gradio_call(img2img),
     inputs=[
         gr.Textbox(placeholder="A fantasy landscape, trending on artstation.", lines=1),
         gr.Image(value=sample_img2img, source="upload", interactive=True, type="pil"),
@@ -677,7 +698,7 @@ img2img_interface = gr.Interface(
     outputs=[
         gr.Gallery(),
         gr.Number(label='Seed'),
-        gr.Textbox(label="Copy-paste generation parameters"),
+        gr.HTML(),
     ],
     title="Stable Diffusion Image-to-Image",
     description="Generate images from images with Stable Diffusion",
@@ -698,7 +719,7 @@ def run_GFPGAN(image, strength):
     if strength < 1.0:
         res = Image.blend(image, res, strength)
 
-    return res
+    return res, 0, ''
 
 
 if GFPGAN is not None:
@@ -710,6 +731,8 @@ if GFPGAN is not None:
         ],
         outputs=[
             gr.Image(label="Result"),
+            gr.Number(label='Seed', visible=False),
+            gr.HTML(),
         ],
         title="GFPGAN",
         description="Fix faces on images",
@@ -719,7 +742,10 @@ if GFPGAN is not None:
 demo = gr.TabbedInterface(
     interface_list=[x[0] for x in interfaces],
     tab_names=[x[1] for x in interfaces],
-    css=("" if opt.no_progressbar_hiding else css_hide_progressbar)
+    css=("" if opt.no_progressbar_hiding else css_hide_progressbar) + """
+.output-html p {margin: 0 0.5em;}
+.performance { font-size: 0.85em; color: #444; }
+"""
 )
 
 demo.launch()
