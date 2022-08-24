@@ -118,12 +118,11 @@ Example:
 ![](images/resizing.jpg)
 
 ### Loading
-Gradio's loading graphic has a very negative effect on the processing speed onthe neural network. 
-My RTX 3090 makes images about 10% faster when the tab with gradio is not active. By defaul, the UI
-now hides loading progress animation and replaces it with static "Loading..." text. Use
-the --no-progressbar-hiding commandline option to revert this and show loading animations.
+Gradio's loading graphic has a very negative effect on the processing speed of the neural network. 
+My RTX 3090 makes images about 10% faster when the tab with gradio is not active. By default, the UI
+now hides loading progress animation and replaces it with static "Loading..." text, which achieves
+the same effect. Use the --no-progressbar-hiding commandline option to revert this and show loading animations.
 
 ### Prompt validation
-Stable Diffusion has a limit for imput text length. If your prompt is too long, you will get a
-warning in the text output field, showing which parts of your text were truncated and consequently
-ignored by the model.
+Stable Diffusion has a limit for input text length. If your prompt is too long, you will get a
+warning in the text output field, showing which parts of your text were truncated and ignored by the model.
