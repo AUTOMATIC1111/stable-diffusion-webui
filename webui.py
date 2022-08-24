@@ -524,10 +524,12 @@ def txt2img(prompt: str, ddim_steps: int, sampler_name: str, use_GFPGAN: bool, p
         return output_images, seed, info, stats
     except RuntimeError as e:
         err = e
-        return [], f'CRASHED:<br><textarea rows="5" style="background: black;width: -webkit-fill-available;font-family: monospace;font-size: small;font-weight: bold;">{str(e)}</textarea><br><br>Please wait while the program restarts.'
+        err_msg = f'CRASHED:<br><textarea rows="5" style="background: black;width: -webkit-fill-available;font-family: monospace;font-size: small;font-weight: bold;">{str(e)}</textarea><br><br>Please wait while the program restarts.'
+        stats = err_msg
+        return [], 1
     finally:
         if err:
-            crash(err, '!!Runtime error (dream)!!')
+            crash(err, '!!Runtime error (txt2img)!!')
 
 
 
@@ -643,7 +645,7 @@ def img2img(prompt: str, init_img, ddim_steps: int, use_GFPGAN: bool, prompt_mat
             initial_seed = None
 
             for i in range(n_iter):
-                output_images, seed, info = process_images(
+                output_images, seed, info, stats = process_images(
                     outpath=outpath,
                     func_init=init,
                     func_sample=sample,
@@ -677,7 +679,7 @@ def img2img(prompt: str, init_img, ddim_steps: int, use_GFPGAN: bool, prompt_mat
             seed = initial_seed
 
         else:
-            output_images, seed, info = process_images(
+            output_images, seed, info, stats = process_images(
                 outpath=outpath,
                 func_init=init,
                 func_sample=sample,
@@ -699,10 +701,12 @@ def img2img(prompt: str, init_img, ddim_steps: int, use_GFPGAN: bool, prompt_mat
         return output_images, seed, info, stats
     except RuntimeError as e:
         err = e
-        return [], f'CRASHED:<br><textarea rows="5" style="background: black;width: -webkit-fill-available;font-family: monospace;font-size: small;font-weight: bold;">{str(e)}</textarea><br><br>Please wait while the program restarts.'
+        err_msg = f'CRASHED:<br><textarea rows="5" style="background: black;width: -webkit-fill-available;font-family: monospace;font-size: small;font-weight: bold;">{str(e)}</textarea><br><br>Please wait while the program restarts.'
+        stats = err_msg
+        return [], 1
     finally:
         if err:
-            crash(err, '!!Runtime error (dream)!!')
+            crash(err, '!!Runtime error (img2img)!!')
 
 
 sample_img2img = "assets/stable-samples/img2img/sketch-mountains-input.jpg"
