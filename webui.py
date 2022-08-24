@@ -562,8 +562,7 @@ def txt2img(prompt: str, ddim_steps: int, sampler_name: str, use_GFPGAN: bool, p
     except RuntimeError as e:
         err = e
         err_msg = f'CRASHED:<br><textarea rows="5" style="background: black;width: -webkit-fill-available;font-family: monospace;font-size: small;font-weight: bold;">{str(e)}</textarea><br><br>Please wait while the program restarts.'
-        stats = err_msg
-        return [], 1
+        return [], 0, "", err_msg
     finally:
         if err:
             crash(err, '!!Runtime error (txt2img)!!')
@@ -740,8 +739,7 @@ def img2img(prompt: str, init_img, ddim_steps: int, use_GFPGAN: bool, prompt_mat
     except RuntimeError as e:
         err = e
         err_msg = f'CRASHED:<br><textarea rows="5" style="background: black;width: -webkit-fill-available;font-family: monospace;font-size: small;font-weight: bold;">{str(e)}</textarea><br><br>Please wait while the program restarts.'
-        stats = err_msg
-        return [], 1
+        return [], 0, "", err_msg
     finally:
         if err:
             crash(err, '!!Runtime error (img2img)!!')
@@ -821,4 +819,4 @@ demo = gr.TabbedInterface(
     theme="default",
 )
 
-demo.launch(server_name='0.0.0.0')
+demo.launch(show_error=True, server_name='0.0.0.0')
