@@ -6,7 +6,7 @@ import mimetypes
 import numpy as np
 import pynvml
 import random
-import threading
+import threading, asyncio
 import time
 import torch
 import torch.nn as nn
@@ -1010,5 +1010,28 @@ demo = gr.TabbedInterface(
     css=("" if opt.no_progressbar_hiding else css_hide_progressbar),
     theme="default",
 )
+
 demo.queue(concurrency_count=1)
-demo.launch(show_error=True, server_name='0.0.0.0')
+
+class ServerLauncher(threading.Thread):
+    def __init__(self, demo):
+        threading.Thread.__init__(self)
+        self.name = 'Gradio Server Thread'
+        self.demo = demo
+
+    def run(self):
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        demo.launch(show_error=True, server_name='0.0.0.0')
+
+    def stop(self):
+        demo.close() # this tends to hang
+
+server_thread = ServerLauncher(demo)
+server_thread.start()
+
+try:
+    while server_thread.is_alive():
+        time.sleep(60)
+except (KeyboardInterrupt, OSError) as e:
+    crash(e, 'Shutting down...')
