@@ -1022,10 +1022,10 @@ class ServerLauncher(threading.Thread):
     def run(self):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        demo.launch(show_error=True, server_name='0.0.0.0')
+        self.demo.launch(show_error=True, server_name='0.0.0.0')
 
     def stop(self):
-        demo.close() # this tends to hang
+        self.demo.close() # this tends to hang
 
 server_thread = ServerLauncher(demo)
 server_thread.start()
