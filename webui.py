@@ -560,8 +560,18 @@ def txt2img(prompt: str, ddim_steps: int, sampler_name: str, use_GFPGAN: bool, p
         sampler = PLMSSampler(model)
     elif sampler_name == 'DDIM':
         sampler = DDIMSampler(model)
-    elif sampler_name == 'k-diffusion':
-        sampler = KDiffusionSampler(model)
+    elif sampler_name == 'k_dpm_2_a':
+        sampler = KDiffusionSampler(model,'dpm_2_ancestral')
+    elif sampler_name == 'k_dpm_2':
+        sampler = KDiffusionSampler(model,'dpm_2')
+    elif sampler_name == 'k_euler_a':
+        sampler = KDiffusionSampler(model,'euler_ancestral')
+    elif sampler_name == 'k_euler':
+        sampler = KDiffusionSampler(model,'euler')
+    elif sampler_name == 'k_heun':
+        sampler = KDiffusionSampler(model,'heun')
+    elif sampler_name == 'k_lms':
+        sampler = KDiffusionSampler(model,'lms')
     else:
         raise Exception("Unknown sampler: " + sampler_name)
 
@@ -653,7 +663,7 @@ txt2img_interface = gr.Interface(
     inputs=[
         gr.Textbox(label="Prompt", placeholder="A corgi wearing a top hat as an oil painting.", lines=1),
         gr.Slider(minimum=1, maximum=150, step=1, label="Sampling Steps", value=50),
-        gr.Radio(label='Sampling method', choices=["DDIM", "PLMS", "k-diffusion"], value="k-diffusion"),
+        gr.Radio(label='Sampling method', choices=["DDIM", "PLMS", 'k_dpm_2_a', 'k_dpm_2', 'k_euler_a', 'k_euler', 'k_heun', 'k_lms'], value="k-lms"),
         gr.Checkbox(label='Fix faces using GFPGAN', value=False, visible=GFPGAN is not None),
         gr.Checkbox(label='Create prompt matrix (separate multiple prompts using |, and get all combinations of them)', value=False),
         gr.Checkbox(label='Skip grid', value=False),
@@ -688,8 +698,18 @@ def img2img(prompt: str, init_info, mask_mode, ddim_steps: int, sampler_name: st
 
     if sampler_name == 'DDIM':
         sampler = DDIMSampler(model)
-    elif sampler_name == 'k-diffusion':
-        sampler = KDiffusionSampler(model)
+    elif sampler_name == 'k_dpm_2_a':
+        sampler = KDiffusionSampler(model,'dpm_2_ancestral')
+    elif sampler_name == 'k_dpm_2':
+        sampler = KDiffusionSampler(model,'dpm_2')
+    elif sampler_name == 'k_euler_a':
+        sampler = KDiffusionSampler(model,'euler_ancestral')
+    elif sampler_name == 'k_euler':
+        sampler = KDiffusionSampler(model,'euler')
+    elif sampler_name == 'k_heun':
+        sampler = KDiffusionSampler(model,'heun')
+    elif sampler_name == 'k_lms':
+        sampler = KDiffusionSampler(model,'lms')
     else:
         raise Exception("Unknown sampler: " + sampler_name)
 
@@ -835,7 +855,7 @@ img2img_interface = gr.Interface(
         gr.Image(value=sample_img2img, source="upload", interactive=True, type="pil", tool="sketch"),
         gr.Radio(choices=["Keep masked area", "Regenerate only masked area"], label="Mask Mode", value="Keep masked area"),
         gr.Slider(minimum=1, maximum=150, step=1, label="Sampling Steps", value=50),
-        gr.Radio(label='Sampling method', choices=["DDIM", "k-diffusion"], value="k-diffusion"),
+        gr.Radio(label='Sampling method', choices=["DDIM", 'k_dpm_2_a', 'k_dpm_2', 'k_euler_a', 'k_euler', 'k_heun', 'k_lms'], value="k-lms"),
         gr.Checkbox(label='Fix faces using GFPGAN', value=False, visible=GFPGAN is not None),
         gr.Checkbox(label='Create prompt matrix (separate multiple prompts using |, and get all combinations of them)', value=False),
         gr.Checkbox(label='Loopback (use images from previous batch when creating next batch)', value=False),
