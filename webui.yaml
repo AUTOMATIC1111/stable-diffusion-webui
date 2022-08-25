@@ -1,0 +1,58 @@
+# UI defaults configuration file. Is read automatically if located at configs/webui/webui.yaml, or specify path via --defaults.
+
+txt2img:
+  prompt: 
+  ddim_steps: 50
+  # Adding an int to toggles enables the corresponding feature.
+  # 0: Create prompt matrix (separate multiple prompts using |, and get all combinations of them)
+  # 1: Normalize Prompt Weights (ensure sum of weights add up to 1.0)
+  # 2: Save individual images
+  # 3: Save grid
+  # 4: Fix faces using GFPGAN
+  toggles: [1, 2, 3]
+  sampler_name: k_lms
+  ddim_eta: 0.0
+  n_iter: 1
+  batch_size: 1
+  cfg_scale: 7.5
+  # Leave blank for random seed
+  seed: 
+  height: 512
+  width: 512
+  # Textual inversion embeddings file path
+  fp:
+
+img2img:
+  prompt:
+  ddim_steps: 50
+  # Adding an int to toggles enables the corresponding feature.
+  # 0: Create prompt matrix (separate multiple prompts using |, and get all combinations of them)
+  # 1: Normalize Prompt Weights (ensure sum of weights add up to 1.0)
+  # 2: Loopback (use images from previous batch when creating next batch)
+  # 3: Random loopback seed
+  # 4: Save individual images
+  # 5: Save grid
+  # 6: Fix faces using GFPGAN
+  toggles: [1, 4, 5]
+  sampler_name: k_lms
+  ddim_eta: 0.0
+  n_iter: 1
+  batch_size: 1
+  cfg_scale: 5.0
+  denoising_strength: 0.75
+  # 0: Keep masked area
+  # 1: Regenerate only masked area
+  mask_mode: 0
+  # 0: Just resize
+  # 1: Crop and resize
+  # 2: Resize and fill
+  resize_mode: 0
+  # Leave blank for random seed
+  seed:
+  height: 512
+  width: 512
+  # Textual inversion embeddings file path
+  fp:
+
+gfpgan:
+  strength: 100
