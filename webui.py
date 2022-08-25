@@ -810,7 +810,11 @@ def img2img(prompt: str, init_info, mask_mode, ddim_steps: int, sampler_name: st
                     prompt_matrix=prompt_matrix,
                     use_GFPGAN=use_GFPGAN,
                     fp=fp,
-                    do_not_save_grid=True
+                    do_not_save_grid=True,
+                    normalize_prompt_weights=normalize_prompt_weights,
+                    init_img=init_img,
+                    init_mask=init_mask,
+                    keep_mask=keep_mask
                 )
 
                 if initial_seed is None:
