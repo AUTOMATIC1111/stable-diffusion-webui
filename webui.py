@@ -558,9 +558,8 @@ def txt2img(prompt: str, ddim_steps: int, sampler_name: str, toggles: list, ddim
     err = False
     seed = seed_to_int(seed)
 
-    # print('toggles:', toggles)
     prompt_matrix = 0 in toggles
-    normalize_prompt_weights = toggles[1]
+    normalize_prompt_weights = 1 in toggles
     skip_save = 2 not in toggles
     skip_grid = 3 not in toggles
     use_GFPGAN = 4 in toggles
@@ -718,7 +717,7 @@ def img2img(prompt: str, init_info, mask_mode, ddim_steps: int, sampler_name: st
     seed = seed_to_int(seed)
 
     prompt_matrix = 0 in toggles
-    normalize_prompt_weights = toggles[1]
+    normalize_prompt_weights = 1 in toggles
     loopback = 2 in toggles
     skip_save = 3 not in toggles
     skip_grid = 4 not in toggles
