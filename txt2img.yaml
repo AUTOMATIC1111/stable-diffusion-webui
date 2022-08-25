@@ -1,0 +1,20 @@
+# Example configuration file for CLI usage.
+
+target: txt2img  # img2img not implemented.
+prompt: E=mc2
+ddim_steps: 50
+# Adding an int to toggles enables the corresponding feature.
+# 0: prompt matrix
+# 1: Normalize Prompt Weights
+# 2: Save individual images
+# 3: Save grid
+# 4: Fix faces using GFPGAN
+toggles: [1, 2, 3]
+sampler_name: k_lms  # Valid: DDIM, k_dpm_2_a, k_dpm_2, k_euler_a, k_euler, k_heun, k_lms
+ddim_eta: 0.0
+n_iter: 1
+batch_size: 1
+cfg_scale: 7.5
+seed: 3172010360 # Leave blank for random seed.
+height: 512
+width: 512
