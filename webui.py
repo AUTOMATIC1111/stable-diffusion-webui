@@ -617,9 +617,9 @@ class Flagging(gr.FlaggingCallback):
 
         os.makedirs("log/images", exist_ok=True)
 
-        # those must match the "txt2img" function
-        prompt, ddim_steps, sampler_name, use_GFPGAN, prompt_matrix, ddim_eta, n_iter, n_samples, cfg_scale, request_seed, height, width, images, seed, comment = flag_data
-
+        # those must match the "txt2img" function !! + images, seed, comment, stats !! NOTE: changes to UI output must be reflected here too
+        prompt, ddim_steps, sampler_name, use_GFPGAN, skip_grid, skip_save, prompt_matrix, ddim_eta, n_iter, n_samples, cfg_scale, input_seed, height, width, normalize_prompt_weights, fp, images, seed, comment, stats = flag_data
+        
         filenames = []
 
         with open("log/log.csv", "a", encoding="utf8", newline='') as file:
@@ -629,7 +629,7 @@ class Flagging(gr.FlaggingCallback):
             at_start = file.tell() == 0
             writer = csv.writer(file)
             if at_start:
-                writer.writerow(["prompt", "seed", "width", "height", "cfgs", "steps", "filename"])
+                writer.writerow(["prompt", "seed", "width", "height", "sampler", "use_GFPGAN", "prompt_matrix", "n_iter", "n_samples", "cfg_scale", "steps", "filename"])
 
             filename_base = str(int(time.time() * 1000))
             for i, filedata in enumerate(images):
@@ -643,7 +643,7 @@ class Flagging(gr.FlaggingCallback):
 
                 filenames.append(filename)
 
-            writer.writerow([prompt, seed, width, height, cfg_scale, ddim_steps, filenames[0]])
+            writer.writerow([prompt, seed, width, height, sampler_name, use_GFPGAN, prompt_matrix, n_iter, n_samples, cfg_scale, ddim_steps, filenames[0]])
 
         print("Logged:", filenames[0])
 
