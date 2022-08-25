@@ -1,3 +1,20 @@
+Features:
+
+* Gradio GUI: Idiot-proof, fully featured frontend for both txt2img and img2img generation
+No more manually typing parameters, now all you have to do is write your prompt and adjust sliders
+Textual inversion: [info](https://textual-inversion.github.io/) - requires enabling, see [here](https://github.com/hlky/sd-enable-textual-inversion), script works as usual without it enabled
+Mask painting (NEW): Powerful tool for re-generating only specific parts of an image you want to change
+Loopback (NEW): Automatically feed the last generated sample back into img2img
+Prompt Weighting (NEW): Adjust the strength of different terms in your prompt
+GFPGAN Face Correction: Automatically correct distorted faces with a built-in GFPGAN option, fixes them in less than half a second
+More k_diffusion samplers: Far greater quality outputs than the default sampler, less distortion and more accurate
+CFG: Classifier free guidance scale, a feature for fine-tuning your output
+Memory Monitoring: Shows Vram usage and generation time after outputting.
+Word Seeds: Use words instead of seed numbers
+Launcher Automatic shortcut to load the model, no more typing in Conda
+Lighter on Vram: 512x512 img2img & txt2img tested working on 6gb
+and ????
+
 # Stable Diffusion web UI
 A browser interface based on Gradio library for Stable Diffusion.
 
