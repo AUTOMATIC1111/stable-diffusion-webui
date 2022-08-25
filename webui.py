@@ -42,8 +42,6 @@ invalid_filename_chars = '<>:"/\|?*\n'
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--outdir", type=str, nargs="?", help="dir to write results to", default=None)
-parser.add_argument("--outdir_txt2img", type=str, nargs="?", help="dir to write txt2img results to (overrides --outdir)", default=None)
-parser.add_argument("--outdir_img2img", type=str, nargs="?", help="dir to write img2img results to (overrides --outdir)", default=None)
 parser.add_argument("--skip_grid", action='store_true', help="do not save a grid, only individual samples. Helpful when evaluating lots of samples",)
 parser.add_argument("--skip_save", action='store_true', help="do not save indiviual samples. For speed measurements.",)
 parser.add_argument("--n_rows", type=int, default=-1, help="rows in the grid; use -1 for autodetect and 0 for n_rows to be same as batch_size (default: -1)",)
@@ -265,7 +263,7 @@ def image_grid(imgs, batch_size, round_down=False, force_n_rows=None):
     return grid
 
 def seed_to_int(s):
-    if s == '':
+    if s == 'random':
         return random.randint(0,2**32)
     n = abs(int(s) if s.isdigit() else hash(s))
     while n > 2**32:
@@ -553,18 +551,21 @@ Peak memory usage: { -(mem_max_used // -1_048_576) } MiB / { -(mem_total // -1_0
     return output_images, seed, info, stats
 
 
-def txt2img(prompt: str, ddim_steps: int, sampler_name: str, toggles: list, ddim_eta: float, n_iter: int, batch_size: int, cfg_scale: float, seed: int, height: int, width: int, fp):
-    outpath = opt.outdir_txt2img or opt.outdir or "outputs/txt2img-samples"
+def txt2img(prompt: str, ddim_steps: int, sampler_name: str, use_GFPGAN: bool, prompt_matrix: bool, skip_grid: bool, skip_save: bool, ddim_eta: float, n_iter: int, batch_size: int, cfg_scale: float, seed: int, height: int, width: int, normalize_prompt_weights: bool, fp):
+    outpath = opt.outdir or "outputs/txt2img-samples"
     err = False
     seed = seed_to_int(seed)
 
+<<<<<<< HEAD
     # print('toggles:', toggles)
     prompt_matrix = 0 in toggles
-    normalize_prompt_weights = 1 in toggles
+    normalize_prompt_weights = 1
     skip_save = 2 not in toggles
     skip_grid = 3 not in toggles
     use_GFPGAN = 4 in toggles
 
+=======
+>>>>>>> parent of 07edcd9 (Merge pull request #14 from EyeDeck/master)
     if sampler_name == 'PLMS':
         sampler = PLMSSampler(model)
     elif sampler_name == 'DDIM':
@@ -637,8 +638,8 @@ class Flagging(gr.FlaggingCallback):
         os.makedirs("log/images", exist_ok=True)
 
         # those must match the "txt2img" function !! + images, seed, comment, stats !! NOTE: changes to UI output must be reflected here too
-        prompt, ddim_steps, sampler_name, toggles, ddim_eta, n_iter, batch_size, cfg_scale, seed, height, width, fp, images, seed, comment, stats = flag_data
-
+        prompt, ddim_steps, sampler_name, use_GFPGAN, skip_grid, skip_save, prompt_matrix, ddim_eta, n_iter, n_samples, cfg_scale, input_seed, height, width, normalize_prompt_weights, fp, images, seed, comment, stats = flag_data
+        
         filenames = []
 
         with open("log/log.csv", "a", encoding="utf8", newline='') as file:
@@ -648,7 +649,7 @@ class Flagging(gr.FlaggingCallback):
             at_start = file.tell() == 0
             writer = csv.writer(file)
             if at_start:
-                writer.writerow(["prompt", "seed", "width", "height", "sampler", "toggles", "n_iter", "n_samples", "cfg_scale", "steps", "filename"])
+                writer.writerow(["prompt", "seed", "width", "height", "sampler", "use_GFPGAN", "prompt_matrix", "n_iter", "n_samples", "cfg_scale", "steps", "filename"])
 
             filename_base = str(int(time.time() * 1000))
             for i, filedata in enumerate(images):
@@ -662,41 +663,29 @@ class Flagging(gr.FlaggingCallback):
 
                 filenames.append(filename)
 
-            writer.writerow([prompt, seed, width, height, sampler_name, toggles, n_iter, batch_size, cfg_scale, ddim_steps, filenames[0]])
+            writer.writerow([prompt, seed, width, height, sampler_name, use_GFPGAN, prompt_matrix, n_iter, n_samples, cfg_scale, ddim_steps, filenames[0]])
 
         print("Logged:", filenames[0])
 
-
-# make sure these indicies line up at the top of txt2img()
-txt2img_toggles = [
-    'Create prompt matrix (separate multiple prompts using |, and get all combinations of them)',
-    'Normalize Prompt Weights (ensure sum of weights add up to 1.0)',
-    'Save individual images',
-    'Save grid',
-]
-if GFPGAN is not None:
-    toggle_choices.append('Fix faces using GFPGAN')
-
-txt2img_toggle_defaults = [
-    'Normalize Prompt Weights (ensure sum of weights add up to 1.0)',
-    'Save individual images',
-    'Save grid'
-]
 
 txt2img_interface = gr.Interface(
     txt2img,
     inputs=[
         gr.Textbox(label="Prompt", placeholder="A corgi wearing a top hat as an oil painting.", lines=1),
-        gr.Slider(minimum=1, maximum=250, step=1, label="Sampling Steps", value=50),
-        gr.Radio(label='Sampling method (k_lms is default k-diffusion sampler)', choices=["DDIM", "PLMS", 'k_dpm_2_a', 'k_dpm_2', 'k_euler_a', 'k_euler', 'k_heun', 'k_lms'], value="k-lms"),
-        gr.CheckboxGroup(label='', choices=txt2img_toggles, value=txt2img_toggle_defaults, type="index"),
+        gr.Slider(minimum=1, maximum=150, step=1, label="Sampling Steps", value=50),
+        gr.Radio(label='Sampling method (k_lms is default k-diffusion sampler)', choices=["DDIM", "PLMS", 'k_dpm_2_a', 'k_dpm_2', 'k_euler_a', 'k_euler', 'k_heun', 'k_lms'], value="k_lms"),
+        gr.Checkbox(label='Fix faces using GFPGAN', value=False, visible=GFPGAN is not None),
+        gr.Checkbox(label='Create prompt matrix (separate multiple prompts using |, and get all combinations of them)', value=False),
+        gr.Checkbox(label='Skip grid', value=False),
+        gr.Checkbox(label='Skip save individual images', value=False),
         gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label="DDIM ETA", value=0.0, visible=False),
         gr.Slider(minimum=1, maximum=250, step=1, label='Batch count (how many batches of images to generate)', value=1),
         gr.Slider(minimum=1, maximum=8, step=1, label='Batch size (how many images are in a batch; memory-hungry)', value=1),
-        gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='Classifier Free Guidance Scale (how strongly the image should follow the prompt)', value=7.5),
-        gr.Textbox(label="Seed (blank to randomize)", lines=1, value=""),
+        gr.Slider(minimum=1.0, maximum=15.0, step=0.5, label='Classifier Free Guidance Scale (how strongly the image should follow the prompt)', value=7.0),
+        gr.Textbox(label="Seed ('random' to randomize)", lines=1, value="random"),
         gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512),
         gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512),
+        gr.Checkbox(label="Normalize Prompt Weights (ensure sum of weights add up to 1.0)", value=True),
         gr.File(label = "Embeddings file for textual inversion", visible=hasattr(model, "embedding_manager")),
     ],
     outputs=[
@@ -712,17 +701,10 @@ txt2img_interface = gr.Interface(
 )
 
 
-def img2img(prompt: str, init_info, mask_mode, ddim_steps: int, sampler_name: str, toggles: list, n_iter: int, batch_size: int, cfg_scale: float, denoising_strength: float, seed: int, height: int, width: int, resize_mode: int, fp):
-    outpath = opt.outdir_img2img or opt.outdir or "outputs/img2img-samples"
+def img2img(prompt: str, init_info, mask_mode, ddim_steps: int, sampler_name: str, use_GFPGAN: bool, prompt_matrix, loopback: bool, skip_grid: bool, skip_save: bool,  n_iter: int, batch_size: int, cfg_scale: float, denoising_strength: float, seed: int, height: int, width: int, resize_mode: int, normalize_prompt_weights: bool, fp):
+    outpath = opt.outdir or "outputs/img2img-samples"
     err = False
     seed = seed_to_int(seed)
-
-    prompt_matrix = 0 in toggles
-    normalize_prompt_weights = 1 in toggles
-    loopback = 2 in toggles
-    skip_save = 3 not in toggles
-    skip_grid = 4 not in toggles
-    use_GFPGAN = 5 in toggles
 
     if sampler_name == 'DDIM':
         sampler = DDIMSampler(model)
@@ -876,40 +858,28 @@ def img2img(prompt: str, init_info, mask_mode, ddim_steps: int, sampler_name: st
 sample_img2img = "assets/stable-samples/img2img/sketch-mountains-input.jpg"
 sample_img2img = sample_img2img if os.path.exists(sample_img2img) else None
 
-# make sure these indicies line up at the top of img2img()
-img2img_toggles = [
-    'Create prompt matrix (separate multiple prompts using |, and get all combinations of them)',
-    'Normalize Prompt Weights (ensure sum of weights add up to 1.0)'
-    'Loopback (use images from previous batch when creating next batch)',
-    'Save individual images',
-    'Save grid',
-]
-if GFPGAN is not None:
-    toggle_choices.append('Fix faces using GFPGAN')
-
-img2img_toggle_defaults = [
-    'Normalize Prompt Weights (ensure sum of weights add up to 1.0)',
-    'Save individual images',
-    'Save grid',
-]
-
 img2img_interface = gr.Interface(
     img2img,
     inputs=[
-        gr.Textbox(label="Prompt", placeholder="A fantasy landscape, trending on artstation.", lines=1),
+        gr.Textbox(placeholder="A fantasy landscape, trending on artstation.", lines=1),
         gr.Image(value=sample_img2img, source="upload", interactive=True, type="pil", tool="sketch"),
         gr.Radio(choices=["Keep masked area", "Regenerate only masked area"], label="Mask Mode", value="Keep masked area"),
-        gr.Slider(minimum=1, maximum=250, step=1, label="Sampling Steps", value=50),
-        gr.Radio(label='Sampling method (k_lms is default k-diffusion sampler)', choices=["DDIM", 'k_dpm_2_a', 'k_dpm_2', 'k_euler_a', 'k_euler', 'k_heun', 'k_lms'], value="k-lms"),
-        gr.CheckboxGroup(label='', choices=img2img_toggles, value=img2img_toggle_defaults, type="index"),
-        gr.Slider(minimum=1, maximum=250, step=1, label='Batch count (how many batches of images to generate)', value=1),
-        gr.Slider(minimum=1, maximum=8, step=1, label='Batch size (how many images are in a batch; memory-hungry)', value=1),
-        gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='Classifier Free Guidance Scale (how strongly the image should follow the prompt)', value=5.0),
+        gr.Slider(minimum=1, maximum=150, step=1, label="Sampling Steps", value=50),
+        gr.Radio(label='Sampling method (k_lms is default k-diffusion sampler)', choices=["DDIM", 'k_dpm_2_a', 'k_dpm_2', 'k_euler_a', 'k_euler', 'k_heun', 'k_lms'], value="k_lms"),
+        gr.Checkbox(label='Fix faces using GFPGAN', value=False, visible=GFPGAN is not None),
+        gr.Checkbox(label='Create prompt matrix (separate multiple prompts using |, and get all combinations of them)', value=False),
+        gr.Checkbox(label='Loopback (use images from previous batch when creating next batch)', value=False),
+        gr.Checkbox(label='Skip grid', value=False),
+        gr.Checkbox(label='Skip save individual images', value=False),
+        gr.Slider(minimum=1, maximum=16, step=1, label='Batch count (how many batches of images to generate)', value=1),
+        gr.Slider(minimum=1, maximum=250, step=1, label='Batch size (how many images are in a batch; memory-hungry)', value=1),
+        gr.Slider(minimum=1.0, maximum=15.0, step=0.5, label='Classifier Free Guidance Scale (how strongly the image should follow the prompt)', value=7.0),
         gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising Strength', value=0.75),
-        gr.Textbox(label="Seed (blank to randomize)", lines=1, value=""),
+        gr.Textbox(label="Seed ('random' to randomize)", lines=1, value="random"),
         gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512),
         gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512),
         gr.Radio(label="Resize mode", choices=["Just resize", "Crop and resize", "Resize and fill"], type="index", value="Just resize"),
+        gr.Checkbox(label="Normalize Prompt Weights (ensure sum of weights add up to 1.0)", value=True),
         gr.File(label = "Embeddings file for textual inversion", visible=hasattr(model, "embedding_manager")),
     ],
     outputs=[
