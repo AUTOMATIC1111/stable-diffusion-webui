@@ -10,6 +10,8 @@ import threading, asyncio
 import time
 import torch
 import torch.nn as nn
+import yaml
+from typing import List, Union
 
 from contextlib import contextmanager, nullcontext
 from einops import rearrange, repeat
@@ -54,6 +56,7 @@ parser.add_argument("--gfpgan-dir", type=str, help="GFPGAN directory", default=(
 parser.add_argument("--no-verify-input", action='store_true', help="do not verify input to check if it's too long")
 parser.add_argument("--no-half", action='store_true', help="do not switch the model to 16-bit floats")
 parser.add_argument("--no-progressbar-hiding", action='store_true', help="do not hide progressbar in gradio UI (we hide it because it slows down ML if you have hardware accleration in browser)")
+parser.add_argument("--cli", type=str, help="don't launch web server, take Python function kwargs from this file.", default=None)
 opt = parser.parse_args()
 
 GFPGAN_dir = opt.gfpgan_dir
@@ -265,7 +268,9 @@ def image_grid(imgs, batch_size, round_down=False, force_n_rows=None):
     return grid
 
 def seed_to_int(s):
-    if s == '':
+    if type(s) is int:
+        return s
+    if s is None or s == '':
         return random.randint(0,2**32)
     n = abs(int(s) if s.isdigit() else hash(s))
     while n > 2**32:
@@ -551,7 +556,8 @@ Peak memory usage: { -(mem_max_used // -1_048_576) } MiB / { -(mem_total // -1_0
     return output_images, seed, info, stats
 
 
-def txt2img(prompt: str, ddim_steps: int, sampler_name: str, toggles: list, ddim_eta: float, n_iter: int, batch_size: int, cfg_scale: float, seed: int, height: int, width: int, fp):
+def txt2img(prompt: str, ddim_steps: int, sampler_name: str, toggles: List[int], ddim_eta: float, n_iter: int,
+            batch_size: int, cfg_scale: float, seed: Union[int, str, None], height: int, width: int, fp):
     outpath = opt.outdir_txt2img or opt.outdir or "outputs/txt2img-samples"
     err = False
     seed = seed_to_int(seed)
@@ -709,7 +715,9 @@ txt2img_interface = gr.Interface(
 )
 
 
-def img2img(prompt: str, init_info, mask_mode, ddim_steps: int, sampler_name: str, toggles: list, n_iter: int, batch_size: int, cfg_scale: float, denoising_strength: float, seed: int, height: int, width: int, resize_mode: int, fp):
+def img2img(prompt: str, init_info: dict, mask_mode: str, ddim_steps: int, sampler_name: str,
+            toggles: List[int], n_iter: int, batch_size: int, cfg_scale: float, denoising_strength: float,
+            seed: int, height: int, width: int, resize_mode: int, fp):
     outpath = opt.outdir_img2img or opt.outdir or "outputs/img2img-samples"
     err = False
     seed = seed_to_int(seed)
@@ -1027,11 +1035,28 @@ class ServerLauncher(threading.Thread):
     def stop(self):
         self.demo.close() # this tends to hang
 
-server_thread = ServerLauncher(demo)
-server_thread.start()
+if opt.cli is None:
+    server_thread = ServerLauncher(demo)
+    server_thread.start()
 
-try:
-    while server_thread.is_alive():
-        time.sleep(60)
-except (KeyboardInterrupt, OSError) as e:
-    crash(e, 'Shutting down...')
+    try:
+        while server_thread.is_alive():
+            time.sleep(60)
+    except (KeyboardInterrupt, OSError) as e:
+        crash(e, 'Shutting down...')
+else:
+    with open(opt.cli, "r", encoding="utf8") as f:
+        kwargs = yaml.safe_load(f)
+    target = kwargs.pop("target")
+    if target == "txt2img":
+        target_func = txt2img
+    elif target == "img2img":
+        target_func = img2img
+        raise NotImplementedError()
+    else:
+        raise ValueError(f"Unknown target: {target}")
+    kwargs["fp"] = None
+    output_images, seed, info, stats = target_func(**kwargs)
+    print(f"Seed: {seed}")
+    print(info)
+    print(stats)
