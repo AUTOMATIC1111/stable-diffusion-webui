@@ -599,9 +599,9 @@ def txt2img(prompt: str, ddim_steps: int, sampler_name: str, use_GFPGAN: bool, p
         return output_images, seed, info, stats
     except RuntimeError as e:
         err = e
-        err_msg = f'CRASHED:<br><textarea rows="5" style="background: black;width: -webkit-fill-available;font-family: monospace;font-size: small;font-weight: bold;">{str(e)}</textarea><br><br>Please wait while the program restarts.'
+        err_msg = f'CRASHED:<br><textarea rows="5" style="color:white;background: black;width: -webkit-fill-available;font-family: monospace;font-size: small;font-weight: bold;">{str(e)}</textarea><br><br>Please wait while the program restarts.'
         stats = err_msg
-        return [], 1
+        return [], seed, 'err', stats
     finally:
         if err:
             crash(err, '!!Runtime error (txt2img)!!')
@@ -816,9 +816,9 @@ def img2img(prompt: str, init_info, mask_mode, ddim_steps: int, sampler_name: st
         return output_images, seed, info, stats
     except RuntimeError as e:
         err = e
-        err_msg = f'CRASHED:<br><textarea rows="5" style="background: black;width: -webkit-fill-available;font-family: monospace;font-size: small;font-weight: bold;">{str(e)}</textarea><br><br>Please wait while the program restarts.'
+        err_msg = f'CRASHED:<br><textarea rows="5" style="color:white;background: black;width: -webkit-fill-available;font-family: monospace;font-size: small;font-weight: bold;">{str(e)}</textarea><br><br>Please wait while the program restarts.'
         stats = err_msg
-        return [], 1
+        return [], seed, 'err', stats
     finally:
         if err:
             crash(err, '!!Runtime error (img2img)!!')
