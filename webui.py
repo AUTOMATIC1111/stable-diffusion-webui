@@ -301,7 +301,17 @@ def draw_prompt_matrix(im, width, height, all_prompts):
 
     fontsize = (width + height) // 25
     line_spacing = fontsize // 2
-    fnt = ImageFont.truetype("arial.ttf", fontsize)
+    fonts = ["arial.ttf", "DejaVuSans.ttf"]
+    for font_name in fonts:
+        try:
+            fnt = ImageFont.truetype(font_name, fontsize)
+            break
+        except OSError:
+           pass
+    else:
+        # ImageFont.load_default() is practically unusable as it only supports
+        # latin1, so raise an exception instead
+        raise Exception(f"No usable font found (tried {', '.join(fonts)})")
     color_active = (0, 0, 0)
     color_inactive = (153, 153, 153)
 
