@@ -158,7 +158,7 @@ class KDiffusionSampler:
         x = x_T * sigmas[0]
         model_wrap_cfg = CFGDenoiser(self.model_wrap)
 
-        samples_ddim = K.sampling.sample_lms(model_wrap_cfg, x, sigmas, extra_args={'cond': conditioning, 'uncond': unconditional_conditioning, 'cond_scale': unconditional_guidance_scale}, disable=False)
+        samples_ddim = K.sampling.__dict__[f'sample_{self.schedule}'](model_wrap_cfg, x, sigmas, extra_args={'cond': conditioning, 'uncond': unconditional_conditioning, 'cond_scale': unconditional_guidance_scale}, disable=False)
 
         return samples_ddim, None
 
@@ -392,7 +392,8 @@ def check_prompt_length(prompt, comments):
     comments.append(f"Warning: too many input tokens; some ({len(overflowing_words)}) have been truncated:\n{overflowing_text}\n")
 
 
-def process_images(outpath, func_init, func_sample, prompt, seed, sampler_name, skip_grid, skip_save, batch_size, n_iter, steps, cfg_scale, width, height, prompt_matrix, use_GFPGAN, fp, do_not_save_grid=False, normalize_prompt_weights=True, init_img=None, init_mask=None, keep_mask=True):
+def process_images(outpath, func_init, func_sample, prompt, seed, sampler_name, skip_grid, skip_save, batch_size, n_iter, steps, cfg_scale, width, height, prompt_matrix, 
+                   , fp, do_not_save_grid=False, normalize_prompt_weights=True, init_img=None, init_mask=None, keep_mask=True):
     """this is the main loop that both txt2img and img2img use; it calls func_init once inside all the scopes and func_sample once per batch"""
     assert prompt is not None
     torch_gc()
@@ -495,9 +496,8 @@ def process_images(outpath, func_init, func_sample, prompt, seed, sampler_name, 
                 x_sample = x_sample.astype(np.uint8)
 
                 if use_GFPGAN and GFPGAN is not None:
-                    cropped_faces, restored_faces, restored_img = GFPGAN.enhance(x_sample, has_aligned=False, only_center_face=False, paste_back=True)
-                    x_sample = restored_img
-
+                    cropped_faces, restored_faces, restored_img = GFPGAN.enhance(x_sample[:,:,::-1], has_aligned=False, only_center_face=False, paste_back=True)
+                    x_sample = restored_img[:,:,::-1]
 
                 image = Image.fromarray(x_sample)
                 if init_mask:
@@ -903,7 +903,7 @@ img2img_interface = gr.Interface(
         gr.Slider(minimum=1, maximum=250, step=1, label="Sampling Steps", value=50),
         gr.Radio(label='Sampling method (k_lms is default k-diffusion sampler)', choices=["DDIM", 'k_dpm_2_a', 'k_dpm_2', 'k_euler_a', 'k_euler', 'k_heun', 'k_lms'], value="k-lms"),
         gr.CheckboxGroup(label='', choices=img2img_toggles, value=img2img_toggle_defaults, type="index"),
-        gr.Slider(minimum=1, maximum=40, step=1, label='Batch count (how many batches of images to generate)', value=1),
+        gr.Slider(minimum=1, maximum=250, step=1, label='Batch count (how many batches of images to generate)', value=1),
         gr.Slider(minimum=1, maximum=8, step=1, label='Batch size (how many images are in a batch; memory-hungry)', value=1),
         gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='Classifier Free Guidance Scale (how strongly the image should follow the prompt)', value=5.0),
         gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising Strength', value=0.75),
