@@ -503,7 +503,7 @@ def process_images(outpath, func_init, func_sample, prompt, seed, sampler_name, 
 
                 image = Image.fromarray(x_sample)
                 if init_mask:
-                    init_mask = init_mask if keep_mask else ImageOps.invert(init_mask)
+                    #init_mask = init_mask if keep_mask else ImageOps.invert(init_mask)
                     init_mask = init_mask.filter(ImageFilter.GaussianBlur(3))
                     init_mask = init_mask.convert('L')
                     init_img = init_img.convert('RGB')
@@ -753,6 +753,7 @@ def img2img(prompt: str, init_info: dict, mask_mode: str, ddim_steps: int, sampl
     init_mask = init_mask.convert("RGB")
     init_mask = resize_image(resize_mode, init_mask, width, height)
     keep_mask = mask_mode == "Keep masked area"
+    init_mask = init_mask if keep_mask else ImageOps.invert(init_mask)
 
     assert 0. <= denoising_strength <= 1., 'can only work with strength in [0.0, 1.0]'
     t_enc = int(denoising_strength * ddim_steps)
