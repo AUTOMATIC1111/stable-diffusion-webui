@@ -457,8 +457,8 @@ def process_images(outpath, func_init, func_sample, prompt, seed, sampler_name, 
             seeds = all_seeds[n * batch_size:(n + 1) * batch_size]
 
             uc = None
-            if cfg_scale != 1.0:
-                uc = model.get_learned_conditioning(len(prompts) * [""])
+            # if cfg_scale != 1.0:
+            uc = model.get_learned_conditioning(len(prompts) * [""])
             if isinstance(prompts, tuple):
                 prompts = list(prompts)
 
