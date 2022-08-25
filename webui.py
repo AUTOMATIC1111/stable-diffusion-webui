@@ -392,7 +392,7 @@ def check_prompt_length(prompt, comments):
     comments.append(f"Warning: too many input tokens; some ({len(overflowing_words)}) have been truncated:\n{overflowing_text}\n")
 
 
-def process_images(outpath, func_init, func_sample, prompt, seed, sampler_name, skip_grid, skip_save, batch_size, n_iter, steps, cfg_scale, width, height, prompt_matrix, fp, do_not_save_grid=False, normalize_prompt_weights=True, init_img=None, init_mask=None, keep_mask=True):
+def process_images(outpath, func_init, func_sample, prompt, seed, sampler_name, skip_grid, skip_save, batch_size, n_iter, steps, cfg_scale, width, height, prompt_matrix, use_GFPGAN, fp, do_not_save_grid=False, normalize_prompt_weights=True, init_img=None, init_mask=None, keep_mask=True):
     """this is the main loop that both txt2img and img2img use; it calls func_init once inside all the scopes and func_sample once per batch"""
     assert prompt is not None
     torch_gc()
@@ -675,7 +675,7 @@ txt2img_toggles = [
     'Save grid',
 ]
 if GFPGAN is not None:
-    toggle_choices.append('Fix faces using GFPGAN')
+    txt2img_toggles.append('Fix faces using GFPGAN')
 
 txt2img_toggle_defaults = [
     'Normalize Prompt Weights (ensure sum of weights add up to 1.0)',
@@ -688,7 +688,7 @@ txt2img_interface = gr.Interface(
     inputs=[
         gr.Textbox(label="Prompt", placeholder="A corgi wearing a top hat as an oil painting.", lines=1),
         gr.Slider(minimum=1, maximum=250, step=1, label="Sampling Steps", value=50),
-        gr.Radio(label='Sampling method (k_lms is default k-diffusion sampler)', choices=["DDIM", "PLMS", 'k_dpm_2_a', 'k_dpm_2', 'k_euler_a', 'k_euler', 'k_heun', 'k_lms'], value="k-lms"),
+        gr.Radio(label='Sampling method (k_lms is default k-diffusion sampler)', choices=["DDIM", "PLMS", 'k_dpm_2_a', 'k_dpm_2', 'k_euler_a', 'k_euler', 'k_heun', 'k_lms'], value="k_lms"),
         gr.CheckboxGroup(label='', choices=txt2img_toggles, value=txt2img_toggle_defaults, type="index"),
         gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label="DDIM ETA", value=0.0, visible=False),
         gr.Slider(minimum=1, maximum=250, step=1, label='Batch count (how many batches of images to generate)', value=1),
@@ -885,7 +885,7 @@ img2img_toggles = [
     'Save grid',
 ]
 if GFPGAN is not None:
-    toggle_choices.append('Fix faces using GFPGAN')
+    img2img_toggles.append('Fix faces using GFPGAN')
 
 img2img_toggle_defaults = [
     'Normalize Prompt Weights (ensure sum of weights add up to 1.0)',
@@ -900,7 +900,7 @@ img2img_interface = gr.Interface(
         gr.Image(value=sample_img2img, source="upload", interactive=True, type="pil", tool="sketch"),
         gr.Radio(choices=["Keep masked area", "Regenerate only masked area"], label="Mask Mode", value="Keep masked area"),
         gr.Slider(minimum=1, maximum=250, step=1, label="Sampling Steps", value=50),
-        gr.Radio(label='Sampling method (k_lms is default k-diffusion sampler)', choices=["DDIM", 'k_dpm_2_a', 'k_dpm_2', 'k_euler_a', 'k_euler', 'k_heun', 'k_lms'], value="k-lms"),
+        gr.Radio(label='Sampling method (k_lms is default k-diffusion sampler)', choices=["DDIM", 'k_dpm_2_a', 'k_dpm_2', 'k_euler_a', 'k_euler', 'k_heun', 'k_lms'], value="k_lms"),
         gr.CheckboxGroup(label='', choices=img2img_toggles, value=img2img_toggle_defaults, type="index"),
         gr.Slider(minimum=1, maximum=250, step=1, label='Batch count (how many batches of images to generate)', value=1),
         gr.Slider(minimum=1, maximum=8, step=1, label='Batch size (how many images are in a batch; memory-hungry)', value=1),
