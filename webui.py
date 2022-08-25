@@ -681,7 +681,7 @@ class Flagging(gr.FlaggingCallback):
         print("Logged:", filenames[0])
 
 
-def img2img(prompt: str, init_info: dict, mask_mode: str, ddim_steps: int, sampler_name: str,
+def img2img(prompt: str, image_editor_mode: str, cropped_image, image_with_mask, mask_mode: str, ddim_steps: int, sampler_name: str,
             toggles: List[int], n_iter: int, batch_size: int, cfg_scale: float, denoising_strength: float,
             seed: int, height: int, width: int, resize_mode: int, fp):
     outpath = opt.outdir_img2img or opt.outdir or "outputs/img2img-samples"
@@ -713,14 +713,18 @@ def img2img(prompt: str, init_info: dict, mask_mode: str, ddim_steps: int, sampl
     else:
         raise Exception("Unknown sampler: " + sampler_name)
 
-    init_img = init_info["image"]
-    init_img = init_img.convert("RGB")
-    init_img = resize_image(resize_mode, init_img, width, height)
-    init_mask = init_info["mask"]
-    init_mask = init_mask.convert("RGB")
-    init_mask = resize_image(resize_mode, init_mask, width, height)
-    keep_mask = mask_mode == "Keep masked area"
-    init_mask = init_mask if keep_mask else ImageOps.invert(init_mask)
+    if image_editor_mode == 'Mask':
+        init_img = image_with_mask["image"]
+        init_img = init_img.convert("RGB")
+        init_img = resize_image(resize_mode, init_img, width, height)
+        init_mask = image_with_mask["mask"]
+        init_mask = init_mask.convert("RGB")
+        init_mask = resize_image(resize_mode, init_mask, width, height)
+        keep_mask = mask_mode == "Keep masked area"
+        init_mask = init_mask if keep_mask else ImageOps.invert(init_mask)
+    else:
+        init_img = cropped_image
+        init_mask = None
 
     assert 0. <= denoising_strength <= 1., 'can only work with strength in [0.0, 1.0]'
     t_enc = int(denoising_strength * ddim_steps)
@@ -947,6 +951,16 @@ img2img_toggle_defaults = [
     'Save individual images',
     'Save grid',
 ]
+img2img_image_mode = 'sketch'
+
+def change_image_editor_mode(choice, cropped_image, resize_mode, width, height):
+    if choice == "Mask":
+        return [gr.update(visible=False), gr.update(visible=True)]
+    return [gr.update(visible=True), gr.update(visible=False)]
+
+def update_image_mask(cropped_image, resize_mode, width, height):
+    resized_cropped_image = resize_image(resize_mode, cropped_image, width, height) if cropped_image else None
+    return gr.update(value=resized_cropped_image)
 
 with gr.Blocks(css=css) as demo:
     with gr.Tabs():
@@ -984,7 +998,10 @@ with gr.Blocks(css=css) as demo:
                 with gr.Column():
                     gr.Markdown("Generate images from images with Stable Diffusion")
                     img2img_prompt = gr.Textbox(label="Prompt", placeholder="A fantasy landscape, trending on artstation.", lines=1)
-                    img2img_image = gr.Image(value=sample_img2img, source="upload", interactive=True, type="pil", tool="sketch")
+                    img2img_image_editor_mode = gr.Radio(choices=["Mask", "Crop"], label="Image Editor Mode", value="Crop")
+                    gr.Markdown("The masking/cropping is very temperamental. It may take some time for the image to show when switching from Crop to Mask. If it doesn't work try switching modes again, switch tabs, clear the image or reload.")
+                    img2img_image_editor = gr.Image(value=sample_img2img, source="upload", interactive=True, type="pil", tool="select")
+                    img2img_image_mask = gr.Image(value=sample_img2img, source="upload", interactive=True, type="pil", tool="sketch", visible=False)
                     img2img_mask = gr.Radio(choices=["Keep masked area", "Regenerate only masked area"], label="Mask Mode", value="Keep masked area")
                     img2img_steps = gr.Slider(minimum=1, maximum=250, step=1, label="Sampling Steps", value=50)
                     img2img_sampling = gr.Radio(label='Sampling method (k_lms is default k-diffusion sampler)', choices=["DDIM", 'k_dpm_2_a', 'k_dpm_2', 'k_euler_a', 'k_euler', 'k_heun', 'k_lms'], value="k_lms")
@@ -1005,9 +1022,22 @@ with gr.Blocks(css=css) as demo:
                     output_img2img_params = gr.Textbox(label="Copy-paste generation parameters")
                     output_img2img_stats = gr.HTML(label='Stats')
 
+            img2img_image_editor_mode.change(
+                change_image_editor_mode,
+                [img2img_image_editor_mode, img2img_image_editor, img2img_resize, img2img_width, img2img_height],
+                [img2img_image_editor, img2img_image_mask]
+            )
+
+            img2img_image_editor.edit(
+                update_image_mask,
+                [img2img_image_editor, img2img_resize, img2img_width, img2img_height],
+                img2img_image_mask
+            )
+
+            output_img2img_copy_to_input_btn.click(
             img2img_btn.click(
                 img2img,
-                [img2img_prompt, img2img_image, img2img_mask, img2img_steps, img2img_sampling, img2img_toggles, img2img_batch_count, img2img_batch_size, img2img_cfg, img2img_denoising, img2img_seed, img2img_height, img2img_width, img2img_resize, img2img_embeddings],
+                [img2img_prompt, img2img_image_editor_mode, img2img_image_editor, img2img_image_mask, img2img_mask, img2img_steps, img2img_sampling, img2img_toggles, img2img_batch_count, img2img_batch_size, img2img_cfg, img2img_denoising, img2img_seed, img2img_height, img2img_width, img2img_resize, img2img_embeddings],
                 [output_img2img_gallery, output_img2img_seed, output_img2img_params, output_img2img_stats]
             )
         if GFPGAN is not None:
