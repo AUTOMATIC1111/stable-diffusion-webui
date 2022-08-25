@@ -560,7 +560,7 @@ def txt2img(prompt: str, ddim_steps: int, sampler_name: str, toggles: list, ddim
 
     # print('toggles:', toggles)
     prompt_matrix = 0 in toggles
-    normalize_prompt_weights = 1 in toggles
+    normalize_prompt_weights = 1
     skip_save = 2 not in toggles
     skip_grid = 3 not in toggles
     use_GFPGAN = 4 in toggles
