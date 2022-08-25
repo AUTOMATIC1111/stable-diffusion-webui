@@ -1,7 +1,7 @@
 # Stable Diffusion web UI
 A browser interface based on Gradio library for Stable Diffusion.
 
-Original script with Gradio UI was written by a kind anonymopus user. This is a modification.
+Original script with Gradio UI was written by a kind anonymous user. This is a modification.
 
 ![](screenshot.png)
 ## Installing and running
@@ -128,7 +128,7 @@ Example:
 Gradio's loading graphic has a very negative effect on the processing speed of the neural network. 
 My RTX 3090 makes images about 10% faster when the tab with gradio is not active. By default, the UI
 now hides loading progress animation and replaces it with static "Loading..." text, which achieves
-the same effect. Use the --no-progressbar-hiding commandline option to revert this and show loading animations.
+the same effect. Use the `--no-progressbar-hiding` commandline option to revert this and show loading animations.
 
 ### Prompt validation
 Stable Diffusion has a limit for input text length. If your prompt is too long, you will get a
@@ -152,6 +152,28 @@ Adds information about generation parameters to PNG as a text chunk. You
 can view this information later using any software that supports viewing
 PNG chunk info, for example: https://www.nayuki.io/page/png-file-chunk-inspector
 
-This can be disabled using the `--disable-pnginfo` command line option.
-
 ![](images/pnginfo.png)
+
+### Textual Inversion
+Allows you to use pretrained textual inversion embeddings.
+See originial site for details: https://textual-inversion.github.io/.
+I used lstein's repo for training embdedding: https://github.com/lstein/stable-diffusion; if
+you want to train your own, I recommend following the guide on his site.
+
+No additional libraries/repositories are required to use pretrained embeddings.
+
+To make use of pretrained embeddings, create `embeddings` directory in the root dir of Stable
+Diffusion and put your embeddings into it. They must be .pt files about 5Kb in size, each with only
+one trained embedding, and the filename (without .pt) will be the term you'd use in prompt
+to get that embedding.
+
+As an example, I trained one for about 5000 steps: https://files.catbox.moe/e2ui6r.pt; it does
+not produce very good results, but it does work. Download and rename it to `Usada Pekora.pt`,
+and put it into `embeddings` dir and use Usada Pekora in prompt.
+
+![](images/inversion.png)
+
+### Settings
+A tab with settings, allowing you to use UI to edit more than half of parameters that previously
+were commandline. Settings are saved to config.js file. Settings that remain as commandline
+options are ones that are required at startup.
