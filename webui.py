@@ -651,6 +651,7 @@ class Flagging(gr.FlaggingCallback):
             at_start = file.tell() == 0
             writer = csv.writer(file)
             if at_start:
+                writer.writerow(["sep=,"])
                 writer.writerow(["prompt", "seed", "width", "height", "sampler", "toggles", "n_iter", "n_samples", "cfg_scale", "steps", "filename"])
 
             filename_base = str(int(time.time() * 1000))
