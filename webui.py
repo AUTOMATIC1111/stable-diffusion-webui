@@ -556,7 +556,6 @@ def txt2img(prompt: str, ddim_steps: int, sampler_name: str, use_GFPGAN: bool, p
     err = False
     seed = seed_to_int(seed)
 
-<<<<<<< HEAD
     # print('toggles:', toggles)
     prompt_matrix = 0 in toggles
     normalize_prompt_weights = 1
@@ -564,8 +563,6 @@ def txt2img(prompt: str, ddim_steps: int, sampler_name: str, use_GFPGAN: bool, p
     skip_grid = 3 not in toggles
     use_GFPGAN = 4 in toggles
 
-=======
->>>>>>> parent of 07edcd9 (Merge pull request #14 from EyeDeck/master)
     if sampler_name == 'PLMS':
         sampler = PLMSSampler(model)
     elif sampler_name == 'DDIM':
