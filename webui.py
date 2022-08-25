@@ -146,9 +146,10 @@ class CFGDenoiser(nn.Module):
 
 
 class KDiffusionSampler:
-    def __init__(self, m):
+    def __init__(self, m, sampler):
         self.model = m
         self.model_wrap = K.external.CompVisDenoiser(m)
+        self.schedule = sampler
 
     def sample(self, S, conditioning, batch_size, shape, verbose, unconditional_guidance_scale, unconditional_conditioning, eta, x_T):
         sigmas = self.model_wrap.get_sigmas(S)
