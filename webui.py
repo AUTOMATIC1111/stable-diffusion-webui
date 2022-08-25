@@ -834,7 +834,7 @@ def img2img(prompt: str, init_info: dict, mask_mode: str, ddim_steps: int, sampl
                 if not random_seed_loopback:
                     seed = seed + 1
                 else:
-                    seed = seed_to_int(seed)
+                    seed = seed_to_int(None)
                 denoising_strength = max(denoising_strength * 0.95, 0.1)
                 history.append(init_img)
 
