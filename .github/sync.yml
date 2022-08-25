@@ -3,3 +3,5 @@ hlky/stable-diffusion:
     dest: scripts/webui.py
   - source: relauncher.py
     dest: scripts/relauncher.py
+  - source: txt2img.yaml
+    dest: txt2img.yaml
