@@ -736,9 +736,10 @@ def img2img(prompt: str, init_info: dict, mask_mode: str, ddim_steps: int, sampl
     prompt_matrix = 0 in toggles
     normalize_prompt_weights = 1 in toggles
     loopback = 2 in toggles
-    skip_save = 3 not in toggles
-    skip_grid = 4 not in toggles
-    use_GFPGAN = 5 in toggles
+    random_seed_loopback = 3 in toggles
+    skip_save = 4 not in toggles
+    skip_grid = 5 not in toggles
+    use_GFPGAN = 6 in toggles
 
     if sampler_name == 'DDIM':
         sampler = DDIMSampler(model)
@@ -841,7 +842,10 @@ def img2img(prompt: str, init_info: dict, mask_mode: str, ddim_steps: int, sampl
                     initial_seed = seed
 
                 init_img = output_images[0]
-                seed = seed + 1
+                if not random_seed_loopback:
+                    seed = seed + 1
+                else:
+                    seed = seed_to_int(None)
                 denoising_strength = max(denoising_strength * 0.95, 0.1)
                 history.append(init_img)
 
@@ -902,6 +906,7 @@ img2img_toggles = [
     'Create prompt matrix (separate multiple prompts using |, and get all combinations of them)',
     'Normalize Prompt Weights (ensure sum of weights add up to 1.0)',
     'Loopback (use images from previous batch when creating next batch)',
+    'Random loopback seed',
     'Save individual images',
     'Save grid',
 ]
