@@ -547,7 +547,7 @@ def get_learned_conditioning_with_embeddings(model, prompts):
     return model.get_learned_conditioning(prompts)
 
 
-def process_images(outpath, func_init, func_sample, prompt, seed, sampler_index, batch_size, n_iter, steps, cfg_scale, width, height, prompt_matrix, use_GFPGAN, do_not_save_grid=False):
+def process_images(outpath, func_init, func_sample, prompt, seed, sampler_index, batch_size, n_iter, steps, cfg_scale, width, height, prompt_matrix, use_GFPGAN, do_not_save_grid=False, extra_generation_params=None):
     """this is the main loop that both txt2img and img2img use; it calls func_init once inside all the scopes and func_sample once per batch"""
 
     assert prompt is not None
@@ -598,11 +598,21 @@ def process_images(outpath, func_init, func_sample, prompt, seed, sampler_index,
         all_prompts = batch_size * n_iter * [prompt]
         all_seeds = [seed + x for x in range(len(all_prompts))]
 
+    generation_params = {
+        "Steps": steps,
+        "Sampler": samplers[sampler_index].name,
+        "CFG scale": cfg_scale,
+        "Seed": seed,
+        "GFPGAN": ("GFPGAN" if use_GFPGAN and GFPGAN is not None else None)
+    }
+
+    if extra_generation_params is not None:
+        generation_params.update(extra_generation_params)
+
+    generation_params_text = ", ".join([k if k == v else f'{k}: {v}' for k, v in generation_params.items() if v is not None])
+
     def infotext():
-        return f"""
-{prompt}
-Steps: {steps}, Sampler: {samplers[sampler_index].name}, CFG scale: {cfg_scale}, Seed: {seed}{', GFPGAN' if use_GFPGAN and GFPGAN is not None else ''}
-        """.strip() + "".join(["\n\n" + x for x in comments])
+        return f"{prompt}\n{generation_params_text}".strip() + "".join(["\n\n" + x for x in comments])
 
     if os.path.exists(cmd_opts.embeddings_dir):
         text_inversion_embeddings.load(cmd_opts.embeddings_dir, model)
@@ -824,7 +834,8 @@ def img2img(prompt: str, init_img, ddim_steps: int, use_GFPGAN: bool, prompt_mat
                 height=height,
                 prompt_matrix=prompt_matrix,
                 use_GFPGAN=use_GFPGAN,
-                do_not_save_grid=True
+                do_not_save_grid=True,
+                extra_generation_params = {"Denoising Strength": denoising_strength},
             )
 
             if initial_seed is None:
@@ -858,7 +869,8 @@ def img2img(prompt: str, init_img, ddim_steps: int, use_GFPGAN: bool, prompt_mat
             width=width,
             height=height,
             prompt_matrix=prompt_matrix,
-            use_GFPGAN=use_GFPGAN
+            use_GFPGAN=use_GFPGAN,
+            extra_generation_params = {"Denoising Strength": denoising_strength},
         )
 
     del sampler
