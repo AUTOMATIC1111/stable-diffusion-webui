@@ -63,11 +63,12 @@ parser.add_argument("--realesrgan-dir", type=str, help="RealESRGAN directory", d
 parser.add_argument("--realesrgan-model", type=str, help="Upscaling model for RealESRGAN", default=('RealESRGAN_x4plus'))
 parser.add_argument("--no-verify-input", action='store_true', help="do not verify input to check if it's too long")
 parser.add_argument("--no-half", action='store_true', help="do not switch the model to 16-bit floats")
-parser.add_argument("--gpu", type=int, help="choose which GPU to use if you have multiple", default=0)
 parser.add_argument("--no-progressbar-hiding", action='store_true', help="do not hide progressbar in gradio UI (we hide it because it slows down ML if you have hardware accleration in browser)")
 parser.add_argument("--defaults", type=str, help="path to configuration file providing UI defaults, uses same format as cli parameter", default='configs/webui/webui.yaml')
+parser.add_argument("--gpu", type=int, help="choose which GPU to use if you have multiple", default=0)
 parser.add_argument("--cli", type=str, help="don't launch web server, take Python function kwargs from this file.", default=None)
 opt = parser.parse_args()
+
 # this should force GFPGAN and RealESRGAN onto the selected gpu as well
 os.environ["CUDA_VISIBLE_DEVICES"] = str(opt.gpu)
 
@@ -791,6 +792,7 @@ class Flagging(gr.FlaggingCallback):
                 filenames.append(filename)
 
             writer.writerow([prompt, seed, width, height, sampler_name, toggles, n_iter, batch_size, cfg_scale, ddim_steps, filenames[0]])
+
         print("Logged:", filenames[0])
 
 
