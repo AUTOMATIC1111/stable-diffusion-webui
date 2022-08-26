@@ -11,6 +11,7 @@ import time
 import torch
 import torch.nn as nn
 import yaml
+import glob
 from typing import List, Union
 
 from contextlib import contextmanager, nullcontext
@@ -585,12 +586,12 @@ def process_images(
                     sanitized_prompt = sanitized_prompt[:128] #200 is too long
                     sample_path_i = os.path.join(sample_path, sanitized_prompt)
                     os.makedirs(sample_path_i, exist_ok=True)
-                    base_count = len(os.listdir(sample_path_i))
+                    base_count = len(glob.glob(f"{sample_path_i}/*.png"))
                     filename = f"{base_count:05}-{seeds[i]}"
                 else:
                     sample_path_i = sample_path
-                    base_count = len(os.listdir(sample_path_i))
-                    sanitized_prompt = sanitized_prompt[:128]
+                    base_count = len(glob.glob(f"{sample_path_i}/*.png"))
+                    sanitized_prompt = sanitized_prompt
                     filename = f"{base_count:05}-{seeds[i]}_{sanitized_prompt}"[:128] #same as before
                 if not skip_save:
                     filename_i = os.path.join(sample_path_i, filename)
