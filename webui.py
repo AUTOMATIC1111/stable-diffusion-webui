@@ -799,9 +799,9 @@ class Flagging(gr.FlaggingCallback):
         print("Logged:", filenames[0])
 
 
-def img2img(prompt: str, image_editor_mode: str, cropped_image, image_with_mask, mask_mode: str, ddim_steps: int, sampler_name: str,
-            toggles: List[int], realesrgan_model_name: str, n_iter: int, batch_size: int, cfg_scale: float,
-            denoising_strength: float, seed: int, height: int, width: int, resize_mode: int, fp):
+def img2img(prompt: str, image_editor_mode: str, init_info, mask_mode: str, ddim_steps: int, sampler_name: str,
+            toggles: List[int], realesrgan_model_name: str, n_iter: int, batch_size: int, cfg_scale: float, denoising_strength: float,
+            seed: int, height: int, width: int, resize_mode: int, fp):
     outpath = opt.outdir_img2img or opt.outdir or "outputs/img2img-samples"
     err = False
     seed = seed_to_int(seed)
@@ -835,16 +835,16 @@ def img2img(prompt: str, image_editor_mode: str, cropped_image, image_with_mask,
         raise Exception("Unknown sampler: " + sampler_name)
 
     if image_editor_mode == 'Mask':
-        init_img = image_with_mask["image"]
+        init_img = init_info["image"]
         init_img = init_img.convert("RGB")
         init_img = resize_image(resize_mode, init_img, width, height)
-        init_mask = image_with_mask["mask"]
+        init_mask = init_info["mask"]
         init_mask = init_mask.convert("RGB")
         init_mask = resize_image(resize_mode, init_mask, width, height)
         keep_mask = mask_mode == 0
         init_mask = init_mask if keep_mask else ImageOps.invert(init_mask)
     else:
-        init_img = cropped_image
+        init_img = init_info
         init_mask = None
         keep_mask = False
 
@@ -1164,8 +1164,8 @@ img2img_image_mode = 'sketch'
 
 def change_image_editor_mode(choice, cropped_image, resize_mode, width, height):
     if choice == "Mask":
-        return [gr.update(visible=False), gr.update(visible=True)]
-    return [gr.update(visible=True), gr.update(visible=False)]
+        return [gr.update(visible=False), gr.update(visible=True), gr.update(visible=False), gr.update(visible=True)]
+    return [gr.update(visible=True), gr.update(visible=False), gr.update(visible=True), gr.update(visible=False)]
 
 def update_image_mask(cropped_image, resize_mode, width, height):
     resized_cropped_image = resize_image(resize_mode, cropped_image, width, height) if cropped_image else None
@@ -1220,7 +1220,16 @@ with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion WebUI")
                     gr.Markdown("Generate images from images with Stable Diffusion")
                     img2img_prompt = gr.Textbox(label="Prompt", placeholder="A fantasy landscape, trending on artstation.", lines=1, value=img2img_defaults['prompt'])
                     img2img_image_editor_mode = gr.Radio(choices=["Mask", "Crop"], label="Image Editor Mode", value="Crop")
-                    gr.Markdown("The masking/cropping is very temperamental. It may take some time for the image to show when switching from Crop to Mask. If it doesn't work try switching modes again, switch tabs, clear the image or reload.")
+                    gr.Markdown(
+                        """
+                            The masking/cropping is very temperamental.
+                            It may take some time for the image to show when switching from Crop to Mask.
+                            * If the image doesn't appear after switching to Mask, switch back to Crop and then back again to Mask
+                            * If the mask appears distorted (the brush is weirdly shaped instead of round), switch back to Crop and then back again to Mask.
+
+                            If it keeps not working, try switching modes again, switch tabs, clear the image or reload.
+                        """
+                    )
                     img2img_image_editor = gr.Image(value=sample_img2img, source="upload", interactive=True, type="pil", tool="select")
                     img2img_image_mask = gr.Image(value=sample_img2img, source="upload", interactive=True, type="pil", tool="sketch", visible=False)
                     img2img_mask = gr.Radio(choices=["Keep masked area", "Regenerate only masked area"], label="Mask Mode", type="index", value=img2img_mask_modes[img2img_defaults['mask_mode']])
@@ -1237,7 +1246,8 @@ with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion WebUI")
                     img2img_width = gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512)
                     img2img_resize = gr.Radio(label="Resize mode", choices=["Just resize", "Crop and resize", "Resize and fill"], type="index", value="Just resize")
                     img2img_embeddings = gr.File(label = "Embeddings file for textual inversion", visible=hasattr(model, "embedding_manager"))
-                    img2img_btn = gr.Button("Generate")
+                    img2img_btn_mask = gr.Button("Generate", visible=False)
+                    img2img_btn_editor = gr.Button("Generate")
                 with gr.Column():
                     output_img2img_gallery = gr.Gallery(label="Images")
                     output_img2img_select_image = gr.Number(label='Select image number from results for copying', value=1, precision=None)
@@ -1250,7 +1260,7 @@ with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion WebUI")
             img2img_image_editor_mode.change(
                 change_image_editor_mode,
                 [img2img_image_editor_mode, img2img_image_editor, img2img_resize, img2img_width, img2img_height],
-                [img2img_image_editor, img2img_image_mask]
+                [img2img_image_editor, img2img_image_mask, img2img_btn_editor, img2img_btn_mask]
             )
 
             img2img_image_editor.edit(
@@ -1265,11 +1275,24 @@ with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion WebUI")
                 [img2img_image_editor, img2img_image_mask]
             )
 
-            img2img_btn.click(
+            output_txt2img_copy_to_input_btn.click(
+                copy_img_to_input,
+                [output_txt2img_select_image, output_txt2img_gallery],
+                [img2img_image_editor, img2img_image_mask]
+            )
+
+            img2img_btn_mask.click(
                 img2img,
-                [img2img_prompt, img2img_image_editor_mode, img2img_image_editor, img2img_image_mask, img2img_mask, img2img_steps, img2img_sampling, img2img_toggles, img2img_realesrgan_model_name, img2img_batch_count, img2img_batch_size, img2img_cfg, img2img_denoising, img2img_seed, img2img_height, img2img_width, img2img_resize, img2img_embeddings],
+                [img2img_prompt, img2img_image_editor_mode, img2img_image_mask, img2img_mask, img2img_steps, img2img_sampling, img2img_toggles, img2img_realesrgan_model_name, img2img_batch_count, img2img_batch_size, img2img_cfg, img2img_denoising, img2img_seed, img2img_height, img2img_width, img2img_resize, img2img_embeddings],
                 [output_img2img_gallery, output_img2img_seed, output_img2img_params, output_img2img_stats]
             )
+
+            img2img_btn_editor.click(
+                img2img,
+                [img2img_prompt, img2img_image_editor_mode, img2img_image_editor, img2img_mask, img2img_steps, img2img_sampling, img2img_toggles, img2img_realesrgan_model_name, img2img_batch_count, img2img_batch_size, img2img_cfg, img2img_denoising, img2img_seed, img2img_height, img2img_width, img2img_resize, img2img_embeddings],
+                [output_img2img_gallery, output_img2img_seed, output_img2img_params, output_img2img_stats]
+            )
+
         if GFPGAN is not None:
             gfpgan_defaults = {
                 'strength': 100,
@@ -1307,12 +1330,6 @@ with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion WebUI")
                     [realesrgan_source, realesrgan_model_name],
                     [realesrgan_output]
                 )
-
-    output_txt2img_copy_to_input_btn.click(
-        copy_img_to_input,
-        [output_txt2img_select_image, output_txt2img_gallery],
-        [img2img_image_editor, img2img_image_mask]
-    )
 
 demo.queue(concurrency_count=1)
 
