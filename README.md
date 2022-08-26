@@ -2,12 +2,13 @@ Features:
 
 * Gradio GUI: Idiot-proof, fully featured frontend for both txt2img and img2img generation
 * No more manually typing parameters, now all you have to do is write your prompt and adjust sliders
-* :fire::fire: Mask and crop :fire::fire: 
-* Textual inversion 🔥: [info](https://textual-inversion.github.io/) - requires enabling, see [here](https://github.com/hlky/sd-enable-textual-inversion), script works as usual without it enabled 
+* :fire::fire: Mask and crop :fire::fire:
+* Textual inversion 🔥: [info](https://textual-inversion.github.io/) - requires enabling, see [here](https://github.com/hlky/sd-enable-textual-inversion), script works as usual without it enabled
 * Mask painting (NEW) 🖌️: Powerful tool for re-generating only specific parts of an image you want to change
 * Loopback (NEW) ➿: Automatically feed the last generated sample back into img2img
 * Prompt Weighting (NEW) 🏋️: Adjust the strength of different terms in your prompt
 * GFPGAN Face Correction 🔥: Automatically correct distorted faces with a built-in GFPGAN option, fixes them in less than half a second
+* RealESRGAN Upscaling 🔥: Boos the resolution of images with a built-in RealESRGAN option
 * More k_diffusion samplers 🔥🔥 : Far greater quality outputs than the default sampler, less distortion and more accurate
 * CFG: Classifier free guidance scale, a feature for fine-tuning your output
 * Memory Monitoring 🔥: Shows Vram usage and generation time after outputting.
@@ -34,6 +35,15 @@ from the GFPGAN's repository until `inference_gfpgan.py` script works.
 If the GFPGAN directory does not exist, you will not get the option to use GFPGAN in the UI. If it does exist, you will either be able
 to use it, or there will be a message in console with an error related to GFPGAN.
 
+### RealESRGAN
+If you want to use RealESRGAN to upscale generated images, you need to install it separately.
+Follow instructions from https://github.com/xinntao/Real-ESRGAN, but when cloning it, do so into Stable Diffusion main directory, `/sd`.
+After that download [RealESRGAN_x4plus.pth](https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth) and [RealESRGAN_x4plus_anime_6B.pth](https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.2.4/RealESRGAN_x4plus_anime_6B.pth).
+Put them into the `/sd/RealESRGAN/experiments/pretrained_models` directory. If you're getting troubles with RealESRGAN support, follow instructions from the RealESRGAN's repository until `inference_realesrgan.py` script works.
+
+If the RealESRGAN directory does not exist, you will not get the option to use RealESRGAN in the UI. If it does exist, you will be either able
+to use it, or there will be a message in console with an error related to RealESRGAN.
+
 ### Web UI
 
 When launching, you may get a very long warning message related to some weights not being used. You may freely ignore it.
@@ -54,6 +64,12 @@ Lets you improve faces in pictures using the GFPGAN model. There is a checkbox i
 also a separate tab that just allows you to use GFPGAN on any picture, with a slider that controls how strongthe effect is.
 
 ![](images/GFPGAN.png)
+
+### RealESRGAN
+Lets you double the resolution of generated images. There is a checkbox in every tab to use RealESRGAN, and you can choose between the regular upscaler and the anime version.
+There is also a separate tab for using RealESRGAN on any picture.
+
+![](images/RealESRGAN.png)
 
 ### Sampling method selection
 Pick out of three sampling methods for txt2img: DDIM, PLMS, k-diffusion:
@@ -112,7 +128,7 @@ Example:
 ![](images/resizing.jpg)
 
 ### Loading
-Gradio's loading graphic has a very negative effect on the processing speed of the neural network. 
+Gradio's loading graphic has a very negative effect on the processing speed of the neural network.
 My RTX 3090 makes images about 10% faster when the tab with gradio is not active. By default, the UI
 now hides loading progress animation and replaces it with static "Loading..." text, which achieves
 the same effect. Use the --no-progressbar-hiding commandline option to revert this and show loading animations.
