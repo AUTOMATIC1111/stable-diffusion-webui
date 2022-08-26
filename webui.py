@@ -68,7 +68,7 @@ parser.add_argument("--cli", type=str, help="don't launch web server, take Pytho
 opt = parser.parse_args()
 
 # this should force GFPGAN and RealESRGAN onto the selected gpu as well
-os.environ["CUDA_VISIBLE_DEVICES"] = opt.gpu
+os.environ["CUDA_VISIBLE_DEVICES"] = str(opt.gpu)
 GFPGAN_dir = opt.gfpgan_dir
 RealESRGAN_dir = opt.realesrgan_dir
 
