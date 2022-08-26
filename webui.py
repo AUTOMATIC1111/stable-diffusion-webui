@@ -11,6 +11,7 @@ import time
 import torch
 import torch.nn as nn
 import yaml
+import glob
 from typing import List, Union
 
 from contextlib import contextmanager, nullcontext
@@ -444,7 +445,12 @@ def check_prompt_length(prompt, comments):
     comments.append(f"Warning: too many input tokens; some ({len(overflowing_words)}) have been truncated:\n{overflowing_text}\n")
 
 
-def process_images(outpath, func_init, func_sample, prompt, seed, sampler_name, skip_grid, skip_save, batch_size, n_iter, steps, cfg_scale, width, height, prompt_matrix, use_GFPGAN, use_RealESRGAN, realesrgan_model_name, fp, do_not_save_grid=False, normalize_prompt_weights=True, init_img=None, init_mask=None, keep_mask=False):
+def process_images(
+        outpath, func_init, func_sample, prompt, seed, sampler_name, skip_grid, skip_save, batch_size,
+        n_iter, steps, cfg_scale, width, height, prompt_matrix, use_GFPGAN, use_RealESRGAN, realesrgan_model_name,
+        fp, ddim_eta=0.0, do_not_save_grid=False, normalize_prompt_weights=True, init_img=None, init_mask=None,
+        keep_mask=False, denoising_strength=0.75, resize_mode=None, uses_loopback=False,
+        uses_random_seed_loopback=False, sort_samples=True, write_info_files=True):
     """this is the main loop that both txt2img and img2img use; it calls func_init once inside all the scopes and func_sample once per batch"""
     assert prompt is not None
     torch_gc()
@@ -461,7 +467,6 @@ def process_images(outpath, func_init, func_sample, prompt, seed, sampler_name, 
 
     sample_path = os.path.join(outpath, "samples")
     os.makedirs(sample_path, exist_ok=True)
-    base_count = len(os.listdir(sample_path))
     grid_count = len(os.listdir(outpath)) - 1
 
     comments = []
@@ -576,9 +581,58 @@ def process_images(outpath, func_init, func_sample, prompt, seed, sampler_name, 
 
                     image = Image.composite(init_img, image, init_mask)
 
-                filename = f"{base_count:05}-{seeds[i]}_{prompts[i].replace(' ', '_').translate({ord(x): '' for x in invalid_filename_chars})[:128]}.png"
+                sanitized_prompt = prompts[i].replace(' ', '_').translate({ord(x): '' for x in invalid_filename_chars})
+                if sort_samples:
+                    sanitized_prompt = sanitized_prompt[:200]
+                    sample_path_i = os.path.join(sample_path, sanitized_prompt)
+                    os.makedirs(sample_path_i, exist_ok=True)
+                    base_count = len(glob.glob(f"*.png", root_dir=sample_path_i))
+                    filename = f"{base_count:05}-{seeds[i]}"
+                else:
+                    sample_path_i = sample_path
+                    base_count = len(glob.glob(f"*.png", root_dir=sample_path_i))
+                    sanitized_prompt = sanitized_prompt[:128]
+                    filename = f"{sanitized_prompt}-{base_count:05}-{seeds[i]}"
                 if not skip_save:
-                    image.save(os.path.join(sample_path, filename))
+                    filename_i = os.path.join(sample_path_i, filename)
+                    image.save(f"{filename_i}.png")
+                    if write_info_files:
+                        # toggles differ for txt2img vs. img2img:
+                        offset = 0 if init_img is None else 2
+                        toggles = []
+                        if prompt_matrix:
+                            toggles.append(0)
+                        if normalize_prompt_weights:
+                            toggles.append(1)
+                        if init_img is not None:
+                            if uses_loopback:
+                                toggles.append(2)
+                            if uses_random_seed_loopback:
+                                toggles.append(3)
+                        if not skip_save:
+                            toggles.append(2 + offset)
+                        if not skip_grid:
+                            toggles.append(3 + offset)
+                        if sort_samples:
+                            toggles.append(4 + offset)
+                        if write_info_files:
+                            toggles.append(5 + offset)
+                        if use_GFPGAN:
+                            toggles.append(6 + offset)
+                        info_dict = dict(
+                            target="txt2img" if init_img is None else "img2img",
+                            prompt=prompts[i], ddim_steps=steps, toggles=toggles, sampler_name=sampler_name,
+                            ddim_eta=ddim_eta, n_iter=n_iter, batch_size=batch_size, cfg_scale=cfg_scale,
+                            seed=seed, width=width, height=height
+                        )
+                        if init_img is not None:
+                            # Not yet any use for these, but they bloat up the files:
+                            #info_dict["init_img"] = init_img
+                            #info_dict["init_mask"] = init_mask
+                            info_dict["denoising_strength"] = denoising_strength
+                            info_dict["resize_mode"] = resize_mode
+                        with open(f"{filename_i}.yaml", "w", encoding="utf8") as f:
+                            yaml.dump(info_dict, f)
 
                 output_images.append(image)
                 base_count += 1
@@ -622,8 +676,9 @@ Peak memory usage: { -(mem_max_used // -1_048_576) } MiB / { -(mem_total // -1_0
     return output_images, seed, info, stats
 
 
-def txt2img(prompt: str, ddim_steps: int, sampler_name: str, toggles: List[int], realesrgan_model_name: str, ddim_eta: float, n_iter: int,
-            batch_size: int, cfg_scale: float, seed: Union[int, str, None], height: int, width: int, fp):
+def txt2img(prompt: str, ddim_steps: int, sampler_name: str, toggles: List[int], realesrgan_model_name: str,
+            ddim_eta: float, n_iter: int, batch_size: int, cfg_scale: float, seed: Union[int, str, None],
+            height: int, width: int, fp):
     outpath = opt.outdir_txt2img or opt.outdir or "outputs/txt2img-samples"
     err = False
     seed = seed_to_int(seed)
@@ -632,8 +687,10 @@ def txt2img(prompt: str, ddim_steps: int, sampler_name: str, toggles: List[int],
     normalize_prompt_weights = 1 in toggles
     skip_save = 2 not in toggles
     skip_grid = 3 not in toggles
-    use_GFPGAN = 4 in toggles
-    use_RealESRGAN = 5 in toggles
+    sort_samples = 4 in toggles
+    write_info_files = 5 in toggles
+    use_GFPGAN = 6 in toggles
+    use_RealESRGAN = 7 in toggles
 
     if sampler_name == 'PLMS':
         sampler = PLMSSampler(model)
@@ -682,7 +739,10 @@ def txt2img(prompt: str, ddim_steps: int, sampler_name: str, toggles: List[int],
             use_RealESRGAN=use_RealESRGAN,
             realesrgan_model_name=realesrgan_model_name,
             fp=fp,
-            normalize_prompt_weights=normalize_prompt_weights
+            ddim_eta=ddim_eta,
+            normalize_prompt_weights=normalize_prompt_weights,
+            sort_samples=sort_samples,
+            write_info_files=write_info_files,
         )
 
         del sampler
@@ -740,9 +800,9 @@ class Flagging(gr.FlaggingCallback):
         print("Logged:", filenames[0])
 
 
-def img2img(prompt: str, image_editor_mode: str, cropped_image, image_with_mask, mask_mode: str, ddim_steps: int, sampler_name: str,
-            toggles: List[int], realesrgan_model_name: str, n_iter: int, batch_size: int, cfg_scale: float, denoising_strength: float,
-            seed: int, height: int, width: int, resize_mode: int, fp):
+def img2img(prompt: str, image_editor_mode: str, mask_mode: str, ddim_steps: int, sampler_name: str,
+            toggles: List[int], realsrgan_model_name: str, n_iter: int, batch_size: int, cfg_scale: float,
+            denoising_strength: float, seed: int, height: int, width: int, resize_mode: int, fp):
     outpath = opt.outdir_img2img or opt.outdir or "outputs/img2img-samples"
     err = False
     seed = seed_to_int(seed)
@@ -753,8 +813,10 @@ def img2img(prompt: str, image_editor_mode: str, cropped_image, image_with_mask,
     random_seed_loopback = 3 in toggles
     skip_save = 4 not in toggles
     skip_grid = 5 not in toggles
-    use_GFPGAN = 6 in toggles
-    use_RealESRGAN = 7 in toggles
+    sort_samples = 6 in toggles
+    write_info_files = 7 in toggles
+    use_GFPGAN = 8 in toggles
+    use_RealESRGAN = 9 in toggles
 
     if sampler_name == 'DDIM':
         sampler = DDIMSampler(model)
@@ -857,7 +919,13 @@ def img2img(prompt: str, image_editor_mode: str, cropped_image, image_with_mask,
                     normalize_prompt_weights=normalize_prompt_weights,
                     init_img=init_img,
                     init_mask=init_mask,
-                    keep_mask=keep_mask
+                    keep_mask=keep_mask,
+                    denoising_strength=denoising_strength,
+                    resize_mode=resize_mode,
+                    uses_loopback=loopback,
+                    uses_random_seed_loopback=random_seed_loopback,
+                    sort_samples=sort_samples,
+                    write_info_files=write_info_files,
                 )
 
                 if initial_seed is None:
@@ -905,7 +973,13 @@ def img2img(prompt: str, image_editor_mode: str, cropped_image, image_with_mask,
                 normalize_prompt_weights=normalize_prompt_weights,
                 init_img=init_img,
                 init_mask=init_mask,
-                keep_mask=keep_mask
+                keep_mask=keep_mask,
+                denoising_strength=denoising_strength,
+                resize_mode=resize_mode,
+                uses_loopback=loopback,
+                uses_random_seed_loopback=random_loopback,
+                sort_samples=sort_samples,
+                write_info_files=write_info_files,
             )
 
         del sampler
@@ -1008,6 +1082,8 @@ txt2img_toggles = [
     'Normalize Prompt Weights (ensure sum of weights add up to 1.0)',
     'Save individual images',
     'Save grid',
+    'Sort samples by prompt',
+    'Write sample info files',
 ]
 if GFPGAN is not None:
     txt2img_toggles.append('Fix faces using GFPGAN')
@@ -1017,7 +1093,7 @@ if RealESRGAN is not None:
 txt2img_defaults = {
     'prompt': '',
     'ddim_steps': 50,
-    'toggles': [1, 2, 3],
+    'toggles': [1, 2, 3, 4, 5],
     'sampler_name': 'k_lms',
     'ddim_eta': 0.0,
     'n_iter': 1,
@@ -1045,6 +1121,8 @@ img2img_toggles = [
     'Random loopback seed',
     'Save individual images',
     'Save grid',
+    'Sort samples by prompt',
+    'Write sample info files',
 ]
 if GFPGAN is not None:
     img2img_toggles.append('Fix faces using GFPGAN')
@@ -1065,7 +1143,7 @@ img2img_resize_modes = [
 img2img_defaults = {
     'prompt': '',
     'ddim_steps': 50,
-    'toggles': [1, 4, 5],
+    'toggles': [1, 4, 5, 6, 7],
     'sampler_name': 'k_lms',
     'ddim_eta': 0.0,
     'n_iter': 1,
