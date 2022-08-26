@@ -63,6 +63,7 @@ parser.add_argument("--no-verify-input", action='store_true', help="do not verif
 parser.add_argument("--no-half", action='store_true', help="do not switch the model to 16-bit floats")
 parser.add_argument("--no-progressbar-hiding", action='store_true', help="do not hide progressbar in gradio UI (we hide it because it slows down ML if you have hardware accleration in browser)")
 parser.add_argument("--defaults", type=str, help="path to configuration file providing UI defaults, uses same format as cli parameter", default='configs/webui/webui.yaml')
+parser.add_argument("--gpu", type=int, help="choose which GPU to use if you have multiple", default=0)
 parser.add_argument("--cli", type=str, help="don't launch web server, take Python function kwargs from this file.", default=None)
 opt = parser.parse_args()
 
@@ -125,7 +126,7 @@ class MemUsageMonitor(threading.Thread):
     def run(self):
         print(f"[{self.name}] Recording max memory usage...\n")
         pynvml.nvmlInit()
-        handle = pynvml.nvmlDeviceGetHandleByIndex(0)
+        handle = pynvml.nvmlDeviceGetHandleByIndex(opt.gpu)
         self.total = pynvml.nvmlDeviceGetMemoryInfo(handle).total
         while not self.stop_flag:
             m = pynvml.nvmlDeviceGetMemoryInfo(handle)
@@ -172,38 +173,6 @@ class KDiffusionSampler:
         samples_ddim = K.sampling.__dict__[f'sample_{self.schedule}'](model_wrap_cfg, x, sigmas, extra_args={'cond': conditioning, 'uncond': unconditional_conditioning, 'cond_scale': unconditional_guidance_scale}, disable=False)
 
         return samples_ddim, None
-
-class MemUsageMonitor(threading.Thread):
-    stop_flag = False
-    max_usage = 0
-    total = 0
-
-    def __init__(self, name):
-        threading.Thread.__init__(self)
-        self.name = name
-
-    def run(self):
-        print(f"[{self.name}] Recording max memory usage...\n")
-        pynvml.nvmlInit()
-        handle = pynvml.nvmlDeviceGetHandleByIndex(0)
-        self.total = pynvml.nvmlDeviceGetMemoryInfo(handle).total
-        while not self.stop_flag:
-            m = pynvml.nvmlDeviceGetMemoryInfo(handle)
-            self.max_usage = max(self.max_usage, m.used)
-            # print(self.max_usage)
-            time.sleep(0.1)
-        print(f"[{self.name}] Stopped recording.\n")
-        pynvml.nvmlShutdown()
-
-    def read(self):
-        return self.max_usage, self.total
-
-    def stop(self):
-        self.stop_flag = True
-
-    def read_and_stop(self):
-        self.stop_flag = True
-        return self.max_usage, self.total
 
 def create_random_tensors(shape, seeds):
     xs = []
@@ -277,7 +246,7 @@ try_loading_RealESRGAN('RealESRGAN_x4plus')
 config = OmegaConf.load("configs/stable-diffusion/v1-inference.yaml")
 model = load_model_from_config(config, "models/ldm/stable-diffusion-v1/model.ckpt")
 
-device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+device = torch.device(f"cuda:{opt.gpu}") if torch.cuda.is_available() else torch.device("cpu")
 model = (model if opt.no_half else model.half()).to(device)
 
 def load_embeddings(fp):
