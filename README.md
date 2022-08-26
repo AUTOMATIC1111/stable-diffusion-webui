@@ -2,6 +2,7 @@ Features:
 
 * Gradio GUI: Idiot-proof, fully featured frontend for both txt2img and img2img generation
 * No more manually typing parameters, now all you have to do is write your prompt and adjust sliders
+* :fire: gpu device selectable with --gpu <id> :fire:
 * :fire::fire: Mask and crop :fire::fire:
 * Textual inversion 🔥: [info](https://textual-inversion.github.io/) - requires enabling, see [here](https://github.com/hlky/sd-enable-textual-inversion), script works as usual without it enabled
 * Mask painting (NEW) 🖌️: Powerful tool for re-generating only specific parts of an image you want to change
