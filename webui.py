@@ -790,12 +790,8 @@ class Flagging(gr.FlaggingCallback):
 
                 filenames.append(filename)
 
-                #with Image.open(filename) as targetImage
-                #    metadata = PngInfo()
-                #     metadata.add_text("prompt", prompt)
-                #     #metadata.add_text("MyNewInt", str(1234))
-                #     targetImage.save(f"x-{filename}", pnginfo=metadata)
-
+            writer.writerow([prompt, seed, width, height, sampler_name, toggles, n_iter, batch_size, cfg_scale, ddim_steps, filenames[0]])
+        print("Logged:", filenames[0])
 
 
 def img2img(prompt: str, image_editor_mode: str, init_info, mask_mode: str, ddim_steps: int, sampler_name: str,
@@ -1070,8 +1066,8 @@ if opt.defaults is not None and os.path.isfile(opt.defaults):
         with open(opt.defaults, "r", encoding="utf8") as f:
             user_defaults = yaml.safe_load(f)
     except (OSError, yaml.YAMLError) as e:
-        print(f"Error loading defaults file {opt.defaults}:", e)
-        print("Falling back to program defaults.")
+        print(f"Error loading defaults file {opt.defaults}:", e, file=sys.stderr)
+        print("Falling back to program defaults.", file=sys.stderr)
         user_defaults = {}
 else:
     user_defaults = {}
