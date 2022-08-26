@@ -90,6 +90,7 @@ class Options:
         "jpeg_quality": (80, "Quality for saved jpeg images", 1, 100),
         "verify_input": (True, "Check input, and produce warning if it's too long"),
         "enable_pnginfo": (True, "Save text information about generation parameters as chunks to png files"),
+        "prompt_matrix_add_to_start": (True, "In prompt matrix, add the variable combination of text to the start of the prompt, rather than the end"),
     }
 
     def __init__(self):
@@ -106,6 +107,9 @@ class Options:
         if self.data is not None:
             if item in self.data:
                 return self.data[item]
+
+        if item in self.data_labels:
+            return self.data_labels[item][0]
 
         return super(Options, self).__getattribute__(item)
 
@@ -568,13 +572,14 @@ def process_images(outpath, func_init, func_sample, prompt, seed, sampler_index,
         prompt_matrix_parts = prompt.split("|")
         combination_count = 2 ** (len(prompt_matrix_parts) - 1)
         for combination_num in range(combination_count):
-            current = prompt_matrix_parts[0]
+            selected_prompts = [text.strip().strip(',') for n, text in enumerate(prompt_matrix_parts[1:]) if combination_num & (1<<n)]
 
-            for n, text in enumerate(prompt_matrix_parts[1:]):
-                if combination_num & (2 ** n) > 0:
-                    current += ("" if text.strip().startswith(",") else ", ") + text
+            if opts.prompt_matrix_add_to_start:
+                selected_prompts = selected_prompts + [prompt_matrix_parts[0]]
+            else:
+                selected_prompts = [prompt_matrix_parts[0]] + selected_prompts
 
-            all_prompts.append(current)
+            all_prompts.append( ", ".join(selected_prompts))
 
         n_iter = math.ceil(len(all_prompts) / batch_size)
         all_seeds = len(all_prompts) * [seed]
