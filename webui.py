@@ -678,6 +678,7 @@ def process_images(outpath, func_init, func_sample, prompt, seed, sampler_index,
                     x_sample = x_sample.astype(np.uint8)
 
                     if use_GFPGAN and GFPGAN is not None:
+                        torch_gc()
                         cropped_faces, restored_faces, restored_img = GFPGAN.enhance(x_sample, has_aligned=False, only_center_face=False, paste_back=True)
                         x_sample = restored_img
 
