@@ -210,8 +210,9 @@ def load_GFPGAN():
 
     sys.path.append(os.path.abspath(GFPGAN_dir))
     from gfpgan import GFPGANer
-
-    return GFPGANer(model_path=model_path, upscale=1, arch='clean', channel_multiplier=2, bg_upsampler=None)
+    instance = GFPGANer(model_path=model_path, upscale=1, arch='clean', channel_multiplier=2, bg_upsampler=None)
+    instance.device = torch.device('cpu')
+    return instance
 
 def load_RealESRGAN(model_name: str):
     from basicsr.archs.rrdbnet_arch import RRDBNet
@@ -227,8 +228,10 @@ def load_RealESRGAN(model_name: str):
     sys.path.append(os.path.abspath(RealESRGAN_dir))
     from realesrgan import RealESRGANer
 
-    instance = RealESRGANer(scale=2, model_path=model_path, model=RealESRGAN_models[model_name], pre_pad=0, half=True)
+    instance = RealESRGANer(scale=2, model_path=model_path, model=RealESRGAN_models[model_name], pre_pad=0, half=False)
     instance.model.name = model_name
+    instance.model.to('cpu')
+    instance.device = torch.device('cpu')
     return instance
 
 GFPGAN = None
