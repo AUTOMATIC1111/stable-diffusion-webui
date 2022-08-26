@@ -463,7 +463,7 @@ def process_images(
 
     sample_path = os.path.join(outpath, "samples")
     os.makedirs(sample_path, exist_ok=True)
-    grid_count = len(os.listdir(outpath)) - 1
+    grid_count = len([_ for x in os.listdir() if x.endswith(('.png', '.jpg'))]) - 1 # start at 0
 
     comments = []
 
@@ -584,11 +584,11 @@ def process_images(
                     sanitized_prompt = sanitized_prompt[:128] #200 is too long
                     sample_path_i = os.path.join(sample_path, sanitized_prompt)
                     os.makedirs(sample_path_i, exist_ok=True)
-                    base_count = len(os.listdir(sample_path_i))
+                    base_count = len([_ for x in os.listdir() if x.endswith(('.png', '.jpg'))]) - 1 # start at 0
                     filename = f"{base_count:05}-{seeds[i]}"
                 else:
                     sample_path_i = sample_path
-                    base_count = len(os.listdir(sample_path_i))
+                    base_count = len([_ for x in os.listdir() if x.endswith(('.png', '.jpg'))]) - 1 # start at 0
                     sanitized_prompt = sanitized_prompt
                     filename = f"{base_count:05}-{seeds[i]}_{sanitized_prompt}"[:128] #same as before
                 if not skip_save:
@@ -957,7 +957,7 @@ def img2img(prompt: str, image_editor_mode: str, init_info, mask_mode: str, ddim
                 history.append(init_img)
 
             if not skip_grid:
-                grid_count = len(os.listdir(outpath)) - 1
+                grid_count = len([_ for x in os.listdir() if x.endswith(('.png', '.jpg'))]) - 1 # start at 0
                 grid = image_grid(history, batch_size, force_n_rows=1)
                 grid_file = f"grid-{grid_count:05}-{seed}_{prompt.replace(' ', '_').translate({ord(x): '' for x in invalid_filename_chars})[:128]}.jpg"
                 grid.save(os.path.join(outpath, grid_file), 'jpeg', quality=100, optimize=True)
