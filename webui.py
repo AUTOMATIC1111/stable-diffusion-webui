@@ -18,6 +18,9 @@ from einops import rearrange, repeat
 from itertools import islice
 from omegaconf import OmegaConf
 from PIL import Image, ImageFont, ImageDraw, ImageFilter, ImageOps
+from io import BytesIO
+import base64
+import re
 from torch import autocast
 from ldm.models.diffusion.ddim import DDIMSampler
 from ldm.models.diffusion.plms import PLMSSampler
@@ -962,10 +965,19 @@ def update_image_mask(cropped_image, resize_mode, width, height):
     resized_cropped_image = resize_image(resize_mode, cropped_image, width, height) if cropped_image else None
     return gr.update(value=resized_cropped_image)
 
+def copy_img_to_input(selected=1, imgs = []):
+    try:
+        idx = int(0 if selected - 1 < 0 else selected - 1)
+        image_data = re.sub('^data:image/.+;base64,', '', imgs[idx])
+        processed_image = Image.open(BytesIO(base64.b64decode(image_data)))
+        return [processed_image, processed_image]
+    except IndexError:
+        return [None, None]
+
 with gr.Blocks(css=css) as demo:
     with gr.Tabs():
         with gr.TabItem("Stable Diffusion Text-to-Image Unified"):
-            with gr.Row():
+            with gr.Row().style(equal_height=False):
                 with gr.Column():
                     gr.Markdown("Generate images from text with Stable Diffusion")
                     txt2img_prompt = gr.Textbox(label="Prompt", placeholder="A corgi wearing a top hat as an oil painting.", lines=1)
@@ -994,7 +1006,7 @@ with gr.Blocks(css=css) as demo:
             )
 
         with gr.TabItem("Stable Diffusion Image-to-Image Unified"):
-            with gr.Row():
+            with gr.Row().style(equal_height=False):
                 with gr.Column():
                     gr.Markdown("Generate images from images with Stable Diffusion")
                     img2img_prompt = gr.Textbox(label="Prompt", placeholder="A fantasy landscape, trending on artstation.", lines=1)
@@ -1018,6 +1030,9 @@ with gr.Blocks(css=css) as demo:
                     img2img_btn = gr.Button("Generate")
                 with gr.Column():
                     output_img2img_gallery = gr.Gallery(label="Images")
+                    output_img2img_select_image = gr.Number(label='Select image number from results for copying', value=1, precision=None)
+                    gr.Markdown("Clear the input image before copying your output to your input. It may take some time to load the image.")
+                    output_img2img_copy_to_input_btn = gr.Button("Copy selected image to input")
                     output_img2img_seed = gr.Number(label='Seed')
                     output_img2img_params = gr.Textbox(label="Copy-paste generation parameters")
                     output_img2img_stats = gr.HTML(label='Stats')
@@ -1035,6 +1050,11 @@ with gr.Blocks(css=css) as demo:
             )
 
             output_img2img_copy_to_input_btn.click(
+                copy_img_to_input,
+                [output_img2img_select_image, output_img2img_gallery],
+                [img2img_image_editor, img2img_image_mask]
+            )
+
             img2img_btn.click(
                 img2img,
                 [img2img_prompt, img2img_image_editor_mode, img2img_image_editor, img2img_image_mask, img2img_mask, img2img_steps, img2img_sampling, img2img_toggles, img2img_batch_count, img2img_batch_size, img2img_cfg, img2img_denoising, img2img_seed, img2img_height, img2img_width, img2img_resize, img2img_embeddings],
