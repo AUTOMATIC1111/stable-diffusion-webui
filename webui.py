@@ -530,10 +530,12 @@ def process_images(
                 x_sample = x_sample.astype(np.uint8)
 
                 if use_GFPGAN and GFPGAN is not None:
+                    torch_gc()
                     cropped_faces, restored_faces, restored_img = GFPGAN.enhance(x_sample[:,:,::-1], has_aligned=False, only_center_face=False, paste_back=True)
                     x_sample = restored_img[:,:,::-1]
 
                 if use_RealESRGAN and RealESRGAN is not None:
+                    torch_gc()
                     if RealESRGAN.model.name != realesrgan_model_name:
                         try_loading_RealESRGAN(realesrgan_model_name)
 
