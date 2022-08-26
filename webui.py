@@ -117,15 +117,19 @@ def crash(e, s):
 class MemUsageMonitor(threading.Thread):
     stop_flag = False
     max_usage = 0
-    total = 0
+    total = -1
 
     def __init__(self, name):
         threading.Thread.__init__(self)
         self.name = name
 
     def run(self):
+        try:
+            pynvml.nvmlInit()
+        except:
+            print(f"[{self.name}] Unable to initialize NVIDIA management. No memory stats. \n")
+            return
         print(f"[{self.name}] Recording max memory usage...\n")
-        pynvml.nvmlInit()
         handle = pynvml.nvmlDeviceGetHandleByIndex(opt.gpu)
         self.total = pynvml.nvmlDeviceGetMemoryInfo(handle).total
         while not self.stop_flag:
