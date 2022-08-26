@@ -534,7 +534,7 @@ skip_grid, sort_samples, sampler_name, ddim_eta, n_iter, batch_size, i, denoisin
             target="txt2img" if init_img is None else "img2img",
             prompt=prompts[i], ddim_steps=steps, toggles=toggles, sampler_name=sampler_name,
             ddim_eta=ddim_eta, n_iter=n_iter, batch_size=batch_size, cfg_scale=cfg_scale,
-            seed=seed, width=width, height=height
+            seed=seeds[i], width=width, height=height
         )
         if init_img is not None:
             # Not yet any use for these, but they bloat up the files:
@@ -1549,7 +1549,7 @@ class ServerLauncher(threading.Thread):
     def stop(self):
         self.demo.close() # this tends to hang
 
-if opt.cli is None:
+def launch_server():
     server_thread = ServerLauncher(demo)
     server_thread.start()
 
@@ -1558,19 +1558,30 @@ if opt.cli is None:
             time.sleep(60)
     except (KeyboardInterrupt, OSError) as e:
         crash(e, 'Shutting down...')
-else:
-    with open(opt.cli, "r", encoding="utf8") as f:
+
+def run_headless():
+    with open(opt.cli, 'r', encoding='utf8') as f:
         kwargs = yaml.safe_load(f)
-    target = kwargs.pop("target")
-    if target == "txt2img":
+    target = kwargs.pop('target')
+    if target == 'txt2img':
         target_func = txt2img
-    elif target == "img2img":
+    elif target == 'img2img':
         target_func = img2img
         raise NotImplementedError()
     else:
-        raise ValueError(f"Unknown target: {target}")
-    kwargs["fp"] = None
-    output_images, seed, info, stats = target_func(**kwargs)
-    print(f"Seed: {seed}")
-    print(info)
-    print(stats)
+        raise ValueError(f'Unknown target: {target}')
+    prompts = kwargs.pop("prompt")
+    prompts = prompts if type(prompts) is list else [prompts]
+    for i, prompt_i in enumerate(prompts):
+        print(f"===== Prompt {i+1}/{len(prompts)}: {prompt_i} =====")
+        output_images, seed, info, stats = target_func(prompt=prompt_i, **kwargs)
+        print(f'Seed: {seed}')
+        print(info)
+        print(stats)
+        print()
+
+if __name__ == '__main__':
+    if opt.cli is None:
+        launch_server()
+    else:
+        run_headless()
