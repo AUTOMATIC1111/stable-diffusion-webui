@@ -8,7 +8,7 @@ Features:
 * Loopback (NEW) ➿: Automatically feed the last generated sample back into img2img
 * Prompt Weighting (NEW) 🏋️: Adjust the strength of different terms in your prompt
 * GFPGAN Face Correction 🔥: Automatically correct distorted faces with a built-in GFPGAN option, fixes them in less than half a second
-* RealESRGAN Upscaling 🔥: Boos the resolution of images with a built-in RealESRGAN option
+* RealESRGAN Upscaling 🔥: Boosts the resolution of images with a built-in RealESRGAN option
 * More k_diffusion samplers 🔥🔥 : Far greater quality outputs than the default sampler, less distortion and more accurate
 * CFG: Classifier free guidance scale, a feature for fine-tuning your output
 * Memory Monitoring 🔥: Shows Vram usage and generation time after outputting.
