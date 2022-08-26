@@ -728,6 +728,7 @@ def img2img(prompt: str, image_editor_mode: str, cropped_image, image_with_mask,
     else:
         init_img = cropped_image
         init_mask = None
+        keep_mask = False
 
     assert 0. <= denoising_strength <= 1., 'can only work with strength in [0.0, 1.0]'
     t_enc = int(denoising_strength * ddim_steps)
