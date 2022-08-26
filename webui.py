@@ -1104,7 +1104,7 @@ def copy_img_to_input(selected=1, imgs = []):
     except IndexError:
         return [None, None]
 
-with gr.Blocks(css=css) as demo:
+with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion WebUI") as demo:
     with gr.Tabs():
         with gr.TabItem("Stable Diffusion Text-to-Image Unified"):
             with gr.Row().style(equal_height=False):
