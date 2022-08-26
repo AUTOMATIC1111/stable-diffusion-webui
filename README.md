@@ -62,14 +62,25 @@ Open the URL in browser, and you are good to go.
 The script creates a web UI for Stable Diffusion's txt2img and img2img scripts. Following are features added
 that are not in original script.
 
-### GFPGAN
+### Extras tab
+Additional neural network image improvement methods unrelated to stable diffusion.
+
+#### GFPGAN
 Lets you improve faces in pictures using the GFPGAN model. There is a checkbox in every tab to use GFPGAN at 100%, and
 also a separate tab that just allows you to use GFPGAN on any picture, with a slider that controls how strongthe effect is.
 
 ![](images/GFPGAN.png)
 
+#### Real-ESRGAN
+Image upscaler. You can choose from multiple models by original author, and specify by how much the image should be upscaled.
+Requires `realesrgan` librarty:
+
+```commandline
+pip install realesrgan
+```
+
 ### Sampling method selection
-Pick out of three sampling methods for txt2img: DDIM, PLMS, k-diffusion:
+Pick out of multiple sampling methods for txt2img:
 
 ![](images/sampling.png)
 
