@@ -18,6 +18,9 @@ from einops import rearrange, repeat
 from itertools import islice
 from omegaconf import OmegaConf
 from PIL import Image, ImageFont, ImageDraw, ImageFilter, ImageOps
+from io import BytesIO
+import base64
+import re
 from torch import autocast
 from ldm.models.diffusion.ddim import DDIMSampler
 from ldm.models.diffusion.plms import PLMSSampler
@@ -681,52 +684,7 @@ class Flagging(gr.FlaggingCallback):
         print("Logged:", filenames[0])
 
 
-# make sure these indicies line up at the top of txt2img()
-txt2img_toggles = [
-    'Create prompt matrix (separate multiple prompts using |, and get all combinations of them)',
-    'Normalize Prompt Weights (ensure sum of weights add up to 1.0)',
-    'Save individual images',
-    'Save grid',
-]
-if GFPGAN is not None:
-    txt2img_toggles.append('Fix faces using GFPGAN')
-
-txt2img_toggle_defaults = [
-    'Normalize Prompt Weights (ensure sum of weights add up to 1.0)',
-    'Save individual images',
-    'Save grid'
-]
-
-txt2img_interface = gr.Interface(
-    txt2img,
-    inputs=[
-        gr.Textbox(label="Prompt", placeholder="A corgi wearing a top hat as an oil painting.", lines=1),
-        gr.Slider(minimum=1, maximum=250, step=1, label="Sampling Steps", value=50),
-        gr.Radio(label='Sampling method (k_lms is default k-diffusion sampler)', choices=["DDIM", "PLMS", 'k_dpm_2_a', 'k_dpm_2', 'k_euler_a', 'k_euler', 'k_heun', 'k_lms'], value="k_lms"),
-        gr.CheckboxGroup(label='', choices=txt2img_toggles, value=txt2img_toggle_defaults, type="index"),
-        gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label="DDIM ETA", value=0.0, visible=False),
-        gr.Slider(minimum=1, maximum=250, step=1, label='Batch count (how many batches of images to generate)', value=1),
-        gr.Slider(minimum=1, maximum=8, step=1, label='Batch size (how many images are in a batch; memory-hungry)', value=1),
-        gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='Classifier Free Guidance Scale (how strongly the image should follow the prompt)', value=7.5),
-        gr.Textbox(label="Seed (blank to randomize)", lines=1, value=""),
-        gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512),
-        gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512),
-        gr.File(label = "Embeddings file for textual inversion", visible=hasattr(model, "embedding_manager")),
-    ],
-    outputs=[
-        gr.Gallery(label="Images"),
-        gr.Number(label='Seed'),
-        gr.Textbox(label="Copy-paste generation parameters"),
-        gr.HTML(label='Stats'),
-    ],
-    title="Stable Diffusion Text-to-Image Unified",
-    description="Generate images from text with Stable Diffusion",
-    flagging_callback=Flagging(),
-    theme="default",
-)
-
-
-def img2img(prompt: str, init_info: dict, mask_mode: str, ddim_steps: int, sampler_name: str,
+def img2img(prompt: str, image_editor_mode: str, cropped_image, image_with_mask, mask_mode: str, ddim_steps: int, sampler_name: str,
             toggles: List[int], n_iter: int, batch_size: int, cfg_scale: float, denoising_strength: float,
             seed: int, height: int, width: int, resize_mode: int, fp):
     outpath = opt.outdir_img2img or opt.outdir or "outputs/img2img-samples"
@@ -758,14 +716,18 @@ def img2img(prompt: str, init_info: dict, mask_mode: str, ddim_steps: int, sampl
     else:
         raise Exception("Unknown sampler: " + sampler_name)
 
-    init_img = init_info["image"]
-    init_img = init_img.convert("RGB")
-    init_img = resize_image(resize_mode, init_img, width, height)
-    init_mask = init_info["mask"]
-    init_mask = init_mask.convert("RGB")
-    init_mask = resize_image(resize_mode, init_mask, width, height)
-    keep_mask = mask_mode == "Keep masked area"
-    init_mask = init_mask if keep_mask else ImageOps.invert(init_mask)
+    if image_editor_mode == 'Mask':
+        init_img = image_with_mask["image"]
+        init_img = init_img.convert("RGB")
+        init_img = resize_image(resize_mode, init_img, width, height)
+        init_mask = image_with_mask["mask"]
+        init_mask = init_mask.convert("RGB")
+        init_mask = resize_image(resize_mode, init_mask, width, height)
+        keep_mask = mask_mode == "Keep masked area"
+        init_mask = init_mask if keep_mask else ImageOps.invert(init_mask)
+    else:
+        init_img = cropped_image
+        init_mask = None
 
     assert 0. <= denoising_strength <= 1., 'can only work with strength in [0.0, 1.0]'
     t_enc = int(denoising_strength * ddim_steps)
@@ -896,65 +858,6 @@ def img2img(prompt: str, init_info: dict, mask_mode: str, ddim_steps: int, sampl
         if err:
             crash(err, '!!Runtime error (img2img)!!')
 
-
-
-sample_img2img = "assets/stable-samples/img2img/sketch-mountains-input.jpg"
-sample_img2img = sample_img2img if os.path.exists(sample_img2img) else None
-
-# make sure these indicies line up at the top of img2img()
-img2img_toggles = [
-    'Create prompt matrix (separate multiple prompts using |, and get all combinations of them)',
-    'Normalize Prompt Weights (ensure sum of weights add up to 1.0)',
-    'Loopback (use images from previous batch when creating next batch)',
-    'Random loopback seed',
-    'Save individual images',
-    'Save grid',
-]
-if GFPGAN is not None:
-    img2img_toggles.append('Fix faces using GFPGAN')
-
-img2img_toggle_defaults = [
-    'Normalize Prompt Weights (ensure sum of weights add up to 1.0)',
-    'Save individual images',
-    'Save grid',
-]
-
-img2img_interface = gr.Interface(
-    img2img,
-    inputs=[
-        gr.Textbox(label="Prompt", placeholder="A fantasy landscape, trending on artstation.", lines=1),
-        gr.Image(value=sample_img2img, source="upload", interactive=True, type="pil", tool="sketch"),
-        gr.Radio(choices=["Keep masked area", "Regenerate only masked area"], label="Mask Mode", value="Keep masked area"),
-        gr.Slider(minimum=1, maximum=250, step=1, label="Sampling Steps", value=50),
-        gr.Radio(label='Sampling method (k_lms is default k-diffusion sampler)', choices=["DDIM", 'k_dpm_2_a', 'k_dpm_2', 'k_euler_a', 'k_euler', 'k_heun', 'k_lms'], value="k_lms"),
-        gr.CheckboxGroup(label='', choices=img2img_toggles, value=img2img_toggle_defaults, type="index"),
-        gr.Slider(minimum=1, maximum=250, step=1, label='Batch count (how many batches of images to generate)', value=1),
-        gr.Slider(minimum=1, maximum=8, step=1, label='Batch size (how many images are in a batch; memory-hungry)', value=1),
-        gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='Classifier Free Guidance Scale (how strongly the image should follow the prompt)', value=5.0),
-        gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising Strength', value=0.75),
-        gr.Textbox(label="Seed (blank to randomize)", lines=1, value=""),
-        gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512),
-        gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512),
-        gr.Radio(label="Resize mode", choices=["Just resize", "Crop and resize", "Resize and fill"], type="index", value="Just resize"),
-        gr.File(label = "Embeddings file for textual inversion", visible=hasattr(model, "embedding_manager")),
-    ],
-    outputs=[
-        gr.Gallery(),
-        gr.Number(label='Seed'),
-        gr.Textbox(label="Copy-paste generation parameters"),
-        gr.HTML(label='Stats'),
-    ],
-    title="Stable Diffusion Image-to-Image Unified",
-    description="Generate images from images with Stable Diffusion",
-    allow_flagging="never",
-    theme="default",
-)
-
-interfaces = [
-    (txt2img_interface, "txt2img"),
-    (img2img_interface, "img2img")
-]
-
 # grabs all text up to the first occurrence of ':' as sub-prompt
 # takes the value following ':' as weight
 # if ':' has no value defined, defaults to 1.0
@@ -1012,32 +915,166 @@ def run_GFPGAN(image, strength):
 
     return res
 
-
-if GFPGAN is not None:
-    interfaces.append((gr.Interface(
-        run_GFPGAN,
-        inputs=[
-            gr.Image(label="Source", source="upload", interactive=True, type="pil"),
-            gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="Effect strength", value=100),
-        ],
-        outputs=[
-            gr.Image(label="Result"),
-        ],
-        title="GFPGAN",
-        description="Fix faces on images",
-        allow_flagging="never",
-        theme="default",
-    ), "GFPGAN"))
-
 css = "" if opt.no_progressbar_hiding else css_hide_progressbar
 css = css + '[data-testid="image"] {min-height: 512px !important}'
 
-demo = gr.TabbedInterface(
-    interface_list=[x[0] for x in interfaces],
-    tab_names=[x[1] for x in interfaces],
-    css=css,
-    theme="default",
-)
+sample_img2img = "assets/stable-samples/img2img/sketch-mountains-input.jpg"
+sample_img2img = sample_img2img if os.path.exists(sample_img2img) else None
+
+# make sure these indicies line up at the top of txt2img()
+txt2img_toggles = [
+    'Create prompt matrix (separate multiple prompts using |, and get all combinations of them)',
+    'Normalize Prompt Weights (ensure sum of weights add up to 1.0)',
+    'Save individual images',
+    'Save grid',
+]
+if GFPGAN is not None:
+    txt2img_toggles.append('Fix faces using GFPGAN')
+
+txt2img_toggle_defaults = [
+    'Normalize Prompt Weights (ensure sum of weights add up to 1.0)',
+    'Save individual images',
+    'Save grid'
+]
+
+# make sure these indicies line up at the top of img2img()
+img2img_toggles = [
+    'Create prompt matrix (separate multiple prompts using |, and get all combinations of them)',
+    'Normalize Prompt Weights (ensure sum of weights add up to 1.0)',
+    'Loopback (use images from previous batch when creating next batch)',
+    'Random loopback seed',
+    'Save individual images',
+    'Save grid',
+]
+if GFPGAN is not None:
+    img2img_toggles.append('Fix faces using GFPGAN')
+
+img2img_toggle_defaults = [
+    'Normalize Prompt Weights (ensure sum of weights add up to 1.0)',
+    'Save individual images',
+    'Save grid',
+]
+img2img_image_mode = 'sketch'
+
+def change_image_editor_mode(choice, cropped_image, resize_mode, width, height):
+    if choice == "Mask":
+        return [gr.update(visible=False), gr.update(visible=True)]
+    return [gr.update(visible=True), gr.update(visible=False)]
+
+def update_image_mask(cropped_image, resize_mode, width, height):
+    resized_cropped_image = resize_image(resize_mode, cropped_image, width, height) if cropped_image else None
+    return gr.update(value=resized_cropped_image)
+
+def copy_img_to_input(selected=1, imgs = []):
+    try:
+        idx = int(0 if selected - 1 < 0 else selected - 1)
+        image_data = re.sub('^data:image/.+;base64,', '', imgs[idx])
+        processed_image = Image.open(BytesIO(base64.b64decode(image_data)))
+        return [processed_image, processed_image]
+    except IndexError:
+        return [None, None]
+
+with gr.Blocks(css=css) as demo:
+    with gr.Tabs():
+        with gr.TabItem("Stable Diffusion Text-to-Image Unified"):
+            with gr.Row().style(equal_height=False):
+                with gr.Column():
+                    gr.Markdown("Generate images from text with Stable Diffusion")
+                    txt2img_prompt = gr.Textbox(label="Prompt", placeholder="A corgi wearing a top hat as an oil painting.", lines=1)
+                    txt2img_steps = gr.Slider(minimum=1, maximum=250, step=1, label="Sampling Steps", value=50)
+                    txt2img_sampling = gr.Radio(label='Sampling method (k_lms is default k-diffusion sampler)', choices=["DDIM", "PLMS", 'k_dpm_2_a', 'k_dpm_2', 'k_euler_a', 'k_euler', 'k_heun', 'k_lms'], value="k_lms")
+                    txt2img_toggles = gr.CheckboxGroup(label='', choices=txt2img_toggles, value=txt2img_toggle_defaults, type="index")
+                    txt2img_ddim_eta = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label="DDIM ETA", value=0.0, visible=False)
+                    txt2img_batch_count = gr.Slider(minimum=1, maximum=250, step=1, label='Batch count (how many batches of images to generate)', value=1)
+                    txt2img_batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size (how many images are in a batch; memory-hungry)', value=1)
+                    txt2img_cfg = gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='Classifier Free Guidance Scale (how strongly the image should follow the prompt)', value=7.5)
+                    txt2img_seed = gr.Textbox(label="Seed (blank to randomize)", lines=1, value="")
+                    txt2img_height = gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512)
+                    txt2img_width = gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512)
+                    txt2img_embeddings = gr.File(label = "Embeddings file for textual inversion", visible=hasattr(model, "embedding_manager"))
+                    txt2img_btn = gr.Button("Generate")
+                with gr.Column():
+                    output_txt2img_gallery = gr.Gallery(label="Images")
+                    output_txt2img_seed = gr.Number(label='Seed')
+                    output_txt2img_params = gr.Textbox(label="Copy-paste generation parameters")
+                    output_txt2img_stats = gr.HTML(label='Stats')
+
+            txt2img_btn.click(
+                txt2img,
+                [txt2img_prompt, txt2img_steps, txt2img_sampling, txt2img_toggles, txt2img_ddim_eta, txt2img_batch_count, txt2img_batch_size, txt2img_cfg, txt2img_seed, txt2img_height, txt2img_width, txt2img_embeddings],
+                [output_txt2img_gallery, output_txt2img_seed, output_txt2img_params, output_txt2img_stats]
+            )
+
+        with gr.TabItem("Stable Diffusion Image-to-Image Unified"):
+            with gr.Row().style(equal_height=False):
+                with gr.Column():
+                    gr.Markdown("Generate images from images with Stable Diffusion")
+                    img2img_prompt = gr.Textbox(label="Prompt", placeholder="A fantasy landscape, trending on artstation.", lines=1)
+                    img2img_image_editor_mode = gr.Radio(choices=["Mask", "Crop"], label="Image Editor Mode", value="Crop")
+                    gr.Markdown("The masking/cropping is very temperamental. It may take some time for the image to show when switching from Crop to Mask. If it doesn't work try switching modes again, switch tabs, clear the image or reload.")
+                    img2img_image_editor = gr.Image(value=sample_img2img, source="upload", interactive=True, type="pil", tool="select")
+                    img2img_image_mask = gr.Image(value=sample_img2img, source="upload", interactive=True, type="pil", tool="sketch", visible=False)
+                    img2img_mask = gr.Radio(choices=["Keep masked area", "Regenerate only masked area"], label="Mask Mode", value="Keep masked area")
+                    img2img_steps = gr.Slider(minimum=1, maximum=250, step=1, label="Sampling Steps", value=50)
+                    img2img_sampling = gr.Radio(label='Sampling method (k_lms is default k-diffusion sampler)', choices=["DDIM", 'k_dpm_2_a', 'k_dpm_2', 'k_euler_a', 'k_euler', 'k_heun', 'k_lms'], value="k_lms")
+                    img2img_toggles = gr.CheckboxGroup(label='', choices=img2img_toggles, value=img2img_toggle_defaults, type="index")
+                    img2img_batch_count = gr.Slider(minimum=1, maximum=250, step=1, label='Batch count (how many batches of images to generate)', value=1)
+                    img2img_batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size (how many images are in a batch; memory-hungry)', value=1)
+                    img2img_cfg = gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='Classifier Free Guidance Scale (how strongly the image should follow the prompt)', value=5.0)
+                    img2img_denoising = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising Strength', value=0.75)
+                    img2img_seed = gr.Textbox(label="Seed (blank to randomize)", lines=1, value="")
+                    img2img_height = gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512)
+                    img2img_width = gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512)
+                    img2img_resize = gr.Radio(label="Resize mode", choices=["Just resize", "Crop and resize", "Resize and fill"], type="index", value="Just resize")
+                    img2img_embeddings = gr.File(label = "Embeddings file for textual inversion", visible=hasattr(model, "embedding_manager"))
+                    img2img_btn = gr.Button("Generate")
+                with gr.Column():
+                    output_img2img_gallery = gr.Gallery(label="Images")
+                    output_img2img_select_image = gr.Number(label='Select image number from results for copying', value=1, precision=None)
+                    gr.Markdown("Clear the input image before copying your output to your input. It may take some time to load the image.")
+                    output_img2img_copy_to_input_btn = gr.Button("Copy selected image to input")
+                    output_img2img_seed = gr.Number(label='Seed')
+                    output_img2img_params = gr.Textbox(label="Copy-paste generation parameters")
+                    output_img2img_stats = gr.HTML(label='Stats')
+
+            img2img_image_editor_mode.change(
+                change_image_editor_mode,
+                [img2img_image_editor_mode, img2img_image_editor, img2img_resize, img2img_width, img2img_height],
+                [img2img_image_editor, img2img_image_mask]
+            )
+
+            img2img_image_editor.edit(
+                update_image_mask,
+                [img2img_image_editor, img2img_resize, img2img_width, img2img_height],
+                img2img_image_mask
+            )
+
+            output_img2img_copy_to_input_btn.click(
+                copy_img_to_input,
+                [output_img2img_select_image, output_img2img_gallery],
+                [img2img_image_editor, img2img_image_mask]
+            )
+
+            img2img_btn.click(
+                img2img,
+                [img2img_prompt, img2img_image_editor_mode, img2img_image_editor, img2img_image_mask, img2img_mask, img2img_steps, img2img_sampling, img2img_toggles, img2img_batch_count, img2img_batch_size, img2img_cfg, img2img_denoising, img2img_seed, img2img_height, img2img_width, img2img_resize, img2img_embeddings],
+                [output_img2img_gallery, output_img2img_seed, output_img2img_params, output_img2img_stats]
+            )
+        if GFPGAN is not None:
+            with gr.TabItem("GFPGAN"):
+                gr.Markdown("Fix faces on images")
+                with gr.Row():
+                    with gr.Column():
+                        gfpgan_source = gr.Image(label="Source", source="upload", interactive=True, type="pil")
+                        gfpgan_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="Effect strength", value=100)
+                        gfpgan_btn = gr.Button("Generate")
+                    with gr.Column():
+                        gfpgan_output = gr.Image(label="Output")
+                gfpgan_btn.click(
+                    run_GFPGAN,
+                    [gfpgan_source, gfpgan_strength],
+                    [gfpgan_output]
+                )
 
 demo.queue(concurrency_count=1)
 
