@@ -267,7 +267,7 @@ def load_GFPGAN():
     return GFPGANer(model_path=model_path, upscale=1, arch='clean', channel_multiplier=2, bg_upsampler=None)
 
 
-def image_grid(imgs, batch_size, round_down=False, force_n_rows=None):
+def image_grid(imgs, batch_size, force_n_rows=None):
     if force_n_rows is not None:
         rows = force_n_rows
     elif opts.n_rows > 0:
@@ -276,7 +276,7 @@ def image_grid(imgs, batch_size, round_down=False, force_n_rows=None):
         rows = batch_size
     else:
         rows = math.sqrt(len(imgs))
-        rows = int(rows) if round_down else round(rows)
+        rows = round(rows)
 
     cols = math.ceil(len(imgs) / rows)
 
@@ -688,18 +688,19 @@ def process_images(outpath, func_init, func_sample, prompt, seed, sampler_index,
                     base_count += 1
 
         if (prompt_matrix or opts.grid_save) and not do_not_save_grid:
-            grid = image_grid(output_images, batch_size, round_down=prompt_matrix)
-
             if prompt_matrix:
+                grid = image_grid(output_images, batch_size, force_n_rows=1 << ((len(prompt_matrix_parts)-1)//2))
 
                 try:
                     grid = draw_prompt_matrix(grid, width, height, prompt_matrix_parts)
-                except Exception:
+                except:
                     import traceback
                     print("Error creating prompt_matrix text:", file=sys.stderr)
                     print(traceback.format_exc(), file=sys.stderr)
 
                 output_images.insert(0, grid)
+            else:
+                grid = image_grid(output_images, batch_size)
 
             save_image(grid, outpath, f"grid-{grid_count:04}", seed, prompt, opts.grid_format, info=infotext(), short_filename=not opts.grid_extended_filename)
             grid_count += 1
