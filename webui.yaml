@@ -8,18 +8,21 @@ txt2img:
   # 1: Normalize Prompt Weights (ensure sum of weights add up to 1.0)
   # 2: Save individual images
   # 3: Save grid
-  # 4: Fix faces using GFPGAN
-  toggles: [1, 2, 3]
+  # 4: Sort samples by prompt
+  # 5: Write sample info files
+  # 6: Fix faces using GFPGAN
+  # 7: Upscale images using Real-ESRGAN
+  toggles: [1, 2, 3, 4, 5]
   sampler_name: k_lms
-  ddim_eta: 0.0
+  ddim_eta: 0.0  # legacy name, applies to all algorithms.
   n_iter: 1
   batch_size: 1
   cfg_scale: 7.5
-  # Leave blank for random seed
+  # Leave blank for random seed:
   seed: 
   height: 512
   width: 512
-  # Textual inversion embeddings file path
+  # Textual inversion embeddings file path:
   fp:
 
 img2img:
@@ -32,8 +35,11 @@ img2img:
   # 3: Random loopback seed
   # 4: Save individual images
   # 5: Save grid
-  # 6: Fix faces using GFPGAN
-  toggles: [1, 4, 5]
+  # 6: Sort samples by prompt
+  # 7: Write sample info files
+  # 8: Fix faces using GFPGAN
+  # 9: Upscale images using Real-ESRGAN
+  toggles: [1, 4, 5, 6, 7]
   sampler_name: k_lms
   ddim_eta: 0.0
   n_iter: 1
@@ -47,11 +53,11 @@ img2img:
   # 1: Crop and resize
   # 2: Resize and fill
   resize_mode: 0
-  # Leave blank for random seed
+  # Leave blank for random seed:
   seed:
   height: 512
   width: 512
-  # Textual inversion embeddings file path
+  # Textual inversion embeddings file path:
   fp:
 
 gfpgan:

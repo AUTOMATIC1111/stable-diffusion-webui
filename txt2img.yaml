@@ -1,15 +1,19 @@
 # Example configuration file for CLI usage.
+# Intended for advanced users.
 
 target: txt2img  # img2img not implemented.
 prompt: E=mc2
-ddim_steps: 50
+ddim_steps: 50  # legacy name, applies to all algorithms.
 # Adding an int to toggles enables the corresponding feature.
-# 0: prompt matrix
-# 1: Normalize Prompt Weights
+# 0: Create prompt matrix (separate multiple prompts using |, and get all combinations of them)
+# 1: Normalize Prompt Weights (ensure sum of weights add up to 1.0)
 # 2: Save individual images
 # 3: Save grid
-# 4: Fix faces using GFPGAN
-toggles: [1, 2, 3]
+# 4: Sort samples by prompt
+# 5: Write sample info files
+# 6: Fix faces using GFPGAN
+# 7: Upscale images using Real-ESRGAN
+toggles: [1, 2, 3, 4, 5]
 sampler_name: k_lms  # Valid: DDIM, k_dpm_2_a, k_dpm_2, k_euler_a, k_euler, k_heun, k_lms
 ddim_eta: 0.0
 n_iter: 1
