@@ -256,7 +256,7 @@ try_loading_RealESRGAN('RealESRGAN_x4plus')
 config = OmegaConf.load("configs/stable-diffusion/v1-inference.yaml")
 model = load_model_from_config(config, "models/ldm/stable-diffusion-v1/model.ckpt")
 
-device = torch.device(f"cuda:{opt.gpu}") if torch.cuda.is_available() else torch.device("cpu")
+device = torch.device(f"cuda") if torch.cuda.is_available() else torch.device("cpu")
 model = (model if opt.no_half else model.half()).to(device)
 
 def load_embeddings(fp):
