@@ -61,6 +61,7 @@ parser.add_argument("--realesrgan-model", type=str, help="Upscaling model for Re
 parser.add_argument("--no-verify-input", action='store_true', help="do not verify input to check if it's too long")
 parser.add_argument("--no-half", action='store_true', help="do not switch the model to 16-bit floats")
 parser.add_argument("--no-progressbar-hiding", action='store_true', help="do not hide progressbar in gradio UI (we hide it because it slows down ML if you have hardware accleration in browser)")
+parser.add_argument("--defaults", type=str, help="path to configuration file providing UI defaults, uses same format as cli parameter", default='configs/webui/webui.yaml')
 parser.add_argument("--cli", type=str, help="don't launch web server, take Python function kwargs from this file.", default=None)
 opt = parser.parse_args()
 
@@ -779,7 +780,7 @@ def img2img(prompt: str, image_editor_mode: str, cropped_image, image_with_mask,
         init_mask = image_with_mask["mask"]
         init_mask = init_mask.convert("RGB")
         init_mask = resize_image(resize_mode, init_mask, width, height)
-        keep_mask = mask_mode == "Keep masked area"
+        keep_mask = mask_mode == 0
         init_mask = init_mask if keep_mask else ImageOps.invert(init_mask)
     else:
         init_img = cropped_image
@@ -990,8 +991,16 @@ def run_RealESRGAN(image, model_name: str):
 css = "" if opt.no_progressbar_hiding else css_hide_progressbar
 css = css + '[data-testid="image"] {min-height: 512px !important}'
 
-sample_img2img = "assets/stable-samples/img2img/sketch-mountains-input.jpg"
-sample_img2img = sample_img2img if os.path.exists(sample_img2img) else None
+if opt.defaults is not None and os.path.isfile(opt.defaults):
+    try:
+        with open(opt.defaults, "r", encoding="utf8") as f:
+            user_defaults = yaml.safe_load(f)
+    except (OSError, yaml.YAMLError) as e:
+        print(f"Error loading defaults file {opt.defaults}:", e)
+        print("Falling back to program defaults.")
+        user_defaults = {}
+else:
+    user_defaults = {}
 
 # make sure these indicies line up at the top of txt2img()
 txt2img_toggles = [
@@ -1005,11 +1014,28 @@ if GFPGAN is not None:
 if RealESRGAN is not None:
     txt2img_toggles.append('Upscale images using RealESRGAN')
 
-txt2img_toggle_defaults = [
-    'Normalize Prompt Weights (ensure sum of weights add up to 1.0)',
-    'Save individual images',
-    'Save grid'
-]
+txt2img_defaults = {
+    'prompt': '',
+    'ddim_steps': 50,
+    'toggles': [1, 2, 3],
+    'sampler_name': 'k_lms',
+    'ddim_eta': 0.0,
+    'n_iter': 1,
+    'batch_size': 1,
+    'cfg_scale': 7.5,
+    'seed': '',
+    'height': 512,
+    'width': 512,
+    'fp': None,
+}
+
+if 'txt2img' in user_defaults:
+    txt2img_defaults.update(user_defaults['txt2img'])
+
+txt2img_toggle_defaults = [txt2img_toggles[i] for i in txt2img_defaults['toggles']]
+
+sample_img2img = "assets/stable-samples/img2img/sketch-mountains-input.jpg"
+sample_img2img = sample_img2img if os.path.exists(sample_img2img) else None
 
 # make sure these indicies line up at the top of img2img()
 img2img_toggles = [
@@ -1025,11 +1051,39 @@ if GFPGAN is not None:
 if RealESRGAN is not None:
     img2img_toggles.append('Upscale images using RealESRGAN')
 
-img2img_toggle_defaults = [
-    'Normalize Prompt Weights (ensure sum of weights add up to 1.0)',
-    'Save individual images',
-    'Save grid',
+img2img_mask_modes = [
+    "Keep masked area",
+    "Regenerate only masked area",
 ]
+
+img2img_resize_modes = [
+    "Just resize",
+    "Crop and resize",
+    "Resize and fill",
+]
+
+img2img_defaults = {
+    'prompt': '',
+    'ddim_steps': 50,
+    'toggles': [1, 4, 5],
+    'sampler_name': 'k_lms',
+    'ddim_eta': 0.0,
+    'n_iter': 1,
+    'batch_size': 1,
+    'cfg_scale': 5.0,
+    'denoising_strength': 0.75,
+    'mask_mode': 0,
+    'resize_mode': 0,
+    'seed': '',
+    'height': 512,
+    'width': 512,
+    'fp': None,
+}
+
+if 'img2img' in user_defaults:
+    img2img_defaults.update(user_defaults['img2img'])
+
+img2img_toggle_defaults = [img2img_toggles[i] for i in img2img_defaults['toggles']]
 img2img_image_mode = 'sketch'
 
 def change_image_editor_mode(choice, cropped_image, resize_mode, width, height):
@@ -1056,9 +1110,9 @@ with gr.Blocks(css=css) as demo:
             with gr.Row().style(equal_height=False):
                 with gr.Column():
                     gr.Markdown("Generate images from text with Stable Diffusion")
-                    txt2img_prompt = gr.Textbox(label="Prompt", placeholder="A corgi wearing a top hat as an oil painting.", lines=1)
-                    txt2img_steps = gr.Slider(minimum=1, maximum=250, step=1, label="Sampling Steps", value=50)
-                    txt2img_sampling = gr.Radio(label='Sampling method (k_lms is default k-diffusion sampler)', choices=["DDIM", "PLMS", 'k_dpm_2_a', 'k_dpm_2', 'k_euler_a', 'k_euler', 'k_heun', 'k_lms'], value="k_lms")
+                    txt2img_prompt = gr.Textbox(label="Prompt", placeholder="A corgi wearing a top hat as an oil painting.", lines=1, value=txt2img_defaults['prompt'])
+                    txt2img_steps = gr.Slider(minimum=1, maximum=250, step=1, label="Sampling Steps", value=txt2img_defaults['ddim_steps'])
+                    txt2img_sampling = gr.Radio(label='Sampling method (k_lms is default k-diffusion sampler)', choices=["DDIM", "PLMS", 'k_dpm_2_a', 'k_dpm_2', 'k_euler_a', 'k_euler', 'k_heun', 'k_lms'], value=txt2img_defaults['sampler_name'])
                     txt2img_toggles = gr.CheckboxGroup(label='', choices=txt2img_toggles, value=txt2img_toggle_defaults, type="index")
                     txt2img_realesrgan_model_name = gr.Dropdown(label='RealESRGAN model', choices=['RealESRGAN_x4plus', 'RealESRGAN_x4plus_anime_6B'], value='RealESRGAN_x4plus', visible=RealESRGAN is not None) # TODO: Feels like I shouldnt slot it in here.
                     txt2img_ddim_eta = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label="DDIM ETA", value=0.0, visible=False)
@@ -1088,14 +1142,14 @@ with gr.Blocks(css=css) as demo:
             with gr.Row().style(equal_height=False):
                 with gr.Column():
                     gr.Markdown("Generate images from images with Stable Diffusion")
-                    img2img_prompt = gr.Textbox(label="Prompt", placeholder="A fantasy landscape, trending on artstation.", lines=1)
+                    img2img_prompt = gr.Textbox(label="Prompt", placeholder="A fantasy landscape, trending on artstation.", lines=1, value=img2img_defaults['prompt'])
                     img2img_image_editor_mode = gr.Radio(choices=["Mask", "Crop"], label="Image Editor Mode", value="Crop")
                     gr.Markdown("The masking/cropping is very temperamental. It may take some time for the image to show when switching from Crop to Mask. If it doesn't work try switching modes again, switch tabs, clear the image or reload.")
                     img2img_image_editor = gr.Image(value=sample_img2img, source="upload", interactive=True, type="pil", tool="select")
                     img2img_image_mask = gr.Image(value=sample_img2img, source="upload", interactive=True, type="pil", tool="sketch", visible=False)
-                    img2img_mask = gr.Radio(choices=["Keep masked area", "Regenerate only masked area"], label="Mask Mode", value="Keep masked area")
-                    img2img_steps = gr.Slider(minimum=1, maximum=250, step=1, label="Sampling Steps", value=50)
-                    img2img_sampling = gr.Radio(label='Sampling method (k_lms is default k-diffusion sampler)', choices=["DDIM", 'k_dpm_2_a', 'k_dpm_2', 'k_euler_a', 'k_euler', 'k_heun', 'k_lms'], value="k_lms")
+                    img2img_mask = gr.Radio(choices=["Keep masked area", "Regenerate only masked area"], label="Mask Mode", type="index", value=img2img_mask_modes[img2img_defaults['mask_mode']])
+                    img2img_steps = gr.Slider(minimum=1, maximum=250, step=1, label="Sampling Steps", value=img2img_defaults['ddim_steps'])
+                    img2img_sampling = gr.Radio(label='Sampling method (k_lms is default k-diffusion sampler)', choices=["DDIM", 'k_dpm_2_a', 'k_dpm_2', 'k_euler_a', 'k_euler', 'k_heun', 'k_lms'], value=img2img_defaults['sampler_name'])
                     img2img_toggles = gr.CheckboxGroup(label='', choices=img2img_toggles, value=img2img_toggle_defaults, type="index")
                     img2img_realesrgan_model_name = gr.Dropdown(label='RealESRGAN model', choices=['RealESRGAN_x4plus', 'RealESRGAN_x4plus_anime_6B'], value='RealESRGAN_x4plus', visible=RealESRGAN is not None) # TODO: Feels like I shouldnt slot it in here.
                     img2img_batch_count = gr.Slider(minimum=1, maximum=250, step=1, label='Batch count (how many batches of images to generate)', value=1)
@@ -1141,12 +1195,19 @@ with gr.Blocks(css=css) as demo:
                 [output_img2img_gallery, output_img2img_seed, output_img2img_params, output_img2img_stats]
             )
         if GFPGAN is not None:
+            gfpgan_defaults = {
+                'strength': 100,
+            }
+
+            if 'gfpgan' in user_defaults:
+                gfpgan_defaults.update(user_defaults['gfpgan'])
+
             with gr.TabItem("GFPGAN"):
                 gr.Markdown("Fix faces on images")
                 with gr.Row():
                     with gr.Column():
                         gfpgan_source = gr.Image(label="Source", source="upload", interactive=True, type="pil")
-                        gfpgan_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="Effect strength", value=100)
+                        gfpgan_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="Effect strength", value=gfpgan_defaults['strength'])
                         gfpgan_btn = gr.Button("Generate")
                     with gr.Column():
                         gfpgan_output = gr.Image(label="Output")
