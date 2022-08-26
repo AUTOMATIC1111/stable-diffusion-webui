@@ -996,6 +996,8 @@ with gr.Blocks(css=css) as demo:
                     txt2img_btn = gr.Button("Generate")
                 with gr.Column():
                     output_txt2img_gallery = gr.Gallery(label="Images")
+                    output_txt2img_select_image = gr.Number(label='Select image number from results for copying', value=1, precision=None)
+                    output_txt2img_copy_to_input_btn = gr.Button("Copy selected image to img2img input")
                     output_txt2img_seed = gr.Number(label='Seed')
                     output_txt2img_params = gr.Textbox(label="Copy-paste generation parameters")
                     output_txt2img_stats = gr.HTML(label='Stats')
@@ -1076,6 +1078,12 @@ with gr.Blocks(css=css) as demo:
                     [gfpgan_source, gfpgan_strength],
                     [gfpgan_output]
                 )
+
+    output_txt2img_copy_to_input_btn.click(
+        copy_img_to_input,
+        [output_txt2img_select_image, output_txt2img_gallery],
+        [img2img_image_editor, img2img_image_mask]
+    )
 
 demo.queue(concurrency_count=1)
 
