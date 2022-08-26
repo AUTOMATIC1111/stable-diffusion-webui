@@ -67,6 +67,8 @@ parser.add_argument("--gpu", type=int, help="choose which GPU to use if you have
 parser.add_argument("--cli", type=str, help="don't launch web server, take Python function kwargs from this file.", default=None)
 opt = parser.parse_args()
 
+# this should force GFPGAN and RealESRGAN onto the selected gpu as well
+os.environ["CUDA_VISIBLE_DEVICES"] = opt.gpu
 GFPGAN_dir = opt.gfpgan_dir
 RealESRGAN_dir = opt.realesrgan_dir
 
