@@ -19,6 +19,7 @@ from einops import rearrange, repeat
 from itertools import islice
 from omegaconf import OmegaConf
 from PIL import Image, ImageFont, ImageDraw, ImageFilter, ImageOps
+from PIL.PngImagePlugin import PngInfo
 from io import BytesIO
 import base64
 import re
@@ -50,8 +51,9 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--outdir", type=str, nargs="?", help="dir to write results to", default=None)
 parser.add_argument("--outdir_txt2img", type=str, nargs="?", help="dir to write txt2img results to (overrides --outdir)", default=None)
 parser.add_argument("--outdir_img2img", type=str, nargs="?", help="dir to write img2img results to (overrides --outdir)", default=None)
+parser.add_argument("--save_metadata", action='store_true', help="Whether to embed the generation parameters in the sample images")
 parser.add_argument("--skip_grid", action='store_true', help="do not save a grid, only individual samples. Helpful when evaluating lots of samples",)
-parser.add_argument("--skip_save", action='store_true', help="do not save indiviual samples. For speed measurements.",)
+parser.add_argument("--skip_save", action='store_true', help="do not save indiviual samples. For speed measurements.")
 parser.add_argument("--n_rows", type=int, default=-1, help="rows in the grid; use -1 for autodetect and 0 for n_rows to be same as batch_size (default: -1)",)
 parser.add_argument("--config", type=str, default="configs/stable-diffusion/v1-inference.yaml", help="path to config which constructs model",)
 parser.add_argument("--ckpt", type=str, default="models/ldm/stable-diffusion-v1/model.ckpt", help="path to checkpoint of model",)
@@ -69,6 +71,7 @@ opt = parser.parse_args()
 
 # this should force GFPGAN and RealESRGAN onto the selected gpu as well
 os.environ["CUDA_VISIBLE_DEVICES"] = str(opt.gpu)
+
 GFPGAN_dir = opt.gfpgan_dir
 RealESRGAN_dir = opt.realesrgan_dir
 
@@ -179,6 +182,7 @@ class KDiffusionSampler:
         samples_ddim = K.sampling.__dict__[f'sample_{self.schedule}'](model_wrap_cfg, x, sigmas, extra_args={'cond': conditioning, 'uncond': unconditional_conditioning, 'cond_scale': unconditional_guidance_scale}, disable=False)
 
         return samples_ddim, None
+
 
 def create_random_tensors(shape, seeds):
     xs = []
@@ -571,7 +575,19 @@ def process_images(
                 if not skip_save:
                     filename_i = os.path.join(sample_path_i, filename)
                     if not jpg_sample:
-                        image.save(f"{filename_i}.png")
+                        if opt.save_metadata:
+                            metadata = PngInfo()
+                            metadata.add_text("SD:prompt", prompts[i])
+                            metadata.add_text("SD:seed", str(seeds[i]))
+                            metadata.add_text("SD:width", str(width))
+                            metadata.add_text("SD:height", str(height))
+                            metadata.add_text("SD:steps", str(steps))
+                            metadata.add_text("SD:cfg_scale", str(cfg_scale))
+                            metadata.add_text("SD:normalize_prompt_weights", str(normalize_prompt_weights))
+                            metadata.add_text("SD:GFPGAN", str(use_GFPGAN and GFPGAN is not None))
+                            image.save(f"{filename_i}.png", pnginfo=metadata)
+                        else:
+                            image.save(f"{filename_i}.png")
                     else:
                         image.save(f"{filename_i}.jpg", 'jpeg', quality=100, optimize=True)
                     if write_info_files:
