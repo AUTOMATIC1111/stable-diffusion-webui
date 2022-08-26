@@ -42,9 +42,6 @@ into the `/stable-diffusion/src/gfpgan/experiments/pretrained_models` directory.
 Download [RealESRGAN_x4plus.pth](https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth) and [RealESRGAN_x4plus_anime_6B.pth](https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.2.4/RealESRGAN_x4plus_anime_6B.pth).
 Put them into the `stable-diffusion/src/realesrgan/experiments/pretrained_models` directory. 
 
-If the RealESRGAN directory does not exist, you will not get the option to use RealESRGAN in the UI. If it does exist, you will be either able
-to use it, or there will be a message in console with an error related to RealESRGAN.
-
 ### Web UI
 
 When launching, you may get a very long warning message related to some weights not being used. You may freely ignore it.
