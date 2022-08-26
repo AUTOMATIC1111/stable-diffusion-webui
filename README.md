@@ -2,6 +2,7 @@ Features:
 
 * Gradio GUI: Idiot-proof, fully featured frontend for both txt2img and img2img generation
 * No more manually typing parameters, now all you have to do is write your prompt and adjust sliders
+* Advanced img2img editor :art: :fire: :art:
 * :computer: esrgan/gfpgan on cpu support :computer:
 * :fire: gpu device selectable with --gpu <id> :fire:
 * :fire::fire: Mask and crop :fire::fire:
