@@ -11,7 +11,6 @@ import time
 import torch
 import torch.nn as nn
 import yaml
-import glob
 from typing import List, Union
 
 from contextlib import contextmanager, nullcontext
@@ -583,16 +582,16 @@ def process_images(
 
                 sanitized_prompt = prompts[i].replace(' ', '_').translate({ord(x): '' for x in invalid_filename_chars})
                 if sort_samples:
-                    sanitized_prompt = sanitized_prompt[:200]
+                    sanitized_prompt = sanitized_prompt[:128] #200 is too long
                     sample_path_i = os.path.join(sample_path, sanitized_prompt)
                     os.makedirs(sample_path_i, exist_ok=True)
-                    base_count = len(glob.glob(f"*.png", root_dir=sample_path_i))
+                    base_count = len(os.listdir(sample_path_i))
                     filename = f"{base_count:05}-{seeds[i]}"
                 else:
                     sample_path_i = sample_path
-                    base_count = len(glob.glob(f"*.png", root_dir=sample_path_i))
+                    base_count = len(os.listdir(sample_path_i))
                     sanitized_prompt = sanitized_prompt[:128]
-                    filename = f"{sanitized_prompt}-{base_count:05}-{seeds[i]}"
+                    filename = f"{base_count:05}-{seeds[i]}_{sanitized_prompt}"[:128] #same as before
                 if not skip_save:
                     filename_i = os.path.join(sample_path_i, filename)
                     image.save(f"{filename_i}.png")
@@ -800,8 +799,8 @@ class Flagging(gr.FlaggingCallback):
         print("Logged:", filenames[0])
 
 
-def img2img(prompt: str, image_editor_mode: str, mask_mode: str, ddim_steps: int, sampler_name: str,
-            toggles: List[int], realsrgan_model_name: str, n_iter: int, batch_size: int, cfg_scale: float,
+def img2img(prompt: str, image_editor_mode: str, cropped_image, image_with_mask, mask_mode: str, ddim_steps: int, sampler_name: str,
+            toggles: List[int], realesrgan_model_name: str, n_iter: int, batch_size: int, cfg_scale: float,
             denoising_strength: float, seed: int, height: int, width: int, resize_mode: int, fp):
     outpath = opt.outdir_img2img or opt.outdir or "outputs/img2img-samples"
     err = False
@@ -977,7 +976,6 @@ def img2img(prompt: str, image_editor_mode: str, mask_mode: str, ddim_steps: int
                 denoising_strength=denoising_strength,
                 resize_mode=resize_mode,
                 uses_loopback=loopback,
-                uses_random_seed_loopback=random_loopback,
                 sort_samples=sort_samples,
                 write_info_files=write_info_files,
             )
@@ -1093,7 +1091,7 @@ if RealESRGAN is not None:
 txt2img_defaults = {
     'prompt': '',
     'ddim_steps': 50,
-    'toggles': [1, 2, 3, 4, 5],
+    'toggles': [1, 2, 3],
     'sampler_name': 'k_lms',
     'ddim_eta': 0.0,
     'n_iter': 1,
@@ -1143,7 +1141,7 @@ img2img_resize_modes = [
 img2img_defaults = {
     'prompt': '',
     'ddim_steps': 50,
-    'toggles': [1, 4, 5, 6, 7],
+    'toggles': [1, 4, 5],
     'sampler_name': 'k_lms',
     'ddim_eta': 0.0,
     'n_iter': 1,
