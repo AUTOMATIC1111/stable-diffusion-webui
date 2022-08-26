@@ -24,13 +24,13 @@ A browser interface based on Gradio library for Stable Diffusion.
 
 Original script with Gradio UI was written by a kind anonymopus user. This is a modification.
 
-![](images/txt2img.png)
+![](images/txt2img.jpg)
 
-![](images/img2img.png)
+![](images/img2img.jpg)
 
-![](images/gfpgan.png)
+![](images/gfpgan.jpg)
 
-![](images/esrgan.png)
+![](images/esrgan.jpg)
 
 ### GFPGAN
 
