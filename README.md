@@ -2,20 +2,22 @@ Features:
 
 * Gradio GUI: Idiot-proof, fully featured frontend for both txt2img and img2img generation
 * No more manually typing parameters, now all you have to do is write your prompt and adjust sliders
-* Advanced img2img editor :art: :fire: :art:
+* GFPGAN Face Correction 🔥: [Download the model](https://github.com/hlky/stable-diffusion-webui#gfpgan)Automatically correct distorted faces with a built-in GFPGAN option, fixes them in less than half a second 
+* RealESRGAN Upscaling 🔥: [Download the models](https://github.com/hlky/stable-diffusion-webui#realesrgan) Boosts the resolution of images with a built-in RealESRGAN option 
 * :computer: esrgan/gfpgan on cpu support :computer:
-* :fire: gpu device selectable with --gpu <id> :fire:
-* :fire::fire: Mask and crop :fire::fire:
 * Textual inversion 🔥: [info](https://textual-inversion.github.io/) - requires enabling, see [here](https://github.com/hlky/sd-enable-textual-inversion), script works as usual without it enabled
+* Advanced img2img editor :art: :fire: :art:
+* :fire::fire: Mask and crop :fire::fire:
 * Mask painting (NEW) 🖌️: Powerful tool for re-generating only specific parts of an image you want to change
+* More k_diffusion samplers 🔥🔥 : Far greater quality outputs than the default sampler, less distortion and more accurate
+* txt2img samplers: "DDIM", "PLMS", 'k_dpm_2_a', 'k_dpm_2', 'k_euler_a', 'k_euler', 'k_heun', 'k_lms'
+* img2img samplers: "DDIM", 'k_dpm_2_a', 'k_dpm_2', 'k_euler_a', 'k_euler', 'k_heun', 'k_lms'
 * Loopback (NEW) ➿: Automatically feed the last generated sample back into img2img
 * Prompt Weighting (NEW) 🏋️: Adjust the strength of different terms in your prompt
-* GFPGAN Face Correction 🔥: Automatically correct distorted faces with a built-in GFPGAN option, fixes them in less than half a second
-* RealESRGAN Upscaling 🔥: Boosts the resolution of images with a built-in RealESRGAN option (advanced users only to avoid breaking for non-advanced users, requires environment.yaml change (maybe))
-* More k_diffusion samplers 🔥🔥 : Far greater quality outputs than the default sampler, less distortion and more accurate
-* CFG: Classifier free guidance scale, a feature for fine-tuning your output
+* :fire: gpu device selectable with --gpu <id> :fire:
 * Memory Monitoring 🔥: Shows Vram usage and generation time after outputting.
 * Word Seeds 🔥: Use words instead of seed numbers
+* CFG: Classifier free guidance scale, a feature for fine-tuning your output
 * Launcher Automatic 👑🔥 shortcut to load the model, no more typing in Conda
 * Lighter on Vram: 512x512 img2img & txt2img tested working on 6gb
 * and ????
