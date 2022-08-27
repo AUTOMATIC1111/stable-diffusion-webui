@@ -194,3 +194,14 @@ Using `()` in prompt decreases model's attention to enclosed words, and `[]` inc
 multiple modifiers:
 
 ![](images/attention-3.jpg)
+
+### SD upscale
+Upscale image using RealESRGAN and then go through tiles of the result, improving them with img2img.
+
+Original idea by: https://github.com/jquesnelle/txt2imghd. This is an independent implementation.
+
+To use this feature, tick a checkbox in the img2img interface. Original
+image will be upscaled to twice the original width and height, while width and height sliders
+will specify the size of individual tiles. At the moment this method does not support batch size.
+
+![](images/sd-upscale.jpg)
