@@ -4,6 +4,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--outdir", type=str, nargs="?", help="dir to write results to", default=None)
 parser.add_argument("--outdir_txt2img", type=str, nargs="?", help="dir to write txt2img results to (overrides --outdir)", default=None)
 parser.add_argument("--outdir_img2img", type=str, nargs="?", help="dir to write img2img results to (overrides --outdir)", default=None)
+parser.add_argument("--outdir_goBig", type=str, nargs="?", help="dir to write img2img results to (overrides --outdir)", default=None)
 parser.add_argument("--save-metadata", action='store_true', help="Whether to embed the generation parameters in the sample images", default=False)
 parser.add_argument("--skip-grid", action='store_true', help="do not save a grid, only individual samples. Helpful when evaluating lots of samples", default=False)
 parser.add_argument("--skip-save", action='store_true', help="do not save indiviual samples. For speed measurements.", default=False)
@@ -27,6 +28,7 @@ parser.add_argument("--extra-models-cpu", action='store_true', help="run extra m
 parser.add_argument("--esrgan-cpu", action='store_true', help="run ESRGAN on cpu", default=False)
 parser.add_argument("--gfpgan-cpu", action='store_true', help="run GFPGAN on cpu", default=False)
 parser.add_argument("--cli", type=str, help="don't launch web server, take Python function kwargs from this file.", default=None)
+parser.add_argument("--scale",type=float,default=10,help="unconditional guidance scale: eps = eps(x, empty) + scale * (eps(x, cond) - eps(x, empty))",)
 opt = parser.parse_args()
 
 # this should force GFPGAN and RealESRGAN onto the selected gpu as well
@@ -47,6 +49,7 @@ import yaml
 import glob
 from typing import List, Union
 from pathlib import Path
+from tqdm import tqdm, trange
 
 from contextlib import contextmanager, nullcontext
 from einops import rearrange, repeat
@@ -648,7 +651,7 @@ def oxlamon_matrix(prompt, seed, batch_size):
 
 def process_images(
         outpath, func_init, func_sample, prompt, seed, sampler_name, skip_grid, skip_save, batch_size,
-        n_iter, steps, cfg_scale, width, height, prompt_matrix, use_GFPGAN, use_RealESRGAN, realesrgan_model_name,
+        n_iter, steps, cfg_scale, width, height, prompt_matrix, use_GFPGAN, use_RealESRGAN,use_GoBIG, realesrgan_model_name,
         fp, ddim_eta=0.0, do_not_save_grid=False, normalize_prompt_weights=True, init_img=None, init_mask=None,
         keep_mask=False, mask_blur_strength=3, denoising_strength=0.75, resize_mode=None, uses_loopback=False,
         uses_random_seed_loopback=False, sort_samples=True, write_info_files=True, jpg_sample=False):
@@ -778,7 +781,7 @@ def process_images(
                 x_sample = 255. * rearrange(x_sample.cpu().numpy(), 'c h w -> h w c')
                 x_sample = x_sample.astype(np.uint8)
 
-                if use_GFPGAN and GFPGAN is not None:
+                if use_GFPGAN and GFPGAN is not None and use_GoBIG is None:
                     torch_gc()
                     original_sample = x_sample
                     original_filename = filename
@@ -801,14 +804,250 @@ skip_grid, sort_samples, sampler_name, ddim_eta, n_iter, batch_size, i, denoisin
                     output, img_mode = RealESRGAN.enhance(x_sample[:,:,::-1])
                     x_sample = output[:,:,::-1]
                     image = Image.fromarray(x_sample)
-                    filename = filename + '-esrgan'
+                    filename = filename + '-esrgan4x'
                     save_sample(image, sample_path_i, filename, jpg_sample, prompts, seeds, width, height, steps, cfg_scale, 
 normalize_prompt_weights, use_GFPGAN, write_info_files, prompt_matrix, init_img, uses_loopback, uses_random_seed_loopback, skip_save,
 skip_grid, sort_samples, sampler_name, ddim_eta, n_iter, batch_size, i, denoising_strength, resize_mode)
                     filename = original_filename
                     x_sample = original_sample
+                
+                if use_GoBIG and RealESRGAN is not None:
+                    original_sample = x_sample
+                    original_filename = filename
+                    def addalpha(im, mask):
+                        imr, img, imb, ima = im.split()
+                        mmr, mmg, mmb, mma = mask.split()
+                        im = Image.merge('RGBA', [imr, img, imb, mma])  # we want the RGB from the original, but the transparency from the mask
+                        return(im)
+                    def grid_merge(source, slices):
+                        source.convert("RGBA")
+                        for slice, posx, posy in slices: # go in reverse to get proper stacking
+                            source.alpha_composite(slice, (posx, posy))
+                        return source
+                    def grid_slice(source, overlap, og_size, maximize=False):
+                        def grid_coords(target, original, overlap):
+                            #generate a list of coordinate tuples for our sections, in order of how they'll be rendered
+                            #target should be the size for the gobig result, original is the size of each chunk being rendered
+                            center = []
+                            target_x, target_y = target
+                            center_x = int(target_x / 2)
+                            center_y = int(target_y / 2)
+                            original_x, original_y = original
+                            x = center_x - int(original_x / 2)
+                            y = center_y - int(original_y / 2)
+                            center.append((x,y)) #center chunk
+                            uy = y #up
+                            uy_list = []
+                            dy = y #down
+                            dy_list = []
+                            lx = x #left
+                            lx_list = []
+                            rx = x #right
+                            rx_list = []
+                            while uy > 0: #center row vertical up
+                                uy = uy - original_y + overlap
+                                uy_list.append((lx, uy))
+                            while (dy + original_y) <= target_y: #center row vertical down
+                                dy = dy + original_y - overlap
+                                dy_list.append((rx, dy))
+                            while lx > 0:
+                                lx = lx - original_x + overlap
+                                lx_list.append((lx, y))
+                                uy = y
+                                while uy > 0:
+                                    uy = uy - original_y + overlap
+                                    uy_list.append((lx, uy))
+                                dy = y
+                                while (dy + original_y) <= target_y:
+                                    dy = dy + original_y - overlap
+                                    dy_list.append((lx, dy))
+                            while (rx + original_x) <= target_x:
+                                rx = rx + original_x - overlap
+                                rx_list.append((rx, y))
+                                uy = y
+                                while uy > 0:
+                                    uy = uy - original_y + overlap
+                                    uy_list.append((rx, uy))
+                                dy = y
+                                while (dy + original_y) <= target_y:
+                                    dy = dy + original_y - overlap
+                                    dy_list.append((rx, dy))
+                            # calculate a new size that will fill the canvas, which will be optionally used in grid_slice and go_big
+                            last_coordx, last_coordy = dy_list[-1:][0]
+                            render_edgey = last_coordy + original_y # outer bottom edge of the render canvas
+                            render_edgex = last_coordx + original_x # outer side edge of the render canvas
+                            scalarx = render_edgex / target_x
+                            scalary = render_edgey / target_y
+                            if scalarx <= scalary:
+                                new_edgex = int(target_x * scalarx)
+                                new_edgey = int(target_y * scalarx)
+                            else:
+                                new_edgex = int(target_x * scalary)
+                                new_edgey = int(target_y * scalary)
+                            # now put all the chunks into one master list of coordinates (essentially reverse of how we calculated them so that the central slices will be on top)
+                            result = []
+                            for coords in dy_list[::-1]:
+                                result.append(coords)
+                            for coords in uy_list[::-1]:
+                                result.append(coords)
+                            for coords in rx_list[::-1]:
+                                result.append(coords)
+                            for coords in lx_list[::-1]:
+                                result.append(coords)
+                            result.append(center[0])
+                            return result, (new_edgex, new_edgey)
+                        def get_resampling_mode():
+                            try:
+                                from PIL import __version__, Image
+                                major_ver = int(__version__.split('.')[0])
+                                if major_ver >= 9:
+                                    return Image.Resampling.LANCZOS
+                                else:
+                                    return LANCZOS
+                            except Exception as ex:
+                                return 1  # 'Lanczos' irrespective of version 
+                        width, height = og_size # size of the slices to be rendered
+                        coordinates, new_size = grid_coords(source.size, og_size, overlap)
+                        if maximize == True:
+                            source = source.resize(new_size, get_resampling_mode()) # minor concern that we're resizing twice
+                            coordinates, new_size = grid_coords(source.size, og_size, overlap) # re-do the coordinates with the new canvas size
+                        # loc_width and loc_height are the center point of the goal size, and we'll start there and work our way out
+                        slices = []
+                        for coordinate in coordinates:
+                            x, y = coordinate
+                            slices.append(((source.crop((x, y, x+width, y+height))), x, y))
+                        global slices_todo
+                        slices_todo = len(slices) - 1
+                        return slices, new_size
+                    def convert_pil_img(image):
+                        w, h = image.size
+                        w, h = map(lambda x: x - x % 32, (w, h))  # resize to integer multiple of 32
+                        image = image.resize((w, h), resample=LANCZOS)
+                        image = np.array(image).astype(np.float32) / 255.0
+                        image = image[None].transpose(0, 3, 1, 2)
+                        image = torch.from_numpy(image)
+                        return 2.*image - 1.
+                    
+                    torch_gc()
+                    if RealESRGAN.model.name != realesrgan_model_name:
+                        try_loading_RealESRGAN(realesrgan_model_name)
+                    #image = image.convert("RGB")
 
+                    output,img_mode = RealESRGAN.enhance(x_sample[:,:,::-1])
+                    #resize output to half size
+                    #convert output to single segment array
+                    #coverts tuple to array
+                    x_sample2 = output[:,:,::-1]
+                    #output = np.array(output)
+                    res = Image.fromarray(x_sample2)
+                    X2_Output = res.resize((int(res.width/2), int(res.height/2)), LANCZOS)
+                    filename = filename + '-esrgan2x'
+                    save_sample(X2_Output, sample_path_i, filename, jpg_sample, prompts, seeds, width, height, steps, cfg_scale, 
+    normalize_prompt_weights, use_GFPGAN, write_info_files, prompt_matrix, init_img, uses_loopback, uses_random_seed_loopback, skip_save,
+    skip_grid, sort_samples, sampler_name, ddim_eta, n_iter, batch_size, i, denoising_strength, resize_mode)
+                    filename = original_filename
+                    output_images.append(X2_Output)
+                    
+                    
+                    
+                    sampler = DDIMSampler(model)
+                    data = [batch_size * [prompt]]
+                    gobig_overlap = 64
+                    #batch_size = 1
+                    #precision_scope = autocast if opt.precision == "autocast" else nullcontext
+                    #base_filename = 'sampleTest'
+                    #res.save(os.path.join(outpath, f"{base_filename}.png"))
+                    #image.save(os.path.join(outpath, f"{base_filename}ORG.png"))
+                    for _ in trange(1, desc="Passes"):
+                        #realesrgan2x(opt.realesrgan, os.path.join(sample_path, f"{base_filename}.png"), os.path.join(sample_path, f"{base_filename}u.png"))
+                        #base_filename = f"{base_filename}u"
+
+                        source_image = X2_Output
+                        og_size = (int(source_image.size[0] / 2), int(source_image.size[1] / 2))
+                        slices, _ = grid_slice(source_image, gobig_overlap, og_size, False)
+
+                        betterslices = []
+                        
+                        for _, chunk_w_coords in tqdm(enumerate(slices), "Slices"):
+                            chunk, coord_x, coord_y = chunk_w_coords
+                            init_image = convert_pil_img(chunk).to(device)
+                            init_image = repeat(init_image, '1 ... -> b ...', b=batch_size)
+                            init_latent = model.get_first_stage_encoding(model.encode_first_stage(init_image))  # move to latent space
+
+                            sampler.make_schedule(ddim_num_steps=150, ddim_eta=0, verbose=False)
+
+                            assert 0. <= 0.3 <= 1., 'can only work with strength in [0.0, 1.0]'
+                            t_enc = int(0.3 * 150)
+
+                            with torch.no_grad():
+                                with precision_scope("cuda"):
+                                    with model.ema_scope():
+                                        for prompts in tqdm(data, desc="data"):
+                                            uc = None
+                                            if opt.scale != 1.0:
+                                                uc = model.get_learned_conditioning(batch_size * [prompt])
+                                            if isinstance(prompts, tuple):
+                                                prompts2 = list(prompts)
+                                            else:
+                                                prompts2 = prompts
+                                            c = model.get_learned_conditioning(prompts2)
+
+                                            # encode (scaled latent)
+                                            z_enc = sampler.stochastic_encode(init_latent, torch.tensor([t_enc]*batch_size).to(device))
+                                            # decode it
+                                            samples = sampler.decode(z_enc, c, t_enc, unconditional_guidance_scale=opt.scale,
+                                                                    unconditional_conditioning=uc,)
+
+                                            x_samples = model.decode_first_stage(samples)
+                                            x_samples = torch.clamp((x_samples + 1.0) / 2.0, min=0.0, max=1.0)
+
+                                            for x_sample2 in x_samples:
+                                                x_sample2 = 255. * rearrange(x_sample2.cpu().numpy(), 'c h w -> h w c')
+                                                resultslice = Image.fromarray(x_sample2.astype(np.uint8)).convert('RGBA')
+                                                betterslices.append((resultslice.copy(), coord_x, coord_y))
+
+                        alpha = Image.new('L', og_size, color=0xFF)
+                        alpha_gradient = ImageDraw.Draw(alpha)
+                        a = 0
+                        ia = 0
+                        overlap = gobig_overlap
+                        shape = (og_size, (0,0))
+                        while ia < overlap:
+                            alpha_gradient.rectangle(shape, fill = a)
+                            a += 4
+                            ia += 1
+                            shape = ((og_size[0] - ia, og_size[1]- ia), (ia,ia))
+                        mask = Image.new('RGBA', og_size, color=0)
+                        mask.putalpha(alpha)
+                        finished_slices = []
+                        for betterslice, x, y in betterslices:
+                            finished_slice = addalpha(betterslice, mask)
+                            finished_slices.append((finished_slice, x, y))
+                        # # Once we have all our images, use grid_merge back onto the source, then save
+                        goBig_output = grid_merge(source_image.convert("RGBA"), finished_slices).convert("RGB")
+                        filename = filename + '-gobig'
+                        save_sample(goBig_output, sample_path_i, filename, jpg_sample, prompts, seeds, width, height, steps, cfg_scale, 
+    normalize_prompt_weights, use_GFPGAN, write_info_files, prompt_matrix, init_img, uses_loopback, uses_random_seed_loopback, skip_save,
+    skip_grid, sort_samples, sampler_name, ddim_eta, n_iter, batch_size, i, denoising_strength, resize_mode)
+                        if use_GFPGAN and GFPGAN is not None:
+                            torch_gc()
+                            cropped_faces, restored_faces, restored_img = GFPGAN.enhance(np.array(goBig_output, dtype=np.uint8), has_aligned=False, only_center_face=False, paste_back=True)
+                            x_sample3 = restored_img[:,:,::1]
+                            goBig_output = Image.fromarray(x_sample3)
+                            filename = filename + '-gfpgan'
+                        save_sample(goBig_output, sample_path_i, filename, jpg_sample, prompts, seeds, width, height, steps, cfg_scale, 
+    normalize_prompt_weights, use_GFPGAN, write_info_files, prompt_matrix, init_img, uses_loopback, uses_random_seed_loopback, skip_save,
+    skip_grid, sort_samples, sampler_name, ddim_eta, n_iter, batch_size, i, denoising_strength, resize_mode)
+                        
+                        filename = original_filename
+                        x_sample = original_sample
+                        output_images.append(goBig_output)
+                        #final_output.save(os.path.join(outpath, f"{base_filename}d.png"))
+                        #base_filename = f"{base_filename}d"
+
+                        torch_gc()
                 image = Image.fromarray(x_sample)
+                
                 if init_mask:
                     #init_mask = init_mask if keep_mask else ImageOps.invert(init_mask)
                     init_mask = init_mask.filter(ImageFilter.GaussianBlur(mask_blur_strength))
@@ -899,9 +1138,10 @@ def txt2img(prompt: str, ddim_steps: int, sampler_name: str, toggles: List[int],
     sort_samples = 4 in toggles
     write_info_files = 5 in toggles
     jpg_sample = 6 in toggles
-    use_GFPGAN = 7 in toggles
-    use_RealESRGAN = 7 in toggles if GFPGAN is None else 8 in toggles # possible index shift
-
+    use_GoBIG = 7 in toggles
+    use_GFPGAN = 8 in toggles
+    use_RealESRGAN = 8 in toggles if GFPGAN is None else 9 in toggles # possible index shift
+    
     if sampler_name == 'PLMS':
         sampler = PLMSSampler(model)
     elif sampler_name == 'DDIM':
@@ -947,6 +1187,7 @@ def txt2img(prompt: str, ddim_steps: int, sampler_name: str, toggles: List[int],
             prompt_matrix=prompt_matrix,
             use_GFPGAN=use_GFPGAN,
             use_RealESRGAN=use_RealESRGAN,
+            use_GoBIG=use_GoBIG,
             realesrgan_model_name=realesrgan_model_name,
             fp=fp,
             ddim_eta=ddim_eta,
@@ -1027,8 +1268,9 @@ def img2img(prompt: str, image_editor_mode: str, init_info, mask_mode: str, mask
     sort_samples = 6 in toggles
     write_info_files = 7 in toggles
     jpg_sample = 8 in toggles
-    use_GFPGAN = 9 in toggles
-    use_RealESRGAN = 9 in toggles if GFPGAN is None else 10 in toggles # possible index shift
+    use_GoBIG = 9 in toggles
+    use_GFPGAN = 10 in toggles
+    use_RealESRGAN = 11 in toggles if GFPGAN is None else 10 in toggles # possible index shift
 
     if sampler_name == 'DDIM':
         sampler = DDIMSampler(model)
@@ -1134,6 +1376,7 @@ def img2img(prompt: str, image_editor_mode: str, init_info, mask_mode: str, mask
                     prompt_matrix=prompt_matrix,
                     use_GFPGAN=use_GFPGAN,
                     use_RealESRGAN=False, # Forcefully disable upscaling when using loopback
+                    use_GoBIG=use_GoBIG,
                     realesrgan_model_name=realesrgan_model_name,
                     fp=fp,
                     do_not_save_grid=True,
@@ -1191,6 +1434,7 @@ def img2img(prompt: str, image_editor_mode: str, init_info, mask_mode: str, mask
                 prompt_matrix=prompt_matrix,
                 use_GFPGAN=use_GFPGAN,
                 use_RealESRGAN=use_RealESRGAN,
+                use_GoBIG=use_GoBIG,
                 realesrgan_model_name=realesrgan_model_name,
                 fp=fp,
                 normalize_prompt_weights=normalize_prompt_weights,
@@ -1286,6 +1530,225 @@ def run_RealESRGAN(image, model_name: str):
 
     return res
 
+def run_goBIG(image, model_name: str):
+    outpath = opt.outdir_goBig or opt.outdir or "outputs/gobig-samples"
+    os.makedirs(outpath, exist_ok=True)
+    def addalpha(im, mask):
+        imr, img, imb, ima = im.split()
+        mmr, mmg, mmb, mma = mask.split()
+        im = Image.merge('RGBA', [imr, img, imb, mma])  # we want the RGB from the original, but the transparency from the mask
+        return(im)
+    def grid_merge(source, slices):
+        source.convert("RGBA")
+        for slice, posx, posy in slices: # go in reverse to get proper stacking
+            source.alpha_composite(slice, (posx, posy))
+        return source
+    def grid_slice(source, overlap, og_size, maximize=False):
+        def grid_coords(target, original, overlap):
+            #generate a list of coordinate tuples for our sections, in order of how they'll be rendered
+            #target should be the size for the gobig result, original is the size of each chunk being rendered
+            center = []
+            target_x, target_y = target
+            center_x = int(target_x / 2)
+            center_y = int(target_y / 2)
+            original_x, original_y = original
+            x = center_x - int(original_x / 2)
+            y = center_y - int(original_y / 2)
+            center.append((x,y)) #center chunk
+            uy = y #up
+            uy_list = []
+            dy = y #down
+            dy_list = []
+            lx = x #left
+            lx_list = []
+            rx = x #right
+            rx_list = []
+            while uy > 0: #center row vertical up
+                uy = uy - original_y + overlap
+                uy_list.append((lx, uy))
+            while (dy + original_y) <= target_y: #center row vertical down
+                dy = dy + original_y - overlap
+                dy_list.append((rx, dy))
+            while lx > 0:
+                lx = lx - original_x + overlap
+                lx_list.append((lx, y))
+                uy = y
+                while uy > 0:
+                    uy = uy - original_y + overlap
+                    uy_list.append((lx, uy))
+                dy = y
+                while (dy + original_y) <= target_y:
+                    dy = dy + original_y - overlap
+                    dy_list.append((lx, dy))
+            while (rx + original_x) <= target_x:
+                rx = rx + original_x - overlap
+                rx_list.append((rx, y))
+                uy = y
+                while uy > 0:
+                    uy = uy - original_y + overlap
+                    uy_list.append((rx, uy))
+                dy = y
+                while (dy + original_y) <= target_y:
+                    dy = dy + original_y - overlap
+                    dy_list.append((rx, dy))
+            # calculate a new size that will fill the canvas, which will be optionally used in grid_slice and go_big
+            last_coordx, last_coordy = dy_list[-1:][0]
+            render_edgey = last_coordy + original_y # outer bottom edge of the render canvas
+            render_edgex = last_coordx + original_x # outer side edge of the render canvas
+            scalarx = render_edgex / target_x
+            scalary = render_edgey / target_y
+            if scalarx <= scalary:
+                new_edgex = int(target_x * scalarx)
+                new_edgey = int(target_y * scalarx)
+            else:
+                new_edgex = int(target_x * scalary)
+                new_edgey = int(target_y * scalary)
+            # now put all the chunks into one master list of coordinates (essentially reverse of how we calculated them so that the central slices will be on top)
+            result = []
+            for coords in dy_list[::-1]:
+                result.append(coords)
+            for coords in uy_list[::-1]:
+                result.append(coords)
+            for coords in rx_list[::-1]:
+                result.append(coords)
+            for coords in lx_list[::-1]:
+                result.append(coords)
+            result.append(center[0])
+            return result, (new_edgex, new_edgey)
+        def get_resampling_mode():
+            try:
+                from PIL import __version__, Image
+                major_ver = int(__version__.split('.')[0])
+                if major_ver >= 9:
+                    return Image.Resampling.LANCZOS
+                else:
+                    return LANCZOS
+            except Exception as ex:
+                return 1  # 'Lanczos' irrespective of version 
+        width, height = og_size # size of the slices to be rendered
+        coordinates, new_size = grid_coords(source.size, og_size, overlap)
+        if maximize == True:
+            source = source.resize(new_size, get_resampling_mode()) # minor concern that we're resizing twice
+            coordinates, new_size = grid_coords(source.size, og_size, overlap) # re-do the coordinates with the new canvas size
+        # loc_width and loc_height are the center point of the goal size, and we'll start there and work our way out
+        slices = []
+        for coordinate in coordinates:
+            x, y = coordinate
+            slices.append(((source.crop((x, y, x+width, y+height))), x, y))
+        global slices_todo
+        slices_todo = len(slices) - 1
+        return slices, new_size
+    def convert_pil_img(image):
+        w, h = image.size
+        w, h = map(lambda x: x - x % 32, (w, h))  # resize to integer multiple of 32
+        image = image.resize((w, h), resample=LANCZOS)
+        image = np.array(image).astype(np.float32) / 255.0
+        image = image[None].transpose(0, 3, 1, 2)
+        image = torch.from_numpy(image)
+        return 2.*image - 1.
+    
+    if RealESRGAN.model.name != model_name:
+            try_loading_RealESRGAN(model_name)
+    image = image.convert("RGB")
+
+    output, img_mode = RealESRGAN.enhance(np.array(image, dtype=np.uint8))
+    #resize output to half size
+    #convert output to single segment array
+    res = Image.fromarray(output)
+
+    res = res.resize((int(res.width/2), int(res.height/2)), LANCZOS)
+    
+    sampler = DDIMSampler(model)
+
+    gobig_overlap = 64
+    batch_size = 1
+    data = [batch_size * [""]]
+    precision_scope = autocast if opt.precision == "autocast" else nullcontext
+    base_filename = 'sampleTest'
+    res.save(os.path.join(outpath, f"{base_filename}.png"))
+    image.save(os.path.join(outpath, f"{base_filename}ORG.png"))
+    
+    
+    with torch.no_grad():
+            with precision_scope("cuda"):
+                with model.ema_scope():
+                    for _ in trange(1, desc="Passes"):
+                        #realesrgan2x(opt.realesrgan, os.path.join(sample_path, f"{base_filename}.png"), os.path.join(sample_path, f"{base_filename}u.png"))
+                        base_filename = f"{base_filename}u"
+
+                        source_image = res
+                        og_size = (int(source_image.size[0] / 2), int(source_image.size[1] / 2))
+                        slices, _ = grid_slice(source_image, gobig_overlap, og_size, False)
+
+                        betterslices = []
+                        for _, chunk_w_coords in tqdm(enumerate(slices), "Slices"):
+                            chunk, coord_x, coord_y = chunk_w_coords
+                            init_image = convert_pil_img(chunk).to(device)
+                            init_image = repeat(init_image, '1 ... -> b ...', b=batch_size)
+                            init_latent = model.get_first_stage_encoding(model.encode_first_stage(init_image))  # move to latent space
+
+                            sampler.make_schedule(ddim_num_steps=150, ddim_eta=0, verbose=False)
+
+                            assert 0. <= 0.3 <= 1., 'can only work with strength in [0.0, 1.0]'
+                            t_enc = int(0.3 * 150)
+
+                            with torch.no_grad():
+                                with precision_scope("cuda"):
+                                    with model.ema_scope():
+                                        for prompts in tqdm(data, desc="data"):
+                                            uc = None
+                                            if opt.scale != 1.0:
+                                                uc = model.get_learned_conditioning(batch_size * ['4k'])
+                                            if isinstance(prompts, tuple):
+                                                prompts = list(prompts)
+                                            c = model.get_learned_conditioning(prompts)
+
+                                            # encode (scaled latent)
+                                            z_enc = sampler.stochastic_encode(init_latent, torch.tensor([t_enc]*batch_size).to(device))
+                                            # decode it
+                                            samples = sampler.decode(z_enc, c, t_enc, unconditional_guidance_scale=opt.scale,
+                                                                    unconditional_conditioning=uc,)
+
+                                            x_samples = model.decode_first_stage(samples)
+                                            x_samples = torch.clamp((x_samples + 1.0) / 2.0, min=0.0, max=1.0)
+
+                                            for x_sample in x_samples:
+                                                x_sample = 255. * rearrange(x_sample.cpu().numpy(), 'c h w -> h w c')
+                                                resultslice = Image.fromarray(x_sample.astype(np.uint8)).convert('RGBA')
+                                                betterslices.append((resultslice.copy(), coord_x, coord_y))
+
+                        alpha = Image.new('L', og_size, color=0xFF)
+                        alpha_gradient = ImageDraw.Draw(alpha)
+                        a = 0
+                        i = 0
+                        overlap = gobig_overlap
+                        shape = (og_size, (0,0))
+                        while i < overlap:
+                            alpha_gradient.rectangle(shape, fill = a)
+                            a += 4
+                            i += 1
+                            shape = ((og_size[0] - i, og_size[1]- i), (i,i))
+                        mask = Image.new('RGBA', og_size, color=0)
+                        mask.putalpha(alpha)
+                        finished_slices = []
+                        for betterslice, x, y in betterslices:
+                            finished_slice = addalpha(betterslice, mask)
+                            finished_slices.append((finished_slice, x, y))
+                        # # Once we have all our images, use grid_merge back onto the source, then save
+                        final_output = grid_merge(source_image.convert("RGBA"), finished_slices).convert("RGB")
+                        final_output.save(os.path.join(outpath, f"{base_filename}d.png"))
+                        base_filename = f"{base_filename}d"
+
+                        torch_gc()
+        
+                        #put_watermark(final_output, wm_encoder)
+                        final_output.save(os.path.join(outpath, f"{base_filename}.png"))
+                        
+
+
+   
+    return res
+
 
 if opt.defaults is not None and os.path.isfile(opt.defaults):
     try:
@@ -1308,6 +1771,8 @@ txt2img_toggles = [
     'Write sample info files',
     'jpg samples',
 ]
+if RealESRGAN is not None:
+    txt2img_toggles.append('Upscale images using goBig')
 if GFPGAN is not None:
     txt2img_toggles.append('Fix faces using GFPGAN')
 if RealESRGAN is not None:
@@ -1349,6 +1814,8 @@ img2img_toggles = [
     'Write sample info files',
     'jpg samples',
 ]
+if RealESRGAN is not None:
+    img2img_toggles.append('Upscale images goBig')
 if GFPGAN is not None:
     img2img_toggles.append('Fix faces using GFPGAN')
 if RealESRGAN is not None:
@@ -1478,6 +1945,10 @@ with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion WebUI")
                         with gr.Group():
                             output_txt2img_select_image = gr.Number(label='Image # and click Copy to copy to img2img', value=1, precision=None)
                             output_txt2img_copy_to_input_btn = gr.Button("Push to img2img", full_width=True)
+                            if RealESRGAN is not None:
+                                #needs to be fixed
+                                #output_txt2img_copy_to_gobig_input_btn = gr.Button("Copy selected image to goBig input")
+                                pass
                     with gr.Group():
                         output_txt2img_params = gr.Textbox(label="Copy-paste generation parameters", interactive=False)
                         output_txt2img_copy_params = gr.Button("Copy", full_width=True).click(inputs=output_txt2img_params, outputs=[], _js='(x) => navigator.clipboard.writeText(x)', fn=None, show_progress=False)
@@ -1551,6 +2022,8 @@ with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion WebUI")
                     output_img2img_select_image = gr.Number(label='Select image number from results for copying', value=1, precision=None)
                     gr.Markdown("Clear the input image before copying your output to your input. It may take some time to load the image.")
                     output_img2img_copy_to_input_btn = gr.Button("Copy selected image to input")
+                    if RealESRGAN is not None:
+                        output_txt2img_copy_to_gobig_input_btn = gr.Button("Copy selected image to goBig input")
                     output_img2img_seed = gr.Number(label='Seed')
                     output_img2img_params = gr.Textbox(label="Copy-paste generation parameters")
                     output_img2img_stats = gr.HTML(label='Stats')
@@ -1665,6 +2138,25 @@ with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion WebUI")
                     [realesrgan_source, realesrgan_model_name],
                     [realesrgan_output]
                 )
+            with gr.TabItem("goBIG"):
+                gr.Markdown("Upscale and detail images")
+                with gr.Row():
+                    with gr.Column():
+                        realesrganGoBig_source = gr.Image(source="upload", interactive=True, type="pil", tool="select")
+                        realesrganGoBig_model_name = gr.Dropdown(label='RealESRGAN model', choices=['RealESRGAN_x4plus', 'RealESRGAN_x4plus_anime_6B'], value='RealESRGAN_x4plus')
+                        realesrganGoBig_btn = gr.Button("Generate")
+                    with gr.Column():
+                        realesrganGoBig_output = gr.Image(label="Output")
+                realesrganGoBig_btn.click(
+                    run_goBIG,
+                    [realesrganGoBig_source, realesrganGoBig_model_name],
+                    [realesrganGoBig_output]
+                )
+            output_txt2img_copy_to_gobig_input_btn.click(
+                copy_img_to_input,
+                [output_txt2img_select_image, output_txt2img_gallery],
+                [realesrganGoBig_source,realesrganGoBig_source]
+            )
 
 
 class ServerLauncher(threading.Thread):
