@@ -1426,7 +1426,7 @@ with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion WebUI")
             with gr.Row(elem_id="prompt_row"):
                 img2img_prompt = gr.Textbox(label="Prompt", 
                 elem_id='img2img_prompt_input',
-                placeholder="A corgi wearing a top hat as an oil painting.", 
+                placeholder="A fantasy landscape, trending on artstation.", 
                 lines=1,
                 max_lines=1 if txt2img_defaults['submit_on_enter'] == 'Yes' else 25, 
                 value=img2img_defaults['prompt'], 
