@@ -43,6 +43,7 @@ import torch.nn as nn
 import yaml
 import glob
 from typing import List, Union
+from pathlib import Path
 
 from contextlib import contextmanager, nullcontext
 from einops import rearrange, repeat
@@ -487,6 +488,28 @@ def check_prompt_length(prompt, comments):
     comments.append(f"Warning: too many input tokens; some ({len(overflowing_words)}) have been truncated:\n{overflowing_text}\n")
 
 
+def get_next_sequence_number(path, prefix=''):
+    """
+    Determines and returns the next sequence number to use when saving an
+    image in the specified directory.
+
+    If a prefix is given, only consider files whose names start with that
+    prefix, and strip the prefix from filenames before extracting their
+    sequence number.
+
+    The sequence starts at 0.
+    """
+    result = -1
+    for p in Path(path).iterdir():
+        if p.name.endswith(('.png', '.jpg')) and p.name.startswith(prefix):
+            tmp = p.name[len(prefix):]
+            try:
+                result = max(int(tmp.split('-')[0]), result)
+            except ValueError:
+                pass
+    return result + 1
+
+
 def process_images(
         outpath, func_init, func_sample, prompt, seed, sampler_name, skip_grid, skip_save, batch_size,
         n_iter, steps, cfg_scale, width, height, prompt_matrix, use_GFPGAN, use_RealESRGAN, realesrgan_model_name,
@@ -509,7 +532,6 @@ def process_images(
 
     sample_path = os.path.join(outpath, "samples")
     os.makedirs(sample_path, exist_ok=True)
-    grid_count = len([x for x in os.listdir(outpath) if x.endswith(('.png', '.jpg'))]) - 1 # start at 0
 
     comments = []
 
@@ -640,11 +662,11 @@ def process_images(
                     sanitized_prompt = sanitized_prompt[:128] #200 is too long
                     sample_path_i = os.path.join(sample_path, sanitized_prompt)
                     os.makedirs(sample_path_i, exist_ok=True)
-                    base_count = len([x for x in os.listdir(sample_path_i) if x.endswith(('.png', '.jpg'))]) - 1 # start at 0
+                    base_count = get_next_sequence_number(sample_path_i)
                     filename = f"{base_count:05}-{seeds[i]}"
                 else:
                     sample_path_i = sample_path
-                    base_count = len([x for x in os.listdir(sample_path_i) if x.endswith(('.png', '.jpg'))]) - 1 # start at 0
+                    base_count = get_next_sequence_number(sample_path_i)
                     sanitized_prompt = sanitized_prompt
                     filename = f"{base_count:05}-{seeds[i]}_{sanitized_prompt}"[:128] #same as before
                 if not skip_save:
@@ -704,7 +726,6 @@ def process_images(
                             yaml.dump(info_dict, f)
 
                 output_images.append(image)
-                base_count += 1
 
         if (prompt_matrix or not skip_grid) and not do_not_save_grid:
             if prompt_matrix:
@@ -724,9 +745,9 @@ def process_images(
             else:
                 grid = image_grid(output_images, batch_size)
 
+            grid_count = get_next_sequence_number(outpath, 'grid-')
             grid_file = f"grid-{grid_count:05}-{seed}_{prompts[i].replace(' ', '_').translate({ord(x): '' for x in invalid_filename_chars})[:128]}.jpg"
             grid.save(os.path.join(outpath, grid_file), 'jpeg', quality=100, optimize=True)
-            grid_count += 1
 
         if opt.optimized:
             mem = torch.cuda.memory_allocated()/1e6
@@ -1034,7 +1055,7 @@ def img2img(prompt: str, image_editor_mode: str, init_info, mask_mode: str, mask
                 history.append(init_img)
 
             if not skip_grid:
-                grid_count = len([x for x in os.listdir(outpath) if x.endswith(('.png', '.jpg'))]) - 1 # start at 0
+                grid_count = get_next_sequence_number(outpath, 'grid-')
                 grid = image_grid(history, batch_size, force_n_rows=1)
                 grid_file = f"grid-{grid_count:05}-{seed}_{prompt.replace(' ', '_').translate({ord(x): '' for x in invalid_filename_chars})[:128]}.jpg"
                 grid.save(os.path.join(outpath, grid_file), 'jpeg', quality=100, optimize=True)
