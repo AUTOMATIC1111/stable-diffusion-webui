@@ -1069,17 +1069,17 @@ skip_grid, sort_samples, sampler_name, ddim_eta, n_iter, batch_size, i, denoisin
             else:
                 grid = image_grid(output_images, batch_size)
 
-            if prompt_matrix and not prompt.startswith("@"):
-                try:
-                    grid = draw_prompt_matrix(grid, width, height, prompt_matrix_parts)
-                except:
-                    import traceback
-                    print("Error creating prompt_matrix text:", file=sys.stderr)
-                    print(traceback.format_exc(), file=sys.stderr)
-
-            output_images.insert(0, grid)
-            #else:
-            #    grid = image_grid(output_images, batch_size)
+            if prompt_matrix:
+                if not prompt.startswith("@"):
+                    try:
+                        grid = draw_prompt_matrix(grid, width, height, prompt_matrix_parts)
+                    except:
+                        import traceback
+                        print("Error creating prompt_matrix text:", file=sys.stderr)
+                        print(traceback.format_exc(), file=sys.stderr)
+                output_images.insert(0, grid)
+            else:
+                grid = image_grid(output_images, batch_size)
 
             grid_count = get_next_sequence_number(outpath, 'grid-')
             grid_file = f"grid-{grid_count:05}-{seed}_{prompts[i].replace(' ', '_').translate({ord(x): '' for x in invalid_filename_chars})[:128]}.{grid_ext}"
