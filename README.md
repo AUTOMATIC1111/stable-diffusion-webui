@@ -188,3 +188,9 @@ and put it into `embeddings` dir and use Usada Pekora in prompt.
 A tab with settings, allowing you to use UI to edit more than half of parameters that previously
 were commandline. Settings are saved to config.js file. Settings that remain as commandline
 options are ones that are required at startup.
+
+### Attention
+Using `()` in prompt decreases model's attention to enclosed words, and `[]` increases it. You can combine
+multiple modifiers:
+
+![](images/attention-3.jpg)
