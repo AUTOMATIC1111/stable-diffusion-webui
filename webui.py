@@ -87,7 +87,7 @@ RealESRGAN_dir = opt.realesrgan_dir
 
 
 # should probably be moved to a settings menu in the UI at some point
-grid_format = [s.lower() for s in 'webp:-50'.split(':')]
+grid_format = [s.lower() for s in opt.grid_format.split(':')]
 grid_lossless = False
 grid_quality = 100
 if grid_format[0] == 'png':
