@@ -81,12 +81,7 @@ invalid_filename_chars = '<>:"/\|?*\n'
 GFPGAN_dir = opt.gfpgan_dir
 RealESRGAN_dir = opt.realesrgan_dir
 
-css_hide_progressbar = """
-.wrap .m-12 svg { display:none!important; }
-.wrap .m-12::before { content:"Loading..." }
-.progress-bar { display:none!important; }
-.meta-text { display:none!important; }
-"""
+
 
 def chunk(it, size):
     it = iter(it)
@@ -1204,8 +1199,6 @@ def run_RealESRGAN(image, model_name: str):
 
     return res
 
-css = "" if opt.no_progressbar_hiding else css_hide_progressbar
-css = css + '[data-testid="image"] {min-height: 512px !important}'
 
 if opt.defaults is not None and os.path.isfile(opt.defaults):
     try:
@@ -1323,7 +1316,7 @@ def copy_img_to_input(selected=1, imgs = []):
         idx = int(0 if selected - 1 < 0 else selected - 1)
         image_data = re.sub('^data:image/.+;base64,', '', imgs[idx])
         processed_image = Image.open(BytesIO(base64.b64decode(image_data)))
-        update = gr.update(selected='Stable Diffusion Image-to-Image Unified')
+        update = gr.update(selected='img2img_tab')
         return [processed_image, processed_image, update]
     except IndexError:
         return [None, None]
@@ -1350,21 +1343,29 @@ def show_help():
 def hide_help():
     return [gr.update(visible=True), gr.update(visible=False), gr.update(value="")]
 
+
+css_hide_progressbar = """
+.wrap .m-12 svg { display:none!important; }
+.wrap .m-12::before { content:"Loading..." }
+.progress-bar { display:none!important; }
+.meta-text { display:none!important; }
+"""
+
 styling = """
 [data-testid="image"] {min-height: 512px !important};
-*{
-    border: 1px solid red
-}
+]
 * #body>.col:nth-child(2){width:250%;max-width:89vw}
 #generate{width: 100%; }
 #prompt_row input{
  font-size:20px
- }
-
+}
 """
-with gr.Blocks(css=styling, analytics_enabled=False, title="Stable Diffusion WebUI") as demo:
+
+css = styleing if opt.no_progressbar_hiding else css + css_hide_progressbar
+
+with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion WebUI") as demo:
     with gr.Tabs(elem_id='tabss') as tabs:
-        with gr.TabItem("Stable Diffusion Text-to-Image Unified"):
+        with gr.TabItem("Stable Diffusion Text-to-Image Unified", id='txt2img_tab'):
             with gr.Row(elem_id="prompt_row"):
                 txt2img_prompt = gr.Textbox(label="Prompt", 
                 elem_id='prompt_input',
@@ -1420,7 +1421,7 @@ with gr.Blocks(css=styling, analytics_enabled=False, title="Stable Diffusion Web
                 [output_txt2img_gallery, output_txt2img_seed, output_txt2img_params, output_txt2img_stats]
             )
 
-        with gr.TabItem("Stable Diffusion Image-to-Image Unified"):
+        with gr.TabItem("Stable Diffusion Image-to-Image Unified", id="img2img_tab"):
             with gr.Row(elem_id="prompt_row"):
                 img2img_prompt = gr.Textbox(label="Prompt", 
                 elem_id='img2img_prompt_input',
