@@ -7,6 +7,7 @@ parser.add_argument("--outdir_img2img", type=str, nargs="?", help="dir to write 
 parser.add_argument("--save-metadata", action='store_true', help="Whether to embed the generation parameters in the sample images", default=False)
 parser.add_argument("--skip-grid", action='store_true', help="do not save a grid, only individual samples. Helpful when evaluating lots of samples", default=False)
 parser.add_argument("--skip-save", action='store_true', help="do not save indiviual samples. For speed measurements.", default=False)
+parser.add_argument("--grid-format", type=str, help="png for lossless png files; jpg:quality for lossy jpeg; webp:quality for lossy webp, or webp:-compression for lossless webp", default="jpg:95")
 parser.add_argument("--n_rows", type=int, default=-1, help="rows in the grid; use -1 for autodetect and 0 for n_rows to be same as batch_size (default: -1)",)
 parser.add_argument("--config", type=str, default="configs/stable-diffusion/v1-inference.yaml", help="path to config which constructs model",)
 parser.add_argument("--ckpt", type=str, default="models/ldm/stable-diffusion-v1/model.ckpt", help="path to checkpoint of model",)
@@ -83,6 +84,26 @@ invalid_filename_chars = '<>:"/\|?*\n'
 GFPGAN_dir = opt.gfpgan_dir
 RealESRGAN_dir = opt.realesrgan_dir
 
+
+
+# should probably be moved to a settings menu in the UI at some point
+grid_format = [s.lower() for s in 'webp:-50'.split(':')]
+grid_lossless = False
+grid_quality = 100
+if grid_format[0] == 'png':
+    grid_ext = 'png'
+    grid_format = 'png'
+elif grid_format[0] in ['jpg', 'jpeg']:
+    grid_quality = int(grid_format[1]) if len(grid_format) > 1 else 100
+    grid_ext = 'jpg'
+    grid_format = 'jpeg'
+elif grid_format[0] == 'webp':
+    grid_quality = int(grid_format[1]) if len(grid_format) > 1 else 100
+    grid_ext = 'webp'
+    grid_format = 'webp'
+    if grid_quality < 0: # e.g. webp:-100 for lossless mode
+        grid_lossless = True
+        grid_quality = abs(grid_quality)
 
 
 def chunk(it, size):
@@ -769,8 +790,8 @@ skip_grid, sort_samples, sampler_name, ddim_eta, n_iter, batch_size, i, denoisin
                 grid = image_grid(output_images, batch_size)
 
             grid_count = get_next_sequence_number(outpath, 'grid-')
-            grid_file = f"grid-{grid_count:05}-{seed}_{prompts[i].replace(' ', '_').translate({ord(x): '' for x in invalid_filename_chars})[:128]}.jpg"
-            grid.save(os.path.join(outpath, grid_file), 'jpeg', quality=100, optimize=True)
+            grid_file = f"grid-{grid_count:05}-{seed}_{prompts[i].replace(' ', '_').translate({ord(x): '' for x in invalid_filename_chars})[:128]}.{grid_ext}"
+            grid.save(os.path.join(outpath, grid_file), grid_format, quality=grid_quality, lossless=grid_lossless, optimize=True)
 
         if opt.optimized:
             mem = torch.cuda.memory_allocated()/1e6
@@ -815,7 +836,7 @@ def txt2img(prompt: str, ddim_steps: int, sampler_name: str, toggles: List[int],
     write_info_files = 5 in toggles
     jpg_sample = 6 in toggles
     use_GFPGAN = 7 in toggles
-    use_RealESRGAN = 8 in toggles
+    use_RealESRGAN = 7 in toggles if GFPGAN is None else 8 in toggles # possible index shift
 
     if sampler_name == 'PLMS':
         sampler = PLMSSampler(model)
@@ -943,7 +964,7 @@ def img2img(prompt: str, image_editor_mode: str, init_info, mask_mode: str, mask
     write_info_files = 7 in toggles
     jpg_sample = 8 in toggles
     use_GFPGAN = 9 in toggles
-    use_RealESRGAN = 10 in toggles
+    use_RealESRGAN = 9 in toggles if GFPGAN is None else 10 in toggles # possible index shift
 
     if sampler_name == 'DDIM':
         sampler = DDIMSampler(model)
@@ -1080,8 +1101,8 @@ def img2img(prompt: str, image_editor_mode: str, init_info, mask_mode: str, mask
             if not skip_grid:
                 grid_count = get_next_sequence_number(outpath, 'grid-')
                 grid = image_grid(history, batch_size, force_n_rows=1)
-                grid_file = f"grid-{grid_count:05}-{seed}_{prompt.replace(' ', '_').translate({ord(x): '' for x in invalid_filename_chars})[:128]}.jpg"
-                grid.save(os.path.join(outpath, grid_file), 'jpeg', quality=100, optimize=True)
+                grid_file = f"grid-{grid_count:05}-{seed}_{prompt.replace(' ', '_').translate({ord(x): '' for x in invalid_filename_chars})[:128]}.{grid_ext}"
+                grid.save(os.path.join(outpath, grid_file), grid_format, quality=grid_quality, lossless=grid_lossless, optimize=True)
 
 
             output_images = history
