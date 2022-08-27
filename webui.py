@@ -780,40 +780,54 @@ def process_images(
 
                 x_sample = 255. * rearrange(x_sample.cpu().numpy(), 'c h w -> h w c')
                 x_sample = x_sample.astype(np.uint8)
-
-                if use_GFPGAN and GFPGAN is not None and use_GoBIG is None:
+                original_sample = x_sample
+                original_filename = filename
+                if use_GFPGAN and GFPGAN is not None and not use_RealESRGAN:
                     torch_gc()
-                    original_sample = x_sample
-                    original_filename = filename
                     cropped_faces, restored_faces, restored_img = GFPGAN.enhance(x_sample[:,:,::-1], has_aligned=False, only_center_face=False, paste_back=True)
-                    x_sample = restored_img[:,:,::-1]
-                    image = Image.fromarray(x_sample)
-                    filename = filename + '-gfpgan'
-                    save_sample(image, sample_path_i, filename, jpg_sample, prompts, seeds, width, height, steps, cfg_scale, 
+                    gfpgan_sample = restored_img[:,:,::-1]
+                    image = Image.fromarray(gfpgan_sample)
+                    gfpgan_filename = original_filename + '-gfpgan'
+                    save_sample(image, sample_path_i, gfpgan_filename, jpg_sample, prompts, seeds, width, height, steps, cfg_scale, 
 normalize_prompt_weights, use_GFPGAN, write_info_files, prompt_matrix, init_img, uses_loopback, uses_random_seed_loopback, skip_save,
 skip_grid, sort_samples, sampler_name, ddim_eta, n_iter, batch_size, i, denoising_strength, resize_mode)
-                    filename = original_filename
                     x_sample = original_sample
 
-                if use_RealESRGAN and RealESRGAN is not None:
+                if use_RealESRGAN and RealESRGAN is not None and not use_GFPGAN:
                     torch_gc()
-                    original_sample = x_sample
-                    original_filename = filename
                     if RealESRGAN.model.name != realesrgan_model_name:
                         try_loading_RealESRGAN(realesrgan_model_name)
                     output, img_mode = RealESRGAN.enhance(x_sample[:,:,::-1])
-                    x_sample = output[:,:,::-1]
-                    image = Image.fromarray(x_sample)
-                    filename = filename + '-esrgan4x'
-                    save_sample(image, sample_path_i, filename, jpg_sample, prompts, seeds, width, height, steps, cfg_scale, 
+                    esrgan_filename = original_filename + '-esrgan4x'
+                    esrgan_sample = output[:,:,::-1]
+                    image = Image.fromarray(esrgan_sample)
+                    save_sample(image, sample_path_i, esrgan_filename, jpg_sample, prompts, seeds, width, height, steps, cfg_scale, 
 normalize_prompt_weights, use_GFPGAN, write_info_files, prompt_matrix, init_img, uses_loopback, uses_random_seed_loopback, skip_save,
 skip_grid, sort_samples, sampler_name, ddim_eta, n_iter, batch_size, i, denoising_strength, resize_mode)
-                    filename = original_filename
+                    x_sample = original_sample
+
+                if use_RealESRGAN and RealESRGAN is not None and use_GFPGAN and GFPGAN is not None:
+                    torch_gc()
+                    cropped_faces, restored_faces, restored_img = GFPGAN.enhance(x_sample[:,:,::-1], has_aligned=False, only_center_face=False, paste_back=True)
+                    gfpgan_sample = restored_img[:,:,::-1]
+                    if RealESRGAN.model.name != realesrgan_model_name:
+                        try_loading_RealESRGAN(realesrgan_model_name)
+                    output, img_mode = RealESRGAN.enhance(gfpgan_sample[:,:,::-1])
+                    esrgan_filename = original_filename + '-gfpgan-esrgan4x'
+                    esrgan_sample = output[:,:,::-1]
+                    image = Image.fromarray(esrgan_sample)
+                    save_sample(image, sample_path_i, esrgan_filename, jpg_sample, prompts, seeds, width, height, steps, cfg_scale, 
+normalize_prompt_weights, use_GFPGAN, write_info_files, prompt_matrix, init_img, uses_loopback, uses_random_seed_loopback, skip_save,
+skip_grid, sort_samples, sampler_name, ddim_eta, n_iter, batch_size, i, denoising_strength, resize_mode)
                     x_sample = original_sample
                 
                 if use_GoBIG and RealESRGAN is not None:
-                    original_sample = x_sample
-                    original_filename = filename
+                    if use_GFPGAN:
+                        x_sample = gfpgan_sample
+                        original_sample = gfpgan_sample
+                    else:
+                        original_sample = x_sample
+                        original_filename = filename
                     def addalpha(im, mask):
                         imr, img, imb, ima = im.split()
                         mmr, mmg, mmb, mma = mask.split()
@@ -1129,7 +1143,7 @@ def txt2img(prompt: str, ddim_steps: int, sampler_name: str, toggles: List[int],
     jpg_sample = 6 in toggles
     use_GoBIG = 7 in toggles
     use_GFPGAN = 8 in toggles
-    use_RealESRGAN = 8 in toggles if GFPGAN is None else 9 in toggles # possible index shift
+    use_RealESRGAN = 9 in toggles # possible index shift
     
     if sampler_name == 'PLMS':
         sampler = PLMSSampler(model)
@@ -1259,7 +1273,7 @@ def img2img(prompt: str, image_editor_mode: str, init_info, mask_mode: str, mask
     jpg_sample = 8 in toggles
     use_GoBIG = 9 in toggles
     use_GFPGAN = 10 in toggles
-    use_RealESRGAN = 11 in toggles if GFPGAN is None else 10 in toggles # possible index shift
+    use_RealESRGAN = 11 in toggles
 
     if sampler_name == 'DDIM':
         sampler = DDIMSampler(model)
