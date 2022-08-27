@@ -1352,7 +1352,7 @@ css_hide_progressbar = """
 """
 
 styling = """
-[data-testid="image"] {min-height: 512px !important};
+[data-testid="image"] {min-height: 512px !important}
 * #body>.col:nth-child(2){width:250%;max-width:89vw}
 #generate{width: 100%; }
 #prompt_row input{
