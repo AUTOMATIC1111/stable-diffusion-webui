@@ -384,7 +384,7 @@ def image_grid(imgs, batch_size, force_n_rows=None, captions=None):
         if captions:
             d = ImageDraw.Draw( grid )
             size = d.textbbox( (0,0), captions[i], font=fnt, stroke_width=2, align="center" )
-            d.multiline_text((i % cols * w + w/2, i // cols * h + h - size[3]), captions[i], font=fnt, fill=(255,0,255), stroke_width=2, stroke_fill=(0,0,0), anchor="mm", align="center")
+            d.multiline_text((i % cols * w + w/2, i // cols * h + h - size[3]), captions[i], font=fnt, fill=(255,255,255), stroke_width=2, stroke_fill=(0,0,0), anchor="mm", align="center")
 
     return grid
 
