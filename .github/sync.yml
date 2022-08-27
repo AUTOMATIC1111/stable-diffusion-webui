@@ -7,3 +7,5 @@ hlky/stable-diffusion:
     dest: txt2img.yaml
   - source: webui.yaml
     dest: configs/webui/webui.yaml
+  - source: readme.md
+    dest: readme.md
