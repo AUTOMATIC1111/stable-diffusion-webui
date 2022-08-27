@@ -1361,7 +1361,7 @@ styling = """
 }
 """
 
-css = styleing if opt.no_progressbar_hiding else css + css_hide_progressbar
+css = styling if opt.no_progressbar_hiding else styling + css_hide_progressbar
 
 with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion WebUI") as demo:
     with gr.Tabs(elem_id='tabss') as tabs:
