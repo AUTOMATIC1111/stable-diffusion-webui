@@ -707,7 +707,10 @@ def process_images(
                 base_count += 1
 
         if (prompt_matrix or not skip_grid) and not do_not_save_grid:
-            grid = image_grid(output_images, batch_size, force_n_rows=1 << ((len(prompt_matrix_parts)-1)//2))
+            if prompt_matrix:
+                grid = image_grid(output_images, batch_size, force_n_rows=1 << ((len(prompt_matrix_parts)-1)//2))
+            else:
+                grid = image_grid(output_images, batch_size)
 
             if prompt_matrix:
                 try:
