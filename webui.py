@@ -312,7 +312,9 @@ if opt.optimized:
     modelFS = instantiate_from_config(config.modelFirstStage)
     _, _ = modelFS.load_state_dict(sd, strict=False)
     modelFS.eval()
-    del sd
+    device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+    model = model if opt.no_half else model.half()
+    modelCS = modelCS if opt.no_half else modelCS.half()
 else:
     config = OmegaConf.load("configs/stable-diffusion/v1-inference.yaml")
     model = load_model_from_config(config, "models/ldm/stable-diffusion-v1/model.ckpt")
