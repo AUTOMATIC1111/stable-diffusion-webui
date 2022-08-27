@@ -148,7 +148,7 @@ def copy_img_to_input(selected=1, imgs = []):
         idx = int(0 if selected - 1 < 0 else selected - 1)
         image_data = re.sub('^data:image/.+;base64,', '', imgs[idx])
         processed_image = Image.open(BytesIO(base64.b64decode(image_data)))
-        update = gr.update(selected='Stable Diffusion Image-to-Image Unified')
+        update = gr.update(selected='img2img_tab')
         return [processed_image, processed_image, update]
     except IndexError:
         return [None, None]
@@ -189,8 +189,9 @@ styling = """
 
 """
 with gr.Blocks(css=styling, analytics_enabled=False, title="Stable Diffusion WebUI") as demo:
+    gr.Markdown('# Stable diffusion webui')
     with gr.Tabs(elem_id='tabss') as tabs:
-        with gr.TabItem("Stable Diffusion Text-to-Image Unified"):
+        with gr.TabItem("txt2img", id="txt2img_tab"):
             with gr.Row(elem_id="prompt_row"):
                 txt2img_prompt = gr.Textbox(label="Prompt", 
                 elem_id='prompt_input',
@@ -246,7 +247,7 @@ with gr.Blocks(css=styling, analytics_enabled=False, title="Stable Diffusion Web
                 [output_txt2img_gallery, output_txt2img_seed, output_txt2img_params, output_txt2img_stats]
             )
 
-        with gr.TabItem("Stable Diffusion Image-to-Image Unified"):
+        with gr.TabItem("img2img with inpainting", id="img2img_tab"):
             with gr.Row(elem_id="prompt_row"):
                 img2img_prompt = gr.Textbox(label="Prompt", 
                 elem_id='img2img_prompt_input',
