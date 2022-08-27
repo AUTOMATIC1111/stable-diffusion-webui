@@ -767,11 +767,11 @@ def process_images(
                     sanitized_prompt = sanitized_prompt[:128] #200 is too long
                     sample_path_i = os.path.join(sample_path, sanitized_prompt)
                     os.makedirs(sample_path_i, exist_ok=True)
-                    base_count = len([x for x in os.listdir(sample_path_i) if x.endswith(('.png', '.jpg'))]) - 1 # start at 0
+                    base_count = get_next_sequence_number(sample_path_i)
                     filename = f"{base_count:05}-{steps}_{sampler_name}_{seeds[i]}"
                 else:
                     sample_path_i = sample_path
-                    base_count = len([x for x in os.listdir(sample_path_i) if x.endswith(('.png', '.jpg'))]) - 1 # start at 0
+                    base_count = get_next_sequence_number(sample_path_i)
                     sanitized_prompt = sanitized_prompt
                     filename = f"{base_count:05}-{steps}_{sampler_name}_{seeds[i]}_{sanitized_prompt}"[:128] #same as before
 
