@@ -1,3 +1,7 @@
+### [MAIN REPO](https://github.com/hlky/stable-diffusion)
+
+## This repo is for development, there may be bugs and new features
+
 Features:
 
 * Gradio GUI: Idiot-proof, fully featured frontend for both txt2img and img2img generation
