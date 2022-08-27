@@ -19,7 +19,7 @@ parser.add_argument("--no-verify-input", action='store_true', help="do not verif
 parser.add_argument("--no-half", action='store_true', help="do not switch the model to 16-bit floats", default=False)
 parser.add_argument("--no-progressbar-hiding", action='store_true', help="do not hide progressbar in gradio UI (we hide it because it slows down ML if you have hardware accleration in browser)", default=False)
 parser.add_argument("--defaults", type=str, help="path to configuration file providing UI defaults, uses same format as cli parameter", default='configs/webui/webui.yaml')
-parser.add_argument("--gpu", type=int, help="choose which GPU to use if you have multiple", default=0)
+parser.add_argument("--gpu", type=int, help="choose which GPU to use if you have multiple", default=int(os.environ.get('CUDA_VISIBLE_DEVICES', 0)))
 parser.add_argument("--extra-models-cpu", action='store_true', help="run extra models (GFGPAN/ESRGAN) on cpu", default=False)
 parser.add_argument("--esrgan-cpu", action='store_true', help="run ESRGAN on cpu", default=False)
 parser.add_argument("--gfpgan-cpu", action='store_true', help="run GFPGAN on cpu", default=False)
