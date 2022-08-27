@@ -253,7 +253,7 @@ def load_RealESRGAN(model_name: str):
         instance = RealESRGANer(scale=2, model_path=model_path, model=RealESRGAN_models[model_name], pre_pad=0, half=not opt.no_half)
         instance.model.name = model_name
         instance.device = torch.device(f'cuda:{opt.gpu}') # another way to set gpu device
-    
+
     return instance
 
 GFPGAN = None
@@ -352,9 +352,9 @@ def seed_to_int(s):
     if type(s) is int:
         return s
     if s is None or s == '':
-        return random.randint(0,2**32)
-    n = abs(int(s) if s.isdigit() else hash(s))
-    while n > 2**32:
+        return random.randint(0, 2**32 - 1)
+    n = abs(int(s) if s.isdigit() else random.Random(s).randint(0, 2**32 - 1))
+    while n >= 2**32:
         n = n >> 32
     return n
 
@@ -492,7 +492,7 @@ def process_images(
         outpath, func_init, func_sample, prompt, seed, sampler_name, skip_grid, skip_save, batch_size,
         n_iter, steps, cfg_scale, width, height, prompt_matrix, use_GFPGAN, use_RealESRGAN, realesrgan_model_name,
         fp, ddim_eta=0.0, do_not_save_grid=False, normalize_prompt_weights=True, init_img=None, init_mask=None,
-        keep_mask=False, denoising_strength=0.75, resize_mode=None, uses_loopback=False,
+        keep_mask=False, mask_blur_strength=3, denoising_strength=0.75, resize_mode=None, uses_loopback=False,
         uses_random_seed_loopback=False, sort_samples=True, write_info_files=True, jpg_sample=False):
     """this is the main loop that both txt2img and img2img use; it calls func_init once inside all the scopes and func_sample once per batch"""
     assert prompt is not None
@@ -510,7 +510,7 @@ def process_images(
 
     sample_path = os.path.join(outpath, "samples")
     os.makedirs(sample_path, exist_ok=True)
-    grid_count = len(os.listdir(outpath)) - 1
+    grid_count = len([_ for x in os.listdir() if x.endswith(('.png', '.jpg'))]) - 1 # start at 0
 
     comments = []
 
@@ -618,7 +618,7 @@ def process_images(
                 image = Image.fromarray(x_sample)
                 if init_mask:
                     #init_mask = init_mask if keep_mask else ImageOps.invert(init_mask)
-                    init_mask = init_mask.filter(ImageFilter.GaussianBlur(3))
+                    init_mask = init_mask.filter(ImageFilter.GaussianBlur(mask_blur_strength))
                     init_mask = init_mask.convert('L')
                     init_img = init_img.convert('RGB')
                     image = image.convert('RGB')
@@ -641,11 +641,11 @@ def process_images(
                     sanitized_prompt = sanitized_prompt[:128] #200 is too long
                     sample_path_i = os.path.join(sample_path, sanitized_prompt)
                     os.makedirs(sample_path_i, exist_ok=True)
-                    base_count = len(os.listdir(sample_path_i))
+                    base_count = len([_ for x in os.listdir() if x.endswith(('.png', '.jpg'))]) - 1 # start at 0
                     filename = f"{base_count:05}-{seeds[i]}"
                 else:
                     sample_path_i = sample_path
-                    base_count = len(os.listdir(sample_path_i))
+                    base_count = len([_ for x in os.listdir() if x.endswith(('.png', '.jpg'))]) - 1 # start at 0
                     sanitized_prompt = sanitized_prompt
                     filename = f"{base_count:05}-{seeds[i]}_{sanitized_prompt}"[:128] #same as before
                 if not skip_save:
@@ -879,7 +879,7 @@ class Flagging(gr.FlaggingCallback):
         print("Logged:", filenames[0])
 
 
-def img2img(prompt: str, image_editor_mode: str, init_info, mask_mode: str, ddim_steps: int, sampler_name: str,
+def img2img(prompt: str, image_editor_mode: str, init_info, mask_mode: str, mask_blur_strength: int, ddim_steps: int, sampler_name: str,
             toggles: List[int], realesrgan_model_name: str, n_iter: int, batch_size: int, cfg_scale: float, denoising_strength: float,
             seed: int, height: int, width: int, resize_mode: int, fp):
     outpath = opt.outdir_img2img or opt.outdir or "outputs/img2img-samples"
@@ -1009,6 +1009,7 @@ def img2img(prompt: str, image_editor_mode: str, init_info, mask_mode: str, ddim
                     init_img=init_img,
                     init_mask=init_mask,
                     keep_mask=keep_mask,
+                    mask_blur_strength=mask_blur_strength,
                     denoising_strength=denoising_strength,
                     resize_mode=resize_mode,
                     uses_loopback=loopback,
@@ -1030,7 +1031,7 @@ def img2img(prompt: str, image_editor_mode: str, init_info, mask_mode: str, ddim
                 history.append(init_img)
 
             if not skip_grid:
-                grid_count = len(os.listdir(outpath)) - 1
+                grid_count = len([_ for x in os.listdir() if x.endswith(('.png', '.jpg'))]) - 1 # start at 0
                 grid = image_grid(history, batch_size, force_n_rows=1)
                 grid_file = f"grid-{grid_count:05}-{seed}_{prompt.replace(' ', '_').translate({ord(x): '' for x in invalid_filename_chars})[:128]}.jpg"
                 grid.save(os.path.join(outpath, grid_file), 'jpeg', quality=100, optimize=True)
@@ -1064,6 +1065,7 @@ def img2img(prompt: str, image_editor_mode: str, init_info, mask_mode: str, ddim
                 init_img=init_img,
                 init_mask=init_mask,
                 keep_mask=keep_mask,
+                mask_blur_strength=mask_blur_strength,
                 denoising_strength=denoising_strength,
                 resize_mode=resize_mode,
                 uses_loopback=loopback,
@@ -1258,8 +1260,8 @@ img2img_image_mode = 'sketch'
 
 def change_image_editor_mode(choice, cropped_image, resize_mode, width, height):
     if choice == "Mask":
-        return [gr.update(visible=False), gr.update(visible=True), gr.update(visible=False), gr.update(visible=True)]
-    return [gr.update(visible=True), gr.update(visible=False), gr.update(visible=True), gr.update(visible=False)]
+        return [gr.update(visible=False), gr.update(visible=True), gr.update(visible=False), gr.update(visible=True), gr.update(visible=False), gr.update(visible=False), gr.update(visible=True), gr.update(visible=True)]
+    return [gr.update(visible=True), gr.update(visible=False), gr.update(visible=True), gr.update(visible=False), gr.update(visible=True), gr.update(visible=True), gr.update(visible=False), gr.update(visible=False)]
 
 def update_image_mask(cropped_image, resize_mode, width, height):
     resized_cropped_image = resize_image(resize_mode, cropped_image, width, height) if cropped_image else None
@@ -1273,6 +1275,28 @@ def copy_img_to_input(selected=1, imgs = []):
         return [processed_image, processed_image]
     except IndexError:
         return [None, None]
+
+help_text = """
+    ## Mask/Crop
+    * The masking/cropping is very temperamental.
+    * It may take some time for the image to show when switching from Crop to Mask.
+    * If the image doesn't appear after switching to Mask, switch back to Crop and then back again to Mask
+    * If the mask appears distorted (the brush is weirdly shaped instead of round), switch back to Crop and then back again to Mask.
+
+    ## Advanced Editor
+    * For now the button needs to be clicked twice the first time.
+    * Once you have edited your image, you _need_ to click the save button for the next step to work.
+    * Clear the image from the crop editor (click the x)
+    * Click "Get Image from Advanced Editor" to get the image you saved. If it doesn't work, try opening the editor and saving again.
+
+    If it keeps not working, try switching modes again, switch tabs, clear the image or reload.
+"""
+
+def show_help():
+    return [gr.update(visible=False), gr.update(visible=True), gr.update(value=help_text)]
+
+def hide_help():
+    return [gr.update(visible=True), gr.update(visible=False), gr.update(value="")]
 
 with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion WebUI") as demo:
     with gr.Tabs():
@@ -1314,19 +1338,16 @@ with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion WebUI")
                     gr.Markdown("Generate images from images with Stable Diffusion")
                     img2img_prompt = gr.Textbox(label="Prompt", placeholder="A fantasy landscape, trending on artstation.", lines=1, value=img2img_defaults['prompt'])
                     img2img_image_editor_mode = gr.Radio(choices=["Mask", "Crop"], label="Image Editor Mode", value="Crop")
-                    gr.Markdown(
-                        """
-                            The masking/cropping is very temperamental.
-                            It may take some time for the image to show when switching from Crop to Mask.
-                            * If the image doesn't appear after switching to Mask, switch back to Crop and then back again to Mask
-                            * If the mask appears distorted (the brush is weirdly shaped instead of round), switch back to Crop and then back again to Mask.
-
-                            If it keeps not working, try switching modes again, switch tabs, clear the image or reload.
-                        """
-                    )
+                    img2img_show_help_btn = gr.Button("Show Hints")
+                    img2img_hide_help_btn = gr.Button("Hide Hints", visible=False)
+                    img2img_help = gr.Markdown(visible=False, value="")
+                    with gr.Row():
+                        img2img_painterro_btn = gr.Button("Advanced Editor")
+                        img2img_copy_from_painterro_btn = gr.Button(value="Get Image from Advanced Editor")
                     img2img_image_editor = gr.Image(value=sample_img2img, source="upload", interactive=True, type="pil", tool="select")
                     img2img_image_mask = gr.Image(value=sample_img2img, source="upload", interactive=True, type="pil", tool="sketch", visible=False)
-                    img2img_mask = gr.Radio(choices=["Keep masked area", "Regenerate only masked area"], label="Mask Mode", type="index", value=img2img_mask_modes[img2img_defaults['mask_mode']])
+                    img2img_mask = gr.Radio(choices=["Keep masked area", "Regenerate only masked area"], label="Mask Mode", type="index", value=img2img_mask_modes[img2img_defaults['mask_mode']], visible=False)
+                    img2img_mask_blur_strength = gr.Slider(minimum=1, maximum=10, step=1, label="How much blurry should the mask be? (to avoid hard edges)", value=3, visible=False)
                     img2img_steps = gr.Slider(minimum=1, maximum=250, step=1, label="Sampling Steps", value=img2img_defaults['ddim_steps'])
                     img2img_sampling = gr.Radio(label='Sampling method (k_lms is default k-diffusion sampler)', choices=["DDIM", 'k_dpm_2_a', 'k_dpm_2', 'k_euler_a', 'k_euler', 'k_heun', 'k_lms'], value=img2img_defaults['sampler_name'])
                     img2img_toggles = gr.CheckboxGroup(label='', choices=img2img_toggles, value=img2img_toggle_defaults, type="index")
@@ -1340,8 +1361,8 @@ with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion WebUI")
                     img2img_width = gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=img2img_defaults["width"])
                     img2img_resize = gr.Radio(label="Resize mode", choices=["Just resize", "Crop and resize", "Resize and fill"], type="index", value=img2img_resize_modes[img2img_defaults['resize_mode']])
                     img2img_embeddings = gr.File(label = "Embeddings file for textual inversion", visible=hasattr(model, "embedding_manager"))
-                    img2img_btn_mask = gr.Button("Generate", visible=False)
-                    img2img_btn_editor = gr.Button("Generate")
+                    img2img_btn_mask = gr.Button("Generate", visible=False).style(full_width=True)
+                    img2img_btn_editor = gr.Button("Generate").style(full_width=True)
                 with gr.Column():
                     output_img2img_gallery = gr.Gallery(label="Images")
                     output_img2img_select_image = gr.Number(label='Select image number from results for copying', value=1, precision=None)
@@ -1354,13 +1375,25 @@ with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion WebUI")
             img2img_image_editor_mode.change(
                 change_image_editor_mode,
                 [img2img_image_editor_mode, img2img_image_editor, img2img_resize, img2img_width, img2img_height],
-                [img2img_image_editor, img2img_image_mask, img2img_btn_editor, img2img_btn_mask]
+                [img2img_image_editor, img2img_image_mask, img2img_btn_editor, img2img_btn_mask, img2img_painterro_btn, img2img_copy_from_painterro_btn, img2img_mask, img2img_mask_blur_strength]
             )
 
             img2img_image_editor.edit(
                 update_image_mask,
                 [img2img_image_editor, img2img_resize, img2img_width, img2img_height],
                 img2img_image_mask
+            )
+
+            img2img_show_help_btn.click(
+                show_help,
+                None,
+                [img2img_show_help_btn, img2img_hide_help_btn, img2img_help]
+            )
+
+            img2img_hide_help_btn.click(
+                hide_help,
+                None,
+                [img2img_show_help_btn, img2img_hide_help_btn, img2img_help]
             )
 
             output_img2img_copy_to_input_btn.click(
@@ -1377,15 +1410,40 @@ with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion WebUI")
 
             img2img_btn_mask.click(
                 img2img,
-                [img2img_prompt, img2img_image_editor_mode, img2img_image_mask, img2img_mask, img2img_steps, img2img_sampling, img2img_toggles, img2img_realesrgan_model_name, img2img_batch_count, img2img_batch_size, img2img_cfg, img2img_denoising, img2img_seed, img2img_height, img2img_width, img2img_resize, img2img_embeddings],
+                [img2img_prompt, img2img_image_editor_mode, img2img_image_mask, img2img_mask, img2img_mask_blur_strength, img2img_steps, img2img_sampling, img2img_toggles, img2img_realesrgan_model_name, img2img_batch_count, img2img_batch_size, img2img_cfg, img2img_denoising, img2img_seed, img2img_height, img2img_width, img2img_resize, img2img_embeddings],
                 [output_img2img_gallery, output_img2img_seed, output_img2img_params, output_img2img_stats]
             )
 
             img2img_btn_editor.click(
                 img2img,
-                [img2img_prompt, img2img_image_editor_mode, img2img_image_editor, img2img_mask, img2img_steps, img2img_sampling, img2img_toggles, img2img_realesrgan_model_name, img2img_batch_count, img2img_batch_size, img2img_cfg, img2img_denoising, img2img_seed, img2img_height, img2img_width, img2img_resize, img2img_embeddings],
+                [img2img_prompt, img2img_image_editor_mode, img2img_image_editor, img2img_mask, img2img_mask_blur_strength, img2img_steps, img2img_sampling, img2img_toggles, img2img_realesrgan_model_name, img2img_batch_count, img2img_batch_size, img2img_cfg, img2img_denoising, img2img_seed, img2img_height, img2img_width, img2img_resize, img2img_embeddings],
                 [output_img2img_gallery, output_img2img_seed, output_img2img_params, output_img2img_stats]
             )
+
+            img2img_painterro_btn.click(None, [img2img_image_editor], None, _js="""(img) => {
+                try {
+                    Painterro({
+                        hiddenTools: ['arrow'],
+                        saveHandler: function (image, done) {
+                            localStorage.setItem('painterro-image', image.asDataURL());
+                            done(true);
+                        },
+                    }).show(Array.isArray(img) ? img[0] : img);
+                } catch(e) {
+                    const script = document.createElement('script');
+                    script.src = 'https://unpkg.com/painterro@1.2.78/build/painterro.min.js';
+                    document.head.appendChild(script);
+                    const style = document.createElement('style');
+                    style.appendChild(document.createTextNode('.ptro-holder-wrapper { z-index: 9999 !important; }'));
+                    document.head.appendChild(style);
+                }
+                return [];
+            }""")
+
+            img2img_copy_from_painterro_btn.click(None, None, [img2img_image_editor, img2img_image_mask], _js="""() => {
+                const image = localStorage.getItem('painterro-image')
+                return [image, image];
+            }""")
 
         if GFPGAN is not None:
             gfpgan_defaults = {
