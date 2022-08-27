@@ -487,6 +487,64 @@ def check_prompt_length(prompt, comments):
 
     comments.append(f"Warning: too many input tokens; some ({len(overflowing_words)}) have been truncated:\n{overflowing_text}\n")
 
+def save_sample(image, sample_path_i, filename, jpg_sample, prompts, seeds, width, height, steps, cfg_scale, 
+normalize_prompt_weights, use_GFPGAN, write_info_files, prompt_matrix, init_img, uses_loopback, uses_random_seed_loopback, skip_save,
+skip_grid, sort_samples, sampler_name, ddim_eta, n_iter, batch_size, i, denoising_strength, resize_mode):
+    filename_i = os.path.join(sample_path_i, filename)
+    if not jpg_sample:
+        if opt.save_metadata:
+            metadata = PngInfo()
+            metadata.add_text("SD:prompt", prompts[i])
+            metadata.add_text("SD:seed", str(seeds[i]))
+            metadata.add_text("SD:width", str(width))
+            metadata.add_text("SD:height", str(height))
+            metadata.add_text("SD:steps", str(steps))
+            metadata.add_text("SD:cfg_scale", str(cfg_scale))
+            metadata.add_text("SD:normalize_prompt_weights", str(normalize_prompt_weights))
+            metadata.add_text("SD:GFPGAN", str(use_GFPGAN and GFPGAN is not None))
+            image.save(f"{filename_i}.png", pnginfo=metadata)
+        else:
+            image.save(f"{filename_i}.png")
+    else:
+        image.save(f"{filename_i}.jpg", 'jpeg', quality=100, optimize=True)
+    if write_info_files:
+        # toggles differ for txt2img vs. img2img:
+        offset = 0 if init_img is None else 2
+        toggles = []
+        if prompt_matrix:
+            toggles.append(0)
+        if normalize_prompt_weights:
+            toggles.append(1)
+        if init_img is not None:
+            if uses_loopback:
+                toggles.append(2)
+            if uses_random_seed_loopback:
+                toggles.append(3)
+        if not skip_save:
+            toggles.append(2 + offset)
+        if not skip_grid:
+            toggles.append(3 + offset)
+        if sort_samples:
+            toggles.append(4 + offset)
+        if write_info_files:
+            toggles.append(5 + offset)
+        if use_GFPGAN:
+            toggles.append(6 + offset)
+        info_dict = dict(
+            target="txt2img" if init_img is None else "img2img",
+            prompt=prompts[i], ddim_steps=steps, toggles=toggles, sampler_name=sampler_name,
+            ddim_eta=ddim_eta, n_iter=n_iter, batch_size=batch_size, cfg_scale=cfg_scale,
+            seed=seed, width=width, height=height
+        )
+        if init_img is not None:
+            # Not yet any use for these, but they bloat up the files:
+            #info_dict["init_img"] = init_img
+            #info_dict["init_mask"] = init_mask
+            info_dict["denoising_strength"] = denoising_strength
+            info_dict["resize_mode"] = resize_mode
+        with open(f"{filename_i}.yaml", "w", encoding="utf8") as f:
+            yaml.dump(info_dict, f)
+
 
 def get_next_sequence_number(path, prefix=''):
     """
@@ -617,24 +675,56 @@ def process_images(
             if opt.optimized:
                 modelFS.to(device)
 
+            
+
             x_samples_ddim = (model if not opt.optimized else modelFS).decode_first_stage(samples_ddim)
             x_samples_ddim = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
             for i, x_sample in enumerate(x_samples_ddim):
+                sanitized_prompt = prompts[i].replace(' ', '_').translate({ord(x): '' for x in invalid_filename_chars})
+                if sort_samples:
+                    sanitized_prompt = sanitized_prompt[:128] #200 is too long
+                    sample_path_i = os.path.join(sample_path, sanitized_prompt)
+                    os.makedirs(sample_path_i, exist_ok=True)
+                    base_count = len([x for x in os.listdir(sample_path_i) if x.endswith(('.png', '.jpg'))]) - 1 # start at 0
+                    filename = f"{base_count:05}-{seeds[i]}"
+                else:
+                    sample_path_i = sample_path
+                    base_count = len([x for x in os.listdir(sample_path_i) if x.endswith(('.png', '.jpg'))]) - 1 # start at 0
+                    sanitized_prompt = sanitized_prompt
+                    filename = f"{base_count:05}-{seeds[i]}_{sanitized_prompt}"[:128] #same as before
+
                 x_sample = 255. * rearrange(x_sample.cpu().numpy(), 'c h w -> h w c')
                 x_sample = x_sample.astype(np.uint8)
 
                 if use_GFPGAN and GFPGAN is not None:
                     torch_gc()
+                    original_sample = x_sample
+                    original_filename = filename
                     cropped_faces, restored_faces, restored_img = GFPGAN.enhance(x_sample[:,:,::-1], has_aligned=False, only_center_face=False, paste_back=True)
                     x_sample = restored_img[:,:,::-1]
+                    image = Image.fromarray(x_sample)
+                    filename = filename + '-gfpgan'
+                    save_sample(image, sample_path_i, filename, jpg_sample, prompts, seeds, width, height, steps, cfg_scale, 
+normalize_prompt_weights, use_GFPGAN, write_info_files, prompt_matrix, init_img, uses_loopback, uses_random_seed_loopback, skip_save,
+skip_grid, sort_samples, sampler_name, ddim_eta, n_iter, batch_size, i, denoising_strength, resize_mode)
+                    filename = original_filename
+                    x_sample = original_sample
 
                 if use_RealESRGAN and RealESRGAN is not None:
                     torch_gc()
+                    original_sample = x_sample
+                    original_filename = filename
                     if RealESRGAN.model.name != realesrgan_model_name:
                         try_loading_RealESRGAN(realesrgan_model_name)
-
                     output, img_mode = RealESRGAN.enhance(x_sample[:,:,::-1])
                     x_sample = output[:,:,::-1]
+                    image = Image.fromarray(x_sample)
+                    filename = filename + '-esrgan'
+                    save_sample(image, sample_path_i, filename, jpg_sample, prompts, seeds, width, height, steps, cfg_scale, 
+normalize_prompt_weights, use_GFPGAN, write_info_files, prompt_matrix, init_img, uses_loopback, uses_random_seed_loopback, skip_save,
+skip_grid, sort_samples, sampler_name, ddim_eta, n_iter, batch_size, i, denoising_strength, resize_mode)
+                    filename = original_filename
+                    x_sample = original_sample
 
                 image = Image.fromarray(x_sample)
                 if init_mask:
@@ -656,74 +746,10 @@ def process_images(
                         init_mask = init_mask.convert('L')
 
                     image = Image.composite(init_img, image, init_mask)
-
-                sanitized_prompt = prompts[i].replace(' ', '_').translate({ord(x): '' for x in invalid_filename_chars})
-                if sort_samples:
-                    sanitized_prompt = sanitized_prompt[:128] #200 is too long
-                    sample_path_i = os.path.join(sample_path, sanitized_prompt)
-                    os.makedirs(sample_path_i, exist_ok=True)
-                    base_count = get_next_sequence_number(sample_path_i)
-                    filename = f"{base_count:05}-{seeds[i]}"
-                else:
-                    sample_path_i = sample_path
-                    base_count = get_next_sequence_number(sample_path_i)
-                    sanitized_prompt = sanitized_prompt
-                    filename = f"{base_count:05}-{seeds[i]}_{sanitized_prompt}"[:128] #same as before
                 if not skip_save:
-                    filename_i = os.path.join(sample_path_i, filename)
-                    if not jpg_sample:
-                        if opt.save_metadata:
-                            metadata = PngInfo()
-                            metadata.add_text("SD:prompt", prompts[i])
-                            metadata.add_text("SD:seed", str(seeds[i]))
-                            metadata.add_text("SD:width", str(width))
-                            metadata.add_text("SD:height", str(height))
-                            metadata.add_text("SD:steps", str(steps))
-                            metadata.add_text("SD:cfg_scale", str(cfg_scale))
-                            metadata.add_text("SD:normalize_prompt_weights", str(normalize_prompt_weights))
-                            metadata.add_text("SD:GFPGAN", str(use_GFPGAN and GFPGAN is not None))
-                            image.save(f"{filename_i}.png", pnginfo=metadata)
-                        else:
-                            image.save(f"{filename_i}.png")
-                    else:
-                        image.save(f"{filename_i}.jpg", 'jpeg', quality=100, optimize=True)
-                    if write_info_files:
-                        # toggles differ for txt2img vs. img2img:
-                        offset = 0 if init_img is None else 2
-                        toggles = []
-                        if prompt_matrix:
-                            toggles.append(0)
-                        if normalize_prompt_weights:
-                            toggles.append(1)
-                        if init_img is not None:
-                            if uses_loopback:
-                                toggles.append(2)
-                            if uses_random_seed_loopback:
-                                toggles.append(3)
-                        if not skip_save:
-                            toggles.append(2 + offset)
-                        if not skip_grid:
-                            toggles.append(3 + offset)
-                        if sort_samples:
-                            toggles.append(4 + offset)
-                        if write_info_files:
-                            toggles.append(5 + offset)
-                        if use_GFPGAN:
-                            toggles.append(6 + offset)
-                        info_dict = dict(
-                            target="txt2img" if init_img is None else "img2img",
-                            prompt=prompts[i], ddim_steps=steps, toggles=toggles, sampler_name=sampler_name,
-                            ddim_eta=ddim_eta, n_iter=n_iter, batch_size=batch_size, cfg_scale=cfg_scale,
-                            seed=seed, width=width, height=height
-                        )
-                        if init_img is not None:
-                            # Not yet any use for these, but they bloat up the files:
-                            #info_dict["init_img"] = init_img
-                            #info_dict["init_mask"] = init_mask
-                            info_dict["denoising_strength"] = denoising_strength
-                            info_dict["resize_mode"] = resize_mode
-                        with open(f"{filename_i}.yaml", "w", encoding="utf8") as f:
-                            yaml.dump(info_dict, f)
+                    save_sample(image, sample_path_i, filename, jpg_sample, prompts, seeds, width, height, steps, cfg_scale, 
+normalize_prompt_weights, use_GFPGAN, write_info_files, prompt_matrix, init_img, uses_loopback, uses_random_seed_loopback, skip_save,
+skip_grid, sort_samples, sampler_name, ddim_eta, n_iter, batch_size, i, denoising_strength, resize_mode)
 
                 output_images.append(image)
 
