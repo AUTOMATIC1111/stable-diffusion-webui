@@ -208,7 +208,8 @@ class KDiffusionSampler:
         self.model = m
         self.model_wrap = K.external.CompVisDenoiser(m)
         self.schedule = sampler
-
+    def get_sampler_name(self):
+        return self.schedule
     def sample(self, S, conditioning, batch_size, shape, verbose, unconditional_guidance_scale, unconditional_conditioning, eta, x_T):
         sigmas = self.model_wrap.get_sigmas(S)
         x = x_T * sigmas[0]
@@ -1342,7 +1343,7 @@ def img2img(prompt: str, image_editor_mode: str, init_info, mask_mode: str, mask
             xi = x0 + noise
             sigma_sched = sigmas[ddim_steps - t_enc - 1:]
             model_wrap_cfg = CFGDenoiser(sampler.model_wrap)
-            samples_ddim, _ = sampler.sample(S=ddim_steps, conditioning=conditioning, batch_size=int(x.shape[0]), shape=x[0].shape, verbose=False, unconditional_guidance_scale=cfg_scale, unconditional_conditioning=unconditional_conditioning, eta=0.0, x_T=x)
+            samples_ddim, _ = K.sampling.__dict__[f'sample_{sampler.get_sampler_name()}'](model_wrap_cfg, xi, sigma_sched, extra_args={'cond': conditioning, 'uncond': unconditional_conditioning, 'cond_scale': cfg_scale}, disable=False)
         else:
             x0, = init_data
             sampler.make_schedule(ddim_num_steps=ddim_steps, ddim_eta=0.0, verbose=False)
