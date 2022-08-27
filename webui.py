@@ -567,7 +567,7 @@ skip_grid, sort_samples, sampler_name, ddim_eta, n_iter, batch_size, i, denoisin
             info_dict["denoising_strength"] = denoising_strength
             info_dict["resize_mode"] = resize_mode
         with open(f"{filename_i}.yaml", "w", encoding="utf8") as f:
-            yaml.dump(info_dict, f, allow_unicode=True)
+            yaml.dump(info_dict, f)
 
 
 def get_next_sequence_number(path, prefix=''):
@@ -765,12 +765,12 @@ def process_images(
                     sample_path_i = os.path.join(sample_path, sanitized_prompt)
                     os.makedirs(sample_path_i, exist_ok=True)
                     base_count = len([x for x in os.listdir(sample_path_i) if x.endswith(('.png', '.jpg'))]) - 1 # start at 0
-                    filename = f"{base_count:05}-{seeds[i]}"
+                    filename = f"{base_count:05}-{sampler_name}_{seeds[i]}"
                 else:
                     sample_path_i = sample_path
                     base_count = len([x for x in os.listdir(sample_path_i) if x.endswith(('.png', '.jpg'))]) - 1 # start at 0
                     sanitized_prompt = sanitized_prompt
-                    filename = f"{base_count:05}-{seeds[i]}_{sanitized_prompt}"[:128] #same as before
+                    filename = f"{base_count:05}-{sampler_name}_{seeds[i]}_{sanitized_prompt}"[:128] #same as before
 
                 x_sample = 255. * rearrange(x_sample.cpu().numpy(), 'c h w -> h w c')
                 x_sample = x_sample.astype(np.uint8)
