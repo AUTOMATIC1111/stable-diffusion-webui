@@ -584,7 +584,7 @@ def get_next_sequence_number(path, prefix=''):
 
     The sequence starts at 0.
     """
-    result = 0
+    result = -1
     for p in Path(path).iterdir():
         if p.name.endswith(('.png', '.jpg')) and p.name.startswith(prefix):
             tmp = p.name[len(prefix):]
