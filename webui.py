@@ -345,6 +345,19 @@ def load_embeddings(fp):
     if fp is not None and hasattr(model, "embedding_manager"):
         model.embedding_manager.load(fp.name)
 
+
+def get_font(fontsize):
+    fonts = ["arial.ttf", "DejaVuSans.ttf"]
+    for font_name in fonts:
+        try:
+            return ImageFont.truetype(font_name, fontsize)
+        except OSError:
+           pass
+
+    # ImageFont.load_default() is practically unusable as it only supports
+    # latin1, so raise an exception instead if no usable font was found
+    raise Exception(f"No usable font found (tried {', '.join(fonts)})")
+
 def image_grid(imgs, batch_size, force_n_rows=None, captions=None):
     if force_n_rows is not None:
         rows = force_n_rows
@@ -361,7 +374,7 @@ def image_grid(imgs, batch_size, force_n_rows=None, captions=None):
     w, h = imgs[0].size
     grid = Image.new('RGB', size=(cols * w, rows * h), color='black')
 
-    fnt = ImageFont.truetype("arial.ttf", 30)
+    fnt = get_font(30)
 
     for i, img in enumerate(imgs):
         grid.paste(img, box=(i % cols * w, i // cols * h))
@@ -406,17 +419,7 @@ def draw_prompt_matrix(im, width, height, all_prompts):
 
     fontsize = (width + height) // 25
     line_spacing = fontsize // 2
-    fonts = ["arial.ttf", "DejaVuSans.ttf"]
-    for font_name in fonts:
-        try:
-            fnt = ImageFont.truetype(font_name, fontsize)
-            break
-        except OSError:
-           pass
-    else:
-        # ImageFont.load_default() is practically unusable as it only supports
-        # latin1, so raise an exception instead
-        raise Exception(f"No usable font found (tried {', '.join(fonts)})")
+    fnt = get_font(fontsize)
     color_active = (0, 0, 0)
     color_inactive = (153, 153, 153)
 
