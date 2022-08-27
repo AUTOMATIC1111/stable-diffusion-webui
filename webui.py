@@ -931,14 +931,11 @@ skip_grid, sort_samples, sampler_name, ddim_eta, n_iter, batch_size, i, denoisin
                     torch_gc()
                     if RealESRGAN.model.name != realesrgan_model_name:
                         try_loading_RealESRGAN(realesrgan_model_name)
-                    #image = image.convert("RGB")
 
                     output,img_mode = RealESRGAN.enhance(x_sample[:,:,::-1])
-                    #resize output to half size
-                    #convert output to single segment array
-                    #coverts tuple to array
+
                     x_sample2 = output[:,:,::-1]
-                    #output = np.array(output)
+
                     res = Image.fromarray(x_sample2)
                     X2_Output = res.resize((int(res.width/2), int(res.height/2)), LANCZOS)
                     filename = filename + '-esrgan2x'
@@ -953,14 +950,8 @@ skip_grid, sort_samples, sampler_name, ddim_eta, n_iter, batch_size, i, denoisin
                     sampler = DDIMSampler(model)
                     data = [batch_size * [prompt]]
                     gobig_overlap = 64
-                    #batch_size = 1
-                    #precision_scope = autocast if opt.precision == "autocast" else nullcontext
-                    #base_filename = 'sampleTest'
-                    #res.save(os.path.join(outpath, f"{base_filename}.png"))
-                    #image.save(os.path.join(outpath, f"{base_filename}ORG.png"))
+
                     for _ in trange(1, desc="Passes"):
-                        #realesrgan2x(opt.realesrgan, os.path.join(sample_path, f"{base_filename}.png"), os.path.join(sample_path, f"{base_filename}u.png"))
-                        #base_filename = f"{base_filename}u"
 
                         source_image = X2_Output
                         og_size = (int(source_image.size[0] / 2), int(source_image.size[1] / 2))
@@ -1042,8 +1033,6 @@ skip_grid, sort_samples, sampler_name, ddim_eta, n_iter, batch_size, i, denoisin
                         filename = original_filename
                         x_sample = original_sample
                         output_images.append(goBig_output)
-                        #final_output.save(os.path.join(outpath, f"{base_filename}d.png"))
-                        #base_filename = f"{base_filename}d"
 
                         torch_gc()
                 image = Image.fromarray(x_sample)
