@@ -326,7 +326,7 @@ def load_embeddings(fp):
     if fp is not None and hasattr(model, "embedding_manager"):
         model.embedding_manager.load(fp.name)
 
-def image_grid(imgs, batch_size, round_down=False, force_n_rows=None):
+def image_grid(imgs, batch_size, force_n_rows=None):
     if force_n_rows is not None:
         rows = force_n_rows
     elif opt.n_rows > 0:
@@ -335,7 +335,7 @@ def image_grid(imgs, batch_size, round_down=False, force_n_rows=None):
         rows = batch_size
     else:
         rows = math.sqrt(len(imgs))
-        rows = int(rows) if round_down else round(rows)
+        rows = round(rows)
 
     cols = math.ceil(len(imgs) / rows)
 
@@ -509,7 +509,7 @@ def process_images(
 
     sample_path = os.path.join(outpath, "samples")
     os.makedirs(sample_path, exist_ok=True)
-    grid_count = len([x for x in os.listdir() if x.endswith(('.png', '.jpg'))]) - 1 # start at 0
+    grid_count = len([x for x in os.listdir(outpath) if x.endswith(('.png', '.jpg'))]) - 1 # start at 0
 
     comments = []
 
@@ -640,11 +640,11 @@ def process_images(
                     sanitized_prompt = sanitized_prompt[:128] #200 is too long
                     sample_path_i = os.path.join(sample_path, sanitized_prompt)
                     os.makedirs(sample_path_i, exist_ok=True)
-                    base_count = len([x for x in os.listdir() if x.endswith(('.png', '.jpg'))]) - 1 # start at 0
+                    base_count = len([x for x in os.listdir(sample_path_i) if x.endswith(('.png', '.jpg'))]) - 1 # start at 0
                     filename = f"{base_count:05}-{seeds[i]}"
                 else:
                     sample_path_i = sample_path
-                    base_count = len([x for x in os.listdir() if x.endswith(('.png', '.jpg'))]) - 1 # start at 0
+                    base_count = len([x for x in os.listdir(sample_path_i) if x.endswith(('.png', '.jpg'))]) - 1 # start at 0
                     sanitized_prompt = sanitized_prompt
                     filename = f"{base_count:05}-{seeds[i]}_{sanitized_prompt}"[:128] #same as before
                 if not skip_save:
@@ -707,18 +707,19 @@ def process_images(
                 base_count += 1
 
         if (prompt_matrix or not skip_grid) and not do_not_save_grid:
-            grid = image_grid(output_images, batch_size, round_down=prompt_matrix)
+            grid = image_grid(output_images, batch_size, force_n_rows=1 << ((len(prompt_matrix_parts)-1)//2))
 
             if prompt_matrix:
                 try:
                     grid = draw_prompt_matrix(grid, width, height, prompt_matrix_parts)
-                except Exception:
+                except:
                     import traceback
                     print("Error creating prompt_matrix text:", file=sys.stderr)
                     print(traceback.format_exc(), file=sys.stderr)
 
                 output_images.insert(0, grid)
-
+            else:
+                grid = image_grid(output_images, batch_size)
 
             grid_file = f"grid-{grid_count:05}-{seed}_{prompts[i].replace(' ', '_').translate({ord(x): '' for x in invalid_filename_chars})[:128]}.jpg"
             grid.save(os.path.join(outpath, grid_file), 'jpeg', quality=100, optimize=True)
@@ -1030,7 +1031,7 @@ def img2img(prompt: str, image_editor_mode: str, init_info, mask_mode: str, mask
                 history.append(init_img)
 
             if not skip_grid:
-                grid_count = len([x for x in os.listdir() if x.endswith(('.png', '.jpg'))]) - 1 # start at 0
+                grid_count = len([x for x in os.listdir(outpath) if x.endswith(('.png', '.jpg'))]) - 1 # start at 0
                 grid = image_grid(history, batch_size, force_n_rows=1)
                 grid_file = f"grid-{grid_count:05}-{seed}_{prompt.replace(' ', '_').translate({ord(x): '' for x in invalid_filename_chars})[:128]}.jpg"
                 grid.save(os.path.join(outpath, grid_file), 'jpeg', quality=100, optimize=True)
