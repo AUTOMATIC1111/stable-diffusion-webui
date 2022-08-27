@@ -567,7 +567,7 @@ skip_grid, sort_samples, sampler_name, ddim_eta, n_iter, batch_size, i, denoisin
             info_dict["denoising_strength"] = denoising_strength
             info_dict["resize_mode"] = resize_mode
         with open(f"{filename_i}.yaml", "w", encoding="utf8") as f:
-            yaml.dump(info_dict, f)
+            yaml.dump(info_dict, f, allow_unicode=True)
 
 
 def get_next_sequence_number(path, prefix=''):
