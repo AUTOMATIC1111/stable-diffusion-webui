@@ -1246,6 +1246,7 @@ txt2img_defaults = {
     'height': 512,
     'width': 512,
     'fp': None,
+    'submit_on_enter': 'Yes'
 }
 
 if 'txt2img' in user_defaults:
@@ -1322,7 +1323,8 @@ def copy_img_to_input(selected=1, imgs = []):
         idx = int(0 if selected - 1 < 0 else selected - 1)
         image_data = re.sub('^data:image/.+;base64,', '', imgs[idx])
         processed_image = Image.open(BytesIO(base64.b64decode(image_data)))
-        return [processed_image, processed_image]
+        update = gr.update(selected='Stable Diffusion Image-to-Image Unified')
+        return [processed_image, processed_image, update]
     except IndexError:
         return [None, None]
 
@@ -1348,45 +1350,90 @@ def show_help():
 def hide_help():
     return [gr.update(visible=True), gr.update(visible=False), gr.update(value="")]
 
-with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion WebUI") as demo:
-    with gr.Tabs():
+styling = """
+[data-testid="image"] {min-height: 512px !important};
+*{
+    border: 1px solid red
+}
+* #body>.col:nth-child(2){width:250%;max-width:89vw}
+#generate{width: 100%; }
+#prompt_row input{
+ font-size:20px
+ }
+
+"""
+with gr.Blocks(css=styling, analytics_enabled=False, title="Stable Diffusion WebUI") as demo:
+    with gr.Tabs(elem_id='tabss') as tabs:
         with gr.TabItem("Stable Diffusion Text-to-Image Unified"):
-            with gr.Row().style(equal_height=False):
+            with gr.Row(elem_id="prompt_row"):
+                txt2img_prompt = gr.Textbox(label="Prompt", 
+                elem_id='prompt_input',
+                placeholder="A corgi wearing a top hat as an oil painting.", 
+                lines=1,
+                max_lines=1 if txt2img_defaults['submit_on_enter'] == 'Yes' else 25, 
+                value=txt2img_defaults['prompt'], 
+                show_label=False).style()
+                
+            with gr.Row(elem_id='body').style(equal_height=False):
                 with gr.Column():
-                    gr.Markdown("Generate images from text with Stable Diffusion")
-                    txt2img_prompt = gr.Textbox(label="Prompt", placeholder="A corgi wearing a top hat as an oil painting.", lines=1, value=txt2img_defaults['prompt'])
-                    txt2img_steps = gr.Slider(minimum=1, maximum=250, step=1, label="Sampling Steps", value=txt2img_defaults['ddim_steps'])
-                    txt2img_sampling = gr.Radio(label='Sampling method (k_lms is default k-diffusion sampler)', choices=["DDIM", "PLMS", 'k_dpm_2_a', 'k_dpm_2', 'k_euler_a', 'k_euler', 'k_heun', 'k_lms'], value=txt2img_defaults['sampler_name'])
-                    txt2img_toggles = gr.CheckboxGroup(label='', choices=txt2img_toggles, value=txt2img_toggle_defaults, type="index")
-                    txt2img_realesrgan_model_name = gr.Dropdown(label='RealESRGAN model', choices=['RealESRGAN_x4plus', 'RealESRGAN_x4plus_anime_6B'], value='RealESRGAN_x4plus', visible=RealESRGAN is not None) # TODO: Feels like I shouldnt slot it in here.
-                    txt2img_ddim_eta = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label="DDIM ETA", value=txt2img_defaults['ddim_eta'], visible=False)
-                    txt2img_batch_count = gr.Slider(minimum=1, maximum=250, step=1, label='Batch count (how many batches of images to generate)', value=txt2img_defaults['n_iter'])
-                    txt2img_batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size (how many images are in a batch; memory-hungry)', value=txt2img_defaults['batch_size'])
-                    txt2img_cfg = gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='Classifier Free Guidance Scale (how strongly the image should follow the prompt)', value=txt2img_defaults['cfg_scale'])
-                    txt2img_seed = gr.Textbox(label="Seed (blank to randomize)", lines=1, value=txt2img_defaults["seed"])
                     txt2img_height = gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=txt2img_defaults["height"])
                     txt2img_width = gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=txt2img_defaults["width"])
-                    txt2img_embeddings = gr.File(label = "Embeddings file for textual inversion", visible=hasattr(model, "embedding_manager"))
-                    txt2img_btn = gr.Button("Generate")
+                    txt2img_cfg = gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='Classifier Free Guidance Scale (how strongly the image should follow the prompt)', value=txt2img_defaults['cfg_scale'])
+                    txt2img_seed = gr.Textbox(label="Seed (blank to randomize)", lines=1, value=txt2img_defaults["seed"])                    
+                    txt2img_batch_count = gr.Slider(minimum=1, maximum=250, step=1, label='Batch count (how many batches of images to generate)', value=txt2img_defaults['n_iter'])
+                    txt2img_batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size (how many images are in a batch; memory-hungry)', value=txt2img_defaults['batch_size'])
                 with gr.Column():
-                    output_txt2img_gallery = gr.Gallery(label="Images")
-                    output_txt2img_select_image = gr.Number(label='Select image number from results for copying', value=1, precision=None)
-                    output_txt2img_copy_to_input_btn = gr.Button("Copy selected image to img2img input")
-                    output_txt2img_seed = gr.Number(label='Seed')
-                    output_txt2img_params = gr.Textbox(label="Copy-paste generation parameters")
+                    output_txt2img_gallery = gr.Gallery(label="Images", elem_id="gallery_output").style(grid=[4,4])
+                    with gr.Row():
+                        with gr.Group():
+                            output_txt2img_seed = gr.Number(label='Seed', interactive=False)
+                            output_txt2img_copy_seed = gr.Button("Copy", full_width=True).click(inputs=output_txt2img_seed, outputs=[], _js='(x) => navigator.clipboard.writeText(x)', fn=None, show_progress=False)
+                        with gr.Group():
+                            output_txt2img_select_image = gr.Number(label='Image # and click Copy to copy to img2img', value=1, precision=None)
+                            output_txt2img_copy_to_input_btn = gr.Button("Push to img2img", full_width=True)
+                    with gr.Group():
+                        output_txt2img_params = gr.Textbox(label="Copy-paste generation parameters", interactive=False)
+                        output_txt2img_copy_params = gr.Button("Copy", full_width=True).click(inputs=output_txt2img_params, outputs=[], _js='(x) => navigator.clipboard.writeText(x)', fn=None, show_progress=False)
                     output_txt2img_stats = gr.HTML(label='Stats')
+                with gr.Column():
+                    txt2img_btn = gr.Button("Generate", full_width=True, elem_id="generate", variant="primary")
+                    txt2img_steps = gr.Slider(minimum=1, maximum=250, step=1, label="Sampling Steps", value=txt2img_defaults['ddim_steps'])
+                    txt2img_sampling = gr.Radio(label='Sampling method (k_lms is default k-diffusion sampler)', choices=["DDIM", "PLMS", 'k_dpm_2_a', 'k_dpm_2', 'k_euler_a', 'k_euler', 'k_heun', 'k_lms'], value=txt2img_defaults['sampler_name'])
+                    with gr.Tabs():
+                        with gr.TabItem('Simple'):
+                            txt2img_submit_on_enter = gr.Radio(['Yes', 'No'], label="Submit on enter? (no means multiline)", value=txt2img_defaults['submit_on_enter'], interactive=True)
+                            txt2img_submit_on_enter.change(lambda x: gr.update(max_lines=1 if x == 'Single' else 25) , txt2img_submit_on_enter, txt2img_prompt)
+                        with gr.TabItem('Advanced'):
+                            txt2img_toggles = gr.CheckboxGroup(label='', choices=txt2img_toggles, value=txt2img_toggle_defaults, type="index")
+                            txt2img_realesrgan_model_name = gr.Dropdown(label='RealESRGAN model', choices=['RealESRGAN_x4plus', 'RealESRGAN_x4plus_anime_6B'], value='RealESRGAN_x4plus', visible=RealESRGAN is not None) # TODO: Feels like I shouldnt slot it in here.
+                            txt2img_ddim_eta = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label="DDIM ETA", value=txt2img_defaults['ddim_eta'], visible=False)
+                    txt2img_embeddings = gr.File(label = "Embeddings file for textual inversion", visible=hasattr(model, "embedding_manager"))
 
             txt2img_btn.click(
                 txt2img,
                 [txt2img_prompt, txt2img_steps, txt2img_sampling, txt2img_toggles, txt2img_realesrgan_model_name, txt2img_ddim_eta, txt2img_batch_count, txt2img_batch_size, txt2img_cfg, txt2img_seed, txt2img_height, txt2img_width, txt2img_embeddings],
                 [output_txt2img_gallery, output_txt2img_seed, output_txt2img_params, output_txt2img_stats]
             )
+            txt2img_prompt.submit(
+                txt2img,
+                [txt2img_prompt, txt2img_steps, txt2img_sampling, txt2img_toggles, txt2img_realesrgan_model_name, txt2img_ddim_eta, txt2img_batch_count, txt2img_batch_size, txt2img_cfg, txt2img_seed, txt2img_height, txt2img_width, txt2img_embeddings],
+                [output_txt2img_gallery, output_txt2img_seed, output_txt2img_params, output_txt2img_stats]
+            )
 
         with gr.TabItem("Stable Diffusion Image-to-Image Unified"):
+            with gr.Row(elem_id="prompt_row"):
+                img2img_prompt = gr.Textbox(label="Prompt", 
+                elem_id='img2img_prompt_input',
+                placeholder="A corgi wearing a top hat as an oil painting.", 
+                lines=1,
+                max_lines=1 if txt2img_defaults['submit_on_enter'] == 'Yes' else 25, 
+                value=img2img_defaults['prompt'], 
+                show_label=False).style()
+                img2img_btn_mask = gr.Button("Generate",variant="primary", visible=False, elem_id="img2img_mask_btn").style(full_width=True)
+                img2img_btn_editor = gr.Button("Generate",variant="primary", elem_id="img2img_editot_btn").style(full_width=True)
             with gr.Row().style(equal_height=False):
                 with gr.Column():
-                    gr.Markdown("Generate images from images with Stable Diffusion")
-                    img2img_prompt = gr.Textbox(label="Prompt", placeholder="A fantasy landscape, trending on artstation.", lines=1, value=img2img_defaults['prompt'])
+                    
                     img2img_image_editor_mode = gr.Radio(choices=["Mask", "Crop"], label="Image Editor Mode", value="Crop")
                     img2img_show_help_btn = gr.Button("Show Hints")
                     img2img_hide_help_btn = gr.Button("Hide Hints", visible=False)
@@ -1411,8 +1458,7 @@ with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion WebUI")
                     img2img_width = gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=img2img_defaults["width"])
                     img2img_resize = gr.Radio(label="Resize mode", choices=["Just resize", "Crop and resize", "Resize and fill"], type="index", value=img2img_resize_modes[img2img_defaults['resize_mode']])
                     img2img_embeddings = gr.File(label = "Embeddings file for textual inversion", visible=hasattr(model, "embedding_manager"))
-                    img2img_btn_mask = gr.Button("Generate", visible=False).style(full_width=True)
-                    img2img_btn_editor = gr.Button("Generate").style(full_width=True)
+                    
                 with gr.Column():
                     output_img2img_gallery = gr.Gallery(label="Images")
                     output_img2img_select_image = gr.Number(label='Select image number from results for copying', value=1, precision=None)
@@ -1455,7 +1501,7 @@ with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion WebUI")
             output_txt2img_copy_to_input_btn.click(
                 copy_img_to_input,
                 [output_txt2img_select_image, output_txt2img_gallery],
-                [img2img_image_editor, img2img_image_mask]
+                [img2img_image_editor, img2img_image_mask, tabs]
             )
 
             img2img_btn_mask.click(
@@ -1509,7 +1555,7 @@ with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion WebUI")
                     with gr.Column():
                         gfpgan_source = gr.Image(label="Source", source="upload", interactive=True, type="pil")
                         gfpgan_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="Effect strength", value=gfpgan_defaults['strength'])
-                        gfpgan_btn = gr.Button("Generate")
+                        gfpgan_btn = gr.Button("Generate", variant="primary")
                     with gr.Column():
                         gfpgan_output = gr.Image(label="Output")
                 gfpgan_btn.click(
