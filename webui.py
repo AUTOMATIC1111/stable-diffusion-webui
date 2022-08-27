@@ -584,7 +584,7 @@ def get_next_sequence_number(path, prefix=''):
 
     The sequence starts at 0.
     """
-    result = -1
+    result = 0
     for p in Path(path).iterdir():
         if p.name.endswith(('.png', '.jpg')) and p.name.startswith(prefix):
             tmp = p.name[len(prefix):]
@@ -1097,7 +1097,7 @@ def img2img(prompt: str, image_editor_mode: str, init_info, mask_mode: str, mask
             xi = x0 + noise
             sigma_sched = sigmas[ddim_steps - t_enc - 1:]
             model_wrap_cfg = CFGDenoiser(sampler.model_wrap)
-            samples_ddim = K.sampling.sample_lms(model_wrap_cfg, xi, sigma_sched, extra_args={'cond': conditioning, 'uncond': unconditional_conditioning, 'cond_scale': cfg_scale}, disable=False)
+            samples_ddim, _ = sampler.sample(S=ddim_steps, conditioning=conditioning, batch_size=int(x.shape[0]), shape=x[0].shape, verbose=False, unconditional_guidance_scale=cfg_scale, unconditional_conditioning=unconditional_conditioning, eta=0.0, x_T=x)
         else:
             x0, = init_data
             sampler.make_schedule(ddim_num_steps=ddim_steps, ddim_eta=0.0, verbose=False)
