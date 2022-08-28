@@ -2,7 +2,7 @@
 
 ## This repo is for development, there may be bugs and new features
 
-### :warning: temporary notice: e71d82e fixed optimized support and also requires the changes in the main repo. e71d82e is synced to main repo too so just pull from main repo :warning:
+### :warning: temporary notice: [e71d82e](https://github.com/hlky/stable-diffusion-webui/commit/e71d82e3a6617c4db00e90a4378a0f14191b5b75) fixed optimized support and also requires the changes in the main repo. [e71d82e](https://github.com/hlky/stable-diffusion-webui/commit/e71d82e3a6617c4db00e90a4378a0f14191b5b75) is synced to main repo too so just pull from main repo :warning:
 
 ### Questions about **_[Upscalers](https://github.com/hlky/stable-diffusion-webui/wiki/Upscalers)_**?
 ### Questions about **_[Optimized mode](https://github.com/hlky/stable-diffusion-webui/wiki/Optimized-mode)_**?
