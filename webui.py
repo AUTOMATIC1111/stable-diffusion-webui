@@ -50,6 +50,7 @@ parser.add_argument("--no-half", action='store_true', help="do not switch the mo
 parser.add_argument("--no-progressbar-hiding", action='store_true', help="do not hide progressbar in gradio UI (we hide it because it slows down ML if you have hardware accleration in browser)")
 parser.add_argument("--max-batch-count", type=int, default=16, help="maximum batch count value for the UI")
 parser.add_argument("--embeddings-dir", type=str, default='embeddings', help="embeddings dirtectory for textual inversion (default: embeddings)")
+parser.add_argument("--allow-code", action='store_true', help="allow custom script execution from webui")
 
 cmd_opts = parser.parse_args()
 
@@ -132,6 +133,7 @@ class Options:
         "grid_extended_filename": OptionInfo(False, "Add extended info (seed, prompt) to filename when saving grid"),
         "n_rows": OptionInfo(-1, "Grid row count; use -1 for autodetect and 0 for it to be same as batch size", gr.Slider, {"minimum": -1, "maximum": 16, "step": 1}),
         "jpeg_quality": OptionInfo(80, "Quality for saved jpeg images", gr.Slider, {"minimum": 1, "maximum": 100, "step": 1}),
+        "export_for_4chan": OptionInfo(True, "If PNG image is larger than 4MB or any dimension is larger than 4000, downscale and save copy as JPG"),
         "enable_pnginfo": OptionInfo(True, "Save text information about generation parameters as chunks to png files"),
         "prompt_matrix_add_to_start": OptionInfo(True, "In prompt matrix, add the variable combination of text to the start of the prompt, rather than the end"),
         "sd_upscale_upscaler_index": OptionInfo("RealESRGAN", "Upscaler to use for SD upscale", gr.Radio, {"choices": list(sd_upscalers.keys())}),
@@ -206,13 +208,12 @@ def torch_gc():
     torch.cuda.ipc_collect()
 
 
-def save_image(image, path, basename, seed, prompt, extension, info=None, short_filename=False):
-    prompt = sanitize_filename_part(prompt)
+def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False):
 
-    if short_filename:
-        filename = f"{basename}.{extension}"
+    if short_filename or prompt is None or seed is None:
+        filename = f"{basename}"
     else:
-        filename = f"{basename}-{seed}-{prompt[:128]}.{extension}"
+        filename = f"{basename}-{seed}-{sanitize_filename_part(prompt)[:128]}"
 
     if extension == 'png' and opts.enable_pnginfo and info is not None:
         pnginfo = PngImagePlugin.PngInfo()
@@ -220,7 +221,23 @@ def save_image(image, path, basename, seed, prompt, extension, info=None, short_
     else:
         pnginfo = None
 
-    image.save(os.path.join(path, filename), quality=opts.jpeg_quality, pnginfo=pnginfo)
+    os.makedirs(path, exist_ok=True)
+    fullfn = os.path.join(path, f"{filename}.{extension}")
+    image.save(fullfn, quality=opts.jpeg_quality, pnginfo=pnginfo)
+
+    target_side_length = 4000
+    oversize = image.width > target_side_length or image.height > target_side_length
+    if opts.export_for_4chan and (oversize or os.stat(fullfn).st_size > 4 * 1024 * 1024):
+        ratio = image.width / image.height
+
+        if oversize and ratio > 1:
+            image = image.resize((target_side_length, image.height * target_side_length // image.width), LANCZOS)
+        elif oversize:
+            image = image.resize((image.width * target_side_length // image.height, target_side_length), LANCZOS)
+
+        image.save(os.path.join(path, f"{filename}.jpg"), quality=opts.jpeg_quality, pnginfo=pnginfo)
+
+
 
 
 def sanitize_filename_part(text):
@@ -244,16 +261,15 @@ def load_gfpgan():
     return GFPGANer(model_path=model_path, upscale=1, arch='clean', channel_multiplier=2, bg_upsampler=None)
 
 
-def image_grid(imgs, batch_size, force_n_rows=None):
-    if force_n_rows is not None:
-        rows = force_n_rows
-    elif opts.n_rows > 0:
-        rows = opts.n_rows
-    elif opts.n_rows == 0:
-        rows = batch_size
-    else:
-        rows = math.sqrt(len(imgs))
-        rows = round(rows)
+def image_grid(imgs, batch_size=1, rows=None):
+    if rows is None:
+        if opts.n_rows > 0:
+            rows = opts.n_rows
+        elif opts.n_rows == 0:
+            rows = batch_size
+        else:
+            rows = math.sqrt(len(imgs))
+            rows = round(rows)
 
     cols = math.ceil(len(imgs) / rows)
 
@@ -426,6 +442,22 @@ def draw_prompt_matrix(im, width, height, all_prompts):
 
     return draw_grid_annotations(im, width, height, hor_texts, ver_texts)
 
+
+def draw_xy_grid(xs, ys, x_label, y_label, cell):
+    res = []
+
+    ver_texts = [[GridAnnotation(y_label(y))] for y in ys]
+    hor_texts = [[GridAnnotation(x_label(x))] for x in xs]
+
+    for y in ys:
+        for x in xs:
+            res.append(cell(x, y))
+
+
+    grid = image_grid(res, rows=len(ys))
+    grid = draw_grid_annotations(grid, res[0].width, res[0].height, hor_texts, ver_texts)
+
+    return grid
 
 def resize_image(resize_mode, im, width, height):
     if resize_mode == 0:
@@ -742,7 +774,10 @@ class KDiffusionSampler:
         return samples_ddim
 
 
-def process_images(p: StableDiffusionProcessing):
+Processed = namedtuple('Processed', ['images','seed', 'info'])
+
+
+def process_images(p: StableDiffusionProcessing) -> Processed:
     """this is the main loop that both txt2img and img2img use; it calls func_init once inside all the scopes and func_sample once per batch"""
 
     prompt = p.prompt
@@ -753,10 +788,7 @@ def process_images(p: StableDiffusionProcessing):
 
     seed = int(random.randrange(4294967294) if p.seed == -1 else p.seed)
 
-    os.makedirs(p.outpath, exist_ok=True)
-
     sample_path = os.path.join(p.outpath, "samples")
-    os.makedirs(sample_path, exist_ok=True)
     base_count = len(os.listdir(sample_path))
     grid_count = len(os.listdir(p.outpath)) - 1
 
@@ -846,7 +878,7 @@ def process_images(p: StableDiffusionProcessing):
 
         if (p.prompt_matrix or opts.grid_save) and not p.do_not_save_grid:
             if p.prompt_matrix:
-                grid = image_grid(output_images, p.batch_size, force_n_rows=1 << ((len(prompt_matrix_parts)-1)//2))
+                grid = image_grid(output_images, p.batch_size, rows=1 << ((len(prompt_matrix_parts)-1)//2))
 
                 try:
                     grid = draw_prompt_matrix(grid, p.width, p.height, prompt_matrix_parts)
@@ -863,7 +895,7 @@ def process_images(p: StableDiffusionProcessing):
             grid_count += 1
 
     torch_gc()
-    return output_images, seed, infotext()
+    return Processed(output_images, seed, infotext())
 
 
 class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
@@ -876,8 +908,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         samples_ddim = self.sampler.sample(self, x, conditioning, unconditional_conditioning)
         return samples_ddim
 
-
-def txt2img(prompt: str, ddim_steps: int, sampler_index: int, use_GFPGAN: bool, prompt_matrix: bool, n_iter: int, batch_size: int, cfg_scale: float, seed: int, height: int, width: int):
+def txt2img(prompt: str, steps: int, sampler_index: int, use_GFPGAN: bool, prompt_matrix: bool, n_iter: int, batch_size: int, cfg_scale: float, seed: int, height: int, width: int, code: str):
     outpath = opts.outdir or "outputs/txt2img-samples"
 
     p = StableDiffusionProcessingTxt2Img(
@@ -887,7 +918,7 @@ def txt2img(prompt: str, ddim_steps: int, sampler_index: int, use_GFPGAN: bool, 
         sampler_index=sampler_index,
         batch_size=batch_size,
         n_iter=n_iter,
-        steps=ddim_steps,
+        steps=steps,
         cfg_scale=cfg_scale,
         width=width,
         height=height,
@@ -895,9 +926,29 @@ def txt2img(prompt: str, ddim_steps: int, sampler_index: int, use_GFPGAN: bool, 
         use_GFPGAN=use_GFPGAN
     )
 
-    output_images, seed, info = process_images(p)
+    if code != '' and cmd_opts.allow_code:
+        p.do_not_save_grid = True
+        p.do_not_save_samples = True
 
-    return output_images, seed, plaintext_to_html(info)
+        display_result_data = [[], -1, ""]
+        def display(imgs, s=display_result_data[1], i=display_result_data[2]):
+            display_result_data[0] = imgs
+            display_result_data[1] = s
+            display_result_data[2] = i
+
+        from types import ModuleType
+        compiled = compile(code, '', 'exec')
+        module = ModuleType("testmodule")
+        module.__dict__.update(globals())
+        module.p = p
+        module.display = display
+        exec(compiled, module.__dict__)
+
+        processed = Processed(*display_result_data)
+    else:
+        processed = process_images(p)
+
+    return processed.images, processed.seed, plaintext_to_html(processed.info)
 
 
 class Flagging(gr.FlaggingCallback):
@@ -911,7 +962,7 @@ class Flagging(gr.FlaggingCallback):
         os.makedirs("log/images", exist_ok=True)
 
         # those must match the "txt2img" function
-        prompt, ddim_steps, sampler_name, use_gfpgan, prompt_matrix, ddim_eta, n_iter, n_samples, cfg_scale, request_seed, height, width, images, seed, comment = flag_data
+        prompt, ddim_steps, sampler_name, use_gfpgan, prompt_matrix, ddim_eta, n_iter, n_samples, cfg_scale, request_seed, height, width, code, images, seed, comment = flag_data
 
         filenames = []
 
@@ -955,6 +1006,7 @@ txt2img_interface = gr.Interface(
         gr.Number(label='Seed', value=-1),
         gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512),
         gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512),
+        gr.Textbox(label="Python script", visible=cmd_opts.allow_code, lines=1)
     ],
     outputs=[
         gr.Gallery(label="Images"),
@@ -1042,29 +1094,30 @@ def img2img(prompt: str, init_img, ddim_steps: int, sampler_index: int, use_GFPG
         output_images, info = None, None
         history = []
         initial_seed = None
+        initial_info = None
 
         for i in range(n_iter):
             p.n_iter = 1
             p.batch_size = 1
             p.do_not_save_grid = True
 
-            output_images, seed, info = process_images(p)
+            processed = process_images(p)
 
             if initial_seed is None:
-                initial_seed = seed
+                initial_seed = processed.seed
+                initial_info = processed.info
 
-            p.init_img = output_images[0]
-            p.seed = seed + 1
+            p.init_img = processed.images[0]
+            p.seed = processed.seed + 1
             p.denoising_strength = max(p.denoising_strength * 0.95, 0.1)
-            history.append(output_images[0])
+            history.append(processed.images[0])
 
         grid_count = len(os.listdir(outpath)) - 1
-        grid = image_grid(history, batch_size, force_n_rows=1)
+        grid = image_grid(history, batch_size, rows=1)
 
         save_image(grid, outpath, f"grid-{grid_count:04}", initial_seed, prompt, opts.grid_format, info=info, short_filename=not opts.grid_extended_filename)
 
-        output_images = history
-        seed = initial_seed
+        processed = Processed(history, initial_seed, initial_info)
 
     elif sd_upscale:
         initial_seed = None
@@ -1094,14 +1147,14 @@ def img2img(prompt: str, init_img, ddim_steps: int, sampler_index: int, use_GFPG
         for i in range(batch_count):
             p.init_images = work[i*p.batch_size:(i+1)*p.batch_size]
 
-            output_images, seed, info = process_images(p)
+            processed = process_images(p)
 
             if initial_seed is None:
-                initial_seed = seed
-                initial_info = info
+                initial_seed = processed.seed
+                initial_info = processed.info
 
-            p.seed = seed + 1
-            work_results += output_images
+            p.seed = processed.seed + 1
+            work_results += processed.images
 
         image_index = 0
         for y, h, row in grid.tiles:
@@ -1114,14 +1167,12 @@ def img2img(prompt: str, init_img, ddim_steps: int, sampler_index: int, use_GFPG
         grid_count = len(os.listdir(outpath)) - 1
         save_image(combined_image, outpath, f"grid-{grid_count:04}", initial_seed, prompt, opts.grid_format, info=initial_info, short_filename=not opts.grid_extended_filename)
 
-        output_images = [combined_image]
-        seed = initial_seed
-        info = initial_info
+        processed = Processed([combined_image], initial_seed, initial_info)
 
     else:
-        output_images, seed, info = process_images(p)
+        processed = process_images(p)
 
-    return output_images, seed, plaintext_to_html(info)
+    return processed.images, processed.seed, plaintext_to_html(processed.info)
 
 
 sample_img2img = "assets/stable-samples/img2img/sketch-mountains-input.jpg"
@@ -1192,9 +1243,7 @@ def run_extras(image, GFPGAN_strength, RealESRGAN_upscaling, RealESRGAN_model_in
     if have_realesrgan and RealESRGAN_upscaling != 1.0:
         image = upscale_with_realesrgan(image, RealESRGAN_upscaling, RealESRGAN_model_index)
 
-    os.makedirs(outpath, exist_ok=True)
     base_count = len(os.listdir(outpath))
-
     save_image(image, outpath, f"{base_count:05}", None, '', opts.samples_format, short_filename=True)
 
     return image, 0, ''
