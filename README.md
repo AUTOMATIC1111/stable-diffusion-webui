@@ -205,3 +205,46 @@ image will be upscaled to twice the original width and height, while width and h
 will specify the size of individual tiles. At the moment this method does not support batch size.
 
 ![](images/sd-upscale.jpg)
+
+### User scripts
+If the program is launched with `--allow-code` option, an extra text input field for script code
+is available in txt2img interface. It allows you to input python code that will do the work with
+image. If this field is not empty, the processing that would happen normally is skipped.
+
+In code, access parameters from web UI using the `p` variable, and provide outputs for web UI
+using the `display(images, seed, info)` function. All globals from script are also accessible.
+
+As an example, here is a script that draws a chart seen below (and also saves it as `test/gnomeplot/gnome5.png`):
+
+```python
+steps = [4, 8,12,16, 20]
+cfg_scales = [5.0,10.0,15.0]
+
+def cell(x, y, p=p):
+	p.steps = x
+	p.cfg_scale = y
+	return process_images(p).images[0]
+
+images = [draw_xy_grid(
+	xs = steps,
+	ys = cfg_scales,
+	x_label = lambda x: f'Steps = {x}',
+	y_label = lambda y: f'CFG = {y}',
+	cell = cell
+)]
+
+save_image(images[0], 'test/gnomeplot', 'gnome5')
+display(images)
+```
+
+![](images/scripting.jpg)
+
+A more simple script that would just process the image and output it normally:
+
+```python
+processed = process_images(p)
+
+print("Seed was: " + str(processed.seed))
+
+display(processed.images, processed.seed, processed.info)
+```
