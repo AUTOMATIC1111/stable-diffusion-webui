@@ -2,8 +2,12 @@
 
 ## This repo is for development, there may be bugs and new features
 
+### :warning: temporary notice: e71d82e fixed optimized support and also requires the changes in the main repo. e71d82e is synced to main repo too so just pull from main repo :warning:
+
 ### Questions about **_[Upscalers](https://github.com/hlky/stable-diffusion-webui/wiki/Upscalers)_**?
 ### Questions about **_[Optimized mode](https://github.com/hlky/stable-diffusion-webui/wiki/Optimized-mode)_**?
+
+
 
 ## More documentation about features, troubleshooting, common issues very soon
 ### Want to help with documentation? Documented something? Use [Discussions](https://github.com/hlky/stable-diffusion-webui/discussions)
