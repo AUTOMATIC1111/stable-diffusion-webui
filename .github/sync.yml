@@ -9,6 +9,8 @@ hlky/stable-diffusion:
     dest: configs/webui/webui.yaml
   - source: readme.md
     dest: readme.md
+  - source: .gitignore/.idea/.gitignore
+    dest: .gitignore/.idea/.gitignore
   - source: frontend/__init__.py
     dest: frontend/__init__.py
   - source: frontend/css_and_js.py
