@@ -301,7 +301,7 @@ def try_loading_RealESRGAN(model_name: str):
 try_loading_RealESRGAN('RealESRGAN_x4plus')
 
 if opt.optimized:
-    sd = load_sd_from_config("models/ldm/stable-diffusion-v1/model.ckpt")
+    sd = load_sd_from_config(opt.ckpt)
     li, lo = [], []
     for key, v_ in sd.items():
         sp = key.split('.')
@@ -337,8 +337,8 @@ if opt.optimized:
     model = model if opt.no_half else model.half()
     modelCS = modelCS if opt.no_half else modelCS.half()
 else:
-    config = OmegaConf.load("configs/stable-diffusion/v1-inference.yaml")
-    model = load_model_from_config(config, "models/ldm/stable-diffusion-v1/model.ckpt")
+    config = OmegaConf.load(opt.config)
+    model = load_model_from_config(config, opt.ckpt)
 
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     model = (model if opt.no_half else model.half()).to(device)
