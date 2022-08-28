@@ -107,6 +107,11 @@ except Exception:
     realesrgan_models = [RealesrganModelInfo('None', '', 0, None)]
     have_realesrgan = False
 
+sd_upscalers = {
+    "RealESRGAN": lambda img: upscale_with_realesrgan(img, 2, 0),
+    "Lanczos": lambda img: img.resize((img.width*2, img.height*2), resample=LANCZOS),
+    "None": lambda img: img
+}
 
 class Options:
     class OptionInfo:
@@ -128,6 +133,7 @@ class Options:
         "jpeg_quality": OptionInfo(80, "Quality for saved jpeg images", gr.Slider, {"minimum": 1, "maximum": 100, "step": 1}),
         "enable_pnginfo": OptionInfo(True, "Save text information about generation parameters as chunks to png files"),
         "prompt_matrix_add_to_start": OptionInfo(True, "In prompt matrix, add the variable combination of text to the start of the prompt, rather than the end"),
+        "sd_upscale_upscaler_index": OptionInfo("RealESRGAN", "Upscaler to use for SD upscale", gr.Radio, {"choices": list(sd_upscalers.keys())}),
         "sd_upscale_overlap": OptionInfo(64, "Overlap for tiles for SD upscale. The smaller it is, the less smooth transition from one tile to another", gr.Slider, {"minimum": 0, "maximum": 256, "step": 16}),
     }
 
@@ -324,6 +330,66 @@ def combine_grid(grid):
         combined_image.paste(combined_row.crop((0, grid.overlap, combined_row.width, h)), (0, y + grid.overlap))
 
     return combined_image
+
+
+def draw_grid_annotations(im, width, height, hor_texts, ver_texts, hor_crossed_texts, ver_crossed_texts):
+    def wrap(text, font, line_length):
+        lines = ['']
+        for word in text.split():
+            line = f'{lines[-1]} {word}'.strip()
+            if d.textlength(line, font=font) <= line_length:
+                lines[-1] = line
+            else:
+                lines.append(word)
+        return '\n'.join(lines)
+
+    def draw_texts(pos, draw_x, draw_y, texts, sizes, active):
+        for i, (text, size) in enumerate(zip(texts, sizes)):
+            if not active:
+                text = '\u0336'.join(text) + '\u0336'
+
+            d.multiline_text((draw_x, draw_y + size[1] / 2), text, font=fnt, fill=color_active if active else color_inactive, anchor="mm", align="center")
+
+            draw_y += size[1] + line_spacing
+
+    fontsize = (width + height) // 25
+    line_spacing = fontsize // 2
+    fnt = ImageFont.truetype("arial.ttf", fontsize)
+    color_active = (0, 0, 0)
+    color_inactive = (153, 153, 153)
+
+    pad_top = height // 4
+    pad_left = width * 3 // 4 if len(hor_texts) > 1 else 0
+
+    cols = im.width // width
+    rows = im.height // height
+
+    result = Image.new("RGB", (im.width + pad_left, im.height + pad_top), "white")
+    result.paste(im, (pad_left, pad_top))
+
+    d = ImageDraw.Draw(result)
+
+    prompts_horiz = [wrap(x, fnt, width) for x in hor_texts]
+    prompts_vert = [wrap(x, fnt, pad_left) for x in ver_texts]
+
+    sizes_hor = [(x[2] - x[0], x[3] - x[1]) for x in [d.multiline_textbbox((0, 0), x, font=fnt) for x in prompts_horiz]]
+    sizes_ver = [(x[2] - x[0], x[3] - x[1]) for x in [d.multiline_textbbox((0, 0), x, font=fnt) for x in prompts_vert]]
+    hor_text_height = sum([x[1] + line_spacing for x in sizes_hor]) - line_spacing
+    ver_text_height = sum([x[1] + line_spacing for x in sizes_ver]) - line_spacing
+
+    for col in range(cols):
+        x = pad_left + width * col + width / 2
+        y = pad_top / 2 - hor_text_height / 2
+
+        draw_texts(col, x, y, prompts_horiz, sizes_hor)
+
+    for row in range(rows):
+        x = pad_left / 2
+        y = pad_top + height * row + height / 2 - ver_text_height / 2
+
+        draw_texts(row, x, y, prompts_vert, sizes_ver)
+
+    return result
 
 
 def draw_prompt_matrix(im, width, height, all_prompts):
@@ -1031,7 +1097,8 @@ def img2img(prompt: str, init_img, ddim_steps: int, sampler_index: int, use_GFPG
         initial_seed = None
         initial_info = None
 
-        img = upscale_with_realesrgan(init_img, RealESRGAN_upscaling=2, RealESRGAN_model_index=0)
+        upscaler = sd_upscalers[opts.sd_upscale_upscaler_index]
+        img = upscaler(init_img)
 
         torch_gc()
 
