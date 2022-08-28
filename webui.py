@@ -1482,18 +1482,38 @@ input[type=number]:disabled { -moz-appearance: textfield;+ }
 
 css = styling if opt.no_progressbar_hiding else styling + css_hide_progressbar
 # This is the code that finds which selected item the user has in the gallery
-js_part="""let getIndex = function(){
-        let selected = document.querySelector('gradio-app').shadowRoot.querySelector('#gallery_output .\\\\!ring-2');
-        return selected ? [...selected.parentNode.children].indexOf(selected) : 0;
-    };"""
-return_selected_img_js = "(x) => {" + js_part+ " document.querySelector('gradio-app').shadowRoot.querySelector('#img2img_editor .modify-upload button:last-child')?.click();return [x[getIndex()].replace('data:;','data:image/png;')]}"
-copy_selected_img_js = "async (x) => {" + js_part+ """ 
-let data = x[getIndex()];
-const blob = await (await fetch(data.replace('data:;','data:image/png;'))).blob(); 
-let item = new ClipboardItem({'image/png': blob})
-navigator.clipboard.write([item]);
-return x
+js_part_getindex_txt2img="""
+const root = document.querySelector('gradio-app').shadowRoot;
+const getIndex = function(){
+const selected = root.querySelector('#txt2img_gallery_output .\\\\!ring-2');
+return selected ? [...selected.parentNode.children].indexOf(selected) : 0;
+};"""
+js_part_getindex_img2img="""
+const root = document.querySelector('gradio-app').shadowRoot;
+const getIndex = function(){
+    const selected = root.querySelector('#img2img_gallery_output .\\\\!ring-2');
+    return selected ? [...selected.parentNode.children].indexOf(selected) : 0;
+};"""
+js_part_clear_img2img="""
+root.querySelector('#img2img_editor .modify-upload button:last-child')?.click();
+root.querySelector('#img2img_editor')?.parentNode.querySelector('input[type="radio"][value="Mask"]')?.click();
+root.querySelector('#img2img_mask .modify-upload button:last-child')?.click();
+"""
+js_return_selected_txt2img = "(x) => {" + js_part_getindex_txt2img + js_part_clear_img2img + """
+return [x[getIndex()].replace('data:;','data:image/png;')];
 }"""
+js_return_selected_img2img = "(x) => {" + js_part_getindex_img2img + js_part_clear_img2img + """
+return [x[getIndex()].replace('data:;','data:image/png;')];
+}"""
+js_part_copy_to_clipboard="""
+const data = x[getIndex()];
+const blob = await (await fetch(data.replace('data:;','data:image/png;'))).blob(); 
+const item = new ClipboardItem({'image/png': blob});
+navigator.clipboard.write([item]);
+return x;
+}"""
+js_copy_selected_txt2img = "async (x) => {" + js_part_getindex_txt2img + js_part_copy_to_clipboard
+js_copy_selected_img2img = "async (x) => {" + js_part_getindex_img2img + js_part_copy_to_clipboard
 
 with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion WebUI") as demo:
     with gr.Tabs(elem_id='tabss') as tabs:
@@ -1516,12 +1536,12 @@ with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion WebUI")
                     txt2img_batch_count = gr.Slider(minimum=1, maximum=250, step=1, label='Batch count (how many batches of images to generate)', value=txt2img_defaults['n_iter'])
                     txt2img_batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size (how many images are in a batch; memory-hungry)', value=txt2img_defaults['batch_size'])
                 with gr.Column():
-                    output_txt2img_gallery = gr.Gallery(label="Images", elem_id="gallery_output").style(grid=[4,4])
+                    output_txt2img_gallery = gr.Gallery(label="Images", elem_id="txt2img_gallery_output").style(grid=[4,4])
                     with gr.Tabs():
                         with gr.TabItem("Generated image actions", id="text2img_actions_tab"):
                             gr.Markdown('Select an image from the gallery, then click one of the buttons below to perform an action.')
                             with gr.Row():
-                                output_txt2img_copy_clipboard = gr.Button("Copy to clipboard").click(fn=None, inputs=output_txt2img_gallery, outputs=[], _js=copy_selected_img_js)
+                                output_txt2img_copy_clipboard = gr.Button("Copy to clipboard").click(fn=None, inputs=output_txt2img_gallery, outputs=[], _js=js_copy_selected_txt2img)
                                 output_txt2img_copy_to_input_btn = gr.Button("Push to img2img")
                                 if RealESRGAN is not None:
                                     output_txt2img_to_upscale_esrgan = gr.Button("Upscale w/ ESRGAN")
@@ -1596,12 +1616,13 @@ with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion WebUI")
                     img2img_embeddings = gr.File(label = "Embeddings file for textual inversion", visible=hasattr(model, "embedding_manager"))
                     
                 with gr.Column():
-                    output_img2img_gallery = gr.Gallery(label="Images")
+                    output_img2img_gallery = gr.Gallery(label="Images", elem_id="img2img_gallery_output")
                     with gr.Tabs():
                         with gr.TabItem("Generated image actions", id="img2img_actions_tab"):
-                            output_img2img_select_image = gr.Number(label='Select image number from results for copying', value=1, precision=None)
-                            gr.Markdown("Clear the input image before copying your output to your input. It may take some time to load the image.")
-                            output_img2img_copy_to_input_btn = gr.Button("Copy selected image to input")
+                            gr.Markdown("Select an image, then press one of the buttons below")
+                            output_img2img_copy_to_clipboard_btn = gr.Button("Copy to clipboard")
+                            output_img2img_copy_to_input_btn = gr.Button("Push to img2img input")
+                            gr.Markdown("Warning: This will clear your current image and mask settings!")
                         with gr.TabItem("Output info", id="img2img_output_info_tab"):
                             output_img2img_params = gr.Textbox(label="Generation parameters")
                             with gr.Row():
@@ -1634,19 +1655,21 @@ with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion WebUI")
                 [img2img_show_help_btn, img2img_hide_help_btn, img2img_help]
             )
 
-            output_img2img_copy_to_input_btn.click(
-                copy_img_to_input,
-                [output_img2img_gallery],
-                [img2img_image_editor, img2img_image_mask, tabs],
-                _js=return_selected_img_js
-            )
-
             output_txt2img_copy_to_input_btn.click(
                 copy_img_to_input,
                 [output_txt2img_gallery],
                 [img2img_image_editor, img2img_image_mask, tabs],
-                _js=return_selected_img_js
+                _js=js_return_selected_txt2img
             )
+
+            output_img2img_copy_to_input_btn.click(
+                copy_img_to_input,
+                [output_img2img_gallery],
+                [img2img_image_editor, img2img_image_mask, tabs],
+                _js=js_return_selected_img2img
+            )
+
+            output_img2img_copy_to_clipboard_btn.click(fn=None, inputs=output_img2img_gallery, outputs=[], _js=js_copy_selected_img2img)
 
             img2img_btn_mask.click(
                 img2img,
