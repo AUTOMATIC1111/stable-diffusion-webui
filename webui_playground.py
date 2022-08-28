@@ -7,14 +7,14 @@ import base64
 import re
 
 from frontend.frontend import draw_gradio_ui
+from frontend.ui_functions import resize_image
 
 """
 This file is here to play around with the interface without loading the whole model 
 
 TBD - extract all the UI into this file and import from the main webui. 
 """
-def resize_image(resize_mode, im, width, height):
-    return im 
+
 GFPGAN = True
 RealESRGAN = True 
 def run_goBIG():

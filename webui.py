@@ -1,7 +1,7 @@
 import argparse, os, sys, glob, re
 
 from frontend.frontend import draw_gradio_ui
-
+from frontend.ui_functions import resize_image
 parser = argparse.ArgumentParser()
 parser.add_argument("--outdir", type=str, nargs="?", help="dir to write results to", default=None)
 parser.add_argument("--outdir_txt2img", type=str, nargs="?", help="dir to write txt2img results to (overrides --outdir)", default=None)
