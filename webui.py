@@ -840,6 +840,9 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
     with torch.no_grad(), autocast("cuda"), model.ema_scope():
         p.init()
 
+        if p.n_iter == 1:
+            p.do_not_save_grid = True
+            
         for n in range(p.n_iter):
             prompts = all_prompts[n * p.batch_size:(n + 1) * p.batch_size]
             seeds = all_seeds[n * p.batch_size:(n + 1) * p.batch_size]
