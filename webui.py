@@ -1431,7 +1431,25 @@ def hide_help():
     return [gr.update(visible=True), gr.update(visible=False), gr.update(value="")]
 
 
-demo = draw_gradio_ui(opt, txt2img_defaults=txt2img_defaults)
+demo = draw_gradio_ui(opt,
+                      user_defaults=user_defaults,
+                      txt2img=txt2img,
+                      img2img=img2img,
+                      txt2img_defaults=txt2img_defaults,
+                      txt2img_toggles=txt2img_toggles,
+                      txt2img_toggle_defaults=txt2img_toggle_defaults,
+                      show_embeddings=hasattr(model, "embedding_manager"),
+                      img2img_defaults=img2img_defaults,
+                      img2img_toggles=img2img_toggles,
+                      img2img_toggle_defaults=img2img_toggle_defaults,
+                      img2img_mask_modes=img2img_mask_modes,
+                      img2img_resize_modes=img2img_resize_modes,
+                      sample_img2img=sample_img2img,
+                      RealESRGAN=RealESRGAN,
+                      GFPGAN=GFPGAN,
+                      run_GFPGAN=run_GFPGAN,
+                      run_RealESRGAN=run_RealESRGAN
+                        )
 
 class ServerLauncher(threading.Thread):
     def __init__(self, demo):
