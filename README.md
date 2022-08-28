@@ -4,6 +4,8 @@
 
 ### :warning: temporary notice: [e71d82e](https://github.com/hlky/stable-diffusion-webui/commit/e71d82e3a6617c4db00e90a4378a0f14191b5b75) fixed optimized support and also requires the changes in the main repo. [e71d82e](https://github.com/hlky/stable-diffusion-webui/commit/e71d82e3a6617c4db00e90a4378a0f14191b5b75) is synced to main repo too so just pull from main repo :warning:
 
+### :warning: temporary notice: [#229](https://github.com/hlky/stable-diffusion-webui/pull/229) overhauled the UI code [#229](https://github.com/hlky/stable-diffusion-webui/pull/229) is synced to main repo too so just pull from main repo :warning:
+
 ### Questions about **_[Upscalers](https://github.com/hlky/stable-diffusion-webui/wiki/Upscalers)_**?
 ### Questions about **_[Optimized mode](https://github.com/hlky/stable-diffusion-webui/wiki/Optimized-mode)_**?
 
