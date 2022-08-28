@@ -1,14 +1,14 @@
 hlky/stable-diffusion:
   - source: webui.py
     dest: scripts/webui.py
-  - source: webui_playground.py
-    dest: scripts/webui_playground.py
   - source: relauncher.py
     dest: scripts/relauncher.py
   - source: txt2img.yaml
     dest: txt2img.yaml
   - source: webui.yaml
     dest: configs/webui/webui.yaml
+  - source: readme.md
+    dest: readme.md
   - source: frontend/__init__.py
     dest: frontend/__init__.py
   - source: frontend/css_and_js.py
