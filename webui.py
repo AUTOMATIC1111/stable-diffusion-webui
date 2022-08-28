@@ -13,6 +13,7 @@ parser.add_argument("--config", type=str, default="configs/stable-diffusion/v1-i
 parser.add_argument("--ckpt", type=str, default="models/ldm/stable-diffusion-v1/model.ckpt", help="path to checkpoint of model",)
 parser.add_argument("--precision", type=str, help="evaluate at this precision", choices=["full", "autocast"], default="autocast")
 parser.add_argument("--optimized", action='store_true', help="load the model onto the device piecemeal instead of all at once to reduce VRAM usage at the cost of performance")
+parser.add_argument("--optimized-turbo", action='store_true', help="alternative optimization mode that does not save as much VRAM but runs siginificantly faster")
 parser.add_argument("--gfpgan-dir", type=str, help="GFPGAN directory", default=('./src/gfpgan' if os.path.exists('./src/gfpgan') else './GFPGAN')) # i disagree with where you're putting it but since all guidefags are doing it this way, there you go
 parser.add_argument("--realesrgan-dir", type=str, help="RealESRGAN directory", default=('./src/realesrgan' if os.path.exists('./src/realesrgan') else './RealESRGAN'))
 parser.add_argument("--realesrgan-model", type=str, help="Upscaling model for RealESRGAN", default=('RealESRGAN_x4plus'))
@@ -85,7 +86,8 @@ invalid_filename_chars = '<>:"/\|?*\n'
 GFPGAN_dir = opt.gfpgan_dir
 RealESRGAN_dir = opt.realesrgan_dir
 
-
+if opt.optimized_turbo:
+    opt.optimized = True
 
 # should probably be moved to a settings menu in the UI at some point
 grid_format = [s.lower() for s in opt.grid_format.split(':')]
@@ -320,22 +322,29 @@ if opt.optimized:
         sd['model2.' + key[6:]] = sd.pop(key)
 
     config = OmegaConf.load("optimizedSD/v1-inference.yaml")
-    config.modelUNet.params.small_batch = False
+    device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
     model = instantiate_from_config(config.modelUNet)
     _, _ = model.load_state_dict(sd, strict=False)
+    model.cuda()
     model.eval()
+    model.turbo = opt.optimized_turbo
 
     modelCS = instantiate_from_config(config.modelCondStage)
     _, _ = modelCS.load_state_dict(sd, strict=False)
+    modelCS.cond_stage_model.device = device
     modelCS.eval()
         
     modelFS = instantiate_from_config(config.modelFirstStage)
     _, _ = modelFS.load_state_dict(sd, strict=False)
     modelFS.eval()
-    device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-    model = model if opt.no_half else model.half()
-    modelCS = modelCS if opt.no_half else modelCS.half()
+
+    del sd
+
+    if not opt.no_half:
+        model = model.half()
+        modelCS = modelCS.half()
+        modelFS = modelFS.half()
 else:
     config = OmegaConf.load(opt.config)
     model = load_model_from_config(config, opt.ckpt)
