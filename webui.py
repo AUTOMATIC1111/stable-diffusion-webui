@@ -671,11 +671,6 @@ def process_images(
     sample_path = os.path.join(outpath, "samples")
     os.makedirs(sample_path, exist_ok=True)
 
-    if not prompt_matrix:
-        if "|" in prompt:
-            print('Matrix prompt detected but matrix check is not set.')
-            prompt_matrix=True
-
     if not ("|" in prompt) and prompt.startswith("@"):
         prompt = prompt[1:]
 
