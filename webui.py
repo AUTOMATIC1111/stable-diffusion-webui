@@ -32,6 +32,7 @@ parser.add_argument("--scale",type=float,default=10,help="unconditional guidance
 opt = parser.parse_args()
 
 # this should force GFPGAN and RealESRGAN onto the selected gpu as well
+os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
 os.environ["CUDA_VISIBLE_DEVICES"] = str(opt.gpu)
 
 import gradio as gr
@@ -249,7 +250,7 @@ def load_GFPGAN():
     if opt.gfpgan_cpu or opt.extra_models_cpu:
         instance.device = torch.device('cpu')
     else:
-        instance.device = torch.device(f'cuda:{opt.gpu}') # another way to set gpu device
+        instance.device = torch.device('cuda') # another way to set gpu device
     return instance
 
 def load_RealESRGAN(model_name: str):
@@ -275,7 +276,7 @@ def load_RealESRGAN(model_name: str):
     else:
         instance = RealESRGANer(scale=2, model_path=model_path, model=RealESRGAN_models[model_name], pre_pad=0, half=not opt.no_half)
         instance.model.name = model_name
-        instance.device = torch.device(f'cuda:{opt.gpu}') # another way to set gpu device
+        instance.device = torch.device('cuda') # another way to set gpu device
 
     return instance
 
