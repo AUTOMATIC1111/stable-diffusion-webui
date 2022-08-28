@@ -793,7 +793,7 @@ def process_images(
                 x_sample = x_sample.astype(np.uint8)
                 original_sample = x_sample
                 original_filename = filename
-                if use_GFPGAN and GFPGAN is not None:
+                if use_GFPGAN and GFPGAN is not None and not use_RealESRGAN:
                     torch_gc()
                     cropped_faces, restored_faces, restored_img = GFPGAN.enhance(x_sample[:,:,::-1], has_aligned=False, only_center_face=False, paste_back=True)
                     gfpgan_sample = restored_img[:,:,::-1]
@@ -874,7 +874,7 @@ skip_grid, sort_samples, sampler_name, ddim_eta, n_iter, batch_size, i, denoisin
             else:
                 grid = image_grid(output_images, batch_size)
  
-            if grid:
+            if grid and (batch_size > 1  or n_iter > 1):
                 output_images.insert(0, grid)
 
             grid_count = get_next_sequence_number(outpath, 'grid-')
