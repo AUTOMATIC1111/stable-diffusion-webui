@@ -519,7 +519,7 @@ if os.path.exists(cmd_opts.gfpgan_dir):
         print(traceback.format_exc(), file=sys.stderr)
 
 
-class StableDiffuionModelHijack:
+class StableDiffusionModelHijack:
     ids_lookup = {}
     word_embeddings = {}
     word_embeddings_checksums = {}
@@ -1328,7 +1328,7 @@ sd_model = load_model_from_config(sd_config, cmd_opts.ckpt)
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 sd_model = (sd_model if cmd_opts.no_half else sd_model.half()).to(device)
 
-model_hijack = StableDiffuionModelHijack()
+model_hijack = StableDiffusionModelHijack()
 model_hijack.hijack(sd_model)
 
 demo = gr.TabbedInterface(
