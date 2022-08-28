@@ -110,6 +110,9 @@ Four images will be produced, in this order, all with same seed and each with co
 Another example, this time with 5 prompts and 16 variations:
 ![](images/prompt_matrix.jpg)
 
+
+### Prompt combinations 
+
 If you add '@' symbol at start your prompt and change text like this:
 `@(moba|rpg|rts) character (2d|3d) model` it will be produce 3 * 2 combinations or prompt with same seed:
 
