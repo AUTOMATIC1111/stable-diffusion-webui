@@ -211,13 +211,9 @@ def setup_for_low_vram(sd_model):
             return
 
         if module_in_gpu is not None:
-            print('removing from gpu:', type(module_in_gpu))
             module_in_gpu.to(cpu)
 
-        print('adding to gpu:', type(module))
         module.to(gpu)
-
-        print('added to gpu:', type(module))
         module_in_gpu = module
 
     # see below for register_forward_pre_hook;
