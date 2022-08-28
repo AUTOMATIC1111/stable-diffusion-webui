@@ -9,6 +9,7 @@
 ### Questions about **_[Upscalers](https://github.com/hlky/stable-diffusion-webui/wiki/Upscalers)_**?
 ### Questions about **_[Optimized mode](https://github.com/hlky/stable-diffusion-webui/wiki/Optimized-mode)_**?
 
+### Feature request? Use [discussions](https://github.com/hlky/stable-diffusion-webui/discussions)
 
 
 ## More documentation about features, troubleshooting, common issues very soon
