@@ -5,6 +5,9 @@
 ### Questions about **_[Upscalers](https://github.com/hlky/stable-diffusion-webui/wiki/Upscalers)_**?
 ### Questions about **_[Optimized mode](https://github.com/hlky/stable-diffusion-webui/wiki/Optimized-mode)_**?
 
+## More documentation about features, troubleshooting, common issues very soon
+### Want to help with documentation? Documented something? Use [Discussions](https://github.com/hlky/stable-diffusion-webui/discussions)
+
 Features:
 
 * Gradio GUI: Idiot-proof, fully featured frontend for both txt2img and img2img generation
