@@ -9,13 +9,11 @@ hlky/stable-diffusion:
     dest: txt2img.yaml
   - source: webui.yaml
     dest: configs/webui/webui.yaml
-  - source: scripts/frontend/__init__.py
-    dest: scripts/frontend/__init__.py
-  - source: scripts/frontend/css_and_js.py
-    dest: scripts/frontend/css_and_js.py
-  - source: scripts/frontend/frontend.py
-    dest: scripts/frontend/frontend.py
-  - source: scripts/frontend/ui_functions.py
-    dest: scripts/frontend/ui_functions.py
-
-
+  - source: frontend/__init__.py
+    dest: frontend/__init__.py
+  - source: frontend/css_and_js.py
+    dest: frontend/css_and_js.py
+  - source: frontend/frontend.py
+    dest: frontend/frontend.py
+  - source: frontend/ui_functions.py
+    dest: frontend/ui_functions.py
