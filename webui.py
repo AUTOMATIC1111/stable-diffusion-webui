@@ -131,6 +131,7 @@ class Options:
         "grid_save": OptionInfo(True, "Save image grids"),
         "grid_format": OptionInfo('png', 'File format for grids'),
         "grid_extended_filename": OptionInfo(False, "Add extended info (seed, prompt) to filename when saving grid"),
+        "grid_only_if_multiple": OptionInfo(True, "Do not save grids consisting of one picture"),
         "n_rows": OptionInfo(-1, "Grid row count; use -1 for autodetect and 0 for it to be same as batch size", gr.Slider, {"minimum": -1, "maximum": 16, "step": 1}),
         "jpeg_quality": OptionInfo(80, "Quality for saved jpeg images", gr.Slider, {"minimum": 1, "maximum": 100, "step": 1}),
         "export_for_4chan": OptionInfo(True, "If PNG image is larger than 4MB or any dimension is larger than 4000, downscale and save copy as JPG"),
@@ -876,7 +877,8 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
                     output_images.append(image)
                     base_count += 1
 
-        if (p.prompt_matrix or opts.grid_save) and not p.do_not_save_grid:
+        unwanted_grid_because_of_img_count = len(output_images) < 2 and opts.grid_only_if_multiple
+        if (p.prompt_matrix or opts.grid_save) and not p.do_not_save_grid and not unwanted_grid_because_of_img_count:
             if p.prompt_matrix:
                 grid = image_grid(output_images, p.batch_size, rows=1 << ((len(prompt_matrix_parts)-1)//2))
 
