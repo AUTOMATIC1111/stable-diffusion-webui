@@ -1,1 +1,2 @@
-__pycache__/webui_playground.cpython-310.pyc
+*.pyc
+.idea
