@@ -106,6 +106,16 @@ Four images will be produced, in this order, all with same seed and each with co
 Another example, this time with 5 prompts and 16 variations:
 ![](images/prompt_matrix.jpg)
 
+If you add '@' symbol at start your prompt and change text like this:
+`@(moba|rpg|rts) character (2d|3d) model` it will be produce 3 * 2 combinations or prompt with same seed:
+
+- `moba character 2d model`
+- `rpg character 2d model`
+- `rts character 2d model`
+- `moba character 3d model`
+- `rpg character 3d model`
+- `rts character 3d model`
+
 If you use this feature, batch count will be ignored, because the number of pictures to produce
 depends on your prompts, but batch size will still work (generating multiple pictures at the
 same time for a small speed boost).
