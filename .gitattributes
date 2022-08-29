@@ -1,0 +1,109 @@
+# Auto-detect text/binary by default:
+* 	text=auto eol=lf
+
+# raw-Text files
+*.[Cc][Ss][Vv] text eol=lf
+*.[Mm][Dd] text eol=lf diff=markdown
+*.[Tt][Xx][Tt] text !eol
+
+# Checksums
+*.[Mm][Dd]5 text eol=lf
+*.[Ss][Hh][Aa] text eol=lf
+*.[Ss][Hh][Aa][0123456789]* text eol=lf
+
+# Scripts: OS
+*.[Bb][Aa][Tt] text !eol
+*.[Cc][Mm][Dd] text !eol
+*.[Ss][Hh] diff=bash text eol=lf
+
+# Scripts: Python
+*.[Pp][Yy] text eol=lf diff=python
+
+# Scripts: Other programming languages
+*.[Cc][Ss] text !eol diff=csharp
+*.[Cc][Ss][Ss] text eol=lf diff=css
+*.[Hh] text eol=lf diff=cpp
+*.[Hh][Tt][Mm] text eol=lf diff=html
+*.[Hh][Tt][Mm][Ll] text eol=lf diff=html
+*.[Jj][Ss] text eol=lf
+*.[Jj][Ss][Oo][Nn] text eol=lf
+*.[Pp][Hh][Pp] text eol=lf diff=php
+*.[Ss][Qq][Ll] text=auto eol=lf
+*.[Xx][Mm][Ll] text eol=lf diff=html
+*.[Xx][Hh][Tt][Mm][Ll] text eol=lf diff=html
+*.[Yy][Aa][Mm][Ll] text eol=lf
+*.[Yy][Mm][Ll] text eol=lf
+
+# Vector graphics
+*.[Ss][Vv][Gg] text eol=lf
+
+
+# =========================================================================== #
+# 	Binary formats
+# =========================================================================== #
+
+*.[Dd][Bb] binary
+*.[Mm][Dd][Bb] binary
+
+# Archives
+*.7[Zz] binary
+*.[Gg][Zz] binary
+*.[Zz][Ii][Pp] binary
+*.[AaJjRrTt][Aa][Rr] binary
+
+# OS libraries
+*.[Dd][Ll][Ll] binary
+*.[Ee][Xx][Ee] binary
+*.[Ss][Oo] binary
+*.[Ss][Yy][Ss] binary
+*.[Bb][Yy][Tt][Ee][Ss] binary
+
+# Python binaries:
+*.[Pp][Yy][CcDdOo] binary
+*.[Pp][Dd][Bb] binary
+*.[Ww][Hh][Ll] binary
+
+# Fonts
+*.[Ee][Oo][Tt] binary
+*.[OoTt][Tt][Ff] binary
+*.[Ww][Oo][Ff][Ff] binary
+*.[Ww][Oo][Ff][Ff]2 binary
+
+# Images: Primary
+*.[Bb][Mm][Pp] binary
+*.[Gg][Ii][Ff] binary
+*.[Jj][Pp][Gg] binary
+*.[Jj][Pp][Ee][Gg] binary
+*.[Pp][Nn][Gg] binary
+*.[Tt][Gg][Aa] binary
+*.[Tt][Ii][Ff] binary
+*.[Tt][Ii][Ff][Ff] binary
+
+# Images: HDR
+*.[Ee][Xx][Rr] binary
+*.[Hh][Dd][Rr] binary
+
+# Images: Other
+*.[Cc][Uu][Rr] binary
+*.[Ii][Cc][Nn][Ss] binary
+*.[Ii][Cc][OoNn] binary
+*.[Ii][Cc][Oo][Nn] binary
+*.[Pp][Dd][Ff] binary
+*.[Pp][Ss][DdBb] binary
+
+# Audio
+*.[Aa][Aa][Cc] binary
+*.[AaFf][Ll][Aa][Cc] binary
+*.[Aa][Ii][Ff] binary
+*.[Mm]4[Aa] binary
+*.[Mm][Pp][1234] binary
+*.[Oo][Gg][GgAa] binary
+*.[Ww][Aa][Vv] binary
+
+# Video
+# mp4 caught by audio pattern
+*.[Aa][Vv][Ii] binary
+*.[Bb][Ii][Kk] binary
+*.[Mm][Kk][Vv] binary
+*.[Oo][Gg][VvXx] binary
+*.[Ss][Ww][Ff] binary
