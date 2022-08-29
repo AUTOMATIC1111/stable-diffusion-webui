@@ -248,3 +248,17 @@ print("Seed was: " + str(processed.seed))
 
 display(processed.images, processed.seed, processed.info)
 ```
+
+### `--lowvram`
+Optimizations for GPUs with low VRAM. This should make it possible to generate 512x512 images on videocards with 4GB memory.
+
+The original idea of those ideas is by basujindal: https://github.com/basujindal/stable-diffusion. Model is separated into modules,
+and only one module is kept in GPU memory; when another module needs to run, the previous is removed from GPU memory.
+
+It should be obvious but the nature of those optimizations makes the processing run slower -- about 10 times slower
+compared to normal operation on my RTX 3090.
+
+This is an independent implementation that does not require any modification to original Stable Diffusion code, and
+with all code concenrated in one place rather than scattered around the program.
+
+
