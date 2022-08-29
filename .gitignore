@@ -1,2 +1,52 @@
-*.pyc
-.idea
+# OS-generated
+# ------------
+.DS_Store*
+[Tt]humbs.db
+[Dd]esktop.ini
+
+# Programming - general
+*.log
+
+
+# =========================================================================== #
+# 	Python-related
+# =========================================================================== #
+# src: https://github.com/github/gitignore/blob/master/Python.gitignore
+
+# JetBrains PyCharm / Rider
+.idea/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.env_updated
+condaenv.*.requirements.txt
+
+
+# =========================================================================== #
+# 	Repo-specific
+# =========================================================================== #
