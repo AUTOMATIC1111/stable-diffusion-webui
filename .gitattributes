@@ -14,7 +14,7 @@
 # Scripts: OS
 *.[Bb][Aa][Tt] text !eol
 *.[Cc][Mm][Dd] text !eol
-*.[Ss][Hh] diff=bash text eol=lf
+*.[Ss][Hh] text eol=lf diff=bash
 
 # Scripts: Python
 *.[Pp][Yy] text eol=lf diff=python
