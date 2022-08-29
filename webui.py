@@ -1217,20 +1217,67 @@ main_css = \
 .performance { font-size: 0.85em; color: #444; }
 """
 
-#[data-testid="image"] {min-height: 512px !important}
+# [data-testid="image"] {min-height: 512px !important}
+# #generate{width: 100%;}
 custom_css = \
 """
 #output_gallery {
-    min-height: 50vh !important;
+    min-height: 100% !important;
     scrollbar-width: none;
 }
+
 ::-webkit-scrollbar {
     display: none;
 }
-* #body>.col:nth-child(2){width:250%;max-width:89vw}
-#generate{width: 100%; }
-#prompt_row input{
- font-size:16px
+
+#prompt_input {
+    padding-top: 0.25rem !important;
+    padding-bottom: 0rem !important;
+    padding-left: 0rem !important;
+    padding-right: 0rem !important;
+    border-style: none !important;
+}
+
+#prompt_row input {
+    font-size: 16px;
+}
+
+#sd_mode {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    border-style: none !important;
+}
+
+#sd_mode > label > select {
+    background-color: #4b5563;
+    font-weight: 600;
+    min-height: 42px;
+    max-height: 42px;
+    text-align: center;
+    font-size: 1rem;
+}
+
+#body>.col:nth-child(odd) {
+    max-width: 450px;
+    min-width: 300px;
+}
+#body>.col:nth-child(even) {
+    width:250%;
+}
+
+.container {
+    max-width: min(1600px, 95%);
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+input[type="number"] {
+    -moz-appearance: textfield;
 }
 """
 
@@ -1238,7 +1285,7 @@ full_css = main_css + css_hide_progressbar + custom_css
 
 with gr.Blocks(css=full_css, analytics_enabled=False, title='Stable Diffusion WebUI') as demo:
     with gr.Tabs(elem_id='tabs'):
-        with gr.TabItem('Stable Diffusion', id='txt2img_tab'):
+        with gr.TabItem('Stable Diffusion', id='sd_tab'):
             with gr.Row(elem_id='prompt_row'):
                 sd_prompt = gr.Textbox(elem_id='prompt_input', placeholder='A corgi wearing a top hat as an oil painting.', lines=1, max_lines=1, show_label=False)
 
@@ -1246,13 +1293,13 @@ with gr.Blocks(css=full_css, analytics_enabled=False, title='Stable Diffusion We
                 # Left Column
                 with gr.Column():
                     sd_mode = \
-                        gr.Dropdown(label='Mode', value='Text-to-Image', choices=['Text-to-Image', 'Image-to-Image', 'Post-Processing'])
+                        gr.Dropdown(show_label=False, value='Text-to-Image', choices=['Text-to-Image', 'Image-to-Image', 'Post-Processing'], elem_id='sd_mode')
 
                     with gr.Row():
                         sd_image_height = \
-                            gr.Number(label="Image Height", value=512, precision=0)
+                            gr.Number(label="Image Height", value=512, precision=0, elem_id='img_height')
                         sd_image_width = \
-                            gr.Number(label="Image Width", value=512, precision=0)
+                            gr.Number(label="Image Width", value=512, precision=0, elem_id='img_width')
 
                     with gr.Row():
                         sd_batch_count = \
@@ -1264,10 +1311,7 @@ with gr.Blocks(css=full_css, analytics_enabled=False, title='Stable Diffusion We
                         sd_input_image = \
                             gr.Image(label='Input Image', source="upload", interactive=True, type="pil", show_label=False, visible=False)
                         sd_resize_mode = \
-                            gr.Dropdown(label="Resize mode", choices=["Stretch", "Proportional stretch & crop", "Proportional stretch & fill"], type="index", value="Stretch", visible=False)
-                    
-                    sd_generate = \
-                        gr.Button('Generate').style(full_width=True)
+                            gr.Dropdown(label="Resize mode", choices=["Stretch", "Scale and crop", "Scale and fill"], type="index", value="Stretch", visible=False)
 
                 # Center Column
                 with gr.Column():
@@ -1278,6 +1322,9 @@ with gr.Blocks(css=full_css, analytics_enabled=False, title='Stable Diffusion We
 
                 # Right Column
                 with gr.Column():
+                    sd_generate = \
+                        gr.Button('Generate').style(full_width=True)
+
                     with gr.Row():
                         sd_sampling_method = \
                             gr.Dropdown(label='Sampling method', choices=[x.name for x in samplers], value=samplers[0].name, type="index")
@@ -1290,22 +1337,24 @@ with gr.Blocks(css=full_css, analytics_enabled=False, title='Stable Diffusion We
                         sd_denoise = \
                             gr.Slider(label='Denoising Strength (DNS)', value=0.75, minimum=0.0, maximum=1.0, step=0.01, visible=False)
 
+                    sd_facefix = \
+                        gr.Checkbox(label='GFPGAN', value=False, visible=GFPGAN is not None).style(rounded=False)
+                    sd_facefix_strength = \
+                        gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="GFPGAN strength", value=1, interactive=GFPGAN is not None, visible=False)
+
                     sd_use_input_seed = \
-                        gr.Checkbox(label='Custom seed')
+                        gr.Checkbox(label='Custom seed').style(rounded=False)
                     sd_input_seed = \
                         gr.Number(value=-1, visible=False, show_label=False)
 
-                    sd_facefix = \
-                        gr.Checkbox(label='GFPGAN', value=False, visible=GFPGAN is not None)
-                    sd_facefix_strength = \
-                        gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="GFPGAN strength", value=1, interactive=GFPGAN is not None, visible=False)
+                    # TODO: Change to 'Enable syntactic prompts'
                     sd_matrix = \
-                        gr.Checkbox(label='Create prompt matrix', value=False)
+                        gr.Checkbox(label='Create prompt matrix', value=False).style(rounded=False)
 
                     sd_loopback = \
-                        gr.Checkbox(label='Output loopback', value=False, visible=False)
+                        gr.Checkbox(label='Output loopback', value=False, visible=False).style(rounded=False)
                     sd_upscale = \
-                        gr.Checkbox(label='Super resolution upscale', value=False, visible=False)
+                        gr.Checkbox(label='Super resolution upscale', value=False, visible=False).style(rounded=False)
 
         with gr.TabItem('Settings', id='settings_tab'):
             # TODO: fix this
