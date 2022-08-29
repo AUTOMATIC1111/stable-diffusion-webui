@@ -54,6 +54,7 @@ parser.add_argument("--max-batch-count", type=int, default=16, help="maximum bat
 parser.add_argument("--embeddings-dir", type=str, default='embeddings', help="embeddings dirtectory for textual inversion (default: embeddings)")
 parser.add_argument("--allow-code", action='store_true', help="allow custom script execution from webui")
 parser.add_argument("--lowvram", action='store_true', help="enamble optimizations for low vram")
+parser.add_argument("--precision", type=str, help="evaluate at this precision", choices=["full", "autocast"], default="autocast")
 
 cmd_opts = parser.parse_args()
 
@@ -273,8 +274,9 @@ def create_random_tensors(shape, seeds):
 
 
 def torch_gc():
-    torch.cuda.empty_cache()
-    torch.cuda.ipc_collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+        torch.cuda.ipc_collect()
 
 
 def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False):
@@ -528,6 +530,7 @@ def draw_xy_grid(xs, ys, x_label, y_label, cell):
 
     return grid
 
+
 def resize_image(resize_mode, im, width, height):
     if resize_mode == 0:
         res = im.resize((width, height), resample=LANCZOS)
@@ -747,7 +750,7 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
         if len(used_custom_terms) > 0:
             self.hijack.comments.append("Used custom terms: " + ", ".join([f'{word} [{checksum}]' for word, checksum in used_custom_terms]))
 
-        tokens = torch.asarray(remade_batch_tokens).to(self.wrapped.device)
+        tokens = torch.asarray(remade_batch_tokens).to(device)
         outputs = self.wrapped.transformer(input_ids=tokens)
         z = outputs.last_hidden_state
 
@@ -906,8 +909,9 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
         model_hijack.load_textual_inversion_embeddings(cmd_opts.embeddings_dir, model)
 
     output_images = []
+    precision_scope = autocast if cmd_opts.precision == "autocast" else nullcontext
     ema_scope = (nullcontext if cmd_opts.lowvram else model.ema_scope)
-    with torch.no_grad(), autocast("cuda"), ema_scope():
+    with torch.no_grad(), precision_scope("cuda"), ema_scope():
         p.init()
 
         for n in range(p.n_iter):
