@@ -11,6 +11,7 @@
 
 ### Feature request? Use [discussions](https://github.com/hlky/stable-diffusion-webui/discussions)
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/altryne/sd-webui-colab/blob/main/Stable_Diffusion_WebUi_Altryne.ipynb)
 
 ## More documentation about features, troubleshooting, common issues very soon
 ### Want to help with documentation? Documented something? Use [Discussions](https://github.com/hlky/stable-diffusion-webui/discussions)
