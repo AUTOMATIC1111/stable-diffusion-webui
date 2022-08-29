@@ -1314,7 +1314,7 @@ else:
 
 # make sure these indicies line up at the top of txt2img()
 txt2img_toggles = [
-    'Create prompt matrix (separate multiple prompts using |, and get all combinations of them)',
+    'Create prompt matrix (separate multiple prompts using |, and get all combinations of them) [OBSOLETE]',
     'Normalize Prompt Weights (ensure sum of weights add up to 1.0)',
     'Save individual images',
     'Save grid',
