@@ -53,10 +53,14 @@ parser.add_argument("--no-progressbar-hiding", action='store_true', help="do not
 parser.add_argument("--max-batch-count", type=int, default=16, help="maximum batch count value for the UI")
 parser.add_argument("--embeddings-dir", type=str, default='embeddings', help="embeddings dirtectory for textual inversion (default: embeddings)")
 parser.add_argument("--allow-code", action='store_true', help="allow custom script execution from webui")
-parser.add_argument("--lowvram", action='store_true', help="enamble optimizations for low vram")
+parser.add_argument("--lowvram", action='store_true', help="enamble stable diffusion model optimizations for low vram")
 parser.add_argument("--precision", type=str, help="evaluate at this precision", choices=["full", "autocast"], default="autocast")
 
 cmd_opts = parser.parse_args()
+
+cpu = torch.device("cpu")
+gpu = torch.device("cuda")
+device = gpu if torch.cuda.is_available() else cpu
 
 css_hide_progressbar = """
 .wrap .m-12 svg { display:none!important; }
@@ -106,7 +110,7 @@ try:
     ]
     have_realesrgan = True
 except Exception:
-    print("Error loading Real-ESRGAN:", file=sys.stderr)
+    print("Error importing Real-ESRGAN:", file=sys.stderr)
     print(traceback.format_exc(), file=sys.stderr)
 
     realesrgan_models = [RealesrganModelInfo('None', '', 0, None)]
@@ -117,6 +121,27 @@ sd_upscalers = {
     "Lanczos": lambda img: img.resize((img.width*2, img.height*2), resample=LANCZOS),
     "None": lambda img: img
 }
+
+
+have_gfpgan = False
+if os.path.exists(cmd_opts.gfpgan_dir):
+    try:
+        sys.path.append(os.path.abspath(cmd_opts.gfpgan_dir))
+        from gfpgan import GFPGANer
+
+        have_gfpgan = True
+    except:
+        print("Error importing GFPGAN:", file=sys.stderr)
+        print(traceback.format_exc(), file=sys.stderr)
+
+
+def gfpgan():
+    model_name = 'GFPGANv1.3'
+    model_path = os.path.join(cmd_opts.gfpgan_dir, 'experiments/pretrained_models', model_name + '.pth')
+    if not os.path.isfile(model_path):
+        raise Exception("GFPGAN model not found at path "+model_path)
+
+    return GFPGANer(model_path=model_path, upscale=1, arch='clean', channel_multiplier=2, bg_upsampler=None)
 
 
 class Options:
@@ -140,6 +165,7 @@ class Options:
         "jpeg_quality": OptionInfo(80, "Quality for saved jpeg images", gr.Slider, {"minimum": 1, "maximum": 100, "step": 1}),
         "export_for_4chan": OptionInfo(True, "If PNG image is larger than 4MB or any dimension is larger than 4000, downscale and save copy as JPG"),
         "enable_pnginfo": OptionInfo(True, "Save text information about generation parameters as chunks to png files"),
+        "font": OptionInfo("arial.ttf", "Font for image grids  that have text"),
         "prompt_matrix_add_to_start": OptionInfo(True, "In prompt matrix, add the variable combination of text to the start of the prompt, rather than the end"),
         "sd_upscale_upscaler_index": OptionInfo("RealESRGAN", "Upscaler to use for SD upscale", gr.Radio, {"choices": list(sd_upscalers.keys())}),
         "sd_upscale_overlap": OptionInfo(64, "Overlap for tiles for SD upscale. The smaller it is, the less smooth transition from one tile to another", gr.Slider, {"minimum": 0, "maximum": 256, "step": 16}),
@@ -319,19 +345,6 @@ def plaintext_to_html(text):
     text = "".join([f"<p>{html.escape(x)}</p>\n" for x in text.split('\n')])
     return text
 
-
-def load_gfpgan():
-    model_name = 'GFPGANv1.3'
-    model_path = os.path.join(cmd_opts.gfpgan_dir, 'experiments/pretrained_models', model_name + '.pth')
-    if not os.path.isfile(model_path):
-        raise Exception("GFPGAN model not found at path "+model_path)
-
-    sys.path.append(os.path.abspath(cmd_opts.gfpgan_dir))
-    from gfpgan import GFPGANer
-
-    return GFPGANer(model_path=model_path, upscale=1, arch='clean', channel_multiplier=2, bg_upsampler=None)
-
-
 def image_grid(imgs, batch_size=1, rows=None):
     if rows is None:
         if opts.n_rows > 0:
@@ -449,7 +462,7 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts):
 
     fontsize = (width + height) // 25
     line_spacing = fontsize // 2
-    fnt = ImageFont.truetype("arial.ttf", fontsize)
+    fnt = ImageFont.truetype(opts.font, fontsize)
     color_active = (0, 0, 0)
     color_inactive = (153, 153, 153)
 
@@ -579,16 +592,6 @@ def wrap_gradio_call(func):
         return tuple(res)
 
     return f
-
-
-GFPGAN = None
-if os.path.exists(cmd_opts.gfpgan_dir):
-    try:
-        GFPGAN = load_gfpgan()
-        print("Loaded GFPGAN")
-    except Exception:
-        print("Error loading GFPGAN:", file=sys.stderr)
-        print(traceback.format_exc(), file=sys.stderr)
 
 
 class StableDiffusionModelHijack:
@@ -894,7 +897,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
         "Sampler": samplers[p.sampler_index].name,
         "CFG scale": p.cfg_scale,
         "Seed": seed,
-        "GFPGAN": ("GFPGAN" if p.use_GFPGAN and GFPGAN is not None else None)
+        "GFPGAN": ("GFPGAN" if p.use_GFPGAN else None)
     }
 
     if p.extra_generation_params is not None:
@@ -937,9 +940,11 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
                     x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
                     x_sample = x_sample.astype(np.uint8)
 
-                    if p.use_GFPGAN and GFPGAN is not None:
+                    if p.use_GFPGAN:
                         torch_gc()
-                        cropped_faces, restored_faces, restored_img = GFPGAN.enhance(x_sample, has_aligned=False, only_center_face=False, paste_back=True)
+
+                        gfpgan_model = gfpgan()
+                        cropped_faces, restored_faces, restored_img = gfpgan_model.enhance(x_sample, has_aligned=False, only_center_face=False, paste_back=True)
                         x_sample = restored_img
 
                     image = Image.fromarray(x_sample)
@@ -1073,7 +1078,7 @@ txt2img_interface = gr.Interface(
         gr.Textbox(label="Prompt", placeholder="A corgi wearing a top hat as an oil painting.", lines=1),
         gr.Slider(minimum=1, maximum=150, step=1, label="Sampling Steps", value=50),
         gr.Radio(label='Sampling method', choices=[x.name for x in samplers], value=samplers[0].name, type="index"),
-        gr.Checkbox(label='Fix faces using GFPGAN', value=False, visible=GFPGAN is not None),
+        gr.Checkbox(label='Fix faces using GFPGAN', value=False, visible=have_gfpgan),
         gr.Checkbox(label='Create prompt matrix (separate multiple prompts using |, and get all combinations of them)', value=False),
         gr.Slider(minimum=1, maximum=cmd_opts.max_batch_count, step=1, label='Batch count (how many batches of images to generate)', value=1),
         gr.Slider(minimum=1, maximum=8, step=1, label='Batch size (how many images are in a batch; memory-hungry)', value=1),
@@ -1260,7 +1265,7 @@ img2img_interface = gr.Interface(
         gr.Image(value=sample_img2img, source="upload", interactive=True, type="pil"),
         gr.Slider(minimum=1, maximum=150, step=1, label="Sampling Steps", value=50),
         gr.Radio(label='Sampling method', choices=[x.name for x in samplers_for_img2img], value=samplers_for_img2img[0].name, type="index"),
-        gr.Checkbox(label='Fix faces using GFPGAN', value=False, visible=GFPGAN is not None),
+        gr.Checkbox(label='Fix faces using GFPGAN', value=False, visible=have_gfpgan),
         gr.Checkbox(label='Create prompt matrix (separate multiple prompts using |, and get all combinations of them)', value=False),
         gr.Checkbox(label='Loopback (use images from previous batch when creating next batch)', value=False),
         gr.Checkbox(label='Stable Diffusion upscale', value=False),
@@ -1306,8 +1311,9 @@ def run_extras(image, GFPGAN_strength, RealESRGAN_upscaling, RealESRGAN_model_in
 
     outpath = opts.outdir or "outputs/extras-samples"
 
-    if GFPGAN is not None and GFPGAN_strength > 0:
-        cropped_faces, restored_faces, restored_img = GFPGAN.enhance(np.array(image, dtype=np.uint8), has_aligned=False, only_center_face=False, paste_back=True)
+    if have_gfpgan is not None and GFPGAN_strength > 0:
+        gfpgan_model = gfpgan()
+        cropped_faces, restored_faces, restored_img = gfpgan_model.enhance(np.array(image, dtype=np.uint8), has_aligned=False, only_center_face=False, paste_back=True)
         res = Image.fromarray(restored_img)
 
         if GFPGAN_strength < 1.0:
@@ -1328,7 +1334,7 @@ extras_interface = gr.Interface(
     wrap_gradio_call(run_extras),
     inputs=[
         gr.Image(label="Source", source="upload", interactive=True, type="pil"),
-        gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="GFPGAN strength", value=1, interactive=GFPGAN is not None),
+        gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="GFPGAN strength", value=1, interactive=have_gfpgan),
         gr.Slider(minimum=1.0, maximum=4.0, step=0.05, label="Real-ESRGAN upscaling", value=2, interactive=have_realesrgan),
         gr.Radio(label='Real-ESRGAN model', choices=[x.name for x in realesrgan_models], value=realesrgan_models[0].name, type="index", interactive=have_realesrgan),
     ],
@@ -1399,11 +1405,6 @@ interfaces = [
 
 sd_config = OmegaConf.load(cmd_opts.config)
 sd_model = load_model_from_config(sd_config, cmd_opts.ckpt)
-
-cpu = torch.device("cpu")
-gpu = torch.device("cuda")
-device = gpu if torch.cuda.is_available() else cpu
-
 sd_model = (sd_model if cmd_opts.no_half else sd_model.half())
 
 if not cmd_opts.lowvram:
