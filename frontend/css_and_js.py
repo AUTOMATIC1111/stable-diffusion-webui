@@ -10,15 +10,23 @@ def css(opt):
     [data-testid="image"] {min-height: 512px !important}
     * #body>.col:nth-child(2){width:250%;max-width:89vw}
     
+    #prompt_row {
+        position: relative;
+    }
+
     #prompt_row input,
     #prompt_row textarea {
       font-size: 1.5rem;
       line-height: 2rem;
+      padding-right: 115px;
     }
     #edit_mode_select{width:auto !important}
     input[type=number]:disabled { -moz-appearance: textfield;+ }
     #generate, #img2img_mask_btn, #img2img_edit_btn {
-        height: 100%;
+        position: absolute;
+        top: 15px;
+        bottom: 15px;
+        right: 17px;
     }
     """
     return styling if opt.no_progressbar_hiding else styling + css_hide_progressbar
