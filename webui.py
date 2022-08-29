@@ -591,7 +591,6 @@ def oxlamon_matrix(prompt, seed, n_iter, batch_size):
             if data:
                 return len(data.group(1).split("|"))
             break
-        return None
 
     def repliter( txt ):
         for data in re.finditer( ".*?\\((.*?)\\).*", txt ):
@@ -636,13 +635,12 @@ def oxlamon_matrix(prompt, seed, n_iter, batch_size):
     n_iter = math.ceil(len(all_prompts) / batch_size)
 
     needrows = getrowcount(prompt)
-    if needrows:
-        xrows = math.sqrt(len(all_prompts))
-        xrows = round(xrows)
-        # if columns is to much
-        cols = math.ceil(len(all_prompts) / xrows)
-        if cols > needrows*4:
-            needrows *= 2
+    xrows = math.sqrt(len(all_prompts))
+    xrows = round(xrows)
+    # if columns is to much
+    cols = math.ceil(len(all_prompts) / xrows)
+    if cols > needrows*4:
+        needrows *= 2
 
     return all_seeds, n_iter, prompt_matrix_parts, all_prompts, needrows
 
