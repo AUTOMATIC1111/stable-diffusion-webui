@@ -670,8 +670,13 @@ def process_images(
     sample_path = os.path.join(outpath, "samples")
     os.makedirs(sample_path, exist_ok=True)
 
-    if not ("|" in prompt) and prompt.startswith("@"):
-        prompt = prompt[1:]
+    # Set auto prompt_matrix depending on prompt.
+    if "|" in prompt:
+        prompt_matrix = True
+    else:
+        prompt_matrix = False
+        if prompt.startswith("@"):
+            prompt = prompt[1:]
 
     comments = []
 
