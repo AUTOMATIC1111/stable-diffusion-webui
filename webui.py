@@ -72,10 +72,10 @@ css_hide_progressbar = """
 SamplerData = namedtuple('SamplerData', ['name', 'constructor'])
 samplers = [
     *[SamplerData(x[0], lambda funcname=x[1]: KDiffusionSampler(funcname)) for x in [
+        ('Euler ancestral', 'sample_euler_ancestral'),
+        ('Euler', 'sample_euler'),
         ('LMS', 'sample_lms'),
         ('Heun', 'sample_heun'),
-        ('Euler', 'sample_euler'),
-        ('Euler ancestral', 'sample_euler_ancestral'),
         ('DPM 2', 'sample_dpm_2'),
         ('DPM 2 Ancestral', 'sample_dpm_2_ancestral'),
     ] if hasattr(k_diffusion.sampling, x[1])],
@@ -466,7 +466,7 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts):
     color_active = (0, 0, 0)
     color_inactive = (153, 153, 153)
 
-    pad_left = width * 3 // 4 if len(hor_texts) > 1 else 0
+    pad_left = width * 3 // 4 if len(ver_texts) > 1 else 0
 
     cols = im.width // width
     rows = im.height // height
@@ -477,12 +477,12 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts):
     calc_img = Image.new("RGB", (1, 1), "white")
     calc_d = ImageDraw.Draw(calc_img)
 
-    for texts in hor_texts + ver_texts:
+    for texts, allowed_width in zip(hor_texts + ver_texts, [width] * len(hor_texts) + [pad_left] * len(ver_texts)):
         items = [] + texts
         texts.clear()
 
         for line in items:
-            wrapped = wrap(calc_d, line.text, fnt, width)
+            wrapped = wrap(calc_d, line.text, fnt, allowed_width)
             texts += [GridAnnotation(x, line.is_active) for x in wrapped]
 
         for line in texts:
@@ -1076,13 +1076,13 @@ txt2img_interface = gr.Interface(
     wrap_gradio_call(txt2img),
     inputs=[
         gr.Textbox(label="Prompt", placeholder="A corgi wearing a top hat as an oil painting.", lines=1),
-        gr.Slider(minimum=1, maximum=150, step=1, label="Sampling Steps", value=50),
+        gr.Slider(minimum=1, maximum=150, step=1, label="Sampling Steps", value=20),
         gr.Radio(label='Sampling method', choices=[x.name for x in samplers], value=samplers[0].name, type="index"),
         gr.Checkbox(label='Fix faces using GFPGAN', value=False, visible=have_gfpgan),
         gr.Checkbox(label='Create prompt matrix (separate multiple prompts using |, and get all combinations of them)', value=False),
         gr.Slider(minimum=1, maximum=cmd_opts.max_batch_count, step=1, label='Batch count (how many batches of images to generate)', value=1),
         gr.Slider(minimum=1, maximum=8, step=1, label='Batch size (how many images are in a batch; memory-hungry)', value=1),
-        gr.Slider(minimum=1.0, maximum=15.0, step=0.5, label='Classifier Free Guidance Scale (how strongly the image should follow the prompt)', value=7.0),
+        gr.Slider(minimum=1.0, maximum=15.0, step=0.5, label='Classifier Free Guidance Scale (how strongly the image should follow the prompt)', value=7.5),
         gr.Number(label='Seed', value=-1),
         gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512),
         gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512),
@@ -1263,7 +1263,7 @@ img2img_interface = gr.Interface(
     inputs=[
         gr.Textbox(placeholder="A fantasy landscape, trending on artstation.", lines=1),
         gr.Image(value=sample_img2img, source="upload", interactive=True, type="pil"),
-        gr.Slider(minimum=1, maximum=150, step=1, label="Sampling Steps", value=50),
+        gr.Slider(minimum=1, maximum=150, step=1, label="Sampling Steps", value=20),
         gr.Radio(label='Sampling method', choices=[x.name for x in samplers_for_img2img], value=samplers_for_img2img[0].name, type="index"),
         gr.Checkbox(label='Fix faces using GFPGAN', value=False, visible=have_gfpgan),
         gr.Checkbox(label='Create prompt matrix (separate multiple prompts using |, and get all combinations of them)', value=False),
@@ -1346,6 +1346,36 @@ extras_interface = gr.Interface(
     allow_flagging="never",
 )
 
+
+def run_pnginfo(image):
+    info = ''
+    for key, text in image.info.items():
+        info += f"""
+<div>
+<p><b>{plaintext_to_html(str(key))}</b></p>
+<p>{plaintext_to_html(str(text))}</p>
+</div>
+""".strip()+"\n"
+
+    if len(info) == 0:
+        message = "Nothing found in the image."
+        info = f"<div><p>{message}<p></div>"
+
+    return [info]
+
+
+pnginfo_interface = gr.Interface(
+    wrap_gradio_call(run_pnginfo),
+    inputs=[
+        gr.Image(label="Source", source="upload", interactive=True, type="pil"),
+    ],
+    outputs=[
+        gr.HTML(),
+    ],
+    allow_flagging="never",
+)
+
+
 opts = Options()
 if os.path.exists(config_filename):
     opts.load(config_filename)
@@ -1400,6 +1430,7 @@ interfaces = [
     (txt2img_interface, "txt2img"),
     (img2img_interface, "img2img"),
     (extras_interface, "Extras"),
+    (pnginfo_interface, "PNG Info"),
     (settings_interface, "Settings"),
 ]
 
