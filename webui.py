@@ -1222,7 +1222,7 @@ main_css = \
 custom_css = \
 """
 #output_gallery {
-    min-height: 100% !important;
+    min-height: 50vh !important;
     scrollbar-width: none;
 }
 
