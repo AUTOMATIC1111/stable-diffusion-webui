@@ -747,7 +747,7 @@ def process_images(p: StableDiffusionProcessing):
     generation_params = {
         "Steps": p.steps,
         "Sampler": samplers[p.sampler_index].name,
-        "CFG scale": p.cfg_scale,
+        "CFG": p.cfg_scale,
         "Seed": seed,
         "GFPGAN": ("GFPGAN" if p.use_GFPGAN and GFPGAN is not None else None)
     }
@@ -758,7 +758,7 @@ def process_images(p: StableDiffusionProcessing):
     generation_params_text = ", ".join([k if k == v else f'{k}: {v}' for k, v in generation_params.items() if v is not None])
 
     def infotext():
-        return f"{prompt}\n{generation_params_text}".strip() + "".join(["\n\n" + x for x in comments])
+        return f'{prompt}\n<p class="performance">{generation_params_text}</p>'.strip() + "".join(["\n\n" + x for x in comments])
 
     if os.path.exists(cmd_opts.embeddings_dir):
         model_hijack.load_textual_inversion_embeddings(cmd_opts.embeddings_dir, model)
@@ -974,7 +974,7 @@ def img2img(prompt: str, init_img, ddim_steps: int, sampler_index: int, use_GFPG
         init_images=[init_img],
         resize_mode=resize_mode,
         denoising_strength=denoising_strength,
-        extra_generation_params={"Denoising Strength": denoising_strength}
+        extra_generation_params={"DNS": denoising_strength}
     )
 
     if loopback:
@@ -1235,15 +1235,21 @@ main_css = \
 # #generate{width: 100%;}
 custom_css = \
 """
+/* hide scrollbars, better scaling for gallery, small padding for main image */
+::-webkit-scrollbar { display: none }
 #output_gallery {
     min-height: 50vh !important;
     scrollbar-width: none;
 }
 
-::-webkit-scrollbar {
-    display: none;
+#output_gallery > div > img {
+    padding-top: 0.5rem;
+    padding-right: 0.5rem;
+    padding-left: 0.5rem;
 }
 
+/* remove excess padding around prompt textbox, increase font size */
+#prompt_row input { font-size: 16px }
 #prompt_input {
     padding-top: 0.25rem !important;
     padding-bottom: 0rem !important;
@@ -1252,10 +1258,7 @@ custom_css = \
     border-style: none !important;
 }
 
-#prompt_row input {
-    font-size: 16px;
-}
-
+/* remove excess padding from mode dropdown, change appear to a button */
 #sd_mode {
     padding-top: 0 !important;
     padding-bottom: 0 !important;
@@ -1265,14 +1268,21 @@ custom_css = \
 }
 
 #sd_mode > label > select {
-    background-color: #4b5563;
     font-weight: 600;
     min-height: 42px;
     max-height: 42px;
     text-align: center;
     font-size: 1rem;
+    appearance: none;
+    background-image: linear-gradient(90deg, #4b5563, #374151);
+    -webkit-appearance: none;
+    background-position: left;
+    background-size: contain;
+    padding-right: 0;
+    border-color: rgb(75 85 99 / var(--tw-border-opacity));
 }
 
+/* custom column scaling (odd = right/left, even = center) */
 #body>.col:nth-child(odd) {
     max-width: 450px;
     min-width: 300px;
@@ -1281,10 +1291,12 @@ custom_css = \
     width:250%;
 }
 
+/* better overall scaling + limits */
 .container {
     max-width: min(1600px, 95%);
 }
 
+/* hide increment/decrement buttons on number inputs */
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
     -webkit-appearance: none;
@@ -1311,9 +1323,9 @@ with gr.Blocks(css=full_css, analytics_enabled=False, title='Stable Diffusion We
 
                     with gr.Row():
                         sd_image_height = \
-                            gr.Number(label="Image Height", value=512, precision=0, elem_id='img_height')
+                            gr.Number(label="Image height", value=512, precision=0, elem_id='img_height')
                         sd_image_width = \
-                            gr.Number(label="Image Width", value=512, precision=0, elem_id='img_width')
+                            gr.Number(label="Image width", value=512, precision=0, elem_id='img_width')
 
                     with gr.Row():
                         sd_batch_count = \
@@ -1323,7 +1335,7 @@ with gr.Blocks(css=full_css, analytics_enabled=False, title='Stable Diffusion We
 
                     with gr.Group():
                         sd_input_image = \
-                            gr.Image(label='Input Image', source="upload", interactive=True, type="pil", show_label=False, visible=False)
+                            gr.Image(label='Input Image', source="upload", interactive=True, type="pil", show_label=True, visible=False)
                         sd_resize_mode = \
                             gr.Dropdown(label="Resize mode", choices=["Stretch", "Scale and crop", "Scale and fill"], type="index", value="Stretch", visible=False)
 
@@ -1337,7 +1349,7 @@ with gr.Blocks(css=full_css, analytics_enabled=False, title='Stable Diffusion We
                 # Right Column
                 with gr.Column():
                     sd_generate = \
-                        gr.Button('Generate').style(full_width=True)
+                        gr.Button('Generate', variant='primary').style(full_width=True)
 
                     with gr.Row():
                         sd_sampling_method = \
@@ -1349,12 +1361,12 @@ with gr.Blocks(css=full_css, analytics_enabled=False, title='Stable Diffusion We
                         sd_cfg = \
                             gr.Slider(label='Prompt similarity (CFG)', value=8.0, minimum=1.0, maximum=15.0, step=0.5)
                         sd_denoise = \
-                            gr.Slider(label='Denoising Strength (DNS)', value=0.75, minimum=0.0, maximum=1.0, step=0.01, visible=False)
+                            gr.Slider(label='Denoising strength (DNS)', value=0.75, minimum=0.0, maximum=1.0, step=0.01, visible=False)
 
                     sd_facefix = \
                         gr.Checkbox(label='GFPGAN', value=False, visible=GFPGAN is not None)
                     sd_facefix_strength = \
-                        gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="GFPGAN strength", value=1, interactive=GFPGAN is not None, visible=False)
+                        gr.Slider(minimum=0.0, maximum=1.0, step=0.1, label="Strength", value=1, interactive=GFPGAN is not None, visible=False)
 
                     sd_use_input_seed = \
                         gr.Checkbox(label='Custom seed')
