@@ -38,7 +38,7 @@ fieldset span.text-gray-500{
     padding: 0 0.5em;
     margin: 0;
 }
-.dark .gr-panel div.flex-col div.justify-between label{ background-color: rgb(17 24 39); }
+.dark .gr-panel div.flex-col div.justify-between label, .dark label.block span{ background-color: rgb(17 24 39); }
 
 .gr-panel div.flex-col div.justify-between label span{
     margin: 0;
