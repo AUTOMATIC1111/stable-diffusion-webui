@@ -33,7 +33,6 @@ fieldset span.text-gray-500{
 .gr-panel div.flex-col div.justify-between label, label.block span{
     position: absolute;
     top: -0.4em;
-    background-color: rgb(249 250 251);
     line-height: 0.7em;
     padding: 0 0.5em;
     margin: 0;
