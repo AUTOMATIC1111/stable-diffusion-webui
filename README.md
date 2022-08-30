@@ -204,6 +204,10 @@ To use this feature, tick a checkbox in the img2img interface. Original
 image will be upscaled to twice the original width and height, while width and height sliders
 will specify the size of individual tiles. At the moment this method does not support batch size.
 
+Rcommended parameters for upscaling:
+ - Sampling method: Euler a
+ - Denoising strength: 0.2, can go up to 0.4 if you feel adventureous
+
 ![](images/sd-upscale.jpg)
 
 ### User scripts
@@ -261,4 +265,7 @@ compared to normal operation on my RTX 3090.
 This is an independent implementation that does not require any modification to original Stable Diffusion code, and
 with all code concenrated in one place rather than scattered around the program.
 
+### Inpainting
+In img2img tab, draw a mask over a part of image, and that part will be in-painted.
 
+![](images/inpainting.png)

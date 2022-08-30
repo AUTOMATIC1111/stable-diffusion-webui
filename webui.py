@@ -8,6 +8,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 import gradio as gr
+import gradio.utils
 from omegaconf import OmegaConf
 from PIL import Image, ImageFont, ImageDraw, PngImagePlugin, ImageFilter, ImageOps
 from torch import autocast
@@ -24,17 +25,15 @@ from ldm.util import instantiate_from_config
 from ldm.models.diffusion.ddim import DDIMSampler
 from ldm.models.diffusion.plms import PLMSSampler
 
-try:
-    # this silences the annoying "Some weights of the model checkpoint were not used when initializing..." message at start.
-
-    from transformers import logging
-    logging.set_verbosity_error()
-except Exception:
-    pass
+# fix gradio phoning home
+gradio.utils.version_check = lambda: None
+gradio.utils.get_local_ip_address = lambda: '127.0.0.1'
 
 # this is a fix for Windows users. Without it, javascript files will be served with text/html content-type and the bowser will not show any UI
 mimetypes.init()
 mimetypes.add_type('application/javascript', '.js')
+
+script_path = os.path.dirname(os.path.realpath(__file__))
 
 # some of those options should not be changed at all because they would break the model, so I removed them from options.
 opt_C = 4
@@ -72,12 +71,12 @@ css_hide_progressbar = """
 SamplerData = namedtuple('SamplerData', ['name', 'constructor'])
 samplers = [
     *[SamplerData(x[0], lambda funcname=x[1]: KDiffusionSampler(funcname)) for x in [
-        ('Euler ancestral', 'sample_euler_ancestral'),
+        ('Euler a', 'sample_euler_ancestral'),
         ('Euler', 'sample_euler'),
         ('LMS', 'sample_lms'),
         ('Heun', 'sample_heun'),
-        ('DPM 2', 'sample_dpm_2'),
-        ('DPM 2 Ancestral', 'sample_dpm_2_ancestral'),
+        ('DPM2', 'sample_dpm_2'),
+        ('DPM2 a', 'sample_dpm_2_ancestral'),
     ] if hasattr(k_diffusion.sampling, x[1])],
     SamplerData('DDIM', lambda: VanillaStableDiffusionSampler(DDIMSampler)),
     SamplerData('PLMS', lambda: VanillaStableDiffusionSampler(PLMSSampler)),
@@ -1083,31 +1082,67 @@ class Flagging(gr.FlaggingCallback):
 
         print("Logged:", filenames[0])
 
+with gr.Blocks(analytics_enabled=False) as txt2img_interface:
+    with gr.Row():
+        prompt = gr.Textbox(label="Prompt", elem_id="txt2img_prompt", show_label=False, placeholder="Prompt", lines=1)
+        submit = gr.Button('Generate', variant='primary')
 
-txt2img_interface = gr.Interface(
-    wrap_gradio_call(txt2img),
-    inputs=[
-        gr.Textbox(label="Prompt", placeholder="A corgi wearing a top hat as an oil painting.", lines=1),
-        gr.Slider(minimum=1, maximum=150, step=1, label="Sampling Steps", value=20),
-        gr.Radio(label='Sampling method', choices=[x.name for x in samplers], value=samplers[0].name, type="index"),
-        gr.Checkbox(label='Fix faces using GFPGAN', value=False, visible=have_gfpgan),
-        gr.Checkbox(label='Create prompt matrix (separate multiple prompts using |, and get all combinations of them)', value=False),
-        gr.Slider(minimum=1, maximum=cmd_opts.max_batch_count, step=1, label='Batch count (how many batches of images to generate)', value=1),
-        gr.Slider(minimum=1, maximum=8, step=1, label='Batch size (how many images are in a batch; memory-hungry)', value=1),
-        gr.Slider(minimum=1.0, maximum=15.0, step=0.5, label='Classifier Free Guidance Scale (how strongly the image should follow the prompt)', value=7.5),
-        gr.Number(label='Seed', value=-1),
-        gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512),
-        gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512),
-        gr.Textbox(label="Python script", visible=cmd_opts.allow_code, lines=1)
-    ],
-    outputs=[
-        gr.Gallery(label="Images"),
-        gr.Number(label='Seed'),
-        gr.HTML(),
-    ],
-    title="Stable Diffusion Text-to-Image",
-    flagging_callback=Flagging()
-)
+    with gr.Row().style(equal_height=False):
+        with gr.Column(variant='panel'):
+            steps = gr.Slider(minimum=1, maximum=150, step=1, label="Sampling Steps", value=20)
+            sampler_index = gr.Radio(label='Sampling method', elem_id="txt2img_sampling", choices=[x.name for x in samplers], value=samplers_for_img2img[0].name, type="index")
+
+            with gr.Row():
+                use_GFPGAN = gr.Checkbox(label='GFPGAN', value=False, visible=have_gfpgan)
+                prompt_matrix = gr.Checkbox(label='Prompt matrix', value=False)
+
+            with gr.Row():
+                batch_count = gr.Slider(minimum=1, maximum=cmd_opts.max_batch_count, step=1, label='Batch count', value=1)
+                batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1)
+
+            cfg_scale = gr.Slider(minimum=1.0, maximum=15.0, step=0.5, label='Classifier Free Guidance Scale (how strongly the image should follow the prompt)', value=7.0)
+
+            with gr.Group():
+                height = gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512)
+                width = gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512)
+
+            seed = gr.Number(label='Seed', value=-1)
+
+            code = gr.Textbox(label="Python script", visible=cmd_opts.allow_code, lines=1)
+
+        with gr.Column(variant='panel'):
+            with gr.Group():
+                gallery = gr.Gallery(label='Output')
+                output_seed = gr.Number(label='Seed', visible=False)
+                html_info = gr.HTML()
+
+        txt2img_args = dict(
+            fn=wrap_gradio_call(txt2img),
+            inputs=[
+                prompt,
+                steps,
+                sampler_index,
+                use_GFPGAN,
+                prompt_matrix,
+                batch_count,
+                batch_size,
+                cfg_scale,
+                seed,
+                height,
+                width,
+                code
+            ],
+            outputs=[
+                gallery,
+                output_seed,
+                html_info
+            ]
+        )
+
+        prompt.submit(**txt2img_args)
+        submit.click(**txt2img_args)
+
+
 
 def fill(image, mask):
     image_mod = Image.new('RGBA', (image.width, image.height))
@@ -1223,10 +1258,15 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         return samples_ddim
 
 
-def img2img(prompt: str, init_img, init_img_with_mask, ddim_steps: int, sampler_index: int, mask_blur: int, inpainting_fill: int, use_GFPGAN: bool, prompt_matrix, loopback: bool, sd_upscale: bool, n_iter: int, batch_size: int, cfg_scale: float, denoising_strength: float, seed: int, height: int, width: int, resize_mode: int):
+def img2img(prompt: str, init_img, init_img_with_mask, steps: int, sampler_index: int, mask_blur: int, inpainting_fill: int, use_GFPGAN: bool, prompt_matrix, mode: int, n_iter: int, batch_size: int, cfg_scale: float, denoising_strength: float, seed: int, height: int, width: int, resize_mode: int):
     outpath = opts.outdir or "outputs/img2img-samples"
 
-    if init_img_with_mask is not None:
+    is_classic = mode == 0
+    is_inpaint = mode == 1
+    is_loopback = mode == 2
+    is_upscale = mode == 3
+
+    if is_inpaint:
         image = init_img_with_mask['image']
         mask = init_img_with_mask['mask']
     else:
@@ -1242,7 +1282,7 @@ def img2img(prompt: str, init_img, init_img_with_mask, ddim_steps: int, sampler_
         sampler_index=sampler_index,
         batch_size=batch_size,
         n_iter=n_iter,
-        steps=ddim_steps,
+        steps=steps,
         cfg_scale=cfg_scale,
         width=width,
         height=height,
@@ -1257,7 +1297,7 @@ def img2img(prompt: str, init_img, init_img_with_mask, ddim_steps: int, sampler_
         extra_generation_params={"Denoising Strength": denoising_strength}
     )
 
-    if loopback:
+    if is_loopback:
         output_images, info = None, None
         history = []
         initial_seed = None
@@ -1286,7 +1326,7 @@ def img2img(prompt: str, init_img, init_img_with_mask, ddim_steps: int, sampler_
 
         processed = Processed(history, initial_seed, initial_info)
 
-    elif sd_upscale:
+    elif is_upscale:
         initial_seed = None
         initial_info = None
 
@@ -1345,36 +1385,103 @@ def img2img(prompt: str, init_img, init_img_with_mask, ddim_steps: int, sampler_
 sample_img2img = "assets/stable-samples/img2img/sketch-mountains-input.jpg"
 sample_img2img = sample_img2img if os.path.exists(sample_img2img) else None
 
-img2img_interface = gr.Interface(
-    wrap_gradio_call(img2img),
-    inputs=[
-        gr.Textbox(placeholder="A fantasy landscape, trending on artstation.", lines=1),
-        gr.Image(label="Image for img2img", source="upload", interactive=True, type="pil"),
-        gr.Image(label="Image for inpainting with mask", source="upload", interactive=True, type="pil", tool="sketch"),
-        gr.Slider(minimum=1, maximum=150, step=1, label="Sampling Steps", value=20),
-        gr.Radio(label='Sampling method', choices=[x.name for x in samplers_for_img2img], value=samplers_for_img2img[0].name, type="index"),
-        gr.Slider(label='Inpainting: mask blur', minimum=0, maximum=64, step=1, value=4),
-        gr.Radio(label='Inpainting: masked content', choices=['fill', 'original', 'latent noise', 'latent nothing'], value='fill', type="index"),
-        gr.Checkbox(label='Fix faces using GFPGAN', value=False, visible=have_gfpgan),
-        gr.Checkbox(label='Create prompt matrix (separate multiple prompts using |, and get all combinations of them)', value=False),
-        gr.Checkbox(label='Loopback (use images from previous batch when creating next batch)', value=False),
-        gr.Checkbox(label='Stable Diffusion upscale', value=False),
-        gr.Slider(minimum=1, maximum=cmd_opts.max_batch_count, step=1, label='Batch count (how many batches of images to generate)', value=1),
-        gr.Slider(minimum=1, maximum=8, step=1, label='Batch size (how many images are in a batch; memory-hungry)', value=1),
-        gr.Slider(minimum=1.0, maximum=15.0, step=0.5, label='Classifier Free Guidance Scale (how strongly the image should follow the prompt)', value=7.0),
-        gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising Strength', value=0.75),
-        gr.Number(label='Seed', value=-1),
-        gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512),
-        gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512),
-        gr.Radio(label="Resize mode", choices=["Just resize", "Crop and resize", "Resize and fill"], type="index", value="Just resize")
-    ],
-    outputs=[
-        gr.Gallery(),
-        gr.Number(label='Seed'),
-        gr.HTML(),
-    ],
-    allow_flagging="never",
-)
+
+with gr.Blocks(analytics_enabled=False) as img2img_interface:
+    with gr.Row():
+        prompt = gr.Textbox(label="Prompt", elem_id="img2img_prompt", show_label=False, placeholder="Prompt", lines=1)
+        submit = gr.Button('Generate', variant='primary')
+
+    with gr.Row().style(equal_height=False):
+
+        with gr.Column(variant='panel'):
+            with gr.Group():
+                switch_mode = gr.Radio(label='Mode', elem_id="img2img_mode", choices=['Redraw whole image', 'Inpaint a part of image', 'Loopback', 'SD upscale'], value='Redraw whole image', type="index", show_label=False)
+                init_img = gr.Image(label="Image for img2img", source="upload", interactive=True, type="pil")
+                init_img_with_mask = gr.Image(label="Image for inpainting with mask", elem_id="img2maskimg", source="upload", interactive=True, type="pil", tool="sketch", visible=False)
+                resize_mode = gr.Radio(label="Resize mode", show_label=False, choices=["Just resize", "Crop and resize", "Resize and fill"], type="index", value="Just resize")
+
+            steps = gr.Slider(minimum=1, maximum=150, step=1, label="Sampling Steps", value=20)
+            sampler_index = gr.Radio(label='Sampling method', choices=[x.name for x in samplers_for_img2img], value=samplers_for_img2img[0].name, type="index")
+            mask_blur = gr.Slider(label='Inpainting: mask blur', minimum=0, maximum=64, step=1, value=4, visible=False)
+            inpainting_fill = gr.Radio(label='Inpainting: masked content', choices=['fill', 'original', 'latent noise', 'latent nothing'], value='fill', type="index", visible=False)
+
+            with gr.Row():
+                use_GFPGAN = gr.Checkbox(label='GFPGAN', value=False, visible=have_gfpgan)
+                prompt_matrix = gr.Checkbox(label='Prompt matrix', value=False)
+
+            with gr.Row():
+                batch_count = gr.Slider(minimum=1, maximum=cmd_opts.max_batch_count, step=1, label='Batch count', value=1)
+                batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1)
+
+            with gr.Group():
+                cfg_scale = gr.Slider(minimum=1.0, maximum=15.0, step=0.5, label='Classifier Free Guidance Scale (how strongly the image should follow the prompt)', value=7.0)
+                denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising Strength', value=0.75)
+
+            with gr.Group():
+                height = gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512)
+                width = gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512)
+
+            seed = gr.Number(label='Seed', value=-1)
+
+        with gr.Column(variant='panel'):
+            with gr.Group():
+                gallery = gr.Gallery(label='Output')
+                output_seed = gr.Number(label='Seed', visible=False)
+                html_info = gr.HTML()
+
+        def apply_mode(mode):
+            is_classic = mode == 0
+            is_inpaint = mode == 1
+            is_loopback = mode == 2
+            is_upscale = mode == 3
+
+            return {
+                init_img: gr.update(visible=not is_inpaint),
+                init_img_with_mask: gr.update(visible=is_inpaint),
+                mask_blur: gr.update(visible=is_inpaint),
+                inpainting_fill: gr.update(visible=is_inpaint),
+                prompt_matrix: gr.update(visible=is_classic),
+                batch_count: gr.update(visible=not is_upscale),
+                batch_size: gr.update(visible=not is_loopback),
+            }
+
+        switch_mode.change(
+            apply_mode,
+            inputs=[switch_mode],
+            outputs=[init_img, init_img_with_mask, mask_blur, inpainting_fill, prompt_matrix, batch_count, batch_size]
+        )
+
+        img2img_args = dict(
+            fn=wrap_gradio_call(img2img),
+            inputs=[
+                prompt,
+                init_img,
+                init_img_with_mask,
+                steps,
+                sampler_index,
+                mask_blur,
+                inpainting_fill,
+                use_GFPGAN,
+                prompt_matrix,
+                switch_mode,
+                batch_count,
+                batch_size,
+                cfg_scale,
+                denoising_strength,
+                seed,
+                height,
+                width,
+                resize_mode
+            ],
+            outputs=[
+                gallery,
+                output_seed,
+                html_info
+            ]
+        )
+
+        prompt.submit(**img2img_args)
+        submit.click(**img2img_args)
 
 
 def upscale_with_realesrgan(image, RealESRGAN_upscaling, RealESRGAN_model_index):
@@ -1434,6 +1541,7 @@ extras_interface = gr.Interface(
         gr.HTML(),
     ],
     allow_flagging="never",
+    analytics_enabled=False,
 )
 
 
@@ -1463,6 +1571,7 @@ pnginfo_interface = gr.Interface(
         gr.HTML(),
     ],
     allow_flagging="never",
+    analytics_enabled=False,
 )
 
 
@@ -1514,6 +1623,7 @@ settings_interface = gr.Interface(
     title=None,
     description=None,
     allow_flagging="never",
+    analytics_enabled=False,
 )
 
 interfaces = [
@@ -1523,6 +1633,15 @@ interfaces = [
     (pnginfo_interface, "PNG Info"),
     (settings_interface, "Settings"),
 ]
+
+try:
+    # this silences the annoying "Some weights of the model checkpoint were not used when initializing..." message at start.
+
+    from transformers import logging
+
+    logging.set_verbosity_error()
+except Exception:
+    pass
 
 sd_config = OmegaConf.load(cmd_opts.config)
 sd_model = load_model_from_config(sd_config, cmd_opts.ckpt)
@@ -1537,13 +1656,17 @@ else:
 model_hijack = StableDiffusionModelHijack()
 model_hijack.hijack(sd_model)
 
+with open(os.path.join(script_path, "style.css"), "r", encoding="utf8") as file:
+    css = file.read()
+
 demo = gr.TabbedInterface(
     interface_list=[x[0] for x in interfaces],
     tab_names=[x[1] for x in interfaces],
     css=("" if cmd_opts.no_progressbar_hiding else css_hide_progressbar) + """
 .output-html p {margin: 0 0.5em;}
 .performance { font-size: 0.85em; color: #444; }
-"""
+""" + css,
+    analytics_enabled=False,
 )
 
 demo.queue(concurrency_count=1)
