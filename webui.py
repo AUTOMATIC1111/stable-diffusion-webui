@@ -1145,19 +1145,8 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         self.sampler = samplers_for_img2img[self.sampler_index].constructor()
 
         if self.original_mask is not None:
-            if self.mask_blur > 0:
-                self.original_mask = self.original_mask.filter(ImageFilter.GaussianBlur(self.mask_blur)).convert('L')
-
-            latmask = self.original_mask.convert('RGB').resize((64, 64))
-            latmask = np.moveaxis(np.array(latmask, dtype=np.float), 2, 0) / 255
-            latmask = latmask[0]
-            latmask = np.tile(latmask[None], (4, 1, 1))
-
-            self.mask = torch.asarray(1.0 - latmask).to(device).type(sd_model.dtype)
-            self.nmask = torch.asarray(latmask).to(device).type(sd_model.dtype)
-
+            self.original_mask = resize_image(self.resize_mode, self.original_mask, self.width, self.height)
             self.overlay_images = []
-
 
         imgs = []
         for img in self.init_images:
@@ -1165,7 +1154,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             image = resize_image(self.resize_mode, image, self.width, self.height)
 
             if self.original_mask is not None:
-                if self.inpainting_fill == 0:
+                if self.inpainting_fill != 1:
                     image = fill(image, self.original_mask)
 
                 image_masked = Image.new('RGBa', (image.width, image.height))
@@ -1193,6 +1182,20 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         image = image.to(device)
 
         self.init_latent = sd_model.get_first_stage_encoding(sd_model.encode_first_stage(image))
+
+        if self.original_mask is not None:
+            if self.mask_blur > 0:
+                self.original_mask = self.original_mask.filter(ImageFilter.GaussianBlur(self.mask_blur)).convert('L')
+
+            latmask = self.original_mask.convert('RGB').resize((self.init_latent.shape[3], self.init_latent.shape[2]))
+            latmask = np.moveaxis(np.array(latmask, dtype=np.float), 2, 0) / 255
+            latmask = latmask[0]
+            latmask = np.tile(latmask[None], (4, 1, 1))
+
+            self.mask = torch.asarray(1.0 - latmask).to(device).type(sd_model.dtype)
+            self.nmask = torch.asarray(latmask).to(device).type(sd_model.dtype)
+
+
 
     def sample(self, x, conditioning, unconditional_conditioning):
         t_enc = int(min(self.denoising_strength, 0.999) * self.steps)
