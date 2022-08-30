@@ -1090,7 +1090,7 @@ with gr.Blocks(analytics_enabled=False) as txt2img_interface:
     with gr.Row().style(equal_height=False):
         with gr.Column(variant='panel'):
             steps = gr.Slider(minimum=1, maximum=150, step=1, label="Sampling Steps", value=20)
-            sampler_index = gr.Radio(label='Sampling method', elem_id="txt2img_sampling", choices=[x.name for x in samplers], value=samplers_for_img2img[0].name, type="index")
+            sampler_index = gr.Radio(label='Sampling method', elem_id="txt2img_sampling", choices=[x.name for x in samplers], value=samplers[0].name, type="index")
 
             with gr.Row():
                 use_GFPGAN = gr.Checkbox(label='GFPGAN', value=False, visible=have_gfpgan)
