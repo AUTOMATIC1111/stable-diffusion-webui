@@ -1,0 +1,61 @@
+
+button{
+    align-self: stretch !important;
+}
+
+#img2img_mode{
+    padding: 0 0 1em 0;
+    border: none !important;
+}
+
+#img2img_prompt, #txt2img_prompt{
+    padding: 0;
+    border: none !important;
+}
+
+#img2maskimg .h-60{
+    height: 30rem;
+}
+
+.overflow-hidden, .gr-panel{
+    overflow: visible !important;
+}
+
+fieldset span.text-gray-500{
+    position: absolute;
+    top: -0.425em;
+    background-color: rgb(249 250 251);
+    line-height: 0.7em;
+    padding: 0 0.5em;
+}
+.dark fieldset span.text-gray-500 { background-color: rgb(17 24 39); }
+
+.gr-panel div.flex-col div.justify-between label, label.block span{
+    position: absolute;
+    top: -0.4em;
+    background-color: rgb(249 250 251);
+    line-height: 0.7em;
+    padding: 0 0.5em;
+    margin: 0;
+}
+.dark .gr-panel div.flex-col div.justify-between label{ background-color: rgb(17 24 39); }
+
+.gr-panel div.flex-col div.justify-between label span{
+    margin: 0;
+}
+
+.gr-panel div.flex-col div.justify-between div{
+  position: absolute;
+  top: -0.1em;
+  right: 1em;
+  padding: 0 0.5em;
+}
+
+input[type="range"]{
+    margin: 0.5em 0 -0.3em 0;
+}
+
+#txt2img_sampling label{
+    padding-left: 0.6em;
+    padding-right: 0.6em;
+}
