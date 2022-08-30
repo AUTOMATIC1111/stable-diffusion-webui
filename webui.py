@@ -1048,7 +1048,7 @@ def txt2img(prompt: str, steps: int, sampler_index: int, use_GFPGAN: bool, stren
         p.do_not_save_grid = True
         p.do_not_save_samples = True
 
-        display_result_data = [[], -1, OutputInfo()]
+        display_result_data = [[], -1, OutputInfo("", "", "")]
 
         def display(imgs, s=display_result_data[1], i=display_result_data[2]):
             display_result_data[0] = imgs
@@ -1485,13 +1485,18 @@ def do_generate(
         resize_mode,
         image_height: int,
         image_width: int,
+        custom_code: str,
         use_input_seed: bool,
         input_seed: int,
         facefix: bool,
         facefix_strength: float,
         prompt_matrix: bool,
         loopback: bool,
-        upscale: bool):
+        upscale: bool,
+        inpainting_mask_blur,
+        inpainting_mask_content,
+        inpainting_image,
+):
     if mode == 'Text-to-Image':
         return txt2img(
             prompt=prompt,
@@ -1506,18 +1511,18 @@ def do_generate(
             seed=input_seed if use_input_seed else -1,
             height=image_height,
             width=image_width,
-            code=''
+            code=custom_code,
 
         )
-    elif mode == 'Image-to-Image':
+    elif mode == 'Image-to-Image' or mode == 'Inpainting':
         return img2img(
             prompt=prompt,
             init_img=input_img,
-            init_img_with_mask=None,
+            init_img_with_mask=inpainting_image,
             ddim_steps=sampler_steps,
             sampler_index=sampler_index,
-            mask_blur=0,
-            inpainting_fill=0,
+            mask_blur=inpainting_mask_blur,
+            inpainting_fill=inpainting_mask_content,
             use_GFPGAN=facefix,
             strength_GFPGAN=facefix_strength,
             prompt_matrix=prompt_matrix,
@@ -1531,7 +1536,6 @@ def do_generate(
             height=image_height,
             width=image_width,
             resize_mode=resize_mode,
-
         )
     elif mode == 'Post-Processing':
         return run_extras(
@@ -1645,7 +1649,7 @@ with gr.Blocks(css=full_css, analytics_enabled=False, title='Stable Diffusion We
                 # Left Column
                 with gr.Column():
                     sd_mode = \
-                        gr.Dropdown(show_label=False, value='Text-to-Image', choices=['Text-to-Image', 'Image-to-Image', 'Post-Processing'], elem_id='sd_mode')
+                        gr.Dropdown(show_label=False, value='Text-to-Image', choices=['Text-to-Image', 'Image-to-Image', 'Post-Processing', 'Inpainting'], elem_id='sd_mode')
 
                     with gr.Row():
                         sd_image_height = \
@@ -1665,12 +1669,18 @@ with gr.Blocks(css=full_css, analytics_enabled=False, title='Stable Diffusion We
                         sd_resize_mode = \
                             gr.Dropdown(label="Resize mode", choices=["Stretch", "Scale and crop", "Scale and fill"], type="index", value="Stretch", visible=False)
 
+                    with gr.Group():
+                        sd_inpainting_mask_blur = gr.Slider(label='Inpainting: mask blur', minimum=0, maximum=64, step=1, value=4, visible=False)
+                        sd_inpainting_mask_content = gr.Radio(label='Inpainting: masked content', choices=['fill', 'original', 'latent noise', 'latent nothing'], value='fill', type="index", visible=False)
+
+                    with gr.Group():
+                        sd_custom_code = gr.Textbox(label="Python script", visible=cmd_opts.allow_code, lines=1)
+
                 # Center Column
                 with gr.Column():
-                    sd_output_image = \
-                        gr.Gallery(show_label=False, elem_id='output_gallery').style(grid=3)
-                    sd_output_html = \
-                        gr.HTML()
+                    sd_output_image = gr.Gallery(show_label=False, elem_id='output_gallery').style(grid=3)
+                    sd_inpainting_image = gr.Image(label='Inpainting image', source="upload", interactive=True, type="pil", tool="sketch", visible=False)
+                    sd_output_html = gr.HTML()
 
                 # Right Column
                 with gr.Column():
@@ -1706,7 +1716,7 @@ with gr.Blocks(css=full_css, analytics_enabled=False, title='Stable Diffusion We
                     sd_loopback = \
                         gr.Checkbox(label='Output loopback', value=False, visible=False)
                     sd_upscale = \
-                        gr.Checkbox(label='Super resolution upscale', value=False, visible=False)
+                        gr.Checkbox(label='Stable diffusion upscale', value=False, visible=False)
 
         with gr.TabItem('Settings', id='settings_tab'):
             # TODO: Add HTML output to indicate settings saved
@@ -1720,28 +1730,34 @@ with gr.Blocks(css=full_css, analytics_enabled=False, title='Stable Diffusion We
     def mode_change(mode: str, facefix: bool, custom_seed: bool):
         is_img2img = (mode == 'Image-to-Image')
         is_txt2img = (mode == 'Text-to-Image')
+        is_inpainting = (mode == 'Inpainting')
         is_pp = (mode == 'Post-Processing')
 
         return {
-            sd_cfg: gr.update(visible=is_img2img or is_txt2img),
-            sd_denoise: gr.update(visible=is_img2img),
-            sd_sampling_method: gr.update(visible=is_img2img or is_txt2img),
-            sd_sampling_steps: gr.update(visible=is_img2img or is_txt2img),
-            sd_batch_count: gr.update(visible=is_img2img or is_txt2img),
-            sd_batch_size: gr.update(visible=is_img2img or is_txt2img),
+            sd_cfg: gr.update(visible=is_img2img or is_txt2img or is_inpainting),
+            sd_denoise: gr.update(visible=is_img2img or is_inpainting),
+            sd_sampling_method: gr.update(visible=is_img2img or is_txt2img or is_inpainting),
+            sd_sampling_steps: gr.update(visible=is_img2img or is_txt2img or is_inpainting),
+            sd_batch_count: gr.update(visible=is_img2img or is_txt2img or is_inpainting),
+            sd_batch_size: gr.update(visible=is_img2img or is_txt2img or is_inpainting),
             sd_input_image: gr.update(visible=is_img2img or is_pp),
-            sd_resize_mode: gr.update(visible=is_img2img),
-            sd_image_height: gr.update(visible=is_img2img or is_txt2img),
-            sd_image_width: gr.update(visible=is_img2img or is_txt2img),
-            sd_use_input_seed: gr.update(visible=is_img2img or is_txt2img),
+            sd_resize_mode: gr.update(visible=is_img2img or is_inpainting),
+            sd_image_height: gr.update(visible=is_img2img or is_txt2img or is_inpainting),
+            sd_image_width: gr.update(visible=is_img2img or is_txt2img or is_inpainting),
+            sd_custom_code: gr.update(visible=is_txt2img and cmd_opts.allow_code),
+            sd_use_input_seed: gr.update(visible=is_img2img or is_txt2img or is_inpainting),
             # TODO: can we handle this by updating use_input_seed and having its callback handle it?
-            sd_input_seed: gr.update(visible=(is_img2img or is_txt2img) and custom_seed),
+            sd_input_seed: gr.update(visible=(is_img2img or is_txt2img or is_inpainting) and custom_seed),
             sd_facefix: gr.update(visible=True),
             # TODO: see above, but for facefix
             sd_facefix_strength: gr.update(visible=facefix),
             sd_matrix: gr.update(visible=is_img2img or is_txt2img),
             sd_loopback: gr.update(visible=is_img2img),
-            sd_upscale: gr.update(visible=is_img2img)
+            sd_upscale: gr.update(visible=is_img2img),
+            sd_inpainting_mask_blur: gr.update(visible=is_inpainting),
+            sd_inpainting_mask_content: gr.update(visible=is_inpainting),
+            sd_inpainting_image: gr.update(visible=is_inpainting),
+
         }
 
 
@@ -1763,13 +1779,17 @@ with gr.Blocks(css=full_css, analytics_enabled=False, title='Stable Diffusion We
             sd_resize_mode,
             sd_image_height,
             sd_image_width,
+            sd_custom_code,
             sd_use_input_seed,
             sd_input_seed,
             sd_facefix,
             sd_facefix_strength,
             sd_matrix,
             sd_loopback,
-            sd_upscale
+            sd_upscale,
+            sd_inpainting_mask_blur,
+            sd_inpainting_mask_content,
+            sd_inpainting_image,
         ]
     )
 
@@ -1788,13 +1808,17 @@ with gr.Blocks(css=full_css, analytics_enabled=False, title='Stable Diffusion We
             sd_resize_mode,
             sd_image_height,
             sd_image_width,
+            sd_custom_code,
             sd_use_input_seed,
             sd_input_seed,
             sd_facefix,
             sd_facefix_strength,
             sd_matrix,
             sd_loopback,
-            sd_upscale
+            sd_upscale,
+            sd_inpainting_mask_blur,
+            sd_inpainting_mask_content,
+            sd_inpainting_image,
         ],
         outputs=[
             sd_output_image,
