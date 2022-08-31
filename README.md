@@ -20,8 +20,8 @@ You optionally can use GPFGAN to improve faces, then you'll need to download the
 Instructions:
 
 ```commandline
-:: crate a directory somewhere for stable diffusion and open cmd in it; below the directorty is assumed to be b:\src\sd
-:: make sure you are in the right directory; the command must output b:\src\sd1
+:: crate a directory somewhere for stable diffusion and open cmd in it;
+:: make sure you are in the right directory; the command must output the directory you chose
 echo %cd%
 
 :: install torch with CUDA support. See https://pytorch.org/get-started/locally/ for more instructions if this fails.
