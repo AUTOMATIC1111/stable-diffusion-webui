@@ -6,50 +6,77 @@ Original script with Gradio UI was written by a kind anonymous user. This is a m
 ![](screenshot.png)
 ## Installing and running
 
-### Stable Diffusion
+You need python and git installed to run this. I tested the installation to work with Python 3.8.10,
+you may be able to run this on different versions.
 
-This script assumes that you already have main Stable Diffusion sutff installed, assumed to be in directory `/sd`.
-If you don't have it installed, follow the guide:
+You need Stable Diffusion model checkpoint, a big file containing the neural network weights. You
+can obtain it from the following places:
+ - [official download](https://huggingface.co/CompVis/stable-diffusion-v-1-4-original)
+ - [file storage](https://drive.yerf.org/wl/?id=EBfTrmcCCUAGaQBXVIj5lJmEhjoP1tgl)
+ - [torrent](magnet:?xt=urn:btih:3a4a612d75ed088ea542acac52f9f45987488d1c&dn=sd-v1-4.ckpt&tr=udp%3a%2f%2ftracker.openbittorrent.com%3a6969%2fannounce&tr=udp%3a%2f%2ftracker.opentrackr.org%3a1337)
 
-- https://rentry.org/kretard
+You optionally can use GPFGAN to improve faces, then you'll need to download the model from [here](https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.3.pth).
 
-This repository's `webgui.py` is a replacement for `kdiff.py` from the guide.
+Instructions:
 
-Particularly, following files must exist:
+```commandline
+:: crate a directory somewhere for stable diffusion and open cmd in it; below the directorty is assumed to be b:\src\sd
+:: make sure you are in the right directory; the command must output b:\src\sd1
+echo %cd%
 
-- `/sd/configs/stable-diffusion/v1-inference.yaml`
-- `/sd/models/ldm/stable-diffusion-v1/model.ckpt`
-- `/sd/ldm/util.py`
-- `/sd/k_diffusion/__init__.py`
+:: install torch with CUDA support. See https://pytorch.org/get-started/locally/ for more instructions if this fails.
+pip install torch --extra-index-url https://download.pytorch.org/whl/cu113
 
-### GFPGAN
+:: check if torch supports GPU; this must output "True". You need CUDA 11. installed for this. You might be able to use
+:: a different version, but this is what I tested.
+python -c "import torch; print(torch.cuda.is_available())"
 
-If you want to use GFPGAN to improve generated faces, you need to install it separately.
-Follow instructions from https://github.com/TencentARC/GFPGAN, but when cloning it, do so into Stable Diffusion main directory, `/sd`.
-After that download [GFPGANv1.3.pth](https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.3.pth) and put it
-into the `/sd/GFPGAN/experiments/pretrained_models` directory. If you're getting troubles with GFPGAN support, follow instructions
-from the GFPGAN's repository until `inference_gfpgan.py` script works.
+:: clone Stable Diffusion repositories
+git clone https://github.com/CompVis/stable-diffusion.git
+git clone https://github.com/CompVis/taming-transformers
 
-The following files must exist:
+:: install requirements of Stable Diffusion
+pip install transformers==4.19.2 diffusers invisible-watermark
 
-- `/sd/GFPGAN/inference_gfpgan.py`
-- `/sd/GFPGAN/experiments/pretrained_models/GFPGANv1.3.pth`
+:: install k-diffusion
+pip install git+https://github.com/crowsonkb/k-diffusion.git
 
-If the GFPGAN directory does not exist, you will not get the option to use GFPGAN in the UI. If it does exist, you will either be able
-to use it, or there will be a message in console with an error related to GFPGAN.
+:: (optional) install GFPGAN to fix faces
+pip install git+https://github.com/TencentARC/GFPGAN.git
 
-### Web UI
+:: go into stable diffusion's repo directory
+cd stable-diffusion
 
-Run the script as:
+:: clone web ui
+git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui.git
 
-`python webui.py`
+:: install requirements of web ui
+pip install -r stable-diffusion-webui/requirements.txt
 
-When running the script, you must be in the main Stable Diffusion directory, `/sd`. If you cloned this repository into a subdirectory 
-of `/sd`, say, the `stable-diffusion-webui` directory, you will run it as:
+:: (outside of command line) put stable diffusion model into models/ldm/stable-diffusion-v1/model.ckpt; you'll have
+:: to create one missing directory;
+:: the command below must output something like: 1 File(s) 4,265,380,512 bytes
+dir models\ldm\stable-diffusion-v1\model.ckpt
 
-`python stable-diffusion-webui/webui.py`
+:: (outside of command line) put the GFPGAN model into same directory as webui script
+:: the command below must output something like: 1 File(s) 348,632,874 bytes
+dir stable-diffusion-webui\GFPGANv1.3.pth
+```
 
-When launching, you may get a very long warning message related to some weights not being used. You may freely ignore it.
+After that the installation is finished.
+
+Run the command to start web ui:
+
+```
+python stable-diffusion-webui/webui.py
+```
+
+If you have a 4GB video card, run the command with `--lowvram` argument:
+
+```
+python stable-diffusion-webui/webui.py --lowvram
+```
+
 After a while, you will get a message like this:
 
 ```
