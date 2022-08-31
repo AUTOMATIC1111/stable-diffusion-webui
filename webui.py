@@ -852,7 +852,7 @@ def p_sample_ddim_hook(sampler_wrapper, x_dec, cond, ts, *args, **kwargs):
 class VanillaStableDiffusionSampler:
     def __init__(self, constructor):
         self.sampler = constructor(sd_model)
-        self.orig_p_sample_ddim = self.sampler.p_sample_ddim
+        self.orig_p_sample_ddim = self.sampler.p_sample_ddim if hasattr(self.sampler, 'p_sample_ddim') else None
         self.mask = None
         self.nmask = None
         self.init_latent = None
