@@ -217,7 +217,7 @@ were commandline. Settings are saved to config.js file. Settings that remain as 
 options are ones that are required at startup.
 
 ### Attention
-Using `()` in prompt decreases model's attention to enclosed words, and `[]` increases it. You can combine
+Using `()` in prompt increases model's attention to enclosed words, and `[]` decreases it. You can combine
 multiple modifiers:
 
 ![](images/attention-3.jpg)
