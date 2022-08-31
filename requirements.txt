@@ -1,0 +1,10 @@
+basicsr
+gfpgan
+gradio
+numpy
+Pillow
+realesrgan
+torch
+transformers
+omegaconf
+pytorch_lightning

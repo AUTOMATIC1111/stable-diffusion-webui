@@ -1,8 +1,18 @@
 import argparse
 import os
 import sys
-from collections import namedtuple
-from contextlib import nullcontext
+
+script_path = os.path.dirname(os.path.realpath(__file__))
+sd_path = os.path.dirname(script_path)
+
+# add parent directory to path; this is where Stable diffusion repo should be
+path_dirs = [(sd_path, 'ldm', 'Stable Diffusion'), ('../../taming-transformers', 'taming', 'Taming Transformers')]
+for d, must_exist, what in path_dirs:
+    must_exist_path = os.path.abspath(os.path.join(script_path, d, must_exist))
+    if not os.path.exists(must_exist_path):
+        print(f"Warning: {what} not found at path {must_exist_path}", file=sys.stderr)
+    else:
+        sys.path.append(os.path.join(script_path, d))
 
 import torch
 import torch.nn as nn
@@ -19,6 +29,9 @@ import html
 import time
 import json
 import traceback
+from collections import namedtuple
+from contextlib import nullcontext
+import signal
 
 import k_diffusion.sampling
 from ldm.util import instantiate_from_config
@@ -33,7 +46,6 @@ gradio.utils.get_local_ip_address = lambda: '127.0.0.1'
 mimetypes.init()
 mimetypes.add_type('application/javascript', '.js')
 
-script_path = os.path.dirname(os.path.realpath(__file__))
 
 # some of those options should not be changed at all because they would break the model, so I removed them from options.
 opt_C = 4
@@ -44,9 +56,10 @@ invalid_filename_chars = '<>:"/\\|?*\n'
 config_filename = "config.json"
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--config", type=str, default="configs/stable-diffusion/v1-inference.yaml", help="path to config which constructs model",)
-parser.add_argument("--ckpt", type=str, default="models/ldm/stable-diffusion-v1/model.ckpt", help="path to checkpoint of model",)
+parser.add_argument("--config", type=str, default=os.path.join(sd_path, "configs/stable-diffusion/v1-inference.yaml"), help="path to config which constructs model",)
+parser.add_argument("--ckpt", type=str, default=os.path.join(sd_path, "models/ldm/stable-diffusion-v1/model.ckpt"), help="path to checkpoint of model",)
 parser.add_argument("--gfpgan-dir", type=str, help="GFPGAN directory", default=('./src/gfpgan' if os.path.exists('./src/gfpgan') else './GFPGAN'))
+parser.add_argument("--gfpgan-model", type=str, help="GFPGAN model file name", default='GFPGANv1.3.pth')
 parser.add_argument("--no-half", action='store_true', help="do not switch the model to 16-bit floats")
 parser.add_argument("--no-progressbar-hiding", action='store_true', help="do not hide progressbar in gradio UI (we hide it because it slows down ML if you have hardware accleration in browser)")
 parser.add_argument("--max-batch-count", type=int, default=16, help="maximum batch count value for the UI")
@@ -122,25 +135,34 @@ sd_upscalers = {
 }
 
 
-have_gfpgan = False
-if os.path.exists(cmd_opts.gfpgan_dir):
-    try:
-        sys.path.append(os.path.abspath(cmd_opts.gfpgan_dir))
-        from gfpgan import GFPGANer
+def gfpgan_model_path():
+    places = [script_path, '.', os.path.join(cmd_opts.gfpgan_dir, 'experiments/pretrained_models')]
+    files = [cmd_opts.gfpgan_model] + [os.path.join(dirname, cmd_opts.gfpgan_model) for dirname in places]
+    found = [x for x in files if os.path.exists(x)]
 
-        have_gfpgan = True
-    except:
-        print("Error importing GFPGAN:", file=sys.stderr)
-        print(traceback.format_exc(), file=sys.stderr)
+    if len(found) == 0:
+        raise Exception("GFPGAN model not found in paths: " + ", ".join(files))
+
+    return found[0]
 
 
 def gfpgan():
-    model_name = 'GFPGANv1.3'
-    model_path = os.path.join(cmd_opts.gfpgan_dir, 'experiments/pretrained_models', model_name + '.pth')
-    if not os.path.isfile(model_path):
-        raise Exception("GFPGAN model not found at path "+model_path)
+    return GFPGANer(model_path=gfpgan_model_path(), upscale=1, arch='clean', channel_multiplier=2, bg_upsampler=None)
 
-    return GFPGANer(model_path=model_path, upscale=1, arch='clean', channel_multiplier=2, bg_upsampler=None)
+
+have_gfpgan = False
+try:
+    model_path = gfpgan_model_path()
+
+    if os.path.exists(cmd_opts.gfpgan_dir):
+        sys.path.append(os.path.abspath(cmd_opts.gfpgan_dir))
+    from gfpgan import GFPGANer
+
+    have_gfpgan = True
+except Exception:
+    print("Error setting up GFPGAN:", file=sys.stderr)
+    print(traceback.format_exc(), file=sys.stderr)
+
 
 
 class Options:
@@ -865,6 +887,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
     seed = int(random.randrange(4294967294) if p.seed == -1 else p.seed)
 
     sample_path = os.path.join(p.outpath, "samples")
+    os.makedirs(sample_path, exist_ok=True)
     base_count = len(os.listdir(sample_path))
     grid_count = len(os.listdir(p.outpath)) - 1
 
@@ -1668,6 +1691,13 @@ demo = gr.TabbedInterface(
 """ + css,
     analytics_enabled=False,
 )
+
+# make the program just exit at ctrl+c without waiting for anything
+def sigint_handler(signal, frame):
+    print('Interrupted')
+    os._exit(0)
+
+signal.signal(signal.SIGINT, sigint_handler)
 
 demo.queue(concurrency_count=1)
 demo.launch()
