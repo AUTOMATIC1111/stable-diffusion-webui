@@ -847,7 +847,6 @@ class VanillaStableDiffusionSampler:
     def __init__(self, constructor):
         self.sampler = constructor(sd_model)
         self.orig_p_sample_ddim = self.sampler.p_sample_ddim
-        self.sampler.p_sample_ddim = lambda x_dec, cond, ts, *args, **kwargs: p_sample_ddim_hook(self, x_dec, cond, ts, *args, **kwargs)
         self.mask = None
         self.nmask = None
         self.init_latent = None
@@ -855,9 +854,15 @@ class VanillaStableDiffusionSampler:
     def sample_img2img(self, p, x, noise, conditioning, unconditional_conditioning):
         t_enc = int(min(p.denoising_strength, 0.999) * p.steps)
 
-        self.sampler.make_schedule(ddim_num_steps=p.steps, ddim_eta=0.0, verbose=False)
+        # existing code fail with cetin step counts, like 9
+        try:
+            self.sampler.make_schedule(ddim_num_steps=p.steps, verbose=False)
+        except Exception:
+            self.sampler.make_schedule(ddim_num_steps=p.steps+1, verbose=False)
+
         x1 = self.sampler.stochastic_encode(x, torch.tensor([t_enc] * int(x.shape[0])).to(device), noise=noise)
 
+        self.sampler.p_sample_ddim = lambda x_dec, cond, ts, *args, **kwargs: p_sample_ddim_hook(self, x_dec, cond, ts, *args, **kwargs)
         self.mask = p.mask
         self.nmask = p.nmask
         self.init_latent = p.init_latent
