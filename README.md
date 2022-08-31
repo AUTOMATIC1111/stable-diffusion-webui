@@ -6,7 +6,7 @@ Original script with Gradio UI was written by a kind anonymous user. This is a m
 ![](screenshot.png)
 ## Installing and running
 
-You need python and git installed to run this. I tested the installation to work with Python 3.8.10,
+You need [python](https://www.python.org/downloads/windows/) and [git](https://git-scm.com/download/win) installed to run this. I tested the installation to work with Python 3.8.10,
 you may be able to run this on different versions.
 
 You need Stable Diffusion model checkpoint, a big file containing the neural network weights. You
