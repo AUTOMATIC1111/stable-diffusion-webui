@@ -1,3 +1,5 @@
+.output-html p {margin: 0 0.5em;}
+.performance { font-size: 0.85em; color: #444; }
 
 button{
     align-self: stretch !important;

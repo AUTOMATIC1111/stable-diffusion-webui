@@ -149,6 +149,12 @@ def gfpgan_model_path():
 def gfpgan():
     return GFPGANer(model_path=gfpgan_model_path(), upscale=1, arch='clean', channel_multiplier=2, bg_upsampler=None)
 
+def gfpgan_fix_faces(gfpgan_model, np_image):
+    np_image_bgr = np_image[:, :, ::-1]
+    cropped_faces, restored_faces, gfpgan_output_bgr = gfpgan_model.enhance(np_image_bgr, has_aligned=False, only_center_face=False, paste_back=True)
+    np_image = gfpgan_output_bgr[:, :, ::-1]
+
+    return np_image
 
 have_gfpgan = False
 try:
@@ -808,9 +814,10 @@ class EmbeddingsWithFixes(nn.Module):
 
 
 class StableDiffusionProcessing:
-    def __init__(self, outpath=None, prompt="", seed=-1, sampler_index=0, batch_size=1, n_iter=1, steps=50, cfg_scale=7.0, width=512, height=512, prompt_matrix=False, use_GFPGAN=False, do_not_save_samples=False, do_not_save_grid=False, extra_generation_params=None, overlay_images=None):
+    def __init__(self, outpath=None, prompt="", seed=-1, sampler_index=0, batch_size=1, n_iter=1, steps=50, cfg_scale=7.0, width=512, height=512, prompt_matrix=False, use_GFPGAN=False, do_not_save_samples=False, do_not_save_grid=False, extra_generation_params=None, overlay_images=None, negative_prompt=None):
         self.outpath: str = outpath
         self.prompt: str = prompt
+        self.negative_prompt: str = (negative_prompt or "")
         self.seed: int = seed
         self.sampler_index: int = sampler_index
         self.batch_size: int = batch_size
@@ -825,6 +832,7 @@ class StableDiffusionProcessing:
         self.do_not_save_grid: bool = do_not_save_grid
         self.extra_generation_params: dict = extra_generation_params
         self.overlay_images = overlay_images
+        self.paste_to = None
 
     def init(self):
         pass
@@ -997,7 +1005,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             prompts = all_prompts[n * p.batch_size:(n + 1) * p.batch_size]
             seeds = all_seeds[n * p.batch_size:(n + 1) * p.batch_size]
 
-            uc = model.get_learned_conditioning(len(prompts) * [""])
+            uc = model.get_learned_conditioning(len(prompts) * [p.negative_prompt])
             c = model.get_learned_conditioning(prompts)
 
             if len(model_hijack.comments) > 0:
@@ -1020,14 +1028,22 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
                         torch_gc()
 
                         gfpgan_model = gfpgan()
-                        cropped_faces, restored_faces, restored_img = gfpgan_model.enhance(x_sample, has_aligned=False, only_center_face=False, paste_back=True)
-                        x_sample = restored_img
+                        x_sample = gfpgan_fix_faces(gfpgan_model, x_sample)
 
                     image = Image.fromarray(x_sample)
 
                     if p.overlay_images is not None and i < len(p.overlay_images):
+                        overlay = p.overlay_images[i]
+
+                        if p.paste_to is not None:
+                            x, y, w, h = p.paste_to
+                            base_image = Image.new('RGBA', (overlay.width, overlay.height))
+                            image = resize_image(1, image, w, h)
+                            base_image.paste(image, (x, y))
+                            image = base_image
+
                         image = image.convert('RGBA')
-                        image.alpha_composite(p.overlay_images[i])
+                        image.alpha_composite(overlay)
                         image = image.convert('RGB')
 
                     if not p.do_not_save_samples:
@@ -1074,12 +1090,13 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         samples_ddim = self.sampler.sample(self, x, conditioning, unconditional_conditioning)
         return samples_ddim
 
-def txt2img(prompt: str, steps: int, sampler_index: int, use_GFPGAN: bool, prompt_matrix: bool, n_iter: int, batch_size: int, cfg_scale: float, seed: int, height: int, width: int, code: str):
+def txt2img(prompt: str, negative_prompt: str, steps: int, sampler_index: int, use_GFPGAN: bool, prompt_matrix: bool, n_iter: int, batch_size: int, cfg_scale: float, seed: int, height: int, width: int, code: str):
     outpath = opts.outdir or "outputs/txt2img-samples"
 
     p = StableDiffusionProcessingTxt2Img(
         outpath=outpath,
         prompt=prompt,
+        negative_prompt=negative_prompt,
         seed=seed,
         sampler_index=sampler_index,
         batch_size=batch_size,
@@ -1160,6 +1177,7 @@ class Flagging(gr.FlaggingCallback):
 with gr.Blocks(analytics_enabled=False) as txt2img_interface:
     with gr.Row():
         prompt = gr.Textbox(label="Prompt", elem_id="txt2img_prompt", show_label=False, placeholder="Prompt", lines=1)
+        negative_prompt = gr.Textbox(label="Negative prompt", elem_id="txt2img_negative_prompt", show_label=False, placeholder="Negative prompt", lines=1, visible=False)
         submit = gr.Button('Generate', variant='primary')
 
     with gr.Row().style(equal_height=False):
@@ -1175,7 +1193,7 @@ with gr.Blocks(analytics_enabled=False) as txt2img_interface:
                 batch_count = gr.Slider(minimum=1, maximum=cmd_opts.max_batch_count, step=1, label='Batch count', value=1)
                 batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1)
 
-            cfg_scale = gr.Slider(minimum=1.0, maximum=15.0, step=0.5, label='Classifier Free Guidance Scale (how strongly the image should follow the prompt)', value=7.0)
+            cfg_scale = gr.Slider(minimum=1.0, maximum=15.0, step=0.5, label='CFG Scale', value=7.0)
 
             with gr.Group():
                 height = gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512)
@@ -1195,6 +1213,7 @@ with gr.Blocks(analytics_enabled=False) as txt2img_interface:
             fn=wrap_gradio_call(txt2img),
             inputs=[
                 prompt,
+                negative_prompt,
                 steps,
                 sampler_index,
                 use_GFPGAN,
@@ -1218,6 +1237,41 @@ with gr.Blocks(analytics_enabled=False) as txt2img_interface:
         submit.click(**txt2img_args)
 
 
+def get_crop_region(mask, pad=0):
+    h, w = mask.shape
+
+    crop_left = 0
+    for i in range(w):
+        if not (mask[:,i] == 0).all():
+            break
+        crop_left += 1
+
+    crop_right = 0
+    for i in reversed(range(w)):
+        if not (mask[:,i] == 0).all():
+            break
+        crop_right += 1
+
+
+    crop_top = 0
+    for i in range(h):
+        if not (mask[i] == 0).all():
+            break
+        crop_top += 1
+
+    crop_bottom = 0
+    for i in reversed(range(h)):
+        if not (mask[i] == 0).all():
+            break
+        crop_bottom += 1
+
+    return (
+        int(max(crop_left-pad, 0)),
+        int(max(crop_top-pad, 0)),
+        int(min(w - crop_right + pad, w)),
+        int(min(h - crop_bottom + pad, h))
+    )
+
 
 def fill(image, mask):
     image_mod = Image.new('RGBA', (image.width, image.height))
@@ -1238,39 +1292,65 @@ def fill(image, mask):
 class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
     sampler = None
 
-    def __init__(self, init_images=None, resize_mode=0, denoising_strength=0.75, mask=None, mask_blur=4, inpainting_fill=0, **kwargs):
+    def __init__(self, init_images=None, resize_mode=0, denoising_strength=0.75, mask=None, mask_blur=4, inpainting_fill=0, inpaint_full_res=True, **kwargs):
         super().__init__(**kwargs)
 
         self.init_images = init_images
         self.resize_mode: int = resize_mode
         self.denoising_strength: float = denoising_strength
         self.init_latent = None
-        self.original_mask = mask
+        self.image_mask = mask
+        self.mask_for_overlay = None
         self.mask_blur = mask_blur
         self.inpainting_fill = inpainting_fill
+        self.inpaint_full_res = inpaint_full_res
         self.mask = None
         self.nmask = None
 
     def init(self):
         self.sampler = samplers_for_img2img[self.sampler_index].constructor()
+        crop_region = None
 
-        if self.original_mask is not None:
-            self.original_mask = resize_image(self.resize_mode, self.original_mask, self.width, self.height)
+        if self.image_mask is not None:
+            if self.mask_blur > 0:
+                self.image_mask = self.image_mask.filter(ImageFilter.GaussianBlur(self.mask_blur)).convert('L')
+
+
+            if self.inpaint_full_res:
+                self.mask_for_overlay = self.image_mask
+                mask = self.image_mask.convert('L')
+                crop_region = get_crop_region(np.array(mask), 64)
+                x1, y1, x2, y2 = crop_region
+
+                mask = mask.crop(crop_region)
+                self.image_mask = resize_image(2, mask, self.width, self.height)
+                self.paste_to = (x1, y1, x2-x1, y2-y1)
+            else:
+                self.image_mask = resize_image(self.resize_mode, self.image_mask, self.width, self.height)
+                self.mask_for_overlay = self.image_mask
+
             self.overlay_images = []
+
 
         imgs = []
         for img in self.init_images:
             image = img.convert("RGB")
-            image = resize_image(self.resize_mode, image, self.width, self.height)
 
-            if self.original_mask is not None:
+            if crop_region is None:
+                image = resize_image(self.resize_mode, image, self.width, self.height)
+
+            if self.image_mask is not None:
                 if self.inpainting_fill != 1:
-                    image = fill(image, self.original_mask)
+                    image = fill(image, self.mask_for_overlay)
 
                 image_masked = Image.new('RGBa', (image.width, image.height))
-                image_masked.paste(image.convert("RGBA").convert("RGBa"), mask=ImageOps.invert(self.original_mask.convert('L')))
+                image_masked.paste(image.convert("RGBA").convert("RGBa"), mask=ImageOps.invert(self.mask_for_overlay.convert('L')))
 
                 self.overlay_images.append(image_masked.convert('RGBA'))
+
+            if crop_region is not None:
+                image = image.crop(crop_region)
+                image = resize_image(2, image, self.width, self.height)
 
             image = np.array(image).astype(np.float32) / 255.0
             image = np.moveaxis(image, 2, 0)
@@ -1293,11 +1373,8 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
         self.init_latent = sd_model.get_first_stage_encoding(sd_model.encode_first_stage(image))
 
-        if self.original_mask is not None:
-            if self.mask_blur > 0:
-                self.original_mask = self.original_mask.filter(ImageFilter.GaussianBlur(self.mask_blur)).convert('L')
-
-            latmask = self.original_mask.convert('RGB').resize((self.init_latent.shape[3], self.init_latent.shape[2]))
+        if self.image_mask is not None:
+            latmask = self.image_mask.convert('RGB').resize((self.init_latent.shape[3], self.init_latent.shape[2]))
             latmask = np.moveaxis(np.array(latmask, dtype=np.float64), 2, 0) / 255
             latmask = latmask[0]
             latmask = np.tile(latmask[None], (4, 1, 1))
@@ -1314,7 +1391,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         return samples
 
 
-def img2img(prompt: str, init_img, init_img_with_mask, steps: int, sampler_index: int, mask_blur: int, inpainting_fill: int, use_GFPGAN: bool, prompt_matrix, mode: int, n_iter: int, batch_size: int, cfg_scale: float, denoising_strength: float, seed: int, height: int, width: int, resize_mode: int, upscaler_name: str, upscale_overlap: int):
+def img2img(prompt: str, init_img, init_img_with_mask, steps: int, sampler_index: int, mask_blur: int, inpainting_fill: int, use_GFPGAN: bool, prompt_matrix, mode: int, n_iter: int, batch_size: int, cfg_scale: float, denoising_strength: float, seed: int, height: int, width: int, resize_mode: int, upscaler_name: str, upscale_overlap: int, inpaint_full_res: bool):
     outpath = opts.outdir or "outputs/img2img-samples"
 
     is_classic = mode == 0
@@ -1350,6 +1427,7 @@ def img2img(prompt: str, init_img, init_img_with_mask, steps: int, sampler_index
         inpainting_fill=inpainting_fill,
         resize_mode=resize_mode,
         denoising_strength=denoising_strength,
+        inpaint_full_res=inpaint_full_res,
         extra_generation_params={"Denoising Strength": denoising_strength}
     )
 
@@ -1458,12 +1536,13 @@ with gr.Blocks(analytics_enabled=False) as img2img_interface:
 
             steps = gr.Slider(minimum=1, maximum=150, step=1, label="Sampling Steps", value=20)
             sampler_index = gr.Radio(label='Sampling method', choices=[x.name for x in samplers_for_img2img], value=samplers_for_img2img[0].name, type="index")
-            mask_blur = gr.Slider(label='Inpainting: mask blur', minimum=0, maximum=64, step=1, value=4, visible=False)
-            inpainting_fill = gr.Radio(label='Inpainting: masked content', choices=['fill', 'original', 'latent noise', 'latent nothing'], value='fill', type="index", visible=False)
+            mask_blur = gr.Slider(label='Mask blur', minimum=0, maximum=64, step=1, value=4, visible=False)
+            inpainting_fill = gr.Radio(label='Msked content', choices=['fill', 'original', 'latent noise', 'latent nothing'], value='fill', type="index", visible=False)
 
             with gr.Row():
                 use_GFPGAN = gr.Checkbox(label='GFPGAN', value=False, visible=have_gfpgan)
                 prompt_matrix = gr.Checkbox(label='Prompt matrix', value=False)
+                inpaint_full_res = gr.Checkbox(label='Inpaint at full resolution', value=True, visible=False)
 
             with gr.Row():
                 sd_upscale_upscaler_name = gr.Radio(label='Upscaler', choices=list(sd_upscalers.keys()), value="RealESRGAN")
@@ -1474,7 +1553,7 @@ with gr.Blocks(analytics_enabled=False) as img2img_interface:
                 batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1)
 
             with gr.Group():
-                cfg_scale = gr.Slider(minimum=1.0, maximum=15.0, step=0.5, label='Classifier Free Guidance Scale (how strongly the image should follow the prompt)', value=7.0)
+                cfg_scale = gr.Slider(minimum=1.0, maximum=15.0, step=0.5, label='CFG Scale', value=7.0)
                 denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising Strength', value=0.75)
 
             with gr.Group():
@@ -1505,6 +1584,7 @@ with gr.Blocks(analytics_enabled=False) as img2img_interface:
                 batch_size: gr.update(visible=not is_loopback),
                 sd_upscale_upscaler_name: gr.update(visible=is_upscale),
                 sd_upscale_overlap: gr.update(visible=is_upscale),
+                inpaint_full_res: gr.update(visible=is_inpaint),
             }
 
         switch_mode.change(
@@ -1520,6 +1600,7 @@ with gr.Blocks(analytics_enabled=False) as img2img_interface:
                 batch_size,
                 sd_upscale_upscaler_name,
                 sd_upscale_overlap,
+                inpaint_full_res,
             ]
         )
 
@@ -1546,6 +1627,7 @@ with gr.Blocks(analytics_enabled=False) as img2img_interface:
                 resize_mode,
                 sd_upscale_upscaler_name,
                 sd_upscale_overlap,
+                inpaint_full_res,
             ],
             outputs=[
                 gallery,
@@ -1584,7 +1666,8 @@ def run_extras(image, GFPGAN_strength, RealESRGAN_upscaling, RealESRGAN_model_in
 
     if have_gfpgan is not None and GFPGAN_strength > 0:
         gfpgan_model = gfpgan()
-        cropped_faces, restored_faces, restored_img = gfpgan_model.enhance(np.array(image, dtype=np.uint8), has_aligned=False, only_center_face=False, paste_back=True)
+
+        restored_img = gfpgan_fix_faces(gfpgan_model, np.array(image, dtype=np.uint8))
         res = Image.fromarray(restored_img)
 
         if GFPGAN_strength < 1.0:
@@ -1724,7 +1807,6 @@ sd_model = (sd_model if cmd_opts.no_half else sd_model.half())
 
 if not cmd_opts.lowvram:
     sd_model = sd_model.to(device)
-
 else:
     setup_for_low_vram(sd_model)
 
@@ -1734,22 +1816,44 @@ model_hijack.hijack(sd_model)
 with open(os.path.join(script_path, "style.css"), "r", encoding="utf8") as file:
     css = file.read()
 
-demo = gr.TabbedInterface(
-    interface_list=[x[0] for x in interfaces],
-    tab_names=[x[1] for x in interfaces],
-    css=("" if cmd_opts.no_progressbar_hiding else css_hide_progressbar) + """
-.output-html p {margin: 0 0.5em;}
-.performance { font-size: 0.85em; color: #444; }
-""" + css,
-    analytics_enabled=False,
-)
+if not cmd_opts.no_progressbar_hiding:
+    css += css_hide_progressbar
+
+with open(os.path.join(script_path, "script.js"), "r", encoding="utf8") as file:
+    javascript = file.read()
+
 
 # make the program just exit at ctrl+c without waiting for anything
 def sigint_handler(signal, frame):
     print('Interrupted')
     os._exit(0)
 
+
 signal.signal(signal.SIGINT, sigint_handler)
+
+demo = gr.TabbedInterface(
+    interface_list=[x[0] for x in interfaces],
+    tab_names=[x[1] for x in interfaces],
+    analytics_enabled=False,
+    css=css,
+)
+
+
+def inject_gradio_html(javascript):
+    import gradio.routes
+
+    def template_response(*args, **kwargs):
+        res = gradio_routes_templates_response(*args, **kwargs)
+        res.body = res.body.replace(b'</head>', f'<script>{javascript}</script></head>'.encode("utf8"))
+        res.init_headers()
+        return res
+
+    gradio_routes_templates_response = gradio.routes.templates.TemplateResponse
+    gradio.routes.templates.TemplateResponse = template_response
+
+
+inject_gradio_html(javascript)
 
 demo.queue(concurrency_count=1)
 demo.launch()
+
