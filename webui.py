@@ -834,13 +834,33 @@ class CFGDenoiser(nn.Module):
         uncond, cond = self.inner_model(x_in, sigma_in, cond=cond_in).chunk(2)
         return uncond + (cond - uncond) * cond_scale
 
+class CFGMaskedDenoiser(nn.Module):
+    def __init__(self, model):
+        super().__init__()
+        self.inner_model = model
+
+    def forward(self, x, sigma, uncond, cond, cond_scale, mask, x0, xi):
+        x_in = x
+        x_in = torch.cat([x_in] * 2)
+        sigma_in = torch.cat([sigma] * 2)
+        cond_in = torch.cat([uncond, cond])
+        uncond, cond = self.inner_model(x_in, sigma_in, cond=cond_in).chunk(2)
+        denoised = uncond + (cond - uncond) * cond_scale
+
+        if mask is not None:
+            assert x0 is not None
+            img_orig = x0
+            mask_inv = 1. - mask
+            denoised = (img_orig * mask_inv) + (mask * denoised)
+
+        return denoised
 
 class KDiffusionSampler:
     def __init__(self, funcname):
         self.model_wrap = k_diffusion.external.CompVisDenoiser(sd_model)
         self.funcname = funcname
         self.func = getattr(k_diffusion.sampling, self.funcname)
-        self.model_wrap_cfg = CFGDenoiser(self.model_wrap)
+        self.model_wrap_cfg = CFGMaskedDenoiser(self.model_wrap)
 
     def sample(self, p: StableDiffusionProcessing, x, conditioning, unconditional_conditioning):
         sigmas = self.model_wrap.get_sigmas(p.steps)
@@ -1090,7 +1110,7 @@ with gr.Blocks(analytics_enabled=False) as txt2img_interface:
     with gr.Row().style(equal_height=False):
         with gr.Column(variant='panel'):
             steps = gr.Slider(minimum=1, maximum=150, step=1, label="Sampling Steps", value=20)
-            sampler_index = gr.Radio(label='Sampling method', elem_id="txt2img_sampling", choices=[x.name for x in samplers], value=samplers[0].name, type="index")
+            sampler_index = gr.Radio(label='Sampling method', elem_id="txt2img_sampling", choices=[x.name for x in samplers], value=samplers_for_img2img[0].name, type="index")
 
             with gr.Row():
                 use_GFPGAN = gr.Checkbox(label='GFPGAN', value=False, visible=have_gfpgan)
@@ -1239,21 +1259,22 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         noise = x * sigmas[self.steps - t_enc - 1]
         xi = self.init_latent + noise
 
-        if self.mask is not None:
-            if self.inpainting_fill == 2:
-                xi = xi * self.mask + noise * self.nmask
-            elif self.inpainting_fill == 3:
-                xi = xi * self.mask
+#        if self.mask is not None:
+#            if self.inpainting_fill == 2:
+#                xi = xi * self.mask + noise * self.nmask
+#            elif self.inpainting_fill == 3:
+#                xi = xi * self.mask
 
         sigma_sched = sigmas[self.steps - t_enc - 1:]
 
         def mask_cb(v):
             v["denoised"][:] = v["denoised"][:] * self.nmask + self.init_latent * self.mask
 
-        samples_ddim = self.sampler.func(self.sampler.model_wrap_cfg, xi, sigma_sched, extra_args={'cond': conditioning, 'uncond': unconditional_conditioning, 'cond_scale': self.cfg_scale}, disable=False, callback=mask_cb if self.mask is not None else None)
+#        samples_ddim = self.sampler.func(self.sampler.model_wrap_cfg, xi, sigma_sched, extra_args={'cond': conditioning, 'uncond': unconditional_conditioning, 'cond_scale': self.cfg_scale}, disable=False, callback=mask_cb if self.mask is not None else None)
+        samples_ddim = self.sampler.func(self.sampler.model_wrap_cfg, xi, sigma_sched, extra_args={'cond': conditioning, 'uncond': unconditional_conditioning, 'cond_scale': self.cfg_scale, 'mask': self.mask, 'x0': self.init_latent, 'xi': xi}, disable=False)
 
-        if self.mask is not None:
-            samples_ddim = samples_ddim * self.nmask + self.init_latent * self.mask
+#        if self.mask is not None:
+#            samples_ddim = samples_ddim * self.nmask + self.init_latent * self.mask
 
         return samples_ddim
 
