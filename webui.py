@@ -189,8 +189,6 @@ class Options:
         "enable_pnginfo": OptionInfo(True, "Save text information about generation parameters as chunks to png files"),
         "font": OptionInfo("arial.ttf", "Font for image grids  that have text"),
         "prompt_matrix_add_to_start": OptionInfo(True, "In prompt matrix, add the variable combination of text to the start of the prompt, rather than the end"),
-        "sd_upscale_upscaler_index": OptionInfo("RealESRGAN", "Upscaler to use for SD upscale", gr.Radio, {"choices": list(sd_upscalers.keys())}),
-        "sd_upscale_overlap": OptionInfo(64, "Overlap for tiles for SD upscale. The smaller it is, the less smooth transition from one tile to another", gr.Slider, {"minimum": 0, "maximum": 256, "step": 16}),
     }
 
     def __init__(self):
@@ -431,8 +429,8 @@ def combine_grid(grid):
         r = r.astype(np.uint8)
         return Image.fromarray(r, 'L')
 
-    mask_w = make_mask_image(np.arange(grid.overlap, dtype=np.float).reshape((1, grid.overlap)).repeat(grid.tile_h, axis=0))
-    mask_h = make_mask_image(np.arange(grid.overlap, dtype=np.float).reshape((grid.overlap, 1)).repeat(grid.image_w, axis=1))
+    mask_w = make_mask_image(np.arange(grid.overlap, dtype=np.float32).reshape((1, grid.overlap)).repeat(grid.tile_h, axis=0))
+    mask_h = make_mask_image(np.arange(grid.overlap, dtype=np.float32).reshape((grid.overlap, 1)).repeat(grid.image_w, axis=1))
 
     combined_image = Image.new("RGB", (grid.image_w, grid.image_h))
     for y, h, row in grid.tiles:
@@ -1316,7 +1314,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         return samples
 
 
-def img2img(prompt: str, init_img, init_img_with_mask, steps: int, sampler_index: int, mask_blur: int, inpainting_fill: int, use_GFPGAN: bool, prompt_matrix, mode: int, n_iter: int, batch_size: int, cfg_scale: float, denoising_strength: float, seed: int, height: int, width: int, resize_mode: int):
+def img2img(prompt: str, init_img, init_img_with_mask, steps: int, sampler_index: int, mask_blur: int, inpainting_fill: int, use_GFPGAN: bool, prompt_matrix, mode: int, n_iter: int, batch_size: int, cfg_scale: float, denoising_strength: float, seed: int, height: int, width: int, resize_mode: int, upscaler_name: str, upscale_overlap: int):
     outpath = opts.outdir or "outputs/img2img-samples"
 
     is_classic = mode == 0
@@ -1388,12 +1386,12 @@ def img2img(prompt: str, init_img, init_img_with_mask, steps: int, sampler_index
         initial_seed = None
         initial_info = None
 
-        upscaler = sd_upscalers[opts.sd_upscale_upscaler_index]
+        upscaler = sd_upscalers[upscaler_name]
         img = upscaler(init_img)
 
         torch_gc()
 
-        grid = split_grid(img, tile_w=width, tile_h=height, overlap=opts.sd_upscale_overlap)
+        grid = split_grid(img, tile_w=width, tile_h=height, overlap=upscale_overlap)
 
         p.n_iter = 1
         p.do_not_save_grid = True
@@ -1468,6 +1466,10 @@ with gr.Blocks(analytics_enabled=False) as img2img_interface:
                 prompt_matrix = gr.Checkbox(label='Prompt matrix', value=False)
 
             with gr.Row():
+                sd_upscale_upscaler_name = gr.Radio(label='Upscaler', choices=list(sd_upscalers.keys()), value="RealESRGAN")
+                sd_upscale_overlap = gr.Slider(minimum=0, maximum=256, step=16, label='Tile overlap', value=64)
+
+            with gr.Row():
                 batch_count = gr.Slider(minimum=1, maximum=cmd_opts.max_batch_count, step=1, label='Batch count', value=1)
                 batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1)
 
@@ -1501,12 +1503,24 @@ with gr.Blocks(analytics_enabled=False) as img2img_interface:
                 prompt_matrix: gr.update(visible=is_classic),
                 batch_count: gr.update(visible=not is_upscale),
                 batch_size: gr.update(visible=not is_loopback),
+                sd_upscale_upscaler_name: gr.update(visible=is_upscale),
+                sd_upscale_overlap: gr.update(visible=is_upscale),
             }
 
         switch_mode.change(
             apply_mode,
             inputs=[switch_mode],
-            outputs=[init_img, init_img_with_mask, mask_blur, inpainting_fill, prompt_matrix, batch_count, batch_size]
+            outputs=[
+                init_img,
+                init_img_with_mask,
+                mask_blur,
+                inpainting_fill,
+                prompt_matrix,
+                batch_count,
+                batch_size,
+                sd_upscale_upscaler_name,
+                sd_upscale_overlap,
+            ]
         )
 
         img2img_args = dict(
@@ -1529,7 +1543,9 @@ with gr.Blocks(analytics_enabled=False) as img2img_interface:
                 seed,
                 height,
                 width,
-                resize_mode
+                resize_mode,
+                sd_upscale_upscaler_name,
+                sd_upscale_overlap,
             ],
             outputs=[
                 gallery,
