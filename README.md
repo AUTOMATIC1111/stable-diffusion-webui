@@ -91,6 +91,20 @@ Running on local URL:  http://127.0.0.1:7860/
 
 Open the URL in browser, and you are good to go.
 
+
+### What options to use for low VRAM videocardsd?
+- If you have 4GB VRAM and want to make 512x512 (or maybe up to 640x640) images, use `--medvram`.
+- If you have 4GB VRAM and want to make 512x512 images, but you get an out of memory error with `--medvram`, use `--lowvram --always-batch-cond-uncond` instead.
+- If you have 4GB VRAM and want to make images larger than you can with `--medvram`, use `--lowvram`.
+- If you have more VRAM and want to make larger images than you can usually make, use `--medvram`. You can use `--lowvram`
+also but the effect will likely be barely noticeable.
+- Otherwise, do not use any of those.
+
+Extra: if you get a green screen instead of generated pictures, you have a card that doesn't support half
+precision floating point numbers. You must use `--precision full --no-half` in addition to other flags,
+and the model will take much more space in VRAM.
+
+
 ## Features
 The script creates a web UI for Stable Diffusion's txt2img and img2img scripts. Following are features added
 that are not in original script.
@@ -298,16 +312,6 @@ compared to normal operation on my RTX 3090.
 unconditional denoising in a same batch.
 
 This implementation of optimization does not require any modification to original Stable Diffusion code.
-
-#### What option to use?
-If you have 4GB VRAM and want to make 512x512 (or maybe up to 640x640) images, use `--medvram`.
-
-If you have 4GB VRAM and want to make images larger than that, use `--lowvram`.
-
-If you have more VRAM and want to make larger images than you can usually make, use `--medvram`. You can use `--lowvram`
-also but the effect will likely be barely noticeable.
-
-Otherwise, do not use any.
 
 ### Inpainting
 In img2img tab, draw a mask over a part of image, and that part will be in-painted.
