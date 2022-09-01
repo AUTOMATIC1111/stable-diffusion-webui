@@ -6,8 +6,11 @@ Original script with Gradio UI was written by a kind anonymous user. This is a m
 ![](screenshot.png)
 ## Installing and running
 
-You need [python](https://www.python.org/downloads/windows/) and [git](https://git-scm.com/download/win) installed to run this. I tested the installation to work with Python 3.8.10,
-you may be able to run this on different versions.
+You need [python](https://www.python.org/downloads/windows/) and [git](https://git-scm.com/download/win)
+installed to run this, and an NVidia videocard.
+
+I tested the installation to work Windows with Python 3.8.10, and with Python 3.10.6. You may be able
+to have success with different versions.
 
 You need Stable Diffusion model checkpoint, a big file containing the neural network weights. You
 can obtain it from the following places:
@@ -52,6 +55,9 @@ git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui.git
 
 :: install requirements of web ui
 pip install -r stable-diffusion-webui/requirements.txt
+
+:: update numpy to latest version
+pip install -U numpy
 
 :: (outside of command line) put stable diffusion model into models/ldm/stable-diffusion-v1/model.ckpt; you'll have
 :: to create one missing directory;
