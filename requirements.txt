@@ -1,6 +1,6 @@
 basicsr
 gfpgan
-gradio
+gradio==3.1.5
 numpy
 Pillow
 realesrgan
