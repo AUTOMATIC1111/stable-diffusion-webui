@@ -71,10 +71,10 @@ Run the command to start web ui:
 python stable-diffusion-webui/webui.py
 ```
 
-If you have a 4GB video card, run the command with `--lowvram` argument:
+If you have a 4GB video card, run the command with either `--lowvram` or `--medvram` argument:
 
 ```
-python stable-diffusion-webui/webui.py --lowvram
+python stable-diffusion-webui/webui.py --medvram
 ```
 
 After a while, you will get a message like this:
@@ -280,17 +280,18 @@ print("Seed was: " + str(processed.seed))
 display(processed.images, processed.seed, processed.info)
 ```
 
-### `--lowvram`
+### 4GB videocard support
 Optimizations for GPUs with low VRAM. This should make it possible to generate 512x512 images on videocards with 4GB memory.
 
-The original idea of those optimizations is by basujindal: https://github.com/basujindal/stable-diffusion. Model is separated into modules,
-and only one module is kept in GPU memory; when another module needs to run, the previous is removed from GPU memory.
-
-It should be obvious but the nature of those optimizations makes the processing run slower -- about 10 times slower
+`--lowvram` is a reimplementation of optimization idea from by [basujindal](https://github.com/basujindal/stable-diffusion).
+Model is separated into modules, and only one module is kept in GPU memory; when another module needs to run, the previous
+is removed from GPU memory. The nature of this optimization makes the processing run slower -- about 10 times slower
 compared to normal operation on my RTX 3090.
 
-This is an independent implementation that does not require any modification to original Stable Diffusion code, and
-with all code concenrated in one place rather than scattered around the program.
+`--medvram` is another optimization that should reduce VRAM usage significantly by not peocessing conditional and
+unconditional denoising in a same batch.
+
+This implementation of optimization does not require any modification to original Stable Diffusion code.
 
 ### Inpainting
 In img2img tab, draw a mask over a part of image, and that part will be in-painted.
