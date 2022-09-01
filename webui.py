@@ -209,6 +209,7 @@ class Options:
         "outdir_samples": OptionInfo("", "Output dictectory for images; if empty, defaults to two directories below"),
         "outdir_txt2img_samples": OptionInfo("outputs/txt2img-images", 'Output dictectory for txt2img images'),
         "outdir_img2img_samples": OptionInfo("outputs/img2img-images", 'Output dictectory for img2img images'),
+        "outdir_extras_samples": OptionInfo("outputs/extras-images", 'Output dictectory for images from extras tab'),
         "outdir_grids": OptionInfo("", "Output dictectory for grids; if empty, defaults to two directories below"),
         "outdir_txt2img_grids": OptionInfo("outputs/txt2img-grids", 'Output dictectory for txt2img grids'),
         "outdir_img2img_grids": OptionInfo("outputs/img2img-grids", 'Output dictectory for img2img grids'),
@@ -368,7 +369,7 @@ def torch_gc():
         torch.cuda.ipc_collect()
 
 
-def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False):
+def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False):
     if short_filename or prompt is None or seed is None:
         file_decoration = ""
     elif opts.save_to_dirs:
@@ -382,7 +383,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     else:
         pnginfo = None
 
-    if opts.save_to_dirs:
+    if opts.save_to_dirs and not no_prompt:
         words = re.findall(r'\w+', prompt or "")
         if len(words) == 0:
             words = ["empty"]
@@ -1838,7 +1839,7 @@ def run_extras(image, GFPGAN_strength, RealESRGAN_upscaling, RealESRGAN_model_in
 
     image = image.convert("RGB")
 
-    outpath = opts.outdir or "outputs/extras-samples"
+    outpath = opts.outdir_samples or opts.outdir_extras_samples
 
     if have_gfpgan is not None and GFPGAN_strength > 0:
         gfpgan_model = gfpgan()
@@ -1854,7 +1855,7 @@ def run_extras(image, GFPGAN_strength, RealESRGAN_upscaling, RealESRGAN_model_in
     if have_realesrgan and RealESRGAN_upscaling != 1.0:
         image = upscale_with_realesrgan(image, RealESRGAN_upscaling, RealESRGAN_model_index)
 
-    save_image(image, outpath, "", None, '', opts.samples_format, short_filename=True)
+    save_image(image, outpath, "", None, '', opts.samples_format, short_filename=True, no_prompt=True)
 
     return image, '', ''
 
