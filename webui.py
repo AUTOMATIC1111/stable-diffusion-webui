@@ -1974,18 +1974,17 @@ try:
 except Exception:
     pass
 
-if False:
-    sd_config = OmegaConf.load(cmd_opts.config)
-    sd_model = load_model_from_config(sd_config, cmd_opts.ckpt)
-    sd_model = (sd_model if cmd_opts.no_half else sd_model.half())
+sd_config = OmegaConf.load(cmd_opts.config)
+sd_model = load_model_from_config(sd_config, cmd_opts.ckpt)
+sd_model = (sd_model if cmd_opts.no_half else sd_model.half())
 
-    if cmd_opts.lowvram or cmd_opts.medvram:
-        setup_for_low_vram(sd_model)
-    else:
-        sd_model = sd_model.to(device)
+if cmd_opts.lowvram or cmd_opts.medvram:
+	setup_for_low_vram(sd_model)
+else:
+	sd_model = sd_model.to(device)
 
-    model_hijack = StableDiffusionModelHijack()
-    model_hijack.hijack(sd_model)
+model_hijack = StableDiffusionModelHijack()
+model_hijack.hijack(sd_model)
 
 with open(os.path.join(script_path, "style.css"), "r", encoding="utf8") as file:
     css = file.read()
