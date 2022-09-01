@@ -80,6 +80,10 @@ batch_cond_uncond = cmd_opts.always_batch_cond_uncond or not (cmd_opts.lowvram o
 queue_lock = threading.Lock()
 
 
+def gr_show(visible=True):
+    return {"visible": visible, "__type__": "update"}
+
+
 class State:
     interrupted = False
     job = ""
@@ -1132,7 +1136,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             # we manually generate all input noises because each one should have a specific seed
             x = create_random_tensors([opt_C, p.height // opt_f, p.width // opt_f], seeds=seeds)
 
-            if p.n_iter > 0:
+            if p.n_iter > 1:
                 state.job = f"Batch {n+1} out of {p.n_iter}"
 
             samples_ddim = p.sample(x=x, conditioning=c, unconditional_conditioning=uc)
@@ -1728,16 +1732,16 @@ with gr.Blocks(analytics_enabled=False) as img2img_interface:
             is_upscale = mode == 3
 
             return {
-                init_img: gr.update(visible=not is_inpaint),
-                init_img_with_mask: gr.update(visible=is_inpaint),
-                mask_blur: gr.update(visible=is_inpaint),
-                inpainting_fill: gr.update(visible=is_inpaint),
-                prompt_matrix: gr.update(visible=is_classic),
-                batch_count: gr.update(visible=not is_upscale),
-                batch_size: gr.update(visible=not is_loopback),
-                sd_upscale_upscaler_name: gr.update(visible=is_upscale),
-                sd_upscale_overlap: gr.Slider.update(visible=is_upscale),
-                inpaint_full_res: gr.update(visible=is_inpaint),
+                init_img: gr_show(not is_inpaint),
+                init_img_with_mask: gr_show(is_inpaint),
+                mask_blur: gr_show(is_inpaint),
+                inpainting_fill: gr_show(is_inpaint),
+                prompt_matrix: gr_show(is_classic),
+                batch_count: gr_show(not is_upscale),
+                batch_size: gr_show(not is_loopback),
+                sd_upscale_upscaler_name: gr_show(is_upscale),
+                sd_upscale_overlap:gr_show(is_upscale),
+                inpaint_full_res: gr_show(is_inpaint),
             }
 
         switch_mode.change(
@@ -1979,9 +1983,9 @@ sd_model = load_model_from_config(sd_config, cmd_opts.ckpt)
 sd_model = (sd_model if cmd_opts.no_half else sd_model.half())
 
 if cmd_opts.lowvram or cmd_opts.medvram:
-	setup_for_low_vram(sd_model)
+    setup_for_low_vram(sd_model)
 else:
-	sd_model = sd_model.to(device)
+    sd_model = sd_model.to(device)
 
 model_hijack = StableDiffusionModelHijack()
 model_hijack.hijack(sd_model)
