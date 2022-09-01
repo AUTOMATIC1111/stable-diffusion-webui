@@ -1227,7 +1227,7 @@ with gr.Blocks(analytics_enabled=False) as txt2img_interface:
     with gr.Row():
         prompt = gr.Textbox(label="Prompt", elem_id="txt2img_prompt", show_label=False, placeholder="Prompt", lines=1)
         negative_prompt = gr.Textbox(label="Negative prompt", elem_id="txt2img_negative_prompt", show_label=False, placeholder="Negative prompt", lines=1, visible=False)
-        submit = gr.Button('Generate', variant='primary')
+        submit = gr.Button('Generate', elem_id="txt2img_generate", variant='primary')
 
     with gr.Row().style(equal_height=False):
         with gr.Column(variant='panel'):
@@ -1575,7 +1575,7 @@ sample_img2img = sample_img2img if os.path.exists(sample_img2img) else None
 with gr.Blocks(analytics_enabled=False) as img2img_interface:
     with gr.Row():
         prompt = gr.Textbox(label="Prompt", elem_id="img2img_prompt", show_label=False, placeholder="Prompt", lines=1)
-        submit = gr.Button('Generate', variant='primary')
+        submit = gr.Button('Generate', elem_id="img2img_generate", variant='primary')
 
     with gr.Row().style(equal_height=False):
 
