@@ -1,5 +1,3 @@
-console.log("running")
-
 titles = {
     "Sampling steps": "How many times to imptove the generated image itratively; higher values take longer; very low values can produce bad results",
     "Sampling method": "Which algorithm to use to produce the image",
@@ -29,6 +27,9 @@ titles = {
     "Inpaint at full resolution": "Upscale masked region to target resolution, do inpainting, downscale back and paste into original image",
 
     "Denoising Strength": "Determines how little respect the algorithm should have for image's content. At 0, nothing will change, and at 1 you'll get an unrelated image.",
+
+    "Interrupt": "Stop processing images and return any results accumulated so far.",
+    "Save": "Write image to a directory (default - log/images) and generation parameters into csv file.",
 }
 
 function gradioApp(){
@@ -36,7 +37,7 @@ function gradioApp(){
 }
 
 function addTitles(root){
-	root.querySelectorAll('span').forEach(function(span){
+	root.querySelectorAll('span, button').forEach(function(span){
 		tooltip = titles[span.textContent];
 		if(tooltip){
 			span.title = tooltip;
