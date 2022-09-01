@@ -1600,7 +1600,7 @@ def img2img(prompt: str, init_img, init_img_with_mask, steps: int, sampler_index
                 initial_seed = processed.seed
                 initial_info = processed.info
 
-            p.init_img = processed.images[0]
+            p.init_images = [processed.images[0]]
             p.seed = processed.seed + 1
             p.denoising_strength = max(p.denoising_strength * 0.95, 0.1)
             history.append(processed.images[0])
