@@ -231,7 +231,9 @@ class Options:
         "enable_pnginfo": OptionInfo(True, "Save text information about generation parameters as chunks to png files"),
         "font": OptionInfo("arial.ttf", "Font for image grids  that have text"),
         "prompt_matrix_add_to_start": OptionInfo(True, "In prompt matrix, add the variable combination of text to the start of the prompt, rather than the end"),
-        "enable_emphasis": OptionInfo(True, "Use (text) to make model pay more attention to text text and [text] to make it pay less attention")
+        "enable_emphasis": OptionInfo(True, "Use (text) to make model pay more attention to text text and [text] to make it pay less attention"),
+        "save_txt": OptionInfo(False, "Create a text file next to every image with generation parameters."),
+
     }
 
     def __init__(self):
@@ -419,6 +421,11 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
             image = image.resize((image.width * target_side_length // image.height, target_side_length), LANCZOS)
 
         image.save(f"{fullfn_without_extension}.jpg", quality=opts.jpeg_quality, pnginfo=pnginfo)
+
+    if opts.save_txt and info is not None:
+        with open(f"{fullfn_without_extension}.txt", "w", encoding="utf8") as file:
+            file.write(info + "\n")
+
 
 
 def sanitize_filename_part(text):
