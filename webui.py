@@ -395,7 +395,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
         elif oversize:
             image = image.resize((image.width * target_side_length // image.height, target_side_length), LANCZOS)
 
-        image.save(os.path.join(path, f"{fullfn_without_extension}.jpg"), quality=opts.jpeg_quality, pnginfo=pnginfo)
+        image.save(f"{fullfn_without_extension}.jpg", quality=opts.jpeg_quality, pnginfo=pnginfo)
 
 
 
