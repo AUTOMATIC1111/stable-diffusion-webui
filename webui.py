@@ -730,6 +730,8 @@ class StableDiffusionModelHijack:
 
             data = torch.load(path)
             param_dict = data['string_to_param']
+            if hasattr(param_dict, '_parameters'):
+                param_dict = getattr(param_dict, '_parameters')  # fix for torch 1.12.1 loading saved file from torch 1.11
             assert len(param_dict) == 1, 'embedding file has multiple terms in it'
             emb = next(iter(param_dict.items()))[1].reshape(768)
             self.word_embeddings[name] = emb
