@@ -229,6 +229,7 @@ class Options:
         "enable_pnginfo": OptionInfo(True, "Save text information about generation parameters as chunks to png files"),
         "font": OptionInfo("arial.ttf", "Font for image grids  that have text"),
         "prompt_matrix_add_to_start": OptionInfo(True, "In prompt matrix, add the variable combination of text to the start of the prompt, rather than the end"),
+        "enable_emphasis": OptionInfo(True, "Use (text) to make model pay more attention to text text and [text] to make it pay less attention")
     }
 
     def __init__(self):
@@ -702,7 +703,7 @@ class StableDiffusionModelHijack:
     word_embeddings = {}
     word_embeddings_checksums = {}
     fixes = None
-    comments = None
+    comments = []
     dir_mtime = None
 
     def load_textual_inversion_embeddings(self, dirname, model):
@@ -810,7 +811,7 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
 
                     possible_matches = self.hijack.ids_lookup.get(token, None)
 
-                    mult_change = self.token_mults.get(token)
+                    mult_change = self.token_mults.get(token) if opts.enable_emphasis else None
                     if mult_change is not None:
                         mult *= mult_change
                     elif possible_matches is None:
@@ -2001,7 +2002,7 @@ else:
     sd_model = sd_model.to(device)
 
 model_hijack = StableDiffusionModelHijack()
-#model_hijack.hijack(sd_model)
+model_hijack.hijack(sd_model)
 
 with open(os.path.join(script_path, "style.css"), "r", encoding="utf8") as file:
     css = file.read()
