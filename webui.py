@@ -548,7 +548,7 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts):
     color_active = (0, 0, 0)
     color_inactive = (153, 153, 153)
 
-    pad_left = width * 3 // 4 if len(ver_texts) > 1 else 0
+    pad_left = width * 3 // 4 if len(ver_texts) > 0 else 0
 
     cols = im.width // width
     rows = im.height // height
@@ -1145,40 +1145,39 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             x_samples_ddim = model.decode_first_stage(samples_ddim)
             x_samples_ddim = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
 
-            if p.prompt_matrix or opts.samples_save or opts.grid_save:
-                for i, x_sample in enumerate(x_samples_ddim):
-                    x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
-                    x_sample = x_sample.astype(np.uint8)
+            for i, x_sample in enumerate(x_samples_ddim):
+                x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
+                x_sample = x_sample.astype(np.uint8)
 
-                    if p.use_GFPGAN:
-                        torch_gc()
+                if p.use_GFPGAN:
+                    torch_gc()
 
-                        gfpgan_model = gfpgan()
-                        x_sample = gfpgan_fix_faces(gfpgan_model, x_sample)
+                    gfpgan_model = gfpgan()
+                    x_sample = gfpgan_fix_faces(gfpgan_model, x_sample)
 
-                    image = Image.fromarray(x_sample)
+                image = Image.fromarray(x_sample)
 
-                    if p.overlay_images is not None and i < len(p.overlay_images):
-                        overlay = p.overlay_images[i]
+                if p.overlay_images is not None and i < len(p.overlay_images):
+                    overlay = p.overlay_images[i]
 
-                        if p.paste_to is not None:
-                            x, y, w, h = p.paste_to
-                            base_image = Image.new('RGBA', (overlay.width, overlay.height))
-                            image = resize_image(1, image, w, h)
-                            base_image.paste(image, (x, y))
-                            image = base_image
+                    if p.paste_to is not None:
+                        x, y, w, h = p.paste_to
+                        base_image = Image.new('RGBA', (overlay.width, overlay.height))
+                        image = resize_image(1, image, w, h)
+                        base_image.paste(image, (x, y))
+                        image = base_image
 
-                        image = image.convert('RGBA')
-                        image.alpha_composite(overlay)
-                        image = image.convert('RGB')
+                    image = image.convert('RGBA')
+                    image.alpha_composite(overlay)
+                    image = image.convert('RGB')
 
-                    if not p.do_not_save_samples:
-                        save_image(image, p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, info=infotext())
+                if opts.samples_save and not p.do_not_save_samples:
+                    save_image(image, p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, info=infotext())
 
-                    output_images.append(image)
+                output_images.append(image)
 
         unwanted_grid_because_of_img_count = len(output_images) < 2 and opts.grid_only_if_multiple
-        if (p.prompt_matrix or opts.grid_save) and not p.do_not_save_grid and not unwanted_grid_because_of_img_count:
+        if not p.do_not_save_grid and not unwanted_grid_because_of_img_count:
             return_grid = opts.return_grid
 
             if p.prompt_matrix:
@@ -1198,7 +1197,8 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             if return_grid:
                 output_images.insert(0, grid)
 
-            save_image(grid, p.outpath_grids, "grid", seed, prompt, opts.grid_format, info=infotext(), short_filename=not opts.grid_extended_filename)
+            if opts.grid_save:
+                save_image(grid, p.outpath_grids, "grid", seed, prompt, opts.grid_format, info=infotext(), short_filename=not opts.grid_extended_filename)
 
     torch_gc()
     return Processed(p, output_images, seed, infotext())
