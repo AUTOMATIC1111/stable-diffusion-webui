@@ -36,6 +36,7 @@ from collections import namedtuple
 from contextlib import nullcontext
 import signal
 import tqdm
+import re
 
 import k_diffusion.sampling
 from ldm.util import instantiate_from_config
@@ -187,7 +188,14 @@ class Options:
 
     data = None
     data_labels = {
-        "outdir": OptionInfo("", "Output dictectory; if empty, defaults to 'outputs/*'"),
+        "outdir_samples": OptionInfo("", "Output dictectory for images; if empty, defaults to two directories below"),
+        "outdir_txt2img_samples": OptionInfo("outputs/txt2img-images", 'Output dictectory for txt2img images'),
+        "outdir_img2img_samples": OptionInfo("outputs/img2img-images", 'Output dictectory for img2img images'),
+        "outdir_grids": OptionInfo("", "Output dictectory for grids; if empty, defaults to two directories below"),
+        "outdir_txt2img_grids": OptionInfo("outputs/txt2img-grids", 'Output dictectory for txt2img grids'),
+        "outdir_img2img_grids": OptionInfo("outputs/img2img-grids", 'Output dictectory for img2img grids'),
+        "save_to_dirs": OptionInfo(False, "When writing images/grids, create a directory with name derived from the prompt"),
+        "save_to_dirs_prompt_len": OptionInfo(10, "When using above, how many words from prompt to put into directory name", gr.Slider, {"minimum": 1, "maximum": 32, "step": 1}),
         "samples_save": OptionInfo(True, "Save indiviual samples"),
         "samples_format": OptionInfo('png', 'File format for indiviual samples'),
         "grid_save": OptionInfo(True, "Save image grids"),
@@ -342,11 +350,12 @@ def torch_gc():
 
 
 def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False):
-
     if short_filename or prompt is None or seed is None:
-        filename = f"{basename}"
+        file_decoration = ""
+    elif opts.save_to_dirs:
+        file_decoration = f"-{seed}"
     else:
-        filename = f"{basename}-{seed}-{sanitize_filename_part(prompt)[:128]}"
+        file_decoration = f"-{seed}-{sanitize_filename_part(prompt)[:128]}"
 
     if extension == 'png' and opts.enable_pnginfo and info is not None:
         pnginfo = PngImagePlugin.PngInfo()
@@ -354,8 +363,26 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     else:
         pnginfo = None
 
+    if opts.save_to_dirs:
+        words = re.findall(r'\w+', prompt or "")
+        if len(words) == 0:
+            words = ["empty"]
+
+        dirname = " ".join(words[0:opts.save_to_dirs_prompt_len])
+        path = os.path.join(path, dirname)
+
     os.makedirs(path, exist_ok=True)
-    fullfn = os.path.join(path, f"{filename}.{extension}")
+
+    filecount = len(os.listdir(path))
+    fullfn = "a.png"
+    fullfn_without_extension = "a"
+    for i in range(100):
+        fn = f"{filecount:05}" if basename == '' else f"{basename}-{filecount:04}"
+        fullfn = os.path.join(path, f"{fn}{file_decoration}.{extension}")
+        fullfn_without_extension = os.path.join(path, f"{fn}{file_decoration}")
+        if not os.path.exists(fullfn):
+            break
+
     image.save(fullfn, quality=opts.jpeg_quality, pnginfo=pnginfo)
 
     target_side_length = 4000
@@ -368,7 +395,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
         elif oversize:
             image = image.resize((image.width * target_side_length // image.height, target_side_length), LANCZOS)
 
-        image.save(os.path.join(path, f"{filename}.jpg"), quality=opts.jpeg_quality, pnginfo=pnginfo)
+        image.save(os.path.join(path, f"{fullfn_without_extension}.jpg"), quality=opts.jpeg_quality, pnginfo=pnginfo)
 
 
 
@@ -824,8 +851,9 @@ class EmbeddingsWithFixes(nn.Module):
 
 
 class StableDiffusionProcessing:
-    def __init__(self, outpath=None, prompt="", seed=-1, sampler_index=0, batch_size=1, n_iter=1, steps=50, cfg_scale=7.0, width=512, height=512, prompt_matrix=False, use_GFPGAN=False, do_not_save_samples=False, do_not_save_grid=False, extra_generation_params=None, overlay_images=None, negative_prompt=None):
-        self.outpath: str = outpath
+    def __init__(self, outpath_samples=None, outpath_grids=None, prompt="", seed=-1, sampler_index=0, batch_size=1, n_iter=1, steps=50, cfg_scale=7.0, width=512, height=512, prompt_matrix=False, use_GFPGAN=False, do_not_save_samples=False, do_not_save_grid=False, extra_generation_params=None, overlay_images=None, negative_prompt=None):
+        self.outpath_samples: str = outpath_samples
+        self.outpath_grids: str = outpath_grids
         self.prompt: str = prompt
         self.negative_prompt: str = (negative_prompt or "")
         self.seed: int = seed
@@ -969,10 +997,8 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
 
     seed = int(random.randrange(4294967294) if p.seed == -1 else p.seed)
 
-    sample_path = os.path.join(p.outpath, "samples")
-    os.makedirs(sample_path, exist_ok=True)
-    base_count = len(os.listdir(sample_path))
-    grid_count = len(os.listdir(p.outpath)) - 1
+    os.makedirs(p.outpath_samples, exist_ok=True)
+    os.makedirs(p.outpath_grids, exist_ok=True)
 
     comments = []
 
@@ -1071,10 +1097,9 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
                         image = image.convert('RGB')
 
                     if not p.do_not_save_samples:
-                        save_image(image, sample_path, f"{base_count:05}", seeds[i], prompts[i], opts.samples_format, info=infotext())
+                        save_image(image, p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, info=infotext())
 
                     output_images.append(image)
-                    base_count += 1
 
         unwanted_grid_because_of_img_count = len(output_images) < 2 and opts.grid_only_if_multiple
         if (p.prompt_matrix or opts.grid_save) and not p.do_not_save_grid and not unwanted_grid_because_of_img_count:
@@ -1097,8 +1122,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             if return_grid:
                 output_images.insert(0, grid)
 
-            save_image(grid, p.outpath, f"grid-{grid_count:04}", seed, prompt, opts.grid_format, info=infotext(), short_filename=not opts.grid_extended_filename)
-            grid_count += 1
+            save_image(grid, p.outpath_grids, "grid", seed, prompt, opts.grid_format, info=infotext(), short_filename=not opts.grid_extended_filename)
 
     torch_gc()
     return Processed(output_images, seed, infotext())
@@ -1114,11 +1138,11 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         samples_ddim = self.sampler.sample(self, x, conditioning, unconditional_conditioning)
         return samples_ddim
 
-def txt2img(prompt: str, negative_prompt: str, steps: int, sampler_index: int, use_GFPGAN: bool, prompt_matrix: bool, n_iter: int, batch_size: int, cfg_scale: float, seed: int, height: int, width: int, code: str):
-    outpath = opts.outdir or "outputs/txt2img-samples"
 
+def txt2img(prompt: str, negative_prompt: str, steps: int, sampler_index: int, use_GFPGAN: bool, prompt_matrix: bool, n_iter: int, batch_size: int, cfg_scale: float, seed: int, height: int, width: int, code: str):
     p = StableDiffusionProcessingTxt2Img(
-        outpath=outpath,
+        outpath_samples=opts.outdir_samples or opts.outdir_txt2img_samples,
+        outpath_grids=opts.outdir_grids or opts.outdir_txt2img_grids,
         prompt=prompt,
         negative_prompt=negative_prompt,
         seed=seed,
@@ -1138,6 +1162,7 @@ def txt2img(prompt: str, negative_prompt: str, steps: int, sampler_index: int, u
         p.do_not_save_samples = True
 
         display_result_data = [[], -1, ""]
+
         def display(imgs, s=display_result_data[1], i=display_result_data[2]):
             display_result_data[0] = imgs
             display_result_data[1] = s
@@ -1422,8 +1447,6 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
 
 def img2img(prompt: str, init_img, init_img_with_mask, steps: int, sampler_index: int, mask_blur: int, inpainting_fill: int, use_GFPGAN: bool, prompt_matrix, mode: int, n_iter: int, batch_size: int, cfg_scale: float, denoising_strength: float, seed: int, height: int, width: int, resize_mode: int, upscaler_name: str, upscale_overlap: int, inpaint_full_res: bool):
-    outpath = opts.outdir or "outputs/img2img-samples"
-
     is_classic = mode == 0
     is_inpaint = mode == 1
     is_loopback = mode == 2
@@ -1439,7 +1462,8 @@ def img2img(prompt: str, init_img, init_img_with_mask, steps: int, sampler_index
     assert 0. <= denoising_strength <= 1., 'can only work with strength in [0.0, 1.0]'
 
     p = StableDiffusionProcessingImg2Img(
-        outpath=outpath,
+        outpath_samples=opts.outdir_samples or opts.outdir_img2img_samples,
+        outpath_grids=opts.outdir_grids or opts.outdir_img2img_grids,
         prompt=prompt,
         seed=seed,
         sampler_index=sampler_index,
@@ -1483,10 +1507,9 @@ def img2img(prompt: str, init_img, init_img_with_mask, steps: int, sampler_index
             p.denoising_strength = max(p.denoising_strength * 0.95, 0.1)
             history.append(processed.images[0])
 
-        grid_count = len(os.listdir(outpath)) - 1
         grid = image_grid(history, batch_size, rows=1)
 
-        save_image(grid, outpath, f"grid-{grid_count:04}", initial_seed, prompt, opts.grid_format, info=info, short_filename=not opts.grid_extended_filename)
+        save_image(grid, p.outpath_grids, "grid", initial_seed, prompt, opts.grid_format, info=info, short_filename=not opts.grid_extended_filename)
 
         processed = Processed(history, initial_seed, initial_info)
 
@@ -1535,8 +1558,7 @@ def img2img(prompt: str, init_img, init_img_with_mask, steps: int, sampler_index
 
         combined_image = combine_grid(grid)
 
-        grid_count = len(os.listdir(outpath)) - 1
-        save_image(combined_image, outpath, f"grid-{grid_count:04}", initial_seed, prompt, opts.grid_format, info=initial_info, short_filename=not opts.grid_extended_filename)
+        save_image(combined_image, p.outpath_grids, "grid", initial_seed, prompt, opts.grid_format, info=initial_info, short_filename=not opts.grid_extended_filename)
 
         processed = Processed([combined_image], initial_seed, initial_info)
 
@@ -1708,9 +1730,7 @@ def run_extras(image, GFPGAN_strength, RealESRGAN_upscaling, RealESRGAN_model_in
     if have_realesrgan and RealESRGAN_upscaling != 1.0:
         image = upscale_with_realesrgan(image, RealESRGAN_upscaling, RealESRGAN_model_index)
 
-    os.makedirs(outpath, exist_ok=True)
-    base_count = len(os.listdir(outpath))
-    save_image(image, outpath, f"{base_count:05}", None, '', opts.samples_format, short_filename=True)
+    save_image(image, outpath, "", None, '', opts.samples_format, short_filename=True)
 
     return image, 0, ''
 
