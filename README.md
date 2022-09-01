@@ -294,10 +294,20 @@ Model is separated into modules, and only one module is kept in GPU memory; when
 is removed from GPU memory. The nature of this optimization makes the processing run slower -- about 10 times slower
 compared to normal operation on my RTX 3090.
 
-`--medvram` is another optimization that should reduce VRAM usage significantly by not peocessing conditional and
+`--medvram` is another optimization that should reduce VRAM usage significantly by not processing conditional and
 unconditional denoising in a same batch.
 
 This implementation of optimization does not require any modification to original Stable Diffusion code.
+
+#### What option to use?
+If you have 4GB VRAM and want to make 512x512 (or maybe up to 640x640) images, use `--medvram`.
+
+If you have 4GB VRAM and want to make images larger than that, use `--lowvram`.
+
+If you have more VRAM and want to make larger images than you can usually make, use `--medvram`. You can use `--lowvram`
+also but the effect will likely be barely noticeable.
+
+Otherwise, do not use any.
 
 ### Inpainting
 In img2img tab, draw a mask over a part of image, and that part will be in-painted.
