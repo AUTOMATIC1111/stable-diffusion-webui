@@ -3,7 +3,9 @@ import os
 import sys
 
 script_path = os.path.dirname(os.path.realpath(__file__))
-sd_path = os.path.dirname(script_path)
+
+# use current directory as SD dir if it has related files, otherwise parent dir of script as stated in guide
+sd_path = os.path.abspath('.') if os.path.exists('./ldm/models/diffusion/ddpm.py') else os.path.dirname(script_path)
 
 # add parent directory to path; this is where Stable diffusion repo should be
 path_dirs = [
