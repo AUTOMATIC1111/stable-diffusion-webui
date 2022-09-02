@@ -10,7 +10,7 @@ sd_path = os.path.abspath('.') if os.path.exists('./ldm/models/diffusion/ddpm.py
 # add parent directory to path; this is where Stable diffusion repo should be
 path_dirs = [
     (sd_path, 'ldm', 'Stable Diffusion'),
-    ('../../taming-transformers', 'taming', 'Taming Transformers')
+    (os.path.join(sd_path,'../taming-transformers'), 'taming', 'Taming Transformers')
 ]
 for d, must_exist, what in path_dirs:
     must_exist_path = os.path.abspath(os.path.join(script_path, d, must_exist))
@@ -57,10 +57,13 @@ opt_f = 8
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
 invalid_filename_chars = '<>:"/\\|?*\n'
 config_filename = "config.json"
+sd_model_file = os.path.join(script_path, 'model.ckpt')
+if not os.path.exists(sd_model_file):
+    sd_model_file = "models/ldm/stable-diffusion-v1/model.ckpt"
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--config", type=str, default=os.path.join(sd_path, "configs/stable-diffusion/v1-inference.yaml"), help="path to config which constructs model",)
-parser.add_argument("--ckpt", type=str, default=os.path.join(sd_path, "models/ldm/stable-diffusion-v1/model.ckpt"), help="path to checkpoint of model",)
+parser.add_argument("--ckpt", type=str, default=os.path.join(sd_path, sd_model_file), help="path to checkpoint of model",)
 parser.add_argument("--gfpgan-dir", type=str, help="GFPGAN directory", default=('./src/gfpgan' if os.path.exists('./src/gfpgan') else './GFPGAN'))
 parser.add_argument("--gfpgan-model", type=str, help="GFPGAN model file name", default='GFPGANv1.3.pth')
 parser.add_argument("--no-half", action='store_true', help="do not switch the model to 16-bit floats")
