@@ -22,10 +22,17 @@ You optionally can use GPFGAN to improve faces, then you'll need to download the
 
 ### Automatic installation/launch
 
+- install [Python 3.10.6](https://www.python.org/downloads/windows/)
+- install [git](https://git-scm.com/download/win)
+- install [CUDA 11.3](https://developer.nvidia.com/cuda-11.3.0-download-archive?target_os=Windows&target_arch=x86_64)
 - place `model.ckpt` into webui directory, next to `webui.bat`.
 - _*(optional)*_ place `GFPGANv1.3.pth` into webui directory, next to `webui.bat`.
-- _*(optional)*_ if you have a 4GB videocard, edit `webui.bat`, change line 5 to from `COMMANDLINE_ARGS=` to `COMMANDLINE_ARGS=--medvram` (see below for other possible options)
 - run `webui.bat` from Windows explorer.
+
+#### Troublehooting:
+
+- if you get out of memory errors and your videocard has low amount of VRAM (4GB), edit `webui.bat`, change line 5 to from `COMMANDLINE_ARGS=` to `COMMANDLINE_ARGS=--medvram` (see below for other possible options)
+
 
 ### Manual instructions
 Alternatively, if you don't want to run webui.bat, here are instructions for installing
