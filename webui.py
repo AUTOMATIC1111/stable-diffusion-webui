@@ -1288,7 +1288,14 @@ def txt2img(prompt: str, negative_prompt: str, steps: int, sampler_index: int, u
 
     return processed.images, processed.js(), plaintext_to_html(processed.info)
 
+
 def image_from_url_text(filedata):
+    if type(filedata) == list:
+        if len(filedata) == 0:
+            return None
+
+        filedata = filedata[0]
+
     if filedata.startswith("data:image/png;base64,"):
         filedata = filedata[len("data:image/png;base64,"):]
 
@@ -1368,7 +1375,7 @@ with gr.Blocks(analytics_enabled=False) as txt2img_interface:
 
         with gr.Column(variant='panel'):
             with gr.Group():
-                txt2img_gallery = gr.Gallery(label='Output')
+                txt2img_gallery = gr.Gallery(label='Output', elem_id='txt2img_gallery')
 
             with gr.Group():
                 with gr.Row():
@@ -1760,7 +1767,7 @@ with gr.Blocks(analytics_enabled=False) as img2img_interface:
 
         with gr.Column(variant='panel'):
             with gr.Group():
-                img2img_gallery = gr.Gallery(label='Output')
+                img2img_gallery = gr.Gallery(label='Output', elem_id='img2img_gallery')
 
             with gr.Group():
                 with gr.Row():
@@ -1863,13 +1870,15 @@ with gr.Blocks(analytics_enabled=False) as img2img_interface:
         )
 
         send_to_img2img.click(
-            fn=send_gradio_gallery_to_image,
+            fn=lambda x: image_from_url_text(x),
+            _js="extract_image_from_gallery",
             inputs=[txt2img_gallery],
             outputs=[init_img],
         )
 
         send_to_inpaint.click(
-            fn=send_gradio_gallery_to_image,
+            fn=lambda x: image_from_url_text(x),
+            _js="extract_image_from_gallery",
             inputs=[txt2img_gallery],
             outputs=[init_img_with_mask],
         )
@@ -1952,14 +1961,17 @@ with gr.Blocks(analytics_enabled=False) as extras_interface:
 
     submit.click(**extras_args)
 
+
     send_to_extras.click(
-        fn=send_gradio_gallery_to_image,
+        fn=lambda x: image_from_url_text(x),
+        _js="extract_image_from_gallery",
         inputs=[txt2img_gallery],
         outputs=[image],
     )
 
     img2img_send_to_extras.click(
-        fn=send_gradio_gallery_to_image,
+        fn=lambda x: image_from_url_text(x),
+        _js="extract_image_from_gallery",
         inputs=[img2img_gallery],
         outputs=[image],
     )

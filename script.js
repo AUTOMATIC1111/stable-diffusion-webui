@@ -33,7 +33,7 @@ titles = {
 }
 
 function gradioApp(){
-    return document.getElementsByTagName('gradio-app')[0];
+    return document.getElementsByTagName('gradio-app')[0].shadowRoot;
 }
 
 function addTitles(root){
@@ -47,8 +47,33 @@ function addTitles(root){
 
 document.addEventListener("DOMContentLoaded", function() {
     var mutationObserver = new MutationObserver(function(m){
-        addTitles(gradioApp().shadowRoot);
+        addTitles(gradioApp());
     });
-    mutationObserver.observe( gradioApp().shadowRoot, { childList:true, subtree:true })
+    mutationObserver.observe( gradioApp(), { childList:true, subtree:true })
 
 });
+
+function selected_gallery_index(){
+    var gr = gradioApp()
+    var buttons = gradioApp().querySelectorAll(".gallery-item")
+    var button = gr.querySelector(".gallery-item.\\!ring-2")
+
+    var result = -1
+    buttons.forEach(function(v, i){ if(v==button) { result = i } })
+
+    return result
+}
+
+function extract_image_from_gallery(gallery){
+    if(gallery.length == 1){
+        return gallery[0]
+    }
+
+    index = selected_gallery_index()
+
+    if (index < 0 || index >= gallery.length){
+        return []
+    }
+
+    return gallery[index];
+}
