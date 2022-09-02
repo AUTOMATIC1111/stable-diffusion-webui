@@ -404,7 +404,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
 
     os.makedirs(path, exist_ok=True)
 
-    filecount = len(os.listdir(path))
+    filecount = len([x for x in os.listdir(path) if os.path.splitext(x)[1] == '.' + extension])
     fullfn = "a.png"
     fullfn_without_extension = "a"
     for i in range(100):
@@ -1126,20 +1126,20 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
         all_prompts = p.batch_size * p.n_iter * [prompt]
         all_seeds = [seed + x for x in range(len(all_prompts))]
 
-    generation_params = {
-        "Steps": p.steps,
-        "Sampler": samplers[p.sampler_index].name,
-        "CFG scale": p.cfg_scale,
-        "Seed": seed,
-        "GFPGAN": ("GFPGAN" if p.use_GFPGAN else None)
-    }
+    def infotext(iteration=0, position_in_batch=0):
+        generation_params = {
+            "Steps": p.steps,
+            "Sampler": samplers[p.sampler_index].name,
+            "CFG scale": p.cfg_scale,
+            "Seed": all_seeds[position_in_batch + iteration * p.batch_size],
+            "GFPGAN": ("GFPGAN" if p.use_GFPGAN else None)
+        }
 
-    if p.extra_generation_params is not None:
-        generation_params.update(p.extra_generation_params)
+        if p.extra_generation_params is not None:
+            generation_params.update(p.extra_generation_params)
 
-    generation_params_text = ", ".join([k if k == v else f'{k}: {v}' for k, v in generation_params.items() if v is not None])
+        generation_params_text = ", ".join([k if k == v else f'{k}: {v}' for k, v in generation_params.items() if v is not None])
 
-    def infotext():
         return f"{prompt}\n{generation_params_text}".strip() + "".join(["\n\n" + x for x in comments])
 
     if os.path.exists(cmd_opts.embeddings_dir):
@@ -1202,7 +1202,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
                     image = image.convert('RGB')
 
                 if opts.samples_save and not p.do_not_save_samples:
-                    save_image(image, p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, info=infotext())
+                    save_image(image, p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, info=infotext(n, i))
 
                 output_images.append(image)
 
@@ -1573,14 +1573,13 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             self.mask = torch.asarray(1.0 - latmask).to(device).type(sd_model.dtype)
             self.nmask = torch.asarray(latmask).to(device).type(sd_model.dtype)
 
-    def sample(self, x, conditioning, unconditional_conditioning):
-
-        if self.mask is not None:
             if self.inpainting_fill == 2:
-                x = x * self.mask + create_random_tensors(x.shape[1:], [self.seed + x + 1 for x in range(x.shape[0])]) * self.nmask
+                self.init_latent = self.init_latent * self.mask + create_random_tensors(self.init_latent.shape[1:], [self.seed + x + 1 for x in range(self.init_latent.shape[0])]) * self.nmask
             elif self.inpainting_fill == 3:
-                x = x * self.mask
+                self.init_latent = self.init_latent * self.mask
 
+
+    def sample(self, x, conditioning, unconditional_conditioning):
         samples = self.sampler.sample_img2img(self, self.init_latent, x, conditioning, unconditional_conditioning)
 
         if self.mask is not None:
