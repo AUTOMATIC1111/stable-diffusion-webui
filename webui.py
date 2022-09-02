@@ -1701,7 +1701,8 @@ def img2img(prompt: str, init_img, init_img_with_mask, steps: int, sampler_index
 
         combined_image = combine_grid(grid)
 
-        save_image(combined_image, p.outpath_grids, "grid", initial_seed, prompt, opts.grid_format, info=initial_info, short_filename=not opts.grid_extended_filename)
+        if opts.samples_save:
+            save_image(combined_image, p.outpath_samples, "", initial_seed, prompt, opts.grid_format, info=initial_info)
 
         processed = Processed(p, [combined_image], initial_seed, initial_info)
 
