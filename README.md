@@ -12,7 +12,7 @@ installed to run this, and an NVidia videocard.
 I tested the installation to work Windows with Python 3.8.10, and with Python 3.10.6. You may be able
 to have success with different versions.
 
-You need Stable Diffusion model checkpoint, a big file containing the neural network weights. You
+You need `model.ckpt`, Stable Diffusion model checkpoint, a big file containing the neural network weights. You
 can obtain it from the following places:
  - [official download](https://huggingface.co/CompVis/stable-diffusion-v-1-4-original)
  - [file storage](https://drive.yerf.org/wl/?id=EBfTrmcCCUAGaQBXVIj5lJmEhjoP1tgl)
@@ -20,7 +20,15 @@ can obtain it from the following places:
 
 You optionally can use GPFGAN to improve faces, then you'll need to download the model from [here](https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.3.pth).
 
-Instructions:
+### Automatic installation/launch
+
+- place `model.ckpt` into webui directory, next to `webui.bat`.
+- (optional) place `GFPGANv1.3.pth` into webui directory, next to `webui.bat`.
+- run `webui.bat` from Windows explorer.
+
+### Manual instructions
+Alternatively, if you don't want to run webui.bat, here are instructions for installing
+everything by hand:
 
 ```commandline
 :: crate a directory somewhere for stable diffusion and open cmd in it;
