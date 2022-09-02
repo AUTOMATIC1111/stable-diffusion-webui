@@ -31,7 +31,7 @@ You optionally can use GPFGAN to improve faces, then you'll need to download the
 
 #### Troublehooting:
 
-- if you get out of memory errors and your videocard has low amount of VRAM (4GB), edit `webui.bat`, change line 5 to from `COMMANDLINE_ARGS=` to `COMMANDLINE_ARGS=--medvram` (see below for other possible options)
+- if you get out of memory errors and your videocard has low amount of VRAM (4GB), edit `webui.bat`, change line 5 to from `set COMMANDLINE_ARGS=` to `set COMMANDLINE_ARGS=--medvram` (see below for other possible options)
 
 
 ### Manual instructions
