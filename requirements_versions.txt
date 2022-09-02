@@ -1,0 +1,10 @@
+basicsr==1.4.1
+gfpgan
+gradio==3.2
+numpy==1.22.0
+Pillow==9.2.0
+realesrgan==0.2.5.0
+torch
+transformers==4.19.2
+omegaconf==2.1.1
+pytorch_lightning==1.7.2

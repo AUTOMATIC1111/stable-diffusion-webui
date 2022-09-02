@@ -633,8 +633,8 @@ def draw_xy_grid(xs, ys, x_label, y_label, cell):
 
     for y in ys:
         for x in xs:
+            state.job = f"{x + y * len(xs)} out of {len(xs) * len(ys)}"
             res.append(cell(x, y))
-
 
     grid = image_grid(res, rows=len(ys))
     grid = draw_grid_annotations(grid, res[0].width, res[0].height, hor_texts, ver_texts)

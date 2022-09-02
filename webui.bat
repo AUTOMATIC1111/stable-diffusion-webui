@@ -3,10 +3,12 @@
 set PYTHON=python
 set GIT=git
 set COMMANDLINE_ARGS=
+set VENV_DIR=venv
 
 mkdir tmp 2>NUL
 
 set TORCH_COMMAND=pip install torch --extra-index-url https://download.pytorch.org/whl/cu113
+set REQS_FILE=requirements_versions.txt
 
 %PYTHON% -c "" >tmp/stdout.txt 2>tmp/stderr.txt
 if %ERRORLEVEL% == 0 goto :check_git
@@ -15,11 +17,34 @@ goto :show_stdout_stderr
 
 :check_git
 %GIT% --help >tmp/stdout.txt 2>tmp/stderr.txt
-if %ERRORLEVEL% == 0 goto :install_torch
+if %ERRORLEVEL% == 0 goto :setup_venv
 echo Couldn't launch git
 goto :show_stdout_stderr
 
+:setup_venv
+if [%VENV_DIR%] == [] goto :skip_venv
+
+dir %VENV_DIR%\Scripts\Python.exe >tmp/stdout.txt 2>tmp/stderr.txt
+if %ERRORLEVEL% == 0 goto :activate_venv
+
+for /f %%i in ('%PYTHON% -c "import sys; print(sys.executable)"') do set PYTHON_FULLNAME=%%i
+echo Creating venv in directory %VENV_DIR% using python %PYTHON_FULLNAME%
+%PYTHON_FULLNAME% -m venv %VENV_DIR% >tmp/stdout.txt 2>tmp/stderr.txt
+if %ERRORLEVEL% == 0 goto :activate_venv
+echo Unable to create venv in directory %VENV_DIR%
+goto :show_stdout_stderr
+
+:activate_venv
+set PYTHON=%~dp0%VENV_DIR%\Scripts\Python.exe
+%PYTHON% --version
+echo venv %PYTHON%
+goto :install_torch
+
+:skip_venv
+%PYTHON% --version
+
 :install_torch
+
 %PYTHON% -c "import torch" >tmp/stdout.txt 2>tmp/stderr.txt
 if %ERRORLEVEL% == 0 goto :check_gpu
 echo Installing torch...
@@ -64,7 +89,7 @@ goto :show_stdout_stderr
 %PYTHON% -c "import omegaconf" >tmp/stdout.txt 2>tmp/stderr.txt
 if %ERRORLEVEL% == 0 goto :make_dirs
 echo Installing requirements...
-%PYTHON% -m pip install -r requirements.txt >tmp/stdout.txt 2>tmp/stderr.txt
+%PYTHON% -m pip install -r %REQS_FILE% >tmp/stdout.txt 2>tmp/stderr.txt
 if %ERRORLEVEL% == 0 goto :update_numpy
 goto :show_stdout_stderr
 :update_numpy
@@ -89,7 +114,7 @@ goto :show_stdout_stderr
 :check_model
 dir model.ckpt >tmp/stdout.txt 2>tmp/stderr.txt
 if %ERRORLEVEL% == 0 goto :check_gfpgan
-echo Stable Diffusin model not found: you need to place model.ckpt file into same directory as this file.
+echo Stable Diffusion model not found: you need to place model.ckpt file into same directory as this file.
 goto :show_stdout_stderr
 
 :check_gfpgan
@@ -101,7 +126,7 @@ echo Face fixing feature will not work.
 :launch
 echo Launching webui.py...
 cd repositories\stable-diffusion
-%PYTHON% ..\..\webui.py %COMMANDLINE_ARGS%
+%PYTHON% ../../webui.py %COMMANDLINE_ARGS%
 pause
 exit /b
 
@@ -127,3 +152,4 @@ type tmp\stderr.txt
 
 echo.
 echo Launch unsuccessful. Exiting.
+pause
