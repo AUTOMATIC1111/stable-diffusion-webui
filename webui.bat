@@ -7,7 +7,7 @@ set VENV_DIR=venv
 
 mkdir tmp 2>NUL
 
-set TORCH_COMMAND=pip install torch --extra-index-url https://download.pytorch.org/whl/cu113
+set TORCH_COMMAND=pip install torch==1.12.1+cu113 --extra-index-url https://download.pytorch.org/whl/cu113
 set REQS_FILE=requirements_versions.txt
 
 %PYTHON% -c "" >tmp/stdout.txt 2>tmp/stderr.txt

@@ -746,9 +746,9 @@ class StableDiffusionModelHijack:
             if hasattr(param_dict, '_parameters'):
                 param_dict = getattr(param_dict, '_parameters')  # fix for torch 1.12.1 loading saved file from torch 1.11
             assert len(param_dict) == 1, 'embedding file has multiple terms in it'
-            emb = next(iter(param_dict.items()))[1].reshape(768)
-            self.word_embeddings[name] = emb
-            self.word_embeddings_checksums[name] = f'{const_hash(emb)&0xffff:04x}'
+            emb = next(iter(param_dict.items()))[1]
+            self.word_embeddings[name] = emb.detach()
+            self.word_embeddings_checksums[name] = f'{const_hash(emb.reshape(-1))&0xffff:04x}'
 
             ids = tokenizer([name], add_special_tokens=False)['input_ids'][0]
 
@@ -838,9 +838,10 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
                         found = False
                         for ids, word in possible_matches:
                             if tokens[i:i+len(ids)] == ids:
+                                emb_len = int(self.hijack.word_embeddings[word].shape[0])
                                 fixes.append((len(remade_tokens), word))
-                                remade_tokens.append(777)
-                                multipliers.append(mult)
+                                remade_tokens += [0] * emb_len
+                                multipliers += [mult] * emb_len
                                 i += len(ids) - 1
                                 found = True
                                 used_custom_terms.append((word, self.hijack.word_embeddings_checksums[word]))
@@ -903,7 +904,9 @@ class EmbeddingsWithFixes(nn.Module):
         if batch_fixes is not None:
             for fixes, tensor in zip(batch_fixes, inputs_embeds):
                 for offset, word in fixes:
-                    tensor[offset] = self.embeddings.word_embeddings[word]
+                    emb = self.embeddings.word_embeddings[word]
+                    emb_len = min(tensor.shape[0]-offset, emb.shape[0])
+                    tensor[offset:offset+emb_len] = self.embeddings.word_embeddings[word][0:emb_len]
 
         return inputs_embeds
 
