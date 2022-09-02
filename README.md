@@ -23,7 +23,8 @@ You optionally can use GPFGAN to improve faces, then you'll need to download the
 ### Automatic installation/launch
 
 - place `model.ckpt` into webui directory, next to `webui.bat`.
-- (optional) place `GFPGANv1.3.pth` into webui directory, next to `webui.bat`.
+- _*(optional)*_ place `GFPGANv1.3.pth` into webui directory, next to `webui.bat`.
+- _*(optional)*_ if you have a 4GB videocard, edit `webui.bat`, change line 5 to from `COMMANDLINE_ARGS=` to `COMMANDLINE_ARGS=--medvram` (see below for other possible options)
 - run `webui.bat` from Windows explorer.
 
 ### Manual instructions
