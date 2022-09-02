@@ -31,11 +31,11 @@ You optionally can use GPFGAN to improve faces, then you'll need to download the
 
 #### Troublehooting:
 
+- if your version of Python is not in PATH, edit `webui.bat`, change the line `set PYTHON=python` to say the full path to your python executable: `set PYTHON=B:\soft\Python310\python.exe`. You can do this for python, but not for git.
 - if you get out of memory errors and your videocard has low amount of VRAM (4GB), edit `webui.bat`, change line 5 to from `set COMMANDLINE_ARGS=` to `set COMMANDLINE_ARGS=--medvram` (see below for other possible options)
 - installer creates python virtual environment, so none of installed modules will affect your system installation of python if you had one prior to installing this.
 - to prevent the creation of virtual environment and use your system python, edit `webui.bat` replacing `set VENV_DIR=venv` with `set VENV_DIR=`.
 - webui.bat installs requirements from files `requirements_versions.txt`, which lists versions for modules specifically compatible with Python 3.10.6. If you choose to install for a different version of python, editing `webui.bat` to have `set REQS_FILE=requirements.txt` instead of `set REQS_FILE=requirements_versions.txt` may help (but I still reccomend you to just use the recommended version of python).
-- if your version of Python is not in PATH, edit the line `set PYTHON=python` to say the full path to your python executable: `B:\soft\Python310\python.exe`. You can do this for python, but not for git.
 
 ### Manual instructions
 Alternatively, if you don't want to run webui.bat, here are instructions for installing
