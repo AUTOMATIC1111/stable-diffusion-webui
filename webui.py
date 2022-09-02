@@ -1580,13 +1580,6 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                 self.init_latent = self.init_latent * self.mask
 
     def sample(self, x, conditioning, unconditional_conditioning):
-
-        if self.mask is not None:
-            if self.inpainting_fill == 2:
-                x = x * self.mask + create_random_tensors(x.shape[1:], [self.seed + x + 1 for x in range(x.shape[0])]) * self.nmask
-            elif self.inpainting_fill == 3:
-                x = x * self.mask
-
         samples = self.sampler.sample_img2img(self, self.init_latent, x, conditioning, unconditional_conditioning)
 
         if self.mask is not None:
