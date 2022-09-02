@@ -1573,7 +1573,6 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             self.mask = torch.asarray(1.0 - latmask).to(device).type(sd_model.dtype)
             self.nmask = torch.asarray(latmask).to(device).type(sd_model.dtype)
 
-        if self.mask is not None:
             if self.inpainting_fill == 2:
                 self.init_latent = self.init_latent * self.mask + create_random_tensors(self.init_latent.shape[1:], [self.seed + x + 1 for x in range(self.init_latent.shape[0])]) * self.nmask
             elif self.inpainting_fill == 3:
