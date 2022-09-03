@@ -126,7 +126,7 @@ shared.sd_model = load_model_from_config(sd_config, cmd_opts.ckpt)
 shared.sd_model = (shared.sd_model if cmd_opts.no_half else shared.sd_model.half())
 
 if cmd_opts.lowvram or cmd_opts.medvram:
-    modules.lowvram.setup_for_low_vram(shared.sd_model, cmd_opts.medram)
+    modules.lowvram.setup_for_low_vram(shared.sd_model, cmd_opts.medvram)
 else:
     shared.sd_model = shared.sd_model.to(shared.device)
 
