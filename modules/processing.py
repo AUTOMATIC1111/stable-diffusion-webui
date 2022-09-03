@@ -282,7 +282,7 @@ def fill(image, mask):
 class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
     sampler = None
 
-    def __init__(self, init_images=None, resize_mode=0, denoising_strength=0.75, mask=None, mask_blur=4, inpainting_fill=0, inpaint_full_res=True, **kwargs):
+    def __init__(self, init_images=None, resize_mode=0, denoising_strength=0.75, mask=None, mask_blur=4, inpainting_fill=0, inpaint_full_res=True, inpainting_mask_invert=0, **kwargs):
         super().__init__(**kwargs)
 
         self.init_images = init_images
@@ -294,6 +294,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         self.mask_blur = mask_blur
         self.inpainting_fill = inpainting_fill
         self.inpaint_full_res = inpaint_full_res
+        self.inpainting_mask_invert = inpainting_mask_invert
         self.mask = None
         self.nmask = None
 
@@ -302,8 +303,13 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         crop_region = None
 
         if self.image_mask is not None:
+            self.image_mask = self.image_mask.convert('L')
+
+            if self.inpainting_mask_invert:
+                self.image_mask = ImageOps.invert(self.image_mask)
+
             if self.mask_blur > 0:
-                self.image_mask = self.image_mask.filter(ImageFilter.GaussianBlur(self.mask_blur)).convert('L')
+                self.image_mask = self.image_mask.filter(ImageFilter.GaussianBlur(self.mask_blur))
 
             if self.inpaint_full_res:
                 self.mask_for_overlay = self.image_mask
