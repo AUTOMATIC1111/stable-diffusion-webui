@@ -266,7 +266,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 seed = gr.Number(label='Seed', value=-1)
 
                 with gr.Group():
-                    custom_inputs = modules.scripts.setup_ui(is_img2img=False)
+                    custom_inputs = modules.scripts.setup_ui(is_img2img=True)
 
 
             with gr.Column(variant='panel'):
