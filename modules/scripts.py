@@ -41,17 +41,21 @@ def load_scripts(basedir):
         with open(path, "r", encoding="utf8") as file:
             text = file.read()
 
-        from types import ModuleType
-        compiled = compile(text, path, 'exec')
-        module = ModuleType(filename)
-        exec(compiled, module.__dict__)
+        try:
+            from types import ModuleType
+            compiled = compile(text, path, 'exec')
+            module = ModuleType(filename)
+            exec(compiled, module.__dict__)
 
-        for key, script_class in module.__dict__.items():
-            if type(script_class) == type and issubclass(script_class, Script):
-                obj = script_class()
-                obj.filename = path
+            for key, script_class in module.__dict__.items():
+                if type(script_class) == type and issubclass(script_class, Script):
+                    obj = script_class()
+                    obj.filename = path
 
-                scripts.append(obj)
+                    scripts.append(obj)
+        except Exception:
+            print(f"Error loading script: {filename}", file=sys.stderr)
+            print(traceback.format_exc(), file=sys.stderr)
 
 
 def wrap_call(func, filename, funcname, *args, default=None, **kwargs):
