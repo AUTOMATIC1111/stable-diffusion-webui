@@ -241,11 +241,14 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 steps = gr.Slider(minimum=1, maximum=150, step=1, label="Sampling Steps", value=20)
                 sampler_index = gr.Radio(label='Sampling method', choices=[x.name for x in samplers_for_img2img], value=samplers_for_img2img[0].name, type="index")
                 mask_blur = gr.Slider(label='Mask blur', minimum=0, maximum=64, step=1, value=4, visible=False)
-                inpainting_fill = gr.Radio(label='Msked content', choices=['fill', 'original', 'latent noise', 'latent nothing'], value='fill', type="index", visible=False)
+                inpainting_fill = gr.Radio(label='Masked content', choices=['fill', 'original', 'latent noise', 'latent nothing'], value='fill', type="index", visible=False)
+
+                with gr.Row():
+                    inpaint_full_res = gr.Checkbox(label='Inpaint at full resolution', value=True, visible=False)
+                    inpainting_mask_invert = gr.Radio(label='Masking mode', choices=['Inpaint masked', 'Inpaint not masked'], value='Inpaint masked', type="index", visible=False)
 
                 with gr.Row():
                     use_gfpgan = gr.Checkbox(label='GFPGAN', value=False, visible=gfpgan.have_gfpgan)
-                    inpaint_full_res = gr.Checkbox(label='Inpaint at full resolution', value=True, visible=False)
 
                 with gr.Row():
                     sd_upscale_upscaler_name = gr.Radio(label='Upscaler', choices=list(shared.sd_upscalers.keys()), value=list(shared.sd_upscalers.keys())[0], visible=False)
@@ -299,6 +302,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     sd_upscale_upscaler_name: gr_show(is_upscale),
                     sd_upscale_overlap: gr_show(is_upscale),
                     inpaint_full_res: gr_show(is_inpaint),
+                    inpainting_mask_invert: gr_show(is_inpaint),
                 }
 
             switch_mode.change(
@@ -314,6 +318,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     sd_upscale_upscaler_name,
                     sd_upscale_overlap,
                     inpaint_full_res,
+                    inpainting_mask_invert,
                 ]
             )
 
@@ -340,6 +345,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     sd_upscale_upscaler_name,
                     sd_upscale_overlap,
                     inpaint_full_res,
+                    inpainting_mask_invert,
                 ] + custom_inputs,
                 outputs=[
                     img2img_gallery,
