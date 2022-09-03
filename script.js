@@ -36,7 +36,7 @@ titles = {
 
     "None": "Do not do anything special",
     "Prompt matrix": "Separate prompts into parts using vertical pipe character (|) and the script will create a picture for every combination of them (except for the first part, which will be present in all combinations)",
-    "X/Y Plot": "Create a grid where images will have different parameters. Use inputs below to specify which parameterswill be shared by columns and rows",
+    "X/Y plot": "Create a grid where images will have different parameters. Use inputs below to specify which parameterswill be shared by columns and rows",
     "Custom code": "Run python code. Advanced user only. Must run program with --allow-code for this to work",
 
     "Prompt S/R": "Separate a list of words with commas, and the first word will be used as a keyword: script will search for this word in the prompt, and replace it with others",
