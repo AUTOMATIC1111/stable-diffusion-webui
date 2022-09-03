@@ -150,4 +150,5 @@ demo = modules.ui.create_ui(
     run_pnginfo=run_pnginfo
 )
 
-demo.launch(share=cmd_opts.share)
+if __name__ == '__main__':
+    demo.launch(share=cmd_opts.share)

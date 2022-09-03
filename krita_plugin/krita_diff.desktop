@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Service
+ServiceTypes=Krita/PythonPlugin
+X-KDE-Library=krita_diff
+X-Python-2-Compatible=false
+X-Krita-Manual=manual.html
+Name=Krita Stable Diffusion Plugin
+Comment=Our very own plugin.

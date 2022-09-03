@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ActionCollection version="2" name="Scripts">
+    <Actions category="Scripts">
+        <text>Krita Diff Plugin</text>
+
+        <Action name="txt2img">
+            <icon/>
+            <text>Apply txt2img transform</text>
+            <whatsThis/>
+            <toolTip/>
+            <iconText/>
+            <activationFlags>10000</activationFlags>
+            <activationConditions>0</activationConditions>
+            <shortcut>ctrl+alt+q</shortcut>
+            <isCheckable>false</isCheckable>
+            <statusTip/>
+        </Action>
+        <Action name="img2img">
+            <icon/>
+            <text>Apply img2img transform</text>
+            <whatsThis/>
+            <toolTip/>
+            <iconText/>
+            <activationFlags>10000</activationFlags>
+            <activationConditions>0</activationConditions>
+            <shortcut>ctrl+alt+w</shortcut>
+            <isCheckable>false</isCheckable>
+            <statusTip/>
+        </Action>
+        <Action name="img2img_upscale">
+            <icon/>
+            <text>Apply upscale transform</text>
+            <whatsThis/>
+            <toolTip/>
+            <iconText/>
+            <activationFlags>10000</activationFlags>
+            <activationConditions>0</activationConditions>
+            <shortcut>ctrl+alt+e</shortcut>
+            <isCheckable>false</isCheckable>
+            <statusTip/>
+        </Action>
+        <Action name="img2img_inpaint">
+            <icon/>
+            <text>Apply inpaint transform</text>
+            <whatsThis/>
+            <toolTip/>
+            <iconText/>
+            <activationFlags>10000</activationFlags>
+            <activationConditions>0</activationConditions>
+            <shortcut>ctrl+alt+r</shortcut>
+            <isCheckable>false</isCheckable>
+            <statusTip/>
+        </Action>
+    </Actions>
+</ActionCollection>

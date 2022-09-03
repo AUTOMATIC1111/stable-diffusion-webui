@@ -1,0 +1,45 @@
+txt2img:
+  prompts: "dog"
+  negative_prompt: ""
+  sampler_name: k_euler_a
+  steps: 20
+  cfg_scale: 12.0
+  n_iter: 1
+  seed: -1
+  base_size: 512
+  max_size: 704
+  batch_size: 1
+
+  use_gfpgan: false
+  use_realesrgan: false
+  realesrgan_model_name: RealESRGAN_x4plus_anime_6B
+  sample_path: '../../outputs/krita-out'
+
+img2img:
+  mode: 0 # 0 - default, 1 - inpaint, 3 - upscale, 2 - loopback (unsupported)
+
+  prompts: "dog"
+  sampler_name: k_euler_a
+  steps: 50
+  cfg_scale: 12.0
+  denoising_strength: 0.35
+  n_iter: 1
+  seed: -1
+  base_size: 512
+  max_size: 704
+  batch_size: 1
+
+  upscale_overlap: 64
+
+  inpainting_fill: 0
+  inpaint_full_res: true
+  mask_blur: 0
+
+  use_gfpgan: false
+  use_realesrgan: false
+  realesrgan_model_name: RealESRGAN_x4plus_anime_6B
+  resize_mode: 1
+  sample_path: '../../outputs/krita-out'
+
+plugin:
+  sample_path: '../../outputs/krita-in'
