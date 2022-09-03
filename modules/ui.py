@@ -162,7 +162,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 seed = gr.Number(label='Seed', value=-1)
 
                 with gr.Group():
-                    custom_inputs = modules.scripts.setup_ui(is_img2img=False)
+                    custom_inputs = modules.scripts.scripts_txt2img.setup_ui(is_img2img=False)
 
             with gr.Column(variant='panel'):
                 with gr.Group():
@@ -244,7 +244,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 inpainting_fill = gr.Radio(label='Masked content', choices=['fill', 'original', 'latent noise', 'latent nothing'], value='fill', type="index", visible=False)
 
                 with gr.Row():
-                    inpaint_full_res = gr.Checkbox(label='Inpaint at full resolution', value=True, visible=False)
+                    inpaint_full_res = gr.Checkbox(label='Inpaint at full resolution', value=False, visible=False)
                     inpainting_mask_invert = gr.Radio(label='Masking mode', choices=['Inpaint masked', 'Inpaint not masked'], value='Inpaint masked', type="index", visible=False)
 
                 with gr.Row():
@@ -269,7 +269,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 seed = gr.Number(label='Seed', value=-1)
 
                 with gr.Group():
-                    custom_inputs = modules.scripts.setup_ui(is_img2img=True)
+                    custom_inputs = modules.scripts.scripts_img2img.setup_ui(is_img2img=True)
 
 
             with gr.Column(variant='panel'):

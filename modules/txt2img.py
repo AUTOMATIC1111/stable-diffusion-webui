@@ -24,7 +24,7 @@ def txt2img(prompt: str, negative_prompt: str, steps: int, sampler_index: int, u
         use_GFPGAN=use_GFPGAN
     )
 
-    processed = modules.scripts.run(p, *args)
+    processed = modules.scripts.scripts_txt2img.run(p, *args)
 
     if processed is not None:
         pass
