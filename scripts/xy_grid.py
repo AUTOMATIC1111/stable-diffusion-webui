@@ -31,7 +31,6 @@ for i, sampler in enumerate(modules.sd_samplers.samplers):
 
 def apply_sampler(p, x, xs):
     sampler_index = samplers_dict.get(x.lower(), None)
-    print(x, sampler_index)
     if sampler_index is None:
         raise RuntimeError(f"Unknown sampler: {x}")
 
@@ -55,7 +54,7 @@ axis_options = [
     AxisOption("Steps", int, apply_field("steps"), format_value_add_label),
     AxisOption("CFG Scale", float, apply_field("cfg_scale"), format_value_add_label),
     AxisOption("Prompt S/R", str, apply_prompt, format_value),
-    AxisOption("Sampler", str, apply_prompt, format_value),
+    AxisOption("Sampler", str, apply_sampler, format_value),
     AxisOptionImg2Img("Denoising", float, apply_field("denoising_strength"), format_value_add_label) #  as it is now all AxisOptionImg2Img items must go after AxisOption ones
 ]
 
@@ -105,6 +104,8 @@ class Script(scripts.Script):
 
     def run(self, p, x_type, x_values, y_type, y_values):
         p.seed = int(random.randrange(4294967294) if p.seed == -1 else p.seed)
+        p.batch_size = 1
+        p.batch_count = 1
 
         def process_axis(opt, vals):
             valslist = [x.strip() for x in vals.split(",")]
