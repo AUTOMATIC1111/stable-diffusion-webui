@@ -9,11 +9,6 @@ button{
     align-self: stretch !important;
 }
 
-#img2img_mode{
-    padding: 0 0 1em 0;
-    border: none !important;
-}
-
 #img2img_prompt, #txt2img_prompt{
     padding: 0;
     border: none !important;
