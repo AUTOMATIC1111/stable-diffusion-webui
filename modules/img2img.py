@@ -7,8 +7,9 @@ import modules.shared as shared
 import modules.processing as processing
 from modules.ui import plaintext_to_html
 import modules.images as images
+import modules.scripts
 
-def img2img(prompt: str, init_img, init_img_with_mask, steps: int, sampler_index: int, mask_blur: int, inpainting_fill: int, use_GFPGAN: bool, prompt_matrix, mode: int, n_iter: int, batch_size: int, cfg_scale: float, denoising_strength: float, seed: int, height: int, width: int, resize_mode: int, upscaler_name: str, upscale_overlap: int, inpaint_full_res: bool):
+def img2img(prompt: str, init_img, init_img_with_mask, steps: int, sampler_index: int, mask_blur: int, inpainting_fill: int, use_GFPGAN: bool, mode: int, n_iter: int, batch_size: int, cfg_scale: float, denoising_strength: float, seed: int, height: int, width: int, resize_mode: int, upscaler_name: str, upscale_overlap: int, inpaint_full_res: bool, *args):
     is_inpaint = mode == 1
     is_loopback = mode == 2
     is_upscale = mode == 3
@@ -35,7 +36,6 @@ def img2img(prompt: str, init_img, init_img_with_mask, steps: int, sampler_index
         cfg_scale=cfg_scale,
         width=width,
         height=height,
-        prompt_matrix=prompt_matrix,
         use_GFPGAN=use_GFPGAN,
         init_images=[image],
         mask=mask,
@@ -128,6 +128,11 @@ def img2img(prompt: str, init_img, init_img_with_mask, steps: int, sampler_index
         processed = Processed(p, [combined_image], initial_seed, initial_info)
 
     else:
-        processed = process_images(p)
+
+        processed = modules.scripts.run(p, *args)
+
+        if processed is None:
+            processed = process_images(p)
+
 
     return processed.images, processed.js(), plaintext_to_html(processed.info)

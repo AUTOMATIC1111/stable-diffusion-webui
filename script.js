@@ -4,7 +4,7 @@ titles = {
 	"GFPGAN": "Restore low quality faces using GFPGAN neural network",
 	"Euler a": "Euler Ancestral - very creative, each can get acompletely different pictures depending on step count, setting seps tohigher than 30-40 does not help",
 	"DDIM": "Denoising Diffusion Implicit Models - best at inpainting",
-	"Prompt matrix": "Separate prompts into part using vertical pipe character (|) and the script will create a picture for every combination of them (except for first part, which will be present in all combinations)",
+
 	"Batch count": "How many batches of images to create",
 	"Batch size": "How many image to create in a single batch",
     "CFG Scale": "Classifier Free Guidance Scale - how strongly the image should conform to prompt - lower values produce more creative results",
@@ -30,6 +30,16 @@ titles = {
 
     "Interrupt": "Stop processing images and return any results accumulated so far.",
     "Save": "Write image to a directory (default - log/images) and generation parameters into csv file.",
+
+    "X values": "Separate values for X axis using commas.",
+    "Y values": "Separate values for Y axis using commas.",
+
+    "None": "Do not do anything special",
+    "Prompt matrix": "Separate prompts into parts using vertical pipe character (|) and the script will create a picture for every combination of them (except for the first part, which will be present in all combinations)",
+    "X/Y Plot": "Create a grid where images will have different parameters. Use inputs below to specify which parameterswill be shared by columns and rows",
+    "Custom code": "Run python code. Advanced user only. Must run program with --allow-code for this to work",
+
+    "Prompt S/R": "Separate a list of words with commas, and the first word will be used as a keyword: script will search for this word in the prompt, and replace it with others",
 }
 
 function gradioApp(){
@@ -37,11 +47,24 @@ function gradioApp(){
 }
 
 function addTitles(root){
-	root.querySelectorAll('span, button').forEach(function(span){
+	root.querySelectorAll('span, button, select').forEach(function(span){
 		tooltip = titles[span.textContent];
+
+		if(!tooltip){
+		    tooltip = titles[span.value];
+		}
+
 		if(tooltip){
 			span.title = tooltip;
 		}
+	})
+
+	root.querySelectorAll('select').forEach(function(select){
+	    if (select.onchange != null) return;
+
+	    select.onchange = function(){
+            select.title = titles[select.value] || "";
+	    }
 	})
 }
 

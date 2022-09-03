@@ -55,23 +55,6 @@ def load_model_from_config(config, ckpt, verbose=False):
     return model
 
 
-def draw_xy_grid(xs, ys, x_label, y_label, cell):
-    res = []
-
-    ver_texts = [[images.GridAnnotation(y_label(y))] for y in ys]
-    hor_texts = [[images.GridAnnotation(x_label(x))] for x in xs]
-
-    for y in ys:
-        for x in xs:
-            state.job = f"{x + y * len(xs)} out of {len(xs) * len(ys)}"
-            res.append(cell(x, y))
-
-    grid = images.image_grid(res, rows=len(ys))
-    grid = images.draw_grid_annotations(grid, res[0].width, res[0].height, hor_texts, ver_texts)
-
-    return grid
-
-
 def run_extras(image, GFPGAN_strength, RealESRGAN_upscaling, RealESRGAN_model_index):
     processing.torch_gc()
 
@@ -138,7 +121,6 @@ try:
 except Exception:
     pass
 
-
 sd_config = OmegaConf.load(cmd_opts.config)
 shared.sd_model = load_model_from_config(sd_config, cmd_opts.ckpt)
 shared.sd_model = (shared.sd_model if cmd_opts.no_half else shared.sd_model.half())
@@ -150,18 +132,18 @@ else:
 
 modules.sd_hijack.model_hijack.hijack(shared.sd_model)
 
+modules.scripts.load_scripts(os.path.join(script_path, "scripts"))
+
 
 # make the program just exit at ctrl+c without waiting for anything
-def sigint_handler(signal, frame):
-    print('Interrupted')
+def sigint_handler(sig, frame):
+    print(f'Interrupted with singal {sig} in {frame}')
     os._exit(0)
 
 
 signal.signal(signal.SIGINT, sigint_handler)
 
 demo = modules.ui.create_ui(
-    opts=opts,
-    cmd_opts=cmd_opts,
     txt2img=wrap_gradio_gpu_call(modules.txt2img.txt2img),
     img2img=wrap_gradio_gpu_call(modules.img2img.img2img),
     run_extras=wrap_gradio_gpu_call(run_extras),

@@ -12,6 +12,7 @@ from PIL import Image
 
 import gradio as gr
 import gradio.utils
+import gradio.routes
 
 from modules.paths import script_path
 from modules.shared import opts, cmd_opts
@@ -19,6 +20,7 @@ import modules.shared as shared
 from modules.sd_samplers import samplers, samplers_for_img2img
 import modules.gfpgan_model as gfpgan
 import modules.realesrgan_model as realesrgan
+import modules.scripts
 
 # this is a fix for Windows users. Without it, javascript files will be served with text/html content-type and the bowser will not show any UI
 mimetypes.init()
@@ -131,7 +133,7 @@ def wrap_gradio_call(func):
     return f
 
 
-def create_ui(opts, cmd_opts, txt2img, img2img, run_extras, run_pnginfo):
+def create_ui(txt2img, img2img, run_extras, run_pnginfo):
 
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
         with gr.Row():
@@ -145,8 +147,7 @@ def create_ui(opts, cmd_opts, txt2img, img2img, run_extras, run_pnginfo):
                 sampler_index = gr.Radio(label='Sampling method', elem_id="txt2img_sampling", choices=[x.name for x in samplers], value=samplers[0].name, type="index")
 
                 with gr.Row():
-                    use_GFPGAN = gr.Checkbox(label='GFPGAN', value=False, visible=gfpgan.have_gfpgan)
-                    prompt_matrix = gr.Checkbox(label='Prompt matrix', value=False)
+                    use_gfpgan = gr.Checkbox(label='GFPGAN', value=False, visible=gfpgan.have_gfpgan)
 
                 with gr.Row():
                     batch_count = gr.Slider(minimum=1, maximum=cmd_opts.max_batch_count, step=1, label='Batch count', value=1)
@@ -160,7 +161,8 @@ def create_ui(opts, cmd_opts, txt2img, img2img, run_extras, run_pnginfo):
 
                 seed = gr.Number(label='Seed', value=-1)
 
-                code = gr.Textbox(label="Python script", visible=cmd_opts.allow_code, lines=1)
+                with gr.Group():
+                    custom_inputs = modules.scripts.setup_ui(is_img2img=False)
 
             with gr.Column(variant='panel'):
                 with gr.Group():
@@ -185,16 +187,14 @@ def create_ui(opts, cmd_opts, txt2img, img2img, run_extras, run_pnginfo):
                     negative_prompt,
                     steps,
                     sampler_index,
-                    use_GFPGAN,
-                    prompt_matrix,
+                    use_gfpgan,
                     batch_count,
                     batch_size,
                     cfg_scale,
                     seed,
                     height,
                     width,
-                    code
-                ],
+                ] + custom_inputs,
                 outputs=[
                     txt2img_gallery,
                     generation_info,
@@ -244,8 +244,7 @@ def create_ui(opts, cmd_opts, txt2img, img2img, run_extras, run_pnginfo):
                 inpainting_fill = gr.Radio(label='Msked content', choices=['fill', 'original', 'latent noise', 'latent nothing'], value='fill', type="index", visible=False)
 
                 with gr.Row():
-                    use_GFPGAN = gr.Checkbox(label='GFPGAN', value=False, visible=gfpgan.have_gfpgan)
-                    prompt_matrix = gr.Checkbox(label='Prompt matrix', value=False)
+                    use_gfpgan = gr.Checkbox(label='GFPGAN', value=False, visible=gfpgan.have_gfpgan)
                     inpaint_full_res = gr.Checkbox(label='Inpaint at full resolution', value=True, visible=False)
 
                 with gr.Row():
@@ -265,6 +264,10 @@ def create_ui(opts, cmd_opts, txt2img, img2img, run_extras, run_pnginfo):
                     width = gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512)
 
                 seed = gr.Number(label='Seed', value=-1)
+
+                with gr.Group():
+                    custom_inputs = modules.scripts.setup_ui(is_img2img=False)
+
 
             with gr.Column(variant='panel'):
                 with gr.Group():
@@ -291,11 +294,10 @@ def create_ui(opts, cmd_opts, txt2img, img2img, run_extras, run_pnginfo):
                     init_img_with_mask: gr_show(is_inpaint),
                     mask_blur: gr_show(is_inpaint),
                     inpainting_fill: gr_show(is_inpaint),
-                    prompt_matrix: gr_show(is_classic),
                     batch_count: gr_show(not is_upscale),
                     batch_size: gr_show(not is_loopback),
                     sd_upscale_upscaler_name: gr_show(is_upscale),
-                    sd_upscale_overlap:gr_show(is_upscale),
+                    sd_upscale_overlap: gr_show(is_upscale),
                     inpaint_full_res: gr_show(is_inpaint),
                 }
 
@@ -307,7 +309,6 @@ def create_ui(opts, cmd_opts, txt2img, img2img, run_extras, run_pnginfo):
                     init_img_with_mask,
                     mask_blur,
                     inpainting_fill,
-                    prompt_matrix,
                     batch_count,
                     batch_size,
                     sd_upscale_upscaler_name,
@@ -326,8 +327,7 @@ def create_ui(opts, cmd_opts, txt2img, img2img, run_extras, run_pnginfo):
                     sampler_index,
                     mask_blur,
                     inpainting_fill,
-                    use_GFPGAN,
-                    prompt_matrix,
+                    use_gfpgan,
                     switch_mode,
                     batch_count,
                     batch_size,
@@ -340,7 +340,7 @@ def create_ui(opts, cmd_opts, txt2img, img2img, run_extras, run_pnginfo):
                     sd_upscale_upscaler_name,
                     sd_upscale_overlap,
                     inpaint_full_res,
-                ],
+                ] + custom_inputs,
                 outputs=[
                     img2img_gallery,
                     generation_info,
@@ -384,9 +384,6 @@ def create_ui(opts, cmd_opts, txt2img, img2img, run_extras, run_pnginfo):
                 outputs=[init_img_with_mask],
             )
 
-
-
-
     with gr.Blocks(analytics_enabled=False) as extras_interface:
         with gr.Row().style(equal_height=False):
             with gr.Column(variant='panel'):
@@ -420,7 +417,6 @@ def create_ui(opts, cmd_opts, txt2img, img2img, run_extras, run_pnginfo):
 
         submit.click(**extras_args)
 
-
         send_to_extras.click(
             fn=lambda x: image_from_url_text(x),
             _js="extract_image_from_gallery",
@@ -435,7 +431,6 @@ def create_ui(opts, cmd_opts, txt2img, img2img, run_extras, run_pnginfo):
             outputs=[image],
         )
 
-
     pnginfo_interface = gr.Interface(
         wrap_gradio_call(run_pnginfo),
         inputs=[
@@ -449,7 +444,6 @@ def create_ui(opts, cmd_opts, txt2img, img2img, run_extras, run_pnginfo):
         allow_flagging="never",
         analytics_enabled=False,
     )
-
 
     def create_setting_component(key):
         def fun():
@@ -520,20 +514,16 @@ def create_ui(opts, cmd_opts, txt2img, img2img, run_extras, run_pnginfo):
     return demo
 
 
-with open(os.path.join(script_path, "script.js"), "r", encoding="utf8") as file:
-    javascript = file.read()
-
-def inject_gradio_html(javascript):
-    import gradio.routes
-
-    def template_response(*args, **kwargs):
-        res = gradio_routes_templates_response(*args, **kwargs)
-        res.body = res.body.replace(b'</head>', f'<script>{javascript}</script></head>'.encode("utf8"))
-        res.init_headers()
-        return res
-
-    gradio_routes_templates_response = gradio.routes.templates.TemplateResponse
-    gradio.routes.templates.TemplateResponse = template_response
+with open(os.path.join(script_path, "script.js"), "r", encoding="utf8") as jsfile:
+    javascript = jsfile.read()
 
 
-inject_gradio_html(javascript)
+def template_response(*args, **kwargs):
+    res = gradio_routes_templates_response(*args, **kwargs)
+    res.body = res.body.replace(b'</head>', f'<script>{javascript}</script></head>'.encode("utf8"))
+    res.init_headers()
+    return res
+
+
+gradio_routes_templates_response = gradio.routes.templates.TemplateResponse
+gradio.routes.templates.TemplateResponse = template_response
