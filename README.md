@@ -39,8 +39,8 @@ You optionally can use GPFGAN to improve faces, then you'll need to download the
 - install [Python 3.10.6](https://www.python.org/downloads/windows/)
 - install [git](https://git-scm.com/download/win)
 - install [CUDA 11.3](https://developer.nvidia.com/cuda-11.3.0-download-archive?target_os=Windows&target_arch=x86_64)
-- place `model.ckpt` into webui directory, next to `webui.bat`.
-- _*(optional)*_ place `GFPGANv1.3.pth` into webui directory, next to `webui.bat`.
+- place `model.ckpt` into webui directory, next to `krita.bat`.
+- _*(optional)*_ place `GFPGANv1.3.pth` into webui directory, next to `krita.bat`.
 - run `krita.bat` from Windows Explorer.
 
 #### Troublehooting:
