@@ -28,11 +28,12 @@ def torch_gc():
 
 
 class StableDiffusionProcessing:
-    def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt="", seed=-1, sampler_index=0, batch_size=1, n_iter=1, steps=50, cfg_scale=7.0, width=512, height=512, prompt_matrix=False, use_GFPGAN=False, do_not_save_samples=False, do_not_save_grid=False, extra_generation_params=None, overlay_images=None, negative_prompt=None):
+    def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt="", seed=-1, sampler_index=0, batch_size=1, n_iter=1, steps=50, cfg_scale=7.0, width=512, height=512, use_GFPGAN=False, do_not_save_samples=False, do_not_save_grid=False, extra_generation_params=None, overlay_images=None, negative_prompt=None):
         self.sd_model = sd_model
         self.outpath_samples: str = outpath_samples
         self.outpath_grids: str = outpath_grids
         self.prompt: str = prompt
+        self.prompt_for_display: str = None
         self.negative_prompt: str = (negative_prompt or "")
         self.seed: int = seed
         self.sampler_index: int = sampler_index
@@ -42,7 +43,6 @@ class StableDiffusionProcessing:
         self.cfg_scale: float = cfg_scale
         self.width: int = width
         self.height: int = height
-        self.prompt_matrix: bool = prompt_matrix
         self.use_GFPGAN: bool = use_GFPGAN
         self.do_not_save_samples: bool = do_not_save_samples
         self.do_not_save_grid: bool = do_not_save_grid
@@ -71,8 +71,8 @@ class Processed:
 
     def js(self):
         obj = {
-            "prompt": self.prompt,
-            "seed": int(self.seed),
+            "prompt": self.prompt if type(self.prompt) != list else self.prompt[0],
+            "seed": int(self.seed if type(self.seed) != list else self.seed[0]),
             "width": self.width,
             "height": self.height,
             "sampler": self.sampler,
@@ -105,35 +105,22 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
     assert p.prompt is not None
     torch_gc()
 
-    seed = int(random.randrange(4294967294) if p.seed == -1 else p.seed)
+    seed = int(random.randrange(4294967294)) if p.seed == -1 else p.seed
 
     os.makedirs(p.outpath_samples, exist_ok=True)
     os.makedirs(p.outpath_grids, exist_ok=True)
 
     comments = []
 
-    prompt_matrix_parts = []
-    if p.prompt_matrix:
-        all_prompts = []
-        prompt_matrix_parts = prompt.split("|")
-        combination_count = 2 ** (len(prompt_matrix_parts) - 1)
-        for combination_num in range(combination_count):
-            selected_prompts = [text.strip().strip(',') for n, text in enumerate(prompt_matrix_parts[1:]) if combination_num & (1 << n)]
-
-            if opts.prompt_matrix_add_to_start:
-                selected_prompts = selected_prompts + [prompt_matrix_parts[0]]
-            else:
-                selected_prompts = [prompt_matrix_parts[0]] + selected_prompts
-
-            all_prompts.append(", ".join(selected_prompts))
-
-        p.n_iter = math.ceil(len(all_prompts) / p.batch_size)
-        all_seeds = len(all_prompts) * [seed]
-
-        print(f"Prompt matrix will create {len(all_prompts)} images using a total of {p.n_iter} batches.")
+    if type(prompt) == list:
+        all_prompts = prompt
     else:
         all_prompts = p.batch_size * p.n_iter * [prompt]
-        all_seeds = [seed + x for x in range(len(all_prompts))]
+
+    if type(seed) == list:
+        all_seeds = seed
+    else:
+        all_seeds = [int(seed + x) for x in range(len(all_prompts))]
 
     def infotext(iteration=0, position_in_batch=0):
         generation_params = {
@@ -149,7 +136,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
 
         generation_params_text = ", ".join([k if k == v else f'{k}: {v}' for k, v in generation_params.items() if v is not None])
 
-        return f"{prompt}\n{generation_params_text}".strip() + "".join(["\n\n" + x for x in comments])
+        return f"{p.prompt_for_display or prompt}\n{generation_params_text}".strip() + "".join(["\n\n" + x for x in comments])
 
     if os.path.exists(cmd_opts.embeddings_dir):
         model_hijack.load_textual_inversion_embeddings(cmd_opts.embeddings_dir, p.sd_model)
@@ -218,25 +205,13 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
         if not p.do_not_save_grid and not unwanted_grid_because_of_img_count:
             return_grid = opts.return_grid
 
-            if p.prompt_matrix:
-                grid = images.image_grid(output_images, p.batch_size, rows=1 << ((len(prompt_matrix_parts)-1)//2))
-
-                try:
-                    grid = images.draw_prompt_matrix(grid, p.width, p.height, prompt_matrix_parts)
-                except Exception:
-                    import traceback
-                    print("Error creating prompt_matrix text:", file=sys.stderr)
-                    print(traceback.format_exc(), file=sys.stderr)
-
-                return_grid = True
-            else:
-                grid = images.image_grid(output_images, p.batch_size)
+            grid = images.image_grid(output_images, p.batch_size)
 
             if return_grid:
                 output_images.insert(0, grid)
 
             if opts.grid_save:
-                images.save_image(grid, p.outpath_grids, "grid", seed, prompt, opts.grid_format, info=infotext(), short_filename=not opts.grid_extended_filename)
+                images.save_image(grid, p.outpath_grids, "grid", seed, all_prompts[0], opts.grid_format, info=infotext(), short_filename=not opts.grid_extended_filename)
 
     torch_gc()
     return Processed(p, output_images, seed, infotext())

@@ -22,22 +22,24 @@ button{
     overflow: visible !important;
 }
 
-fieldset span.text-gray-500, .gr-panel div.flex-col div.justify-between label, label.block span{
+#x_type, #y_type{
+    max-width: 10em;
+}
+
+fieldset span.text-gray-500, .gr-block.gr-box span.text-gray-500,  label.block span{
     position: absolute;
     top: -0.6em;
     line-height: 1.2em;
     padding: 0 0.5em;
     margin: 0;
-}
 
-fieldset span.text-gray-500, .gr-panel div.flex-col div.justify-between label, label.block span{
     background-color: white;
     border-top: 1px solid #eee;
     border-left: 1px solid #eee;
     border-right: 1px solid #eee;
 }
 
-.dark fieldset span.text-gray-500, .dark .gr-panel div.flex-col div.justify-between label, .dark label.block span{
+.dark fieldset span.text-gray-500, .dark .gr-block.gr-box span.text-gray-500, .dark label.block span{
     background-color: rgb(31, 41, 55);
     border-top: 1px solid rgb(55 65 81);
     border-left: 1px solid rgb(55 65 81);
