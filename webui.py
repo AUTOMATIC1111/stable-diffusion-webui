@@ -179,8 +179,16 @@ def gfpgan_model_path():
     return found[0]
 
 
+loaded_gfpgan_model = None
+
+
 def gfpgan():
-    return GFPGANer(model_path=gfpgan_model_path(), upscale=1, arch='clean', channel_multiplier=2, bg_upsampler=None)
+    global loaded_gfpgan_model
+
+    if loaded_gfpgan_model is None:
+        loaded_gfpgan_model = GFPGANer(model_path=gfpgan_model_path(), upscale=1, arch='clean', channel_multiplier=2, bg_upsampler=None)
+
+    return loaded_gfpgan_model
 
 def gfpgan_fix_faces(gfpgan_model, np_image):
     np_image_bgr = np_image[:, :, ::-1]
