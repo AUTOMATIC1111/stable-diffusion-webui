@@ -3,6 +3,8 @@ A simple interface based on this repository: https://github.com/AUTOMATIC1111/st
 
 Requires Krita 5.1
 
+https://user-images.githubusercontent.com/112324253/188290881-0ee2cbf2-e1a0-422e-9c2c-4b99b3a5f723.mp4
+
 ## Installing and running
 
 ### Plugin installation
