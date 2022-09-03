@@ -4,6 +4,7 @@ import traceback
 
 from modules.paths import script_path
 from modules.shared import cmd_opts
+import modules.shared
 
 
 def gfpgan_model_path():
@@ -23,10 +24,18 @@ loaded_gfpgan_model = None
 def gfpgan():
     global loaded_gfpgan_model
 
-    if loaded_gfpgan_model is None and gfpgan_constructor is not None:
-        loaded_gfpgan_model = gfpgan_constructor(model_path=gfpgan_model_path(), upscale=1, arch='clean', channel_multiplier=2, bg_upsampler=None)
+    if loaded_gfpgan_model is not None:
+        return loaded_gfpgan_model
 
-    return loaded_gfpgan_model
+    if gfpgan_constructor is None:
+        return None
+
+    model = gfpgan_constructor(model_path=gfpgan_model_path(), upscale=1, arch='clean', channel_multiplier=2, bg_upsampler=None)
+
+    if not cmd_opts.unload_gfpgan:
+        loaded_gfpgan_model = model
+
+    return model
 
 
 def gfpgan_fix_faces(np_image):
