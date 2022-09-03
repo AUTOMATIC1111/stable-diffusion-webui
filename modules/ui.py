@@ -84,7 +84,7 @@ def save_files(js_data, images):
 
     data = json.loads(js_data)
 
-    with open("log/log.csv", "a", encoding="utf8", newline='') as file:
+    with open(os.path.join(opts.outdir_save, "log.csv"), "a", encoding="utf8", newline='') as file:
         at_start = file.tell() == 0
         writer = csv.writer(file)
         if at_start:
