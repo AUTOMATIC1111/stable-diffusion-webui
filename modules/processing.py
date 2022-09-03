@@ -271,7 +271,7 @@ def fill(image, mask):
 
     image_masked = image_masked.convert('RGBa')
 
-    for radius, repeats in [(64, 1), (16, 2), (4, 4), (2, 2), (0, 1)]:
+    for radius, repeats in [(256, 1), (64, 1), (16, 2), (4, 4), (2, 2), (0, 1)]:
         blurred = image_masked.filter(ImageFilter.GaussianBlur(radius)).convert('RGBA')
         for _ in range(repeats):
             image_mod.alpha_composite(blurred)
@@ -290,6 +290,8 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         self.denoising_strength: float = denoising_strength
         self.init_latent = None
         self.image_mask = mask
+        #self.image_unblurred_mask = None
+        self.latent_mask = None
         self.mask_for_overlay = None
         self.mask_blur = mask_blur
         self.inpainting_fill = inpainting_fill
@@ -307,6 +309,8 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
             if self.inpainting_mask_invert:
                 self.image_mask = ImageOps.invert(self.image_mask)
+
+            #self.image_unblurred_mask = self.image_mask
 
             if self.mask_blur > 0:
                 self.image_mask = self.image_mask.filter(ImageFilter.GaussianBlur(self.mask_blur))
@@ -368,7 +372,8 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         self.init_latent = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(image))
 
         if self.image_mask is not None:
-            latmask = self.image_mask.convert('RGB').resize((self.init_latent.shape[3], self.init_latent.shape[2]))
+            init_mask = self.latent_mask if self.latent_mask is not None else self.image_mask
+            latmask = init_mask.convert('RGB').resize((self.init_latent.shape[3], self.init_latent.shape[2]))
             latmask = np.moveaxis(np.array(latmask, dtype=np.float64), 2, 0) / 255
             latmask = latmask[0]
             latmask = np.tile(latmask[None], (4, 1, 1))

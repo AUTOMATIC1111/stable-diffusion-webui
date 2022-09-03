@@ -130,7 +130,7 @@ def img2img(prompt: str, init_img, init_img_with_mask, steps: int, sampler_index
 
     else:
 
-        processed = modules.scripts.run(p, *args)
+        processed = modules.scripts.scripts_img2img.run(p, *args)
 
         if processed is None:
             processed = process_images(p)
