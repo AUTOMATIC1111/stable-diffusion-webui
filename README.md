@@ -9,7 +9,7 @@ Requires Krita 5.1
 
 ## Installing and running
 
-If you used previous version based which used conda, please make a new install
+If you used previous version based which used conda, please make a new install. Please install in separately from webui.
 
 ### Plugin installation
 
