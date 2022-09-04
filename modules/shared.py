@@ -29,7 +29,7 @@ parser.add_argument("--unload-gfpgan", action='store_true', help="unload GFPGAN 
 parser.add_argument("--precision", type=str, help="evaluate at this precision", choices=["full", "autocast"], default="autocast")
 parser.add_argument("--share", action='store_true', help="use share=True for gradio and make the UI accessible through their site (doesn't work for me but you might have better luck)")
 parser.add_argument("--esrgan-models-path", type=str, help="path to directory with ESRGAN models", default=os.path.join(script_path, 'ESRGAN'))
-parser.add_argument("--opt-split-attention", type=str, help="enable optimization that reduced vram usage by a lot for about 10% decrease in performance", default=os.path.join(script_path, 'ESRGAN'))
+parser.add_argument("--opt-split-attention", action='store_true', help="enable optimization that reduced vram usage by a lot for about 10% decrease in performance")
 cmd_opts = parser.parse_args()
 
 cpu = torch.device("cpu")
