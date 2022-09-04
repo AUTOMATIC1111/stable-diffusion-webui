@@ -36,6 +36,7 @@ class Script(QObject):
         self.set_cfg('delete_temp_files', True, if_empty)
         self.set_cfg('workaround_timeout', 100, if_empty)
         self.set_cfg('png_quality', -1, if_empty)
+        self.set_cfg('fix_aspect_ratio', True, if_empty)
 
         self.set_cfg('txt2img_prompt', "", if_empty)
         self.set_cfg('txt2img_sampler', samplers.index("k_euler_a"), if_empty)
@@ -154,7 +155,7 @@ class Script(QObject):
         # SD will need to resize image to match required size of 512x(512 + 64*j). That may fuck aspect ratio.
         # That's why we will try to make selection slightly bigger to unfuck aspect ratio a little
 
-        if self.selection is not None:
+        if self.selection is not None and self.cfg("fix_aspect_ratio", bool):
             ratio = self.width / self.height
             final_ratio = self.find_final_aspect_ratio()
 
@@ -672,6 +673,8 @@ class KritaSDPluginDocker(DockWidget):
         self.config_create_mask_layer.setTristate(False)
         self.config_delete_temp_files = QCheckBox("Automatically delete temporary image files")
         self.config_delete_temp_files.setTristate(False)
+        self.fix_aspect_ratio = QCheckBox("Try to fix aspect ratio for selections")
+        self.fix_aspect_ratio.setTristate(False)
 
         self.config_restore_defaults = QPushButton("Restore Defaults")
 
@@ -681,6 +684,7 @@ class KritaSDPluginDocker(DockWidget):
         self.config_layout.addWidget(self.config_just_use_yaml)
         self.config_layout.addWidget(self.config_create_mask_layer)
         self.config_layout.addWidget(self.config_delete_temp_files)
+        self.config_layout.addWidget(self.fix_aspect_ratio)
         self.config_layout.addWidget(self.config_restore_defaults)
         self.config_layout.addStretch()
 
@@ -696,6 +700,8 @@ class KritaSDPluginDocker(DockWidget):
             Qt.CheckState.Checked if script.cfg('create_mask_layer', bool) else Qt.CheckState.Unchecked)
         self.config_delete_temp_files.setCheckState(
             Qt.CheckState.Checked if script.cfg('delete_temp_files', bool) else Qt.CheckState.Unchecked)
+        self.fix_aspect_ratio.setCheckState(
+            Qt.CheckState.Checked if script.cfg('fix_aspect_ratio', bool) else Qt.CheckState.Unchecked)
 
     def connect_config_interface(self):
         self.config_base_url.textChanged.connect(
@@ -712,6 +718,9 @@ class KritaSDPluginDocker(DockWidget):
         )
         self.config_delete_temp_files.toggled.connect(
             partial(script.set_cfg, "delete_temp_files")
+        )
+        self.fix_aspect_ratio.toggled.connect(
+            partial(script.set_cfg, "fix_aspect_ratio")
         )
         self.config_restore_defaults.released.connect(
             lambda: self.restore_defaults()
