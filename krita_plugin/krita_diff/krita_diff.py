@@ -1,3 +1,4 @@
+import math
 from functools import partial
 import re
 import os
@@ -128,6 +129,61 @@ class Script(QObject):
         }
         return self.post(self.cfg('base_url', str) + '/img2img', params)
 
+    def find_final_aspect_ratio(self):
+        base_size = self.cfg('img2img_base_size', int)
+        max_size = self.cfg('img2img_max_size', int)
+
+        def rnd(r, x):
+            z = 64
+            return z * round(r * x / z)
+
+        ratio = self.width / self.height
+
+        if self.width > self.height:
+            width, height = rnd(ratio, base_size), base_size
+            if width > max_size:
+                width, height = max_size, rnd(1 / ratio, max_size)
+        else:
+            width, height = base_size, rnd(1 / ratio, base_size)
+            if height > max_size:
+                width, height = rnd(ratio, max_size), max_size
+
+        return width / height
+
+    def try_fix_aspect_ratio(self):
+        # SD will need to resize image to match required size of 512x(512 + 64*j). That may fuck aspect ratio.
+        # That's why we will try to make selection slightly bigger to unfuck aspect ratio a little
+
+        if self.selection is not None:
+            ratio = self.width / self.height
+            final_ratio = self.find_final_aspect_ratio()
+
+            delta = abs(final_ratio - ratio)
+            x_limit = math.floor(delta * self.width)
+            y_limit = math.floor(delta * self.height)
+
+            best_delta = delta
+            best_x1, best_y1 = self.x, self.y
+            best_x2, best_y2 = self.x + self.width, self.y + self.height
+            for x in range(x_limit):
+                x1 = max(0, self.x - (x // 2))
+                x2 = min(self.doc.width(), x1 + self.width + x)
+                for y in range(y_limit):
+                    y1 = max(0, self.y + (y // 2))
+                    y2 = min(self.doc.height(), y1 + self.height + y)
+
+                    curr_ratio = (x2 - x1) / (y2 - y1)
+                    curr_delta = abs(curr_ratio - final_ratio)
+                    if curr_delta < best_delta:
+                        best_delta = curr_delta
+                        best_x1, best_y1 = x1, y1
+                        best_x2, best_y2 = x2, y2
+
+            self.x = best_x1
+            self.y = best_y1
+            self.width = best_x2 - best_x1
+            self.height = best_y2 - best_y1
+
     def save_img(self, path, is_mask=False):
         if is_mask:
             pixel_bytes = self.node.pixelData(self.x, self.y, self.width, self.height)
@@ -216,6 +272,7 @@ class Script(QObject):
         if self.working:
             pass
         self.update_config()
+        self.try_fix_aspect_ratio()
         self.apply_txt2img()
         self.create_mask_layer_workaround()
 
@@ -223,6 +280,7 @@ class Script(QObject):
         if self.working:
             pass
         self.update_config()
+        self.try_fix_aspect_ratio()
         self.apply_img2img(mode=0)
         self.create_mask_layer_workaround()
 
@@ -237,6 +295,7 @@ class Script(QObject):
         if self.working:
             pass
         self.update_config()
+        self.try_fix_aspect_ratio()
         self.apply_img2img(mode=1)
 
 

@@ -43,7 +43,10 @@ def fix_aspect_ratio(base_size, max_size, orig_width, orig_height):
         if height > max_size:
             width, height = rnd(ratio, max_size), max_size
 
-    print(f"img size: {orig_width}x{orig_height} -> {width}x{height}")
+    new_ratio = width / height
+
+    print(f"img size: {orig_width}x{orig_height} -> {width}x{height}, "
+          f"aspect ratio: {ratio:.2f} -> {new_ratio:.2f}, {100 * (new_ratio - ratio) / ratio :.2f}% change")
     return width, height
 
 
