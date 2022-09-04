@@ -1,1 +1,1 @@
-from .krita_diff import *
+from .krita_diff_ui import *
