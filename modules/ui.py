@@ -133,8 +133,15 @@ def wrap_gradio_call(func):
     return f
 
 
-def create_ui(txt2img, img2img, run_extras, run_pnginfo):
+def visit(x, func, path=""):
+    if hasattr(x, 'children'):
+        for c in x.children:
+            visit(c, func, path)
+    elif x.label is not None:
+        func(path + "/" + str(x.label), x)
 
+
+def create_ui(txt2img, img2img, run_extras, run_pnginfo):
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
         with gr.Row():
             prompt = gr.Textbox(label="Prompt", elem_id="txt2img_prompt", show_label=False, placeholder="Prompt", lines=1)
@@ -270,7 +277,6 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
 
                 with gr.Group():
                     custom_inputs = modules.scripts.scripts_img2img.setup_ui(is_img2img=True)
-
 
             with gr.Column(variant='panel'):
                 with gr.Group():
@@ -516,6 +522,46 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
         analytics_enabled=False,
         css=css,
     )
+
+    ui_config_file = os.path.join(modules.paths.script_path, 'ui-config.json')
+    ui_settings = {}
+    settings_count = len(ui_settings)
+    error_loading = False
+
+    try:
+        if os.path.exists(ui_config_file):
+            with open(ui_config_file, "r", encoding="utf8") as file:
+                ui_settings = json.load(file)
+    except Exception:
+        error_loading = True
+        print("Error loading settings:", file=sys.stderr)
+        print(traceback.format_exc(), file=sys.stderr)
+
+    def loadsave(path, x):
+        def apply_field(obj, field):
+            key = path + "/" + field
+
+            saved_value = ui_settings.get(key, None)
+            if saved_value is None:
+                ui_settings[key] = getattr(obj, field)
+            else:
+                setattr(obj, field, saved_value)
+
+        if type(x) == gr.Slider:
+            apply_field(x, 'value')
+            apply_field(x, 'minimum')
+            apply_field(x, 'maximum')
+            apply_field(x, 'step')
+
+        if type(x) == gr.Radio:
+            apply_field(x, 'value')
+
+    visit(txt2img_interface, loadsave, "txt2img")
+    visit(img2img_interface, loadsave, "img2img")
+
+    if not error_loading and (not os.path.exists(ui_config_file) or settings_count != len(ui_settings)):
+        with open(ui_config_file, "w", encoding="utf8") as file:
+            json.dump(ui_settings, file, indent=4)
 
     return demo
 

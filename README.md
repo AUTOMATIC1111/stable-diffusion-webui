@@ -31,6 +31,7 @@ Original script with Gradio UI was written by a kind anonymous user. This is a m
 - Settings page
 - Running custom code from UI
 - Mouseover hints fo most UI elements
+- Possible to change defaults/mix/max/step values for UI elements via text config
 
 ## Installing and running
 
