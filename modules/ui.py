@@ -84,7 +84,7 @@ def save_files(js_data, images):
 
     data = json.loads(js_data)
 
-    with open("log/log.csv", "a", encoding="utf8", newline='') as file:
+    with open(os.path.join(opts.outdir_save, "log.csv"), "a", encoding="utf8", newline='') as file:
         at_start = file.tell() == 0
         writer = csv.writer(file)
         if at_start:
@@ -133,8 +133,15 @@ def wrap_gradio_call(func):
     return f
 
 
-def create_ui(txt2img, img2img, run_extras, run_pnginfo):
+def visit(x, func, path=""):
+    if hasattr(x, 'children'):
+        for c in x.children:
+            visit(c, func, path)
+    elif x.label is not None:
+        func(path + "/" + str(x.label), x)
 
+
+def create_ui(txt2img, img2img, run_extras, run_pnginfo):
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
         with gr.Row():
             prompt = gr.Textbox(label="Prompt", elem_id="txt2img_prompt", show_label=False, placeholder="Prompt", lines=1)
@@ -162,7 +169,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 seed = gr.Number(label='Seed', value=-1)
 
                 with gr.Group():
-                    custom_inputs = modules.scripts.setup_ui(is_img2img=False)
+                    custom_inputs = modules.scripts.scripts_txt2img.setup_ui(is_img2img=False)
 
             with gr.Column(variant='panel'):
                 with gr.Group():
@@ -241,11 +248,14 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 steps = gr.Slider(minimum=1, maximum=150, step=1, label="Sampling Steps", value=20)
                 sampler_index = gr.Radio(label='Sampling method', choices=[x.name for x in samplers_for_img2img], value=samplers_for_img2img[0].name, type="index")
                 mask_blur = gr.Slider(label='Mask blur', minimum=0, maximum=64, step=1, value=4, visible=False)
-                inpainting_fill = gr.Radio(label='Msked content', choices=['fill', 'original', 'latent noise', 'latent nothing'], value='fill', type="index", visible=False)
+                inpainting_fill = gr.Radio(label='Masked content', choices=['fill', 'original', 'latent noise', 'latent nothing'], value='fill', type="index", visible=False)
+
+                with gr.Row():
+                    inpaint_full_res = gr.Checkbox(label='Inpaint at full resolution', value=False, visible=False)
+                    inpainting_mask_invert = gr.Radio(label='Masking mode', choices=['Inpaint masked', 'Inpaint not masked'], value='Inpaint masked', type="index", visible=False)
 
                 with gr.Row():
                     use_gfpgan = gr.Checkbox(label='GFPGAN', value=False, visible=gfpgan.have_gfpgan)
-                    inpaint_full_res = gr.Checkbox(label='Inpaint at full resolution', value=True, visible=False)
 
                 with gr.Row():
                     sd_upscale_upscaler_name = gr.Radio(label='Upscaler', choices=list(shared.sd_upscalers.keys()), value=list(shared.sd_upscalers.keys())[0], visible=False)
@@ -266,8 +276,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 seed = gr.Number(label='Seed', value=-1)
 
                 with gr.Group():
-                    custom_inputs = modules.scripts.setup_ui(is_img2img=True)
-
+                    custom_inputs = modules.scripts.scripts_img2img.setup_ui(is_img2img=True)
 
             with gr.Column(variant='panel'):
                 with gr.Group():
@@ -299,6 +308,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     sd_upscale_upscaler_name: gr_show(is_upscale),
                     sd_upscale_overlap: gr_show(is_upscale),
                     inpaint_full_res: gr_show(is_inpaint),
+                    inpainting_mask_invert: gr_show(is_inpaint),
                 }
 
             switch_mode.change(
@@ -314,6 +324,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     sd_upscale_upscaler_name,
                     sd_upscale_overlap,
                     inpaint_full_res,
+                    inpainting_mask_invert,
                 ]
             )
 
@@ -340,6 +351,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     sd_upscale_upscaler_name,
                     sd_upscale_overlap,
                     inpaint_full_res,
+                    inpainting_mask_invert,
                 ] + custom_inputs,
                 outputs=[
                     img2img_gallery,
@@ -510,6 +522,46 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
         analytics_enabled=False,
         css=css,
     )
+
+    ui_config_file = os.path.join(modules.paths.script_path, 'ui-config.json')
+    ui_settings = {}
+    settings_count = len(ui_settings)
+    error_loading = False
+
+    try:
+        if os.path.exists(ui_config_file):
+            with open(ui_config_file, "r", encoding="utf8") as file:
+                ui_settings = json.load(file)
+    except Exception:
+        error_loading = True
+        print("Error loading settings:", file=sys.stderr)
+        print(traceback.format_exc(), file=sys.stderr)
+
+    def loadsave(path, x):
+        def apply_field(obj, field):
+            key = path + "/" + field
+
+            saved_value = ui_settings.get(key, None)
+            if saved_value is None:
+                ui_settings[key] = getattr(obj, field)
+            else:
+                setattr(obj, field, saved_value)
+
+        if type(x) == gr.Slider:
+            apply_field(x, 'value')
+            apply_field(x, 'minimum')
+            apply_field(x, 'maximum')
+            apply_field(x, 'step')
+
+        if type(x) == gr.Radio:
+            apply_field(x, 'value')
+
+    visit(txt2img_interface, loadsave, "txt2img")
+    visit(img2img_interface, loadsave, "img2img")
+
+    if not error_loading and (not os.path.exists(ui_config_file) or settings_count != len(ui_settings)):
+        with open(ui_config_file, "w", encoding="utf8") as file:
+            json.dump(ui_settings, file, indent=4)
 
     return demo
 
