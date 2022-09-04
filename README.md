@@ -64,10 +64,14 @@ Put something in your prompt and just run it. If you select some area, only it w
 
 #### Aspect ratio handling
 
-To run SD plugin need to resize image to size of (512 + 64*k)x512. That can change aspect ratio and lead to suboptimal results.
+Plugin needs to resize image to size of (512 + 64*k)x512. That can change aspect ratio and lead to suboptimal results.
 
-For txt2imt, img2img and inpainting if you select some area of the image, plugin can try to slightly increase size of an image patch, which is sent to SD. That may improve aspect ratio handling quite a bit.
-Alternatively work with canvas sizes that have right aspect ratio, like 1024x1024, 1280x1024, ... like (512 + 64*k)x512.
+If you use selection, plugin will try to slightly increase size of an image patch, which is sent to SD. This improves aspect ratio handling quite a bit. 
+Alternatively work with image sizes that have right aspect ratio, like 1024x1024, 1280x1024, ... like (512 + 64*k)x512.
+
+TLDR; use selections, with them aspect ratio is less wrong.
+
+SD upscaling doesn't have this problem at all.
 
 #### Img2img
 
