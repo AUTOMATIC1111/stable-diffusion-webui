@@ -9,7 +9,7 @@ Requires Krita 5.1
 
 ## Installing and running
 
-If you used previous version which used conda, please make a new install. Please install in separately from webui.
+If you used previous version which used conda, please make a new install. Please install it separately from webui.
 
 ### Plugin installation
 
@@ -75,3 +75,5 @@ You should use low denoising strength with this mode. Think 0.1-0.2.
 #### Inpainting
 
 It requires both image and mask. For mask this plugin uses selected layer. Just create new layer and paint with white brush. This area will be inpainted.
+
+For inpainting to work properly you need high cfg score. Think 0.6-0.8.
