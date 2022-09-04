@@ -76,4 +76,4 @@ You should use low denoising strength with this mode. Think 0.1-0.2.
 
 It requires both image and mask. For mask this plugin uses selected layer. Just create new layer and paint with white brush. This area will be inpainted.
 
-For inpainting to work properly you need high cfg score. Think 0.6-0.8.
+For inpainting to work properly you need high denoising strength. Think 0.6-0.8.
