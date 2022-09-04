@@ -148,7 +148,8 @@ Open the URL in browser, and you are good to go.
 
 ### What options to use for low VRAM videocardsd?
 - If you have 4GB VRAM and want to make 512x512 (or maybe up to 640x640) images, use `--medvram`.
-- If you have 4GB VRAM and want to make 512x512 images, but you get an out of memory error with `--medvram`, use `--lowvram --always-batch-cond-uncond` instead.
+- If you have 4GB VRAM and want to make 512x512 images, but you get an out of memory error with `--medvram`, use `--opt-split-attention` instead.
+- If you have 4GB VRAM and want to make 512x512 images, and you still get an out of memory error, use `--lowvram --always-batch-cond-uncond` instead.
 - If you have 4GB VRAM and want to make images larger than you can with `--medvram`, use `--lowvram`.
 - If you have more VRAM and want to make larger images than you can usually make, use `--medvram`. You can use `--lowvram`
 also but the effect will likely be barely noticeable.
@@ -163,7 +164,7 @@ and the model will take much more space in VRAM.
 - k-diffusion - https://github.com/crowsonkb/k-diffusion.git
 - GFPGAN - https://github.com/TencentARC/GFPGAN.git
 - ESRGAN - https://github.com/xinntao/ESRGAN
-- Ideas for optimizations - https://github.com/basujindal/stable-diffusion
+- Ideas for optimizations and some code (from users) - https://github.com/basujindal/stable-diffusion
 - Idea for SD upscale - https://github.com/jquesnelle/txt2imghd
 - Initial Gradio script - posted on 4chan by an Anonymous user. Thank you Anonymous user.
 - (You)
