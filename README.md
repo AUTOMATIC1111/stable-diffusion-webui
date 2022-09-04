@@ -9,6 +9,8 @@ Requires Krita 5.1
 
 ## Installing and running
 
+If you used previous version based which used conda, please make a new install
+
 ### Plugin installation
 
 1. Open Krita and go into Settings - Manage Resources... - Open Resource Folder
