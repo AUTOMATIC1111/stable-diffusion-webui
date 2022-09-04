@@ -19,11 +19,14 @@ Original script with Gradio UI was written by a kind anonymous user. This is a m
 - Loopback
 - X/Y plot
 - Textual Inversion
-- Resizing options
+- Extras tab with:
+  - GFPGAN, neural network that fixes faces
+  - RealESRGAN, neural network upscaler
+  - ESRGAN, neural network with a lot of third party models
+- Resizing aspect ratio options
 - Sampling method selection
 - Interrupt processing at any time
 - 4GB videocard support
-- Option to use GFPGAN
 - Correct seeds for batches
 - Prompt length validation
 - Generation parameters added as text to PNG
@@ -48,6 +51,9 @@ can obtain it from the following places:
  - magnet:?xt=urn:btih:3a4a612d75ed088ea542acac52f9f45987488d1c&dn=sd-v1-4.ckpt&tr=udp%3a%2f%2ftracker.openbittorrent.com%3a6969%2fannounce&tr=udp%3a%2f%2ftracker.opentrackr.org%3a1337
 
 You optionally can use GPFGAN to improve faces, then you'll need to download the model from [here](https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.3.pth).
+
+To use ESRGAN models, put them into ESRGAN directory in the same location as webui.py. A file will be loaded
+as model if it has .pth extension. Grab models from the [Model Database](https://upscale.wiki/wiki/Model_Database).
 
 ### Automatic installation/launch
 

@@ -21,17 +21,14 @@ import modules.processing as processing
 import modules.sd_hijack
 import modules.gfpgan_model as gfpgan
 import modules.realesrgan_model as realesrgan
+import modules.esrgan_model as esrgan
 import modules.images as images
 import modules.lowvram
 import modules.txt2img
 import modules.img2img
 
 
-shared.sd_upscalers = {
-    "RealESRGAN": lambda img: realesrgan.upscale_with_realesrgan(img, 2, 0),
-    "Lanczos": lambda img: img.resize((img.width*2, img.height*2), resample=images.LANCZOS),
-    "None": lambda img: img
-}
+esrgan.load_models(cmd_opts.esrgan_models_path)
 realesrgan.setup_realesrgan()
 gfpgan.setup_gfpgan()
 
@@ -54,26 +51,48 @@ def load_model_from_config(config, ckpt, verbose=False):
     model.eval()
     return model
 
+cached_images = {}
 
-def run_extras(image, GFPGAN_strength, RealESRGAN_upscaling, RealESRGAN_model_index):
+def run_extras(image, gfpgan_strength, upscaling_resize, extras_upscaler_1, extras_upscaler_2, extras_upscaler_2_visibility):
     processing.torch_gc()
 
     image = image.convert("RGB")
 
     outpath = opts.outdir_samples or opts.outdir_extras_samples
 
-    if gfpgan.have_gfpgan is not None and GFPGAN_strength > 0:
-
+    if gfpgan.have_gfpgan is not None and gfpgan_strength > 0:
         restored_img = gfpgan.gfpgan_fix_faces(np.array(image, dtype=np.uint8))
         res = Image.fromarray(restored_img)
 
-        if GFPGAN_strength < 1.0:
-            res = Image.blend(image, res, GFPGAN_strength)
+        if gfpgan_strength < 1.0:
+            res = Image.blend(image, res, gfpgan_strength)
 
         image = res
 
-    if realesrgan.have_realesrgan and RealESRGAN_upscaling != 1.0:
-        image = realesrgan.upscale_with_realesrgan(image, RealESRGAN_upscaling, RealESRGAN_model_index)
+    if upscaling_resize != 1.0:
+        def upscale(image, scaler_index, resize):
+            small = image.crop((image.width // 2, image.height // 2, image.width // 2 + 10, image.height // 2 + 10))
+            pixels = tuple(np.array(small).flatten().tolist())
+            key = (resize, scaler_index, image.width, image.height) + pixels
+
+            c = cached_images.get(key)
+            if c is None:
+                upscaler = shared.sd_upscalers[scaler_index]
+                c = upscaler.upscale(image, image.width * resize, image.height * resize)
+                cached_images[key] = c
+
+            return c
+
+        res = upscale(image, extras_upscaler_1, upscaling_resize)
+
+        if extras_upscaler_2 != 0 and extras_upscaler_2_visibility>0:
+            res2 = upscale(image, extras_upscaler_2, upscaling_resize)
+            res = Image.blend(res, res2, extras_upscaler_2_visibility)
+
+        image = res
+
+    while len(cached_images) > 2:
+        del cached_images[next(iter(cached_images.keys()))]
 
     images.save_image(image, outpath, "", None, '', opts.samples_format, short_filename=True, no_prompt=True)
 
