@@ -119,7 +119,7 @@ class Img2ImgRequest(BaseModel):
 def get_sampler_index(sampler_name):
     for i, sampler in enumerate(modules.sd_samplers.samplers):
         name, constructor, aliases = sampler
-        if sampler_name in aliases:
+        if sampler_name == name or sampler_name in aliases:
             return i
 
 
