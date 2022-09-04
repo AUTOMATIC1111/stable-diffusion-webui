@@ -9,7 +9,8 @@ class Script(scripts.Script):
     def title(self):
         return "Custom code"
 
-    def enabled(self):
+
+    def show(self, is_img2img):
         return cmd_opts.allow_code
 
     def ui(self, is_img2img):
@@ -18,8 +19,7 @@ class Script(scripts.Script):
         return [code]
 
     def run(self, p, code):
-        if not cmd_opts.allow_code:
-            return
+        assert cmd_opts.allow_code, '--allow-code option must be enabled'
 
         display_result_data = [[], -1, ""]
 
