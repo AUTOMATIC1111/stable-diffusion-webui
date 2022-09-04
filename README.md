@@ -64,7 +64,7 @@ Put something in your prompt and just run it. If you select some area, only it w
 
 #### Img2img
 
-You may use feathered selections. Selection will be converted to selection mask afterwards. Not sure it is useful, it can be disabled on config tab.
+You may use feathered selections. Selection will be converted to transparency mask afterwards. Not sure it is useful, it can be disabled on config tab.
 
 #### Upscale
 
@@ -74,4 +74,4 @@ You should use low denoising strength with this mode. Think 0.1-0.2.
 
 #### Inpainting
 
-It requires both image and mask. For mask this plugin uses selected layer. Just create new layer and paint with white brush. This are will be inpainted.
+It requires both image and mask. For mask this plugin uses selected layer. Just create new layer and paint with white brush. This area will be inpainted.
