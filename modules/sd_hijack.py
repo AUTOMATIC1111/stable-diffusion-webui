@@ -243,8 +243,13 @@ class EmbeddingsWithFixes(torch.nn.Module):
         return inputs_embeds
 
 
+def add_circular_option_to_conv_2d():
+    conv2d_constructor = torch.nn.Conv2d.__init__
 
+    def conv2d_constructor_circular(self, *args, **kwargs):
+        return conv2d_constructor(self, *args, padding_mode='circular', **kwargs)
 
+    torch.nn.Conv2d.__init__ = conv2d_constructor_circular
 
 
 model_hijack = StableDiffusionModelHijack()
