@@ -62,6 +62,13 @@ Put something in your prompt and just run it. If you select some area, only it w
 - sd upscale - Ctrl + Alt + E
 - inpainting - Ctrl + Alt + R
 
+#### Aspect ratio handling
+
+To run SD plugin need to resize image to size of (512 + 64*k)x512. That can change aspect ratio and lead to suboptimal results.
+
+For txt2imt, img2img and inpainting if you select some area of the image, plugin can try to slightly increase size of an image patch, which is sent to SD. That may improve aspect ratio handling quite a bit.
+Alternatively work with canvas sizes that have right aspect ratio, like 1024x1024, 1280x1024, ... like (512 + 64*k)x512.
+
 #### Img2img
 
 You may use feathered selections. Selection will be converted to transparency mask afterwards. Not sure it is useful, it can be disabled on config tab.
