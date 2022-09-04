@@ -224,19 +224,21 @@ async def f_img2img(req: Img2ImgRequest):
         req.inpaint_full_res or opt['inpaint_full_res'],
         0
     )
-    if mode == 0:
+    if mode != 3:
         output_images = output_images[1:]
-    elif mode == 1:
+
+    resized_images = [images.resize_image(0, image, orig_width, orig_height) for image in output_images]
+
+    if mode == 1:
         def remove_not_masked(img):
             masked_img = Image.new("RGBA", img.size, (0, 0, 0, 0))
             masked_img.paste(img, (0, 0), mask=mask)
             return masked_img
 
-        output_images = [remove_not_masked(x) for x in output_images[1:]]
+        resized_images = [remove_not_masked(x) for x in resized_images]
 
     sample_path = opt['sample_path']
     os.makedirs(sample_path, exist_ok=True)
-    resized_images = [images.resize_image(0, image, orig_width, orig_height) for image in output_images]
     outputs = [save_img(image, sample_path, filename=f"{int(time.time())}_{i}.png")
                for i, image in enumerate(resized_images)]
     print(f"finished: {outputs}\n{info}")

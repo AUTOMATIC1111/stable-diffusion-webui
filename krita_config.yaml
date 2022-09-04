@@ -32,7 +32,7 @@ img2img:
   upscale_overlap: 64
 
   inpainting_fill: 0
-  inpaint_full_res: true
+  inpaint_full_res: false
   mask_blur: 0
 
   use_gfpgan: false
