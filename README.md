@@ -70,6 +70,8 @@ You may use feathered selections. Selection will be converted to selection mask 
 
 It uses "SD upscale", that means original image is split into overlapping tiles with size 512x512. Each tile is processed with SD, then they are merged into a single out image. This algorithm is very sensitive to original img resolution. For sane processing time try to use images of size up to 1980x1080.
 
+You should use low denoising strength with this mode. Think 0.1-0.2.
+
 #### Inpainting
 
 It requires both image and mask. For mask this plugin uses selected layer. Just create new layer and paint with white brush. This are will be inpainted.
