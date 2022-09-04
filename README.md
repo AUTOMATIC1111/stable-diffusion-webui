@@ -62,17 +62,6 @@ Put something in your prompt and just run it. If you select some area, only it w
 - sd upscale - Ctrl + Alt + E
 - inpainting - Ctrl + Alt + R
 
-#### Aspect ratio handling
-
-Plugin needs to resize image to size of (512 + 64*k)x512. That can change aspect ratio and lead to suboptimal results.
-
-If you use selection, plugin will try to slightly increase size of an image patch, which is sent to SD. This improves aspect ratio handling quite a bit. 
-Alternatively work with image sizes that have right aspect ratio, like 1024x1024, 1280x1024, ... like (512 + 64*k)x512.
-
-TLDR; use selections, with them aspect ratio is less wrong.
-
-SD upscaling doesn't have this problem at all.
-
 #### Img2img
 
 You may use feathered selections. Selection will be converted to transparency mask afterwards. Not sure it is useful, it can be disabled on config tab.
@@ -88,3 +77,21 @@ You should use low denoising strength with this mode. Think 0.1-0.2.
 It requires both image and mask. For mask this plugin uses selected layer. Just create new layer and paint with white brush. This area will be inpainted.
 
 For inpainting to work properly you need high denoising strength. Think 0.6-0.8.
+
+#### Image resizing
+
+In every mode except sd upscale plugin resizes source images. First image is resized to match SD required size of 512x(512 + 64*k). Second resulting image is resized back. 
+That means that you should be able to use plugin with image or selection of any size. But large image sizes will generally have less downscaling artefacts.
+
+Internally plugin uses Lanczos algorithm for both downscaling and upscaling.
+
+#### Aspect ratio handling
+
+**TLDR:** use selections, with them aspect ratio is less wrong.
+
+Plugin needs to resize image to size of (512 + 64*k)x512. That can change aspect ratio and lead to suboptimal results.
+
+If you use selection, plugin will try to slightly increase size of an image patch, which is sent to SD. This improves aspect ratio handling quite a bit.
+Alternatively work with image sizes that have right aspect ratio, like 1024x1024, 1280x1024, ... like (512 + 64*k)x512.
+
+SD upscaling doesn't have this problem at all.
