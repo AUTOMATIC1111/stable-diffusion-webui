@@ -1,8 +1,6 @@
 # Stable Diffusion web UI
 A browser interface based on Gradio library for Stable Diffusion.
 
-Original script with Gradio UI was written by a kind anonymous user. This is a modification.
-
 ![](screenshot.png)
 
 ## Feature showcase
@@ -160,3 +158,12 @@ Extra: if you get a green screen instead of generated pictures, you have a card 
 precision floating point numbers. You must use `--precision full --no-half` in addition to other flags,
 and the model will take much more space in VRAM.
 
+## Credits
+- Stable Diffusion - https://github.com/CompVis/stable-diffusion, https://github.com/CompVis/taming-transformers
+- k-diffusion - https://github.com/crowsonkb/k-diffusion.git
+- GFPGAN - https://github.com/TencentARC/GFPGAN.git
+- ESRGAN - https://github.com/xinntao/ESRGAN
+- Ideas for optimizations - https://github.com/basujindal/stable-diffusion
+- Idea for SD upscale - https://github.com/jquesnelle/txt2imghd
+- Initial Gradio script - posted on 4chan by an Anonymous user. Thank you Anonymous user.
+- (You)
