@@ -150,6 +150,7 @@ class Script(scripts.Script):
             cell=cell
         )
 
-        images.save_image(processed.images[0], p.outpath_grids, "xy_grid", prompt=p.prompt, seed=processed.seed)
+        if opts.grid_save:
+            images.save_image(processed.images[0], p.outpath_grids, "xy_grid", prompt=p.prompt, seed=processed.seed)
 
         return processed
