@@ -169,7 +169,7 @@ class Script(QObject):
                 x1 = max(0, self.x - (x // 2))
                 x2 = min(self.doc.width(), x1 + self.width + x)
                 for y in range(y_limit):
-                    y1 = max(0, self.y + (y // 2))
+                    y1 = max(0, self.y - (y // 2))
                     y2 = min(self.doc.height(), y1 + self.height + y)
 
                     curr_ratio = (x2 - x1) / (y2 - y1)
