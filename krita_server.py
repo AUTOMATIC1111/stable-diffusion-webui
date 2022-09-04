@@ -161,7 +161,6 @@ async def f_txt2img(req: Txt2ImgRequest):
         width,
         0
     )
-    output_images = output_images[1:]
 
     sample_path = opt['sample_path']
     os.makedirs(sample_path, exist_ok=True)
@@ -224,8 +223,6 @@ async def f_img2img(req: Img2ImgRequest):
         req.inpaint_full_res or opt['inpaint_full_res'],
         0
     )
-    if mode != 3:
-        output_images = output_images[1:]
 
     resized_images = [images.resize_image(0, image, orig_width, orig_height) for image in output_images]
 
