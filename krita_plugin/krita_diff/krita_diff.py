@@ -10,6 +10,7 @@ default_url = "http://127.0.0.1:8000"
 
 samplers = ["DDIM", "PLMS", 'k_dpm_2_a', 'k_dpm_2', 'k_euler_a', 'k_euler', 'k_heun', 'k_lms']
 samplers_img2img = ["DDIM", 'k_dpm_2_a', 'k_dpm_2', 'k_euler_a', 'k_euler', 'k_heun', 'k_lms']
+upscaler_name = ["None", "Lanczos", "RealESRGAN"]
 realesrgan_models = ['RealESRGAN_x4plus', 'RealESRGAN_x4plus_anime_6B']
 
 
@@ -56,6 +57,7 @@ class Script(QObject):
         self.set_cfg('img2img_base_size', 512, if_empty)
         self.set_cfg('img2img_max_size', 704, if_empty)
         self.set_cfg('img2img_seed', "", if_empty)
+        self.set_cfg('img2img_upscaler_name', 0, if_empty)
 
     def update_config(self):
         self.app = Krita.instance()
@@ -121,7 +123,8 @@ class Script(QObject):
             "batch_size": self.cfg('img2img_batch_size', int),
             "base_size": self.cfg('img2img_base_size', int),
             "max_size": self.cfg('img2img_max_size', int),
-            "seed": self.cfg('img2img_seed', str) if not self.cfg('img2img_seed', str).isspace() else ''
+            "seed": self.cfg('img2img_seed', str) if not self.cfg('img2img_seed', str).isspace() else '',
+            "upscaler_name": upscaler_name[self.cfg('img2img_upscaler_name', int)]
         } if not self.cfg('just_use_yaml', bool) else {
             "src_path": path,
             "mask_path": mask_path

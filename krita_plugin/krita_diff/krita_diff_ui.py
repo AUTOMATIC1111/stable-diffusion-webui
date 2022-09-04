@@ -283,6 +283,13 @@ class KritaSDPluginDocker(DockWidget):
         self.img2img_seed_layout.addWidget(self.img2img_seed_label)
         self.img2img_seed_layout.addWidget(self.img2img_seed)
 
+        self.img2img_upscaler_name_label = QLabel("Prescaler for SD upscale:")
+        self.img2img_upscaler_name = QComboBox()
+        self.img2img_upscaler_name.addItems(upscaler_name)
+        self.img2img_upscaler_name_layout = QHBoxLayout()
+        self.img2img_upscaler_name_layout.addWidget(self.img2img_upscaler_name_label)
+        self.img2img_upscaler_name_layout.addWidget(self.img2img_upscaler_name)
+
         self.img2img_start_button = QPushButton("Apply SD img2img")
         self.img2img_upscale_button = QPushButton("Apply SD upscale")
         self.img2img_inpaint_button = QPushButton("Apply SD inpainting")
@@ -300,6 +307,7 @@ class KritaSDPluginDocker(DockWidget):
         self.img2img_layout.addLayout(self.img2img_batch_layout)
         self.img2img_layout.addLayout(self.img2img_size_layout)
         self.img2img_layout.addLayout(self.img2img_seed_layout)
+        self.img2img_layout.addLayout(self.img2img_upscaler_name_layout)
         self.img2img_layout.addLayout(self.img2img_button_layout)
         self.img2img_layout.addStretch()
 
@@ -317,6 +325,7 @@ class KritaSDPluginDocker(DockWidget):
         self.img2img_base_size.setValue(script.cfg('img2img_base_size', int))
         self.img2img_max_size.setValue(script.cfg('img2img_max_size', int))
         self.img2img_seed.setText(script.cfg('img2img_seed', str))
+        self.img2img_upscaler_name.setCurrentIndex(script.cfg('img2img_upscaler_name', int))
 
     def connect_img2img_interface(self):
         self.img2img_prompt_text.textChanged.connect(
@@ -349,6 +358,9 @@ class KritaSDPluginDocker(DockWidget):
         )
         self.img2img_seed.textChanged.connect(
             partial(script.set_cfg, "img2img_seed")
+        )
+        self.img2img_upscaler_name.currentIndexChanged.connect(
+            partial(script.set_cfg, "img2img_upscaler_name")
         )
         self.img2img_start_button.released.connect(
             lambda: script.action_img2img()

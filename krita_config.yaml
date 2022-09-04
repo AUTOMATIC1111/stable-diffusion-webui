@@ -1,3 +1,4 @@
+# Here we have some default and internal values, changing some of them may lead to plugin not working properly
 txt2img:
   prompts: "dog"
   negative_prompt: ""
@@ -30,6 +31,7 @@ img2img:
   batch_size: 1
 
   upscale_overlap: 64
+  upscaler_name: "None" # None, Lanczos, RealESRGAN
 
   inpainting_fill: 0
   inpaint_full_res: false

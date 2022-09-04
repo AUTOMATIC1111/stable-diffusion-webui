@@ -110,6 +110,7 @@ class Img2ImgRequest(BaseModel):
     realesrgan_model: Optional[str]
 
     upscale_overlap: Optional[int]
+    upscaler_name: Optional[str]
 
     inpainting_fill: Optional[int]
     inpaint_full_res: Optional[bool]
@@ -221,7 +222,7 @@ async def f_img2img(req: Img2ImgRequest):
         height,
         width,
         opt['resize_mode'],
-        "None",
+        req.upscaler_name or opt['upscaler_name'],
         req.upscale_overlap or opt['upscale_overlap'],
         req.inpaint_full_res or opt['inpaint_full_res'],
         0,
