@@ -79,4 +79,7 @@ class Script(scripts.Script):
         grid = images.draw_prompt_matrix(grid, p.width, p.height, prompt_matrix_parts)
         processed.images.insert(0, grid)
 
+        if opts.grid_save:
+            images.save_image(processed.images[0], p.outpath_grids, "prompt_matrix", prompt=original_prompt, seed=seed)
+
         return processed
