@@ -2,8 +2,8 @@
 A simple interface based on this repository: https://github.com/AUTOMATIC1111/stable-diffusion-webui
 
 Requires Krita 5.1
+[target.webm](https://user-images.githubusercontent.com/112324253/188291339-9d146a9a-ba9f-4671-9bd8-c8b55fd48ba6.webm)
 
-https://user-images.githubusercontent.com/112324253/188290881-0ee2cbf2-e1a0-422e-9c2c-4b99b3a5f723.mp4
 
 ## Installing and running
 
