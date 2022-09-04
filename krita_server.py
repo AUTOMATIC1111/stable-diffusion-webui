@@ -224,6 +224,7 @@ async def f_img2img(req: Img2ImgRequest):
         "None",
         req.upscale_overlap or opt['upscale_overlap'],
         req.inpaint_full_res or opt['inpaint_full_res'],
+        0,
         0
     )
 
