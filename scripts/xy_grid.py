@@ -114,7 +114,8 @@ class Script(scripts.Script):
                 valslist_ext = []
 
                 for val in valslist:
-                    if "-" in val:
+                    #only check for "-" internal to the string, not at the beginning or end
+                    if "-" in val[1:-1]:
                         s = val.split("-")
                         start = int(s[0])
                         end = int(s[1])+1
