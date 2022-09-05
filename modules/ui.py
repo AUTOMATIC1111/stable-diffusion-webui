@@ -553,13 +553,13 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
         print(traceback.format_exc(), file=sys.stderr)
 
     def loadsave(path, x):
-        def apply_field(obj, field):
+        def apply_field(obj, field, condition=None):
             key = path + "/" + field
 
             saved_value = ui_settings.get(key, None)
             if saved_value is None:
                 ui_settings[key] = getattr(obj, field)
-            else:
+            elif condition is None or condition(saved_value):
                 setattr(obj, field, saved_value)
 
         if type(x) == gr.Slider:
@@ -569,7 +569,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
             apply_field(x, 'step')
 
         if type(x) == gr.Radio:
-            apply_field(x, 'value')
+            apply_field(x, 'value', lambda val: val in x.choices)
 
     visit(txt2img_interface, loadsave, "txt2img")
     visit(img2img_interface, loadsave, "img2img")
