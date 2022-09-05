@@ -159,6 +159,8 @@ Extra: if you get a green screen instead of generated pictures, you have a card 
 precision floating point numbers. You must use `--precision full --no-half` in addition to other flags,
 and the model will take much more space in VRAM.
 
+You may create a .commandline_args.txt file in the same folder as webui.bat to save these arguments so you do not need to re-add them each time you pull. 
+
 ## Credits
 - Stable Diffusion - https://github.com/CompVis/stable-diffusion, https://github.com/CompVis/taming-transformers
 - k-diffusion - https://github.com/crowsonkb/k-diffusion.git

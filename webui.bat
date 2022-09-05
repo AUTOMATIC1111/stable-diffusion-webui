@@ -5,6 +5,9 @@ set GIT=git
 set COMMANDLINE_ARGS=
 set VENV_DIR=venv
 
+:: create a .commandline_args.txt file with the appropriate args and it will not be overwritten when git updates webui.bat
+if exist .commandline_args.txt (set /p COMMANDLINE_ARGS=<.commandline_args.txt)
+
 mkdir tmp 2>NUL
 
 set TORCH_COMMAND=pip install torch==1.12.1+cu113 --extra-index-url https://download.pytorch.org/whl/cu113
