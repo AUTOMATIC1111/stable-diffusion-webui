@@ -60,7 +60,7 @@ class Script(QObject):
         self.set_cfg('img2img_max_size', 704, if_empty)
         self.set_cfg('img2img_seed', "", if_empty)
         self.set_cfg('img2img_tiling', False, if_empty)
-        self.set_cfg('img2img_upscaler_name', 0, if_empty)
+        self.set_cfg('img2img_upscaler_name', 0, False)
 
     def update_config(self):
         self.app = Krita.instance()

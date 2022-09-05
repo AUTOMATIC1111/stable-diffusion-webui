@@ -120,10 +120,18 @@ class Img2ImgRequest(BaseModel):
 
 
 def get_sampler_index(sampler_name):
-    for i, sampler in enumerate(modules.sd_samplers.samplers):
+    for index, sampler in enumerate(modules.sd_samplers.samplers):
         name, constructor, aliases = sampler
         if sampler_name == name or sampler_name in aliases:
-            return i
+            return index
+    return 0
+
+
+def get_upscaler_index(upscaler_name):
+    for index, upscaler in enumerate(shared.sd_upscalers):
+        if upscaler.name == upscaler_name:
+            return index
+    return 0
 
 
 @app.get("/config")
@@ -207,6 +215,8 @@ async def f_img2img(req: Img2ImgRequest):
         width, height = fix_aspect_ratio(base_size, req.max_size or opt['max_size'],
                                          orig_width, orig_height)
 
+    upscaler_index = get_upscaler_index(req.upscaler_name or opt['upscaler_name'])
+
     output_images, info, html = modules.img2img.img2img(
         req.prompt or collect_prompt(opt),
         image,
@@ -226,7 +236,7 @@ async def f_img2img(req: Img2ImgRequest):
         height,
         width,
         opt['resize_mode'],
-        req.upscaler_name or opt['upscaler_name'],
+        upscaler_index,
         req.upscale_overlap or opt['upscale_overlap'],
         req.inpaint_full_res or opt['inpaint_full_res'],
         0,

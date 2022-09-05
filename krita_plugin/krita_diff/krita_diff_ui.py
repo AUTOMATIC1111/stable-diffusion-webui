@@ -320,7 +320,7 @@ class KritaSDPluginDocker(DockWidget):
         self.img2img_layout.addLayout(self.img2img_size_layout)
         self.img2img_layout.addLayout(self.img2img_seed_layout)
         self.img2img_layout.addWidget(self.img2img_tiling)
-        self.img2img_layout.addLayout(self.img2img_upscaler_name_layout)
+        # self.img2img_layout.addLayout(self.img2img_upscaler_name_layout)
         self.img2img_layout.addLayout(self.img2img_button_layout)
         self.img2img_layout.addStretch()
 
