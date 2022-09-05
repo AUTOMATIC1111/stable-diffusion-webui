@@ -132,7 +132,9 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             "Sampler": samplers[p.sampler_index].name,
             "CFG scale": p.cfg_scale,
             "Seed": all_seeds[position_in_batch + iteration * p.batch_size],
-            "GFPGAN": ("GFPGAN" if p.use_GFPGAN else None)
+            "GFPGAN": ("GFPGAN" if p.use_GFPGAN else None),
+            "Batch size": (None if p.batch_size < 2 else p.batch_size),
+            "Batch pos": (None if p.batch_size < 2 else position_in_batch),
         }
 
         if p.extra_generation_params is not None:
