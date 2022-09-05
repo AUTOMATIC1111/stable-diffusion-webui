@@ -139,6 +139,9 @@ class KritaSDPluginDocker(DockWidget):
         self.txt2img_seed_layout.addWidget(self.txt2img_seed_label)
         self.txt2img_seed_layout.addWidget(self.txt2img_seed)
 
+        self.txt2img_tiling = QCheckBox("Enable tiling mode")
+        self.txt2img_tiling.setTristate(False)
+
         self.txt2img_start_button = QPushButton("Apply txt2img")
         self.txt2img_button_layout = QHBoxLayout()
         self.txt2img_button_layout.addWidget(self.txt2img_start_button)
@@ -151,6 +154,7 @@ class KritaSDPluginDocker(DockWidget):
         self.txt2img_layout.addLayout(self.txt2img_batch_layout)
         self.txt2img_layout.addLayout(self.txt2img_size_layout)
         self.txt2img_layout.addLayout(self.txt2img_seed_layout)
+        self.txt2img_layout.addWidget(self.txt2img_tiling)
         self.txt2img_layout.addLayout(self.txt2img_button_layout)
         self.txt2img_layout.addStretch()
 
@@ -167,6 +171,8 @@ class KritaSDPluginDocker(DockWidget):
         self.txt2img_base_size.setValue(script.cfg('txt2img_base_size', int))
         self.txt2img_max_size.setValue(script.cfg('txt2img_max_size', int))
         self.txt2img_seed.setText(script.cfg('txt2img_seed', str))
+        self.txt2img_tiling.setCheckState(
+            Qt.CheckState.Checked if script.cfg('txt2img_tiling', bool) else Qt.CheckState.Unchecked)
 
     def connect_txt2img_interface(self):
         self.txt2img_prompt_text.textChanged.connect(
@@ -196,6 +202,9 @@ class KritaSDPluginDocker(DockWidget):
         )
         self.txt2img_seed.textChanged.connect(
             partial(script.set_cfg, "txt2img_seed")
+        )
+        self.txt2img_tiling.toggled.connect(
+            partial(script.set_cfg, "txt2img_tiling")
         )
         self.txt2img_start_button.released.connect(
             lambda: script.action_txt2img()
@@ -283,6 +292,9 @@ class KritaSDPluginDocker(DockWidget):
         self.img2img_seed_layout.addWidget(self.img2img_seed_label)
         self.img2img_seed_layout.addWidget(self.img2img_seed)
 
+        self.img2img_tiling = QCheckBox("Enable tiling mode")
+        self.img2img_tiling.setTristate(False)
+
         self.img2img_upscaler_name_label = QLabel("Prescaler for SD upscale:")
         self.img2img_upscaler_name = QComboBox()
         self.img2img_upscaler_name.addItems(upscaler_name)
@@ -307,6 +319,7 @@ class KritaSDPluginDocker(DockWidget):
         self.img2img_layout.addLayout(self.img2img_batch_layout)
         self.img2img_layout.addLayout(self.img2img_size_layout)
         self.img2img_layout.addLayout(self.img2img_seed_layout)
+        self.img2img_layout.addWidget(self.img2img_tiling)
         self.img2img_layout.addLayout(self.img2img_upscaler_name_layout)
         self.img2img_layout.addLayout(self.img2img_button_layout)
         self.img2img_layout.addStretch()
@@ -325,6 +338,8 @@ class KritaSDPluginDocker(DockWidget):
         self.img2img_base_size.setValue(script.cfg('img2img_base_size', int))
         self.img2img_max_size.setValue(script.cfg('img2img_max_size', int))
         self.img2img_seed.setText(script.cfg('img2img_seed', str))
+        self.img2img_tiling.setCheckState(
+            Qt.CheckState.Checked if script.cfg('img2img_tiling', bool) else Qt.CheckState.Unchecked)
         self.img2img_upscaler_name.setCurrentIndex(script.cfg('img2img_upscaler_name', int))
 
     def connect_img2img_interface(self):
@@ -359,6 +374,9 @@ class KritaSDPluginDocker(DockWidget):
         self.img2img_seed.textChanged.connect(
             partial(script.set_cfg, "img2img_seed")
         )
+        self.img2img_tiling.toggled.connect(
+            partial(script.set_cfg, "img2img_tiling")
+        )
         self.img2img_upscaler_name.currentIndexChanged.connect(
             partial(script.set_cfg, "img2img_upscaler_name")
         )
@@ -386,8 +404,10 @@ class KritaSDPluginDocker(DockWidget):
         self.config_create_mask_layer.setTristate(False)
         self.config_delete_temp_files = QCheckBox("Automatically delete temporary image files")
         self.config_delete_temp_files.setTristate(False)
-        self.fix_aspect_ratio = QCheckBox("Try to fix aspect ratio for selections")
-        self.fix_aspect_ratio.setTristate(False)
+        self.config_fix_aspect_ratio = QCheckBox("Try to fix aspect ratio for selections")
+        self.config_fix_aspect_ratio.setTristate(False)
+        self.config_only_full_img_tiling = QCheckBox("Allow tiling only with no selection (on full image)")
+        self.config_only_full_img_tiling.setTristate(False)
 
         self.config_restore_defaults = QPushButton("Restore Defaults")
 
@@ -397,7 +417,8 @@ class KritaSDPluginDocker(DockWidget):
         self.config_layout.addWidget(self.config_just_use_yaml)
         self.config_layout.addWidget(self.config_create_mask_layer)
         self.config_layout.addWidget(self.config_delete_temp_files)
-        self.config_layout.addWidget(self.fix_aspect_ratio)
+        self.config_layout.addWidget(self.config_fix_aspect_ratio)
+        self.config_layout.addWidget(self.config_only_full_img_tiling)
         self.config_layout.addWidget(self.config_restore_defaults)
         self.config_layout.addStretch()
 
@@ -413,8 +434,10 @@ class KritaSDPluginDocker(DockWidget):
             Qt.CheckState.Checked if script.cfg('create_mask_layer', bool) else Qt.CheckState.Unchecked)
         self.config_delete_temp_files.setCheckState(
             Qt.CheckState.Checked if script.cfg('delete_temp_files', bool) else Qt.CheckState.Unchecked)
-        self.fix_aspect_ratio.setCheckState(
+        self.config_fix_aspect_ratio.setCheckState(
             Qt.CheckState.Checked if script.cfg('fix_aspect_ratio', bool) else Qt.CheckState.Unchecked)
+        self.config_only_full_img_tiling.setCheckState(
+            Qt.CheckState.Checked if script.cfg('only_full_img_tiling', bool) else Qt.CheckState.Unchecked)
 
     def connect_config_interface(self):
         self.config_base_url.textChanged.connect(
@@ -432,8 +455,11 @@ class KritaSDPluginDocker(DockWidget):
         self.config_delete_temp_files.toggled.connect(
             partial(script.set_cfg, "delete_temp_files")
         )
-        self.fix_aspect_ratio.toggled.connect(
+        self.config_fix_aspect_ratio.toggled.connect(
             partial(script.set_cfg, "fix_aspect_ratio")
+        )
+        self.config_only_full_img_tiling.toggled.connect(
+            partial(script.set_cfg, "only_full_img_tiling")
         )
         self.config_restore_defaults.released.connect(
             lambda: self.restore_defaults()

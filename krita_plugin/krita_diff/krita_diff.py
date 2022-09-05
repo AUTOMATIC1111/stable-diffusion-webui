@@ -36,6 +36,7 @@ class Script(QObject):
         self.set_cfg('workaround_timeout', 100, if_empty)
         self.set_cfg('png_quality', -1, if_empty)
         self.set_cfg('fix_aspect_ratio', True, if_empty)
+        self.set_cfg('only_full_img_tiling', True, if_empty)
 
         self.set_cfg('txt2img_prompt', "", if_empty)
         self.set_cfg('txt2img_sampler', samplers.index("k_euler_a"), if_empty)
@@ -46,6 +47,7 @@ class Script(QObject):
         self.set_cfg('txt2img_base_size', 512, if_empty)
         self.set_cfg('txt2img_max_size', 704, if_empty)
         self.set_cfg('txt2img_seed', "", if_empty)
+        self.set_cfg('txt2img_tiling', False, if_empty)
 
         self.set_cfg('img2img_prompt', "", if_empty)
         self.set_cfg('img2img_sampler', samplers_img2img.index("k_euler_a"), if_empty)
@@ -57,6 +59,7 @@ class Script(QObject):
         self.set_cfg('img2img_base_size', 512, if_empty)
         self.set_cfg('img2img_max_size', 704, if_empty)
         self.set_cfg('img2img_seed', "", if_empty)
+        self.set_cfg('img2img_tiling', False, if_empty)
         self.set_cfg('img2img_upscaler_name', 0, if_empty)
 
     def update_config(self):
@@ -91,6 +94,10 @@ class Script(QObject):
             return json.loads(res.read())
 
     def txt2img(self):
+        tiling = self.cfg('txt2img_tiling', bool)
+        if self.cfg("only_full_img_tiling", bool) and self.selection is not None:
+            tiling = False
+
         params = {
             "orig_width": self.width,
             "orig_height": self.height,
@@ -102,7 +109,8 @@ class Script(QObject):
             "batch_size": self.cfg('txt2img_batch_size', int),
             "base_size": self.cfg('txt2img_base_size', int),
             "max_size": self.cfg('txt2img_max_size', int),
-            "seed": self.cfg('txt2img_seed', str) if not self.cfg('txt2img_seed', str).isspace() else ''
+            "seed": self.cfg('txt2img_seed', str) if not self.cfg('txt2img_seed', str).isspace() else '',
+            "tiling": tiling
         } if not self.cfg('just_use_yaml', bool) else {
             "orig_width": self.width,
             "orig_height": self.height
@@ -110,6 +118,10 @@ class Script(QObject):
         return self.post(self.cfg('base_url', str) + '/txt2img', params)
 
     def img2img(self, path, mask_path, mode):
+        tiling = self.cfg('txt2img_tiling', bool)
+        if mode == 3 or (self.cfg("only_full_img_tiling", bool) and self.selection is not None):
+            tiling = False
+
         params = {
             "mode": mode,
             "src_path": path,
@@ -124,6 +136,7 @@ class Script(QObject):
             "base_size": self.cfg('img2img_base_size', int),
             "max_size": self.cfg('img2img_max_size', int),
             "seed": self.cfg('img2img_seed', str) if not self.cfg('img2img_seed', str).isspace() else '',
+            "tiling": tiling,
             "upscaler_name": upscaler_name[self.cfg('img2img_upscaler_name', int)]
         } if not self.cfg('just_use_yaml', bool) else {
             "src_path": path,

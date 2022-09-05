@@ -84,6 +84,7 @@ class Txt2ImgRequest(BaseModel):
     base_size: Optional[int]
     max_size: Optional[int]
     seed: Optional[str]
+    tiling: Optional[bool]
 
 
 class Img2ImgRequest(BaseModel):
@@ -103,6 +104,7 @@ class Img2ImgRequest(BaseModel):
     base_size: Optional[int]
     max_size: Optional[int]
     seed: Optional[str]
+    tiling: Optional[bool]
 
     normalize_prompt_weights: Optional[bool]
     use_gfpgan: Optional[bool]
@@ -157,6 +159,7 @@ async def f_txt2img(req: Txt2ImgRequest):
         req.steps or opt['steps'],
         sampler_index,
         opt['use_gfpgan'],
+        req.tiling or opt['tiling'],
         req.batch_count or opt['n_iter'],
         req.batch_size or opt['batch_size'],
         req.cfg_scale or opt['cfg_scale'],
@@ -213,6 +216,7 @@ async def f_img2img(req: Img2ImgRequest):
         req.mask_blur or opt['mask_blur'],
         req.inpainting_fill or opt['inpainting_fill'],
         req.use_gfpgan or opt['use_gfpgan'],
+        req.tiling or opt['tiling'],
         mode,
         req.batch_count or opt['n_iter'],
         req.batch_size or opt['batch_size'],

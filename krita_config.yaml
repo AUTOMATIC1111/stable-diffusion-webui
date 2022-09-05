@@ -10,6 +10,7 @@ txt2img:
   base_size: 512
   max_size: 704
   batch_size: 1
+  tiling: false
 
   use_gfpgan: false
   use_realesrgan: false
@@ -29,6 +30,7 @@ img2img:
   base_size: 512
   max_size: 704
   batch_size: 1
+  tiling: false
 
   upscale_overlap: 64
   upscaler_name: "None" # None, Lanczos, RealESRGAN
