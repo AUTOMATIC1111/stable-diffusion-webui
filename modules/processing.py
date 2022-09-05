@@ -9,6 +9,7 @@ import numpy as np
 from PIL import Image, ImageFilter, ImageOps
 import random
 
+import modules.sd_hijack
 from modules.sd_hijack import model_hijack
 from modules.sd_samplers import samplers, samplers_for_img2img
 from modules.shared import opts, cmd_opts, state
@@ -28,7 +29,7 @@ def torch_gc():
 
 
 class StableDiffusionProcessing:
-    def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt="", seed=-1, sampler_index=0, batch_size=1, n_iter=1, steps=50, cfg_scale=7.0, width=512, height=512, use_GFPGAN=False, do_not_save_samples=False, do_not_save_grid=False, extra_generation_params=None, overlay_images=None, negative_prompt=None):
+    def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt="", seed=-1, sampler_index=0, batch_size=1, n_iter=1, steps=50, cfg_scale=7.0, width=512, height=512, use_GFPGAN=False, tiling=False, do_not_save_samples=False, do_not_save_grid=False, extra_generation_params=None, overlay_images=None, negative_prompt=None):
         self.sd_model = sd_model
         self.outpath_samples: str = outpath_samples
         self.outpath_grids: str = outpath_grids
@@ -44,6 +45,7 @@ class StableDiffusionProcessing:
         self.width: int = width
         self.height: int = height
         self.use_GFPGAN: bool = use_GFPGAN
+        self.tiling: bool = tiling
         self.do_not_save_samples: bool = do_not_save_samples
         self.do_not_save_grid: bool = do_not_save_grid
         self.extra_generation_params: dict = extra_generation_params
@@ -109,6 +111,8 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
 
     os.makedirs(p.outpath_samples, exist_ok=True)
     os.makedirs(p.outpath_grids, exist_ok=True)
+
+    modules.sd_hijack.model_hijack.apply_circular(p.tiling)
 
     comments = []
 
