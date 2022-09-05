@@ -40,6 +40,10 @@ titles = {
     "Custom code": "Run python code. Advanced user only. Must run program with --allow-code for this to work",
 
     "Prompt S/R": "Separate a list of words with commas, and the first word will be used as a keyword: script will search for this word in the prompt, and replace it with others",
+
+    "Tiling": "Produce an image that can be tiled.",
+    "Tile overlap": "For SD upscale, how much overlap in pixels should there be between tiles. Tils overlap so that when they are merged back into one oicture, there is no clearly visible seam.",
+
 }
 
 function gradioApp(){

@@ -1,0 +1,8 @@
+__pycache__
+/ESRGAN
+/repositories
+/venv
+/tmp
+/model.ckpt
+/GFPGANv1.3.pth
+/ui-config.json

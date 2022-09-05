@@ -140,11 +140,6 @@ try:
 except Exception:
     pass
 
-
-if cmd_opts.tiling:
-    # this has to be done before the model is loaded
-    modules.sd_hijack.add_circular_option_to_conv_2d()
-
 sd_config = OmegaConf.load(cmd_opts.config)
 shared.sd_model = load_model_from_config(sd_config, cmd_opts.ckpt)
 shared.sd_model = (shared.sd_model if cmd_opts.no_half else shared.sd_model.half())
@@ -174,4 +169,4 @@ demo = modules.ui.create_ui(
     run_pnginfo=run_pnginfo
 )
 
-demo.launch(share=cmd_opts.share)
+demo.launch(share=cmd_opts.share, server_name="0.0.0.0" if cmd_opts.listen else None)
