@@ -4,6 +4,7 @@ import io
 import json
 import mimetypes
 import os
+import random
 import sys
 import time
 import traceback
@@ -27,7 +28,7 @@ mimetypes.init()
 mimetypes.add_type('application/javascript', '.js')
 
 
-if not cmd_opts.share:
+if not cmd_opts.share and not cmd_opts.listen:
     # fix gradio phoning home
     gradio.utils.version_check = lambda: None
     gradio.utils.get_local_ip_address = lambda: '127.0.0.1'
@@ -133,6 +134,13 @@ def wrap_gradio_call(func):
     return f
 
 
+def roll_artist(prompt):
+    allowed_cats = set([x for x in shared.artist_db.categories() if len(opts.random_artist_categories)==0 or x in opts.random_artist_categories])
+    artist = random.choice([x for x in shared.artist_db.artists if x.category in allowed_cats])
+
+    return prompt + ", " + artist.name if prompt != '' else artist.name
+
+
 def visit(x, func, path=""):
     if hasattr(x, 'children'):
         for c in x.children:
@@ -146,6 +154,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
         with gr.Row():
             prompt = gr.Textbox(label="Prompt", elem_id="txt2img_prompt", show_label=False, placeholder="Prompt", lines=1)
             negative_prompt = gr.Textbox(label="Negative prompt", elem_id="txt2img_negative_prompt", show_label=False, placeholder="Negative prompt", lines=1, visible=False)
+            roll = gr.Button('Roll', elem_id="txt2img_roll", visible=len(shared.artist_db.artists)>0)
             submit = gr.Button('Generate', elem_id="txt2img_generate", variant='primary')
 
         with gr.Row().style(equal_height=False):
@@ -155,6 +164,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
 
                 with gr.Row():
                     use_gfpgan = gr.Checkbox(label='GFPGAN', value=False, visible=gfpgan.have_gfpgan)
+                    tiling = gr.Checkbox(label='Tiling', value=False)
 
                 with gr.Row():
                     batch_count = gr.Slider(minimum=1, maximum=cmd_opts.max_batch_count, step=1, label='Batch count', value=1)
@@ -195,6 +205,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     steps,
                     sampler_index,
                     use_gfpgan,
+                    tiling,
                     batch_count,
                     batch_size,
                     cfg_scale,
@@ -231,6 +242,16 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 ]
             )
 
+            roll.click(
+                fn=roll_artist,
+                inputs=[
+                    prompt,
+                ],
+                outputs=[
+                    prompt
+                ]
+            )
+
     with gr.Blocks(analytics_enabled=False) as img2img_interface:
         with gr.Row():
             prompt = gr.Textbox(label="Prompt", elem_id="img2img_prompt", show_label=False, placeholder="Prompt", lines=1)
@@ -256,10 +277,11 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
 
                 with gr.Row():
                     use_gfpgan = gr.Checkbox(label='GFPGAN', value=False, visible=gfpgan.have_gfpgan)
+                    tiling = gr.Checkbox(label='Tiling', value=False)
+                    sd_upscale_overlap = gr.Slider(minimum=0, maximum=256, step=16, label='Tile overlap', value=64, visible=False)
 
                 with gr.Row():
-                    sd_upscale_upscaler_name = gr.Radio(label='Upscaler', choices=list(shared.sd_upscalers.keys()), value=list(shared.sd_upscalers.keys())[0], visible=False)
-                    sd_upscale_overlap = gr.Slider(minimum=0, maximum=256, step=16, label='Tile overlap', value=64, visible=False)
+                    sd_upscale_upscaler_name = gr.Radio(label='Upscaler', choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name, type="index", visible=False)
 
                 with gr.Row():
                     batch_count = gr.Slider(minimum=1, maximum=cmd_opts.max_batch_count, step=1, label='Batch count', value=1)
@@ -339,6 +361,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     mask_blur,
                     inpainting_fill,
                     use_gfpgan,
+                    tiling,
                     switch_mode,
                     batch_count,
                     batch_size,
@@ -401,9 +424,18 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
             with gr.Column(variant='panel'):
                 with gr.Group():
                     image = gr.Image(label="Source", source="upload", interactive=True, type="pil")
-                    gfpgan_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="GFPGAN strength", value=1, interactive=gfpgan.have_gfpgan)
-                    realesrgan_resize = gr.Slider(minimum=1.0, maximum=4.0, step=0.05, label="Real-ESRGAN upscaling", value=2, interactive=realesrgan.have_realesrgan)
-                    realesrgan_model = gr.Radio(label='Real-ESRGAN model', choices=[x.name for x in realesrgan.realesrgan_models], value=realesrgan.realesrgan_models[0].name, type="index", interactive=realesrgan.have_realesrgan)
+
+                upscaling_resize = gr.Slider(minimum=1.0, maximum=4.0, step=0.05, label="Resize", value=2)
+
+                with gr.Group():
+                    extras_upscaler_1 = gr.Radio(label='Upscaler 1', choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name, type="index")
+
+                with gr.Group():
+                    extras_upscaler_2 = gr.Radio(label='Upscaler 2', choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name, type="index")
+                    extras_upscaler_2_visibility = gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="Upscaler 2 visibility", value=1)
+
+                with gr.Group():
+                    gfpgan_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="GFPGAN strength", value=0, interactive=gfpgan.have_gfpgan)
 
                 submit = gr.Button('Generate', elem_id="extras_generate", variant='primary')
 
@@ -417,8 +449,10 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
             inputs=[
                 image,
                 gfpgan_strength,
-                realesrgan_resize,
-                realesrgan_model,
+                upscaling_resize,
+                extras_upscaler_1,
+                extras_upscaler_2,
+                extras_upscaler_2_visibility,
             ],
             outputs=[
                 result_image,
@@ -538,13 +572,13 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
         print(traceback.format_exc(), file=sys.stderr)
 
     def loadsave(path, x):
-        def apply_field(obj, field):
+        def apply_field(obj, field, condition=None):
             key = path + "/" + field
 
             saved_value = ui_settings.get(key, None)
             if saved_value is None:
                 ui_settings[key] = getattr(obj, field)
-            else:
+            elif condition is None or condition(saved_value):
                 setattr(obj, field, saved_value)
 
         if type(x) == gr.Slider:
@@ -554,7 +588,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
             apply_field(x, 'step')
 
         if type(x) == gr.Radio:
-            apply_field(x, 'value')
+            apply_field(x, 'value', lambda val: val in x.choices)
 
     visit(txt2img_interface, loadsave, "txt2img")
     visit(img2img_interface, loadsave, "img2img")

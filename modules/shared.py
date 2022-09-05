@@ -4,6 +4,7 @@ import os
 import gradio as gr
 import torch
 
+import modules.artists
 from modules.paths import script_path, sd_path
 
 config_filename = "config.json"
@@ -28,6 +29,9 @@ parser.add_argument("--always-batch-cond-uncond", action='store_true', help="a w
 parser.add_argument("--unload-gfpgan", action='store_true', help="unload GFPGAN every time after processing images. Warning: seems to cause memory leaks")
 parser.add_argument("--precision", type=str, help="evaluate at this precision", choices=["full", "autocast"], default="autocast")
 parser.add_argument("--share", action='store_true', help="use share=True for gradio and make the UI accessible through their site (doesn't work for me but you might have better luck)")
+parser.add_argument("--esrgan-models-path", type=str, help="path to directory with ESRGAN models", default=os.path.join(script_path, 'ESRGAN'))
+parser.add_argument("--opt-split-attention", action='store_true', help="enable optimization that reduced vram usage by a lot for about 10% decrease in performance")
+parser.add_argument("--listen", action='store_true', help="launch gradio with 0.0.0.0 as server name, allowing to respond to network requests")
 cmd_opts = parser.parse_args()
 
 cpu = torch.device("cpu")
@@ -43,6 +47,8 @@ class State:
         self.interrupted = True
 
 state = State()
+
+artist_db = modules.artists.ArtistsDatabase(os.path.join(script_path, 'artists.csv'))
 
 
 class Options:
@@ -79,7 +85,10 @@ class Options:
         "font": OptionInfo("arial.ttf", "Font for image grids  that have text"),
         "enable_emphasis": OptionInfo(True, "Use (text) to make model pay more attention to text text and [text] to make it pay less attention"),
         "save_txt": OptionInfo(False, "Create a text file next to every image with generation parameters."),
-
+        "ESRGAN_tile": OptionInfo(192, "Tile size for ESRGAN upscaling. 0 = no tiling.", gr.Slider, {"minimum": 0, "maximum": 512, "step": 16}),
+        "ESRGAN_tile_overlap": OptionInfo(8, "Tile overlap, in pixels for ESRGAN upscaling. Low values = visible seam.", gr.Slider, {"minimum": 0, "maximum": 48, "step": 1}),
+        "random_artist_categories": OptionInfo([], "Allowed categories for random artists selection when using the Roll button", gr.CheckboxGroup, {"choices": artist_db.categories()}),
+        "upscale_at_full_resolution_padding": OptionInfo(16, "Inpainting at full resolution: padding, in pixels, for the masked region.", gr.Slider, {"minimum": 0, "maximum": 128, "step": 4}),
     }
 
     def __init__(self):
@@ -115,7 +124,8 @@ opts = Options()
 if os.path.exists(config_filename):
     opts.load(config_filename)
 
-
-sd_upscalers = {}
+sd_upscalers = []
 
 sd_model = None
+
+
