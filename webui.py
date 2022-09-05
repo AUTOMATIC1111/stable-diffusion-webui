@@ -169,4 +169,4 @@ demo = modules.ui.create_ui(
     run_pnginfo=run_pnginfo
 )
 
-demo.launch(share=cmd_opts.share)
+demo.launch(share=cmd_opts.share, server_name="0.0.0.0" if cmd_opts.listen else None)
