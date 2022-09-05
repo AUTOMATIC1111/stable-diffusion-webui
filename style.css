@@ -5,6 +5,11 @@
     max-width: 13em;
 }
 
+#txt2img_roll{
+    min-width: 1em;
+    max-width: 4em;
+}
+
 button{
     align-self: stretch !important;
 }

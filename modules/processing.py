@@ -324,7 +324,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             if self.inpaint_full_res:
                 self.mask_for_overlay = self.image_mask
                 mask = self.image_mask.convert('L')
-                crop_region = get_crop_region(np.array(mask), 64)
+                crop_region = get_crop_region(np.array(mask), opts.upscale_at_full_resolution_padding)
                 x1, y1, x2, y2 = crop_region
 
                 mask = mask.crop(crop_region)
