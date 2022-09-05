@@ -44,6 +44,7 @@ titles = {
     "Tiling": "Produce an image that can be tiled.",
     "Tile overlap": "For SD upscale, how much overlap in pixels should there be between tiles. Tils overlap so that when they are merged back into one oicture, there is no clearly visible seam.",
 
+    "Roll": "Add a random artist to the prompt.",
 }
 
 function gradioApp(){

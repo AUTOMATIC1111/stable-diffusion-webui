@@ -4,6 +4,7 @@ import io
 import json
 import mimetypes
 import os
+import random
 import sys
 import time
 import traceback
@@ -133,6 +134,13 @@ def wrap_gradio_call(func):
     return f
 
 
+def roll_artist(prompt):
+    allowed_cats = set([x for x in shared.artist_db.categories() if len(opts.random_artist_categories)==0 or x in opts.random_artist_categories])
+    artist = random.choice([x for x in shared.artist_db.artists if x.category in allowed_cats])
+
+    return prompt + ", " + artist.name if prompt != '' else artist.name
+
+
 def visit(x, func, path=""):
     if hasattr(x, 'children'):
         for c in x.children:
@@ -146,6 +154,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
         with gr.Row():
             prompt = gr.Textbox(label="Prompt", elem_id="txt2img_prompt", show_label=False, placeholder="Prompt", lines=1)
             negative_prompt = gr.Textbox(label="Negative prompt", elem_id="txt2img_negative_prompt", show_label=False, placeholder="Negative prompt", lines=1, visible=False)
+            roll = gr.Button('Roll', elem_id="txt2img_roll", visible=len(shared.artist_db.artists)>0)
             submit = gr.Button('Generate', elem_id="txt2img_generate", variant='primary')
 
         with gr.Row().style(equal_height=False):
@@ -230,6 +239,16 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     html_info,
                     html_info,
                     html_info,
+                ]
+            )
+
+            roll.click(
+                fn=roll_artist,
+                inputs=[
+                    prompt,
+                ],
+                outputs=[
+                    prompt
                 ]
             )
 
