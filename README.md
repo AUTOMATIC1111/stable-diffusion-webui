@@ -146,7 +146,7 @@ Running on local URL:  http://127.0.0.1:7860/
 Open the URL in browser, and you are good to go.
 
 
-### What options to use for low VRAM videocardsd?
+### What options to use for low VRAM videocards?
 - If you have 4GB VRAM and want to make 512x512 (or maybe up to 640x640) images, use `--medvram`.
 - If you have 4GB VRAM and want to make 512x512 images, but you get an out of memory error with `--medvram`, use `--opt-split-attention` instead.
 - If you have 4GB VRAM and want to make 512x512 images, and you still get an out of memory error, use `--lowvram --always-batch-cond-uncond` instead.

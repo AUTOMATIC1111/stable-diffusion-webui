@@ -61,10 +61,10 @@ echo Torch is not able to use GPU
 goto :show_stdout_stderr
 
 :install_sd_reqs
-%PYTHON% -c "import transformers" >tmp/stdout.txt 2>tmp/stderr.txt
+%PYTHON% -c "import transformers; import wheel" >tmp/stdout.txt 2>tmp/stderr.txt
 if %ERRORLEVEL% == 0 goto :install_k_diff
 echo Installing SD requirements...
-%PYTHON% -m pip install transformers==4.19.2 diffusers invisible-watermark >tmp/stdout.txt 2>tmp/stderr.txt
+%PYTHON% -m pip install wheel transformers==4.19.2 diffusers invisible-watermark --prefer-binary >tmp/stdout.txt 2>tmp/stderr.txt
 if %ERRORLEVEL% == 0 goto :install_k_diff
 goto :show_stdout_stderr
 
@@ -72,7 +72,7 @@ goto :show_stdout_stderr
 %PYTHON% -c "import k_diffusion.sampling" >tmp/stdout.txt 2>tmp/stderr.txt
 if %ERRORLEVEL% == 0 goto :install_GFPGAN
 echo Installing K-Diffusion...
-%PYTHON% -m pip install git+https://github.com/crowsonkb/k-diffusion.git >tmp/stdout.txt 2>tmp/stderr.txt
+%PYTHON% -m pip install git+https://github.com/crowsonkb/k-diffusion.git --prefer-binary --only-binary=psutil >tmp/stdout.txt 2>tmp/stderr.txt
 if %ERRORLEVEL% == 0 goto :install_GFPGAN
 goto :show_stdout_stderr
 
@@ -81,7 +81,7 @@ goto :show_stdout_stderr
 %PYTHON% -c "import gfpgan" >tmp/stdout.txt 2>tmp/stderr.txt
 if %ERRORLEVEL% == 0 goto :install_reqs
 echo Installing GFPGAN
-%PYTHON% -m pip install git+https://github.com/TencentARC/GFPGAN.git >tmp/stdout.txt 2>tmp/stderr.txt
+%PYTHON% -m pip install git+https://github.com/TencentARC/GFPGAN.git --prefer-binary >tmp/stdout.txt 2>tmp/stderr.txt
 if %ERRORLEVEL% == 0 goto :install_reqs
 goto :show_stdout_stderr
 
@@ -89,11 +89,11 @@ goto :show_stdout_stderr
 %PYTHON% -c "import omegaconf" >tmp/stdout.txt 2>tmp/stderr.txt
 if %ERRORLEVEL% == 0 goto :make_dirs
 echo Installing requirements...
-%PYTHON% -m pip install -r %REQS_FILE% >tmp/stdout.txt 2>tmp/stderr.txt
+%PYTHON% -m pip install -r %REQS_FILE% --prefer-binary >tmp/stdout.txt 2>tmp/stderr.txt
 if %ERRORLEVEL% == 0 goto :update_numpy
 goto :show_stdout_stderr
 :update_numpy
-%PYTHON% -m pip install -U numpy >tmp/stdout.txt 2>tmp/stderr.txt
+%PYTHON% -m pip install -U numpy --prefer-binary >tmp/stdout.txt 2>tmp/stderr.txt
 
 :make_dirs
 mkdir repositories 2>NUL
