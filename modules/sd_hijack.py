@@ -49,6 +49,8 @@ class StableDiffusionModelHijack:
     fixes = None
     comments = []
     dir_mtime = None
+    layers = None
+    circular_enabled = False
 
     def load_textual_inversion_embeddings(self, dirname, model):
         mt = os.path.getmtime(dirname)
@@ -104,6 +106,24 @@ class StableDiffusionModelHijack:
 
         if cmd_opts.opt_split_attention:
             ldm.modules.attention.CrossAttention.forward = split_cross_attention_forward
+
+        def flatten(el):
+            flattened = [flatten(children) for children in el.children()]
+            res = [el]
+            for c in flattened:
+                res += c
+            return res
+
+        self.layers = flatten(m)
+
+    def apply_circular(self, enable):
+        if self.circular_enabled == enable:
+            return
+
+        self.circular_enabled = enable
+
+        for layer in [layer for layer in self.layers if type(layer) == torch.nn.Conv2d]:
+            layer.padding_mode = 'circular' if enable else 'zeros'
 
 
 class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
