@@ -68,7 +68,7 @@ You may use feathered selections. Selection will be converted to transparency ma
 
 #### Upscale
 
-It uses "SD upscale", that means original image is split into overlapping tiles with size 512x512. Each tile is processed with SD, then they are merged into a single out image. This algorithm is very sensitive to original img resolution. For sane processing time try to use images of size up to 1980x1080.
+It uses "SD upscale", that means original image is split into overlapping tiles with size 512x512. Each tile is processed with SD, then they are merged into a single out image. This algorithm is very sensitive to original img resolution. For sane processing time try to use images of size up to 1408x960 (max size for 6 tiles).
 
 You should use low denoising strength with this mode. Think 0.1-0.2.
 
