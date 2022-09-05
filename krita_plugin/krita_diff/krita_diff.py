@@ -161,8 +161,9 @@ class Script(QObject):
             final_ratio = self.find_final_aspect_ratio()
 
             delta = abs(final_ratio - ratio)
-            x_limit = math.floor(delta * self.width)
-            y_limit = math.floor(delta * self.height)
+            delta_rev = abs(1 / final_ratio - 1 / ratio)
+            x_limit = math.ceil(delta * self.width)
+            y_limit = math.ceil(delta_rev * self.height)
 
             best_delta = delta
             best_x1, best_y1 = self.x, self.y
