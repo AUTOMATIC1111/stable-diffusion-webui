@@ -51,6 +51,8 @@ function gradioApp(){
     return document.getElementsByTagName('gradio-app')[0].shadowRoot;
 }
 
+global_progressbar = null
+
 function addTitles(root){
 	root.querySelectorAll('span, button, select').forEach(function(span){
 		tooltip = titles[span.textContent];
@@ -71,6 +73,17 @@ function addTitles(root){
             select.title = titles[select.value] || "";
 	    }
 	})
+
+	progressbar = root.getElementById('progressbar')
+	if(progressbar!= null && progressbar != global_progressbar){
+	    global_progressbar = progressbar
+
+        var mutationObserver = new MutationObserver(function(m){
+            window.setTimeout(requestProgress, 500)
+        });
+        mutationObserver.observe( progressbar, { childList:true, subtree:true })
+	}
+
 }
 
 document.addEventListener("DOMContentLoaded", function() {
@@ -78,7 +91,6 @@ document.addEventListener("DOMContentLoaded", function() {
         addTitles(gradioApp());
     });
     mutationObserver.observe( gradioApp(), { childList:true, subtree:true })
-
 });
 
 function selected_gallery_index(){
@@ -104,4 +116,23 @@ function extract_image_from_gallery(gallery){
     }
 
     return gallery[index];
+}
+
+
+function requestProgress(){
+    btn = gradioApp().getElementById("check_progress");
+    if(btn==null) return;
+
+    btn.click();
+}
+
+function submit(){
+    window.setTimeout(requestProgress, 500)
+
+    res = []
+    for(var i=0;i<arguments.length;i++){
+        res.push(arguments[i])
+    }
+    console.log(res)
+    return res
 }

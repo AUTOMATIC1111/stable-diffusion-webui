@@ -48,7 +48,6 @@ css_hide_progressbar = """
 .meta-text { display:none!important; }
 """
 
-
 def plaintext_to_html(text):
     text = "".join([f"<p>{html.escape(x)}</p>\n" for x in text.split('\n')])
     return text
@@ -134,6 +133,24 @@ def wrap_gradio_call(func):
     return f
 
 
+def check_progress_call():
+    if not opts.show_progressbar:
+        return ""
+
+    if shared.state.job_count == 0:
+        return ""
+
+    progress = shared.state.job_no / shared.state.job_count
+    if shared.state.sampling_steps > 0:
+        progress += 1 / shared.state.job_count * shared.state.sampling_step / shared.state.sampling_steps
+
+    progress = min(progress, 1)
+
+    progressbar = f"""<div class='progressDiv'><div class='progress' style="width:{progress * 100}%">{str(int(progress*100))+"%" if progress > 0.01 else ""}</div></div>"""
+
+    return f"<span style='display: none'>{time.time()}</span><p>{progressbar}</p>"
+
+
 def roll_artist(prompt):
     allowed_cats = set([x for x in shared.artist_db.categories() if len(opts.random_artist_categories)==0 or x in opts.random_artist_categories])
     artist = random.choice([x for x in shared.artist_db.artists if x.category in allowed_cats])
@@ -154,8 +171,9 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
         with gr.Row():
             prompt = gr.Textbox(label="Prompt", elem_id="txt2img_prompt", show_label=False, placeholder="Prompt", lines=1)
             negative_prompt = gr.Textbox(label="Negative prompt", elem_id="txt2img_negative_prompt", show_label=False, placeholder="Negative prompt", lines=1, visible=False)
-            roll = gr.Button('Roll', elem_id="txt2img_roll", visible=len(shared.artist_db.artists)>0)
+            roll = gr.Button('Roll', elem_id="txt2img_roll", visible=len(shared.artist_db.artists) > 0)
             submit = gr.Button('Generate', elem_id="txt2img_generate", variant='primary')
+            check_progress = gr.Button('Check progress', elem_id="check_progress", visible=False)
 
         with gr.Row().style(equal_height=False):
             with gr.Column(variant='panel'):
@@ -185,6 +203,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 with gr.Group():
                     txt2img_gallery = gr.Gallery(label='Output', elem_id='txt2img_gallery')
 
+
                 with gr.Group():
                     with gr.Row():
                         save = gr.Button('Save')
@@ -193,12 +212,16 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                         send_to_extras = gr.Button('Send to extras')
                         interrupt = gr.Button('Interrupt')
 
+                progressbar = gr.HTML(elem_id="progressbar")
+
                 with gr.Group():
                     html_info = gr.HTML()
                     generation_info = gr.Textbox(visible=False)
 
+
             txt2img_args = dict(
                 fn=txt2img,
+                _js="submit",
                 inputs=[
                     prompt,
                     negative_prompt,
@@ -222,6 +245,13 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
 
             prompt.submit(**txt2img_args)
             submit.click(**txt2img_args)
+
+            check_progress.click(
+                fn=check_progress_call,
+                inputs=[],
+                outputs=[progressbar],
+            )
+
 
             interrupt.click(
                 fn=lambda: shared.state.interrupt(),
@@ -252,10 +282,12 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 ]
             )
 
+
     with gr.Blocks(analytics_enabled=False) as img2img_interface:
         with gr.Row():
             prompt = gr.Textbox(label="Prompt", elem_id="img2img_prompt", show_label=False, placeholder="Prompt", lines=1)
             submit = gr.Button('Generate', elem_id="img2img_generate", variant='primary')
+            check_progress = gr.Button('Check progress', elem_id="check_progress", visible=False)
 
         with gr.Row().style(equal_height=False):
 
@@ -310,6 +342,8 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                         save = gr.Button('Save')
                         img2img_send_to_extras = gr.Button('Send to extras')
 
+                progressbar = gr.HTML(elem_id="progressbar")
+
                 with gr.Group():
                     html_info = gr.HTML()
                     generation_info = gr.Textbox(visible=False)
@@ -352,6 +386,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
 
             img2img_args = dict(
                 fn=img2img,
+                _js="submit",
                 inputs=[
                     prompt,
                     init_img,
@@ -385,6 +420,12 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
 
             prompt.submit(**img2img_args)
             submit.click(**img2img_args)
+
+            check_progress.click(
+                fn=check_progress_call,
+                inputs=[],
+                outputs=[progressbar],
+            )
 
             interrupt.click(
                 fn=lambda: shared.state.interrupt(),

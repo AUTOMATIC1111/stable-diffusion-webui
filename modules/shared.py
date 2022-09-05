@@ -42,9 +42,17 @@ batch_cond_uncond = cmd_opts.always_batch_cond_uncond or not (cmd_opts.lowvram o
 class State:
     interrupted = False
     job = ""
+    job_no = 0
+    job_count = 0
+    sampling_step = 0
+    sampling_steps = 0
 
     def interrupt(self):
         self.interrupted = True
+
+    def nextjob(self):
+        self.job_no += 1
+        self.sampling_step = 0
 
 state = State()
 
@@ -89,6 +97,7 @@ class Options:
         "ESRGAN_tile_overlap": OptionInfo(8, "Tile overlap, in pixels for ESRGAN upscaling. Low values = visible seam.", gr.Slider, {"minimum": 0, "maximum": 48, "step": 1}),
         "random_artist_categories": OptionInfo([], "Allowed categories for random artists selection when using the Roll button", gr.CheckboxGroup, {"choices": artist_db.categories()}),
         "upscale_at_full_resolution_padding": OptionInfo(16, "Inpainting at full resolution: padding, in pixels, for the masked region.", gr.Slider, {"minimum": 0, "maximum": 128, "step": 4}),
+        "show_progressbar": OptionInfo(True, "Show progressbar"),
     }
 
     def __init__(self):

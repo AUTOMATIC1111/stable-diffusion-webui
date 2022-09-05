@@ -55,7 +55,10 @@ def img2img(prompt: str, init_img, init_img_with_mask, steps: int, sampler_index
         initial_seed = None
         initial_info = None
 
+        state.job_count = n_iter
+
         for i in range(n_iter):
+
             p.n_iter = 1
             p.batch_size = 1
             p.do_not_save_grid = True
@@ -71,6 +74,8 @@ def img2img(prompt: str, init_img, init_img_with_mask, steps: int, sampler_index
             p.seed = processed.seed + 1
             p.denoising_strength = max(p.denoising_strength * 0.95, 0.1)
             history.append(processed.images[0])
+
+            state.nextjob()
 
         grid = images.image_grid(history, batch_size, rows=1)
 
@@ -103,6 +108,8 @@ def img2img(prompt: str, init_img, init_img_with_mask, steps: int, sampler_index
         batch_count = math.ceil(len(work) / p.batch_size)
         print(f"SD upscaling will process a total of {len(work)} images tiled as {len(grid.tiles[0][2])}x{len(grid.tiles)} in a total of {batch_count} batches.")
 
+        state.job_count = batch_count
+
         for i in range(batch_count):
             p.init_images = work[i*p.batch_size:(i+1)*p.batch_size]
 
@@ -115,6 +122,8 @@ def img2img(prompt: str, init_img, init_img_with_mask, steps: int, sampler_index
 
             p.seed = processed.seed + 1
             work_results += processed.images
+
+            state.nextjob()
 
         image_index = 0
         for y, h, row in grid.tiles:
