@@ -53,6 +53,7 @@ def load_model_from_config(config, ckpt, verbose=False):
 
 cached_images = {}
 
+
 def run_extras(image, gfpgan_strength, upscaling_resize, extras_upscaler_1, extras_upscaler_2, extras_upscaler_2_visibility):
     processing.torch_gc()
 
@@ -121,10 +122,16 @@ queue_lock = threading.Lock()
 
 def wrap_gradio_gpu_call(func):
     def f(*args, **kwargs):
+        shared.state.sampling_step = 0
+        shared.state.job_count = 1
+        shared.state.job_no = 0
+
+
         with queue_lock:
             res = func(*args, **kwargs)
 
         shared.state.job = ""
+        shared.state.job_count = 0
 
         return res
 

@@ -71,3 +71,28 @@ input[type="range"]{
     padding-left: 0.6em;
     padding-right: 0.6em;
 }
+
+
+
+.progressDiv{
+  width: 100%;
+  height: 30px;
+  background: #b4c0cc;
+  border-radius: 8px;
+}
+
+.dark .progressDiv{
+  background: #424c5b;
+}
+
+.progressDiv .progress{
+  width: 0%;
+  height: 30px;
+  background: #0060df;
+  color: white;
+  font-weight: bold;
+  line-height: 30px;
+  padding: 0 8px 0 0;
+  text-align: right;
+  border-radius: 8px;
+}

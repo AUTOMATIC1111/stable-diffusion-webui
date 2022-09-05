@@ -67,6 +67,8 @@ def draw_xy_grid(xs, ys, x_label, y_label, cell):
 
     first_pocessed = None
 
+    state.job_count = len(xs) * len(ys)
+
     for iy, y in enumerate(ys):
         for ix, x in enumerate(xs):
             state.job = f"{ix + iy * len(xs) + 1} out of {len(xs) * len(ys)}"
@@ -76,6 +78,8 @@ def draw_xy_grid(xs, ys, x_label, y_label, cell):
                 first_pocessed = processed
 
             res.append(processed.images[0])
+
+            state.nextjob()
 
     grid = images.image_grid(res, rows=len(ys))
     grid = images.draw_grid_annotations(grid, res[0].width, res[0].height, hor_texts, ver_texts)

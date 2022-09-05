@@ -78,6 +78,8 @@ class Script(scripts.Script):
         batch_count = len(work)
         print(f"Poor man's outpainting will process a total of {len(work)} images tiled as {len(grid.tiles[0][2])}x{len(grid.tiles)}.")
 
+        state.job_count = batch_count
+
         for i in range(batch_count):
             p.init_images = [work[i]]
             p.image_mask = work_mask[i]
@@ -92,6 +94,8 @@ class Script(scripts.Script):
 
             p.seed = processed.seed + 1
             work_results += processed.images
+
+            state.nextjob()
 
         image_index = 0
         for y, h, row in grid.tiles:

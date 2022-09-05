@@ -153,6 +153,8 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
     with torch.no_grad(), precision_scope("cuda"), ema_scope():
         p.init()
 
+        state.job_count = p.n_iter
+
         for n in range(p.n_iter):
             if state.interrupted:
                 break
@@ -206,6 +208,8 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
                     images.save_image(image, p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, info=infotext(n, i))
 
                 output_images.append(image)
+
+            state.nextjob()
 
         unwanted_grid_because_of_img_count = len(output_images) < 2 and opts.grid_only_if_multiple
         if not p.do_not_save_grid and not unwanted_grid_because_of_img_count:
