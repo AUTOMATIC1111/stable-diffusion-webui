@@ -67,7 +67,7 @@ class Script(scripts.Script):
 
         latent_mask = Image.new("L", (img.width, img.height), "white")
         latent_draw = ImageDraw.Draw(latent_mask)
-        latent_draw.rectangle((left + 1, up + 1, mask.width - right - 1, mask.height - down - 1), fill="black")
+        latent_draw.rectangle((left + left//2, up + up//2, mask.width - right - right//2, mask.height - down - down//2), fill="black")
 
         processing.torch_gc()
 
