@@ -75,8 +75,6 @@ def img2img(prompt: str, init_img, init_img_with_mask, steps: int, sampler_index
             p.denoising_strength = max(p.denoising_strength * 0.95, 0.1)
             history.append(processed.images[0])
 
-            state.nextjob()
-
         grid = images.image_grid(history, batch_size, rows=1)
 
         images.save_image(grid, p.outpath_grids, "grid", initial_seed, prompt, opts.grid_format, info=info, short_filename=not opts.grid_extended_filename)
@@ -122,8 +120,6 @@ def img2img(prompt: str, init_img, init_img_with_mask, steps: int, sampler_index
 
             p.seed = processed.seed + 1
             work_results += processed.images
-
-            state.nextjob()
 
         image_index = 0
         for y, h, row in grid.tiles:

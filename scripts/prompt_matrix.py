@@ -31,7 +31,6 @@ def draw_xy_grid(xs, ys, x_label, y_label, cell):
                 first_pocessed = processed
 
             res.append(processed.images[0])
-            state.nextjob()
 
     grid = images.image_grid(res, rows=len(ys))
     grid = images.draw_grid_annotations(grid, res[0].width, res[0].height, hor_texts, ver_texts)
