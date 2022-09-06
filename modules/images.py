@@ -267,8 +267,8 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     filecount = len([x for x in os.listdir(path) if os.path.splitext(x)[1] == '.' + extension])
     fullfn = "a.png"
     fullfn_without_extension = "a"
-    for i in range(100):
-        fn = f"{filecount:05}" if basename == '' else f"{basename}-{filecount:04}"
+    for i in range(500):
+        fn = f"{filecount+i:05}" if basename == '' else f"{basename}-{filecount+i:04}"
         fullfn = os.path.join(path, f"{fn}{file_decoration}.{extension}")
         fullfn_without_extension = os.path.join(path, f"{fn}{file_decoration}")
         if not os.path.exists(fullfn):
