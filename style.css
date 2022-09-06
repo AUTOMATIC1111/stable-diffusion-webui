@@ -31,6 +31,20 @@ button{
     max-width: 10em;
 }
 
+#txt2img_preview, #img2img_preview{
+    position: absolute;
+    width: 320px;
+    left: 0;
+    right: 0;
+    margin-left: auto;
+    margin-right: auto;
+    z-index: 100;
+}
+
+#txt2img_preview div.left-0.top-0, #img2img_preview div.left-0.top-0{
+    display: none;
+}
+
 fieldset span.text-gray-500, .gr-block.gr-box span.text-gray-500,  label.block span{
     position: absolute;
     top: -0.6em;
@@ -96,3 +110,4 @@ input[type="range"]{
   text-align: right;
   border-radius: 8px;
 }
+

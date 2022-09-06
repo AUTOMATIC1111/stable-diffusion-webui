@@ -42,6 +42,8 @@ def p_sample_ddim_hook(sampler_wrapper, x_dec, cond, ts, *args, **kwargs):
         img_orig = sampler_wrapper.sampler.model.q_sample(sampler_wrapper.init_latent, ts)
         x_dec = img_orig * sampler_wrapper.mask + sampler_wrapper.nmask * x_dec
 
+    state.current_latent = x_dec
+
     return sampler_wrapper.orig_p_sample_ddim(x_dec, cond, ts, *args, **kwargs)
 
 
@@ -141,6 +143,9 @@ class KDiffusionSampler:
         self.func = getattr(k_diffusion.sampling, self.funcname)
         self.model_wrap_cfg = CFGDenoiser(self.model_wrap)
 
+    def callback_state(self, d):
+        state.current_latent = d["denoised"]
+
     def sample_img2img(self, p, x, noise, conditioning, unconditional_conditioning):
         t_enc = int(min(p.denoising_strength, 0.999) * p.steps)
         sigmas = self.model_wrap.get_sigmas(p.steps)
@@ -157,7 +162,7 @@ class KDiffusionSampler:
         if hasattr(k_diffusion.sampling, 'trange'):
             k_diffusion.sampling.trange = lambda *args, **kwargs: extended_trange(*args, **kwargs)
 
-        return self.func(self.model_wrap_cfg, xi, sigma_sched, extra_args={'cond': conditioning, 'uncond': unconditional_conditioning, 'cond_scale': p.cfg_scale}, disable=False)
+        return self.func(self.model_wrap_cfg, xi, sigma_sched, extra_args={'cond': conditioning, 'uncond': unconditional_conditioning, 'cond_scale': p.cfg_scale}, disable=False, callback=self.callback_state)
 
     def sample(self, p, x, conditioning, unconditional_conditioning):
         sigmas = self.model_wrap.get_sigmas(p.steps)
@@ -166,6 +171,6 @@ class KDiffusionSampler:
         if hasattr(k_diffusion.sampling, 'trange'):
             k_diffusion.sampling.trange = lambda *args, **kwargs: extended_trange(*args, **kwargs)
 
-        samples_ddim = self.func(self.model_wrap_cfg, x, sigmas, extra_args={'cond': conditioning, 'uncond': unconditional_conditioning, 'cond_scale': p.cfg_scale}, disable=False)
+        samples_ddim = self.func(self.model_wrap_cfg, x, sigmas, extra_args={'cond': conditioning, 'uncond': unconditional_conditioning, 'cond_scale': p.cfg_scale}, disable=False, callback=self.callback_state)
         return samples_ddim
 

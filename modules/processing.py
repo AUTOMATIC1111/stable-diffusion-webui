@@ -176,6 +176,11 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
                 shared.state.job = f"Batch {n+1} out of {p.n_iter}"
 
             samples_ddim = p.sample(x=x, conditioning=c, unconditional_conditioning=uc)
+            if state.interrupted:
+
+                # if we are interruped, sample returns just noise
+                # use the image collected previously in sampler loop
+                samples_ddim = shared.state.current_latent
 
             x_samples_ddim = p.sd_model.decode_first_stage(samples_ddim)
             x_samples_ddim = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
