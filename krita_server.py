@@ -119,6 +119,12 @@ class Img2ImgRequest(BaseModel):
     mask_blur: Optional[int]
 
 
+class UpscaleRequest(BaseModel):
+    src_path: str
+    upscaler_name: Optional[str]
+    downscale_first: Optional[bool]
+
+
 def get_sampler_index(sampler_name):
     for index, sampler in enumerate(modules.sd_samplers.samplers):
         name, constructor, aliases = sampler
@@ -142,8 +148,10 @@ async def read_item():
     filename = f"{int(time.time())}"
     path = os.path.join(sample_path, filename)
     src_path = os.path.abspath(path)
-    print(f"src path: {src_path}")
-    return {"new_img": src_path + ".png", "new_img_mask": src_path + "_mask.png", **opt}
+    return {"new_img": src_path + ".png",
+            "new_img_mask": src_path + "_mask.png",
+            "upscalers": [upscaler.name for upscaler in shared.sd_upscalers],
+            **opt}
 
 
 @app.post("/txt2img")
@@ -208,14 +216,16 @@ async def f_img2img(req: Img2ImgRequest):
     else:
         mask = None
 
+    upscaler_index = get_upscaler_index(req.upscaler_name or opt['upscaler_name'])
+
     base_size = req.base_size or opt['base_size']
     if mode == 3:
         width, height = base_size, base_size
+        if upscaler_index > 0:
+            image = image.convert("RGB")
     else:
         width, height = fix_aspect_ratio(base_size, req.max_size or opt['max_size'],
                                          orig_width, orig_height)
-
-    upscaler_index = get_upscaler_index(req.upscaler_name or opt['upscaler_name'])
 
     output_images, info, html = modules.img2img.img2img(
         req.prompt or collect_prompt(opt),
@@ -259,6 +269,34 @@ async def f_img2img(req: Img2ImgRequest):
                for i, image in enumerate(resized_images)]
     print(f"finished: {outputs}\n{info}")
     return {"outputs": outputs, "info": info}
+
+
+@app.post("/upscale")
+async def f_upscale(req: UpscaleRequest):
+    print(f"upscale: {req}")
+
+    opt = load_config()['upscale']
+    image = Image.open(req.src_path).convert('RGB')
+    orig_width, orig_height = image.size
+
+    upscaler_index = get_upscaler_index(req.upscaler_name or opt['upscaler_name'])
+    upscaler = shared.sd_upscalers[upscaler_index]
+
+    if upscaler.name == 'None':
+        print(f"No upscaler selected, will do nothing")
+        return
+
+    if req.downscale_first or opt['downscale_first']:
+        image = images.resize_image(0, image, orig_width // 2, orig_height // 2)
+
+    upscaled_image = upscaler.upscale(image, 2 * orig_width, 2 * orig_height)
+    resized_image = images.resize_image(0, upscaled_image, orig_width, orig_height)
+
+    sample_path = opt['sample_path']
+    os.makedirs(sample_path, exist_ok=True)
+    output = save_img(resized_image, sample_path, filename=f"{int(time.time())}.png")
+    print(f"finished: {output}")
+    return {"output": output}
 
 
 def main():

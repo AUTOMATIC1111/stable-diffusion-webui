@@ -45,5 +45,10 @@ img2img:
   resize_mode: 1
   sample_path: '../../outputs/krita-out'
 
+upscale:
+  upscaler_name: None
+  sample_path: '../../outputs/krita-out'
+  downscale_first: false
+
 plugin:
   sample_path: '../../outputs/krita-in'

@@ -10,7 +10,7 @@ default_url = "http://127.0.0.1:8000"
 
 samplers = ["DDIM", "PLMS", 'k_dpm_2_a', 'k_dpm_2', 'k_euler_a', 'k_euler', 'k_heun', 'k_lms']
 samplers_img2img = ["DDIM", 'k_dpm_2_a', 'k_dpm_2', 'k_euler_a', 'k_euler', 'k_heun', 'k_lms']
-upscaler_name = ["None", "Lanczos", "RealESRGAN"]
+upscalers = ["None", "Lanczos"]
 realesrgan_models = ['RealESRGAN_x4plus', 'RealESRGAN_x4plus_anime_6B']
 
 
@@ -60,9 +60,20 @@ class Script(QObject):
         self.set_cfg('img2img_max_size', 704, if_empty)
         self.set_cfg('img2img_seed', "", if_empty)
         self.set_cfg('img2img_tiling', False, if_empty)
-        self.set_cfg('img2img_upscaler_name', 0, False)
+        self.set_cfg('img2img_upscaler_name', 0, if_empty)
+
+        self.set_cfg('upscale_upscaler_name', 0, if_empty)
+        self.set_cfg('upscale_downscale_first', False, if_empty)
 
     def update_config(self):
+        with urllib.request.urlopen(self.cfg('base_url', str) + '/config') as req:
+            res = req.read()
+            self.opt = json.loads(res)
+
+        for upscaler in self.opt['upscalers']:
+            if upscaler not in upscalers:
+                upscalers.append(upscaler)
+
         self.app = Krita.instance()
         self.doc = self.app.activeDocument()
         self.node = self.doc.activeNode()
@@ -78,10 +89,6 @@ class Script(QObject):
             self.y = self.selection.y()
             self.width = self.selection.width()
             self.height = self.selection.height()
-
-        with urllib.request.urlopen(self.cfg('base_url', str) + '/config') as req:
-            res = req.read()
-            self.opt = json.loads(res)
 
     # Server API    @staticmethod
     def post(self, url, body):
@@ -137,12 +144,22 @@ class Script(QObject):
             "max_size": self.cfg('img2img_max_size', int),
             "seed": self.cfg('img2img_seed', str) if not self.cfg('img2img_seed', str).isspace() else '',
             "tiling": tiling,
-            "upscaler_name": upscaler_name[self.cfg('img2img_upscaler_name', int)]
+            "upscaler_name": upscalers[self.cfg('img2img_upscaler_name', int)]
         } if not self.cfg('just_use_yaml', bool) else {
             "src_path": path,
             "mask_path": mask_path
         }
         return self.post(self.cfg('base_url', str) + '/img2img', params)
+
+    def simple_upscale(self, path):
+        params = {
+            "src_path": path,
+            "upscaler_name": upscalers[self.cfg("upscale_upscaler_name", int)],
+            "downscale_first": self.cfg("upscale_downscale_first", bool)
+        } if not self.cfg('just_use_yaml', bool) else {
+            "src_path": path
+        }
+        return self.post(self.cfg('base_url', str) + '/upscale', params)
 
     def find_final_aspect_ratio(self):
         base_size = self.cfg('img2img_base_size', int)
@@ -223,12 +240,12 @@ class Script(QObject):
         ptr.setsize(image.byteCount())
         return QByteArray(ptr.asstring())
 
-    def insert_img(self, path, visible=True):
+    def insert_img(self, layer_name, path, visible=True):
         image = QImage()
         image.load(path, "PNG")
         ba = self.image_to_ba(image)
 
-        layer = self.create_layer(path)
+        layer = self.create_layer(layer_name)
         if not visible:
             layer.setVisible(False)
 
@@ -240,7 +257,7 @@ class Script(QObject):
         outputs = response['outputs']
         print(f"Getting images: {outputs}")
         for i, output in enumerate(outputs):
-            self.insert_img(output, i + 1 == len(outputs))
+            self.insert_img(f"txt2img {i + 1}: {output}", output, i + 1 == len(outputs))
         self.clear_temp_images(outputs)
         self.doc.refreshProjection()
 
@@ -254,14 +271,27 @@ class Script(QObject):
         response = self.img2img(path, mask_path, mode)
         outputs = response['outputs']
         print(f"Getting images: {outputs}")
+        layer_name_prefix = "inpaint" if mode == 1 else "sd upscale" if mode == 3 else "img2img"
         for i, output in enumerate(outputs):
-            self.insert_img(output, i + 1 == len(outputs))
+            self.insert_img(f"{layer_name_prefix} {i + 1}: {output}", output, i + 1 == len(outputs))
 
         if mode == 1:
             self.clear_temp_images([path, mask_path, *outputs])
         else:
             self.clear_temp_images([path, *outputs])
 
+        self.doc.refreshProjection()
+
+    def apply_simple_upscale(self):
+        path = self.opt['new_img']
+        self.save_img(path)
+
+        response = self.simple_upscale(path)
+        output = response['output']
+        print(f"Getting image: {output}")
+
+        self.insert_img(f"upscale: {output}", output)
+        self.clear_temp_images([path, output])
         self.doc.refreshProjection()
 
     def create_mask_layer_internal(self):
@@ -300,7 +330,7 @@ class Script(QObject):
         self.apply_img2img(mode=0)
         self.create_mask_layer_workaround()
 
-    def action_upscale(self):
+    def action_sd_upscale(self):
         if self.working:
             pass
         self.update_config()
@@ -313,6 +343,12 @@ class Script(QObject):
         self.update_config()
         self.try_fix_aspect_ratio()
         self.apply_img2img(mode=1)
+
+    def action_simple_upscale(self):
+        if self.working:
+            pass
+        self.update_config()
+        self.apply_simple_upscale()
 
 
 script = Script()

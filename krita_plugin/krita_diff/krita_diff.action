@@ -29,7 +29,7 @@
         </Action>
         <Action name="img2img_upscale">
             <icon/>
-            <text>Apply upscale transform</text>
+            <text>Apply SD upscale transform</text>
             <whatsThis/>
             <toolTip/>
             <iconText/>
@@ -48,6 +48,18 @@
             <activationFlags>10000</activationFlags>
             <activationConditions>0</activationConditions>
             <shortcut>ctrl+alt+r</shortcut>
+            <isCheckable>false</isCheckable>
+            <statusTip/>
+        </Action>
+        <Action name="simple_upscale">
+            <icon/>
+            <text>Apply ESRGAN upscaler</text>
+            <whatsThis/>
+            <toolTip/>
+            <iconText/>
+            <activationFlags>10000</activationFlags>
+            <activationConditions>0</activationConditions>
+            <shortcut>ctrl+alt+t</shortcut>
             <isCheckable>false</isCheckable>
             <statusTip/>
         </Action>

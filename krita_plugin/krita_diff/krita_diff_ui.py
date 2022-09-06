@@ -25,11 +25,15 @@ class MyExtension(Extension):
         )
         upscale_x_action = window.createAction("img2img_upscale", "Apply img2img upscale transform", "tools/scripts")
         upscale_x_action.triggered.connect(
-            lambda: script.action_upscale()
+            lambda: script.action_sd_upscale()
         )
         upscale_x_action = window.createAction("img2img_inpaint", "Apply img2img inpaint transform", "tools/scripts")
         upscale_x_action.triggered.connect(
             lambda: script.action_inpaint()
+        )
+        simple_upscale_action = window.createAction("simple_upscale", "Apply ESRGAN upscaler", "tools/scripts")
+        simple_upscale_action.triggered.connect(
+            lambda: script.action_simple_upscale()
         )
 
 
@@ -41,12 +45,19 @@ class KritaSDPluginDocker(DockWidget):
         self.setWindowTitle("SD Plugin")
         self.create_interface()
 
+        try:
+            script.update_config()
+        except:
+            pass
+
         self.init_txt2img_interface()
         self.init_img2img_interface()
+        self.init_upscale_interface()
         self.init_config_interface()
 
         self.connect_txt2img_interface()
         self.connect_img2img_interface()
+        self.connect_upscale_interface()
         self.connect_config_interface()
 
         self.setWidget(self.widget)
@@ -54,11 +65,13 @@ class KritaSDPluginDocker(DockWidget):
     def create_interface(self):
         self.create_txt2img_interface()
         self.create_img2img_interface()
+        self.create_upscale_interface()
         self.create_config_interface()
 
         self.tabs = QTabWidget()
         self.tabs.addTab(self.txt2img_widget, "Txt2Img")
         self.tabs.addTab(self.img2img_widget, "Img2Img")
+        self.tabs.addTab(self.upscale_widget, "Upscale")
         self.tabs.addTab(self.config_widget, "Config")
 
         self.layout = QVBoxLayout()
@@ -297,10 +310,12 @@ class KritaSDPluginDocker(DockWidget):
 
         self.img2img_upscaler_name_label = QLabel("Prescaler for SD upscale:")
         self.img2img_upscaler_name = QComboBox()
-        self.img2img_upscaler_name.addItems(upscaler_name)
+        self.img2img_upscaler_name.addItems(upscalers)
+        self.img2img_upscaler_name_renew = QPushButton("Update list")
         self.img2img_upscaler_name_layout = QHBoxLayout()
         self.img2img_upscaler_name_layout.addWidget(self.img2img_upscaler_name_label)
         self.img2img_upscaler_name_layout.addWidget(self.img2img_upscaler_name)
+        self.img2img_upscaler_name_layout.addWidget(self.img2img_upscaler_name_renew)
 
         self.img2img_start_button = QPushButton("Apply SD img2img")
         self.img2img_upscale_button = QPushButton("Apply SD upscale")
@@ -320,7 +335,7 @@ class KritaSDPluginDocker(DockWidget):
         self.img2img_layout.addLayout(self.img2img_size_layout)
         self.img2img_layout.addLayout(self.img2img_seed_layout)
         self.img2img_layout.addWidget(self.img2img_tiling)
-        # self.img2img_layout.addLayout(self.img2img_upscaler_name_layout)
+        self.img2img_layout.addLayout(self.img2img_upscaler_name_layout)
         self.img2img_layout.addLayout(self.img2img_button_layout)
         self.img2img_layout.addStretch()
 
@@ -340,6 +355,7 @@ class KritaSDPluginDocker(DockWidget):
         self.img2img_seed.setText(script.cfg('img2img_seed', str))
         self.img2img_tiling.setCheckState(
             Qt.CheckState.Checked if script.cfg('img2img_tiling', bool) else Qt.CheckState.Unchecked)
+        self.img2img_upscaler_name.addItems(upscalers[self.img2img_upscaler_name.count():])
         self.img2img_upscaler_name.setCurrentIndex(script.cfg('img2img_upscaler_name', int))
 
     def connect_img2img_interface(self):
@@ -380,17 +396,66 @@ class KritaSDPluginDocker(DockWidget):
         self.img2img_upscaler_name.currentIndexChanged.connect(
             partial(script.set_cfg, "img2img_upscaler_name")
         )
+        self.img2img_upscaler_name_renew.released.connect(
+            lambda: self.update_upscalers()
+        )
         self.img2img_start_button.released.connect(
             lambda: script.action_img2img()
         )
         self.img2img_upscale_button.released.connect(
-            lambda: script.action_upscale()
+            lambda: script.action_sd_upscale()
         )
         self.img2img_inpaint_button.released.connect(
             lambda: script.action_inpaint()
         )
 
-    def create_config_interface(self) -> QWidget:
+    def create_upscale_interface(self):
+        self.upscale_upscaler_name_label = QLabel("Upscalers:")
+        self.upscale_upscaler_name = QComboBox()
+        self.upscale_upscaler_name.addItems(upscalers)
+        self.upscale_upscaler_name_renew = QPushButton("Update list")
+        self.upscale_upscaler_name_layout = QHBoxLayout()
+        self.upscale_upscaler_name_layout.addWidget(self.upscale_upscaler_name_label)
+        self.upscale_upscaler_name_layout.addWidget(self.upscale_upscaler_name)
+        self.upscale_upscaler_name_layout.addWidget(self.upscale_upscaler_name_renew)
+
+        self.upscale_downscale_first = QCheckBox("Downscale image x0.5 before upscaling")
+        self.upscale_downscale_first.setTristate(False)
+
+        self.upscale_start_button = QPushButton("Apply upscaler")
+
+        self.upscale_layout = QVBoxLayout()
+        self.upscale_layout.addLayout(self.upscale_upscaler_name_layout)
+        self.upscale_layout.addWidget(self.upscale_downscale_first)
+        self.upscale_layout.addWidget(self.upscale_start_button)
+        self.upscale_layout.addStretch()
+
+        self.upscale_widget = QWidget()
+        self.upscale_widget.setLayout(self.upscale_layout)
+        return self.upscale_layout
+
+    def init_upscale_interface(self):
+        # add loaded upscalers
+        self.upscale_upscaler_name.addItems(upscalers[self.upscale_upscaler_name.count():])
+        self.upscale_upscaler_name.setCurrentIndex(script.cfg('upscale_upscaler_name', int))
+        self.upscale_downscale_first.setCheckState(
+            Qt.CheckState.Checked if script.cfg('upscale_downscale_first', bool) else Qt.CheckState.Unchecked)
+
+    def connect_upscale_interface(self):
+        self.upscale_upscaler_name.currentIndexChanged.connect(
+            partial(script.set_cfg, "upscale_upscaler_name")
+        )
+        self.upscale_upscaler_name_renew.released.connect(
+            lambda: self.update_upscalers()
+        )
+        self.upscale_downscale_first.toggled.connect(
+            partial(script.set_cfg, "upscale_downscale_first")
+        )
+        self.upscale_start_button.released.connect(
+            lambda: script.action_simple_upscale()
+        )
+
+    def create_config_interface(self):
         self.config_base_url_label = QLabel("Backend url (only local now):")
         self.config_base_url = QLineEdit()
         self.config_base_url_reset = QPushButton("Default")
@@ -424,7 +489,6 @@ class KritaSDPluginDocker(DockWidget):
 
         self.config_widget = QWidget()
         self.config_widget.setLayout(self.config_layout)
-        return self.config_widget
 
     def init_config_interface(self):
         self.config_base_url.setText(script.cfg('base_url', str))
@@ -470,6 +534,11 @@ class KritaSDPluginDocker(DockWidget):
         self.init_txt2img_interface()
         self.init_img2img_interface()
         self.init_upscale_interface()
+        self.init_config_interface()
+
+    def update_upscalers(self):
+        script.update_config()
+        self.init_img2img_interface()
         self.init_upscale_interface()
 
     def canvasChanged(self, canvas):
