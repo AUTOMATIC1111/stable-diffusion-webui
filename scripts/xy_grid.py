@@ -108,7 +108,7 @@ class Script(scripts.Script):
         return [x_type, x_values, y_type, y_values]
 
     def run(self, p, x_type, x_values, y_type, y_values):
-        p.seed = int(random.randrange(4294967294) if p.seed == -1 else p.seed)
+        p.seed = modules.processing.set_seed(p.seed)
         p.batch_size = 1
         p.batch_count = 1
 

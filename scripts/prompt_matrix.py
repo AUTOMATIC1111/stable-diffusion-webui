@@ -50,7 +50,7 @@ class Script(scripts.Script):
         return [put_at_start]
 
     def run(self, p, put_at_start):
-        seed = int(random.randrange(4294967294) if p.seed == -1 else p.seed)
+        seed = modules.processing.set_seed(p.seed)
 
         original_prompt = p.prompt[0] if type(p.prompt) == list else p.prompt
 
