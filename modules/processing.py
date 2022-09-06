@@ -99,6 +99,10 @@ def create_random_tensors(shape, seeds):
     return x
 
 
+def set_seed(seed):
+    return int(random.randrange(4294967294)) if seed is None or seed == -1 else seed
+
+
 def process_images(p: StableDiffusionProcessing) -> Processed:
     """this is the main loop that both txt2img and img2img use; it calls func_init once inside all the scopes and func_sample once per batch"""
 
@@ -107,7 +111,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
     assert p.prompt is not None
     torch_gc()
 
-    seed = int(random.randrange(4294967294)) if p.seed == -1 else p.seed
+    seed = set_seed(p.seed)
 
     os.makedirs(p.outpath_samples, exist_ok=True)
     os.makedirs(p.outpath_grids, exist_ok=True)
