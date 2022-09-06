@@ -125,7 +125,8 @@ def wrap_gradio_gpu_call(func):
         shared.state.sampling_step = 0
         shared.state.job_count = -1
         shared.state.job_no = 0
-
+        shared.state.current_latent = None
+        shared.state.current_image = None
 
         with queue_lock:
             res = func(*args, **kwargs)
@@ -163,7 +164,7 @@ modules.scripts.load_scripts(os.path.join(script_path, "scripts"))
 if __name__ == "__main__":
     # make the program just exit at ctrl+c without waiting for anything
     def sigint_handler(sig, frame):
-        print(f'Interrupted with singal {sig} in {frame}')
+        print(f'Interrupted with signal {sig} in {frame}')
         os._exit(0)
 
 
