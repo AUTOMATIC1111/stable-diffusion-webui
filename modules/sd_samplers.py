@@ -1,8 +1,8 @@
 from collections import namedtuple
-
-import ldm.models.diffusion.ddim
+import numpy as np
 import torch
 import tqdm
+from PIL import Image
 
 import k_diffusion.sampling
 import ldm.models.diffusion.ddim
@@ -37,12 +37,28 @@ samplers = [
 samplers_for_img2img = [x for x in samplers if x.name != 'PLMS']
 
 
+def sample_to_image(samples):
+    x_sample = shared.sd_model.decode_first_stage(samples[0:1].type(shared.sd_model.dtype))[0]
+    x_sample = torch.clamp((x_sample + 1.0) / 2.0, min=0.0, max=1.0)
+    x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
+    x_sample = x_sample.astype(np.uint8)
+    return Image.fromarray(x_sample)
+
+
+def store_latent(decoded):
+    state.current_latent = decoded
+
+    if opts.show_progress_every_n_steps > 0 and shared.state.sampling_step % opts.show_progress_every_n_steps == 0:
+        if not shared.parallel_processing_allowed:
+            shared.state.current_image = sample_to_image(decoded)
+
+
 def p_sample_ddim_hook(sampler_wrapper, x_dec, cond, ts, *args, **kwargs):
     if sampler_wrapper.mask is not None:
         img_orig = sampler_wrapper.sampler.model.q_sample(sampler_wrapper.init_latent, ts)
         x_dec = img_orig * sampler_wrapper.mask + sampler_wrapper.nmask * x_dec
 
-    state.current_latent = x_dec
+    store_latent(x_dec)
 
     return sampler_wrapper.orig_p_sample_ddim(x_dec, cond, ts, *args, **kwargs)
 
@@ -144,7 +160,7 @@ class KDiffusionSampler:
         self.model_wrap_cfg = CFGDenoiser(self.model_wrap)
 
     def callback_state(self, d):
-        state.current_latent = d["denoised"]
+        store_latent(d["denoised"])
 
     def sample_img2img(self, p, x, noise, conditioning, unconditional_conditioning):
         t_enc = int(min(p.denoising_strength, 0.999) * p.steps)

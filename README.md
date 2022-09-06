@@ -33,6 +33,9 @@ A browser interface based on Gradio library for Stable Diffusion.
 - Running custom code from UI
 - Mouseover hints fo most UI elements
 - Possible to change defaults/mix/max/step values for UI elements via text config
+- Random artist button
+- Tiling support: UI checkbox to create images that can be tiled like textures
+- Progress bar and live image generation preview
 
 ## Installing and running
 

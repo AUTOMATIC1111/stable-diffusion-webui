@@ -160,13 +160,11 @@ def check_progress_call():
     preview_visibility = gr_show(False)
 
     if opts.show_progress_every_n_steps > 0:
-        if shared.state.current_progress_index % opts.show_progress_every_n_steps == 0 and shared.state.current_latent is not None:
-            x_sample = shared.sd_model.decode_first_stage(shared.state.current_latent[0:1].type(shared.sd_model.dtype))[0]
-            x_sample = torch.clamp((x_sample + 1.0) / 2.0, min=0.0, max=1.0)
-            x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
-            x_sample = x_sample.astype(np.uint8)
-            shared.state.current_image = Image.fromarray(x_sample)
+        if shared.parallel_processing_allowed:
 
+            if shared.state.sampling_step - shared.state.current_image_sampling_step >= opts.show_progress_every_n_steps and shared.state.current_latent is not None:
+                shared.state.current_image = modules.sd_samplers.sample_to_image(shared.state.current_latent)
+                shared.state.current_image_sampling_step = shared.state.sampling_step
 
         image = shared.state.current_image
 
@@ -174,8 +172,6 @@ def check_progress_call():
             image = gr.update(value=None)
         else:
             preview_visibility = gr_show(True)
-
-    shared.state.current_progress_index += 1
 
     return f"<span style='display: none'>{time.time()}</span><p>{progressbar}</p>", preview_visibility, image
 
