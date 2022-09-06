@@ -153,7 +153,8 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
     with torch.no_grad(), precision_scope("cuda"), ema_scope():
         p.init()
 
-        state.job_count = p.n_iter
+        if state.job_count == -1:
+            state.job_count = p.n_iter
 
         for n in range(p.n_iter):
             if state.interrupted:

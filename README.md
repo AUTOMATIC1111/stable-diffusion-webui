@@ -149,15 +149,35 @@ Open the URL in browser, and you are good to go.
 ### What options to use for low VRAM videocards?
 - If you have 4GB VRAM and want to make 512x512 (or maybe up to 640x640) images, use `--medvram`.
 - If you have 4GB VRAM and want to make 512x512 images, but you get an out of memory error with `--medvram`, use `--medvram --opt-split-attention` instead.
-- If you have 4GB VRAM and want to make 512x512 images, and you still get an out of memory error, use `--lowvram --always-batch-cond-uncond` instead.
-- If you have 4GB VRAM and want to make images larger than you can with `--medvram`, use `--lowvram`.
-- If you have more VRAM and want to make larger images than you can usually make, use `--medvram`. You can use `--lowvram`
+- If you have 4GB VRAM and want to make 512x512 images, and you still get an out of memory error, use `--lowvram --always-batch-cond-uncond --opt-split-attention` instead.
+- If you have 4GB VRAM and want to make images larger than you can with `--medvram`, use  `--lowvram --opt-split-attention`.
+- If you have more VRAM and want to make larger images than you can usually make, use `--medvram --opt-split-attention`. You can use `--lowvram`
 also but the effect will likely be barely noticeable.
 - Otherwise, do not use any of those.
 
 Extra: if you get a green screen instead of generated pictures, you have a card that doesn't support half
 precision floating point numbers. You must use `--precision full --no-half` in addition to other flags,
 and the model will take much more space in VRAM.
+
+### How to change UI defaults?
+
+After running once, a `ui-config.json` file appears in webui directory:
+
+```json
+{
+    "txt2img/Sampling Steps/value": 20,
+    "txt2img/Sampling Steps/minimum": 1,
+    "txt2img/Sampling Steps/maximum": 150,
+    "txt2img/Sampling Steps/step": 1,
+    "txt2img/Batch count/value": 1,
+    "txt2img/Batch count/minimum": 1,
+    "txt2img/Batch count/maximum": 32,
+    "txt2img/Batch count/step": 1,
+    "txt2img/Batch size/value": 1,
+    "txt2img/Batch size/minimum": 1,
+```
+
+Edit values to your liking and the next time you launch the program they will be applied.
 
 ## Credits
 - Stable Diffusion - https://github.com/CompVis/stable-diffusion, https://github.com/CompVis/taming-transformers
