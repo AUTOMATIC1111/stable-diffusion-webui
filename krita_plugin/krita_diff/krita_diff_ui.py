@@ -152,6 +152,9 @@ class KritaSDPluginDocker(DockWidget):
         self.txt2img_seed_layout.addWidget(self.txt2img_seed_label)
         self.txt2img_seed_layout.addWidget(self.txt2img_seed)
 
+        self.txt2img_use_gfpgan = QCheckBox("Enable GFPGAN (may fix faces)")
+        self.txt2img_use_gfpgan.setTristate(False)
+
         self.txt2img_tiling = QCheckBox("Enable tiling mode")
         self.txt2img_tiling.setTristate(False)
 
@@ -167,6 +170,7 @@ class KritaSDPluginDocker(DockWidget):
         self.txt2img_layout.addLayout(self.txt2img_batch_layout)
         self.txt2img_layout.addLayout(self.txt2img_size_layout)
         self.txt2img_layout.addLayout(self.txt2img_seed_layout)
+        self.txt2img_layout.addWidget(self.txt2img_use_gfpgan)
         self.txt2img_layout.addWidget(self.txt2img_tiling)
         self.txt2img_layout.addLayout(self.txt2img_button_layout)
         self.txt2img_layout.addStretch()
@@ -184,6 +188,8 @@ class KritaSDPluginDocker(DockWidget):
         self.txt2img_base_size.setValue(script.cfg('txt2img_base_size', int))
         self.txt2img_max_size.setValue(script.cfg('txt2img_max_size', int))
         self.txt2img_seed.setText(script.cfg('txt2img_seed', str))
+        self.txt2img_use_gfpgan.setCheckState(
+            Qt.CheckState.Checked if script.cfg('txt2img_use_gfpgan', bool) else Qt.CheckState.Unchecked)
         self.txt2img_tiling.setCheckState(
             Qt.CheckState.Checked if script.cfg('txt2img_tiling', bool) else Qt.CheckState.Unchecked)
 
@@ -215,6 +221,9 @@ class KritaSDPluginDocker(DockWidget):
         )
         self.txt2img_seed.textChanged.connect(
             partial(script.set_cfg, "txt2img_seed")
+        )
+        self.txt2img_use_gfpgan.toggled.connect(
+            partial(script.set_cfg, "txt2img_use_gfpgan")
         )
         self.txt2img_tiling.toggled.connect(
             partial(script.set_cfg, "txt2img_tiling")
@@ -308,6 +317,9 @@ class KritaSDPluginDocker(DockWidget):
         self.img2img_tiling = QCheckBox("Enable tiling mode")
         self.img2img_tiling.setTristate(False)
 
+        self.img2img_use_gfpgan = QCheckBox("Enable GFPGAN (may fix faces)")
+        self.img2img_use_gfpgan.setTristate(False)
+
         self.img2img_upscaler_name_label = QLabel("Prescaler for SD upscale:")
         self.img2img_upscaler_name = QComboBox()
         self.img2img_upscaler_name.addItems(upscalers)
@@ -334,6 +346,7 @@ class KritaSDPluginDocker(DockWidget):
         self.img2img_layout.addLayout(self.img2img_batch_layout)
         self.img2img_layout.addLayout(self.img2img_size_layout)
         self.img2img_layout.addLayout(self.img2img_seed_layout)
+        self.img2img_layout.addWidget(self.img2img_use_gfpgan)
         self.img2img_layout.addWidget(self.img2img_tiling)
         self.img2img_layout.addLayout(self.img2img_upscaler_name_layout)
         self.img2img_layout.addLayout(self.img2img_button_layout)
@@ -353,6 +366,8 @@ class KritaSDPluginDocker(DockWidget):
         self.img2img_base_size.setValue(script.cfg('img2img_base_size', int))
         self.img2img_max_size.setValue(script.cfg('img2img_max_size', int))
         self.img2img_seed.setText(script.cfg('img2img_seed', str))
+        self.img2img_use_gfpgan.setCheckState(
+            Qt.CheckState.Checked if script.cfg('img2img_use_gfpgan', bool) else Qt.CheckState.Unchecked)
         self.img2img_tiling.setCheckState(
             Qt.CheckState.Checked if script.cfg('img2img_tiling', bool) else Qt.CheckState.Unchecked)
         self.img2img_upscaler_name.addItems(upscalers[self.img2img_upscaler_name.count():])
@@ -389,6 +404,9 @@ class KritaSDPluginDocker(DockWidget):
         )
         self.img2img_seed.textChanged.connect(
             partial(script.set_cfg, "img2img_seed")
+        )
+        self.img2img_use_gfpgan.toggled.connect(
+            partial(script.set_cfg, "img2img_use_gfpgan")
         )
         self.img2img_tiling.toggled.connect(
             partial(script.set_cfg, "img2img_tiling")

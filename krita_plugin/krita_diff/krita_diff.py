@@ -47,6 +47,7 @@ class Script(QObject):
         self.set_cfg('txt2img_base_size', 512, if_empty)
         self.set_cfg('txt2img_max_size', 704, if_empty)
         self.set_cfg('txt2img_seed', "", if_empty)
+        self.set_cfg('txt2img_use_gfpgan', False, if_empty)
         self.set_cfg('txt2img_tiling', False, if_empty)
 
         self.set_cfg('img2img_prompt', "", if_empty)
@@ -59,6 +60,7 @@ class Script(QObject):
         self.set_cfg('img2img_base_size', 512, if_empty)
         self.set_cfg('img2img_max_size', 704, if_empty)
         self.set_cfg('img2img_seed', "", if_empty)
+        self.set_cfg('img2img_use_gfpgan', False, if_empty)
         self.set_cfg('img2img_tiling', False, if_empty)
         self.set_cfg('img2img_upscaler_name', 0, if_empty)
 
@@ -117,7 +119,8 @@ class Script(QObject):
             "base_size": self.cfg('txt2img_base_size', int),
             "max_size": self.cfg('txt2img_max_size', int),
             "seed": self.cfg('txt2img_seed', str) if not self.cfg('txt2img_seed', str).isspace() else '',
-            "tiling": tiling
+            "tiling": tiling,
+            "use_gfpgan": self.cfg("txt2img_use_gfpgan", bool)
         } if not self.cfg('just_use_yaml', bool) else {
             "orig_width": self.width,
             "orig_height": self.height
@@ -144,6 +147,7 @@ class Script(QObject):
             "max_size": self.cfg('img2img_max_size', int),
             "seed": self.cfg('img2img_seed', str) if not self.cfg('img2img_seed', str).isspace() else '',
             "tiling": tiling,
+            "use_gfpgan": self.cfg("img2img_use_gfpgan", bool),
             "upscaler_name": upscalers[self.cfg('img2img_upscaler_name', int)]
         } if not self.cfg('just_use_yaml', bool) else {
             "src_path": path,
