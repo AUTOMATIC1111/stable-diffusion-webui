@@ -95,7 +95,6 @@ class Script(scripts.Script):
             p.seed = processed.seed + 1
             work_results += processed.images
 
-            state.nextjob()
 
         image_index = 0
         for y, h, row in grid.tiles:
