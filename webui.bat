@@ -125,8 +125,7 @@ echo Face fixing feature will not work.
 
 :launch
 echo Launching webui.py...
-cd repositories\stable-diffusion
-%PYTHON% ../../webui.py %COMMANDLINE_ARGS%
+%PYTHON% webui.py %COMMANDLINE_ARGS%
 pause
 exit /b
 
