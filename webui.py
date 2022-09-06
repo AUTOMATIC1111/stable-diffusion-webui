@@ -127,6 +127,7 @@ def wrap_gradio_gpu_call(func):
         shared.state.job_no = 0
         shared.state.current_latent = None
         shared.state.current_image = None
+        shared.state.current_progress_index = 0
 
         with queue_lock:
             res = func(*args, **kwargs)
