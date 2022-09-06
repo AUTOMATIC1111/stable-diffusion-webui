@@ -160,20 +160,20 @@ modules.sd_hijack.model_hijack.hijack(shared.sd_model)
 
 modules.scripts.load_scripts(os.path.join(script_path, "scripts"))
 
+if __name__ == "__main__":
+    # make the program just exit at ctrl+c without waiting for anything
+    def sigint_handler(sig, frame):
+        print(f'Interrupted with singal {sig} in {frame}')
+        os._exit(0)
 
-# make the program just exit at ctrl+c without waiting for anything
-def sigint_handler(sig, frame):
-    print(f'Interrupted with singal {sig} in {frame}')
-    os._exit(0)
 
+    signal.signal(signal.SIGINT, sigint_handler)
 
-signal.signal(signal.SIGINT, sigint_handler)
+    demo = modules.ui.create_ui(
+        txt2img=wrap_gradio_gpu_call(modules.txt2img.txt2img),
+        img2img=wrap_gradio_gpu_call(modules.img2img.img2img),
+        run_extras=wrap_gradio_gpu_call(run_extras),
+        run_pnginfo=run_pnginfo
+    )
 
-demo = modules.ui.create_ui(
-    txt2img=wrap_gradio_gpu_call(modules.txt2img.txt2img),
-    img2img=wrap_gradio_gpu_call(modules.img2img.img2img),
-    run_extras=wrap_gradio_gpu_call(run_extras),
-    run_pnginfo=run_pnginfo
-)
-
-demo.launch(share=cmd_opts.share, server_name="0.0.0.0" if cmd_opts.listen else None)
+    demo.launch(share=cmd_opts.share, server_name="0.0.0.0" if cmd_opts.listen else None)
