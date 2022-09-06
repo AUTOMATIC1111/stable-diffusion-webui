@@ -24,10 +24,11 @@ class Script(scripts.Script):
         pixels = gr.Slider(label="Pixels to expand", minimum=8, maximum=128, step=8)
         mask_blur = gr.Slider(label='Mask blur', minimum=0, maximum=64, step=1, value=4, visible=False)
         inpainting_fill = gr.Radio(label='Masked content', choices=['fill', 'original', 'latent noise', 'latent nothing'], value='fill', type="index", visible=False)
+        direction = gr.CheckboxGroup(label="Outpainting direction", choices=['left', 'right', 'up', 'down'], value=['left', 'right', 'up', 'down'])
 
-        return [pixels, mask_blur, inpainting_fill]
+        return [pixels, mask_blur, inpainting_fill, direction]
 
-    def run(self, p, pixels, mask_blur, inpainting_fill):
+    def run(self, p, pixels, mask_blur, inpainting_fill, direction):
         initial_seed = None
         initial_info = None
 
@@ -35,23 +36,38 @@ class Script(scripts.Script):
         p.inpainting_fill = inpainting_fill
         p.inpaint_full_res = False
 
-        init_img = p.init_images[0]
-        target_w = math.ceil((init_img.width + pixels * 2) / 64) * 64
-        target_h = math.ceil((init_img.height + pixels * 2) / 64) * 64
+        left = pixels if "left" in direction else 0
+        right = pixels if "right" in direction else 0
+        up = pixels if "up" in direction else 0
+        down = pixels if "down" in direction else 0
 
-        border_x = (target_w - init_img.width)//2
-        border_y = (target_h - init_img.height)//2
+        init_img = p.init_images[0]
+        target_w = math.ceil((init_img.width + left + right) / 64) * 64
+        target_h = math.ceil((init_img.height + up + down) / 64) * 64
+
+        if left > 0:
+            left = left * (target_w - init_img.width) // (left + right)
+        right = target_w - init_img.width - left
+
+        if up > 0:
+            up = up * (target_h - init_img.height) // (up + down)
+        down = target_h - init_img.height - up
 
         img = Image.new("RGB", (target_w, target_h))
-        img.paste(init_img, (border_x, border_y))
+        img.paste(init_img, (left, up))
 
         mask = Image.new("L", (img.width, img.height), "white")
         draw = ImageDraw.Draw(mask)
-        draw.rectangle((border_x + mask_blur * 2, border_y + mask_blur * 2, mask.width - border_x - mask_blur * 2, mask.height - border_y - mask_blur * 2), fill="black")
+        draw.rectangle((
+            left + (mask_blur * 2 if left > 0 else 0),
+            up + (mask_blur * 2 if up > 0 else 0),
+            mask.width - right - (mask_blur * 2 if right > 0 else 0),
+            mask.height - down - (mask_blur * 2 if down > 0 else 0)
+        ), fill="black")
 
         latent_mask = Image.new("L", (img.width, img.height), "white")
         latent_draw = ImageDraw.Draw(latent_mask)
-        latent_draw.rectangle((border_x + 1, border_y + 1, mask.width - border_x - 1, mask.height - border_y - 1), fill="black")
+        latent_draw.rectangle((left + 1, up + 1, mask.width - right - 1, mask.height - down - 1), fill="black")
 
         processing.torch_gc()
 
