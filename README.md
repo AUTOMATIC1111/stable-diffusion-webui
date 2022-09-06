@@ -5,7 +5,7 @@ A browser interface based on Gradio library for Stable Diffusion.
 
 ## Feature showcase
 
-[<font size="12">Detailed feature showcase with images, art by Greg Rutkowski</font>](https://github.com/AUTOMATIC1111/stable-diffusion-webui-feature-showcase)
+[Detailed feature showcase with images, art by Greg Rutkowski](https://github.com/AUTOMATIC1111/stable-diffusion-webui-feature-showcase)
 
 - Original txt2img and img2img modes
 - One click install and run script (but you still must install python, git and CUDA)
@@ -71,6 +71,12 @@ as model if it has .pth extension. Grab models from the [Model Database](https:/
 - to prevent the creation of virtual environment and use your system python, edit `webui.bat` replacing `set VENV_DIR=venv` with `set VENV_DIR=`.
 - webui.bat installs requirements from files `requirements_versions.txt`, which lists versions for modules specifically compatible with Python 3.10.6. If you choose to install for a different version of python, editing `webui.bat` to have `set REQS_FILE=requirements.txt` instead of `set REQS_FILE=requirements_versions.txt` may help (but I still reccomend you to just use the recommended version of python).
 - if you feel you broke something and want to reinstall from scratch, delete directories: `venv`, `repositories`.
+
+## Google collab
+
+If you don't want or can't run locally, here is google collab that allows you to run the webui:
+
+https://colab.research.google.com/drive/1Iy-xW9t1-OQWhb0hNxueGij8phCyluOh
 
 ### Manual instructions
 Alternatively, if you don't want to run webui.bat, here are instructions for installing
