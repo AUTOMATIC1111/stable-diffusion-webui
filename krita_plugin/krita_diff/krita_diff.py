@@ -257,7 +257,7 @@ class Script(QObject):
         outputs = response['outputs']
         print(f"Getting images: {outputs}")
         for i, output in enumerate(outputs):
-            self.insert_img(f"txt2img {i + 1}: {output}", output, i + 1 == len(outputs))
+            self.insert_img(f"txt2img {i + 1}: {os.path.basename(output)}", output, i + 1 == len(outputs))
         self.clear_temp_images(outputs)
         self.doc.refreshProjection()
 
@@ -273,7 +273,7 @@ class Script(QObject):
         print(f"Getting images: {outputs}")
         layer_name_prefix = "inpaint" if mode == 1 else "sd upscale" if mode == 3 else "img2img"
         for i, output in enumerate(outputs):
-            self.insert_img(f"{layer_name_prefix} {i + 1}: {output}", output, i + 1 == len(outputs))
+            self.insert_img(f"{layer_name_prefix} {i + 1}: {os.path.basename(output)}", output, i + 1 == len(outputs))
 
         if mode == 1:
             self.clear_temp_images([path, mask_path, *outputs])
@@ -290,7 +290,7 @@ class Script(QObject):
         output = response['output']
         print(f"Getting image: {output}")
 
-        self.insert_img(f"upscale: {output}", output)
+        self.insert_img(f"upscale: {os.path.basename(output)}", output)
         self.clear_temp_images([path, output])
         self.doc.refreshProjection()
 
