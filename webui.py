@@ -123,7 +123,7 @@ queue_lock = threading.Lock()
 def wrap_gradio_gpu_call(func):
     def f(*args, **kwargs):
         shared.state.sampling_step = 0
-        shared.state.job_count = 1
+        shared.state.job_count = -1
         shared.state.job_no = 0
 
 

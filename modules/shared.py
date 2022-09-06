@@ -54,6 +54,7 @@ class State:
         self.job_no += 1
         self.sampling_step = 0
 
+
 state = State()
 
 artist_db = modules.artists.ArtistsDatabase(os.path.join(script_path, 'artists.csv'))

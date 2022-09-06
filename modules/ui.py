@@ -140,7 +140,10 @@ def check_progress_call():
     if shared.state.job_count == 0:
         return ""
 
-    progress = shared.state.job_no / shared.state.job_count
+    progress = 0
+
+    if shared.state.job_count > 0:
+        progress += shared.state.job_no / shared.state.job_count
     if shared.state.sampling_steps > 0:
         progress += 1 / shared.state.job_count * shared.state.sampling_step / shared.state.sampling_steps
 
