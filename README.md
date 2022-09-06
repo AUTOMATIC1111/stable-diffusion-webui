@@ -72,11 +72,54 @@ as model if it has .pth extension. Grab models from the [Model Database](https:/
 - webui.bat installs requirements from files `requirements_versions.txt`, which lists versions for modules specifically compatible with Python 3.10.6. If you choose to install for a different version of python, editing `webui.bat` to have `set REQS_FILE=requirements.txt` instead of `set REQS_FILE=requirements_versions.txt` may help (but I still reccomend you to just use the recommended version of python).
 - if you feel you broke something and want to reinstall from scratch, delete directories: `venv`, `repositories`.
 
-## Google collab
+### Google collab
 
 If you don't want or can't run locally, here is google collab that allows you to run the webui:
 
 https://colab.research.google.com/drive/1Iy-xW9t1-OQWhb0hNxueGij8phCyluOh
+
+### What options to use for low VRAM videocards?
+- If you have 4GB VRAM and want to make 512x512 (or maybe up to 640x640) images, use `--medvram`.
+- If you have 4GB VRAM and want to make 512x512 images, but you get an out of memory error with `--medvram`, use `--medvram --opt-split-attention` instead.
+- If you have 4GB VRAM and want to make 512x512 images, and you still get an out of memory error, use `--lowvram --always-batch-cond-uncond --opt-split-attention` instead.
+- If you have 4GB VRAM and want to make images larger than you can with `--medvram`, use  `--lowvram --opt-split-attention`.
+- If you have more VRAM and want to make larger images than you can usually make, use `--medvram --opt-split-attention`. You can use `--lowvram`
+also but the effect will likely be barely noticeable.
+- Otherwise, do not use any of those.
+
+Extra: if you get a green screen instead of generated pictures, you have a card that doesn't support half
+precision floating point numbers. You must use `--precision full --no-half` in addition to other flags,
+and the model will take much more space in VRAM.
+
+### Running online
+
+Use `--share` option to run online. You will get a xxx.app.gradio link. This is the intended way to use the
+program in collabs.
+
+Use `--listen` to make the server listen to network connections. This will allow computers on local newtork
+to access the UI, and if you configure port forwarding, also computers on the internet.
+
+
+### How to change UI defaults?
+
+After running once, a `ui-config.json` file appears in webui directory:
+
+```json
+{
+    "txt2img/Sampling Steps/value": 20,
+    "txt2img/Sampling Steps/minimum": 1,
+    "txt2img/Sampling Steps/maximum": 150,
+    "txt2img/Sampling Steps/step": 1,
+    "txt2img/Batch count/value": 1,
+    "txt2img/Batch count/minimum": 1,
+    "txt2img/Batch count/maximum": 32,
+    "txt2img/Batch count/step": 1,
+    "txt2img/Batch size/value": 1,
+    "txt2img/Batch size/minimum": 1,
+```
+
+Edit values to your liking and the next time you launch the program they will be applied.
+
 
 ### Manual instructions
 Alternatively, if you don't want to run webui.bat, here are instructions for installing
@@ -151,39 +194,6 @@ Running on local URL:  http://127.0.0.1:7860/
 
 Open the URL in browser, and you are good to go.
 
-
-### What options to use for low VRAM videocards?
-- If you have 4GB VRAM and want to make 512x512 (or maybe up to 640x640) images, use `--medvram`.
-- If you have 4GB VRAM and want to make 512x512 images, but you get an out of memory error with `--medvram`, use `--medvram --opt-split-attention` instead.
-- If you have 4GB VRAM and want to make 512x512 images, and you still get an out of memory error, use `--lowvram --always-batch-cond-uncond --opt-split-attention` instead.
-- If you have 4GB VRAM and want to make images larger than you can with `--medvram`, use  `--lowvram --opt-split-attention`.
-- If you have more VRAM and want to make larger images than you can usually make, use `--medvram --opt-split-attention`. You can use `--lowvram`
-also but the effect will likely be barely noticeable.
-- Otherwise, do not use any of those.
-
-Extra: if you get a green screen instead of generated pictures, you have a card that doesn't support half
-precision floating point numbers. You must use `--precision full --no-half` in addition to other flags,
-and the model will take much more space in VRAM.
-
-### How to change UI defaults?
-
-After running once, a `ui-config.json` file appears in webui directory:
-
-```json
-{
-    "txt2img/Sampling Steps/value": 20,
-    "txt2img/Sampling Steps/minimum": 1,
-    "txt2img/Sampling Steps/maximum": 150,
-    "txt2img/Sampling Steps/step": 1,
-    "txt2img/Batch count/value": 1,
-    "txt2img/Batch count/minimum": 1,
-    "txt2img/Batch count/maximum": 32,
-    "txt2img/Batch count/step": 1,
-    "txt2img/Batch size/value": 1,
-    "txt2img/Batch size/minimum": 1,
-```
-
-Edit values to your liking and the next time you launch the program they will be applied.
 
 ## Credits
 - Stable Diffusion - https://github.com/CompVis/stable-diffusion, https://github.com/CompVis/taming-transformers
