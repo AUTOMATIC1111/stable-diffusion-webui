@@ -47,11 +47,14 @@ class Script(scripts.Script):
 
         if left > 0:
             left = left * (target_w - init_img.width) // (left + right)
-        right = target_w - init_img.width - left
+        if right > 0:
+            right = target_w - init_img.width - left
 
         if up > 0:
             up = up * (target_h - init_img.height) // (up + down)
-        down = target_h - init_img.height - up
+
+        if down > 0:
+            down = target_h - init_img.height - up
 
         img = Image.new("RGB", (target_w, target_h))
         img.paste(init_img, (left, up))
