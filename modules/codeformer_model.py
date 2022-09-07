@@ -16,6 +16,7 @@ from importlib import reload
 pretrain_model_url = 'https://github.com/sczhou/CodeFormer/releases/download/v0.1.0/codeformer.pth'
 
 have_codeformer = False
+codeformer = None
 
 def setup_codeformer():
     path = modules.paths.paths.get("CodeFormer", None)
@@ -64,7 +65,7 @@ def setup_codeformer():
 
                 return net, face_helper
 
-            def restore(self, np_image):
+            def restore(self, np_image, w=None):
                 np_image = np_image[:, :, ::-1]
 
                 net, face_helper = self.create_models()
@@ -80,7 +81,7 @@ def setup_codeformer():
 
                     try:
                         with torch.no_grad():
-                            output = net(cropped_face_t, w=shared.opts.code_former_weight, adain=True)[0]
+                            output = net(cropped_face_t, w=w if w is not None else shared.opts.code_former_weight, adain=True)[0]
                             restored_face = tensor2img(output, rgb2bgr=True, min_max=(-1, 1))
                         del output
                         torch.cuda.empty_cache()
@@ -99,7 +100,10 @@ def setup_codeformer():
 
         global have_codeformer
         have_codeformer = True
-        shared.face_restorers.append(FaceRestorerCodeFormer())
+
+        global codeformer
+        codeformer = FaceRestorerCodeFormer()
+        shared.face_restorers.append(codeformer)
 
     except Exception:
         print("Error setting up CodeFormer:", file=sys.stderr)

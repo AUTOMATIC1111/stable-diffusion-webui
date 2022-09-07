@@ -58,19 +58,28 @@ def load_model_from_config(config, ckpt, verbose=False):
 cached_images = {}
 
 
-def run_extras(image, face_restoration_blending, upscaling_resize, extras_upscaler_1, extras_upscaler_2, extras_upscaler_2_visibility):
+def run_extras(image, gfpgan_visibility, codeformer_visibility, codeformer_weight, upscaling_resize, extras_upscaler_1, extras_upscaler_2, extras_upscaler_2_visibility):
     processing.torch_gc()
 
     image = image.convert("RGB")
 
     outpath = opts.outdir_samples or opts.outdir_extras_samples
 
-    if face_restoration_blending > 0:
-        restored_img = modules.face_restoration.restore_faces(np.array(image, dtype=np.uint8))
+    if gfpgan_visibility > 0:
+        restored_img = modules.gfpgan_model.gfpgan_fix_faces(np.array(image, dtype=np.uint8))
         res = Image.fromarray(restored_img)
 
-        if face_restoration_blending < 1.0:
-            res = Image.blend(image, res, face_restoration_blending)
+        if gfpgan_visibility < 1.0:
+            res = Image.blend(image, res, gfpgan_visibility)
+
+        image = res
+
+    if codeformer_visibility > 0:
+        restored_img = modules.codeformer_model.codeformer.restore(np.array(image, dtype=np.uint8), w=codeformer_weight)
+        res = Image.fromarray(restored_img)
+
+        if codeformer_visibility < 1.0:
+            res = Image.blend(image, res, codeformer_visibility)
 
         image = res
 
