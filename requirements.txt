@@ -10,5 +10,7 @@ omegaconf
 pytorch_lightning
 diffusers
 invisible-watermark
+einops
+taming-transformers-rom1504
 git+https://github.com/crowsonkb/k-diffusion.git
 git+https://github.com/TencentARC/GFPGAN.git
