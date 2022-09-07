@@ -103,11 +103,31 @@ function addTitles(root){
 
 }
 
+tabNames =  {"txt2img": 1, "img2img": 1, "Extras": 1, "PNG Info": 1, "Settings": 1}
+processedTabs = {}
+
 document.addEventListener("DOMContentLoaded", function() {
     var mutationObserver = new MutationObserver(function(m){
         addTitles(gradioApp());
+
+        // fix for gradio breaking when you switch away from tab with mask
+        gradioApp().querySelectorAll('button').forEach(function(button){
+            title = button.textContent.trim()
+            if(processedTabs[title]) return
+            if(tabNames[button.textContent.trim()]==null) return;
+            processedTabs[title]=1
+
+            button.onclick = function(){
+                mask_buttons = gradioApp().querySelectorAll('#img2maskimg button');
+                if(mask_buttons.length == 2){
+                    mask_buttons[1].click();
+                }
+            }
+        })
     });
     mutationObserver.observe( gradioApp(), { childList:true, subtree:true })
+
+
 });
 
 function selected_gallery_index(){
@@ -150,6 +170,5 @@ function submit(){
     for(var i=0;i<arguments.length;i++){
         res.push(arguments[i])
     }
-    console.log(res)
     return res
 }
