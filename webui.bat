@@ -92,6 +92,7 @@ echo Installing requirements...
 %PYTHON% -m pip install -r %REQS_FILE% --prefer-binary >tmp/stdout.txt 2>tmp/stderr.txt
 if %ERRORLEVEL% == 0 goto :update_numpy
 goto :show_stdout_stderr
+
 :update_numpy
 %PYTHON% -m pip install -U numpy --prefer-binary >tmp/stdout.txt 2>tmp/stderr.txt
 
@@ -105,11 +106,27 @@ if %ERRORLEVEL% == 0 goto :clone_transformers
 goto :show_stdout_stderr
 
 :clone_transformers
-if exist repositories\taming-transformers goto :check_model
+if exist repositories\taming-transformers goto :clone_codeformer
 echo Cloning Taming Transforming repository...
 %GIT% clone https://github.com/CompVis/taming-transformers.git repositories\taming-transformers >tmp/stdout.txt 2>tmp/stderr.txt
+if %ERRORLEVEL% == 0 goto :clone_codeformer
+goto :show_stdout_stderr
+
+:clone_codeformer
+if exist repositories\CodeFormer goto :install_codeformer_reqs
+echo Cloning CodeFormer repository...
+%GIT% clone https://github.com/sczhou/CodeFormer.git repositories\CodeFormer >tmp/stdout.txt 2>tmp/stderr.txt
+if %ERRORLEVEL% == 0 goto :install_codeformer_reqs
+goto :show_stdout_stderr
+
+:install_codeformer_reqs
+%PYTHON% -c "import lpips" >tmp/stdout.txt 2>tmp/stderr.txt
+if %ERRORLEVEL% == 0 goto :check_model
+echo Installing requirements for CodeFormer...
+%PYTHON% -m pip install -r repositories\CodeFormer\requirements.txt --prefer-binary >tmp/stdout.txt 2>tmp/stderr.txt
 if %ERRORLEVEL% == 0 goto :check_model
 goto :show_stdout_stderr
+
 
 :check_model
 dir model.ckpt >tmp/stdout.txt 2>tmp/stderr.txt
