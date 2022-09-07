@@ -121,7 +121,7 @@ class Options:
         "show_progressbar": OptionInfo(True, "Show progressbar"),
         "show_progress_every_n_steps": OptionInfo(0, "Show show image creation progress every N sampling steps. Set 0 to disable.", gr.Slider, {"minimum": 0, "maximum": 32, "step": 1}),
         "face_restoration_model": OptionInfo(None, "Face restoration model", gr.Radio, lambda: {"choices": [x.name() for x in face_restorers]}),
-        "code_former_weight": OptionInfo(0.5, "CodeFormer weight parameter; 0 = fix face completely; 1 = do nothing", gr.Slider, {"minimum": 0, "maximum": 1, "step": 0.01}),
+        "code_former_weight": OptionInfo(0.5, "CodeFormer weight parameter; 0 = maximum effect; 1 = minimum effect", gr.Slider, {"minimum": 0, "maximum": 1, "step": 0.01}),
     }
 
     def __init__(self):
