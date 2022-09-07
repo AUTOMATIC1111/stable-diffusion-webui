@@ -52,7 +52,7 @@ class StableDiffusionProcessing:
         self.overlay_images = overlay_images
         self.paste_to = None
 
-    def init(self):
+    def init(self, seed):
         pass
 
     def sample(self, x, conditioning, unconditional_conditioning):
@@ -155,7 +155,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
     precision_scope = torch.autocast if cmd_opts.precision == "autocast" else contextlib.nullcontext
     ema_scope = (contextlib.nullcontext if cmd_opts.lowvram else p.sd_model.ema_scope)
     with torch.no_grad(), precision_scope("cuda"), ema_scope():
-        p.init()
+        p.init(seed=all_seeds[0])
 
         if state.job_count == -1:
             state.job_count = p.n_iter
@@ -240,7 +240,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
 class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
     sampler = None
 
-    def init(self):
+    def init(self, seed):
         self.sampler = samplers[self.sampler_index].constructor(self.sd_model)
 
     def sample(self, x, conditioning, unconditional_conditioning):
@@ -320,7 +320,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         self.mask = None
         self.nmask = None
 
-    def init(self):
+    def init(self, seed):
         self.sampler = samplers_for_img2img[self.sampler_index].constructor(self.sd_model)
         crop_region = None
 
@@ -347,10 +347,12 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             else:
                 self.image_mask = images.resize_image(self.resize_mode, self.image_mask, self.width, self.height)
                 np_mask = np.array(self.image_mask)
-                np_mask = 255 - np.clip((255 - np_mask.astype(np.float)) * 2, 0, 255).astype(np.uint8)
+                np_mask = np.clip((np_mask.astype(np.float)) * 2, 0, 255).astype(np.uint8)
                 self.mask_for_overlay = Image.fromarray(np_mask)
 
             self.overlay_images = []
+
+        latent_mask = self.latent_mask if self.latent_mask is not None else self.image_mask
 
         imgs = []
         for img in self.init_images:
@@ -361,7 +363,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
             if self.image_mask is not None:
                 if self.inpainting_fill != 1:
-                    image = fill(image, self.mask_for_overlay)
+                    image = fill(image, latent_mask)
 
                 image_masked = Image.new('RGBa', (image.width, image.height))
                 image_masked.paste(image.convert("RGBA").convert("RGBa"), mask=ImageOps.invert(self.mask_for_overlay.convert('L')))
@@ -394,17 +396,18 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         self.init_latent = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(image))
 
         if self.image_mask is not None:
-            init_mask = self.latent_mask if self.latent_mask is not None else self.image_mask
+            init_mask = latent_mask
             latmask = init_mask.convert('RGB').resize((self.init_latent.shape[3], self.init_latent.shape[2]))
             latmask = np.moveaxis(np.array(latmask, dtype=np.float64), 2, 0) / 255
             latmask = latmask[0]
+            latmask = np.around(latmask)
             latmask = np.tile(latmask[None], (4, 1, 1))
 
             self.mask = torch.asarray(1.0 - latmask).to(shared.device).type(self.sd_model.dtype)
             self.nmask = torch.asarray(latmask).to(shared.device).type(self.sd_model.dtype)
 
             if self.inpainting_fill == 2:
-                self.init_latent = self.init_latent * self.mask + create_random_tensors(self.init_latent.shape[1:], [self.seed + x + 1 for x in range(self.init_latent.shape[0])]) * self.nmask
+                self.init_latent = self.init_latent * self.mask + create_random_tensors(self.init_latent.shape[1:], [seed + x + 1 for x in range(self.init_latent.shape[0])]) * self.nmask
             elif self.inpainting_fill == 3:
                 self.init_latent = self.init_latent * self.mask
 
