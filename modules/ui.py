@@ -21,9 +21,10 @@ from modules.paths import script_path
 from modules.shared import opts, cmd_opts
 import modules.shared as shared
 from modules.sd_samplers import samplers, samplers_for_img2img
-import modules.gfpgan_model as gfpgan
 import modules.realesrgan_model as realesrgan
 import modules.scripts
+import modules.gfpgan_model
+import modules.codeformer_model
 
 # this is a fix for Windows users. Without it, javascript files will be served with text/html content-type and the bowser will not show any UI
 mimetypes.init()
@@ -521,7 +522,11 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     extras_upscaler_2_visibility = gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="Upscaler 2 visibility", value=1)
 
                 with gr.Group():
-                    face_restoration_blending = gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="Faces restoration visibility", value=0, interactive=len(shared.face_restorers) > 1)
+                    gfpgan_visibility = gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="GFPGAN visibility", value=0, interactive=modules.gfpgan_model.have_gfpgan)
+
+                with gr.Group():
+                    codeformer_visibility = gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="CodeFormer visibility", value=0, interactive=modules.codeformer_model.have_codeformer)
+                    codeformer_weight = gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="CodeFormer weight (0=max, 1=none)", value=0, interactive=modules.codeformer_model.have_codeformer)
 
                 submit = gr.Button('Generate', elem_id="extras_generate", variant='primary')
 
@@ -534,7 +539,9 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
             fn=run_extras,
             inputs=[
                 image,
-                face_restoration_blending,
+                gfpgan_visibility,
+                codeformer_visibility,
+                codeformer_weight,
                 upscaling_resize,
                 extras_upscaler_1,
                 extras_upscaler_2,
