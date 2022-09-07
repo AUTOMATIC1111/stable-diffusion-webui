@@ -42,9 +42,6 @@ A browser interface based on Gradio library for Stable Diffusion.
 You need [python](https://www.python.org/downloads/windows/) and [git](https://git-scm.com/download/win)
 installed to run this, and an NVidia videocard.
 
-I tested the installation to work Windows with Python 3.8.10, and with Python 3.10.6. You may be able
-to have success with different versions.
-
 You need `model.ckpt`, Stable Diffusion model checkpoint, a big file containing the neural network weights. You
 can obtain it from the following places:
  - [official download](https://huggingface.co/CompVis/stable-diffusion-v-1-4-original)
@@ -60,7 +57,6 @@ as model if it has .pth extension. Grab models from the [Model Database](https:/
 
 - install [Python 3.10.6](https://www.python.org/downloads/windows/) and check "Add Python to PATH" during installation. You must install this exact version.
 - install [git](https://git-scm.com/download/win)
-- install [CUDA 11.3](https://developer.nvidia.com/cuda-11.3.0-download-archive?target_os=Windows&target_arch=x86_64)
 - place `model.ckpt` into webui directory, next to `webui.bat`.
 - _*(optional)*_ place `GFPGANv1.3.pth` into webui directory, next to `webui.bat`.
 - run `webui.bat` from Windows Explorer. Run it as normal user, ***not*** as administrator.
