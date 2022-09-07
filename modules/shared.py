@@ -36,9 +36,12 @@ parser.add_argument("--opt-split-attention", action='store_true', help="enable o
 parser.add_argument("--listen", action='store_true', help="launch gradio with 0.0.0.0 as server name, allowing to respond to network requests")
 cmd_opts = parser.parse_args()
 
-cpu = torch.device("cpu")
-gpu = torch.device("cuda")
-device = gpu if torch.cuda.is_available() else cpu
+if torch.has_cuda:
+    device = torch.device("cuda")
+elif torch.has_mps:
+    device = torch.device("mps")
+else:
+    device = torch.device("cpu")
 batch_cond_uncond = cmd_opts.always_batch_cond_uncond or not (cmd_opts.lowvram or cmd_opts.medvram)
 parallel_processing_allowed = not cmd_opts.lowvram and not cmd_opts.medvram
 
