@@ -1,3 +1,5 @@
+# this file is copied from CodeFormer repository. Please see comment in modules/codeformer_model.py
+
 import math
 import numpy as np
 import torch
