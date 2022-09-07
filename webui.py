@@ -19,7 +19,9 @@ from modules.ui import plaintext_to_html
 import modules.scripts
 import modules.processing as processing
 import modules.sd_hijack
-import modules.gfpgan_model as gfpgan
+import modules.codeformer_model
+import modules.gfpgan_model
+import modules.face_restoration
 import modules.realesrgan_model as realesrgan
 import modules.esrgan_model as esrgan
 import modules.images as images
@@ -28,10 +30,12 @@ import modules.txt2img
 import modules.img2img
 
 
+modules.codeformer_model.setup_codeformer()
+modules.gfpgan_model.setup_gfpgan()
+shared.face_restorers.append(modules.face_restoration.FaceRestoration())
+
 esrgan.load_models(cmd_opts.esrgan_models_path)
 realesrgan.setup_realesrgan()
-gfpgan.setup_gfpgan()
-
 
 def load_model_from_config(config, ckpt, verbose=False):
     print(f"Loading model from {ckpt}")
@@ -54,19 +58,19 @@ def load_model_from_config(config, ckpt, verbose=False):
 cached_images = {}
 
 
-def run_extras(image, gfpgan_strength, upscaling_resize, extras_upscaler_1, extras_upscaler_2, extras_upscaler_2_visibility):
+def run_extras(image, face_restoration_blending, upscaling_resize, extras_upscaler_1, extras_upscaler_2, extras_upscaler_2_visibility):
     processing.torch_gc()
 
     image = image.convert("RGB")
 
     outpath = opts.outdir_samples or opts.outdir_extras_samples
 
-    if gfpgan.have_gfpgan is not None and gfpgan_strength > 0:
-        restored_img = gfpgan.gfpgan_fix_faces(np.array(image, dtype=np.uint8))
+    if face_restoration_blending > 0:
+        restored_img = modules.face_restoration.restore_faces(np.array(image, dtype=np.uint8))
         res = Image.fromarray(restored_img)
 
-        if gfpgan_strength < 1.0:
-            res = Image.blend(image, res, gfpgan_strength)
+        if face_restoration_blending < 1.0:
+            res = Image.blend(image, res, face_restoration_blending)
 
         image = res
 
