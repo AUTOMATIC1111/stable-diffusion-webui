@@ -11,5 +11,7 @@ pytorch_lightning
 diffusers
 invisible-watermark
 scikit-image
+gdown
+taming-transformers-rom1504
 git+https://github.com/crowsonkb/k-diffusion.git
 git+https://github.com/TencentARC/GFPGAN.git
