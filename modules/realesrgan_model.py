@@ -5,7 +5,7 @@ import numpy as np
 from PIL import Image
 
 import modules.images
-from modules.shared import cmd_opts
+from modules.shared import cmd_opts, opts
 
 RealesrganModelInfo = namedtuple("RealesrganModelInfo", ["name", "location", "model", "netscale"])
 
@@ -76,7 +76,9 @@ def upscale_with_realesrgan(image, RealESRGAN_upscaling, RealESRGAN_model_index)
         scale=info.netscale,
         model_path=info.location,
         model=model,
-        half=not cmd_opts.no_half
+        half=not cmd_opts.no_half,
+        tile=opts.ESRGAN_tile,
+        tile_pad=opts.ESRGAN_tile_overlap,
     )
 
     upsampled = upsampler.enhance(np.array(image), outscale=RealESRGAN_upscaling)[0]
