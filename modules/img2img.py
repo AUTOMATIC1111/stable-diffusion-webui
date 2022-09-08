@@ -1,7 +1,7 @@
 import math
 import cv2
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageOps, ImageChops
 
 from modules.processing import Processed, StableDiffusionProcessingImg2Img, process_images
 from modules.shared import opts, state
@@ -18,7 +18,9 @@ def img2img(prompt: str, init_img, init_img_with_mask, steps: int, sampler_index
 
     if is_inpaint:
         image = init_img_with_mask['image']
-        mask = init_img_with_mask['mask']
+        alpha_mask = ImageOps.invert(image.split()[-1]).convert('L').point(lambda x: 255 if x > 0 else 0, mode='1')
+        mask = ImageChops.lighter(alpha_mask, init_img_with_mask['mask'].convert('L')).convert('RGBA')
+        image = image.convert('RGB')
     else:
         image = init_img
         mask = None
