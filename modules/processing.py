@@ -362,9 +362,6 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                 image = images.resize_image(self.resize_mode, image, self.width, self.height)
 
             if self.image_mask is not None:
-                if self.inpainting_fill != 1:
-                    image = fill(image, latent_mask)
-
                 image_masked = Image.new('RGBa', (image.width, image.height))
                 image_masked.paste(image.convert("RGBA").convert("RGBa"), mask=ImageOps.invert(self.mask_for_overlay.convert('L')))
 
@@ -373,6 +370,10 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             if crop_region is not None:
                 image = image.crop(crop_region)
                 image = images.resize_image(2, image, self.width, self.height)
+
+            if self.image_mask is not None:
+                if self.inpainting_fill != 1:
+                    image = fill(image, latent_mask)
 
             image = np.array(image).astype(np.float32) / 255.0
             image = np.moveaxis(image, 2, 0)
