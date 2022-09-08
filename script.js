@@ -1,8 +1,8 @@
 titles = {
-    "Sampling steps": "How many times to imptove the generated image itratively; higher values take longer; very low values can produce bad results",
+    "Sampling steps": "How many times to improve the generated image iteratively; higher values take longer; very low values can produce bad results",
     "Sampling method": "Which algorithm to use to produce the image",
 	"GFPGAN": "Restore low quality faces using GFPGAN neural network",
-	"Euler a": "Euler Ancestral - very creative, each can get acompletely different pictures depending on step count, setting seps tohigher than 30-40 does not help",
+	"Euler a": "Euler Ancestral - very creative, each can get a completely different picture depending on step count, setting steps to higher than 30-40 does not help",
 	"DDIM": "Denoising Diffusion Implicit Models - best at inpainting",
 
 	"Batch count": "How many batches of images to create",
@@ -11,7 +11,7 @@ titles = {
     "Seed": "A value that determines the output of random number generator - if you create an image with same parameters and seed as another image, you'll get the same result",
 
     "Inpaint a part of image": "Draw a mask over an image, and the script will regenerate the masked area with content according to prompt",
-    "Loopback": "Process an image, use it as an input, repeat. Batch count determings number of iterations.",
+    "Loopback": "Process an image, use it as an input, repeat. Batch count determins number of iterations.",
     "SD upscale": "Upscale image normally, split result into tiles, improve each tile using img2img, merge whole image back",
 
     "Just resize": "Resize image to target resolution. Unless height and width match, you will get incorrect aspect ratio.",
@@ -37,13 +37,13 @@ titles = {
 
     "None": "Do not do anything special",
     "Prompt matrix": "Separate prompts into parts using vertical pipe character (|) and the script will create a picture for every combination of them (except for the first part, which will be present in all combinations)",
-    "X/Y plot": "Create a grid where images will have different parameters. Use inputs below to specify which parameterswill be shared by columns and rows",
-    "Custom code": "Run python code. Advanced user only. Must run program with --allow-code for this to work",
+    "X/Y plot": "Create a grid where images will have different parameters. Use inputs below to specify which parameters will be shared by columns and rows",
+    "Custom code": "Run Python code. Advanced user only. Must run program with --allow-code for this to work",
 
     "Prompt S/R": "Separate a list of words with commas, and the first word will be used as a keyword: script will search for this word in the prompt, and replace it with others",
 
     "Tiling": "Produce an image that can be tiled.",
-    "Tile overlap": "For SD upscale, how much overlap in pixels should there be between tiles. Tils overlap so that when they are merged back into one oicture, there is no clearly visible seam.",
+    "Tile overlap": "For SD upscale, how much overlap in pixels should there be between tiles. Tiles overlap so that when they are merged back into one picture, there is no clearly visible seam.",
 
     "Roll": "Add a random artist to the prompt.",
 }
