@@ -113,6 +113,11 @@ class VanillaStableDiffusionSampler:
         return samples
 
     def sample(self, p, x, conditioning, unconditional_conditioning):
+        self.sampler.p_sample_ddim = lambda x_dec, cond, ts, *args, **kwargs: p_sample_ddim_hook(self, x_dec, cond, ts, *args, **kwargs)
+        self.mask = None
+        self.nmask = None
+        self.init_latent = None
+
         samples_ddim, _ = self.sampler.sample(S=p.steps, conditioning=conditioning, batch_size=int(x.shape[0]), shape=x[0].shape, verbose=False, unconditional_guidance_scale=p.cfg_scale, unconditional_conditioning=unconditional_conditioning, x_T=x)
         return samples_ddim
 
@@ -170,6 +175,7 @@ class KDiffusionSampler:
     def sample_img2img(self, p, x, noise, conditioning, unconditional_conditioning):
         t_enc = int(min(p.denoising_strength, 0.999) * p.steps)
         sigmas = self.model_wrap.get_sigmas(p.steps)
+
         noise = noise * sigmas[p.steps - t_enc - 1]
 
         xi = x + noise
