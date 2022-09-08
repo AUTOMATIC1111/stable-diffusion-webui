@@ -191,4 +191,4 @@ if __name__ == "__main__":
         run_pnginfo=run_pnginfo
     )
 
-    demo.launch(share=cmd_opts.share, server_name="0.0.0.0" if cmd_opts.listen else None)
+    demo.launch(share=cmd_opts.share, server_name="0.0.0.0" if cmd_opts.listen else None, server_port=cmd_opts.port)
