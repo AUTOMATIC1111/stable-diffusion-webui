@@ -9,4 +9,5 @@ __pycache__
 /outputs
 /config.json
 /log
-webui.settings.bat
+/webui.settings.bat
+/embeddings
