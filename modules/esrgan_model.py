@@ -14,8 +14,11 @@ import modules.images
 
 def load_model(filename):
     # this code is adapted from https://github.com/xinntao/ESRGAN
-
-    pretrained_net = torch.load(filename)
+    if torch.has_mps:
+        map_l = 'cpu'
+    else:
+        map_l = None
+    pretrained_net = torch.load(filename, map_location=map_l)
     crt_model = arch.RRDBNet(3, 3, 64, 23, gc=32)
 
     if 'conv_first.weight' in pretrained_net:
