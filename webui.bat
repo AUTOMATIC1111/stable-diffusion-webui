@@ -5,6 +5,10 @@ set GIT=git
 set COMMANDLINE_ARGS=
 set VENV_DIR=venv
 
+if exist webui.settings.bat (
+    call webui.settings.bat
+)
+
 mkdir tmp 2>NUL
 
 set TORCH_COMMAND=pip install torch==1.12.1+cu113 --extra-index-url https://download.pytorch.org/whl/cu113
