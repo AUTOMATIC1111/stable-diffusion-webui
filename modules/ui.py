@@ -228,7 +228,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
             with gr.Column(variant='panel'):
                 with gr.Group():
                     txt2img_preview = gr.Image(elem_id='txt2img_preview', visible=False)
-                    txt2img_gallery = gr.Gallery(label='Output', elem_id='txt2img_gallery')
+                    txt2img_gallery = gr.Gallery(label='Output', elem_id='txt2img_gallery').style(grid=4)
 
 
                 with gr.Group():
@@ -363,7 +363,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
             with gr.Column(variant='panel'):
                 with gr.Group():
                     img2img_preview = gr.Image(elem_id='img2img_preview', visible=False)
-                    img2img_gallery = gr.Gallery(label='Output', elem_id='img2img_gallery')
+                    img2img_gallery = gr.Gallery(label='Output', elem_id='img2img_gallery').style(grid=4)
 
                 with gr.Group():
                     with gr.Row():
