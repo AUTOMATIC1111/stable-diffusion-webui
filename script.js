@@ -172,3 +172,19 @@ function submit(){
     }
     return res
 }
+
+window.addEventListener('paste', e => {
+    const files = e.clipboardData.files;
+    if (!files || files.length !== 1) {
+        return;
+    }
+    if (!['image/png', 'image/gif', 'image/jpeg'].includes(files[0].type)) {
+        return;
+    }
+    [...gradioApp().querySelectorAll('input[type=file][accept="image/x-png,image/gif,image/jpeg"]')]
+        .filter(input => !input.matches('.\\!hidden input[type=file]'))
+        .forEach(input => {
+            input.files = files;
+            input.dispatchEvent(new Event('change'))
+        });
+});
