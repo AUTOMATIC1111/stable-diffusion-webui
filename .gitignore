@@ -9,3 +9,4 @@ __pycache__
 /outputs
 /config.json
 /log
+webui.settings.bat
