@@ -34,7 +34,7 @@ parser.add_argument("--share", action='store_true', help="use share=True for gra
 parser.add_argument("--esrgan-models-path", type=str, help="path to directory with ESRGAN models", default=os.path.join(script_path, 'ESRGAN'))
 parser.add_argument("--opt-split-attention", action='store_true', help="enable optimization that reduced vram usage by a lot for about 10%% decrease in performance")
 parser.add_argument("--listen", action='store_true', help="launch gradio with 0.0.0.0 as server name, allowing to respond to network requests")
-parser.add_argument("--port", type=int, help="launch gradio with given server port", default=7860)
+parser.add_argument("--port", type=int, help="launch gradio with given server port, you need root/admin rights for ports < 1024", default=7860)
 cmd_opts = parser.parse_args()
 
 if torch.has_cuda:
