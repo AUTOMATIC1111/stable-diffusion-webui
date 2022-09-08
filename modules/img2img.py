@@ -86,7 +86,6 @@ def img2img(prompt: str, init_img, init_img_with_mask, steps: int, sampler_index
             init_img = processed.images[0]
 
             if do_color_correction and correction_target is not None:
-                print("Colour correcting input...")
                 init_img = Image.fromarray(cv2.cvtColor(exposure.match_histograms(
                     cv2.cvtColor(
                         np.asarray(init_img),
