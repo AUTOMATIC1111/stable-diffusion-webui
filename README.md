@@ -98,6 +98,9 @@ program in collabs.
 Use `--listen` to make the server listen to network connections. This will allow computers on local newtork
 to access the UI, and if you configure port forwarding, also computers on the internet.
 
+Use `--port xxxx` to make the server listen on a specific port, xxxx being the wanted port. Remember that
+all ports below 1024 needs root/admin rights, for this reason it is advised to use a port above 1024.
+
 ### Textual Inversion
 To make use of pretrained embeddings, create `embeddings` directory (in the same palce as `webui.py`)
 and put your embeddings into it. They must be .pt files, each with only one trained embedding,
