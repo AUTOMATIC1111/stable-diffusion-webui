@@ -1,9 +1,11 @@
+import sys
 import argparse
 import json
 import os
 
 import gradio as gr
 import torch
+import tqdm
 
 import modules.artists
 from modules.paths import script_path, sd_path
@@ -124,6 +126,7 @@ class Options:
         "upscale_at_full_resolution_padding": OptionInfo(16, "Inpainting at full resolution: padding, in pixels, for the masked region.", gr.Slider, {"minimum": 0, "maximum": 128, "step": 4}),
         "show_progressbar": OptionInfo(True, "Show progressbar"),
         "show_progress_every_n_steps": OptionInfo(0, "Show show image creation progress every N sampling steps. Set 0 to disable.", gr.Slider, {"minimum": 0, "maximum": 32, "step": 1}),
+        "multiple_tqdm": OptionInfo(True, "Add a second progress bar to the console that shows progress for an entire job. Broken in PyCharm console."),
         "face_restoration_model": OptionInfo(None, "Face restoration model", gr.Radio, lambda: {"choices": [x.name() for x in face_restorers]}),
         "code_former_weight": OptionInfo(0.5, "CodeFormer weight parameter; 0 = maximum effect; 1 = minimum effect", gr.Slider, {"minimum": 0, "maximum": 1, "step": 0.01}),
     }
@@ -165,4 +168,32 @@ sd_upscalers = []
 
 sd_model = None
 
+progress_print_out = sys.stdout
 
+
+class TotalTQDM:
+    def __init__(self):
+        self._tqdm = None
+
+    def reset(self):
+        self._tqdm = tqdm.tqdm(
+            desc="Total progress",
+            total=state.job_count * state.sampling_steps,
+            position=1,
+            file=progress_print_out
+        )
+
+    def update(self):
+        if not opts.multiple_tqdm:
+            return
+        if self._tqdm is None:
+            self.reset()
+        self._tqdm.update()
+
+    def clear(self):
+        if self._tqdm is not None:
+            self._tqdm.close()
+            self._tqdm = None
+
+
+total_tqdm = TotalTQDM()

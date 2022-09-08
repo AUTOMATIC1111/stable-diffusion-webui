@@ -25,12 +25,15 @@ def txt2img(prompt: str, negative_prompt: str, steps: int, sampler_index: int, r
         tiling=tiling,
     )
 
+    print(f"\ntxt2img: {prompt}", file=shared.progress_print_out)
     processed = modules.scripts.scripts_txt2img.run(p, *args)
 
     if processed is not None:
         pass
     else:
         processed = process_images(p)
+
+    shared.total_tqdm.clear()
 
     return processed.images, processed.js(), plaintext_to_html(processed.info)
 

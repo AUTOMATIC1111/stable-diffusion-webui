@@ -55,6 +55,7 @@ def img2img(prompt: str, init_img, init_img_with_mask, steps: int, sampler_index
             "Denoising strength change factor": denoising_strength_change_factor
         }
     )
+    print(f"\nimg2img: {prompt}", file=shared.progress_print_out)
 
     if is_loopback:
         output_images, info = None, None
@@ -171,5 +172,6 @@ def img2img(prompt: str, init_img, init_img_with_mask, steps: int, sampler_index
         if processed is None:
             processed = process_images(p)
 
+    shared.total_tqdm.clear()
 
     return processed.images, processed.js(), plaintext_to_html(processed.info)
