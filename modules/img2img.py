@@ -1,4 +1,6 @@
 import math
+import cv2
+import numpy as np
 from PIL import Image
 
 from modules.processing import Processed, StableDiffusionProcessingImg2Img, process_images
@@ -57,7 +59,18 @@ def img2img(prompt: str, init_img, init_img_with_mask, steps: int, sampler_index
 
         state.job_count = n_iter
 
+        do_color_correction = False
+        try:
+            from skimage import exposure
+            do_color_correction = True
+        except:
+            print("Install scikit-image to perform color correction on loopback")
+
+
         for i in range(n_iter):
+
+            if do_color_correction and i == 0:
+                correction_target = cv2.cvtColor(np.asarray(init_img.copy()), cv2.COLOR_RGB2LAB)
 
             p.n_iter = 1
             p.batch_size = 1
@@ -69,8 +82,21 @@ def img2img(prompt: str, init_img, init_img_with_mask, steps: int, sampler_index
             if initial_seed is None:
                 initial_seed = processed.seed
                 initial_info = processed.info
+            
+            init_img = processed.images[0]
 
-            p.init_images = [processed.images[0]]
+            if do_color_correction and correction_target is not None:
+                print("Colour correcting input...")
+                init_img = Image.fromarray(cv2.cvtColor(exposure.match_histograms(
+                    cv2.cvtColor(
+                        np.asarray(init_img),
+                        cv2.COLOR_RGB2LAB
+                    ),
+                    correction_target,
+                    channel_axis=2
+                ), cv2.COLOR_LAB2RGB).astype("uint8"))
+
+            p.init_images = [init_img]
             p.seed = processed.seed + 1
             p.denoising_strength = max(p.denoising_strength * 0.95, 0.1)
             history.append(processed.images[0])
