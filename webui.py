@@ -153,6 +153,7 @@ def wrap_gradio_gpu_call(func):
 
     return modules.ui.wrap_gradio_call(f)
 
+modules.scripts.load_scripts(os.path.join(script_path, "scripts"))
 
 try:
     # this silences the annoying "Some weights of the model checkpoint were not used when initializing..." message at start.
@@ -174,8 +175,6 @@ else:
 
 modules.sd_hijack.model_hijack.hijack(shared.sd_model)
 
-modules.scripts.load_scripts(os.path.join(script_path, "scripts"))
-
 
 def webui():
     # make the program just exit at ctrl+c without waiting for anything
@@ -193,7 +192,6 @@ def webui():
     )
 
     demo.launch(share=cmd_opts.share, server_name="0.0.0.0" if cmd_opts.listen else None, server_port=cmd_opts.port)
-
 
 if __name__ == "__main__":
     webui()
