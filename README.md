@@ -63,7 +63,6 @@ as model if it has .pth extension. Grab models from the [Model Database](https:/
 
 #### Troublehooting:
 
-- According to reports, intallation currently does not work in a directory with spaces in filenames.
 - if your version of Python is not in PATH (or if another version is), edit `webui.bat`, change the line `set PYTHON=python` to say the full path to your python executable: `set PYTHON=B:\soft\Python310\python.exe`. You can do this for python, but not for git.
 - if you get out of memory errors and your videocard has low amount of VRAM (4GB), edit `webui.bat`, change line 5 to from `set COMMANDLINE_ARGS=` to `set COMMANDLINE_ARGS=--medvram` (see below for other possible options)
 - installer creates python virtual environment, so none of installed modules will affect your system installation of python if you had one prior to installing this.
@@ -78,6 +77,9 @@ If you don't want or can't run locally, here is google collab that allows you to
 https://colab.research.google.com/drive/1Iy-xW9t1-OQWhb0hNxueGij8phCyluOh
 
 ### What options to use for low VRAM videocards?
+Use command line options by editing `webui.bat`, adding them to the end of the `set COMMANDLINE_ARGS=` line.
+For example, `set COMMANDLINE_ARGS=--medvram --opt-split-attention`.
+
 - If you have 4GB VRAM and want to make 512x512 (or maybe up to 640x640) images, use `--medvram`.
 - If you have 4GB VRAM and want to make 512x512 images, but you get an out of memory error with `--medvram`, use `--medvram --opt-split-attention` instead.
 - If you have 4GB VRAM and want to make 512x512 images, and you still get an out of memory error, use `--lowvram --always-batch-cond-uncond --opt-split-attention` instead.
