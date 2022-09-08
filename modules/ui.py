@@ -349,7 +349,8 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
 
                 with gr.Group():
                     cfg_scale = gr.Slider(minimum=1.0, maximum=15.0, step=0.5, label='CFG Scale', value=7.0)
-                    denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising Strength', value=0.75)
+                    denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.75)
+                    denoising_strength_change_factor = gr.Slider(minimum=0.9, maximum=1.1, step=0.01, label='Denoising strength change factor', value=1, visible=False)
 
                 with gr.Group():
                     height = gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512)
@@ -396,6 +397,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     sd_upscale_overlap: gr_show(is_upscale),
                     inpaint_full_res: gr_show(is_inpaint),
                     inpainting_mask_invert: gr_show(is_inpaint),
+                    denoising_strength_change_factor: gr_show(is_loopback),
                 }
 
             switch_mode.change(
@@ -412,6 +414,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     sd_upscale_overlap,
                     inpaint_full_res,
                     inpainting_mask_invert,
+                    denoising_strength_change_factor,
                 ]
             )
 
@@ -433,6 +436,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     batch_size,
                     cfg_scale,
                     denoising_strength,
+                    denoising_strength_change_factor,
                     seed,
                     height,
                     width,
