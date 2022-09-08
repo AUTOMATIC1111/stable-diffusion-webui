@@ -88,7 +88,7 @@ def run_extras(image, gfpgan_visibility, codeformer_visibility, codeformer_weigh
         def upscale(image, scaler_index, resize):
             small = image.crop((image.width // 2, image.height // 2, image.width // 2 + 10, image.height // 2 + 10))
             pixels = tuple(np.array(small).flatten().tolist())
-            key = (resize, scaler_index, image.width, image.height) + pixels
+            key = (resize, scaler_index, image.width, image.height, gfpgan_visibility, codeformer_visibility, codeformer_weight) + pixels
 
             c = cached_images.get(key)
             if c is None:
