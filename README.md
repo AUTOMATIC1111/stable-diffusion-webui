@@ -59,27 +59,63 @@ as model if it has .pth extension. Grab models from the [Model Database](https:/
 - install [git](https://git-scm.com/download/win)
 - place `model.ckpt` into webui directory, next to `webui.bat`.
 - _*(optional)*_ place `GFPGANv1.3.pth` into webui directory, next to `webui.bat`.
-- run `webui.bat` from Windows Explorer. Run it as normal user, ***not*** as administrator.
+- run `webui-user.bat` from Windows Explorer. Run it as normal user, ***not*** as administrator.
 
-#### Troublehooting:
+#### Troubleshooting
 
-- if your version of Python is not in PATH (or if another version is), edit `webui.bat`, and modify the line `set PYTHON=python` to say the full path to your python executable, for example: `set PYTHON=B:\soft\Python310\python.exe`. You can do this for python, but not for git.
-- if you get out of memory errors and your video-card has a low amount of VRAM (4GB), create a file called `webui.custom.bat` (in the same folder as `webui.bat`) and write inside of it `webui.bat --medvram` (see below for other possible options). _From now on, **instead** of running `webui.bat`, you should run `webui.custom.bat`_
-- installer creates python virtual environment, so none of installed modules will affect your system installation of python if you had one prior to installing this.
-- to prevent the creation of virtual environment and use your system python, edit `webui.bat` replacing `set VENV_DIR=venv` with `set VENV_DIR=`.
-- webui.bat installs requirements from files `requirements_versions.txt`, which lists versions for modules specifically compatible with Python 3.10.6. If you choose to install for a different version of python, editing `webui.bat` to have `set REQS_FILE=requirements.txt` instead of `set REQS_FILE=requirements_versions.txt` may help (but I still recommend you to just use the recommended version of python).
+- if your version of Python is not in PATH (or if another version is), edit `webui-user.bat`, and modify the
+line `set PYTHON=python` to say the full path to your python executable, for example: `set PYTHON=B:\soft\Python310\python.exe`.
+You can do this for python, but not for git.
+- if you get out of memory errors and your video-card has a low amount of VRAM (4GB), use custom parameter `set COMMANDLINE_ARGS` (see section below)
+to enable appropriate optimization according to low VRAM guide below (for example, `set COMMANDLINE_ARGS=--medvram --opt-split-attention`).
+- to prevent the creation of virtual environment and use your system python, use custom parameter replacing `set VENV_DIR=-` (see below).
+- webui.bat installs requirements from files `requirements_versions.txt`, which lists versions for modules specifically compatible with
+Python 3.10.6. If you choose to install for a different version of python,  using custom parameter `set REQS_FILE=requirements.txt`
+may help (but I still recommend you to just use the recommended version of python).
 - if you feel you broke something and want to reinstall from scratch, delete directories: `venv`, `repositories`.
+- if you get a green or black screen instead of generated pictures, you have a card that doesn't support half precision
+floating point numbers (Known issue with 16xx cards). You must use `--precision full --no-half` in addition to command line
+arguments (set them using `set COMMANDLINE_ARGS`, see below), and the model will take much more space in VRAM (you will likely
+have to also use at least `--medvram`).
+- installer creates python virtual environment, so none of installed modules will affect your system installation of python if
+you had one prior to installing this.
+- About _"You must install this exact version"_ from the instructions above: you can use any version of python you like,
+and it will likely work, but if you want to seek help about things not working, I will not offer help unless you this
+exact version for my sanity.
 
-### Google collab
+#### How to run with custom parameters
 
-If you don't want or can't run locally, here is google collab that allows you to run the webui:
+It's possible to edit `set COMMANDLINE_ARGS=` line in `webui.bat` to run the program with different command line arguments, but that may lead
+to inconveniences when the file is updated in the repository.
 
-https://colab.research.google.com/drive/1Iy-xW9t1-OQWhb0hNxueGij8phCyluOh
+The recommndended way is to use another .bat file named anything you like, set the parameters you want in it, and run webui.bat from it.
+A `webui-user.bat` file included into the repository does exactly this.
+
+Here is an example that runs the prgoram with `--opt-split-attention` argument:
+
+```commandline
+@echo off
+
+set COMMANDLINE_ARGS=--opt-split-attention
+
+call webui.bat
+```
+
+Another example, this file will run the program with custom python path, a different model named `a.ckpt` and without virtual environment:
+
+```commandline
+@echo off
+
+set PYTHON=b:/soft/Python310/Python.exe
+set VENV_DIR=-
+set COMMANDLINE_ARGS=--ckpt a.ckpt
+
+call webui.bat
+```
 
 ### What options to use for low VRAM video-cards?
-Use command line options by creating or modifying `webui.settings.bat` in the root folder (same place as webui.bat), adding a line with `set COMMANDLINE_ARGS=`, and adding the settings at the end of that line.
-You can, through command line arguments, enable the various optimizations which sacrifice some/a lot of speed in favor of using less VRAM. To do so, simply create (or modify it, if you've previously created it) a file called `webui.settings.bat` _in the same folder_ as `webui.bat`. Inside there should only be one line: `webui.bat <arguments>`
-For example, `webui.bat --medvram --opt-split-attention`.
+You can, through command line arguments, enable the various optimizations which sacrifice some/a lot of speed in favor of
+using less VRAM. Those arguments are added to the `COMMANDLINE_ARGS` parameter, see section above.
 
 Here's a list of optimization arguments:
 - If you have 4GB VRAM and want to make 512x512 (or maybe up to 640x640) images, use `--medvram`.
@@ -89,10 +125,6 @@ Here's a list of optimization arguments:
 - If you have more VRAM and want to make larger images than you can usually make (for example 1024x1024 instead of 512x512), use `--medvram --opt-split-attention`. You can use `--lowvram`
 also but the effect will likely be barely noticeable.
 - Otherwise, do not use any of those.
-
-Extra: if you get a green screen instead of generated pictures, you have a card that doesn't support half
-precision floating point numbers (Known issue with 16xx cards). You must use `--precision full --no-half` in addition to other flags,
-and the model will take much more space in VRAM (you will likely have to also use at least `--medvram`).
 
 ### Running online
 
@@ -105,6 +137,12 @@ to access the UI, and if you configure port forwarding, also computers on the in
 Use `--port xxxx` to make the server listen on a specific port, xxxx being the wanted port. Remember that
 all ports below 1024 needs root/admin rights, for this reason it is advised to use a port above 1024.
 Defaults to port 7860 if available.
+
+### Google collab
+
+If you don't want or can't run locally, here is google collab that allows you to run the webui:
+
+https://colab.research.google.com/drive/1Iy-xW9t1-OQWhb0hNxueGij8phCyluOh
 
 ### Textual Inversion
 To make use of pretrained embeddings, create `embeddings` directory (in the same palce as `webui.py`)
@@ -141,10 +179,6 @@ Alternatively, if you don't want to run webui.bat, here are instructions for ins
 everything by hand:
 
 ```commandline
-:: crate a directory somewhere for stable diffusion and open cmd in it;
-:: make sure you are in the right directory; the command must output the directory you chose
-echo %cd%
-
 :: install torch with CUDA support. See https://pytorch.org/get-started/locally/ for more instructions if this fails.
 pip install torch --extra-index-url https://download.pytorch.org/whl/cu113
 
@@ -152,53 +186,59 @@ pip install torch --extra-index-url https://download.pytorch.org/whl/cu113
 :: a different version, but this is what I tested.
 python -c "import torch; print(torch.cuda.is_available())"
 
-:: clone Stable Diffusion repositories
-git clone https://github.com/CompVis/stable-diffusion.git
-git clone https://github.com/CompVis/taming-transformers
+:: clone web ui and go into its directory
+git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui.git
+cd stable-diffusion-webui
+
+:: clone repositories for Stable Diffusion and (optionally) CodeFormer
+mkdir repositories
+git clone https://github.com/CompVis/stable-diffusion.git repositories/stable-diffusion
+git clone https://github.com/CompVis/taming-transformers.git repositories/taming-transformers
+git clone https://github.com/sczhou/CodeFormer.git repositories/CodeFormer
 
 :: install requirements of Stable Diffusion
-pip install transformers==4.19.2 diffusers invisible-watermark
+pip install transformers==4.19.2 diffusers invisible-watermark --prefer-binary
 
 :: install k-diffusion
-pip install git+https://github.com/crowsonkb/k-diffusion.git
+pip install git+https://github.com/crowsonkb/k-diffusion.git --prefer-binary
 
-:: (optional) install GFPGAN to fix faces
-pip install git+https://github.com/TencentARC/GFPGAN.git
+:: (optional) install GFPGAN (face resoration)
+pip install git+https://github.com/TencentARC/GFPGAN.git --prefer-binary
 
-:: go into stable diffusion's repo directory
-cd stable-diffusion
-
-:: clone web ui
-git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui.git
+:: (optional) install requirements for CodeFormer (face resoration)
+pip install -r repositories/CodeFormer/requirements.txt --prefer-binary
 
 :: install requirements of web ui
-pip install -r stable-diffusion-webui/requirements.txt
+pip install -r stable-diffusion-webui/requirements.txt  --prefer-binary
 
 :: update numpy to latest version
-pip install -U numpy
+pip install -U numpy  --prefer-binary
 
-:: (outside of command line) put stable diffusion model into models/ldm/stable-diffusion-v1/model.ckpt; you'll have
-:: to create one missing directory;
+:: (outside of command line) put stable diffusion model into web ui directory
 :: the command below must output something like: 1 File(s) 4,265,380,512 bytes
-dir models\ldm\stable-diffusion-v1\model.ckpt
+dir model.ckpt
 
-:: (outside of command line) put the GFPGAN model into same directory as webui script
+:: (outside of command line) put the GFPGAN model into web ui directory
 :: the command below must output something like: 1 File(s) 348,632,874 bytes
-dir stable-diffusion-webui\GFPGANv1.3.pth
+dir GFPGANv1.3.pth
 ```
+
+> Note: the directory structure for manual instruction has been changed on 2022-09-09 to match automatic installation: previosuly
+> webui was in a subdirectory of stable diffusion, now it's the reverse. If you followed manual installation before the
+> chage, you can still use the program with you existing directory sctructure.
 
 After that the installation is finished.
 
 Run the command to start web ui:
 
 ```
-python stable-diffusion-webui/webui.py
+python webui.py
 ```
 
 If you have a 4GB video card, run the command with either `--lowvram` or `--medvram` argument:
 
 ```
-python stable-diffusion-webui/webui.py --medvram
+python webui.py --medvram
 ```
 
 After a while, you will get a message like this:
