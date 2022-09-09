@@ -62,7 +62,6 @@ class State:
     current_image = None
     current_image_sampling_step = 0
 
-
     def interrupt(self):
         self.interrupted = True
 
