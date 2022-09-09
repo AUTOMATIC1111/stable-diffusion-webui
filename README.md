@@ -179,11 +179,12 @@ Alternatively, here are instructions for installing under WSL2 on windows everyt
 ```bash
 mkdir automatic1111
 cd automatic1111
-conda env create -f environment.yaml
-conda activate automatic
 
 git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui.git
 cd stable-diffusion-webui
+
+conda env create -f environment.yaml
+conda activate automatic
 
 # clone repositories for Stable Diffusion and (optionally) CodeFormer
 mkdir repositories
