@@ -173,6 +173,76 @@ After running once, a `ui-config.json` file appears in webui directory:
 
 Edit values to your liking and the next time you launch the program they will be applied.
 
+### Windows WSL2 instructions
+Alternatively, here are instructions for installing under WSL2 on windows everything by hand:
+
+```bash
+mkdir automatic1111
+cd automatic1111
+conda env create -f environment.yaml
+conda activate automatic
+
+git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui.git
+cd stable-diffusion-webui
+
+# clone repositories for Stable Diffusion and (optionally) CodeFormer
+mkdir repositories
+git clone https://github.com/CompVis/stable-diffusion.git repositories/stable-diffusion
+git clone https://github.com/CompVis/taming-transformers.git repositories/taming-transformers
+git clone https://github.com/sczhou/CodeFormer.git repositories/CodeFormer
+
+# install requirements of Stable Diffusion
+pip install transformers==4.19.2 diffusers invisible-watermark --prefer-binary
+
+# install k-diffusion
+pip install git+https://github.com/crowsonkb/k-diffusion.git --prefer-binary
+
+# (optional) install GFPGAN (face resoration)
+pip install git+https://github.com/TencentARC/GFPGAN.git --prefer-binary
+
+# (optional) install requirements for CodeFormer (face resoration)
+pip install -r repositories/CodeFormer/requirements.txt --prefer-binary
+
+# install requirements of web ui
+pip install -r ./requirements.txt  --prefer-binary
+
+# update numpy to latest version
+pip install -U numpy  --prefer-binary
+
+# (outside of command line) put stable diffusion model into web ui directory
+# the command below must output something like: 1 File(s) 4,265,380,512 bytes
+ls model.ckpt
+
+# (outside of command line) put the GFPGAN model into web ui directory
+# the command below must output something like: 1 File(s) 348,632,874 bytes
+ls GFPGANv1.3.pth
+```
+
+> Note: the directory structure for manual instruction has been changed on 2022-09-09 to match automatic installation: previosuly
+> webui was in a subdirectory of stable diffusion, now it's the reverse. If you followed manual installation before the
+> chage, you can still use the program with you existing directory sctructure.
+
+After that the installation is finished.
+
+Run the command to start web ui:
+
+```
+python webui.py
+```
+
+If you have a 4GB video card, run the command with either `--lowvram` or `--medvram` argument:
+
+```
+python webui.py --medvram
+```
+
+After a while, you will get a message like this:
+
+```
+Running on local URL:  http://127.0.0.1:7860/
+```
+
+Open the URL in browser, and you are good to go.
 
 ### Manual instructions
 Alternatively, if you don't want to run webui.bat, here are instructions for installing
