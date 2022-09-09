@@ -173,8 +173,8 @@ After running once, a `ui-config.json` file appears in webui directory:
 
 Edit values to your liking and the next time you launch the program they will be applied.
 
-### Windows WSL2 instructions
-Alternatively, here are instructions for installing under WSL2 on windows everything by hand:
+### Windows 11 WSL2 instructions
+Alternatively, here are instructions for installing under Windows 11 WSL2, everything by hand:
 
 ```bash
 mkdir automatic1111
