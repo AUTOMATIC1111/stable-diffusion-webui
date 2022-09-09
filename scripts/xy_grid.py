@@ -21,6 +21,7 @@ def apply_field(field):
 
 def apply_prompt(p, x, xs):
     p.prompt = p.prompt.replace(xs[0], x)
+    p.negative_prompt = p.negative_prompt.replace(xs[0], x)
 
 
 samplers_dict = {}
