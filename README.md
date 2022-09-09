@@ -173,75 +173,53 @@ After running once, a `ui-config.json` file appears in webui directory:
 
 Edit values to your liking and the next time you launch the program they will be applied.
 
-### Windows 11 WSL2 instructions
-Alternatively, here are instructions for installing under Windows 11 WSL2 Linux distro, everything by hand:
+### Manual installation
+Alternatively, if you don't want to run webui.bat, here are instructions for installing
+everything by hand. This can run on both Windows and Linux (if you're on linux, use `ls`
+instead of `dir`). 
 
 ```bash
-# install conda (if not already done)
-wget https://repo.anaconda.com/archive/Anaconda3-2022.05-Linux-x86_64.sh
-chmod +x Anaconda3-2022.05-Linux-x86_64.sh 
-./Anaconda3-2022.05-Linux-x86_64.sh
-
-# Clone webui repo
-git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui.git
-cd stable-diffusion-webui
-
-# Create and activate conda env
-conda env create -f environment-wsl2.yaml
-conda activate automatic
-
-# (optional) install requirements for GFPGAN (upscaling)
-wget https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.3.pth
-```
-
-After that follow the instructions in the `Manual instructions` section starting at step `:: clone repositories for Stable Diffusion and (optionally) CodeFormer`.
-
-### Manual instructions
-Alternatively, if you don't want to run webui.bat, here are instructions for installing
-everything by hand:
-
-```commandline
-:: install torch with CUDA support. See https://pytorch.org/get-started/locally/ for more instructions if this fails.
+# install torch with CUDA support. See https://pytorch.org/get-started/locally/ for more instructions if this fails.
 pip install torch --extra-index-url https://download.pytorch.org/whl/cu113
 
-:: check if torch supports GPU; this must output "True". You need CUDA 11. installed for this. You might be able to use
-:: a different version, but this is what I tested.
+# check if torch supports GPU; this must output "True". You need CUDA 11. installed for this. You might be able to use
+# a different version, but this is what I tested.
 python -c "import torch; print(torch.cuda.is_available())"
 
-:: clone web ui and go into its directory
+# clone web ui and go into its directory
 git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui.git
 cd stable-diffusion-webui
 
-:: clone repositories for Stable Diffusion and (optionally) CodeFormer
+# clone repositories for Stable Diffusion and (optionally) CodeFormer
 mkdir repositories
 git clone https://github.com/CompVis/stable-diffusion.git repositories/stable-diffusion
 git clone https://github.com/CompVis/taming-transformers.git repositories/taming-transformers
 git clone https://github.com/sczhou/CodeFormer.git repositories/CodeFormer
 
-:: install requirements of Stable Diffusion
+# install requirements of Stable Diffusion
 pip install transformers==4.19.2 diffusers invisible-watermark --prefer-binary
 
-:: install k-diffusion
+# install k-diffusion
 pip install git+https://github.com/crowsonkb/k-diffusion.git --prefer-binary
 
-:: (optional) install GFPGAN (face resoration)
+# (optional) install GFPGAN (face resoration)
 pip install git+https://github.com/TencentARC/GFPGAN.git --prefer-binary
 
-:: (optional) install requirements for CodeFormer (face resoration)
+# (optional) install requirements for CodeFormer (face resoration)
 pip install -r repositories/CodeFormer/requirements.txt --prefer-binary
 
-:: install requirements of web ui
+# install requirements of web ui
 pip install -r requirements.txt  --prefer-binary
 
-:: update numpy to latest version
+# update numpy to latest version
 pip install -U numpy  --prefer-binary
 
-:: (outside of command line) put stable diffusion model into web ui directory
-:: the command below must output something like: 1 File(s) 4,265,380,512 bytes
+# (outside of command line) put stable diffusion model into web ui directory
+# the command below must output something like: 1 File(s) 4,265,380,512 bytes
 dir model.ckpt
 
-:: (outside of command line) put the GFPGAN model into web ui directory
-:: the command below must output something like: 1 File(s) 348,632,874 bytes
+# (outside of command line) put the GFPGAN model into web ui directory
+# the command below must output something like: 1 File(s) 348,632,874 bytes
 dir GFPGANv1.3.pth
 ```
 
@@ -270,6 +248,30 @@ Running on local URL:  http://127.0.0.1:7860/
 ```
 
 Open the URL in browser, and you are good to go.
+
+
+### Windows 11 WSL2 instructions
+Alternatively, here are instructions for installing under Windows 11 WSL2 Linux distro, everything by hand:
+
+```bash
+# install conda (if not already done)
+wget https://repo.anaconda.com/archive/Anaconda3-2022.05-Linux-x86_64.sh
+chmod +x Anaconda3-2022.05-Linux-x86_64.sh 
+./Anaconda3-2022.05-Linux-x86_64.sh
+
+# Clone webui repo
+git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui.git
+cd stable-diffusion-webui
+
+# Create and activate conda env
+conda env create -f environment-wsl2.yaml
+conda activate automatic
+
+# (optional) install requirements for GFPGAN (upscaling)
+wget https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.3.pth
+```
+
+After that follow the instructions in the `Manual instructions` section starting at step `:: clone repositories for Stable Diffusion and (optionally) CodeFormer`.
 
 
 ## Credits
