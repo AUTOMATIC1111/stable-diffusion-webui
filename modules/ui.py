@@ -192,6 +192,40 @@ def visit(x, func, path=""):
         func(path + "/" + str(x.label), x)
 
 
+def create_seed_inputs():
+    with gr.Row():
+        seed = gr.Number(label='Seed', value=-1)
+        subseed = gr.Number(label='Variation seed', value=-1, visible=False)
+        seed_checkbox = gr.Checkbox(label="Extra", elem_id="subseed_show", value=False)
+
+    with gr.Row():
+        subseed_strength = gr.Slider(label='Variation strength', value=0.0, minimum=0, maximum=1, step=0.01, visible=False)
+        seed_resize_from_h = gr.Slider(minimum=0, maximum=2048, step=64, label="Resize seed from height", value=0, visible=False)
+        seed_resize_from_w = gr.Slider(minimum=0, maximum=2048, step=64, label="Resize seed from width", value=0, visible=False)
+
+    def change_visiblity(show):
+
+        return {
+            subseed: gr_show(show),
+            subseed_strength: gr_show(show),
+            seed_resize_from_h: gr_show(show),
+            seed_resize_from_w: gr_show(show),
+        }
+
+    seed_checkbox.change(
+        change_visiblity,
+        inputs=[seed_checkbox],
+        outputs=[
+            subseed,
+            subseed_strength,
+            seed_resize_from_h,
+            seed_resize_from_w
+        ]
+    )
+
+    return seed, subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w
+
+
 def create_ui(txt2img, img2img, run_extras, run_pnginfo):
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
         with gr.Row():
@@ -220,7 +254,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     height = gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512)
                     width = gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512)
 
-                seed = gr.Number(label='Seed', value=-1)
+                seed, subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w = create_seed_inputs()
 
                 with gr.Group():
                     custom_inputs = modules.scripts.scripts_txt2img.setup_ui(is_img2img=False)
@@ -260,6 +294,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     batch_size,
                     cfg_scale,
                     seed,
+                    subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w,
                     height,
                     width,
                 ] + custom_inputs,
@@ -357,7 +392,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     height = gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512)
                     width = gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512)
 
-                seed = gr.Number(label='Seed', value=-1)
+                seed, subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w = create_seed_inputs()
 
                 with gr.Group():
                     custom_inputs = modules.scripts.scripts_img2img.setup_ui(is_img2img=True)
@@ -440,6 +475,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     denoising_strength,
                     denoising_strength_change_factor,
                     seed,
+                    subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w,
                     height,
                     width,
                     resize_mode,

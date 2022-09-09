@@ -2,6 +2,8 @@ from collections import namedtuple
 from copy import copy
 import random
 
+import numpy as np
+
 import modules.scripts as scripts
 import gradio as gr
 
@@ -46,18 +48,27 @@ def format_value_add_label(p, opt, x):
 def format_value(p, opt, x):
     return x
 
+def do_nothing(p, x, xs):
+    pass
+
+def format_nothing(p, opt, x):
+    return ""
+
 
 AxisOption = namedtuple("AxisOption", ["label", "type", "apply", "format_value"])
 AxisOptionImg2Img = namedtuple("AxisOptionImg2Img", ["label", "type", "apply", "format_value"])
 
 
 axis_options = [
+    AxisOption("Nothing", str, do_nothing, format_nothing),
     AxisOption("Seed", int, apply_field("seed"), format_value_add_label),
+    AxisOption("Var. seed", int, apply_field("subseed"), format_value_add_label),
+    AxisOption("Var. strength", float, apply_field("subseed_strength"), format_value_add_label),
     AxisOption("Steps", int, apply_field("steps"), format_value_add_label),
     AxisOption("CFG Scale", float, apply_field("cfg_scale"), format_value_add_label),
     AxisOption("Prompt S/R", str, apply_prompt, format_value),
     AxisOption("Sampler", str, apply_sampler, format_value),
-    AxisOptionImg2Img("Denoising", float, apply_field("denoising_strength"), format_value_add_label) #  as it is now all AxisOptionImg2Img items must go after AxisOption ones
+    AxisOptionImg2Img("Denoising", float, apply_field("denoising_strength"), format_value_add_label), #  as it is now all AxisOptionImg2Img items must go after AxisOption ones
 ]
 
 
@@ -90,6 +101,7 @@ def draw_xy_grid(xs, ys, x_label, y_label, cell):
 
 
 re_range = re.compile(r"\s*([+-]?\s*\d+)\s*-\s*([+-]?\s*\d+)(?:\s*\(([+-]\d+)\s*\))?\s*")
+re_range_float = re.compile(r"\s*([+-]?\s*\d+(?:.\d*)?)\s*-\s*([+-]?\s*\d+(?:.\d*)?)(?:\s*\(([+-]\d+(?:.\d*)?)\s*\))?\s*")
 
 class Script(scripts.Script):
     def title(self):
@@ -99,17 +111,17 @@ class Script(scripts.Script):
         current_axis_options = [x for x in axis_options if type(x) == AxisOption or type(x) == AxisOptionImg2Img and is_img2img]
 
         with gr.Row():
-            x_type = gr.Dropdown(label="X type", choices=[x.label for x in current_axis_options], value=current_axis_options[0].label, visible=False, type="index", elem_id="x_type")
+            x_type = gr.Dropdown(label="X type", choices=[x.label for x in current_axis_options], value=current_axis_options[1].label, visible=False, type="index", elem_id="x_type")
             x_values = gr.Textbox(label="X values", visible=False, lines=1)
 
         with gr.Row():
-            y_type = gr.Dropdown(label="Y type", choices=[x.label for x in current_axis_options], value=current_axis_options[1].label, visible=False, type="index", elem_id="y_type")
+            y_type = gr.Dropdown(label="Y type", choices=[x.label for x in current_axis_options], value=current_axis_options[4].label, visible=False, type="index", elem_id="y_type")
             y_values = gr.Textbox(label="Y values", visible=False, lines=1)
 
         return [x_type, x_values, y_type, y_values]
 
     def run(self, p, x_type, x_values, y_type, y_values):
-        p.seed = modules.processing.set_seed(p.seed)
+        modules.processing.fix_seed(p)
         p.batch_size = 1
         p.batch_count = 1
 
@@ -128,6 +140,21 @@ class Script(scripts.Script):
                         step = int(m.group(3)) if m.group(3) is not None else 1
 
                         valslist_ext += list(range(start, end, step))
+                    else:
+                        valslist_ext.append(val)
+
+                valslist = valslist_ext
+            elif opt.type == float:
+                valslist_ext = []
+
+                for val in valslist:
+                    m = re_range_float.fullmatch(val)
+                    if m is not None:
+                        start = float(m.group(1))
+                        end = float(m.group(2))
+                        step = float(m.group(3)) if m.group(3) is not None else 1
+
+                        valslist_ext += np.arange(start, end + step, step).tolist()
                     else:
                         valslist_ext.append(val)
 
