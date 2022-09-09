@@ -74,7 +74,6 @@ class Script(scripts.Script):
 
         p.prompt = all_prompts
         p.prompt_for_display = original_prompt
-        p.seed = len(all_prompts) * [seed]
         processed = process_images(p)
 
         grid = images.image_grid(processed.images, p.batch_size, rows=1 << ((len(prompt_matrix_parts) - 1) // 2))
@@ -82,6 +81,6 @@ class Script(scripts.Script):
         processed.images.insert(0, grid)
 
         if opts.grid_save:
-            images.save_image(processed.images[0], p.outpath_grids, "prompt_matrix", prompt=original_prompt, seed=seed)
+            images.save_image(processed.images[0], p.outpath_grids, "prompt_matrix", prompt=original_prompt, seed=processed.seed)
 
         return processed

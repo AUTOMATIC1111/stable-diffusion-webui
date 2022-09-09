@@ -194,3 +194,12 @@ window.addEventListener('paste', e => {
             input.dispatchEvent(new Event('change'))
         });
 });
+
+function ask_for_style_name(style_name, text){
+    input = prompt('Style name:');
+    if (input === null) {
+        return [null, null]
+    }
+
+    return [input, text]
+}

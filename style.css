@@ -19,6 +19,18 @@
     max-width: 4em;
 }
 
+#style_index{
+    min-width: 9em;
+    max-width: 9em;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+#component-1 div{
+    border: none;
+    gap: 0;
+}
+
 #resize_mode{
     flex: 1.5;
 }
@@ -28,9 +40,12 @@ button{
 }
 
 #img2img_prompt, #txt2img_prompt, #img2img_negative_prompt, #txt2img_negative_prompt{
-    padding: 0;
     border: none !important;
 }
+#img2img_prompt textarea, #txt2img_prompt textarea, #img2img_negative_prompt textarea, #txt2img_negative_prompt textarea{
+    border: none !important;
+}
+
 
 #img2maskimg .h-60{
     height: 30rem;
