@@ -85,7 +85,7 @@ if %ERRORLEVEL% == 0 goto :install_reqs
 goto :show_stdout_stderr
 
 :install_reqs
-%PYTHON% -c "import omegaconf" >tmp/stdout.txt 2>tmp/stderr.txt
+%PYTHON% -c "import omegaconf; import fonts" >tmp/stdout.txt 2>tmp/stderr.txt
 if %ERRORLEVEL% == 0 goto :make_dirs
 echo Installing requirements...
 %PYTHON% -m pip install -r %REQS_FILE% --prefer-binary >tmp/stdout.txt 2>tmp/stderr.txt
