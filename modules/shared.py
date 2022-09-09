@@ -187,7 +187,7 @@ class TotalTQDM:
         )
 
     def update(self):
-        if not opts.multiple_tqdm:
+        if not opts.multiple_tqdm or state.job_count < 2:
             return
         if self._tqdm is None:
             self.reset()
