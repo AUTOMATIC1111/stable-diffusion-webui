@@ -9,7 +9,7 @@ import tqdm
 
 import modules.artists
 from modules.paths import script_path, sd_path
-import modules.codeformer_model
+import modules.styles
 
 config_filename = "config.json"
 
@@ -75,8 +75,10 @@ state = State()
 
 artist_db = modules.artists.ArtistsDatabase(os.path.join(script_path, 'artists.csv'))
 
-face_restorers = []
+styles_filename = os.path.join(script_path, 'styles.csv')
+prompt_styles = modules.styles.load_styles(styles_filename)
 
+face_restorers = []
 
 def find_any_font():
     fonts = ['/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf']
