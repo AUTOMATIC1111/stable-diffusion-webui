@@ -177,12 +177,16 @@ Edit values to your liking and the next time you launch the program they will be
 Alternatively, here are instructions for installing under Windows 11 WSL2, everything by hand:
 
 ```bash
-mkdir automatic1111
-cd automatic1111
+# install conda (if not already done)
+wget https://repo.anaconda.com/archive/Anaconda3-2022.05-Linux-x86_64.sh
+chmod +x Anaconda3-2022.05-Linux-x86_64.sh 
+./Anaconda3-2022.05-Linux-x86_64.sh
 
+# Clone webui repo
 git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui.git
 cd stable-diffusion-webui
 
+# Create and activate conda env
 conda env create -f environment-wsl2.yaml
 conda activate automatic
 
@@ -217,10 +221,6 @@ wget https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.3.pt
 # the command below must output something like: 1 File(s) 4,265,380,512 bytes
 ls model.ckpt
 ```
-
-> Note: the directory structure for manual instruction has been changed on 2022-09-09 to match automatic installation: previosuly
-> webui was in a subdirectory of stable diffusion, now it's the reverse. If you followed manual installation before the
-> chage, you can still use the program with you existing directory sctructure.
 
 After that the installation is finished.
 
