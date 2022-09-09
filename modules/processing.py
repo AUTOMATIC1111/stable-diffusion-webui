@@ -204,8 +204,10 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             generation_params.update(p.extra_generation_params)
 
         generation_params_text = ", ".join([k if k == v else f'{k}: {v}' for k, v in generation_params.items() if v is not None])
+        
+        negative_prompt_text = "\nNegative prompt: " + p.negative_prompt if p.negative_prompt else ""
 
-        return f"{p.prompt_for_display or prompt}\n{generation_params_text}".strip() + "".join(["\n\n" + x for x in comments])
+        return f"{p.prompt_for_display or prompt}{negative_prompt_text}\n{generation_params_text}".strip() + "".join(["\n\n" + x for x in comments])
 
     if os.path.exists(cmd_opts.embeddings_dir):
         model_hijack.load_textual_inversion_embeddings(cmd_opts.embeddings_dir, p.sd_model)
