@@ -83,7 +83,7 @@ def find_any_font():
         if os.path.exists(font):
             return font
 
-    return "arial.ttf"
+    return "Arial.TTF"
 
 
 class Options:
