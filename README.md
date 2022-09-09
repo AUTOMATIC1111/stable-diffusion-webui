@@ -210,13 +210,12 @@ pip install -r ./requirements.txt  --prefer-binary
 # update numpy to latest version
 pip install -U numpy  --prefer-binary
 
+# (optional) install requirements for GFPGAN (upscaling)
+wget https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.3.pth
+
 # (outside of command line) put stable diffusion model into web ui directory
 # the command below must output something like: 1 File(s) 4,265,380,512 bytes
 ls model.ckpt
-
-# (outside of command line) put the GFPGAN model into web ui directory
-# the command below must output something like: 1 File(s) 348,632,874 bytes
-ls GFPGANv1.3.pth
 ```
 
 > Note: the directory structure for manual instruction has been changed on 2022-09-09 to match automatic installation: previosuly
