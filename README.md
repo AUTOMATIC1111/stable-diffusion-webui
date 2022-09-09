@@ -8,7 +8,7 @@ A browser interface based on Gradio library for Stable Diffusion.
 [Detailed feature showcase with images, art by Greg Rutkowski](https://github.com/AUTOMATIC1111/stable-diffusion-webui-feature-showcase)
 
 - Original txt2img and img2img modes
-- One click install and run script (but you still must install python, git and CUDA)
+- One click install and run script (but you still must install python and git)
 - Outpainting
 - Inpainting
 - Prompt matrix
