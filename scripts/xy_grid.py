@@ -42,10 +42,16 @@ def apply_sampler(p, x, xs):
 
 
 def format_value_add_label(p, opt, x):
+    if type(x) == float:
+        x = round(x, 8)
+
     return f"{opt.label}: {x}"
 
 
 def format_value(p, opt, x):
+    if type(x) == float:
+        x = round(x, 8)
+
     return x
 
 def do_nothing(p, x, xs):
