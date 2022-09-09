@@ -3,6 +3,14 @@ A browser interface based on Gradio library for Stable Diffusion.
 
 ![](screenshot.png)
 
+### Want to contribute?
+
+Open new Pull Requests on `master` branch!
+
+for [Gradio](https://github.com/gradio-app/gradio) check out the [docs](https://gradio.app/docs/) to contribute
+
+Have an issue or feature request with Gradio? open a issue/feature request on github for support: https://github.com/gradio-app/gradio/issues
+
 ## Feature showcase
 
 [Detailed feature showcase with images, art by Greg Rutkowski](https://github.com/AUTOMATIC1111/stable-diffusion-webui-feature-showcase)
