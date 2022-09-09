@@ -209,7 +209,7 @@ pip install git+https://github.com/TencentARC/GFPGAN.git --prefer-binary
 pip install -r repositories/CodeFormer/requirements.txt --prefer-binary
 
 :: install requirements of web ui
-pip install -r stable-diffusion-webui/requirements.txt  --prefer-binary
+pip install -r requirements.txt  --prefer-binary
 
 :: update numpy to latest version
 pip install -U numpy  --prefer-binary
