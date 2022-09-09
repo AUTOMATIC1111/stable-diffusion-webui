@@ -360,7 +360,11 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     switch_mode = gr.Radio(label='Mode', elem_id="img2img_mode", choices=['Redraw whole image', 'Inpaint a part of image', 'Loopback', 'SD upscale'], value='Redraw whole image', type="index", show_label=False)
                     init_img = gr.Image(label="Image for img2img", source="upload", interactive=True, type="pil")
                     init_img_with_mask = gr.Image(label="Image for inpainting with mask", elem_id="img2maskimg", source="upload", interactive=True, type="pil", tool="sketch", visible=False, image_mode="RGBA")
-                    resize_mode = gr.Radio(label="Resize mode", show_label=False, choices=["Just resize", "Crop and resize", "Resize and fill"], type="index", value="Just resize")
+                    init_mask = gr.Image(label="Mask", source="upload", interactive=True, type="pil", visible=False)
+
+                    with gr.Row():
+                        resize_mode = gr.Radio(label="Resize mode", elem_id="resize_mode", show_label=False, choices=["Just resize", "Crop and resize", "Resize and fill"], type="index", value="Just resize")
+                        mask_mode = gr.Radio(label="Mask mode", show_label=False, choices=["Draw mask", "Upload mask"], type="index", value="Draw mask")
 
                 steps = gr.Slider(minimum=1, maximum=150, step=1, label="Sampling Steps", value=20)
                 sampler_index = gr.Radio(label='Sampling method', choices=[x.name for x in samplers_for_img2img], value=samplers_for_img2img[0].name, type="index")
@@ -416,15 +420,17 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     html_info = gr.HTML()
                     generation_info = gr.Textbox(visible=False)
 
-            def apply_mode(mode):
+            def apply_mode(mode, uploadmask):
                 is_classic = mode == 0
                 is_inpaint = mode == 1
                 is_loopback = mode == 2
                 is_upscale = mode == 3
 
                 return {
-                    init_img: gr_show(not is_inpaint),
-                    init_img_with_mask: gr_show(is_inpaint),
+                    init_img: gr_show(not is_inpaint or (is_inpaint and uploadmask == 1)),
+                    init_img_with_mask: gr_show(is_inpaint and uploadmask == 0),
+                    init_mask: gr_show(is_inpaint and uploadmask == 1),
+                    mask_mode: gr_show(is_inpaint),
                     mask_blur: gr_show(is_inpaint),
                     inpainting_fill: gr_show(is_inpaint),
                     batch_count: gr_show(not is_upscale),
@@ -438,10 +444,12 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
 
             switch_mode.change(
                 apply_mode,
-                inputs=[switch_mode],
+                inputs=[switch_mode, mask_mode],
                 outputs=[
                     init_img,
                     init_img_with_mask,
+                    init_mask,
+                    mask_mode,
                     mask_blur,
                     inpainting_fill,
                     batch_count,
@@ -454,6 +462,20 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 ]
             )
 
+            mask_mode.change(
+                lambda mode: {
+                    init_img: gr_show(mode == 1),
+                    init_img_with_mask: gr_show(mode == 0),
+                    init_mask: gr_show(mode == 1),
+                },
+                inputs=[mask_mode],
+                outputs=[
+                    init_img,
+                    init_img_with_mask,
+                    init_mask,
+                ],
+            )
+
             img2img_args = dict(
                 fn=img2img,
                 _js="submit",
@@ -462,6 +484,8 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     negative_prompt,
                     init_img,
                     init_img_with_mask,
+                    init_mask,
+                    mask_mode,
                     steps,
                     sampler_index,
                     mask_blur,

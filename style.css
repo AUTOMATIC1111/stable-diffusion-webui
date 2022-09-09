@@ -19,6 +19,10 @@
     max-width: 4em;
 }
 
+#resize_mode{
+    flex: 1.5;
+}
+
 button{
     align-self: stretch !important;
 }
