@@ -183,7 +183,7 @@ cd automatic1111
 git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui.git
 cd stable-diffusion-webui
 
-conda env create -f environment.yaml
+conda env create -f environment-wsl2.yaml
 conda activate automatic
 
 # clone repositories for Stable Diffusion and (optionally) CodeFormer
