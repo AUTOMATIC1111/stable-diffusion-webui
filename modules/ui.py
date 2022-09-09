@@ -196,7 +196,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
         with gr.Row():
             prompt = gr.Textbox(label="Prompt", elem_id="txt2img_prompt", show_label=False, placeholder="Prompt", lines=1)
-            negative_prompt = gr.Textbox(label="Negative prompt", elem_id="txt2img_negative_prompt", show_label=False, placeholder="Negative prompt", lines=1, visible=False)
+            negative_prompt = gr.Textbox(label="Negative prompt", elem_id="txt2img_negative_prompt", show_label=False, placeholder="Negative prompt", lines=1, visible=cmd_opts.show_negative_prompt)
             roll = gr.Button('Roll', elem_id="txt2img_roll", visible=len(shared.artist_db.artists) > 0)
             submit = gr.Button('Generate', elem_id="txt2img_generate", variant='primary')
             check_progress = gr.Button('Check progress', elem_id="check_progress", visible=False)
@@ -314,6 +314,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
     with gr.Blocks(analytics_enabled=False) as img2img_interface:
         with gr.Row():
             prompt = gr.Textbox(label="Prompt", elem_id="img2img_prompt", show_label=False, placeholder="Prompt", lines=1)
+            negative_prompt = gr.Textbox(label="Negative prompt", elem_id="img2img_negative_prompt", show_label=False, placeholder="Negative prompt", lines=1, visible=cmd_opts.show_negative_prompt)
             submit = gr.Button('Generate', elem_id="img2img_generate", variant='primary')
             check_progress = gr.Button('Check progress', elem_id="check_progress", visible=False)
 
@@ -423,6 +424,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 _js="submit",
                 inputs=[
                     prompt,
+                    negative_prompt,
                     init_img,
                     init_img_with_mask,
                     steps,
