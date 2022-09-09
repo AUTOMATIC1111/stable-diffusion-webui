@@ -2,7 +2,7 @@
 
 set PYTHON=python
 set GIT=git
-set COMMANDLINE_ARGS=
+set COMMANDLINE_ARGS=%*
 set VENV_DIR=venv
 
 if exist webui.settings.bat (

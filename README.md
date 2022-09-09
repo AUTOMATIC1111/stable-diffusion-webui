@@ -63,34 +63,36 @@ as model if it has .pth extension. Grab models from the [Model Database](https:/
 
 #### Troublehooting:
 
-- if your version of Python is not in PATH (or if another version is), create or modify `webui.settings.bat` in the root folder (same place as webui.bat), add the line `set PYTHON=python` to say the full path to your python executable: `set PYTHON=B:\soft\Python310\python.exe`. You can do this for python, but not for git.
-- if you get an out of memory error, refer to the section below.
+- if your version of Python is not in PATH (or if another version is), edit `webui.bat`, and modify the line `set PYTHON=python` to say the full path to your python executable, for example: `set PYTHON=B:\soft\Python310\python.exe`. You can do this for python, but not for git.
+- if you get out of memory errors and your video-card has a low amount of VRAM (4GB), create a file called `webui.custom.bat` (in the same folder as `webui.bat`) and write inside of it `webui.bat --medvram` (see below for other possible options). _From now on, **instead** of running `webui.bat`, you should run `webui.custom.bat`_
 - installer creates python virtual environment, so none of installed modules will affect your system installation of python if you had one prior to installing this.
 - to prevent the creation of virtual environment and use your system python, edit `webui.bat` replacing `set VENV_DIR=venv` with `set VENV_DIR=`.
-- webui.bat installs requirements from files `requirements_versions.txt`, which lists versions for modules specifically compatible with Python 3.10.6. If you choose to install for a different version of python, editing `webui.bat` to have `set REQS_FILE=requirements.txt` instead of `set REQS_FILE=requirements_versions.txt` may help (but I still reccomend you to just use the recommended version of python).
+- webui.bat installs requirements from files `requirements_versions.txt`, which lists versions for modules specifically compatible with Python 3.10.6. If you choose to install for a different version of python, editing `webui.bat` to have `set REQS_FILE=requirements.txt` instead of `set REQS_FILE=requirements_versions.txt` may help (but I still recommend you to just use the recommended version of python).
 - if you feel you broke something and want to reinstall from scratch, delete directories: `venv`, `repositories`.
-
-### What options to use for low VRAM videocards?
-Use command line options by creating or modifying `webui.settings.bat` in the root folder (same place as webui.bat), adding a line with `set COMMANDLINE_ARGS=`, and adding the settings at the end of that line.
-For example, `set COMMANDLINE_ARGS=--medvram --opt-split-attention`.
-
-- If you have 4GB VRAM and want to make 512x512 (or maybe up to 640x640) images, use `--medvram`.
-- If you have 4GB VRAM and want to make 512x512 images, but you get an out of memory error with `--medvram`, use `--medvram --opt-split-attention` instead.
-- If you have 4GB VRAM and want to make 512x512 images, and you still get an out of memory error, use `--lowvram --always-batch-cond-uncond --opt-split-attention` instead.
-- If you have 4GB VRAM and want to make images larger than you can with `--medvram`, use  `--lowvram --opt-split-attention`.
-- If you have more VRAM and want to make larger images than you can usually make, use `--medvram --opt-split-attention`. You can use `--lowvram`
-also but the effect will likely be barely noticeable.
-- Otherwise, do not use any of those.
-
-Extra: if you get a green screen instead of generated pictures, you have a card that doesn't support half
-precision floating point numbers. You must use `--precision full --no-half` in addition to other flags,
-and the model will take much more space in VRAM.
 
 ### Google collab
 
 If you don't want or can't run locally, here is google collab that allows you to run the webui:
 
 https://colab.research.google.com/drive/1Iy-xW9t1-OQWhb0hNxueGij8phCyluOh
+
+### What options to use for low VRAM video-cards?
+Use command line options by creating or modifying `webui.settings.bat` in the root folder (same place as webui.bat), adding a line with `set COMMANDLINE_ARGS=`, and adding the settings at the end of that line.
+You can, through command line arguments, enable the various optimizations which sacrifice some/a lot of speed in favor of using less VRAM. To do so, simply create (or modify it, if you've previously created it) a file called `webui.settings.bat` _in the same folder_ as `webui.bat`. Inside there should only be one line: `webui.bat <arguments>`
+For example, `webui.bat --medvram --opt-split-attention`.
+
+Here's a list of optimization arguments:
+- If you have 4GB VRAM and want to make 512x512 (or maybe up to 640x640) images, use `--medvram`.
+- If you have 4GB VRAM and want to make 512x512 images, but you get an out of memory error with `--medvram`, use `--medvram --opt-split-attention` instead.
+- If you have 4GB VRAM and want to make 512x512 images, and you still get an out of memory error, use `--lowvram --always-batch-cond-uncond --opt-split-attention` instead.
+- If you have 4GB VRAM and want to make images larger than you can with `--medvram`, use  `--lowvram --opt-split-attention`.
+- If you have more VRAM and want to make larger images than you can usually make (for example 1024x1024 instead of 512x512), use `--medvram --opt-split-attention`. You can use `--lowvram`
+also but the effect will likely be barely noticeable.
+- Otherwise, do not use any of those.
+
+Extra: if you get a green screen instead of generated pictures, you have a card that doesn't support half
+precision floating point numbers (Known issue with 16xx cards). You must use `--precision full --no-half` in addition to other flags,
+and the model will take much more space in VRAM (you will likely have to also use at least `--medvram`).
 
 ### Running online
 
