@@ -9,3 +9,5 @@ transformers==4.19.2
 omegaconf==2.1.1
 pytorch_lightning==1.7.2
 scikit-image==0.19.2
+fonts
+font-roboto
