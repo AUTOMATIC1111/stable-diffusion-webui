@@ -19,6 +19,9 @@ def load_styles(filename):
 
 
 def apply_style_text(style_text, prompt):
+    if style_text == "":
+        return prompt
+
     return prompt + ", " + style_text if prompt else style_text
 
 
