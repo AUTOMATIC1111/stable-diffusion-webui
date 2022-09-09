@@ -46,6 +46,11 @@ titles = {
     "Tile overlap": "For SD upscale, how much overlap in pixels should there be between tiles. Tiles overlap so that when they are merged back into one picture, there is no clearly visible seam.",
 
     "Roll": "Add a random artist to the prompt.",
+
+    "Variation seed": "Seed of a different picture to be mixed into the generation.",
+    "Variation strength": "How strong of a variation to produce. At 0, there will be no effect. At 1, you will get the complete picture with variation seed (except for ancestral samplers, where you will just get something).",
+    "Resize seed from height": "Make an attempt to produce a picture similar to what would have been produced with same seed at specified resolution",
+    "Resize seed from width": "Make an attempt to produce a picture similar to what would have been produced with same seed at specified resolution",
 }
 
 function gradioApp(){

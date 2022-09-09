@@ -192,6 +192,40 @@ def visit(x, func, path=""):
         func(path + "/" + str(x.label), x)
 
 
+def create_seed_inputs():
+    with gr.Row():
+        seed = gr.Number(label='Seed', value=-1)
+        subseed = gr.Number(label='Variation seed', value=-1, visible=False)
+        seed_checkbox = gr.Checkbox(label="Extra", elem_id="subseed_show", value=False)
+
+    with gr.Row():
+        subseed_strength = gr.Slider(label='Variation strength', value=0.0, minimum=0, maximum=1, step=0.01, visible=False)
+        seed_resize_from_h = gr.Slider(minimum=0, maximum=2048, step=64, label="Resize seed from height", value=0, visible=False)
+        seed_resize_from_w = gr.Slider(minimum=0, maximum=2048, step=64, label="Resize seed from width", value=0, visible=False)
+
+    def change_visiblity(show):
+
+        return {
+            subseed: gr_show(show),
+            subseed_strength: gr_show(show),
+            seed_resize_from_h: gr_show(show),
+            seed_resize_from_w: gr_show(show),
+        }
+
+    seed_checkbox.change(
+        change_visiblity,
+        inputs=[seed_checkbox],
+        outputs=[
+            subseed,
+            subseed_strength,
+            seed_resize_from_h,
+            seed_resize_from_w
+        ]
+    )
+
+    return seed, subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w
+
+
 def create_ui(txt2img, img2img, run_extras, run_pnginfo):
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
         with gr.Row():
@@ -220,7 +254,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     height = gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512)
                     width = gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512)
 
-                seed = gr.Number(label='Seed', value=-1)
+                seed, subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w = create_seed_inputs()
 
                 with gr.Group():
                     custom_inputs = modules.scripts.scripts_txt2img.setup_ui(is_img2img=False)
@@ -260,6 +294,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     batch_size,
                     cfg_scale,
                     seed,
+                    subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w,
                     height,
                     width,
                 ] + custom_inputs,
@@ -325,7 +360,11 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     switch_mode = gr.Radio(label='Mode', elem_id="img2img_mode", choices=['Redraw whole image', 'Inpaint a part of image', 'Loopback', 'SD upscale'], value='Redraw whole image', type="index", show_label=False)
                     init_img = gr.Image(label="Image for img2img", source="upload", interactive=True, type="pil")
                     init_img_with_mask = gr.Image(label="Image for inpainting with mask", elem_id="img2maskimg", source="upload", interactive=True, type="pil", tool="sketch", visible=False, image_mode="RGBA")
-                    resize_mode = gr.Radio(label="Resize mode", show_label=False, choices=["Just resize", "Crop and resize", "Resize and fill"], type="index", value="Just resize")
+                    init_mask = gr.Image(label="Mask", source="upload", interactive=True, type="pil", visible=False)
+
+                    with gr.Row():
+                        resize_mode = gr.Radio(label="Resize mode", elem_id="resize_mode", show_label=False, choices=["Just resize", "Crop and resize", "Resize and fill"], type="index", value="Just resize")
+                        mask_mode = gr.Radio(label="Mask mode", show_label=False, choices=["Draw mask", "Upload mask"], type="index", value="Draw mask")
 
                 steps = gr.Slider(minimum=1, maximum=150, step=1, label="Sampling Steps", value=20)
                 sampler_index = gr.Radio(label='Sampling method', choices=[x.name for x in samplers_for_img2img], value=samplers_for_img2img[0].name, type="index")
@@ -357,7 +396,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     height = gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512)
                     width = gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512)
 
-                seed = gr.Number(label='Seed', value=-1)
+                seed, subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w = create_seed_inputs()
 
                 with gr.Group():
                     custom_inputs = modules.scripts.scripts_img2img.setup_ui(is_img2img=True)
@@ -381,15 +420,17 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     html_info = gr.HTML()
                     generation_info = gr.Textbox(visible=False)
 
-            def apply_mode(mode):
+            def apply_mode(mode, uploadmask):
                 is_classic = mode == 0
                 is_inpaint = mode == 1
                 is_loopback = mode == 2
                 is_upscale = mode == 3
 
                 return {
-                    init_img: gr_show(not is_inpaint),
-                    init_img_with_mask: gr_show(is_inpaint),
+                    init_img: gr_show(not is_inpaint or (is_inpaint and uploadmask == 1)),
+                    init_img_with_mask: gr_show(is_inpaint and uploadmask == 0),
+                    init_mask: gr_show(is_inpaint and uploadmask == 1),
+                    mask_mode: gr_show(is_inpaint),
                     mask_blur: gr_show(is_inpaint),
                     inpainting_fill: gr_show(is_inpaint),
                     batch_count: gr_show(not is_upscale),
@@ -403,10 +444,12 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
 
             switch_mode.change(
                 apply_mode,
-                inputs=[switch_mode],
+                inputs=[switch_mode, mask_mode],
                 outputs=[
                     init_img,
                     init_img_with_mask,
+                    init_mask,
+                    mask_mode,
                     mask_blur,
                     inpainting_fill,
                     batch_count,
@@ -419,6 +462,20 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 ]
             )
 
+            mask_mode.change(
+                lambda mode: {
+                    init_img: gr_show(mode == 1),
+                    init_img_with_mask: gr_show(mode == 0),
+                    init_mask: gr_show(mode == 1),
+                },
+                inputs=[mask_mode],
+                outputs=[
+                    init_img,
+                    init_img_with_mask,
+                    init_mask,
+                ],
+            )
+
             img2img_args = dict(
                 fn=img2img,
                 _js="submit",
@@ -427,6 +484,8 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     negative_prompt,
                     init_img,
                     init_img_with_mask,
+                    init_mask,
+                    mask_mode,
                     steps,
                     sampler_index,
                     mask_blur,
@@ -440,6 +499,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     denoising_strength,
                     denoising_strength_change_factor,
                     seed,
+                    subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w,
                     height,
                     width,
                     resize_mode,

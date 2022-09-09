@@ -5,9 +5,22 @@
     max-width: 13em;
 }
 
+#subseed_show{
+    min-width: 6em;
+    max-width: 6em;
+}
+
+#subseed_show label{
+    height: 100%;
+}
+
 #txt2img_roll{
     min-width: 1em;
     max-width: 4em;
+}
+
+#resize_mode{
+    flex: 1.5;
 }
 
 button{
