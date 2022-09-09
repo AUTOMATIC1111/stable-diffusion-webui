@@ -11,5 +11,7 @@ pytorch_lightning
 diffusers
 invisible-watermark
 scikit-image
+fonts
+font-roboto
 git+https://github.com/crowsonkb/k-diffusion.git
 git+https://github.com/TencentARC/GFPGAN.git
