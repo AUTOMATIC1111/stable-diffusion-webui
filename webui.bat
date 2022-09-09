@@ -1,18 +1,13 @@
 @echo off
 
-set PYTHON=python
-set GIT=git
-set COMMANDLINE_ARGS=%*
-set VENV_DIR=venv
-
-if exist webui.settings.bat (
-    call webui.settings.bat
-)
+if not defined PYTHON (set PYTHON=python)
+if not defined GIT (set GIT=git)
+if not defined COMMANDLINE_ARGS (set COMMANDLINE_ARGS=%*)
+if not defined VENV_DIR (set VENV_DIR=venv)
+if not defined TORCH_COMMAND (set TORCH_COMMAND=pip install torch==1.12.1+cu113 --extra-index-url https://download.pytorch.org/whl/cu113)
+if not defined REQS_FILE (set REQS_FILE=requirements_versions.txt)
 
 mkdir tmp 2>NUL
-
-set TORCH_COMMAND=pip install torch==1.12.1+cu113 --extra-index-url https://download.pytorch.org/whl/cu113
-set REQS_FILE=requirements_versions.txt
 
 %PYTHON% -c "" >tmp/stdout.txt 2>tmp/stderr.txt
 if %ERRORLEVEL% == 0 goto :check_git
@@ -26,7 +21,7 @@ echo Couldn't launch git
 goto :show_stdout_stderr
 
 :setup_venv
-if [%VENV_DIR%] == [] goto :skip_venv
+if [%VENV_DIR%] == [-] goto :skip_venv
 
 dir %VENV_DIR%\Scripts\Python.exe >tmp/stdout.txt 2>tmp/stderr.txt
 if %ERRORLEVEL% == 0 goto :activate_venv
