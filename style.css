@@ -14,7 +14,7 @@ button{
     align-self: stretch !important;
 }
 
-#img2img_prompt, #txt2img_prompt{
+#img2img_prompt, #txt2img_prompt, #img2img_negative_prompt, #txt2img_negative_prompt{
     padding: 0;
     border: none !important;
 }

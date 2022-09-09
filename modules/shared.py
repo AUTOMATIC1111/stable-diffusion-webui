@@ -37,6 +37,8 @@ parser.add_argument("--esrgan-models-path", type=str, help="path to directory wi
 parser.add_argument("--opt-split-attention", action='store_true', help="enable optimization that reduce vram usage by a lot for about 10%% decrease in performance")
 parser.add_argument("--listen", action='store_true', help="launch gradio with 0.0.0.0 as server name, allowing to respond to network requests")
 parser.add_argument("--port", type=int, help="launch gradio with given server port, you need root/admin rights for ports < 1024, defaults to 7860 if available", default=None)
+parser.add_argument("--show-negative-prompt", action='store_true', help="enable the field that lets you input negative prompt", default=False)
+
 cmd_opts = parser.parse_args()
 
 if torch.has_cuda:
@@ -75,6 +77,7 @@ state = State()
 artist_db = modules.artists.ArtistsDatabase(os.path.join(script_path, 'artists.csv'))
 
 face_restorers = []
+
 
 def find_any_font():
     fonts = ['/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf']
