@@ -176,7 +176,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
         all_prompts = p.batch_size * p.n_iter * [p.prompt]
 
     if type(p.seed) == list:
-        all_seeds = int(p.seed)
+        all_seeds = p.seed
     else:
         all_seeds = [int(p.seed + x) for x in range(len(all_prompts))]
 
