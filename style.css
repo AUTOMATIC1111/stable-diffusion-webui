@@ -109,6 +109,10 @@ fieldset span.text-gray-500, .gr-block.gr-box span.text-gray-500,  label.block s
   padding: 0 0.5em;
 }
 
+#settings .gr-panel div.flex-col div.justify-between div{
+    position: relative;
+}
+
 input[type="range"]{
     margin: 0.5em 0 -0.3em 0;
 }
