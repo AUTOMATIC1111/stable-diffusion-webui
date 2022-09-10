@@ -6,6 +6,7 @@ import re
 import numpy as np
 from PIL import Image, ImageFont, ImageDraw, PngImagePlugin
 from fonts.ttf import Roboto
+import string
 
 import modules.shared
 from modules.shared import opts
@@ -235,6 +236,7 @@ def resize_image(resize_mode, im, width, height):
 
 
 invalid_filename_chars = '<>:"/\\|?*\n'
+re_nonletters = re.compile(r'[\s'+string.punctuation+']+')
 
 
 def sanitize_filename_part(text):
@@ -256,11 +258,11 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
         pnginfo = None
 
     if opts.save_to_dirs and not no_prompt:
-        words = re.findall(r'\w+', prompt or "")
+        words = re_nonletters.split(prompt or "")
         if len(words) == 0:
             words = ["empty"]
 
-        dirname = " ".join(words[0:opts.save_to_dirs_prompt_len])
+        dirname = " ".join(words[0:opts.save_to_dirs_prompt_len]).strip()
         path = os.path.join(path, dirname)
 
     os.makedirs(path, exist_ok=True)
