@@ -194,7 +194,7 @@ def visit(x, func, path=""):
         func(path + "/" + str(x.label), x)
 
 
-def create_seed_inputs():
+def create_seed_inputs(batch_count: int):
     with gr.Row():
         seed = gr.Number(label='Seed', value=-1)
         subseed = gr.Number(label='Variation seed', value=-1, visible=False)
@@ -204,6 +204,8 @@ def create_seed_inputs():
         subseed_strength = gr.Slider(label='Variation strength', value=0.0, minimum=0, maximum=1, step=0.01, visible=False)
         seed_resize_from_h = gr.Slider(minimum=0, maximum=2048, step=64, label="Resize seed from height", value=0, visible=False)
         seed_resize_from_w = gr.Slider(minimum=0, maximum=2048, step=64, label="Resize seed from width", value=0, visible=False)
+        increment_seed = gr.Button('Increment', elem_id="subseed_show", visible=False)
+        random_seed = gr.Button('Random Seed', elem_id="subseed_show", visible=False)
 
     def change_visiblity(show):
 
@@ -212,6 +214,8 @@ def create_seed_inputs():
             subseed_strength: gr_show(show),
             seed_resize_from_h: gr_show(show),
             seed_resize_from_w: gr_show(show),
+            increment_seed: gr_show(show),
+            random_seed: gr_show(show),
         }
 
     seed_checkbox.change(
@@ -221,12 +225,33 @@ def create_seed_inputs():
             subseed,
             subseed_strength,
             seed_resize_from_h,
-            seed_resize_from_w
+            seed_resize_from_w,
+            increment_seed,
+            random_seed
         ]
     )
 
-    return seed, subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w
+    increment_seed.click(
+        fn=increment_seed_number,
+        show_progress=False,
+        inputs=[seed, batch_count],
+        outputs=[seed],
+    )
 
+    random_seed.click(
+        fn=random_seed_number,
+        show_progress=False,
+        inputs=[],
+        outputs=[seed],
+    )
+
+    return seed, subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, increment_seed, random_seed
+
+def increment_seed_number(seed: int, batch_count: int):
+    return seed + batch_count
+
+def random_seed_number():
+    return random.randint(-2147483648, 2147483647)
 
 def add_style(style_name, text):
     if style_name is None:
@@ -271,7 +296,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     height = gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512)
                     width = gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512)
 
-                seed, subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w = create_seed_inputs()
+                seed, subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, increment_seed, random_seed = create_seed_inputs(batch_count)
 
                 with gr.Group():
                     custom_inputs = modules.scripts.scripts_txt2img.setup_ui(is_img2img=False)
@@ -333,7 +358,6 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 inputs=[],
                 outputs=[progressbar, txt2img_preview, txt2img_preview],
             )
-
 
             interrupt.click(
                 fn=lambda: shared.state.interrupt(),
@@ -415,7 +439,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     height = gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512)
                     width = gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512)
 
-                seed, subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w = create_seed_inputs()
+                seed, subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, increment_seed, random_seed = create_seed_inputs(batch_count)
 
                 with gr.Group():
                     custom_inputs = modules.scripts.scripts_img2img.setup_ui(is_img2img=True)
