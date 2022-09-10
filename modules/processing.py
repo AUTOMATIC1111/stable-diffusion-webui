@@ -229,6 +229,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
 
             prompts = all_prompts[n * p.batch_size:(n + 1) * p.batch_size]
             seeds = all_seeds[n * p.batch_size:(n + 1) * p.batch_size]
+            subseeds = all_subseeds[n * p.batch_size:(n + 1) * p.batch_size]
 
             uc = p.sd_model.get_learned_conditioning(len(prompts) * [p.negative_prompt])
             c = p.sd_model.get_learned_conditioning(prompts)
@@ -237,7 +238,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
                 comments += model_hijack.comments
 
             # we manually generate all input noises because each one should have a specific seed
-            x = create_random_tensors([opt_C, p.height // opt_f, p.width // opt_f], seeds=seeds, subseeds=all_subseeds, subseed_strength=p.subseed_strength, seed_resize_from_h=p.seed_resize_from_h, seed_resize_from_w=p.seed_resize_from_w)
+            x = create_random_tensors([opt_C, p.height // opt_f, p.width // opt_f], seeds=seeds, subseeds=subseeds, subseed_strength=p.subseed_strength, seed_resize_from_h=p.seed_resize_from_h, seed_resize_from_w=p.seed_resize_from_w)
 
             if p.n_iter > 1:
                 shared.state.job = f"Batch {n+1} out of {p.n_iter}"
