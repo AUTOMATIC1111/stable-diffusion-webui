@@ -54,7 +54,7 @@ css_hide_progressbar = """
 """
 
 def plaintext_to_html(text):
-    text = "".join([f"<p>{html.escape(x)}</p>\n" for x in text.split('\n')])
+    text = "<p>" + "<br>\n".join([f"{html.escape(x)}" for x in text.split('\n')]) + "</p>"
     return text
 
 
