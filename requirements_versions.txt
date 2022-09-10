@@ -1,7 +1,7 @@
 basicsr==1.3.5
 gfpgan
-gradio==3.2
-numpy==1.22.0
+gradio==3.3
+numpy==1.23.3
 Pillow==9.2.0
 realesrgan==0.2.5.0
 torch

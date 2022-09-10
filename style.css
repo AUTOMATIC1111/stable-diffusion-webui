@@ -93,6 +93,10 @@ fieldset span.text-gray-500, .gr-block.gr-box span.text-gray-500,  label.block s
     border-right: 1px solid rgb(55 65 81);
 }
 
+#settings fieldset span.text-gray-500, #settings .gr-block.gr-box span.text-gray-500, #settings label.block span{
+    position: relative;
+    border: none;
+}
 
 .gr-panel div.flex-col div.justify-between label span{
     margin: 0;
@@ -114,6 +118,11 @@ input[type="range"]{
     padding-right: 0.6em;
 }
 
+#mask_bug_info {
+  text-align: center;
+  display: block;
+  margin-bottom: 0.5em;
+}
 
 
 .progressDiv{

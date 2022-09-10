@@ -102,7 +102,7 @@ class Options:
         "save_to_dirs_prompt_len": OptionInfo(10, "When using above, how many words from prompt to put into directory name", gr.Slider, {"minimum": 1, "maximum": 32, "step": 1}),
         "outdir_save": OptionInfo("log/images", "Directory for saving images using the Save button"),
         "samples_save": OptionInfo(True, "Save indiviual samples"),
-        "samples_format": OptionInfo('png', 'File format for indiviual samples'),
+        "samples_format": OptionInfo('png', 'File format for individual samples'),
         "grid_save": OptionInfo(True, "Save image grids"),
         "return_grid": OptionInfo(True, "Show grid in results for web"),
         "grid_format": OptionInfo('png', 'File format for grids'),
