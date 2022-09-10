@@ -1,6 +1,8 @@
 import os
 import sys
 import traceback
+
+import cv2
 import torch
 
 from modules import shared
@@ -68,6 +70,8 @@ def setup_codeformer():
             def restore(self, np_image, w=None):
                 np_image = np_image[:, :, ::-1]
 
+                original_resolution = np_image.shape[0:2]
+
                 net, face_helper = self.create_models()
                 face_helper.clean_all()
                 face_helper.read_image(np_image)
@@ -96,6 +100,10 @@ def setup_codeformer():
 
                 restored_img = face_helper.paste_faces_to_input_image()
                 restored_img = restored_img[:, :, ::-1]
+
+                if original_resolution != restored_img.shape[0:2]:
+                    restored_img = cv2.resize(restored_img, (0, 0), fx=original_resolution[1]/restored_img.shape[1], fy=original_resolution[0]/restored_img.shape[0], interpolation=cv2.INTER_LINEAR)
+
                 return restored_img
 
         global have_codeformer
