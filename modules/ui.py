@@ -722,14 +722,14 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
 
         send_to_img2img.click(
             fn=lambda x: image_from_url_text(x),
-            _js="extract_image_from_gallery",
+            _js="extract_image_from_gallery_img2img",
             inputs=[txt2img_gallery],
             outputs=[init_img],
         )
 
         send_to_inpaint.click(
             fn=lambda x: image_from_url_text(x),
-            _js="extract_image_from_gallery",
+            _js="extract_image_from_gallery_img2img",
             inputs=[txt2img_gallery],
             outputs=[init_img_with_mask],
         )
@@ -750,14 +750,14 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
 
         send_to_extras.click(
             fn=lambda x: image_from_url_text(x),
-            _js="extract_image_from_gallery",
+            _js="extract_image_from_gallery_extras",
             inputs=[txt2img_gallery],
             outputs=[image],
         )
 
         img2img_send_to_extras.click(
             fn=lambda x: image_from_url_text(x),
-            _js="extract_image_from_gallery",
+            _js="extract_image_from_gallery_extras",
             inputs=[img2img_gallery],
             outputs=[image],
         )
