@@ -2,6 +2,7 @@ import base64
 import html
 import io
 import json
+import math
 import mimetypes
 import os
 import random
@@ -363,7 +364,6 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 ]
             )
 
-
     with gr.Blocks(analytics_enabled=False) as img2img_interface:
         with gr.Row():
             img2img_prompt = gr.Textbox(label="Prompt", elem_id="img2img_prompt", show_label=False, placeholder="Prompt", lines=1)
@@ -373,12 +373,12 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
             check_progress = gr.Button('Check progress', elem_id="check_progress", visible=False)
 
         with gr.Row().style(equal_height=False):
-
             with gr.Column(variant='panel'):
                 with gr.Group():
                     switch_mode = gr.Radio(label='Mode', elem_id="img2img_mode", choices=['Redraw whole image', 'Inpaint a part of image', 'Loopback', 'SD upscale'], value='Redraw whole image', type="index", show_label=False)
                     init_img = gr.Image(label="Image for img2img", source="upload", interactive=True, type="pil")
                     init_img_with_mask = gr.Image(label="Image for inpainting with mask", elem_id="img2maskimg", source="upload", interactive=True, type="pil", tool="sketch", visible=False, image_mode="RGBA")
+                    init_img_with_mask_comment = gr.HTML(elem_id="mask_bug_info", value="<small>if the editor shows ERROR, switch to another img2img mode above and back</small>", visible=False)
                     init_mask = gr.Image(label="Mask", source="upload", interactive=True, type="pil", visible=False)
 
                     with gr.Row():
@@ -450,6 +450,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 return {
                     init_img: gr_show(not is_inpaint or (is_inpaint and uploadmask == 1)),
                     init_img_with_mask: gr_show(is_inpaint and uploadmask == 0),
+                    init_img_with_mask_comment: gr_show(is_inpaint and uploadmask == 0),
                     init_mask: gr_show(is_inpaint and uploadmask == 1),
                     mask_mode: gr_show(is_inpaint),
                     mask_blur: gr_show(is_inpaint),
@@ -469,6 +470,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 outputs=[
                     init_img,
                     init_img_with_mask,
+                    init_img_with_mask_comment,
                     init_mask,
                     mask_mode,
                     mask_blur,
@@ -566,34 +568,6 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 ]
             )
 
-            send_to_img2img.click(
-                fn=lambda x: image_from_url_text(x),
-                _js="extract_image_from_gallery",
-                inputs=[txt2img_gallery],
-                outputs=[init_img],
-            )
-
-            send_to_inpaint.click(
-                fn=lambda x: image_from_url_text(x),
-                _js="extract_image_from_gallery",
-                inputs=[txt2img_gallery],
-                outputs=[init_img_with_mask],
-            )
-
-            img2img_send_to_img2img.click(
-                fn=lambda x: image_from_url_text(x),
-                _js="extract_image_from_gallery",
-                inputs=[img2img_gallery],
-                outputs=[init_img],
-            )
-
-            img2img_send_to_inpaint.click(
-                fn=lambda x: image_from_url_text(x),
-                _js="extract_image_from_gallery",
-                inputs=[img2img_gallery],
-                outputs=[init_img_with_mask],
-            )
-
             for button, propmt in zip([txt2img_save_style, img2img_save_style], [txt2img_prompt, img2img_prompt]):
                 button.click(
                     fn=add_style,
@@ -652,20 +626,6 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
 
         submit.click(**extras_args)
 
-        send_to_extras.click(
-            fn=lambda x: image_from_url_text(x),
-            _js="extract_image_from_gallery",
-            inputs=[txt2img_gallery],
-            outputs=[image],
-        )
-
-        img2img_send_to_extras.click(
-            fn=lambda x: image_from_url_text(x),
-            _js="extract_image_from_gallery",
-            inputs=[img2img_gallery],
-            outputs=[image],
-        )
-
     pnginfo_interface = gr.Interface(
         wrap_gradio_call(run_pnginfo),
         inputs=[
@@ -701,37 +661,47 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
 
         return item
 
+    components = []
+    keys = list(opts.data_labels.keys())
+    settings_cols = 3
+    items_per_col = math.ceil(len(keys) / settings_cols)
+
     def run_settings(*args):
         up = []
 
-        for key, value, comp in zip(opts.data_labels.keys(), args, settings_interface.input_components):
+        for key, value, comp in zip(opts.data_labels.keys(), args, components):
             opts.data[key] = value
             up.append(comp.update(value=value))
 
         opts.save(shared.config_filename)
 
-        return 'Settings saved.', '', ''
+        return 'Settings applied.'
 
-    settings_interface = gr.Interface(
-        run_settings,
-        inputs=[create_setting_component(key) for key in opts.data_labels.keys()],
-        outputs=[
-            gr.Textbox(label='Result'),
-            gr.HTML(),
-            gr.HTML(),
-        ],
-        title=None,
-        description=None,
-        allow_flagging="never",
-        analytics_enabled=False,
-    )
+    with gr.Blocks(analytics_enabled=False) as settings_interface:
+        submit = gr.Button(value="Apply settings", variant='primary')
+        result = gr.HTML()
+
+        with gr.Row(elem_id="settings").style(equal_height=False):
+            for colno in range(settings_cols):
+                with gr.Column(variant='panel'):
+                    for rowno in range(items_per_col):
+                        index = rowno + colno * items_per_col
+
+                        if index < len(keys):
+                            components.append(create_setting_component(keys[index]))
+
+        submit.click(
+            fn=run_settings,
+            inputs=components,
+            outputs=[result]
+        )
 
     interfaces = [
-        (txt2img_interface, "txt2img"),
-        (img2img_interface, "img2img"),
-        (extras_interface, "Extras"),
-        (pnginfo_interface, "PNG Info"),
-        (settings_interface, "Settings"),
+        (txt2img_interface, "txt2img", "txt2img"),
+        (img2img_interface, "img2img", "img2img"),
+        (extras_interface, "Extras", "extras"),
+        (pnginfo_interface, "PNG Info", "pnginfo"),
+        (settings_interface, "Settings", "settings"),
     ]
 
     with open(os.path.join(script_path, "style.css"), "r", encoding="utf8") as file:
@@ -740,12 +710,59 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
     if not cmd_opts.no_progressbar_hiding:
         css += css_hide_progressbar
 
-    demo = gr.TabbedInterface(
-        interface_list=[x[0] for x in interfaces],
-        tab_names=[x[1] for x in interfaces],
-        analytics_enabled=False,
-        css=css,
-    )
+    with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion") as demo:
+        with gr.Tabs() as tabs:
+            for interface, label, ifid in interfaces:
+                with gr.TabItem(label, id=ifid):
+                    interface.render()
+
+        tabs.change(
+            fn=lambda x: x,
+            inputs=[init_img_with_mask],
+            outputs=[init_img_with_mask],
+        )
+
+        send_to_img2img.click(
+            fn=lambda x: image_from_url_text(x),
+            _js="extract_image_from_gallery",
+            inputs=[txt2img_gallery],
+            outputs=[init_img],
+        )
+
+        send_to_inpaint.click(
+            fn=lambda x: image_from_url_text(x),
+            _js="extract_image_from_gallery",
+            inputs=[txt2img_gallery],
+            outputs=[init_img_with_mask],
+        )
+
+        img2img_send_to_img2img.click(
+            fn=lambda x: image_from_url_text(x),
+            _js="extract_image_from_gallery",
+            inputs=[img2img_gallery],
+            outputs=[init_img],
+        )
+
+        img2img_send_to_inpaint.click(
+            fn=lambda x: image_from_url_text(x),
+            _js="extract_image_from_gallery",
+            inputs=[img2img_gallery],
+            outputs=[init_img_with_mask],
+        )
+
+        send_to_extras.click(
+            fn=lambda x: image_from_url_text(x),
+            _js="extract_image_from_gallery",
+            inputs=[txt2img_gallery],
+            outputs=[image],
+        )
+
+        img2img_send_to_extras.click(
+            fn=lambda x: image_from_url_text(x),
+            _js="extract_image_from_gallery",
+            inputs=[img2img_gallery],
+            outputs=[image],
+        )
 
     ui_config_file = cmd_opts.ui_config_file
     ui_settings = {}

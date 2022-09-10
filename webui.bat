@@ -89,11 +89,8 @@ goto :show_stdout_stderr
 if %ERRORLEVEL% == 0 goto :make_dirs
 echo Installing requirements...
 %PYTHON% -m pip install -r %REQS_FILE% --prefer-binary >tmp/stdout.txt 2>tmp/stderr.txt
-if %ERRORLEVEL% == 0 goto :update_numpy
+if %ERRORLEVEL% == 0 goto :make_dirs
 goto :show_stdout_stderr
-
-:update_numpy
-%PYTHON% -m pip install -U numpy --prefer-binary >tmp/stdout.txt 2>tmp/stderr.txt
 
 :make_dirs
 mkdir repositories 2>NUL
