@@ -279,7 +279,8 @@ After that follow the instructions in the `Manual instructions` section starting
 - k-diffusion - https://github.com/crowsonkb/k-diffusion.git
 - GFPGAN - https://github.com/TencentARC/GFPGAN.git
 - ESRGAN - https://github.com/xinntao/ESRGAN
-- Ideas for optimizations and some code (from users) - https://github.com/basujindal/stable-diffusion
+- Ideas for optimizations - https://github.com/basujindal/stable-diffusion
+- Cross Attention layer optimization - https://github.com/Doggettx/stable-diffusion
 - Idea for SD upscale - https://github.com/jquesnelle/txt2imghd
 - Initial Gradio script - posted on 4chan by an Anonymous user. Thank you Anonymous user.
 - (You)
