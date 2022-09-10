@@ -36,6 +36,7 @@ A browser interface based on Gradio library for Stable Diffusion.
 - Random artist button
 - Tiling support: UI checkbox to create images that can be tiled like textures
 - Progress bar and live image generation preview
+- Negative prompt
 - Styles
 - Variations
 - Seed resizing
