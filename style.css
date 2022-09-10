@@ -130,6 +130,7 @@ input[type="range"]{
 
 #txt2img_negative_prompt, #img2img_negative_prompt{
     flex: 0.3;
+    min-width: 10em;
 }
 
 .progressDiv{
