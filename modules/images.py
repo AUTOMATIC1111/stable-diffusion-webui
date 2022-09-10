@@ -244,6 +244,9 @@ def sanitize_filename_part(text):
 
 
 def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False):
+    # would be better to add this as an argument in future, but will do for now
+    is_a_grid = basename != ""
+
     if short_filename or prompt is None or seed is None:
         file_decoration = ""
     elif opts.save_to_dirs:
@@ -257,7 +260,9 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     else:
         pnginfo = None
 
-    if opts.save_to_dirs and not no_prompt:
+    save_to_dirs = (is_a_grid and opts.grid_save_to_dirs) or (not is_a_grid and opts.save_to_dirs)
+
+    if save_to_dirs and not no_prompt:
         words = re_nonletters.split(prompt or "")
         if len(words[0]) == 0:
             words = ["empty"]
