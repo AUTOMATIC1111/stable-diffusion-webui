@@ -38,6 +38,7 @@ parser.add_argument("--opt-split-attention", action='store_true', help="enable o
 parser.add_argument("--listen", action='store_true', help="launch gradio with 0.0.0.0 as server name, allowing to respond to network requests")
 parser.add_argument("--port", type=int, help="launch gradio with given server port, you need root/admin rights for ports < 1024, defaults to 7860 if available", default=None)
 parser.add_argument("--show-negative-prompt", action='store_true', help="enable the field that lets you input negative prompt", default=False)
+parser.add_argument("--ui-config-file", type=str, help="filename to use for ui configuration", default=os.path.join(script_path, 'ui-config.json'))
 
 cmd_opts = parser.parse_args()
 

@@ -747,7 +747,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
         css=css,
     )
 
-    ui_config_file = os.path.join(modules.paths.script_path, 'ui-config.json')
+    ui_config_file = cmd_opts.ui_config_file
     ui_settings = {}
     settings_count = len(ui_settings)
     error_loading = False
