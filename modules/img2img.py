@@ -63,7 +63,7 @@ def img2img(prompt: str, negative_prompt: str, prompt_style: int, init_img, init
         inpainting_mask_invert=inpainting_mask_invert,
         extra_generation_params={
             "Denoising strength": denoising_strength,
-            "Denoising strength change factor": denoising_strength_change_factor
+            "Denoising strength change factor": (denoising_strength_change_factor if is_loopback else None)
         }
     )
     print(f"\nimg2img: {prompt}", file=shared.progress_print_out)
@@ -85,7 +85,6 @@ def img2img(prompt: str, negative_prompt: str, prompt_style: int, init_img, init
 
 
         for i in range(n_iter):
-
             if do_color_correction and i == 0:
                 correction_target = cv2.cvtColor(np.asarray(init_img.copy()), cv2.COLOR_RGB2LAB)
 
@@ -124,8 +123,10 @@ def img2img(prompt: str, negative_prompt: str, prompt_style: int, init_img, init
         processed = Processed(p, history, initial_seed, initial_info)
 
     elif is_upscale:
-        initial_seed = None
         initial_info = None
+
+        processing.fix_seed(p)
+        seed = p.seed
 
         upscaler = shared.sd_upscalers[upscaler_index]
         img = upscaler.upscale(init_img, init_img.width * 2, init_img.height * 2)
@@ -134,47 +135,53 @@ def img2img(prompt: str, negative_prompt: str, prompt_style: int, init_img, init
 
         grid = images.split_grid(img, tile_w=width, tile_h=height, overlap=upscale_overlap)
 
+        upscale_count = p.n_iter
         p.n_iter = 1
         p.do_not_save_grid = True
         p.do_not_save_samples = True
 
         work = []
-        work_results = []
 
         for y, h, row in grid.tiles:
             for tiledata in row:
                 work.append(tiledata[2])
 
         batch_count = math.ceil(len(work) / p.batch_size)
-        print(f"SD upscaling will process a total of {len(work)} images tiled as {len(grid.tiles[0][2])}x{len(grid.tiles)} in a total of {batch_count} batches.")
+        state.job_count = batch_count * upscale_count
 
-        state.job_count = batch_count
+        print(f"SD upscaling will process a total of {len(work)} images tiled as {len(grid.tiles[0][2])}x{len(grid.tiles)} per upscale in a total of {state.job_count} batches.")
 
-        for i in range(batch_count):
-            p.init_images = work[i*p.batch_size:(i+1)*p.batch_size]
+        result_images = []
+        for n in range(upscale_count):
+            start_seed = seed + n
+            p.seed = start_seed
 
-            state.job = f"Batch {i + 1} out of {batch_count}"
-            processed = process_images(p)
+            work_results = []
+            for i in range(batch_count):
+                p.init_images = work[i*p.batch_size:(i+1)*p.batch_size]
 
-            if initial_seed is None:
-                initial_seed = processed.seed
-                initial_info = processed.info
+                state.job = f"Batch {i + 1} out of {state.job_count}"
+                processed = process_images(p)
 
-            p.seed = processed.seed + 1
-            work_results += processed.images
+                if initial_info is None:
+                    initial_info = processed.info
 
-        image_index = 0
-        for y, h, row in grid.tiles:
-            for tiledata in row:
-                tiledata[2] = work_results[image_index] if image_index < len(work_results) else Image.new("RGB", (p.width, p.height))
-                image_index += 1
+                p.seed = processed.seed + 1
+                work_results += processed.images
 
-        combined_image = images.combine_grid(grid)
+            image_index = 0
+            for y, h, row in grid.tiles:
+                for tiledata in row:
+                    tiledata[2] = work_results[image_index] if image_index < len(work_results) else Image.new("RGB", (p.width, p.height))
+                    image_index += 1
 
-        if opts.samples_save:
-            images.save_image(combined_image, p.outpath_samples, "", initial_seed, prompt, opts.grid_format, info=initial_info)
+            combined_image = images.combine_grid(grid)
+            result_images.append(combined_image)
 
-        processed = Processed(p, [combined_image], initial_seed, initial_info)
+            if opts.samples_save:
+                images.save_image(combined_image, p.outpath_samples, "", start_seed, prompt, opts.grid_format, info=initial_info)
+
+        processed = Processed(p, result_images, seed, initial_info)
 
     else:
 
