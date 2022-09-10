@@ -141,6 +141,16 @@ function extract_image_from_gallery(gallery){
     return gallery[index];
 }
 
+function extract_image_from_gallery_img2img(gallery){
+    gradioApp().querySelectorAll('button')[1].click();
+    return extract_image_from_gallery(gallery);
+}
+
+function extract_image_from_gallery_extras(gallery){
+    gradioApp().querySelectorAll('button')[2].click();
+    return extract_image_from_gallery(gallery);
+}
+
 function requestProgress(){
     btn = gradioApp().getElementById("check_progress");
     if(btn==null) return;
