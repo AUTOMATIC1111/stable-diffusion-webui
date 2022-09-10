@@ -73,6 +73,7 @@ class Script(scripts.Script):
         print(f"Prompt matrix will create {len(all_prompts)} images using a total of {p.n_iter} batches.")
 
         p.prompt = all_prompts
+        p.seed = [p.seed for _ in all_prompts]
         p.prompt_for_display = original_prompt
         processed = process_images(p)
 
