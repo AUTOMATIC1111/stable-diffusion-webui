@@ -264,7 +264,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
 
     if save_to_dirs and not no_prompt:
         words = [x for x in re_nonletters.split(prompt or "") if len(x)>0]
-        if len(words[0]) == 0:
+        if len(words) == 0:
             words = ["empty"]
 
         dirname = " ".join(words[0:opts.save_to_dirs_prompt_len]).strip()
