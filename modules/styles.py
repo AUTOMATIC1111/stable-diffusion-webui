@@ -1,44 +1,68 @@
+# We need this so Python doesn't complain about the unknown StableDiffusionProcessing-typehint at runtime
+from __future__ import annotations
+
 import csv
+import os
 import os.path
-from collections import namedtuple
+import typing
+import collections.abc as abc
+import tempfile
+import shutil
 
-PromptStyle = namedtuple("PromptStyle", ["name", "text"])
+if typing.TYPE_CHECKING:
+    # Only import this when code is being type-checked, it doesn't have any effect at runtime
+    from .processing import StableDiffusionProcessing
 
 
-def load_styles(filename):
-    res = {"None": PromptStyle("None", "")}
+class PromptStyle(typing.NamedTuple):
+    name: str
+    prompt: str
+    negative_prompt: str
 
-    if os.path.exists(filename):
-        with open(filename, "r", encoding="utf8", newline='') as file:
+
+def load_styles(path: str) -> dict[str, PromptStyle]:
+    styles = {"None": PromptStyle("None", "", "")}
+
+    if os.path.exists(path):
+        with open(path, "r", encoding="utf8", newline='') as file:
             reader = csv.DictReader(file)
-
             for row in reader:
-                res[row["name"]] = PromptStyle(row["name"], row["text"])
+                # Support loading old CSV format with "name, text"-columns
+                prompt = row["prompt"] if "prompt" in row else row["text"]
+                negative_prompt = row.get("negative_prompt", "")
+                styles[row["name"]] = PromptStyle(row["name"], prompt, negative_prompt)
 
-    return res
-
-
-def apply_style_text(style_text, prompt):
-    if style_text == "":
-        return prompt
-
-    return prompt + ", " + style_text if prompt else style_text
+    return styles
 
 
-def apply_style(p, style):
-    if type(p.prompt) == list:
-        p.prompt = [apply_style_text(style.text, x) for x in p.prompt]
+def merge_prompts(style_prompt: str, prompt: str) -> str:
+    parts = filter(None, (prompt.strip(), style_prompt.strip()))
+    return ", ".join(parts)
+
+
+def apply_style(processing: StableDiffusionProcessing, style: PromptStyle) -> None:
+    if isinstance(processing.prompt, list):
+        processing.prompt = [merge_prompts(style.prompt, p) for p in processing.prompt]
     else:
-        p.prompt = apply_style_text(style.text, p.prompt)
+        processing.prompt = merge_prompts(style.prompt, processing.prompt)
+
+    if isinstance(processing.negative_prompt, list):
+        processing.negative_prompt = [merge_prompts(style.negative_prompt, p) for p in processing.negative_prompt]
+    else:
+        processing.negative_prompt = merge_prompts(style.negative_prompt, processing.negative_prompt)
 
 
-def save_style(filename, style):
-    with open(filename, "a", encoding="utf8", newline='') as file:
-        atstart = file.tell() == 0
+def save_styles(path: str, styles: abc.Iterable[PromptStyle]) -> None:
+    # Write to temporary file first, so we don't nuke the file if something goes wrong
+    fd, temp_path = tempfile.mkstemp(".csv")
+    with os.fdopen(fd, "w", encoding="utf8", newline='') as file:
+        # _fields is actually part of the public API: typing.NamedTuple is a replacement for collections.NamedTuple,
+        # and collections.NamedTuple has explicit documentation for accessing _fields. Same goes for _asdict()
+        writer = csv.DictWriter(file, fieldnames=PromptStyle._fields)
+        writer.writeheader()
+        writer.writerows(style._asdict() for style in styles)
 
-        writer = csv.DictWriter(file, fieldnames=["name", "text"])
-
-        if atstart:
-            writer.writeheader()
-
-        writer.writerow({"name": style.name, "text": style.text})
+    # Always keep a backup file around
+    if os.path.exists(path):
+        shutil.move(path, path + ".bak")
+    shutil.move(temp_path, path)
