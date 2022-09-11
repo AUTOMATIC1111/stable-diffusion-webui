@@ -63,5 +63,6 @@ def save_styles(path: str, styles: abc.Iterable[PromptStyle]) -> None:
         writer.writerows(style._asdict() for style in styles)
 
     # Always keep a backup file around
-    shutil.copy(path, path + ".bak")
+    if os.path.exists(path):
+        shutil.move(path, path + ".bak")
     shutil.move(temp_path, path)
