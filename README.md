@@ -283,6 +283,16 @@ wget https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.3.pt
 After that follow the instructions in the `Manual instructions` section starting at step `:: clone repositories for Stable Diffusion and (optionally) CodeFormer`.
 
 
+### img2img alterantive test
+- find it in scripts section
+- put description of input image into the Original prompt field
+- use Euler only
+- recommended: 50 steps, low cfg scale between 1 and 2
+- denoising and seed don't matter
+- decode cfg scale between 0 and 1
+- decode steps 50
+- original blue haired woman close nearly reproduces with cfg scale=1.8
+
 ## Credits
 - Stable Diffusion - https://github.com/CompVis/stable-diffusion, https://github.com/CompVis/taming-transformers
 - k-diffusion - https://github.com/crowsonkb/k-diffusion.git
