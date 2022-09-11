@@ -175,15 +175,19 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
     else:
         all_prompts = p.batch_size * p.n_iter * [p.prompt]
 
-    if type(p.seed) == list:
-        all_seeds = p.seed
-    else:
-        all_seeds = [int(p.seed + x) for x in range(len(all_prompts))]
-
     if type(p.subseed) == list:
         all_subseeds = p.subseed
     else:
         all_subseeds = [int(p.subseed + x) for x in range(len(all_prompts))]
+
+    if type(p.seed) == list:
+        all_seeds = p.seed
+    else:
+        if p.subseed_strength > 0:
+            all_seeds = [p.seed] * len(all_prompts)
+        else:
+            all_seeds = [int(p.seed + x) for x in range(len(all_prompts))]
+
 
     def infotext(iteration=0, position_in_batch=0):
         index = position_in_batch + iteration * p.batch_size
