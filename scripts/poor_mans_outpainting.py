@@ -4,7 +4,7 @@ import modules.scripts as scripts
 import gradio as gr
 from PIL import Image, ImageDraw
 
-from modules import images, processing
+from modules import images, processing, devices
 from modules.processing import Processed, process_images
 from modules.shared import opts, cmd_opts, state
 
@@ -77,7 +77,7 @@ class Script(scripts.Script):
              mask.height - down - (mask_blur//2 if down > 0 else 0)
         ), fill="black")
 
-        processing.torch_gc()
+        devices.torch_gc()
 
         grid = images.split_grid(img, tile_w=p.width, tile_h=p.height, overlap=pixels)
         grid_mask = images.split_grid(mask, tile_w=p.width, tile_h=p.height, overlap=pixels)

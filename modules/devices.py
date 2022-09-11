@@ -14,3 +14,9 @@ def get_optimal_device():
         return torch.device("mps")
 
     return cpu
+
+
+def torch_gc():
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+        torch.cuda.ipc_collect()
