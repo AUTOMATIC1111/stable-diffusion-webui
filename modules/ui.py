@@ -661,19 +661,20 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
         info = opts.data_labels[key]
         t = type(info.default)
 
+        args = info.component_args() if callable(info.component_args) else info.component_args
+
         if info.component is not None:
-            args = info.component_args() if callable(info.component_args) else info.component_args
-            item = info.component(label=info.label, value=fun, **(args or {}))
+            comp = info.component
         elif t == str:
-            item = gr.Textbox(label=info.label, value=fun, lines=1)
+            comp = gr.Textbox
         elif t == int:
-            item = gr.Number(label=info.label, value=fun)
+            comp = gr.Number
         elif t == bool:
-            item = gr.Checkbox(label=info.label, value=fun)
+            comp = gr.Checkbox
         else:
             raise Exception(f'bad options item type: {str(t)} for key {key}')
 
-        return item
+        return comp(label=info.label, value=fun, **(args or {}))
 
     components = []
     keys = list(opts.data_labels.keys())
@@ -684,6 +685,10 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
         up = []
 
         for key, value, comp in zip(opts.data_labels.keys(), args, components):
+            comp_args = opts.data_labels[key].component_args
+            if comp_args and isinstance(comp_args, dict) and comp_args.get('visible') is False:
+                continue
+
             opts.data[key] = value
             up.append(comp.update(value=value))
 
