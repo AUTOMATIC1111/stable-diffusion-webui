@@ -9,12 +9,13 @@ from PIL import Image
 import modules.esrgam_model_arch as arch
 from modules import shared
 from modules.shared import opts
+from modules.devices import has_mps
 import modules.images
 
 
 def load_model(filename):
     # this code is adapted from https://github.com/xinntao/ESRGAN
-    pretrained_net = torch.load(filename, map_location='cpu' if torch.has_mps else None)
+    pretrained_net = torch.load(filename, map_location='cpu' if has_mps else None)
     crt_model = arch.RRDBNet(3, 3, 64, 23, gc=32)
 
     if 'conv_first.weight' in pretrained_net:

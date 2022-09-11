@@ -40,6 +40,7 @@ A browser interface based on Gradio library for Stable Diffusion.
 - Styles
 - Variations
 - Seed resizing
+- CLIP interrogator
 
 ## Installing and running
 
@@ -56,6 +57,9 @@ You optionally can use GFPGAN to improve faces, then you'll need to download the
 
 To use ESRGAN models, put them into ESRGAN directory in the same location as webui.py. A file will be loaded
 as model if it has .pth extension. Grab models from the [Model Database](https://upscale.wiki/wiki/Model_Database).
+
+> Note: RealESRGAN models are not ESRGAN models, they are not compatible. Do not download RealESRGAN models. Do not place
+RealESRGAN into the directory with ESRGAN models. Thank you.
 
 ### Automatic installation/launch
 
@@ -199,6 +203,7 @@ mkdir repositories
 git clone https://github.com/CompVis/stable-diffusion.git repositories/stable-diffusion
 git clone https://github.com/CompVis/taming-transformers.git repositories/taming-transformers
 git clone https://github.com/sczhou/CodeFormer.git repositories/CodeFormer
+git clone https://github.com/salesforce/BLIP.git repositories/BLIP
 
 # install requirements of Stable Diffusion
 pip install transformers==4.19.2 diffusers invisible-watermark --prefer-binary
@@ -286,5 +291,6 @@ After that follow the instructions in the `Manual instructions` section starting
 - Ideas for optimizations - https://github.com/basujindal/stable-diffusion
 - Cross Attention layer optimization - https://github.com/Doggettx/stable-diffusion
 - Idea for SD upscale - https://github.com/jquesnelle/txt2imghd
+- CLIP interrogator idea and borrowing some code - https://github.com/pharmapsychotic/clip-interrogator
 - Initial Gradio script - posted on 4chan by an Anonymous user. Thank you Anonymous user.
 - (You)

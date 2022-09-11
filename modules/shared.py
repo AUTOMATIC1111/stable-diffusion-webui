@@ -9,7 +9,9 @@ import tqdm
 
 import modules.artists
 from modules.paths import script_path, sd_path
+from modules.devices import get_optimal_device
 import modules.styles
+import modules.interrogate
 
 config_filename = "config.json"
 
@@ -35,6 +37,7 @@ parser.add_argument("--precision", type=str, help="evaluate at this precision", 
 parser.add_argument("--share", action='store_true', help="use share=True for gradio and make the UI accessible through their site (doesn't work for me but you might have better luck)")
 parser.add_argument("--esrgan-models-path", type=str, help="path to directory with ESRGAN models", default=os.path.join(script_path, 'ESRGAN'))
 parser.add_argument("--opt-split-attention", action='store_true', help="enable optimization that reduce vram usage by a lot for about 10%% decrease in performance")
+parser.add_argument("--opt-split-attention-v1", action='store_true', help="enable older version of --opt-split-attention optimization")
 parser.add_argument("--listen", action='store_true', help="launch gradio with 0.0.0.0 as server name, allowing to respond to network requests")
 parser.add_argument("--port", type=int, help="launch gradio with given server port, you need root/admin rights for ports < 1024, defaults to 7860 if available", default=None)
 parser.add_argument("--show-negative-prompt", action='store_true', help="does not do anything", default=False)
@@ -42,12 +45,8 @@ parser.add_argument("--ui-config-file", type=str, help="filename to use for ui c
 
 cmd_opts = parser.parse_args()
 
-if torch.has_cuda:
-    device = torch.device("cuda")
-elif torch.has_mps:
-    device = torch.device("mps")
-else:
-    device = torch.device("cpu")
+device = get_optimal_device()
+
 batch_cond_uncond = cmd_opts.always_batch_cond_uncond or not (cmd_opts.lowvram or cmd_opts.medvram)
 parallel_processing_allowed = not cmd_opts.lowvram and not cmd_opts.medvram
 
@@ -78,6 +77,8 @@ artist_db = modules.artists.ArtistsDatabase(os.path.join(script_path, 'artists.c
 
 styles_filename = os.path.join(script_path, 'styles.csv')
 prompt_styles = modules.styles.load_styles(styles_filename)
+
+interrogator = modules.interrogate.InterrogateModels("interrogate")
 
 face_restorers = []
 
@@ -125,6 +126,11 @@ class Options:
         "multiple_tqdm": OptionInfo(True, "Add a second progress bar to the console that shows progress for an entire job. Broken in PyCharm console."),
         "face_restoration_model": OptionInfo(None, "Face restoration model", gr.Radio, lambda: {"choices": [x.name() for x in face_restorers]}),
         "code_former_weight": OptionInfo(0.5, "CodeFormer weight parameter; 0 = maximum effect; 1 = minimum effect", gr.Slider, {"minimum": 0, "maximum": 1, "step": 0.01}),
+        "interrogate_keep_models_in_memory": OptionInfo(True, "Interrogate: keep models in VRAM"),
+        "interrogate_use_builtin_artists": OptionInfo(True, "Interrogate: use artists from artists.csv"),
+        "interrogate_clip_num_beams": OptionInfo(1, "Interrogate: num_beams for BLIP", gr.Slider, {"minimum": 1, "maximum": 16, "step": 1}),
+        "interrogate_clip_min_length": OptionInfo(24, "Interrogate: minimum descripton length (excluding artists, etc..)", gr.Slider, {"minimum": 1, "maximum": 128, "step": 1}),
+        "interrogate_clip_max_length": OptionInfo(48, "Interrogate: maximum descripton length", gr.Slider, {"minimum": 1, "maximum": 256, "step": 1}),
     }
 
     def __init__(self):

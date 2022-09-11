@@ -11,3 +11,5 @@ pytorch_lightning==1.7.2
 scikit-image==0.19.2
 fonts
 font-roboto
+timm==0.4.12
+fairscale==0.4.4
