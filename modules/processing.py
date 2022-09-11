@@ -122,8 +122,6 @@ def create_random_tensors(shape, seeds, subseeds=None, subseed_strength=0.0, see
 
         fixed_subnoises = []
         for fs in range(len(fixed_subseeds)):
-            print("Why is this doing something?")
-            print(fs, fixed_subseeds, fixed_subnoises)
             torch.manual_seed(fixed_subseeds[fs])
             fixed_subnoises.append(torch.randn(noise_shape, device=shared.device))
 
