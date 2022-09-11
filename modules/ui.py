@@ -378,7 +378,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     switch_mode = gr.Radio(label='Mode', elem_id="img2img_mode", choices=['Redraw whole image', 'Inpaint a part of image', 'Loopback', 'SD upscale'], value='Redraw whole image', type="index", show_label=False)
                     init_img = gr.Image(label="Image for img2img", source="upload", interactive=True, type="pil")
                     init_img_with_mask = gr.Image(label="Image for inpainting with mask", elem_id="img2maskimg", source="upload", interactive=True, type="pil", tool="sketch", visible=False, image_mode="RGBA")
-                    init_img_with_mask_comment = gr.HTML(elem_id="mask_bug_info", value="<small>if the editor shows ERROR, switch to another img2img mode above and back</small>", visible=False)
+                    init_img_with_mask_comment = gr.HTML(elem_id="mask_bug_info", value="<small>if the editor shows ERROR, switch to another tab and back, then to another img2img mode above and back</small>", visible=False)
                     init_mask = gr.Image(label="Mask", source="upload", interactive=True, type="pil", visible=False)
 
                     with gr.Row():
