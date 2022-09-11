@@ -92,6 +92,7 @@ class Options:
 
     data = None
     data_labels = {
+        "samples_filename_format": OptionInfo("", "Samples filename format using following tags: [STEPS],[CFG],[PROMPT],[PROMPT_SPACES],[WIDTH],[HEIGHT],[SAMPLER],[SEED]. Leave blank for default."),
         "outdir_samples": OptionInfo("", "Output directory for images; if empty, defaults to two directories below"),
         "outdir_txt2img_samples": OptionInfo("outputs/txt2img-images", 'Output directory for txt2img images'),
         "outdir_img2img_samples": OptionInfo("outputs/img2img-images", 'Output directory for img2img images'),
