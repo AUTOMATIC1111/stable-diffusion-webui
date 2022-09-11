@@ -10,6 +10,7 @@ from PIL import Image, ImageFilter, ImageOps
 import random
 
 import modules.sd_hijack
+from modules import devices
 from modules.sd_hijack import model_hijack
 from modules.sd_samplers import samplers, samplers_for_img2img
 from modules.shared import opts, cmd_opts, state
@@ -22,11 +23,6 @@ import modules.styles
 opt_C = 4
 opt_f = 8
 
-
-def torch_gc():
-    if torch.cuda.is_available():
-        torch.cuda.empty_cache()
-        torch.cuda.ipc_collect()
 
 
 class StableDiffusionProcessing:
@@ -157,7 +153,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
     """this is the main loop that both txt2img and img2img use; it calls func_init once inside all the scopes and func_sample once per batch"""
 
     assert p.prompt is not None
-    torch_gc()
+    devices.torch_gc()
 
     fix_seed(p)
 
@@ -258,7 +254,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
                 x_sample = x_sample.astype(np.uint8)
 
                 if p.restore_faces:
-                    torch_gc()
+                    devices.torch_gc()
 
                     x_sample = modules.face_restoration.restore_faces(x_sample)
 
@@ -297,7 +293,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             if opts.grid_save:
                 images.save_image(grid, p.outpath_grids, "grid", all_seeds[0], all_prompts[0], opts.grid_format, info=infotext(), short_filename=not opts.grid_extended_filename)
 
-    torch_gc()
+    devices.torch_gc()
     return Processed(p, output_images, all_seeds[0], infotext())
 
 

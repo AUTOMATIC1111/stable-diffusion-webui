@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 from PIL import Image, ImageOps, ImageChops
 
+from modules import devices
 from modules.processing import Processed, StableDiffusionProcessingImg2Img, process_images
 from modules.shared import opts, state
 import modules.shared as shared
@@ -131,7 +132,7 @@ def img2img(prompt: str, negative_prompt: str, prompt_style: str, init_img, init
         upscaler = shared.sd_upscalers[upscaler_index]
         img = upscaler.upscale(init_img, init_img.width * 2, init_img.height * 2)
 
-        processing.torch_gc()
+        devices.torch_gc()
 
         grid = images.split_grid(img, tile_w=width, tile_h=height, overlap=upscale_overlap)
 
