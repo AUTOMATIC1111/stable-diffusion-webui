@@ -58,7 +58,7 @@ To use ESRGAN models, put them into ESRGAN directory in the same location as web
 as model if it has .pth extension. Grab models from the [Model Database](https://upscale.wiki/wiki/Model_Database).
 
 > Note: RealESRGAN models are not ESRGAN models, they are not compatible. Do not download RealESRGAN models. Do not place
-RealESRGAN into the directory with ESRGAN moderls. Thank you.
+RealESRGAN into the directory with ESRGAN models. Thank you.
 
 ### Automatic installation/launch
 
