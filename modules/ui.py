@@ -242,9 +242,14 @@ def add_style(style_name, text):
     return [update, update]
 
 
+def interrogate(image):
+    prompt = shared.interrogator.interrogate(image)
+
+    return gr_show(True) if prompt is None else prompt
+
 def create_ui(txt2img, img2img, run_extras, run_pnginfo):
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
-        with gr.Row():
+        with gr.Row(elem_id="toprow"):
             txt2img_prompt = gr.Textbox(label="Prompt", elem_id="txt2img_prompt", show_label=False, placeholder="Prompt", lines=1)
             negative_prompt = gr.Textbox(label="Negative prompt", elem_id="txt2img_negative_prompt", show_label=False, placeholder="Negative prompt", lines=1)
             txt2img_prompt_style = gr.Dropdown(label="Style", show_label=False, elem_id="style_index", choices=[k for k, v in shared.prompt_styles.items()], value=next(iter(shared.prompt_styles.keys())), visible=len(shared.prompt_styles) > 1)
@@ -365,10 +370,11 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
             )
 
     with gr.Blocks(analytics_enabled=False) as img2img_interface:
-        with gr.Row():
+        with gr.Row(elem_id="toprow"):
             img2img_prompt = gr.Textbox(label="Prompt", elem_id="img2img_prompt", show_label=False, placeholder="Prompt", lines=1)
             negative_prompt = gr.Textbox(label="Negative prompt", elem_id="img2img_negative_prompt", show_label=False, placeholder="Negative prompt", lines=1)
             img2img_prompt_style = gr.Dropdown(label="Style", show_label=False, elem_id="style_index", choices=[k for k, v in shared.prompt_styles.items()], value=next(iter(shared.prompt_styles.keys())), visible=len(shared.prompt_styles) > 1)
+            img2img_interrogate = gr.Button('Interrogate', elem_id="img2img_interrogate", variant='primary')
             submit = gr.Button('Generate', elem_id="img2img_generate", variant='primary')
             check_progress = gr.Button('Check progress', elem_id="check_progress", visible=False)
 
@@ -461,6 +467,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     inpaint_full_res: gr_show(is_inpaint),
                     inpainting_mask_invert: gr_show(is_inpaint),
                     denoising_strength_change_factor: gr_show(is_loopback),
+                    img2img_interrogate: gr_show(not is_inpaint),
                 }
 
             switch_mode.change(
@@ -480,6 +487,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     inpaint_full_res,
                     inpainting_mask_invert,
                     denoising_strength_change_factor,
+                    img2img_interrogate,
                 ]
             )
 
@@ -539,6 +547,12 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
 
             img2img_prompt.submit(**img2img_args)
             submit.click(**img2img_args)
+
+            img2img_interrogate.click(
+                fn=interrogate,
+                inputs=[init_img],
+                outputs=[img2img_prompt],
+            )
 
             check_progress.click(
                 fn=check_progress_call,

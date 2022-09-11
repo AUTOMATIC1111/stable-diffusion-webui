@@ -5,6 +5,10 @@
     max-width: 13em;
 }
 
+#img2img_interrogate{
+    max-width: 10em;
+}
+
 #subseed_show{
     min-width: 6em;
     max-width: 6em;
@@ -26,7 +30,7 @@
     padding-right: 0;
 }
 
-#component-1 div{
+#toprow div{
     border: none;
     gap: 0;
 }

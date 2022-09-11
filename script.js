@@ -51,6 +51,8 @@ titles = {
     "Variation strength": "How strong of a variation to produce. At 0, there will be no effect. At 1, you will get the complete picture with variation seed (except for ancestral samplers, where you will just get something).",
     "Resize seed from height": "Make an attempt to produce a picture similar to what would have been produced with same seed at specified resolution",
     "Resize seed from width": "Make an attempt to produce a picture similar to what would have been produced with same seed at specified resolution",
+
+    "Interrogate": "Reconstruct frompt from existing image and put it into the prompt field.",
 }
 
 function gradioApp(){

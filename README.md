@@ -40,6 +40,7 @@ A browser interface based on Gradio library for Stable Diffusion.
 - Styles
 - Variations
 - Seed resizing
+- CLIP interrogator
 
 ## Installing and running
 
@@ -289,5 +290,6 @@ After that follow the instructions in the `Manual instructions` section starting
 - Ideas for optimizations - https://github.com/basujindal/stable-diffusion
 - Cross Attention layer optimization - https://github.com/Doggettx/stable-diffusion
 - Idea for SD upscale - https://github.com/jquesnelle/txt2imghd
+- CLIP interrogator idea and borrowing some code - https://github.com/pharmapsychotic/clip-interrogator
 - Initial Gradio script - posted on 4chan by an Anonymous user. Thank you Anonymous user.
 - (You)
