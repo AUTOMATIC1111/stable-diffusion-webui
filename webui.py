@@ -4,9 +4,7 @@ import threading
 from modules.paths import script_path
 
 import torch
-import numpy as np
 from omegaconf import OmegaConf
-from PIL import Image
 
 import signal
 
@@ -15,16 +13,14 @@ from ldm.util import instantiate_from_config
 from modules.shared import opts, cmd_opts, state
 import modules.shared as shared
 import modules.ui
-from modules.ui import plaintext_to_html
 import modules.scripts
-import modules.processing as processing
 import modules.sd_hijack
 import modules.codeformer_model
 import modules.gfpgan_model
 import modules.face_restoration
 import modules.realesrgan_model as realesrgan
 import modules.esrgan_model as esrgan
-import modules.images as images
+import  modules.extras
 import modules.lowvram
 import modules.txt2img
 import modules.img2img
@@ -56,80 +52,6 @@ def load_model_from_config(config, ckpt, verbose=False):
     model.eval()
     return model
 
-cached_images = {}
-
-
-def run_extras(image, gfpgan_visibility, codeformer_visibility, codeformer_weight, upscaling_resize, extras_upscaler_1, extras_upscaler_2, extras_upscaler_2_visibility):
-    processing.torch_gc()
-
-    image = image.convert("RGB")
-
-    outpath = opts.outdir_samples or opts.outdir_extras_samples
-
-    if gfpgan_visibility > 0:
-        restored_img = modules.gfpgan_model.gfpgan_fix_faces(np.array(image, dtype=np.uint8))
-        res = Image.fromarray(restored_img)
-
-        if gfpgan_visibility < 1.0:
-            res = Image.blend(image, res, gfpgan_visibility)
-
-        image = res
-
-    if codeformer_visibility > 0:
-        restored_img = modules.codeformer_model.codeformer.restore(np.array(image, dtype=np.uint8), w=codeformer_weight)
-        res = Image.fromarray(restored_img)
-
-        if codeformer_visibility < 1.0:
-            res = Image.blend(image, res, codeformer_visibility)
-
-        image = res
-
-    if upscaling_resize != 1.0:
-        def upscale(image, scaler_index, resize):
-            small = image.crop((image.width // 2, image.height // 2, image.width // 2 + 10, image.height // 2 + 10))
-            pixels = tuple(np.array(small).flatten().tolist())
-            key = (resize, scaler_index, image.width, image.height, gfpgan_visibility, codeformer_visibility, codeformer_weight) + pixels
-
-            c = cached_images.get(key)
-            if c is None:
-                upscaler = shared.sd_upscalers[scaler_index]
-                c = upscaler.upscale(image, image.width * resize, image.height * resize)
-                cached_images[key] = c
-
-            return c
-
-        res = upscale(image, extras_upscaler_1, upscaling_resize)
-
-        if extras_upscaler_2 != 0 and extras_upscaler_2_visibility>0:
-            res2 = upscale(image, extras_upscaler_2, upscaling_resize)
-            res = Image.blend(res, res2, extras_upscaler_2_visibility)
-
-        image = res
-
-    while len(cached_images) > 2:
-        del cached_images[next(iter(cached_images.keys()))]
-
-    images.save_image(image, outpath, "", None, '', opts.samples_format, short_filename=True, no_prompt=True)
-
-    return image, '', ''
-
-
-def run_pnginfo(image):
-    info = ''
-    for key, text in image.info.items():
-        info += f"""
-<div>
-<p><b>{plaintext_to_html(str(key))}</b></p>
-<p>{plaintext_to_html(str(text))}</p>
-</div>
-""".strip()+"\n"
-
-    if len(info) == 0:
-        message = "Nothing found in the image."
-        info = f"<div><p>{message}<p></div>"
-
-    return '', '', info
-
 
 queue_lock = threading.Lock()
 
@@ -152,6 +74,7 @@ def wrap_gradio_gpu_call(func):
         return res
 
     return modules.ui.wrap_gradio_call(f)
+
 
 modules.scripts.load_scripts(os.path.join(script_path, "scripts"))
 
@@ -187,8 +110,8 @@ def webui():
     demo = modules.ui.create_ui(
         txt2img=wrap_gradio_gpu_call(modules.txt2img.txt2img),
         img2img=wrap_gradio_gpu_call(modules.img2img.img2img),
-        run_extras=wrap_gradio_gpu_call(run_extras),
-        run_pnginfo=run_pnginfo
+        run_extras=wrap_gradio_gpu_call(modules.extras.run_extras),
+        run_pnginfo=modules.extras.run_pnginfo
     )
 
     demo.launch(share=cmd_opts.share, server_name="0.0.0.0" if cmd_opts.listen else None, server_port=cmd_opts.port)

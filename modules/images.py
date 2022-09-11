@@ -243,7 +243,7 @@ def sanitize_filename_part(text):
     return text.replace(' ', '_').translate({ord(x): '' for x in invalid_filename_chars})[:128]
 
 
-def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False):
+def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False, pnginfo_section_name='parameters'):
     # would be better to add this as an argument in future, but will do for now
     is_a_grid = basename != ""
 
@@ -256,7 +256,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
 
     if extension == 'png' and opts.enable_pnginfo and info is not None:
         pnginfo = PngImagePlugin.PngInfo()
-        pnginfo.add_text("parameters", info)
+        pnginfo.add_text(pnginfo_section_name, info)
     else:
         pnginfo = None
 

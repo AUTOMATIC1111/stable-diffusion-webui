@@ -797,6 +797,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
 
     visit(txt2img_interface, loadsave, "txt2img")
     visit(img2img_interface, loadsave, "img2img")
+    visit(extras_interface, loadsave, "extras")
 
     if not error_loading and (not os.path.exists(ui_config_file) or settings_count != len(ui_settings)):
         with open(ui_config_file, "w", encoding="utf8") as file:
