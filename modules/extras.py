@@ -1,7 +1,7 @@
 import numpy as np
 from PIL import Image
 
-from modules import processing, shared, images
+from modules import processing, shared, images, devices
 from modules.shared import opts
 import modules.gfpgan_model
 from modules.ui import plaintext_to_html
@@ -11,7 +11,7 @@ cached_images = {}
 
 
 def run_extras(image, gfpgan_visibility, codeformer_visibility, codeformer_weight, upscaling_resize, extras_upscaler_1, extras_upscaler_2, extras_upscaler_2_visibility):
-    processing.torch_gc()
+    devices.torch_gc()
 
     image = image.convert("RGB")
     info = ""
