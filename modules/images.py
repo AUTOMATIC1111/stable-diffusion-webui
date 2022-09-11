@@ -243,16 +243,32 @@ def sanitize_filename_part(text):
     return text.replace(' ', '_').translate({ord(x): '' for x in invalid_filename_chars})[:128]
 
 
-def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False, pnginfo_section_name='parameters'):
+def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False, pnginfo_section_name='parameters', process_info=None):
     # would be better to add this as an argument in future, but will do for now
     is_a_grid = basename != ""
 
     if short_filename or prompt is None or seed is None:
         file_decoration = ""
     elif opts.save_to_dirs:
-        file_decoration = f"-{seed}"
+        file_decoration = opts.samples_filename_format or "[SEED]"
     else:
-        file_decoration = f"-{seed}-{sanitize_filename_part(prompt)[:128]}"
+        file_decoration = opts.samples_filename_format or "[SEED]-[PROMPT]"
+        #file_decoration = f"-{seed}-{sanitize_filename_part(prompt)[:128]}"
+
+    #Add new filenames tags here
+    file_decoration = "-" + file_decoration
+    if seed is not None:
+        file_decoration = file_decoration.replace("[SEED]", str(seed))
+    if prompt is not None:
+        file_decoration = file_decoration.replace("[PROMPT]", sanitize_filename_part(prompt)[:128])
+        file_decoration = file_decoration.replace("[PROMPT_SPACES]", prompt.translate({ord(x): '' for x in invalid_filename_chars})[:128])
+    if process_info is not None:
+        file_decoration = file_decoration.replace("[STEPS]", str(process_info.steps))
+        file_decoration = file_decoration.replace("[CFG]", str(process_info.cfg_scale))
+        file_decoration = file_decoration.replace("[WIDTH]", str(process_info.width))
+        file_decoration = file_decoration.replace("[HEIGHT]", str(process_info.height))
+        file_decoration = file_decoration.replace("[SAMPLER]", str(process_info.sampler))
+
 
     if extension == 'png' and opts.enable_pnginfo and info is not None:
         pnginfo = PngImagePlugin.PngInfo()
