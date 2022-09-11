@@ -203,6 +203,7 @@ mkdir repositories
 git clone https://github.com/CompVis/stable-diffusion.git repositories/stable-diffusion
 git clone https://github.com/CompVis/taming-transformers.git repositories/taming-transformers
 git clone https://github.com/sczhou/CodeFormer.git repositories/CodeFormer
+git clone https://github.com/salesforce/BLIP.git repositories/BLIP
 
 # install requirements of Stable Diffusion
 pip install transformers==4.19.2 diffusers invisible-watermark --prefer-binary
