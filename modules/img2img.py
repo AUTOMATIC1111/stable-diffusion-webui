@@ -180,7 +180,7 @@ def img2img(prompt: str, negative_prompt: str, prompt_style: str, init_img, init
             result_images.append(combined_image)
 
             if opts.samples_save:
-                images.save_image(combined_image, p.outpath_samples, "", start_seed, prompt, opts.grid_format, info=initial_info)
+                images.save_image(combined_image, p.outpath_samples, "", start_seed, prompt, opts.samples_format, info=initial_info)
 
         processed = Processed(p, result_images, seed, initial_info)
 
