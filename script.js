@@ -186,11 +186,7 @@ window.addEventListener('paste', e => {
         });
 });
 
-function ask_for_style_name(style_name, text){
-    input = prompt('Style name:');
-    if (input === null) {
-        return [null, null]
-    }
-
-    return [input, text]
+function ask_for_style_name(_, prompt_text, negative_prompt_text) {
+    name_ = prompt('Style name:')
+    return name_ === null ? [null, null, null]: [name_, prompt_text, negative_prompt_text]
 }

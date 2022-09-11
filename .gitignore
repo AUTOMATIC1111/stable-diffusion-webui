@@ -12,5 +12,6 @@ __pycache__
 /webui.settings.bat
 /embeddings
 /styles.csv
+/styles.csv.bak
 /webui-user.bat
 /interrogate
