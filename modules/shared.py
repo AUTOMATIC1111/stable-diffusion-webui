@@ -9,6 +9,7 @@ import tqdm
 
 import modules.artists
 from modules.paths import script_path, sd_path
+from modules.devices import get_optimal_device
 import modules.styles
 
 config_filename = "config.json"
@@ -43,12 +44,8 @@ parser.add_argument("--ui-config-file", type=str, help="filename to use for ui c
 
 cmd_opts = parser.parse_args()
 
-if torch.has_cuda:
-    device = torch.device("cuda")
-elif torch.has_mps:
-    device = torch.device("mps")
-else:
-    device = torch.device("cpu")
+device = get_optimal_device()
+
 batch_cond_uncond = cmd_opts.always_batch_cond_uncond or not (cmd_opts.lowvram or cmd_opts.medvram)
 parallel_processing_allowed = not cmd_opts.lowvram and not cmd_opts.medvram
 
