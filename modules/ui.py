@@ -197,7 +197,7 @@ def visit(x, func, path=""):
 def create_seed_inputs():
     with gr.Row():
         seed = gr.Number(label='Seed', value=-1)
-        seed_resize_checkbox = gr.Checkbox(label="Extra", elem_id="seed_resize_show", value=False)
+        seed_resize_checkbox = gr.Checkbox(label="Extra", elem_id="subseed_show", value=False)
 
     with gr.Row():
         seed_resize_from_h = gr.Slider(minimum=0, maximum=2048, step=64, label="Resize seed from height", value=0, visible=False)

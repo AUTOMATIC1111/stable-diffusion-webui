@@ -60,11 +60,12 @@ class StableDiffusionProcessing:
         self.overlay_images = overlay_images
         self.paste_to = None
 
-        if len(fixed_subseeds) > len(fixed_subseed_strengths):
-            fixed_subseeds = fixed_subseeds[:len(fixed_subseed_strengths)-1]
-        for fs in range(len(fixed_subseeds)):
-            if not (0 <= fixed_subseed_strengths[fs] <= 1):
-                fixed_subseed_strengths[fs] = 0
+
+        if len(self.fixed_subseeds) > len(self.fixed_subseed_strengths):
+            self.fixed_subseeds = self.fixed_subseeds[:len(self.fixed_subseed_strengths)-1]
+        for fs in range(len(self.fixed_subseeds)):
+            if not (0 <= self.fixed_subseed_strengths[fs] <= 1):
+                self.fixed_subseed_strengths[fs] = 0
 
     def init(self, seed):
         pass
