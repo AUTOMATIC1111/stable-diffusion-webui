@@ -30,7 +30,7 @@ def torch_gc():
 
 
 class StableDiffusionProcessing:
-    def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt="", prompt_style=0, seed=-1, subseed=-1, subseed_strength=0, seed_resize_from_h=-1, seed_resize_from_w=-1, sampler_index=0, batch_size=1, n_iter=1, steps=50, cfg_scale=7.0, width=512, height=512, restore_faces=False, tiling=False, do_not_save_samples=False, do_not_save_grid=False, extra_generation_params=None, overlay_images=None, negative_prompt=None):
+    def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt="", prompt_style=0, seed=-1, subseed=-1, subseed_strength=0, seed_resize_from_h=-1, seed_resize_from_w=-1, fixed_subseeds='', fixed_subseed_strengths='', sampler_index=0, batch_size=1, n_iter=1, steps=50, cfg_scale=7.0, width=512, height=512, restore_faces=False, tiling=False, do_not_save_samples=False, do_not_save_grid=False, extra_generation_params=None, overlay_images=None, negative_prompt=None):
         self.sd_model = sd_model
         self.outpath_samples: str = outpath_samples
         self.outpath_grids: str = outpath_grids
@@ -43,6 +43,8 @@ class StableDiffusionProcessing:
         self.subseed_strength: float = subseed_strength
         self.seed_resize_from_h: int = seed_resize_from_h
         self.seed_resize_from_w: int = seed_resize_from_w
+        self.fixed_subseeds: List[int] = [] if len(fixed_subseeds) == 0 else [int(x) for x in fixed_subseeds.strip().split(',')]
+        self.fixed_subseed_strengths: List[float] = [] if len(fixed_subseed_strengths) == 0 else [float(x) for x in fixed_subseed_strengths.strip().split(',')]
         self.sampler_index: int = sampler_index
         self.batch_size: int = batch_size
         self.n_iter: int = n_iter
@@ -57,6 +59,12 @@ class StableDiffusionProcessing:
         self.extra_generation_params: dict = extra_generation_params
         self.overlay_images = overlay_images
         self.paste_to = None
+
+        if len(fixed_subseeds) > len(fixed_subseed_strengths):
+            fixed_subseeds = fixed_subseeds[:len(fixed_subseed_strengths)-1]
+        for fs in range(len(fixed_subseeds)):
+            if not (0 <= fixed_subseed_strengths[fs] <= 1):
+                fixed_subseed_strengths[fs] = 0
 
     def init(self, seed):
         pass
@@ -100,7 +108,7 @@ def slerp(val, low, high):
     return res
 
 
-def create_random_tensors(shape, seeds, subseeds=None, subseed_strength=0.0, seed_resize_from_h=0, seed_resize_from_w=0):
+def create_random_tensors(shape, seeds, subseeds=None, subseed_strength=0.0, seed_resize_from_h=0, seed_resize_from_w=0, fixed_subseeds=[], fixed_subseed_strengths=[]):
     xs = []
     for i, seed in enumerate(seeds):
         noise_shape = shape if seed_resize_from_h <= 0 or seed_resize_from_w <= 0 else (shape[0], seed_resize_from_h//8, seed_resize_from_w//8)
@@ -111,12 +119,22 @@ def create_random_tensors(shape, seeds, subseeds=None, subseed_strength=0.0, see
             torch.manual_seed(subseed)
             subnoise = torch.randn(noise_shape, device=shared.device)
 
+        fixed_subnoises = []
+        for fs in range(len(fixed_subseeds)):
+            print("Why is this doing something?")
+            print(fs, fixed_subseeds, fixed_subnoises)
+            torch.manual_seed(fixed_subseeds[fs])
+            fixed_subnoises.append(torch.randn(noise_shape, device=shared.device))
+
         # randn results depend on device; gpu and cpu get different results for same seed;
         # the way I see it, it's better to do this on CPU, so that everyone gets same result;
         # but the original script had it like this, so I do not dare change it for now because
         # it will break everyone's seeds.
         torch.manual_seed(seed)
         noise = torch.randn(noise_shape, device=shared.device)
+
+        for fs in range(len(fixed_subseeds)):
+            noise = slerp(fixed_subseed_strengths[fs], noise, fixed_subnoises[fs])
 
         if subnoise is not None:
             #noise = subnoise * subseed_strength + noise * (1 - subseed_strength)
@@ -242,7 +260,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
                 comments += model_hijack.comments
 
             # we manually generate all input noises because each one should have a specific seed
-            x = create_random_tensors([opt_C, p.height // opt_f, p.width // opt_f], seeds=seeds, subseeds=subseeds, subseed_strength=p.subseed_strength, seed_resize_from_h=p.seed_resize_from_h, seed_resize_from_w=p.seed_resize_from_w)
+            x = create_random_tensors([opt_C, p.height // opt_f, p.width // opt_f], seeds=seeds, subseeds=subseeds, subseed_strength=p.subseed_strength, seed_resize_from_h=p.seed_resize_from_h, seed_resize_from_w=p.seed_resize_from_w, fixed_subseeds=p.fixed_subseeds, fixed_subseed_strengths=p.fixed_subseed_strengths)
 
             if p.n_iter > 1:
                 shared.state.job = f"Batch {n+1} out of {p.n_iter}"
