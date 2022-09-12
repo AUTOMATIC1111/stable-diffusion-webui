@@ -247,7 +247,7 @@ def sanitize_filename_part(text, replace_spaces=True):
     return text.translate({ord(x): '' for x in invalid_filename_chars})[:128]
 
 
-def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False, pnginfo_section_name='parameters', p=None):
+def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False, pnginfo_section_name='parameters', p=None, existing_info=None):
     # would be better to add this as an argument in future, but will do for now
     is_a_grid = basename != ""
 
@@ -258,7 +258,9 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     else:
         file_decoration = opts.samples_filename_format or "[seed]-[prompt_spaces]"
 
-    file_decoration = "-" + file_decoration.lower()
+    if file_decoration != "":
+        file_decoration = "-" + file_decoration.lower()
+
     if seed is not None:
         file_decoration = file_decoration.replace("[seed]", str(seed))
     if prompt is not None:
@@ -273,6 +275,11 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
 
     if extension == 'png' and opts.enable_pnginfo and info is not None:
         pnginfo = PngImagePlugin.PngInfo()
+
+        if existing_info is not None:
+            for k, v in existing_info.items():
+                pnginfo.add_text(k, v)
+
         pnginfo.add_text(pnginfo_section_name, info)
     else:
         pnginfo = None
