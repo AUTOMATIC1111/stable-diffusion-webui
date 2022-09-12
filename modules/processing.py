@@ -103,33 +103,17 @@ def create_random_tensors(shape, seeds, subseeds=None, subseed_strength=0.0, see
     for i, seed in enumerate(seeds):
         noise_shape = shape if seed_resize_from_h <= 0 or seed_resize_from_w <= 0 else (shape[0], seed_resize_from_h//8, seed_resize_from_w//8)
 
-        # Pytorch currently doesn't handle seeting randomness correctly when the metal backend is used.
-        generator = torch
-        if shared.device.type == 'mps':
-            shared.device_seed_type = 'cpu'
-            generator = torch.Generator(device=shared.device_seed_type)
-
         subnoise = None
         if subseeds is not None:
             subseed = 0 if i >= len(subseeds) else subseeds[i]
-            generator.manual_seed(subseed)
 
-            if shared.device.type != shared.device_seed_type:
-                subnoise = torch.randn(noise_shape, generator=generator, device=shared.device_seed_type).to(shared.device)
-            else:
-                subnoise = torch.randn(noise_shape, device=shared.device)
+            subnoise = devices.randn(subseed, noise_shape)
 
         # randn results depend on device; gpu and cpu get different results for same seed;
         # the way I see it, it's better to do this on CPU, so that everyone gets same result;
         # but the original script had it like this, so I do not dare change it for now because
         # it will break everyone's seeds.
-        # When using the mps backend falling back to the cpu device is needed, since mps currently
-        # does not implement seeding properly.
-        generator.manual_seed(seed)
-        if shared.device.type != shared.device_seed_type:
-            noise = torch.randn(noise_shape, generator=generator, device=shared.device_seed_type).to(shared.device)
-        else:
-            noise = torch.randn(noise_shape, device=shared.device)
+        noise = devices.randn(seed, noise_shape)
 
         if subnoise is not None:
             #noise = subnoise * subseed_strength + noise * (1 - subseed_strength)
@@ -137,14 +121,8 @@ def create_random_tensors(shape, seeds, subseeds=None, subseed_strength=0.0, see
 
         if noise_shape != shape:
             #noise = torch.nn.functional.interpolate(noise.unsqueeze(1), size=shape[1:], mode="bilinear").squeeze()
-            # noise_shape = (64, 80)
-            # shape = (64, 72)
-            generator.manual_seed(seed)
-            if shared.device.type != shared.device_seed_type:
-                x = torch.randn(shape, generator=generator, device=shared.device_seed_type).to(shared.device)
-            else:
-                x = torch.randn(shape, device=shared.device)
-            dx = (shape[2] - noise_shape[2]) // 2 # -4
+            x = devices.randn(seed, shape)
+            dx = (shape[2] - noise_shape[2]) // 2
             dy = (shape[1] - noise_shape[1]) // 2
             w = noise_shape[2] if dx >= 0 else noise_shape[2] + 2 * dx
             h = noise_shape[1] if dy >= 0 else noise_shape[1] + 2 * dy
@@ -482,10 +460,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         if self.image_mask is not None:
             init_mask = latent_mask
             latmask = init_mask.convert('RGB').resize((self.init_latent.shape[3], self.init_latent.shape[2]))
-            precision = np.float64
-            if shared.device.type == 'mps': # mps backend does not support float64
-                precision = np.float32
-            latmask = np.moveaxis(np.array(latmask, dtype=precision), 2, 0) / 255
+            latmask = np.moveaxis(np.array(latmask, dtype=np.float32), 2, 0) / 255
             latmask = latmask[0]
             latmask = np.around(latmask)
             latmask = np.tile(latmask[None], (4, 1, 1))
