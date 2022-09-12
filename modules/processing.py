@@ -254,11 +254,15 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
                 x_sample = x_sample.astype(np.uint8)
 
                 if p.restore_faces:
+                    if opts.save and not p.do_not_save_samples and opts.save_images_before_face_restoration:
+                        images.save_image(Image.fromarray(x_sample), p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, info=infotext(n, i), p=p)
+
                     devices.torch_gc()
 
                     x_sample = modules.face_restoration.restore_faces(x_sample)
 
                 image = Image.fromarray(x_sample)
+
 
                 if p.overlay_images is not None and i < len(p.overlay_images):
                     overlay = p.overlay_images[i]
