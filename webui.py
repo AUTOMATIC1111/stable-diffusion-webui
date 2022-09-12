@@ -120,7 +120,7 @@ def webui():
         server_name="0.0.0.0" if cmd_opts.listen else None,
         server_port=cmd_opts.port,
         debug=cmd_opts.gradio_debug,
-        auth=[tuple(cred.split(':')) for cred in cmd_opts.auth.strip('"').split(',')] if cmd_opts.auth else None,
+        auth=[tuple(cred.split(':')) for cred in cmd_opts.gradio_auth.strip('"').split(',')] if cmd_opts.gradio_auth else None,
     )
 
 
