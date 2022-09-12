@@ -138,7 +138,7 @@ also but the effect will likely be barely noticeable.
 ### Running online
 
 Use `--share` option to run online. You will get a xxx.app.gradio link. This is the intended way to use the
-program in collabs. You may also use `--gradio-username abc` and `--gradio-password xyz` to set up authentication for said gradio shared instance.
+program in collabs. You may set up authentication for said gradio shared instance with the flag `--gradio-auth username:password`, optionally providing multiple sets of usernames and passwords separated by commas.
 
 Use `--listen` to make the server listen to network connections. This will allow computers on local newtork
 to access the UI, and if you configure port forwarding, also computers on the internet.
