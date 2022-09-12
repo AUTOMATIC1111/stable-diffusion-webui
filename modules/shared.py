@@ -97,7 +97,7 @@ class Options:
     data = None
     hide_dirs = {"visible": False} if cmd_opts.hide_ui_dir_config else None
     data_labels = {
-        "samples_filename_format": OptionInfo("", "Samples filename format using following tags: [steps],[cfg],[prompt],[prompt_spaces],[width],[height],[sampler],[seed]. Leave blank for default."),
+        "samples_filename_format": OptionInfo("", "Samples filename format using following tags: [steps], [cfg], [prompt], [prompt_spaces], [width], [height], [sampler], [seed], [model_hash]. Leave blank for default."),
         "outdir_samples": OptionInfo("", "Output directory for images; if empty, defaults to two directories below", component_args=hide_dirs),
         "outdir_txt2img_samples": OptionInfo("outputs/txt2img-images", 'Output directory for txt2img images', component_args=hide_dirs),
         "outdir_img2img_samples": OptionInfo("outputs/img2img-images", 'Output directory for img2img images', component_args=hide_dirs),
@@ -120,6 +120,7 @@ class Options:
         "jpeg_quality": OptionInfo(80, "Quality for saved jpeg images", gr.Slider, {"minimum": 1, "maximum": 100, "step": 1}),
         "export_for_4chan": OptionInfo(True, "If PNG image is larger than 4MB or any dimension is larger than 4000, downscale and save copy as JPG"),
         "enable_pnginfo": OptionInfo(True, "Save text information about generation parameters as chunks to png files"),
+        "add_model_hash_to_info": OptionInfo(False, "Add model hash to generation information"),
         "font": OptionInfo("", "Font for image grids that have text"),
         "enable_emphasis": OptionInfo(True, "Use (text) to make model pay more attention to text text and [text] to make it pay less attention"),
         "save_txt": OptionInfo(False, "Create a text file next to every image with generation parameters."),
@@ -178,6 +179,7 @@ if os.path.exists(config_filename):
 sd_upscalers = []
 
 sd_model = None
+sd_model_hash = ''
 
 progress_print_out = sys.stdout
 

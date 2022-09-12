@@ -35,7 +35,7 @@ realesrgan.setup_realesrgan()
 
 
 def load_model_from_config(config, ckpt, verbose=False):
-    print(f"Loading model from {ckpt}")
+    print(f"Loading model [{shared.sd_model_hash}] from {ckpt}")
     pl_sd = torch.load(ckpt, map_location="cpu")
     if "global_step" in pl_sd:
         print(f"Global Step: {pl_sd['global_step']}")
@@ -88,6 +88,14 @@ try:
     logging.set_verbosity_error()
 except Exception:
     pass
+
+with open(cmd_opts.ckpt, "rb") as file:
+    import hashlib
+    m = hashlib.sha256()
+
+    file.seek(0x100000)
+    m.update(file.read(0x10000))
+    shared.sd_model_hash = m.hexdigest()[0:8]
 
 sd_config = OmegaConf.load(cmd_opts.config)
 shared.sd_model = load_model_from_config(sd_config, cmd_opts.ckpt)

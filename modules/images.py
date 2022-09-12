@@ -9,7 +9,7 @@ from fonts.ttf import Roboto
 import string
 
 import modules.shared
-from modules import sd_samplers
+from modules import sd_samplers, shared
 from modules.shared import opts
 
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
@@ -277,6 +277,8 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
         file_decoration = file_decoration.replace("[width]", str(p.width))
         file_decoration = file_decoration.replace("[height]", str(p.height))
         file_decoration = file_decoration.replace("[sampler]", sd_samplers.samplers[p.sampler_index].name)
+
+    file_decoration = file_decoration.replace("[model_hash]", shared.sd_model_hash)
 
     if extension == 'png' and opts.enable_pnginfo and info is not None:
         pnginfo = PngImagePlugin.PngInfo()
