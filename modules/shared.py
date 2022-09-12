@@ -13,8 +13,6 @@ from modules.devices import get_optimal_device
 import modules.styles
 import modules.interrogate
 
-config_filename = "config.json"
-
 sd_model_file = os.path.join(script_path, 'model.ckpt')
 if not os.path.exists(sd_model_file):
     sd_model_file = "models/ldm/stable-diffusion-v1/model.ckpt"
@@ -42,6 +40,7 @@ parser.add_argument("--listen", action='store_true', help="launch gradio with 0.
 parser.add_argument("--port", type=int, help="launch gradio with given server port, you need root/admin rights for ports < 1024, defaults to 7860 if available", default=None)
 parser.add_argument("--show-negative-prompt", action='store_true', help="does not do anything", default=False)
 parser.add_argument("--ui-config-file", type=str, help="filename to use for ui configuration", default=os.path.join(script_path, 'ui-config.json'))
+parser.add_argument("--ui-settings-file", type=str, help="filename to use for ui settings", default=os.path.join(script_path, 'config.json'))
 
 cmd_opts = parser.parse_args()
 
@@ -50,6 +49,7 @@ device = get_optimal_device()
 batch_cond_uncond = cmd_opts.always_batch_cond_uncond or not (cmd_opts.lowvram or cmd_opts.medvram)
 parallel_processing_allowed = not cmd_opts.lowvram and not cmd_opts.medvram
 
+config_filename = cmd_opts.ui_settings_file
 
 class State:
     interrupted = False
