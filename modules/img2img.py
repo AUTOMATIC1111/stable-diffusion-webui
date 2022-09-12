@@ -63,7 +63,6 @@ def img2img(prompt: str, negative_prompt: str, prompt_style: str, init_img, init
         inpaint_full_res=inpaint_full_res,
         inpainting_mask_invert=inpainting_mask_invert,
         extra_generation_params={
-            "Denoising strength": denoising_strength,
             "Denoising strength change factor": (denoising_strength_change_factor if is_loopback else None)
         }
     )
