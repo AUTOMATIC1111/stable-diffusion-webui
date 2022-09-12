@@ -56,13 +56,13 @@ def setup_codeformer():
                     self.net.to(shared.device)
                     return self.net, self.face_helper
 
-                net = net_class(dim_embd=512, codebook_size=1024, n_head=8, n_layers=9, connect_list=['32', '64', '128', '256']).to(shared.device_codeformer)
+                net = net_class(dim_embd=512, codebook_size=1024, n_head=8, n_layers=9, connect_list=['32', '64', '128', '256']).to(devices.device_codeformer)
                 ckpt_path = load_file_from_url(url=pretrain_model_url, model_dir=os.path.join(path, 'weights/CodeFormer'), progress=True)
                 checkpoint = torch.load(ckpt_path)['params_ema']
                 net.load_state_dict(checkpoint)
                 net.eval()
 
-                face_helper = FaceRestoreHelper(1, face_size=512, crop_ratio=(1, 1), det_model='retinaface_resnet50', save_ext='png', use_parse=True, device=shared.device_codeformer)
+                face_helper = FaceRestoreHelper(1, face_size=512, crop_ratio=(1, 1), det_model='retinaface_resnet50', save_ext='png', use_parse=True, device=devices.device_codeformer)
 
                 self.net = net
                 self.face_helper = face_helper
@@ -84,7 +84,7 @@ def setup_codeformer():
                 for idx, cropped_face in enumerate(self.face_helper.cropped_faces):
                     cropped_face_t = img2tensor(cropped_face / 255., bgr2rgb=True, float32=True)
                     normalize(cropped_face_t, (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=True)
-                    cropped_face_t = cropped_face_t.unsqueeze(0).to(shared.device_codeformer)
+                    cropped_face_t = cropped_face_t.unsqueeze(0).to(devices.device_codeformer)
 
                     try:
                         with torch.no_grad():
