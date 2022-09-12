@@ -155,14 +155,14 @@ https://colab.research.google.com/drive/1Iy-xW9t1-OQWhb0hNxueGij8phCyluOh
 
 ### Textual Inversion
 To make use of pretrained embeddings, create an `embeddings` directory (in the same place as `webui.py`)
-and put your embeddings into it. They must be .pt files, each with only one trained embedding,
-and the filename (without .pt) will be the term you'll use in the prompt to get that embedding.
+and put your embeddings into it. They must be either .pt or .bin files, each with only one trained embedding,
+and the filename (without .pt/.bin) will be the term you'll use in the prompt to get that embedding.
 
 As an example, I trained one for about 5000 steps: https://files.catbox.moe/e2ui6r.pt; it does not produce
-very good results, but it does work. Download and rename it to Usada Pekora.pt, and put it into embeddings dir
-and use Usada Pekora in prompt.
+very good results, but it does work. To try it out download the file, rename it to `Usada Pekora.pt`, put it into the `embeddings` dir
+and use `Usada Pekora` in the prompt.
 
-You may also try some from the growing library of embeddings at https://huggingface.co/sd-concepts-library, downloading the `learned_embeds.bin` files, renaming them to the related term found in `token_identifier.txt` (without the < and >) and putting them in your `embeddings` directory.
+You may also try some from the growing library of embeddings at https://huggingface.co/sd-concepts-library, downloading one of the `learned_embeds.bin` files, renaming it to the term you want to use for it in the prompt (be sure to keep the .bin extension) and putting it in your `embeddings` directory.
 
 ### How to change UI defaults?
 
