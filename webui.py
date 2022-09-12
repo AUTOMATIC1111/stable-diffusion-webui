@@ -115,8 +115,13 @@ def webui():
         run_pnginfo=modules.extras.run_pnginfo
     )
 
-    auth = [tuple(cred.split(':')) for cred in cmd_opts.auth.strip('"').split(',')] if cmd_opts.auth else None
-    demo.launch(share=cmd_opts.share, server_name="0.0.0.0" if cmd_opts.listen else None, server_port=cmd_opts.port, debug=cmd_opts.gradio_debug, auth=auth)
+    demo.launch(
+        share=cmd_opts.share,
+        server_name="0.0.0.0" if cmd_opts.listen else None,
+        server_port=cmd_opts.port,
+        debug=cmd_opts.gradio_debug,
+        auth=[tuple(cred.split(':')) for cred in cmd_opts.auth.strip('"').split(',')] if cmd_opts.auth else None,
+    )
 
 
 if __name__ == "__main__":
