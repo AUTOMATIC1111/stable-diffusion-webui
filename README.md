@@ -284,6 +284,7 @@ After that follow the instructions in the `Manual instructions` section starting
 
 
 ### img2img alterantive test
+- see [this post](https://www.reddit.com/r/StableDiffusion/comments/xboy90/a_better_way_of_doing_img2img_by_finding_the/) on ebaumsworld.com for context.
 - find it in scripts section
 - put description of input image into the Original prompt field
 - use Euler only
