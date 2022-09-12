@@ -127,7 +127,7 @@ class Options:
         "multiple_tqdm": OptionInfo(True, "Add a second progress bar to the console that shows progress for an entire job. Broken in PyCharm console."),
         "face_restoration_model": OptionInfo(None, "Face restoration model", gr.Radio, lambda: {"choices": [x.name() for x in face_restorers]}),
         "code_former_weight": OptionInfo(0.5, "CodeFormer weight parameter; 0 = maximum effect; 1 = minimum effect", gr.Slider, {"minimum": 0, "maximum": 1, "step": 0.01}),
-        "interrogate_keep_models_in_memory": OptionInfo(True, "Interrogate: keep models in VRAM"),
+        "interrogate_keep_models_in_memory": OptionInfo(False, "Interrogate: keep models in VRAM"),
         "interrogate_use_builtin_artists": OptionInfo(True, "Interrogate: use artists from artists.csv"),
         "interrogate_clip_num_beams": OptionInfo(1, "Interrogate: num_beams for BLIP", gr.Slider, {"minimum": 1, "maximum": 16, "step": 1}),
         "interrogate_clip_min_length": OptionInfo(24, "Interrogate: minimum descripton length (excluding artists, etc..)", gr.Slider, {"minimum": 1, "maximum": 128, "step": 1}),
