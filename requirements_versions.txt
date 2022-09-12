@@ -1,4 +1,4 @@
-basicsr==1.3.5
+basicsr==1.4.2
 gfpgan
 gradio==3.3
 numpy==1.23.3
