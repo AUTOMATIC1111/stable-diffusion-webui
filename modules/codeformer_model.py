@@ -1,6 +1,3 @@
-# Metal backend fixes written and placed
-# into the public domain by Elias Oenal <sd@eliasoenal.com>
-
 import os
 import sys
 import traceback
@@ -50,25 +47,21 @@ def setup_codeformer():
             def __init__(self):
                 self.net = None
                 self.face_helper = None
+                if shared.device.type == 'mps': # CodeFormer currently does not support mps backend
+                    shared.device_codeformer = torch.device('cpu')
 
             def create_models(self):
 
                 if self.net is not None and self.face_helper is not None:
                     return self.net, self.face_helper
 
-                if shared.device.type == 'mps': # CodeFormer currently does not support mps backend
-                    net = net_class(dim_embd=512, codebook_size=1024, n_head=8, n_layers=9, connect_list=['32', '64', '128', '256']).to(torch.device('cpu'))
-                else:
-                    net = net_class(dim_embd=512, codebook_size=1024, n_head=8, n_layers=9, connect_list=['32', '64', '128', '256']).to(shared.device)
+                net = net_class(dim_embd=512, codebook_size=1024, n_head=8, n_layers=9, connect_list=['32', '64', '128', '256']).to(shared.device_codeformer)
                 ckpt_path = load_file_from_url(url=pretrain_model_url, model_dir=os.path.join(path, 'weights/CodeFormer'), progress=True)
                 checkpoint = torch.load(ckpt_path)['params_ema']
                 net.load_state_dict(checkpoint)
                 net.eval()
 
-                if shared.device.type == 'mps': # CodeFormer currently does not support mps backend
-                    face_helper = FaceRestoreHelper(1, face_size=512, crop_ratio=(1, 1), det_model='retinaface_resnet50', save_ext='png', use_parse=True, device=torch.device('cpu'))
-                else:
-                    face_helper = FaceRestoreHelper(1, face_size=512, crop_ratio=(1, 1), det_model='retinaface_resnet50', save_ext='png', use_parse=True, device=shared.device)
+                face_helper = FaceRestoreHelper(1, face_size=512, crop_ratio=(1, 1), det_model='retinaface_resnet50', save_ext='png', use_parse=True, device=shared.device_codeformer)
 
                 if not cmd_opts.unload_gfpgan:
                     self.net = net
@@ -90,10 +83,8 @@ def setup_codeformer():
                 for idx, cropped_face in enumerate(face_helper.cropped_faces):
                     cropped_face_t = img2tensor(cropped_face / 255., bgr2rgb=True, float32=True)
                     normalize(cropped_face_t, (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=True)
-                    if shared.device.type == 'mps': # CodeFormer currently does not support mps backend
-                        cropped_face_t = cropped_face_t.unsqueeze(0).to(torch.device('cpu'))
-                    else:
-                        cropped_face_t = cropped_face_t.unsqueeze(0).to(shared.device)
+                    cropped_face_t = cropped_face_t.unsqueeze(0).to(shared.device_codeformer)
+
                     try:
                         with torch.no_grad():
                             output = net(cropped_face_t, w=w if w is not None else shared.opts.code_former_weight, adain=True)[0]
