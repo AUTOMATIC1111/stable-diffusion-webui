@@ -115,7 +115,7 @@ def webui():
         run_pnginfo=modules.extras.run_pnginfo
     )
 
-    demo.launch(share=cmd_opts.share, server_name="0.0.0.0" if cmd_opts.listen else None, server_port=cmd_opts.port)
+    demo.launch(share=cmd_opts.share, server_name="0.0.0.0" if cmd_opts.listen else None, server_port=cmd_opts.port, debug=cmd_opts.gradio_debug)
 
 
 if __name__ == "__main__":
