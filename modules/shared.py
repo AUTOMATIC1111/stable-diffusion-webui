@@ -2,7 +2,7 @@ import sys
 import argparse
 import json
 import os
-
+import hashlib
 import gradio as gr
 import torch
 import tqdm
@@ -52,6 +52,9 @@ device = get_optimal_device()
 
 batch_cond_uncond = cmd_opts.always_batch_cond_uncond or not (cmd_opts.lowvram or cmd_opts.medvram)
 parallel_processing_allowed = not cmd_opts.lowvram and not cmd_opts.medvram
+
+# Hash of model file name, not the model itself!
+md5 = hashlib.md5(cmd_opts.ckpt.encode('UTF-8')).hexdigest()
 
 config_filename = cmd_opts.ui_settings_file
 
