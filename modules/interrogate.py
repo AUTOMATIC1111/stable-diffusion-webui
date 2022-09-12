@@ -160,8 +160,8 @@ class InterrogateModels:
         except Exception:
             print(f"Error interrogating", file=sys.stderr)
             print(traceback.format_exc(), file=sys.stderr)
+            res += "<error>"
 
         self.unload()
 
-        res += "<error>"
         return res
