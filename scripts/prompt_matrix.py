@@ -82,6 +82,6 @@ class Script(scripts.Script):
         processed.images.insert(0, grid)
 
         if opts.grid_save:
-            images.save_image(processed.images[0], p.outpath_grids, "prompt_matrix", prompt=original_prompt, seed=processed.seed)
+            images.save_image(processed.images[0], p.outpath_grids, "prompt_matrix", prompt=original_prompt, seed=processed.seed, p=p)
 
         return processed

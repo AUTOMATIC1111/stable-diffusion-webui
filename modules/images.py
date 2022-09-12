@@ -9,6 +9,7 @@ from fonts.ttf import Roboto
 import string
 
 import modules.shared
+from modules import sd_samplers
 from modules.shared import opts
 
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
@@ -239,36 +240,36 @@ invalid_filename_chars = '<>:"/\\|?*\n'
 re_nonletters = re.compile(r'[\s'+string.punctuation+']+')
 
 
-def sanitize_filename_part(text):
-    return text.replace(' ', '_').translate({ord(x): '' for x in invalid_filename_chars})[:128]
+def sanitize_filename_part(text, replace_spaces=True):
+    if replace_spaces:
+        text = text.replace(' ', '_')
+
+    return text.translate({ord(x): '' for x in invalid_filename_chars})[:128]
 
 
-def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False, pnginfo_section_name='parameters', process_info=None):
+def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False, pnginfo_section_name='parameters', p=None):
     # would be better to add this as an argument in future, but will do for now
     is_a_grid = basename != ""
 
     if short_filename or prompt is None or seed is None:
         file_decoration = ""
     elif opts.save_to_dirs:
-        file_decoration = opts.samples_filename_format or "[SEED]"
+        file_decoration = opts.samples_filename_format or "[seed]"
     else:
-        file_decoration = opts.samples_filename_format or "[SEED]-[PROMPT]"
-        #file_decoration = f"-{seed}-{sanitize_filename_part(prompt)[:128]}"
+        file_decoration = opts.samples_filename_format or "[seed]-[prompt_spaces]"
 
-    #Add new filenames tags here
-    file_decoration = "-" + file_decoration
+    file_decoration = "-" + file_decoration.lower()
     if seed is not None:
-        file_decoration = file_decoration.replace("[SEED]", str(seed))
+        file_decoration = file_decoration.replace("[seed]", str(seed))
     if prompt is not None:
-        file_decoration = file_decoration.replace("[PROMPT]", sanitize_filename_part(prompt)[:128])
-        file_decoration = file_decoration.replace("[PROMPT_SPACES]", prompt.translate({ord(x): '' for x in invalid_filename_chars})[:128])
-    if process_info is not None:
-        file_decoration = file_decoration.replace("[STEPS]", str(process_info.steps))
-        file_decoration = file_decoration.replace("[CFG]", str(process_info.cfg_scale))
-        file_decoration = file_decoration.replace("[WIDTH]", str(process_info.width))
-        file_decoration = file_decoration.replace("[HEIGHT]", str(process_info.height))
-        file_decoration = file_decoration.replace("[SAMPLER]", str(process_info.sampler))
-
+        file_decoration = file_decoration.replace("[prompt]", sanitize_filename_part(prompt)[:128])
+        file_decoration = file_decoration.replace("[prompt_spaces]", sanitize_filename_part(prompt, replace_spaces=False)[:128])
+    if p is not None:
+        file_decoration = file_decoration.replace("[steps]", str(p.steps))
+        file_decoration = file_decoration.replace("[cfg]", str(p.cfg_scale))
+        file_decoration = file_decoration.replace("[width]", str(p.width))
+        file_decoration = file_decoration.replace("[height]", str(p.height))
+        file_decoration = file_decoration.replace("[sampler]", sd_samplers.samplers[p.sampler_index].name)
 
     if extension == 'png' and opts.enable_pnginfo and info is not None:
         pnginfo = PngImagePlugin.PngInfo()
