@@ -49,6 +49,8 @@ parser.add_argument("--opt-channelslast", action='store_true', help="change memo
 cmd_opts = parser.parse_args()
 
 device = get_optimal_device()
+device_codeformer = device
+device_seed_type = device
 
 batch_cond_uncond = cmd_opts.always_batch_cond_uncond or not (cmd_opts.lowvram or cmd_opts.medvram)
 parallel_processing_allowed = not cmd_opts.lowvram and not cmd_opts.medvram
