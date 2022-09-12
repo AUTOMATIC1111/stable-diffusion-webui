@@ -40,6 +40,7 @@ parser.add_argument("--listen", action='store_true', help="launch gradio with 0.
 parser.add_argument("--port", type=int, help="launch gradio with given server port, you need root/admin rights for ports < 1024, defaults to 7860 if available", default=None)
 parser.add_argument("--show-negative-prompt", action='store_true', help="does not do anything", default=False)
 parser.add_argument("--ui-config-file", type=str, help="filename to use for ui configuration", default=os.path.join(script_path, 'ui-config.json'))
+parser.add_argument("--hide-ui-dir-config", action='store_true', help="hide directory configuration from webui", default=False)
 parser.add_argument("--ui-settings-file", type=str, help="filename to use for ui settings", default=os.path.join(script_path, 'config.json'))
 parser.add_argument("--gradio-debug",  action='store_true', help="launch gradio with --debug option")
 
@@ -92,19 +93,20 @@ class Options:
             self.component_args = component_args
 
     data = None
+    hide_dirs = {"visible": False} if cmd_opts.hide_ui_dir_config else None
     data_labels = {
         "samples_filename_format": OptionInfo("", "Samples filename format using following tags: [STEPS],[CFG],[PROMPT],[PROMPT_SPACES],[WIDTH],[HEIGHT],[SAMPLER],[SEED]. Leave blank for default."),
-        "outdir_samples": OptionInfo("", "Output directory for images; if empty, defaults to two directories below"),
-        "outdir_txt2img_samples": OptionInfo("outputs/txt2img-images", 'Output directory for txt2img images'),
-        "outdir_img2img_samples": OptionInfo("outputs/img2img-images", 'Output directory for img2img images'),
-        "outdir_extras_samples": OptionInfo("outputs/extras-images", 'Output directory for images from extras tab'),
-        "outdir_grids": OptionInfo("", "Output directory for grids; if empty, defaults to two directories below"),
-        "outdir_txt2img_grids": OptionInfo("outputs/txt2img-grids", 'Output directory for txt2img grids'),
-        "outdir_img2img_grids": OptionInfo("outputs/img2img-grids", 'Output directory for img2img grids'),
+        "outdir_samples": OptionInfo("", "Output directory for images; if empty, defaults to two directories below", component_args=hide_dirs),
+        "outdir_txt2img_samples": OptionInfo("outputs/txt2img-images", 'Output directory for txt2img images', component_args=hide_dirs),
+        "outdir_img2img_samples": OptionInfo("outputs/img2img-images", 'Output directory for img2img images', component_args=hide_dirs),
+        "outdir_extras_samples": OptionInfo("outputs/extras-images", 'Output directory for images from extras tab', component_args=hide_dirs),
+        "outdir_grids": OptionInfo("", "Output directory for grids; if empty, defaults to two directories below", component_args=hide_dirs),
+        "outdir_txt2img_grids": OptionInfo("outputs/txt2img-grids", 'Output directory for txt2img grids', component_args=hide_dirs),
+        "outdir_img2img_grids": OptionInfo("outputs/img2img-grids", 'Output directory for img2img grids', component_args=hide_dirs),
         "save_to_dirs": OptionInfo(False, "When writing images, create a directory with name derived from the prompt"),
         "grid_save_to_dirs": OptionInfo(False, "When writing grids, create a directory with name derived from the prompt"),
         "save_to_dirs_prompt_len": OptionInfo(10, "When using above, how many words from prompt to put into directory name", gr.Slider, {"minimum": 1, "maximum": 32, "step": 1}),
-        "outdir_save": OptionInfo("log/images", "Directory for saving images using the Save button"),
+        "outdir_save": OptionInfo("log/images", "Directory for saving images using the Save button", component_args=hide_dirs),
         "samples_save": OptionInfo(True, "Save indiviual samples"),
         "samples_format": OptionInfo('png', 'File format for individual samples'),
         "grid_save": OptionInfo(True, "Save image grids"),
