@@ -49,7 +49,7 @@ def load_model_from_config(config, ckpt, verbose=False):
     if len(u) > 0 and verbose:
         print("unexpected keys:")
         print(u)
-    if cmd_opts.opts_channelslast:
+    if cmd_opts.opt_channelslast:
         model = model.to(memory_format=torch.channels_last)
     model.eval()
     return model
