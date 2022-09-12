@@ -339,8 +339,8 @@ class Installer:
                 self._pip_install(self.config.get("LAUNCHER", "requirements_path"),
                                   "--prefer-binary", from_file=True)
 
-            # create directory called "repositories" if it doesn't exist
-            os.makedirs("repositoriess", exist_ok=True)
+            if not os.path.exists('repositories'):
+                os.mkdir("repositories")
 
             # clone repositories
             if not os.path.exists("repositories/taming-transformers"):
