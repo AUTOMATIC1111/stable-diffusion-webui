@@ -126,24 +126,12 @@ if %ERRORLEVEL% == 0 goto :clone_blip
 goto :show_stdout_stderr
 
 :clone_blip
-if exist repositories\BLIP goto :check_model
+if exist repositories\BLIP goto :launch
 echo Cloning BLIP repository...
 %GIT% clone https://github.com/salesforce/BLIP.git repositories\BLIP >tmp/stdout.txt 2>tmp/stderr.txt
 if %ERRORLEVEL% NEQ 0 goto :show_stdout_stderr
 %GIT% -C repositories/BLIP checkout 48211a1594f1321b00f14c9f7a5b4813144b2fb9 >tmp/stdout.txt 2>tmp/stderr.txt
 if %ERRORLEVEL% NEQ 0 goto :show_stdout_stderr
-
-:check_model
-dir model.ckpt >tmp/stdout.txt 2>tmp/stderr.txt
-if %ERRORLEVEL% == 0 goto :check_gfpgan
-echo Stable Diffusion model not found: you need to place model.ckpt file into same directory as this file.
-goto :show_stdout_stderr
-
-:check_gfpgan
-dir GFPGANv1.3.pth >tmp/stdout.txt 2>tmp/stderr.txt
-if %ERRORLEVEL% == 0 goto :launch
-echo GFPGAN not found: you need to place GFPGANv1.3.pth file into same directory as this file.
-echo Face fixing feature will not work.
 
 :launch
 echo Launching webui.py...
