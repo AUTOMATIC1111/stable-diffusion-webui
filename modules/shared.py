@@ -97,7 +97,10 @@ class Options:
     data = None
     hide_dirs = {"visible": False} if cmd_opts.hide_ui_dir_config else None
     data_labels = {
-        "samples_filename_format": OptionInfo("", "Samples filename format using following tags: [steps], [cfg], [prompt], [prompt_spaces], [width], [height], [sampler], [seed], [model_hash]. Leave blank for default."),
+        "samples_filename_pattern": OptionInfo("", "Images filename pattern"),
+        "save_to_dirs": OptionInfo(False, "Save images to a subdirectory"),
+        "grid_save_to_dirs": OptionInfo(False, "Save grids to subdirectory"),
+        "directories_filename_pattern": OptionInfo("", "Directory name pattern"),
         "outdir_samples": OptionInfo("", "Output directory for images; if empty, defaults to two directories below", component_args=hide_dirs),
         "outdir_txt2img_samples": OptionInfo("outputs/txt2img-images", 'Output directory for txt2img images', component_args=hide_dirs),
         "outdir_img2img_samples": OptionInfo("outputs/img2img-images", 'Output directory for img2img images', component_args=hide_dirs),
@@ -105,9 +108,6 @@ class Options:
         "outdir_grids": OptionInfo("", "Output directory for grids; if empty, defaults to two directories below", component_args=hide_dirs),
         "outdir_txt2img_grids": OptionInfo("outputs/txt2img-grids", 'Output directory for txt2img grids', component_args=hide_dirs),
         "outdir_img2img_grids": OptionInfo("outputs/img2img-grids", 'Output directory for img2img grids', component_args=hide_dirs),
-        "save_to_dirs": OptionInfo(False, "When writing images, create a directory with name derived from the prompt"),
-        "grid_save_to_dirs": OptionInfo(False, "When writing grids, create a directory with name derived from the prompt"),
-        "save_to_dirs_prompt_len": OptionInfo(10, "When using above, how many words from prompt to put into directory name", gr.Slider, {"minimum": 1, "maximum": 32, "step": 1}),
         "outdir_save": OptionInfo("log/images", "Directory for saving images using the Save button", component_args=hide_dirs),
         "samples_save": OptionInfo(True, "Save indiviual samples"),
         "samples_format": OptionInfo('png', 'File format for individual samples'),
