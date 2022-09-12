@@ -1,3 +1,4 @@
+import datetime
 import math
 import os
 from collections import namedtuple
@@ -252,6 +253,31 @@ def sanitize_filename_part(text, replace_spaces=True):
     return text.translate({ord(x): '' for x in invalid_filename_chars})[:128]
 
 
+def apply_filename_pattern(x, p, seed, prompt):
+    if seed is not None:
+        x = x.replace("[seed]", str(seed))
+    if prompt is not None:
+        x = x.replace("[prompt]", sanitize_filename_part(prompt)[:128])
+        x = x.replace("[prompt_spaces]", sanitize_filename_part(prompt, replace_spaces=False)[:128])
+        if "[prompt_words]" in x:
+            words = [x for x in re_nonletters.split(prompt or "") if len(x) > 0]
+            if len(words) == 0:
+                words = ["empty"]
+
+            x = x.replace("[prompt_words]", " ".join(words[0:8]).strip())
+    if p is not None:
+        x = x.replace("[steps]", str(p.steps))
+        x = x.replace("[cfg]", str(p.cfg_scale))
+        x = x.replace("[width]", str(p.width))
+        x = x.replace("[height]", str(p.height))
+        x = x.replace("[sampler]", sd_samplers.samplers[p.sampler_index].name)
+
+    x = x.replace("[model_hash]", shared.sd_model_hash)
+    x = x.replace("[date]", datetime.date.today().isoformat())
+
+    return x
+
+
 def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False, pnginfo_section_name='parameters', p=None, existing_info=None):
     # would be better to add this as an argument in future, but will do for now
     is_a_grid = basename != ""
@@ -259,26 +285,14 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     if short_filename or prompt is None or seed is None:
         file_decoration = ""
     elif opts.save_to_dirs:
-        file_decoration = opts.samples_filename_format or "[seed]"
+        file_decoration = opts.samples_filename_pattern or "[seed]"
     else:
-        file_decoration = opts.samples_filename_format or "[seed]-[prompt_spaces]"
+        file_decoration = opts.samples_filename_pattern or "[seed]-[prompt_spaces]"
 
     if file_decoration != "":
         file_decoration = "-" + file_decoration.lower()
 
-    if seed is not None:
-        file_decoration = file_decoration.replace("[seed]", str(seed))
-    if prompt is not None:
-        file_decoration = file_decoration.replace("[prompt]", sanitize_filename_part(prompt)[:128])
-        file_decoration = file_decoration.replace("[prompt_spaces]", sanitize_filename_part(prompt, replace_spaces=False)[:128])
-    if p is not None:
-        file_decoration = file_decoration.replace("[steps]", str(p.steps))
-        file_decoration = file_decoration.replace("[cfg]", str(p.cfg_scale))
-        file_decoration = file_decoration.replace("[width]", str(p.width))
-        file_decoration = file_decoration.replace("[height]", str(p.height))
-        file_decoration = file_decoration.replace("[sampler]", sd_samplers.samplers[p.sampler_index].name)
-
-    file_decoration = file_decoration.replace("[model_hash]", shared.sd_model_hash)
+    file_decoration = apply_filename_pattern(file_decoration, p, seed, prompt)
 
     if extension == 'png' and opts.enable_pnginfo and info is not None:
         pnginfo = PngImagePlugin.PngInfo()
@@ -293,12 +307,8 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
 
     save_to_dirs = (is_a_grid and opts.grid_save_to_dirs) or (not is_a_grid and opts.save_to_dirs)
 
-    if save_to_dirs and not no_prompt:
-        words = [x for x in re_nonletters.split(prompt or "") if len(x)>0]
-        if len(words) == 0:
-            words = ["empty"]
-
-        dirname = " ".join(words[0:opts.save_to_dirs_prompt_len]).strip()
+    if save_to_dirs:
+        dirname = apply_filename_pattern(opts.directories_filename_pattern or "[prompt_words]", p, seed, prompt)
         path = os.path.join(path, dirname)
 
     os.makedirs(path, exist_ok=True)
