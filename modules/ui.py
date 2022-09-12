@@ -93,7 +93,7 @@ def save_files(js_data, images):
         at_start = file.tell() == 0
         writer = csv.writer(file)
         if at_start:
-            writer.writerow(["prompt", "seed", "width", "height", "sampler", "cfgs", "steps", "filename"])
+            writer.writerow(["prompt", "seed", "width", "height", "sampler", "cfgs", "steps", "filename", "negative_prompt"])
 
         filename_base = str(int(time.time() * 1000))
         for i, filedata in enumerate(images):
@@ -108,7 +108,7 @@ def save_files(js_data, images):
 
             filenames.append(filename)
 
-        writer.writerow([data["prompt"], data["seed"], data["width"], data["height"], data["sampler"], data["cfg_scale"], data["steps"], filenames[0]])
+        writer.writerow([data["prompt"], data["seed"], data["width"], data["height"], data["sampler"], data["cfg_scale"], data["steps"], filenames[0], data["negative_prompt"]])
 
     return '', '', plaintext_to_html(f"Saved: {filenames[0]}")
 

@@ -65,6 +65,7 @@ class Processed:
     def __init__(self, p: StableDiffusionProcessing, images_list, seed, info):
         self.images = images_list
         self.prompt = p.prompt
+        self.negative_prompt = p.negative_prompt
         self.seed = seed
         self.info = info
         self.width = p.width
@@ -76,6 +77,7 @@ class Processed:
     def js(self):
         obj = {
             "prompt": self.prompt if type(self.prompt) != list else self.prompt[0],
+            "negative_prompt": self.negative_prompt if type(self.negative_prompt) != list else self.negative_prompt[0],
             "seed": int(self.seed if type(self.seed) != list else self.seed[0]),
             "width": self.width,
             "height": self.height,
