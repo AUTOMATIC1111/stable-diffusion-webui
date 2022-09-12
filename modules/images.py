@@ -332,7 +332,7 @@ class Upscaler:
             img = self.do_upscale(img)
 
         if img.width != w or img.height != h:
-            img = img.resize((w, h), resample=LANCZOS)
+            img = img.resize((int(w), int(h)), resample=LANCZOS)
 
         return img
 
