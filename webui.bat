@@ -37,13 +37,15 @@ goto :show_stdout_stderr
 set PYTHON="%~dp0%VENV_DIR%\Scripts\Python.exe"
 %PYTHON% --version
 echo venv %PYTHON%
-goto :install_torch
+goto :print_commit
 
 :skip_venv
 %PYTHON% --version
 
-:install_torch
+:print_commit
+%GIT% rev-parse HEAD
 
+:install_torch
 %PYTHON% -c "import torch" >tmp/stdout.txt 2>tmp/stderr.txt
 if %ERRORLEVEL% == 0 goto :check_gpu
 echo Installing torch...
