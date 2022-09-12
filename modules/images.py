@@ -5,6 +5,8 @@ from collections import namedtuple
 import re
 
 import numpy as np
+import piexif
+import piexif.helper
 from PIL import Image, ImageFont, ImageDraw, PngImagePlugin
 from fonts.ttf import Roboto
 import string
@@ -323,7 +325,14 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
         if not os.path.exists(fullfn):
             break
 
-    image.save(fullfn, quality=opts.jpeg_quality, pnginfo=pnginfo)
+    if extension == "png":
+        image.save(fullfn, quality=opts.jpeg_quality, pnginfo=pnginfo)
+    else:
+        exif_dict = { "Exif" : dict() }
+        exif_dict["Exif"][piexif.ExifIFD.UserComment] = piexif.helper.UserComment.dump(
+            info, encoding="unicode")
+        exif_bytes = piexif.dump(exif_dict)
+        image.save(fullfn, quality=opts.jpeg_quality, exif=exif_bytes)
 
     target_side_length = 4000
     oversize = image.width > target_side_length or image.height > target_side_length
@@ -335,7 +344,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
         elif oversize:
             image = image.resize((image.width * target_side_length // image.height, target_side_length), LANCZOS)
 
-        image.save(f"{fullfn_without_extension}.jpg", quality=opts.jpeg_quality, pnginfo=pnginfo)
+        image.save(fullfn, quality=opts.jpeg_quality, exif=exif_bytes)
 
     if opts.save_txt and info is not None:
         with open(f"{fullfn_without_extension}.txt", "w", encoding="utf8") as file:
