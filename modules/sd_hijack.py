@@ -1,3 +1,4 @@
+import math
 import os
 import sys
 import traceback
@@ -12,8 +13,9 @@ from einops import rearrange
 import ldm.modules.attention
 
 
+
 # see https://github.com/basujindal/stable-diffusion/pull/117 for discussion
-def split_cross_attention_forward(self, x, context=None, mask=None):
+def split_cross_attention_forward_v1(self, x, context=None, mask=None):
     h = self.heads
 
     q = self.to_q(x)
@@ -35,6 +37,62 @@ def split_cross_attention_forward(self, x, context=None, mask=None):
 
         r1[i:end] = einsum('b i j, b j d -> b i d', s2, v[i:end])
         del s2
+
+    r2 = rearrange(r1, '(b h) n d -> b n (h d)', h=h)
+    del r1
+
+    return self.to_out(r2)
+
+
+# taken from https://github.com/Doggettx/stable-diffusion
+def split_cross_attention_forward(self, x, context=None, mask=None):
+    h = self.heads
+
+    q_in = self.to_q(x)
+    context = default(context, x)
+    k_in = self.to_k(context)
+    v_in = self.to_v(context)
+    del context, x
+
+    q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> (b h) n d', h=h), (q_in, k_in, v_in))
+    del q_in, k_in, v_in
+
+    r1 = torch.zeros(q.shape[0], q.shape[1], v.shape[2], device=q.device)
+
+    stats = torch.cuda.memory_stats(q.device)
+    mem_active = stats['active_bytes.all.current']
+    mem_reserved = stats['reserved_bytes.all.current']
+    mem_free_cuda, _ = torch.cuda.mem_get_info(torch.cuda.current_device())
+    mem_free_torch = mem_reserved - mem_active
+    mem_free_total = mem_free_cuda + mem_free_torch
+
+    gb = 1024 ** 3
+    tensor_size = q.shape[0] * q.shape[1] * k.shape[1] * 4
+    mem_required = tensor_size * 2.5
+    steps = 1
+
+    if mem_required > mem_free_total:
+        steps = 2 ** (math.ceil(math.log(mem_required / mem_free_total, 2)))
+        # print(f"Expected tensor size:{tensor_size/gb:0.1f}GB, cuda free:{mem_free_cuda/gb:0.1f}GB "
+        #       f"torch free:{mem_free_torch/gb:0.1f} total:{mem_free_total/gb:0.1f} steps:{steps}")
+
+    if steps > 64:
+        max_res = math.floor(math.sqrt(math.sqrt(mem_free_total / 2.5)) / 8) * 64
+        raise RuntimeError(f'Not enough memory, use lower resolution (max approx. {max_res}x{max_res}). '
+                           f'Need: {mem_required / 64 / gb:0.1f}GB free, Have:{mem_free_total / gb:0.1f}GB free')
+
+    slice_size = q.shape[1] // steps if (q.shape[1] % steps) == 0 else q.shape[1]
+    for i in range(0, q.shape[1], slice_size):
+        end = i + slice_size
+        s1 = einsum('b i d, b j d -> b i j', q[:, i:end], k) * self.scale
+
+        s2 = s1.softmax(dim=-1)
+        del s1
+
+        r1[:, i:end] = einsum('b i j, b j d -> b i d', s2, v)
+        del s2
+
+    del q, k, v
 
     r2 = rearrange(r1, '(b h) n d -> b n (h d)', h=h)
     del r1
@@ -73,11 +131,21 @@ class StableDiffusionModelHijack:
             name = os.path.splitext(filename)[0]
 
             data = torch.load(path)
-            param_dict = data['string_to_param']
-            if hasattr(param_dict, '_parameters'):
-                param_dict = getattr(param_dict, '_parameters')  # fix for torch 1.12.1 loading saved file from torch 1.11
-            assert len(param_dict) == 1, 'embedding file has multiple terms in it'
-            emb = next(iter(param_dict.items()))[1]
+
+            # textual inversion embeddings
+            if 'string_to_param' in data:
+                param_dict = data['string_to_param']
+                if hasattr(param_dict, '_parameters'):
+                    param_dict = getattr(param_dict, '_parameters')  # fix for torch 1.12.1 loading saved file from torch 1.11
+                assert len(param_dict) == 1, 'embedding file has multiple terms in it'
+                emb = next(iter(param_dict.items()))[1]
+            elif type(data) == dict and type(next(iter(data.values()))) == torch.Tensor:
+                assert len(data.keys()) == 1, 'embedding file has multiple terms in it'
+
+                emb = next(iter(data.values()))
+                if len(emb.shape) == 1:
+                    emb = emb.unsqueeze(0)
+
             self.word_embeddings[name] = emb.detach()
             self.word_embeddings_checksums[name] = f'{const_hash(emb.reshape(-1))&0xffff:04x}'
 
@@ -106,6 +174,8 @@ class StableDiffusionModelHijack:
 
         if cmd_opts.opt_split_attention:
             ldm.modules.attention.CrossAttention.forward = split_cross_attention_forward
+        elif cmd_opts.opt_split_attention_v1:
+            ldm.modules.attention.CrossAttention.forward = split_cross_attention_forward_v1
 
         def flatten(el):
             flattened = [flatten(children) for children in el.children()]
@@ -232,7 +302,7 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
         z = outputs.last_hidden_state
 
         # restoring original mean is likely not correct, but it seems to work well to prevent artifacts that happen otherwise
-        batch_multipliers = torch.asarray(np.array(batch_multipliers)).to(device)
+        batch_multipliers = torch.asarray(batch_multipliers).to(device)
         original_mean = z.mean()
         z *= batch_multipliers.reshape(batch_multipliers.shape + (1,)).expand(z.shape)
         new_mean = z.mean()

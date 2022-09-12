@@ -5,6 +5,8 @@ import re
 
 import numpy as np
 from PIL import Image, ImageFont, ImageDraw, PngImagePlugin
+from fonts.ttf import Roboto
+import string
 
 import modules.shared
 from modules.shared import opts
@@ -132,11 +134,11 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts):
 
     fontsize = (width + height) // 25
     line_spacing = fontsize // 2
-    fnt = ImageFont.truetype(opts.font, fontsize)
+    fnt = ImageFont.truetype(opts.font or Roboto, fontsize)
     color_active = (0, 0, 0)
     color_inactive = (153, 153, 153)
 
-    pad_left = width * 3 // 4 if len(ver_texts) > 0 else 0
+    pad_left = 0 if sum([sum([len(line.text) for line in lines]) for lines in ver_texts]) == 0 else width * 3 // 4
 
     cols = im.width // width
     rows = im.height // height
@@ -234,13 +236,17 @@ def resize_image(resize_mode, im, width, height):
 
 
 invalid_filename_chars = '<>:"/\\|?*\n'
+re_nonletters = re.compile(r'[\s'+string.punctuation+']+')
 
 
 def sanitize_filename_part(text):
     return text.replace(' ', '_').translate({ord(x): '' for x in invalid_filename_chars})[:128]
 
 
-def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False):
+def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False, pnginfo_section_name='parameters'):
+    # would be better to add this as an argument in future, but will do for now
+    is_a_grid = basename != ""
+
     if short_filename or prompt is None or seed is None:
         file_decoration = ""
     elif opts.save_to_dirs:
@@ -250,16 +256,18 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
 
     if extension == 'png' and opts.enable_pnginfo and info is not None:
         pnginfo = PngImagePlugin.PngInfo()
-        pnginfo.add_text("parameters", info)
+        pnginfo.add_text(pnginfo_section_name, info)
     else:
         pnginfo = None
 
-    if opts.save_to_dirs and not no_prompt:
-        words = re.findall(r'\w+', prompt or "")
+    save_to_dirs = (is_a_grid and opts.grid_save_to_dirs) or (not is_a_grid and opts.save_to_dirs)
+
+    if save_to_dirs and not no_prompt:
+        words = [x for x in re_nonletters.split(prompt or "") if len(x)>0]
         if len(words) == 0:
             words = ["empty"]
 
-        dirname = " ".join(words[0:opts.save_to_dirs_prompt_len])
+        dirname = " ".join(words[0:opts.save_to_dirs_prompt_len]).strip()
         path = os.path.join(path, dirname)
 
     os.makedirs(path, exist_ok=True)
@@ -267,8 +275,8 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     filecount = len([x for x in os.listdir(path) if os.path.splitext(x)[1] == '.' + extension])
     fullfn = "a.png"
     fullfn_without_extension = "a"
-    for i in range(100):
-        fn = f"{filecount:05}" if basename == '' else f"{basename}-{filecount:04}"
+    for i in range(500):
+        fn = f"{filecount+i:05}" if basename == '' else f"{basename}-{filecount+i:04}"
         fullfn = os.path.join(path, f"{fn}{file_decoration}.{extension}")
         fullfn_without_extension = os.path.join(path, f"{fn}{file_decoration}")
         if not os.path.exists(fullfn):

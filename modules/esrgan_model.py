@@ -9,18 +9,25 @@ from PIL import Image
 import modules.esrgam_model_arch as arch
 from modules import shared
 from modules.shared import opts
+from modules.devices import has_mps
 import modules.images
 
 
 def load_model(filename):
     # this code is adapted from https://github.com/xinntao/ESRGAN
-
-    pretrained_net = torch.load(filename)
+    pretrained_net = torch.load(filename, map_location='cpu' if has_mps else None)
     crt_model = arch.RRDBNet(3, 3, 64, 23, gc=32)
 
     if 'conv_first.weight' in pretrained_net:
         crt_model.load_state_dict(pretrained_net)
         return crt_model
+
+    if 'model.0.weight' not in pretrained_net:
+        is_realesrgan = "params_ema" in pretrained_net and 'body.0.rdb1.conv1.weight' in pretrained_net["params_ema"]
+        if is_realesrgan:
+            raise Exception("The file is a RealESRGAN model, it can't be used as a ESRGAN model.")
+        else:
+            raise Exception("The file is not a ESRGAN model.")
 
     crt_net = crt_model.state_dict()
     load_net_clean = {}

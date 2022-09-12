@@ -5,19 +5,51 @@
     max-width: 13em;
 }
 
+#img2img_interrogate{
+    max-width: 10em;
+}
+
+#subseed_show{
+    min-width: 6em;
+    max-width: 6em;
+}
+
+#subseed_show label{
+    height: 100%;
+}
+
 #txt2img_roll{
     min-width: 1em;
     max-width: 4em;
+}
+
+#style_index{
+    min-width: 9em;
+    max-width: 9em;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+#toprow div{
+    border: none;
+    gap: 0;
+}
+
+#resize_mode{
+    flex: 1.5;
 }
 
 button{
     align-self: stretch !important;
 }
 
-#img2img_prompt, #txt2img_prompt{
-    padding: 0;
+#img2img_prompt, #txt2img_prompt, #img2img_negative_prompt, #txt2img_negative_prompt{
     border: none !important;
 }
+#img2img_prompt textarea, #txt2img_prompt textarea, #img2img_negative_prompt textarea, #txt2img_negative_prompt textarea{
+    border: none !important;
+}
+
 
 #img2maskimg .h-60{
     height: 30rem;
@@ -29,6 +61,20 @@ button{
 
 #x_type, #y_type{
     max-width: 10em;
+}
+
+#txt2img_preview, #img2img_preview{
+    position: absolute;
+    width: 320px;
+    left: 0;
+    right: 0;
+    margin-left: auto;
+    margin-right: auto;
+    z-index: 100;
+}
+
+#txt2img_preview div.left-0.top-0, #img2img_preview div.left-0.top-0{
+    display: none;
 }
 
 fieldset span.text-gray-500, .gr-block.gr-box span.text-gray-500,  label.block span{
@@ -51,6 +97,10 @@ fieldset span.text-gray-500, .gr-block.gr-box span.text-gray-500,  label.block s
     border-right: 1px solid rgb(55 65 81);
 }
 
+#settings fieldset span.text-gray-500, #settings .gr-block.gr-box span.text-gray-500, #settings label.block span{
+    position: relative;
+    border: none;
+}
 
 .gr-panel div.flex-col div.justify-between label span{
     margin: 0;
@@ -63,6 +113,10 @@ fieldset span.text-gray-500, .gr-block.gr-box span.text-gray-500,  label.block s
   padding: 0 0.5em;
 }
 
+#settings .gr-panel div.flex-col div.justify-between div{
+    position: relative;
+}
+
 input[type="range"]{
     margin: 0.5em 0 -0.3em 0;
 }
@@ -71,3 +125,38 @@ input[type="range"]{
     padding-left: 0.6em;
     padding-right: 0.6em;
 }
+
+#mask_bug_info {
+  text-align: center;
+  display: block;
+  margin-bottom: 0.5em;
+}
+
+#txt2img_negative_prompt, #img2img_negative_prompt{
+    flex: 0.3;
+    min-width: 10em;
+}
+
+.progressDiv{
+  width: 100%;
+  height: 30px;
+  background: #b4c0cc;
+  border-radius: 8px;
+}
+
+.dark .progressDiv{
+  background: #424c5b;
+}
+
+.progressDiv .progress{
+  width: 0%;
+  height: 30px;
+  background: #0060df;
+  color: white;
+  font-weight: bold;
+  line-height: 30px;
+  padding: 0 8px 0 0;
+  text-align: right;
+  border-radius: 8px;
+}
+

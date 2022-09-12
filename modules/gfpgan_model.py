@@ -2,12 +2,15 @@ import os
 import sys
 import traceback
 
-from modules.paths import script_path
+from modules import shared
 from modules.shared import cmd_opts
-import modules.shared
+from modules.paths import script_path
+import modules.face_restoration
 
 
 def gfpgan_model_path():
+    from modules.shared import cmd_opts
+
     places = [script_path, '.', os.path.join(cmd_opts.gfpgan_dir, 'experiments/pretrained_models')]
     files = [cmd_opts.gfpgan_model] + [os.path.join(dirname, cmd_opts.gfpgan_model) for dirname in places]
     found = [x for x in files if os.path.exists(x)]
@@ -62,6 +65,19 @@ def setup_gfpgan():
 
         global gfpgan_constructor
         gfpgan_constructor = GFPGANer
+
+        class FaceRestorerGFPGAN(modules.face_restoration.FaceRestoration):
+            def name(self):
+                return "GFPGAN"
+
+            def restore(self, np_image):
+                np_image_bgr = np_image[:, :, ::-1]
+                cropped_faces, restored_faces, gfpgan_output_bgr = gfpgan().enhance(np_image_bgr, has_aligned=False, only_center_face=False, paste_back=True)
+                np_image = gfpgan_output_bgr[:, :, ::-1]
+
+                return np_image
+
+        shared.face_restorers.append(FaceRestorerGFPGAN())
     except Exception:
         print("Error setting up GFPGAN:", file=sys.stderr)
         print(traceback.format_exc(), file=sys.stderr)
