@@ -194,6 +194,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             "Variation seed": (None if p.subseed_strength == 0 else all_subseeds[index]),
             "Variation seed strength": (None if p.subseed_strength == 0 else p.subseed_strength),
             "Seed resize from": (None if p.seed_resize_from_w == 0 or p.seed_resize_from_h == 0 else f"{p.seed_resize_from_w}x{p.seed_resize_from_h}"),
+            "Denoising strength": getattr(p, 'denoising_strength', None),
         }
 
         if p.extra_generation_params is not None:
