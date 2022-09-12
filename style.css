@@ -45,6 +45,7 @@ button{
 
 #img2img_prompt, #txt2img_prompt, #img2img_negative_prompt, #txt2img_negative_prompt{
     border: none !important;
+    width: 50%;
 }
 #img2img_prompt textarea, #txt2img_prompt textarea, #img2img_negative_prompt textarea, #txt2img_negative_prompt textarea{
     border: none !important;
@@ -130,11 +131,6 @@ input[type="range"]{
   text-align: center;
   display: block;
   margin-bottom: 0.5em;
-}
-
-#txt2img_negative_prompt, #img2img_negative_prompt{
-    flex: 0.3;
-    min-width: 10em;
 }
 
 .progressDiv{
