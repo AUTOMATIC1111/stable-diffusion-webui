@@ -26,7 +26,7 @@ opt_f = 8
 
 
 class StableDiffusionProcessing:
-    def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt="", prompt_style="None", seed=-1, subseed=-1, subseed_strength=0, seed_resize_from_h=-1, seed_resize_from_w=-1, sampler_index=0, batch_size=1, n_iter=1, steps=50, cfg_scale=7.0, width=512, height=512, restore_faces=False, tiling=False, do_not_save_samples=False, do_not_save_grid=False, extra_generation_params=None, overlay_images=None, negative_prompt=None):
+    def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt="", prompt_style="None", seed=-1, subseed=-1, subseed_strength=0, seed_resize_from_h=-1, seed_resize_from_w=-1, sampler_index=0, batch_size=1, n_iter=1, steps=50, cfg_scale=7.0, width=512, height=512, restore_faces=False, tiling=False, do_not_save_samples=False, do_not_save_grid=False, extra_generation_params=None, overlay_images=None, negative_prompt=None, md5=""):
         self.sd_model = sd_model
         self.outpath_samples: str = outpath_samples
         self.outpath_grids: str = outpath_grids
@@ -53,6 +53,7 @@ class StableDiffusionProcessing:
         self.extra_generation_params: dict = extra_generation_params
         self.overlay_images = overlay_images
         self.paste_to = None
+        self.md5: str = shared.md5
 
     def init(self, seed):
         pass
@@ -189,6 +190,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             "Sampler": samplers[p.sampler_index].name,
             "CFG scale": p.cfg_scale,
             "Seed": all_seeds[index],
+            "Model": p.md5,
             "Face restoration": (opts.face_restoration_model if p.restore_faces else None),
             "Size": f"{p.width}x{p.height}",
             "Batch size": (None if p.batch_size < 2 else p.batch_size),
