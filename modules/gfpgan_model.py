@@ -2,7 +2,7 @@ import os
 import sys
 import traceback
 
-from modules import shared
+from modules import shared, devices
 from modules.shared import cmd_opts
 from modules.paths import script_path
 import modules.face_restoration
@@ -28,23 +28,28 @@ def gfpgan():
     global loaded_gfpgan_model
 
     if loaded_gfpgan_model is not None:
+        loaded_gfpgan_model.gfpgan.to(shared.device)
         return loaded_gfpgan_model
 
     if gfpgan_constructor is None:
         return None
 
     model = gfpgan_constructor(model_path=gfpgan_model_path(), upscale=1, arch='clean', channel_multiplier=2, bg_upsampler=None)
-
-    if not cmd_opts.unload_gfpgan:
-        loaded_gfpgan_model = model
+    model.gfpgan.to(shared.device)
+    loaded_gfpgan_model = model
 
     return model
 
 
 def gfpgan_fix_faces(np_image):
+    model = gfpgan()
+
     np_image_bgr = np_image[:, :, ::-1]
-    cropped_faces, restored_faces, gfpgan_output_bgr = gfpgan().enhance(np_image_bgr, has_aligned=False, only_center_face=False, paste_back=True)
+    cropped_faces, restored_faces, gfpgan_output_bgr = model.enhance(np_image_bgr, has_aligned=False, only_center_face=False, paste_back=True)
     np_image = gfpgan_output_bgr[:, :, ::-1]
+
+    if shared.opts.face_restoration_unload:
+        model.gfpgan.to(devices.cpu)
 
     return np_image
 
