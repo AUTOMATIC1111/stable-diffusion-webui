@@ -174,7 +174,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
     if type(p.seed) == list:
         all_seeds = p.seed
     else:
-        all_seeds = [int(p.seed + x) for x in range(len(all_prompts))]
+        all_seeds = [int(p.seed + (x if p.subseed_strength == 0 else 0)) for x in range(len(all_prompts))]
 
     if type(p.subseed) == list:
         all_subseeds = p.subseed
