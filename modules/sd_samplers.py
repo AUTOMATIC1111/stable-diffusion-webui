@@ -58,12 +58,14 @@ def p_sample_ddim_hook(sampler_wrapper, x_dec, cond, ts, *args, **kwargs):
         img_orig = sampler_wrapper.sampler.model.q_sample(sampler_wrapper.init_latent, ts)
         x_dec = img_orig * sampler_wrapper.mask + sampler_wrapper.nmask * x_dec
 
-        store_latent(sampler_wrapper.init_latent * sampler_wrapper.mask + sampler_wrapper.nmask * x_dec)
+    res = sampler_wrapper.orig_p_sample_ddim(x_dec, cond, ts, *args, **kwargs)
 
+    if sampler_wrapper.mask is not None:
+        store_latent(sampler_wrapper.init_latent * sampler_wrapper.mask + sampler_wrapper.nmask * res[1])
     else:
-        store_latent(x_dec)
+        store_latent(res[1])
 
-    return sampler_wrapper.orig_p_sample_ddim(x_dec, cond, ts, *args, **kwargs)
+    return res
 
 
 def extended_tdqm(sequence, *args, desc=None, **kwargs):
