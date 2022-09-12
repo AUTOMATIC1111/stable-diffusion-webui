@@ -41,6 +41,7 @@ parser.add_argument("--port", type=int, help="launch gradio with given server po
 parser.add_argument("--show-negative-prompt", action='store_true', help="does not do anything", default=False)
 parser.add_argument("--ui-config-file", type=str, help="filename to use for ui configuration", default=os.path.join(script_path, 'ui-config.json'))
 parser.add_argument("--ui-settings-file", type=str, help="filename to use for ui settings", default=os.path.join(script_path, 'config.json'))
+parser.add_argument("--gradio-debug",  action='store_true', help="launch gradio with --debug option")
 
 cmd_opts = parser.parse_args()
 
