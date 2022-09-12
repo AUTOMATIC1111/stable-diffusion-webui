@@ -19,6 +19,7 @@ A browser interface based on Gradio library for Stable Diffusion.
 - Textual Inversion
 - Extras tab with:
   - GFPGAN, neural network that fixes faces
+  - CodeFormer, face restoration tool as an alternative to GFPGAN
   - RealESRGAN, neural network upscaler
   - ESRGAN, neural network with a lot of third party models
 - Resizing aspect ratio options
@@ -53,10 +54,10 @@ can obtain it from the following places:
  - [file storage](https://drive.yerf.org/wl/?id=EBfTrmcCCUAGaQBXVIj5lJmEhjoP1tgl)
  - magnet:?xt=urn:btih:3a4a612d75ed088ea542acac52f9f45987488d1c&dn=sd-v1-4.ckpt&tr=udp%3a%2f%2ftracker.openbittorrent.com%3a6969%2fannounce&tr=udp%3a%2f%2ftracker.opentrackr.org%3a1337
 
-You optionally can use GFPGAN to improve faces, then you'll need to download the model from [here](https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.3.pth).
+You can optionally use GFPGAN to improve faces, to do so you'll need to download the model from [here](https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.3.pth) and place it in the same directory as `webui.bat`.
 
 To use ESRGAN models, put them into ESRGAN directory in the same location as webui.py. A file will be loaded
-as model if it has .pth extension. Grab models from the [Model Database](https://upscale.wiki/wiki/Model_Database).
+as a model if it has .pth extension, and it will show up with its name in the UI. Grab models from the [Model Database](https://upscale.wiki/wiki/Model_Database).
 
 > Note: RealESRGAN models are not ESRGAN models, they are not compatible. Do not download RealESRGAN models. Do not place
 RealESRGAN into the directory with ESRGAN models. Thank you.
@@ -85,10 +86,10 @@ may help (but I still recommend you to just use the recommended version of pytho
 floating point numbers (Known issue with 16xx cards). You must use `--precision full --no-half` in addition to command line
 arguments (set them using `set COMMANDLINE_ARGS`, see below), and the model will take much more space in VRAM (you will likely
 have to also use at least `--medvram`).
-- installer creates python virtual environment, so none of installed modules will affect your system installation of python if
+- the installer creates a python virtual environment, so none of the installed modules will affect your system installation of python if
 you had one prior to installing this.
 - About _"You must install this exact version"_ from the instructions above: you can use any version of python you like,
-and it will likely work, but if you want to seek help about things not working, I will not offer help unless you this
+and it will likely work, but if you want to seek help about things not working, I will not offer help unless you use this
 exact version for my sanity.
 
 #### How to run with custom parameters
@@ -96,7 +97,7 @@ exact version for my sanity.
 It's possible to edit `set COMMANDLINE_ARGS=` line in `webui.bat` to run the program with different command line arguments, but that may lead
 to inconveniences when the file is updated in the repository.
 
-The recommndended way is to use another .bat file named anything you like, set the parameters you want in it, and run webui.bat from it.
+The recommended way is to use another .bat file named anything you like, set the parameters you want in it, and run webui.bat from it.
 A `webui-user.bat` file included into the repository does exactly this.
 
 Here is an example that runs the prgoram with `--opt-split-attention` argument:
@@ -109,7 +110,7 @@ set COMMANDLINE_ARGS=--opt-split-attention
 call webui.bat
 ```
 
-Another example, this file will run the program with custom python path, a different model named `a.ckpt` and without virtual environment:
+Another example, this file will run the program with a custom python path, a different model named `a.ckpt` and without a virtual environment:
 
 ```commandline
 @echo off
@@ -137,7 +138,7 @@ also but the effect will likely be barely noticeable.
 ### Running online
 
 Use `--share` option to run online. You will get a xxx.app.gradio link. This is the intended way to use the
-program in collabs.
+program in collabs. You may set up authentication for said gradio shared instance with the flag `--gradio-auth username:password`, optionally providing multiple sets of usernames and passwords separated by commas.
 
 Use `--listen` to make the server listen to network connections. This will allow computers on local newtork
 to access the UI, and if you configure port forwarding, also computers on the internet.
@@ -148,18 +149,20 @@ Defaults to port 7860 if available.
 
 ### Google collab
 
-If you don't want or can't run locally, here is google collab that allows you to run the webui:
+If you don't want or can't run locally, here is a Google colab that allows you to run the webui:
 
 https://colab.research.google.com/drive/1Iy-xW9t1-OQWhb0hNxueGij8phCyluOh
 
 ### Textual Inversion
-To make use of pretrained embeddings, create `embeddings` directory (in the same palce as `webui.py`)
-and put your embeddings into it. They must be .pt files, each with only one trained embedding,
-and the filename (without .pt) will be the term you'd use in prompt to get that embedding.
+To make use of pretrained embeddings, create an `embeddings` directory (in the same place as `webui.py`)
+and put your embeddings into it. They must be either .pt or .bin files, each with only one trained embedding,
+and the filename (without .pt/.bin) will be the term you'll use in the prompt to get that embedding.
 
 As an example, I trained one for about 5000 steps: https://files.catbox.moe/e2ui6r.pt; it does not produce
-very good results, but it does work. Download and rename it to Usada Pekora.pt, and put it into embeddings dir
-and use Usada Pekora in prompt.
+very good results, but it does work. To try it out download the file, rename it to `Usada Pekora.pt`, put it into the `embeddings` dir
+and use `Usada Pekora` in the prompt.
+
+You may also try some from the growing library of embeddings at https://huggingface.co/sd-concepts-library, downloading one of the `learned_embeds.bin` files, renaming it to the term you want to use for it in the prompt (be sure to keep the .bin extension) and putting it in your `embeddings` directory.
 
 ### How to change UI defaults?
 
@@ -283,7 +286,7 @@ wget https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.3.pt
 After that follow the instructions in the `Manual instructions` section starting at step `:: clone repositories for Stable Diffusion and (optionally) CodeFormer`.
 
 
-### img2img alterantive test
+### img2img alternative test
 - see [this post](https://www.reddit.com/r/StableDiffusion/comments/xboy90/a_better_way_of_doing_img2img_by_finding_the/) on ebaumsworld.com for context.
 - find it in scripts section
 - put description of input image into the Original prompt field
