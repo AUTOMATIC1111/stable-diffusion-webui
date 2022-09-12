@@ -160,3 +160,7 @@ input[type="range"]{
   border-radius: 8px;
 }
 
+.flex-wrap {
+  flex-wrap: unset;
+}
+
