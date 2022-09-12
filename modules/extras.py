@@ -13,6 +13,8 @@ cached_images = {}
 def run_extras(image, gfpgan_visibility, codeformer_visibility, codeformer_weight, upscaling_resize, extras_upscaler_1, extras_upscaler_2, extras_upscaler_2_visibility):
     devices.torch_gc()
 
+    existing_pnginfo = image.info or {}
+
     image = image.convert("RGB")
     info = ""
 
@@ -65,7 +67,7 @@ def run_extras(image, gfpgan_visibility, codeformer_visibility, codeformer_weigh
     while len(cached_images) > 2:
         del cached_images[next(iter(cached_images.keys()))]
 
-    images.save_image(image, outpath, "", None, info=info, extension=opts.samples_format, short_filename=True, no_prompt=True, pnginfo_section_name="extras")
+    images.save_image(image, outpath, "", None, info=info, extension=opts.samples_format, short_filename=True, no_prompt=True, pnginfo_section_name="extras", existing_info=existing_pnginfo)
 
     return image, plaintext_to_html(info), ''
 
