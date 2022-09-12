@@ -11,7 +11,7 @@ from torchvision import transforms
 from torchvision.transforms.functional import InterpolationMode
 
 import modules.shared as shared
-from modules import devices, paths
+from modules import devices, paths, lowvram
 
 blip_image_eval_size = 384
 blip_model_url = 'https://storage.googleapis.com/sfr-vision-language-research/BLIP/models/model_base_caption_capfilt_large.pth'
@@ -75,18 +75,27 @@ class InterrogateModels:
 
         self.dtype = next(self.clip_model.parameters()).dtype
 
-    def unload(self):
+    def send_clip_to_ram(self):
         if not shared.opts.interrogate_keep_models_in_memory:
             if self.clip_model is not None:
                 self.clip_model = self.clip_model.to(devices.cpu)
 
+    def send_blip_to_ram(self):
+        if not shared.opts.interrogate_keep_models_in_memory:
             if self.blip_model is not None:
                 self.blip_model = self.blip_model.to(devices.cpu)
 
-            devices.torch_gc()
+    def unload(self):
+        self.send_clip_to_ram()
+        self.send_blip_to_ram()
+
+        devices.torch_gc()
 
     def rank(self, image_features, text_array, top_count=1):
         import clip
+
+        if shared.opts.interrogate_clip_dict_limit != 0:
+            text_array = text_array[0:int(shared.opts.interrogate_clip_dict_limit)]
 
         top_count = min(top_count, len(text_array))
         text_tokens = clip.tokenize([text for text in text_array]).to(shared.device)
@@ -117,16 +126,24 @@ class InterrogateModels:
         res = None
 
         try:
+
+            if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
+                lowvram.send_everything_to_cpu()
+                devices.torch_gc()
+
             self.load()
 
             caption = self.generate_caption(pil_image)
+            self.send_blip_to_ram()
+            devices.torch_gc()
+
             res = caption
 
-            images = self.clip_preprocess(pil_image).unsqueeze(0).type(self.dtype).to(shared.device)
+            cilp_image = self.clip_preprocess(pil_image).unsqueeze(0).type(self.dtype).to(shared.device)
 
             precision_scope = torch.autocast if shared.cmd_opts.precision == "autocast" else contextlib.nullcontext
             with torch.no_grad(), precision_scope("cuda"):
-                image_features = self.clip_model.encode_image(images).type(self.dtype)
+                image_features = self.clip_model.encode_image(cilp_image).type(self.dtype)
 
                 image_features /= image_features.norm(dim=-1, keepdim=True)
 
@@ -146,4 +163,5 @@ class InterrogateModels:
 
         self.unload()
 
+        res += "<error>"
         return res
