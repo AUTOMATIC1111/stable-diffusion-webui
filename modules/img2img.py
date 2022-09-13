@@ -96,7 +96,7 @@ def img2img(prompt: str, negative_prompt: str, prompt_style: str, init_img, init
 
         grid = images.image_grid(history, batch_size, rows=1)
 
-        images.save_image(grid, p.outpath_grids, "grid", initial_seed, prompt, opts.grid_format, info=info, short_filename=not opts.grid_extended_filename, p=p)
+        images.save_image(grid, p.outpath_grids, "grid", initial_seed, prompt, opts.grid_format, info=info, short_filename=not opts.grid_extended_filename, grid=True, p=p)
 
         processed = Processed(p, history, initial_seed, initial_info)
 
