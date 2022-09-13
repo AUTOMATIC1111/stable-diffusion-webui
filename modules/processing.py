@@ -8,6 +8,8 @@ import torch
 import numpy as np
 from PIL import Image, ImageFilter, ImageOps
 import random
+import cv2
+from skimage import exposure
 
 import modules.sd_hijack
 from modules import devices
@@ -19,9 +21,28 @@ import modules.face_restoration
 import modules.images as images
 import modules.styles
 
+
 # some of those options should not be changed at all because they would break the model, so I removed them from options.
 opt_C = 4
 opt_f = 8
+
+
+def setup_color_correction(image):
+    correction_target = cv2.cvtColor(np.asarray(image.copy()), cv2.COLOR_RGB2LAB)
+    return correction_target
+
+
+def apply_color_correction(correction, image):
+    image = Image.fromarray(cv2.cvtColor(exposure.match_histograms(
+        cv2.cvtColor(
+            np.asarray(image),
+            cv2.COLOR_RGB2LAB
+        ),
+        correction,
+        channel_axis=2
+    ), cv2.COLOR_LAB2RGB).astype("uint8"))
+
+    return image
 
 
 class StableDiffusionProcessing:
@@ -52,6 +73,7 @@ class StableDiffusionProcessing:
         self.extra_generation_params: dict = extra_generation_params
         self.overlay_images = overlay_images
         self.paste_to = None
+        self.color_corrections = None
 
     def init(self, seed):
         pass
@@ -265,6 +287,8 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
 
                 image = Image.fromarray(x_sample)
 
+                if p.color_corrections is not None and i < len(p.color_corrections):
+                    image = apply_color_correction(p.color_corrections[i], image)
 
                 if p.overlay_images is not None and i < len(p.overlay_images):
                     overlay = p.overlay_images[i]
@@ -420,6 +444,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
         latent_mask = self.latent_mask if self.latent_mask is not None else self.image_mask
 
+        self.color_corrections = []
         imgs = []
         for img in self.init_images:
             image = img.convert("RGB")
@@ -440,6 +465,9 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             if self.image_mask is not None:
                 if self.inpainting_fill != 1:
                     image = fill(image, latent_mask)
+
+            if opts.img2img_color_correction:
+                self.color_corrections.append(setup_color_correction(image))
 
             image = np.array(image).astype(np.float32) / 255.0
             image = np.moveaxis(image, 2, 0)
