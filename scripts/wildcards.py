@@ -17,9 +17,11 @@ class Script(scripts.Script):
         return "Wildcards"
 
     def ui(self, is_img2img):
-        return []
+        same_seed = gr.Checkbox(label='Use same seed for each image', value=False)
 
-    def run(self, p):
+        return [same_seed]
+
+    def run(self, p, same_seed):
         def replace_wildcard(chunk):
             if " " not in chunk:
                 file_dir = os.path.dirname(os.path.realpath("__file__"))
@@ -45,5 +47,7 @@ class Script(scripts.Script):
             p.prompt = all_prompts[batch_no*p.batch_size:(batch_no+1)*p.batch_size]
             proc = process_images(p)
             images += proc.images
+            if not same_seed:
+                p.seed += 1
 
         return Processed(p, images, p.seed, "")
