@@ -54,7 +54,7 @@ titles = {
     "Resize seed from height": "Make an attempt to produce a picture similar to what would have been produced with same seed at specified resolution",
     "Resize seed from width": "Make an attempt to produce a picture similar to what would have been produced with same seed at specified resolution",
 
-    "Interrogate": "Reconstruct frompt from existing image and put it into the prompt field.",
+    "Interrogate": "Reconstruct prompt from existing image and put it into the prompt field.",
 
     "Images filename pattern": "Use following tags to define how filenames for images are chosen: [steps], [cfg], [prompt], [prompt_spaces], [width], [height], [sampler], [seed], [model_hash], [prompt_words], [date]; leave empty for default.",
     "Directory name pattern": "Use following tags to define how subdirectories for images and grids are chosen: [steps], [cfg], [prompt], [prompt_spaces], [width], [height], [sampler], [seed], [model_hash], [prompt_words], [date]; leave empty for default.",
