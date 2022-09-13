@@ -111,6 +111,7 @@ class Options:
         "outdir_save": OptionInfo("log/images", "Directory for saving images using the Save button", component_args=hide_dirs),
         "samples_save": OptionInfo(True, "Save indiviual samples"),
         "samples_format": OptionInfo('png', 'File format for individual samples'),
+        "filter_nsfw": OptionInfo(False, "Filter NSFW content"),
         "grid_save": OptionInfo(True, "Save image grids"),
         "return_grid": OptionInfo(True, "Show grid in results for web"),
         "grid_format": OptionInfo('png', 'File format for grids'),
