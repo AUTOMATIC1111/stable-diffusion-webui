@@ -68,7 +68,8 @@ RealESRGAN into the directory with ESRGAN models. Thank you.
 - install [git](https://git-scm.com/download/win)
 - place `model.ckpt` into webui directory, next to `webui.bat`.
 - _*(optional)*_ place `GFPGANv1.3.pth` into webui directory, next to `webui.bat`.
-- run `webui-user.bat` from Windows Explorer. Run it as a normal user, ***not*** as administrator.
+- run `webui-user.bat` from Windows Explorer. Run it as a normal user, ***not*** as administrator (Windows).
+- run `webui.sh` (Linux).
 
 #### Troubleshooting
 
@@ -187,7 +188,7 @@ Edit values to your liking and the next time you launch the program they will be
 ### Manual installation
 Alternatively, if you don't want to run webui.bat, here are instructions for installing
 everything by hand. This can run on both Windows and Linux (if you're on linux, use `ls`
-instead of `dir`). 
+instead of `dir`).
 
 ```bash
 # install torch with CUDA support. See https://pytorch.org/get-started/locally/ for more instructions if this fails.
@@ -268,7 +269,7 @@ Alternatively, here are instructions for installing under Windows 11 WSL2 Linux 
 ```bash
 # install conda (if not already done)
 wget https://repo.anaconda.com/archive/Anaconda3-2022.05-Linux-x86_64.sh
-chmod +x Anaconda3-2022.05-Linux-x86_64.sh 
+chmod +x Anaconda3-2022.05-Linux-x86_64.sh
 ./Anaconda3-2022.05-Linux-x86_64.sh
 
 # Clone webui repo
