@@ -29,7 +29,6 @@ class Script(scripts.Script):
                         return random.choice(f.read().splitlines())
             return chunk
         
-        print(p.prompt)
         original_prompt = p.prompt[0] if type(p.prompt) == list else p.prompt
         all_prompts = ["".join(replace_wildcard(chunk) for chunk in original_prompt.split("__")) for _ in range(p.batch_size * p.n_iter)]
 
