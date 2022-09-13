@@ -393,7 +393,7 @@ class KritaSDPluginDocker(DockWidget):
         )
         self.img2img_negative_prompt_text.textChanged.connect(
             lambda: script.set_cfg("img2img_negative_prompt",
-                                   re.sub(r'\n', ', ', self.img2img_negative_prompt_text.toText().strip()))
+                                   re.sub(r'\n', ', ', self.img2img_negative_prompt_text.text().strip()))
         )
         self.img2img_sampler_name.currentIndexChanged.connect(
             partial(script.set_cfg, "img2img_sampler")
