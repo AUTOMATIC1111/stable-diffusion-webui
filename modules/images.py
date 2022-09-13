@@ -279,17 +279,24 @@ def apply_filename_pattern(x, p, seed, prompt):
 
     return x
 
-def get_next_sequence_number(path):
+def get_next_sequence_number(path, checkAtEnd = False):
     """
     Determines and returns the next sequence number to use when saving an image in the specified directory.
+    set checkAtEnd to True if the sequence is at the end of the filename
 
     The sequence starts at 0.
     """
     result = -1
     for p in os.listdir(path):
-        if p.endswith(('.png', '.jpg')):
-            result = max(int(p.split('-')[0]), result)
-            
+        l = os.path.splitext(p)[0].split('-')
+        try:
+            if checkAtEnd:
+                result = max(int(l[-1]), result)
+            else:
+                result = max(int(l[0]), result)
+        except ValueError:
+                pass
+
     return result + 1
 
 def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None):
@@ -324,7 +331,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
 
     os.makedirs(path, exist_ok=True)
 
-    basecount = get_next_sequence_number(path)
+    basecount = get_next_sequence_number(path, basename != '')
     fullfn = "a.png"
     fullfn_without_extension = "a"
     for i in range(500):
