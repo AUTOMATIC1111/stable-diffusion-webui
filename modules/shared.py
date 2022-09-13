@@ -45,6 +45,7 @@ parser.add_argument("--ui-settings-file", type=str, help="filename to use for ui
 parser.add_argument("--gradio-debug",  action='store_true', help="launch gradio with --debug option")
 parser.add_argument("--gradio-auth", type=str, help='set gradio authentication like "username:password"; or comma-delimit multiple like "u1:p1,u2:p2,u3:p3"', default=None)
 parser.add_argument("--opt-channelslast", action='store_true', help="change memory type for stable diffusion to channels last")
+parser.add_argument("--styles-file", type=str, help="filename to use for styles", default=os.path.join(script_path, 'styles.csv'))
 
 cmd_opts = parser.parse_args()
 
@@ -79,7 +80,7 @@ state = State()
 
 artist_db = modules.artists.ArtistsDatabase(os.path.join(script_path, 'artists.csv'))
 
-styles_filename = os.path.join(script_path, 'styles.csv')
+styles_filename = cmd_opts.styles_file
 prompt_styles = modules.styles.load_styles(styles_filename)
 
 interrogator = modules.interrogate.InterrogateModels("interrogate")
