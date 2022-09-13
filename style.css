@@ -160,3 +160,29 @@ input[type="range"]{
   border-radius: 8px;
 }
 
+#component-50 > div:nth-child(1) {
+    height: 600px !important;
+}
+
+#txt2img_gallery,
+#img2img_gallery {
+    height: 600px;
+}
+
+#txt2img_gallery .absolute.inset-0.z-10.flex.flex-col,
+#img2img_gallery .absolute.inset-0.z-10.flex.flex-col {
+    max-height: 600px;
+}
+
+#text2img_gallery .overflow-y-auto {
+    max-height: 600px;
+}
+
+#img2img_preview 
+#txt2img_preview {
+    height: 600px;
+}
+
+#component-80 .h-60.bg-gray-200 {
+    height: 500px;
+}
