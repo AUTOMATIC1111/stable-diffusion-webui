@@ -25,14 +25,14 @@ A browser interface based on Gradio library for Stable Diffusion.
 - Resizing aspect ratio options
 - Sampling method selection
 - Interrupt processing at any time
-- 4GB videocard support
+- 4GB video card support
 - Correct seeds for batches
 - Prompt length validation
 - Generation parameters added as text to PNG
 - Tab to view an existing picture's generation parameters
 - Settings page
 - Running custom code from UI
-- Mouseover hints fo most UI elements
+- Mouseover hints for most UI elements
 - Possible to change defaults/mix/max/step values for UI elements via text config
 - Random artist button
 - Tiling support: UI checkbox to create images that can be tiled like textures
@@ -46,7 +46,7 @@ A browser interface based on Gradio library for Stable Diffusion.
 ## Installing and running
 
 You need [python](https://www.python.org/downloads/windows/) and [git](https://git-scm.com/download/win)
-installed to run this, and an NVidia videocard.
+installed to run this, and an NVidia video card.
 
 You need `model.ckpt`, Stable Diffusion model checkpoint, a big file containing the neural network weights. You
 can obtain it from the following places:
@@ -68,7 +68,7 @@ RealESRGAN into the directory with ESRGAN models. Thank you.
 - install [git](https://git-scm.com/download/win)
 - place `model.ckpt` into webui directory, next to `webui.bat`.
 - _*(optional)*_ place `GFPGANv1.3.pth` into webui directory, next to `webui.bat`.
-- run `webui-user.bat` from Windows Explorer. Run it as normal user, ***not*** as administrator.
+- run `webui-user.bat` from Windows Explorer. Run it as a normal user, ***not*** as administrator.
 
 #### Troubleshooting
 
@@ -100,7 +100,7 @@ to inconveniences when the file is updated in the repository.
 The recommended way is to use another .bat file named anything you like, set the parameters you want in it, and run webui.bat from it.
 A `webui-user.bat` file included into the repository does exactly this.
 
-Here is an example that runs the prgoram with `--opt-split-attention` argument:
+Here is an example that runs the program with `--opt-split-attention` argument:
 
 ```commandline
 @echo off
@@ -137,14 +137,14 @@ also but the effect will likely be barely noticeable.
 
 ### Running online
 
-Use `--share` option to run online. You will get a xxx.app.gradio link. This is the intended way to use the
+Use the `--share` option to run online. You will get a xxx.app.gradio link. This is the intended way to use the
 program in collabs. You may set up authentication for said gradio shared instance with the flag `--gradio-auth username:password`, optionally providing multiple sets of usernames and passwords separated by commas.
 
-Use `--listen` to make the server listen to network connections. This will allow computers on local newtork
+Use `--listen` to make the server listen to network connections. This will allow computers on the local network
 to access the UI, and if you configure port forwarding, also computers on the internet.
 
 Use `--port xxxx` to make the server listen on a specific port, xxxx being the wanted port. Remember that
-all ports below 1024 needs root/admin rights, for this reason it is advised to use a port above 1024.
+all ports below 1024 need root/admin rights, for this reason it is advised to use a port above 1024.
 Defaults to port 7860 if available.
 
 ### Google collab
@@ -214,10 +214,10 @@ pip install transformers==4.19.2 diffusers invisible-watermark --prefer-binary
 # install k-diffusion
 pip install git+https://github.com/crowsonkb/k-diffusion.git --prefer-binary
 
-# (optional) install GFPGAN (face resoration)
+# (optional) install GFPGAN (face restoration)
 pip install git+https://github.com/TencentARC/GFPGAN.git --prefer-binary
 
-# (optional) install requirements for CodeFormer (face resoration)
+# (optional) install requirements for CodeFormer (face restoration)
 pip install -r repositories/CodeFormer/requirements.txt --prefer-binary
 
 # install requirements of web ui
@@ -235,9 +235,9 @@ dir model.ckpt
 dir GFPGANv1.3.pth
 ```
 
-> Note: the directory structure for manual instruction has been changed on 2022-09-09 to match automatic installation: previosuly
+> Note: the directory structure for manual instruction has been changed on 2022-09-09 to match automatic installation: previously
 > webui was in a subdirectory of stable diffusion, now it's the reverse. If you followed manual installation before the
-> chage, you can still use the program with you existing directory sctructure.
+> change, you can still use the program with your existing directory structure.
 
 After that the installation is finished.
 
@@ -259,7 +259,7 @@ After a while, you will get a message like this:
 Running on local URL:  http://127.0.0.1:7860/
 ```
 
-Open the URL in browser, and you are good to go.
+Open the URL in a browser, and you are good to go.
 
 
 ### Windows 11 WSL2 instructions
