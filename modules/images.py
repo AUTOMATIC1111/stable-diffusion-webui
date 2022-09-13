@@ -279,6 +279,18 @@ def apply_filename_pattern(x, p, seed, prompt):
 
     return x
 
+def get_next_sequence_number(path):
+    """
+    Determines and returns the next sequence number to use when saving an image in the specified directory.
+
+    The sequence starts at 0.
+    """
+    result = -1
+    for p in os.listdir(path):
+        if p.endswith(('.png', '.jpg')):
+            result = max(int(p.split('-')[0]), result)
+            
+    return result + 1
 
 def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None):
     if short_filename or prompt is None or seed is None:
@@ -312,11 +324,11 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
 
     os.makedirs(path, exist_ok=True)
 
-    filecount = len([x for x in os.listdir(path) if os.path.splitext(x)[1] == '.' + extension])
+    basecount = get_next_sequence_number(path)
     fullfn = "a.png"
     fullfn_without_extension = "a"
     for i in range(500):
-        fn = f"{filecount+i:05}" if basename == '' else f"{basename}-{filecount+i:04}"
+        fn = f"{basecount+i:05}" if basename == '' else f"{basename}-{basecount+i:04}"
         fullfn = os.path.join(path, f"{fn}{file_decoration}.{extension}")
         fullfn_without_extension = os.path.join(path, f"{fn}{file_decoration}")
         if not os.path.exists(fullfn):
