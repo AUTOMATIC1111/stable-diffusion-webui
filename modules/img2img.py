@@ -1,8 +1,8 @@
 import math
-import cv2
 import numpy as np
 from PIL import Image, ImageOps, ImageChops
 
+from modules import devices
 from modules.processing import Processed, StableDiffusionProcessingImg2Img, process_images
 from modules.shared import opts, state
 import modules.shared as shared
@@ -62,7 +62,6 @@ def img2img(prompt: str, negative_prompt: str, prompt_style: str, init_img, init
         inpaint_full_res=inpaint_full_res,
         inpainting_mask_invert=inpainting_mask_invert,
         extra_generation_params={
-            "Denoising strength": denoising_strength,
             "Denoising strength change factor": (denoising_strength_change_factor if is_loopback else None)
         }
     )
@@ -75,14 +74,6 @@ def img2img(prompt: str, negative_prompt: str, prompt_style: str, init_img, init
         initial_info = None
 
         state.job_count = n_iter
-
-        do_color_correction = False
-        try:
-            from skimage import exposure
-            do_color_correction = True
-        except:
-            print("Install scikit-image to perform color correction on loopback")
-
 
         for i in range(n_iter):
             if do_color_correction and i == 0:
@@ -101,16 +92,6 @@ def img2img(prompt: str, negative_prompt: str, prompt_style: str, init_img, init
             
             init_img = processed.images[0]
 
-            if do_color_correction and correction_target is not None:
-                init_img = Image.fromarray(cv2.cvtColor(exposure.match_histograms(
-                    cv2.cvtColor(
-                        np.asarray(init_img),
-                        cv2.COLOR_RGB2LAB
-                    ),
-                    correction_target,
-                    channel_axis=2
-                ), cv2.COLOR_LAB2RGB).astype("uint8"))
-
             p.init_images = [init_img]
             p.seed = processed.seed + 1
             p.denoising_strength = min(max(p.denoising_strength * denoising_strength_change_factor, 0.1), 1)
@@ -118,7 +99,7 @@ def img2img(prompt: str, negative_prompt: str, prompt_style: str, init_img, init
 
         grid = images.image_grid(history, batch_size, rows=1)
 
-        images.save_image(grid, p.outpath_grids, "grid", initial_seed, prompt, opts.grid_format, info=info, short_filename=not opts.grid_extended_filename)
+        images.save_image(grid, p.outpath_grids, "grid", initial_seed, prompt, opts.grid_format, info=info, short_filename=not opts.grid_extended_filename, p=p)
 
         processed = Processed(p, history, initial_seed, initial_info)
 
@@ -131,7 +112,7 @@ def img2img(prompt: str, negative_prompt: str, prompt_style: str, init_img, init
         upscaler = shared.sd_upscalers[upscaler_index]
         img = upscaler.upscale(init_img, init_img.width * 2, init_img.height * 2)
 
-        processing.torch_gc()
+        devices.torch_gc()
 
         grid = images.split_grid(img, tile_w=width, tile_h=height, overlap=upscale_overlap)
 
@@ -179,7 +160,7 @@ def img2img(prompt: str, negative_prompt: str, prompt_style: str, init_img, init
             result_images.append(combined_image)
 
             if opts.samples_save:
-                images.save_image(combined_image, p.outpath_samples, "", start_seed, prompt, opts.grid_format, info=initial_info)
+                images.save_image(combined_image, p.outpath_samples, "", start_seed, prompt, opts.samples_format, info=initial_info, p=p)
 
         processed = Processed(p, result_images, seed, initial_info)
 

@@ -115,6 +115,7 @@ fieldset span.text-gray-500, .gr-block.gr-box span.text-gray-500,  label.block s
 
 #settings .gr-panel div.flex-col div.justify-between div{
     position: relative;
+    z-index: 200;
 }
 
 input[type="range"]{

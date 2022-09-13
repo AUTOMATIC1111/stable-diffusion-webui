@@ -13,8 +13,6 @@ from modules.devices import get_optimal_device
 import modules.styles
 import modules.interrogate
 
-config_filename = "config.json"
-
 sd_model_file = os.path.join(script_path, 'model.ckpt')
 if not os.path.exists(sd_model_file):
     sd_model_file = "models/ldm/stable-diffusion-v1/model.ckpt"
@@ -27,12 +25,12 @@ parser.add_argument("--gfpgan-model", type=str, help="GFPGAN model file name", d
 parser.add_argument("--no-half", action='store_true', help="do not switch the model to 16-bit floats")
 parser.add_argument("--no-progressbar-hiding", action='store_true', help="do not hide progressbar in gradio UI (we hide it because it slows down ML if you have hardware accleration in browser)")
 parser.add_argument("--max-batch-count", type=int, default=16, help="maximum batch count value for the UI")
-parser.add_argument("--embeddings-dir", type=str, default='embeddings', help="embeddings directory for textual inversion (default: embeddings)")
+parser.add_argument("--embeddings-dir", type=str, default=os.path.join(script_path, 'embeddings'), help="embeddings directory for textual inversion (default: embeddings)")
 parser.add_argument("--allow-code", action='store_true', help="allow custom script execution from webui")
 parser.add_argument("--medvram", action='store_true', help="enable stable diffusion model optimizations for sacrificing a little speed for low VRM usage")
 parser.add_argument("--lowvram", action='store_true', help="enable stable diffusion model optimizations for sacrificing a lot of speed for very low VRM usage")
 parser.add_argument("--always-batch-cond-uncond", action='store_true', help="a workaround test; may help with speed if you use --lowvram")
-parser.add_argument("--unload-gfpgan", action='store_true', help="unload GFPGAN every time after processing images. Warning: seems to cause memory leaks")
+parser.add_argument("--unload-gfpgan", action='store_true', help="does not do anything.")
 parser.add_argument("--precision", type=str, help="evaluate at this precision", choices=["full", "autocast"], default="autocast")
 parser.add_argument("--share", action='store_true', help="use share=True for gradio and make the UI accessible through their site (doesn't work for me but you might have better luck)")
 parser.add_argument("--esrgan-models-path", type=str, help="path to directory with ESRGAN models", default=os.path.join(script_path, 'ESRGAN'))
@@ -42,6 +40,11 @@ parser.add_argument("--listen", action='store_true', help="launch gradio with 0.
 parser.add_argument("--port", type=int, help="launch gradio with given server port, you need root/admin rights for ports < 1024, defaults to 7860 if available", default=None)
 parser.add_argument("--show-negative-prompt", action='store_true', help="does not do anything", default=False)
 parser.add_argument("--ui-config-file", type=str, help="filename to use for ui configuration", default=os.path.join(script_path, 'ui-config.json'))
+parser.add_argument("--hide-ui-dir-config", action='store_true', help="hide directory configuration from webui", default=False)
+parser.add_argument("--ui-settings-file", type=str, help="filename to use for ui settings", default=os.path.join(script_path, 'config.json'))
+parser.add_argument("--gradio-debug",  action='store_true', help="launch gradio with --debug option")
+parser.add_argument("--gradio-auth", type=str, help='set gradio authentication like "username:password"; or comma-delimit multiple like "u1:p1,u2:p2,u3:p3"', default=None)
+parser.add_argument("--opt-channelslast", action='store_true', help="change memory type for stable diffusion to channels last")
 
 cmd_opts = parser.parse_args()
 
@@ -50,6 +53,7 @@ device = get_optimal_device()
 batch_cond_uncond = cmd_opts.always_batch_cond_uncond or not (cmd_opts.lowvram or cmd_opts.medvram)
 parallel_processing_allowed = not cmd_opts.lowvram and not cmd_opts.medvram
 
+config_filename = cmd_opts.ui_settings_file
 
 class State:
     interrupted = False
@@ -91,20 +95,23 @@ class Options:
             self.component_args = component_args
 
     data = None
+    hide_dirs = {"visible": False} if cmd_opts.hide_ui_dir_config else None
     data_labels = {
-        "outdir_samples": OptionInfo("", "Output directory for images; if empty, defaults to two directories below"),
-        "outdir_txt2img_samples": OptionInfo("outputs/txt2img-images", 'Output directory for txt2img images'),
-        "outdir_img2img_samples": OptionInfo("outputs/img2img-images", 'Output directory for img2img images'),
-        "outdir_extras_samples": OptionInfo("outputs/extras-images", 'Output directory for images from extras tab'),
-        "outdir_grids": OptionInfo("", "Output directory for grids; if empty, defaults to two directories below"),
-        "outdir_txt2img_grids": OptionInfo("outputs/txt2img-grids", 'Output directory for txt2img grids'),
-        "outdir_img2img_grids": OptionInfo("outputs/img2img-grids", 'Output directory for img2img grids'),
-        "save_to_dirs": OptionInfo(False, "When writing images, create a directory with name derived from the prompt"),
-        "grid_save_to_dirs": OptionInfo(False, "When writing grids, create a directory with name derived from the prompt"),
-        "save_to_dirs_prompt_len": OptionInfo(10, "When using above, how many words from prompt to put into directory name", gr.Slider, {"minimum": 1, "maximum": 32, "step": 1}),
-        "outdir_save": OptionInfo("log/images", "Directory for saving images using the Save button"),
+        "samples_filename_pattern": OptionInfo("", "Images filename pattern"),
+        "save_to_dirs": OptionInfo(False, "Save images to a subdirectory"),
+        "grid_save_to_dirs": OptionInfo(False, "Save grids to subdirectory"),
+        "directories_filename_pattern": OptionInfo("", "Directory name pattern"),
+        "outdir_samples": OptionInfo("", "Output directory for images; if empty, defaults to two directories below", component_args=hide_dirs),
+        "outdir_txt2img_samples": OptionInfo("outputs/txt2img-images", 'Output directory for txt2img images', component_args=hide_dirs),
+        "outdir_img2img_samples": OptionInfo("outputs/img2img-images", 'Output directory for img2img images', component_args=hide_dirs),
+        "outdir_extras_samples": OptionInfo("outputs/extras-images", 'Output directory for images from extras tab', component_args=hide_dirs),
+        "outdir_grids": OptionInfo("", "Output directory for grids; if empty, defaults to two directories below", component_args=hide_dirs),
+        "outdir_txt2img_grids": OptionInfo("outputs/txt2img-grids", 'Output directory for txt2img grids', component_args=hide_dirs),
+        "outdir_img2img_grids": OptionInfo("outputs/img2img-grids", 'Output directory for img2img grids', component_args=hide_dirs),
+        "outdir_save": OptionInfo("log/images", "Directory for saving images using the Save button", component_args=hide_dirs),
         "samples_save": OptionInfo(True, "Save indiviual samples"),
         "samples_format": OptionInfo('png', 'File format for individual samples'),
+        "filter_nsfw": OptionInfo(False, "Filter NSFW content"),
         "grid_save": OptionInfo(True, "Save image grids"),
         "return_grid": OptionInfo(True, "Show grid in results for web"),
         "grid_format": OptionInfo('png', 'File format for grids'),
@@ -114,6 +121,8 @@ class Options:
         "jpeg_quality": OptionInfo(80, "Quality for saved jpeg images", gr.Slider, {"minimum": 1, "maximum": 100, "step": 1}),
         "export_for_4chan": OptionInfo(True, "If PNG image is larger than 4MB or any dimension is larger than 4000, downscale and save copy as JPG"),
         "enable_pnginfo": OptionInfo(True, "Save text information about generation parameters as chunks to png files"),
+        "add_model_hash_to_info": OptionInfo(False, "Add model hash to generation information"),
+        "img2img_color_correction": OptionInfo(False, "Apply color correction to img2img results to match original colors."),
         "font": OptionInfo("", "Font for image grids that have text"),
         "enable_emphasis": OptionInfo(True, "Use (text) to make model pay more attention to text text and [text] to make it pay less attention"),
         "save_txt": OptionInfo(False, "Create a text file next to every image with generation parameters."),
@@ -126,11 +135,14 @@ class Options:
         "multiple_tqdm": OptionInfo(True, "Add a second progress bar to the console that shows progress for an entire job. Broken in PyCharm console."),
         "face_restoration_model": OptionInfo(None, "Face restoration model", gr.Radio, lambda: {"choices": [x.name() for x in face_restorers]}),
         "code_former_weight": OptionInfo(0.5, "CodeFormer weight parameter; 0 = maximum effect; 1 = minimum effect", gr.Slider, {"minimum": 0, "maximum": 1, "step": 0.01}),
-        "interrogate_keep_models_in_memory": OptionInfo(True, "Interrogate: keep models in VRAM"),
+        "save_images_before_face_restoration": OptionInfo(False, "Save a copy of image before doing face restoration."),
+        "face_restoration_unload": OptionInfo(False, "Move face restoration model from VRAM into RAM after processing"),
+        "interrogate_keep_models_in_memory": OptionInfo(False, "Interrogate: keep models in VRAM"),
         "interrogate_use_builtin_artists": OptionInfo(True, "Interrogate: use artists from artists.csv"),
         "interrogate_clip_num_beams": OptionInfo(1, "Interrogate: num_beams for BLIP", gr.Slider, {"minimum": 1, "maximum": 16, "step": 1}),
         "interrogate_clip_min_length": OptionInfo(24, "Interrogate: minimum descripton length (excluding artists, etc..)", gr.Slider, {"minimum": 1, "maximum": 128, "step": 1}),
         "interrogate_clip_max_length": OptionInfo(48, "Interrogate: maximum descripton length", gr.Slider, {"minimum": 1, "maximum": 256, "step": 1}),
+        "interrogate_clip_dict_limit": OptionInfo(1500, "Interrogate: maximum number of lines in text file (0 = No limit)"),
     }
 
     def __init__(self):
@@ -169,6 +181,7 @@ if os.path.exists(config_filename):
 sd_upscalers = []
 
 sd_model = None
+sd_model_hash = ''
 
 progress_print_out = sys.stdout
 

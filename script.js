@@ -1,12 +1,14 @@
+
+
 titles = {
     "Sampling steps": "How many times to improve the generated image iteratively; higher values take longer; very low values can produce bad results",
     "Sampling method": "Which algorithm to use to produce the image",
-	"GFPGAN": "Restore low quality faces using GFPGAN neural network",
-	"Euler a": "Euler Ancestral - very creative, each can get a completely different picture depending on step count, setting steps to higher than 30-40 does not help",
-	"DDIM": "Denoising Diffusion Implicit Models - best at inpainting",
+    "GFPGAN": "Restore low quality faces using GFPGAN neural network",
+    "Euler a": "Euler Ancestral - very creative, each can get a completely different picture depending on step count, setting steps to higher than 30-40 does not help",
+    "DDIM": "Denoising Diffusion Implicit Models - best at inpainting",
 
-	"Batch count": "How many batches of images to create",
-	"Batch size": "How many image to create in a single batch",
+    "Batch count": "How many batches of images to create",
+    "Batch size": "How many image to create in a single batch",
     "CFG Scale": "Classifier Free Guidance Scale - how strongly the image should conform to prompt - lower values produce more creative results",
     "Seed": "A value that determines the output of random number generator - if you create an image with same parameters and seed as another image, you'll get the same result",
 
@@ -53,52 +55,55 @@ titles = {
     "Resize seed from width": "Make an attempt to produce a picture similar to what would have been produced with same seed at specified resolution",
 
     "Interrogate": "Reconstruct frompt from existing image and put it into the prompt field.",
+
+    "Images filename pattern": "Use following tags to define how filenames for images are chosen: [steps], [cfg], [prompt], [prompt_spaces], [width], [height], [sampler], [seed], [model_hash], [prompt_words], [date]; leave empty for default.",
+    "Directory name pattern": "Use following tags to define how subdirectories for images and grids are chosen: [steps], [cfg], [prompt], [prompt_spaces], [width], [height], [sampler], [seed], [model_hash], [prompt_words], [date]; leave empty for default.",
 }
 
-function gradioApp(){
+function gradioApp() {
     return document.getElementsByTagName('gradio-app')[0].shadowRoot;
 }
 
 global_progressbar = null
 
-function addTitles(root){
-	root.querySelectorAll('span, button, select').forEach(function(span){
-		tooltip = titles[span.textContent];
+function addTitles(root) {
+    root.querySelectorAll('span, button, select').forEach(function (span) {
+        tooltip = titles[span.textContent];
 
-		if(!tooltip){
-		    tooltip = titles[span.value];
-		}
+        if (!tooltip) {
+            tooltip = titles[span.value];
+        }
 
-		if(tooltip){
-			span.title = tooltip;
-		}
-	})
+        if (tooltip) {
+            span.title = tooltip;
+        }
+    })
 
-	root.querySelectorAll('select').forEach(function(select){
-	    if (select.onchange != null) return;
+    root.querySelectorAll('select').forEach(function (select) {
+        if (select.onchange != null) return;
 
-	    select.onchange = function(){
+        select.onchange = function () {
             select.title = titles[select.value] || "";
-	    }
-	})
+        }
+    })
 
-	progressbar = root.getElementById('progressbar')
-	if(progressbar!= null && progressbar != global_progressbar){
-	    global_progressbar = progressbar
+    progressbar = root.getElementById('progressbar')
+    if (progressbar != null && progressbar != global_progressbar) {
+        global_progressbar = progressbar
 
-        var mutationObserver = new MutationObserver(function(m){
+        var mutationObserver = new MutationObserver(function (m) {
             txt2img_preview = gradioApp().getElementById('txt2img_preview')
             txt2img_gallery = gradioApp().getElementById('txt2img_gallery')
 
             img2img_preview = gradioApp().getElementById('img2img_preview')
             img2img_gallery = gradioApp().getElementById('img2img_gallery')
 
-            if(txt2img_preview != null && txt2img_gallery != null){
+            if (txt2img_preview != null && txt2img_gallery != null) {
                 txt2img_preview.style.width = txt2img_gallery.clientWidth + "px"
                 txt2img_preview.style.height = txt2img_gallery.clientHeight + "px"
             }
 
-            if(img2img_preview != null && img2img_gallery != null){
+            if (img2img_preview != null && img2img_gallery != null) {
                 img2img_preview.style.width = img2img_gallery.clientWidth + "px"
                 img2img_preview.style.height = img2img_gallery.clientHeight + "px"
             }
@@ -106,65 +111,67 @@ function addTitles(root){
 
             window.setTimeout(requestProgress, 500)
         });
-        mutationObserver.observe( progressbar, { childList:true, subtree:true })
-	}
+        mutationObserver.observe(progressbar, { childList: true, subtree: true })
+    }
 
 }
 
-document.addEventListener("DOMContentLoaded", function() {
-    var mutationObserver = new MutationObserver(function(m){
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    var mutationObserver = new MutationObserver(function (m) {
         addTitles(gradioApp());
     });
-    mutationObserver.observe( gradioApp(), { childList:true, subtree:true })
+    mutationObserver.observe(gradioApp(), { childList: true, subtree: true })
 });
 
-function selected_gallery_index(){
+function selected_gallery_index() {
     var gr = gradioApp()
     var buttons = gradioApp().querySelectorAll(".gallery-item")
     var button = gr.querySelector(".gallery-item.\\!ring-2")
 
     var result = -1
-    buttons.forEach(function(v, i){ if(v==button) { result = i } })
+    buttons.forEach(function (v, i) { if (v == button) { result = i } })
 
     return result
 }
 
-function extract_image_from_gallery(gallery){
-    if(gallery.length == 1){
+function extract_image_from_gallery(gallery) {
+    if (gallery.length == 1) {
         return gallery[0]
     }
 
     index = selected_gallery_index()
 
-    if (index < 0 || index >= gallery.length){
+    if (index < 0 || index >= gallery.length) {
         return [null]
     }
 
     return gallery[index];
 }
 
-function extract_image_from_gallery_img2img(gallery){
+function extract_image_from_gallery_img2img(gallery) {
     gradioApp().querySelectorAll('button')[1].click();
     return extract_image_from_gallery(gallery);
 }
 
-function extract_image_from_gallery_extras(gallery){
+function extract_image_from_gallery_extras(gallery) {
     gradioApp().querySelectorAll('button')[2].click();
     return extract_image_from_gallery(gallery);
 }
 
-function requestProgress(){
+function requestProgress() {
     btn = gradioApp().getElementById("check_progress");
-    if(btn==null) return;
+    if (btn == null) return;
 
     btn.click();
 }
 
-function submit(){
+function submit() {
     window.setTimeout(requestProgress, 500)
 
     res = []
-    for(var i=0;i<arguments.length;i++){
+    for (var i = 0; i < arguments.length; i++) {
         res.push(arguments[i])
     }
     return res
@@ -188,5 +195,5 @@ window.addEventListener('paste', e => {
 
 function ask_for_style_name(_, prompt_text, negative_prompt_text) {
     name_ = prompt('Style name:')
-    return name_ === null ? [null, null, null]: [name_, prompt_text, negative_prompt_text]
+    return name_ === null ? [null, null, null] : [name_, prompt_text, negative_prompt_text]
 }
