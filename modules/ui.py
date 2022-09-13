@@ -83,7 +83,7 @@ def send_gradio_gallery_to_image(x):
 def save_files(js_data, images, index):
     import csv
 
-    if opts.save_selected_only:
+    if index > -1 and opts.save_selected_only:
         images = [images[index]]
 
     os.makedirs(opts.outdir_save, exist_ok=True)
