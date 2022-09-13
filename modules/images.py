@@ -299,7 +299,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
 
         if existing_info is not None:
             for k, v in existing_info.items():
-                pnginfo.add_text(k, v)
+                pnginfo.add_text(k, str(v))
 
         pnginfo.add_text(pnginfo_section_name, info)
     else:
