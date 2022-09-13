@@ -25,17 +25,16 @@ class Script(scripts.Script):
         lines = [x for x in lines if len(x) > 0]
 
         batch_count = math.ceil(len(lines) / p.batch_size)
-        print(f"Will process {len(lines)} images in {batch_count} batches.")
+        print(f"Will process {len(lines) * p.n_iter} images in {batch_count * p.n_iter} batches.")
 
-        p.batch_count = 1
         p.do_not_save_grid = True
 
         state.job_count = batch_count
 
         images = []
         for batch_no in range(batch_count):
-            state.job = f"{batch_no} out of {batch_count}"
-            p.prompt = lines[batch_no*p.batch_size:(batch_no+1)*p.batch_size]
+            state.job = f"{batch_no} out of {batch_count * p.n_iter}"
+            p.prompt = lines[batch_no*p.batch_size:(batch_no+1)*p.batch_size] * p.n_iter
             proc = process_images(p)
             images += proc.images
 
