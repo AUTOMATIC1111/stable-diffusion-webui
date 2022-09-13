@@ -47,11 +47,11 @@ stderr: {result.stderr.decode(encoding="utf8", errors="ignore") if len(result.st
 
 
 def run_python(code, desc=None, errdesc=None):
-    return run(f'{python} -c "{code}"', desc, errdesc)
+    return run(f'"{python}" -c "{code}"', desc, errdesc)
 
 
 def run_pip(args, desc=None):
-    return run(f'{python} -m pip {args} --prefer-binary', desc=f"Installing {desc}", errdesc=f"Couldn't install {desc}")
+    return run(f'"{python}" -m pip {args} --prefer-binary', desc=f"Installing {desc}", errdesc=f"Couldn't install {desc}")
 
 
 def check_run(command):
@@ -60,7 +60,7 @@ def check_run(command):
 
 
 def check_run_python(code):
-    return check_run(f'{python} -c "{code}"')
+    return check_run(f'"{python}" -c "{code}"')
 
 
 def is_installed(package):
@@ -78,10 +78,10 @@ def git_clone(url, dir, name, commithash=None):
     if os.path.exists(dir):
         return
 
-    run(f'{git} clone "{url}" "{dir}"', f"Cloning {name} into {dir}...", f"Couldn't clone {name}")
+    run(f'"{git}" clone "{url}" "{dir}"', f"Cloning {name} into {dir}...", f"Couldn't clone {name}")
 
     if commithash is not None:
-        run(f"{git} -C {dir} checkout {commithash}", None, "Couldn't checkout {name}'s hash: {commithash}")
+        run(f'"{git}" -C {dir} checkout {commithash}', None, "Couldn't checkout {name}'s hash: {commithash}")
 
 
 try:
@@ -93,7 +93,7 @@ print(f"Python {sys.version}")
 print(f"Commit hash: {commit}")
 
 if not is_installed("torch"):
-    run(f"{python} -m {torch_command}", "Installing torch", "Couldn't install torch")
+    run(f'"{python}" -m {torch_command}', "Installing torch", "Couldn't install torch")
 
 run_python("import torch; assert torch.cuda.is_available(), 'Torch is not able to use GPU'")
 
