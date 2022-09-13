@@ -8,7 +8,7 @@ import numpy as np
 import piexif
 import piexif.helper
 from PIL import Image, ImageFont, ImageDraw, PngImagePlugin
-import font_roboto as Roboto
+from fonts.ttf import Roboto
 import string
 
 import modules.shared
