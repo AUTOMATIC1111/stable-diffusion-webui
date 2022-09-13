@@ -10,7 +10,7 @@ omegaconf
 pytorch_lightning
 diffusers
 invisible-watermark
-scikit-image>=0.1.9
+scikit-image>=0.19
 fonts
 font-roboto
 git+https://github.com/crowsonkb/k-diffusion.git
