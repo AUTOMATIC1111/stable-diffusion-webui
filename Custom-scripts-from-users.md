@@ -16,3 +16,5 @@ Script support so that prompts can contain wildcard terms (indicated by surround
 `a woman at a cafe by __artist__ and __artist__`
 
 will draw two random artists from `artist.txt`. This works independently on each prompt, so that one can e.g. generate a batch of 100 images with the same prompt input using wildcards, and each output will have unique artists (or styles, or genres, or anything that the user creates their own .txt file for) attached to it.
+
+(also see https://github.com/jtkelm2/stable-diffusion-webui-1/tree/master/scripts/wildcards for examples of custom lists)
