@@ -97,7 +97,7 @@ class VanillaStableDiffusionSampler:
     def sample_img2img(self, p, x, noise, conditioning, unconditional_conditioning):
         t_enc = int(min(p.denoising_strength, 0.999) * p.steps)
 
-        # existing code fails with cetin step counts, like 9
+        # existing code fails with cetain step counts, like 9
         try:
             self.sampler.make_schedule(ddim_num_steps=p.steps, verbose=False)
         except Exception:
@@ -122,7 +122,12 @@ class VanillaStableDiffusionSampler:
         self.nmask = None
         self.init_latent = None
 
-        samples_ddim, _ = self.sampler.sample(S=p.steps, conditioning=conditioning, batch_size=int(x.shape[0]), shape=x[0].shape, verbose=False, unconditional_guidance_scale=p.cfg_scale, unconditional_conditioning=unconditional_conditioning, x_T=x)
+        # existing code fails with cetin step counts, like 9
+        try:
+            samples_ddim, _ = self.sampler.sample(S=p.steps, conditioning=conditioning, batch_size=int(x.shape[0]), shape=x[0].shape, verbose=False, unconditional_guidance_scale=p.cfg_scale, unconditional_conditioning=unconditional_conditioning, x_T=x)
+        except Exception:
+            samples_ddim, _ = self.sampler.sample(S=p.steps+1, conditioning=conditioning, batch_size=int(x.shape[0]), shape=x[0].shape, verbose=False, unconditional_guidance_scale=p.cfg_scale, unconditional_conditioning=unconditional_conditioning, x_T=x)
+
         return samples_ddim
 
 
