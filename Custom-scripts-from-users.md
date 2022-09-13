@@ -11,7 +11,7 @@ Does not actually draw a matrix, just produces pictures.
 ## Wildcards
 https://github.com/jtkelm2/stable-diffusion-webui-1/blob/master/scripts/wildcards.py
 
-Added script support so that prompts can contain wildcard terms (indicated by surrounding double underscores), with values instantiated randomly from the corresponding .txt file in the folder `/scripts/wildcards/`. For example:
+Script support so that prompts can contain wildcard terms (indicated by surrounding double underscores), with values instantiated randomly from the corresponding .txt file in the folder `/scripts/wildcards/`. For example:
 
 `a woman at a cafe by __artist__ and __artist__`
 
