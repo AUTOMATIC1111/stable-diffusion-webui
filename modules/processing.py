@@ -437,7 +437,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             else:
                 self.image_mask = images.resize_image(self.resize_mode, self.image_mask, self.width, self.height)
                 np_mask = np.array(self.image_mask)
-                np_mask = np.clip((np_mask.astype(np.float)) * 2, 0, 255).astype(np.uint8)
+                np_mask = np.clip((np_mask.astype(np.float32)) * 2, 0, 255).astype(np.uint8)
                 self.mask_for_overlay = Image.fromarray(np_mask)
 
             self.overlay_images = []
