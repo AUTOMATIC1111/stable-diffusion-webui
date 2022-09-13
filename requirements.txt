@@ -1,3 +1,5 @@
+transformers
+diffusers
 basicsr
 gfpgan
 gradio
