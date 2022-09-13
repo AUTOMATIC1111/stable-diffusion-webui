@@ -93,6 +93,10 @@ class VanillaStableDiffusionSampler:
         self.mask = None
         self.nmask = None
         self.init_latent = None
+        self.sampler_noises = None
+
+    def number_of_needed_noises(self, p):
+        return 0
 
     def sample_img2img(self, p, x, noise, conditioning, unconditional_conditioning):
         t_enc = int(min(p.denoising_strength, 0.999) * p.steps)
@@ -171,15 +175,36 @@ def extended_trange(count, *args, **kwargs):
         shared.total_tqdm.update()
 
 
+original_randn_like = torch.randn_like
+
 class KDiffusionSampler:
     def __init__(self, funcname, sd_model):
         self.model_wrap = k_diffusion.external.CompVisDenoiser(sd_model)
         self.funcname = funcname
         self.func = getattr(k_diffusion.sampling, self.funcname)
         self.model_wrap_cfg = CFGDenoiser(self.model_wrap)
+        self.sampler_noises = None
+        self.sampler_noise_index = 0
+
+        k_diffusion.sampling.torch.randn_like = self.randn_like
 
     def callback_state(self, d):
         store_latent(d["denoised"])
+
+    def number_of_needed_noises(self, p):
+        return p.steps
+
+    def randn_like(self, x):
+        noise = self.sampler_noises[self.sampler_noise_index] if self.sampler_noises is not None and self.sampler_noise_index < len(self.sampler_noises) else None
+
+        if noise is not None and x.shape == noise.shape:
+            res = noise
+        else:
+            print('generating')
+            res = original_randn_like(x)
+
+        self.sampler_noise_index += 1
+        return res
 
     def sample_img2img(self, p, x, noise, conditioning, unconditional_conditioning):
         t_enc = int(min(p.denoising_strength, 0.999) * p.steps)
