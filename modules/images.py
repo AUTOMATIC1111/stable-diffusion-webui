@@ -325,14 +325,16 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
         if not os.path.exists(fullfn):
             break
 
-    if extension == "png":
-        image.save(fullfn, quality=opts.jpeg_quality, pnginfo=pnginfo)
+    if extension.lower() in ("jpg", "jpeg"):
+        exif_bytes = piexif.dump({
+            "Exif": {
+                piexif.ExifIFD.UserComment: info.encode("utf8"),
+            }
+        })
     else:
-        exif_dict = { "Exif" : dict() }
-        exif_dict["Exif"][piexif.ExifIFD.UserComment] = piexif.helper.UserComment.dump(
-            info, encoding="unicode")
-        exif_bytes = piexif.dump(exif_dict)
-        image.save(fullfn, quality=opts.jpeg_quality, exif=exif_bytes)
+        exif_bytes = None
+
+    image.save(fullfn, quality=opts.jpeg_quality, pnginfo=pnginfo, exif=exif_bytes)
 
     target_side_length = 4000
     oversize = image.width > target_side_length or image.height > target_side_length
