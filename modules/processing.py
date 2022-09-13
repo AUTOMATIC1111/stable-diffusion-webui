@@ -321,7 +321,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
                 output_images.insert(0, grid)
 
             if opts.grid_save:
-                images.save_image(grid, p.outpath_grids, "grid", all_seeds[0], all_prompts[0], opts.grid_format, info=infotext(), short_filename=not opts.grid_extended_filename, p=p)
+                images.save_image(grid, p.outpath_grids, "grid", all_seeds[0], all_prompts[0], opts.grid_format, info=infotext(), short_filename=not opts.grid_extended_filename, grid=True, p=p)
 
     devices.torch_gc()
     return Processed(p, output_images, all_seeds[0], infotext())

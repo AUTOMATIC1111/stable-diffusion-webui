@@ -69,7 +69,7 @@ def run_extras(image, gfpgan_visibility, codeformer_visibility, codeformer_weigh
     while len(cached_images) > 2:
         del cached_images[next(iter(cached_images.keys()))]
 
-    images.save_image(image, outpath, "", None, info=info, extension=opts.samples_format, short_filename=True, no_prompt=True, pnginfo_section_name="extras", existing_info=existing_pnginfo)
+    images.save_image(image, path=outpath, basename="", seed=None, prompt=None, extension=opts.samples_format, info=info, short_filename=True, no_prompt=True, grid=False, pnginfo_section_name="extras", existing_info=existing_pnginfo)
 
     return image, plaintext_to_html(info), ''
 
