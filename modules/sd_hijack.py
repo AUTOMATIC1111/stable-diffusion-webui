@@ -108,6 +108,12 @@ def nonlinearity_hijack(x):
 
     return x
 
+def transformer_forward(self, x, context=None):
+        x += self.attn1(self.norm1(x))
+        x += self.attn2(self.norm2(x), context=context)
+        x += self.ff(self.norm3(x))
+        return x
+
 def cross_attention_attnblock_forward(self, x):
         h_ = x
         h_ = self.norm(h_)
@@ -242,7 +248,7 @@ class StableDiffusionModelHijack:
 
         model_embeddings.token_embedding = EmbeddingsWithFixes(model_embeddings.token_embedding, self)
         m.cond_stage_model = FrozenCLIPEmbedderWithCustomWords(m.cond_stage_model, self)
-
+        ldm.modules.attention.BasicTransformerBlock._forward = transformer_forward
         if cmd_opts.opt_split_attention:
             ldm.modules.attention.CrossAttention.forward = split_cross_attention_forward
             ldm.modules.diffusionmodules.model.nonlinearity = nonlinearity_hijack
