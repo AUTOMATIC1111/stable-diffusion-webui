@@ -80,8 +80,11 @@ def send_gradio_gallery_to_image(x):
     return image_from_url_text(x[0])
 
 
-def save_files(js_data, images):
+def save_files(js_data, images, index):
     import csv
+
+    if opts.save_selected_only:
+        images = [images[index]]
 
     os.makedirs(opts.outdir_save, exist_ok=True)
 
@@ -348,9 +351,11 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
 
             save.click(
                 fn=wrap_gradio_call(save_files),
+                _js = "(x, y, z) => [x, y, selected_gallery_index()]",
                 inputs=[
                     generation_info,
                     txt2img_gallery,
+                    html_info
                 ],
                 outputs=[
                     html_info,
@@ -568,9 +573,11 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
 
             save.click(
                 fn=wrap_gradio_call(save_files),
+                _js = "(x, y, z) => [x, y, selected_gallery_index()]",
                 inputs=[
                     generation_info,
                     img2img_gallery,
+                    html_info
                 ],
                 outputs=[
                     html_info,
