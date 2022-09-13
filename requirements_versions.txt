@@ -1,6 +1,6 @@
 transformers==4.19.2
 diffusers==0.2.4
-basicsr==1.4.2
+basicsr==1.3.5
 gfpgan
 gradio==3.3
 numpy==1.23.3
