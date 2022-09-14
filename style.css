@@ -47,6 +47,7 @@
 #toprow div{
     border: none;
     gap: 0;
+    background: transparent;
 }
 
 #resize_mode{
