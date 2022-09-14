@@ -83,14 +83,15 @@ def send_gradio_gallery_to_image(x):
 def save_files(js_data, images, index):
     import csv
 
-    if index > -1 and opts.save_selected_only:
-        images = [images[index]]
-
     os.makedirs(opts.outdir_save, exist_ok=True)
 
     filenames = []
 
     data = json.loads(js_data)
+    
+    if index > -1 and opts.save_selected_only and len(images) > 1 and (index > 0 or not opts.return_grid): # ensures we are looking at a specific picture, we have save_selected_only, and there's more than a single image (for correct seed logging in case of return_grid)
+        images = [images[index]]
+        data["seed"] += (index - 1 if opts.return_grid else index)
 
     with open(os.path.join(opts.outdir_save, "log.csv"), "a", encoding="utf8", newline='') as file:
         at_start = file.tell() == 0
