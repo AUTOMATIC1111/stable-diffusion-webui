@@ -226,10 +226,14 @@ async def f_img2img(req: Img2ImgRequest):
     else:
         mask = None
 
+    # because API in webui changed
+    if mode == 3:
+        mode = 2
+
     upscaler_index = get_upscaler_index(req.upscaler_name or opt['upscaler_name'])
 
     base_size = req.base_size or opt['base_size']
-    if mode == 3:
+    if mode == 2:
         width, height = base_size, base_size
         if upscaler_index > 0:
             image = image.convert("RGB")
@@ -256,7 +260,6 @@ async def f_img2img(req: Img2ImgRequest):
         req.batch_size or opt['batch_size'],
         req.cfg_scale or opt['cfg_scale'],
         req.denoising_strength or opt['denoising_strength'],
-        None,
         seed,
         None,
         0,

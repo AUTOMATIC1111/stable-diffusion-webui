@@ -133,7 +133,7 @@ class Script(QObject):
 
     def img2img(self, path, mask_path, mode):
         tiling = self.cfg('txt2img_tiling', bool)
-        if mode == 3 or (self.cfg("only_full_img_tiling", bool) and self.selection is not None):
+        if mode == 2 or (self.cfg("only_full_img_tiling", bool) and self.selection is not None):
             tiling = False
 
         params = {
@@ -284,7 +284,7 @@ class Script(QObject):
         response = self.img2img(path, mask_path, mode)
         outputs = response['outputs']
         print(f"Getting images: {outputs}")
-        layer_name_prefix = "inpaint" if mode == 1 else "sd upscale" if mode == 3 else "img2img"
+        layer_name_prefix = "inpaint" if mode == 1 else "sd upscale" if mode == 2 else "img2img"
         for i, output in enumerate(outputs):
             self.insert_img(f"{layer_name_prefix} {i + 1}: {os.path.basename(output)}", output, i + 1 == len(outputs))
 
@@ -347,7 +347,7 @@ class Script(QObject):
         if self.working:
             pass
         self.update_config()
-        self.apply_img2img(mode=3)
+        self.apply_img2img(mode=2)
         self.create_mask_layer_workaround()
 
     def action_inpaint(self):

@@ -45,6 +45,7 @@ parser.add_argument("--ui-settings-file", type=str, help="filename to use for ui
 parser.add_argument("--gradio-debug",  action='store_true', help="launch gradio with --debug option")
 parser.add_argument("--gradio-auth", type=str, help='set gradio authentication like "username:password"; or comma-delimit multiple like "u1:p1,u2:p2,u3:p3"', default=None)
 parser.add_argument("--opt-channelslast", action='store_true', help="change memory type for stable diffusion to channels last")
+parser.add_argument("--styles-file", type=str, help="filename to use for styles", default=os.path.join(script_path, 'styles.csv'))
 
 cmd_opts = parser.parse_args()
 
@@ -79,7 +80,7 @@ state = State()
 
 artist_db = modules.artists.ArtistsDatabase(os.path.join(script_path, 'artists.csv'))
 
-styles_filename = os.path.join(script_path, 'styles.csv')
+styles_filename = cmd_opts.styles_file
 prompt_styles = modules.styles.load_styles(styles_filename)
 
 interrogator = modules.interrogate.InterrogateModels("interrogate")
@@ -109,10 +110,11 @@ class Options:
         "outdir_txt2img_grids": OptionInfo("outputs/txt2img-grids", 'Output directory for txt2img grids', component_args=hide_dirs),
         "outdir_img2img_grids": OptionInfo("outputs/img2img-grids", 'Output directory for img2img grids', component_args=hide_dirs),
         "outdir_save": OptionInfo("log/images", "Directory for saving images using the Save button", component_args=hide_dirs),
-        "samples_save": OptionInfo(True, "Save indiviual samples"),
+        "samples_save": OptionInfo(True, "Always save all generated images"),
+        "save_selected_only": OptionInfo(False, "When using 'Save' button, only save a single selected image"),
         "samples_format": OptionInfo('png', 'File format for individual samples'),
         "filter_nsfw": OptionInfo(False, "Filter NSFW content"),
-        "grid_save": OptionInfo(True, "Save image grids"),
+        "grid_save": OptionInfo(True, "Always save all generated image grids"),
         "return_grid": OptionInfo(True, "Show grid in results for web"),
         "grid_format": OptionInfo('png', 'File format for grids'),
         "grid_extended_filename": OptionInfo(False, "Add extended info (seed, prompt) to filename when saving grid"),
