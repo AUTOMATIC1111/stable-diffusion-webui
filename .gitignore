@@ -15,6 +15,3 @@ __pycache__
 /styles.csv.bak
 /webui-user.bat
 /interrogate
-*.ckpt
-Other checkpoints/trinart2_step115000.ckpt
-Other checkpoints/trinart2_step115000.ckpt
