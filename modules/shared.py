@@ -81,7 +81,7 @@ state = State()
 artist_db = modules.artists.ArtistsDatabase(os.path.join(script_path, 'artists.csv'))
 
 styles_filename = cmd_opts.styles_file
-prompt_styles = modules.styles.load_styles(styles_filename)
+prompt_styles = modules.styles.StyleDatabase(styles_filename)
 
 interrogator = modules.interrogate.InterrogateModels("interrogate")
 
@@ -126,7 +126,7 @@ class Options:
         "add_model_hash_to_info": OptionInfo(False, "Add model hash to generation information"),
         "img2img_color_correction": OptionInfo(False, "Apply color correction to img2img results to match original colors."),
         "font": OptionInfo("", "Font for image grids that have text"),
-        "enable_emphasis": OptionInfo(True, "Use (text) to make model pay more attention to text text and [text] to make it pay less attention"),
+        "enable_emphasis": OptionInfo(True, "Use (text) to make model pay more attention to text and [text] to make it pay less attention"),
         "save_txt": OptionInfo(False, "Create a text file next to every image with generation parameters."),
         "ESRGAN_tile": OptionInfo(192, "Tile size for upscaling. 0 = no tiling.", gr.Slider, {"minimum": 0, "maximum": 512, "step": 16}),
         "ESRGAN_tile_overlap": OptionInfo(8, "Tile overlap, in pixels for upscaling. Low values = visible seam.", gr.Slider, {"minimum": 0, "maximum": 48, "step": 1}),

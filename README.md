@@ -70,6 +70,9 @@ RealESRGAN into the directory with ESRGAN models. Thank you.
 - _*(optional)*_ place `GFPGANv1.3.pth` into webui directory, next to `webui.bat`.
 - run `webui-user.bat` from Windows Explorer. Run it as a normal user, ***not*** as administrator.
 
+### Running on AMD GPUs
+See the [wiki article](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Running-using-AMD-GPUs) by [cryzed](https://github.com/cryzed).
+
 ### Linux Automatic installation/launch
 
 Prequisites:
@@ -338,6 +341,8 @@ After that follow the instructions in the `Manual instructions` section starting
 ### Custom scripts from users
 
 [A list of custom scripts](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Custom-scripts-from-users), along with installation instructions.
+
+
 
 ### img2img alternative test
 - see [this post](https://www.reddit.com/r/StableDiffusion/comments/xboy90/a_better_way_of_doing_img2img_by_finding_the/) on ebaumsworld.com for context.
