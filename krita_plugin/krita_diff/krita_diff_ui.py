@@ -158,7 +158,7 @@ class KritaSDPluginDocker(DockWidget):
         self.txt2img_seed_layout.addWidget(self.txt2img_seed_label)
         self.txt2img_seed_layout.addWidget(self.txt2img_seed)
 
-        self.txt2img_use_gfpgan = QCheckBox("Enable GFPGAN (may fix faces)")
+        self.txt2img_use_gfpgan = QCheckBox("Restore faces")
         self.txt2img_use_gfpgan.setTristate(False)
 
         self.txt2img_tiling = QCheckBox("Enable tiling mode")
@@ -337,7 +337,7 @@ class KritaSDPluginDocker(DockWidget):
         self.img2img_checkboxes_layout.addWidget(self.img2img_tiling)
         # self.img2img_checkboxes_layout.addWidget(self.img2img_invert_mask)
 
-        self.img2img_use_gfpgan = QCheckBox("Enable GFPGAN (may fix faces)")
+        self.img2img_use_gfpgan = QCheckBox("Restore faces")
         self.img2img_use_gfpgan.setTristate(False)
         
         self.img2img_upscaler_name_label = QLabel("Prescaler for SD upscale:")
@@ -522,6 +522,22 @@ class KritaSDPluginDocker(DockWidget):
         self.config_only_full_img_tiling = QCheckBox("Allow tiling only with no selection (on full image)")
         self.config_only_full_img_tiling.setTristate(False)
 
+        self.config_face_restorer_model_label = QLabel("Face restorer model:")
+        self.config_face_restorer_model = QComboBox()
+        self.config_face_restorer_model.addItems(face_restorers)
+        self.config_face_restorer_model_layout = QHBoxLayout()
+        self.config_face_restorer_model_layout.addWidget(self.config_face_restorer_model_label)
+        self.config_face_restorer_model_layout.addWidget(self.config_face_restorer_model)
+
+        self.config_codeformer_weight_label = QLabel("CodeFormer weight (0 - max effect, 1 - min effect)")
+        self.config_codeformer_weight = QDoubleSpinBox()
+        self.config_codeformer_weight.setMinimum(0.0)
+        self.config_codeformer_weight.setMaximum(1.0)
+        self.config_codeformer_weight.setSingleStep(0.01)
+        self.config_codeformer_weight_layout = QHBoxLayout()
+        self.config_codeformer_weight_layout.addWidget(self.config_codeformer_weight_label)
+        self.config_codeformer_weight_layout.addWidget(self.config_codeformer_weight)
+
         self.config_restore_defaults = QPushButton("Restore Defaults")
 
         self.config_layout = QVBoxLayout()
@@ -532,6 +548,8 @@ class KritaSDPluginDocker(DockWidget):
         self.config_layout.addWidget(self.config_delete_temp_files)
         self.config_layout.addWidget(self.config_fix_aspect_ratio)
         self.config_layout.addWidget(self.config_only_full_img_tiling)
+        self.config_layout.addLayout(self.config_face_restorer_model_layout)
+        self.config_layout.addLayout(self.config_codeformer_weight_layout)
         self.config_layout.addWidget(self.config_restore_defaults)
         self.config_layout.addStretch()
 
@@ -550,6 +568,8 @@ class KritaSDPluginDocker(DockWidget):
             Qt.CheckState.Checked if script.cfg('fix_aspect_ratio', bool) else Qt.CheckState.Unchecked)
         self.config_only_full_img_tiling.setCheckState(
             Qt.CheckState.Checked if script.cfg('only_full_img_tiling', bool) else Qt.CheckState.Unchecked)
+        self.config_face_restorer_model.setCurrentIndex(script.cfg('face_restorer_model', int))
+        self.config_codeformer_weight.setValue(script.cfg('codeformer_weight', float))
 
     def connect_config_interface(self):
         self.config_base_url.textChanged.connect(
@@ -572,6 +592,12 @@ class KritaSDPluginDocker(DockWidget):
         )
         self.config_only_full_img_tiling.toggled.connect(
             partial(script.set_cfg, "only_full_img_tiling")
+        )
+        self.config_face_restorer_model.currentIndexChanged.connect(
+            partial(script.set_cfg, "face_restorer_model")
+        )
+        self.config_codeformer_weight.valueChanged.connect(
+            partial(script.set_cfg, "codeformer_weight")
         )
         self.config_restore_defaults.released.connect(
             lambda: self.restore_defaults()

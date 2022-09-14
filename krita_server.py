@@ -89,6 +89,8 @@ class Txt2ImgRequest(BaseModel):
     tiling: Optional[bool]
 
     use_gfpgan: Optional[bool]
+    face_restorer: Optional[str]
+    codeformer_weight: Optional[float]
 
 
 class Img2ImgRequest(BaseModel):
@@ -112,6 +114,8 @@ class Img2ImgRequest(BaseModel):
     tiling: Optional[bool]
 
     use_gfpgan: Optional[bool]
+    face_restorer: Optional[str]
+    codeformer_weight: Optional[float]
 
     upscale_overlap: Optional[int]
     upscaler_name: Optional[str]
@@ -128,7 +132,7 @@ class UpscaleRequest(BaseModel):
     downscale_first: Optional[bool]
 
 
-def get_sampler_index(sampler_name):
+def get_sampler_index(sampler_name: str):
     for index, sampler in enumerate(modules.sd_samplers.samplers):
         name, constructor, aliases = sampler
         if sampler_name == name or sampler_name in aliases:
@@ -136,12 +140,16 @@ def get_sampler_index(sampler_name):
     return 0
 
 
-def get_upscaler_index(upscaler_name):
+def get_upscaler_index(upscaler_name: str):
     for index, upscaler in enumerate(shared.sd_upscalers):
         if upscaler.name == upscaler_name:
             return index
     return 0
 
+
+def set_face_restorer(face_restorer: str, codeformer_weight: float):
+    shared.opts.face_restoration_model = face_restorer
+    shared.opts.code_former_weight = codeformer_weight
 
 @app.get("/config")
 async def read_item():
@@ -162,6 +170,8 @@ async def f_txt2img(req: Txt2ImgRequest):
     print(f"txt2img: {req}")
 
     opt = load_config()['txt2img']
+    set_face_restorer(req.face_restorer or opt['face_restorer'],
+                      req.codeformer_weight or opt['codeformer_weight'])
 
     sampler_index = get_sampler_index(req.sampler_name or opt['sampler_name'])
 
@@ -208,6 +218,8 @@ async def f_img2img(req: Img2ImgRequest):
     print(f"img2img: {req}")
 
     opt = load_config()['img2img']
+    set_face_restorer(req.face_restorer or opt['face_restorer'],
+                      req.codeformer_weight or opt['codeformer_weight'])
 
     sampler_index = get_sampler_index(req.sampler_name or opt['sampler_name'])
 

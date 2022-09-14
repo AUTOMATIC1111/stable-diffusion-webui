@@ -13,6 +13,8 @@ txt2img:
   tiling: false
 
   use_gfpgan: false
+  face_restorer: "CodeFormer"
+  codeformer_weight: 0.5
   use_realesrgan: false
   realesrgan_model_name: RealESRGAN_x4plus_anime_6B
   sample_path: 'outputs/krita-out'
@@ -42,6 +44,8 @@ img2img:
   mask_blur: 0
 
   use_gfpgan: false
+  face_restorer: "CodeFormer"
+  codeformer_weight: 0.5
   use_realesrgan: false
   realesrgan_model_name: RealESRGAN_x4plus_anime_6B
   resize_mode: 1

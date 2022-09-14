@@ -11,8 +11,7 @@ default_url = "http://127.0.0.1:8000"
 samplers = ["DDIM", "PLMS", 'k_dpm_2_a', 'k_dpm_2', 'k_euler_a', 'k_euler', 'k_heun', 'k_lms']
 samplers_img2img = ["DDIM", 'k_dpm_2_a', 'k_dpm_2', 'k_euler_a', 'k_euler', 'k_heun', 'k_lms']
 upscalers = ["None", "Lanczos"]
-realesrgan_models = ['RealESRGAN_x4plus', 'RealESRGAN_x4plus_anime_6B']
-
+face_restorers = ["None", "CodeFormer", "GFPGAN"]
 
 class Script(QObject):
     def __init__(self):
@@ -37,7 +36,9 @@ class Script(QObject):
         self.set_cfg('png_quality', -1, if_empty)
         self.set_cfg('fix_aspect_ratio', True, if_empty)
         self.set_cfg('only_full_img_tiling', True, if_empty)
-        # TODO: Add config variables that fulfill new arguments in upstream release.
+        self.set_cfg('face_restorer_model', face_restorers.index("CodeFormer"), if_empty)
+        self.set_cfg('codeformer_weight', 0.5, if_empty)
+
         self.set_cfg('txt2img_prompt', "", if_empty)
         self.set_cfg('txt2img_sampler', samplers.index("k_euler_a"), if_empty)
         self.set_cfg('txt2img_steps', 20, if_empty)
@@ -124,7 +125,9 @@ class Script(QObject):
             "max_size": self.cfg('txt2img_max_size', int),
             "seed": self.cfg('txt2img_seed', str) if not self.cfg('txt2img_seed', str).isspace() else '',
             "tiling": tiling,
-            "use_gfpgan": self.cfg("txt2img_use_gfpgan", bool)
+            "use_gfpgan": self.cfg("txt2img_use_gfpgan", bool),
+            "face_restorer": face_restorers[self.cfg("face_restorer_model", int)],
+            "codeformer_weight": self.cfg("codeformer_weight", float)
         } if not self.cfg('just_use_yaml', bool) else {
             "orig_width": self.width,
             "orig_height": self.height
@@ -154,6 +157,8 @@ class Script(QObject):
             "tiling": tiling,
             "invert_mask": False, #self.cfg('img2img_invert_mask', bool), - not implemented yet
             "use_gfpgan": self.cfg("img2img_use_gfpgan", bool),
+            "face_restorer": face_restorers[self.cfg("face_restorer_model", int)],
+            "codeformer_weight": self.cfg("codeformer_weight", float),
             "upscaler_name": upscalers[self.cfg('img2img_upscaler_name', int)]
         } if not self.cfg('just_use_yaml', bool) else {
             "src_path": path,

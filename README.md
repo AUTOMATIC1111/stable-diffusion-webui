@@ -9,6 +9,7 @@ Requires Krita 5.1
 ## Updates
 - webui.bat now starts both krita_server and webui on usual address: http://127.0.0.1:7860. Just don't try to run SD both in Krita and in webui simultaneously, it will give you CUDA error most likely.
 - removed krita.bat and krita.sh because they were confusing people, and were pain to support. Just run webui.bat ***from this repository***.
+- added CodeFormer support, it should work by default instead of GFPGAN. You can change it in the config tab.
 
 ## Installing and running
 
