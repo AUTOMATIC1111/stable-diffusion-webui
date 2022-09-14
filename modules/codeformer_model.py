@@ -53,7 +53,7 @@ def setup_codeformer():
             def create_models(self):
 
                 if self.net is not None and self.face_helper is not None:
-                    self.net.to(shared.device)
+                    self.net.to(shared.device_codeformer)
                     return self.net, self.face_helper
 
                 net = net_class(dim_embd=512, codebook_size=1024, n_head=8, n_layers=9, connect_list=['32', '64', '128', '256']).to(devices.device_codeformer)
@@ -66,7 +66,7 @@ def setup_codeformer():
 
                 self.net = net
                 self.face_helper = face_helper
-                self.net.to(shared.device)
+                self.net.to(shared.device_codeformer)
 
                 return net, face_helper
 
