@@ -178,6 +178,7 @@ async def f_txt2img(req: Txt2ImgRequest):
         req.prompt or collect_prompt(opt, "prompts"),
         req.negative_prompt or collect_prompt(opt, "negative_prompt"),
         "None",
+        "None",
         req.steps or opt['steps'],
         sampler_index,
         req.use_gfpgan or opt['use_gfpgan'],
@@ -244,6 +245,7 @@ async def f_img2img(req: Img2ImgRequest):
     output_images, info, html = modules.img2img.img2img(
         req.prompt or collect_prompt(opt, 'prompts'),
         req.negative_prompt or collect_prompt(opt, 'negative_prompt'),
+        "None",
         "None",
         image,
         {"image": image, "mask": mask},
