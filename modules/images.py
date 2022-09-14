@@ -325,8 +325,8 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     if extension.lower() in ("jpg", "jpeg", "webp"):
         exif_bytes = piexif.dump({
             "Exif": {
-                piexif.ExifIFD.UserComment: info.encode("utf8"),
-            }
+                piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(info)
+            },
         })
     else:
         exif_bytes = None
