@@ -79,15 +79,19 @@ def send_gradio_gallery_to_image(x):
 
     return image_from_url_text(x[0])
 
-
-def save_files(js_data, images):
+def save_files(js_data, images, index):
     import csv
+
 
     os.makedirs(opts.outdir_save, exist_ok=True)
 
     filenames = []
 
     data = json.loads(js_data)
+    
+    if index > -1 and opts.save_selected_only and len(images) > 1 and (index > 0 or not opts.return_grid): # ensures we are looking at a specific picture, we have save_selected_only, and there's more than a single image (for correct seed logging in case of return_grid)
+        images = [images[index]]
+        data["seed"] += (index - 1 if opts.return_grid else index)
 
     with open(os.path.join(opts.outdir_save, "log.csv"), "a", encoding="utf8", newline='') as file:
         at_start = file.tell() == 0
@@ -348,9 +352,11 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
 
             save.click(
                 fn=wrap_gradio_call(save_files),
+                _js = "(x, y, z) => [x, y, selected_gallery_index()]",
                 inputs=[
                     generation_info,
                     txt2img_gallery,
+                    html_info
                 ],
                 outputs=[
                     html_info,
@@ -568,9 +574,11 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
 
             save.click(
                 fn=wrap_gradio_call(save_files),
+                _js = "(x, y, z) => [x, y, selected_gallery_index()]",
                 inputs=[
                     generation_info,
                     img2img_gallery,
+                    html_info
                 ],
                 outputs=[
                     html_info,
