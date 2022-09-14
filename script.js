@@ -60,6 +60,12 @@ titles = {
 
     "Loopback": "Process an image, use it as an input, repeat.",
     "Loops": "How many times to repeat processing an image and using it as input for the next iteration",
+
+
+    "Style 1": "Style to apply; styles have components for both positive and negative prompts and apply to both",
+    "Style 2": "Style to apply; styles have components for both positive and negative prompts and apply to both",
+    "Apply style": "Insert selected styles into prompt fields",
+    "Create style": "Save current prompts as a style. If you add the token {prompt} to the text, the style use that as placeholder for your prompt when you use the style in the future.",
 }
 
 function gradioApp(){

@@ -1,12 +1,8 @@
 .output-html p {margin: 0 0.5em;}
 .performance { font-size: 0.85em; color: #444; }
 
-#txt2img_generate, #img2img_generate{
-    max-width: 13em;
-}
-
-#img2img_interrogate{
-    max-width: 10em;
+#generate{
+    min-height: 4.5em;
 }
 
 #subseed_show{
@@ -18,16 +14,27 @@
     height: 100%;
 }
 
-#txt2img_roll{
+#roll{
     min-width: 1em;
     max-width: 4em;
+    margin: 0.5em;
 }
 
-#style_index{
-    min-width: 9em;
-    max-width: 9em;
-    padding-left: 0;
-    padding-right: 0;
+#style_apply, #style_create, #interrogate{
+    margin: 0.75em 0.25em 0.25em 0.25em;
+    min-width: 3em;
+}
+
+#style_pos_col, #style_neg_col{
+    min-width: 4em !important;
+}
+
+#style_index, #style2_index{
+    margin-top: 1em;
+}
+
+.gr-form{
+    background: transparent;
 }
 
 #toprow div{
@@ -43,10 +50,10 @@ button{
     align-self: stretch !important;
 }
 
-#img2img_prompt, #txt2img_prompt, #img2img_negative_prompt, #txt2img_negative_prompt{
+#prompt, #negative_prompt{
     border: none !important;
 }
-#img2img_prompt textarea, #txt2img_prompt textarea, #img2img_negative_prompt textarea, #txt2img_negative_prompt textarea{
+#prompt textarea, #negative_prompt textarea{
     border: none !important;
 }
 
@@ -134,8 +141,6 @@ input[type="range"]{
 }
 
 #txt2img_negative_prompt, #img2img_negative_prompt{
-    flex: 0.3;
-    min-width: 10em;
 }
 
 .progressDiv{
