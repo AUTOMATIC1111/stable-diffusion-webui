@@ -16,3 +16,5 @@ font-roboto
 timm==0.4.12
 fairscale==0.4.4
 piexif==1.1.3
+uvicorn==0.18.3
+fastapi==0.81.0

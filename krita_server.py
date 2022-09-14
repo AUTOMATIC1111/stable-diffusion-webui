@@ -116,7 +116,7 @@ class Img2ImgRequest(BaseModel):
     inpainting_fill: Optional[int]
     inpaint_full_res: Optional[bool]
     mask_blur: Optional[int]
-    mask_invert: Optional[bool]
+    invert_mask: Optional[bool]
 
 
 class UpscaleRequest(BaseModel):
@@ -237,9 +237,9 @@ async def f_img2img(req: Img2ImgRequest):
         req.negative_prompt or collect_prompt(opt, 'negative_prompt'),
         "None",
         image,
+        {"image": image, "mask": mask},
         mask,
         1,
-        {"image": image, "mask": mask},
         req.steps or opt['steps'],
         sampler_index,
         req.mask_blur or opt['mask_blur'],
@@ -263,7 +263,7 @@ async def f_img2img(req: Img2ImgRequest):
         upscaler_index,
         req.upscale_overlap or opt['upscale_overlap'],
         req.inpaint_full_res or opt['inpaint_full_res'],
-        req.mask_invert or opt['mask_invert'],
+        False, #req.invert_mask or opt['invert_mask'],
         0
     )
 

@@ -114,6 +114,7 @@ class Script(QObject):
             "orig_height": self.height,
             "prompt": self.fix_prompt(
                 self.cfg('txt2img_prompt', str) if not self.cfg('txt2img_prompt', str).isspace() else None),
+            "negative_prompt": self.fix_prompt(self.cfg('txt2img_negative_prompt', str)) if not self.cfg('txt2img_negative_prompt', str).isspace() else None,
             "sampler_name": samplers[self.cfg('txt2img_sampler', int)],
             "steps": self.cfg('txt2img_steps', int),
             "cfg_scale": self.cfg('txt2img_cfg_scale', float),
@@ -139,8 +140,8 @@ class Script(QObject):
             "mode": mode,
             "src_path": path,
             "mask_path": mask_path,
-            "prompt": self.cfg('img2img_prompt', str) if not self.cfg('img2img_prompt', str).isspace() else None,
-            "negative_prompt": self.cfg('img2img_negative_prompt', str) if not self.cfg('img2img_negative_prompt', str).isspace() else None,
+            "prompt": self.fix_prompt(self.cfg('img2img_prompt', str)) if not self.cfg('img2img_prompt', str).isspace() else None,
+            "negative_prompt": self.fix_prompt(self.cfg('img2img_negative_prompt', str)) if not self.cfg('img2img_negative_prompt', str).isspace() else None,
             "sampler_name": samplers_img2img[self.cfg('img2img_sampler', int)],
             "steps": self.cfg('img2img_steps', int),
             "cfg_scale": self.cfg('img2img_cfg_scale', float),
@@ -151,7 +152,7 @@ class Script(QObject):
             "max_size": self.cfg('img2img_max_size', int),
             "seed": self.cfg('img2img_seed', str) if not self.cfg('img2img_seed', str).isspace() else '',
             "tiling": tiling,
-            "invert_mask": self.cfg('img2img_invert_mask', bool),
+            "invert_mask": False, #self.cfg('img2img_invert_mask', bool), - not implemented yet
             "use_gfpgan": self.cfg("img2img_use_gfpgan", bool),
             "upscaler_name": upscalers[self.cfg('img2img_upscaler_name', int)]
         } if not self.cfg('just_use_yaml', bool) else {

@@ -84,9 +84,14 @@ class KritaSDPluginDocker(DockWidget):
         self.txt2img_prompt_label = QLabel("Prompt:")
         self.txt2img_prompt_text = QPlainTextEdit()
         self.txt2img_prompt_text.setPlaceholderText("krita_config.yaml value will be used")
-        self.txt2img_prompt_layout = QHBoxLayout()
+        self.txt2img_negative_prompt_label = QLabel("Negative Prompt:")
+        self.txt2img_negative_prompt_text = QLineEdit()
+        self.txt2img_negative_prompt_text.setPlaceholderText("krita_config.yaml value will be used")
+        self.txt2img_prompt_layout = QVBoxLayout()
         self.txt2img_prompt_layout.addWidget(self.txt2img_prompt_label)
         self.txt2img_prompt_layout.addWidget(self.txt2img_prompt_text)
+        self.txt2img_prompt_layout.addWidget(self.txt2img_negative_prompt_label)
+        self.txt2img_prompt_layout.addWidget(self.txt2img_negative_prompt_text)
 
         self.txt2img_sampler_name_label = QLabel("Sampler:")
         self.txt2img_sampler_name = QComboBox()
@@ -181,6 +186,7 @@ class KritaSDPluginDocker(DockWidget):
 
     def init_txt2img_interface(self):
         self.txt2img_prompt_text.setPlainText(script.cfg('txt2img_prompt', str))
+        self.txt2img_negative_prompt_text.setText(script.cfg('txt2img_negative_prompt', str))
         self.txt2img_sampler_name.setCurrentIndex(script.cfg('txt2img_sampler', int))
         self.txt2img_steps.setValue(script.cfg('txt2img_steps', int))
         self.txt2img_cfg_scale.setValue(script.cfg('txt2img_cfg_scale', float))
@@ -197,6 +203,10 @@ class KritaSDPluginDocker(DockWidget):
     def connect_txt2img_interface(self):
         self.txt2img_prompt_text.textChanged.connect(
             lambda: script.set_cfg("txt2img_prompt", self.txt2img_prompt_text.toPlainText())
+        )
+        self.txt2img_negative_prompt_text.textChanged.connect(
+            lambda: script.set_cfg("txt2img_negative_prompt",
+                                   re.sub(r'\n', ', ', self.txt2img_negative_prompt_text.text()))
         )
         self.txt2img_sampler_name.currentIndexChanged.connect(
             partial(script.set_cfg, "txt2img_sampler")
@@ -322,10 +332,10 @@ class KritaSDPluginDocker(DockWidget):
         self.img2img_checkboxes_layout = QHBoxLayout()
         self.img2img_tiling = QCheckBox("Enable tiling mode")
         self.img2img_tiling.setTristate(False)
-        self.img2img_mask_invert = QCheckBox("Invert mask")
-        self.img2img_mask_invert.setTristate(False)
+        self.img2img_invert_mask = QCheckBox("Invert mask")
+        self.img2img_invert_mask.setTristate(False)
         self.img2img_checkboxes_layout.addWidget(self.img2img_tiling)
-        self.img2img_checkboxes_layout.addWidget(self.img2img_mask_invert)
+        # self.img2img_checkboxes_layout.addWidget(self.img2img_invert_mask)
 
         self.img2img_use_gfpgan = QCheckBox("Enable GFPGAN (may fix faces)")
         self.img2img_use_gfpgan.setTristate(False)
@@ -382,8 +392,8 @@ class KritaSDPluginDocker(DockWidget):
             Qt.CheckState.Checked if script.cfg('img2img_use_gfpgan', bool) else Qt.CheckState.Unchecked)
         self.img2img_tiling.setCheckState(
             Qt.CheckState.Checked if script.cfg('img2img_tiling', bool) else Qt.CheckState.Unchecked)
-        self.img2img_mask_invert.setCheckState(
-            Qt.CheckState.Checked if script.cfg('img2img_mask_invert', bool) else Qt.CheckState.Unchecked)
+        self.img2img_invert_mask.setCheckState(
+            Qt.CheckState.Checked if script.cfg('img2img_invert_mask', bool) else Qt.CheckState.Unchecked)
         self.img2img_upscaler_name.addItems(upscalers[self.img2img_upscaler_name.count():])
         self.img2img_upscaler_name.setCurrentIndex(script.cfg('img2img_upscaler_name', int))
 
@@ -428,8 +438,8 @@ class KritaSDPluginDocker(DockWidget):
         self.img2img_tiling.toggled.connect(
             partial(script.set_cfg, "img2img_tiling")
         )
-        self.img2img_mask_invert.toggled.connect(
-            partial(script.set_cfg, "img2img_mask_invert")
+        self.img2img_invert_mask.toggled.connect(
+            partial(script.set_cfg, "img2img_invert_mask")
         )
         self.img2img_upscaler_name.currentIndexChanged.connect(
             partial(script.set_cfg, "img2img_upscaler_name")
