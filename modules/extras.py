@@ -6,6 +6,8 @@ from modules.shared import opts
 import modules.gfpgan_model
 from modules.ui import plaintext_to_html
 import modules.codeformer_model
+import piexif
+
 
 cached_images = {}
 
@@ -73,8 +75,20 @@ def run_extras(image, gfpgan_visibility, codeformer_visibility, codeformer_weigh
 
 
 def run_pnginfo(image):
+    items = image.info
+
+    if "exif" in image.info:
+        exif = piexif.load(image.info["exif"])
+        exif_comment = (exif or {}).get("Exif", {}).get(piexif.ExifIFD.UserComment, b'')
+        exif_comment = exif_comment.decode("utf8", 'ignore')
+        items['exif comment'] = exif_comment
+
+        for field in ['jfif', 'jfif_version', 'jfif_unit', 'jfif_density', 'dpi', 'exif']:
+            del items[field]
+
+
     info = ''
-    for key, text in image.info.items():
+    for key, text in items.items():
         info += f"""
 <div>
 <p><b>{plaintext_to_html(str(key))}</b></p>

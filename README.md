@@ -122,6 +122,9 @@ set COMMANDLINE_ARGS=--ckpt a.ckpt
 call webui.bat
 ```
 
+### How to create large images?
+Use `--opt-split-attention` parameter. It slows down sampling a tiny bit, but allows you to make gigantic images.
+
 ### What options to use for low VRAM video-cards?
 You can, through command line arguments, enable the various optimizations which sacrifice some/a lot of speed in favor of
 using less VRAM. Those arguments are added to the `COMMANDLINE_ARGS` parameter, see section above.
@@ -184,8 +187,25 @@ After running once, a `ui-config.json` file appears in webui directory:
 
 Edit values to your liking and the next time you launch the program they will be applied.
 
+### Almost automatic installation and launch
+
+Install python and git, place `model.ckpt` and `GFPGANv1.3.pth` into webui directory, run:
+
+```
+python launch.py
+```
+
+This installs packages via pip. If you need to use a virtual environment, you must set it up yourself. I will not
+provide support for using the web ui this way unless you are using the recommended version of python below.
+
+If you'd like to use command line parameters, use them right there:
+
+```
+python launch.py --opt-split-attention --ckpt ../secret/anime9999.ckpt
+```
+
 ### Manual installation
-Alternatively, if you don't want to run webui.bat, here are instructions for installing
+Alternatively, if you don't want to run the installer, here are instructions for installing
 everything by hand. This can run on both Windows and Linux (if you're on linux, use `ls`
 instead of `dir`). 
 
