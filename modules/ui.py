@@ -79,9 +79,9 @@ def send_gradio_gallery_to_image(x):
 
     return image_from_url_text(x[0])
 
+
 def save_files(js_data, images, index):
     import csv
-
 
     os.makedirs(opts.outdir_save, exist_ok=True)
 
