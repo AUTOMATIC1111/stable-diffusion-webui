@@ -1,3 +1,7 @@
+import launch
+
+import contextlib
+import threading
 import math
 import time
 import yaml
@@ -17,7 +21,7 @@ app = FastAPI()
 
 
 def load_config():
-    with open("../../krita_config.yaml") as file:
+    with open("krita_config.yaml") as file:
         return yaml.safe_load(file)
 
 
@@ -314,11 +318,30 @@ async def f_upscale(req: UpscaleRequest):
     return {"output": output}
 
 
+class Server(uvicorn.Server):
+    def install_signal_handlers(self):
+        pass
+
+    @contextlib.contextmanager
+    def run_in_thread(self):
+        thread = threading.Thread(target=self.run)
+        thread.start()
+        try:
+            while not self.started:
+                time.sleep(1e-3)
+            yield
+        finally:
+            self.should_exit = True
+            thread.join()
+
+
 def main():
-    uvicorn.run("krita_server:app", host="127.0.0.1", port=8000, log_level="info")
+    config = uvicorn.Config("krita_server:app", host="127.0.0.1", port=8000, log_level="info")
+    server = Server(config=config)
+
+    with server.run_in_thread():
+        webui()
 
 
 if __name__ == "__main__":
-    import launch
-
     main()
