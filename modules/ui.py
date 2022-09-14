@@ -89,7 +89,7 @@ def save_files(js_data, images, index):
 
     data = json.loads(js_data)
     
-    if index > -1 and opts.save_selected_only and len(images) > 1 and (index > 0 or not opts.return_grid): # ensures we are looking at a specific picture, we have save_selected_only, and there's more than a single image (for correct seed logging in case of return_grid)
+    if index > -1 and opts.save_selected_only and (index > 0 or not opts.return_grid): # ensures we are looking at a specific non-grid picture, and we have save_selected_only
         images = [images[index]]
         data["seed"] += (index - 1 if opts.return_grid else index)
 
