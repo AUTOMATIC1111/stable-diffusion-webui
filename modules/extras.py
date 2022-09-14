@@ -7,6 +7,7 @@ import modules.gfpgan_model
 from modules.ui import plaintext_to_html
 import modules.codeformer_model
 import piexif
+import piexif.helper
 
 
 cached_images = {}
@@ -80,7 +81,12 @@ def run_pnginfo(image):
     if "exif" in image.info:
         exif = piexif.load(image.info["exif"])
         exif_comment = (exif or {}).get("Exif", {}).get(piexif.ExifIFD.UserComment, b'')
-        exif_comment = exif_comment.decode("utf8", 'ignore')
+        try:
+            exif_comment = piexif.helper.UserComment.load(exif_comment)
+        except ValueError:
+            exif_comment = exif_comment.decode('utf8', errors="ignore")
+
+
         items['exif comment'] = exif_comment
 
         for field in ['jfif', 'jfif_version', 'jfif_unit', 'jfif_density', 'dpi', 'exif']:
