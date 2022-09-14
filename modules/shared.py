@@ -81,7 +81,7 @@ state = State()
 artist_db = modules.artists.ArtistsDatabase(os.path.join(script_path, 'artists.csv'))
 
 styles_filename = cmd_opts.styles_file
-prompt_styles = modules.styles.load_styles(styles_filename)
+prompt_styles = modules.styles.StyleDatabase(styles_filename)
 
 interrogator = modules.interrogate.InterrogateModels("interrogate")
 
