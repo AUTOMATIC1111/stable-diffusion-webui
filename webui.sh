@@ -134,27 +134,6 @@ else
 fi
 
 printf "\n%s\n" "${delimiter}"
-printf "Check if models are present"
-printf "\n%s\n" "${delimiter}"
-for model in GFPGANv1.3.pth model.ckpt
-do
-    if [[ ! -f "${model}" ]]
-    then
-        printf "\n%s\n" "${delimiter}"
-        printf "\e[1m\e[33mWarning:\e[0m %s file not found..." "${model}"
-        printf "\n%s\n" "${delimiter}"
-        if [[ "${model}" == "model.ckpt" ]] && [[ -n "${first_launch}" ]]
-        then
-            printf "\n%s\n" "${delimiter}"
-            printf "Place \e[1m\e[32m%s\e[0m into webui directory, next to \e[1m\e[32mwebui.py\e[0m\n" "${model}"
-            printf "Then press a key to continue...\n"
-            read -rsn 1
-            printf "\n%s\n" "${delimiter}"
-        fi
-    fi
-done
-
-printf "\n%s\n" "${delimiter}"
 printf "Launching launch.py..."
 printf "\n%s\n" "${delimiter}"
 "${python_cmd}" launch.py
