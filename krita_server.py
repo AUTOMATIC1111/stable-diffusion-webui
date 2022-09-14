@@ -88,6 +88,7 @@ class Txt2ImgRequest(BaseModel):
 
     use_gfpgan: Optional[bool]
 
+
 class Img2ImgRequest(BaseModel):
     mode: Optional[int]
 
@@ -263,7 +264,7 @@ async def f_img2img(req: Img2ImgRequest):
         upscaler_index,
         req.upscale_overlap or opt['upscale_overlap'],
         req.inpaint_full_res or opt['inpaint_full_res'],
-        False, #req.invert_mask or opt['invert_mask'],
+        False,  # req.invert_mask or opt['invert_mask'],
         0
     )
 
@@ -318,4 +319,6 @@ def main():
 
 
 if __name__ == "__main__":
+    import launch
+
     main()
