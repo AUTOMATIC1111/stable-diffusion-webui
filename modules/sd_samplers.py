@@ -173,7 +173,7 @@ def extended_trange(count, *args, **kwargs):
 
 class KDiffusionSampler:
     def __init__(self, funcname, sd_model):
-        self.model_wrap = k_diffusion.external.CompVisDenoiser(sd_model)
+        self.model_wrap = k_diffusion.external.CompVisDenoiser(sd_model, quantize=True)
         self.funcname = funcname
         self.func = getattr(k_diffusion.sampling, self.funcname)
         self.model_wrap_cfg = CFGDenoiser(self.model_wrap)
