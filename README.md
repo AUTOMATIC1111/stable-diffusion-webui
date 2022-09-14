@@ -90,7 +90,7 @@ source venv/bin/activate
 TORCH_COMMAND='pip install torch torchvision --extra-index-url https://download.pytorch.org/whl/rocm5.1.1' REQS_FILE='requirements.txt' python launch.py --precision full --no-half
 ```
 
-The `/dockerx` folder should be accessible in your home directory with he name `dockerx`.
+The `/dockerx` folder inside the container should be accessible in your home directory under the same name.
 
 ### Automatic installation/launch
 
