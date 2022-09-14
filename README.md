@@ -6,10 +6,13 @@ Requires Krita 5.1
 ## Usage example
 [target.webm](https://user-images.githubusercontent.com/112324253/188291339-9d146a9a-ba9f-4671-9bd8-c8b55fd48ba6.webm)
 
+## Updates
+- krita.bat now starts webui too on usual address: http://127.0.0.1:7860. Just don't try to run SD both in Krita and in webui simultaneously, it will give you CUDA error most likely
 
 ## Installing and running
 
 If you used previous version which used conda, please make a new install. Please install it separately from webui.
+If you got any trouble after updating repo, please try to delete and reinstall it.
 
 ### Plugin installation
 
@@ -25,10 +28,7 @@ If you used previous version which used conda, please make a new install. Please
 ### Server installation
 
 You need [python](https://www.python.org/downloads/windows/) and [git](https://git-scm.com/download/win)
-installed to run this, and an NVidia videocard.
-
-I tested the installation to work Windows with Python 3.8.10, and with Python 3.10.6. You may be able
-to have success with different versions.
+installed to run this, and an NVidia video card.
 
 You need `model.ckpt`, Stable Diffusion model checkpoint, a big file containing the neural network weights. You
 can obtain it from the following places:
@@ -36,16 +36,25 @@ can obtain it from the following places:
  - [file storage](https://drive.yerf.org/wl/?id=EBfTrmcCCUAGaQBXVIj5lJmEhjoP1tgl)
  - magnet:?xt=urn:btih:3a4a612d75ed088ea542acac52f9f45987488d1c&dn=sd-v1-4.ckpt&tr=udp%3a%2f%2ftracker.openbittorrent.com%3a6969%2fannounce&tr=udp%3a%2f%2ftracker.opentrackr.org%3a1337
 
-You optionally can use GPFGAN to improve faces, then you'll need to download the model from [here](https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.3.pth).
+You can optionally use GFPGAN to improve faces, to do so you'll need to download the model from [here](https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.3.pth) and place it in the same directory as `webui.bat`.
+
+To use ESRGAN models, put them into ESRGAN directory in the same location as webui.py. A file will be loaded
+as a model if it has .pth extension, and it will show up with its name in the UI. Grab models from the [Model Database](https://upscale.wiki/wiki/Model_Database).
+
+> Note: RealESRGAN models are not ESRGAN models, they are not compatible. Do not download RealESRGAN models. Do not place
+RealESRGAN into the directory with ESRGAN models. Thank you.
 
 ### Automatic installation/launch
 
-- install [Python 3.10.6](https://www.python.org/downloads/windows/)
+- install [Python 3.10.6](https://www.python.org/downloads/windows/) and check "Add Python to PATH" during installation. You must install this exact version.
 - install [git](https://git-scm.com/download/win)
-- install [CUDA 11.3](https://developer.nvidia.com/cuda-11.3.0-download-archive?target_os=Windows&target_arch=x86_64)
-- place `model.ckpt` into webui directory, next to `krita.bat`.
-- _*(optional)*_ place `GFPGANv1.3.pth` into webui directory, next to `krita.bat`.
-- run `krita.bat` from Windows Explorer.
+- place `model.ckpt` into webui directory, next to `webui.bat`.
+- _*(optional)*_ place `GFPGANv1.3.pth` into webui directory, next to `webui.bat`.
+- run `krita.bat` from Windows Explorer. Run it as a normal user, ***not*** as administrator.
+
+### Linux installation
+
+Please look at parent repo, try to run webui.sh following instructions. If it works, krita.sh should work too. 
 
 #### Troublehooting:
 
@@ -61,6 +70,7 @@ Put something in your prompt and just run it. If you select some area, only it w
 - img2img - Ctrl + Alt + W
 - sd upscale - Ctrl + Alt + E
 - inpainting - Ctrl + Alt + R
+- just upscale, no SD - Ctrl + Alt + T
 
 #### Img2img
 
@@ -73,6 +83,8 @@ It uses "SD upscale", that means original image is split into overlapping tiles 
 You should use low denoising strength with this mode. Think 0.1-0.2.
 
 #### Inpainting
+
+I'm not sure, it works correctly currently. If you think it doesn't please try webui.
 
 It requires both image and mask. For mask this plugin uses selected layer. Just create new layer and paint with white brush. This area will be inpainted.
 
