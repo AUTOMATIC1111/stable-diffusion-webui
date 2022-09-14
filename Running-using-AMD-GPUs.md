@@ -1,5 +1,10 @@
-# Installing and running on Linux with AMD GPUs 
+# Installing and running on Linux with AMD GPUs
 If your AMD GPU is compatible with ROCm, you can try running: `TORCH_COMMAND='pip install torch torchvision --extra-index-url https://download.pytorch.org/whl/rocm5.1.1' python launch.py --precision full --no-half`. Make sure to do this in a new virtual environment, or activate your existing environment and `pip uninstall torch torchvision` beforehand.
+
+The first generation after starting the WebUI might take very long, and you might see a message similar to this: 
+> MIOpen(HIP): Warning [SQLiteBase] Missing system database file: gfx1030_40.kdb Performance may degrade. Please follow instructions to install: https://github.com/ROCmSoftwarePlatform/MIOpen#installing-miopen-kernels-package
+
+Subsequent generations should work with regular performance. You can follow the link in the message, and if you happen to use the same operating system, follow the steps there to fix this issue. If there is no clear way to compile or install the MIOpen kernels for your operating system, consider following the Docker guide below.
 
 # Installing and running using Docker
 This is only tested using a Linux host!
