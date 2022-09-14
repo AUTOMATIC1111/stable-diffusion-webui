@@ -5,6 +5,10 @@
     min-height: 4.5em;
 }
 
+#txt2img_gallery, #img2img_gallery{
+    min-height: 768px;
+}
+
 #subseed_show{
     min-width: 6em;
     max-width: 6em;
