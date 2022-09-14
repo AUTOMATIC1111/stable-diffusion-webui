@@ -78,7 +78,7 @@ axis_options = [
 ]
 
 
-def draw_xy_grid(xs, ys, x_label, y_label, cell):
+def draw_xy_grid(p, xs, ys, x_label, y_label, cell):
     res = []
 
     ver_texts = [[images.GridAnnotation(y_label(y))] for y in ys]
@@ -86,7 +86,7 @@ def draw_xy_grid(xs, ys, x_label, y_label, cell):
 
     first_pocessed = None
 
-    state.job_count = len(xs) * len(ys)
+    state.job_count = len(xs) * len(ys) * p.n_iter
 
     for iy, y in enumerate(ys):
         for ix, x in enumerate(xs):
@@ -129,7 +129,6 @@ class Script(scripts.Script):
     def run(self, p, x_type, x_values, y_type, y_values):
         modules.processing.fix_seed(p)
         p.batch_size = 1
-        p.batch_count = 1
 
         def process_axis(opt, vals):
             valslist = [x.strip() for x in vals.split(",")]
@@ -184,6 +183,7 @@ class Script(scripts.Script):
             return process_images(pc)
 
         processed = draw_xy_grid(
+            p,
             xs=xs,
             ys=ys,
             x_label=lambda x: x_opt.format_value(p, x_opt, x),
