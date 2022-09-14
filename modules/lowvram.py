@@ -1,9 +1,18 @@
 import torch
+from modules.devices import get_optimal_device
 
 module_in_gpu = None
 cpu = torch.device("cpu")
-gpu = torch.device("cuda")
-device = gpu if torch.cuda.is_available() else cpu
+device = gpu = get_optimal_device()
+
+
+def send_everything_to_cpu():
+    global module_in_gpu
+
+    if module_in_gpu is not None:
+        module_in_gpu.to(cpu)
+
+    module_in_gpu = None
 
 
 def setup_for_low_vram(sd_model, use_medvram):

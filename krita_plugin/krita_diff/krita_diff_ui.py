@@ -79,13 +79,19 @@ class KritaSDPluginDocker(DockWidget):
         self.widget = QWidget(self)
         self.widget.setLayout(self.layout)
 
+    # TODO: Add necessary UI components to match up with upstream changes.
     def create_txt2img_interface(self):
         self.txt2img_prompt_label = QLabel("Prompt:")
         self.txt2img_prompt_text = QPlainTextEdit()
         self.txt2img_prompt_text.setPlaceholderText("krita_config.yaml value will be used")
-        self.txt2img_prompt_layout = QHBoxLayout()
+        self.txt2img_negative_prompt_label = QLabel("Negative Prompt:")
+        self.txt2img_negative_prompt_text = QLineEdit()
+        self.txt2img_negative_prompt_text.setPlaceholderText("krita_config.yaml value will be used")
+        self.txt2img_prompt_layout = QVBoxLayout()
         self.txt2img_prompt_layout.addWidget(self.txt2img_prompt_label)
         self.txt2img_prompt_layout.addWidget(self.txt2img_prompt_text)
+        self.txt2img_prompt_layout.addWidget(self.txt2img_negative_prompt_label)
+        self.txt2img_prompt_layout.addWidget(self.txt2img_negative_prompt_text)
 
         self.txt2img_sampler_name_label = QLabel("Sampler:")
         self.txt2img_sampler_name = QComboBox()
@@ -180,6 +186,7 @@ class KritaSDPluginDocker(DockWidget):
 
     def init_txt2img_interface(self):
         self.txt2img_prompt_text.setPlainText(script.cfg('txt2img_prompt', str))
+        self.txt2img_negative_prompt_text.setText(script.cfg('txt2img_negative_prompt', str))
         self.txt2img_sampler_name.setCurrentIndex(script.cfg('txt2img_sampler', int))
         self.txt2img_steps.setValue(script.cfg('txt2img_steps', int))
         self.txt2img_cfg_scale.setValue(script.cfg('txt2img_cfg_scale', float))
@@ -196,6 +203,10 @@ class KritaSDPluginDocker(DockWidget):
     def connect_txt2img_interface(self):
         self.txt2img_prompt_text.textChanged.connect(
             lambda: script.set_cfg("txt2img_prompt", self.txt2img_prompt_text.toPlainText())
+        )
+        self.txt2img_negative_prompt_text.textChanged.connect(
+            lambda: script.set_cfg("txt2img_negative_prompt",
+                                   re.sub(r'\n', ', ', self.txt2img_negative_prompt_text.text()))
         )
         self.txt2img_sampler_name.currentIndexChanged.connect(
             partial(script.set_cfg, "txt2img_sampler")
@@ -235,9 +246,14 @@ class KritaSDPluginDocker(DockWidget):
         self.img2img_prompt_label = QLabel("Prompt:")
         self.img2img_prompt_text = QPlainTextEdit()
         self.img2img_prompt_text.setPlaceholderText("krita_config.yaml value will be used")
-        self.img2img_prompt_layout = QHBoxLayout()
+        self.img2img_negative_prompt_label = QLabel("Negative Prompt:")
+        self.img2img_negative_prompt_text = QLineEdit()
+        self.img2img_negative_prompt_text.setPlaceholderText("krita_config.yaml value will be used")
+        self.img2img_prompt_layout = QVBoxLayout()
         self.img2img_prompt_layout.addWidget(self.img2img_prompt_label)
         self.img2img_prompt_layout.addWidget(self.img2img_prompt_text)
+        self.img2img_prompt_layout.addWidget(self.img2img_negative_prompt_label)
+        self.img2img_prompt_layout.addWidget(self.img2img_negative_prompt_text)
 
         self.img2img_sampler_name_label = QLabel("Sampler:")
         self.img2img_sampler_name = QComboBox()
@@ -313,12 +329,17 @@ class KritaSDPluginDocker(DockWidget):
         self.img2img_seed_layout.addWidget(self.img2img_seed_label)
         self.img2img_seed_layout.addWidget(self.img2img_seed)
 
+        self.img2img_checkboxes_layout = QHBoxLayout()
         self.img2img_tiling = QCheckBox("Enable tiling mode")
         self.img2img_tiling.setTristate(False)
+        self.img2img_invert_mask = QCheckBox("Invert mask")
+        self.img2img_invert_mask.setTristate(False)
+        self.img2img_checkboxes_layout.addWidget(self.img2img_tiling)
+        # self.img2img_checkboxes_layout.addWidget(self.img2img_invert_mask)
 
         self.img2img_use_gfpgan = QCheckBox("Enable GFPGAN (may fix faces)")
         self.img2img_use_gfpgan.setTristate(False)
-
+        
         self.img2img_upscaler_name_label = QLabel("Prescaler for SD upscale:")
         self.img2img_upscaler_name = QComboBox()
         self.img2img_upscaler_name.addItems(upscalers)
@@ -346,7 +367,8 @@ class KritaSDPluginDocker(DockWidget):
         self.img2img_layout.addLayout(self.img2img_size_layout)
         self.img2img_layout.addLayout(self.img2img_seed_layout)
         self.img2img_layout.addWidget(self.img2img_use_gfpgan)
-        self.img2img_layout.addWidget(self.img2img_tiling)
+
+        self.img2img_layout.addLayout(self.img2img_checkboxes_layout)
         self.img2img_layout.addLayout(self.img2img_upscaler_name_layout)
         self.img2img_layout.addLayout(self.img2img_button_layout)
         self.img2img_layout.addStretch()
@@ -356,6 +378,7 @@ class KritaSDPluginDocker(DockWidget):
 
     def init_img2img_interface(self):
         self.img2img_prompt_text.setPlainText(script.cfg('img2img_prompt', str))
+        self.img2img_negative_prompt_text.setText(script.cfg('img2img_negative_prompt', str))
         self.img2img_sampler_name.setCurrentIndex(script.cfg('img2img_sampler', int))
         self.img2img_steps.setValue(script.cfg('img2img_steps', int))
         self.img2img_cfg_scale.setValue(script.cfg('img2img_cfg_scale', float))
@@ -369,12 +392,18 @@ class KritaSDPluginDocker(DockWidget):
             Qt.CheckState.Checked if script.cfg('img2img_use_gfpgan', bool) else Qt.CheckState.Unchecked)
         self.img2img_tiling.setCheckState(
             Qt.CheckState.Checked if script.cfg('img2img_tiling', bool) else Qt.CheckState.Unchecked)
+        self.img2img_invert_mask.setCheckState(
+            Qt.CheckState.Checked if script.cfg('img2img_invert_mask', bool) else Qt.CheckState.Unchecked)
         self.img2img_upscaler_name.addItems(upscalers[self.img2img_upscaler_name.count():])
         self.img2img_upscaler_name.setCurrentIndex(script.cfg('img2img_upscaler_name', int))
 
     def connect_img2img_interface(self):
         self.img2img_prompt_text.textChanged.connect(
             lambda: script.set_cfg("img2img_prompt", self.img2img_prompt_text.toPlainText())
+        )
+        self.img2img_negative_prompt_text.textChanged.connect(
+            lambda: script.set_cfg("img2img_negative_prompt",
+                                   re.sub(r'\n', ', ', self.img2img_negative_prompt_text.text().strip()))
         )
         self.img2img_sampler_name.currentIndexChanged.connect(
             partial(script.set_cfg, "img2img_sampler")
@@ -408,6 +437,9 @@ class KritaSDPluginDocker(DockWidget):
         )
         self.img2img_tiling.toggled.connect(
             partial(script.set_cfg, "img2img_tiling")
+        )
+        self.img2img_invert_mask.toggled.connect(
+            partial(script.set_cfg, "img2img_invert_mask")
         )
         self.img2img_upscaler_name.currentIndexChanged.connect(
             partial(script.set_cfg, "img2img_upscaler_name")

@@ -1,12 +1,18 @@
+import datetime
 import math
 import os
 from collections import namedtuple
 import re
 
 import numpy as np
+import piexif
+import piexif.helper
 from PIL import Image, ImageFont, ImageDraw, PngImagePlugin
+from fonts.ttf import Roboto
+import string
 
 import modules.shared
+from modules import sd_samplers, shared
 from modules.shared import opts
 
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
@@ -132,11 +138,16 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts):
 
     fontsize = (width + height) // 25
     line_spacing = fontsize // 2
-    fnt = ImageFont.truetype(opts.font, fontsize)
+
+    try:
+        fnt = ImageFont.truetype(opts.font or Roboto, fontsize)
+    except Exception:
+        fnt = ImageFont.truetype(Roboto, fontsize)
+
     color_active = (0, 0, 0)
     color_inactive = (153, 153, 153)
 
-    pad_left = width * 3 // 4 if len(ver_texts) > 0 else 0
+    pad_left = 0 if sum([sum([len(line.text) for line in lines]) for lines in ver_texts]) == 0 else width * 3 // 4
 
     cols = im.width // width
     rows = im.height // height
@@ -234,32 +245,72 @@ def resize_image(resize_mode, im, width, height):
 
 
 invalid_filename_chars = '<>:"/\\|?*\n'
+re_nonletters = re.compile(r'[\s'+string.punctuation+']+')
 
 
-def sanitize_filename_part(text):
-    return text.replace(' ', '_').translate({ord(x): '' for x in invalid_filename_chars})[:128]
+def sanitize_filename_part(text, replace_spaces=True):
+    if replace_spaces:
+        text = text.replace(' ', '_')
+
+    return text.translate({ord(x): '' for x in invalid_filename_chars})[:128]
 
 
-def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False):
+def apply_filename_pattern(x, p, seed, prompt):
+    if seed is not None:
+        x = x.replace("[seed]", str(seed))
+    if prompt is not None:
+        x = x.replace("[prompt]", sanitize_filename_part(prompt)[:128])
+        x = x.replace("[prompt_spaces]", sanitize_filename_part(prompt, replace_spaces=False)[:128])
+        if "[prompt_words]" in x:
+            words = [x for x in re_nonletters.split(prompt or "") if len(x) > 0]
+            if len(words) == 0:
+                words = ["empty"]
+
+            x = x.replace("[prompt_words]", " ".join(words[0:8]).strip())
+    if p is not None:
+        x = x.replace("[steps]", str(p.steps))
+        x = x.replace("[cfg]", str(p.cfg_scale))
+        x = x.replace("[width]", str(p.width))
+        x = x.replace("[height]", str(p.height))
+        x = x.replace("[sampler]", sd_samplers.samplers[p.sampler_index].name)
+
+    x = x.replace("[model_hash]", shared.sd_model_hash)
+    x = x.replace("[date]", datetime.date.today().isoformat())
+
+    return x
+
+
+def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False, pnginfo_section_name='parameters', p=None, existing_info=None):
+    # would be better to add this as an argument in future, but will do for now
+    is_a_grid = basename != ""
+
     if short_filename or prompt is None or seed is None:
         file_decoration = ""
     elif opts.save_to_dirs:
-        file_decoration = f"-{seed}"
+        file_decoration = opts.samples_filename_pattern or "[seed]"
     else:
-        file_decoration = f"-{seed}-{sanitize_filename_part(prompt)[:128]}"
+        file_decoration = opts.samples_filename_pattern or "[seed]-[prompt_spaces]"
+
+    if file_decoration != "":
+        file_decoration = "-" + file_decoration.lower()
+
+    file_decoration = apply_filename_pattern(file_decoration, p, seed, prompt)
 
     if extension == 'png' and opts.enable_pnginfo and info is not None:
         pnginfo = PngImagePlugin.PngInfo()
-        pnginfo.add_text("parameters", info)
+
+        if existing_info is not None:
+            for k, v in existing_info.items():
+                pnginfo.add_text(k, str(v))
+
+        pnginfo.add_text(pnginfo_section_name, info)
     else:
         pnginfo = None
 
-    if opts.save_to_dirs and not no_prompt:
-        words = re.findall(r'\w+', prompt or "")
-        if len(words) == 0:
-            words = ["empty"]
+    save_to_dirs = (is_a_grid and opts.grid_save_to_dirs) or (not is_a_grid and opts.save_to_dirs)
 
-        dirname = " ".join(words[0:opts.save_to_dirs_prompt_len])
+    if save_to_dirs:
+        dirname = apply_filename_pattern(opts.directories_filename_pattern or "[prompt_words]", p, seed, prompt)
         path = os.path.join(path, dirname)
 
     os.makedirs(path, exist_ok=True)
@@ -267,14 +318,23 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     filecount = len([x for x in os.listdir(path) if os.path.splitext(x)[1] == '.' + extension])
     fullfn = "a.png"
     fullfn_without_extension = "a"
-    for i in range(100):
-        fn = f"{filecount:05}" if basename == '' else f"{basename}-{filecount:04}"
+    for i in range(500):
+        fn = f"{filecount+i:05}" if basename == '' else f"{basename}-{filecount+i:04}"
         fullfn = os.path.join(path, f"{fn}{file_decoration}.{extension}")
         fullfn_without_extension = os.path.join(path, f"{fn}{file_decoration}")
         if not os.path.exists(fullfn):
             break
 
-    image.save(fullfn, quality=opts.jpeg_quality, pnginfo=pnginfo)
+    if extension.lower() in ("jpg", "jpeg"):
+        exif_bytes = piexif.dump({
+            "Exif": {
+                piexif.ExifIFD.UserComment: info.encode("utf8"),
+            }
+        })
+    else:
+        exif_bytes = None
+
+    image.save(fullfn, quality=opts.jpeg_quality, pnginfo=pnginfo, exif=exif_bytes)
 
     target_side_length = 4000
     oversize = image.width > target_side_length or image.height > target_side_length
@@ -286,7 +346,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
         elif oversize:
             image = image.resize((image.width * target_side_length // image.height, target_side_length), LANCZOS)
 
-        image.save(f"{fullfn_without_extension}.jpg", quality=opts.jpeg_quality, pnginfo=pnginfo)
+        image.save(fullfn, quality=opts.jpeg_quality, exif=exif_bytes)
 
     if opts.save_txt and info is not None:
         with open(f"{fullfn_without_extension}.txt", "w", encoding="utf8") as file:
@@ -307,7 +367,7 @@ class Upscaler:
             img = self.do_upscale(img)
 
         if img.width != w or img.height != h:
-            img = img.resize((w, h), resample=LANCZOS)
+            img = img.resize((int(w), int(h)), resample=LANCZOS)
 
         return img
 

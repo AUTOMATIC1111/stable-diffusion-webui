@@ -50,8 +50,8 @@ def fix_aspect_ratio(base_size, max_size, orig_width, orig_height):
     return width, height
 
 
-def collect_prompt(opt):
-    prompts = opt['prompts']
+def collect_prompt(opts, key):
+    prompts = opts[key]
     if isinstance(prompts, str):
         return prompts
     if isinstance(prompts, list):
@@ -95,6 +95,7 @@ class Img2ImgRequest(BaseModel):
     mask_path: Optional[str]
 
     prompt: Optional[str]
+    negative_prompt: Optional[str]
     sampler_name: Optional[str]
     steps: Optional[int]
     cfg_scale: Optional[float]
@@ -115,6 +116,7 @@ class Img2ImgRequest(BaseModel):
     inpainting_fill: Optional[int]
     inpaint_full_res: Optional[bool]
     mask_blur: Optional[int]
+    invert_mask: Optional[bool]
 
 
 class UpscaleRequest(BaseModel):
@@ -168,8 +170,9 @@ async def f_txt2img(req: Txt2ImgRequest):
                                      req.orig_width, req.orig_height)
 
     output_images, info, html = modules.txt2img.txt2img(
-        req.prompt or collect_prompt(opt),
-        req.negative_prompt or opt['negative_prompt'],
+        req.prompt or collect_prompt(opt, "prompts"),
+        req.negative_prompt or collect_prompt(opt, "negative_prompt"),
+        "None",
         req.steps or opt['steps'],
         sampler_index,
         req.use_gfpgan or opt['use_gfpgan'],
@@ -178,6 +181,10 @@ async def f_txt2img(req: Txt2ImgRequest):
         req.batch_size or opt['batch_size'],
         req.cfg_scale or opt['cfg_scale'],
         seed,
+        None,
+        0,
+        0,
+        0,
         height,
         width,
         0
@@ -185,7 +192,7 @@ async def f_txt2img(req: Txt2ImgRequest):
 
     sample_path = opt['sample_path']
     os.makedirs(sample_path, exist_ok=True)
-    resized_images = [images.resize_image(0, image, req.orig_width, req.orig_height) for image in output_images]
+    resized_images = [modules.images.resize_image(0, image, req.orig_width, req.orig_height) for image in output_images]
     outputs = [save_img(image, sample_path, filename=f"{int(time.time())}_{i}.png")
                for i, image in enumerate(resized_images)]
     print(f"finished: {outputs}\n{info}")
@@ -226,9 +233,13 @@ async def f_img2img(req: Img2ImgRequest):
                                          orig_width, orig_height)
 
     output_images, info, html = modules.img2img.img2img(
-        req.prompt or collect_prompt(opt),
+        req.prompt or collect_prompt(opt, 'prompts'),
+        req.negative_prompt or collect_prompt(opt, 'negative_prompt'),
+        "None",
         image,
         {"image": image, "mask": mask},
+        mask,
+        1,
         req.steps or opt['steps'],
         sampler_index,
         req.mask_blur or opt['mask_blur'],
@@ -240,18 +251,23 @@ async def f_img2img(req: Img2ImgRequest):
         req.batch_size or opt['batch_size'],
         req.cfg_scale or opt['cfg_scale'],
         req.denoising_strength or opt['denoising_strength'],
+        None,
         seed,
+        None,
+        0,
+        0,
+        0,
         height,
         width,
         opt['resize_mode'],
         upscaler_index,
         req.upscale_overlap or opt['upscale_overlap'],
         req.inpaint_full_res or opt['inpaint_full_res'],
-        0,
+        False, #req.invert_mask or opt['invert_mask'],
         0
     )
 
-    resized_images = [images.resize_image(0, image, orig_width, orig_height) for image in output_images]
+    resized_images = [modules.images.resize_image(0, image, orig_width, orig_height) for image in output_images]
 
     if mode == 1:
         def remove_not_masked(img):
@@ -285,10 +301,10 @@ async def f_upscale(req: UpscaleRequest):
         return
 
     if req.downscale_first or opt['downscale_first']:
-        image = images.resize_image(0, image, orig_width // 2, orig_height // 2)
+        image = modules.images.resize_image(0, image, orig_width // 2, orig_height // 2)
 
     upscaled_image = upscaler.upscale(image, 2 * orig_width, 2 * orig_height)
-    resized_image = images.resize_image(0, upscaled_image, orig_width, orig_height)
+    resized_image = modules.images.resize_image(0, upscaled_image, orig_width, orig_height)
 
     sample_path = opt['sample_path']
     os.makedirs(sample_path, exist_ok=True)

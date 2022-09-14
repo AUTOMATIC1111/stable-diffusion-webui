@@ -20,6 +20,8 @@ def draw_xy_grid(xs, ys, x_label, y_label, cell):
 
     first_pocessed = None
 
+    state.job_count = len(xs) * len(ys)
+
     for iy, y in enumerate(ys):
         for ix, x in enumerate(xs):
             state.job = f"{ix + iy * len(xs) + 1} out of {len(xs) * len(ys)}"
@@ -48,7 +50,7 @@ class Script(scripts.Script):
         return [put_at_start]
 
     def run(self, p, put_at_start):
-        seed = int(random.randrange(4294967294) if p.seed == -1 else p.seed)
+        modules.processing.fix_seed(p)
 
         original_prompt = p.prompt[0] if type(p.prompt) == list else p.prompt
 
@@ -71,8 +73,8 @@ class Script(scripts.Script):
         print(f"Prompt matrix will create {len(all_prompts)} images using a total of {p.n_iter} batches.")
 
         p.prompt = all_prompts
+        p.seed = [p.seed for _ in all_prompts]
         p.prompt_for_display = original_prompt
-        p.seed = len(all_prompts) * [seed]
         processed = process_images(p)
 
         grid = images.image_grid(processed.images, p.batch_size, rows=1 << ((len(prompt_matrix_parts) - 1) // 2))
@@ -80,6 +82,6 @@ class Script(scripts.Script):
         processed.images.insert(0, grid)
 
         if opts.grid_save:
-            images.save_image(processed.images[0], p.outpath_grids, "prompt_matrix", prompt=original_prompt, seed=seed)
+            images.save_image(processed.images[0], p.outpath_grids, "prompt_matrix", prompt=original_prompt, seed=processed.seed, p=p)
 
         return processed
