@@ -78,7 +78,7 @@ axis_options = [
 ]
 
 
-def draw_xy_grid(p, xs, ys, x_label, y_label, cell):
+def draw_xy_grid(p, xs, ys, x_label, y_label, cell, draw_legend):
     res = []
 
     ver_texts = [[images.GridAnnotation(y_label(y))] for y in ys]
@@ -99,7 +99,8 @@ def draw_xy_grid(p, xs, ys, x_label, y_label, cell):
             res.append(processed.images[0])
 
     grid = images.image_grid(res, rows=len(ys))
-    grid = images.draw_grid_annotations(grid, res[0].width, res[0].height, hor_texts, ver_texts)
+    if draw_legend:
+        grid = images.draw_grid_annotations(grid, res[0].width, res[0].height, hor_texts, ver_texts)
 
     first_pocessed.images = [grid]
 
@@ -126,10 +127,12 @@ class Script(scripts.Script):
         with gr.Row():
             y_type = gr.Dropdown(label="Y type", choices=[x.label for x in current_axis_options], value=current_axis_options[4].label, visible=False, type="index", elem_id="y_type")
             y_values = gr.Textbox(label="Y values", visible=False, lines=1)
+        
+        draw_legend = gr.Checkbox(label='Draw legend', value=True)
+            
+        return [x_type, x_values, y_type, y_values, draw_legend]
 
-        return [x_type, x_values, y_type, y_values]
-
-    def run(self, p, x_type, x_values, y_type, y_values):
+    def run(self, p, x_type, x_values, y_type, y_values, draw_legend):
         modules.processing.fix_seed(p)
         p.batch_size = 1
 
@@ -205,7 +208,8 @@ class Script(scripts.Script):
             ys=ys,
             x_label=lambda x: x_opt.format_value(p, x_opt, x),
             y_label=lambda y: y_opt.format_value(p, y_opt, y),
-            cell=cell
+            cell=cell,
+            draw_legend=draw_legend
         )
 
         if opts.grid_save:
