@@ -1,5 +1,3 @@
-import launch
-
 import contextlib
 import threading
 import math
@@ -340,7 +338,7 @@ class Server(uvicorn.Server):
             thread.join()
 
 
-def main():
+def start():
     config = uvicorn.Config("krita_server:app", host="127.0.0.1", port=8000, log_level="info")
     server = Server(config=config)
 
@@ -349,4 +347,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    start()

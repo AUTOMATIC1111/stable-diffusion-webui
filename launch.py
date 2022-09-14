@@ -11,17 +11,23 @@ dir_tmp = "tmp"
 
 python = sys.executable
 git = os.environ.get('GIT', "git")
-torch_command = os.environ.get('TORCH_COMMAND', "pip install torch==1.12.1+cu113 --extra-index-url https://download.pytorch.org/whl/cu113")
+torch_command = os.environ.get('TORCH_COMMAND',
+                               "pip install torch==1.12.1+cu113 --extra-index-url https://download.pytorch.org/whl/cu113")
 requirements_file = os.environ.get('REQS_FILE', "requirements_versions.txt")
 commandline_args = os.environ.get('COMMANDLINE_ARGS', "")
 
-k_diffusion_package = os.environ.get('K_DIFFUSION_PACKAGE', "git+https://github.com/crowsonkb/k-diffusion.git@1a0703dfb7d24d8806267c3e7ccc4caf67fd1331")
-gfpgan_package = os.environ.get('GFPGAN_PACKAGE', "git+https://github.com/TencentARC/GFPGAN.git@8d2447a2d918f8eba5a4a01463fd48e45126a379")
+k_diffusion_package = os.environ.get('K_DIFFUSION_PACKAGE',
+                                     "git+https://github.com/crowsonkb/k-diffusion.git@1a0703dfb7d24d8806267c3e7ccc4caf67fd1331")
+gfpgan_package = os.environ.get('GFPGAN_PACKAGE',
+                                "git+https://github.com/TencentARC/GFPGAN.git@8d2447a2d918f8eba5a4a01463fd48e45126a379")
 
-stable_diffusion_commit_hash = os.environ.get('STABLE_DIFFUSION_COMMIT_HASH', "69ae4b35e0a0f6ee1af8bb9a5d0016ccb27e36dc")
-taming_transformers_commit_hash = os.environ.get('TAMING_TRANSFORMERS_COMMIT_HASH', "24268930bf1dce879235a7fddd0b2355b84d7ea6")
+stable_diffusion_commit_hash = os.environ.get('STABLE_DIFFUSION_COMMIT_HASH',
+                                              "69ae4b35e0a0f6ee1af8bb9a5d0016ccb27e36dc")
+taming_transformers_commit_hash = os.environ.get('TAMING_TRANSFORMERS_COMMIT_HASH',
+                                                 "24268930bf1dce879235a7fddd0b2355b84d7ea6")
 codeformer_commit_hash = os.environ.get('CODEFORMER_COMMIT_HASH', "c5b4593074ba6214284d6acd5f1719b6c5d739af")
 blip_commit_hash = os.environ.get('BLIP_COMMIT_HASH', "48211a1594f1321b00f14c9f7a5b4813144b2fb9")
+
 
 def repo_dir(name):
     return os.path.join(dir_repos, name)
@@ -34,12 +40,11 @@ def run(command, desc=None, errdesc=None):
     result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 
     if result.returncode != 0:
-
         message = f"""{errdesc or 'Error running command'}.
 Command: {command}
 Error code: {result.returncode}
-stdout: {result.stdout.decode(encoding="utf8", errors="ignore") if len(result.stdout)>0 else '<empty>'}
-stderr: {result.stderr.decode(encoding="utf8", errors="ignore") if len(result.stderr)>0 else '<empty>'}
+stdout: {result.stdout.decode(encoding="utf8", errors="ignore") if len(result.stdout) > 0 else '<empty>'}
+stderr: {result.stderr.decode(encoding="utf8", errors="ignore") if len(result.stderr) > 0 else '<empty>'}
 """
         raise RuntimeError(message)
 
@@ -51,7 +56,8 @@ def run_python(code, desc=None, errdesc=None):
 
 
 def run_pip(args, desc=None):
-    return run(f'"{python}" -m pip {args} --prefer-binary', desc=f"Installing {desc}", errdesc=f"Couldn't install {desc}")
+    return run(f'"{python}" -m pip {args} --prefer-binary', desc=f"Installing {desc}",
+               errdesc=f"Couldn't install {desc}")
 
 
 def check_run(command):
@@ -105,8 +111,10 @@ if not is_installed("gfpgan"):
 
 os.makedirs(dir_repos, exist_ok=True)
 
-git_clone("https://github.com/CompVis/stable-diffusion.git", repo_dir('stable-diffusion'), "Stable Diffusion", stable_diffusion_commit_hash)
-git_clone("https://github.com/CompVis/taming-transformers.git", repo_dir('taming-transformers'), "Taming Transformers", taming_transformers_commit_hash)
+git_clone("https://github.com/CompVis/stable-diffusion.git", repo_dir('stable-diffusion'), "Stable Diffusion",
+          stable_diffusion_commit_hash)
+git_clone("https://github.com/CompVis/taming-transformers.git", repo_dir('taming-transformers'), "Taming Transformers",
+          taming_transformers_commit_hash)
 git_clone("https://github.com/sczhou/CodeFormer.git", repo_dir('CodeFormer'), "CodeFormer", codeformer_commit_hash)
 git_clone("https://github.com/salesforce/BLIP.git", repo_dir('BLIP'), "BLIP", blip_commit_hash)
 
@@ -124,5 +132,11 @@ def start_webui():
     webui.webui()
 
 
+def start_krita_server():
+    print(f"Launching Web UI and Krita server with arguments: {' '.join(sys.argv[1:])}")
+    import krita_server
+    krita_server.start()
+
+
 if __name__ == "__main__":
-    start_webui()
+    start_krita_server()

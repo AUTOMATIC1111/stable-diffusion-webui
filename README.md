@@ -7,7 +7,8 @@ Requires Krita 5.1
 [target.webm](https://user-images.githubusercontent.com/112324253/188291339-9d146a9a-ba9f-4671-9bd8-c8b55fd48ba6.webm)
 
 ## Updates
-- krita.bat now starts webui too on usual address: http://127.0.0.1:7860. Just don't try to run SD both in Krita and in webui simultaneously, it will give you CUDA error most likely
+- webui.bat now starts both krita_server and webui on usual address: http://127.0.0.1:7860. Just don't try to run SD both in Krita and in webui simultaneously, it will give you CUDA error most likely.
+- removed krita.bat and krita.sh because they were confusing people, and were pain to support. Just run webui.bat ***from this repository***.
 
 ## Installing and running
 
@@ -50,15 +51,15 @@ RealESRGAN into the directory with ESRGAN models. Thank you.
 - install [git](https://git-scm.com/download/win)
 - place `model.ckpt` into webui directory, next to `webui.bat`.
 - _*(optional)*_ place `GFPGANv1.3.pth` into webui directory, next to `webui.bat`.
-- run `krita.bat` from Windows Explorer. Run it as a normal user, ***not*** as administrator.
+- run `webui-user.bat` from Windows Explorer. Run it as a normal user, ***not*** as administrator. You should run webui-user.bat ***from this repository***, not from others.
 
 ### Linux installation
 
-Please look at parent repo, try to run webui.sh following instructions. If it works, krita.sh should work too. 
+Please look at parent repo, try to run webui.sh following instructions. You should run webui.sh ***from this repository***, not from others.
 
 #### Troublehooting:
 
-Look into parent repository https://github.com/AUTOMATIC1111/stable-diffusion-webui for instructions. You should make sure webui.cmd works.
+Look into parent repository https://github.com/AUTOMATIC1111/stable-diffusion-webui for instructions. This repository uses slightly changed code, but most parameters including those for low VRAM usage should still work.
 
 ### Usage
 
