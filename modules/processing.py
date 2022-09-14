@@ -312,16 +312,14 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             state.nextjob()
 
         unwanted_grid_because_of_img_count = len(output_images) < 2 and opts.grid_only_if_multiple
-        if not p.do_not_save_grid and not unwanted_grid_because_of_img_count:
-            return_grid = opts.return_grid
-
+        if (opts.return_grid or opts.grid_save) and not p.do_not_save_grid and not unwanted_grid_because_of_img_count:
             grid = images.image_grid(output_images, p.batch_size)
 
-            if return_grid:
+            if opts.return_grid:
                 output_images.insert(0, grid)
 
             if opts.grid_save:
-                images.save_image(grid, p.outpath_grids, "grid", all_seeds[0], all_prompts[0], opts.grid_format, info=infotext(), short_filename=not opts.grid_extended_filename, grid=True, p=p)
+                images.save_image(grid, p.outpath_grids, "grid", all_seeds[0], all_prompts[0], opts.grid_format, info=infotext(), short_filename=not opts.grid_extended_filename, p=p)
 
     devices.torch_gc()
     return Processed(p, output_images, all_seeds[0], infotext())
