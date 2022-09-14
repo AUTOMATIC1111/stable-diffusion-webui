@@ -98,6 +98,12 @@ class Script(scripts.Script):
 
         p.sample = sample_extra
 
+        p.extra_generation_params = {
+            "Decode prompt": original_prompt,
+            "Decode CFG scale": cfg,
+            "Decode steps": st,
+        }
+
         processed = processing.process_images(p)
 
         return processed
