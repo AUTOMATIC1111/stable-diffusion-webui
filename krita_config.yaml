@@ -15,13 +15,13 @@ txt2img:
   use_gfpgan: false
   use_realesrgan: false
   realesrgan_model_name: RealESRGAN_x4plus_anime_6B
-  sample_path: '../../outputs/krita-out'
+  sample_path: 'outputs/krita-out'
 
 img2img:
   mode: 0 # 0 - default, 1 - inpaint, 3 - upscale, 2 - loopback (unsupported)
 
   prompts: "dog"
-  negative_prompt: "bad"
+  negative_prompt: ""
   sampler_name: k_euler_a
   steps: 50
   cfg_scale: 12.0
@@ -45,12 +45,12 @@ img2img:
   use_realesrgan: false
   realesrgan_model_name: RealESRGAN_x4plus_anime_6B
   resize_mode: 1
-  sample_path: '../../outputs/krita-out'
+  sample_path: 'outputs/krita-out'
 
 upscale:
   upscaler_name: None
-  sample_path: '../../outputs/krita-out'
+  sample_path: 'outputs/krita-out'
   downscale_first: false
 
 plugin:
-  sample_path: '../../outputs/krita-in'
+  sample_path: 'outputs/krita-in'
