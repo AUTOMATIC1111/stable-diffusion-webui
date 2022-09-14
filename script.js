@@ -13,7 +13,6 @@ titles = {
     "Seed": "A value that determines the output of random number generator - if you create an image with same parameters and seed as another image, you'll get the same result",
 
     "Inpaint a part of image": "Draw a mask over an image, and the script will regenerate the masked area with content according to prompt",
-    "Loopback": "Process an image, use it as an input, repeat. Batch count determins number of iterations.",
     "SD upscale": "Upscale image normally, split result into tiles, improve each tile using img2img, merge whole image back",
 
     "Just resize": "Resize image to target resolution. Unless height and width match, you will get incorrect aspect ratio.",
@@ -58,6 +57,9 @@ titles = {
 
     "Images filename pattern": "Use following tags to define how filenames for images are chosen: [steps], [cfg], [prompt], [prompt_spaces], [width], [height], [sampler], [seed], [model_hash], [prompt_words], [date]; leave empty for default.",
     "Directory name pattern": "Use following tags to define how subdirectories for images and grids are chosen: [steps], [cfg], [prompt], [prompt_spaces], [width], [height], [sampler], [seed], [model_hash], [prompt_words], [date]; leave empty for default.",
+
+    "Loopback": "Process an image, use it as an input, repeat.",
+    "Loops": "How many times to repeat processing an image and using it as input for the next iteration",
 }
 
 function gradioApp(){

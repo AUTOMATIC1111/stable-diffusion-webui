@@ -387,7 +387,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
         with gr.Row().style(equal_height=False):
             with gr.Column(variant='panel'):
                 with gr.Group():
-                    switch_mode = gr.Radio(label='Mode', elem_id="img2img_mode", choices=['Redraw whole image', 'Inpaint a part of image', 'Loopback', 'SD upscale'], value='Redraw whole image', type="index", show_label=False)
+                    switch_mode = gr.Radio(label='Mode', elem_id="img2img_mode", choices=['Redraw whole image', 'Inpaint a part of image', 'SD upscale'], value='Redraw whole image', type="index", show_label=False)
                     init_img = gr.Image(label="Image for img2img", source="upload", interactive=True, type="pil")
                     init_img_with_mask = gr.Image(label="Image for inpainting with mask", elem_id="img2maskimg", source="upload", interactive=True, type="pil", tool="sketch", visible=False, image_mode="RGBA")
                     init_mask = gr.Image(label="Mask", source="upload", interactive=True, type="pil", visible=False)
@@ -421,7 +421,6 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 with gr.Group():
                     cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='CFG Scale', value=7.0)
                     denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.75)
-                    denoising_strength_change_factor = gr.Slider(minimum=0.9, maximum=1.1, step=0.01, label='Denoising strength change factor', value=1, visible=False)
 
                 with gr.Group():
                     width = gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512)
@@ -455,8 +454,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
             def apply_mode(mode, uploadmask):
                 is_classic = mode == 0
                 is_inpaint = mode == 1
-                is_loopback = mode == 2
-                is_upscale = mode == 3
+                is_upscale = mode == 2
 
                 return {
                     init_img: gr_show(not is_inpaint or (is_inpaint and uploadmask == 1)),
@@ -466,12 +464,10 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     mask_mode: gr_show(is_inpaint),
                     mask_blur: gr_show(is_inpaint),
                     inpainting_fill: gr_show(is_inpaint),
-                    batch_size: gr_show(not is_loopback),
                     sd_upscale_upscaler_name: gr_show(is_upscale),
                     sd_upscale_overlap: gr_show(is_upscale),
                     inpaint_full_res: gr_show(is_inpaint),
                     inpainting_mask_invert: gr_show(is_inpaint),
-                    denoising_strength_change_factor: gr_show(is_loopback),
                     img2img_interrogate: gr_show(not is_inpaint),
                 }
 
@@ -486,12 +482,10 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     mask_mode,
                     mask_blur,
                     inpainting_fill,
-                    batch_size,
                     sd_upscale_upscaler_name,
                     sd_upscale_overlap,
                     inpaint_full_res,
                     inpainting_mask_invert,
-                    denoising_strength_change_factor,
                     img2img_interrogate,
                 ]
             )
@@ -532,7 +526,6 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     batch_size,
                     cfg_scale,
                     denoising_strength,
-                    denoising_strength_change_factor,
                     seed,
                     subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w,
                     height,
