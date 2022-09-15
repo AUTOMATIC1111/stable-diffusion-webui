@@ -252,7 +252,7 @@ def sanitize_filename_part(text, replace_spaces=True):
     if replace_spaces:
         text = text.replace(' ', '_')
 
-    return text.translate({ord(x): '' for x in invalid_filename_chars})[:128]
+    return text.translate({ord(x): '_' for x in invalid_filename_chars})[:128]
 
 
 def apply_filename_pattern(x, p, seed, prompt):
