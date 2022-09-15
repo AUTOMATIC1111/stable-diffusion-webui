@@ -272,6 +272,8 @@ The picture at the op was made with prompt:
 
 And the number 0.99 was replaced with whatever you see in column labels on the image.
 
+Prompt editing was first implemented by Doggettx in [this myspace.com post](https://www.reddit.com/r/StableDiffusion/comments/xas2os/simple_prompt2prompt_implementation_with_prompt/).
+
 # Interrupt
 
 Press the Interrupt button to stop current processing.
