@@ -29,7 +29,7 @@
 GFPGAN can be used to improve faces, requiring the [model](https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.3.pth) to be placed in the base directory.
 
 ## ESRGAN (Upscaling)
-ESRGAN models such as those from the [Model Database](https://upscale.wiki/wiki/Model_Database, may be placed into the ESRGAN directory.
+ESRGAN models such as those from the [Model Database](https://upscale.wiki/wiki/Model_Database), may be placed into the ESRGAN directory.
 A file will be loaded as a model if it has `.pth` extension, and it will show up with its name in the UI.
 
 > Note: RealESRGAN models are not ESRGAN models, they are not compatible. Do not download RealESRGAN models. Do not place RealESRGAN into the directory with ESRGAN models.
