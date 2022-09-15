@@ -57,7 +57,7 @@ def split_cross_attention_forward(self, x, context=None, mask=None):
     q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> (b h) n d', h=h), (q_in, k_in, v_in))
     del q_in, k_in, v_in
 
-    r1 = torch.zeros(q.shape[0], q.shape[1], v.shape[2], device=q.device)
+    r1 = torch.zeros(q.shape[0], q.shape[1], v.shape[2], device=q.device, dtype=q.dtype)
 
     stats = torch.cuda.memory_stats(q.device)
     mem_active = stats['active_bytes.all.current']
