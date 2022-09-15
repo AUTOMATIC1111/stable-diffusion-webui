@@ -324,7 +324,7 @@ You can change parameters for UI elements:
 
 The file is ui-config.json in webui dir, and it is created automatically if you don't have one when the program starts.
 
-Some settings will break processing, like step not divisible by 64 for width and heght, and some, lie changing default
+Some settings will break processing, like step not divisible by 64 for width and heght, and some, like changing default
 function on the img2img tab, may break UI. I do not have plans to address those in near future.
 
 # ESRGAN
