@@ -18,3 +18,10 @@ Script support so that prompts can contain wildcard terms (indicated by surround
 will draw two random artists from `artist.txt`. This works independently on each prompt, so that one can e.g. generate a batch of 100 images with the same prompt input using wildcards, and each output will have unique artists (or styles, or genres, or anything that the user creates their own .txt file for) attached to it.
 
 (also see https://github.com/jtkelm2/stable-diffusion-webui-1/tree/master/scripts/wildcards for examples of custom lists)
+
+# txt2img2img 
+https://github.com/ThereforeGames/txt2img2img/blob/main/scripts/txt2img2img.py
+
+Greatly improve the editability of any character/subject while retaining their likeness.
+
+Full description in original repo: https://github.com/ThereforeGames/txt2img2img (be careful with cloning as it has a bit of venv checked in)
