@@ -52,8 +52,13 @@ class Script(scripts.Script):
             state.job = f"{batch_no} out of {batch_count}: {batch_images[0][1]}"
             p.init_images = [x[0] for x in batch_images]
             proc = process_images(p)
-            for image, (_, path) in zip(proc.images, batch_images):
+            
+            path=batch_images[0][1]
+            for image, image_no in zip(proc.images, range(len(proc.images))):
                 filename = os.path.basename(path)
-                image.save(os.path.join(output_dir, filename))
+                if len(proc.images)==1:
+                    image.save(os.path.join(output_dir, filename))
+                else:
+                    image.save(os.path.join(output_dir, filename[:-4]+"_"+str(image_no)+filename[-4:]))
 
         return Processed(p, [], p.seed, "")
