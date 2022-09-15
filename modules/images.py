@@ -13,7 +13,7 @@ import string
 
 import modules.shared
 from modules import sd_samplers, shared
-from modules.shared import opts
+from modules.shared import opts, cmd_opts
 
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
 
@@ -276,6 +276,9 @@ def apply_filename_pattern(x, p, seed, prompt):
 
     x = x.replace("[model_hash]", shared.sd_model_hash)
     x = x.replace("[date]", datetime.date.today().isoformat())
+
+    if cmd_opts.hide_ui_dir_config:
+        x = re.sub(r'^[\\/]+|\.{2,}[\\/]+|[\\/]+\.{2,}', '', x)
 
     return x
 
