@@ -12,7 +12,7 @@ import cv2
 from skimage import exposure
 
 import modules.sd_hijack
-from modules import devices
+from modules import devices, prompt_parser
 from modules.sd_hijack import model_hijack
 from modules.sd_samplers import samplers, samplers_for_img2img
 from modules.shared import opts, cmd_opts, state
@@ -183,7 +183,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
 
     modules.sd_hijack.model_hijack.apply_circular(p.tiling)
 
-    comments = []
+    comments = {}
 
     shared.prompt_styles.apply_styles(p)
 
@@ -252,14 +252,14 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             seeds = all_seeds[n * p.batch_size:(n + 1) * p.batch_size]
             subseeds = all_subseeds[n * p.batch_size:(n + 1) * p.batch_size]
 
-            prompt_guidance = prompt_parser.get_prompt_guidance(prompts[0], p.steps, p.batch_size)
-            prompt_guidance_uc = prompt_parser.get_prompt_guidance(len(prompts) * p.negative_prompt, p.steps, p.batch_size)
-
-            uc = prompt_guidance_uc[0]
-            c = prompt_guidance[0]
+            #uc = p.sd_model.get_learned_conditioning(len(prompts) * [p.negative_prompt])
+            #c = p.sd_model.get_learned_conditioning(prompts)
+            uc = prompt_parser.get_learned_conditioning(len(prompts) * [p.negative_prompt], p.steps)
+            c = prompt_parser.get_learned_conditioning(prompts, p.steps)
 
             if len(model_hijack.comments) > 0:
-                comments += model_hijack.comments
+                for comment in model_hijack.comments:
+                    comments[comment] = 1
 
             # we manually generate all input noises because each one should have a specific seed
             x = create_random_tensors([opt_C, p.height // opt_f, p.width // opt_f], seeds=seeds, subseeds=subseeds, subseed_strength=p.subseed_strength, seed_resize_from_h=p.seed_resize_from_h, seed_resize_from_w=p.seed_resize_from_w)
