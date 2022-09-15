@@ -338,6 +338,21 @@ A tab with settings, allowing you to use UI to edit more than half of parameters
 were commandline. Settings are saved to config.js file. Settings that remain as commandline
 options are ones that are required at startup.
 
+# Filenames format
+The `Images filename pattern` field in the UI option allows customization of generated txt2img and img2img images filenames. This pattern defines the generation parameters you want to include in filenames, and their order. Here are the supported tags:
+
+`[steps], [cfg], [prompt], [prompt_spaces], [width], [height], [sampler], [seed], [model_hash], [prompt_words], [date].`
+
+(You can get an up-to-date list of supported tags by hovering your mouse over the "Images filename pattern" label in the UI.)
+
+Example of a pattern: `[seed]-[steps]-[cfg]-[sampler]-[prompt_spaces]`
+
+Note about "prompt" tags: `[prompt]` will add underscores between the prompt words, while `[prompt_spaces]` will keep the prompt intact (easier to copy/paste into the UI again). `[prompt_words]` is a simplifed and cleaned-up version of your prompt, already used to generated subdirectories names, with only the words of your prompt (no punctuation).
+
+If you leave this field empty, the default pattern will be applied (`[seed]-[prompt_spaces]`).
+
+Please note that the tags are actually replaced inside the pattern. It means that you can also add non-tags words to this pattern, to make filenames even more explicit. For example: `s=[seed],p=[prompt_spaces]`
+
 # User scripts
 If the program is launched with `--allow-code` option, an extra text input field for script code
 is available in the bottom of the page, under Scripts -> Custom code. It allows you to input python
