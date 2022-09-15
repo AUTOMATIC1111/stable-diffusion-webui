@@ -261,22 +261,25 @@ Additionally:
 Example:
 `a [fantasy:cyberpunk:16] landscape`
 
-At start, the model will be drawing `a fantasy landscape`.
-After step 16, it will switch to drawing `a cyberpunk landscape`, continuing from where it stopped with fantasy.
+- At start, the model will be drawing `a fantasy landscape`.
+- After step 16, it will switch to drawing `a cyberpunk landscape`, continuing from where it stopped with fantasy.
 
-Here's a more complex example with multiple edits, here's how a prompt `fantasy landscape with a [mountain:lake:0.25] and [an oak:a christmas tree:0.75][ in foreground::0.6][ in background:0.25] [shoddy:masterful:0.5]` will look to sampler with 100 steps:
+Here's a more complex example with multiple edits:
+`fantasy landscape with a [mountain:lake:0.25] and [an oak:a christmas tree:0.75][ in foreground::0.6][ in background:0.25] [shoddy:masterful:0.5]` (sampler has 100 steps)
 
-at start, `fantasy landscape with a mountain and an oak in foreground shoddy`
-after step 25, `fantasy landscape with a lake and an oak in foreground in background shoddy`
-after step 50, `fantasy landscape with a lake and an oak in foreground in background masterful`
-after step 60, `fantasy landscape with a lake and an oak in background masterful`
-after step 75, `fantasy landscape with a lake and a christmas tree in background masterful`
+- at start, `fantasy landscape with a mountain and an oak in foreground shoddy`
+- after step 25, `fantasy landscape with a lake and an oak in foreground in background shoddy`
+- after step 50, `fantasy landscape with a lake and an oak in foreground in background masterful`
+- after step 60, `fantasy landscape with a lake and an oak in background masterful`
+- after step 75, `fantasy landscape with a lake and a christmas tree in background masterful`
 
 The picture at the top was made with prompt:
 
 `Official portrait of a smiling world war ii general, [male:female:0.99], cheerful, happy, detailed face, 20th century, highly detailed, cinematic lighting, digital art painting by greg rutkowski`
 
-And the number 0.99 was replaced with whatever you see in column labels on the image.
+And the number 0.99 is replaced with whatever you see in column labels on the image.
+
+The last column in the picture is [male:female:0.0], which essentially means that you are asking the model to draw a female from the start, without starting with a male general, and that is why it looks so different from others.
 
 Prompt editing was first implemented by Doggettx in [this myspace.com post](https://www.reddit.com/r/StableDiffusion/comments/xas2os/simple_prompt2prompt_implementation_with_prompt/).
 
