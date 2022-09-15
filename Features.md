@@ -255,10 +255,16 @@ Prompt editing allows you to start sampling one picture, but in the middle swap 
 Where `from` and `to` are arbitrary texts, and `when` is a number the defines how late in the sampling cycle should the switch be made. The later it is, the less power the model has to draw the `to` text in place of `from` text. If `when` is a number between 0 and 1, it's a fraction of the number of steps after which to make the switch. If it's integer greater than zero, it's just the step after which to make the switch.
 
 Additionally:
-- `[to:when]` - adds `to` toprompt after a fixed number of steps (`when`)
-- `[from::when]` - removes `from` from prompt after a fixed number of steps (`when`)
+- `[to:when]` - adds `to` to the prompt after a fixed number of steps (`when`)
+- `[from::when]` - removes `from` from the prompt after a fixed number of steps (`when`)
 
-For example, here's how a prompt `fantasy landscape with a [mountain:lake:0.25] and [an oak:a christmas tree:0.75][ in foreground::0.6][ in background:0.25] [shoddy:masterful:0.5]` will look to sampler with 100 steps:
+Example:
+`a [fantasy:cyberpunk:16] landscape`
+
+At start, the model will be drawing `a fantasy landscape`.
+After step 16, it will switch to drawing `a cyberpunk landscape`, continuing from where it stopped with fantasy.
+
+Here's a more complex example with multiple edits, here's how a prompt `fantasy landscape with a [mountain:lake:0.25] and [an oak:a christmas tree:0.75][ in foreground::0.6][ in background:0.25] [shoddy:masterful:0.5]` will look to sampler with 100 steps:
 
 at start, `fantasy landscape with a mountain and an oak in foreground shoddy`
 after step 25, `fantasy landscape with a lake and an oak in foreground in background shoddy`
@@ -266,7 +272,7 @@ after step 50, `fantasy landscape with a lake and an oak in foreground in backgr
 after step 60, `fantasy landscape with a lake and an oak in background masterful`
 after step 75, `fantasy landscape with a lake and a christmas tree in background masterful`
 
-The picture at the op was made with prompt:
+The picture at the top was made with prompt:
 
 `Official portrait of a smiling world war ii general, [male:female:0.99], cheerful, happy, detailed face, 20th century, highly detailed, cinematic lighting, digital art painting by greg rutkowski`
 
