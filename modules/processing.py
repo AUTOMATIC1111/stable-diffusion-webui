@@ -180,7 +180,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
 
     modules.sd_hijack.model_hijack.apply_circular(p.tiling)
 
-    comments = []
+    comments = {}
 
     shared.prompt_styles.apply_styles(p)
 
@@ -251,7 +251,8 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             c = p.sd_model.get_learned_conditioning(prompts)
 
             if len(model_hijack.comments) > 0:
-                comments += model_hijack.comments
+                for comment in model_hijack.comments:
+                    comments[comment] = 1
 
             # we manually generate all input noises because each one should have a specific seed
             x = create_random_tensors([opt_C, p.height // opt_f, p.width // opt_f], seeds=seeds, subseeds=subseeds, subseed_strength=p.subseed_strength, seed_resize_from_h=p.seed_resize_from_h, seed_resize_from_w=p.seed_resize_from_w)
