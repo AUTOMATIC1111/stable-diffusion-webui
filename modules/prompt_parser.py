@@ -99,16 +99,16 @@ def get_learned_conditioning(prompts, steps):
         if cached is not None:
             res.append(cached)
             continue
+        else:
+            texts = [x[1] for x in prompt_schedule]
+            conds = shared.sd_model.get_learned_conditioning(texts)
 
-        texts = [x[1] for x in prompt_schedule]
-        conds = shared.sd_model.get_learned_conditioning(texts)
+            cond_schedule = []
+            for i, (end_at_step, text) in enumerate(prompt_schedule):
+                cond_schedule.append(ScheduledPromptConditioning(end_at_step, conds[i]))
 
-        cond_schedule = []
-        for i, (end_at_step, text) in enumerate(prompt_schedule):
-            cond_schedule.append(ScheduledPromptConditioning(end_at_step, conds[i]))
-
-        cache[prompt] = cond_schedule
-        res.append(cond_schedule)
+            cache[prompt] = cond_schedule
+            res.append(cond_schedule)
 
     return ScheduledPromptBatch((len(prompts),) + res[0][0].cond.shape, res)
 
