@@ -2,6 +2,7 @@
 
 if not defined PYTHON (set PYTHON=python)
 if not defined VENV_DIR (set VENV_DIR=venv)
+if not defined COMMANDLINE_ARGS (set COMMANDLINE_ARGS=%*)
 
 mkdir tmp 2>NUL
 
@@ -31,7 +32,7 @@ goto :launch
 :skip_venv
 
 :launch
-%PYTHON% launch.py
+%PYTHON% launch.py %COMMANDLINE_ARGS%
 pause
 exit /b
 
