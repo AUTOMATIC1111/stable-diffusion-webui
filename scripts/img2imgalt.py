@@ -6,7 +6,7 @@ from tqdm import trange
 import modules.scripts as scripts
 import gradio as gr
 
-from modules import processing, shared, sd_samplers
+from modules import processing, shared, sd_samplers, prompt_parser
 from modules.processing import Processed
 from modules.sd_samplers import samplers
 from modules.shared import opts, cmd_opts, state
@@ -94,7 +94,8 @@ class Script(scripts.Script):
             else:
                 shared.state.job_count += 1
                 cond = p.sd_model.get_learned_conditioning(p.batch_size * [original_prompt])
-                noise = find_noise_for_image(p, cond, unconditional_conditioning, cfg, st)
+                uncond = p.sd_model.get_learned_conditioning(p.batch_size * [""])
+                noise = find_noise_for_image(p, cond, uncond, cfg, st)
                 self.cache = Cached(noise, cfg, st, lat, original_prompt)
 
             sampler = samplers[p.sampler_index].constructor(p.sd_model)
