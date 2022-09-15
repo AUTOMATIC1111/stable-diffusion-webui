@@ -339,7 +339,7 @@ were commandline. Settings are saved to config.js file. Settings that remain as 
 options are ones that are required at startup.
 
 # Filenames format
-The `Images filename pattern` field in the UI option allows customization of generated txt2img and img2img images filenames. This pattern defines the generation parameters you want to include in filenames, and their order. Here are the supported tags:
+The `Images filename pattern` field in the Settings tab allows customization of generated txt2img and img2img images filenames. This pattern defines the generation parameters you want to include in filenames, and their order. Here are the supported tags:
 
 `[steps], [cfg], [prompt], [prompt_spaces], [width], [height], [sampler], [seed], [model_hash], [prompt_words], [date].`
 
@@ -347,7 +347,7 @@ The `Images filename pattern` field in the UI option allows customization of gen
 
 Example of a pattern: `[seed]-[steps]-[cfg]-[sampler]-[prompt_spaces]`
 
-Note about "prompt" tags: `[prompt]` will add underscores between the prompt words, while `[prompt_spaces]` will keep the prompt intact (easier to copy/paste into the UI again). `[prompt_words]` is a simplifed and cleaned-up version of your prompt, already used to generated subdirectories names, with only the words of your prompt (no punctuation).
+Note about "prompt" tags: `[prompt]` will add underscores between the prompt words, while `[prompt_spaces]` will keep the prompt intact (easier to copy/paste into the UI again). `[prompt_words]` is a simplified and cleaned-up version of your prompt, already used to generated subdirectories names, with only the words of your prompt (no punctuation).
 
 If you leave this field empty, the default pattern will be applied (`[seed]-[prompt_spaces]`).
 
