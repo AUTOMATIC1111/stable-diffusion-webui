@@ -120,7 +120,7 @@ class VanillaStableDiffusionSampler:
 
         return samples
 
-    def sample(self, p, x, conditioning, unconditional_conditioning, prompt_guidance=""):
+    def sample(self, p, x, conditioning, unconditional_conditioning):
         for fieldname in ['p_sample_ddim', 'p_sample_plms']:
             if hasattr(self.sampler, fieldname):
                 setattr(self.sampler, fieldname, self.p_sample_ddim_hook)
@@ -130,9 +130,9 @@ class VanillaStableDiffusionSampler:
 
         # existing code fails with cetin step counts, like 9
         try:
-            samples_ddim, _ = self.sampler.sample(S=p.steps, conditioning=conditioning, batch_size=int(x.shape[0]), shape=x[0].shape, verbose=False, unconditional_guidance_scale=p.cfg_scale, unconditional_conditioning=unconditional_conditioning, x_T=x, prompt_guidance=prompt_guidance)
+            samples_ddim, _ = self.sampler.sample(S=p.steps, conditioning=conditioning, batch_size=int(x.shape[0]), shape=x[0].shape, verbose=False, unconditional_guidance_scale=p.cfg_scale, unconditional_conditioning=unconditional_conditioning, x_T=x)
         except Exception:
-            samples_ddim, _ = self.sampler.sample(S=p.steps+1, conditioning=conditioning, batch_size=int(x.shape[0]), shape=x[0].shape, verbose=False, unconditional_guidance_scale=p.cfg_scale, unconditional_conditioning=unconditional_conditioning, x_T=x, prompt_guidance=prompt_guidance)
+            samples_ddim, _ = self.sampler.sample(S=p.steps+1, conditioning=conditioning, batch_size=int(x.shape[0]), shape=x[0].shape, verbose=False, unconditional_guidance_scale=p.cfg_scale, unconditional_conditioning=unconditional_conditioning, x_T=x)
 
         return samples_ddim
 
@@ -212,7 +212,7 @@ class KDiffusionSampler:
 
         return self.func(self.model_wrap_cfg, xi, sigma_sched, extra_args={'cond': conditioning, 'uncond': unconditional_conditioning, 'cond_scale': p.cfg_scale}, disable=False, callback=self.callback_state)
 
-    def sample(self, p, x, conditioning, unconditional_conditioning, prompt_guidance=""):
+    def sample(self, p, x, conditioning, unconditional_conditioning):
         sigmas = self.model_wrap.get_sigmas(p.steps)
         x = x * sigmas[0]
 

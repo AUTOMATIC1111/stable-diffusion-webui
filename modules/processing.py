@@ -21,8 +21,6 @@ import modules.face_restoration
 import modules.images as images
 import modules.styles
 
-from modules.prompt_parser import PromptParser
-
 
 # some of those options should not be changed at all because they would break the model, so I removed them from options.
 opt_C = 4
@@ -48,7 +46,7 @@ def apply_color_correction(correction, image):
 
 
 class StableDiffusionProcessing:
-    def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt="", styles=None, seed=-1, subseed=-1, subseed_strength=0, seed_resize_from_h=-1, seed_resize_from_w=-1, sampler_index=0, batch_size=1, n_iter=1, steps=50, cfg_scale=7.0, width=512, height=512, restore_faces=False, tiling=False, do_not_save_samples=False, do_not_save_grid=False, extra_generation_params=None, overlay_images=None, negative_prompt=None, prompt_guidance=None):
+    def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt="", styles=None, seed=-1, subseed=-1, subseed_strength=0, seed_resize_from_h=-1, seed_resize_from_w=-1, sampler_index=0, batch_size=1, n_iter=1, steps=50, cfg_scale=7.0, width=512, height=512, restore_faces=False, tiling=False, do_not_save_samples=False, do_not_save_grid=False, extra_generation_params=None, overlay_images=None, negative_prompt=None):
         self.sd_model = sd_model
         self.outpath_samples: str = outpath_samples
         self.outpath_grids: str = outpath_grids
@@ -76,12 +74,11 @@ class StableDiffusionProcessing:
         self.overlay_images = overlay_images
         self.paste_to = None
         self.color_corrections = None
-        self.prompt_guidance = prompt_guidance
 
     def init(self, seed):
         pass
 
-    def sample(self, x, conditioning, unconditional_conditioning, prompt_guidance):
+    def sample(self, x, conditioning, unconditional_conditioning):
         raise NotImplementedError()
 
 
@@ -234,8 +231,6 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
         model_hijack.load_textual_inversion_embeddings(cmd_opts.embeddings_dir, p.sd_model)
 
     output_images = []
-
-    prompt_parser = PromptParser(p.sd_model)
     precision_scope = torch.autocast if cmd_opts.precision == "autocast" else contextlib.nullcontext
     ema_scope = (contextlib.nullcontext if cmd_opts.lowvram else p.sd_model.ema_scope)
     with torch.no_grad(), precision_scope("cuda"), ema_scope():
@@ -267,7 +262,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             if p.n_iter > 1:
                 shared.state.job = f"Batch {n+1} out of {p.n_iter}"
 
-            samples_ddim = p.sample(x=x, conditioning=c, unconditional_conditioning=uc, prompt_guidance=prompt_guidance)
+            samples_ddim = p.sample(x=x, conditioning=c, unconditional_conditioning=uc)
             if state.interrupted:
 
                 # if we are interruped, sample returns just noise
@@ -339,8 +334,8 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
     def init(self, seed):
         self.sampler = samplers[self.sampler_index].constructor(self.sd_model)
 
-    def sample(self, x, conditioning, unconditional_conditioning, prompt_guidance=""):
-        samples_ddim = self.sampler.sample(self, x, conditioning, unconditional_conditioning, prompt_guidance)
+    def sample(self, x, conditioning, unconditional_conditioning):
+        samples_ddim = self.sampler.sample(self, x, conditioning, unconditional_conditioning)
         return samples_ddim
 
 
@@ -512,7 +507,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             elif self.inpainting_fill == 3:
                 self.init_latent = self.init_latent * self.mask
 
-    def sample(self, x, conditioning, unconditional_conditioning, prompt_guidance=""):
+    def sample(self, x, conditioning, unconditional_conditioning):
         samples = self.sampler.sample_img2img(self, self.init_latent, x, conditioning, unconditional_conditioning)
 
         if self.mask is not None:

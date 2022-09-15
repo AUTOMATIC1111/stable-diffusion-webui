@@ -12,7 +12,6 @@ from ldm.util import default
 from einops import rearrange
 import ldm.modules.attention
 import ldm.modules.diffusionmodules.model
-import modules.custom_samplers.ddim
 
 
 # see https://github.com/basujindal/stable-diffusion/pull/117 for discussion
@@ -250,9 +249,6 @@ class StableDiffusionModelHijack:
             ldm.modules.diffusionmodules.model.AttnBlock.forward = cross_attention_attnblock_forward
         elif cmd_opts.opt_split_attention_v1:
             ldm.modules.attention.CrossAttention.forward = split_cross_attention_forward_v1
-
-        # uses custom DDIM sampler
-        ldm.models.diffusion.ddim.DDIMSampler = modules.custom_samplers.ddim.DDIMSampler
 
         def flatten(el):
             flattened = [flatten(children) for children in el.children()]
