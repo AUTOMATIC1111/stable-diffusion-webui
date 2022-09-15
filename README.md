@@ -40,6 +40,7 @@ A browser interface based on Gradio library for Stable Diffusion.
 - Variations
 - Seed resizing
 - CLIP interrogator
+- Prompt Editing
 
 ## Installation and Running
 Make sure the required [dependencies](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Dependencies) are met and follow the instructions available for both [NVidia](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-NVidia-GPUs) (recommended) and [AMD](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-AMD-GPUs) GPUs.
@@ -78,7 +79,7 @@ The documentation was moved from this README over to the project's [wiki](https:
 - GFPGAN - https://github.com/TencentARC/GFPGAN.git
 - ESRGAN - https://github.com/xinntao/ESRGAN
 - Ideas for optimizations - https://github.com/basujindal/stable-diffusion
-- Cross Attention layer optimization - https://github.com/Doggettx/stable-diffusion
+- Doggettx - Cross Attention layer optimization - https://github.com/Doggettx/stable-diffusion, original idea for prompt editing.
 - Idea for SD upscale - https://github.com/jquesnelle/txt2imghd
 - CLIP interrogator idea and borrowing some code - https://github.com/pharmapsychotic/clip-interrogator
 - Initial Gradio script - posted on 4chan by an Anonymous user. Thank you Anonymous user.
