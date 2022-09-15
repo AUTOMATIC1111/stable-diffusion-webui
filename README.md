@@ -112,7 +112,7 @@ You can do this for python, but not for git.
 to enable appropriate optimization according to low VRAM guide below (for example, `set COMMANDLINE_ARGS=--medvram --opt-split-attention`).
 - to prevent the creation of virtual environment and use your system python, use custom parameter replacing `set VENV_DIR=-` (see below).
 - webui.bat installs requirements from files `requirements_versions.txt`, which lists versions for modules specifically compatible with
-Python 3.10.6. If you choose to install for a different version of python,  using custom parameter `set REQS_FILE=requirements.txt`
+Python 3.10.6. If you choose to install for a different version of python, using custom parameter `set REQS_FILE=requirements.txt`
 may help (but I still recommend you to just use the recommended version of python).
 - if you feel you broke something and want to reinstall from scratch, delete directories: `venv`, `repositories`.
 - if you get a green or black screen instead of generated pictures, you have a card that doesn't support half precision
@@ -166,7 +166,7 @@ Here's a list of optimization arguments:
 - If you have 4GB VRAM and want to make 512x512 (or maybe up to 640x640) images, use `--medvram`.
 - If you have 4GB VRAM and want to make 512x512 images, but you get an out of memory error with `--medvram`, use `--medvram --opt-split-attention` instead.
 - If you have 4GB VRAM and want to make 512x512 images, and you still get an out of memory error, use `--lowvram --always-batch-cond-uncond --opt-split-attention` instead.
-- If you have 4GB VRAM and want to make images larger than you can with `--medvram`, use  `--lowvram --opt-split-attention`.
+- If you have 4GB VRAM and want to make images larger than you can with `--medvram`, use `--lowvram --opt-split-attention`.
 - If you have more VRAM and want to make larger images than you can usually make (for example 1024x1024 instead of 512x512), use `--medvram --opt-split-attention`. You can use `--lowvram`
 also but the effect will likely be barely noticeable.
 - Otherwise, do not use any of those.
@@ -174,7 +174,7 @@ also but the effect will likely be barely noticeable.
 ### Running online
 
 Use the `--share` option to run online. You will get a xxx.app.gradio link. This is the intended way to use the
-program in collabs. You may set up authentication for said gradio shared instance with the flag `--gradio-auth username:password`, optionally providing multiple sets of usernames and passwords separated by commas.
+program in Colab. You may set up authentication for said gradio shared instance with the flag `--gradio-auth username:password`, optionally providing multiple sets of usernames and passwords separated by commas.
 
 Use `--listen` to make the server listen to network connections. This will allow computers on the local network
 to access the UI, and if you configure port forwarding, also computers on the internet.
@@ -183,9 +183,9 @@ Use `--port xxxx` to make the server listen on a specific port, xxxx being the w
 all ports below 1024 need root/admin rights, for this reason it is advised to use a port above 1024.
 Defaults to port 7860 if available.
 
-### Google collab
+### Google Colab
 
-If you don't want or can't run locally, here is a Google colab that allows you to run the webui:
+If you don't want or can't run locally, here is a Google Colab that allows you to run the webui:
 
 https://colab.research.google.com/drive/1Iy-xW9t1-OQWhb0hNxueGij8phCyluOh
 
