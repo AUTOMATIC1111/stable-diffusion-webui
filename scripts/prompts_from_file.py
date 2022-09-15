@@ -33,7 +33,7 @@ class Script(scripts.Script):
 
         images = []
         for batch_no in range(batch_count):
-            state.job = f"{batch_no} out of {batch_count * p.n_iter}"
+            state.job = f"{batch_no + 1} out of {batch_count * p.n_iter}"
             p.prompt = lines[batch_no*p.batch_size:(batch_no+1)*p.batch_size] * p.n_iter
             proc = process_images(p)
             images += proc.images
