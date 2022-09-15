@@ -12,7 +12,7 @@ import cv2
 from skimage import exposure
 
 import modules.sd_hijack
-from modules import devices
+from modules import devices, prompt_parser
 from modules.sd_hijack import model_hijack
 from modules.sd_samplers import samplers, samplers_for_img2img
 from modules.shared import opts, cmd_opts, state
@@ -247,8 +247,10 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             seeds = all_seeds[n * p.batch_size:(n + 1) * p.batch_size]
             subseeds = all_subseeds[n * p.batch_size:(n + 1) * p.batch_size]
 
-            uc = p.sd_model.get_learned_conditioning(len(prompts) * [p.negative_prompt])
-            c = p.sd_model.get_learned_conditioning(prompts)
+            #uc = p.sd_model.get_learned_conditioning(len(prompts) * [p.negative_prompt])
+            #c = p.sd_model.get_learned_conditioning(prompts)
+            uc = prompt_parser.get_learned_conditioning(len(prompts) * [p.negative_prompt], p.steps)
+            c = prompt_parser.get_learned_conditioning(prompts, p.steps)
 
             if len(model_hijack.comments) > 0:
                 for comment in model_hijack.comments:
