@@ -34,6 +34,7 @@ def get_learned_conditioning_prompt_schedules(prompts, steps):
         cached = cache.get(prompt, None)
         if cached is not None:
             res.append(cached)
+            continue
 
         for m in re_prompt.finditer(prompt):
             plaintext = m.group(1) if m.group(5) is None else m.group(5)
@@ -97,6 +98,7 @@ def get_learned_conditioning(prompts, steps):
         cached = cache.get(prompt, None)
         if cached is not None:
             res.append(cached)
+            continue
 
         texts = [x[1] for x in prompt_schedule]
         conds = shared.sd_model.get_learned_conditioning(texts)
