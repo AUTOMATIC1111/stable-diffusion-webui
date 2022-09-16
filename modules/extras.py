@@ -36,6 +36,7 @@ def run_extras(image, image_folder, gfpgan_visibility, codeformer_visibility, co
 
     outpath = opts.outdir_samples or opts.outdir_extras_samples
 
+    outputs = []
     for image in imageArr:
         existing_pnginfo = image.info or {}
 
@@ -91,7 +92,9 @@ def run_extras(image, image_folder, gfpgan_visibility, codeformer_visibility, co
 
         images.save_image(image, path=outpath, basename="", seed=None, prompt=None, extension=opts.samples_format, info=info, short_filename=True, no_prompt=True, grid=False, pnginfo_section_name="extras", existing_info=existing_pnginfo)
 
-    return imageArr, plaintext_to_html(info), ''
+        outputs.append(image)
+
+    return outputs, plaintext_to_html(info), ''
 
 
 def run_pnginfo(image):
