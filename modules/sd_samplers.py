@@ -38,6 +38,17 @@ samplers = [
 samplers_for_img2img = [x for x in samplers if x.name != 'PLMS']
 
 
+def setup_img2img_steps(p):
+    if opts.img2img_fix_steps:
+        steps = int(p.steps / min(p.denoising_strength, 0.999))
+        t_enc = p.steps - 1
+    else:
+        steps = p.steps
+        t_enc = int(min(p.denoising_strength, 0.999) * steps)
+
+    return steps, t_enc
+
+
 def sample_to_image(samples):
     x_sample = shared.sd_model.decode_first_stage(samples[0:1].type(shared.sd_model.dtype))[0]
     x_sample = torch.clamp((x_sample + 1.0) / 2.0, min=0.0, max=1.0)
@@ -105,13 +116,13 @@ class VanillaStableDiffusionSampler:
         return res
 
     def sample_img2img(self, p, x, noise, conditioning, unconditional_conditioning):
-        t_enc = int(min(p.denoising_strength, 0.999) * p.steps)
+        steps, t_enc = setup_img2img_steps(p)
 
         # existing code fails with cetain step counts, like 9
         try:
-            self.sampler.make_schedule(ddim_num_steps=p.steps, verbose=False)
+            self.sampler.make_schedule(ddim_num_steps=steps, verbose=False)
         except Exception:
-            self.sampler.make_schedule(ddim_num_steps=p.steps+1, verbose=False)
+            self.sampler.make_schedule(ddim_num_steps=steps+1, verbose=False)
 
         x1 = self.sampler.stochastic_encode(x, torch.tensor([t_enc] * int(x.shape[0])).to(shared.device), noise=noise)
 
@@ -230,14 +241,15 @@ class KDiffusionSampler:
         return res
 
     def sample_img2img(self, p, x, noise, conditioning, unconditional_conditioning):
-        t_enc = int(min(p.denoising_strength, 0.999) * p.steps)
-        sigmas = self.model_wrap.get_sigmas(p.steps)
+        steps, t_enc = setup_img2img_steps(p)
 
-        noise = noise * sigmas[p.steps - t_enc - 1]
+        sigmas = self.model_wrap.get_sigmas(steps)
+
+        noise = noise * sigmas[steps - t_enc - 1]
 
         xi = x + noise
 
-        sigma_sched = sigmas[p.steps - t_enc - 1:]
+        sigma_sched = sigmas[steps - t_enc - 1:]
 
         self.model_wrap_cfg.mask = p.mask
         self.model_wrap_cfg.nmask = p.nmask
