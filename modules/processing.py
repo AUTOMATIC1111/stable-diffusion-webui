@@ -122,7 +122,7 @@ def slerp(val, low, high):
 def create_random_tensors(shape, seeds, subseeds=None, subseed_strength=0.0, seed_resize_from_h=0, seed_resize_from_w=0, p=None):
     xs = []
 
-    if p is not None and p.sampler is not None and len(seeds) > 1:
+    if p is not None and p.sampler is not None and len(seeds) > 1 and opts.enable_batch_seeds:
         sampler_noises = [[] for _ in range(p.sampler.number_of_needed_noises(p))]
     else:
         sampler_noises = None

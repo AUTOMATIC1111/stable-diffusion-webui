@@ -175,7 +175,19 @@ def extended_trange(count, *args, **kwargs):
         shared.total_tqdm.update()
 
 
-original_randn_like = torch.randn_like
+class TorchHijack:
+    def __init__(self, kdiff_sampler):
+        self.kdiff_sampler = kdiff_sampler
+
+    def __getattr__(self, item):
+        if item == 'randn_like':
+            return self.kdiff_sampler.randn_like
+
+        if hasattr(torch, item):
+            return getattr(torch, item)
+
+        raise AttributeError("'{}' object has no attribute '{}'".format(type(self).__name__, item))
+
 
 class KDiffusionSampler:
     def __init__(self, funcname, sd_model):
@@ -185,8 +197,6 @@ class KDiffusionSampler:
         self.model_wrap_cfg = CFGDenoiser(self.model_wrap)
         self.sampler_noises = None
         self.sampler_noise_index = 0
-
-        k_diffusion.sampling.torch.randn_like = self.randn_like
 
     def callback_state(self, d):
         store_latent(d["denoised"])
@@ -200,8 +210,7 @@ class KDiffusionSampler:
         if noise is not None and x.shape == noise.shape:
             res = noise
         else:
-            print('generating')
-            res = original_randn_like(x)
+            res = torch.randn_like(x)
 
         self.sampler_noise_index += 1
         return res
@@ -223,6 +232,9 @@ class KDiffusionSampler:
         if hasattr(k_diffusion.sampling, 'trange'):
             k_diffusion.sampling.trange = lambda *args, **kwargs: extended_trange(*args, **kwargs)
 
+        if self.sampler_noises is not None:
+            k_diffusion.sampling.torch = TorchHijack(self)
+
         return self.func(self.model_wrap_cfg, xi, sigma_sched, extra_args={'cond': conditioning, 'uncond': unconditional_conditioning, 'cond_scale': p.cfg_scale}, disable=False, callback=self.callback_state)
 
     def sample(self, p, x, conditioning, unconditional_conditioning):
@@ -231,6 +243,9 @@ class KDiffusionSampler:
 
         if hasattr(k_diffusion.sampling, 'trange'):
             k_diffusion.sampling.trange = lambda *args, **kwargs: extended_trange(*args, **kwargs)
+
+        if self.sampler_noises is not None:
+            k_diffusion.sampling.torch = TorchHijack(self)
 
         samples_ddim = self.func(self.model_wrap_cfg, x, sigmas, extra_args={'cond': conditioning, 'uncond': unconditional_conditioning, 'cond_scale': p.cfg_scale}, disable=False, callback=self.callback_state)
         return samples_ddim
