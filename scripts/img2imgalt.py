@@ -105,25 +105,13 @@ class Script(scripts.Script):
             sampler = samplers[p.sampler_index].constructor(p.sd_model)
 
             sigmas = sampler.model_wrap.get_sigmas(p.steps)
-
-            t_enc = int(min(p.denoising_strength, 0.999) * p.steps)
             
             noise_dt = combined_noise - ( p.init_latent / sigmas[0] )
-            noise_dt = noise_dt * sigmas[p.steps - t_enc - 1]
-
-            noise = p.init_latent + noise_dt
-
-            sigma_sched = sigmas[p.steps - t_enc - 1:]
-
-            sampler.model_wrap_cfg.mask = p.mask
-            sampler.model_wrap_cfg.nmask = p.nmask
-            sampler.model_wrap_cfg.init_latent = p.init_latent
-
-            if hasattr(K.sampling, 'trange'):
-                K.sampling.trange = lambda *args, **kwargs: sd_samplers.extended_trange(*args, **kwargs)
-
+            
             p.seed = p.seed + 1
-            return sampler.func(sampler.model_wrap_cfg, noise, sigma_sched, extra_args={'cond': conditioning, 'uncond': unconditional_conditioning, 'cond_scale': p.cfg_scale}, disable=False, callback=sampler.callback_state)
+            
+            return sampler.sample_img2img(p, p.init_latent, noise_dt, conditioning, unconditional_conditioning)
+
 
         p.sample = sample_extra
 
