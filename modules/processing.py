@@ -119,8 +119,14 @@ def slerp(val, low, high):
     return res
 
 
-def create_random_tensors(shape, seeds, subseeds=None, subseed_strength=0.0, seed_resize_from_h=0, seed_resize_from_w=0):
+def create_random_tensors(shape, seeds, subseeds=None, subseed_strength=0.0, seed_resize_from_h=0, seed_resize_from_w=0, p=None):
     xs = []
+
+    if p is not None and p.sampler is not None and len(seeds) > 1 and opts.enable_batch_seeds:
+        sampler_noises = [[] for _ in range(p.sampler.number_of_needed_noises(p))]
+    else:
+        sampler_noises = None
+
     for i, seed in enumerate(seeds):
         noise_shape = shape if seed_resize_from_h <= 0 or seed_resize_from_w <= 0 else (shape[0], seed_resize_from_h//8, seed_resize_from_w//8)
 
@@ -155,9 +161,17 @@ def create_random_tensors(shape, seeds, subseeds=None, subseed_strength=0.0, see
             x[:, ty:ty+h, tx:tx+w] = noise[:, dy:dy+h, dx:dx+w]
             noise = x
 
+        if sampler_noises is not None:
+            cnt = p.sampler.number_of_needed_noises(p)
 
+            for j in range(cnt):
+                sampler_noises[j].append(devices.randn_without_seed(tuple(noise_shape)))
 
         xs.append(noise)
+
+    if sampler_noises is not None:
+        p.sampler.sampler_noises = [torch.stack(n).to(shared.device) for n in sampler_noises]
+
     x = torch.stack(xs).to(shared.device)
     return x
 
@@ -257,7 +271,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
                     comments[comment] = 1
 
             # we manually generate all input noises because each one should have a specific seed
-            x = create_random_tensors([opt_C, p.height // opt_f, p.width // opt_f], seeds=seeds, subseeds=subseeds, subseed_strength=p.subseed_strength, seed_resize_from_h=p.seed_resize_from_h, seed_resize_from_w=p.seed_resize_from_w)
+            x = create_random_tensors([opt_C, p.height // opt_f, p.width // opt_f], seeds=seeds, subseeds=subseeds, subseed_strength=p.subseed_strength, seed_resize_from_h=p.seed_resize_from_h, seed_resize_from_w=p.seed_resize_from_w, p=p)
 
             if p.n_iter > 1:
                 shared.state.job = f"Batch {n+1} out of {p.n_iter}"
