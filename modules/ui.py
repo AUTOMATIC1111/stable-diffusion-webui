@@ -295,7 +295,7 @@ def create_toprow(is_img2img):
     return prompt, roll, prompt_style, negative_prompt, prompt_style2, submit, interrogate, prompt_style_apply, save_style, check_progress
 
 
-def create_ui(txt2img, img2img, run_extras, run_pnginfo):
+def create_ui(txt2img, img2img, run_extras, run_image_info):
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
         txt2img_prompt, roll, txt2img_prompt_style, txt2img_negative_prompt, txt2img_prompt_style2, submit, _, txt2img_prompt_style_apply, txt2img_save_style, check_progress = create_toprow(is_img2img=False)
 
@@ -697,7 +697,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
         submit.click(**extras_args)
 
     pnginfo_interface = gr.Interface(
-        wrap_gradio_call(run_pnginfo),
+        wrap_gradio_call(run_image_info),
         inputs=[
             gr.Image(label="Source", source="upload", interactive=True, type="pil"),
         ],
