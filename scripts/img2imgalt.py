@@ -76,10 +76,10 @@ class Script(scripts.Script):
         original_prompt = gr.Textbox(label="Original prompt", lines=1)
         cfg = gr.Slider(label="Decode CFG scale", minimum=0.0, maximum=15.0, step=0.1, value=1.0)
         st = gr.Slider(label="Decode steps", minimum=1, maximum=150, step=1, value=50)
+        randomness = gr.Slider(label="randomness", minimum=0.0, maximum=1.0, step=0.01, value=0.0)
+        return [original_prompt, cfg, st, randomness]
 
-        return [original_prompt, cfg, st]
-
-    def run(self, p, original_prompt, cfg, st):
+    def run(self, p, original_prompt, cfg, st, randomness):
         p.batch_size = 1
         p.batch_count = 1
 
@@ -90,18 +90,40 @@ class Script(scripts.Script):
             same_everything = same_params and self.cache.latent.shape == lat.shape and np.abs(self.cache.latent-lat).sum() < 100
 
             if same_everything:
-                noise = self.cache.noise
+                rec_noise = self.cache.noise
             else:
                 shared.state.job_count += 1
                 cond = p.sd_model.get_learned_conditioning(p.batch_size * [original_prompt])
                 uncond = p.sd_model.get_learned_conditioning(p.batch_size * [""])
-                noise = find_noise_for_image(p, cond, uncond, cfg, st)
-                self.cache = Cached(noise, cfg, st, lat, original_prompt)
+                rec_noise = find_noise_for_image(p, cond, uncond, cfg, st)
+                self.cache = Cached(rec_noise, cfg, st, lat, original_prompt)
 
+            rand_noise = processing.create_random_tensors(p.init_latent.shape[1:], [p.seed + x + 1 for x in range(p.init_latent.shape[0])])
+            
+            combined_noise = ((1 - randomness) * rec_noise + randomness * rand_noise) / ((randomness**2 + (1-randomness)**2) ** 0.5)
+            
             sampler = samplers[p.sampler_index].constructor(p.sd_model)
 
-            samples_ddim = sampler.sample(p, noise, conditioning, unconditional_conditioning)
-            return samples_ddim
+            sigmas = sampler.model_wrap.get_sigmas(p.steps)
+
+            t_enc = int(min(p.denoising_strength, 0.999) * p.steps)
+            
+            noise_dt = combined_noise - ( p.init_latent / sigmas[0] )
+            noise_dt = noise_dt * sigmas[p.steps - t_enc - 1]
+
+            noise = p.init_latent + noise_dt
+
+            sigma_sched = sigmas[p.steps - t_enc - 1:]
+
+            sampler.model_wrap_cfg.mask = p.mask
+            sampler.model_wrap_cfg.nmask = p.nmask
+            sampler.model_wrap_cfg.init_latent = p.init_latent
+
+            if hasattr(K.sampling, 'trange'):
+                K.sampling.trange = lambda *args, **kwargs: sd_samplers.extended_trange(*args, **kwargs)
+
+            p.seed = p.seed + 1
+            return sampler.func(sampler.model_wrap_cfg, noise, sigma_sched, extra_args={'cond': conditioning, 'uncond': unconditional_conditioning, 'cond_scale': p.cfg_scale}, disable=False, callback=sampler.callback_state)
 
         p.sample = sample_extra
 
