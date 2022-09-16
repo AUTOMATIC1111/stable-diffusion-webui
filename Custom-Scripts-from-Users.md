@@ -27,6 +27,6 @@ Greatly improve the editability of any character/subject while retaining their l
 Full description in original repo: https://github.com/ThereforeGames/txt2img2img (be careful with cloning as it has a bit of venv checked in)
 
 # Mask drawing UI
-https://github.com/dfaker/stable-diffusion-webui-cv2-external-masking-script
+https://github.com/dfaker/stable-diffusion-webui-cv2-external-masking-script/blob/main/external_masking.py
 
-Provides a local popup window powered by CV2 that allows addition of a mask before processing.
+Provides a local popup window powered by CV2 that allows addition of a mask before processing. [Readme](https://github.com/dfaker/stable-diffusion-webui-cv2-external-masking-script).
