@@ -40,6 +40,9 @@ class Script(scripts.Script):
         all_images = []
         state.job_count = loops * batch_count
 
+        if opts.img2img_color_correction:
+            p.color_corrections = [processing.setup_color_correction(p.init_images[0])]
+
         for n in range(batch_count):
             history = []
 

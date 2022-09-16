@@ -445,7 +445,9 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
         latent_mask = self.latent_mask if self.latent_mask is not None else self.image_mask
 
-        self.color_corrections = []
+        add_color_corrections = opts.img2img_color_correction and self.color_corrections is None
+        if add_color_corrections:
+            self.color_corrections = []
         imgs = []
         for img in self.init_images:
             image = img.convert("RGB")
@@ -467,7 +469,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                 if self.inpainting_fill != 1:
                     image = fill(image, latent_mask)
 
-            if opts.img2img_color_correction:
+            if add_color_corrections:
                 self.color_corrections.append(setup_color_correction(image))
 
             image = np.array(image).astype(np.float32) / 255.0
