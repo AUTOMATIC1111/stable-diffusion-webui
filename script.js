@@ -177,7 +177,7 @@ function submit(){
     window.setTimeout(requestProgress, 500)
 
     res = []
-    for(var i=0;i<arguments.length;i++){
+    for(var i=0;i<arguments.length - 3;i++){
         res.push(arguments[i])
     }
     return res
