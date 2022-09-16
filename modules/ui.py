@@ -53,6 +53,12 @@ css_hide_progressbar = """
 .meta-text { display:none!important; }
 """
 
+# Using constants for these since the variation selector isn't visible.
+# Important that they exactly match script.js for tooltip to work.
+random_symbol = '\U0001f3b2\ufe0f'  # 🎲️
+reuse_symbol = '\u267b\ufe0f'  # ♻️
+
+
 def plaintext_to_html(text):
     text = "<p>" + "<br>\n".join([f"{html.escape(x)}" for x in text.split('\n')]) + "</p>"
     return text
@@ -221,40 +227,6 @@ def visit(x, func, path=""):
         func(path + "/" + str(x.label), x)
 
 
-def create_seed_inputs():
-    with gr.Row():
-        seed = gr.Number(label='Seed', value=-1)
-        subseed = gr.Number(label='Variation seed', value=-1, visible=False)
-        seed_checkbox = gr.Checkbox(label="Extra", elem_id="subseed_show", value=False)
-
-    with gr.Row():
-        subseed_strength = gr.Slider(label='Variation strength', value=0.0, minimum=0, maximum=1, step=0.01, visible=False)
-        seed_resize_from_w = gr.Slider(minimum=0, maximum=2048, step=64, label="Resize seed from width", value=0, visible=False)
-        seed_resize_from_h = gr.Slider(minimum=0, maximum=2048, step=64, label="Resize seed from height", value=0, visible=False)
-
-    def change_visiblity(show):
-
-        return {
-            subseed: gr_show(show),
-            subseed_strength: gr_show(show),
-            seed_resize_from_h: gr_show(show),
-            seed_resize_from_w: gr_show(show),
-        }
-
-    seed_checkbox.change(
-        change_visiblity,
-        inputs=[seed_checkbox],
-        outputs=[
-            subseed,
-            subseed_strength,
-            seed_resize_from_h,
-            seed_resize_from_w
-        ]
-    )
-
-    return seed, subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w
-
-
 def add_style(name: str, prompt: str, negative_prompt: str):
     if name is None:
         return [gr_show(), gr_show()]
@@ -280,6 +252,94 @@ def interrogate(image):
     prompt = shared.interrogator.interrogate(image)
 
     return gr_show(True) if prompt is None else prompt
+
+
+def create_seed_inputs():
+    with gr.Row():
+        with gr.Box():
+            with gr.Row(elem_id='seed_row'):
+                seed = gr.Number(label='Seed', value=-1)
+                seed.style(container=False)
+                random_seed = gr.Button('🎲', elem_id='random_seed')
+                reuse_seed = gr.Button('♻️', elem_id='reuse_seed')
+
+        with gr.Box(elem_id='subseed_show_box'):
+            seed_checkbox = gr.Checkbox(label='Extra', elem_id='subseed_show', value=False)
+
+    # Components to show/hide based on the 'Extra' checkbox
+    seed_extras = []
+
+    with gr.Row(visible=False) as seed_extra_row_1:
+        seed_extras.append(seed_extra_row_1)
+        with gr.Box():
+            with gr.Row(elem_id='subseed_row'):
+                subseed = gr.Number(label='Variation seed', value=-1)
+                subseed.style(container=False)
+                random_subseed = gr.Button(random_symbol, elem_id='random_subseed')
+                reuse_subseed = gr.Button(reuse_symbol, elem_id='reuse_subseed')
+        subseed_strength = gr.Slider(label='Variation strength', value=0.0, minimum=0, maximum=1, step=0.01)
+
+    with gr.Row(visible=False) as seed_extra_row_2:
+        seed_extras.append(seed_extra_row_2)
+        seed_resize_from_w = gr.Slider(minimum=0, maximum=2048, step=64, label="Resize seed from width", value=0)
+        seed_resize_from_h = gr.Slider(minimum=0, maximum=2048, step=64, label="Resize seed from height", value=0)
+
+    random_seed.click(fn=lambda: -1, show_progress=False, inputs=[], outputs=[seed])
+    random_subseed.click(fn=lambda: -1, show_progress=False, inputs=[], outputs=[subseed])
+
+    def change_visibility(show):
+        return {comp: gr_show(show) for comp in seed_extras}
+
+    seed_checkbox.change(change_visibility, show_progress=False, inputs=[seed_checkbox], outputs=seed_extras)
+
+    return seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w
+
+
+def connect_reuse_seed(seed: gr.Number, reuse_seed: gr.Button, generation_info: gr.Textbox):
+    """ Connects a 'reuse seed' button's click event so that it copies last used
+        seed value from generation info the to the seed."""
+    def copy_seed(gen_info_string: str):
+        try:
+            gen_info = json.loads(gen_info_string)
+            return gen_info.get('seed', -1)
+        except json.decoder.JSONDecodeError as e:
+            if gen_info_string != '':
+                print("Error parsing JSON generation info:", file=sys.stderr)
+                print(gen_info_string, file=sys.stderr)
+            return -1
+
+    reuse_seed.click(
+        fn=copy_seed,
+        show_progress=False,
+        inputs=[generation_info],
+        outputs=[seed]
+    )
+
+
+def connect_reuse_subseed(seed: gr.Number, reuse_seed: gr.Button, generation_info: gr.Textbox):
+    """ Connects a 'reuse subseed' button's click event so that it copies last used
+        subseed value from generation info the to the subseed. If subseed strength
+        was 0, i.e. no variation seed was used, it copies the normal seed value instead."""
+    def copy_seed(gen_info_string: str):
+        try:
+            gen_info = json.loads(gen_info_string)
+            subseed_strength = gen_info.get('subseed_strength', 0)
+            if subseed_strength > 0:
+                return gen_info.get('subseed', -1)
+            else:
+                return gen_info.get('seed', -1)
+        except json.decoder.JSONDecodeError as e:
+            if gen_info_string != '':
+                print("Error parsing JSON generation info:", file=sys.stderr)
+                print(gen_info_string, file=sys.stderr)
+            return -1
+
+    reuse_seed.click(
+        fn=copy_seed,
+        show_progress=False,
+        inputs=[generation_info],
+        outputs=[seed]
+    )
 
 
 def create_toprow(is_img2img):
@@ -357,7 +417,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     width = gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512)
                     height = gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512)
 
-                seed, subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w = create_seed_inputs()
+                seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w = create_seed_inputs()
 
                 with gr.Group():
                     custom_inputs = modules.scripts.scripts_txt2img.setup_ui(is_img2img=False)
@@ -382,6 +442,9 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 with gr.Group():
                     html_info = gr.HTML()
                     generation_info = gr.Textbox(visible=False)
+
+            connect_reuse_seed(seed, reuse_seed, generation_info)
+            connect_reuse_subseed(subseed, reuse_subseed, generation_info)
 
             txt2img_args = dict(
                 fn=txt2img,
@@ -490,7 +553,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     width = gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512)
                     height = gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512)
 
-                seed, subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w = create_seed_inputs()
+                seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w = create_seed_inputs()
 
                 with gr.Group():
                     custom_inputs = modules.scripts.scripts_img2img.setup_ui(is_img2img=True)
@@ -517,6 +580,9 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 with gr.Group():
                     html_info = gr.HTML()
                     generation_info = gr.Textbox(visible=False)
+
+            connect_reuse_seed(seed, reuse_seed, generation_info)
+            connect_reuse_subseed(subseed, reuse_subseed, generation_info)
 
             def apply_mode(mode, uploadmask):
                 is_classic = mode == 0
