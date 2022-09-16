@@ -115,6 +115,7 @@ class VanillaStableDiffusionSampler:
         self.mask = p.mask
         self.nmask = p.nmask
         self.init_latent = p.init_latent
+        self.step = 0
 
         samples = self.sampler.decode(x1, conditioning, t_enc, unconditional_guidance_scale=p.cfg_scale, unconditional_conditioning=unconditional_conditioning)
 
@@ -127,6 +128,7 @@ class VanillaStableDiffusionSampler:
         self.mask = None
         self.nmask = None
         self.init_latent = None
+        self.step = 0
 
         # existing code fails with cetin step counts, like 9
         try:
@@ -206,6 +208,7 @@ class KDiffusionSampler:
         self.model_wrap_cfg.mask = p.mask
         self.model_wrap_cfg.nmask = p.nmask
         self.model_wrap_cfg.init_latent = p.init_latent
+        self.model_wrap.step = 0
 
         if hasattr(k_diffusion.sampling, 'trange'):
             k_diffusion.sampling.trange = lambda *args, **kwargs: extended_trange(*args, **kwargs)
@@ -215,6 +218,8 @@ class KDiffusionSampler:
     def sample(self, p, x, conditioning, unconditional_conditioning):
         sigmas = self.model_wrap.get_sigmas(p.steps)
         x = x * sigmas[0]
+
+        self.model_wrap_cfg.step = 0
 
         if hasattr(k_diffusion.sampling, 'trange'):
             k_diffusion.sampling.trange = lambda *args, **kwargs: extended_trange(*args, **kwargs)
