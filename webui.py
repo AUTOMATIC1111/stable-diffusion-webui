@@ -121,7 +121,7 @@ def webui():
         txt2img=wrap_gradio_gpu_call(modules.txt2img.txt2img),
         img2img=wrap_gradio_gpu_call(modules.img2img.img2img),
         run_extras=wrap_gradio_gpu_call(modules.extras.run_extras),
-        run_pnginfo=modules.extras.run_pnginfo
+        run_image_info=modules.extras.run_image_info
     )
 
     demo.launch(

@@ -97,7 +97,7 @@ def run_extras(image, image_folder, gfpgan_visibility, codeformer_visibility, co
     return outputs, plaintext_to_html(info), ''
 
 
-def run_pnginfo(image):
+def run_image_info(image):
     items = image.info
 
     if "exif" in image.info:
@@ -111,8 +111,9 @@ def run_pnginfo(image):
 
         items['exif comment'] = exif_comment
 
-        for field in ['jfif', 'jfif_version', 'jfif_unit', 'jfif_density', 'dpi', 'exif']:
-            del items[field]
+        for field in ['jfif', 'jfif_version', 'jfif_unit', 'jfif_density', 'dpi', 'exif',
+                      'loop', 'background', 'timestamp', 'duration']:
+            items.pop(field, None)
 
 
     info = ''
