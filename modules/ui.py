@@ -644,8 +644,12 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
     with gr.Blocks(analytics_enabled=False) as extras_interface:
         with gr.Row().style(equal_height=False):
             with gr.Column(variant='panel'):
-                with gr.Group():
-                    image = gr.Image(label="Source", source="upload", interactive=True, type="pil")
+                with gr.Tabs():
+                    with gr.TabItem('Single Image'):
+                        image = gr.Image(label="Source", source="upload", interactive=True, type="pil")
+
+                    with gr.TabItem('Batch Process'):
+                        image_batch = gr.File(label="Batch Process", file_count="multiple", source="upload", interactive=True, type="file")
 
                 upscaling_resize = gr.Slider(minimum=1.0, maximum=4.0, step=0.05, label="Resize", value=2)
 
@@ -666,7 +670,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 submit = gr.Button('Generate', elem_id="extras_generate", variant='primary')
 
             with gr.Column(variant='panel'):
-                result_image = gr.Image(label="Result")
+                result_images = gr.Gallery(label="Result")
                 html_info_x = gr.HTML()
                 html_info = gr.HTML()
 
@@ -674,6 +678,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
             fn=run_extras,
             inputs=[
                 image,
+                image_batch,
                 gfpgan_visibility,
                 codeformer_visibility,
                 codeformer_weight,
@@ -683,7 +688,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 extras_upscaler_2_visibility,
             ],
             outputs=[
-                result_image,
+                result_images,
                 html_info_x,
                 html_info,
             ]
