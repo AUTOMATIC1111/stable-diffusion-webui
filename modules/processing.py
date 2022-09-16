@@ -122,6 +122,10 @@ def slerp(val, low, high):
 def create_random_tensors(shape, seeds, subseeds=None, subseed_strength=0.0, seed_resize_from_h=0, seed_resize_from_w=0, p=None):
     xs = []
 
+    # if we have multiple seeds, this means we are working with batch size>1; this then
+    # enables the generation of additional tensors with noise that the sampler will use during its processing.
+    # Using those pre-genrated tensors instead of siimple torch.randn allows a batch with seeds [100, 101] to
+    # produce the same images as with two batches [100], [101].
     if p is not None and p.sampler is not None and len(seeds) > 1 and opts.enable_batch_seeds:
         sampler_noises = [[] for _ in range(p.sampler.number_of_needed_noises(p))]
     else:
