@@ -649,7 +649,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                         image = gr.Image(label="Source", source="upload", interactive=True, type="pil")
 
                     with gr.TabItem('Batch Process'):
-                        image_batch = gr.File(label="Batch Process", file_count="multiple", source="upload", interactive=True, type="file")
+                        image_batch = gr.File(label="Batch Process", file_count="multiple", interactive=True, type="file")
 
                 upscaling_resize = gr.Slider(minimum=1.0, maximum=4.0, step=0.05, label="Resize", value=2)
 
