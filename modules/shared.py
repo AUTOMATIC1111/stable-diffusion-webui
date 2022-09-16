@@ -125,6 +125,7 @@ class Options:
         "enable_pnginfo": OptionInfo(True, "Save text information about generation parameters as chunks to png files"),
         "add_model_hash_to_info": OptionInfo(False, "Add model hash to generation information"),
         "img2img_color_correction": OptionInfo(False, "Apply color correction to img2img results to match original colors."),
+        "img2img_fix_steps": OptionInfo(False, "With img2img, do exactly the amount of steps the slider specifies (normaly you'd do less with less denoising)."),
         "enable_quantization": OptionInfo(False, "Enable quantization in K samplers for sharper and cleaner results. This may change existing seeds. Requires restart to apply."),
         "font": OptionInfo("", "Font for image grids that have text"),
         "enable_emphasis": OptionInfo(True, "Use (text) to make model pay more attention to text and [text] to make it pay less attention"),
