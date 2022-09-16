@@ -80,7 +80,11 @@ class VanillaStableDiffusionSampler:
         self.mask = None
         self.nmask = None
         self.init_latent = None
+        self.sampler_noises = None
         self.step = 0
+
+    def number_of_needed_noises(self, p):
+        return 0
 
     def p_sample_ddim_hook(self, x_dec, cond, ts, unconditional_conditioning, *args, **kwargs):
         cond = prompt_parser.reconstruct_cond_batch(cond, self.step)
@@ -185,15 +189,45 @@ def extended_trange(count, *args, **kwargs):
         shared.total_tqdm.update()
 
 
+class TorchHijack:
+    def __init__(self, kdiff_sampler):
+        self.kdiff_sampler = kdiff_sampler
+
+    def __getattr__(self, item):
+        if item == 'randn_like':
+            return self.kdiff_sampler.randn_like
+
+        if hasattr(torch, item):
+            return getattr(torch, item)
+
+        raise AttributeError("'{}' object has no attribute '{}'".format(type(self).__name__, item))
+
+
 class KDiffusionSampler:
     def __init__(self, funcname, sd_model):
         self.model_wrap = k_diffusion.external.CompVisDenoiser(sd_model, quantize=shared.opts.enable_quantization)
         self.funcname = funcname
         self.func = getattr(k_diffusion.sampling, self.funcname)
         self.model_wrap_cfg = CFGDenoiser(self.model_wrap)
+        self.sampler_noises = None
+        self.sampler_noise_index = 0
 
     def callback_state(self, d):
         store_latent(d["denoised"])
+
+    def number_of_needed_noises(self, p):
+        return p.steps
+
+    def randn_like(self, x):
+        noise = self.sampler_noises[self.sampler_noise_index] if self.sampler_noises is not None and self.sampler_noise_index < len(self.sampler_noises) else None
+
+        if noise is not None and x.shape == noise.shape:
+            res = noise
+        else:
+            res = torch.randn_like(x)
+
+        self.sampler_noise_index += 1
+        return res
 
     def sample_img2img(self, p, x, noise, conditioning, unconditional_conditioning):
         t_enc = int(min(p.denoising_strength, 0.999) * p.steps)
@@ -213,6 +247,9 @@ class KDiffusionSampler:
         if hasattr(k_diffusion.sampling, 'trange'):
             k_diffusion.sampling.trange = lambda *args, **kwargs: extended_trange(*args, **kwargs)
 
+        if self.sampler_noises is not None:
+            k_diffusion.sampling.torch = TorchHijack(self)
+
         return self.func(self.model_wrap_cfg, xi, sigma_sched, extra_args={'cond': conditioning, 'uncond': unconditional_conditioning, 'cond_scale': p.cfg_scale}, disable=False, callback=self.callback_state)
 
     def sample(self, p, x, conditioning, unconditional_conditioning):
@@ -223,6 +260,9 @@ class KDiffusionSampler:
 
         if hasattr(k_diffusion.sampling, 'trange'):
             k_diffusion.sampling.trange = lambda *args, **kwargs: extended_trange(*args, **kwargs)
+
+        if self.sampler_noises is not None:
+            k_diffusion.sampling.torch = TorchHijack(self)
 
         samples_ddim = self.func(self.model_wrap_cfg, x, sigmas, extra_args={'cond': conditioning, 'uncond': unconditional_conditioning, 'cond_scale': p.cfg_scale}, disable=False, callback=self.callback_state)
         return samples_ddim
