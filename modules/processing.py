@@ -119,8 +119,18 @@ def slerp(val, low, high):
     return res
 
 
-def create_random_tensors(shape, seeds, subseeds=None, subseed_strength=0.0, seed_resize_from_h=0, seed_resize_from_w=0):
+def create_random_tensors(shape, seeds, subseeds=None, subseed_strength=0.0, seed_resize_from_h=0, seed_resize_from_w=0, p=None):
     xs = []
+
+    # if we have multiple seeds, this means we are working with batch size>1; this then
+    # enables the generation of additional tensors with noise that the sampler will use during its processing.
+    # Using those pre-genrated tensors instead of siimple torch.randn allows a batch with seeds [100, 101] to
+    # produce the same images as with two batches [100], [101].
+    if p is not None and p.sampler is not None and len(seeds) > 1 and opts.enable_batch_seeds:
+        sampler_noises = [[] for _ in range(p.sampler.number_of_needed_noises(p))]
+    else:
+        sampler_noises = None
+
     for i, seed in enumerate(seeds):
         noise_shape = shape if seed_resize_from_h <= 0 or seed_resize_from_w <= 0 else (shape[0], seed_resize_from_h//8, seed_resize_from_w//8)
 
@@ -155,9 +165,17 @@ def create_random_tensors(shape, seeds, subseeds=None, subseed_strength=0.0, see
             x[:, ty:ty+h, tx:tx+w] = noise[:, dy:dy+h, dx:dx+w]
             noise = x
 
+        if sampler_noises is not None:
+            cnt = p.sampler.number_of_needed_noises(p)
 
+            for j in range(cnt):
+                sampler_noises[j].append(devices.randn_without_seed(tuple(noise_shape)))
 
         xs.append(noise)
+
+    if sampler_noises is not None:
+        p.sampler.sampler_noises = [torch.stack(n).to(shared.device) for n in sampler_noises]
+
     x = torch.stack(xs).to(shared.device)
     return x
 
@@ -170,7 +188,11 @@ def fix_seed(p):
 def process_images(p: StableDiffusionProcessing) -> Processed:
     """this is the main loop that both txt2img and img2img use; it calls func_init once inside all the scopes and func_sample once per batch"""
 
-    assert p.prompt is not None
+    if type(p.prompt) == list:
+        assert(len(p.prompt) > 0)
+    else:
+        assert p.prompt is not None
+        
     devices.torch_gc()
 
     fix_seed(p)
@@ -209,7 +231,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             "Seed": all_seeds[index],
             "Face restoration": (opts.face_restoration_model if p.restore_faces else None),
             "Size": f"{p.width}x{p.height}",
-            "Model hash": (None if not opts.add_model_hash_to_info or not shared.sd_model_hash else shared.sd_model_hash),
+            "Model hash": (None if not opts.add_model_hash_to_info or not shared.sd_model.sd_model_hash else shared.sd_model.sd_model_hash),
             "Batch size": (None if p.batch_size < 2 else p.batch_size),
             "Batch pos": (None if p.batch_size < 2 else position_in_batch),
             "Variation seed": (None if p.subseed_strength == 0 else all_subseeds[index]),
@@ -247,6 +269,9 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             seeds = all_seeds[n * p.batch_size:(n + 1) * p.batch_size]
             subseeds = all_subseeds[n * p.batch_size:(n + 1) * p.batch_size]
 
+            if (len(prompts) == 0):
+                break
+
             #uc = p.sd_model.get_learned_conditioning(len(prompts) * [p.negative_prompt])
             #c = p.sd_model.get_learned_conditioning(prompts)
             uc = prompt_parser.get_learned_conditioning(len(prompts) * [p.negative_prompt], p.steps)
@@ -257,7 +282,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
                     comments[comment] = 1
 
             # we manually generate all input noises because each one should have a specific seed
-            x = create_random_tensors([opt_C, p.height // opt_f, p.width // opt_f], seeds=seeds, subseeds=subseeds, subseed_strength=p.subseed_strength, seed_resize_from_h=p.seed_resize_from_h, seed_resize_from_w=p.seed_resize_from_w)
+            x = create_random_tensors([opt_C, p.height // opt_f, p.width // opt_f], seeds=seeds, subseeds=subseeds, subseed_strength=p.subseed_strength, seed_resize_from_h=p.seed_resize_from_h, seed_resize_from_w=p.seed_resize_from_w, p=p)
 
             if p.n_iter > 1:
                 shared.state.job = f"Batch {n+1} out of {p.n_iter}"
