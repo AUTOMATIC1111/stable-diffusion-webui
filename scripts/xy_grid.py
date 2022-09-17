@@ -90,11 +90,11 @@ axis_options = [
 ]
 
 
-def draw_xy_grid(p, xs, ys, x_label, y_label, cell, draw_legend):
+def draw_xy_grid(p, xs, ys, x_labels, y_labels, cell, draw_legend):
     res = []
 
-    ver_texts = [[images.GridAnnotation(y_label(y))] for y in ys]
-    hor_texts = [[images.GridAnnotation(x_label(x))] for x in xs]
+    ver_texts = [[images.GridAnnotation(y)] for y in y_labels]
+    hor_texts = [[images.GridAnnotation(x)] for x in x_labels]
 
     first_pocessed = None
 
@@ -218,8 +218,8 @@ class Script(scripts.Script):
             p,
             xs=xs,
             ys=ys,
-            x_label=lambda x: x_opt.format_value(p, x_opt, x),
-            y_label=lambda y: y_opt.format_value(p, y_opt, y),
+            x_labels=[x_opt.format_value(p, x_opt, x) for x in xs],
+            y_labels=[y_opt.format_value(p, y_opt, y) for y in ys],
             cell=cell,
             draw_legend=draw_legend
         )
