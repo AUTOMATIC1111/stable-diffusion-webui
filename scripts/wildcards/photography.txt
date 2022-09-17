@@ -1,0 +1,32 @@
+daguerreotype
+tintype
+film negative
+Tri-X
+Kodachrome
+slide film
+portra 800
+Natura 1600
+ilford delta 3200
+polaroid
+hasselblad
+double exposure
+multiple exposure
+large format camera
+wide angle lens
+fisheye lens
+tilt shift lens
+anamorphic
+lensbaby
+telephoto
+prime lens
+f1.8
+f2.8
+f4
+f11
+f16
+photoshoot
+commercial
+thermographic
+x-ray
+infrared
+General Notes

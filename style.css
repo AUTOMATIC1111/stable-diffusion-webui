@@ -230,3 +230,9 @@ input[type="range"]{
     width: auto;
 }
 
+#append_buttons{
+    margin: 0.75em 0.25em 0.25em 0.25em;
+    min-width: 6em;
+    max-width: 8em;
+    max-height: 2em;
+}

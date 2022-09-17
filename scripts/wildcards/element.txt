@@ -1,0 +1,13 @@
+ice
+fire
+liquid
+wind
+storm
+rain
+plasma
+lightning
+smoke
+water
+earth
+snow
+crystal

@@ -20,7 +20,9 @@ import modules.lowvram
 import modules.txt2img
 import modules.img2img
 import modules.sd_models
-
+#####################################################
+import modules.discordbot   #   Import discord bot  #
+#####################################################
 
 modules.codeformer_model.setup_codeformer()
 modules.gfpgan_model.setup_gfpgan()

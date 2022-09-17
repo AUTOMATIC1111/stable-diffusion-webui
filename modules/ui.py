@@ -27,6 +27,10 @@ import modules.scripts
 import modules.gfpgan_model
 import modules.codeformer_model
 import modules.styles
+#########################################
+#   Import Prompt Gen
+import modules.prompt_gen
+#   #########################################
 
 # this is a fix for Windows users. Without it, javascript files will be served with text/html content-type and the bowser will not show any UI
 mimetypes.init()
@@ -201,6 +205,15 @@ def roll_artist(prompt):
     artist = random.choice([x for x in shared.artist_db.artists if x.category in allowed_cats])
 
     return prompt + ", " + artist.name if prompt != '' else artist.name
+
+
+def append_prompt(prompt, prompt_append, prompt_seperator):
+    if prompt_seperator == "none":
+        return prompt + prompt_append if prompt != '' else prompt_append
+    elif prompt_seperator == "space":
+        return prompt + " " + prompt_append if prompt != '' else prompt_append
+    else:
+        return prompt + ", " + prompt_append if prompt != '' else prompt_append
 
 
 def visit(x, func, path=""):
@@ -655,6 +668,334 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     outputs=[prompt, negative_prompt, style1, style2],
                 )
 
+
+    with gr.Blocks(analytics_enabled=False) as promptgen_interface:
+        with gr.Row():
+            genprompt = gr.Textbox(label="Prompt", elem_id="prompt", show_label=False, placeholder="Prompt", lines=4)
+            #roll = gr.Button('Roll', elem_id="roll", visible=len(shared.artist_db.artists) > 0)
+        with gr.Row():
+            prompt_seperator = gr.Radio(label='Seperator to use', choices=["comma","space", "none"], value="comma", type="value")
+        with gr.Row():
+            prompt_artist = gr.Dropdown(label="Artists", show_label=False, elem_id="artists_index",choices=[k for k, v in shared.prompt_artists.items()], value=next(iter(shared.prompt_artists.keys())), interactive=True)
+            append_artist = gr.Button('Add Artist', elem_id="append_buttons")
+            prompt_descriptor = gr.Dropdown(label="Descriptors", show_label=False, elem_id="descriptors_index",choices=[k for k, v in shared.prompt_descriptors.items()], value=next(iter(shared.prompt_descriptors.keys())), interactive=True)
+            append_descriptor = gr.Button('Add Desc', elem_id="append_buttons")
+            prompt_adjective = gr.Dropdown(label="adjectives", show_label=False, elem_id="adjectives_index",choices=[k for k, v in shared.prompt_adjectives.items()], value=next(iter(shared.prompt_adjectives.keys())), interactive=True)
+            append_adjective = gr.Button('Add adject', elem_id="append_buttons")
+            prompt_animal = gr.Dropdown(label="animals", show_label=False, elem_id="animals_index",choices=[k for k, v in shared.prompt_animals.items()], value=next(iter(shared.prompt_animals.keys())), interactive=True)
+            append_animal = gr.Button('Add animal', elem_id="append_buttons")
+        with gr.Row():
+            prompt_artstyle = gr.Dropdown(label="artstyles", show_label=False, elem_id="artstyles_index",choices=[k for k, v in shared.prompt_artstyles.items()], value=next(iter(shared.prompt_artstyles.keys())), interactive=True)
+            append_artstyle = gr.Button('Add artstyle', elem_id="append_buttons")
+            prompt_body = gr.Dropdown(label="bodys", show_label=False, elem_id="bodys_index",choices=[k for k, v in shared.prompt_bodys.items()], value=next(iter(shared.prompt_bodys.keys())), interactive=True)
+            append_body = gr.Button('Add body', elem_id="append_buttons")
+            prompt_car = gr.Dropdown(label="cars", show_label=False, elem_id="cars_index",choices=[k for k, v in shared.prompt_cars.items()], value=next(iter(shared.prompt_cars.keys())), interactive=True)
+            append_car = gr.Button('Add car', elem_id="append_buttons")
+            prompt_colour = gr.Dropdown(label="colours", show_label=False, elem_id="colours_index",choices=[k for k, v in shared.prompt_colours.items()], value=next(iter(shared.prompt_colours.keys())), interactive=True)
+            append_colour = gr.Button('Add colour', elem_id="append_buttons")
+        with gr.Row():
+            prompt_decoart = gr.Dropdown(label="decoarts", show_label=False, elem_id="decoarts_index",choices=[k for k, v in shared.prompt_decoarts.items()], value=next(iter(shared.prompt_decoarts.keys())), interactive=True)
+            append_decoart = gr.Button('Add decoarts', elem_id="append_buttons")
+            prompt_dog = gr.Dropdown(label="dogs", show_label=False, elem_id="dogs_index",choices=[k for k, v in shared.prompt_dogs.items()], value=next(iter(shared.prompt_dogs.keys())), interactive=True)
+            append_dog = gr.Button('Add dog', elem_id="append_buttons")
+            prompt_element = gr.Dropdown(label="elements", show_label=False, elem_id="elements_index",choices=[k for k, v in shared.prompt_elements.items()], value=next(iter(shared.prompt_elements.keys())), interactive=True)
+            append_element = gr.Button('Add element', elem_id="append_buttons")
+            prompt_flower = gr.Dropdown(label="flowers", show_label=False, elem_id="flowers_index",choices=[k for k, v in shared.prompt_flowers.items()], value=next(iter(shared.prompt_flowers.keys())), interactive=True)
+            append_flower = gr.Button('Add flower', elem_id="append_buttons")
+        with gr.Row():
+            prompt_genre = gr.Dropdown(label="genres", show_label=False, elem_id="genres_index",choices=[k for k, v in shared.prompt_genres.items()], value=next(iter(shared.prompt_genres.keys())), interactive=True)
+            append_genre = gr.Button('Add genre', elem_id="append_buttons")
+            prompt_inkchalk = gr.Dropdown(label="inkchalks", show_label=False, elem_id="inkchalks_index",choices=[k for k, v in shared.prompt_inkchalks.items()], value=next(iter(shared.prompt_inkchalks.keys())), interactive=True)
+            append_inkchalk = gr.Button('Add inkchalk', elem_id="append_buttons")
+            prompt_lighting = gr.Dropdown(label="lightings", show_label=False, elem_id="lightings_index",choices=[k for k, v in shared.prompt_lightings.items()], value=next(iter(shared.prompt_lightings.keys())), interactive=True)
+            append_lighting = gr.Button('Add lighting', elem_id="append_buttons")
+            prompt_oddmaterial = gr.Dropdown(label="oddmaterials", show_label=False, elem_id="oddmaterials_index",choices=[k for k, v in shared.prompt_oddmaterials.items()], value=next(iter(shared.prompt_oddmaterials.keys())), interactive=True)
+            append_oddmaterial = gr.Button('Add oddmat', elem_id="append_buttons")
+        with gr.Row():
+            prompt_paint = gr.Dropdown(label="paints", show_label=False, elem_id="paints_index",choices=[k for k, v in shared.prompt_paints.items()], value=next(iter(shared.prompt_paints.keys())), interactive=True)
+            append_paint = gr.Button('Add paint', elem_id="append_buttons")
+            prompt_photography = gr.Dropdown(label="photographys", show_label=False, elem_id="photographys_index",choices=[k for k, v in shared.prompt_photographys.items()], value=next(iter(shared.prompt_photographys.keys())), interactive=True)
+            append_photography = gr.Button('Add photo', elem_id="append_buttons")
+            prompt_print = gr.Dropdown(label="prints", show_label=False, elem_id="prints_index",choices=[k for k, v in shared.prompt_prints.items()], value=next(iter(shared.prompt_prints.keys())), interactive=True)
+            append_print = gr.Button('Add print', elem_id="append_buttons")
+            prompt_rendering = gr.Dropdown(label="renderings", show_label=False, elem_id="renderings_index",choices=[k for k, v in shared.prompt_renderings.items()], value=next(iter(shared.prompt_renderings.keys())), interactive=True)
+            append_rendering = gr.Button('Add render', elem_id="append_buttons")
+        with gr.Row():
+            prompt_shape = gr.Dropdown(label="shapes", show_label=False, elem_id="shapes_index",choices=[k for k, v in shared.prompt_shapes.items()], value=next(iter(shared.prompt_shapes.keys())), interactive=True)
+            append_shape = gr.Button('Add shape', elem_id="append_buttons")
+            prompt_site = gr.Dropdown(label="sites", show_label=False, elem_id="sites_index",choices=[k for k, v in shared.prompt_sites.items()], value=next(iter(shared.prompt_sites.keys())), interactive=True)
+            append_site = gr.Button('Add site', elem_id="append_buttons")
+            prompt_genstyle = gr.Dropdown(label="styles", show_label=False, elem_id="genstyles_index",choices=[k for k, v in shared.prompt_genstyles.items()], value=next(iter(shared.prompt_genstyles.keys())), interactive=True)
+            append_genstyle = gr.Button('Add Style', elem_id="append_buttons")
+            prompt_timeperiod = gr.Dropdown(label="timeperiods", show_label=False, elem_id="timeperiods_index",choices=[k for k, v in shared.prompt_timeperiods.items()], value=next(iter(shared.prompt_timeperiods.keys())), interactive=True)
+            append_timeperiod = gr.Button('Add time', elem_id="append_buttons")
+
+        append_adjective.click(
+            fn=append_prompt,
+            inputs=[
+                genprompt,
+                prompt_adjective,
+                prompt_seperator,
+            ],
+            outputs=[
+                genprompt,
+            ]
+        )
+        append_animal.click(
+            fn=append_prompt,
+            inputs=[
+                genprompt,
+                prompt_animal,
+                prompt_seperator,
+            ],
+            outputs=[
+                genprompt,
+            ]
+        )
+        append_artist.click(
+            fn=append_prompt,
+            inputs=[
+                genprompt,
+                prompt_artist,
+                prompt_seperator,
+            ],
+            outputs=[
+                genprompt,
+            ]
+        )
+        append_artstyle.click(
+            fn=append_prompt,
+            inputs=[
+                genprompt,
+                prompt_artstyle,
+                prompt_seperator,
+            ],
+            outputs=[
+                genprompt,
+            ]
+        )
+        append_body.click(
+            fn=append_prompt,
+            inputs=[
+                genprompt,
+                prompt_body,
+                prompt_seperator,
+            ],
+            outputs=[
+                genprompt,
+            ]
+        )
+        append_car.click(
+            fn=append_prompt,
+            inputs=[
+                genprompt,
+                prompt_car,
+                prompt_seperator,
+            ],
+            outputs=[
+                genprompt,
+            ]
+        )
+        append_colour.click(
+            fn=append_prompt,
+            inputs=[
+                genprompt,
+                prompt_colour,
+                prompt_seperator,
+            ],
+            outputs=[
+                genprompt,
+            ]
+        )
+        append_decoart.click(
+            fn=append_prompt,
+            inputs=[
+                genprompt,
+                prompt_decoart,
+                prompt_seperator,
+            ],
+            outputs=[
+                genprompt,
+            ]
+        )
+        append_descriptor.click(
+            fn=append_prompt,
+            inputs=[
+                genprompt,
+                prompt_descriptor,
+                prompt_seperator,
+            ],
+            outputs=[
+                genprompt,
+            ]
+        )
+        append_dog.click(
+            fn=append_prompt,
+            inputs=[
+                genprompt,
+                prompt_dog,
+                prompt_seperator,
+            ],
+            outputs=[
+                genprompt,
+            ]
+        )
+        append_element.click(
+            fn=append_prompt,
+            inputs=[
+                genprompt,
+                prompt_element,
+                prompt_seperator,
+            ],
+            outputs=[
+                genprompt,
+            ]
+        )
+        append_flower.click(
+            fn=append_prompt,
+            inputs=[
+                genprompt,
+                prompt_flower,
+                prompt_seperator,
+            ],
+            outputs=[
+                genprompt,
+            ]
+        )
+        append_genre.click(
+            fn=append_prompt,
+            inputs=[
+                genprompt,
+                prompt_genre,
+                prompt_seperator,
+            ],
+            outputs=[
+                genprompt,
+            ]
+        )
+        append_inkchalk.click(
+            fn=append_prompt,
+            inputs=[
+                genprompt,
+                prompt_inkchalk,
+                prompt_seperator,
+            ],
+            outputs=[
+                genprompt,
+            ]
+        )
+        append_lighting.click(
+            fn=append_prompt,
+            inputs=[
+                genprompt,
+                prompt_lighting,
+                prompt_seperator,
+            ],
+            outputs=[
+                genprompt,
+            ]
+        )
+        append_oddmaterial.click(
+            fn=append_prompt,
+            inputs=[
+                genprompt,
+                prompt_oddmaterial,
+                prompt_seperator,
+            ],
+            outputs=[
+                genprompt,
+            ]
+        )
+        append_paint.click(
+            fn=append_prompt,
+            inputs=[
+                genprompt,
+                prompt_paint,
+                prompt_seperator,
+            ],
+            outputs=[
+                genprompt,
+            ]
+        )
+        append_photography.click(
+            fn=append_prompt,
+            inputs=[
+                genprompt,
+                prompt_photography,
+                prompt_seperator,
+            ],
+            outputs=[
+                genprompt,
+            ]
+        )
+        append_print.click(
+            fn=append_prompt,
+            inputs=[
+                genprompt,
+                prompt_print,
+                prompt_seperator,
+            ],
+            outputs=[
+                genprompt,
+            ]
+        )
+        append_rendering.click(
+            fn=append_prompt,
+            inputs=[
+                genprompt,
+                prompt_rendering,
+                prompt_seperator,
+            ],
+            outputs=[
+                genprompt,
+            ]
+        )
+        append_shape.click(
+            fn=append_prompt,
+            inputs=[
+                genprompt,
+                prompt_shape,
+                prompt_seperator,
+            ],
+            outputs=[
+                genprompt,
+            ]
+        )
+        append_site.click(
+            fn=append_prompt,
+            inputs=[
+                genprompt,
+                prompt_site,
+                prompt_seperator,
+            ],
+            outputs=[
+                genprompt,
+            ]
+        )
+        append_genstyle.click(
+            fn=append_prompt,
+            inputs=[
+                genprompt,
+                prompt_genstyle,
+                prompt_seperator,
+            ],
+            outputs=[
+                genprompt,
+            ]
+        )
+        append_timeperiod.click(
+            fn=append_prompt,
+            inputs=[
+                genprompt,
+                prompt_timeperiod,
+                prompt_seperator,
+            ],
+            outputs=[
+                genprompt,
+            ]
+        )
+
+
     with gr.Blocks(analytics_enabled=False) as extras_interface:
         with gr.Row().style(equal_height=False):
             with gr.Column(variant='panel'):
@@ -793,6 +1134,10 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
     interfaces = [
         (txt2img_interface, "txt2img", "txt2img"),
         (img2img_interface, "img2img", "img2img"),
+##################################################
+#   Prompt Gen
+##################################################
+        (promptgen_interface, "Prompt Gen", "prompt_gen"),
         (extras_interface, "Extras", "extras"),
         (pnginfo_interface, "PNG Info", "pnginfo"),
         (settings_interface, "Settings", "settings"),

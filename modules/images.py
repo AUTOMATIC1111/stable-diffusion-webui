@@ -14,7 +14,9 @@ import string
 import modules.shared
 from modules import sd_samplers, shared
 from modules.shared import opts, cmd_opts
-
+#################################################################
+from modules.discordbot import post_result  #   Discord Imports #
+#################################################################
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
 
 
@@ -376,7 +378,13 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     if opts.save_txt and info is not None:
         with open(f"{fullfn_without_extension}.txt", "w", encoding="utf8") as file:
             file.write(info + "\n")
-
+#########################################
+#   Call Discord Bot to post picture    #
+    try:
+        post_result(str(fullfn),prompt,str(seed),sd_samplers.samplers[p.sampler_index].name,str(p.steps),str(p.cfg_scale),str(p.width),str(p.height))
+    except:
+        pass
+#########################################
 
 class Upscaler:
     name = "Lanczos"

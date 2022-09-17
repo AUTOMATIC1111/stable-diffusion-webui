@@ -14,6 +14,10 @@ import modules.styles
 import modules.interrogate
 import modules.memmon
 import modules.sd_models
+#############################################
+#   Prompt Gen import                       #
+import modules.prompt_gen
+#############################################
 
 sd_model_file = os.path.join(script_path, 'model.ckpt')
 default_sd_model_file = sd_model_file
@@ -84,7 +88,36 @@ artist_db = modules.artists.ArtistsDatabase(os.path.join(script_path, 'artists.c
 
 styles_filename = cmd_opts.styles_file
 prompt_styles = modules.styles.StyleDatabase(styles_filename)
-
+###########################################################
+#   Descriptors
+#descriptors_filename = os.path.join(script_path, 'descriptors.csv')
+#prompt_descriptors = modules.descriptors.load_descriptors(descriptors_filename)
+#prompt_artists = modules.prompt_artists.load_artists(os.path.join(script_path, 'artists.csv'))
+prompt_artists = modules.prompt_gen.load_promptgen('cfg/promptgen/artist.csv')
+prompt_adjectives = modules.prompt_gen.load_promptgen('cfg/promptgen/adjective.csv')
+prompt_animals = modules.prompt_gen.load_promptgen('cfg/promptgen/animal.csv')
+prompt_artstyles = modules.prompt_gen.load_promptgen('cfg/promptgen/artstyle.csv')
+prompt_bodys = modules.prompt_gen.load_promptgen('cfg/promptgen/body.csv')
+prompt_cars = modules.prompt_gen.load_promptgen('cfg/promptgen/car.csv')
+prompt_colours = modules.prompt_gen.load_promptgen('cfg/promptgen/colour.csv')
+prompt_decoarts = modules.prompt_gen.load_promptgen('cfg/promptgen/decoart.csv')
+prompt_dogs = modules.prompt_gen.load_promptgen('cfg/promptgen/dog.csv')
+prompt_elements = modules.prompt_gen.load_promptgen('cfg/promptgen/element.csv')
+prompt_flowers = modules.prompt_gen.load_promptgen('cfg/promptgen/flower.csv')
+prompt_genres = modules.prompt_gen.load_promptgen('cfg/promptgen/genre.csv')
+prompt_inkchalks = modules.prompt_gen.load_promptgen('cfg/promptgen/inkchalk.csv')
+prompt_lightings = modules.prompt_gen.load_promptgen('cfg/promptgen/lighting.csv')
+prompt_oddmaterials = modules.prompt_gen.load_promptgen('cfg/promptgen/oddmaterial.csv')
+prompt_paints = modules.prompt_gen.load_promptgen('cfg/promptgen/paint.csv')
+prompt_renderings = modules.prompt_gen.load_promptgen('cfg/promptgen/rendering.csv')
+prompt_shapes = modules.prompt_gen.load_promptgen('cfg/promptgen/shape.csv')
+prompt_sites = modules.prompt_gen.load_promptgen('cfg/promptgen/site.csv')
+prompt_timeperiods = modules.prompt_gen.load_promptgen('cfg/promptgen/timeperiod.csv')
+prompt_photographys = modules.prompt_gen.load_promptgen('cfg/promptgen/photography.csv')
+prompt_prints = modules.prompt_gen.load_promptgen('cfg/promptgen/print.csv')
+prompt_descriptors = modules.prompt_gen.load_promptgen('cfg/promptgen/descriptor.csv')
+prompt_genstyles = modules.prompt_gen.load_promptgen('cfg/promptgen/style.csv')
+###########################################################
 interrogator = modules.interrogate.InterrogateModels("interrogate")
 
 face_restorers = []
