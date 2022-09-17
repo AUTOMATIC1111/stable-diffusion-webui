@@ -188,7 +188,11 @@ def fix_seed(p):
 def process_images(p: StableDiffusionProcessing) -> Processed:
     """this is the main loop that both txt2img and img2img use; it calls func_init once inside all the scopes and func_sample once per batch"""
 
-    assert p.prompt is not None
+    if type(p.prompt) == list:
+        assert(len(p.prompt) > 0)
+    else:
+        assert p.prompt is not None
+        
     devices.torch_gc()
 
     fix_seed(p)
@@ -264,6 +268,9 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             prompts = all_prompts[n * p.batch_size:(n + 1) * p.batch_size]
             seeds = all_seeds[n * p.batch_size:(n + 1) * p.batch_size]
             subseeds = all_subseeds[n * p.batch_size:(n + 1) * p.batch_size]
+
+            if (len(prompts) == 0):
+                break
 
             #uc = p.sd_model.get_learned_conditioning(len(prompts) * [p.negative_prompt])
             #c = p.sd_model.get_learned_conditioning(prompts)
