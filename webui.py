@@ -9,7 +9,7 @@ from omegaconf import OmegaConf
 import signal
 
 from ldm.util import instantiate_from_config
-
+run_
 from modules.shared import opts, cmd_opts, state
 import modules.shared as shared
 import modules.ui
@@ -121,7 +121,7 @@ def webui():
         txt2img=wrap_gradio_gpu_call(modules.txt2img.txt2img),
         img2img=wrap_gradio_gpu_call(modules.img2img.img2img),
         run_extras=wrap_gradio_gpu_call(modules.extras.run_extras),
-        run_image_info=modules.extras.run_image_info
+        run_pnginfo=modules.extras.run_pnginfo
     )
 
     demo.launch(
