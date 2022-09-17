@@ -21,8 +21,26 @@
     min-height: 4.5em;
 }
 
+@media screen and (min-width: 2500px) {
+    #txt2img_gallery, #img2img_gallery {
+        min-height: 768px;
+    }
+}
+
 #txt2img_gallery img, #img2img_gallery img{
     object-fit: scale-down;
+}
+
+.justify-center.overflow-x-scroll {
+    justify-content: left;
+}
+
+.justify-center.overflow-x-scroll button:first-of-type {
+    margin-left: auto;
+}
+
+.justify-center.overflow-x-scroll button:last-of-type {
+    margin-right: auto;
 }
 
 #subseed_show{
@@ -229,6 +247,94 @@ input[type="range"]{
     margin-top: auto;
     width: auto;
 }
+
+
+.modalPrev,
+.modalNext {
+  cursor: pointer;
+  position: absolute;
+  top: 50%;
+  width: auto;
+  padding: 16px;
+  margin-top: -50px;
+  color: white;
+  font-weight: bold;
+  font-size: 20px;
+  transition: 0.6s ease;
+  border-radius: 0 3px 3px 0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.modalNext {
+  right: 0;
+  border-radius: 3px 0 0 3px;
+}
+
+.modalPrev:hover,
+.modalNext:hover {
+  background-color: rgba(0, 0, 0, 0.8);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #append_buttons{
     margin: 0.75em 0.25em 0.25em 0.25em;
