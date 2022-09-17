@@ -97,7 +97,7 @@ def run_extras(image, image_folder, gfpgan_visibility, codeformer_visibility, co
     return outputs, plaintext_to_html(info), ''
 
 
-def run_image_info(image):
+def run_pnginfo(image):
     items = image.info
 
     if "exif" in image.info:
