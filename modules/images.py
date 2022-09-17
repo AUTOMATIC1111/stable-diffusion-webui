@@ -371,7 +371,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
 
         image.save(fullfn_without_extension + ".jpg", quality=opts.jpeg_quality)
         if opts.enable_pnginfo and info is not None:
-            piexif.insert(exif_bytes(), fullfn)
+            piexif.insert(exif_bytes(), fullfn_without_extension + ".jpg")
 
     if opts.save_txt and info is not None:
         with open(f"{fullfn_without_extension}.txt", "w", encoding="utf8") as file:
