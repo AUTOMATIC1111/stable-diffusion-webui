@@ -79,6 +79,7 @@ bot = PersistentButtons()
 post_id = bot_config['channel_id']['post_id']
 heart_id = bot_config['channel_id']['heart_id']
 cursed_id = bot_config['channel_id']['cursed_id']
+average_id = bot_config['channel_id']['average_id']
 nsfw_id = bot_config['channel_id']['nsfw_id']
 admin_roleid = bot_config['admin']['admin_roleid']
 
