@@ -105,6 +105,12 @@ function showGalleryImage(){
     }, 100);
 }
 
+function galleryImageHandler(e){
+    if(e && e.parentElement.tagName == 'BUTTON'){
+        e.onclick = showGalleryImage;
+    }
+}
+
 function addTitles(root){
 	root.querySelectorAll('span, button, select').forEach(function(span){
 		tooltip = titles[span.textContent];
@@ -147,22 +153,17 @@ function addTitles(root){
                 img2img_preview.style.height = img2img_gallery.clientHeight + "px"
             }
 		
-            fullImg_preview = gradioApp().querySelectorAll('img.w-full')
-
-            if(fullImg_preview != null){
-
-                fullImg_preview.forEach(function function_name(e) {
-                    if(e && e.parentElement.tagName == 'BUTTON'){
-                        e.onclick = showGalleryImage;
-                    }
-                });
-            }
-		
             window.setTimeout(requestProgress, 500)
         });
         mutationObserver.observe( progressbar, { childList:true, subtree:true })
 	}
+	
+	fullImg_preview = gradioApp().querySelectorAll('img.w-full')
 
+	    if(fullImg_preview != null){
+		fullImg_preview.forEach(galleryImageHandler);
+	}
+	
 }
 
 document.addEventListener("DOMContentLoaded", function() {
