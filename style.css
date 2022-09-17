@@ -21,9 +21,6 @@
     min-height: 4.5em;
 }
 
-#txt2img_gallery, #img2img_gallery{
-    min-height: 768px;
-}
 #txt2img_gallery img, #img2img_gallery img{
     object-fit: scale-down;
 }
