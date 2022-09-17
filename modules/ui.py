@@ -801,7 +801,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
     with open(os.path.join(script_path, "style.css"), "r", encoding="utf8") as file:
         css = file.read()
 
-    if os.path.exists(os.path.join(script_path, "style.css")):
+    if os.path.exists(os.path.join(script_path, "user.css")):
         with open(os.path.join(script_path, "user.css"), "r", encoding="utf8") as file:
             usercss = file.read()
             css += usercss
