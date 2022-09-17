@@ -274,7 +274,7 @@ def apply_filename_pattern(x, p, seed, prompt):
         x = x.replace("[height]", str(p.height))
         x = x.replace("[sampler]", sd_samplers.samplers[p.sampler_index].name)
 
-    x = x.replace("[model_hash]", shared.sd_model_hash)
+    x = x.replace("[model_hash]", shared.sd_model.sd_model_hash)
     x = x.replace("[date]", datetime.date.today().isoformat())
 
     if cmd_opts.hide_ui_dir_config:

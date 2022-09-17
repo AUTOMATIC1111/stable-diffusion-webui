@@ -758,7 +758,12 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
             if comp_args and isinstance(comp_args, dict) and comp_args.get('visible') is False:
                 continue
 
+            oldval = opts.data.get(key, None)
             opts.data[key] = value
+
+            if oldval != value and opts.data_labels[key].onchange is not None:
+                opts.data_labels[key].onchange()
+
             up.append(comp.update(value=value))
 
         opts.save(shared.config_filename)
