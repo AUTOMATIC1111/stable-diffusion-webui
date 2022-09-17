@@ -1,5 +1,21 @@
 .output-html p {margin: 0 0.5em;}
-.performance { font-size: 0.85em; color: #444; }
+
+.performance {
+    font-size: 0.85em;
+    color: #444;
+    display: flex;
+    justify-content: space-between;
+    white-space: nowrap;
+}
+
+.performance .time {
+    margin-right: 0;
+}
+
+.performance .vram {
+    margin-left: 0;
+    text-align: right;
+}
 
 #generate{
     min-height: 4.5em;
