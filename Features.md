@@ -401,3 +401,12 @@ Not all models from the database are supported. All 2x models are most likely no
 - decode cfg scale between 0 and 1
 - decode steps 50
 - original blue haired woman close nearly reproduces with cfg scale=1.8
+
+# user.css
+Create a file named `user.css` near `webui.py` and put custom CSS code into it. For example, this makes gallery taller:
+
+```css
+#txt2img_gallery, #img2img_gallery{
+    min-height: 768px;
+}
+```
