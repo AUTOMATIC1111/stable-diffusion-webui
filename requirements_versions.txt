@@ -16,3 +16,4 @@ font-roboto
 timm==0.4.12
 fairscale==0.4.4
 piexif==1.1.3
+discord.py
