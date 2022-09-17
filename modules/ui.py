@@ -212,6 +212,8 @@ def append_prompt(prompt, prompt_append, prompt_seperator):
         return prompt + prompt_append if prompt != '' else prompt_append
     elif prompt_seperator == "space":
         return prompt + " " + prompt_append if prompt != '' else prompt_append
+    elif prompt_seperator == "pipe":
+        return prompt + "|" + prompt_append if prompt != '' else prompt_append
     else:
         return prompt + ", " + prompt_append if prompt != '' else prompt_append
 
@@ -674,7 +676,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
             genprompt = gr.Textbox(label="Prompt", elem_id="prompt", show_label=False, placeholder="Prompt", lines=4)
             #roll = gr.Button('Roll', elem_id="roll", visible=len(shared.artist_db.artists) > 0)
         with gr.Row():
-            prompt_seperator = gr.Radio(label='Seperator to use', choices=["comma","space", "none"], value="comma", type="value")
+            prompt_seperator = gr.Radio(label='Seperator to use', choices=["comma","space", "pipe", "none"], value="comma", type="value")
         with gr.Row():
             prompt_artist = gr.Dropdown(label="Artists", show_label=False, elem_id="artists_index",choices=[k for k, v in shared.prompt_artists.items()], value=next(iter(shared.prompt_artists.keys())), interactive=True)
             append_artist = gr.Button('Add Artist', elem_id="append_buttons")
