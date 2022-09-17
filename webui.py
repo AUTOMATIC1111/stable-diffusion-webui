@@ -9,7 +9,6 @@ from omegaconf import OmegaConf
 import signal
 
 from ldm.util import instantiate_from_config
-run_
 from modules.shared import opts, cmd_opts, state
 import modules.shared as shared
 import modules.ui
