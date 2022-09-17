@@ -128,7 +128,7 @@ class Buttons(discord.ui.View):
                     await interaction.message.delete()
 
 
-        @discord.ui.button(label="Average",style=discord.ButtonStyle.blurple,emoji="👌",custom_id="average_button") # or .secondary/.grey
+        @discord.ui.button(label="Average",style=discord.ButtonStyle.gray,emoji="👌",custom_id="average_button") # or .secondary/.grey
         async def average_button(self,interaction:discord.Interaction,button:discord.ui.Button):
             for r in interaction.user.roles:
                 if r.id == admin_roleid:
