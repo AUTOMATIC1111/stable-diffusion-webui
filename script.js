@@ -133,6 +133,33 @@ function modalKeyHandler(event){
     }
 }
 
+function showGalleryImage(){
+    setTimeout(function() {
+        fullImg_preview = gradioApp().querySelectorAll('img.w-full.object-contain')
+        
+        if(fullImg_preview != null){
+            fullImg_preview.forEach(function function_name(e) {
+                if(e && e.parentElement.tagName == 'DIV'){
+
+                    e.style.cursor='pointer'
+
+                    e.addEventListener('click', function (evt) {
+                      showModal(evt)
+
+                    },true);
+                }
+            });
+        }
+
+    }, 100);
+}
+
+function galleryImageHandler(e){
+    if(e && e.parentElement.tagName == 'BUTTON'){
+        e.onclick = showGalleryImage;
+    }
+}
+
 function addTitles(root){
 	root.querySelectorAll('span, button, select').forEach(function(span){
 		tooltip = titles[span.textContent];
