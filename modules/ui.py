@@ -337,6 +337,8 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     custom_inputs = modules.scripts.scripts_txt2img.setup_ui(is_img2img=False)
 
             with gr.Column(variant='panel'):
+                progressbar = gr.HTML(elem_id="progressbar")
+
                 with gr.Group():
                     txt2img_preview = gr.Image(elem_id='txt2img_preview', visible=False)
                     txt2img_gallery = gr.Gallery(label='Output', elem_id='txt2img_gallery').style(grid=4)
@@ -348,8 +350,6 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                         send_to_inpaint = gr.Button('Send to inpaint')
                         send_to_extras = gr.Button('Send to extras')
                         interrupt = gr.Button('Interrupt')
-
-                progressbar = gr.HTML(elem_id="progressbar")
 
                 with gr.Group():
                     html_info = gr.HTML()
@@ -474,6 +474,8 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     custom_inputs = modules.scripts.scripts_img2img.setup_ui(is_img2img=True)
 
             with gr.Column(variant='panel'):
+                progressbar = gr.HTML(elem_id="progressbar")
+
                 with gr.Group():
                     img2img_preview = gr.Image(elem_id='img2img_preview', visible=False)
                     img2img_gallery = gr.Gallery(label='Output', elem_id='img2img_gallery').style(grid=4)
@@ -487,7 +489,6 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                         interrupt = gr.Button('Interrupt')
                         img2img_save_style = gr.Button('Save prompt as style')
 
-                progressbar = gr.HTML(elem_id="progressbar")
 
                 with gr.Group():
                     html_info = gr.HTML()
