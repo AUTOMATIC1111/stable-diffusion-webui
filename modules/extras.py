@@ -60,7 +60,7 @@ def run_extras(image, image_folder, gfpgan_visibility, codeformer_visibility, co
             if codeformer_visibility < 1.0:
                 res = Image.blend(image, res, codeformer_visibility)
 
-            info += f"CodeFormer w: {round(codeformer_weight, 2)}, CodeFormer visibility:{round(codeformer_visibility)}\n"
+            info += f"CodeFormer w: {round(codeformer_weight, 2)}, CodeFormer visibility:{round(codeformer_visibility, 2)}\n"
             image = res
 
         if upscaling_resize != 1.0:
