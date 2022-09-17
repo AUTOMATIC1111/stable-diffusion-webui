@@ -127,9 +127,9 @@ def load_model():
     return sd_model
 
 
-def reload_model_weights(sd_model):
+def reload_model_weights(sd_model, info=None):
     from modules import lowvram, devices
-    checkpoint_info = select_checkpoint()
+    checkpoint_info = info or select_checkpoint()
 
     if sd_model.sd_model_checkpint == checkpoint_info.filename:
         return

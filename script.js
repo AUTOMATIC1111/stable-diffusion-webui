@@ -66,6 +66,8 @@ titles = {
     "Style 2": "Style to apply; styles have components for both positive and negative prompts and apply to both",
     "Apply style": "Insert selected styles into prompt fields",
     "Create style": "Save current prompts as a style. If you add the token {prompt} to the text, the style use that as placeholder for your prompt when you use the style in the future.",
+
+    "Checkpoint name": "Loads weights from checkpoint before making images. You can either use hash or a part of filename (as seen in settings) for checkpoint name. Recommended to use with Y axis for less switching.",
 }
 
 function gradioApp(){
