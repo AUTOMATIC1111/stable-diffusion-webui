@@ -188,7 +188,11 @@ def fix_seed(p):
 def process_images(p: StableDiffusionProcessing) -> Processed:
     """this is the main loop that both txt2img and img2img use; it calls func_init once inside all the scopes and func_sample once per batch"""
 
-    assert p.prompt is not None
+    if type(p.prompt) == list:
+        assert(len(p.prompt) > 0)
+    else:
+        assert p.prompt is not None
+        
     devices.torch_gc()
 
     fix_seed(p)
@@ -227,7 +231,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             "Seed": all_seeds[index],
             "Face restoration": (opts.face_restoration_model if p.restore_faces else None),
             "Size": f"{p.width}x{p.height}",
-            "Model hash": (None if not opts.add_model_hash_to_info or not shared.sd_model_hash else shared.sd_model_hash),
+            "Model hash": (None if not opts.add_model_hash_to_info or not shared.sd_model.sd_model_hash else shared.sd_model.sd_model_hash),
             "Batch size": (None if p.batch_size < 2 else p.batch_size),
             "Batch pos": (None if p.batch_size < 2 else position_in_batch),
             "Variation seed": (None if p.subseed_strength == 0 else all_subseeds[index]),
@@ -264,6 +268,9 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             prompts = all_prompts[n * p.batch_size:(n + 1) * p.batch_size]
             seeds = all_seeds[n * p.batch_size:(n + 1) * p.batch_size]
             subseeds = all_subseeds[n * p.batch_size:(n + 1) * p.batch_size]
+
+            if (len(prompts) == 0):
+                break
 
             #uc = p.sd_model.get_learned_conditioning(len(prompts) * [p.negative_prompt])
             #c = p.sd_model.get_learned_conditioning(prompts)
