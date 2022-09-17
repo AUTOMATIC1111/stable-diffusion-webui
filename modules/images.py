@@ -345,7 +345,6 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
         if not os.path.exists(fullfn):
             break
 
-    def create_exif_bytes():
     def exif_bytes():
         return piexif.dump({
             "Exif": {
