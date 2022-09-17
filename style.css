@@ -167,6 +167,12 @@ input[type="range"]{
 #txt2img_negative_prompt, #img2img_negative_prompt{
 }
 
+#progressbar{
+  position: absolute;
+  z-index: 1000;
+  right: 0;
+}
+
 .progressDiv{
   width: 100%;
   height: 30px;
