@@ -49,7 +49,9 @@ class Script(scripts.Script):
                 p.n_iter = 1
                 p.batch_size = 1
                 p.do_not_save_grid = True
-                p.color_corrections = initial_color_corrections
+
+                if opts.img2img_color_correction:
+                    p.color_corrections = initial_color_corrections
 
                 state.job = f"Iteration {i + 1}/{loops}, batch {n + 1}/{batch_count}"
 
