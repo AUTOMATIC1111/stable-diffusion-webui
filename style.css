@@ -196,3 +196,40 @@ input[type="range"]{
   border-radius: 8px;
 }
 
+#lightboxModal{
+  display: none;
+  position: fixed;
+  z-index: 900;
+  padding-top: 100px;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(20, 20, 20, 0.95);
+}
+
+.modalClose {
+  color: white;
+  position: absolute;
+  top: 10px;
+  right: 25px;
+  font-size: 35px;
+  font-weight: bold;
+}
+
+.modalClose:hover,
+.modalClose:focus {
+  color: #999;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+#modalImage {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: auto;
+    width: auto;
+}
+

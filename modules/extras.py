@@ -111,8 +111,9 @@ def run_pnginfo(image):
 
         items['exif comment'] = exif_comment
 
-        for field in ['jfif', 'jfif_version', 'jfif_unit', 'jfif_density', 'dpi', 'exif']:
-            del items[field]
+        for field in ['jfif', 'jfif_version', 'jfif_unit', 'jfif_density', 'dpi', 'exif',
+                      'loop', 'background', 'timestamp', 'duration']:
+            items.pop(field, None)
 
 
     info = ''
