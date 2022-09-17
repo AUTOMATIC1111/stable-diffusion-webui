@@ -147,8 +147,8 @@ class Buttons(discord.ui.View):
                     await cursed_channel.send(msg_to_forward.content, files=[await a.to_file() for a in msg_to_forward.attachments])
                     await interaction.message.delete()
 
-        @discord.ui.button(label="NSFW",style=discord.ButtonStyle.gray,emoji="🔞",custom_id="cursed_button") # or .secondary/.grey
-        async def cursed_button(self,interaction:discord.Interaction,button:discord.ui.Button):
+        @discord.ui.button(label="NSFW",style=discord.ButtonStyle.gray,emoji="🔞",custom_id="nsfw_button") # or .secondary/.grey
+        async def nsfw_button(self,interaction:discord.Interaction,button:discord.ui.Button):
             for r in interaction.user.roles:
                 if r.id == admin_roleid:
                     nsfw_channel = bot.get_channel(nsfw_id)
