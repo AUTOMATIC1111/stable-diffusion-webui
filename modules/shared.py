@@ -12,6 +12,7 @@ from modules.paths import script_path, sd_path
 from modules.devices import get_optimal_device
 import modules.styles
 import modules.interrogate
+import modules.memmon
 
 sd_model_file = os.path.join(script_path, 'model.ckpt')
 if not os.path.exists(sd_model_file):
@@ -138,6 +139,7 @@ class Options:
         "show_progressbar": OptionInfo(True, "Show progressbar"),
         "show_progress_every_n_steps": OptionInfo(0, "Show show image creation progress every N sampling steps. Set 0 to disable.", gr.Slider, {"minimum": 0, "maximum": 32, "step": 1}),
         "multiple_tqdm": OptionInfo(True, "Add a second progress bar to the console that shows progress for an entire job. Broken in PyCharm console."),
+        "memmon_poll_rate": OptionInfo(8, "VRAM usage polls per second during generation. Set to 0 to disable.", gr.Slider, {"minimum": 0, "maximum": 40, "step":1}),
         "face_restoration_model": OptionInfo(None, "Face restoration model", gr.Radio, lambda: {"choices": [x.name() for x in face_restorers]}),
         "code_former_weight": OptionInfo(0.5, "CodeFormer weight parameter; 0 = maximum effect; 1 = minimum effect", gr.Slider, {"minimum": 0, "maximum": 1, "step": 0.01}),
         "save_images_before_face_restoration": OptionInfo(False, "Save a copy of image before doing face restoration."),
@@ -217,3 +219,6 @@ class TotalTQDM:
 
 
 total_tqdm = TotalTQDM()
+
+mem_mon = modules.memmon.MemUsageMonitor("MemMon", device, opts)
+mem_mon.start()

@@ -119,6 +119,7 @@ def save_files(js_data, images, index):
 
 def wrap_gradio_call(func):
     def f(*args, **kwargs):
+        shared.mem_mon.monitor()
         t = time.perf_counter()
 
         try:
@@ -135,8 +136,19 @@ def wrap_gradio_call(func):
 
         elapsed = time.perf_counter() - t
 
+        mem_stats = {k:-(v//-(1024*1024)) for k,v in shared.mem_mon.stop().items()}
+        active_peak = mem_stats['active_peak']
+        reserved_peak = mem_stats['reserved_peak']
+        sys_peak = '?' if opts.memmon_poll_rate <= 0 else mem_stats['system_peak']
+        sys_total = mem_stats['total']
+        sys_pct = '?' if opts.memmon_poll_rate <= 0 else round(sys_peak/sys_total * 100, 2)
+        vram_tooltip = "Torch active: Peak amount of VRAM used by Torch during generation, excluding cached data.&#013;" \
+                       "Torch reserved: Peak amount of VRAM allocated by Torch, including all active and cached data.&#013;" \
+                       "Sys VRAM: Peak amount of VRAM allocation across all applications / total GPU VRAM (peak utilization%)."
+
         # last item is always HTML
-        res[-1] = res[-1] + f"<p class='performance'>Time taken: {elapsed:.2f}s</p>"
+        res[-1] += f"<div class='performance'><p class='time'>Time taken: <wbr>{elapsed:.2f}s</p>" \
+                   f"<p class='vram' title='{vram_tooltip}'>Torch active/reserved: {active_peak}/{reserved_peak} MiB, <wbr>Sys VRAM: {sys_peak}/{sys_total} MiB ({sys_pct}%)</p></div>"
 
         shared.state.interrupted = False
 
