@@ -101,12 +101,6 @@ wget https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.3.pt
 
 At this point, the instructions for the Manual installation may be applied starting at step `# clone repositories for Stable Diffusion and (optionally) CodeFormer`.
 
-# Troubleshooting
-- Although support will only be offered for Python 3.10.6, other versions should work.
-- The installer creates a python virtual environment, so none of the installed modules will affect existing system installations of python.
-- To use the system's python rather than creating a virtual environment, use custom parameter replacing `set VENV_DIR=-`.
-- To reinstall from scratch, delete directories: `venv`, `repositories`.
-
 ## Windows
 - If the desired version of Python is not in PATH, modify the line `set PYTHON=python` in `webui-user.bat` with the full path to the python executable.
     - Example: `set PYTHON=B:\soft\Python310\python.exe`
