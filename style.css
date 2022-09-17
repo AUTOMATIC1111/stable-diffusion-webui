@@ -206,7 +206,7 @@ input[type="range"]{
   width: 100%;
   height: 100%;
   overflow: auto;
-  background-color: black;
+  background-color: rgba(20, 20, 20, 0.95);
 }
 
 .modalClose {
