@@ -1,3 +1,9 @@
+- The program is tested to work on 3.10.6. Don't use other versions unless you are looking for trouble.
+- The installer creates a python virtual environment, so none of the installed modules will affect existing system installations of python.
+- To use the system's python rather than creating a virtual environment, use custom parameter replacing `set VENV_DIR=-`.
+- To reinstall from scratch, delete directories: `venv`, `repositories`.
+
+
 # Low VRAM Video-cards
 When running on video cards with a low amount of VRAM (<=4GB), out of memory errors may arise.
 Various optimizations may be enabled through command line arguments, sacrificing some/a lot of speed in favor of using less VRAM:
