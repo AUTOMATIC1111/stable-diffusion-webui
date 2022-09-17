@@ -79,7 +79,8 @@ bot = PersistentButtons()
 post_id = bot_config['channel_id']['post_id']
 heart_id = bot_config['channel_id']['heart_id']
 cursed_id = bot_config['channel_id']['cursed_id']
-
+nsfw_id = bot_config['channel_id']['nsfw_id']
+admin_roleid = bot_config['admin']['admin_roleid']
 
 @bot.event
 async def on_raw_reaction_add(payload):
@@ -119,48 +120,48 @@ class Buttons(discord.ui.View):
             super().__init__(timeout=None)
         @discord.ui.button(label="Keeper",style=discord.ButtonStyle.gray,emoji="😍",custom_id="keeper_button") # or .primary
         async def heart_button(self,interaction:discord.Interaction,button:discord.ui.Button):
-            for child in self.children:
-                if child.label != "Reset" and child.custom_id != "delete_button":
-                    child.disabled=True
-            button.style=discord.ButtonStyle.green
-            #ChID = 1015686897198170252
-            #ChID_fire = 1015234649192149023
-            #ChID_joy = 1015615431899369512
-            post_channel = bot.get_channel(post_id)
-            heart_channel = bot.get_channel(heart_id)
-            cursed_channel = bot.get_channel(cursed_id)
-            msg_to_forward = interaction.message
-            await heart_channel.send(msg_to_forward.content, files=[await a.to_file() for a in msg_to_forward.attachments])
-            await interaction.response.edit_message(view=self)
+            for r in interaction.user.roles:
+                if r.id == admin_roleid:
+                    heart_channel = bot.get_channel(heart_id)
+                    msg_to_forward = interaction.message
+                    await heart_channel.send(msg_to_forward.content, files=[await a.to_file() for a in msg_to_forward.attachments])
+                    await interaction.message.delete()
+
+
+        @discord.ui.button(label="Average",style=discord.ButtonStyle.blurple,emoji="👌",custom_id="average_button") # or .secondary/.grey
+        async def average_button(self,interaction:discord.Interaction,button:discord.ui.Button):
+            for r in interaction.user.roles:
+                if r.id == admin_roleid:
+                    average_channel = bot.get_channel(average_id)
+                    msg_to_forward = interaction.message
+                    await average_channel.send(msg_to_forward.content, files=[await a.to_file() for a in msg_to_forward.attachments])
+                    await interaction.message.delete()
+
+
         @discord.ui.button(label="Cursed and Funny",style=discord.ButtonStyle.gray,emoji="🤣",custom_id="cursed_button") # or .secondary/.grey
         async def cursed_button(self,interaction:discord.Interaction,button:discord.ui.Button):
-            for child in self.children:
-                if child.label != "Reset" and child.custom_id != "delete_button":
-                    child.disabled=True
-            button.style = discord.ButtonStyle.green
-            #ChID = 1015686897198170252
-            #ChID_fire = 1015234649192149023
-            #ChID_joy = 1015615431899369512
-            post_channel = bot.get_channel(post_id)
-            heart_channel = bot.get_channel(heart_id)
-            cursed_channel = bot.get_channel(cursed_id)
-            msg_to_forward = interaction.message
-            await cursed_channel.send(msg_to_forward.content, files=[await a.to_file() for a in msg_to_forward.attachments])
-            await interaction.response.edit_message(view=self)
-        @discord.ui.button(label="Reset",style=discord.ButtonStyle.blurple,emoji="🔁",custom_id="reset_button") # or .secondary/.grey
-        async def reset_button(self,interaction:discord.Interaction,button:discord.ui.Button):
-            if interaction.user.id != 205698404070850560: #Vetchems#1060
-                return
-            for child in self.children:
-                if child.label != "Reset" and child.custom_id != "delete_button":
-                    child.disabled=False
-                    child.style = discord.ButtonStyle.gray
-            await interaction.response.edit_message(view=self)
+            for r in interaction.user.roles:
+                if r.id == admin_roleid:
+                    cursed_channel = bot.get_channel(cursed_id)
+                    msg_to_forward = interaction.message
+                    await cursed_channel.send(msg_to_forward.content, files=[await a.to_file() for a in msg_to_forward.attachments])
+                    await interaction.message.delete()
+
+        @discord.ui.button(label="NSFW",style=discord.ButtonStyle.gray,emoji="🔞",custom_id="cursed_button") # or .secondary/.grey
+        async def cursed_button(self,interaction:discord.Interaction,button:discord.ui.Button):
+            for r in interaction.user.roles:
+                if r.id == admin_roleid:
+                    nsfw_channel = bot.get_channel(nsfw_id)
+                    msg_to_forward = interaction.message
+                    await nsfw_channel.send(msg_to_forward.content, files=[await a.to_file() for a in msg_to_forward.attachments])
+                    await interaction.message.delete()
+
+
         @discord.ui.button(label="Delete",style=discord.ButtonStyle.blurple,emoji="❌",custom_id="delete_button") # or .secondary/.grey
         async def deletee_button(self,interaction:discord.Interaction,button:discord.ui.Button):
-            if interaction.user.id != 205698404070850560: #Vetchems#1060
-                return
-            await interaction.message.delete()
+            for r in interaction.user.roles:
+                if r.id == admin_roleid:
+                    await interaction.message.delete()
 
 #@bot.command()
 #async def button(ctx):
