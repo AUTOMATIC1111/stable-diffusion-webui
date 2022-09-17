@@ -51,7 +51,6 @@ class Script(scripts.Script):
 
             state.job = f"{batch_no} out of {batch_count}: {batch_images[0][1]}"
             p.init_images = [x[0] for x in batch_images]
-
             proc = process_images(p)
             for image, (_, path) in zip(proc.images, batch_images):
                 filename = os.path.basename(path)
