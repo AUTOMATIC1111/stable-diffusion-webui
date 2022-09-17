@@ -245,7 +245,8 @@ input[type="range"]{
     margin-left: auto;
     margin-right: auto;
     margin-top: auto;
-    width: auto;
+    max-width: max-content;
+    height: 90%;
 }
 
 .modalPrev,
