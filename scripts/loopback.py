@@ -40,8 +40,7 @@ class Script(scripts.Script):
         all_images = []
         state.job_count = loops * batch_count
 
-        if opts.img2img_color_correction:
-            p.color_corrections = [processing.setup_color_correction(p.init_images[0])]
+        initial_color_corrections = [processing.setup_color_correction(p.init_images[0])]
 
         for n in range(batch_count):
             history = []
@@ -50,6 +49,7 @@ class Script(scripts.Script):
                 p.n_iter = 1
                 p.batch_size = 1
                 p.do_not_save_grid = True
+                p.color_corrections = initial_color_corrections
 
                 state.job = f"Iteration {i + 1}/{loops}, batch {n + 1}/{batch_count}"
 

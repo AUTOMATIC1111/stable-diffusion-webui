@@ -6,7 +6,7 @@ import traceback
 import modules.scripts as scripts
 import gradio as gr
 
-from modules.processing import Processed, process_images, setup_color_correction
+from modules.processing import Processed, process_images
 from PIL import Image
 from modules.shared import opts, cmd_opts, state
 
@@ -51,9 +51,6 @@ class Script(scripts.Script):
 
             state.job = f"{batch_no} out of {batch_count}: {batch_images[0][1]}"
             p.init_images = [x[0] for x in batch_images]
-
-            if opts.img2img_color_correction:
-                p.color_corrections = [setup_color_correction(i) for i in p.init_images]
 
             proc = process_images(p)
             for image, (_, path) in zip(proc.images, batch_images):
