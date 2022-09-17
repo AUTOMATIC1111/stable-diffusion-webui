@@ -25,6 +25,18 @@
     object-fit: scale-down;
 }
 
+.justify-center.overflow-x-scroll {
+    justify-content: left;
+}
+
+.justify-center.overflow-x-scroll button:first-of-type {
+    margin-left: auto;
+}
+
+.justify-center.overflow-x-scroll button:last-of-type {
+    margin-right: auto;
+}
+
 #subseed_show{
     min-width: 6em;
     max-width: 6em;
