@@ -76,6 +76,41 @@ function gradioApp(){
 
 global_progressbar = null
 
+function closeModal() {
+  gradioApp().getElementById("lightboxModal").style.display = "none";
+}
+
+function showModal(elem) {
+  gradioApp().getElementById("modalImage").src = elem.src
+  gradioApp().getElementById("lightboxModal").style.display = "block";
+}
+
+function showGalleryImage(){
+    setTimeout(function() {
+        fullImg_preview = gradioApp().querySelectorAll('img.w-full.object-contain')
+        
+        if(fullImg_preview != null){
+            fullImg_preview.forEach(function function_name(e) {
+                if(e && e.parentElement.tagName == 'DIV'){
+                    e.style.cursor='pointer'
+
+                    elemfunc = function(elem){
+                        elem.onclick = function(){showModal(elem)};
+                    }
+                    elemfunc(e)
+                }
+            });
+        }
+
+    }, 100);
+}
+
+function galleryImageHandler(e){
+    if(e && e.parentElement.tagName == 'BUTTON'){
+        e.onclick = showGalleryImage;
+    }
+}
+
 function addTitles(root){
 	root.querySelectorAll('span, button, select').forEach(function(span){
 		tooltip = titles[span.textContent];
@@ -117,13 +152,18 @@ function addTitles(root){
                 img2img_preview.style.width = img2img_gallery.clientWidth + "px"
                 img2img_preview.style.height = img2img_gallery.clientHeight + "px"
             }
-
-
+		
             window.setTimeout(requestProgress, 500)
         });
         mutationObserver.observe( progressbar, { childList:true, subtree:true })
 	}
+	
+	fullImg_preview = gradioApp().querySelectorAll('img.w-full')
 
+	    if(fullImg_preview != null){
+		fullImg_preview.forEach(galleryImageHandler);
+	}
+	
 }
 
 document.addEventListener("DOMContentLoaded", function() {
@@ -131,6 +171,27 @@ document.addEventListener("DOMContentLoaded", function() {
         addTitles(gradioApp());
     });
     mutationObserver.observe( gradioApp(), { childList:true, subtree:true })
+	
+    const modalFragment = document.createDocumentFragment();
+    const modal = document.createElement('div')
+    modal.onclick = closeModal;
+    
+    const modalClose = document.createElement('span')
+    modalClose.className = 'modalClose cursor';
+    modalClose.innerHTML = '&times;'
+    modalClose.onclick = closeModal;
+    modal.id = "lightboxModal";
+    modal.appendChild(modalClose)
+
+    const modalImage = document.createElement('img')
+    modalImage.id = 'modalImage';
+    modalImage.onclick = closeModal;
+    modal.appendChild(modalImage)
+
+    gradioApp().getRootNode().appendChild(modal)
+    
+    document.body.appendChild(modalFragment);
+	
 });
 
 function selected_gallery_index(){
