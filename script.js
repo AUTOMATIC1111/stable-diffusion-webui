@@ -80,10 +80,13 @@ function closeModal() {
   gradioApp().getElementById("lightboxModal").style.display = "none";
 }
 
-function showModal(elem) {
-  gradioApp().getElementById("modalImage").src = elem.src
+function showModal(event) {
+  var source = event.target || event.srcElement;
+  gradioApp().getElementById("modalImage").src = source.src
   gradioApp().getElementById("lightboxModal").style.display = "block";
+  event.stopPropagation()
 }
+
 
 function showGalleryImage(){
     setTimeout(function() {
@@ -92,12 +95,13 @@ function showGalleryImage(){
         if(fullImg_preview != null){
             fullImg_preview.forEach(function function_name(e) {
                 if(e && e.parentElement.tagName == 'DIV'){
+
                     e.style.cursor='pointer'
 
-                    elemfunc = function(elem){
-                        elem.onclick = function(){showModal(elem)};
-                    }
-                    elemfunc(e)
+                    e.addEventListener('click', function (evt) {
+                      showModal(evt)
+
+                    },true);
                 }
             });
         }
