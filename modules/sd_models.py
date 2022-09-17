@@ -112,7 +112,8 @@ def load_model():
 
     sd_config = OmegaConf.load(shared.cmd_opts.config)
     sd_model = instantiate_from_config(sd_config.model)
-    load_model_weights(sd_model, checkpoint_info.filename, checkpoint_info.hash)
+    if checkpoint_info is not None:
+        load_model_weights(sd_model, checkpoint_info.filename, checkpoint_info.hash)
 
     if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
         lowvram.setup_for_low_vram(sd_model, shared.cmd_opts.medvram)
