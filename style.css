@@ -1,15 +1,46 @@
 .output-html p {margin: 0 0.5em;}
-.performance { font-size: 0.85em; color: #444; }
+
+.performance {
+    font-size: 0.85em;
+    color: #444;
+    display: flex;
+    justify-content: space-between;
+    white-space: nowrap;
+}
+
+.performance .time {
+    margin-right: 0;
+}
+
+.performance .vram {
+    margin-left: 0;
+    text-align: right;
+}
 
 #generate{
     min-height: 4.5em;
 }
 
-#txt2img_gallery, #img2img_gallery{
-    min-height: 768px;
+@media screen and (min-width: 2500px) {
+    #txt2img_gallery, #img2img_gallery {
+        min-height: 768px;
+    }
 }
+
 #txt2img_gallery img, #img2img_gallery img{
     object-fit: scale-down;
+}
+
+.justify-center.overflow-x-scroll {
+    justify-content: left;
+}
+
+.justify-center.overflow-x-scroll button:first-of-type {
+    margin-left: auto;
+}
+
+.justify-center.overflow-x-scroll button:last-of-type {
+    margin-right: auto;
 }
 
 #subseed_show{
@@ -151,6 +182,12 @@ input[type="range"]{
 #txt2img_negative_prompt, #img2img_negative_prompt{
 }
 
+#progressbar{
+  position: absolute;
+  z-index: 1000;
+  right: 0;
+}
+
 .progressDiv{
   width: 100%;
   height: 30px;
@@ -174,3 +211,66 @@ input[type="range"]{
   border-radius: 8px;
 }
 
+#lightboxModal{
+  display: none;
+  position: fixed;
+  z-index: 900;
+  padding-top: 100px;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(20, 20, 20, 0.95);
+}
+
+.modalClose {
+  color: white;
+  position: absolute;
+  top: 10px;
+  right: 25px;
+  font-size: 35px;
+  font-weight: bold;
+}
+
+.modalClose:hover,
+.modalClose:focus {
+  color: #999;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+#modalImage {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: auto;
+    width: auto;
+}
+
+.modalPrev,
+.modalNext {
+  cursor: pointer;
+  position: absolute;
+  top: 50%;
+  width: auto;
+  padding: 16px;
+  margin-top: -50px;
+  color: white;
+  font-weight: bold;
+  font-size: 20px;
+  transition: 0.6s ease;
+  border-radius: 0 3px 3px 0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.modalNext {
+  right: 0;
+  border-radius: 3px 0 0 3px;
+}
+
+.modalPrev:hover,
+.modalNext:hover {
+  background-color: rgba(0, 0, 0, 0.8);
+}

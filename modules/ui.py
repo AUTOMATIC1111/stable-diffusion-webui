@@ -119,6 +119,7 @@ def save_files(js_data, images, index):
 
 def wrap_gradio_call(func):
     def f(*args, **kwargs):
+        shared.mem_mon.monitor()
         t = time.perf_counter()
 
         try:
@@ -135,8 +136,20 @@ def wrap_gradio_call(func):
 
         elapsed = time.perf_counter() - t
 
+        mem_stats = {k: -(v//-(1024*1024)) for k,v in shared.mem_mon.stop().items()}
+        active_peak = mem_stats['active_peak']
+        reserved_peak = mem_stats['reserved_peak']
+        sys_peak = '?' if opts.memmon_poll_rate <= 0 else mem_stats['system_peak']
+        sys_total = mem_stats['total']
+        sys_pct = '?' if opts.memmon_poll_rate <= 0 else round(sys_peak/sys_total * 100, 2)
+        vram_tooltip = "Torch active: Peak amount of VRAM used by Torch during generation, excluding cached data.&#013;" \
+                       "Torch reserved: Peak amount of VRAM allocated by Torch, including all active and cached data.&#013;" \
+                       "Sys VRAM: Peak amount of VRAM allocation across all applications / total GPU VRAM (peak utilization%)."
+
+        vram_html = '' if opts.memmon_poll_rate == 0 else f"<p class='vram' title='{vram_tooltip}'>Torch active/reserved: {active_peak}/{reserved_peak} MiB, <wbr>Sys VRAM: {sys_peak}/{sys_total} MiB ({sys_pct}%)</p>"
+
         # last item is always HTML
-        res[-1] = res[-1] + f"<p class='performance'>Time taken: {elapsed:.2f}s</p>"
+        res[-1] += f"<div class='performance'><p class='time'>Time taken: <wbr>{elapsed:.2f}s</p>{vram_html}</div>"
 
         shared.state.interrupted = False
 
@@ -324,6 +337,8 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     custom_inputs = modules.scripts.scripts_txt2img.setup_ui(is_img2img=False)
 
             with gr.Column(variant='panel'):
+                progressbar = gr.HTML(elem_id="progressbar")
+
                 with gr.Group():
                     txt2img_preview = gr.Image(elem_id='txt2img_preview', visible=False)
                     txt2img_gallery = gr.Gallery(label='Output', elem_id='txt2img_gallery').style(grid=4)
@@ -335,8 +350,6 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                         send_to_inpaint = gr.Button('Send to inpaint')
                         send_to_extras = gr.Button('Send to extras')
                         interrupt = gr.Button('Interrupt')
-
-                progressbar = gr.HTML(elem_id="progressbar")
 
                 with gr.Group():
                     html_info = gr.HTML()
@@ -461,6 +474,8 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     custom_inputs = modules.scripts.scripts_img2img.setup_ui(is_img2img=True)
 
             with gr.Column(variant='panel'):
+                progressbar = gr.HTML(elem_id="progressbar")
+
                 with gr.Group():
                     img2img_preview = gr.Image(elem_id='img2img_preview', visible=False)
                     img2img_gallery = gr.Gallery(label='Output', elem_id='img2img_gallery').style(grid=4)
@@ -474,7 +489,6 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                         interrupt = gr.Button('Interrupt')
                         img2img_save_style = gr.Button('Save prompt as style')
 
-                progressbar = gr.HTML(elem_id="progressbar")
 
                 with gr.Group():
                     html_info = gr.HTML()
@@ -649,7 +663,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                         image = gr.Image(label="Source", source="upload", interactive=True, type="pil")
 
                     with gr.TabItem('Batch Process'):
-                        image_batch = gr.File(label="Batch Process", file_count="multiple", source="upload", interactive=True, type="file")
+                        image_batch = gr.File(label="Batch Process", file_count="multiple", interactive=True, type="file")
 
                 upscaling_resize = gr.Slider(minimum=1.0, maximum=4.0, step=0.05, label="Resize", value=2)
 
@@ -745,7 +759,12 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
             if comp_args and isinstance(comp_args, dict) and comp_args.get('visible') is False:
                 continue
 
+            oldval = opts.data.get(key, None)
             opts.data[key] = value
+
+            if oldval != value and opts.data_labels[key].onchange is not None:
+                opts.data_labels[key].onchange()
+
             up.append(comp.update(value=value))
 
         opts.save(shared.config_filename)
@@ -781,6 +800,11 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
 
     with open(os.path.join(script_path, "style.css"), "r", encoding="utf8") as file:
         css = file.read()
+
+    if os.path.exists(os.path.join(script_path, "user.css")):
+        with open(os.path.join(script_path, "user.css"), "r", encoding="utf8") as file:
+            usercss = file.read()
+            css += usercss
 
     if not cmd_opts.no_progressbar_hiding:
         css += css_hide_progressbar
