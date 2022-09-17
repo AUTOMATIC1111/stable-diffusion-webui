@@ -21,6 +21,12 @@
     min-height: 4.5em;
 }
 
+@media screen and (min-width: 2500px) {
+    #txt2img_gallery, #img2img_gallery {
+        min-height: 768px;
+    }
+}
+
 #txt2img_gallery img, #img2img_gallery img{
     object-fit: scale-down;
 }
