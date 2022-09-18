@@ -908,12 +908,17 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
 
 
 with open(os.path.join(script_path, "script.js"), "r", encoding="utf8") as jsfile:
-    javascript = jsfile.read()
+    javascript = f'<script>{jsfile.read()}</script>'
+
+jsdir = os.path.join(script_path, "javascript")
+for filename in os.listdir(jsdir):
+    with open(os.path.join(jsdir, filename), "r", encoding="utf8") as jsfile:
+        javascript += f"\n<script>{jsfile.read()}</script>"
 
 
 def template_response(*args, **kwargs):
     res = gradio_routes_templates_response(*args, **kwargs)
-    res.body = res.body.replace(b'</head>', f'<script>{javascript}</script></head>'.encode("utf8"))
+    res.body = res.body.replace(b'</head>', f'{javascript}</head>'.encode("utf8"))
     res.init_headers()
     return res
 
