@@ -49,6 +49,7 @@ parser.add_argument("--gradio-debug",  action='store_true', help="launch gradio 
 parser.add_argument("--gradio-auth", type=str, help='set gradio authentication like "username:password"; or comma-delimit multiple like "u1:p1,u2:p2,u3:p3"', default=None)
 parser.add_argument("--opt-channelslast", action='store_true', help="change memory type for stable diffusion to channels last")
 parser.add_argument("--styles-file", type=str, help="filename to use for styles", default=os.path.join(script_path, 'styles.csv'))
+parser.add_argument("--autolaunch", action=argparse.BooleanOptionalAction, help="open the webui URL in the system's default browser upon launch", default=False)
 cmd_opts = parser.parse_args()
 
 if cmd_opts.opt_split_attention:
