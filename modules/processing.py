@@ -83,11 +83,13 @@ class StableDiffusionProcessing:
 
 
 class Processed:
-    def __init__(self, p: StableDiffusionProcessing, images_list, seed, info):
+    def __init__(self, p: StableDiffusionProcessing, images_list, seed, subseed, info):
         self.images = images_list
         self.prompt = p.prompt
         self.negative_prompt = p.negative_prompt
         self.seed = seed
+        self.subseed = subseed
+        self.subseed_strength = p.subseed_strength
         self.info = info
         self.width = p.width
         self.height = p.height
@@ -100,6 +102,8 @@ class Processed:
             "prompt": self.prompt if type(self.prompt) != list else self.prompt[0],
             "negative_prompt": self.negative_prompt if type(self.negative_prompt) != list else self.negative_prompt[0],
             "seed": int(self.seed if type(self.seed) != list else self.seed[0]),
+            "subseed": int(self.subseed if type(self.subseed) != list else self.subseed[0]),
+            "subseed_strength": self.subseed_strength,
             "width": self.width,
             "height": self.height,
             "sampler": self.sampler,
@@ -352,7 +356,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
                 images.save_image(grid, p.outpath_grids, "grid", all_seeds[0], all_prompts[0], opts.grid_format, info=infotext(), short_filename=not opts.grid_extended_filename, p=p)
 
     devices.torch_gc()
-    return Processed(p, output_images, all_seeds[0], infotext())
+    return Processed(p, output_images, all_seeds[0], all_subseeds[0], infotext())
 
 
 class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
