@@ -102,7 +102,7 @@ class Processed:
             "prompt": self.prompt if type(self.prompt) != list else self.prompt[0],
             "negative_prompt": self.negative_prompt if type(self.negative_prompt) != list else self.negative_prompt[0],
             "seed": int(self.seed if type(self.seed) != list else self.seed[0]),
-            "subseed": int(self.subseed if type(self.subseed) != list else self.subseed[0]),
+            "subseed": int(self.subseed if type(self.subseed) != list else self.subseed[0]) if self.subseed is not None else -1,
             "subseed_strength": self.subseed_strength,
             "width": self.width,
             "height": self.height,
