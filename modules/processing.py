@@ -83,7 +83,7 @@ class StableDiffusionProcessing:
 
 
 class Processed:
-    def __init__(self, p: StableDiffusionProcessing, images_list, seed, subseed, info):
+    def __init__(self, p: StableDiffusionProcessing, images_list, seed, info, subseed=None):
         self.images = images_list
         self.prompt = p.prompt
         self.negative_prompt = p.negative_prompt
@@ -356,7 +356,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
                 images.save_image(grid, p.outpath_grids, "grid", all_seeds[0], all_prompts[0], opts.grid_format, info=infotext(), short_filename=not opts.grid_extended_filename, p=p)
 
     devices.torch_gc()
-    return Processed(p, output_images, all_seeds[0], all_subseeds[0], infotext())
+    return Processed(p, output_images, all_seeds[0], infotext(), subseed=all_subseeds[0])
 
 
 class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
