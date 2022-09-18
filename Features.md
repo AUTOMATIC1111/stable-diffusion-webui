@@ -145,8 +145,8 @@ See original site for details: https://textual-inversion.github.io/.
 I used lstein's repo for training embdedding: https://github.com/lstein/stable-diffusion; if
 you want to train your own, I recommend following the guide on his site.
 
-To make use of pretrained embeddings, create `embeddings` directory in the root dir of Stable
-Diffusion and put your embeddings into it. They must be .pt files about 5Kb in size, each with only
+To make use of pretrained embeddings, create `embeddings` directory in the same directory as `webui.py`
+and put your embeddings into it. They must be .pt files about 5Kb in size, each with only
 one trained embedding, and the filename (without .pt) will be the term you'd use in prompt
 to get that embedding.
 
