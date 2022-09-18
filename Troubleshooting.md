@@ -2,7 +2,7 @@
 - The installer creates a python virtual environment, so none of the installed modules will affect existing system installations of python.
 - To use the system's python rather than creating a virtual environment, use custom parameter replacing `set VENV_DIR=-`.
 - To reinstall from scratch, delete directories: `venv`, `repositories`.
-
+- When starting the program for the first time, the path to python interpreter is displayed. If this is not the python you installed, you can specify full path in the `webui-user` script; see [Running with custom parameters](Run-with-Custom-Parameters).
 
 # Low VRAM Video-cards
 When running on video cards with a low amount of VRAM (<=4GB), out of memory errors may arise.
