@@ -53,6 +53,9 @@ function modalKeyHandler(event){
         case "ArrowRight":
             modalNextImage(event)
             break;
+        case "Escape":
+            closeModal();
+            break;
     }
 }
 
