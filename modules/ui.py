@@ -262,8 +262,8 @@ def create_seed_inputs():
             with gr.Row(elem_id='seed_row'):
                 seed = gr.Number(label='Seed', value=-1)
                 seed.style(container=False)
-                random_seed = gr.Button('🎲', elem_id='random_seed')
-                reuse_seed = gr.Button('♻️', elem_id='reuse_seed')
+                random_seed = gr.Button(random_symbol, elem_id='random_seed')
+                reuse_seed = gr.Button(reuse_symbol, elem_id='reuse_seed')
 
         with gr.Box(elem_id='subseed_show_box'):
             seed_checkbox = gr.Checkbox(label='Extra', elem_id='subseed_show', value=False)
