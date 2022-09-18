@@ -6,5 +6,5 @@
 - [Installation and run on AMD GPUs](Install-and-Run-on-AMD-GPUs)
 - [Running with custom parameters](Run-with-Custom-Parameters)
 - [Changing UI defaults](Change-UI-Defaults)
-- [Custom scripts from users](Custom-Scripts-from-Users)
+- [Custom scripts](Custom-Scripts)
 - [Troubleshooting](Troubleshooting)
