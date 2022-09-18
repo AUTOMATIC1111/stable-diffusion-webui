@@ -339,11 +339,11 @@ were commandline. Settings are saved to config.js file. Settings that remain as 
 options are ones that are required at startup.
 
 # Filenames format
-The `Images filename pattern` field in the Settings tab allows customization of generated txt2img and img2img images filenames. This pattern defines the generation parameters you want to include in filenames, and their order. Here are the supported tags:
+The `Images filename pattern` field in the Settings tab allows customization of generated txt2img and img2img images filenames. This pattern defines the generation parameters you want to include in filenames, and their order. The supported tags are:
 
-`[steps], [cfg], [prompt], [prompt_spaces], [width], [height], [sampler], [seed], [model_hash], [prompt_words], [date].`
+`[steps], [cfg], [prompt], [prompt_spaces], [width], [height], [sampler], [seed], [model_hash], [prompt_words], [date], [model_hash].`
 
-(You can get an up-to-date list of supported tags by hovering your mouse over the "Images filename pattern" label in the UI.)
+This list will evolve though, with new additions. You can get an up-to-date list of supported tags by hovering your mouse over the "Images filename pattern" label in the UI.
 
 Example of a pattern: `[seed]-[steps]-[cfg]-[sampler]-[prompt_spaces]`
 
