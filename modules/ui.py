@@ -858,7 +858,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
         return 'Settings applied.'
 
     with gr.Blocks(analytics_enabled=False) as settings_interface:
-        submit = gr.Button(value="Apply settings", variant='primary')
+        settings_submit = gr.Button(value="Apply settings", variant='primary')
         result = gr.HTML()
 
         with gr.Row(elem_id="settings").style(equal_height=False):
@@ -870,7 +870,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                         if index < len(keys):
                             components.append(create_setting_component(keys[index]))
 
-        submit.click(
+        settings_submit.click(
             fn=run_settings,
             inputs=components,
             outputs=[result]
@@ -896,10 +896,19 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
         css += css_hide_progressbar
 
     with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion") as demo:
+
         with gr.Tabs() as tabs:
             for interface, label, ifid in interfaces:
                 with gr.TabItem(label, id=ifid):
                     interface.render()
+
+        text_settings = gr.Textbox(elem_id="settings_json", value=opts.dumpjson(), visible=False)
+
+        settings_submit.click(
+            fn=lambda: opts.dumpjson(),
+            inputs=[],
+            outputs=[text_settings],
+        )
 
         tabs.change(
             fn=lambda x: x,

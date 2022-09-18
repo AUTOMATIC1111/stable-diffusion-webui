@@ -59,3 +59,42 @@ function ask_for_style_name(_, prompt_text, negative_prompt_text) {
     name_ = prompt('Style name:')
     return name_ === null ? [null, null, null]: [name_, prompt_text, negative_prompt_text]
 }
+
+opts = {}
+function apply_settings(jsdata){
+    console.log(jsdata)
+
+    opts = JSON.parse(jsdata)
+
+    return jsdata
+}
+
+onUiUpdate(function(){
+	if(Object.keys(opts).length != 0) return;
+
+	json_elem = gradioApp().getElementById('settings_json')
+	if(json_elem == null) return;
+
+    textarea = json_elem.querySelector('textarea')
+    jsdata = textarea.value
+    opts = JSON.parse(jsdata)
+
+
+    Object.defineProperty(textarea, 'value', {
+        set: function(newValue) {
+            var valueProp = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value');
+            var oldValue = valueProp.get.call(textarea);
+            valueProp.set.call(textarea, newValue);
+
+            if (oldValue != newValue) {
+                opts = JSON.parse(textarea.value)
+            }
+        },
+        get: function() {
+            var valueProp = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value');
+            return valueProp.get.call(textarea);
+        }
+    });
+
+    json_elem.parentElement.style.display="none"
+})

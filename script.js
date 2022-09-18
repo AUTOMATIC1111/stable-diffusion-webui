@@ -9,7 +9,11 @@ function onUiUpdate(callback){
 
 function uiUpdate(root){
 	uiUpdateCallbacks.forEach(function(x){
-	    x()
+        try {
+            x()
+        } catch (e) {
+            (console.error || console.log).call(console, e.message, e);
+        }
 	})
 }
 
