@@ -37,7 +37,7 @@ function extract_image_from_gallery_extras(gallery){
 
 function submit(){
     // this calls a function from progressbar.js
-    window.setTimeout(requestProgress, 500)
+    requestProgress()
 
     res = []
     for(var i=0;i<arguments.length;i++){

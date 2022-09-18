@@ -24,15 +24,23 @@ onUiUpdate(function(){
                 img2img_preview.style.height = img2img_gallery.clientHeight + "px"
             }
 
-            window.setTimeout(requestProgress, 500)
+            window.setTimeout(requestMoreProgress, 500)
         });
         mutationObserver.observe( progressbar, { childList:true, subtree:true })
 	}
 })
 
-function requestProgress(){
+function requestMoreProgress(){
     btn = gradioApp().getElementById("check_progress");
     if(btn==null) return;
 
     btn.click();
 }
+
+function requestProgress(){
+    btn = gradioApp().getElementById("check_progress_initial");
+    if(btn==null) return;
+
+    btn.click();
+}
+

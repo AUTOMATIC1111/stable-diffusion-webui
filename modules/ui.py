@@ -159,7 +159,6 @@ def wrap_gradio_call(func):
 
 
 def check_progress_call():
-
     if shared.state.job_count == 0:
         return "", gr_show(False), gr_show(False)
 
@@ -194,6 +193,12 @@ def check_progress_call():
             preview_visibility = gr_show(True)
 
     return f"<span style='display: none'>{time.time()}</span><p>{progressbar}</p>", preview_visibility, image
+
+
+def check_progress_call_initial():
+    shared.state.job_count = -1
+
+    return check_progress_call()
 
 
 def roll_artist(prompt):
@@ -303,14 +308,30 @@ def create_toprow(is_img2img):
                 prompt_style_apply = gr.Button('Apply style', elem_id="style_apply")
                 save_style = gr.Button('Create style', elem_id="style_create")
 
-            check_progress = gr.Button('Check progress', elem_id="check_progress", visible=False)
+    return prompt, roll, prompt_style, negative_prompt, prompt_style2, submit, interrogate, prompt_style_apply, save_style
 
-    return prompt, roll, prompt_style, negative_prompt, prompt_style2, submit, interrogate, prompt_style_apply, save_style, check_progress
+
+def setup_progressbar(progressbar, preview):
+    check_progress = gr.Button('Check progress', elem_id="check_progress", visible=False)
+    check_progress.click(
+        fn=check_progress_call,
+        show_progress=False,
+        inputs=[],
+        outputs=[progressbar, preview, preview],
+    )
+
+    check_progress_initial = gr.Button('Check progress (first)', elem_id="check_progress_initial", visible=False)
+    check_progress_initial.click(
+        fn=check_progress_call_initial,
+        show_progress=False,
+        inputs=[],
+        outputs=[progressbar, preview, preview],
+    )
 
 
 def create_ui(txt2img, img2img, run_extras, run_pnginfo):
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
-        txt2img_prompt, roll, txt2img_prompt_style, txt2img_negative_prompt, txt2img_prompt_style2, submit, _, txt2img_prompt_style_apply, txt2img_save_style, check_progress = create_toprow(is_img2img=False)
+        txt2img_prompt, roll, txt2img_prompt_style, txt2img_negative_prompt, txt2img_prompt_style2, submit, _, txt2img_prompt_style_apply, txt2img_save_style = create_toprow(is_img2img=False)
 
         with gr.Row().style(equal_height=False):
             with gr.Column(variant='panel'):
@@ -342,6 +363,8 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 with gr.Group():
                     txt2img_preview = gr.Image(elem_id='txt2img_preview', visible=False)
                     txt2img_gallery = gr.Gallery(label='Output', elem_id='txt2img_gallery').style(grid=4)
+
+                setup_progressbar(progressbar, txt2img_preview)
 
                 with gr.Group():
                     with gr.Row():
@@ -379,18 +402,12 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     txt2img_gallery,
                     generation_info,
                     html_info
-                ]
+                ],
+                show_progress=False,
             )
 
             txt2img_prompt.submit(**txt2img_args)
             submit.click(**txt2img_args)
-
-            check_progress.click(
-                fn=check_progress_call,
-                show_progress=False,
-                inputs=[],
-                outputs=[progressbar, txt2img_preview, txt2img_preview],
-            )
 
             interrupt.click(
                 fn=lambda: shared.state.interrupt(),
@@ -424,7 +441,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
             )
 
     with gr.Blocks(analytics_enabled=False) as img2img_interface:
-        img2img_prompt, roll, img2img_prompt_style, img2img_negative_prompt, img2img_prompt_style2, submit, img2img_interrogate, img2img_prompt_style_apply, img2img_save_style, check_progress = create_toprow(is_img2img=True)
+        img2img_prompt, roll, img2img_prompt_style, img2img_negative_prompt, img2img_prompt_style2, submit, img2img_interrogate, img2img_prompt_style_apply, img2img_save_style = create_toprow(is_img2img=True)
 
         with gr.Row().style(equal_height=False):
             with gr.Column(variant='panel'):
@@ -479,6 +496,8 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 with gr.Group():
                     img2img_preview = gr.Image(elem_id='img2img_preview', visible=False)
                     img2img_gallery = gr.Gallery(label='Output', elem_id='img2img_gallery').style(grid=4)
+
+                setup_progressbar(progressbar, img2img_preview)
 
                 with gr.Group():
                     with gr.Row():
@@ -584,7 +603,8 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     img2img_gallery,
                     generation_info,
                     html_info
-                ]
+                ],
+                show_progress=False,
             )
 
             img2img_prompt.submit(**img2img_args)
@@ -596,13 +616,6 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 outputs=[img2img_prompt],
             )
 
-            check_progress.click(
-                fn=check_progress_call,
-                show_progress=False,
-                inputs=[],
-                outputs=[progressbar, img2img_preview, img2img_preview],
-            )
-
             interrupt.click(
                 fn=lambda: shared.state.interrupt(),
                 inputs=[],
@@ -611,7 +624,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
 
             save.click(
                 fn=wrap_gradio_call(save_files),
-                _js = "(x, y, z) => [x, y, selected_gallery_index()]",
+                _js="(x, y, z) => [x, y, selected_gallery_index()]",
                 inputs=[
                     generation_info,
                     img2img_gallery,
