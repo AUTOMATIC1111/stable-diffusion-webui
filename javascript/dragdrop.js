@@ -1,3 +1,5 @@
+// allows drag-dropping files into gradio image elements, and also pasting images from clipboard
+
 function isValidImageList( files ) {
     return files && files?.length === 1 && ['image/png', 'image/gif', 'image/jpeg'].includes(files[0].type);
 }

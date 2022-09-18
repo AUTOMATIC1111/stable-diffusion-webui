@@ -1,4 +1,4 @@
-
+// mouseover tooltips for various UI elements
 
 titles = {
     "Sampling steps": "How many times to improve the generated image iteratively; higher values take longer; very low values can produce bad results",

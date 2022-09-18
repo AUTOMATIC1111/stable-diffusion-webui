@@ -1,24 +1,4 @@
-function gradioApp(){
-    return document.getElementsByTagName('gradio-app')[0].shadowRoot;
-}
-
-uiUpdateCallbacks = []
-function onUiUpdate(callback){
-    uiUpdateCallbacks.push(callback)
-}
-
-function uiUpdate(root){
-	uiUpdateCallbacks.forEach(function(x){
-	    x()
-	})
-}
-
-document.addEventListener("DOMContentLoaded", function() {
-    var mutationObserver = new MutationObserver(function(m){
-        uiUpdate(gradioApp());
-    });
-    mutationObserver.observe( gradioApp(), { childList:true, subtree:true })
-});
+// various functions for interation with ui.py not large enough to warrant putting them in separate files
 
 function selected_gallery_index(){
     var gr = gradioApp()
@@ -55,14 +35,8 @@ function extract_image_from_gallery_extras(gallery){
     return extract_image_from_gallery(gallery);
 }
 
-function requestProgress(){
-    btn = gradioApp().getElementById("check_progress");
-    if(btn==null) return;
-
-    btn.click();
-}
-
 function submit(){
+    // this calls a function from progressbar.js
     window.setTimeout(requestProgress, 500)
 
     res = []

@@ -1,3 +1,4 @@
+// A full size 'lightbox' preview modal shown when left clicking on gallery previews
 
 function closeModal() {
   gradioApp().getElementById("lightboxModal").style.display = "none";
