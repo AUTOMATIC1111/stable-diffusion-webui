@@ -1,7 +1,9 @@
+// code related to showing and updating progressbar shown as the image is being made
+
 global_progressbar = null
 
 onUiUpdate(function(){
-	progressbar = root.getElementById('progressbar')
+	progressbar = gradioApp().getElementById('progressbar')
 	if(progressbar!= null && progressbar != global_progressbar){
 	    global_progressbar = progressbar
 
@@ -27,3 +29,10 @@ onUiUpdate(function(){
         mutationObserver.observe( progressbar, { childList:true, subtree:true })
 	}
 })
+
+function requestProgress(){
+    btn = gradioApp().getElementById("check_progress");
+    if(btn==null) return;
+
+    btn.click();
+}
