@@ -13,18 +13,37 @@ class Script:
     args_from = None
     args_to = None
 
+    # The title of the script. This is what will be displayed in the dropdown menu.
     def title(self):
         raise NotImplementedError()
 
+    # How the script is displayed in the UI. See https://gradio.app/docs/#components
+    # for the different UI components you can use and how to create them.
+    # Most UI components can return a value, such as a boolean for a checkbox.
+    # The returned values are passed to the run method as parameters.
     def ui(self, is_img2img):
         pass
 
+    # Determines when the script should be shown in the dropdown menu via the 
+    # returned value. As an example:
+    # is_img2img is True if the current tab is img2img, and False if it is txt2img.
+    # Thus, return is_img2img to only show the script on the img2img tab.
     def show(self, is_img2img):
         return True
 
+    # This is where the additional processing is implemented. The parameters include
+    # self, the model object "p" (a StableDiffusionProcessing class, see
+    # processing.py), and the parameters returned by the ui method.
+    # Custom functions can be defined here, and additional libraries can be imported 
+    # to be used in processing. The return value should be a Processed object, which is
+    # what is returned by the process_images method.
     def run(self, *args):
         raise NotImplementedError()
 
+    # The description method is currently unused.
+    # To add a description that appears when hovering over the title, amend the "titles" 
+    # dict in script.js to include the script title (returned by title) as a key, and 
+    # your description as the value.
     def describe(self):
         return ""
 
