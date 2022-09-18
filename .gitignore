@@ -4,6 +4,7 @@ __pycache__
 /venv
 /tmp
 /model.ckpt
+/models/*.ckpt
 /GFPGANv1.3.pth
 /ui-config.json
 /outputs
