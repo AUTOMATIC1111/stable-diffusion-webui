@@ -159,6 +159,7 @@ class Options:
         "interrogate_clip_max_length": OptionInfo(48, "Interrogate: maximum description length", gr.Slider, {"minimum": 1, "maximum": 256, "step": 1}),
         "interrogate_clip_dict_limit": OptionInfo(1500, "Interrogate: maximum number of lines in text file (0 = No limit)"),
         "sd_model_checkpoint": OptionInfo(None, "Stable Diffusion checkpoint", gr.Radio, lambda: {"choices": [x.title for x in modules.sd_models.checkpoints_list.values()]}),
+        "js_modal_lightbox": OptionInfo(True, "Enable full page image viewer"),
     }
 
     def __init__(self):
@@ -192,6 +193,10 @@ class Options:
     def onchange(self, key, func):
         item = self.data_labels.get(key)
         item.onchange = func
+
+    def dumpjson(self):
+        d = {k: self.data.get(k, self.data_labels.get(k).default) for k in self.data_labels.keys()}
+        return json.dumps(d)
 
 
 opts = Options()
