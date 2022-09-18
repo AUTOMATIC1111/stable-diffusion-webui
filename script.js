@@ -78,7 +78,6 @@ global_progressbar = null
 
 function closeModal() {
   gradioApp().getElementById("lightboxModal").style.display = "none";
-  document.removeEventListener('keydown', handleEscapeModal);
 }
 
 function showModal(event) {
@@ -88,13 +87,6 @@ function showModal(event) {
   lb.style.display = "block";
   lb.focus()
   event.stopPropagation()
-  document.addEventListener('keydown', handleEscapeModal);
-}
-
-function handleEscapeModal(event) {
-    if (event.key === 'Escape') {
-        closeModal()
-    }
 }
 
 function negmod(n, m) {
@@ -137,6 +129,9 @@ function modalKeyHandler(event){
             break;
         case "ArrowRight":
             modalNextImage(event)
+            break;
+        case "Escape":
+            closeModal()
             break;
     }
 }
