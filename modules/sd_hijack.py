@@ -243,12 +243,12 @@ class StableDiffusionModelHijack:
         model_embeddings.token_embedding = EmbeddingsWithFixes(model_embeddings.token_embedding, self)
         m.cond_stage_model = FrozenCLIPEmbedderWithCustomWords(m.cond_stage_model, self)
 
-        if cmd_opts.opt_split_attention:
+        if cmd_opts.opt_split_attention_v1:
+            ldm.modules.attention.CrossAttention.forward = split_cross_attention_forward_v1
+        elif not cmd_opts.disable_opt_split_attention:
             ldm.modules.attention.CrossAttention.forward = split_cross_attention_forward
             ldm.modules.diffusionmodules.model.nonlinearity = nonlinearity_hijack
             ldm.modules.diffusionmodules.model.AttnBlock.forward = cross_attention_attnblock_forward
-        elif cmd_opts.opt_split_attention_v1:
-            ldm.modules.attention.CrossAttention.forward = split_cross_attention_forward_v1
 
         def flatten(el):
             flattened = [flatten(children) for children in el.children()]
