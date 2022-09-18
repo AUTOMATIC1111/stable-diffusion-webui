@@ -30,6 +30,11 @@ Greatly improve the editability of any character/subject while retaining their l
 
 Full description in original repo: https://github.com/ThereforeGames/txt2img2img (be careful with cloning as it has a bit of venv checked in)
 
+## txt2mask
+https://github.com/ThereforeGames/txt2mask
+
+Allows you to specify an inpainting mask with text, as opposed to the brush.
+
 ## Mask drawing UI
 https://github.com/dfaker/stable-diffusion-webui-cv2-external-masking-script/blob/main/external_masking.py
 
