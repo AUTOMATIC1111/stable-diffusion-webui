@@ -54,5 +54,6 @@ window.addEventListener('paste', e => {
             input.dispatchEvent(new Event('change'))
         });
     [...gradioApp().querySelectorAll('[data-testid="image"]')]
+        .filter(imgWrap => !imgWrap.closest('.\\!hidden'))
         .forEach(imgWrap => dropReplaceImage( imgWrap, files ));
 });
