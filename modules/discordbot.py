@@ -183,22 +183,22 @@ async def die(ctx):
     await ctx.message.delete()
     await bot.close()
 
-async def image_send(filename,prompt,seed,sampler_name,steps,cfg_scale,width,height):
+async def image_send(filename,prompt,seed,subseed,seedvar,sampler_name,steps,cfg_scale,width,height):
         channel = bot.get_channel(post_id)
         view=Buttons()
         #loop.create_task(image_send(filename_i,prompts[i],seeds[i],sampler_name,steps,cfg_scale,width,height))
         print(f"Uploading: {filename}")
-        await channel.send(f"Prompt: `{prompt}`\nSeed: `{seed}`\nSampler: `{sampler_name}` - Steps: `{steps}` - CFG Scale: `{cfg_scale}`\nImage Dimensions: `{width}x{height}`", file=discord.File(filename), view=view)
+        await channel.send(f"Prompt: `{prompt}`\nSeed: `{seed}` - Subseed: `{subseed}` - Var Amount: `{seedvar}`\nSampler: `{sampler_name}` - Steps: `{steps}` - CFG Scale: `{cfg_scale}`\nImage Dimensions: `{width}x{height}`", file=discord.File(filename), view=view)
         #await channel.send(file=discord.File(filename), view=view)
 
 ##########################
 #save_sample part
-def post_result(image,prompt,seed,sampler_name,steps,cfg_scale,width,height):
+def post_result(image,prompt,seed,subseed,seedvar,sampler_name,steps,cfg_scale,width,height):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     #image = os.path.join("../", image)
     #image = join("../" + image)
-    bot.loop.create_task(image_send(image,prompt,seed,sampler_name,steps,cfg_scale,width,height))
+    bot.loop.create_task(image_send(image,prompt,seed,subseed,seedvar,sampler_name,steps,cfg_scale,width,height))
     loop.close()
 ######################
 #
