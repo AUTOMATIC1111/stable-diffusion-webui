@@ -76,8 +76,11 @@ def select_checkpoint():
         return checkpoint_info
 
     if len(checkpoints_list) == 0:
-        print(f"Checkpoint {model_checkpoint} not found and no other checkpoints found", file=sys.stderr)
-        return None
+        print(f"No checkpoints found. When searching for checkpoints, looked at:", file=sys.stderr)
+        print(f" - file {os.path.abspath(shared.cmd_opts.ckpt)}", file=sys.stderr)
+        print(f" - directory {os.path.abspath(shared.cmd_opts.ckpt_dir)}", file=sys.stderr)
+        print(f"Can't run without a checkpoint. Find and place a .ckpt file into any of those locations. The program will exit.", file=sys.stderr)
+        exit(1)
 
     checkpoint_info = next(iter(checkpoints_list.values()))
     if model_checkpoint is not None:
