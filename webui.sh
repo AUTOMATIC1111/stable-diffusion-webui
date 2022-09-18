@@ -44,7 +44,7 @@ fi
 # install command for torch
 if [[ -z "${TORCH_COMMAND}" ]]
 then
-    export TORCH_COMMAND="python3 -m pip install torch==1.12.1+cu113 --extra-index-url https://download.pytorch.org/whl/cu113"
+    export TORCH_COMMAND="pip install torch==1.12.1+cu113 --extra-index-url https://download.pytorch.org/whl/cu113"
 fi
 
 # Do not reinstall existing pip packages on Debian/Ubuntu
