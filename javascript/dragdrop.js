@@ -9,7 +9,7 @@ function dropReplaceImage( imgWrap, files ) {
         return;
     }
 
-    imgWrap.querySelector('.modify-upload button + button')?.click();
+    imgWrap.querySelector('.modify-upload button + button, .touch-none + div button + button')?.click();
     window.requestAnimationFrame( () => {
         const fileInput = imgWrap.querySelector('input[type="file"]');
         if ( fileInput ) {
