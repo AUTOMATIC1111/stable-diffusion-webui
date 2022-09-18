@@ -202,6 +202,8 @@ def check_progress_call():
 
 def check_progress_call_initial():
     shared.state.job_count = -1
+    shared.state.current_latent = None
+    shared.state.current_image = None
 
     return check_progress_call()
 
