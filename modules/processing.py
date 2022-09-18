@@ -12,7 +12,7 @@ import cv2
 from skimage import exposure
 
 import modules.sd_hijack
-from modules import devices, prompt_parser
+from modules import devices, prompt_parser, masking
 from modules.sd_hijack import model_hijack
 from modules.sd_samplers import samplers, samplers_for_img2img
 from modules.shared import opts, cmd_opts, state
@@ -124,7 +124,7 @@ def create_random_tensors(shape, seeds, subseeds=None, subseed_strength=0.0, see
 
     # if we have multiple seeds, this means we are working with batch size>1; this then
     # enables the generation of additional tensors with noise that the sampler will use during its processing.
-    # Using those pre-genrated tensors instead of siimple torch.randn allows a batch with seeds [100, 101] to
+    # Using those pre-generated tensors instead of simple torch.randn allows a batch with seeds [100, 101] to
     # produce the same images as with two batches [100], [101].
     if p is not None and p.sampler is not None and len(seeds) > 1 and opts.enable_batch_seeds:
         sampler_noises = [[] for _ in range(p.sampler.number_of_needed_noises(p))]
@@ -339,6 +339,8 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
 
             state.nextjob()
 
+        p.color_corrections = None
+
         unwanted_grid_because_of_img_count = len(output_images) < 2 and opts.grid_only_if_multiple
         if (opts.return_grid or opts.grid_save) and not p.do_not_save_grid and not unwanted_grid_because_of_img_count:
             grid = images.image_grid(output_images, p.batch_size)
@@ -362,58 +364,6 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
     def sample(self, x, conditioning, unconditional_conditioning):
         samples_ddim = self.sampler.sample(self, x, conditioning, unconditional_conditioning)
         return samples_ddim
-
-
-def get_crop_region(mask, pad=0):
-    h, w = mask.shape
-
-    crop_left = 0
-    for i in range(w):
-        if not (mask[:, i] == 0).all():
-            break
-        crop_left += 1
-
-    crop_right = 0
-    for i in reversed(range(w)):
-        if not (mask[:, i] == 0).all():
-            break
-        crop_right += 1
-
-    crop_top = 0
-    for i in range(h):
-        if not (mask[i] == 0).all():
-            break
-        crop_top += 1
-
-    crop_bottom = 0
-    for i in reversed(range(h)):
-        if not (mask[i] == 0).all():
-            break
-        crop_bottom += 1
-
-    return (
-        int(max(crop_left-pad, 0)),
-        int(max(crop_top-pad, 0)),
-        int(min(w - crop_right + pad, w)),
-        int(min(h - crop_bottom + pad, h))
-    )
-
-
-def fill(image, mask):
-    image_mod = Image.new('RGBA', (image.width, image.height))
-
-    image_masked = Image.new('RGBa', (image.width, image.height))
-    image_masked.paste(image.convert("RGBA").convert("RGBa"), mask=ImageOps.invert(mask.convert('L')))
-
-    image_masked = image_masked.convert('RGBa')
-
-    for radius, repeats in [(256, 1), (64, 1), (16, 2), (4, 4), (2, 2), (0, 1)]:
-        blurred = image_masked.filter(ImageFilter.GaussianBlur(radius)).convert('RGBA')
-        for _ in range(repeats):
-            image_mod.alpha_composite(blurred)
-
-    return image_mod.convert("RGB")
-
 
 class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
     sampler = None
@@ -454,7 +404,8 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             if self.inpaint_full_res:
                 self.mask_for_overlay = self.image_mask
                 mask = self.image_mask.convert('L')
-                crop_region = get_crop_region(np.array(mask), opts.upscale_at_full_resolution_padding)
+                crop_region = masking.get_crop_region(np.array(mask), opts.upscale_at_full_resolution_padding)
+                crop_region = masking.expand_crop_region(crop_region, self.width, self.height, mask.width, mask.height)
                 x1, y1, x2, y2 = crop_region
 
                 mask = mask.crop(crop_region)
@@ -492,7 +443,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
             if self.image_mask is not None:
                 if self.inpainting_fill != 1:
-                    image = fill(image, latent_mask)
+                    image = masking.fill(image, latent_mask)
 
             if add_color_corrections:
                 self.color_corrections.append(setup_color_correction(image))

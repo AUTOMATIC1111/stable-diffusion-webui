@@ -123,7 +123,9 @@ def save_files(js_data, images, index):
 
 def wrap_gradio_call(func):
     def f(*args, **kwargs):
-        shared.mem_mon.monitor()
+        run_memmon = opts.memmon_poll_rate > 0 and not shared.mem_mon.disabled
+        if run_memmon:
+            shared.mem_mon.monitor()
         t = time.perf_counter()
 
         try:
@@ -140,17 +142,20 @@ def wrap_gradio_call(func):
 
         elapsed = time.perf_counter() - t
 
-        mem_stats = {k: -(v//-(1024*1024)) for k,v in shared.mem_mon.stop().items()}
-        active_peak = mem_stats['active_peak']
-        reserved_peak = mem_stats['reserved_peak']
-        sys_peak = '?' if opts.memmon_poll_rate <= 0 else mem_stats['system_peak']
-        sys_total = mem_stats['total']
-        sys_pct = '?' if opts.memmon_poll_rate <= 0 else round(sys_peak/sys_total * 100, 2)
-        vram_tooltip = "Torch active: Peak amount of VRAM used by Torch during generation, excluding cached data.&#013;" \
-                       "Torch reserved: Peak amount of VRAM allocated by Torch, including all active and cached data.&#013;" \
-                       "Sys VRAM: Peak amount of VRAM allocation across all applications / total GPU VRAM (peak utilization%)."
+        if run_memmon:
+            mem_stats = {k: -(v//-(1024*1024)) for k, v in shared.mem_mon.stop().items()}
+            active_peak = mem_stats['active_peak']
+            reserved_peak = mem_stats['reserved_peak']
+            sys_peak = mem_stats['system_peak']
+            sys_total = mem_stats['total']
+            sys_pct = round(sys_peak/max(sys_total, 1) * 100, 2)
+            vram_tooltip = "Torch active: Peak amount of VRAM used by Torch during generation, excluding cached data.&#013;" \
+                           "Torch reserved: Peak amount of VRAM allocated by Torch, including all active and cached data.&#013;" \
+                           "Sys VRAM: Peak amount of VRAM allocation across all applications / total GPU VRAM (peak utilization%)."
 
-        vram_html = '' if opts.memmon_poll_rate == 0 else f"<p class='vram' title='{vram_tooltip}'>Torch active/reserved: {active_peak}/{reserved_peak} MiB, <wbr>Sys VRAM: {sys_peak}/{sys_total} MiB ({sys_pct}%)</p>"
+            vram_html = f"<p class='vram' title='{vram_tooltip}'>Torch active/reserved: {active_peak}/{reserved_peak} MiB, <wbr>Sys VRAM: {sys_peak}/{sys_total} MiB ({sys_pct}%)</p>"
+        else:
+            vram_html = ''
 
         # last item is always HTML
         res[-1] += f"<div class='performance'><p class='time'>Time taken: <wbr>{elapsed:.2f}s</p>{vram_html}</div>"
@@ -163,7 +168,6 @@ def wrap_gradio_call(func):
 
 
 def check_progress_call():
-
     if shared.state.job_count == 0:
         return "", gr_show(False), gr_show(False)
 
@@ -198,6 +202,12 @@ def check_progress_call():
             preview_visibility = gr_show(True)
 
     return f"<span style='display: none'>{time.time()}</span><p>{progressbar}</p>", preview_visibility, image
+
+
+def check_progress_call_initial():
+    shared.state.job_count = -1
+
+    return check_progress_call()
 
 
 def roll_artist(prompt):
@@ -318,14 +328,30 @@ def create_toprow(is_img2img):
                 prompt_style_apply = gr.Button('Apply style', elem_id="style_apply")
                 save_style = gr.Button('Create style', elem_id="style_create")
 
-            check_progress = gr.Button('Check progress', elem_id="check_progress", visible=False)
+    return prompt, roll, prompt_style, negative_prompt, prompt_style2, submit, interrogate, prompt_style_apply, save_style
 
-    return prompt, roll, prompt_style, negative_prompt, prompt_style2, submit, interrogate, prompt_style_apply, save_style, check_progress
+
+def setup_progressbar(progressbar, preview):
+    check_progress = gr.Button('Check progress', elem_id="check_progress", visible=False)
+    check_progress.click(
+        fn=check_progress_call,
+        show_progress=False,
+        inputs=[],
+        outputs=[progressbar, preview, preview],
+    )
+
+    check_progress_initial = gr.Button('Check progress (first)', elem_id="check_progress_initial", visible=False)
+    check_progress_initial.click(
+        fn=check_progress_call_initial,
+        show_progress=False,
+        inputs=[],
+        outputs=[progressbar, preview, preview],
+    )
 
 
 def create_ui(txt2img, img2img, run_extras, run_pnginfo):
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
-        txt2img_prompt, roll, txt2img_prompt_style, txt2img_negative_prompt, txt2img_prompt_style2, submit, _, txt2img_prompt_style_apply, txt2img_save_style, check_progress = create_toprow(is_img2img=False)
+        txt2img_prompt, roll, txt2img_prompt_style, txt2img_negative_prompt, txt2img_prompt_style2, submit, _, txt2img_prompt_style_apply, txt2img_save_style = create_toprow(is_img2img=False)
 
         with gr.Row().style(equal_height=False):
             with gr.Column(variant='panel'):
@@ -357,6 +383,8 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 with gr.Group():
                     txt2img_preview = gr.Image(elem_id='txt2img_preview', visible=False)
                     txt2img_gallery = gr.Gallery(label='Output', elem_id='txt2img_gallery').style(grid=4)
+
+                setup_progressbar(progressbar, txt2img_preview)
 
                 with gr.Group():
                     with gr.Row():
@@ -394,18 +422,12 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     txt2img_gallery,
                     generation_info,
                     html_info
-                ]
+                ],
+                show_progress=False,
             )
 
             txt2img_prompt.submit(**txt2img_args)
             submit.click(**txt2img_args)
-
-            check_progress.click(
-                fn=check_progress_call,
-                show_progress=False,
-                inputs=[],
-                outputs=[progressbar, txt2img_preview, txt2img_preview],
-            )
 
             interrupt.click(
                 fn=lambda: shared.state.interrupt(),
@@ -439,7 +461,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
             )
 
     with gr.Blocks(analytics_enabled=False) as img2img_interface:
-        img2img_prompt, roll, img2img_prompt_style, img2img_negative_prompt, img2img_prompt_style2, submit, img2img_interrogate, img2img_prompt_style_apply, img2img_save_style, check_progress = create_toprow(is_img2img=True)
+        img2img_prompt, roll, img2img_prompt_style, img2img_negative_prompt, img2img_prompt_style2, submit, img2img_interrogate, img2img_prompt_style_apply, img2img_save_style = create_toprow(is_img2img=True)
 
         with gr.Row().style(equal_height=False):
             with gr.Column(variant='panel'):
@@ -494,6 +516,8 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 with gr.Group():
                     img2img_preview = gr.Image(elem_id='img2img_preview', visible=False)
                     img2img_gallery = gr.Gallery(label='Output', elem_id='img2img_gallery').style(grid=4)
+
+                setup_progressbar(progressbar, img2img_preview)
 
                 with gr.Group():
                     with gr.Row():
@@ -599,7 +623,8 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     img2img_gallery,
                     generation_info,
                     html_info
-                ]
+                ],
+                show_progress=False,
             )
 
             img2img_prompt.submit(**img2img_args)
@@ -611,13 +636,6 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 outputs=[img2img_prompt],
             )
 
-            check_progress.click(
-                fn=check_progress_call,
-                show_progress=False,
-                inputs=[],
-                outputs=[progressbar, img2img_preview, img2img_preview],
-            )
-
             interrupt.click(
                 fn=lambda: shared.state.interrupt(),
                 inputs=[],
@@ -626,7 +644,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
 
             save.click(
                 fn=wrap_gradio_call(save_files),
-                _js = "(x, y, z) => [x, y, selected_gallery_index()]",
+                _js="(x, y, z) => [x, y, selected_gallery_index()]",
                 inputs=[
                     generation_info,
                     img2img_gallery,
@@ -1255,12 +1273,17 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
 
 
 with open(os.path.join(script_path, "script.js"), "r", encoding="utf8") as jsfile:
-    javascript = jsfile.read()
+    javascript = f'<script>{jsfile.read()}</script>'
+
+jsdir = os.path.join(script_path, "javascript")
+for filename in os.listdir(jsdir):
+    with open(os.path.join(jsdir, filename), "r", encoding="utf8") as jsfile:
+        javascript += f"\n<script>{jsfile.read()}</script>"
 
 
 def template_response(*args, **kwargs):
     res = gradio_routes_templates_response(*args, **kwargs)
-    res.body = res.body.replace(b'</head>', f'<script>{javascript}</script></head>'.encode("utf8"))
+    res.body = res.body.replace(b'</head>', f'{javascript}</head>'.encode("utf8"))
     res.init_headers()
     return res
 
