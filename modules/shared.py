@@ -37,7 +37,7 @@ parser.add_argument("--share", action='store_true', help="use share=True for gra
 parser.add_argument("--esrgan-models-path", type=str, help="path to directory with ESRGAN models", default=os.path.join(script_path, 'ESRGAN'))
 parser.add_argument("--opt-split-attention", action='store_true', help="does not do anything")
 parser.add_argument("--disable-opt-split-attention", action='store_true', help="disable an optimization that reduces vram usage by a lot")
-parser.add_argument("--opt-split-attention-v1", action='store_true', help="enable older version of split attention optimization that does not consumes all the VRAM it can find")
+parser.add_argument("--opt-split-attention-v1", action='store_true', help="enable older version of split attention optimization that does not consume all the VRAM it can find")
 parser.add_argument("--listen", action='store_true', help="launch gradio with 0.0.0.0 as server name, allowing to respond to network requests")
 parser.add_argument("--port", type=int, help="launch gradio with given server port, you need root/admin rights for ports < 1024, defaults to 7860 if available", default=None)
 parser.add_argument("--show-negative-prompt", action='store_true', help="does not do anything", default=False)
