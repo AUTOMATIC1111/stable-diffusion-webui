@@ -236,7 +236,7 @@ input[type="range"]{
 #lightboxModal{
   display: none;
   position: fixed;
-  z-index: 1001;
+  z-index: 900;
   padding-top: 100px;
   left: 0;
   top: 0;
