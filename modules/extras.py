@@ -98,6 +98,9 @@ def run_extras(image, image_folder, gfpgan_visibility, codeformer_visibility, co
 
 
 def run_pnginfo(image):
+    if image is None:
+        return '', '', ''
+
     items = image.info
 
     if "exif" in image.info:
