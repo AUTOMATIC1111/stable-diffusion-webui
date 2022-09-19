@@ -297,52 +297,38 @@ def create_seed_inputs():
     return seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w
 
 
-def connect_reuse_seed(seed: gr.Number, reuse_seed: gr.Button, generation_info: gr.Textbox):
-    """ Connects a 'reuse seed' button's click event so that it copies last used
-        seed value from generation info the to the seed."""
-    def copy_seed(gen_info_string: str):
-        try:
-            gen_info = json.loads(gen_info_string)
-            return gen_info.get('seed', -1)
-        except json.decoder.JSONDecodeError as e:
-            if gen_info_string != '':
-                print("Error parsing JSON generation info:", file=sys.stderr)
-                print(gen_info_string, file=sys.stderr)
-            return -1
-
-    reuse_seed.click(
-        fn=copy_seed,
-        show_progress=False,
-        inputs=[generation_info],
-        outputs=[seed]
-    )
-
-
-def connect_reuse_subseed(seed: gr.Number, reuse_seed: gr.Button, generation_info: gr.Textbox):
-    """ Connects a 'reuse subseed' button's click event so that it copies last used
-        subseed value from generation info the to the subseed. If subseed strength
+def connect_reuse_seed(seed: gr.Number, reuse_seed: gr.Button, generation_info: gr.Textbox, dummy_component, is_subseed):
+    """ Connects a 'reuse (sub)seed' button's click event so that it copies last used
+        (sub)seed value from generation info the to the seed field. If copying subseed and subseed strength
         was 0, i.e. no variation seed was used, it copies the normal seed value instead."""
-    def copy_seed(gen_info_string: str):
+    def copy_seed(gen_info_string: str, index):
+        res = -1
+
         try:
             gen_info = json.loads(gen_info_string)
-            subseed_strength = gen_info.get('subseed_strength', 0)
-            if subseed_strength > 0:
-                return gen_info.get('subseed', -1)
+            index -= gen_info.get('index_of_first_image', 0)
+
+            if is_subseed and gen_info.get('subseed_strength', 0) > 0:
+                all_subseeds = gen_info.get('all_subseeds', [-1])
+                res = all_subseeds[index if 0 <= index < len(all_subseeds) else 0]
             else:
-                return gen_info.get('seed', -1)
+                all_seeds = gen_info.get('all_seeds', [-1])
+                res = all_seeds[index if 0 <= index < len(all_seeds) else 0]
+
         except json.decoder.JSONDecodeError as e:
             if gen_info_string != '':
                 print("Error parsing JSON generation info:", file=sys.stderr)
                 print(gen_info_string, file=sys.stderr)
-            return -1
+
+        return [res, gr_show(False)]
 
     reuse_seed.click(
         fn=copy_seed,
+        _js="(x, y) => [x, selected_gallery_index()]",
         show_progress=False,
-        inputs=[generation_info],
-        outputs=[seed]
+        inputs=[generation_info, dummy_component],
+        outputs=[seed, dummy_component]
     )
-
 
 def create_toprow(is_img2img):
     with gr.Row(elem_id="toprow"):
@@ -399,6 +385,7 @@ def setup_progressbar(progressbar, preview):
 def create_ui(txt2img, img2img, run_extras, run_pnginfo):
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
         txt2img_prompt, roll, txt2img_prompt_style, txt2img_negative_prompt, txt2img_prompt_style2, submit, _, txt2img_prompt_style_apply, txt2img_save_style = create_toprow(is_img2img=False)
+        dummy_component = gr.Label(visible=False)
 
         with gr.Row().style(equal_height=False):
             with gr.Column(variant='panel'):
@@ -445,8 +432,8 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     html_info = gr.HTML()
                     generation_info = gr.Textbox(visible=False)
 
-            connect_reuse_seed(seed, reuse_seed, generation_info)
-            connect_reuse_subseed(subseed, reuse_subseed, generation_info)
+            connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
+            connect_reuse_seed(subseed, reuse_subseed, generation_info, dummy_component, is_subseed=True)
 
             txt2img_args = dict(
                 fn=txt2img,
@@ -487,11 +474,11 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
 
             save.click(
                 fn=wrap_gradio_call(save_files),
-                _js = "(x, y, z) => [x, y, selected_gallery_index()]",
+                _js="(x, y, z) => [x, y, selected_gallery_index()]",
                 inputs=[
                     generation_info,
                     txt2img_gallery,
-                    html_info
+                    html_info,
                 ],
                 outputs=[
                     html_info,
@@ -583,8 +570,8 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     html_info = gr.HTML()
                     generation_info = gr.Textbox(visible=False)
 
-            connect_reuse_seed(seed, reuse_seed, generation_info)
-            connect_reuse_subseed(subseed, reuse_subseed, generation_info)
+            connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
+            connect_reuse_seed(subseed, reuse_subseed, generation_info, dummy_component, is_subseed=True)
 
             def apply_mode(mode, uploadmask):
                 is_classic = mode == 0
@@ -723,7 +710,6 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
             prompts = [(txt2img_prompt, txt2img_negative_prompt), (img2img_prompt, img2img_negative_prompt)]
             style_dropdowns = [(txt2img_prompt_style, txt2img_prompt_style2), (img2img_prompt_style, img2img_prompt_style2)]
 
-            dummy_component = gr.Label(visible=False)
             for button, (prompt, negative_prompt) in zip([txt2img_save_style, img2img_save_style], prompts):
                 button.click(
                     fn=add_style,
