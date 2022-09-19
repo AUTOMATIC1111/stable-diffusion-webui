@@ -815,6 +815,21 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
             append_genstyle = gr.Button('Add Style', elem_id="append_buttons")
             prompt_timeperiod = gr.Dropdown(label="timeperiods", show_label=False, elem_id="timeperiods_index",choices=[k for k, v in shared.prompt_timeperiods.items()], value=next(iter(shared.prompt_timeperiods.keys())), interactive=True)
             append_timeperiod = gr.Button('Add time', elem_id="append_buttons")
+        with gr.Row():
+            prompt_celebrity = gr.Dropdown(label="celebrities", show_label=False, elem_id="celebrities_index",choices=[k for k, v in shared.prompt_celebrities.items()], value=next(iter(shared.prompt_celebrities.keys())), interactive=True)
+            append_celebrity = gr.Button('Add Celeb', elem_id="append_buttons")
+            prompt_clothing = gr.Dropdown(label="clothing", show_label=False, elem_id="clothes_index",choices=[k for k, v in shared.prompt_clothes.items()], value=next(iter(shared.prompt_clothes.keys())), interactive=True)
+            append_clothing = gr.Button('Add Clothes', elem_id="append_buttons")
+            prompt_emotion = gr.Dropdown(label="emotions", show_label=False, elem_id="emotions_index",choices=[k for k, v in shared.prompt_emotions.items()], value=next(iter(shared.prompt_emotions.keys())), interactive=True)
+            append_emotion = gr.Button('Add emotion', elem_id="append_buttons")
+            prompt_hairstyle = gr.Dropdown(label="hairstyles", show_label=False, elem_id="hairstyles_index",choices=[k for k, v in shared.prompt_hairstyles.items()], value=next(iter(shared.prompt_hairstyles.keys())), interactive=True)
+            append_hairstyle = gr.Button('Add hairstyle', elem_id="append_buttons")
+        with gr.Row():
+            prompt_sport = gr.Dropdown(label="sports", show_label=False, elem_id="sport_index",choices=[k for k, v in shared.prompt_sports.items()], value=next(iter(shared.prompt_sports.keys())), interactive=True)
+            append_sport = gr.Button('Add sport', elem_id="append_buttons")
+            prompt_vehicle = gr.Dropdown(label="vehicles", show_label=False, elem_id="vehicles_index",choices=[k for k, v in shared.prompt_vehicles.items()], value=next(iter(shared.prompt_vehicles.keys())), interactive=True)
+            append_vehicle = gr.Button('Add vehicle', elem_id="append_buttons")
+
 
         append_adjective.click(
             fn=append_prompt,
@@ -1080,7 +1095,72 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 genprompt,
             ]
         )
-
+        append_celebrity.click(
+            fn=append_prompt,
+            inputs=[
+                genprompt,
+                prompt_celebrity,
+                prompt_seperator,
+            ],
+            outputs=[
+                genprompt,
+            ]
+        )        
+        append_clothing.click(
+            fn=append_prompt,
+            inputs=[
+                genprompt,
+                prompt_clothing,
+                prompt_seperator,
+            ],
+            outputs=[
+                genprompt,
+            ]
+        )        
+        append_emotion.click(
+            fn=append_prompt,
+            inputs=[
+                genprompt,
+                prompt_emotion,
+                prompt_seperator,
+            ],
+            outputs=[
+                genprompt,
+            ]
+        )        
+        append_hairstyle.click(
+            fn=append_prompt,
+            inputs=[
+                genprompt,
+                prompt_hairstyle,
+                prompt_seperator,
+            ],
+            outputs=[
+                genprompt,
+            ]
+        )        
+        append_sport.click(
+            fn=append_prompt,
+            inputs=[
+                genprompt,
+                prompt_sport,
+                prompt_seperator,
+            ],
+            outputs=[
+                genprompt,
+            ]
+        )        
+        append_vehicle.click(
+            fn=append_prompt,
+            inputs=[
+                genprompt,
+                prompt_vehicle,
+                prompt_seperator,
+            ],
+            outputs=[
+                genprompt,
+            ]
+        )
 
     with gr.Blocks(analytics_enabled=False) as extras_interface:
         with gr.Row().style(equal_height=False):
