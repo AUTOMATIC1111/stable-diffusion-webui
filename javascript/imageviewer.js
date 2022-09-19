@@ -97,19 +97,12 @@ function galleryImageHandler(e){
 }
 
 onUiUpdate(function(){
-	fullImg_preview = gradioApp().querySelectorAll('img.w-full')
-	    if(fullImg_preview != null){
-		fullImg_preview.forEach(galleryImageHandler);
-	}
+    fullImg_preview = gradioApp().querySelectorAll('img.w-full')
+        if(fullImg_preview != null){
+	    fullImg_preview.forEach(galleryImageHandler);
+    }
 
-    if(Object.keys(opts).length != 0) return;
-
-    json_elem = gradioApp().getElementById('settings_json')
-    if(json_elem == null) return;
-
-    textarea = json_elem.querySelector('textarea')
-    jsdata = textarea.value
-    opts = JSON.parse(jsdata)
+    if(Object.keys(opts).length == 0) return;
 
     if(!window.lightbox_settings_applied){
         window.lightbox_settings_applied = true;
