@@ -70,8 +70,8 @@ function showGalleryImage(){
                     e.style.cursor='pointer'
 
                     e.addEventListener('click', function (evt) {
-                      showModal(evt)
-
+                        if(!opts.js_modal_lightbox) return;
+                        showModal(evt)
                     },true);
                 }
             });
