@@ -82,7 +82,6 @@ function showGalleryImage(){
 
 function modalZoomToggle(event){
     modalImage = gradioApp().getElementById("modalImage");
-    console.log(modalImage)
     if( !modalImage.classList.contains('modalImageFullscreen') ){
         modalImage.classList.add('modalImageFullscreen');
     }else{
@@ -102,6 +101,25 @@ onUiUpdate(function(){
 	    if(fullImg_preview != null){
 		fullImg_preview.forEach(galleryImageHandler);
 	}
+
+    if(Object.keys(opts).length != 0) return;
+
+    json_elem = gradioApp().getElementById('settings_json')
+    if(json_elem == null) return;
+
+    textarea = json_elem.querySelector('textarea')
+    jsdata = textarea.value
+    opts = JSON.parse(jsdata)
+
+    if(!window.lightbox_settings_applied){
+        window.lightbox_settings_applied = true;
+        if(opts.js_modal_lightbox_initialy_zoomed){
+            var imageModal = gradioApp().getElementById('modalImage');
+            if(imageModal){
+                imageModal.className = 'modalImageFullscreen';
+            }
+        }
+    }
 })
 
 document.addEventListener("DOMContentLoaded", function() {
