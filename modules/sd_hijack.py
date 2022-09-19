@@ -50,7 +50,7 @@ def split_cross_attention_forward(self, x, context=None, mask=None):
 
     q_in = self.to_q(x)
     context = default(context, x)
-    k_in = self.to_k(context)
+    k_in = self.to_k(context) * self.scale
     v_in = self.to_v(context)
     del context, x
 
@@ -85,7 +85,7 @@ def split_cross_attention_forward(self, x, context=None, mask=None):
     slice_size = q.shape[1] // steps if (q.shape[1] % steps) == 0 else q.shape[1]
     for i in range(0, q.shape[1], slice_size):
         end = i + slice_size
-        s1 = einsum('b i d, b j d -> b i j', q[:, i:end], k) * self.scale
+        s1 = einsum('b i d, b j d -> b i j', q[:, i:end], k)
 
         s2 = s1.softmax(dim=-1, dtype=q.dtype)
         del s1
@@ -243,12 +243,12 @@ class StableDiffusionModelHijack:
         model_embeddings.token_embedding = EmbeddingsWithFixes(model_embeddings.token_embedding, self)
         m.cond_stage_model = FrozenCLIPEmbedderWithCustomWords(m.cond_stage_model, self)
 
-        if cmd_opts.opt_split_attention:
+        if cmd_opts.opt_split_attention_v1:
+            ldm.modules.attention.CrossAttention.forward = split_cross_attention_forward_v1
+        elif not cmd_opts.disable_opt_split_attention:
             ldm.modules.attention.CrossAttention.forward = split_cross_attention_forward
             ldm.modules.diffusionmodules.model.nonlinearity = nonlinearity_hijack
             ldm.modules.diffusionmodules.model.AttnBlock.forward = cross_attention_attnblock_forward
-        elif cmd_opts.opt_split_attention_v1:
-            ldm.modules.attention.CrossAttention.forward = split_cross_attention_forward_v1
 
         def flatten(el):
             flattened = [flatten(children) for children in el.children()]

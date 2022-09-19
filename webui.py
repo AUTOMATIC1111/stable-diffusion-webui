@@ -89,6 +89,7 @@ def webui():
         server_port=cmd_opts.port,
         debug=cmd_opts.gradio_debug,
         auth=[tuple(cred.split(':')) for cred in cmd_opts.gradio_auth.strip('"').split(',')] if cmd_opts.gradio_auth else None,
+        inbrowser=cmd_opts.autolaunch,
     )
 
 

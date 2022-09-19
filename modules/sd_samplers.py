@@ -255,6 +255,7 @@ class KDiffusionSampler:
         self.model_wrap_cfg.nmask = p.nmask
         self.model_wrap_cfg.init_latent = p.init_latent
         self.model_wrap.step = 0
+        self.sampler_noise_index = 0
 
         if hasattr(k_diffusion.sampling, 'trange'):
             k_diffusion.sampling.trange = lambda *args, **kwargs: extended_trange(*args, **kwargs)
@@ -269,6 +270,7 @@ class KDiffusionSampler:
         x = x * sigmas[0]
 
         self.model_wrap_cfg.step = 0
+        self.sampler_noise_index = 0
 
         if hasattr(k_diffusion.sampling, 'trange'):
             k_diffusion.sampling.trange = lambda *args, **kwargs: extended_trange(*args, **kwargs)

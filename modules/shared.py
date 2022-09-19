@@ -4,7 +4,6 @@ import json
 import os
 
 import gradio as gr
-import torch
 import tqdm
 
 import modules.artists
@@ -31,13 +30,14 @@ parser.add_argument("--embeddings-dir", type=str, default=os.path.join(script_pa
 parser.add_argument("--allow-code", action='store_true', help="allow custom script execution from webui")
 parser.add_argument("--medvram", action='store_true', help="enable stable diffusion model optimizations for sacrificing a little speed for low VRM usage")
 parser.add_argument("--lowvram", action='store_true', help="enable stable diffusion model optimizations for sacrificing a lot of speed for very low VRM usage")
-parser.add_argument("--always-batch-cond-uncond", action='store_true', help="a workaround test; may help with speed if you use --lowvram")
+parser.add_argument("--always-batch-cond-uncond", action='store_true', help="disables cond/uncond batching that is enabled to save memory with --medvram or --lowvram")
 parser.add_argument("--unload-gfpgan", action='store_true', help="does not do anything.")
 parser.add_argument("--precision", type=str, help="evaluate at this precision", choices=["full", "autocast"], default="autocast")
 parser.add_argument("--share", action='store_true', help="use share=True for gradio and make the UI accessible through their site (doesn't work for me but you might have better luck)")
 parser.add_argument("--esrgan-models-path", type=str, help="path to directory with ESRGAN models", default=os.path.join(script_path, 'ESRGAN'))
-parser.add_argument("--opt-split-attention", action='store_true', help="enable optimization that reduce vram usage by a lot for about 10%% decrease in performance")
-parser.add_argument("--opt-split-attention-v1", action='store_true', help="enable older version of --opt-split-attention optimization")
+parser.add_argument("--opt-split-attention", action='store_true', help="does not do anything")
+parser.add_argument("--disable-opt-split-attention", action='store_true', help="disable an optimization that reduces vram usage by a lot")
+parser.add_argument("--opt-split-attention-v1", action='store_true', help="enable older version of split attention optimization that does not consume all the VRAM it can find")
 parser.add_argument("--listen", action='store_true', help="launch gradio with 0.0.0.0 as server name, allowing to respond to network requests")
 parser.add_argument("--port", type=int, help="launch gradio with given server port, you need root/admin rights for ports < 1024, defaults to 7860 if available", default=None)
 parser.add_argument("--show-negative-prompt", action='store_true', help="does not do anything", default=False)
@@ -48,8 +48,11 @@ parser.add_argument("--gradio-debug",  action='store_true', help="launch gradio 
 parser.add_argument("--gradio-auth", type=str, help='set gradio authentication like "username:password"; or comma-delimit multiple like "u1:p1,u2:p2,u3:p3"', default=None)
 parser.add_argument("--opt-channelslast", action='store_true', help="change memory type for stable diffusion to channels last")
 parser.add_argument("--styles-file", type=str, help="filename to use for styles", default=os.path.join(script_path, 'styles.csv'))
-
+parser.add_argument("--autolaunch", action='store_true', help="open the webui URL in the system's default browser upon launch", default=False)
 cmd_opts = parser.parse_args()
+
+if cmd_opts.opt_split_attention:
+    print("Information: --opt-split-attention is now the default. To remove this message, remove --opt-split-attention from command line arguments. To disable the optimization, use --disable-opt-split-attention")
 
 device = get_optimal_device()
 
@@ -131,7 +134,7 @@ class Options:
         "enable_pnginfo": OptionInfo(True, "Save text information about generation parameters as chunks to png files"),
         "add_model_hash_to_info": OptionInfo(False, "Add model hash to generation information"),
         "img2img_color_correction": OptionInfo(False, "Apply color correction to img2img results to match original colors."),
-        "img2img_fix_steps": OptionInfo(False, "With img2img, do exactly the amount of steps the slider specifies (normaly you'd do less with less denoising)."),
+        "img2img_fix_steps": OptionInfo(False, "With img2img, do exactly the amount of steps the slider specifies (normally you'd do less with less denoising)."),
         "enable_quantization": OptionInfo(False, "Enable quantization in K samplers for sharper and cleaner results. This may change existing seeds. Requires restart to apply."),
         "font": OptionInfo("", "Font for image grids that have text"),
         "enable_emphasis": OptionInfo(True, "Use (text) to make model pay more attention to text and [text] to make it pay less attention"),
@@ -156,6 +159,7 @@ class Options:
         "interrogate_clip_max_length": OptionInfo(48, "Interrogate: maximum description length", gr.Slider, {"minimum": 1, "maximum": 256, "step": 1}),
         "interrogate_clip_dict_limit": OptionInfo(1500, "Interrogate: maximum number of lines in text file (0 = No limit)"),
         "sd_model_checkpoint": OptionInfo(None, "Stable Diffusion checkpoint", gr.Radio, lambda: {"choices": [x.title for x in modules.sd_models.checkpoints_list.values()]}),
+        "js_modal_lightbox": OptionInfo(True, "Enable full page image viewer"),
     }
 
     def __init__(self):
@@ -189,6 +193,10 @@ class Options:
     def onchange(self, key, func):
         item = self.data_labels.get(key)
         item.onchange = func
+
+    def dumpjson(self):
+        d = {k: self.data.get(k, self.data_labels.get(k).default) for k in self.data_labels.keys()}
+        return json.dumps(d)
 
 
 opts = Options()

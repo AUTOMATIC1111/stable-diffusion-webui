@@ -51,9 +51,9 @@ Alternatively, use [Google Colab](https://colab.research.google.com/drive/1Iy-xW
 1. Install [Python 3.10.6](https://www.python.org/downloads/windows/), checking "Add Python to PATH"
 2. Install [git](https://git-scm.com/download/win).
 3. Download the stable-diffusion-webui repository, for example by running `git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui.git`.
-4. Place `model.ckpt` in the `models` directory.
-5. _*(Optional)*_ Place `GFPGANv1.3.pth` in the base directory, alongside `webui.py`.
-6. Run `webui-user.bat` from Windows Explorer as normal, non-administrate, user.
+4. Place `model.ckpt` in the `models` directory (see [dependencies](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Dependencies) for where to get it).
+5. _*(Optional)*_ Place `GFPGANv1.3.pth` in the base directory, alongside `webui.py` (see [dependencies](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Dependencies) for where to get it).
+6. Run `webui-user.bat` from Windows Explorer as normal, non-administrator, user.
 
 ### Automatic Installation on Linux
 1. Install the dependencies:

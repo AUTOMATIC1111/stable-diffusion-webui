@@ -4,8 +4,8 @@ import gradio as gr
 from modules.processing import Processed
 from modules.shared import opts, cmd_opts, state
 
-
 class Script(scripts.Script):
+
     def title(self):
         return "Custom code"
 
@@ -17,6 +17,7 @@ class Script(scripts.Script):
         code = gr.Textbox(label="Python code", visible=False, lines=1)
 
         return [code]
+
 
     def run(self, p, code):
         assert cmd_opts.allow_code, '--allow-code option must be enabled'
@@ -37,4 +38,5 @@ class Script(scripts.Script):
         exec(compiled, module.__dict__)
 
         return Processed(p, *display_result_data)
-
+    
+    
