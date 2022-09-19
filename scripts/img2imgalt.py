@@ -1,10 +1,12 @@
+from collections import namedtuple
+
 import numpy as np
 from tqdm import trange
 
 import modules.scripts as scripts
 import gradio as gr
 
-from modules import processing, shared, sd_samplers
+from modules import processing, shared, sd_samplers, prompt_parser
 from modules.processing import Processed
 from modules.sd_samplers import samplers
 from modules.shared import opts, cmd_opts, state
@@ -56,9 +58,14 @@ def find_noise_for_image(p, cond, uncond, cfg_scale, steps):
 
     return x / x.std()
 
-cache = [None, None, None, None, None]
+
+Cached = namedtuple("Cached", ["noise", "cfg_scale", "steps", "latent", "original_prompt", "original_negative_prompt"])
+
 
 class Script(scripts.Script):
+    def __init__(self):
+        self.cache = None
+
     def title(self):
         return "img2img alternative test"
 
@@ -67,34 +74,45 @@ class Script(scripts.Script):
 
     def ui(self, is_img2img):
         original_prompt = gr.Textbox(label="Original prompt", lines=1)
-        cfg = gr.Slider(label="Decode CFG scale", minimum=0.1, maximum=3.0, step=0.1, value=1.0)
+        original_negative_prompt = gr.Textbox(label="Original negative prompt", lines=1)
+        cfg = gr.Slider(label="Decode CFG scale", minimum=0.0, maximum=15.0, step=0.1, value=1.0)
         st = gr.Slider(label="Decode steps", minimum=1, maximum=150, step=1, value=50)
+        randomness = gr.Slider(label="randomness", minimum=0.0, maximum=1.0, step=0.01, value=0.0)
+        return [original_prompt, original_negative_prompt, cfg, st, randomness]
 
-        return [original_prompt, cfg, st]
-
-    def run(self, p, original_prompt, cfg, st):
+    def run(self, p, original_prompt, original_negative_prompt, cfg, st, randomness):
         p.batch_size = 1
         p.batch_count = 1
 
-        def sample_extra(x, conditioning, unconditional_conditioning):
-            lat = tuple([int(x*10) for x in p.init_latent.cpu().numpy().flatten().tolist()])
+        def sample_extra(conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength):
+            lat = (p.init_latent.cpu().numpy() * 10).astype(int)
 
-            if cache[0] is not None and cache[1] == cfg and cache[2] == st and len(cache[3]) == len(lat) and sum(np.array(cache[3])-np.array(lat)) < 100 and cache[4] == original_prompt:
-                noise = cache[0]
+            same_params = self.cache is not None and self.cache.cfg_scale == cfg and self.cache.steps == st and self.cache.original_prompt == original_prompt and self.cache.original_negative_prompt == original_negative_prompt
+            same_everything = same_params and self.cache.latent.shape == lat.shape and np.abs(self.cache.latent-lat).sum() < 100
+
+            if same_everything:
+                rec_noise = self.cache.noise
             else:
                 shared.state.job_count += 1
                 cond = p.sd_model.get_learned_conditioning(p.batch_size * [original_prompt])
-                noise = find_noise_for_image(p, cond, unconditional_conditioning, cfg, st)
-                cache[0] = noise
-                cache[1] = cfg
-                cache[2] = st
-                cache[3] = lat
-                cache[4] = original_prompt
+                uncond = p.sd_model.get_learned_conditioning(p.batch_size * [original_negative_prompt])
+                rec_noise = find_noise_for_image(p, cond, uncond, cfg, st)
+                self.cache = Cached(rec_noise, cfg, st, lat, original_prompt, original_negative_prompt)
 
+            rand_noise = processing.create_random_tensors(p.init_latent.shape[1:], [p.seed + x + 1 for x in range(p.init_latent.shape[0])])
+            
+            combined_noise = ((1 - randomness) * rec_noise + randomness * rand_noise) / ((randomness**2 + (1-randomness)**2) ** 0.5)
+            
             sampler = samplers[p.sampler_index].constructor(p.sd_model)
 
-            samples_ddim = sampler.sample(p, noise, conditioning, unconditional_conditioning)
-            return samples_ddim
+            sigmas = sampler.model_wrap.get_sigmas(p.steps)
+            
+            noise_dt = combined_noise - (p.init_latent / sigmas[0])
+            
+            p.seed = p.seed + 1
+            
+            return sampler.sample_img2img(p, p.init_latent, noise_dt, conditioning, unconditional_conditioning)
+
 
         p.sample = sample_extra
 

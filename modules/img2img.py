@@ -76,6 +76,7 @@ def img2img(prompt: str, negative_prompt: str, prompt_style: str, prompt_style2:
 
         grid = images.split_grid(img, tile_w=width, tile_h=height, overlap=upscale_overlap)
 
+        batch_size = p.batch_size
         upscale_count = p.n_iter
         p.n_iter = 1
         p.do_not_save_grid = True
@@ -87,7 +88,7 @@ def img2img(prompt: str, negative_prompt: str, prompt_style: str, prompt_style2:
             for tiledata in row:
                 work.append(tiledata[2])
 
-        batch_count = math.ceil(len(work) / p.batch_size)
+        batch_count = math.ceil(len(work) / batch_size)
         state.job_count = batch_count * upscale_count
 
         print(f"SD upscaling will process a total of {len(work)} images tiled as {len(grid.tiles[0][2])}x{len(grid.tiles)} per upscale in a total of {state.job_count} batches.")
@@ -99,9 +100,10 @@ def img2img(prompt: str, negative_prompt: str, prompt_style: str, prompt_style2:
 
             work_results = []
             for i in range(batch_count):
-                p.init_images = work[i*p.batch_size:(i+1)*p.batch_size]
+                p.batch_size = batch_size
+                p.init_images = work[i*batch_size:(i+1)*batch_size]
 
-                state.job = f"Batch {i + 1} out of {state.job_count}"
+                state.job = f"Batch {i + 1 + n * batch_count} out of {state.job_count}"
                 processed = process_images(p)
 
                 if initial_info is None:
