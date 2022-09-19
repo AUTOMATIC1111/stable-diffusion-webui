@@ -70,15 +70,30 @@ titles = {
     "Create style": "Save current prompts as a style. If you add the token {prompt} to the text, the style use that as placeholder for your prompt when you use the style in the future.",
 
     "Checkpoint name": "Loads weights from checkpoint before making images. You can either use hash or a part of filename (as seen in settings) for checkpoint name. Recommended to use with Y axis for less switching.",
+
+    "vram": "Torch active: Peak amount of VRAM used by Torch during generation, excluding cached data.\nTorch reserved: Peak amount of VRAM allocated by Torch, including all active and cached data.\nSys VRAM: Peak amount of VRAM allocation across all applications / total GPU VRAM (peak utilization%).",
+
+    "Highres. fix": "Use a two step process to partially create an image at smaller resolution, upscale, and then improve details in it without changing composition",
+    "Scale latent": "Uscale the image in latent space. Alternative is to produce the full image from latent representation, upscale that, and then move it back to latent space.",
+
 }
 
 
 onUiUpdate(function(){
-	gradioApp().querySelectorAll('span, button, select').forEach(function(span){
+	gradioApp().querySelectorAll('span, button, select, p').forEach(function(span){
 		tooltip = titles[span.textContent];
 
 		if(!tooltip){
 		    tooltip = titles[span.value];
+		}
+
+		if(!tooltip){
+			for (const c of span.classList) {
+				if (c in titles) {
+					tooltip = titles[c];
+					break;
+				}
+			}
 		}
 
 		if(tooltip){

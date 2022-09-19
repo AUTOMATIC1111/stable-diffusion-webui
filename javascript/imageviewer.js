@@ -80,6 +80,16 @@ function showGalleryImage(){
     }, 100);
 }
 
+function modalZoomToggle(event){
+    modalImage = gradioApp().getElementById("modalImage");
+    if( !modalImage.classList.contains('modalImageFullscreen') ){
+        modalImage.classList.add('modalImageFullscreen');
+    }else{
+        modalImage.classList.remove('modalImageFullscreen');
+    }
+    event.stopPropagation()
+}
+
 function galleryImageHandler(e){
     if(e && e.parentElement.tagName == 'BUTTON'){
         e.onclick = showGalleryImage;
@@ -87,25 +97,43 @@ function galleryImageHandler(e){
 }
 
 onUiUpdate(function(){
-	fullImg_preview = gradioApp().querySelectorAll('img.w-full')
-	    if(fullImg_preview != null){
-		fullImg_preview.forEach(galleryImageHandler);
-	}
+    fullImg_preview = gradioApp().querySelectorAll('img.w-full')
+        if(fullImg_preview != null){
+	    fullImg_preview.forEach(galleryImageHandler);
+    }
+
+    if(Object.keys(opts).length == 0) return;
+
+    if(!window.lightbox_settings_applied){
+        window.lightbox_settings_applied = true;
+        if(opts.js_modal_lightbox_initialy_zoomed){
+            var imageModal = gradioApp().getElementById('modalImage');
+            if(imageModal){
+                imageModal.className = 'modalImageFullscreen';
+            }
+        }
+    }
 })
 
 document.addEventListener("DOMContentLoaded", function() {
     const modalFragment = document.createDocumentFragment();
     const modal = document.createElement('div')
     modal.onclick = closeModal;
-    
+    modal.id = "lightboxModal";
+    modal.tabIndex=0
+    modal.addEventListener('keydown', modalKeyHandler, true)
+
     const modalClose = document.createElement('span')
     modalClose.className = 'modalClose cursor';
     modalClose.innerHTML = '&times;'
     modalClose.onclick = closeModal;
-    modal.id = "lightboxModal";
-    modal.tabIndex=0
-    modal.addEventListener('keydown', modalKeyHandler, true)
     modal.appendChild(modalClose)
+
+    const modalZoom = document.createElement('span')
+    modalZoom.className = 'modalZoom cursor';
+    modalZoom.innerHTML = '&#10529;'
+    modalZoom.addEventListener('click', modalZoomToggle, true)
+    modal.appendChild(modalZoom)
 
     const modalImage = document.createElement('img')
     modalImage.id = 'modalImage';
