@@ -280,7 +280,7 @@ input[type="range"]{
 }
 
 .modalImageFullscreen {
-    max-width: max-content;
+    object-fit: contain;
     height: 90%;
 }
 
