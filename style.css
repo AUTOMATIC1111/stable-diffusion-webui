@@ -246,17 +246,26 @@ input[type="range"]{
   background-color: rgba(20, 20, 20, 0.95);
 }
 
-.modalClose {
+.modalClose, 
+.modalZoom {
   color: white;
   position: absolute;
   top: 10px;
   right: 25px;
   font-size: 35px;
   font-weight: bold;
+  cursor: pointer;
+}
+
+.modalZoom {
+  left: 10px;
+  right: auto;
 }
 
 .modalClose:hover,
-.modalClose:focus {
+.modalClose:focus,
+.modalZoom:hover,
+.modalZoom:focus {
   color: #999;
   text-decoration: none;
   cursor: pointer;
@@ -268,6 +277,11 @@ input[type="range"]{
     margin-right: auto;
     margin-top: auto;
     width: auto;
+}
+
+.modalImageFullscreen {
+    max-width: max-content;
+    height: 90%;
 }
 
 .modalPrev,
