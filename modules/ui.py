@@ -900,7 +900,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 with gr.TabItem(label, id=ifid):
                     interface.render()
 
-        text_settings = gr.Textbox(elem_id="settings_json", value=opts.dumpjson(), visible=False)
+        text_settings = gr.Textbox(elem_id="settings_json", value=lambda: opts.dumpjson(), visible=False)
 
         settings_submit.click(
             fn=lambda: opts.dumpjson(),
