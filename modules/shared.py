@@ -161,6 +161,7 @@ class Options:
         "sd_model_checkpoint": OptionInfo(None, "Stable Diffusion checkpoint", gr.Radio, lambda: {"choices": [x.title for x in modules.sd_models.checkpoints_list.values()]}),
         "js_modal_lightbox": OptionInfo(True, "Enable full page image viewer"),
         "js_modal_lightbox_initialy_zoomed": OptionInfo(True, "Show images zoomed in by default in full page image viewer"),
+        "use_original_name_batch": OptionInfo(True, "Use original name for output filename during batch process"),
     }
 
     def __init__(self):
