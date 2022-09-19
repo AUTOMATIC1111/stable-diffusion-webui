@@ -114,7 +114,7 @@ def get_learned_conditioning(prompts, steps):
 
 
 def reconstruct_cond_batch(c: ScheduledPromptBatch, current_step):
-    res = torch.zeros(c.shape)
+    res = torch.zeros(c.shape, device=shared.device, dtype=torch.half)
     for i, cond_schedule in enumerate(c.schedules):
         target_index = 0
         for curret_index, (end_at, cond) in enumerate(cond_schedule):
@@ -123,7 +123,7 @@ def reconstruct_cond_batch(c: ScheduledPromptBatch, current_step):
                 break
         res[i] = cond_schedule[target_index].cond
 
-    return res.to(shared.device)
+    return res
 
 
 
