@@ -201,6 +201,9 @@ async def f_txt2img(req: Txt2ImgRequest):
         0,
         height,
         width,
+        False,
+        None,
+        None,
         0
     )
 
