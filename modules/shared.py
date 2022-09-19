@@ -4,7 +4,6 @@ import json
 import os
 
 import gradio as gr
-import torch
 import tqdm
 
 import modules.artists
@@ -38,7 +37,7 @@ parser.add_argument("--share", action='store_true', help="use share=True for gra
 parser.add_argument("--esrgan-models-path", type=str, help="path to directory with ESRGAN models", default=os.path.join(script_path, 'ESRGAN'))
 parser.add_argument("--opt-split-attention", action='store_true', help="does not do anything")
 parser.add_argument("--disable-opt-split-attention", action='store_true', help="disable an optimization that reduces vram usage by a lot")
-parser.add_argument("--opt-split-attention-v1", action='store_true', help="enable older version of split attention optimization that does not consaumes all the VRAM it can find")
+parser.add_argument("--opt-split-attention-v1", action='store_true', help="enable older version of split attention optimization that does not consume all the VRAM it can find")
 parser.add_argument("--listen", action='store_true', help="launch gradio with 0.0.0.0 as server name, allowing to respond to network requests")
 parser.add_argument("--port", type=int, help="launch gradio with given server port, you need root/admin rights for ports < 1024, defaults to 7860 if available", default=None)
 parser.add_argument("--show-negative-prompt", action='store_true', help="does not do anything", default=False)
@@ -135,7 +134,7 @@ class Options:
         "enable_pnginfo": OptionInfo(True, "Save text information about generation parameters as chunks to png files"),
         "add_model_hash_to_info": OptionInfo(False, "Add model hash to generation information"),
         "img2img_color_correction": OptionInfo(False, "Apply color correction to img2img results to match original colors."),
-        "img2img_fix_steps": OptionInfo(False, "With img2img, do exactly the amount of steps the slider specifies (normaly you'd do less with less denoising)."),
+        "img2img_fix_steps": OptionInfo(False, "With img2img, do exactly the amount of steps the slider specifies (normally you'd do less with less denoising)."),
         "enable_quantization": OptionInfo(False, "Enable quantization in K samplers for sharper and cleaner results. This may change existing seeds. Requires restart to apply."),
         "font": OptionInfo("", "Font for image grids that have text"),
         "enable_emphasis": OptionInfo(True, "Use (text) to make model pay more attention to text and [text] to make it pay less attention"),

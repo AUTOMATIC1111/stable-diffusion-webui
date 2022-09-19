@@ -151,11 +151,8 @@ def wrap_gradio_call(func):
             sys_peak = mem_stats['system_peak']
             sys_total = mem_stats['total']
             sys_pct = round(sys_peak/max(sys_total, 1) * 100, 2)
-            vram_tooltip = "Torch active: Peak amount of VRAM used by Torch during generation, excluding cached data.&#013;" \
-                           "Torch reserved: Peak amount of VRAM allocated by Torch, including all active and cached data.&#013;" \
-                           "Sys VRAM: Peak amount of VRAM allocation across all applications / total GPU VRAM (peak utilization%)."
 
-            vram_html = f"<p class='vram' title='{vram_tooltip}'>Torch active/reserved: {active_peak}/{reserved_peak} MiB, <wbr>Sys VRAM: {sys_peak}/{sys_total} MiB ({sys_pct}%)</p>"
+            vram_html = f"<p class='vram'>Torch active/reserved: {active_peak}/{reserved_peak} MiB, <wbr>Sys VRAM: {sys_peak}/{sys_total} MiB ({sys_pct}%)</p>"
         else:
             vram_html = ''
 
