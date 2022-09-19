@@ -303,7 +303,7 @@ def get_next_sequence_number(path, basename):
 
     return result + 1
 
-def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None):
+def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None, forced_filename=None):
     if short_filename or prompt is None or seed is None:
         file_decoration = ""
     elif opts.save_to_dirs:
@@ -335,15 +335,19 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
 
     os.makedirs(path, exist_ok=True)
 
-    basecount = get_next_sequence_number(path, basename)
-    fullfn = "a.png"
-    fullfn_without_extension = "a"
-    for i in range(500):
-        fn = f"{basecount+i:05}" if basename == '' else f"{basename}-{basecount+i:04}"
-        fullfn = os.path.join(path, f"{fn}{file_decoration}.{extension}")
-        fullfn_without_extension = os.path.join(path, f"{fn}{file_decoration}")
-        if not os.path.exists(fullfn):
-            break
+    if forced_filename is None:
+        basecount = get_next_sequence_number(path, basename)
+        fullfn = "a.png"
+        fullfn_without_extension = "a"
+        for i in range(500):
+            fn = f"{basecount+i:05}" if basename == '' else f"{basename}-{basecount+i:04}"
+            fullfn = os.path.join(path, f"{fn}{file_decoration}.{extension}")
+            fullfn_without_extension = os.path.join(path, f"{fn}{file_decoration}")
+            if not os.path.exists(fullfn):
+                break
+    else:
+        fullfn = os.path.join(path, f"{forced_filename}.{extension}")
+        fullfn_without_extension = os.path.join(path, forced_filename)
 
     def exif_bytes():
         return piexif.dump({

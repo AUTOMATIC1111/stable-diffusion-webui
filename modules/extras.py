@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 from PIL import Image
 
@@ -17,27 +19,31 @@ def run_extras(image, image_folder, gfpgan_visibility, codeformer_visibility, co
     devices.torch_gc()
 
     imageArr = []
+    # Also keep track of original file names
+    imageNameArr = []
 
-    if image_folder != None:
-        if image != None:
+    if image_folder is not None:
+        if image is not None:
             print("Batch detected and single image detected, please only use one of the two. Aborting.")
             return None
         #convert file to pillow image
         for img in image_folder:
             image = Image.fromarray(np.array(Image.open(img)))
             imageArr.append(image)
+            imageNameArr.append(os.path.splitext(img.orig_name)[0])
 
-    elif image != None:
-        if image_folder != None:
+    elif image is not None:
+        if image_folder is not None:
             print("Batch detected and single image detected, please only use one of the two. Aborting.")
             return None
         else:
             imageArr.append(image)
+            imageNameArr.append(None)
 
     outpath = opts.outdir_samples or opts.outdir_extras_samples
 
     outputs = []
-    for image in imageArr:
+    for image, image_name in zip(imageArr, imageNameArr):
         existing_pnginfo = image.info or {}
 
         image = image.convert("RGB")
@@ -90,7 +96,9 @@ def run_extras(image, image_folder, gfpgan_visibility, codeformer_visibility, co
         while len(cached_images) > 2:
             del cached_images[next(iter(cached_images.keys()))]
 
-        images.save_image(image, path=outpath, basename="", seed=None, prompt=None, extension=opts.samples_format, info=info, short_filename=True, no_prompt=True, grid=False, pnginfo_section_name="extras", existing_info=existing_pnginfo)
+        images.save_image(image, path=outpath, basename="", seed=None, prompt=None, extension=opts.samples_format, info=info, short_filename=True,
+                          no_prompt=True, grid=False, pnginfo_section_name="extras", existing_info=existing_pnginfo,
+                          forced_filename=image_name if opts.use_original_name_batch else None)
 
         outputs.append(image)
 
