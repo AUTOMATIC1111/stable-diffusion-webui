@@ -84,7 +84,7 @@ class Script(scripts.Script):
         p.batch_size = 1
         p.batch_count = 1
 
-        def sample_extra(x, conditioning, unconditional_conditioning):
+        def sample_extra(conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength):
             lat = (p.init_latent.cpu().numpy() * 10).astype(int)
 
             same_params = self.cache is not None and self.cache.cfg_scale == cfg and self.cache.steps == st and self.cache.original_prompt == original_prompt and self.cache.original_negative_prompt == original_negative_prompt
@@ -107,7 +107,7 @@ class Script(scripts.Script):
 
             sigmas = sampler.model_wrap.get_sigmas(p.steps)
             
-            noise_dt = combined_noise - ( p.init_latent / sigmas[0] )
+            noise_dt = combined_noise - (p.init_latent / sigmas[0])
             
             p.seed = p.seed + 1
             
