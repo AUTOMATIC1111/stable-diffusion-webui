@@ -1229,6 +1229,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
         ],
         allow_flagging="never",
         analytics_enabled=False,
+        live=True,
     )
 
     def create_setting_component(key):
