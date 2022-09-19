@@ -80,6 +80,17 @@ function showGalleryImage(){
     }, 100);
 }
 
+function modalZoomToggle(event){
+    modalImage = gradioApp().getElementById("modalImage");
+    console.log(modalImage)
+    if( !modalImage.classList.contains('modalImageFullscreen') ){
+        modalImage.classList.add('modalImageFullscreen');
+    }else{
+        modalImage.classList.remove('modalImageFullscreen');
+    }
+    event.stopPropagation()
+}
+
 function galleryImageHandler(e){
     if(e && e.parentElement.tagName == 'BUTTON'){
         e.onclick = showGalleryImage;
@@ -97,15 +108,21 @@ document.addEventListener("DOMContentLoaded", function() {
     const modalFragment = document.createDocumentFragment();
     const modal = document.createElement('div')
     modal.onclick = closeModal;
-    
+    modal.id = "lightboxModal";
+    modal.tabIndex=0
+    modal.addEventListener('keydown', modalKeyHandler, true)
+
     const modalClose = document.createElement('span')
     modalClose.className = 'modalClose cursor';
     modalClose.innerHTML = '&times;'
     modalClose.onclick = closeModal;
-    modal.id = "lightboxModal";
-    modal.tabIndex=0
-    modal.addEventListener('keydown', modalKeyHandler, true)
     modal.appendChild(modalClose)
+
+    const modalZoom = document.createElement('span')
+    modalZoom.className = 'modalZoom cursor';
+    modalZoom.innerHTML = '&#10529;'
+    modalZoom.addEventListener('click', modalZoomToggle, true)
+    modal.appendChild(modalZoom)
 
     const modalImage = document.createElement('img')
     modalImage.id = 'modalImage';
