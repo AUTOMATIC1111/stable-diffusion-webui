@@ -327,6 +327,7 @@ def connect_reuse_seed(seed: gr.Number, reuse_seed: gr.Button, generation_info: 
         outputs=[seed, dummy_component]
     )
 
+
 def create_toprow(is_img2img):
     with gr.Row(elem_id="toprow"):
         with gr.Column(scale=4):
@@ -392,6 +393,11 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 with gr.Row():
                     restore_faces = gr.Checkbox(label='Restore faces', value=False, visible=len(shared.face_restorers) > 1)
                     tiling = gr.Checkbox(label='Tiling', value=False)
+                    enable_hr = gr.Checkbox(label='Highres. fix', value=False)
+
+                with gr.Row(visible=False) as hr_options:
+                    scale_latent = gr.Checkbox(label='Scale latent', value=True)
+                    denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.7)
 
                 with gr.Row():
                     batch_count = gr.Slider(minimum=1, maximum=cmd_opts.max_batch_count, step=1, label='Batch count', value=1)
@@ -451,6 +457,9 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w,
                     height,
                     width,
+                    enable_hr,
+                    scale_latent,
+                    denoising_strength,
                 ] + custom_inputs,
                 outputs=[
                     txt2img_gallery,
@@ -462,6 +471,12 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
 
             txt2img_prompt.submit(**txt2img_args)
             submit.click(**txt2img_args)
+
+            enable_hr.change(
+                fn=lambda x: gr_show(x),
+                inputs=[enable_hr],
+                outputs=[hr_options],
+            )
 
             interrupt.click(
                 fn=lambda: shared.state.interrupt(),

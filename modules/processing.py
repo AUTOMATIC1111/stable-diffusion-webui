@@ -74,11 +74,12 @@ class StableDiffusionProcessing:
         self.overlay_images = overlay_images
         self.paste_to = None
         self.color_corrections = None
+        self.denoising_strength: float = 0
 
-    def init(self, seed):
+    def init(self, all_prompts, all_seeds, all_subseeds):
         pass
 
-    def sample(self, x, conditioning, unconditional_conditioning):
+    def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength):
         raise NotImplementedError()
 
 
@@ -303,7 +304,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
     precision_scope = torch.autocast if cmd_opts.precision == "autocast" else contextlib.nullcontext
     ema_scope = (contextlib.nullcontext if cmd_opts.lowvram else p.sd_model.ema_scope)
     with torch.no_grad(), precision_scope("cuda"), ema_scope():
-        p.init(seed=all_seeds[0])
+        p.init(all_prompts, all_seeds, all_subseeds)
 
         if state.job_count == -1:
             state.job_count = p.n_iter
@@ -328,13 +329,10 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
                 for comment in model_hijack.comments:
                     comments[comment] = 1
 
-            # we manually generate all input noises because each one should have a specific seed
-            x = create_random_tensors([opt_C, p.height // opt_f, p.width // opt_f], seeds=seeds, subseeds=subseeds, subseed_strength=p.subseed_strength, seed_resize_from_h=p.seed_resize_from_h, seed_resize_from_w=p.seed_resize_from_w, p=p)
-
             if p.n_iter > 1:
                 shared.state.job = f"Batch {n+1} out of {p.n_iter}"
 
-            samples_ddim = p.sample(x=x, conditioning=c, unconditional_conditioning=uc)
+            samples_ddim = p.sample(conditioning=c, unconditional_conditioning=uc, seeds=seeds, subseeds=subseeds, subseed_strength=p.subseed_strength)
             if state.interrupted:
 
                 # if we are interruped, sample returns just noise
@@ -406,13 +404,64 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
 
 class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
     sampler = None
+    firstphase_width = 0
+    firstphase_height = 0
+    firstphase_width_truncated = 0
+    firstphase_height_truncated = 0
 
-    def init(self, seed):
+    def __init__(self, enable_hr=False, scale_latent=True, denoising_strength=0.75, **kwargs):
+        super().__init__(**kwargs)
+        self.enable_hr = enable_hr
+        self.scale_latent = scale_latent
+        self.denoising_strength = denoising_strength
+
+    def init(self, all_prompts, all_seeds, all_subseeds):
+        if self.enable_hr:
+            if state.job_count == -1:
+                state.job_count = self.n_iter * 2
+            else:
+                state.job_count = state.job_count * 2
+
+            desired_pixel_count = 512 * 512
+            actual_pixel_count = self.width * self.height
+            scale = math.sqrt(desired_pixel_count / actual_pixel_count)
+
+            self.firstphase_width = math.ceil(scale * self.width / 64) * 64
+            self.firstphase_height = math.ceil(scale * self.height / 64) * 64
+            self.firstphase_width_truncated = int(scale * self.width)
+            self.firstphase_height_truncated = int(scale * self.height)
+
+    def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength):
         self.sampler = samplers[self.sampler_index].constructor(self.sd_model)
 
-    def sample(self, x, conditioning, unconditional_conditioning):
-        samples_ddim = self.sampler.sample(self, x, conditioning, unconditional_conditioning)
-        return samples_ddim
+        if not self.enable_hr:
+            x = create_random_tensors([opt_C, self.height // opt_f, self.width // opt_f], seeds=seeds, subseeds=subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
+            samples = self.sampler.sample(self, x, conditioning, unconditional_conditioning)
+            return samples
+
+        x = create_random_tensors([opt_C, self.firstphase_height // opt_f, self.firstphase_width // opt_f], seeds=seeds, subseeds=subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
+        samples = self.sampler.sample(self, x, conditioning, unconditional_conditioning)
+
+        truncate_x = (self.firstphase_width - self.firstphase_width_truncated) // opt_f
+        truncate_y = (self.firstphase_height - self.firstphase_height_truncated) // opt_f
+
+        samples = samples[:, :, truncate_y//2:samples.shape[2]-truncate_y//2, truncate_x//2:samples.shape[3]-truncate_x//2]
+
+        if self.scale_latent:
+            samples = torch.nn.functional.interpolate(samples, size=(self.height // opt_f, self.width // opt_f), mode="bilinear")
+        else:
+            decoded_samples = self.sd_model.decode_first_stage(samples)
+            decoded_samples = torch.nn.functional.interpolate(decoded_samples, size=(self.height, self.width), mode="bilinear")
+            samples = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(decoded_samples))
+
+        shared.state.nextjob()
+
+        self.sampler = samplers[self.sampler_index].constructor(self.sd_model)
+        noise = create_random_tensors(samples.shape[1:], seeds=seeds, subseeds=subseeds, subseed_strength=subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
+        samples = self.sampler.sample_img2img(self, samples, noise, conditioning, unconditional_conditioning, steps=self.steps)
+
+        return samples
+
 
 class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
     sampler = None
@@ -435,7 +484,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         self.mask = None
         self.nmask = None
 
-    def init(self, seed):
+    def init(self, all_prompts, all_seeds, all_subseeds):
         self.sampler = samplers_for_img2img[self.sampler_index].constructor(self.sd_model)
         crop_region = None
 
@@ -529,12 +578,15 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             self.mask = torch.asarray(1.0 - latmask).to(shared.device).type(self.sd_model.dtype)
             self.nmask = torch.asarray(latmask).to(shared.device).type(self.sd_model.dtype)
 
+            # this needs to be fixed to be done in sample() using actual seeds for batches
             if self.inpainting_fill == 2:
-                self.init_latent = self.init_latent * self.mask + create_random_tensors(self.init_latent.shape[1:], [seed + x + 1 for x in range(self.init_latent.shape[0])]) * self.nmask
+                self.init_latent = self.init_latent * self.mask + create_random_tensors(self.init_latent.shape[1:], all_seeds[0:self.init_latent.shape[0]]) * self.nmask
             elif self.inpainting_fill == 3:
                 self.init_latent = self.init_latent * self.mask
 
-    def sample(self, x, conditioning, unconditional_conditioning):
+    def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength):
+        x = create_random_tensors([opt_C, self.height // opt_f, self.width // opt_f], seeds=seeds, subseeds=subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
+
         samples = self.sampler.sample_img2img(self, self.init_latent, x, conditioning, unconditional_conditioning)
 
         if self.mask is not None:
