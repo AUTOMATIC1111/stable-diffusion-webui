@@ -70,7 +70,7 @@ class StableDiffusionProcessing:
         self.tiling: bool = tiling
         self.do_not_save_samples: bool = do_not_save_samples
         self.do_not_save_grid: bool = do_not_save_grid
-        self.extra_generation_params: dict = extra_generation_params
+        self.extra_generation_params: dict = extra_generation_params or {}
         self.overlay_images = overlay_images
         self.paste_to = None
         self.color_corrections = None
@@ -225,8 +225,8 @@ def create_random_tensors(shape, seeds, subseeds=None, subseed_strength=0.0, see
 
 
 def fix_seed(p):
-    p.seed = int(random.randrange(4294967294)) if p.seed is None or p.seed == -1 else p.seed
-    p.subseed = int(random.randrange(4294967294)) if p.subseed is None or p.subseed == -1 else p.subseed
+    p.seed = int(random.randrange(4294967294)) if p.seed is None or p.seed == '' or p.seed == -1 else p.seed
+    p.subseed = int(random.randrange(4294967294)) if p.subseed is None or p.subseed == '' or p.subseed == -1 else p.subseed
 
 
 def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration=0, position_in_batch=0):
@@ -248,8 +248,7 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration
         "Denoising strength": getattr(p, 'denoising_strength', None),
     }
 
-    if p.extra_generation_params is not None:
-        generation_params.update(p.extra_generation_params)
+    generation_params.update(p.extra_generation_params)
 
     generation_params_text = ", ".join([k if k == v else f'{k}: {v}' for k, v in generation_params.items() if v is not None])
 
@@ -287,12 +286,12 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
     if type(p.seed) == list:
         all_seeds = p.seed
     else:
-        all_seeds = [int(p.seed + (x if p.subseed_strength == 0 else 0)) for x in range(len(all_prompts))]
+        all_seeds = [int(p.seed) + (x if p.subseed_strength == 0 else 0) for x in range(len(all_prompts))]
 
     if type(p.subseed) == list:
         all_subseeds = p.subseed
     else:
-        all_subseeds = [int(p.subseed + x) for x in range(len(all_prompts))]
+        all_subseeds = [int(p.subseed) + x for x in range(len(all_prompts))]
 
     def infotext(iteration=0, position_in_batch=0):
         return create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration, position_in_batch)
@@ -451,7 +450,27 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             samples = torch.nn.functional.interpolate(samples, size=(self.height // opt_f, self.width // opt_f), mode="bilinear")
         else:
             decoded_samples = self.sd_model.decode_first_stage(samples)
-            decoded_samples = torch.nn.functional.interpolate(decoded_samples, size=(self.height, self.width), mode="bilinear")
+
+            if opts.upscaler_for_hires_fix is None or opts.upscaler_for_hires_fix == "None":
+                decoded_samples = torch.nn.functional.interpolate(decoded_samples, size=(self.height, self.width), mode="bilinear")
+            else:
+                lowres_samples = torch.clamp((decoded_samples + 1.0) / 2.0, min=0.0, max=1.0)
+
+                batch_images = []
+                for i, x_sample in enumerate(lowres_samples):
+                    x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
+                    x_sample = x_sample.astype(np.uint8)
+                    image = Image.fromarray(x_sample)
+                    upscaler = [x for x in shared.sd_upscalers if x.name == opts.upscaler_for_hires_fix][0]
+                    image = upscaler.upscale(image, self.width, self.height)
+                    image = np.array(image).astype(np.float32) / 255.0
+                    image = np.moveaxis(image, 2, 0)
+                    batch_images.append(image)
+
+                decoded_samples = torch.from_numpy(np.array(batch_images))
+                decoded_samples = decoded_samples.to(shared.device)
+                decoded_samples = 2. * decoded_samples - 1.
+
             samples = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(decoded_samples))
 
         shared.state.nextjob()
