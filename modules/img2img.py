@@ -63,6 +63,8 @@ def img2img(prompt: str, negative_prompt: str, prompt_style: str, prompt_style2:
     )
     print(f"\nimg2img: {prompt}", file=shared.progress_print_out)
 
+    p.extra_generation_params["Mask blur"] = mask_blur
+
     if is_upscale:
         initial_info = None
 
