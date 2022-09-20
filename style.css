@@ -205,9 +205,10 @@ input[type="range"]{
 }
 
 #progressbar{
-  position: absolute;
+  position: relative;
   z-index: 1000;
   right: 0;
+  display: none;
 }
 
 .progressDiv{
