@@ -38,10 +38,8 @@ def setup_ldsr():
         repo_path = 'latent-diffusion/experiments/pretrained_models/'
         model_path = load_file_from_url(url=model_url, model_dir=os.path.join("repositories", repo_path),
                                        progress=True, file_name="model.chkpt")
-        print("Loaded model path: %s" % model_path)
         yaml_path = load_file_from_url(url=yaml_url, model_dir=os.path.join("repositories", repo_path),
                                        progress=True, file_name="project.yaml")
-        print("Loaded yaml path: %s" % yaml_path)
         have_ldsr = True
         LDSR_obj = LDSR(model_path, yaml_path)
         modules.shared.sd_upscalers.append(UpscalerLDSR(100))
@@ -53,6 +51,7 @@ def setup_ldsr():
 
 
 def upscale_with_ldsr(image, steps):
+    setup_ldsr()
     if not have_ldsr or LDSR_obj is None:
         return image
 

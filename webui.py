@@ -28,7 +28,6 @@ modules.gfpgan_model.setup_gfpgan()
 shared.face_restorers.append(modules.face_restoration.FaceRestoration())
 
 esrgan.load_models(cmd_opts.esrgan_models_path)
-ldsr.setup_ldsr()
 realesrgan.setup_realesrgan()
 
 queue_lock = threading.Lock()
