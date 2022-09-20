@@ -70,7 +70,7 @@ class StableDiffusionProcessing:
         self.tiling: bool = tiling
         self.do_not_save_samples: bool = do_not_save_samples
         self.do_not_save_grid: bool = do_not_save_grid
-        self.extra_generation_params: dict = extra_generation_params
+        self.extra_generation_params: dict = extra_generation_params or {}
         self.overlay_images = overlay_images
         self.paste_to = None
         self.color_corrections = None
@@ -248,8 +248,7 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration
         "Denoising strength": getattr(p, 'denoising_strength', None),
     }
 
-    if p.extra_generation_params is not None:
-        generation_params.update(p.extra_generation_params)
+    generation_params.update(p.extra_generation_params)
 
     generation_params_text = ", ".join([k if k == v else f'{k}: {v}' for k, v in generation_params.items() if v is not None])
 
