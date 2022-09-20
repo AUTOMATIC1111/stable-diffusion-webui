@@ -4,7 +4,7 @@ global_progressbar = null
 
 onUiUpdate(function(){
 	progressbar = gradioApp().getElementById('progressbar')
-    progressDiv = gradioApp().querySelectorAll('.progressDiv').length > 0;  
+    	progressDiv = gradioApp().querySelectorAll('.progressDiv').length > 0;  
 	if(progressbar!= null && progressbar != global_progressbar){
 	    global_progressbar = progressbar
 
