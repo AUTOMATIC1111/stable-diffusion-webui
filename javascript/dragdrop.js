@@ -10,13 +10,34 @@ function dropReplaceImage( imgWrap, files ) {
     }
 
     imgWrap.querySelector('.modify-upload button + button, .touch-none + div button + button')?.click();
-    window.requestAnimationFrame( () => {
+    const callback = () => {
         const fileInput = imgWrap.querySelector('input[type="file"]');
         if ( fileInput ) {
             fileInput.files = files;
             fileInput.dispatchEvent(new Event('change'));   
         }
-    });
+    };
+    
+    if ( imgWrap.closest('#pnginfo_image') ) {
+        // special treatment for PNG Info tab, wait for fetch request to finish
+        const oldFetch = window.fetch;
+        window.fetch = async (input, options) => {
+            const response = await oldFetch(input, options);
+            if ( 'api/predict/' === input ) {
+                const content = await response.text();
+                window.fetch = oldFetch;
+                window.requestAnimationFrame( () => callback() );
+                return new Response(content, {
+                    status: response.status,
+                    statusText: response.statusText,
+                    headers: response.headers
+                })
+            }
+            return response;
+        };        
+    } else {
+        window.requestAnimationFrame( () => callback() );
+    }
 }
 
 function pressClearBtn(hoverElems) {
