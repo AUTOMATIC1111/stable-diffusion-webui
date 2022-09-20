@@ -245,34 +245,42 @@ def resize_image(resize_mode, im, width, height):
 
 
 invalid_filename_chars = '<>:"/\\|?*\n'
+invalid_filename_prefix = ' '
+invalid_filename_postfix = ' .'
 re_nonletters = re.compile(r'[\s'+string.punctuation+']+')
+max_filename_part_length = 128
+max_prompt_words = 8
 
 
 def sanitize_filename_part(text, replace_spaces=True):
     if replace_spaces:
         text = text.replace(' ', '_')
 
-    return text.translate({ord(x): '_' for x in invalid_filename_chars})[:128]
+    text = text.translate({ord(x): '_' for x in invalid_filename_chars})
+    text = text.lstrip(invalid_filename_prefix)[:max_filename_part_length]
+    text = text.rstrip(invalid_filename_postfix)
+    return text
 
 
 def apply_filename_pattern(x, p, seed, prompt):
     if seed is not None:
         x = x.replace("[seed]", str(seed))
+
     if prompt is not None:
-        x = x.replace("[prompt]", sanitize_filename_part(prompt)[:128])
-        x = x.replace("[prompt_spaces]", sanitize_filename_part(prompt, replace_spaces=False)[:128])
+        x = x.replace("[prompt]", sanitize_filename_part(prompt))
+        x = x.replace("[prompt_spaces]", sanitize_filename_part(prompt, replace_spaces=False))
         if "[prompt_words]" in x:
             words = [x for x in re_nonletters.split(prompt or "") if len(x) > 0]
             if len(words) == 0:
                 words = ["empty"]
+            x = x.replace("[prompt_words]", sanitize_filename_part(" ".join(words[0:max_prompt_words]), replace_spaces=False))
 
-            x = x.replace("[prompt_words]", " ".join(words[0:8]).strip())
     if p is not None:
         x = x.replace("[steps]", str(p.steps))
         x = x.replace("[cfg]", str(p.cfg_scale))
         x = x.replace("[width]", str(p.width))
         x = x.replace("[height]", str(p.height))
-        x = x.replace("[sampler]", sd_samplers.samplers[p.sampler_index].name)
+        x = x.replace("[sampler]", sanitize_filename_part(sd_samplers.samplers[p.sampler_index].name, replace_spaces=False))
 
     x = x.replace("[model_hash]", shared.sd_model.sd_model_hash)
     x = x.replace("[date]", datetime.date.today().isoformat())
