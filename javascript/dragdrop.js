@@ -19,6 +19,15 @@ function dropReplaceImage( imgWrap, files ) {
     });
 }
 
+function pressClearBtn(hoverElems) {
+    //Find all buttons hovering over the image box
+    let btns = Array.from(hoverElems.querySelectorAll("button"))
+
+    //Press the last btn which will be the X button
+    if (btns.length)
+        btns[btns.length-1].click()
+}
+
 window.document.addEventListener('dragover', e => {
     const target = e.composedPath()[0];
     const imgWrap = target.closest('[data-testid="image"]');
@@ -27,7 +36,13 @@ window.document.addEventListener('dragover', e => {
     }
     e.stopPropagation();
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'copy';
+
+    if (e.dataTransfer) 
+         e.dataTransfer.dropEffect = 'copy';   
+        
+    //If is gr.Interface clear image on hover
+    if (target.previousElementSibling)
+        pressClearBtn(target.previousElementSibling)
 });
 
 window.document.addEventListener('drop', e => {

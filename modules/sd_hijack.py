@@ -400,7 +400,7 @@ class EmbeddingsWithFixes(torch.nn.Module):
             for fixes, tensor in zip(batch_fixes, inputs_embeds):
                 for offset, word in fixes:
                     emb = self.embeddings.word_embeddings[word]
-                    emb_len = min(tensor.shape[0]-offset, emb.shape[0])
+                    emb_len = min(tensor.shape[0]-offset-1, emb.shape[0])
                     tensor[offset+1:offset+1+emb_len] = self.embeddings.word_embeddings[word][0:emb_len]
 
         return inputs_embeds

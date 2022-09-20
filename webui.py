@@ -20,6 +20,7 @@ import modules.extras
 import modules.lowvram
 import modules.txt2img
 import modules.img2img
+import modules.swinir as swinir
 import modules.sd_models
 
 
@@ -28,6 +29,7 @@ modules.gfpgan_model.setup_gfpgan()
 shared.face_restorers.append(modules.face_restoration.FaceRestoration())
 
 esrgan.load_models(cmd_opts.esrgan_models_path)
+swinir.load_models(cmd_opts.swinir_models_path)
 realesrgan.setup_realesrgan()
 ldsr.add_lsdr()
 queue_lock = threading.Lock()
