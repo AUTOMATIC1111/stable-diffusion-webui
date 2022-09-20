@@ -22,7 +22,7 @@ class UpscalerLDSR(modules.images.Upscaler):
         self.name = "LDSR"
 
     def do_upscale(self, img):
-        return upscale_with_ldsr(img, self.steps)
+        return upscale_with_ldsr(img)
 
 
 def setup_ldsr():
@@ -50,11 +50,23 @@ def setup_ldsr():
         have_ldsr = False
 
 
-def upscale_with_ldsr(image, steps):
+def upscale_with_ldsr(image):
     setup_ldsr()
     if not have_ldsr or LDSR_obj is None:
         return image
 
-    #superResolution(self, image, ddimSteps=100, preDownScale='None', postDownScale='None'):
-    image = LDSR_obj.superResolution(image, steps)
+    ddim_steps = 100
+    pre_scale = 1
+    post_scale = 1
+
+    if "ldsr_steps" in shared.opts:
+        ddim_steps = shared.opts["ldsr_steps"]
+
+    if "ldsr_pre_down" in shared.opts:
+        pre_scale = shared.opts["ldsr_pre_down"]
+
+    if "ldsr_post_down" in shared.opts:
+        post_scale = shared.opts["ldsr_post_down"]
+
+    image = LDSR_obj.super_resolution(image, ddim_steps, pre_scale, post_scale)
     return image
