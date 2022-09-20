@@ -218,7 +218,7 @@ class StableDiffusionModelHijack:
                     emb = emb.unsqueeze(0)
 
             self.word_embeddings[name] = emb.detach()
-            self.word_embeddings_checksums[name] = f'{const_hash(emb.reshape(-1))&0xffff:04x}'
+            self.word_embeddings_checksums[name] = f'{const_hash(emb.reshape(-1)*100)&0xffff:04x}'
 
             ids = tokenizer([name], add_special_tokens=False)['input_ids'][0]
 
