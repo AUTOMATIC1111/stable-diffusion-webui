@@ -59,18 +59,9 @@ def upscale_with_ldsr(image):
     if not have_ldsr or LDSR_obj is None:
         return image
 
-    ddim_steps = 100
-    pre_scale = 1
-    post_scale = 1
-
-    if "ldsr_steps" in shared.opts:
-        ddim_steps = shared.opts["ldsr_steps"]
-
-    if "ldsr_pre_down" in shared.opts:
-        pre_scale = shared.opts["ldsr_pre_down"]
-
-    if "ldsr_post_down" in shared.opts:
-        post_scale = shared.opts["ldsr_post_down"]
+    ddim_steps = shared.opts.lsdr_steps
+    pre_scale = shared.opts.lsdr_pre_down
+    post_scale = shared.opts.lsdr_post_down
 
     image = LDSR_obj.super_resolution(image, ddim_steps, pre_scale, post_scale)
     return image
