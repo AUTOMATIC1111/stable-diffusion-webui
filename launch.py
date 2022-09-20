@@ -95,7 +95,8 @@ print(f"Commit hash: {commit}")
 if not is_installed("torch"):
     run(f'"{python}" -m {torch_command}', "Installing torch", "Couldn't install torch")
 
-run_python("import torch; assert torch.cuda.is_available(), 'Torch is not able to use GPU'")
+if not check_run_python("import torch; assert torch.cuda.is_available()"):
+    print("Torch is not able to use GPU. Using CPU/MPS instead")
 
 if not is_installed("k_diffusion.sampling"):
     run_pip(f"install {k_diffusion_package}", "k-diffusion")
