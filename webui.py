@@ -19,6 +19,7 @@ import modules.extras
 import modules.lowvram
 import modules.txt2img
 import modules.img2img
+import modules.swinir as swinir
 import modules.sd_models
 
 
