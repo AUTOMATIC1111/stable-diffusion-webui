@@ -1,4 +1,4 @@
-Before attempting to install make sure all the required [dependencies](/Dependencies) are met.
+Before attempting to install make sure all the required [dependencies](Dependencies) are met.
 
 # Automatic Installation
 ## Windows
