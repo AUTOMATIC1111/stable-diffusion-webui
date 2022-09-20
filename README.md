@@ -57,7 +57,13 @@ RealESRGAN into the directory with ESRGAN models. Thank you.
 ### Linux installation
 
 - clone this git
-- run webui.sh from directory with cloned git
+- run webui.sh from it
+
+```
+git clone https://github.com/sddebz/stable-diffusion-krita-plugin.git
+cd stable-diffusion-krita-plugin
+./webui.sh
+```
 
 #### Troublehooting:
 
