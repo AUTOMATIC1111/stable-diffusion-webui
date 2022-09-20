@@ -123,5 +123,5 @@ def start_webui():
     import webui
     webui.webui()
 
-
-start_webui()
+if __name__ == "__main__":
+    start_webui()
