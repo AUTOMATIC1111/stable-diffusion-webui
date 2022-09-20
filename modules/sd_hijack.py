@@ -218,7 +218,7 @@ class StableDiffusionModelHijack:
                     emb = emb.unsqueeze(0)
 
             self.word_embeddings[name] = emb.detach()
-            self.word_embeddings_checksums[name] = f'{const_hash(emb.reshape(-1))&0xffff:04x}'
+            self.word_embeddings_checksums[name] = f'{const_hash(emb.reshape(-1)*100)&0xffff:04x}'
 
             ids = tokenizer([name], add_special_tokens=False)['input_ids'][0]
 
@@ -401,7 +401,7 @@ class EmbeddingsWithFixes(torch.nn.Module):
                 for offset, word in fixes:
                     emb = self.embeddings.word_embeddings[word]
                     emb_len = min(tensor.shape[0]-offset, emb.shape[0])
-                    tensor[offset:offset+emb_len] = self.embeddings.word_embeddings[word][0:emb_len]
+                    tensor[offset+1:offset+1+emb_len] = self.embeddings.word_embeddings[word][0:emb_len]
 
         return inputs_embeds
 
