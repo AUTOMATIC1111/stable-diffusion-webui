@@ -123,7 +123,7 @@ class TextToImageResponse(BaseModel):
     seed_resize_from_w: int = Field(..., title="Seed Resize From Width")
     seed_resize_from_h: int = Field(..., title="Seed Resize From Height")
     denoising_strength: float = Field(default=None, title="Denoising Strength")
-    extra_generation_params: str | None = Field(default="", title="Extra Generation Params")
+    extra_generation_params: dict = Field(default={}, title="Extra Generation Params")
     index_of_first_image: int = Field(..., title="Index of First Image")
     html: str = Field(..., title="HTML")
 
