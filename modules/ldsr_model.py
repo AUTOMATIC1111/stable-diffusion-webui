@@ -25,6 +25,10 @@ class UpscalerLDSR(modules.images.Upscaler):
         return upscale_with_ldsr(img)
 
 
+def add_lsdr():
+    modules.shared.sd_upscalers.append(UpscalerLDSR(100))
+
+
 def setup_ldsr():
     path = modules.paths.paths.get("LDSR", None)
     if path is None:
@@ -37,12 +41,12 @@ def setup_ldsr():
         yaml_url = "https://heibox.uni-heidelberg.de/f/31a76b13ea27482981b4/?dl=1"
         repo_path = 'latent-diffusion/experiments/pretrained_models/'
         model_path = load_file_from_url(url=model_url, model_dir=os.path.join("repositories", repo_path),
-                                       progress=True, file_name="model.chkpt")
+                                        progress=True, file_name="model.chkpt")
         yaml_path = load_file_from_url(url=yaml_url, model_dir=os.path.join("repositories", repo_path),
                                        progress=True, file_name="project.yaml")
         have_ldsr = True
         LDSR_obj = LDSR(model_path, yaml_path)
-        modules.shared.sd_upscalers.append(UpscalerLDSR(100))
+
 
     except Exception:
         print("Error importing LDSR:", file=sys.stderr)
