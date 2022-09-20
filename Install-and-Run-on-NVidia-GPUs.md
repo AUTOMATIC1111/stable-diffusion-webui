@@ -1,8 +1,10 @@
-Before attempting to install make sure all the required [dependencies](Dependencies) are met.
+Before attempting to install make sure all the required [dependencies](/Dependencies) are met.
 
 # Automatic Installation
 ## Windows
-Run `webui-user.bat` from Windows Explorer as normal, ***non-administrate***, user.
+Run `webui-user.bat` from Windows Explorer as normal, ***non-administrator***, user.
+
+See [Troubleshooting](Troubleshooting) section for what to do if things go wrong.
 
 ## Linux
 To install in the default directory `/home/$(whoami)/stable-diffusion-webui/`, run:
@@ -100,9 +102,3 @@ wget https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.3.pt
 ```
 
 At this point, the instructions for the Manual installation may be applied starting at step `# clone repositories for Stable Diffusion and (optionally) CodeFormer`.
-
-## Windows
-- If the desired version of Python is not in PATH, modify the line `set PYTHON=python` in `webui-user.bat` with the full path to the python executable.
-    - Example: `set PYTHON=B:\soft\Python310\python.exe`
-    - This won't work with git.
-- `webui.bat` installs requirements from `requirements_versions.txt`, which lists versions for modules specifically compatible with Python 3.10.6. If this doesn't work with other versions of Python, setting the custom parameter `set REQS_FILE=requirements.txt` may help.
