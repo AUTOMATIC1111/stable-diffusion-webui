@@ -1,25 +1,17 @@
 # Required Dependencies
 1. Python 3.10.6 and Git:
-    - Windows:
-        - [Python](https://www.python.org/downloads/windows/)
-        - [Git](https://git-scm.com)
-    - Linux (Debian-based):
-    ```bash
-    sudo apt install wget git python3 python3-venv
-    ```
-    - Linux (Red Hat-based):
-    ```bash
-    sudo dnf install wget git python3
-    ```
-    - Linux (Arch-based):
-    ```bash
-    sudo pacman -S wget git python3
-    ```
-2. The stable-diffusion-webui code may be cloned by running:
-    ```bash
-    git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui.git
-    ```
-3. The Stable Diffusion model checkpoint `model.ckpt` needs to be placed in the base directory, alongside `webui.py`
+    - Windows: download and run installers for Python 3.10.6 ([webpage](https://www.python.org/downloads/release/python-3106/), [exe](https://www.python.org/ftp/python/3.10.6/python-3.10.6-amd64.exe), or [win7 version](https://github.com/adang1345/PythonWin7/raw/master/3.10.6/python-3.10.6-amd64-full.exe)) and git ([webpage](https://git-scm.com/download/win))
+    - Linux (Debian-based): `sudo apt install wget git python3 python3-venv`
+    - Linux (Red Hat-based): `sudo dnf install wget git python3`
+    - Linux (Arch-based): `sudo pacman -S wget git python3`
+2. Code from this repository:
+    - preferred way: using git: `git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui.git`.
+        - This way is referred because it lets you update by just running `git pull`.
+        - Those commands can be used from command line window that opens after you right click in Explorer and select "Git Bash here".
+    - alternative way: use the "Code" (green button) -> "Download ZIP" option on the main page of the repo.
+        - You still need to install git even if you choose this.
+        - To update, you'll have to download zip again and replace files.
+3. The Stable Diffusion model checkpoint, a file with `.ckpt` extension, needs to be downloaded and placed in the `models` directory.
     - [Official download](https://huggingface.co/CompVis/stable-diffusion-v-1-4-original)
     - [File storage](https://drive.yerf.org/wl/?id=EBfTrmcCCUAGaQBXVIj5lJmEhjoP1tgl)
     - Torrent (magnet:?xt=urn:btih:3a4a612d75ed088ea542acac52f9f45987488d1c&dn=sd-v1-4.ckpt&tr=udp%3a%2f%2ftracker.openbittorrent.com%3a6969%2fannounce&tr=udp%3a%2f%2ftracker.opentrackr.org%3a1337)
