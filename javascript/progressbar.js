@@ -4,6 +4,7 @@ global_progressbar = null
 
 onUiUpdate(function(){
 	progressbar = gradioApp().getElementById('progressbar')
+    progressDiv = gradioApp().querySelectorAll('.progressDiv').length > 0;  
 	if(progressbar!= null && progressbar != global_progressbar){
 	    global_progressbar = progressbar
 
@@ -16,12 +17,18 @@ onUiUpdate(function(){
 
             if(txt2img_preview != null && txt2img_gallery != null){
                 txt2img_preview.style.width = txt2img_gallery.clientWidth + "px"
-                txt2img_preview.style.height = txt2img_gallery.clientHeight + "px"
+                txt2img_preview.style.height = txt2img_gallery.clientHeight + "px"  
+                if(!progressDiv){
+                    progressbar.style.display = "none"
+                }
             }
 
             if(img2img_preview != null && img2img_gallery != null){
                 img2img_preview.style.width = img2img_gallery.clientWidth + "px"
-                img2img_preview.style.height = img2img_gallery.clientHeight + "px"
+                img2img_preview.style.height = img2img_gallery.clientHeight + "px" 
+                if(!progressDiv){
+                    progressbar.style.display = "none"
+                }
             }
 
             window.setTimeout(requestMoreProgress, 500)
@@ -35,6 +42,10 @@ function requestMoreProgress(){
     if(btn==null) return;
 
     btn.click();
+    progressDiv = gradioApp().querySelectorAll('.progressDiv').length > 0;
+    if(progressDiv){
+        progressbar.style.display = "block" 
+    }
 }
 
 function requestProgress(){
@@ -43,4 +54,3 @@ function requestProgress(){
 
     btn.click();
 }
-
