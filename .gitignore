@@ -5,6 +5,7 @@ __pycache__
 /tmp
 /model.ckpt
 /models/*.ckpt
+/models/*.pth
 /GFPGANv1.3.pth
 /ui-config.json
 /outputs
