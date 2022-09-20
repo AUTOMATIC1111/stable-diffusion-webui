@@ -283,6 +283,14 @@ The last column in the picture is [male:female:0.0], which essentially means tha
 
 Prompt editing was first implemented by Doggettx in [this myspace.com post](https://www.reddit.com/r/StableDiffusion/comments/xas2os/simple_prompt2prompt_implementation_with_prompt/).
 
+# Highres. fix
+A convenience option to partially render your image at lower resolution, upscale it, and then add details at high resolution. By default, txt2img  makes horrible images at very high resolutions, and this makes it possible to avoid that using small picture's composition. Enabled by checking the "Highres. fix" checkbox on the txt2img page.
+
+| Without                      | With                |
+|-------------------------------|---------------------------------|
+| ![00262-836728130](https://user-images.githubusercontent.com/20920490/191177752-ad983e62-8e1c-4197-8f3b-3165a6a6c31d.png) | ![00261-836728130](https://user-images.githubusercontent.com/20920490/191177785-395a951e-0d2e-4db7-9645-4c5af9321772.png) |
+| ![00345-950170121](https://user-images.githubusercontent.com/20920490/191178018-25dcd98d-6c45-4c31-ab7a-3de6c51c52e3.png) | ![00341-950170121](https://user-images.githubusercontent.com/20920490/191178048-3eba3db4-e5be-4617-9bfe-2cb36cebaafc.png) |
+
 # Interrupt
 
 Press the Interrupt button to stop current processing.
