@@ -56,7 +56,8 @@ RealESRGAN into the directory with ESRGAN models. Thank you.
 
 ### Linux installation
 
-Please look at parent repo, try to run webui.sh following instructions. You should run webui.sh ***from this repository***, not from others.
+- clone this git
+- run webui.sh from directory with cloned git
 
 #### Troublehooting:
 
