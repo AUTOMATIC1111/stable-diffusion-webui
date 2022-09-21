@@ -131,21 +131,6 @@ def load_model():
 
 
 def reload_model_weights(sd_model, info=None):
-    from modules import lowvram, devices
-    checkpoint_info = info or select_checkpoint()
+    shared.sd_model = load_model()
+    return
 
-    if sd_model.sd_model_checkpint == checkpoint_info.filename:
-        return
-
-    if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
-        lowvram.send_everything_to_cpu()
-    else:
-        sd_model.to(devices.cpu)
-
-    load_model_weights(sd_model, checkpoint_info.filename, checkpoint_info.hash)
-
-    if not shared.cmd_opts.lowvram and not shared.cmd_opts.medvram:
-        sd_model.to(devices.device)
-
-    print(f"Weights loaded.")
-    return sd_model
