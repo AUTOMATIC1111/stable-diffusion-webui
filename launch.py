@@ -5,6 +5,9 @@ import os
 import sys
 import importlib.util
 import shlex
+from dotenv import load_dotenv
+
+load_dotenv()
 
 dir_repos = "repositories"
 dir_tmp = "tmp"
