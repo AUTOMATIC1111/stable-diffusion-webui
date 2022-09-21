@@ -246,20 +246,37 @@ input[type="range"]{
   background-color: rgba(20, 20, 20, 0.95);
 }
 
-.modalClose, 
-.modalZoom {
-  color: white;
-  position: absolute;
-  top: 10px;
-  right: 25px;
-  font-size: 35px;
-  font-weight: bold;
-  cursor: pointer;
+.modalControls {
+    display: grid;
+    grid-template-columns: 32px auto 1fr 32px;
+    grid-template-areas: "zoom tile space close";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 16px;
+    gap: 16px;
+    background-color: rgba(0,0,0,0.2);
+}
+
+.modalClose {
+    grid-area: close;
 }
 
 .modalZoom {
-  left: 10px;
-  right: auto;
+    grid-area: zoom;
+}
+
+.modalTileImage {
+    grid-area: tile;
+}
+
+.modalClose, 
+.modalZoom {
+  color: white;
+  font-size: 35px;
+  font-weight: bold;
+  cursor: pointer;
 }
 
 .modalClose:hover,
