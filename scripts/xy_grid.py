@@ -200,7 +200,7 @@ class Script(scripts.Script):
             valslist = [opt.type(x) for x in valslist]
 
             return valslist
-        
+
         x_opt = axis_options[x_type]
         xs = process_axis(x_opt, x_values)
 
