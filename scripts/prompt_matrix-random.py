@@ -20,14 +20,19 @@ import glob
 
 
 def replace_wildcard(chunk):
-            if " " not in chunk:
-                file_dir = os.path.dirname(os.path.realpath("__file__"))
-                replacement_file = os.path.join(file_dir, f"cfg/promptgen/{chunk}.csv")
-                if os.path.exists(replacement_file):
-                    with open(replacement_file, "r", encoding="utf8", newline='') as f:
-                        return random.choice(f.read().splitlines()).replace(",,","")
-            return chunk
-
+    if " " not in chunk:
+        file_dir = os.path.dirname(os.path.realpath("__file__"))
+        replacement_file = os.path.join(file_dir, f"cfg/promptgen/{chunk}.csv")
+        if os.path.exists(replacement_file):
+            with open(replacement_file, "r", encoding="utf8", newline='') as f:
+                lines = f.readlines()
+                stripped = []
+                for line in lines:
+                    stripped.append(line.strip())                        
+                stripped.remove('name,blank,blank2')
+                print(stripped)
+                return random.choice(stripped).replace(",,","")
+    return chunk
 
 def oxlamon_matrix(prompt, seed, n_iter, batch_size):
     pattern = re.compile(r'(,\s){2,}')
@@ -102,7 +107,7 @@ def oxlamon_matrix(prompt, seed, n_iter, batch_size):
 
 class Script(scripts.Script):
     def title(self):
-        return "Prompt matrix Random"
+        return "Prompt Matrix V + Random"
 
     def ui(self, is_img2img):
         same_seed = gr.Checkbox(label='Use same seed (off = random)', value=False)

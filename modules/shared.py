@@ -93,9 +93,6 @@ styles_filename = cmd_opts.styles_file
 prompt_styles = modules.styles.StyleDatabase(styles_filename)
 ###########################################################
 #   Descriptors
-#descriptors_filename = os.path.join(script_path, 'descriptors.csv')
-#prompt_descriptors = modules.descriptors.load_descriptors(descriptors_filename)
-#prompt_artists = modules.prompt_artists.load_artists(os.path.join(script_path, 'artists.csv'))
 prompt_adjectives = modules.prompt_gen.load_promptgen('cfg/promptgen/adjective.csv')
 prompt_animals = modules.prompt_gen.load_promptgen('cfg/promptgen/animal.csv')
 prompt_artists = modules.prompt_gen.load_promptgen('cfg/promptgen/artist.csv')
