@@ -11,7 +11,7 @@ dir_tmp = "tmp"
 
 python = sys.executable
 git = os.environ.get('GIT', "git")
-torch_command = os.environ.get('TORCH_COMMAND', "pip install torch==1.12.1+cu113 --extra-index-url https://download.pytorch.org/whl/cu113")
+torch_command = os.environ.get('TORCH_COMMAND', "pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 --extra-index-url https://download.pytorch.org/whl/cu113")
 requirements_file = os.environ.get('REQS_FILE', "requirements_versions.txt")
 commandline_args = os.environ.get('COMMANDLINE_ARGS', "")
 
@@ -22,6 +22,17 @@ stable_diffusion_commit_hash = os.environ.get('STABLE_DIFFUSION_COMMIT_HASH', "6
 taming_transformers_commit_hash = os.environ.get('TAMING_TRANSFORMERS_COMMIT_HASH', "24268930bf1dce879235a7fddd0b2355b84d7ea6")
 codeformer_commit_hash = os.environ.get('CODEFORMER_COMMIT_HASH', "c5b4593074ba6214284d6acd5f1719b6c5d739af")
 blip_commit_hash = os.environ.get('BLIP_COMMIT_HASH', "48211a1594f1321b00f14c9f7a5b4813144b2fb9")
+ldsr_commit_hash = os.environ.get('LDSR_COMMIT_HASH',"abf33e7002d59d9085081bce93ec798dcabd49af")
+
+args = shlex.split(commandline_args)
+
+
+def extract_arg(args, name):
+    return [x for x in args if x != name], name in args
+
+
+args, skip_torch_cuda_test = extract_arg(args, '--skip-torch-cuda-test')
+
 
 def repo_dir(name):
     return os.path.join(dir_repos, name)
@@ -92,10 +103,12 @@ except Exception:
 print(f"Python {sys.version}")
 print(f"Commit hash: {commit}")
 
-if not is_installed("torch"):
-    run(f'"{python}" -m {torch_command}', "Installing torch", "Couldn't install torch")
 
-run_python("import torch; assert torch.cuda.is_available(), 'Torch is not able to use GPU'")
+if not is_installed("torch") or not is_installed("torchvision"):
+    run(f'"{python}" -m {torch_command}', "Installing torch and torchvision", "Couldn't install torch")
+
+if not skip_torch_cuda_test:
+    run_python("import torch; assert torch.cuda.is_available(), 'Torch is not able to use GPU; add --skip-torch-cuda-test to COMMANDINE_ARGS variable to disable this check'")
 
 if not is_installed("k_diffusion.sampling"):
     run_pip(f"install {k_diffusion_package}", "k-diffusion")
@@ -109,13 +122,15 @@ git_clone("https://github.com/CompVis/stable-diffusion.git", repo_dir('stable-di
 git_clone("https://github.com/CompVis/taming-transformers.git", repo_dir('taming-transformers'), "Taming Transformers", taming_transformers_commit_hash)
 git_clone("https://github.com/sczhou/CodeFormer.git", repo_dir('CodeFormer'), "CodeFormer", codeformer_commit_hash)
 git_clone("https://github.com/salesforce/BLIP.git", repo_dir('BLIP'), "BLIP", blip_commit_hash)
+# Using my repo until my changes are merged, as this makes interfacing with our version of SD-web a lot easier
+git_clone("https://github.com/Hafiidz/latent-diffusion", repo_dir('latent-diffusion'), "LDSR", ldsr_commit_hash)
 
 if not is_installed("lpips"):
     run_pip(f"install -r {os.path.join(repo_dir('CodeFormer'), 'requirements.txt')}", "requirements for CodeFormer")
 
 run_pip(f"install -r {requirements_file}", "requirements for Web UI")
 
-sys.argv += shlex.split(commandline_args)
+sys.argv += args
 
 
 def start_webui():
