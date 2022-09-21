@@ -11,7 +11,7 @@ dir_tmp = "tmp"
 
 python = sys.executable
 git = os.environ.get('GIT', "git")
-torch_command = os.environ.get('TORCH_COMMAND', "pip install torch==1.12.1+cu113 --extra-index-url https://download.pytorch.org/whl/cu113")
+torch_command = os.environ.get('TORCH_COMMAND', "pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 --extra-index-url https://download.pytorch.org/whl/cu113")
 requirements_file = os.environ.get('REQS_FILE', "requirements_versions.txt")
 commandline_args = os.environ.get('COMMANDLINE_ARGS', "")
 
@@ -102,8 +102,9 @@ except Exception:
 print(f"Python {sys.version}")
 print(f"Commit hash: {commit}")
 
-if not is_installed("torch"):
-    run(f'"{python}" -m {torch_command}', "Installing torch", "Couldn't install torch")
+
+if not is_installed("torch") or not is_installed("torchvision"):
+    run(f'"{python}" -m {torch_command}', "Installing torch and torchvision", "Couldn't install torch")
 
 if not skip_torch_cuda_test:
     run_python("import torch; assert torch.cuda.is_available(), 'Torch is not able to use GPU; add --skip-torch-cuda-test to COMMANDINE_ARGS variable to disable this check'")
