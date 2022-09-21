@@ -1,0 +1,39 @@
+# Git
+.git
+.github
+.gitignore
+
+# Docker
+/Dockerfile
+/docker-compose.yml
+
+# Environments
+.env
+.venv
+env/
+venv/
+
+# Python
+__pycache__
+
+# Models and generated files
+/ESRGAN
+/models
+*.chpt
+*.pth
+/outputs
+/repositories
+/runtime
+/src
+
+# Other
+/tmp
+/log
+/webui.settings.bat
+/embeddings
+/styles.csv
+/styles.csv.bak
+/webui-user.bat
+/webui-user.sh
+/interrogate
+/user.css

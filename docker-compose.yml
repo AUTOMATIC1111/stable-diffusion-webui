@@ -1,0 +1,28 @@
+version: '3.3'
+
+services:
+  stable-diffusion:
+    container_name: automatic1111-sd-webui
+    build:
+      context: .
+      dockerfile: Dockerfile
+    user: 1001:1001
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./models:/app/models
+      - ./ESRGAN:/app/ESRGAN
+      - ./runtime:/app/runtime
+      - ./src:/app/src
+      - ./outputs:/app/outputs
+      - cache:/.cache
+    ports:
+      - 7860:7860
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+
+volumes:
+  cache:
