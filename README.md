@@ -19,6 +19,8 @@ A browser interface based on Gradio library for Stable Diffusion.
     - GFPGAN, neural network that fixes faces
     - CodeFormer, face restoration tool as an alternative to GFPGAN
     - RealESRGAN, neural network upscaler
+    - SwinIR Neural network upscaler
+    - LDSR Latent diffusion super resolution upscaling
     - ESRGAN, neural network with a lot of third party models
 - Resizing aspect ratio options
 - Sampling method selection
@@ -79,6 +81,8 @@ The documentation was moved from this README over to the project's [wiki](https:
 - GFPGAN - https://github.com/TencentARC/GFPGAN.git
 - CodeFormer - https://github.com/sczhou/CodeFormer
 - ESRGAN - https://github.com/xinntao/ESRGAN
+- SwinIR - https://github.com/JingyunLiang/SwinIR
+- LDSR - https://github.com/Hafiidz/latent-diffusion
 - Ideas for optimizations - https://github.com/basujindal/stable-diffusion
 - Doggettx - Cross Attention layer optimization - https://github.com/Doggettx/stable-diffusion, original idea for prompt editing.
 - Idea for SD upscale - https://github.com/jquesnelle/txt2imghd
