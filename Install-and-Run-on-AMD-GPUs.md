@@ -68,7 +68,7 @@ Then restart the container and attach again. If you check `python --version` it 
 
 Run `rm -rf /dockerx/stable-diffusion-webui/venv` inside the container and then follow the steps in "Installing and
 running using Docker" again, skipping the `git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui` and using
-the modified launch command below instead:
+the modified launch-command below instead:
 
 ```bash
 # It's possible that you don't need "--precision full", dropping "--no-half" however crashes my drivers
