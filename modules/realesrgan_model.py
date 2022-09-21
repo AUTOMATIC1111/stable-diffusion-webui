@@ -1,12 +1,10 @@
 import sys
 import traceback
 from collections import namedtuple
+
 import numpy as np
-import torch
 from PIL import Image
-from basicsr.archs.rrdbnet_arch import RRDBNet
 from realesrgan import RealESRGANer
-from realesrgan.archs.srvgg_arch import SRVGGNetCompact
 
 import modules.images
 from modules.shared import cmd_opts, opts
