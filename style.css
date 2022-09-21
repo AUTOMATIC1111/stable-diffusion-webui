@@ -272,7 +272,8 @@ input[type="range"]{
 }
 
 .modalClose, 
-.modalZoom {
+.modalZoom,
+.modalTileImage {
   color: white;
   font-size: 35px;
   font-weight: bold;

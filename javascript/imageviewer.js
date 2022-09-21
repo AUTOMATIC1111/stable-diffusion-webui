@@ -148,18 +148,21 @@ document.addEventListener("DOMContentLoaded", function() {
     modalZoom.className = 'modalZoom cursor';
     modalZoom.innerHTML = '&#10529;'
     modalZoom.addEventListener('click', modalZoomToggle, true)
+    modalZoom.title = "Toggle zoomed view";
     modalControls.appendChild(modalZoom)
 
-    const modalTileImage = document.createElement('button')
-    modalTileImage.className = 'modalTileImage gr-button gr-button-lg gr-button-secondary';
-    modalTileImage.innerHTML = 'Preview Image Tiling'
+    const modalTileImage = document.createElement('span')
+    modalTileImage.className = 'modalTileImage cursor';
+    modalTileImage.innerHTML = '&#8862;'
     modalTileImage.addEventListener('click', modalTileImageToggle, true)
+    modalTileImage.title = "Preview tiling";
     modalControls.appendChild(modalTileImage)
 
     const modalClose = document.createElement('span')
     modalClose.className = 'modalClose cursor';
     modalClose.innerHTML = '&times;'
     modalClose.onclick = closeModal;
+    modalClose.title = "Close image viewer";
     modalControls.appendChild(modalClose)
 
     const modalImage = document.createElement('img')
