@@ -1,3 +1,6 @@
+main:
+    enabled: False
+    post_result: False
 admin:
     admin_roleid: 1008398707147939902
 channel_id:
