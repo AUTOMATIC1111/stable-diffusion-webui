@@ -1,4 +1,4 @@
-# Install and run on Linux with AMD GPU
+# Install and run on Linux with AMD GPUs
 If your AMD GPU is compatible with ROCm, you can try running: 
 
 ```bash
@@ -17,7 +17,7 @@ The next generations should work with regular performance. You can follow the li
 to use the same operating system, follow the steps there to fix this issue. If there is no clear way to compile or
 install the MIOpen kernels for your operating system, consider following the Docker guide below.
 
-# Install and run on Linux with AMD GPU (Docker)
+# Install and run on Linux with AMD GPUs (Docker)
 Pull the latest `rocm/pytorch` Docker image, start the image and attach to the container (taken from the `rocm/pytorch`
 documentation): `docker run -it --network=host --device=/dev/kfd --device=/dev/dri --group-add=video --ipc=host
 --cap-add=SYS_PTRACE --security-opt seccomp=unconfined -v $HOME/dockerx:/dockerx rocm/pytorch`
@@ -53,7 +53,7 @@ The `/dockerx` folder inside the container should be accessible in your home dir
 
 ## Updating Python version inside Docker
 If the web UI becomes incompatible with the pre-installed Python 3.7 version inside the Docker image, here are
-instructions on how to update it (assuming you have successfully followed "Install and run on Linux with AMD GPU
+instructions on how to update it (assuming you have successfully followed "Install and run on Linux with AMD GPUs
 (Docker)"):
 
 Execute the following inside the container:
