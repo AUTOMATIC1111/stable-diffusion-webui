@@ -200,12 +200,17 @@ class Script(scripts.Script):
             valslist = [opt.type(x) for x in valslist]
 
             return valslist
-
+        
         x_opt = axis_options[x_type]
         xs = process_axis(x_opt, x_values)
 
         y_opt = axis_options[y_type]
         ys = process_axis(y_opt, y_values)
+
+        if p.n_iter > 1:
+            print(f"Number of seeds/images per prompt is {p.n_iter}.")
+            
+        print(f"X/Y plot will create {len(xs) * len(ys) * p.n_iter} images on a {len(xs)} x {len(ys)} grid (total steps={len(xs) * len(ys) * p.n_iter * p.steps}).")
 
         def cell(x, y):
             pc = copy(p)
