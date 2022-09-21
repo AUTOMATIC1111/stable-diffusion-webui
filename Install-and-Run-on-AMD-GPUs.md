@@ -1,3 +1,5 @@
+This only works on Linux!
+
 # Running natively
 
 Execute the following:
