@@ -55,8 +55,8 @@ def load_models(dirname):
 def upscale(
     img,
     model,
-    tile=opts.GAN_tile,
-    tile_overlap=opts.GAN_tile_overlap,
+    tile=opts.SWIN_tile,
+    tile_overlap=opts.SWIN_tile_overlap,
     window_size=8,
     scale=4,
 ):
