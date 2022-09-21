@@ -23,6 +23,7 @@ from modules.shared import opts, cmd_opts
 import modules.shared as shared
 from modules.sd_samplers import samplers, samplers_for_img2img
 import modules.realesrgan_model as realesrgan
+import modules.ldsr_model
 import modules.scripts
 import modules.gfpgan_model
 import modules.codeformer_model
