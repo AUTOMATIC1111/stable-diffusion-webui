@@ -3,7 +3,7 @@
 - [Features](Features)
 - [Dependencies](Dependencies)
 - [Installation and run on NVidia GPUs](Install-and-Run-on-NVidia-GPUs)
-- [Installation and run on AMD GPUs](Install-and-Run-on-AMD-GPUs)
+- [Install and Run on Linux with AMD GPU](Install-and-Run-on-Linux-with-AMD-GPU)
 - [Running with custom parameters](Run-with-Custom-Parameters)
 - [Optimizations](Optimizations)
 - [Changing UI defaults](Change-UI-Defaults)
