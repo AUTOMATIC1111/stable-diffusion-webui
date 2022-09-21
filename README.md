@@ -45,7 +45,7 @@ A browser interface based on Gradio library for Stable Diffusion.
 - Batch Processing
 - Img2img Alternative
 - Highres Fix
-- Golatent Upscaling
+- LDSR Upscaling
 
 ## Installation and Running
 Make sure the required [dependencies](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Dependencies) are met and follow the instructions available for both [NVidia](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-NVidia-GPUs) (recommended) and [AMD](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-AMD-GPUs) GPUs.
