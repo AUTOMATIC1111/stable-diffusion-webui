@@ -7,10 +7,10 @@ from PIL import Image
 from realesrgan import RealESRGANer
 
 import modules.images
+from modules import realesrgan_model_loader
 from modules.shared import cmd_opts, opts
 
 RealesrganModelInfo = namedtuple("RealesrganModelInfo", ["name", "location", "model", "netscale"])
-
 realesrgan_models = []
 have_realesrgan = False
 RealESRGANer_constructor = None
@@ -36,46 +36,13 @@ def setup_realesrgan():
         from realesrgan import RealESRGANer
         from realesrgan.archs.srvgg_arch import SRVGGNetCompact
 
-        realesrgan_models = [
-            RealesrganModelInfo(
-                name="Real-ESRGAN General x4x3",
-                location="https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesr-general-x4v3.pth",
-                netscale=4,
-                model=lambda: SRVGGNetCompact(num_in_ch=3, num_out_ch=3, num_feat=64, num_conv=32, upscale=4, act_type='prelu')
-            ),
-            RealesrganModelInfo(
-                name="Real-ESRGAN General WDN x4x3",
-                location="https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesr-general-wdn-x4v3.pth",
-                netscale=4,
-                model=lambda: SRVGGNetCompact(num_in_ch=3, num_out_ch=3, num_feat=64, num_conv=32, upscale=4, act_type='prelu')
-            ),
-            RealesrganModelInfo(
-                name="Real-ESRGAN AnimeVideo",
-                location="https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesr-animevideov3.pth",
-                netscale=4,
-                model=lambda: SRVGGNetCompact(num_in_ch=3, num_out_ch=3, num_feat=64, num_conv=16, upscale=4, act_type='prelu')
-            ),
-            RealesrganModelInfo(
-                name="Real-ESRGAN 4x plus",
-                location="https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth",
-                netscale=4, model=lambda: RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=4)
-            ),
-            RealesrganModelInfo(
-                name="Real-ESRGAN 4x plus anime 6B",
-                location="https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.2.4/RealESRGAN_x4plus_anime_6B.pth",
-                netscale=4, model=lambda: RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=6, num_grow_ch=32, scale=4)
-            ),
-            RealesrganModelInfo(
-                name="Real-ESRGAN 2x plus",
-                location="https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.1/RealESRGAN_x2plus.pth",
-                netscale=2, model=lambda: RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=2)
-            ),
-        ]
+        realesrgan_models = realesrgan_model_loader.get_realesrgan_models()
         have_realesrgan = True
         RealESRGANer_constructor = RealESRGANer
 
         for i, model in enumerate(realesrgan_models):
-            modules.shared.sd_upscalers.append(UpscalerRealESRGAN(model.netscale, i))
+            if model.name in opts.realesrgan_enabled_models:
+                modules.shared.sd_upscalers.append(UpscalerRealESRGAN(model.netscale, i))
 
     except Exception:
         print("Error importing Real-ESRGAN:", file=sys.stderr)
@@ -83,6 +50,7 @@ def setup_realesrgan():
 
         realesrgan_models = [RealesrganModelInfo('None', '', 0, None)]
         have_realesrgan = False
+
 
 def upscale_with_realesrgan(image, RealESRGAN_upscaling, RealESRGAN_model_index):
     if not have_realesrgan:
