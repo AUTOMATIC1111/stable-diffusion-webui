@@ -2,7 +2,11 @@ import sys
 import traceback
 from collections import namedtuple
 import numpy as np
+import torch
 from PIL import Image
+from basicsr.archs.rrdbnet_arch import RRDBNet
+from realesrgan import RealESRGANer
+from realesrgan.archs.srvgg_arch import SRVGGNetCompact
 
 import modules.images
 from modules.shared import cmd_opts, opts
@@ -36,8 +40,26 @@ def setup_realesrgan():
 
         realesrgan_models = [
             RealesrganModelInfo(
+                name="Real-ESRGAN General x4x3",
+                location="https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesr-general-x4v3.pth",
+                netscale=4,
+                model=lambda: SRVGGNetCompact(num_in_ch=3, num_out_ch=3, num_feat=64, num_conv=32, upscale=4, act_type='prelu')
+            ),
+            RealesrganModelInfo(
+                name="Real-ESRGAN General WDN x4x3",
+                location="https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesr-general-wdn-x4v3.pth",
+                netscale=4,
+                model=lambda: SRVGGNetCompact(num_in_ch=3, num_out_ch=3, num_feat=64, num_conv=32, upscale=4, act_type='prelu')
+            ),
+            RealesrganModelInfo(
+                name="Real-ESRGAN AnimeVideo",
+                location="https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesr-animevideov3.pth",
+                netscale=4,
+                model=lambda: SRVGGNetCompact(num_in_ch=3, num_out_ch=3, num_feat=64, num_conv=16, upscale=4, act_type='prelu')
+            ),
+            RealesrganModelInfo(
                 name="Real-ESRGAN 4x plus",
-                location="https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth",
+                location="https://github.com/xinntao/Real-ESRGA N/releases/download/v0.1.0/RealESRGAN_x4plus.pth",
                 netscale=4, model=lambda: RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=4)
             ),
             RealesrganModelInfo(
@@ -64,21 +86,20 @@ def setup_realesrgan():
         realesrgan_models = [RealesrganModelInfo('None', '', 0, None)]
         have_realesrgan = False
 
-
 def upscale_with_realesrgan(image, RealESRGAN_upscaling, RealESRGAN_model_index):
-    if not have_realesrgan or RealESRGANer_constructor is None:
+    if not have_realesrgan:
         return image
 
     info = realesrgan_models[RealESRGAN_model_index]
 
     model = info.model()
-    upsampler = RealESRGANer_constructor(
+    upsampler = RealESRGANer(
         scale=info.netscale,
         model_path=info.location,
         model=model,
         half=not cmd_opts.no_half,
-        tile=opts.ESRGAN_tile,
-        tile_pad=opts.ESRGAN_tile_overlap,
+        tile=opts.GAN_tile,
+        tile_pad=opts.GAN_tile_overlap,
     )
 
     upsampled = upsampler.enhance(np.array(image), outscale=RealESRGAN_upscaling)[0]
