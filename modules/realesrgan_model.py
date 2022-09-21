@@ -59,7 +59,7 @@ def setup_realesrgan():
             ),
             RealesrganModelInfo(
                 name="Real-ESRGAN 4x plus",
-                location="https://github.com/xinntao/Real-ESRGA N/releases/download/v0.1.0/RealESRGAN_x4plus.pth",
+                location="https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth",
                 netscale=4, model=lambda: RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=4)
             ),
             RealesrganModelInfo(
