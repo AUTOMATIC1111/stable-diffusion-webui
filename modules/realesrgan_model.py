@@ -77,7 +77,7 @@ def upscale_with_realesrgan(image, RealESRGAN_upscaling, RealESRGAN_model_index)
         model_path=info.location,
         model=model,
         half=not cmd_opts.no_half,
-        tile=opts.ESRGAN_tile,
+        tile=opts.GAN_tile,
         tile_pad=opts.ESRGAN_tile_overlap,
     )
 
