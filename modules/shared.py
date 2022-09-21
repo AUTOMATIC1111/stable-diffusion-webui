@@ -36,8 +36,8 @@ parser.add_argument("--precision", type=str, help="evaluate at this precision", 
 parser.add_argument("--share", action='store_true', help="use share=True for gradio and make the UI accessible through their site (doesn't work for me but you might have better luck)")
 parser.add_argument("--esrgan-models-path", type=str, help="path to directory with ESRGAN models", default=os.path.join(script_path, 'ESRGAN'))
 parser.add_argument("--swinir-models-path", type=str, help="path to directory with SwinIR models", default=os.path.join(script_path, 'SwinIR'))
-parser.add_argument("--opt-split-attention", action='store_true', help="does not do anything")
-parser.add_argument("--disable-opt-split-attention", action='store_true', help="disable an optimization that reduces vram usage by a lot")
+parser.add_argument("--opt-split-attention", action='store_true', help="force-enables cross-attention layer optimization. By default, it's on for torch.cuda and off for other torch devices.")
+parser.add_argument("--disable-opt-split-attention", action='store_true', help="force-disables cross-attention layer optimization")
 parser.add_argument("--opt-split-attention-v1", action='store_true', help="enable older version of split attention optimization that does not consume all the VRAM it can find")
 parser.add_argument("--listen", action='store_true', help="launch gradio with 0.0.0.0 as server name, allowing to respond to network requests")
 parser.add_argument("--port", type=int, help="launch gradio with given server port, you need root/admin rights for ports < 1024, defaults to 7860 if available", default=None)
@@ -53,9 +53,6 @@ parser.add_argument("--autolaunch", action='store_true', help="open the webui UR
 parser.add_argument("--use-textbox-seed", action='store_true', help="use textbox for seeds in UI (no up/down, but possible to input long seeds)", default=False)
 
 cmd_opts = parser.parse_args()
-
-if cmd_opts.opt_split_attention:
-    print("Information: --opt-split-attention is now the default. To remove this message, remove --opt-split-attention from command line arguments. To disable the optimization, use --disable-opt-split-attention")
 
 device = get_optimal_device()
 
