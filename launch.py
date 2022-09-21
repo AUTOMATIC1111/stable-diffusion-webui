@@ -106,7 +106,7 @@ if not is_installed("torch"):
     run(f'"{python}" -m {torch_command}', "Installing torch", "Couldn't install torch")
 
 if not skip_torch_cuda_test:
-    run_python("import torch; assert not torch.cuda.is_available(), 'Torch is not able to use GPU; add --skip-torch-cuda-test to COMMANDINE_ARGS variable to disable this check'")
+    run_python("import torch; assert torch.cuda.is_available(), 'Torch is not able to use GPU; add --skip-torch-cuda-test to COMMANDINE_ARGS variable to disable this check'")
 
 if not is_installed("k_diffusion.sampling"):
     run_pip(f"install {k_diffusion_package}", "k-diffusion")
