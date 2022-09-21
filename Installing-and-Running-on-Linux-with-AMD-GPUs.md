@@ -1,13 +1,27 @@
-# Install and run on Linux with AMD GPUs
-If your AMD GPU is compatible with ROCm, you can try running: 
+# Running natively
+
+Execute the following:
 
 ```bash
+git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui
+cd stable-diffusion-webui
+python -m venv venv
+source venv/bin/activate
+python -m pip install --upgrade pip wheel
+
 # It's possible that you don't need "--precision full", dropping "--no-half" however crashes my drivers
 TORCH_COMMAND='pip install torch torchvision --extra-index-url https://download.pytorch.org/whl/rocm5.1.1' python launch.py --precision full --no-half
 ```
 
-Make sure to do this in a new virtual environment, or activate your existing environment and
-`pip uninstall torch torchvision` beforehand.
+In following runs you will only need to execute:
+```bash
+cd stable-diffusion-webui
+# Optional: "git pull" to update the repository
+source venv/bin/activate
+
+# It's possible that you don't need "--precision full", dropping "--no-half" however crashes my drivers
+TORCH_COMMAND='pip install torch torchvision --extra-index-url https://download.pytorch.org/whl/rocm5.1.1' python launch.py --precision full --no-half
+```
 
 The first generation after starting the WebUI might take very long, and you might see a message similar to this: 
 > MIOpen(HIP): Warning [SQLiteBase] Missing system database file: gfx1030_40.kdb Performance may degrade. Please follow
@@ -15,9 +29,11 @@ The first generation after starting the WebUI might take very long, and you migh
 
 The next generations should work with regular performance. You can follow the link in the message, and if you happen
 to use the same operating system, follow the steps there to fix this issue. If there is no clear way to compile or
-install the MIOpen kernels for your operating system, consider following the Docker guide below.
+install the MIOpen kernels for your operating system, consider following the "Running inside Docker"-guide below.
 
-# Install and run on Linux with AMD GPUs (Docker)
+
+
+# Running inside Docker
 Pull the latest `rocm/pytorch` Docker image, start the image and attach to the container (taken from the `rocm/pytorch`
 documentation): `docker run -it --network=host --device=/dev/kfd --device=/dev/dri --group-add=video --ipc=host
 --cap-add=SYS_PTRACE --security-opt seccomp=unconfined -v $HOME/dockerx:/dockerx rocm/pytorch`
@@ -53,8 +69,7 @@ The `/dockerx` folder inside the container should be accessible in your home dir
 
 ## Updating Python version inside Docker
 If the web UI becomes incompatible with the pre-installed Python 3.7 version inside the Docker image, here are
-instructions on how to update it (assuming you have successfully followed "Install and run on Linux with AMD GPUs
-(Docker)"):
+instructions on how to update it (assuming you have successfully followed "Running inside Docker"):
 
 Execute the following inside the container:
 ```bash
@@ -65,9 +80,9 @@ echo 'PATH=/usr/local/bin:$PATH' >> ~/.bashrc
 
 Then restart the container and attach again. If you check `python --version` it should now say `Python 3.9.5` or newer.
 
-Run `rm -rf /dockerx/stable-diffusion-webui/venv` inside the container and then follow the steps in "Installing and
-running on Linux with AMD GPU (Docker)" again, skipping the
-`git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui` and using the modified launch-command below instead:
+Run `rm -rf /dockerx/stable-diffusion-webui/venv` inside the container and then follow the steps in "Running inside
+Docker" again, skipping the `git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui` and using the modified
+launch-command below instead:
 
 ```bash
 # It's possible that you don't need "--precision full", dropping "--no-half" however crashes my drivers
