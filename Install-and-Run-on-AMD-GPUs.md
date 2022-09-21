@@ -17,9 +17,7 @@ The next generations should work with regular performance. You can follow the li
 to use the same operating system, follow the steps there to fix this issue. If there is no clear way to compile or
 install the MIOpen kernels for your operating system, consider following the Docker guide below.
 
-# Installing and running using Docker
-This is only tested using a Linux host!
-
+# Installing and running on Linux with AMD GPUs (Docker)
 Pull the latest `rocm/pytorch` Docker image, start the image and attach to the container (taken from the `rocm/pytorch`
 documentation): `docker run -it --network=host --device=/dev/kfd --device=/dev/dri --group-add=video --ipc=host
 --cap-add=SYS_PTRACE --security-opt seccomp=unconfined -v $HOME/dockerx:/dockerx rocm/pytorch`
