@@ -797,7 +797,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
     pnginfo_interface = gr.Interface(
         wrap_gradio_call(run_pnginfo),
         inputs=[
-            gr.Image(label="Source", source="upload", interactive=True, type="pil"),
+            gr.Image(elem_id="pnginfo_image", label="Source", source="upload", interactive=True, type="pil"),
         ],
         outputs=[
             gr.HTML(),
