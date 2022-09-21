@@ -1,4 +1,4 @@
-This only works on Linux!
+The instructions below only work on Linux! An alternative guide for Windows user can be found [here](https://rentry.org/ayymd-stable-diffustion-v1_4-guide) (untested).
 
 # Running natively
 
