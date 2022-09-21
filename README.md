@@ -21,7 +21,7 @@ A browser interface based on Gradio library for Stable Diffusion.
     - RealESRGAN, neural network upscaler
     - ESRGAN, neural network with a lot of third party models
     - SwinIR, neural network upscaler
-    - LDSR Upscaling
+    - LDSR, Latent diffusion super resolution upscaling
 - Resizing aspect ratio options
 - Sampling method selection
 - Interrupt processing at any time
@@ -86,6 +86,7 @@ The documentation was moved from this README over to the project's [wiki](https:
 - CodeFormer - https://github.com/sczhou/CodeFormer
 - ESRGAN - https://github.com/xinntao/ESRGAN
 - SwinIR - https://github.com/JingyunLiang/SwinIR
+- LDSR - https://github.com/Hafiidz/latent-diffusion
 - Ideas for optimizations - https://github.com/basujindal/stable-diffusion
 - Doggettx - Cross Attention layer optimization - https://github.com/Doggettx/stable-diffusion, original idea for prompt editing.
 - Idea for SD upscale - https://github.com/jquesnelle/txt2imghd
