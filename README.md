@@ -21,6 +21,7 @@ A browser interface based on Gradio library for Stable Diffusion.
     - RealESRGAN, neural network upscaler
     - ESRGAN, neural network with a lot of third party models
     - SwinIR, neural network upscaler
+    - LDSR Upscaling
 - Resizing aspect ratio options
 - Sampling method selection
 - Interrupt processing at any time
