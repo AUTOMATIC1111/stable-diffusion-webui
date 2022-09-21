@@ -14,37 +14,48 @@ import subprocess
 import os
 import yaml
 
+
+def new_config():
+    newconfig = {'channel_id':{'post_id':0,'heart_id':0,'average_id':0,'cursed_id':0,'nsfw_id':0},'admin':{'admin_roleid':0,'botmod_roleid':0},'main':{'enabled':False,'post_result':False}}
+    return newconfig
+
+
 botconfigfile = "cfg/discordbot/bot.yaml"
-with open('cfg/discordbot/TOKEN','r') as file:
-    bot_token = file.read().strip()
+bottokenfile = "cfg/discordbot/TOKEN"
+
 
 if botconfigfile is not None and os.path.isfile(botconfigfile):
     try:
         with open(botconfigfile, "r", encoding="utf8") as f:
             bot_config = yaml.safe_load(f)
+            print("Loaded discord bot defaults successfully.")
     except (OSError, yaml.YAMLError) as e:
         print(f"Error loading defaults file {botconfigfile}:", e, file=sys.stderr)
         print("Falling back to program defaults.", file=sys.stderr)
-        bot_config = {}
+        bot_config = new_config()
 else:
-    bot_config = {}
+    print(f"No bot config file found at {botconfigfile}, creating one.")
+    with open(botconfigfile, "w", encoding="utf8") as f:
+        save_config = yaml.dump(new_config(), f, default_flow_style=False)
+    with open(botconfigfile, "r", encoding="utf8") as f:
+        bot_config = yaml.safe_load(f)
 
 
+if bottokenfile is not None and os.path.isfile(bottokenfile):
+    try:
+        with open(bottokenfile,'r') as file:
+            bot_token = file.read().strip()
+            print("Loaded Token from file.")
+    except:
+        print(f"Error Loading token file, please check {bottokenfile} and make sure your token is there")
+        bot_config['main']['enabled'] == False
+else:
+    print("No TOKEN file found, Creating one.")
+    with open(bottokenfile,'w') as file:
+        file.write()
+    print(f"Edit {bottokenfile} and paste your bot token")
 
-def remove_line(fileName,lineToSkip):
-    """ Removes a given line from a file """
-    with open(fileName,'r') as read_file:
-        lines = read_file.readlines()
 
-    currentLine = 1
-    with open(fileName,'w') as write_file:
-        for line in lines:
-            if currentLine == lineToSkip:
-                pass
-            else:
-                write_file.write(line)
-    
-            currentLine += 1
 
 
 
@@ -52,7 +63,7 @@ def remove_line(fileName,lineToSkip):
 intents = discord.Intents.all()
 intents.members = True
 intents.message_content = True
-#bot = commands.Bot(command_prefix='!', intents=intents)
+
 class PersistentButtons(commands.Bot):
     def __init__(self):
         intents = discord.Intents.default()
@@ -71,7 +82,7 @@ class PersistentButtons(commands.Bot):
     async def on_ready(self):
         print(f'Logged in as {self.user} (ID: {self.user.id})')
         print('------')
-    #    slow_count.start()
+
 
 
 bot = PersistentButtons()
@@ -82,13 +93,10 @@ cursed_id = bot_config['channel_id']['cursed_id']
 average_id = bot_config['channel_id']['average_id']
 nsfw_id = bot_config['channel_id']['nsfw_id']
 admin_roleid = bot_config['admin']['admin_roleid']
+botmod_roleid = bot_config['admin']['botmod_roleid']
 
 @bot.event
 async def on_raw_reaction_add(payload):
-    #ChID = 1015686897198170252 # #sd-img-spam
-    #ChID_fire = 1015234649192149023 # #stable-diffussion
-    #ChID_joy = 1015615431899369512 # #cursed-gens
-    #spamchannel = bot.get_channel(ChID)
     cursed_channel = bot.get_channel(cursed_id)
     heart_channel = bot.get_channel(heart_id)
     post_channel = bot.get_channel(post_id)
@@ -96,20 +104,21 @@ async def on_raw_reaction_add(payload):
     if payload.channel_id != post_id:
         print("wrong channel")
         return
-    if payload.user_id != 205698404070850560: #Vetchems#1060
+    do_react = False
+    for r in payload.user.roles:
+        if r.id == admin_roleid or botmod_roleid:
+            do_react = True
+
+    if do_react == False:
         return
-    if payload.emoji.name == '🔥':
-        print("fire detected")
-        #giveaway_msg_channel = bot.get_channel(fb_giveaway_channel_ID)
+
+    if payload.emoji.name == '🔥': # fire emoji
         msg_to_forward = await post_channel.fetch_message(payload.message_id)
         await heart_channel.send(msg_to_forward.content, files=[await a.to_file() for a in msg_to_forward.attachments])
 
-        #attached = await msg_to_forward.attachments[0].to_file()
-        #await firechannel.send(msg_to_forward.content, file=attached)
     if payload.emoji.name == '😂':
         print("joy detected")
         msg_to_forward = await post_channel.fetch_message(payload.message_id)
-        #attached = await msg_to_forward.attachments[0].to_file()
         await cursed_channel.send(msg_to_forward.content, files=[await a.to_file() for a in msg_to_forward.attachments])
     print("end reaction loop")
 
@@ -121,55 +130,63 @@ class Buttons(discord.ui.View):
             super().__init__(timeout=None)
         @discord.ui.button(label="Keeper",style=discord.ButtonStyle.gray,emoji="😍",custom_id="keeper_button") # or .primary
         async def heart_button(self,interaction:discord.Interaction,button:discord.ui.Button):
+            do_post = False
             for r in interaction.user.roles:
-                if r.id == admin_roleid:
-                    heart_channel = bot.get_channel(heart_id)
-                    msg_to_forward = interaction.message
-                    await heart_channel.send(msg_to_forward.content, files=[await a.to_file() for a in msg_to_forward.attachments])
-                    await interaction.message.delete()
+                if r.id == admin_roleid or botmod_roleid:
+                    do_post = True
+            if do_post == True:
+                heart_channel = bot.get_channel(heart_id)
+                msg_to_forward = interaction.message
+                await heart_channel.send(msg_to_forward.content, files=[await a.to_file() for a in msg_to_forward.attachments])
+                await interaction.message.delete()
 
 
         @discord.ui.button(label="Average",style=discord.ButtonStyle.gray,emoji="👌",custom_id="average_button") # or .secondary/.grey
         async def average_button(self,interaction:discord.Interaction,button:discord.ui.Button):
+            do_post = False
             for r in interaction.user.roles:
-                if r.id == admin_roleid:
-                    average_channel = bot.get_channel(average_id)
-                    msg_to_forward = interaction.message
-                    await average_channel.send(msg_to_forward.content, files=[await a.to_file() for a in msg_to_forward.attachments])
-                    await interaction.message.delete()
+                if r.id == admin_roleid or botmod_roleid:
+                    do_post = True
+            if do_post == True:
+                average_channel = bot.get_channel(average_id)
+                msg_to_forward = interaction.message
+                await average_channel.send(msg_to_forward.content, files=[await a.to_file() for a in msg_to_forward.attachments])
+                await interaction.message.delete()
 
 
         @discord.ui.button(label="Cursed and Funny",style=discord.ButtonStyle.gray,emoji="🤣",custom_id="cursed_button") # or .secondary/.grey
         async def cursed_button(self,interaction:discord.Interaction,button:discord.ui.Button):
+            do_post = False
             for r in interaction.user.roles:
-                if r.id == admin_roleid:
-                    cursed_channel = bot.get_channel(cursed_id)
-                    msg_to_forward = interaction.message
-                    await cursed_channel.send(msg_to_forward.content, files=[await a.to_file() for a in msg_to_forward.attachments])
-                    await interaction.message.delete()
+                if r.id == admin_roleid or botmod_roleid:
+                    do_post = True
+            if do_post == True:
+                cursed_channel = bot.get_channel(cursed_id)
+                msg_to_forward = interaction.message
+                await cursed_channel.send(msg_to_forward.content, files=[await a.to_file() for a in msg_to_forward.attachments])
+                await interaction.message.delete()
 
         @discord.ui.button(label="NSFW",style=discord.ButtonStyle.gray,emoji="🔞",custom_id="nsfw_button") # or .secondary/.grey
         async def nsfw_button(self,interaction:discord.Interaction,button:discord.ui.Button):
+            do_post = False
             for r in interaction.user.roles:
-                if r.id == admin_roleid:
-                    nsfw_channel = bot.get_channel(nsfw_id)
-                    msg_to_forward = interaction.message
-                    await nsfw_channel.send(msg_to_forward.content, files=[await a.to_file() for a in msg_to_forward.attachments])
-                    await interaction.message.delete()
+                if r.id == admin_roleid or botmod_roleid:
+                    do_post = True
+            if do_post == True:
+                nsfw_channel = bot.get_channel(nsfw_id)
+                msg_to_forward = interaction.message
+                await nsfw_channel.send(msg_to_forward.content, files=[await a.to_file() for a in msg_to_forward.attachments])
+                await interaction.message.delete()
 
 
         @discord.ui.button(label="Delete",style=discord.ButtonStyle.blurple,emoji="❌",custom_id="delete_button") # or .secondary/.grey
-        async def deletee_button(self,interaction:discord.Interaction,button:discord.ui.Button):
+        async def delete_button(self,interaction:discord.Interaction,button:discord.ui.Button):
+            do_post = False
             for r in interaction.user.roles:
-                if r.id == admin_roleid:
-                    await interaction.message.delete()
-
-#@bot.command()
-#async def button(ctx):
-#    view=Buttons()
-#    view.add_item(discord.ui.Button(label="URL Button",style=discord.ButtonStyle.link,url="https://github.com/lykn",emoji="<a:kannaWink:909791444661850132>"))
-#    await ctx.send("This message has buttons!",view=view)
-
+                if r.id == admin_roleid or botmod_roleid:
+                    do_post = True
+            if do_post == True:
+                await interaction.message.delete()
 
 @bot.command(pass_context=True)
 async def about(ctx):
@@ -186,10 +203,8 @@ async def die(ctx):
 async def image_send(filename,prompt,seed,subseed,seedvar,sampler_name,steps,cfg_scale,width,height):
         channel = bot.get_channel(post_id)
         view=Buttons()
-        #loop.create_task(image_send(filename_i,prompts[i],seeds[i],sampler_name,steps,cfg_scale,width,height))
         print(f"Uploading: {filename}")
         await channel.send(f"Prompt: `{prompt}`\nSeed: `{seed}` - Subseed: `{subseed}` - Var Amount: `{seedvar}`\nSampler: `{sampler_name}` - Steps: `{steps}` - CFG Scale: `{cfg_scale}`\nImage Dimensions: `{width}x{height}`", file=discord.File(filename), view=view)
-        #await channel.send(file=discord.File(filename), view=view)
 
 ##########################
 #save_sample part
@@ -197,8 +212,6 @@ def post_result(image,prompt,seed,subseed,seedvar,sampler_name,steps,cfg_scale,w
     if bot_config['main']['post_result'] == True:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-    #image = os.path.join("../", image)
-    #image = join("../" + image)
         bot.loop.create_task(image_send(image,prompt,seed,subseed,seedvar,sampler_name,steps,cfg_scale,width,height))
         loop.close()
 ######################
