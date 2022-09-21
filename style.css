@@ -100,7 +100,6 @@
 #toprow div{
     border: none;
     gap: 0;
-    background: transparent;
 }
 
 #resize_mode{
@@ -205,15 +204,15 @@ input[type="range"]{
 }
 
 #progressbar{
-  position: relative;
+  position: absolute;
   z-index: 1000;
-  right: 0;
+  width: 100%;
   display: none;
 }
 
 .progressDiv{
   width: 100%;
-  height: 30px;
+  height: 72px;
   background: #b4c0cc;
   border-radius: 8px;
 }
@@ -224,11 +223,11 @@ input[type="range"]{
 
 .progressDiv .progress{
   width: 0%;
-  height: 30px;
+  height: 72px;
   background: #0060df;
   color: white;
   font-weight: bold;
-  line-height: 30px;
+  line-height: 72px;
   padding: 0 8px 0 0;
   text-align: right;
   border-radius: 8px;
