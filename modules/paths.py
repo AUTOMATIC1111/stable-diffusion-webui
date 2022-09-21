@@ -19,6 +19,7 @@ path_dirs = [
     (os.path.join(sd_path, '../taming-transformers'), 'taming', 'Taming Transformers'),
     (os.path.join(sd_path, '../CodeFormer'), 'inference_codeformer.py', 'CodeFormer'),
     (os.path.join(sd_path, '../BLIP'), 'models/blip.py', 'BLIP'),
+    (os.path.join(sd_path, '../latent-diffusion'), 'LDSR.py', 'LDSR'),
 ]
 
 paths = {}
