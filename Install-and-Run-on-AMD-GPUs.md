@@ -53,7 +53,8 @@ The `/dockerx` folder inside the container should be accessible in your home dir
 
 ## Updating Python version inside Docker
 If the web UI becomes incompatible with the pre-installed Python 3.7 version inside the Docker image, here are
-instructions on how to update it (assuming you have successfully followed "Installing and running using Docker"):
+instructions on how to update it (assuming you have successfully followed "Installing and running on Linux with AMD GPUs
+(Docker)"):
 
 Execute the following inside the container:
 ```bash
@@ -65,8 +66,8 @@ echo 'PATH=/usr/local/bin:$PATH' >> ~/.bashrc
 Then restart the container and attach again. If you check `python --version` it should now say `Python 3.9.5` or newer.
 
 Run `rm -rf /dockerx/stable-diffusion-webui/venv` inside the container and then follow the steps in "Installing and
-running using Docker" again, skipping the `git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui` and using
-the modified launch-command below instead:
+running on Linux with AMD GPUs (Docker)" again, skipping the
+`git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui` and using the modified launch-command below instead:
 
 ```bash
 # It's possible that you don't need "--precision full", dropping "--no-half" however crashes my drivers
