@@ -13,6 +13,7 @@ import modules.styles
 import modules.interrogate
 import modules.memmon
 import modules.sd_models
+from modules.realesrgan_model_loader import get_realesrgan_model_names
 
 sd_model_file = os.path.join(script_path, 'model.ckpt')
 default_sd_model_file = sd_model_file
@@ -142,6 +143,10 @@ class Options:
         "save_txt": OptionInfo(False, "Create a text file next to every image with generation parameters."),
         "ESRGAN_tile": OptionInfo(192, "Tile size for ESRGAN upscalers. 0 = no tiling.", gr.Slider, {"minimum": 0, "maximum": 512, "step": 16}),
         "ESRGAN_tile_overlap": OptionInfo(8, "Tile overlap, in pixels for ESRGAN upscalers. Low values = visible seam.", gr.Slider, {"minimum": 0, "maximum": 48, "step": 1}),
+        "realesrgan_enabled_models": OptionInfo(
+            ["Real-ESRGAN 2x plus", "Real-ESRGAN 4x plus", "Real-ESRGAN 4x plus anime 6B"],
+            "Select which RealESRGAN models to show in the web UI. (Requires restart)",
+            gr.CheckboxGroup, {"choices": get_realesrgan_model_names()}),
         "SWIN_tile": OptionInfo(192, "Tile size for all SwinIR.", gr.Slider, {"minimum": 16, "maximum": 512, "step": 16}),
         "SWIN_tile_overlap": OptionInfo(8, "Tile overlap, in pixels for SwinIR. Low values = visible seam.", gr.Slider, {"minimum": 0, "maximum": 48, "step": 1}),
         "ldsr_steps": OptionInfo(100, "LDSR processing steps. Lower = faster",
