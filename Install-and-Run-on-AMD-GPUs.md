@@ -1,8 +1,13 @@
 # Installing and running on Linux with AMD GPUs
-If your AMD GPU is compatible with ROCm, you can try running: `TORCH_COMMAND='pip install torch torchvision
---extra-index-url https://download.pytorch.org/whl/rocm5.1.1' python launch.py --precision full --no-half`. Make sure to
-do this in a new virtual environment, or activate your existing environment and `pip uninstall torch torchvision`
-beforehand.
+If your AMD GPU is compatible with ROCm, you can try running: 
+
+```bash
+# It's possible that you don't need "--precision full", dropping "--no-half" however crashes my drivers
+TORCH_COMMAND='pip install torch torchvision --extra-index-url https://download.pytorch.org/whl/rocm5.1.1' python launch.py --precision full --no-half
+```
+
+Make sure to do this in a new virtual environment, or activate your existing environment and
+`pip uninstall torch torchvision` beforehand.
 
 The first generation after starting the WebUI might take very long, and you might see a message similar to this: 
 > MIOpen(HIP): Warning [SQLiteBase] Missing system database file: gfx1030_40.kdb Performance may degrade. Please follow
