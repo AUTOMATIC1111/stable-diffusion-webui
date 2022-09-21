@@ -70,6 +70,45 @@ sudo pacman -S wget git python3
 bash <(wget -qO- https://raw.githubusercontent.com/AUTOMATIC1111/stable-diffusion-webui/master/webui.sh)
 ```
 
+### Installation with Docker Compose
+Alternatively you can start an instance on any system that has Docker Compose 1.28.0+ and Docker Engine 17.06.0+ installed.
+Instructions for installing these can be found [here](https://docs.docker.com/compose/install/).
+No other dependencies need to be installed on your system for this approach.
+
+Once you have Docker Compose installed, starting up Stable Diffusion web UI should be as simple as running the command:
+```bash
+docker-compose up -d
+```
+in a terminal where the current working directory is this repository (either manually downloaded or cloned with git).
+Once it has started up, you will be able to access the web UI at http://127.0.0.1:7860.
+
+To shut down the server, again from terminal in the same working directory, run:
+```bash
+docker-compose down
+```
+
+If you wish to enable GFPGAN (optional), you will have to download the model as described in previous installation techniques,
+however the model should be placed in the `models/` directory.
+
+Updating your instance is an simple as taking it down, pulling the latest changes with git, and then running:
+```bash
+docker-compose build
+```
+The container can then be started back up as normal.
+
+If you encounter an issue with permissions, particularly when trying to render images, you may need to
+manually set the ownership of the `outputs/` directory to UID 1001 and GID 1001. On Linux this is done with the command:
+```bash
+chown -R 1001:1001 outputs/
+```
+
+You can customize many things by modifying the docker-compose.yml file. For example, if you want to specify which GPU
+to use on multi-GPU setups, you can [specify GPU drivers and device ids](https://docs.docker.com/compose/gpu-support/).
+You can also pass in command line arguments using [the services command property](https://docs.docker.com/compose/compose-file/#command).
+
+Note: while you can build and run the Dockerfile without docker-compose, this is not recommended as there are many volumes to
+mount and some specific settings that need to be set to assure correct operation.
+
 ## Documentation
 The documentation was moved from this README over to the project's [wiki](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki).
 
