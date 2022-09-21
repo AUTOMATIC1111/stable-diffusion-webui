@@ -1,4 +1,4 @@
-# Installing and running on Linux with AMD GPUs
+# Install and run on Linux with AMD GPU
 If your AMD GPU is compatible with ROCm, you can try running: 
 
 ```bash
@@ -17,7 +17,7 @@ The next generations should work with regular performance. You can follow the li
 to use the same operating system, follow the steps there to fix this issue. If there is no clear way to compile or
 install the MIOpen kernels for your operating system, consider following the Docker guide below.
 
-# Installing and running on Linux with AMD GPUs (Docker)
+# Install and run on Linux with AMD GPU (Docker)
 Pull the latest `rocm/pytorch` Docker image, start the image and attach to the container (taken from the `rocm/pytorch`
 documentation): `docker run -it --network=host --device=/dev/kfd --device=/dev/dri --group-add=video --ipc=host
 --cap-add=SYS_PTRACE --security-opt seccomp=unconfined -v $HOME/dockerx:/dockerx rocm/pytorch`
@@ -53,7 +53,7 @@ The `/dockerx` folder inside the container should be accessible in your home dir
 
 ## Updating Python version inside Docker
 If the web UI becomes incompatible with the pre-installed Python 3.7 version inside the Docker image, here are
-instructions on how to update it (assuming you have successfully followed "Installing and running on Linux with AMD GPUs
+instructions on how to update it (assuming you have successfully followed "Install and run on Linux with AMD GPU
 (Docker)"):
 
 Execute the following inside the container:
@@ -66,7 +66,7 @@ echo 'PATH=/usr/local/bin:$PATH' >> ~/.bashrc
 Then restart the container and attach again. If you check `python --version` it should now say `Python 3.9.5` or newer.
 
 Run `rm -rf /dockerx/stable-diffusion-webui/venv` inside the container and then follow the steps in "Installing and
-running on Linux with AMD GPUs (Docker)" again, skipping the
+running on Linux with AMD GPU (Docker)" again, skipping the
 `git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui` and using the modified launch-command below instead:
 
 ```bash
