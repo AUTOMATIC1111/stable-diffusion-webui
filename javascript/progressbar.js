@@ -3,7 +3,7 @@ global_progressbar = null
 
 onUiUpdate(function(){
     progressbar = gradioApp().getElementById('progressbar')
-    progressDiv = gradioApp().querySelectorAll('.progressDiv').length > 0;
+    progressDiv = gradioApp().querySelectorAll('#progressSpan').length > 0;
     interrupt = gradioApp().getElementById('interrupt')
 	if(progressbar!= null && progressbar != global_progressbar){
 	    global_progressbar = progressbar
@@ -40,7 +40,7 @@ function requestMoreProgress(){
     if(btn==null) return;
 
     btn.click();
-    progressDiv = gradioApp().querySelectorAll('.progressDiv').length > 0;
+    progressDiv = gradioApp().querySelectorAll('#progressSpan').length > 0;
     if(progressDiv){
         interrupt.style.display = "block"
     }
