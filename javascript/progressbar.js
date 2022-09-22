@@ -1,17 +1,16 @@
 // code related to showing and updating progressbar shown as the image is being made
-
 global_progressbar = null
 
 onUiUpdate(function(){
-	progressbar = gradioApp().getElementById('progressbar')
-    	progressDiv = gradioApp().querySelectorAll('.progressDiv').length > 0;  
+    progressbar = gradioApp().getElementById('progressbar')
+    progressDiv = gradioApp().querySelectorAll('.progressDiv').length > 0;
+    interrupt = gradioApp().getElementById('interrupt')
 	if(progressbar!= null && progressbar != global_progressbar){
 	    global_progressbar = progressbar
 
         var mutationObserver = new MutationObserver(function(m){
             txt2img_preview = gradioApp().getElementById('txt2img_preview')
             txt2img_gallery = gradioApp().getElementById('txt2img_gallery')
-
             img2img_preview = gradioApp().getElementById('img2img_preview')
             img2img_gallery = gradioApp().getElementById('img2img_gallery')
 
@@ -19,7 +18,7 @@ onUiUpdate(function(){
                 txt2img_preview.style.width = txt2img_gallery.clientWidth + "px"
                 txt2img_preview.style.height = txt2img_gallery.clientHeight + "px"  
                 if(!progressDiv){
-                    progressbar.style.display = "none"
+                    interrupt.style.display = "none"
                 }
             }
 
@@ -27,7 +26,7 @@ onUiUpdate(function(){
                 img2img_preview.style.width = img2img_gallery.clientWidth + "px"
                 img2img_preview.style.height = img2img_gallery.clientHeight + "px" 
                 if(!progressDiv){
-                    progressbar.style.display = "none"
+                    interrupt.style.display = "none"
                 }
             }
 
@@ -36,7 +35,6 @@ onUiUpdate(function(){
         mutationObserver.observe( progressbar, { childList:true, subtree:true })
 	}
 })
-
 function requestMoreProgress(){
     btn = gradioApp().getElementById("check_progress");
     if(btn==null) return;
@@ -44,7 +42,7 @@ function requestMoreProgress(){
     btn.click();
     progressDiv = gradioApp().querySelectorAll('.progressDiv').length > 0;
     if(progressDiv){
-        progressbar.style.display = "block" 
+        interrupt.style.display = "block"
     }
 }
 
