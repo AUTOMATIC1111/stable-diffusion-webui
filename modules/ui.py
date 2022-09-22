@@ -22,7 +22,6 @@ from modules.paths import script_path
 from modules.shared import opts, cmd_opts
 import modules.shared as shared
 from modules.sd_samplers import samplers, samplers_for_img2img
-import modules.realesrgan_model as realesrgan
 import modules.ldsr_model
 import modules.scripts
 import modules.gfpgan_model
@@ -350,7 +349,14 @@ def create_toprow(is_img2img):
 
         with gr.Column(scale=1):
             with gr.Row():
+                interrupt = gr.Button('Interrupt', elem_id="interrupt")
                 submit = gr.Button('Generate', elem_id="generate", variant='primary')
+
+                interrupt.click(
+                    fn=lambda: shared.state.interrupt(),
+                    inputs=[],
+                    outputs=[],
+                )
 
             with gr.Row():
                 if is_img2img:
@@ -386,6 +392,15 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
         txt2img_prompt, roll, txt2img_prompt_style, txt2img_negative_prompt, txt2img_prompt_style2, submit, _, txt2img_prompt_style_apply, txt2img_save_style = create_toprow(is_img2img=False)
         dummy_component = gr.Label(visible=False)
 
+        with gr.Row(elem_id='progressRow'):
+              with gr.Column(scale=1):
+                columnEmpty = "Empty"
+
+              with gr.Column(scale=1):
+                progressbar = gr.HTML(elem_id="progressbar")
+                txt2img_preview = gr.Image(elem_id='txt2img_preview', visible=False)
+                setup_progressbar(progressbar, txt2img_preview)
+
         with gr.Row().style(equal_height=False):
             with gr.Column(variant='panel'):
                 steps = gr.Slider(minimum=1, maximum=150, step=1, label="Sampling Steps", value=20)
@@ -416,13 +431,10 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     custom_inputs = modules.scripts.scripts_txt2img.setup_ui(is_img2img=False)
 
             with gr.Column(variant='panel'):
-                progressbar = gr.HTML(elem_id="progressbar")
 
                 with gr.Group():
                     txt2img_preview = gr.Image(elem_id='txt2img_preview', visible=False)
-                    txt2img_gallery = gr.Gallery(label='Output', elem_id='txt2img_gallery').style(grid=4)
-
-                setup_progressbar(progressbar, txt2img_preview)
+                    txt2img_gallery = gr.Gallery(label='Output', show_label=False, elem_id='txt2img_gallery').style(grid=4)
 
                 with gr.Group():
                     with gr.Row():
@@ -430,7 +442,6 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                         send_to_img2img = gr.Button('Send to img2img')
                         send_to_inpaint = gr.Button('Send to inpaint')
                         send_to_extras = gr.Button('Send to extras')
-                        interrupt = gr.Button('Interrupt')
 
                 with gr.Group():
                     html_info = gr.HTML()
@@ -479,12 +490,6 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 outputs=[hr_options],
             )
 
-            interrupt.click(
-                fn=lambda: shared.state.interrupt(),
-                inputs=[],
-                outputs=[],
-            )
-
             save.click(
                 fn=wrap_gradio_call(save_files),
                 _js="(x, y, z) => [x, y, selected_gallery_index()]",
@@ -513,35 +518,55 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
     with gr.Blocks(analytics_enabled=False) as img2img_interface:
         img2img_prompt, roll, img2img_prompt_style, img2img_negative_prompt, img2img_prompt_style2, submit, img2img_interrogate, img2img_prompt_style_apply, img2img_save_style = create_toprow(is_img2img=True)
 
+        with gr.Row(elem_id='progressRow'):
+              with gr.Column(scale=1):
+                columnEmpty = "Empty"
+
+              with gr.Column(scale=1):
+                progressbar = gr.HTML(elem_id="progressbar")
+                img2img_preview = gr.Image(elem_id='img2img_preview', visible=False)
+                setup_progressbar(progressbar, img2img_preview)
+
         with gr.Row().style(equal_height=False):
             with gr.Column(variant='panel'):
-                with gr.Group():
-                    switch_mode = gr.Radio(label='Mode', elem_id="img2img_mode", choices=['Redraw whole image', 'Inpaint a part of image', 'SD upscale'], value='Redraw whole image', type="index", show_label=False)
-                    init_img = gr.Image(label="Image for img2img", source="upload", interactive=True, type="pil")
-                    init_img_with_mask = gr.Image(label="Image for inpainting with mask", elem_id="img2maskimg", source="upload", interactive=True, type="pil", tool="sketch", visible=False, image_mode="RGBA")
-                    init_mask = gr.Image(label="Mask", source="upload", interactive=True, type="pil", visible=False)
-                    init_img_with_mask_comment = gr.HTML(elem_id="mask_bug_info", value="<small>if the editor shows ERROR, switch to another tab and back, then to another img2img mode above and back</small>", visible=False)
 
-                    with gr.Row():
-                        resize_mode = gr.Radio(label="Resize mode", elem_id="resize_mode", show_label=False, choices=["Just resize", "Crop and resize", "Resize and fill"], type="index", value="Just resize")
-                        mask_mode = gr.Radio(label="Mask mode", show_label=False, choices=["Draw mask", "Upload mask"], type="index", value="Draw mask")
+                with gr.Tabs(elem_id="mode_img2img") as tabs_img2img_mode:
+                    with gr.TabItem('img2img'):
+                        init_img = gr.Image(label="Image for img2img", show_label=False, source="upload", interactive=True, type="pil")
+
+                    with gr.TabItem('Inpaint'):
+                        init_img_with_mask = gr.Image(label="Image for inpainting with mask",  show_label=False, elem_id="img2maskimg", source="upload", interactive=True, type="pil", tool="sketch", image_mode="RGBA")
+                        init_img_with_mask_comment = gr.HTML(elem_id="mask_bug_info", value="<small>if the editor shows ERROR, switch to another tab and back, then to \"Upload mask\" mode above and back</small>")
+
+                        init_img_inpaint = gr.Image(label="Image for img2img", show_label=False, source="upload", interactive=True, type="pil", visible=False)
+                        init_mask_inpaint = gr.Image(label="Mask", source="upload", interactive=True, type="pil", visible=False)
+
+                        mask_blur = gr.Slider(label='Mask blur', minimum=0, maximum=64, step=1, value=4)
+
+                        with gr.Row():
+                            mask_mode = gr.Radio(label="Mask mode", show_label=False, choices=["Draw mask", "Upload mask"], type="index", value="Draw mask")
+                            inpainting_mask_invert = gr.Radio(label='Masking mode', show_label=False, choices=['Inpaint masked', 'Inpaint not masked'], value='Inpaint masked', type="index")
+
+                        inpainting_fill = gr.Radio(label='Masked content', choices=['fill', 'original', 'latent noise', 'latent nothing'], value='fill', type="index")
+
+                        with gr.Row():
+                            inpaint_full_res = gr.Checkbox(label='Inpaint at full resolution', value=False)
+                            inpaint_full_res_padding = gr.Slider(label='Inpaint at full resolution padding, pixels', minimum=0, maximum=256, step=4, value=32)
+
+                    with gr.TabItem('Batch img2img'):
+                        gr.HTML("<p class=\"text-gray-500\">Process images in a directory on the same machine where the server is running.</p>")
+                        img2img_batch_input_dir = gr.Textbox(label="Input directory")
+                        img2img_batch_output_dir = gr.Textbox(label="Output directory")
+
+                with gr.Row():
+                    resize_mode = gr.Radio(label="Resize mode", elem_id="resize_mode", show_label=False, choices=["Just resize", "Crop and resize", "Resize and fill"], type="index", value="Just resize")
 
                 steps = gr.Slider(minimum=1, maximum=150, step=1, label="Sampling Steps", value=20)
                 sampler_index = gr.Radio(label='Sampling method', choices=[x.name for x in samplers_for_img2img], value=samplers_for_img2img[0].name, type="index")
-                mask_blur = gr.Slider(label='Mask blur', minimum=0, maximum=64, step=1, value=4, visible=False)
-                inpainting_fill = gr.Radio(label='Masked content', choices=['fill', 'original', 'latent noise', 'latent nothing'], value='fill', type="index", visible=False)
-
-                with gr.Row():
-                    inpaint_full_res = gr.Checkbox(label='Inpaint at full resolution', value=False, visible=False)
-                    inpainting_mask_invert = gr.Radio(label='Masking mode', choices=['Inpaint masked', 'Inpaint not masked'], value='Inpaint masked', type="index", visible=False)
 
                 with gr.Row():
                     restore_faces = gr.Checkbox(label='Restore faces', value=False, visible=len(shared.face_restorers) > 1)
                     tiling = gr.Checkbox(label='Tiling', value=False)
-                    sd_upscale_overlap = gr.Slider(minimum=0, maximum=256, step=16, label='Tile overlap', value=64, visible=False)
-
-                with gr.Row():
-                    sd_upscale_upscaler_name = gr.Radio(label='Upscaler', choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name, type="index", visible=False)
 
                 with gr.Row():
                     batch_count = gr.Slider(minimum=1, maximum=cmd_opts.max_batch_count, step=1, label='Batch count', value=1)
@@ -561,13 +586,10 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     custom_inputs = modules.scripts.scripts_img2img.setup_ui(is_img2img=True)
 
             with gr.Column(variant='panel'):
-                progressbar = gr.HTML(elem_id="progressbar")
 
                 with gr.Group():
                     img2img_preview = gr.Image(elem_id='img2img_preview', visible=False)
-                    img2img_gallery = gr.Gallery(label='Output', elem_id='img2img_gallery').style(grid=4)
-
-                setup_progressbar(progressbar, img2img_preview)
+                    img2img_gallery = gr.Gallery(label='Output', show_label=False, elem_id='img2img_gallery').style(grid=4)
 
                 with gr.Group():
                     with gr.Row():
@@ -575,9 +597,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                         img2img_send_to_img2img = gr.Button('Send to img2img')
                         img2img_send_to_inpaint = gr.Button('Send to inpaint')
                         img2img_send_to_extras = gr.Button('Send to extras')
-                        interrupt = gr.Button('Interrupt')
                         img2img_save_style = gr.Button('Save prompt as style')
-
 
                 with gr.Group():
                     html_info = gr.HTML()
@@ -586,70 +606,36 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
             connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
             connect_reuse_seed(subseed, reuse_subseed, generation_info, dummy_component, is_subseed=True)
 
-            def apply_mode(mode, uploadmask):
-                is_classic = mode == 0
-                is_inpaint = mode == 1
-                is_upscale = mode == 2
-
-                return {
-                    init_img: gr_show(not is_inpaint or (is_inpaint and uploadmask == 1)),
-                    init_img_with_mask: gr_show(is_inpaint and uploadmask == 0),
-                    init_img_with_mask_comment: gr_show(is_inpaint and uploadmask == 0),
-                    init_mask: gr_show(is_inpaint and uploadmask == 1),
-                    mask_mode: gr_show(is_inpaint),
-                    mask_blur: gr_show(is_inpaint),
-                    inpainting_fill: gr_show(is_inpaint),
-                    sd_upscale_upscaler_name: gr_show(is_upscale),
-                    sd_upscale_overlap: gr_show(is_upscale),
-                    inpaint_full_res: gr_show(is_inpaint),
-                    inpainting_mask_invert: gr_show(is_inpaint),
-                    img2img_interrogate: gr_show(not is_inpaint),
-                }
-
-            switch_mode.change(
-                apply_mode,
-                inputs=[switch_mode, mask_mode],
+            mask_mode.change(
+                lambda mode, img: {
+                    #init_img_with_mask: gr.Image.update(visible=mode == 0, value=img["image"]),
+                    init_img_with_mask: gr_show(mode == 0),
+                    init_img_with_mask_comment: gr_show(mode == 0),
+                    init_img_inpaint: gr_show(mode == 1),
+                    init_mask_inpaint: gr_show(mode == 1),
+                },
+                inputs=[mask_mode, init_img_with_mask],
                 outputs=[
-                    init_img,
                     init_img_with_mask,
                     init_img_with_mask_comment,
-                    init_mask,
-                    mask_mode,
-                    mask_blur,
-                    inpainting_fill,
-                    sd_upscale_upscaler_name,
-                    sd_upscale_overlap,
-                    inpaint_full_res,
-                    inpainting_mask_invert,
-                    img2img_interrogate,
-                ]
-            )
-
-            mask_mode.change(
-                lambda mode: {
-                    init_img: gr_show(mode == 1),
-                    init_img_with_mask: gr_show(mode == 0),
-                    init_mask: gr_show(mode == 1),
-                },
-                inputs=[mask_mode],
-                outputs=[
-                    init_img,
-                    init_img_with_mask,
-                    init_mask,
+                    init_img_inpaint,
+                    init_mask_inpaint,
                 ],
             )
 
             img2img_args = dict(
                 fn=img2img,
-                _js="submit",
+                _js="submit_img2img",
                 inputs=[
+                    dummy_component,
                     img2img_prompt,
                     img2img_negative_prompt,
                     img2img_prompt_style,
                     img2img_prompt_style2,
                     init_img,
                     init_img_with_mask,
-                    init_mask,
+                    init_img_inpaint,
+                    init_mask_inpaint,
                     mask_mode,
                     steps,
                     sampler_index,
@@ -657,7 +643,6 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     inpainting_fill,
                     restore_faces,
                     tiling,
-                    switch_mode,
                     batch_count,
                     batch_size,
                     cfg_scale,
@@ -667,10 +652,11 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     height,
                     width,
                     resize_mode,
-                    sd_upscale_upscaler_name,
-                    sd_upscale_overlap,
                     inpaint_full_res,
+                    inpaint_full_res_padding,
                     inpainting_mask_invert,
+                    img2img_batch_input_dir,
+                    img2img_batch_output_dir,
                 ] + custom_inputs,
                 outputs=[
                     img2img_gallery,
@@ -687,12 +673,6 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 fn=interrogate,
                 inputs=[init_img],
                 outputs=[img2img_prompt],
-            )
-
-            interrupt.click(
-                fn=lambda: shared.state.interrupt(),
-                inputs=[],
-                outputs=[],
             )
 
             save.click(
@@ -743,7 +723,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
     with gr.Blocks(analytics_enabled=False) as extras_interface:
         with gr.Row().style(equal_height=False):
             with gr.Column(variant='panel'):
-                with gr.Tabs():
+                with gr.Tabs(elem_id="mode_extras"):
                     with gr.TabItem('Single Image'):
                         image = gr.Image(label="Source", source="upload", interactive=True, type="pil")
 
@@ -769,13 +749,15 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 submit = gr.Button('Generate', elem_id="extras_generate", variant='primary')
 
             with gr.Column(variant='panel'):
-                result_images = gr.Gallery(label="Result")
+                result_images = gr.Gallery(label="Result", show_label=False)
                 html_info_x = gr.HTML()
                 html_info = gr.HTML()
 
-        extras_args = dict(
+        submit.click(
             fn=run_extras,
+            _js="get_extras_tab_index",
             inputs=[
+                dummy_component,
                 image,
                 image_batch,
                 gfpgan_visibility,
@@ -792,8 +774,6 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 html_info,
             ]
         )
-
-        submit.click(**extras_args)
 
     pnginfo_interface = gr.Interface(
         wrap_gradio_call(run_pnginfo),
@@ -833,9 +813,6 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
         return comp(label=info.label, value=fun, **(args or {}))
 
     components = []
-    keys = list(opts.data_labels.keys())
-    settings_cols = 3
-    items_per_col = math.ceil(len(keys) / settings_cols)
 
     def run_settings(*args):
         up = []
@@ -861,27 +838,49 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
         settings_submit = gr.Button(value="Apply settings", variant='primary')
         result = gr.HTML()
 
-        with gr.Row(elem_id="settings").style(equal_height=False):
-            for colno in range(settings_cols):
-                with gr.Column(variant='panel'):
-                    for rowno in range(items_per_col):
-                        index = rowno + colno * items_per_col
+        settings_cols = 3
+        items_per_col = int(len(opts.data_labels) * 0.9 / settings_cols)
 
-                        if index < len(keys):
-                            components.append(create_setting_component(keys[index]))
+        cols_displayed = 0
+        items_displayed = 0
+        previous_section = None
+        column = None
+        with gr.Row(elem_id="settings").style(equal_height=False):
+            for i, (k, item) in enumerate(opts.data_labels.items()):
+
+                if previous_section != item.section:
+                    if cols_displayed < settings_cols and (items_displayed >= items_per_col or previous_section is None):
+                        if column is not None:
+                            column.__exit__()
+
+                        column = gr.Column(variant='panel')
+                        column.__enter__()
+
+                        items_displayed = 0
+                        cols_displayed += 1
+
+                    previous_section = item.section
+
+                    gr.HTML(elem_id="settings_header_text_{}".format(item.section[0]), value='<h1 class="gr-button-lg">{}</h1>'.format(item.section[1]))
+
+                components.append(create_setting_component(k))
+                items_displayed += 1
+
+        request_notifications = gr.Button(value='Request browser notifications', elem_id="request_notifications")
+        request_notifications.click(
+            fn=lambda: None,
+            inputs=[],
+            outputs=[],
+            _js='function(){}'
+        )
+
+        if column is not None:
+            column.__exit__()
 
         settings_submit.click(
             fn=run_settings,
             inputs=components,
             outputs=[result]
-        )
-
-        request_notifications = gr.Button(value='Request browser notifications')
-        request_notifications.click(
-            fn=lambda: None,
-            inputs=[],
-            outputs=[],
-            _js='() => Notification.requestPermission()'
         )
 
     interfaces = [
@@ -919,6 +918,12 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
         )
 
         tabs.change(
+            fn=lambda x: x,
+            inputs=[init_img_with_mask],
+            outputs=[init_img_with_mask],
+        )
+
+        tabs_img2img_mode.change(
             fn=lambda x: x,
             inputs=[init_img_with_mask],
             outputs=[init_img_with_mask],
