@@ -116,6 +116,7 @@ class Options:
         "save_to_dirs": OptionInfo(False, "Save images to a subdirectory"),
         "grid_save_to_dirs": OptionInfo(False, "Save grids to subdirectory"),
         "directories_filename_pattern": OptionInfo("", "Directory name pattern"),
+        "directories_max_prompt_words": OptionInfo(8, "Max prompt words", gr.Slider, {"minimum": 1, "maximum": 20, "step": 1}),
         "outdir_samples": OptionInfo("", "Output directory for images; if empty, defaults to two directories below", component_args=hide_dirs),
         "outdir_txt2img_samples": OptionInfo("outputs/txt2img-images", 'Output directory for txt2img images', component_args=hide_dirs),
         "outdir_img2img_samples": OptionInfo("outputs/img2img-images", 'Output directory for img2img images', component_args=hide_dirs),
