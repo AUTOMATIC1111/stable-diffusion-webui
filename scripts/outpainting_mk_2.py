@@ -11,7 +11,7 @@ from modules import images, processing, devices
 from modules.processing import Processed, process_images
 from modules.shared import opts, cmd_opts, state
 
-
+#  https://github.com/parlance-zz/g-diffuser-bot
 def expand(x, dir, amount, power=0.75):
     is_left = dir == 3
     is_right = dir == 1
