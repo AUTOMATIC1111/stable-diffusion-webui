@@ -86,7 +86,7 @@
 }
 
 #style_pos_col, #style_neg_col{
-    min-width: 4em !important;
+    min-width: 8em !important;
 }
 
 #style_index, #style2_index{
@@ -100,6 +100,7 @@
 #toprow div{
     border: none;
     gap: 0;
+    background: transparent;
 }
 
 #resize_mode{
@@ -206,13 +207,20 @@ input[type="range"]{
 #progressbar{
   position: absolute;
   z-index: 1000;
-  width: 100%;
-  display: none;
+  right: 0;
+  padding-left: 5px;
+  padding-right: 5px;
+  display: block;
+}
+
+#progressRow{
+  margin-bottom: 10px;
+  margin-top: -18px;
 }
 
 .progressDiv{
   width: 100%;
-  height: 72px;
+  height: 20px;
   background: #b4c0cc;
   border-radius: 8px;
 }
@@ -223,11 +231,11 @@ input[type="range"]{
 
 .progressDiv .progress{
   width: 0%;
-  height: 72px;
+  height: 20px;
   background: #0060df;
   color: white;
   font-weight: bold;
-  line-height: 72px;
+  line-height: 20px;
   padding: 0 8px 0 0;
   text-align: right;
   border-radius: 8px;
@@ -327,4 +335,13 @@ input[type="range"]{
 .modalPrev:hover,
 .modalNext:hover {
   background-color: rgba(0, 0, 0, 0.8);
+}
+
+#interrupt{
+  position: absolute;
+  width: 100%;
+  height: 72px;
+  background: #b4c0cc;
+  border-radius: 8px;
+  display: none;
 }
