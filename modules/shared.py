@@ -107,6 +107,7 @@ class OptionInfo:
         self.component = component
         self.component_args = component_args
         self.onchange = onchange
+        self.section = None
 
 
 def options_section(section_identifer, options_dict):
@@ -120,11 +121,45 @@ hide_dirs = {"visible": False} if cmd_opts.hide_ui_dir_config else None
 
 options_templates = {}
 
-options_templates.update(options_section((0, "General"), {
-    "filter_nsfw": OptionInfo(False, "Filter NSFW content"),
+options_templates.update(options_section(('saving-images', "Saving images/grids"), {
+    "samples_save": OptionInfo(True, "Always save all generated images"),
+    "samples_format": OptionInfo('png', 'File format for images'),
+    "samples_filename_pattern": OptionInfo("", "Images filename pattern"),
+
+    "grid_save": OptionInfo(True, "Always save all generated image grids"),
+    "grid_format": OptionInfo('png', 'File format for grids'),
+    "grid_extended_filename": OptionInfo(False, "Add extended info (seed, prompt) to filename when saving grid"),
+    "grid_only_if_multiple": OptionInfo(True, "Do not save grids consisting of one picture"),
+    "n_rows": OptionInfo(-1, "Grid row count; use -1 for autodetect and 0 for it to be same as batch size", gr.Slider, {"minimum": -1, "maximum": 16, "step": 1}),
+
     "enable_pnginfo": OptionInfo(True, "Save text information about generation parameters as chunks to png files"),
-    "add_model_hash_to_info": OptionInfo(False, "Add model hash to generation information"),
     "save_txt": OptionInfo(False, "Create a text file next to every image with generation parameters."),
+    "save_images_before_face_restoration": OptionInfo(False, "Save a copy of image before doing face restoration."),
+    "jpeg_quality": OptionInfo(80, "Quality for saved jpeg images", gr.Slider, {"minimum": 1, "maximum": 100, "step": 1}),
+    "export_for_4chan": OptionInfo(True, "If PNG image is larger than 4MB or any dimension is larger than 4000, downscale and save copy as JPG"),
+
+    "use_original_name_batch": OptionInfo(False, "Use original name for output filename during batch process in extras tab"),
+}))
+
+options_templates.update(options_section(('saving-paths', "Paths for saving"), {
+    "outdir_samples": OptionInfo("", "Output directory for images; if empty, defaults to three directories below", component_args=hide_dirs),
+    "outdir_txt2img_samples": OptionInfo("outputs/txt2img-images", 'Output directory for txt2img images', component_args=hide_dirs),
+    "outdir_img2img_samples": OptionInfo("outputs/img2img-images", 'Output directory for img2img images', component_args=hide_dirs),
+    "outdir_extras_samples": OptionInfo("outputs/extras-images", 'Output directory for images from extras tab', component_args=hide_dirs),
+    "outdir_grids": OptionInfo("", "Output directory for grids; if empty, defaults to two directories below", component_args=hide_dirs),
+    "outdir_txt2img_grids": OptionInfo("outputs/txt2img-grids", 'Output directory for txt2img grids', component_args=hide_dirs),
+    "outdir_img2img_grids": OptionInfo("outputs/img2img-grids", 'Output directory for img2img grids', component_args=hide_dirs),
+    "outdir_save": OptionInfo("log/images", "Directory for saving images using the Save button", component_args=hide_dirs),
+}))
+
+options_templates.update(options_section(('saving-to-dirs', "Saving to a directory"), {
+    "save_to_dirs": OptionInfo(False, "Save images to a subdirectory"),
+    "grid_save_to_dirs": OptionInfo(False, "Save grids to subdirectory"),
+    "directories_filename_pattern": OptionInfo("", "Directory name pattern"),
+    "directories_max_prompt_words": OptionInfo(8, "Max prompt words", gr.Slider, {"minimum": 1, "maximum": 20, "step": 1}),
+}))
+
+options_templates.update(options_section(('upscaling', "Upscaling"), {
     "ESRGAN_tile": OptionInfo(192, "Tile size for ESRGAN upscalers. 0 = no tiling.", gr.Slider, {"minimum": 0, "maximum": 512, "step": 16}),
     "ESRGAN_tile_overlap": OptionInfo(8, "Tile overlap, in pixels for ESRGAN upscalers. Low values = visible seam.", gr.Slider, {"minimum": 0, "maximum": 48, "step": 1}),
     "realesrgan_enabled_models": OptionInfo(["Real-ESRGAN 4x plus", "Real-ESRGAN 4x plus anime 6B"], "Select which RealESRGAN models to show in the web UI. (Requires restart)", gr.CheckboxGroup, lambda: {"choices": realesrgan_models_names()}),
@@ -133,72 +168,51 @@ options_templates.update(options_section((0, "General"), {
     "ldsr_steps": OptionInfo(100, "LDSR processing steps. Lower = faster", gr.Slider, {"minimum": 1, "maximum": 200, "step": 1}),
     "ldsr_pre_down": OptionInfo(1, "LDSR Pre-process downssample scale. 1 = no down-sampling, 4 = 1/4 scale.", gr.Slider, {"minimum": 1, "maximum": 4, "step": 1}),
     "ldsr_post_down": OptionInfo(1, "LDSR Post-process down-sample scale. 1 = no down-sampling, 4 = 1/4 scale.", gr.Slider, {"minimum": 1, "maximum": 4, "step": 1}),
-    "random_artist_categories": OptionInfo([], "Allowed categories for random artists selection when using the Roll button", gr.CheckboxGroup, {"choices": artist_db.categories()}),
+
     "upscaler_for_hires_fix": OptionInfo(None, "Upscaler for highres. fix", gr.Radio, lambda: {"choices": [x.name for x in sd_upscalers]}),
-    "show_progressbar": OptionInfo(True, "Show progressbar"),
-    "show_progress_every_n_steps": OptionInfo(0, "Show show image creation progress every N sampling steps. Set 0 to disable.", gr.Slider, {"minimum": 0, "maximum": 32, "step": 1}),
-    "multiple_tqdm": OptionInfo(True, "Add a second progress bar to the console that shows progress for an entire job. Broken in PyCharm console."),
-    "memmon_poll_rate": OptionInfo(8, "VRAM usage polls per second during generation. Set to 0 to disable.", gr.Slider, {"minimum": 0, "maximum": 40, "step": 1}),
+}))
+
+options_templates.update(options_section(('face-restoration', "Face restoration"), {
     "face_restoration_model": OptionInfo(None, "Face restoration model", gr.Radio, lambda: {"choices": [x.name() for x in face_restorers]}),
     "code_former_weight": OptionInfo(0.5, "CodeFormer weight parameter; 0 = maximum effect; 1 = minimum effect", gr.Slider, {"minimum": 0, "maximum": 1, "step": 0.01}),
-    "save_images_before_face_restoration": OptionInfo(False, "Save a copy of image before doing face restoration."),
     "face_restoration_unload": OptionInfo(False, "Move face restoration model from VRAM into RAM after processing"),
-    "sd_model_checkpoint": OptionInfo(None, "Stable Diffusion checkpoint", gr.Radio, lambda: {"choices": [x.title for x in modules.sd_models.checkpoints_list.values()]}),
-    "js_modal_lightbox": OptionInfo(True, "Enable full page image viewer"),
-    "js_modal_lightbox_initialy_zoomed": OptionInfo(True, "Show images zoomed in by default in full page image viewer"),
-    "use_original_name_batch": OptionInfo(False, "Use original name for output filename during batch process"),
-}))
-
-options_templates.update(options_section((1, "File and Folder Locations"), {
-    "samples_filename_pattern": OptionInfo("", "Images filename pattern"),
-    "save_to_dirs": OptionInfo(False, "Save images to a subdirectory"),
-    "grid_save_to_dirs": OptionInfo(False, "Save grids to subdirectory"),
-    "directories_filename_pattern": OptionInfo("", "Directory name pattern"),
-    "directories_max_prompt_words": OptionInfo(8, "Max prompt words", gr.Slider, {"minimum": 1, "maximum": 20, "step": 1}),
-    "outdir_samples": OptionInfo("", "Output directory for images; if empty, defaults to two directories below", component_args=hide_dirs),
-    "outdir_txt2img_samples": OptionInfo("outputs/txt2img-images", 'Output directory for txt2img images', component_args=hide_dirs),
-    "outdir_img2img_samples": OptionInfo("outputs/img2img-images", 'Output directory for img2img images', component_args=hide_dirs),
-    "outdir_extras_samples": OptionInfo("outputs/extras-images", 'Output directory for images from extras tab', component_args=hide_dirs),
-    "outdir_grids": OptionInfo("", "Output directory for grids; if empty, defaults to two directories below", component_args=hide_dirs),
-    "outdir_txt2img_grids": OptionInfo("outputs/txt2img-grids", 'Output directory for txt2img grids', component_args=hide_dirs),
-    "outdir_img2img_grids": OptionInfo("outputs/img2img-grids", 'Output directory for img2img grids', component_args=hide_dirs),
-    "outdir_save": OptionInfo("log/images", "Directory for saving images using the Save button", component_args=hide_dirs),
-    "jpeg_quality": OptionInfo(80, "Quality for saved jpeg images", gr.Slider, {"minimum": 1, "maximum": 100, "step": 1}),
-    "export_for_4chan": OptionInfo(True, "If PNG image is larger than 4MB or any dimension is larger than 4000, downscale and save copy as JPG"),
-}))
-
-options_templates.update(options_section((2, "Sampling Options"), {
-    "samples_save": OptionInfo(True, "Always save all generated images"),
-    "samples_log_stdout": OptionInfo(False, "Always print all generation info to standard output"),
     "save_selected_only": OptionInfo(False, "When using 'Save' button, only save a single selected image"),
-    "samples_format": OptionInfo('png', 'File format for individual samples'),
 }))
 
-options_templates.update(options_section((3, "Grid Options"), {
-    "grid_save": OptionInfo(True, "Always save all generated image grids"),
-    "return_grid": OptionInfo(True, "Show grid in results for web"),
-    "grid_format": OptionInfo('png', 'File format for grids'),
-    "grid_extended_filename": OptionInfo(False, "Add extended info (seed, prompt) to filename when saving grid"),
-    "grid_only_if_multiple": OptionInfo(True, "Do not save grids consisting of one picture"),
-    "n_rows": OptionInfo(-1, "Grid row count; use -1 for autodetect and 0 for it to be same as batch size", gr.Slider, {"minimum": -1, "maximum": 16, "step": 1}),
+options_templates.update(options_section(('system', "System"), {
+    "memmon_poll_rate": OptionInfo(8, "VRAM usage polls per second during generation. Set to 0 to disable.", gr.Slider, {"minimum": 0, "maximum": 40, "step": 1}),
+    "samples_log_stdout": OptionInfo(False, "Always print all generation info to standard output"),
+    "multiple_tqdm": OptionInfo(True, "Add a second progress bar to the console that shows progress for an entire job. Broken in PyCharm console."),
 }))
 
-options_templates.update(options_section((4, "Model Options"), {
+options_templates.update(options_section(('sd', "Stable Diffusion"), {
+    "sd_model_checkpoint": OptionInfo(None, "Stable Diffusion checkpoint", gr.Radio, lambda: {"choices": [x.title for x in modules.sd_models.checkpoints_list.values()]}),
     "img2img_color_correction": OptionInfo(False, "Apply color correction to img2img results to match original colors."),
     "img2img_fix_steps": OptionInfo(False, "With img2img, do exactly the amount of steps the slider specifies (normally you'd do less with less denoising)."),
     "enable_quantization": OptionInfo(False, "Enable quantization in K samplers for sharper and cleaner results. This may change existing seeds. Requires restart to apply."),
-    "font": OptionInfo("", "Font for image grids that have text"),
     "enable_emphasis": OptionInfo(True, "Use (text) to make model pay more attention to text and [text] to make it pay less attention"),
     "enable_batch_seeds": OptionInfo(True, "Make K-diffusion samplers produce same images in a batch as when making a single image"),
+    "filter_nsfw": OptionInfo(False, "Filter NSFW content"),
+    "random_artist_categories": OptionInfo([], "Allowed categories for random artists selection when using the Roll button", gr.CheckboxGroup, {"choices": artist_db.categories()}),
 }))
 
-options_templates.update(options_section((5, "Interrogate Options"), {
+options_templates.update(options_section(('interrogate', "Interrogate Options"), {
     "interrogate_keep_models_in_memory": OptionInfo(False, "Interrogate: keep models in VRAM"),
     "interrogate_use_builtin_artists": OptionInfo(True, "Interrogate: use artists from artists.csv"),
     "interrogate_clip_num_beams": OptionInfo(1, "Interrogate: num_beams for BLIP", gr.Slider, {"minimum": 1, "maximum": 16, "step": 1}),
     "interrogate_clip_min_length": OptionInfo(24, "Interrogate: minimum description length (excluding artists, etc..)", gr.Slider, {"minimum": 1, "maximum": 128, "step": 1}),
     "interrogate_clip_max_length": OptionInfo(48, "Interrogate: maximum description length", gr.Slider, {"minimum": 1, "maximum": 256, "step": 1}),
     "interrogate_clip_dict_limit": OptionInfo(1500, "Interrogate: maximum number of lines in text file (0 = No limit)"),
+}))
+
+options_templates.update(options_section(('ui', "User interface"), {
+    "show_progressbar": OptionInfo(True, "Show progressbar"),
+    "show_progress_every_n_steps": OptionInfo(0, "Show show image creation progress every N sampling steps. Set 0 to disable.", gr.Slider, {"minimum": 0, "maximum": 32, "step": 1}),
+    "return_grid": OptionInfo(True, "Show grid in results for web"),
+    "add_model_hash_to_info": OptionInfo(True, "Add model hash to generation information"),
+    "font": OptionInfo("", "Font for image grids that have text"),
+    "js_modal_lightbox": OptionInfo(True, "Enable full page image viewer"),
+    "js_modal_lightbox_initialy_zoomed": OptionInfo(True, "Show images zoomed in by default in full page image viewer"),
 }))
 
 
