@@ -200,7 +200,7 @@ def check_progress_call():
         else:
             preview_visibility = gr_show(True)
 
-    return f"<span id'progressSpan' style='display: none'>{time.time()}</span><p>{progressbar}</p>", preview_visibility, image
+    return f"<span id='progressSpan' style='display: none'>{time.time()}</span><p>{progressbar}</p>", preview_visibility, image
 
 
 def check_progress_call_initial():
