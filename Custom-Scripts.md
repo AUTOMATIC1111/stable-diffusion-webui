@@ -151,7 +151,7 @@ class Script(scripts.Script):
 
 # Saving steps of the sampling process
 This script will save steps of the sampling process to a directory.
-```
+```python
 import os.path
 
 import modules.scripts as scripts
