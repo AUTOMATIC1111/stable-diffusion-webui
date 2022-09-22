@@ -102,7 +102,7 @@ def draw_xy_grid(p, xs, ys, x_labels, y_labels, cell, draw_legend):
 
     for iy, y in enumerate(ys):
         for ix, x in enumerate(xs):
-            state.job = f"{ix + iy * len(xs) + 1} out of {len(xs) * len(ys)}"
+            state.job = f"Image {ix + iy * len(xs) + 1} out of {state.job_count}"
 
             processed = cell(x, y)
             if first_pocessed is None:
@@ -206,6 +206,16 @@ class Script(scripts.Script):
 
         y_opt = axis_options[y_type]
         ys = process_axis(y_opt, y_values)
+
+        if x_opt.label == 'Steps':
+            total_steps = sum(xs) * len(ys)
+        elif y_opt.label == 'Steps':
+            total_steps = sum(ys) * len(xs)
+        else:
+            total_steps = p.steps * len(xs) * len(ys)
+
+        print(f"Generating {len(xs) * len(ys) * p.n_iter} images with a total of {total_steps * p.n_iter} steps to process.")
+        shared.total_tqdm.updateTotal(total_steps * p.n_iter)
 
         def cell(x, y):
             pc = copy(p)
