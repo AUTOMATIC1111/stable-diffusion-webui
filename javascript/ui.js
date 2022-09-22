@@ -35,13 +35,36 @@ function extract_image_from_gallery_extras(gallery){
     return extract_image_from_gallery(gallery);
 }
 
-function submit(){
-    // this calls a function from progressbar.js
-    requestProgress()
+function get_tab_index(tabId){
+    var res = 0
 
+    gradioApp().getElementById(tabId).querySelector('div').querySelectorAll('button').forEach(function(button, i){
+        if(button.className.indexOf('bg-white') != -1)
+            res = i
+    })
+
+    return res
+}
+
+function create_tab_index_args(tabId, args){
+    var res = []
+    for(var i=0; i<args.length; i++){
+        res.push(args[i])
+    }
+
+    res[0] = get_tab_index(tabId)
+
+    return res
+}
+
+function get_extras_tab_index(){
+    return create_tab_index_args('mode_extras', arguments)
+}
+
+function create_submit_args(args){
     res = []
-    for(var i=0;i<arguments.length;i++){
-        res.push(arguments[i])
+    for(var i=0;i<args.length;i++){
+        res.push(args[i])
     }
 
     // As it is currently, txt2img and img2img send back the previous output args (txt2img_gallery, generation_info, html_info) whenever you generate a new image.
@@ -55,10 +78,29 @@ function submit(){
     return res
 }
 
+function submit(){
+    requestProgress()
+
+    return create_submit_args(arguments)
+}
+
+function submit_img2img(){
+    requestProgress()
+
+    res = create_submit_args(arguments)
+
+    res[0] = get_tab_index('mode_img2img')
+
+    return res
+}
+
+
 function ask_for_style_name(_, prompt_text, negative_prompt_text) {
     name_ = prompt('Style name:')
     return name_ === null ? [null, null, null]: [name_, prompt_text, negative_prompt_text]
 }
+
+
 
 opts = {}
 function apply_settings(jsdata){
