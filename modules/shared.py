@@ -99,6 +99,10 @@ def realesrgan_models_names():
     import modules.realesrgan_model
     return [x.name for x in modules.realesrgan_model.get_realesrgan_models()]
 
+def optionsSection(sectionIdentifer,optionsDict):
+  for k,v in optionsDict.items():
+    v.section = sectionIdentifer
+  return optionsDict
 
 class Options:
     class OptionInfo:
@@ -111,41 +115,11 @@ class Options:
 
     data = None
     hide_dirs = {"visible": False} if cmd_opts.hide_ui_dir_config else None
-    data_labels = {
-        "samples_filename_pattern": OptionInfo("", "Images filename pattern"),
-        "save_to_dirs": OptionInfo(False, "Save images to a subdirectory"),
-        "grid_save_to_dirs": OptionInfo(False, "Save grids to subdirectory"),
-        "directories_filename_pattern": OptionInfo("", "Directory name pattern"),
-        "directories_max_prompt_words": OptionInfo(8, "Max prompt words", gr.Slider, {"minimum": 1, "maximum": 20, "step": 1}),
-        "outdir_samples": OptionInfo("", "Output directory for images; if empty, defaults to two directories below", component_args=hide_dirs),
-        "outdir_txt2img_samples": OptionInfo("outputs/txt2img-images", 'Output directory for txt2img images', component_args=hide_dirs),
-        "outdir_img2img_samples": OptionInfo("outputs/img2img-images", 'Output directory for img2img images', component_args=hide_dirs),
-        "outdir_extras_samples": OptionInfo("outputs/extras-images", 'Output directory for images from extras tab', component_args=hide_dirs),
-        "outdir_grids": OptionInfo("", "Output directory for grids; if empty, defaults to two directories below", component_args=hide_dirs),
-        "outdir_txt2img_grids": OptionInfo("outputs/txt2img-grids", 'Output directory for txt2img grids', component_args=hide_dirs),
-        "outdir_img2img_grids": OptionInfo("outputs/img2img-grids", 'Output directory for img2img grids', component_args=hide_dirs),
-        "outdir_save": OptionInfo("log/images", "Directory for saving images using the Save button", component_args=hide_dirs),
-        "samples_save": OptionInfo(True, "Always save all generated images"),
-        "samples_log_stdout": OptionInfo(False, "Always print all generation info to standard output"),
-        "save_selected_only": OptionInfo(False, "When using 'Save' button, only save a single selected image"),
-        "samples_format": OptionInfo('png', 'File format for individual samples'),
+    
+    data_labels.update(optionsSection((0,"General"),{
         "filter_nsfw": OptionInfo(False, "Filter NSFW content"),
-        "grid_save": OptionInfo(True, "Always save all generated image grids"),
-        "return_grid": OptionInfo(True, "Show grid in results for web"),
-        "grid_format": OptionInfo('png', 'File format for grids'),
-        "grid_extended_filename": OptionInfo(False, "Add extended info (seed, prompt) to filename when saving grid"),
-        "grid_only_if_multiple": OptionInfo(True, "Do not save grids consisting of one picture"),
-        "n_rows": OptionInfo(-1, "Grid row count; use -1 for autodetect and 0 for it to be same as batch size", gr.Slider, {"minimum": -1, "maximum": 16, "step": 1}),
-        "jpeg_quality": OptionInfo(80, "Quality for saved jpeg images", gr.Slider, {"minimum": 1, "maximum": 100, "step": 1}),
-        "export_for_4chan": OptionInfo(True, "If PNG image is larger than 4MB or any dimension is larger than 4000, downscale and save copy as JPG"),
         "enable_pnginfo": OptionInfo(True, "Save text information about generation parameters as chunks to png files"),
         "add_model_hash_to_info": OptionInfo(False, "Add model hash to generation information"),
-        "img2img_color_correction": OptionInfo(False, "Apply color correction to img2img results to match original colors."),
-        "img2img_fix_steps": OptionInfo(False, "With img2img, do exactly the amount of steps the slider specifies (normally you'd do less with less denoising)."),
-        "enable_quantization": OptionInfo(False, "Enable quantization in K samplers for sharper and cleaner results. This may change existing seeds. Requires restart to apply."),
-        "font": OptionInfo("", "Font for image grids that have text"),
-        "enable_emphasis": OptionInfo(True, "Use (text) to make model pay more attention to text and [text] to make it pay less attention"),
-        "enable_batch_seeds": OptionInfo(True, "Make K-diffusion samplers produce same images in a batch as when making a single image"),
         "save_txt": OptionInfo(False, "Create a text file next to every image with generation parameters."),
         "ESRGAN_tile": OptionInfo(192, "Tile size for ESRGAN upscalers. 0 = no tiling.", gr.Slider, {"minimum": 0, "maximum": 512, "step": 16}),
         "ESRGAN_tile_overlap": OptionInfo(8, "Tile overlap, in pixels for ESRGAN upscalers. Low values = visible seam.", gr.Slider, {"minimum": 0, "maximum": 48, "step": 1}),
@@ -165,17 +139,63 @@ class Options:
         "code_former_weight": OptionInfo(0.5, "CodeFormer weight parameter; 0 = maximum effect; 1 = minimum effect", gr.Slider, {"minimum": 0, "maximum": 1, "step": 0.01}),
         "save_images_before_face_restoration": OptionInfo(False, "Save a copy of image before doing face restoration."),
         "face_restoration_unload": OptionInfo(False, "Move face restoration model from VRAM into RAM after processing"),
+        "sd_model_checkpoint": OptionInfo(None, "Stable Diffusion checkpoint", gr.Radio, lambda: {"choices": [x.title for x in modules.sd_models.checkpoints_list.values()]}),
+        "js_modal_lightbox": OptionInfo(True, "Enable full page image viewer"),
+        "js_modal_lightbox_initialy_zoomed": OptionInfo(True, "Show images zoomed in by default in full page image viewer"),
+        "use_original_name_batch": OptionInfo(False, "Use original name for output filename during batch process"),
+    }))
+    
+    data_labels.update(optionsSection((1,"File and Folder Locations"),{
+        "samples_filename_pattern": OptionInfo("", "Images filename pattern"),
+        "save_to_dirs": OptionInfo(False, "Save images to a subdirectory"),
+        "grid_save_to_dirs": OptionInfo(False, "Save grids to subdirectory"),
+        "directories_filename_pattern": OptionInfo("", "Directory name pattern"),
+        "directories_max_prompt_words": OptionInfo(8, "Max prompt words", gr.Slider, {"minimum": 1, "maximum": 20, "step": 1}),
+        "outdir_samples": OptionInfo("", "Output directory for images; if empty, defaults to two directories below", component_args=hide_dirs),
+        "outdir_txt2img_samples": OptionInfo("outputs/txt2img-images", 'Output directory for txt2img images', component_args=hide_dirs),
+        "outdir_img2img_samples": OptionInfo("outputs/img2img-images", 'Output directory for img2img images', component_args=hide_dirs),
+        "outdir_extras_samples": OptionInfo("outputs/extras-images", 'Output directory for images from extras tab', component_args=hide_dirs),
+        "outdir_grids": OptionInfo("", "Output directory for grids; if empty, defaults to two directories below", component_args=hide_dirs),
+        "outdir_txt2img_grids": OptionInfo("outputs/txt2img-grids", 'Output directory for txt2img grids', component_args=hide_dirs),
+        "outdir_img2img_grids": OptionInfo("outputs/img2img-grids", 'Output directory for img2img grids', component_args=hide_dirs),
+        "outdir_save": OptionInfo("log/images", "Directory for saving images using the Save button", component_args=hide_dirs),
+        "jpeg_quality": OptionInfo(80, "Quality for saved jpeg images", gr.Slider, {"minimum": 1, "maximum": 100, "step": 1}),
+        "export_for_4chan": OptionInfo(True, "If PNG image is larger than 4MB or any dimension is larger than 4000, downscale and save copy as JPG"),
+    }))
+
+    data_labels.update(optionsSection((2,"Sampling Options"),{
+        "samples_save": OptionInfo(True, "Always save all generated images"),
+        "samples_log_stdout": OptionInfo(False, "Always print all generation info to standard output"),
+        "save_selected_only": OptionInfo(False, "When using 'Save' button, only save a single selected image"),
+        "samples_format": OptionInfo('png', 'File format for individual samples'),
+    }))
+
+    data_labels.update(optionsSection((3,"Grid Options"),{
+        "grid_save": OptionInfo(True, "Always save all generated image grids"),
+        "return_grid": OptionInfo(True, "Show grid in results for web"),
+        "grid_format": OptionInfo('png', 'File format for grids'),
+        "grid_extended_filename": OptionInfo(False, "Add extended info (seed, prompt) to filename when saving grid"),
+        "grid_only_if_multiple": OptionInfo(True, "Do not save grids consisting of one picture"),
+        "n_rows": OptionInfo(-1, "Grid row count; use -1 for autodetect and 0 for it to be same as batch size", gr.Slider, {"minimum": -1, "maximum": 16, "step": 1}),
+    }))
+
+    data_labels.update(optionsSection((4,"Model Options"),{
+        "img2img_color_correction": OptionInfo(False, "Apply color correction to img2img results to match original colors."),
+        "img2img_fix_steps": OptionInfo(False, "With img2img, do exactly the amount of steps the slider specifies (normally you'd do less with less denoising)."),
+        "enable_quantization": OptionInfo(False, "Enable quantization in K samplers for sharper and cleaner results. This may change existing seeds. Requires restart to apply."),
+        "font": OptionInfo("", "Font for image grids that have text"),
+        "enable_emphasis": OptionInfo(True, "Use (text) to make model pay more attention to text and [text] to make it pay less attention"),
+        "enable_batch_seeds": OptionInfo(True, "Make K-diffusion samplers produce same images in a batch as when making a single image"), 
+    }))
+
+    data_labels.update(optionsSection((5,"Interrogate Options"),{
         "interrogate_keep_models_in_memory": OptionInfo(False, "Interrogate: keep models in VRAM"),
         "interrogate_use_builtin_artists": OptionInfo(True, "Interrogate: use artists from artists.csv"),
         "interrogate_clip_num_beams": OptionInfo(1, "Interrogate: num_beams for BLIP", gr.Slider, {"minimum": 1, "maximum": 16, "step": 1}),
         "interrogate_clip_min_length": OptionInfo(24, "Interrogate: minimum description length (excluding artists, etc..)", gr.Slider, {"minimum": 1, "maximum": 128, "step": 1}),
         "interrogate_clip_max_length": OptionInfo(48, "Interrogate: maximum description length", gr.Slider, {"minimum": 1, "maximum": 256, "step": 1}),
         "interrogate_clip_dict_limit": OptionInfo(1500, "Interrogate: maximum number of lines in text file (0 = No limit)"),
-        "sd_model_checkpoint": OptionInfo(None, "Stable Diffusion checkpoint", gr.Radio, lambda: {"choices": [x.title for x in modules.sd_models.checkpoints_list.values()]}),
-        "js_modal_lightbox": OptionInfo(True, "Enable full page image viewer"),
-        "js_modal_lightbox_initialy_zoomed": OptionInfo(True, "Show images zoomed in by default in full page image viewer"),
-        "use_original_name_batch": OptionInfo(False, "Use original name for output filename during batch process"),
-    }
+    }))
 
     def __init__(self):
         self.data = {k: v.default for k, v in self.data_labels.items()}
