@@ -97,6 +97,11 @@
     background: transparent;
 }
 
+.my-4{
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
 #toprow div{
     border: none;
     gap: 0;
@@ -198,7 +203,8 @@ input[type="range"]{
 #mask_bug_info {
   text-align: center;
   display: block;
-  margin-bottom: 0.5em;
+  margin-top: -0.75em;
+  margin-bottom: -0.75em;
 }
 
 #txt2img_negative_prompt, #img2img_negative_prompt{
