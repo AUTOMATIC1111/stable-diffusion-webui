@@ -18,9 +18,9 @@ function dimensionChange(e,dimname){
 		return;
 	}
 
-	var img2imgMode = gradioApp().querySelector("input[name=radio-img2img_mode]:checked")
+	var img2imgMode = gradioApp().querySelector('#mode_img2img.tabs > div > button.rounded-t-lg.border-gray-200')
 	if(img2imgMode){
-		img2imgMode=img2imgMode.value
+		img2imgMode=img2imgMode.innerText
 	}else{
 		return;
 	}
@@ -30,12 +30,10 @@ function dimensionChange(e,dimname){
 
 	var targetElement = null;
 
-	if(img2imgMode=='Redraw whole image' && redrawImage){
+	if(img2imgMode=='img2img' && redrawImage){
 		targetElement = redrawImage;
-	}else if(img2imgMode=='Inpaint a part of image' && inpaintImage){
+	}else if(img2imgMode=='Inpaint' && inpaintImage){
 		targetElement = inpaintImage;
-	}else if(img2imgMode=='SD upscale' && redrawImage){
-		targetElement = redrawImage;
 	}
 
 	if(targetElement){
@@ -119,6 +117,3 @@ onUiUpdate(function(){
 		})
 	}
 });
-
-
-
