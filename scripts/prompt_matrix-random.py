@@ -30,7 +30,7 @@ def replace_wildcard(chunk):
                 for line in lines:
                     stripped.append(line.strip())                        
                 stripped.remove('name,blank,blank2')
-                print(stripped)
+                #print(stripped)
                 return random.choice(stripped).replace(",,","")
     return chunk
 
@@ -146,17 +146,7 @@ class Script(scripts.Script):
             replace_prompt = "".join(replace_wildcard(chunk) for chunk in str(string).split("__"))
             new_prompt.append(replace_prompt)
 
-        print(f"NewPrompts\n{new_prompt}\n")
-        print(f"All Prompts\n{all_prompts}")
-        #print("printing i")
-        #for i in all_prompts:
-        #    print(i)
-        #    tempp = str(i)
-        #    replace_prompt = ["".join(replace_wildcard(chunk) for chunk in tempp.split("__"))]
-        #    new_prompt.append(replace_prompt)
-
         #p.prompt = all_prompts
-        
         p.prompt = new_prompt
         if same_seed:
             p.seed = [p.seed for _ in all_prompts]
