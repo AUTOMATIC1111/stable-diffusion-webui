@@ -51,6 +51,14 @@ parser.add_argument("--opt-channelslast", action='store_true', help="change memo
 parser.add_argument("--styles-file", type=str, help="filename to use for styles", default=os.path.join(script_path, 'styles.csv'))
 parser.add_argument("--autolaunch", action='store_true', help="open the webui URL in the system's default browser upon launch", default=False)
 parser.add_argument("--use-textbox-seed", action='store_true', help="use textbox for seeds in UI (no up/down, but possible to input long seeds)", default=False)
+parser.add_argument("--outputs_samples", type=str, default='', help="Output directory for images")
+parser.add_argument("--outputs_txt2img", type=str, default='output/txt2img-images', help="Output directory for txt2img images")
+parser.add_argument("--outputs_img2img", type=str, default='output/img2img-images', help="Output directory for img2img images")
+parser.add_argument("--outputs_extra_images", type=str, default='output/extra-images', help="Output directory for extra images")
+parser.add_argument("--outputs_grids", type=str, default='', help="Output directory for grids")
+parser.add_argument("--outputs_txt2img_grids", type=str, default='output/txt2img-grids', help="Output directory for txt2img grids")
+parser.add_argument("--outputs_img2img_grids", type=str, default='output/img2img-grids', help="Output directory for img2img grids")
+parser.add_argument("--outputs_log_images", type=str, default='output/log-images', help="Output directory for log images")
 
 cmd_opts = parser.parse_args()
 
@@ -142,14 +150,14 @@ options_templates.update(options_section(('saving-images', "Saving images/grids"
 }))
 
 options_templates.update(options_section(('saving-paths', "Paths for saving"), {
-    "outdir_samples": OptionInfo("", "Output directory for images; if empty, defaults to three directories below", component_args=hide_dirs),
-    "outdir_txt2img_samples": OptionInfo("outputs/txt2img-images", 'Output directory for txt2img images', component_args=hide_dirs),
-    "outdir_img2img_samples": OptionInfo("outputs/img2img-images", 'Output directory for img2img images', component_args=hide_dirs),
-    "outdir_extras_samples": OptionInfo("outputs/extras-images", 'Output directory for images from extras tab', component_args=hide_dirs),
-    "outdir_grids": OptionInfo("", "Output directory for grids; if empty, defaults to two directories below", component_args=hide_dirs),
-    "outdir_txt2img_grids": OptionInfo("outputs/txt2img-grids", 'Output directory for txt2img grids', component_args=hide_dirs),
-    "outdir_img2img_grids": OptionInfo("outputs/img2img-grids", 'Output directory for img2img grids', component_args=hide_dirs),
-    "outdir_save": OptionInfo("log/images", "Directory for saving images using the Save button", component_args=hide_dirs),
+    "outdir_samples": OptionInfo(cmd_opts.outputs_samples, "Output directory for images; if empty, defaults to three directories below", component_args=hide_dirs),
+    "outdir_txt2img_samples": OptionInfo(cmd_opts.outputs_txt2img, 'Output directory for txt2img images', component_args=hide_dirs),
+    "outdir_img2img_samples": OptionInfo(cmd_opts.outputs_img2img, 'Output directory for img2img images', component_args=hide_dirs),
+    "outdir_extras_samples": OptionInfo(cmd_opts.outputs_extra_images, 'Output directory for images from extras tab', component_args=hide_dirs),
+    "outdir_grids": OptionInfo(cmd_opts.outputs_grids, "Output directory for grids; if empty, defaults to two directories below", component_args=hide_dirs),
+    "outdir_txt2img_grids": OptionInfo(cmd_opts.outputs_txt2img_grids, 'Output directory for txt2img grids', component_args=hide_dirs),
+    "outdir_img2img_grids": OptionInfo(cmd_opts.outputs_img2img_grids, 'Output directory for img2img grids', component_args=hide_dirs),
+    "outdir_save": OptionInfo(cmd_opts.outputs_log_images, "Directory for saving images using the Save button", component_args=hide_dirs),
 }))
 
 options_templates.update(options_section(('saving-to-dirs', "Saving to a directory"), {
@@ -182,7 +190,7 @@ options_templates.update(options_section(('face-restoration', "Face restoration"
 options_templates.update(options_section(('system', "System"), {
     "memmon_poll_rate": OptionInfo(8, "VRAM usage polls per second during generation. Set to 0 to disable.", gr.Slider, {"minimum": 0, "maximum": 40, "step": 1}),
     "samples_log_stdout": OptionInfo(False, "Always print all generation info to standard output"),
-    "multiple_tqdm": OptionInfo(True, "Add a second progress bar to the console that shows progress for an entire job. Broken in PyCharm console."),
+    "multiple_tqdm": OptionInfo(False, "Add a second progress bar to the console that shows progress for an entire job. Broken in PyCharm console."),
 }))
 
 options_templates.update(options_section(('sd', "Stable Diffusion"), {
