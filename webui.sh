@@ -41,12 +41,6 @@ then
     venv_dir="venv"
 fi
 
-# install command for torch
-if [[ -z "${TORCH_COMMAND}" ]]
-then
-    export TORCH_COMMAND="pip install torch==1.12.1+cu113 --extra-index-url https://download.pytorch.org/whl/cu113"
-fi
-
 # Do not reinstall existing pip packages on Debian/Ubuntu
 export PIP_IGNORE_INSTALLED=0
 
