@@ -214,6 +214,9 @@ class Script(scripts.Script):
         else:
             total_steps = p.steps * len(xs) * len(ys)
 
+        if p.n_iter > 1:
+            print(f"Number of seeds/images per prompt is {p.n_iter}.")
+
         print(f"X/Y plot will create {len(xs) * len(ys) * p.n_iter} images on a {len(xs)} x {len(ys)} grid (total steps={len(xs) * len(ys) * p.n_iter * p.steps}).")
         print(f"Generating {len(xs) * len(ys) * p.n_iter} images with a total of {total_steps * p.n_iter} steps to process.")
         shared.total_tqdm.updateTotal(total_steps * p.n_iter)
