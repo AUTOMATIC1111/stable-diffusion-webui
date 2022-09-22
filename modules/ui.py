@@ -9,6 +9,7 @@ import random
 import sys
 import time
 import traceback
+import itertools
 
 import numpy as np
 import torch
@@ -842,14 +843,22 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
         settings_submit = gr.Button(value="Apply settings", variant='primary')
         result = gr.HTML()
 
-        with gr.Row(elem_id="settings").style(equal_height=False):
-            for colno in range(settings_cols):
-                with gr.Column(variant='panel'):
-                    for rowno in range(items_per_col):
-                        index = rowno + colno * items_per_col
+        sortedKeys  = sorted([(opts.data_labels[key].section,key) for key in keys],key=lambda x:x[0])
+        groupedKeys = itertools.groupby(sortedKeys,key=lambda x:x[0])
 
-                        if index < len(keys):
-                            components.append(create_setting_component(keys[index]))
+        for (sectionNumber,sectionName),sectionGroup in groupedKeys:
+          with gr.Row(elem_id="settings_header_{}".format(sectionNumber)).style(equal_height=False):
+            gr.HTML(elem_id="settings_header_text_{}".format(sectionNumber), value='<h1 class="gr-button-lg">{}</h1>'.format(sectionName))
+
+          with gr.Row(elem_id="settings_{}".format(sectionNumber)).style(equal_height=False):
+              columnLookup = {}
+              for colNum,element in zip(itertools.cycle(range(settings_cols)),sectionGroup):
+                columnLookup.setdefault(colNum,[]).append(element)
+
+              for colno,elements in sorted(columnLookup.items()):
+                  with gr.Column(variant='panel'):
+                      for _,keyElement in elements:
+                        components.append(create_setting_component(keyElement))
 
         settings_submit.click(
             fn=run_settings,
