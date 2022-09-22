@@ -95,6 +95,11 @@ face_restorers = []
 modules.sd_models.list_models()
 
 
+def realesrgan_models_names():
+    import modules.realesrgan_model
+    return [x.name for x in modules.realesrgan_model.get_realesrgan_models()]
+
+
 class Options:
     class OptionInfo:
         def __init__(self, default=None, label="", component=None, component_args=None, onchange=None):
@@ -142,14 +147,12 @@ class Options:
         "save_txt": OptionInfo(False, "Create a text file next to every image with generation parameters."),
         "ESRGAN_tile": OptionInfo(192, "Tile size for ESRGAN upscalers. 0 = no tiling.", gr.Slider, {"minimum": 0, "maximum": 512, "step": 16}),
         "ESRGAN_tile_overlap": OptionInfo(8, "Tile overlap, in pixels for ESRGAN upscalers. Low values = visible seam.", gr.Slider, {"minimum": 0, "maximum": 48, "step": 1}),
+        "realesrgan_enabled_models": OptionInfo(["Real-ESRGAN 4x plus", "Real-ESRGAN 4x plus anime 6B"],"Select which RealESRGAN models to show in the web UI. (Requires restart)", gr.CheckboxGroup, lambda: {"choices": realesrgan_models_names()}),
         "SWIN_tile": OptionInfo(192, "Tile size for all SwinIR.", gr.Slider, {"minimum": 16, "maximum": 512, "step": 16}),
         "SWIN_tile_overlap": OptionInfo(8, "Tile overlap, in pixels for SwinIR. Low values = visible seam.", gr.Slider, {"minimum": 0, "maximum": 48, "step": 1}),
-        "ldsr_steps": OptionInfo(100, "LDSR processing steps. Lower = faster",
-                                          gr.Slider, {"minimum": 1, "maximum": 200, "step": 1}),
-        "ldsr_pre_down":OptionInfo(1, "LDSR Pre-process downssample scale. 1 = no down-sampling, 4 = 1/4 scale.",
-                                          gr.Slider, {"minimum": 1, "maximum": 4, "step": 1}),
-        "ldsr_post_down":OptionInfo(1, "LDSR Post-process down-sample scale. 1 = no down-sampling, 4 = 1/4 scale.",
-                                          gr.Slider, {"minimum": 1, "maximum": 4, "step": 1}),
+        "ldsr_steps": OptionInfo(100, "LDSR processing steps. Lower = faster", gr.Slider, {"minimum": 1, "maximum": 200, "step": 1}),
+        "ldsr_pre_down":OptionInfo(1, "LDSR Pre-process downssample scale. 1 = no down-sampling, 4 = 1/4 scale.", gr.Slider, {"minimum": 1, "maximum": 4, "step": 1}),
+        "ldsr_post_down":OptionInfo(1, "LDSR Post-process down-sample scale. 1 = no down-sampling, 4 = 1/4 scale.", gr.Slider, {"minimum": 1, "maximum": 4, "step": 1}),
         "random_artist_categories": OptionInfo([], "Allowed categories for random artists selection when using the Roll button", gr.CheckboxGroup, {"choices": artist_db.categories()}),
         "upscale_at_full_resolution_padding": OptionInfo(16, "Inpainting at full resolution: padding, in pixels, for the masked region.", gr.Slider, {"minimum": 0, "maximum": 128, "step": 4}),
         "upscaler_for_hires_fix": OptionInfo(None, "Upscaler for highres. fix", gr.Radio, lambda: {"choices": [x.name for x in sd_upscalers]}),
