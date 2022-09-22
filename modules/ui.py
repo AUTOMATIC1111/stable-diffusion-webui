@@ -435,7 +435,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
 
                 with gr.Group():
                     txt2img_preview = gr.Image(elem_id='txt2img_preview', visible=False)
-                    txt2img_gallery = gr.Gallery(label='Output', elem_id='txt2img_gallery').style(grid=4)
+                    txt2img_gallery = gr.Gallery(label='Output', show_label=False, elem_id='txt2img_gallery').style(grid=4)
 
                 with gr.Group():
                     with gr.Row():
@@ -590,7 +590,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
 
                 with gr.Group():
                     img2img_preview = gr.Image(elem_id='img2img_preview', visible=False)
-                    img2img_gallery = gr.Gallery(label='Output', elem_id='img2img_gallery').style(grid=4)
+                    img2img_gallery = gr.Gallery(label='Output', show_label=False, elem_id='img2img_gallery').style(grid=4)
 
                 with gr.Group():
                     with gr.Row():
@@ -750,7 +750,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 submit = gr.Button('Generate', elem_id="extras_generate", variant='primary')
 
             with gr.Column(variant='panel'):
-                result_images = gr.Gallery(label="Result")
+                result_images = gr.Gallery(label="Result", show_label=False)
                 html_info_x = gr.HTML()
                 html_info = gr.HTML()
 
