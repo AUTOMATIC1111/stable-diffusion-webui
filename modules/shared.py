@@ -125,6 +125,7 @@ class Options:
         "outdir_img2img_grids": OptionInfo("outputs/img2img-grids", 'Output directory for img2img grids', component_args=hide_dirs),
         "outdir_save": OptionInfo("log/images", "Directory for saving images using the Save button", component_args=hide_dirs),
         "samples_save": OptionInfo(True, "Always save all generated images"),
+        "samples_log_stdout": OptionInfo(False, "Always print all generation info to standard output"),
         "save_selected_only": OptionInfo(False, "When using 'Save' button, only save a single selected image"),
         "samples_format": OptionInfo('png', 'File format for individual samples'),
         "filter_nsfw": OptionInfo(False, "Filter NSFW content"),
