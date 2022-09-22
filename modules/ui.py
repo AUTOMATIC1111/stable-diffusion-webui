@@ -350,7 +350,14 @@ def create_toprow(is_img2img):
 
         with gr.Column(scale=1):
             with gr.Row():
+                interrupt = gr.Button('Interrupt', elem_id="interrupt")
                 submit = gr.Button('Generate', elem_id="generate", variant='primary')
+
+                interrupt.click(
+                    fn=lambda: shared.state.interrupt(),
+                    inputs=[],
+                    outputs=[],
+                )
 
             with gr.Row():
                 if is_img2img:
@@ -386,6 +393,15 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
         txt2img_prompt, roll, txt2img_prompt_style, txt2img_negative_prompt, txt2img_prompt_style2, submit, _, txt2img_prompt_style_apply, txt2img_save_style = create_toprow(is_img2img=False)
         dummy_component = gr.Label(visible=False)
 
+        with gr.Row(elem_id='progressRow'):
+              with gr.Column(scale=1):
+                columnEmpty = "Empty"
+
+              with gr.Column(scale=1):
+                progressbar = gr.HTML(elem_id="progressbar")
+                txt2img_preview = gr.Image(elem_id='txt2img_preview', visible=False)
+                setup_progressbar(progressbar, txt2img_preview)
+
         with gr.Row().style(equal_height=False):
             with gr.Column(variant='panel'):
                 steps = gr.Slider(minimum=1, maximum=150, step=1, label="Sampling Steps", value=20)
@@ -416,13 +432,10 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     custom_inputs = modules.scripts.scripts_txt2img.setup_ui(is_img2img=False)
 
             with gr.Column(variant='panel'):
-                progressbar = gr.HTML(elem_id="progressbar")
 
                 with gr.Group():
                     txt2img_preview = gr.Image(elem_id='txt2img_preview', visible=False)
                     txt2img_gallery = gr.Gallery(label='Output', elem_id='txt2img_gallery').style(grid=4)
-
-                setup_progressbar(progressbar, txt2img_preview)
 
                 with gr.Group():
                     with gr.Row():
@@ -430,7 +443,6 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                         send_to_img2img = gr.Button('Send to img2img')
                         send_to_inpaint = gr.Button('Send to inpaint')
                         send_to_extras = gr.Button('Send to extras')
-                        interrupt = gr.Button('Interrupt')
 
                 with gr.Group():
                     html_info = gr.HTML()
@@ -479,12 +491,6 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 outputs=[hr_options],
             )
 
-            interrupt.click(
-                fn=lambda: shared.state.interrupt(),
-                inputs=[],
-                outputs=[],
-            )
-
             save.click(
                 fn=wrap_gradio_call(save_files),
                 _js="(x, y, z) => [x, y, selected_gallery_index()]",
@@ -513,6 +519,15 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
     with gr.Blocks(analytics_enabled=False) as img2img_interface:
         img2img_prompt, roll, img2img_prompt_style, img2img_negative_prompt, img2img_prompt_style2, submit, img2img_interrogate, img2img_prompt_style_apply, img2img_save_style = create_toprow(is_img2img=True)
 
+        with gr.Row(elem_id='progressRow'):
+              with gr.Column(scale=1):
+                columnEmpty = "Empty"
+
+              with gr.Column(scale=1):
+                progressbar = gr.HTML(elem_id="progressbar")
+                img2img_preview = gr.Image(elem_id='img2img_preview', visible=False)
+                setup_progressbar(progressbar, img2img_preview)
+        
         with gr.Row().style(equal_height=False):
             with gr.Column(variant='panel'):
                 with gr.Group():
@@ -561,13 +576,10 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     custom_inputs = modules.scripts.scripts_img2img.setup_ui(is_img2img=True)
 
             with gr.Column(variant='panel'):
-                progressbar = gr.HTML(elem_id="progressbar")
 
                 with gr.Group():
                     img2img_preview = gr.Image(elem_id='img2img_preview', visible=False)
                     img2img_gallery = gr.Gallery(label='Output', elem_id='img2img_gallery').style(grid=4)
-
-                setup_progressbar(progressbar, img2img_preview)
 
                 with gr.Group():
                     with gr.Row():
@@ -575,7 +587,6 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                         img2img_send_to_img2img = gr.Button('Send to img2img')
                         img2img_send_to_inpaint = gr.Button('Send to inpaint')
                         img2img_send_to_extras = gr.Button('Send to extras')
-                        interrupt = gr.Button('Interrupt')
                         img2img_save_style = gr.Button('Save prompt as style')
 
 
@@ -687,12 +698,6 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 fn=interrogate,
                 inputs=[init_img],
                 outputs=[img2img_prompt],
-            )
-
-            interrupt.click(
-                fn=lambda: shared.state.interrupt(),
-                inputs=[],
-                outputs=[],
             )
 
             save.click(
