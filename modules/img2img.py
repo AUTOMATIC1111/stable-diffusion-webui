@@ -1,4 +1,8 @@
 import math
+import os
+import sys
+import traceback
+
 import numpy as np
 from PIL import Image, ImageOps, ImageChops
 
@@ -11,9 +15,45 @@ from modules.ui import plaintext_to_html
 import modules.images as images
 import modules.scripts
 
-def img2img(prompt: str, negative_prompt: str, prompt_style: str, prompt_style2: str, init_img, init_img_with_mask, init_mask, mask_mode, steps: int, sampler_index: int, mask_blur: int, inpainting_fill: int, restore_faces: bool, tiling: bool, mode: int, n_iter: int, batch_size: int, cfg_scale: float, denoising_strength: float, seed: int, subseed: int, subseed_strength: float, seed_resize_from_h: int, seed_resize_from_w: int, seed_enable_extras: bool, height: int, width: int, resize_mode: int, upscaler_index: str, upscale_overlap: int, inpaint_full_res: bool, inpainting_mask_invert: int, *args):
+
+def process_batch(p, input_dir, output_dir, args):
+    processing.fix_seed(p)
+
+    images = [file for file in [os.path.join(input_dir, x) for x in os.listdir(input_dir)] if os.path.isfile(file)]
+
+    print(f"Will process {len(images)} images, creating {p.n_iter * p.batch_size} new images for each.")
+
+    p.do_not_save_grid = True
+    p.do_not_save_samples = True
+
+    state.job_count = len(images) * p.n_iter
+
+    for i, image in enumerate(images):
+        state.job = f"{i+1} out of {len(images)}"
+
+        if state.interrupted:
+            break
+
+        img = Image.open(image)
+        p.init_images = [img] * p.batch_size
+
+        proc = modules.scripts.scripts_img2img.run(p, *args)
+        if proc is None:
+            proc = process_images(p)
+
+        for n, processed_image in enumerate(proc.images):
+            filename = os.path.basename(image)
+
+            if n > 0:
+                left, right = os.path.splitext(filename)
+                filename = f"{left}-{n}{right}"
+
+            processed_image.save(os.path.join(output_dir, filename))
+
+
+def img2img(mode: int, prompt: str, negative_prompt: str, prompt_style: str, prompt_style2: str, init_img, init_img_with_mask, init_img_inpaint, init_mask_inpaint, mask_mode, steps: int, sampler_index: int, mask_blur: int, inpainting_fill: int, restore_faces: bool, tiling: bool, n_iter: int, batch_size: int, cfg_scale: float, denoising_strength: float, seed: int, subseed: int, subseed_strength: float, seed_resize_from_h: int, seed_resize_from_w: int, seed_enable_extras: bool, height: int, width: int, resize_mode: int, inpaint_full_res: bool, inpaint_full_res_padding: int, inpainting_mask_invert: int, img2img_batch_input_dir: str, img2img_batch_output_dir: str, *args):
     is_inpaint = mode == 1
-    is_upscale = mode == 2
+    is_batch = mode == 2
 
     if is_inpaint:
         if mask_mode == 0:
@@ -23,8 +63,8 @@ def img2img(prompt: str, negative_prompt: str, prompt_style: str, prompt_style2:
             mask = ImageChops.lighter(alpha_mask, mask.convert('L')).convert('L')
             image = image.convert('RGB')
         else:
-            image = init_img
-            mask = init_mask
+            image = init_img_inpaint
+            mask = init_mask_inpaint
     else:
         image = init_img
         mask = None
@@ -60,79 +100,19 @@ def img2img(prompt: str, negative_prompt: str, prompt_style: str, prompt_style2:
         resize_mode=resize_mode,
         denoising_strength=denoising_strength,
         inpaint_full_res=inpaint_full_res,
+        inpaint_full_res_padding=inpaint_full_res_padding,
         inpainting_mask_invert=inpainting_mask_invert,
     )
     print(f"\nimg2img: {prompt}", file=shared.progress_print_out)
 
     p.extra_generation_params["Mask blur"] = mask_blur
 
-    if is_upscale:
-        initial_info = None
+    if is_batch:
+        process_batch(p, img2img_batch_input_dir, img2img_batch_output_dir, args)
 
-        processing.fix_seed(p)
-        seed = p.seed
-
-        upscaler = shared.sd_upscalers[upscaler_index]
-        img = upscaler.upscale(init_img, init_img.width * 2, init_img.height * 2)
-
-        devices.torch_gc()
-
-        grid = images.split_grid(img, tile_w=width, tile_h=height, overlap=upscale_overlap)
-
-        batch_size = p.batch_size
-        upscale_count = p.n_iter
-        p.n_iter = 1
-        p.do_not_save_grid = True
-        p.do_not_save_samples = True
-
-        work = []
-
-        for y, h, row in grid.tiles:
-            for tiledata in row:
-                work.append(tiledata[2])
-
-        batch_count = math.ceil(len(work) / batch_size)
-        state.job_count = batch_count * upscale_count
-
-        print(f"SD upscaling will process a total of {len(work)} images tiled as {len(grid.tiles[0][2])}x{len(grid.tiles)} per upscale in a total of {state.job_count} batches.")
-
-        result_images = []
-        for n in range(upscale_count):
-            start_seed = seed + n
-            p.seed = start_seed
-
-            work_results = []
-            for i in range(batch_count):
-                p.batch_size = batch_size
-                p.init_images = work[i*batch_size:(i+1)*batch_size]
-
-                state.job = f"Batch {i + 1 + n * batch_count} out of {state.job_count}"
-                processed = process_images(p)
-
-                if initial_info is None:
-                    initial_info = processed.info
-
-                p.seed = processed.seed + 1
-                work_results += processed.images
-
-            image_index = 0
-            for y, h, row in grid.tiles:
-                for tiledata in row:
-                    tiledata[2] = work_results[image_index] if image_index < len(work_results) else Image.new("RGB", (p.width, p.height))
-                    image_index += 1
-
-            combined_image = images.combine_grid(grid)
-            result_images.append(combined_image)
-
-            if opts.samples_save:
-                images.save_image(combined_image, p.outpath_samples, "", start_seed, prompt, opts.samples_format, info=initial_info, p=p)
-
-        processed = Processed(p, result_images, seed, initial_info)
-
+        processed = Processed(p, [], p.seed, "")
     else:
-
         processed = modules.scripts.scripts_img2img.run(p, *args)
-
         if processed is None:
             processed = process_images(p)
 
