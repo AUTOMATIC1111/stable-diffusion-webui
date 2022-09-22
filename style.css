@@ -337,6 +337,17 @@ input[type="range"]{
   background-color: rgba(0, 0, 0, 0.8);
 }
 
+#imageARPreview{
+    position:absolute;
+    top:0px;
+    left:0px;
+    border:2px solid red;
+    background:rgba(255, 0, 0, 0.3);
+    z-index: 900;
+    pointer-events:none;
+    display:none
+}
+
 #interrupt{
   position: absolute;
   width: 100%;
