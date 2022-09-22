@@ -115,6 +115,7 @@ class Options:
 
     data = None
     hide_dirs = {"visible": False} if cmd_opts.hide_ui_dir_config else None
+    data_labels = {}
     
     data_labels.update(optionsSection((0,"General"),{
         "filter_nsfw": OptionInfo(False, "Filter NSFW content"),
