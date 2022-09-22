@@ -857,12 +857,12 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
             outputs=[result]
         )
 
-        request_notifications = gr.Button(value='Request browser notifications')
+        request_notifications = gr.Button(value='Request browser notifications', elem_id="request_notifications")
         request_notifications.click(
             fn=lambda: None,
             inputs=[],
             outputs=[],
-            _js='() => Notification.requestPermission()'
+            _js='function(){}'
         )
 
     interfaces = [

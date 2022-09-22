@@ -2,7 +2,19 @@
 
 let lastHeadImg = null;
 
+notificationButton = null
+
 onUiUpdate(function(){
+    if(notificationButton == null){
+        notificationButton = gradioApp().getElementById('request_notifications')
+
+        if(notificationButton != null){
+            notificationButton.addEventListener('click', function (evt) {
+                Notification.requestPermission();
+            },true);
+        }
+    }
+
     const galleryPreviews = gradioApp().querySelectorAll('img.h-full.w-full.overflow-hidden');
 
     if (galleryPreviews == null) return;
