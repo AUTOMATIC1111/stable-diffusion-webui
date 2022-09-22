@@ -402,15 +402,35 @@ A file will be loaded as model if it has .pth extension. Grab models from the [M
 Not all models from the database are supported. All 2x models are most likely not supported.
 
 # img2img alternative test
-- see [this post](https://www.reddit.com/r/StableDiffusion/comments/xboy90/a_better_way_of_doing_img2img_by_finding_the/) on ebaumsworld.com for context.
-- find it in scripts section
-- put description of input image into the Original prompt field
-- use Euler only
-- recommended: 50 steps, low cfg scale between 1 and 2
-- denoising and seed don't matter
-- decode cfg scale between 0 and 1
-- decode steps 50
-- original blue haired woman close nearly reproduces with cfg scale=1.8
+Deconstructs an input image using a reverse of the Euler diffuser to create the noise pattern used to construct the input prompt.
+
+As an example, you can use this image. Select the img2img alternative test from the *scripts* section.
+
+![alt_src](https://user-images.githubusercontent.com/1633844/191771623-6293ec7b-c1c0-425c-9fe9-9d03313761fb.png)
+
+Adjust your settings for the reconstruction process:
+- Use a brief description of the scene: "A smiling woman with brown hair." Describing features you want to change helps. Set this as your starting prompt, and 'Original Input Prompt' in the script settings.
+- You *MUST* use the Euler sampling method, as this script is built on it.
+- Sampling steps: 50-60. This MUCH match the decode steps value in the script, or you'll have a bad time. Use 50 for this demo.
+- CFG scale: 2 or lower. For this demo, use 1.8. (Hint, you can edit ui-config.json to change "img2img/CFG Scale/step" to .1 instead of .5.
+- Denoising strength - this *does* matter, contrary to what the old docs said. Set it to 1.
+- Width/Height - Use the width/height of the input image.
+- Seed...you can ignore this. The reverse Euler is generating the noise for the image now.
+- Decode cfg scale - Somewhere lower than 1 is the sweet spot. For the demo, use 1.
+- Decode steps - as mentioned above, this should match your sampling steps. 50 for the demo, consider increasing to 60 for more detailed images.
+
+Once all of the above are dialed in, you should be able to hit "Generate" and get back a result that is a *very* close approximation to the original.
+
+After validating that the script is re-generating the source photo with a good degree of accuracy, you can try to change details of the prompt. Larger variations of the original will likely result in an image with an entirely different composition than the source.
+
+Example outputs using the above settings and prompts below (Red hair/pony not pictured)
+
+![demo](https://user-images.githubusercontent.com/1633844/191776138-c77bf232-1981-47c9-a4d3-ae155631f5c8.png)
+
+"A smiling woman with blue hair." Works.
+"A frowning woman with brown hair." Works.
+"A frowning woman with red hair." Works.
+"A frowning woman with red hair riding a horse." Seems to replace the woman entirely, and now we have a ginger pony.
 
 # user.css
 Create a file named `user.css` near `webui.py` and put custom CSS code into it. For example, this makes gallery taller:
