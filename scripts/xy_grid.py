@@ -217,7 +217,7 @@ class Script(scripts.Script):
         print(f"X/Y plot will create {len(xs) * len(ys) * p.n_iter} images on a {len(xs)} x {len(ys)} grid (total steps={len(xs) * len(ys) * p.n_iter * p.steps}).")
         print(f"Generating {len(xs) * len(ys) * p.n_iter} images with a total of {total_steps * p.n_iter} steps to process.")
         shared.total_tqdm.updateTotal(total_steps * p.n_iter)
-            
+
         def cell(x, y):
             pc = copy(p)
             x_opt.apply(pc, x, xs)
