@@ -53,7 +53,7 @@ Make sure the required [dependencies](https://github.com/AUTOMATIC1111/stable-di
 
 Alternatively, use Google Colab:
 
-- [Colab, maintained by Akaibu#9379](https://colab.research.google.com/drive/1kw3egmSn-KgWsikYvOMjJkVDsPLjEMzl)
+- [Colab, maintained by Akaibu](https://colab.research.google.com/drive/1kw3egmSn-KgWsikYvOMjJkVDsPLjEMzl)
 - [Colab, original by me, outdated](https://colab.research.google.com/drive/1Iy-xW9t1-OQWhb0hNxueGij8phCyluOh).
 
 ### Automatic Installation on Windows
