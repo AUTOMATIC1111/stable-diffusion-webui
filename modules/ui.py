@@ -447,6 +447,13 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     html_info = gr.HTML()
                     generation_info = gr.Textbox(visible=False)
 
+            txt2img_steps         = steps
+            txt2img_sampler_index = sampler_index
+            txt2img_cfg_scale     = cfg_scale
+            txt2img_seed          = seed
+            txt2img_width         = width
+            txt2img_height        = height
+
             connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
             connect_reuse_seed(subseed, reuse_subseed, generation_info, dummy_component, is_subseed=True)
 
@@ -791,20 +798,70 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
             outputs=[init_img_with_mask],
         )
 
-    pnginfo_interface = gr.Interface(
-        wrap_gradio_call(run_pnginfo),
-        inputs=[
-            gr.Image(elem_id="pnginfo_image", label="Source", source="upload", interactive=True, type="pil"),
-        ],
-        outputs=[
-            gr.HTML(),
-            gr.HTML(),
-            gr.HTML(),
-        ],
-        allow_flagging="never",
-        analytics_enabled=False,
-        live=True,
-    )
+    with gr.Blocks(analytics_enabled=False) as pnginfo_interface:
+        with gr.Row().style(equal_height=False):
+            with gr.Column(variant='panel'):
+                pnginfo_image = gr.Image(elem_id="pnginfo_image", label="Source", source="upload", interactive=True, type="pil")
+                pnginfo_send_txt2img = gr.Button('Send PNG Info to txt2img')
+                pnginfo_send_img2img = gr.Button('Send PNG Info to img2img')
+            with gr.Column(variant='panel'):
+                pnginfo_prompt          = gr.Textbox(label="prompt"         , interactive=False)
+                pnginfo_negative_prompt = gr.Textbox(label="negative_prompt", interactive=False)
+                pnginfo_steps           = gr.Textbox(label="steps"          , interactive=False)
+                pnginfo_sampler         = gr.Textbox(label="sampler"        , interactive=False)
+                pnginfo_cfg_scale       = gr.Textbox(label="cfg_scale"      , interactive=False)
+                pnginfo_seed            = gr.Textbox(label="seed"           , interactive=False)
+                pnginfo_width           = gr.Textbox(label="width"          , interactive=False)
+                pnginfo_height          = gr.Textbox(label="height"         , interactive=False)
+
+            pnginfo_image.change(
+                fn=run_pnginfo,
+                inputs=[pnginfo_image],
+                outputs=[
+                    pnginfo_prompt,
+                    pnginfo_negative_prompt,
+                    pnginfo_steps,
+                    pnginfo_sampler,
+                    pnginfo_cfg_scale,
+                    pnginfo_seed,
+                    pnginfo_width,
+                    pnginfo_height,
+                ],
+            )
+            pnginfo_send_txt2img.click(
+                fn=lambda prompt, negative_prompt, steps, sampler, cfg_scale, seed, width, height: (prompt, negative_prompt, int(steps), sampler, float(cfg_scale), int(seed), int(width), int(height)),
+                inputs=[
+                    pnginfo_prompt,
+                    pnginfo_negative_prompt,
+                    pnginfo_steps,
+                    pnginfo_sampler,
+                    pnginfo_cfg_scale,
+                    pnginfo_seed,
+                    pnginfo_width,
+                    pnginfo_height,
+                ],
+                outputs=[
+                    txt2img_prompt,
+                    txt2img_negative_prompt,
+                    txt2img_steps,
+                    txt2img_sampler_index,
+                    txt2img_cfg_scale,
+                    txt2img_seed,
+                    txt2img_width,
+                    txt2img_height,
+                ],
+            )
+            pnginfo_send_img2img.click(
+                fn=lambda *args: args,
+                inputs=[
+                    pnginfo_prompt,
+                    pnginfo_negative_prompt,
+                ],
+                outputs=[
+                    img2img_prompt,
+                    img2img_negative_prompt,
+                ],
+            )
 
     def create_setting_component(key):
         def fun():

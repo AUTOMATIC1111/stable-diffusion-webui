@@ -99,7 +99,7 @@ def run_extras(extras_mode, image, image_folder, gfpgan_visibility, codeformer_v
 
 def run_pnginfo(image):
     if image is None:
-        return '', '', ''
+        return 'Nothing', '', '', '', '', '', '', ''
 
     items = image.info
 
@@ -121,15 +121,23 @@ def run_pnginfo(image):
 
     info = ''
     for key, text in items.items():
-        info += f"""
-<div>
-<p><b>{plaintext_to_html(str(key))}</b></p>
-<p>{plaintext_to_html(str(text))}</p>
-</div>
-""".strip()+"\n"
+        info += str(text)
 
     if len(info) == 0:
         message = "Nothing found in the image."
         info = f"<div><p>{message}<p></div>"
 
-    return '', '', info
+    import re
+
+    pattern = re.compile(r'(.+)Negative prompt: (.+)Steps: ([0-9]+), Sampler: (.+), CFG scale: ([0-9.]+), Seed: ([0-9]+), Size: ([0-9]+)x([0-9]+)', re.MULTILINE | re.DOTALL)
+    result = re.search(pattern, info)
+    if result != None:
+        return result.groups()[0], result.groups()[1], result.groups()[2], result.groups()[3], result.groups()[4], result.groups()[5], result.groups()[6], result.groups()[7]
+    
+    pattern = re.compile(r'(.+)Steps: ([0-9]+), Sampler: (.+), CFG scale: ([0-9.]+), Seed: ([0-9]+), Size: ([0-9]+)x([0-9]+)', re.MULTILINE | re.DOTALL)
+    result = re.search(pattern, info)
+    if result != None:
+        return result.groups()[0], '', result.groups()[1], result.groups()[2], result.groups()[3], result.groups()[4], result.groups()[5], result.groups()[6]
+
+    return info, '', '', '', '', '', '', ''
+
