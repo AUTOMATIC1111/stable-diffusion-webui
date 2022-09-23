@@ -17,16 +17,16 @@ from modules.shared import opts
 model_dir = "ESRGAN"
 model_path = os.path.join(models_path, model_dir)
 model_url = "https://drive.google.com/u/0/uc?id=1TPrz5QKd8DHHt1k8SRtm6tMiPjz_Qene&export=download"
-model_name = "RRDB_ESRGAN_x4"
+model_name = "ESRGAN_x4.pth"
 
 
 def load_model(path: str, name: str):
     global model_path
     global model_url
     global model_dir
+    global model_name
     if "http" in path:
-        dl_name = model_name.join(".pth")
-        filename = load_file_from_url(url=model_url, model_dir=model_path, file_name=dl_name, progress=True)
+        filename = load_file_from_url(url=model_url, model_dir=model_path, file_name=model_name, progress=True)
     else:
         filename = path
     if not os.path.exists(filename) or filename is None:
