@@ -22,10 +22,22 @@ function negmod(n, m) {
 }
 
 function modalImageSwitch(offset){
-  var galleryButtons = gradioApp().querySelectorAll(".gallery-item.transition-all")
+  var allgalleryButtons = gradioApp().querySelectorAll(".gallery-item.transition-all")
+  var galleryButtons = []
+  allgalleryButtons.forEach(function(elem){
+    if(elem.parentElement.offsetParent){
+        galleryButtons.push(elem);
+    }
+  })
 
   if(galleryButtons.length>1){
-      var currentButton  = gradioApp().querySelector(".gallery-item.transition-all.\\!ring-2")
+      var allcurrentButtons = gradioApp().querySelectorAll(".gallery-item.transition-all.\\!ring-2")
+      var currentButton = null
+      allcurrentButtons.forEach(function(elem){
+        if(elem.parentElement.offsetParent){
+            currentButton = elem;
+        }
+      })
 
       var result = -1
       galleryButtons.forEach(function(v, i){ if(v==currentButton) { result = i } })
