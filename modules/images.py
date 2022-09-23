@@ -312,7 +312,7 @@ def get_next_sequence_number(path, basename):
 
     return result + 1
 
-def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None, forced_filename=None):
+def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None, forced_filename=None, suffix=""):
     if short_filename or prompt is None or seed is None:
         file_decoration = ""
     elif opts.save_to_dirs:
@@ -323,7 +323,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     if file_decoration != "":
         file_decoration = "-" + file_decoration.lower()
 
-    file_decoration = apply_filename_pattern(file_decoration, p, seed, prompt)
+    file_decoration = apply_filename_pattern(file_decoration, p, seed, prompt) + suffix
 
     if extension == 'png' and opts.enable_pnginfo and info is not None:
         pnginfo = PngImagePlugin.PngInfo()
