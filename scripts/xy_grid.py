@@ -207,6 +207,15 @@ class Script(scripts.Script):
         y_opt = axis_options[y_type]
         ys = process_axis(y_opt, y_values)
 
+        def fix_axis_seeds(axis_opt, axis_list):
+            if axis_opt.label == 'Seed':
+                return [int(random.randrange(4294967294)) if val is None or val == '' or val == -1 else val for val in axis_list]
+            else:
+                return axis_list
+
+        xs = fix_axis_seeds(x_opt, xs)
+        ys = fix_axis_seeds(y_opt, ys)
+
         if x_opt.label == 'Steps':
             total_steps = sum(xs) * len(ys)
         elif y_opt.label == 'Steps':
