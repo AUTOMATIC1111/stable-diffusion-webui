@@ -111,8 +111,8 @@ function apply_settings(jsdata){
     return jsdata
 }
 
-onUiUpdate(function(){
-	if(Object.keys(opts).length != 0) return;
+function parse_settings() {
+    if(Object.keys(opts).length != 0) return;
 
 	json_elem = gradioApp().getElementById('settings_json')
 	if(json_elem == null) return;
@@ -121,22 +121,30 @@ onUiUpdate(function(){
     jsdata = textarea.value
     opts = JSON.parse(jsdata)
 
-
-    Object.defineProperty(textarea, 'value', {
-        set: function(newValue) {
-            var valueProp = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value');
-            var oldValue = valueProp.get.call(textarea);
-            valueProp.set.call(textarea, newValue);
-
-            if (oldValue != newValue) {
-                opts = JSON.parse(textarea.value)
+    if ( ! textarea.hasOwnProperty('value') ) {
+        Object.defineProperty(textarea, 'value', {
+            set: function(newValue) {
+                var valueProp = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value');
+                var oldValue = valueProp.get.call(textarea);
+                valueProp.set.call(textarea, newValue);
+                
+                if (oldValue != newValue) {
+                    opts = JSON.parse(newValue)
+                }
+            },
+            get: function() {
+                var valueProp = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value');
+                return valueProp.get.call(textarea);
             }
-        },
-        get: function() {
-            var valueProp = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value');
-            return valueProp.get.call(textarea);
-        }
-    });
+        });
+    }
 
     json_elem.parentElement.style.display="none"
-})
+}
+
+function refresh_settings() {
+    opts = {};
+    parse_settings();
+}
+
+onUiUpdate(parse_settings);

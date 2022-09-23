@@ -932,6 +932,13 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
 
         text_settings = gr.Textbox(elem_id="settings_json", value=lambda: opts.dumpjson(), visible=False)
 
+        text_settings.change(
+            fn=None,
+            _js="refresh_settings",
+            inputs=[],
+            outputs=[gr.Textbox(visible=False)], # prevents gradio JS error when outputs=[]
+        )
+
         settings_submit.click(
             fn=lambda: opts.dumpjson(),
             inputs=[],
