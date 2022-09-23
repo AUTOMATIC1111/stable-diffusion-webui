@@ -248,6 +248,27 @@ class Options:
         with open(filename, "r", encoding="utf8") as file:
             self.data = json.load(file)
 
+        typemap = {int: float}
+
+        def same_type(x, y):
+            if x is None or y is None:
+                return True
+
+            type_x = typemap.get(type(x), type(x))
+            type_y = typemap.get(type(y), type(y))
+
+            return type_x == type_y
+
+        bad_settings = 0
+        for k, v in self.data.items():
+            info = self.data_labels.get(k, None)
+            if info is not None and not same_type(info.default, v):
+                print(f"Warning: bad setting value: {k}: {v} ({type(v).__name__}; expected {type(info.default).__name__})", file=sys.stderr)
+                bad_settings += 1
+
+        if bad_settings > 0:
+            print(f"The program is likely to not work with bad settings.\nSettings file: {filename}\nEither fix the file, or delete it and restart.", file=sys.stderr)
+
     def onchange(self, key, func):
         item = self.data_labels.get(key)
         item.onchange = func
