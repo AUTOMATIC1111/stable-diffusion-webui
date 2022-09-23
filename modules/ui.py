@@ -333,7 +333,7 @@ def create_toprow(is_img2img):
     with gr.Row(elem_id="toprow"):
         with gr.Column(scale=4):
             with gr.Row():
-                with gr.Column(scale=8):
+                with gr.Column(scale=80):
                     with gr.Row():
                         prompt = gr.Textbox(label="Prompt", elem_id="prompt", show_label=False, placeholder="Prompt", lines=2)
                         roll = gr.Button('Roll', elem_id="roll", visible=len(shared.artist_db.artists) > 0)
