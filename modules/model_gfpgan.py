@@ -20,7 +20,7 @@ loaded_gfpgan_model = None
 
 def gfpgan():
     global loaded_gfpgan_model
-
+    global model_path
     if loaded_gfpgan_model is not None:
         loaded_gfpgan_model.gfpgan.to(shared.device)
         return loaded_gfpgan_model
@@ -35,7 +35,7 @@ def gfpgan():
     else:
         print("Unable to load gfpgan model!")
         return None
-    model = gfpgan_constructor(model_path=model_file, upscale=1, arch='clean', channel_multiplier=2,
+    model = gfpgan_constructor(model_path=model_file, model_dir=model_path, upscale=1, arch='clean', channel_multiplier=2,
                                bg_upsampler=None)
     model.gfpgan.to(shared.device)
     loaded_gfpgan_model = model
@@ -67,14 +67,14 @@ def setup_model(dirname):
         os.makedirs(model_path)
 
     try:
-        from gfpgan import GFPGANer
+        from modules.model_gfpgan_arch import GFPGANerr
         global cmd_dir
         global have_gfpgan
         global gfpgan_constructor
 
         cmd_dir = dirname
         have_gfpgan = True
-        gfpgan_constructor = GFPGANer
+        gfpgan_constructor = GFPGANerr
 
         class FaceRestorerGFPGAN(modules.face_restoration.FaceRestoration):
             def name(self):
