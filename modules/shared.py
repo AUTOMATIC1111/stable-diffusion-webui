@@ -168,7 +168,7 @@ options_templates.update(options_section(('upscaling', "Upscaling"), {
     "ldsr_pre_down": OptionInfo(1, "LDSR Pre-process downssample scale. 1 = no down-sampling, 4 = 1/4 scale.", gr.Slider, {"minimum": 1, "maximum": 4, "step": 1}),
     "ldsr_post_down": OptionInfo(1, "LDSR Post-process down-sample scale. 1 = no down-sampling, 4 = 1/4 scale.", gr.Slider, {"minimum": 1, "maximum": 4, "step": 1}),
 
-    "upscaler_for_hires_fix": OptionInfo(None, "Upscaler for highres. fix", gr.Radio, lambda: {"choices": [x.name for x in sd_upscalers]}),
+    "upscaler_for_img2img": OptionInfo(None, "Upscaler for img2img", gr.Radio, lambda: {"choices": [x.name for x in sd_upscalers]}),
 }))
 
 options_templates.update(options_section(('face-restoration', "Face restoration"), {
