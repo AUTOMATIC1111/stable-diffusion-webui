@@ -65,6 +65,13 @@ cd stable-diffusion-krita-plugin
 ./webui.sh
 ```
 
+#### Low VRAM (4-6GB) videocard support
+If you have less then 8GB of VRAM, you should probably use options like --midvram or --lowvram. Look at the guide from parent repo for more information:
+
+https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Optimizations
+
+Try --midvram first, it's not so bad for performance.
+
 #### Troublehooting:
 
 Look into parent repository https://github.com/AUTOMATIC1111/stable-diffusion-webui for instructions. This repository uses slightly changed code, but most parameters including those for low VRAM usage should still work.
