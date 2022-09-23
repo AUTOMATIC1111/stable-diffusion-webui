@@ -249,7 +249,6 @@ invalid_filename_prefix = ' '
 invalid_filename_postfix = ' .'
 re_nonletters = re.compile(r'[\s'+string.punctuation+']+')
 max_filename_part_length = 128
-max_prompt_words = 8
 
 
 def sanitize_filename_part(text, replace_spaces=True):
@@ -263,6 +262,8 @@ def sanitize_filename_part(text, replace_spaces=True):
 
 
 def apply_filename_pattern(x, p, seed, prompt):
+    max_prompt_words = opts.directories_max_prompt_words
+
     if seed is not None:
         x = x.replace("[seed]", str(seed))
 
