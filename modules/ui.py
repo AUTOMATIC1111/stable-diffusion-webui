@@ -22,7 +22,6 @@ from modules.paths import script_path
 from modules.shared import opts, cmd_opts
 import modules.shared as shared
 from modules.sd_samplers import samplers, samplers_for_img2img
-import modules.realesrgan_model as realesrgan
 import modules.ldsr_model
 import modules.scripts
 import modules.gfpgan_model
@@ -814,9 +813,6 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
         return comp(label=info.label, value=fun, **(args or {}))
 
     components = []
-    keys = list(opts.data_labels.keys())
-    settings_cols = 3
-    items_per_col = math.ceil(len(keys) / settings_cols)
 
     def run_settings(*args):
         up = []
@@ -842,20 +838,33 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
         settings_submit = gr.Button(value="Apply settings", variant='primary')
         result = gr.HTML()
 
+        settings_cols = 3
+        items_per_col = int(len(opts.data_labels) * 0.9 / settings_cols)
+
+        cols_displayed = 0
+        items_displayed = 0
+        previous_section = None
+        column = None
         with gr.Row(elem_id="settings").style(equal_height=False):
-            for colno in range(settings_cols):
-                with gr.Column(variant='panel'):
-                    for rowno in range(items_per_col):
-                        index = rowno + colno * items_per_col
+            for i, (k, item) in enumerate(opts.data_labels.items()):
 
-                        if index < len(keys):
-                            components.append(create_setting_component(keys[index]))
+                if previous_section != item.section:
+                    if cols_displayed < settings_cols and (items_displayed >= items_per_col or previous_section is None):
+                        if column is not None:
+                            column.__exit__()
 
-        settings_submit.click(
-            fn=run_settings,
-            inputs=components,
-            outputs=[result]
-        )
+                        column = gr.Column(variant='panel')
+                        column.__enter__()
+
+                        items_displayed = 0
+                        cols_displayed += 1
+
+                    previous_section = item.section
+
+                    gr.HTML(elem_id="settings_header_text_{}".format(item.section[0]), value='<h1 class="gr-button-lg">{}</h1>'.format(item.section[1]))
+
+                components.append(create_setting_component(k))
+                items_displayed += 1
 
         request_notifications = gr.Button(value='Request browser notifications', elem_id="request_notifications")
         request_notifications.click(
@@ -863,6 +872,15 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
             inputs=[],
             outputs=[],
             _js='function(){}'
+        )
+
+        if column is not None:
+            column.__exit__()
+
+        settings_submit.click(
+            fn=run_settings,
+            inputs=components,
+            outputs=[result]
         )
 
     interfaces = [
