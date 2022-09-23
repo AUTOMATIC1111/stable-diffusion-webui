@@ -204,7 +204,7 @@ def check_progress_call():
         else:
             preview_visibility = gr_show(True)
 
-    return f"<span style='display: none'>{time.time()}</span><p>{progressbar}</p>", preview_visibility, image
+    return f"<span id='progressSpan' style='display: none'>{time.time()}</span><p>{progressbar}</p>", preview_visibility, image
 
 
 def check_progress_call_initial():
@@ -1175,6 +1175,8 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 result_images = gr.Gallery(label="Result", show_label=False)
                 html_info_x = gr.HTML()
                 html_info = gr.HTML()
+                extras_send_to_img2img = gr.Button('Send to img2img')
+                extras_send_to_inpaint = gr.Button('Send to inpaint')
 
         submit.click(
             fn=run_extras,
@@ -1196,6 +1198,20 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 html_info_x,
                 html_info,
             ]
+        )
+     
+        extras_send_to_img2img.click(
+            fn=lambda x: image_from_url_text(x),
+            _js="extract_image_from_gallery_img2img",
+            inputs=[result_images],
+            outputs=[init_img],
+        )
+        
+        extras_send_to_inpaint.click(
+            fn=lambda x: image_from_url_text(x),
+            _js="extract_image_from_gallery_img2img",
+            inputs=[result_images],
+            outputs=[init_img_with_mask],
         )
 
     pnginfo_interface = gr.Interface(
@@ -1446,7 +1462,7 @@ with open(os.path.join(script_path, "script.js"), "r", encoding="utf8") as jsfil
     javascript = f'<script>{jsfile.read()}</script>'
 
 jsdir = os.path.join(script_path, "javascript")
-for filename in os.listdir(jsdir):
+for filename in sorted(os.listdir(jsdir)):
     with open(os.path.join(jsdir, filename), "r", encoding="utf8") as jsfile:
         javascript += f"\n<script>{jsfile.read()}</script>"
 

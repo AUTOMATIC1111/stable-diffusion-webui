@@ -2,7 +2,6 @@ import sys
 import argparse
 import json
 import os
-from glob import glob
 import gradio as gr
 import tqdm
 
@@ -26,7 +25,7 @@ parser.add_argument("--config", type=str, default=os.path.join(sd_path, "configs
 parser.add_argument("--ckpt", type=str, default=sd_model_file, help="path to checkpoint of stable diffusion model; this checkpoint will be added to the list of checkpoints and loaded by default if you don't have a checkpoint selected in settings",)
 parser.add_argument("--ckpt-dir", type=str, default=os.path.join(script_path, 'models'), help="path to directory with stable diffusion checkpoints",)
 parser.add_argument("--gfpgan-dir", type=str, help="GFPGAN directory", default=('./src/gfpgan' if os.path.exists('./src/gfpgan') else './GFPGAN'))
-parser.add_argument("--gfpgan-model", type=str, help="GFPGAN model file name", default=next(iter(glob('GFPGAN*.pth')), ''))
+parser.add_argument("--gfpgan-model", type=str, help="GFPGAN model file name", default=None)
 parser.add_argument("--no-half", action='store_true', help="do not switch the model to 16-bit floats")
 parser.add_argument("--no-progressbar-hiding", action='store_true', help="do not hide progressbar in gradio UI (we hide it because it slows down ML if you have hardware acceleration in browser)")
 parser.add_argument("--max-batch-count", type=int, default=16, help="maximum batch count value for the UI")
@@ -226,6 +225,7 @@ options_templates.update(options_section(('system', "System"), {
 options_templates.update(options_section(('sd', "Stable Diffusion"), {
     "sd_model_checkpoint": OptionInfo(None, "Stable Diffusion checkpoint", gr.Radio, lambda: {"choices": [x.title for x in modules.sd_models.checkpoints_list.values()]}),
     "img2img_color_correction": OptionInfo(False, "Apply color correction to img2img results to match original colors."),
+    "save_images_before_color_correction": OptionInfo(False, "Save a copy of image before applying color correction to img2img results"),    
     "img2img_fix_steps": OptionInfo(False, "With img2img, do exactly the amount of steps the slider specifies (normally you'd do less with less denoising)."),
     "enable_quantization": OptionInfo(False, "Enable quantization in K samplers for sharper and cleaner results. This may change existing seeds. Requires restart to apply."),
     "enable_emphasis": OptionInfo(True, "Use (text) to make model pay more attention to text and [text] to make it pay less attention"),
@@ -285,6 +285,27 @@ class Options:
     def load(self, filename):
         with open(filename, "r", encoding="utf8") as file:
             self.data = json.load(file)
+
+        typemap = {int: float}
+
+        def same_type(x, y):
+            if x is None or y is None:
+                return True
+
+            type_x = typemap.get(type(x), type(x))
+            type_y = typemap.get(type(y), type(y))
+
+            return type_x == type_y
+
+        bad_settings = 0
+        for k, v in self.data.items():
+            info = self.data_labels.get(k, None)
+            if info is not None and not same_type(info.default, v):
+                print(f"Warning: bad setting value: {k}: {v} ({type(v).__name__}; expected {type(info.default).__name__})", file=sys.stderr)
+                bad_settings += 1
+
+        if bad_settings > 0:
+            print(f"The program is likely to not work with bad settings.\nSettings file: {filename}\nEither fix the file, or delete it and restart.", file=sys.stderr)
 
     def onchange(self, key, func):
         item = self.data_labels.get(key)
