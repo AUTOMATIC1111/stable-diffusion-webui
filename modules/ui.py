@@ -752,6 +752,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 result_images = gr.Gallery(label="Result", show_label=False)
                 html_info_x = gr.HTML()
                 html_info = gr.HTML()
+                extras_send_to_img2img = gr.Button('Send to img2img')
 
         submit.click(
             fn=run_extras,
@@ -773,6 +774,13 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 html_info_x,
                 html_info,
             ]
+        )
+     
+        extras_send_to_img2img.click(
+            fn=lambda x: image_from_url_text(x),
+            _js="extract_image_from_gallery_img2img",
+            inputs=[result_images],
+            outputs=[init_img],
         )
 
     pnginfo_interface = gr.Interface(
