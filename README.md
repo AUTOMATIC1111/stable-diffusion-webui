@@ -66,11 +66,11 @@ cd stable-diffusion-krita-plugin
 ```
 
 #### Low VRAM (4-6GB) videocard support
-If you have less then 8GB of VRAM, you should probably use options like --medvram or --lowvram. Look at the guide from parent repo for more information:
+If you have less then 8GB of VRAM, you should probably use options like `--medvram` or `--lowvram`. Look at the guide from parent repo for more information:
 
 https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Optimizations
 
-Try --medvram first, it's not so bad for performance.
+Try `--medvram` first, it's not so bad for performance.
 
 #### Troublehooting:
 
