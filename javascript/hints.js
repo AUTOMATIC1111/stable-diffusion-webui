@@ -13,6 +13,8 @@ titles = {
     "Seed": "A value that determines the output of random number generator - if you create an image with same parameters and seed as another image, you'll get the same result",
     "\u{1f3b2}\ufe0f": "Set seed to -1, which will cause a new random number to be used every time",
     "\u267b\ufe0f": "Reuse seed from last generation, mostly useful if it was randomed",
+    "\u{1f3a8}": "Add a random artist to the prompt.",
+    "\u2199\ufe0f": "Read generation parameters from prompt into user interface.",
 
     "Inpaint a part of image": "Draw a mask over an image, and the script will regenerate the masked area with content according to prompt",
     "SD upscale": "Upscale image normally, split result into tiles, improve each tile using img2img, merge whole image back",
@@ -47,8 +49,6 @@ titles = {
 
     "Tiling": "Produce an image that can be tiled.",
     "Tile overlap": "For SD upscale, how much overlap in pixels should there be between tiles. Tiles overlap so that when they are merged back into one picture, there is no clearly visible seam.",
-
-    "Roll": "Add a random artist to the prompt.",
 
     "Variation seed": "Seed of a different picture to be mixed into the generation.",
     "Variation strength": "How strong of a variation to produce. At 0, there will be no effect. At 1, you will get the complete picture with variation seed (except for ancestral samplers, where you will just get something).",

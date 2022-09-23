@@ -74,10 +74,21 @@
     height: 100%;
 }
 
-#roll{
-    min-width: 1em;
-    max-width: 4em;
-    margin: 0.5em;
+#roll_col{
+    min-width: unset !important;
+    flex-grow: 0 !important;
+    padding: 0.4em 0;
+}
+
+#roll, #paste{
+    min-width: 2em;
+    min-height: 2em;
+    max-width: 2em;
+    max-height: 2em;
+    flex-grow: 0;
+    padding-left: 0.25em;
+    padding-right: 0.25em;
+    margin: 0.1em 0;
 }
 
 #style_apply, #style_create, #interrogate{
