@@ -45,8 +45,8 @@ def prepare_ldsr():
     global LDSR_obj
     try:
         from LDSR import LDSR
-        model_files = modelloader.load_models(model_dir, model_url, cmd_path, dl_name="model.ckpt", ext_filter=[".ckpt"])
-        yaml_files = modelloader.load_models(model_dir, yaml_url, cmd_path, dl_name="project.yaml", ext_filter=[".yaml"])
+        model_files = modelloader.load_models(model_path, model_url, cmd_path, dl_name="model.ckpt", ext_filter=[".ckpt"])
+        yaml_files = modelloader.load_models(model_path, yaml_url, cmd_path, dl_name="project.yaml", ext_filter=[".yaml"])
         if len(model_files) != 0 and len(yaml_files) != 0:
             model_file = model_files[0]
             yaml_file = yaml_files[0]
