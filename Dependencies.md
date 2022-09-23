@@ -17,8 +17,6 @@
     - Torrent (magnet:?xt=urn:btih:3a4a612d75ed088ea542acac52f9f45987488d1c&dn=sd-v1-4.ckpt&tr=udp%3a%2f%2ftracker.openbittorrent.com%3a6969%2fannounce&tr=udp%3a%2f%2ftracker.opentrackr.org%3a1337)
 
 # Optional Dependencies
-## GFPGAN (Improve Faces)
-GFPGAN can be used to improve faces, requiring the [model](https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.4.pth) to be placed in the base directory.
 
 ## ESRGAN (Upscaling)
 ESRGAN models such as those from the [Model Database](https://upscale.wiki/wiki/Model_Database), may be placed into the ESRGAN directory.
