@@ -10,28 +10,30 @@ import modules.shared as shared
 import modules.ui
 import modules.scripts
 import modules.sd_hijack
-import modules.codeformer_model
-import modules.gfpgan_model
+import modules.model_codeformer
+import modules.model_gfpgan
 import modules.face_restoration
-import modules.realesrgan_model as realesrgan
-import modules.esrgan_model as esrgan
-import modules.ldsr_model as ldsr
+import modules.model_realesrgan as realesrgan
+import modules.model_esrgan as esrgan
+import modules.model_ldsr as ldsr
+import modules.model_swinir as swinir
+
+
 import modules.extras
 import modules.lowvram
 import modules.txt2img
 import modules.img2img
-import modules.swinir as swinir
 import modules.sd_models
 
 
-modules.codeformer_model.setup_codeformer()
-modules.gfpgan_model.setup_gfpgan()
+modules.model_codeformer.setup_model(cmd_opts.codeformer_models_path)
+modules.model_gfpgan.setup_model(cmd_opts.gfpgan_models_path)
 shared.face_restorers.append(modules.face_restoration.FaceRestoration())
 
-esrgan.load_models(cmd_opts.esrgan_models_path)
-swinir.load_models(cmd_opts.swinir_models_path)
-realesrgan.setup_realesrgan()
-ldsr.add_lsdr()
+esrgan.setup_model(cmd_opts.esrgan_models_path)
+swinir.setup_model(cmd_opts.swinir_models_path)
+realesrgan.setup_model(cmd_opts.realesrgan_models_path)
+ldsr.setup_model(cmd_opts.ldsr_models_path)
 queue_lock = threading.Lock()
 
 

@@ -1,4 +1,4 @@
-# this file is copied from CodeFormer repository. Please see comment in modules/codeformer_model.py
+# this file is copied from CodeFormer repository. Please see comment in modules/model_codeformer.py
 
 import math
 import numpy as np

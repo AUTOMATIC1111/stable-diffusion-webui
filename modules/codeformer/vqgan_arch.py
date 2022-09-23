@@ -1,4 +1,4 @@
-# this file is copied from CodeFormer repository. Please see comment in modules/codeformer_model.py
+# this file is copied from CodeFormer repository. Please see comment in modules/model_codeformer.py
 
 '''
 VQGAN code, adapted from the original created by the Unleashing Transformers authors:

@@ -2,7 +2,6 @@ import base64
 import html
 import io
 import json
-import math
 import mimetypes
 import os
 import random
@@ -10,23 +9,20 @@ import sys
 import time
 import traceback
 
-import numpy as np
-import torch
+import gradio as gr
+import gradio.routes
+import gradio.utils
 from PIL import Image
 
-import gradio as gr
-import gradio.utils
-import gradio.routes
-
-from modules.paths import script_path
-from modules.shared import opts, cmd_opts
-import modules.shared as shared
-from modules.sd_samplers import samplers, samplers_for_img2img
-import modules.ldsr_model
+import modules.model_codeformer
+import modules.model_gfpgan
+import modules.model_ldsr
 import modules.scripts
-import modules.gfpgan_model
-import modules.codeformer_model
+import modules.shared as shared
 import modules.styles
+from modules.paths import script_path
+from modules.sd_samplers import samplers, samplers_for_img2img
+from modules.shared import opts, cmd_opts
 
 # this is a fix for Windows users. Without it, javascript files will be served with text/html content-type and the bowser will not show any UI
 mimetypes.init()
@@ -740,11 +736,11 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     extras_upscaler_2_visibility = gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="Upscaler 2 visibility", value=1)
 
                 with gr.Group():
-                    gfpgan_visibility = gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="GFPGAN visibility", value=0, interactive=modules.gfpgan_model.have_gfpgan)
+                    gfpgan_visibility = gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="GFPGAN visibility", value=0, interactive=modules.model_gfpgan.have_gfpgan)
 
                 with gr.Group():
-                    codeformer_visibility = gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="CodeFormer visibility", value=0, interactive=modules.codeformer_model.have_codeformer)
-                    codeformer_weight = gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="CodeFormer weight (0 = maximum effect, 1 = minimum effect)", value=0, interactive=modules.codeformer_model.have_codeformer)
+                    codeformer_visibility = gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="CodeFormer visibility", value=0, interactive=modules.model_codeformer.have_codeformer)
+                    codeformer_weight = gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="CodeFormer weight (0 = maximum effect, 1 = minimum effect)", value=0, interactive=modules.model_codeformer.have_codeformer)
 
                 submit = gr.Button('Generate', elem_id="extras_generate", variant='primary')
 

@@ -5,9 +5,9 @@ from PIL import Image
 
 from modules import processing, shared, images, devices
 from modules.shared import opts
-import modules.gfpgan_model
+import modules.model_gfpgan
 from modules.ui import plaintext_to_html
-import modules.codeformer_model
+import modules.model_codeformer
 import piexif
 import piexif.helper
 
@@ -36,13 +36,15 @@ def run_extras(extras_mode, image, image_folder, gfpgan_visibility, codeformer_v
 
     outputs = []
     for image, image_name in zip(imageArr, imageNameArr):
+        if image is None:
+            return outputs, "Please select an input image.", ''
         existing_pnginfo = image.info or {}
 
         image = image.convert("RGB")
         info = ""
 
         if gfpgan_visibility > 0:
-            restored_img = modules.gfpgan_model.gfpgan_fix_faces(np.array(image, dtype=np.uint8))
+            restored_img = modules.model_gfpgan.gfpgan_fix_faces(np.array(image, dtype=np.uint8))
             res = Image.fromarray(restored_img)
 
             if gfpgan_visibility < 1.0:
@@ -52,7 +54,7 @@ def run_extras(extras_mode, image, image_folder, gfpgan_visibility, codeformer_v
             image = res
 
         if codeformer_visibility > 0:
-            restored_img = modules.codeformer_model.codeformer.restore(np.array(image, dtype=np.uint8), w=codeformer_weight)
+            restored_img = modules.model_codeformer.codeformer.restore(np.array(image, dtype=np.uint8), w=codeformer_weight)
             res = Image.fromarray(restored_img)
 
             if codeformer_visibility < 1.0:
