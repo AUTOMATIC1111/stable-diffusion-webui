@@ -209,8 +209,16 @@ def draw_prompt_matrix(im, width, height, all_prompts):
 
 
 def resize_image(resize_mode, im, width, height):
+    def resize(im, w, h):
+        if opts.upscaler_for_img2img is None or opts.upscaler_for_img2img == "None":
+            return im.resize((w, h), resample=LANCZOS)
+
+        upscaler = [x for x in shared.sd_upscalers if x.name == opts.upscaler_for_img2img][0]
+        return upscaler.upscale(im, w, h)
+
     if resize_mode == 0:
-        res = im.resize((width, height), resample=LANCZOS)
+        res = resize(im, width, height)
+
     elif resize_mode == 1:
         ratio = width / height
         src_ratio = im.width / im.height
@@ -218,9 +226,10 @@ def resize_image(resize_mode, im, width, height):
         src_w = width if ratio > src_ratio else im.width * height // im.height
         src_h = height if ratio <= src_ratio else im.height * width // im.width
 
-        resized = im.resize((src_w, src_h), resample=LANCZOS)
+        resized = resize(im, src_w, src_h)
         res = Image.new("RGB", (width, height))
         res.paste(resized, box=(width // 2 - src_w // 2, height // 2 - src_h // 2))
+
     else:
         ratio = width / height
         src_ratio = im.width / im.height
@@ -228,7 +237,7 @@ def resize_image(resize_mode, im, width, height):
         src_w = width if ratio < src_ratio else im.width * height // im.height
         src_h = height if ratio >= src_ratio else im.height * width // im.width
 
-        resized = im.resize((src_w, src_h), resample=LANCZOS)
+        resized = resize(im, src_w, src_h)
         res = Image.new("RGB", (width, height))
         res.paste(resized, box=(width // 2 - src_w // 2, height // 2 - src_h // 2))
 

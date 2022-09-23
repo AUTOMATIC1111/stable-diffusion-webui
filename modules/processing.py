@@ -462,7 +462,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         else:
             decoded_samples = self.sd_model.decode_first_stage(samples)
 
-            if opts.upscaler_for_hires_fix is None or opts.upscaler_for_hires_fix == "None":
+            if opts.upscaler_for_img2img is None or opts.upscaler_for_img2img == "None":
                 decoded_samples = torch.nn.functional.interpolate(decoded_samples, size=(self.height, self.width), mode="bilinear")
             else:
                 lowres_samples = torch.clamp((decoded_samples + 1.0) / 2.0, min=0.0, max=1.0)
@@ -472,7 +472,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                     x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
                     x_sample = x_sample.astype(np.uint8)
                     image = Image.fromarray(x_sample)
-                    upscaler = [x for x in shared.sd_upscalers if x.name == opts.upscaler_for_hires_fix][0]
+                    upscaler = [x for x in shared.sd_upscalers if x.name == opts.upscaler_for_img2img][0]
                     image = upscaler.upscale(image, self.width, self.height)
                     image = np.array(image).astype(np.float32) / 255.0
                     image = np.moveaxis(image, 2, 0)
