@@ -166,7 +166,7 @@ def wrap_gradio_call(func):
     return f
 
 
-def check_progress_call():
+def check_progress_call(id_part):
     if shared.state.job_count == 0:
         return "", gr_show(False), gr_show(False)
 
@@ -200,15 +200,15 @@ def check_progress_call():
         else:
             preview_visibility = gr_show(True)
 
-    return f"<span id='progressSpan' style='display: none'>{time.time()}</span><p>{progressbar}</p>", preview_visibility, image
+    return f"<span id='{id_part}_progress_span' style='display: none'>{time.time()}</span><p>{progressbar}</p>", preview_visibility, image
 
 
-def check_progress_call_initial():
+def check_progress_call_initial(id_part):
     shared.state.job_count = -1
     shared.state.current_latent = None
     shared.state.current_image = None
 
-    return check_progress_call()
+    return check_progress_call(id_part)
 
 
 def roll_artist(prompt):
@@ -236,8 +236,7 @@ def add_style(name: str, prompt: str, negative_prompt: str):
     # reserialize all styles every time we save them
     shared.prompt_styles.save_styles(shared.styles_filename)
 
-    update = {"visible": True, "choices": list(shared.prompt_styles.styles), "__type__": "update"}
-    return [update, update, update, update]
+    return [gr.Dropdown.update(visible=True, choices=list(shared.prompt_styles.styles)) for _ in range(4)]
 
 
 def apply_styles(prompt, prompt_neg, style1_name, style2_name):
@@ -329,6 +328,8 @@ def connect_reuse_seed(seed: gr.Number, reuse_seed: gr.Button, generation_info: 
 
 
 def create_toprow(is_img2img):
+    id_part = "img2img" if is_img2img else "txt2img"
+
     with gr.Row(elem_id="toprow"):
         with gr.Column(scale=4):
             with gr.Row():
@@ -337,19 +338,20 @@ def create_toprow(is_img2img):
                         prompt = gr.Textbox(label="Prompt", elem_id="prompt", show_label=False, placeholder="Prompt", lines=2)
                         roll = gr.Button('Roll', elem_id="roll", visible=len(shared.artist_db.artists) > 0)
 
-                with gr.Column(scale=1, elem_id="style_pos_col"):
-                    prompt_style = gr.Dropdown(label="Style 1", elem_id="style_index", choices=[k for k, v in shared.prompt_styles.styles.items()], value=next(iter(shared.prompt_styles.styles.keys())), visible=len(shared.prompt_styles.styles) > 1)
+
+                with gr.Column(scale=10, elem_id="style_pos_col"):
+                    prompt_style = gr.Dropdown(label="Style 1", elem_id=f"{id_part}_style_index", choices=[k for k, v in shared.prompt_styles.styles.items()], value=next(iter(shared.prompt_styles.styles.keys())), visible=len(shared.prompt_styles.styles) > 1)
 
             with gr.Row():
                 with gr.Column(scale=8):
                     negative_prompt = gr.Textbox(label="Negative prompt", elem_id="negative_prompt", show_label=False, placeholder="Negative prompt", lines=2)
 
                 with gr.Column(scale=1, elem_id="style_neg_col"):
-                    prompt_style2 = gr.Dropdown(label="Style 2", elem_id="style2_index", choices=[k for k, v in shared.prompt_styles.styles.items()], value=next(iter(shared.prompt_styles.styles.keys())), visible=len(shared.prompt_styles.styles) > 1)
+                    prompt_style2 = gr.Dropdown(label="Style 2", elem_id=f"{id_part}_style2_index", choices=[k for k, v in shared.prompt_styles.styles.items()], value=next(iter(shared.prompt_styles.styles.keys())), visible=len(shared.prompt_styles.styles) > 1)
 
         with gr.Column(scale=1):
             with gr.Row():
-                interrupt = gr.Button('Interrupt', elem_id="interrupt")
+                interrupt = gr.Button('Interrupt', elem_id=f"{id_part}_interrupt")
                 submit = gr.Button('Generate', elem_id="generate", variant='primary')
 
                 interrupt.click(
@@ -369,18 +371,18 @@ def create_toprow(is_img2img):
     return prompt, roll, prompt_style, negative_prompt, prompt_style2, submit, interrogate, prompt_style_apply, save_style
 
 
-def setup_progressbar(progressbar, preview):
-    check_progress = gr.Button('Check progress', elem_id="check_progress", visible=False)
+def setup_progressbar(progressbar, preview, id_part):
+    check_progress = gr.Button('Check progress', elem_id=f"{id_part}_check_progress", visible=False)
     check_progress.click(
-        fn=check_progress_call,
+        fn=lambda: check_progress_call(id_part),
         show_progress=False,
         inputs=[],
         outputs=[progressbar, preview, preview],
     )
 
-    check_progress_initial = gr.Button('Check progress (first)', elem_id="check_progress_initial", visible=False)
+    check_progress_initial = gr.Button('Check progress (first)', elem_id=f"{id_part}_check_progress_initial", visible=False)
     check_progress_initial.click(
-        fn=check_progress_call_initial,
+        fn=lambda: check_progress_call_initial(id_part),
         show_progress=False,
         inputs=[],
         outputs=[progressbar, preview, preview],
@@ -392,14 +394,14 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
         txt2img_prompt, roll, txt2img_prompt_style, txt2img_negative_prompt, txt2img_prompt_style2, submit, _, txt2img_prompt_style_apply, txt2img_save_style = create_toprow(is_img2img=False)
         dummy_component = gr.Label(visible=False)
 
-        with gr.Row(elem_id='progressRow'):
-              with gr.Column(scale=1):
-                columnEmpty = "Empty"
+        with gr.Row(elem_id='txt2img_progress_row'):
+            with gr.Column(scale=1):
+                pass
 
-              with gr.Column(scale=1):
-                progressbar = gr.HTML(elem_id="progressbar")
+            with gr.Column(scale=1):
+                progressbar = gr.HTML(elem_id="txt2img_progressbar")
                 txt2img_preview = gr.Image(elem_id='txt2img_preview', visible=False)
-                setup_progressbar(progressbar, txt2img_preview)
+                setup_progressbar(progressbar, txt2img_preview, 'txt2img')
 
         with gr.Row().style(equal_height=False):
             with gr.Column(variant='panel'):
@@ -518,14 +520,14 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
     with gr.Blocks(analytics_enabled=False) as img2img_interface:
         img2img_prompt, roll, img2img_prompt_style, img2img_negative_prompt, img2img_prompt_style2, submit, img2img_interrogate, img2img_prompt_style_apply, img2img_save_style = create_toprow(is_img2img=True)
 
-        with gr.Row(elem_id='progressRow'):
-              with gr.Column(scale=1):
-                columnEmpty = "Empty"
+        with gr.Row(elem_id='img2img_progress_row'):
+            with gr.Column(scale=1):
+                pass
 
-              with gr.Column(scale=1):
-                progressbar = gr.HTML(elem_id="progressbar")
+            with gr.Column(scale=1):
+                progressbar = gr.HTML(elem_id="img2img_progressbar")
                 img2img_preview = gr.Image(elem_id='img2img_preview', visible=False)
-                setup_progressbar(progressbar, img2img_preview)
+                setup_progressbar(progressbar, img2img_preview, 'img2img')
 
         with gr.Row().style(equal_height=False):
             with gr.Column(variant='panel'):
@@ -536,7 +538,6 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
 
                     with gr.TabItem('Inpaint'):
                         init_img_with_mask = gr.Image(label="Image for inpainting with mask",  show_label=False, elem_id="img2maskimg", source="upload", interactive=True, type="pil", tool="sketch", image_mode="RGBA")
-                        init_img_with_mask_comment = gr.HTML(elem_id="mask_bug_info", value="<small>if the editor shows ERROR, switch to another tab and back, then to \"Upload mask\" mode above and back</small>")
 
                         init_img_inpaint = gr.Image(label="Image for img2img", show_label=False, source="upload", interactive=True, type="pil", visible=False)
                         init_mask_inpaint = gr.Image(label="Mask", source="upload", interactive=True, type="pil", visible=False)
@@ -597,7 +598,6 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                         img2img_send_to_img2img = gr.Button('Send to img2img')
                         img2img_send_to_inpaint = gr.Button('Send to inpaint')
                         img2img_send_to_extras = gr.Button('Send to extras')
-                        img2img_save_style = gr.Button('Save prompt as style')
 
                 with gr.Group():
                     html_info = gr.HTML()
@@ -608,16 +608,13 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
 
             mask_mode.change(
                 lambda mode, img: {
-                    #init_img_with_mask: gr.Image.update(visible=mode == 0, value=img["image"]),
                     init_img_with_mask: gr_show(mode == 0),
-                    init_img_with_mask_comment: gr_show(mode == 0),
                     init_img_inpaint: gr_show(mode == 1),
                     init_mask_inpaint: gr_show(mode == 1),
                 },
                 inputs=[mask_mode, init_img_with_mask],
                 outputs=[
                     init_img_with_mask,
-                    init_img_with_mask_comment,
                     init_img_inpaint,
                     init_mask_inpaint,
                 ],
@@ -936,18 +933,6 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
             fn=lambda: opts.dumpjson(),
             inputs=[],
             outputs=[text_settings],
-        )
-
-        tabs.change(
-            fn=lambda x: x,
-            inputs=[init_img_with_mask],
-            outputs=[init_img_with_mask],
-        )
-
-        tabs_img2img_mode.change(
-            fn=lambda x: x,
-            inputs=[init_img_with_mask],
-            outputs=[init_img_with_mask],
         )
 
         send_to_img2img.click(
