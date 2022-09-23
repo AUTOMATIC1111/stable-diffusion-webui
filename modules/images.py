@@ -210,7 +210,7 @@ def draw_prompt_matrix(im, width, height, all_prompts):
 
 def resize_image(resize_mode, im, width, height):
     def resize(im, w, h):
-        if opts.upscaler_for_img2img is None or opts.upscaler_for_img2img == "None":
+        if opts.upscaler_for_img2img is None or opts.upscaler_for_img2img == "None" or im.mode == 'L':
             return im.resize((w, h), resample=LANCZOS)
 
         upscaler = [x for x in shared.sd_upscalers if x.name == opts.upscaler_for_img2img][0]
