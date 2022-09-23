@@ -1,10 +1,13 @@
 # Stable Diffusion web UI
+
 A browser interface based on Gradio library for Stable Diffusion.
 
 ![](screenshot.png)
 
 ## Features
+
 [Detailed feature showcase with images](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Features):
+
 - Original txt2img and img2img modes
 - One click install and run script (but you still must install python and git)
 - Outpainting
@@ -16,12 +19,12 @@ A browser interface based on Gradio library for Stable Diffusion.
 - X/Y plot
 - Textual Inversion
 - Extras tab with:
-    - GFPGAN, neural network that fixes faces
-    - CodeFormer, face restoration tool as an alternative to GFPGAN
-    - RealESRGAN, neural network upscaler
-    - ESRGAN, neural network with a lot of third party models
-    - SwinIR, neural network upscaler
-    - LDSR, Latent diffusion super resolution upscaling
+  - GFPGAN, neural network that fixes faces
+  - CodeFormer, face restoration tool as an alternative to GFPGAN
+  - RealESRGAN, neural network upscaler
+  - ESRGAN, neural network with a lot of third party models
+  - SwinIR, neural network upscaler
+  - LDSR, Latent diffusion super resolution upscaling
 - Resizing aspect ratio options
 - Sampling method selection
 - Interrupt processing at any time
@@ -49,6 +52,7 @@ A browser interface based on Gradio library for Stable Diffusion.
 - LDSR Upscaling
 
 ## Installation and Running
+
 Make sure the required [dependencies](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Dependencies) are met and follow the instructions available for both [NVidia](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-NVidia-GPUs) (recommended) and [AMD](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-AMD-GPUs) GPUs.
 
 Alternatively, use Google Colab:
@@ -57,6 +61,7 @@ Alternatively, use Google Colab:
 - [Colab, original by me, outdated](https://colab.research.google.com/drive/1Iy-xW9t1-OQWhb0hNxueGij8phCyluOh).
 
 ### Automatic Installation on Windows
+
 1. Install [Python 3.10.6](https://www.python.org/downloads/windows/), checking "Add Python to PATH"
 2. Install [git](https://git-scm.com/download/win).
 3. Download the stable-diffusion-webui repository, for example by running `git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui.git`.
@@ -65,7 +70,9 @@ Alternatively, use Google Colab:
 6. Run `webui-user.bat` from Windows Explorer as normal, non-administrator, user.
 
 ### Automatic Installation on Linux
+
 1. Install the dependencies:
+
 ```bash
 # Debian-based:
 sudo apt install wget git python3 python3-venv
@@ -74,19 +81,39 @@ sudo dnf install wget git python3
 # Arch-based:
 sudo pacman -S wget git python3
 ```
+
 2. To install in `/home/$(whoami)/stable-diffusion-webui/`, run:
+
 ```bash
 bash <(wget -qO- https://raw.githubusercontent.com/AUTOMATIC1111/stable-diffusion-webui/master/webui.sh)
 ```
 
-### Installation on Apple Silicon
+### Automatic installation on Apple Silicon
 
-Find the instructions [here](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Installation-on-Apple-Silicon).
+This script assumes you've installed the same dependencies as the other scripts (python, git, ...) - these can all be installed using [Homebrew](https://brew.sh/).
+
+We're going to install and run the script downloaded from https://raw.githubusercontent.com/AUTOMATIC1111/stable-diffusion-webui/master/setup_mac.sh
+
+1. Open Terminal.app
+2. Run the following command:
+
+```
+bash <(curl -s https://raw.githubusercontent.com/AUTOMATIC1111/stable-diffusion-webui/master/setup_mac.sh)
+```
+
+3. Follow the instructions in the terminal window.
+
+#### Usage
+
+After installation, the you'll now find `run_webui_mac.sh` in the `stable-diffusion-webui` directory. Run this script to start the web UI using `./run_webui_mac.sh`.
+This script automatically activates the conda environment, pulls the latest changes from the repository, and starts the web UI. On exit, the conda environment is deactivated.
 
 ## Documentation
+
 The documentation was moved from this README over to the project's [wiki](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki).
 
 ## Credits
+
 - Stable Diffusion - https://github.com/CompVis/stable-diffusion, https://github.com/CompVis/taming-transformers
 - k-diffusion - https://github.com/crowsonkb/k-diffusion.git
 - GFPGAN - https://github.com/TencentARC/GFPGAN.git
