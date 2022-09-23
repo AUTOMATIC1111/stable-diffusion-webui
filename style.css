@@ -154,7 +154,23 @@ button{
     right: 0;
     margin-left: auto;
     margin-right: auto;
+    margin-top: 34px;
     z-index: 100;
+    border: none;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
+
+@media screen and (min-width: 768px) {
+    #txt2img_preview, #img2img_preview {
+        position: absolute;
+    }
+}
+
+@media screen and (max-width: 767px) {
+    #txt2img_preview, #img2img_preview {
+        position: relative;
+    }
 }
 
 #txt2img_preview div.left-0.top-0, #img2img_preview div.left-0.top-0{
