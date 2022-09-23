@@ -38,11 +38,11 @@ function extract_image_from_gallery_extras(gallery){
 function get_tab_index(tabId){
     var res = 0
 
-    gradioApp().getElementById(tabId).querySelector('div').querySelectorAll('button').forEach(function(button, i){
-        if(button.className.indexOf('bg-white') != -1)
-            res = i
+    gradioApp().querySelectorAll('#'+tabId+' div button').forEach(function(button, i){
+        if(button.className.indexOf('bg-white') != -1){
+            return i
+	}
     })
-
     return res
 }
 
