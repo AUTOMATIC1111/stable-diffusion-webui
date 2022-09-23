@@ -212,7 +212,16 @@ def check_progress_call_initial(id_part):
     shared.state.current_image = None
 
     return check_progress_call(id_part)
-
+######################################################################### Prompt Gen
+def append_prompt(prompt, prompt_append, prompt_seperator):
+    if prompt_seperator == "none":
+        return prompt + prompt_append if prompt != '' else prompt_append
+    elif prompt_seperator == "space":
+        return prompt + " " + prompt_append if prompt != '' else prompt_append
+    elif prompt_seperator == "pipe":
+        return prompt + "|" + prompt_append if prompt != '' else prompt_append
+    else:
+        return prompt + ", " + prompt_append if prompt != '' else prompt_append
 
 def roll_artist(prompt):
     allowed_cats = set([x for x in shared.artist_db.categories() if len(opts.random_artist_categories)==0 or x in opts.random_artist_categories])
