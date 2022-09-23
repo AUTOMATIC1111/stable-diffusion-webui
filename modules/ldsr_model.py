@@ -63,5 +63,5 @@ def upscale_with_ldsr(image):
     pre_scale = shared.opts.ldsr_pre_down
     post_scale = shared.opts.ldsr_post_down
 
-    image = LDSR_obj.super_resolution(image, ddim_steps, pre_scale, post_scale)
+    image = LDSR_obj.superResolution(image, ddim_steps, pre_scale, post_scale)
     return image
