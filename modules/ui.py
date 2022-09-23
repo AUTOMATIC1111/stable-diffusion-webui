@@ -831,7 +831,11 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
     components = []
 
     def run_settings(*args):
-        up = []
+        changed = 0
+
+        for key, value, comp in zip(opts.data_labels.keys(), args, components):
+            if not opts.same_type(value, opts.data_labels[key].default):
+                return f"Bad value for setting {key}: {value}; expecting {type(opts.data_labels[key].default).__name__}"
 
         for key, value, comp in zip(opts.data_labels.keys(), args, components):
             comp_args = opts.data_labels[key].component_args
@@ -841,14 +845,15 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
             oldval = opts.data.get(key, None)
             opts.data[key] = value
 
-            if oldval != value and opts.data_labels[key].onchange is not None:
-                opts.data_labels[key].onchange()
+            if oldval != value:
+                if opts.data_labels[key].onchange is not None:
+                    opts.data_labels[key].onchange()
 
-            up.append(comp.update(value=value))
+                changed += 1
 
         opts.save(shared.config_filename)
 
-        return 'Settings applied.'
+        return f'{changed} settings changed.'
 
     with gr.Blocks(analytics_enabled=False) as settings_interface:
         settings_submit = gr.Button(value="Apply settings", variant='primary')
