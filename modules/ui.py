@@ -759,7 +759,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 "Denoising strength": denoising_strength,
             }
             modules.generation_parameters_copypaste.connect_paste(paste, img2img_paste_fields, img2img_prompt)
-        with gr.Blocks(analytics_enabled=False) as promptgen_interface:
+    with gr.Blocks(analytics_enabled=False) as promptgen_interface:
         with gr.Row():
             genprompt = gr.Textbox(label="Prompt", elem_id="prompt", show_label=False, placeholder="Prompt", lines=4)
             #roll = gr.Button('Roll', elem_id="roll", visible=len(shared.artist_db.artists) > 0)
