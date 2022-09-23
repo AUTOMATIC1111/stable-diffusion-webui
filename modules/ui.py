@@ -898,7 +898,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
 
         opts.save(shared.config_filename)
 
-        return f'{changed} settings changed.'
+        return f'{changed} settings changed.', opts.dumpjson()
 
     with gr.Blocks(analytics_enabled=False) as settings_interface:
         settings_submit = gr.Button(value="Apply settings", variant='primary')
@@ -943,12 +943,6 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
         if column is not None:
             column.__exit__()
 
-        settings_submit.click(
-            fn=run_settings,
-            inputs=components,
-            outputs=[result]
-        )
-
     interfaces = [
         (txt2img_interface, "txt2img", "txt2img"),
         (img2img_interface, "img2img", "img2img"),
@@ -976,11 +970,10 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     interface.render()
 
         text_settings = gr.Textbox(elem_id="settings_json", value=lambda: opts.dumpjson(), visible=False)
-
         settings_submit.click(
-            fn=lambda: opts.dumpjson(),
-            inputs=[],
-            outputs=[text_settings],
+            fn=run_settings,
+            inputs=components,
+            outputs=[result, text_settings],
         )
 
         send_to_img2img.click(
