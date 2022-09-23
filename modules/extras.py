@@ -102,6 +102,7 @@ def run_pnginfo(image):
         return '', '', ''
 
     items = image.info
+    geninfo = ''
 
     if "exif" in image.info:
         exif = piexif.load(image.info["exif"])
@@ -111,13 +112,14 @@ def run_pnginfo(image):
         except ValueError:
             exif_comment = exif_comment.decode('utf8', errors="ignore")
 
-
         items['exif comment'] = exif_comment
+        geninfo = exif_comment
 
         for field in ['jfif', 'jfif_version', 'jfif_unit', 'jfif_density', 'dpi', 'exif',
                       'loop', 'background', 'timestamp', 'duration']:
             items.pop(field, None)
 
+    geninfo = items.get('parameters', geninfo)
 
     info = ''
     for key, text in items.items():
@@ -132,4 +134,4 @@ def run_pnginfo(image):
         message = "Nothing found in the image."
         info = f"<div><p>{message}<p></div>"
 
-    return '', '', info
+    return '', geninfo, info

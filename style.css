@@ -74,10 +74,21 @@
     height: 100%;
 }
 
-#roll{
-    min-width: 1em;
-    max-width: 4em;
-    margin: 0.5em;
+#roll_col{
+    min-width: unset !important;
+    flex-grow: 0 !important;
+    padding: 0.4em 0;
+}
+
+#roll, #paste{
+    min-width: 2em;
+    min-height: 2em;
+    max-width: 2em;
+    max-height: 2em;
+    flex-grow: 0;
+    padding-left: 0.25em;
+    padding-right: 0.25em;
+    margin: 0.1em 0;
 }
 
 #style_apply, #style_create, #interrogate{
@@ -89,7 +100,7 @@
     min-width: 8em !important;
 }
 
-#style_index, #style2_index{
+#txt2img_style_index, #txt2img_style2_index, #img2img_style_index, #img2img_style2_index{
     margin-top: 1em;
 }
 
@@ -210,7 +221,7 @@ input[type="range"]{
 #txt2img_negative_prompt, #img2img_negative_prompt{
 }
 
-#progressbar{
+#txt2img_progressbar, #img2img_progressbar{
   position: absolute;
   z-index: 1000;
   right: 0;
@@ -219,7 +230,7 @@ input[type="range"]{
   display: block;
 }
 
-#progressRow{
+#txt2img_progress_row, #img2img_progress_row{
   margin-bottom: 10px;
   margin-top: -18px;
 }
@@ -354,7 +365,7 @@ input[type="range"]{
     display:none
 }
 
-#interrupt{
+#txt2img_interrupt, #img2img_interrupt{
   position: absolute;
   width: 100%;
   height: 72px;

@@ -206,7 +206,7 @@ options_templates.update(options_section(('upscaling', "Upscaling"), {
     "ldsr_pre_down": OptionInfo(1, "LDSR Pre-process downssample scale. 1 = no down-sampling, 4 = 1/4 scale.", gr.Slider, {"minimum": 1, "maximum": 4, "step": 1}),
     "ldsr_post_down": OptionInfo(1, "LDSR Post-process down-sample scale. 1 = no down-sampling, 4 = 1/4 scale.", gr.Slider, {"minimum": 1, "maximum": 4, "step": 1}),
 
-    "upscaler_for_hires_fix": OptionInfo(None, "Upscaler for highres. fix", gr.Radio, lambda: {"choices": [x.name for x in sd_upscalers]}),
+    "upscaler_for_img2img": OptionInfo(None, "Upscaler for img2img", gr.Radio, lambda: {"choices": [x.name for x in sd_upscalers]}),
 }))
 
 options_templates.update(options_section(('face-restoration', "Face restoration"), {
@@ -257,6 +257,7 @@ options_templates.update(options_section(('ui', "User interface"), {
 class Options:
     data = None
     data_labels = options_templates
+    typemap = {int: float}
 
     def __init__(self):
         self.data = {k: v.default for k, v in self.data_labels.items()}
@@ -282,25 +283,23 @@ class Options:
         with open(filename, "w", encoding="utf8") as file:
             json.dump(self.data, file)
 
+    def same_type(self, x, y):
+        if x is None or y is None:
+            return True
+
+        type_x = self.typemap.get(type(x), type(x))
+        type_y = self.typemap.get(type(y), type(y))
+
+        return type_x == type_y
+
     def load(self, filename):
         with open(filename, "r", encoding="utf8") as file:
             self.data = json.load(file)
 
-        typemap = {int: float}
-
-        def same_type(x, y):
-            if x is None or y is None:
-                return True
-
-            type_x = typemap.get(type(x), type(x))
-            type_y = typemap.get(type(y), type(y))
-
-            return type_x == type_y
-
         bad_settings = 0
         for k, v in self.data.items():
             info = self.data_labels.get(k, None)
-            if info is not None and not same_type(info.default, v):
+            if info is not None and not self.same_type(info.default, v):
                 print(f"Warning: bad setting value: {k}: {v} ({type(v).__name__}; expected {type(info.default).__name__})", file=sys.stderr)
                 bad_settings += 1
 
