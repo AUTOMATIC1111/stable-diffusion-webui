@@ -156,6 +156,9 @@ button{
     margin-right: auto;
     margin-top: 35px;
     z-index: 100;
+    border: none;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
 }
 
 @media screen and (min-width: 768px) {
