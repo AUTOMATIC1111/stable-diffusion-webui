@@ -79,13 +79,13 @@ function create_submit_args(args){
 }
 
 function submit(){
-    requestProgress()
+    requestProgress('txt2img')
 
     return create_submit_args(arguments)
 }
 
 function submit_img2img(){
-    requestProgress()
+    requestProgress('img2img')
 
     res = create_submit_args(arguments)
 
