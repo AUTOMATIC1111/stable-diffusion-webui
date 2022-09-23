@@ -39,7 +39,6 @@ function requestMoreProgress(id_part, id_progressbar_span, id_interrupt){
     btn.click();
     var progressDiv = gradioApp().querySelectorAll('#' + id_progressbar_span).length > 0;
     var interrupt = gradioApp().getElementById(id_interrupt)
-    console.log(progressDiv, interrupt)
     if(progressDiv && interrupt){
         interrupt.style.display = "block"
     }
