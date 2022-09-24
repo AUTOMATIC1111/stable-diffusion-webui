@@ -102,7 +102,7 @@ def draw_xy_grid(p, xs, ys, x_labels, y_labels, cell, draw_legend):
 
     for iy, y in enumerate(ys):
         for ix, x in enumerate(xs):
-            state.job = f"{ix + iy * len(xs) + 1} out of {len(xs) * len(ys)}"
+            state.job = f"Image {ix + iy * len(xs) + 1} out of {state.job_count}"
 
             processed = cell(x, y)
             if first_pocessed is None:
@@ -141,10 +141,11 @@ class Script(scripts.Script):
             y_values = gr.Textbox(label="Y values", visible=False, lines=1)
         
         draw_legend = gr.Checkbox(label='Draw legend', value=True)
-            
-        return [x_type, x_values, y_type, y_values, draw_legend]
+        fixed_seeds = gr.Checkbox(label='Resolve random seeds before plotting (only applies when plotting "-1" seed values for X or Y axis)', value=False)
 
-    def run(self, p, x_type, x_values, y_type, y_values, draw_legend):
+        return [x_type, x_values, y_type, y_values, draw_legend, fixed_seeds]
+
+    def run(self, p, x_type, x_values, y_type, y_values, draw_legend, fixed_seeds):
         modules.processing.fix_seed(p)
         p.batch_size = 1
 
@@ -206,6 +207,29 @@ class Script(scripts.Script):
 
         y_opt = axis_options[y_type]
         ys = process_axis(y_opt, y_values)
+
+        def fix_axis_seeds(axis_opt, axis_list):
+            if axis_opt.label == 'Seed':
+                return [int(random.randrange(4294967294)) if val is None or val == '' or val == -1 else val for val in axis_list]
+            else:
+                return axis_list
+
+        if fixed_seeds == True:
+            xs = fix_axis_seeds(x_opt, xs)
+            ys = fix_axis_seeds(y_opt, ys)
+
+        if x_opt.label == 'Steps':
+            total_steps = sum(xs) * len(ys)
+        elif y_opt.label == 'Steps':
+            total_steps = sum(ys) * len(xs)
+        else:
+            total_steps = p.steps * len(xs) * len(ys)
+
+        if p.n_iter > 1:
+            print(f"Number of seeds/images per prompt is {p.n_iter}.")
+
+        print(f"X/Y plot will create {len(xs) * len(ys) * p.n_iter} images on a {len(xs)} x {len(ys)} grid. (Total steps to process: {total_steps * p.n_iter})")
+        shared.total_tqdm.updateTotal(total_steps * p.n_iter)
 
         def cell(x, y):
             pc = copy(p)
