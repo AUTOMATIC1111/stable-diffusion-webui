@@ -36,6 +36,10 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
         else:
             prompt += line
 
+    if lastline.startswith("Negative prompt:"):
+        negative_prompt += lastline[16:].strip()
+        lastline = ""
+
     if len(prompt) > 0:
         res["Prompt"] = prompt
 
