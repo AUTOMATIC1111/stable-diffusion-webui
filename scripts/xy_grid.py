@@ -141,10 +141,11 @@ class Script(scripts.Script):
             y_values = gr.Textbox(label="Y values", visible=False, lines=1)
         
         draw_legend = gr.Checkbox(label='Draw legend', value=True)
-            
-        return [x_type, x_values, y_type, y_values, draw_legend]
+        fixed_seeds = gr.Checkbox(label='Resolve random seeds before plotting (only applies when plotting "-1" seed values for X or Y axis)', value=False)
 
-    def run(self, p, x_type, x_values, y_type, y_values, draw_legend):
+        return [x_type, x_values, y_type, y_values, draw_legend, fixed_seeds]
+
+    def run(self, p, x_type, x_values, y_type, y_values, draw_legend, fixed_seeds):
         modules.processing.fix_seed(p)
         p.batch_size = 1
 
@@ -213,8 +214,9 @@ class Script(scripts.Script):
             else:
                 return axis_list
 
-        xs = fix_axis_seeds(x_opt, xs)
-        ys = fix_axis_seeds(y_opt, ys)
+        if fixed_seeds == True:
+            xs = fix_axis_seeds(x_opt, xs)
+            ys = fix_axis_seeds(y_opt, ys)
 
         if x_opt.label == 'Steps':
             total_steps = sum(xs) * len(ys)
