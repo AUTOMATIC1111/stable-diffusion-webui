@@ -141,10 +141,11 @@ class Script(scripts.Script):
             y_values = gr.Textbox(label="Y values", visible=False, lines=1)
         
         draw_legend = gr.Checkbox(label='Draw legend', value=True)
-            
-        return [x_type, x_values, y_type, y_values, draw_legend]
+        no_fixed_seeds = gr.Checkbox(label='Keep -1 for seeds', value=False)
 
-    def run(self, p, x_type, x_values, y_type, y_values, draw_legend):
+        return [x_type, x_values, y_type, y_values, draw_legend, no_fixed_seeds]
+
+    def run(self, p, x_type, x_values, y_type, y_values, draw_legend, no_fixed_seeds):
         modules.processing.fix_seed(p)
         p.batch_size = 1
 
@@ -169,7 +170,7 @@ class Script(scripts.Script):
                         end   = int(mc.group(2))
                         num   = int(mc.group(3)) if mc.group(3) is not None else 1
                         
-                        valslist_ext += [int(x) for x in np.linspace(start = start, stop = end, num = num).tolist()]
+                        valslist_ext += [int(x) for x in np.linspace(start=start, stop=end, num=num).tolist()]
                     else:
                         valslist_ext.append(val)
 
@@ -191,7 +192,7 @@ class Script(scripts.Script):
                         end   = float(mc.group(2))
                         num   = int(mc.group(3)) if mc.group(3) is not None else 1
                         
-                        valslist_ext += np.linspace(start = start, stop = end, num = num).tolist()
+                        valslist_ext += np.linspace(start=start, stop=end, num=num).tolist()
                     else:
                         valslist_ext.append(val)
 
@@ -206,6 +207,26 @@ class Script(scripts.Script):
 
         y_opt = axis_options[y_type]
         ys = process_axis(y_opt, y_values)
+
+        def fix_axis_seeds(axis_opt, axis_list):
+            if axis_opt.label == 'Seed':
+                return [int(random.randrange(4294967294)) if val is None or val == '' or val == -1 else val for val in axis_list]
+            else:
+                return axis_list
+
+        if not no_fixed_seeds:
+            xs = fix_axis_seeds(x_opt, xs)
+            ys = fix_axis_seeds(y_opt, ys)
+
+        if x_opt.label == 'Steps':
+            total_steps = sum(xs) * len(ys)
+        elif y_opt.label == 'Steps':
+            total_steps = sum(ys) * len(xs)
+        else:
+            total_steps = p.steps * len(xs) * len(ys)
+
+        print(f"X/Y plot will create {len(xs) * len(ys) * p.n_iter} images on a {len(xs)}x{len(ys)} grid. (Total steps to process: {total_steps * p.n_iter})")
+        shared.total_tqdm.updateTotal(total_steps * p.n_iter)
 
         def cell(x, y):
             pc = copy(p)

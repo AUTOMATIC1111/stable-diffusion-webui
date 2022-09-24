@@ -307,6 +307,13 @@ class TotalTQDM:
             self.reset()
         self._tqdm.update()
 
+    def updateTotal(self, new_total):
+        if not opts.multiple_tqdm:
+            return
+        if self._tqdm is None:
+            self.reset()
+        self._tqdm.total=new_total
+
     def clear(self):
         if self._tqdm is not None:
             self._tqdm.close()
