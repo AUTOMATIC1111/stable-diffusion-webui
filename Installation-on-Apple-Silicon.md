@@ -13,10 +13,11 @@ First, you need to install the required dependencies using [Homebrew](https://br
 The script can be downloaded from [here](https://github.com/dylancl/stable-diffusion-webui-mps/blob/master/setup_mac.sh), or follow the instructions below.
 
 1. Open Terminal.app
-2. Run the following command:
+2. Run the following commands:
 
 ```
-bash <(curl -s https://raw.githubusercontent.com/dylancl/stable-diffusion-webui-mps/master/setup_mac.sh)
+$ curl -s https://raw.githubusercontent.com/dylancl/stable-diffusion-webui-mps/master/setup_mac.sh
+$ ./setup_mac.sh
 ```
 
 3. Follow the instructions in the terminal window.
