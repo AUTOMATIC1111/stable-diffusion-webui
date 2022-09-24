@@ -134,9 +134,12 @@ def get_learned_conditioning(prompts, steps):
 
         cond_schedule = []
         for end_at_step,promptText in prompt_schedule:
-            weighted_subprompts = split_weighted_subprompts(promptText, shared.opts.prompt_blending_normalize)
+            
+            weighted_subprompts = []
+            if shared.opts.prompt_blending_enable:
+                weighted_subprompts = split_weighted_subprompts(promptText, shared.opts.prompt_blending_normalize)
 
-            if shared.opts.prompt_blending_enable and len(weighted_subprompts) > 1:
+            if len(weighted_subprompts) > 1:
                 texts = [p.text for p in weighted_subprompts]
                 cond = shared.sd_model.get_learned_conditioning(texts)
                 c = torch.zeros_like(cond[0])
