@@ -578,9 +578,10 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                             inpaint_full_res_padding = gr.Slider(label='Inpaint at full resolution padding, pixels', minimum=0, maximum=256, step=4, value=32)
 
                     with gr.TabItem('Batch img2img', id='batch'):
-                        gr.HTML("<p class=\"text-gray-500\">Process images in a directory on the same machine where the server is running.</p>")
-                        img2img_batch_input_dir = gr.Textbox(label="Input directory")
-                        img2img_batch_output_dir = gr.Textbox(label="Output directory")
+                        hidden = '<br>Disabled when launched with --hide-ui-dir-config.' if shared.cmd_opts.hide_ui_dir_config else ''
+                        gr.HTML(f"<p class=\"text-gray-500\">Process images in a directory on the same machine where the server is running.{hidden}</p>")
+                        img2img_batch_input_dir = gr.Textbox(label="Input directory", **shared.hide_dirs)
+                        img2img_batch_output_dir = gr.Textbox(label="Output directory", **shared.hide_dirs)
 
                 with gr.Row():
                     resize_mode = gr.Radio(label="Resize mode", elem_id="resize_mode", show_label=False, choices=["Just resize", "Crop and resize", "Resize and fill"], type="index", value="Just resize")
