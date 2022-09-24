@@ -8,7 +8,7 @@ Upscaling works, but only using the real-ESRGAN models.
 
 First, you need to install the required dependencies using [Homebrew](https://brew.sh).
 
-`brew install cmake protobuf rust python git`
+`brew install cmake protobuf rust python git wget`
 
 The script can be downloaded from [here](https://github.com/dylancl/stable-diffusion-webui-mps/blob/master/setup_mac.sh), or follow the instructions below.
 
