@@ -4,6 +4,38 @@ import torch
 
 import modules.shared as shared
 
+
+weighted_prompt_regex = re.compile("""
+    (?P<prompt>     # capture group for 'prompt'
+    (?:\\\@|[^\@])+   # match one or more non '@' characters or escaped at symbols '\@'
+    )               # end 'prompt'
+    (?:             # non-capture group
+    \@+              # match one or more '@' characters
+    (?P<weight>     # capture group for 'weight'
+    -?\d*\.{0,1}\d+ # match positive or negative integer or decimal number
+    )?              # end weight capture group, make optional
+    \s*             # strip spaces after weight
+    |               # OR
+    $               # else, if no '@' then match end of line
+    )               # end non-capture group
+""", re.VERBOSE)
+
+WeightedPrompt = namedtuple("WeightedPrompt", ["text", "weight"])
+
+def split_weighted_subprompts(input_string, normalize=True):
+    parsed_prompts = [WeightedPrompt(match.group("prompt").replace("\\@", "@"), float(match.group("weight") or 1)) for match in re.finditer(weighted_prompt_regex, input_string)]
+    
+    if not normalize:
+        return parsed_prompts
+    
+    weight_sum = sum([x.weight for x in parsed_prompts])
+
+    if weight_sum == 0:
+        equal_weight = 1 / (len(parsed_prompts) or 1)
+        return [WeightedPrompt(text, equal_weight) for text,weight in parsed_prompts]
+
+    return [WeightedPrompt(text, weight / weight_sum) for text,weight in parsed_prompts]
+
 re_prompt = re.compile(r'''
 (.*?)
 \[
@@ -100,12 +132,21 @@ def get_learned_conditioning(prompts, steps):
             res.append(cached)
             continue
 
-        texts = [x[1] for x in prompt_schedule]
-        conds = shared.sd_model.get_learned_conditioning(texts)
-
         cond_schedule = []
-        for i, (end_at_step, text) in enumerate(prompt_schedule):
-            cond_schedule.append(ScheduledPromptConditioning(end_at_step, conds[i]))
+        for promtStep,promptText in prompt_schedule:
+            weighted_subprompts = split_weighted_subprompts(promptText, shared.opts.prompt_blending_normalize)
+            print(weighted_subprompts)
+            if shared.opts.prompt_blending_enable and len(weighted_subprompts) > 1:
+                texts = [p.text for p in weighted_subprompts]
+                cond = shared.sd_model.get_learned_conditioning(texts)
+                c = torch.zeros_like(cond[0])
+                for i, (text, weight) in enumerate(weighted_subprompts):
+                    c = torch.add(c, cond[i], alpha=weight)
+                cond = [c]
+            else:
+                cond = shared.sd_model.get_learned_conditioning([promptText])
+
+            cond_schedule.append(ScheduledPromptConditioning(promtStep, cond[0]))
 
         cache[prompt] = cond_schedule
         res.append(cond_schedule)
