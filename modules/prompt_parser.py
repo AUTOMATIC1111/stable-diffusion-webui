@@ -133,7 +133,7 @@ def get_learned_conditioning(prompts, steps):
             continue
 
         cond_schedule = []
-        for promtStep,promptText in prompt_schedule:
+        for end_at_step,promptText in prompt_schedule:
             weighted_subprompts = split_weighted_subprompts(promptText, shared.opts.prompt_blending_normalize)
 
             if shared.opts.prompt_blending_enable and len(weighted_subprompts) > 1:
@@ -146,7 +146,7 @@ def get_learned_conditioning(prompts, steps):
             else:
                 cond = shared.sd_model.get_learned_conditioning([promptText])
 
-            cond_schedule.append(ScheduledPromptConditioning(promtStep, cond[0]))
+            cond_schedule.append(ScheduledPromptConditioning(end_at_step, cond[0]))
 
         cache[prompt] = cond_schedule
         res.append(cond_schedule)
