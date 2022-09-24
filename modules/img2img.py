@@ -108,6 +108,8 @@ def img2img(mode: int, prompt: str, negative_prompt: str, prompt_style: str, pro
     p.extra_generation_params["Mask blur"] = mask_blur
 
     if is_batch:
+        assert not shared.cmd_opts.hide_ui_dir_config, "Launched with --hide-ui-dir-config, batch img2img disabled"
+
         process_batch(p, img2img_batch_input_dir, img2img_batch_output_dir, args)
 
         processed = Processed(p, [], p.seed, "")
