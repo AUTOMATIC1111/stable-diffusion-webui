@@ -215,6 +215,10 @@ options_templates.update(options_section(('ui', "User interface"), {
     "js_modal_lightbox_initialy_zoomed": OptionInfo(True, "Show images zoomed in by default in full page image viewer"),
 }))
 
+options_templates.update(options_section(('prompt-blend', "Prompt Blending"), {
+    "prompt_blending_enable": OptionInfo(False, "Enable Prompt Blending with 'prompt@weight' syntax."),
+    "prompt_blending_normalize": OptionInfo(True, "Automatically normalize prompt blending weights to 1."),
+}))
 
 class Options:
     data = None
