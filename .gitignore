@@ -22,3 +22,4 @@ __pycache__
 /.idea
 notification.mp3
 /SwinIR
+.vscode/launch.json
