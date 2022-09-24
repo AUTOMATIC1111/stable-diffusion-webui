@@ -338,7 +338,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
                     comments[comment] = 1
 
             if p.n_iter > 1:
-                shared.state.job = f"Image {n+1} out of {p.n_iter}; Batch {(shared.state.job_no // p.n_iter) + 1} of {shared.state.job_count // p.n_iter}"
+                shared.state.job = f"Batch {n+1} out of {p.n_iter}"
 
             samples_ddim = p.sample(conditioning=c, unconditional_conditioning=uc, seeds=seeds, subseeds=subseeds, subseed_strength=p.subseed_strength)
             if state.interrupted:
