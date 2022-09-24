@@ -6,7 +6,9 @@ Upscaling works, but only using the real-ESRGAN models.
 
 ## Automatic installation
 
-This script assumes you've installed the same dependencies as the other scripts (python, git, ...) - these can all be installed using [Homebrew](https://brew.sh/).
+First, you need to install the required dependencies using [Homebrew](https://brew.sh).
+
+`brew install cmake protobuf rust python git`
 
 The script can be downloaded from [here](https://github.com/dylancl/stable-diffusion-webui-mps/blob/master/setup_mac.sh), or follow the instructions below.
 
@@ -14,8 +16,9 @@ The script can be downloaded from [here](https://github.com/dylancl/stable-diffu
 2. Run the following command:
 
 ```
-bash <(curl -s https://github.com/dylancl/stable-diffusion-webui-mps/blob/master/setup_mac.sh)
+bash <(curl -s https://raw.githubusercontent.com/dylancl/stable-diffusion-webui-mps/master/setup_mac.sh)
 ```
+
 3. Follow the instructions in the terminal window.
 
 #### Usage
