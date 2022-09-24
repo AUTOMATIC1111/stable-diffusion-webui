@@ -197,7 +197,7 @@ def check_progress_call(id_part):
 
         image = shared.state.current_image
 
-        if image is None or progress >= 1:
+        if image is None:
             image = gr.update(value=None)
         else:
             preview_visibility = gr_show(True)
