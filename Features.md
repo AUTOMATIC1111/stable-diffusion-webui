@@ -208,6 +208,8 @@ To delete style, manually delete it from styles.csv and restart the program.
 Allows you to use another prompt of things the model should avoid when generating the picture. This works by using the
 negative prompt for unconditional conditioning in the sampling process instead of empty string.
 
+Advanced explanation: [Negative prompt](Negative-prompt)
+
 | Original                      | Negative: purple                | Negative: tentacles                |
 |-------------------------------|---------------------------------|------------------------------------|
 | ![](images/negative-base.png) | ![](images/negative-purple.png) | ![](images/negative-tentacles.png) |
