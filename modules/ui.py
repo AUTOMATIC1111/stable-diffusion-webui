@@ -80,12 +80,10 @@ def image_from_url_text(filedata):
     image = Image.open(io.BytesIO(filedata))
     return image
 
-def send_from_txt2img_to_img2img(filedata, prompt, neg_prompt, t2i_width, t2i_height):
-    width = gr.Slider.update(value=t2i_width)
-    height = gr.Slider.update(value=t2i_height)
+def send_from_txt2img_to_img2img(filedata, prompt, neg_prompt, t2i_width, t2i_height, seed):
     if type(filedata) == list:
         if len(filedata) == 0:
-            return None, prompt, neg_prompt, width, height
+            return None, prompt, neg_prompt, t2i_width, t2i_height
 
         filedata = filedata[0]
 
@@ -95,7 +93,7 @@ def send_from_txt2img_to_img2img(filedata, prompt, neg_prompt, t2i_width, t2i_he
     filedata = base64.decodebytes(filedata.encode('utf-8'))
     image = Image.open(io.BytesIO(filedata))
 
-    return image, prompt, neg_prompt, width, height
+    return image, prompt, neg_prompt, t2i_width, t2i_height, seed
 
 def send_gradio_gallery_to_image(x):
     if len(x) == 0:
@@ -447,7 +445,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
 
                 cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='CFG Scale', value=7.0)
 
-                seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox = create_seed_inputs()
+                t2i_seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox = create_seed_inputs()
 
                 with gr.Group():
                     custom_inputs = modules.scripts.scripts_txt2img.setup_ui(is_img2img=False)
@@ -469,7 +467,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     html_info = gr.HTML()
                     generation_info = gr.Textbox(visible=False)
 
-            connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
+            connect_reuse_seed(t2i_seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
             connect_reuse_seed(subseed, reuse_subseed, generation_info, dummy_component, is_subseed=True)
 
             txt2img_args = dict(
@@ -487,7 +485,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     batch_count,
                     batch_size,
                     cfg_scale,
-                    seed,
+                    t2i_seed,
                     subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox,
                     t2i_height,
                     t2i_width,
@@ -544,7 +542,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 (sampler_index, "Sampler"),
                 (restore_faces, "Face restoration"),
                 (cfg_scale, "CFG scale"),
-                (seed, "Seed"),
+                (t2i_seed, "Seed"),
                 (t2i_width, "Size-1"),
                 (t2i_height, "Size-2"),
                 (batch_size, "Batch size"),
@@ -997,15 +995,15 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
         send_to_img2img.click(
             fn=send_from_txt2img_to_img2img,
             _js="extract_image_from_gallery_img2img",
-            inputs=[txt2img_gallery, txt2img_prompt, txt2img_negative_prompt, t2i_width, t2i_height],
-            outputs=[init_img, img2img_prompt, img2img_negative_prompt, width, height],
+            inputs=[txt2img_gallery, txt2img_prompt, txt2img_negative_prompt, t2i_width, t2i_height, t2i_seed],
+            outputs=[init_img, img2img_prompt, img2img_negative_prompt, width, height, seed],
         )
 
         send_to_inpaint.click(
             fn=send_from_txt2img_to_img2img,
             _js="extract_image_from_gallery_inpaint",
-            inputs=[txt2img_gallery, txt2img_prompt, txt2img_negative_prompt, t2i_width, t2i_height],
-            outputs=[init_img_with_mask, img2img_prompt, img2img_negative_prompt, width, height],
+            inputs=[txt2img_gallery, txt2img_prompt, txt2img_negative_prompt, t2i_width, t2i_height, t2i_seed],
+            outputs=[init_img_with_mask, img2img_prompt, img2img_negative_prompt, width, height, seed],
         )
 
         img2img_send_to_img2img.click(
