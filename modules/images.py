@@ -295,6 +295,7 @@ def apply_filename_pattern(x, p, seed, prompt):
 
     x = x.replace("[model_hash]", shared.sd_model.sd_model_hash)
     x = x.replace("[date]", datetime.date.today().isoformat())
+    x = x.replace("[job_id]", shared.state.job_id)
 
     if cmd_opts.hide_ui_dir_config:
         x = re.sub(r'^[\\/]+|\.{2,}[\\/]+|[\\/]+\.{2,}', '', x)

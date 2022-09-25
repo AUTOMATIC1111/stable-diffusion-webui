@@ -50,6 +50,7 @@ def wrap_gradio_gpu_call(func):
         shared.state.sampling_step = 0
         shared.state.job_count = -1
         shared.state.job_no = 0
+        shared.state.job_id = shared.state.gen_job_id()
         shared.state.current_latent = None
         shared.state.current_image = None
         shared.state.current_image_sampling_step = 0
