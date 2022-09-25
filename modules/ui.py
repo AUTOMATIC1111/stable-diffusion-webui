@@ -1062,7 +1062,10 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
 
         if type(x) == gr.Textbox:
           apply_field(x, 'value')
-
+        
+        if type(x) == gr.Number:
+          apply_field(x, 'value')
+        
     visit(txt2img_interface, loadsave, "txt2img")
     visit(img2img_interface, loadsave, "img2img")
     visit(extras_interface, loadsave, "extras")
