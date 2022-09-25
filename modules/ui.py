@@ -1041,14 +1041,17 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
         def apply_field(obj, field, condition=None):
             key = path + "/" + field
             
-            if getattr(obj,'do_not_save_to_config',False):
-              return
+            if getattr(obj, 'do_not_save_to_config', False):
+                return
             
             saved_value = ui_settings.get(key, None)
             if saved_value is None:
                 ui_settings[key] = getattr(obj, field)
             elif condition is None or condition(saved_value):
                 setattr(obj, field, saved_value)
+
+        if type(x) in [gr.Slider, gr.Radio, gr.Checkbox, gr.Textbox, gr.Number] and x.visible:
+            apply_field(x, 'visible')
 
         if type(x) == gr.Slider:
             apply_field(x, 'value')
