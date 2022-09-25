@@ -418,9 +418,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
 
                 with gr.Row():
                     restore_faces = gr.Checkbox(label='Restore faces', value=False, visible=len(shared.face_restorers) > 1)
-                    restore_faces.add_to_ui_config = True
                     tiling = gr.Checkbox(label='Tiling', value=False)
-                    tiling.add_to_ui_config = True
                     enable_hr = gr.Checkbox(label='Highres. fix', value=False)
 
                 with gr.Row(visible=False) as hr_options:
@@ -577,7 +575,6 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
 
                         with gr.Row():
                             inpaint_full_res = gr.Checkbox(label='Inpaint at full resolution', value=False)
-                            inpaint_full_res.add_to_ui_config = True
                             inpaint_full_res_padding = gr.Slider(label='Inpaint at full resolution padding, pixels', minimum=0, maximum=256, step=4, value=32)
 
                     with gr.TabItem('Batch img2img', id='batch'):
@@ -598,9 +595,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
 
                 with gr.Row():
                     restore_faces = gr.Checkbox(label='Restore faces', value=False, visible=len(shared.face_restorers) > 1)
-                    restore_faces.add_to_ui_config = True
                     tiling = gr.Checkbox(label='Tiling', value=False)
-                    tiling.add_to_ui_config = True
 
                 with gr.Row():
                     batch_count = gr.Slider(minimum=1, maximum=cmd_opts.max_batch_count, step=1, label='Batch count', value=1)
@@ -1059,7 +1054,10 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
         if type(x) == gr.Radio:
             apply_field(x, 'value', lambda val: val in x.choices)
 
-        if type(x) == gr.Checkbox and getattr(x,'add_to_ui_config',False):
+        if type(x) == gr.Checkbox:
+          apply_field(x, 'value')
+
+        if type(x) == gr.Textbox:
           apply_field(x, 'value')
 
     visit(txt2img_interface, loadsave, "txt2img")
