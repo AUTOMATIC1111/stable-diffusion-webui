@@ -978,18 +978,21 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
             outputs=[result, text_settings],
         )
 
+        paste_field_names = ['Prompt', 'Negative prompt', 'Steps', 'Face restoration', 'Seed', 'Size-1', 'Size-2']
+        txt2img_fields = [field for field,name in txt2img_paste_fields if name in paste_field_names]
+        img2img_fields = [field for field,name in img2img_paste_fields if name in paste_field_names]
         send_to_img2img.click(
-            fn=lambda x: (image_from_url_text(x)),
-            _js="extract_image_from_gallery_img2img",
-            inputs=[txt2img_gallery],
-            outputs=[init_img],
+            fn=lambda img, *args: (image_from_url_text(img),*args),
+            _js="(gallery, ...args) => [extract_image_from_gallery_img2img(gallery), ...args]",
+            inputs=[txt2img_gallery] + txt2img_fields,
+            outputs=[init_img] + img2img_fields,
         )
 
         send_to_inpaint.click(
-            fn=lambda x: (image_from_url_text(x)),
-            _js="extract_image_from_gallery_inpaint",
-            inputs=[txt2img_gallery],
-            outputs=[init_img_with_mask],
+            fn=lambda x, *args: (image_from_url_text(x), *args),
+            _js="(gallery, ...args) => [extract_image_from_gallery_inpaint(gallery), ...args]",
+            inputs=[txt2img_gallery] + txt2img_fields,
+            outputs=[init_img_with_mask] + img2img_fields,
         )
 
         img2img_send_to_img2img.click(
