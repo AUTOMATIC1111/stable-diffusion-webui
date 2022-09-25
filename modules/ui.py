@@ -1040,6 +1040,9 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
     def loadsave(path, x):
         def apply_field(obj, field, condition=None):
             key = path + "/" + field
+
+            if getattr(obj,'custom_script_source',None) is not None:
+              key = 'customscript/' + obj.custom_script_source + '/' + key
             
             if getattr(obj, 'do_not_save_to_config', False):
                 return
