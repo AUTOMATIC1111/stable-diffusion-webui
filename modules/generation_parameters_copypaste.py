@@ -1,9 +1,11 @@
-from collections import namedtuple
 import re
 import gradio as gr
 
-re_param = re.compile(r"\s*([\w ]+):\s*([^,]+)(?:,|$)")
+re_param_code = r"\s*([\w ]+):\s*([^,]+)(?:,|$)"
+re_param = re.compile(re_param_code)
+re_params = re.compile(r"^(?:" + re_param_code + "){3,}$")
 re_imagesize = re.compile(r"^(\d+)x(\d+)$")
+type_of_gr_update = type(gr.update())
 
 
 def parse_generation_parameters(x: str):
@@ -25,6 +27,10 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
     done_with_prompt = False
 
     *lines, lastline = x.strip().split("\n")
+    if not re_params.match(lastline):
+        lines.append(lastline)
+        lastline = ''
+
     for i, line in enumerate(lines):
         line = line.strip()
         if line.startswith("Negative prompt:"):
@@ -32,9 +38,9 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
             line = line[16:].strip()
 
         if done_with_prompt:
-            negative_prompt += line
+            negative_prompt += ("" if negative_prompt == "" else "\n") + line
         else:
-            prompt += line
+            prompt += ("" if prompt == "" else "\n") + line
 
     if len(prompt) > 0:
         res["Prompt"] = prompt
@@ -53,19 +59,21 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
     return res
 
 
-def connect_paste(button, d, input_comp, js=None):
-    items = []
-    outputs = []
-
+def connect_paste(button, paste_fields, input_comp, js=None):
     def paste_func(prompt):
         params = parse_generation_parameters(prompt)
         res = []
 
-        for key, output in zip(items, outputs):
-            v = params.get(key, None)
+        for output, key in paste_fields:
+            if callable(key):
+                v = key(params)
+            else:
+                v = params.get(key, None)
 
             if v is None:
                 res.append(gr.update())
+            elif isinstance(v, type_of_gr_update):
+                res.append(v)
             else:
                 try:
                     valtype = type(output.value)
@@ -76,13 +84,9 @@ def connect_paste(button, d, input_comp, js=None):
 
         return res
 
-    for k, v in d.items():
-        items.append(k)
-        outputs.append(v)
-
     button.click(
         fn=paste_func,
         _js=js,
         inputs=[input_comp],
-        outputs=outputs,
+        outputs=[x[0] for x in paste_fields],
     )

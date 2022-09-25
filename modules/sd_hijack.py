@@ -300,7 +300,7 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
         remade_batch_tokens = []
         id_start = self.wrapped.tokenizer.bos_token_id
         id_end = self.wrapped.tokenizer.eos_token_id
-        maxlen = self.wrapped.max_length - 2
+        maxlen = self.wrapped.max_length
         used_custom_terms = []
 
         cache = {}

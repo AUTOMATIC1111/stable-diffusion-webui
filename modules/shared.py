@@ -154,7 +154,7 @@ def options_section(section_identifer, options_dict):
     return options_dict
 
 
-hide_dirs = {"visible": False} if cmd_opts.hide_ui_dir_config else None
+hide_dirs = {"visible": not cmd_opts.hide_ui_dir_config}
 
 options_templates = {}
 

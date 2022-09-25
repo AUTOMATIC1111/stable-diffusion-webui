@@ -421,6 +421,10 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 steps = gr.Slider(minimum=1, maximum=150, step=1, label="Sampling Steps", value=20)
                 sampler_index = gr.Radio(label='Sampling method', elem_id="txt2img_sampling", choices=[x.name for x in samplers], value=samplers[0].name, type="index")
 
+                with gr.Group():
+                    width = gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512)
+                    height = gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512)
+
                 with gr.Row():
                     restore_faces = gr.Checkbox(label='Restore faces', value=False, visible=len(shared.face_restorers) > 1)
                     tiling = gr.Checkbox(label='Tiling', value=False)
@@ -435,10 +439,6 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1)
 
                 cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='CFG Scale', value=7.0)
-
-                with gr.Group():
-                    width = gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512)
-                    height = gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512)
 
                 seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox = create_seed_inputs()
 
@@ -530,23 +530,25 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 ]
             )
 
-            txt2img_paste_fields = {
-                "Prompt": txt2img_prompt,
-                "Negative prompt": txt2img_negative_prompt,
-                "Steps": steps,
-                "Sampler": sampler_index,
-                "Face restoration": restore_faces,
-                "CFG scale": cfg_scale,
-                "Seed": seed,
-                "Size-1": width,
-                "Size-2": height,
-                "Batch size": batch_size,
-                "Variation seed": subseed,
-                "Variation seed strength": subseed_strength,
-                "Seed resize from-1": seed_resize_from_w,
-                "Seed resize from-2": seed_resize_from_h,
-                "Denoising strength": denoising_strength,
-            }
+            txt2img_paste_fields = [
+                (txt2img_prompt, "Prompt"),
+                (txt2img_negative_prompt, "Negative prompt"),
+                (steps, "Steps"),
+                (sampler_index, "Sampler"),
+                (restore_faces, "Face restoration"),
+                (cfg_scale, "CFG scale"),
+                (seed, "Seed"),
+                (width, "Size-1"),
+                (height, "Size-2"),
+                (batch_size, "Batch size"),
+                (subseed, "Variation seed"),
+                (subseed_strength, "Variation seed strength"),
+                (seed_resize_from_w, "Seed resize from-1"),
+                (seed_resize_from_h, "Seed resize from-2"),
+                (denoising_strength, "Denoising strength"),
+                (enable_hr, lambda d: "Denoising strength" in d),
+                (hr_options, lambda d: gr.Row.update(visible="Denoising strength" in d)),
+            ]
             modules.generation_parameters_copypaste.connect_paste(paste, txt2img_paste_fields, txt2img_prompt)
 
     with gr.Blocks(analytics_enabled=False) as img2img_interface:
@@ -587,15 +589,20 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                             inpaint_full_res_padding = gr.Slider(label='Inpaint at full resolution padding, pixels', minimum=0, maximum=256, step=4, value=32)
 
                     with gr.TabItem('Batch img2img', id='batch'):
-                        gr.HTML("<p class=\"text-gray-500\">Process images in a directory on the same machine where the server is running.</p>")
-                        img2img_batch_input_dir = gr.Textbox(label="Input directory")
-                        img2img_batch_output_dir = gr.Textbox(label="Output directory")
+                        hidden = '<br>Disabled when launched with --hide-ui-dir-config.' if shared.cmd_opts.hide_ui_dir_config else ''
+                        gr.HTML(f"<p class=\"text-gray-500\">Process images in a directory on the same machine where the server is running.{hidden}</p>")
+                        img2img_batch_input_dir = gr.Textbox(label="Input directory", **shared.hide_dirs)
+                        img2img_batch_output_dir = gr.Textbox(label="Output directory", **shared.hide_dirs)
 
                 with gr.Row():
                     resize_mode = gr.Radio(label="Resize mode", elem_id="resize_mode", show_label=False, choices=["Just resize", "Crop and resize", "Resize and fill"], type="index", value="Just resize")
 
                 steps = gr.Slider(minimum=1, maximum=150, step=1, label="Sampling Steps", value=20)
                 sampler_index = gr.Radio(label='Sampling method', choices=[x.name for x in samplers_for_img2img], value=samplers_for_img2img[0].name, type="index")
+
+                with gr.Group():
+                    width = gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512)
+                    height = gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512)
 
                 with gr.Row():
                     restore_faces = gr.Checkbox(label='Restore faces', value=False, visible=len(shared.face_restorers) > 1)
@@ -608,10 +615,6 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 with gr.Group():
                     cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='CFG Scale', value=7.0)
                     denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.75)
-
-                with gr.Group():
-                    width = gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512)
-                    height = gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512)
 
                 seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox = create_seed_inputs()
 
@@ -749,23 +752,23 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     outputs=[prompt, negative_prompt, style1, style2],
                 )
 
-            img2img_paste_fields = {
-                "Prompt": img2img_prompt,
-                "Negative prompt": img2img_negative_prompt,
-                "Steps": steps,
-                "Sampler": sampler_index,
-                "Face restoration": restore_faces,
-                "CFG scale": cfg_scale,
-                "Seed": seed,
-                "Size-1": width,
-                "Size-2": height,
-                "Batch size": batch_size,
-                "Variation seed": subseed,
-                "Variation seed strength": subseed_strength,
-                "Seed resize from-1": seed_resize_from_w,
-                "Seed resize from-2": seed_resize_from_h,
-                "Denoising strength": denoising_strength,
-            }
+            img2img_paste_fields = [
+                (img2img_prompt, "Prompt"),
+                (img2img_negative_prompt, "Negative prompt"),
+                (steps, "Steps"),
+                (sampler_index, "Sampler"),
+                (restore_faces, "Face restoration"),
+                (cfg_scale, "CFG scale"),
+                (seed, "Seed"),
+                (width, "Size-1"),
+                (height, "Size-2"),
+                (batch_size, "Batch size"),
+                (subseed, "Variation seed"),
+                (subseed_strength, "Variation seed strength"),
+                (seed_resize_from_w, "Seed resize from-1"),
+                (seed_resize_from_h, "Seed resize from-2"),
+                (denoising_strength, "Denoising strength"),
+            ]
             modules.generation_parameters_copypaste.connect_paste(paste, img2img_paste_fields, img2img_prompt)
     with gr.Blocks(analytics_enabled=False) as promptgen_interface:
         with gr.Row():
@@ -1454,6 +1457,12 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
         def apply_field(obj, field, condition=None):
             key = path + "/" + field
 
+            if getattr(obj,'custom_script_source',None) is not None:
+              key = 'customscript/' + obj.custom_script_source + '/' + key
+            
+            if getattr(obj,'do_not_save_to_config',False):
+              return
+            
             saved_value = ui_settings.get(key, None)
             if saved_value is None:
                 ui_settings[key] = getattr(obj, field)
@@ -1469,6 +1478,15 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
         if type(x) == gr.Radio:
             apply_field(x, 'value', lambda val: val in x.choices)
 
+        if type(x) == gr.Checkbox:
+            apply_field(x, 'value')
+
+        if type(x) == gr.Textbox:
+            apply_field(x, 'value')
+        
+        if type(x) == gr.Number:
+            apply_field(x, 'value')
+        
     visit(txt2img_interface, loadsave, "txt2img")
     visit(img2img_interface, loadsave, "img2img")
     visit(extras_interface, loadsave, "extras")
