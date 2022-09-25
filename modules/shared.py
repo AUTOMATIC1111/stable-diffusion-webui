@@ -117,8 +117,8 @@ def options_section(section_identifer, options_dict):
     for k, v in options_dict.items():
         v.section = section_identifer
 
-
     return options_dict
+
 
 hide_dirs = {"visible": not cmd_opts.hide_ui_dir_config}
 
