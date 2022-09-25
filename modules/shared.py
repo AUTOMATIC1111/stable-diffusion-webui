@@ -4,6 +4,7 @@ import json
 import os
 import gradio as gr
 import tqdm
+import random
 
 import modules.artists
 from modules.paths import script_path, sd_path
@@ -65,6 +66,7 @@ class State:
     job = ""
     job_no = 0
     job_count = 0
+    job_id = 0
     sampling_step = 0
     sampling_steps = 0
     current_latent = None
@@ -78,6 +80,8 @@ class State:
         self.job_no += 1
         self.sampling_step = 0
         self.current_image_sampling_step = 0
+    def gen_job_id(self):
+        return ''.join(random.choices('0123456789abcdefghijklmnopqrstuvwxyz', k=opts.job_id_length))
 
 
 state = State()
@@ -114,7 +118,6 @@ def options_section(section_identifer, options_dict):
         v.section = section_identifer
 
     return options_dict
-
 
 hide_dirs = {"visible": not cmd_opts.hide_ui_dir_config}
 
@@ -156,6 +159,7 @@ options_templates.update(options_section(('saving-to-dirs', "Saving to a directo
     "grid_save_to_dirs": OptionInfo(False, "Save grids to subdirectory"),
     "directories_filename_pattern": OptionInfo("", "Directory name pattern"),
     "directories_max_prompt_words": OptionInfo(8, "Max prompt words", gr.Slider, {"minimum": 1, "maximum": 20, "step": 1}),
+    "job_id_length": OptionInfo(5, "Length of job id", gr.Slider, {"minimum": 5, "maximum": 20, "step": 1}),
 }))
 
 options_templates.update(options_section(('upscaling', "Upscaling"), {
