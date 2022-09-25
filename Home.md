@@ -10,3 +10,4 @@
 - [Changing UI defaults](Change-UI-Defaults)
 - [Custom scripts](Custom-Scripts)
 - [Troubleshooting](Troubleshooting)
+- [Negative prompt](Negative-prompt)
