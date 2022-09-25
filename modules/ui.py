@@ -1038,7 +1038,10 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
     def loadsave(path, x):
         def apply_field(obj, field, condition=None):
             key = path + "/" + field
-
+            
+            if getattr(obj,'do_not_save_to_config',False):
+              return
+            
             saved_value = ui_settings.get(key, None)
             if saved_value is None:
                 ui_settings[key] = getattr(obj, field)
