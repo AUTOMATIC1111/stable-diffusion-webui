@@ -1058,13 +1058,13 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
             apply_field(x, 'value', lambda val: val in x.choices)
 
         if type(x) == gr.Checkbox:
-          apply_field(x, 'value')
+            apply_field(x, 'value')
 
         if type(x) == gr.Textbox:
-          apply_field(x, 'value')
+            apply_field(x, 'value')
         
         if type(x) == gr.Number:
-          apply_field(x, 'value')
+            apply_field(x, 'value')
         
     visit(txt2img_interface, loadsave, "txt2img")
     visit(img2img_interface, loadsave, "img2img")
