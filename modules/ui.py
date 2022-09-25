@@ -521,23 +521,25 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 ]
             )
 
-            txt2img_paste_fields = {
-                "Prompt": txt2img_prompt,
-                "Negative prompt": txt2img_negative_prompt,
-                "Steps": steps,
-                "Sampler": sampler_index,
-                "Face restoration": restore_faces,
-                "CFG scale": cfg_scale,
-                "Seed": seed,
-                "Size-1": width,
-                "Size-2": height,
-                "Batch size": batch_size,
-                "Variation seed": subseed,
-                "Variation seed strength": subseed_strength,
-                "Seed resize from-1": seed_resize_from_w,
-                "Seed resize from-2": seed_resize_from_h,
-                "Denoising strength": denoising_strength,
-            }
+            txt2img_paste_fields = [
+                (txt2img_prompt, "Prompt"),
+                (txt2img_negative_prompt, "Negative prompt"),
+                (steps, "Steps"),
+                (sampler_index, "Sampler"),
+                (restore_faces, "Face restoration"),
+                (cfg_scale, "CFG scale"),
+                (seed, "Seed"),
+                (width, "Size-1"),
+                (height, "Size-2"),
+                (batch_size, "Batch size"),
+                (subseed, "Variation seed"),
+                (subseed_strength, "Variation seed strength"),
+                (seed_resize_from_w, "Seed resize from-1"),
+                (seed_resize_from_h, "Seed resize from-2"),
+                (denoising_strength, "Denoising strength"),
+                (enable_hr, lambda d: "Denoising strength" in d),
+                (hr_options, lambda d: gr.Row.update(visible="Denoising strength" in d)),
+            ]
             modules.generation_parameters_copypaste.connect_paste(paste, txt2img_paste_fields, txt2img_prompt)
 
     with gr.Blocks(analytics_enabled=False) as img2img_interface:
@@ -741,23 +743,23 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     outputs=[prompt, negative_prompt, style1, style2],
                 )
 
-            img2img_paste_fields = {
-                "Prompt": img2img_prompt,
-                "Negative prompt": img2img_negative_prompt,
-                "Steps": steps,
-                "Sampler": sampler_index,
-                "Face restoration": restore_faces,
-                "CFG scale": cfg_scale,
-                "Seed": seed,
-                "Size-1": width,
-                "Size-2": height,
-                "Batch size": batch_size,
-                "Variation seed": subseed,
-                "Variation seed strength": subseed_strength,
-                "Seed resize from-1": seed_resize_from_w,
-                "Seed resize from-2": seed_resize_from_h,
-                "Denoising strength": denoising_strength,
-            }
+            img2img_paste_fields = [
+                (img2img_prompt, "Prompt"),
+                (img2img_negative_prompt, "Negative prompt"),
+                (steps, "Steps"),
+                (sampler_index, "Sampler"),
+                (restore_faces, "Face restoration"),
+                (cfg_scale, "CFG scale"),
+                (seed, "Seed"),
+                (width, "Size-1"),
+                (height, "Size-2"),
+                (batch_size, "Batch size"),
+                (subseed, "Variation seed"),
+                (subseed_strength, "Variation seed strength"),
+                (seed_resize_from_w, "Seed resize from-1"),
+                (seed_resize_from_h, "Seed resize from-2"),
+                (denoising_strength, "Denoising strength"),
+            ]
             modules.generation_parameters_copypaste.connect_paste(paste, img2img_paste_fields, img2img_prompt)
 
     with gr.Blocks(analytics_enabled=False) as extras_interface:
