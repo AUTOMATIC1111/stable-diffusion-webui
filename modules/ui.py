@@ -80,6 +80,22 @@ def image_from_url_text(filedata):
     image = Image.open(io.BytesIO(filedata))
     return image
 
+def send_from_txt2img_to_img2img(filedata, prompt, neg_prompt, t2i_width, t2i_height):
+    width = gr.Slider.update(value=t2i_width)
+    height = gr.Slider.update(value=t2i_height)
+    if type(filedata) == list:
+        if len(filedata) == 0:
+            return None, prompt, neg_prompt, width, height
+
+        filedata = filedata[0]
+
+    if filedata.startswith("data:image/png;base64,"):
+        filedata = filedata[len("data:image/png;base64,"):]
+
+    filedata = base64.decodebytes(filedata.encode('utf-8'))
+    image = Image.open(io.BytesIO(filedata))
+
+    return image, prompt, neg_prompt, width, height
 
 def send_gradio_gallery_to_image(x):
     if len(x) == 0:
@@ -413,8 +429,8 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 sampler_index = gr.Radio(label='Sampling method', elem_id="txt2img_sampling", choices=[x.name for x in samplers], value=samplers[0].name, type="index")
 
                 with gr.Group():
-                    width = gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512)
-                    height = gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512)
+                    t2i_width = gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512)
+                    t2i_height = gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512)
 
                 with gr.Row():
                     restore_faces = gr.Checkbox(label='Restore faces', value=False, visible=len(shared.face_restorers) > 1)
@@ -473,8 +489,8 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     cfg_scale,
                     seed,
                     subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox,
-                    height,
-                    width,
+                    t2i_height,
+                    t2i_width,
                     enable_hr,
                     scale_latent,
                     denoising_strength,
@@ -529,8 +545,8 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 (restore_faces, "Face restoration"),
                 (cfg_scale, "CFG scale"),
                 (seed, "Seed"),
-                (width, "Size-1"),
-                (height, "Size-2"),
+                (t2i_width, "Size-1"),
+                (t2i_height, "Size-2"),
                 (batch_size, "Batch size"),
                 (subseed, "Variation seed"),
                 (subseed_strength, "Variation seed strength"),
@@ -979,17 +995,17 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
         )
 
         send_to_img2img.click(
-            fn=lambda x: (image_from_url_text(x)),
+            fn=send_from_txt2img_to_img2img,
             _js="extract_image_from_gallery_img2img",
-            inputs=[txt2img_gallery],
-            outputs=[init_img],
+            inputs=[txt2img_gallery, txt2img_prompt, txt2img_negative_prompt, t2i_width, t2i_height],
+            outputs=[init_img, img2img_prompt, img2img_negative_prompt, width, height],
         )
 
         send_to_inpaint.click(
-            fn=lambda x: (image_from_url_text(x)),
+            fn=send_from_txt2img_to_img2img,
             _js="extract_image_from_gallery_inpaint",
-            inputs=[txt2img_gallery],
-            outputs=[init_img_with_mask],
+            inputs=[txt2img_gallery, txt2img_prompt, txt2img_negative_prompt, t2i_width, t2i_height],
+            outputs=[init_img_with_mask, img2img_prompt, img2img_negative_prompt, width, height],
         )
 
         img2img_send_to_img2img.click(

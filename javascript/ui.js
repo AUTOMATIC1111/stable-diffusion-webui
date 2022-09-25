@@ -66,12 +66,12 @@ function extract_image_from_gallery_txt2img(gallery){
 
 function extract_image_from_gallery_img2img(gallery){
     switch_to_img2img_img2img()
-    return extract_image_from_gallery(gallery);
+    return arguments.length>1?[extract_image_from_gallery(gallery), ...Array.from(arguments).slice(1)] : extract_image_from_gallery(gallery);
 }
 
 function extract_image_from_gallery_inpaint(gallery){
     switch_to_img2img_inpaint()
-    return extract_image_from_gallery(gallery);
+    return arguments.length>1?[extract_image_from_gallery(gallery), ...Array.from(arguments).slice(1)] : extract_image_from_gallery(gallery);
 }
 
 function extract_image_from_gallery_extras(gallery){
