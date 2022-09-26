@@ -1,6 +1,6 @@
 @echo off
 
-set conda_env_name=automaticLDM
+set conda_env_name=automatic1111
 
 :: Put the path to conda directory after "=" sign if it's installed at non-standard path:
 set cutom_conda_path=D:\Software\Miniconda3
@@ -29,5 +29,5 @@ IF "%CONDA_PATH%"=="" (
 
 call "%CONDA_PATH%\Scripts\activate.bat"
 call "%CONDA_PATH%\Scripts\activate.bat" "%conda_env_name%"
-python %CD%/launch.py --medvram
+python %CD%/launch.py
 
