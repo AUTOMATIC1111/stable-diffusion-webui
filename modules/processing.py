@@ -78,7 +78,14 @@ class StableDiffusionProcessing:
         self.paste_to = None
         self.color_corrections = None
         self.denoising_strength: float = 0
-
+        
+        self.ddim_eta = opts.ddim_eta
+        self.ddim_discretize = opts.ddim_discretize
+        self.s_churn = opts.s_churn
+        self.s_tmin = opts.s_tmin
+        self.s_tmax = float('inf') # not representable as a standard ui option
+        self.s_noise = opts.s_noise
+        
         if not seed_enable_extras:
             self.subseed = -1
             self.subseed_strength = 0
@@ -117,6 +124,13 @@ class Processed:
         self.extra_generation_params = p.extra_generation_params
         self.index_of_first_image = index_of_first_image
 
+        self.ddim_eta = p.ddim_eta
+        self.ddim_discretize = p.ddim_discretize
+        self.s_churn = p.s_churn
+        self.s_tmin = p.s_tmin
+        self.s_tmax = p.s_tmax
+        self.s_noise = p.s_noise
+        
         self.prompt = self.prompt if type(self.prompt) != list else self.prompt[0]
         self.negative_prompt = self.negative_prompt if type(self.negative_prompt) != list else self.negative_prompt[0]
         self.seed = int(self.seed if type(self.seed) != list else self.seed[0])
