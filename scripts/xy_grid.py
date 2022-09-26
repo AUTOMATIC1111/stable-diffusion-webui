@@ -87,7 +87,12 @@ axis_options = [
     AxisOption("Prompt S/R", str, apply_prompt, format_value),
     AxisOption("Sampler", str, apply_sampler, format_value),
     AxisOption("Checkpoint name", str, apply_checkpoint, format_value),
-    AxisOptionImg2Img("Denoising", float, apply_field("denoising_strength"), format_value_add_label), #  as it is now all AxisOptionImg2Img items must go after AxisOption ones
+    AxisOption("Sigma Churn", float, apply_field("s_churn"),  format_value_add_label),
+    AxisOption("Sigma min",   float, apply_field("s_tmin"),   format_value_add_label),
+    AxisOption("Sigma max",   float, apply_field("s_tmax"),   format_value_add_label),
+    AxisOption("Sigma noise", float, apply_field("s_noise"),  format_value_add_label),
+    AxisOptionImg2Img("Denoising", float, apply_field("denoising_strength"), format_value_add_label),
+    AxisOptionImg2Img("DDIM Eta", float, apply_field("ddim_eta"), format_value_add_label) #  as it is now all AxisOptionImg2Img items must go after AxisOption ones
 ]
 
 
