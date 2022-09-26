@@ -1,7 +1,10 @@
 import os
+import shutil
 from urllib.parse import urlparse
 
 from basicsr.utils.download_util import load_file_from_url
+
+from modules.paths import script_path, models_path
 
 
 def load_models(model_path: str, model_url: str = None, command_path: str = None, dl_name: str = None, existing=None,
@@ -63,3 +66,38 @@ def friendly_name(file: str):
     model_name, extension = os.path.splitext(file)
     model_name = model_name.replace("_", " ").title()
     return model_name
+
+
+def cleanup_models():
+    root_path = script_path
+    src_path = os.path.join(root_path, "ESRGAN")
+    dest_path = os.path.join(models_path, "ESRGAN")
+    move_files(src_path, dest_path)
+    src_path = os.path.join(root_path, "gfpgan")
+    dest_path = os.path.join(models_path, "GFPGAN")
+    move_files(src_path, dest_path)
+    src_path = os.path.join(root_path, "SwinIR")
+    dest_path = os.path.join(models_path, "SwinIR")
+    move_files(src_path, dest_path)
+    src_path = os.path.join(root_path, "repositories/latent-diffusion/experiments/pretrained_models/")
+    dest_path = os.path.join(models_path, "LDSR")
+    move_files(src_path, dest_path)
+
+
+def move_files(src_path: str, dest_path: str):
+    try:
+        if not os.path.exists(dest_path):
+            os.makedirs(dest_path)
+        if os.path.exists(src_path):
+            for file in os.listdir(src_path):
+                if os.path.isfile(file):
+                    fullpath = os.path.join(src_path, file)
+                    print("Moving file: %s to %s" % (fullpath, dest_path))
+                    try:
+                        shutil.move(fullpath, dest_path)
+                    except:
+                        pass
+            print("Removing folder: %s" % src_path)
+            shutil.rmtree(src_path, True)
+    except:
+        pass
