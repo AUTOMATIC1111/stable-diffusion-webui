@@ -134,6 +134,16 @@ button{
     border: none !important;
 }
 
+#image_options {
+    gap: 0.6rem;
+}
+
+#image_options > #delete_button {
+    min-width: auto;
+    flex-grow: 0;
+    padding-left: 0;
+    padding-right: 0;
+}
 
 #img2maskimg .h-60{
     height: 30rem;

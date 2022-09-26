@@ -59,7 +59,7 @@ random_symbol = '\U0001f3b2\ufe0f'  # 🎲️
 reuse_symbol = '\u267b\ufe0f'  # ♻️
 art_symbol = '\U0001f3a8'  # 🎨
 paste_symbol = '\u2199\ufe0f'  # ↙
-
+garbage_symbol = '\U0001F5D1' # 🗑
 
 def plaintext_to_html(text):
     text = "<p>" + "<br>\n".join([f"{html.escape(x)}" for x in text.split('\n')]) + "</p>"
@@ -87,6 +87,23 @@ def send_gradio_gallery_to_image(x):
 
     return image_from_url_text(x[0])
 
+def remove_image_from_gallery(gallery, index):
+    if type(gallery) == list:
+        if len(gallery) == 0:
+            return None, gr_show(False)
+
+    new_gallery = []
+    for filedata in gallery:
+        if filedata.startswith("data:image/png;base64,"):
+            filedata = filedata[len("data:image/png;base64,"):]
+
+        filedata = base64.decodebytes(filedata.encode('utf-8'))
+        image = Image.open(io.BytesIO(filedata))
+        new_gallery.append(image)
+
+    if (index >= 0):
+        del new_gallery[index]
+    return [new_gallery, gr_show(False)]
 
 def save_files(js_data, images, index):
     import csv
@@ -443,11 +460,12 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     txt2img_gallery = gr.Gallery(label='Output', show_label=False, elem_id='txt2img_gallery').style(grid=4)
 
                 with gr.Group():
-                    with gr.Row():
+                    with gr.Row(elem_id='image_options'):
                         save = gr.Button('Save')
                         send_to_img2img = gr.Button('Send to img2img')
                         send_to_inpaint = gr.Button('Send to inpaint')
                         send_to_extras = gr.Button('Send to extras')
+                        delete_button = gr.Button(garbage_symbol, elem_id='delete_button')
 
                 with gr.Group():
                     html_info = gr.HTML()
@@ -519,6 +537,13 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                 outputs=[
                     txt2img_prompt,
                 ]
+            )
+
+            delete_button.click(
+                fn=remove_image_from_gallery,
+                _js="(x, y) => [x, selected_gallery_index()]",
+                inputs=[txt2img_gallery, dummy_component],
+                outputs=[txt2img_gallery, dummy_component]
             )
 
             txt2img_paste_fields = [
@@ -619,11 +644,12 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     img2img_gallery = gr.Gallery(label='Output', show_label=False, elem_id='img2img_gallery').style(grid=4)
 
                 with gr.Group():
-                    with gr.Row():
+                    with gr.Row(elem_id='image_options'):
                         save = gr.Button('Save')
                         img2img_send_to_img2img = gr.Button('Send to img2img')
                         img2img_send_to_inpaint = gr.Button('Send to inpaint')
                         img2img_send_to_extras = gr.Button('Send to extras')
+                        img2img_delete_button = gr.Button(garbage_symbol, elem_id='delete_button')
 
                 with gr.Group():
                     html_info = gr.HTML()
@@ -993,6 +1019,13 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
             _js="(gallery, ...args) => [extract_image_from_gallery_inpaint(gallery), ...args]",
             inputs=[txt2img_gallery] + txt2img_fields,
             outputs=[init_img_with_mask] + img2img_fields,
+        )
+
+        img2img_delete_button.click(
+            fn=remove_image_from_gallery,
+           _js="(x, y) => [x, selected_gallery_index()]",
+            inputs=[img2img_gallery, dummy_component],
+            outputs=[img2img_gallery, dummy_component]
         )
 
         img2img_send_to_img2img.click(
