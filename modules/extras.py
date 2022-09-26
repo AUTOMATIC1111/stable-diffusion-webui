@@ -36,6 +36,8 @@ def run_extras(extras_mode, image, image_folder, gfpgan_visibility, codeformer_v
 
     outputs = []
     for image, image_name in zip(imageArr, imageNameArr):
+        if image is None:
+            return outputs, "Please select an input image.", ''
         existing_pnginfo = image.info or {}
 
         image = image.convert("RGB")

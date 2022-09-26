@@ -3,11 +3,14 @@ import sys
 import traceback
 from collections import namedtuple
 
-from basicsr.utils.download_util import load_file_from_url
+from modules import shared, images, modelloader, paths
+from modules.paths import models_path
 
-import modules.images
-from modules import shared
-from modules.paths import script_path
+model_dir = "LDSR"
+model_path = os.path.join(models_path, model_dir)
+cmd_path = None
+model_url = "https://heibox.uni-heidelberg.de/f/578df07c8fc04ffbadf3/?dl=1"
+yaml_url = "https://heibox.uni-heidelberg.de/f/31a76b13ea27482981b4/?dl=1"
 
 LDSRModelInfo = namedtuple("LDSRModelInfo", ["name", "location", "model", "netscale"])
 
@@ -25,28 +28,32 @@ class UpscalerLDSR(modules.images.Upscaler):
         return upscale_with_ldsr(img)
 
 
-def add_lsdr():
-    modules.shared.sd_upscalers.append(UpscalerLDSR(100))
+def setup_model(dirname):
+    global cmd_path
+    global model_path
+    if not os.path.exists(model_path):
+        os.makedirs(model_path)
+    cmd_path = dirname
+    shared.sd_upscalers.append(UpscalerLDSR(100))
 
 
-def setup_ldsr():
-    path = modules.paths.paths.get("LDSR", None)
+def prepare_ldsr():
+    path = paths.paths.get("LDSR", None)
     if path is None:
         return
     global have_ldsr
     global LDSR_obj
     try:
         from LDSR import LDSR
-        model_url = "https://heibox.uni-heidelberg.de/f/578df07c8fc04ffbadf3/?dl=1"
-        yaml_url = "https://heibox.uni-heidelberg.de/f/31a76b13ea27482981b4/?dl=1"
-        repo_path = 'latent-diffusion/experiments/pretrained_models/'
-        model_path = load_file_from_url(url=model_url, model_dir=os.path.join("repositories", repo_path),
-                                        progress=True, file_name="model.chkpt")
-        yaml_path = load_file_from_url(url=yaml_url, model_dir=os.path.join("repositories", repo_path),
-                                       progress=True, file_name="project.yaml")
-        have_ldsr = True
-        LDSR_obj = LDSR(model_path, yaml_path)
-
+        model_files = modelloader.load_models(model_path, model_url, cmd_path, dl_name="model.ckpt", ext_filter=[".ckpt"])
+        yaml_files = modelloader.load_models(model_path, yaml_url, cmd_path, dl_name="project.yaml", ext_filter=[".yaml"])
+        if len(model_files) != 0 and len(yaml_files) != 0:
+            model_file = model_files[0]
+            yaml_file = yaml_files[0]
+            have_ldsr = True
+            LDSR_obj = LDSR(model_file, yaml_file)
+        else:
+            return
 
     except Exception:
         print("Error importing LDSR:", file=sys.stderr)
@@ -55,7 +62,7 @@ def setup_ldsr():
 
 
 def upscale_with_ldsr(image):
-    setup_ldsr()
+    prepare_ldsr()
     if not have_ldsr or LDSR_obj is None:
         return image
 
