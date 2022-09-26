@@ -53,20 +53,6 @@ RUN rm -rf stable-diffusion-webui/.git
 # SET WORKDIR TO THE DOWNLOADED REPO
 WORKDIR ${SD_ROOT_DIR}/stable-diffusion-webui
 
-# DOWNLOAD WEBUI MODELS AND REPOSITORIES
-RUN wget https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.3.pth
-
-RUN mkdir repositories
-RUN git clone https://github.com/CompVis/stable-diffusion.git repositories/stable-diffusion
-RUN git clone https://github.com/CompVis/taming-transformers.git repositories/taming-transformers
-RUN git clone https://github.com/sczhou/CodeFormer.git repositories/CodeFormer
-RUN git clone https://github.com/salesforce/BLIP.git repositories/BLIP
-
-# IMPORT EXPECTED DATASETS AND ALL PROVIDED EMBEDDINGS
-COPY models/model.ckpt ./model.ckpt
-COPY ESRGAN/4xESRGAN.pth ./
-COPY embeddings/ ./embeddings/
-
 # SETUP ANACONDA ENVIRONMENT FOR WEBUI
 RUN conda install python=3.10.4
 RUN conda install pytorch==1.11.0 -c pytorch
@@ -74,18 +60,10 @@ RUN conda install torchvision==0.12.0 -c pytorch
 RUN conda install cudatoolkit=11.3 -c pytorch
 RUN conda clean -a -y
 
-RUN pip install transformers==4.19.2 diffusers invisible-watermark --prefer-binary
-RUN pip install git+https://github.com/crowsonkb/k-diffusion.git --prefer-binary
-RUN pip install git+https://github.com/TencentARC/GFPGAN.git --prefer-binary
-RUN pip install -r repositories/CodeFormer/requirements.txt --prefer-binary
-RUN pip install -r requirements.txt --prefer-binary
-RUN pip install -U numpy --prefer-binary
-RUN pip install --prefer-binary -U opencv-python-headless
-
-# SETUP REVERSE PROXY, MOVE DEFAULT CONF FILE TO DIRECTORY FOR NGINX CONFIG MOUNT
-# NOT THE CLEANEST SOLUTION, BUT PROBABLY THE SIMPLEST FOR THE END USER
-# MAKES THE REVERSE PROXY DEPENDENT ON THE STABLE DIFFUSION CONTAINER
-COPY ./config-proxy/domain.example.com ./config-proxy/${STABLE_DIFFUSION_URL}
+# IMPORT EXPECTED DATASETS AND ALL PROVIDED EMBEDDINGS
+COPY models/model.ckpt ./model.ckpt
+COPY ESRGAN/4xESRGAN.pth ./
+COPY embeddings/ ./embeddings/
 
 # RUN LAUNCH.PY WITH A TEMPORARY WEBUI.PY,
 # THIS WILL ENSURE MOST DOWNLOADS BECOME A PART OF THE IMAGE
@@ -97,12 +75,34 @@ RUN COMMANDLINE_ARGS="${COMMANDLINE_ARGS} --skip-torch-cuda-test" && python laun
 RUN rm -f webui.py
 RUN mv webui-8ef2cfb4-1648-464d-b1ee-f4068c17a36c.py webui.py
 
+# # DOWNLOAD WEBUI MODELS AND REPOSITORIES
+# RUN wget https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.3.pth
+
+# RUN mkdir repositories
+# RUN git clone https://github.com/CompVis/stable-diffusion.git repositories/stable-diffusion
+# RUN git clone https://github.com/CompVis/taming-transformers.git repositories/taming-transformers
+# RUN git clone https://github.com/sczhou/CodeFormer.git repositories/CodeFormer
+# RUN git clone https://github.com/salesforce/BLIP.git repositories/BLIP
+
+# # INSTALL REMAINING PYTHON DEPENDENCIES
+# RUN pip install transformers==4.19.2 diffusers invisible-watermark --prefer-binary
+# RUN pip install git+https://github.com/crowsonkb/k-diffusion.git --prefer-binary
+# RUN pip install git+https://github.com/TencentARC/GFPGAN.git --prefer-binary
+# RUN pip install -r repositories/CodeFormer/requirements.txt --prefer-binary
+# RUN pip install -r requirements.txt --prefer-binary
+# RUN pip install -U numpy --prefer-binary
+# RUN pip install --prefer-binary -U opencv-python-headless
+
+# SETUP REVERSE PROXY, MOVE DEFAULT CONF FILE TO DIRECTORY FOR NGINX CONFIG MOUNT
+# NOT THE CLEANEST SOLUTION, BUT PROBABLY THE SIMPLEST FOR THE END USER
+# MAKES THE REVERSE PROXY DEPENDENT ON THE STABLE DIFFUSION CONTAINER
+COPY ./config-proxy/domain.example.com ./config-proxy/${STABLE_DIFFUSION_URL}
+
 # START THE SERVER
 ENTRYPOINT [ "python", "launch.py" ]
 
-# TODO: REALIZED THAT THE MODELS ARE PULLED FROM LATEST, MAKING THE IMAGE VERY UNSTABLE. 
-#       IT MAY BE BEST TO LAUNCH PY EARLIER TO PULL REPO VERSIONS THE AUTOMATIC111 HAS TESTED.
 # TODO: MOVE MODEL DEPENDENCY FROM USER PROVIDED TO URL REFERENCED
 # TODO: ADD ENV VARIABLE TO SKIP THE PULL OF THE ONLINE REPO AND USE CURRENT REPO, CAN BE USEFUL FOR DEVELOPMENT
 # TODO: CHANGE FROM ROOT TO USER-BASED FOR SECURITY
 # TODO: ADD README AND WIKI INFO FOR DOCKER
+# TODO: ADD VARIABLE TO SPECIFY REPO VERSION
