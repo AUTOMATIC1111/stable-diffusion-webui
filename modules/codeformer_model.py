@@ -5,14 +5,13 @@ import traceback
 import cv2
 import torch
 
+import modules.face_restoration
+import modules.shared
 from modules import shared, devices, modelloader
 from modules.paths import script_path, models_path
-import modules.shared
-import modules.face_restoration
-from importlib import reload
 
-# codeformer people made a choice to include modified basicsr library to their project, which makes
-# it utterly impossible to use it alongside other libraries that also use basicsr, like GFPGAN.
+# codeformer people made a choice to include modified basicsr library to their project which makes
+# it utterly impossible to use it alongside with other libraries that also use basicsr, like GFPGAN.
 # I am making a choice to include some files from codeformer to work around this issue.
 model_dir = "Codeformer"
 model_path = os.path.join(models_path, model_dir)
@@ -30,11 +29,6 @@ def setup_model(dirname):
     path = modules.paths.paths.get("CodeFormer", None)
     if path is None:
         return
-
-
-    # both GFPGAN and CodeFormer use bascisr, one has it installed from pip the other uses its own
-    #stored_sys_path = sys.path
-    #sys.path = [path] + sys.path
 
     try:
         from torchvision.transforms.functional import normalize
@@ -67,7 +61,6 @@ def setup_model(dirname):
                     print("Unable to load codeformer model.")
                     return None, None
                 net = net_class(dim_embd=512, codebook_size=1024, n_head=8, n_layers=9, connect_list=['32', '64', '128', '256']).to(devices.device_codeformer)
-                ckpt_path = load_file_from_url(url=pretrain_model_url, model_dir=os.path.join(path, 'weights/CodeFormer'), progress=True)
                 checkpoint = torch.load(ckpt_path)['params_ema']
                 net.load_state_dict(checkpoint)
                 net.eval()

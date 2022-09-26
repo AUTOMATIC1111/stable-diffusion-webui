@@ -18,7 +18,7 @@ from modules.shared import opts
 model_dir = "ESRGAN"
 model_path = os.path.join(models_path, model_dir)
 model_url = "https://drive.google.com/u/0/uc?id=1TPrz5QKd8DHHt1k8SRtm6tMiPjz_Qene&export=download"
-model_name = "ESRGAN_x4.pth"
+model_name = "ESRGAN_x4"
 
 
 def load_model(path: str, name: str):
@@ -27,7 +27,7 @@ def load_model(path: str, name: str):
     global model_dir
     global model_name
     if "http" in path:
-        filename = load_file_from_url(url=model_url, model_dir=model_path, file_name=model_name, progress=True)
+        filename = load_file_from_url(url=model_url, model_dir=model_path, file_name="%s.pth" % model_name, progress=True)
     else:
         filename = path
     if not os.path.exists(filename) or filename is None:

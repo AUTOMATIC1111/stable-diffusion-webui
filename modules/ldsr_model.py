@@ -19,7 +19,7 @@ have_ldsr = False
 LDSR_obj = None
 
 
-class UpscalerLDSR(modules.images.Upscaler):
+class UpscalerLDSR(images.Upscaler):
     def __init__(self, steps):
         self.steps = steps
         self.name = "LDSR"
