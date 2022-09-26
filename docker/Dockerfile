@@ -9,14 +9,14 @@
 # KNOWN LIMITATIONS:
 ### - CURRENTLY ONLY SUPPORTS NVIDIA GPUS, BUT CAN BE USED AS A STARTING POINT
 
-FROM nvidia/cuda:11.3.1-runtime-ubuntu20.04
+FROM debian:11-slim
 
 ENV DEBIAN_FRONTEND noninteractive
 
 ARG CONFIG_DIRECTORY config-proxy
 ARG STABLE_DIFFUSION_URL domain.example.com
 
-ENV CONDA_DIR /root/anaconda
+ENV CONDA_DIR /root/conda
 ENV SD_ROOT_DIR /sd
 
 ENV SD_USERNAME sa
@@ -71,11 +71,11 @@ COPY docker/entrypoint.sh ./
 RUN chmod +x entrypoint.sh
 
 # SETUP ANACONDA ENVIRONMENT FOR WEBUI
-# NOTE: RUNNING AN VENV ENVIRONMENT IS UNECESSARY IN A PRODUCTION BUILD
-RUN conda env create -f environment-wsl2.yaml
-RUN conda init bash
-
-SHELL ["conda", "run", "-n", "automatic", "/bin/bash", "-c"]
+RUN conda install python=3.10.4
+RUN conda install pytorch==1.11.0 -c pytorch
+RUN conda install torchvision==0.12.0 -c pytorch
+RUN conda install cudatoolkit=11.3 -c pytorch
+RUN conda clean -a -y
 
 RUN pip install transformers==4.19.2 diffusers invisible-watermark --prefer-binary
 RUN pip install git+https://github.com/crowsonkb/k-diffusion.git --prefer-binary
@@ -90,7 +90,9 @@ RUN pip install --prefer-binary -U opencv-python-headless
 # MAKES THE REVERSE PROXY DEPENDENT ON THE STABLE DIFFUSION CONTAINER
 COPY ./config-proxy/domain.example.com ./config-proxy/${STABLE_DIFFUSION_URL}
 
-# RUN LAUNCH.PY WITH A TEMPORARY WEBUI.PY
+# RUN LAUNCH.PY WITH A TEMPORARY WEBUI.PY,
+# THIS WILL ENSURE MOST DOWNLOADS BECOME A PART OF THE IMAGE
+# ALLOWING RESTARTS TO BE MUCH QUICKER AND WITH MORE EFFICIENT BANDWIDTH USE
 RUN mv webui.py webui-8ef2cfb4-1648-464d-b1ee-f4068c17a36c.py
 RUN echo 'print("launch successful!!!")' > webui.py
 # RUN python launch.py
@@ -98,10 +100,8 @@ RUN rm -f webui.py
 RUN mv webui-8ef2cfb4-1648-464d-b1ee-f4068c17a36c.py webui.py
 
 # START THE SERVER
-ENTRYPOINT [ "bash", "-i", "entrypoint.sh" ]
+ENTRYPOINT [ "python", "launch.py" ]
 
-# TODO: ADJUST environment-wsl2.yaml TO USE PYTHON 3.10, RENAME TO environment.yaml, THEN UPDATE README + WIKI ACCORDINGLY (POSSIBLE ISSUE: CHANGING THE WSL2 ENVIRONMENT WILL REMOVE THE VENV SETUP)
-# TODO: MOVE ENVIRONMENT OUTSIDE OF VENV
 # TODO: MOVE MODEL DEPENDENCY FROM USER PROVIDED TO URL REFERENCED
 # TODO: USE launch.py WITH A FAKE webui.py TO FETCH REMAINING DEPENDENCIES
 # TODO: ADD ENV VARIABLE TO SKIP THE PULL OF THE ONLINE REPO AND USE CURRENT REPO, CAN BE USEFUL FOR DEVELOPMENT
