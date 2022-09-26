@@ -2,6 +2,7 @@ from collections import namedtuple
 from copy import copy
 import random
 
+from PIL import Image
 import numpy as np
 
 import modules.scripts as scripts
@@ -108,7 +109,10 @@ def draw_xy_grid(p, xs, ys, x_labels, y_labels, cell, draw_legend):
             if first_pocessed is None:
                 first_pocessed = processed
 
-            res.append(processed.images[0])
+            try:
+              res.append(processed.images[0])
+            except:
+              res.append(Image.new(res[0].mode, res[0].size))
 
     grid = images.image_grid(res, rows=len(ys))
     if draw_legend:
