@@ -220,6 +220,10 @@ options_templates.update(options_section(('ui', "User interface"), {
     "js_modal_lightbox_initialy_zoomed": OptionInfo(True, "Show images zoomed in by default in full page image viewer"),
 }))
 
+options_templates.update(options_section(('sampler-params', "Sampler parameters"), {
+  "ddim_eta": OptionInfo(0.0, "img2img ddim eta", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
+  "ddim_discretize": OptionInfo('uniform', "img2img ddim discretize", gr.Radio, {"choices": ['uniform','quad']}),
+}))
 
 class Options:
     data = None
