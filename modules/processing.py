@@ -85,6 +85,38 @@ class StableDiffusionProcessing:
             self.seed_resize_from_h = 0
             self.seed_resize_from_w = 0
 
+    def parameters_dict(self):
+        obj = {
+            "prompt": self.prompt,
+            "seed": self.seed,
+            "steps": self.steps,
+            "cfg_scale": self.cfg_scale,
+            "width": self.width,
+            "height": self.height,
+            "styles": self.styles,
+            "denoising_strength": self.denoising_strength,
+            "outpath_samples": self.outpath_samples,
+            "outpath_grids": self.outpath_grids,
+            "negative_prompt": self.negative_prompt,
+            "subseed": self.subseed,
+            "subseed_strength": self.subseed_strength,
+            "seed_resize_from_h": self.seed_resize_from_h,
+            "seed_resize_from_w": self.seed_resize_from_w,
+            "sampler_index": self.sampler_index,
+            "batch_size": self.batch_size,
+            "n_iter": self.n_iter,
+            "restore_faces": self.restore_faces,
+            "tiling": self.tiling,
+            "do_not_save_samples": self.do_not_save_samples,
+            "do_not_save_grid": self.do_not_save_grid,
+            "extra_generation_params": self.extra_generation_params,
+            "overlay_images": self.overlay_images,
+            "paste_to": self.paste_to,
+            "color_corrections": self.color_corrections,    
+        }
+
+        return obj
+    
     def init(self, all_prompts, all_seeds, all_subseeds):
         pass
 

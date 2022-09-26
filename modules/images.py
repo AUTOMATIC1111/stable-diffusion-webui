@@ -3,6 +3,7 @@ import math
 import os
 from collections import namedtuple
 import re
+import json
 
 import numpy as np
 import piexif
@@ -398,8 +399,9 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
             piexif.insert(exif_bytes(), fullfn_without_extension + ".jpg")
 
     if opts.save_txt and info is not None:
-        with open(f"{fullfn_without_extension}.txt", "w", encoding="utf8") as file:
-            file.write(info + "\n")
+        with open(f"{fullfn_without_extension}.json", "w", encoding="utf8") as file:
+            json.dump(p.parameters_dict(), file, indent=4)
+
 
 
 class Upscaler:
