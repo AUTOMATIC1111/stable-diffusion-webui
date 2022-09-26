@@ -40,11 +40,10 @@ RUN apt-get install -y libglib2.0-0 wget git
 RUN apt-get clean
 RUN rm -rf /var/lib/apt/lists/*
 
-# INSTALL ANACONDA
-# NOTE: MINICONDA COULD PROBABLY BE USED HERE FOR A PRODUCTION BUILD
-RUN wget https://repo.anaconda.com/archive/Anaconda3-2022.05-Linux-x86_64.sh
-RUN chmod +x Anaconda3-2022.05-Linux-x86_64.sh
-RUN ./Anaconda3-2022.05-Linux-x86_64.sh -b -p ${CONDA_DIR}
+# INSTALL MINICONDA
+RUN wget https://repo.anaconda.com/miniconda/Miniconda3-py39_4.12.0-Linux-x86_64.sh
+RUN chmod +x Miniconda3-py39_4.12.0-Linux-x86_64.sh
+RUN ./Miniconda3-py39_4.12.0-Linux-x86_64.sh -b -p ${CONDA_DIR}
 ENV PATH ${CONDA_DIR}/bin:$PATH
 
 # INSTALL A CLEAN AND UPDATED REPO OF THE WEBUI
@@ -102,7 +101,6 @@ RUN mv webui-8ef2cfb4-1648-464d-b1ee-f4068c17a36c.py webui.py
 ENTRYPOINT [ "bash", "-i", "entrypoint.sh" ]
 
 # TODO: ADJUST environment-wsl2.yaml TO USE PYTHON 3.10, RENAME TO environment.yaml, THEN UPDATE README + WIKI ACCORDINGLY (POSSIBLE ISSUE: CHANGING THE WSL2 ENVIRONMENT WILL REMOVE THE VENV SETUP)
-# TODO: REPLACE ANACONDA WITH MINICONDA
 # TODO: MOVE ENVIRONMENT OUTSIDE OF VENV
 # TODO: MOVE MODEL DEPENDENCY FROM USER PROVIDED TO URL REFERENCED
 # TODO: USE launch.py WITH A FAKE webui.py TO FETCH REMAINING DEPENDENCIES
