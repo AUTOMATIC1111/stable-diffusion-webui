@@ -37,11 +37,6 @@ SHELL ["/bin/bash", "-c"]
 # UPDATE UBUNTU, INSTALL DEPENDENCIES, THEN CLEAN THE REMAINING PACKAGES
 RUN apt-get update
 RUN apt-get install -y libglib2.0-0 wget git 
-# RUN apt-get -y nano software-properties-common
-# RUN add-apt-repository -y ppa:deadsnakes/ppa
-# RUN apt-get update
-# RUN apt install -y python3.10 python3.10-venv python3.10-dev
-# RUN link /usr/bin/python3.10 /usr/bin/python
 RUN apt-get clean
 RUN rm -rf /var/lib/apt/lists/*
 

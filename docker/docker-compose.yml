@@ -33,7 +33,6 @@ volumes:
 services:
   nginx-proxy:
     image: nginxproxy/nginx-proxy
-    # container_name: nginx-proxy
     restart: always
     ports:
       - "80:80"
@@ -53,7 +52,6 @@ services:
 
   nginx-letsencrypt:
     image: nginxproxy/acme-companion
-    # container_name: nginx-letsencrypt
     restart: always
     volumes_from:
       - nginx-proxy
@@ -85,7 +83,6 @@ services:
       args:
         - STABLE_DIFFUSION_URL=${STABLE_DIFFUSION_URL}
         - CONFIG_DIRECTORY=${CONFIG_DIRECTORY}
-    # container_name: stable-diffusion
     restart: always
     deploy:
       resources:
