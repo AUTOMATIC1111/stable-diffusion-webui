@@ -1,0 +1,115 @@
+version: "3.9"
+
+# PLEASE SET THE VARIABLES IN THE .ENV FILE
+# PLEASE ALSO ENSURE THE GPU IS SET UP ON YOUR COMPUTER
+# FOR WINDOWS USERS, THIS ALSO INVOLVES ENSURING THAT YOUR GPU IS SET UP ON WSL2
+# THIS WILL NOT WORK FOR DOCKER FOR WINDOWS WITH HYPER-V CONTAINERS
+
+# THERE ARE SOME ISSUES WITH THE REVERSE PROXY COMMUNICATING TO THE WEBUI.
+# FOR THAT REASON, THE WEBUI ALSO USES THE DEFAULT PORT 7860, WHICH CAN BE
+# ACCESSED SEPARATELY TO VERIFY THAT IT IS RUNNING. 
+
+# BY DEFAULT, THIS COMPOSE FILE USES NGINX-PROXY FOR THE SIMPLICITY
+# THIS AUTOMATED CONTAINER OF NGINX IS CREATED BY JASON WILDER
+# YOU CAN LEARN MORE HERE HTTPS://GITHUB.COM/JWILDER
+
+volumes:
+  volume_cert:
+    name: ${VOLUME_CERT}
+  volume_conf:
+    name: ${VOLUME_CONF}
+  volume_data:
+    name: ${VOLUME_DATA}
+  sd-images:
+    name: ${SD_IMAGES}
+  sd-exported:
+    name: ${SD_EXPORTED}
+  sd-config:
+    name: ${SD_CONFIG}
+  sd-proxy-conf:
+    name: ${SD_PROXY_CONFIG}
+
+
+services:
+  nginx-proxy:
+    image: nginxproxy/nginx-proxy
+    # container_name: nginx-proxy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - volume_conf:/etc/nginx/conf.d
+      - volume_data:/usr/share/nginx/html
+      - volume_cert:/etc/nginx/certs
+      - sd-proxy-conf:/etc/nginx/vhost.d
+    environment:
+      - DHPARAM_SKIP=true
+    depends_on:
+      - stable-diffusion
+    networks:
+      - default
+
+  nginx-letsencrypt:
+    image: nginxproxy/acme-companion
+    # container_name: nginx-letsencrypt
+    restart: always
+    volumes_from:
+      - nginx-proxy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - DEFAULT_EMAIL=${LETSENCRYPT_EMAIL}
+    depends_on:
+      - nginx-proxy
+      - stable-diffusion
+    networks:
+      - default
+
+  # nginx-selfsigned:
+  #   image: sebastienheyd/self-signed-proxy-companion
+  #   # container_name: nginx-selfsigned
+  #   restart: always
+  #   volumes_from:
+  #     - nginx-proxy
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock:ro
+  #   networks:
+  #     - default
+
+  stable-diffusion:
+    build:
+      context: ../
+      dockerfile: ./docker/Dockerfile
+      args:
+        - STABLE_DIFFUSION_URL=${STABLE_DIFFUSION_URL}
+        - CONFIG_DIRECTORY=${CONFIG_DIRECTORY}
+    # container_name: stable-diffusion
+    restart: always
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    environment:
+      - VIRTUAL_HOST=${STABLE_DIFFUSION_URL}
+      - VIRTUAL_PORT=7860
+      - LETSENCRYPT_HOST=${STABLE_DIFFUSION_URL}
+      - SELF_SIGNED_HOST=${STABLE_DIFFUSION_URL} # UNECESSARY UNLESS LETSENCRYPT SERVICE IS REPLACED WITH THE SELF-SIGNED SERVICE
+      # - VIRTUAL_PATH=/stable_diffusion (SEE HTTPS://GITHUB.COM/NGINX-PROXY/NGINX-PROXY#PATH-BASED-ROUTING)
+    ports:
+      - 7860:7860 # REMOVE :7860 TO USE A RANDOM PORT 
+    volumes:
+      - sd-images:/sd/stable-diffusion-webui/outputs/
+      - sd-exported:/sd/stable-diffusion-webui/log/images/
+      - sd-config:/sd/stable-diffusion-webui/config/
+      - sd-proxy-conf:/sd/stable-diffusion-webui/${CONFIG_DIRECTORY}/
+    networks:
+      - default
+
+networks:
+  default:
+    name: sd-net
