@@ -1,10 +1,12 @@
 # DOCKERFILE CREATED BY COFFEEF0X, INTENDED FOR AUTOMATIC111'S STABLE DIFFUSION WEBUI
 # FOLLOW COFFEEF0X @ HTTPS://GITLAB.COM/EXOFOX OR HTTPS://GITHUB.COM/COFFEEF0X
 ##########################################################################################
-# IMPORTANT!!! SET BUILD CONTEXT TO ../ (PARENT DIRECTORY) AND LEAVE IN THE DOCKER
-# SUBFOLDER, OTHERWISE THE FILE PATHS WILL NEED TO BE CORRECTED
+# IMPORTANT!!! THE BUILD CONTEXT MUST BE SET TO THE ../ (REPOSITORY ROOT DIRECTORY)
+# AND EXPECTS DOCKER IN ITS SUBFOLDER, OTHERWISE THE FILE PATHS MUST BE MODIFIED
 #####
-# THIS DOCKERFILE EXPECTS . . .
+# THIS DOCKERFILE ALSO EXPECTS THE USER TO PROVIDE THE FOLLOWING
+# - THE STABLE DIFFUSION MODEL IN/AS -> models/model.ckpt
+# - THE ESRGAN MODEL IN/AS -> ESRGAN/4xESRGAN.pth
 #####
 # KNOWN LIMITATIONS:
 ### - CURRENTLY ONLY SUPPORTS NVIDIA GPUS, BUT CAN BE USED AS A STARTING POINT
@@ -62,13 +64,10 @@ RUN git clone https://github.com/CompVis/taming-transformers.git repositories/ta
 RUN git clone https://github.com/sczhou/CodeFormer.git repositories/CodeFormer
 RUN git clone https://github.com/salesforce/BLIP.git repositories/BLIP
 
-COPY models/sd-v1-4.ckpt ./model.ckpt
+# IMPORT EXPECTED DATASETS AND ALL PROVIDED EMBEDDINGS
+COPY models/model.ckpt ./model.ckpt
 COPY ESRGAN/4xESRGAN.pth ./
 COPY embeddings/ ./embeddings/
-
-# SETUP DOCKER ENTRYPOINT
-COPY docker/entrypoint.sh ./
-RUN chmod +x entrypoint.sh
 
 # SETUP ANACONDA ENVIRONMENT FOR WEBUI
 RUN conda install python=3.10.4
@@ -94,8 +93,9 @@ COPY ./config-proxy/domain.example.com ./config-proxy/${STABLE_DIFFUSION_URL}
 # THIS WILL ENSURE MOST DOWNLOADS BECOME A PART OF THE IMAGE
 # ALLOWING RESTARTS TO BE MUCH QUICKER AND WITH MORE EFFICIENT BANDWIDTH USE
 RUN mv webui.py webui-8ef2cfb4-1648-464d-b1ee-f4068c17a36c.py
-RUN echo 'print("launch successful!!!")' > webui.py
-# RUN python launch.py
+RUN echo 'def webui():' > webui.py
+RUN echo '  print("launch successful!!!")' >> webui.py
+RUN COMMANDLINE_ARGS="${COMMANDLINE_ARGS} --skip-torch-cuda-test" && python launch.py
 RUN rm -f webui.py
 RUN mv webui-8ef2cfb4-1648-464d-b1ee-f4068c17a36c.py webui.py
 
