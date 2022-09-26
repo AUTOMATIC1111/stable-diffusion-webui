@@ -41,6 +41,9 @@ then
     venv_dir="venv"
 fi
 
+# Disable sentry logging
+export ERROR_REPORTING=FALSE
+
 # Do not reinstall existing pip packages on Debian/Ubuntu
 export PIP_IGNORE_INSTALLED=0
 
