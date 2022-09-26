@@ -125,9 +125,9 @@ class VanillaStableDiffusionSampler:
 
         # existing code fails with cetain step counts, like 9
         try:
-            self.sampler.make_schedule(ddim_num_steps=steps,  ddim_eta=opts.ddim_eta, ddim_discretize=opts.ddim_discretize, verbose=False)
+            self.sampler.make_schedule(ddim_num_steps=steps,  ddim_eta=p.ddim_eta, ddim_discretize=p.ddim_discretize, verbose=False)
         except Exception:
-            self.sampler.make_schedule(ddim_num_steps=steps+1,ddim_eta=opts.ddim_eta, ddim_discretize=opts.ddim_discretize, verbose=False)
+            self.sampler.make_schedule(ddim_num_steps=steps+1,ddim_eta=p.ddim_eta, ddim_discretize=p.ddim_discretize, verbose=False)
 
         x1 = self.sampler.stochastic_encode(x, torch.tensor([t_enc] * int(x.shape[0])).to(shared.device), noise=noise)
 
@@ -277,8 +277,8 @@ class KDiffusionSampler:
 
         extra_params_kwargs = {}
         for val in self.extra_params:
-          if hasattr(opts,val):
-            extra_params_kwargs[val] = getattr(opts,val)
+          if hasattr(p,val):
+            extra_params_kwargs[val] = getattr(p,val)
 
         return self.func(self.model_wrap_cfg, xi, sigma_sched, extra_args={'cond': conditioning, 'uncond': unconditional_conditioning, 'cond_scale': p.cfg_scale}, disable=False, callback=self.callback_state, **extra_params_kwargs)
 
@@ -299,8 +299,8 @@ class KDiffusionSampler:
 
         extra_params_kwargs = {}
         for val in self.extra_params:
-          if hasattr(opts,val):
-            extra_params_kwargs[val] = getattr(opts,val)
+          if hasattr(p,val):
+            extra_params_kwargs[val] = getattr(p,val)
 
         samples = self.func(self.model_wrap_cfg, x, sigmas, extra_args={'cond': conditioning, 'uncond': unconditional_conditioning, 'cond_scale': p.cfg_scale}, disable=False, callback=self.callback_state, **extra_params_kwargs)
 
