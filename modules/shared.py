@@ -7,6 +7,8 @@ import tqdm
 import datetime
 
 import modules.artists
+import modules.keywords
+import modules.people
 from modules.paths import script_path, sd_path
 from modules.devices import get_optimal_device
 import modules.styles
@@ -87,6 +89,8 @@ class State:
 state = State()
 
 artist_db = modules.artists.ArtistsDatabase(os.path.join(script_path, 'artists.csv'))
+keyword_db = modules.keywords.KeywordsDatabase(os.path.join(script_path, 'keywords.csv'))
+person_db = modules.people.PeopleDatabase(os.path.join(script_path, 'people.csv'))
 
 styles_filename = cmd_opts.styles_file
 prompt_styles = modules.styles.StyleDatabase(styles_filename)
@@ -138,7 +142,7 @@ options_templates.update(options_section(('saving-images', "Saving images/grids"
     "enable_pnginfo": OptionInfo(True, "Save text information about generation parameters as chunks to png files"),
     "save_txt": OptionInfo(False, "Create a text file next to every image with generation parameters."),
     "save_images_before_face_restoration": OptionInfo(False, "Save a copy of image before doing face restoration."),
-    "jpeg_quality": OptionInfo(80, "Quality for saved jpegimages", gr.Slider, {"minimum": 1, "maximum": 100, "step": 1}),
+    "jpeg_quality": OptionInfo(80, "Quality for saved jpeg images", gr.Slider, {"minimum": 1, "maximum": 100, "step": 1}),
     "export_for_4chan": OptionInfo(True, "If PNG image is larger than 4MB or any dimension is larger than 4000, downscale and save copy as JPG"),
 
     "use_original_name_batch": OptionInfo(False, "Use original name for output filename during batch process in extras tab"),
@@ -198,6 +202,8 @@ options_templates.update(options_section(('sd', "Stable Diffusion"), {
     "enable_batch_seeds": OptionInfo(True, "Make K-diffusion samplers produce same images in a batch as when making a single image"),
     "filter_nsfw": OptionInfo(False, "Filter NSFW content"),
     "random_artist_categories": OptionInfo([], "Allowed categories for random artists selection when using the Roll button", gr.CheckboxGroup, {"choices": artist_db.categories()}),
+    "random_keyword_categories": OptionInfo([], "Allowed categories for random keywords selection when using the \U0001F3F7 button", gr.CheckboxGroup, {"choices": keyword_db.categories()}),
+    "random_person_categories": OptionInfo([], "Allowed categories for random people selection when using the \U0001F9DD button", gr.CheckboxGroup, {"choices": person_db.categories()}),
 }))
 
 options_templates.update(options_section(('interrogate', "Interrogate Options"), {
