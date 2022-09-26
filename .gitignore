@@ -1,8 +1,6 @@
 __pycache__
 *.ckpt
 *.pth
-/ESRGAN/
-/SwinIR/
 /ESRGAN/*
 /SwinIR/*
 /repositories
