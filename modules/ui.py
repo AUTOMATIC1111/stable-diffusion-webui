@@ -860,7 +860,8 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
                 
                 modelname_0 = gr.Textbox(elem_id="modelmerger_modelname_0", label="Model Name (to)")
                 modelname_1 = gr.Textbox(elem_id="modelmerger_modelname_1", label="Model Name (from)")
-                alpha = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Alpha', value=0.3)
+                interp_method = gr.Radio(choices=["Weighted Sum", "Sigmoid"], value="Weighted Sum", label="Interpolation Method")
+                interp_amount = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Interpolation Amount', value=0.3)
                 submit = gr.Button(elem_id="modelmerger_merge", label="Merge", variant='primary')
             
             with gr.Column(variant='panel'):
@@ -871,7 +872,8 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
                 inputs=[
                     modelname_0,
                     modelname_1,
-                    alpha
+                    interp_method,
+                    interp_amount
                 ],
                 outputs=[
                     submit_result,
