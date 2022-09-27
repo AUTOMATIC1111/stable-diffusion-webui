@@ -8,7 +8,11 @@ has_mps = getattr(torch, 'has_mps', False)
 cpu = torch.device("cpu")
 
 
-def get_optimal_device():
+def get_optimal_device(force_cpu=False):
+
+    if force_cpu:
+        return cpu
+
     if torch.cuda.is_available():
         return torch.device("cuda")
 

@@ -59,12 +59,13 @@ def split_cross_attention_forward(self, x, context=None, mask=None):
 
     r1 = torch.zeros(q.shape[0], q.shape[1], v.shape[2], device=q.device, dtype=q.dtype)
 
-    stats = torch.cuda.memory_stats(q.device)
-    mem_active = stats['active_bytes.all.current']
-    mem_reserved = stats['reserved_bytes.all.current']
-    mem_free_cuda, _ = torch.cuda.mem_get_info(torch.cuda.current_device())
-    mem_free_torch = mem_reserved - mem_active
-    mem_free_total = mem_free_cuda + mem_free_torch
+    if device.type == "cuda":
+        stats = torch.cuda.memory_stats(q.device)
+        mem_active = stats['active_bytes.all.current']
+        mem_reserved = stats['reserved_bytes.all.current']
+        mem_free_cuda, _ = torch.cuda.mem_get_info(torch.cuda.current_device())
+        mem_free_torch = mem_reserved - mem_active
+        mem_free_total = mem_free_cuda + mem_free_torch
 
     gb = 1024 ** 3
     tensor_size = q.shape[0] * q.shape[1] * k.shape[1] * q.element_size()
@@ -72,10 +73,11 @@ def split_cross_attention_forward(self, x, context=None, mask=None):
     mem_required = tensor_size * modifier
     steps = 1
 
-    if mem_required > mem_free_total:
-        steps = 2 ** (math.ceil(math.log(mem_required / mem_free_total, 2)))
-        # print(f"Expected tensor size:{tensor_size/gb:0.1f}GB, cuda free:{mem_free_cuda/gb:0.1f}GB "
-        #       f"torch free:{mem_free_torch/gb:0.1f} total:{mem_free_total/gb:0.1f} steps:{steps}")
+    if device.type == "cuda":
+        if mem_required > mem_free_total:
+            steps = 2 ** (math.ceil(math.log(mem_required / mem_free_total, 2)))
+            # print(f"Expected tensor size:{tensor_size/gb:0.1f}GB, cuda free:{mem_free_cuda/gb:0.1f}GB "
+            #       f"torch free:{mem_free_torch/gb:0.1f} total:{mem_free_total/gb:0.1f} steps:{steps}")
 
     if steps > 64:
         max_res = math.floor(math.sqrt(math.sqrt(mem_free_total / 2.5)) / 8) * 64
@@ -128,20 +130,22 @@ def cross_attention_attnblock_forward(self, x):
         del k1
 
         h_ = torch.zeros_like(k, device=q.device)
-
-        stats = torch.cuda.memory_stats(q.device)
-        mem_active = stats['active_bytes.all.current']
-        mem_reserved = stats['reserved_bytes.all.current']
-        mem_free_cuda, _ = torch.cuda.mem_get_info(torch.cuda.current_device())
-        mem_free_torch = mem_reserved - mem_active
-        mem_free_total = mem_free_cuda + mem_free_torch
+    
+        if device.type == "cuda":
+            stats = torch.cuda.memory_stats(q.device)
+            mem_active = stats['active_bytes.all.current']
+            mem_reserved = stats['reserved_bytes.all.current']
+            mem_free_cuda, _ = torch.cuda.mem_get_info(torch.cuda.current_device())
+            mem_free_torch = mem_reserved - mem_active
+            mem_free_total = mem_free_cuda + mem_free_torch
 
         tensor_size = q.shape[0] * q.shape[1] * k.shape[2] * q.element_size()
         mem_required = tensor_size * 2.5
         steps = 1
 
-        if mem_required > mem_free_total:
-            steps = 2**(math.ceil(math.log(mem_required / mem_free_total, 2)))
+        if device.type == "cuda":
+            if mem_required > mem_free_total:
+                steps = 2**(math.ceil(math.log(mem_required / mem_free_total, 2)))
 
         slice_size = q.shape[1] // steps if (q.shape[1] % steps) == 0 else q.shape[1]
         for i in range(0, q.shape[1], slice_size):

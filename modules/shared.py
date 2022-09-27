@@ -51,10 +51,17 @@ parser.add_argument("--opt-channelslast", action='store_true', help="change memo
 parser.add_argument("--styles-file", type=str, help="filename to use for styles", default=os.path.join(script_path, 'styles.csv'))
 parser.add_argument("--autolaunch", action='store_true', help="open the webui URL in the system's default browser upon launch", default=False)
 parser.add_argument("--use-textbox-seed", action='store_true', help="use textbox for seeds in UI (no up/down, but possible to input long seeds)", default=False)
+parser.add_argument("--cpu", action='store_true', help="force CPU usage)", default=False)
+parser.add_argument("--skip-torch-cuda-test", action='store_true', help="skip CUDA availble check)", default=False)
 
 cmd_opts = parser.parse_args()
 
-device = get_optimal_device()
+device = get_optimal_device(force_cpu=cmd_opts.cpu)
+
+if cmd_opts.cpu:
+    cmd_opts.precision = "full"
+    cmd_opts.no_half = True
+
 
 batch_cond_uncond = cmd_opts.always_batch_cond_uncond or not (cmd_opts.lowvram or cmd_opts.medvram)
 parallel_processing_allowed = not cmd_opts.lowvram and not cmd_opts.medvram
