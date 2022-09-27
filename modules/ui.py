@@ -393,7 +393,7 @@ def setup_progressbar(progressbar, preview, id_part):
     )
 
 
-def create_ui(txt2img, img2img, run_extras, run_pnginfo):
+def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
         txt2img_prompt, roll, txt2img_prompt_style, txt2img_negative_prompt, txt2img_prompt_style2, submit, _, txt2img_prompt_style_apply, txt2img_save_style, paste = create_toprow(is_img2img=False)
         dummy_component = gr.Label(visible=False)
@@ -853,6 +853,33 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
             outputs=[html, generation_info, html2],
         )
 
+    with gr.Blocks() as modelmerger_interface:
+        with gr.Row().style(equal_height=False):
+            with gr.Column(variant='panel'):
+                gr.HTML(value="<p>A merger of the two checkpoints will be generated in your <b>/models</b> directory.</p>")
+                
+                modelname_0 = gr.Textbox(elem_id="modelmerger_modelname_0", label="Model Name (to)")
+                modelname_1 = gr.Textbox(elem_id="modelmerger_modelname_1", label="Model Name (from)")
+                interp_method = gr.Radio(choices=["Weighted Sum", "Sigmoid"], value="Weighted Sum", label="Interpolation Method")
+                interp_amount = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Interpolation Amount', value=0.3)
+                submit = gr.Button(elem_id="modelmerger_merge", label="Merge", variant='primary')
+            
+            with gr.Column(variant='panel'):
+                submit_result = gr.HTML(elem_id="modelmerger_result")
+
+            submit.click(
+                fn=run_modelmerger,
+                inputs=[
+                    modelname_0,
+                    modelname_1,
+                    interp_method,
+                    interp_amount
+                ],
+                outputs=[
+                    submit_result,
+                ]
+            )
+
     def create_setting_component(key):
         def fun():
             return opts.data[key] if key in opts.data else opts.data_labels[key].default
@@ -950,6 +977,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
         (img2img_interface, "img2img", "img2img"),
         (extras_interface, "Extras", "extras"),
         (pnginfo_interface, "PNG Info", "pnginfo"),
+        (modelmerger_interface, "Checkpoint Merger", "modelmerger"),
         (settings_interface, "Settings", "settings"),
     ]
 
