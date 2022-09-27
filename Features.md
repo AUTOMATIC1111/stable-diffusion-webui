@@ -446,3 +446,10 @@ Create a file named `user.css` near `webui.py` and put custom CSS code into it. 
     min-height: 768px;
 }
 ```
+
+# notification.mp3
+If an aufio file named `notification.mp3` is present in webui's root folder, it will be played when the generation process completes.
+
+As a source of inspiration:
+* https://pixabay.com/sound-effects/search/ding/?duration=0-30
+* https://pixabay.com/sound-effects/search/notification/?duration=0-30
