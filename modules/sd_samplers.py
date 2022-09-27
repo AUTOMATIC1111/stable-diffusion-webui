@@ -38,9 +38,9 @@ samplers = [
 samplers_for_img2img = [x for x in samplers if x.name != 'PLMS']
 
 sampler_extra_params = {
-    'sample_euler':['s_churn','s_tmin','s_noise'],
-    'sample_heun' :['s_churn','s_tmin','s_noise'],
-    'sample_dpm_2':['s_churn','s_tmin','s_noise'],
+    'sample_euler':['s_churn','s_tmin','s_tmax','s_noise'],
+    'sample_heun' :['s_churn','s_tmin','s_tmax','s_noise'],
+    'sample_dpm_2':['s_churn','s_tmin','s_tmax','s_noise'],
 }
 
 def setup_img2img_steps(p, steps=None):
