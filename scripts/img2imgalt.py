@@ -129,6 +129,12 @@ class Script(scripts.Script):
         sigma_adjustment = gr.Checkbox(label="Sigma adjustment for finding noise for image", value=False)
         return [original_prompt, original_negative_prompt, cfg, st, randomness, sigma_adjustment]
 
+    def ui_restraints(self):
+        restraints = {
+            "methods": ["Euler"]
+        }
+        return restraints
+
     def run(self, p, original_prompt, original_negative_prompt, cfg, st, randomness, sigma_adjustment):
         p.batch_size = 1
         p.batch_count = 1

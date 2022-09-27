@@ -1,6 +1,7 @@
 import os
 import sys
 import traceback
+import json
 
 import modules.ui as ui
 import gradio as gr
@@ -23,6 +24,14 @@ class Script:
     # The returned values are passed to the run method as parameters.
     def ui(self, is_img2img):
         pass
+
+    # Put restraints on UI elements when this script is selected.
+    # Restricting the available sampling methods:
+    # {
+    #   "methods": [ "Euler", "DDIM" ]
+    # }
+    def ui_restraints(self):
+        return {}
 
     # Determines when the script should be shown in the dropdown menu via the 
     # returned value. As an example:
@@ -106,7 +115,9 @@ class ScriptRunner:
 
         titles = [wrap_call(script.title, script.filename, "title") or f"{script.filename} [error]" for script in self.scripts]
 
-        dropdown = gr.Dropdown(label="Script", choices=["None"] + titles, value="None", type="index")
+        id_prefix = "img2img_" if is_img2img else "txt2img_"
+
+        dropdown = gr.Dropdown(label="Script", choices=["None"] + titles, value="None", type="index", elem_id=id_prefix+"scripts")
         inputs = [dropdown]
 
         for script in self.scripts:
@@ -125,21 +136,35 @@ class ScriptRunner:
             inputs += controls
             script.args_to = len(inputs)
 
+        script_restraints_json = gr.Textbox(value="{}", elem_id=id_prefix+"script_restraints_json", show_label=False, visible=False)
+        inputs += [script_restraints_json];
+
         def select_script(script_index):
             if 0 < script_index <= len(self.scripts):
                 script = self.scripts[script_index-1]
                 args_from = script.args_from
                 args_to = script.args_to
             else:
+                script = None
                 args_from = 0
                 args_to = 0
 
-            return [ui.gr_show(True if i == 0 else args_from <= i < args_to) for i in range(len(inputs))]
+            return (
+                [ui.gr_show(True if i == 0 else args_from <= i < args_to) for i in range(len(inputs)-1)]
+                + [gr.Textbox.update(value=json.dumps(script.ui_restraints() if script is not None else {}), visible=False)]
+            )
 
         dropdown.change(
             fn=select_script,
             inputs=[dropdown],
             outputs=inputs
+        )
+
+        script_restraints_json.change(
+            _js="updateScriptRestraints",
+            fn=lambda: None,
+            inputs=[],
+            outputs=[]
         )
 
         return inputs

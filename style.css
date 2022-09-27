@@ -222,6 +222,10 @@ input[type="range"]{
     margin: 0.5em 0 -0.3em 0;
 }
 
+.gr-input-label.disabled {
+    opacity: 0.48;
+}
+
 #txt2img_sampling label{
     padding-left: 0.6em;
     padding-right: 0.6em;
