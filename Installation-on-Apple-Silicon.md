@@ -1,8 +1,12 @@
-## Important note
+## Important notes
 
  While the web UI runs fine, there are still certain issues when running this fork on Apple Silicon.
 The only 2 samplers that work (at the time of writing this) are `Euler` and `DPM2` - all others result in a black screen.
 Upscaling works, but only using the real-ESRGAN models.
+
+People have also had issues completing the installation because they have previous installations of Python and/or Miniconda. This causes the script to be confused about where to install the environment and all related files. 
+
+Please follow [this guide](https://apple.stackexchange.com/questions/284824/remove-and-reinstall-python-on-mac-can-i-trust-these-old-references/285028#285028) if this is the case.
 
 ## Automatic installation
 
