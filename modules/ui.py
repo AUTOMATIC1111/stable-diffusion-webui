@@ -49,6 +49,7 @@ sample_img2img = sample_img2img if os.path.exists(sample_img2img) else None
 
 css_hide_progressbar = """
 .wrap .m-12 svg { display:none!important; }
+.wrap .m-12::before { content:"Loading..." }
 .progress-bar { display:none!important; }
 .meta-text { display:none!important; }
 """
@@ -393,7 +394,7 @@ def setup_progressbar(progressbar, preview, id_part):
     )
 
 
-def create_ui(txt2img, img2img, run_extras, run_pnginfo):
+def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
         txt2img_prompt, roll, txt2img_prompt_style, txt2img_negative_prompt, txt2img_prompt_style2, submit, _, txt2img_prompt_style_apply, txt2img_save_style, paste = create_toprow(is_img2img=False)
         dummy_component = gr.Label(visible=False)
@@ -564,13 +565,13 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     with gr.TabItem('Inpaint', id='inpaint'):
                         init_img_with_mask = gr.Image(label="Image for inpainting with mask",  show_label=False, elem_id="img2maskimg", source="upload", interactive=True, type="pil", tool="sketch", image_mode="RGBA")
 
-                        init_img_inpaint = gr.Image(label="Image for img2img", show_label=False, source="upload", interactive=True, type="pil", visible=False)
-                        init_mask_inpaint = gr.Image(label="Mask", source="upload", interactive=True, type="pil", visible=False)
+                        init_img_inpaint = gr.Image(label="Image for img2img", show_label=False, source="upload", interactive=True, type="pil", visible=False, elem_id="img_inpaint_base")
+                        init_mask_inpaint = gr.Image(label="Mask", source="upload", interactive=True, type="pil", visible=False, elem_id="img_inpaint_mask")
 
                         mask_blur = gr.Slider(label='Mask blur', minimum=0, maximum=64, step=1, value=4)
 
                         with gr.Row():
-                            mask_mode = gr.Radio(label="Mask mode", show_label=False, choices=["Draw mask", "Upload mask"], type="index", value="Draw mask")
+                            mask_mode = gr.Radio(label="Mask mode", show_label=False, choices=["Draw mask", "Upload mask"], type="index", value="Draw mask", elem_id="mask_mode")
                             inpainting_mask_invert = gr.Radio(label='Masking mode', show_label=False, choices=['Inpaint masked', 'Inpaint not masked'], value='Inpaint masked', type="index")
 
                         inpainting_fill = gr.Radio(label='Masked content', choices=['fill', 'original', 'latent noise', 'latent nothing'], value='fill', type="index")
@@ -853,6 +854,33 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
             outputs=[html, generation_info, html2],
         )
 
+    with gr.Blocks() as modelmerger_interface:
+        with gr.Row().style(equal_height=False):
+            with gr.Column(variant='panel'):
+                gr.HTML(value="<p>A merger of the two checkpoints will be generated in your <b>/models</b> directory.</p>")
+                
+                modelname_0 = gr.Textbox(elem_id="modelmerger_modelname_0", label="Model Name (to)")
+                modelname_1 = gr.Textbox(elem_id="modelmerger_modelname_1", label="Model Name (from)")
+                interp_method = gr.Radio(choices=["Weighted Sum", "Sigmoid"], value="Weighted Sum", label="Interpolation Method")
+                interp_amount = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Interpolation Amount', value=0.3)
+                submit = gr.Button(elem_id="modelmerger_merge", label="Merge", variant='primary')
+            
+            with gr.Column(variant='panel'):
+                submit_result = gr.Textbox(elem_id="modelmerger_result", show_label=False)
+
+            submit.click(
+                fn=run_modelmerger,
+                inputs=[
+                    modelname_0,
+                    modelname_1,
+                    interp_method,
+                    interp_amount
+                ],
+                outputs=[
+                    submit_result,
+                ]
+            )
+
     def create_setting_component(key):
         def fun():
             return opts.data[key] if key in opts.data else opts.data_labels[key].default
@@ -950,6 +978,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
         (img2img_interface, "img2img", "img2img"),
         (extras_interface, "Extras", "extras"),
         (pnginfo_interface, "PNG Info", "pnginfo"),
+        (modelmerger_interface, "Checkpoint Merger", "modelmerger"),
         (settings_interface, "Settings", "settings"),
     ]
 
@@ -970,6 +999,9 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
             for interface, label, ifid in interfaces:
                 with gr.TabItem(label, id=ifid):
                     interface.render()
+        
+        if os.path.exists(os.path.join(script_path, "notification.mp3")):
+            audio_notification = gr.Audio(interactive=False, value=os.path.join(script_path, "notification.mp3"), elem_id="audio_notification", visible=False)
 
         text_settings = gr.Textbox(elem_id="settings_json", value=lambda: opts.dumpjson(), visible=False)
         settings_submit.click(
