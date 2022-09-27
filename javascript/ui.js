@@ -183,3 +183,40 @@ onUiUpdate(function(){
 
     json_elem.parentElement.style.display="none"
 })
+
+/**
+ * force Euler method for the "img2img alternative test" script
+ */
+let prev_sampling_method;
+onUiTabChange(function() {
+    const currentTab = get_uiCurrentTab();
+    if ( ! currentTab || currentTab?.textContent.trim() !== 'img2img' ) {
+        return;
+    }
+
+    const altScriptName = 'img2img alternative test';
+    const scriptSelect = gradioApp().querySelector('#component-223 select');
+    const methodRadios = gradioApp().querySelectorAll('[name="radio-component-182"]');
+    scriptSelect.addEventListener( 'change', function() {
+        if( scriptSelect.value === altScriptName) {
+            prev_sampling_method = gradioApp().querySelector('[name="radio-component-182"]:checked');
+            methodRadios.forEach(radio => {
+                const isEuler = radio.value === 'Euler';
+                const label = radio.closest('label');
+                radio.disabled = !isEuler;
+                radio.checked = isEuler;
+                label.classList[isEuler ? 'remove' : 'add']('!cursor-not-allowed');
+                label.title = !isEuler ? `${altScriptName} only works with the Euler method` : '';
+            });
+        } else {
+            // reset to previous method
+            methodRadios.forEach(radio => {
+                const label = radio.closest('label');
+                radio.disabled = false;
+                radio.checked = radio === prev_sampling_method;
+                label.classList.remove('!cursor-not-allowed');
+                label.title = '';
+            });
+        }
+    });
+})
