@@ -128,10 +128,15 @@ Creates a grid of images with varying parameters. Select which parameters should
 X type and Y type fields, and input those parameters separated by comma into X values/Y values fields. For integer,
 and floating ponit numbers, ranges are supported. Examples:
 
-- `1-5` = 1, 2, 3, 4, 5
-- `1-5 (+2)` = 1, 3, 5
-- `10-5 (-3)` = 10, 7
-- `1-3 (+0.5)` = 1, 1.5, 2, 2.5, 3
+- Simple ranges:
+  - `1-5` = 1, 2, 3, 4, 5
+- Ranges with increment in bracket:
+  - `1-5 (+2)` = 1, 3, 5
+  - `10-5 (-3)` = 10, 7
+  - `1-3 (+0.5)` = 1, 1.5, 2, 2.5, 3
+- Ranges with count in square brackets:
+  - `1-10 [5]` = 1, 3, 5, 7, 10
+  - `0.0-1.0 [6]` = 0.0, 0.2, 0.4, 0.6, 0.8, 1.0
 
 ![](images/xy_grid-medusa.png)
 
