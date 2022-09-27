@@ -186,7 +186,7 @@ def run_modelmerger(from_model_name, to_model_name, interp_method, interp_amount
         if 'model' in key and key not in theta_0:
             theta_0[key] = theta_1[key]
 
-    output_modelname = 'models/' + from_model_name + str(interp_amount) + '-' + to_model_name + str(float(1.0) - interp_amount) + '-' + interp_method.replace(" ", "_") + '-' + '-merged.ckpt'
+    output_modelname = 'models/' + from_model_name + '_' + str(interp_amount) + '-' + to_model_name + '_' + str(float(1.0) - interp_amount) + '-' + interp_method.replace(" ", "_") + '-merged.ckpt'
     print(f"Saving to {output_modelname}...")
     torch.save(model_0, output_modelname)
 
