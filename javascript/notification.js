@@ -25,6 +25,9 @@ onUiUpdate(function(){
 
     lastHeadImg = headImg;
 
+    // play notification sound if available
+    gradioApp().querySelector('#audio_notification audio')?.play();
+
     if (document.hasFocus()) return;
 
     // Multiple copies of the images are in the DOM when one is selected. Dedup with a Set to get the real number generated.
