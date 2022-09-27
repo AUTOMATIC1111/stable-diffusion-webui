@@ -49,6 +49,7 @@ sample_img2img = sample_img2img if os.path.exists(sample_img2img) else None
 
 css_hide_progressbar = """
 .wrap .m-12 svg { display:none!important; }
+.wrap .m-12::before { content:"Loading..." }
 .progress-bar { display:none!important; }
 .meta-text { display:none!important; }
 """
@@ -865,7 +866,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
                 submit = gr.Button(elem_id="modelmerger_merge", label="Merge", variant='primary')
             
             with gr.Column(variant='panel'):
-                submit_result = gr.HTML(elem_id="modelmerger_result")
+                submit_result = gr.Textbox(elem_id="modelmerger_result", show_label=False)
 
             submit.click(
                 fn=run_modelmerger,
