@@ -157,6 +157,7 @@ options_templates.update(options_section(('saving-paths', "Paths for saving"), {
 
 options_templates.update(options_section(('saving-to-dirs', "Saving to a directory"), {
     "save_to_dirs": OptionInfo(False, "Save images to a subdirectory"),
+    "save_to_dirs_batch_only": OptionInfo(False, "Only save images to a subdirectory when running a batch larger than one"),
     "grid_save_to_dirs": OptionInfo(False, "Save grids to subdirectory"),
     "directories_filename_pattern": OptionInfo("", "Directory name pattern"),
     "directories_max_prompt_words": OptionInfo(8, "Max prompt words", gr.Slider, {"minimum": 1, "maximum": 20, "step": 1}),
