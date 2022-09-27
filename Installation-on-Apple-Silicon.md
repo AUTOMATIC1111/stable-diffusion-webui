@@ -16,7 +16,9 @@ The script can be downloaded from [here](https://github.com/dylancl/stable-diffu
 2. Run the following commands:
 
 ```
-$ curl -s https://raw.githubusercontent.com/dylancl/stable-diffusion-webui-mps/master/setup_mac.sh
+$ cd ~/Documents/
+$ curl https://raw.githubusercontent.com/dylancl/stable-diffusion-webui-mps/master/setup_mac.sh -o setup_mac.sh
+$ chmod +x setup_mac.sh
 $ ./setup_mac.sh
 ```
 
