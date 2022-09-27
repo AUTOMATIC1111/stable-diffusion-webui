@@ -40,6 +40,19 @@ https://github.com/dfaker/stable-diffusion-webui-cv2-external-masking-script/blo
 
 Provides a local popup window powered by CV2 that allows addition of a mask before processing. [Readme](https://github.com/dfaker/stable-diffusion-webui-cv2-external-masking-script).
 
+## Img2img Video
+https://github.com/memes-forever/Stable-diffusion-webui-video
+
+Using img2img, generates pictures one after another.
+
+## Seed Travel
+https://github.com/yownas/seed_travel
+
+Pick two (or more) seeds and generate a sequence of images interpolating between them. Optionally, let it create a video of the result.
+
+Example of what you can do with it:
+https://www.youtube.com/watch?v=4c71iUclY4U
+
 # Creating Custom Scripts
 
 The Script class definition can be found in `modules/scripts.py`. To create your own custom script, create a python script that implements the class and drop it into the `scripts` folder, using the below example or other scripts already in the folder as a guide. 
