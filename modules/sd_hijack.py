@@ -273,8 +273,7 @@ class StableDiffusionModelHijack:
     def tokenize(self, text):
         max_length = self.clip.max_length - 2
         _, remade_batch_tokens, _, _, _, token_count = self.clip.process_text([text])
-        return {"tokens": remade_batch_tokens[0], "token_count":token_count, "max_length":max_length}
-        
+        return remade_batch_tokens[0], token_count, max_length
 
 class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
     def __init__(self, wrapped, hijack):

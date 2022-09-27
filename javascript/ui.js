@@ -182,51 +182,21 @@ onUiUpdate(function(){
     });
 
     json_elem.parentElement.style.display="none"
-
-	let debounce_time = 800
-	if (!txt2img_textarea) {
-		txt2img_textarea = gradioApp().querySelector("#txt2img_prompt > label > textarea")
-		txt2img_textarea?.addEventListener("input", debounce(submit_prompt_text.bind(null, "txt2img"), debounce_time))
-	}
-	if (!img2img_textarea) {
-		img2img_textarea = gradioApp().querySelector("#img2img_prompt > label > textarea")
-		img2img_textarea?.addEventListener("input", debounce(submit_prompt_text.bind(null, "img2img"), debounce_time))
-    }
 })
 
+let wait_time = 800
+let token_timeout;
+function txt2img_token_counter(text) {
+	return update_token_counter("txt2img_token_button", text);
+}
 
-let txt2img_textarea, img2img_textarea = undefined;
-function submit_prompt_text(source, e) {
-	let prompt_text;
-	if (source == "txt2img")
-		prompt_text = txt2img_textarea.value;
-	else if (source == "img2img")
-		prompt_text = img2img_textarea.value;
-	if (!prompt_text)
-		return;
-	params = {
-		method: "POST",
-		headers: {
-			"Accept": "application/json",
-			"Content-type": "application/json"
-		},
-		body: JSON.stringify({data:[prompt_text]})
-	}
-	fetch('http://127.0.0.1:7860/api/tokenize/', params)
-	.then((response) => response.json())
-	.then((data) => {
-		if (data?.data.length) {
-			let response_json = data.data[0]
-			if (elem = gradioApp().getElementById(source+"_token_counter")) {
-				if (response_json.token_count > response_json.max_length)
-					elem.classList.add("red");
-				else
-					elem.classList.remove("red");
-				elem.innerText = response_json.token_count + "/" + response_json.max_length;
-			}
-		}
-	})
-	.catch((error) => {
-		console.error('Error:', error);
-	});
+function img2img_token_counter(text) {
+	return update_token_counter("img2img_token_button", text);
+}
+
+function update_token_counter(button_id, text) {
+	if (token_timeout)
+		clearTimeout(token_timeout);
+	token_timeout = setTimeout(() => gradioApp().getElementById(button_id)?.click(), wait_time);
+	return [];
 }
