@@ -6,7 +6,7 @@ import traceback
 import modules.scripts as scripts
 import gradio as gr
 
-from modules.processing import Processed, process_images
+from modules.processing import Processed, process_images, fix_seed
 from PIL import Image
 from modules.shared import opts, cmd_opts, state
 
@@ -23,13 +23,16 @@ class Script(scripts.Script):
         #    due to the way Script assumes all controls returned can be used as inputs.
         # Therefore, there's no good way to use grouping components right now,
         # so we will use a checkbox! :)
-        checkbox_txt = gr.Checkbox(label="Show Textbox", value=False)
+        with gr.Row():
+          checkbox_txt = gr.Checkbox(label="Show Textbox", value=False)
+          checkbox_random_seeds = gr.Checkbox(label="Randomize seeds for every line if -1", value=False)
+
         file = gr.File(label="File with inputs", type='bytes')
         prompt_txt = gr.TextArea(label="Prompts")
         checkbox_txt.change(fn=lambda x: [gr.File.update(visible = not x), gr.TextArea.update(visible = x)], inputs=[checkbox_txt], outputs=[file, prompt_txt])
-        return [checkbox_txt, file, prompt_txt]
+        return [checkbox_txt, checkbox_random_seeds, file, prompt_txt]
 
-    def run(self, p, checkbox_txt, data: bytes, prompt_txt: str):
+    def run(self, p, checkbox_txt, checkbox_random_seeds, data: bytes, prompt_txt: str):
         if (checkbox_txt):
             lines = [x.strip() for x in prompt_txt.splitlines()]
         else:
@@ -46,8 +49,14 @@ class Script(scripts.Script):
         state.job_count = batch_count
 
         images = []
+        initial_seed    = p.seed
+        initial_subseed = p.subseed
         for loop_no in range(loop_count):
             state.job = f"{loop_no + 1} out of {loop_count}"
+            if checkbox_random_seeds:
+              p.seed    = initial_seed
+              p.subseed = initial_subseed
+              fix_seed(p)
             p.prompt = lines[loop_no*p.batch_size:(loop_no+1)*p.batch_size] * p.n_iter
             proc = process_images(p)
             images += proc.images
