@@ -98,7 +98,6 @@ def move_files(src_path: str, dest_path: str, ext_filter: str = None):
             for file in os.listdir(src_path):
                 fullpath = os.path.join(src_path, file)
                 if os.path.isfile(fullpath):
-                    print(f"Checking file {file} in {src_path}")
                     if ext_filter is not None:
                         if ext_filter not in file:
                             continue
