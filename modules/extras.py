@@ -3,6 +3,8 @@ import os
 import numpy as np
 from PIL import Image
 
+import torch
+
 from modules import processing, shared, images, devices
 from modules.shared import opts
 import modules.gfpgan_model
@@ -135,3 +137,40 @@ def run_pnginfo(image):
         info = f"<div><p>{message}<p></div>"
 
     return '', geninfo, info
+
+
+def run_modelmerger(modelname_0, modelname_1, interp_method, interp_amount):
+    # Linear interpolation (https://en.wikipedia.org/wiki/Linear_interpolation)
+    def weighted_sum(theta0, theta1, alpha):
+        return ((1 - alpha) * theta0) + (alpha * theta1)
+
+    # Smoothstep (https://en.wikipedia.org/wiki/Smoothstep)
+    def sigmoid(theta0, theta1, alpha):
+        alpha = alpha * alpha * (3 - (2 * alpha))
+        return theta0 + ((theta1 - theta0) * alpha)
+
+    model_0 = torch.load('models/' + modelname_0 + '.ckpt')
+    model_1 = torch.load('models/' + modelname_1 + '.ckpt')
+    
+    theta_0 = model_0['state_dict']
+    theta_1 = model_1['state_dict']
+    theta_func = weighted_sum
+    
+    if interp_method == "Weighted Sum":
+        theta_func = weighted_sum
+    if interp_method == "Sigmoid":
+        theta_func = sigmoid
+    
+    for key in theta_0.keys():
+        if 'model' in key and key in theta_1:
+            theta_0[key] = theta_func(theta_0[key], theta_1[key], interp_amount)
+    
+    for key in theta_1.keys():
+        if 'model' in key and key not in theta_0:
+            theta_0[key] = theta_1[key]
+    
+    output_modelname = 'models/' + modelname_0 + '-' + modelname_1 + '-merged.ckpt';
+    
+    torch.save(model_0, output_modelname)
+    
+    return "<p>Model saved to " + output_modelname + "</p>"
