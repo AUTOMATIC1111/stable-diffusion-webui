@@ -119,9 +119,6 @@ class Script(scripts.Script):
 
     def show(self, is_img2img):
         return is_img2img
-
-    def compatible_samplers(self):
-        return ['Euler']
     
     def ui(self, is_img2img):
         original_prompt = gr.Textbox(label="Original prompt", lines=1)
