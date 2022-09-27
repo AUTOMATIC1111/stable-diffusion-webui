@@ -66,7 +66,7 @@ class State:
     job = ""
     job_no = 0
     job_count = 0
-    job_timestamp = 0
+    job_timestamp = '0'
     sampling_step = 0
     sampling_steps = 0
     current_latent = None
@@ -80,6 +80,7 @@ class State:
         self.job_no += 1
         self.sampling_step = 0
         self.current_image_sampling_step = 0
+        
     def get_job_timestamp(self):
         return datetime.datetime.now().strftime("%Y%m%d%H%M%S")
 
