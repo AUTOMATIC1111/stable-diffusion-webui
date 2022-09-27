@@ -1,9 +1,9 @@
 import re
 import gradio as gr
 
-re_param_code = r"\s*([\w ]+):\s*([^,]+)(?:,|$)"
+re_param_code = r"\s*([\w ]+):\s*([^\"]+(?=\")|[^,]+)(?:,|\",|$)"
 re_param = re.compile(re_param_code)
-re_params = re.compile(r"^(?:" + re_param_code + "){3,}$")
+re_params = re.compile(r"^\"?(?:" + re_param_code + "){3,}(?:Filename:[\w])?$")
 re_imagesize = re.compile(r"^(\d+)x(\d+)$")
 type_of_gr_update = type(gr.update())
 
@@ -36,6 +36,12 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
         if line.startswith("Negative prompt:"):
             done_with_prompt = True
             line = line[16:].strip()
+        elif line.startswith("\"Negative prompt:"):
+            line = line[17:].strip()
+        elif line.startswith("Prompt:"):
+            line = line[8:].strip()
+        elif line.startswith("\"Prompt:"):
+            line = line[9:].strip()
 
         if done_with_prompt:
             negative_prompt += ("" if negative_prompt == "" else "\n") + line

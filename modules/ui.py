@@ -12,7 +12,7 @@ import traceback
 
 import numpy as np
 import torch
-from PIL import Image
+from PIL import Image, PngImagePlugin
 
 import gradio as gr
 import gradio.utils
@@ -97,16 +97,13 @@ def save_files(js_data, images, index):
     filenames = []
 
     data = json.loads(js_data)
-    
+
     if index > -1 and opts.save_selected_only and (index > 0 or not opts.return_grid): # ensures we are looking at a specific non-grid picture, and we have save_selected_only
         images = [images[index]]
         data["seed"] += (index - 1 if opts.return_grid else index)
 
     with open(os.path.join(opts.outdir_save, "log.csv"), "a", encoding="utf8", newline='') as file:
-        at_start = file.tell() == 0
         writer = csv.writer(file)
-        if at_start:
-            writer.writerow(["prompt", "seed", "width", "height", "sampler", "cfgs", "steps", "filename", "negative_prompt"])
 
         filename_base = str(int(time.time() * 1000))
         for i, filedata in enumerate(images):
@@ -121,10 +118,37 @@ def save_files(js_data, images, index):
 
             filenames.append(filename)
 
-        writer.writerow([data["prompt"], data["seed"], data["width"], data["height"], data["sampler"], data["cfg_scale"], data["steps"], filenames[0], data["negative_prompt"]])
+        generation_params = {
+            "Prompt": data['prompt'],
+            "Negative prompt": data['negative_prompt'],
+            "Steps": data['steps'],
+            "Sampler": data['sampler'],
+            "CFG scale": data['cfg_scale'],
+            "Seed": data['seed'],
+            "Face restoration": (data['face_restoration_model'] if data['restore_faces'] else None),
+            "Size": f"{data['width']}x{data['height']}",
+            "Model hash": (None if not data['sd_model_hash'] else data['sd_model_hash']),
+            "Batch size": (None if data['batch_size'] < 2 else data['batch_size']),
+            "Variation seed": (None if data['subseed_strength'] == 0 else data['subseed']),
+            "Variation seed strength": (None if data['subseed_strength'] == 0 else data['subseed_strength']),
+            "Seed resize from": (None if data['seed_resize_from_w'] == 0 or data['seed_resize_from_h'] == 0 else f"{data['seed_resize_from_w']}x{data['seed_resize_from_h']}"),
+            "Denoising strength": data['denoising_strength']
+        }
 
-    return '', '', plaintext_to_html(f"Saved: {filenames[0]}")
+        generation_params.update(data['extra_generation_params'])
+        generation_params_text = ", ".join([k if k == v else f'{k}: {v}' for k, v in generation_params.items() if v is not None])
 
+        pnginfo = PngImagePlugin.PngInfo()
+        image = Image.open(filepath)
+        pnginfo.add_text('parameters', generation_params_text)
+        image.save(filepath, quality=opts.jpeg_quality, pnginfo=pnginfo)
+
+        generation_params.update({"Filename": filenames[0]})
+        writer.writerow([k if k == v else f'{k}: {v}' for k, v in generation_params.items() if v is not None])
+
+        generation_params_text += f', Filename: {filenames[0]}'
+
+    return '', '', generation_params_text
 
 def wrap_gradio_call(func):
     def f(*args, **kwargs):
