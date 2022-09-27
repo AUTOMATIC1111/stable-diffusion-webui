@@ -61,7 +61,7 @@ random_symbol = '\U0001f3b2\ufe0f'  # 🎲️
 reuse_symbol = '\u267b\ufe0f'  # ♻️
 art_symbol = '\U0001f3a8'  # 🎨
 paste_symbol = '\u2199\ufe0f'  # ↙
-
+folder_symbol = '\uD83D\uDCC2'
 
 def plaintext_to_html(text):
     text = "<p>" + "<br>\n".join([f"{html.escape(x)}" for x in text.split('\n')]) + "</p>"
@@ -461,6 +461,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
                         send_to_img2img = gr.Button('Send to img2img')
                         send_to_inpaint = gr.Button('Send to inpaint')
                         send_to_extras = gr.Button('Send to extras')
+                        open_txt2img_folder = gr.Button(folder_symbol, elem_id="open_folder")
 
                 with gr.Group():
                     html_info = gr.HTML()
@@ -637,6 +638,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
                         img2img_send_to_img2img = gr.Button('Send to img2img')
                         img2img_send_to_inpaint = gr.Button('Send to inpaint')
                         img2img_send_to_extras = gr.Button('Send to extras')
+                        open_img2img_folder = gr.Button(folder_symbol, elem_id="open_folder")
 
                 with gr.Group():
                     html_info = gr.HTML()
@@ -809,6 +811,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
                 html_info = gr.HTML()
                 extras_send_to_img2img = gr.Button('Send to img2img')
                 extras_send_to_inpaint = gr.Button('Send to inpaint')
+                open_extras_folder = gr.Button('Open output directory')
 
         submit.click(
             fn=run_extras,
@@ -906,6 +909,9 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
 
     components = []
     component_dict = {}
+
+    def open_folder(f):
+        os.startfile(os.path.normpath(f))
 
     def run_settings(*args):
         changed = 0
@@ -1066,6 +1072,24 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
             _js="extract_image_from_gallery_extras",
             inputs=[txt2img_gallery],
             outputs=[extras_image],
+        )
+
+        open_txt2img_folder.click(
+            fn=lambda: open_folder(opts.outdir_samples or opts.outdir_txt2img_samples),
+            inputs=[],
+            outputs=[],
+        )
+
+        open_img2img_folder.click(
+            fn=lambda: open_folder(opts.outdir_samples or opts.outdir_img2img_samples),
+            inputs=[],
+            outputs=[],
+        )
+
+        open_extras_folder.click(
+            fn=lambda: open_folder(opts.outdir_samples or opts.outdir_extras_samples),
+            inputs=[],
+            outputs=[],
         )
 
         img2img_send_to_extras.click(
