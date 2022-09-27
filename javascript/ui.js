@@ -1,9 +1,8 @@
 // various functions for interation with ui.py not large enough to warrant putting them in separate files
 
 function selected_gallery_index(){
-    var gr = gradioApp()
-    var buttons = gradioApp().querySelectorAll(".gallery-item")
-    var button = gr.querySelector(".gallery-item.\\!ring-2")
+    var buttons = gradioApp().querySelectorAll('[style="display: block;"].tabitem .gallery-item')
+    var button = gradioApp().querySelector('[style="display: block;"].tabitem .gallery-item.\\!ring-2')
 
     var result = -1
     buttons.forEach(function(v, i){ if(v==button) { result = i } })
