@@ -39,3 +39,24 @@ document.addEventListener("DOMContentLoaded", function() {
     });
     mutationObserver.observe( gradioApp(), { childList:true, subtree:true })
 });
+
+/**
+ * checks that a UI element is not in another hidden element or tab content
+ */
+function uiElementIsVisible(el) {
+    let isVisible = !el.closest('.\\!hidden');
+    if ( ! isVisible ) {
+        return false;
+    }
+
+    while( isVisible = el.closest('.tabitem')?.style.display !== 'none' ) {
+        if ( ! isVisible ) {
+            return false;
+        } else if ( el.parentElement ) {
+            el = el.parentElement
+        } else {
+            break;
+        }
+    }
+    return isVisible;
+}
