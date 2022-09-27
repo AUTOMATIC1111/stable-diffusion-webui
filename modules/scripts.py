@@ -56,7 +56,12 @@ class Script:
     def describe(self):
         return ""
 
-
+    # If your script is only compatible with a subset of samplers, return the sampler
+    # names here, an empty list indicates compatibility with all samplers, for a full
+    # listing of current sampler names import modules.sd_samplers.samplers
+    def compatible_samplers(self):
+        return []
+    
 scripts_data = []
 
 
@@ -133,6 +138,10 @@ class ScriptRunner:
                 control.custom_script_source = os.path.basename(script.filename)
                 control.visible = False
 
+            concat_compatible_samplers = ",".join(script.compatible_samplers())
+            inputs += [gr.HTML(value='<span class="customScriptAttrs" data-supported-samplers="{}"></span>'.format(concat_compatible_samplers))]
+            inputs[-1].visible=False
+                
             inputs += controls
             script.args_to = len(inputs)
 
@@ -180,7 +189,7 @@ class ScriptRunner:
         if script is None:
             return None
 
-        script_args = args[script.args_from:script.args_to]
+        script_args = args[script.args_from+1:script.args_to]
         processed = script.run(p, *script_args)
 
         shared.total_tqdm.clear()
