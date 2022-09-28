@@ -12,7 +12,7 @@ import traceback
 
 import numpy as np
 import torch
-from PIL import Image
+from PIL import Image, PngImagePlugin
 
 import gradio as gr
 import gradio.utils
@@ -97,10 +97,11 @@ def save_files(js_data, images, index):
     filenames = []
 
     data = json.loads(js_data)
-    
-    if index > -1 and opts.save_selected_only and (index > 0 or not opts.return_grid): # ensures we are looking at a specific non-grid picture, and we have save_selected_only
+    if index > -1 and opts.save_selected_only and (index >= data["index_of_first_image"]):  # ensures we are looking at a specific non-grid picture, and we have save_selected_only
         images = [images[index]]
-        data["seed"] += (index - 1 if opts.return_grid else index)
+        infotexts = [data["infotexts"][index]]
+    else:
+        infotexts = data["infotexts"]
 
     with open(os.path.join(opts.outdir_save, "log.csv"), "a", encoding="utf8", newline='') as file:
         at_start = file.tell() == 0
@@ -116,8 +117,11 @@ def save_files(js_data, images, index):
             if filedata.startswith("data:image/png;base64,"):
                 filedata = filedata[len("data:image/png;base64,"):]
 
-            with open(filepath, "wb") as imgfile:
-                imgfile.write(base64.decodebytes(filedata.encode('utf-8')))
+            pnginfo = PngImagePlugin.PngInfo()
+            pnginfo.add_text('parameters', infotexts[i])
+
+            image = Image.open(io.BytesIO(base64.decodebytes(filedata.encode('utf-8'))))
+            image.save(filepath, quality=opts.jpeg_quality, pnginfo=pnginfo)
 
             filenames.append(filename)
 
