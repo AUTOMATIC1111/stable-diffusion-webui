@@ -79,8 +79,9 @@ class StableDiffusionProcessing:
         self.color_corrections = None
         self.denoising_strength: float = 0
         
-        self.eta = opts.eta
+        self.ddim_eta = opts.ddim_eta
         self.ddim_discretize = opts.ddim_discretize
+        self.ka_eta = opts.ka_eta
         self.s_churn = opts.s_churn
         self.s_tmin = opts.s_tmin
         self.s_tmax = float('inf') # not representable as a standard ui option
@@ -124,8 +125,9 @@ class Processed:
         self.extra_generation_params = p.extra_generation_params
         self.index_of_first_image = index_of_first_image
 
-        self.eta = p.eta
+        self.ddim_eta = p.ddim_eta
         self.ddim_discretize = p.ddim_discretize
+        self.ka_eta = opts.ka_eta
         self.s_churn = p.s_churn
         self.s_tmin = p.s_tmin
         self.s_tmax = p.s_tmax
