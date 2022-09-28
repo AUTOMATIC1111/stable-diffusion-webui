@@ -22,6 +22,7 @@ from modules.paths import script_path
 from modules.shared import opts, cmd_opts
 import modules.shared as shared
 from modules.sd_samplers import samplers, samplers_for_img2img
+from modules.sd_hijack import model_hijack
 import modules.ldsr_model
 import modules.scripts
 import modules.gfpgan_model
@@ -333,6 +334,10 @@ def connect_reuse_seed(seed: gr.Number, reuse_seed: gr.Button, generation_info: 
         outputs=[seed, dummy_component]
     )
 
+def update_token_counter(text):
+    tokens, token_count, max_length = model_hijack.tokenize(text)
+    style_class = ' class="red"' if (token_count > max_length) else ""
+    return f"<span {style_class}>{token_count}/{max_length}</span>"
 
 def create_toprow(is_img2img):
     id_part = "img2img" if is_img2img else "txt2img"
@@ -342,11 +347,14 @@ def create_toprow(is_img2img):
             with gr.Row():
                 with gr.Column(scale=80):
                     with gr.Row():
-                        prompt = gr.Textbox(label="Prompt", elem_id="prompt", show_label=False, placeholder="Prompt", lines=2)
+                        prompt = gr.Textbox(label="Prompt", elem_id=f"{id_part}_prompt", show_label=False, placeholder="Prompt", lines=2)
 
                 with gr.Column(scale=1, elem_id="roll_col"):
                     roll = gr.Button(value=art_symbol, elem_id="roll", visible=len(shared.artist_db.artists) > 0)
                     paste = gr.Button(value=paste_symbol, elem_id="paste")
+                    token_counter = gr.HTML(value="<span></span>", elem_id=f"{id_part}_token_counter")
+                    hidden_button = gr.Button(visible=False, elem_id=f"{id_part}_token_button")
+                    hidden_button.click(fn=update_token_counter, inputs=[prompt], outputs=[token_counter])
 
                 with gr.Column(scale=10, elem_id="style_pos_col"):
                     prompt_style = gr.Dropdown(label="Style 1", elem_id=f"{id_part}_style_index", choices=[k for k, v in shared.prompt_styles.styles.items()], value=next(iter(shared.prompt_styles.styles.keys())), visible=len(shared.prompt_styles.styles) > 1)
@@ -861,31 +869,18 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
     with gr.Blocks() as modelmerger_interface:
         with gr.Row().style(equal_height=False):
             with gr.Column(variant='panel'):
-                gr.HTML(value="<p>A merger of the two checkpoints will be generated in your <b>/models</b> directory.</p>")
+                gr.HTML(value="<p>A merger of the two checkpoints will be generated in your <b>checkpoint</b> directory.</p>")
                 
                 with gr.Row():
-                    ckpt_name_list = sorted([x.model_name for x in modules.sd_models.checkpoints_list.values()])
-                    primary_model_name   = gr.Dropdown(ckpt_name_list, elem_id="modelmerger_primary_model_name", label="Primary Model Name")
-                    secondary_model_name = gr.Dropdown(ckpt_name_list, elem_id="modelmerger_secondary_model_name", label="Secondary Model Name")
+                    primary_model_name = gr.Dropdown(modules.sd_models.checkpoint_tiles(), elem_id="modelmerger_primary_model_name", label="Primary Model Name")
+                    secondary_model_name = gr.Dropdown(modules.sd_models.checkpoint_tiles(), elem_id="modelmerger_secondary_model_name", label="Secondary Model Name")
                 interp_amount = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Interpolation Amount', value=0.3)
                 interp_method = gr.Radio(choices=["Weighted Sum", "Sigmoid", "Inverse Sigmoid"], value="Weighted Sum", label="Interpolation Method")
-                submit = gr.Button(elem_id="modelmerger_merge", label="Merge", variant='primary')
+                save_as_half = gr.Checkbox(value=False, label="Safe as float16")
+                modelmerger_merge = gr.Button(elem_id="modelmerger_merge", label="Merge", variant='primary')
             
             with gr.Column(variant='panel'):
                 submit_result = gr.Textbox(elem_id="modelmerger_result", show_label=False)
-
-            submit.click(
-                fn=run_modelmerger,
-                inputs=[
-                    primary_model_name,
-                    secondary_model_name,
-                    interp_method,
-                    interp_amount
-                ],
-                outputs=[
-                    submit_result,
-                ]
-            )
 
     def create_setting_component(key):
         def fun():
@@ -910,6 +905,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
         return comp(label=info.label, value=fun, **(args or {}))
 
     components = []
+    component_dict = {}
 
     def run_settings(*args):
         changed = 0
@@ -965,7 +961,9 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
 
                     gr.HTML(elem_id="settings_header_text_{}".format(item.section[0]), value='<h1 class="gr-button-lg">{}</h1>'.format(item.section[1]))
 
-                components.append(create_setting_component(k))
+                component = create_setting_component(k)
+                component_dict[k] = component
+                components.append(component)
                 items_displayed += 1
 
         request_notifications = gr.Button(value='Request browser notifications', elem_id="request_notifications")
@@ -1016,6 +1014,22 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
             outputs=[result, text_settings],
         )
 
+        modelmerger_merge.click(
+            fn=run_modelmerger,
+            inputs=[
+                primary_model_name,
+                secondary_model_name,
+                interp_method,
+                interp_amount,
+                save_as_half,
+            ],
+            outputs=[
+                submit_result,
+                primary_model_name,
+                secondary_model_name,
+                component_dict['sd_model_checkpoint'],
+            ]
+        )
         paste_field_names = ['Prompt', 'Negative prompt', 'Steps', 'Face restoration', 'Seed', 'Size-1', 'Size-2']
         txt2img_fields = [field for field,name in txt2img_paste_fields if name in paste_field_names]
         img2img_fields = [field for field,name in img2img_paste_fields if name in paste_field_names]
