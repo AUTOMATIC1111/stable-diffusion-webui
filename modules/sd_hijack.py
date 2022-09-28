@@ -283,8 +283,9 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
         self.tokenizer = wrapped.tokenizer
         self.max_length = wrapped.max_length
         self.token_mults = {}
+        self.escapeChars = set()
 
-        tokens_with_parens = [(k, v) for k, v in self.tokenizer.get_vocab().items() if '(' in k or ')' in k or '[' in k or ']' in k]
+        tokens_with_parens = [(k, v) for k, v in self.tokenizer.get_vocab().items() if any([char in k for char in '()[]\\'])]
         for text, ident in tokens_with_parens:
             mult = 1.0
             for c in text:
@@ -296,7 +297,9 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
                     mult *= 1.1
                 if c == ')':
                     mult /= 1.1
-
+                if c == '\\':
+                  self.escapeChars.add(ident)
+                
             if mult != 1.0:
                 self.token_mults[ident] = mult
 
@@ -330,8 +333,13 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
                     token = tokens[i]
 
                     possible_matches = self.hijack.ids_lookup.get(token, None)
-
                     mult_change = self.token_mults.get(token) if opts.enable_emphasis else None
+
+                    if mult_change is not None and lastToken in self.escapeChars:
+                      mult_change = None
+                      remade_tokens.pop()
+                      multipliers.pop()
+                    
                     if mult_change is not None:
                         mult *= mult_change
                     elif possible_matches is None:
