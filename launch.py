@@ -4,7 +4,6 @@ import subprocess
 import os
 import sys
 import importlib.util
-import shlex
 
 dir_repos = "repositories"
 dir_tmp = "tmp"
@@ -107,7 +106,7 @@ if not is_installed("torch") or not is_installed("torchvision"):
     run(f'"{python}" -m {torch_command}', "Installing torch and torchvision", "Couldn't install torch")
 
 if not skip_torch_cuda_test and not use_cpu:
-    run_python("import torch; assert torch.cuda.is_available(), 'Torch is not able to use GPU; add --skip-torch-cuda-test to COMMANDINE_ARGS variable to disable this check'")
+    run_python("import torch; assert torch.cuda.is_available(), 'Torch is not able to use GPU; add --skip-torch-cuda-test to COMMANDLINE_ARGS variable to disable this check'")
 
 if not is_installed("gfpgan"):
     run_pip(f"install {gfpgan_package}", "gfpgan")
