@@ -113,6 +113,13 @@ if not skip_torch_cuda_test:
 if not is_installed("k_diffusion.sampling"):
     run_pip(f"install {k_diffusion_package}", "k-diffusion")
 
+if not check_run_python("import k_diffusion; import inspect; assert 'eta' in inspect.signature(k_diffusion.sampling.sample_euler_ancestral).parameters"):
+    print(f"k-diffusion does not have 'eta' parameter; reinstalling latest version")
+    try:
+        run_pip(f"install --upgrade --force-reinstall {k_diffusion_package}", "k-diffusion")
+    except RuntimeError as e:
+        print(str(e))
+
 if not is_installed("gfpgan"):
     run_pip(f"install {gfpgan_package}", "gfpgan")
 

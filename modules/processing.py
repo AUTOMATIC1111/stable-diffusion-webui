@@ -49,7 +49,7 @@ def apply_color_correction(correction, image):
 
 
 class StableDiffusionProcessing:
-    def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt="", styles=None, seed=-1, subseed=-1, subseed_strength=0, seed_resize_from_h=-1, seed_resize_from_w=-1, seed_enable_extras=True, sampler_index=0, batch_size=1, n_iter=1, steps=50, cfg_scale=7.0, width=512, height=512, restore_faces=False, tiling=False, do_not_save_samples=False, do_not_save_grid=False, extra_generation_params=None, overlay_images=None, negative_prompt=None):
+    def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt="", styles=None, seed=-1, subseed=-1, subseed_strength=0, seed_resize_from_h=-1, seed_resize_from_w=-1, seed_enable_extras=True, sampler_index=0, batch_size=1, n_iter=1, steps=50, cfg_scale=7.0, width=512, height=512, restore_faces=False, tiling=False, do_not_save_samples=False, do_not_save_grid=False, extra_generation_params=None, overlay_images=None, negative_prompt=None, eta=None):
         self.sd_model = sd_model
         self.outpath_samples: str = outpath_samples
         self.outpath_grids: str = outpath_grids
@@ -75,15 +75,15 @@ class StableDiffusionProcessing:
         self.do_not_save_grid: bool = do_not_save_grid
         self.extra_generation_params: dict = extra_generation_params or {}
         self.overlay_images = overlay_images
+        self.eta = eta
         self.paste_to = None
         self.color_corrections = None
         self.denoising_strength: float = 0
-        
-        self.eta = opts.eta
+
         self.ddim_discretize = opts.ddim_discretize
         self.s_churn = opts.s_churn
         self.s_tmin = opts.s_tmin
-        self.s_tmax = float('inf') # not representable as a standard ui option
+        self.s_tmax = float('inf')  # not representable as a standard ui option
         self.s_noise = opts.s_noise
         
         if not seed_enable_extras:
@@ -271,6 +271,7 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration
         "Variation seed strength": (None if p.subseed_strength == 0 else p.subseed_strength),
         "Seed resize from": (None if p.seed_resize_from_w == 0 or p.seed_resize_from_h == 0 else f"{p.seed_resize_from_w}x{p.seed_resize_from_h}"),
         "Denoising strength": getattr(p, 'denoising_strength', None),
+        "Eta": (None if p.sampler.eta == p.sampler.default_eta else p.sampler.eta),
     }
 
     generation_params.update(p.extra_generation_params)
