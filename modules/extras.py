@@ -188,8 +188,7 @@ def run_modelmerger(primary_model_name, secondary_model_name, interp_method, int
         # Finish the slerp algorithm
         s0 = np.sin(theta_0 - theta_t) / sin_theta_0
         s1 = sin_theta_t / sin_theta_0
-        v2 = s0 * theta0_copy + s1 * theta1_copy
-        return v2
+        return s0 * theta0_copy + s1 * theta1_copy
     
     if os.path.exists(primary_model_name):
         primary_model_filename = primary_model_name
