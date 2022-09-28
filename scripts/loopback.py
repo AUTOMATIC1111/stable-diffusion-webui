@@ -5,7 +5,7 @@ import modules.scripts as scripts
 import gradio as gr
 
 from modules import processing, shared, sd_samplers, images
-from modules.processing import Processed
+from modules.processing import Processed, StableDiffusionProcessingImg2Img
 from modules.sd_samplers import samplers
 from modules.shared import opts, cmd_opts, state
 
@@ -19,10 +19,12 @@ class Script(scripts.Script):
     def ui(self, is_img2img):
         loops = gr.Slider(minimum=1, maximum=32, step=1, label='Loops', value=4)
         denoising_strength_change_factor = gr.Slider(minimum=0.9, maximum=1.1, step=0.01, label='Denoising strength change factor', value=1)
+        inpaint_on_original = gr.Checkbox(label="Inpaint on original image", value=0)
 
-        return [loops, denoising_strength_change_factor]
 
-    def run(self, p, loops, denoising_strength_change_factor):
+        return [loops, denoising_strength_change_factor, inpaint_on_original]
+
+    def run(self, p: StableDiffusionProcessingImg2Img, loops, denoising_strength_change_factor, inpaint_on_original):
         processing.fix_seed(p)
         batch_count = p.n_iter
         p.extra_generation_params = {
@@ -44,6 +46,7 @@ class Script(scripts.Script):
 
         for n in range(batch_count):
             history = []
+            original_image = p.init_images[n]
 
             for i in range(loops):
                 p.n_iter = 1
@@ -54,7 +57,10 @@ class Script(scripts.Script):
                     p.color_corrections = initial_color_corrections
 
                 state.job = f"Iteration {i + 1}/{loops}, batch {n + 1}/{batch_count}"
-
+                
+                if(inpaint_on_original):
+                    p.init_images = [original_image]
+                
                 processed = processing.process_images(p)
 
                 if initial_seed is None:
