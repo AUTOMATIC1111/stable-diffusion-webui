@@ -55,7 +55,8 @@ def load_scripts(basedir):
     if not os.path.exists(basedir):
         return
 
-    for filename in os.listdir(basedir):
+    for filename in sorted(os.listdir(basedir)):
+        print(f"Loading script: {filename}")
         path = os.path.join(basedir, filename)
 
         if not os.path.isfile(path):
