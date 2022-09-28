@@ -1,4 +1,7 @@
 # Stable Diffusion Krita Plugin
+
+NOTE: This repository was originally a fork of https://github.com/sddebz/stable-diffusion-krita-plugin. I fixed the commit history in order to make further development easier. Thanks to https://github.com/sddebz for making both backend API and frontend Kritia plugin, and somehow preserving the Gradio WebUI despite that.
+
 A simple interface based on this repository: https://github.com/AUTOMATIC1111/stable-diffusion-webui
 
 Requires Krita 5.1
