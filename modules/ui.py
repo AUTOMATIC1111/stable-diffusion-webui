@@ -126,6 +126,11 @@ def save_files(js_data, images, index):
     return '', '', plaintext_to_html(f"Saved: {filenames[0]}")
 
 
+def get_image_parameters(images, index):
+    image = image_from_url_text(images[index])
+    return image.info.get("parameters",""), plaintext_to_html("")
+        
+
 def wrap_gradio_call(func):
     def f(*args, **kwargs):
         run_memmon = opts.memmon_poll_rate > 0 and not shared.mem_mon.disabled
@@ -394,7 +399,7 @@ def setup_progressbar(progressbar, preview, id_part):
     )
 
 
-def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
+def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger, run_history=None):
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
         txt2img_prompt, roll, txt2img_prompt_style, txt2img_negative_prompt, txt2img_prompt_style2, submit, _, txt2img_prompt_style_apply, txt2img_save_style, paste = create_toprow(is_img2img=False)
         dummy_component = gr.Label(visible=False)
@@ -881,6 +886,49 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
                 ]
             )
 
+    with gr.Blocks(analytics_enabled=False) as history_interface:
+        with gr.Row():
+            with gr.Column():
+                inputs=[
+                    gr.Textbox(value="", label="Regex to filter history by (blank returns all)"),
+                    gr.Slider(0, 50, 15, step=1, label="Number of images"),
+                ]
+                with gr.Row():
+                    btn = gr.Button(elem_id="history_update", label="Update")
+            with gr.Column():
+                history_gallery = gr.Gallery(
+                    elem_id='history_gallery',
+                    label="Past Generated Images",
+                    show_label=False,
+                ).style(
+                    grid=[5], height="auto"
+                )
+                generation_info = gr.HTML()
+                with gr.Row():
+                    get_params = gr.Button("Get Parameters")
+                    send_to_txt2img = gr.Button("Send to txt2img")
+
+                info = gr.HTML()
+                outputs=[
+                    history_gallery,
+                    info
+                ]
+
+            btn.click(
+                fn=run_history,
+                inputs=inputs,
+                outputs=outputs,
+            )
+
+            get_params.click(
+                fn=wrap_gradio_call(get_image_parameters),
+                _js="(x, y) => [x, selected_gallery_index()]",
+                inputs=[history_gallery, info],
+                outputs=[generation_info, info],
+            )
+            modules.generation_parameters_copypaste.connect_paste(send_to_txt2img, txt2img_paste_fields, generation_info, 'switch_to_txt2img')
+
+
     def create_setting_component(key):
         def fun():
             return opts.data[key] if key in opts.data else opts.data_labels[key].default
@@ -979,6 +1027,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
         (extras_interface, "Extras", "extras"),
         (pnginfo_interface, "PNG Info", "pnginfo"),
         (modelmerger_interface, "Checkpoint Merger", "modelmerger"),
+        (history_interface, "History", "prompt_history"),
         (settings_interface, "Settings", "settings"),
     ]
 

@@ -20,6 +20,7 @@ import modules.extras
 import modules.lowvram
 import modules.txt2img
 import modules.img2img
+import modules.history
 import modules.swinir as swinir
 import modules.sd_models
 
@@ -86,7 +87,8 @@ def webui():
         img2img=wrap_gradio_gpu_call(modules.img2img.img2img),
         run_extras=wrap_gradio_gpu_call(modules.extras.run_extras),
         run_pnginfo=modules.extras.run_pnginfo,
-        run_modelmerger=modules.extras.run_modelmerger
+        run_modelmerger=modules.extras.run_modelmerger,
+        run_history=wrap_gradio_gpu_call(modules.history.history),
     )
 
     demo.launch(
