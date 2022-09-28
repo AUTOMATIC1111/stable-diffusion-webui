@@ -3,6 +3,7 @@ from collections import namedtuple
 import torch
 
 import modules.shared as shared
+from modules.prompt_parser_weights import get_weighted_prompt
 
 re_prompt = re.compile(r'''
 (.*?)
@@ -86,6 +87,34 @@ ScheduledPromptConditioning = namedtuple("ScheduledPromptConditioning", ["end_at
 ScheduledPromptBatch = namedtuple("ScheduledPromptBatch", ["shape", "schedules"])
 
 
+def get_learned_conditioning_real(texts):
+    return shared.sd_model.get_learned_conditioning(texts)
+
+
+def get_learned_conditioning_weighted(texts):
+    weighted_prompts = list(map(lambda t: get_weighted_prompt((t, 1)), texts))
+    all_texts = []
+    for weighted_prompt in weighted_prompts:
+        for (prompt, weight) in weighted_prompt:
+            all_texts.append(prompt)
+
+    if len(all_texts) > len(texts):
+        all_conds = get_learned_conditioning_real(all_texts)
+        offset = 0
+
+        conds = []
+
+        for weighted_prompt in weighted_prompts:
+            c = torch.zeros_like(all_conds[offset])
+            for (i, (prompt, weight)) in enumerate(weighted_prompt):
+                c = torch.add(c, all_conds[i+offset], alpha=weight)
+            conds.append(c)
+            offset += len(weighted_prompt)
+        return conds
+    else:
+        return get_learned_conditioning_real(texts)
+
+
 def get_learned_conditioning(prompts, steps):
 
     res = []
@@ -101,7 +130,7 @@ def get_learned_conditioning(prompts, steps):
             continue
 
         texts = [x[1] for x in prompt_schedule]
-        conds = shared.sd_model.get_learned_conditioning(texts)
+        conds = get_learned_conditioning_weighted(texts)
 
         cond_schedule = []
         for i, (end_at_step, text) in enumerate(prompt_schedule):
