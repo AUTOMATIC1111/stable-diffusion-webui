@@ -631,23 +631,25 @@ def create_ui(wrap_gradio_gpu_call):
             )
 
             txt2img_paste_fields = [
-                (txt2img_prompt, "Prompt"),
-                (txt2img_negative_prompt, "Negative prompt"),
-                (steps, "Steps"),
-                (sampler_index, "Sampler"),
-                (restore_faces, "Face restoration"),
-                (cfg_scale, "CFG scale"),
-                (seed, "Seed"),
-                (width, "Size-1"),
-                (height, "Size-2"),
-                (batch_size, "Batch size"),
-                (subseed, "Variation seed"),
-                (subseed_strength, "Variation seed strength"),
-                (seed_resize_from_w, "Seed resize from-1"),
-                (seed_resize_from_h, "Seed resize from-2"),
-                (denoising_strength, "Denoising strength"),
-                (enable_hr, lambda d: "Denoising strength" in d),
-                (hr_options, lambda d: gr.Row.update(visible="Denoising strength" in d)),
+                (txt2img_prompt, "Prompt", "prompt"),
+                (txt2img_negative_prompt, "Negative prompt", "negative_prompt"),
+                (steps, "Steps", "steps"),
+                (sampler_index, "Sampler", "sampler"),
+                (restore_faces, "Face restoration", "restore_faces"),
+                (cfg_scale, "CFG scale", "cfg_scale"),
+                (seed, "Seed", "seed"),
+                (width, "Size-1", "width"),
+                (height, "Size-2", "height"),
+                (batch_size, "Batch size", "batch_size"),
+                (subseed, "Variation seed", "subseed"),
+                (subseed_strength, "Variation seed strength", "subseed_strength"),
+                (seed_resize_from_w, "Seed resize from-1", "seed_resize_from_w"),
+                (seed_resize_from_h, "Seed resize from-2", "seed_resize_from_h"),
+                (denoising_strength, "Denoising strength", "denoising_strength"),
+                (enable_hr, lambda d: "Denoising strength" in d,
+                 lambda d: "enable_hr" in d),
+                (hr_options, lambda d: gr.Row.update(visible="Denoising strength" in d),
+                 lambda d: gr.Row.update(visible="hr_options" in d)),
             ]
             modules.generation_parameters_copypaste.connect_paste(paste, txt2img_paste_fields, txt2img_prompt)
             token_button.click(fn=update_token_counter, inputs=[txt2img_prompt, steps], outputs=[token_counter])
@@ -874,21 +876,21 @@ def create_ui(wrap_gradio_gpu_call):
                 )
 
             img2img_paste_fields = [
-                (img2img_prompt, "Prompt"),
-                (img2img_negative_prompt, "Negative prompt"),
-                (steps, "Steps"),
-                (sampler_index, "Sampler"),
-                (restore_faces, "Face restoration"),
-                (cfg_scale, "CFG scale"),
-                (seed, "Seed"),
-                (width, "Size-1"),
-                (height, "Size-2"),
-                (batch_size, "Batch size"),
-                (subseed, "Variation seed"),
-                (subseed_strength, "Variation seed strength"),
-                (seed_resize_from_w, "Seed resize from-1"),
-                (seed_resize_from_h, "Seed resize from-2"),
-                (denoising_strength, "Denoising strength"),
+                (img2img_prompt, "Prompt", "prompt"),
+                (img2img_negative_prompt, "Negative prompt", "negative_prompt"),
+                (steps, "Steps", "steps"),
+                (sampler_index, "Sampler", "sampler"),
+                (restore_faces, "Face restoration", "restore_faces"),
+                (cfg_scale, "CFG scale", "cfg_scale"),
+                (seed, "Seed", "seed"),
+                (width, "Size-1", "width"),
+                (height, "Size-2", "height"),
+                (batch_size, "Batch size", "batch_size"),
+                (subseed, "Variation seed", "subseed"),
+                (subseed_strength, "Variation seed strength", "subseed_strength"),
+                (seed_resize_from_w, "Seed resize from-1", "seed_resize_from_w"),
+                (seed_resize_from_h, "Seed resize from-2", "seed_resize_from_h"),
+                (denoising_strength, "Denoising strength", "denoising_strength"),
             ]
             modules.generation_parameters_copypaste.connect_paste(paste, img2img_paste_fields, img2img_prompt)
             token_button.click(fn=update_token_counter, inputs=[img2img_prompt, steps], outputs=[token_counter])
@@ -1335,8 +1337,8 @@ Requested path was: {f}
             ]
         )
         paste_field_names = ['Prompt', 'Negative prompt', 'Steps', 'Face restoration', 'Seed', 'Size-1', 'Size-2']
-        txt2img_fields = [field for field,name in txt2img_paste_fields if name in paste_field_names]
-        img2img_fields = [field for field,name in img2img_paste_fields if name in paste_field_names]
+        txt2img_fields = [field for field,name,name_json in txt2img_paste_fields if name in paste_field_names]
+        img2img_fields = [field for field,name,name_json in img2img_paste_fields if name in paste_field_names]
         send_to_img2img.click(
             fn=lambda img, *args: (image_from_url_text(img),*args),
             _js="(gallery, ...args) => [extract_image_from_gallery_img2img(gallery), ...args]",
