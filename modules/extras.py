@@ -141,7 +141,7 @@ def run_pnginfo(image):
     return '', geninfo, info
 
 
-def run_modelmerger(primary_model_name, secondary_model_name, interp_method, interp_amount, save_as_half):
+def run_modelmerger(primary_model_name, secondary_model_name, interp_method, interp_amount, save_as_half, custom_name):
     # Linear interpolation (https://en.wikipedia.org/wiki/Linear_interpolation)
     def weighted_sum(theta0, theta1, alpha):
         return ((1 - alpha) * theta0) + (alpha * theta1)
@@ -190,6 +190,7 @@ def run_modelmerger(primary_model_name, secondary_model_name, interp_method, int
                 theta_0[key] = theta_0[key].half()
 
     filename = primary_model_info.model_name + '_' + str(round(interp_amount, 2)) + '-' + secondary_model_info.model_name + '_' + str(round((float(1.0) - interp_amount), 2)) + '-' + interp_method.replace(" ", "_") + '-merged.ckpt'
+    filename = filename if custom_name == '' else (custom_name + '.ckpt')
     output_modelname = os.path.join(shared.cmd_opts.ckpt_dir, filename)
 
     print(f"Saving to {output_modelname}...")
