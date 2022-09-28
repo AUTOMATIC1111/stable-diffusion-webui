@@ -140,7 +140,7 @@ def run_pnginfo(image):
     return '', geninfo, info
 
 
-def run_modelmerger(from_model_name, to_model_name, interp_method, interp_amount):
+def run_modelmerger(primary_model_name, secondary_model_name, interp_method, interp_amount):
     # Linear interpolation (https://en.wikipedia.org/wiki/Linear_interpolation)
     def weighted_sum(theta0, theta1, alpha):
         return ((1 - alpha) * theta0) + (alpha * theta1)
@@ -150,23 +150,23 @@ def run_modelmerger(from_model_name, to_model_name, interp_method, interp_amount
         alpha = alpha * alpha * (3 - (2 * alpha))
         return theta0 + ((theta1 - theta0) * alpha)
 
-    if os.path.exists(to_model_name):
-        to_model_filename = to_model_name
-        to_model_name = os.path.splitext(os.path.basename(to_model_name))[0]
+    if os.path.exists(secondary_model_name):
+        secondary_model_filename = secondary_model_name
+        secondary_model_name = os.path.splitext(os.path.basename(secondary_model_name))[0]
     else:
-        to_model_filename = 'models/' + to_model_name + '.ckpt'
+        secondary_model_filename = 'models/' + secondary_model_name + '.ckpt'
 
-    if os.path.exists(from_model_name):
-        from_model_filename = from_model_name
-        from_model_name = os.path.splitext(os.path.basename(from_model_name))[0]
+    if os.path.exists(primary_model_name):
+        primary_model_filename = primary_model_name
+        primary_model_name = os.path.splitext(os.path.basename(primary_model_name))[0]
     else:
-        from_model_filename = 'models/' + from_model_name + '.ckpt'
+        primary_model_filename = 'models/' + primary_model_name + '.ckpt'
 
-    print(f"Loading {to_model_filename}...")
-    model_0 = torch.load(to_model_filename, map_location='cpu')
+    print(f"Loading {secondary_model_filename}...")
+    model_0 = torch.load(secondary_model_filename, map_location='cpu')
 
-    print(f"Loading {from_model_filename}...")
-    model_1 = torch.load(from_model_filename, map_location='cpu')
+    print(f"Loading {primary_model_filename}...")
+    model_1 = torch.load(primary_model_filename, map_location='cpu')
     
     theta_0 = model_0['state_dict']
     theta_1 = model_1['state_dict']
@@ -186,7 +186,7 @@ def run_modelmerger(from_model_name, to_model_name, interp_method, interp_amount
         if 'model' in key and key not in theta_0:
             theta_0[key] = theta_1[key]
 
-    output_modelname = 'models/' + from_model_name + '_' + str(interp_amount) + '-' + to_model_name + '_' + str(float(1.0) - interp_amount) + '-' + interp_method.replace(" ", "_") + '-merged.ckpt'
+    output_modelname = 'models/' + primary_model_name + '_' + str(interp_amount) + '-' + secondary_model_name + '_' + str(float(1.0) - interp_amount) + '-' + interp_method.replace(" ", "_") + '-merged.ckpt'
     print(f"Saving to {output_modelname}...")
     torch.save(model_0, output_modelname)
 
