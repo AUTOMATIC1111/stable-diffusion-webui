@@ -451,7 +451,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
                         send_to_img2img = gr.Button('Send to img2img')
                         send_to_inpaint = gr.Button('Send to inpaint')
                         send_to_extras = gr.Button('Send to extras')
-                        button_id = "open_folder_hidden" if shared.cmd_opts.hide_ui_dir_config else 'open_folder'
+                        button_id = "hidden_element" if shared.cmd_opts.hide_ui_dir_config else 'open_folder'
                         open_txt2img_folder = gr.Button(folder_symbol, elem_id=button_id)
 
                 with gr.Group():
@@ -629,7 +629,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
                         img2img_send_to_img2img = gr.Button('Send to img2img')
                         img2img_send_to_inpaint = gr.Button('Send to inpaint')
                         img2img_send_to_extras = gr.Button('Send to extras')
-                        button_id = "open_folder_hidden" if shared.cmd_opts.hide_ui_dir_config else 'open_folder'
+                        button_id = "hidden_element" if shared.cmd_opts.hide_ui_dir_config else 'open_folder'
                         open_img2img_folder = gr.Button(folder_symbol, elem_id=button_id)
 
                 with gr.Group():
@@ -803,7 +803,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
                 html_info = gr.HTML()
                 extras_send_to_img2img = gr.Button('Send to img2img')
                 extras_send_to_inpaint = gr.Button('Send to inpaint')
-                button_id = "open_folder_hidden" if shared.cmd_opts.hide_ui_dir_config else ''
+                button_id = "hidden_element" if shared.cmd_opts.hide_ui_dir_config else ''
                 open_extras_folder = gr.Button('Open output directory', elem_id=button_id)
 
         submit.click(
