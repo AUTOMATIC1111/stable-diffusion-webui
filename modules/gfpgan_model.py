@@ -1,6 +1,7 @@
 import os
 import sys
 import traceback
+from glob import glob
 
 from modules import shared, devices
 from modules.shared import cmd_opts
@@ -11,14 +12,20 @@ import modules.face_restoration
 def gfpgan_model_path():
     from modules.shared import cmd_opts
 
+    filemask = 'GFPGAN*.pth'
+
+    if cmd_opts.gfpgan_model is not None:
+        return cmd_opts.gfpgan_model
+
     places = [script_path, '.', os.path.join(cmd_opts.gfpgan_dir, 'experiments/pretrained_models')]
-    files = [cmd_opts.gfpgan_model] + [os.path.join(dirname, cmd_opts.gfpgan_model) for dirname in places]
-    found = [x for x in files if os.path.exists(x)]
 
-    if len(found) == 0:
-        raise Exception("GFPGAN model not found in paths: " + ", ".join(files))
+    filename = None
+    for place in places:
+        filename = next(iter(glob(os.path.join(place, filemask))), None)
+        if filename is not None:
+            break
 
-    return found[0]
+    return filename
 
 
 loaded_gfpgan_model = None
@@ -34,7 +41,7 @@ def gfpgan():
     if gfpgan_constructor is None:
         return None
 
-    model = gfpgan_constructor(model_path=gfpgan_model_path(), upscale=1, arch='clean', channel_multiplier=2, bg_upsampler=None)
+    model = gfpgan_constructor(model_path=gfpgan_model_path() or 'https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.4.pth', upscale=1, arch='clean', channel_multiplier=2, bg_upsampler=None)
     model.gfpgan.to(shared.device)
     loaded_gfpgan_model = model
 

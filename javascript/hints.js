@@ -13,6 +13,8 @@ titles = {
     "Seed": "A value that determines the output of random number generator - if you create an image with same parameters and seed as another image, you'll get the same result",
     "\u{1f3b2}\ufe0f": "Set seed to -1, which will cause a new random number to be used every time",
     "\u267b\ufe0f": "Reuse seed from last generation, mostly useful if it was randomed",
+    "\u{1f3a8}": "Add a random artist to the prompt.",
+    "\u2199\ufe0f": "Read generation parameters from prompt into user interface.",
 
     "Inpaint a part of image": "Draw a mask over an image, and the script will regenerate the masked area with content according to prompt",
     "SD upscale": "Upscale image normally, split result into tiles, improve each tile using img2img, merge whole image back",
@@ -48,8 +50,6 @@ titles = {
     "Tiling": "Produce an image that can be tiled.",
     "Tile overlap": "For SD upscale, how much overlap in pixels should there be between tiles. Tiles overlap so that when they are merged back into one picture, there is no clearly visible seam.",
 
-    "Roll": "Add a random artist to the prompt.",
-
     "Variation seed": "Seed of a different picture to be mixed into the generation.",
     "Variation strength": "How strong of a variation to produce. At 0, there will be no effect. At 1, you will get the complete picture with variation seed (except for ancestral samplers, where you will just get something).",
     "Resize seed from height": "Make an attempt to produce a picture similar to what would have been produced with same seed at specified resolution",
@@ -57,12 +57,12 @@ titles = {
 
     "Interrogate": "Reconstruct prompt from existing image and put it into the prompt field.",
 
-    "Images filename pattern": "Use following tags to define how filenames for images are chosen: [steps], [cfg], [prompt], [prompt_spaces], [width], [height], [sampler], [seed], [model_hash], [prompt_words], [date]; leave empty for default.",
-    "Directory name pattern": "Use following tags to define how subdirectories for images and grids are chosen: [steps], [cfg], [prompt], [prompt_spaces], [width], [height], [sampler], [seed], [model_hash], [prompt_words], [date]; leave empty for default.",
+    "Images filename pattern": "Use following tags to define how filenames for images are chosen: [steps], [cfg], [prompt], [prompt_spaces], [width], [height], [styles], [sampler], [seed], [model_hash], [prompt_words], [date], [datetime], [job_timestamp]; leave empty for default.",
+    "Directory name pattern": "Use following tags to define how subdirectories for images and grids are chosen: [steps], [cfg], [prompt], [prompt_spaces], [width], [height], [styles], [sampler], [seed], [model_hash], [prompt_words], [date], [datetime], [job_timestamp]; leave empty for default.",
+    "Max prompt words": "Set the maximum number of words to be used in the [prompt_words] option; ATTENTION: If the words are too long, they may exceed the maximum length of the file path that the system can handle",
 
     "Loopback": "Process an image, use it as an input, repeat.",
     "Loops": "How many times to repeat processing an image and using it as input for the next iteration",
-
 
     "Style 1": "Style to apply; styles have components for both positive and negative prompts and apply to both",
     "Style 2": "Style to apply; styles have components for both positive and negative prompts and apply to both",

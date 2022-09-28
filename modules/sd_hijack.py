@@ -201,7 +201,7 @@ class StableDiffusionModelHijack:
         def process_file(path, filename):
             name = os.path.splitext(filename)[0]
 
-            data = torch.load(path)
+            data = torch.load(path, map_location="cpu")
 
             # textual inversion embeddings
             if 'string_to_param' in data:
@@ -217,8 +217,8 @@ class StableDiffusionModelHijack:
                 if len(emb.shape) == 1:
                     emb = emb.unsqueeze(0)
 
-            self.word_embeddings[name] = emb.detach()
-            self.word_embeddings_checksums[name] = f'{const_hash(emb.reshape(-1))&0xffff:04x}'
+            self.word_embeddings[name] = emb.detach().to(device)
+            self.word_embeddings_checksums[name] = f'{const_hash(emb.reshape(-1)*100)&0xffff:04x}'
 
             ids = tokenizer([name], add_special_tokens=False)['input_ids'][0]
 
@@ -245,7 +245,7 @@ class StableDiffusionModelHijack:
 
         if cmd_opts.opt_split_attention_v1:
             ldm.modules.attention.CrossAttention.forward = split_cross_attention_forward_v1
-        elif not cmd_opts.disable_opt_split_attention:
+        elif not cmd_opts.disable_opt_split_attention and (cmd_opts.opt_split_attention or torch.cuda.is_available()):
             ldm.modules.attention.CrossAttention.forward = split_cross_attention_forward
             ldm.modules.diffusionmodules.model.nonlinearity = nonlinearity_hijack
             ldm.modules.diffusionmodules.model.AttnBlock.forward = cross_attention_attnblock_forward
@@ -300,7 +300,7 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
         remade_batch_tokens = []
         id_start = self.wrapped.tokenizer.bos_token_id
         id_end = self.wrapped.tokenizer.eos_token_id
-        maxlen = self.wrapped.max_length - 2
+        maxlen = self.wrapped.max_length
         used_custom_terms = []
 
         cache = {}
@@ -400,8 +400,8 @@ class EmbeddingsWithFixes(torch.nn.Module):
             for fixes, tensor in zip(batch_fixes, inputs_embeds):
                 for offset, word in fixes:
                     emb = self.embeddings.word_embeddings[word]
-                    emb_len = min(tensor.shape[0]-offset, emb.shape[0])
-                    tensor[offset:offset+emb_len] = self.embeddings.word_embeddings[word][0:emb_len]
+                    emb_len = min(tensor.shape[0]-offset-1, emb.shape[0])
+                    tensor[offset+1:offset+1+emb_len] = self.embeddings.word_embeddings[word][0:emb_len]
 
         return inputs_embeds
 

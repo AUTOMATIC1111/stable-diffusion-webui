@@ -119,6 +119,7 @@ class ScriptRunner:
                 continue
 
             for control in controls:
+                control.custom_script_source = os.path.basename(script.filename)
                 control.visible = False
 
             inputs += controls
@@ -142,7 +143,6 @@ class ScriptRunner:
         )
 
         return inputs
-
 
     def run(self, p: StableDiffusionProcessing, *args):
         script_index = args[0]

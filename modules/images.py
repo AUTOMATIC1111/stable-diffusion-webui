@@ -209,8 +209,16 @@ def draw_prompt_matrix(im, width, height, all_prompts):
 
 
 def resize_image(resize_mode, im, width, height):
+    def resize(im, w, h):
+        if opts.upscaler_for_img2img is None or opts.upscaler_for_img2img == "None" or im.mode == 'L':
+            return im.resize((w, h), resample=LANCZOS)
+
+        upscaler = [x for x in shared.sd_upscalers if x.name == opts.upscaler_for_img2img][0]
+        return upscaler.upscale(im, w, h)
+
     if resize_mode == 0:
-        res = im.resize((width, height), resample=LANCZOS)
+        res = resize(im, width, height)
+
     elif resize_mode == 1:
         ratio = width / height
         src_ratio = im.width / im.height
@@ -218,9 +226,10 @@ def resize_image(resize_mode, im, width, height):
         src_w = width if ratio > src_ratio else im.width * height // im.height
         src_h = height if ratio <= src_ratio else im.height * width // im.width
 
-        resized = im.resize((src_w, src_h), resample=LANCZOS)
+        resized = resize(im, src_w, src_h)
         res = Image.new("RGB", (width, height))
         res.paste(resized, box=(width // 2 - src_w // 2, height // 2 - src_h // 2))
+
     else:
         ratio = width / height
         src_ratio = im.width / im.height
@@ -228,7 +237,7 @@ def resize_image(resize_mode, im, width, height):
         src_w = width if ratio < src_ratio else im.width * height // im.height
         src_h = height if ratio >= src_ratio else im.height * width // im.width
 
-        resized = im.resize((src_w, src_h), resample=LANCZOS)
+        resized = resize(im, src_w, src_h)
         res = Image.new("RGB", (width, height))
         res.paste(resized, box=(width // 2 - src_w // 2, height // 2 - src_h // 2))
 
@@ -245,37 +254,49 @@ def resize_image(resize_mode, im, width, height):
 
 
 invalid_filename_chars = '<>:"/\\|?*\n'
+invalid_filename_prefix = ' '
+invalid_filename_postfix = ' .'
 re_nonletters = re.compile(r'[\s'+string.punctuation+']+')
+max_filename_part_length = 128
 
 
 def sanitize_filename_part(text, replace_spaces=True):
     if replace_spaces:
         text = text.replace(' ', '_')
 
-    return text.translate({ord(x): '_' for x in invalid_filename_chars})[:128]
+    text = text.translate({ord(x): '_' for x in invalid_filename_chars})
+    text = text.lstrip(invalid_filename_prefix)[:max_filename_part_length]
+    text = text.rstrip(invalid_filename_postfix)
+    return text
 
 
 def apply_filename_pattern(x, p, seed, prompt):
+    max_prompt_words = opts.directories_max_prompt_words
+
     if seed is not None:
         x = x.replace("[seed]", str(seed))
+
     if prompt is not None:
-        x = x.replace("[prompt]", sanitize_filename_part(prompt)[:128])
-        x = x.replace("[prompt_spaces]", sanitize_filename_part(prompt, replace_spaces=False)[:128])
+        x = x.replace("[prompt]", sanitize_filename_part(prompt))
+        x = x.replace("[prompt_spaces]", sanitize_filename_part(prompt, replace_spaces=False))
         if "[prompt_words]" in x:
             words = [x for x in re_nonletters.split(prompt or "") if len(x) > 0]
             if len(words) == 0:
                 words = ["empty"]
+            x = x.replace("[prompt_words]", sanitize_filename_part(" ".join(words[0:max_prompt_words]), replace_spaces=False))
 
-            x = x.replace("[prompt_words]", " ".join(words[0:8]).strip())
     if p is not None:
         x = x.replace("[steps]", str(p.steps))
         x = x.replace("[cfg]", str(p.cfg_scale))
         x = x.replace("[width]", str(p.width))
         x = x.replace("[height]", str(p.height))
-        x = x.replace("[sampler]", sd_samplers.samplers[p.sampler_index].name)
+        x = x.replace("[styles]", sanitize_filename_part(", ".join(p.styles), replace_spaces=False))
+        x = x.replace("[sampler]", sanitize_filename_part(sd_samplers.samplers[p.sampler_index].name, replace_spaces=False))
 
     x = x.replace("[model_hash]", shared.sd_model.sd_model_hash)
     x = x.replace("[date]", datetime.date.today().isoformat())
+    x = x.replace("[datetime]", datetime.datetime.now().strftime("%Y%m%d%H%M%S"))
+    x = x.replace("[job_timestamp]", shared.state.job_timestamp)
 
     if cmd_opts.hide_ui_dir_config:
         x = re.sub(r'^[\\/]+|\.{2,}[\\/]+|[\\/]+\.{2,}', '', x)
@@ -303,7 +324,7 @@ def get_next_sequence_number(path, basename):
 
     return result + 1
 
-def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None):
+def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None, forced_filename=None, suffix=""):
     if short_filename or prompt is None or seed is None:
         file_decoration = ""
     elif opts.save_to_dirs:
@@ -314,7 +335,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     if file_decoration != "":
         file_decoration = "-" + file_decoration.lower()
 
-    file_decoration = apply_filename_pattern(file_decoration, p, seed, prompt)
+    file_decoration = apply_filename_pattern(file_decoration, p, seed, prompt) + suffix
 
     if extension == 'png' and opts.enable_pnginfo and info is not None:
         pnginfo = PngImagePlugin.PngInfo()
@@ -335,15 +356,19 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
 
     os.makedirs(path, exist_ok=True)
 
-    basecount = get_next_sequence_number(path, basename)
-    fullfn = "a.png"
-    fullfn_without_extension = "a"
-    for i in range(500):
-        fn = f"{basecount+i:05}" if basename == '' else f"{basename}-{basecount+i:04}"
-        fullfn = os.path.join(path, f"{fn}{file_decoration}.{extension}")
-        fullfn_without_extension = os.path.join(path, f"{fn}{file_decoration}")
-        if not os.path.exists(fullfn):
-            break
+    if forced_filename is None:
+        basecount = get_next_sequence_number(path, basename)
+        fullfn = "a.png"
+        fullfn_without_extension = "a"
+        for i in range(500):
+            fn = f"{basecount+i:05}" if basename == '' else f"{basename}-{basecount+i:04}"
+            fullfn = os.path.join(path, f"{fn}{file_decoration}.{extension}")
+            fullfn_without_extension = os.path.join(path, f"{fn}{file_decoration}")
+            if not os.path.exists(fullfn):
+                break
+    else:
+        fullfn = os.path.join(path, f"{forced_filename}.{extension}")
+        fullfn_without_extension = os.path.join(path, forced_filename)
 
     def exif_bytes():
         return piexif.dump({
