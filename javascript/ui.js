@@ -1,26 +1,15 @@
 // various functions for interation with ui.py not large enough to warrant putting them in separate files
 
 function selected_gallery_index(){
-    var buttons = gradioApp().querySelectorAll('[style="display: block;"].tabitem .gallery-item')
-    var button = gradioApp().querySelector('[style="display: block;"].tabitem .gallery-item.\\!ring-2')
+    const buttons = gradioApp().querySelectorAll('.gallery-item')
+    const button = gradioApp().querySelector('.gallery-item.\\!ring-2')
+    const index = Array.apply(null, buttons).indexOf(button)
 
-    var result = -1
-    buttons.forEach(function(v, i){ if(v==button) { result = i } })
-
-    return result
+    return index
 }
 
 function extract_image_from_gallery(gallery){
-    if(gallery.length == 1){
-        return gallery[0]
-    }
-
-    index = selected_gallery_index()
-
-    if (index < 0 || index >= gallery.length){
-        return [null]
-    }
-
+    const index = selected_gallery_index()
     return gallery[index];
 }
 

@@ -69,12 +69,6 @@ def plaintext_to_html(text):
 
 
 def image_from_url_text(filedata):
-    if type(filedata) == list:
-        if len(filedata) == 0:
-            return None
-
-        filedata = filedata[0]
-
     if filedata.startswith("data:image/png;base64,"):
         filedata = filedata[len("data:image/png;base64,"):]
 
