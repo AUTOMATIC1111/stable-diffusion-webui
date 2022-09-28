@@ -1,8 +1,8 @@
 // various functions for interation with ui.py not large enough to warrant putting them in separate files
 
 function selected_gallery_index(){
-    const buttons = gradioApp().querySelectorAll('.gallery-item')
-    const button = gradioApp().querySelector('.gallery-item.\\!ring-2')
+    const buttons = gradioApp().querySelectorAll('button.gallery-item')
+    const button = gradioApp().querySelector('button.gallery-item.\\!ring-2')
     const index = Array.apply(null, buttons).indexOf(button)
 
     return index
