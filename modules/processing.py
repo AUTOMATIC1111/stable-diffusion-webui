@@ -79,7 +79,7 @@ class StableDiffusionProcessing:
         self.color_corrections = None
         self.denoising_strength: float = 0
         
-        self.ddim_eta = opts.ddim_eta
+        self.eta = opts.eta
         self.ddim_discretize = opts.ddim_discretize
         self.s_churn = opts.s_churn
         self.s_tmin = opts.s_tmin
@@ -124,7 +124,7 @@ class Processed:
         self.extra_generation_params = p.extra_generation_params
         self.index_of_first_image = index_of_first_image
 
-        self.ddim_eta = p.ddim_eta
+        self.eta = p.eta
         self.ddim_discretize = p.ddim_discretize
         self.s_churn = p.s_churn
         self.s_tmin = p.s_tmin
