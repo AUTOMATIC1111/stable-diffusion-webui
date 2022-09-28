@@ -18,7 +18,10 @@ import gradio as gr
 import gradio.utils
 import gradio.routes
 
+from modules.images import save_image
 from modules.paths import script_path
+from modules.processing import create_infotext
+from modules.processing import StableDiffusionProcessing
 from modules.shared import opts, cmd_opts
 import modules.shared as shared
 from modules.sd_samplers import samplers, samplers_for_img2img
@@ -97,31 +100,88 @@ def save_files(js_data, images, index):
     filenames = []
 
     data = json.loads(js_data)
-    
+
     if index > -1 and opts.save_selected_only and (index > 0 or not opts.return_grid): # ensures we are looking at a specific non-grid picture, and we have save_selected_only
         images = [images[index]]
         data["seed"] += (index - 1 if opts.return_grid else index)
 
-    with open(os.path.join(opts.outdir_save, "log.csv"), "a", encoding="utf8", newline='') as file:
+    with open(
+        os.path.join(opts.outdir_save, "log.csv"),
+        "a",
+        encoding="utf8",
+        newline=''
+    ) as file:
         at_start = file.tell() == 0
         writer = csv.writer(file)
         if at_start:
-            writer.writerow(["prompt", "seed", "width", "height", "sampler", "cfgs", "steps", "filename", "negative_prompt"])
+            writer.writerow([
+                "prompt",
+                "seed",
+                "width",
+                "height",
+                "sampler",
+                "cfgs",
+                "steps",
+                "filename",
+                "negative_prompt",
+            ])
 
-        filename_base = str(int(time.time() * 1000))
+        # filename_base = str(int(time.time() * 1000))
         for i, filedata in enumerate(images):
-            filename = filename_base + ("" if len(images) == 1 else "-" + str(i + 1)) + ".png"
-            filepath = os.path.join(opts.outdir_save, filename)
+            # needs_dash = ("" if len(images) == 1 else "-" + str(i + 1))
+            # filename = f"{filename_base}{needs_dash}.png"
 
-            if filedata.startswith("data:image/png;base64,"):
-                filedata = filedata[len("data:image/png;base64,"):]
+            image = image_from_url_text(filedata)
+            p = StableDiffusionProcessing(
+                sd_model=data.get('sd_model'),
+                prompt=data['prompt'],
+                seed=data['seed'],
+                width=data['width'],
+                height=data['height'],
+                sampler_index=data['sampler_index'],
+                steps=data['steps'],
+                cfg_scale=data['cfg_scale'],
+                restore_faces=data['restore_faces'],
+                tiling=data.get('tiling'),
+                negative_prompt=data['negative_prompt'],
+                styles=[],
+                seed_resize_from_w=0,
+                seed_resize_from_h=0,
+                denoising_strength=data.get('denoising_strength', 0.75),
+            )
+            shared.prompt_styles.apply_styles(p)
 
-            with open(filepath, "wb") as imgfile:
-                imgfile.write(base64.decodebytes(filedata.encode('utf-8')))
+            info = create_infotext(p, [p.prompt], [p.seed], [p.subseed], {})
+            filenames.append(save_image(
+                image,
+                opts.outdir_save,
+                "",
+                seed=p.seed,
+                prompt=p.prompt,
+                extension='png',
+                info=info,
+                short_filename=False,
+                no_prompt=False,
+                grid=False,
+                pnginfo_section_name='parameters',
+                p=p,
+                existing_info=image.info,
+                forced_filename=None,
+                suffix="",
+                save_button=True,
+            ))
 
-            filenames.append(filename)
-
-        writer.writerow([data["prompt"], data["seed"], data["width"], data["height"], data["sampler"], data["cfg_scale"], data["steps"], filenames[0], data["negative_prompt"]])
+        writer.writerow(
+            [data["prompt"],
+             data["seed"],
+             data["width"],
+             data["height"],
+             data["sampler"],
+             data["cfg_scale"],
+             data["steps"],
+             filenames[0],
+             data["negative_prompt"]]
+        )
 
     return '', '', plaintext_to_html(f"Saved: {filenames[0]}")
 
@@ -819,14 +879,14 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
                 html_info,
             ]
         )
-     
+
         extras_send_to_img2img.click(
             fn=lambda x: image_from_url_text(x),
             _js="extract_image_from_gallery_img2img",
             inputs=[result_images],
             outputs=[init_img],
         )
-        
+
         extras_send_to_inpaint.click(
             fn=lambda x: image_from_url_text(x),
             _js="extract_image_from_gallery_img2img",
@@ -858,13 +918,13 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
         with gr.Row().style(equal_height=False):
             with gr.Column(variant='panel'):
                 gr.HTML(value="<p>A merger of the two checkpoints will be generated in your <b>/models</b> directory.</p>")
-                
+
                 modelname_0 = gr.Textbox(elem_id="modelmerger_modelname_0", label="Model Name (to)")
                 modelname_1 = gr.Textbox(elem_id="modelmerger_modelname_1", label="Model Name (from)")
                 interp_method = gr.Radio(choices=["Weighted Sum", "Sigmoid"], value="Weighted Sum", label="Interpolation Method")
                 interp_amount = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Interpolation Amount', value=0.3)
                 submit = gr.Button(elem_id="modelmerger_merge", label="Merge", variant='primary')
-            
+
             with gr.Column(variant='panel'):
                 submit_result = gr.Textbox(elem_id="modelmerger_result", show_label=False)
 
@@ -999,7 +1059,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
             for interface, label, ifid in interfaces:
                 with gr.TabItem(label, id=ifid):
                     interface.render()
-        
+
         if os.path.exists(os.path.join(script_path, "notification.mp3")):
             audio_notification = gr.Audio(interactive=False, value=os.path.join(script_path, "notification.mp3"), elem_id="audio_notification", visible=False)
 
@@ -1078,10 +1138,10 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
 
             if getattr(obj,'custom_script_source',None) is not None:
               key = 'customscript/' + obj.custom_script_source + '/' + key
-            
+
             if getattr(obj, 'do_not_save_to_config', False):
                 return
-            
+
             saved_value = ui_settings.get(key, None)
             if saved_value is None:
                 ui_settings[key] = getattr(obj, field)
@@ -1105,10 +1165,10 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
 
         if type(x) == gr.Textbox:
             apply_field(x, 'value')
-        
+
         if type(x) == gr.Number:
             apply_field(x, 'value')
-        
+
     visit(txt2img_interface, loadsave, "txt2img")
     visit(img2img_interface, loadsave, "img2img")
     visit(extras_interface, loadsave, "extras")
