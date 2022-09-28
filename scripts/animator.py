@@ -1,7 +1,7 @@
 #
 # Animation Script v0.5
 # Inspired by Deforum Notebook
-# Requires ffmpeg installed and accessible in PATH
+# Save as animation_v0.5.py in the scripts folder. Restart webui.
 #
 import os, time
 import modules.scripts as scripts
@@ -20,17 +20,15 @@ from PIL import Image, ImageFilter
 def zoom_at2(img, x, y, zoom):
     w, h = img.size
     z = float(zoom)
-    
     #Zoom image
     img2 = img.resize((int(w*z), int(h*z)), Image.Resampling.LANCZOS)    
 
     #Crate background image
-    padding=2    
+    padding=4    
     resimg = img.resize((w+padding*2, h+padding*2), Image.Resampling.LANCZOS).\
                 filter(ImageFilter.GaussianBlur(5)).\
                 crop((padding,padding,w+padding,h+padding))
-    
-    #Paste scaled image over blurred background.
+        
     resimg.paste(img2, (int((w - img2.size[0])/2 + x),int((h - img2.size[1])/2 + y)))
 
     return resimg
@@ -132,21 +130,25 @@ class Script(scripts.Script):
  
     def ui(self, is_img2img):
         
-        i1 = gr.HTML("<p style=\"margin-bottom:0.75em\">Video Format</p>")
-        vid_gif = gr.Checkbox(label='Video: GIF', value=False)
-        vid_mp4 = gr.Checkbox(label='Video: MP4', value=False)
-        vid_webm = gr.Checkbox(label='Video: WEBM', value=True)
+        i1 = gr.HTML("<p style=\"margin-bottom:0.75em\">Render these video formats:</p>")
+        with gr.Row():
+            vid_gif = gr.Checkbox(label='GIF', value=False)
+            vid_mp4 = gr.Checkbox(label='MP4', value=False)
+            vid_webm = gr.Checkbox(label='WEBM', value=True)
         
         i2 = gr.HTML("<p style=\"margin-bottom:0.75em\">Animation Parameters</p>")
-        totaltime = gr.Textbox(label="Total Animation Length (s)", visible=True, lines=1, value="10.0")
-        fps = gr.Textbox(label="Framerate", visible=True, lines=1, value="15")
+        with gr.Row():
+            totaltime = gr.Textbox(label="Total Animation Length (s)", visible=True, lines=1, value="10.0")
+            fps = gr.Textbox(label="Framerate", visible=True, lines=1, value="15")
         
-        denoising_strength = gr.Slider(label="Denoising Strength, overrides img2img", minimum=0.0, maximum=1.0, step=0.01, value=0.40)
-        noise_decay =  gr.Checkbox(label='Denoising Decay', value=True)
+        with gr.Row():
+            denoising_strength = gr.Slider(label="Denoising Strength, overrides img2img", minimum=0.0, maximum=1.0, step=0.01, value=0.40)
+            noise_decay =  gr.Checkbox(label='Denoising Decay', value=False)
 
-        zoom_factor = gr.Textbox(label="Zoom Factor", visible=True, lines=1, value="1.0")
-        x_shift = gr.Textbox(label="X Pixel Shift", visible=True, lines=1, value="0")
-        y_shift = gr.Textbox(label="Y Pixel Shift", visible=True, lines=1, value="0")
+        with gr.Row():
+            zoom_factor = gr.Textbox(label="Zoom Factor (scale/s)", visible=True, lines=1, value="1.0")
+            x_shift = gr.Textbox(label="X Pixel Shift (pixels/s)", visible=True, lines=1, value="0")
+            y_shift = gr.Textbox(label="Y Pixel Shift (pixels/s)", visible=True, lines=1, value="0")
         
         i3 = gr.HTML("<p style=\"margin-bottom:0.75em\">Prompt Template, applied to each keyframe below</p>")
         tmpl_pos = gr.Textbox(label="Positive Prompts", visible=True, lines=1, value="")
@@ -217,7 +219,7 @@ class Script(scripts.Script):
             "Keyframe Data": prompts, 
         }
  
-        #Check prompts. If not prompt give, but templates exist, set them.
+        #Check prompts. If no prompt given, but templates exist, set them.
         if len(p.prompt.strip(",").strip()) == 0:           p.prompt =          tmpl_pos
         if len(p.negative_prompt.strip(",").strip()) == 0:  p.negative_prompt = tmpl_neg
         
@@ -227,11 +229,13 @@ class Script(scripts.Script):
         
         p.batch_size = 1
         p.n_iter = 1
-        p.denoising_strength = denoising_strength
+        p.denoising_strength = denoising_strength 
         #For half life, or 0.5x every second, formula:
         # decay_mult =  1/(2^(1/FPS))
         decay_mult = 1 / (2 ** (1 / int(fps)))
-
+        #Zoom FPS scaler = zoom ^ (1/FPS)
+        zoom_factor = float(zoom_factor) ** (1/float(fps))
+        
         output_images, info = None, None
         initial_seed = None
         initial_info = None
@@ -260,7 +264,7 @@ class Script(scripts.Script):
                 # Desnoise | Zoom | X Shift | Y shift | Positive Prompts | Negative Prompts | Seed
                 print(f"\r\nKeyframe at {i}: {myprompts[i]}\r\n")
                 p.denoising_strength =  float(myprompts[i][0])
-                zoom_factor =           float(myprompts[i][1])
+                zoom_factor =           float(myprompts[i][1]) ** (1/float(fps))
                 x_shift =               float(myprompts[i][2])
                 y_shift =               float(myprompts[i][3])
 
