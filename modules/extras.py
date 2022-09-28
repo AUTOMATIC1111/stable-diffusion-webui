@@ -193,14 +193,7 @@ def run_modelmerger(primary_model_name, secondary_model_name, interp_method, int
         if 'model' in key and key not in theta_0:
             theta_0[key] = theta_1[key]
     
-    # Respect --ckpt-dir command-line argument
-    output_modelname = ''
-    if os.path.exists(cmd_opts.ckpt_dir):
-        output_modelname = cmd_opts.ckpt_dir
-    else:
-        output_modelname = 'models/'
-    
-    output_modelname = os.path.join(output_modelname, primary_model_name + '_' + str(round(interp_amount,2)) + '-' + secondary_model_name + '_' + str(round((float(1.0) - interp_amount),2)) + '-' + interp_method.replace(" ", "_") + '-merged.ckpt')
+    output_modelname = os.path.join(cmd_opts.ckpt_dir, primary_model_name + '_' + str(round(interp_amount,2)) + '-' + secondary_model_name + '_' + str(round((float(1.0) - interp_amount),2)) + '-' + interp_method.replace(" ", "_") + '-merged.ckpt')
     
     print(f"Saving to {output_modelname}...")
     torch.save(primary_model, output_modelname)

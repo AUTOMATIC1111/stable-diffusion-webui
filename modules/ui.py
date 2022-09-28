@@ -869,7 +869,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
     with gr.Blocks() as modelmerger_interface:
         with gr.Row().style(equal_height=False):
             with gr.Column(variant='panel'):
-                gr.HTML(value="<p>A merger of the two checkpoints will be generated in your <b>/checkpoint</b> directory.</p>")
+                gr.HTML(value="<p>A merger of the two checkpoints will be generated in your <b>checkpoint</b> directory.</p>")
                 
                 with gr.Row():
                     ckpt_name_list = sorted([x.model_name for x in modules.sd_models.checkpoints_list.values()])
