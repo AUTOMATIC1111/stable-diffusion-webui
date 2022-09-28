@@ -46,6 +46,11 @@ sampler_extra_params = {
     'sample_dpm_2_ancestral': ['eta'],
 }
 
+sampler_parameter_mappingFunctions = {
+  ('sample_euler_ancestral','eta'): lambda x: 1-x,
+  ('sample_dpm_2_ancestral','eta'): lambda x: 1-x
+}
+
 def setup_img2img_steps(p, steps=None):
     if opts.img2img_fix_steps or steps is not None:
         steps = int((steps or p.steps) / min(p.denoising_strength, 0.999)) if p.denoising_strength > 0 else 0
@@ -281,7 +286,8 @@ class KDiffusionSampler:
         extra_params_kwargs = {}
         for param_name in self.extra_params:
             if hasattr(p, param_name) and param_name in inspect.signature(self.func).parameters:
-                extra_params_kwargs[param_name] = getattr(p, param_name)
+                mappingFunc = sampler_parameter_mappingFunctions.get((self.funcname,param_name),lambda x: x)
+                extra_params_kwargs[param_name] = mappingFunc(getattr(p, param_name))
 
         return self.func(self.model_wrap_cfg, xi, sigma_sched, extra_args={'cond': conditioning, 'uncond': unconditional_conditioning, 'cond_scale': p.cfg_scale}, disable=False, callback=self.callback_state, **extra_params_kwargs)
 
@@ -303,7 +309,8 @@ class KDiffusionSampler:
         extra_params_kwargs = {}
         for param_name in self.extra_params:
             if hasattr(p, param_name) and param_name in inspect.signature(self.func).parameters:
-                extra_params_kwargs[param_name] = getattr(p, param_name)
+                mappingFunc = sampler_parameter_mappingFunctions.get((self.funcname,param_name),lambda x: x)
+                extra_params_kwargs[param_name] = mappingFunc(getattr(p, param_name))
 
         samples = self.func(self.model_wrap_cfg, x, sigmas, extra_args={'cond': conditioning, 'uncond': unconditional_conditioning, 'cond_scale': p.cfg_scale}, disable=False, callback=self.callback_state, **extra_params_kwargs)
 
