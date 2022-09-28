@@ -156,6 +156,41 @@ def run_modelmerger(primary_model_name, secondary_model_name, interp_method, int
         alpha = 0.5 - math.sin(math.asin(1.0 - 2.0 * alpha) / 3.0)
         return theta0 + ((theta1 - theta0) * alpha)
 
+    # Derived from https://gist.github.com/laundmo/b224b1f4c8ef6ca5fe47e132c8deab56
+    def lerp(theta0, theta1, alpha):
+        """Linear interpolate on the scale given by a to b, using t as the point on that scale.
+        Examples
+        --------
+            50 == lerp(0, 100, 0.5)
+            4.2 == lerp(1, 5, 0.8)
+        """
+        return (1 - alpha) * theta0 + alpha * theta1
+
+    # Derived from https://gist.github.com/dvschultz/3af50c40df002da3b751efab1daddf2c
+    def slerp(theta0, theta1, alpha):
+        # Copy the vectors to reuse them later
+        theta0_copy = np.copy(theta0)
+        theta1_copy = np.copy(theta1)
+        # Normalize the vectors to get the directions and angles
+        theta0 = theta0 / np.linalg.norm(theta0)
+        theta1 = theta1 / np.linalg.norm(theta1)
+        # Dot product with the normalized vectors (can't use np.dot in W)
+        dot = theta0 * theta1
+        # If absolute value of dot product is almost 1, vectors are ~colineal, so use lerp
+        # if np.abs(dot) >= 1.0:
+        #     return lerp(alpha, theta0_copy, theta1_copy)
+        # Calculate initial angle between v0 and v1
+        theta_0 = np.arccos(dot)
+        sin_theta_0 = np.sin(theta_0)
+        # Angle at timestep t
+        theta_t = theta_0 * alpha
+        sin_theta_t = np.sin(theta_t)
+        # Finish the slerp algorithm
+        s0 = np.sin(theta_0 - theta_t) / sin_theta_0
+        s1 = sin_theta_t / sin_theta_0
+        v2 = s0 * theta0_copy + s1 * theta1_copy
+        return v2
+    
     if os.path.exists(primary_model_name):
         primary_model_filename = primary_model_name
         primary_model_name = os.path.splitext(os.path.basename(primary_model_name))[0]
@@ -180,7 +215,9 @@ def run_modelmerger(primary_model_name, secondary_model_name, interp_method, int
     theta_funcs = {
         "Weighted Sum": weighted_sum,
         "Sigmoid": sigmoid,
-        "Inverse Sigmoid": inv_sigmoid
+        "Inverse Sigmoid": inv_sigmoid,
+        "Lerp": lerp,
+        "Slerp": slerp
     }
     theta_func = theta_funcs[interp_method]
 
