@@ -7,6 +7,8 @@ import tqdm
 import datetime
 
 import modules.artists
+import modules.keywords
+import modules.people
 from modules.paths import script_path, sd_path
 from modules.devices import get_optimal_device
 import modules.styles
@@ -88,6 +90,8 @@ class State:
 state = State()
 
 artist_db = modules.artists.ArtistsDatabase(os.path.join(script_path, 'artists.csv'))
+keyword_db = modules.keywords.KeywordsDatabase(os.path.join(script_path, 'keywords.csv'))
+person_db = modules.people.PeopleDatabase(os.path.join(script_path, 'people.csv'))
 
 styles_filename = cmd_opts.styles_file
 prompt_styles = modules.styles.StyleDatabase(styles_filename)
@@ -199,6 +203,8 @@ options_templates.update(options_section(('sd', "Stable Diffusion"), {
     "enable_batch_seeds": OptionInfo(True, "Make K-diffusion samplers produce same images in a batch as when making a single image"),
     "filter_nsfw": OptionInfo(False, "Filter NSFW content"),
     "random_artist_categories": OptionInfo([], "Allowed categories for random artists selection when using the Roll button", gr.CheckboxGroup, {"choices": artist_db.categories()}),
+    "random_keyword_categories": OptionInfo([], "Allowed categories for random keywords selection when using the \U0001F3F7 button", gr.CheckboxGroup, {"choices": keyword_db.categories()}),
+    "random_person_categories": OptionInfo([], "Allowed categories for random people selection when using the \U0001F9DD button", gr.CheckboxGroup, {"choices": person_db.categories()}),
 }))
 
 options_templates.update(options_section(('interrogate', "Interrogate Options"), {

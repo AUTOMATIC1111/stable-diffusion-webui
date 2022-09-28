@@ -60,6 +60,8 @@ random_symbol = '\U0001f3b2\ufe0f'  # 🎲️
 reuse_symbol = '\u267b\ufe0f'  # ♻️
 art_symbol = '\U0001f3a8'  # 🎨
 paste_symbol = '\u2199\ufe0f'  # ↙
+keyword_symbol = "\U0001F3F7"
+people_symbol = "\U0001F9DD"
 
 
 def plaintext_to_html(text):
@@ -220,6 +222,60 @@ def roll_artist(prompt):
 
     return prompt + ", " + artist.name if prompt != '' else artist.name
 
+def roll_keyword(prompt):
+    allowed_cats = set([x for x in shared.keyword_db.categories() if len(opts.random_keyword_categories)==0 or x in opts.random_keyword_categories])
+    allKeywords = shared.keyword_db.keywords
+    allNames = []
+    check = []
+    formattedPrompt = prompt.split(', ')
+
+    for keyword in allKeywords:
+        if keyword.category in allowed_cats:
+            allNames.append(keyword.name)
+
+    for word in formattedPrompt:
+        if word in allNames:
+            check.append(word)
+
+    if len(allNames) != len(check):
+        keyword = random.choice([x for x in shared.keyword_db.keywords if x.category in allowed_cats and x.name not in check])
+    else:
+        keyword = ""
+
+    if keyword == "":
+            return prompt
+    if prompt != '':
+        return prompt + ", " + keyword.name
+    else: 
+        return keyword.name
+
+def roll_people(prompt):
+    allowed_cats = set([x for x in shared.person_db.categories() if len(opts.random_person_categories)==0 or x in opts.random_person_categories])
+    allPeople = shared.person_db.people
+    allNames = []
+    check = []
+    formattedPrompt = prompt.split(', ')
+
+    for person in allPeople:
+        if person.category in allowed_cats:
+            allNames.append(person.name)
+
+    for word in formattedPrompt:
+        if word in allNames:
+            check.append(word)
+
+    if len(allNames) != len(check):
+        people = random.choice([x for x in shared.person_db.people if x.category in allowed_cats and x.name not in check])
+    else:
+        people = ""
+
+    if people == "":
+            return prompt
+    if prompt != '':
+        return prompt + ", " + people.name
+    else: 
+        return people.name
+
 
 def visit(x, func, path=""):
     if hasattr(x, 'children'):
@@ -343,6 +399,10 @@ def create_toprow(is_img2img):
                 with gr.Column(scale=1, elem_id="roll_col"):
                     roll = gr.Button(value=art_symbol, elem_id="roll", visible=len(shared.artist_db.artists) > 0)
                     paste = gr.Button(value=paste_symbol, elem_id="paste")
+                with gr.Column(scale=1, elem_id="roll_col"):
+                    with gr.Row():
+                        keyword = gr.Button(value=keyword_symbol, elem_id="keyword", visible=len(shared.keyword_db.keywords) > 0)
+                        person = gr.Button(value=people_symbol, elem_id="person", visible=len(shared.person_db.people) > 0)
 
                 with gr.Column(scale=10, elem_id="style_pos_col"):
                     prompt_style = gr.Dropdown(label="Style 1", elem_id=f"{id_part}_style_index", choices=[k for k, v in shared.prompt_styles.styles.items()], value=next(iter(shared.prompt_styles.styles.keys())), visible=len(shared.prompt_styles.styles) > 1)
@@ -373,7 +433,7 @@ def create_toprow(is_img2img):
                 prompt_style_apply = gr.Button('Apply style', elem_id="style_apply")
                 save_style = gr.Button('Create style', elem_id="style_create")
 
-    return prompt, roll, prompt_style, negative_prompt, prompt_style2, submit, interrogate, prompt_style_apply, save_style, paste
+    return prompt, roll, keyword, person, prompt_style, negative_prompt, prompt_style2, submit, interrogate, prompt_style_apply, save_style, paste
 
 
 def setup_progressbar(progressbar, preview, id_part):
@@ -396,7 +456,7 @@ def setup_progressbar(progressbar, preview, id_part):
 
 def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
-        txt2img_prompt, roll, txt2img_prompt_style, txt2img_negative_prompt, txt2img_prompt_style2, submit, _, txt2img_prompt_style_apply, txt2img_save_style, paste = create_toprow(is_img2img=False)
+        txt2img_prompt, roll, keyword, person, txt2img_prompt_style, txt2img_negative_prompt, txt2img_prompt_style2, submit, _, txt2img_prompt_style_apply, txt2img_save_style, paste = create_toprow(is_img2img=False)
         dummy_component = gr.Label(visible=False)
 
         with gr.Row(elem_id='txt2img_progress_row'):
@@ -522,6 +582,26 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
                 ]
             )
 
+            keyword.click(
+                fn=roll_keyword,
+                inputs=[
+                    txt2img_prompt,
+                ],
+                outputs=[
+                    txt2img_prompt,
+                ]
+            )
+
+            person.click(
+                fn=roll_people,
+                inputs=[
+                    txt2img_prompt,
+                ],
+                outputs=[
+                    txt2img_prompt,
+                ]
+            )
+
             txt2img_paste_fields = [
                 (txt2img_prompt, "Prompt"),
                 (txt2img_negative_prompt, "Negative prompt"),
@@ -544,7 +624,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
             modules.generation_parameters_copypaste.connect_paste(paste, txt2img_paste_fields, txt2img_prompt)
 
     with gr.Blocks(analytics_enabled=False) as img2img_interface:
-        img2img_prompt, roll, img2img_prompt_style, img2img_negative_prompt, img2img_prompt_style2, submit, img2img_interrogate, img2img_prompt_style_apply, img2img_save_style, paste = create_toprow(is_img2img=True)
+        img2img_prompt, roll, keyword, person, img2img_prompt_style, img2img_negative_prompt, img2img_prompt_style2, submit, img2img_interrogate, img2img_prompt_style_apply, img2img_save_style, paste = create_toprow(is_img2img=True)
 
         with gr.Row(elem_id='img2img_progress_row'):
             with gr.Column(scale=1):
@@ -721,6 +801,25 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
                 ],
                 outputs=[
                     img2img_prompt,
+                ]
+            )
+
+            keyword.click(
+                fn=roll_keyword,
+                inputs=[
+                    txt2img_prompt,
+                ],
+                outputs=[
+                    txt2img_prompt,
+                ]
+            )
+            person.click(
+                fn=roll_people,
+                inputs=[
+                    txt2img_prompt,
+                ],
+                outputs=[
+                    txt2img_prompt,
                 ]
             )
 
