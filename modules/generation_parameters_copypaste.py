@@ -1,3 +1,4 @@
+import json
 import re
 import gradio as gr
 
@@ -20,6 +21,14 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
     """
 
     res = {}
+
+    try:
+        res = json.loads(x)
+    except json.JSONDecodeError:
+        res = {};
+
+    if len(res) > 0:
+        return res;
 
     prompt = ""
     negative_prompt = ""
@@ -64,11 +73,15 @@ def connect_paste(button, paste_fields, input_comp, js=None):
         params = parse_generation_parameters(prompt)
         res = []
 
-        for output, key in paste_fields:
+        for output, key, key_json in paste_fields:
             if callable(key):
                 v = key(params)
+                if v is None:
+                    v = key_json(params)
             else:
                 v = params.get(key, None)
+                if v is None:
+                    v = params.get(key_json, None)
 
             if v is None:
                 res.append(gr.update())
