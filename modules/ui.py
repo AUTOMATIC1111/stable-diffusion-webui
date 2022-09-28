@@ -12,7 +12,7 @@ import traceback
 
 import numpy as np
 import torch
-from PIL import Image
+from PIL import Image, PngImagePlugin
 
 import gradio as gr
 import gradio.utils
@@ -22,6 +22,7 @@ from modules.paths import script_path
 from modules.shared import opts, cmd_opts
 import modules.shared as shared
 from modules.sd_samplers import samplers, samplers_for_img2img
+from modules.sd_hijack import model_hijack
 import modules.ldsr_model
 import modules.scripts
 import modules.gfpgan_model
@@ -49,6 +50,7 @@ sample_img2img = sample_img2img if os.path.exists(sample_img2img) else None
 
 css_hide_progressbar = """
 .wrap .m-12 svg { display:none!important; }
+.wrap .m-12::before { content:"Loading..." }
 .progress-bar { display:none!important; }
 .meta-text { display:none!important; }
 """
@@ -96,10 +98,11 @@ def save_files(js_data, images, index):
     filenames = []
 
     data = json.loads(js_data)
-    
-    if index > -1 and opts.save_selected_only and (index > 0 or not opts.return_grid): # ensures we are looking at a specific non-grid picture, and we have save_selected_only
+    if index > -1 and opts.save_selected_only and (index >= data["index_of_first_image"]):  # ensures we are looking at a specific non-grid picture, and we have save_selected_only
         images = [images[index]]
-        data["seed"] += (index - 1 if opts.return_grid else index)
+        infotexts = [data["infotexts"][index]]
+    else:
+        infotexts = data["infotexts"]
 
     with open(os.path.join(opts.outdir_save, "log.csv"), "a", encoding="utf8", newline='') as file:
         at_start = file.tell() == 0
@@ -115,8 +118,11 @@ def save_files(js_data, images, index):
             if filedata.startswith("data:image/png;base64,"):
                 filedata = filedata[len("data:image/png;base64,"):]
 
-            with open(filepath, "wb") as imgfile:
-                imgfile.write(base64.decodebytes(filedata.encode('utf-8')))
+            pnginfo = PngImagePlugin.PngInfo()
+            pnginfo.add_text('parameters', infotexts[i])
+
+            image = Image.open(io.BytesIO(base64.decodebytes(filedata.encode('utf-8'))))
+            image.save(filepath, quality=opts.jpeg_quality, pnginfo=pnginfo)
 
             filenames.append(filename)
 
@@ -328,6 +334,10 @@ def connect_reuse_seed(seed: gr.Number, reuse_seed: gr.Button, generation_info: 
         outputs=[seed, dummy_component]
     )
 
+def update_token_counter(text):
+    tokens, token_count, max_length = model_hijack.tokenize(text)
+    style_class = ' class="red"' if (token_count > max_length) else ""
+    return f"<span {style_class}>{token_count}/{max_length}</span>"
 
 def create_toprow(is_img2img):
     id_part = "img2img" if is_img2img else "txt2img"
@@ -337,11 +347,14 @@ def create_toprow(is_img2img):
             with gr.Row():
                 with gr.Column(scale=80):
                     with gr.Row():
-                        prompt = gr.Textbox(label="Prompt", elem_id="prompt", show_label=False, placeholder="Prompt", lines=2)
+                        prompt = gr.Textbox(label="Prompt", elem_id=f"{id_part}_prompt", show_label=False, placeholder="Prompt", lines=2)
 
                 with gr.Column(scale=1, elem_id="roll_col"):
                     roll = gr.Button(value=art_symbol, elem_id="roll", visible=len(shared.artist_db.artists) > 0)
                     paste = gr.Button(value=paste_symbol, elem_id="paste")
+                    token_counter = gr.HTML(value="<span></span>", elem_id=f"{id_part}_token_counter")
+                    hidden_button = gr.Button(visible=False, elem_id=f"{id_part}_token_button")
+                    hidden_button.click(fn=update_token_counter, inputs=[prompt], outputs=[token_counter])
 
                 with gr.Column(scale=10, elem_id="style_pos_col"):
                     prompt_style = gr.Dropdown(label="Style 1", elem_id=f"{id_part}_style_index", choices=[k for k, v in shared.prompt_styles.styles.items()], value=next(iter(shared.prompt_styles.styles.keys())), visible=len(shared.prompt_styles.styles) > 1)
@@ -393,7 +406,7 @@ def setup_progressbar(progressbar, preview, id_part):
     )
 
 
-def create_ui(txt2img, img2img, run_extras, run_pnginfo):
+def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
         txt2img_prompt, roll, txt2img_prompt_style, txt2img_negative_prompt, txt2img_prompt_style2, submit, _, txt2img_prompt_style_apply, txt2img_save_style, paste = create_toprow(is_img2img=False)
         dummy_component = gr.Label(visible=False)
@@ -564,13 +577,13 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
                     with gr.TabItem('Inpaint', id='inpaint'):
                         init_img_with_mask = gr.Image(label="Image for inpainting with mask",  show_label=False, elem_id="img2maskimg", source="upload", interactive=True, type="pil", tool="sketch", image_mode="RGBA")
 
-                        init_img_inpaint = gr.Image(label="Image for img2img", show_label=False, source="upload", interactive=True, type="pil", visible=False)
-                        init_mask_inpaint = gr.Image(label="Mask", source="upload", interactive=True, type="pil", visible=False)
+                        init_img_inpaint = gr.Image(label="Image for img2img", show_label=False, source="upload", interactive=True, type="pil", visible=False, elem_id="img_inpaint_base")
+                        init_mask_inpaint = gr.Image(label="Mask", source="upload", interactive=True, type="pil", visible=False, elem_id="img_inpaint_mask")
 
                         mask_blur = gr.Slider(label='Mask blur', minimum=0, maximum=64, step=1, value=4)
 
                         with gr.Row():
-                            mask_mode = gr.Radio(label="Mask mode", show_label=False, choices=["Draw mask", "Upload mask"], type="index", value="Draw mask")
+                            mask_mode = gr.Radio(label="Mask mode", show_label=False, choices=["Draw mask", "Upload mask"], type="index", value="Draw mask", elem_id="mask_mode")
                             inpainting_mask_invert = gr.Radio(label='Masking mode', show_label=False, choices=['Inpaint masked', 'Inpaint not masked'], value='Inpaint masked', type="index")
 
                         inpainting_fill = gr.Radio(label='Masked content', choices=['fill', 'original', 'latent noise', 'latent nothing'], value='fill', type="index")
@@ -853,6 +866,35 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
             outputs=[html, generation_info, html2],
         )
 
+    with gr.Blocks() as modelmerger_interface:
+        with gr.Row().style(equal_height=False):
+            with gr.Column(variant='panel'):
+                gr.HTML(value="<p>A merger of the two checkpoints will be generated in your <b>/models</b> directory.</p>")
+                
+                with gr.Row():
+                    ckpt_name_list = sorted([x.model_name for x in modules.sd_models.checkpoints_list.values()])
+                    primary_model_name   = gr.Dropdown(ckpt_name_list, elem_id="modelmerger_primary_model_name", label="Primary Model Name")
+                    secondary_model_name = gr.Dropdown(ckpt_name_list, elem_id="modelmerger_secondary_model_name", label="Secondary Model Name")
+                interp_amount = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Interpolation Amount', value=0.3)
+                interp_method = gr.Radio(choices=["Weighted Sum", "Sigmoid", "Inverse Sigmoid"], value="Weighted Sum", label="Interpolation Method")
+                submit = gr.Button(elem_id="modelmerger_merge", label="Merge", variant='primary')
+            
+            with gr.Column(variant='panel'):
+                submit_result = gr.Textbox(elem_id="modelmerger_result", show_label=False)
+
+            submit.click(
+                fn=run_modelmerger,
+                inputs=[
+                    primary_model_name,
+                    secondary_model_name,
+                    interp_method,
+                    interp_amount
+                ],
+                outputs=[
+                    submit_result,
+                ]
+            )
+
     def create_setting_component(key):
         def fun():
             return opts.data[key] if key in opts.data else opts.data_labels[key].default
@@ -950,6 +992,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
         (img2img_interface, "img2img", "img2img"),
         (extras_interface, "Extras", "extras"),
         (pnginfo_interface, "PNG Info", "pnginfo"),
+        (modelmerger_interface, "Checkpoint Merger", "modelmerger"),
         (settings_interface, "Settings", "settings"),
     ]
 
@@ -970,6 +1013,9 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
             for interface, label, ifid in interfaces:
                 with gr.TabItem(label, id=ifid):
                     interface.render()
+        
+        if os.path.exists(os.path.join(script_path, "notification.mp3")):
+            audio_notification = gr.Audio(interactive=False, value=os.path.join(script_path, "notification.mp3"), elem_id="audio_notification", visible=False)
 
         text_settings = gr.Textbox(elem_id="settings_json", value=lambda: opts.dumpjson(), visible=False)
         settings_submit.click(
@@ -978,18 +1024,21 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo):
             outputs=[result, text_settings],
         )
 
+        paste_field_names = ['Prompt', 'Negative prompt', 'Steps', 'Face restoration', 'Seed', 'Size-1', 'Size-2']
+        txt2img_fields = [field for field,name in txt2img_paste_fields if name in paste_field_names]
+        img2img_fields = [field for field,name in img2img_paste_fields if name in paste_field_names]
         send_to_img2img.click(
-            fn=lambda x: (image_from_url_text(x)),
-            _js="extract_image_from_gallery_img2img",
-            inputs=[txt2img_gallery],
-            outputs=[init_img],
+            fn=lambda img, *args: (image_from_url_text(img),*args),
+            _js="(gallery, ...args) => [extract_image_from_gallery_img2img(gallery), ...args]",
+            inputs=[txt2img_gallery] + txt2img_fields,
+            outputs=[init_img] + img2img_fields,
         )
 
         send_to_inpaint.click(
-            fn=lambda x: (image_from_url_text(x)),
-            _js="extract_image_from_gallery_inpaint",
-            inputs=[txt2img_gallery],
-            outputs=[init_img_with_mask],
+            fn=lambda x, *args: (image_from_url_text(x), *args),
+            _js="(gallery, ...args) => [extract_image_from_gallery_inpaint(gallery), ...args]",
+            inputs=[txt2img_gallery] + txt2img_fields,
+            outputs=[init_img_with_mask] + img2img_fields,
         )
 
         img2img_send_to_img2img.click(

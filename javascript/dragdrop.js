@@ -68,13 +68,19 @@ window.addEventListener('paste', e => {
     if ( ! isValidImageList( files ) ) {
         return;
     }
-    [...gradioApp().querySelectorAll('input[type=file][accept="image/x-png,image/gif,image/jpeg"]')]
-        .filter(input => !input.matches('.\\!hidden input[type=file]'))
-        .forEach(input => {
-            input.files = files;
-            input.dispatchEvent(new Event('change'))
-        });
-    [...gradioApp().querySelectorAll('[data-testid="image"]')]
-        .filter(imgWrap => !imgWrap.closest('.\\!hidden'))
-        .forEach(imgWrap => dropReplaceImage( imgWrap, files ));
+
+    const visibleImageFields = [...gradioApp().querySelectorAll('[data-testid="image"]')]
+        .filter(el => uiElementIsVisible(el));
+    if ( ! visibleImageFields.length ) {
+        return;
+    }
+    
+    const firstFreeImageField = visibleImageFields
+        .filter(el => el.querySelector('input[type=file]'))?.[0];
+
+    dropReplaceImage(
+        firstFreeImageField ?
+        firstFreeImageField :
+        visibleImageFields[visibleImageFields.length - 1]
+    , files );
 });

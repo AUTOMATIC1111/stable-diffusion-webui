@@ -3,6 +3,9 @@ import os
 import numpy as np
 from PIL import Image
 
+import torch
+import tqdm
+
 from modules import processing, shared, images, devices
 from modules.shared import opts
 import modules.gfpgan_model
@@ -135,3 +138,64 @@ def run_pnginfo(image):
         info = f"<div><p>{message}<p></div>"
 
     return '', geninfo, info
+
+
+def run_modelmerger(primary_model_name, secondary_model_name, interp_method, interp_amount):
+    # Linear interpolation (https://en.wikipedia.org/wiki/Linear_interpolation)
+    def weighted_sum(theta0, theta1, alpha):
+        return ((1 - alpha) * theta0) + (alpha * theta1)
+
+    # Smoothstep (https://en.wikipedia.org/wiki/Smoothstep)
+    def sigmoid(theta0, theta1, alpha):
+        alpha = alpha * alpha * (3 - (2 * alpha))
+        return theta0 + ((theta1 - theta0) * alpha)
+
+    # Inverse Smoothstep (https://en.wikipedia.org/wiki/Smoothstep)
+    def inv_sigmoid(theta0, theta1, alpha):
+        import math
+        alpha = 0.5 - math.sin(math.asin(1.0 - 2.0 * alpha) / 3.0)
+        return theta0 + ((theta1 - theta0) * alpha)
+
+    if os.path.exists(primary_model_name):
+        primary_model_filename = primary_model_name
+        primary_model_name = os.path.splitext(os.path.basename(primary_model_name))[0]
+    else:
+        primary_model_filename = 'models/' + primary_model_name + '.ckpt'
+
+    if os.path.exists(secondary_model_name):
+        secondary_model_filename = secondary_model_name
+        secondary_model_name = os.path.splitext(os.path.basename(secondary_model_name))[0]
+    else:
+        secondary_model_filename = 'models/' + secondary_model_name + '.ckpt'
+
+    print(f"Loading {primary_model_filename}...")
+    primary_model = torch.load(primary_model_filename, map_location='cpu')
+
+    print(f"Loading {secondary_model_filename}...")
+    secondary_model = torch.load(secondary_model_filename, map_location='cpu')
+   
+    theta_0 = primary_model['state_dict']
+    theta_1 = secondary_model['state_dict']
+
+    theta_funcs = {
+        "Weighted Sum": weighted_sum,
+        "Sigmoid": sigmoid,
+        "Inverse Sigmoid": inv_sigmoid
+    }
+    theta_func = theta_funcs[interp_method]
+
+    print(f"Merging...")
+    for key in tqdm.tqdm(theta_0.keys()):
+        if 'model' in key and key in theta_1:
+            theta_0[key] = theta_func(theta_0[key], theta_1[key], (float(1.0) - interp_amount)) # Need to reverse the interp_amount to match the desired mix ration in the merged checkpoint
+    
+    for key in theta_1.keys():
+        if 'model' in key and key not in theta_0:
+            theta_0[key] = theta_1[key]
+
+    output_modelname = 'models/' + primary_model_name + '_' + str(round(interp_amount,2)) + '-' + secondary_model_name + '_' + str(round((float(1.0) - interp_amount),2)) + '-' + interp_method.replace(" ", "_") + '-merged.ckpt'
+    print(f"Saving to {output_modelname}...")
+    torch.save(primary_model, output_modelname)
+
+    print(f"Checkpoint saved.")
+    return "Checkpoint saved to " + output_modelname
