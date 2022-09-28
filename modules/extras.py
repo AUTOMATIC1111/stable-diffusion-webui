@@ -150,26 +150,26 @@ def run_modelmerger(primary_model_name, secondary_model_name, interp_method, int
         alpha = alpha * alpha * (3 - (2 * alpha))
         return theta0 + ((theta1 - theta0) * alpha)
 
-    if os.path.exists(secondary_model_name):
-        secondary_model_filename = secondary_model_name
-        secondary_model_name = os.path.splitext(os.path.basename(secondary_model_name))[0]
-    else:
-        secondary_model_filename = 'models/' + secondary_model_name + '.ckpt'
-
     if os.path.exists(primary_model_name):
         primary_model_filename = primary_model_name
         primary_model_name = os.path.splitext(os.path.basename(primary_model_name))[0]
     else:
         primary_model_filename = 'models/' + primary_model_name + '.ckpt'
 
-    print(f"Loading {secondary_model_filename}...")
-    model_0 = torch.load(secondary_model_filename, map_location='cpu')
+    if os.path.exists(secondary_model_name):
+        secondary_model_filename = secondary_model_name
+        secondary_model_name = os.path.splitext(os.path.basename(secondary_model_name))[0]
+    else:
+        secondary_model_filename = 'models/' + secondary_model_name + '.ckpt'
 
     print(f"Loading {primary_model_filename}...")
-    model_1 = torch.load(primary_model_filename, map_location='cpu')
-    
-    theta_0 = model_0['state_dict']
-    theta_1 = model_1['state_dict']
+    primary_model = torch.load(primary_model_filename, map_location='cpu')
+
+    print(f"Loading {secondary_model_filename}...")
+    secondary_model = torch.load(secondary_model_filename, map_location='cpu')
+   
+    theta_0 = primary_model['state_dict']
+    theta_1 = secondary_model['state_dict']
 
     theta_funcs = {
         "Weighted Sum": weighted_sum,
@@ -180,7 +180,7 @@ def run_modelmerger(primary_model_name, secondary_model_name, interp_method, int
     print(f"Merging...")
     for key in tqdm.tqdm(theta_0.keys()):
         if 'model' in key and key in theta_1:
-            theta_0[key] = theta_func(theta_0[key], theta_1[key], interp_amount)
+            theta_0[key] = theta_func(theta_0[key], theta_1[key], (float(1.0) - interp_amount)) # Need to reverse the interp_amount to match the desired mix ration in the merged checkpoint
     
     for key in theta_1.keys():
         if 'model' in key and key not in theta_0:
@@ -188,7 +188,7 @@ def run_modelmerger(primary_model_name, secondary_model_name, interp_method, int
 
     output_modelname = 'models/' + primary_model_name + '_' + str(interp_amount) + '-' + secondary_model_name + '_' + str(float(1.0) - interp_amount) + '-' + interp_method.replace(" ", "_") + '-merged.ckpt'
     print(f"Saving to {output_modelname}...")
-    torch.save(model_0, output_modelname)
+    torch.save(primary_model, output_modelname)
 
     print(f"Checkpoint saved.")
     return "Checkpoint saved to " + output_modelname
