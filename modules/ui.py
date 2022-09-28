@@ -28,6 +28,7 @@ import modules.gfpgan_model
 import modules.codeformer_model
 import modules.styles
 import modules.generation_parameters_copypaste
+from modules.images import apply_filename_pattern, get_next_sequence_number
 
 # this is a fix for Windows users. Without it, javascript files will be served with text/html content-type and the bowser will not show any UI
 mimetypes.init()
@@ -90,13 +91,26 @@ def send_gradio_gallery_to_image(x):
 
 
 def save_files(js_data, images, index):
-    import csv
-
-    os.makedirs(opts.outdir_save, exist_ok=True)
-
+    import csv    
     filenames = []
 
+    #quick dictionary to class object conversion. Its neccesary due apply_filename_pattern requiring it
+    class MyObject:
+        def __init__(self, d=None):
+            if d is not None:
+                for key, value in d.items():
+                    setattr(self, key, value)
+
     data = json.loads(js_data)
+    p = MyObject(data)
+    path = opts.outdir_save
+    save_to_dirs = opts.save_to_dirs
+
+    if save_to_dirs:
+        dirname = apply_filename_pattern(opts.directories_filename_pattern or "[prompt_words]", p, p.seed, p.prompt)
+        path = os.path.join(opts.outdir_save, dirname)
+
+    os.makedirs(path, exist_ok=True)
     
     if index > -1 and opts.save_selected_only and (index > 0 or not opts.return_grid): # ensures we are looking at a specific non-grid picture, and we have save_selected_only
         images = [images[index]]
@@ -107,11 +121,18 @@ def save_files(js_data, images, index):
         writer = csv.writer(file)
         if at_start:
             writer.writerow(["prompt", "seed", "width", "height", "sampler", "cfgs", "steps", "filename", "negative_prompt"])
+        file_decoration = opts.samples_filename_pattern or "[seed]-[prompt_spaces]"
+        if file_decoration != "":
+            file_decoration = "-" + file_decoration.lower()
+        file_decoration = apply_filename_pattern(file_decoration, p, p.seed, p.prompt)
+        truncated = (file_decoration[:240] + '..') if len(file_decoration) > 240 else file_decoration
+        filename_base = truncated
 
-        filename_base = str(int(time.time() * 1000))
+        basecount = get_next_sequence_number(path, "")
         for i, filedata in enumerate(images):
-            filename = filename_base + ("" if len(images) == 1 else "-" + str(i + 1)) + ".png"
-            filepath = os.path.join(opts.outdir_save, filename)
+            file_number = f"{basecount+i:05}"
+            filename = file_number + filename_base + ".png"
+            filepath = os.path.join(path, filename)
 
             if filedata.startswith("data:image/png;base64,"):
                 filedata = filedata[len("data:image/png;base64,"):]
