@@ -872,8 +872,8 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
                 gr.HTML(value="<p>A merger of the two checkpoints will be generated in your <b>/models</b> directory.</p>")
                 
                 with gr.Row():
-                    ckpt_name_list = sorted([x.model_name for x in modules.sd_models.checkpoints_list.values()])
-                    primary_model_name   = gr.Dropdown(ckpt_name_list, elem_id="modelmerger_primary_model_name", label="Primary Model Name")
+                    ckpt_name_list = sorted([x.title for x in modules.sd_models.checkpoints_list.values()])
+                    primary_model_name = gr.Dropdown(ckpt_name_list, elem_id="modelmerger_primary_model_name", label="Primary Model Name")
                     secondary_model_name = gr.Dropdown(ckpt_name_list, elem_id="modelmerger_secondary_model_name", label="Secondary Model Name")
                 interp_amount = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Interpolation Amount', value=0.3)
                 interp_method = gr.Radio(choices=["Weighted Sum", "Sigmoid", "Inverse Sigmoid"], value="Weighted Sum", label="Interpolation Method")

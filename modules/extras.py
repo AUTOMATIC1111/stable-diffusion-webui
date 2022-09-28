@@ -6,7 +6,7 @@ from PIL import Image
 import torch
 import tqdm
 
-from modules import processing, shared, images, devices
+from modules import processing, shared, images, devices, sd_models
 from modules.shared import opts
 import modules.gfpgan_model
 from modules.ui import plaintext_to_html
@@ -156,17 +156,8 @@ def run_modelmerger(primary_model_name, secondary_model_name, interp_method, int
         alpha = 0.5 - math.sin(math.asin(1.0 - 2.0 * alpha) / 3.0)
         return theta0 + ((theta1 - theta0) * alpha)
 
-    if os.path.exists(primary_model_name):
-        primary_model_filename = primary_model_name
-        primary_model_name = os.path.splitext(os.path.basename(primary_model_name))[0]
-    else:
-        primary_model_filename = 'models/' + primary_model_name + '.ckpt'
-
-    if os.path.exists(secondary_model_name):
-        secondary_model_filename = secondary_model_name
-        secondary_model_name = os.path.splitext(os.path.basename(secondary_model_name))[0]
-    else:
-        secondary_model_filename = 'models/' + secondary_model_name + '.ckpt'
+    primary_model_filename = sd_models.checkpoints_list[primary_model_name].filename
+    secondary_model_filename = sd_models.checkpoints_list[secondary_model_name].filename
 
     print(f"Loading {primary_model_filename}...")
     primary_model = torch.load(primary_model_filename, map_location='cpu')
@@ -180,7 +171,7 @@ def run_modelmerger(primary_model_name, secondary_model_name, interp_method, int
     theta_funcs = {
         "Weighted Sum": weighted_sum,
         "Sigmoid": sigmoid,
-        "Inverse Sigmoid": inv_sigmoid
+        "Inverse Sigmoid": inv_sigmoid,
     }
     theta_func = theta_funcs[interp_method]
 
@@ -193,7 +184,9 @@ def run_modelmerger(primary_model_name, secondary_model_name, interp_method, int
         if 'model' in key and key not in theta_0:
             theta_0[key] = theta_1[key]
 
-    output_modelname = 'models/' + primary_model_name + '_' + str(round(interp_amount,2)) + '-' + secondary_model_name + '_' + str(round((float(1.0) - interp_amount),2)) + '-' + interp_method.replace(" ", "_") + '-merged.ckpt'
+    filename = primary_model_name + '_' + str(round(interp_amount,2)) + '-' + secondary_model_name + '_' + str(round((float(1.0) - interp_amount),2)) + '-' + interp_method.replace(" ", "_") + '-merged.ckpt'
+    output_modelname = os.path.join(shared.cmd_opts.ckpt_dir, filename)
+
     print(f"Saving to {output_modelname}...")
     torch.save(primary_model, output_modelname)
 
