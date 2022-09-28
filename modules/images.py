@@ -10,6 +10,7 @@ import piexif.helper
 from PIL import Image, ImageFont, ImageDraw, PngImagePlugin
 from fonts.ttf import Roboto
 import string
+from modules.processing import Processed
 
 import modules.shared
 from modules import sd_samplers, shared
@@ -401,6 +402,10 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
         with open(f"{fullfn_without_extension}.txt", "w", encoding="utf8") as file:
             file.write(info + "\n")
 
+    if (opts.save_json):
+        with open(f"{fullfn_without_extension}.json", "w", encoding="utf8") as file:
+            processed = Processed(p, [], seed, info)
+            file.write(processed.js())
 
 class Upscaler:
     name = "Lanczos"
