@@ -9,6 +9,8 @@ import random
 import sys
 import time
 import traceback
+import platform
+import subprocess as sp
 
 import numpy as np
 import torch
@@ -449,7 +451,8 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
                         send_to_img2img = gr.Button('Send to img2img')
                         send_to_inpaint = gr.Button('Send to inpaint')
                         send_to_extras = gr.Button('Send to extras')
-                        open_txt2img_folder = gr.Button(folder_symbol, elem_id="open_folder")
+                        button_id = "open_folder_hidden" if shared.cmd_opts.hide_ui_dir_config else 'open_folder'
+                        open_txt2img_folder = gr.Button(folder_symbol, elem_id=button_id)
 
                 with gr.Group():
                     html_info = gr.HTML()
@@ -626,7 +629,8 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
                         img2img_send_to_img2img = gr.Button('Send to img2img')
                         img2img_send_to_inpaint = gr.Button('Send to inpaint')
                         img2img_send_to_extras = gr.Button('Send to extras')
-                        open_img2img_folder = gr.Button(folder_symbol, elem_id="open_folder")
+                        button_id = "open_folder_hidden" if shared.cmd_opts.hide_ui_dir_config else 'open_folder'
+                        open_img2img_folder = gr.Button(folder_symbol, elem_id=button_id)
 
                 with gr.Group():
                     html_info = gr.HTML()
@@ -799,7 +803,8 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
                 html_info = gr.HTML()
                 extras_send_to_img2img = gr.Button('Send to img2img')
                 extras_send_to_inpaint = gr.Button('Send to inpaint')
-                open_extras_folder = gr.Button('Open output directory')
+                button_id = "open_folder_hidden" if shared.cmd_opts.hide_ui_dir_config else ''
+                open_extras_folder = gr.Button('Open output directory', elem_id=button_id)
 
         submit.click(
             fn=run_extras,
@@ -909,7 +914,14 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
     components = []
 
     def open_folder(f):
-        os.startfile(os.path.normpath(f))
+        if not shared.cmd_opts.hide_ui_dir_config:
+            path = os.path.normpath(f)
+            if platform.system() == "Windows":
+                os.startfile(path)
+            elif platform.system() == "Darwin":
+                sp.Popen(["open", path])
+            else:
+                sp.Popen(["xdg-open", path])
 
     def run_settings(*args):
         changed = 0
