@@ -150,6 +150,12 @@ def run_modelmerger(primary_model_name, secondary_model_name, interp_method, int
         alpha = alpha * alpha * (3 - (2 * alpha))
         return theta0 + ((theta1 - theta0) * alpha)
 
+    # Inverse Smoothstep (https://en.wikipedia.org/wiki/Smoothstep)
+    def inv_sigmoid(theta0, theta1, alpha):
+        import math
+        alpha = 0.5 - math.sin(math.asin(1.0 - 2.0 * alpha) / 3.0)
+        return theta0 + ((theta1 - theta0) * alpha)
+
     if os.path.exists(primary_model_name):
         primary_model_filename = primary_model_name
         primary_model_name = os.path.splitext(os.path.basename(primary_model_name))[0]
@@ -174,6 +180,7 @@ def run_modelmerger(primary_model_name, secondary_model_name, interp_method, int
     theta_funcs = {
         "Weighted Sum": weighted_sum,
         "Sigmoid": sigmoid,
+        "Inverse Sigmoid": inv_sigmoid
     }
     theta_func = theta_funcs[interp_method]
 
