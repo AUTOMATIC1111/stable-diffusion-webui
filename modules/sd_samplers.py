@@ -128,9 +128,9 @@ class VanillaStableDiffusionSampler:
 
         # existing code fails with cetain step counts, like 9
         try:
-            self.sampler.make_schedule(ddim_num_steps=steps,  ddim_eta=p.ddim_eta, ddim_discretize=p.ddim_discretize, verbose=False)
+            self.sampler.make_schedule(ddim_num_steps=steps,  ddim_eta=p.eta, ddim_discretize=p.ddim_discretize, verbose=False)
         except Exception:
-            self.sampler.make_schedule(ddim_num_steps=steps+1,ddim_eta=p.ddim_eta, ddim_discretize=p.ddim_discretize, verbose=False)
+            self.sampler.make_schedule(ddim_num_steps=steps+1,ddim_eta=p.eta, ddim_discretize=p.ddim_discretize, verbose=False)
 
         x1 = self.sampler.stochastic_encode(x, torch.tensor([t_enc] * int(x.shape[0])).to(shared.device), noise=noise)
 
