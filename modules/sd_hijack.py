@@ -328,6 +328,7 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
                 multipliers = []
                 mult = 1.0
 
+                lastToken=None
                 i = 0
                 while i < len(tokens):
                     token = tokens[i]
@@ -361,7 +362,8 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
                         if not found:
                             remade_tokens.append(token)
                             multipliers.append(mult)
-
+                    
+                    lastToken = token
                     i += 1
 
                 if len(remade_tokens) > maxlen - 2:
