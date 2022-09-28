@@ -3,7 +3,7 @@
 set conda_env_name=automatic1111
 
 :: Put the path to conda directory after "=" sign if it's installed at non-standard path:
-set cutom_conda_path=D:\Software\Miniconda3
+set cutom_conda_path=
 
 set paths=%ProgramData%\miniconda3
 set paths=%paths%;%USERPROFILE%\miniconda3
