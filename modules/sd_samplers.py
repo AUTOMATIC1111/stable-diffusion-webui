@@ -136,6 +136,8 @@ class VanillaStableDiffusionSampler:
     def sample_img2img(self, p, x, noise, conditioning, unconditional_conditioning, steps=None):
         steps, t_enc = setup_img2img_steps(p, steps)
 
+        self.initialize(p)
+
         # existing code fails with cetain step counts, like 9
         try:
             self.sampler.make_schedule(ddim_num_steps=steps,  ddim_eta=self.eta, ddim_discretize=p.ddim_discretize, verbose=False)
@@ -143,8 +145,6 @@ class VanillaStableDiffusionSampler:
             self.sampler.make_schedule(ddim_num_steps=steps+1, ddim_eta=self.eta, ddim_discretize=p.ddim_discretize, verbose=False)
 
         x1 = self.sampler.stochastic_encode(x, torch.tensor([t_enc] * int(x.shape[0])).to(shared.device), noise=noise)
-
-        self.initialize(p)
 
         self.init_latent = x
         self.step = 0
