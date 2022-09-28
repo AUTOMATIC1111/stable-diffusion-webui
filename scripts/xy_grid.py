@@ -91,7 +91,7 @@ axis_options = [
     AxisOption("Sigma min",   float, apply_field("s_tmin"),   format_value_add_label),
     AxisOption("Sigma max",   float, apply_field("s_tmax"),   format_value_add_label),
     AxisOption("Sigma noise", float, apply_field("s_noise"),  format_value_add_label),
-    AxisOption("DDIM Eta",    float, apply_field("ddim_eta"), format_value_add_label),
+    AxisOption("Eta",    float, apply_field("eta"), format_value_add_label),
     AxisOptionImg2Img("Denoising", float, apply_field("denoising_strength"), format_value_add_label),#  as it is now all AxisOptionImg2Img items must go after AxisOption ones
 ]
 
