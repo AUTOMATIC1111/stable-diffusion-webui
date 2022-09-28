@@ -6,7 +6,6 @@ font-roboto
 gfpgan
 gradio
 invisible-watermark
-git+https://github.com/crowsonkb/k-diffusion.git
 numpy
 omegaconf
 piexif
