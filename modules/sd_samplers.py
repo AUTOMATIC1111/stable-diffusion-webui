@@ -251,7 +251,7 @@ class KDiffusionSampler:
         self.model_wrap = k_diffusion.external.CompVisDenoiser(sd_model, quantize=shared.opts.enable_quantization)
         self.funcname = funcname
         self.func = getattr(k_diffusion.sampling, self.funcname)
-        self.extra_params = sampler_extra_params.get(funcname, {})
+        self.extra_params = sampler_extra_params.get(funcname, [])
         self.model_wrap_cfg = CFGDenoiser(self.model_wrap)
         self.sampler_noises = None
         self.sampler_noise_index = 0
