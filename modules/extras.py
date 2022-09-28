@@ -157,15 +157,9 @@ def run_modelmerger(primary_model_name, secondary_model_name, interp_method, int
         return theta0 + ((theta1 - theta0) * alpha)
 
     primary_model_filename = os.path.join(cmd_opts.ckpt_dir, primary_model_name + '.ckpt')
-    if not os.path.exists(primary_model_filename):
-        primary_model_filename = os.path.join('models/', primary_model_name + '.ckpt')
-        
     primary_model_name = os.path.splitext(os.path.basename(primary_model_filename))[0]
 
     secondary_model_filename = os.path.join(cmd_opts.ckpt_dir, secondary_model_name + '.ckpt')
-    if not os.path.exists(secondary_model_filename):
-        secondary_model_filename = os.path.join('models/', secondary_model_name + '.ckpt')
-        
     secondary_model_name = os.path.splitext(os.path.basename(secondary_model_filename))[0]
 
     print(f"Loading {primary_model_filename}...")
