@@ -78,7 +78,14 @@ class StableDiffusionProcessing:
         self.paste_to = None
         self.color_corrections = None
         self.denoising_strength: float = 0
-
+        
+        self.ddim_eta = opts.ddim_eta
+        self.ddim_discretize = opts.ddim_discretize
+        self.s_churn = opts.s_churn
+        self.s_tmin = opts.s_tmin
+        self.s_tmax = float('inf') # not representable as a standard ui option
+        self.s_noise = opts.s_noise
+        
         if not seed_enable_extras:
             self.subseed = -1
             self.subseed_strength = 0
@@ -117,6 +124,13 @@ class Processed:
         self.extra_generation_params = p.extra_generation_params
         self.index_of_first_image = index_of_first_image
 
+        self.ddim_eta = p.ddim_eta
+        self.ddim_discretize = p.ddim_discretize
+        self.s_churn = p.s_churn
+        self.s_tmin = p.s_tmin
+        self.s_tmax = p.s_tmax
+        self.s_noise = p.s_noise
+        
         self.prompt = self.prompt if type(self.prompt) != list else self.prompt[0]
         self.negative_prompt = self.negative_prompt if type(self.negative_prompt) != list else self.negative_prompt[0]
         self.seed = int(self.seed if type(self.seed) != list else self.seed[0])
@@ -406,7 +420,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
                 index_of_first_image = 1
 
             if opts.grid_save:
-                images.save_image(grid, p.outpath_grids, "grid", all_seeds[0], all_prompts[0], opts.grid_format, info=infotext(), short_filename=not opts.grid_extended_filename, p=p)
+                images.save_image(grid, p.outpath_grids, "grid", all_seeds[0], all_prompts[0], opts.grid_format, info=infotext(), short_filename=not opts.grid_extended_filename, p=p, grid=True)
 
     devices.torch_gc()
     return Processed(p, output_images, all_seeds[0], infotext(), subseed=all_subseeds[0], all_prompts=all_prompts, all_seeds=all_seeds, all_subseeds=all_subseeds, index_of_first_image=index_of_first_image)
