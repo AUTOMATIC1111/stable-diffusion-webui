@@ -882,6 +882,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
                 with gr.Row():
                     primary_model_name = gr.Dropdown(modules.sd_models.checkpoint_tiles(), elem_id="modelmerger_primary_model_name", label="Primary Model Name")
                     secondary_model_name = gr.Dropdown(modules.sd_models.checkpoint_tiles(), elem_id="modelmerger_secondary_model_name", label="Secondary Model Name")
+                custom_name = gr.Textbox(label="Custom Name (Optional)")
                 interp_amount = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Interpolation Amount', value=0.3)
                 interp_method = gr.Radio(choices=["Weighted Sum", "Sigmoid", "Inverse Sigmoid"], value="Weighted Sum", label="Interpolation Method")
                 save_as_half = gr.Checkbox(value=False, label="Safe as float16")
@@ -1031,15 +1032,26 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
             inputs=components,
             outputs=[result, text_settings],
         )
+        
+        def modelmerger(*args):
+            try:
+                results = run_modelmerger(*args)
+            except Exception as e:
+                print("Error loading/saving model file:", file=sys.stderr)
+                print(traceback.format_exc(), file=sys.stderr)
+                modules.sd_models.list_models() #To remove the potentially missing models from the list
+                return ["Error loading/saving model file. It doesn't exist or the name contains illegal characters"] + [gr.Dropdown.update(choices=modules.sd_models.checkpoint_tiles()) for _ in range(3)]
+            return results
 
         modelmerger_merge.click(
-            fn=run_modelmerger,
+            fn=modelmerger,
             inputs=[
                 primary_model_name,
                 secondary_model_name,
                 interp_method,
                 interp_amount,
                 save_as_half,
+                custom_name,
             ],
             outputs=[
                 submit_result,
