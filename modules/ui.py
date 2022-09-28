@@ -23,7 +23,6 @@ from modules.shared import opts, cmd_opts
 import modules.shared as shared
 from modules.sd_samplers import samplers, samplers_for_img2img
 from modules.sd_hijack import model_hijack
-from modules.helpers import debounce
 import modules.ldsr_model
 import modules.scripts
 import modules.gfpgan_model
@@ -345,7 +344,6 @@ def create_toprow(is_img2img):
                 with gr.Column(scale=80):
                     with gr.Row():
                         prompt = gr.Textbox(label="Prompt", elem_id=f"{id_part}_prompt", show_label=False, placeholder="Prompt", lines=2)
-                        prompt.change(fn=lambda *args: [], _js=f"{id_part}_token_counter", inputs=[prompt], outputs=[], preprocess=False)
 
                 with gr.Column(scale=1, elem_id="roll_col"):
                     roll = gr.Button(value=art_symbol, elem_id="roll", visible=len(shared.artist_db.artists) > 0)
