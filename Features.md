@@ -102,11 +102,16 @@ Rcommended parameters for upscaling:
 | ![](images/sd-upscale-castle-original.png) | ![](images/sd-upscale-castle-realesrgan.png) | ![](images/sd-upscale-castle-esrgan-topaz-gigapixel.png) | ![](images/sd-upscale-castle-sd-upscale.png) |
 | ![](images/sd-upscale-city-original.png)  | ![](images/sd-upscale-city-realesrgan.png)  | ![](images/sd-upscale-city-esrgan-topaz-gigapixel.png)  | ![](images/sd-upscale-city-sd-upscale.png)  |
 
-# Attention
-Using `()` in prompt increases model's attention to enclosed words, and `[]` decreases it. You can combine
-multiple modifiers:
+# Attention/emphasis
+Using `()` in prompt increases model's attention to enclosed words, and `[]` decreases it. You can combine multiple modifiers:
 
 ![](images/attention-3.jpg)
+
+With `()`, a weight can be specified like this: `(text:1.4)`. If the weight is not specified, it is assumed to be 1.1. Specifying weight only works with `()` not with `[]`.
+
+If you want to use any of literal `()[]` characters in the prompt, use the backslash to escape them: `anime_\(character\)`.
+
+On 2022-09-29, a new implementation was added that supports escape characters and numerical weights. A downside of the new implementation is that the old one was not perfect and sometimes ate characters: "a (((farm))), daytime", for example, would become "a farm daytime" without the comma. This behavior is not shared by the new implementation which preserves all text correctly, and this means that your saved seeds may produce different pictures. For now, there is an option in settings to use old implementation.
 
 # Loopback
 A checkbox for img2img allowing to automatically feed output image as input for the next batch. Equivalent to
@@ -114,7 +119,7 @@ saving output image, and replacing input image with it. Batch count setting cont
 this you get.
 
 Usually, when doing this, you would choose one of many images for the next iteration yourself, so the usefulness
-of this feature may be questionable, but I've managed to get some very nice outputs with it that I wasn't abble
+of this feature may be questionable, but I've managed to get some very nice outputs with it that I wasn't able
 to get otherwise.
 
 Example: (cherrypicked result)
