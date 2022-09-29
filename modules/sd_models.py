@@ -50,7 +50,7 @@ def setup_model(dirname):
     if not os.path.exists(model_path):
         os.makedirs(model_path)
     checkpoints_list.clear()
-    model_list = modelloader.load_models(model_path, model_url, dirname, model_name, ext_filter=".ckpt")
+    model_list = modelloader.load_models(model_path=model_path, model_url=model_url, command_path=dirname, download_name=model_name, ext_filter=".ckpt")
 
     cmd_ckpt = shared.cmd_opts.ckpt
     if os.path.exists(cmd_ckpt):
@@ -68,6 +68,7 @@ def setup_model(dirname):
 
 def model_hash(filename):
     try:
+        print(f"Opening: {filename}")
         with open(filename, "rb") as file:
             import hashlib
             m = hashlib.sha256()

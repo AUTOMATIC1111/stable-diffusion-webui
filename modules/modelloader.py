@@ -1,34 +1,36 @@
 import os
 import shutil
+import importlib
 from urllib.parse import urlparse
 
 from basicsr.utils.download_util import load_file_from_url
 
+from modules import shared
+from modules.upscaler import Upscaler
 from modules.paths import script_path, models_path
 
 
-def load_models(model_path: str, model_url: str = None, command_path: str = None, dl_name: str = None, existing=None,
-                ext_filter=None) -> list:
+def load_models(model_path: str, model_url: str = None, command_path: str = None, ext_filter=None, download_name=None) -> list:
     """
     A one-and done loader to try finding the desired models in specified directories.
 
-    @param dl_name: The file name to use for downloading a model. If not specified, it will be used from the URL.
-    @param model_url: If specified, attempt to download model from the given URL.
+    @param download_name: Specify to download from model_url immediately.
+    @param model_url: If no other models are found, this will be downloaded on upscale.
     @param model_path: The location to store/find models in.
     @param command_path: A command-line argument to search for models in first.
-    @param existing: An array of existing model paths.
     @param ext_filter: An optional list of filename extensions to filter by
     @return: A list of paths containing the desired model(s)
     """
+    output = []
+
     if ext_filter is None:
         ext_filter = []
-    if existing is None:
-        existing = []
     try:
         places = []
         if command_path is not None and command_path != model_path:
             pretrained_path = os.path.join(command_path, 'experiments/pretrained_models')
             if os.path.exists(pretrained_path):
+                print(f"Appending path: {pretrained_path}")
                 places.append(pretrained_path)
             elif os.path.exists(command_path):
                 places.append(command_path)
@@ -36,26 +38,24 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
         for place in places:
             if os.path.exists(place):
                 for file in os.listdir(place):
-                    if os.path.isdir(file):
+                    full_path = os.path.join(place, file)
+                    if os.path.isdir(full_path):
                         continue
                     if len(ext_filter) != 0:
                         model_name, extension = os.path.splitext(file)
                         if extension not in ext_filter:
                             continue
-                    if file not in existing:
-                        path = os.path.join(place, file)
-                        existing.append(path)
-        if model_url is not None and len(existing) == 0:
-            if dl_name is not None:
-                model_file = load_file_from_url(url=model_url, model_dir=model_path, file_name=dl_name, progress=True)
+                    if file not in output:
+                        output.append(full_path)
+        if model_url is not None and len(output) == 0:
+            if download_name is not None:
+                dl = load_file_from_url(model_url, model_path, True, download_name)
+                output.append(dl)
             else:
-                model_file = load_file_from_url(url=model_url, model_dir=model_path, progress=True)
-
-            if os.path.exists(model_file) and os.path.isfile(model_file) and model_file not in existing:
-                existing.append(model_file)
+                output.append(model_url)
     except:
         pass
-    return existing
+    return output
 
 
 def friendly_name(file: str):
@@ -111,3 +111,37 @@ def move_files(src_path: str, dest_path: str, ext_filter: str = None):
                 shutil.rmtree(src_path, True)
     except:
         pass
+
+
+def load_upscalers():
+    datas = []
+    for cls in Upscaler.__subclasses__():
+        name = cls.__name__
+        module_name = cls.__module__
+        print(f"Class: {name} and {module_name}")
+        module = importlib.import_module(module_name)
+        class_ = getattr(module, name)
+        cmd_name = f"{name.lower().replace('upscaler', '')}-models-path"
+        print(f"CMD Name: {cmd_name}")
+        opt_string = None
+        try:
+            opt_string = shared.opts.__getattr__(cmd_name)
+        except:
+            pass
+        scaler = class_(opt_string)
+        for child in scaler.scalers:
+            print(f"Appending {child.name}")
+            datas.append(child)
+
+    shared.sd_upscalers = datas
+
+    # for scaler in subclasses:
+    #     print(f"Found scaler: {type(scaler).__name__}")
+    #     try:
+    #         scaler = scaler()
+    #         for child in scaler.scalers:
+    #             print(f"Appending {child.name}")
+    #             datas.append[child]
+    #     except:
+    #         pass
+    # shared.sd_upscalers = datas

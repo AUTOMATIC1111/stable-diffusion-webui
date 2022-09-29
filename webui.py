@@ -1,9 +1,10 @@
 import os
 import signal
 import threading
-
+import modules.paths
 import modules.codeformer_model as codeformer
 import modules.esrgan_model as esrgan
+import modules.bsrgan_model as bsrgan
 import modules.extras
 import modules.face_restoration
 import modules.gfpgan_model as gfpgan
@@ -27,11 +28,7 @@ modules.sd_models.setup_model(cmd_opts.stablediffusion_models_path)
 codeformer.setup_model(cmd_opts.codeformer_models_path)
 gfpgan.setup_model(cmd_opts.gfpgan_models_path)
 shared.face_restorers.append(modules.face_restoration.FaceRestoration())
-
-esrgan.setup_model(cmd_opts.esrgan_models_path)
-swinir.setup_model(cmd_opts.swinir_models_path)
-realesrgan.setup_model(cmd_opts.realesrgan_models_path)
-ldsr.setup_model(cmd_opts.ldsr_models_path)
+modelloader.load_upscalers()
 queue_lock = threading.Lock()
 
 
