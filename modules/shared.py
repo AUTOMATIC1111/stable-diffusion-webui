@@ -228,6 +228,15 @@ options_templates.update(options_section(('sampler-params', "Sampler parameters"
   's_churn': OptionInfo(0.0, "sigma churn", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
   's_tmin':  OptionInfo(0.0, "sigma tmin",  gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
   's_noise': OptionInfo(1.0, "sigma noise", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
+    
+  'noise_scheduler_override': OptionInfo('default', "Noise Scheduler Override", gr.Dropdown, {"choices": ['default','karras','exponential','vp']}),
+  'noise_scheduler_smin': OptionInfo(0.1,  "Noise Scheduler Sigma min", gr.Slider, {"minimum": 0.0, "maximum": 100.0, "step": 0.5}),
+  'noise_scheduler_smax': OptionInfo(10.0, "Noise Scheduler Sigma max", gr.Slider, {"minimum": 0.0, "maximum": 100.0, "step": 0.5}),
+  'noise_scheduler_rho' : OptionInfo(7.0,  "Noise Scheduler Sigma rho", gr.Slider, {"minimum": 7.0, "maximum": 100.0, "step": 0.5}),
+  'noise_scheduler_beta_d':   OptionInfo(19.9,  "Noise Scheduler Beta distribution", gr.Slider, {"minimum": 0.0, "maximum": 100.0, "step": 0.5}),
+  'noise_scheduler_beta_min': OptionInfo(0.1,   "Noise Scheduler beta min", gr.Slider, {"minimum": 0.0, "maximum": 100.0, "step": 0.1}),
+  'noise_scheduler_eps_s':    OptionInfo(0.001, "Noise Scheduler epsilon", gr.Slider, {"minimum": 0.001, "maximum": 1.0, "step": 0.001}),
+    
 }))
 
 class Options:
