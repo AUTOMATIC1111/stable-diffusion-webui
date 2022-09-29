@@ -98,6 +98,8 @@ def run_extras(extras_mode, image, image_folder, gfpgan_visibility, codeformer_v
 
         outputs.append(image)
 
+    devices.torch_gc()
+
     return outputs, plaintext_to_html(info), ''
 
 
