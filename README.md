@@ -14,6 +14,7 @@ A browser interface based on Gradio library for Stable Diffusion.
 - Attention
 - Loopback
 - X/Y plot
+- TXT2Vectorgraphic (needs POTRACE)
 - Textual Inversion
 - Extras tab with:
     - GFPGAN, neural network that fixes faces
@@ -82,6 +83,14 @@ bash <(wget -qO- https://raw.githubusercontent.com/AUTOMATIC1111/stable-diffusio
 ### Installation on Apple Silicon
 
 Find the instructions [here](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Installation-on-Apple-Silicon).
+
+### Installation of POTRACE
+To use the TXT2Vectorgraphics feature, install POTRACE to your system. 
+
+**Windows users** download it from https://potrace.sourceforge.net/#downloading and configure the path to the executable in the settings of SD-Webui. 
+
+**Linux users** can just ```apt install potrace``` (or other packagers)
+**Mac User** not tested yet, but ```brew potrace``` could work or follow the Windows-instructions
 
 ## Documentation
 The documentation was moved from this README over to the project's [wiki](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki).
