@@ -14,7 +14,9 @@ import random
 import subprocess
 import numpy as np
 import json
- 
+import cv2
+import torch
+
 from PIL import Image, ImageFilter
  
 def zoom_at2(img, x, y, zoom):
@@ -33,6 +35,31 @@ def zoom_at2(img, x, y, zoom):
 
     return resimg
  
+def opencvtransform(pil_img, angle, translation_x, translation_y, zoom, wrap):
+    
+    #Convert PIL to OpenCV2 format.
+    numpy_image=np.array(pil_img)  
+    prev_img_cv2=cv2.cvtColor(numpy_image, cv2.COLOR_RGB2BGR) 
+    
+    #Set up matrices for transformations
+    center = (pil_img.size[0] // 2, pil_img.size[1] // 2)
+    trans_mat = np.float32([[1, 0, translation_x], [0, 1, translation_y]])
+    rot_mat = cv2.getRotationMatrix2D(center, angle, zoom)
+    trans_mat = np.vstack([trans_mat, [0,0,1]])
+    rot_mat = np.vstack([rot_mat, [0,0,1]])
+    xform = np.matmul(rot_mat, trans_mat)
+
+    opencv_image = cv2.warpPerspective(
+        prev_img_cv2,
+        xform,
+        (prev_img_cv2.shape[1], prev_img_cv2.shape[0]),
+        borderMode=cv2.BORDER_WRAP if wrap else cv2.BORDER_REPLICATE
+        )
+    
+    #Convert OpenCV2 image back to PIL
+    color_coverted = cv2.cvtColor(opencv_image, cv2.COLOR_BGR2RGB)
+    return Image.fromarray(color_coverted)
+    
 def make_gif(filepath, filename, max_frames, fps, create_vid):
     #Create filenames
     in_filename = f"{str(filename)}_%05d.png"
@@ -123,7 +150,7 @@ def make_mp4(filepath, filename, max_frames, fps, create_vid):
 class Script(scripts.Script):
  
     def title(self):
-        return "Animation v0.5"
+        return "Animator"
  
     def show(self, is_img2img):
         return is_img2img
@@ -138,24 +165,24 @@ class Script(scripts.Script):
         
         i2 = gr.HTML("<p style=\"margin-bottom:0.75em\">Animation Parameters</p>")
         with gr.Row():
-            totaltime = gr.Textbox(label="Total Animation Length (s)", visible=True, lines=1, value="10.0")
-            fps = gr.Textbox(label="Framerate", visible=True, lines=1, value="15")
+            totaltime = gr.Textbox(label="Total Animation Length (s)", lines=1, value="10.0")
+            fps = gr.Textbox(label="Framerate", lines=1, value="15")
         
         with gr.Row():
             denoising_strength = gr.Slider(label="Denoising Strength, overrides img2img", minimum=0.0, maximum=1.0, step=0.01, value=0.40)
             noise_decay =  gr.Checkbox(label='Denoising Decay', value=False)
 
         with gr.Row():
-            zoom_factor = gr.Textbox(label="Zoom Factor (scale/s)", visible=True, lines=1, value="1.0")
-            x_shift = gr.Textbox(label="X Pixel Shift (pixels/s)", visible=True, lines=1, value="0")
-            y_shift = gr.Textbox(label="Y Pixel Shift (pixels/s)", visible=True, lines=1, value="0")
+            zoom_factor = gr.Textbox(label="Zoom Factor (scale/s)", lines=1, value="1.0")
+            x_shift = gr.Textbox(label="X Pixel Shift (pixels/s)", lines=1, value="0")
+            y_shift = gr.Textbox(label="Y Pixel Shift (pixels/s)", lines=1, value="0")
         
         i3 = gr.HTML("<p style=\"margin-bottom:0.75em\">Prompt Template, applied to each keyframe below</p>")
-        tmpl_pos = gr.Textbox(label="Positive Prompts", visible=True, lines=1, value="")
-        tmpl_neg = gr.Textbox(label="Negative Prompts", visible=True, lines=1, value="")
+        tmpl_pos = gr.Textbox(label="Positive Prompts", lines=1, value="")
+        tmpl_neg = gr.Textbox(label="Negative Prompts", lines=1, value="")
         
-        i4 = gr.HTML("<p style=\"margin-bottom:0.75em\">Keyframes<br>Format: Time (s) | Desnoise | Zoom (/s) | X Shift (pix/s) | Y shift (pix/s) | Positive Prompts | Negative Prompts | Seed</p>")
-        prompts = gr.Textbox(label="Keyframes:", visible=True, lines=5, value="")
+        i4 = gr.HTML("<p style=\"margin-bottom:0.75em\">Keyframes<br>Format: Time (s) | Desnoise | Zoom (/s) | X Shift (pix/s) | Y shift (pix/s) | Positive Prompts | Negative Prompts</p>")
+        prompts = gr.Textbox(label="Keyframes:", lines=5, value="")
         return [i1, i2, i3, i4, totaltime, fps, vid_gif, vid_mp4, vid_webm, zoom_factor, tmpl_pos, tmpl_neg, prompts, denoising_strength, x_shift, y_shift, noise_decay]
  
     def run(self, p, i1, i2, i3, i4, totaltime, fps, vid_gif, vid_mp4, vid_webm, zoom_factor, tmpl_pos, tmpl_neg, prompts, denoising_strength, x_shift, y_shift, noise_decay):
@@ -297,8 +324,9 @@ class Script(scripts.Script):
 
             #Manipulate image to be passed to next iteration
             init_img = processed.images[0]
-            p.init_images = [zoom_at2(init_img, int(x_shift_cumulitive), int(y_shift_cumulitive), zoom_factor)]
-
+            #p.init_images = [zoom_at2(init_img, int(x_shift_cumulitive), int(y_shift_cumulitive), zoom_factor)]
+            p.init_images = [opencvtransform(init_img, 0, int(x_shift_cumulitive),  int(y_shift_cumulitive), zoom_factor, False)]
+            
             #Subtract the integer portion we just shifted.
             x_shift_cumulitive = x_xhift_cumulitive - int(x_xhift_cumulitive)
             y_shift_cumulitive = y_shift_cumulitive - int(y_shift_cumulitive)
@@ -313,10 +341,9 @@ class Script(scripts.Script):
             init_img.save(os.path.join(outpath, f"{outfilename}_{i:05}.png"))
  
         #If not interrupted, make requested movies. Otherise the bat files exist.
-        if not state.interrupted:
-            make_gif(outpath, outfilename, int(loops), int(fps), vid_gif)
-            make_mp4(outpath, outfilename, int(loops), int(fps), vid_mp4)
-            make_webm(outpath, outfilename, int(loops), int(fps), vid_webm)
+        make_gif(outpath, outfilename, int(loops), int(fps), vid_gif & not (state.interrupted))
+        make_mp4(outpath, outfilename, int(loops), int(fps), vid_mp4 & not (state.interrupted))
+        make_webm(outpath, outfilename, int(loops), int(fps), vid_webm & not (state.interrupted))
  
  
         #display(all_images, initial_seed, initial_info)
