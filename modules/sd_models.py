@@ -137,7 +137,7 @@ def load_model():
 
 
 def reload_model_weights(sd_model, info=None):
-    from modules import lowvram, devices
+    from modules import lowvram, devices, sd_hijack
     checkpoint_info = info or select_checkpoint()
 
     if sd_model.sd_model_checkpint == checkpoint_info.filename:
@@ -148,7 +148,11 @@ def reload_model_weights(sd_model, info=None):
     else:
         sd_model.to(devices.cpu)
 
+    sd_hijack.model_hijack.undo_hijack(sd_model)
+
     load_model_weights(sd_model, checkpoint_info.filename, checkpoint_info.hash)
+
+    sd_hijack.model_hijack.hijack(sd_model)
 
     if not shared.cmd_opts.lowvram and not shared.cmd_opts.medvram:
         sd_model.to(devices.device)
