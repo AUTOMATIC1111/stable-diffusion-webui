@@ -13,6 +13,7 @@ import traceback
 import numpy as np
 import torch
 from PIL import Image, PngImagePlugin
+import piexif
 
 import gradio as gr
 import gradio.utils
@@ -111,18 +112,26 @@ def save_files(js_data, images, index):
             writer.writerow(["prompt", "seed", "width", "height", "sampler", "cfgs", "steps", "filename", "negative_prompt"])
 
         filename_base = str(int(time.time() * 1000))
+        extension = opts.samples_format.lower()
         for i, filedata in enumerate(images):
-            filename = filename_base + ("" if len(images) == 1 else "-" + str(i + 1)) + f".{opts.samples_format}"
+            filename = filename_base + ("" if len(images) == 1 else "-" + str(i + 1)) + f".{extension}"
             filepath = os.path.join(opts.outdir_save, filename)
 
             if filedata.startswith("data:image/png;base64,"):
                 filedata = filedata[len("data:image/png;base64,"):]
 
-            pnginfo = PngImagePlugin.PngInfo()
-            pnginfo.add_text('parameters', infotexts[i])
-
             image = Image.open(io.BytesIO(base64.decodebytes(filedata.encode('utf-8'))))
-            image.save(filepath, quality=opts.jpeg_quality, pnginfo=pnginfo)
+            if opts.enable_pnginfo and extension == 'png':
+                pnginfo = PngImagePlugin.PngInfo()
+                pnginfo.add_text('parameters', infotexts[i])
+                image.save(filepath, pnginfo=pnginfo)
+            else:
+                image.save(filepath, quality=opts.jpeg_quality)
+
+            if opts.enable_pnginfo and extension in ("jpg", "jpeg", "webp"):
+                piexif.insert(piexif.dump({"Exif": {
+                    piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(infotexts[i], encoding="unicode")
+                }}), filepath)
 
             filenames.append(filename)
 
