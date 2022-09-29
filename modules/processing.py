@@ -80,6 +80,14 @@ class StableDiffusionProcessing:
         self.color_corrections = None
         self.denoising_strength: float = 0
 
+        self.noise_scheduler_override = None
+        self.noise_scheduler_smin = None 
+        self.noise_scheduler_smax = None
+        self.noise_scheduler_rho = None
+        self.noise_scheduler_beta_d = None
+        self.noise_scheduler_beta_min = None
+        self.noise_scheduler_eps_s = None
+            
         self.ddim_discretize = opts.ddim_discretize
         self.s_churn = opts.s_churn
         self.s_tmin = opts.s_tmin
@@ -130,6 +138,14 @@ class Processed:
         self.s_tmin = p.s_tmin
         self.s_tmax = p.s_tmax
         self.s_noise = p.s_noise
+        
+        self.noise_scheduler_override = p.noise_scheduler_override
+        self.noise_scheduler_smin = p.noise_scheduler_smin 
+        self.noise_scheduler_smax = p.noise_scheduler_smax
+        self.noise_scheduler_rho = p.noise_scheduler_rho
+        self.noise_scheduler_beta_d = p.noise_scheduler_beta_d
+        self.noise_scheduler_beta_min = p.noise_scheduler_beta_min
+        self.noise_scheduler_eps_s = p.noise_scheduler_eps_s
         
         self.prompt = self.prompt if type(self.prompt) != list else self.prompt[0]
         self.negative_prompt = self.negative_prompt if type(self.negative_prompt) != list else self.negative_prompt[0]
