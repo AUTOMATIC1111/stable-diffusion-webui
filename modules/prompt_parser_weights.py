@@ -52,9 +52,13 @@ def get_weighted_prompt(prompt_weight):
             weight = 1
             if mark != -1:
                 weight_str = prompt[mark + 1:i]
-                if weight_str.isdecimal():
-                    weight = int(weight_str)
+                try:
+                    weight = float(weight_str)
                     end = mark
+                except ValueError:
+                    print("warning, not a number:", weight_str)
+
+
 
             alt = (prompt[start:end], weight)
             alts += get_weighted_prompt(alt) if nested else [alt]
@@ -98,3 +102,4 @@ def get_weighted_prompt(prompt_weight):
 # test("{lava|ice|water@5}")
 # test("{fire@4|lava@1}", 5)
 # test("{{fire@4|lava@1}|ice@2|water@5}")
+# test("{fire|lava@3.5}")
