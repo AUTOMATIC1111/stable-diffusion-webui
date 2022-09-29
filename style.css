@@ -389,3 +389,8 @@ input[type="range"]{
   border-radius: 8px;
   display: none;
 }
+
+.red {
+	color: red;
+}
+
