@@ -2,7 +2,7 @@ Negative prompt is a way to use the Stable Diffusion in a way that allows the us
 
 The way negative prompt works is by using user-specified text instead of empty string for `unconditional_conditioning` when doing sampling.
 
-Here's (simplified) code from [txt2img.py](https://github.com/CompVis/stable-diffusion/blob/main/scripts/txt2img.py):
+Here's the (simplified) code from [txt2img.py](https://github.com/CompVis/stable-diffusion/blob/main/scripts/txt2img.py):
 
 ```python
 # prompts = ["a castle in a forest"]
@@ -14,7 +14,7 @@ uc = model.get_learned_conditioning(batch_size * [""])
 samples_ddim, _ = sampler.sample(conditioning=c, unconditional_conditioning=uc, [...])
 ```
 
-This launches sampler that repeatedly:
+This launches the sampler that repeatedly:
 - de-noises the picture guiding it to look more like your prompt (conditioning)
 - de-noises the picture guiding it to look more like an empty prompt (unconditional_conditioning)
 - looks at difference between those and uses it to produce a set of changes for the noisy picture (different samplers do that part differently)
