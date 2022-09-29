@@ -14,6 +14,8 @@ titles = {
     "\u{1f3b2}\ufe0f": "Set seed to -1, which will cause a new random number to be used every time",
     "\u267b\ufe0f": "Reuse seed from last generation, mostly useful if it was randomed",
     "\u{1f3a8}": "Add a random artist to the prompt.",
+    "\u{1F3F7}": "Add a random keyword to the prompt.",
+    "\u{1F9DD}": "Add a random person to the prompt.",
     "\u2199\ufe0f": "Read generation parameters from prompt into user interface.",
 
     "Inpaint a part of image": "Draw a mask over an image, and the script will regenerate the masked area with content according to prompt",
