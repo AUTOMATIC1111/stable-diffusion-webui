@@ -23,6 +23,8 @@ samplers_k_diffusion = [
     ('Heun', 'sample_heun', ['k_heun']),
     ('DPM2', 'sample_dpm_2', ['k_dpm_2']),
     ('DPM2 a', 'sample_dpm_2_ancestral', ['k_dpm_2_a']),
+    ('DPM fast', 'sample_dpm_fast', ['k_dpm_fast']),
+    ('DPM adaptive', 'sample_dpm_adaptive', ['k_dpm_ad']),
 ]
 
 samplers_data_k_diffusion = [
@@ -37,6 +39,8 @@ samplers = [
     SamplerData('PLMS', lambda model: VanillaStableDiffusionSampler(ldm.models.diffusion.plms.PLMSSampler, model), []),
 ]
 samplers_for_img2img = [x for x in samplers if x.name != 'PLMS']
+samplers_for_img2img.remove(samplers_for_img2img[6])
+samplers_for_img2img.remove(samplers_for_img2img[6])
 
 sampler_extra_params = {
     'sample_euler': ['s_churn', 's_tmin', 's_tmax', 's_noise'],
@@ -309,7 +313,12 @@ class KDiffusionSampler:
         x = x * sigmas[0]
 
         extra_params_kwargs = self.initialize(p)
-
+        if 'sigma_min' in inspect.signature(self.func).parameters:
+            if 'n' in inspect.signature(self.func).parameters:
+                samples = self.func(self.model_wrap_cfg, x, sigma_min=self.model_wrap.sigmas[0].item(), sigma_max=self.model_wrap.sigmas[-1].item(), n=steps, extra_args={'cond': conditioning, 'uncond': unconditional_conditioning, 'cond_scale': p.cfg_scale}, disable=False, callback=self.callback_state, **extra_params_kwargs)
+                return samples
+            samples = self.func(self.model_wrap_cfg, x, sigma_min=self.model_wrap.sigmas[0].item(), sigma_max=self.model_wrap.sigmas[-1].item(), extra_args={'cond': conditioning, 'uncond': unconditional_conditioning, 'cond_scale': p.cfg_scale}, disable=False, callback=self.callback_state, **extra_params_kwargs)
+            return samples
         samples = self.func(self.model_wrap_cfg, x, sigmas, extra_args={'cond': conditioning, 'uncond': unconditional_conditioning, 'cond_scale': p.cfg_scale}, disable=False, callback=self.callback_state, **extra_params_kwargs)
 
         return samples
