@@ -4,7 +4,8 @@ import torch
 import tqdm
 from PIL import Image
 import inspect
-
+from modules.paths import paths
+sys.path.insert(0, paths["k_diffusion"])
 import k_diffusion.sampling
 import ldm.models.diffusion.ddim
 import ldm.models.diffusion.plms
