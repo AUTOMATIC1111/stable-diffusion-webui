@@ -324,7 +324,7 @@ def get_next_sequence_number(path, basename):
 
     return result + 1
 
-def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None, forced_filename=None, suffix=""):
+def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', pnginfo_desciption='description', p=None, existing_info=None, forced_filename=None, suffix=""):
     if short_filename or prompt is None or seed is None:
         file_decoration = ""
     elif opts.save_to_dirs:
@@ -345,6 +345,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
                 pnginfo.add_text(k, str(v))
 
         pnginfo.add_text(pnginfo_section_name, info)
+        pnginfo.add_text(pnginfo_desciption, info)
     else:
         pnginfo = None
 
