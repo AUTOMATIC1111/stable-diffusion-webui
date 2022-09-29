@@ -24,7 +24,6 @@ except Exception:
 
 
 def checkpoint_tiles():
-    print(sorted([x.title for x in checkpoints_list.values()]))
     return sorted([x.title for x in checkpoints_list.values()])
 
 
