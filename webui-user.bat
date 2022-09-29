@@ -1,8 +1,8 @@
 @echo off
 
-set PYTHON=py
-set GIT=git
-set VENV_DIR=venv
+set PYTHON=
+set GIT=
+set VENV_DIR=
 set COMMANDLINE_ARGS=
 
 call webui.bat
