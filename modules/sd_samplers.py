@@ -126,7 +126,7 @@ class VanillaStableDiffusionSampler:
         return res
 
     def initialize(self, p):
-        self.eta = p.eta or opts.eta_ddim
+        self.eta = p.eta if p.eta is not None else opts.eta_ddim
 
         for fieldname in ['p_sample_ddim', 'p_sample_plms']:
             if hasattr(self.sampler, fieldname):
@@ -270,7 +270,7 @@ class KDiffusionSampler:
         self.model_wrap_cfg.nmask = p.nmask if hasattr(p, 'nmask') else None
         self.model_wrap.step = 0
         self.sampler_noise_index = 0
-        self.eta = p.eta or opts.eta_ancestral
+        self.eta = p.eta if p.eta is not None else opts.eta_ancestral
 
         if hasattr(k_diffusion.sampling, 'trange'):
             k_diffusion.sampling.trange = lambda *args, **kwargs: extended_trange(self, *args, **kwargs)
@@ -297,12 +297,12 @@ class KDiffusionSampler:
         
         sigma_fnc_kwargs = {'device':'cuda'}
         sigma_fnc_kwargs_defaults = {
-          'sigma_min':p.noise_scheduler_smin      or opts.noise_scheduler_smin, 
-          'sigma_max':p.noise_scheduler_smax      or opts.noise_scheduler_smax,
-          'rho':      p.noise_scheduler_rho       or opts.noise_scheduler_rho,
-          'beta_d':   p.noise_scheduler_beta_d    or opts.noise_scheduler_beta_d,
-          'beta_min': p.noise_scheduler_beta_min  or opts.noise_scheduler_beta_min,
-          'eps_s':    p.noise_scheduler_eps_s     or opts.noise_scheduler_eps_s,
+          'sigma_min':p.noise_scheduler_smin     if p.noise_scheduler_smin     is not None else opts.noise_scheduler_smin, 
+          'sigma_max':p.noise_scheduler_smax     if p.noise_scheduler_smax     is not None else opts.noise_scheduler_smax,
+          'rho':      p.noise_scheduler_rho      if p.noise_scheduler_rho      is not None else opts.noise_scheduler_rho,
+          'beta_d':   p.noise_scheduler_beta_d   if p.noise_scheduler_beta_d   is not None else opts.noise_scheduler_beta_d,
+          'beta_min': p.noise_scheduler_beta_min if p.noise_scheduler_beta_min is not None else opts.noise_scheduler_beta_min,
+          'eps_s':    p.noise_scheduler_eps_s    if p.noise_scheduler_eps_s    is not None else opts.noise_scheduler_eps_s,
         }
         
         for k,v in sigma_fnc_kwargs_defaults.items():
