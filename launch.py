@@ -130,6 +130,9 @@ run_pip(f"install -r {requirements_file}", "requirements for Web UI")
 
 sys.argv += args
 
+if "--exit" in args:
+    print("Exiting because of --exit argument")
+    exit(0)
 
 def start_webui():
     print(f"Launching Web UI with arguments: {' '.join(sys.argv[1:])}")
