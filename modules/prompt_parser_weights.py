@@ -11,8 +11,8 @@ def combine(left, right):
 
 
 def get_weighted_prompt(prompt_weight):
-    (prompt, weight) = prompt_weight
-    results = [('', weight)]
+    (prompt, full_weight) = prompt_weight
+    results = [('', full_weight)]
     alts = []
     start = 0
     mark = -1
@@ -58,6 +58,7 @@ def get_weighted_prompt(prompt_weight):
 
             alt = (prompt[start:end], weight)
             alts += get_weighted_prompt(alt) if nested else [alt]
+            nested = False
             mark = -1
             start = i + 1
 
@@ -71,16 +72,19 @@ def get_weighted_prompt(prompt_weight):
     # rest of the prompt
     results = list(combine(results, [(prompt[start:], 1)]))
     weight_sum = sum(map(lambda r: r[1], results))
-    results = list(map(lambda p: (p[0], p[1] / weight_sum), results))
+    results = list(map(lambda p: (p[0], p[1] / weight_sum * full_weight), results))
 
     return results
 
 
-# def test(p):
+# def test(p, w=1):
 #     print('')
 #     print(p)
-#     print(get_weighted_prompt((p, 1)))
-
+#     result = get_weighted_prompt((p, w))
+#     print(result)
+#     print(sum(map(lambda x: x[1], result)))
+#
+#
 # test("fantasy landscape")
 # test("fantasy {landscape|city}, dark")
 # test("fantasy {landscape|city}, {fire|ice} ")
@@ -91,3 +95,6 @@ def get_weighted_prompt(prompt_weight):
 # test("fantasy landscape, {{fire|lava}|ice@2")
 # test("fantasy landscape, {fire|lava} {cool} {ice,water}")
 # test("fantasy landscape, {fire|lava} {cool} {ice,water")
+# test("{lava|ice|water@5}")
+# test("{fire@4|lava@1}", 5)
+# test("{{fire@4|lava@1}|ice@2|water@5}")
