@@ -143,6 +143,7 @@ options_templates.update(options_section(('saving-images', "Saving images/grids"
     "export_for_4chan": OptionInfo(True, "If PNG image is larger than 4MB or any dimension is larger than 4000, downscale and save copy as JPG"),
 
     "use_original_name_batch": OptionInfo(False, "Use original name for output filename during batch process in extras tab"),
+    "potrace_path" : OptionInfo("potrace.exe", "Path on your system to find the potrace command")
 }))
 
 options_templates.update(options_section(('saving-paths', "Paths for saving"), {

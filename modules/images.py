@@ -402,6 +402,8 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
         with open(f"{fullfn_without_extension}.txt", "w", encoding="utf8") as file:
             file.write(info + "\n")
 
+    return fullfn
+
 
 class Upscaler:
     name = "Lanczos"
