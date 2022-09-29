@@ -6,7 +6,6 @@ font-roboto
 gfpgan
 gradio
 invisible-watermark
-git+https://github.com/crowsonkb/k-diffusion.git
 numpy
 omegaconf
 piexif
@@ -16,5 +15,12 @@ realesrgan
 scikit-image>=0.19
 git+https://github.com/TencentARC/GFPGAN.git@8d2447a2d918f8eba5a4a01463fd48e45126a379
 timm==0.4.12
-transformers
+transformers==4.19.2
 torch
+einops
+jsonmerge
+clean-fid
+git+https://github.com/openai/CLIP@d50d76daa670286dd6cacf3bcd80b5e4823fc8e1
+resize-right
+torchdiffeq
+kornia

@@ -10,7 +10,7 @@ from ldm.util import instantiate_from_config
 
 from modules import shared
 
-CheckpointInfo = namedtuple("CheckpointInfo", ['filename', 'title', 'hash'])
+CheckpointInfo = namedtuple("CheckpointInfo", ['filename', 'title', 'hash', 'model_name'])
 checkpoints_list = {}
 
 try:
@@ -21,6 +21,11 @@ try:
     logging.set_verbosity_error()
 except Exception:
     pass
+
+
+def checkpoint_tiles():
+    print(sorted([x.title for x in checkpoints_list.values()]))
+    return sorted([x.title for x in checkpoints_list.values()])
 
 
 def list_models():
@@ -39,21 +44,23 @@ def list_models():
         if name.startswith("\\") or name.startswith("/"):
             name = name[1:]
 
-        return f'{name} [{h}]'
+        shortname = os.path.splitext(name.replace("/", "_").replace("\\", "_"))[0]
+
+        return f'{name} [{h}]', shortname
 
     cmd_ckpt = shared.cmd_opts.ckpt
     if os.path.exists(cmd_ckpt):
         h = model_hash(cmd_ckpt)
-        title = modeltitle(cmd_ckpt, h)
-        checkpoints_list[title] = CheckpointInfo(cmd_ckpt, title, h)
+        title, model_name = modeltitle(cmd_ckpt, h)
+        checkpoints_list[title] = CheckpointInfo(cmd_ckpt, title, h, model_name)
     elif cmd_ckpt is not None and cmd_ckpt != shared.default_sd_model_file:
         print(f"Checkpoint in --ckpt argument not found: {cmd_ckpt}", file=sys.stderr)
 
     if os.path.exists(model_dir):
         for filename in glob.glob(model_dir + '/**/*.ckpt', recursive=True):
             h = model_hash(filename)
-            title = modeltitle(filename, h)
-            checkpoints_list[title] = CheckpointInfo(filename, title, h)
+            title, model_name = modeltitle(filename, h)
+            checkpoints_list[title] = CheckpointInfo(filename, title, h, model_name)
 
 
 def model_hash(filename):
