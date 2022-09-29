@@ -199,11 +199,12 @@ async def f_txt2img(req: Txt2ImgRequest):
         0,
         0,
         0,
+        False,
         height,
         width,
         False,
-        None,
-        None,
+        False,
+        0,
         0
     )
 
@@ -256,21 +257,22 @@ async def f_img2img(req: Img2ImgRequest):
                                          orig_width, orig_height)
 
     output_images, info, html = modules.img2img.img2img(
+        0,
         req.prompt or collect_prompt(opt, 'prompts'),
         req.negative_prompt or collect_prompt(opt, 'negative_prompt'),
         "None",
         "None",
         image,
         {"image": image, "mask": mask},
+        image,
         mask,
-        1,
+        mode,
         req.steps or opt['steps'],
         sampler_index,
         req.mask_blur or opt['mask_blur'],
         req.inpainting_fill or opt['inpainting_fill'],
         req.use_gfpgan or opt['use_gfpgan'],
         req.tiling or opt['tiling'],
-        mode,
         req.batch_count or opt['n_iter'],
         req.batch_size or opt['batch_size'],
         req.cfg_scale or opt['cfg_scale'],
@@ -280,13 +282,17 @@ async def f_img2img(req: Img2ImgRequest):
         0,
         0,
         0,
+        False,
         height,
         width,
         opt['resize_mode'],
-        upscaler_index,
-        req.upscale_overlap or opt['upscale_overlap'],
         req.inpaint_full_res or opt['inpaint_full_res'],
+        32,
         False,  # req.invert_mask or opt['invert_mask'],
+        "",
+        "",
+        # upscaler_index,
+        # req.upscale_overlap or opt['upscale_overlap'],
         0
     )
 
