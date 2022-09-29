@@ -107,6 +107,15 @@ Using `()` in prompt increases model's attention to enclosed words, and `[]` dec
 
 ![](images/attention-3.jpg)
 
+Cheat sheet:
+
+ - `a (word)` - increase attention to `word` by a factor of 1.1
+ - `a ((word))` - increase attention to `word` by a factor of 1.21 (= 1.1 * 1.1)
+ - `a [word]` - decrease attention to `word` by a factor of 1.1
+ - `a (word:1.5)` - increase attention to `word` by a factor of 1.5
+ - `a (word:0.25)` - decrease attention to `word` by a factor of 4 (= 1 / 0.25)
+ - `a \(word\)` - use literal `()` characters in prompt
+
 With `()`, a weight can be specified like this: `(text:1.4)`. If the weight is not specified, it is assumed to be 1.1. Specifying weight only works with `()` not with `[]`.
 
 If you want to use any of literal `()[]` characters in the prompt, use the backslash to escape them: `anime_\(character\)`.
