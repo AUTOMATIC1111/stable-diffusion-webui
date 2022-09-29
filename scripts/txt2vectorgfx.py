@@ -22,7 +22,7 @@ NEG_PROMPT = ",background, colors, shading, details"
 
 class Script(scripts.Script):
     def title(self):
-        return "Text to Vectorgraphics (svg,pdf)"
+        return "Text to Vectorgraphics"
 
     def ui(self, is_img2img):
         poFormat = gr.Dropdown(["svg","pdf"], label="Output format", value="svg")
