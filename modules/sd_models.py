@@ -62,19 +62,9 @@ def list_models():
             checkpoints_list[title] = CheckpointInfo(filename, title, h, model_name)
 
 def get_closet_checkpoint_match(searchString):
-    checkpointValues = checkpoints_list.values()
-
-    applicable = [info for info in checkpointValues if searchString.upper() == ''.join(info.title.rpartition('.ckpt')[0]).upper()]
-
-    if len(applicable) == 0:
-        applicable = [info for info in checkpointValues if searchString.upper() == ''.join(info.title.rpartition('.ckpt')[:2]).upper()]
-
-    if len(applicable) == 0:
-        applicable = [info for info in checkpointValues if searchString in info.title]
-
+    applicable = sorted([info for info in checkpoints_list.values() if searchString in info.title], key = lambda x:len(x.title))
     if len(applicable)>0:
         return applicable[0]
-
     return None
 
 def model_hash(filename):
