@@ -159,6 +159,9 @@ class Script(scripts.Script):
         p.batch_size = 1
 
         def process_axis(opt, vals):
+            if opt.label == 'Nothing':
+                return [0]
+
             valslist = [x.strip() for x in vals.split(",")]
 
             if opt.type == int:
