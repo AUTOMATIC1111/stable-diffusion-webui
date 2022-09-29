@@ -245,6 +245,7 @@ class StableDiffusionModelHijack:
 
         model_embeddings.token_embedding = EmbeddingsWithFixes(model_embeddings.token_embedding, self)
         m.cond_stage_model = FrozenCLIPEmbedderWithCustomWords(m.cond_stage_model, self)
+
         self.clip = m.cond_stage_model
 
         if cmd_opts.opt_split_attention_v1:
@@ -262,6 +263,14 @@ class StableDiffusionModelHijack:
             return res
 
         self.layers = flatten(m)
+
+    def undo_hijack(self, m):
+        if type(m.cond_stage_model) == FrozenCLIPEmbedderWithCustomWords:
+            m.cond_stage_model = m.cond_stage_model.wrapped
+
+        model_embeddings = m.cond_stage_model.transformer.text_model.embeddings
+        if type(model_embeddings.token_embedding) == EmbeddingsWithFixes:
+            model_embeddings.token_embedding = model_embeddings.token_embedding.wrapped
 
     def apply_circular(self, enable):
         if self.circular_enabled == enable:
