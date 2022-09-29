@@ -22,10 +22,7 @@ import modules.txt2img
 import modules.img2img
 import modules.swinir as swinir
 import modules.sd_models
-from torch.nn.functional import silu
-import ldm
 
-ldm.modules.diffusionmodules.model.nonlinearity = silu
 
 modules.codeformer_model.setup_codeformer()
 modules.gfpgan_model.setup_gfpgan()
