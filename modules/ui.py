@@ -539,6 +539,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
 
             roll.click(
                 fn=roll_artist,
+                _js="roll_artist_txt2img",
                 inputs=[
                     txt2img_prompt,
                 ],
@@ -743,6 +744,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
 
             roll.click(
                 fn=roll_artist,
+                _js="roll_artist_img2img",
                 inputs=[
                     img2img_prompt,
                 ],
@@ -753,6 +755,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
 
             prompts = [(txt2img_prompt, txt2img_negative_prompt), (img2img_prompt, img2img_negative_prompt)]
             style_dropdowns = [(txt2img_prompt_style, txt2img_prompt_style2), (img2img_prompt_style, img2img_prompt_style2)]
+            style_js_funcs = ["update_style_txt2img", "update_style_img2img"]
 
             for button, (prompt, negative_prompt) in zip([txt2img_save_style, img2img_save_style], prompts):
                 button.click(
@@ -764,9 +767,10 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
                     outputs=[txt2img_prompt_style, img2img_prompt_style, txt2img_prompt_style2, img2img_prompt_style2],
                 )
 
-            for button, (prompt, negative_prompt), (style1, style2) in zip([txt2img_prompt_style_apply, img2img_prompt_style_apply], prompts, style_dropdowns):
+            for button, (prompt, negative_prompt), (style1, style2), js_func in zip([txt2img_prompt_style_apply, img2img_prompt_style_apply], prompts, style_dropdowns, style_js_funcs):
                 button.click(
                     fn=apply_styles,
+                    _js=js_func,
                     inputs=[prompt, negative_prompt, style1, style2],
                     outputs=[prompt, negative_prompt, style1, style2],
                 )
