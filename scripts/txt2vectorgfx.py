@@ -17,6 +17,8 @@ import gradio as gr
 from modules.processing import Processed, process_images
 from modules.shared import opts
 
+POS_PROMPT = ",(((vector graphic))), (((black white, line art))), atari graphic"
+NEG_PROMPT = ",background, colors, shading, details"
 
 class Script(scripts.Script):
     def title(self):
@@ -34,9 +36,14 @@ class Script(scripts.Script):
     def run(self, p, poFormat, poOpaque, poTight, poKeepPnm, poThreshold):
         p.do_not_save_grid = True
 
+        # make SD great b/w stuff
+        p.prompt += POS_PROMPT
+        p.negative_prompt += NEG_PROMPT
+
         images = []
         proc = process_images(p)
         images += proc.images
+        
 
         # vectorize
         for i,img in enumerate(images): 
