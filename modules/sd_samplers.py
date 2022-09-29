@@ -288,10 +288,36 @@ class KDiffusionSampler:
 
         return extra_params_kwargs
 
+    def get_wrapped_sigmas(self,n):
+      scheduler_override_name = 'get_sigmas_'+opts.noise_scheduler_override
+
+      if hasattr(k_diffusion.sampling,scheduler_override_name):
+        print('Alternate sigma func',scheduler_override_name)
+        sigma_func = getattr(k_diffusion.sampling,scheduler_override_name)
+        
+        sigma_fnc_kwargs = {'device':'cuda'}
+        sigma_fnc_kwargs_defaults = {
+          'sigma_min':opts.noise_scheduler_smin, 
+          'sigma_max':opts.noise_scheduler_smax,
+          'rho':      opts.noise_scheduler_rho,
+          'beta_d':   opts.noise_scheduler_beta_d,
+          'beta_min': opts.noise_scheduler_beta_min,
+          'eps_s':    opts.noise_scheduler_eps_s,
+        }
+        
+        for k,v in sigma_fnc_kwargs_defaults.items():
+          if k in inspect.signature(sigma_func).parameters:
+            sigma_fnc_kwargs[k] = v
+
+        return sigma_func(n,**sigma_fnc_kwargs)
+
+      return self.model_wrap.get_sigmas(n)
+
+    
     def sample_img2img(self, p, x, noise, conditioning, unconditional_conditioning, steps=None):
         steps, t_enc = setup_img2img_steps(p, steps)
 
-        sigmas = self.model_wrap.get_sigmas(steps)
+        sigmas = self.get_wrapped_sigmas(steps)
 
         noise = noise * sigmas[steps - t_enc - 1]
         xi = x + noise
@@ -307,7 +333,7 @@ class KDiffusionSampler:
     def sample(self, p, x, conditioning, unconditional_conditioning, steps=None):
         steps = steps or p.steps
 
-        sigmas = self.model_wrap.get_sigmas(steps)
+        sigmas = self.get_wrapped_sigmas(steps)
         x = x * sigmas[0]
 
         extra_params_kwargs = self.initialize(p)
