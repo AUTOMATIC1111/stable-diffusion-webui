@@ -288,8 +288,8 @@ class KDiffusionSampler:
 
         return extra_params_kwargs
 
-    def get_wrapped_sigmas(self,n):
-      scheduler_override_name = 'get_sigmas_'+opts.noise_scheduler_override
+    def get_wrapped_sigmas(self,n,p):
+      scheduler_override_name = 'get_sigmas_'+(p.noise_scheduler_override or opts.noise_scheduler_override)
 
       if hasattr(k_diffusion.sampling,scheduler_override_name):
         print('Alternate sigma func',scheduler_override_name)
@@ -297,12 +297,12 @@ class KDiffusionSampler:
         
         sigma_fnc_kwargs = {'device':'cuda'}
         sigma_fnc_kwargs_defaults = {
-          'sigma_min':opts.noise_scheduler_smin, 
-          'sigma_max':opts.noise_scheduler_smax,
-          'rho':      opts.noise_scheduler_rho,
-          'beta_d':   opts.noise_scheduler_beta_d,
-          'beta_min': opts.noise_scheduler_beta_min,
-          'eps_s':    opts.noise_scheduler_eps_s,
+          'sigma_min':p.noise_scheduler_smin      or opts.noise_scheduler_smin, 
+          'sigma_max':p.noise_scheduler_smax      or opts.noise_scheduler_smax,
+          'rho':      p.noise_scheduler_rho       or opts.noise_scheduler_rho,
+          'beta_d':   p.noise_scheduler_beta_d    or opts.noise_scheduler_beta_d,
+          'beta_min': p.noise_scheduler_beta_min  or opts.noise_scheduler_beta_min,
+          'eps_s':    p.noise_scheduler_eps_s     or opts.noise_scheduler_eps_s,
         }
         
         for k,v in sigma_fnc_kwargs_defaults.items():
@@ -317,7 +317,7 @@ class KDiffusionSampler:
     def sample_img2img(self, p, x, noise, conditioning, unconditional_conditioning, steps=None):
         steps, t_enc = setup_img2img_steps(p, steps)
 
-        sigmas = self.get_wrapped_sigmas(steps)
+        sigmas = self.get_wrapped_sigmas(steps,p)
 
         noise = noise * sigmas[steps - t_enc - 1]
         xi = x + noise
@@ -333,7 +333,7 @@ class KDiffusionSampler:
     def sample(self, p, x, conditioning, unconditional_conditioning, steps=None):
         steps = steps or p.steps
 
-        sigmas = self.get_wrapped_sigmas(steps)
+        sigmas = self.get_wrapped_sigmas(steps,p)
         x = x * sigmas[0]
 
         extra_params_kwargs = self.initialize(p)
