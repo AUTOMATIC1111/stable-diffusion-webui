@@ -49,6 +49,7 @@ def gfpgan():
 
 
 def gfpgan_fix_faces(np_image):
+    global loaded_gfpgan_model
     model = gfpgan()
 
     np_image_bgr = np_image[:, :, ::-1]
@@ -56,7 +57,9 @@ def gfpgan_fix_faces(np_image):
     np_image = gfpgan_output_bgr[:, :, ::-1]
 
     if shared.opts.face_restoration_unload:
-        model.gfpgan.to(devices.cpu)
+        del model
+        loaded_gfpgan_model = None
+        devices.torch_gc()
 
     return np_image
 
@@ -83,11 +86,7 @@ def setup_gfpgan():
                 return "GFPGAN"
 
             def restore(self, np_image):
-                np_image_bgr = np_image[:, :, ::-1]
-                cropped_faces, restored_faces, gfpgan_output_bgr = gfpgan().enhance(np_image_bgr, has_aligned=False, only_center_face=False, paste_back=True)
-                np_image = gfpgan_output_bgr[:, :, ::-1]
-
-                return np_image
+                return gfpgan_fix_faces(np_image)
 
         shared.face_restorers.append(FaceRestorerGFPGAN())
     except Exception:

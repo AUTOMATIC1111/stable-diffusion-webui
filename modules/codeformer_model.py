@@ -89,7 +89,7 @@ def setup_codeformer():
                             output = self.net(cropped_face_t, w=w if w is not None else shared.opts.code_former_weight, adain=True)[0]
                             restored_face = tensor2img(output, rgb2bgr=True, min_max=(-1, 1))
                         del output
-                        torch.cuda.empty_cache()
+                        devices.torch_gc()
                     except Exception as error:
                         print(f'\tFailed inference for CodeFormer: {error}', file=sys.stderr)
                         restored_face = tensor2img(cropped_face_t, rgb2bgr=True, min_max=(-1, 1))
@@ -106,7 +106,9 @@ def setup_codeformer():
                     restored_img = cv2.resize(restored_img, (0, 0), fx=original_resolution[1]/restored_img.shape[1], fy=original_resolution[0]/restored_img.shape[0], interpolation=cv2.INTER_LINEAR)
 
                 if shared.opts.face_restoration_unload:
-                    self.net.to(devices.cpu)
+                    self.net = None
+                    self.face_helper = None
+                    devices.torch_gc()
 
                 return restored_img
 

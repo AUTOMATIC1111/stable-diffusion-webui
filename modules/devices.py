@@ -1,4 +1,5 @@
 import torch
+import gc
 
 # has_mps is only available in nightly pytorch (for now), `getattr` for compatibility
 from modules import errors
@@ -17,8 +18,8 @@ def get_optimal_device():
 
     return cpu
 
-
 def torch_gc():
+    gc.collect()
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
         torch.cuda.ipc_collect()
