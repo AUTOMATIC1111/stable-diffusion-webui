@@ -92,6 +92,13 @@ axis_options = [
     AxisOption("Sigma max", float, apply_field("s_tmax"), format_value_add_label),
     AxisOption("Sigma noise", float, apply_field("s_noise"), format_value_add_label),
     AxisOption("Eta", float, apply_field("eta"), format_value_add_label),
+    AxisOption("Noise Scheduler", str, apply_field("noise_scheduler_override") , format_value_add_label),
+    AxisOption("Noise Scheduler min", float, apply_field("noise_scheduler_smin") , format_value_add_label),
+    AxisOption("Noise Scheduler max", float, apply_field("noise_scheduler_smax"), format_value_add_label),
+    AxisOption("Noise Scheduler rho", float, apply_field("noise_scheduler_rho"), format_value_add_label),
+    AxisOption("Noise Scheduler beta dist", float, apply_field("noise_scheduler_beta_d"), format_value_add_label),
+    AxisOption("Noise Scheduler beta min", float, apply_field("noise_scheduler_beta_min"), format_value_add_label),
+    AxisOption("Noise Scheduler epsilon", float, apply_field("noise_scheduler_eps_s"), format_value_add_label),
     AxisOptionImg2Img("Denoising", float, apply_field("denoising_strength"), format_value_add_label),  # as it is now all AxisOptionImg2Img items must go after AxisOption ones
 ]
 
