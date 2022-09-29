@@ -114,7 +114,7 @@ def save_files(js_data, images, index):
 
         filename_base = str(int(time.time() * 1000))
         for i, filedata in enumerate(images):
-            filename = filename_base + ("" if len(images) == 1 else "-" + str(i + 1)) + ".png"
+            filename = filename_base + ("" if len(images) == 1 else "-" + str(i + 1)) + f".{opts.samples_format}"
             filepath = os.path.join(opts.outdir_save, filename)
 
             if filedata.startswith("data:image/png;base64,"):
