@@ -15,7 +15,7 @@ model_dir = "Stable-diffusion"
 model_path = os.path.abspath(os.path.join(models_path, model_dir))
 model_name = "sd-v1-4.ckpt"
 model_url = "https://drive.yerf.org/wl/?id=EBfTrmcCCUAGaQBXVIj5lJmEhjoP1tgl&mode=grid&download=1"
-user_dir: (str | None) = None
+user_dir = None
 
 CheckpointInfo = namedtuple("CheckpointInfo", ['filename', 'title', 'hash', 'model_name'])
 checkpoints_list = {}
