@@ -11,7 +11,6 @@ services:
       - PYTHONUNBUFFERED=1
     volumes:
       - ./models:/app/models
-      - ./ESRGAN:/app/ESRGAN
       - ./runtime:/app/runtime
       - ./src:/app/src
       - ./outputs:/app/outputs
