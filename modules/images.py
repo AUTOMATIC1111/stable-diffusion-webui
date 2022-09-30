@@ -84,10 +84,8 @@ def combine_grid(grid):
         r = r.astype(np.uint8)
         return Image.fromarray(r, 'L')
 
-    mask_w = make_mask_image(
-        np.arange(grid.overlap, dtype=np.float32).reshape((1, grid.overlap)).repeat(grid.tile_h, axis=0))
-    mask_h = make_mask_image(
-        np.arange(grid.overlap, dtype=np.float32).reshape((grid.overlap, 1)).repeat(grid.image_w, axis=1))
+    mask_w = make_mask_image(np.arange(grid.overlap, dtype=np.float32).reshape((1, grid.overlap)).repeat(grid.tile_h, axis=0))
+    mask_h = make_mask_image(np.arange(grid.overlap, dtype=np.float32).reshape((grid.overlap, 1)).repeat(grid.image_w, axis=1))
 
     combined_image = Image.new("RGB", (grid.image_w, grid.image_h))
     for y, h, row in grid.tiles:
@@ -130,12 +128,10 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts):
 
     def draw_texts(drawing, draw_x, draw_y, lines):
         for i, line in enumerate(lines):
-            drawing.multiline_text((draw_x, draw_y + line.size[1] / 2), line.text, font=fnt,
-                                   fill=color_active if line.is_active else color_inactive, anchor="mm", align="center")
+            drawing.multiline_text((draw_x, draw_y + line.size[1] / 2), line.text, font=fnt, fill=color_active if line.is_active else color_inactive, anchor="mm", align="center")
 
             if not line.is_active:
-                drawing.line((draw_x - line.size[0] // 2, draw_y + line.size[1] // 2, draw_x + line.size[0] // 2,
-                              draw_y + line.size[1] // 2), fill=color_inactive, width=4)
+                drawing.line((draw_x - line.size[0] // 2, draw_y + line.size[1] // 2, draw_x + line.size[0] // 2, draw_y + line.size[1] // 2), fill=color_inactive, width=4)
 
             draw_y += line.size[1] + line_spacing
 
@@ -206,10 +202,8 @@ def draw_prompt_matrix(im, width, height, all_prompts):
     prompts_horiz = prompts[:boundary]
     prompts_vert = prompts[boundary:]
 
-    hor_texts = [[GridAnnotation(x, is_active=pos & (1 << i) != 0) for i, x in enumerate(prompts_horiz)] for pos in
-                 range(1 << len(prompts_horiz))]
-    ver_texts = [[GridAnnotation(x, is_active=pos & (1 << i) != 0) for i, x in enumerate(prompts_vert)] for pos in
-                 range(1 << len(prompts_vert))]
+    hor_texts = [[GridAnnotation(x, is_active=pos & (1 << i) != 0) for i, x in enumerate(prompts_horiz)] for pos in range(1 << len(prompts_horiz))]
+    ver_texts = [[GridAnnotation(x, is_active=pos & (1 << i) != 0) for i, x in enumerate(prompts_vert)] for pos in range(1 << len(prompts_vert))]
 
     return draw_grid_annotations(im, width, height, hor_texts, ver_texts)
 
@@ -259,13 +253,11 @@ def resize_image(resize_mode, im, width, height):
         if ratio < src_ratio:
             fill_height = height // 2 - src_h // 2
             res.paste(resized.resize((width, fill_height), box=(0, 0, width, 0)), box=(0, 0))
-            res.paste(resized.resize((width, fill_height), box=(0, resized.height, width, resized.height)),
-                      box=(0, fill_height + src_h))
+            res.paste(resized.resize((width, fill_height), box=(0, resized.height, width, resized.height)), box=(0, fill_height + src_h))
         elif ratio > src_ratio:
             fill_width = width // 2 - src_w // 2
             res.paste(resized.resize((fill_width, height), box=(0, 0, 0, height)), box=(0, 0))
-            res.paste(resized.resize((fill_width, height), box=(resized.width, 0, resized.width, height)),
-                      box=(fill_width + src_w, 0))
+            res.paste(resized.resize((fill_width, height), box=(resized.width, 0, resized.width, height)), box=(fill_width + src_w, 0))
 
     return res
 
@@ -300,8 +292,7 @@ def apply_filename_pattern(x, p, seed, prompt):
             words = [x for x in re_nonletters.split(prompt or "") if len(x) > 0]
             if len(words) == 0:
                 words = ["empty"]
-            x = x.replace("[prompt_words]",
-                          sanitize_filename_part(" ".join(words[0:max_prompt_words]), replace_spaces=False))
+            x = x.replace("[prompt_words]", sanitize_filename_part(" ".join(words[0:max_prompt_words]), replace_spaces=False))
 
     if p is not None:
         x = x.replace("[steps]", str(p.steps))
@@ -309,8 +300,7 @@ def apply_filename_pattern(x, p, seed, prompt):
         x = x.replace("[width]", str(p.width))
         x = x.replace("[height]", str(p.height))
         x = x.replace("[styles]", sanitize_filename_part(", ".join(p.styles), replace_spaces=False))
-        x = x.replace("[sampler]",
-                      sanitize_filename_part(sd_samplers.samplers[p.sampler_index].name, replace_spaces=False))
+        x = x.replace("[sampler]", sanitize_filename_part(sd_samplers.samplers[p.sampler_index].name, replace_spaces=False))
 
     x = x.replace("[model_hash]", shared.sd_model.sd_model_hash)
     x = x.replace("[date]", datetime.date.today().isoformat())
@@ -336,8 +326,7 @@ def get_next_sequence_number(path, basename):
     prefix_length = len(basename)
     for p in os.listdir(path):
         if p.startswith(basename):
-            l = os.path.splitext(p[prefix_length:])[0].split(
-                '-')  # splits the filename (removing the basename first if one is defined, so the sequence number is always the first element)
+            l = os.path.splitext(p[prefix_length:])[0].split('-')  # splits the filename (removing the basename first if one is defined, so the sequence number is always the first element)
             try:
                 result = max(int(l[0]), result)
             except ValueError:
@@ -346,9 +335,7 @@ def get_next_sequence_number(path, basename):
     return result + 1
 
 
-def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False,
-               no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None,
-               forced_filename=None, suffix=""):
+def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None, forced_filename=None, suffix=""):
     if short_filename or prompt is None or seed is None:
         file_decoration = ""
     elif opts.save_to_dirs:
