@@ -15,6 +15,7 @@ titles = {
     "\u267b\ufe0f": "Reuse seed from last generation, mostly useful if it was randomed",
     "\u{1f3a8}": "Add a random artist to the prompt.",
     "\u2199\ufe0f": "Read generation parameters from prompt into user interface.",
+    "\uD83D\uDCC2": "Open images output directory",
 
     "Inpaint a part of image": "Draw a mask over an image, and the script will regenerate the masked area with content according to prompt",
     "SD upscale": "Upscale image normally, split result into tiles, improve each tile using img2img, merge whole image back",

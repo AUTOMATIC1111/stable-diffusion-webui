@@ -4,7 +4,6 @@ import torch
 import tqdm
 from PIL import Image
 import inspect
-
 import k_diffusion.sampling
 import ldm.models.diffusion.ddim
 import ldm.models.diffusion.plms
@@ -23,6 +22,8 @@ samplers_k_diffusion = [
     ('Heun', 'sample_heun', ['k_heun']),
     ('DPM2', 'sample_dpm_2', ['k_dpm_2']),
     ('DPM2 a', 'sample_dpm_2_ancestral', ['k_dpm_2_a']),
+    ('DPM fast', 'sample_dpm_fast', ['k_dpm_fast']),
+    ('DPM adaptive', 'sample_dpm_adaptive', ['k_dpm_ad']),
 ]
 
 samplers_data_k_diffusion = [
@@ -36,7 +37,7 @@ samplers = [
     SamplerData('DDIM', lambda model: VanillaStableDiffusionSampler(ldm.models.diffusion.ddim.DDIMSampler, model), []),
     SamplerData('PLMS', lambda model: VanillaStableDiffusionSampler(ldm.models.diffusion.plms.PLMSSampler, model), []),
 ]
-samplers_for_img2img = [x for x in samplers if x.name != 'PLMS']
+samplers_for_img2img = [x for x in samplers if x.name not in ['PLMS', 'DPM fast', 'DPM adaptive']]
 
 sampler_extra_params = {
     'sample_euler': ['s_churn', 's_tmin', 's_tmax', 's_noise'],
@@ -309,8 +310,13 @@ class KDiffusionSampler:
         x = x * sigmas[0]
 
         extra_params_kwargs = self.initialize(p)
-
-        samples = self.func(self.model_wrap_cfg, x, sigmas, extra_args={'cond': conditioning, 'uncond': unconditional_conditioning, 'cond_scale': p.cfg_scale}, disable=False, callback=self.callback_state, **extra_params_kwargs)
-
+        if 'sigma_min' in inspect.signature(self.func).parameters:
+            extra_params_kwargs['sigma_min'] = self.model_wrap.sigmas[0].item()
+            extra_params_kwargs['sigma_max'] = self.model_wrap.sigmas[-1].item()
+            if 'n' in inspect.signature(self.func).parameters:
+                extra_params_kwargs['n'] = steps
+        else:
+            extra_params_kwargs['sigmas'] = sigmas
+        samples = self.func(self.model_wrap_cfg, x, extra_args={'cond': conditioning, 'uncond': unconditional_conditioning, 'cond_scale': p.cfg_scale}, disable=False, callback=self.callback_state, **extra_params_kwargs)
         return samples
 
