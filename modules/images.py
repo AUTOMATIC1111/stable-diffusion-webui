@@ -287,6 +287,12 @@ def apply_filename_pattern(x, p, seed, prompt):
 
     if prompt is not None:
         x = x.replace("[prompt]", sanitize_filename_part(prompt))
+        if "[prompt_no_styles]" in x:
+            prompt_no_style = prompt
+            for style in shared.prompt_styles.get_style_prompts(p.styles):
+                prompt_no_style = prompt_no_style.replace(style.replace("{prompt}", ""), "")
+            x = x.replace("[prompt_no_styles]", sanitize_filename_part(prompt_no_style, replace_spaces=False))
+
         x = x.replace("[prompt_spaces]", sanitize_filename_part(prompt, replace_spaces=False))
         if "[prompt_words]" in x:
             words = [x for x in re_nonletters.split(prompt or "") if len(x) > 0]
@@ -299,7 +305,7 @@ def apply_filename_pattern(x, p, seed, prompt):
         x = x.replace("[cfg]", str(p.cfg_scale))
         x = x.replace("[width]", str(p.width))
         x = x.replace("[height]", str(p.height))
-        x = x.replace("[styles]", sanitize_filename_part(", ".join(p.styles), replace_spaces=False))
+        x = x.replace("[styles]", sanitize_filename_part(", ".join([x for x in p.styles if not x == "None"]), replace_spaces=False))
         x = x.replace("[sampler]", sanitize_filename_part(sd_samplers.samplers[p.sampler_index].name, replace_spaces=False))
 
     x = x.replace("[model_hash]", shared.sd_model.sd_model_hash)
