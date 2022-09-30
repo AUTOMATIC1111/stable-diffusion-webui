@@ -3,6 +3,8 @@ Textual Inversion allows you to train a tiny part of the neural network on your 
 
 The result of training is a .pt or a .bin file (former is the format used by original author, latter is by the diffusers library).
 
+See original site for more details about what textual inversion is: https://textual-inversion.github.io/.
+
 # Using pre-trained embeddings
 Put the embedding into the `embeddings` directory and use its filename in the prompt. You don't have to restart the program for this to work.
 
@@ -28,3 +30,17 @@ Be very careful about which model you are using with your embeddings: they work 
 portrait of usada pekora
 Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 4077357776, Size: 512x512, Model hash: 7460a6fa
 ```
+
+# Training embeddings
+I successfully trained embeddings using those repositories:
+
+ - [nicolai256](https://github.com/nicolai256/Stable-textual-inversion_win)
+ - [lstein](https://github.com/invoke-ai/InvokeAI)
+
+Other options are to train on colabs and/or using diffusers library, which I know nothing about.
+
+# Finding embeddings online
+
+- [huggingface concepts library](https://huggingface.co/sd-concepts-library) - a lot of different embeddings, but mostly useless.
+- [16777216c](https://gitlab.com/16777216c/stable-diffusion-embeddings) - NSFW, anime artist styles by a mysterious stranger.
+- [cattoroboto](https://gitlab.com/cattoroboto/waifu-diffusion-embeds) - some anime embeddings by anon.
