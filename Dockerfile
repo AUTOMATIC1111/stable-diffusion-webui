@@ -22,17 +22,7 @@ RUN pip install torch torchvision torchaudio --extra-index-url https://download.
 RUN pip install -r requirements.txt
 USER 1001
 
-RUN git clone https://github.com/CompVis/stable-diffusion.git $REPO_PATH/stable-diffusion && \
-    git -C $REPO_PATH/stable-diffusion checkout 69ae4b35e0a0f6ee1af8bb9a5d0016ccb27e36dc
-
-RUN git clone https://github.com/CompVis/taming-transformers.git $REPO_PATH/taming-transformers && \
-    git -C $REPO_PATH/taming-transformers checkout 24268930bf1dce879235a7fddd0b2355b84d7ea6
-
-RUN git clone https://github.com/salesforce/BLIP.git $REPO_PATH/BLIP && \
-    git -C $REPO_PATH/BLIP checkout 48211a1594f1321b00f14c9f7a5b4813144b2fb9
-
-RUN git clone https://github.com/sczhou/CodeFormer.git $REPO_PATH/CodeFormer && \
-    git -C $REPO_PATH/CodeFormer checkout c5b4593074ba6214284d6acd5f1719b6c5d739af
+RUN COMMANDLINE_ARGS="--skip-torch-cuda-test" python3 -c "import launch"
 
 USER root
 RUN pip install -r repositories/CodeFormer/requirements.txt
