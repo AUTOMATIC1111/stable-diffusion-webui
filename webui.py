@@ -24,9 +24,6 @@ import modules.sd_models
 import modules.discordbot   #   Import discord bot  #
 #####################################################
 
-modules.codeformer_model.setup_codeformer()
-modules.gfpgan_model.setup_gfpgan()
-
 import modules.shared as shared
 import modules.swinir_model as swinir
 import modules.txt2img
