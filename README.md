@@ -102,9 +102,6 @@ To shut down the server, again from terminal in the same working directory, run:
 docker-compose down
 ```
 
-If you wish to enable GFPGAN (optional), you will have to download the model as described in previous installation techniques,
-however the model should be placed in the `models/` directory.
-
 Updating your instance is an simple as taking it down, pulling the latest changes with git, and then running:
 ```bash
 docker-compose build
