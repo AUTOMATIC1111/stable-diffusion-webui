@@ -11,4 +11,5 @@
 - [Custom scripts](Custom-Scripts)
   - [Developing custom scripts](Developing-custom-scripts)
 - [Troubleshooting](Troubleshooting)
+- [Contributing](Contributing)
 - [Negative prompt](Negative-prompt)
