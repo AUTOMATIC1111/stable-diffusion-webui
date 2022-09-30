@@ -8,7 +8,14 @@ from omegaconf import OmegaConf
 
 from ldm.util import instantiate_from_config
 
-from modules import shared
+from modules import shared, modelloader
+from modules.paths import models_path
+
+model_dir = "Stable-diffusion"
+model_path = os.path.abspath(os.path.join(models_path, model_dir))
+model_name = "sd-v1-4.ckpt"
+model_url = "https://drive.yerf.org/wl/?id=EBfTrmcCCUAGaQBXVIj5lJmEhjoP1tgl&mode=grid&download=1"
+user_dir = None
 
 CheckpointInfo = namedtuple("CheckpointInfo", ['filename', 'title', 'hash', 'model_name'])
 checkpoints_list = {}
@@ -23,20 +30,30 @@ except Exception:
     pass
 
 
+def setup_model(dirname):
+    global user_dir
+    user_dir = dirname
+    if not os.path.exists(model_path):
+        os.makedirs(model_path)
+    checkpoints_list.clear()
+    list_models()
+
+
 def checkpoint_tiles():
     return sorted([x.title for x in checkpoints_list.values()])
 
 
 def list_models():
     checkpoints_list.clear()
+    model_list = modelloader.load_models(model_path=model_path, model_url=model_url, command_path=user_dir, ext_filter=[".ckpt"], download_name=model_name)
 
-    model_dir = os.path.abspath(shared.cmd_opts.ckpt_dir)
-
-    def modeltitle(path, h):
+    def modeltitle(path, shorthash):
         abspath = os.path.abspath(path)
 
-        if abspath.startswith(model_dir):
-            name = abspath.replace(model_dir, '')
+        if user_dir is not None and abspath.startswith(user_dir):
+            name = abspath.replace(user_dir, '')
+        elif abspath.startswith(model_path):
+            name = abspath.replace(model_path, '')
         else:
             name = os.path.basename(path)
 
@@ -45,21 +62,26 @@ def list_models():
 
         shortname = os.path.splitext(name.replace("/", "_").replace("\\", "_"))[0]
 
-        return f'{name} [{h}]', shortname
+        return f'{name} [{shorthash}]', shortname
 
     cmd_ckpt = shared.cmd_opts.ckpt
     if os.path.exists(cmd_ckpt):
         h = model_hash(cmd_ckpt)
-        title, model_name = modeltitle(cmd_ckpt, h)
-        checkpoints_list[title] = CheckpointInfo(cmd_ckpt, title, h, model_name)
+        title, short_model_name = modeltitle(cmd_ckpt, h)
+        checkpoints_list[title] = CheckpointInfo(cmd_ckpt, title, h, short_model_name)
     elif cmd_ckpt is not None and cmd_ckpt != shared.default_sd_model_file:
-        print(f"Checkpoint in --ckpt argument not found: {cmd_ckpt}", file=sys.stderr)
+        print(f"Checkpoint in --ckpt argument not found (Possible it was moved to {model_path}: {cmd_ckpt}", file=sys.stderr)
+    for filename in model_list:
+        h = model_hash(filename)
+        title, short_model_name = modeltitle(filename, h)
+        checkpoints_list[title] = CheckpointInfo(filename, title, h, short_model_name)
 
-    if os.path.exists(model_dir):
-        for filename in glob.glob(model_dir + '/**/*.ckpt', recursive=True):
-            h = model_hash(filename)
-            title, model_name = modeltitle(filename, h)
-            checkpoints_list[title] = CheckpointInfo(filename, title, h, model_name)
+
+def get_closet_checkpoint_match(searchString):
+    applicable = sorted([info for info in checkpoints_list.values() if searchString in info.title], key = lambda x:len(x.title))
+    if len(applicable) > 0:
+        return applicable[0]
+    return None
 
 
 def model_hash(filename):
