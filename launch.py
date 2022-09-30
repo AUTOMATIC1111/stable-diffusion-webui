@@ -31,7 +31,7 @@ def extract_arg(args, name):
 
 
 args, skip_torch_cuda_test = extract_arg(args, '--skip-torch-cuda-test')
-
+args, skip_codeformer_reqs = extract_arg(args, '--skip-codeformer-requirements')
 
 def repo_dir(name):
     return os.path.join(dir_repos, name)
@@ -124,7 +124,7 @@ if os.path.isdir(repo_dir('latent-diffusion')):
         shutil.rmtree(repo_dir('latent-diffusion'))
     except:
         pass
-if not is_installed("lpips"):
+if not is_installed("lpips") and not skip_codeformer_reqs:
     run_pip(f"install -r {os.path.join(repo_dir('CodeFormer'), 'requirements.txt')}", "requirements for CodeFormer")
 
 run_pip(f"install -r {requirements_file}", "requirements for Web UI")

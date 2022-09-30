@@ -22,7 +22,7 @@ RUN pip install torch torchvision torchaudio --extra-index-url https://download.
 RUN pip install -r requirements.txt
 USER 1001
 
-RUN COMMANDLINE_ARGS="--skip-torch-cuda-test" python3 -c "import launch"
+RUN COMMANDLINE_ARGS="--skip-torch-cuda-test --skip-codeformer-requirements" python3 -c "import launch"
 
 USER root
 RUN pip install -r repositories/CodeFormer/requirements.txt
