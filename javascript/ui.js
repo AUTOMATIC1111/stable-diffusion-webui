@@ -191,7 +191,7 @@ onUiUpdate(function(){
 	if (!img2img_textarea) {
 		img2img_textarea = gradioApp().querySelector("#img2img_prompt > label > textarea");
 		img2img_textarea?.addEventListener("input", () => update_token_counter("img2img_token_button"));
-        txt2img_textarea?.addEventListener("keyup", (event) => submit_prompt(event, "img2img_generate"));
+        img2img_textarea?.addEventListener("keyup", (event) => submit_prompt(event, "img2img_generate"));
 	}
 })
 
