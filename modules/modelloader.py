@@ -51,7 +51,6 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
                         if extension not in ext_filter:
                             continue
                     if file not in output:
-                        print(f"FILE: {full_path}")
                         output.append(full_path)
 
         if model_url is not None and len(output) == 0:
