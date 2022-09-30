@@ -3,9 +3,10 @@ import os
 import sys
 
 script_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+models_path = os.path.join(script_path, "models")
 sys.path.insert(0, script_path)
 
-# search for directory of stable diffsuion in following palces
+# search for directory of stable diffusion in following places
 sd_path = None
 possible_sd_paths = [os.path.join(script_path, 'repositories/stable-diffusion'), '.', os.path.dirname(script_path)]
 for possible_sd_path in possible_sd_paths:

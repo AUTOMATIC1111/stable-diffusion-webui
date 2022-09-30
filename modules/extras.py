@@ -40,6 +40,8 @@ def run_extras(extras_mode, image, image_folder, gfpgan_visibility, codeformer_v
 
     outputs = []
     for image, image_name in zip(imageArr, imageNameArr):
+        if image is None:
+            return outputs, "Please select an input image.", ''
         existing_pnginfo = image.info or {}
 
         image = image.convert("RGB")
@@ -65,29 +67,28 @@ def run_extras(extras_mode, image, image_folder, gfpgan_visibility, codeformer_v
             info += f"CodeFormer w: {round(codeformer_weight, 2)}, CodeFormer visibility:{round(codeformer_visibility, 2)}\n"
             image = res
 
-        if upscaling_resize != 1.0:
-            def upscale(image, scaler_index, resize):
-                small = image.crop((image.width // 2, image.height // 2, image.width // 2 + 10, image.height // 2 + 10))
-                pixels = tuple(np.array(small).flatten().tolist())
-                key = (resize, scaler_index, image.width, image.height, gfpgan_visibility, codeformer_visibility, codeformer_weight) + pixels
+        def upscale(image, scaler_index, resize):
+            small = image.crop((image.width // 2, image.height // 2, image.width // 2 + 10, image.height // 2 + 10))
+            pixels = tuple(np.array(small).flatten().tolist())
+            key = (resize, scaler_index, image.width, image.height, gfpgan_visibility, codeformer_visibility, codeformer_weight) + pixels
 
-                c = cached_images.get(key)
-                if c is None:
-                    upscaler = shared.sd_upscalers[scaler_index]
-                    c = upscaler.upscale(image, image.width * resize, image.height * resize)
-                    cached_images[key] = c
+            c = cached_images.get(key)
+            if c is None:
+                upscaler = shared.sd_upscalers[scaler_index]
+                c = upscaler.scaler.upscale(image, resize, upscaler.data_path)
+                cached_images[key] = c
 
-                return c
+            return c
 
-            info += f"Upscale: {round(upscaling_resize, 3)}, model:{shared.sd_upscalers[extras_upscaler_1].name}\n"
-            res = upscale(image, extras_upscaler_1, upscaling_resize)
+        info += f"Upscale: {round(upscaling_resize, 3)}, model:{shared.sd_upscalers[extras_upscaler_1].name}\n"
+        res = upscale(image, extras_upscaler_1, upscaling_resize)
 
-            if extras_upscaler_2 != 0 and extras_upscaler_2_visibility > 0:
-                res2 = upscale(image, extras_upscaler_2, upscaling_resize)
-                info += f"Upscale: {round(upscaling_resize, 3)}, visibility: {round(extras_upscaler_2_visibility, 3)}, model:{shared.sd_upscalers[extras_upscaler_2].name}\n"
-                res = Image.blend(res, res2, extras_upscaler_2_visibility)
+        if extras_upscaler_2 != 0 and extras_upscaler_2_visibility > 0:
+            res2 = upscale(image, extras_upscaler_2, upscaling_resize)
+            info += f"Upscale: {round(upscaling_resize, 3)}, visibility: {round(extras_upscaler_2_visibility, 3)}, model:{shared.sd_upscalers[extras_upscaler_2].name}\n"
+            res = Image.blend(res, res2, extras_upscaler_2_visibility)
 
-            image = res
+        image = res
 
         while len(cached_images) > 2:
             del cached_images[next(iter(cached_images.keys()))]
