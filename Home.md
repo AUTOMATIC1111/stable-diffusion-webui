@@ -9,5 +9,6 @@
 - [Optimizations](Optimizations)
 - [Changing UI defaults](Change-UI-Defaults)
 - [Custom scripts](Custom-Scripts)
+  - [Developing custom scripts](Developing-custom-scripts)
 - [Troubleshooting](Troubleshooting)
 - [Negative prompt](Negative-prompt)
