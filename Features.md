@@ -159,23 +159,13 @@ Here's are settings that create the graph above:
 ![](images/xy_grid-medusa-ui.png)
 
 # Textual Inversion
-Allows you to use pretrained textual inversion embeddings.
-See original site for details: https://textual-inversion.github.io/.
-I used lstein's repo for training embdedding: https://github.com/lstein/stable-diffusion; if
-you want to train your own, I recommend following the guide on his site.
+See original site for details about what textual inversion is: https://textual-inversion.github.io/.
 
-Update: you can now download many pre-trained embeddings from this page: https://huggingface.co/sd-concepts-library
+Short explanation: place your embeddings into `embeddings` directory, and use the filename in prompt.
 
-To make use of pretrained embeddings, create `embeddings` directory in the same directory as `webui.py`
-and put your embeddings into it. They must be .pt or .bin files about 5Kb in size, each with only
-one trained embedding, and the filename (without .pt or .bin) will be the term you'd use in prompt
-to get that embedding.
+Long explanation: [Textual Inversion](Textual-Inversion)
 
-As an example, I trained one for about 5000 steps: https://files.catbox.moe/e2ui6r.pt; it does
-not produce very good results, but it does work. Download and rename it to `Usada Pekora.pt`,
-and put it into `embeddings` dir and use Usada Pekora in prompt.
-
-![](images/inversion.png)
+![grid-0037](https://user-images.githubusercontent.com/20920490/193285770-9454c5e1-e594-463c-8be8-1488ddf2877b.png)
 
 # Resizing
 There are three options for resizing input images in img2img mode:
