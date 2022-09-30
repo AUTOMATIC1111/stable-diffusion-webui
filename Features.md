@@ -159,8 +159,6 @@ Here's are settings that create the graph above:
 ![](images/xy_grid-medusa-ui.png)
 
 # Textual Inversion
-See original site for details about what textual inversion is: https://textual-inversion.github.io/.
-
 Short explanation: place your embeddings into `embeddings` directory, and use the filename in prompt.
 
 Long explanation: [Textual Inversion](Textual-Inversion)
