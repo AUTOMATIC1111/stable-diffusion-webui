@@ -218,7 +218,7 @@ def resize_image(resize_mode, im, width, height):
 
         upscaler = upscalers[0]
         scale = max(w / im.width, h / im.height)
-        upscaled = upscaler.scaler.upscale(im, scale)
+        upscaled = upscaler.scaler.upscale(im, scale, upscaler.data_path)
 
         if upscaled.width != w or upscaled.height != h:
             upscaled = im.resize((w, h), resample=LANCZOS)
