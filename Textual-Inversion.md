@@ -44,3 +44,5 @@ Other options are to train on colabs and/or using diffusers library, which I kno
 - [huggingface concepts library](https://huggingface.co/sd-concepts-library) - a lot of different embeddings, but mostly useless.
 - [16777216c](https://gitlab.com/16777216c/stable-diffusion-embeddings) - NSFW, anime artist styles by a mysterious stranger.
 - [cattoroboto](https://gitlab.com/cattoroboto/waifu-diffusion-embeds) - some anime embeddings by anon.
+- [viper1](https://gitgud.io/viper1/stable-diffusion-embeddings) - NSFW, furry girls.
+- [anon's embeddings](https://mega.nz/folder/7k0R2arB#5_u6PYfdn-ZS7sRdoecD2A) - NSFW, anime artists.
