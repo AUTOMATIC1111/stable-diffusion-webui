@@ -232,7 +232,12 @@ class StableDiffusionModelHijack:
 
         for fn in os.listdir(dirname):
             try:
-                process_file(os.path.join(dirname, fn), fn)
+                fullfn = os.path.join(dirname, fn)
+
+                if os.stat(fullfn).st_size == 0:
+                    continue
+
+                process_file(fullfn, fn)
             except Exception:
                 print(f"Error loading emedding {fn}:", file=sys.stderr)
                 print(traceback.format_exc(), file=sys.stderr)
