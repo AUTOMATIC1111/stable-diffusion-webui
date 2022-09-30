@@ -5,4 +5,3 @@
 [ref-original]: https://huggingface.co/CompVis/stable-diffusion-v-1-4-original
 [ref-fstor]: https://drive.yerf.org/wl/?id=EBfTrmcCCUAGaQBXVIj5lJmEhjoP1tgl
 [ref-hugface]: https://huggingface.co
-
