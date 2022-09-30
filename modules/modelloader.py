@@ -64,7 +64,6 @@ def friendly_name(file: str):
 
     file = os.path.basename(file)
     model_name, extension = os.path.splitext(file)
-    model_name = model_name.replace("_", " ").title()
     return model_name
 
 
