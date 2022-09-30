@@ -53,6 +53,12 @@ class StyleDatabase:
                 negative_prompt = row.get("negative_prompt", "")
                 self.styles[row["name"]] = PromptStyle(row["name"], prompt, negative_prompt)
 
+    def get_style_prompts(self, styles):
+        return [self.styles.get(x, self.no_style).prompt for x in styles]
+
+    def get_negative_style_prompts(self, styles):
+        return [self.styles.get(x, self.no_style).negative_prompt for x in styles]
+
     def apply_styles_to_prompt(self, prompt, styles):
         return apply_styles_to_prompt(prompt, [self.styles.get(x, self.no_style).prompt for x in styles])
 
