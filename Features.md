@@ -4,7 +4,7 @@ All examples are non-cherrypicked unless specified otherwise.
 
 # Outpainting
 
-Outpainting extends original image and inpaints  created empty space.
+Outpainting extends the original image and inpaints the created empty space.
 
 Example:
 
@@ -17,34 +17,34 @@ Original image by Anonymous user from 4chan. Thank you, Anonymous user.
 You can find the feature in the img2img tab at the bottom, under Script -> Poor man's outpainting.
 
 Outpainting, unlike normal image generation, seems to profit very much from large step count. A recipe for a good outpainting
-is a good prompt that matches the picture, sliders for denoising and FCG scale set to max, and step count of 50 to 100 with
-euler ancestral or DPM2 ancestral samplers.
+is a good prompt that matches the picture, sliders for denoising and CFG scale set to max, and step count of 50 to 100 with
+Euler ancestral or DPM2 ancestral samplers.
 
 | 81 steps, Euler A                   | 30 steps, Euler A                     | 10 steps, Euler A                    | 80 steps, Euler A                   |
 |-------------------------------------|---------------------------------------|--------------------------------------|-------------------------------------|
 | ![](images/inpainting-81-euler-a.png) | ![](images/inpainting-30-euler-a.png) | ![](images/inpainting-10-euler-a.png) | ![](images/inpainting-80-dpm2-a.png) |
 
 # Inpainting
-In img2img tab, draw a mask over a part of image, and that part will be in-painted.
+In img2img tab, draw a mask over a part of the image, and that part will be in-painted.
 
 ![](images/inpainting.png)
 
 Options for inpainting:
-- draw a mask yourself in web editor
-- erase a part of picture in external editor and upload a transparent picture. Any even slightly transparent areas will become part of the mask. Be aware that [some editors](https://docs.krita.org/en/reference_manual/layers_and_masks/split_alpha.html#how-to-save-a-png-texture-and-keep-color-values-in-fully-transparent-areas) save completely transparent areas as black by default.
-- change mode (to the bottom right of the picture) to "Upload mask" and choose a separate black and while image for mask (white=inpaint).
+- draw a mask yourself in the web editor
+- erase a part of the picture in an external editor and upload a transparent picture. Any even slightly transparent areas will become part of the mask. Be aware that [some editors](https://docs.krita.org/en/reference_manual/layers_and_masks/split_alpha.html#how-to-save-a-png-texture-and-keep-color-values-in-fully-transparent-areas) save completely transparent areas as black by default.
+- change mode (to the bottom right of the picture) to "Upload mask" and choose a separate black and white image for the mask (white=inpaint).
 
 ## Masked content
-Masked content field determines content is placed to put into the masked regions before thet are inpainted.
+The masked content field determines content is placed to put into the masked regions before they are inpainted.
 
 | mask                                            | fill                                            | original                                            | latent noise                                            | latent nothing                                            |
 |-------------------------------------------------|-------------------------------------------------|-----------------------------------------------------|---------------------------------------------------------|-----------------------------------------------------------|
 | ![](images/inpainting-initial-content-mask.png) | ![](images/inpainting-initial-content-fill.png) | ![](images/inpainting-initial-content-original.png) | ![](images/inpainting-initial-content-latent-noise.png) | ![](images/inpainting-initial-content-latent-nothing.png) |
 
 ## Inpaint at full resolution
-Normally, inpaiting resizes the image to target resolution specified in the UI. With Inpaint at full resolution
+Normally, inpainting resizes the image to the target resolution specified in the UI. With Inpaint at full resolution
 enabled, only the masked region is resized, and after processing it is pasted back to the original picture.
-This allows you to work with large pictures, and allows to render the inpained object at a much larger resolution.
+This allows you to work with large pictures and allows you to render the inpainted object at a much larger resolution.
 
 
 | Input                               | Inpaint normal                   | Inpaint at whole resolution       |
@@ -66,14 +66,14 @@ There are two options for masked mode:
 
 # Prompt matrix
 Separate multiple prompts using the `|` character, and the system will produce an image for every combination of them.
-For example, if you use `a busy city street in a modern city|illustration|cinematic lighting` prompt, there are four combinations possible (first part of prompt is always kept):
+For example, if you use `a busy city street in a modern city|illustration|cinematic lighting` prompt, there are four combinations possible (first part of the prompt is always kept):
 
 - `a busy city street in a modern city`
 - `a busy city street in a modern city, illustration`
 - `a busy city street in a modern city, cinematic lighting`
 - `a busy city street in a modern city, illustration, cinematic lighting`
 
-Four images will be produced, in this order, all with same seed and each with corresponding prompt:
+Four images will be produced, in this order, all with the same seed and each with a corresponding prompt:
 ![](images/prompt-matrix.png)
 
 Another example, this time with 5 prompts and 16 variations:
@@ -83,18 +83,22 @@ You can find the feature at the bottom, under Script -> Prompt matrix.
 
 # Stable Diffusion upscale
 Upscale image using RealESRGAN/ESRGAN and then go through tiles of the result, improving them with img2img.
-Also has an let you do the upscaling part yourself in external program, and just go through tiles with img2img.
+It also has an option to let you do the upscaling part yourself in an external program, and just go through tiles with img2img.
 
 Original idea by: https://github.com/jquesnelle/txt2imghd. This is an independent implementation.
 
-To use this feature, tick a checkbox in the img2img interface. Input image will be upscaled to twice the original
+To use this feature, select `SD upscale from the scripts dropdown selection` (img2img tab).
+
+![chrome_dl8hcMPYcx](https://user-images.githubusercontent.com/39339941/193300082-be3b8864-3c28-44b7-bb75-f893f92269b6.png)
+
+The input image will be upscaled to twice the original
 width and height, and UI's width and height sliders specify the size of individual tiles. Because of overlap,
-the size of tile can be very important: 512x512 image needs nine 512x512 tiles (because of overlap), but only
+the size of the tile can be very important: 512x512 image needs nine 512x512 tiles (because of overlap), but only
 four 640x640 tiles.
 
-Rcommended parameters for upscaling:
+Recommended parameters for upscaling:
  - Sampling method: Euler a
- - Denoising strength: 0.2, can go up to 0.4 if you feel adventureous
+ - Denoising strength: 0.2, can go up to 0.4 if you feel adventurous
 
 | Original                                  | RealESRGAN                                  | Topaz Gigapixel                                         | SD upscale                                  |
 |-------------------------------------------|---------------------------------------------|---------------------------------------------------------|---------------------------------------------|
@@ -103,7 +107,7 @@ Rcommended parameters for upscaling:
 | ![](images/sd-upscale-city-original.png)  | ![](images/sd-upscale-city-realesrgan.png)  | ![](images/sd-upscale-city-esrgan-topaz-gigapixel.png)  | ![](images/sd-upscale-city-sd-upscale.png)  |
 
 # Attention/emphasis
-Using `()` in prompt increases model's attention to enclosed words, and `[]` decreases it. You can combine multiple modifiers:
+Using `()` in the prompt increases the model's attention to enclosed words, and `[]` decreases it. You can combine multiple modifiers:
 
 ![](images/attention-3.jpg)
 
@@ -118,13 +122,13 @@ Cheat sheet:
 
 With `()`, a weight can be specified like this: `(text:1.4)`. If the weight is not specified, it is assumed to be 1.1. Specifying weight only works with `()` not with `[]`.
 
-If you want to use any of literal `()[]` characters in the prompt, use the backslash to escape them: `anime_\(character\)`.
+If you want to use any of the literal `()[]` characters in the prompt, use the backslash to escape them: `anime_\(character\)`.
 
-On 2022-09-29, a new implementation was added that supports escape characters and numerical weights. A downside of the new implementation is that the old one was not perfect and sometimes ate characters: "a (((farm))), daytime", for example, would become "a farm daytime" without the comma. This behavior is not shared by the new implementation which preserves all text correctly, and this means that your saved seeds may produce different pictures. For now, there is an option in settings to use old implementation.
+On 2022-09-29, a new implementation was added that supports escape characters and numerical weights. A downside of the new implementation is that the old one was not perfect and sometimes ate characters: "a (((farm))), daytime", for example, would become "a farm daytime" without the comma. This behavior is not shared by the new implementation which preserves all text correctly, and this means that your saved seeds may produce different pictures. For now, there is an option in settings to use the old implementation.
 
 # Loopback
-A checkbox for img2img allowing to automatically feed output image as input for the next batch. Equivalent to
-saving output image, and replacing input image with it. Batch count setting controls how many iterations of
+Selecting the loopback script in img2img allows you to automatically feed output image as input for the next batch. Equivalent to
+saving output image, and replacing the input image with it. Batch count setting controls how many iterations of
 this you get.
 
 Usually, when doing this, you would choose one of many images for the next iteration yourself, so the usefulness
@@ -140,7 +144,7 @@ Original image by Anonymous user from 4chan. Thank you, Anonymous user.
 # X/Y plot
 Creates a grid of images with varying parameters. Select which parameters should be shared by rows and columns using
 X type and Y type fields, and input those parameters separated by comma into X values/Y values fields. For integer,
-and floating ponit numbers, ranges are supported. Examples:
+and floating point numbers, and ranges are supported. Examples:
 
 - Simple ranges:
   - `1-5` = 1, 2, 3, 4, 5
@@ -148,18 +152,18 @@ and floating ponit numbers, ranges are supported. Examples:
   - `1-5 (+2)` = 1, 3, 5
   - `10-5 (-3)` = 10, 7
   - `1-3 (+0.5)` = 1, 1.5, 2, 2.5, 3
-- Ranges with count in square brackets:
+- Ranges with the count in square brackets:
   - `1-10 [5]` = 1, 3, 5, 7, 10
   - `0.0-1.0 [6]` = 0.0, 0.2, 0.4, 0.6, 0.8, 1.0
 
 ![](images/xy_grid-medusa.png)
 
-Here's are settings that create the graph above:
+Here are the settings that create the graph above:
 
 ![](images/xy_grid-medusa-ui.png)
 
 # Textual Inversion
-Short explanation: place your embeddings into `embeddings` directory, and use the filename in prompt.
+Short explanation: place your embeddings into the `embeddings` directory, and use the filename in the prompt.
 
 Long explanation: [Textual Inversion](Textual-Inversion)
 
@@ -168,9 +172,9 @@ Long explanation: [Textual Inversion](Textual-Inversion)
 # Resizing
 There are three options for resizing input images in img2img mode:
 
-- Just resize - simply resizes source image to target resolution, resulting in incorrect aspect ratio
+- Just resize - simply resizes the source image to the target resolution, resulting in an incorrect aspect ratio
 - Crop and resize - resize source image preserving aspect ratio so that entirety of target resolution is occupied by it, and crop parts that stick out
-- Resize and fill - resize source image preserving aspect ratio so that it entirely fits target resolution, and fill empty space by rows/columns from source image
+- Resize and fill - resize source image preserving aspect ratio so that it entirely fits target resolution, and fill empty space by rows/columns from the source image
 
 Example:
 ![](images/resizing.jpg)
@@ -194,26 +198,26 @@ resolution.
 
 Ancestral samplers are a little worse at this than the rest.
 
-You can find this ferature by clicking the "Extra" checkbox near the seed.
+You can find this feature by clicking the "Extra" checkbox near the seed.
 
 # Variations
 A Variation strength slider and Variation seed field allow you to specify how much the existing picture should be altered to look
-like a different one. At maximum strength you will get picture with Variation seed, at minimum -  picture with original Seed (except
+like a different one. At maximum strength, you will get pictures with the Variation seed, at minimum - pictures with the original Seed (except
 for when using ancestral samplers).
 
 ![](images/seed-variations.jpg)
 
-You can find this ferature by clicking the "Extra" checkbox near the seed.
+You can find this feature by clicking the "Extra" checkbox near the seed.
 
 # Styles
-Press "Save prompt as style" button to write your current prompt to styles.csv, the file with collection of styles. A dropbox to
+Press the "Save prompt as style" button to write your current prompt to styles.csv, the file with a collection of styles. A dropbox to
 the right of the prompt will allow you to choose any style out of previously saved, and automatically append it to your input.
-To delete style, manually delete it from styles.csv and restart the program.
+To delete a style, manually delete it from styles.csv and restart the program.
 
 # Negative prompt
 
 Allows you to use another prompt of things the model should avoid when generating the picture. This works by using the
-negative prompt for unconditional conditioning in the sampling process instead of empty string.
+negative prompt for unconditional conditioning in the sampling process instead of an empty string.
 
 Advanced explanation: [Negative prompt](Negative-prompt)
 
@@ -225,33 +229,33 @@ Advanced explanation: [Negative prompt](Negative-prompt)
 
 Originally by: https://github.com/pharmapsychotic/clip-interrogator
 
-CLIP interrogator allows you to retrieve prompt from an image. The prompt won't allow you to reproduce this
+CLIP interrogator allows you to retrieve the prompt from an image. The prompt won't allow you to reproduce this
 exact image (and sometimes it won't even be close), but it can be a good start.
 
 ![](images/CLIP-interrogate.png)
 
-The first time you run CLIP interrogator it will download few gigabytes of models.
+The first time you run CLIP interrogator it will download a few gigabytes of models.
 
 CLIP interrogator has two parts: one is a BLIP model that creates a text description from the picture.
 Other is a CLIP model that will pick few lines relevant to the picture out of a list. By default, there
-is only one list - a list of artists (from `artists.csv`). You can add more lists by doing the follwoing:
+is only one list - a list of artists (from `artists.csv`). You can add more lists by doing the following:
 
- - create `interrogate` directory in same place as web ui
+ - create `interrogate` directory in the same place as webui
  - put text files in it with a relevant description on each line
 
 For example of what text files to use, see https://github.com/pharmapsychotic/clip-interrogator/tree/main/data.
 In fact, you can just take files from there and use them - just skip artists.txt because you already have a list of
-artists in `artists.csv` (or use that too, who's going to stop you). Each file adds one line of text to final description.
-If you add ".top3." to filename, for example, `flavors.top3.txt`, three most relevant lines from this file will be
+artists in `artists.csv` (or use that too, who's going to stop you). Each file adds one line of text to the final description.
+If you add ".top3." to filename, for example, `flavors.top3.txt`, the three most relevant lines from this file will be
 added to the prompt (other numbers also work).
 
 There are settings relevant to this feature:
  - `Interrogate: keep models in VRAM` - do not unload Interrogate models from memory after using them. For users with a lot of VRAM.
- - `Interrogate: use artists from artists.csv` - adds artist from `artists.csv` when interrogating. Can be useful disable when you have your list of artists in `interrogate` directory
+ - `Interrogate: use artists from artists.csv` - adds artist from `artists.csv` when interrogating. Can be useful to disable when you have your list of artists in `interrogate` directory
  - `Interrogate: num_beams for BLIP` - parameter that affects how detailed descriptions from BLIP model are (the first part of generated prompt)
- - `Interrogate: minimum descripton length` - minimum length for BLIP model's text
+ - `Interrogate: minimum description length` - minimum length for BLIP model's text
  - `Interrogate: maximum descripton length` - maximum length for BLIP model's text
- - `Interrogate: maximum number of lines in text file` - interrogator will only consider this many first lines in a file. Set to 0, default is 1500, which is about as much as a 4GB videocard can handle.
+ - `Interrogate: maximum number of lines in text file` - interrogator will only consider this many first lines in a file. Set to 0, the default is 1500, which is about as much as a 4GB videocard can handle.
 
 # Prompt editing
 
@@ -263,7 +267,7 @@ Prompt editing allows you to start sampling one picture, but in the middle swap 
 [from:to:when]
 ```
 
-Where `from` and `to` are arbitrary texts, and `when` is a number the defines how late in the sampling cycle should the switch be made. The later it is, the less power the model has to draw the `to` text in place of `from` text. If `when` is a number between 0 and 1, it's a fraction of the number of steps after which to make the switch. If it's integer greater than zero, it's just the step after which to make the switch.
+Where `from` and `to` are arbitrary texts, and `when` is a number that defines how late in the sampling cycle should the switch be made. The later it is, the less power the model has to draw the `to` text in place of `from` text. If `when` is a number between 0 and 1, it's a fraction of the number of steps after which to make the switch. If it's an integer greater than zero, it's just the step after which to make the switch.
 
 Nesting one prompt editing inside another does not work.
 
@@ -286,9 +290,9 @@ Here's a more complex example with multiple edits:
 - after step 60, `fantasy landscape with a lake and an oak in background masterful`
 - after step 75, `fantasy landscape with a lake and a christmas tree in background masterful`
 
-The picture at the top was made with prompt:
+The picture at the top was made with the prompt:
 
-`Official portrait of a smiling world war ii general, [male:female:0.99], cheerful, happy, detailed face, 20th century, highly detailed, cinematic lighting, digital art painting by greg rutkowski`
+`Official portrait of a smiling world war ii general, [male:female:0.99], cheerful, happy, detailed face, 20th century, highly detailed, cinematic lighting, digital art painting by Greg Rutkowski's
 
 And the number 0.99 is replaced with whatever you see in column labels on the image.
 
@@ -297,7 +301,7 @@ The last column in the picture is [male:female:0.0], which essentially means tha
 Prompt editing was first implemented by Doggettx in [this myspace.com post](https://www.reddit.com/r/StableDiffusion/comments/xas2os/simple_prompt2prompt_implementation_with_prompt/).
 
 # Highres. fix
-A convenience option to partially render your image at lower resolution, upscale it, and then add details at high resolution. By default, txt2img  makes horrible images at very high resolutions, and this makes it possible to avoid that using small picture's composition. Enabled by checking the "Highres. fix" checkbox on the txt2img page.
+A convenience option to partially render your image at a lower resolution, upscale it, and then add details at a high resolution. By default, txt2img  makes horrible images at very high resolutions, and this makes it possible to avoid using the small picture's composition. Enabled by checking the "Highres. fix" checkbox on the txt2img page.
 
 | Without                      | With                |
 |-------------------------------|---------------------------------|
@@ -311,15 +315,15 @@ Press the Interrupt button to stop current processing.
 # 4GB videocard support
 Optimizations for GPUs with low VRAM. This should make it possible to generate 512x512 images on videocards with 4GB memory.
 
-`--lowvram` is a reimplementation of optimization idea from by [basujindal](https://github.com/basujindal/stable-diffusion).
+`--lowvram` is a reimplementation of an optimization idea by [basujindal](https://github.com/basujindal/stable-diffusion).
 Model is separated into modules, and only one module is kept in GPU memory; when another module needs to run, the previous
 is removed from GPU memory. The nature of this optimization makes the processing run slower -- about 10 times slower
 compared to normal operation on my RTX 3090.
 
 `--medvram` is another optimization that should reduce VRAM usage significantly by not processing conditional and
-unconditional denoising in a same batch.
+unconditional denoising in the same batch.
 
-This implementation of optimization does not require any modification to original Stable Diffusion code.
+This implementation of optimization does not require any modification to the original Stable Diffusion code.
 
 # Face restoration
 Lets you improve faces in pictures using either GFPGAN or CodeFormer. There is a checkbox in every tab to use face restoration,
@@ -333,7 +337,7 @@ the effect is. You can choose between the two methods in settings.
 
 # Saving
 Click the Save button under the output section, and generated images will be saved to a directory specified in settings;
-generation parameters will be appended to a csv file  in the same directory.
+generation parameters will be appended to a csv file in the same directory.
 
 # Correct seeds for batches
 If you use a seed of 1000 to generate two batches of two images each, four generated images will have seeds: `1000, 1001, 1002, 1003`.
@@ -355,12 +359,12 @@ can view this information later using any software that supports viewing
 PNG chunk info, for example: https://www.nayuki.io/page/png-file-chunk-inspector
 
 # Settings
-A tab with settings, allowing you to use UI to edit more than half of parameters that previously
+A tab with settings, allows you to use UI to edit more than half of parameters that previously
 were commandline. Settings are saved to config.js file. Settings that remain as commandline
 options are ones that are required at startup.
 
 # Filenames format
-The `Images filename pattern` field in the Settings tab allows customization of generated txt2img and img2img images filenames. This pattern defines the generation parameters you want to include in filenames, and their order. The supported tags are:
+The `Images filename pattern` field in the Settings tab allows customization of generated txt2img and img2img images filenames. This pattern defines the generation parameters you want to include in filenames and their order. The supported tags are:
 
 `[steps], [cfg], [prompt], [prompt_spaces], [width], [height], [sampler], [seed], [model_hash], [prompt_words], [date], [model_hash].`
 
@@ -368,7 +372,7 @@ This list will evolve though, with new additions. You can get an up-to-date list
 
 Example of a pattern: `[seed]-[steps]-[cfg]-[sampler]-[prompt_spaces]`
 
-Note about "prompt" tags: `[prompt]` will add underscores between the prompt words, while `[prompt_spaces]` will keep the prompt intact (easier to copy/paste into the UI again). `[prompt_words]` is a simplified and cleaned-up version of your prompt, already used to generated subdirectories names, with only the words of your prompt (no punctuation).
+Note about "prompt" tags: `[prompt]` will add underscores between the prompt words, while `[prompt_spaces]` will keep the prompt intact (easier to copy/paste into the UI again). `[prompt_words]` is a simplified and cleaned-up version of your prompt, already used to generate subdirectories names, with only the words of your prompt (no punctuation).
 
 If you leave this field empty, the default pattern will be applied (`[seed]-[prompt_spaces]`).
 
@@ -376,11 +380,11 @@ Please note that the tags are actually replaced inside the pattern. It means tha
 
 # User scripts
 If the program is launched with `--allow-code` option, an extra text input field for script code
-is available in the bottom of the page, under Scripts -> Custom code. It allows you to input python
+is available at the bottom of the page, under Scripts -> Custom code. It allows you to input python
 code that will do the work with the image.
 
 In code, access parameters from web UI using the `p` variable, and provide outputs for web UI
-using the `display(images, seed, info)` function. All globals from script are also accessible.
+using the `display(images, seed, info)` function. All globals from the script are also accessible.
 
 A simple script that would just process the image and output it normally:
 
@@ -405,14 +409,14 @@ The file is ui-config.json in webui dir, and it is created automatically if you 
 
 Checkboxes that would usually expand a hidden section will not initially do so when set as UI config entries.
 
-Some settings will break processing, like step not divisible by 64 for width and heght, and some, like changing default
+Some settings will break processing, like step not divisible by 64 for width and height, and some, like changing the default
 function on the img2img tab, may break UI. I do not have plans to address those in near future.
 
 # ESRGAN
 It's possible to use ESRGAN models on the Extras tab, as well as in SD upscale.
 
 To use ESRGAN models, put them into ESRGAN directory in the same location as webui.py.
-A file will be loaded as model if it has .pth extension. Grab models from the [Model Database](https://upscale.wiki/wiki/Model_Database).
+A file will be loaded as a model if it has .pth extension. Grab models from the [Model Database](https://upscale.wiki/wiki/Model_Database).
 
 Not all models from the database are supported. All 2x models are most likely not supported.
 
@@ -436,7 +440,7 @@ Adjust your settings for the reconstruction process:
 
 Once all of the above are dialed in, you should be able to hit "Generate" and get back a result that is a *very* close approximation to the original.
 
-After validating that the script is re-generating the source photo with a good degree of accuracy, you can try to change details of the prompt. Larger variations of the original will likely result in an image with an entirely different composition than the source.
+After validating that the script is re-generating the source photo with a good degree of accuracy, you can try to change the details of the prompt. Larger variations of the original will likely result in an image with an entirely different composition than the source.
 
 Example outputs using the above settings and prompts below (Red hair/pony not pictured)
 
@@ -448,7 +452,7 @@ Example outputs using the above settings and prompts below (Red hair/pony not pi
 "A frowning woman with red hair riding a horse." Seems to replace the woman entirely, and now we have a ginger pony.
 
 # user.css
-Create a file named `user.css` near `webui.py` and put custom CSS code into it. For example, this makes gallery taller:
+Create a file named `user.css` near `webui.py` and put custom CSS code into it. For example, this makes the gallery taller:
 
 ```css
 #txt2img_gallery, #img2img_gallery{
@@ -457,7 +461,7 @@ Create a file named `user.css` near `webui.py` and put custom CSS code into it. 
 ```
 
 # notification.mp3
-If an aufio file named `notification.mp3` is present in webui's root folder, it will be played when the generation process completes.
+If an audio file named `notification.mp3` is present in webui's root folder, it will be played when the generation process completes.
 
 As a source of inspiration:
 * https://pixabay.com/sound-effects/search/ding/?duration=0-30
