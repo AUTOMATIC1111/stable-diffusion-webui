@@ -24,7 +24,7 @@ class UpscalerLDSR(Upscaler):
     def load_model(self, path: str):
         model = load_file_from_url(url=self.model_url, model_dir=self.model_path,
                                    file_name="model.pth", progress=True)
-        yaml = load_file_from_url(url=self.model_url, model_dir=self.model_path,
+        yaml = load_file_from_url(url=self.yaml_url, model_dir=self.model_path,
                                   file_name="project.yaml", progress=True)
 
         try:
