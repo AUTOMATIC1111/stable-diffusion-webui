@@ -69,7 +69,6 @@ class UpscalerBSRGAN(modules.upscaler.Upscaler):
         if not os.path.exists(filename) or filename is None:
             print(f"BSRGAN: Unable to load model from {filename}", file=sys.stderr)
             return None
-        print("Loading %s from %s" % (self.model_path, filename))
         model = RRDBNet(in_nc=3, out_nc=3, nf=64, nb=23, gc=32, sf=4)  # define network
         model.load_state_dict(torch.load(filename), strict=True)
         model.eval()
