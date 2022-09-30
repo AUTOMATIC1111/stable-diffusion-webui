@@ -6,13 +6,14 @@ from PIL import Image
 import torch
 import tqdm
 
-from modules import processing, shared, images, devices
+from modules import processing, shared, images, devices, sd_models
 from modules.shared import opts
 import modules.gfpgan_model
 from modules.ui import plaintext_to_html
 import modules.codeformer_model
 import piexif
 import piexif.helper
+import gradio as gr
 
 
 cached_images = {}
@@ -141,7 +142,7 @@ def run_pnginfo(image):
     return '', geninfo, info
 
 
-def run_modelmerger(modelname_0, modelname_1, interp_method, interp_amount):
+def run_modelmerger(primary_model_name, secondary_model_name, interp_method, interp_amount, save_as_half, custom_name):
     # Linear interpolation (https://en.wikipedia.org/wiki/Linear_interpolation)
     def weighted_sum(theta0, theta1, alpha):
         return ((1 - alpha) * theta0) + (alpha * theta1)
@@ -151,45 +152,52 @@ def run_modelmerger(modelname_0, modelname_1, interp_method, interp_amount):
         alpha = alpha * alpha * (3 - (2 * alpha))
         return theta0 + ((theta1 - theta0) * alpha)
 
-    if os.path.exists(modelname_0):
-        model0_filename = modelname_0
-        modelname_0 = os.path.splitext(os.path.basename(modelname_0))[0]
-    else:
-        model0_filename = 'models/' + modelname_0 + '.ckpt'
+    # Inverse Smoothstep (https://en.wikipedia.org/wiki/Smoothstep)
+    def inv_sigmoid(theta0, theta1, alpha):
+        import math
+        alpha = 0.5 - math.sin(math.asin(1.0 - 2.0 * alpha) / 3.0)
+        return theta0 + ((theta1 - theta0) * alpha)
 
-    if os.path.exists(modelname_1):
-        model1_filename = modelname_1
-        modelname_1 = os.path.splitext(os.path.basename(modelname_1))[0]
-    else:
-        model1_filename = 'models/' + modelname_1 + '.ckpt'
+    primary_model_info = sd_models.checkpoints_list[primary_model_name]
+    secondary_model_info = sd_models.checkpoints_list[secondary_model_name]
 
-    print(f"Loading {model0_filename}...")
-    model_0 = torch.load(model0_filename, map_location='cpu')
+    print(f"Loading {primary_model_info.filename}...")
+    primary_model = torch.load(primary_model_info.filename, map_location='cpu')
 
-    print(f"Loading {model1_filename}...")
-    model_1 = torch.load(model1_filename, map_location='cpu')
-    
-    theta_0 = model_0['state_dict']
-    theta_1 = model_1['state_dict']
+    print(f"Loading {secondary_model_info.filename}...")
+    secondary_model = torch.load(secondary_model_info.filename, map_location='cpu')
+   
+    theta_0 = primary_model['state_dict']
+    theta_1 = secondary_model['state_dict']
 
     theta_funcs = {
         "Weighted Sum": weighted_sum,
         "Sigmoid": sigmoid,
+        "Inverse Sigmoid": inv_sigmoid,
     }
     theta_func = theta_funcs[interp_method]
 
     print(f"Merging...")
     for key in tqdm.tqdm(theta_0.keys()):
         if 'model' in key and key in theta_1:
-            theta_0[key] = theta_func(theta_0[key], theta_1[key], interp_amount)
+            theta_0[key] = theta_func(theta_0[key], theta_1[key], (float(1.0) - interp_amount))  # Need to reverse the interp_amount to match the desired mix ration in the merged checkpoint
+            if save_as_half:
+                theta_0[key] = theta_0[key].half()
     
     for key in theta_1.keys():
         if 'model' in key and key not in theta_0:
             theta_0[key] = theta_1[key]
+            if save_as_half:
+                theta_0[key] = theta_0[key].half()
 
-    output_modelname = 'models/' + modelname_0 + '-' + modelname_1 + '-merged.ckpt'
+    filename = primary_model_info.model_name + '_' + str(round(interp_amount, 2)) + '-' + secondary_model_info.model_name + '_' + str(round((float(1.0) - interp_amount), 2)) + '-' + interp_method.replace(" ", "_") + '-merged.ckpt'
+    filename = filename if custom_name == '' else (custom_name + '.ckpt')
+    output_modelname = os.path.join(shared.cmd_opts.ckpt_dir, filename)
+
     print(f"Saving to {output_modelname}...")
-    torch.save(model_0, output_modelname)
+    torch.save(primary_model, output_modelname)
+
+    sd_models.list_models()
 
     print(f"Checkpoint saved.")
-    return "Checkpoint saved to " + output_modelname
+    return ["Checkpoint saved to " + output_modelname] + [gr.Dropdown.update(choices=sd_models.checkpoint_tiles()) for _ in range(3)]
