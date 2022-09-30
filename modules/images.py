@@ -213,17 +213,19 @@ def resize_image(resize_mode, im, width, height):
         if opts.upscaler_for_img2img is None or opts.upscaler_for_img2img == "None" or im.mode == 'L':
             return im.resize((w, h), resample=LANCZOS)
 
-        upscalers = [x for x in shared.sd_upscalers if x.name == opts.upscaler_for_img2img]
-        assert len(upscalers) > 0, f"could not find upscaler named {opts.upscaler_for_img2img}"
-
-        upscaler = upscalers[0]
         scale = max(w / im.width, h / im.height)
-        upscaled = upscaler.scaler.upscale(im, scale, upscaler.data_path)
 
-        if upscaled.width != w or upscaled.height != h:
-            upscaled = im.resize((w, h), resample=LANCZOS)
+        if scale > 1.0:
+            upscalers = [x for x in shared.sd_upscalers if x.name == opts.upscaler_for_img2img]
+            assert len(upscalers) > 0, f"could not find upscaler named {opts.upscaler_for_img2img}"
 
-        return upscaled
+            upscaler = upscalers[0]
+            im = upscaler.scaler.upscale(im, scale, upscaler.data_path)
+
+        if im.width != w or im.height != h:
+            im = im.resize((w, h), resample=LANCZOS)
+
+        return im
 
     if resize_mode == 0:
         res = resize(im, width, height)
