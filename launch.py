@@ -78,10 +78,15 @@ def git_clone(url, dir, name, commithash=None):
     if os.path.exists(dir):
         return
 
-    run(f'"{git}" clone "{url}" "{dir}"', f"Cloning {name} into {dir}...", f"Couldn't clone {name}")
-
-    if commithash is not None:
-        run(f'"{git}" -C {dir} checkout {commithash}', None, "Couldn't checkout {name}'s hash: {commithash}")
+    if commithash is None:
+        run(f'"{git}" clone --depth 1 "{url}" "{dir}"', f"Cloning {name} into {dir}...", f"Couldn't clone {name}")
+    else:
+        os.makedirs(dir)
+        git_prefix = f'"{git}" -C "{dir}"'
+        run(f'{git_prefix} init', None, f"Could not initialize git repository at {dir}")
+        run(f'{git_prefix} remote add origin {url}', None, f"Could not add {name}'s url: {url}")
+        run(f'{git_prefix} fetch --depth 1 origin {commithash}', f"Fetching {name}...", f"Couldn't fetch {name} from url {url} commit {commithash}")
+        run(f'{git_prefix} checkout {commithash}', None, f"Unable to checkout {name} commit {commithash}")
 
 
 try:
