@@ -15,11 +15,11 @@ torch_command = os.environ.get('TORCH_COMMAND', "pip install torch==1.12.1+cu113
 requirements_file = os.environ.get('REQS_FILE', "requirements_versions.txt")
 commandline_args = os.environ.get('COMMANDLINE_ARGS', "")
 
-k_diffusion_package = os.environ.get('K_DIFFUSION_PACKAGE', "git+https://github.com/crowsonkb/k-diffusion.git@1a0703dfb7d24d8806267c3e7ccc4caf67fd1331")
 gfpgan_package = os.environ.get('GFPGAN_PACKAGE', "git+https://github.com/TencentARC/GFPGAN.git@8d2447a2d918f8eba5a4a01463fd48e45126a379")
 
 stable_diffusion_commit_hash = os.environ.get('STABLE_DIFFUSION_COMMIT_HASH', "69ae4b35e0a0f6ee1af8bb9a5d0016ccb27e36dc")
 taming_transformers_commit_hash = os.environ.get('TAMING_TRANSFORMERS_COMMIT_HASH', "24268930bf1dce879235a7fddd0b2355b84d7ea6")
+k_diffusion_commit_hash = os.environ.get('K_DIFFUSION_COMMIT_HASH', "a7ec1974d4ccb394c2dca275f42cd97490618924")
 codeformer_commit_hash = os.environ.get('CODEFORMER_COMMIT_HASH', "c5b4593074ba6214284d6acd5f1719b6c5d739af")
 blip_commit_hash = os.environ.get('BLIP_COMMIT_HASH', "48211a1594f1321b00f14c9f7a5b4813144b2fb9")
 
@@ -107,10 +107,7 @@ if not is_installed("torch") or not is_installed("torchvision"):
     run(f'"{python}" -m {torch_command}', "Installing torch and torchvision", "Couldn't install torch")
 
 if not skip_torch_cuda_test:
-    run_python("import torch; assert torch.cuda.is_available(), 'Torch is not able to use GPU; add --skip-torch-cuda-test to COMMANDINE_ARGS variable to disable this check'")
-
-if not is_installed("k_diffusion.sampling"):
-    run_pip(f"install {k_diffusion_package}", "k-diffusion")
+    run_python("import torch; assert torch.cuda.is_available(), 'Torch is not able to use GPU; add --skip-torch-cuda-test to COMMANDLINE_ARGS variable to disable this check'")
 
 if not is_installed("gfpgan"):
     run_pip(f"install {gfpgan_package}", "gfpgan")
@@ -119,6 +116,7 @@ os.makedirs(dir_repos, exist_ok=True)
 
 git_clone("https://github.com/CompVis/stable-diffusion.git", repo_dir('stable-diffusion'), "Stable Diffusion", stable_diffusion_commit_hash)
 git_clone("https://github.com/CompVis/taming-transformers.git", repo_dir('taming-transformers'), "Taming Transformers", taming_transformers_commit_hash)
+git_clone("https://github.com/crowsonkb/k-diffusion.git", repo_dir('k-diffusion'), "K-diffusion", k_diffusion_commit_hash)
 git_clone("https://github.com/sczhou/CodeFormer.git", repo_dir('CodeFormer'), "CodeFormer", codeformer_commit_hash)
 git_clone("https://github.com/salesforce/BLIP.git", repo_dir('BLIP'), "BLIP", blip_commit_hash)
 if os.path.isdir(repo_dir('latent-diffusion')):
@@ -133,6 +131,9 @@ run_pip(f"install -r {requirements_file}", "requirements for Web UI")
 
 sys.argv += args
 
+if "--exit" in args:
+    print("Exiting because of --exit argument")
+    exit(0)
 
 def start_webui():
     print(f"Launching Web UI with arguments: {' '.join(sys.argv[1:])}")
