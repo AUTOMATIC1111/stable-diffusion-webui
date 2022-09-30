@@ -5,10 +5,12 @@ In the Settings config the path to your potrace executable (or just "potrace" if
 https://potrace.sourceforge.net/#downloading
 """
 
+from email.mime import application
 from inspect import _void
 import os
 import pathlib
 import subprocess
+from xmlrpc.client import APPLICATION_ERROR
 
 import modules.scripts as scripts
 import modules.images as Images
@@ -30,10 +32,17 @@ class Script(scripts.Script):
         poTight = gr.Checkbox(label="Cut white margin from input", value=True)
         poKeepPnm = gr.Checkbox(label="Keep temp images", value=False)
         poThreshold = gr.Slider(label="Threshold", minimum=0.0, maximum=1.0, step=0.05, value=0.5)
-
         return [poFormat,poOpaque, poTight, poKeepPnm, poThreshold]
 
     def run(self, p, poFormat, poOpaque, poTight, poKeepPnm, poThreshold):
+
+        if not os.path.exists(opts.potrace_path):
+            try:
+                checkPath = subprocess.Popen([opts.potrace_path,"-v"])
+                checkPath.wait()
+            except (Exception):
+                raise Exception("Txt2Vectorgraphics: Potrace command not found or not configured properly")
+
         p.do_not_save_grid = True
 
         # make SD great b/w stuff
@@ -55,10 +64,13 @@ class Script(scripts.Script):
             if poTight: args.append("--tight")
             args.append(fullfn)
 
-            p2 = subprocess.Popen(args)
+            try:
+                p2 = subprocess.Popen(args)
 
-            if not poKeepPnm:
-                p2.wait()
-                os.remove(fullfn)
-
-        return Processed(p, images, p.seed, "")
+                if not poKeepPnm:
+                    p2.wait()
+                    os.remove(fullfn)
+            except (any):
+                raise Exception("TXT2Vectorgraphics: Execution of Protrace failed, check filesystem, permissions, installation or settings")
+            finally:
+                return Processed(p, images, p.seed, "")
