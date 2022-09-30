@@ -380,7 +380,7 @@ def create_toprow(is_img2img):
         with gr.Column(scale=1):
             with gr.Row():
                 interrupt = gr.Button('Interrupt', elem_id=f"{id_part}_interrupt")
-                submit = gr.Button('Generate', elem_id="generate", variant='primary')
+                submit = gr.Button('Generate', elem_id=f"{id_part}_generate", variant='primary')
 
                 interrupt.click(
                     fn=lambda: shared.state.interrupt(),
