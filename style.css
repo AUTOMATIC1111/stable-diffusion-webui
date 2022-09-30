@@ -403,3 +403,7 @@ input[type="range"]{
 .red {
 	color: red;
 }
+
+.gallery-item {
+    --tw-bg-opacity: 0 !important;
+}
