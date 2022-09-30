@@ -98,7 +98,6 @@ class LDSR:
         im_og = image
         width_og, height_og = im_og.size
         # If we can adjust the max upscale size, then the 4 below should be our variable
-        print("Foo")
         down_sample_rate = target_scale / 4
         wd = width_og * down_sample_rate
         hd = height_og * down_sample_rate
