@@ -29,6 +29,8 @@ python launch.py --opt-split-attention --ckpt ../secret/anime9999.ckpt
 ```
 
 # Manual Installation
+Manual installation is very outdated and probably won't work. check colab in the repo's readme for instructions.
+
 The following process installs everything manually on both Windows or Linux (the latter requiring `dir` to be replaced by `ls`):
 ```bash
 # install torch with CUDA support. See https://pytorch.org/get-started/locally/ for more instructions if this fails.
