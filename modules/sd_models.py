@@ -96,7 +96,7 @@ def list_models():
         print(f"Checkpoint in --ckpt argument not found (Possible it was moved to {model_path}: {cmd_ckpt}", file=sys.stderr)
     for filename in model_list:
         h = model_hash(filename)
-        title = modeltitle(filename, h)
+        title, model_name = modeltitle(filename, h)
         checkpoints_list[title] = CheckpointInfo(filename, title, h, model_name)
 
 def get_closet_checkpoint_match(searchString):

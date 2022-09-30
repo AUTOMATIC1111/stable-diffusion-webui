@@ -60,7 +60,7 @@ class Upscaler:
                 break
             img = self.do_upscale(img, selected_model)
         if img.width != dest_w or img.height != dest_h:
-            img = img.resize(dest_w, dest_h, resample=LANCZOS)
+            img = img.resize((dest_w, dest_h), resample=LANCZOS)
 
         return img
 
