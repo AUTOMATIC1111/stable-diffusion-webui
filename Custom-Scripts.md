@@ -1,6 +1,5 @@
 # Installing and Using Custom Scripts
-
-The Script class enables custom extensions to how the image processing is handled after "Generate" is clicked. To install custom scripts, place them into the `scripts` directory and restart the web ui. Custom scripts will appear in the lower-left dropdown menu on the txt2img and img2img tabs after being installed. Below are some notable custom scripts created by Web UI users:
+To install custom scripts, place them into the `scripts` directory and restart the web ui. Custom scripts will appear in the lower-left dropdown menu on the txt2img and img2img tabs after being installed. Below are some notable custom scripts created by Web UI users:
 
 # Custom Scripts from Users
 
