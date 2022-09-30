@@ -22,6 +22,13 @@ class UpscalerLDSR(Upscaler):
         self.scalers = [scaler_data]
 
     def load_model(self, path: str):
+        # Remove incorrect project.yaml file if too big
+        yaml_path = os.path.join(self.model_path, "project.yaml")
+        if os.path.exists(yaml_path):
+            statinfo = os.stat(yaml_path)
+            if statinfo.st_size <= 10485760:
+                print("Removing invalid LDSR YAML file.")
+                os.remove(yaml_path)
         model = load_file_from_url(url=self.model_url, model_dir=self.model_path,
                                    file_name="model.pth", progress=True)
         yaml = load_file_from_url(url=self.yaml_url, model_dir=self.model_path,
