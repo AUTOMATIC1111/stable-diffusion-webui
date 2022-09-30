@@ -197,9 +197,9 @@ class Script(scripts.Script):
         
         i1 = gr.HTML("<p style=\"margin-bottom:0.75em\">Render these video formats:</p>")
         with gr.Row():
-            vid_gif = gr.Checkbox(label='GIF', value=False)
-            vid_mp4 = gr.Checkbox(label='MP4', value=False)
-            vid_webm = gr.Checkbox(label='WEBM', value=True)
+            vid_gif = gr.Checkbox(label="GIF", value=False)
+            vid_mp4 = gr.Checkbox(label="MP4", value=False)
+            vid_webm = gr.Checkbox(label="WEBM", value=True)
         
         i2 = gr.HTML("<p style=\"margin-bottom:0.75em\">Animation Parameters</p>")
         with gr.Row():
@@ -208,7 +208,7 @@ class Script(scripts.Script):
         
         with gr.Row():
             denoising_strength = gr.Slider(label="Denoising Strength, overrides img2img", minimum=0.0, maximum=1.0, step=0.01, value=0.40)
-            noise_decay =  gr.Checkbox(label='Denoising Decay', value=False)
+            noise_decay = gr.Checkbox(label="Decay", value=False)
 
         with gr.Row():
             zoom_factor = gr.Textbox(label="Zoom Factor (scale/s)", lines=1, value="1.0")
@@ -219,7 +219,7 @@ class Script(scripts.Script):
         tmpl_pos = gr.Textbox(label="Positive Prompts", lines=1, value="")
         tmpl_neg = gr.Textbox(label="Negative Prompts", lines=1, value="")
         
-        i4 = gr.HTML("<p style=\"margin-bottom:0.75em\">Keyframes<br>Format: Time (s) | Desnoise | Zoom (/s) | X Shift (pix/s) | Y shift (pix/s) | Positive Prompts | Negative Prompts</p>")
+        i4 = gr.HTML("<p style=\"margin-bottom:0.75em\">Keyframe Format: <br>Time (s) | Desnoise | Zoom (/s) | X Shift (pix/s) | Y shift (pix/s) | Positive Prompts | Negative Prompts</p>")
         prompts = gr.Textbox(label="Keyframes:", lines=5, value="")
         return [i1, i2, i3, i4, totaltime, fps, vid_gif, vid_mp4, vid_webm, zoom_factor, tmpl_pos, tmpl_neg, prompts, denoising_strength, x_shift, y_shift, noise_decay]
  
