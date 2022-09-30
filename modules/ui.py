@@ -543,7 +543,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
 
             roll.click(
                 fn=roll_artist,
-                _js="roll_artist_txt2img",
+                _js="update_txt2img_tokens",
                 inputs=[
                     txt2img_prompt,
                 ],
@@ -749,7 +749,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
 
             roll.click(
                 fn=roll_artist,
-                _js="roll_artist_img2img",
+                _js="update_img2img_tokens",
                 inputs=[
                     img2img_prompt,
                 ],
@@ -760,7 +760,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
 
             prompts = [(txt2img_prompt, txt2img_negative_prompt), (img2img_prompt, img2img_negative_prompt)]
             style_dropdowns = [(txt2img_prompt_style, txt2img_prompt_style2), (img2img_prompt_style, img2img_prompt_style2)]
-            style_js_funcs = ["update_style_txt2img", "update_style_img2img"]
+            style_js_funcs = ["update_txt2img_tokens", "update_img2img_tokens"]
 
             for button, (prompt, negative_prompt) in zip([txt2img_save_style, img2img_save_style], prompts):
                 button.click(

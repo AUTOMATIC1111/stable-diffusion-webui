@@ -199,21 +199,18 @@ let txt2img_textarea, img2img_textarea = undefined;
 let wait_time = 800
 let token_timeout;
 
-function roll_artist_txt2img(prompt_text) {
+function update_txt2img_tokens(...args) {
 	update_token_counter("txt2img_token_button")
-	return prompt_text;
+	if (args.length == 2)
+		return args[0]
+	return args;
 }
-function roll_artist_img2img(prompt_text) {
+
+function update_img2img_tokens(...args) {
 	update_token_counter("img2img_token_button")
-	return prompt_text;
-}
-function update_style_txt2img(prompt_text, negative_prompt, style1, style2) {
-	update_token_counter("txt2img_token_button")
-	return [prompt_text, negative_prompt, style1, style2]
-}
-function update_style_img2img(prompt_text, negative_prompt, style1, style2) {
-	update_token_counter("img2img_token_button")
-	return [prompt_text, negative_prompt, style1, style2]
+	if (args.length == 2)
+		return args[0]
+	return args;
 }
 
 function update_token_counter(button_id) {
