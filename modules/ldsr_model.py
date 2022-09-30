@@ -53,5 +53,4 @@ class UpscalerLDSR(Upscaler):
             print("NO LDSR!")
             return img
         ddim_steps = shared.opts.ldsr_steps
-        pre_scale = shared.opts.ldsr_pre_down
         return ldsr.super_resolution(img, ddim_steps, self.scale)
