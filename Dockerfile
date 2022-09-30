@@ -1,10 +1,6 @@
 FROM nvidia/cuda:11.3.1-runtime-ubuntu20.04
 
 ARG APP_PATH=/app
-ARG REPO_PATH=$APP_PATH/repositories
-
-COPY --chown=1001:1001 ./ $APP_PATH
-WORKDIR $APP_PATH
 
 ARG DEBIAN_FRONTEND=noninteractive
 USER root
@@ -19,6 +15,10 @@ RUN mkdir -p /usr/local/lib/python3.8/dist-packages/weights
 RUN chown -R 1001:1001 /usr/local/lib/python3.8/dist-packages/weights
 
 RUN pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu113
+
+COPY --chown=1001:1001 ./ $APP_PATH
+WORKDIR $APP_PATH
+
 RUN pip install -r requirements.txt
 USER 1001
 
