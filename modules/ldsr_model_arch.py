@@ -100,7 +100,6 @@ class LDSR:
         # If we can adjust the max upscale size, then the 4 below should be our variable
         print("Foo")
         down_sample_rate = target_scale / 4
-        print(f"Downsample rate is {down_sample_rate}")
         wd = width_og * down_sample_rate
         hd = height_og * down_sample_rate
         width_downsampled_pre = int(wd)
@@ -111,7 +110,7 @@ class LDSR:
                 f'Downsampling from [{width_og}, {height_og}] to [{width_downsampled_pre}, {height_downsampled_pre}]')
             im_og = im_og.resize((width_downsampled_pre, height_downsampled_pre), Image.LANCZOS)
         else:
-            print(f"Down sample rate is 1 from {target_scale} / 4")
+            print(f"Down sample rate is 1 from {target_scale} / 4 (Not downsampling)")
         logs = self.run(model["model"], im_og, diffusion_steps, eta)
 
         sample = logs["sample"]
