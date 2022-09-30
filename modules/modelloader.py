@@ -1,3 +1,4 @@
+import glob
 import os
 import shutil
 import importlib
@@ -41,7 +42,7 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
 
         for place in places:
             if os.path.exists(place):
-                for file in os.listdir(place):
+                for file in glob.iglob(place + '**/**', recursive=True):
                     full_path = os.path.join(place, file)
                     if os.path.isdir(full_path):
                         continue
@@ -50,6 +51,7 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
                         if extension not in ext_filter:
                             continue
                     if file not in output:
+                        print(f"FILE: {full_path}")
                         output.append(full_path)
 
         if model_url is not None and len(output) == 0:
