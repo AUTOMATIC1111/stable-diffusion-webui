@@ -290,7 +290,11 @@ def apply_filename_pattern(x, p, seed, prompt):
         if "[prompt_no_styles]" in x:
             prompt_no_style = prompt
             for style in shared.prompt_styles.get_style_prompts(p.styles):
-                prompt_no_style = prompt_no_style.replace(style.replace("{prompt}", ""), "")
+                if len(style) > 0:
+                    style_parts = [y for y in style.split("{prompt}")]
+                    for part in style_parts:
+                        prompt_no_style = prompt_no_style.replace(part, "").replace(", ,", ",").strip().strip(',')                        
+            prompt_no_style = prompt_no_style.replace(style, "").strip().strip(',').strip()
             x = x.replace("[prompt_no_styles]", sanitize_filename_part(prompt_no_style, replace_spaces=False))
 
         x = x.replace("[prompt_spaces]", sanitize_filename_part(prompt, replace_spaces=False))
