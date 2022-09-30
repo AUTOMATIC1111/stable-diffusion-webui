@@ -9,10 +9,13 @@ import random
 import sys
 import time
 import traceback
+import platform
+import subprocess as sp
 
 import numpy as np
 import torch
 from PIL import Image, PngImagePlugin
+import piexif
 
 import gradio as gr
 import gradio.utils
@@ -61,7 +64,7 @@ random_symbol = '\U0001f3b2\ufe0f'  # 🎲️
 reuse_symbol = '\u267b\ufe0f'  # ♻️
 art_symbol = '\U0001f3a8'  # 🎨
 paste_symbol = '\u2199\ufe0f'  # ↙
-
+folder_symbol = '\uD83D\uDCC2'
 
 def plaintext_to_html(text):
     text = "<p>" + "<br>\n".join([f"{html.escape(x)}" for x in text.split('\n')]) + "</p>"
@@ -111,18 +114,26 @@ def save_files(js_data, images, index):
             writer.writerow(["prompt", "seed", "width", "height", "sampler", "cfgs", "steps", "filename", "negative_prompt"])
 
         filename_base = str(int(time.time() * 1000))
+        extension = opts.samples_format.lower()
         for i, filedata in enumerate(images):
-            filename = filename_base + ("" if len(images) == 1 else "-" + str(i + 1)) + ".png"
+            filename = filename_base + ("" if len(images) == 1 else "-" + str(i + 1)) + f".{extension}"
             filepath = os.path.join(opts.outdir_save, filename)
 
             if filedata.startswith("data:image/png;base64,"):
                 filedata = filedata[len("data:image/png;base64,"):]
 
-            pnginfo = PngImagePlugin.PngInfo()
-            pnginfo.add_text('parameters', infotexts[i])
-
             image = Image.open(io.BytesIO(base64.decodebytes(filedata.encode('utf-8'))))
-            image.save(filepath, quality=opts.jpeg_quality, pnginfo=pnginfo)
+            if opts.enable_pnginfo and extension == 'png':
+                pnginfo = PngImagePlugin.PngInfo()
+                pnginfo.add_text('parameters', infotexts[i])
+                image.save(filepath, pnginfo=pnginfo)
+            else:
+                image.save(filepath, quality=opts.jpeg_quality)
+
+            if opts.enable_pnginfo and extension in ("jpg", "jpeg", "webp"):
+                piexif.insert(piexif.dump({"Exif": {
+                    piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(infotexts[i], encoding="unicode")
+                }}), filepath)
 
             filenames.append(filename)
 
@@ -369,7 +380,7 @@ def create_toprow(is_img2img):
         with gr.Column(scale=1):
             with gr.Row():
                 interrupt = gr.Button('Interrupt', elem_id=f"{id_part}_interrupt")
-                submit = gr.Button('Generate', elem_id="generate", variant='primary')
+                submit = gr.Button('Generate', elem_id=f"{id_part}_generate", variant='primary')
 
                 interrupt.click(
                     fn=lambda: shared.state.interrupt(),
@@ -461,6 +472,8 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
                         send_to_img2img = gr.Button('Send to img2img')
                         send_to_inpaint = gr.Button('Send to inpaint')
                         send_to_extras = gr.Button('Send to extras')
+                        button_id = "hidden_element" if shared.cmd_opts.hide_ui_dir_config else 'open_folder'
+                        open_txt2img_folder = gr.Button(folder_symbol, elem_id=button_id)
 
                 with gr.Group():
                     html_info = gr.HTML()
@@ -586,7 +599,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
                             mask_mode = gr.Radio(label="Mask mode", show_label=False, choices=["Draw mask", "Upload mask"], type="index", value="Draw mask", elem_id="mask_mode")
                             inpainting_mask_invert = gr.Radio(label='Masking mode', show_label=False, choices=['Inpaint masked', 'Inpaint not masked'], value='Inpaint masked', type="index")
 
-                        inpainting_fill = gr.Radio(label='Masked content', choices=['fill', 'original', 'latent noise', 'latent nothing'], value='fill', type="index")
+                        inpainting_fill = gr.Radio(label='Masked content', choices=['fill', 'original', 'latent noise', 'latent nothing'], value='original', type="index")
 
                         with gr.Row():
                             inpaint_full_res = gr.Checkbox(label='Inpaint at full resolution', value=False)
@@ -637,6 +650,8 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
                         img2img_send_to_img2img = gr.Button('Send to img2img')
                         img2img_send_to_inpaint = gr.Button('Send to inpaint')
                         img2img_send_to_extras = gr.Button('Send to extras')
+                        button_id = "hidden_element" if shared.cmd_opts.hide_ui_dir_config else 'open_folder'
+                        open_img2img_folder = gr.Button(folder_symbol, elem_id=button_id)
 
                 with gr.Group():
                     html_info = gr.HTML()
@@ -809,6 +824,8 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
                 html_info = gr.HTML()
                 extras_send_to_img2img = gr.Button('Send to img2img')
                 extras_send_to_inpaint = gr.Button('Send to inpaint')
+                button_id = "hidden_element" if shared.cmd_opts.hide_ui_dir_config else ''
+                open_extras_folder = gr.Button('Open output directory', elem_id=button_id)
 
         submit.click(
             fn=run_extras,
@@ -874,6 +891,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
                 with gr.Row():
                     primary_model_name = gr.Dropdown(modules.sd_models.checkpoint_tiles(), elem_id="modelmerger_primary_model_name", label="Primary Model Name")
                     secondary_model_name = gr.Dropdown(modules.sd_models.checkpoint_tiles(), elem_id="modelmerger_secondary_model_name", label="Secondary Model Name")
+                custom_name = gr.Textbox(label="Custom Name (Optional)")
                 interp_amount = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Interpolation Amount', value=0.3)
                 interp_method = gr.Radio(choices=["Weighted Sum", "Sigmoid", "Inverse Sigmoid"], value="Weighted Sum", label="Interpolation Method")
                 save_as_half = gr.Checkbox(value=False, label="Safe as float16")
@@ -906,6 +924,16 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
 
     components = []
     component_dict = {}
+
+    def open_folder(f):
+        if not shared.cmd_opts.hide_ui_dir_config:
+            path = os.path.normpath(f)
+            if platform.system() == "Windows":
+                os.startfile(path)
+            elif platform.system() == "Darwin":
+                sp.Popen(["open", path])
+            else:
+                sp.Popen(["xdg-open", path])
 
     def run_settings(*args):
         changed = 0
@@ -1013,15 +1041,26 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
             inputs=components,
             outputs=[result, text_settings],
         )
+        
+        def modelmerger(*args):
+            try:
+                results = run_modelmerger(*args)
+            except Exception as e:
+                print("Error loading/saving model file:", file=sys.stderr)
+                print(traceback.format_exc(), file=sys.stderr)
+                modules.sd_models.list_models() #To remove the potentially missing models from the list
+                return ["Error loading/saving model file. It doesn't exist or the name contains illegal characters"] + [gr.Dropdown.update(choices=modules.sd_models.checkpoint_tiles()) for _ in range(3)]
+            return results
 
         modelmerger_merge.click(
-            fn=run_modelmerger,
+            fn=modelmerger,
             inputs=[
                 primary_model_name,
                 secondary_model_name,
                 interp_method,
                 interp_amount,
                 save_as_half,
+                custom_name,
             ],
             outputs=[
                 submit_result,
@@ -1066,6 +1105,24 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
             _js="extract_image_from_gallery_extras",
             inputs=[txt2img_gallery],
             outputs=[extras_image],
+        )
+
+        open_txt2img_folder.click(
+            fn=lambda: open_folder(opts.outdir_samples or opts.outdir_txt2img_samples),
+            inputs=[],
+            outputs=[],
+        )
+
+        open_img2img_folder.click(
+            fn=lambda: open_folder(opts.outdir_samples or opts.outdir_img2img_samples),
+            inputs=[],
+            outputs=[],
+        )
+
+        open_extras_folder.click(
+            fn=lambda: open_folder(opts.outdir_samples or opts.outdir_extras_samples),
+            inputs=[],
+            outputs=[],
         )
 
         img2img_send_to_extras.click(
