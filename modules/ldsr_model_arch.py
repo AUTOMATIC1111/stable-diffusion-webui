@@ -101,8 +101,10 @@ class LDSR:
         print("Foo")
         down_sample_rate = target_scale / 4
         print(f"Downsample rate is {down_sample_rate}")
-        width_downsampled_pre = width_og * down_sample_rate
-        height_downsampled_pre = height_og * down_sample_method
+        wd = width_og * down_sample_rate
+        hd = height_og * down_sample_rate
+        width_downsampled_pre = int(wd)
+        height_downsampled_pre = int(hd)
 
         if down_sample_rate != 1:
             print(

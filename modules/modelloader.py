@@ -118,11 +118,9 @@ def load_upscalers():
     for cls in Upscaler.__subclasses__():
         name = cls.__name__
         module_name = cls.__module__
-        print(f"Class: {name} and {module_name}")
         module = importlib.import_module(module_name)
         class_ = getattr(module, name)
         cmd_name = f"{name.lower().replace('upscaler', '')}-models-path"
-        print(f"CMD Name: {cmd_name}")
         opt_string = None
         try:
             opt_string = shared.opts.__getattr__(cmd_name)
@@ -130,18 +128,6 @@ def load_upscalers():
             pass
         scaler = class_(opt_string)
         for child in scaler.scalers:
-            print(f"Appending {child.name}")
             datas.append(child)
 
     shared.sd_upscalers = datas
-
-    # for scaler in subclasses:
-    #     print(f"Found scaler: {type(scaler).__name__}")
-    #     try:
-    #         scaler = scaler()
-    #         for child in scaler.scalers:
-    #             print(f"Appending {child.name}")
-    #             datas.append[child]
-    #     except:
-    #         pass
-    # shared.sd_upscalers = datas
