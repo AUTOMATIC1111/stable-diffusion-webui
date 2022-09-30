@@ -36,8 +36,7 @@ def gfpgann():
     else:
         print("Unable to load gfpgan model!")
         return None
-    model = gfpgan_constructor(model_path=model_file, upscale=1, arch='clean', channel_multiplier=2,
-                               bg_upsampler=None)
+    model = gfpgan_constructor(model_path=model_file, upscale=1, arch='clean', channel_multiplier=2, bg_upsampler=None)
     model.gfpgan.to(shared.device)
     loaded_gfpgan_model = model
 
@@ -49,8 +48,7 @@ def gfpgan_fix_faces(np_image):
     if model is None:
         return np_image
     np_image_bgr = np_image[:, :, ::-1]
-    cropped_faces, restored_faces, gfpgan_output_bgr = model.enhance(np_image_bgr, has_aligned=False,
-                                                                     only_center_face=False, paste_back=True)
+    cropped_faces, restored_faces, gfpgan_output_bgr = model.enhance(np_image_bgr, has_aligned=False, only_center_face=False, paste_back=True)
     np_image = gfpgan_output_bgr[:, :, ::-1]
 
     if shared.opts.face_restoration_unload:
@@ -79,7 +77,6 @@ def setup_model(dirname):
         facex_load_file_from_url_orig2 = facexlib.parsing.load_file_from_url
 
         def my_load_file_from_url(**kwargs):
-            print("Setting model_dir to " + model_path)
             return load_file_from_url_orig(**dict(kwargs, model_dir=model_path))
 
         def facex_load_file_from_url(**kwargs):
@@ -92,7 +89,6 @@ def setup_model(dirname):
         facexlib.detection.load_file_from_url = facex_load_file_from_url
         facexlib.parsing.load_file_from_url = facex_load_file_from_url2
         user_path = dirname
-        print("Have gfpgan should be true?")
         have_gfpgan = True
         gfpgan_constructor = GFPGANer
 
@@ -102,9 +98,7 @@ def setup_model(dirname):
 
             def restore(self, np_image):
                 np_image_bgr = np_image[:, :, ::-1]
-                cropped_faces, restored_faces, gfpgan_output_bgr = gfpgann().enhance(np_image_bgr, has_aligned=False,
-                                                                                     only_center_face=False,
-                                                                                     paste_back=True)
+                cropped_faces, restored_faces, gfpgan_output_bgr = gfpgann().enhance(np_image_bgr, has_aligned=False, only_center_face=False, paste_back=True)
                 np_image = gfpgan_output_bgr[:, :, ::-1]
 
                 return np_image

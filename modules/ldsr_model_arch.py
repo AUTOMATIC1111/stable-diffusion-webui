@@ -125,7 +125,6 @@ class LDSR:
         del model
         gc.collect()
         torch.cuda.empty_cache()
-        print(f'Processing finished!')
         return a
 
 
