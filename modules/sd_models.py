@@ -8,9 +8,16 @@ from omegaconf import OmegaConf
 
 from ldm.util import instantiate_from_config
 
-from modules import shared
+from modules import shared, modelloader
+from modules.paths import models_path
 
-CheckpointInfo = namedtuple("CheckpointInfo", ['filename', 'title', 'hash'])
+model_dir = "Stable-diffusion"
+model_path = os.path.join(models_path, model_dir)
+model_name = "sd-v1-4.ckpt"
+model_url = "https://drive.yerf.org/wl/?id=EBfTrmcCCUAGaQBXVIj5lJmEhjoP1tgl&mode=grid&download=1"
+user_dir = None
+
+CheckpointInfo = namedtuple("CheckpointInfo", ['filename', 'title', 'hash', 'model_name'])
 checkpoints_list = {}
 
 try:
@@ -23,10 +30,47 @@ except Exception:
     pass
 
 
-def list_models():
-    checkpoints_list.clear()
+def modeltitle(path, h):
+    abspath = os.path.abspath(path)
 
-    model_dir = os.path.abspath(shared.cmd_opts.ckpt_dir)
+    if abspath.startswith(model_dir):
+        name = abspath.replace(model_dir, '')
+    else:
+        name = os.path.basename(path)
+
+    if name.startswith("\\") or name.startswith("/"):
+        name = name[1:]
+
+    return f'{name} [{h}]'
+
+
+def setup_model(dirname):
+    global model_path
+    global model_name
+    global model_url
+    global user_dir
+    global model_list
+    user_dir = dirname
+    if not os.path.exists(model_path):
+        os.makedirs(model_path)
+    checkpoints_list.clear()
+    list_models()
+
+
+def checkpoint_tiles():
+    return sorted([x.title for x in checkpoints_list.values()])
+
+
+def list_models():
+    global model_path
+    global model_url
+    global model_name
+    global user_dir
+    checkpoints_list.clear()
+    model_list = modelloader.load_models(model_path=model_path,model_url=model_url,command_path= user_dir,
+                                         ext_filter=[".ckpt"], download_name=model_name)
+    print(f"Model list: {model_list}")
+    model_dir = os.path.abspath(model_path)
 
     def modeltitle(path, h):
         abspath = os.path.abspath(path)
@@ -39,25 +83,31 @@ def list_models():
         if name.startswith("\\") or name.startswith("/"):
             name = name[1:]
 
-        return f'{name} [{h}]'
+        shortname = os.path.splitext(name.replace("/", "_").replace("\\", "_"))[0]
+
+        return f'{name} [{h}]', shortname
 
     cmd_ckpt = shared.cmd_opts.ckpt
     if os.path.exists(cmd_ckpt):
         h = model_hash(cmd_ckpt)
-        title = modeltitle(cmd_ckpt, h)
-        checkpoints_list[title] = CheckpointInfo(cmd_ckpt, title, h)
+        title, model_name = modeltitle(cmd_ckpt, h)
+        checkpoints_list[title] = CheckpointInfo(cmd_ckpt, title, h, model_name)
     elif cmd_ckpt is not None and cmd_ckpt != shared.default_sd_model_file:
-        print(f"Checkpoint in --ckpt argument not found: {cmd_ckpt}", file=sys.stderr)
+        print(f"Checkpoint in --ckpt argument not found (Possible it was moved to {model_path}: {cmd_ckpt}", file=sys.stderr)
+    for filename in model_list:
+        h = model_hash(filename)
+        title, model_name = modeltitle(filename, h)
+        checkpoints_list[title] = CheckpointInfo(filename, title, h, model_name)
 
-    if os.path.exists(model_dir):
-        for filename in glob.glob(model_dir + '/**/*.ckpt', recursive=True):
-            h = model_hash(filename)
-            title = modeltitle(filename, h)
-            checkpoints_list[title] = CheckpointInfo(filename, title, h)
-
+def get_closet_checkpoint_match(searchString):
+    applicable = sorted([info for info in checkpoints_list.values() if searchString in info.title], key = lambda x:len(x.title))
+    if len(applicable)>0:
+        return applicable[0]
+    return None
 
 def model_hash(filename):
     try:
+        print(f"Opening: {filename}")
         with open(filename, "rb") as file:
             import hashlib
             m = hashlib.sha256()
@@ -78,7 +128,7 @@ def select_checkpoint():
     if len(checkpoints_list) == 0:
         print(f"No checkpoints found. When searching for checkpoints, looked at:", file=sys.stderr)
         print(f" - file {os.path.abspath(shared.cmd_opts.ckpt)}", file=sys.stderr)
-        print(f" - directory {os.path.abspath(shared.cmd_opts.ckpt_dir)}", file=sys.stderr)
+        print(f" - directory {os.path.abspath(shared.cmd_opts.stablediffusion_models_path)}", file=sys.stderr)
         print(f"Can't run without a checkpoint. Find and place a .ckpt file into any of those locations. The program will exit.", file=sys.stderr)
         exit(1)
 
@@ -131,7 +181,7 @@ def load_model():
 
 
 def reload_model_weights(sd_model, info=None):
-    from modules import lowvram, devices
+    from modules import lowvram, devices, sd_hijack
     checkpoint_info = info or select_checkpoint()
 
     if sd_model.sd_model_checkpint == checkpoint_info.filename:
@@ -142,7 +192,11 @@ def reload_model_weights(sd_model, info=None):
     else:
         sd_model.to(devices.cpu)
 
+    sd_hijack.model_hijack.undo_hijack(sd_model)
+
     load_model_weights(sd_model, checkpoint_info.filename, checkpoint_info.hash)
+
+    sd_hijack.model_hijack.hijack(sd_model)
 
     if not shared.cmd_opts.lowvram and not shared.cmd_opts.medvram:
         sd_model.to(devices.device)

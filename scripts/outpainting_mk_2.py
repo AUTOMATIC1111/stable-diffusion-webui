@@ -11,7 +11,7 @@ from modules import images, processing, devices
 from modules.processing import Processed, process_images
 from modules.shared import opts, cmd_opts, state
 
-
+#  https://github.com/parlance-zz/g-diffuser-bot
 def expand(x, dir, amount, power=0.75):
     is_left = dir == 3
     is_right = dir == 1
@@ -197,6 +197,7 @@ class Script(scripts.Script):
 
         if left > 0:
             left = left * (target_w - init_img.width) // (left + right)
+
         if right > 0:
             right = target_w - init_img.width - left
 
@@ -208,7 +209,7 @@ class Script(scripts.Script):
 
         init_image = p.init_images[0]
 
-        state.job_count = (1 if left > 0 else 0) + (1 if right > 0 else 0)+ (1 if up > 0 else 0)+ (1 if down > 0 else 0)
+        state.job_count = (1 if left > 0 else 0) + (1 if right > 0 else 0) + (1 if up > 0 else 0) + (1 if down > 0 else 0)
 
         def expand(init, expand_pixels, is_left=False, is_right=False, is_top=False, is_bottom=False):
             is_horiz = is_left or is_right
@@ -216,15 +217,20 @@ class Script(scripts.Script):
             pixels_horiz = expand_pixels if is_horiz else 0
             pixels_vert = expand_pixels if is_vert else 0
 
-            img = Image.new("RGB", (init.width + pixels_horiz, init.height + pixels_vert))
+            res_w = init.width + pixels_horiz
+            res_h = init.height + pixels_vert
+            process_res_w = math.ceil(res_w / 64) * 64
+            process_res_h = math.ceil(res_h / 64) * 64
+
+            img = Image.new("RGB", (process_res_w, process_res_h))
             img.paste(init, (pixels_horiz if is_left else 0, pixels_vert if is_top else 0))
-            mask = Image.new("RGB", (init.width + pixels_horiz, init.height + pixels_vert), "white")
+            mask = Image.new("RGB", (process_res_w, process_res_h), "white")
             draw = ImageDraw.Draw(mask)
             draw.rectangle((
                 expand_pixels + mask_blur if is_left else 0,
                 expand_pixels + mask_blur if is_top else 0,
-                mask.width - expand_pixels - mask_blur if is_right else mask.width,
-                mask.height - expand_pixels - mask_blur if is_bottom else mask.height,
+                mask.width - expand_pixels - mask_blur if is_right else res_w,
+                mask.height - expand_pixels - mask_blur if is_bottom else res_h,
             ), fill="black")
 
             np_image = (np.asarray(img) / 255.0).astype(np.float64)
@@ -255,8 +261,8 @@ class Script(scripts.Script):
             draw.rectangle((
                 expand_pixels + mask_blur * 2 if is_left else 0,
                 expand_pixels + mask_blur * 2 if is_top else 0,
-                mask.width - expand_pixels - mask_blur * 2 if is_right else mask.width,
-                mask.height - expand_pixels - mask_blur * 2 if is_bottom else mask.height,
+                mask.width - expand_pixels - mask_blur * 2 if is_right else res_w,
+                mask.height - expand_pixels - mask_blur * 2 if is_bottom else res_h,
             ), fill="black")
             p.latent_mask = latent_mask
 
@@ -268,6 +274,7 @@ class Script(scripts.Script):
                 initial_seed_and_info[1] = proc.info
 
             out.paste(proc_img, (0 if is_left else out.width - proc_img.width, 0 if is_top else out.height - proc_img.height))
+            out = out.crop((0, 0, res_w, res_h))
             return out
 
         img = init_image

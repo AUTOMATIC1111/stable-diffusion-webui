@@ -1,87 +1,139 @@
+import os
 import sys
 import traceback
-from collections import namedtuple
+
 import numpy as np
 from PIL import Image
+from basicsr.utils.download_util import load_file_from_url
+from realesrgan import RealESRGANer
 
-import modules.images
+from modules.upscaler import Upscaler, UpscalerData
+from modules.paths import models_path
 from modules.shared import cmd_opts, opts
 
-RealesrganModelInfo = namedtuple("RealesrganModelInfo", ["name", "location", "model", "netscale"])
 
-realesrgan_models = []
-have_realesrgan = False
-RealESRGANer_constructor = None
+class UpscalerRealESRGAN(Upscaler):
+    def __init__(self, path):
+        self.name = "RealESRGAN"
+        self.model_path = os.path.join(models_path, self.name)
+        self.user_path = path
+        super().__init__()
+        try:
+            from basicsr.archs.rrdbnet_arch import RRDBNet
+            from realesrgan import RealESRGANer
+            from realesrgan.archs.srvgg_arch import SRVGGNetCompact
+            self.enable = True
+            self.scalers = []
+            scalers = self.load_models(path)
+            for scaler in scalers:
+                if scaler.name in opts.realesrgan_enabled_models:
+                    self.scalers.append(scaler)
 
+        except Exception:
+            print("Error importing Real-ESRGAN:", file=sys.stderr)
+            print(traceback.format_exc(), file=sys.stderr)
+            self.enable = False
+            self.scalers = []
 
-class UpscalerRealESRGAN(modules.images.Upscaler):
-    def __init__(self, upscaling, model_index):
-        self.upscaling = upscaling
-        self.model_index = model_index
-        self.name = realesrgan_models[model_index].name
+    def do_upscale(self, img, path):
+        if not self.enable:
+            return img
 
-    def do_upscale(self, img):
-        return upscale_with_realesrgan(img, self.upscaling, self.model_index)
+        info = self.load_model(path)
+        if not os.path.exists(info.data_path):
+            print("Unable to load RealESRGAN model: %s" % info.name)
+            return img
 
+        upsampler = RealESRGANer(
+            scale=info.scale,
+            model_path=info.data_path,
+            model=info.model(),
+            half=not cmd_opts.no_half,
+            tile=opts.ESRGAN_tile,
+            tile_pad=opts.ESRGAN_tile_overlap,
+        )
 
-def setup_realesrgan():
-    global realesrgan_models
-    global have_realesrgan
-    global RealESRGANer_constructor
+        upsampled = upsampler.enhance(np.array(img), outscale=info.scale)[0]
 
-    try:
-        from basicsr.archs.rrdbnet_arch import RRDBNet
-        from realesrgan import RealESRGANer
-        from realesrgan.archs.srvgg_arch import SRVGGNetCompact
-
-        realesrgan_models = [
-            RealesrganModelInfo(
-                name="Real-ESRGAN 4x plus",
-                location="https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth",
-                netscale=4, model=lambda: RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=4)
-            ),
-            RealesrganModelInfo(
-                name="Real-ESRGAN 4x plus anime 6B",
-                location="https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.2.4/RealESRGAN_x4plus_anime_6B.pth",
-                netscale=4, model=lambda: RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=6, num_grow_ch=32, scale=4)
-            ),
-            RealesrganModelInfo(
-                name="Real-ESRGAN 2x plus",
-                location="https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.1/RealESRGAN_x2plus.pth",
-                netscale=2, model=lambda: RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=2)
-            ),
-        ]
-        have_realesrgan = True
-        RealESRGANer_constructor = RealESRGANer
-
-        for i, model in enumerate(realesrgan_models):
-            modules.shared.sd_upscalers.append(UpscalerRealESRGAN(model.netscale, i))
-
-    except Exception:
-        print("Error importing Real-ESRGAN:", file=sys.stderr)
-        print(traceback.format_exc(), file=sys.stderr)
-
-        realesrgan_models = [RealesrganModelInfo('None', '', 0, None)]
-        have_realesrgan = False
-
-
-def upscale_with_realesrgan(image, RealESRGAN_upscaling, RealESRGAN_model_index):
-    if not have_realesrgan or RealESRGANer_constructor is None:
+        image = Image.fromarray(upsampled)
         return image
 
-    info = realesrgan_models[RealESRGAN_model_index]
+    def load_model(self, path):
+        try:
+            info = None
+            for scaler in self.scalers:
+                if scaler.data_path == path:
+                    info = scaler
 
-    model = info.model()
-    upsampler = RealESRGANer_constructor(
-        scale=info.netscale,
-        model_path=info.location,
-        model=model,
-        half=not cmd_opts.no_half,
-        tile=opts.ESRGAN_tile,
-        tile_pad=opts.ESRGAN_tile_overlap,
-    )
+            if info is None:
+                print(f"Unable to find model info: {path}")
+                return None
 
-    upsampled = upsampler.enhance(np.array(image), outscale=RealESRGAN_upscaling)[0]
+            model_file = load_file_from_url(url=info.data_path, model_dir=self.model_path, progress=True)
+            info.data_path = model_file
+            return info
+        except Exception as e:
+            print(f"Error making Real-ESRGAN models list: {e}", file=sys.stderr)
+            print(traceback.format_exc(), file=sys.stderr)
+        return None
 
-    image = Image.fromarray(upsampled)
-    return image
+    def load_models(self, _):
+        return get_realesrgan_models(self)
+
+
+def get_realesrgan_models(scaler):
+    try:
+        from basicsr.archs.rrdbnet_arch import RRDBNet
+        from realesrgan.archs.srvgg_arch import SRVGGNetCompact
+        models = [
+            UpscalerData(
+                name="R-ESRGAN General 4xV3",
+                path="https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesr-general-x4v3"
+                     ".pth",
+                scale=4,
+                upscaler=scaler,
+                model=lambda: SRVGGNetCompact(num_in_ch=3, num_out_ch=3, num_feat=64, num_conv=32, upscale=4,
+                                              act_type='prelu')
+            ),
+            UpscalerData(
+                name="R-ESRGAN General WDN 4xV3",
+                path="https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesr-general-wdn-x4v3.pth",
+                scale=4,
+                upscaler=scaler,
+                model=lambda: SRVGGNetCompact(num_in_ch=3, num_out_ch=3, num_feat=64, num_conv=32, upscale=4,
+                                              act_type='prelu')
+            ),
+            UpscalerData(
+                name="R-ESRGAN AnimeVideo",
+                path="https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesr-animevideov3.pth",
+                scale=4,
+                upscaler=scaler,
+                model=lambda: SRVGGNetCompact(num_in_ch=3, num_out_ch=3, num_feat=64, num_conv=16, upscale=4,
+                                              act_type='prelu')
+            ),
+            UpscalerData(
+                name="R-ESRGAN 4x+",
+                path="https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth",
+                scale=4,
+                upscaler=scaler,
+                model=lambda: RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=4)
+            ),
+            UpscalerData(
+                name="R-ESRGAN 4x+ Anime6B",
+                path="https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.2.4/RealESRGAN_x4plus_anime_6B.pth",
+                scale=4,
+                upscaler=scaler,
+                model=lambda: RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=6, num_grow_ch=32, scale=4)
+            ),
+            UpscalerData(
+                name="R-ESRGAN 2x+",
+                path="https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.1/RealESRGAN_x2plus.pth",
+                scale=2,
+                upscaler=scaler,
+                model=lambda: RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=2)
+            ),
+        ]
+        return models
+    except Exception as e:
+        print("Error making Real-ESRGAN models list:", file=sys.stderr)
+        print(traceback.format_exc(), file=sys.stderr)

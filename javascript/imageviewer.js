@@ -5,9 +5,13 @@ function closeModal() {
 }
 
 function showModal(event) {
-  var source = event.target || event.srcElement;
-  gradioApp().getElementById("modalImage").src = source.src
-  var lb = gradioApp().getElementById("lightboxModal")
+  const source = event.target || event.srcElement;
+  const modalImage = gradioApp().getElementById("modalImage")
+  const lb = gradioApp().getElementById("lightboxModal")
+  modalImage.src = source.src
+  if (modalImage.style.display === 'none') {
+    lb.style.setProperty('background-image', 'url(' + source.src + ')');
+  }
   lb.style.display = "block";
   lb.focus()
   event.stopPropagation()
@@ -18,10 +22,22 @@ function negmod(n, m) {
 }
 
 function modalImageSwitch(offset){
-  var galleryButtons = gradioApp().querySelectorAll(".gallery-item.transition-all")
+  var allgalleryButtons = gradioApp().querySelectorAll(".gallery-item.transition-all")
+  var galleryButtons = []
+  allgalleryButtons.forEach(function(elem){
+    if(elem.parentElement.offsetParent){
+        galleryButtons.push(elem);
+    }
+  })
 
   if(galleryButtons.length>1){
-      var currentButton  = gradioApp().querySelector(".gallery-item.transition-all.\\!ring-2")
+      var allcurrentButtons = gradioApp().querySelectorAll(".gallery-item.transition-all.\\!ring-2")
+      var currentButton = null
+      allcurrentButtons.forEach(function(elem){
+        if(elem.parentElement.offsetParent){
+            currentButton = elem;
+        }
+      })
 
       var result = -1
       galleryButtons.forEach(function(v, i){ if(v==currentButton) { result = i } })
@@ -29,8 +45,13 @@ function modalImageSwitch(offset){
       if(result != -1){
         nextButton = galleryButtons[negmod((result+offset),galleryButtons.length)]
         nextButton.click()
-        gradioApp().getElementById("modalImage").src = nextButton.children[0].src
-        setTimeout( function(){gradioApp().getElementById("lightboxModal").focus()},10)
+        const modalImage = gradioApp().getElementById("modalImage");
+        const modal = gradioApp().getElementById("lightboxModal");
+        modalImage.src = nextButton.children[0].src;
+        if (modalImage.style.display === 'none') {
+            modal.style.setProperty('background-image', `url(${modalImage.src})`)
+        }
+        setTimeout( function(){modal.focus()},10)
       }
   }
 }
@@ -95,6 +116,21 @@ function modalZoomToggle(event){
     event.stopPropagation()
 }
 
+function modalTileImageToggle(event){
+    const modalImage = gradioApp().getElementById("modalImage");
+    const modal = gradioApp().getElementById("lightboxModal");
+    const isTiling = modalImage.style.display === 'none';
+    if (isTiling) {
+        modalImage.style.display = 'block';
+        modal.style.setProperty('background-image', 'none')
+    } else {
+        modalImage.style.display = 'none';
+        modal.style.setProperty('background-image', `url(${modalImage.src})`)
+    }
+
+    event.stopPropagation()
+}
+
 function galleryImageHandler(e){
     if(e && e.parentElement.tagName == 'BUTTON'){
         e.onclick = showGalleryImage;
@@ -116,17 +152,30 @@ document.addEventListener("DOMContentLoaded", function() {
     modal.tabIndex=0
     modal.addEventListener('keydown', modalKeyHandler, true)
 
-    const modalClose = document.createElement('span')
-    modalClose.className = 'modalClose cursor';
-    modalClose.innerHTML = '&times;'
-    modalClose.onclick = closeModal;
-    modal.appendChild(modalClose)
-
+    const modalControls = document.createElement('div')
+    modalControls.className = 'modalControls gradio-container';
+    modal.append(modalControls);
+    
     const modalZoom = document.createElement('span')
     modalZoom.className = 'modalZoom cursor';
     modalZoom.innerHTML = '&#10529;'
     modalZoom.addEventListener('click', modalZoomToggle, true)
-    modal.appendChild(modalZoom)
+    modalZoom.title = "Toggle zoomed view";
+    modalControls.appendChild(modalZoom)
+
+    const modalTileImage = document.createElement('span')
+    modalTileImage.className = 'modalTileImage cursor';
+    modalTileImage.innerHTML = '&#8862;'
+    modalTileImage.addEventListener('click', modalTileImageToggle, true)
+    modalTileImage.title = "Preview tiling";
+    modalControls.appendChild(modalTileImage)
+
+    const modalClose = document.createElement('span')
+    modalClose.className = 'modalClose cursor';
+    modalClose.innerHTML = '&times;'
+    modalClose.onclick = closeModal;
+    modalClose.title = "Close image viewer";
+    modalControls.appendChild(modalClose)
 
     const modalImage = document.createElement('img')
     modalImage.id = 'modalImage';

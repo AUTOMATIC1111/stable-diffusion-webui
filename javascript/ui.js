@@ -1,9 +1,8 @@
 // various functions for interation with ui.py not large enough to warrant putting them in separate files
 
 function selected_gallery_index(){
-    var gr = gradioApp()
-    var buttons = gradioApp().querySelectorAll(".gallery-item")
-    var button = gr.querySelector(".gallery-item.\\!ring-2")
+    var buttons = gradioApp().querySelectorAll('[style="display: block;"].tabitem .gallery-item')
+    var button = gradioApp().querySelector('[style="display: block;"].tabitem .gallery-item.\\!ring-2')
 
     var result = -1
     buttons.forEach(function(v, i){ if(v==button) { result = i } })
@@ -25,23 +24,90 @@ function extract_image_from_gallery(gallery){
     return gallery[index];
 }
 
-function extract_image_from_gallery_img2img(gallery){
+function args_to_array(args){
+    res = []
+    for(var i=0;i<args.length;i++){
+        res.push(args[i])
+    }
+    return res
+}
+
+function switch_to_txt2img(){
+    gradioApp().querySelectorAll('button')[0].click();
+
+    return args_to_array(arguments);
+}
+
+function switch_to_img2img_img2img(){
     gradioApp().querySelectorAll('button')[1].click();
+    gradioApp().getElementById('mode_img2img').querySelectorAll('button')[0].click();
+
+    return args_to_array(arguments);
+}
+
+function switch_to_img2img_inpaint(){
+    gradioApp().querySelectorAll('button')[1].click();
+    gradioApp().getElementById('mode_img2img').querySelectorAll('button')[1].click();
+
+    return args_to_array(arguments);
+}
+
+function switch_to_extras(){
+    gradioApp().querySelectorAll('button')[2].click();
+
+    return args_to_array(arguments);
+}
+
+function extract_image_from_gallery_txt2img(gallery){
+    switch_to_txt2img()
+    return extract_image_from_gallery(gallery);
+}
+
+function extract_image_from_gallery_img2img(gallery){
+    switch_to_img2img_img2img()
+    return extract_image_from_gallery(gallery);
+}
+
+function extract_image_from_gallery_inpaint(gallery){
+    switch_to_img2img_inpaint()
     return extract_image_from_gallery(gallery);
 }
 
 function extract_image_from_gallery_extras(gallery){
-    gradioApp().querySelectorAll('button')[2].click();
+    switch_to_extras()
     return extract_image_from_gallery(gallery);
 }
 
-function submit(){
-    // this calls a function from progressbar.js
-    requestProgress()
+function get_tab_index(tabId){
+    var res = 0
 
+    gradioApp().getElementById(tabId).querySelector('div').querySelectorAll('button').forEach(function(button, i){
+        if(button.className.indexOf('bg-white') != -1)
+            res = i
+    })
+
+    return res
+}
+
+function create_tab_index_args(tabId, args){
+    var res = []
+    for(var i=0; i<args.length; i++){
+        res.push(args[i])
+    }
+
+    res[0] = get_tab_index(tabId)
+
+    return res
+}
+
+function get_extras_tab_index(){
+    return create_tab_index_args('mode_extras', arguments)
+}
+
+function create_submit_args(args){
     res = []
-    for(var i=0;i<arguments.length;i++){
-        res.push(arguments[i])
+    for(var i=0;i<args.length;i++){
+        res.push(args[i])
     }
 
     // As it is currently, txt2img and img2img send back the previous output args (txt2img_gallery, generation_info, html_info) whenever you generate a new image.
@@ -55,10 +121,29 @@ function submit(){
     return res
 }
 
+function submit(){
+    requestProgress('txt2img')
+
+    return create_submit_args(arguments)
+}
+
+function submit_img2img(){
+    requestProgress('img2img')
+
+    res = create_submit_args(arguments)
+
+    res[0] = get_tab_index('mode_img2img')
+
+    return res
+}
+
+
 function ask_for_style_name(_, prompt_text, negative_prompt_text) {
     name_ = prompt('Style name:')
     return name_ === null ? [null, null, null]: [name_, prompt_text, negative_prompt_text]
 }
+
+
 
 opts = {}
 function apply_settings(jsdata){
@@ -97,4 +182,23 @@ onUiUpdate(function(){
     });
 
     json_elem.parentElement.style.display="none"
+
+	if (!txt2img_textarea) {
+		txt2img_textarea = gradioApp().querySelector("#txt2img_prompt > label > textarea");
+		txt2img_textarea?.addEventListener("input", () => update_token_counter("txt2img_token_button"));
+	}
+	if (!img2img_textarea) {
+		img2img_textarea = gradioApp().querySelector("#img2img_prompt > label > textarea");
+		img2img_textarea?.addEventListener("input", () => update_token_counter("img2img_token_button"));
+	}
 })
+
+let txt2img_textarea, img2img_textarea = undefined;
+let wait_time = 800
+let token_timeout;
+
+function update_token_counter(button_id) {
+	if (token_timeout)
+		clearTimeout(token_timeout);
+	token_timeout = setTimeout(() => gradioApp().getElementById(button_id)?.click(), wait_time);
+}

@@ -10,22 +10,34 @@ function dropReplaceImage( imgWrap, files ) {
     }
 
     imgWrap.querySelector('.modify-upload button + button, .touch-none + div button + button')?.click();
-    window.requestAnimationFrame( () => {
+    const callback = () => {
         const fileInput = imgWrap.querySelector('input[type="file"]');
         if ( fileInput ) {
             fileInput.files = files;
             fileInput.dispatchEvent(new Event('change'));   
         }
-    });
-}
-
-function pressClearBtn(hoverElems) {
-    //Find all buttons hovering over the image box
-    let btns = Array.from(hoverElems.querySelectorAll("button"))
-
-    //Press the last btn which will be the X button
-    if (btns.length)
-        btns[btns.length-1].click()
+    };
+    
+    if ( imgWrap.closest('#pnginfo_image') ) {
+        // special treatment for PNG Info tab, wait for fetch request to finish
+        const oldFetch = window.fetch;
+        window.fetch = async (input, options) => {
+            const response = await oldFetch(input, options);
+            if ( 'api/predict/' === input ) {
+                const content = await response.text();
+                window.fetch = oldFetch;
+                window.requestAnimationFrame( () => callback() );
+                return new Response(content, {
+                    status: response.status,
+                    statusText: response.statusText,
+                    headers: response.headers
+                })
+            }
+            return response;
+        };        
+    } else {
+        window.requestAnimationFrame( () => callback() );
+    }
 }
 
 window.document.addEventListener('dragover', e => {
@@ -36,13 +48,7 @@ window.document.addEventListener('dragover', e => {
     }
     e.stopPropagation();
     e.preventDefault();
-
-    if (e.dataTransfer) 
-         e.dataTransfer.dropEffect = 'copy';   
-        
-    //If is gr.Interface clear image on hover
-    if (target.previousElementSibling)
-        pressClearBtn(target.previousElementSibling)
+    e.dataTransfer.dropEffect = 'copy';
 });
 
 window.document.addEventListener('drop', e => {
@@ -62,13 +68,19 @@ window.addEventListener('paste', e => {
     if ( ! isValidImageList( files ) ) {
         return;
     }
-    [...gradioApp().querySelectorAll('input[type=file][accept="image/x-png,image/gif,image/jpeg"]')]
-        .filter(input => !input.matches('.\\!hidden input[type=file]'))
-        .forEach(input => {
-            input.files = files;
-            input.dispatchEvent(new Event('change'))
-        });
-    [...gradioApp().querySelectorAll('[data-testid="image"]')]
-        .filter(imgWrap => !imgWrap.closest('.\\!hidden'))
-        .forEach(imgWrap => dropReplaceImage( imgWrap, files ));
+
+    const visibleImageFields = [...gradioApp().querySelectorAll('[data-testid="image"]')]
+        .filter(el => uiElementIsVisible(el));
+    if ( ! visibleImageFields.length ) {
+        return;
+    }
+    
+    const firstFreeImageField = visibleImageFields
+        .filter(el => el.querySelector('input[type=file]'))?.[0];
+
+    dropReplaceImage(
+        firstFreeImageField ?
+        firstFreeImageField :
+        visibleImageFields[visibleImageFields.length - 1]
+    , files );
 });
