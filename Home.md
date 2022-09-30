@@ -1,6 +1,7 @@
 **Stable Diffusion web UI** is a browser interface for Stable Diffusion based on Gradio library.
 
 - [Features](Features)
+  - [Textual Inversion](Textual-Inversion)
 - [Dependencies](Dependencies)
 - [Installation and run on NVidia GPUs](Install-and-Run-on-NVidia-GPUs)
 - [Install and run on AMD GPUs](Install-and-Run-on-AMD-GPUs)
