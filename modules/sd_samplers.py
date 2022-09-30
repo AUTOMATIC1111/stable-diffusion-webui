@@ -5,6 +5,7 @@ import tqdm
 from PIL import Image
 import inspect
 from modules.paths import paths
+import sys
 sys.path.insert(0, paths["k_diffusion"])
 import k_diffusion.sampling
 import ldm.models.diffusion.ddim
