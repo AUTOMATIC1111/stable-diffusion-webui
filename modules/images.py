@@ -11,7 +11,6 @@ from PIL import Image, ImageFont, ImageDraw, PngImagePlugin
 from fonts.ttf import Roboto
 import string
 
-import modules.shared
 from modules import sd_samplers, shared
 from modules.shared import opts, cmd_opts
 
@@ -52,8 +51,8 @@ def split_grid(image, tile_w=512, tile_h=512, overlap=64):
     cols = math.ceil((w - overlap) / non_overlap_width)
     rows = math.ceil((h - overlap) / non_overlap_height)
 
-    dx = (w - tile_w) / (cols-1) if cols > 1 else 0
-    dy = (h - tile_h) / (rows-1) if rows > 1 else 0
+    dx = (w - tile_w) / (cols - 1) if cols > 1 else 0
+    dy = (h - tile_h) / (rows - 1) if rows > 1 else 0
 
     grid = Grid([], tile_w, tile_h, w, h, overlap)
     for row in range(rows):
@@ -67,7 +66,7 @@ def split_grid(image, tile_w=512, tile_h=512, overlap=64):
         for col in range(cols):
             x = int(col * dx)
 
-            if x+tile_w >= w:
+            if x + tile_w >= w:
                 x = w - tile_w
 
             tile = image.crop((x, y, x + tile_w, y + tile_h))
@@ -132,7 +131,7 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts):
             drawing.multiline_text((draw_x, draw_y + line.size[1] / 2), line.text, font=fnt, fill=color_active if line.is_active else color_inactive, anchor="mm", align="center")
 
             if not line.is_active:
-                drawing.line((draw_x - line.size[0]//2, draw_y + line.size[1]//2, draw_x + line.size[0]//2, draw_y + line.size[1]//2), fill=color_inactive, width=4)
+                drawing.line((draw_x - line.size[0] // 2, draw_y + line.size[1] // 2, draw_x + line.size[0] // 2, draw_y + line.size[1] // 2), fill=color_inactive, width=4)
 
             draw_y += line.size[1] + line_spacing
 
@@ -171,7 +170,8 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts):
             line.size = (bbox[2] - bbox[0], bbox[3] - bbox[1])
 
     hor_text_heights = [sum([line.size[1] + line_spacing for line in lines]) - line_spacing for lines in hor_texts]
-    ver_text_heights = [sum([line.size[1] + line_spacing for line in lines]) - line_spacing * len(lines) for lines in ver_texts]
+    ver_text_heights = [sum([line.size[1] + line_spacing for line in lines]) - line_spacing * len(lines) for lines in
+                        ver_texts]
 
     pad_top = max(hor_text_heights) + line_spacing * 2
 
@@ -213,8 +213,19 @@ def resize_image(resize_mode, im, width, height):
         if opts.upscaler_for_img2img is None or opts.upscaler_for_img2img == "None" or im.mode == 'L':
             return im.resize((w, h), resample=LANCZOS)
 
-        upscaler = [x for x in shared.sd_upscalers if x.name == opts.upscaler_for_img2img][0]
-        return upscaler.upscale(im, w, h)
+        scale = max(w / im.width, h / im.height)
+
+        if scale > 1.0:
+            upscalers = [x for x in shared.sd_upscalers if x.name == opts.upscaler_for_img2img]
+            assert len(upscalers) > 0, f"could not find upscaler named {opts.upscaler_for_img2img}"
+
+            upscaler = upscalers[0]
+            im = upscaler.scaler.upscale(im, scale, upscaler.data_path)
+
+        if im.width != w or im.height != h:
+            im = im.resize((w, h), resample=LANCZOS)
+
+        return im
 
     if resize_mode == 0:
         res = resize(im, width, height)
@@ -256,7 +267,7 @@ def resize_image(resize_mode, im, width, height):
 invalid_filename_chars = '<>:"/\\|?*\n'
 invalid_filename_prefix = ' '
 invalid_filename_postfix = ' .'
-re_nonletters = re.compile(r'[\s'+string.punctuation+']+')
+re_nonletters = re.compile(r'[\s' + string.punctuation + ']+')
 max_filename_part_length = 128
 
 
@@ -278,6 +289,16 @@ def apply_filename_pattern(x, p, seed, prompt):
 
     if prompt is not None:
         x = x.replace("[prompt]", sanitize_filename_part(prompt))
+        if "[prompt_no_styles]" in x:
+            prompt_no_style = prompt
+            for style in shared.prompt_styles.get_style_prompts(p.styles):
+                if len(style) > 0:
+                    style_parts = [y for y in style.split("{prompt}")]
+                    for part in style_parts:
+                        prompt_no_style = prompt_no_style.replace(part, "").replace(", ,", ",").strip().strip(',')                        
+            prompt_no_style = prompt_no_style.replace(style, "").strip().strip(',').strip()
+            x = x.replace("[prompt_no_styles]", sanitize_filename_part(prompt_no_style, replace_spaces=False))
+
         x = x.replace("[prompt_spaces]", sanitize_filename_part(prompt, replace_spaces=False))
         if "[prompt_words]" in x:
             words = [x for x in re_nonletters.split(prompt or "") if len(x) > 0]
@@ -290,7 +311,7 @@ def apply_filename_pattern(x, p, seed, prompt):
         x = x.replace("[cfg]", str(p.cfg_scale))
         x = x.replace("[width]", str(p.width))
         x = x.replace("[height]", str(p.height))
-        x = x.replace("[styles]", sanitize_filename_part(", ".join(p.styles), replace_spaces=False))
+        x = x.replace("[styles]", sanitize_filename_part(", ".join([x for x in p.styles if not x == "None"]), replace_spaces=False))
         x = x.replace("[sampler]", sanitize_filename_part(sd_samplers.samplers[p.sampler_index].name, replace_spaces=False))
 
     x = x.replace("[model_hash]", shared.sd_model.sd_model_hash)
@@ -302,6 +323,7 @@ def apply_filename_pattern(x, p, seed, prompt):
         x = re.sub(r'^[\\/]+|\.{2,}[\\/]+|[\\/]+\.{2,}', '', x)
 
     return x
+
 
 def get_next_sequence_number(path, basename):
     """
@@ -316,13 +338,14 @@ def get_next_sequence_number(path, basename):
     prefix_length = len(basename)
     for p in os.listdir(path):
         if p.startswith(basename):
-            l = os.path.splitext(p[prefix_length:])[0].split('-') #splits the filename (removing the basename first if one is defined, so the sequence number is always the first element)
+            l = os.path.splitext(p[prefix_length:])[0].split('-')  # splits the filename (removing the basename first if one is defined, so the sequence number is always the first element)
             try:
                 result = max(int(l[0]), result)
             except ValueError:
                 pass
 
     return result + 1
+
 
 def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None, forced_filename=None, suffix=""):
     if short_filename or prompt is None or seed is None:
@@ -361,7 +384,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
         fullfn = "a.png"
         fullfn_without_extension = "a"
         for i in range(500):
-            fn = f"{basecount+i:05}" if basename == '' else f"{basename}-{basecount+i:04}"
+            fn = f"{basecount + i:05}" if basename == '' else f"{basename}-{basecount + i:04}"
             fullfn = os.path.join(path, f"{fn}{file_decoration}.{extension}")
             fullfn_without_extension = os.path.join(path, f"{fn}{file_decoration}")
             if not os.path.exists(fullfn):
@@ -403,31 +426,3 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
             file.write(info + "\n")
 
 
-class Upscaler:
-    name = "Lanczos"
-
-    def do_upscale(self, img):
-        return img
-
-    def upscale(self, img, w, h):
-        for i in range(3):
-            if img.width >= w and img.height >= h:
-                break
-
-            img = self.do_upscale(img)
-
-        if img.width != w or img.height != h:
-            img = img.resize((int(w), int(h)), resample=LANCZOS)
-
-        return img
-
-
-class UpscalerNone(Upscaler):
-    name = "None"
-
-    def upscale(self, img, w, h):
-        return img
-
-
-modules.shared.sd_upscalers.append(UpscalerNone())
-modules.shared.sd_upscalers.append(Upscaler())

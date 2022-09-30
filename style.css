@@ -1,5 +1,11 @@
 .output-html p {margin: 0 0.5em;}
 
+.row > *,
+.row > .gr-form > * {
+    min-width: min(120px, 100%);
+    flex: 1 1 0%;
+}
+
 .performance {
     font-size: 0.85em;
     color: #444;
@@ -17,7 +23,7 @@
     text-align: right;
 }
 
-#generate{
+#txt2img_generate, #img2img_generate {
     min-height: 4.5em;
 }
 
@@ -43,11 +49,15 @@
     margin-right: auto;
 }
 
-#random_seed, #random_subseed, #reuse_seed, #reuse_subseed{
+#random_seed, #random_subseed, #reuse_seed, #reuse_subseed, #open_folder{
     min-width: auto;
     flex-grow: 0;
     padding-left: 0.25em;
     padding-right: 0.25em;
+}
+
+#hidden_element{
+    display: none;
 }
 
 #seed_row, #subseed_row{
