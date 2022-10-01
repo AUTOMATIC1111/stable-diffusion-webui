@@ -1005,7 +1005,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
         def request_restart():
           settings_interface.gradio_ref.do_restart = True
 
-        restart_gradio = gr.Button(value='Restart Gradio and Refresh Scripts')
+        restart_gradio = gr.Button(value='Restart Gradio and Refresh components (Custom Scripts, ui.py, js and css only)', variant='primary')
         restart_gradio.click(
             fn=request_restart,
             inputs=[],
