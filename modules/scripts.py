@@ -165,3 +165,12 @@ class ScriptRunner:
 
 scripts_txt2img = ScriptRunner()
 scripts_img2img = ScriptRunner()
+
+def reload_scripts(basedir):
+  global scripts_txt2img,scripts_img2img
+
+  scripts_data.clear()
+  load_scripts(basedir)
+
+  scripts_txt2img = ScriptRunner()
+  scripts_img2img = ScriptRunner()
