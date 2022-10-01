@@ -1219,12 +1219,13 @@ for filename in sorted(os.listdir(jsdir)):
         javascript += f"\n<script>{jsfile.read()}</script>"
 
 
-def template_response(*args, **kwargs):
-    res = gradio_routes_templates_response(*args, **kwargs)
-    res.body = res.body.replace(b'</head>', f'{javascript}</head>'.encode("utf8"))
-    res.init_headers()
-    return res
+if 'gradio_routes_templates_response' not in globals():
+  def template_response(*args, **kwargs):
+      res = gradio_routes_templates_response(*args, **kwargs)
+      res.body = res.body.replace(b'</head>', f'{javascript}</head>'.encode("utf8"))
+      res.init_headers()
+      return res
 
+  gradio_routes_templates_response = gradio.routes.templates.TemplateResponse
+  gradio.routes.templates.TemplateResponse = template_response
 
-gradio_routes_templates_response = gradio.routes.templates.TemplateResponse
-gradio.routes.templates.TemplateResponse = template_response
