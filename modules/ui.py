@@ -1002,6 +1002,17 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
             _js='function(){}'
         )
 
+        def request_restart():
+          settings_interface.gradio_ref.do_restart = True
+
+        restart_gradio = gr.Button(value='Restart Gradio and Refresh Scripts')
+        restart_gradio.click(
+            fn=request_restart,
+            inputs=[],
+            outputs=[],
+            _js='function(){document.body.innerHTML=\'<h1 style="color:white;text-align: center;">Reloading</h1>\';setTimeout(function(){location.reload()},2000)}'
+        )
+        
         if column is not None:
             column.__exit__()
 
@@ -1026,7 +1037,9 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
         css += css_hide_progressbar
 
     with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion") as demo:
-
+        
+        settings_interface.gradio_ref = demo
+        
         with gr.Tabs() as tabs:
             for interface, label, ifid in interfaces:
                 with gr.TabItem(label, id=ifid):
