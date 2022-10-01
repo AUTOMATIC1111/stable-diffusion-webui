@@ -1,5 +1,6 @@
 import os
 import threading
+import time
 
 from modules import devices
 from modules.paths import script_path
