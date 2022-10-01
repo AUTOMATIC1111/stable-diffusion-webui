@@ -10,6 +10,7 @@ import piexif.helper
 from PIL import Image, ImageFont, ImageDraw, PngImagePlugin
 from fonts.ttf import Roboto
 import string
+import platform
 
 from modules import sd_samplers, shared
 from modules.shared import opts, cmd_opts
@@ -138,8 +139,16 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts):
     fontsize = (width + height) // 25
     line_spacing = fontsize // 2
 
+    font_path_dict = {
+        "Windows": "C:/Windows/Fonts/YuGothR.ttc",                          # Windows
+        "Darwin": "/System/Library/Fonts/ヒラギノ角ゴシック W5.ttc",        # Mac
+        "Linux": "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"   # Linux
+    }
+
+    font_path = opts.font or font_path_dict.get(platform.system())
+
     try:
-        fnt = ImageFont.truetype(opts.font or Roboto, fontsize)
+        fnt = ImageFont.truetype(font_path or Roboto, fontsize)
     except Exception:
         fnt = ImageFont.truetype(Roboto, fontsize)
 
