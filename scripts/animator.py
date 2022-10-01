@@ -2,6 +2,7 @@
 # Animation Script v0.6
 # Inspired by Deforum Notebook
 # Must have ffmpeg installed in path.
+# Poor img2img implentation, will trash images that aren't moving.
 #
 # Explanation of settings:
 # Video formats:
@@ -33,12 +34,12 @@
 # Keyframes:
 # Format: Time (s) | Desnoise | Zoom (/s) | X Shift (pix/s) | Y shift (pix/s) | Positive Prompts | Negative Prompts
 # E.g. Doesn't much, zoom in, move around, zoom out again. expects animation length to be greater than 25s. Prompts blank, templates or the img2img values will be used.
-#   0   | 0.4   | 2.0   | 0     | 0     |  | 
-#   5   | 0.4   | 1.0   | 250   | 0     |  | 
-#   10  | 0.4   | 1.0   | 0     | 250   |  | 
-#   15  | 0.4   | 1.0   | -250  | 0     |  | 
-#   20  | 0.4   | 1.0   | 0     | -250  |  | 
-#   25  | 0.4   | 0.5   | 0     | 0     |  | 
+#    0 | 0.4 | 2.0 |    0 |    0 | | |
+#    5 | 0.4 | 1.0 |  250 |    0 | | |
+#   10 | 0.4 | 1.0 |    0 |  250 | | |
+#   15 | 0.4 | 1.0 | -250 |    0 | | |
+#   20 | 0.4 | 1.0 |    0 | -250 | | |
+#   25 | 0.4 | 0.5 |    0 |    0 | | |
 
 
 import os, time
@@ -72,6 +73,17 @@ def zoom_at2(img, x, y, zoom):
     resimg.paste(img2, (int((w - img2.size[0])/2 + x),int((h - img2.size[1])/2 + y)))
 
     return resimg
+ 
+def addnoise(img, percent):
+    numpy_image = np.array(img)
+    
+    row,col,ch = numpy_image.shape
+    mean = 0
+    sigma = percent**0.5
+    gauss = np.random.normal(mean,sigma,(row,col,ch)) 
+    gauss = gauss.reshape(row,col,ch).astype('uint8')
+
+    return Image.fromarray( numpy_image + gauss)
  
 def opencvtransform(pil_img, angle, translation_x, translation_y, zoom, wrap):
     
@@ -208,7 +220,11 @@ class Script(scripts.Script):
         
         with gr.Row():
             denoising_strength = gr.Slider(label="Denoising Strength, overrides img2img", minimum=0.0, maximum=1.0, step=0.01, value=0.40)
-            noise_decay = gr.Checkbox(label="Decay", value=False)
+            noise_decay = gr.Checkbox(label="Decay_HalfLife", value=False)
+
+        with gr.Row():
+            add_noise = gr.Checkbox(label="Add_Noise", value=False)
+            noise_strength = gr.Slider(label="Noise Strength", minimum=0.0, maximum=1.0, step=0.01, value=0.10)
 
         with gr.Row():
             zoom_factor = gr.Textbox(label="Zoom Factor (scale/s)", lines=1, value="1.0")
@@ -219,11 +235,11 @@ class Script(scripts.Script):
         tmpl_pos = gr.Textbox(label="Positive Prompts", lines=1, value="")
         tmpl_neg = gr.Textbox(label="Negative Prompts", lines=1, value="")
         
-        i4 = gr.HTML("<p style=\"margin-bottom:0.75em\">Keyframe Format: <br>Time (s) | Desnoise | Zoom (/s) | X Shift (pix/s) | Y shift (pix/s) | Positive Prompts | Negative Prompts</p>")
+        i4 = gr.HTML("<p style=\"margin-bottom:0.75em\">Keyframe Format: <br>Time (s) | Desnoise | Zoom (/s) | X Shift (pix/s) | Y shift (pix/s) | Positive Prompts | Negative Prompts | Seed</p>")
         prompts = gr.Textbox(label="Keyframes:", lines=5, value="")
-        return [i1, i2, i3, i4, totaltime, fps, vid_gif, vid_mp4, vid_webm, zoom_factor, tmpl_pos, tmpl_neg, prompts, denoising_strength, x_shift, y_shift, noise_decay]
+        return [i1, i2, i3, i4, totaltime, fps, vid_gif, vid_mp4, vid_webm, zoom_factor, tmpl_pos, tmpl_neg, prompts, denoising_strength, x_shift, y_shift, noise_decay, add_noise, noise_strength]
  
-    def run(self, p, i1, i2, i3, i4, totaltime, fps, vid_gif, vid_mp4, vid_webm, zoom_factor, tmpl_pos, tmpl_neg, prompts, denoising_strength, x_shift, y_shift, noise_decay):
+    def run(self, p, i1, i2, i3, i4, totaltime, fps, vid_gif, vid_mp4, vid_webm, zoom_factor, tmpl_pos, tmpl_neg, prompts, denoising_strength, x_shift, y_shift, noise_decay, add_noise, noise_strength):
       
         outfilename =  time.strftime('%Y%m%d%H%M%S')
         outpath =  os.path.join(p.outpath_samples, outfilename)
@@ -255,10 +271,10 @@ class Script(scripts.Script):
         myprompts={}
         for myline in prompts.splitlines():
             lineparts = myline.split("|")
-            if len(lineparts) < 7:
+            if len(lineparts) < 8:
                 continue
             tmpframe = int(float(lineparts[0]) * int(fps))
-            myprompts[tmpframe] = (lineparts[1].strip(),lineparts[2].strip(),lineparts[3].strip(),lineparts[4].strip(),lineparts[5].strip(),lineparts[6].strip())
+            myprompts[tmpframe] = (lineparts[1].strip(),lineparts[2].strip(),lineparts[3].strip(),lineparts[4].strip(),lineparts[5].strip(),lineparts[6].strip(),lineparts[7].strip())
         
         processing.fix_seed(p)
         batch_count = p.n_iter
@@ -339,6 +355,12 @@ class Script(scripts.Script):
                 #If not prompt, continue previous prompts
                 if len(myprompts[i][4]) > 0: p.prompt =          tmpl_pos + ", " + myprompts[i][4]
                 if len(myprompts[i][5]) > 0: p.negative_prompt = tmpl_neg + ", " + myprompts[i][5]
+                
+                #If seed is blank, keep it the same as it was. Otherwise, set it. -1 will result in random seed.
+                if len(myprompts[i][6]) != 0:
+                    p.seed = int(myprompts[i][6])
+                    processing.fix_seed(p)
+                
             elif noise_decay:
                 p.denoising_strength = p.denoising_strength * decay_mult
 
@@ -364,6 +386,8 @@ class Script(scripts.Script):
             init_img = processed.images[0]
             #p.init_images = [zoom_at2(init_img, int(x_shift_cumulitive), int(y_shift_cumulitive), zoom_factor)]
             p.init_images = [opencvtransform(init_img, 0, int(x_shift_cumulitive),  int(y_shift_cumulitive), zoom_factor, False)]
+            if add_noise:
+                p.init_images[0] = addnoise(p.init_images[0], noise_strength)
             
             #Subtract the integer portion we just shifted.
             x_shift_cumulitive = x_xhift_cumulitive - int(x_xhift_cumulitive)
@@ -385,7 +409,7 @@ class Script(scripts.Script):
  
  
         #display(all_images, initial_seed, initial_info)
-        print("Video Rendered.\r\n")      
+        #print("Video Rendered.\r\n")      
  
         processed = Processed(p, all_images, initial_seed, initial_info)
  
