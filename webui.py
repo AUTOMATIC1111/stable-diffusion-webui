@@ -1,7 +1,7 @@
 import os
 import threading
 import time
-
+import importlib
 from modules import devices
 from modules.paths import script_path
 import signal
@@ -116,8 +116,10 @@ def webui():
           time.sleep(0.5)
           break
 
-      print('Reloading Scripts')
+      print('Reloading Custom Scripts')
       modules.scripts.reload_scripts(os.path.join(script_path, "scripts"))
+      print('Reloading modules: modules.ui')
+      importlib.reload(modules.ui)
       print('Restarting Gradio')
 
 
