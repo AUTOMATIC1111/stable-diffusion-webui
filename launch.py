@@ -1,5 +1,4 @@
 # this scripts installs necessary requirements and launches main program in webui.py
-import shutil
 import subprocess
 import os
 import sys
@@ -119,11 +118,7 @@ git_clone("https://github.com/CompVis/taming-transformers.git", repo_dir('taming
 git_clone("https://github.com/crowsonkb/k-diffusion.git", repo_dir('k-diffusion'), "K-diffusion", k_diffusion_commit_hash)
 git_clone("https://github.com/sczhou/CodeFormer.git", repo_dir('CodeFormer'), "CodeFormer", codeformer_commit_hash)
 git_clone("https://github.com/salesforce/BLIP.git", repo_dir('BLIP'), "BLIP", blip_commit_hash)
-if os.path.isdir(repo_dir('latent-diffusion')):
-    try:
-        shutil.rmtree(repo_dir('latent-diffusion'))
-    except:
-        pass
+
 if not is_installed("lpips"):
     run_pip(f"install -r {os.path.join(repo_dir('CodeFormer'), 'requirements.txt')}", "requirements for CodeFormer")
 

@@ -67,28 +67,29 @@ def run_extras(extras_mode, image, image_folder, gfpgan_visibility, codeformer_v
             info += f"CodeFormer w: {round(codeformer_weight, 2)}, CodeFormer visibility:{round(codeformer_visibility, 2)}\n"
             image = res
 
-        def upscale(image, scaler_index, resize):
-            small = image.crop((image.width // 2, image.height // 2, image.width // 2 + 10, image.height // 2 + 10))
-            pixels = tuple(np.array(small).flatten().tolist())
-            key = (resize, scaler_index, image.width, image.height, gfpgan_visibility, codeformer_visibility, codeformer_weight) + pixels
+        if upscaling_resize != 1.0:
+            def upscale(image, scaler_index, resize):
+                small = image.crop((image.width // 2, image.height // 2, image.width // 2 + 10, image.height // 2 + 10))
+                pixels = tuple(np.array(small).flatten().tolist())
+                key = (resize, scaler_index, image.width, image.height, gfpgan_visibility, codeformer_visibility, codeformer_weight) + pixels
 
-            c = cached_images.get(key)
-            if c is None:
-                upscaler = shared.sd_upscalers[scaler_index]
-                c = upscaler.scaler.upscale(image, resize, upscaler.data_path)
-                cached_images[key] = c
+                c = cached_images.get(key)
+                if c is None:
+                    upscaler = shared.sd_upscalers[scaler_index]
+                    c = upscaler.scaler.upscale(image, resize, upscaler.data_path)
+                    cached_images[key] = c
 
-            return c
+                return c
 
-        info += f"Upscale: {round(upscaling_resize, 3)}, model:{shared.sd_upscalers[extras_upscaler_1].name}\n"
-        res = upscale(image, extras_upscaler_1, upscaling_resize)
+            info += f"Upscale: {round(upscaling_resize, 3)}, model:{shared.sd_upscalers[extras_upscaler_1].name}\n"
+            res = upscale(image, extras_upscaler_1, upscaling_resize)
 
-        if extras_upscaler_2 != 0 and extras_upscaler_2_visibility > 0:
-            res2 = upscale(image, extras_upscaler_2, upscaling_resize)
-            info += f"Upscale: {round(upscaling_resize, 3)}, visibility: {round(extras_upscaler_2_visibility, 3)}, model:{shared.sd_upscalers[extras_upscaler_2].name}\n"
-            res = Image.blend(res, res2, extras_upscaler_2_visibility)
+            if extras_upscaler_2 != 0 and extras_upscaler_2_visibility > 0:
+                res2 = upscale(image, extras_upscaler_2, upscaling_resize)
+                info += f"Upscale: {round(upscaling_resize, 3)}, visibility: {round(extras_upscaler_2_visibility, 3)}, model:{shared.sd_upscalers[extras_upscaler_2].name}\n"
+                res = Image.blend(res, res2, extras_upscaler_2_visibility)
 
-        image = res
+            image = res
 
         while len(cached_images) > 2:
             del cached_images[next(iter(cached_images.keys()))]
@@ -190,9 +191,11 @@ def run_modelmerger(primary_model_name, secondary_model_name, interp_method, int
             if save_as_half:
                 theta_0[key] = theta_0[key].half()
 
+    ckpt_dir = shared.cmd_opts.ckpt_dir or sd_models.model_path
+
     filename = primary_model_info.model_name + '_' + str(round(interp_amount, 2)) + '-' + secondary_model_info.model_name + '_' + str(round((float(1.0) - interp_amount), 2)) + '-' + interp_method.replace(" ", "_") + '-merged.ckpt'
     filename = filename if custom_name == '' else (custom_name + '.ckpt')
-    output_modelname = os.path.join(shared.cmd_opts.ckpt_dir, filename)
+    output_modelname = os.path.join(ckpt_dir, filename)
 
     print(f"Saving to {output_modelname}...")
     torch.save(primary_model, output_modelname)

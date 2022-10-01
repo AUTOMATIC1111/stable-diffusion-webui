@@ -1,3 +1,4 @@
+import glob
 import os
 import shutil
 import importlib
@@ -25,8 +26,10 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
 
     if ext_filter is None:
         ext_filter = []
+
     try:
         places = []
+
         if command_path is not None and command_path != model_path:
             pretrained_path = os.path.join(command_path, 'experiments/pretrained_models')
             if os.path.exists(pretrained_path):
@@ -34,10 +37,12 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
                 places.append(pretrained_path)
             elif os.path.exists(command_path):
                 places.append(command_path)
+
         places.append(model_path)
+
         for place in places:
             if os.path.exists(place):
-                for file in os.listdir(place):
+                for file in glob.iglob(place + '**/**', recursive=True):
                     full_path = os.path.join(place, file)
                     if os.path.isdir(full_path):
                         continue
@@ -47,14 +52,17 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
                             continue
                     if file not in output:
                         output.append(full_path)
+
         if model_url is not None and len(output) == 0:
             if download_name is not None:
                 dl = load_file_from_url(model_url, model_path, True, download_name)
                 output.append(dl)
             else:
                 output.append(model_url)
-    except:
+
+    except Exception:
         pass
+
     return output
 
 
@@ -64,7 +72,6 @@ def friendly_name(file: str):
 
     file = os.path.basename(file)
     model_name, extension = os.path.splitext(file)
-    model_name = model_name.replace("_", " ").title()
     return model_name
 
 

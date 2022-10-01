@@ -28,7 +28,7 @@ from modules.paths import script_path
 from modules.shared import cmd_opts
 
 modelloader.cleanup_models()
-modules.sd_models.setup_model(cmd_opts.stablediffusion_models_path)
+modules.sd_models.setup_model(cmd_opts.ckpt_dir)
 codeformer.setup_model(cmd_opts.codeformer_models_path)
 gfpgan.setup_model(cmd_opts.gfpgan_models_path)
 shared.face_restorers.append(modules.face_restoration.FaceRestoration())
