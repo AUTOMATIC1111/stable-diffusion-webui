@@ -86,22 +86,38 @@ def webui():
 
     signal.signal(signal.SIGINT, sigint_handler)
 
-    demo = modules.ui.create_ui(
-        txt2img=wrap_gradio_gpu_call(modules.txt2img.txt2img),
-        img2img=wrap_gradio_gpu_call(modules.img2img.img2img),
-        run_extras=wrap_gradio_gpu_call(modules.extras.run_extras),
-        run_pnginfo=modules.extras.run_pnginfo,
-        run_modelmerger=modules.extras.run_modelmerger
-    )
+    while 1:
 
-    demo.launch(
-        share=cmd_opts.share,
-        server_name="0.0.0.0" if cmd_opts.listen else None,
-        server_port=cmd_opts.port,
-        debug=cmd_opts.gradio_debug,
-        auth=[tuple(cred.split(':')) for cred in cmd_opts.gradio_auth.strip('"').split(',')] if cmd_opts.gradio_auth else None,
-        inbrowser=cmd_opts.autolaunch,
-    )
+      demo = modules.ui.create_ui(
+          txt2img=wrap_gradio_gpu_call(modules.txt2img.txt2img),
+          img2img=wrap_gradio_gpu_call(modules.img2img.img2img),
+          run_extras=wrap_gradio_gpu_call(modules.extras.run_extras),
+          run_pnginfo=modules.extras.run_pnginfo,
+          run_modelmerger=modules.extras.run_modelmerger
+      )
+
+
+      demo.launch(
+          share=cmd_opts.share,
+          server_name="0.0.0.0" if cmd_opts.listen else None,
+          server_port=cmd_opts.port,
+          debug=cmd_opts.gradio_debug,
+          auth=[tuple(cred.split(':')) for cred in cmd_opts.gradio_auth.strip('"').split(',')] if cmd_opts.gradio_auth else None,
+          inbrowser=cmd_opts.autolaunch,
+          prevent_thread_lock=True
+      )
+
+      while 1:
+        time.sleep(0.5)
+        if getattr(demo,'do_restart',False):
+          time.sleep(0.5)
+          demo.close()
+          time.sleep(0.5)
+          break
+
+      print('Reloading Scripts')
+      modules.scripts.reload_scripts(os.path.join(script_path, "scripts"))
+      print('Restarting Gradio')
 
 
 if __name__ == "__main__":
