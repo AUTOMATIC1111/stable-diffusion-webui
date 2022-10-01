@@ -41,12 +41,10 @@ Provides a local popup window powered by CV2 that allows addition of a mask befo
 
 ## Img2img Video
 https://github.com/memes-forever/Stable-diffusion-webui-video
-
 Using img2img, generates pictures one after another.
 
 ## Seed Travel
 https://github.com/yownas/seed_travel
-
 Pick two (or more) seeds and generate a sequence of images interpolating between them. Optionally, let it create a video of the result.
 
 Example of what you can do with it:
@@ -56,13 +54,31 @@ https://www.youtube.com/watch?v=4c71iUclY4U
 https://github.com/Animator-Anon/stable-diffusion-webui/blob/master/scripts/animator.py
 Inspired by Deforum Notebook
 Must have ffmpeg installed in path.
-Poor img2img implentation, will trash images that aren't moving.
+Keyframes, Prompt Templates, Various animation parameters.
 
 ## Alternate Noise Schedules
 https://gist.github.com/dfaker/f88aa62e3a14b559fe4e5f6b345db664
 Uses alternate generators for the sampler's sigma schedule.
 
 Allows access to Karras, Exponential and Variance Preserving schedules from crowsonkb/k-diffusion along with their parameters.
+
+## Vid2Vid
+https://github.com/Filarius/stable-diffusion-webui/blob/master/scripts/vid2vid.py
+From real video, img2img the frames and stitch them together. Does not unpack frames to hard drive.
+
+## Txt2VectorGraphics
+https://github.com/GeorgLegato/Txt2Vectorgraphics
+Create custom, scaleable icons from your prompts as SVG or PDF.
+
+## Shift Attention
+https://github.com/yownas/shift-attention
+Generate a sequence of images shifting attention in the prompt.
+
+This script enables you to give a range to the weight of tokens in a prompt and then generate a sequence of images stepping from the first one to the second.
+
+## Loopback and Superimpose
+https://github.com/DiceOwl/StableDiffusionStuff
+Mixes output of img2img with original input image at strength alpha. The result is fed into img2img again (at loop>=2), and this procedure repeats. Tends to sharpen the image, improve consistency, reduce creativity and reduce fine detail.
 
 ## Saving steps of the sampling process
 This script will save steps of the sampling process to a directory.
