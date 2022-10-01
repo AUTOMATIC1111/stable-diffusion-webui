@@ -1010,7 +1010,7 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
             fn=request_restart,
             inputs=[],
             outputs=[],
-            _js='function(){document.body.innerHTML=\'<h1 style="color:white;text-align: center;">Reloading</h1>\';setTimeout(function(){location.reload()},2000)}'
+            _js='function(){document.body.innerHTML=\'<h1 style="font-family:monospace;margin-top:20%;color:lightgray;text-align:center;">Reloading...</h1>\';setTimeout(function(){location.reload()},2000)}'
         )
         
         if column is not None:
