@@ -52,6 +52,12 @@ Pick two (or more) seeds and generate a sequence of images interpolating between
 Example of what you can do with it:
 https://www.youtube.com/watch?v=4c71iUclY4U
 
+## Animator
+https://github.com/Animator-Anon/stable-diffusion-webui/blob/master/scripts/animator.py
+Inspired by Deforum Notebook
+Must have ffmpeg installed in path.
+Poor img2img implentation, will trash images that aren't moving.
+
 ## Saving steps of the sampling process
 This script will save steps of the sampling process to a directory.
 ```python
