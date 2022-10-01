@@ -212,3 +212,8 @@ function update_token_counter(button_id) {
 		clearTimeout(token_timeout);
 	token_timeout = setTimeout(() => gradioApp().getElementById(button_id)?.click(), wait_time);
 }
+
+function restart_reload(){
+    document.body.innerHTML='<h1 style="font-family:monospace;margin-top:20%;color:lightgray;text-align:center;">Reloading...</h1>';
+    setTimeout(function(){location.reload()},2000)
+}
