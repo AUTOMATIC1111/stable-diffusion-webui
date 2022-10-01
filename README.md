@@ -11,12 +11,12 @@ Check the [custom scripts](https://github.com/AUTOMATIC1111/stable-diffusion-web
 - One click install and run script (but you still must install python and git)
 - Outpainting
 - Inpainting
-- Prompt
-- Stable Diffusion upscale
+- Prompt Matrix
+- Stable Diffusion Upscale
 - Attention, specify parts of text that the model should pay more attention to
-    - a man in a ((txuedo)) - will pay more attentinoto tuxedo
-    - a man in a (txuedo:1.21) - alternative syntax
-- Loopback, run img2img procvessing multiple times
+    - a man in a ((tuxedo)) - will pay more attention to tuxedo
+    - a man in a (tuxedo:1.21) - alternative syntax
+- Loopback, run img2img processing multiple times
 - X/Y plot, a way to draw a 2 dimensional plot of images with different parameters
 - Textual Inversion
     - have as many embeddings as you want and use any names you like for them
@@ -35,15 +35,15 @@ Check the [custom scripts](https://github.com/AUTOMATIC1111/stable-diffusion-web
 - 4GB video card support (also reports of 2GB working)
 - Correct seeds for batches 
 - Prompt length validation
-     - get length of prompt in tokensas you type
-     - get a warning after geenration if some text was truncated
+     - get length of prompt in tokens as you type
+     - get a warning after generation if some text was truncated
 - Generation parameters
      - parameters you used to generate images are saved with that image
      - in PNG chunks for PNG, in EXIF for JPEG
      - can drag the image to PNG info tab to restore generation parameters and automatically copy them into UI
      - can be disabled in settings
 - Settings page
-- Running arbitrary python code from UI (must run with commandline flag to enable)
+- Running arbitrary python code from UI (must run with --allow-code to enable)
 - Mouseover hints for most UI elements
 - Possible to change defaults/mix/max/step values for UI elements via text config
 - Random artist button
