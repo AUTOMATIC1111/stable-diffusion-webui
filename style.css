@@ -1,5 +1,11 @@
 .output-html p {margin: 0 0.5em;}
 
+.row > *,
+.row > .gr-form > * {
+    min-width: min(120px, 100%);
+    flex: 1 1 0%;
+}
+
 .performance {
     font-size: 0.85em;
     color: #444;
@@ -17,7 +23,7 @@
     text-align: right;
 }
 
-#generate{
+#txt2img_generate, #img2img_generate {
     min-height: 4.5em;
 }
 
@@ -43,11 +49,15 @@
     margin-right: auto;
 }
 
-#random_seed, #random_subseed, #reuse_seed, #reuse_subseed{
+#random_seed, #random_subseed, #reuse_seed, #reuse_subseed, #open_folder{
     min-width: auto;
     flex-grow: 0;
     padding-left: 0.25em;
     padding-right: 0.25em;
+}
+
+#hidden_element{
+    display: none;
 }
 
 #seed_row, #subseed_row{
@@ -74,10 +84,21 @@
     height: 100%;
 }
 
-#roll{
-    min-width: 1em;
-    max-width: 4em;
-    margin: 0.5em;
+#roll_col{
+    min-width: unset !important;
+    flex-grow: 0 !important;
+    padding: 0.4em 0;
+}
+
+#roll, #paste{
+    min-width: 2em;
+    min-height: 2em;
+    max-width: 2em;
+    max-height: 2em;
+    flex-grow: 0;
+    padding-left: 0.25em;
+    padding-right: 0.25em;
+    margin: 0.1em 0;
 }
 
 #style_apply, #style_create, #interrogate{
@@ -89,7 +110,7 @@
     min-width: 8em !important;
 }
 
-#style_index, #style2_index{
+#txt2img_style_index, #txt2img_style2_index, #img2img_style_index, #img2img_style2_index{
     margin-top: 1em;
 }
 
@@ -143,7 +164,23 @@ button{
     right: 0;
     margin-left: auto;
     margin-right: auto;
+    margin-top: 34px;
     z-index: 100;
+    border: none;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
+
+@media screen and (min-width: 768px) {
+    #txt2img_preview, #img2img_preview {
+        position: absolute;
+    }
+}
+
+@media screen and (max-width: 767px) {
+    #txt2img_preview, #img2img_preview {
+        position: relative;
+    }
 }
 
 #txt2img_preview div.left-0.top-0, #img2img_preview div.left-0.top-0{
@@ -210,7 +247,7 @@ input[type="range"]{
 #txt2img_negative_prompt, #img2img_negative_prompt{
 }
 
-#progressbar{
+#txt2img_progressbar, #img2img_progressbar{
   position: absolute;
   z-index: 1000;
   right: 0;
@@ -219,7 +256,7 @@ input[type="range"]{
   display: block;
 }
 
-#progressRow{
+#txt2img_progress_row, #img2img_progress_row{
   margin-bottom: 10px;
   margin-top: -18px;
 }
@@ -354,11 +391,15 @@ input[type="range"]{
     display:none
 }
 
-#interrupt{
+#txt2img_interrupt, #img2img_interrupt{
   position: absolute;
   width: 100%;
   height: 72px;
   background: #b4c0cc;
   border-radius: 8px;
   display: none;
+}
+
+.red {
+	color: red;
 }
