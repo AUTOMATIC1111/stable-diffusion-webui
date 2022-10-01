@@ -244,6 +244,14 @@ class Script(scripts.Script):
 
             return process_images(pc)
 
+        if not x_opt.label == 'Nothing':
+            p.extra_generation_params["X/Y Plot X Type"] = x_opt.label
+            p.extra_generation_params["X Values"] = '{' + ", ".join([f'{x}' for x in xs]) + '}'
+
+        if not y_opt.label == 'Nothing':
+            p.extra_generation_params["X/Y Plot Y Type"] = y_opt.label
+            p.extra_generation_params["Y Values"] = '{' + ", ".join([f'{y}' for y in ys]) + '}'
+
         processed = draw_xy_grid(
             p,
             xs=xs,
