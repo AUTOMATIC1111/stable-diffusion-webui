@@ -14,9 +14,9 @@ Check the [custom scripts](https://github.com/AUTOMATIC1111/stable-diffusion-web
 - Prompt
 - Stable Diffusion upscale
 - Attention, specify parts of text that the model should pay more attention to
-    - a man in a ((txuedo)) - will pay more attentinoto tuxedo
-    - a man in a (txuedo:1.21) - alternative syntax
-- Loopback, run img2img procvessing multiple times
+    - a man in a ((tuxedo)) - will pay more attentin to tuxedo
+    - a man in a (tuxedo:1.21) - alternative syntax
+- Loopback, run img2img processing multiple times
 - X/Y plot, a way to draw a 2 dimensional plot of images with different parameters
 - Textual Inversion
     - have as many embeddings as you want and use any names you like for them
@@ -35,8 +35,8 @@ Check the [custom scripts](https://github.com/AUTOMATIC1111/stable-diffusion-web
 - 4GB video card support (also reports of 2GB working)
 - Correct seeds for batches 
 - Prompt length validation
-     - get length of prompt in tokensas you type
-     - get a warning after geenration if some text was truncated
+     - get length of prompt in tokens as you type
+     - get a warning after generation if some text was truncated
 - Generation parameters
      - parameters you used to generate images are saved with that image
      - in PNG chunks for PNG, in EXIF for JPEG
