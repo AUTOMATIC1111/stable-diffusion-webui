@@ -34,7 +34,7 @@ errors.run(enable_tf32, "Enabling TF32")
 
 
 device = get_optimal_device()
-device_codeformer = cpu if has_mps else device
+device_gfpgan = device_codeformer = cpu if device.type == 'mps' else device
 
 
 def randn(seed, shape):
