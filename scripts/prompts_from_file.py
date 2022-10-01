@@ -2,7 +2,6 @@ import math
 import os
 import sys
 import traceback
-from xml.etree.ElementTree import tostring
 
 import modules.scripts as scripts
 import gradio as gr
@@ -90,6 +89,8 @@ class Script(scripts.Script):
             state.job = f"{loop_no + 1} out of {loop_count}"
             # The following line may need revising to remove batch_size references
             current_line = lines[loop_no*p.batch_size:(loop_no+1)*p.batch_size] * p.n_iter
+
+            # If the current line has no tags, parse the whole line as a prompt, else parse each tag
             if(current_line[0][:2] != "--"):
                 p.prompt = current_line
             else:
