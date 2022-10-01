@@ -271,7 +271,7 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration
         "Variation seed strength": (None if p.subseed_strength == 0 else p.subseed_strength),
         "Seed resize from": (None if p.seed_resize_from_w == 0 or p.seed_resize_from_h == 0 else f"{p.seed_resize_from_w}x{p.seed_resize_from_h}"),
         "Denoising strength": getattr(p, 'denoising_strength', None),
-        "Eta": (None if p.sampler.eta == p.sampler.default_eta else p.sampler.eta),
+        "Eta": (None if (not p.sampler) or p.sampler.eta == p.sampler.default_eta else p.sampler.eta ),
     }
 
     generation_params.update(p.extra_generation_params)
