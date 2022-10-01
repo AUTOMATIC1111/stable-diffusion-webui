@@ -58,6 +58,11 @@ Inspired by Deforum Notebook
 Must have ffmpeg installed in path.
 Poor img2img implentation, will trash images that aren't moving.
 
+## Alternate Noise Schedules
+https://gist.github.com/dfaker/f88aa62e3a14b559fe4e5f6b345db664
+Uses alternate generators for the sampler's sigma schedule.
+Allows access to Karras, Exponential and Variance Preserving schedules from crowsonkb/k-diffusion along with their parameters.
+
 ## Saving steps of the sampling process
 This script will save steps of the sampling process to a directory.
 ```python
