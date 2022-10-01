@@ -290,7 +290,10 @@ class KDiffusionSampler:
     def sample_img2img(self, p, x, noise, conditioning, unconditional_conditioning, steps=None):
         steps, t_enc = setup_img2img_steps(p, steps)
 
-        sigmas = self.model_wrap.get_sigmas(steps)
+        if p.sampler_noise_scheduler_override:
+          sigmas = p.sampler_noise_scheduler_override(steps)
+        else:
+          sigmas = self.model_wrap.get_sigmas(steps)
 
         noise = noise * sigmas[steps - t_enc - 1]
         xi = x + noise
@@ -306,7 +309,10 @@ class KDiffusionSampler:
     def sample(self, p, x, conditioning, unconditional_conditioning, steps=None):
         steps = steps or p.steps
 
-        sigmas = self.model_wrap.get_sigmas(steps)
+        if p.sampler_noise_scheduler_override:
+          sigmas = p.sampler_noise_scheduler_override(steps)
+        else:
+          sigmas = self.model_wrap.get_sigmas(steps)
         x = x * sigmas[0]
 
         extra_params_kwargs = self.initialize(p)
