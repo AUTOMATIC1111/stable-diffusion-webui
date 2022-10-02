@@ -853,7 +853,8 @@ def create_ui(wrap_gradio_gpu_call):
                 (denoising_strength, "Denoising strength"),
             ]
             modules.generation_parameters_copypaste.connect_paste(paste, img2img_paste_fields, img2img_prompt)
-
+            token_button.click(fn=update_token_counter, inputs=[img2img_prompt, steps], outputs=[token_counter])
+            
     with gr.Blocks(analytics_enabled=False) as promptgen_interface:
         with gr.Row():
             genprompt = gr.Textbox(label="Prompt", elem_id="prompt", show_label=False, placeholder="Prompt", lines=4)
@@ -1261,7 +1262,6 @@ def create_ui(wrap_gradio_gpu_call):
             ]
         )
 
-            token_button.click(fn=update_token_counter, inputs=[img2img_prompt, steps], outputs=[token_counter])
 
 
     with gr.Blocks(analytics_enabled=False) as extras_interface:
