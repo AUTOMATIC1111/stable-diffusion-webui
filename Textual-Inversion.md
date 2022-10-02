@@ -81,7 +81,7 @@ Other options are to train on colabs and/or using diffusers library, which I kno
 
 # Finding embeddings online
 
-- [huggingface concepts library](https://cyberes.github.io/stable-diffusion-textual-inversion-models/) - a lot of different embeddings, but mostly useless.
+- [huggingface concepts library](https://cyberes.github.io/stable-diffusion-textual-inversion-models/) - a lot of different embeddings, but
 - [16777216c](https://gitlab.com/16777216c/stable-diffusion-embeddings) - NSFW, anime artist styles by a mysterious stranger.
 - [cattoroboto](https://gitlab.com/cattoroboto/waifu-diffusion-embeds) - some anime embeddings by anon.
 - [viper1](https://gitgud.io/viper1/stable-diffusion-embeddings) - NSFW, furry girls.
