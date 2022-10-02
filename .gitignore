@@ -26,4 +26,5 @@ __pycache__
 /cfg/discordbot
 notification.mp3
 /SwinIR
+/textual_inversion
 

@@ -103,7 +103,9 @@ def img2img(mode: int, prompt: str, negative_prompt: str, prompt_style: str, pro
         inpaint_full_res_padding=inpaint_full_res_padding,
         inpainting_mask_invert=inpainting_mask_invert,
     )
-    print(f"\nimg2img: {prompt}", file=shared.progress_print_out)
+
+    if shared.cmd_opts.enable_console_prompts:
+        print(f"\nimg2img: {prompt}", file=shared.progress_print_out)
 
     p.extra_generation_params["Mask blur"] = mask_blur
 
