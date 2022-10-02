@@ -45,11 +45,8 @@ def apply_sampler(p, x, xs):
 
 
 def apply_checkpoint(p, x, xs):
-    applicable = [info for info in modules.sd_models.checkpoints_list.values() if x in info.title]
-    assert len(applicable) > 0, f'Checkpoint {x} for found'
-
-    info = applicable[0]
-
+    info = modules.sd_models.get_closet_checkpoint_match(x)
+    assert info is not None, f'Checkpoint for {x} not found'
     modules.sd_models.reload_model_weights(shared.sd_model, info)
 
 
@@ -159,6 +156,9 @@ class Script(scripts.Script):
         p.batch_size = 1
 
         def process_axis(opt, vals):
+            if opt.label == 'Nothing':
+                return [0]
+
             valslist = [x.strip() for x in vals.split(",")]
 
             if opt.type == int:
