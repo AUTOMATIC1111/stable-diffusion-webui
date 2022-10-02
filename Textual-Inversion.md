@@ -54,7 +54,7 @@ Experimental support for training embeddings in user interface.
 
 ### Training an embedding
 - **Embedding**: select the embedding you want to train from this dropdown.
-- **Learning rate**: how fast should the training go. The danger with setting parameter to high value is that you may break the embedding if you se it too high. If you see `Loss: nan` in the training info textbox, that means you failed and the embedding is dead. With the default value, this should not happen.
+- **Learning rate**: how fast should the training go. The danger of setting this parameter to a high value is that you may break the embedding if you set it too high. If you see `Loss: nan` in the training info textbox, that means you failed and the embedding is dead. With the default value, this should not happen.
 - **Dataset directory**: directory with images for training. They all must be square.
 - **Log directory**: sample images and copies of partially trained embeddings will be written to this directory.
 - **Prompt template file**: text file with prompts, one per line, for training the model on. See files in directory `textual_inversion_templates` for what you can do with those. Following tags can be used in the file:
