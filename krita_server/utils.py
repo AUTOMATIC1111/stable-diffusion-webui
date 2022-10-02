@@ -89,7 +89,7 @@ def collect_prompt(opts, key):
         key (str): Key containing the prompt to parse.
 
     Raises:
-        Exception: Value of the prompt key cannot be parsed.
+        SyntaxError: Value of the prompt key cannot be parsed.
 
     Returns:
         str: Correctly formatted prompt.
@@ -109,7 +109,7 @@ def collect_prompt(opts, key):
             else:
                 prompt += f"({item}:{weight})"
         return prompt
-    raise Exception("wtf man, fix your prompts")
+    raise SyntaxError("prompt field in krita_config.yml is invalid")
 
 
 def get_sampler_index(sampler_name: str):
@@ -118,15 +118,17 @@ def get_sampler_index(sampler_name: str):
     Args:
         sampler_name (str): Exact name of sampler.
 
+    Raises:
+        KeyError: Sampler cannot be found.
+
     Returns:
-        int: Index of sampler else 0.
+        int: Index of sampler.
     """
-    # TODO: Should return -1 or throw error instead of default sampler.
     for index, sampler in enumerate(modules.sd_samplers.samplers):
         name, constructor, aliases = sampler
         if sampler_name == name or sampler_name in aliases:
             return index
-    return 0
+    raise KeyError(f"sampler not found: {sampler_name}")
 
 
 def get_upscaler_index(upscaler_name: str):
@@ -135,14 +137,16 @@ def get_upscaler_index(upscaler_name: str):
     Args:
         upscaler_name (str): Exact name of upscaler.
 
+    Raises:
+        KeyError: Upscaler cannot be found.
+
     Returns:
-        int: Index of sampler else 0.
+        int: Index of sampler.
     """
-    # TODO: Should return -1 or throw error instead of default upscaler.
     for index, upscaler in enumerate(shared.sd_upscalers):
         if upscaler.name == upscaler_name:
             return index
-    return 0
+    raise KeyError(f"upscaler not found: {upscaler_name}")
 
 
 def set_face_restorer(face_restorer: str, codeformer_weight: float):
