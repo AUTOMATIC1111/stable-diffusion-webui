@@ -65,7 +65,7 @@ This takes images from a directory, processes them to be ready for textual inver
 - **Learning rate**: how fast should the training go. The danger of setting this parameter to a high value is that you may break the embedding if you set it too high. If you see `Loss: nan` in the training info textbox, that means you failed and the embedding is dead. With the default value, this should not happen.
 - **Dataset directory**: directory with images for training. They all must be square.
 - **Log directory**: sample images and copies of partially trained embeddings will be written to this directory.
-- **Prompt template file**: text file with prompts, one per line, for training the model on. See files in directory `textual_inversion_templates` for what you can do with those. Following tags can be used in the file:
+- **Prompt template file**: text file with prompts, one per line, for training the model on. See files in directory `textual_inversion_templates` for what you can do with those. Use `style.txt` when training styles, and `subject.txt` when training object embeddings. Following tags can be used in the file:
   - `[name]`: the name of embedding
   - `[filewords]`: words from the file name of the image from the dataset, separated by spaces.
 - **Max steps**: training will stop after this many steps have been completed. A step is when one picture (or one batch of pictures, but batches are currently not supported) is shown to the model and is used to improve embedding. if you interrupt training and resume it at a later date, the number of steps is preserved.
