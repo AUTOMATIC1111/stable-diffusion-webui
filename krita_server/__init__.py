@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import contextlib
+import logging
 import threading
 import time
 
@@ -37,6 +38,18 @@ def start():
         log_level="info",
     )
     server = Server(config=config)
+
+    # logging stuff
+    root_logger = logging.getLogger("krita_server")
+    handler = logging.StreamHandler()
+    handler.setFormatter(
+        logging.Formatter(
+            fmt="[%(asctime)s][%(name)s:%(lineno)d][%(levelname)s] %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
+    )
+    root_logger.addHandler(handler)
+    root_logger.setLevel(logging.INFO)
 
     with server.run_in_thread():
         webui()
