@@ -25,3 +25,4 @@ __pycache__
 /.idea
 notification.mp3
 /SwinIR
+/textual_inversion
