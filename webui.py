@@ -1,26 +1,23 @@
 import os
-import threading
-
-from modules import devices
-from modules.paths import script_path
 import signal
 import threading
-import modules.paths
+
 import modules.codeformer_model as codeformer
-import modules.esrgan_model as esrgan
-import modules.bsrgan_model as bsrgan
 import modules.extras
 import modules.face_restoration
 import modules.gfpgan_model as gfpgan
-import modules.ldsr_model as ldsr
+import modules.img2img
+
 import modules.lowvram
-import modules.realesrgan_model as realesrgan
+import modules.paths
 import modules.scripts
 import modules.sd_hijack
 import modules.sd_models
 import modules.shared as shared
-import modules.swinir_model as swinir
+import modules.txt2img
+
 import modules.ui
+from modules import devices
 from modules import modelloader
 from modules.paths import script_path
 from modules.shared import cmd_opts
