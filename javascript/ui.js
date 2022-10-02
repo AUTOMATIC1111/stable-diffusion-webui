@@ -186,16 +186,26 @@ onUiUpdate(function(){
 	if (!txt2img_textarea) {
 		txt2img_textarea = gradioApp().querySelector("#txt2img_prompt > label > textarea");
 		txt2img_textarea?.addEventListener("input", () => update_token_counter("txt2img_token_button"));
+        txt2img_textarea?.addEventListener("keyup", (event) => submit_prompt(event, "txt2img_generate"));
 	}
 	if (!img2img_textarea) {
 		img2img_textarea = gradioApp().querySelector("#img2img_prompt > label > textarea");
 		img2img_textarea?.addEventListener("input", () => update_token_counter("img2img_token_button"));
+        img2img_textarea?.addEventListener("keyup", (event) => submit_prompt(event, "img2img_generate"));
 	}
 })
 
 let txt2img_textarea, img2img_textarea = undefined;
 let wait_time = 800
 let token_timeout;
+
+function submit_prompt(event, generate_button_id) {
+    if (event.altKey && event.keyCode === 13) {
+        event.preventDefault();
+        gradioApp().getElementById(generate_button_id).click();
+        return;
+    }
+}
 
 function update_token_counter(button_id) {
 	if (token_timeout)
