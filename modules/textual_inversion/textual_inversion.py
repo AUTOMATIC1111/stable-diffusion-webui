@@ -117,24 +117,21 @@ class EmbeddingDatabase:
         possible_matches = self.ids_lookup.get(token, None)
 
         if possible_matches is None:
-            return None
+            return None, None
 
         for ids, embedding in possible_matches:
             if tokens[offset:offset + len(ids)] == ids:
-                return embedding
+                return embedding, len(ids)
 
-        return None
+        return None, None
 
 
-
-def create_embedding(name, num_vectors_per_token):
-    init_text = '*'
-
+def create_embedding(name, num_vectors_per_token, init_text='*'):
     cond_model = shared.sd_model.cond_stage_model
     embedding_layer = cond_model.wrapped.transformer.text_model.embeddings
 
     ids = cond_model.tokenizer(init_text, max_length=num_vectors_per_token, return_tensors="pt", add_special_tokens=False)["input_ids"]
-    embedded = embedding_layer(ids.to(devices.device)).squeeze(0)
+    embedded = embedding_layer.token_embedding.wrapped(ids.to(devices.device)).squeeze(0)
     vec = torch.zeros((num_vectors_per_token, embedded.shape[1]), device=devices.device)
 
     for i in range(num_vectors_per_token):
