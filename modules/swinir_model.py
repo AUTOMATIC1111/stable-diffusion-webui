@@ -5,6 +5,7 @@ import numpy as np
 import torch
 from PIL import Image
 from basicsr.utils.download_util import load_file_from_url
+from tqdm import tqdm
 
 from modules import modelloader
 from modules.paths import models_path
@@ -122,18 +123,20 @@ def inference(img, model, tile, tile_overlap, window_size, scale):
     E = torch.zeros(b, c, h * sf, w * sf, dtype=torch.half, device=device).type_as(img)
     W = torch.zeros_like(E, dtype=torch.half, device=device)
 
-    for h_idx in h_idx_list:
-        for w_idx in w_idx_list:
-            in_patch = img[..., h_idx: h_idx + tile, w_idx: w_idx + tile]
-            out_patch = model(in_patch)
-            out_patch_mask = torch.ones_like(out_patch)
+    with tqdm(total=len(h_idx_list) * len(w_idx_list), desc="SwinIR tiles") as pbar:
+        for h_idx in h_idx_list:
+            for w_idx in w_idx_list:
+                in_patch = img[..., h_idx: h_idx + tile, w_idx: w_idx + tile]
+                out_patch = model(in_patch)
+                out_patch_mask = torch.ones_like(out_patch)
 
-            E[
-            ..., h_idx * sf: (h_idx + tile) * sf, w_idx * sf: (w_idx + tile) * sf
-            ].add_(out_patch)
-            W[
-            ..., h_idx * sf: (h_idx + tile) * sf, w_idx * sf: (w_idx + tile) * sf
-            ].add_(out_patch_mask)
+                E[
+                ..., h_idx * sf: (h_idx + tile) * sf, w_idx * sf: (w_idx + tile) * sf
+                ].add_(out_patch)
+                W[
+                ..., h_idx * sf: (h_idx + tile) * sf, w_idx * sf: (w_idx + tile) * sf
+                ].add_(out_patch_mask)
+                pbar.update(1)
     output = E.div_(W)
 
     return output
