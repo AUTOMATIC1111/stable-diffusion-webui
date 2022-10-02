@@ -173,6 +173,7 @@ options_templates.update(options_section(('saving-to-dirs', "Saving to a directo
     "grid_save_to_dirs": OptionInfo(False, "Save grids to subdirectory"),
     "directories_filename_pattern": OptionInfo("", "Directory name pattern"),
     "directories_max_prompt_words": OptionInfo(8, "Max prompt words", gr.Slider, {"minimum": 1, "maximum": 20, "step": 1}),
+    "use_save_to_dirs_for_ui": OptionInfo(False, "Use \"Save images to a subdirectory\" option for images saved from UI"),
 }))
 
 options_templates.update(options_section(('upscaling', "Upscaling"), {
