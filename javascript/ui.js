@@ -218,10 +218,16 @@ function update_token_counter(button_id) {
 		clearTimeout(token_timeout);
 	token_timeout = setTimeout(() => gradioApp().getElementById(button_id)?.click(), wait_time);
 }
+
 function submit_prompt(event, generate_button_id) {
     if (event.altKey && event.keyCode === 13) {
         event.preventDefault();
         gradioApp().getElementById(generate_button_id).click();
         return;
     }
+}
+
+function restart_reload(){
+    document.body.innerHTML='<h1 style="font-family:monospace;margin-top:20%;color:lightgray;text-align:center;">Reloading...</h1>';
+    setTimeout(function(){location.reload()},2000)
 }
