@@ -23,7 +23,6 @@ from modules.paths import script_path
 from modules.shared import opts, cmd_opts
 import modules.shared as shared
 from modules.sd_samplers import samplers, samplers_for_img2img
-from modules.sd_hijack import model_hijack
 import modules.ldsr_model
 import modules.scripts
 import modules.gfpgan_model
@@ -506,7 +505,7 @@ def connect_reuse_seed(
 
 
 def update_token_counter(text):
-    tokens, token_count, max_length = model_hijack.tokenize(text)
+    tokens, token_count, max_length = sd_hijack.model_hijack.tokenize(text)
     style_class = ' class="red"' if (token_count > max_length) else ""
     return f"<span {style_class}>{token_count}/{max_length}</span>"
 

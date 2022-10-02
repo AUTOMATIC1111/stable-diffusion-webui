@@ -8,7 +8,7 @@ import html
 import datetime
 
 from modules import shared, devices, sd_hijack, processing, sd_models
-import modules.textual_inversion.dataset
+from .dataset import PersonalizedBase
 
 
 class Embedding:
@@ -211,7 +211,7 @@ def train_embedding(
 
     shared.state.textinfo = f"Preparing dataset from {html.escape(data_root)}..."
     with torch.autocast("cuda"):
-        ds = modules.textual_inversion.dataset.PersonalizedBase(
+        ds = PersonalizedBase(
             data_root=data_root,
             size=512,
             placeholder_token=embedding_name,

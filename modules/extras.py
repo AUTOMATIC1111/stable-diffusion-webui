@@ -1,4 +1,5 @@
 import os
+from typing import Any, Dict, Tuple
 
 import numpy as np
 from PIL import Image
@@ -16,7 +17,7 @@ import piexif.helper
 import gradio as gr
 
 
-cached_images = {}
+cached_images: Dict[Tuple, Any] = {}
 
 
 def run_extras(
@@ -50,6 +51,7 @@ def run_extras(
     outpath = opts.outdir_samples or opts.outdir_extras_samples
 
     outputs = []
+    info: str = ""
     for image, image_name in zip(imageArr, imageNameArr):
         if image is None:
             return outputs, "Please select an input image.", ""

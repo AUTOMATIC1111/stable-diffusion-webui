@@ -1,6 +1,6 @@
 import os
 from abc import abstractmethod
-from typing import Optional
+from typing import Optional, List
 
 import PIL
 from PIL import Image
@@ -11,6 +11,7 @@ from modules import modelloader, shared
 LANCZOS = Image.Resampling.LANCZOS if hasattr(Image, "Resampling") else Image.LANCZOS
 from modules.paths import models_path
 
+
 class Upscaler:
     name = None
     model_path = None
@@ -20,7 +21,7 @@ class Upscaler:
     filter = None
     model = None
     user_path = None
-    scalers: []
+    scalers: List["UpscalerData"] = []
     tile = True
 
     def __init__(self, create_dirs=False):
@@ -79,17 +80,17 @@ class Upscaler:
 
 
 class UpscalerData:
-    name = None
-    data_path = None
+    name: Optional[str] = None
+    data_path: Optional[str] = None
     scale: int = 4
-    scaler: Upscaler = None
+    scaler: Optional[Upscaler] = None
     model: None
 
     def __init__(
         self,
         name: str,
         path: str,
-        upscaler: Upscaler = None,
+        upscaler: Optional[Upscaler] = None,
         scale: int = 4,
         model=None,
     ):

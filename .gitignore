@@ -123,6 +123,7 @@ interrogate/
 log/
 outputs/
 repositories/
+textual_inversion_templates/
 tmp/
 config.json
 notification.mp3
@@ -132,9 +133,6 @@ user.css
 webui-user.bat
 webui-user.sh
 webui.settings.bat
-
-# Textual Inversion
-textual_inversion/
 
 # Extras
 ffmpeg/

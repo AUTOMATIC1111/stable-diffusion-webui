@@ -1,3 +1,4 @@
+from typing import List
 import torch
 
 import modules.textual_inversion.textual_inversion
@@ -45,9 +46,9 @@ def undo_optimizations():
 
 class StableDiffusionModelHijack:
     fixes = None
-    comments = []
+    comments: List[str] = []
     layers = None
-    circular_enabled = False
+    circular_enabled: bool = False
     clip = None
 
     embedding_db = modules.textual_inversion.textual_inversion.EmbeddingDatabase(

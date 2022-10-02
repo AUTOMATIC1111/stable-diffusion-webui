@@ -1,5 +1,6 @@
 import os
 import sys
+from typing import List, Tuple
 
 script_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 models_path = os.path.join(script_path, "models")
@@ -7,7 +8,7 @@ sys.path.insert(0, script_path)
 
 # search for directory of stable diffusion in following places
 sd_path = None
-possible_sd_paths = [
+possible_sd_paths: List[str] = [
     os.path.join(script_path, "repositories/stable-diffusion"),
     ".",
     os.path.dirname(script_path),
@@ -20,7 +21,7 @@ assert sd_path is not None, "Couldn't find Stable Diffusion in any of: " + str(
     possible_sd_paths
 )
 
-path_dirs = [
+path_dirs: List[Tuple[str, str, str, List[str]]] = [
     (sd_path, "ldm", "Stable Diffusion", []),
     (
         os.path.join(sd_path, "../taming-transformers"),

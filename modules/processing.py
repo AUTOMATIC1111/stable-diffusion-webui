@@ -12,7 +12,6 @@ from skimage import exposure
 
 import modules.sd_hijack
 from modules import devices, prompt_parser, masking
-from modules.sd_hijack import model_hijack
 from modules.sd_samplers import samplers, samplers_for_img2img
 from modules.shared import opts, cmd_opts, state
 import modules.shared as shared
@@ -460,7 +459,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
         )
 
     if os.path.exists(cmd_opts.embeddings_dir):
-        model_hijack.embedding_db.load_textual_inversion_embeddings()
+        modules.sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings()
 
     infotexts = []
     output_images = []
@@ -492,8 +491,8 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             )
             c = prompt_parser.get_learned_conditioning(prompts, p.steps)
 
-            if len(model_hijack.comments) > 0:
-                for comment in model_hijack.comments:
+            if len(modules.sd_hijack.model_hijack.comments) > 0:
+                for comment in modules.sd_hijack.model_hijack.comments:
                     comments[comment] = 1
 
             if p.n_iter > 1:
