@@ -19,17 +19,54 @@ app = FastAPI()
 
 
 def load_config():
+    """Load default config (including those not exposed in the API yet) from
+    `krita_config.yaml` in the current working directory.
+
+    Returns:
+        Dict: config
+    """
     with open("krita_config.yaml") as file:
         return yaml.safe_load(file)
 
 
 def save_img(image, sample_path, filename):
+    """Saves an image.
+
+    Args:
+        image (PIL.Image): Image to save.
+        sample_path (str): Folder to save the image in.
+        filename (str): Name to save the image as.
+
+    Returns:
+        str: Absolute path where the image was saved.
+    """
     path = os.path.join(sample_path, filename)
     image.save(path)
     return os.path.abspath(path)
 
 
 def fix_aspect_ratio(base_size, max_size, orig_width, orig_height):
+    """Calculate an appropiate image resolution given the base input size of the
+    model and max input size allowed.
+    
+    The max input size is due to how Stable Diffusion currently handles resolutions
+    larger than its base/native input size of 512, which can cause weird issues 
+    such as duplicated features in the image. Hence, it is typically better to
+    render at a smaller appropiate resolution before using other methods to upscale
+    to the original resolution.
+
+    Stable Diffusion also messes up for resolutions smaller than 512. In which case,
+    it is better to render at the base resolution before downscaling to the original.
+
+    Args:
+        base_size (int): Native/base input size of the model.
+        max_size (int): Bax input size to accept.
+        orig_width (int): Original width requested.
+        orig_height (int): Original height requested.
+
+    Returns:
+        Tuple[int, int]: Appropiate (width, height) to use for the model.
+    """
     def rnd(r, x):
         z = 64
         return z * round(r * x / z)
@@ -53,6 +90,18 @@ def fix_aspect_ratio(base_size, max_size, orig_width, orig_height):
 
 
 def collect_prompt(opts, key):
+    """Parse prompt/negative prompt keys from `krita_config.yaml`. Is not used for prompt from API.
+
+    Args:
+        opts (Dict): Config from `load_config()`.
+        key (str): Key containing the prompt to parse.
+
+    Raises:
+        Exception: Value of the prompt key cannot be parsed.
+
+    Returns:
+        str: Correctly formatted prompt.
+    """
     prompts = opts[key]
     if isinstance(prompts, str):
         return prompts
@@ -70,69 +119,133 @@ def collect_prompt(opts, key):
         return prompt
     raise Exception("wtf man, fix your prompts")
 
+# TODO:
+# - common attributes of Img2Img and Txt2Img can be refactored out
+# - seed should be int, is likely str as legacy from being based on hlky originally
 
 class Txt2ImgRequest(BaseModel):
+    """Text2Img API request. If optional attributes aren't set, the defaults 
+    from `krita_config.yaml` will be used.
+    """
     orig_width: int
+    """Requested image width."""
     orig_height: int
+    """Requested image height."""
 
     prompt: Optional[str]
+    """Requested prompt."""
     negative_prompt: Optional[str]
+    """Requested negative prompt."""
     sampler_name: Optional[str]
+    """Exact name of sampler to use. Name should follow exact spelling and capitalization as in the WebUI."""
     steps: Optional[int]
+    """Number of steps for diffusion."""
     cfg_scale: Optional[float]
+    """Guidance scale for diffusion."""
 
     batch_count: Optional[int]
+    """Number of batches to render."""
     batch_size: Optional[int]
+    """Number of images per batch to render."""
     base_size: Optional[int]
+    """Native/base resolution of model used."""
     max_size: Optional[int]
+    """Max input resolution allowed to prevent image artifacts."""
     seed: Optional[str]
+    """Seed used for noise generation. Incremented by 1 for each image rendered."""
     tiling: Optional[bool]
+    """Whether to generate a tileable image."""
 
     use_gfpgan: Optional[bool]
+    """Whether to use GFPGAN for face restoration."""
     face_restorer: Optional[str]
+    """Exact name of face restorer to use."""
     codeformer_weight: Optional[float]
+    """Strength of face restoration if using CodeFormer. 0.0 is the strongest and 1.0 is the weakest."""
 
 
 class Img2ImgRequest(BaseModel):
+    """Img2Img API request. If optional attributes aren't set, the defaults from
+    `krita_config.yaml` will be used.
+    """
     mode: Optional[int]
+    """Img2Img mode. 0 is normal img2img on the selected region, 1 is inpainting, and 2 (unsupported) is batch processing."""
 
     src_path: str
+    """Path to image being used."""
     mask_path: Optional[str]
+    """Path to image mask being used."""
 
     prompt: Optional[str]
+    """Requested prompt."""
     negative_prompt: Optional[str]
+    """Requested negative prompt."""
     sampler_name: Optional[str]
+    """Exact name of sampler to use. Name should follow exact spelling and capitalization as in the WebUI."""
     steps: Optional[int]
+    """Number of steps for diffusion."""
     cfg_scale: Optional[float]
+    """Guidance scale for diffusion."""
     denoising_strength: Optional[float]
+    """Strength of denoising from 0.0 to 1.0."""
 
     batch_count: Optional[int]
+    """Number of batches to render."""
     batch_size: Optional[int]
+    """Number of images per batch to render."""
     base_size: Optional[int]
+    """Native/base resolution of model used."""
     max_size: Optional[int]
+    """Max input resolution allowed to prevent image artifacts."""
     seed: Optional[str]
+    """Seed used for noise generation. Incremented by 1 for each image rendered."""
     tiling: Optional[bool]
+    """Whether to generate a tileable image."""
 
     use_gfpgan: Optional[bool]
+    """Whether to use GFPGAN for face restoration."""
     face_restorer: Optional[str]
+    """Exact name of face restorer to use."""
     codeformer_weight: Optional[float]
+    """Strength of face restoration if using CodeFormer. 0.0 is the strongest and 1.0 is the weakest."""
 
     upscale_overlap: Optional[int]
+    """Size of overlap in pixels for upscaling."""
     upscaler_name: Optional[str]
+    """Exact name of upscaler to use."""
 
     inpainting_fill: Optional[int]
+    """What to fill inpainted region with. 0 is blur, 1 is empty, 2 is latent noise, and 3 is latent empty."""
     inpaint_full_res: Optional[bool]
+    """Whether to use the full resolution for inpainting."""
     mask_blur: Optional[int]
+    """Size of blur at boundaries of mask."""
     invert_mask: Optional[bool]
+    """Whether to invert the mask."""
 
 
 class UpscaleRequest(BaseModel):
+    """Upscale API request. If optional attributes aren't set, the defaults from
+    `krita_config.yaml` will be used.
+    """
     src_path: str
+    """Path to image being used."""
     upscaler_name: Optional[str]
+    """Exact name of upscaler to use."""
     downscale_first: Optional[bool]
+    """Whether to downscale the image by x0.5 first."""
 
 
 def get_sampler_index(sampler_name: str):
+    """Get index of sampler by name.
+
+    Args:
+        sampler_name (str): Exact name of sampler.
+
+    Returns:
+        int: Index of sampler else 0.
+    """
+    # TODO: Should return -1 or throw error instead of default sampler.
     for index, sampler in enumerate(modules.sd_samplers.samplers):
         name, constructor, aliases = sampler
         if sampler_name == name or sampler_name in aliases:
@@ -141,6 +254,15 @@ def get_sampler_index(sampler_name: str):
 
 
 def get_upscaler_index(upscaler_name: str):
+    """Get index of upscaler by name.
+
+    Args:
+        upscaler_name (str): Exact name of upscaler.
+
+    Returns:
+        int: Index of sampler else 0.
+    """
+    # TODO: Should return -1 or throw error instead of default upscaler.
     for index, upscaler in enumerate(shared.sd_upscalers):
         if upscaler.name == upscaler_name:
             return index
@@ -148,11 +270,30 @@ def get_upscaler_index(upscaler_name: str):
 
 
 def set_face_restorer(face_restorer: str, codeformer_weight: float):
+    """Change which face restorer to use.
+
+    Args:
+        face_restorer (str): Exact name of face restorer to use.
+        codeformer_weight (float): Strength of face restoration when using CodeFormer.
+    """
+    # the `shared` module handles app state for the underlying codebase
     shared.opts.face_restoration_model = face_restorer
     shared.opts.code_former_weight = codeformer_weight
 
 @app.get("/config")
 async def read_item():
+    """Get information about backend API.
+
+    Returns config from `krita_config.yaml`, the list of available upscalers,
+    the path to the rendered image and image mask.
+
+    Returns:
+        Dict: information.
+    """
+    # TODO:
+    # - function and route name isn't descriptive, feels more like get_state()
+    # - response isn't well typed
+    # - ensuring the folders for images exist should be refactored out
     opt = load_config()['plugin']
     sample_path = opt['sample_path']
     os.makedirs(sample_path, exist_ok=True)
@@ -167,6 +308,14 @@ async def read_item():
 
 @app.post("/txt2img")
 async def f_txt2img(req: Txt2ImgRequest):
+    """Post request for Txt2Img.
+
+    Args:
+        req (Txt2ImgRequest): Request.
+
+    Returns:
+        Dict: Outputs and info.
+    """
     print(f"txt2img: {req}")
 
     opt = load_config()['txt2img']
@@ -219,6 +368,14 @@ async def f_txt2img(req: Txt2ImgRequest):
 
 @app.post("/img2img")
 async def f_img2img(req: Img2ImgRequest):
+    """Post request for Img2Img.
+
+    Args:
+        req (Img2ImgRequest): Request.
+
+    Returns:
+        Dict: Outputs and info.
+    """
     print(f"img2img: {req}")
 
     opt = load_config()['img2img']
@@ -316,6 +473,14 @@ async def f_img2img(req: Img2ImgRequest):
 
 @app.post("/upscale")
 async def f_upscale(req: UpscaleRequest):
+    """Post request for upscaling.
+
+    Args:
+        req (UpscaleRequest): Request.
+
+    Returns:
+        Dict: Output.
+    """
     print(f"upscale: {req}")
 
     opt = load_config()['upscale']

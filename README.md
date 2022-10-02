@@ -15,6 +15,13 @@ Analyzing the diff, these are the main changes (& hence the main parts to mainta
 
 Also note, there are a few files that have been screwed up due to the CRLF problem, see this: <https://stackoverflow.com/questions/37007300/how-to-ignore-whitespace-in-github-when-comparing>. Annoying, but live with it. The other annoying thing is having to temporarily disable both my formatter and import sorter when editing the code, but can't be helped given the codebase itself does not have any formatting rules to adhere to.
 
+I am using AUTOMATIC1111's fork because compared to Hlky's (now named sd-webui) and Lstein's (now named InvokeAI), it
+has far superior performance and the most practical features. However, there are some features I wish for:
+
+- Proper logging (think pyRich)
+- Proper API and documentation
+- _Proper_ Docker support and integration with Devcontainers
+
 ## Stable Diffusion Krita Plugin
 
 A simple interface based on this repository: https://github.com/AUTOMATIC1111/stable-diffusion-webui
