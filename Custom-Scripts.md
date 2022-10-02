@@ -51,10 +51,11 @@ Example of what you can do with it:
 https://www.youtube.com/watch?v=4c71iUclY4U
 
 ## Animator
-https://github.com/Animator-Anon/stable-diffusion-webui/blob/master/scripts/animator.py
-Inspired by Deforum Notebook
-Must have ffmpeg installed in path.
-Keyframes, Prompt Templates, Various animation parameters.
+https://github.com/Animator-Anon/Animator/blob/main/animation.py
+
+Animation Script - https://github.com/Animator-Anon/Animator
+
+A basic img2img script that will dump frames and build a video file. Suitable for creating interesting zoom in warping movies, but not too much else at this time.
 
 ## Alternate Noise Schedules
 https://gist.github.com/dfaker/f88aa62e3a14b559fe4e5f6b345db664
