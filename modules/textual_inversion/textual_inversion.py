@@ -57,7 +57,8 @@ class EmbeddingDatabase:
         first_id = ids[0]
         if first_id not in self.ids_lookup:
             self.ids_lookup[first_id] = []
-        self.ids_lookup[first_id].append((ids, embedding))
+
+        self.ids_lookup[first_id] = sorted(self.ids_lookup[first_id] + [(ids, embedding)], key=lambda x: len(x[0]), reverse=True)
 
         return embedding
 
