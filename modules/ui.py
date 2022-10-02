@@ -113,7 +113,7 @@ def save_files(js_data, images, index):
 
     p = MyObject(data)
     path = opts.outdir_save
-    save_to_dirs = opts.save_to_dirs
+    save_to_dirs = opts.use_save_to_dirs_for_ui
 
     if save_to_dirs:
         dirname = apply_filename_pattern(opts.directories_filename_pattern or "[prompt_words]", p, p.seed, p.prompt)
