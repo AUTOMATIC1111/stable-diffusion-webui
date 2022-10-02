@@ -12,6 +12,7 @@ from modules.sd_samplers import samplers
 import torch
 import k_diffusion as K
 
+
 def find_noise_for_image(p, cond, uncond, cfg_scale, steps):
     x = p.init_latent
 

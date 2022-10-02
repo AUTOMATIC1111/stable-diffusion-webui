@@ -40,7 +40,9 @@ class UpscalerScuNET(modules.upscaler.Upscaler):
                 print(f"Error loading ScuNET model: {file}", file=sys.stderr)
                 print(traceback.format_exc(), file=sys.stderr)
         if add_model2:
-            scaler_data2 = modules.upscaler.UpscalerData(self.model_name2, self.model_url2, self)
+            scaler_data2 = modules.upscaler.UpscalerData(
+                self.model_name2, self.model_url2, self
+            )
             scalers.append(scaler_data2)
         self.scalers = scalers
 
@@ -62,20 +64,27 @@ class UpscalerScuNET(modules.upscaler.Upscaler):
         with torch.no_grad():
             output = model(img)
         output = output.squeeze().float().cpu().clamp_(0, 1).numpy()
-        output = 255. * np.moveaxis(output, 0, 2)
+        output = 255.0 * np.moveaxis(output, 0, 2)
         output = output.astype(np.uint8)
         output = output[:, :, ::-1]
         torch.cuda.empty_cache()
-        return PIL.Image.fromarray(output, 'RGB')
+        return PIL.Image.fromarray(output, "RGB")
 
     def load_model(self, path: str):
         device = shared.device
         if "http" in path:
-            filename = load_file_from_url(url=self.model_url, model_dir=self.model_path, file_name="%s.pth" % self.name,
-                                          progress=True)
+            filename = load_file_from_url(
+                url=self.model_url,
+                model_dir=self.model_path,
+                file_name="%s.pth" % self.name,
+                progress=True,
+            )
         else:
             filename = path
-        if not os.path.exists(os.path.join(self.model_path, filename)) or filename is None:
+        if (
+            not os.path.exists(os.path.join(self.model_path, filename))
+            or filename is None
+        ):
             print(f"ScuNET: Unable to load model from {filename}", file=sys.stderr)
             return None
 
@@ -87,4 +96,3 @@ class UpscalerScuNET(modules.upscaler.Upscaler):
         model = model.to(device)
 
         return model
-
