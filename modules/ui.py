@@ -1145,6 +1145,31 @@ def create_ui(wrap_gradio_gpu_call):
             _js='function(){}'
         )
 
+        with gr.Row():
+            reload_script_bodies = gr.Button(value='Reload custom script bodies (No ui updates, No restart)', variant='secondary')
+            restart_gradio = gr.Button(value='Restart Gradio and Refresh components (Custom Scripts, ui.py, js and css only)', variant='primary')
+
+
+        def reload_scripts():
+            modules.scripts.reload_script_body_only()
+
+        reload_script_bodies.click(
+            fn=reload_scripts,
+            inputs=[],
+            outputs=[],
+            _js='function(){}'
+        )
+
+        def request_restart():
+            settings_interface.gradio_ref.do_restart = True
+
+        restart_gradio.click(
+            fn=request_restart,
+            inputs=[],
+            outputs=[],
+            _js='function(){restart_reload()}'
+        )
+        
         if column is not None:
             column.__exit__()
 
@@ -1170,7 +1195,9 @@ def create_ui(wrap_gradio_gpu_call):
         css += css_hide_progressbar
 
     with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion") as demo:
-
+        
+        settings_interface.gradio_ref = demo
+        
         with gr.Tabs() as tabs:
             for interface, label, ifid in interfaces:
                 with gr.TabItem(label, id=ifid):
@@ -1350,12 +1377,12 @@ for filename in sorted(os.listdir(jsdir)):
         javascript += f"\n<script>{jsfile.read()}</script>"
 
 
-def template_response(*args, **kwargs):
-    res = gradio_routes_templates_response(*args, **kwargs)
-    res.body = res.body.replace(b'</head>', f'{javascript}</head>'.encode("utf8"))
-    res.init_headers()
-    return res
+if 'gradio_routes_templates_response' not in globals():
+    def template_response(*args, **kwargs):
+        res = gradio_routes_templates_response(*args, **kwargs)
+        res.body = res.body.replace(b'</head>', f'{javascript}</head>'.encode("utf8"))
+        res.init_headers()
+        return res
 
-
-gradio_routes_templates_response = gradio.routes.templates.TemplateResponse
-gradio.routes.templates.TemplateResponse = template_response
+    gradio_routes_templates_response = gradio.routes.templates.TemplateResponse
+    gradio.routes.templates.TemplateResponse = template_response
