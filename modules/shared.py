@@ -58,6 +58,9 @@ parser.add_argument("--opt-channelslast", action='store_true', help="change memo
 parser.add_argument("--styles-file", type=str, help="filename to use for styles", default=os.path.join(script_path, 'styles.csv'))
 parser.add_argument("--autolaunch", action='store_true', help="open the webui URL in the system's default browser upon launch", default=False)
 parser.add_argument("--use-textbox-seed", action='store_true', help="use textbox for seeds in UI (no up/down, but possible to input long seeds)", default=False)
+parser.add_argument("--disable-console-progressbars", action='store_true', help="do not output progressbars to console", default=False)
+parser.add_argument("--enable-console-prompts", action='store_true', help="print prompts to console when generating with txt2img and img2img", default=False)
+
 
 cmd_opts = parser.parse_args()
 device = get_optimal_device()
@@ -320,14 +323,14 @@ class TotalTQDM:
         )
 
     def update(self):
-        if not opts.multiple_tqdm:
+        if not opts.multiple_tqdm or cmd_opts.disable_console_progressbars:
             return
         if self._tqdm is None:
             self.reset()
         self._tqdm.update()
 
     def updateTotal(self, new_total):
-        if not opts.multiple_tqdm:
+        if not opts.multiple_tqdm or cmd_opts.disable_console_progressbars:
             return
         if self._tqdm is None:
             self.reset()
