@@ -6,8 +6,8 @@ import modules.textual_inversion.textual_inversion as ti
 from modules import sd_hijack, shared
 
 
-def create_embedding(name, nvpt):
-    filename = ti.create_embedding(name, nvpt)
+def create_embedding(name, initialization_text, nvpt):
+    filename = ti.create_embedding(name, nvpt, init_text=initialization_text)
 
     sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings()
 

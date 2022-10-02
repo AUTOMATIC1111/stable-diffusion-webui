@@ -954,6 +954,7 @@ def create_ui(wrap_gradio_gpu_call):
                     gr.HTML(value="<p style='margin-bottom: 0.7em'>Create a new embedding</p>")
 
                     new_embedding_name = gr.Textbox(label="Name")
+                    initialization_text = gr.Textbox(label="Initialization text", value="*")
                     nvpt = gr.Slider(label="Number of vectors per token", minimum=1, maximum=75, step=1, value=1)
 
                     with gr.Row():
@@ -997,6 +998,7 @@ def create_ui(wrap_gradio_gpu_call):
             fn=modules.textual_inversion.ui.create_embedding,
             inputs=[
                 new_embedding_name,
+                initialization_text,
                 nvpt,
             ],
             outputs=[
