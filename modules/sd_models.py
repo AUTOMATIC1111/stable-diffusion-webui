@@ -13,9 +13,6 @@ from modules.paths import models_path
 
 model_dir = "Stable-diffusion"
 model_path = os.path.abspath(os.path.join(models_path, model_dir))
-model_name = "sd-v1-4.ckpt"
-model_url = "https://drive.yerf.org/wl/?id=EBfTrmcCCUAGaQBXVIj5lJmEhjoP1tgl&mode=grid&download=1"
-user_dir = None
 
 CheckpointInfo = namedtuple("CheckpointInfo", ['filename', 'title', 'hash', 'model_name'])
 checkpoints_list = {}
@@ -30,12 +27,10 @@ except Exception:
     pass
 
 
-def setup_model(dirname):
-    global user_dir
-    user_dir = dirname
+def setup_model():
     if not os.path.exists(model_path):
         os.makedirs(model_path)
-    checkpoints_list.clear()
+
     list_models()
 
 
@@ -45,7 +40,7 @@ def checkpoint_tiles():
 
 def list_models():
     checkpoints_list.clear()
-    model_list = modelloader.load_models(model_path=model_path, model_url=model_url, command_path=user_dir, ext_filter=[".ckpt"], download_name=model_name)
+    model_list = modelloader.load_models(model_path=model_path, command_path=shared.cmd_opts.ckpt_dir, ext_filter=[".ckpt"])
 
     def modeltitle(path, shorthash):
         abspath = os.path.abspath(path)
@@ -106,8 +101,11 @@ def select_checkpoint():
 
     if len(checkpoints_list) == 0:
         print(f"No checkpoints found. When searching for checkpoints, looked at:", file=sys.stderr)
-        print(f" - file {os.path.abspath(shared.cmd_opts.ckpt)}", file=sys.stderr)
-        print(f" - directory {os.path.abspath(shared.cmd_opts.ckpt_dir)}", file=sys.stderr)
+        if shared.cmd_opts.ckpt is not None:
+            print(f" - file {os.path.abspath(shared.cmd_opts.ckpt)}", file=sys.stderr)
+        print(f" - directory {model_path}", file=sys.stderr)
+        if shared.cmd_opts.ckpt_dir is not None:
+            print(f" - directory {os.path.abspath(shared.cmd_opts.ckpt_dir)}", file=sys.stderr)
         print(f"Can't run without a checkpoint. Find and place a .ckpt file into any of those locations. The program will exit.", file=sys.stderr)
         exit(1)
 
