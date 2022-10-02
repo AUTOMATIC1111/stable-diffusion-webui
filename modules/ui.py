@@ -1002,26 +1002,29 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
             _js='function(){}'
         )
 
-        def request_restart():
-          settings_interface.gradio_ref.do_restart = True
+        with gr.Row():
+          reload_script_bodies = gr.Button(value='Reload custom script bodies (No ui updates, No restart)', variant='secondary')
+          restart_gradio = gr.Button(value='Restart Gradio and Refresh components (Custom Scripts, ui.py, js and css only)', variant='primary')
 
-        restart_gradio = gr.Button(value='Restart Gradio and Refresh components (Custom Scripts, ui.py, js and css only)', variant='primary')
-        restart_gradio.click(
-            fn=request_restart,
-            inputs=[],
-            outputs=[],
-            _js='function(){restart_reload()}'
-        )
 
         def reload_scripts():
           modules.scripts.reload_script_body_only()
 
-        reload_script_bodies = gr.Button(value='Reload custom script bodies (No ui updates, No restart)', variant='primary')
         reload_script_bodies.click(
             fn=reload_scripts,
             inputs=[],
             outputs=[],
             _js='function(){}'
+        )
+
+        def request_restart():
+          settings_interface.gradio_ref.do_restart = True
+
+        restart_gradio.click(
+            fn=request_restart,
+            inputs=[],
+            outputs=[],
+            _js='function(){restart_reload()}'
         )
         
         if column is not None:
