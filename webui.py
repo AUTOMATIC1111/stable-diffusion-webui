@@ -1,28 +1,23 @@
 import os
-import threading
-
-from modules import devices
-from modules.paths import script_path
 import signal
 import threading
-import modules.paths
+
 import modules.codeformer_model as codeformer
-import modules.esrgan_model as esrgan
-import modules.bsrgan_model as bsrgan
 import modules.extras
 import modules.face_restoration
 import modules.gfpgan_model as gfpgan
 import modules.img2img
-import modules.ldsr_model as ldsr
+
 import modules.lowvram
-import modules.realesrgan_model as realesrgan
+import modules.paths
 import modules.scripts
 import modules.sd_hijack
 import modules.sd_models
 import modules.shared as shared
-import modules.swinir_model as swinir
 import modules.txt2img
+
 import modules.ui
+from modules import devices
 from modules import modelloader
 from modules.paths import script_path
 from modules.shared import cmd_opts
@@ -46,7 +41,7 @@ def wrap_queued_call(func):
     return f
 
 
-def wrap_gradio_gpu_call(func):
+def wrap_gradio_gpu_call(func, extra_outputs=None):
     def f(*args, **kwargs):
         devices.torch_gc()
 
@@ -58,6 +53,7 @@ def wrap_gradio_gpu_call(func):
         shared.state.current_image = None
         shared.state.current_image_sampling_step = 0
         shared.state.interrupted = False
+        shared.state.textinfo = None
 
         with queue_lock:
             res = func(*args, **kwargs)
@@ -69,7 +65,7 @@ def wrap_gradio_gpu_call(func):
 
         return res
 
-    return modules.ui.wrap_gradio_call(f)
+    return modules.ui.wrap_gradio_call(f, extra_outputs=extra_outputs)
 
 
 modules.scripts.load_scripts(os.path.join(script_path, "scripts"))
@@ -86,13 +82,7 @@ def webui():
 
     signal.signal(signal.SIGINT, sigint_handler)
 
-    demo = modules.ui.create_ui(
-        txt2img=wrap_gradio_gpu_call(modules.txt2img.txt2img),
-        img2img=wrap_gradio_gpu_call(modules.img2img.img2img),
-        run_extras=wrap_gradio_gpu_call(modules.extras.run_extras),
-        run_pnginfo=modules.extras.run_pnginfo,
-        run_modelmerger=modules.extras.run_modelmerger
-    )
+    demo = modules.ui.create_ui(wrap_gradio_gpu_call=wrap_gradio_gpu_call)
 
     demo.launch(
         share=cmd_opts.share,
