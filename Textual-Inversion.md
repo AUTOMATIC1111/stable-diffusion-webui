@@ -45,6 +45,22 @@ Experimental support for training embeddings in user interface.
 - no support for batch sizes or gradient accumulation
 - it should not be possible to run this with `--lowvram` and `--medvram` flags.
 
+## Explanation for parameter
+
+### Creating an embedding
+- **Name**: filename for the created embedding. You will also use this text in prompts when referring to the embedding.
+- **Initialization text*: the embedding you create will initially be filled with vectors of this text. If you create a one vector embedding named "zzzz1234" with "tree" as initialization text, and use it in prompt without training, then prompt "a zzzz1234 by monet" will produce same pictures as "a tree by monet".
+- **Number of vectors per token**: the size of embedding. The larger this value, the more information about subject you can fit into the embedding, but also the more words it will take away from your prompt allowance. With stable diffusion, you have a limit of 75 tokens in the prompt. If you use an embedding with 16 vectors in a prompt, that will leave you with space for 75 - 16 = 59. Also from my experience, the larger the number of vectors, the more pictures you need to obtain good results.
+
+### Training an embedding
+- **Embedding**: select the embedding you want to train from this dropdown.
+- **Learning rate**: how fast should the training go. The danger with setting parameter to high value is that you may break the embedding if you se it too high. If you see `Loss: nan` in the training info textbox, that means you failed and the embedding is dead. With the default value, this should not happen.
+- **Dataset directory**: directory with images for training. They all must be square.
+- **Log directory**: sample images and copies of partially trained embeddings will be written to this directory.
+- **Prompt template file**: text file with prompts, one per line, for training the model on. See files in directory `textual_inversion_templates` for what you can do with those. Following tags can be used in the file:
+  - `[name]`: the name of embedding
+  - `[filewords]`: words from the file name of the image from the dataset, separated by spaces.
+- **Max steps**: training will reach after this many steps have been completed. A step is when one picture (or one batch of pictures, but batches are currently not supported) is shown to the model and is used to improve embedding. 
 
 ## Third party repos
 I successfully trained embeddings using those repositories:
