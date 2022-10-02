@@ -22,12 +22,38 @@ has far superior performance and the most practical features. However, there are
 - Proper API and documentation
 - _Proper_ Docker support and integration with Devcontainers
 
+## Installation
+
+Mostly the same as <https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki>. However, to increase clarity, I appended `.template` to `webui-user.bat` and `webui.sh`. Copy, rename and fill in their values before proceeding per normal.
+
+Then, follow from [Plugin Installation](#plugin-installation) onwards. Small tip, use symlinks if you want the plugin to auto-update:
+
+```sh
+# symlink on windows
+mklink /j C:\\...\pykrita\krita_diff C:\\...\auto-sd-krita\krita_plugin\krita_diff
+mklink C:\\...\pykrita\krita_diff.desktop C:\\...\auto-sd-krita\krita_plugin\krita_diff.desktop
+
+# symlink on linux
+ln -rs /.../auto-sd-krita/krita_plugin/krita_diff /.../pykrita/krita_diff
+ln -rs /.../auto-sd-krita/krita_plugin/krita_diff.desktop /.../pykrita/krita_diff.desktop
+```
+
 ## TODO
 
-- Figure out API for calling script
+- Figure out API for calling scripts
   - SD Upscaler feature removed from Krita plugin as it was refactored to a script upstream. See <https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/91bfc71261e160451e89f35a7c0eef66ff98877c>
+- Expose config options present in `krita_config.yaml` in the GUI.
 
-## Stable Diffusion Krita Plugin
+## Done
+
+- Exposed most features present in WebUI.
+  - not in GUI yet; see and edit auto-generated `krita_config.yaml`, restart not needed.
+- Update to upstream and fix resultant bugs.
+- `--listen` will cause the backend API to also host on `0.0.0.0`, allowing remote usage of the Krita plugin.
+- Added more comments and documentation, especially with respect to the internal API (positional argument hell).
+- Strongly type the config and document the config in code.
+
+# Stable Diffusion Krita Plugin
 
 A simple interface based on this repository: https://github.com/AUTOMATIC1111/stable-diffusion-webui
 
