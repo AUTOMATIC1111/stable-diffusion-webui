@@ -199,18 +199,32 @@ let txt2img_textarea, img2img_textarea = undefined;
 let wait_time = 800
 let token_timeout;
 
-function submit_prompt(event, generate_button_id) {
-    if (event.altKey && event.keyCode === 13) {
-        event.preventDefault();
-        gradioApp().getElementById(generate_button_id).click();
-        return;
-    }
+function update_txt2img_tokens(...args) {
+	update_token_counter("txt2img_token_button")
+	if (args.length == 2)
+		return args[0]
+	return args;
+}
+
+function update_img2img_tokens(...args) {
+	update_token_counter("img2img_token_button")
+	if (args.length == 2)
+		return args[0]
+	return args;
 }
 
 function update_token_counter(button_id) {
 	if (token_timeout)
 		clearTimeout(token_timeout);
 	token_timeout = setTimeout(() => gradioApp().getElementById(button_id)?.click(), wait_time);
+}
+
+function submit_prompt(event, generate_button_id) {
+    if (event.altKey && event.keyCode === 13) {
+        event.preventDefault();
+        gradioApp().getElementById(generate_button_id).click();
+        return;
+    }
 }
 
 function restart_reload(){

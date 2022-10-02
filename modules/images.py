@@ -311,7 +311,12 @@ def apply_filename_pattern(x, p, seed, prompt):
         x = x.replace("[cfg]", str(p.cfg_scale))
         x = x.replace("[width]", str(p.width))
         x = x.replace("[height]", str(p.height))
-        x = x.replace("[styles]", sanitize_filename_part(", ".join([x for x in p.styles if not x == "None"]), replace_spaces=False))
+        
+        #currently disabled if using the save button, will work otherwise 
+        # if enabled it will cause a bug because styles is not included in the save_files data dictionary
+        if hasattr(p, "styles"):
+            x = x.replace("[styles]", sanitize_filename_part(", ".join([x for x in p.styles if not x == "None"]), replace_spaces=False))
+
         x = x.replace("[sampler]", sanitize_filename_part(sd_samplers.samplers[p.sampler_index].name, replace_spaces=False))
 
     x = x.replace("[model_hash]", shared.sd_model.sd_model_hash)
