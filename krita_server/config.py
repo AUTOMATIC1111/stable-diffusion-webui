@@ -20,12 +20,25 @@ class GenerationOptions(BaseModel):
     seed: int = -1
     """Seed used for noise generation. Incremented by 1 for each image rendered."""
 
+    seed_enable_extras: bool = False
+    """Enable subseed variation."""
+    subseed: int = -1
+    """Subseed to use for subseed variation. Incremented by 1 for each image rendered."""
+    subseed_strength: float = 0.0
+    """Strength of subseed compared to seed. 0.0 will be completely original seed, 1.0 will be completely subseed."""
+    seed_resize_from_h: int = 0
+    """Original resolution seed was used at. Used to resize latent noise to attempt to generate same image with a different resolution."""
+    seed_resize_from_w: int = 0
+    """Original resolution seed was used at. Used to resize latent noise to attempt to generate same image with a different resolution."""
+
     sampler_name: str = "k_euler_a"
     """Exact name of sampler to use. Name should follow exact spelling and capitalization as in the WebUI."""
     steps: int = 20
     """Number of steps for diffusion."""
     cfg_scale: float = 12.0
     """Guidance scale for diffusion."""
+    denoising_strength: float = 0.35
+    """Strength of denoising from 0.0 to 1.0."""
 
     batch_count: int = 1
     """Number of batches to render."""
@@ -38,6 +51,10 @@ class GenerationOptions(BaseModel):
     """Max input resolution allowed to prevent image artifacts."""
     tiling: bool = False
     """Whether to generate a tileable image."""
+    highres_fix: bool = False
+    """Whether to enable workaround for higher resolution at cost of time."""
+    upscale_latent: bool = False
+    """Upscale in latent space."""
 
 
 class FaceRestorationOptions(BaseModel):
@@ -58,6 +75,8 @@ class InpaintingOptions(BaseModel):
     """What to fill inpainted region with. 0 is blur, 1 is empty, 2 is latent noise, and 3 is latent empty."""
     inpaint_full_res: bool = False
     """Whether to use the full resolution for inpainting."""
+    inpaint_full_res_padding: int = 32
+    """Padding when using full resolution for inpainting."""
     mask_blur: int = 0
     """Size of blur at boundaries of mask."""
     invert_mask: bool = False
@@ -73,10 +92,11 @@ class Img2ImgOptions(
 ):
     mode: int = 0
     """Img2Img mode. 0 is normal img2img on the selected region, 1 is inpainting, and 2 (unsupported) is batch processing."""
-    denoising_strength: float = 0.35
-    """Strength of denoising from 0.0 to 1.0."""
     resize_mode: int = 1
+    """Unused by Krita plugin since rescaling can be done in Krita itself. 0 is stretch to fit, 1 is cover, 2 is contain."""
 
+    alpha_mask: bool = False
+    """Use alpha mask, whatever it does."""
     # upscale_overlap: int = 64
     # """Size of overlap in pixels for upscaling."""
     # upscaler_name: str = "None"

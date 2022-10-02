@@ -85,16 +85,16 @@ async def f_txt2img(req: Txt2ImgRequest):
         req.batch_size,  # batch_size
         req.cfg_scale,  # cfg_scale
         req.seed,  # seed
-        None,  # subseed
-        0,  # subseed_strength
-        0,  # seed_resize_from_h
-        0,  # seed_resize_from_w
-        False,  # seed_enable_extras
+        req.subseed,  # subseed
+        req.subseed_strength,  # subseed_strength
+        req.seed_resize_from_h,  # seed_resize_from_h
+        req.seed_resize_from_w,  # seed_resize_from_w
+        req.seed_enable_extras,  # seed_enable_extras
         height,  # height
         width,  # width
-        False,  # enable_hr: high res fix
-        False,  # scale_latent
-        0,  # denoising_strength: only applicable if high res fix in use
+        req.highres_fix,  # enable_hr: high res fix
+        req.upscale_latent,  # scale_latent
+        req.denoising_strength,  # denoising_strength: only applicable if high res fix in use
         # *args below
         0,  # selects which script to use. 0 to not run any.
     )
@@ -161,7 +161,9 @@ async def f_img2img(req: Img2ImgRequest):
         {"image": image, "mask": mask},  # init_img_with_mask
         image,  # init_img_inpaint
         mask,  # init_mask_inpaint
-        -1,  # mask_mode: internally checks if equal 0. enables Alpha Mask but idk what it does.
+        0
+        if req.alpha_mask
+        else -1,  # mask_mode: internally checks if equal 0. enables Alpha Mask but idk what it does.
         req.steps,  # steps
         get_sampler_index(req.sampler_name),  # sampler_index
         req.mask_blur,  # mask_blur
@@ -173,16 +175,16 @@ async def f_img2img(req: Img2ImgRequest):
         req.cfg_scale,  # cfg_scale
         req.denoising_strength,  # denoising_strength
         req.seed,  # seed
-        None,  # subseed
-        0,  # subseed_strength
-        0,  # seed_resize_from_h
-        0,  # seed_resize_from_w
-        False,  # seed_enable_extras
+        req.subseed,  # subseed
+        req.subseed_strength,  # subseed_strength
+        req.seed_resize_from_h,  # seed_resize_from_h
+        req.seed_resize_from_w,  # seed_resize_from_w
+        req.seed_enable_extras,  # seed_enable_extras
         height,  # height
         width,  # width
         req.resize_mode,  # resize_mode
         req.inpaint_full_res,  # inpaint_full_res
-        32,  # inpaint_full_res_padding
+        req.inpaint_full_res_padding,  # inpaint_full_res_padding
         req.invert_mask,  # inpainting_mask_invert
         "",  # img2img_batch_input_dir (unspported)
         "",  # img2img_batch_output_dir (unspported)
