@@ -1,6 +1,21 @@
-# Stable Diffusion Krita Plugin
+# Notes from Interpause
 
-NOTE: This repository was originally a fork of https://github.com/sddebz/stable-diffusion-krita-plugin. I fixed the commit history in order to make further development easier. Thanks to https://github.com/sddebz for making both backend API and frontend Kritia plugin, and somehow preserving the Gradio WebUI despite that.
+This repository was originally a fork of <https://github.com/sddebz/stable-diffusion-krita-plugin>. I fixed the commit history in order to make further development easier. Thanks to <https://github.com/sddebz> for making both backend API and frontend Kritia plugin, and preserving the Gradio WebUI despite that.
+
+I plan to continue maintaining and updating this as long as I am using it. Which will be until a more functional drawing studio plugin comes into existence. Or until I get frustrated enough with AUTOMATIC1111's codebase (can't be helped; it Gradio's fault actually the API is so messed up) to reinvent the wheel and create my own.
+
+Analyzing the diff, these are the main changes (& hence the main parts to maintain):
+
+- everything in the `krita_plugin` folder (which contains the krita plugin's code)
+  - has to be touched if adding new features/exposing current ones
+- `launch.py`, which has been modified to launch `krita_server.py`
+- `krita_server.py`, which imports and exposes internal API
+  - iT Is aLL _undocumented_ pOsITiOnAl PArAmETeRS?
+- the `requirements.txt` (duh)
+
+Also note, there are a few files that have been screwed up due to the CRLF problem, see this: <https://stackoverflow.com/questions/37007300/how-to-ignore-whitespace-in-github-when-comparing>. Annoying, but live with it. The other annoying thing is having to temporarily disable both my formatter and import sorter when editing the code, but can't be helped given the codebase itself does not have any formatting rules to adhere to.
+
+## Stable Diffusion Krita Plugin
 
 A simple interface based on this repository: https://github.com/AUTOMATIC1111/stable-diffusion-webui
 
