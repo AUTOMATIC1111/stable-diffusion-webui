@@ -40,6 +40,7 @@ parser.add_argument("--gfpgan-models-path", type=str, help="Path to directory wi
 parser.add_argument("--esrgan-models-path", type=str, help="Path to directory with ESRGAN model file(s).", default=os.path.join(model_path, 'ESRGAN'))
 parser.add_argument("--bsrgan-models-path", type=str, help="Path to directory with BSRGAN model file(s).", default=os.path.join(model_path, 'BSRGAN'))
 parser.add_argument("--realesrgan-models-path", type=str, help="Path to directory with RealESRGAN model file(s).", default=os.path.join(model_path, 'RealESRGAN'))
+parser.add_argument("--scunet-models-path", type=str, help="Path to directory with ScuNET model file(s).", default=os.path.join(model_path, 'ScuNET'))
 parser.add_argument("--swinir-models-path", type=str, help="Path to directory with SwinIR model file(s).", default=os.path.join(model_path, 'SwinIR'))
 parser.add_argument("--ldsr-models-path", type=str, help="Path to directory with LDSR model file(s).", default=os.path.join(model_path, 'LDSR'))
 parser.add_argument("--opt-split-attention", action='store_true', help="force-enables cross-attention layer optimization. By default, it's on for torch.cuda and off for other torch devices.")
@@ -57,6 +58,9 @@ parser.add_argument("--opt-channelslast", action='store_true', help="change memo
 parser.add_argument("--styles-file", type=str, help="filename to use for styles", default=os.path.join(script_path, 'styles.csv'))
 parser.add_argument("--autolaunch", action='store_true', help="open the webui URL in the system's default browser upon launch", default=False)
 parser.add_argument("--use-textbox-seed", action='store_true', help="use textbox for seeds in UI (no up/down, but possible to input long seeds)", default=False)
+parser.add_argument("--disable-console-progressbars", action='store_true', help="do not output progressbars to console", default=False)
+parser.add_argument("--enable-console-prompts", action='store_true', help="print prompts to console when generating with txt2img and img2img", default=False)
+
 
 cmd_opts = parser.parse_args()
 device = get_optimal_device()
@@ -78,6 +82,7 @@ class State:
     current_latent = None
     current_image = None
     current_image_sampling_step = 0
+    textinfo = None
 
     def interrupt(self):
         self.interrupted = True
@@ -88,7 +93,7 @@ class State:
         self.current_image_sampling_step = 0
         
     def get_job_timestamp(self):
-        return datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+        return datetime.datetime.now().strftime("%Y%m%d%H%M%S")  # shouldn't this return job_timestamp?
 
 
 state = State()
@@ -318,14 +323,14 @@ class TotalTQDM:
         )
 
     def update(self):
-        if not opts.multiple_tqdm:
+        if not opts.multiple_tqdm or cmd_opts.disable_console_progressbars:
             return
         if self._tqdm is None:
             self.reset()
         self._tqdm.update()
 
     def updateTotal(self, new_total):
-        if not opts.multiple_tqdm:
+        if not opts.multiple_tqdm or cmd_opts.disable_console_progressbars:
             return
         if self._tqdm is None:
             self.reset()
