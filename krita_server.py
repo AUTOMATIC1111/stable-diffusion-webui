@@ -66,7 +66,7 @@ def collect_prompt(opts, key):
             if weight is None:
                 prompt += f"{item}"
             else:
-                prompt += f"{item}:{weight}"
+                prompt += f"({item}:{weight})"
         return prompt
     raise Exception("wtf man, fix your prompts")
 
