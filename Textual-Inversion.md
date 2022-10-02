@@ -42,6 +42,7 @@ Experimental support for training embeddings in user interface.
 - no preprocessing is done for images (except for resizing to 512x512), not even flip
 - you can interrupt and resume training without any loss of data (except for AdamW optimization parameters, but it seems none of existing repos save those anyway so the general opinion is they are not important)
 - no support for batch sizes or gradient accumulation
+- it should not be possible to run this with `--lowvram` and `--medvram` flags.
 
 ## Third party repos
 I successfully trained embeddings using those repositories:
