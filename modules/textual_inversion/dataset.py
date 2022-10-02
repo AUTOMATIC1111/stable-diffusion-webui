@@ -30,7 +30,7 @@ class PersonalizedBase(Dataset):
 
         assert data_root, 'dataset directory not specified'
 
-        self.image_paths = [os.path.join(data_root, file_path) for file_path in os.listdir(data_root)]
+        self.image_paths = [os.path.join(data_root, file_path) for file_path in os.listdir(data_root) if file_path[0] != '.']
         print("Preparing dataset...")
         for path in tqdm.tqdm(self.image_paths):
             image = Image.open(path)

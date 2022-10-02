@@ -56,6 +56,8 @@ def load_scripts(basedir):
         return
 
     for filename in sorted(os.listdir(basedir)):
+        if filename[0] == '.':
+            continue
         path = os.path.join(basedir, filename)
 
         if not os.path.isfile(path):

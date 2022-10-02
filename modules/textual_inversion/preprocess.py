@@ -14,7 +14,7 @@ def preprocess(process_src, process_dst, process_flip, process_split, process_ca
 
     os.makedirs(dst, exist_ok=True)
 
-    files = os.listdir(src)
+    files = [fn for fn in os.listdir(src) if fn[0] != '.']
 
     shared.state.textinfo = "Preprocessing..."
     shared.state.job_count = len(files)
