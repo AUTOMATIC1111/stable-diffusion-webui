@@ -45,7 +45,7 @@ Experimental support for training embeddings in user interface.
 - no support for batch sizes or gradient accumulation
 - it should not be possible to run this with `--lowvram` and `--medvram` flags.
 
-## Explanation for parameter
+## Explanation for parameters
 
 ### Creating an embedding
 - **Name**: filename for the created embedding. You will also use this text in prompts when referring to the embedding.
