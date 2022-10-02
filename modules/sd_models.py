@@ -8,7 +8,7 @@ from omegaconf import OmegaConf
 
 from ldm.util import instantiate_from_config
 
-from modules import shared, modelloader
+from modules import shared, modelloader, devices
 from modules.paths import models_path
 
 model_dir = "Stable-diffusion"
@@ -133,6 +133,8 @@ def load_model_weights(model, checkpoint_file, sd_model_hash):
 
     if not shared.cmd_opts.no_half:
         model.half()
+
+    devices.dtype = torch.float32 if shared.cmd_opts.no_half else torch.float16
 
     model.sd_model_hash = sd_model_hash
     model.sd_model_checkpint = checkpoint_file
