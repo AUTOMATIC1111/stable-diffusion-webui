@@ -2,19 +2,36 @@ from collections import namedtuple
 import torch
 
 import modules.shared as shared
-from lark import Lark, Transformer, Visitor, v_args
-
+from lark import Lark, Transformer, Visitor, Tree, v_args
 grammar = r"""
 start: prompt
-prompt: (emphasized | scheduled | plain)*
+prompt: (emphasized | scheduled | weighted | plain)*
 emphasized: "(" prompt ")" -> emph_more
           | "(" prompt ":" NUMBER ")" -> emph_valued
           | "[" prompt "]" -> emph_less
 scheduled: "[" (prompt ":")? prompt ":" NUMBER "]"
-plain: /([^\\\[\]():]|\\.)+/
+weighted: "{" weighted_item ("|" weighted_item)* "}"
+weighted_item: prompt (":" NUMBER)?
+plain: /([^\\\[\](){}:|]|\\.)+/
 %import common.SIGNED_NUMBER -> NUMBER
 """
-parser = Lark(grammar, parser='lalr')
+class FixOptional(Transformer):
+    @v_args(tree=True)
+    def weighted_item(self, tree):
+        tree.children[1:] = (float(tree.children[1] if len(tree.children) == 2 else 1.),)
+        return tree
+    @v_args(tree=True)
+    def scheduled(self, tree):
+        if len(tree.children) == 2:
+            tree.children[:0] = (Tree('prompt', []),)
+        return tree
+    def emph_more(self, args):
+        return Tree('emphasized', [args[0], 1.1])
+    def emph_less(self, args):
+        return Tree('emphasized', [args[0], 1/1.1])
+    def emph_valued(self, args):
+        return Tree('emphasized', [args[0], float(args[1].value)])
+parser = Lark(grammar, parser='lalr', transformer=FixOptional())
 
 # a prompt like this: "fantasy landscape with a [mountain:lake:0.25] and [an oak:a christmas tree:0.75][ in foreground::0.6][ in background:0.25] [shoddy:masterful:0.5]"
 # will be represented with prompt_schedule like this (assuming steps=100):
@@ -28,10 +45,10 @@ def collect_steps(steps, tree):
     l = [steps]
     class CollectSteps(Visitor):
         def scheduled(self, tree):
-            swap_position = float(tree.children[-1])
-            if swap_position < 1:
-                swap_position *= steps
-            tree.children[-1] = min(steps, int(swap_position))
+            tree.children[-1] = float(tree.children[-1])
+            if tree.children[-1] < 1:
+                tree.children[-1] *= steps
+            tree.children[-1] = min(steps, int(tree.children[-1]))
             l.append(tree.children[-1])
     CollectSteps().visit(tree)
     return sorted(set(l))
@@ -44,8 +61,7 @@ def at_step(step, tree):
                 if child.data != 'scheduled':
                     children.append(child)
                     continue
-                p1 = child.children[0].children if len(child.children) == 3 else []
-                p2, t = child.children[-2].children, child.children[-1]
+                p1, p2, t = child.children[0].children, child.children[-2].children, child.children[-1]
                 children.extend(p1 if step <= t else p2)
             tree.children = children
             return tree
@@ -63,6 +79,24 @@ def get_learned_conditioning_prompt_schedules(prompts, steps):
 ScheduledPromptConditioning = namedtuple("ScheduledPromptConditioning", ["end_at_step", "cond"])
 ScheduledPromptBatch = namedtuple("ScheduledPromptBatch", ["shape", "schedules"])
 
+from itertools import product
+from math import prod
+def expand_weights(tree):
+    class T(Transformer):
+        def start(self, args):
+            return args[0]
+        def prompt(self, args):
+            return [(Tree('prompt', [e[0] for e in p]), prod(e[1] for e in p)) for p in product(*args)]
+        def weighted(self, args):
+            s = sum(arg.children[1] for arg in args)
+            return [(Tree('weighted_resolved', [tree]) , w * arg.children[1] / s) for arg in args for tree, w in arg.children[0]]
+        def emphasized(self, args):
+            return [(Tree('emphasized', [t, args[1]]), w) for t, w in args[0]]
+        @v_args(tree=True)
+        def plain(self, tree):
+            return [(tree, 1.)]
+
+    return T().transform(tree)
 
 def get_learned_conditioning(prompts, steps):
 
@@ -78,12 +112,13 @@ def get_learned_conditioning(prompts, steps):
             res.append(cached)
             continue
 
-        texts = [x[1] for x in prompt_schedule]
-        conds = shared.sd_model.get_learned_conditioning(texts)
-
         cond_schedule = []
-        for i, (end_at_step, text) in enumerate(prompt_schedule):
-            cond_schedule.append(ScheduledPromptConditioning(end_at_step, conds[i]))
+        
+        for end_at_step, text in prompt_schedule:
+            texts, weights = zip(*expand_weights(text))
+            conds = shared.sd_model.get_learned_conditioning(texts)
+            c = sum(c * w for c, w in zip(conds, weights))
+            cond_schedule.append(ScheduledPromptConditioning(end_at_step, c))
 
         cache[prompt] = cond_schedule
         res.append(cond_schedule)
@@ -140,13 +175,11 @@ def parse_prompt_attention(tree):
             return args[0]
         def prompt(self, args):
             return sum(args, start=[])
-        def emph_more(self, args):
-            return [(t, w*1.1) for t, w in args[0]]
-        def emph_less(self, args):
-            return [(t, w/1.1) for t, w in args[0]]
-        def emph_valued(self, args):
-            return [(t, w*float(args[1])) for t, w in args[0]]
+        def emphasized(self, args):
+            return [(t, w*args[1]) for t, w in args[0]]
         def plain(self, args):
             return [(args[0].value, 1.)]
+        def weighted_resolved(self, args):
+            return args[0]
     res = T().transform(tree)
     return res if res else [("", 1.)]
