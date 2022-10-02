@@ -20,7 +20,7 @@ default_sd_model_file = sd_model_file
 model_path = os.path.join(script_path, 'models')
 parser = argparse.ArgumentParser()
 parser.add_argument("--config", type=str, default=os.path.join(sd_path, "configs/stable-diffusion/v1-inference.yaml"), help="path to config which constructs model",)
-parser.add_argument("--ckpt", type=str, default=sd_model_file, help="path to checkpoint of stable diffusion model; this checkpoint will be added to the list of checkpoints and loaded by default if you don't have a checkpoint selected in settings",)
+parser.add_argument("--ckpt", type=str, default=sd_model_file, help="path to checkpoint of stable diffusion model; if specified, this checkpoint will be added to the list of checkpoints and loaded",)
 parser.add_argument("--ckpt-dir", type=str, default=None, help="Path to directory with stable diffusion checkpoints")
 parser.add_argument("--gfpgan-dir", type=str, help="GFPGAN directory", default=('./src/gfpgan' if os.path.exists('./src/gfpgan') else './GFPGAN'))
 parser.add_argument("--gfpgan-model", type=str, help="GFPGAN model file name", default=None)
@@ -79,6 +79,7 @@ class State:
     current_latent = None
     current_image = None
     current_image_sampling_step = 0
+    textinfo = None
 
     def interrupt(self):
         self.interrupted = True
@@ -89,7 +90,7 @@ class State:
         self.current_image_sampling_step = 0
         
     def get_job_timestamp(self):
-        return datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+        return datetime.datetime.now().strftime("%Y%m%d%H%M%S")  # shouldn't this return job_timestamp?
 
 
 state = State()
