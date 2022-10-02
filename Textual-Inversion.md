@@ -32,12 +32,25 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 4077357776, Size: 512x512, Mode
 ```
 
 # Training embeddings
+## Textual inversion tab
+Experimental support for training embeddings in user interface.
+- create a new empty embedding, select directory with images, train the embedding on it
+- the feature is very raw, use at own risk
+- i was able to reproduce results I got with other repos in training anime artists as styles, after few tens of thousands steps
+- works with half precision floats, but needs experimentation to see if results will be just as good
+- if you have enough memory, safer to run with `--no-half --precision full`
+- no preprocessing is done for images (except for resizing to 512x512), not even flip
+- you can interrupt and resume training without any loss of data (except for AdamW optimization parameters, but it seems none of existing repos save those anyway so the general opinion is they are not important)
+- no support for batch sizes or gradient accumulation
+
+## Third party repos
 I successfully trained embeddings using those repositories:
 
  - [nicolai256](https://github.com/nicolai256/Stable-textual-inversion_win)
  - [lstein](https://github.com/invoke-ai/InvokeAI)
 
 Other options are to train on colabs and/or using diffusers library, which I know nothing about.
+
 
 # Finding embeddings online
 
