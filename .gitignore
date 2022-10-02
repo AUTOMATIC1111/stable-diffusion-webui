@@ -1,28 +1,140 @@
-__pycache__
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+#   For a library or package, you might want to ignore these files since the code is
+#   intended to run in multiple environments; otherwise, check them in:
+# .python-version
+
+# pipenv
+#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
+#   However, in case of collaboration, if having platform-specific dependencies or dependencies
+#   having no cross-platform support, pipenv may install dependencies that don't work, or not
+#   install all needed dependencies.
+#Pipfile.lock
+
+# poetry
+#   Similar to Pipfile.lock, it is generally recommended to include poetry.lock in version control.
+#   This is especially recommended for binary packages to ensure reproducibility, and is more
+#   commonly ignored for libraries.
+#   https://python-poetry.org/docs/basic-usage/#commit-your-poetrylock-file-to-version-control
+#poetry.lock
+
+# pdm
+#   Similar to Pipfile.lock, it is generally recommended to include pdm.lock in version control.
+#pdm.lock
+#   pdm stores project-wide configurations in .pdm.toml, but it is recommended to not include it
+#   in version control.
+#   https://pdm.fming.dev/#use-with-ide
+# .pdm.toml
+
+# PEP 582; used by e.g. github.com/David-OConnor/pyflow and github.com/pdm-project/pdm
+__pypackages__/
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Cython debug symbols
+cython_debug/
+
+# IDEs
+.idea/
+.vscode/
+
+# Standard ML
 *.ckpt
 *.pth
-/ESRGAN/*
-/SwinIR/*
-/repositories
-/venv
-/tmp
-/model.ckpt
-/models/**/*
-/GFPGANv1.3.pth
-/gfpgan/weights/*.pth
-/ui-config.json
-/outputs
-/config.json
-/log
-/webui.settings.bat
-/embeddings
-/styles.csv
-/styles.csv.bak
-/webui-user.bat
-/webui-user.sh
-/interrogate
-/user.css
-/.idea
+
+# Models
+models/**/*
+models/ESRGAN/*
+models/SwinIR/*
+models/GFPGAN/*
+models/LDSR/*
+models/Stable-diffusion/*
+
+# Stable Diffusion
+embeddings/
+interrogate/
+log/
+outputs/
+repositories/
+tmp/
+config.json
 notification.mp3
-/SwinIR
-/textual_inversion
+styles.csv
+ui-config.json
+user.css
+webui-user.bat
+webui-user.sh
+webui.settings.bat
+
+# Textual Inversion
+textual_inversion/
+
+# Extras
+ffmpeg/
