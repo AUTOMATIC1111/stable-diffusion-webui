@@ -323,10 +323,7 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
         id_end = self.wrapped.tokenizer.eos_token_id
         maxlen = self.wrapped.max_length
 
-        if opts.enable_emphasis:
-            parsed = prompt_parser.parse_prompt_attention(line)
-        else:
-            parsed = [[line, 1.0]]
+        parsed = prompt_parser.parse_prompt_attention(line)
 
         tokenized = self.wrapped.tokenizer([text for text, _ in parsed], truncation=False, add_special_tokens=False)["input_ids"]
 
@@ -479,10 +476,7 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
 
     def forward(self, text):
 
-        if opts.use_old_emphasis_implementation:
-            batch_multipliers, remade_batch_tokens, used_custom_terms, hijack_comments, hijack_fixes, token_count = self.process_text_old(text)
-        else:
-            batch_multipliers, remade_batch_tokens, used_custom_terms, hijack_comments, hijack_fixes, token_count = self.process_text(text)
+        batch_multipliers, remade_batch_tokens, used_custom_terms, hijack_comments, hijack_fixes, token_count = self.process_text(text)
 
 
         self.hijack.fixes = hijack_fixes

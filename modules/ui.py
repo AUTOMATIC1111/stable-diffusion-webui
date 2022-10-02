@@ -346,7 +346,7 @@ def connect_reuse_seed(seed: gr.Number, reuse_seed: gr.Button, generation_info: 
     )
 
 def update_token_counter(text):
-    tokens, token_count, max_length = model_hijack.tokenize(text)
+    tokens, token_count, max_length = 0, 0, 75 # model_hijack.tokenize(text)
     style_class = ' class="red"' if (token_count > max_length) else ""
     return f"<span {style_class}>{token_count}/{max_length}</span>"
 
