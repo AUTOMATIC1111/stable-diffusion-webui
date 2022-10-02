@@ -24,16 +24,22 @@ class Script(scripts.Script):
         # Therefore, there's no good way to use grouping components right now,
         # so we will use a checkbox! :)
         checkbox_txt = gr.Checkbox(label="Show Textbox", value=False)
-        file = gr.File(label="File with inputs", type='bytes')
+        file = gr.File(label="File with inputs", type="bytes")
         prompt_txt = gr.TextArea(label="Prompts")
-        checkbox_txt.change(fn=lambda x: [gr.File.update(visible = not x), gr.TextArea.update(visible = x)], inputs=[checkbox_txt], outputs=[file, prompt_txt])
+        checkbox_txt.change(
+            fn=lambda x: [gr.File.update(visible=not x), gr.TextArea.update(visible=x)],
+            inputs=[checkbox_txt],
+            outputs=[file, prompt_txt],
+        )
         return [checkbox_txt, file, prompt_txt]
 
     def run(self, p, checkbox_txt, data: bytes, prompt_txt: str):
-        if (checkbox_txt):
+        if checkbox_txt:
             lines = [x.strip() for x in prompt_txt.splitlines()]
         else:
-            lines = [x.strip() for x in data.decode('utf8', errors='ignore').split("\n")]
+            lines = [
+                x.strip() for x in data.decode("utf8", errors="ignore").split("\n")
+            ]
         lines = [x for x in lines if len(x) > 0]
 
         img_count = len(lines) * p.n_iter
@@ -48,7 +54,9 @@ class Script(scripts.Script):
         images = []
         for loop_no in range(loop_count):
             state.job = f"{loop_no + 1} out of {loop_count}"
-            p.prompt = lines[loop_no*p.batch_size:(loop_no+1)*p.batch_size] * p.n_iter
+            p.prompt = (
+                lines[loop_no * p.batch_size : (loop_no + 1) * p.batch_size] * p.n_iter
+            )
             proc = process_images(p)
             images += proc.images
 

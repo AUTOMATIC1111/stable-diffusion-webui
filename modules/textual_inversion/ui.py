@@ -11,7 +11,13 @@ def create_embedding(name, initialization_text, nvpt):
 
     sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings()
 
-    return gr.Dropdown.update(choices=sorted(sd_hijack.model_hijack.embedding_db.word_embeddings.keys())), f"Created: {filename}", ""
+    return (
+        gr.Dropdown.update(
+            choices=sorted(sd_hijack.model_hijack.embedding_db.word_embeddings.keys())
+        ),
+        f"Created: {filename}",
+        "",
+    )
 
 
 def train_embedding(*args):

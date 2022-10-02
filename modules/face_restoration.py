@@ -10,7 +10,12 @@ class FaceRestoration:
 
 
 def restore_faces(np_image):
-    face_restorers = [x for x in shared.face_restorers if x.name() == shared.opts.face_restoration_model or shared.opts.face_restoration_model is None]
+    face_restorers = [
+        x
+        for x in shared.face_restorers
+        if x.name() == shared.opts.face_restoration_model
+        or shared.opts.face_restoration_model is None
+    ]
     if len(face_restorers) == 0:
         return np_image
 

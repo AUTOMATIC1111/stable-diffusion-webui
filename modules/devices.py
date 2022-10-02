@@ -3,7 +3,7 @@ import torch
 # has_mps is only available in nightly pytorch (for now), `getattr` for compatibility
 from modules import errors
 
-has_mps = getattr(torch, 'has_mps', False)
+has_mps = getattr(torch, "has_mps", False)
 
 cpu = torch.device("cpu")
 
@@ -36,9 +36,10 @@ device = get_optimal_device()
 device_codeformer = cpu if has_mps else device
 dtype = torch.float16
 
+
 def randn(seed, shape):
     # Pytorch currently doesn't handle setting randomness correctly when the metal backend is used.
-    if device.type == 'mps':
+    if device.type == "mps":
         generator = torch.Generator(device=cpu)
         generator.manual_seed(seed)
         noise = torch.randn(shape, generator=generator, device=cpu).to(device)
@@ -50,10 +51,9 @@ def randn(seed, shape):
 
 def randn_without_seed(shape):
     # Pytorch currently doesn't handle setting randomness correctly when the metal backend is used.
-    if device.type == 'mps':
+    if device.type == "mps":
         generator = torch.Generator(device=cpu)
         noise = torch.randn(shape, generator=generator, device=cpu).to(device)
         return noise
 
     return torch.randn(shape, device=device)
-

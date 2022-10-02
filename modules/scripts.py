@@ -8,6 +8,7 @@ import gradio as gr
 from modules.processing import StableDiffusionProcessing
 from modules import shared
 
+
 class Script:
     filename = None
     args_from = None
@@ -24,7 +25,7 @@ class Script:
     def ui(self, is_img2img):
         pass
 
-    # Determines when the script should be shown in the dropdown menu via the 
+    # Determines when the script should be shown in the dropdown menu via the
     # returned value. As an example:
     # is_img2img is True if the current tab is img2img, and False if it is txt2img.
     # Thus, return is_img2img to only show the script on the img2img tab.
@@ -34,15 +35,15 @@ class Script:
     # This is where the additional processing is implemented. The parameters include
     # self, the model object "p" (a StableDiffusionProcessing class, see
     # processing.py), and the parameters returned by the ui method.
-    # Custom functions can be defined here, and additional libraries can be imported 
+    # Custom functions can be defined here, and additional libraries can be imported
     # to be used in processing. The return value should be a Processed object, which is
     # what is returned by the process_images method.
     def run(self, *args):
         raise NotImplementedError()
 
     # The description method is currently unused.
-    # To add a description that appears when hovering over the title, amend the "titles" 
-    # dict in script.js to include the script title (returned by title) as a key, and 
+    # To add a description that appears when hovering over the title, amend the "titles"
+    # dict in script.js to include the script title (returned by title) as a key, and
     # your description as the value.
     def describe(self):
         return ""
@@ -66,7 +67,8 @@ def load_scripts(basedir):
                 text = file.read()
 
             from types import ModuleType
-            compiled = compile(text, path, 'exec')
+
+            compiled = compile(text, path, "exec")
             module = ModuleType(filename)
             exec(compiled, module.__dict__)
 
@@ -104,9 +106,15 @@ class ScriptRunner:
 
             self.scripts.append(script)
 
-        titles = [wrap_call(script.title, script.filename, "title") or f"{script.filename} [error]" for script in self.scripts]
+        titles = [
+            wrap_call(script.title, script.filename, "title")
+            or f"{script.filename} [error]"
+            for script in self.scripts
+        ]
 
-        dropdown = gr.Dropdown(label="Script", choices=["None"] + titles, value="None", type="index")
+        dropdown = gr.Dropdown(
+            label="Script", choices=["None"] + titles, value="None", type="index"
+        )
         inputs = [dropdown]
 
         for script in self.scripts:
@@ -127,20 +135,19 @@ class ScriptRunner:
 
         def select_script(script_index):
             if 0 < script_index <= len(self.scripts):
-                script = self.scripts[script_index-1]
+                script = self.scripts[script_index - 1]
                 args_from = script.args_from
                 args_to = script.args_to
             else:
                 args_from = 0
                 args_to = 0
 
-            return [ui.gr_show(True if i == 0 else args_from <= i < args_to) for i in range(len(inputs))]
+            return [
+                ui.gr_show(True if i == 0 else args_from <= i < args_to)
+                for i in range(len(inputs))
+            ]
 
-        dropdown.change(
-            fn=select_script,
-            inputs=[dropdown],
-            outputs=inputs
-        )
+        dropdown.change(fn=select_script, inputs=[dropdown], outputs=inputs)
 
         return inputs
 
@@ -150,12 +157,12 @@ class ScriptRunner:
         if script_index == 0:
             return None
 
-        script = self.scripts[script_index-1]
+        script = self.scripts[script_index - 1]
 
         if script is None:
             return None
 
-        script_args = args[script.args_from:script.args_to]
+        script_args = args[script.args_from : script.args_to]
         processed = script.run(p, *script_args)
 
         shared.total_tqdm.clear()

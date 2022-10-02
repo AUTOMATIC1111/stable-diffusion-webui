@@ -14,10 +14,10 @@ function dropReplaceImage( imgWrap, files ) {
         const fileInput = imgWrap.querySelector('input[type="file"]');
         if ( fileInput ) {
             fileInput.files = files;
-            fileInput.dispatchEvent(new Event('change'));   
+            fileInput.dispatchEvent(new Event('change'));
         }
     };
-    
+
     if ( imgWrap.closest('#pnginfo_image') ) {
         // special treatment for PNG Info tab, wait for fetch request to finish
         const oldFetch = window.fetch;
@@ -34,7 +34,7 @@ function dropReplaceImage( imgWrap, files ) {
                 })
             }
             return response;
-        };        
+        };
     } else {
         window.requestAnimationFrame( () => callback() );
     }
@@ -74,7 +74,7 @@ window.addEventListener('paste', e => {
     if ( ! visibleImageFields.length ) {
         return;
     }
-    
+
     const firstFreeImageField = visibleImageFields
         .filter(el => el.querySelector('input[type=file]'))?.[0];
 

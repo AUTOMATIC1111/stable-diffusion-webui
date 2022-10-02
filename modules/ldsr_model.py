@@ -34,10 +34,18 @@ class UpscalerLDSR(Upscaler):
         if os.path.exists(old_model_path):
             print("Renaming model from model.pth to model.ckpt")
             os.rename(old_model_path, new_model_path)
-        model = load_file_from_url(url=self.model_url, model_dir=self.model_path,
-                                   file_name="model.ckpt", progress=True)
-        yaml = load_file_from_url(url=self.yaml_url, model_dir=self.model_path,
-                                  file_name="project.yaml", progress=True)
+        model = load_file_from_url(
+            url=self.model_url,
+            model_dir=self.model_path,
+            file_name="model.ckpt",
+            progress=True,
+        )
+        yaml = load_file_from_url(
+            url=self.yaml_url,
+            model_dir=self.model_path,
+            file_name="project.yaml",
+            progress=True,
+        )
 
         try:
             return LDSR(model, yaml)

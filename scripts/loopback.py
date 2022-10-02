@@ -9,6 +9,7 @@ from modules.processing import Processed
 from modules.sd_samplers import samplers
 from modules.shared import opts, cmd_opts, state
 
+
 class Script(scripts.Script):
     def title(self):
         return "Loopback"
@@ -17,8 +18,14 @@ class Script(scripts.Script):
         return is_img2img
 
     def ui(self, is_img2img):
-        loops = gr.Slider(minimum=1, maximum=32, step=1, label='Loops', value=4)
-        denoising_strength_change_factor = gr.Slider(minimum=0.9, maximum=1.1, step=0.01, label='Denoising strength change factor', value=1)
+        loops = gr.Slider(minimum=1, maximum=32, step=1, label="Loops", value=4)
+        denoising_strength_change_factor = gr.Slider(
+            minimum=0.9,
+            maximum=1.1,
+            step=0.01,
+            label="Denoising strength change factor",
+            value=1,
+        )
 
         return [loops, denoising_strength_change_factor]
 
@@ -40,7 +47,9 @@ class Script(scripts.Script):
         all_images = []
         state.job_count = loops * batch_count
 
-        initial_color_corrections = [processing.setup_color_correction(p.init_images[0])]
+        initial_color_corrections = [
+            processing.setup_color_correction(p.init_images[0])
+        ]
 
         for n in range(batch_count):
             history = []
@@ -65,12 +74,25 @@ class Script(scripts.Script):
 
                 p.init_images = [init_img]
                 p.seed = processed.seed + 1
-                p.denoising_strength = min(max(p.denoising_strength * denoising_strength_change_factor, 0.1), 1)
+                p.denoising_strength = min(
+                    max(p.denoising_strength * denoising_strength_change_factor, 0.1), 1
+                )
                 history.append(processed.images[0])
 
             grid = images.image_grid(history, rows=1)
             if opts.grid_save:
-                images.save_image(grid, p.outpath_grids, "grid", initial_seed, p.prompt, opts.grid_format, info=info, short_filename=not opts.grid_extended_filename, grid=True, p=p)
+                images.save_image(
+                    grid,
+                    p.outpath_grids,
+                    "grid",
+                    initial_seed,
+                    p.prompt,
+                    opts.grid_format,
+                    info=info,
+                    short_filename=not opts.grid_extended_filename,
+                    grid=True,
+                    p=p,
+                )
 
             grids.append(grid)
             all_images += history

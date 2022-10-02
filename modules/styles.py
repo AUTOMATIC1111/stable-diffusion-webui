@@ -45,13 +45,15 @@ class StyleDatabase:
         if not os.path.exists(path):
             return
 
-        with open(path, "r", encoding="utf8", newline='') as file:
+        with open(path, "r", encoding="utf8", newline="") as file:
             reader = csv.DictReader(file)
             for row in reader:
                 # Support loading old CSV format with "name, text"-columns
                 prompt = row["prompt"] if "prompt" in row else row["text"]
                 negative_prompt = row.get("negative_prompt", "")
-                self.styles[row["name"]] = PromptStyle(row["name"], prompt, negative_prompt)
+                self.styles[row["name"]] = PromptStyle(
+                    row["name"], prompt, negative_prompt
+                )
 
     def get_style_prompts(self, styles):
         return [self.styles.get(x, self.no_style).prompt for x in styles]
@@ -60,31 +62,42 @@ class StyleDatabase:
         return [self.styles.get(x, self.no_style).negative_prompt for x in styles]
 
     def apply_styles_to_prompt(self, prompt, styles):
-        return apply_styles_to_prompt(prompt, [self.styles.get(x, self.no_style).prompt for x in styles])
+        return apply_styles_to_prompt(
+            prompt, [self.styles.get(x, self.no_style).prompt for x in styles]
+        )
 
     def apply_negative_styles_to_prompt(self, prompt, styles):
-        return apply_styles_to_prompt(prompt, [self.styles.get(x, self.no_style).negative_prompt for x in styles])
+        return apply_styles_to_prompt(
+            prompt, [self.styles.get(x, self.no_style).negative_prompt for x in styles]
+        )
 
     def apply_styles(self, p: StableDiffusionProcessing) -> None:
         if isinstance(p.prompt, list):
-            p.prompt = [self.apply_styles_to_prompt(prompt, p.styles) for prompt in p.prompt]
+            p.prompt = [
+                self.apply_styles_to_prompt(prompt, p.styles) for prompt in p.prompt
+            ]
         else:
             p.prompt = self.apply_styles_to_prompt(p.prompt, p.styles)
 
         if isinstance(p.negative_prompt, list):
-            p.negative_prompt = [self.apply_negative_styles_to_prompt(prompt, p.styles) for prompt in p.negative_prompt]
+            p.negative_prompt = [
+                self.apply_negative_styles_to_prompt(prompt, p.styles)
+                for prompt in p.negative_prompt
+            ]
         else:
-            p.negative_prompt = self.apply_negative_styles_to_prompt(p.negative_prompt, p.styles)
+            p.negative_prompt = self.apply_negative_styles_to_prompt(
+                p.negative_prompt, p.styles
+            )
 
     def save_styles(self, path: str) -> None:
         # Write to temporary file first, so we don't nuke the file if something goes wrong
         fd, temp_path = tempfile.mkstemp(".csv")
-        with os.fdopen(fd, "w", encoding="utf8", newline='') as file:
+        with os.fdopen(fd, "w", encoding="utf8", newline="") as file:
             # _fields is actually part of the public API: typing.NamedTuple is a replacement for collections.NamedTuple,
             # and collections.NamedTuple has explicit documentation for accessing _fields. Same goes for _asdict()
             writer = csv.DictWriter(file, fieldnames=PromptStyle._fields)
             writer.writeheader()
-            writer.writerows(style._asdict() for k,     style in self.styles.items())
+            writer.writerows(style._asdict() for k, style in self.styles.items())
 
         # Always keep a backup file around
         if os.path.exists(path):

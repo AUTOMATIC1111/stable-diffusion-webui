@@ -7,7 +7,11 @@ import numpy as np
 from PIL import Image, ImageOps, ImageChops
 
 from modules import devices
-from modules.processing import Processed, StableDiffusionProcessingImg2Img, process_images
+from modules.processing import (
+    Processed,
+    StableDiffusionProcessingImg2Img,
+    process_images,
+)
 from modules.shared import opts, state
 import modules.shared as shared
 import modules.processing as processing
@@ -19,9 +23,15 @@ import modules.scripts
 def process_batch(p, input_dir, output_dir, args):
     processing.fix_seed(p)
 
-    images = [file for file in [os.path.join(input_dir, x) for x in os.listdir(input_dir)] if os.path.isfile(file)]
+    images = [
+        file
+        for file in [os.path.join(input_dir, x) for x in os.listdir(input_dir)]
+        if os.path.isfile(file)
+    ]
 
-    print(f"Will process {len(images)} images, creating {p.n_iter * p.batch_size} new images for each.")
+    print(
+        f"Will process {len(images)} images, creating {p.n_iter * p.batch_size} new images for each."
+    )
 
     p.do_not_save_grid = True
     p.do_not_save_samples = True
@@ -51,17 +61,57 @@ def process_batch(p, input_dir, output_dir, args):
             processed_image.save(os.path.join(output_dir, filename))
 
 
-def img2img(mode: int, prompt: str, negative_prompt: str, prompt_style: str, prompt_style2: str, init_img, init_img_with_mask, init_img_inpaint, init_mask_inpaint, mask_mode, steps: int, sampler_index: int, mask_blur: int, inpainting_fill: int, restore_faces: bool, tiling: bool, n_iter: int, batch_size: int, cfg_scale: float, denoising_strength: float, seed: int, subseed: int, subseed_strength: float, seed_resize_from_h: int, seed_resize_from_w: int, seed_enable_extras: bool, height: int, width: int, resize_mode: int, inpaint_full_res: bool, inpaint_full_res_padding: int, inpainting_mask_invert: int, img2img_batch_input_dir: str, img2img_batch_output_dir: str, *args):
+def img2img(
+    mode: int,
+    prompt: str,
+    negative_prompt: str,
+    prompt_style: str,
+    prompt_style2: str,
+    init_img,
+    init_img_with_mask,
+    init_img_inpaint,
+    init_mask_inpaint,
+    mask_mode,
+    steps: int,
+    sampler_index: int,
+    mask_blur: int,
+    inpainting_fill: int,
+    restore_faces: bool,
+    tiling: bool,
+    n_iter: int,
+    batch_size: int,
+    cfg_scale: float,
+    denoising_strength: float,
+    seed: int,
+    subseed: int,
+    subseed_strength: float,
+    seed_resize_from_h: int,
+    seed_resize_from_w: int,
+    seed_enable_extras: bool,
+    height: int,
+    width: int,
+    resize_mode: int,
+    inpaint_full_res: bool,
+    inpaint_full_res_padding: int,
+    inpainting_mask_invert: int,
+    img2img_batch_input_dir: str,
+    img2img_batch_output_dir: str,
+    *args,
+):
     is_inpaint = mode == 1
     is_batch = mode == 2
 
     if is_inpaint:
         if mask_mode == 0:
-            image = init_img_with_mask['image']
-            mask = init_img_with_mask['mask']
-            alpha_mask = ImageOps.invert(image.split()[-1]).convert('L').point(lambda x: 255 if x > 0 else 0, mode='1')
-            mask = ImageChops.lighter(alpha_mask, mask.convert('L')).convert('L')
-            image = image.convert('RGB')
+            image = init_img_with_mask["image"]
+            mask = init_img_with_mask["mask"]
+            alpha_mask = (
+                ImageOps.invert(image.split()[-1])
+                .convert("L")
+                .point(lambda x: 255 if x > 0 else 0, mode="1")
+            )
+            mask = ImageChops.lighter(alpha_mask, mask.convert("L")).convert("L")
+            image = image.convert("RGB")
         else:
             image = init_img_inpaint
             mask = init_mask_inpaint
@@ -69,7 +119,7 @@ def img2img(mode: int, prompt: str, negative_prompt: str, prompt_style: str, pro
         image = init_img
         mask = None
 
-    assert 0. <= denoising_strength <= 1., 'can only work with strength in [0.0, 1.0]'
+    assert 0.0 <= denoising_strength <= 1.0, "can only work with strength in [0.0, 1.0]"
 
     p = StableDiffusionProcessingImg2Img(
         sd_model=shared.sd_model,
@@ -110,7 +160,9 @@ def img2img(mode: int, prompt: str, negative_prompt: str, prompt_style: str, pro
     p.extra_generation_params["Mask blur"] = mask_blur
 
     if is_batch:
-        assert not shared.cmd_opts.hide_ui_dir_config, "Launched with --hide-ui-dir-config, batch img2img disabled"
+        assert (
+            not shared.cmd_opts.hide_ui_dir_config
+        ), "Launched with --hide-ui-dir-config, batch img2img disabled"
 
         process_batch(p, img2img_batch_input_dir, img2img_batch_output_dir, args)
 

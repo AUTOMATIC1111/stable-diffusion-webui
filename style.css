@@ -322,7 +322,7 @@ input[type="range"]{
     grid-area: tile;
 }
 
-.modalClose, 
+.modalClose,
 .modalZoom,
 .modalTileImage {
   color: white;

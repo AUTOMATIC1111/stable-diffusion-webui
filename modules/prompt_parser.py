@@ -4,7 +4,8 @@ import torch
 
 import modules.shared as shared
 
-re_prompt = re.compile(r'''
+re_prompt = re.compile(
+    r"""
 (.*?)
 \[
     ([^]:]+):
@@ -13,7 +14,9 @@ re_prompt = re.compile(r'''
 ]
 |
 (.+)
-''', re.X)
+""",
+    re.X,
+)
 
 # a prompt like this: "fantasy landscape with a [mountain:lake:0.25] and [an oak:a christmas tree:0.75][ in foreground::0.6][ in background:0.25] [shoddy:masterful:0.5]"
 # will be represented with prompt_schedule like this (assuming steps=100):
@@ -66,23 +69,29 @@ def get_learned_conditioning_prompt_schedules(prompts, steps):
 
             if swap_index is not None:
                 if not found_exact_index:
-                    prompt_schedule.insert(swap_index, [swap_position, prompt_schedule[swap_index][1]])
+                    prompt_schedule.insert(
+                        swap_index, [swap_position, prompt_schedule[swap_index][1]]
+                    )
 
                 for i in range(len(prompt_schedule)):
                     end_step = prompt_schedule[i][0]
                     must_replace = swap_position < end_step
 
-                    prompt_schedule[i][1] += concept_to if must_replace else concept_from
+                    prompt_schedule[i][1] += (
+                        concept_to if must_replace else concept_from
+                    )
 
         res.append(prompt_schedule)
         cache[prompt] = prompt_schedule
-        #for t in prompt_schedule:
+        # for t in prompt_schedule:
         #    print(t)
 
     return res
 
 
-ScheduledPromptConditioning = namedtuple("ScheduledPromptConditioning", ["end_at_step", "cond"])
+ScheduledPromptConditioning = namedtuple(
+    "ScheduledPromptConditioning", ["end_at_step", "cond"]
+)
 ScheduledPromptBatch = namedtuple("ScheduledPromptBatch", ["shape", "schedules"])
 
 
@@ -114,7 +123,9 @@ def get_learned_conditioning(prompts, steps):
 
 
 def reconstruct_cond_batch(c: ScheduledPromptBatch, current_step):
-    res = torch.zeros(c.shape, device=shared.device, dtype=next(shared.sd_model.parameters()).dtype)
+    res = torch.zeros(
+        c.shape, device=shared.device, dtype=next(shared.sd_model.parameters()).dtype
+    )
     for i, cond_schedule in enumerate(c.schedules):
         target_index = 0
         for curret_index, (end_at, cond) in enumerate(cond_schedule):
@@ -126,7 +137,8 @@ def reconstruct_cond_batch(c: ScheduledPromptBatch, current_step):
     return res
 
 
-re_attention = re.compile(r"""
+re_attention = re.compile(
+    r"""
 \\\(|
 \\\)|
 \\\[|
@@ -140,7 +152,9 @@ re_attention = re.compile(r"""
 ]|
 [^\\()\[\]:]+|
 :
-""", re.X)
+""",
+    re.X,
+)
 
 
 def parse_prompt_attention(text):
@@ -191,17 +205,17 @@ def parse_prompt_attention(text):
         text = m.group(0)
         weight = m.group(1)
 
-        if text.startswith('\\'):
+        if text.startswith("\\"):
             res.append([text[1:], 1.0])
-        elif text == '(':
+        elif text == "(":
             round_brackets.append(len(res))
-        elif text == '[':
+        elif text == "[":
             square_brackets.append(len(res))
         elif weight is not None and len(round_brackets) > 0:
             multiply_range(round_brackets.pop(), float(weight))
-        elif text == ')' and len(round_brackets) > 0:
+        elif text == ")" and len(round_brackets) > 0:
             multiply_range(round_brackets.pop(), round_bracket_multiplier)
-        elif text == ']' and len(square_brackets) > 0:
+        elif text == "]" and len(square_brackets) > 0:
             multiply_range(square_brackets.pop(), square_bracket_multiplier)
         else:
             res.append([text, 1.0])

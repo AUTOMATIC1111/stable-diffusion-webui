@@ -1,5 +1,7 @@
 import torch
-from diffusers.pipelines.stable_diffusion.safety_checker import StableDiffusionSafetyChecker
+from diffusers.pipelines.stable_diffusion.safety_checker import (
+    StableDiffusionSafetyChecker,
+)
 from transformers import AutoFeatureExtractor
 from PIL import Image
 
@@ -8,6 +10,7 @@ import modules.shared as shared
 safety_model_id = "CompVis/stable-diffusion-safety-checker"
 safety_feature_extractor = None
 safety_checker = None
+
 
 def numpy_to_pil(images):
     """
@@ -20,6 +23,7 @@ def numpy_to_pil(images):
 
     return pil_images
 
+
 # check and replace nsfw content
 def check_safety(x_image):
     global safety_feature_extractor, safety_checker
@@ -28,8 +32,12 @@ def check_safety(x_image):
         safety_feature_extractor = AutoFeatureExtractor.from_pretrained(safety_model_id)
         safety_checker = StableDiffusionSafetyChecker.from_pretrained(safety_model_id)
 
-    safety_checker_input = safety_feature_extractor(numpy_to_pil(x_image), return_tensors="pt")
-    x_checked_image, has_nsfw_concept = safety_checker(images=x_image, clip_input=safety_checker_input.pixel_values)
+    safety_checker_input = safety_feature_extractor(
+        numpy_to_pil(x_image), return_tensors="pt"
+    )
+    x_checked_image, has_nsfw_concept = safety_checker(
+        images=x_image, clip_input=safety_checker_input.pixel_values
+    )
 
     return x_checked_image, has_nsfw_concept
 

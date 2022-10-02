@@ -98,7 +98,7 @@ onUiUpdate(function(){
 	var inImg2img   = Boolean(gradioApp().querySelector("button.rounded-t-lg.border-gray-200"))
 	if(inImg2img){
 		let inputs = gradioApp().querySelectorAll('input');
-		inputs.forEach(function(e){ 
+		inputs.forEach(function(e){
 			let parentLabel = e.parentElement.querySelector('label')
 			if(parentLabel && parentLabel.innerText){
 				if(!e.classList.contains('scrollwatch')){
@@ -113,7 +113,7 @@ onUiUpdate(function(){
 						currentHeight = e.value*1.0
 					}
 				}
-			} 
+			}
 		})
 	}
 });

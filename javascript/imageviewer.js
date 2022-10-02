@@ -62,7 +62,7 @@ function modalNextImage(event){
 }
 
 function modalPrevImage(event){
-  modalImageSwitch(-1)  
+  modalImageSwitch(-1)
   event.stopPropagation()
 }
 
@@ -83,7 +83,7 @@ function modalKeyHandler(event){
 function showGalleryImage(){
     setTimeout(function() {
         fullImg_preview = gradioApp().querySelectorAll('img.w-full.object-contain')
-        
+
         if(fullImg_preview != null){
             fullImg_preview.forEach(function function_name(e) {
                 if(e && e.parentElement.tagName == 'DIV'){
@@ -155,7 +155,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const modalControls = document.createElement('div')
     modalControls.className = 'modalControls gradio-container';
     modal.append(modalControls);
-    
+
     const modalZoom = document.createElement('span')
     modalZoom.className = 'modalZoom cursor';
     modalZoom.innerHTML = '&#10529;'
@@ -203,7 +203,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
     gradioApp().getRootNode().appendChild(modal)
-    
+
     document.body.appendChild(modalFragment);
-	
+
 });

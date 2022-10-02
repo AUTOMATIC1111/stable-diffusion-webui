@@ -46,22 +46,27 @@ class MemUsageMonitor(threading.Thread):
             self.data["min_free"] = torch.cuda.mem_get_info()[0]
 
             while self.run_flag.is_set():
-                free, total = torch.cuda.mem_get_info()  # calling with self.device errors, torch bug?
+                (
+                    free,
+                    total,
+                ) = (
+                    torch.cuda.mem_get_info()
+                )  # calling with self.device errors, torch bug?
                 self.data["min_free"] = min(self.data["min_free"], free)
 
                 time.sleep(1 / self.opts.memmon_poll_rate)
 
     def dump_debug(self):
-        print(self, 'recorded data:')
+        print(self, "recorded data:")
         for k, v in self.read().items():
-            print(k, -(v // -(1024 ** 2)))
+            print(k, -(v // -(1024**2)))
 
-        print(self, 'raw torch memory stats:')
+        print(self, "raw torch memory stats:")
         tm = torch.cuda.memory_stats(self.device)
         for k, v in tm.items():
-            if 'bytes' not in k:
+            if "bytes" not in k:
                 continue
-            print('\t' if 'peak' in k else '', k, -(v // -(1024 ** 2)))
+            print("\t" if "peak" in k else "", k, -(v // -(1024**2)))
 
         print(torch.cuda.memory_summary())
 

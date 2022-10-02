@@ -14,7 +14,7 @@ import string
 from modules import sd_samplers, shared
 from modules.shared import opts, cmd_opts
 
-LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
+LANCZOS = Image.Resampling.LANCZOS if hasattr(Image, "Resampling") else Image.LANCZOS
 
 
 def image_grid(imgs, batch_size=1, rows=None):
@@ -30,7 +30,7 @@ def image_grid(imgs, batch_size=1, rows=None):
     cols = math.ceil(len(imgs) / rows)
 
     w, h = imgs[0].size
-    grid = Image.new('RGB', size=(cols * w, rows * h), color='black')
+    grid = Image.new("RGB", size=(cols * w, rows * h), color="black")
 
     for i, img in enumerate(imgs):
         grid.paste(img, box=(i % cols * w, i // cols * h))
@@ -38,7 +38,9 @@ def image_grid(imgs, batch_size=1, rows=None):
     return grid
 
 
-Grid = namedtuple("Grid", ["tiles", "tile_w", "tile_h", "image_w", "image_h", "overlap"])
+Grid = namedtuple(
+    "Grid", ["tiles", "tile_w", "tile_h", "image_w", "image_h", "overlap"]
+)
 
 
 def split_grid(image, tile_w=512, tile_h=512, overlap=64):
@@ -82,10 +84,18 @@ def combine_grid(grid):
     def make_mask_image(r):
         r = r * 255 / grid.overlap
         r = r.astype(np.uint8)
-        return Image.fromarray(r, 'L')
+        return Image.fromarray(r, "L")
 
-    mask_w = make_mask_image(np.arange(grid.overlap, dtype=np.float32).reshape((1, grid.overlap)).repeat(grid.tile_h, axis=0))
-    mask_h = make_mask_image(np.arange(grid.overlap, dtype=np.float32).reshape((grid.overlap, 1)).repeat(grid.image_w, axis=1))
+    mask_w = make_mask_image(
+        np.arange(grid.overlap, dtype=np.float32)
+        .reshape((1, grid.overlap))
+        .repeat(grid.tile_h, axis=0)
+    )
+    mask_h = make_mask_image(
+        np.arange(grid.overlap, dtype=np.float32)
+        .reshape((grid.overlap, 1))
+        .repeat(grid.image_w, axis=1)
+    )
 
     combined_image = Image.new("RGB", (grid.image_w, grid.image_h))
     for y, h, row in grid.tiles:
@@ -96,20 +106,29 @@ def combine_grid(grid):
                 continue
 
             combined_row.paste(tile.crop((0, 0, grid.overlap, h)), (x, 0), mask=mask_w)
-            combined_row.paste(tile.crop((grid.overlap, 0, w, h)), (x + grid.overlap, 0))
+            combined_row.paste(
+                tile.crop((grid.overlap, 0, w, h)), (x + grid.overlap, 0)
+            )
 
         if y == 0:
             combined_image.paste(combined_row, (0, 0))
             continue
 
-        combined_image.paste(combined_row.crop((0, 0, combined_row.width, grid.overlap)), (0, y), mask=mask_h)
-        combined_image.paste(combined_row.crop((0, grid.overlap, combined_row.width, h)), (0, y + grid.overlap))
+        combined_image.paste(
+            combined_row.crop((0, 0, combined_row.width, grid.overlap)),
+            (0, y),
+            mask=mask_h,
+        )
+        combined_image.paste(
+            combined_row.crop((0, grid.overlap, combined_row.width, h)),
+            (0, y + grid.overlap),
+        )
 
     return combined_image
 
 
 class GridAnnotation:
-    def __init__(self, text='', is_active=True):
+    def __init__(self, text="", is_active=True):
         self.text = text
         self.is_active = is_active
         self.size = None
@@ -117,9 +136,9 @@ class GridAnnotation:
 
 def draw_grid_annotations(im, width, height, hor_texts, ver_texts):
     def wrap(drawing, text, font, line_length):
-        lines = ['']
+        lines = [""]
         for word in text.split():
-            line = f'{lines[-1]} {word}'.strip()
+            line = f"{lines[-1]} {word}".strip()
             if drawing.textlength(line, font=font) <= line_length:
                 lines[-1] = line
             else:
@@ -128,10 +147,26 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts):
 
     def draw_texts(drawing, draw_x, draw_y, lines):
         for i, line in enumerate(lines):
-            drawing.multiline_text((draw_x, draw_y + line.size[1] / 2), line.text, font=fnt, fill=color_active if line.is_active else color_inactive, anchor="mm", align="center")
+            drawing.multiline_text(
+                (draw_x, draw_y + line.size[1] / 2),
+                line.text,
+                font=fnt,
+                fill=color_active if line.is_active else color_inactive,
+                anchor="mm",
+                align="center",
+            )
 
             if not line.is_active:
-                drawing.line((draw_x - line.size[0] // 2, draw_y + line.size[1] // 2, draw_x + line.size[0] // 2, draw_y + line.size[1] // 2), fill=color_inactive, width=4)
+                drawing.line(
+                    (
+                        draw_x - line.size[0] // 2,
+                        draw_y + line.size[1] // 2,
+                        draw_x + line.size[0] // 2,
+                        draw_y + line.size[1] // 2,
+                    ),
+                    fill=color_inactive,
+                    width=4,
+                )
 
             draw_y += line.size[1] + line_spacing
 
@@ -146,18 +181,28 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts):
     color_active = (0, 0, 0)
     color_inactive = (153, 153, 153)
 
-    pad_left = 0 if sum([sum([len(line.text) for line in lines]) for lines in ver_texts]) == 0 else width * 3 // 4
+    pad_left = (
+        0
+        if sum([sum([len(line.text) for line in lines]) for lines in ver_texts]) == 0
+        else width * 3 // 4
+    )
 
     cols = im.width // width
     rows = im.height // height
 
-    assert cols == len(hor_texts), f'bad number of horizontal texts: {len(hor_texts)}; must be {cols}'
-    assert rows == len(ver_texts), f'bad number of vertical texts: {len(ver_texts)}; must be {rows}'
+    assert cols == len(
+        hor_texts
+    ), f"bad number of horizontal texts: {len(hor_texts)}; must be {cols}"
+    assert rows == len(
+        ver_texts
+    ), f"bad number of vertical texts: {len(ver_texts)}; must be {rows}"
 
     calc_img = Image.new("RGB", (1, 1), "white")
     calc_d = ImageDraw.Draw(calc_img)
 
-    for texts, allowed_width in zip(hor_texts + ver_texts, [width] * len(hor_texts) + [pad_left] * len(ver_texts)):
+    for texts, allowed_width in zip(
+        hor_texts + ver_texts, [width] * len(hor_texts) + [pad_left] * len(ver_texts)
+    ):
         items = [] + texts
         texts.clear()
 
@@ -169,9 +214,14 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts):
             bbox = calc_d.multiline_textbbox((0, 0), line.text, font=fnt)
             line.size = (bbox[2] - bbox[0], bbox[3] - bbox[1])
 
-    hor_text_heights = [sum([line.size[1] + line_spacing for line in lines]) - line_spacing for lines in hor_texts]
-    ver_text_heights = [sum([line.size[1] + line_spacing for line in lines]) - line_spacing * len(lines) for lines in
-                        ver_texts]
+    hor_text_heights = [
+        sum([line.size[1] + line_spacing for line in lines]) - line_spacing
+        for lines in hor_texts
+    ]
+    ver_text_heights = [
+        sum([line.size[1] + line_spacing for line in lines]) - line_spacing * len(lines)
+        for lines in ver_texts
+    ]
 
     pad_top = max(hor_text_heights) + line_spacing * 2
 
@@ -202,22 +252,42 @@ def draw_prompt_matrix(im, width, height, all_prompts):
     prompts_horiz = prompts[:boundary]
     prompts_vert = prompts[boundary:]
 
-    hor_texts = [[GridAnnotation(x, is_active=pos & (1 << i) != 0) for i, x in enumerate(prompts_horiz)] for pos in range(1 << len(prompts_horiz))]
-    ver_texts = [[GridAnnotation(x, is_active=pos & (1 << i) != 0) for i, x in enumerate(prompts_vert)] for pos in range(1 << len(prompts_vert))]
+    hor_texts = [
+        [
+            GridAnnotation(x, is_active=pos & (1 << i) != 0)
+            for i, x in enumerate(prompts_horiz)
+        ]
+        for pos in range(1 << len(prompts_horiz))
+    ]
+    ver_texts = [
+        [
+            GridAnnotation(x, is_active=pos & (1 << i) != 0)
+            for i, x in enumerate(prompts_vert)
+        ]
+        for pos in range(1 << len(prompts_vert))
+    ]
 
     return draw_grid_annotations(im, width, height, hor_texts, ver_texts)
 
 
 def resize_image(resize_mode, im, width, height):
     def resize(im, w, h):
-        if opts.upscaler_for_img2img is None or opts.upscaler_for_img2img == "None" or im.mode == 'L':
+        if (
+            opts.upscaler_for_img2img is None
+            or opts.upscaler_for_img2img == "None"
+            or im.mode == "L"
+        ):
             return im.resize((w, h), resample=LANCZOS)
 
         scale = max(w / im.width, h / im.height)
 
         if scale > 1.0:
-            upscalers = [x for x in shared.sd_upscalers if x.name == opts.upscaler_for_img2img]
-            assert len(upscalers) > 0, f"could not find upscaler named {opts.upscaler_for_img2img}"
+            upscalers = [
+                x for x in shared.sd_upscalers if x.name == opts.upscaler_for_img2img
+            ]
+            assert (
+                len(upscalers) > 0
+            ), f"could not find upscaler named {opts.upscaler_for_img2img}"
 
             upscaler = upscalers[0]
             im = upscaler.scaler.upscale(im, scale, upscaler.data_path)
@@ -254,28 +324,42 @@ def resize_image(resize_mode, im, width, height):
 
         if ratio < src_ratio:
             fill_height = height // 2 - src_h // 2
-            res.paste(resized.resize((width, fill_height), box=(0, 0, width, 0)), box=(0, 0))
-            res.paste(resized.resize((width, fill_height), box=(0, resized.height, width, resized.height)), box=(0, fill_height + src_h))
+            res.paste(
+                resized.resize((width, fill_height), box=(0, 0, width, 0)), box=(0, 0)
+            )
+            res.paste(
+                resized.resize(
+                    (width, fill_height), box=(0, resized.height, width, resized.height)
+                ),
+                box=(0, fill_height + src_h),
+            )
         elif ratio > src_ratio:
             fill_width = width // 2 - src_w // 2
-            res.paste(resized.resize((fill_width, height), box=(0, 0, 0, height)), box=(0, 0))
-            res.paste(resized.resize((fill_width, height), box=(resized.width, 0, resized.width, height)), box=(fill_width + src_w, 0))
+            res.paste(
+                resized.resize((fill_width, height), box=(0, 0, 0, height)), box=(0, 0)
+            )
+            res.paste(
+                resized.resize(
+                    (fill_width, height), box=(resized.width, 0, resized.width, height)
+                ),
+                box=(fill_width + src_w, 0),
+            )
 
     return res
 
 
 invalid_filename_chars = '<>:"/\\|?*\n'
-invalid_filename_prefix = ' '
-invalid_filename_postfix = ' .'
-re_nonletters = re.compile(r'[\s' + string.punctuation + ']+')
+invalid_filename_prefix = " "
+invalid_filename_postfix = " ."
+re_nonletters = re.compile(r"[\s" + string.punctuation + "]+")
 max_filename_part_length = 128
 
 
 def sanitize_filename_part(text, replace_spaces=True):
     if replace_spaces:
-        text = text.replace(' ', '_')
+        text = text.replace(" ", "_")
 
-    text = text.translate({ord(x): '_' for x in invalid_filename_chars})
+    text = text.translate({ord(x): "_" for x in invalid_filename_chars})
     text = text.lstrip(invalid_filename_prefix)[:max_filename_part_length]
     text = text.rstrip(invalid_filename_postfix)
     return text
@@ -295,29 +379,57 @@ def apply_filename_pattern(x, p, seed, prompt):
                 if len(style) > 0:
                     style_parts = [y for y in style.split("{prompt}")]
                     for part in style_parts:
-                        prompt_no_style = prompt_no_style.replace(part, "").replace(", ,", ",").strip().strip(',')                        
-            prompt_no_style = prompt_no_style.replace(style, "").strip().strip(',').strip()
-            x = x.replace("[prompt_no_styles]", sanitize_filename_part(prompt_no_style, replace_spaces=False))
+                        prompt_no_style = (
+                            prompt_no_style.replace(part, "")
+                            .replace(", ,", ",")
+                            .strip()
+                            .strip(",")
+                        )
+            prompt_no_style = (
+                prompt_no_style.replace(style, "").strip().strip(",").strip()
+            )
+            x = x.replace(
+                "[prompt_no_styles]",
+                sanitize_filename_part(prompt_no_style, replace_spaces=False),
+            )
 
-        x = x.replace("[prompt_spaces]", sanitize_filename_part(prompt, replace_spaces=False))
+        x = x.replace(
+            "[prompt_spaces]", sanitize_filename_part(prompt, replace_spaces=False)
+        )
         if "[prompt_words]" in x:
             words = [x for x in re_nonletters.split(prompt or "") if len(x) > 0]
             if len(words) == 0:
                 words = ["empty"]
-            x = x.replace("[prompt_words]", sanitize_filename_part(" ".join(words[0:max_prompt_words]), replace_spaces=False))
+            x = x.replace(
+                "[prompt_words]",
+                sanitize_filename_part(
+                    " ".join(words[0:max_prompt_words]), replace_spaces=False
+                ),
+            )
 
     if p is not None:
         x = x.replace("[steps]", str(p.steps))
         x = x.replace("[cfg]", str(p.cfg_scale))
         x = x.replace("[width]", str(p.width))
         x = x.replace("[height]", str(p.height))
-        
-        #currently disabled if using the save button, will work otherwise 
+
+        # currently disabled if using the save button, will work otherwise
         # if enabled it will cause a bug because styles is not included in the save_files data dictionary
         if hasattr(p, "styles"):
-            x = x.replace("[styles]", sanitize_filename_part(", ".join([x for x in p.styles if not x == "None"]), replace_spaces=False))
+            x = x.replace(
+                "[styles]",
+                sanitize_filename_part(
+                    ", ".join([x for x in p.styles if not x == "None"]),
+                    replace_spaces=False,
+                ),
+            )
 
-        x = x.replace("[sampler]", sanitize_filename_part(sd_samplers.samplers[p.sampler_index].name, replace_spaces=False))
+        x = x.replace(
+            "[sampler]",
+            sanitize_filename_part(
+                sd_samplers.samplers[p.sampler_index].name, replace_spaces=False
+            ),
+        )
 
     x = x.replace("[model_hash]", shared.sd_model.sd_model_hash)
     x = x.replace("[date]", datetime.date.today().isoformat())
@@ -325,7 +437,7 @@ def apply_filename_pattern(x, p, seed, prompt):
     x = x.replace("[job_timestamp]", shared.state.job_timestamp)
 
     if cmd_opts.hide_ui_dir_config:
-        x = re.sub(r'^[\\/]+|\.{2,}[\\/]+|[\\/]+\.{2,}', '', x)
+        x = re.sub(r"^[\\/]+|\.{2,}[\\/]+|[\\/]+\.{2,}", "", x)
 
     return x
 
@@ -337,13 +449,15 @@ def get_next_sequence_number(path, basename):
     The sequence starts at 0.
     """
     result = -1
-    if basename != '':
+    if basename != "":
         basename = basename + "-"
 
     prefix_length = len(basename)
     for p in os.listdir(path):
         if p.startswith(basename):
-            l = os.path.splitext(p[prefix_length:])[0].split('-')  # splits the filename (removing the basename first if one is defined, so the sequence number is always the first element)
+            l = os.path.splitext(p[prefix_length:])[0].split(
+                "-"
+            )  # splits the filename (removing the basename first if one is defined, so the sequence number is always the first element)
             try:
                 result = max(int(l[0]), result)
             except ValueError:
@@ -352,7 +466,23 @@ def get_next_sequence_number(path, basename):
     return result + 1
 
 
-def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None, forced_filename=None, suffix=""):
+def save_image(
+    image,
+    path,
+    basename,
+    seed=None,
+    prompt=None,
+    extension="png",
+    info=None,
+    short_filename=False,
+    no_prompt=False,
+    grid=False,
+    pnginfo_section_name="parameters",
+    p=None,
+    existing_info=None,
+    forced_filename=None,
+    suffix="",
+):
     if short_filename or prompt is None or seed is None:
         file_decoration = ""
     elif opts.save_to_dirs:
@@ -365,7 +495,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
 
     file_decoration = apply_filename_pattern(file_decoration, p, seed, prompt) + suffix
 
-    if extension == 'png' and opts.enable_pnginfo and info is not None:
+    if extension == "png" and opts.enable_pnginfo and info is not None:
         pnginfo = PngImagePlugin.PngInfo()
 
         if existing_info is not None:
@@ -376,10 +506,14 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     else:
         pnginfo = None
 
-    save_to_dirs = (grid and opts.grid_save_to_dirs) or (not grid and opts.save_to_dirs and not no_prompt)
+    save_to_dirs = (grid and opts.grid_save_to_dirs) or (
+        not grid and opts.save_to_dirs and not no_prompt
+    )
 
     if save_to_dirs:
-        dirname = apply_filename_pattern(opts.directories_filename_pattern or "[prompt_words]", p, seed, prompt)
+        dirname = apply_filename_pattern(
+            opts.directories_filename_pattern or "[prompt_words]", p, seed, prompt
+        )
         path = os.path.join(path, dirname)
 
     os.makedirs(path, exist_ok=True)
@@ -389,7 +523,11 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
         fullfn = "a.png"
         fullfn_without_extension = "a"
         for i in range(500):
-            fn = f"{basecount + i:05}" if basename == '' else f"{basename}-{basecount + i:04}"
+            fn = (
+                f"{basecount + i:05}"
+                if basename == ""
+                else f"{basename}-{basecount + i:04}"
+            )
             fullfn = os.path.join(path, f"{fn}{file_decoration}.{extension}")
             fullfn_without_extension = os.path.join(path, f"{fn}{file_decoration}")
             if not os.path.exists(fullfn):
@@ -399,11 +537,15 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
         fullfn_without_extension = os.path.join(path, forced_filename)
 
     def exif_bytes():
-        return piexif.dump({
-            "Exif": {
-                piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(info or "", encoding="unicode")
-            },
-        })
+        return piexif.dump(
+            {
+                "Exif": {
+                    piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(
+                        info or "", encoding="unicode"
+                    )
+                },
+            }
+        )
 
     if extension.lower() in ("jpg", "jpeg", "webp"):
         image.save(fullfn, quality=opts.jpeg_quality)
@@ -414,13 +556,21 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
 
     target_side_length = 4000
     oversize = image.width > target_side_length or image.height > target_side_length
-    if opts.export_for_4chan and (oversize or os.stat(fullfn).st_size > 4 * 1024 * 1024):
+    if opts.export_for_4chan and (
+        oversize or os.stat(fullfn).st_size > 4 * 1024 * 1024
+    ):
         ratio = image.width / image.height
 
         if oversize and ratio > 1:
-            image = image.resize((target_side_length, image.height * target_side_length // image.width), LANCZOS)
+            image = image.resize(
+                (target_side_length, image.height * target_side_length // image.width),
+                LANCZOS,
+            )
         elif oversize:
-            image = image.resize((image.width * target_side_length // image.height, target_side_length), LANCZOS)
+            image = image.resize(
+                (image.width * target_side_length // image.height, target_side_length),
+                LANCZOS,
+            )
 
         image.save(fullfn_without_extension + ".jpg", quality=opts.jpeg_quality)
         if opts.enable_pnginfo and info is not None:
@@ -429,5 +579,3 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     if opts.save_txt and info is not None:
         with open(f"{fullfn_without_extension}.txt", "w", encoding="utf8") as file:
             file.write(info + "\n")
-
-

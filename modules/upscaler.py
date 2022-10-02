@@ -9,7 +9,7 @@ from PIL import Image
 import modules.shared
 from modules import modelloader, shared
 
-LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
+LANCZOS = Image.Resampling.LANCZOS if hasattr(Image, "Resampling") else Image.LANCZOS
 from modules.paths import models_path
 
 
@@ -43,6 +43,7 @@ class Upscaler:
 
         try:
             import cv2
+
             self.can_tile = True
         except:
             pass
@@ -69,7 +70,11 @@ class Upscaler:
         pass
 
     def find_models(self, ext_filter=None) -> list:
-        return modelloader.load_models(model_path=self.model_path, model_url=self.model_url, command_path=self.user_path)
+        return modelloader.load_models(
+            model_path=self.model_path,
+            model_url=self.model_url,
+            command_path=self.user_path,
+        )
 
     def update_status(self, prompt):
         print(f"\nextras: {prompt}", file=shared.progress_print_out)
@@ -82,7 +87,14 @@ class UpscalerData:
     scaler: Upscaler = None
     model: None
 
-    def __init__(self, name: str, path: str, upscaler: Upscaler = None, scale: int = 4, model=None):
+    def __init__(
+        self,
+        name: str,
+        path: str,
+        upscaler: Upscaler = None,
+        scale: int = 4,
+        model=None,
+    ):
         self.name = name
         self.data_path = path
         self.scaler = upscaler
@@ -109,7 +121,10 @@ class UpscalerLanczos(Upscaler):
     scalers = []
 
     def do_upscale(self, img, selected_model=None):
-        return img.resize((int(img.width * self.scale), int(img.height * self.scale)), resample=LANCZOS)
+        return img.resize(
+            (int(img.width * self.scale), int(img.height * self.scale)),
+            resample=LANCZOS,
+        )
 
     def load_model(self, _):
         pass
@@ -118,4 +133,3 @@ class UpscalerLanczos(Upscaler):
         super().__init__(False)
         self.name = "Lanczos"
         self.scalers = [UpscalerData("Lanczos", None, self)]
-

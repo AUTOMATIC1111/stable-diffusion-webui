@@ -11,7 +11,19 @@ import tqdm
 
 
 class PersonalizedBase(Dataset):
-    def __init__(self, data_root, size=None, repeats=100, flip_p=0.5, placeholder_token="*", width=512, height=512, model=None, device=None, template_file=None):
+    def __init__(
+        self,
+        data_root,
+        size=None,
+        repeats=100,
+        flip_p=0.5,
+        placeholder_token="*",
+        width=512,
+        height=512,
+        model=None,
+        device=None,
+        template_file=None,
+    ):
 
         self.placeholder_token = placeholder_token
 
@@ -27,17 +39,24 @@ class PersonalizedBase(Dataset):
 
         self.lines = lines
 
-        assert data_root, 'dataset directory not specified'
+        assert data_root, "dataset directory not specified"
 
-        self.image_paths = [os.path.join(data_root, file_path) for file_path in os.listdir(data_root)]
+        self.image_paths = [
+            os.path.join(data_root, file_path) for file_path in os.listdir(data_root)
+        ]
         print("Preparing dataset...")
         for path in tqdm.tqdm(self.image_paths):
             image = Image.open(path)
-            image = image.convert('RGB')
+            image = image.convert("RGB")
             image = image.resize((self.width, self.height), PIL.Image.BICUBIC)
 
             filename = os.path.basename(path)
-            filename_tokens = os.path.splitext(filename)[0].replace('_', '-').replace(' ', '-').split('-')
+            filename_tokens = (
+                os.path.splitext(filename)[0]
+                .replace("_", "-")
+                .replace(" ", "-")
+                .split("-")
+            )
             filename_tokens = [token for token in filename_tokens if token.isalpha()]
 
             npimage = np.array(image).astype(np.uint8)
@@ -46,7 +65,9 @@ class PersonalizedBase(Dataset):
             torchdata = torch.from_numpy(npimage).to(device=device, dtype=torch.float32)
             torchdata = torch.moveaxis(torchdata, 2, 0)
 
-            init_latent = model.get_first_stage_encoding(model.encode_first_stage(torchdata.unsqueeze(dim=0))).squeeze()
+            init_latent = model.get_first_stage_encoding(
+                model.encode_first_stage(torchdata.unsqueeze(dim=0))
+            ).squeeze()
 
             self.dataset.append((init_latent, filename_tokens))
 
@@ -57,7 +78,9 @@ class PersonalizedBase(Dataset):
         self.shuffle()
 
     def shuffle(self):
-        self.indexes = self.initial_indexes[torch.randperm(self.initial_indexes.shape[0])]
+        self.indexes = self.initial_indexes[
+            torch.randperm(self.initial_indexes.shape[0])
+        ]
 
     def __len__(self):
         return self.length
@@ -71,6 +94,6 @@ class PersonalizedBase(Dataset):
 
         text = random.choice(self.lines)
         text = text.replace("[name]", self.placeholder_token)
-        text = text.replace("[filewords]", ' '.join(filename_tokens))
+        text = text.replace("[filewords]", " ".join(filename_tokens))
 
         return x, text

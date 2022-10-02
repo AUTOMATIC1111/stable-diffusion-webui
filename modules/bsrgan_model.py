@@ -18,13 +18,17 @@ class UpscalerBSRGAN(modules.upscaler.Upscaler):
         self.name = "BSRGAN"
         self.model_path = os.path.join(models_path, self.name)
         self.model_name = "BSRGAN 4x"
-        self.model_url = "https://github.com/cszn/KAIR/releases/download/v1.0/BSRGAN.pth"
+        self.model_url = (
+            "https://github.com/cszn/KAIR/releases/download/v1.0/BSRGAN.pth"
+        )
         self.user_path = dirname
         super().__init__()
         model_paths = self.find_models(ext_filter=[".pt", ".pth"])
         scalers = []
         if len(model_paths) == 0:
-            scaler_data = modules.upscaler.UpscalerData(self.model_name, self.model_url, self, 4)
+            scaler_data = modules.upscaler.UpscalerData(
+                self.model_name, self.model_url, self, 4
+            )
             scalers.append(scaler_data)
         for file in model_paths:
             if "http" in file:
@@ -54,16 +58,20 @@ class UpscalerBSRGAN(modules.upscaler.Upscaler):
         with torch.no_grad():
             output = model(img)
         output = output.squeeze().float().cpu().clamp_(0, 1).numpy()
-        output = 255. * np.moveaxis(output, 0, 2)
+        output = 255.0 * np.moveaxis(output, 0, 2)
         output = output.astype(np.uint8)
         output = output[:, :, ::-1]
         torch.cuda.empty_cache()
-        return PIL.Image.fromarray(output, 'RGB')
+        return PIL.Image.fromarray(output, "RGB")
 
     def load_model(self, path: str):
         if "http" in path:
-            filename = load_file_from_url(url=self.model_url, model_dir=self.model_path, file_name="%s.pth" % self.name,
-                                          progress=True)
+            filename = load_file_from_url(
+                url=self.model_url,
+                model_dir=self.model_path,
+                file_name="%s.pth" % self.name,
+                progress=True,
+            )
         else:
             filename = path
         if not os.path.exists(filename) or filename is None:
@@ -75,4 +83,3 @@ class UpscalerBSRGAN(modules.upscaler.Upscaler):
         for k, v in model.named_parameters():
             v.requires_grad = False
         return model
-

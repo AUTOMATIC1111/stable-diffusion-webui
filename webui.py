@@ -71,13 +71,16 @@ def wrap_gradio_gpu_call(func, extra_outputs=None):
 modules.scripts.load_scripts(os.path.join(script_path, "scripts"))
 
 shared.sd_model = modules.sd_models.load_model()
-shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights(shared.sd_model)))
+shared.opts.onchange(
+    "sd_model_checkpoint",
+    wrap_queued_call(lambda: modules.sd_models.reload_model_weights(shared.sd_model)),
+)
 
 
 def webui():
     # make the program just exit at ctrl+c without waiting for anything
     def sigint_handler(sig, frame):
-        print(f'Interrupted with signal {sig} in {frame}')
+        print(f"Interrupted with signal {sig} in {frame}")
         os._exit(0)
 
     signal.signal(signal.SIGINT, sigint_handler)
@@ -89,7 +92,12 @@ def webui():
         server_name="0.0.0.0" if cmd_opts.listen else None,
         server_port=cmd_opts.port,
         debug=cmd_opts.gradio_debug,
-        auth=[tuple(cred.split(':')) for cred in cmd_opts.gradio_auth.strip('"').split(',')] if cmd_opts.gradio_auth else None,
+        auth=[
+            tuple(cred.split(":"))
+            for cred in cmd_opts.gradio_auth.strip('"').split(",")
+        ]
+        if cmd_opts.gradio_auth
+        else None,
         inbrowser=cmd_opts.autolaunch,
     )
 

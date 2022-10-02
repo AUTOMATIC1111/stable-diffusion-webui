@@ -42,7 +42,7 @@ class Embedding:
                 r = (r * 281 ^ int(v) * 997) & 0xFFFFFFFF
             return r
 
-        self.cached_checksum = f'{const_hash(self.vec.reshape(-1) * 100) & 0xffff:04x}'
+        self.cached_checksum = f"{const_hash(self.vec.reshape(-1) * 100) & 0xffff:04x}"
         return self.cached_checksum
 
 
@@ -57,13 +57,19 @@ class EmbeddingDatabase:
 
         self.word_embeddings[embedding.name] = embedding
 
-        ids = model.cond_stage_model.tokenizer([embedding.name], add_special_tokens=False)['input_ids'][0]
+        ids = model.cond_stage_model.tokenizer(
+            [embedding.name], add_special_tokens=False
+        )["input_ids"][0]
 
         first_id = ids[0]
         if first_id not in self.ids_lookup:
             self.ids_lookup[first_id] = []
 
-        self.ids_lookup[first_id] = sorted(self.ids_lookup[first_id] + [(ids, embedding)], key=lambda x: len(x[0]), reverse=True)
+        self.ids_lookup[first_id] = sorted(
+            self.ids_lookup[first_id] + [(ids, embedding)],
+            key=lambda x: len(x[0]),
+            reverse=True,
+        )
 
         return embedding
 
@@ -82,27 +88,31 @@ class EmbeddingDatabase:
             data = torch.load(path, map_location="cpu")
 
             # textual inversion embeddings
-            if 'string_to_param' in data:
-                param_dict = data['string_to_param']
-                if hasattr(param_dict, '_parameters'):
-                    param_dict = getattr(param_dict, '_parameters')  # fix for torch 1.12.1 loading saved file from torch 1.11
-                assert len(param_dict) == 1, 'embedding file has multiple terms in it'
+            if "string_to_param" in data:
+                param_dict = data["string_to_param"]
+                if hasattr(param_dict, "_parameters"):
+                    param_dict = getattr(
+                        param_dict, "_parameters"
+                    )  # fix for torch 1.12.1 loading saved file from torch 1.11
+                assert len(param_dict) == 1, "embedding file has multiple terms in it"
                 emb = next(iter(param_dict.items()))[1]
             # diffuser concepts
             elif type(data) == dict and type(next(iter(data.values()))) == torch.Tensor:
-                assert len(data.keys()) == 1, 'embedding file has multiple terms in it'
+                assert len(data.keys()) == 1, "embedding file has multiple terms in it"
 
                 emb = next(iter(data.values()))
                 if len(emb.shape) == 1:
                     emb = emb.unsqueeze(0)
             else:
-                raise Exception(f"Couldn't identify {filename} as neither textual inversion embedding nor diffuser concept.")
+                raise Exception(
+                    f"Couldn't identify {filename} as neither textual inversion embedding nor diffuser concept."
+                )
 
             vec = emb.detach().to(devices.device, dtype=torch.float32)
             embedding = Embedding(vec, name)
-            embedding.step = data.get('step', None)
-            embedding.sd_checkpoint = data.get('hash', None)
-            embedding.sd_checkpoint_name = data.get('sd_checkpoint_name', None)
+            embedding.step = data.get("step", None)
+            embedding.sd_checkpoint = data.get("hash", None)
+            embedding.sd_checkpoint_name = data.get("sd_checkpoint_name", None)
             self.register_embedding(embedding, shared.sd_model)
 
         for fn in os.listdir(self.embeddings_dir):
@@ -118,7 +128,9 @@ class EmbeddingDatabase:
                 print(traceback.format_exc(), file=sys.stderr)
                 continue
 
-        print(f"Loaded a total of {len(self.word_embeddings)} textual inversion embeddings.")
+        print(
+            f"Loaded a total of {len(self.word_embeddings)} textual inversion embeddings."
+        )
 
     def find_embedding_at_position(self, tokens, offset):
         token = tokens[offset]
@@ -128,18 +140,25 @@ class EmbeddingDatabase:
             return None, None
 
         for ids, embedding in possible_matches:
-            if tokens[offset:offset + len(ids)] == ids:
+            if tokens[offset : offset + len(ids)] == ids:
                 return embedding, len(ids)
 
         return None, None
 
 
-def create_embedding(name, num_vectors_per_token, init_text='*'):
+def create_embedding(name, num_vectors_per_token, init_text="*"):
     cond_model = shared.sd_model.cond_stage_model
     embedding_layer = cond_model.wrapped.transformer.text_model.embeddings
 
-    ids = cond_model.tokenizer(init_text, max_length=num_vectors_per_token, return_tensors="pt", add_special_tokens=False)["input_ids"]
-    embedded = embedding_layer.token_embedding.wrapped(ids.to(devices.device)).squeeze(0)
+    ids = cond_model.tokenizer(
+        init_text,
+        max_length=num_vectors_per_token,
+        return_tensors="pt",
+        add_special_tokens=False,
+    )["input_ids"]
+    embedded = embedding_layer.token_embedding.wrapped(ids.to(devices.device)).squeeze(
+        0
+    )
     vec = torch.zeros((num_vectors_per_token, embedded.shape[1]), device=devices.device)
 
     for i in range(num_vectors_per_token):
@@ -155,15 +174,26 @@ def create_embedding(name, num_vectors_per_token, init_text='*'):
     return fn
 
 
-def train_embedding(embedding_name, learn_rate, data_root, log_directory, steps, create_image_every, save_embedding_every, template_file):
-    assert embedding_name, 'embedding not selected'
+def train_embedding(
+    embedding_name,
+    learn_rate,
+    data_root,
+    log_directory,
+    steps,
+    create_image_every,
+    save_embedding_every,
+    template_file,
+):
+    assert embedding_name, "embedding not selected"
 
     shared.state.textinfo = "Initializing textual inversion training..."
     shared.state.job_count = steps
 
-    filename = os.path.join(shared.cmd_opts.embeddings_dir, f'{embedding_name}.pt')
+    filename = os.path.join(shared.cmd_opts.embeddings_dir, f"{embedding_name}.pt")
 
-    log_directory = os.path.join(log_directory, datetime.datetime.now().strftime("%Y-%d-%m"), embedding_name)
+    log_directory = os.path.join(
+        log_directory, datetime.datetime.now().strftime("%Y-%d-%m"), embedding_name
+    )
 
     if save_embedding_every > 0:
         embedding_dir = os.path.join(log_directory, "embeddings")
@@ -181,7 +211,14 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, steps,
 
     shared.state.textinfo = f"Preparing dataset from {html.escape(data_root)}..."
     with torch.autocast("cuda"):
-        ds = modules.textual_inversion.dataset.PersonalizedBase(data_root=data_root, size=512, placeholder_token=embedding_name, model=shared.sd_model, device=devices.device, template_file=template_file)
+        ds = modules.textual_inversion.dataset.PersonalizedBase(
+            data_root=data_root,
+            size=512,
+            placeholder_token=embedding_name,
+            model=shared.sd_model,
+            device=devices.device,
+            template_file=template_file,
+        )
 
     hijack = sd_hijack.model_hijack
 
@@ -199,7 +236,7 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, steps,
     if ititial_step > steps:
         return embedding, filename
 
-    pbar = tqdm.tqdm(enumerate(ds), total=steps-ititial_step)
+    pbar = tqdm.tqdm(enumerate(ds), total=steps - ititial_step)
     for i, (x, text) in pbar:
         embedding.step = i + ititial_step
 
@@ -221,12 +258,24 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, steps,
 
         pbar.set_description(f"loss: {losses.mean():.7f}")
 
-        if embedding.step > 0 and embedding_dir is not None and embedding.step % save_embedding_every == 0:
-            last_saved_file = os.path.join(embedding_dir, f'{embedding_name}-{embedding.step}.pt')
+        if (
+            embedding.step > 0
+            and embedding_dir is not None
+            and embedding.step % save_embedding_every == 0
+        ):
+            last_saved_file = os.path.join(
+                embedding_dir, f"{embedding_name}-{embedding.step}.pt"
+            )
             embedding.save(last_saved_file)
 
-        if embedding.step > 0 and images_dir is not None and embedding.step % create_image_every == 0:
-            last_saved_image = os.path.join(images_dir, f'{embedding_name}-{embedding.step}.png')
+        if (
+            embedding.step > 0
+            and images_dir is not None
+            and embedding.step % create_image_every == 0
+        ):
+            last_saved_image = os.path.join(
+                images_dir, f"{embedding_name}-{embedding.step}.png"
+            )
 
             p = processing.StableDiffusionProcessingTxt2Img(
                 sd_model=shared.sd_model,
@@ -264,4 +313,3 @@ Last saved image: {html.escape(last_saved_image)}<br/>
     embedding.save(filename)
 
     return embedding, filename
-
