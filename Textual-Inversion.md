@@ -52,6 +52,14 @@ Experimental support for training embeddings in user interface.
 - **Initialization text**: the embedding you create will initially be filled with vectors of this text. If you create a one vector embedding named "zzzz1234" with "tree" as initialization text, and use it in prompt without training, then prompt "a zzzz1234 by monet" will produce same pictures as "a tree by monet".
 - **Number of vectors per token**: the size of embedding. The larger this value, the more information about subject you can fit into the embedding, but also the more words it will take away from your prompt allowance. With stable diffusion, you have a limit of 75 tokens in the prompt. If you use an embedding with 16 vectors in a prompt, that will leave you with space for 75 - 16 = 59. Also from my experience, the larger the number of vectors, the more pictures you need to obtain good results.
 
+### Preprocess
+This takes images from a directory, processes them to be ready for textual inversion, and writes results to another directory. This is a convenience feature and you can preprocess pictures yourself if you wish.
+- **Source directory**: directory with images
+- **Destination directory**: directory where the results will be written
+- **Flip**: for each image, also write its mirrored copy
+- **Split into two**: if the image is too tall or wide, resize it to have the short side match the desired resolution, and create two, possibly intersecting pictures out of it.
+- **Add caption**: use BLIP model from the interrogator to add a caption to the filename.
+
 ### Training an embedding
 - **Embedding**: select the embedding you want to train from this dropdown.
 - **Learning rate**: how fast should the training go. The danger of setting this parameter to a high value is that you may break the embedding if you set it too high. If you see `Loss: nan` in the training info textbox, that means you failed and the embedding is dead. With the default value, this should not happen.
