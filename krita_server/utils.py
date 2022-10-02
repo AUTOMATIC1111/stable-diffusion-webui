@@ -1,7 +1,10 @@
+import logging
 import os
 
 import yaml
 from webui import modules, shared
+
+log = logging.getLogger(__name__)
 
 
 def load_config():
@@ -71,7 +74,7 @@ def fix_aspect_ratio(base_size, max_size, orig_width, orig_height):
 
     new_ratio = width / height
 
-    print(
+    log.info(
         f"img size: {orig_width}x{orig_height} -> {width}x{height}, "
         f"aspect ratio: {ratio:.2f} -> {new_ratio:.2f}, {100 * (new_ratio - ratio) / ratio :.2f}% change"
     )

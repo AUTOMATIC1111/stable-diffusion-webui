@@ -1,3 +1,4 @@
+import logging
 import os
 import time
 
@@ -18,6 +19,8 @@ from .utils import (
 
 app = FastAPI()
 
+log = logging.getLogger(__name__)
+
 
 @app.get("/config")
 async def read_item():
@@ -31,7 +34,7 @@ async def read_item():
     """
     # TODO:
     # - function and route name isn't descriptive, feels more like get_state()
-    # - response isn't well typed
+    # - response isn't well typed but is deeply tied into the krita_plugin side..
     # - ensuring the folders for images exist should be refactored out
     opt = load_config()["plugin"]
     sample_path = opt["sample_path"]
@@ -57,7 +60,7 @@ async def f_txt2img(req: Txt2ImgRequest):
     Returns:
         Dict: Outputs and info.
     """
-    print(f"txt2img: {req}")
+    log.info(f"txt2img: {req}")
 
     opt = load_config()["txt2img"]
     set_face_restorer(
@@ -112,7 +115,7 @@ async def f_txt2img(req: Txt2ImgRequest):
         save_img(image, sample_path, filename=f"{int(time.time())}_{i}.png")
         for i, image in enumerate(resized_images)
     ]
-    print(f"finished: {outputs}\n{info}")
+    log.info(f"finished: {outputs}\n{info}")
     return {"outputs": outputs, "info": info}
 
 
@@ -126,7 +129,7 @@ async def f_img2img(req: Img2ImgRequest):
     Returns:
         Dict: Outputs and info.
     """
-    print(f"img2img: {req}")
+    log.info(f"img2img: {req}")
 
     opt = load_config()["img2img"]
     set_face_restorer(
@@ -224,7 +227,7 @@ async def f_img2img(req: Img2ImgRequest):
         save_img(image, sample_path, filename=f"{int(time.time())}_{i}.png")
         for i, image in enumerate(resized_images)
     ]
-    print(f"finished: {outputs}\n{info}")
+    log.info(f"finished: {outputs}\n{info}")
     return {"outputs": outputs, "info": info}
 
 
@@ -238,7 +241,7 @@ async def f_upscale(req: UpscaleRequest):
     Returns:
         Dict: Output.
     """
-    print(f"upscale: {req}")
+    log.info(f"upscale: {req}")
 
     opt = load_config()["upscale"]
     image = Image.open(req.src_path).convert("RGB")
@@ -248,7 +251,7 @@ async def f_upscale(req: UpscaleRequest):
     upscaler = shared.sd_upscalers[upscaler_index]
 
     if upscaler.name == "None":
-        print(f"No upscaler selected, will do nothing")
+        log.info(f"No upscaler selected, will do nothing")
         return
 
     if req.downscale_first or opt["downscale_first"]:
@@ -262,5 +265,5 @@ async def f_upscale(req: UpscaleRequest):
     sample_path = opt["sample_path"]
     os.makedirs(sample_path, exist_ok=True)
     output = save_img(resized_image, sample_path, filename=f"{int(time.time())}.png")
-    print(f"finished: {output}")
+    log.info(f"finished: {output}")
     return {"output": output}
