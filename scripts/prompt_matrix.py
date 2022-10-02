@@ -1,14 +1,11 @@
 import math
-from collections import namedtuple
-from copy import copy
-import random
 
 import modules.scripts as scripts
 import gradio as gr
 
 from modules import images
-from modules.processing import process_images, Processed
-from modules.shared import opts, cmd_opts, state
+from modules.processing import process_images
+from modules.shared import opts, state
 import modules.sd_samplers
 
 

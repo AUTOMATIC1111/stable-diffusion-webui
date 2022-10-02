@@ -6,7 +6,7 @@ from PIL import Image
 import torch
 import tqdm
 
-from modules import processing, shared, images, devices, sd_models
+from modules import shared, images, devices, sd_models
 from modules.shared import opts
 import modules.gfpgan_model
 from modules.ui import plaintext_to_html

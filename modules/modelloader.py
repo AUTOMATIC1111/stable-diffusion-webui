@@ -120,12 +120,12 @@ def move_files(src_path: str, dest_path: str, ext_filter: str = None):
                     print(f"Moving {file} from {src_path} to {dest_path}.")
                     try:
                         shutil.move(fullpath, dest_path)
-                    except:
+                    except Exception:
                         pass
             if len(os.listdir(src_path)) == 0:
                 print(f"Removing empty folder: {src_path}")
                 shutil.rmtree(src_path, True)
-    except:
+    except Exception:
         pass
 
 
@@ -154,7 +154,7 @@ def load_upscalers():
         try:
             if cmd_name in c_o:
                 opt_string = c_o[cmd_name]
-        except:
+        except Exception:
             pass
         scaler = class_(opt_string)
         for child in scaler.scalers:

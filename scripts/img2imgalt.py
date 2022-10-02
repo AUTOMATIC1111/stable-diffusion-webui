@@ -6,18 +6,11 @@ from tqdm import trange
 import modules.scripts as scripts
 import gradio as gr
 
-from modules import processing, shared, sd_samplers, prompt_parser
-from modules.processing import Processed
+from modules import processing, shared, sd_samplers
 from modules.sd_samplers import samplers
-from modules.shared import opts, cmd_opts, state
 
 import torch
 import k_diffusion as K
-
-from PIL import Image
-from torch import autocast
-from einops import rearrange, repeat
-
 
 def find_noise_for_image(p, cond, uncond, cfg_scale, steps):
     x = p.init_latent

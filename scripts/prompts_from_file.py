@@ -1,14 +1,10 @@
 import math
-import os
-import sys
-import traceback
 
 import modules.scripts as scripts
 import gradio as gr
 
 from modules.processing import Processed, process_images
-from PIL import Image
-from modules.shared import opts, cmd_opts, state
+from modules.shared import state
 
 
 class Script(scripts.Script):

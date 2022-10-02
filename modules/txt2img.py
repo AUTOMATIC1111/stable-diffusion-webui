@@ -1,14 +1,10 @@
 import modules.scripts
 from modules.processing import (
-    StableDiffusionProcessing,
-    Processed,
     StableDiffusionProcessingTxt2Img,
-    StableDiffusionProcessingImg2Img,
     process_images,
 )
-from modules.shared import opts, cmd_opts
+from modules.shared import opts
 import modules.shared as shared
-import modules.processing as processing
 from modules.ui import plaintext_to_html
 
 

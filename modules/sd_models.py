@@ -1,5 +1,4 @@
-import glob
-import os.path
+import os
 import sys
 from collections import namedtuple
 import torch
@@ -121,7 +120,7 @@ def select_checkpoint():
 
     if len(checkpoints_list) == 0:
         print(
-            f"No checkpoints found. When searching for checkpoints, looked at:",
+            "No checkpoints found. When searching for checkpoints, looked at:",
             file=sys.stderr,
         )
         print(f" - file {os.path.abspath(shared.cmd_opts.ckpt)}", file=sys.stderr)
@@ -129,7 +128,7 @@ def select_checkpoint():
             f" - directory {os.path.abspath(shared.cmd_opts.ckpt_dir)}", file=sys.stderr
         )
         print(
-            f"Can't run without a checkpoint. Find and place a .ckpt file into any of those locations. The program will exit.",
+            "Can't run without a checkpoint. Find and place a .ckpt file into any of those locations. The program will exit.",
             file=sys.stderr,
         )
         exit(1)
@@ -184,7 +183,7 @@ def load_model():
 
     sd_model.eval()
 
-    print(f"Model loaded.")
+    print("Model loaded.")
     return sd_model
 
 
@@ -210,5 +209,5 @@ def reload_model_weights(sd_model, info=None):
     if not shared.cmd_opts.lowvram and not shared.cmd_opts.medvram:
         sd_model.to(devices.device)
 
-    print(f"Weights loaded.")
+    print("Weights loaded.")
     return sd_model

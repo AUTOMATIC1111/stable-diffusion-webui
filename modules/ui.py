@@ -2,7 +2,6 @@ import base64
 import html
 import io
 import json
-import math
 import mimetypes
 import os
 import random
@@ -12,8 +11,6 @@ import traceback
 import platform
 import subprocess as sp
 
-import numpy as np
-import torch
 from PIL import Image, PngImagePlugin
 import piexif
 
@@ -1758,7 +1755,7 @@ def create_ui(wrap_gradio_gpu_call):
         def modelmerger(*args):
             try:
                 results = modules.extras.run_modelmerger(*args)
-            except Exception as e:
+            except Exception:
                 print("Error loading/saving model file:", file=sys.stderr)
                 print(traceback.format_exc(), file=sys.stderr)
                 modules.sd_models.list_models()  # to remove the potentially missing models from the list

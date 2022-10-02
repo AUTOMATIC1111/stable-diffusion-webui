@@ -157,7 +157,7 @@ class InterrogateModels:
         return caption[0]
 
     def interrogate(self, pil_image):
-        res = None
+        res = ""
 
         try:
 
@@ -206,7 +206,7 @@ class InterrogateModels:
                         res += ", " + match
 
         except Exception:
-            print(f"Error interrogating", file=sys.stderr)
+            print("Error interrogating", file=sys.stderr)
             print(traceback.format_exc(), file=sys.stderr)
             res += "<error>"
 

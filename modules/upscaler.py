@@ -1,9 +1,8 @@
 import os
 from abc import abstractmethod
+from typing import Optional
 
 import PIL
-import numpy as np
-import torch
 from PIL import Image
 
 import modules.shared
@@ -11,7 +10,6 @@ from modules import modelloader, shared
 
 LANCZOS = Image.Resampling.LANCZOS if hasattr(Image, "Resampling") else Image.LANCZOS
 from modules.paths import models_path
-
 
 class Upscaler:
     name = None
@@ -45,14 +43,14 @@ class Upscaler:
             import cv2
 
             self.can_tile = True
-        except:
+        except Exception:
             pass
 
     @abstractmethod
     def do_upscale(self, img: PIL.Image, selected_model: str):
         return img
 
-    def upscale(self, img: PIL.Image, scale: int, selected_model: str = None):
+    def upscale(self, img: PIL.Image, scale: int, selected_model: Optional[str] = None):
         self.scale = scale
         dest_w = img.width * scale
         dest_h = img.height * scale

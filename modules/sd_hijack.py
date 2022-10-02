@@ -1,13 +1,7 @@
-import math
-import os
-import sys
-import traceback
 import torch
-import numpy as np
-from torch import einsum
 
 import modules.textual_inversion.textual_inversion
-from modules import prompt_parser, devices, sd_hijack_optimizations, shared
+from modules import prompt_parser, sd_hijack_optimizations
 from modules.shared import opts, device, cmd_opts
 
 import ldm.modules.attention

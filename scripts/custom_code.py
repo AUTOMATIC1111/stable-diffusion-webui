@@ -2,7 +2,7 @@ import modules.scripts as scripts
 import gradio as gr
 
 from modules.processing import Processed
-from modules.shared import opts, cmd_opts, state
+from modules.shared import cmd_opts
 
 
 class Script(scripts.Script):

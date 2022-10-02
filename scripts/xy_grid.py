@@ -9,8 +9,8 @@ import modules.scripts as scripts
 import gradio as gr
 
 from modules import images
-from modules.processing import process_images, Processed
-from modules.shared import opts, cmd_opts, state
+from modules.processing import process_images
+from modules.shared import opts, state
 import modules.shared as shared
 import modules.sd_samplers
 import modules.sd_models
@@ -121,7 +121,7 @@ def draw_xy_grid(p, xs, ys, x_labels, y_labels, cell, draw_legend):
 
             try:
                 res.append(processed.images[0])
-            except:
+            except Exception:
                 res.append(Image.new(res[0].mode, res[0].size))
 
     grid = images.image_grid(res, rows=len(ys))
