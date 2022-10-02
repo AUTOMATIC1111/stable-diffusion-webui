@@ -85,7 +85,7 @@ class KritaSDPluginDocker(DockWidget):
         self.txt2img_prompt_text = QPlainTextEdit()
         self.txt2img_prompt_text.setPlaceholderText("krita_config.yaml value will be used")
         self.txt2img_negative_prompt_label = QLabel("Negative Prompt:")
-        self.txt2img_negative_prompt_text = QLineEdit()
+        self.txt2img_negative_prompt_text = QPlainTextEdit()
         self.txt2img_negative_prompt_text.setPlaceholderText("krita_config.yaml value will be used")
         self.txt2img_prompt_layout = QVBoxLayout()
         self.txt2img_prompt_layout.addWidget(self.txt2img_prompt_label)
