@@ -1,21 +1,80 @@
+from __future__ import annotations
+
+import inspect
 import logging
 import os
 
 import yaml
+from pydantic import BaseModel
 from webui import modules, shared
 
+from .config import MainConfig
+
 log = logging.getLogger(__name__)
+
+CONFIG_PATH = "krita_config.yaml"
 
 
 def load_config():
     """Load default config (including those not exposed in the API yet) from
     `krita_config.yaml` in the current working directory.
 
+    Will create `krita_config.yaml` if it has yet to exist using `MainConfig` from
+    `config.py`.
+
     Returns:
-        Dict: config
+        MainConfig: config
     """
-    with open("krita_config.yaml") as file:
-        return yaml.safe_load(file)
+    if not os.path.isfile(CONFIG_PATH):
+        cfg = MainConfig()
+        with open(CONFIG_PATH, "w") as f:
+            yaml.safe_dump(cfg.dict(), f)
+
+    with open(CONFIG_PATH) as file:
+        obj = yaml.safe_load(file)
+        return MainConfig.parse_obj(obj)
+
+
+def merge_default_config(config: BaseModel, default: BaseModel):
+    """Replace unset and None fields in opt with values from default with the
+    same field name in place.
+
+    Unset fields does not include fields that are explicitly set to None but
+    includes fields with a default value due to being unset.
+
+    Args:
+        config (BaseModel): Config object.
+        default (BaseModel): Default to merge from.
+
+    Returns:
+        BaseModel: Modified config.
+    """
+
+    for field in config.__fields__:
+        if not field in config.__fields_set__ or field is None:
+            config[field] = default[field]
+
+    return config
+
+
+def optional(*fields):
+    """Decorator function used to modify a pydantic model's fields to all be optional.
+    Alternatively, you can  also pass the field names that should be made optional as arguments
+    to the decorator.
+    Taken from https://github.com/samuelcolvin/pydantic/issues/1223#issuecomment-775363074
+    """
+
+    def dec(_cls):
+        for field in fields:
+            _cls.__fields__[field].required = False
+        return _cls
+
+    if fields and inspect.isclass(fields[0]) and issubclass(fields[0], BaseModel):
+        cls = fields[0]
+        fields = cls.__fields__
+        return dec(cls)
+
+    return dec
 
 
 def save_img(image, sample_path, filename):
@@ -81,12 +140,11 @@ def fix_aspect_ratio(base_size, max_size, orig_width, orig_height):
     return width, height
 
 
-def collect_prompt(opts, key):
-    """Parse prompt/negative prompt keys from `krita_config.yaml`. Is not used for prompt from API.
+def parse_prompt(val):
+    """Parse different representations of prompt/negative prompt.
 
     Args:
-        opts (Dict): Config from `load_config()`.
-        key (str): Key containing the prompt to parse.
+        val (Any): Key containing the prompt to parse.
 
     Raises:
         SyntaxError: Value of the prompt key cannot be parsed.
@@ -94,14 +152,13 @@ def collect_prompt(opts, key):
     Returns:
         str: Correctly formatted prompt.
     """
-    prompts = opts[key]
-    if isinstance(prompts, str):
-        return prompts
-    if isinstance(prompts, list):
-        return ", ".join(prompts)
-    if isinstance(prompts, dict):
+    if isinstance(val, str):
+        return val
+    if isinstance(val, list):
+        return ", ".join(val)
+    if isinstance(val, dict):
         prompt = ""
-        for item, weight in prompts.items():
+        for item, weight in val.items():
             if not prompt == "":
                 prompt += " "
             if weight is None:
