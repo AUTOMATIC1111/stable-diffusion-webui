@@ -5,7 +5,7 @@ import threading
 import time
 
 import uvicorn
-from webui import webui
+from webui import shared, webui
 
 from .app import app
 
@@ -31,7 +31,10 @@ class Server(uvicorn.Server):
 
 def start():
     config = uvicorn.Config(
-        "krita_server:app", host="127.0.0.1", port=8000, log_level="info"
+        "krita_server:app",
+        host="0.0.0.0" if shared.cmd_opts.listen else "127.0.0.1",
+        port=8000,
+        log_level="info",
     )
     server = Server(config=config)
 
