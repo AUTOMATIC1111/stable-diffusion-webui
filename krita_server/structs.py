@@ -4,9 +4,6 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-# TODO:
-# - seed should be int, is likely str as legacy from being based on hlky originally
-
 
 class CommonOptions:
     """Options that are shared between Txt2Img and Img2Img."""
@@ -30,7 +27,7 @@ class CommonOptions:
     """Native/base resolution of model used."""
     max_size: Optional[int]
     """Max input resolution allowed to prevent image artifacts."""
-    seed: Optional[str]
+    seed: Optional[int]
     """Seed used for noise generation. Incremented by 1 for each image rendered."""
     tiling: Optional[bool]
     """Whether to generate a tileable image."""

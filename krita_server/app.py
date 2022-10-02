@@ -67,9 +67,7 @@ async def f_txt2img(req: Txt2ImgRequest):
 
     sampler_index = get_sampler_index(req.sampler_name or opt["sampler_name"])
 
-    seed = opt["seed"]
-    if req.seed is not None and not req.seed == "":
-        seed = int(req.seed)
+    seed = opt["seed"] if req.seed is None else req.seed
 
     width, height = fix_aspect_ratio(
         req.base_size or opt["base_size"],
@@ -138,9 +136,7 @@ async def f_img2img(req: Img2ImgRequest):
 
     sampler_index = get_sampler_index(req.sampler_name or opt["sampler_name"])
 
-    seed = opt["seed"]
-    if req.seed is not None and not req.seed == "":
-        seed = int(req.seed)
+    seed = opt["seed"] if req.seed is None else req.seed
 
     mode = req.mode or opt["mode"]
 

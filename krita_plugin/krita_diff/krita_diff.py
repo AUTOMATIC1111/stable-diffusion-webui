@@ -123,7 +123,7 @@ class Script(QObject):
             "batch_size": self.cfg('txt2img_batch_size', int),
             "base_size": self.cfg('txt2img_base_size', int),
             "max_size": self.cfg('txt2img_max_size', int),
-            "seed": self.cfg('txt2img_seed', str) if not self.cfg('txt2img_seed', str).isspace() else '',
+            "seed": self.cfg('txt2img_seed', int) if not self.cfg('txt2img_seed', str).isspace() else None,
             "tiling": tiling,
             "use_gfpgan": self.cfg("txt2img_use_gfpgan", bool),
             "face_restorer": face_restorers[self.cfg("face_restorer_model", int)],
@@ -153,7 +153,7 @@ class Script(QObject):
             "batch_size": self.cfg('img2img_batch_size', int),
             "base_size": self.cfg('img2img_base_size', int),
             "max_size": self.cfg('img2img_max_size', int),
-            "seed": self.cfg('img2img_seed', str) if not self.cfg('img2img_seed', str).isspace() else '',
+            "seed": self.cfg('img2img_seed', int) if not self.cfg('img2img_seed', str).isspace() else None,
             "tiling": tiling,
             "invert_mask": False, #self.cfg('img2img_invert_mask', bool), - not implemented yet
             "use_gfpgan": self.cfg("img2img_use_gfpgan", bool),

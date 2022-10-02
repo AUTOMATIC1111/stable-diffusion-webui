@@ -7,6 +7,8 @@ from webui import webui
 
 from .app import app
 
+__all__ = ["app", "start"]
+
 
 class Server(uvicorn.Server):
     def install_signal_handlers(self):
