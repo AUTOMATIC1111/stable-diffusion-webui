@@ -15,7 +15,7 @@ weighted_item: prompt (":" NUMBER)?
 plain: /([^\\\[\](){}:|]|\\.)+/
 %import common.SIGNED_NUMBER -> NUMBER
 """
-class FixOptional(Transformer):
+class Preprocess(Transformer):
     @v_args(tree=True)
     def weighted_item(self, tree):
         tree.children[1:] = (float(tree.children[1] if len(tree.children) == 2 else 1.),)
@@ -31,7 +31,21 @@ class FixOptional(Transformer):
         return Tree('emphasized', [args[0], 1/1.1])
     def emph_valued(self, args):
         return Tree('emphasized', [args[0], float(args[1].value)])
-parser = Lark(grammar, parser='lalr', transformer=FixOptional())
+    @v_args(tree=True)
+    def plain(self, tree):
+        s = []
+        esc = False
+        for c in tree.children[0]:
+            if esc:
+                esc = False
+                s.append(c)
+            elif c == '\\':
+                esc = True
+            else:
+                s.append(c)
+        tree.children[0].value = ''.join(s)
+        return tree
+parser = Lark(grammar, parser='lalr', transformer=Preprocess())
 
 # a prompt like this: "fantasy landscape with a [mountain:lake:0.25] and [an oak:a christmas tree:0.75][ in foreground::0.6][ in background:0.25] [shoddy:masterful:0.5]"
 # will be represented with prompt_schedule like this (assuming steps=100):
