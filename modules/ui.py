@@ -1399,6 +1399,8 @@ with open(os.path.join(script_path, "script.js"), "r", encoding="utf8") as jsfil
 
 jsdir = os.path.join(script_path, "javascript")
 for filename in sorted(os.listdir(jsdir)):
+    if filename.startswith('.'):
+        continue
     with open(os.path.join(jsdir, filename), "r", encoding="utf8") as jsfile:
         javascript += f"\n<script>{jsfile.read()}</script>"
 

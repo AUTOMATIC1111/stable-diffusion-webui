@@ -338,6 +338,9 @@ def get_next_sequence_number(path, basename):
 
     prefix_length = len(basename)
     for p in os.listdir(path):
+        # ignore hidden files unless basename itself is hidden
+        if p.startswith('.') and not basename.startswith('.'):
+            continue
         if p.startswith(basename):
             l = os.path.splitext(p[prefix_length:])[0].split('-')  # splits the filename (removing the basename first if one is defined, so the sequence number is always the first element)
             try:

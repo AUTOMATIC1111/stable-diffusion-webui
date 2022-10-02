@@ -34,6 +34,8 @@ class InterrogateModels:
 
         if os.path.exists(content_dir):
             for filename in os.listdir(content_dir):
+                if filename.startswith('.'):
+                    continue
                 m = re_topn.search(filename)
                 topn = 1 if m is None else int(m.group(1))
 

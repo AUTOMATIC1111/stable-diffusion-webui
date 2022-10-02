@@ -102,6 +102,8 @@ def move_files(src_path: str, dest_path: str, ext_filter: str = None):
             os.makedirs(dest_path)
         if os.path.exists(src_path):
             for file in os.listdir(src_path):
+                if file.startswith('.'):
+                    continue
                 fullpath = os.path.join(src_path, file)
                 if os.path.isfile(fullpath):
                     if ext_filter is not None:
@@ -125,7 +127,7 @@ def load_upscalers():
     # so we'll try to import any _model.py files before looking in __subclasses__
     modules_dir = os.path.join(sd, "modules")
     for file in os.listdir(modules_dir):
-        if "_model.py" in file:
+        if not file.startswith(".") and "_model.py" in file:
             model_name = file.replace("_model.py", "")
             full_model = f"modules.{model_name}_model"
             try:

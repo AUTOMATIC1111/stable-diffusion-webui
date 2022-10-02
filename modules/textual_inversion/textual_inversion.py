@@ -107,6 +107,8 @@ class EmbeddingDatabase:
             self.register_embedding(embedding, shared.sd_model)
 
         for fn in os.listdir(self.embeddings_dir):
+            if fn.startswith('.'):
+                continue
             try:
                 fullfn = os.path.join(self.embeddings_dir, fn)
 
