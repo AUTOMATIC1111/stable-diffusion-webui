@@ -14,7 +14,7 @@ from modules.paths import models_path
 model_dir = "Stable-diffusion"
 model_path = os.path.abspath(os.path.join(models_path, model_dir))
 model_name = "sd-v1-4.ckpt"
-model_url = "https://drive.yerf.org/wl/?id=EBfTrmcCCUAGaQBXVIj5lJmEhjoP1tgl&mode=grid&download=1"
+model_url = "https://cdn-lfs.huggingface.co/repos/4c/37/4c372b4ebb57bbd02e68413d4951aa326d4b3cfb6e62db989e529c6d4b26fb21/fe4efff1e174c627256e44ec2991ba279b3816e364b49f9be2abc0b3ff3f8556?response-content-disposition=attachment%3B%20filename%3D%22sd-v1-4.ckpt%22"
 user_dir = None
 
 CheckpointInfo = namedtuple("CheckpointInfo", ['filename', 'title', 'hash', 'model_name'])
