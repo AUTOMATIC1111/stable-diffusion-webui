@@ -103,11 +103,11 @@ def webui():
 
         while 1:
             time.sleep(0.5)
-                if getattr(demo,'do_restart',False):
-                    time.sleep(0.5)
-                    demo.close()
-                    time.sleep(0.5)
-                    break
+            if getattr(demo, 'do_restart', False):
+                time.sleep(0.5)
+                demo.close()
+                time.sleep(0.5)
+                break
 
         print('Reloading Custom Scripts')
         modules.scripts.reload_scripts(os.path.join(script_path, "scripts"))
