@@ -45,8 +45,8 @@ def list_models():
     def modeltitle(path, shorthash):
         abspath = os.path.abspath(path)
 
-        if user_dir is not None and abspath.startswith(user_dir):
-            name = abspath.replace(user_dir, '')
+        if shared.cmd_opts.ckpt_dir is not None and abspath.startswith(shared.cmd_opts.ckpt_dir):
+            name = abspath.replace(shared.cmd_opts.ckpt_dir, '')
         elif abspath.startswith(model_path):
             name = abspath.replace(model_path, '')
         else:
