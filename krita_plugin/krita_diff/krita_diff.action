@@ -27,6 +27,7 @@
             <isCheckable>false</isCheckable>
             <statusTip/>
         </Action>
+        <!--
         <Action name="img2img_upscale">
             <icon/>
             <text>Apply SD upscale transform</text>
@@ -39,6 +40,7 @@
             <isCheckable>false</isCheckable>
             <statusTip/>
         </Action>
+        -->
         <Action name="img2img_inpaint">
             <icon/>
             <text>Apply inpaint transform</text>
