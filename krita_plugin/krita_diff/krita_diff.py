@@ -65,7 +65,7 @@ class Script(QObject):
         self.set_cfg('img2img_use_gfpgan', False, if_empty)
         self.set_cfg('img2img_tiling', False, if_empty)
         self.set_cfg('img2img_invert_mask', False, if_empty)
-        self.set_cfg('img2img_upscaler_name', 0, if_empty)
+        # self.set_cfg('img2img_upscaler_name', 0, if_empty)
 
         self.set_cfg('upscale_upscaler_name', 0, if_empty)
         self.set_cfg('upscale_downscale_first', False, if_empty)
@@ -159,7 +159,7 @@ class Script(QObject):
             "use_gfpgan": self.cfg("img2img_use_gfpgan", bool),
             "face_restorer": face_restorers[self.cfg("face_restorer_model", int)],
             "codeformer_weight": self.cfg("codeformer_weight", float),
-            "upscaler_name": upscalers[self.cfg('img2img_upscaler_name', int)]
+            # "upscaler_name": upscalers[self.cfg('img2img_upscaler_name', int)]
         } if not self.cfg('just_use_yaml', bool) else {
             "src_path": path,
             "mask_path": mask_path

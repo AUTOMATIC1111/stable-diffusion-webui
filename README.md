@@ -22,6 +22,11 @@ has far superior performance and the most practical features. However, there are
 - Proper API and documentation
 - _Proper_ Docker support and integration with Devcontainers
 
+## TODO
+
+- Figure out API for calling script
+  - SD Upscaler feature removed from Krita plugin as it was refactored to a script upstream. See <https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/91bfc71261e160451e89f35a7c0eef66ff98877c>
+
 ## Stable Diffusion Krita Plugin
 
 A simple interface based on this repository: https://github.com/AUTOMATIC1111/stable-diffusion-webui

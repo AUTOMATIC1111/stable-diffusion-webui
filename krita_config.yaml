@@ -36,8 +36,8 @@ img2img:
   tiling: false
   mask_invert: false
 
-  upscale_overlap: 64
-  upscaler_name: "None" # None, Lanczos, RealESRGAN
+  # upscale_overlap: 64
+  # upscaler_name: "None" # None, Lanczos, RealESRGAN
 
   inpainting_fill: 0
   inpaint_full_res: false

@@ -339,15 +339,16 @@ class KritaSDPluginDocker(DockWidget):
 
         self.img2img_use_gfpgan = QCheckBox("Restore faces")
         self.img2img_use_gfpgan.setTristate(False)
-        
-        self.img2img_upscaler_name_label = QLabel("Prescaler for SD upscale:")
-        self.img2img_upscaler_name = QComboBox()
-        self.img2img_upscaler_name.addItems(upscalers)
-        self.img2img_upscaler_name_renew = QPushButton("Update list")
-        self.img2img_upscaler_name_layout = QHBoxLayout()
-        self.img2img_upscaler_name_layout.addWidget(self.img2img_upscaler_name_label)
-        self.img2img_upscaler_name_layout.addWidget(self.img2img_upscaler_name)
-        self.img2img_upscaler_name_layout.addWidget(self.img2img_upscaler_name_renew)
+
+        # SD upscale became a script in https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/91bfc71261e160451e89f35a7c0eef66ff98877c 
+        # self.img2img_upscaler_name_label = QLabel("Prescaler for SD upscale:")
+        # self.img2img_upscaler_name = QComboBox()
+        # self.img2img_upscaler_name.addItems(upscalers)
+        # self.img2img_upscaler_name_renew = QPushButton("Update list")
+        # self.img2img_upscaler_name_layout = QHBoxLayout()
+        # self.img2img_upscaler_name_layout.addWidget(self.img2img_upscaler_name_label)
+        # self.img2img_upscaler_name_layout.addWidget(self.img2img_upscaler_name)
+        # self.img2img_upscaler_name_layout.addWidget(self.img2img_upscaler_name_renew)
 
         self.img2img_start_button = QPushButton("Apply SD img2img")
         self.img2img_upscale_button = QPushButton("Apply SD upscale")
@@ -369,7 +370,7 @@ class KritaSDPluginDocker(DockWidget):
         self.img2img_layout.addWidget(self.img2img_use_gfpgan)
 
         self.img2img_layout.addLayout(self.img2img_checkboxes_layout)
-        self.img2img_layout.addLayout(self.img2img_upscaler_name_layout)
+        # self.img2img_layout.addLayout(self.img2img_upscaler_name_layout)
         self.img2img_layout.addLayout(self.img2img_button_layout)
         self.img2img_layout.addStretch()
 
@@ -394,8 +395,8 @@ class KritaSDPluginDocker(DockWidget):
             Qt.CheckState.Checked if script.cfg('img2img_tiling', bool) else Qt.CheckState.Unchecked)
         self.img2img_invert_mask.setCheckState(
             Qt.CheckState.Checked if script.cfg('img2img_invert_mask', bool) else Qt.CheckState.Unchecked)
-        self.img2img_upscaler_name.addItems(upscalers[self.img2img_upscaler_name.count():])
-        self.img2img_upscaler_name.setCurrentIndex(script.cfg('img2img_upscaler_name', int))
+        # self.img2img_upscaler_name.addItems(upscalers[self.img2img_upscaler_name.count():])
+        # self.img2img_upscaler_name.setCurrentIndex(script.cfg('img2img_upscaler_name', int))
 
     def connect_img2img_interface(self):
         self.img2img_prompt_text.textChanged.connect(
@@ -441,12 +442,12 @@ class KritaSDPluginDocker(DockWidget):
         self.img2img_invert_mask.toggled.connect(
             partial(script.set_cfg, "img2img_invert_mask")
         )
-        self.img2img_upscaler_name.currentIndexChanged.connect(
-            partial(script.set_cfg, "img2img_upscaler_name")
-        )
-        self.img2img_upscaler_name_renew.released.connect(
-            lambda: self.update_upscalers()
-        )
+        # self.img2img_upscaler_name.currentIndexChanged.connect(
+        #     partial(script.set_cfg, "img2img_upscaler_name")
+        # )
+        # self.img2img_upscaler_name_renew.released.connect(
+        #     lambda: self.update_upscalers()
+        # )
         self.img2img_start_button.released.connect(
             lambda: script.action_img2img()
         )

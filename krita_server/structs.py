@@ -76,10 +76,10 @@ class Img2ImgRequest(CommonOptions, BaseModel):
     denoising_strength: Optional[float]
     """Strength of denoising from 0.0 to 1.0."""
 
-    upscale_overlap: Optional[int]
-    """Size of overlap in pixels for upscaling."""
-    upscaler_name: Optional[str]
-    """Exact name of upscaler to use."""
+    # upscale_overlap: Optional[int]
+    # """Size of overlap in pixels for upscaling."""
+    # upscaler_name: Optional[str]
+    # """Exact name of upscaler to use."""
 
 
 class UpscaleRequest(BaseModel):
