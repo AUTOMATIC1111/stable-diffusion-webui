@@ -5,6 +5,8 @@ import time
 import uvicorn
 from webui import webui
 
+from .app import app
+
 
 class Server(uvicorn.Server):
     def install_signal_handlers(self):

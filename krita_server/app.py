@@ -1,17 +1,9 @@
-import contextlib
-import math
 import os
-import threading
 import time
-from typing import Optional
 
-import numpy as np
-import uvicorn
-import yaml
 from fastapi import FastAPI
 from PIL import Image
-from pydantic import BaseModel
-from webui import *
+from webui import modules, shared
 
 from .structs import Img2ImgRequest, Txt2ImgRequest, UpscaleRequest
 from .utils import (
