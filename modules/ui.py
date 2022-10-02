@@ -1012,6 +1012,17 @@ def create_ui(txt2img, img2img, run_extras, run_pnginfo, run_modelmerger):
             outputs=[],
             _js='function(){restart_reload()}'
         )
+
+        def reload_scripts():
+          modules.scripts.reload_script_body_only()
+
+        reload_script_bodies = gr.Button(value='Reload custom script bodies (No ui updates, No restart)', variant='primary')
+        reload_script_bodies.click(
+            fn=reload_scripts,
+            inputs=[],
+            outputs=[],
+            _js='function(){}'
+        )
         
         if column is not None:
             column.__exit__()
