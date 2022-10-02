@@ -5,6 +5,7 @@ import logging
 import os
 
 import yaml
+from PIL import Image
 from pydantic import BaseModel
 from webui import modules, shared
 
@@ -77,7 +78,7 @@ def optional(*fields):
     return dec
 
 
-def save_img(image, sample_path, filename):
+def save_img(image: Image, sample_path: str, filename: str):
     """Saves an image.
 
     Args:
@@ -93,7 +94,7 @@ def save_img(image, sample_path, filename):
     return os.path.abspath(path)
 
 
-def fix_aspect_ratio(base_size, max_size, orig_width, orig_height):
+def fix_aspect_ratio(base_size: int, max_size: int, orig_width: int, orig_height: int):
     """Calculate an appropiate image resolution given the base input size of the
     model and max input size allowed.
 
