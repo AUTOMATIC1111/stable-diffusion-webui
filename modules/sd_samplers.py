@@ -127,7 +127,7 @@ class VanillaStableDiffusionSampler:
         return res
 
     def initialize(self, p):
-        self.eta = p.eta or opts.eta_ddim
+        self.eta = p.eta if p.eta is not None else opts.eta_ddim
 
         for fieldname in ['p_sample_ddim', 'p_sample_plms']:
             if hasattr(self.sampler, fieldname):

@@ -35,6 +35,8 @@ ln -rs /.../auto-sd-krita/krita_plugin/krita_diff.desktop /.../pykrita/krita_dif
 
 ## Features
 
+- Gradio WebUI is fully functional and runs alongside the Krita plugin!
+  - Some things are better done in the WebUI than the Krita Plugin GUI (i.e. training textual inversion)
 - Exposed more features present in WebUI.
   - not in GUI yet; see and edit auto-generated `krita_config.yaml`, restart not needed.
 - `--listen` will cause the backend API to also host on `0.0.0.0`, allowing remote usage of the Krita plugin.
@@ -54,6 +56,7 @@ Analyzing the diff, these are the main changes (& hence the main parts to mainta
 Will move to `CONTRIBUTING.md` if this gets popular.
 
 **_Original README below_**
+
 <hr/>
 
 # Stable Diffusion Krita Plugin
@@ -63,11 +66,13 @@ A simple interface based on this repository: https://github.com/AUTOMATIC1111/st
 Requires Krita 5.1
 
 ## Usage example
+
 [target.webm](https://user-images.githubusercontent.com/112324253/188291339-9d146a9a-ba9f-4671-9bd8-c8b55fd48ba6.webm)
 
 ## Updates
-- webui.bat now starts both krita_server and webui on usual address: http://127.0.0.1:7860. Just don't try to run SD both in Krita and in webui simultaneously, it will give you CUDA error most likely.
-- removed krita.bat and krita.sh because they were confusing people, and were pain to support. Just run webui.bat ***from this repository***.
+
+- webui.bat now starts both krita_server and webui on usual address: <http://127.0.0.1:7860>. Just don't try to run SD both in Krita and in webui simultaneously, it will give you CUDA error most likely.
+- removed krita.bat and krita.sh because they were confusing people, and were pain to support. Just run webui.bat **_from this repository_**.
 - added CodeFormer support, it should work by default instead of GFPGAN. You can change it in the config tab.
 
 ## Installing and running
@@ -93,9 +98,10 @@ installed to run this, and an NVidia video card.
 
 You need `model.ckpt`, Stable Diffusion model checkpoint, a big file containing the neural network weights. You
 can obtain it from the following places:
- - [official download](https://huggingface.co/CompVis/stable-diffusion-v-1-4-original)
- - [file storage](https://drive.yerf.org/wl/?id=EBfTrmcCCUAGaQBXVIj5lJmEhjoP1tgl)
- - magnet:?xt=urn:btih:3a4a612d75ed088ea542acac52f9f45987488d1c&dn=sd-v1-4.ckpt&tr=udp%3a%2f%2ftracker.openbittorrent.com%3a6969%2fannounce&tr=udp%3a%2f%2ftracker.opentrackr.org%3a1337
+
+- [official download](https://huggingface.co/CompVis/stable-diffusion-v-1-4-original)
+- [file storage](https://drive.yerf.org/wl/?id=EBfTrmcCCUAGaQBXVIj5lJmEhjoP1tgl)
+- magnet:?xt=urn:btih:3a4a612d75ed088ea542acac52f9f45987488d1c&dn=sd-v1-4.ckpt&tr=udp%3a%2f%2ftracker.openbittorrent.com%3a6969%2fannounce&tr=udp%3a%2f%2ftracker.opentrackr.org%3a1337
 
 You can optionally use GFPGAN to improve faces, to do so you'll need to download the model from [here](https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.3.pth) and place it in the same directory as `webui.bat`.
 
@@ -110,30 +116,31 @@ RealESRGAN into the directory with ESRGAN models. Thank you.
 - install [Python 3.10.6](https://www.python.org/downloads/windows/) and check "Add Python to PATH" during installation. You must install this exact version.
 - install [git](https://git-scm.com/download/win)
 - place `model.ckpt` into webui directory, next to `webui.bat`.
-- _*(optional)*_ place `GFPGANv1.3.pth` into webui directory, next to `webui.bat`.
-- run `webui-user.bat` from Windows Explorer. Run it as a normal user, ***not*** as administrator. You should run webui-user.bat ***from this repository***, not from others.
+- **(optional)** place `GFPGANv1.3.pth` into webui directory, next to `webui.bat`.
+- run `webui-user.bat` from Windows Explorer. Run it as a normal user, **_not_** as administrator. You should run webui-user.bat **_from this repository_**, not from others.
 
 ### Linux installation
 
 - clone this git
 - run webui.sh from it
 
-```
+```sh
 git clone https://github.com/sddebz/stable-diffusion-krita-plugin.git
 cd stable-diffusion-krita-plugin
 ./webui.sh
 ```
 
 #### Low VRAM (4-6GB) videocard support
+
 If you have less then 8GB of VRAM, you should probably use options like `--medvram` or `--lowvram`. Look at the guide from parent repo for more information:
 
-https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Optimizations
+<https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Optimizations>
 
 Try `--medvram` first, it's not so bad for performance.
 
-#### Troublehooting:
+#### Troublehooting
 
-Look into parent repository https://github.com/AUTOMATIC1111/stable-diffusion-webui for instructions. This repository uses slightly changed code, but most parameters including those for low VRAM usage should still work.
+Look into parent repository <https://github.com/AUTOMATIC1111/stable-diffusion-webui> for instructions. This repository uses slightly changed code, but most parameters including those for low VRAM usage should still work.
 
 ### Usage
 
@@ -167,7 +174,7 @@ For inpainting to work properly you need high denoising strength. Think 0.6-0.8.
 
 #### Image resizing
 
-In every mode except sd upscale plugin resizes source images. First image is resized to match SD required size of 512x(512 + 64*k). Second resulting image is resized back. 
+In every mode except sd upscale plugin resizes source images. First image is resized to match SD required size of 512x(512 + 64*k). Second resulting image is resized back.
 That means that you should be able to use plugin with image or selection of any size. But large image sizes will generally have less downscaling artefacts.
 
 Internally plugin uses Lanczos algorithm for both downscaling and upscaling.
@@ -182,3 +189,21 @@ If you use selection, plugin will try to slightly increase size of an image patc
 Alternatively work with image sizes that have right aspect ratio, like 1024x1024, 1280x1024, ... like (512 + 64*k)x512.
 
 SD upscaling doesn't have this problem at all.
+
+## Credits
+
+- Stable Diffusion - <https://github.com/CompVis/stable-diffusion>, <https://github.com/CompVis/taming-transformers>
+- k-diffusion - <https://github.com/crowsonkb/k-diffusion.git>
+- GFPGAN - <https://github.com/TencentARC/GFPGAN.git>
+- CodeFormer - <https://github.com/sczhou/CodeFormer>
+- ESRGAN - <https://github.com/xinntao/ESRGAN>
+- SwinIR - <https://github.com/JingyunLiang/SwinIR>
+- LDSR - <https://github.com/Hafiidz/latent-diffusion>
+- Ideas for optimizations - <https://github.com/basujindal/stable-diffusion>
+- Doggettx - Cross Attention layer optimization - <https://github.com/Doggettx/stable-diffusion>, original idea for prompt editing.
+- Rinon Gal - Textual Inversion - <https://github.com/rinongal/textual_inversion> (we're not using his code, but we are using his ideas).
+- Idea for SD upscale - <https://github.com/jquesnelle/txt2imghd>
+- Noise generation for outpainting mk2 - <https://github.com/parlance-zz/g-diffuser-bot>
+- CLIP interrogator idea and borrowing some code - <https://github.com/pharmapsychotic/clip-interrogator>
+- Initial Gradio script - posted on 4chan by an Anonymous user. Thank you Anonymous user.
+- (You)

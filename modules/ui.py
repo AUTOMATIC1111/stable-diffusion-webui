@@ -11,6 +11,7 @@ import time
 import traceback
 import platform
 import subprocess as sp
+from functools import reduce
 
 import numpy as np
 import torch
@@ -33,6 +34,7 @@ import modules.gfpgan_model
 import modules.codeformer_model
 import modules.styles
 import modules.generation_parameters_copypaste
+from modules.prompt_parser import get_learned_conditioning_prompt_schedules
 from modules.images import apply_filename_pattern, get_next_sequence_number
 import modules.textual_inversion.ui
 
@@ -67,7 +69,7 @@ random_symbol = '\U0001f3b2\ufe0f'  # 🎲️
 reuse_symbol = '\u267b\ufe0f'  # ♻️
 art_symbol = '\U0001f3a8'  # 🎨
 paste_symbol = '\u2199\ufe0f'  # ↙
-folder_symbol = '\uD83D\uDCC2'
+folder_symbol = '\U0001f4c2'  # 📂
 
 def plaintext_to_html(text):
     text = "<p>" + "<br>\n".join([f"{html.escape(x)}" for x in text.split('\n')]) + "</p>"
@@ -111,7 +113,7 @@ def save_files(js_data, images, index):
 
     p = MyObject(data)
     path = opts.outdir_save
-    save_to_dirs = opts.save_to_dirs
+    save_to_dirs = opts.use_save_to_dirs_for_ui
 
     if save_to_dirs:
         dirname = apply_filename_pattern(opts.directories_filename_pattern or "[prompt_words]", p, p.seed, p.prompt)
@@ -384,8 +386,11 @@ def connect_reuse_seed(seed: gr.Number, reuse_seed: gr.Button, generation_info: 
         outputs=[seed, dummy_component]
     )
 
-def update_token_counter(text):
-    tokens, token_count, max_length = model_hijack.tokenize(text)
+def update_token_counter(text, steps):
+    prompt_schedules = get_learned_conditioning_prompt_schedules([text], steps)
+    flat_prompts = reduce(lambda list1, list2: list1+list2, prompt_schedules)
+    prompts = [prompt_text for step,prompt_text in flat_prompts]
+    tokens, token_count, max_length = max([model_hijack.tokenize(prompt) for prompt in prompts], key=lambda args: args[1])
     style_class = ' class="red"' if (token_count > max_length) else ""
     return f"<span {style_class}>{token_count}/{max_length}</span>"
 
@@ -403,8 +408,7 @@ def create_toprow(is_img2img):
                     roll = gr.Button(value=art_symbol, elem_id="roll", visible=len(shared.artist_db.artists) > 0)
                     paste = gr.Button(value=paste_symbol, elem_id="paste")
                     token_counter = gr.HTML(value="<span></span>", elem_id=f"{id_part}_token_counter")
-                    hidden_button = gr.Button(visible=False, elem_id=f"{id_part}_token_button")
-                    hidden_button.click(fn=update_token_counter, inputs=[prompt], outputs=[token_counter])
+                    token_button = gr.Button(visible=False, elem_id=f"{id_part}_token_button")
 
                 with gr.Column(scale=10, elem_id="style_pos_col"):
                     prompt_style = gr.Dropdown(label="Style 1", elem_id=f"{id_part}_style_index", choices=[k for k, v in shared.prompt_styles.styles.items()], value=next(iter(shared.prompt_styles.styles.keys())), visible=len(shared.prompt_styles.styles) > 1)
@@ -435,7 +439,7 @@ def create_toprow(is_img2img):
                 prompt_style_apply = gr.Button('Apply style', elem_id="style_apply")
                 save_style = gr.Button('Create style', elem_id="style_create")
 
-    return prompt, roll, prompt_style, negative_prompt, prompt_style2, submit, interrogate, prompt_style_apply, save_style, paste
+    return prompt, roll, prompt_style, negative_prompt, prompt_style2, submit, interrogate, prompt_style_apply, save_style, paste, token_counter, token_button
 
 
 def setup_progressbar(progressbar, preview, id_part, textinfo=None):
@@ -464,7 +468,7 @@ def create_ui(wrap_gradio_gpu_call):
     import modules.txt2img
 
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
-        txt2img_prompt, roll, txt2img_prompt_style, txt2img_negative_prompt, txt2img_prompt_style2, submit, _, txt2img_prompt_style_apply, txt2img_save_style, paste = create_toprow(is_img2img=False)
+        txt2img_prompt, roll, txt2img_prompt_style, txt2img_negative_prompt, txt2img_prompt_style2, submit, _, txt2img_prompt_style_apply, txt2img_save_style, paste, token_counter, token_button = create_toprow(is_img2img=False)
         dummy_component = gr.Label(visible=False)
 
         with gr.Row(elem_id='txt2img_progress_row'):
@@ -584,6 +588,7 @@ def create_ui(wrap_gradio_gpu_call):
 
             roll.click(
                 fn=roll_artist,
+                _js="update_txt2img_tokens",
                 inputs=[
                     txt2img_prompt,
                 ],
@@ -612,9 +617,10 @@ def create_ui(wrap_gradio_gpu_call):
                 (hr_options, lambda d: gr.Row.update(visible="Denoising strength" in d)),
             ]
             modules.generation_parameters_copypaste.connect_paste(paste, txt2img_paste_fields, txt2img_prompt)
+            token_button.click(fn=update_token_counter, inputs=[txt2img_prompt, steps], outputs=[token_counter])
 
     with gr.Blocks(analytics_enabled=False) as img2img_interface:
-        img2img_prompt, roll, img2img_prompt_style, img2img_negative_prompt, img2img_prompt_style2, submit, img2img_interrogate, img2img_prompt_style_apply, img2img_save_style, paste = create_toprow(is_img2img=True)
+        img2img_prompt, roll, img2img_prompt_style, img2img_negative_prompt, img2img_prompt_style2, submit, img2img_interrogate, img2img_prompt_style_apply, img2img_save_style, paste, token_counter, token_button = create_toprow(is_img2img=True)
 
         with gr.Row(elem_id='img2img_progress_row'):
             with gr.Column(scale=1):
@@ -652,7 +658,7 @@ def create_ui(wrap_gradio_gpu_call):
 
                     with gr.TabItem('Batch img2img', id='batch'):
                         hidden = '<br>Disabled when launched with --hide-ui-dir-config.' if shared.cmd_opts.hide_ui_dir_config else ''
-                        gr.HTML(f"<p class=\"text-gray-500\">Process images in a directory on the same machine where the server is running.{hidden}</p>")
+                        gr.HTML(f"<p class=\"text-gray-500\">Process images in a directory on the same machine where the server is running.<br>Use an empty output directory to save pictures normally instead of writing to the output directory.{hidden}</p>")
                         img2img_batch_input_dir = gr.Textbox(label="Input directory", **shared.hide_dirs)
                         img2img_batch_output_dir = gr.Textbox(label="Output directory", **shared.hide_dirs)
 
@@ -788,6 +794,7 @@ def create_ui(wrap_gradio_gpu_call):
 
             roll.click(
                 fn=roll_artist,
+                _js="update_img2img_tokens",
                 inputs=[
                     img2img_prompt,
                 ],
@@ -798,6 +805,7 @@ def create_ui(wrap_gradio_gpu_call):
 
             prompts = [(txt2img_prompt, txt2img_negative_prompt), (img2img_prompt, img2img_negative_prompt)]
             style_dropdowns = [(txt2img_prompt_style, txt2img_prompt_style2), (img2img_prompt_style, img2img_prompt_style2)]
+            style_js_funcs = ["update_txt2img_tokens", "update_img2img_tokens"]
 
             for button, (prompt, negative_prompt) in zip([txt2img_save_style, img2img_save_style], prompts):
                 button.click(
@@ -809,9 +817,10 @@ def create_ui(wrap_gradio_gpu_call):
                     outputs=[txt2img_prompt_style, img2img_prompt_style, txt2img_prompt_style2, img2img_prompt_style2],
                 )
 
-            for button, (prompt, negative_prompt), (style1, style2) in zip([txt2img_prompt_style_apply, img2img_prompt_style_apply], prompts, style_dropdowns):
+            for button, (prompt, negative_prompt), (style1, style2), js_func in zip([txt2img_prompt_style_apply, img2img_prompt_style_apply], prompts, style_dropdowns, style_js_funcs):
                 button.click(
                     fn=apply_styles,
+                    _js=js_func,
                     inputs=[prompt, negative_prompt, style1, style2],
                     outputs=[prompt, negative_prompt, style1, style2],
                 )
@@ -834,6 +843,7 @@ def create_ui(wrap_gradio_gpu_call):
                 (denoising_strength, "Denoising strength"),
             ]
             modules.generation_parameters_copypaste.connect_paste(paste, img2img_paste_fields, img2img_prompt)
+            token_button.click(fn=update_token_counter, inputs=[img2img_prompt, steps], outputs=[token_counter])
 
     with gr.Blocks(analytics_enabled=False) as extras_interface:
         with gr.Row().style(equal_height=False):
@@ -951,6 +961,8 @@ def create_ui(wrap_gradio_gpu_call):
         with gr.Row().style(equal_height=False):
             with gr.Column():
                 with gr.Group():
+                    gr.HTML(value="<p style='margin-bottom: 0.7em'>See <b><a href=\"https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Textual-Inversion\">wiki</a></b> for detailed explanation.</p>")
+
                     gr.HTML(value="<p style='margin-bottom: 0.7em'>Create a new embedding</p>")
 
                     new_embedding_name = gr.Textbox(label="Name")
@@ -965,6 +977,24 @@ def create_ui(wrap_gradio_gpu_call):
                             create_embedding = gr.Button(value="Create", variant='primary')
 
                 with gr.Group():
+                    gr.HTML(value="<p style='margin-bottom: 0.7em'>Preprocess images</p>")
+
+                    process_src = gr.Textbox(label='Source directory')
+                    process_dst = gr.Textbox(label='Destination directory')
+
+                    with gr.Row():
+                        process_flip = gr.Checkbox(label='Flip')
+                        process_split = gr.Checkbox(label='Split into two')
+                        process_caption = gr.Checkbox(label='Add caption')
+
+                    with gr.Row():
+                        with gr.Column(scale=3):
+                            gr.HTML(value="")
+
+                        with gr.Column():
+                            run_preprocess = gr.Button(value="Preprocess", variant='primary')
+
+                with gr.Group():
                     gr.HTML(value="<p style='margin-bottom: 0.7em'>Train an embedding; must specify a directory with a set of 512x512 images</p>")
                     train_embedding_name = gr.Dropdown(label='Embedding', choices=sorted(sd_hijack.model_hijack.embedding_db.word_embeddings.keys()))
                     learn_rate = gr.Number(label='Learning rate', value=5.0e-03)
@@ -972,8 +1002,8 @@ def create_ui(wrap_gradio_gpu_call):
                     log_directory = gr.Textbox(label='Log directory', placeholder="Path to directory where to write outputs", value="textual_inversion")
                     template_file = gr.Textbox(label='Prompt template file', value=os.path.join(script_path, "textual_inversion_templates", "style_filewords.txt"))
                     steps = gr.Number(label='Max steps', value=100000, precision=0)
-                    create_image_every = gr.Number(label='Save an image to log directory every N steps, 0 to disable', value=1000, precision=0)
-                    save_embedding_every = gr.Number(label='Save a copy of embedding to log directory every N steps, 0 to disable', value=1000, precision=0)
+                    create_image_every = gr.Number(label='Save an image to log directory every N steps, 0 to disable', value=500, precision=0)
+                    save_embedding_every = gr.Number(label='Save a copy of embedding to log directory every N steps, 0 to disable', value=500, precision=0)
 
                     with gr.Row():
                         with gr.Column(scale=2):
@@ -1006,6 +1036,22 @@ def create_ui(wrap_gradio_gpu_call):
                 ti_output,
                 ti_outcome,
             ]
+        )
+
+        run_preprocess.click(
+            fn=wrap_gradio_gpu_call(modules.textual_inversion.ui.preprocess, extra_outputs=[gr.update()]),
+            _js="start_training_textual_inversion",
+            inputs=[
+                process_src,
+                process_dst,
+                process_flip,
+                process_split,
+                process_caption,
+            ],
+            outputs=[
+                ti_output,
+                ti_outcome,
+            ],
         )
 
         train_embedding.click(
@@ -1135,6 +1181,31 @@ def create_ui(wrap_gradio_gpu_call):
             _js='function(){}'
         )
 
+        with gr.Row():
+            reload_script_bodies = gr.Button(value='Reload custom script bodies (No ui updates, No restart)', variant='secondary')
+            restart_gradio = gr.Button(value='Restart Gradio and Refresh components (Custom Scripts, ui.py, js and css only)', variant='primary')
+
+
+        def reload_scripts():
+            modules.scripts.reload_script_body_only()
+
+        reload_script_bodies.click(
+            fn=reload_scripts,
+            inputs=[],
+            outputs=[],
+            _js='function(){}'
+        )
+
+        def request_restart():
+            settings_interface.gradio_ref.do_restart = True
+
+        restart_gradio.click(
+            fn=request_restart,
+            inputs=[],
+            outputs=[],
+            _js='function(){restart_reload()}'
+        )
+        
         if column is not None:
             column.__exit__()
 
@@ -1160,7 +1231,9 @@ def create_ui(wrap_gradio_gpu_call):
         css += css_hide_progressbar
 
     with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion") as demo:
-
+        
+        settings_interface.gradio_ref = demo
+        
         with gr.Tabs() as tabs:
             for interface, label, ifid in interfaces:
                 with gr.TabItem(label, id=ifid):
@@ -1340,12 +1413,12 @@ for filename in sorted(os.listdir(jsdir)):
         javascript += f"\n<script>{jsfile.read()}</script>"
 
 
-def template_response(*args, **kwargs):
-    res = gradio_routes_templates_response(*args, **kwargs)
-    res.body = res.body.replace(b'</head>', f'{javascript}</head>'.encode("utf8"))
-    res.init_headers()
-    return res
+if 'gradio_routes_templates_response' not in globals():
+    def template_response(*args, **kwargs):
+        res = gradio_routes_templates_response(*args, **kwargs)
+        res.body = res.body.replace(b'</head>', f'{javascript}</head>'.encode("utf8"))
+        res.init_headers()
+        return res
 
-
-gradio_routes_templates_response = gradio.routes.templates.TemplateResponse
-gradio.routes.templates.TemplateResponse = template_response
+    gradio_routes_templates_response = gradio.routes.templates.TemplateResponse
+    gradio.routes.templates.TemplateResponse = template_response

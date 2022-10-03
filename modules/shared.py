@@ -170,9 +170,10 @@ options_templates.update(options_section(('saving-paths', "Paths for saving"), {
 
 options_templates.update(options_section(('saving-to-dirs', "Saving to a directory"), {
     "save_to_dirs": OptionInfo(False, "Save images to a subdirectory"),
-    "grid_save_to_dirs": OptionInfo(False, "Save grids to subdirectory"),
+    "grid_save_to_dirs": OptionInfo(False, "Save grids to a subdirectory"),
+    "use_save_to_dirs_for_ui": OptionInfo(False, "When using \"Save\" button, save images to a subdirectory"),
     "directories_filename_pattern": OptionInfo("", "Directory name pattern"),
-    "directories_max_prompt_words": OptionInfo(8, "Max prompt words", gr.Slider, {"minimum": 1, "maximum": 20, "step": 1}),
+    "directories_max_prompt_words": OptionInfo(8, "Max prompt words for [prompt_words] pattern", gr.Slider, {"minimum": 1, "maximum": 20, "step": 1}),
 }))
 
 options_templates.update(options_section(('upscaling', "Upscaling"), {
@@ -182,7 +183,7 @@ options_templates.update(options_section(('upscaling', "Upscaling"), {
     "SWIN_tile": OptionInfo(192, "Tile size for all SwinIR.", gr.Slider, {"minimum": 16, "maximum": 512, "step": 16}),
     "SWIN_tile_overlap": OptionInfo(8, "Tile overlap, in pixels for SwinIR. Low values = visible seam.", gr.Slider, {"minimum": 0, "maximum": 48, "step": 1}),
     "ldsr_steps": OptionInfo(100, "LDSR processing steps. Lower = faster", gr.Slider, {"minimum": 1, "maximum": 200, "step": 1}),
-    "upscaler_for_img2img": OptionInfo(None, "Upscaler for img2img", gr.Radio, lambda: {"choices": [x.name for x in sd_upscalers]}),
+    "upscaler_for_img2img": OptionInfo(None, "Upscaler for img2img", gr.Dropdown, lambda: {"choices": [x.name for x in sd_upscalers]}),
 }))
 
 options_templates.update(options_section(('face-restoration', "Face restoration"), {

@@ -8,6 +8,7 @@ from torchvision import transforms
 
 import random
 import tqdm
+from modules import devices
 
 
 class PersonalizedBase(Dataset):
@@ -47,6 +48,7 @@ class PersonalizedBase(Dataset):
             torchdata = torch.moveaxis(torchdata, 2, 0)
 
             init_latent = model.get_first_stage_encoding(model.encode_first_stage(torchdata.unsqueeze(dim=0))).squeeze()
+            init_latent = init_latent.to(devices.cpu)
 
             self.dataset.append((init_latent, filename_tokens))
 
