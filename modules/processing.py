@@ -112,14 +112,17 @@ class Processed:
         p: StableDiffusionProcessing,
         images_list: list[Image.Image],
         seed=-1,
-        info="",
+        infotext="",
+        comments: list[str] = [],
         subseed: int | None =None,
         all_prompts: list[str] | None = None,
         all_negative_prompts: list[str] | None = None,
         all_seeds: list[int] | None = None,
         all_subseeds: list[int] | None = None,
         index_of_first_image=0,
-        infotexts: list[str] | None = None,
+        all_infotexts: list[str] | None = None,
+        job_timestamp: str | None = None,
+        styles: list[str] = [],
     ):
         self.images = images_list
         self.prompt = p.prompt
@@ -127,7 +130,8 @@ class Processed:
         self.seed = seed
         self.subseed = subseed
         self.subseed_strength = p.subseed_strength
-        self.info = info
+        self.infotext = infotext
+        self.comments = comments
         self.width = p.width
         self.height = p.height
         self.sampler_index = p.sampler_index
@@ -143,6 +147,8 @@ class Processed:
         self.denoising_strength = getattr(p, 'denoising_strength', None)
         self.extra_generation_params = p.extra_generation_params
         self.index_of_first_image = index_of_first_image
+        self.job_timestamp = job_timestamp
+        self.styles = styles
 
         self.eta = p.eta
         self.ddim_discretize = p.ddim_discretize
@@ -151,49 +157,39 @@ class Processed:
         self.s_tmax = p.s_tmax
         self.s_noise = p.s_noise
         self.sampler_noise_scheduler_override = p.sampler_noise_scheduler_override
-        self.prompt = self.prompt if type(self.prompt) != list else self.prompt[0]
-        self.negative_prompt = self.negative_prompt if type(self.negative_prompt) != list else self.negative_prompt[0]
-        self.seed = int(self.seed if type(self.seed) != list else self.seed[0])
-        self.subseed = int(self.subseed if type(self.subseed) != list else self.subseed[0]) if self.subseed is not None else -1
+        self.all_prompts = all_prompts or (self.prompt if isinstance(self.prompt, list) else [self.prompt])
+        self.all_negative_prompts = all_negative_prompts or (self.negative_prompt if isinstance(self.negative_prompt, list) else [self.negative_prompt])
+        self.all_seeds = all_seeds or (self.seed if isinstance(self.seed, list) else [self.seed])
+        self.all_subseeds = all_subseeds or (self.subseed if isinstance(self.subseed, list) else [self.subseed])
+        self.all_infotexts = all_infotexts or [infotext]
 
-        self.all_prompts = all_prompts or [self.prompt]
-        self.all_negative_prompts = all_negative_prompts or [self.negative_prompt]
-        self.all_seeds = all_seeds or [self.seed]
-        self.all_subseeds = all_subseeds or [self.subseed]
-        self.infotexts = infotexts or [info]
+    @property
+    def info(self) -> str:
+        return "\n\n".join([self.infotext, *self.comments])
 
     def js(self):
         obj = {
-            "prompt": self.prompt,
-            "all_prompts": self.all_prompts,
-            "negative_prompt": self.negative_prompt,
-            "seed": self.seed,
-            "all_seeds": self.all_seeds,
-            "subseed": self.subseed,
-            "all_subseeds": self.all_subseeds,
-            "subseed_strength": self.subseed_strength,
-            "width": self.width,
-            "height": self.height,
-            "sampler_index": self.sampler_index,
-            "sampler": self.sampler,
-            "cfg_scale": self.cfg_scale,
-            "steps": self.steps,
-            "batch_size": self.batch_size,
-            "restore_faces": self.restore_faces,
-            "face_restoration_model": self.face_restoration_model,
-            "sd_model_hash": self.sd_model_hash,
-            "seed_resize_from_w": self.seed_resize_from_w,
-            "seed_resize_from_h": self.seed_resize_from_h,
-            "denoising_strength": self.denoising_strength,
-            "extra_generation_params": self.extra_generation_params,
-            "index_of_first_image": self.index_of_first_image,
-            "infotexts": self.infotexts,
+            k: v
+            for k, v in self.__dict__.items()
+            if not k.startswith("_") and self._jsonable(v)
         }
-
         return json.dumps(obj)
 
-    def infotext(self,  p: StableDiffusionProcessing, index):
-        return create_infotext(p, self.all_prompts, self.all_seeds, self.all_subseeds, comments=[], position_in_batch=index % self.batch_size, iteration=index // self.batch_size)
+    @classmethod
+    def from_js(cls, jsobj: dict):
+        obj = cls.__new__(cls)
+        for k, v in jsobj.items():
+            setattr(obj, k, v)
+        return obj
+
+    @staticmethod
+    def _jsonable(obj) -> bool:
+        try:
+            json.dumps(obj)
+        except Exception:
+            return False
+        else:
+            return True
 
 
 # from https://discuss.pytorch.org/t/help-regarding-slerp-function-for-generative-model-sampling/32475/3
@@ -370,8 +366,8 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
     if os.path.exists(cmd_opts.embeddings_dir):
         model_hijack.embedding_db.load_textual_inversion_embeddings()
 
-    infotexts = []
-    output_images = []
+    all_infotexts: list[str] = []
+    output_images: list[Image.Image] = []
 
     with torch.no_grad():
         p.init(all_prompts, all_negative_prompts, all_seeds, all_subseeds)
@@ -456,7 +452,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
                 if opts.samples_save and not p.do_not_save_samples:
                     images.save_image(image, p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, info=infotext(n, i), p=p)
 
-                infotexts.append(infotext(n, i))
+                all_infotexts.append(infotext(n, i))
                 output_images.append(image)
 
             state.nextjob()
@@ -469,7 +465,6 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             grid = images.image_grid(output_images, p.batch_size)
 
             if opts.return_grid:
-                infotexts.insert(0, infotext())
                 output_images.insert(0, grid)
                 index_of_first_image = 1
 
@@ -482,14 +477,17 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
         p,
         output_images,
         seed=all_seeds[0],
-        info="\n\n".join([infotext(), *dict.fromkeys(comments)]),
+        infotext=infotext(),
+        comments=list(dict.fromkeys(comments)),
         subseed=all_subseeds[0],
         all_prompts=all_prompts,
         all_negative_prompts=all_negative_prompts,
         all_seeds=all_seeds,
         all_subseeds=all_subseeds,
         index_of_first_image=index_of_first_image,
-        infotexts=infotexts,
+        all_infotexts=all_infotexts,
+        job_timestamp=state.job_timestamp,
+        styles=p.styles,
     )
 
 

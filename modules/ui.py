@@ -1,10 +1,14 @@
+from __future__ import annotations
+
 import base64
+import csv
 import html
 import io
 import json
 import math
 import mimetypes
 import os
+import os.path
 import random
 import sys
 import time
@@ -24,6 +28,7 @@ import gradio.routes
 
 from modules import sd_hijack
 from modules.paths import script_path
+from modules.processing import Processed
 from modules.shared import opts, cmd_opts
 import modules.shared as shared
 from modules.sd_samplers import samplers, samplers_for_img2img
@@ -34,9 +39,9 @@ import modules.gfpgan_model
 import modules.codeformer_model
 import modules.styles
 import modules.generation_parameters_copypaste
-from modules.prompt_parser import get_learned_conditioning_prompt_schedules
-from modules.images import apply_filename_pattern, get_next_sequence_number
 import modules.textual_inversion.ui
+from modules.images import save_image
+from modules.prompt_parser import get_learned_conditioning_prompt_schedules
 
 # this is a fix for Windows users. Without it, javascript files will be served with text/html content-type and the bowser will not show any UI
 mimetypes.init()
@@ -99,78 +104,45 @@ def send_gradio_gallery_to_image(x):
 
 
 def save_files(js_data, images, index):
-    import csv    
-    filenames = []
+    filenames: list[str] = []
+    path: str = opts.outdir_save or ""
+    extension: str = opts.samples_format or ""
+    save_to_dirs: bool = opts.use_save_to_dirs_for_ui
+    grid_save_to_dirs: bool = opts.grid_save_to_dirs_for_ui
+    start_index = 0
 
-    #quick dictionary to class object conversion. Its neccesary due apply_filename_pattern requiring it
-    class MyObject:
-        def __init__(self, d=None):
-            if d is not None:
-                for key, value in d.items():
-                    setattr(self, key, value)
+    p = Processed.from_js(json.loads(js_data))
 
-    data = json.loads(js_data)
-
-    p = MyObject(data)
-    path = opts.outdir_save
-    save_to_dirs = opts.use_save_to_dirs_for_ui
-
-    if save_to_dirs:
-        dirname = apply_filename_pattern(opts.directories_filename_pattern or "[prompt_words]", p, p.seed, p.prompt)
-        path = os.path.join(opts.outdir_save, dirname)
-
-    os.makedirs(path, exist_ok=True)
-  
-
-    if index > -1 and opts.save_selected_only and (index >= data["index_of_first_image"]):  # ensures we are looking at a specific non-grid picture, and we have save_selected_only
-
+    # ensures we are looking at a specific non-grid picture, and we have save_selected_only
+    if opts.save_selected_only and index >= p.index_of_first_image:
         images = [images[index]]
-        infotexts = [data["infotexts"][index]]
-    else:
-        infotexts = data["infotexts"]
+        start_index = index
 
-    with open(os.path.join(opts.outdir_save, "log.csv"), "a", encoding="utf8", newline='') as file:
+    log_filename = os.path.join(path, "log.csv")
+    with open(log_filename, "a", encoding="utf8", newline='') as file:
         at_start = file.tell() == 0
         writer = csv.writer(file)
         if at_start:
             writer.writerow(["prompt", "seed", "width", "height", "sampler", "cfgs", "steps", "filename", "negative_prompt"])
 
-        file_decoration = opts.samples_filename_pattern or "[seed]-[prompt_spaces]"
-        if file_decoration != "":
-            file_decoration = "-" + file_decoration.lower()
-        file_decoration = apply_filename_pattern(file_decoration, p, p.seed, p.prompt)
-        truncated = (file_decoration[:240] + '..') if len(file_decoration) > 240 else file_decoration
-        filename_base = truncated
-        extension = opts.samples_format.lower()
-
-        basecount = get_next_sequence_number(path, "")
-        for i, filedata in enumerate(images):
-            file_number = f"{basecount+i:05}"
-            filename = file_number + filename_base + f".{extension}"
-            filepath = os.path.join(path, filename)
-
-
+        for image_index, filedata in enumerate(images, start=start_index):
             if filedata.startswith("data:image/png;base64,"):
                 filedata = filedata[len("data:image/png;base64,"):]
-
             image = Image.open(io.BytesIO(base64.decodebytes(filedata.encode('utf-8'))))
-            if opts.enable_pnginfo and extension == 'png':
-                pnginfo = PngImagePlugin.PngInfo()
-                pnginfo.add_text('parameters', infotexts[i])
-                image.save(filepath, pnginfo=pnginfo)
-            else:
-                image.save(filepath, quality=opts.jpeg_quality)
 
-            if opts.enable_pnginfo and extension in ("jpg", "jpeg", "webp"):
-                piexif.insert(piexif.dump({"Exif": {
-                    piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(infotexts[i], encoding="unicode")
-                }}), filepath)
+            is_grid = image_index < p.index_of_first_image
+            is_save_to_dirs = grid_save_to_dirs if is_grid else save_to_dirs
+            i = 0 if is_grid else (image_index - p.index_of_first_image)
 
-            filenames.append(filename)
+            fullfn = save_image(image, path, "", seed=p.all_seeds[i], prompt=p.all_prompts[i], extension=extension, info=p.all_infotexts[i], grid=is_grid, p=p, index=i, save_to_dirs=is_save_to_dirs)
 
-        writer.writerow([data["prompt"], data["seed"], data["width"], data["height"], data["sampler"], data["cfg_scale"], data["steps"], filenames[0], data["negative_prompt"]])
+            relfn = os.path.relpath(fullfn, path)
+            filenames.append(relfn)
 
-    return '', '', plaintext_to_html(f"Saved: {filenames[0]}")
+            writer.writerow([p.all_prompts[i], p.all_seeds[i], image.width, image.height, p.sampler, p.cfg_scale, p.steps, relfn, p.all_negative_prompts[i]])
+
+    result_message = "\n".join(f"Saved: {fn}" for fn in filenames)
+    return '', '', plaintext_to_html(result_message)
 
 
 def wrap_gradio_call(func, extra_outputs=None):

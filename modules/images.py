@@ -371,9 +371,7 @@ def apply_filename_pattern(
         replace_pattern("cfg", p.cfg_scale)
         replace_pattern("width", p.width)
         replace_pattern("height", p.height)
-        styles: list[str] | None = getattr(p, "styles", None)
-        if styles:
-            replace_pattern("styles", lambda: sanitize_filename_part(", ".join(x for x in styles if x != "None") or "No styles", replace_spaces=False))
+        replace_pattern("styles", lambda: sanitize_filename_part(", ".join(x for x in p.styles if x != "None") or "No styles", replace_spaces=False))
         replace_pattern("sampler", lambda: sanitize_filename_part(sd_samplers.samplers[p.sampler_index].name))
         replace_pattern("model_hash", lambda: getattr(p, "sd_model_hash", shared.sd_model.sd_model_hash))
         replace_pattern("job_timestamp", lambda: getattr(p, "job_timestamp", shared.state.job_timestamp))
@@ -441,9 +439,11 @@ def save_image(
     existing_info: dict | None = None,
     forced_filename: str | None = None,
     index=0,
+    save_to_dirs: bool | None = None,
     separator="-",
 ) -> str:
-    save_to_dirs = (grid and opts.grid_save_to_dirs) or (not grid and opts.save_to_dirs and not no_prompt)
+    if save_to_dirs is None:
+        save_to_dirs = opts.grid_save_to_dirs if grid else (opts.save_to_dirs and not no_prompt)
 
     if save_to_dirs:
         dirname_pattern = (opts.directories_filename_pattern or "[prompt_words]").lower()
