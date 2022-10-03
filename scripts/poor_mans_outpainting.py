@@ -5,7 +5,7 @@ import gradio as gr
 from PIL import Image, ImageDraw
 
 from modules import images, processing, devices
-from modules.processing import Processed, process_images
+from modules.processing import Processed, ProcessedImage, process_images
 from modules.shared import opts, cmd_opts, state
 
 
@@ -30,7 +30,7 @@ class Script(scripts.Script):
 
     def run(self, p, pixels, mask_blur, inpainting_fill, direction):
         initial_seed = None
-        initial_info = None
+        initial_infotext = None
 
         p.mask_blur = mask_blur * 2
         p.inpainting_fill = inpainting_fill
@@ -119,10 +119,10 @@ class Script(scripts.Script):
 
             if initial_seed is None:
                 initial_seed = processed.seed
-                initial_info = processed.info
+                initial_infotext = processed.images[0].infotext
 
             p.seed = processed.seed + 1
-            work_results += processed.images
+            work_results += [pi.image for pi in processed.images]
 
 
         image_index = 0
@@ -137,11 +137,12 @@ class Script(scripts.Script):
                 image_index += 1
 
         combined_image = images.combine_grid(grid)
+        pi = ProcessedImage(combined_image, initial_infotext)
 
         if opts.samples_save:
-            images.save_image(combined_image, p.outpath_samples, "", initial_seed, p.prompt, opts.grid_format, info=initial_info, p=p)
+            images.save_image(pi, p.outpath_samples, "", initial_seed, p.prompt, opts.grid_format, p=p)
 
-        processed = Processed(p, [combined_image], initial_seed, initial_info)
+        processed = Processed(p, [pi], initial_seed)
 
         return processed
 

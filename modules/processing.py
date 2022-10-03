@@ -99,15 +99,21 @@ class StableDiffusionProcessing:
         raise NotImplementedError()
 
 
+class ProcessedImage:
+    def __init__(self, image, infotext, infotext_extras=None, is_grid=False):
+        self.image = image
+        self.infotext = infotext
+        self.infotext_extras = infotext_extras
+        self.is_grid = is_grid
+
 class Processed:
-    def __init__(self, p: StableDiffusionProcessing, images_list, seed=-1, info="", subseed=None, all_prompts=None, all_seeds=None, all_subseeds=None, index_of_first_image=0, infotexts=None):
+    def __init__(self, p: StableDiffusionProcessing, images_list, seed=-1, subseed=None, all_prompts=None, all_seeds=None, all_subseeds=None, index_of_first_image=0, comments=()):
         self.images = images_list
         self.prompt = p.prompt
         self.negative_prompt = p.negative_prompt
         self.seed = seed
         self.subseed = subseed
         self.subseed_strength = p.subseed_strength
-        self.info = info
         self.width = p.width
         self.height = p.height
         self.sampler_index = p.sampler_index
@@ -139,7 +145,7 @@ class Processed:
         self.all_prompts = all_prompts or [self.prompt]
         self.all_seeds = all_seeds or [self.seed]
         self.all_subseeds = all_subseeds or [self.subseed]
-        self.infotexts = infotexts or [info]
+        self.comments = comments
 
     def js(self):
         obj = {
@@ -166,13 +172,10 @@ class Processed:
             "denoising_strength": self.denoising_strength,
             "extra_generation_params": self.extra_generation_params,
             "index_of_first_image": self.index_of_first_image,
-            "infotexts": self.infotexts,
+            "infotexts": [pi.infotext for pi in self.images],
         }
 
         return json.dumps(obj)
-
-    def infotext(self,  p: StableDiffusionProcessing, index):
-        return create_infotext(p, self.all_prompts, self.all_seeds, self.all_subseeds, comments=[], position_in_batch=index % self.batch_size, iteration=index // self.batch_size)
 
 
 # from https://discuss.pytorch.org/t/help-regarding-slerp-function-for-generative-model-sampling/32475/3
@@ -328,7 +331,6 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
     if os.path.exists(cmd_opts.embeddings_dir):
         model_hijack.embedding_db.load_textual_inversion_embeddings()
 
-    infotexts = []
     output_images = []
     precision_scope = torch.autocast if cmd_opts.precision == "autocast" else contextlib.nullcontext
     ema_scope = (contextlib.nullcontext if cmd_opts.lowvram else p.sd_model.ema_scope)
@@ -381,7 +383,8 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
 
                 if p.restore_faces:
                     if opts.save and not p.do_not_save_samples and opts.save_images_before_face_restoration:
-                        images.save_image(Image.fromarray(x_sample), p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, info=infotext(n, i), p=p, suffix="-before-face-restoration")
+                        pi = ProcessedImage(Image.fromarray(x_sample), infotext(n, i))
+                        images.save_image(pi, p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, p=p, suffix="-before-face-restoration")
 
                     devices.torch_gc()
 
@@ -391,7 +394,8 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
 
                 if p.color_corrections is not None and i < len(p.color_corrections):
                     if opts.save and not p.do_not_save_samples and opts.save_images_before_color_correction:
-                        images.save_image(image, p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, info=infotext(n, i), p=p, suffix="-before-color-correction")
+                        pi = ProcessedImage(image, infotext(n, i))
+                        images.save_image(pi, p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, p=p, suffix="-before-color-correction")
                     image = apply_color_correction(p.color_corrections[i], image)
 
                 if p.overlay_images is not None and i < len(p.overlay_images):
@@ -408,11 +412,12 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
                     image.alpha_composite(overlay)
                     image = image.convert('RGB')
 
-                if opts.samples_save and not p.do_not_save_samples:
-                    images.save_image(image, p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, info=infotext(n, i), p=p)
+                pi = ProcessedImage(image, infotext(n, i))
 
-                infotexts.append(infotext(n, i))
-                output_images.append(image)
+                if opts.samples_save and not p.do_not_save_samples:
+                    images.save_image(pi, p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, p=p)
+
+                output_images.append(pi)
 
             state.nextjob()
 
@@ -424,15 +429,14 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             grid = images.image_grid(output_images, p.batch_size)
 
             if opts.return_grid:
-                infotexts.insert(0, infotext())
                 output_images.insert(0, grid)
                 index_of_first_image = 1
 
             if opts.grid_save:
-                images.save_image(grid, p.outpath_grids, "grid", all_seeds[0], all_prompts[0], opts.grid_format, info=infotext(), short_filename=not opts.grid_extended_filename, p=p, grid=True)
+                images.save_image(grid, p.outpath_grids, "grid", all_seeds[0], all_prompts[0], opts.grid_format, short_filename=not opts.grid_extended_filename, p=p)
 
     devices.torch_gc()
-    return Processed(p, output_images, all_seeds[0], infotext() + "".join(["\n\n" + x for x in comments]), subseed=all_subseeds[0], all_prompts=all_prompts, all_seeds=all_seeds, all_subseeds=all_subseeds, index_of_first_image=index_of_first_image, infotexts=infotexts)
+    return Processed(p, output_images, all_seeds[0], subseed=all_subseeds[0], all_prompts=all_prompts, all_seeds=all_seeds, all_subseeds=all_subseeds, index_of_first_image=index_of_first_image, comments=comments)
 
 
 class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):

@@ -8,7 +8,7 @@ import gradio as gr
 from PIL import Image, ImageDraw
 
 from modules import images, processing, devices
-from modules.processing import Processed, process_images
+from modules.processing import Processed, ProcessedImage, process_images
 from modules.shared import opts, cmd_opts, state
 
 
@@ -137,7 +137,8 @@ class Script(scripts.Script):
         return [info, pixels, mask_blur, direction, noise_q, color_variation]
 
     def run(self, p, _, pixels, mask_blur, direction, noise_q, color_variation):
-        initial_seed_and_info = [None, None]
+        initial_seed = None
+        initial_infotext = None
 
         process_width = p.width
         process_height = p.height
@@ -174,6 +175,7 @@ class Script(scripts.Script):
         state.job_count = (1 if left > 0 else 0) + (1 if right > 0 else 0) + (1 if up > 0 else 0) + (1 if down > 0 else 0)
 
         def expand(init, expand_pixels, is_left=False, is_right=False, is_top=False, is_bottom=False):
+            nonlocal initial_seed, initial_infotext
             is_horiz = is_left or is_right
             is_vert = is_top or is_bottom
             pixels_horiz = expand_pixels if is_horiz else 0
@@ -229,11 +231,11 @@ class Script(scripts.Script):
             p.latent_mask = latent_mask
 
             proc = process_images(p)
-            proc_img = proc.images[0]
+            proc_img = proc.images[0].image
 
-            if initial_seed_and_info[0] is None:
-                initial_seed_and_info[0] = proc.seed
-                initial_seed_and_info[1] = proc.info
+            if initial_seed is None:
+                initial_seed = proc.seed
+                initial_infotext = proc.images[0].infotext
 
             out.paste(proc_img, (0 if is_left else out.width - proc_img.width, 0 if is_top else out.height - proc_img.height))
             out = out.crop((0, 0, res_w, res_h))
@@ -250,10 +252,11 @@ class Script(scripts.Script):
         if down > 0:
             img = expand(img, down, is_bottom=True)
 
-        res = Processed(p, [img], initial_seed_and_info[0], initial_seed_and_info[1])
+        pi = ProcessedImage(img, initial_infotext)
+        res = Processed(p, [pi], initial_seed)
 
         if opts.samples_save:
-            images.save_image(img, p.outpath_samples, "", res.seed, p.prompt, opts.grid_format, info=res.info, p=p)
+            images.save_image(pi, p.outpath_samples, "", res.seed, p.prompt, opts.grid_format, p=p)
 
         return res
 

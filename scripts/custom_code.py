@@ -22,12 +22,11 @@ class Script(scripts.Script):
     def run(self, p, code):
         assert cmd_opts.allow_code, '--allow-code option must be enabled'
 
-        display_result_data = [[], -1, ""]
+        display_result_data = [[], -1]
 
-        def display(imgs, s=display_result_data[1], i=display_result_data[2]):
+        def display(imgs, s=display_result_data[1]):
             display_result_data[0] = imgs
             display_result_data[1] = s
-            display_result_data[2] = i
 
         from types import ModuleType
         compiled = compile(code, '', 'exec')

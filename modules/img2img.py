@@ -43,7 +43,7 @@ def process_batch(p, input_dir, output_dir, args):
         if proc is None:
             proc = process_images(p)
 
-        for n, processed_image in enumerate(proc.images):
+        for n, pi in enumerate(proc.images):
             filename = os.path.basename(image)
 
             if n > 0:
@@ -51,7 +51,7 @@ def process_batch(p, input_dir, output_dir, args):
                 filename = f"{left}-{n}{right}"
 
             if not save_normally:
-                processed_image.save(os.path.join(output_dir, filename))
+                pi.image.save(os.path.join(output_dir, filename))
 
 
 def img2img(mode: int, prompt: str, negative_prompt: str, prompt_style: str, prompt_style2: str, init_img, init_img_inpaint, init_mask_inpaint, steps: int, sampler_index: int, mask_blur: int, inpainting_fill: int, restore_faces: bool, tiling: bool, n_iter: int, batch_size: int, cfg_scale: float, denoising_strength: float, seed: int, subseed: int, subseed_strength: float, seed_resize_from_h: int, seed_resize_from_w: int, seed_enable_extras: bool, height: int, width: int, resize_mode: int, inpaint_full_res: bool, inpaint_full_res_padding: int, inpainting_mask_invert: int, img2img_batch_input_dir: str, img2img_batch_output_dir: str, *args):
@@ -114,7 +114,7 @@ def img2img(mode: int, prompt: str, negative_prompt: str, prompt_style: str, pro
 
         process_batch(p, img2img_batch_input_dir, img2img_batch_output_dir, args)
 
-        processed = Processed(p, [], p.seed, "")
+        processed = Processed(p, [], p.seed)
     else:
         processed = modules.scripts.scripts_img2img.run(p, *args)
         if processed is None:
@@ -126,4 +126,4 @@ def img2img(mode: int, prompt: str, negative_prompt: str, prompt_style: str, pro
     if opts.samples_log_stdout:
         print(generation_info_js)
 
-    return processed.images, generation_info_js, plaintext_to_html(processed.info)
+    return [pi.image for pi in processed.images], generation_info_js, plaintext_to_html(processed.images[0].infotext + "".join(["\n\n" + x for x in processed.comments]))

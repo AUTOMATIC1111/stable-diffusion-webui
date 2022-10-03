@@ -18,6 +18,8 @@ LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.L
 
 
 def image_grid(imgs, batch_size=1, rows=None):
+    from modules.processing import ProcessedImage
+
     if rows is None:
         if opts.n_rows > 0:
             rows = opts.n_rows
@@ -29,13 +31,13 @@ def image_grid(imgs, batch_size=1, rows=None):
 
     cols = math.ceil(len(imgs) / rows)
 
-    w, h = imgs[0].size
+    w, h = imgs[0].image.size
     grid = Image.new('RGB', size=(cols * w, rows * h), color='black')
 
     for i, img in enumerate(imgs):
-        grid.paste(img, box=(i % cols * w, i // cols * h))
+        grid.paste(img.image, box=(i % cols * w, i // cols * h))
 
-    return grid
+    return ProcessedImage(grid, imgs[0].infotext, is_grid=True)
 
 
 Grid = namedtuple("Grid", ["tiles", "tile_w", "tile_h", "image_w", "image_h", "overlap"])
@@ -115,7 +117,9 @@ class GridAnnotation:
         self.size = None
 
 
-def draw_grid_annotations(im, width, height, hor_texts, ver_texts):
+def draw_grid_annotations(grid, width, height, hor_texts, ver_texts):
+    from modules.processing import ProcessedImage
+
     def wrap(drawing, text, font, line_length):
         lines = ['']
         for word in text.split():
@@ -148,6 +152,7 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts):
 
     pad_left = 0 if sum([sum([len(line.text) for line in lines]) for lines in ver_texts]) == 0 else width * 3 // 4
 
+    im = grid.image
     cols = im.width // width
     rows = im.height // height
 
@@ -192,10 +197,10 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts):
 
         draw_texts(d, x, y, ver_texts[row])
 
-    return result
+    return ProcessedImage(result, grid.infotext, is_grid=True)
 
 
-def draw_prompt_matrix(im, width, height, all_prompts):
+def draw_prompt_matrix(grid, width, height, all_prompts):
     prompts = all_prompts[1:]
     boundary = math.ceil(len(prompts) / 2)
 
@@ -205,7 +210,7 @@ def draw_prompt_matrix(im, width, height, all_prompts):
     hor_texts = [[GridAnnotation(x, is_active=pos & (1 << i) != 0) for i, x in enumerate(prompts_horiz)] for pos in range(1 << len(prompts_horiz))]
     ver_texts = [[GridAnnotation(x, is_active=pos & (1 << i) != 0) for i, x in enumerate(prompts_vert)] for pos in range(1 << len(prompts_vert))]
 
-    return draw_grid_annotations(im, width, height, hor_texts, ver_texts)
+    return draw_grid_annotations(grid, width, height, hor_texts, ver_texts)
 
 
 def resize_image(resize_mode, im, width, height):
@@ -355,7 +360,7 @@ def get_next_sequence_number(path, basename):
     return result + 1
 
 
-def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None, forced_filename=None, suffix=""):
+def save_image(pi, path, basename, seed=None, prompt=None, extension='png', short_filename=False, no_prompt=False, p=None, forced_filename=None, suffix=""):
     if short_filename or prompt is None or seed is None:
         file_decoration = ""
     elif opts.save_to_dirs:
@@ -368,6 +373,13 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
 
     file_decoration = apply_filename_pattern(file_decoration, p, seed, prompt) + suffix
 
+    if pi.infotext_extras is not None:
+        existing_info, info = pi.infotext_extras
+        pnginfo_section_name = 'extras'
+    else:
+        existing_info, info = None, pi.infotext
+        pnginfo_section_name = 'parameters'
+
     if extension == 'png' and opts.enable_pnginfo and info is not None:
         pnginfo = PngImagePlugin.PngInfo()
 
@@ -379,6 +391,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     else:
         pnginfo = None
 
+    grid = pi.is_grid
     save_to_dirs = (grid and opts.grid_save_to_dirs) or (not grid and opts.save_to_dirs and not no_prompt)
 
     if save_to_dirs:
@@ -408,6 +421,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
             },
         })
 
+    image = pi.image
     if extension.lower() in ("jpg", "jpeg", "webp"):
         image.save(fullfn, quality=opts.jpeg_quality)
         if opts.enable_pnginfo and info is not None:

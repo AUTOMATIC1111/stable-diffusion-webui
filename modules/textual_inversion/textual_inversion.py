@@ -243,10 +243,10 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, steps,
             )
 
             processed = processing.process_images(p)
-            image = processed.images[0]
+            pi = processed.images[0]
 
-            shared.state.current_image = image
-            image.save(last_saved_image)
+            shared.state.current_image = pi.image
+            pi.image.save(last_saved_image)
 
             last_saved_image += f", prompt: {text}"
 

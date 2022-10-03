@@ -7,7 +7,6 @@ import modules.scripts as scripts
 import gradio as gr
 
 from modules import processing, shared, sd_samplers, prompt_parser
-from modules.processing import Processed
 from modules.sd_samplers import samplers
 from modules.shared import opts, cmd_opts, state
 
