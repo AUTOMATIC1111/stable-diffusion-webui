@@ -77,7 +77,9 @@ def extended_tdqm(sequence, *args, desc=None, **kwargs):
     state.sampling_steps = len(sequence)
     state.sampling_step = 0
 
-    for x in tqdm.tqdm(sequence, *args, desc=state.job, file=shared.progress_print_out, **kwargs):
+    seq = sequence if cmd_opts.disable_console_progressbars else tqdm.tqdm(sequence, *args, desc=state.job, file=shared.progress_print_out, **kwargs)
+
+    for x in seq:
         if state.interrupted:
             break
 
@@ -125,7 +127,7 @@ class VanillaStableDiffusionSampler:
         return res
 
     def initialize(self, p):
-        self.eta = p.eta or opts.eta_ddim
+        self.eta = p.eta if p.eta is not None else opts.eta_ddim
 
         for fieldname in ['p_sample_ddim', 'p_sample_plms']:
             if hasattr(self.sampler, fieldname):
@@ -207,7 +209,9 @@ def extended_trange(sampler, count, *args, **kwargs):
     state.sampling_steps = count
     state.sampling_step = 0
 
-    for x in tqdm.trange(count, *args, desc=state.job, file=shared.progress_print_out, **kwargs):
+    seq = range(count) if cmd_opts.disable_console_progressbars else tqdm.trange(count, *args, desc=state.job, file=shared.progress_print_out, **kwargs)
+
+    for x in seq:
         if state.interrupted:
             break
 
@@ -290,7 +294,10 @@ class KDiffusionSampler:
     def sample_img2img(self, p, x, noise, conditioning, unconditional_conditioning, steps=None):
         steps, t_enc = setup_img2img_steps(p, steps)
 
-        sigmas = self.model_wrap.get_sigmas(steps)
+        if p.sampler_noise_scheduler_override:
+          sigmas = p.sampler_noise_scheduler_override(steps)
+        else:
+          sigmas = self.model_wrap.get_sigmas(steps)
 
         noise = noise * sigmas[steps - t_enc - 1]
         xi = x + noise
@@ -306,7 +313,10 @@ class KDiffusionSampler:
     def sample(self, p, x, conditioning, unconditional_conditioning, steps=None):
         steps = steps or p.steps
 
-        sigmas = self.model_wrap.get_sigmas(steps)
+        if p.sampler_noise_scheduler_override:
+          sigmas = p.sampler_noise_scheduler_override(steps)
+        else:
+          sigmas = self.model_wrap.get_sigmas(steps)
         x = x * sigmas[0]
 
         extra_params_kwargs = self.initialize(p)
