@@ -1,26 +1,10 @@
-# Notes from Interpause
+# auto-sd-krita
 
-This repository was originally a fork of <https://github.com/sddebz/stable-diffusion-krita-plugin>. I fixed the commit history in order to make further development easier. Thanks to <https://github.com/sddebz> for making both backend API and frontend Kritia plugin, and preserving the Gradio WebUI despite that.
+> AUTOMATIC1111's fork of Stable Diffusion as a Krita plugin
+
+This repository was originally a fork of <https://github.com/sddebz/stable-diffusion-krita-plugin>. I fixed the commit history in order to make further development easier. Thanks to <https://github.com/sddebz> for making both backend API and frontend Kritia plugin, and keeping the Gradio WebUI fully functional despite that.
 
 I plan to continue maintaining and updating this as long as I am using it. Which will be until a more functional drawing studio plugin comes into existence. Or until I get frustrated enough with AUTOMATIC1111's codebase (can't be helped; it Gradio's fault actually the API is so messed up) to reinvent the wheel and create my own.
-
-Analyzing the diff, these are the main changes (& hence the main parts to maintain):
-
-- everything in the `krita_plugin` folder (which contains the krita plugin's code)
-  - has to be touched if adding new features/exposing current ones
-- `launch.py`, which has been modified to launch `krita_server.py`
-- `krita_server.py`, which imports and exposes internal API
-  - iT Is aLL _undocumented_ pOsITiOnAl PArAmETeRS?
-- the `requirements.txt` (duh)
-
-Also note, there are a few files that have been screwed up due to the CRLF problem, see this: <https://stackoverflow.com/questions/37007300/how-to-ignore-whitespace-in-github-when-comparing>. Annoying, but live with it. The other annoying thing is having to temporarily disable both my formatter and import sorter when editing the code, but can't be helped given the codebase itself does not have any formatting rules to adhere to.
-
-I am using AUTOMATIC1111's fork because compared to Hlky's (now named sd-webui) and Lstein's (now named InvokeAI), it
-has far superior performance and the most practical features. However, there are some features I wish for:
-
-- Proper logging (think pyRich)
-- Proper API and documentation
-- _Proper_ Docker support and integration with Devcontainers
 
 ## Installation
 
@@ -40,18 +24,37 @@ ln -rs /.../auto-sd-krita/krita_plugin/krita_diff.desktop /.../pykrita/krita_dif
 
 ## TODO
 
-- Figure out API for calling scripts
-  - SD Upscaler feature removed from Krita plugin as it was refactored to a script upstream. See <https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/91bfc71261e160451e89f35a7c0eef66ff98877c>
-- Expose config options present in `krita_config.yaml` in the GUI.
+1. Regularly update to upstream & fix resultant bugs.
+    - I will do this at least once a week; more often if there are no breaking changes.
+2. Figure out API for calling scripts.
+    - Mainly to add back SD upscaling, it was refactored to a script upstream. See <https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/91bfc71261e160451e89f35a7c0eef66ff98877c>.
+3. Expose config options present in `krita_config.yaml` in the GUI.
+    - Including using scripts.
+4. Improve & document the API.
+5. _Proper_ Docker support and integration with Devcontainers.
 
-## Done
+## Features
 
-- Exposed most features present in WebUI.
+- Exposed more features present in WebUI.
   - not in GUI yet; see and edit auto-generated `krita_config.yaml`, restart not needed.
-- Update to upstream and fix resultant bugs.
 - `--listen` will cause the backend API to also host on `0.0.0.0`, allowing remote usage of the Krita plugin.
-- Added more comments and documentation, especially with respect to the internal API (positional argument hell).
-- Strongly type the config and document the config in code.
+- Added more comments and documentation, especially with respect to the internal API.
+- Strongly type & document the config.
+
+## Maintenance
+
+Analyzing the diff, these are the main changes (& hence the main parts to maintain):
+
+- the `krita_plugin` folder, which contains the krita plugin's code.
+  - has to be touched if adding new features/exposing current ones in the GUI.
+- the `krita_server` folder, which imports and exposes internal API via a REST API.
+- `launch.py`, which has been modified to launch `krita_server`.
+- `requirements.txt`
+
+Will move to `CONTRIBUTING.md` if this gets popular.
+
+**_Original README below_**
+<hr/>
 
 # Stable Diffusion Krita Plugin
 
