@@ -48,5 +48,5 @@ def txt2img(prompt: str, negative_prompt: str, prompt_style: str, prompt_style2:
     if opts.samples_log_stdout:
         print(generation_info_js)
 
-    return [pi.image for pi in processed.images], generation_info_js, plaintext_to_html(processed.images[0].infotext + "".join(["\n\n" + x for x in processed.comments]))
+    return [pi.get_filename() for pi in processed.images], generation_info_js, plaintext_to_html(processed.images[0].infotext + "".join(["\n\n" + x for x in processed.comments]))
 

@@ -5,9 +5,7 @@ from collections import namedtuple
 import re
 
 import numpy as np
-import piexif
-import piexif.helper
-from PIL import Image, ImageFont, ImageDraw, PngImagePlugin
+from PIL import Image, ImageFont, ImageDraw
 from fonts.ttf import Roboto
 import string
 
@@ -373,24 +371,6 @@ def save_image(pi, path, basename, seed=None, prompt=None, extension='png', shor
 
     file_decoration = apply_filename_pattern(file_decoration, p, seed, prompt) + suffix
 
-    if pi.infotext_extras is not None:
-        existing_info, info = pi.infotext_extras
-        pnginfo_section_name = 'extras'
-    else:
-        existing_info, info = None, pi.infotext
-        pnginfo_section_name = 'parameters'
-
-    if extension == 'png' and opts.enable_pnginfo and info is not None:
-        pnginfo = PngImagePlugin.PngInfo()
-
-        if existing_info is not None:
-            for k, v in existing_info.items():
-                pnginfo.add_text(k, str(v))
-
-        pnginfo.add_text(pnginfo_section_name, info)
-    else:
-        pnginfo = None
-
     grid = pi.is_grid
     save_to_dirs = (grid and opts.grid_save_to_dirs) or (not grid and opts.save_to_dirs and not no_prompt)
 
@@ -414,21 +394,10 @@ def save_image(pi, path, basename, seed=None, prompt=None, extension='png', shor
         fullfn = os.path.join(path, f"{forced_filename}.{extension}")
         fullfn_without_extension = os.path.join(path, forced_filename)
 
-    def exif_bytes():
-        return piexif.dump({
-            "Exif": {
-                piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(info or "", encoding="unicode")
-            },
-        })
+    pi.save(fullfn)
+    pi.saved_fn = fullfn
 
     image = pi.image
-    if extension.lower() in ("jpg", "jpeg", "webp"):
-        image.save(fullfn, quality=opts.jpeg_quality)
-        if opts.enable_pnginfo and info is not None:
-            piexif.insert(exif_bytes(), fullfn)
-    else:
-        image.save(fullfn, quality=opts.jpeg_quality, pnginfo=pnginfo)
-
     target_side_length = 4000
     oversize = image.width > target_side_length or image.height > target_side_length
     if opts.export_for_4chan and (oversize or os.stat(fullfn).st_size > 4 * 1024 * 1024):
@@ -440,8 +409,8 @@ def save_image(pi, path, basename, seed=None, prompt=None, extension='png', shor
             image = image.resize((image.width * target_side_length // image.height, target_side_length), LANCZOS)
 
         image.save(fullfn_without_extension + ".jpg", quality=opts.jpeg_quality)
-        if opts.enable_pnginfo and info is not None:
-            piexif.insert(exif_bytes(), fullfn_without_extension + ".jpg")
+        if opts.enable_pnginfo:
+            pi.insert_exif(fullfn_without_extension + ".jpg")
 
     if opts.save_txt and info is not None:
         with open(f"{fullfn_without_extension}.txt", "w", encoding="utf8") as file:

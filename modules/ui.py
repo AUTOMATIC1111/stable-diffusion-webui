@@ -580,9 +580,11 @@ class CachingImageUploader:
                           opts.outdir_txt2img_samples,
                           opts.outdir_img2img_samples,
                           opts.outdir_extras_samples,
+                          opts.outdir_unsaved_samples,
                           opts.outdir_grids,
                           opts.outdir_txt2img_grids,
                           opts.outdir_img2img_grids,
+                          opts.outdir_unsaved_grids,
                           opts.outdir_save,
                           opts.outdir_image_uploads,
                           opts.outdir_mask_uploads}:
