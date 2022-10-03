@@ -104,6 +104,23 @@ function get_extras_tab_index(){
     return create_tab_index_args('mode_extras', arguments)
 }
 
+function sha256sum(data_url){
+    return fetch(data_url)
+        .then(res => res.arrayBuffer())
+        .then(ab => crypto.subtle.digest('SHA-256', ab))
+        .then(d => Array.from(new Uint8Array(d))
+                        .map(b => b.toString(16).padStart(2, '0'))
+                        .join(''));
+}
+
+function mask_mode_changed(mode){
+    return [
+        {__type__: "update", visible: mode == "Draw mask"},
+        {__type__: "update", visible: mode == "Upload mask"},
+        {__type__: "update", visible: mode == "Upload mask"}
+    ]
+}
+
 function create_submit_args(args){
     res = []
     for(var i=0;i<args.length;i++){

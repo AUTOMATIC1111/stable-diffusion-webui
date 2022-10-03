@@ -166,6 +166,8 @@ options_templates.update(options_section(('saving-paths', "Paths for saving"), {
     "outdir_txt2img_grids": OptionInfo("outputs/txt2img-grids", 'Output directory for txt2img grids', component_args=hide_dirs),
     "outdir_img2img_grids": OptionInfo("outputs/img2img-grids", 'Output directory for img2img grids', component_args=hide_dirs),
     "outdir_save": OptionInfo("log/images", "Directory for saving images using the Save button", component_args=hide_dirs),
+    "outdir_image_uploads": OptionInfo("uploads/images", "Directory for storing uploaded images", component_args=hide_dirs),
+    "outdir_mask_uploads": OptionInfo("uploads/masks", "Directory for storing uploaded masks", component_args=hide_dirs),
 }))
 
 options_templates.update(options_section(('saving-to-dirs', "Saving to a directory"), {

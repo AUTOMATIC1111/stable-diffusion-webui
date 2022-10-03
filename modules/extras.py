@@ -9,7 +9,7 @@ import tqdm
 from modules import processing, shared, images, devices, sd_models
 from modules.shared import opts
 import modules.gfpgan_model
-from modules.ui import plaintext_to_html
+from modules.ui import plaintext_to_html, get_filename_for_checksum
 import modules.codeformer_model
 import piexif
 import piexif.helper
@@ -33,6 +33,7 @@ def run_extras(extras_mode, image, image_folder, gfpgan_visibility, codeformer_v
             imageArr.append(image)
             imageNameArr.append(os.path.splitext(img.orig_name)[0])
     else:
+        image = Image.open(get_filename_for_checksum(image))
         imageArr.append(image)
         imageNameArr.append(None)
 
@@ -107,6 +108,7 @@ def run_pnginfo(image):
     if image is None:
         return '', '', ''
 
+    image = Image.open(get_filename_for_checksum(image))
     items = image.info
     geninfo = ''
 

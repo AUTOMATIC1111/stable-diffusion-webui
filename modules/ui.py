@@ -1,4 +1,5 @@
 import base64
+import hashlib
 import html
 import io
 import json
@@ -307,6 +308,8 @@ def apply_styles(prompt, prompt_neg, style1_name, style2_name):
 
 
 def interrogate(image):
+    image = Image.open(get_filename_for_checksum(image))
+
     prompt = shared.interrogator.interrogate(image)
 
     return gr_show(True) if prompt is None else prompt
@@ -423,7 +426,7 @@ def create_toprow(is_img2img):
         with gr.Column(scale=1):
             with gr.Row():
                 interrupt = gr.Button('Interrupt', elem_id=f"{id_part}_interrupt")
-                submit = gr.Button('Generate', elem_id=f"{id_part}_generate", variant='primary')
+                submit = gr.Button('[no image]' if is_img2img else 'Generate', elem_id=f"{id_part}_generate", variant='primary')
 
                 interrupt.click(
                     fn=lambda: shared.state.interrupt(),
@@ -461,6 +464,149 @@ def setup_progressbar(progressbar, preview, id_part, textinfo=None):
         inputs=[],
         outputs=[progressbar, preview, preview, textinfo],
     )
+
+
+## Caching image uploader.
+#
+# Every time a function taking an image as an input is called, Gradio
+# uploads the image to the server.  For instances running in the cloud
+# with a slow uplink, this is a major performance bottleneck.
+#
+# Gradio doesn't allow caching images, but this can be worked around by
+# calculating the image checksum, using the checksum as the actual
+# function input, and only uploading the image the first time it is
+# selected.
+#
+# This class wraps the necessary components (the actual image and three
+# invisible textboxes).  To retrieve the server-side image filename, read
+# the value of the textbox ciu.checksum and look it up using
+# get_filename_for_checksum.  To pre-populate the uploader with an image,
+# just write it to ciu.image.
+#
+# Known bug: The client-side checksum is calculated incorrectly for images
+#            with an alpha channel.  This causes them to always be uploaded
+#            and (except for the first upload) discarded.
+
+class CachingImageUploader:
+    checksum_for_filename = {}
+    filename_for_checksum = {}
+
+    def __init__(self, image_mode = 'RGB', label = None, show_label = True,
+                       visible = True, elem_id = None, is_mask = False):
+        self.image = gr.Image(image_mode = image_mode,
+                              source = 'upload', type = 'filepath',
+                              label = label, show_label = show_label,
+                              interactive = True, visible = visible,
+                              elem_id = elem_id)
+        self.new_checksum = gr.Textbox(interactive = False, visible = False)
+        self.checksum = gr.Textbox(interactive = False, visible = False)
+        self.trigger = gr.Textbox(interactive = False, visible = False)
+        self.is_mask = is_mask
+
+    def wire_up(self, button):
+        self.button = button
+        if button is None:
+            js = 'x => x === null ? null : sha256sum(x)'
+            btn = []
+        else:
+            js = 'x => x === null ? [null, "[no image]"] : ' \
+                'sha256sum(x).then(checksum => [checksum, "[probing image]"])'
+            btn = [button]
+        self.image.change(None, _js = js,
+                          inputs = [self.image],
+                          outputs = [self.new_checksum] + btn)
+        self.new_checksum.change(self._received_checksum,
+                                 inputs = [self.new_checksum, self.trigger],
+                                 outputs = [self.checksum, self.trigger] + btn)
+        self.trigger.change(self._received_upload,
+                            inputs = [self.image],
+                            outputs = [self.checksum] + btn)
+
+    def res(self, checksum, button, trigger = None):
+        d = {self.checksum: checksum}
+        if trigger is not None:
+            d[self.trigger] = trigger
+        if self.button is not None:
+            d[self.button] = button
+        return d
+
+    def _received_checksum(self, checksum, t):
+        if checksum is not None and len(checksum) != 64:
+            return self.res(None, '[probing failed]')
+        if checksum is None:
+            return self.res(None, '[no image]')
+        if checksum not in self.filename_for_checksum:
+            self.rescan()
+            if checksum not in self.filename_for_checksum:
+                return self.res(None, '[uploading image]', trigger = t + '!')
+        return self.res(checksum, 'Generate')
+
+    def _received_upload(self, temp_fn):
+        if temp_fn is None:
+            return self.res(None, '[no upload received]')
+
+        with open(temp_fn, 'rb') as f:
+            checksum = hashlib.sha256(f.read()).hexdigest()
+
+        if checksum in self.filename_for_checksum:
+            # erroneous upload--file is already known
+            os.unlink(temp_fn)
+            return self.res(checksum, 'Generate')
+
+        if self.is_mask:
+            upload_dir = opts.outdir_mask_uploads
+        else:
+            upload_dir = opts.outdir_image_uploads
+        os.makedirs(upload_dir, exist_ok = True)
+        prefix = os.path.join(upload_dir, os.path.basename(temp_fn))
+        i = 0
+        dest_fn = prefix
+        while True:
+            try:
+                with open(dest_fn, 'x'):
+                    break
+            except FileExistsError:
+                i += 1
+                dest_fn = f'{prefix}.{i}'
+        os.rename(temp_fn, dest_fn)
+
+        self.checksum_for_filename[dest_fn] = checksum
+        self.filename_for_checksum[checksum] = dest_fn
+        return self.res(checksum, 'Generate')
+
+    @classmethod
+    def rescan(cls):
+        for image_dir in {opts.outdir_samples,
+                          opts.outdir_txt2img_samples,
+                          opts.outdir_img2img_samples,
+                          opts.outdir_extras_samples,
+                          opts.outdir_grids,
+                          opts.outdir_txt2img_grids,
+                          opts.outdir_img2img_grids,
+                          opts.outdir_save,
+                          opts.outdir_image_uploads,
+                          opts.outdir_mask_uploads}:
+            if not image_dir:
+                continue
+            for dirpath, dirnames, filenames in os.walk(image_dir):
+                for filename in filenames:
+                    fn = os.path.join(dirpath, filename)
+                    if fn in cls.checksum_for_filename:
+                        continue
+                    with open(fn, 'rb') as f:
+                        checksum = hashlib.sha256(f.read()).hexdigest()
+                        cls.checksum_for_filename[fn] = checksum
+                        cls.filename_for_checksum[checksum] = fn
+
+CachingImageUploader.rescan()
+
+def get_filename_for_checksum(checksum):
+    if not checksum:
+        raise ValueError('please select an input image')
+    try:
+        return CachingImageUploader.filename_for_checksum[checksum]
+    except KeyError:
+        raise ValueError('input image is missing')
 
 
 def create_ui(wrap_gradio_gpu_call):
@@ -636,13 +782,17 @@ def create_ui(wrap_gradio_gpu_call):
 
                 with gr.Tabs(elem_id="mode_img2img") as tabs_img2img_mode:
                     with gr.TabItem('img2img', id='img2img'):
-                        init_img = gr.Image(label="Image for img2img", show_label=False, source="upload", interactive=True, type="pil")
+                        img2img_ciu = CachingImageUploader(label="Image for img2img", show_label=False)
+                        img2img_ciu.wire_up(submit)
 
                     with gr.TabItem('Inpaint', id='inpaint'):
-                        init_img_with_mask = gr.Image(label="Image for inpainting with mask",  show_label=False, elem_id="img2maskimg", source="upload", interactive=True, type="pil", tool="sketch", image_mode="RGBA")
+                        init_img_with_mask = gr.Image(label="Image for inpainting with mask",  show_label=False, elem_id="img2maskimg", source="upload", interactive=True, type="filepath", tool="sketch", image_mode="RGBA")
 
-                        init_img_inpaint = gr.Image(label="Image for img2img", show_label=False, source="upload", interactive=True, type="pil", visible=False, elem_id="img_inpaint_base")
-                        init_mask_inpaint = gr.Image(label="Mask", source="upload", interactive=True, type="pil", visible=False, elem_id="img_inpaint_mask")
+                        with gr.Group():
+                            inpaint_img_ciu = CachingImageUploader(label="Image for img2img", show_label=False, visible=False, elem_id="img_inpaint_base", image_mode="RGBA")
+                            inpaint_img_ciu.wire_up(submit)
+                            inpaint_mask_ciu = CachingImageUploader(label="Mask", visible=False, elem_id="img_inpaint_mask", is_mask=True)
+                            inpaint_mask_ciu.wire_up(submit)
 
                         mask_blur = gr.Slider(label='Mask blur', minimum=0, maximum=64, step=1, value=4)
 
@@ -711,17 +861,24 @@ def create_ui(wrap_gradio_gpu_call):
             connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
             connect_reuse_seed(subseed, reuse_subseed, generation_info, dummy_component, is_subseed=True)
 
+            # using gr.Image.change() results in a browser deadlock
+            init_img_with_mask.edit(
+                None,
+                _js='x => [x.image, x.mask]',
+                inputs=[init_img_with_mask],
+                outputs=[
+                    inpaint_img_ciu.image,
+                    inpaint_mask_ciu.image,
+                ],
+            )
             mask_mode.change(
-                lambda mode, img: {
-                    init_img_with_mask: gr_show(mode == 0),
-                    init_img_inpaint: gr_show(mode == 1),
-                    init_mask_inpaint: gr_show(mode == 1),
-                },
-                inputs=[mask_mode, init_img_with_mask],
+                None,
+                _js='mask_mode_changed',
+                inputs=[mask_mode],
                 outputs=[
                     init_img_with_mask,
-                    init_img_inpaint,
-                    init_mask_inpaint,
+                    inpaint_img_ciu.image,
+                    inpaint_mask_ciu.image,
                 ],
             )
 
@@ -734,11 +891,9 @@ def create_ui(wrap_gradio_gpu_call):
                     img2img_negative_prompt,
                     img2img_prompt_style,
                     img2img_prompt_style2,
-                    init_img,
-                    init_img_with_mask,
-                    init_img_inpaint,
-                    init_mask_inpaint,
-                    mask_mode,
+                    img2img_ciu.checksum,
+                    inpaint_img_ciu.checksum,
+                    inpaint_mask_ciu.checksum,
                     steps,
                     sampler_index,
                     mask_blur,
@@ -773,7 +928,7 @@ def create_ui(wrap_gradio_gpu_call):
 
             img2img_interrogate.click(
                 fn=interrogate,
-                inputs=[init_img],
+                inputs=[img2img_ciu.checksum],
                 outputs=[img2img_prompt],
             )
 
@@ -850,7 +1005,7 @@ def create_ui(wrap_gradio_gpu_call):
             with gr.Column(variant='panel'):
                 with gr.Tabs(elem_id="mode_extras"):
                     with gr.TabItem('Single Image'):
-                        extras_image = gr.Image(label="Source", source="upload", interactive=True, type="pil")
+                        extras_ciu = CachingImageUploader(label="Source")
 
                     with gr.TabItem('Batch Process'):
                         image_batch = gr.File(label="Batch Process", file_count="multiple", interactive=True, type="file")
@@ -871,7 +1026,8 @@ def create_ui(wrap_gradio_gpu_call):
                     codeformer_visibility = gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="CodeFormer visibility", value=0, interactive=modules.codeformer_model.have_codeformer)
                     codeformer_weight = gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="CodeFormer weight (0 = maximum effect, 1 = minimum effect)", value=0, interactive=modules.codeformer_model.have_codeformer)
 
-                submit = gr.Button('Generate', elem_id="extras_generate", variant='primary')
+                submit = gr.Button('[no image]', elem_id="extras_generate", variant='primary')
+                extras_ciu.wire_up(submit)
 
             with gr.Column(variant='panel'):
                 result_images = gr.Gallery(label="Result", show_label=False)
@@ -887,7 +1043,7 @@ def create_ui(wrap_gradio_gpu_call):
             _js="get_extras_tab_index",
             inputs=[
                 dummy_component,
-                extras_image,
+                extras_ciu.checksum,
                 image_batch,
                 gfpgan_visibility,
                 codeformer_visibility,
@@ -908,7 +1064,7 @@ def create_ui(wrap_gradio_gpu_call):
             fn=lambda x: image_from_url_text(x),
             _js="extract_image_from_gallery_img2img",
             inputs=[result_images],
-            outputs=[init_img],
+            outputs=[img2img_ciu.image],
         )
         
         extras_send_to_inpaint.click(
@@ -921,7 +1077,8 @@ def create_ui(wrap_gradio_gpu_call):
     with gr.Blocks(analytics_enabled=False) as pnginfo_interface:
         with gr.Row().style(equal_height=False):
             with gr.Column(variant='panel'):
-                image = gr.Image(elem_id="pnginfo_image", label="Source", source="upload", interactive=True, type="pil")
+                pnginfo_ciu = CachingImageUploader(elem_id="pnginfo_image", label="Source")
+                pnginfo_ciu.wire_up(None)
 
             with gr.Column(variant='panel'):
                 html = gr.HTML()
@@ -932,9 +1089,9 @@ def create_ui(wrap_gradio_gpu_call):
                     pnginfo_send_to_txt2img = gr.Button('Send to txt2img')
                     pnginfo_send_to_img2img = gr.Button('Send to img2img')
 
-        image.change(
+        pnginfo_ciu.checksum.change(
             fn=wrap_gradio_call(modules.extras.run_pnginfo),
-            inputs=[image],
+            inputs=[pnginfo_ciu.checksum],
             outputs=[html, generation_info, html2],
         )
 
@@ -1283,7 +1440,7 @@ def create_ui(wrap_gradio_gpu_call):
             fn=lambda img, *args: (image_from_url_text(img),*args),
             _js="(gallery, ...args) => [extract_image_from_gallery_img2img(gallery), ...args]",
             inputs=[txt2img_gallery] + txt2img_fields,
-            outputs=[init_img] + img2img_fields,
+            outputs=[img2img_ciu.image] + img2img_fields,
         )
 
         send_to_inpaint.click(
@@ -1297,7 +1454,7 @@ def create_ui(wrap_gradio_gpu_call):
             fn=lambda x: image_from_url_text(x),
             _js="extract_image_from_gallery_img2img",
             inputs=[img2img_gallery],
-            outputs=[init_img],
+            outputs=[img2img_ciu.image],
         )
 
         img2img_send_to_inpaint.click(
@@ -1311,7 +1468,7 @@ def create_ui(wrap_gradio_gpu_call):
             fn=lambda x: image_from_url_text(x),
             _js="extract_image_from_gallery_extras",
             inputs=[txt2img_gallery],
-            outputs=[extras_image],
+            outputs=[extras_ciu.image],
         )
 
         open_txt2img_folder.click(
@@ -1336,7 +1493,7 @@ def create_ui(wrap_gradio_gpu_call):
             fn=lambda x: image_from_url_text(x),
             _js="extract_image_from_gallery_extras",
             inputs=[img2img_gallery],
-            outputs=[extras_image],
+            outputs=[extras_ciu.image],
         )
 
         modules.generation_parameters_copypaste.connect_paste(pnginfo_send_to_txt2img, txt2img_paste_fields, generation_info, 'switch_to_txt2img')
