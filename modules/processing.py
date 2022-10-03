@@ -396,6 +396,9 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
 
             comments.extend(model_hijack.comments)
 
+            def save_sample_image(image: Image.Image, **kwargs):
+                images.save_image(image, p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, info=infotext(n, i), p=p, **kwargs)
+
             if p.n_iter > 1:
                 shared.state.job = f"Batch {n+1} out of {p.n_iter}"
 
@@ -421,7 +424,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
 
                 if p.restore_faces:
                     if opts.save and not p.do_not_save_samples and opts.save_images_before_face_restoration:
-                        images.save_image(Image.fromarray(x_sample), p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, info=infotext(n, i), p=p, suffix="-before-face-restoration")
+                        save_sample_image(Image.fromarray(x_sample), suffix="-before-face-restoration")
 
                     devices.torch_gc()
 
@@ -432,7 +435,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
 
                 if p.color_corrections is not None and i < len(p.color_corrections):
                     if opts.save and not p.do_not_save_samples and opts.save_images_before_color_correction:
-                        images.save_image(image, p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, info=infotext(n, i), p=p, suffix="-before-color-correction")
+                        save_sample_image(image, suffix="-before-color-correction")
                     image = apply_color_correction(p.color_corrections[i], image)
 
                 if p.overlay_images is not None and i < len(p.overlay_images):
@@ -450,7 +453,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
                     image = image.convert('RGB')
 
                 if opts.samples_save and not p.do_not_save_samples:
-                    images.save_image(image, p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, info=infotext(n, i), p=p)
+                    save_sample_image(image)
 
                 all_infotexts.append(infotext(n, i))
                 output_images.append(image)
