@@ -163,13 +163,17 @@ options_templates.update(options_section(('saving-paths', "Paths for saving"), {
     "outdir_img2img_samples": OptionInfo("outputs/img2img-images", 'Output directory for img2img images', component_args=hide_dirs),
     "outdir_extras_samples": OptionInfo("outputs/extras-images", 'Output directory for images from extras tab', component_args=hide_dirs),
     "outdir_unsaved_samples": OptionInfo("outputs/unsaved-images", 'Output directory for unsaved images', component_args=hide_dirs),
+    "delete_unsaved_samples": OptionInfo(True, "Delete unsaved images on exit"),
     "outdir_grids": OptionInfo("", "Output directory for grids; if empty, defaults to two directories below", component_args=hide_dirs),
     "outdir_txt2img_grids": OptionInfo("outputs/txt2img-grids", 'Output directory for txt2img grids', component_args=hide_dirs),
     "outdir_img2img_grids": OptionInfo("outputs/img2img-grids", 'Output directory for img2img grids', component_args=hide_dirs),
     "outdir_unsaved_grids": OptionInfo("outputs/unsaved-grids", 'Output directory for unsaved grids', component_args=hide_dirs),
+    "delete_unsaved_grids": OptionInfo(True, "Delete unsaved grids on exit"),
     "outdir_save": OptionInfo("log/images", "Directory for saving images using the Save button", component_args=hide_dirs),
     "outdir_image_uploads": OptionInfo("uploads/images", "Directory for storing uploaded images", component_args=hide_dirs),
     "outdir_mask_uploads": OptionInfo("uploads/masks", "Directory for storing uploaded masks", component_args=hide_dirs),
+    "delete_image_uploads": OptionInfo(True, "Delete uploaded images on exit"),
+    "delete_mask_uploads": OptionInfo(True, "Delete uploaded masks on exit"),
 }))
 
 options_templates.update(options_section(('saving-to-dirs', "Saving to a directory"), {
@@ -351,3 +355,39 @@ total_tqdm = TotalTQDM()
 
 mem_mon = modules.memmon.MemUsageMonitor("MemMon", device, opts)
 mem_mon.start()
+
+
+unsaved_samples_to_remove = []
+unsaved_grids_to_remove = []
+image_uploads_to_remove = []
+mask_uploads_to_remove = []
+
+def remove_temporary_files():
+    def remove_files(fns):
+        for fn in fns:
+            try:
+                os.unlink(fn)
+            except OSError:
+                pass
+            else:
+                print(f"removed '{fn}'")
+    def remove_dir(path):
+        try:
+            os.rmdir(path)
+        except OSError:
+            pass
+        else:
+            print(f"removed directory '{path}'")
+            remove_dir(os.path.dirname(path))
+    if opts.delete_unsaved_samples:
+        remove_files(unsaved_samples_to_remove)
+        remove_dir(opts.outdir_unsaved_samples)
+    if opts.delete_unsaved_grids:
+        remove_files(unsaved_grids_to_remove)
+        remove_dir(opts.outdir_unsaved_grids)
+    if opts.delete_image_uploads:
+        remove_files(image_uploads_to_remove)
+        remove_dir(opts.outdir_image_uploads)
+    if opts.delete_mask_uploads:
+        remove_files(mask_uploads_to_remove)
+        remove_dir(opts.outdir_mask_uploads)

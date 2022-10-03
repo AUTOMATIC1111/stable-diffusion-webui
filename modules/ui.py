@@ -569,6 +569,10 @@ class CachingImageUploader:
                 i += 1
                 dest_fn = f'{prefix}.{i}'
         os.rename(temp_fn, dest_fn)
+        if self.is_mask:
+            shared.mask_uploads_to_remove.append(dest_fn)
+        else:
+            shared.image_uploads_to_remove.append(dest_fn)
 
         self.checksum_for_filename[dest_fn] = checksum
         self.filename_for_checksum[checksum] = dest_fn

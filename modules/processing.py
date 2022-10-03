@@ -126,6 +126,10 @@ class ProcessedImage:
         os.close(fd)
         self.save(fn)
         self.unsaved_fn = fn
+        if self.is_grid:
+            shared.unsaved_grids_to_remove.append(fn)
+        else:
+            shared.unsaved_samples_to_remove.append(fn)
         return fn
 
     def save(self, fn):
