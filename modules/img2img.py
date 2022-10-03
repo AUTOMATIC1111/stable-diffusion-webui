@@ -74,10 +74,12 @@ def img2img(mode: int, prompt: str, negative_prompt: str, prompt_style: str, pro
 
     assert 0. <= denoising_strength <= 1., 'can only work with strength in [0.0, 1.0]'
 
+    outdir_samples = opts.outdir_samples or opts.outdir_img2img_samples
+    outdir_grids = opts.outdir_grids or opts.outdir_img2img_grids
     p = StableDiffusionProcessingImg2Img(
         sd_model=shared.sd_model,
-        outpath_samples=opts.outdir_samples or opts.outdir_img2img_samples,
-        outpath_grids=opts.outdir_grids or opts.outdir_img2img_grids,
+        outpath_samples=outdir_samples,
+        outpath_grids=outdir_grids,
         prompt=prompt,
         negative_prompt=negative_prompt,
         styles=[prompt_style, prompt_style2],
@@ -132,4 +134,4 @@ def img2img(mode: int, prompt: str, negative_prompt: str, prompt_style: str, pro
     if opts.do_not_show_images:
         processed.images = []
 
-    return [pi.image for pi in processed.images], generation_info_js, plaintext_to_html(processed.images[0].infotext + "".join(["\n\n" + x for x in processed.comments]))
+    return [pi.get_filename(outdir_samples, outdir_grids) for pi in processed.images], generation_info_js, plaintext_to_html(processed.images[0].infotext + "".join(["\n\n" + x for x in processed.comments]))

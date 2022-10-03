@@ -7,10 +7,12 @@ from modules.ui import plaintext_to_html
 
 
 def txt2img(prompt: str, negative_prompt: str, prompt_style: str, prompt_style2: str, steps: int, sampler_index: int, restore_faces: bool, tiling: bool, n_iter: int, batch_size: int, cfg_scale: float, seed: int, subseed: int, subseed_strength: float, seed_resize_from_h: int, seed_resize_from_w: int, seed_enable_extras: bool, height: int, width: int, enable_hr: bool, scale_latent: bool, denoising_strength: float, *args):
+    outdir_samples = opts.outdir_samples or opts.outdir_txt2img_samples
+    outdir_grids = opts.outdir_grids or opts.outdir_txt2img_grids
     p = StableDiffusionProcessingTxt2Img(
         sd_model=shared.sd_model,
-        outpath_samples=opts.outdir_samples or opts.outdir_txt2img_samples,
-        outpath_grids=opts.outdir_grids or opts.outdir_txt2img_grids,
+        outpath_samples=outdir_samples,
+        outpath_grids=outdir_grids,
         prompt=prompt,
         styles=[prompt_style, prompt_style2],
         negative_prompt=negative_prompt,
@@ -51,5 +53,5 @@ def txt2img(prompt: str, negative_prompt: str, prompt_style: str, prompt_style2:
     if opts.do_not_show_images:
         processed.images = []
 
-    return [pi.image for pi in processed.images], generation_info_js, plaintext_to_html(processed.images[0].infotext + "".join(["\n\n" + x for x in processed.comments]))
+    return [pi.get_filename(outdir_samples, outdir_grids) for pi in processed.images], generation_info_js, plaintext_to_html(processed.images[0].infotext + "".join(["\n\n" + x for x in processed.comments]))
 

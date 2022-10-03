@@ -2,10 +2,13 @@ import json
 import math
 import os
 import sys
+import tempfile
 
 import torch
 import numpy as np
-from PIL import Image, ImageFilter, ImageOps
+import piexif
+import piexif.helper
+from PIL import Image, ImageFilter, ImageOps, PngImagePlugin
 import random
 import cv2
 from skimage import exposure
@@ -102,6 +105,76 @@ class ProcessedImage:
         self.image = image
         self.infotext = infotext
         self.is_grid = is_grid
+        self.unsaved_fn = None
+        self.saved_fn = None
+
+    def get_filename(self, outdir_samples, outdir_grids=None):
+        if self.unsaved_fn is not None:
+            return self.unsaved_fn
+        if self.saved_fn is not None:
+            return self.saved_fn
+
+        if self.is_grid and outdir_grids is not None:
+            unsaved_dir = os.path.join(outdir_grids, 'unsaved')
+        else:
+            unsaved_dir = os.path.join(outdir_samples, 'unsaved')
+        os.makedirs(unsaved_dir, exist_ok = True)
+        fd, fn = tempfile.mkstemp('.png', dir = unsaved_dir)
+        os.close(fd)
+        self.save(fn)
+        self.unsaved_fn = fn
+        return fn
+
+    def save(self, fn):
+        try:
+            existing_info, info = self.infotext
+            pnginfo_section_name = 'extras'
+        except ValueError:
+            existing_info, info = None, self.infotext
+            pnginfo_section_name = 'parameters'
+
+        extension = os.path.splitext(fn)[1][1:].lower()
+
+        if extension == 'png' and opts.enable_pnginfo and info is not None:
+            pnginfo = PngImagePlugin.PngInfo()
+
+            if existing_info is not None:
+                for k, v in existing_info.items():
+                    pnginfo.add_text(k, str(v))
+
+            pnginfo.add_text(pnginfo_section_name, info)
+        else:
+            pnginfo = None
+
+        if extension in ("jpg", "jpeg", "webp"):
+            self.image.save(fn, quality=opts.jpeg_quality)
+            if opts.enable_pnginfo:
+                self.insert_exif(fn)
+        else:
+            self.image.save(fn, quality=opts.jpeg_quality, pnginfo=pnginfo)
+
+    def save_txt(self, fn):
+        try:
+            _, info = self.infotext
+        except ValueError:
+            info = self.infotext
+
+        if info is not None:
+            with open(fn, "w", encoding="utf8") as f:
+                f.write(info + "\n")
+
+    def insert_exif(self, fn):
+        try:
+            _, info = self.infotext
+        except ValueError:
+            info = self.infotext
+
+        if info is not None:
+            piexif.insert(piexif.dump({
+                "Exif": {
+                    piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(info or "", encoding="unicode")
+                },
+            }), fn)
 
 class Processed:
     def __init__(self, p: StableDiffusionProcessing, images_list, seed=-1, subseed=None, all_prompts=None, all_seeds=None, all_subseeds=None, index_of_first_image=0, comments=()):

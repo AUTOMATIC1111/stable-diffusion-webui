@@ -42,7 +42,7 @@ def run_extras(extras_mode, image, image_folder, gfpgan_visibility, codeformer_v
     outputs = []
     for image, image_name in zip(imageArr, imageNameArr):
         if image is None:
-            return [pi.image for pi in outputs], "Please select an input image.", ''
+            return [pi.get_filename(outpath) for pi in outputs], "Please select an input image.", ''
         existing_pnginfo = image.info or {}
 
         image = image.convert("RGB")
@@ -103,7 +103,7 @@ def run_extras(extras_mode, image, image_folder, gfpgan_visibility, codeformer_v
 
     devices.torch_gc()
 
-    return [pi.image for pi in outputs], plaintext_to_html(info), ''
+    return [pi.get_filename(outpath) for pi in outputs], plaintext_to_html(info), ''
 
 
 def run_pnginfo(image):
