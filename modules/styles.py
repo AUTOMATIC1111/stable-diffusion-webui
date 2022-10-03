@@ -1,4 +1,3 @@
-# We need this so Python doesn't complain about the unknown StableDiffusionProcessing-typehint at runtime
 from __future__ import annotations
 
 import csv
@@ -8,10 +7,6 @@ import typing
 import collections.abc as abc
 import tempfile
 import shutil
-
-if typing.TYPE_CHECKING:
-    # Only import this when code is being type-checked, it doesn't have any effect at runtime
-    from .processing import StableDiffusionProcessing
 
 
 class PromptStyle(typing.NamedTuple):
@@ -64,17 +59,6 @@ class StyleDatabase:
 
     def apply_negative_styles_to_prompt(self, prompt, styles):
         return apply_styles_to_prompt(prompt, [self.styles.get(x, self.no_style).negative_prompt for x in styles])
-
-    def apply_styles(self, p: StableDiffusionProcessing) -> None:
-        if isinstance(p.prompt, list):
-            p.prompt = [self.apply_styles_to_prompt(prompt, p.styles) for prompt in p.prompt]
-        else:
-            p.prompt = self.apply_styles_to_prompt(p.prompt, p.styles)
-
-        if isinstance(p.negative_prompt, list):
-            p.negative_prompt = [self.apply_negative_styles_to_prompt(prompt, p.styles) for prompt in p.negative_prompt]
-        else:
-            p.negative_prompt = self.apply_negative_styles_to_prompt(p.negative_prompt, p.styles)
 
     def save_styles(self, path: str) -> None:
         # Write to temporary file first, so we don't nuke the file if something goes wrong

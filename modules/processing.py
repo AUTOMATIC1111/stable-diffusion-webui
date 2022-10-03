@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import math
 import os
@@ -52,12 +54,12 @@ class StableDiffusionProcessing:
         self.sd_model = sd_model
         self.outpath_samples: str = outpath_samples
         self.outpath_grids: str = outpath_grids
-        self.prompt: str = prompt
+        self.prompt: str | list[str] = prompt
         self.prompt_for_display: str = None
-        self.negative_prompt: str = (negative_prompt or "")
-        self.styles: list = styles or []
-        self.seed: int = seed
-        self.subseed: int = subseed
+        self.negative_prompt: str | list[str] = (negative_prompt or "")
+        self.styles: list[str] = styles or []
+        self.seed: int | list[int] = seed
+        self.subseed: int | list[int] = subseed
         self.subseed_strength: float = subseed_strength
         self.seed_resize_from_h: int = seed_resize_from_h
         self.seed_resize_from_w: int = seed_resize_from_w
@@ -84,14 +86,20 @@ class StableDiffusionProcessing:
         self.s_tmin = opts.s_tmin
         self.s_tmax = float('inf')  # not representable as a standard ui option
         self.s_noise = opts.s_noise
-        
+
         if not seed_enable_extras:
             self.subseed = -1
             self.subseed_strength = 0
             self.seed_resize_from_h = 0
             self.seed_resize_from_w = 0
 
-    def init(self, all_prompts, all_seeds, all_subseeds):
+    def init(
+        self,
+        all_prompts: list[str],
+        all_negative_prompts: list[str],
+        all_seeds: list[int],
+        all_subseeds: list[int],
+    ):
         pass
 
     def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength):
@@ -99,7 +107,20 @@ class StableDiffusionProcessing:
 
 
 class Processed:
-    def __init__(self, p: StableDiffusionProcessing, images_list, seed=-1, info="", subseed=None, all_prompts=None, all_seeds=None, all_subseeds=None, index_of_first_image=0, infotexts=None):
+    def __init__(
+        self,
+        p: StableDiffusionProcessing,
+        images_list: list[Image.Image],
+        seed=-1,
+        info="",
+        subseed: int | None =None,
+        all_prompts: list[str] | None = None,
+        all_negative_prompts: list[str] | None = None,
+        all_seeds: list[int] | None = None,
+        all_subseeds: list[int] | None = None,
+        index_of_first_image=0,
+        infotexts: list[str] | None = None,
+    ):
         self.images = images_list
         self.prompt = p.prompt
         self.negative_prompt = p.negative_prompt
@@ -136,6 +157,7 @@ class Processed:
         self.subseed = int(self.subseed if type(self.subseed) != list else self.subseed[0]) if self.subseed is not None else -1
 
         self.all_prompts = all_prompts or [self.prompt]
+        self.all_negative_prompts = all_negative_prompts or [self.negative_prompt]
         self.all_seeds = all_seeds or [self.seed]
         self.all_subseeds = all_subseeds or [self.subseed]
         self.infotexts = infotexts or [info]
@@ -253,7 +275,15 @@ def fix_seed(p):
     p.subseed = int(random.randrange(4294967294)) if p.subseed is None or p.subseed == '' or p.subseed == -1 else p.subseed
 
 
-def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration=0, position_in_batch=0):
+def create_infotext(
+    p: StableDiffusionProcessing,
+    all_prompts: list[str],
+    all_negative_prompts: list[str],
+    all_seeds: list[int],
+    all_subseeds: list[int],
+    iteration=0,
+    position_in_batch=0,
+):
     index = position_in_batch + iteration * p.batch_size
 
     generation_params = {
@@ -277,7 +307,7 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration
 
     generation_params_text = ", ".join([k if k == v else f'{k}: {v}' for k, v in generation_params.items() if v is not None])
 
-    negative_prompt_text = "\nNegative prompt: " + p.negative_prompt if p.negative_prompt else ""
+    negative_prompt_text = f"\nNegative prompt: {all_negative_prompts[index]}" if all_negative_prompts[index] else ""
 
     return f"{all_prompts[index]}{negative_prompt_text}\n{generation_params_text}".strip()
 
@@ -289,7 +319,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
         assert(len(p.prompt) > 0)
     else:
         assert p.prompt is not None
-        
+
     devices.torch_gc()
 
     fix_seed(p)
@@ -302,27 +332,40 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
 
     modules.sd_hijack.model_hijack.apply_circular(p.tiling)
 
-    comments = {}
+    comments: list[str] = []
 
-    shared.prompt_styles.apply_styles(p)
-
-    if type(p.prompt) == list:
-        all_prompts = p.prompt
+    if isinstance(p.prompt, list):
+        all_prompts = [
+            shared.prompt_styles.apply_styles_to_prompt(prompt, p.styles)
+            for prompt in p.prompt
+        ]
     else:
-        all_prompts = p.batch_size * p.n_iter * [p.prompt]
+        all_prompts = p.batch_size * p.n_iter * [
+            shared.prompt_styles.apply_styles_to_prompt(p.prompt, p.styles)
+        ]
 
-    if type(p.seed) == list:
+    if isinstance(p.negative_prompt, list):
+        all_negative_prompts = [
+            shared.prompt_styles.apply_negative_styles_to_prompt(negative_prompt, p.styles)
+            for negative_prompt in p.negative_prompt
+        ]
+    else:
+        all_negative_prompts = len(all_prompts) * [
+            shared.prompt_styles.apply_styles_to_prompt(p.negative_prompt, p.styles)
+        ]
+
+    if isinstance(p.seed, list):
         all_seeds = p.seed
     else:
-        all_seeds = [int(p.seed) + (x if p.subseed_strength == 0 else 0) for x in range(len(all_prompts))]
+        all_seeds = [p.seed + (x if p.subseed_strength == 0 else 0) for x in range(len(all_prompts))]
 
-    if type(p.subseed) == list:
+    if isinstance(p.subseed, list):
         all_subseeds = p.subseed
     else:
-        all_subseeds = [int(p.subseed) + x for x in range(len(all_prompts))]
+        all_subseeds = [p.subseed + x for x in range(len(all_prompts))]
 
     def infotext(iteration=0, position_in_batch=0):
-        return create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration, position_in_batch)
+        return create_infotext(p, all_prompts, all_negative_prompts, all_seeds, all_subseeds, iteration, position_in_batch)
 
     if os.path.exists(cmd_opts.embeddings_dir):
         model_hijack.embedding_db.load_textual_inversion_embeddings()
@@ -331,7 +374,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
     output_images = []
 
     with torch.no_grad():
-        p.init(all_prompts, all_seeds, all_subseeds)
+        p.init(all_prompts, all_negative_prompts, all_seeds, all_subseeds)
 
         if state.job_count == -1:
             state.job_count = p.n_iter
@@ -340,22 +383,22 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             if state.interrupted:
                 break
 
-            prompts = all_prompts[n * p.batch_size:(n + 1) * p.batch_size]
-            seeds = all_seeds[n * p.batch_size:(n + 1) * p.batch_size]
-            subseeds = all_subseeds[n * p.batch_size:(n + 1) * p.batch_size]
+            n_slice = slice(n * p.batch_size, (n + 1) * p.batch_size)
+            prompts = all_prompts[n_slice]
+            negative_prompts = all_negative_prompts[n_slice]
+            seeds = all_seeds[n_slice]
+            subseeds = all_subseeds[n_slice]
 
-            if (len(prompts) == 0):
+            if len(prompts) == 0:
                 break
 
-            #uc = p.sd_model.get_learned_conditioning(len(prompts) * [p.negative_prompt])
+            #uc = p.sd_model.get_learned_conditioning(negative_prompts)
             #c = p.sd_model.get_learned_conditioning(prompts)
             with devices.autocast():
-                uc = prompt_parser.get_learned_conditioning(len(prompts) * [p.negative_prompt], p.steps)
+                uc = prompt_parser.get_learned_conditioning(negative_prompts, p.steps)
                 c = prompt_parser.get_learned_conditioning(prompts, p.steps)
 
-            if len(model_hijack.comments) > 0:
-                for comment in model_hijack.comments:
-                    comments[comment] = 1
+            comments.extend(model_hijack.comments)
 
             if p.n_iter > 1:
                 shared.state.job = f"Batch {n+1} out of {p.n_iter}"
@@ -434,11 +477,23 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
                 images.save_image(grid, p.outpath_grids, "grid", all_seeds[0], all_prompts[0], opts.grid_format, info=infotext(), short_filename=not opts.grid_extended_filename, p=p, grid=True)
 
     devices.torch_gc()
-    return Processed(p, output_images, all_seeds[0], infotext() + "".join(["\n\n" + x for x in comments]), subseed=all_subseeds[0], all_prompts=all_prompts, all_seeds=all_seeds, all_subseeds=all_subseeds, index_of_first_image=index_of_first_image, infotexts=infotexts)
+
+    return Processed(
+        p,
+        output_images,
+        seed=all_seeds[0],
+        info="\n\n".join([infotext(), *dict.fromkeys(comments)]),
+        subseed=all_subseeds[0],
+        all_prompts=all_prompts,
+        all_negative_prompts=all_negative_prompts,
+        all_seeds=all_seeds,
+        all_subseeds=all_subseeds,
+        index_of_first_image=index_of_first_image,
+        infotexts=infotexts,
+    )
 
 
 class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
-    sampler = None
     firstphase_width = 0
     firstphase_height = 0
     firstphase_width_truncated = 0
@@ -450,7 +505,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         self.scale_latent = scale_latent
         self.denoising_strength = denoising_strength
 
-    def init(self, all_prompts, all_seeds, all_subseeds):
+    def init(self, all_prompts, all_negative_prompts, all_seeds, all_subseeds):
         if self.enable_hr:
             if state.job_count == -1:
                 state.job_count = self.n_iter * 2
@@ -516,7 +571,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         # GC now before running the next img2img to prevent running out of memory
         x = None
         devices.torch_gc()
-        
+
         samples = self.sampler.sample_img2img(self, samples, noise, conditioning, unconditional_conditioning, steps=self.steps)
 
         return samples
@@ -544,7 +599,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         self.mask = None
         self.nmask = None
 
-    def init(self, all_prompts, all_seeds, all_subseeds):
+    def init(self, all_prompts, all_negative_prompts, all_seeds, all_subseeds):
         self.sampler = samplers_for_img2img[self.sampler_index].constructor(self.sd_model)
         crop_region = None
 
