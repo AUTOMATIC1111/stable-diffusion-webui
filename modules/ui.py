@@ -69,7 +69,7 @@ random_symbol = '\U0001f3b2\ufe0f'  # 🎲️
 reuse_symbol = '\u267b\ufe0f'  # ♻️
 art_symbol = '\U0001f3a8'  # 🎨
 paste_symbol = '\u2199\ufe0f'  # ↙
-folder_symbol = '\uD83D\uDCC2'
+folder_symbol = '\U0001f4c2'  # 📂
 
 def plaintext_to_html(text):
     text = "<p>" + "<br>\n".join([f"{html.escape(x)}" for x in text.split('\n')]) + "</p>"
