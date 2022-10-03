@@ -401,26 +401,28 @@ def apply_filename_pattern(
     return x
 
 
-def get_next_sequence_number(path, basename):
+def get_next_sequence_number(path: str, basename: str, separator="-"):
     """
     Determines and returns the next sequence number to use when saving an image in the specified directory.
 
     The sequence starts at 0.
     """
-    result = -1
-    if basename != '':
-        basename = basename + "-"
+    if basename:
+        basename += separator
 
     prefix_length = len(basename)
-    for p in os.listdir(path):
-        if p.startswith(basename):
-            l = os.path.splitext(p[prefix_length:])[0].split('-')  # splits the filename (removing the basename first if one is defined, so the sequence number is always the first element)
-            try:
-                result = max(int(l[0]), result)
-            except ValueError:
-                pass
+    sequences = (
+        # get the sequence number (removing the basename and the extension,
+        # so the sequence number is always the first element)
+        os.path.splitext(p[prefix_length:])[0].split(separator, 1)[0]
+        for p in os.listdir(path)
+        if p.startswith(basename)
+    )
 
-    return result + 1
+    try:
+        return max(int(s) for s in sequences if s.isdigit()) + 1
+    except ValueError: # when sequences is empty
+        return 0
 
 
 def save_image(
@@ -439,6 +441,7 @@ def save_image(
     existing_info: dict | None = None,
     forced_filename: str | None = None,
     index=0,
+    separator="-",
 ) -> str:
     save_to_dirs = (grid and opts.grid_save_to_dirs) or (not grid and opts.save_to_dirs and not no_prompt)
 
@@ -461,8 +464,8 @@ def save_image(
             filename_pattern = "[seed]-[prompt_spaces]"
 
         file_decoration = apply_filename_pattern(filename_pattern, p, seed, prompt, index)
-        sequence_number = get_next_sequence_number(path, basename)
-        fn = "-".join(filter(None, [
+        sequence_number = get_next_sequence_number(path, basename, separator)
+        fn = separator.join(filter(None, [
             basename,
             f"{sequence_number:04}" if basename else f"{sequence_number:05}",
             file_decoration,
