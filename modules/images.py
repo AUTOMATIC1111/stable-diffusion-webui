@@ -391,7 +391,7 @@ def apply_filename_pattern(
         replace_pattern("prompt_spaces", lambda: sanitize_filename_part(prompt, replace_spaces=False))
         replace_pattern("prompt_words", lambda: sanitize_filename_part(" ".join(split_prompt_words(prompt)[:opts.directories_max_prompt_words]) or "empty", replace_spaces=False))
     if p:
-        replace_pattern("prompt_no_styles", lambda: sanitize_filename_part(p.prompt[index - p.index_of_first_image] if isinstance(p.prompt, list) else p.prompt, replace_spaces=False))
+        replace_pattern("prompt_no_styles", lambda: sanitize_filename_part(p.prompt[index - getattr(p, "index_of_first_image", 0)] if isinstance(p.prompt, list) else p.prompt, replace_spaces=False))
 
     if cmd_opts.hide_ui_dir_config:
         x = re.sub(r'^[\\/]+|\.{2,}[\\/]+|[\\/]+\.{2,}', '', x)
