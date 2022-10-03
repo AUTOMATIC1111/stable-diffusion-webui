@@ -77,28 +77,6 @@ def plaintext_to_html(text):
     return text
 
 
-def image_from_url_text(filedata):
-    if type(filedata) == list:
-        if len(filedata) == 0:
-            return None
-
-        filedata = filedata[0]
-
-    if filedata.startswith("data:image/png;base64,"):
-        filedata = filedata[len("data:image/png;base64,"):]
-
-    filedata = base64.decodebytes(filedata.encode('utf-8'))
-    image = Image.open(io.BytesIO(filedata))
-    return image
-
-
-def send_gradio_gallery_to_image(x):
-    if len(x) == 0:
-        return None
-
-    return image_from_url_text(x[0])
-
-
 def save_files(js_data, images, index):
     import csv    
     filenames = []
@@ -1067,14 +1045,14 @@ def create_ui(wrap_gradio_gpu_call):
         )
      
         extras_send_to_img2img.click(
-            fn=lambda x: image_from_url_text(x),
+            fn=None,
             _js="extract_image_from_gallery_img2img",
             inputs=[result_images],
             outputs=[img2img_ciu.image],
         )
         
         extras_send_to_inpaint.click(
-            fn=lambda x: image_from_url_text(x),
+            fn=None,
             _js="extract_image_from_gallery_img2img",
             inputs=[result_images],
             outputs=[init_img_with_mask],
@@ -1443,35 +1421,35 @@ def create_ui(wrap_gradio_gpu_call):
         txt2img_fields = [field for field,name in txt2img_paste_fields if name in paste_field_names]
         img2img_fields = [field for field,name in img2img_paste_fields if name in paste_field_names]
         send_to_img2img.click(
-            fn=lambda img, *args: (image_from_url_text(img),*args),
+            fn=None,
             _js="(gallery, ...args) => [extract_image_from_gallery_img2img(gallery), ...args]",
             inputs=[txt2img_gallery] + txt2img_fields,
             outputs=[img2img_ciu.image] + img2img_fields,
         )
 
         send_to_inpaint.click(
-            fn=lambda x, *args: (image_from_url_text(x), *args),
+            fn=None,
             _js="(gallery, ...args) => [extract_image_from_gallery_inpaint(gallery), ...args]",
             inputs=[txt2img_gallery] + txt2img_fields,
             outputs=[init_img_with_mask] + img2img_fields,
         )
 
         img2img_send_to_img2img.click(
-            fn=lambda x: image_from_url_text(x),
+            fn=None,
             _js="extract_image_from_gallery_img2img",
             inputs=[img2img_gallery],
             outputs=[img2img_ciu.image],
         )
 
         img2img_send_to_inpaint.click(
-            fn=lambda x: image_from_url_text(x),
+            fn=None,
             _js="extract_image_from_gallery_inpaint",
             inputs=[img2img_gallery],
             outputs=[init_img_with_mask],
         )
 
         send_to_extras.click(
-            fn=lambda x: image_from_url_text(x),
+            fn=None,
             _js="extract_image_from_gallery_extras",
             inputs=[txt2img_gallery],
             outputs=[extras_ciu.image],
@@ -1496,7 +1474,7 @@ def create_ui(wrap_gradio_gpu_call):
         )
 
         img2img_send_to_extras.click(
-            fn=lambda x: image_from_url_text(x),
+            fn=None,
             _js="extract_image_from_gallery_extras",
             inputs=[img2img_gallery],
             outputs=[extras_ciu.image],
