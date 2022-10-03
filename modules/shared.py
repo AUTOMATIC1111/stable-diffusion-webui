@@ -357,3 +357,22 @@ total_tqdm = TotalTQDM()
 
 mem_mon = modules.memmon.MemUsageMonitor("MemMon", device, opts)
 mem_mon.start()
+
+
+unsaved_files_to_remove = []
+
+def remove_temporary_files():
+    for fn in unsaved_files_to_remove:
+        try:
+            os.unlink(fn)
+        except OSError:
+            pass
+        else:
+            print(f"removed '{fn}'")
+    for path in set(os.path.dirname(fn) for fn in unsaved_files_to_remove):
+        try:
+            os.rmdir(path)
+        except OSError:
+            pass
+        else:
+            print(f"removed directory '{path}'")

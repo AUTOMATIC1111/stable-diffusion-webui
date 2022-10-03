@@ -84,6 +84,7 @@ def webui():
     # make the program just exit at ctrl+c without waiting for anything
     def sigint_handler(sig, frame):
         print(f'Interrupted with signal {sig} in {frame}')
+        shared.remove_temporary_files()
         os._exit(0)
 
     signal.signal(signal.SIGINT, sigint_handler)

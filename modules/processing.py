@@ -123,6 +123,7 @@ class ProcessedImage:
         os.close(fd)
         self.save(fn)
         self.unsaved_fn = fn
+        shared.unsaved_files_to_remove.append(fn)
         return fn
 
     def save(self, fn):
