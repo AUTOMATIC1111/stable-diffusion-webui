@@ -503,7 +503,7 @@ class KritaSDPluginDocker(DockWidget):
         )
 
     def create_config_interface(self):
-        self.config_base_url_label = QLabel("Backend url (only local now):")
+        self.config_base_url_label = QLabel("Backend url:")
         self.config_base_url = QLineEdit()
         self.config_base_url_reset = QPushButton("Default")
         self.config_base_url_layout = QHBoxLayout()

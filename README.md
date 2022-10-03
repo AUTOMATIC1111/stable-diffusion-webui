@@ -26,12 +26,13 @@ ln -rs /.../auto-sd-krita/krita_plugin/krita_diff.desktop /.../pykrita/krita_dif
 
 1. Regularly update to upstream & fix resultant bugs.
     - I will do this at least once a week; more often if there are no breaking changes.
-2. Figure out API for calling scripts.
+2. Fix remote usage of the Krita plugin.
+3. Figure out API for calling scripts.
     - Mainly to add back SD upscaling, it was refactored to a script upstream. See <https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/91bfc71261e160451e89f35a7c0eef66ff98877c>.
-3. Expose config options present in `krita_config.yaml` in the GUI.
+4. Expose config options present in `krita_config.yaml` in the GUI.
     - Including using scripts.
-4. Improve & document the API.
-5. _Proper_ Docker support and integration with Devcontainers.
+5. Improve & document the API.
+6. _Proper_ Docker support and integration with Devcontainers.
 
 ## Features
 
@@ -40,6 +41,7 @@ ln -rs /.../auto-sd-krita/krita_plugin/krita_diff.desktop /.../pykrita/krita_dif
 - Exposed more features present in WebUI.
   - not in GUI yet; see and edit auto-generated `krita_config.yaml`, restart not needed.
 - `--listen` will cause the backend API to also host on `0.0.0.0`, allowing remote usage of the Krita plugin.
+  - This does not work for now; the API has to be modified to send images instead of the local path to them :p
 - Added more comments and documentation, especially with respect to the internal API.
 - Strongly type & document the config.
 
