@@ -59,9 +59,9 @@ class Script(scripts.Script):
 
                 if initial_seed is None:
                     initial_seed = processed.seed
-                    initial_info = processed.info
+                    initial_info = processed.images[0].infotext
 
-                init_img = processed.images[0]
+                init_img = processed.images[0].image
 
                 p.init_images = [init_img]
                 p.seed = processed.seed + 1
@@ -70,7 +70,7 @@ class Script(scripts.Script):
 
             grid = images.image_grid(history, rows=1)
             if opts.grid_save:
-                images.save_image(grid, p.outpath_grids, "grid", initial_seed, p.prompt, opts.grid_format, info=info, short_filename=not opts.grid_extended_filename, grid=True, p=p)
+                images.save_image(grid, p.outpath_grids, "grid", initial_seed, p.prompt, opts.grid_format, short_filename=not opts.grid_extended_filename, p=p)
 
             grids.append(grid)
             all_images += history
@@ -78,6 +78,6 @@ class Script(scripts.Script):
         if opts.return_grid:
             all_images = grids + all_images
 
-        processed = Processed(p, all_images, initial_seed, initial_info)
+        processed = Processed(p, all_images, initial_seed)
 
         return processed

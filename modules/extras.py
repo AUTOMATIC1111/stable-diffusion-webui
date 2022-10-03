@@ -7,6 +7,7 @@ import torch
 import tqdm
 
 from modules import processing, shared, images, devices, sd_models
+from modules.processing import ProcessedImage
 from modules.shared import opts
 import modules.gfpgan_model
 from modules.ui import plaintext_to_html
@@ -41,7 +42,7 @@ def run_extras(extras_mode, image, image_folder, gfpgan_visibility, codeformer_v
     outputs = []
     for image, image_name in zip(imageArr, imageNameArr):
         if image is None:
-            return outputs, "Please select an input image.", ''
+            return [pi.image for pi in outputs], "Please select an input image.", ''
         existing_pnginfo = image.info or {}
 
         image = image.convert("RGB")
@@ -94,15 +95,15 @@ def run_extras(extras_mode, image, image_folder, gfpgan_visibility, codeformer_v
         while len(cached_images) > 2:
             del cached_images[next(iter(cached_images.keys()))]
 
-        images.save_image(image, path=outpath, basename="", seed=None, prompt=None, extension=opts.samples_format, info=info, short_filename=True,
-                          no_prompt=True, grid=False, pnginfo_section_name="extras", existing_info=existing_pnginfo,
+        pi = ProcessedImage(image, (existing_pnginfo, info))
+        images.save_image(pi, path=outpath, basename="", seed=None, prompt=None, extension=opts.samples_format, short_filename=True, no_prompt=True,
                           forced_filename=image_name if opts.use_original_name_batch else None)
 
-        outputs.append(image)
+        outputs.append(pi)
 
     devices.torch_gc()
 
-    return outputs, plaintext_to_html(info), ''
+    return [pi.image for pi in outputs], plaintext_to_html(info), ''
 
 
 def run_pnginfo(image):

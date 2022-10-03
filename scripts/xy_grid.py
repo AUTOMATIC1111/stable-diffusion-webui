@@ -11,7 +11,7 @@ import modules.scripts as scripts
 import gradio as gr
 
 from modules import images
-from modules.processing import process_images, Processed
+from modules.processing import ProcessedImage, process_images
 from modules.shared import opts, cmd_opts, state
 import modules.shared as shared
 import modules.sd_samplers
@@ -152,11 +152,11 @@ def draw_xy_grid(p, xs, ys, x_labels, y_labels, cell, draw_legend):
             try:
               res.append(processed.images[0])
             except:
-              res.append(Image.new(res[0].mode, res[0].size))
+              res.append(ProcessedImage(Image.new(res[0].image.mode, res[0].image.size), ''))
 
     grid = images.image_grid(res, rows=len(ys))
     if draw_legend:
-        grid = images.draw_grid_annotations(grid, res[0].width, res[0].height, hor_texts, ver_texts)
+        grid = images.draw_grid_annotations(grid, res[0].image.width, res[0].image.height, hor_texts, ver_texts)
 
     first_pocessed.images = [grid]
 
@@ -295,7 +295,7 @@ class Script(scripts.Script):
         )
 
         if opts.grid_save:
-            images.save_image(processed.images[0], p.outpath_grids, "xy_grid", prompt=p.prompt, seed=processed.seed, grid=True, p=p)
+            images.save_image(processed.images[0], p.outpath_grids, "xy_grid", prompt=p.prompt, seed=processed.seed, p=p)
 
         # restore checkpoint in case it was changed by axes
         modules.sd_models.reload_model_weights(shared.sd_model)

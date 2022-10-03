@@ -75,10 +75,10 @@ class Script(scripts.Script):
                 processed = processing.process_images(p)
 
                 if initial_info is None:
-                    initial_info = processed.info
+                    initial_info = processed.images[0].infotext
 
                 p.seed = processed.seed + 1
-                work_results += processed.images
+                work_results += [pi.image for pi in processed.images]
 
             image_index = 0
             for y, h, row in grid.tiles:
@@ -87,11 +87,12 @@ class Script(scripts.Script):
                     image_index += 1
 
             combined_image = images.combine_grid(grid)
-            result_images.append(combined_image)
+            pi = ProcessedImage(combined_image, initial_info)
+            result_images.append(pi)
 
             if opts.samples_save:
-                images.save_image(combined_image, p.outpath_samples, "", start_seed, p.prompt, opts.samples_format, info=initial_info, p=p)
+                images.save_image(pi, p.outpath_samples, "", start_seed, p.prompt, opts.samples_format, p=p)
 
-        processed = Processed(p, result_images, seed, initial_info)
+        processed = Processed(p, result_images, seed)
 
         return processed

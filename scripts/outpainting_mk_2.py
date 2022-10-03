@@ -8,7 +8,7 @@ import gradio as gr
 from PIL import Image, ImageDraw
 
 from modules import images, processing, devices
-from modules.processing import Processed, process_images
+from modules.processing import Processed, ProcessedImage, process_images
 from modules.shared import opts, cmd_opts, state
 
 
@@ -232,11 +232,11 @@ class Script(scripts.Script):
             p.latent_mask = latent_mask
 
             proc = process_images(p)
-            proc_img = proc.images[0]
+            proc_img = proc.images[0].image
 
             if initial_seed_and_info[0] is None:
                 initial_seed_and_info[0] = proc.seed
-                initial_seed_and_info[1] = proc.info
+                initial_seed_and_info[1] = proc.images[0].infotext
 
             out.paste(proc_img, (0 if is_left else out.width - proc_img.width, 0 if is_top else out.height - proc_img.height))
             out = out.crop((0, 0, res_w, res_h))
@@ -253,10 +253,11 @@ class Script(scripts.Script):
         if down > 0:
             img = expand(img, down, is_bottom=True)
 
-        res = Processed(p, [img], initial_seed_and_info[0], initial_seed_and_info[1])
+        pi = ProcessedImage(img, initial_seed_and_info[1])
+        res = Processed(p, [pi], initial_seed_and_info[0])
 
         if opts.samples_save:
-            images.save_image(img, p.outpath_samples, "", res.seed, p.prompt, opts.grid_format, info=res.info, p=p)
+            images.save_image(pi, p.outpath_samples, "", res.seed, p.prompt, opts.grid_format, p=p)
 
         return res
 
