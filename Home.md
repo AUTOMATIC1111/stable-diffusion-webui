@@ -2,6 +2,7 @@
 
 - [Features](Features)
   - [Textual Inversion](Textual-Inversion)
+  - [Negative prompt](Negative-prompt)
 - [Dependencies](Dependencies)
 - [Installation and run on NVidia GPUs](Install-and-Run-on-NVidia-GPUs)
 - [Install and run on AMD GPUs](Install-and-Run-on-AMD-GPUs)
@@ -13,4 +14,3 @@
   - [Developing custom scripts](Developing-custom-scripts)
 - [Troubleshooting](Troubleshooting)
 - [Contributing](Contributing)
-- [Negative prompt](Negative-prompt)
