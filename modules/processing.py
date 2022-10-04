@@ -1,4 +1,3 @@
-import contextlib
 import json
 import math
 import os
@@ -330,9 +329,8 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
 
     infotexts = []
     output_images = []
-    precision_scope = torch.autocast if cmd_opts.precision == "autocast" else contextlib.nullcontext
-    ema_scope = (contextlib.nullcontext if cmd_opts.lowvram else p.sd_model.ema_scope)
-    with torch.no_grad(), precision_scope("cuda"), ema_scope():
+
+    with torch.no_grad():
         p.init(all_prompts, all_seeds, all_subseeds)
 
         if state.job_count == -1:
@@ -351,8 +349,9 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
 
             #uc = p.sd_model.get_learned_conditioning(len(prompts) * [p.negative_prompt])
             #c = p.sd_model.get_learned_conditioning(prompts)
-            uc = prompt_parser.get_learned_conditioning(len(prompts) * [p.negative_prompt], p.steps)
-            c = prompt_parser.get_learned_conditioning(prompts, p.steps)
+            with devices.autocast():
+                uc = prompt_parser.get_learned_conditioning(len(prompts) * [p.negative_prompt], p.steps)
+                c = prompt_parser.get_learned_conditioning(prompts, p.steps)
 
             if len(model_hijack.comments) > 0:
                 for comment in model_hijack.comments:
@@ -361,7 +360,9 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             if p.n_iter > 1:
                 shared.state.job = f"Batch {n+1} out of {p.n_iter}"
 
-            samples_ddim = p.sample(conditioning=c, unconditional_conditioning=uc, seeds=seeds, subseeds=subseeds, subseed_strength=p.subseed_strength)
+            with devices.autocast():
+                samples_ddim = p.sample(conditioning=c, unconditional_conditioning=uc, seeds=seeds, subseeds=subseeds, subseed_strength=p.subseed_strength).to(devices.dtype)
+
             if state.interrupted:
 
                 # if we are interruped, sample returns just noise
@@ -386,6 +387,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
                     devices.torch_gc()
 
                     x_sample = modules.face_restoration.restore_faces(x_sample)
+                    devices.torch_gc()
 
                 image = Image.fromarray(x_sample)
 
