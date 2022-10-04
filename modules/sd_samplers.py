@@ -4,7 +4,6 @@ import torch
 import tqdm
 from PIL import Image
 import inspect
-
 import k_diffusion.sampling
 import ldm.models.diffusion.ddim
 import ldm.models.diffusion.plms
@@ -23,6 +22,8 @@ samplers_k_diffusion = [
     ('Heun', 'sample_heun', ['k_heun']),
     ('DPM2', 'sample_dpm_2', ['k_dpm_2']),
     ('DPM2 a', 'sample_dpm_2_ancestral', ['k_dpm_2_a']),
+    ('DPM fast', 'sample_dpm_fast', ['k_dpm_fast']),
+    ('DPM adaptive', 'sample_dpm_adaptive', ['k_dpm_ad']),
 ]
 
 samplers_data_k_diffusion = [
@@ -36,7 +37,7 @@ samplers = [
     SamplerData('DDIM', lambda model: VanillaStableDiffusionSampler(ldm.models.diffusion.ddim.DDIMSampler, model), []),
     SamplerData('PLMS', lambda model: VanillaStableDiffusionSampler(ldm.models.diffusion.plms.PLMSSampler, model), []),
 ]
-samplers_for_img2img = [x for x in samplers if x.name != 'PLMS']
+samplers_for_img2img = [x for x in samplers if x.name not in ['PLMS', 'DPM fast', 'DPM adaptive']]
 
 sampler_extra_params = {
     'sample_euler': ['s_churn', 's_tmin', 's_tmax', 's_noise'],
@@ -76,7 +77,9 @@ def extended_tdqm(sequence, *args, desc=None, **kwargs):
     state.sampling_steps = len(sequence)
     state.sampling_step = 0
 
-    for x in tqdm.tqdm(sequence, *args, desc=state.job, file=shared.progress_print_out, **kwargs):
+    seq = sequence if cmd_opts.disable_console_progressbars else tqdm.tqdm(sequence, *args, desc=state.job, file=shared.progress_print_out, **kwargs)
+
+    for x in seq:
         if state.interrupted:
             break
 
@@ -124,7 +127,7 @@ class VanillaStableDiffusionSampler:
         return res
 
     def initialize(self, p):
-        self.eta = p.eta or opts.eta_ddim
+        self.eta = p.eta if p.eta is not None else opts.eta_ddim
 
         for fieldname in ['p_sample_ddim', 'p_sample_plms']:
             if hasattr(self.sampler, fieldname):
@@ -206,7 +209,9 @@ def extended_trange(sampler, count, *args, **kwargs):
     state.sampling_steps = count
     state.sampling_step = 0
 
-    for x in tqdm.trange(count, *args, desc=state.job, file=shared.progress_print_out, **kwargs):
+    seq = range(count) if cmd_opts.disable_console_progressbars else tqdm.trange(count, *args, desc=state.job, file=shared.progress_print_out, **kwargs)
+
+    for x in seq:
         if state.interrupted:
             break
 
@@ -289,7 +294,10 @@ class KDiffusionSampler:
     def sample_img2img(self, p, x, noise, conditioning, unconditional_conditioning, steps=None):
         steps, t_enc = setup_img2img_steps(p, steps)
 
-        sigmas = self.model_wrap.get_sigmas(steps)
+        if p.sampler_noise_scheduler_override:
+          sigmas = p.sampler_noise_scheduler_override(steps)
+        else:
+          sigmas = self.model_wrap.get_sigmas(steps)
 
         noise = noise * sigmas[steps - t_enc - 1]
         xi = x + noise
@@ -305,12 +313,20 @@ class KDiffusionSampler:
     def sample(self, p, x, conditioning, unconditional_conditioning, steps=None):
         steps = steps or p.steps
 
-        sigmas = self.model_wrap.get_sigmas(steps)
+        if p.sampler_noise_scheduler_override:
+          sigmas = p.sampler_noise_scheduler_override(steps)
+        else:
+          sigmas = self.model_wrap.get_sigmas(steps)
         x = x * sigmas[0]
 
         extra_params_kwargs = self.initialize(p)
-
-        samples = self.func(self.model_wrap_cfg, x, sigmas, extra_args={'cond': conditioning, 'uncond': unconditional_conditioning, 'cond_scale': p.cfg_scale}, disable=False, callback=self.callback_state, **extra_params_kwargs)
-
+        if 'sigma_min' in inspect.signature(self.func).parameters:
+            extra_params_kwargs['sigma_min'] = self.model_wrap.sigmas[0].item()
+            extra_params_kwargs['sigma_max'] = self.model_wrap.sigmas[-1].item()
+            if 'n' in inspect.signature(self.func).parameters:
+                extra_params_kwargs['n'] = steps
+        else:
+            extra_params_kwargs['sigmas'] = sigmas
+        samples = self.func(self.model_wrap_cfg, x, extra_args={'cond': conditioning, 'uncond': unconditional_conditioning, 'cond_scale': p.cfg_scale}, disable=False, callback=self.callback_state, **extra_params_kwargs)
         return samples
 

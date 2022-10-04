@@ -21,6 +21,7 @@ Category = namedtuple("Category", ["name", "topn", "items"])
 
 re_topn = re.compile(r"\.top(\d+)\.")
 
+
 class InterrogateModels:
     blip_model = None
     clip_model = None

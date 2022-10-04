@@ -34,7 +34,11 @@ class Script(scripts.Script):
         seed = p.seed
 
         init_img = p.init_images[0]
-        img = upscaler.upscale(init_img, init_img.width * 2, init_img.height * 2)
+        
+        if(upscaler.name != "None"): 
+            img = upscaler.scaler.upscale(init_img, 2, upscaler.data_path)
+        else:
+            img = init_img
 
         devices.torch_gc()
 
