@@ -135,7 +135,7 @@ class Script(scripts.Script):
                     if combination_num & (2 ** n) > 0:
                         current += ("" if text.strip().startswith(",") else ", ") + text
                 all_prompts.append(current)
-            all_seeds = len(all_prompts) * [seed]
+            all_seeds = len(all_prompts) * [p.seed]
 
         p.n_iter = math.ceil(len(all_prompts) / p.batch_size)
         p.do_not_save_grid = True

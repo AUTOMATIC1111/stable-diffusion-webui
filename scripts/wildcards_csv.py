@@ -38,7 +38,7 @@ class Script(scripts.Script):
                             stripped.append(line.strip())
                         
                         stripped.remove('name,blank,blank2')
-                        print(stripped)
+                        #print(stripped)
                         return random.choice(stripped).replace(",,","")
             return chunk
         
