@@ -1,3 +1,5 @@
+import contextlib
+
 import torch
 
 # has_mps is only available in nightly pytorch (for now), `getattr` for compatibility
@@ -57,3 +59,11 @@ def randn_without_seed(shape):
 
     return torch.randn(shape, device=device)
 
+
+def autocast():
+    from modules import shared
+
+    if dtype == torch.float32 or shared.cmd_opts.precision == "full":
+        return contextlib.nullcontext()
+
+    return torch.autocast("cuda")

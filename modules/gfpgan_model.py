@@ -37,22 +37,32 @@ def gfpgann():
         print("Unable to load gfpgan model!")
         return None
     model = gfpgan_constructor(model_path=model_file, upscale=1, arch='clean', channel_multiplier=2, bg_upsampler=None)
-    model.gfpgan.to(shared.device)
     loaded_gfpgan_model = model
 
     return model
+
+
+def send_model_to(model, device):
+    model.gfpgan.to(device)
+    model.face_helper.face_det.to(device)
+    model.face_helper.face_parse.to(device)
 
 
 def gfpgan_fix_faces(np_image):
     model = gfpgann()
     if model is None:
         return np_image
+
+    send_model_to(model, devices.device)
+
     np_image_bgr = np_image[:, :, ::-1]
     cropped_faces, restored_faces, gfpgan_output_bgr = model.enhance(np_image_bgr, has_aligned=False, only_center_face=False, paste_back=True)
     np_image = gfpgan_output_bgr[:, :, ::-1]
 
+    model.face_helper.clean_all()
+
     if shared.opts.face_restoration_unload:
-        model.gfpgan.to(devices.cpu)
+        send_model_to(model, devices.cpu)
 
     return np_image
 
