@@ -4,7 +4,7 @@ OPEN = '{'
 CLOSE = '}'
 SEPARATE = '|'
 MARK = '@'
-
+REAL_MARK = ':'
 
 def combine(left, right):
     return map(lambda p: (p[0][0] + p[1][0], p[0][1] * p[1][1]), itertools.product(left, right))
@@ -80,6 +80,21 @@ def get_weighted_prompt(prompt_weight):
 
     return results
 
+
+def switch_syntax(prompt):
+    p = list(prompt)
+    stack = []
+    for i, c in enumerate(p):
+        if c == '{' or c == '[' or c == '(':
+            stack.append(c)
+
+        if c == '}' or c == ']' or c == ')':
+            stack.pop()
+
+        if c == REAL_MARK and stack[-1] == '{':
+            p[i] = MARK
+
+    return "".join(p)
 
 # def test(p, w=1):
 #     print('')
