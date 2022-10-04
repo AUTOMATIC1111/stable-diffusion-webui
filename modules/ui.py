@@ -254,6 +254,13 @@ def check_progress_call(id_part):
         else:
             preview_visibility = gr_show(True)
 
+            if opts.progress_size_threshold > 0:
+                if (max(image.size) > opts.progress_size_threshold):
+                    res_desired_ratio = opts.progress_size_threshold/max(image.size)
+                    out_res = tuple([int(i*res_desired_ratio) for i in image.size])
+                    image = image.resize(out_res)
+
+
     if shared.state.textinfo is not None:
         textinfo_result = gr.HTML.update(value=shared.state.textinfo, visible=True)
     else:
