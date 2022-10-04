@@ -97,11 +97,7 @@ def setup_model(dirname):
                 return "GFPGAN"
 
             def restore(self, np_image):
-                np_image_bgr = np_image[:, :, ::-1]
-                cropped_faces, restored_faces, gfpgan_output_bgr = gfpgann().enhance(np_image_bgr, has_aligned=False, only_center_face=False, paste_back=True)
-                np_image = gfpgan_output_bgr[:, :, ::-1]
-
-                return np_image
+                return gfpgan_fix_faces(np_image)
 
         shared.face_restorers.append(FaceRestorerGFPGAN())
     except Exception:

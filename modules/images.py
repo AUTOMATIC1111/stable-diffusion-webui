@@ -311,7 +311,12 @@ def apply_filename_pattern(x, p, seed, prompt):
         x = x.replace("[cfg]", str(p.cfg_scale))
         x = x.replace("[width]", str(p.width))
         x = x.replace("[height]", str(p.height))
-        x = x.replace("[styles]", sanitize_filename_part(", ".join([x for x in p.styles if not x == "None"]), replace_spaces=False))
+        
+        #currently disabled if using the save button, will work otherwise 
+        # if enabled it will cause a bug because styles is not included in the save_files data dictionary
+        if hasattr(p, "styles"):
+            x = x.replace("[styles]", sanitize_filename_part(", ".join([x for x in p.styles if not x == "None"] or "None"), replace_spaces=False))
+
         x = x.replace("[sampler]", sanitize_filename_part(sd_samplers.samplers[p.sampler_index].name, replace_spaces=False))
 
     x = x.replace("[model_hash]", shared.sd_model.sd_model_hash)
@@ -374,7 +379,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     save_to_dirs = (grid and opts.grid_save_to_dirs) or (not grid and opts.save_to_dirs and not no_prompt)
 
     if save_to_dirs:
-        dirname = apply_filename_pattern(opts.directories_filename_pattern or "[prompt_words]", p, seed, prompt)
+        dirname = apply_filename_pattern(opts.directories_filename_pattern or "[prompt_words]", p, seed, prompt).strip('\\ /')
         path = os.path.join(path, dirname)
 
     os.makedirs(path, exist_ok=True)

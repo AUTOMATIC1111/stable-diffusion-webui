@@ -32,10 +32,9 @@ def enable_tf32():
 
 errors.run(enable_tf32, "Enabling TF32")
 
-
 device = get_optimal_device()
 device_gfpgan = device_codeformer = cpu if device.type == 'mps' else device
-
+dtype = torch.float16
 
 def randn(seed, shape):
     # Pytorch currently doesn't handle setting randomness correctly when the metal backend is used.
