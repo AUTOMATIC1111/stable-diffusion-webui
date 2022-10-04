@@ -69,9 +69,13 @@ def setup_model(dirname):
 
                 self.net = net
                 self.face_helper = face_helper
-                self.net.to(devices.device_codeformer)
 
                 return net, face_helper
+
+            def send_model_to(self, device):
+                self.net.to(device)
+                self.face_helper.face_det.to(device)
+                self.face_helper.face_parse.to(device)
 
             def restore(self, np_image, w=None):
                 np_image = np_image[:, :, ::-1]
@@ -81,6 +85,8 @@ def setup_model(dirname):
                 self.create_models()
                 if self.net is None or self.face_helper is None:
                     return np_image
+
+                self.send_model_to(devices.device_codeformer)
 
                 self.face_helper.clean_all()
                 self.face_helper.read_image(np_image)
@@ -113,8 +119,10 @@ def setup_model(dirname):
                 if original_resolution != restored_img.shape[0:2]:
                     restored_img = cv2.resize(restored_img, (0, 0), fx=original_resolution[1]/restored_img.shape[1], fy=original_resolution[0]/restored_img.shape[0], interpolation=cv2.INTER_LINEAR)
 
+                self.face_helper.clean_all()
+
                 if shared.opts.face_restoration_unload:
-                    self.net.to(devices.cpu)
+                    self.send_model_to(devices.cpu)
 
                 return restored_img
 
