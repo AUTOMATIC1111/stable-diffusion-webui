@@ -196,6 +196,11 @@ def wrap_gradio_call(func, extra_outputs=None):
             res = extra_outputs_array + [f"<div class='error'>{plaintext_to_html(type(e).__name__+': '+str(e))}</div>"]
 
         elapsed = time.perf_counter() - t
+        elapsed_m = int(elapsed // 60)
+        elapsed_s = elapsed % 60
+        elapsed_text = f"{elapsed_s:.2f}s"
+        if (elapsed_m > 0):
+            elapsed_text = f"{elapsed_m}m "+elapsed_text
 
         if run_memmon:
             mem_stats = {k: -(v//-(1024*1024)) for k, v in shared.mem_mon.stop().items()}
@@ -210,7 +215,7 @@ def wrap_gradio_call(func, extra_outputs=None):
             vram_html = ''
 
         # last item is always HTML
-        res[-1] += f"<div class='performance'><p class='time'>Time taken: <wbr>{elapsed:.2f}s</p>{vram_html}</div>"
+        res[-1] += f"<div class='performance'><p class='time'>Time taken: <wbr>{elapsed_text}</p>{vram_html}</div>"
 
         shared.state.interrupted = False
         shared.state.job_count = 0
