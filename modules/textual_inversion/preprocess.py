@@ -26,7 +26,9 @@ def preprocess(process_src, process_dst, process_flip, process_split, process_ca
         if process_caption:
             caption = "-" + shared.interrogator.generate_caption(image)
         else:
-            caption = ""
+            caption = filename
+            caption = os.path.splitext(caption)[0]
+            caption = os.path.basename(caption)
 
         image.save(os.path.join(dst, f"{index:05}-{subindex[0]}{caption}.png"))
         subindex[0] += 1
