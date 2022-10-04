@@ -84,7 +84,7 @@ class StableDiffusionProcessing:
         self.s_tmin = opts.s_tmin
         self.s_tmax = float('inf')  # not representable as a standard ui option
         self.s_noise = opts.s_noise
-        
+
         if not seed_enable_extras:
             self.subseed = -1
             self.subseed_strength = 0
@@ -296,7 +296,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
         assert(len(p.prompt) > 0)
     else:
         assert p.prompt is not None
-        
+
     devices.torch_gc()
 
     seed = get_fixed_seed(p.seed)
@@ -359,8 +359,8 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             #uc = p.sd_model.get_learned_conditioning(len(prompts) * [p.negative_prompt])
             #c = p.sd_model.get_learned_conditioning(prompts)
             with devices.autocast():
-                uc = prompt_parser.get_learned_conditioning(len(prompts) * [p.negative_prompt], p.steps)
-                c = prompt_parser.get_learned_conditioning(prompts, p.steps)
+                uc = prompt_parser.get_learned_conditioning(shared.sd_model, len(prompts) * [p.negative_prompt], p.steps)
+                c = prompt_parser.get_learned_conditioning(shared.sd_model, prompts, p.steps)
 
             if len(model_hijack.comments) > 0:
                 for comment in model_hijack.comments:
@@ -527,7 +527,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         # GC now before running the next img2img to prevent running out of memory
         x = None
         devices.torch_gc()
-        
+
         samples = self.sampler.sample_img2img(self, samples, noise, conditioning, unconditional_conditioning, steps=self.steps)
 
         return samples
