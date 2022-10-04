@@ -256,9 +256,9 @@ def check_progress_call(id_part):
 
             if opts.progress_size_threshold > 0:
                 if (max(image.size) > opts.progress_size_threshold):
-                    res_desired_ratio = opts.progress_size_threshold/max(image.size)
-                    out_res = tuple([int(i*res_desired_ratio) for i in image.size])
-                    image = image.resize(out_res)
+                    preview_res_ratio = opts.progress_size_threshold/max(image.size)
+                    preview_res = tuple([int(i*preview_res_ratio) for i in image.size]) # shrink resolution by ratio
+                    image = image.resize(preview_res)
 
 
     if shared.state.textinfo is not None:
