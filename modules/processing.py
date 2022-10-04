@@ -122,6 +122,7 @@ class Processed:
         self.extra_generation_params = p.extra_generation_params
         self.index_of_first_image = index_of_first_image
         self.styles = p.styles
+        self.job_timestamp = state.job_timestamp
 
         self.eta = p.eta
         self.ddim_discretize = p.ddim_discretize
@@ -167,6 +168,7 @@ class Processed:
             "index_of_first_image": self.index_of_first_image,
             "infotexts": self.infotexts,
             "styles": self.styles,
+            "job_timestamp": self.job_timestamp,
         }
 
         return json.dumps(obj)

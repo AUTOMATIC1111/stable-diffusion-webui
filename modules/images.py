@@ -298,7 +298,7 @@ def apply_filename_pattern(x, p, seed, prompt):
     x = x.replace("[model_hash]", shared.sd_model.sd_model_hash)
     x = x.replace("[date]", datetime.date.today().isoformat())
     x = x.replace("[datetime]", datetime.datetime.now().strftime("%Y%m%d%H%M%S"))
-    x = x.replace("[job_timestamp]", shared.state.job_timestamp)
+    x = x.replace("[job_timestamp]", getattr(p, "job_timestamp", shared.state.job_timestamp))
 
     # Apply [prompt] at last. Because it may contain any replacement word.^M
     if prompt is not None:
