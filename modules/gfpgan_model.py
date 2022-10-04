@@ -21,7 +21,7 @@ def gfpgann():
     global loaded_gfpgan_model
     global model_path
     if loaded_gfpgan_model is not None:
-        loaded_gfpgan_model.gfpgan.to(shared.device)
+        loaded_gfpgan_model.gfpgan.to(devices.device_gfpgan)
         return loaded_gfpgan_model
 
     if gfpgan_constructor is None:
@@ -53,7 +53,7 @@ def gfpgan_fix_faces(np_image):
     if model is None:
         return np_image
 
-    send_model_to(model, devices.device)
+    send_model_to(model, devices.device_gfpgan)
 
     np_image_bgr = np_image[:, :, ::-1]
     cropped_faces, restored_faces, gfpgan_output_bgr = model.enhance(np_image_bgr, has_aligned=False, only_center_face=False, paste_back=True)
