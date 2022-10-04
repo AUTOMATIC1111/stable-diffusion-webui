@@ -287,32 +287,13 @@ def apply_filename_pattern(x, p, seed, prompt):
     if seed is not None:
         x = x.replace("[seed]", str(seed))
 
-    if prompt is not None:
-        x = x.replace("[prompt]", sanitize_filename_part(prompt))
-        if "[prompt_no_styles]" in x:
-            prompt_no_style = prompt
-            for style in shared.prompt_styles.get_style_prompts(p.styles):
-                if len(style) > 0:
-                    style_parts = [y for y in style.split("{prompt}")]
-                    for part in style_parts:
-                        prompt_no_style = prompt_no_style.replace(part, "").replace(", ,", ",").strip().strip(',')                        
-            prompt_no_style = prompt_no_style.replace(style, "").strip().strip(',').strip()
-            x = x.replace("[prompt_no_styles]", sanitize_filename_part(prompt_no_style, replace_spaces=False))
-
-        x = x.replace("[prompt_spaces]", sanitize_filename_part(prompt, replace_spaces=False))
-        if "[prompt_words]" in x:
-            words = [x for x in re_nonletters.split(prompt or "") if len(x) > 0]
-            if len(words) == 0:
-                words = ["empty"]
-            x = x.replace("[prompt_words]", sanitize_filename_part(" ".join(words[0:max_prompt_words]), replace_spaces=False))
-
     if p is not None:
         x = x.replace("[steps]", str(p.steps))
         x = x.replace("[cfg]", str(p.cfg_scale))
         x = x.replace("[width]", str(p.width))
         x = x.replace("[height]", str(p.height))
-        
-        #currently disabled if using the save button, will work otherwise 
+
+        #currently disabled if using the save button, will work otherwise
         # if enabled it will cause a bug because styles is not included in the save_files data dictionary
         if hasattr(p, "styles"):
             x = x.replace("[styles]", sanitize_filename_part(", ".join([x for x in p.styles if not x == "None"] or "None"), replace_spaces=False))
@@ -323,6 +304,26 @@ def apply_filename_pattern(x, p, seed, prompt):
     x = x.replace("[date]", datetime.date.today().isoformat())
     x = x.replace("[datetime]", datetime.datetime.now().strftime("%Y%m%d%H%M%S"))
     x = x.replace("[job_timestamp]", shared.state.job_timestamp)
+
+    # Apply [prompt] at last. Because it may contain any replacement word.^M
+    if prompt is not None:
+        x = x.replace("[prompt]", sanitize_filename_part(prompt))
+        if "[prompt_no_styles]" in x:
+            prompt_no_style = prompt
+            for style in shared.prompt_styles.get_style_prompts(p.styles):
+                if len(style) > 0:
+                    style_parts = [y for y in style.split("{prompt}")]
+                    for part in style_parts:
+                        prompt_no_style = prompt_no_style.replace(part, "").replace(", ,", ",").strip().strip(',')
+            prompt_no_style = prompt_no_style.replace(style, "").strip().strip(',').strip()
+            x = x.replace("[prompt_no_styles]", sanitize_filename_part(prompt_no_style, replace_spaces=False))
+
+        x = x.replace("[prompt_spaces]", sanitize_filename_part(prompt, replace_spaces=False))
+        if "[prompt_words]" in x:
+            words = [x for x in re_nonletters.split(prompt or "") if len(x) > 0]
+            if len(words) == 0:
+                words = ["empty"]
+            x = x.replace("[prompt_words]", sanitize_filename_part(" ".join(words[0:max_prompt_words]), replace_spaces=False))
 
     if cmd_opts.hide_ui_dir_config:
         x = re.sub(r'^[\\/]+|\.{2,}[\\/]+|[\\/]+\.{2,}', '', x)
