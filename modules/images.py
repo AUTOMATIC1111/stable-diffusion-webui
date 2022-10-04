@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 import datetime
 import math
 import os
 from collections import namedtuple
 import re
+from pathlib import Path
 
 import numpy as np
 import piexif
@@ -265,19 +268,44 @@ def resize_image(resize_mode, im, width, height):
 
 
 invalid_filename_chars = '<>:"/\\|?*\n'
+invalid_filename_translate_char = '_'
 invalid_filename_prefix = ' '
 invalid_filename_postfix = ' .'
 re_nonletters = re.compile(r'[\s' + string.punctuation + ']+')
 max_filename_part_length = 128
+max_filename_length = 240
+
+
+def sanitize_pathname(pathname: str) -> str:
+    """Sanitize invalid pathname and truncate length"""
+    path = Path(pathname)
+    if path.drive or path.root:
+        # disallow absolute path
+        parts = path.parts[1:]
+    else:
+        parts = path.parts
+
+    res: list[str] = []
+
+    for part in parts:
+        part = part.translate({ord(x): invalid_filename_translate_char for x in invalid_filename_chars})
+        part = part.lstrip(invalid_filename_prefix)
+        part = part[:max_filename_length]
+        part = part.rstrip(invalid_filename_postfix)
+
+        # ignore empty or `.` only parts.
+        if part.strip("."):
+            res.append(part)
+
+    return str(Path(*res)) if res else ""
 
 
 def sanitize_filename_part(text, replace_spaces=True):
     if replace_spaces:
         text = text.replace(' ', '_')
 
-    text = text.translate({ord(x): '_' for x in invalid_filename_chars})
-    text = text.lstrip(invalid_filename_prefix)[:max_filename_part_length]
-    text = text.rstrip(invalid_filename_postfix)
+    text = text.translate({ord(x): invalid_filename_translate_char for x in invalid_filename_chars})
+    text = text.strip()[:max_filename_part_length]
     return text
 
 
@@ -327,6 +355,8 @@ def apply_filename_pattern(x, p, seed, prompt):
 
     if cmd_opts.hide_ui_dir_config:
         x = re.sub(r'^[\\/]+|\.{2,}[\\/]+|[\\/]+\.{2,}', '', x)
+
+    x = sanitize_pathname(x)
 
     return x
 
@@ -380,7 +410,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     save_to_dirs = (grid and opts.grid_save_to_dirs) or (not grid and opts.save_to_dirs and not no_prompt)
 
     if save_to_dirs:
-        dirname = apply_filename_pattern(opts.directories_filename_pattern or "[prompt_words]", p, seed, prompt).strip('\\ /')
+        dirname = apply_filename_pattern(opts.directories_filename_pattern or "[prompt_words]", p, seed, prompt)
         path = os.path.join(path, dirname)
 
     os.makedirs(path, exist_ok=True)
