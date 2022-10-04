@@ -147,7 +147,7 @@ options_templates.update(options_section(('saving-images', "Saving images/grids"
     "grid_only_if_multiple": OptionInfo(True, "Do not save grids consisting of one picture"),
     "n_rows": OptionInfo(-1, "Grid row count; use -1 for autodetect and 0 for it to be same as batch size", gr.Slider, {"minimum": -1, "maximum": 16, "step": 1}),
 
-    "enable_pnginfo": OptionInfo(True, "Save text information about generation parameters as chunks to png files"),
+    "enable_pnginfo": OptionInfo(True, "Save prompt and parameters in image metadata"),
     "save_txt": OptionInfo(False, "Create a text file next to every image with generation parameters."),
     "save_images_before_face_restoration": OptionInfo(False, "Save a copy of image before doing face restoration."),
     "jpeg_quality": OptionInfo(80, "Quality for saved jpeg images", gr.Slider, {"minimum": 1, "maximum": 100, "step": 1}),
