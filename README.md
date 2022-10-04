@@ -40,7 +40,7 @@ Check the [custom scripts](https://github.com/AUTOMATIC1111/stable-diffusion-web
 - Generation parameters
      - parameters you used to generate images are saved with that image
      - in PNG chunks for PNG, in EXIF for JPEG
-     - can drag the image to PNG info tab to restore generation parameters and automatically copy them into UI
+     - can drag the image to IMG info tab to restore generation parameters and automatically copy them into UI
      - can be disabled in settings
 - Settings page
 - Running arbitrary python code from UI (must run with --allow-code to enable)
