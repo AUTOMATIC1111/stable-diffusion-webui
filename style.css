@@ -1,5 +1,11 @@
 .output-html p {margin: 0 0.5em;}
 
+.row > *,
+.row > .gr-form > * {
+    min-width: min(120px, 100%);
+    flex: 1 1 0%;
+}
+
 .performance {
     font-size: 0.85em;
     color: #444;
@@ -17,7 +23,7 @@
     text-align: right;
 }
 
-#generate{
+#txt2img_generate, #img2img_generate {
     min-height: 4.5em;
 }
 
@@ -43,11 +49,15 @@
     margin-right: auto;
 }
 
-#random_seed, #random_subseed, #reuse_seed, #reuse_subseed{
+#random_seed, #random_subseed, #reuse_seed, #reuse_subseed, #open_folder{
     min-width: auto;
     flex-grow: 0;
     padding-left: 0.25em;
     padding-right: 0.25em;
+}
+
+#hidden_element{
+    display: none;
 }
 
 #seed_row, #subseed_row{
@@ -147,7 +157,7 @@ button{
     max-width: 10em;
 }
 
-#txt2img_preview, #img2img_preview{
+#txt2img_preview, #img2img_preview, #ti_preview{
     position: absolute;
     width: 320px;
     left: 0;
@@ -162,18 +172,18 @@ button{
 }
 
 @media screen and (min-width: 768px) {
-    #txt2img_preview, #img2img_preview {
+    #txt2img_preview, #img2img_preview, #ti_preview {
         position: absolute;
     }
 }
 
 @media screen and (max-width: 767px) {
-    #txt2img_preview, #img2img_preview {
+    #txt2img_preview, #img2img_preview, #ti_preview {
         position: relative;
     }
 }
 
-#txt2img_preview div.left-0.top-0, #img2img_preview div.left-0.top-0{
+#txt2img_preview div.left-0.top-0, #img2img_preview div.left-0.top-0, #ti_preview div.left-0.top-0{
     display: none;
 }
 
@@ -237,7 +247,7 @@ input[type="range"]{
 #txt2img_negative_prompt, #img2img_negative_prompt{
 }
 
-#txt2img_progressbar, #img2img_progressbar{
+#txt2img_progressbar, #img2img_progressbar, #ti_progressbar{
   position: absolute;
   z-index: 1000;
   right: 0;
@@ -392,4 +402,8 @@ input[type="range"]{
 
 .red {
 	color: red;
+}
+
+#img2img_image div.h-60{
+    height: 480px;
 }

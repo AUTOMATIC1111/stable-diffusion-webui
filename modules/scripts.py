@@ -55,7 +55,7 @@ def load_scripts(basedir):
     if not os.path.exists(basedir):
         return
 
-    for filename in os.listdir(basedir):
+    for filename in sorted(os.listdir(basedir)):
         path = os.path.join(basedir, filename)
 
         if not os.path.isfile(path):
@@ -162,6 +162,40 @@ class ScriptRunner:
 
         return processed
 
+    def reload_sources(self):
+        for si, script in list(enumerate(self.scripts)):
+            with open(script.filename, "r", encoding="utf8") as file:
+                args_from = script.args_from
+                args_to = script.args_to
+                filename = script.filename
+                text = file.read()
+
+                from types import ModuleType
+
+                compiled = compile(text, filename, 'exec')
+                module = ModuleType(script.filename)
+                exec(compiled, module.__dict__)
+
+                for key, script_class in module.__dict__.items():
+                    if type(script_class) == type and issubclass(script_class, Script):
+                        self.scripts[si] = script_class()
+                        self.scripts[si].filename = filename
+                        self.scripts[si].args_from = args_from
+                        self.scripts[si].args_to = args_to
 
 scripts_txt2img = ScriptRunner()
 scripts_img2img = ScriptRunner()
+
+def reload_script_body_only():
+    scripts_txt2img.reload_sources()
+    scripts_img2img.reload_sources()
+
+
+def reload_scripts(basedir):
+    global scripts_txt2img, scripts_img2img
+
+    scripts_data.clear()
+    load_scripts(basedir)
+
+    scripts_txt2img = ScriptRunner()
+    scripts_img2img = ScriptRunner()

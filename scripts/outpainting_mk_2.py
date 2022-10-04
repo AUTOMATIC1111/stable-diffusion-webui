@@ -11,46 +11,8 @@ from modules import images, processing, devices
 from modules.processing import Processed, process_images
 from modules.shared import opts, cmd_opts, state
 
-#  https://github.com/parlance-zz/g-diffuser-bot
-def expand(x, dir, amount, power=0.75):
-    is_left = dir == 3
-    is_right = dir == 1
-    is_up = dir == 0
-    is_down = dir == 2
 
-    if is_left or is_right:
-        noise = np.zeros((x.shape[0], amount, 3), dtype=float)
-        indexes = np.random.random((x.shape[0], amount)) ** power * (1 - np.arange(amount) / amount)
-        if is_right:
-            indexes = 1 - indexes
-        indexes = (indexes * (x.shape[1] - 1)).astype(int)
-
-        for row in range(x.shape[0]):
-            if is_left:
-                noise[row] = x[row][indexes[row]]
-            else:
-                noise[row] = np.flip(x[row][indexes[row]], axis=0)
-
-        x = np.concatenate([noise, x] if is_left else [x, noise], axis=1)
-        return x
-
-    if is_up or is_down:
-        noise = np.zeros((amount, x.shape[1], 3), dtype=float)
-        indexes = np.random.random((x.shape[1], amount)) ** power * (1 - np.arange(amount) / amount)
-        if is_down:
-            indexes = 1 - indexes
-        indexes = (indexes * x.shape[0] - 1).astype(int)
-
-        for row in range(x.shape[1]):
-            if is_up:
-                noise[:, row] = x[:, row][indexes[row]]
-            else:
-                noise[:, row] = np.flip(x[:, row][indexes[row]], axis=0)
-
-        x = np.concatenate([noise, x] if is_up else [x, noise], axis=0)
-        return x
-
-
+# this function is taken from https://github.com/parlance-zz/g-diffuser-bot
 def get_matched_noise(_np_src_image, np_mask_rgb, noise_q=1, color_variation=0.05):
     # helper fft routines that keep ortho normalization and auto-shift before and after fft
     def _fft2(data):
