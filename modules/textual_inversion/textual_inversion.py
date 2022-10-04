@@ -164,7 +164,7 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, steps,
 
     filename = os.path.join(shared.cmd_opts.embeddings_dir, f'{embedding_name}.pt')
 
-    log_directory = os.path.join(log_directory, datetime.datetime.now().strftime("%Y-%d-%m"), embedding_name)
+    log_directory = os.path.join(log_directory, datetime.datetime.now().strftime("%Y-%m-%d"), embedding_name)
 
     if save_embedding_every > 0:
         embedding_dir = os.path.join(log_directory, "embeddings")
