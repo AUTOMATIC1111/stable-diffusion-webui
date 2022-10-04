@@ -228,7 +228,7 @@ options_templates.update(options_section(('interrogate', "Interrogate Options"),
 options_templates.update(options_section(('ui', "User interface"), {
     "show_progressbar": OptionInfo(True, "Show progressbar"),
     "show_progress_every_n_steps": OptionInfo(0, "Show image creation progress every N sampling steps. Set 0 to disable.", gr.Slider, {"minimum": 0, "maximum": 32, "step": 1}),
-    "progress_size_threshold": OptionInfo(0, "progress images will be resized to a given resolution if above. Set 0 to disable.", gr.Number, {"minimum": 0, "step": 4}),
+    "progress_size_threshold": OptionInfo(0, "Progress images will be throttled to N resolution. Set 0 to disable.", gr.Number, {"minimum": 0, "step": 4}),
     "return_grid": OptionInfo(True, "Show grid in results for web"),
     "do_not_show_images": OptionInfo(False, "Do not show any images in results for web"),
     "add_model_hash_to_info": OptionInfo(True, "Add model hash to generation information"),
