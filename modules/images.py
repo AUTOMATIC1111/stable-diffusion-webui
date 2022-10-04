@@ -353,9 +353,6 @@ def apply_filename_pattern(x, p, seed, prompt):
                 words = ["empty"]
             x = x.replace("[prompt_words]", sanitize_filename_part(" ".join(words[0:max_prompt_words]), replace_spaces=False))
 
-    if cmd_opts.hide_ui_dir_config:
-        x = re.sub(r'^[\\/]+|\.{2,}[\\/]+|[\\/]+\.{2,}', '', x)
-
     x = sanitize_pathname(x)
 
     return x
