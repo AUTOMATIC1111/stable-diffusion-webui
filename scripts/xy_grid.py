@@ -38,15 +38,21 @@ def apply_order(p, x, xs):
 
     token_order.sort(key=lambda t: t[0])
 
-    search_from_pos = 0
-    for idx, (original_pos, old_token) in enumerate(token_order):
-        # Get position of the token again as it will likely change as tokens are being replaced
-        pos = search_from_pos + p.prompt[search_from_pos:].find(old_token)
-        if original_pos >= 0:
-            # Avoid trying to replace what was just replaced by searching later in the prompt string
-            p.prompt = p.prompt[0:search_from_pos] + p.prompt[search_from_pos:].replace(old_token, x[idx], 1)
+    prompt_parts = []
 
-        search_from_pos = pos + len(x[idx])
+    # Split the prompt up, taking out the tokens
+    for _, token in token_order:
+        n = p.prompt.find(token)
+        prompt_parts.append(p.prompt[0:n])
+        p.prompt = p.prompt[n + len(token):]
+
+    # Rebuild the prompt with the tokens in the order we want
+    prompt_tmp = ""
+    for idx, part in enumerate(prompt_parts):
+        prompt_tmp += part
+        prompt_tmp += x[idx]
+    p.prompt = prompt_tmp + p.prompt
+    
 
 samplers_dict = {}
 for i, sampler in enumerate(modules.sd_samplers.samplers):
