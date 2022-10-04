@@ -34,7 +34,9 @@ def txt2img(prompt: str, negative_prompt: str, prompt_style: str, prompt_style2:
         denoising_strength=denoising_strength if enable_hr else None,
     )
 
-    print(f"\ntxt2img: {prompt}", file=shared.progress_print_out)
+    if cmd_opts.enable_console_prompts:
+        print(f"\ntxt2img: {prompt}", file=shared.progress_print_out)
+
     processed = modules.scripts.scripts_txt2img.run(p, *args)
 
     if processed is None:
