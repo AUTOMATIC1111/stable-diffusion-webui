@@ -331,7 +331,8 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
     output_images = []
 
     with torch.no_grad():
-        p.init(all_prompts, all_seeds, all_subseeds)
+        with devices.autocast():
+            p.init(all_prompts, all_seeds, all_subseeds)
 
         if state.job_count == -1:
             state.job_count = p.n_iter
