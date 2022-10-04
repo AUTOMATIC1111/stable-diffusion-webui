@@ -229,6 +229,7 @@ options_templates.update(options_section(('ui', "User interface"), {
     "show_progressbar": OptionInfo(True, "Show progressbar"),
     "show_progress_every_n_steps": OptionInfo(0, "Show show image creation progress every N sampling steps. Set 0 to disable.", gr.Slider, {"minimum": 0, "maximum": 32, "step": 1}),
     "return_grid": OptionInfo(True, "Show grid in results for web"),
+    "do_not_show_images": OptionInfo(False, "Do not show any images in results for web"),
     "add_model_hash_to_info": OptionInfo(True, "Add model hash to generation information"),
     "font": OptionInfo("", "Font for image grids that have text"),
     "js_modal_lightbox": OptionInfo(True, "Enable full page image viewer"),
