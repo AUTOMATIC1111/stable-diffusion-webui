@@ -404,3 +404,7 @@ input[type="range"]{
 	color: red;
 }
 
+#img2img_image div.h-60{
+    height: 480px;
+}
+

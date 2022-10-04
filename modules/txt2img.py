@@ -48,5 +48,8 @@ def txt2img(prompt: str, negative_prompt: str, prompt_style: str, prompt_style2:
     if opts.samples_log_stdout:
         print(generation_info_js)
 
+    if opts.do_not_show_images:
+        processed.images = []
+
     return processed.images, generation_info_js, plaintext_to_html(processed.info)
 
