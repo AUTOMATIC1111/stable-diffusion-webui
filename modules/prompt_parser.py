@@ -29,6 +29,7 @@ def get_learned_conditioning_prompt_schedules(prompts, steps):
     %import common.SIGNED_NUMBER -> NUMBER
     """
     parser = Lark(grammar, parser='lalr')
+
     def collect_steps(steps, tree):
         l = [steps]
         class CollectSteps(Visitor):
@@ -40,6 +41,7 @@ def get_learned_conditioning_prompt_schedules(prompts, steps):
                 l.append(tree.children[-1])
         CollectSteps().visit(tree)
         return sorted(set(l))
+
     def at_step(step, tree):
         class AtStep(Transformer):
             def scheduled(self, args):
@@ -62,11 +64,13 @@ def get_learned_conditioning_prompt_schedules(prompts, steps):
                 for child in children:
                     yield from child
         return AtStep().transform(tree)
-    @functools.cache
+    
     def get_schedule(prompt):
         tree = parser.parse(prompt)
         return [[t, at_step(t, tree)] for t in collect_steps(steps, tree)]
-    return [get_schedule(prompt) for prompt in prompts]
+
+    promptdict = {prompt: get_schedule(prompt) for prompt in set(prompts)}
+    return [promptdict[prompt] for prompt in prompts]
 
 
 ScheduledPromptConditioning = namedtuple("ScheduledPromptConditioning", ["end_at_step", "cond"])
