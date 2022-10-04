@@ -35,7 +35,7 @@ import modules.codeformer_model
 import modules.styles
 import modules.generation_parameters_copypaste
 from modules import prompt_parser
-from modules.images import apply_filename_pattern, get_next_sequence_number
+from modules.images import save_image
 import modules.textual_inversion.ui
 
 # this is a fix for Windows users. Without it, javascript files will be served with text/html content-type and the bowser will not show any UI
@@ -114,20 +114,13 @@ def save_files(js_data, images, index):
     p = MyObject(data)
     path = opts.outdir_save
     save_to_dirs = opts.use_save_to_dirs_for_ui
-
-    if save_to_dirs:
-        dirname = apply_filename_pattern(opts.directories_filename_pattern or "[prompt_words]", p, p.seed, p.prompt)
-        path = os.path.join(opts.outdir_save, dirname)
-
-    os.makedirs(path, exist_ok=True)
-  
+    extension: str = opts.samples_format
+    start_index = 0
 
     if index > -1 and opts.save_selected_only and (index >= data["index_of_first_image"]):  # ensures we are looking at a specific non-grid picture, and we have save_selected_only
 
         images = [images[index]]
-        infotexts = [data["infotexts"][index]]
-    else:
-        infotexts = data["infotexts"]
+        start_index = index
 
     with open(os.path.join(opts.outdir_save, "log.csv"), "a", encoding="utf8", newline='') as file:
         at_start = file.tell() == 0
@@ -135,37 +128,18 @@ def save_files(js_data, images, index):
         if at_start:
             writer.writerow(["prompt", "seed", "width", "height", "sampler", "cfgs", "steps", "filename", "negative_prompt"])
 
-        file_decoration = opts.samples_filename_pattern or "[seed]-[prompt_spaces]"
-        if file_decoration != "":
-            file_decoration = "-" + file_decoration.lower()
-        file_decoration = apply_filename_pattern(file_decoration, p, p.seed, p.prompt)
-        truncated = (file_decoration[:240] + '..') if len(file_decoration) > 240 else file_decoration
-        filename_base = truncated
-        extension = opts.samples_format.lower()
-
-        basecount = get_next_sequence_number(path, "")
-        for i, filedata in enumerate(images):
-            file_number = f"{basecount+i:05}"
-            filename = file_number + filename_base + f".{extension}"
-            filepath = os.path.join(path, filename)
-
-
+        for image_index, filedata in enumerate(images, start_index):
             if filedata.startswith("data:image/png;base64,"):
                 filedata = filedata[len("data:image/png;base64,"):]
 
             image = Image.open(io.BytesIO(base64.decodebytes(filedata.encode('utf-8'))))
-            if opts.enable_pnginfo and extension == 'png':
-                pnginfo = PngImagePlugin.PngInfo()
-                pnginfo.add_text('parameters', infotexts[i])
-                image.save(filepath, pnginfo=pnginfo)
-            else:
-                image.save(filepath, quality=opts.jpeg_quality)
 
-            if opts.enable_pnginfo and extension in ("jpg", "jpeg", "webp"):
-                piexif.insert(piexif.dump({"Exif": {
-                    piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(infotexts[i], encoding="unicode")
-                }}), filepath)
+            is_grid = image_index < p.index_of_first_image
+            i = 0 if is_grid else (image_index - p.index_of_first_image)
 
+            fullfn = save_image(image, path, "", seed=p.all_seeds[i], prompt=p.all_prompts[i], extension=extension, info=p.infotexts[image_index], grid=is_grid, p=p, save_to_dirs=save_to_dirs)
+
+            filename = os.path.relpath(fullfn, path)
             filenames.append(filename)
 
         writer.writerow([data["prompt"], data["seed"], data["width"], data["height"], data["sampler"], data["cfg_scale"], data["steps"], filenames[0], data["negative_prompt"]])
