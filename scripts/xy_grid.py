@@ -32,24 +32,21 @@ def apply_prompt(p, x, xs):
 def apply_order(p, x, xs):
     token_order = []
 
-    # Initally grab the tokens from the prompt so they can be later be replaced in order of earliest seen in the prompt
+    # Initally grab the tokens from the prompt so they can be be replaced in order of earliest seen
     for token in x:
         token_order.append((p.prompt.find(token), token))
 
     token_order.sort(key=lambda t: t[0])
 
     search_from_pos = 0
-    for idx, token in enumerate(x):
-        original_pos, old_token = token_order[idx]
-
+    for idx, (original_pos, old_token) in enumerate(token_order):
         # Get position of the token again as it will likely change as tokens are being replaced
-        pos = p.prompt.find(old_token)
+        pos = search_from_pos + p.prompt[search_from_pos:].find(old_token)
         if original_pos >= 0:
             # Avoid trying to replace what was just replaced by searching later in the prompt string
-            p.prompt = p.prompt[0:search_from_pos] + p.prompt[search_from_pos:].replace(old_token, token, 1)
+            p.prompt = p.prompt[0:search_from_pos] + p.prompt[search_from_pos:].replace(old_token, x[idx], 1)
 
-        search_from_pos = pos + len(token)
-
+        search_from_pos = pos + len(x[idx])
 
 samplers_dict = {}
 for i, sampler in enumerate(modules.sd_samplers.samplers):
