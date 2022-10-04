@@ -1,8 +1,8 @@
 import torch
 
-# has_mps is only available in nightly pytorch (for now), `getattr` for compatibility
 from modules import errors
 
+# has_mps is only available in nightly pytorch (for now), `getattr` for compatibility
 has_mps = getattr(torch, 'has_mps', False)
 
 cpu = torch.device("cpu")
@@ -32,8 +32,7 @@ def enable_tf32():
 
 errors.run(enable_tf32, "Enabling TF32")
 
-device = get_optimal_device()
-device_gfpgan = device_codeformer = cpu if device.type == 'mps' else device
+device = device_gfpgan = device_esrgan = device_scunet = device_codeformer = get_optimal_device()
 dtype = torch.float16
 
 def randn(seed, shape):
