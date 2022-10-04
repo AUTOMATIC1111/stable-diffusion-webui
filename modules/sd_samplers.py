@@ -109,8 +109,8 @@ class VanillaStableDiffusionSampler:
         return 0
 
     def p_sample_ddim_hook(self, x_dec, cond, ts, unconditional_conditioning, *args, **kwargs):
-        cond = prompt_parser.reconstruct_cond_batch(cond, self.step)
-        unconditional_conditioning = prompt_parser.reconstruct_cond_batch(unconditional_conditioning, self.step)
+        cond, _ = prompt_parser.reconstruct_cond_batch(cond, self.step)
+        unconditional_conditioning, _ = prompt_parser.reconstruct_cond_batch(unconditional_conditioning, self.step)
 
         if self.mask is not None:
             img_orig = self.sampler.model.q_sample(self.init_latent, ts)
@@ -183,19 +183,40 @@ class CFGDenoiser(torch.nn.Module):
         self.step = 0
 
     def forward(self, x, sigma, uncond, cond, cond_scale):
-        cond = prompt_parser.reconstruct_cond_batch(cond, self.step)
-        uncond = prompt_parser.reconstruct_cond_batch(uncond, self.step)
+        cond, cond_weights = prompt_parser.reconstruct_cond_batch(cond, self.step)
+        uncond, _ = prompt_parser.reconstruct_cond_batch(uncond, self.step)
+
+        cond_count = len(cond_weights[0])
 
         if shared.batch_cond_uncond:
-            x_in = torch.cat([x] * 2)
-            sigma_in = torch.cat([sigma] * 2)
-            cond_in = torch.cat([uncond, cond])
-            uncond, cond = self.inner_model(x_in, sigma_in, cond=cond_in).chunk(2)
-            denoised = uncond + (cond - uncond) * cond_scale
+            chunk_count = 1 + cond_count
+            cond_in = torch.cat((uncond,) + cond.chunk(cond_count, dim=1))
+            if chunk_count <= 4:
+                x_in = torch.cat([x] * chunk_count)
+                sigma_in = torch.cat([sigma] * chunk_count)
+                chunks = self.inner_model(x_in, sigma_in, cond=cond_in).chunk(chunk_count)
+            else:
+                chunks = []
+                for cond_in_chunk in cond_in.chunk(cond_count // 4):
+                    chunk_count = cond_in_chunk.shape[0]
+                    x_in = torch.cat([x] * chunk_count)
+                    sigma_in = torch.cat([sigma] * chunk_count)
+                    chunks.extend(self.inner_model(x_in, sigma_in, cond=cond_in_chunk).chunk(chunk_count))
+            uncond, conds = chunks[0], chunks[1:]
         else:
             uncond = self.inner_model(x, sigma, cond=uncond)
-            cond = self.inner_model(x, sigma, cond=cond)
-            denoised = uncond + (cond - uncond) * cond_scale
+            conds = [
+                self.inner_model(x, sigma, cond=c)
+                for c in cond.chunk(cond_count, dim=1)
+            ]
+        if cond_count == 1:
+            denoised = uncond + (conds[0] - uncond) * cond_scale
+        else:
+            # 2206.01714 Algorithm 1, Line 16
+            for cond, weight in zip(conds, cond_weights.chunk(cond_count, dim=1)):
+                cond.sub_(uncond)
+                cond.mul_(weight.reshape(weight.shape + (1,1)))
+            denoised = uncond + torch.cat(conds).sum(dim=0) * cond_scale
 
         if self.mask is not None:
             denoised = self.init_latent * self.mask + self.nmask * denoised
@@ -295,9 +316,9 @@ class KDiffusionSampler:
         steps, t_enc = setup_img2img_steps(p, steps)
 
         if p.sampler_noise_scheduler_override:
-          sigmas = p.sampler_noise_scheduler_override(steps)
+            sigmas = p.sampler_noise_scheduler_override(steps)
         else:
-          sigmas = self.model_wrap.get_sigmas(steps)
+            sigmas = self.model_wrap.get_sigmas(steps)
 
         noise = noise * sigmas[steps - t_enc - 1]
         xi = x + noise
@@ -314,9 +335,9 @@ class KDiffusionSampler:
         steps = steps or p.steps
 
         if p.sampler_noise_scheduler_override:
-          sigmas = p.sampler_noise_scheduler_override(steps)
+            sigmas = p.sampler_noise_scheduler_override(steps)
         else:
-          sigmas = self.model_wrap.get_sigmas(steps)
+            sigmas = self.model_wrap.get_sigmas(steps)
         x = x * sigmas[0]
 
         extra_params_kwargs = self.initialize(p)
@@ -329,4 +350,3 @@ class KDiffusionSampler:
             extra_params_kwargs['sigmas'] = sigmas
         samples = self.func(self.model_wrap_cfg, x, extra_args={'cond': conditioning, 'uncond': unconditional_conditioning, 'cond_scale': p.cfg_scale}, disable=False, callback=self.callback_state, **extra_params_kwargs)
         return samples
-

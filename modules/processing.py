@@ -356,8 +356,6 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             if (len(prompts) == 0):
                 break
 
-            #uc = p.sd_model.get_learned_conditioning(len(prompts) * [p.negative_prompt])
-            #c = p.sd_model.get_learned_conditioning(prompts)
             with devices.autocast():
                 uc = prompt_parser.get_learned_conditioning(shared.sd_model, len(prompts) * [p.negative_prompt], p.steps)
                 c = prompt_parser.get_learned_conditioning(shared.sd_model, prompts, p.steps)

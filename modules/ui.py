@@ -34,7 +34,7 @@ import modules.gfpgan_model
 import modules.codeformer_model
 import modules.styles
 import modules.generation_parameters_copypaste
-from modules.prompt_parser import get_learned_conditioning_prompt_schedules
+from modules.prompt_parser import parse_schedules_and_compounds
 from modules.images import apply_filename_pattern, get_next_sequence_number
 import modules.textual_inversion.ui
 
@@ -99,7 +99,7 @@ def send_gradio_gallery_to_image(x):
 
 
 def save_files(js_data, images, index):
-    import csv    
+    import csv
     filenames = []
 
     #quick dictionary to class object conversion. Its neccesary due apply_filename_pattern requiring it
@@ -120,7 +120,7 @@ def save_files(js_data, images, index):
         path = os.path.join(opts.outdir_save, dirname)
 
     os.makedirs(path, exist_ok=True)
-  
+
 
     if index > -1 and opts.save_selected_only and (index >= data["index_of_first_image"]):  # ensures we are looking at a specific non-grid picture, and we have save_selected_only
 
@@ -394,14 +394,18 @@ def connect_reuse_seed(seed: gr.Number, reuse_seed: gr.Button, generation_info: 
 
 def update_token_counter(text, steps):
     try:
-        prompt_schedules = get_learned_conditioning_prompt_schedules([text], steps)
+        prompt_schedule = parse_schedules_and_compounds([text], steps, True)[0]
     except Exception:
         # a parsing error can happen here during typing, and we don't want to bother the user with
         # messages related to it in console
-        prompt_schedules = [[[steps, text]]]
+        prompt_schedule = [[steps, [[[(text, 1.0)], 1.0]]]]
 
-    flat_prompts = reduce(lambda list1, list2: list1+list2, prompt_schedules)
-    prompts = [prompt_text for step, prompt_text in flat_prompts]
+    prompts = []
+    for _, parsed in prompt_schedule:
+        for subprompts, _ in parsed:
+            for prompt, _ in subprompts:
+                prompts.append(prompt)
+
     tokens, token_count, max_length = max([model_hijack.tokenize(prompt) for prompt in prompts], key=lambda args: args[1])
     style_class = ' class="red"' if (token_count > max_length) else ""
     return f"<span {style_class}>{token_count}/{max_length}</span>"
@@ -916,14 +920,14 @@ def create_ui(wrap_gradio_gpu_call):
                 html_info,
             ]
         )
-     
+
         extras_send_to_img2img.click(
             fn=lambda x: image_from_url_text(x),
             _js="extract_image_from_gallery_img2img",
             inputs=[result_images],
             outputs=[init_img],
         )
-        
+
         extras_send_to_inpaint.click(
             fn=lambda x: image_from_url_text(x),
             _js="extract_image_from_gallery_img2img",
@@ -1218,7 +1222,7 @@ def create_ui(wrap_gradio_gpu_call):
             outputs=[],
             _js='function(){restart_reload()}'
         )
-        
+
         if column is not None:
             column.__exit__()
 
@@ -1244,14 +1248,14 @@ def create_ui(wrap_gradio_gpu_call):
         css += css_hide_progressbar
 
     with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion") as demo:
-        
+
         settings_interface.gradio_ref = demo
-        
+
         with gr.Tabs() as tabs:
             for interface, label, ifid in interfaces:
                 with gr.TabItem(label, id=ifid):
                     interface.render()
-        
+
         if os.path.exists(os.path.join(script_path, "notification.mp3")):
             audio_notification = gr.Audio(interactive=False, value=os.path.join(script_path, "notification.mp3"), elem_id="audio_notification", visible=False)
 
@@ -1261,7 +1265,7 @@ def create_ui(wrap_gradio_gpu_call):
             inputs=components,
             outputs=[result, text_settings],
         )
-        
+
         def modelmerger(*args):
             try:
                 results = modules.extras.run_modelmerger(*args)
@@ -1374,11 +1378,11 @@ def create_ui(wrap_gradio_gpu_call):
             key = path + "/" + field
 
             if getattr(obj,'custom_script_source',None) is not None:
-              key = 'customscript/' + obj.custom_script_source + '/' + key
-            
+                key = 'customscript/' + obj.custom_script_source + '/' + key
+
             if getattr(obj, 'do_not_save_to_config', False):
                 return
-            
+
             saved_value = ui_settings.get(key, None)
             if saved_value is None:
                 ui_settings[key] = getattr(obj, field)
@@ -1402,10 +1406,10 @@ def create_ui(wrap_gradio_gpu_call):
 
         if type(x) == gr.Textbox:
             apply_field(x, 'value')
-        
+
         if type(x) == gr.Number:
             apply_field(x, 'value')
-        
+
     visit(txt2img_interface, loadsave, "txt2img")
     visit(img2img_interface, loadsave, "img2img")
     visit(extras_interface, loadsave, "extras")
