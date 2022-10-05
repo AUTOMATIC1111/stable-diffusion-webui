@@ -49,7 +49,7 @@
 }
 
 #txt2img_generate, #img2img_generate {
-    min-height: 4.5em;
+    min-height: 4em;
 }
 
 @media screen and (min-width: 2500px) {
@@ -127,12 +127,12 @@
 }
 
 #style_apply, #style_create, #interrogate{
-    margin: 0.75em 0.25em 0.25em 0.25em;
+    margin: 0.75em 0 0 0;
     min-width: 5em;
 }
 
 #style_apply, #style_create, #deepbooru{
-    margin: 0.75em 0.25em 0.25em 0.25em;
+    margin: 0.75em 0 0 0;
     min-width: 5em;
 }
 
@@ -289,9 +289,9 @@ input[type="range"]{
   display: block;
 }
 
-#txt2img_progress_row, #img2img_progress_row{
+#txt2img_progress_column, #img2img_progress_column{
   margin-bottom: 10px;
-  margin-top: -18px;
+  margin-top: -10px;
 }
 
 .progressDiv{
@@ -426,8 +426,8 @@ input[type="range"]{
 
 #txt2img_interrupt, #img2img_interrupt{
   position: absolute;
-  width: 50%;
-  height: 72px;
+  width: 100%;
+  min-height: 4em;
   background: #b4c0cc;
   border-radius: 0px;
   display: none;
