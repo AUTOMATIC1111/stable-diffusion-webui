@@ -13,6 +13,12 @@ import sys
 import time
 import torch
 import traceback
+
+# Importing base modules as named entites
+import numpy as np
+import subprocess as sp
+
+# Functools reduce import
 from functools import reduce
 
 # Importing stable-diffusion modules
@@ -27,8 +33,6 @@ import modules.textual_inversion.ui
 
 # Importing stable-diffusion modules as a named entity
 import modules.shared as shared
-import numpy as np
-import subprocess as sp
 
 # Importing variables from stable-diffusion modules
 from modules.images import apply_filename_pattern, get_next_sequence_number
