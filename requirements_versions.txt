@@ -22,3 +22,6 @@ resize-right==0.0.2
 torchdiffeq==0.2.3
 kornia==0.6.7
 lark==1.1.2
+git+https://github.com/KichangKim/DeepDanbooru.git@edf73df4cdaeea2cf00e9ac08bd8a9026b7a7b26#egg=deepdanbooru[tensorflow]
+tensorflow==2.10.0
+tensorflow-io==0.27.0
