@@ -1,4 +1,3 @@
-from cmath import log
 import os
 from PIL import Image, ImageOps
 import platform
@@ -13,7 +12,7 @@ def preprocess(process_src, process_dst, process_flip, process_split, process_ca
     src = os.path.abspath(process_src)
     dst = os.path.abspath(process_dst)
 
-    assert src != dst, 'same directory specified as source and desitnation'
+    assert src != dst, 'same directory specified as source and destination'
 
     os.makedirs(dst, exist_ok=True)
 
