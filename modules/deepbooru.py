@@ -56,7 +56,7 @@ def _load_tf_and_return_tags(pil_image, threshold):
 
     print('\n'.join(sorted(result_tags_print, reverse=True)))
 
-    return ', '.join(result_tags_out)
+    return ', '.join(result_tags_out).replace('_', ' ').replace(':', ' ')
 
 
 def get_deepbooru_tags(pil_image, threshold=0.5):
