@@ -23,3 +23,6 @@ resize-right
 torchdiffeq
 kornia
 lark
+deepdanbooru
+tensorflow
+tensorflow-io
