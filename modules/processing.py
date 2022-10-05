@@ -360,7 +360,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             #c = p.sd_model.get_learned_conditioning(prompts)
             with devices.autocast():
                 uc = prompt_parser.get_learned_conditioning(shared.sd_model, len(prompts) * [p.negative_prompt], p.steps)
-                c = prompt_parser.get_learned_conditioning(shared.sd_model, prompts, p.steps)
+                c = prompt_parser.get_multicond_learned_conditioning(shared.sd_model, prompts, p.steps)
 
             if len(model_hijack.comments) > 0:
                 for comment in model_hijack.comments:
