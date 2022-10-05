@@ -109,8 +109,11 @@ class VanillaStableDiffusionSampler:
         return 0
 
     def p_sample_ddim_hook(self, x_dec, cond, ts, unconditional_conditioning, *args, **kwargs):
-        cond = prompt_parser.reconstruct_cond_batch(cond, self.step)
+        conds_list, tensor = prompt_parser.reconstruct_multicond_batch(cond, self.step)
         unconditional_conditioning = prompt_parser.reconstruct_cond_batch(unconditional_conditioning, self.step)
+
+        assert all([len(conds) == 1 for conds in conds_list]), 'composition via AND is not supported for DDIM/PLMS samplers'
+        cond = tensor
 
         if self.mask is not None:
             img_orig = self.sampler.model.q_sample(self.init_latent, ts)
@@ -183,19 +186,31 @@ class CFGDenoiser(torch.nn.Module):
         self.step = 0
 
     def forward(self, x, sigma, uncond, cond, cond_scale):
-        cond = prompt_parser.reconstruct_cond_batch(cond, self.step)
+        conds_list, tensor = prompt_parser.reconstruct_multicond_batch(cond, self.step)
         uncond = prompt_parser.reconstruct_cond_batch(uncond, self.step)
 
+        batch_size = len(conds_list)
+        repeats = [len(conds_list[i]) for i in range(batch_size)]
+
+        x_in = torch.cat([torch.stack([x[i] for _ in range(n)]) for i, n in enumerate(repeats)] + [x])
+        sigma_in = torch.cat([torch.stack([sigma[i] for _ in range(n)]) for i, n in enumerate(repeats)] + [sigma])
+        cond_in = torch.cat([tensor, uncond])
+
         if shared.batch_cond_uncond:
-            x_in = torch.cat([x] * 2)
-            sigma_in = torch.cat([sigma] * 2)
-            cond_in = torch.cat([uncond, cond])
-            uncond, cond = self.inner_model(x_in, sigma_in, cond=cond_in).chunk(2)
-            denoised = uncond + (cond - uncond) * cond_scale
+            x_out = self.inner_model(x_in, sigma_in, cond=cond_in)
         else:
-            uncond = self.inner_model(x, sigma, cond=uncond)
-            cond = self.inner_model(x, sigma, cond=cond)
-            denoised = uncond + (cond - uncond) * cond_scale
+            x_out = torch.zeros_like(x_in)
+            for batch_offset in range(0, x_out.shape[0], batch_size):
+                a = batch_offset
+                b = a + batch_size
+                x_out[a:b] = self.inner_model(x_in[a:b], sigma_in[a:b], cond=cond_in[a:b])
+
+        denoised_uncond = x_out[-batch_size:]
+        denoised = torch.clone(denoised_uncond)
+
+        for i, conds in enumerate(conds_list):
+            for cond_index, weight in conds:
+                denoised[i] += (x_out[cond_index] - denoised_uncond[i]) * (weight * cond_scale)
 
         if self.mask is not None:
             denoised = self.init_latent * self.mask + self.nmask * denoised
