@@ -32,6 +32,10 @@ def process_batch(p, input_dir, output_dir, args):
 
     for i, image in enumerate(images):
         state.job = f"{i+1} out of {len(images)}"
+        if state.skipped:
+            state.skipped = False
+            state.interrupted = False
+            continue
 
         if state.interrupted:
             break
