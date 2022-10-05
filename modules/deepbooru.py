@@ -9,8 +9,15 @@ import tensorflow as tf
 def _load_tf_and_return_tags(pil_image, threshold):
     this_folder = os.path.dirname(__file__)
     model_path = os.path.join(this_folder, '..', 'models', 'deepbooru', 'deepdanbooru-v3-20211112-sgd-e28')
-    if not os.path.exists(model_path):
-        return "Download https://github.com/KichangKim/DeepDanbooru/releases/download/v3-20211112-sgd-e28/deepdanbooru-v3-20211112-sgd-e28.zip unpack and put into models/deepbooru"
+
+    model_good = False
+    for path_candidate in [model_path, os.path.dirname(model_path)]:
+        if os.path.exists(os.path.join(path_candidate, 'project.json')):
+            model_path = path_candidate
+            model_good = True
+    if not model_good:
+        return ("Download https://github.com/KichangKim/DeepDanbooru/releases/download/v3-20211112-sgd-e28/"
+                "deepdanbooru-v3-20211112-sgd-e28.zip unpack and put into models/deepbooru")
 
     tags = dd.project.load_tags_from_project(model_path)
     model = dd.project.load_model_from_project(
