@@ -295,7 +295,7 @@ def apply_filename_pattern(x, p, seed, prompt):
         x = x.replace("[styles]", sanitize_filename_part(", ".join([x for x in p.styles if not x == "None"]) or "None", replace_spaces=False))
         x = x.replace("[sampler]", sanitize_filename_part(sd_samplers.samplers[p.sampler_index].name, replace_spaces=False))
 
-    x = x.replace("[model_hash]", shared.sd_model.sd_model_hash)
+    x = x.replace("[model_hash]", getattr(p, "sd_model_hash", shared.sd_model.sd_model_hash))
     x = x.replace("[date]", datetime.date.today().isoformat())
     x = x.replace("[datetime]", datetime.datetime.now().strftime("%Y%m%d%H%M%S"))
     x = x.replace("[job_timestamp]", getattr(p, "job_timestamp", shared.state.job_timestamp))
