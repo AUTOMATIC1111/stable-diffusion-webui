@@ -1,7 +1,6 @@
 import contextlib
 
 import torch
-import gc
 
 from modules import errors
 
@@ -20,8 +19,8 @@ def get_optimal_device():
 
     return cpu
 
+
 def torch_gc():
-    gc.collect()
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
         torch.cuda.ipc_collect()
