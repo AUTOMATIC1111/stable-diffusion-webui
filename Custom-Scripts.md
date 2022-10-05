@@ -82,7 +82,7 @@ https://github.com/DiceOwl/StableDiffusionStuff
 Mixes output of img2img with original input image at strength alpha. The result is fed into img2img again (at loop>=2), and this procedure repeats. Tends to sharpen the image, improve consistency, reduce creativity and reduce fine detail.
 
 ## Run n times
-https://github.com/camenduru/stable-diffusion-webui/blob/master/scripts/run_n_times.py
+https://gist.github.com/camenduru/9ec5f8141db9902e375967e93250860f
 Run n times with random seed.
 
 ## Saving steps of the sampling process
