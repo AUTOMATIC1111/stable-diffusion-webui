@@ -38,13 +38,12 @@ def _load_tf_and_return_tags(pil_image, threshold):
 
     for i, tag in enumerate(tags):
         result_dict[tag] = y[i]
-
-
-
     result_tags_out = []
     result_tags_print = []
     for tag in tags:
         if result_dict[tag] >= threshold:
+            if tag.startswith("rating:"):
+                continue
             result_tags_out.append(tag)
             result_tags_print.append(f'{result_dict[tag]} {tag}')
 
