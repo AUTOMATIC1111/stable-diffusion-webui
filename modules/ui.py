@@ -1210,6 +1210,7 @@ def create_ui(wrap_gradio_gpu_call):
         )
 
         def request_restart():
+            shared.state.interrupt()
             settings_interface.gradio_ref.do_restart = True
 
         restart_gradio.click(
