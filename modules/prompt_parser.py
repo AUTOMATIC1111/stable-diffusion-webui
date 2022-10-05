@@ -184,7 +184,6 @@ class MulticondLearnedConditioning:
         self.shape: tuple = shape  # the shape field is needed to send this object to DDIM/PLMS
         self.batch: List[List[ComposableScheduledPromptConditioning]] = batch
 
-
 def get_multicond_learned_conditioning(model, prompts, steps) -> MulticondLearnedConditioning:
     """same as get_learned_conditioning, but returns a list of ScheduledPromptConditioning along with the weight objects for each prompt.
     For each prompt, the list is obtained by splitting the prompt using the AND separator.
