@@ -1,4 +1,4 @@
-#tacos
+# Importing base modules
 import base64
 import html
 import io
@@ -6,38 +6,46 @@ import json
 import math
 import mimetypes
 import os
+import piexif
+import platform
 import random
 import sys
 import time
+import torch
 import traceback
-import platform
-import subprocess as sp
 from functools import reduce
 
-import numpy as np
-import torch
-from PIL import Image, PngImagePlugin
-import piexif
+# Importing stable-diffusion modules
+import modules.codeformer_model
+import modules.generation_parameters_copypaste
+import modules.gfpgan_model
+import modules.ldsr_model
+import modules.scripts
+import modules.sd_hijack
+import modules.styles
+import modules.textual_inversion.ui
 
+# Importing stable-diffusion modules as a named entity
+import modules.shared as shared
+import numpy as np
+import subprocess as sp
+
+# Importing variables from stable-diffusion modules
+from modules.images import apply_filename_pattern, get_next_sequence_number
+from modules.paths import script_path
+from modules.prompt_parser import get_learned_conditioning_prompt_schedules
+from modules.sd_hijack import model_hijack
+from modules.sd_samplers import samplers, samplers_for_img2img
+from modules.shared import opts, cmd_opts
+
+# Importing variables from non-stable-diffusion modules
+from PIL import Image, PngImagePlugin
+
+# Importing Gradio modules
 import gradio as gr
 import gradio.utils
 import gradio.routes
 
-from modules import sd_hijack
-from modules.paths import script_path
-from modules.shared import opts, cmd_opts
-import modules.shared as shared
-from modules.sd_samplers import samplers, samplers_for_img2img
-from modules.sd_hijack import model_hijack
-import modules.ldsr_model
-import modules.scripts
-import modules.gfpgan_model
-import modules.codeformer_model
-import modules.styles
-import modules.generation_parameters_copypaste
-from modules.prompt_parser import get_learned_conditioning_prompt_schedules
-from modules.images import apply_filename_pattern, get_next_sequence_number
-import modules.textual_inversion.ui
 
 # this is a fix for Windows users. Without it, javascript files will be served with text/html content-type and the bowser will not show any UI
 mimetypes.init()
@@ -969,7 +977,7 @@ def create_ui(wrap_gradio_gpu_call):
             with gr.Column(variant='panel'):
                 submit_result = gr.Textbox(elem_id="modelmerger_result", show_label=False)
 
-    sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings()
+    modules.sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings()
 
     with gr.Blocks() as textual_inversion_interface:
         with gr.Row().style(equal_height=False):
@@ -1010,7 +1018,7 @@ def create_ui(wrap_gradio_gpu_call):
 
                 with gr.Group():
                     gr.HTML(value="<p style='margin-bottom: 0.7em'>Train an embedding; must specify a directory with a set of 512x512 images</p>")
-                    train_embedding_name = gr.Dropdown(label='Embedding', choices=sorted(sd_hijack.model_hijack.embedding_db.word_embeddings.keys()))
+                    train_embedding_name = gr.Dropdown(label='Embedding', choices=sorted(modules.sd_hijack.model_hijack.embedding_db.word_embeddings.keys()))
                     learn_rate = gr.Number(label='Learning rate', value=5.0e-03)
                     dataset_directory = gr.Textbox(label='Dataset directory', placeholder="Path to directory with input images")
                     log_directory = gr.Textbox(label='Log directory', placeholder="Path to directory where to write outputs", value="textual_inversion")
