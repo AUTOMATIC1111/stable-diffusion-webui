@@ -393,10 +393,20 @@ input[type="range"]{
 
 #txt2img_interrupt, #img2img_interrupt{
   position: absolute;
-  width: 100%;
+  width: 50%;
   height: 72px;
   background: #b4c0cc;
-  border-radius: 8px;
+  border-radius: 0px;
+  display: none;
+}
+
+#txt2img_skip, #img2img_skip{
+  position: absolute;
+  width: 50%;
+  right: 0px;
+  height: 72px;
+  background: #b4c0cc;
+  border-radius: 0px;
   display: none;
 }
 

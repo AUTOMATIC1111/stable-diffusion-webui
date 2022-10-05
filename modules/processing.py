@@ -355,6 +355,10 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             state.job_count = p.n_iter
 
         for n in range(p.n_iter):
+            if state.skipped:
+                state.skipped = False
+                state.interrupted = False
+            
             if state.interrupted:
                 break
 

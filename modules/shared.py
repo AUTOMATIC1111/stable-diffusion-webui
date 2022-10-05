@@ -84,6 +84,7 @@ def selected_hypernetwork():
 
 
 class State:
+    skipped = False
     interrupted = False
     job = ""
     job_no = 0
@@ -95,6 +96,10 @@ class State:
     current_image = None
     current_image_sampling_step = 0
     textinfo = None
+
+    def skip(self):
+        self.skipped = True
+        self.interrupted = True
 
     def interrupt(self):
         self.interrupted = True
