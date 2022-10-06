@@ -16,6 +16,7 @@ Check the [custom scripts](https://github.com/AUTOMATIC1111/stable-diffusion-web
 - Attention, specify parts of text that the model should pay more attention to
     - a man in a ((tuxedo)) - will pay more attention to tuxedo
     - a man in a (tuxedo:1.21) - alternative syntax
+    - select text and press ctrl+up or ctrl+down to aduotmatically adjust attention to selected text
 - Loopback, run img2img processing multiple times
 - X/Y plot, a way to draw a 2 dimensional plot of images with different parameters
 - Textual Inversion
@@ -61,6 +62,9 @@ Check the [custom scripts](https://github.com/AUTOMATIC1111/stable-diffusion-web
 - Reloading checkpoints on the fly
 - Checkpoint Merger, a tab that allows you to merge two checkpoints into one
 - [Custom scripts](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Custom-Scripts) with many extensions from community
+- [Composable-Diffusion](https://energy-based-model.github.io/Compositional-Visual-Generation-with-Composable-Diffusion-Models/), a way to use multiple prompts at once
+     - separate prompts using uppercase `AND`
+     - also supports weights for prompts: `a cat :1.2 AND a dog AND a penguin :2.2`
 
 ## Installation and Running
 Make sure the required [dependencies](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Dependencies) are met and follow the instructions available for both [NVidia](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-NVidia-GPUs) (recommended) and [AMD](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-AMD-GPUs) GPUs.
