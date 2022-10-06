@@ -11,44 +11,56 @@ Check the [custom scripts](https://github.com/AUTOMATIC1111/stable-diffusion-web
 - One click install and run script (but you still must install python and git)
 - Outpainting
 - Inpainting
-- Prompt matrix
-- Stable Diffusion upscale
-- Attention
-- Loopback
-- X/Y plot
+- Prompt Matrix
+- Stable Diffusion Upscale
+- Attention, specify parts of text that the model should pay more attention to
+    - a man in a ((tuxedo)) - will pay more attention to tuxedo
+    - a man in a (tuxedo:1.21) - alternative syntax
+- Loopback, run img2img processing multiple times
+- X/Y plot, a way to draw a 2 dimensional plot of images with different parameters
 - Textual Inversion
+    - have as many embeddings as you want and use any names you like for them
+    - use multiple embeddings with different numbers of vectors per token
+    - works with half precision floating point numbers
 - Extras tab with:
     - GFPGAN, neural network that fixes faces
     - CodeFormer, face restoration tool as an alternative to GFPGAN
     - RealESRGAN, neural network upscaler
-    - ESRGAN, neural network with a lot of third party models
+    - ESRGAN, neural network upscaler with a lot of third party models
     - SwinIR, neural network upscaler
     - LDSR, Latent diffusion super resolution upscaling
 - Resizing aspect ratio options
 - Sampling method selection
 - Interrupt processing at any time
-- 4GB video card support
-- Correct seeds for batches
+- 4GB video card support (also reports of 2GB working)
+- Correct seeds for batches 
 - Prompt length validation
-- Generation parameters added as text to PNG
-- Tab to view an existing picture's generation parameters
+     - get length of prompt in tokens as you type
+     - get a warning after generation if some text was truncated
+- Generation parameters
+     - parameters you used to generate images are saved with that image
+     - in PNG chunks for PNG, in EXIF for JPEG
+     - can drag the image to PNG info tab to restore generation parameters and automatically copy them into UI
+     - can be disabled in settings
 - Settings page
-- Running custom code from UI
+- Running arbitrary python code from UI (must run with --allow-code to enable)
 - Mouseover hints for most UI elements
 - Possible to change defaults/mix/max/step values for UI elements via text config
 - Random artist button
-- Tiling support: UI checkbox to create images that can be tiled like textures
+- Tiling support, a checkbox to create images that can be tiled like textures
 - Progress bar and live image generation preview
-- Negative prompt
-- Styles
-- Variations
-- Seed resizing
-- CLIP interrogator
-- Prompt Editing
-- Batch Processing
+- Negative prompt, an extra text field that allows you to list what you don't want to see in generated image
+- Styles, a way to save part of prompt and easily apply them via dropdown later
+- Variations, a way to generate same image but with tiny differences
+- Seed resizing, a way to generate same image but at slightly different resolution
+- CLIP interrogator, a button that tries to guess prompt from an image
+- Prompt Editing, a way to change prompt mid-generation, say to start making a watermelon and switch to anime girl midway
+- Batch Processing, process a group of files using img2img
 - Img2img Alternative
-- Highres Fix
-- LDSR Upscaling
+- Highres Fix, a convenience option to produce high resolution pictures in one click without usual distortions
+- Reloading checkpoints on the fly
+- Checkpoint Merger, a tab that allows you to merge two checkpoints into one
+- [Custom scripts](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Custom-Scripts) with many extensions from community
 
 ## Installation and Running
 Make sure the required [dependencies](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Dependencies) are met and follow the instructions available for both [NVidia](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-NVidia-GPUs) (recommended) and [AMD](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-AMD-GPUs) GPUs.
@@ -101,6 +113,7 @@ The documentation was moved from this README over to the project's [wiki](https:
 - LDSR - https://github.com/Hafiidz/latent-diffusion
 - Ideas for optimizations - https://github.com/basujindal/stable-diffusion
 - Doggettx - Cross Attention layer optimization - https://github.com/Doggettx/stable-diffusion, original idea for prompt editing.
+- Rinon Gal - Textual Inversion - https://github.com/rinongal/textual_inversion (we're not using his code, but we are using his ideas).
 - Idea for SD upscale - https://github.com/jquesnelle/txt2imghd
 - Noise generation for outpainting mk2 - https://github.com/parlance-zz/g-diffuser-bot
 - CLIP interrogator idea and borrowing some code - https://github.com/pharmapsychotic/clip-interrogator
