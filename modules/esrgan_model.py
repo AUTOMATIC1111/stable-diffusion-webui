@@ -7,7 +7,6 @@ from basicsr.utils.download_util import load_file_from_url
 
 import modules.esrgam_model_arch as arch
 from modules import shared, modelloader, images, devices
-from modules.paths import models_path
 from modules.upscaler import Upscaler, UpscalerData
 from modules.shared import opts
 
@@ -76,7 +75,6 @@ class UpscalerESRGAN(Upscaler):
         self.model_name = "ESRGAN_4x"
         self.scalers = []
         self.user_path = dirname
-        self.model_path = os.path.join(models_path, self.name)
         super().__init__()
         model_paths = self.find_models(ext_filter=[".pt", ".pth"])
         scalers = []
