@@ -11,7 +11,7 @@ import cv2
 from skimage import exposure
 
 import modules.sd_hijack
-from modules import devices, prompt_parser, masking, sd_samplers
+from modules import devices, prompt_parser, masking, sd_samplers, lowvram
 from modules.sd_hijack import model_hijack
 from modules.shared import opts, cmd_opts, state
 import modules.shared as shared
@@ -382,6 +382,13 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             x_samples_ddim = p.sd_model.decode_first_stage(samples_ddim)
             x_samples_ddim = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
 
+            del samples_ddim
+
+            if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
+                lowvram.send_everything_to_cpu()
+
+            devices.torch_gc()
+
             if opts.filter_nsfw:
                 import modules.safety as safety
                 x_samples_ddim = modules.safety.censor_batch(x_samples_ddim)
@@ -425,6 +432,10 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
 
                 infotexts.append(infotext(n, i))
                 output_images.append(image)
+
+            del x_samples_ddim 
+
+            devices.torch_gc()
 
             state.nextjob()
 
@@ -662,5 +673,8 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
         if self.mask is not None:
             samples = samples * self.nmask + self.init_latent * self.mask
+
+        del x
+        devices.torch_gc()
 
         return samples
