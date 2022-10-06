@@ -61,7 +61,13 @@ def run_python(code, desc=None, errdesc=None):
 
 
 def run_pip(args, desc=None):
-    return run(f'"{python}" -m pip {args} --prefer-binary', desc=f"Installing {desc}", errdesc=f"Couldn't install {desc}")
+    out = f"Couldn't install {desc}"
+    try:
+        out = run(f'"{python}" -m pip {args} --prefer-binary', desc=f"Installing {desc}",
+                  errdesc=f"Couldn't install {desc}")
+    except:
+        pass
+    return out
 
 
 def check_run(command):
@@ -84,15 +90,16 @@ def is_installed(package):
 
 def git_clone(url, dir, name, commithash=None):
     # TODO clone into temporary dir and move if successful
-
-    if os.path.exists(dir):
-        return
-
-    run(f'"{git}" clone "{url}" "{dir}"', f"Cloning {name} into {dir}...", f"Couldn't clone {name}")
-
-    if commithash is not None:
-        run(f'"{git}" -C {dir} checkout {commithash}', None, "Couldn't checkout {name}'s hash: {commithash}")
-
+    try:
+        if not os.path.exists(dir):
+            run(f'"{git}" clone "{url}" "{dir}"', f"Cloning {name} into {dir}...", f"Couldn't clone {name}")
+        else:
+            if commithash is not None:
+                existing = run(f'"{git}" -C {dir} rev-parse HEAD', None, "Couldn't determine {name}'s hash: {commithash}")
+                if existing != commithash and existing is not None:
+                    run(f'"{git}" -C {dir} checkout {commithash}', None, "Couldn't checkout {name}'s hash: {commithash}")
+    except Exception as e:
+        print(f"Exception cloning/updating {name}: {e}")
 
 try:
     commit = run(f"{git} rev-parse HEAD").strip()
