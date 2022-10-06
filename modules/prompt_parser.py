@@ -156,7 +156,9 @@ def get_multicond_prompt_list(prompts):
 
         indexes = []
         for subprompt in subprompts:
-            text, weight = re_weight.search(subprompt).groups()
+            match = re_weight.search(subprompt)
+
+            text, weight = match.groups() if match is not None else (subprompt, 1.0)
 
             weight = float(weight) if weight is not None else 1.0
 
