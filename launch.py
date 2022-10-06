@@ -86,6 +86,15 @@ def git_clone(url, dir, name, commithash=None):
     # TODO clone into temporary dir and move if successful
 
     if os.path.exists(dir):
+        if commithash is None:
+            return
+
+        current_hash = run(f'"{git}" -C {dir} rev-parse HEAD', None, "Couldn't determine {name}'s hash: {commithash}").strip()
+        if current_hash == commithash:
+            return
+
+        run(f'"{git}" -C {dir} fetch', f"Fetching updates for {name}...", f"Couldn't fetch {name}")
+        run(f'"{git}" -C {dir} checkout {commithash}', f"Checking out commint for {name} with hash: {commithash}...", f"Couldn't checkout commit {commithash} for {name}")
         return
 
     run(f'"{git}" clone "{url}" "{dir}"', f"Cloning {name} into {dir}...", f"Couldn't clone {name}")
