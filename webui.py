@@ -2,11 +2,12 @@ import os
 import threading
 import time
 import importlib
-from modules import devices, sd_samplers
-from modules.paths import script_path
 import signal
 import threading
 
+from modules.paths import script_path
+
+from modules import devices, sd_samplers
 import modules.codeformer_model as codeformer
 import modules.extras
 import modules.face_restoration
