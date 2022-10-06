@@ -2,6 +2,7 @@ import os
 import threading
 import time
 import importlib
+import modules.paths
 from modules import devices, sd_samplers
 from modules.paths import script_path
 import signal
@@ -14,7 +15,6 @@ import modules.gfpgan_model as gfpgan
 import modules.img2img
 
 import modules.lowvram
-import modules.paths
 import modules.scripts
 import modules.sd_hijack
 import modules.sd_models
