@@ -190,7 +190,9 @@ class Script(scripts.Script):
         return [x_type, x_values, y_type, y_values, draw_legend, no_fixed_seeds]
 
     def run(self, p, x_type, x_values, y_type, y_values, draw_legend, no_fixed_seeds):
-        modules.processing.fix_seed(p)
+        if not no_fixed_seeds:
+            modules.processing.fix_seed(p)
+
         p.batch_size = 1
 
         def process_axis(opt, vals):
