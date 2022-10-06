@@ -4,13 +4,13 @@ import torch
 import tqdm
 from PIL import Image
 import inspect
+from modules import prompt_parser
+from modules.shared import opts, cmd_opts, state
+import modules.shared as shared
 import k_diffusion.sampling
 import ldm.models.diffusion.ddim
 import ldm.models.diffusion.plms
-from modules import prompt_parser
 
-from modules.shared import opts, cmd_opts, state
-import modules.shared as shared
 
 
 SamplerData = namedtuple('SamplerData', ['name', 'constructor', 'aliases'])
