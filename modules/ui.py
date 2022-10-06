@@ -34,7 +34,7 @@ import modules.gfpgan_model
 import modules.codeformer_model
 import modules.styles
 import modules.generation_parameters_copypaste
-from modules.prompt_parser import get_learned_conditioning_prompt_schedules
+from modules import prompt_parser
 from modules.images import apply_filename_pattern, get_next_sequence_number
 import modules.textual_inversion.ui
 
@@ -196,6 +196,11 @@ def wrap_gradio_call(func, extra_outputs=None):
             res = extra_outputs_array + [f"<div class='error'>{plaintext_to_html(type(e).__name__+': '+str(e))}</div>"]
 
         elapsed = time.perf_counter() - t
+        elapsed_m = int(elapsed // 60)
+        elapsed_s = elapsed % 60
+        elapsed_text = f"{elapsed_s:.2f}s"
+        if (elapsed_m > 0):
+            elapsed_text = f"{elapsed_m}m "+elapsed_text
 
         if run_memmon:
             mem_stats = {k: -(v//-(1024*1024)) for k, v in shared.mem_mon.stop().items()}
@@ -210,7 +215,7 @@ def wrap_gradio_call(func, extra_outputs=None):
             vram_html = ''
 
         # last item is always HTML
-        res[-1] += f"<div class='performance'><p class='time'>Time taken: <wbr>{elapsed:.2f}s</p>{vram_html}</div>"
+        res[-1] += f"<div class='performance'><p class='time'>Time taken: <wbr>{elapsed_text}</p>{vram_html}</div>"
 
         shared.state.interrupted = False
         shared.state.job_count = 0
@@ -386,13 +391,23 @@ def connect_reuse_seed(seed: gr.Number, reuse_seed: gr.Button, generation_info: 
         outputs=[seed, dummy_component]
     )
 
+
 def update_token_counter(text, steps):
-    prompt_schedules = get_learned_conditioning_prompt_schedules([text], steps)
+    try:
+        _, prompt_flat_list, _ = prompt_parser.get_multicond_prompt_list([text])
+        prompt_schedules = prompt_parser.get_learned_conditioning_prompt_schedules(prompt_flat_list, steps)
+
+    except Exception:
+        # a parsing error can happen here during typing, and we don't want to bother the user with
+        # messages related to it in console
+        prompt_schedules = [[[steps, text]]]
+
     flat_prompts = reduce(lambda list1, list2: list1+list2, prompt_schedules)
-    prompts = [prompt_text for step,prompt_text in flat_prompts]
+    prompts = [prompt_text for step, prompt_text in flat_prompts]
     tokens, token_count, max_length = max([model_hijack.tokenize(prompt) for prompt in prompts], key=lambda args: args[1])
     style_class = ' class="red"' if (token_count > max_length) else ""
     return f"<span {style_class}>{token_count}/{max_length}</span>"
+
 
 def create_toprow(is_img2img):
     id_part = "img2img" if is_img2img else "txt2img"
@@ -636,7 +651,7 @@ def create_ui(wrap_gradio_gpu_call):
 
                 with gr.Tabs(elem_id="mode_img2img") as tabs_img2img_mode:
                     with gr.TabItem('img2img', id='img2img'):
-                        init_img = gr.Image(label="Image for img2img", show_label=False, source="upload", interactive=True, type="pil")
+                        init_img = gr.Image(label="Image for img2img", elem_id="img2img_image", show_label=False, source="upload", interactive=True, type="pil", tool=cmd_opts.gradio_img2img_tool)
 
                     with gr.TabItem('Inpaint', id='inpaint'):
                         init_img_with_mask = gr.Image(label="Image for inpainting with mask",  show_label=False, elem_id="img2maskimg", source="upload", interactive=True, type="pil", tool="sketch", image_mode="RGBA")
@@ -1197,6 +1212,7 @@ def create_ui(wrap_gradio_gpu_call):
         )
 
         def request_restart():
+            shared.state.interrupt()
             settings_interface.gradio_ref.do_restart = True
 
         restart_gradio.click(
