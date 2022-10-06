@@ -430,7 +430,9 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
                 if opts.samples_save and not p.do_not_save_samples:
                     images.save_image(image, p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, info=infotext(n, i), p=p)
 
-                infotexts.append(infotext(n, i))
+                text = infotext(n, i)
+                infotexts.append(text)
+                image.info["parameters"] = text
                 output_images.append(image)
 
             del x_samples_ddim 
@@ -447,7 +449,9 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             grid = images.image_grid(output_images, p.batch_size)
 
             if opts.return_grid:
-                infotexts.insert(0, infotext())
+                text = infotext()
+                infotexts.insert(0, text)
+                grid.info["parameters"] = text
                 output_images.insert(0, grid)
                 index_of_first_image = 1
 
