@@ -89,7 +89,7 @@ def git_clone(url, dir, name, commithash=None):
         if commithash is None:
             return
 
-        current_hash = run(f'"{git}" -C {dir} rev-parse HEAD', None, "Couldn't determine {name}'s hash: {commithash}").strip()
+        current_hash = run(f'"{git}" -C {dir} rev-parse HEAD', None, f"Couldn't determine {name}'s hash: {commithash}").strip()
         if current_hash == commithash:
             return
 
