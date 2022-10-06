@@ -1,8 +1,9 @@
 from collections import namedtuple
 from copy import copy
-from itertools import permutations
+from itertools import permutations, chain
 import random
-
+import csv
+from io import StringIO
 from PIL import Image
 import numpy as np
 
@@ -168,8 +169,6 @@ re_range_float = re.compile(r"\s*([+-]?\s*\d+(?:.\d*)?)\s*-\s*([+-]?\s*\d+(?:.\d
 re_range_count = re.compile(r"\s*([+-]?\s*\d+)\s*-\s*([+-]?\s*\d+)(?:\s*\[(\d+)\s*\])?\s*")
 re_range_count_float = re.compile(r"\s*([+-]?\s*\d+(?:.\d*)?)\s*-\s*([+-]?\s*\d+(?:.\d*)?)(?:\s*\[(\d+(?:.\d*)?)\s*\])?\s*")
 
-re_non_escaped_comma = re.compile(r"(?<!\\),")
-
 class Script(scripts.Script):
     def title(self):
         return "X/Y plot"
@@ -198,7 +197,7 @@ class Script(scripts.Script):
             if opt.label == 'Nothing':
                 return [0]
 
-            valslist = [x.replace('\\,',',').strip() for x in re_non_escaped_comma.split(vals)]
+            valslist = list(chain.from_iterable(csv.reader(StringIO(s))))
 
             if opt.type == int:
                 valslist_ext = []
