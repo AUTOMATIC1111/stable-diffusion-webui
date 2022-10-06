@@ -2,7 +2,7 @@ import os
 import threading
 import time
 import importlib
-from modules import devices
+from modules import devices, sd_samplers
 from modules.paths import script_path
 import signal
 import threading
@@ -108,6 +108,8 @@ def webui():
                 demo.close()
                 time.sleep(0.5)
                 break
+
+        sd_samplers.set_samplers()
 
         print('Reloading Custom Scripts')
         modules.scripts.reload_scripts(os.path.join(script_path, "scripts"))
