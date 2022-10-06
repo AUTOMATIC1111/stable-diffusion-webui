@@ -34,7 +34,7 @@ import modules.gfpgan_model
 import modules.codeformer_model
 import modules.styles
 import modules.generation_parameters_copypaste
-from modules.prompt_parser import get_learned_conditioning_prompt_schedules
+from modules import prompt_parser
 from modules.images import apply_filename_pattern, get_next_sequence_number
 import modules.textual_inversion.ui
 
@@ -394,7 +394,9 @@ def connect_reuse_seed(seed: gr.Number, reuse_seed: gr.Button, generation_info: 
 
 def update_token_counter(text, steps):
     try:
-        prompt_schedules = get_learned_conditioning_prompt_schedules([text], steps)
+        _, prompt_flat_list, _ = prompt_parser.get_multicond_prompt_list([text])
+        prompt_schedules = prompt_parser.get_learned_conditioning_prompt_schedules(prompt_flat_list, steps)
+
     except Exception:
         # a parsing error can happen here during typing, and we don't want to bother the user with
         # messages related to it in console
@@ -1210,6 +1212,7 @@ def create_ui(wrap_gradio_gpu_call):
         )
 
         def request_restart():
+            shared.state.interrupt()
             settings_interface.gradio_ref.do_restart = True
 
         restart_gradio.click(
