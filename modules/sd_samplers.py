@@ -32,12 +32,27 @@ samplers_data_k_diffusion = [
     if hasattr(k_diffusion.sampling, funcname)
 ]
 
-samplers = [
+all_samplers = [
     *samplers_data_k_diffusion,
     SamplerData('DDIM', lambda model: VanillaStableDiffusionSampler(ldm.models.diffusion.ddim.DDIMSampler, model), []),
     SamplerData('PLMS', lambda model: VanillaStableDiffusionSampler(ldm.models.diffusion.plms.PLMSSampler, model), []),
 ]
-samplers_for_img2img = [x for x in samplers if x.name not in ['PLMS', 'DPM fast', 'DPM adaptive']]
+
+samplers = []
+samplers_for_img2img = []
+
+
+def set_samplers():
+    global samplers, samplers_for_img2img
+
+    hidden = set(opts.hide_samplers)
+    hidden_img2img = set(opts.hide_samplers + ['PLMS', 'DPM fast', 'DPM adaptive'])
+
+    samplers = [x for x in all_samplers if x.name not in hidden]
+    samplers_for_img2img = [x for x in all_samplers if x.name not in hidden_img2img]
+
+
+set_samplers()
 
 sampler_extra_params = {
     'sample_euler': ['s_churn', 's_tmin', 's_tmax', 's_noise'],
