@@ -168,6 +168,7 @@ re_range_float = re.compile(r"\s*([+-]?\s*\d+(?:.\d*)?)\s*-\s*([+-]?\s*\d+(?:.\d
 re_range_count = re.compile(r"\s*([+-]?\s*\d+)\s*-\s*([+-]?\s*\d+)(?:\s*\[(\d+)\s*\])?\s*")
 re_range_count_float = re.compile(r"\s*([+-]?\s*\d+(?:.\d*)?)\s*-\s*([+-]?\s*\d+(?:.\d*)?)(?:\s*\[(\d+(?:.\d*)?)\s*\])?\s*")
 
+re_non_escaped_comma = re.compile(r"(?<!\\),")
 
 class Script(scripts.Script):
     def title(self):
@@ -197,7 +198,7 @@ class Script(scripts.Script):
             if opt.label == 'Nothing':
                 return [0]
 
-            valslist = [x.strip() for x in vals.split(",")]
+            valslist = [x.replace('\\,',',').strip() for x in re_non_escaped_comma.split(vals)]
 
             if opt.type == int:
                 valslist_ext = []
