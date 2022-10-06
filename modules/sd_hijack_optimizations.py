@@ -92,14 +92,6 @@ def split_cross_attention_forward(self, x, context=None, mask=None):
 
     return self.to_out(r2)
 
-def nonlinearity_hijack(x):
-    # swish
-    t = torch.sigmoid(x)
-    x *= t
-    del t
-
-    return x
-
 def cross_attention_attnblock_forward(self, x):
         h_ = x
         h_ = self.norm(h_)
