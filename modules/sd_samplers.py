@@ -338,9 +338,11 @@ class KDiffusionSampler:
         steps, t_enc = setup_img2img_steps(p, steps)
 
         if p.sampler_noise_scheduler_override:
-          sigmas = p.sampler_noise_scheduler_override(steps)
+            sigmas = p.sampler_noise_scheduler_override(steps)
+        elif self.config is not None and self.config.options.get('scheduler', None) == 'karras':
+            sigmas = k_diffusion.sampling.get_sigmas_karras(n=steps, sigma_min=0.1, sigma_max=10, device=shared.device)
         else:
-          sigmas = self.model_wrap.get_sigmas(steps)
+            sigmas = self.model_wrap.get_sigmas(steps)
 
         noise = noise * sigmas[steps - t_enc - 1]
         xi = x + noise
