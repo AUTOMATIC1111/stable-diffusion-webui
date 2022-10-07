@@ -597,6 +597,19 @@ class KritaSDPluginDocker(DockWidget):
 
         self.config_restore_defaults = QPushButton("Restore Defaults")
 
+        self.config_open_webui_config_label = QLabel(
+            '<a href="http://127.0.0.1/">Configure all settings in webUI</a>'
+        )
+        self.config_weblinks_label = QLabel(
+            """
+            <a href="http://127.0.0.1:7860/" target="_blank">Configure all settings in webUI</a><br/>
+            <a href="https://github.com/Interpause/auto-sd-krita/wiki" target="_blank">Read the guide</a><br/>
+            <a href="https://github.com/Interpause/auto-sd-krita/issues" target="_blank">Report bugs or suggest features</a>
+            """
+        )
+        self.config_weblinks_label.setOpenExternalLinks(True)
+        self.config_weblinks_label.setWordWrap(True)
+
         self.config_layout = QVBoxLayout()
         self.config_layout.addWidget(self.config_base_url_label)
         self.config_layout.addLayout(self.config_base_url_layout)
@@ -608,6 +621,7 @@ class KritaSDPluginDocker(DockWidget):
         self.config_layout.addLayout(self.config_face_restorer_model_layout)
         self.config_layout.addLayout(self.config_codeformer_weight_layout)
         self.config_layout.addWidget(self.config_restore_defaults)
+        self.config_layout.addWidget(self.config_weblinks_label)
         self.config_layout.addStretch()
 
         self.config_widget = QWidget()
