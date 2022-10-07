@@ -3,9 +3,12 @@ import math
 import os
 import urllib.parse
 import urllib.request
+from dataclasses import asdict
 from urllib.error import URLError
 
 from krita import Krita, QByteArray, QImage, QObject, QSettings, QTimer
+
+from .defaults import Defaults
 
 default_url = "http://127.0.0.1:8000"
 
@@ -49,53 +52,10 @@ class Script(QObject):
             self.config.setValue(name, value)
 
     def restore_defaults(self, if_empty=False):
-        self.set_cfg("base_url", default_url, if_empty)
-        self.set_cfg("just_use_yaml", False, if_empty)
-        self.set_cfg("create_mask_layer", True, if_empty)
-        self.set_cfg("delete_temp_files", True, if_empty)
-        self.set_cfg("workaround_timeout", 100, if_empty)
-        self.set_cfg("png_quality", -1, if_empty)
-        self.set_cfg("fix_aspect_ratio", True, if_empty)
-        self.set_cfg("only_full_img_tiling", True, if_empty)
-        self.set_cfg("sd_model_list", [], if_empty)
-        self.set_cfg("sd_model", "model.ckpt", if_empty)
-        self.set_cfg("face_restorer_model_list", [], if_empty)
-        self.set_cfg("face_restorer_model", "CodeFormer", if_empty)
-        self.set_cfg("codeformer_weight", 0.5, if_empty)
+        default = asdict(Defaults())
 
-        self.set_cfg("txt2img_prompt", "", if_empty)
-        self.set_cfg("txt2img_sampler_list", [], if_empty)
-        self.set_cfg("txt2img_sampler", "Euler a", if_empty)
-        self.set_cfg("txt2img_steps", 20, if_empty)
-        self.set_cfg("txt2img_cfg_scale", 7.5, if_empty)
-        self.set_cfg("txt2img_batch_count", 1, if_empty)
-        self.set_cfg("txt2img_batch_size", 1, if_empty)
-        self.set_cfg("txt2img_base_size", 512, if_empty)
-        self.set_cfg("txt2img_max_size", 768, if_empty)
-        self.set_cfg("txt2img_seed", "", if_empty)
-        self.set_cfg("txt2img_use_gfpgan", False, if_empty)
-        self.set_cfg("txt2img_tiling", False, if_empty)
-
-        self.set_cfg("img2img_prompt", "", if_empty)
-        self.set_cfg("img2img_negative_prompt", "", if_empty)
-        self.set_cfg("img2img_sampler_list", [], if_empty)
-        self.set_cfg("img2img_sampler", "Euler a", if_empty)
-        self.set_cfg("img2img_steps", 50, if_empty)
-        self.set_cfg("img2img_cfg_scale", 12.0, if_empty)
-        self.set_cfg("img2img_denoising_strength", 0.40, if_empty)
-        self.set_cfg("img2img_batch_count", 1, if_empty)
-        self.set_cfg("img2img_batch_size", 1, if_empty)
-        self.set_cfg("img2img_base_size", 512, if_empty)
-        self.set_cfg("img2img_max_size", 768, if_empty)
-        self.set_cfg("img2img_seed", "", if_empty)
-        self.set_cfg("img2img_use_gfpgan", False, if_empty)
-        self.set_cfg("img2img_tiling", False, if_empty)
-        self.set_cfg("img2img_invert_mask", False, if_empty)
-        self.set_cfg("upscaler_list", [], if_empty)
-        self.set_cfg("img2img_upscaler_name", "None", if_empty)
-
-        self.set_cfg("upscale_upscaler_name", "None", if_empty)
-        self.set_cfg("upscale_downscale_first", False, if_empty)
+        for k, v in default.items():
+            self.set_cfg(k, v, if_empty)
 
     def update_config(self):
         res = None
