@@ -3,35 +3,33 @@ import math
 import os
 import urllib.parse
 import urllib.request
+from urllib.error import URLError
 
 from krita import *
 
 default_url = "http://127.0.0.1:8000"
 
-samplers = [
-    # "DDIM",
-    # "PLMS",
-    # "k_dpm_2_a",
-    # "k_dpm_2",
-    # "k_euler_a",
-    # "k_euler",
-    # "k_heun",
-    # "k_lms",
-]
-samplers_img2img = [
-    # "DDIM",
-    # "k_dpm_2_a",
-    # "k_dpm_2",
-    # "k_euler_a",
-    # "k_euler",
-    # "k_heun",
-    # "k_lms",
-]
+# samplers = [
+#     "DDIM",
+#     "PLMS",
+#     "k_dpm_2_a",
+#     "k_dpm_2",
+#     "k_euler_a",
+#     "k_euler",
+#     "k_heun",
+#     "k_lms",
+# ]
+# samplers_img2img = [
+#     "DDIM",
+#     "k_dpm_2_a",
+#     "k_dpm_2",
+#     "k_euler_a",
+#     "k_euler",
+#     "k_heun",
+#     "k_lms",
+# ]
 # upscalers = ["None", "Lanczos"]
-upscalers = []
 # face_restorers = ["None", "CodeFormer", "GFPGAN"]
-face_restorers = []
-sd_models = []
 
 
 class Script(QObject):
@@ -43,10 +41,10 @@ class Script(QObject):
         self.restore_defaults(if_empty=True)
         self.working = False
 
-    def cfg(self, name, type):
+    def cfg(self, name: str, type):
         return self.config.value(name, type=type)
 
-    def set_cfg(self, name, value, if_empty=False):
+    def set_cfg(self, name: str, value, if_empty=False):
         if not if_empty or not self.config.contains(name):
             self.config.setValue(name, value)
 
@@ -59,24 +57,28 @@ class Script(QObject):
         self.set_cfg("png_quality", -1, if_empty)
         self.set_cfg("fix_aspect_ratio", True, if_empty)
         self.set_cfg("only_full_img_tiling", True, if_empty)
+        self.set_cfg("sd_model_list", [], if_empty)
         self.set_cfg("sd_model", "model.ckpt", if_empty)
+        self.set_cfg("face_restorer_model_list", [], if_empty)
         self.set_cfg("face_restorer_model", "CodeFormer", if_empty)
         self.set_cfg("codeformer_weight", 0.5, if_empty)
 
         self.set_cfg("txt2img_prompt", "", if_empty)
+        self.set_cfg("txt2img_sampler_list", [], if_empty)
         self.set_cfg("txt2img_sampler", "Euler a", if_empty)
         self.set_cfg("txt2img_steps", 20, if_empty)
         self.set_cfg("txt2img_cfg_scale", 7.5, if_empty)
         self.set_cfg("txt2img_batch_count", 1, if_empty)
         self.set_cfg("txt2img_batch_size", 1, if_empty)
         self.set_cfg("txt2img_base_size", 512, if_empty)
-        self.set_cfg("txt2img_max_size", 704, if_empty)
+        self.set_cfg("txt2img_max_size", 768, if_empty)
         self.set_cfg("txt2img_seed", "", if_empty)
         self.set_cfg("txt2img_use_gfpgan", False, if_empty)
         self.set_cfg("txt2img_tiling", False, if_empty)
 
         self.set_cfg("img2img_prompt", "", if_empty)
         self.set_cfg("img2img_negative_prompt", "", if_empty)
+        self.set_cfg("img2img_sampler_list", [], if_empty)
         self.set_cfg("img2img_sampler", "Euler a", if_empty)
         self.set_cfg("img2img_steps", 50, if_empty)
         self.set_cfg("img2img_cfg_scale", 12.0, if_empty)
@@ -84,49 +86,57 @@ class Script(QObject):
         self.set_cfg("img2img_batch_count", 1, if_empty)
         self.set_cfg("img2img_batch_size", 1, if_empty)
         self.set_cfg("img2img_base_size", 512, if_empty)
-        self.set_cfg("img2img_max_size", 704, if_empty)
+        self.set_cfg("img2img_max_size", 768, if_empty)
         self.set_cfg("img2img_seed", "", if_empty)
         self.set_cfg("img2img_use_gfpgan", False, if_empty)
         self.set_cfg("img2img_tiling", False, if_empty)
         self.set_cfg("img2img_invert_mask", False, if_empty)
+        self.set_cfg("upscaler_list", [], if_empty)
         self.set_cfg("img2img_upscaler_name", "None", if_empty)
 
         self.set_cfg("upscale_upscaler_name", "None", if_empty)
         self.set_cfg("upscale_downscale_first", False, if_empty)
 
     def update_config(self):
-        with urllib.request.urlopen(
-            self.cfg("base_url", str) + "/config", timeout=1
-        ) as req:
-            res = req.read()
-            self.opt = json.loads(res)
+        res = None
+        try:
+            with urllib.request.urlopen(self.cfg("base_url", str) + "/config") as req:
+                res = req.read()
+                self.opt = json.loads(res)
+        except URLError:
+            # TODO: Warning about failed connection or loading screen...
+            pass
 
-        assert len(self.opt["upscalers"]) > 0
-        assert len(self.opt["samplers"]) > 0
-        assert len(self.opt["samplers_img2img"]) > 0
-        assert len(self.opt["face_restorers"]) > 0
-        assert len(self.opt["sd_models"]) > 0
-        upscalers[:] = self.opt["upscalers"]
-        samplers[:] = self.opt["samplers"]
-        samplers_img2img[:] = self.opt["samplers_img2img"]
-        face_restorers[:] = self.opt["face_restorers"]
-        sd_models[:] = self.opt["sd_models"]
+        # dont update lists if connection failed
+        if res:
+            assert len(self.opt["upscalers"]) > 0
+            assert len(self.opt["samplers"]) > 0
+            assert len(self.opt["samplers_img2img"]) > 0
+            assert len(self.opt["face_restorers"]) > 0
+            assert len(self.opt["sd_models"]) > 0
+            self.set_cfg("upscaler_list", self.opt["upscalers"])
+            self.set_cfg("txt2img_sampler_list", self.opt["samplers"])
+            self.set_cfg("img2img_sampler_list", self.opt["samplers_img2img"])
+            self.set_cfg("face_restorer_model_list", self.opt["face_restorers"])
+            self.set_cfg("sd_model_list", self.opt["sd_models"])
 
         self.app = Krita.instance()
         self.doc = self.app.activeDocument()
-        self.node = self.doc.activeNode()
-        self.selection = self.doc.selection()
+        # self.doc doesnt exist at app startup
+        if self.doc:
+            self.node = self.doc.activeNode()
+            self.selection = self.doc.selection()
 
-        if self.selection is None:
-            self.x = 0
-            self.y = 0
-            self.width = self.doc.width()
-            self.height = self.doc.height()
-        else:
-            self.x = self.selection.x()
-            self.y = self.selection.y()
-            self.width = self.selection.width()
-            self.height = self.selection.height()
+            if self.selection is None:
+                self.x = 0
+                self.y = 0
+                self.width = self.doc.width()
+                self.height = self.doc.height()
+            else:
+                self.x = self.selection.x()
+                self.y = self.selection.y()
+                self.width = self.selection.width()
+                self.height = self.selection.height()
 
     # Server API    @staticmethod
     def post(self, url, body):
