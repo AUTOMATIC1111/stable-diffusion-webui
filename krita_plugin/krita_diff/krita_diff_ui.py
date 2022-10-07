@@ -3,39 +3,6 @@ from functools import partial
 
 from .krita_diff import *
 
-
-# Actions for Hotkeys
-class MyExtension(Extension):
-    def __init__(self, parent):
-        # This is initialising the parent, always important when subclassing.
-        super().__init__(parent)
-
-    def setup(self):
-        pass
-
-    def createActions(self, window):
-        txt2img_action = window.createAction(
-            "txt2img", "Apply txt2img transform", "tools/scripts"
-        )
-        txt2img_action.triggered.connect(lambda: script.action_txt2img())
-        img2img_action = window.createAction(
-            "img2img", "Apply img2img transform", "tools/scripts"
-        )
-        img2img_action.triggered.connect(lambda: script.action_img2img())
-        upscale_x_action = window.createAction(
-            "img2img_upscale", "Apply img2img upscale transform", "tools/scripts"
-        )
-        upscale_x_action.triggered.connect(lambda: script.action_sd_upscale())
-        upscale_x_action = window.createAction(
-            "img2img_inpaint", "Apply img2img inpaint transform", "tools/scripts"
-        )
-        upscale_x_action.triggered.connect(lambda: script.action_inpaint())
-        simple_upscale_action = window.createAction(
-            "simple_upscale", "Apply ESRGAN upscaler", "tools/scripts"
-        )
-        simple_upscale_action.triggered.connect(lambda: script.action_simple_upscale())
-
-
 # Interface
 
 
@@ -745,12 +712,3 @@ class KritaSDPluginDocker(DockWidget):
 
     def canvasChanged(self, canvas):
         pass
-
-
-# And add the extension to Krita's list of extensions:
-Krita.instance().addExtension(MyExtension(Krita.instance()))
-Krita.instance().addDockWidgetFactory(
-    DockWidgetFactory(
-        "krita_diff", DockWidgetFactoryBase.DockRight, KritaSDPluginDocker
-    )
-)
