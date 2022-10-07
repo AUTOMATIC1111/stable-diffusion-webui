@@ -10,8 +10,6 @@ from krita import Krita, QByteArray, QImage, QObject, QSettings, QTimer
 
 from .defaults import Defaults
 
-default_url = "http://127.0.0.1:8000"
-
 # samplers = [
 #     "DDIM",
 #     "PLMS",

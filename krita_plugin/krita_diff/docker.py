@@ -12,13 +12,14 @@ from krita import (
     QWidget,
 )
 
-from .script import default_url, script
+from .defaults import Defaults
+from .script import script
 from .widgets import QComboBoxLayout, QLineEditLayout, QPromptLayout, QSpinBoxLayout
 
 
 class SDPluginDocker(DockWidget):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super(SDPluginDocker, self).__init__(*args, **kwargs)
         self.setWindowTitle("SD Plugin")
         self.create_interface()
 
@@ -292,6 +293,15 @@ class SDPluginDocker(DockWidget):
         self.upscale_start_button = QPushButton("Apply upscaler")
 
         self.upscale_layout = QVBoxLayout()
+        note = QLabel(
+            """
+        NOTE: txt2img & img2img will use the Global Upscaler when needing to scale up.
+        Upscaling manually is only useful if the image was resized via Krita.
+        In the future, SD Upscaling will replace this tab! For now, use the WebUI.
+            """
+        )
+        note.setWordWrap(True)
+        self.upscale_layout.addWidget(note)
         self.upscale_layout.addLayout(self.upscale_upscaler_layout)
         self.upscale_layout.addWidget(self.upscale_downscale_first)
         self.upscale_layout.addWidget(self.upscale_start_button)
@@ -407,7 +417,7 @@ class SDPluginDocker(DockWidget):
     def connect_config_interface(self):
         self.config_base_url.textChanged.connect(partial(script.set_cfg, "base_url"))
         self.config_base_url_reset.released.connect(
-            lambda: self.config_base_url.setText(default_url)
+            lambda: self.config_base_url.setText(Defaults.base_url)
         )
         self.config_just_use_yaml.toggled.connect(
             partial(script.set_cfg, "just_use_yaml")

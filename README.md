@@ -39,6 +39,7 @@ ln -rs /.../auto-sd-krita/krita_plugin/krita_diff.desktop /.../pykrita/krita_dif
 
 ## Features
 
+- Images always pass through the upscaler when scaling up no matter which mode is being used.
 - Gradio WebUI is fully functional and runs alongside the Krita plugin!
   - Some things are better done in the WebUI than the Krita Plugin GUI (i.e. training textual inversion)
 - Exposed more features present in WebUI.
@@ -50,6 +51,8 @@ ln -rs /.../auto-sd-krita/krita_plugin/krita_diff.desktop /.../pykrita/krita_dif
 - Componentized GUI that should be easier to develop in the future.
 - List of upscalers, samplers, face restorers and models are refreshed from the backend!
   - The original plugin refreshed samplers, but hardcoded everything else, and couldn't switch models without the webUI.
+
+Hey I just noticed `modules.images.resize_image()` runs an upscaling if scaling up, which means unintentionally upscaling is a thing given its used to resize images at every part.
 
 ## Maintenance
 
