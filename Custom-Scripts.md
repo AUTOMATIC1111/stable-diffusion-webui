@@ -45,6 +45,7 @@ Using img2img, generates pictures one after another.
 
 ## Seed Travel
 https://github.com/yownas/seed_travel
+
 Pick two (or more) seeds and generate a sequence of images interpolating between them. Optionally, let it create a video of the result.
 
 Example of what you can do with it:
@@ -59,30 +60,36 @@ A basic img2img script that will dump frames and build a video file. Suitable fo
 
 ## Alternate Noise Schedules
 https://gist.github.com/dfaker/f88aa62e3a14b559fe4e5f6b345db664
+
 Uses alternate generators for the sampler's sigma schedule.
 
 Allows access to Karras, Exponential and Variance Preserving schedules from crowsonkb/k-diffusion along with their parameters.
 
 ## Vid2Vid
 https://github.com/Filarius/stable-diffusion-webui/blob/master/scripts/vid2vid.py
+
 From real video, img2img the frames and stitch them together. Does not unpack frames to hard drive.
 
 ## Txt2VectorGraphics
 https://github.com/GeorgLegato/Txt2Vectorgraphics
+
 Create custom, scaleable icons from your prompts as SVG or PDF.
 
 ## Shift Attention
 https://github.com/yownas/shift-attention
+
 Generate a sequence of images shifting attention in the prompt.
 
 This script enables you to give a range to the weight of tokens in a prompt and then generate a sequence of images stepping from the first one to the second.
 
 ## Loopback and Superimpose
 https://github.com/DiceOwl/StableDiffusionStuff
+
 Mixes output of img2img with original input image at strength alpha. The result is fed into img2img again (at loop>=2), and this procedure repeats. Tends to sharpen the image, improve consistency, reduce creativity and reduce fine detail.
 
 ## Run n times
 https://gist.github.com/camenduru/9ec5f8141db9902e375967e93250860f
+
 Run n times with random seed.
 
 ## Dynamic Prompt Templates
@@ -90,9 +97,11 @@ https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/1433/files
 
 ## Advanced Loopback
 https://github.com/Extraltodeus/advanced-loopback-for-sd-webui
+
 Dynamic zoom loopback with parameters variations and prompt switching amongst other features!
 
 ## Saving steps of the sampling process
+
 This script will save steps of the sampling process to a directory.
 ```python
 import os.path
