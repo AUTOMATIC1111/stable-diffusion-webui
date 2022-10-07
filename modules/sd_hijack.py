@@ -8,7 +8,7 @@ from torch import einsum
 from torch.nn.functional import silu
 
 import modules.textual_inversion.textual_inversion
-from modules import prompt_parser, devices, sd_hijack_optimizations, shared, hypernetwork
+from modules import prompt_parser, devices, sd_hijack_optimizations, shared
 from modules.shared import opts, device, cmd_opts
 
 import ldm.modules.attention
@@ -32,6 +32,8 @@ def apply_optimizations():
 
 
 def undo_optimizations():
+    from modules.hypernetwork import hypernetwork
+
     ldm.modules.attention.CrossAttention.forward = hypernetwork.attention_CrossAttention_forward
     ldm.modules.diffusionmodules.model.nonlinearity = diffusionmodules_model_nonlinearity
     ldm.modules.diffusionmodules.model.AttnBlock.forward = diffusionmodules_model_AttnBlock_forward

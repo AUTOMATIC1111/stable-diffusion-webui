@@ -45,8 +45,7 @@ def split_cross_attention_forward(self, x, context=None, mask=None):
     q_in = self.to_q(x)
     context = default(context, x)
 
-    hypernetwork = shared.selected_hypernetwork()
-    hypernetwork_layers = (hypernetwork.layers if hypernetwork is not None else {}).get(context.shape[2], None)
+    hypernetwork_layers = (shared.hypernetwork.layers if shared.hypernetwork is not None else {}).get(context.shape[2], None)
 
     if hypernetwork_layers is not None:
         k_in = self.to_k(hypernetwork_layers[0](context))

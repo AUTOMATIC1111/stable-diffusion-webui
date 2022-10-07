@@ -74,6 +74,15 @@ def wrap_gradio_gpu_call(func, extra_outputs=None):
     return modules.ui.wrap_gradio_call(f, extra_outputs=extra_outputs)
 
 
+def set_hypernetwork():
+    shared.hypernetwork = shared.hypernetworks.get(shared.opts.sd_hypernetwork, None)
+
+
+shared.reload_hypernetworks()
+shared.opts.onchange("sd_hypernetwork", set_hypernetwork)
+set_hypernetwork()
+
+
 modules.scripts.load_scripts(os.path.join(script_path, "scripts"))
 
 shared.sd_model = modules.sd_models.load_model()

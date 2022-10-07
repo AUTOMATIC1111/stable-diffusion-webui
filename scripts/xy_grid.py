@@ -78,8 +78,7 @@ def apply_checkpoint(p, x, xs):
 
 
 def apply_hypernetwork(p, x, xs):
-    hn = shared.hypernetworks.get(x, None)
-    opts.data["sd_hypernetwork"] = hn.name if hn is not None else 'None'
+    shared.hypernetwork = shared.hypernetworks.get(x, None)
 
 
 def format_value_add_label(p, opt, x):
@@ -199,7 +198,7 @@ class Script(scripts.Script):
         modules.processing.fix_seed(p)
         p.batch_size = 1
 
-        initial_hn = opts.sd_hypernetwork
+        initial_hn = shared.hypernetwork
 
         def process_axis(opt, vals):
             if opt.label == 'Nothing':
@@ -308,6 +307,6 @@ class Script(scripts.Script):
         # restore checkpoint in case it was changed by axes
         modules.sd_models.reload_model_weights(shared.sd_model)
 
-        opts.data["sd_hypernetwork"] = initial_hn
+        shared.hypernetwork = initial_hn
 
         return processed
