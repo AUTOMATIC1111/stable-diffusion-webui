@@ -9,9 +9,16 @@ from PIL import Image
 from webui import modules, shared
 
 from .structs import Img2ImgRequest, Txt2ImgRequest, UpscaleRequest
-from .utils import (fix_aspect_ratio, get_sampler_index, get_upscaler_index,
-                    load_config, merge_default_config, parse_prompt, save_img,
-                    set_face_restorer)
+from .utils import (
+    fix_aspect_ratio,
+    get_sampler_index,
+    get_upscaler_index,
+    load_config,
+    merge_default_config,
+    parse_prompt,
+    save_img,
+    set_face_restorer,
+)
 
 app = FastAPI()
 
@@ -239,7 +246,7 @@ async def f_upscale(req: UpscaleRequest):
     if req.downscale_first:
         image = modules.images.resize_image(0, image, orig_width // 2, orig_height // 2)
 
-    upscaled_image = upscaler.scaler.upscale(image, 2 * orig_width, 2 * orig_height)
+    upscaled_image = upscaler.scaler.upscale(image, upscaler.scale, upscaler.data_path)
     resized_image = modules.images.resize_image(
         0, upscaled_image, orig_width, orig_height
     )

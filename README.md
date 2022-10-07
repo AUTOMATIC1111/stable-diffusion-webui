@@ -29,14 +29,13 @@ ln -rs /.../auto-sd-krita/krita_plugin/krita_diff.desktop /.../pykrita/krita_dif
 2. Inpainting: Prevent mask from being included in the image
     - Current workaround: select the mask layer as per normal, but make sure its hidden (the eye icon) before pressing "Apply SD Inpainting"
     - Mask blur seems to be inwards, not outwards.
-3. Upscaling is broken. Oof.
-4. Fix remote usage of the Krita plugin.
-5. Figure out API for calling scripts.
+3. Figure out API for calling scripts.
     - Mainly to add back SD upscaling, it was refactored to a script upstream. See <https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/91bfc71261e160451e89f35a7c0eef66ff98877c>.
-6. Expose config options present in `krita_config.yaml` in the GUI.
+4. Fix remote usage of the Krita plugin.
+5. Expose config options present in `krita_config.yaml` in the GUI.
     - Including using scripts.
-7. Improve & document the API.
-8. _Proper_ Docker support and integration with Devcontainers.
+6. Improve & document the API.
+7. _Proper_ Docker support and integration with Devcontainers.
 
 ## Features
 
