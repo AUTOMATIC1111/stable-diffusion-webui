@@ -17,12 +17,23 @@ class SDCommonWidget(QWidget):
             script, "sd_model_list", "sd_model", label="SD model:"
         )
 
+        # batch size & count
+        self.batch_count_layout = QSpinBoxLayout(
+            script, "sd_batch_count", label="Batch count:", min=1, max=500, step=1
+        )
+        self.batch_size_layout = QSpinBoxLayout(
+            script, "sd_batch_size", label="Batch size:", min=1, max=128, step=1
+        )
+        batch_layout = QHBoxLayout()
+        batch_layout.addLayout(self.batch_count_layout)
+        batch_layout.addLayout(self.batch_size_layout)
+
         # base/max size adjustment
         self.base_size_layout = QSpinBoxLayout(
-            script, "sd_base_size", "Base size:", min=64, max=8192, step=64
+            script, "sd_base_size", label="Base size:", min=64, max=8192, step=64
         )
         self.max_size_layout = QSpinBoxLayout(
-            script, "sd_max_size", "Max size:", min=64, max=8192, step=64
+            script, "sd_max_size", label="Max size:", min=64, max=8192, step=64
         )
         size_layout = QHBoxLayout()
         size_layout.addLayout(self.base_size_layout)
@@ -54,6 +65,7 @@ class SDCommonWidget(QWidget):
         layout = QVBoxLayout()
         layout.addWidget(title)
         layout.addLayout(self.sd_model_layout)
+        layout.addLayout(batch_layout)
         layout.addLayout(size_layout)
         layout.addLayout(self.upscaler_layout)
         layout.addLayout(self.face_restorer_layout)
@@ -64,6 +76,8 @@ class SDCommonWidget(QWidget):
 
     def cfg_init(self):
         self.sd_model_layout.cfg_init()
+        self.batch_count_layout.cfg_init()
+        self.batch_size_layout.cfg_init()
         self.base_size_layout.cfg_init()
         self.max_size_layout.cfg_init()
         self.upscaler_layout.cfg_init()
@@ -73,6 +87,8 @@ class SDCommonWidget(QWidget):
 
     def cfg_connect(self):
         self.sd_model_layout.cfg_connect()
+        self.batch_count_layout.cfg_connect()
+        self.batch_size_layout.cfg_connect()
         self.base_size_layout.cfg_connect()
         self.max_size_layout.cfg_connect()
         self.upscaler_layout.cfg_connect()

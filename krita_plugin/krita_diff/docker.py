@@ -53,8 +53,8 @@ class SDPluginDocker(DockWidget):
 
         self.layout = QVBoxLayout()
         self.layout.addWidget(refresh)
-        self.layout.addWidget(self.tabs)
         self.layout.addWidget(self.quick_config)
+        self.layout.addWidget(self.tabs)
         self.widget = QWidget(self)
         self.widget.setLayout(self.layout)
 
@@ -324,7 +324,7 @@ class SDPluginDocker(DockWidget):
         self.config_base_url_layout.addWidget(self.config_base_url_reset)
 
         self.config_just_use_yaml = QCheckBox(
-            "Use only YAML config, ignore these properties"
+            "Use only YAML config, ignore these properties (not recommended)"
         )
         self.config_create_mask_layer = QCheckBox(
             "Create transparency mask layer from selection"

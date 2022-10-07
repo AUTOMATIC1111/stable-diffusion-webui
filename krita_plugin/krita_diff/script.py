@@ -75,6 +75,7 @@ class Script(QObject):
             self.set_cfg("upscaler_list", self.opt["upscalers"])
             self.set_cfg("txt2img_sampler_list", self.opt["samplers"])
             self.set_cfg("img2img_sampler_list", self.opt["samplers_img2img"])
+            self.set_cfg("inpaint_sampler_list", self.opt["samplers_img2img"])
             self.set_cfg("face_restorer_model_list", self.opt["face_restorers"])
             self.set_cfg("sd_model_list", self.opt["sd_models"])
 
@@ -106,79 +107,97 @@ class Script(QObject):
         with urllib.request.urlopen(req, body_encoded) as res:
             return json.loads(res.read())
 
-    def txt2img(self):
-        tiling = self.cfg("txt2img_tiling", bool)
-        if self.cfg("only_full_img_tiling", bool) and self.selection is not None:
-            tiling = False
+    def get_common_params(self):
+        tiling = self.cfg("sd_tiling", bool) and (
+            not self.cfg("only_full_img_tiling", bool) or self.selection is None
+        )
+        params = dict(
+            sd_model=self.cfg("sd_model", str),
+            batch_count=self.cfg("sd_batch_count", int),
+            batch_size=self.cfg("sd_batch_size", int),
+            base_size=self.cfg("sd_base_size", int),
+            max_size=self.cfg("sd_max_size", int),
+            tiling=tiling,
+            upscaler_name=self.cfg("upscaler_name", str),
+            restore_faces=self.cfg("face_restorer_model", str) != "None",
+            face_restorer=self.cfg("face_restorer_model", str),
+            codeformer_weight=self.cfg("codeformer_weight", float),
+        )
+        return params
 
-        params = (
-            {
-                "orig_width": self.width,
-                "orig_height": self.height,
-                "prompt": self.fix_prompt(self.cfg("txt2img_prompt", str)),
-                "negative_prompt": self.fix_prompt(
+    def txt2img(self):
+        params = dict(orig_width=self.width, orig_height=self.height)
+        if not self.cfg("just_use_yaml", bool):
+            seed = (
+                self.cfg("txt2img_seed", int)
+                if not self.cfg("txt2img_seed", str).strip() == ""
+                else -1
+            )
+            params.update(
+                prompt=self.fix_prompt(self.cfg("txt2img_prompt", str)),
+                negative_prompt=self.fix_prompt(
                     self.cfg("txt2img_negative_prompt", str)
                 ),
-                "sampler_name": self.cfg("txt2img_sampler", str),
-                "steps": self.cfg("txt2img_steps", int),
-                "cfg_scale": self.cfg("txt2img_cfg_scale", float),
-                "batch_count": self.cfg("txt2img_batch_count", int),
-                "batch_size": self.cfg("txt2img_batch_size", int),
-                "base_size": self.cfg("txt2img_base_size", int),
-                "max_size": self.cfg("txt2img_max_size", int),
-                "seed": self.cfg("txt2img_seed", int)
-                if not self.cfg("txt2img_seed", str).strip() == ""
-                else -1,
-                "tiling": tiling,
-                # TODO: infer restore faces from face restorer being "None"
-                "restore_faces": self.cfg("txt2img_restore_faces", bool),
-                "sd_model": self.cfg("sd_model", str),
-                "face_restorer": self.cfg("face_restorer_model", str),
-                "codeformer_weight": self.cfg("codeformer_weight", float),
-            }
-            if not self.cfg("just_use_yaml", bool)
-            else {"orig_width": self.width, "orig_height": self.height}
-        )
+                sampler_name=self.cfg("txt2img_sampler", str),
+                steps=self.cfg("txt2img_steps", int),
+                cfg_scale=self.cfg("txt2img_cfg_scale", float),
+                seed=seed,
+                highres_fix=self.cfg("txt2img_highres", bool),
+                denoising_strength=self.cfg("txt2img_denoising_strength", float),
+            )
+            params.update(self.get_common_params())
+
         return self.post(self.cfg("base_url", str) + "/txt2img", params)
 
-    def img2img(self, path, mask_path, mode):
-        tiling = self.cfg("txt2img_tiling", bool)
-        if mode == 2 or (
-            self.cfg("only_full_img_tiling", bool) and self.selection is not None
-        ):
-            tiling = False
-
-        params = (
-            {
-                "mode": mode,
-                "src_path": path,
-                "mask_path": mask_path,
-                "prompt": self.fix_prompt(self.cfg("img2img_prompt", str)),
-                "negative_prompt": self.fix_prompt(
+    def img2img(self, path, mask_path):
+        params = dict(mode=0, src_path=path, mask_path=mask_path)
+        if not self.cfg("just_use_yaml", bool):
+            seed = (
+                self.cfg("img2img_seed", int)
+                if not self.cfg("img2img_seed", str).strip() == ""
+                else -1
+            )
+            params.update(
+                prompt=self.fix_prompt(self.cfg("img2img_prompt", str)),
+                negative_prompt=self.fix_prompt(
                     self.cfg("img2img_negative_prompt", str)
                 ),
-                "sampler_name": self.cfg("img2img_sampler", str),
-                "steps": self.cfg("img2img_steps", int),
-                "cfg_scale": self.cfg("img2img_cfg_scale", float),
-                "denoising_strength": self.cfg("img2img_denoising_strength", float),
-                "batch_count": self.cfg("img2img_batch_count", int),
-                "batch_size": self.cfg("img2img_batch_size", int),
-                "base_size": self.cfg("img2img_base_size", int),
-                "max_size": self.cfg("img2img_max_size", int),
-                "seed": self.cfg("img2img_seed", int)
-                if not self.cfg("img2img_seed", str).strip() == ""
-                else -1,
-                "tiling": tiling,
-                "invert_mask": self.cfg("img2img_invert_mask", bool),
-                "restore_faces": self.cfg("img2img_restore_faces", bool),
-                "sd_model": self.cfg("sd_model", str),
-                "face_restorer": self.cfg("face_restorer_model", str),
-                "codeformer_weight": self.cfg("codeformer_weight", float),
-                # "upscaler_name": self.cfg('img2img_upscaler_name', str)
-            }
-            if not self.cfg("just_use_yaml", bool)
-            else {"src_path": path, "mask_path": mask_path}
-        )
+                sampler_name=self.cfg("img2img_sampler", str),
+                steps=self.cfg("img2img_steps", int),
+                cfg_scale=self.cfg("img2img_cfg_scale", float),
+                denoising_strength=self.cfg("img2img_denoising_strength", float),
+                seed=seed,
+            )
+            params.update(self.get_common_params())
+
+        return self.post(self.cfg("base_url", str) + "/img2img", params)
+
+    def inpaint(self, path, mask_path):
+        params = dict(mode=1, src_path=path, mask_path=mask_path)
+        if not self.cfg("just_use_yaml", bool):
+            seed = (
+                self.cfg("inpaint_seed", int)
+                if not self.cfg("inpaint_seed", str).strip() == ""
+                else -1
+            )
+            params.update(
+                prompt=self.fix_prompt(self.cfg("inpaint_prompt", str)),
+                negative_prompt=self.fix_prompt(
+                    self.cfg("inpaint_negative_prompt", str)
+                ),
+                sampler_name=self.cfg("inpaint_sampler", str),
+                steps=self.cfg("inpaint_steps", int),
+                cfg_scale=self.cfg("inpaint_cfg_scale", float),
+                denoising_strength=self.cfg("inpaint_denoising_strength", float),
+                seed=seed,
+                invert_mask=self.cfg("inpaint_invert_mask", bool),
+                mask_blur=self.cfg("inpaint_mask_blur", int),
+                inpainting_fill=self.cfg("inpaint_fill", int),
+                inpaint_full_res=self.cfg("inpaint_full_res", bool),
+                inpaint_full_res_padding=self.cfg("inpaint_full_res_padding", int),
+            )
+            params.update(self.get_common_params())
+
         return self.post(self.cfg("base_url", str) + "/img2img", params)
 
     def simple_upscale(self, path):
@@ -310,7 +329,12 @@ class Script(QObject):
         if mode == 1:
             self.save_img(mask_path, is_mask=True)
 
-        response = self.img2img(path, mask_path, mode)
+        response = (
+            self.inpaint(path, mask_path)
+            if mode == 1
+            else self.img2img(path, mask_path)
+        )
+
         outputs = response["outputs"]
         print(f"Getting images: {outputs}")
         layer_name_prefix = (
@@ -382,6 +406,7 @@ class Script(QObject):
         self.create_mask_layer_workaround()
 
     def action_sd_upscale(self):
+        assert False, "disabled"
         if self.working:
             pass
         self.update_config()

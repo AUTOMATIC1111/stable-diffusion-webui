@@ -15,6 +15,8 @@ class Defaults:
 
     sd_model_list: List[str] = field(default_factory=list)
     sd_model: str = "model.ckpt"
+    sd_batch_size: int = 1
+    sd_batch_count: int = 1
     sd_base_size: int = 512
     sd_max_size: int = 768
     sd_tiling: bool = False
@@ -31,8 +33,6 @@ class Defaults:
     txt2img_steps: int = 20
     txt2img_cfg_scale: float = 7.5
     txt2img_denoising_strength: float = 0.7
-    txt2img_batch_count: int = 1
-    txt2img_batch_size: int = 1
     txt2img_seed: str = ""
     txt2img_highres: bool = False
     # txt2img_scale_latent: bool = None
@@ -45,8 +45,6 @@ class Defaults:
     img2img_steps: int = 50
     img2img_cfg_scale: float = 12.0
     img2img_denoising_strength: float = 0.40
-    img2img_batch_count: int = 1
-    img2img_batch_size: int = 1
     img2img_seed: str = ""
 
     inpaint_prompt: str = ""
@@ -56,8 +54,6 @@ class Defaults:
     inpaint_steps: int = 50
     inpaint_cfg_scale: float = 12.0
     inpaint_denoising_strength: float = 0.40
-    inpaint_batch_count: int = 1
-    inpaint_batch_size: int = 1
     inpaint_seed: str = ""
     inpaint_invert_mask: bool = False
     inpaint_fill: int = 1
