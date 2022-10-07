@@ -77,6 +77,11 @@ def apply_checkpoint(p, x, xs):
     modules.sd_models.reload_model_weights(shared.sd_model, info)
 
 
+def apply_hypernetwork(p, x, xs):
+    hn = shared.hypernetworks.get(x, None)
+    opts.data["sd_hypernetwork"] = hn.name if hn is not None else 'None'
+
+
 def format_value_add_label(p, opt, x):
     if type(x) == float:
         x = round(x, 8)
@@ -122,6 +127,7 @@ axis_options = [
     AxisOption("Prompt order", str_permutations, apply_order, format_value_join_list),
     AxisOption("Sampler", str, apply_sampler, format_value),
     AxisOption("Checkpoint name", str, apply_checkpoint, format_value),
+    AxisOption("Hypernetwork", str, apply_hypernetwork, format_value),
     AxisOption("Sigma Churn", float, apply_field("s_churn"), format_value_add_label),
     AxisOption("Sigma min", float, apply_field("s_tmin"), format_value_add_label),
     AxisOption("Sigma max", float, apply_field("s_tmax"), format_value_add_label),
@@ -192,6 +198,8 @@ class Script(scripts.Script):
     def run(self, p, x_type, x_values, y_type, y_values, draw_legend, no_fixed_seeds):
         modules.processing.fix_seed(p)
         p.batch_size = 1
+
+        initial_hn = opts.sd_hypernetwork
 
         def process_axis(opt, vals):
             if opt.label == 'Nothing':
@@ -299,5 +307,7 @@ class Script(scripts.Script):
 
         # restore checkpoint in case it was changed by axes
         modules.sd_models.reload_model_weights(shared.sd_model)
+
+        opts.data["sd_hypernetwork"] = initial_hn
 
         return processed
