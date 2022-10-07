@@ -35,6 +35,8 @@ class QSpinBoxLayout(QHBoxLayout):
         self.script = script
         self.field_cfg = field_cfg
 
+        self.qlabel = QLabel(field_cfg if label is None else label)
+
         is_integer = (
             float(step).is_integer()
             and float(min).is_integer()
@@ -46,7 +48,7 @@ class QSpinBoxLayout(QHBoxLayout):
         self.qspin.setMinimum(self.cast(min))
         self.qspin.setMaximum(self.cast(max))
         self.qspin.setSingleStep(self.cast(step))
-        self.addWidget(QLabel(field_cfg if label is None else label))
+        self.addWidget(self.qlabel)
         self.addWidget(self.qspin)
 
     def cfg_init(self):

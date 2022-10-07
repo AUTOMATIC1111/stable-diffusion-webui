@@ -130,6 +130,7 @@ class Script(QObject):
                 if not self.cfg("txt2img_seed", str).strip() == ""
                 else -1,
                 "tiling": tiling,
+                # TODO: infer restore faces from face restorer being "None"
                 "restore_faces": self.cfg("txt2img_restore_faces", bool),
                 "sd_model": self.cfg("sd_model", str),
                 "face_restorer": self.cfg("face_restorer_model", str),

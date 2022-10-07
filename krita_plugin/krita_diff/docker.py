@@ -13,6 +13,7 @@ from krita import (
 )
 
 from .defaults import Defaults
+from .pages import SDCommonWidget
 from .script import script
 from .widgets import QComboBoxLayout, QLineEditLayout, QPromptLayout, QSpinBoxLayout
 
@@ -23,13 +24,9 @@ class SDPluginDocker(DockWidget):
         self.setWindowTitle("SD Plugin")
         self.create_interface()
 
-        script.update_config()
+        self.update_remote_config()
 
-        self.init_txt2img_interface()
-        self.init_img2img_interface()
-        self.init_upscale_interface()
-        self.init_config_interface()
-
+        self.quick_config.cfg_connect()
         self.connect_txt2img_interface()
         self.connect_img2img_interface()
         self.connect_upscale_interface()
@@ -46,6 +43,8 @@ class SDPluginDocker(DockWidget):
         refresh = QPushButton("Refresh Available Options")
         refresh.released.connect(lambda: self.update_remote_config())
 
+        self.quick_config = SDCommonWidget()
+
         self.tabs = QTabWidget()
         self.tabs.addTab(self.txt2img_widget, "Txt2Img")
         self.tabs.addTab(self.img2img_widget, "Img2Img")
@@ -55,6 +54,7 @@ class SDPluginDocker(DockWidget):
         self.layout = QVBoxLayout()
         self.layout.addWidget(refresh)
         self.layout.addWidget(self.tabs)
+        self.layout.addWidget(self.quick_config)
         self.widget = QWidget(self)
         self.widget.setLayout(self.layout)
 
@@ -438,6 +438,7 @@ class SDPluginDocker(DockWidget):
         self.update_interfaces()
 
     def update_interfaces(self):
+        self.quick_config.cfg_init()
         self.init_txt2img_interface()
         self.init_img2img_interface()
         self.init_upscale_interface()

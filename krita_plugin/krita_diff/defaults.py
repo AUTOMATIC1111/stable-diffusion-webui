@@ -17,7 +17,6 @@ class Defaults:
     sd_model: str = "model.ckpt"
     sd_base_size: int = 512
     sd_max_size: int = 768
-    restore_faces: bool = False
     sd_tiling: bool = False
     upscaler_list: List[str] = field(default_factory=list)
     upscaler_name: str = "None"
