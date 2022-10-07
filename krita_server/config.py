@@ -59,6 +59,11 @@ class GenerationOptions(BaseModel):
     upscale_latent: bool = False
     """Upscale in latent space."""
 
+    # upscale_overlap: int = 64
+    # """Size of overlap in pixels for upscaling.""" Configure this in WebUI
+    upscaler_name: str = "None"
+    """Exact name of upscaler to use."""
+
 
 class FaceRestorationOptions(BaseModel):
     restore_faces: bool = False
@@ -96,10 +101,6 @@ class Img2ImgOptions(
 
     alpha_mask: bool = False
     """Use alpha mask, whatever it does."""
-    # upscale_overlap: int = 64
-    # """Size of overlap in pixels for upscaling."""
-    # upscaler_name: str = "None"
-    # """Exact name of upscaler to use."""
 
     steps: int = 50
 
