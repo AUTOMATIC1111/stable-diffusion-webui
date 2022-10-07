@@ -20,12 +20,17 @@ diffusionmodules_model_AttnBlock_forward = ldm.modules.diffusionmodules.model.At
 
 
 def apply_optimizations():
-    ldm.modules.diffusionmodules.model.nonlinearity = silu
-
     if cmd_opts.opt_split_attention_v1:
         ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.split_cross_attention_forward_v1
-    elif not cmd_opts.disable_opt_split_attention and (cmd_opts.opt_split_attention or torch.cuda.is_available()):
-        ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.split_cross_attention_forward
+    if cmd_opts.opt_split_attention:
+        ldm.modules.attention_CrossAttention_forward = sd_hijack_optimizations.split_cross_attention_forward
+        ldm.modules.diffusionmodules.model.nonlinearity = sd_hijack_optimizations.nonlinearity_hijack
+        ldm.modules.diffusionmodules.model.AttnBlock.forward = sd_hijack_optimizations.cross_attention_attnblock_forward
+    elif not cmd_opts.disable_opt_xformers_attention:
+        ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.xformers_attention_forward
+        ldm.modules.attention.CrossAttention._maybe_init = sd_hijack_optimizations._maybe_init
+        ldm.modules.attention.CrossAttention.attention_op = None
+        ldm.modules.diffusionmodules.model.nonlinearity = sd_hijack_optimizations.nonlinearity_hijack
         ldm.modules.diffusionmodules.model.AttnBlock.forward = sd_hijack_optimizations.cross_attention_attnblock_forward
 
 
