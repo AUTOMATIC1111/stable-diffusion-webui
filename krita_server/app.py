@@ -84,7 +84,7 @@ async def f_txt2img(req: Txt2ImgRequest):
         "None",  # prompt_style2: saved prompt styles (unsupported)
         req.steps,  # steps
         get_sampler_index(req.sampler_name),  # sampler_index
-        req.use_gfpgan,  # restore_faces
+        req.restore_faces,  # restore_faces
         req.tiling,  # tiling
         req.batch_count,  # n_iter
         req.batch_size,  # batch_size
@@ -171,7 +171,7 @@ async def f_img2img(req: Img2ImgRequest):
         get_sampler_index(req.sampler_name),  # sampler_index
         req.mask_blur,  # mask_blur
         req.inpainting_fill,  # inpainting_fill
-        req.use_gfpgan,  # restore_faces
+        req.restore_faces,  # restore_faces
         req.tiling,  # tiling
         req.batch_count,  # n_iter
         req.batch_size,  # batch_size

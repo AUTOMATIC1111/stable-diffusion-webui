@@ -132,7 +132,7 @@ class Script(QObject):
                 if not self.cfg("txt2img_seed", str).strip() == ""
                 else -1,
                 "tiling": tiling,
-                "use_gfpgan": self.cfg("txt2img_use_gfpgan", bool),
+                "restore_faces": self.cfg("txt2img_restore_faces", bool),
                 "sd_model": self.cfg("sd_model", str),
                 "face_restorer": self.cfg("face_restorer_model", str),
                 "codeformer_weight": self.cfg("codeformer_weight", float),
@@ -171,7 +171,7 @@ class Script(QObject):
                 else -1,
                 "tiling": tiling,
                 "invert_mask": self.cfg("img2img_invert_mask", bool),
-                "use_gfpgan": self.cfg("img2img_use_gfpgan", bool),
+                "restore_faces": self.cfg("img2img_restore_faces", bool),
                 "sd_model": self.cfg("sd_model", str),
                 "face_restorer": self.cfg("face_restorer_model", str),
                 "codeformer_weight": self.cfg("codeformer_weight", float),

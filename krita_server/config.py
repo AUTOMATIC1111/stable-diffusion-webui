@@ -34,11 +34,11 @@ class GenerationOptions(BaseModel):
     seed_resize_from_w: int = 0
     """Original resolution seed was used at. Used to resize latent noise to attempt to generate same image with a different resolution."""
 
-    sampler_name: str = "k_euler_a"
+    sampler_name: str = "Euler a"
     """Exact name of sampler to use. Name should follow exact spelling and capitalization as in the WebUI."""
-    steps: int = 20
+    steps: int = 30
     """Number of steps for diffusion."""
-    cfg_scale: float = 12.0
+    cfg_scale: float = 7.5
     """Guidance scale for diffusion."""
     denoising_strength: float = 0.35
     """Strength of denoising from 0.0 to 1.0."""
@@ -61,26 +61,22 @@ class GenerationOptions(BaseModel):
 
 
 class FaceRestorationOptions(BaseModel):
-    use_gfpgan: bool = False
+    restore_faces: bool = False
     """Whether to use GFPGAN for face restoration."""
     face_restorer: str = "CodeFormer"
     """Exact name of face restorer to use."""
     codeformer_weight: float = 0.5
     """Strength of face restoration if using CodeFormer. 0.0 is the strongest and 1.0 is the weakest."""
-    use_realesrgan: bool = False
-    """Whether to use RealESRGAN models for face restoration."""
-    realesrgan_model_name: str = "RealESRGAN_x4plus_anime_6B"
-    """Name of RealESRGAN model to use."""
 
 
 class InpaintingOptions(BaseModel):
-    inpainting_fill: int = 0
+    inpainting_fill: int = 1
     """What to fill inpainted region with. 0 is blur/fill, 1 is original, 2 is latent noise, and 3 is latent empty."""
-    inpaint_full_res: bool = False
+    inpaint_full_res: bool = True
     """Whether to use the full resolution for inpainting."""
     inpaint_full_res_padding: int = 32
     """Padding when using full resolution for inpainting."""
-    mask_blur: int = 0
+    mask_blur: int = 4
     """Size of blur at boundaries of mask."""
     invert_mask: bool = False
     """Whether to invert the mask."""

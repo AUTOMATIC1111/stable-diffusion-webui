@@ -46,9 +46,9 @@ class SDPluginDocker(DockWidget):
         refresh.released.connect(lambda: self.update_remote_config())
 
         self.tabs = QTabWidget()
+        self.tabs.addTab(self.txt2img_widget, "Txt2Img")
         self.tabs.addTab(self.img2img_widget, "Img2Img")
         self.tabs.addTab(self.upscale_widget, "Upscale")
-        self.tabs.addTab(self.txt2img_widget, "Txt2Img")
         self.tabs.addTab(self.config_widget, "Config")
 
         self.layout = QVBoxLayout()
@@ -102,7 +102,7 @@ class SDPluginDocker(DockWidget):
             script, "txt2img_seed", label="Seed:", placeholder="Random"
         )
 
-        self.txt2img_use_gfpgan = QCheckBox("Restore faces")
+        self.txt2img_restore_faces = QCheckBox("Restore faces")
         self.txt2img_tiling = QCheckBox("Enable tiling mode")
 
         self.txt2img_start_button = QPushButton("Apply txt2img")
@@ -115,7 +115,7 @@ class SDPluginDocker(DockWidget):
         self.txt2img_layout.addLayout(self.txt2img_batch_layout)
         self.txt2img_layout.addLayout(self.txt2img_size_layout)
         self.txt2img_layout.addLayout(self.txt2img_seed_layout)
-        self.txt2img_layout.addWidget(self.txt2img_use_gfpgan)
+        self.txt2img_layout.addWidget(self.txt2img_restore_faces)
         self.txt2img_layout.addWidget(self.txt2img_tiling)
         self.txt2img_layout.addWidget(self.txt2img_start_button)
         self.txt2img_layout.addStretch()
@@ -133,7 +133,7 @@ class SDPluginDocker(DockWidget):
         self.txt2img_base_size_layout.cfg_init()
         self.txt2img_max_size_layout.cfg_init()
         self.txt2img_seed_layout.cfg_init()
-        self.txt2img_use_gfpgan.setChecked(script.cfg("txt2img_use_gfpgan", bool))
+        self.txt2img_restore_faces.setChecked(script.cfg("txt2img_restore_faces", bool))
         self.txt2img_tiling.setChecked(script.cfg("txt2img_tiling", bool))
 
     def connect_txt2img_interface(self):
@@ -146,8 +146,8 @@ class SDPluginDocker(DockWidget):
         self.txt2img_base_size_layout.cfg_connect()
         self.txt2img_max_size_layout.cfg_connect()
         self.txt2img_seed_layout.cfg_connect()
-        self.txt2img_use_gfpgan.toggled.connect(
-            partial(script.set_cfg, "txt2img_use_gfpgan")
+        self.txt2img_restore_faces.toggled.connect(
+            partial(script.set_cfg, "txt2img_restore_faces")
         )
         self.txt2img_tiling.toggled.connect(partial(script.set_cfg, "txt2img_tiling"))
         self.txt2img_start_button.released.connect(lambda: script.action_txt2img())
@@ -207,7 +207,7 @@ class SDPluginDocker(DockWidget):
         self.img2img_checkboxes_layout.addWidget(self.img2img_tiling)
         self.img2img_checkboxes_layout.addWidget(self.img2img_invert_mask)
 
-        self.img2img_use_gfpgan = QCheckBox("Restore faces")
+        self.img2img_restore_faces = QCheckBox("Restore faces")
 
         self.img2img_upscaler_layout = QComboBoxLayout(
             script, "upscaler_list", "img2img_upscaler_name", label="Upscaler:"
@@ -230,7 +230,7 @@ class SDPluginDocker(DockWidget):
         self.img2img_layout.addLayout(self.img2img_batch_layout)
         self.img2img_layout.addLayout(self.img2img_size_layout)
         self.img2img_layout.addLayout(self.img2img_seed_layout)
-        self.img2img_layout.addWidget(self.img2img_use_gfpgan)
+        self.img2img_layout.addWidget(self.img2img_restore_faces)
 
         self.img2img_layout.addLayout(self.img2img_checkboxes_layout)
         # SD upscale became a script in https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/91bfc71261e160451e89f35a7c0eef66ff98877c
@@ -252,7 +252,7 @@ class SDPluginDocker(DockWidget):
         self.img2img_base_size_layout.cfg_init()
         self.img2img_max_size_layout.cfg_init()
         self.img2img_seed_layout.cfg_init()
-        self.img2img_use_gfpgan.setChecked(script.cfg("img2img_use_gfpgan", bool))
+        self.img2img_restore_faces.setChecked(script.cfg("img2img_restore_faces", bool))
         self.img2img_tiling.setChecked(script.cfg("img2img_tiling", bool))
         self.img2img_invert_mask.setChecked(script.cfg("img2img_invert_mask", bool))
         self.img2img_upscaler_layout.cfg_init()
@@ -268,8 +268,8 @@ class SDPluginDocker(DockWidget):
         self.img2img_base_size_layout.cfg_connect()
         self.img2img_max_size_layout.cfg_connect()
         self.img2img_seed_layout.cfg_connect()
-        self.img2img_use_gfpgan.toggled.connect(
-            partial(script.set_cfg, "img2img_use_gfpgan")
+        self.img2img_restore_faces.toggled.connect(
+            partial(script.set_cfg, "img2img_restore_faces")
         )
         self.img2img_tiling.toggled.connect(partial(script.set_cfg, "img2img_tiling"))
         self.img2img_invert_mask.toggled.connect(
