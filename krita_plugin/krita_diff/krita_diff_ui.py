@@ -205,7 +205,9 @@ class KritaSDPluginDocker(DockWidget):
         self.txt2img_negative_prompt_text.setPlainText(
             script.cfg("txt2img_negative_prompt", str)
         )
-        self.txt2img_sampler_name.setCurrentIndex(script.cfg("txt2img_sampler", int))
+        self.txt2img_sampler_name.clear()
+        self.txt2img_sampler_name.addItems(samplers)
+        self.txt2img_sampler_name.setCurrentText(script.cfg("txt2img_sampler", str))
         self.txt2img_steps.setValue(script.cfg("txt2img_steps", int))
         self.txt2img_cfg_scale.setValue(script.cfg("txt2img_cfg_scale", float))
         self.txt2img_batch_count.setValue(script.cfg("txt2img_batch_count", int))
@@ -236,7 +238,7 @@ class KritaSDPluginDocker(DockWidget):
                 self.txt2img_negative_prompt_text.toPlainText(),
             )
         )
-        self.txt2img_sampler_name.currentIndexChanged.connect(
+        self.txt2img_sampler_name.currentTextChanged.connect(
             partial(script.set_cfg, "txt2img_sampler")
         )
         self.txt2img_steps.valueChanged.connect(
@@ -424,7 +426,9 @@ class KritaSDPluginDocker(DockWidget):
         self.img2img_negative_prompt_text.setPlainText(
             script.cfg("img2img_negative_prompt", str)
         )
-        self.img2img_sampler_name.setCurrentIndex(script.cfg("img2img_sampler", int))
+        self.img2img_sampler_name.clear()
+        self.img2img_sampler_name.addItems(samplers_img2img)
+        self.img2img_sampler_name.setCurrentText(script.cfg("img2img_sampler", str))
         self.img2img_steps.setValue(script.cfg("img2img_steps", int))
         self.img2img_cfg_scale.setValue(script.cfg("img2img_cfg_scale", float))
         self.img2img_denoising_strength.setValue(
@@ -450,11 +454,10 @@ class KritaSDPluginDocker(DockWidget):
             if script.cfg("img2img_invert_mask", bool)
             else Qt.CheckState.Unchecked
         )
-        self.img2img_upscaler_name.addItems(
-            upscalers[self.img2img_upscaler_name.count() :]
-        )
-        self.img2img_upscaler_name.setCurrentIndex(
-            script.cfg("img2img_upscaler_name", int)
+        self.img2img_upscaler_name.clear()
+        self.img2img_upscaler_name.addItems(upscalers)
+        self.img2img_upscaler_name.setCurrentText(
+            script.cfg("img2img_upscaler_name", str)
         )
 
     def connect_img2img_interface(self):
@@ -469,7 +472,7 @@ class KritaSDPluginDocker(DockWidget):
                 self.img2img_negative_prompt_text.toPlainText(),
             )
         )
-        self.img2img_sampler_name.currentIndexChanged.connect(
+        self.img2img_sampler_name.currentTextChanged.connect(
             partial(script.set_cfg, "img2img_sampler")
         )
         self.img2img_steps.valueChanged.connect(
@@ -501,11 +504,11 @@ class KritaSDPluginDocker(DockWidget):
         self.img2img_invert_mask.toggled.connect(
             partial(script.set_cfg, "img2img_invert_mask")
         )
-        self.img2img_upscaler_name.currentIndexChanged.connect(
+        self.img2img_upscaler_name.currentTextChanged.connect(
             partial(script.set_cfg, "img2img_upscaler_name")
         )
         self.img2img_upscaler_name_renew.released.connect(
-            lambda: self.update_upscalers()
+            lambda: self.update_remote_config()
         )
         self.img2img_start_button.released.connect(lambda: script.action_img2img())
         self.img2img_upscale_button.released.connect(lambda: script.action_sd_upscale())
@@ -540,11 +543,10 @@ class KritaSDPluginDocker(DockWidget):
 
     def init_upscale_interface(self):
         # add loaded upscalers
-        self.upscale_upscaler_name.addItems(
-            upscalers[self.upscale_upscaler_name.count() :]
-        )
-        self.upscale_upscaler_name.setCurrentIndex(
-            script.cfg("upscale_upscaler_name", int)
+        self.upscale_upscaler_name.clear()
+        self.upscale_upscaler_name.addItems(upscalers)
+        self.upscale_upscaler_name.setCurrentText(
+            script.cfg("upscale_upscaler_name", str)
         )
         self.upscale_downscale_first.setCheckState(
             Qt.CheckState.Checked
@@ -553,11 +555,11 @@ class KritaSDPluginDocker(DockWidget):
         )
 
     def connect_upscale_interface(self):
-        self.upscale_upscaler_name.currentIndexChanged.connect(
+        self.upscale_upscaler_name.currentTextChanged.connect(
             partial(script.set_cfg, "upscale_upscaler_name")
         )
         self.upscale_upscaler_name_renew.released.connect(
-            lambda: self.update_upscalers()
+            lambda: self.update_remote_config()
         )
         self.upscale_downscale_first.toggled.connect(
             partial(script.set_cfg, "upscale_downscale_first")
@@ -678,8 +680,10 @@ class KritaSDPluginDocker(DockWidget):
             if script.cfg("only_full_img_tiling", bool)
             else Qt.CheckState.Unchecked
         )
-        self.config_face_restorer_model.setCurrentIndex(
-            script.cfg("face_restorer_model", int)
+        self.config_face_restorer_model.clear()
+        self.config_face_restorer_model.addItems(face_restorers)
+        self.config_face_restorer_model.setCurrentText(
+            script.cfg("face_restorer_model", str)
         )
         self.config_codeformer_weight.setValue(script.cfg("codeformer_weight", float))
 
@@ -703,7 +707,7 @@ class KritaSDPluginDocker(DockWidget):
         self.config_only_full_img_tiling.toggled.connect(
             partial(script.set_cfg, "only_full_img_tiling")
         )
-        self.config_face_restorer_model.currentIndexChanged.connect(
+        self.config_face_restorer_model.currentTextChanged.connect(
             partial(script.set_cfg, "face_restorer_model")
         )
         self.config_codeformer_weight.valueChanged.connect(
@@ -713,15 +717,17 @@ class KritaSDPluginDocker(DockWidget):
 
     def restore_defaults(self):
         script.restore_defaults()
+        self.update_interfaces()
+
+    def update_remote_config(self):
+        script.update_config()
+        self.update_interfaces()
+
+    def update_interfaces(self):
         self.init_txt2img_interface()
         self.init_img2img_interface()
         self.init_upscale_interface()
         self.init_config_interface()
-
-    def update_upscalers(self):
-        script.update_config()
-        self.init_img2img_interface()
-        self.init_upscale_interface()
 
     def canvasChanged(self, canvas):
         pass

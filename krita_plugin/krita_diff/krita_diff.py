@@ -9,26 +9,28 @@ from krita import *
 default_url = "http://127.0.0.1:8000"
 
 samplers = [
-    "DDIM",
-    "PLMS",
-    "k_dpm_2_a",
-    "k_dpm_2",
-    "k_euler_a",
-    "k_euler",
-    "k_heun",
-    "k_lms",
+    # "DDIM",
+    # "PLMS",
+    # "k_dpm_2_a",
+    # "k_dpm_2",
+    # "k_euler_a",
+    # "k_euler",
+    # "k_heun",
+    # "k_lms",
 ]
 samplers_img2img = [
-    "DDIM",
-    "k_dpm_2_a",
-    "k_dpm_2",
-    "k_euler_a",
-    "k_euler",
-    "k_heun",
-    "k_lms",
+    # "DDIM",
+    # "k_dpm_2_a",
+    # "k_dpm_2",
+    # "k_euler_a",
+    # "k_euler",
+    # "k_heun",
+    # "k_lms",
 ]
-upscalers = ["None", "Lanczos"]
-face_restorers = ["None", "CodeFormer", "GFPGAN"]
+# upscalers = ["None", "Lanczos"]
+upscalers = []
+# face_restorers = ["None", "CodeFormer", "GFPGAN"]
+face_restorers = []
 
 
 class Script(QObject):
@@ -56,13 +58,11 @@ class Script(QObject):
         self.set_cfg("png_quality", -1, if_empty)
         self.set_cfg("fix_aspect_ratio", True, if_empty)
         self.set_cfg("only_full_img_tiling", True, if_empty)
-        self.set_cfg(
-            "face_restorer_model", face_restorers.index("CodeFormer"), if_empty
-        )
+        self.set_cfg("face_restorer_model", "CodeFormer", if_empty)
         self.set_cfg("codeformer_weight", 0.5, if_empty)
 
         self.set_cfg("txt2img_prompt", "", if_empty)
-        self.set_cfg("txt2img_sampler", samplers.index("k_euler_a"), if_empty)
+        self.set_cfg("txt2img_sampler", "Euler a", if_empty)
         self.set_cfg("txt2img_steps", 20, if_empty)
         self.set_cfg("txt2img_cfg_scale", 7.5, if_empty)
         self.set_cfg("txt2img_batch_count", 1, if_empty)
@@ -75,7 +75,7 @@ class Script(QObject):
 
         self.set_cfg("img2img_prompt", "", if_empty)
         self.set_cfg("img2img_negative_prompt", "", if_empty)
-        self.set_cfg("img2img_sampler", samplers_img2img.index("k_euler_a"), if_empty)
+        self.set_cfg("img2img_sampler", "Euler a", if_empty)
         self.set_cfg("img2img_steps", 50, if_empty)
         self.set_cfg("img2img_cfg_scale", 12.0, if_empty)
         self.set_cfg("img2img_denoising_strength", 0.40, if_empty)
@@ -87,9 +87,9 @@ class Script(QObject):
         self.set_cfg("img2img_use_gfpgan", False, if_empty)
         self.set_cfg("img2img_tiling", False, if_empty)
         self.set_cfg("img2img_invert_mask", False, if_empty)
-        self.set_cfg("img2img_upscaler_name", 0, if_empty)
+        self.set_cfg("img2img_upscaler_name", "None", if_empty)
 
-        self.set_cfg("upscale_upscaler_name", 0, if_empty)
+        self.set_cfg("upscale_upscaler_name", "None", if_empty)
         self.set_cfg("upscale_downscale_first", False, if_empty)
 
     def update_config(self):
@@ -97,9 +97,14 @@ class Script(QObject):
             res = req.read()
             self.opt = json.loads(res)
 
-        for upscaler in self.opt["upscalers"]:
-            if upscaler not in upscalers:
-                upscalers.append(upscaler)
+        assert len(self.opt["upscalers"]) > 0
+        assert len(self.opt["samplers"]) > 0
+        assert len(self.opt["samplers_img2img"]) > 0
+        assert len(self.opt["face_restorers"]) > 0
+        upscalers[:] = self.opt["upscalers"]
+        samplers[:] = self.opt["samplers"]
+        samplers_img2img[:] = self.opt["samplers_img2img"]
+        face_restorers[:] = self.opt["face_restorers"]
 
         self.app = Krita.instance()
         self.doc = self.app.activeDocument()
@@ -136,17 +141,11 @@ class Script(QObject):
             {
                 "orig_width": self.width,
                 "orig_height": self.height,
-                "prompt": self.fix_prompt(
-                    self.cfg("txt2img_prompt", str)
-                    if not self.cfg("txt2img_prompt", str).isspace()
-                    else None
-                ),
+                "prompt": self.fix_prompt(self.cfg("txt2img_prompt", str)),
                 "negative_prompt": self.fix_prompt(
                     self.cfg("txt2img_negative_prompt", str)
-                )
-                if not self.cfg("txt2img_negative_prompt", str).isspace()
-                else None,
-                "sampler_name": samplers[self.cfg("txt2img_sampler", int)],
+                ),
+                "sampler_name": self.cfg("txt2img_sampler", str),
                 "steps": self.cfg("txt2img_steps", int),
                 "cfg_scale": self.cfg("txt2img_cfg_scale", float),
                 "batch_count": self.cfg("txt2img_batch_count", int),
@@ -158,7 +157,7 @@ class Script(QObject):
                 else -1,
                 "tiling": tiling,
                 "use_gfpgan": self.cfg("txt2img_use_gfpgan", bool),
-                "face_restorer": face_restorers[self.cfg("face_restorer_model", int)],
+                "face_restorer": self.cfg("face_restorer_model", str),
                 "codeformer_weight": self.cfg("codeformer_weight", float),
             }
             if not self.cfg("just_use_yaml", bool)
@@ -178,15 +177,11 @@ class Script(QObject):
                 "mode": mode,
                 "src_path": path,
                 "mask_path": mask_path,
-                "prompt": self.fix_prompt(self.cfg("img2img_prompt", str))
-                if not self.cfg("img2img_prompt", str).isspace()
-                else None,
+                "prompt": self.fix_prompt(self.cfg("img2img_prompt", str)),
                 "negative_prompt": self.fix_prompt(
                     self.cfg("img2img_negative_prompt", str)
-                )
-                if not self.cfg("img2img_negative_prompt", str).isspace()
-                else None,
-                "sampler_name": samplers_img2img[self.cfg("img2img_sampler", int)],
+                ),
+                "sampler_name": self.cfg("img2img_sampler", str),
                 "steps": self.cfg("img2img_steps", int),
                 "cfg_scale": self.cfg("img2img_cfg_scale", float),
                 "denoising_strength": self.cfg("img2img_denoising_strength", float),
@@ -200,9 +195,9 @@ class Script(QObject):
                 "tiling": tiling,
                 "invert_mask": self.cfg("img2img_invert_mask", bool),
                 "use_gfpgan": self.cfg("img2img_use_gfpgan", bool),
-                "face_restorer": face_restorers[self.cfg("face_restorer_model", int)],
+                "face_restorer": self.cfg("face_restorer_model", str),
                 "codeformer_weight": self.cfg("codeformer_weight", float),
-                # "upscaler_name": upscalers[self.cfg('img2img_upscaler_name', int)]
+                # "upscaler_name": self.cfg('img2img_upscaler_name', str)
             }
             if not self.cfg("just_use_yaml", bool)
             else {"src_path": path, "mask_path": mask_path}
@@ -213,7 +208,7 @@ class Script(QObject):
         params = (
             {
                 "src_path": path,
-                "upscaler_name": upscalers[self.cfg("upscale_upscaler_name", int)],
+                "upscaler_name": self.cfg("upscale_upscaler_name", str),
                 "downscale_first": self.cfg("upscale_downscale_first", bool),
             }
             if not self.cfg("just_use_yaml", bool)
@@ -222,7 +217,8 @@ class Script(QObject):
         return self.post(self.cfg("base_url", str) + "/upscale", params)
 
     def fix_prompt(self, prompt):
-        return ", ".join(filter(bool, [x.strip() for x in prompt.splitlines()]))
+        joined = ", ".join(filter(bool, [x.strip() for x in prompt.splitlines()]))
+        return joined if joined != "" else None
 
     def find_final_aspect_ratio(self):
         base_size = self.cfg("img2img_base_size", int)

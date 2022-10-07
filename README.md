@@ -47,6 +47,8 @@ ln -rs /.../auto-sd-krita/krita_plugin/krita_diff.desktop /.../pykrita/krita_dif
   - This does not work for now; the API has to be modified to send images instead of the local path to them :p
 - Added more comments and documentation, especially with respect to the internal API.
 - Strongly type & document the config.
+- List of upscalers, samplers, face restorers and models are refreshed from the backend!
+  - The original plugin refreshed samplers, but hardcoded everything else, and couldn't switch models without the webUI.
 
 ## Maintenance
 

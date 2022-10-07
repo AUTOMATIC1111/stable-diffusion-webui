@@ -48,6 +48,11 @@ async def read_item():
         "new_img": src_path + ".png",
         "new_img_mask": src_path + "_mask.png",
         "upscalers": [upscaler.name for upscaler in shared.sd_upscalers],
+        "samplers": [sampler.name for sampler in modules.sd_samplers.samplers],
+        "samplers_img2img": [
+            sampler.name for sampler in modules.sd_samplers.samplers_for_img2img
+        ],
+        "face_restorers": [model.name() for model in shared.face_restorers],
         **opt.dict(),
     }
 
