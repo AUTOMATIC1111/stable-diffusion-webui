@@ -60,8 +60,13 @@ def _load_tf_and_return_tags(pil_image, threshold):
     return ', '.join(result_tags_out).replace('_', ' ').replace(':', ' ')
 
 
+def subprocess_init_no_cuda():
+    import os
+    os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+
+
 def get_deepbooru_tags(pil_image, threshold=0.5):
-    with ProcessPoolExecutor() as executor:
-        f = executor.submit(_load_tf_and_return_tags, pil_image, threshold)
+    with ProcessPoolExecutor(initializer=subprocess_init_no_cuda) as executor:
+        f = executor.submit(_load_tf_and_return_tags, pil_image, threshold, )
         ret = f.result()  # will rethrow any exceptions
     return ret
