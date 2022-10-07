@@ -43,7 +43,7 @@ class Hypernetwork:
 def load_hypernetworks(path):
     res = {}
 
-    for filename in glob.iglob(path + '**/*.pt', recursive=True):
+    for filename in glob.iglob(os.path.join(path, '**/*.pt'), recursive=True):
         try:
             hn = Hypernetwork(filename)
             res[hn.name] = hn
