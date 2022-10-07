@@ -353,7 +353,7 @@ class KritaSDPluginDocker(DockWidget):
         self.img2img_invert_mask = QCheckBox("Invert mask")
         self.img2img_invert_mask.setTristate(False)
         self.img2img_checkboxes_layout.addWidget(self.img2img_tiling)
-        # self.img2img_checkboxes_layout.addWidget(self.img2img_invert_mask)
+        self.img2img_checkboxes_layout.addWidget(self.img2img_invert_mask)
 
         self.img2img_use_gfpgan = QCheckBox("Restore faces")
         self.img2img_use_gfpgan.setTristate(False)

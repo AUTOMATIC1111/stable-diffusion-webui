@@ -5,7 +5,7 @@ import os
 import time
 
 from fastapi import FastAPI
-from PIL import Image
+from PIL import Image, ImageOps
 from webui import modules, shared
 
 from .structs import Img2ImgRequest, Txt2ImgRequest, UpscaleRequest
@@ -204,7 +204,9 @@ async def f_img2img(req: Img2ImgRequest):
 
         def remove_not_masked(img):
             masked_img = Image.new("RGBA", img.size, (0, 0, 0, 0))
-            masked_img.paste(img, (0, 0), mask=mask)
+            masked_img.paste(
+                img, (0, 0), mask=ImageOps.invert(mask) if req.invert_mask else mask
+            )
             return masked_img
 
         resized_images = [remove_not_masked(x) for x in resized_images]
