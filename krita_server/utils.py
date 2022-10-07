@@ -183,7 +183,7 @@ def get_sampler_index(sampler_name: str):
         int: Index of sampler.
     """
     for index, sampler in enumerate(modules.sd_samplers.samplers):
-        name, constructor, aliases = sampler
+        name, constructor, aliases, options = sampler
         if sampler_name == name or sampler_name in aliases:
             return index
     raise KeyError(f"sampler not found: {sampler_name}")
