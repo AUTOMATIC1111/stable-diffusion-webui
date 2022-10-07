@@ -23,3 +23,5 @@ resize-right
 torchdiffeq
 kornia
 lark
+functorch
+#xformers?
