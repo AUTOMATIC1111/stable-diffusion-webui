@@ -1,6 +1,6 @@
 import os.path
 from concurrent.futures import ProcessPoolExecutor
-
+from multiprocessing import get_context
 
 
 def _load_tf_and_return_tags(pil_image, threshold):
@@ -66,7 +66,8 @@ def subprocess_init_no_cuda():
 
 
 def get_deepbooru_tags(pil_image, threshold=0.5):
-    with ProcessPoolExecutor(initializer=subprocess_init_no_cuda) as executor:
+    context = get_context('spawn')
+    with ProcessPoolExecutor(initializer=subprocess_init_no_cuda, mp_context=context) as executor:
         f = executor.submit(_load_tf_and_return_tags, pil_image, threshold, )
         ret = f.result()  # will rethrow any exceptions
     return ret
