@@ -5,6 +5,7 @@ import traceback
 import torch
 import numpy as np
 from torch import einsum
+from torch.nn.functional import silu
 
 import modules.textual_inversion.textual_inversion
 from modules import prompt_parser, devices, sd_hijack_optimizations, shared
@@ -19,11 +20,12 @@ diffusionmodules_model_AttnBlock_forward = ldm.modules.diffusionmodules.model.At
 
 
 def apply_optimizations():
+    ldm.modules.diffusionmodules.model.nonlinearity = silu
+
     if cmd_opts.opt_split_attention_v1:
         ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.split_cross_attention_forward_v1
     elif not cmd_opts.disable_opt_split_attention and (cmd_opts.opt_split_attention or torch.cuda.is_available()):
         ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.split_cross_attention_forward
-        ldm.modules.diffusionmodules.model.nonlinearity = sd_hijack_optimizations.nonlinearity_hijack
         ldm.modules.diffusionmodules.model.AttnBlock.forward = sd_hijack_optimizations.cross_attention_attnblock_forward
 
 
