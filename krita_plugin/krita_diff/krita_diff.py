@@ -1,22 +1,42 @@
+import json
 import math
 import os
 import urllib.parse
 import urllib.request
-import json
 
 from krita import *
 
 default_url = "http://127.0.0.1:8000"
 
-samplers = ["DDIM", "PLMS", 'k_dpm_2_a', 'k_dpm_2', 'k_euler_a', 'k_euler', 'k_heun', 'k_lms']
-samplers_img2img = ["DDIM", 'k_dpm_2_a', 'k_dpm_2', 'k_euler_a', 'k_euler', 'k_heun', 'k_lms']
+samplers = [
+    "DDIM",
+    "PLMS",
+    "k_dpm_2_a",
+    "k_dpm_2",
+    "k_euler_a",
+    "k_euler",
+    "k_heun",
+    "k_lms",
+]
+samplers_img2img = [
+    "DDIM",
+    "k_dpm_2_a",
+    "k_dpm_2",
+    "k_euler_a",
+    "k_euler",
+    "k_heun",
+    "k_lms",
+]
 upscalers = ["None", "Lanczos"]
 face_restorers = ["None", "CodeFormer", "GFPGAN"]
+
 
 class Script(QObject):
     def __init__(self):
         # Persistent settings (should reload between Krita sessions)
-        self.config = QSettings(QSettings.IniFormat, QSettings.UserScope, "krita", "krita_diff_plugin")
+        self.config = QSettings(
+            QSettings.IniFormat, QSettings.UserScope, "krita", "krita_diff_plugin"
+        )
         self.restore_defaults(if_empty=True)
         self.working = False
 
@@ -28,54 +48,56 @@ class Script(QObject):
             self.config.setValue(name, value)
 
     def restore_defaults(self, if_empty=False):
-        self.set_cfg('base_url', default_url, if_empty)
-        self.set_cfg('just_use_yaml', False, if_empty)
-        self.set_cfg('create_mask_layer', True, if_empty)
-        self.set_cfg('delete_temp_files', True, if_empty)
-        self.set_cfg('workaround_timeout', 100, if_empty)
-        self.set_cfg('png_quality', -1, if_empty)
-        self.set_cfg('fix_aspect_ratio', True, if_empty)
-        self.set_cfg('only_full_img_tiling', True, if_empty)
-        self.set_cfg('face_restorer_model', face_restorers.index("CodeFormer"), if_empty)
-        self.set_cfg('codeformer_weight', 0.5, if_empty)
+        self.set_cfg("base_url", default_url, if_empty)
+        self.set_cfg("just_use_yaml", False, if_empty)
+        self.set_cfg("create_mask_layer", True, if_empty)
+        self.set_cfg("delete_temp_files", True, if_empty)
+        self.set_cfg("workaround_timeout", 100, if_empty)
+        self.set_cfg("png_quality", -1, if_empty)
+        self.set_cfg("fix_aspect_ratio", True, if_empty)
+        self.set_cfg("only_full_img_tiling", True, if_empty)
+        self.set_cfg(
+            "face_restorer_model", face_restorers.index("CodeFormer"), if_empty
+        )
+        self.set_cfg("codeformer_weight", 0.5, if_empty)
 
-        self.set_cfg('txt2img_prompt', "", if_empty)
-        self.set_cfg('txt2img_sampler', samplers.index("k_euler_a"), if_empty)
-        self.set_cfg('txt2img_steps', 20, if_empty)
-        self.set_cfg('txt2img_cfg_scale', 7.5, if_empty)
-        self.set_cfg('txt2img_batch_count', 1, if_empty)
-        self.set_cfg('txt2img_batch_size', 1, if_empty)
-        self.set_cfg('txt2img_base_size', 512, if_empty)
-        self.set_cfg('txt2img_max_size', 704, if_empty)
-        self.set_cfg('txt2img_seed', "", if_empty)
-        self.set_cfg('txt2img_use_gfpgan', False, if_empty)
-        self.set_cfg('txt2img_tiling', False, if_empty)
+        self.set_cfg("txt2img_prompt", "", if_empty)
+        self.set_cfg("txt2img_sampler", samplers.index("k_euler_a"), if_empty)
+        self.set_cfg("txt2img_steps", 20, if_empty)
+        self.set_cfg("txt2img_cfg_scale", 7.5, if_empty)
+        self.set_cfg("txt2img_batch_count", 1, if_empty)
+        self.set_cfg("txt2img_batch_size", 1, if_empty)
+        self.set_cfg("txt2img_base_size", 512, if_empty)
+        self.set_cfg("txt2img_max_size", 704, if_empty)
+        self.set_cfg("txt2img_seed", "", if_empty)
+        self.set_cfg("txt2img_use_gfpgan", False, if_empty)
+        self.set_cfg("txt2img_tiling", False, if_empty)
 
-        self.set_cfg('img2img_prompt', "", if_empty)
-        self.set_cfg('img2img_negative_prompt', "", if_empty)
-        self.set_cfg('img2img_sampler', samplers_img2img.index("k_euler_a"), if_empty)
-        self.set_cfg('img2img_steps', 50, if_empty)
-        self.set_cfg('img2img_cfg_scale', 12.0, if_empty)
-        self.set_cfg('img2img_denoising_strength', 0.40, if_empty)
-        self.set_cfg('img2img_batch_count', 1, if_empty)
-        self.set_cfg('img2img_batch_size', 1, if_empty)
-        self.set_cfg('img2img_base_size', 512, if_empty)
-        self.set_cfg('img2img_max_size', 704, if_empty)
-        self.set_cfg('img2img_seed', "", if_empty)
-        self.set_cfg('img2img_use_gfpgan', False, if_empty)
-        self.set_cfg('img2img_tiling', False, if_empty)
-        self.set_cfg('img2img_invert_mask', False, if_empty)
+        self.set_cfg("img2img_prompt", "", if_empty)
+        self.set_cfg("img2img_negative_prompt", "", if_empty)
+        self.set_cfg("img2img_sampler", samplers_img2img.index("k_euler_a"), if_empty)
+        self.set_cfg("img2img_steps", 50, if_empty)
+        self.set_cfg("img2img_cfg_scale", 12.0, if_empty)
+        self.set_cfg("img2img_denoising_strength", 0.40, if_empty)
+        self.set_cfg("img2img_batch_count", 1, if_empty)
+        self.set_cfg("img2img_batch_size", 1, if_empty)
+        self.set_cfg("img2img_base_size", 512, if_empty)
+        self.set_cfg("img2img_max_size", 704, if_empty)
+        self.set_cfg("img2img_seed", "", if_empty)
+        self.set_cfg("img2img_use_gfpgan", False, if_empty)
+        self.set_cfg("img2img_tiling", False, if_empty)
+        self.set_cfg("img2img_invert_mask", False, if_empty)
         # self.set_cfg('img2img_upscaler_name', 0, if_empty)
 
-        self.set_cfg('upscale_upscaler_name', 0, if_empty)
-        self.set_cfg('upscale_downscale_first', False, if_empty)
+        self.set_cfg("upscale_upscaler_name", 0, if_empty)
+        self.set_cfg("upscale_downscale_first", False, if_empty)
 
     def update_config(self):
-        with urllib.request.urlopen(self.cfg('base_url', str) + '/config') as req:
+        with urllib.request.urlopen(self.cfg("base_url", str) + "/config") as req:
             res = req.read()
             self.opt = json.loads(res)
 
-        for upscaler in self.opt['upscalers']:
+        for upscaler in self.opt["upscalers"]:
             if upscaler not in upscalers:
                 upscalers.append(upscaler)
 
@@ -98,90 +120,113 @@ class Script(QObject):
     # Server API    @staticmethod
     def post(self, url, body):
         req = urllib.request.Request(url)
-        req.add_header('Content-Type', 'application/json')
+        req.add_header("Content-Type", "application/json")
         body = json.dumps(body)
-        body_encoded = body.encode('utf-8')
-        req.add_header('Content-Length', str(len(body_encoded)))
+        body_encoded = body.encode("utf-8")
+        req.add_header("Content-Length", str(len(body_encoded)))
         with urllib.request.urlopen(req, body_encoded) as res:
             return json.loads(res.read())
 
     def txt2img(self):
-        tiling = self.cfg('txt2img_tiling', bool)
+        tiling = self.cfg("txt2img_tiling", bool)
         if self.cfg("only_full_img_tiling", bool) and self.selection is not None:
             tiling = False
 
-        params = {
-            "orig_width": self.width,
-            "orig_height": self.height,
-            "prompt": self.fix_prompt(
-                self.cfg('txt2img_prompt', str) if not self.cfg('txt2img_prompt', str).isspace() else None),
-            "negative_prompt": self.fix_prompt(self.cfg('txt2img_negative_prompt', str)) if not self.cfg('txt2img_negative_prompt', str).isspace() else None,
-            "sampler_name": samplers[self.cfg('txt2img_sampler', int)],
-            "steps": self.cfg('txt2img_steps', int),
-            "cfg_scale": self.cfg('txt2img_cfg_scale', float),
-            "batch_count": self.cfg('txt2img_batch_count', int),
-            "batch_size": self.cfg('txt2img_batch_size', int),
-            "base_size": self.cfg('txt2img_base_size', int),
-            "max_size": self.cfg('txt2img_max_size', int),
-            "seed": self.cfg('txt2img_seed', int) if not self.cfg('txt2img_seed', str).strip() == "" else -1,
-            "tiling": tiling,
-            "use_gfpgan": self.cfg("txt2img_use_gfpgan", bool),
-            "face_restorer": face_restorers[self.cfg("face_restorer_model", int)],
-            "codeformer_weight": self.cfg("codeformer_weight", float)
-        } if not self.cfg('just_use_yaml', bool) else {
-            "orig_width": self.width,
-            "orig_height": self.height
-        }
-        return self.post(self.cfg('base_url', str) + '/txt2img', params)
+        params = (
+            {
+                "orig_width": self.width,
+                "orig_height": self.height,
+                "prompt": self.fix_prompt(
+                    self.cfg("txt2img_prompt", str)
+                    if not self.cfg("txt2img_prompt", str).isspace()
+                    else None
+                ),
+                "negative_prompt": self.fix_prompt(
+                    self.cfg("txt2img_negative_prompt", str)
+                )
+                if not self.cfg("txt2img_negative_prompt", str).isspace()
+                else None,
+                "sampler_name": samplers[self.cfg("txt2img_sampler", int)],
+                "steps": self.cfg("txt2img_steps", int),
+                "cfg_scale": self.cfg("txt2img_cfg_scale", float),
+                "batch_count": self.cfg("txt2img_batch_count", int),
+                "batch_size": self.cfg("txt2img_batch_size", int),
+                "base_size": self.cfg("txt2img_base_size", int),
+                "max_size": self.cfg("txt2img_max_size", int),
+                "seed": self.cfg("txt2img_seed", int)
+                if not self.cfg("txt2img_seed", str).strip() == ""
+                else -1,
+                "tiling": tiling,
+                "use_gfpgan": self.cfg("txt2img_use_gfpgan", bool),
+                "face_restorer": face_restorers[self.cfg("face_restorer_model", int)],
+                "codeformer_weight": self.cfg("codeformer_weight", float),
+            }
+            if not self.cfg("just_use_yaml", bool)
+            else {"orig_width": self.width, "orig_height": self.height}
+        )
+        return self.post(self.cfg("base_url", str) + "/txt2img", params)
 
     def img2img(self, path, mask_path, mode):
-        tiling = self.cfg('txt2img_tiling', bool)
-        if mode == 2 or (self.cfg("only_full_img_tiling", bool) and self.selection is not None):
+        tiling = self.cfg("txt2img_tiling", bool)
+        if mode == 2 or (
+            self.cfg("only_full_img_tiling", bool) and self.selection is not None
+        ):
             tiling = False
 
-        params = {
-            "mode": mode,
-            "src_path": path,
-            "mask_path": mask_path,
-            "prompt": self.fix_prompt(self.cfg('img2img_prompt', str)) if not self.cfg('img2img_prompt', str).isspace() else None,
-            "negative_prompt": self.fix_prompt(self.cfg('img2img_negative_prompt', str)) if not self.cfg('img2img_negative_prompt', str).isspace() else None,
-            "sampler_name": samplers_img2img[self.cfg('img2img_sampler', int)],
-            "steps": self.cfg('img2img_steps', int),
-            "cfg_scale": self.cfg('img2img_cfg_scale', float),
-            "denoising_strength": self.cfg('img2img_denoising_strength', float),
-            "batch_count": self.cfg('img2img_batch_count', int),
-            "batch_size": self.cfg('img2img_batch_size', int),
-            "base_size": self.cfg('img2img_base_size', int),
-            "max_size": self.cfg('img2img_max_size', int),
-            "seed": self.cfg('img2img_seed', int) if not self.cfg('img2img_seed', str).strip() == "" else -1,
-            "tiling": tiling,
-            "invert_mask": False, #self.cfg('img2img_invert_mask', bool), - not implemented yet
-            "use_gfpgan": self.cfg("img2img_use_gfpgan", bool),
-            "face_restorer": face_restorers[self.cfg("face_restorer_model", int)],
-            "codeformer_weight": self.cfg("codeformer_weight", float),
-            # "upscaler_name": upscalers[self.cfg('img2img_upscaler_name', int)]
-        } if not self.cfg('just_use_yaml', bool) else {
-            "src_path": path,
-            "mask_path": mask_path
-        }
-        return self.post(self.cfg('base_url', str) + '/img2img', params)
+        params = (
+            {
+                "mode": mode,
+                "src_path": path,
+                "mask_path": mask_path,
+                "prompt": self.fix_prompt(self.cfg("img2img_prompt", str))
+                if not self.cfg("img2img_prompt", str).isspace()
+                else None,
+                "negative_prompt": self.fix_prompt(
+                    self.cfg("img2img_negative_prompt", str)
+                )
+                if not self.cfg("img2img_negative_prompt", str).isspace()
+                else None,
+                "sampler_name": samplers_img2img[self.cfg("img2img_sampler", int)],
+                "steps": self.cfg("img2img_steps", int),
+                "cfg_scale": self.cfg("img2img_cfg_scale", float),
+                "denoising_strength": self.cfg("img2img_denoising_strength", float),
+                "batch_count": self.cfg("img2img_batch_count", int),
+                "batch_size": self.cfg("img2img_batch_size", int),
+                "base_size": self.cfg("img2img_base_size", int),
+                "max_size": self.cfg("img2img_max_size", int),
+                "seed": self.cfg("img2img_seed", int)
+                if not self.cfg("img2img_seed", str).strip() == ""
+                else -1,
+                "tiling": tiling,
+                "invert_mask": False,  # self.cfg('img2img_invert_mask', bool), - not implemented yet
+                "use_gfpgan": self.cfg("img2img_use_gfpgan", bool),
+                "face_restorer": face_restorers[self.cfg("face_restorer_model", int)],
+                "codeformer_weight": self.cfg("codeformer_weight", float),
+                # "upscaler_name": upscalers[self.cfg('img2img_upscaler_name', int)]
+            }
+            if not self.cfg("just_use_yaml", bool)
+            else {"src_path": path, "mask_path": mask_path}
+        )
+        return self.post(self.cfg("base_url", str) + "/img2img", params)
 
     def simple_upscale(self, path):
-        params = {
-            "src_path": path,
-            "upscaler_name": upscalers[self.cfg("upscale_upscaler_name", int)],
-            "downscale_first": self.cfg("upscale_downscale_first", bool)
-        } if not self.cfg('just_use_yaml', bool) else {
-            "src_path": path
-        }
-        return self.post(self.cfg('base_url', str) + '/upscale', params)
+        params = (
+            {
+                "src_path": path,
+                "upscaler_name": upscalers[self.cfg("upscale_upscaler_name", int)],
+                "downscale_first": self.cfg("upscale_downscale_first", bool),
+            }
+            if not self.cfg("just_use_yaml", bool)
+            else {"src_path": path}
+        )
+        return self.post(self.cfg("base_url", str) + "/upscale", params)
 
     def fix_prompt(self, prompt):
-        return ', '.join(filter(bool, [x.strip() for x in prompt.splitlines()]))
+        return ", ".join(filter(bool, [x.strip() for x in prompt.splitlines()]))
 
     def find_final_aspect_ratio(self):
-        base_size = self.cfg('img2img_base_size', int)
-        max_size = self.cfg('img2img_max_size', int)
+        base_size = self.cfg("img2img_base_size", int)
+        max_size = self.cfg("img2img_max_size", int)
 
         def rnd(r, x):
             z = 64
@@ -241,8 +286,10 @@ class Script(QObject):
         else:
             pixel_bytes = self.doc.pixelData(self.x, self.y, self.width, self.height)
 
-        image_data = QImage(pixel_bytes, self.width, self.height, QImage.Format_RGBA8888).rgbSwapped()
-        image_data.save(path, "PNG", self.cfg('png_quality', int))
+        image_data = QImage(
+            pixel_bytes, self.width, self.height, QImage.Format_RGBA8888
+        ).rgbSwapped()
+        image_data.save(path, "PNG", self.cfg("png_quality", int))
         print(f"Saved {'mask' if is_mask else 'image'}: {path}")
 
     # Krita tools
@@ -272,26 +319,36 @@ class Script(QObject):
 
     def apply_txt2img(self):
         response = self.txt2img()
-        outputs = response['outputs']
+        outputs = response["outputs"]
         print(f"Getting images: {outputs}")
         for i, output in enumerate(outputs):
-            self.insert_img(f"txt2img {i + 1}: {os.path.basename(output)}", output, i + 1 == len(outputs))
+            self.insert_img(
+                f"txt2img {i + 1}: {os.path.basename(output)}",
+                output,
+                i + 1 == len(outputs),
+            )
         self.clear_temp_images(outputs)
         self.doc.refreshProjection()
 
     def apply_img2img(self, mode):
-        path = self.opt['new_img']
-        mask_path = self.opt['new_img_mask']
+        path = self.opt["new_img"]
+        mask_path = self.opt["new_img_mask"]
         self.save_img(path)
         if mode == 1:
             self.save_img(mask_path, is_mask=True)
 
         response = self.img2img(path, mask_path, mode)
-        outputs = response['outputs']
+        outputs = response["outputs"]
         print(f"Getting images: {outputs}")
-        layer_name_prefix = "inpaint" if mode == 1 else "sd upscale" if mode == 2 else "img2img"
+        layer_name_prefix = (
+            "inpaint" if mode == 1 else "sd upscale" if mode == 2 else "img2img"
+        )
         for i, output in enumerate(outputs):
-            self.insert_img(f"{layer_name_prefix} {i + 1}: {os.path.basename(output)}", output, i + 1 == len(outputs))
+            self.insert_img(
+                f"{layer_name_prefix} {i + 1}: {os.path.basename(output)}",
+                output,
+                i + 1 == len(outputs),
+            )
 
         if mode == 1:
             self.clear_temp_images([path, mask_path, *outputs])
@@ -301,11 +358,11 @@ class Script(QObject):
         self.doc.refreshProjection()
 
     def apply_simple_upscale(self):
-        path = self.opt['new_img']
+        path = self.opt["new_img"]
         self.save_img(path)
 
         response = self.simple_upscale(path)
-        output = response['output']
+        output = response["output"]
         print(f"Getting image: {output}")
 
         self.insert_img(f"upscale: {os.path.basename(output)}", output)
@@ -315,19 +372,22 @@ class Script(QObject):
     def create_mask_layer_internal(self):
         try:
             if self.selection is not None:
-                self.app.action('add_new_transparency_mask').trigger()
+                self.app.action("add_new_transparency_mask").trigger()
                 print(f"created mask layer")
                 self.doc.setSelection(self.selection)
         finally:
             self.working = False
 
     def create_mask_layer_workaround(self):
-        if self.cfg('create_mask_layer', bool):
+        if self.cfg("create_mask_layer", bool):
             self.working = True
-            QTimer.singleShot(self.cfg('workaround_timeout', int), lambda: self.create_mask_layer_internal())
+            QTimer.singleShot(
+                self.cfg("workaround_timeout", int),
+                lambda: self.create_mask_layer_internal(),
+            )
 
     def clear_temp_images(self, files):
-        if self.cfg('delete_temp_files', bool):
+        if self.cfg("delete_temp_files", bool):
             for file in files:
                 os.remove(file)
 
