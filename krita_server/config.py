@@ -72,7 +72,7 @@ class FaceRestorationOptions(BaseModel):
 
 class InpaintingOptions(BaseModel):
     inpainting_fill: int = 0
-    """What to fill inpainted region with. 0 is blur, 1 is empty, 2 is latent noise, and 3 is latent empty."""
+    """What to fill inpainted region with. 0 is blur/fill, 1 is original, 2 is latent noise, and 3 is latent empty."""
     inpaint_full_res: bool = False
     """Whether to use the full resolution for inpainting."""
     inpaint_full_res_padding: int = 32
