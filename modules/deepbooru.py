@@ -1,12 +1,13 @@
 import os.path
 from concurrent.futures import ProcessPoolExecutor
 
-import numpy as np
-import deepdanbooru as dd
-import tensorflow as tf
 
 
 def _load_tf_and_return_tags(pil_image, threshold):
+    import deepdanbooru as dd
+    import tensorflow as tf
+    import numpy as np
+
     this_folder = os.path.dirname(__file__)
     model_path = os.path.join(this_folder, '..', 'models', 'deepbooru', 'deepdanbooru-v3-20211112-sgd-e28')
 
