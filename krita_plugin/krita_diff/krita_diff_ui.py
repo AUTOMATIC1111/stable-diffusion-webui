@@ -597,6 +597,13 @@ class KritaSDPluginDocker(DockWidget):
         )
         self.config_only_full_img_tiling.setTristate(False)
 
+        self.config_sd_model_label = QLabel("SD model:")
+        self.config_sd_model = QComboBox()
+        self.config_sd_model.addItems(sd_models)
+        self.config_sd_model_layout = QHBoxLayout()
+        self.config_sd_model_layout.addWidget(self.config_sd_model_label)
+        self.config_sd_model_layout.addWidget(self.config_sd_model)
+
         self.config_face_restorer_model_label = QLabel("Face restorer model:")
         self.config_face_restorer_model = QComboBox()
         self.config_face_restorer_model.addItems(face_restorers)
@@ -644,6 +651,7 @@ class KritaSDPluginDocker(DockWidget):
         self.config_layout.addWidget(self.config_delete_temp_files)
         self.config_layout.addWidget(self.config_fix_aspect_ratio)
         self.config_layout.addWidget(self.config_only_full_img_tiling)
+        self.config_layout.addLayout(self.config_sd_model_layout)
         self.config_layout.addLayout(self.config_face_restorer_model_layout)
         self.config_layout.addLayout(self.config_codeformer_weight_layout)
         self.config_layout.addWidget(self.config_restore_defaults)
@@ -680,6 +688,9 @@ class KritaSDPluginDocker(DockWidget):
             if script.cfg("only_full_img_tiling", bool)
             else Qt.CheckState.Unchecked
         )
+        self.config_sd_model.clear()
+        self.config_sd_model.addItems(sd_models)
+        self.config_sd_model.setCurrentText(script.cfg("sd_model", str))
         self.config_face_restorer_model.clear()
         self.config_face_restorer_model.addItems(face_restorers)
         self.config_face_restorer_model.setCurrentText(
@@ -706,6 +717,9 @@ class KritaSDPluginDocker(DockWidget):
         )
         self.config_only_full_img_tiling.toggled.connect(
             partial(script.set_cfg, "only_full_img_tiling")
+        )
+        self.config_sd_model.currentTextChanged.connect(
+            partial(script.set_cfg, "sd_model")
         )
         self.config_face_restorer_model.currentTextChanged.connect(
             partial(script.set_cfg, "face_restorer_model")

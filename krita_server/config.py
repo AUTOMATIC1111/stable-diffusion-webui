@@ -13,6 +13,9 @@ class BaseOptions(BaseModel):
 
 
 class GenerationOptions(BaseModel):
+    sd_model: str = "model.ckpt"
+    """Model to use for generation."""
+
     prompt: Any = "dog"
     """Requested prompt."""
     negative_prompt: Any = ""

@@ -58,6 +58,29 @@ def merge_default_config(config: BaseModel, default: BaseModel):
     return config
 
 
+def prepare_backend(opt: BaseModel):
+    """Misc configuration and preparation tasks before calling internal API.
+
+    Currently includes:
+    - Ensuring the output/input folders exist
+    - Set the face restorer model to the selected one
+    - Set the SD model to the selected one
+
+    Args:
+        opt (BaseModel): Option/Request object
+    """
+
+    # Ensure the output/input folders exist
+    if hasattr(opt, "sample_path"):
+        os.makedirs(opt.sample_path, exist_ok=True)
+
+    if hasattr(opt, "face_restorer"):
+        set_face_restorer(opt.face_restorer, opt.codeformer_weight)
+
+    if hasattr(opt, "sd_model"):
+        set_sd_model(opt.sd_model)
+
+
 def optional(*fields):
     """Decorator function used to modify a pydantic model's fields to all be optional.
     Alternatively, you can  also pass the field names that should be made optional as arguments
@@ -216,3 +239,14 @@ def set_face_restorer(face_restorer: str, codeformer_weight: float):
     # the `shared` module handles app state for the underlying codebase
     shared.opts.face_restoration_model = face_restorer
     shared.opts.code_former_weight = codeformer_weight
+
+
+def set_sd_model(sd_model: str):
+    """Change which SD model to use.
+
+    Args:
+        sd_model (str): Exact name of SD model to use.
+    """
+    # the `shared` module handles app state for the underlying codebase
+    shared.opts.sd_model_checkpoint = sd_model
+    modules.sd_models.reload_model_weights(shared.sd_model)

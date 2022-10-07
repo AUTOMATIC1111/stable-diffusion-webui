@@ -31,6 +31,7 @@ samplers_img2img = [
 upscalers = []
 # face_restorers = ["None", "CodeFormer", "GFPGAN"]
 face_restorers = []
+sd_models = []
 
 
 class Script(QObject):
@@ -58,6 +59,7 @@ class Script(QObject):
         self.set_cfg("png_quality", -1, if_empty)
         self.set_cfg("fix_aspect_ratio", True, if_empty)
         self.set_cfg("only_full_img_tiling", True, if_empty)
+        self.set_cfg("sd_model", "model.ckpt", if_empty)
         self.set_cfg("face_restorer_model", "CodeFormer", if_empty)
         self.set_cfg("codeformer_weight", 0.5, if_empty)
 
@@ -93,7 +95,9 @@ class Script(QObject):
         self.set_cfg("upscale_downscale_first", False, if_empty)
 
     def update_config(self):
-        with urllib.request.urlopen(self.cfg("base_url", str) + "/config") as req:
+        with urllib.request.urlopen(
+            self.cfg("base_url", str) + "/config", timeout=1
+        ) as req:
             res = req.read()
             self.opt = json.loads(res)
 
@@ -101,10 +105,12 @@ class Script(QObject):
         assert len(self.opt["samplers"]) > 0
         assert len(self.opt["samplers_img2img"]) > 0
         assert len(self.opt["face_restorers"]) > 0
+        assert len(self.opt["sd_models"]) > 0
         upscalers[:] = self.opt["upscalers"]
         samplers[:] = self.opt["samplers"]
         samplers_img2img[:] = self.opt["samplers_img2img"]
         face_restorers[:] = self.opt["face_restorers"]
+        sd_models[:] = self.opt["sd_models"]
 
         self.app = Krita.instance()
         self.doc = self.app.activeDocument()
@@ -157,6 +163,7 @@ class Script(QObject):
                 else -1,
                 "tiling": tiling,
                 "use_gfpgan": self.cfg("txt2img_use_gfpgan", bool),
+                "sd_model": self.cfg("sd_model", str),
                 "face_restorer": self.cfg("face_restorer_model", str),
                 "codeformer_weight": self.cfg("codeformer_weight", float),
             }
@@ -195,6 +202,7 @@ class Script(QObject):
                 "tiling": tiling,
                 "invert_mask": self.cfg("img2img_invert_mask", bool),
                 "use_gfpgan": self.cfg("img2img_use_gfpgan", bool),
+                "sd_model": self.cfg("sd_model", str),
                 "face_restorer": self.cfg("face_restorer_model", str),
                 "codeformer_weight": self.cfg("codeformer_weight", float),
                 # "upscaler_name": self.cfg('img2img_upscaler_name', str)

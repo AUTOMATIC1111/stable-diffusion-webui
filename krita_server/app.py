@@ -16,8 +16,8 @@ from .utils import (
     load_config,
     merge_default_config,
     parse_prompt,
+    prepare_backend,
     save_img,
-    set_face_restorer,
 )
 
 app = FastAPI()
@@ -40,10 +40,9 @@ async def read_item():
     # - response isn't well typed but is deeply tied into the krita_plugin side..
     # - ensuring the folders for images exist should be refactored out
     opt = load_config().plugin
+    prepare_backend(opt)
 
-    os.makedirs(opt.sample_path, exist_ok=True)
-    path = os.path.join(opt.sample_path, f"{int(time.time())}")
-    src_path = os.path.abspath(path)
+    src_path = os.path.abspath(os.path.join(opt.sample_path, f"{int(time.time())}"))
     return {
         "new_img": src_path + ".png",
         "new_img_mask": src_path + "_mask.png",
@@ -53,6 +52,7 @@ async def read_item():
             sampler.name for sampler in modules.sd_samplers.samplers_for_img2img
         ],
         "face_restorers": [model.name() for model in shared.face_restorers],
+        "sd_models": modules.sd_models.checkpoint_tiles(),  # yes internal API has spelling error
         **opt.dict(),
     }
 
@@ -71,8 +71,8 @@ async def f_txt2img(req: Txt2ImgRequest):
 
     opt = load_config().txt2img
     req = merge_default_config(req, opt)
+    prepare_backend(req)
 
-    set_face_restorer(req.face_restorer, req.codeformer_weight)
     width, height = fix_aspect_ratio(
         req.base_size, req.max_size, req.orig_width, req.orig_height
     )
@@ -104,7 +104,6 @@ async def f_txt2img(req: Txt2ImgRequest):
         0,  # selects which script to use. 0 to not run any.
     )
 
-    os.makedirs(opt.sample_path, exist_ok=True)
     resized_images = [
         modules.images.resize_image(0, image, req.orig_width, req.orig_height)
         for image in output_images
@@ -131,11 +130,10 @@ async def f_img2img(req: Img2ImgRequest):
 
     opt = load_config().img2img
     req = merge_default_config(req, opt)
+    prepare_backend(req)
 
     image = Image.open(req.src_path)
     mask = Image.open(req.mask_path).convert("L") if req.mode == 1 else None
-
-    set_face_restorer(req.face_restorer, req.codeformer_weight)
 
     orig_width, orig_height = image.size
 
@@ -216,7 +214,6 @@ async def f_img2img(req: Img2ImgRequest):
 
         resized_images = [remove_not_masked(x) for x in resized_images]
 
-    os.makedirs(opt.sample_path, exist_ok=True)
     outputs = [
         save_img(image, opt.sample_path, filename=f"{int(time.time())}_{i}.png")
         for i, image in enumerate(resized_images)
@@ -239,6 +236,7 @@ async def f_upscale(req: UpscaleRequest):
 
     opt = load_config().upscale
     req = merge_default_config(req, opt)
+    prepare_backend(req)
 
     image = Image.open(req.src_path).convert("RGB")
     orig_width, orig_height = image.size
@@ -258,7 +256,6 @@ async def f_upscale(req: UpscaleRequest):
         0, upscaled_image, orig_width, orig_height
     )
 
-    os.makedirs(opt.sample_path, exist_ok=True)
     output = save_img(
         resized_image, opt.sample_path, filename=f"{int(time.time())}.png"
     )
