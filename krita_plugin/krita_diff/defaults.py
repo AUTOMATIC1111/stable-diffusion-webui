@@ -19,6 +19,8 @@ class Defaults:
     sd_max_size: int = 768
     restore_faces: bool = False
     sd_tiling: bool = False
+    upscaler_list: List[str] = field(default_factory=list)
+    upscaler_name: str = "None"
     face_restorer_model_list: List[str] = field(default_factory=list)
     face_restorer_model: str = "CodeFormer"
     codeformer_weight: float = 0.5
@@ -64,8 +66,5 @@ class Defaults:
     inpaint_full_res_padding: int = 32
     inpaint_mask_blur: int = 4
 
-    # SD upscale should be moved to upscale tab even if its a img2img script?
-    img2img_upscaler_name: str = "None"
-    upscaler_list: List[str] = field(default_factory=list)
     upscale_upscaler_name: str = "None"
     upscale_downscale_first: bool = False

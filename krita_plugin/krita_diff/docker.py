@@ -210,16 +210,10 @@ class SDPluginDocker(DockWidget):
 
         self.img2img_restore_faces = QCheckBox("Restore faces")
 
-        self.img2img_upscaler_layout = QComboBoxLayout(
-            script, "upscaler_list", "img2img_upscaler_name", label="Upscaler:"
-        )
-
         self.img2img_start_button = QPushButton("Apply SD img2img")
-        self.img2img_upscale_button = QPushButton("Apply SD upscale")
         self.img2img_inpaint_button = QPushButton("Apply SD inpainting")
         self.img2img_button_layout = QHBoxLayout()
         self.img2img_button_layout.addWidget(self.img2img_start_button)
-        # self.img2img_button_layout.addWidget(self.img2img_upscale_button)
         self.img2img_button_layout.addWidget(self.img2img_inpaint_button)
 
         self.img2img_layout = QVBoxLayout()
@@ -234,8 +228,6 @@ class SDPluginDocker(DockWidget):
         self.img2img_layout.addWidget(self.img2img_restore_faces)
 
         self.img2img_layout.addLayout(self.img2img_checkboxes_layout)
-        # SD upscale became a script in https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/91bfc71261e160451e89f35a7c0eef66ff98877c
-        # self.img2img_layout.addLayout(self.img2img_upscaler)
         self.img2img_layout.addLayout(self.img2img_button_layout)
         self.img2img_layout.addStretch()
 
@@ -256,7 +248,6 @@ class SDPluginDocker(DockWidget):
         self.img2img_restore_faces.setChecked(script.cfg("img2img_restore_faces", bool))
         self.img2img_tiling.setChecked(script.cfg("img2img_tiling", bool))
         self.img2img_invert_mask.setChecked(script.cfg("img2img_invert_mask", bool))
-        self.img2img_upscaler_layout.cfg_init()
 
     def connect_img2img_interface(self):
         self.img2img_prompt_layout.cfg_connect()
@@ -276,9 +267,7 @@ class SDPluginDocker(DockWidget):
         self.img2img_invert_mask.toggled.connect(
             partial(script.set_cfg, "img2img_invert_mask")
         )
-        self.img2img_upscaler_layout.cfg_connect()
         self.img2img_start_button.released.connect(lambda: script.action_img2img())
-        self.img2img_upscale_button.released.connect(lambda: script.action_sd_upscale())
         self.img2img_inpaint_button.released.connect(lambda: script.action_inpaint())
 
     def create_upscale_interface(self):
