@@ -1,6 +1,7 @@
 from functools import partial
 
 from .script import *
+from .widgets import QPromptLayout
 
 
 class SDPluginDocker(DockWidget):
@@ -45,33 +46,9 @@ class SDPluginDocker(DockWidget):
 
     # TODO: Add necessary UI components to match up with upstream changes.
     def create_txt2img_interface(self):
-        self.txt2img_prompt_label = QLabel("Prompt:")
-        self.txt2img_prompt_text = QPlainTextEdit()
-        self.txt2img_prompt_text.setPlaceholderText(
-            "krita_config.yaml value will be used"
+        self.txt2img_prompt = QPromptLayout(
+            script, "txt2img_prompt", "txt2img_negative_prompt"
         )
-        self.txt2img_prompt_text.setFixedHeight(
-            self.txt2img_prompt_text.fontMetrics().lineSpacing() * 5
-        )
-        self.txt2img_prompt_text.setSizePolicy(
-            QSizePolicy.MinimumExpanding, QSizePolicy.Maximum
-        )
-        self.txt2img_negative_prompt_label = QLabel("Negative Prompt:")
-        self.txt2img_negative_prompt_text = QPlainTextEdit()
-        self.txt2img_negative_prompt_text.setPlaceholderText(
-            "krita_config.yaml value will be used"
-        )
-        self.txt2img_negative_prompt_text.setFixedHeight(
-            self.txt2img_negative_prompt_text.fontMetrics().lineSpacing() * 5
-        )
-        self.txt2img_negative_prompt_text.setSizePolicy(
-            QSizePolicy.MinimumExpanding, QSizePolicy.Maximum
-        )
-        self.txt2img_prompt_layout = QVBoxLayout()
-        self.txt2img_prompt_layout.addWidget(self.txt2img_prompt_label)
-        self.txt2img_prompt_layout.addWidget(self.txt2img_prompt_text)
-        self.txt2img_prompt_layout.addWidget(self.txt2img_negative_prompt_label)
-        self.txt2img_prompt_layout.addWidget(self.txt2img_negative_prompt_text)
 
         self.txt2img_sampler_name_label = QLabel("Sampler:")
         self.txt2img_sampler_name = QComboBox()
@@ -149,7 +126,7 @@ class SDPluginDocker(DockWidget):
         self.txt2img_button_layout.addWidget(self.txt2img_start_button)
 
         self.txt2img_layout = QVBoxLayout()
-        self.txt2img_layout.addLayout(self.txt2img_prompt_layout)
+        self.txt2img_layout.addLayout(self.txt2img_prompt)
         self.txt2img_layout.addLayout(self.txt2img_sampler_name_layout)
         self.txt2img_layout.addLayout(self.txt2img_steps_layout)
         self.txt2img_layout.addLayout(self.txt2img_cfg_scale_layout)
@@ -165,10 +142,7 @@ class SDPluginDocker(DockWidget):
         self.txt2img_widget.setLayout(self.txt2img_layout)
 
     def init_txt2img_interface(self):
-        self.txt2img_prompt_text.setPlainText(script.cfg("txt2img_prompt", str))
-        self.txt2img_negative_prompt_text.setPlainText(
-            script.cfg("txt2img_negative_prompt", str)
-        )
+        self.txt2img_prompt.cfg_init()
         self.txt2img_sampler_name.clear()
         self.txt2img_sampler_name.addItems(samplers)
         self.txt2img_sampler_name.setCurrentText(script.cfg("txt2img_sampler", str))
@@ -191,17 +165,7 @@ class SDPluginDocker(DockWidget):
         )
 
     def connect_txt2img_interface(self):
-        self.txt2img_prompt_text.textChanged.connect(
-            lambda: script.set_cfg(
-                "txt2img_prompt", self.txt2img_prompt_text.toPlainText()
-            )
-        )
-        self.txt2img_negative_prompt_text.textChanged.connect(
-            lambda: script.set_cfg(
-                "txt2img_negative_prompt",
-                self.txt2img_negative_prompt_text.toPlainText(),
-            )
-        )
+        self.txt2img_prompt.cfg_connect()
         self.txt2img_sampler_name.currentTextChanged.connect(
             partial(script.set_cfg, "txt2img_sampler")
         )
@@ -231,33 +195,9 @@ class SDPluginDocker(DockWidget):
         self.txt2img_start_button.released.connect(lambda: script.action_txt2img())
 
     def create_img2img_interface(self):
-        self.img2img_prompt_label = QLabel("Prompt:")
-        self.img2img_prompt_text = QPlainTextEdit()
-        self.img2img_prompt_text.setPlaceholderText(
-            "krita_config.yaml value will be used"
+        self.img2img_prompt = QPromptLayout(
+            script, "img2img_prompt", "img2img_negative_prompt"
         )
-        self.img2img_prompt_text.setFixedHeight(
-            self.img2img_prompt_text.fontMetrics().lineSpacing() * 5
-        )
-        self.img2img_prompt_text.setSizePolicy(
-            QSizePolicy.MinimumExpanding, QSizePolicy.Maximum
-        )
-        self.img2img_negative_prompt_label = QLabel("Negative Prompt:")
-        self.img2img_negative_prompt_text = QPlainTextEdit()
-        self.img2img_negative_prompt_text.setPlaceholderText(
-            "krita_config.yaml value will be used"
-        )
-        self.img2img_negative_prompt_text.setFixedHeight(
-            self.img2img_negative_prompt_text.fontMetrics().lineSpacing() * 5
-        )
-        self.img2img_negative_prompt_text.setSizePolicy(
-            QSizePolicy.MinimumExpanding, QSizePolicy.Maximum
-        )
-        self.img2img_prompt_layout = QVBoxLayout()
-        self.img2img_prompt_layout.addWidget(self.img2img_prompt_label)
-        self.img2img_prompt_layout.addWidget(self.img2img_prompt_text)
-        self.img2img_prompt_layout.addWidget(self.img2img_negative_prompt_label)
-        self.img2img_prompt_layout.addWidget(self.img2img_negative_prompt_text)
 
         self.img2img_sampler_name_label = QLabel("Sampler:")
         self.img2img_sampler_name = QComboBox()
@@ -367,7 +307,7 @@ class SDPluginDocker(DockWidget):
         self.img2img_button_layout.addWidget(self.img2img_inpaint_button)
 
         self.img2img_layout = QVBoxLayout()
-        self.img2img_layout.addLayout(self.img2img_prompt_layout)
+        self.img2img_layout.addLayout(self.img2img_prompt)
         self.img2img_layout.addLayout(self.img2img_sampler_name_layout)
         self.img2img_layout.addLayout(self.img2img_steps_layout)
         self.img2img_layout.addLayout(self.img2img_cfg_scale_layout)
@@ -386,10 +326,7 @@ class SDPluginDocker(DockWidget):
         self.img2img_widget.setLayout(self.img2img_layout)
 
     def init_img2img_interface(self):
-        self.img2img_prompt_text.setPlainText(script.cfg("img2img_prompt", str))
-        self.img2img_negative_prompt_text.setPlainText(
-            script.cfg("img2img_negative_prompt", str)
-        )
+        self.img2img_prompt.cfg_init()
         self.img2img_sampler_name.clear()
         self.img2img_sampler_name.addItems(samplers_img2img)
         self.img2img_sampler_name.setCurrentText(script.cfg("img2img_sampler", str))
@@ -425,17 +362,7 @@ class SDPluginDocker(DockWidget):
         )
 
     def connect_img2img_interface(self):
-        self.img2img_prompt_text.textChanged.connect(
-            lambda: script.set_cfg(
-                "img2img_prompt", self.img2img_prompt_text.toPlainText()
-            )
-        )
-        self.img2img_negative_prompt_text.textChanged.connect(
-            lambda: script.set_cfg(
-                "img2img_negative_prompt",
-                self.img2img_negative_prompt_text.toPlainText(),
-            )
-        )
+        self.img2img_prompt.cfg_connect()
         self.img2img_sampler_name.currentTextChanged.connect(
             partial(script.set_cfg, "img2img_sampler")
         )
