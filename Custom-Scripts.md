@@ -85,6 +85,12 @@ Mixes output of img2img with original input image at strength alpha. The result 
 https://gist.github.com/camenduru/9ec5f8141db9902e375967e93250860f
 Run n times with random seed.
 
+## Dynamic Prompt Templates
+https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/1433/files
+
+## Advanced Loopback
+https://github.com/Extraltodeus/advanced-loopback-for-sd-webui
+
 ## Saving steps of the sampling process
 This script will save steps of the sampling process to a directory.
 ```python
