@@ -35,8 +35,8 @@ import modules.gfpgan_model
 import modules.codeformer_model
 import modules.styles
 import modules.generation_parameters_copypaste
-from modules.prompt_parser import get_learned_conditioning_prompt_schedules
-from modules.images import apply_filename_pattern, get_next_sequence_number
+from modules import prompt_parser
+from modules.images import save_image
 import modules.textual_inversion.ui
 
 # this is a fix for Windows users. Without it, javascript files will be served with text/html content-type and the bowser will not show any UI
@@ -115,20 +115,13 @@ def save_files(js_data, images, index):
     p = MyObject(data)
     path = opts.outdir_save
     save_to_dirs = opts.use_save_to_dirs_for_ui
-
-    if save_to_dirs:
-        dirname = apply_filename_pattern(opts.directories_filename_pattern or "[prompt_words]", p, p.seed, p.prompt)
-        path = os.path.join(opts.outdir_save, dirname)
-
-    os.makedirs(path, exist_ok=True)
-  
+    extension: str = opts.samples_format
+    start_index = 0
 
     if index > -1 and opts.save_selected_only and (index >= data["index_of_first_image"]):  # ensures we are looking at a specific non-grid picture, and we have save_selected_only
 
         images = [images[index]]
-        infotexts = [data["infotexts"][index]]
-    else:
-        infotexts = data["infotexts"]
+        start_index = index
 
     with open(os.path.join(opts.outdir_save, "log.csv"), "a", encoding="utf8", newline='') as file:
         at_start = file.tell() == 0
@@ -136,37 +129,18 @@ def save_files(js_data, images, index):
         if at_start:
             writer.writerow(["prompt", "seed", "width", "height", "sampler", "cfgs", "steps", "filename", "negative_prompt"])
 
-        file_decoration = opts.samples_filename_pattern or "[seed]-[prompt_spaces]"
-        if file_decoration != "":
-            file_decoration = "-" + file_decoration.lower()
-        file_decoration = apply_filename_pattern(file_decoration, p, p.seed, p.prompt)
-        truncated = (file_decoration[:240] + '..') if len(file_decoration) > 240 else file_decoration
-        filename_base = truncated
-        extension = opts.samples_format.lower()
-
-        basecount = get_next_sequence_number(path, "")
-        for i, filedata in enumerate(images):
-            file_number = f"{basecount+i:05}"
-            filename = file_number + filename_base + f".{extension}"
-            filepath = os.path.join(path, filename)
-
-
+        for image_index, filedata in enumerate(images, start_index):
             if filedata.startswith("data:image/png;base64,"):
                 filedata = filedata[len("data:image/png;base64,"):]
 
             image = Image.open(io.BytesIO(base64.decodebytes(filedata.encode('utf-8'))))
-            if opts.enable_pnginfo and extension == 'png':
-                pnginfo = PngImagePlugin.PngInfo()
-                pnginfo.add_text('parameters', infotexts[i])
-                image.save(filepath, pnginfo=pnginfo)
-            else:
-                image.save(filepath, quality=opts.jpeg_quality)
 
-            if opts.enable_pnginfo and extension in ("jpg", "jpeg", "webp"):
-                piexif.insert(piexif.dump({"Exif": {
-                    piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(infotexts[i], encoding="unicode")
-                }}), filepath)
+            is_grid = image_index < p.index_of_first_image
+            i = 0 if is_grid else (image_index - p.index_of_first_image)
 
+            fullfn = save_image(image, path, "", seed=p.all_seeds[i], prompt=p.all_prompts[i], extension=extension, info=p.infotexts[image_index], grid=is_grid, p=p, save_to_dirs=save_to_dirs)
+
+            filename = os.path.relpath(fullfn, path)
             filenames.append(filename)
 
         writer.writerow([data["prompt"], data["seed"], data["width"], data["height"], data["sampler"], data["cfg_scale"], data["steps"], filenames[0], data["negative_prompt"]])
@@ -197,6 +171,11 @@ def wrap_gradio_call(func, extra_outputs=None):
             res = extra_outputs_array + [f"<div class='error'>{plaintext_to_html(type(e).__name__+': '+str(e))}</div>"]
 
         elapsed = time.perf_counter() - t
+        elapsed_m = int(elapsed // 60)
+        elapsed_s = elapsed % 60
+        elapsed_text = f"{elapsed_s:.2f}s"
+        if (elapsed_m > 0):
+            elapsed_text = f"{elapsed_m}m "+elapsed_text
 
         if run_memmon:
             mem_stats = {k: -(v//-(1024*1024)) for k, v in shared.mem_mon.stop().items()}
@@ -211,7 +190,7 @@ def wrap_gradio_call(func, extra_outputs=None):
             vram_html = ''
 
         # last item is always HTML
-        res[-1] += f"<div class='performance'><p class='time'>Time taken: <wbr>{elapsed:.2f}s</p>{vram_html}</div>"
+        res[-1] += f"<div class='performance'><p class='time'>Time taken: <wbr>{elapsed_text}</p>{vram_html}</div>"
 
         shared.state.interrupted = False
         shared.state.job_count = 0
@@ -395,7 +374,9 @@ def connect_reuse_seed(seed: gr.Number, reuse_seed: gr.Button, generation_info: 
 
 def update_token_counter(text, steps):
     try:
-        prompt_schedules = get_learned_conditioning_prompt_schedules([text], steps)
+        _, prompt_flat_list, _ = prompt_parser.get_multicond_prompt_list([text])
+        prompt_schedules = prompt_parser.get_learned_conditioning_prompt_schedules(prompt_flat_list, steps)
+
     except Exception:
         # a parsing error can happen here during typing, and we don't want to bother the user with
         # messages related to it in console
@@ -652,7 +633,7 @@ def create_ui(wrap_gradio_gpu_call):
 
                 with gr.Tabs(elem_id="mode_img2img") as tabs_img2img_mode:
                     with gr.TabItem('img2img', id='img2img'):
-                        init_img = gr.Image(label="Image for img2img", show_label=False, source="upload", interactive=True, type="pil")
+                        init_img = gr.Image(label="Image for img2img", elem_id="img2img_image", show_label=False, source="upload", interactive=True, type="pil", tool=cmd_opts.gradio_img2img_tool)
 
                     with gr.TabItem('Inpaint', id='inpaint'):
                         init_img_with_mask = gr.Image(label="Image for inpainting with mask",  show_label=False, elem_id="img2maskimg", source="upload", interactive=True, type="pil", tool="sketch", image_mode="RGBA")
@@ -1219,6 +1200,7 @@ def create_ui(wrap_gradio_gpu_call):
         )
 
         def request_restart():
+            shared.state.interrupt()
             settings_interface.gradio_ref.do_restart = True
 
         restart_gradio.click(

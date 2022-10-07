@@ -2,11 +2,12 @@ import os
 import threading
 import time
 import importlib
-from modules import devices
-from modules.paths import script_path
 import signal
 import threading
 
+from modules.paths import script_path
+
+from modules import devices, sd_samplers
 import modules.codeformer_model as codeformer
 import modules.extras
 import modules.face_restoration
@@ -108,6 +109,8 @@ def webui():
                 demo.close()
                 time.sleep(0.5)
                 break
+
+        sd_samplers.set_samplers()
 
         print('Reloading Custom Scripts')
         modules.scripts.reload_scripts(os.path.join(script_path, "scripts"))

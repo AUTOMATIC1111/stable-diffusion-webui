@@ -4,6 +4,21 @@ global_progressbars = {}
 function check_progressbar(id_part, id_progressbar, id_progressbar_span, id_interrupt, id_preview, id_gallery){
     var progressbar = gradioApp().getElementById(id_progressbar)
     var interrupt = gradioApp().getElementById(id_interrupt)
+    
+    if(opts.show_progress_in_title && progressbar && progressbar.offsetParent){
+        if(progressbar.innerText){
+            let newtitle = 'Stable Diffusion - ' + progressbar.innerText
+            if(document.title != newtitle){
+                document.title =  newtitle;          
+            }
+        }else{
+            let newtitle = 'Stable Diffusion'
+            if(document.title != newtitle){
+                document.title =  newtitle;          
+            }
+        }
+    }
+    
 	if(progressbar!= null && progressbar != global_progressbars[id_progressbar]){
 	    global_progressbars[id_progressbar] = progressbar
 
