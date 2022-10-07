@@ -82,6 +82,9 @@ class StableDiffusionModelHijack:
         for layer in [layer for layer in self.layers if type(layer) == torch.nn.Conv2d]:
             layer.padding_mode = 'circular' if enable else 'zeros'
 
+    def clear_comments(self):
+        self.comments = []
+
     def tokenize(self, text):
         max_length = self.clip.max_length - 2
         _, remade_batch_tokens, _, _, _, token_count = self.clip.process_text([text])
@@ -263,7 +266,7 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
             batch_multipliers, remade_batch_tokens, used_custom_terms, hijack_comments, hijack_fixes, token_count = self.process_text(text)
 
         self.hijack.fixes = hijack_fixes
-        self.hijack.comments = hijack_comments
+        self.hijack.comments += hijack_comments
 
         if len(used_custom_terms) > 0:
             self.hijack.comments.append("Used embeddings: " + ", ".join([f'{word} [{checksum}]' for word, checksum in used_custom_terms]))
