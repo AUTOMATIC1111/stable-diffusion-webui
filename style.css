@@ -408,3 +408,11 @@ input[type="range"]{
 .red {
 	color: red;
 }
+
+.gallery-item {
+    --tw-bg-opacity: 0 !important;
+}
+
+#img2img_image div.h-60{
+    height: 480px;
+}

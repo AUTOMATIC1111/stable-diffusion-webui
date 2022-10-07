@@ -1,8 +1,9 @@
 from collections import namedtuple
 from copy import copy
-from itertools import permutations
+from itertools import permutations, chain
 import random
-
+import csv
+from io import StringIO
 from PIL import Image
 import numpy as np
 
@@ -76,6 +77,11 @@ def apply_checkpoint(p, x, xs):
     modules.sd_models.reload_model_weights(shared.sd_model, info)
 
 
+def apply_hypernetwork(p, x, xs):
+    hn = shared.hypernetworks.get(x, None)
+    opts.data["sd_hypernetwork"] = hn.name if hn is not None else 'None'
+
+
 def format_value_add_label(p, opt, x):
     if type(x) == float:
         x = round(x, 8)
@@ -121,6 +127,7 @@ axis_options = [
     AxisOption("Prompt order", str_permutations, apply_order, format_value_join_list),
     AxisOption("Sampler", str, apply_sampler, format_value),
     AxisOption("Checkpoint name", str, apply_checkpoint, format_value),
+    AxisOption("Hypernetwork", str, apply_hypernetwork, format_value),
     AxisOption("Sigma Churn", float, apply_field("s_churn"), format_value_add_label),
     AxisOption("Sigma min", float, apply_field("s_tmin"), format_value_add_label),
     AxisOption("Sigma max", float, apply_field("s_tmax"), format_value_add_label),
@@ -168,7 +175,6 @@ re_range_float = re.compile(r"\s*([+-]?\s*\d+(?:.\d*)?)\s*-\s*([+-]?\s*\d+(?:.\d
 re_range_count = re.compile(r"\s*([+-]?\s*\d+)\s*-\s*([+-]?\s*\d+)(?:\s*\[(\d+)\s*\])?\s*")
 re_range_count_float = re.compile(r"\s*([+-]?\s*\d+(?:.\d*)?)\s*-\s*([+-]?\s*\d+(?:.\d*)?)(?:\s*\[(\d+(?:.\d*)?)\s*\])?\s*")
 
-
 class Script(scripts.Script):
     def title(self):
         return "X/Y plot"
@@ -193,11 +199,13 @@ class Script(scripts.Script):
         modules.processing.fix_seed(p)
         p.batch_size = 1
 
+        initial_hn = opts.sd_hypernetwork
+
         def process_axis(opt, vals):
             if opt.label == 'Nothing':
                 return [0]
 
-            valslist = [x.strip() for x in vals.split(",")]
+            valslist = [x.strip() for x in chain.from_iterable(csv.reader(StringIO(vals)))]
 
             if opt.type == int:
                 valslist_ext = []
@@ -299,5 +307,7 @@ class Script(scripts.Script):
 
         # restore checkpoint in case it was changed by axes
         modules.sd_models.reload_model_weights(shared.sd_model)
+
+        opts.data["sd_hypernetwork"] = initial_hn
 
         return processed
