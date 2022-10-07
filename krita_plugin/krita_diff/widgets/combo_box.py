@@ -15,6 +15,14 @@ class QComboBoxLayout(QHBoxLayout):
         *args,
         **kwargs
     ):
+        """Layout for labelled QComboBox.
+
+        Args:
+            script (Script): Script to connect to.
+            options_cfg (str): Config key to read available options from.
+            selected_cfg (str): Config key to read/write selected option to.
+            label (str, optional): Label, uses `selected_cfg` if None. Defaults to None.
+        """
         super(QComboBoxLayout, self).__init__(*args, **kwargs)
 
         # Used to connect to config stored in script

@@ -17,7 +17,7 @@ class QPromptEdit(QPlainTextEdit):
 
 class QPromptLayout(QVBoxLayout):
     prompt_label: str = "Prompt:"
-    neg_prompt_label: str = "Negative Prompt:"
+    neg_prompt_label: str = "Negative prompt:"
 
     def __init__(
         self, script: Script, prompt_cfg: str, neg_prompt_cfg: str, *args, **kwargs
