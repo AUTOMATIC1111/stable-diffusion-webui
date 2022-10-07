@@ -87,7 +87,7 @@ class Script(QObject):
         self.set_cfg("img2img_use_gfpgan", False, if_empty)
         self.set_cfg("img2img_tiling", False, if_empty)
         self.set_cfg("img2img_invert_mask", False, if_empty)
-        # self.set_cfg('img2img_upscaler_name', 0, if_empty)
+        self.set_cfg("img2img_upscaler_name", 0, if_empty)
 
         self.set_cfg("upscale_upscaler_name", 0, if_empty)
         self.set_cfg("upscale_downscale_first", False, if_empty)

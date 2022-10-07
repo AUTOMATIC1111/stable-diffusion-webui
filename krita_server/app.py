@@ -29,8 +29,8 @@ log = logging.getLogger(__name__)
 async def read_item():
     """Get information about backend API.
 
-    Returns config from `krita_config.yaml`, the list of available upscalers,
-    the path to the rendered image and image mask.
+    Returns config from `krita_config.yaml`, other metadata,
+    the path to the rendered image and image mask, etc.
 
     Returns:
         Dict: information.

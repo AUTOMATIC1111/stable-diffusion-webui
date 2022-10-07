@@ -86,10 +86,22 @@ class KritaSDPluginDocker(DockWidget):
         self.txt2img_prompt_text.setPlaceholderText(
             "krita_config.yaml value will be used"
         )
+        self.txt2img_prompt_text.setFixedHeight(
+            self.txt2img_prompt_text.fontMetrics().lineSpacing() * 5
+        )
+        self.txt2img_prompt_text.setSizePolicy(
+            QSizePolicy.MinimumExpanding, QSizePolicy.Maximum
+        )
         self.txt2img_negative_prompt_label = QLabel("Negative Prompt:")
         self.txt2img_negative_prompt_text = QPlainTextEdit()
         self.txt2img_negative_prompt_text.setPlaceholderText(
             "krita_config.yaml value will be used"
+        )
+        self.txt2img_negative_prompt_text.setFixedHeight(
+            self.txt2img_negative_prompt_text.fontMetrics().lineSpacing() * 5
+        )
+        self.txt2img_negative_prompt_text.setSizePolicy(
+            QSizePolicy.MinimumExpanding, QSizePolicy.Maximum
         )
         self.txt2img_prompt_layout = QVBoxLayout()
         self.txt2img_prompt_layout.addWidget(self.txt2img_prompt_label)
@@ -258,10 +270,22 @@ class KritaSDPluginDocker(DockWidget):
         self.img2img_prompt_text.setPlaceholderText(
             "krita_config.yaml value will be used"
         )
+        self.img2img_prompt_text.setFixedHeight(
+            self.img2img_prompt_text.fontMetrics().lineSpacing() * 5
+        )
+        self.img2img_prompt_text.setSizePolicy(
+            QSizePolicy.MinimumExpanding, QSizePolicy.Maximum
+        )
         self.img2img_negative_prompt_label = QLabel("Negative Prompt:")
         self.img2img_negative_prompt_text = QPlainTextEdit()
         self.img2img_negative_prompt_text.setPlaceholderText(
             "krita_config.yaml value will be used"
+        )
+        self.img2img_negative_prompt_text.setFixedHeight(
+            self.img2img_negative_prompt_text.fontMetrics().lineSpacing() * 5
+        )
+        self.img2img_negative_prompt_text.setSizePolicy(
+            QSizePolicy.MinimumExpanding, QSizePolicy.Maximum
         )
         self.img2img_prompt_layout = QVBoxLayout()
         self.img2img_prompt_layout.addWidget(self.img2img_prompt_label)
