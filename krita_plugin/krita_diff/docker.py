@@ -1,7 +1,8 @@
 from functools import partial
+from urllib.error import URLError
 
 from .script import *
-from .widgets import QPromptLayout
+from .widgets import QComboBoxLayout, QPromptLayout
 
 
 class SDPluginDocker(DockWidget):
@@ -10,10 +11,7 @@ class SDPluginDocker(DockWidget):
         self.setWindowTitle("SD Plugin")
         self.create_interface()
 
-        try:
-            script.update_config()
-        except:
-            pass
+        script.update_config()
 
         self.init_txt2img_interface()
         self.init_img2img_interface()
@@ -33,13 +31,17 @@ class SDPluginDocker(DockWidget):
         self.create_upscale_interface()
         self.create_config_interface()
 
+        refresh = QPushButton("Refresh Available Options")
+        refresh.released.connect(lambda: self.update_remote_config())
+
         self.tabs = QTabWidget()
-        self.tabs.addTab(self.txt2img_widget, "Txt2Img")
         self.tabs.addTab(self.img2img_widget, "Img2Img")
         self.tabs.addTab(self.upscale_widget, "Upscale")
+        self.tabs.addTab(self.txt2img_widget, "Txt2Img")
         self.tabs.addTab(self.config_widget, "Config")
 
         self.layout = QVBoxLayout()
+        self.layout.addWidget(refresh)
         self.layout.addWidget(self.tabs)
         self.widget = QWidget(self)
         self.widget.setLayout(self.layout)
@@ -49,13 +51,9 @@ class SDPluginDocker(DockWidget):
         self.txt2img_prompt = QPromptLayout(
             script, "txt2img_prompt", "txt2img_negative_prompt"
         )
-
-        self.txt2img_sampler_name_label = QLabel("Sampler:")
-        self.txt2img_sampler_name = QComboBox()
-        self.txt2img_sampler_name.addItems(samplers)
-        self.txt2img_sampler_name_layout = QHBoxLayout()
-        self.txt2img_sampler_name_layout.addWidget(self.txt2img_sampler_name_label)
-        self.txt2img_sampler_name_layout.addWidget(self.txt2img_sampler_name)
+        self.txt2img_sampler = QComboBoxLayout(
+            script, "txt2img_sampler_list", "txt2img_sampler", label="Sampler:"
+        )
 
         self.txt2img_steps_label = QLabel("Steps:")
         self.txt2img_steps = QSpinBox()
@@ -127,7 +125,7 @@ class SDPluginDocker(DockWidget):
 
         self.txt2img_layout = QVBoxLayout()
         self.txt2img_layout.addLayout(self.txt2img_prompt)
-        self.txt2img_layout.addLayout(self.txt2img_sampler_name_layout)
+        self.txt2img_layout.addLayout(self.txt2img_sampler)
         self.txt2img_layout.addLayout(self.txt2img_steps_layout)
         self.txt2img_layout.addLayout(self.txt2img_cfg_scale_layout)
         self.txt2img_layout.addLayout(self.txt2img_batch_layout)
@@ -143,9 +141,7 @@ class SDPluginDocker(DockWidget):
 
     def init_txt2img_interface(self):
         self.txt2img_prompt.cfg_init()
-        self.txt2img_sampler_name.clear()
-        self.txt2img_sampler_name.addItems(samplers)
-        self.txt2img_sampler_name.setCurrentText(script.cfg("txt2img_sampler", str))
+        self.txt2img_sampler.cfg_init()
         self.txt2img_steps.setValue(script.cfg("txt2img_steps", int))
         self.txt2img_cfg_scale.setValue(script.cfg("txt2img_cfg_scale", float))
         self.txt2img_batch_count.setValue(script.cfg("txt2img_batch_count", int))
@@ -166,9 +162,7 @@ class SDPluginDocker(DockWidget):
 
     def connect_txt2img_interface(self):
         self.txt2img_prompt.cfg_connect()
-        self.txt2img_sampler_name.currentTextChanged.connect(
-            partial(script.set_cfg, "txt2img_sampler")
-        )
+        self.txt2img_sampler.cfg_connect()
         self.txt2img_steps.valueChanged.connect(
             partial(script.set_cfg, "txt2img_steps")
         )
@@ -199,12 +193,9 @@ class SDPluginDocker(DockWidget):
             script, "img2img_prompt", "img2img_negative_prompt"
         )
 
-        self.img2img_sampler_name_label = QLabel("Sampler:")
-        self.img2img_sampler_name = QComboBox()
-        self.img2img_sampler_name.addItems(samplers_img2img)
-        self.img2img_sampler_name_layout = QHBoxLayout()
-        self.img2img_sampler_name_layout.addWidget(self.img2img_sampler_name_label)
-        self.img2img_sampler_name_layout.addWidget(self.img2img_sampler_name)
+        self.img2img_sampler = QComboBoxLayout(
+            script, "img2img_sampler_list", "img2img_sampler", label="Sampler:"
+        )
 
         self.img2img_steps_label = QLabel("Steps:")
         self.img2img_steps = QSpinBox()
@@ -288,15 +279,9 @@ class SDPluginDocker(DockWidget):
         self.img2img_use_gfpgan = QCheckBox("Restore faces")
         self.img2img_use_gfpgan.setTristate(False)
 
-        # SD upscale became a script in https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/91bfc71261e160451e89f35a7c0eef66ff98877c
-        self.img2img_upscaler_name_label = QLabel("Prescaler for SD upscale:")
-        self.img2img_upscaler_name = QComboBox()
-        self.img2img_upscaler_name.addItems(upscalers)
-        self.img2img_upscaler_name_renew = QPushButton("Update list")
-        self.img2img_upscaler_name_layout = QHBoxLayout()
-        self.img2img_upscaler_name_layout.addWidget(self.img2img_upscaler_name_label)
-        self.img2img_upscaler_name_layout.addWidget(self.img2img_upscaler_name)
-        self.img2img_upscaler_name_layout.addWidget(self.img2img_upscaler_name_renew)
+        self.img2img_upscaler = QComboBoxLayout(
+            script, "upscaler_list", "img2img_upscaler_name", label="Upscaler:"
+        )
 
         self.img2img_start_button = QPushButton("Apply SD img2img")
         self.img2img_upscale_button = QPushButton("Apply SD upscale")
@@ -308,7 +293,7 @@ class SDPluginDocker(DockWidget):
 
         self.img2img_layout = QVBoxLayout()
         self.img2img_layout.addLayout(self.img2img_prompt)
-        self.img2img_layout.addLayout(self.img2img_sampler_name_layout)
+        self.img2img_layout.addLayout(self.img2img_sampler)
         self.img2img_layout.addLayout(self.img2img_steps_layout)
         self.img2img_layout.addLayout(self.img2img_cfg_scale_layout)
         self.img2img_layout.addLayout(self.img2img_denoising_strength_layout)
@@ -318,7 +303,8 @@ class SDPluginDocker(DockWidget):
         self.img2img_layout.addWidget(self.img2img_use_gfpgan)
 
         self.img2img_layout.addLayout(self.img2img_checkboxes_layout)
-        # self.img2img_layout.addLayout(self.img2img_upscaler_name_layout)
+        # SD upscale became a script in https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/91bfc71261e160451e89f35a7c0eef66ff98877c
+        # self.img2img_layout.addLayout(self.img2img_upscaler)
         self.img2img_layout.addLayout(self.img2img_button_layout)
         self.img2img_layout.addStretch()
 
@@ -327,9 +313,7 @@ class SDPluginDocker(DockWidget):
 
     def init_img2img_interface(self):
         self.img2img_prompt.cfg_init()
-        self.img2img_sampler_name.clear()
-        self.img2img_sampler_name.addItems(samplers_img2img)
-        self.img2img_sampler_name.setCurrentText(script.cfg("img2img_sampler", str))
+        self.img2img_sampler.cfg_init()
         self.img2img_steps.setValue(script.cfg("img2img_steps", int))
         self.img2img_cfg_scale.setValue(script.cfg("img2img_cfg_scale", float))
         self.img2img_denoising_strength.setValue(
@@ -355,17 +339,11 @@ class SDPluginDocker(DockWidget):
             if script.cfg("img2img_invert_mask", bool)
             else Qt.CheckState.Unchecked
         )
-        self.img2img_upscaler_name.clear()
-        self.img2img_upscaler_name.addItems(upscalers)
-        self.img2img_upscaler_name.setCurrentText(
-            script.cfg("img2img_upscaler_name", str)
-        )
+        self.img2img_upscaler.cfg_init()
 
     def connect_img2img_interface(self):
         self.img2img_prompt.cfg_connect()
-        self.img2img_sampler_name.currentTextChanged.connect(
-            partial(script.set_cfg, "img2img_sampler")
-        )
+        self.img2img_sampler.cfg_connect()
         self.img2img_steps.valueChanged.connect(
             partial(script.set_cfg, "img2img_steps")
         )
@@ -395,25 +373,15 @@ class SDPluginDocker(DockWidget):
         self.img2img_invert_mask.toggled.connect(
             partial(script.set_cfg, "img2img_invert_mask")
         )
-        self.img2img_upscaler_name.currentTextChanged.connect(
-            partial(script.set_cfg, "img2img_upscaler_name")
-        )
-        self.img2img_upscaler_name_renew.released.connect(
-            lambda: self.update_remote_config()
-        )
+        self.img2img_upscaler.cfg_connect()
         self.img2img_start_button.released.connect(lambda: script.action_img2img())
         self.img2img_upscale_button.released.connect(lambda: script.action_sd_upscale())
         self.img2img_inpaint_button.released.connect(lambda: script.action_inpaint())
 
     def create_upscale_interface(self):
-        self.upscale_upscaler_name_label = QLabel("Upscalers:")
-        self.upscale_upscaler_name = QComboBox()
-        self.upscale_upscaler_name.addItems(upscalers)
-        self.upscale_upscaler_name_renew = QPushButton("Update list")
-        self.upscale_upscaler_name_layout = QHBoxLayout()
-        self.upscale_upscaler_name_layout.addWidget(self.upscale_upscaler_name_label)
-        self.upscale_upscaler_name_layout.addWidget(self.upscale_upscaler_name)
-        self.upscale_upscaler_name_layout.addWidget(self.upscale_upscaler_name_renew)
+        self.upscale_upscaler = QComboBoxLayout(
+            script, "upscaler_list", "upscale_upscaler_name", label="Upscaler:"
+        )
 
         self.upscale_downscale_first = QCheckBox(
             "Downscale image x0.5 before upscaling"
@@ -423,7 +391,7 @@ class SDPluginDocker(DockWidget):
         self.upscale_start_button = QPushButton("Apply upscaler")
 
         self.upscale_layout = QVBoxLayout()
-        self.upscale_layout.addLayout(self.upscale_upscaler_name_layout)
+        self.upscale_layout.addLayout(self.upscale_upscaler)
         self.upscale_layout.addWidget(self.upscale_downscale_first)
         self.upscale_layout.addWidget(self.upscale_start_button)
         self.upscale_layout.addStretch()
@@ -433,12 +401,7 @@ class SDPluginDocker(DockWidget):
         return self.upscale_layout
 
     def init_upscale_interface(self):
-        # add loaded upscalers
-        self.upscale_upscaler_name.clear()
-        self.upscale_upscaler_name.addItems(upscalers)
-        self.upscale_upscaler_name.setCurrentText(
-            script.cfg("upscale_upscaler_name", str)
-        )
+        self.upscale_upscaler.cfg_init()
         self.upscale_downscale_first.setCheckState(
             Qt.CheckState.Checked
             if script.cfg("upscale_downscale_first", bool)
@@ -446,12 +409,7 @@ class SDPluginDocker(DockWidget):
         )
 
     def connect_upscale_interface(self):
-        self.upscale_upscaler_name.currentTextChanged.connect(
-            partial(script.set_cfg, "upscale_upscaler_name")
-        )
-        self.upscale_upscaler_name_renew.released.connect(
-            lambda: self.update_remote_config()
-        )
+        self.upscale_upscaler.cfg_connect()
         self.upscale_downscale_first.toggled.connect(
             partial(script.set_cfg, "upscale_downscale_first")
         )
@@ -488,22 +446,15 @@ class SDPluginDocker(DockWidget):
         )
         self.config_only_full_img_tiling.setTristate(False)
 
-        self.config_sd_model_label = QLabel("SD model:")
-        self.config_sd_model = QComboBox()
-        self.config_sd_model.addItems(sd_models)
-        self.config_sd_model_layout = QHBoxLayout()
-        self.config_sd_model_layout.addWidget(self.config_sd_model_label)
-        self.config_sd_model_layout.addWidget(self.config_sd_model)
-
-        self.config_face_restorer_model_label = QLabel("Face restorer model:")
-        self.config_face_restorer_model = QComboBox()
-        self.config_face_restorer_model.addItems(face_restorers)
-        self.config_face_restorer_model_layout = QHBoxLayout()
-        self.config_face_restorer_model_layout.addWidget(
-            self.config_face_restorer_model_label
+        self.config_sd_model = QComboBoxLayout(
+            script, "sd_model_list", "sd_model", label="SD model:"
         )
-        self.config_face_restorer_model_layout.addWidget(
-            self.config_face_restorer_model
+
+        self.config_face_restorer_model = QComboBoxLayout(
+            script,
+            "face_restorer_model_list",
+            "face_restorer_model",
+            label="Face restorer:",
         )
 
         self.config_codeformer_weight_label = QLabel(
@@ -542,8 +493,8 @@ class SDPluginDocker(DockWidget):
         self.config_layout.addWidget(self.config_delete_temp_files)
         self.config_layout.addWidget(self.config_fix_aspect_ratio)
         self.config_layout.addWidget(self.config_only_full_img_tiling)
-        self.config_layout.addLayout(self.config_sd_model_layout)
-        self.config_layout.addLayout(self.config_face_restorer_model_layout)
+        self.config_layout.addLayout(self.config_sd_model)
+        self.config_layout.addLayout(self.config_face_restorer_model)
         self.config_layout.addLayout(self.config_codeformer_weight_layout)
         self.config_layout.addWidget(self.config_restore_defaults)
         self.config_layout.addWidget(self.config_weblinks_label)
@@ -579,14 +530,8 @@ class SDPluginDocker(DockWidget):
             if script.cfg("only_full_img_tiling", bool)
             else Qt.CheckState.Unchecked
         )
-        self.config_sd_model.clear()
-        self.config_sd_model.addItems(sd_models)
-        self.config_sd_model.setCurrentText(script.cfg("sd_model", str))
-        self.config_face_restorer_model.clear()
-        self.config_face_restorer_model.addItems(face_restorers)
-        self.config_face_restorer_model.setCurrentText(
-            script.cfg("face_restorer_model", str)
-        )
+        self.config_sd_model.cfg_init()
+        self.config_face_restorer_model.cfg_init()
         self.config_codeformer_weight.setValue(script.cfg("codeformer_weight", float))
 
     def connect_config_interface(self):
@@ -609,12 +554,8 @@ class SDPluginDocker(DockWidget):
         self.config_only_full_img_tiling.toggled.connect(
             partial(script.set_cfg, "only_full_img_tiling")
         )
-        self.config_sd_model.currentTextChanged.connect(
-            partial(script.set_cfg, "sd_model")
-        )
-        self.config_face_restorer_model.currentTextChanged.connect(
-            partial(script.set_cfg, "face_restorer_model")
-        )
+        self.config_sd_model.cfg_connect()
+        self.config_face_restorer_model.cfg_connect()
         self.config_codeformer_weight.valueChanged.connect(
             partial(script.set_cfg, "codeformer_weight")
         )
