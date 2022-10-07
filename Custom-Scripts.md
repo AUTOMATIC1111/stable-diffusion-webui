@@ -90,6 +90,7 @@ https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/1433/files
 
 ## Advanced Loopback
 https://github.com/Extraltodeus/advanced-loopback-for-sd-webui
+Dynamic zoom loopback with parameters variations and prompt switching amongst other features!
 
 ## Saving steps of the sampling process
 This script will save steps of the sampling process to a directory.
