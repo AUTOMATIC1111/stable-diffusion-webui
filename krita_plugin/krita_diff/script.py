@@ -5,7 +5,7 @@ import urllib.parse
 import urllib.request
 from urllib.error import URLError
 
-from krita import *
+from krita import Krita, QByteArray, QImage, QObject, QSettings, QTimer
 
 default_url = "http://127.0.0.1:8000"
 

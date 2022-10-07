@@ -1,8 +1,18 @@
 from functools import partial
 
-from krita import QCheckBox, QHBoxLayout, QLabel, QPushButton, QVBoxLayout
+from krita import (
+    DockWidget,
+    QCheckBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    QTabWidget,
+    QVBoxLayout,
+    QWidget,
+)
 
-from .script import *
+from .script import default_url, script
 from .widgets import QComboBoxLayout, QLineEditLayout, QPromptLayout, QSpinBoxLayout
 
 
