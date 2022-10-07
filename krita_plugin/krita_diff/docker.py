@@ -1,12 +1,9 @@
-import re
 from functools import partial
 
-from .krita_diff import *
-
-# Interface
+from .script import *
 
 
-class KritaSDPluginDocker(DockWidget):
+class SDPluginDocker(DockWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("SD Plugin")

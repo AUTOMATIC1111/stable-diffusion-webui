@@ -1,6 +1,6 @@
 from krita import Extension
 
-from .krita_diff_ui import script
+from .docker import script
 
 
 class Hotkeys(Extension):
