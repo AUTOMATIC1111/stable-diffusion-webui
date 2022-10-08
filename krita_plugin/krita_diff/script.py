@@ -180,6 +180,9 @@ class Script(QObject):
                 if not self.cfg("inpaint_seed", str).strip() == ""
                 else -1
             )
+            fill = self.cfg("inpaint_fill_list", "QStringList").index(
+                self.cfg("inpaint_fill", str)
+            )
             params.update(
                 prompt=self.fix_prompt(self.cfg("inpaint_prompt", str)),
                 negative_prompt=self.fix_prompt(
@@ -192,7 +195,7 @@ class Script(QObject):
                 seed=seed,
                 invert_mask=self.cfg("inpaint_invert_mask", bool),
                 mask_blur=self.cfg("inpaint_mask_blur", int),
-                inpainting_fill=self.cfg("inpaint_fill", int),
+                inpainting_fill=fill,
                 inpaint_full_res=self.cfg("inpaint_full_res", bool),
                 inpaint_full_res_padding=self.cfg("inpaint_full_res_padding", int),
             )
