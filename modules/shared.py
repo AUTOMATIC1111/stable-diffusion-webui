@@ -141,9 +141,9 @@ class OptionInfo:
         self.section = None
 
 
-def options_section(section_identifer, options_dict):
+def options_section(section_identifier, options_dict):
     for k, v in options_dict.items():
-        v.section = section_identifer
+        v.section = section_identifier
 
     return options_dict
 
@@ -246,7 +246,7 @@ options_templates.update(options_section(('ui', "User interface"), {
     "add_model_hash_to_info": OptionInfo(True, "Add model hash to generation information"),
     "font": OptionInfo("", "Font for image grids that have text"),
     "js_modal_lightbox": OptionInfo(True, "Enable full page image viewer"),
-    "js_modal_lightbox_initialy_zoomed": OptionInfo(True, "Show images zoomed in by default in full page image viewer"),
+    "js_modal_lightbox_initially_zoomed": OptionInfo(True, "Show images zoomed in by default in full page image viewer"),
     "show_progress_in_title": OptionInfo(True, "Show generation progress in window title."),
 }))
 

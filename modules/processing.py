@@ -386,7 +386,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
 
             if state.interrupted or state.skipped:
 
-                # if we are interruped, sample returns just noise
+                # if we are interrupted, sample returns just noise
                 # use the image collected previously in sampler loop
                 samples_ddim = shared.state.current_latent
 

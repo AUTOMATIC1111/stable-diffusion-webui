@@ -38,7 +38,7 @@ from modules import prompt_parser
 from modules.images import save_image
 import modules.textual_inversion.ui
 
-# this is a fix for Windows users. Without it, javascript files will be served with text/html content-type and the bowser will not show any UI
+# this is a fix for Windows users. Without it, javascript files will be served with text/html content-type and the browser will not show any UI
 mimetypes.init()
 mimetypes.add_type('application/javascript', '.js')
 
@@ -102,7 +102,7 @@ def save_files(js_data, images, index):
     import csv    
     filenames = []
 
-    #quick dictionary to class object conversion. Its neccesary due apply_filename_pattern requiring it
+    #quick dictionary to class object conversion. Its necessary due apply_filename_pattern requiring it
     class MyObject:
         def __init__(self, d=None):
             if d is not None:

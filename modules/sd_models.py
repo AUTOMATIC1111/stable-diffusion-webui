@@ -147,7 +147,7 @@ def load_model_weights(model, checkpoint_file, sd_model_hash):
         model.first_stage_model.load_state_dict(vae_dict)
 
     model.sd_model_hash = sd_model_hash
-    model.sd_model_checkpint = checkpoint_file
+    model.sd_model_checkpoint = checkpoint_file
 
 
 def load_model():
@@ -175,7 +175,7 @@ def reload_model_weights(sd_model, info=None):
     from modules import lowvram, devices, sd_hijack
     checkpoint_info = info or select_checkpoint()
 
-    if sd_model.sd_model_checkpint == checkpoint_info.filename:
+    if sd_model.sd_model_checkpoint == checkpoint_info.filename:
         return
 
     if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
