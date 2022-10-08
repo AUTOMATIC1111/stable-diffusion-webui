@@ -22,16 +22,12 @@ class ConfigTabWidget(QWidget):
 
         # Plugin settings
         self.just_use_yaml = QCheckBox(
-            "Override all options with krita_config.yaml (not recommended)"
+            "Override with krita_config.yaml (unrecommended)"
         )
-        self.create_mask_layer = QCheckBox(
-            "Create transparency mask layer from selection"
-        )
-        self.del_temp_files = QCheckBox("Automatically delete temporary image files")
-        self.fix_aspect_ratio = QCheckBox("Try to fix aspect ratio for selections")
-        self.only_full_img_tiling = QCheckBox(
-            "Only allow tiling (on full image) with no selection"
-        )
+        self.create_mask_layer = QCheckBox("Create transparency mask from selection")
+        self.del_temp_files = QCheckBox("Auto delete temporary image files")
+        self.fix_aspect_ratio = QCheckBox("Fix aspect ratio for selections")
+        self.only_full_img_tiling = QCheckBox("Only allow tiling with no selection")
 
         # webUI/backend settings
         self.filter_nsfw = QCheckBox("Filter NSFW content")
