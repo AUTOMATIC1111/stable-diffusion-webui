@@ -28,7 +28,7 @@ def apply_optimizations():
     elif cmd_opts.opt_split_attention_v1:
         ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.split_cross_attention_forward_v1
     elif not cmd_opts.disable_opt_split_attention and (cmd_opts.opt_split_attention or torch.cuda.is_available()):
-        ldm.modules.attention_CrossAttention_forward = sd_hijack_optimizations.split_cross_attention_forward
+        ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.split_cross_attention_forward
         ldm.modules.diffusionmodules.model.AttnBlock.forward = sd_hijack_optimizations.cross_attention_attnblock_forward
 
 
