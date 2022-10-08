@@ -270,9 +270,16 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration
 
     clip_skip = getattr(p, 'clip_skip', opts.CLIP_ignore_last_layers)
 
+    if isinstance(p, modules.processing.StableDiffusionProcessingTxt2Img):
+        sampler = sd_samplers.samplers[p.sampler_index].name
+    elif isinstance(p, modules.processing.StableDiffusionProcessingImg2Img):
+        sampler = sd_samplers.samplers_for_img2img[p.sampler_index].name
+    else:
+        sampler = None
+
     generation_params = {
         "Steps": p.steps,
-        "Sampler": sd_samplers.samplers[p.sampler_index].name,
+        "Sampler": sampler,
         "CFG scale": p.cfg_scale,
         "Seed": all_seeds[index],
         "Face restoration": (opts.face_restoration_model if p.restore_faces else None),
