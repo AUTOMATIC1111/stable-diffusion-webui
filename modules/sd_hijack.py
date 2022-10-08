@@ -22,9 +22,10 @@ def apply_optimizations():
     undo_optimizations()
 
     ldm.modules.diffusionmodules.model.nonlinearity = silu
-    if cmd_opts.xformers and shared.xformers_available and not torch.version.hip:
-        ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.xformers_attention_forward
-        ldm.modules.diffusionmodules.model.AttnBlock.forward = sd_hijack_optimizations.xformers_attnblock_forward
+    if cmd_opts.xformers and shared.xformers_available and torch.version.cuda:
+        if torch.cuda.get_device_capability(shared.device) == (8, 6):
+            ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.xformers_attention_forward
+            ldm.modules.diffusionmodules.model.AttnBlock.forward = sd_hijack_optimizations.xformers_attnblock_forward
     elif cmd_opts.opt_split_attention_v1:
         ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.split_cross_attention_forward_v1
     elif not cmd_opts.disable_opt_split_attention and (cmd_opts.opt_split_attention or torch.cuda.is_available()):
