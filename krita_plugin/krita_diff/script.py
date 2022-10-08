@@ -427,21 +427,29 @@ class Script(QObject):
         self.set_status(STATE_WAIT)
         if self.working:
             pass
-        self.update_config()
-        self.try_fix_aspect_ratio()
-        self.apply_txt2img()
-        self.create_mask_layer_workaround()
-        self.set_status(STATE_TXT2IMG)
+
+        def cb():
+            self.update_config()
+            self.try_fix_aspect_ratio()
+            self.apply_txt2img()
+            self.create_mask_layer_workaround()
+            self.set_status(STATE_TXT2IMG)
+
+        QTimer.singleShot(1, cb)
 
     def action_img2img(self):
         self.set_status(STATE_WAIT)
         if self.working:
             pass
-        self.update_config()
-        self.try_fix_aspect_ratio()
-        self.apply_img2img(mode=0)
-        self.create_mask_layer_workaround()
-        self.set_status(STATE_IMG2IMG)
+
+        def cb():
+            self.update_config()
+            self.try_fix_aspect_ratio()
+            self.apply_img2img(mode=0)
+            self.create_mask_layer_workaround()
+            self.set_status(STATE_IMG2IMG)
+
+        QTimer.singleShot(1, cb)
 
     def action_sd_upscale(self):
         assert False, "disabled"
@@ -456,18 +464,26 @@ class Script(QObject):
         self.set_status(STATE_WAIT)
         if self.working:
             pass
-        self.update_config()
-        self.try_fix_aspect_ratio()
-        self.apply_img2img(mode=1)
-        self.set_status(STATE_INPAINT)
+
+        def cb():
+            self.update_config()
+            self.try_fix_aspect_ratio()
+            self.apply_img2img(mode=1)
+            self.set_status(STATE_INPAINT)
+
+        QTimer.singleShot(1, cb)
 
     def action_simple_upscale(self):
         self.set_status(STATE_WAIT)
         if self.working:
             pass
-        self.update_config()
-        self.apply_simple_upscale()
-        self.set_status(STATE_UPSCALE)
+
+        def cb():
+            self.update_config()
+            self.apply_simple_upscale()
+            self.set_status(STATE_UPSCALE)
+
+        QTimer.singleShot(1, cb)
 
 
 script = Script()
