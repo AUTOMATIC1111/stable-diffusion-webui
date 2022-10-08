@@ -143,6 +143,8 @@ class ScriptRunner:
                 args_to = script.args_to
                 script_args = args[args_from:args_to]
                 on_show_updates = wrap_call(script.on_show, script.filename, "on_show", *script_args)
+                if (len(on_show_updates) != (args_to - args_from)):
+                    print("Error in custom script (" + script.filename + "): on_show() method should return the same number of arguments as ui().", file=sys.stderr)
             else:
                 args_from = 0
                 args_to = 0
@@ -150,12 +152,13 @@ class ScriptRunner:
             ret = [ ui.gr_show(True)] # always show the dropdown
             for i in range(1, len(inputs)):
                 if (args_from <= i < args_to):
-                    ret.append( on_show_updates[i - args_from] )
+                    if (i - args_from) < len(on_show_updates):
+                        ret.append( on_show_updates[i - args_from] )
+                    else:
+                        ret.append(ui.gr_show(True))
                 else:
                     ret.append(ui.gr_show(False))
             return ret
-
-            # return [ui.gr_show(True if (i == 0) else on_show_updates[i - args_from] if args_from <= i < args_to else False) for i in range(len(inputs))]
 
         dropdown.change(
             fn=select_script,
