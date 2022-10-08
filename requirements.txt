@@ -1,3 +1,4 @@
+accelerate
 basicsr
 diffusers
 fairscale==0.4.4
