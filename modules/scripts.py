@@ -1,5 +1,4 @@
 import os
-from pydoc import visiblename
 import sys
 import traceback
 

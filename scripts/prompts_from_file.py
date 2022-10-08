@@ -10,8 +10,6 @@ from modules.processing import Processed, process_images
 from PIL import Image
 from modules.shared import opts, cmd_opts, state
 
-g_txt_mode = False
-
 class Script(scripts.Script):
     def title(self):
         return "Prompts from file or textbox"
