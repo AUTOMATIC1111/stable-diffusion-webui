@@ -129,7 +129,7 @@ class Processed:
         self.index_of_first_image = index_of_first_image
         self.styles = p.styles
         self.job_timestamp = state.job_timestamp
-        self.clip_skip = opts.CLIP_ignore_last_layers
+        self.clip_skip = opts.CLIP_stop_at_last_layers
 
         self.eta = p.eta
         self.ddim_discretize = p.ddim_discretize
@@ -274,7 +274,7 @@ def fix_seed(p):
 def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration=0, position_in_batch=0):
     index = position_in_batch + iteration * p.batch_size
 
-    clip_skip = getattr(p, 'clip_skip', opts.CLIP_ignore_last_layers)
+    clip_skip = getattr(p, 'clip_skip', opts.CLIP_stop_at_last_layers)
 
     generation_params = {
         "Steps": p.steps,
