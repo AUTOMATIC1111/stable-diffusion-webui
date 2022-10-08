@@ -80,3 +80,7 @@ A. Unfortunately no, all plugins so far have different APIs.
 - CLIP interrogator idea and borrowing some code - <https://github.com/pharmapsychotic/clip-interrogator>
 - Initial Gradio script - posted on 4chan by an Anonymous user. Thank you Anonymous user.
 - (You)
+
+## License
+
+MIT for the Krita Plugin backend server & frontend plugin. Code has been nearly completely rewritten compared to original plugin by now.
