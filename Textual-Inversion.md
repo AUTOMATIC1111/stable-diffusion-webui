@@ -39,8 +39,7 @@ Experimental support for training embeddings in user interface.
 - i was able to reproduce results I got with other repos in training anime artists as styles, after few tens of thousands steps
 - works with half precision floats, but needs experimentation to see if results will be just as good
 - if you have enough memory, safer to run with `--no-half --precision full`
-- no preprocessing is done for images (except for resizing to 512x512), not even flip
-- planned: another button for UI to run preprocessing for images automatically.
+- Section for UI to run preprocessing for images automatically.
 - you can interrupt and resume training without any loss of data (except for AdamW optimization parameters, but it seems none of existing repos save those anyway so the general opinion is they are not important)
 - no support for batch sizes or gradient accumulation
 - it should not be possible to run this with `--lowvram` and `--medvram` flags.
@@ -56,9 +55,9 @@ Experimental support for training embeddings in user interface.
 This takes images from a directory, processes them to be ready for textual inversion, and writes results to another directory. This is a convenience feature and you can preprocess pictures yourself if you wish.
 - **Source directory**: directory with images
 - **Destination directory**: directory where the results will be written
-- **Flip**: for each image, also write its mirrored copy
-- **Split into two**: if the image is too tall or wide, resize it to have the short side match the desired resolution, and create two, possibly intersecting pictures out of it.
-- **Add caption**: use BLIP model from the interrogator to add a caption to the filename.
+- **Create flipped copies**: for each image, also write its mirrored copy
+- **Split oversized images into two**: if the image is too tall or wide, resize it to have the short side match the desired resolution, and create two, possibly intersecting pictures out of it.
+- **Use BLIP caption as filename**: use BLIP model from the interrogator to add a caption to the filename.
 
 ### Training an embedding
 - **Embedding**: select the embedding you want to train from this dropdown.
