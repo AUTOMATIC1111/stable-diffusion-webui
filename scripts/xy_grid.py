@@ -1,7 +1,9 @@
 from collections import namedtuple
 from copy import copy
+from itertools import permutations, chain
 import random
-
+import csv
+from io import StringIO
 from PIL import Image
 import numpy as np
 
@@ -29,6 +31,31 @@ def apply_prompt(p, x, xs):
     p.negative_prompt = p.negative_prompt.replace(xs[0], x)
 
 
+def apply_order(p, x, xs):
+    token_order = []
+
+    # Initally grab the tokens from the prompt, so they can be replaced in order of earliest seen
+    for token in x:
+        token_order.append((p.prompt.find(token), token))
+
+    token_order.sort(key=lambda t: t[0])
+
+    prompt_parts = []
+
+    # Split the prompt up, taking out the tokens
+    for _, token in token_order:
+        n = p.prompt.find(token)
+        prompt_parts.append(p.prompt[0:n])
+        p.prompt = p.prompt[n + len(token):]
+
+    # Rebuild the prompt with the tokens in the order we want
+    prompt_tmp = ""
+    for idx, part in enumerate(prompt_parts):
+        prompt_tmp += part
+        prompt_tmp += x[idx]
+    p.prompt = prompt_tmp + p.prompt
+    
+
 samplers_dict = {}
 for i, sampler in enumerate(modules.sd_samplers.samplers):
     samplers_dict[sampler.name.lower()] = i
@@ -50,6 +77,11 @@ def apply_checkpoint(p, x, xs):
     modules.sd_models.reload_model_weights(shared.sd_model, info)
 
 
+def apply_hypernetwork(p, x, xs):
+    hn = shared.hypernetworks.get(x, None)
+    opts.data["sd_hypernetwork"] = hn.name if hn is not None else 'None'
+
+
 def format_value_add_label(p, opt, x):
     if type(x) == float:
         x = round(x, 8)
@@ -60,14 +92,24 @@ def format_value_add_label(p, opt, x):
 def format_value(p, opt, x):
     if type(x) == float:
         x = round(x, 8)
-
     return x
+
+
+def format_value_join_list(p, opt, x):
+    return ", ".join(x)
+
 
 def do_nothing(p, x, xs):
     pass
 
+
 def format_nothing(p, opt, x):
     return ""
+
+
+def str_permutations(x):
+    """dummy function for specifying it in AxisOption's type when you want to get a list of permutations"""
+    return x
 
 
 AxisOption = namedtuple("AxisOption", ["label", "type", "apply", "format_value"])
@@ -82,8 +124,10 @@ axis_options = [
     AxisOption("Steps", int, apply_field("steps"), format_value_add_label),
     AxisOption("CFG Scale", float, apply_field("cfg_scale"), format_value_add_label),
     AxisOption("Prompt S/R", str, apply_prompt, format_value),
+    AxisOption("Prompt order", str_permutations, apply_order, format_value_join_list),
     AxisOption("Sampler", str, apply_sampler, format_value),
     AxisOption("Checkpoint name", str, apply_checkpoint, format_value),
+    AxisOption("Hypernetwork", str, apply_hypernetwork, format_value),
     AxisOption("Sigma Churn", float, apply_field("s_churn"), format_value_add_label),
     AxisOption("Sigma min", float, apply_field("s_tmin"), format_value_add_label),
     AxisOption("Sigma max", float, apply_field("s_tmax"), format_value_add_label),
@@ -155,11 +199,13 @@ class Script(scripts.Script):
         modules.processing.fix_seed(p)
         p.batch_size = 1
 
+        initial_hn = opts.sd_hypernetwork
+
         def process_axis(opt, vals):
             if opt.label == 'Nothing':
                 return [0]
 
-            valslist = [x.strip() for x in vals.split(",")]
+            valslist = [x.strip() for x in chain.from_iterable(csv.reader(StringIO(vals)))]
 
             if opt.type == int:
                 valslist_ext = []
@@ -206,6 +252,8 @@ class Script(scripts.Script):
                         valslist_ext.append(val)
 
                 valslist = valslist_ext
+            elif opt.type == str_permutations:
+                valslist = list(permutations(valslist))
 
             valslist = [opt.type(x) for x in valslist]
 
@@ -259,5 +307,7 @@ class Script(scripts.Script):
 
         # restore checkpoint in case it was changed by axes
         modules.sd_models.reload_model_weights(shared.sd_model)
+
+        opts.data["sd_hypernetwork"] = initial_hn
 
         return processed

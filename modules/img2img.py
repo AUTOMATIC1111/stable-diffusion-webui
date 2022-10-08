@@ -32,6 +32,8 @@ def process_batch(p, input_dir, output_dir, args):
 
     for i, image in enumerate(images):
         state.job = f"{i+1} out of {len(images)}"
+        if state.skipped:
+            state.skipped = False
 
         if state.interrupted:
             break
@@ -128,5 +130,8 @@ def img2img(mode: int, prompt: str, negative_prompt: str, prompt_style: str, pro
     generation_info_js = processed.js()
     if opts.samples_log_stdout:
         print(generation_info_js)
+
+    if opts.do_not_show_images:
+        processed.images = []
 
     return processed.images, generation_info_js, plaintext_to_html(processed.info)

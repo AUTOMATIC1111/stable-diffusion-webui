@@ -288,6 +288,20 @@ def apply_filename_pattern(x, p, seed, prompt):
     if seed is not None:
         x = x.replace("[seed]", str(seed))
 
+    if p is not None:
+        x = x.replace("[steps]", str(p.steps))
+        x = x.replace("[cfg]", str(p.cfg_scale))
+        x = x.replace("[width]", str(p.width))
+        x = x.replace("[height]", str(p.height))
+        x = x.replace("[styles]", sanitize_filename_part(", ".join([x for x in p.styles if not x == "None"]) or "None", replace_spaces=False))
+        x = x.replace("[sampler]", sanitize_filename_part(sd_samplers.samplers[p.sampler_index].name, replace_spaces=False))
+
+    x = x.replace("[model_hash]", getattr(p, "sd_model_hash", shared.sd_model.sd_model_hash))
+    x = x.replace("[date]", datetime.date.today().isoformat())
+    x = x.replace("[datetime]", datetime.datetime.now().strftime("%Y%m%d%H%M%S"))
+    x = x.replace("[job_timestamp]", getattr(p, "job_timestamp", shared.state.job_timestamp))
+
+    # Apply [prompt] at last. Because it may contain any replacement word.^M
     if prompt is not None:
         x = x.replace("[prompt]", sanitize_filename_part(prompt))
         if "[prompt_no_styles]" in x:
@@ -296,7 +310,7 @@ def apply_filename_pattern(x, p, seed, prompt):
                 if len(style) > 0:
                     style_parts = [y for y in style.split("{prompt}")]
                     for part in style_parts:
-                        prompt_no_style = prompt_no_style.replace(part, "").replace(", ,", ",").strip().strip(',')                        
+                        prompt_no_style = prompt_no_style.replace(part, "").replace(", ,", ",").strip().strip(',')
             prompt_no_style = prompt_no_style.replace(style, "").strip().strip(',').strip()
             x = x.replace("[prompt_no_styles]", sanitize_filename_part(prompt_no_style, replace_spaces=False))
 
@@ -306,24 +320,6 @@ def apply_filename_pattern(x, p, seed, prompt):
             if len(words) == 0:
                 words = ["empty"]
             x = x.replace("[prompt_words]", sanitize_filename_part(" ".join(words[0:max_prompt_words]), replace_spaces=False))
-
-    if p is not None:
-        x = x.replace("[steps]", str(p.steps))
-        x = x.replace("[cfg]", str(p.cfg_scale))
-        x = x.replace("[width]", str(p.width))
-        x = x.replace("[height]", str(p.height))
-        
-        #currently disabled if using the save button, will work otherwise 
-        # if enabled it will cause a bug because styles is not included in the save_files data dictionary
-        if hasattr(p, "styles"):
-            x = x.replace("[styles]", sanitize_filename_part(", ".join([x for x in p.styles if not x == "None"] or "None"), replace_spaces=False))
-
-        x = x.replace("[sampler]", sanitize_filename_part(sd_samplers.samplers[p.sampler_index].name, replace_spaces=False))
-
-    x = x.replace("[model_hash]", shared.sd_model.sd_model_hash)
-    x = x.replace("[date]", datetime.date.today().isoformat())
-    x = x.replace("[datetime]", datetime.datetime.now().strftime("%Y%m%d%H%M%S"))
-    x = x.replace("[job_timestamp]", shared.state.job_timestamp)
 
     if cmd_opts.hide_ui_dir_config:
         x = re.sub(r'^[\\/]+|\.{2,}[\\/]+|[\\/]+\.{2,}', '', x)
@@ -353,7 +349,7 @@ def get_next_sequence_number(path, basename):
     return result + 1
 
 
-def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None, forced_filename=None, suffix=""):
+def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None, forced_filename=None, suffix="", save_to_dirs=None):
     if short_filename or prompt is None or seed is None:
         file_decoration = ""
     elif opts.save_to_dirs:
@@ -377,7 +373,8 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     else:
         pnginfo = None
 
-    save_to_dirs = (grid and opts.grid_save_to_dirs) or (not grid and opts.save_to_dirs and not no_prompt)
+    if save_to_dirs is None:
+        save_to_dirs = (grid and opts.grid_save_to_dirs) or (not grid and opts.save_to_dirs and not no_prompt)
 
     if save_to_dirs:
         dirname = apply_filename_pattern(opts.directories_filename_pattern or "[prompt_words]", p, seed, prompt).strip('\\ /')
@@ -436,3 +433,4 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
             processed = Processed(p, [], seed, info)
             file.write(processed.js())
 
+    return fullfn

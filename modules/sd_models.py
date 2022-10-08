@@ -122,7 +122,11 @@ def load_model_weights(model, checkpoint_file, sd_model_hash):
     pl_sd = torch.load(checkpoint_file, map_location="cpu")
     if "global_step" in pl_sd:
         print(f"Global Step: {pl_sd['global_step']}")
-    sd = pl_sd["state_dict"]
+    
+    if "state_dict" in pl_sd:
+        sd = pl_sd["state_dict"]
+    else:
+        sd = pl_sd
 
     model.load_state_dict(sd, strict=False)
 
@@ -133,6 +137,14 @@ def load_model_weights(model, checkpoint_file, sd_model_hash):
         model.half()
 
     devices.dtype = torch.float32 if shared.cmd_opts.no_half else torch.float16
+
+    vae_file = os.path.splitext(checkpoint_file)[0] + ".vae.pt"
+    if os.path.exists(vae_file):
+        print(f"Loading VAE weights from: {vae_file}")
+        vae_ckpt = torch.load(vae_file, map_location="cpu")
+        vae_dict = {k: v for k, v in vae_ckpt["state_dict"].items() if k[0:4] != "loss"}
+
+        model.first_stage_model.load_state_dict(vae_dict)
 
     model.sd_model_hash = sd_model_hash
     model.sd_model_checkpint = checkpoint_file
