@@ -98,9 +98,10 @@ def send_gradio_gallery_to_image(x):
     return image_from_url_text(x[0])
 
 
-def save_files(js_data, images, index):
+def save_files(js_data, images, do_make_zip, index):
     import csv    
     filenames = []
+    fullfns = []
 
     #quick dictionary to class object conversion. Its necessary due apply_filename_pattern requiring it
     class MyObject:
@@ -141,10 +142,22 @@ def save_files(js_data, images, index):
 
             filename = os.path.relpath(fullfn, path)
             filenames.append(filename)
+            fullfns.append(fullfn)
 
         writer.writerow([data["prompt"], data["seed"], data["width"], data["height"], data["sampler"], data["cfg_scale"], data["steps"], filenames[0], data["negative_prompt"]])
 
-    return '', '', plaintext_to_html(f"Saved: {filenames[0]}")
+    # Make Zip
+    if do_make_zip:
+        zip_filepath = os.path.join(path, "images.zip")
+
+        from zipfile import ZipFile
+        with ZipFile(zip_filepath, "w") as zip_file:
+            for i in range(len(fullfns)):
+                with open(fullfns[i], mode="rb") as f:
+                    zip_file.writestr(filenames[i], f.read())
+        fullfns.insert(0, zip_filepath)
+
+    return fullfns, '', '', plaintext_to_html(f"Saved: {filenames[0]}")
 
 
 def wrap_gradio_call(func, extra_outputs=None):
@@ -521,6 +534,12 @@ def create_ui(wrap_gradio_gpu_call):
                         button_id = "hidden_element" if shared.cmd_opts.hide_ui_dir_config else 'open_folder'
                         open_txt2img_folder = gr.Button(folder_symbol, elem_id=button_id)
 
+                    with gr.Row():
+                        do_make_zip = gr.Checkbox(label="Make Zip when Save?", value=False)
+                    
+                    with gr.Row():
+                        download_files = gr.File(None, file_count="multiple", interactive=False, show_label=False)
+
                 with gr.Group():
                     html_info = gr.HTML()
                     generation_info = gr.Textbox(visible=False)
@@ -570,13 +589,15 @@ def create_ui(wrap_gradio_gpu_call):
 
             save.click(
                 fn=wrap_gradio_call(save_files),
-                _js="(x, y, z) => [x, y, selected_gallery_index()]",
+                _js="(x, y, z, w) => [x, y, z, selected_gallery_index()]",
                 inputs=[
                     generation_info,
                     txt2img_gallery,
+                    do_make_zip,
                     html_info,
                 ],
                 outputs=[
+                    download_files,
                     html_info,
                     html_info,
                     html_info,
@@ -701,6 +722,12 @@ def create_ui(wrap_gradio_gpu_call):
                         button_id = "hidden_element" if shared.cmd_opts.hide_ui_dir_config else 'open_folder'
                         open_img2img_folder = gr.Button(folder_symbol, elem_id=button_id)
 
+                    with gr.Row():
+                        do_make_zip = gr.Checkbox(label="Make Zip when Save?", value=False)
+                    
+                    with gr.Row():
+                        download_files = gr.File(None, file_count="multiple", interactive=False, show_label=False)
+
                 with gr.Group():
                     html_info = gr.HTML()
                     generation_info = gr.Textbox(visible=False)
@@ -776,13 +803,15 @@ def create_ui(wrap_gradio_gpu_call):
 
             save.click(
                 fn=wrap_gradio_call(save_files),
-                _js="(x, y, z) => [x, y, selected_gallery_index()]",
+                _js="(x, y, z, w) => [x, y, z, selected_gallery_index()]",
                 inputs=[
                     generation_info,
                     img2img_gallery,
-                    html_info
+                    do_make_zip,
+                    html_info,
                 ],
                 outputs=[
+                    download_files,
                     html_info,
                     html_info,
                     html_info,
