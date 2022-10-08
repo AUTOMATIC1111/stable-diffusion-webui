@@ -1,9 +1,14 @@
 import math
 import torch
 from torch import einsum
-import xformers.ops
-import functorch
-xformers._is_functorch_available=True
+try:
+    import xformers.ops
+    import functorch
+    xformers._is_functorch_available = True
+    shared.xformers_available = True
+except:
+    print('Cannot find xformers, defaulting to split attention. Try setting --xformers in your webui-user file if you wish to install it.')
+    continue
 from ldm.util import default
 from einops import rearrange
 
