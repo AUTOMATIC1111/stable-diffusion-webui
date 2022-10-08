@@ -79,7 +79,13 @@ contextMenuInit = function(){
   }
 
   function removeContextMenuOption(uid){
-
+    menuSpecs.forEach(function(v,k) {
+      let index = -1
+      v.forEach(function(e,ei){if(e['id']==uid){index=ei}})
+      if(index>=0){
+        v.splice(index, 1);
+      }
+    })
   }
 
   function addContextMenuEventListener(){
@@ -148,7 +154,8 @@ cancelGenerateForever = function(){
 }
 
 appendContextMenuOption('#txt2img_interrupt','Cancel generate forever',cancelGenerateForever)
-appendContextMenuOption('#txt2img_generate','Cancel generate forever',cancelGenerateForever)
+appendContextMenuOption('#txt2img_generate', 'Cancel generate forever',cancelGenerateForever)
+
 
 appendContextMenuOption('#roll','Roll three',
   function(){ 
