@@ -4,6 +4,7 @@ import os
 import sys
 import importlib.util
 import shlex
+import platform
 
 dir_repos = "repositories"
 dir_tmp = "tmp"
@@ -31,6 +32,7 @@ def extract_arg(args, name):
 
 
 args, skip_torch_cuda_test = extract_arg(args, '--skip-torch-cuda-test')
+args, xformers = extract_arg(args, '--xformers')
 
 
 def repo_dir(name):
@@ -123,6 +125,12 @@ if not is_installed("gfpgan"):
 
 if not is_installed("clip"):
     run_pip(f"install {clip_package}", "clip")
+
+if not is_installed("xformers") and xformers:
+    if platform.system() == "Windows":
+        run_pip("install https://github.com/C43H66N12O12S2/stable-diffusion-webui/releases/download/a/xformers-0.0.14.dev0-cp310-cp310-win_amd64.whl", "xformers")
+    elif platform.system() == "Linux":
+        run_pip("install xformers", "xformers")
 
 os.makedirs(dir_repos, exist_ok=True)
 
