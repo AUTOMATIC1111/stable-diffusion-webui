@@ -37,4 +37,4 @@ class Txt2ImgTabWidget(ImgTabBaseWidget):
         self.highres.toggled.connect(toggle_highres)
         toggle_highres(self.highres.isChecked())
 
-        self.btn.released.connect(lambda: script.apply_txt2img())
+        self.btn.released.connect(lambda: script.action_txt2img())
