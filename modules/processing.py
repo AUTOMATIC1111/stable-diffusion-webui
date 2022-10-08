@@ -347,7 +347,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
     infotexts = []
     output_images = []
 
-    with torch.no_grad():
+    with torch.no_grad(), p.sd_model.ema_scope():
         with devices.autocast():
             p.init(all_prompts, all_seeds, all_subseeds)
 
