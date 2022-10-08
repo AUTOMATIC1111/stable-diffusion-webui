@@ -40,6 +40,7 @@ ln -rs /.../auto-sd-krita/krita_plugin/krita_diff.desktop /.../pykrita/krita_dif
 5. Improve & document the API.
 6. _Proper_ Docker support and integration with Devcontainers.
 7. Figure out how to do async with pyQt to prevent GUI freeze & allow progress feedback
+8. Expose sampler parameters with explanation.
 
 ## Features
 

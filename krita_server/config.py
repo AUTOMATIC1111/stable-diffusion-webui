@@ -64,6 +64,10 @@ class GenerationOptions(BaseModel):
     upscaler_name: str = "None"
     """Exact name of upscaler to use."""
 
+class SamplerParamOptions(BaseModel):
+    # TODO: More conveniently expose config options for samplers/explain them.
+    pass
+
 
 class FaceRestorationOptions(BaseModel):
     restore_faces: bool = False
