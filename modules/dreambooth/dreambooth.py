@@ -4,7 +4,6 @@ from contextlib import nullcontext
 from pathlib import Path
 from typing import Optional
 
-import accelerate
 import torch
 import torch.nn.functional as F
 import torch.utils.checkpoint
@@ -14,7 +13,6 @@ from accelerate.utils import set_seed
 from diffusers import AutoencoderKL, DDPMScheduler, StableDiffusionPipeline, UNet2DConditionModel
 from diffusers.optimization import get_scheduler
 from huggingface_hub import HfFolder, whoami
-from torch.distributed.launch import launch
 from torch.utils.data import Dataset
 from torchvision import transforms
 from tqdm.auto import tqdm
@@ -429,7 +427,7 @@ def start_training(model_dir, initialization_text, classification_text, learn_ra
     try:
         sd_hijack.undo_optimizations()
         dream = DreamBooth(model_dir, dataset_directory, initialization_text,classification_text,learn_rate,create_image_every,save_embedding_every, steps)
-        foo = accelerate launch dream.train()
+        foo = dream.train()
     except Exception:
         raise
     finally:
