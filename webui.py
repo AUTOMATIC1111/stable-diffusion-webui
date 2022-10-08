@@ -5,6 +5,8 @@ import importlib
 import signal
 import threading
 
+from fastapi.middleware.gzip import GZipMiddleware
+
 from modules.paths import script_path
 
 from modules import devices, sd_samplers
@@ -93,7 +95,7 @@ def webui():
 
         demo = modules.ui.create_ui(wrap_gradio_gpu_call=wrap_gradio_gpu_call)
         
-        demo.launch(
+        app,local_url,share_url = demo.launch(
             share=cmd_opts.share,
             server_name="0.0.0.0" if cmd_opts.listen else None,
             server_port=cmd_opts.port,
@@ -102,6 +104,8 @@ def webui():
             inbrowser=cmd_opts.autolaunch,
             prevent_thread_lock=True
         )
+        
+        app.add_middleware(GZipMiddleware,minimum_size=1000)
 
         while 1:
             time.sleep(0.5)
