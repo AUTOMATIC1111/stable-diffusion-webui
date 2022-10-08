@@ -39,7 +39,7 @@ from modules.prompt_parser import get_learned_conditioning_prompt_schedules
 from modules.images import apply_filename_pattern, get_next_sequence_number
 import modules.textual_inversion.ui
 
-# this is a fix for Windows users. Without it, javascript files will be served with text/html content-type and the bowser will not show any UI
+# this is a fix for Windows users. Without it, javascript files will be served with text/html content-type and the browser will not show any UI
 mimetypes.init()
 mimetypes.add_type('application/javascript', '.js')
 
@@ -102,6 +102,7 @@ def send_gradio_gallery_to_image(x):
 def save_files(js_data, images, index):
     import csv
     filenames = []
+
 
     # quick dictionary to class object conversion. Its neccesary due apply_filename_pattern requiring it
     class MyObject:

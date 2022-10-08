@@ -34,7 +34,7 @@ Check the [custom scripts](https://github.com/AUTOMATIC1111/stable-diffusion-web
 - Sampling method selection
 - Interrupt processing at any time
 - 4GB video card support (also reports of 2GB working)
-- Correct seeds for batches 
+- Correct seeds for batches
 - Prompt length validation
      - get length of prompt in tokens as you type
      - get a warning after generation if some text was truncated
