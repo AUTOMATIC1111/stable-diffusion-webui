@@ -100,6 +100,13 @@ https://github.com/Extraltodeus/advanced-loopback-for-sd-webui
 
 Dynamic zoom loopback with parameters variations and prompt switching amongst other features!
 
+## prompt-morph
+https://github.com/feffy380/prompt-morph
+
+Generate morph sequences with Stable Diffusion. Interpolate between two or more prompts and create an image at each step.
+
+Uses the new AND keyword and can optionally export the sequence as a video.
+
 ## Saving steps of the sampling process
 
 This script will save steps of the sampling process to a directory.
