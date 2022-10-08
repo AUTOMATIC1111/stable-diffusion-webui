@@ -4,6 +4,7 @@
   - [Textual Inversion](Textual-Inversion)
   - [Negative prompt](Negative-prompt)
 - [Dependencies](Dependencies)
+  - [Xformers](Xformers)
 - [Installation and run on NVidia GPUs](Install-and-Run-on-NVidia-GPUs)
 - [Install and run on AMD GPUs](Install-and-Run-on-AMD-GPUs)
 - [Install and run on Apple Silicon](Installation-on-Apple-Silicon) 
