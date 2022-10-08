@@ -138,4 +138,4 @@ fi
 printf "\n%s\n" "${delimiter}"
 printf "Launching launch.py..."
 printf "\n%s\n" "${delimiter}"
-"${python_cmd}" "${LAUNCH_SCRIPT}"
+"${python_cmd}" "${LAUNCH_SCRIPT}" "$@"
