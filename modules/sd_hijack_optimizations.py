@@ -1,4 +1,7 @@
 import math
+import sys
+import traceback
+
 import torch
 from torch import einsum
 
@@ -7,13 +10,16 @@ from einops import rearrange
 
 from modules import shared
 
-try:
-    import xformers.ops
-    import functorch
-    xformers._is_functorch_available = True
-    shared.xformers_available = True
-except Exception:
-    print('Cannot find xformers, defaulting to split attention. Try adding --xformers commandline argument to your webui-user file if you wish to install it.')
+if shared.cmd_opts.xformers:
+    try:
+        import xformers.ops
+        import functorch
+        xformers._is_functorch_available = True
+        shared.xformers_available = True
+    except Exception:
+        print("Cannot import xformers", file=sys.stderr)
+        print(traceback.format_exc(), file=sys.stderr)
+
 
 # see https://github.com/basujindal/stable-diffusion/pull/117 for discussion
 def split_cross_attention_forward_v1(self, x, context=None, mask=None):
