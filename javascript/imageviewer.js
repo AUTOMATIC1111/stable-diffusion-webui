@@ -86,6 +86,9 @@ function showGalleryImage(){
         
         if(fullImg_preview != null){
             fullImg_preview.forEach(function function_name(e) {
+                if (e.dataset.modded)
+                    return;
+                e.dataset.modded = true;
                 if(e && e.parentElement.tagName == 'DIV'){
 
                     e.style.cursor='pointer'
