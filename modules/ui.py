@@ -38,8 +38,10 @@ import modules.generation_parameters_copypaste
 from modules import prompt_parser
 from modules.images import save_image
 import modules.textual_inversion.ui
+
 import modules.prompt_gen ################################################ Prompt_Gen Import
-# this is a fix for Windows users. Without it, javascript files will be served with text/html content-type and the bowser will not show any UI
+
+# this is a fix for Windows users. Without it, javascript files will be served with text/html content-type and the browser will not show any UI
 mimetypes.init()
 mimetypes.add_type('application/javascript', '.js')
 
@@ -103,7 +105,7 @@ def save_files(js_data, images, index):
     import csv    
     filenames = []
 
-    #quick dictionary to class object conversion. Its neccesary due apply_filename_pattern requiring it
+    #quick dictionary to class object conversion. Its necessary due apply_filename_pattern requiring it
     class MyObject:
         def __init__(self, d=None):
             if d is not None:
@@ -1365,7 +1367,7 @@ def create_ui(wrap_gradio_gpu_call):
                 custom_name = gr.Textbox(label="Custom Name (Optional)")
                 interp_amount = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Interpolation Amount', value=0.3)
                 interp_method = gr.Radio(choices=["Weighted Sum", "Sigmoid", "Inverse Sigmoid"], value="Weighted Sum", label="Interpolation Method")
-                save_as_half = gr.Checkbox(value=False, label="Safe as float16")
+                save_as_half = gr.Checkbox(value=False, label="Save as float16")
                 modelmerger_merge = gr.Button(elem_id="modelmerger_merge", label="Merge", variant='primary')
 
             with gr.Column(variant='panel'):
@@ -1399,9 +1401,9 @@ def create_ui(wrap_gradio_gpu_call):
                     process_dst = gr.Textbox(label='Destination directory')
 
                     with gr.Row():
-                        process_flip = gr.Checkbox(label='Flip')
-                        process_split = gr.Checkbox(label='Split into two')
-                        process_caption = gr.Checkbox(label='Add caption')
+                        process_flip = gr.Checkbox(label='Create flipped copies')
+                        process_split = gr.Checkbox(label='Split oversized images into two')
+                        process_caption = gr.Checkbox(label='Use BLIP caption as filename')
 
                     with gr.Row():
                         with gr.Column(scale=3):

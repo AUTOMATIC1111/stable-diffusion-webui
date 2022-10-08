@@ -181,7 +181,7 @@ class VanillaStableDiffusionSampler:
 
         self.initialize(p)
 
-        # existing code fails with cetain step counts, like 9
+        # existing code fails with certain step counts, like 9
         try:
             self.sampler.make_schedule(ddim_num_steps=steps,  ddim_eta=self.eta, ddim_discretize=p.ddim_discretize, verbose=False)
         except Exception:
@@ -204,7 +204,7 @@ class VanillaStableDiffusionSampler:
 
         steps = steps or p.steps
 
-        # existing code fails with cetin step counts, like 9
+        # existing code fails with certain step counts, like 9
         try:
             samples_ddim, _ = self.sampler.sample(S=steps, conditioning=conditioning, batch_size=int(x.shape[0]), shape=x[0].shape, verbose=False, unconditional_guidance_scale=p.cfg_scale, unconditional_conditioning=unconditional_conditioning, x_T=x, eta=self.eta)
         except Exception:
