@@ -6,9 +6,9 @@
 
 Why use this?
 
-- Extremely good inpainting workflow; Option to use Gradio webUI for everything else
-- Updated regularly with upstream AUTOMATIC1111's features & fixes
-- Battle tested by a perfectionist who daily drives it ([@Interpause](https://github.com/interpause))
+- Optimized focus inpainting workflow allowing multiple models to be used for advanced composition of multiple characters.
+- AUTOMATIC1111's webUI works alongside plugin to allow using features not available yet in the plugin's UI without restarting.
+- Updated regularly with upstream AUTOMATIC1111's features & fixes.
 
 This repository was originally a fork of [sddebz/stable-diffusion-krita-plugin](https://github.com/sddebz/stable-diffusion-krita-plugin), which is itself a fork of [AUTOMATIC1111/stable-diffusion-webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui), the most featureful & performant SD fork yet. The main value adds are fixing the commit history, thoroughly refactoring the plugin code for future development, and maintenance.
 
