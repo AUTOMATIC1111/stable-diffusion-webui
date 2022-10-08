@@ -176,7 +176,7 @@ def cross_attention_attnblock_forward(self, x):
 
         return h3
     
-    def xformers_attnblock_forward(self, x):
+def xformers_attnblock_forward(self, x):
         h_ = x
         h_ = self.norm(h_)
         q1 = self.q(h_).contiguous()
