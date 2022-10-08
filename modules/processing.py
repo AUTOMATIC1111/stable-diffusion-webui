@@ -141,6 +141,7 @@ class Processed:
         self.all_subseeds = all_subseeds or [self.subseed]
         self.infotexts = infotexts or [info]
 
+
     def js(self):
         obj = {
             "prompt": self.prompt,
@@ -312,6 +313,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
         os.makedirs(p.outpath_grids, exist_ok=True)
 
     modules.sd_hijack.model_hijack.apply_circular(p.tiling)
+    modules.sd_hijack.model_hijack.clear_comments()
 
     comments = {}
 
@@ -349,6 +351,9 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             state.job_count = p.n_iter
 
         for n in range(p.n_iter):
+            if state.skipped:
+                state.skipped = False
+            
             if state.interrupted:
                 break
 
@@ -375,7 +380,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             with devices.autocast():
                 samples_ddim = p.sample(conditioning=c, unconditional_conditioning=uc, seeds=seeds, subseeds=subseeds, subseed_strength=p.subseed_strength)
 
-            if state.interrupted:
+            if state.interrupted or state.skipped:
 
                 # if we are interruped, sample returns just noise
                 # use the image collected previously in sampler loop

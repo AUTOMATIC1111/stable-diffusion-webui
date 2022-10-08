@@ -106,7 +106,7 @@ def extended_tdqm(sequence, *args, desc=None, **kwargs):
     seq = sequence if cmd_opts.disable_console_progressbars else tqdm.tqdm(sequence, *args, desc=state.job, file=shared.progress_print_out, **kwargs)
 
     for x in seq:
-        if state.interrupted:
+        if state.interrupted or state.skipped:
             break
 
         yield x
@@ -141,6 +141,16 @@ class VanillaStableDiffusionSampler:
 
         assert all([len(conds) == 1 for conds in conds_list]), 'composition via AND is not supported for DDIM/PLMS samplers'
         cond = tensor
+
+        # for DDIM, shapes must match, we can't just process cond and uncond independently;
+        # filling unconditional_conditioning with repeats of the last vector to match length is
+        # not 100% correct but should work well enough
+        if unconditional_conditioning.shape[1] < cond.shape[1]:
+            last_vector = unconditional_conditioning[:, -1:]
+            last_vector_repeated = last_vector.repeat([1, cond.shape[1] - unconditional_conditioning.shape[1], 1])
+            unconditional_conditioning = torch.hstack([unconditional_conditioning, last_vector_repeated])
+        elif unconditional_conditioning.shape[1] > cond.shape[1]:
+            unconditional_conditioning = unconditional_conditioning[:, :cond.shape[1]]
 
         if self.mask is not None:
             img_orig = self.sampler.model.q_sample(self.init_latent, ts)
@@ -221,18 +231,29 @@ class CFGDenoiser(torch.nn.Module):
 
         x_in = torch.cat([torch.stack([x[i] for _ in range(n)]) for i, n in enumerate(repeats)] + [x])
         sigma_in = torch.cat([torch.stack([sigma[i] for _ in range(n)]) for i, n in enumerate(repeats)] + [sigma])
-        cond_in = torch.cat([tensor, uncond])
 
-        if shared.batch_cond_uncond:
-            x_out = self.inner_model(x_in, sigma_in, cond=cond_in)
+        if tensor.shape[1] == uncond.shape[1]:
+            cond_in = torch.cat([tensor, uncond])
+
+            if shared.batch_cond_uncond:
+                x_out = self.inner_model(x_in, sigma_in, cond=cond_in)
+            else:
+                x_out = torch.zeros_like(x_in)
+                for batch_offset in range(0, x_out.shape[0], batch_size):
+                    a = batch_offset
+                    b = a + batch_size
+                    x_out[a:b] = self.inner_model(x_in[a:b], sigma_in[a:b], cond=cond_in[a:b])
         else:
             x_out = torch.zeros_like(x_in)
-            for batch_offset in range(0, x_out.shape[0], batch_size):
+            batch_size = batch_size*2 if shared.batch_cond_uncond else batch_size
+            for batch_offset in range(0, tensor.shape[0], batch_size):
                 a = batch_offset
-                b = a + batch_size
-                x_out[a:b] = self.inner_model(x_in[a:b], sigma_in[a:b], cond=cond_in[a:b])
+                b = min(a + batch_size, tensor.shape[0])
+                x_out[a:b] = self.inner_model(x_in[a:b], sigma_in[a:b], cond=tensor[a:b])
 
-        denoised_uncond = x_out[-batch_size:]
+            x_out[-uncond.shape[0]:] = self.inner_model(x_in[-uncond.shape[0]:], sigma_in[-uncond.shape[0]:], cond=uncond)
+
+        denoised_uncond = x_out[-uncond.shape[0]:]
         denoised = torch.clone(denoised_uncond)
 
         for i, conds in enumerate(conds_list):
@@ -254,7 +275,7 @@ def extended_trange(sampler, count, *args, **kwargs):
     seq = range(count) if cmd_opts.disable_console_progressbars else tqdm.trange(count, *args, desc=state.job, file=shared.progress_print_out, **kwargs)
 
     for x in seq:
-        if state.interrupted:
+        if state.interrupted or state.skipped:
             break
 
         if sampler.stop_at is not None and x > sampler.stop_at:

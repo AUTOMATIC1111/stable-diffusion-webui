@@ -26,3 +26,4 @@ lark
 deepdanbooru
 tensorflow
 tensorflow-io
+functorch
