@@ -191,6 +191,8 @@ def parse_prompt(val):
     Returns:
         str: Correctly formatted prompt.
     """
+    if val is None:
+        return ""
     if isinstance(val, str):
         return val
     if isinstance(val, list):
