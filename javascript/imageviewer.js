@@ -22,11 +22,11 @@ function negmod(n, m) {
 }
 
 function updateOnBackgroundChange(){
-      
+    
       const modalImage = gradioApp().getElementById("modalImage")
       if(modalImage && modalImage.offsetParent){
           let allcurrentButtons = gradioApp().querySelectorAll(".gallery-item.transition-all.\\!ring-2")
-          let    = null
+          let currentButton = null
           allcurrentButtons.forEach(function(elem){
             if(elem.parentElement.offsetParent){
                 currentButton = elem;
@@ -40,7 +40,6 @@ function updateOnBackgroundChange(){
             }
           }
       }
-
 }
 
 
