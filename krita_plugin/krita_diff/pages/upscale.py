@@ -1,9 +1,9 @@
 from functools import partial
 
-from krita import QCheckBox, QLabel, QPushButton, QVBoxLayout, QWidget
+from krita import QCheckBox, QPushButton, QVBoxLayout, QWidget
 
 from ..script import script
-from ..widgets import QComboBoxLayout
+from ..widgets import QComboBoxLayout, QLabel
 
 
 # TODO: Become SD Upscale tab.
@@ -19,9 +19,9 @@ class UpscaleTabWidget(QWidget):
 
         note = QLabel(
             """
-NOTE:
- - txt2img & img2img will use the <em>Quick Config</em> Upscaler when needing to scale up.
- - Upscaling manually is only useful if the image was resized via Krita.
+NOTE:<br/>
+ - txt2img & img2img will use the <em>Quick Config</em> Upscaler when needing to scale up.<br/>
+ - Upscaling manually is only useful if the image was resized via Krita.<br/>
  - In the future, SD Upscaling will replace this tab! For now, use the WebUI.
             """
         )

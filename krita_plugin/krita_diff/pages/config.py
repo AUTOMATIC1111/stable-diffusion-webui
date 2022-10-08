@@ -1,17 +1,10 @@
 from functools import partial
 
-from krita import (
-    QCheckBox,
-    QHBoxLayout,
-    QLabel,
-    QLineEdit,
-    QPushButton,
-    QVBoxLayout,
-    QWidget,
-)
+from krita import QCheckBox, QHBoxLayout, QLineEdit, QPushButton, QVBoxLayout, QWidget
 
 from ..defaults import Defaults
 from ..script import script
+from ..widgets import QLabel
 
 
 class ConfigTabWidget(QWidget):

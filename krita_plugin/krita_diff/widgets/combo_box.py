@@ -1,8 +1,9 @@
 from functools import partial
 
-from krita import QComboBox, QHBoxLayout, QLabel
+from krita import QComboBox, QHBoxLayout
 
 from ..script import Script
+from .misc import QLabel
 
 
 class QComboBoxLayout(QHBoxLayout):

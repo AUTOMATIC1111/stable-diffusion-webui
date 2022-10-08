@@ -1,6 +1,7 @@
-from krita import QLabel, QPushButton
+from krita import QPushButton
 
 from ..script import script
+from ..widgets import QLabel
 from .img_base import ImgTabBaseWidget
 
 

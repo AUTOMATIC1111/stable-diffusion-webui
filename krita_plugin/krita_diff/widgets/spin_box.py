@@ -1,9 +1,10 @@
 from functools import partial
 from typing import Union
 
-from krita import QDoubleSpinBox, QHBoxLayout, QLabel, QSpinBox
+from krita import QDoubleSpinBox, QHBoxLayout, QSpinBox
 
 from ..script import Script
+from .misc import QLabel
 
 
 class QSpinBoxLayout(QHBoxLayout):

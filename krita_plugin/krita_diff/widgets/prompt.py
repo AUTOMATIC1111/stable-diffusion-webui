@@ -1,6 +1,7 @@
-from krita import QLabel, QPlainTextEdit, QSizePolicy, QVBoxLayout
+from krita import QPlainTextEdit, QSizePolicy, QVBoxLayout
 
 from ..script import Script
+from .misc import QLabel
 
 
 class QPromptEdit(QPlainTextEdit):

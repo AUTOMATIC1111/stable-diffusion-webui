@@ -1,8 +1,9 @@
 from functools import partial
 
-from krita import QHBoxLayout, QLabel, QLineEdit
+from krita import QHBoxLayout, QLineEdit
 
 from ..script import Script
+from .misc import QLabel
 
 
 class QLineEditLayout(QHBoxLayout):

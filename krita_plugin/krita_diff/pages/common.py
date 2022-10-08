@@ -1,9 +1,9 @@
 from functools import partial
 
-from krita import QCheckBox, QHBoxLayout, QLabel, QVBoxLayout, QWidget
+from krita import QCheckBox, QHBoxLayout, QVBoxLayout, QWidget
 
 from ..script import script
-from ..widgets import QComboBoxLayout, QSpinBoxLayout
+from ..widgets import QComboBoxLayout, QLabel, QSpinBoxLayout
 
 
 class SDCommonWidget(QWidget):

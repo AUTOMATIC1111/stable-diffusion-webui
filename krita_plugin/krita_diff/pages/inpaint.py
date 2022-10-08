@@ -1,9 +1,9 @@
 from functools import partial
 
-from krita import QCheckBox, QHBoxLayout, QLabel, QPushButton
+from krita import QCheckBox, QHBoxLayout, QPushButton
 
 from ..script import script
-from ..widgets import QComboBoxLayout, QSpinBoxLayout
+from ..widgets import QComboBoxLayout, QLabel, QSpinBoxLayout
 from .img_base import ImgTabBaseWidget
 
 
