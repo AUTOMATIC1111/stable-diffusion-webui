@@ -89,7 +89,6 @@ class StableDiffusionModelHijack:
             layer.padding_mode = 'circular' if enable else 'zeros'
 
     def tokenize(self, text):
-        max_length = opts.max_prompt_tokens - 2
         _, remade_batch_tokens, _, _, _, token_count = self.clip.process_text([text])
         return remade_batch_tokens[0], token_count, get_target_prompt_token_count(token_count)
 
@@ -174,7 +173,8 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
             if line in cache:
                 remade_tokens, fixes, multipliers = cache[line]
             else:
-                remade_tokens, fixes, multipliers, token_count = self.tokenize_line(line, used_custom_terms, hijack_comments)
+                remade_tokens, fixes, multipliers, current_token_count = self.tokenize_line(line, used_custom_terms, hijack_comments)
+                token_count = max(current_token_count, token_count)
 
                 cache[line] = (remade_tokens, fixes, multipliers)
 
@@ -265,15 +265,19 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
         if len(used_custom_terms) > 0:
             self.hijack.comments.append("Used embeddings: " + ", ".join([f'{word} [{checksum}]' for word, checksum in used_custom_terms]))
 
-        position_ids_array = [min(x, 75) for x in range(len(remade_batch_tokens[0])-1)] + [76]
+        target_token_count = get_target_prompt_token_count(token_count) + 2
+
+        position_ids_array = [min(x, 75) for x in range(target_token_count-1)] + [76]
         position_ids = torch.asarray(position_ids_array, device=devices.device).expand((1, -1))
 
-        tokens = torch.asarray(remade_batch_tokens).to(device)
+        remade_batch_tokens_of_same_length = [x + [self.wrapped.tokenizer.eos_token_id] * (target_token_count - len(x)) for x in remade_batch_tokens]
+        tokens = torch.asarray(remade_batch_tokens_of_same_length).to(device)
         outputs = self.wrapped.transformer(input_ids=tokens, position_ids=position_ids)
         z = outputs.last_hidden_state
 
         # restoring original mean is likely not correct, but it seems to work well to prevent artifacts that happen otherwise
-        batch_multipliers = torch.asarray(batch_multipliers).to(device)
+        batch_multipliers_of_same_length = [x + [1.0] * (target_token_count - len(x)) for x in batch_multipliers]
+        batch_multipliers = torch.asarray(batch_multipliers_of_same_length).to(device)
         original_mean = z.mean()
         z *= batch_multipliers.reshape(batch_multipliers.shape + (1,)).expand(z.shape)
         new_mean = z.mean()
