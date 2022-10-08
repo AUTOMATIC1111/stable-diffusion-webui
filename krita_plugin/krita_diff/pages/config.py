@@ -2,7 +2,7 @@ from functools import partial
 
 from krita import QCheckBox, QHBoxLayout, QLineEdit, QPushButton, QVBoxLayout, QWidget
 
-from ..defaults import Defaults
+from ..defaults import DEFAULTS
 from ..script import script
 from ..widgets import QLabel
 
@@ -89,7 +89,7 @@ class ConfigTabWidget(QWidget):
     def cfg_connect(self):
         self.base_url.textChanged.connect(partial(script.set_cfg, "base_url"))
         self.base_url_reset.released.connect(
-            lambda: self.base_url.setText(Defaults.base_url)
+            lambda: self.base_url.setText(DEFAULTS.base_url)
         )
         self.just_use_yaml.toggled.connect(partial(script.set_cfg, "just_use_yaml"))
         self.create_mask_layer.toggled.connect(

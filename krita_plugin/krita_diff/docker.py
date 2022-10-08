@@ -1,14 +1,9 @@
 from krita import DockWidget, QPushButton, QTabWidget, QVBoxLayout, QWidget
 
-from .pages import (
-    ConfigTabWidget,
-    Img2ImgTabWidget,
-    InpaintTabWidget,
-    SDCommonWidget,
-    Txt2ImgTabWidget,
-    UpscaleTabWidget,
-)
-from .script import script
+from .pages import (ConfigTabWidget, Img2ImgTabWidget, InpaintTabWidget,
+                    SDCommonWidget, Txt2ImgTabWidget, UpscaleTabWidget)
+from .script import STATE_INIT, STATE_READY, script
+from .widgets import QLabel
 
 
 class SDPluginDocker(DockWidget):
@@ -38,11 +33,18 @@ class SDPluginDocker(DockWidget):
         tabs.addTab(self.upscale_widget, "Upscale")
         tabs.addTab(self.config_widget, "Config")
 
+        # TODO: this is a hacky and lazy approach
+        status_bar = QLabel()
+        script.set_status_callback(lambda s: status_bar.setText(f"<b>Status:</b> {s}"))
+        script.set_status(STATE_INIT)
+
         layout = QVBoxLayout()
+        layout.addWidget(status_bar)
         layout.addWidget(self.refresh_btn)
         layout.addWidget(self.quick_widget)
         layout.addWidget(tabs)
         layout.addStretch()
+
         self.widget = QWidget(self)
         self.widget.setLayout(layout)
 
@@ -67,6 +69,7 @@ class SDPluginDocker(DockWidget):
     def update_remote_config(self):
         script.update_config()
         self.update_interfaces()
+        script.set_status(STATE_READY)
 
     def canvasChanged(self, canvas):
         pass

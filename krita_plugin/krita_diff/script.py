@@ -8,7 +8,18 @@ from urllib.error import URLError
 
 from krita import Krita, QByteArray, QImage, QObject, QSettings, QTimer
 
-from .defaults import Defaults
+from .defaults import (
+    DEFAULTS,
+    STATE_IMG2IMG,
+    STATE_INIT,
+    STATE_INPAINT,
+    STATE_READY,
+    STATE_RESET_DEFAULT,
+    STATE_TXT2IMG,
+    STATE_UPSCALE,
+    STATE_URLERROR,
+    STATE_WAIT,
+)
 
 # samplers = [
 #     "DDIM",
@@ -42,6 +53,10 @@ class Script(QObject):
         self.restore_defaults(if_empty=True)
         self.working = False
 
+        # Status bar
+        self._status_cb = lambda s: None
+        self.status = STATE_INIT
+
     def cfg(self, name: str, type):
         return self.config.value(name, type=type)
 
@@ -50,10 +65,20 @@ class Script(QObject):
             self.config.setValue(name, value)
 
     def restore_defaults(self, if_empty=False):
-        default = asdict(Defaults())
+        default = asdict(DEFAULTS)
 
         for k, v in default.items():
             self.set_cfg(k, v, if_empty)
+
+        if not if_empty:
+            self.set_status(STATE_RESET_DEFAULT)
+
+    def set_status_callback(self, cb):
+        self._status_cb = cb
+
+    def set_status(self, state):
+        self.status = state
+        self._status_cb(state)
 
     def update_config(self):
         res = None
@@ -62,8 +87,7 @@ class Script(QObject):
                 res = req.read()
                 self.opt = json.loads(res)
         except URLError:
-            # TODO: Warning about failed connection or loading screen...
-            pass
+            self.set_status(STATE_URLERROR)
 
         # dont update lists if connection failed
         if res:
@@ -104,8 +128,11 @@ class Script(QObject):
         body = json.dumps(body)
         body_encoded = body.encode("utf-8")
         req.add_header("Content-Length", str(len(body_encoded)))
-        with urllib.request.urlopen(req, body_encoded) as res:
-            return json.loads(res.read())
+        try:
+            with urllib.request.urlopen(req, body_encoded) as res:
+                return json.loads(res.read())
+        except URLError:
+            self.set_status(STATE_URLERROR)
 
     def get_common_params(self):
         tiling = self.cfg("sd_tiling", bool) and (
@@ -397,23 +424,28 @@ class Script(QObject):
 
     # Actions
     def action_txt2img(self):
+        self.set_status(STATE_WAIT)
         if self.working:
             pass
         self.update_config()
         self.try_fix_aspect_ratio()
         self.apply_txt2img()
         self.create_mask_layer_workaround()
+        self.set_status(STATE_TXT2IMG)
 
     def action_img2img(self):
+        self.set_status(STATE_WAIT)
         if self.working:
             pass
         self.update_config()
         self.try_fix_aspect_ratio()
         self.apply_img2img(mode=0)
         self.create_mask_layer_workaround()
+        self.set_status(STATE_IMG2IMG)
 
     def action_sd_upscale(self):
         assert False, "disabled"
+        self.set_status(STATE_WAIT)
         if self.working:
             pass
         self.update_config()
@@ -421,17 +453,21 @@ class Script(QObject):
         self.create_mask_layer_workaround()
 
     def action_inpaint(self):
+        self.set_status(STATE_WAIT)
         if self.working:
             pass
         self.update_config()
         self.try_fix_aspect_ratio()
         self.apply_img2img(mode=1)
+        self.set_status(STATE_INPAINT)
 
     def action_simple_upscale(self):
+        self.set_status(STATE_WAIT)
         if self.working:
             pass
         self.update_config()
         self.apply_simple_upscale()
+        self.set_status(STATE_UPSCALE)
 
 
 script = Script()

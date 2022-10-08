@@ -2,7 +2,18 @@ from dataclasses import dataclass, field
 from typing import List
 
 # set combo box to error msg instead of blank when cannot retrieve options from backend
-error_msg = "Retrieval Failed"
+ERROR_MSG = "Retrieval Failed"
+
+# Used for status bar
+STATE_READY = "Ready"
+STATE_INIT = "Initializing..."
+STATE_URLERROR = "Cannot reach backend"
+STATE_RESET_DEFAULT = "All settings reset"
+STATE_WAIT = "Please wait..."
+STATE_TXT2IMG = "txt2img done!"
+STATE_IMG2IMG = "img2img done!"
+STATE_INPAINT = "inpaint done!"
+STATE_UPSCALE = "upscale done!"
 
 
 @dataclass(frozen=True)
@@ -19,22 +30,22 @@ class Defaults:
     color_correct: bool = True
     do_exact_steps: bool = True
 
-    sd_model_list: List[str] = field(default_factory=lambda: [error_msg])
+    sd_model_list: List[str] = field(default_factory=lambda: [ERROR_MSG])
     sd_model: str = "model.ckpt"
     sd_batch_size: int = 1
     sd_batch_count: int = 1
     sd_base_size: int = 512
     sd_max_size: int = 768
     sd_tiling: bool = False
-    upscaler_list: List[str] = field(default_factory=lambda: [error_msg])
+    upscaler_list: List[str] = field(default_factory=lambda: [ERROR_MSG])
     upscaler_name: str = "None"
-    face_restorer_model_list: List[str] = field(default_factory=lambda: [error_msg])
+    face_restorer_model_list: List[str] = field(default_factory=lambda: [ERROR_MSG])
     face_restorer_model: str = "CodeFormer"
     codeformer_weight: float = 0.5
 
     txt2img_prompt: str = ""
     txt2img_negative_prompt: str = ""
-    txt2img_sampler_list: List[str] = field(default_factory=lambda: [error_msg])
+    txt2img_sampler_list: List[str] = field(default_factory=lambda: [ERROR_MSG])
     txt2img_sampler: str = "Euler a"
     txt2img_steps: int = 20
     txt2img_cfg_scale: float = 7.0
@@ -46,7 +57,7 @@ class Defaults:
 
     img2img_prompt: str = ""
     img2img_negative_prompt: str = ""
-    img2img_sampler_list: List[str] = field(default_factory=lambda: [error_msg])
+    img2img_sampler_list: List[str] = field(default_factory=lambda: [ERROR_MSG])
     img2img_sampler: str = "Euler a"
     img2img_steps: int = 40
     img2img_cfg_scale: float = 12.0
@@ -55,7 +66,7 @@ class Defaults:
 
     inpaint_prompt: str = ""
     inpaint_negative_prompt: str = ""
-    inpaint_sampler_list: List[str] = field(default_factory=lambda: [error_msg])
+    inpaint_sampler_list: List[str] = field(default_factory=lambda: [ERROR_MSG])
     inpaint_sampler: str = "LMS"
     inpaint_steps: int = 100
     inpaint_cfg_scale: float = 5.0
@@ -73,3 +84,6 @@ class Defaults:
 
     upscale_upscaler_name: str = "None"
     upscale_downscale_first: bool = False
+
+
+DEFAULTS = Defaults()
