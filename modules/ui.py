@@ -982,7 +982,7 @@ def create_ui(wrap_gradio_gpu_call):
                     with gr.Row():
                         process_flip = gr.Checkbox(label='Create flipped copies')
                         process_split = gr.Checkbox(label='Split oversized images into two')
-                        process_caption = gr.Checkbox(label='Use CLIP caption as filename')
+                        process_caption = gr.Checkbox(label='Use BLIP caption as filename')
 
                     with gr.Row():
                         with gr.Column(scale=3):
