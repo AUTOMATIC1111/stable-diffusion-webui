@@ -6,6 +6,12 @@ This repository was originally a fork of <https://github.com/sddebz/stable-diffu
 
 I plan to continue maintaining and updating this as long as I am using it. Which will be until a more functional drawing studio plugin comes into existence. Or until I get frustrated enough with AUTOMATIC1111's codebase (can't be helped; it Gradio's fault actually the API is so messed up) to reinvent the wheel and create my own.
 
+The main benefits of this fork are:
+
+- Reimagined UI with better workflow
+- Continuous updates
+- Much more shoe polish & battle testing (by me)
+
 ## Installation
 
 Mostly the same as <https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki>. However, to increase clarity, I appended `.template` to `webui-user.bat` and `webui.sh`. Copy, rename and fill in their values before proceeding per normal.
