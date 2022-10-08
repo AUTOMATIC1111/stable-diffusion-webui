@@ -22,6 +22,11 @@ will draw two random artists from `artist.txt`. This works independently on each
 
 (also see https://github.com/jtkelm2/stable-diffusion-webui-1/tree/master/scripts/wildcards for examples of custom lists)
 
+## Dynamic Prompt Templates
+https://github.com/adieyal/sd-dynamic-prompting
+
+A custom script to implement a tiny template language for random prompt generation. Features merged with [Wildcards](https://github.com/jtkelm2/stable-diffusion-webui-1/blob/master/scripts/wildcards.py) script.
+
 ## txt2img2img 
 https://github.com/ThereforeGames/txt2img2img/blob/main/scripts/txt2img2img.py
 
@@ -70,6 +75,10 @@ https://github.com/Filarius/stable-diffusion-webui/blob/master/scripts/vid2vid.p
 
 From real video, img2img the frames and stitch them together. Does not unpack frames to hard drive.
 
+V2: https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/1902/files 
+
+Adds seed walking.
+
 ## Txt2VectorGraphics
 https://github.com/GeorgLegato/Txt2Vectorgraphics
 
@@ -91,9 +100,6 @@ Mixes output of img2img with original input image at strength alpha. The result 
 https://gist.github.com/camenduru/9ec5f8141db9902e375967e93250860f
 
 Run n times with random seed.
-
-## Dynamic Prompt Templates
-https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/1433/files
 
 ## Advanced Loopback
 https://github.com/Extraltodeus/advanced-loopback-for-sd-webui
