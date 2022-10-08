@@ -51,7 +51,6 @@ class SDCommonWidget(QWidget):
             "face_restorer_model",
             label="Face restorer:",
         )
-        # TODO: layout.qspin.setVisible(False) when model isnt CodeFormer
         self.codeformer_weight_layout = QSpinBoxLayout(
             script,
             "codeformer_weight",

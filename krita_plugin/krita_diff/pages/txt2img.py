@@ -4,7 +4,6 @@ from ..script import script
 from .img_base import ImgTabBaseWidget
 
 
-# TODO: Add necessary UI components to match up with upstream changes.
 class Txt2ImgTabWidget(ImgTabBaseWidget):
     def __init__(self, *args, **kwargs):
         super(Txt2ImgTabWidget, self).__init__(cfg_prefix="txt2img", *args, **kwargs)

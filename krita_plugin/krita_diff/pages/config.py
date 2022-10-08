@@ -14,7 +14,6 @@ from ..defaults import Defaults
 from ..script import script
 
 
-# TODO: Add necessary UI components to match up with upstream changes.
 class ConfigTabWidget(QWidget):
     def __init__(self, update_func, *args, **kwargs):
         super(ConfigTabWidget, self).__init__(*args, **kwargs)

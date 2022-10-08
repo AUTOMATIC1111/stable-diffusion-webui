@@ -4,7 +4,6 @@ from ..script import script
 from ..widgets import QComboBoxLayout, QLineEditLayout, QPromptLayout, QSpinBoxLayout
 
 
-# TODO: Add necessary UI components to match up with upstream changes.
 class ImgTabBaseWidget(QWidget):
     def __init__(self, cfg_prefix: str = "", *args, **kwargs):
         super(ImgTabBaseWidget, self).__init__(*args, **kwargs)
