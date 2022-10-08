@@ -123,6 +123,7 @@ class Processed:
         self.index_of_first_image = index_of_first_image
         self.styles = p.styles
         self.job_timestamp = state.job_timestamp
+        self.max_prompt_tokens = opts.max_prompt_tokens
 
         self.eta = p.eta
         self.ddim_discretize = p.ddim_discretize
@@ -140,6 +141,7 @@ class Processed:
         self.all_seeds = all_seeds or [self.seed]
         self.all_subseeds = all_subseeds or [self.subseed]
         self.infotexts = infotexts or [info]
+
 
     def js(self):
         obj = {
@@ -169,6 +171,7 @@ class Processed:
             "infotexts": self.infotexts,
             "styles": self.styles,
             "job_timestamp": self.job_timestamp,
+            "max_prompt_tokens": self.max_prompt_tokens,
         }
 
         return json.dumps(obj)
@@ -266,6 +269,8 @@ def fix_seed(p):
 def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration=0, position_in_batch=0):
     index = position_in_batch + iteration * p.batch_size
 
+    max_tokens = getattr(p, 'max_prompt_tokens', opts.max_prompt_tokens)
+
     generation_params = {
         "Steps": p.steps,
         "Sampler": sd_samplers.samplers[p.sampler_index].name,
@@ -281,6 +286,7 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration
         "Seed resize from": (None if p.seed_resize_from_w == 0 or p.seed_resize_from_h == 0 else f"{p.seed_resize_from_w}x{p.seed_resize_from_h}"),
         "Denoising strength": getattr(p, 'denoising_strength', None),
         "Eta": (None if p.sampler is None or p.sampler.eta == p.sampler.default_eta else p.sampler.eta),
+        "Max tokens": (None if max_tokens == shared.vanilla_max_prompt_tokens else max_tokens)
     }
 
     generation_params.update(p.extra_generation_params)
@@ -349,6 +355,9 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             state.job_count = p.n_iter
 
         for n in range(p.n_iter):
+            if state.skipped:
+                state.skipped = False
+            
             if state.interrupted:
                 break
 
@@ -375,7 +384,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             with devices.autocast():
                 samples_ddim = p.sample(conditioning=c, unconditional_conditioning=uc, seeds=seeds, subseeds=subseeds, subseed_strength=p.subseed_strength)
 
-            if state.interrupted:
+            if state.interrupted or state.skipped:
 
                 # if we are interruped, sample returns just noise
                 # use the image collected previously in sampler loop
