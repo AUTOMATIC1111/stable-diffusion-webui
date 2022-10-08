@@ -1,7 +1,13 @@
-from krita import DockWidget, QPushButton, QTabWidget, QVBoxLayout, QWidget
+from krita import DockWidget, QPushButton, QScrollArea, QTabWidget, QVBoxLayout, QWidget
 
-from .pages import (ConfigTabWidget, Img2ImgTabWidget, InpaintTabWidget,
-                    SDCommonWidget, Txt2ImgTabWidget, UpscaleTabWidget)
+from .pages import (
+    ConfigTabWidget,
+    Img2ImgTabWidget,
+    InpaintTabWidget,
+    SDCommonWidget,
+    Txt2ImgTabWidget,
+    UpscaleTabWidget,
+)
 from .script import STATE_INIT, STATE_READY, script
 from .widgets import QLabel
 
@@ -45,8 +51,11 @@ class SDPluginDocker(DockWidget):
         layout.addWidget(tabs)
         layout.addStretch()
 
-        self.widget = QWidget(self)
-        self.widget.setLayout(layout)
+        self.widget = QScrollArea()
+        widget = QWidget(self)
+        widget.setLayout(layout)
+        self.widget.setWidget(widget)
+        self.widget.setWidgetResizable(True)
 
     def update_interfaces(self):
         self.quick_widget.cfg_init()
