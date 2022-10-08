@@ -111,7 +111,7 @@ class UpscalerESRGAN(Upscaler):
             print("Unable to load %s from %s" % (self.model_path, filename))
             return None
 
-        pretrained_net = torch.load(filename, map_location='cpu' if shared.device.type == 'mps' else None)
+        pretrained_net = torch.load(filename, map_location='cpu' if devices.device_esrgan.type == 'mps' else None)
         crt_model = arch.RRDBNet(3, 3, 64, 23, gc=32)
 
         pretrained_net = fix_model_layers(crt_model, pretrained_net)

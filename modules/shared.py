@@ -91,6 +91,7 @@ def selected_hypernetwork():
 
 
 class State:
+    skipped = False
     interrupted = False
     job = ""
     job_no = 0
@@ -102,6 +103,9 @@ class State:
     current_image = None
     current_image_sampling_step = 0
     textinfo = None
+
+    def skip(self):
+        self.skipped = True
 
     def interrupt(self):
         self.interrupted = True
@@ -159,8 +163,6 @@ prompt_vehicles = modules.prompt_gen.load_promptgen('cfg/promptgen/vehicle.csv')
 interrogator = modules.interrogate.InterrogateModels("interrogate")
 
 face_restorers = []
-# This was moved to webui.py with the other model "setup" calls.
-# modules.sd_models.list_models()
 
 
 def realesrgan_models_names():
