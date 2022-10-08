@@ -10,7 +10,7 @@ from einops import rearrange
 
 from modules import shared
 
-if shared.cmd_opts.xformers:
+if shared.cmd_opts.xformers or shared.cmd_opts.force_enable_xformers:
     try:
         import xformers.ops
         import functorch
