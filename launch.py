@@ -32,7 +32,7 @@ def extract_arg(args, name):
 
 
 args, skip_torch_cuda_test = extract_arg(args, '--skip-torch-cuda-test')
-args, xformers = extract_arg(args, '--xformers')
+xformers = '--xformers' in args
 
 
 def repo_dir(name):
