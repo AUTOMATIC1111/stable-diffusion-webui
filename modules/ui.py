@@ -23,9 +23,10 @@ import gradio.utils
 import gradio.routes
 
 from modules import sd_hijack
-from modules.deepbooru import get_deepbooru_tags
 from modules.paths import script_path
 from modules.shared import opts, cmd_opts
+if cmd_opts.deepdanbooru:
+    from modules.deepbooru import get_deepbooru_tags
 import modules.shared as shared
 from modules.sd_samplers import samplers, samplers_for_img2img
 from modules.sd_hijack import model_hijack
@@ -437,7 +438,10 @@ def create_toprow(is_img2img):
             with gr.Row(scale=1):
                 if is_img2img:
                     interrogate = gr.Button('Interrogate\nCLIP', elem_id="interrogate")
-                    deepbooru = gr.Button('Interrogate\nDeepBooru', elem_id="deepbooru")
+                    if cmd_opts.deepdanbooru:
+                        deepbooru = gr.Button('Interrogate\nDeepBooru', elem_id="deepbooru")
+                    else:
+                        deepbooru = None
                 else:
                     interrogate = None
                     deepbooru = None
@@ -782,11 +786,12 @@ def create_ui(wrap_gradio_gpu_call):
                 outputs=[img2img_prompt],
             )
 
-            img2img_deepbooru.click(
-                fn=interrogate_deepbooru,
-                inputs=[init_img],
-                outputs=[img2img_prompt],
-            )
+            if cmd_opts.deepdanbooru:
+                img2img_deepbooru.click(
+                    fn=interrogate_deepbooru,
+                    inputs=[init_img],
+                    outputs=[img2img_prompt],
+                )
 
             save.click(
                 fn=wrap_gradio_call(save_files),

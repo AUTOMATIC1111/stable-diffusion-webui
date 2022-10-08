@@ -66,6 +66,7 @@ Check the [custom scripts](https://github.com/AUTOMATIC1111/stable-diffusion-web
      - separate prompts using uppercase `AND`
      - also supports weights for prompts: `a cat :1.2 AND a dog AND a penguin :2.2`
 - No token limit for prompts (original stable diffusion lets you use up to 75 tokens)
+- DeepDanbooru integration, creates danbooru style tags for anime prompts (add --deepdanbooru to commandline args)
 
 ## Installation and Running
 Make sure the required [dependencies](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Dependencies) are met and follow the instructions available for both [NVidia](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-NVidia-GPUs) (recommended) and [AMD](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-AMD-GPUs) GPUs.
@@ -123,4 +124,5 @@ The documentation was moved from this README over to the project's [wiki](https:
 - Noise generation for outpainting mk2 - https://github.com/parlance-zz/g-diffuser-bot
 - CLIP interrogator idea and borrowing some code - https://github.com/pharmapsychotic/clip-interrogator
 - Initial Gradio script - posted on 4chan by an Anonymous user. Thank you Anonymous user.
+- DeepDanbooru - interrogator for anime diffusors https://github.com/KichangKim/DeepDanbooru
 - (You)

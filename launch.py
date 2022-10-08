@@ -33,6 +33,7 @@ def extract_arg(args, name):
 
 args, skip_torch_cuda_test = extract_arg(args, '--skip-torch-cuda-test')
 xformers = '--xformers' in args
+deepdanbooru = '--deepdanbooru' in args
 
 
 def repo_dir(name):
@@ -131,6 +132,9 @@ if not is_installed("xformers") and xformers:
         run_pip("install https://github.com/C43H66N12O12S2/stable-diffusion-webui/releases/download/a/xformers-0.0.14.dev0-cp310-cp310-win_amd64.whl", "xformers")
     elif platform.system() == "Linux":
         run_pip("install xformers", "xformers")
+
+if not is_installed("deepdanbooru") and deepdanbooru:
+    run_pip("install git+https://github.com/KichangKim/DeepDanbooru.git@edf73df4cdaeea2cf00e9ac08bd8a9026b7a7b26#egg=deepdanbooru[tensorflow] tensorflow==2.10.0 tensorflow-io==0.27.0", "deepdanbooru")
 
 os.makedirs(dir_repos, exist_ok=True)
 
