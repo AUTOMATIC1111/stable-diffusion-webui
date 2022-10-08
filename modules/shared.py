@@ -43,6 +43,8 @@ parser.add_argument("--realesrgan-models-path", type=str, help="Path to director
 parser.add_argument("--scunet-models-path", type=str, help="Path to directory with ScuNET model file(s).", default=os.path.join(models_path, 'ScuNET'))
 parser.add_argument("--swinir-models-path", type=str, help="Path to directory with SwinIR model file(s).", default=os.path.join(models_path, 'SwinIR'))
 parser.add_argument("--ldsr-models-path", type=str, help="Path to directory with LDSR model file(s).", default=os.path.join(models_path, 'LDSR'))
+parser.add_argument("--xformers", action='store_true', help="enable xformers for cross attention layers")
+parser.add_argument("--force-enable-xformers", action='store_true', help="enable xformers for cross attention layers regardless of whether the checking code thinks you can run it; do not make bug reports if this fails to work")
 parser.add_argument("--opt-split-attention", action='store_true', help="force-enables cross-attention layer optimization. By default, it's on for torch.cuda and off for other torch devices.")
 parser.add_argument("--disable-opt-split-attention", action='store_true', help="force-disables cross-attention layer optimization")
 parser.add_argument("--opt-split-attention-v1", action='store_true', help="enable older version of split attention optimization that does not consume all the VRAM it can find")
@@ -73,7 +75,7 @@ device = devices.device
 
 batch_cond_uncond = cmd_opts.always_batch_cond_uncond or not (cmd_opts.lowvram or cmd_opts.medvram)
 parallel_processing_allowed = not cmd_opts.lowvram and not cmd_opts.medvram
-
+xformers_available = False
 config_filename = cmd_opts.ui_settings_file
 
 hypernetworks = hypernetwork.load_hypernetworks(os.path.join(models_path, 'hypernetworks'))
@@ -84,6 +86,7 @@ def selected_hypernetwork():
 
 
 class State:
+    skipped = False
     interrupted = False
     job = ""
     job_no = 0
@@ -95,6 +98,9 @@ class State:
     current_image = None
     current_image_sampling_step = 0
     textinfo = None
+
+    def skip(self):
+        self.skipped = True
 
     def interrupt(self):
         self.interrupted = True
@@ -118,8 +124,6 @@ prompt_styles = modules.styles.StyleDatabase(styles_filename)
 interrogator = modules.interrogate.InterrogateModels("interrogate")
 
 face_restorers = []
-# This was moved to webui.py with the other model "setup" calls.
-# modules.sd_models.list_models()
 
 
 def realesrgan_models_names():

@@ -191,6 +191,7 @@ def wrap_gradio_call(func, extra_outputs=None):
         # last item is always HTML
         res[-1] += f"<div class='performance'><p class='time'>Time taken: <wbr>{elapsed_text}</p>{vram_html}</div>"
 
+        shared.state.skipped = False
         shared.state.interrupted = False
         shared.state.job_count = 0
 
@@ -411,8 +412,15 @@ def create_toprow(is_img2img):
 
         with gr.Column(scale=1):
             with gr.Row():
+                skip = gr.Button('Skip', elem_id=f"{id_part}_skip")
                 interrupt = gr.Button('Interrupt', elem_id=f"{id_part}_interrupt")
                 submit = gr.Button('Generate', elem_id=f"{id_part}_generate", variant='primary')
+
+                skip.click(
+                    fn=lambda: shared.state.skip(),
+                    inputs=[],
+                    outputs=[],
+                )
 
                 interrupt.click(
                     fn=lambda: shared.state.interrupt(),
@@ -938,7 +946,7 @@ def create_ui(wrap_gradio_gpu_call):
                 custom_name = gr.Textbox(label="Custom Name (Optional)")
                 interp_amount = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Interpolation Amount', value=0.3)
                 interp_method = gr.Radio(choices=["Weighted Sum", "Sigmoid", "Inverse Sigmoid"], value="Weighted Sum", label="Interpolation Method")
-                save_as_half = gr.Checkbox(value=False, label="Safe as float16")
+                save_as_half = gr.Checkbox(value=False, label="Save as float16")
                 modelmerger_merge = gr.Button(elem_id="modelmerger_merge", label="Merge", variant='primary')
 
             with gr.Column(variant='panel'):
@@ -972,9 +980,9 @@ def create_ui(wrap_gradio_gpu_call):
                     process_dst = gr.Textbox(label='Destination directory')
 
                     with gr.Row():
-                        process_flip = gr.Checkbox(label='Flip')
-                        process_split = gr.Checkbox(label='Split into two')
-                        process_caption = gr.Checkbox(label='Add caption')
+                        process_flip = gr.Checkbox(label='Create flipped copies')
+                        process_split = gr.Checkbox(label='Split oversized images into two')
+                        process_caption = gr.Checkbox(label='Use BLIP caption as filename')
 
                     with gr.Row():
                         with gr.Column(scale=3):

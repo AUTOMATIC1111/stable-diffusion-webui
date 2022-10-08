@@ -393,10 +393,20 @@ input[type="range"]{
 
 #txt2img_interrupt, #img2img_interrupt{
   position: absolute;
-  width: 100%;
+  width: 50%;
   height: 72px;
   background: #b4c0cc;
-  border-radius: 8px;
+  border-radius: 0px;
+  display: none;
+}
+
+#txt2img_skip, #img2img_skip{
+  position: absolute;
+  width: 50%;
+  right: 0px;
+  height: 72px;
+  background: #b4c0cc;
+  border-radius: 0px;
   display: none;
 }
 
@@ -410,4 +420,31 @@ input[type="range"]{
 
 #img2img_image div.h-60{
     height: 480px;
+}
+
+#context-menu{
+    z-index:9999;
+    position:absolute;
+    display:block;
+    padding:0px 0;
+    border:2px solid #a55000;
+    border-radius:8px;
+    box-shadow:1px 1px 2px #CE6400;
+    width: 200px;
+}
+
+.context-menu-items{
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.context-menu-items a{
+    display:block;
+    padding:5px;
+    cursor:pointer;
+}
+
+.context-menu-items a:hover{
+    background: #a55000;
 }
