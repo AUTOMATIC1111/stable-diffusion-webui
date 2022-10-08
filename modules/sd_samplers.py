@@ -106,7 +106,7 @@ def extended_tdqm(sequence, *args, desc=None, **kwargs):
     seq = sequence if cmd_opts.disable_console_progressbars else tqdm.tqdm(sequence, *args, desc=state.job, file=shared.progress_print_out, **kwargs)
 
     for x in seq:
-        if state.interrupted:
+        if state.interrupted or state.skipped:
             break
 
         yield x
@@ -254,7 +254,7 @@ def extended_trange(sampler, count, *args, **kwargs):
     seq = range(count) if cmd_opts.disable_console_progressbars else tqdm.trange(count, *args, desc=state.job, file=shared.progress_print_out, **kwargs)
 
     for x in seq:
-        if state.interrupted:
+        if state.interrupted or state.skipped:
             break
 
         if sampler.stop_at is not None and x > sampler.stop_at:

@@ -99,7 +99,6 @@ class State:
 
     def skip(self):
         self.skipped = True
-        self.interrupted = True
 
     def interrupt(self):
         self.interrupted = True
