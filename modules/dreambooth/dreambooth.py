@@ -4,6 +4,7 @@ from contextlib import nullcontext
 from pathlib import Path
 from typing import Optional
 
+import accelerate
 import torch
 import torch.nn.functional as F
 import torch.utils.checkpoint
@@ -13,18 +14,19 @@ from accelerate.utils import set_seed
 from diffusers import AutoencoderKL, DDPMScheduler, StableDiffusionPipeline, UNet2DConditionModel
 from diffusers.optimization import get_scheduler
 from huggingface_hub import HfFolder, whoami
+from torch.distributed.launch import launch
 from torch.utils.data import Dataset
 from torchvision import transforms
 from tqdm.auto import tqdm
 from transformers import CLIPTextModel, CLIPTokenizer
-from modules import paths
+from modules import paths, sd_hijack, sd_models
 
 
 class DreamBooth:
     # TODO: Clean up notes below and make them a proper docstring
     def __init__(self, name, training_data: str, instance_prompt: str,class_prompt: str, learn_rate: float = 5e-6,
                  save_img_every=500, save_data_every=200, max_steps: int = 800, batch_size: int = 1,
-                 grad_steps: int = 1, scheduler: str = "constant", warmup_steps: int = 0,  use_adam=True,
+                 grad_steps: int = 1, scheduler: str = "constant", warmup_steps: int = 0,  use_adam=False,
                  class_data=None, seed=None, log_interval=10, mixed_precision="no", cache_latents=False
                  ):
         self.tokenizer_name = None
@@ -107,6 +109,7 @@ class DreamBooth:
         #                 Do not precompute and cache latents from VAE.")
 
     def train(self):
+
         logging_dir = Path(self.output_dir, self.logging_dir)
 
         accelerator = Accelerator(
@@ -422,8 +425,16 @@ class DreamBooth:
 
 def start_training(model_dir, initialization_text, classification_text, learn_rate, dataset_directory, steps, create_image_every,
                    save_embedding_every):
-    dream = DreamBooth(model_dir, dataset_directory, initialization_text,classification_text,learn_rate,create_image_every,save_embedding_every, steps)
-    foo = dream.train()
+    print("Starting dreambooth training...")
+    try:
+        sd_hijack.undo_optimizations()
+        dream = DreamBooth(model_dir, dataset_directory, initialization_text,classification_text,learn_rate,create_image_every,save_embedding_every, steps)
+        foo = accelerate launch dream.train()
+    except Exception:
+        raise
+    finally:
+        sd_hijack.apply_optimizations()
+
 
 class DreamBoothDataset(Dataset):
     """
