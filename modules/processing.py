@@ -313,6 +313,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
         os.makedirs(p.outpath_grids, exist_ok=True)
 
     modules.sd_hijack.model_hijack.apply_circular(p.tiling)
+    modules.sd_hijack.model_hijack.clear_comments()
 
     comments = {}
 
