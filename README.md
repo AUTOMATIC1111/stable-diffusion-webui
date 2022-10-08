@@ -23,6 +23,26 @@ This repository was originally a fork of [sddebz/stable-diffusion-krita-plugin](
 - [TODO](https://github.com/Interpause/auto-sd-krita/wiki/TODO)
 - [Contribution Guide](https://github.com/Interpause/auto-sd-krita/wiki/Contribution-Guide)
 
+## FAQ
+
+Q. How hard is it to install?
+A. It is basically AUTOMATIC1111 + a few extra steps. aka almost one-click install.
+
+Q. How hard is it to run?
+A. The launch process is exactly the same as AUTOMATIC1111, to the point the Gradio webUI functions normally.
+
+Q. Outpainting?
+A. No outpainting MK2 yet, but nothing stopping you from doing basic outpainting. 1) expand canvas 2) scribble in blank area 3) img2img on blank area + some of image.
+
+Q. Is the model loaded into memory twice?
+A. No, it shares the same backend. Both the Krita plugin and webUI can be used concurrently.
+
+Q. How can you commit to updating regularly?
+A. The plugin builds on top the internal API without modifying it, and good documentation practices facilitate adapting to upstream changes and bugfixing.
+
+Q. Will it work with other Krita plugins?
+A. Unfortunately no, all plugins so far have different APIs.
+
 ## Credits
 
 - [@sddebz](https://github.com/sddebz) for writing the original backend API and Krita plugin while keeping the Gradio webUI functionality intact.
