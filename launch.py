@@ -124,6 +124,9 @@ if not is_installed("gfpgan"):
 if not is_installed("clip"):
     run_pip(f"install {clip_package}", "clip")
 
+if not is_installed("xformers"):
+    run_pip("install https://github.com/C43H66N12O12S2/stable-diffusion-webui/releases/download/a/xformers-0.0.14.dev0-cp310-cp310-win_amd64.whl", "xformers")
+
 os.makedirs(dir_repos, exist_ok=True)
 
 git_clone("https://github.com/CompVis/stable-diffusion.git", repo_dir('stable-diffusion'), "Stable Diffusion", stable_diffusion_commit_hash)
