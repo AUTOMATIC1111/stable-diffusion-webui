@@ -6,6 +6,12 @@ This repository was originally a fork of <https://github.com/sddebz/stable-diffu
 
 I plan to continue maintaining and updating this as long as I am using it. Which will be until a more functional drawing studio plugin comes into existence. Or until I get frustrated enough with AUTOMATIC1111's codebase (can't be helped; it Gradio's fault actually the API is so messed up) to reinvent the wheel and create my own.
 
+The main benefits of this fork are:
+
+- Reimagined UI with better workflow
+- Continuous updates
+- Much more shoe polish & battle testing (by me)
+
 ## Installation
 
 Mostly the same as <https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki>. However, to increase clarity, I appended `.template` to `webui-user.bat` and `webui.sh`. Copy, rename and fill in their values before proceeding per normal.
@@ -41,8 +47,11 @@ ln -rs /.../auto-sd-krita/krita_plugin/krita_diff.desktop /.../pykrita/krita_dif
 
 - Gradio WebUI is fully functional and runs alongside the Krita plugin!
   - Some things are better done in the WebUI than the Krita Plugin GUI (i.e. training textual inversion)
+- Images always pass through the upscaler when scaling up no matter which mode is being used unless set to "None".
+- Values are preserved between Krita sessions!
+- Improved workflow with separate profiles for each!
 - Exposed more features present in WebUI.
-  - not in GUI yet; see and edit auto-generated `krita_config.yaml`, restart not needed.
+  - some not in GUI yet; see and edit auto-generated `krita_config.yaml`, restart not needed.
 - `--listen` will cause the backend API to also host on `0.0.0.0`, allowing remote usage of the Krita plugin.
   - This does not work for now; the API has to be modified to send images instead of the local path to them :p
 - Added more comments and documentation, especially with respect to the internal API.

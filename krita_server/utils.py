@@ -80,6 +80,9 @@ def prepare_backend(opt: BaseModel):
     if hasattr(opt, "sd_model"):
         set_sd_model(opt.sd_model)
 
+    if hasattr(opt, "upscaler_name"):
+        set_global_upscaler(opt.upscaler_name)
+
 
 def optional(*fields):
     """Decorator function used to modify a pydantic model's fields to all be optional.
@@ -227,6 +230,15 @@ def get_upscaler_index(upscaler_name: str):
         if upscaler.name == upscaler_name:
             return index
     raise KeyError(f"upscaler not found: {upscaler_name}")
+
+
+def set_global_upscaler(upscaler: str):
+    """Change which upscaler to use globally.
+
+    Args:
+        upscaler (str): Exact name of upscaler to use.
+    """
+    shared.opts.upscaler_for_img2img = upscaler
 
 
 def set_face_restorer(face_restorer: str, codeformer_weight: float):

@@ -59,6 +59,11 @@ class GenerationOptions(BaseModel):
     upscale_latent: bool = False
     """Upscale in latent space."""
 
+    # upscale_overlap: int = 64
+    # """Size of overlap in pixels for upscaling.""" Configure this in WebUI
+    upscaler_name: str = "None"
+    """Exact name of upscaler to use."""
+
 
 class FaceRestorationOptions(BaseModel):
     restore_faces: bool = False
@@ -92,14 +97,10 @@ class Img2ImgOptions(
     mode: int = 0
     """Img2Img mode. 0 is normal img2img on the selected region, 1 is inpainting, and 2 (unsupported) is batch processing."""
     resize_mode: int = 1
-    """Unused by Krita plugin since rescaling can be done in Krita itself. 0 is stretch to fit, 1 is cover, 2 is contain."""
+    """Unused by Krita plugin since rescaling is done by us. 0 is stretch to fit, 1 is cover, 2 is contain."""
 
     alpha_mask: bool = False
     """Use alpha mask, whatever it does."""
-    # upscale_overlap: int = 64
-    # """Size of overlap in pixels for upscaling."""
-    # upscaler_name: str = "None"
-    # """Exact name of upscaler to use."""
 
     steps: int = 50
 
