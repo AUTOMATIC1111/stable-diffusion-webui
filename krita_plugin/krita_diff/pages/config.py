@@ -1,14 +1,7 @@
 from functools import partial
 
-from krita import (
-    QCheckBox,
-    QHBoxLayout,
-    QLabel,
-    QLineEdit,
-    QPushButton,
-    QVBoxLayout,
-    QWidget,
-)
+from krita import (QCheckBox, QHBoxLayout, QLabel, QLineEdit, QPushButton,
+                   QVBoxLayout, QWidget)
 
 from ..defaults import Defaults
 from ..script import script
@@ -21,7 +14,6 @@ class ConfigTabWidget(QWidget):
         # callback to update all the other widgets
         self.update_func = update_func
 
-        base_url_label = QLabel("Backend url:")
         self.base_url = QLineEdit()
         self.base_url_reset = QPushButton("Default")
         inline1 = QHBoxLayout()
@@ -44,6 +36,9 @@ class ConfigTabWidget(QWidget):
 
         info_label = QLabel(
             """
+            <em>Tip:</em> Only a selected few backend/webUI settings are exposed above.<br/>
+            <em>Tip:</em> You should look through & configure all the backend/webUI settings at least once.
+            <br/><br/>
             <a href="http://127.0.0.1:7860/" target="_blank">Configure all settings in webUI</a><br/>
             <a href="https://github.com/Interpause/auto-sd-krita/wiki" target="_blank">Read the guide</a><br/>
             <a href="https://github.com/Interpause/auto-sd-krita/issues" target="_blank">Report bugs or suggest features</a>
@@ -53,13 +48,18 @@ class ConfigTabWidget(QWidget):
         info_label.setWordWrap(True)
 
         layout = QVBoxLayout()
-        layout.addWidget(base_url_label)
+
+        layout.addWidget(QLabel("<em>Backend url (Remote URL still broken :p):</em>"))
         layout.addLayout(inline1)
+
+        layout.addWidget(QLabel("<em>Plugin settings:</em>"))
         layout.addWidget(self.just_use_yaml)
         layout.addWidget(self.create_mask_layer)
         layout.addWidget(self.del_temp_files)
         layout.addWidget(self.fix_aspect_ratio)
         layout.addWidget(self.only_full_img_tiling)
+
+        layout.addWidget(QLabel("<em>Backend/webUI settings:</em>"))
         layout.addStretch()
         layout.addWidget(self.restore_defaults)
         layout.addWidget(info_label)

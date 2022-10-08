@@ -20,7 +20,7 @@ class UpscaleTabWidget(QWidget):
         note = QLabel(
             """
 NOTE:
- - txt2img & img2img will use the Global Upscaler when needing to scale up.
+ - txt2img & img2img will use the <em>Quick Config</em> Upscaler when needing to scale up.
  - Upscaling manually is only useful if the image was resized via Krita.
  - In the future, SD Upscaling will replace this tab! For now, use the WebUI.
             """

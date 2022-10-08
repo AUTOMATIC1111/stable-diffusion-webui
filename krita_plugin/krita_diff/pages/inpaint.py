@@ -1,6 +1,6 @@
 from functools import partial
 
-from krita import QCheckBox, QHBoxLayout, QPushButton
+from krita import QCheckBox, QHBoxLayout, QLabel, QPushButton
 
 from ..script import script
 from ..widgets import QComboBoxLayout, QSpinBoxLayout
@@ -44,6 +44,9 @@ class InpaintTabWidget(ImgTabBaseWidget):
         self.layout.addLayout(inline1)
         self.layout.addLayout(self.fill_layout)
         self.layout.addLayout(inline2)
+        self.layout.addWidget(
+            QLabel("<em>Tip:</em> Make sure inpaint layer is selected but hidden!")
+        )
         self.layout.addStretch()
         self.layout.addWidget(self.btn)
 
