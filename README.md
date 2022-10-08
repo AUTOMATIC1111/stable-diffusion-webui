@@ -16,7 +16,7 @@ Check the [custom scripts](https://github.com/AUTOMATIC1111/stable-diffusion-web
 - Attention, specify parts of text that the model should pay more attention to
     - a man in a ((tuxedo)) - will pay more attention to tuxedo
     - a man in a (tuxedo:1.21) - alternative syntax
-    - select text and press ctrl+up or ctrl+down to automatically adjust attention to selected text
+    - select text and press ctrl+up or ctrl+down to automatically adjust attention to selected text (code contributed by anonymous user)
 - Loopback, run img2img processing multiple times
 - X/Y plot, a way to draw a 2 dimensional plot of images with different parameters
 - Textual Inversion
