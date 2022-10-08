@@ -357,7 +357,6 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
         for n in range(p.n_iter):
             if state.skipped:
                 state.skipped = False
-                state.interrupted = False
             
             if state.interrupted:
                 break
@@ -385,7 +384,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             with devices.autocast():
                 samples_ddim = p.sample(conditioning=c, unconditional_conditioning=uc, seeds=seeds, subseeds=subseeds, subseed_strength=p.subseed_strength)
 
-            if state.interrupted:
+            if state.interrupted or state.skipped:
 
                 # if we are interruped, sample returns just noise
                 # use the image collected previously in sampler loop
