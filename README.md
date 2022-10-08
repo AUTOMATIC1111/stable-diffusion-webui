@@ -1,6 +1,6 @@
 # auto-sd-krita
 
-> AUTOMATIC1111's fork of Stable Diffusion as a Krita plugin
+> AUTOMATIC1111's webUI + Krita Plugin
 
 ![demo image](https://user-images.githubusercontent.com/42513874/194701722-e7a3f7eb-be4a-4f43-93a5-480835c9260f.jpg)
 
