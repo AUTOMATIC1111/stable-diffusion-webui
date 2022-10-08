@@ -7,6 +7,7 @@
 Why use this?
 
 - Extremely good inpainting workflow
+- Use the Gradio WebUI per normal for yet to be implemented features
 - Updated regularly with upstream AUTOMATIC1111's features & fixes
 - Battle tested by a perfectionist who daily drives it ([@Interpause](https://github.com/interpause))
 
