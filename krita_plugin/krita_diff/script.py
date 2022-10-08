@@ -111,6 +111,7 @@ class Script(QObject):
         tiling = self.cfg("sd_tiling", bool) and (
             not self.cfg("only_full_img_tiling", bool) or self.selection is None
         )
+        # its fine to stuff extra stuff here; pydantic will shave off irrelevant params
         params = dict(
             sd_model=self.cfg("sd_model", str),
             batch_count=self.cfg("sd_batch_count", int),
@@ -122,6 +123,9 @@ class Script(QObject):
             restore_faces=self.cfg("face_restorer_model", str) != "None",
             face_restorer=self.cfg("face_restorer_model", str),
             codeformer_weight=self.cfg("codeformer_weight", float),
+            filter_nsfw=self.cfg("filter_nsfw", bool),
+            color_correct=self.cfg("color_correct", bool),
+            do_exact_steps=self.cfg("do_exact_steps", bool),
         )
         return params
 

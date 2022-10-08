@@ -47,6 +47,11 @@ class InpaintTabWidget(ImgTabBaseWidget):
         self.layout.addWidget(
             QLabel("<em>Tip:</em> Make sure inpaint layer is selected but hidden!")
         )
+        self.layout.addWidget(
+            QLabel(
+                "<em>Tip:</em> Rectangle select what you want the model to see when inpainting."
+            )
+        )
         self.layout.addStretch()
         self.layout.addWidget(self.btn)
 

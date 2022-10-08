@@ -15,6 +15,9 @@ class Defaults:
     png_quality: int = -1
     fix_aspect_ratio: bool = True
     only_full_img_tiling: bool = True
+    filter_nsfw: bool = False
+    color_correct: bool = True
+    do_exact_steps: bool = True
 
     sd_model_list: List[str] = field(default_factory=lambda: [error_msg])
     sd_model: str = "model.ckpt"

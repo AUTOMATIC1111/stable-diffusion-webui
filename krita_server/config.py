@@ -63,6 +63,9 @@ class GenerationOptions(BaseModel):
     # """Size of overlap in pixels for upscaling.""" Configure this in WebUI
     upscaler_name: str = "None"
     """Exact name of upscaler to use."""
+    filter_nsfw: bool = False
+    """filter NSFW content."""
+
 
 class SamplerParamOptions(BaseModel):
     # TODO: More conveniently expose config options for samplers/explain them.
@@ -107,6 +110,11 @@ class Img2ImgOptions(
     """Use alpha mask, whatever it does."""
 
     steps: int = 50
+
+    color_correct: bool = True
+    """Apply color correction after img2img/inpaint to match original & blend better."""
+    do_exact_steps: bool = True
+    """Do exactly the number of steps specified by the slider instead of less during img2img/inpaint."""
 
 
 class UpscaleOptions(BaseOptions):

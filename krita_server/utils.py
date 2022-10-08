@@ -63,25 +63,37 @@ def prepare_backend(opt: BaseModel):
 
     Currently includes:
     - Ensuring the output/input folders exist
-    - Set the face restorer model to the selected one
-    - Set the SD model to the selected one
+    - Set the global face restorer model to the selected one
+    - Set the global SD model to the selected one
+    - Set the global upscaler to the selected one
+    - Set other misc global webUI/backend settings
 
     Args:
         opt (BaseModel): Option/Request object
     """
+    # the `shared` module handles app state for the underlying codebase
+
+    if hasattr(opt, "face_restorer"):
+        shared.opts.face_restoration_model = opt.face_restorer
+        shared.opts.code_former_weight = opt.codeformer_weight
+
+    if hasattr(opt, "sd_model"):
+        shared.opts.sd_model_checkpoint = opt.sd_model
+        modules.sd_models.reload_model_weights(shared.sd_model)
+
+    if hasattr(opt, "upscaler_name"):
+        shared.opts.upscaler_for_img2img = opt.upscaler_name
+
+    if hasattr(opt, "color_correct"):
+        shared.opts.img2img_color_correction = opt.color_correct
+        shared.opts.img2img_fix_steps = opt.do_exact_steps
+
+    if hasattr(opt, "filter_nsfw"):
+        shared.opts.filter_nsfw = opt.filter_nsfw
 
     # Ensure the output/input folders exist
     if hasattr(opt, "sample_path"):
         os.makedirs(opt.sample_path, exist_ok=True)
-
-    if hasattr(opt, "face_restorer"):
-        set_face_restorer(opt.face_restorer, opt.codeformer_weight)
-
-    if hasattr(opt, "sd_model"):
-        set_sd_model(opt.sd_model)
-
-    if hasattr(opt, "upscaler_name"):
-        set_global_upscaler(opt.upscaler_name)
 
 
 def optional(*fields):
@@ -230,35 +242,3 @@ def get_upscaler_index(upscaler_name: str):
         if upscaler.name == upscaler_name:
             return index
     raise KeyError(f"upscaler not found: {upscaler_name}")
-
-
-def set_global_upscaler(upscaler: str):
-    """Change which upscaler to use globally.
-
-    Args:
-        upscaler (str): Exact name of upscaler to use.
-    """
-    shared.opts.upscaler_for_img2img = upscaler
-
-
-def set_face_restorer(face_restorer: str, codeformer_weight: float):
-    """Change which face restorer to use.
-
-    Args:
-        face_restorer (str): Exact name of face restorer to use.
-        codeformer_weight (float): Strength of face restoration when using CodeFormer.
-    """
-    # the `shared` module handles app state for the underlying codebase
-    shared.opts.face_restoration_model = face_restorer
-    shared.opts.code_former_weight = codeformer_weight
-
-
-def set_sd_model(sd_model: str):
-    """Change which SD model to use.
-
-    Args:
-        sd_model (str): Exact name of SD model to use.
-    """
-    # the `shared` module handles app state for the underlying codebase
-    shared.opts.sd_model_checkpoint = sd_model
-    modules.sd_models.reload_model_weights(shared.sd_model)

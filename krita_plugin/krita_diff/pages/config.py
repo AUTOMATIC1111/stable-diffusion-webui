@@ -1,7 +1,14 @@
 from functools import partial
 
-from krita import (QCheckBox, QHBoxLayout, QLabel, QLineEdit, QPushButton,
-                   QVBoxLayout, QWidget)
+from krita import (
+    QCheckBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 from ..defaults import Defaults
 from ..script import script
@@ -20,6 +27,7 @@ class ConfigTabWidget(QWidget):
         inline1.addWidget(self.base_url)
         inline1.addWidget(self.base_url_reset)
 
+        # Plugin settings
         self.just_use_yaml = QCheckBox(
             "Override all options with krita_config.yaml (not recommended)"
         )
@@ -30,6 +38,15 @@ class ConfigTabWidget(QWidget):
         self.fix_aspect_ratio = QCheckBox("Try to fix aspect ratio for selections")
         self.only_full_img_tiling = QCheckBox(
             "Only allow tiling (on full image) with no selection"
+        )
+
+        # webUI/backend settings
+        self.filter_nsfw = QCheckBox("Filter NSFW content")
+        self.color_correct = QCheckBox(
+            "Color correct img2img/inpaint for better blending"
+        )
+        self.do_exact_steps = QCheckBox(
+            "Don't decrease steps based on denoising strength"
         )
 
         self.restore_defaults = QPushButton("Restore Defaults")
@@ -60,6 +77,9 @@ class ConfigTabWidget(QWidget):
         layout.addWidget(self.only_full_img_tiling)
 
         layout.addWidget(QLabel("<em>Backend/webUI settings:</em>"))
+        layout.addWidget(self.filter_nsfw)
+        layout.addWidget(self.color_correct)
+        layout.addWidget(self.do_exact_steps)
         layout.addStretch()
         layout.addWidget(self.restore_defaults)
         layout.addWidget(info_label)
@@ -73,6 +93,9 @@ class ConfigTabWidget(QWidget):
         self.del_temp_files.setChecked(script.cfg("delete_temp_files", bool))
         self.fix_aspect_ratio.setChecked(script.cfg("fix_aspect_ratio", bool))
         self.only_full_img_tiling.setChecked(script.cfg("only_full_img_tiling", bool))
+        self.filter_nsfw.setChecked(script.cfg("filter_nsfw", bool))
+        self.color_correct.setChecked(script.cfg("color_correct", bool))
+        self.do_exact_steps.setChecked(script.cfg("do_exact_steps", bool))
 
     def cfg_connect(self):
         self.base_url.textChanged.connect(partial(script.set_cfg, "base_url"))
@@ -92,6 +115,9 @@ class ConfigTabWidget(QWidget):
         self.only_full_img_tiling.toggled.connect(
             partial(script.set_cfg, "only_full_img_tiling")
         )
+        self.filter_nsfw.toggled.connect(partial(script.set_cfg, "filter_nsfw"))
+        self.color_correct.toggled.connect(partial(script.set_cfg, "color_correct"))
+        self.do_exact_steps.toggled.connect(partial(script.set_cfg, "do_exact_steps"))
 
         def restore_defaults():
             script.restore_defaults()
