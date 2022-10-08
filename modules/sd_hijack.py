@@ -36,6 +36,13 @@ def undo_optimizations():
     ldm.modules.diffusionmodules.model.AttnBlock.forward = diffusionmodules_model_AttnBlock_forward
 
 
+def get_target_prompt_token_count(token_count):
+    if token_count < 75:
+        return 75
+
+    return math.ceil(token_count / 10) * 10
+
+
 class StableDiffusionModelHijack:
     fixes = None
     comments = []
@@ -84,7 +91,7 @@ class StableDiffusionModelHijack:
     def tokenize(self, text):
         max_length = opts.max_prompt_tokens - 2
         _, remade_batch_tokens, _, _, _, token_count = self.clip.process_text([text])
-        return remade_batch_tokens[0], token_count, max_length
+        return remade_batch_tokens[0], token_count, get_target_prompt_token_count(token_count)
 
 
 class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
@@ -114,7 +121,6 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
     def tokenize_line(self, line, used_custom_terms, hijack_comments):
         id_start = self.wrapped.tokenizer.bos_token_id
         id_end = self.wrapped.tokenizer.eos_token_id
-        maxlen = opts.max_prompt_tokens
 
         if opts.enable_emphasis:
             parsed = prompt_parser.parse_prompt_attention(line)
@@ -146,19 +152,12 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
                     used_custom_terms.append((embedding.name, embedding.checksum()))
                     i += embedding_length_in_tokens
 
-        if len(remade_tokens) > maxlen - 2:
-            vocab = {v: k for k, v in self.wrapped.tokenizer.get_vocab().items()}
-            ovf = remade_tokens[maxlen - 2:]
-            overflowing_words = [vocab.get(int(x), "") for x in ovf]
-            overflowing_text = self.wrapped.tokenizer.convert_tokens_to_string(''.join(overflowing_words))
-            hijack_comments.append(f"Warning: too many input tokens; some ({len(overflowing_words)}) have been truncated:\n{overflowing_text}\n")
-
         token_count = len(remade_tokens)
-        remade_tokens = remade_tokens + [id_end] * (maxlen - 2 - len(remade_tokens))
-        remade_tokens = [id_start] + remade_tokens[0:maxlen - 2] + [id_end]
+        prompt_target_length = get_target_prompt_token_count(token_count)
+        tokens_to_add = prompt_target_length - len(remade_tokens) + 1
 
-        multipliers = multipliers + [1.0] * (maxlen - 2 - len(multipliers))
-        multipliers = [1.0] + multipliers[0:maxlen - 2] + [1.0]
+        remade_tokens = [id_start] + remade_tokens + [id_end] * tokens_to_add
+        multipliers = [1.0] + multipliers + [1.0] * tokens_to_add
 
         return remade_tokens, fixes, multipliers, token_count
 

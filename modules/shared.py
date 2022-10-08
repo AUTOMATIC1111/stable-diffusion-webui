@@ -123,8 +123,6 @@ interrogator = modules.interrogate.InterrogateModels("interrogate")
 
 face_restorers = []
 
-vanilla_max_prompt_tokens = 77
-
 
 def realesrgan_models_names():
     import modules.realesrgan_model
@@ -225,7 +223,6 @@ options_templates.update(options_section(('sd', "Stable Diffusion"), {
     "use_old_emphasis_implementation": OptionInfo(False, "Use old emphasis implementation. Can be useful to reproduce old seeds."),
     "enable_batch_seeds": OptionInfo(True, "Make K-diffusion samplers produce same images in a batch as when making a single image"),
     "filter_nsfw": OptionInfo(False, "Filter NSFW content"),
-    "max_prompt_tokens": OptionInfo(vanilla_max_prompt_tokens, f"Max prompt token count. Two tokens are reserved for for start and end. Default is {vanilla_max_prompt_tokens}. Setting this to a different value will result in different pictures for same seed.", gr.Number, {"precision": 0}),
     "random_artist_categories": OptionInfo([], "Allowed categories for random artists selection when using the Roll button", gr.CheckboxGroup, {"choices": artist_db.categories()}),
 }))
 
