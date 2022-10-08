@@ -41,9 +41,11 @@ class QComboBoxLayout(QHBoxLayout):
         self.addWidget(self.qcombo)
 
     def cfg_init(self):
+        # prevent value from getting wiped
+        val = self.script.cfg(self.selected_cfg, str)
         self.qcombo.clear()
         self.qcombo.addItems(self.script.cfg(self.options_cfg, "QStringList"))
-        self.qcombo.setCurrentText(self.script.cfg(self.selected_cfg, str))
+        self.qcombo.setCurrentText(val)
         if self.num_chars is not None:
             self.qcombo.setFixedWidth(
                 self.qcombo.fontMetrics().width("M" * self.num_chars)
