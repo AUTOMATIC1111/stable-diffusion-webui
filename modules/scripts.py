@@ -1,4 +1,5 @@
 import os
+from pydoc import visiblename
 import sys
 import traceback
 
@@ -30,6 +31,15 @@ class Script:
     # Thus, return is_img2img to only show the script on the img2img tab.
     def show(self, is_img2img):
         return True
+
+
+    # Called when the ui for this script has been shown.
+    # Useful for hiding some controls, since the scripts module sets visibility to
+    # everything to true. The parameters will be the parameters returned by the ui method
+    # The return value should be gradio updates, similar to what you would return
+    # from a Gradio event handler.
+    def on_show(self, *args):
+        return [ui.gr_show(True)] * len(args)
 
     # This is where the additional processing is implemented. The parameters include
     # self, the model object "p" (a StableDiffusionProcessing class, see
@@ -125,20 +135,32 @@ class ScriptRunner:
             inputs += controls
             script.args_to = len(inputs)
 
-        def select_script(script_index):
+        def select_script(*args):
+            script_index = args[0]
+            on_show_updates = []
             if 0 < script_index <= len(self.scripts):
                 script = self.scripts[script_index-1]
                 args_from = script.args_from
                 args_to = script.args_to
+                script_args = args[args_from:args_to]
+                on_show_updates = wrap_call(script.on_show, script.filename, "on_show", *script_args)
             else:
                 args_from = 0
                 args_to = 0
 
-            return [ui.gr_show(True if i == 0 else args_from <= i < args_to) for i in range(len(inputs))]
+            ret = [ ui.gr_show(True)] # always show the dropdown
+            for i in range(1, len(inputs)):
+                if (args_from <= i < args_to):
+                    ret.append( on_show_updates[i - args_from] )
+                else:
+                    ret.append(ui.gr_show(False))
+            return ret
+
+            # return [ui.gr_show(True if (i == 0) else on_show_updates[i - args_from] if args_from <= i < args_to else False) for i in range(len(inputs))]
 
         dropdown.change(
             fn=select_script,
-            inputs=[dropdown],
+            inputs=inputs,
             outputs=inputs
         )
 
