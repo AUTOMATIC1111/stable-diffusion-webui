@@ -15,13 +15,16 @@ This repository was originally a fork of [sddebz/stable-diffusion-krita-plugin](
 ## Quick Jump
 
 - Full Installation & Workflow Tutorial! (Coming Soon...)
-- Usage & Workflow Video Tutorial! https://youtu.be/nP8MuRwcDN8
 - [Installation Guide](https://github.com/Interpause/auto-sd-krita/wiki/Install-Guide)
   - Similar in difficulty to AUTOMATIC1111 + 1 extra step
 - [Usage Guide](https://github.com/Interpause/auto-sd-krita/wiki/Usage-Guide)
 - [Features](https://github.com/Interpause/auto-sd-krita/wiki/Features)
 - [TODO](https://github.com/Interpause/auto-sd-krita/wiki/TODO)
 - [Contribution Guide](https://github.com/Interpause/auto-sd-krita/wiki/Contribution-Guide)
+
+Usage & Workflow Demo:
+
+[![Youtube Video](http://img.youtube.com/vi/nP8MuRwcDN8/0.jpg)](https://youtu.be/nP8MuRwcDN8 "Inpaint like a pro with Stable Diffusion! auto-sd-krita workflow guide")
 
 ## FAQ
 
