@@ -265,8 +265,11 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, steps,
 
                 pre_lines = [((255, 207, 175),"<{}>".format(data.get('name','???')))]
                 
-                caption_checkpoint_hash = data.get('sd_checkpoint','UNK')
-                caption_checkpoint_hash = caption_checkpoint_hash.upper() if caption_checkpoint_hash else 'UNK'
+                caption_checkpoint_hash = data.get('sd_checkpoint')
+                if caption_checkpoint_hash is None:
+                    caption_checkpoint_hash = data.get('hash')
+                caption_checkpoint_hash = caption_checkpoint_hash.upper() if caption_checkpoint_hash else 'UNKNOWN'
+                
                 caption_stepcount = data.get('step',0)
                 caption_stepcount = caption_stepcount if caption_stepcount else 0
 
