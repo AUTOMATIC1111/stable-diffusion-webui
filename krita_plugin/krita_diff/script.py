@@ -110,7 +110,12 @@ class Script(QObject):
             self.node = self.doc.activeNode()
             self.selection = self.doc.selection()
 
-            if self.selection is None:
+            is_not_selected = (
+                self.selection is None
+                or self.selection.width() < 1
+                or self.selection.height() < 1
+            )
+            if is_not_selected:
                 self.x = 0
                 self.y = 0
                 self.width = self.doc.width()
@@ -256,7 +261,10 @@ class Script(QObject):
 
         def rnd(r, x):
             z = 64
-            return z * round(r * x / z)
+            # TODO: for selections with extreme ratios, it might round to 0, causing zero devision
+            # however, this temporary fix will return the wrong aspect ratio instead of actually
+            # fixing the problem (i.e. warning the user or resetting the box)
+            return z * min(round(r * x / z), 1)
 
         ratio = self.width / self.height
 
