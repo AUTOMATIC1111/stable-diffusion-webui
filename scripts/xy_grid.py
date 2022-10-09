@@ -88,7 +88,17 @@ def apply_hypernetwork(p, x, xs):
         name = None
     else:
         name = hypernetwork.find_closest_hypernetwork_name(x)
+        if not name:
+            raise RuntimeError(f"Unknown hypernetwork: {x}")
     hypernetwork.load_hypernetwork(name)
+
+
+def confirm_hypernetworks(xs):
+    for x in xs:
+        if x.lower() in ["", "none"]:
+            continue
+        if not hypernetwork.find_closest_hypernetwork_name(x):
+            raise RuntimeError(f"Unknown hypernetwork: {x}")
 
 
 def apply_clip_skip(p, x, xs):
@@ -284,6 +294,8 @@ class Script(scripts.Script):
                 for ckpt_val in valslist:
                     if modules.sd_models.get_closet_checkpoint_match(ckpt_val) is None:
                         raise RuntimeError(f"Checkpoint for {ckpt_val} not found")
+            elif opt.label == "Hypernetwork":
+                confirm_hypernetworks(valslist)
 
             return valslist
 
