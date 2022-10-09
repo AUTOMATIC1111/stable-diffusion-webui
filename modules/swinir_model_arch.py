@@ -166,7 +166,7 @@ class SwinTransformerBlock(nn.Module):
 
     Args:
         dim (int): Number of input channels.
-        input_resolution (tuple[int]): Input resulotion.
+        input_resolution (tuple[int]): Input resolution.
         num_heads (int): Number of attention heads.
         window_size (int): Window size.
         shift_size (int): Shift size for SW-MSA.
