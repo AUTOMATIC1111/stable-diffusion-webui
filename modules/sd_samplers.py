@@ -98,25 +98,46 @@ def store_latent(decoded):
             shared.state.current_image = sample_to_image(decoded)
 
 
+class TqdmHijack(tqdm.tqdm):
+    def __init__(self, *args, **kwargs):
+        override_parameters = [
+            {'i':  1, 'key': 'desc',    'value': state.job},
+            {'i':  4, 'key': 'file',    'value': shared.progress_print_out},
+            {'i': 10, 'key': 'disable', 'value': cmd_opts.disable_console_progressbars},
+        ]
 
-def extended_tdqm(sequence, *args, desc=None, **kwargs):
-    state.sampling_steps = len(sequence)
-    state.sampling_step = 0
+        for p in override_parameters:
+            if len(args) > p['i']:
+                args[p['i']] = p['value']
+            else:
+                kwargs[p['key']] = p['value']
 
-    seq = sequence if cmd_opts.disable_console_progressbars else tqdm.tqdm(sequence, *args, desc=state.job, file=shared.progress_print_out, **kwargs)
+        super().__init__(*args, **kwargs)
 
-    for x in seq:
-        if state.interrupted or state.skipped:
-            break
+        state.sampling_steps = len(self.iterable) if self.iterable is not None else 0
+        state.sampling_step = 0
 
-        yield x
+    def __iter__(self):
+        base_iterable = super().__iter__()
 
-        state.sampling_step += 1
+        for x in base_iterable:
+            if state.interrupted or state.skipped:
+                break
+
+            yield x
+
+            # tqdm __iter__ doesn't call update when disabled
+            if self.disable:
+                self.update()
+
+    def update(self, n=1):
+        state.sampling_step += n
         shared.total_tqdm.update()
 
+        return super().update(n=n)
 
-ldm.models.diffusion.ddim.tqdm = lambda *args, desc=None, **kwargs: extended_tdqm(*args, desc=desc, **kwargs)
-ldm.models.diffusion.plms.tqdm = lambda *args, desc=None, **kwargs: extended_tdqm(*args, desc=desc, **kwargs)
+ldm.models.diffusion.ddim.tqdm = lambda *args, **kwargs: TqdmHijack(*args, **kwargs)
+ldm.models.diffusion.plms.tqdm = lambda *args, **kwargs: TqdmHijack(*args, **kwargs)
 
 
 class VanillaStableDiffusionSampler:
@@ -268,25 +289,6 @@ class CFGDenoiser(torch.nn.Module):
         return denoised
 
 
-def extended_trange(sampler, count, *args, **kwargs):
-    state.sampling_steps = count
-    state.sampling_step = 0
-
-    seq = range(count) if cmd_opts.disable_console_progressbars else tqdm.trange(count, *args, desc=state.job, file=shared.progress_print_out, **kwargs)
-
-    for x in seq:
-        if state.interrupted or state.skipped:
-            break
-
-        if sampler.stop_at is not None and x > sampler.stop_at:
-            break
-
-        yield x
-
-        state.sampling_step += 1
-        shared.total_tqdm.update()
-
-
 class TorchHijack:
     def __init__(self, kdiff_sampler):
         self.kdiff_sampler = kdiff_sampler
@@ -340,7 +342,10 @@ class KDiffusionSampler:
         self.eta = p.eta or opts.eta_ancestral
 
         if hasattr(k_diffusion.sampling, 'trange'):
-            k_diffusion.sampling.trange = lambda *args, **kwargs: extended_trange(self, *args, **kwargs)
+            k_diffusion.sampling.trange = lambda *args, **kwargs: TqdmHijack(range(*args), **kwargs)
+
+        if hasattr(k_diffusion.sampling, 'tqdm'):
+             k_diffusion.sampling.tqdm = lambda *args, **kwargs: TqdmHijack(*args, **kwargs)
 
         if self.sampler_noises is not None:
             k_diffusion.sampling.torch = TorchHijack(self)
