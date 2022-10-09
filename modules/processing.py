@@ -46,6 +46,12 @@ def apply_color_correction(correction, image):
     return image
 
 
+def get_correct_sampler(p):
+    if isinstance(p, modules.processing.StableDiffusionProcessingTxt2Img):
+        return sd_samplers.samplers
+    elif isinstance(p, modules.processing.StableDiffusionProcessingImg2Img):
+        return sd_samplers.samplers_for_img2img
+
 class StableDiffusionProcessing:
     def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt="", styles=None, seed=-1, subseed=-1, subseed_strength=0, seed_resize_from_h=-1, seed_resize_from_w=-1, seed_enable_extras=True, sampler_index=0, batch_size=1, n_iter=1, steps=50, cfg_scale=7.0, width=512, height=512, restore_faces=False, tiling=False, do_not_save_samples=False, do_not_save_grid=False, extra_generation_params=None, overlay_images=None, negative_prompt=None, eta=None):
         self.sd_model = sd_model
@@ -272,12 +278,14 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration
 
     generation_params = {
         "Steps": p.steps,
-        "Sampler": sd_samplers.samplers[p.sampler_index].name,
+        "Sampler": get_correct_sampler(p)[p.sampler_index].name,
         "CFG scale": p.cfg_scale,
         "Seed": all_seeds[index],
         "Face restoration": (opts.face_restoration_model if p.restore_faces else None),
         "Size": f"{p.width}x{p.height}",
         "Model hash": getattr(p, 'sd_model_hash', None if not opts.add_model_hash_to_info or not shared.sd_model.sd_model_hash else shared.sd_model.sd_model_hash),
+        "Model": (None if not opts.add_model_name_to_info or not shared.sd_model.sd_checkpoint_info.model_name else shared.sd_model.sd_checkpoint_info.model_name.replace(',', '').replace(':', '')),
+        "Hypernet": (None if shared.loaded_hypernetwork is None else shared.loaded_hypernetwork.name.replace(',', '').replace(':', '')),
         "Batch size": (None if p.batch_size < 2 else p.batch_size),
         "Batch pos": (None if p.batch_size < 2 else position_in_batch),
         "Variation seed": (None if p.subseed_strength == 0 else all_subseeds[index]),
@@ -445,7 +453,8 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
 
                 text = infotext(n, i)
                 infotexts.append(text)
-                image.info["parameters"] = text
+                if opts.enable_pnginfo:
+                    image.info["parameters"] = text
                 output_images.append(image)
 
             del x_samples_ddim 
@@ -464,7 +473,8 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             if opts.return_grid:
                 text = infotext()
                 infotexts.insert(0, text)
-                grid.info["parameters"] = text
+                if opts.enable_pnginfo:
+                    grid.info["parameters"] = text
                 output_images.insert(0, grid)
                 index_of_first_image = 1
 
