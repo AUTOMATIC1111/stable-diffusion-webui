@@ -95,7 +95,7 @@ function showGalleryImage(){
 
                     e.addEventListener('click', function (evt) {
                         if(!opts.js_modal_lightbox) return;
-                        modalZoomSet(gradioApp().getElementById('modalImage'), opts.js_modal_lightbox_initialy_zoomed)
+                        modalZoomSet(gradioApp().getElementById('modalImage'), opts.js_modal_lightbox_initially_zoomed)
                         showModal(evt)
                     },true);
                 }

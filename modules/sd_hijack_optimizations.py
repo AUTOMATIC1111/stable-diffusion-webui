@@ -10,7 +10,7 @@ from einops import rearrange
 
 from modules import shared
 
-if shared.cmd_opts.xformers:
+if shared.cmd_opts.xformers or shared.cmd_opts.force_enable_xformers:
     try:
         import xformers.ops
         import functorch
@@ -211,6 +211,7 @@ def cross_attention_attnblock_forward(self, x):
         return h3
     
 def xformers_attnblock_forward(self, x):
+    try:
         h_ = x
         h_ = self.norm(h_)
         q1 = self.q(h_).contiguous()
@@ -218,4 +219,6 @@ def xformers_attnblock_forward(self, x):
         v = self.v(h_).contiguous()
         out = xformers.ops.memory_efficient_attention(q1, k1, v)
         out = self.proj_out(out)
-        return x+out
+        return x + out
+    except NotImplementedError:
+        return cross_attention_attnblock_forward(self, x)

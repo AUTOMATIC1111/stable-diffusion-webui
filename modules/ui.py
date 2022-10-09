@@ -38,7 +38,7 @@ from modules import prompt_parser
 from modules.images import save_image
 import modules.textual_inversion.ui
 
-# this is a fix for Windows users. Without it, javascript files will be served with text/html content-type and the bowser will not show any UI
+# this is a fix for Windows users. Without it, javascript files will be served with text/html content-type and the browser will not show any UI
 mimetypes.init()
 mimetypes.add_type('application/javascript', '.js')
 
@@ -102,7 +102,7 @@ def save_files(js_data, images, index):
     import csv    
     filenames = []
 
-    #quick dictionary to class object conversion. Its neccesary due apply_filename_pattern requiring it
+    #quick dictionary to class object conversion. Its necessary due apply_filename_pattern requiring it
     class MyObject:
         def __init__(self, d=None):
             if d is not None:
@@ -982,9 +982,9 @@ def create_ui(wrap_gradio_gpu_call):
                     process_dst = gr.Textbox(label='Destination directory')
 
                     with gr.Row():
-                        process_flip = gr.Checkbox(label='Flip')
-                        process_split = gr.Checkbox(label='Split into two')
-                        process_caption = gr.Checkbox(label='Add caption')
+                        process_flip = gr.Checkbox(label='Create flipped copies')
+                        process_split = gr.Checkbox(label='Split oversized images into two')
+                        process_caption = gr.Checkbox(label='Use BLIP caption as filename')
 
                     with gr.Row():
                         with gr.Column(scale=3):

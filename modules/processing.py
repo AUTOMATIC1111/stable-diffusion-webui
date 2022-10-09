@@ -123,6 +123,7 @@ class Processed:
         self.index_of_first_image = index_of_first_image
         self.styles = p.styles
         self.job_timestamp = state.job_timestamp
+        self.clip_skip = opts.CLIP_ignore_last_layers
 
         self.eta = p.eta
         self.ddim_discretize = p.ddim_discretize
@@ -140,7 +141,6 @@ class Processed:
         self.all_seeds = all_seeds or [self.seed]
         self.all_subseeds = all_subseeds or [self.subseed]
         self.infotexts = infotexts or [info]
-
 
     def js(self):
         obj = {
@@ -170,6 +170,7 @@ class Processed:
             "infotexts": self.infotexts,
             "styles": self.styles,
             "job_timestamp": self.job_timestamp,
+            "clip_skip": self.clip_skip,
         }
 
         return json.dumps(obj)
@@ -267,6 +268,8 @@ def fix_seed(p):
 def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration=0, position_in_batch=0):
     index = position_in_batch + iteration * p.batch_size
 
+    clip_skip = getattr(p, 'clip_skip', opts.CLIP_ignore_last_layers)
+
     generation_params = {
         "Steps": p.steps,
         "Sampler": sd_samplers.samplers[p.sampler_index].name,
@@ -282,6 +285,7 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration
         "Seed resize from": (None if p.seed_resize_from_w == 0 or p.seed_resize_from_h == 0 else f"{p.seed_resize_from_w}x{p.seed_resize_from_h}"),
         "Denoising strength": getattr(p, 'denoising_strength', None),
         "Eta": (None if p.sampler is None or p.sampler.eta == p.sampler.default_eta else p.sampler.eta),
+        "Clip skip": None if clip_skip==0 else clip_skip,
     }
 
     generation_params.update(p.extra_generation_params)
@@ -343,7 +347,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
     infotexts = []
     output_images = []
 
-    with torch.no_grad():
+    with torch.no_grad(), p.sd_model.ema_scope():
         with devices.autocast():
             p.init(all_prompts, all_seeds, all_subseeds)
 
@@ -382,7 +386,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
 
             if state.interrupted or state.skipped:
 
-                # if we are interruped, sample returns just noise
+                # if we are interrupted, sample returns just noise
                 # use the image collected previously in sampler loop
                 samples_ddim = shared.state.current_latent
 
