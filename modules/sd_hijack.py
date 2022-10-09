@@ -284,8 +284,11 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
 
         tmp = -opts.CLIP_stop_at_last_layers
         outputs = self.wrapped.transformer(input_ids=tokens, position_ids=position_ids, output_hidden_states=tmp)
-        z = outputs.hidden_states[tmp]
-        z = self.wrapped.transformer.text_model.final_layer_norm(z)
+        if tmp < -1:
+            z = outputs.hidden_states[tmp]
+            z = self.wrapped.transformer.text_model.final_layer_norm(z)
+        else:
+            z = outputs.last_hidden_state
 
         # restoring original mean is likely not correct, but it seems to work well to prevent artifacts that happen otherwise
         batch_multipliers_of_same_length = [x + [1.0] * (target_token_count - len(x)) for x in batch_multipliers]
