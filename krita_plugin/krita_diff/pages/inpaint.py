@@ -49,7 +49,7 @@ class InpaintTabWidget(ImgTabBaseWidget):
         )
         self.layout.addWidget(
             QLabel(
-                "<em>Tip:</em> Rectangle select what you want the model to see when inpainting."
+                "<em>Tip:</em> Rectangle select what you want the model to see when inpainting. In which case, <em>Inpaint full res</em> is unnecessary."
             )
         )
         self.layout.addStretch()

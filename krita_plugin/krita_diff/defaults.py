@@ -79,7 +79,7 @@ class Defaults:
         default_factory=lambda: ["blur", "preserve", "latent noise", "latent empty"]
     )
     inpaint_fill: str = "preserve"
-    inpaint_full_res: bool = True
+    inpaint_full_res: bool = False
     inpaint_full_res_padding: int = 32
 
     upscale_upscaler_name: str = "None"
