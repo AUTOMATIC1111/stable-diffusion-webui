@@ -5,7 +5,6 @@ from collections import namedtuple
 import torch
 from omegaconf import OmegaConf
 
-
 from ldm.util import instantiate_from_config
 
 from modules import shared, modelloader, devices
@@ -122,6 +121,13 @@ def select_checkpoint():
     return checkpoint_info
 
 
+def get_state_dict_from_checkpoint(pl_sd):
+    if "state_dict" in pl_sd:
+        return pl_sd["state_dict"]
+
+    return pl_sd
+
+
 def load_model_weights(model, checkpoint_info):
     checkpoint_file = checkpoint_info.filename
     sd_model_hash = checkpoint_info.hash
@@ -131,11 +137,8 @@ def load_model_weights(model, checkpoint_info):
     pl_sd = torch.load(checkpoint_file, map_location="cpu")
     if "global_step" in pl_sd:
         print(f"Global Step: {pl_sd['global_step']}")
-    
-    if "state_dict" in pl_sd:
-        sd = pl_sd["state_dict"]
-    else:
-        sd = pl_sd
+
+    sd = get_state_dict_from_checkpoint(pl_sd)
 
     model.load_state_dict(sd, strict=False)
 
@@ -165,7 +168,7 @@ def load_model():
     checkpoint_info = select_checkpoint()
 
     if checkpoint_info.config != shared.cmd_opts.config:
-        print(f"Loading config from: {shared.cmd_opts.config}")
+        print(f"Loading config from: {checkpoint_info.config}")
 
     sd_config = OmegaConf.load(checkpoint_info.config)
     sd_model = instantiate_from_config(sd_config.model)
@@ -192,7 +195,8 @@ def reload_model_weights(sd_model, info=None):
         return
 
     if sd_model.sd_checkpoint_info.config != checkpoint_info.config:
-        return load_model()
+        shared.sd_model = load_model()
+        return shared.sd_model
 
     if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
         lowvram.send_everything_to_cpu()

@@ -98,6 +98,10 @@ def run_extras(extras_mode, image, image_folder, gfpgan_visibility, codeformer_v
                           no_prompt=True, grid=False, pnginfo_section_name="extras", existing_info=existing_pnginfo,
                           forced_filename=image_name if opts.use_original_name_batch else None)
 
+        if opts.enable_pnginfo:
+            image.info = existing_pnginfo
+            image.info["extras"] = info
+
         outputs.append(image)
 
     devices.torch_gc()
@@ -169,9 +173,9 @@ def run_modelmerger(primary_model_name, secondary_model_name, interp_method, int
 
     print(f"Loading {secondary_model_info.filename}...")
     secondary_model = torch.load(secondary_model_info.filename, map_location='cpu')
-   
-    theta_0 = primary_model['state_dict']
-    theta_1 = secondary_model['state_dict']
+
+    theta_0 = sd_models.get_state_dict_from_checkpoint(primary_model)
+    theta_1 = sd_models.get_state_dict_from_checkpoint(secondary_model)
 
     theta_funcs = {
         "Weighted Sum": weighted_sum,
