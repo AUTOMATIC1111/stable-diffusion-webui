@@ -5,7 +5,6 @@ from collections import namedtuple
 import torch
 from omegaconf import OmegaConf
 
-
 from ldm.util import instantiate_from_config
 
 from modules import shared, modelloader, devices

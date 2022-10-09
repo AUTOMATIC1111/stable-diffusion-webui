@@ -37,7 +37,7 @@ class Upscaler:
         self.pre_pad = 0
         self.mod_scale = None
 
-        if self.model_path is not None and self.name:
+        if self.model_path is None and self.name:
             self.model_path = os.path.join(models_path, self.name)
         if self.model_path and create_dirs:
             os.makedirs(self.model_path, exist_ok=True)
