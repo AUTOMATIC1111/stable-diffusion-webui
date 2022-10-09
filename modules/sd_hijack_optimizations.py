@@ -10,7 +10,7 @@ from einops import rearrange
 
 from modules import shared
 
-if shared.cmd_opts.xformers:
+if shared.cmd_opts.xformers or shared.cmd_opts.force_enable_xformers:
     try:
         import xformers.ops
         import functorch
@@ -28,7 +28,7 @@ def split_cross_attention_forward_v1(self, x, context=None, mask=None):
     q_in = self.to_q(x)
     context = default(context, x)
 
-    hypernetwork = shared.selected_hypernetwork()
+    hypernetwork = shared.loaded_hypernetwork
     hypernetwork_layers = (hypernetwork.layers if hypernetwork is not None else {}).get(context.shape[2], None)
 
     if hypernetwork_layers is not None:
@@ -68,7 +68,7 @@ def split_cross_attention_forward(self, x, context=None, mask=None):
     q_in = self.to_q(x)
     context = default(context, x)
 
-    hypernetwork = shared.selected_hypernetwork()
+    hypernetwork = shared.loaded_hypernetwork
     hypernetwork_layers = (hypernetwork.layers if hypernetwork is not None else {}).get(context.shape[2], None)
 
     if hypernetwork_layers is not None:
@@ -132,7 +132,7 @@ def xformers_attention_forward(self, x, context=None, mask=None):
     h = self.heads
     q_in = self.to_q(x)
     context = default(context, x)
-    hypernetwork = shared.selected_hypernetwork()
+    hypernetwork = shared.loaded_hypernetwork
     hypernetwork_layers = (hypernetwork.layers if hypernetwork is not None else {}).get(context.shape[2], None)
     if hypernetwork_layers is not None:
         k_in = self.to_k(hypernetwork_layers[0](context))
@@ -211,6 +211,7 @@ def cross_attention_attnblock_forward(self, x):
         return h3
     
 def xformers_attnblock_forward(self, x):
+    try:
         h_ = x
         h_ = self.norm(h_)
         q1 = self.q(h_).contiguous()
@@ -218,4 +219,6 @@ def xformers_attnblock_forward(self, x):
         v = self.v(h_).contiguous()
         out = xformers.ops.memory_efficient_attention(q1, k1, v)
         out = self.proj_out(out)
-        return x+out
+        return x + out
+    except NotImplementedError:
+        return cross_attention_attnblock_forward(self, x)

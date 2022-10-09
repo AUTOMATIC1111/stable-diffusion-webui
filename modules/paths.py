@@ -1,6 +1,7 @@
 import argparse
 import os
 import sys
+import modules.safe
 
 script_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 models_path = os.path.join(script_path, "models")
@@ -12,6 +13,7 @@ possible_sd_paths = [os.path.join(script_path, 'repositories/stable-diffusion'),
 for possible_sd_path in possible_sd_paths:
     if os.path.exists(os.path.join(possible_sd_path, 'ldm/models/diffusion/ddpm.py')):
         sd_path = os.path.abspath(possible_sd_path)
+        break
 
 assert sd_path is not None, "Couldn't find Stable Diffusion in any of: " + str(possible_sd_paths)
 

@@ -22,12 +22,16 @@ def apply_optimizations():
     undo_optimizations()
 
     ldm.modules.diffusionmodules.model.nonlinearity = silu
-    if cmd_opts.xformers and shared.xformers_available and torch.version.cuda and torch.cuda.get_device_capability(shared.device) == (8, 6):
+
+    if cmd_opts.force_enable_xformers or (cmd_opts.xformers and shared.xformers_available and torch.version.cuda and torch.cuda.get_device_capability(shared.device) == (8, 6)):
+        print("Applying xformers cross attention optimization.")
         ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.xformers_attention_forward
         ldm.modules.diffusionmodules.model.AttnBlock.forward = sd_hijack_optimizations.xformers_attnblock_forward
     elif cmd_opts.opt_split_attention_v1:
+        print("Applying v1 cross attention optimization.")
         ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.split_cross_attention_forward_v1
     elif not cmd_opts.disable_opt_split_attention and (cmd_opts.opt_split_attention or torch.cuda.is_available()):
+        print("Applying cross attention optimization.")
         ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.split_cross_attention_forward
         ldm.modules.diffusionmodules.model.AttnBlock.forward = sd_hijack_optimizations.cross_attention_attnblock_forward
 
@@ -277,8 +281,15 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
 
         remade_batch_tokens_of_same_length = [x + [self.wrapped.tokenizer.eos_token_id] * (target_token_count - len(x)) for x in remade_batch_tokens]
         tokens = torch.asarray(remade_batch_tokens_of_same_length).to(device)
-        outputs = self.wrapped.transformer(input_ids=tokens, position_ids=position_ids)
-        z = outputs.last_hidden_state
+
+        tmp = -opts.CLIP_ignore_last_layers
+        if (opts.CLIP_ignore_last_layers == 0):
+            outputs = self.wrapped.transformer(input_ids=tokens, position_ids=position_ids)
+            z = outputs.last_hidden_state
+        else:
+            outputs = self.wrapped.transformer(input_ids=tokens, position_ids=position_ids, output_hidden_states=tmp)
+            z = outputs.hidden_states[tmp]
+            z = self.wrapped.transformer.text_model.final_layer_norm(z)
 
         # restoring original mean is likely not correct, but it seems to work well to prevent artifacts that happen otherwise
         batch_multipliers_of_same_length = [x + [1.0] * (target_token_count - len(x)) for x in batch_multipliers]
