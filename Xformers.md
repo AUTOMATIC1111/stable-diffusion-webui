@@ -16,7 +16,7 @@ also includes how to uncuck yourself from sm86 restriction on voldy's new commit
 6. `pip install -r requirements.txt`
 7. `pip install -e .`
 
-## Building xFormers on Windows by @duckness
+## Building xFormers on Windows by [@duckness](https://github.com/duckness)
 
 1. [Install VS Build Tools 2022](https://visualstudio.microsoft.com/downloads/?q=build+tools#build-tools-for-visual-studio-2022), you only need `Desktop development with C++`
 
@@ -31,6 +31,7 @@ also includes how to uncuck yourself from sm86 restriction on voldy's new commit
 ```sh
 git clone https://github.com/facebookresearch/xformers.git
 cd xformers
+git submodule update --init --recursive
 python -m venv venv
 ./venv/scripts/activate
 ```
@@ -68,11 +69,3 @@ pip install xformers-0.0.14.dev0-cp310-cp310-win_amd64.whl
 ```
 
 11. Ensure that `xformers` is activated by launching `stable-diffusion-webui` with `--force-enable-xformers`
-
-
-
-    If you encounter some error about torch not being built with your cuda version blah blah, then try:
-    `pip install setuptools==49.6.0`
-
-8. wait like 30 minutes for everything to build
-9. launch with `--force-enable-xformers` commandline argument
