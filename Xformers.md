@@ -4,7 +4,7 @@ There are no binaries for Windows except for one specific configuration, but you
 
 A guide from an anonymous user, although I think it is for building on Linux:
 
-GUIDE ON HOW TO BUILD XFORMERS
+GUIDES ON HOW TO BUILD XFORMERS
 also includes how to uncuck yourself from sm86 restriction on voldy's new commit
 
 1. go to the webui directory
@@ -15,6 +15,61 @@ also includes how to uncuck yourself from sm86 restriction on voldy's new commit
 5. `git submodule update --init --recursive`
 6. `pip install -r requirements.txt`
 7. `pip install -e .`
+
+## Building xFormers on Windows by @duckness
+
+1. [Install VS Build Tools 2022](https://visualstudio.microsoft.com/downloads/?q=build+tools#build-tools-for-visual-studio-2022), you only need `Desktop development with C++`
+
+![setup_COFbK0AJAZ](https://user-images.githubusercontent.com/6380270/194767872-232136a1-9204-4b16-ae21-3e01f6f526ea.png)
+
+2. [Install CUDA 11.3](https://developer.nvidia.com/cuda-11.3.0-download-archive) (later versions are not tested), select custom, you only need the following (VS integration is probably unecessary):
+
+![setup_QwCdsQ28FM](https://user-images.githubusercontent.com/6380270/194767963-6df7ce14-e6eb-4718-8e93-a11abf172f14.png)
+
+3. Clone the [xFormers repo](https://github.com/facebookresearch/xformers), create a `venv` and activate it
+
+```sh
+git clone https://github.com/facebookresearch/xformers.git
+cd xformers
+python -m venv venv
+./venv/scripts/activate
+```
+
+4. To avoid issues with getting the CPU version, [install pyTorch seperately](https://pytorch.org/get-started/locally/):
+
+```sh
+pip install torch torchvision --extra-index-url https://download.pytorch.org/whl/cu113
+```
+
+5. Then install the rest of the dependencies:
+
+```sh
+pip install -r requirements.txt
+pip install wheel
+```
+
+6. As CUDA 11.3 is rather old, you need to force enable it to be built on MS Build Tools 2022. Do `$env:NVCC_FLAGS = "-allow-unsupported-compiler"` if on `powershell`, or `set NVCC_FLAGS=-allow-unsupported-compiler` if on `cmd`
+
+
+7. You can finally build xFormers, note that the build will take a long time (probably 10-20minutes), it may initially complain of some errors but it should still compile correctly. 
+
+```sh
+python setup.py build
+python setup.py bdist_wheel
+```
+
+9. In `xformers` directory, navigate to the `dist` folder and copy the `.whl` file to the base directory of `stable-diffusion-webui`
+
+10. In `stable-diffusion-webui` directory, install the `.whl`, change the name of the file in the command below if the name is different:
+
+```sh
+./venv/scripts/activate
+pip install xformers-0.0.14.dev0-cp310-cp310-win_amd64.whl
+```
+
+11. Ensure that `xformers` is activated by launching `stable-diffusion-webui` with `--force-enable-xformers`
+
+
 
     If you encounter some error about torch not being built with your cuda version blah blah, then try:
     `pip install setuptools==49.6.0`
