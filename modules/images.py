@@ -428,3 +428,34 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
             file.write(info + "\n")
 
     return fullfn
+
+def addCaptionLines(lines,image,initialx,textfont):
+    draw = ImageDraw.Draw(image)
+    hstart =initialx
+    for fill,line in lines:
+        fontSize = 32
+        font = ImageFont.truetype(textfont, fontSize)
+        _,_,w, h = draw.textbbox((0,0),line,font=font)
+        fontSize =  min( int(fontSize * ((image.size[0]-35)/w) ), 28)
+        font = ImageFont.truetype(textfont, fontSize)
+        _,_,w,h = draw.textbbox((0,0),line,font=font)
+        draw.text(((image.size[0]-w)/2,hstart), line, font=font, fill=fill)
+        hstart += h
+    return hstart
+
+def captionImge(image,prelines,postlines,background=(51, 51, 51),font=None):
+    if font is None:
+        try:
+            font = ImageFont.truetype(opts.font or Roboto, fontsize)
+            font = opts.font or Roboto
+        except Exception:
+            font = Roboto
+
+    sampleImage = image
+    background = Image.new("RGBA", (sampleImage.size[0],sampleImage.size[1]+1024), background)
+    hoffset = addCaptionLines(prelines,background,5,font)+16
+    background.paste(sampleImage,(0,hoffset))
+    hoffset = hoffset+sampleImage.size[1]+8
+    hoffset = addCaptionLines(postlines,background,hoffset,font)
+    background = background.crop((0,0,sampleImage.size[0],hoffset+8))
+    return background
