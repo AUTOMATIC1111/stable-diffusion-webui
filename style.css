@@ -453,3 +453,12 @@ input[type="range"]{
 .context-menu-items a:hover{
     background: #a55000;
 }
+
+#quicksettings > div{
+    border: none;
+}
+
+#quicksettings > div > div{
+    max-width: 32em;
+    padding: 0;
+}

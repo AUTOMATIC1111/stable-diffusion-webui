@@ -129,7 +129,7 @@ class Processed:
         self.index_of_first_image = index_of_first_image
         self.styles = p.styles
         self.job_timestamp = state.job_timestamp
-        self.clip_skip = opts.CLIP_ignore_last_layers
+        self.clip_skip = opts.CLIP_stop_at_last_layers
 
         self.eta = p.eta
         self.ddim_discretize = p.ddim_discretize
@@ -274,7 +274,7 @@ def fix_seed(p):
 def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration=0, position_in_batch=0):
     index = position_in_batch + iteration * p.batch_size
 
-    clip_skip = getattr(p, 'clip_skip', opts.CLIP_ignore_last_layers)
+    clip_skip = getattr(p, 'clip_skip', opts.CLIP_stop_at_last_layers)
 
     generation_params = {
         "Steps": p.steps,
@@ -293,7 +293,7 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration
         "Seed resize from": (None if p.seed_resize_from_w == 0 or p.seed_resize_from_h == 0 else f"{p.seed_resize_from_w}x{p.seed_resize_from_h}"),
         "Denoising strength": getattr(p, 'denoising_strength', None),
         "Eta": (None if p.sampler is None or p.sampler.eta == p.sampler.default_eta else p.sampler.eta),
-        "Clip skip": None if clip_skip==0 else clip_skip,
+        "Clip skip": None if clip_skip <= 1 else clip_skip,
     }
 
     generation_params.update(p.extra_generation_params)
