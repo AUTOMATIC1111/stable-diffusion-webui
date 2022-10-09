@@ -19,15 +19,15 @@ import modules.textual_inversion.dataset
 class EmbeddingEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, torch.Tensor):
-            return {'EMBEDDINGTENSOR':obj.cpu().detach().numpy().tolist()}
+            return {'TORCHTENSOR':obj.cpu().detach().numpy().tolist()}
         return json.JSONEncoder.default(self, o)
 
 class EmbeddingDecoder(json.JSONDecoder):
     def __init__(self, *args, **kwargs):
         json.JSONDecoder.__init__(self, object_hook=self.object_hook, *args, **kwargs)
     def object_hook(self, d):
-        if 'EMBEDDINGTENSOR' in d:
-            return torch.from_numpy(np.array(d['EMBEDDINGTENSOR']))
+        if 'TORCHTENSOR' in d:
+            return torch.from_numpy(np.array(d['TORCHTENSOR']))
         return d
 
 def embeddingToB64(data):
