@@ -130,8 +130,7 @@ if not is_installed("xformers") and xformers:
     if platform.system() == "Windows" and platform.python_version().startswith("3.10"):
         run_pip("install https://github.com/C43H66N12O12S2/stable-diffusion-webui/releases/download/a/xformers-0.0.14.dev0-cp310-cp310-win_amd64.whl", "xformers")
     elif platform.system() == "Linux":
-        ## Issues on some LInux platforms and combinations of Python versions - just build it!
-        run_pip("install 'git+https://github.com/facebookresearch/xformers.git@v0.0.13'", "xformers")
+        run_pip("install xformers", "xformers")
 else:
     print('XFormers Disabled')
 
