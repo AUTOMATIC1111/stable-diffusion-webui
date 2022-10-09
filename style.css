@@ -456,6 +456,7 @@ input[type="range"]{
 
 #quicksettings > div{
     border: none;
+    background: none;
 }
 
 #quicksettings > div > div{
