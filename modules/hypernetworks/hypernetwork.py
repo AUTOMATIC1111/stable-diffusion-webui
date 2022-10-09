@@ -120,6 +120,17 @@ def load_hypernetwork(filename):
         shared.loaded_hypernetwork = None
 
 
+def find_closest_hypernetwork_name(search: str):
+    if not search:
+        return None
+    search = search.lower()
+    applicable = [name for name in shared.hypernetworks if search in name.lower()]
+    if not applicable:
+        return None
+    applicable = sorted(applicable, key=lambda name: len(name))
+    return applicable[0]
+
+
 def apply_hypernetwork(hypernetwork, context, layer=None):
     hypernetwork_layers = (hypernetwork.layers if hypernetwork is not None else {}).get(context.shape[2], None)
 
