@@ -464,3 +464,14 @@ If an audio file named `notification.mp3` is present in webui's root folder, it 
 As a source of inspiration:
 * https://pixabay.com/sound-effects/search/ding/?duration=0-30
 * https://pixabay.com/sound-effects/search/notification/?duration=0-30
+
+# Tweaks
+
+## Ignore last layers of CLIP model
+This is a slider in settings, and it controls how early the processing of prompt by CLIP network should be stopped.
+
+A more detailed explanation:
+
+CLIP is a very advanced neural network that transforms your prompt text into a numerical representation. Neural networks work very well with this numerical representation and that's why devs of SD chose CLIP as one of 3 models involved in stable diffusion's method of producing images. As CLIP is a neural network, it means that it has a lot of layers. Your prompt is digitized in a simple way, and then fed through layers. You get numerical representation of the prompt after the 1st layer, you feed that into the second layer, you feed the result of that into third, etc, until you get to the last layer, and that's the output of CLIP that is used in stable diffusion. This is the slider value of 1. But you can stop early, and use the output of the next to last layer - that's slider value of 2. The earlier you stop, the less layers of neural network have worked on the prompt.
+
+Some models were trained with this kind of tweak, so setting this value helps produce better results on those models.
