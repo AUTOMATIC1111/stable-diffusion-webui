@@ -4,7 +4,7 @@ import sys
 from collections import namedtuple
 import torch
 from omegaconf import OmegaConf
-
+from pathlib import Path
 
 from ldm.util import instantiate_from_config
 
@@ -158,6 +158,7 @@ def load_model_weights(model, checkpoint_info):
         vae_dict = {k: v for k, v in vae_ckpt["state_dict"].items() if k[0:4] != "loss"}
 
         model.first_stage_model.load_state_dict(vae_dict)
+        model.sd_model_vae_name = Path(vae_file).stem
 
     model.sd_model_hash = sd_model_hash
     model.sd_model_checkpoint = checkpoint_file
