@@ -259,6 +259,7 @@ class Script(scripts.Script):
             
             # Confirm options are valid before starting
             if opt.label == "Sampler":
+                samplers_dict = build_samplers_dict(p)
                 for sampler_val in valslist:
                     if sampler_val.lower() not in samplers_dict.keys():
                         raise RuntimeError(f"Unknown sampler: {sampler_val}")
