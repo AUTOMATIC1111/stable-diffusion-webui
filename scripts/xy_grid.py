@@ -11,7 +11,7 @@ import modules.scripts as scripts
 import gradio as gr
 
 from modules import images
-from modules.processing import process_images, Processed
+from modules.processing import process_images, Processed, get_correct_sampler
 from modules.shared import opts, cmd_opts, state
 import modules.shared as shared
 import modules.sd_samplers
@@ -56,15 +56,17 @@ def apply_order(p, x, xs):
     p.prompt = prompt_tmp + p.prompt
     
 
-samplers_dict = {}
-for i, sampler in enumerate(modules.sd_samplers.samplers):
-    samplers_dict[sampler.name.lower()] = i
-    for alias in sampler.aliases:
-        samplers_dict[alias.lower()] = i
+def build_samplers_dict(p):
+    samplers_dict = {}
+    for i, sampler in enumerate(get_correct_sampler(p)):
+        samplers_dict[sampler.name.lower()] = i
+        for alias in sampler.aliases:
+            samplers_dict[alias.lower()] = i
+    return samplers_dict
 
 
 def apply_sampler(p, x, xs):
-    sampler_index = samplers_dict.get(x.lower(), None)
+    sampler_index = build_samplers_dict(p).get(x.lower(), None)
     if sampler_index is None:
         raise RuntimeError(f"Unknown sampler: {x}")
 
