@@ -242,6 +242,7 @@ options_templates.update(options_section(('ui', "User interface"), {
     "return_grid": OptionInfo(True, "Show grid in results for web"),
     "do_not_show_images": OptionInfo(False, "Do not show any images in results for web"),
     "add_model_hash_to_info": OptionInfo(True, "Add model hash to generation information"),
+    "add_extended_model_details_to_info": OptionInfo(False, "Add extended model details to generation information (model name, VAE, hypernetwork)"),
     "font": OptionInfo("", "Font for image grids that have text"),
     "js_modal_lightbox": OptionInfo(True, "Enable full page image viewer"),
     "js_modal_lightbox_initially_zoomed": OptionInfo(True, "Show images zoomed in by default in full page image viewer"),
