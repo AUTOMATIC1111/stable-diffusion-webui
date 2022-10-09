@@ -49,15 +49,18 @@ def list_hypernetworks(path):
 
 
 def load_hypernetwork(filename):
-    print(f"Loading hypernetwork {filename}")
     path = shared.hypernetworks.get(filename, None)
-    if (path is not None):
+    if path is not None:
+        print(f"Loading hypernetwork {filename}")
         try:
             shared.loaded_hypernetwork = Hypernetwork(path)
         except Exception:
             print(f"Error loading hypernetwork {path}", file=sys.stderr)
             print(traceback.format_exc(), file=sys.stderr)
     else:
+        if shared.loaded_hypernetwork is not None:
+            print(f"Unloading hypernetwork")
+
         shared.loaded_hypernetwork = None
 
 

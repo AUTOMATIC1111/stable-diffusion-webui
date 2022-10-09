@@ -10,7 +10,7 @@ import numpy as np
 import modules.scripts as scripts
 import gradio as gr
 
-from modules import images
+from modules import images, hypernetwork
 from modules.processing import process_images, Processed, get_correct_sampler
 from modules.shared import opts, cmd_opts, state
 import modules.shared as shared
@@ -80,8 +80,7 @@ def apply_checkpoint(p, x, xs):
 
 
 def apply_hypernetwork(p, x, xs):
-    hn = shared.hypernetworks.get(x, None)
-    opts.data["sd_hypernetwork"] = hn.name if hn is not None else 'None'
+    hypernetwork.load_hypernetwork(x)
 
 
 def format_value_add_label(p, opt, x):
@@ -203,8 +202,6 @@ class Script(scripts.Script):
 
         p.batch_size = 1
 
-        initial_hn = opts.sd_hypernetwork
-
         def process_axis(opt, vals):
             if opt.label == 'Nothing':
                 return [0]
@@ -321,6 +318,6 @@ class Script(scripts.Script):
         # restore checkpoint in case it was changed by axes
         modules.sd_models.reload_model_weights(shared.sd_model)
 
-        opts.data["sd_hypernetwork"] = initial_hn
+        hypernetwork.load_hypernetwork(opts.sd_hypernetwork)
 
         return processed
