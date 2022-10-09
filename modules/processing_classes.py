@@ -87,13 +87,6 @@ class StableDiffusionProcessing:
 
     def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength):
         raise NotImplementedError()
-
-
-def get_correct_sampler(p):
-    if isinstance(p, modules.processing.StableDiffusionProcessingTxt2Img):
-        return samplers
-    elif isinstance(p, modules.processing.StableDiffusionProcessingImg2Img):
-        return samplers.samplers_for_img2img
         
 class Processed:
     def __init__(self, p: StableDiffusionProcessing, images_list, seed=-1, info="", subseed=None, all_prompts=None, all_seeds=None, all_subseeds=None, index_of_first_image=0, infotexts=None):

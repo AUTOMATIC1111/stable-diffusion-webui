@@ -13,7 +13,7 @@ import string
 from modules.processing import Processed
 
 from modules import sd_samplers, shared
-from modules.shared import opts, cmd_opts, sd_upscalers
+from modules.shared import opts, cmd_opts
 
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
 
@@ -469,32 +469,3 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
             file.write(processed.js())
 
     return fullfn, txt_fullfn
-
-class Upscaler:
-    name = "Lanczos"
-
-    def do_upscale(self, img):
-        return img
-
-    def upscale(self, img, w, h):
-        for i in range(3):
-            if img.width >= w and img.height >= h:
-                break
-
-            img = self.do_upscale(img)
-
-        if img.width != w or img.height != h:
-            img = img.resize((int(w), int(h)), resample=LANCZOS)
-
-        return img
-
-
-class UpscalerNone(Upscaler):
-    name = "None"
-
-    def upscale(self, img, w, h):
-        return img
-
-
-sd_upscalers.append(UpscalerNone())
-sd_upscalers.append(Upscaler())

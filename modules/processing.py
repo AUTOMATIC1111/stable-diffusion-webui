@@ -46,6 +46,13 @@ def apply_color_correction(correction, image):
 
     return image
 
+
+def get_correct_sampler(p):
+    if isinstance(p, modules.processing.StableDiffusionProcessingTxt2Img):
+        return sd_samplers.samplers
+    elif isinstance(p, modules.processing.StableDiffusionProcessingImg2Img):
+        return sd_samplers.samplers_for_img2img
+
 # from https://discuss.pytorch.org/t/help-regarding-slerp-function-for-generative-model-sampling/32475/3
 def slerp(val, low, high):
     low_norm = low/torch.norm(low, dim=1, keepdim=True)
