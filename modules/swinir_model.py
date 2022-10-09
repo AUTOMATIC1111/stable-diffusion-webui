@@ -8,7 +8,6 @@ from basicsr.utils.download_util import load_file_from_url
 from tqdm import tqdm
 
 from modules import modelloader
-from modules.paths import models_path
 from modules.shared import cmd_opts, opts, device
 from modules.swinir_model_arch import SwinIR as net
 from modules.upscaler import Upscaler, UpscalerData
@@ -25,7 +24,6 @@ class UpscalerSwinIR(Upscaler):
                          "/003_realSR_BSRGAN_DFOWMFC_s64w8_SwinIR" \
                          "-L_x4_GAN.pth "
         self.model_name = "SwinIR 4x"
-        self.model_path = os.path.join(models_path, self.name)
         self.user_path = dirname
         super().__init__()
         scalers = []

@@ -349,6 +349,38 @@ def get_next_sequence_number(path, basename):
 
 
 def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None, forced_filename=None, suffix="", save_to_dirs=None):
+    '''Save an image.
+
+    Args:
+        image (`PIL.Image`):
+            The image to be saved.
+        path (`str`):
+            The directory to save the image. Note, the option `save_to_dirs` will make the image to be saved into a sub directory.
+        basename (`str`):
+            The base filename which will be applied to `filename pattern`.
+        seed, prompt, short_filename, 
+        extension (`str`):
+            Image file extension, default is `png`.
+        pngsectionname (`str`):
+            Specify the name of the section which `info` will be saved in.
+        info (`str` or `PngImagePlugin.iTXt`):
+            PNG info chunks.
+        existing_info (`dict`):
+            Additional PNG info. `existing_info == {pngsectionname: info, ...}`
+        no_prompt:
+            TODO I don't know its meaning.
+        p (`StableDiffusionProcessing`)
+        forced_filename (`str`):
+            If specified, `basename` and filename pattern will be ignored.
+        save_to_dirs (bool):
+            If true, the image will be saved into a subdirectory of `path`.
+
+    Returns: (fullfn, txt_fullfn)
+        fullfn (`str`):
+            The full path of the saved imaged.
+        txt_fullfn (`str` or None):
+            If a text file is saved for this image, this will be its full path. Otherwise None.
+    '''
     if short_filename or prompt is None or seed is None:
         file_decoration = ""
     elif opts.save_to_dirs:
@@ -424,10 +456,13 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
             piexif.insert(exif_bytes(), fullfn_without_extension + ".jpg")
 
     if opts.save_txt and info is not None:
-        with open(f"{fullfn_without_extension}.txt", "w", encoding="utf8") as file:
+        txt_fullfn = f"{fullfn_without_extension}.txt"
+        with open(txt_fullfn, "w", encoding="utf8") as file:
             file.write(info + "\n")
+    else:
+        txt_fullfn = None
 
-    return fullfn
+    return fullfn, txt_fullfn
 
 def addCaptionLines(lines,image,initialx,textfont):
     draw = ImageDraw.Draw(image)
