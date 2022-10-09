@@ -17,6 +17,7 @@ from .utils import (
     merge_default_config,
     parse_prompt,
     prepare_backend,
+    prepare_mask,
     save_img,
 )
 
@@ -133,7 +134,7 @@ async def f_img2img(req: Img2ImgRequest):
     prepare_backend(req)
 
     image = Image.open(req.src_path)
-    mask = Image.open(req.mask_path).convert("L") if req.mode == 1 else None
+    mask = prepare_mask(Image.open(req.mask_path)) if req.mode == 1 else None
 
     orig_width, orig_height = image.size
 

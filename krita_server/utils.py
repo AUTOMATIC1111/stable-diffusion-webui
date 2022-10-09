@@ -116,11 +116,11 @@ def optional(*fields):
     return dec
 
 
-def save_img(image: Image, sample_path: str, filename: str):
+def save_img(image: Image.Image, sample_path: str, filename: str):
     """Saves an image.
 
     Args:
-        image (PIL.Image): Image to save.
+        image (Image): Image to save.
         sample_path (str): Folder to save the image in.
         filename (str): Name to save the image as.
 
@@ -244,3 +244,20 @@ def get_upscaler_index(upscaler_name: str):
         if upscaler.name == upscaler_name:
             return index
     raise KeyError(f"upscaler not found: {upscaler_name}")
+
+
+def prepare_mask(mask: Image.Image):
+    """Prepare mask for usage.
+
+    1. Convert transparent white/light pixels to black to fix the luminance calculation.
+    2. Convert to luminance mask.
+
+    Args:
+        mask (Image): mask.
+
+    Returns:
+        Image: The luminance mask.
+    """
+    base = Image.new("RGBA", mask.size, "BLACK")
+    base.paste(mask, (0, 0), mask)
+    return base.convert("L").point(lambda x: 255 if x > 0 else 0, mode="1")
