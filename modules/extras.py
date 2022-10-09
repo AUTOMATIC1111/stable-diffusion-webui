@@ -29,7 +29,7 @@ def run_extras(extras_mode, image, image_folder, gfpgan_visibility, codeformer_v
     if extras_mode == 1:
         #convert file to pillow image
         for img in image_folder:
-            image = Image.fromarray(np.array(Image.open(img)))
+            image = Image.open(img)
             imageArr.append(image)
             imageNameArr.append(os.path.splitext(img.orig_name)[0])
     else:
