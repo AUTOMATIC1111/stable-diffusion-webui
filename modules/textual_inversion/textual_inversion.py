@@ -285,15 +285,9 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, steps,
                 info.add_text("sd-ti-embedding", embeddingToB64(data))
 
                 pre_lines = [((255, 207, 175),"<{}>".format(data.get('name','???')))]
-                
                 checkpoint = sd_models.select_checkpoint()
-                caption_checkpoint_hash = checkpoint.hash
-                
-                caption_stepcount = data.get('step',0)
-                caption_stepcount = caption_stepcount if caption_stepcount else 0
-
-                post_lines = [((240, 223, 175),"Trained against checkpoint [{}] for {} steps".format(caption_checkpoint_hash,
-                                                                                                  caption_stepcount))]
+                post_lines = [((240, 223, 175),"Trained against checkpoint [{}] for {} steps".format(checkpoint.hash,
+                                                                                                     embedding.step))]
                 captioned_image = captionImge(image,prelines=pre_lines,postlines=post_lines)
                 captioned_image.save(last_saved_image, "PNG", pnginfo=info)
             else:
