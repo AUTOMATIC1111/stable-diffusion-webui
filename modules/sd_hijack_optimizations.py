@@ -28,7 +28,7 @@ def split_cross_attention_forward_v1(self, x, context=None, mask=None):
     q_in = self.to_q(x)
     context = default(context, x)
 
-    hypernetwork = shared.selected_hypernetwork()
+    hypernetwork = shared.loaded_hypernetwork
     hypernetwork_layers = (hypernetwork.layers if hypernetwork is not None else {}).get(context.shape[2], None)
 
     if hypernetwork_layers is not None:
@@ -68,7 +68,7 @@ def split_cross_attention_forward(self, x, context=None, mask=None):
     q_in = self.to_q(x)
     context = default(context, x)
 
-    hypernetwork = shared.selected_hypernetwork()
+    hypernetwork = shared.loaded_hypernetwork
     hypernetwork_layers = (hypernetwork.layers if hypernetwork is not None else {}).get(context.shape[2], None)
 
     if hypernetwork_layers is not None:
@@ -132,7 +132,7 @@ def xformers_attention_forward(self, x, context=None, mask=None):
     h = self.heads
     q_in = self.to_q(x)
     context = default(context, x)
-    hypernetwork = shared.selected_hypernetwork()
+    hypernetwork = shared.loaded_hypernetwork
     hypernetwork_layers = (hypernetwork.layers if hypernetwork is not None else {}).get(context.shape[2], None)
     if hypernetwork_layers is not None:
         k_in = self.to_k(hypernetwork_layers[0](context))
