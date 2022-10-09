@@ -1001,7 +1001,8 @@ def create_ui(wrap_gradio_gpu_call):
                     steps = gr.Number(label='Max steps', value=100000, precision=0)
                     create_image_every = gr.Number(label='Save an image to log directory every N steps, 0 to disable', value=500, precision=0)
                     save_embedding_every = gr.Number(label='Save a copy of embedding to log directory every N steps, 0 to disable', value=500, precision=0)
-
+                    save_image_with_stored_embedding = gr.Checkbox(label='Save images with embedding in PNG chunks', value=True)
+                    
                     with gr.Row():
                         with gr.Column(scale=2):
                             gr.HTML(value="")
@@ -1063,6 +1064,7 @@ def create_ui(wrap_gradio_gpu_call):
                 create_image_every,
                 save_embedding_every,
                 template_file,
+                save_image_with_stored_embedding,
             ],
             outputs=[
                 ti_output,
