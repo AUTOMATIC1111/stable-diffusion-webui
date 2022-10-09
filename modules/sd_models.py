@@ -169,7 +169,7 @@ def load_model():
     checkpoint_info = select_checkpoint()
 
     if checkpoint_info.config != shared.cmd_opts.config:
-        print(f"Loading config from: {shared.cmd_opts.config}")
+        print(f"Loading config from: {checkpoint_info.config}")
 
     sd_config = OmegaConf.load(checkpoint_info.config)
     sd_model = instantiate_from_config(sd_config.model)
