@@ -6,6 +6,10 @@ import importlib.util
 import shlex
 import platform
 
+dir_repos = "repositories"
+python = sys.executable
+git = os.environ.get('GIT', "git")
+
 
 def extract_arg(args, name):
     return [x for x in args if x != name], name in args
@@ -44,11 +48,44 @@ def is_installed(package):
     return spec is not None
 
 
-def prepare_enviroment():
-    dir_repos = "repositories"
+def repo_dir(name):
+    return os.path.join(dir_repos, name)
 
-    python = sys.executable
-    git = os.environ.get('GIT', "git")
+
+def run_python(code, desc=None, errdesc=None):
+    return run(f'"{python}" -c "{code}"', desc, errdesc)
+
+
+def run_pip(args, desc=None):
+    return run(f'"{python}" -m pip {args} --prefer-binary', desc=f"Installing {desc}", errdesc=f"Couldn't install {desc}")
+
+
+def check_run_python(code):
+    return check_run(f'"{python}" -c "{code}"')
+
+
+def git_clone(url, dir, name, commithash=None):
+    # TODO clone into temporary dir and move if successful
+
+    if os.path.exists(dir):
+        if commithash is None:
+            return
+
+        current_hash = run(f'"{git}" -C {dir} rev-parse HEAD', None, f"Couldn't determine {name}'s hash: {commithash}").strip()
+        if current_hash == commithash:
+            return
+
+        run(f'"{git}" -C {dir} fetch', f"Fetching updates for {name}...", f"Couldn't fetch {name}")
+        run(f'"{git}" -C {dir} checkout {commithash}', f"Checking out commint for {name} with hash: {commithash}...", f"Couldn't checkout commit {commithash} for {name}")
+        return
+
+    run(f'"{git}" clone "{url}" "{dir}"', f"Cloning {name} into {dir}...", f"Couldn't clone {name}")
+
+    if commithash is not None:
+        run(f'"{git}" -C {dir} checkout {commithash}', None, "Couldn't checkout {name}'s hash: {commithash}")
+
+
+def prepare_enviroment():
     torch_command = os.environ.get('TORCH_COMMAND', "pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 --extra-index-url https://download.pytorch.org/whl/cu113")
     requirements_file = os.environ.get('REQS_FILE', "requirements_versions.txt")
     commandline_args = os.environ.get('COMMANDLINE_ARGS', "")
@@ -67,38 +104,6 @@ def prepare_enviroment():
     args, skip_torch_cuda_test = extract_arg(args, '--skip-torch-cuda-test')
     xformers = '--xformers' in args
     deepdanbooru = '--deepdanbooru' in args
-
-    def repo_dir(name):
-        return os.path.join(dir_repos, name)
-
-    def run_python(code, desc=None, errdesc=None):
-        return run(f'"{python}" -c "{code}"', desc, errdesc)
-
-    def run_pip(args, desc=None):
-        return run(f'"{python}" -m pip {args} --prefer-binary', desc=f"Installing {desc}", errdesc=f"Couldn't install {desc}")
-
-    def check_run_python(code):
-        return check_run(f'"{python}" -c "{code}"')
-
-    def git_clone(url, dir, name, commithash=None):
-        # TODO clone into temporary dir and move if successful
-
-        if os.path.exists(dir):
-            if commithash is None:
-                return
-
-            current_hash = run(f'"{git}" -C {dir} rev-parse HEAD', None, f"Couldn't determine {name}'s hash: {commithash}").strip()
-            if current_hash == commithash:
-                return
-
-            run(f'"{git}" -C {dir} fetch', f"Fetching updates for {name}...", f"Couldn't fetch {name}")
-            run(f'"{git}" -C {dir} checkout {commithash}', f"Checking out commint for {name} with hash: {commithash}...", f"Couldn't checkout commit {commithash} for {name}")
-            return
-
-        run(f'"{git}" clone "{url}" "{dir}"', f"Cloning {name} into {dir}...", f"Couldn't clone {name}")
-
-        if commithash is not None:
-            run(f'"{git}" -C {dir} checkout {commithash}', None, "Couldn't checkout {name}'s hash: {commithash}")
 
     try:
         commit = run(f"{git} rev-parse HEAD").strip()
