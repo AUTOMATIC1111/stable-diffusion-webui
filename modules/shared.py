@@ -79,11 +79,8 @@ parallel_processing_allowed = not cmd_opts.lowvram and not cmd_opts.medvram
 xformers_available = False
 config_filename = cmd_opts.ui_settings_file
 
-hypernetworks = hypernetwork.load_hypernetworks(os.path.join(models_path, 'hypernetworks'))
-
-
-def selected_hypernetwork():
-    return hypernetworks.get(opts.sd_hypernetwork, None)
+hypernetworks = hypernetwork.list_hypernetworks(os.path.join(models_path, 'hypernetworks'))
+loaded_hypernetwork = None
 
 
 class State:
