@@ -83,6 +83,10 @@ def apply_hypernetwork(p, x, xs):
     hypernetwork.load_hypernetwork(x)
 
 
+def apply_clip_skip(p, x, xs):
+    opts.data["CLIP_ignore_last_layers"] = x
+
+
 def format_value_add_label(p, opt, x):
     if type(x) == float:
         x = round(x, 8)
@@ -134,6 +138,7 @@ axis_options = [
     AxisOption("Sigma max", float, apply_field("s_tmax"), format_value_add_label),
     AxisOption("Sigma noise", float, apply_field("s_noise"), format_value_add_label),
     AxisOption("Eta", float, apply_field("eta"), format_value_add_label),
+    AxisOption("Clip skip", int, apply_clip_skip, format_value_add_label),
     AxisOptionImg2Img("Denoising", float, apply_field("denoising_strength"), format_value_add_label),  # as it is now all AxisOptionImg2Img items must go after AxisOption ones
 ]
 
@@ -201,6 +206,7 @@ class Script(scripts.Script):
             modules.processing.fix_seed(p)
 
         p.batch_size = 1
+        CLIP_ignore_last_layers = opts.CLIP_ignore_last_layers
 
         def process_axis(opt, vals):
             if opt.label == 'Nothing':
@@ -320,5 +326,7 @@ class Script(scripts.Script):
         modules.sd_models.reload_model_weights(shared.sd_model)
 
         hypernetwork.load_hypernetwork(opts.sd_hypernetwork)
+
+        opts.data["CLIP_ignore_last_layers"] = CLIP_ignore_last_layers
 
         return processed
