@@ -1,3 +1,4 @@
+
 import json
 import math
 import os
@@ -45,6 +46,12 @@ def apply_color_correction(correction, image):
 
     return image
 
+
+def get_correct_sampler(p):
+    if isinstance(p, modules.processing.StableDiffusionProcessingTxt2Img):
+        return sd_samplers.samplers
+    elif isinstance(p, modules.processing.StableDiffusionProcessingImg2Img):
+        return sd_samplers.samplers_for_img2img
 
 class StableDiffusionProcessing:
     def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt="", styles=None, seed=-1, subseed=-1, subseed_strength=0, seed_resize_from_h=-1, seed_resize_from_w=-1, seed_enable_extras=True, sampler_index=0, batch_size=1, n_iter=1, steps=50, cfg_scale=7.0, width=512, height=512, restore_faces=False, tiling=False, do_not_save_samples=False, do_not_save_grid=False, extra_generation_params=None, overlay_images=None, negative_prompt=None, eta=None):
@@ -272,7 +279,7 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration
 
     generation_params = {
         "Steps": p.steps,
-        "Sampler": sd_samplers.samplers[p.sampler_index].name,
+        "Sampler": get_correct_sampler(p)[p.sampler_index].name,
         "CFG scale": p.cfg_scale,
         "Seed": all_seeds[index],
         "Face restoration": (opts.face_restoration_model if p.restore_faces else None),
