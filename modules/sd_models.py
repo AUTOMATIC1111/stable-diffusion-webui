@@ -122,6 +122,13 @@ def select_checkpoint():
     return checkpoint_info
 
 
+def get_state_dict_from_checkpoint(pl_sd):
+    if "state_dict" in pl_sd:
+        return pl_sd["state_dict"]
+
+    return pl_sd
+
+
 def load_model_weights(model, checkpoint_info):
     checkpoint_file = checkpoint_info.filename
     sd_model_hash = checkpoint_info.hash
@@ -131,11 +138,8 @@ def load_model_weights(model, checkpoint_info):
     pl_sd = torch.load(checkpoint_file, map_location="cpu")
     if "global_step" in pl_sd:
         print(f"Global Step: {pl_sd['global_step']}")
-    
-    if "state_dict" in pl_sd:
-        sd = pl_sd["state_dict"]
-    else:
-        sd = pl_sd
+
+    sd = get_state_dict_from_checkpoint(pl_sd)
 
     model.load_state_dict(sd, strict=False)
 
