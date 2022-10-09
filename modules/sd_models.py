@@ -196,7 +196,8 @@ def reload_model_weights(sd_model, info=None):
         return
 
     if sd_model.sd_checkpoint_info.config != checkpoint_info.config:
-        return load_model()
+        shared.sd_model = load_model()
+        return shared.sd_model
 
     if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
         lowvram.send_everything_to_cpu()
