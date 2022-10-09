@@ -1,5 +1,7 @@
+import os
 import re
 import gradio as gr
+from modules.shared import script_path
 
 re_param_code = r"\s*([\w ]+):\s*([^,]+)(?:,|$)"
 re_param = re.compile(re_param_code)
@@ -61,6 +63,12 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
 
 def connect_paste(button, paste_fields, input_comp, js=None):
     def paste_func(prompt):
+        if not prompt:
+            filename = os.path.join(script_path, "params.txt")
+            if os.path.exists(filename):
+                with open(filename, "r", encoding="utf8") as file:
+                    prompt = file.read()
+
         params = parse_generation_parameters(prompt)
         res = []
 
