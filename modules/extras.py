@@ -98,6 +98,10 @@ def run_extras(extras_mode, image, image_folder, gfpgan_visibility, codeformer_v
                           no_prompt=True, grid=False, pnginfo_section_name="extras", existing_info=existing_pnginfo,
                           forced_filename=image_name if opts.use_original_name_batch else None)
 
+        if opts.enable_pnginfo:
+            image.info = existing_pnginfo
+            image.info["extras"] = info
+
         outputs.append(image)
 
     devices.torch_gc()
