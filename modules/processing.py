@@ -139,6 +139,10 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
     else:
         assert p.prompt is not None
 
+    with open(os.path.join(shared.script_path, "params.json"), "w", encoding="utf8") as file:
+        processed = Processed(p, [], p.seed, "")
+        file.write(processed.js())
+
     devices.torch_gc()
 
     seed = get_fixed_seed(p.seed)
