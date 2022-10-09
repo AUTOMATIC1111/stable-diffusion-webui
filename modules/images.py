@@ -13,7 +13,7 @@ import string
 from modules.processing import Processed
 
 from modules import sd_samplers, shared
-from modules.shared import opts, cmd_opts
+from modules.shared import opts, cmd_opts, sd_upscalers
 
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
 
@@ -496,5 +496,5 @@ class UpscalerNone(Upscaler):
         return img
 
 
-shared.sd_upscalers.append(UpscalerNone())
-shared.sd_upscalers.append(Upscaler())
+sd_upscalers.append(UpscalerNone())
+sd_upscalers.append(Upscaler())
