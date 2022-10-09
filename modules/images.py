@@ -3,6 +3,8 @@ import math
 import os
 from collections import namedtuple
 import re
+import io
+import sys
 
 import numpy as np
 import piexif
@@ -281,7 +283,7 @@ def sanitize_filename_part(text, replace_spaces=True):
     return text
 
 
-def apply_filename_pattern(x, p, seed, prompt):
+def apply_filename_pattern(x, p, seed, prompt, hash):
     max_prompt_words = opts.directories_max_prompt_words
 
     if seed is not None:
@@ -295,7 +297,14 @@ def apply_filename_pattern(x, p, seed, prompt):
         x = x.replace("[styles]", sanitize_filename_part(", ".join([x for x in p.styles if not x == "None"]) or "None", replace_spaces=False))
         x = x.replace("[sampler]", sanitize_filename_part(sd_samplers.samplers[p.sampler_index].name, replace_spaces=False))
 
+         # Handle parent_hash
+        parent_hash = "" if "Parent hash" not in p.extra_generation_params else p.extra_generation_params["Parent hash"]
+        x = x.replace("[parent_hash]", str(parent_hash))
+        x = x.replace("[parent_hash_padded]", str(parent_hash).zfill(8))
+
     x = x.replace("[model_hash]", getattr(p, "sd_model_hash", shared.sd_model.sd_model_hash))
+    x = x.replace("[hash]", str(hash))
+    x = x.replace("[hash_padded]", str(hash).zfill(8))
     x = x.replace("[date]", datetime.date.today().isoformat())
     x = x.replace("[datetime]", datetime.datetime.now().strftime("%Y%m%d%H%M%S"))
     x = x.replace("[job_timestamp]", getattr(p, "job_timestamp", shared.state.job_timestamp))
@@ -358,7 +367,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
             The directory to save the image. Note, the option `save_to_dirs` will make the image to be saved into a sub directory.
         basename (`str`):
             The base filename which will be applied to `filename pattern`.
-        seed, prompt, short_filename, 
+        seed, prompt, short_filename,
         extension (`str`):
             Image file extension, default is `png`.
         pngsectionname (`str`):
@@ -381,18 +390,8 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
         txt_fullfn (`str` or None):
             If a text file is saved for this image, this will be its full path. Otherwise None.
     '''
-    if short_filename or prompt is None or seed is None:
-        file_decoration = ""
-    elif opts.save_to_dirs:
-        file_decoration = opts.samples_filename_pattern or "[seed]"
-    else:
-        file_decoration = opts.samples_filename_pattern or "[seed]-[prompt_spaces]"
 
-    if file_decoration != "":
-        file_decoration = "-" + file_decoration.lower()
-
-    file_decoration = apply_filename_pattern(file_decoration, p, seed, prompt) + suffix
-
+    # Prepare additional image info
     if extension == 'png' and opts.enable_pnginfo and info is not None:
         pnginfo = PngImagePlugin.PngInfo()
 
@@ -404,57 +403,86 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     else:
         pnginfo = None
 
-    if save_to_dirs is None:
-        save_to_dirs = (grid and opts.grid_save_to_dirs) or (not grid and opts.save_to_dirs and not no_prompt)
-
-    if save_to_dirs:
-        dirname = apply_filename_pattern(opts.directories_filename_pattern or "[prompt_words]", p, seed, prompt).strip('\\ /')
-        path = os.path.join(path, dirname)
-
-    os.makedirs(path, exist_ok=True)
-
-    if forced_filename is None:
-        basecount = get_next_sequence_number(path, basename)
-        fullfn = "a.png"
-        fullfn_without_extension = "a"
-        for i in range(500):
-            fn = f"{basecount + i:05}" if basename == '' else f"{basename}-{basecount + i:04}"
-            fullfn = os.path.join(path, f"{fn}{file_decoration}.{extension}")
-            fullfn_without_extension = os.path.join(path, f"{fn}{file_decoration}")
-            if not os.path.exists(fullfn):
-                break
-    else:
-        fullfn = os.path.join(path, f"{forced_filename}.{extension}")
-        fullfn_without_extension = os.path.join(path, forced_filename)
-
-    def exif_bytes():
-        return piexif.dump({
+    if extension.lower() in ("jpg", "jpeg", "webp") and opts.enable_pnginfo and info is not None:
+        exif = piexif.dump({
             "Exif": {
                 piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(info or "", encoding="unicode")
             },
         })
-
-    if extension.lower() in ("jpg", "jpeg", "webp"):
-        image.save(fullfn, quality=opts.jpeg_quality)
-        if opts.enable_pnginfo and info is not None:
-            piexif.insert(exif_bytes(), fullfn)
     else:
-        image.save(fullfn, quality=opts.jpeg_quality, pnginfo=pnginfo)
+        exif = None
 
+    # Save to bytes for hashing
+    image_byte_array = io.BytesIO()
+    format=extension if extension != 'jpg' else 'jpeg'
+    image.save(image_byte_array, quality=opts.jpeg_quality, pnginfo=pnginfo, exif=exif, format=format)
+
+    # Prepare save location and filename
+    def get_fullfn(image_bytes):
+        nonlocal save_to_dirs, path
+
+        # Prepare image hash
+        hash = hash_image(Image.open(image_bytes)) if "[hash]" in opts.samples_filename_pattern or "[hash_padded]" in opts.samples_filename_pattern else None
+
+        if short_filename or prompt is None or seed is None:
+            file_decoration = ""
+        elif opts.save_to_dirs:
+            file_decoration = opts.samples_filename_pattern or "[seed]"
+        else:
+            file_decoration = opts.samples_filename_pattern or "[seed]-[prompt_spaces]"
+
+        if file_decoration != "":
+            file_decoration = "-" + file_decoration.lower()
+
+        file_decoration = apply_filename_pattern(file_decoration, p, seed, prompt, hash) + suffix
+
+        if save_to_dirs is None:
+            save_to_dirs = (grid and opts.grid_save_to_dirs) or (not grid and opts.save_to_dirs and not no_prompt)
+
+        if save_to_dirs:
+            dirname = apply_filename_pattern(opts.directories_filename_pattern or "[prompt_words]", p, seed, prompt, hash).strip('\\ /')
+            path = os.path.join(path, dirname)
+
+        os.makedirs(path, exist_ok=True)
+
+        if forced_filename is None:
+            basecount = get_next_sequence_number(path, basename)
+            fullfn = "a.png"
+            fullfn_without_extension = "a"
+            for i in range(500):
+                fn = f"{basecount + i:05}" if basename == '' else f"{basename}-{basecount + i:04}"
+                fullfn = os.path.join(path, f"{fn}{file_decoration}.{extension}")
+                fullfn_without_extension = os.path.join(path, f"{fn}{file_decoration}")
+                if not os.path.exists(fullfn):
+                    break
+        else:
+            fullfn = os.path.join(path, f"{forced_filename}.{extension}")
+            fullfn_without_extension = os.path.join(path, forced_filename)
+
+        return fullfn, fullfn_without_extension
+
+    # Finally save image
+    fullfn, fullfn_without_extension = get_fullfn(image_byte_array)
+    with open(fullfn, "wb") as f:
+        f.write(image_byte_array.getvalue())
+
+    # Optionally save a copy for 4-chan
     target_side_length = 4000
     oversize = image.width > target_side_length or image.height > target_side_length
-    if opts.export_for_4chan and (oversize or os.stat(fullfn).st_size > 4 * 1024 * 1024):
+    if opts.export_for_4chan and (oversize or sys.getsizeof(image_byte_array) > 4 * 1024 * 1024):
         ratio = image.width / image.height
-
         if oversize and ratio > 1:
             image = image.resize((target_side_length, image.height * target_side_length // image.width), LANCZOS)
         elif oversize:
             image = image.resize((image.width * target_side_length // image.height, target_side_length), LANCZOS)
 
-        image.save(fullfn_without_extension + ".jpg", quality=opts.jpeg_quality)
-        if opts.enable_pnginfo and info is not None:
-            piexif.insert(exif_bytes(), fullfn_without_extension + ".jpg")
+        copy_byte_array = io.BytesIO()
+        image.save(copy_byte_array, quality=opts.jpeg_quality, pnginfo=pnginfo, exif=exif, format="jpeg")
+        copy_fn = get_fullfn(copy_byte_array)[1]+".jpg"
+        with open(copy_fn, "wb") as f:
+            f.write(copy_byte_array.getvalue())
 
+    # And optional the txt with the info
     if opts.save_txt and info is not None:
         txt_fullfn = f"{fullfn_without_extension}.txt"
         with open(txt_fullfn, "w", encoding="utf8") as file:
@@ -463,3 +491,13 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
         txt_fullfn = None
 
     return fullfn, txt_fullfn
+
+def hash_image(img):
+    # compute average hash of img
+    img = img.resize((64, 64), Image.ANTIALIAS).convert('L')
+    pixel_data = list(img.getdata())
+    avg_pixel = sum(pixel_data)/len(pixel_data)
+    bits = "".join(['1' if (px >= avg_pixel) else '0' for px in pixel_data])
+    hex_representation = str(hex(int(bits, 2)))[2:]
+    short_hash = abs(hash(hex_representation)) % (10 ** 8)
+    return short_hash
