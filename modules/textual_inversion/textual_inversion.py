@@ -34,7 +34,7 @@ def embeddingToB64(data):
     d = json.dumps(data,cls=EmbeddingEncoder)
     return base64.b64encode(d.encode())
 
-def EmbeddingFromB64(data):
+def embeddingFromB64(data):
     d = base64.b64decode(data)
     return json.loads(d,cls=EmbeddingDecoder)
 
