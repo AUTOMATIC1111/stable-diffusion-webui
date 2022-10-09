@@ -86,13 +86,16 @@ function showGalleryImage(){
         
         if(fullImg_preview != null){
             fullImg_preview.forEach(function function_name(e) {
+                if (e.dataset.modded)
+                    return;
+                e.dataset.modded = true;
                 if(e && e.parentElement.tagName == 'DIV'){
 
                     e.style.cursor='pointer'
 
                     e.addEventListener('click', function (evt) {
                         if(!opts.js_modal_lightbox) return;
-                        modalZoomSet(gradioApp().getElementById('modalImage'), opts.js_modal_lightbox_initialy_zoomed)
+                        modalZoomSet(gradioApp().getElementById('modalImage'), opts.js_modal_lightbox_initially_zoomed)
                         showModal(evt)
                     },true);
                 }
