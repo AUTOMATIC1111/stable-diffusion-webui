@@ -84,7 +84,11 @@ def apply_checkpoint(p, x, xs):
 
 
 def apply_hypernetwork(p, x, xs):
-    hypernetwork.load_hypernetwork(x)
+    if x.lower() in ["", "none"]:
+        name = None
+    else:
+        name = hypernetwork.find_closest_hypernetwork_name(x)
+    hypernetwork.load_hypernetwork(name)
 
 
 def apply_clip_skip(p, x, xs):
