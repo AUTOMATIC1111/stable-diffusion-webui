@@ -1153,6 +1153,15 @@ def create_ui(wrap_gradio_gpu_call):
     component_dict = {}
 
     def open_folder(f):
+        if not os.path.isdir(f):
+            print(f"""
+WARNING
+An open_folder request was made with an argument that is not a folder.
+This could be an error or a malicious attempt to run code on your computer.
+Requested path was: {f}
+""", file=sys.stderr)
+            return
+
         if not shared.cmd_opts.hide_ui_dir_config:
             path = os.path.normpath(f)
             if platform.system() == "Windows":
