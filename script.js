@@ -41,6 +41,22 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 
 /**
+ * Add a ctrl+enter as a shortcut to start a generation
+ */
+ document.addEventListener('keydown', function(e) {
+    var handled = false;
+    if (e.key !== undefined) {
+        if((e.key == "Enter" && (e.metaKey || e.ctrlKey))) handled = true;
+    } else if (e.keyCode !== undefined) {
+        if((e.keyCode == 13 && (e.metaKey || e.ctrlKey))) handled = true;
+    }
+    if (handled) { 
+        gradioApp().querySelector("#txt2img_generate").click(); 
+        e.preventDefault();
+    }
+})
+
+/**
  * checks that a UI element is not in another hidden element or tab content
  */
 function uiElementIsVisible(el) {
