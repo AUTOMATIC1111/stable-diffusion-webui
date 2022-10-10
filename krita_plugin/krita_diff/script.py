@@ -50,6 +50,7 @@ class Script(QObject):
         self.status = STATE_INIT
 
     def cfg(self, name: str, type):
+        assert self.config.contains(name), "Report this bug, developer missed out a config key somewhere."
         return self.config.value(name, type=type)
 
     def set_cfg(self, name: str, value, if_empty=False):
