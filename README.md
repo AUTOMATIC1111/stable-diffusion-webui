@@ -28,10 +28,12 @@ Check the [custom scripts](https://github.com/AUTOMATIC1111/stable-diffusion-web
     - CodeFormer, face restoration tool as an alternative to GFPGAN
     - RealESRGAN, neural network upscaler
     - ESRGAN, neural network upscaler with a lot of third party models
-    - SwinIR, neural network upscaler
+    - SwinIR and Swin2SR([see here](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/2092)), neural network upscalers
     - LDSR, Latent diffusion super resolution upscaling
 - Resizing aspect ratio options
 - Sampling method selection
+    - Adjust sampler eta values (noise multiplier)
+    - More advanced noise setting options
 - Interrupt processing at any time
 - 4GB video card support (also reports of 2GB working)
 - Correct seeds for batches
@@ -67,6 +69,7 @@ Check the [custom scripts](https://github.com/AUTOMATIC1111/stable-diffusion-web
      - also supports weights for prompts: `a cat :1.2 AND a dog AND a penguin :2.2`
 - No token limit for prompts (original stable diffusion lets you use up to 75 tokens)
 - DeepDanbooru integration, creates danbooru style tags for anime prompts (add --deepdanbooru to commandline args)
+- [xformers](https://github.com/mv-lab/swin2sr), major speed increase for select cards: (add --xformers to commandline args)
 
 ## Installation and Running
 Make sure the required [dependencies](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Dependencies) are met and follow the instructions available for both [NVidia](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-NVidia-GPUs) (recommended) and [AMD](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-AMD-GPUs) GPUs.
@@ -116,6 +119,7 @@ The documentation was moved from this README over to the project's [wiki](https:
 - CodeFormer - https://github.com/sczhou/CodeFormer
 - ESRGAN - https://github.com/xinntao/ESRGAN
 - SwinIR - https://github.com/JingyunLiang/SwinIR
+- Swin2SR - https://github.com/mv-lab/swin2sr
 - LDSR - https://github.com/Hafiidz/latent-diffusion
 - Ideas for optimizations - https://github.com/basujindal/stable-diffusion
 - Doggettx - Cross Attention layer optimization - https://github.com/Doggettx/stable-diffusion, original idea for prompt editing.
@@ -123,6 +127,8 @@ The documentation was moved from this README over to the project's [wiki](https:
 - Idea for SD upscale - https://github.com/jquesnelle/txt2imghd
 - Noise generation for outpainting mk2 - https://github.com/parlance-zz/g-diffuser-bot
 - CLIP interrogator idea and borrowing some code - https://github.com/pharmapsychotic/clip-interrogator
+- Idea for Composable Diffusion - https://github.com/energy-based-model/Compositional-Visual-Generation-with-Composable-Diffusion-Models-PyTorch
+- xformers - https://github.com/facebookresearch/xformers
+- DeepDanbooru - interrogator for anime diffusers https://github.com/KichangKim/DeepDanbooru
 - Initial Gradio script - posted on 4chan by an Anonymous user. Thank you Anonymous user.
-- DeepDanbooru - interrogator for anime diffusors https://github.com/KichangKim/DeepDanbooru
 - (You)
