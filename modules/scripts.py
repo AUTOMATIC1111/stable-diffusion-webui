@@ -2,7 +2,6 @@ import os
 import sys
 import traceback
 
-import modules.ui as ui
 import gradio as gr
 
 from modules.processing import StableDiffusionProcessing
