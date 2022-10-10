@@ -14,9 +14,10 @@ This repository was originally a fork of [sddebz/stable-diffusion-krita-plugin](
 
 ## Quick Jump
 
-- Full Installation & Workflow Tutorial! (Coming Soon...)
+- Full Installation & Workflow Tutorial Video! (Coming Soon...)
 - [Installation Guide](https://github.com/Interpause/auto-sd-krita/wiki/Install-Guide)
   - Similar in difficulty to AUTOMATIC1111 + 1 extra step
+- **Script to Install to Existing AUTOMATIC1111 Alternative Method** (Coming Soon...)
 - [Usage Guide](https://github.com/Interpause/auto-sd-krita/wiki/Usage-Guide)
 - [Features](https://github.com/Interpause/auto-sd-krita/wiki/Features)
 - [TODO](https://github.com/Interpause/auto-sd-krita/wiki/TODO)
