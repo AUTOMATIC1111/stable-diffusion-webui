@@ -35,7 +35,10 @@ class QLineEditLayout(QHBoxLayout):
         self.addWidget(self.qedit)
 
     def cfg_init(self):
-        self.qedit.setText(self.script.cfg(self.field_cfg, str))
+        # NOTE: update timer -> cfg_init, setText seems to reset cursor position so we prevent it
+        val = self.script.cfg(self.field_cfg, str)
+        if self.qedit.text() != val:
+            self.qedit.setText(val)
 
     def cfg_connect(self):
         self.qedit.textChanged.connect(partial(self.script.set_cfg, self.field_cfg))

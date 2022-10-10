@@ -76,7 +76,11 @@ class ConfigTabWidget(QWidget):
         self.setLayout(layout)
 
     def cfg_init(self):
-        self.base_url.setText(script.cfg("base_url", str))
+        # NOTE: update timer -> cfg_init, setText seems to reset cursor position so we prevent it
+        base_url = script.cfg("base_url", str)
+        if self.base_url.text() != base_url:
+            self.base_url.setText(base_url)
+
         self.just_use_yaml.setChecked(script.cfg("just_use_yaml", bool))
         self.create_mask_layer.setChecked(script.cfg("create_mask_layer", bool))
         self.del_temp_files.setChecked(script.cfg("delete_temp_files", bool))

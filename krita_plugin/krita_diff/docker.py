@@ -1,4 +1,12 @@
-from krita import DockWidget, QPushButton, QScrollArea, QTabWidget, QVBoxLayout, QWidget
+from krita import (
+    DockWidget,
+    QPushButton,
+    QScrollArea,
+    QTabWidget,
+    QTimer,
+    QVBoxLayout,
+    QWidget,
+)
 
 from .pages import (
     ConfigTabWidget,
@@ -30,7 +38,7 @@ class SDPluginDocker(DockWidget):
         self.upscale_widget = UpscaleTabWidget()
         self.config_widget = ConfigTabWidget(self.update_interfaces)
 
-        self.refresh_btn = QPushButton("Refresh Available Options")
+        self.refresh_btn = QPushButton("Auto-Refresh Options Now")
 
         tabs = QTabWidget()
         tabs.addTab(self.txt2img_widget, "Txt2Img")
@@ -57,6 +65,8 @@ class SDPluginDocker(DockWidget):
         self.widget.setWidget(widget)
         self.widget.setWidgetResizable(True)
 
+        self.update_timer = QTimer()
+
     def update_interfaces(self):
         self.quick_widget.cfg_init()
         self.txt2img_widget.cfg_init()
@@ -74,11 +84,14 @@ class SDPluginDocker(DockWidget):
         self.config_widget.cfg_connect()
 
         self.refresh_btn.released.connect(self.update_remote_config)
+        self.update_timer.timeout.connect(self.update_remote_config)
+        self.update_timer.start(1000)
 
     def update_remote_config(self):
-        script.update_config()
+        if script.update_config():
+            script.set_status(STATE_READY)
+
         self.update_interfaces()
-        script.set_status(STATE_READY)
 
     def canvasChanged(self, canvas):
         pass

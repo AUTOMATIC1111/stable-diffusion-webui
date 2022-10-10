@@ -8,9 +8,18 @@ from urllib.error import URLError
 
 from krita import Krita, QByteArray, QImage, QObject, QSettings, QTimer
 
-from .defaults import (DEFAULTS, STATE_IMG2IMG, STATE_INIT, STATE_INPAINT,
-                       STATE_READY, STATE_RESET_DEFAULT, STATE_TXT2IMG,
-                       STATE_UPSCALE, STATE_URLERROR, STATE_WAIT)
+from .defaults import (
+    DEFAULTS,
+    STATE_IMG2IMG,
+    STATE_INIT,
+    STATE_INPAINT,
+    STATE_READY,
+    STATE_RESET_DEFAULT,
+    STATE_TXT2IMG,
+    STATE_UPSCALE,
+    STATE_URLERROR,
+    STATE_WAIT,
+)
 
 # samplers = [
 #     "DDIM",
@@ -50,7 +59,9 @@ class Script(QObject):
         self.status = STATE_INIT
 
     def cfg(self, name: str, type):
-        assert self.config.contains(name), "Report this bug, developer missed out a config key somewhere."
+        assert self.config.contains(
+            name
+        ), "Report this bug, developer missed out a config key somewhere."
         return self.config.value(name, type=type)
 
     def set_cfg(self, name: str, value, if_empty=False):
@@ -73,29 +84,7 @@ class Script(QObject):
         self.status = state
         self._status_cb(state)
 
-    def update_config(self):
-        res = None
-        try:
-            with urllib.request.urlopen(self.cfg("base_url", str) + "/config") as req:
-                res = req.read()
-                self.opt = json.loads(res)
-        except URLError:
-            self.set_status(STATE_URLERROR)
-
-        # dont update lists if connection failed
-        if res:
-            assert len(self.opt["upscalers"]) > 0
-            assert len(self.opt["samplers"]) > 0
-            assert len(self.opt["samplers_img2img"]) > 0
-            assert len(self.opt["face_restorers"]) > 0
-            assert len(self.opt["sd_models"]) > 0
-            self.set_cfg("upscaler_list", self.opt["upscalers"])
-            self.set_cfg("txt2img_sampler_list", self.opt["samplers"])
-            self.set_cfg("img2img_sampler_list", self.opt["samplers_img2img"])
-            self.set_cfg("inpaint_sampler_list", self.opt["samplers_img2img"])
-            self.set_cfg("face_restorer_model_list", self.opt["face_restorers"])
-            self.set_cfg("sd_model_list", self.opt["sd_models"])
-
+    def update_selection(self):
         self.app = Krita.instance()
         self.doc = self.app.activeDocument()
         # self.doc doesnt exist at app startup
@@ -118,6 +107,29 @@ class Script(QObject):
                 self.y = self.selection.y()
                 self.width = self.selection.width()
                 self.height = self.selection.height()
+
+    def update_config(self):
+        res = None
+        try:
+            with urllib.request.urlopen(self.cfg("base_url", str) + "/config") as req:
+                res = req.read()
+                self.opt = json.loads(res)
+        except URLError:
+            self.set_status(STATE_URLERROR)
+            return False
+
+        assert len(self.opt["upscalers"]) > 0
+        assert len(self.opt["samplers"]) > 0
+        assert len(self.opt["samplers_img2img"]) > 0
+        assert len(self.opt["face_restorers"]) > 0
+        assert len(self.opt["sd_models"]) > 0
+        self.set_cfg("upscaler_list", self.opt["upscalers"])
+        self.set_cfg("txt2img_sampler_list", self.opt["samplers"])
+        self.set_cfg("img2img_sampler_list", self.opt["samplers_img2img"])
+        self.set_cfg("inpaint_sampler_list", self.opt["samplers_img2img"])
+        self.set_cfg("face_restorer_model_list", self.opt["face_restorers"])
+        self.set_cfg("sd_model_list", self.opt["sd_models"])
+        return True
 
     # Server API    @staticmethod
     def post(self, url, body):
@@ -346,6 +358,7 @@ class Script(QObject):
 
     def apply_txt2img(self):
         response = self.txt2img()
+        assert response is not None, "Backend Error, check terminal"
         outputs = response["outputs"]
         print(f"Getting images: {outputs}")
         for i, output in enumerate(outputs):
@@ -369,6 +382,7 @@ class Script(QObject):
             if mode == 1
             else self.img2img(path, mask_path)
         )
+        assert response is not None, "Backend Error, check terminal"
 
         outputs = response["outputs"]
         print(f"Getting images: {outputs}")
@@ -394,6 +408,7 @@ class Script(QObject):
         self.save_img(path)
 
         response = self.simple_upscale(path)
+        assert response is not None, "Backend Error, check terminal"
         output = response["output"]
         print(f"Getting image: {output}")
 
@@ -431,6 +446,7 @@ class Script(QObject):
 
         def cb():
             self.update_config()
+            self.update_selection()
             self.try_fix_aspect_ratio()
             self.apply_txt2img()
             self.create_mask_layer_workaround()
@@ -445,6 +461,7 @@ class Script(QObject):
 
         def cb():
             self.update_config()
+            self.update_selection()
             self.try_fix_aspect_ratio()
             self.apply_img2img(mode=0)
             self.create_mask_layer_workaround()
@@ -458,6 +475,7 @@ class Script(QObject):
         if self.working:
             pass
         self.update_config()
+        self.update_selection()
         self.apply_img2img(mode=2)
         self.create_mask_layer_workaround()
 
@@ -468,6 +486,7 @@ class Script(QObject):
 
         def cb():
             self.update_config()
+            self.update_selection()
             self.try_fix_aspect_ratio()
             self.apply_img2img(mode=1)
             self.set_status(STATE_INPAINT)
@@ -481,6 +500,7 @@ class Script(QObject):
 
         def cb():
             self.update_config()
+            self.update_selection()
             self.apply_simple_upscale()
             self.set_status(STATE_UPSCALE)
 

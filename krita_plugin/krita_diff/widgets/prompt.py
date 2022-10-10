@@ -48,8 +48,13 @@ class QPromptLayout(QVBoxLayout):
         self.addWidget(self.qedit_neg_prompt)
 
     def cfg_init(self):
-        self.qedit_prompt.setPlainText(self.script.cfg(self.prompt_cfg, str))
-        self.qedit_neg_prompt.setPlainText(self.script.cfg(self.neg_prompt_cfg, str))
+        # NOTE: update timer -> cfg_init, setText seems to reset cursor position so we prevent it
+        prompt = self.script.cfg(self.prompt_cfg, str)
+        neg_prompt = self.script.cfg(self.neg_prompt_cfg, str)
+        if self.qedit_prompt.toPlainText() != prompt:
+            self.qedit_prompt.setPlainText(prompt)
+        if self.qedit_neg_prompt.toPlainText() != neg_prompt:
+            self.qedit_neg_prompt.setPlainText(neg_prompt)
 
     def cfg_connect(self):
         self.qedit_prompt.textChanged.connect(
