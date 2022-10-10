@@ -103,7 +103,7 @@ def crop_black(img,tol=0):
 
 def extractImageDataEmbed(image):
     d=3
-    outarr = crop_black(np.array(image.getdata()).reshape(image.size[1],image.size[0],d ).astype(np.uint8) ) & 0x0F
+    outarr = crop_black(np.array(image.convert('RGB').getdata()).reshape(image.size[1],image.size[0],d ).astype(np.uint8) ) & 0x0F
     blackCols = np.where( np.sum(outarr, axis=(0,2))==0)
     if blackCols[0].shape[0] < 2:
         print('No Image data blocks found.')
