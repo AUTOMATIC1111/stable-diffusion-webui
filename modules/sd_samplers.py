@@ -366,7 +366,6 @@ class KDiffusionSampler:
             sigmas = self.model_wrap.get_sigmas(steps)
 
         sigma_sched = sigmas[steps - t_enc - 1:]
-        print('check values same', sigmas[steps - t_enc - 1] , sigma_sched[0], sigmas[steps - t_enc - 1] - sigma_sched[0])
         xi = x + noise * sigma_sched[0]
         
         extra_params_kwargs = self.initialize(p)
