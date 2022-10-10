@@ -4,6 +4,7 @@ from contextlib import nullcontext
 from pathlib import Path
 from typing import Optional
 
+import accelerate
 import torch
 import torch.nn.functional as F
 import torch.utils.checkpoint
@@ -17,14 +18,15 @@ from torch.utils.data import Dataset
 from torchvision import transforms
 from tqdm.auto import tqdm
 from transformers import CLIPTextModel, CLIPTokenizer
-from modules import paths, sd_hijack, sd_models
+
+from modules import paths, sd_hijack, shared
 
 
 class DreamBooth:
     # TODO: Clean up notes below and make them a proper docstring
-    def __init__(self, name, training_data: str, instance_prompt: str,class_prompt: str, learn_rate: float = 5e-6,
+    def __init__(self, name, training_data: str, instance_prompt: str, class_prompt: str, learn_rate: float = 5e-6,
                  save_img_every=500, save_data_every=200, max_steps: int = 800, batch_size: int = 1,
-                 grad_steps: int = 1, scheduler: str = "constant", warmup_steps: int = 0,  use_adam=False,
+                 grad_steps: int = 1, scheduler: str = "constant", warmup_steps: int = 0, use_adam=False,
                  class_data=None, seed=None, log_interval=10, mixed_precision="no", cache_latents=False
                  ):
         self.tokenizer_name = None
@@ -421,13 +423,23 @@ class DreamBooth:
         pass
 
 
-def start_training(model_dir, initialization_text, classification_text, learn_rate, dataset_directory, steps, create_image_every,
+def start_training(model_dir, initialization_text, classification_text, learn_rate, dataset_directory, steps,
+                   create_image_every,
                    save_embedding_every):
-    print("Starting dreambooth training...")
+    print("Starting Dreambooth training...")
     try:
         sd_hijack.undo_optimizations()
-        dream = DreamBooth(model_dir, dataset_directory, initialization_text,classification_text,learn_rate,create_image_every,save_embedding_every, steps)
-        foo = dream.train()
+        dream = DreamBooth(model_dir, dataset_directory, initialization_text, classification_text, learn_rate,
+                           create_image_every, save_embedding_every, steps)
+
+        def is_available():
+            if shared.cmd_opts.medvram or shared.cmd_opts.lowvram:
+                return False
+            else:
+                return torch.cuda.is_available()
+
+        accelerate.launchers.torch.cuda.is_available = is_available
+        accelerate.launchers.notebook_launcher(dream.train, num_processes=1)
     except Exception:
         raise
     finally:
@@ -564,6 +576,7 @@ def get_full_repo_name(model_id: str, organization: Optional[str] = None, token:
         return f"{username}/{model_id}"
     else:
         return f"{organization}/{model_id}"
+
 
 def get_db_models():
     model_dir = paths.models_path
