@@ -228,7 +228,7 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
             optimizer.step()
 
         epoch_num = math.floor(embedding.step / epoch_len)
-        epoch_step = embedding.step - (epoch_num * epoch_len)
+        epoch_step = embedding.step - (epoch_num * epoch_len) + 1
 
         pbar.set_description(f"[Epoch {epoch_num}: {epoch_step}/{epoch_len}]loss: {losses.mean():.7f}")
 
