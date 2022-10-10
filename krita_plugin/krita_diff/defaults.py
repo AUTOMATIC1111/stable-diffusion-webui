@@ -40,7 +40,7 @@ class Defaults:
     upscaler_list: List[str] = field(default_factory=lambda: [ERROR_MSG])
     upscaler_name: str = "None"
     face_restorer_model_list: List[str] = field(default_factory=lambda: [ERROR_MSG])
-    face_restorer_model: str = "CodeFormer"
+    face_restorer_model: str = "None"
     codeformer_weight: float = 0.5
 
     txt2img_prompt: str = ""

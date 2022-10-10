@@ -19,10 +19,10 @@ class SDCommonWidget(QWidget):
 
         # batch size & count
         self.batch_count_layout = QSpinBoxLayout(
-            script, "sd_batch_count", label="Batch count:", min=1, max=500, step=1
+            script, "sd_batch_count", label="Batch count:", min=1, max=9999, step=1
         )
         self.batch_size_layout = QSpinBoxLayout(
-            script, "sd_batch_size", label="Batch size:", min=1, max=128, step=1
+            script, "sd_batch_size", label="Batch size:", min=1, max=9999, step=1
         )
         batch_layout = QHBoxLayout()
         batch_layout.addLayout(self.batch_count_layout)

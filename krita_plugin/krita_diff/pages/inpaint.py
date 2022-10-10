@@ -14,7 +14,7 @@ class InpaintTabWidget(ImgTabBaseWidget):
 
         self.invert_mask = QCheckBox("Invert mask")
         self.mask_blur_layout = QSpinBoxLayout(
-            script, "inpaint_mask_blur", "Mask blur (px):", min=0, max=256, step=1
+            script, "inpaint_mask_blur", "Mask blur (px):", min=0, max=9999, step=1
         )
 
         inline1 = QHBoxLayout()
@@ -31,7 +31,7 @@ class InpaintTabWidget(ImgTabBaseWidget):
             "inpaint_full_res_padding",
             "Padding (px):",
             min=0,
-            max=256,
+            max=9999,
             step=1,
         )
 

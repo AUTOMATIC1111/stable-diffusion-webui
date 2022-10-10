@@ -24,10 +24,10 @@ class ImgTabBaseWidget(QWidget):
         )
 
         self.steps_layout = QSpinBoxLayout(
-            script, f"{cfg_prefix}_steps", label="Steps:", min=1, max=5000, step=1
+            script, f"{cfg_prefix}_steps", label="Steps:", min=1, max=9999, step=1
         )
         self.cfg_scale_layout = QSpinBoxLayout(
-            script, f"{cfg_prefix}_cfg_scale", label="CFG scale:", min=1.0, max=100.0
+            script, f"{cfg_prefix}_cfg_scale", label="CFG scale:", min=1.0, max=9999.0
         )
         self.script_layout = QComboBoxLayout(
             script,
