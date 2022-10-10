@@ -1047,7 +1047,7 @@ def create_ui(wrap_gradio_gpu_call):
                 with gr.Group():
                     gr.HTML(value="<p style='margin-bottom: 0.7em'>Train an embedding; must specify a directory with a set of 1:1 ratio images</p>")
                     train_embedding_name = gr.Dropdown(label='Embedding', choices=sorted(sd_hijack.model_hijack.embedding_db.word_embeddings.keys()))
-                    learn_rate = gr.Number(label='Learning rate', value=5.0e-03)
+                    learn_rate = gr.Textbox(label='Learning rate', placeholder="Learning rate", value = "5.0e-03")
                     dataset_directory = gr.Textbox(label='Dataset directory', placeholder="Path to directory with input images")
                     log_directory = gr.Textbox(label='Log directory', placeholder="Path to directory where to write outputs", value="textual_inversion")
                     template_file = gr.Textbox(label='Prompt template file', value=os.path.join(script_path, "textual_inversion_templates", "style_filewords.txt"))
