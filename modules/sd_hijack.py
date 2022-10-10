@@ -23,7 +23,7 @@ def apply_optimizations():
 
     ldm.modules.diffusionmodules.model.nonlinearity = silu
 
-    if cmd_opts.force_enable_xformers or (cmd_opts.xformers and shared.xformers_available and torch.version.cuda and (6, 0) <= torch.cuda.get_device_capability(shared.device) <= (8, 6)):
+    if cmd_opts.force_enable_xformers or (cmd_opts.xformers and shared.xformers_available and torch.version.cuda and torch.cuda.get_device_capability(shared.device) == (8, 6)):
         print("Applying xformers cross attention optimization.")
         ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.xformers_attention_forward
         ldm.modules.diffusionmodules.model.AttnBlock.forward = sd_hijack_optimizations.xformers_attnblock_forward
@@ -107,6 +107,8 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
         self.tokenizer = wrapped.tokenizer
         self.token_mults = {}
 
+        self.comma_token = [v for k, v in self.tokenizer.get_vocab().items() if k == ',</w>'][0]
+
         tokens_with_parens = [(k, v) for k, v in self.tokenizer.get_vocab().items() if '(' in k or ')' in k or '[' in k or ']' in k]
         for text, ident in tokens_with_parens:
             mult = 1.0
@@ -143,6 +145,24 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
                 token = tokens[i]
 
                 embedding, embedding_length_in_tokens = self.hijack.embedding_db.find_embedding_at_position(tokens, i)
+
+                if opts.comma_padding_backtrack != 0 and max(len(remade_tokens), 1) % 75 == 0 and token != self.comma_token:
+                    j = len(remade_tokens)
+                    found = False
+                    while not found and j != -1:
+                        j -= 1
+                        found = remade_tokens[j] == self.comma_token and i - j <= opts.comma_padding_backtrack
+                    if found:
+                        j += 1
+                        reloc_tokens = remade_tokens[j:]
+                        reloc_mults = multipliers[j:]
+
+                        remade_tokens = remade_tokens[:j]
+                        length = len(remade_tokens)
+                        rem = (length // 75 + 1) * 75 - length
+
+                        remade_tokens += [id_end] * rem + reloc_tokens
+                        multipliers = multipliers[:j] + [1.0] * rem + reloc_mults
 
                 if embedding is None:
                     remade_tokens.append(token)
@@ -284,7 +304,7 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
         while max(map(len, remade_batch_tokens)) != 0:
             rem_tokens = [x[75:] for x in remade_batch_tokens]
             rem_multipliers = [x[75:] for x in batch_multipliers]
-            
+
             self.hijack.fixes = []
             for unfiltered in hijack_fixes:
                 fixes = []
