@@ -259,6 +259,13 @@ def create_random_tensors(shape, seeds, subseeds=None, subseed_strength=0.0, see
     return x
 
 
+def decode_first_stage(model, x):
+    with devices.autocast(disable=x.dtype == devices.dtype_vae):
+        x = model.decode_first_stage(x)
+
+    return x
+
+
 def get_fixed_seed(seed):
     if seed is None or seed == '' or seed == -1:
         return int(random.randrange(4294967294))
@@ -400,7 +407,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
 
             samples_ddim = samples_ddim.to(devices.dtype)
 
-            x_samples_ddim = p.sd_model.decode_first_stage(samples_ddim)
+            x_samples_ddim = decode_first_stage(p.sd_model, samples_ddim)
             x_samples_ddim = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
 
             del samples_ddim
@@ -533,7 +540,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         if self.scale_latent:
             samples = torch.nn.functional.interpolate(samples, size=(self.height // opt_f, self.width // opt_f), mode="bilinear")
         else:
-            decoded_samples = self.sd_model.decode_first_stage(samples)
+            decoded_samples = decode_first_stage(self.sd_model, samples)
 
             if opts.upscaler_for_img2img is None or opts.upscaler_for_img2img == "None":
                 decoded_samples = torch.nn.functional.interpolate(decoded_samples, size=(self.height, self.width), mode="bilinear")
