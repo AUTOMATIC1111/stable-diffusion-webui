@@ -370,7 +370,7 @@ class KDiffusionSampler:
         
         extra_params_kwargs = self.initialize(p)
         if 'sigma_min' in inspect.signature(self.func).parameters:
-            ## last sigma is zero which is allowed by DPM Fast & Adaptive so taking value before last
+            ## last sigma is zero which isn't allowed by DPM Fast & Adaptive so taking value before last
             extra_params_kwargs['sigma_min'] = sigma_sched[-2]
         if 'sigma_max' in inspect.signature(self.func).parameters:
             extra_params_kwargs['sigma_max'] = sigma_sched[0]
