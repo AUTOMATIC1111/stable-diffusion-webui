@@ -193,15 +193,13 @@ class Buttons(discord.ui.View):
 
 @bot.command(pass_context=True)
 async def togglepost(ctx):
-    do_post = False
-    for r in ctx.user.roles:
+    for r in ctx.message.author.roles:
         if r.id == admin_roleid or botmod_roleid:
-            do_post = True
-    if do_post == True:
-        bot_config['main']['post_result'] = not bot_config['main']['post_result']
-        with open(botconfigfile, "w", encoding="utf8") as f:
-            save_config = yaml.dump(bot_config, f, default_flow_style=False)
-        await ctx.send(f"Image posting set to: {bot_config['main']['post_result']}", delete_after=10)
+            bot_config['main']['post_result'] = not bot_config['main']['post_result']
+            with open(botconfigfile, "w", encoding="utf8") as f:
+                save_config = yaml.dump(bot_config, f, default_flow_style=False)
+            await ctx.channel.send(f"Image posting set to: {bot_config['main']['post_result']}", delete_after=10)
+            return
     await ctx.message.delete()
     
 
