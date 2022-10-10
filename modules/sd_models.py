@@ -5,7 +5,6 @@ from collections import namedtuple
 import torch
 from omegaconf import OmegaConf
 
-
 from ldm.util import instantiate_from_config
 
 from modules import shared, modelloader, devices
@@ -14,7 +13,7 @@ from modules.paths import models_path
 model_dir = "Stable-diffusion"
 model_path = os.path.abspath(os.path.join(models_path, model_dir))
 
-CheckpointInfo = namedtuple("CheckpointInfo", ['filename', 'title', 'hash', 'model_name'])
+CheckpointInfo = namedtuple("CheckpointInfo", ['filename', 'title', 'hash', 'model_name', 'config'])
 checkpoints_list = {}
 
 try:
@@ -63,14 +62,20 @@ def list_models():
     if os.path.exists(cmd_ckpt):
         h = model_hash(cmd_ckpt)
         title, short_model_name = modeltitle(cmd_ckpt, h)
-        checkpoints_list[title] = CheckpointInfo(cmd_ckpt, title, h, short_model_name)
+        checkpoints_list[title] = CheckpointInfo(cmd_ckpt, title, h, short_model_name, shared.cmd_opts.config)
         shared.opts.data['sd_model_checkpoint'] = title
     elif cmd_ckpt is not None and cmd_ckpt != shared.default_sd_model_file:
         print(f"Checkpoint in --ckpt argument not found (Possible it was moved to {model_path}: {cmd_ckpt}", file=sys.stderr)
     for filename in model_list:
         h = model_hash(filename)
         title, short_model_name = modeltitle(filename, h)
-        checkpoints_list[title] = CheckpointInfo(filename, title, h, short_model_name)
+
+        basename, _ = os.path.splitext(filename)
+        config = basename + ".yaml"
+        if not os.path.exists(config):
+            config = shared.cmd_opts.config
+
+        checkpoints_list[title] = CheckpointInfo(filename, title, h, short_model_name, config)
 
 
 def get_closet_checkpoint_match(searchString):
@@ -116,13 +121,24 @@ def select_checkpoint():
     return checkpoint_info
 
 
-def load_model_weights(model, checkpoint_file, sd_model_hash):
+def get_state_dict_from_checkpoint(pl_sd):
+    if "state_dict" in pl_sd:
+        return pl_sd["state_dict"]
+
+    return pl_sd
+
+
+def load_model_weights(model, checkpoint_info):
+    checkpoint_file = checkpoint_info.filename
+    sd_model_hash = checkpoint_info.hash
+
     print(f"Loading weights [{sd_model_hash}] from {checkpoint_file}")
 
     pl_sd = torch.load(checkpoint_file, map_location="cpu")
     if "global_step" in pl_sd:
         print(f"Global Step: {pl_sd['global_step']}")
-    sd = pl_sd["state_dict"]
+
+    sd = get_state_dict_from_checkpoint(pl_sd)
 
     model.load_state_dict(sd, strict=False)
 
@@ -134,17 +150,29 @@ def load_model_weights(model, checkpoint_file, sd_model_hash):
 
     devices.dtype = torch.float32 if shared.cmd_opts.no_half else torch.float16
 
+    vae_file = os.path.splitext(checkpoint_file)[0] + ".vae.pt"
+    if os.path.exists(vae_file):
+        print(f"Loading VAE weights from: {vae_file}")
+        vae_ckpt = torch.load(vae_file, map_location="cpu")
+        vae_dict = {k: v for k, v in vae_ckpt["state_dict"].items() if k[0:4] != "loss"}
+
+        model.first_stage_model.load_state_dict(vae_dict)
+
     model.sd_model_hash = sd_model_hash
-    model.sd_model_checkpint = checkpoint_file
+    model.sd_model_checkpoint = checkpoint_file
+    model.sd_checkpoint_info = checkpoint_info
 
 
 def load_model():
     from modules import lowvram, sd_hijack
     checkpoint_info = select_checkpoint()
 
-    sd_config = OmegaConf.load(shared.cmd_opts.config)
+    if checkpoint_info.config != shared.cmd_opts.config:
+        print(f"Loading config from: {checkpoint_info.config}")
+
+    sd_config = OmegaConf.load(checkpoint_info.config)
     sd_model = instantiate_from_config(sd_config.model)
-    load_model_weights(sd_model, checkpoint_info.filename, checkpoint_info.hash)
+    load_model_weights(sd_model, checkpoint_info)
 
     if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
         lowvram.setup_for_low_vram(sd_model, shared.cmd_opts.medvram)
@@ -163,8 +191,12 @@ def reload_model_weights(sd_model, info=None):
     from modules import lowvram, devices, sd_hijack
     checkpoint_info = info or select_checkpoint()
 
-    if sd_model.sd_model_checkpint == checkpoint_info.filename:
+    if sd_model.sd_model_checkpoint == checkpoint_info.filename:
         return
+
+    if sd_model.sd_checkpoint_info.config != checkpoint_info.config:
+        shared.sd_model = load_model()
+        return shared.sd_model
 
     if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
         lowvram.send_everything_to_cpu()
@@ -173,7 +205,7 @@ def reload_model_weights(sd_model, info=None):
 
     sd_hijack.model_hijack.undo_hijack(sd_model)
 
-    load_model_weights(sd_model, checkpoint_info.filename, checkpoint_info.hash)
+    load_model_weights(sd_model, checkpoint_info)
 
     sd_hijack.model_hijack.hijack(sd_model)
 
