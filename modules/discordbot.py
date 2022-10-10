@@ -84,7 +84,7 @@ class PersistentButtons(commands.Bot):
     async def on_ready(self):
         await self.wait_until_ready()
         if not self.synced:
-            await tree.sync(guild = discord.Object(id = 1008397331512696893))
+            await bot.sync(guild = discord.Object(id = 1008397331512696893))
             self.synced = True
         print(f'Logged in as {self.user} (ID: {self.user.id})')
         print('------')
