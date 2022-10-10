@@ -73,9 +73,6 @@ pip install -U numpy  --prefer-binary
 # the command below must output something like: 1 File(s) 4,265,380,512 bytes
 dir model.ckpt
 
-# (outside of command line) put the GFPGAN model into web ui directory
-# the command below must output something like: 1 File(s) 348,632,874 bytes
-dir GFPGANv1.3.pth
 ```
 
 The installation is finished, to start the web ui, run:
@@ -99,8 +96,6 @@ cd stable-diffusion-webui
 conda env create -f environment-wsl2.yaml
 conda activate automatic
 
-# (optional) install requirements for GFPGAN (upscaling)
-wget https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.3.pth
 ```
 
 At this point, the instructions for the Manual installation may be applied starting at step `# clone repositories for Stable Diffusion and (optionally) CodeFormer`.
