@@ -550,15 +550,15 @@ def create_ui(wrap_gradio_gpu_call):
                         button_id = "hidden_element" if shared.cmd_opts.hide_ui_dir_config else 'open_folder'
                         open_txt2img_folder = gr.Button(folder_symbol, elem_id=button_id)
 
-                    with gr.Row():
-                        do_make_zip = gr.Checkbox(label="Make Zip when Save?", value=False)
+                with gr.Row():
+                    do_make_zip = gr.Checkbox(label="Make Zip when Save?", value=False)
                     
-                    with gr.Row():
-                        download_files = gr.File(None, file_count="multiple", interactive=False, show_label=False, visible=False)
+                with gr.Row():
+                    download_files = gr.File(None, file_count="multiple", interactive=False, show_label=False, visible=False)
 
-                with gr.Group():
-                    html_info = gr.HTML()
-                    generation_info = gr.Textbox(visible=False)
+                    with gr.Group():
+                        html_info = gr.HTML()
+                        generation_info = gr.Textbox(visible=False)
 
             connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
             connect_reuse_seed(subseed, reuse_subseed, generation_info, dummy_component, is_subseed=True)
@@ -738,15 +738,15 @@ def create_ui(wrap_gradio_gpu_call):
                         button_id = "hidden_element" if shared.cmd_opts.hide_ui_dir_config else 'open_folder'
                         open_img2img_folder = gr.Button(folder_symbol, elem_id=button_id)
 
-                    with gr.Row():
-                        do_make_zip = gr.Checkbox(label="Make Zip when Save?", value=False)
+                with gr.Row():
+                    do_make_zip = gr.Checkbox(label="Make Zip when Save?", value=False)
                     
-                    with gr.Row():
-                        download_files = gr.File(None, file_count="multiple", interactive=False, show_label=False, visible=False)
+                with gr.Row():
+                    download_files = gr.File(None, file_count="multiple", interactive=False, show_label=False, visible=False)
 
-                with gr.Group():
-                    html_info = gr.HTML()
-                    generation_info = gr.Textbox(visible=False)
+                    with gr.Group():
+                        html_info = gr.HTML()
+                        generation_info = gr.Textbox(visible=False)
 
             connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
             connect_reuse_seed(subseed, reuse_subseed, generation_info, dummy_component, is_subseed=True)
