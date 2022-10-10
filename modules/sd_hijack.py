@@ -151,6 +151,11 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
                 else:
                     emb_len = int(embedding.vec.shape[0])
                     iteration = len(remade_tokens) // 75
+                    if (len(remade_tokens) + emb_len) // 75 != iteration:
+                        rem = (75 * (iteration + 1) - len(remade_tokens))
+                        remade_tokens += [id_end] * rem
+                        multipliers += [1.0] * rem
+                        iteration += 1
                     fixes.append((iteration, (len(remade_tokens) % 75, embedding)))
                     remade_tokens += [0] * emb_len
                     multipliers += [weight] * emb_len
