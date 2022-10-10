@@ -13,13 +13,14 @@ import lark
 
 schedule_parser = lark.Lark(r"""
 !start: (prompt | /[][():]/+)*
-prompt: (emphasized | scheduled | plain | WHITESPACE)*
+prompt: (emphasized | scheduled | alternate | plain | WHITESPACE)*
 !emphasized: "(" prompt ")"
         | "(" prompt ":" prompt ")"
         | "[" prompt "]"
 scheduled: "[" [prompt ":"] prompt ":" [WHITESPACE] NUMBER "]"
+alternate: "[" prompt ("|" prompt)+ "]"
 WHITESPACE: /\s+/
-plain: /([^\\\[\]():]|\\.)+/
+plain: /([^\\\[\]():|]|\\.)+/
 %import common.SIGNED_NUMBER -> NUMBER
 """)
 
@@ -59,6 +60,8 @@ def get_learned_conditioning_prompt_schedules(prompts, steps):
                     tree.children[-1] *= steps
                 tree.children[-1] = min(steps, int(tree.children[-1]))
                 l.append(tree.children[-1])
+            def alternate(self, tree):
+                l.extend(range(1, steps+1))
         CollectSteps().visit(tree)
         return sorted(set(l))
 
@@ -67,6 +70,8 @@ def get_learned_conditioning_prompt_schedules(prompts, steps):
             def scheduled(self, args):
                 before, after, _, when = args
                 yield before or () if step <= when else after
+            def alternate(self, args):
+                yield next(args[(step - 1)%len(args)])
             def start(self, args):
                 def flatten(x):
                     if type(x) == str:
@@ -238,6 +243,15 @@ def reconstruct_multicond_batch(c: MulticondLearnedConditioning, current_step):
             tensors.append(composable_prompt.schedules[target_index].cond)
 
         conds_list.append(conds_for_batch)
+
+    # if prompts have wildly different lengths above the limit we'll get tensors fo different shapes
+    # and won't be able to torch.stack them. So this fixes that.
+    token_count = max([x.shape[0] for x in tensors])
+    for i in range(len(tensors)):
+        if tensors[i].shape[0] != token_count:
+            last_vector = tensors[i][-1:]
+            last_vector_repeated = last_vector.repeat([token_count - tensors[i].shape[0], 1])
+            tensors[i] = torch.vstack([tensors[i], last_vector_repeated])
 
     return conds_list, torch.stack(tensors).to(device=param.device, dtype=param.dtype)
 

@@ -16,7 +16,7 @@ Check the [custom scripts](https://github.com/AUTOMATIC1111/stable-diffusion-web
 - Attention, specify parts of text that the model should pay more attention to
     - a man in a ((tuxedo)) - will pay more attention to tuxedo
     - a man in a (tuxedo:1.21) - alternative syntax
-    - select text and press ctrl+up or ctrl+down to aduotmatically adjust attention to selected text
+    - select text and press ctrl+up or ctrl+down to automatically adjust attention to selected text (code contributed by anonymous user)
 - Loopback, run img2img processing multiple times
 - X/Y plot, a way to draw a 2 dimensional plot of images with different parameters
 - Textual Inversion
@@ -34,7 +34,7 @@ Check the [custom scripts](https://github.com/AUTOMATIC1111/stable-diffusion-web
 - Sampling method selection
 - Interrupt processing at any time
 - 4GB video card support (also reports of 2GB working)
-- Correct seeds for batches 
+- Correct seeds for batches
 - Prompt length validation
      - get length of prompt in tokens as you type
      - get a warning after generation if some text was truncated
@@ -65,6 +65,8 @@ Check the [custom scripts](https://github.com/AUTOMATIC1111/stable-diffusion-web
 - [Composable-Diffusion](https://energy-based-model.github.io/Compositional-Visual-Generation-with-Composable-Diffusion-Models/), a way to use multiple prompts at once
      - separate prompts using uppercase `AND`
      - also supports weights for prompts: `a cat :1.2 AND a dog AND a penguin :2.2`
+- No token limit for prompts (original stable diffusion lets you use up to 75 tokens)
+- DeepDanbooru integration, creates danbooru style tags for anime prompts (add --deepdanbooru to commandline args)
 
 ## Installation and Running
 Make sure the required [dependencies](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Dependencies) are met and follow the instructions available for both [NVidia](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-NVidia-GPUs) (recommended) and [AMD](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-AMD-GPUs) GPUs.
@@ -122,4 +124,5 @@ The documentation was moved from this README over to the project's [wiki](https:
 - Noise generation for outpainting mk2 - https://github.com/parlance-zz/g-diffuser-bot
 - CLIP interrogator idea and borrowing some code - https://github.com/pharmapsychotic/clip-interrogator
 - Initial Gradio script - posted on 4chan by an Anonymous user. Thank you Anonymous user.
+- DeepDanbooru - interrogator for anime diffusors https://github.com/KichangKim/DeepDanbooru
 - (You)
