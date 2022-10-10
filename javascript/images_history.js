@@ -58,9 +58,9 @@ function set_history_index_from_img(e){
 		}  		
     }
 }
-function images_history_get_current_img(is_image2image){
+function images_history_get_current_img(is_image2image, image_path, files){
 	head = is_image2image?"img2img":"txt2img"
 	s =  $(gradioApp().getElementById(head + '_images_history_set_index')).attr("img_index")
-	return s
+	return [s, image_path, files]
 }
 
