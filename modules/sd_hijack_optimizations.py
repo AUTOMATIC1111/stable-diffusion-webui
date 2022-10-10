@@ -13,8 +13,6 @@ from modules import shared
 if shared.cmd_opts.xformers or shared.cmd_opts.force_enable_xformers:
     try:
         import xformers.ops
-        import functorch
-        xformers._is_functorch_available = True
         shared.xformers_available = True
     except Exception:
         print("Cannot import xformers", file=sys.stderr)
