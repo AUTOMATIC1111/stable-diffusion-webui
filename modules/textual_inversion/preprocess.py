@@ -29,7 +29,7 @@ def preprocess(process_src, process_dst, process_width, process_height, process_
         shared.interrogator.load()
 
     if process_caption_deepbooru:
-        deepbooru.create_deepbooru_process()
+        deepbooru.create_deepbooru_process(opts.deepbooru_threshold, opts.deepbooru_sort_alpha)
 
     def save_pic_with_caption(image, index):
         if process_caption:
