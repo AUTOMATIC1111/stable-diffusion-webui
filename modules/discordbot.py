@@ -65,14 +65,13 @@ intents = discord.Intents.all()
 intents.members = True
 intents.message_content = True
 
-class PersistentButtons(discord.Client):
-#class PersistentButtons(commands.Bot):
+class PersistentButtons(commands.Bot):
     def __init__(self):
         intents = discord.Intents.default()
         intents.message_content = True
 
         super().__init__(command_prefix=commands.when_mentioned_or('!'), intents=intents)
-        self.synced = False
+        
 
     async def setup_hook(self) -> None:
         # Register the persistent view for listening here.
@@ -84,16 +83,12 @@ class PersistentButtons(discord.Client):
 
     async def on_ready(self):
         await self.wait_until_ready()
-        if not self.synced:
-            await bot.sync(guild = discord.Object(id = 1008397331512696893))
-            self.synced = True
         print(f'Logged in as {self.user} (ID: {self.user.id})')
         print('------')
 
 
 
 bot = PersistentButtons()
-#tree = app_commands.CommandTree(bot)
 
 post_id = bot_config['channel_id']['post_id']
 heart_id = bot_config['channel_id']['heart_id']
@@ -102,14 +97,6 @@ average_id = bot_config['channel_id']['average_id']
 nsfw_id = bot_config['channel_id']['nsfw_id']
 admin_roleid = bot_config['admin']['admin_roleid']
 botmod_roleid = bot_config['admin']['botmod_roleid']
-
-@bot.command(name="toggleposttest", description="Toggle post result", guild = discord.Object(id = 1008397331512696893))
-async def self(interaction: discord.Interaction):
-    bot_config['main']['post_result'] = not bot_config['main']['post_result']
-    with open(botconfigfile, "w", encoding="utf8") as f:
-        save_config = yaml.dump(bot_config, f, default_flow_style=False)
-    await interaction.send_message(f"Image posting set to: {bot_config['main']['post_result']}", delete_after=10)
-
 
 @bot.event
 async def on_raw_reaction_add(payload):
