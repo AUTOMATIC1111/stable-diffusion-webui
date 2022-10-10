@@ -157,7 +157,7 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
                     remade_tokens = remade_tokens[:last_comma]
                     length = len(remade_tokens)
                     
-                    rem = (length // 75 + 1) * 75 - length
+                    rem = int(math.ceil(length / 75)) * 75 - length
                     remade_tokens += [id_end] * rem + reloc_tokens
                     multipliers = multipliers[:last_comma] + [1.0] * rem + reloc_mults
                 
