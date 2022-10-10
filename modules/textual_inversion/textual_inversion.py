@@ -243,8 +243,8 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
                 sd_model=shared.sd_model,
                 prompt=text,
                 steps=20,
-				height=training_size,
-				width=training_size,
+                height=training_size,
+                width=training_size,
                 do_not_save_grid=True,
                 do_not_save_samples=True,
             )
