@@ -12,7 +12,7 @@ def preprocess(process_src, process_dst, process_width, process_height, process_
     height = process_height
     src = os.path.abspath(process_src)
     dst = os.path.abspath(process_dst)
-    extns = [".jpg",".jpeg",".png"]
+    extns = [".jpg",".jpeg",".png",".webp",".bmp"]
 
     assert src != dst, 'same directory specified as source and destination'
 
