@@ -27,7 +27,7 @@ class DreamBooth:
     def __init__(self, name, training_data: str, instance_prompt: str, class_prompt: str, learn_rate: float = 5e-6,
                  save_img_every=500, save_data_every=200, max_steps: int = 800, batch_size: int = 1,
                  grad_steps: int = 1, scheduler: str = "constant", warmup_steps: int = 0, use_adam=False,
-                 class_data=None, seed=None, log_interval=10, mixed_precision="no", cache_latents=False
+                 class_data=None, seed=None, log_interval=10, mixed_precision="no", no_cache_latents=True
                  ):
         self.tokenizer_name = None
         self.resolution = 512
@@ -105,7 +105,7 @@ class DreamBooth:
         #     "Whether to use mixed precision. Choose"
         #     "between fp16 and bf16 (bfloat16). Bf16 requires PyTorch >= 1.10."
         #     "and an Nvidia Ampere GPU."
-        self.not_cache_latents = cache_latents
+        self.not_cache_latents = no_cache_latents
         #                 Do not precompute and cache latents from VAE.")
 
     def train(self):
@@ -433,12 +433,10 @@ def start_training(model_dir, initialization_text, classification_text, learn_ra
                            create_image_every, save_embedding_every, steps)
 
         def is_available():
-            if shared.cmd_opts.medvram or shared.cmd_opts.lowvram:
-                return False
-            else:
-                return torch.cuda.is_available()
+            return False
 
-        accelerate.launchers.torch.cuda.is_available = is_available
+        if shared.cmd_opts.medvram or shared.cmd_opts.lowvram:
+            accelerate.launchers.torch.cuda.is_available = is_available
         accelerate.launchers.notebook_launcher(dream.train, num_processes=1)
     except Exception:
         raise
