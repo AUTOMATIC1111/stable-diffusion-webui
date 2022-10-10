@@ -161,6 +161,7 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
 
     shared.state.textinfo = "Initializing textual inversion training..."
     shared.state.job_count = steps
+    extns = [".jpg",".jpeg",".png"]
 
     filename = os.path.join(shared.cmd_opts.embeddings_dir, f'{embedding_name}.pt')
 
@@ -200,7 +201,7 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
     if ititial_step > steps:
         return embedding, filename
 
-    tr_img_len = len([os.path.join(data_root, file_path) for file_path in os.listdir(data_root)])
+    tr_img_len = len([os.path.join(data_root, file_path) for file_path in os.listdir(data_root) if os.path.splitext(file_path.casefold())[1] in extns])
     epoch_len = (tr_img_len * num_repeats) + tr_img_len
 
     pbar = tqdm.tqdm(enumerate(ds), total=steps-ititial_step)

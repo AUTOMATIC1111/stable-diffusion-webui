@@ -22,6 +22,7 @@ class PersonalizedBase(Dataset):
         self.width = width
         self.height = height
         self.flip = transforms.RandomHorizontalFlip(p=flip_p)
+        self.extns = [".jpg",".jpeg",".png"]
 
         self.dataset = []
 
@@ -32,7 +33,7 @@ class PersonalizedBase(Dataset):
 
         assert data_root, 'dataset directory not specified'
 
-        self.image_paths = [os.path.join(data_root, file_path) for file_path in os.listdir(data_root)]
+        self.image_paths = [os.path.join(data_root, file_path) for file_path in os.listdir(data_root) if os.path.splitext(file_path.casefold())[1] in self.extns]
         print("Preparing dataset...")
         for path in tqdm.tqdm(self.image_paths):
             image = Image.open(path)
