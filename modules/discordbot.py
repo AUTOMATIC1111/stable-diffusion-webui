@@ -4,6 +4,7 @@
 #
 #
 import discord
+from discord import app_commands
 from discord.ext import commands, tasks
 from discord.ext.commands import bot
 import threading, asyncio
@@ -70,6 +71,7 @@ class PersistentButtons(commands.Bot):
         intents.message_content = True
 
         super().__init__(command_prefix=commands.when_mentioned_or('!'), intents=intents)
+        self.synced = False
 
     async def setup_hook(self) -> None:
         # Register the persistent view for listening here.
@@ -80,12 +82,17 @@ class PersistentButtons(commands.Bot):
         self.add_view(Buttons())
 
     async def on_ready(self):
+        await self.wait_until_ready()
+        if not self.synced:
+            await tree.sync(guild = discord.Object(id = 1008397331512696893))
+            self.synced = True
         print(f'Logged in as {self.user} (ID: {self.user.id})')
         print('------')
 
 
 
 bot = PersistentButtons()
+tree = app_commands.CommandTree(bot)
 
 post_id = bot_config['channel_id']['post_id']
 heart_id = bot_config['channel_id']['heart_id']
@@ -94,6 +101,14 @@ average_id = bot_config['channel_id']['average_id']
 nsfw_id = bot_config['channel_id']['nsfw_id']
 admin_roleid = bot_config['admin']['admin_roleid']
 botmod_roleid = bot_config['admin']['botmod_roleid']
+
+@tree.command(name="togglepost", description="Toggle post result", guild = (id = 1008397331512696893))
+async def self(interaction: discord.Interaction):
+    bot_config['main']['post_result'] = not bot_config['main']['post_result']
+    with open(botconfigfile, "w", encoding="utf8") as f:
+        save_config = yaml.dump(bot_config, f, default_flow_style=False)
+    await interaction.send_message(f"Image posting set to: {bot_config['main']['post_result']}", delete_after=10)
+
 
 @bot.event
 async def on_raw_reaction_add(payload):
@@ -191,7 +206,7 @@ class Buttons(discord.ui.View):
 @bot.command(pass_context=True)
 async def togglepost(ctx):
     do_post = False
-    for r in interaction.user.roles:
+    for r in ctx.user.roles:
         if r.id == admin_roleid or botmod_roleid:
             do_post = True
     if do_post == True:
