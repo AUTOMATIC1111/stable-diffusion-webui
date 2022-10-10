@@ -8,18 +8,9 @@ from urllib.error import URLError
 
 from krita import Krita, QByteArray, QImage, QObject, QSettings, QTimer
 
-from .defaults import (
-    DEFAULTS,
-    STATE_IMG2IMG,
-    STATE_INIT,
-    STATE_INPAINT,
-    STATE_READY,
-    STATE_RESET_DEFAULT,
-    STATE_TXT2IMG,
-    STATE_UPSCALE,
-    STATE_URLERROR,
-    STATE_WAIT,
-)
+from .defaults import (DEFAULTS, STATE_IMG2IMG, STATE_INIT, STATE_INPAINT,
+                       STATE_READY, STATE_RESET_DEFAULT, STATE_TXT2IMG,
+                       STATE_UPSCALE, STATE_URLERROR, STATE_WAIT)
 
 # samplers = [
 #     "DDIM",
@@ -47,6 +38,7 @@ from .defaults import (
 class Script(QObject):
     def __init__(self):
         # Persistent settings (should reload between Krita sessions)
+        # NOTE: delete this file between tests, should be in ~/.config/krita/krita_diff_plugin.ini
         self.config = QSettings(
             QSettings.IniFormat, QSettings.UserScope, "krita", "krita_diff_plugin"
         )
@@ -256,8 +248,8 @@ class Script(QObject):
         return joined if joined != "" else None
 
     def find_final_aspect_ratio(self):
-        base_size = self.cfg("img2img_base_size", int)
-        max_size = self.cfg("img2img_max_size", int)
+        base_size = self.cfg("sd_base_size", int)
+        max_size = self.cfg("sd_max_size", int)
 
         def rnd(r, x):
             z = 64
