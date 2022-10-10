@@ -43,10 +43,7 @@ def undo_optimizations():
 
 
 def get_target_prompt_token_count(token_count):
-    if token_count < 75:
-        return 75
-
-    return math.ceil(token_count / 10) * 10
+    return math.ceil(max(token_count, 1) / 75) * 75
 
 
 class StableDiffusionModelHijack:
@@ -127,7 +124,6 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
                 self.token_mults[ident] = mult
 
     def tokenize_line(self, line, used_custom_terms, hijack_comments):
-        id_start = self.wrapped.tokenizer.bos_token_id
         id_end = self.wrapped.tokenizer.eos_token_id
 
         if opts.enable_emphasis:
@@ -154,7 +150,8 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
                     i += 1
                 else:
                     emb_len = int(embedding.vec.shape[0])
-                    fixes.append((len(remade_tokens), embedding))
+                    iteration = len(remade_tokens) // 75
+                    fixes.append((iteration, (len(remade_tokens) % 75, embedding)))
                     remade_tokens += [0] * emb_len
                     multipliers += [weight] * emb_len
                     used_custom_terms.append((embedding.name, embedding.checksum()))
@@ -162,10 +159,10 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
 
         token_count = len(remade_tokens)
         prompt_target_length = get_target_prompt_token_count(token_count)
-        tokens_to_add = prompt_target_length - len(remade_tokens) + 1
+        tokens_to_add = prompt_target_length - len(remade_tokens)
 
-        remade_tokens = [id_start] + remade_tokens + [id_end] * tokens_to_add
-        multipliers = [1.0] + multipliers + [1.0] * tokens_to_add
+        remade_tokens = remade_tokens + [id_end] * tokens_to_add
+        multipliers = multipliers + [1.0] * tokens_to_add
 
         return remade_tokens, fixes, multipliers, token_count
 
@@ -260,29 +257,55 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
             hijack_fixes.append(fixes)
             batch_multipliers.append(multipliers)
         return batch_multipliers, remade_batch_tokens, used_custom_terms, hijack_comments, hijack_fixes, token_count
-
+    
     def forward(self, text):
-
-        if opts.use_old_emphasis_implementation:
+        use_old = opts.use_old_emphasis_implementation
+        if use_old:
             batch_multipliers, remade_batch_tokens, used_custom_terms, hijack_comments, hijack_fixes, token_count = self.process_text_old(text)
         else:
             batch_multipliers, remade_batch_tokens, used_custom_terms, hijack_comments, hijack_fixes, token_count = self.process_text(text)
 
-        self.hijack.fixes = hijack_fixes
         self.hijack.comments += hijack_comments
 
         if len(used_custom_terms) > 0:
             self.hijack.comments.append("Used embeddings: " + ", ".join([f'{word} [{checksum}]' for word, checksum in used_custom_terms]))
+        
+        if use_old:
+            self.hijack.fixes = hijack_fixes
+            return self.process_tokens(remade_batch_tokens, batch_multipliers)
+        
+        z = None
+        i = 0
+        while max(map(len, remade_batch_tokens)) != 0:
+            rem_tokens = [x[75:] for x in remade_batch_tokens]
+            rem_multipliers = [x[75:] for x in batch_multipliers]
+            
+            self.hijack.fixes = []
+            for unfiltered in hijack_fixes:
+                fixes = []
+                for fix in unfiltered:
+                    if fix[0] == i:
+                        fixes.append(fix[1])
+                self.hijack.fixes.append(fixes)
+            
+            z1 = self.process_tokens([x[:75] for x in remade_batch_tokens], [x[:75] for x in batch_multipliers])
+            z = z1 if z is None else torch.cat((z, z1), axis=-2)
+            
+            remade_batch_tokens = rem_tokens
+            batch_multipliers = rem_multipliers
+            i += 1
+        
+        return z
+        
+    
+    def process_tokens(self, remade_batch_tokens, batch_multipliers):
+        if not opts.use_old_emphasis_implementation:
+            remade_batch_tokens = [[self.wrapped.tokenizer.bos_token_id] + x[:75] + [self.wrapped.tokenizer.eos_token_id] for x in remade_batch_tokens]
+            batch_multipliers = [[1.0] + x[:75] + [1.0] for x in batch_multipliers]
+        
+        tokens = torch.asarray(remade_batch_tokens).to(device)
+        outputs = self.wrapped.transformer(input_ids=tokens)
 
-        target_token_count = get_target_prompt_token_count(token_count) + 2
-
-        position_ids_array = [min(x, 75) for x in range(target_token_count-1)] + [76]
-        position_ids = torch.asarray(position_ids_array, device=devices.device).expand((1, -1))
-
-        remade_batch_tokens_of_same_length = [x + [self.wrapped.tokenizer.eos_token_id] * (target_token_count - len(x)) for x in remade_batch_tokens]
-        tokens = torch.asarray(remade_batch_tokens_of_same_length).to(device)
-
-        outputs = self.wrapped.transformer(input_ids=tokens, position_ids=position_ids, output_hidden_states=-opts.CLIP_stop_at_last_layers)
         if opts.CLIP_stop_at_last_layers > 1:
             z = outputs.hidden_states[-opts.CLIP_stop_at_last_layers]
             z = self.wrapped.transformer.text_model.final_layer_norm(z)
@@ -290,7 +313,7 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
             z = outputs.last_hidden_state
 
         # restoring original mean is likely not correct, but it seems to work well to prevent artifacts that happen otherwise
-        batch_multipliers_of_same_length = [x + [1.0] * (target_token_count - len(x)) for x in batch_multipliers]
+        batch_multipliers_of_same_length = [x + [1.0] * (75 - len(x)) for x in batch_multipliers]
         batch_multipliers = torch.asarray(batch_multipliers_of_same_length).to(device)
         original_mean = z.mean()
         z *= batch_multipliers.reshape(batch_multipliers.shape + (1,)).expand(z.shape)
