@@ -10,13 +10,11 @@ from basicsr.utils.download_util import load_file_from_url
 import modules.upscaler
 from modules import devices, modelloader
 from modules.bsrgan_model_arch import RRDBNet
-from modules.paths import models_path
 
 
 class UpscalerBSRGAN(modules.upscaler.Upscaler):
     def __init__(self, dirname):
         self.name = "BSRGAN"
-        self.model_path = os.path.join(models_path, self.name)
         self.model_name = "BSRGAN 4x"
         self.model_url = "https://github.com/cszn/KAIR/releases/download/v1.0/BSRGAN.pth"
         self.user_path = dirname

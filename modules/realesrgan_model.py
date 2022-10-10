@@ -8,14 +8,12 @@ from basicsr.utils.download_util import load_file_from_url
 from realesrgan import RealESRGANer
 
 from modules.upscaler import Upscaler, UpscalerData
-from modules.paths import models_path
 from modules.shared import cmd_opts, opts
 
 
 class UpscalerRealESRGAN(Upscaler):
     def __init__(self, path):
         self.name = "RealESRGAN"
-        self.model_path = os.path.join(models_path, self.name)
         self.user_path = path
         super().__init__()
         try:
