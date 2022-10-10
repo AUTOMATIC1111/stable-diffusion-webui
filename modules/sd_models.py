@@ -153,7 +153,14 @@ def load_model_weights(model, checkpoint_info):
 
     vae_file = os.path.splitext(checkpoint_file)[0] + ".vae.pt"
     if os.path.exists(vae_file):
-        print(f"Loading VAE weights from: {vae_file}")
+        print(f"Found VAE Weights: {vae_file}")
+    elif shared.cmd_opts.vae_path != None:
+        vae_file = shared.cmd_opts.vae_path
+        print(f'No VAE found for inside the model folder. Using CLI specified : {vae_file}')
+    else:
+        print("No VAE found for inside the model folder. Passing.")
+
+    if os.path.exists(vae_file):
         vae_ckpt = torch.load(vae_file, map_location="cpu")
         vae_dict = {k: v for k, v in vae_ckpt["state_dict"].items() if k[0:4] != "loss"}
 
