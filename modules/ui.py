@@ -37,6 +37,7 @@ import modules.generation_parameters_copypaste
 from modules import prompt_parser
 from modules.images import save_image
 import modules.textual_inversion.ui
+import modules.images_history as img_his
 
 # this is a fix for Windows users. Without it, javascript files will be served with text/html content-type and the bowser will not show any UI
 mimetypes.init()
@@ -499,7 +500,6 @@ def create_ui(wrap_gradio_gpu_call):
                     custom_inputs = modules.scripts.scripts_txt2img.setup_ui(is_img2img=False)
 
             with gr.Column(variant='panel'):
-
                 with gr.Group():
                     txt2img_preview = gr.Image(elem_id='txt2img_preview', visible=False)
                     txt2img_gallery = gr.Gallery(label='Output', show_label=False, elem_id='txt2img_gallery').style(grid=4)
@@ -516,6 +516,7 @@ def create_ui(wrap_gradio_gpu_call):
                 with gr.Group():
                     html_info = gr.HTML()
                     generation_info = gr.Textbox(visible=False)
+                
 
             connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
             connect_reuse_seed(subseed, reuse_subseed, generation_info, dummy_component, is_subseed=True)
@@ -607,6 +608,7 @@ def create_ui(wrap_gradio_gpu_call):
             ]
             modules.generation_parameters_copypaste.connect_paste(paste, txt2img_paste_fields, txt2img_prompt)
             token_button.click(fn=update_token_counter, inputs=[txt2img_prompt, steps], outputs=[token_counter])
+        
 
     with gr.Blocks(analytics_enabled=False) as img2img_interface:
         img2img_prompt, roll, img2img_prompt_style, img2img_negative_prompt, img2img_prompt_style2, submit, img2img_interrogate, img2img_prompt_style_apply, img2img_save_style, paste, token_counter, token_button = create_toprow(is_img2img=True)
@@ -696,6 +698,7 @@ def create_ui(wrap_gradio_gpu_call):
                 with gr.Group():
                     html_info = gr.HTML()
                     generation_info = gr.Textbox(visible=False)
+                
 
             connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
             connect_reuse_seed(subseed, reuse_subseed, generation_info, dummy_component, is_subseed=True)
@@ -1126,8 +1129,10 @@ def create_ui(wrap_gradio_gpu_call):
 
         opts.save(shared.config_filename)
 
-        return f'{changed} settings changed.', opts.dumpjson()
+        return f'{changed} settings changed.', opts.dumpjson()    
 
+    
+    images_history = img_his.create_history_tabs(gr, opts)    
     with gr.Blocks(analytics_enabled=False) as settings_interface:
         settings_submit = gr.Button(value="Apply settings", variant='primary')
         result = gr.HTML()
@@ -1206,7 +1211,9 @@ def create_ui(wrap_gradio_gpu_call):
         (pnginfo_interface, "PNG Info", "pnginfo"),
         (modelmerger_interface, "Checkpoint Merger", "modelmerger"),
         (textual_inversion_interface, "Textual inversion", "ti"),
+        (images_history, "History", "images_history"),
         (settings_interface, "Settings", "settings"),
+
     ]
 
     with open(os.path.join(script_path, "style.css"), "r", encoding="utf8") as file:
