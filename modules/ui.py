@@ -909,8 +909,8 @@ def create_ui(wrap_gradio_gpu_call):
                     with gr.TabItem('Scale to'):
                         with gr.Group():
                             with gr.Row():
-                                upscaling_resize_w = gr.Number(label="Width", value=512)
-                                upscaling_resize_h = gr.Number(label="Height", value=512)
+                                upscaling_resize_w = gr.Number(label="Width", value=512, precision=0)
+                                upscaling_resize_h = gr.Number(label="Height", value=512, precision=0)
                             upscaling_crop = gr.Checkbox(label='Crop to fit', value=True)
 
                 with gr.Group():
