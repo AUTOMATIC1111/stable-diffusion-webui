@@ -1131,8 +1131,15 @@ def create_ui(wrap_gradio_gpu_call):
 
         return f'{changed} settings changed.', opts.dumpjson()    
 
+    #images history
+    images_history_switch_dict = {
+        "fn":modules.generation_parameters_copypaste.connect_paste,
+        "t2i":txt2img_paste_fields,
+        "i2i":img2img_paste_fields
+    }
+    images_history = img_his.create_history_tabs(gr, opts, wrap_gradio_call(modules.extras.run_pnginfo), images_history_switch_dict)    
     
-    images_history = img_his.create_history_tabs(gr, opts)    
+
     with gr.Blocks(analytics_enabled=False) as settings_interface:
         settings_submit = gr.Button(value="Apply settings", variant='primary')
         result = gr.HTML()
