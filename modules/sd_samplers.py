@@ -7,7 +7,7 @@ import inspect
 import k_diffusion.sampling
 import ldm.models.diffusion.ddim
 import ldm.models.diffusion.plms
-from modules import prompt_parser
+from modules import prompt_parser, devices, processing
 
 from modules.shared import opts, cmd_opts, state
 import modules.shared as shared
@@ -83,7 +83,7 @@ def setup_img2img_steps(p, steps=None):
 
 
 def sample_to_image(samples):
-    x_sample = shared.sd_model.decode_first_stage(samples[0:1].type(shared.sd_model.dtype))[0]
+    x_sample = processing.decode_first_stage(shared.sd_model, samples[0:1])[0]
     x_sample = torch.clamp((x_sample + 1.0) / 2.0, min=0.0, max=1.0)
     x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
     x_sample = x_sample.astype(np.uint8)

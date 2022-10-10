@@ -149,6 +149,7 @@ def load_model_weights(model, checkpoint_info):
         model.half()
 
     devices.dtype = torch.float32 if shared.cmd_opts.no_half else torch.float16
+    devices.dtype_vae = torch.float32 if shared.cmd_opts.no_half or shared.cmd_opts.no_half_vae else torch.float16
 
     vae_file = os.path.splitext(checkpoint_file)[0] + ".vae.pt"
     if os.path.exists(vae_file):
@@ -157,6 +158,8 @@ def load_model_weights(model, checkpoint_info):
         vae_dict = {k: v for k, v in vae_ckpt["state_dict"].items() if k[0:4] != "loss"}
 
         model.first_stage_model.load_state_dict(vae_dict)
+
+    model.first_stage_model.to(devices.dtype_vae)
 
     model.sd_model_hash = sd_model_hash
     model.sd_model_checkpoint = checkpoint_file
