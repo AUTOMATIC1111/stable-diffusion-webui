@@ -64,7 +64,7 @@ def crop_black(img,tol=0):
 
 def extractImageDataFooter(image):
     d=3
-    outarr = crop_black(np.array(image.getdata()).reshape(image.size[1],image.size[0],d ).astype(np.uint8) )
+    outarr = crop_black(np.array(image.convert('RGB').getdata()).reshape(image.size[1],image.size[0],d ).astype(np.uint8) )
     lastRow = np.where( np.sum(outarr, axis=(1,2))==0)
     if lastRow[0].shape[0] == 0:
         print('Image data block not found.')
