@@ -27,7 +27,8 @@ goto :show_stdout_stderr
 
 :activate_venv
 set PYTHON="%~dp0%VENV_DIR%\Scripts\Python.exe"
-echo venv %PYTHON%
+set ACTIVATE="%~dp0%VENV_DIR%\Scripts\activate.bat"
+call %ACTIVATE%
 goto :launch
 
 :skip_venv

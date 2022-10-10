@@ -5,7 +5,7 @@ from contextlib import nullcontext
 from pathlib import Path
 from typing import Optional
 
-import accelerate
+import accelerate.utils.dataclasses
 import torch
 import torch.nn.functional as F
 import torch.utils.checkpoint
@@ -14,8 +14,9 @@ from accelerate import Accelerator
 from accelerate.utils import set_seed
 from diffusers import AutoencoderKL, DDPMScheduler, StableDiffusionPipeline, UNet2DConditionModel
 from diffusers.optimization import get_scheduler
+import datetime
 from huggingface_hub import HfFolder, whoami
-from torch import autocast
+from torch import autocast, distributed
 from torch.utils.data import Dataset
 from torchvision import transforms
 from tqdm.auto import tqdm
@@ -116,11 +117,22 @@ class DreamBooth:
         logging_dir = Path(self.output_dir, self.logging_dir)
         use_cpu = shared.cmd_opts.medvram is True or shared.cmd_opts.lowvram is True
         has_deepspeed = False
+        ds = None
         try:
+            torch.distributed.init_process_group("mpi", init_method=None, timeout=datetime.timedelta(seconds=1800),
+                                                 world_size=- 1, rank=- 1, store=None, group_name='', pg_options=None)
             import deepspeed
+            ds = accelerate.utils.dataclasses.DeepSpeedPlugin()
+            conf_dict = {
+                "zero_optimization.offload_optimizer.device": "cpu",
+                "zero_optimization.offload_param.device": "cpu",
+                "zero_optimization.stage": 2
+            }
+            ds.hf_ds_config = accelerate.utils.deepspeed.HfDeepSpeedConfig(conf_dict)
             has_deepspeed = True
             use_cpu = False
-        except:
+        except Exception as e:
+            print(f"Exception importing deepspeed: {e}")
             pass
         print(f"Creating accelerator. Using cpu: {use_cpu}. Using deepspeed: {has_deepspeed}")
         if has_deepspeed:
@@ -129,7 +141,7 @@ class DreamBooth:
                 mixed_precision=self.mixed_precision,
                 log_with="tensorboard",
                 logging_dir=logging_dir,
-                deepspeed_plugin=deepspeed,
+                deepspeed_plugin=ds,
                 cpu=use_cpu
             )
         else:
@@ -483,7 +495,6 @@ def start_training(model_name, initialization_text, classification_text, learn_r
         sd_hijack.undo_optimizations()
         dream = DreamBooth(model_name, dataset_directory, initialization_text, classification_text, learn_rate,
                            create_image_every, save_embedding_every, steps, class_data=classifier_directory)
-
         dream.train()
         model_path = paths.models_path
         model_dir = os.path.join(model_path, "dreambooth", model_name, "working")
