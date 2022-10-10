@@ -189,6 +189,21 @@ class Buttons(discord.ui.View):
                 await interaction.message.delete()
 
 @bot.command(pass_context=True)
+async def togglepost(ctx):
+    do_post = False
+    for r in interaction.user.roles:
+        if r.id == admin_roleid or botmod_roleid:
+            do_post = True
+    if do_post == True:
+        bot_config['main']['post_result'] = not bot_config['main']['post_result']
+        with open(botconfigfile, "w", encoding="utf8") as f:
+            save_config = yaml.dump(bot_config, f, default_flow_style=False)
+        await ctx.send(f"Image posting set to: {bot_config['main']['post_result']}", delete_after=10)
+    await ctx.message.delete()
+    
+
+
+@bot.command(pass_context=True)
 async def about(ctx):
     await ctx.message.delete()
     channel = bot.get_channel(post_id)
@@ -199,6 +214,8 @@ async def about(ctx):
 async def die(ctx):
     await ctx.message.delete()
     await bot.close()
+
+
 
 async def image_send(filename,prompt,seed,subseed,seedvar,sampler_name,steps,cfg_scale,width,height,modelhash):
         channel = bot.get_channel(post_id)
