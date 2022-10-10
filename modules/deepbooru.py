@@ -1,6 +1,7 @@
 import os.path
 from concurrent.futures import ProcessPoolExecutor
 import multiprocessing
+import time
 
 
 def get_deepbooru_tags(pil_image, threshold=0.5):
