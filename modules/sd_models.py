@@ -152,6 +152,10 @@ def load_model_weights(model, checkpoint_info):
     devices.dtype_vae = torch.float32 if shared.cmd_opts.no_half or shared.cmd_opts.no_half_vae else torch.float16
 
     vae_file = os.path.splitext(checkpoint_file)[0] + ".vae.pt"
+
+    if not os.path.exists(vae_file) and shared.cmd_opts.vae_path is not None:
+        vae_file = shared.cmd_opts.vae_path
+
     if os.path.exists(vae_file):
         print(f"Loading VAE weights from: {vae_file}")
         vae_ckpt = torch.load(vae_file, map_location="cpu")
