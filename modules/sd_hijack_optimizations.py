@@ -128,24 +128,40 @@ def split_cross_attention_forward(self, x, context=None, mask=None):
 
     return self.to_out(r2)
 
+def reshape_heads_to_batch_dim(self, tensor):
+    batch_size, seq_len, dim = tensor.shape
+    head_size = self.heads
+    tensor = tensor.reshape(batch_size, seq_len, head_size, dim // head_size)
+    tensor = tensor.permute(0, 2, 1, 3).reshape(batch_size * head_size, seq_len, dim // head_size)
+    return tensor
+
+def reshape_batch_dim_to_heads(self, tensor):
+    batch_size, seq_len, dim = tensor.shape
+    head_size = self.heads
+    tensor = tensor.reshape(batch_size // head_size, head_size, seq_len, dim)
+    tensor = tensor.permute(0, 2, 1, 3).reshape(batch_size // head_size, seq_len, dim * head_size)
+    return tensor
+
 def xformers_attention_forward(self, x, context=None, mask=None):
-    h = self.heads
     q_in = self.to_q(x)
-    context = default(context, x)
+    context = context if context is not None else x
     hypernetwork = shared.loaded_hypernetwork
     hypernetwork_layers = (hypernetwork.layers if hypernetwork is not None else {}).get(context.shape[2], None)
     if hypernetwork_layers is not None:
         k_in = self.to_k(hypernetwork_layers[0](context))
         v_in = self.to_v(hypernetwork_layers[1](context))
     else:
-        k_in = self.to_k(context)
-        v_in = self.to_v(context)
-    q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> b n h d', h=h), (q_in, k_in, v_in))
-    del q_in, k_in, v_in
-    out = xformers.ops.memory_efficient_attention(q, k, v, attn_bias=None)
+		k_in = self.to_k(context)
+		v_in = self.to_v(context)
 
-    out = rearrange(out, 'b n h d -> b n (h d)', h=h)
-    return self.to_out(out)
+    q_in = reshape_heads_to_batch_dim(self, q_in)
+    k_in = reshape_heads_to_batch_dim(self, k_in)
+    v_in = reshape_heads_to_batch_dim(self, v_in)
+
+    x = xformers.ops.memory_efficient_attention(q_in, k_in, v_in)
+    x = reshape_batch_dim_to_heads(self, x)
+
+    return self.to_out(x)
 
 def cross_attention_attnblock_forward(self, x):
         h_ = x
