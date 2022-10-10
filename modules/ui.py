@@ -1036,7 +1036,8 @@ def create_ui(wrap_gradio_gpu_call):
                         process_caption = gr.Checkbox(label='Use BLIP caption as filename')
                         if cmd_opts.deepdanbooru:
                             process_caption_deepbooru = gr.Checkbox(label='Use deepbooru caption as filename')
-
+                        else:
+                            process_caption_deepbooru = gr.Checkbox(label='Use deepbooru caption as filename', visible=False)
 
                     with gr.Row():
                         with gr.Column(scale=3):
@@ -1089,20 +1090,17 @@ def create_ui(wrap_gradio_gpu_call):
             ]
         )
 
-        run_preprocess_inputs = [
-            process_src,
-            process_dst,
-            process_flip,
-            process_split,
-            process_caption,
-        ]
-        if cmd_opts.deepdanbooru:
-            # if process_caption_deepbooru is None, it will cause an error, as a result only include it if it is enabled
-            run_preprocess_inputs.append(process_caption_deepbooru)
         run_preprocess.click(
             fn=wrap_gradio_gpu_call(modules.textual_inversion.ui.preprocess, extra_outputs=[gr.update()]),
             _js="start_training_textual_inversion",
-            inputs=run_preprocess_inputs,
+            inputs=[
+                process_src,
+                process_dst,
+                process_flip,
+                process_split,
+                process_caption,
+                process_caption_deepbooru
+            ],
             outputs=[
                 ti_output,
                 ti_outcome,
