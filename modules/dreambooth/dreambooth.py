@@ -440,9 +440,12 @@ class DreamBooth:
                             unet=accelerator.unwrap_model(unet),
                             use_auth_token=False,
                         )
-                        pipeline = pipeline.to("cuda")
-                        with autocast("cuda"):
+                        if use_cpu:
                             pipeline.save_pretrained(self.output_dir)
+                        else:
+                            pipeline = pipeline.to("cuda")
+                            with autocast("cuda"):
+                                pipeline.save_pretrained(self.output_dir)
                     pass
 
                 progress_bar.update(1)
