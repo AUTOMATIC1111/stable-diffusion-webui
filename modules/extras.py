@@ -1,3 +1,4 @@
+import math
 import os
 
 import numpy as np
@@ -19,7 +20,7 @@ import gradio as gr
 cached_images = {}
 
 
-def run_extras(extras_mode, image, image_folder, gfpgan_visibility, codeformer_visibility, codeformer_weight, upscaling_resize, extras_upscaler_1, extras_upscaler_2, extras_upscaler_2_visibility):
+def run_extras(extras_mode, resize_mode, image, image_folder, gfpgan_visibility, codeformer_visibility, codeformer_weight, upscaling_resize, upscaling_resize_w, upscaling_resize_h, upscaling_crop, extras_upscaler_1, extras_upscaler_2, extras_upscaler_2_visibility):
     devices.torch_gc()
 
     imageArr = []
@@ -67,8 +68,23 @@ def run_extras(extras_mode, image, image_folder, gfpgan_visibility, codeformer_v
             info += f"CodeFormer w: {round(codeformer_weight, 2)}, CodeFormer visibility:{round(codeformer_visibility, 2)}\n"
             image = res
 
+        if resize_mode == 1:
+            upscaling_resize = max(upscaling_resize_w/image.width, upscaling_resize_h/image.height)
+            crop_info = " (crop)" if upscaling_crop else ""
+            info += f"Resize to: {upscaling_resize_w:g}x{upscaling_resize_h:g}{crop_info}\n"
+
+            def crop_upscaled_center(image, resize_w, resize_h):
+                left = int(math.ceil((image.width - resize_w) / 2))
+                right = image.width - int(math.floor((image.width - resize_w) / 2))
+                top = int(math.ceil((image.height - resize_h) / 2))
+                bottom = image.height - int(math.floor((image.height - resize_h) / 2))
+
+                image = image.crop((left, top, right, bottom))
+                return image
+
+
         if upscaling_resize != 1.0:
-            def upscale(image, scaler_index, resize):
+            def upscale(image, scaler_index, resize, mode, resize_w, resize_h, crop):
                 small = image.crop((image.width // 2, image.height // 2, image.width // 2 + 10, image.height // 2 + 10))
                 pixels = tuple(np.array(small).flatten().tolist())
                 key = (resize, scaler_index, image.width, image.height, gfpgan_visibility, codeformer_visibility, codeformer_weight) + pixels
@@ -77,15 +93,17 @@ def run_extras(extras_mode, image, image_folder, gfpgan_visibility, codeformer_v
                 if c is None:
                     upscaler = shared.sd_upscalers[scaler_index]
                     c = upscaler.scaler.upscale(image, resize, upscaler.data_path)
+                    if mode == 1 and crop:
+                        c = crop_upscaled_center(c, resize_w, resize_h)
                     cached_images[key] = c
 
                 return c
 
             info += f"Upscale: {round(upscaling_resize, 3)}, model:{shared.sd_upscalers[extras_upscaler_1].name}\n"
-            res = upscale(image, extras_upscaler_1, upscaling_resize)
+            res = upscale(image, extras_upscaler_1, upscaling_resize, resize_mode, upscaling_resize_w, upscaling_resize_h, upscaling_crop)
 
             if extras_upscaler_2 != 0 and extras_upscaler_2_visibility > 0:
-                res2 = upscale(image, extras_upscaler_2, upscaling_resize)
+                res2 = upscale(image, extras_upscaler_2, upscaling_resize, resize_mode, upscaling_resize_w, upscaling_resize_h, upscaling_crop)
                 info += f"Upscale: {round(upscaling_resize, 3)}, visibility: {round(extras_upscaler_2_visibility, 3)}, model:{shared.sd_upscalers[extras_upscaler_2].name}\n"
                 res = Image.blend(res, res2, extras_upscaler_2_visibility)
 
@@ -190,7 +208,7 @@ def run_modelmerger(primary_model_name, secondary_model_name, interp_method, int
             theta_0[key] = theta_func(theta_0[key], theta_1[key], (float(1.0) - interp_amount))  # Need to reverse the interp_amount to match the desired mix ration in the merged checkpoint
             if save_as_half:
                 theta_0[key] = theta_0[key].half()
-    
+
     for key in theta_1.keys():
         if 'model' in key and key not in theta_0:
             theta_0[key] = theta_1[key]
