@@ -18,6 +18,16 @@ also includes how to uncuck yourself from sm86 restriction on voldy's new commit
 
 ## Building xFormers on Windows by [@duckness](https://github.com/duckness)
 
+***
+
+
+### If you use a Pascal, Turing or Ampere card, you shouldn't need to build manually anymore. Uninstall your existing xformers and launch the repo with `--xformers`. A compatible wheel will be installed.
+
+
+
+
+***
+
 1. [Install VS Build Tools 2022](https://visualstudio.microsoft.com/downloads/?q=build+tools#build-tools-for-visual-studio-2022), you only need `Desktop development with C++`
 
 ![setup_COFbK0AJAZ](https://user-images.githubusercontent.com/6380270/194767872-232136a1-9204-4b16-ae21-3e01f6f526ea.png)
