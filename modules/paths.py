@@ -4,7 +4,8 @@ import sys
 import modules.safe
 
 script_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-models_path = os.path.join(script_path, "models")
+#models_path = os.path.join(script_path, "models")
+models_path = '/root/autodl-tmp/models/'
 sys.path.insert(0, script_path)
 
 # search for directory of stable diffusion in following places
