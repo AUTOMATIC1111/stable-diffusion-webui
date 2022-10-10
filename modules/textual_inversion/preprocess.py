@@ -10,8 +10,9 @@ from modules.shared import opts, cmd_opts
 if cmd_opts.deepdanbooru:
     import modules.deepbooru as deepbooru
 
-def preprocess(process_src, process_dst, process_flip, process_split, process_caption, process_caption_deepbooru=False):
-    size = 512
+def preprocess(process_src, process_dst, process_width, process_height, process_flip, process_split, process_caption, process_caption_deepbooru=False):
+    width = process_width
+    height = process_height
     src = os.path.abspath(process_src)
     dst = os.path.abspath(process_dst)
 
@@ -69,23 +70,23 @@ def preprocess(process_src, process_dst, process_flip, process_split, process_ca
         is_wide = ratio < 1 / 1.35
 
         if process_split and is_tall:
-            img = img.resize((size, size * img.height // img.width))
+            img = img.resize((width, height * img.height // img.width))
 
-            top = img.crop((0, 0, size, size))
+            top = img.crop((0, 0, width, height))
             save_pic(top, index)
 
-            bot = img.crop((0, img.height - size, size, img.height))
+            bot = img.crop((0, img.height - height, width, img.height))
             save_pic(bot, index)
         elif process_split and is_wide:
-            img = img.resize((size * img.width // img.height, size))
+            img = img.resize((width * img.width // img.height, height))
 
-            left = img.crop((0, 0, size, size))
+            left = img.crop((0, 0, width, height))
             save_pic(left, index)
 
-            right = img.crop((img.width - size, 0, img.width, size))
+            right = img.crop((img.width - width, 0, img.width, height))
             save_pic(right, index)
         else:
-            img = images.resize_image(1, img, size, size)
+            img = images.resize_image(1, img, width, height)
             save_pic(img, index)
 
         shared.state.nextjob()
