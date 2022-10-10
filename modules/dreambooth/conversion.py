@@ -1385,10 +1385,21 @@ class StableDiffusionPipelineStripped(DiffusionPipeline):
 
 def convert_diff_to_sd(diffusers_model_path: str, base_ckpt_path: str, output_ckpt_path: str,
                        overwrite=False):
+    """
+
+    Args:
+        diffusers_model_path: Path to the output of training
+        base_ckpt_path: The source checkpoint that was extracted before training
+        output_ckpt_path: Where to save the new checkpoint. Should be the stable-diffusion directory.
+        overwrite: Whether to overwrite an existing checkpoint or not.
+
+    Returns:
+        The path to the saved model.
+    """
     huggingface_use_auth_token = None
     if not overwrite and os.path.exists(output_ckpt_path):
         print("Specified model already exists and overwrite not set, nothing to do!")
-        return
+        return None
 
     print(f"loading diff model from {diffusers_model_path!r}")
     try:
@@ -1418,10 +1429,7 @@ def convert_diff_to_sd(diffusers_model_path: str, base_ckpt_path: str, output_ck
     print(f"saving converted unet to {output_ckpt_path!r}")
     torch.save(org_model, output_ckpt_path)
     print("done")
-
-
-def create_checkpoint(diffusers_model: str, base_ckpt_path: str, output_ckpt_path: str, overwrite=True):
-    convert_diff_to_sd(diffusers_model, base_ckpt_path, output_ckpt_path, overwrite=True)
+    return output_ckpt_path
 
 
 def create_output_dir(new_model):

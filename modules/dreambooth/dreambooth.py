@@ -1,3 +1,4 @@
+import html
 import math
 import os
 from contextlib import nullcontext
@@ -14,12 +15,15 @@ from accelerate.utils import set_seed
 from diffusers import AutoencoderKL, DDPMScheduler, StableDiffusionPipeline, UNet2DConditionModel
 from diffusers.optimization import get_scheduler
 from huggingface_hub import HfFolder, whoami
+from torch import autocast
 from torch.utils.data import Dataset
 from torchvision import transforms
 from tqdm.auto import tqdm
 from transformers import CLIPTextModel, CLIPTokenizer
 
-from modules import paths, sd_hijack, shared
+import modules.sd_models
+from modules import paths, sd_hijack, shared, sd_models
+from modules.dreambooth import conversion
 
 
 class DreamBooth:
@@ -27,8 +31,7 @@ class DreamBooth:
     def __init__(self, name, training_data: str, instance_prompt: str, class_prompt: str, learn_rate: float = 5e-6,
                  save_img_every=500, save_data_every=200, max_steps: int = 800, batch_size: int = 1,
                  grad_steps: int = 1, scheduler: str = "constant", warmup_steps: int = 0, use_adam=False,
-                 class_data=None, seed=None, log_interval=10, mixed_precision="no", no_cache_latents=True
-                 ):
+                 class_data=None, seed=None, log_interval=10, mixed_precision="no", no_cache_latents=True):
         self.tokenizer_name = None
         self.resolution = 512
         # Pretrained tokenizer name or path if not the same as model_name
@@ -111,13 +114,32 @@ class DreamBooth:
     def train(self):
 
         logging_dir = Path(self.output_dir, self.logging_dir)
-
-        accelerator = Accelerator(
-            gradient_accumulation_steps=self.gradient_accumulation_steps,
-            mixed_precision=self.mixed_precision,
-            log_with="tensorboard",
-            logging_dir=logging_dir,
-        )
+        use_cpu = shared.cmd_opts.medvram is True or shared.cmd_opts.lowvram is True
+        has_deepspeed = False
+        try:
+            import deepspeed
+            has_deepspeed = True
+            use_cpu = False
+        except:
+            pass
+        print(f"Creating accelerator. Using cpu: {use_cpu}. Using deepspeed: {has_deepspeed}")
+        if has_deepspeed:
+            accelerator = Accelerator(
+                gradient_accumulation_steps=self.gradient_accumulation_steps,
+                mixed_precision=self.mixed_precision,
+                log_with="tensorboard",
+                logging_dir=logging_dir,
+                deepspeed_plugin=deepspeed,
+                cpu=use_cpu
+            )
+        else:
+            accelerator = Accelerator(
+                gradient_accumulation_steps=self.gradient_accumulation_steps,
+                mixed_precision=self.mixed_precision,
+                log_with="tensorboard",
+                logging_dir=logging_dir,
+                cpu=use_cpu
+            )
 
         if self.seed is not None:
             set_seed(self.seed)
@@ -171,15 +193,24 @@ class DreamBooth:
                 self.pretrained_model_path, subfolder="tokenizer", use_auth_token=False
             )
 
+        # TODO: If we have already saved pretrained data, load encoder/vae/unet from that model, versus original
+        ex_encoder = os.path.join(self.output_dir, "text_encoder", "pytorch_model.bin")
+        ex_vae = os.path.join(self.output_dir, "vae", "diffusion_pytorch_model.bin")
+        ex_unet = os.path.join(self.output_dir, "unet", "diffusion_pytorch_model.bin")
+        ex_model_path = self.pretrained_model_path
+        if os.path.exists(ex_encoder) and os.path.exists(ex_vae) and os.path.exists(ex_unet):
+            ex_model_path = self.output_dir
+            print(f"Loading existing pre-trained model data from {ex_model_path}")
+
         # Load models and create wrapper for stable diffusion
         text_encoder = CLIPTextModel.from_pretrained(
-            os.path.join(self.pretrained_model_path, "text_encoder"), use_auth_token=False
+            os.path.join(ex_model_path, "text_encoder"), use_auth_token=False
         )
         vae = AutoencoderKL.from_pretrained(
-            os.path.join(self.pretrained_model_path, "vae"), use_auth_token=False
+            os.path.join(ex_model_path, "vae"), use_auth_token=False
         )
         unet = UNet2DConditionModel.from_pretrained(
-            os.path.join(self.pretrained_model_path, "unet"), use_auth_token=False
+            os.path.join(ex_model_path, "unet"), use_auth_token=False
         )
 
         if self.gradient_checkpointing:
@@ -381,19 +412,37 @@ class DreamBooth:
                     progress_bar.set_postfix(**logs)
                     accelerator.log(logs, step=global_step)
 
-                if not global_step % self.save_img_every:
-                    # Todo: send an image to the UI
+                # Only save a preview image if we're not training with the CPU
+                if not global_step % self.save_img_every and use_cpu is not True:
+                    prompt = self.instance_prompt
+                    last_saved_image = os.path.join(self.output_dir, f'{self.instance_prompt}_{global_step}.png')
+                    if accelerator.is_main_process:
+                        print(f"Saving pretrained model data at step {global_step}.")
+                        pipeline = StableDiffusionPipeline.from_pretrained(
+                            self.pretrained_model_path,
+                            unet=accelerator.unwrap_model(unet),
+                            use_auth_token=False
+                        )
+                        pipeline = pipeline.to("cuda")
+                        pipeline.save_pretrained(self.output_dir)
+                        with autocast("cuda"):
+                            image = pipeline(prompt, num_inference_steps=50, guidance_scale=7.5).images[0]
+                            shared.state.current_image = image
+                            image.save(last_saved_image)
                     pass
 
-                if not global_step % self.save_data_every:
-                    # Todo: pray this doesn't break anything
+                # Check to make sure this doesn't throw OOM if training on CPU
+                if not global_step % self.save_data_every and global_step != 0:
                     if accelerator.is_main_process:
+                        print(f"Saving pretrained model data at step {global_step}.")
                         pipeline = StableDiffusionPipeline.from_pretrained(
                             self.pretrained_model_path,
                             unet=accelerator.unwrap_model(unet),
                             use_auth_token=False,
                         )
-                        pipeline.save_pretrained(self.output_dir)
+                        pipeline = pipeline.to("cuda")
+                        with autocast("cuda"):
+                            pipeline.save_pretrained(self.output_dir)
                     pass
 
                 progress_bar.update(1)
@@ -423,25 +472,34 @@ class DreamBooth:
         pass
 
 
-def start_training(model_dir, initialization_text, classification_text, learn_rate, dataset_directory, steps,
-                   create_image_every,
-                   save_embedding_every):
+def start_training(model_name, initialization_text, classification_text, learn_rate, dataset_directory,
+                   classifier_directory, steps, create_image_every, save_embedding_every, src_checkpoint):
     print("Starting Dreambooth training...")
+    converted = ""
     try:
         sd_hijack.undo_optimizations()
-        dream = DreamBooth(model_dir, dataset_directory, initialization_text, classification_text, learn_rate,
-                           create_image_every, save_embedding_every, steps)
+        dream = DreamBooth(model_name, dataset_directory, initialization_text, classification_text, learn_rate,
+                           create_image_every, save_embedding_every, steps, class_data=classifier_directory)
 
-        def is_available():
-            return False
-
-        if shared.cmd_opts.medvram or shared.cmd_opts.lowvram:
-            accelerate.launchers.torch.cuda.is_available = is_available
-        accelerate.launchers.notebook_launcher(dream.train, num_processes=1)
+        dream.train()
+        model_path = paths.models_path
+        model_dir = os.path.join(model_path, "dreambooth", model_name, "working")
+        if os.path.exists(os.path.join(model_dir, "model_index.json")):
+            print(f"Successfully trained model to {model_dir}, converting.")
+            out_file = os.path.join(paths.models_path, "Stable-diffusion", f"{model_name}.ckpt")
+            src_path = modules.sd_models.get_closet_checkpoint_match(src_checkpoint)[0]
+            print(f"Out file set to {out_file}")
+            converted = conversion.convert_diff_to_sd(model_dir, src_path, out_file)
+            sd_models.list_models()
     except Exception:
         raise
     finally:
+        print("Re-applying optimizations...")
         sd_hijack.apply_optimizations()
+    res = f"Training {'interrupted' if shared.state.interrupted else 'finished'}."\
+        f"Embedding saved to {html.escape(converted)}"
+    print(f"Returning result: {res}")
+    return res, ""
 
 
 class DreamBoothDataset(Dataset):

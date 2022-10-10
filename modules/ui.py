@@ -171,6 +171,7 @@ def wrap_gradio_call(func, extra_outputs=None):
 
         try:
             res = list(func(*args, **kwargs))
+            print(f"Received result: {res}")
         except Exception as e:
             print("Error completing request", file=sys.stderr)
             print("Arguments:", args, kwargs, file=sys.stderr)
@@ -1136,7 +1137,7 @@ def create_ui(wrap_gradio_gpu_call):
                         sd_models.checkpoints_list.keys()))
                     # I just randomly chose ddim here because we use it everywhere else. Not sure which of these
                     # are ideal, or if it matters at all.
-                    diff_type = gr.Dropdown(label='Scheduler', choices=["pndm", "ddim", "lms"], value="ddim")
+                    diff_type = gr.Dropdown(label='Scheduler', choices=["pndm", "ddim", "lms"], value="pndm")
 
                     with gr.Row():
                         with gr.Column(scale=3):
@@ -1172,6 +1173,9 @@ def create_ui(wrap_gradio_gpu_call):
                     db_learn_rate = gr.Number(label='Learning rate', value=5e-6)
                     db_dataset_directory = gr.Textbox(label='Dataset directory',
                                                       placeholder="Path to directory with input images")
+                    db_classification_directory = gr.Textbox(label='Classification dataset directory (optional)',
+                                                      placeholder="Path to directory with classification images")
+
                     db_steps = gr.Number(label='Max steps', value=5000, precision=0)
                     db_create_image_every = gr.Number(
                         label='Save an image to log directory every N steps, 0 to disable', value=500, precision=0)
@@ -1236,9 +1240,11 @@ def create_ui(wrap_gradio_gpu_call):
                 db_classification_text,
                 db_learn_rate,
                 db_dataset_directory,
+                db_classification_directory,
                 db_steps,
                 db_create_image_every,
-                db_save_embedding_every
+                db_save_embedding_every,
+                src_checkpoint
             ],
             outputs=[
                 db_output,
