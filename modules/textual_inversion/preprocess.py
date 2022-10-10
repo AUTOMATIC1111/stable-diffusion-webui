@@ -12,12 +12,13 @@ def preprocess(process_src, process_dst, process_width, process_height, process_
     height = process_height
     src = os.path.abspath(process_src)
     dst = os.path.abspath(process_dst)
+    extns = [".jpg",".jpeg",".png"]
 
     assert src != dst, 'same directory specified as source and destination'
 
     os.makedirs(dst, exist_ok=True)
 
-    files = os.listdir(src)
+    files = [i for i in os.listdir(src) if os.path.splitext(i.casefold())[1] in extns]
 
     shared.state.textinfo = "Preprocessing..."
     shared.state.job_count = len(files)
