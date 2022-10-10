@@ -162,7 +162,7 @@ def save_files(js_data, images, do_make_zip, index):
                     zip_file.writestr(filenames[i], f.read())
         fullfns.insert(0, zip_filepath)
 
-    return fullfns, '', '', plaintext_to_html(f"Saved: {filenames[0]}")
+    return gr.File.update(value=fullfns, visible=True), '', '', plaintext_to_html(f"Saved: {filenames[0]}")
 
 
 def wrap_gradio_call(func, extra_outputs=None):
@@ -553,7 +553,7 @@ def create_ui(wrap_gradio_gpu_call):
                         do_make_zip = gr.Checkbox(label="Make Zip when Save?", value=False)
                     
                     with gr.Row():
-                        download_files = gr.File(None, file_count="multiple", interactive=False, show_label=False)
+                        download_files = gr.File(None, file_count="multiple", interactive=False, show_label=False, visible=False)
 
                 with gr.Group():
                     html_info = gr.HTML()
@@ -741,7 +741,7 @@ def create_ui(wrap_gradio_gpu_call):
                         do_make_zip = gr.Checkbox(label="Make Zip when Save?", value=False)
                     
                     with gr.Row():
-                        download_files = gr.File(None, file_count="multiple", interactive=False, show_label=False)
+                        download_files = gr.File(None, file_count="multiple", interactive=False, show_label=False, visible=False)
 
                 with gr.Group():
                     html_info = gr.HTML()
@@ -1153,6 +1153,15 @@ def create_ui(wrap_gradio_gpu_call):
     component_dict = {}
 
     def open_folder(f):
+        if not os.path.isdir(f):
+            print(f"""
+WARNING
+An open_folder request was made with an argument that is not a folder.
+This could be an error or a malicious attempt to run code on your computer.
+Requested path was: {f}
+""", file=sys.stderr)
+            return
+
         if not shared.cmd_opts.hide_ui_dir_config:
             path = os.path.normpath(f)
             if platform.system() == "Windows":
@@ -1166,10 +1175,13 @@ def create_ui(wrap_gradio_gpu_call):
         changed = 0
 
         for key, value, comp in zip(opts.data_labels.keys(), args, components):
-            if not opts.same_type(value, opts.data_labels[key].default):
-                return f"Bad value for setting {key}: {value}; expecting {type(opts.data_labels[key].default).__name__}"
+            if comp != dummy_component and not opts.same_type(value, opts.data_labels[key].default):
+                return f"Bad value for setting {key}: {value}; expecting {type(opts.data_labels[key].default).__name__}", opts.dumpjson()
 
         for key, value, comp in zip(opts.data_labels.keys(), args, components):
+            if comp == dummy_component:
+                continue
+
             comp_args = opts.data_labels[key].component_args
             if comp_args and isinstance(comp_args, dict) and comp_args.get('visible') is False:
                 continue
@@ -1187,12 +1199,29 @@ def create_ui(wrap_gradio_gpu_call):
 
         return f'{changed} settings changed.', opts.dumpjson()
 
+    def run_settings_single(value, key):
+        if not opts.same_type(value, opts.data_labels[key].default):
+            return gr.update(visible=True), opts.dumpjson()
+
+        oldval = opts.data.get(key, None)
+        opts.data[key] = value
+
+        if oldval != value:
+            if opts.data_labels[key].onchange is not None:
+                opts.data_labels[key].onchange()
+
+        opts.save(shared.config_filename)
+
+        return gr.update(value=value), opts.dumpjson()
+
     with gr.Blocks(analytics_enabled=False) as settings_interface:
         settings_submit = gr.Button(value="Apply settings", variant='primary')
         result = gr.HTML()
 
         settings_cols = 3
         items_per_col = int(len(opts.data_labels) * 0.9 / settings_cols)
+
+        quicksettings_list = []
 
         cols_displayed = 0
         items_displayed = 0
@@ -1216,10 +1245,14 @@ def create_ui(wrap_gradio_gpu_call):
 
                     gr.HTML(elem_id="settings_header_text_{}".format(item.section[0]), value='<h1 class="gr-button-lg">{}</h1>'.format(item.section[1]))
 
-                component = create_setting_component(k)
-                component_dict[k] = component
-                components.append(component)
-                items_displayed += 1
+                if item.show_on_main_page:
+                    quicksettings_list.append((i, k, item))
+                    components.append(dummy_component)
+                else:
+                    component = create_setting_component(k)
+                    component_dict[k] = component
+                    components.append(component)
+                    items_displayed += 1
 
         request_notifications = gr.Button(value='Request browser notifications', elem_id="request_notifications")
         request_notifications.click(
@@ -1232,7 +1265,6 @@ def create_ui(wrap_gradio_gpu_call):
         with gr.Row():
             reload_script_bodies = gr.Button(value='Reload custom script bodies (No ui updates, No restart)', variant='secondary')
             restart_gradio = gr.Button(value='Restart Gradio and Refresh components (Custom Scripts, ui.py, js and css only)', variant='primary')
-
 
         def reload_scripts():
             modules.scripts.reload_script_body_only()
@@ -1280,7 +1312,11 @@ def create_ui(wrap_gradio_gpu_call):
         css += css_hide_progressbar
 
     with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion") as demo:
-        
+        with gr.Row(elem_id="quicksettings"):
+            for i, k, item in quicksettings_list:
+                component = create_setting_component(k)
+                component_dict[k] = component
+
         settings_interface.gradio_ref = demo
         
         with gr.Tabs() as tabs:
@@ -1297,7 +1333,16 @@ def create_ui(wrap_gradio_gpu_call):
             inputs=components,
             outputs=[result, text_settings],
         )
-        
+
+        for i, k, item in quicksettings_list:
+            component = component_dict[k]
+
+            component.change(
+                fn=lambda value, k=k: run_settings_single(value, key=k),
+                inputs=[component],
+                outputs=[component, text_settings],
+            )
+
         def modelmerger(*args):
             try:
                 results = modules.extras.run_modelmerger(*args)

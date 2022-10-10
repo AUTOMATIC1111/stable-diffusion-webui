@@ -29,7 +29,7 @@ def run_extras(extras_mode, image, image_folder, gfpgan_visibility, codeformer_v
     if extras_mode == 1:
         #convert file to pillow image
         for img in image_folder:
-            image = Image.fromarray(np.array(Image.open(img)))
+            image = Image.open(img)
             imageArr.append(image)
             imageNameArr.append(os.path.splitext(img.orig_name)[0])
     else:
@@ -97,6 +97,10 @@ def run_extras(extras_mode, image, image_folder, gfpgan_visibility, codeformer_v
         images.save_image(image, path=outpath, basename="", seed=None, prompt=None, extension=opts.samples_format, info=info, short_filename=True,
                           no_prompt=True, grid=False, pnginfo_section_name="extras", existing_info=existing_pnginfo,
                           forced_filename=image_name if opts.use_original_name_batch else None)
+
+        if opts.enable_pnginfo:
+            image.info = existing_pnginfo
+            image.info["extras"] = info
 
         outputs.append(image)
 
