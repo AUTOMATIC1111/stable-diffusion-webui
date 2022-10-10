@@ -202,6 +202,7 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
         return embedding, filename
 
     tr_img_len = len([os.path.join(data_root, file_path) for file_path in os.listdir(data_root) if os.path.splitext(file_path.casefold())[1] in extns])
+
     epoch_len = (tr_img_len * num_repeats) + tr_img_len
 
     pbar = tqdm.tqdm(enumerate(ds), total=steps-ititial_step)
