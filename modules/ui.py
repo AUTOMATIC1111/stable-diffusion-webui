@@ -1034,6 +1034,9 @@ def create_ui(wrap_gradio_gpu_call):
                         process_flip = gr.Checkbox(label='Create flipped copies')
                         process_split = gr.Checkbox(label='Split oversized images into two')
                         process_caption = gr.Checkbox(label='Use BLIP caption as filename')
+                        if cmd_opts.deepdanbooru:
+                            process_caption_deepbooru = gr.Checkbox(label='Use deepbooru caption as filename')
+
 
                     with gr.Row():
                         with gr.Column(scale=3):
@@ -1086,21 +1089,40 @@ def create_ui(wrap_gradio_gpu_call):
             ]
         )
 
-        run_preprocess.click(
-            fn=wrap_gradio_gpu_call(modules.textual_inversion.ui.preprocess, extra_outputs=[gr.update()]),
-            _js="start_training_textual_inversion",
-            inputs=[
-                process_src,
-                process_dst,
-                process_flip,
-                process_split,
-                process_caption,
-            ],
-            outputs=[
-                ti_output,
-                ti_outcome,
-            ],
-        )
+        if cmd_opts.deepdanbooru:
+            # if process_caption_deepbooru is None, it will cause an error, as a result only include it if it is enabled
+            run_preprocess.click(
+                fn=wrap_gradio_gpu_call(modules.textual_inversion.ui.preprocess, extra_outputs=[gr.update()]),
+                _js="start_training_textual_inversion",
+                inputs=[
+                    process_src,
+                    process_dst,
+                    process_flip,
+                    process_split,
+                    process_caption,
+                    process_caption_deepbooru,
+                ],
+                outputs=[
+                    ti_output,
+                    ti_outcome,
+                ],
+            )
+        else:
+            run_preprocess.click(
+                fn=wrap_gradio_gpu_call(modules.textual_inversion.ui.preprocess, extra_outputs=[gr.update()]),
+                _js="start_training_textual_inversion",
+                inputs=[
+                    process_src,
+                    process_dst,
+                    process_flip,
+                    process_split,
+                    process_caption,
+                ],
+                outputs=[
+                    ti_output,
+                    ti_outcome,
+                ],
+            )
 
         train_embedding.click(
             fn=wrap_gradio_gpu_call(modules.textual_inversion.ui.train_embedding, extra_outputs=[gr.update()]),
