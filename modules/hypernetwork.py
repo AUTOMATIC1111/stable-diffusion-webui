@@ -40,18 +40,28 @@ class Hypernetwork:
             self.layers[size] = (HypernetworkModule(size, sd[0]), HypernetworkModule(size, sd[1]))
 
 
-def load_hypernetworks(path):
+def list_hypernetworks(path):
     res = {}
-
     for filename in glob.iglob(os.path.join(path, '**/*.pt'), recursive=True):
-        try:
-            hn = Hypernetwork(filename)
-            res[hn.name] = hn
-        except Exception:
-            print(f"Error loading hypernetwork {filename}", file=sys.stderr)
-            print(traceback.format_exc(), file=sys.stderr)
-
+        name = os.path.splitext(os.path.basename(filename))[0]
+        res[name] = filename
     return res
+
+
+def load_hypernetwork(filename):
+    path = shared.hypernetworks.get(filename, None)
+    if path is not None:
+        print(f"Loading hypernetwork {filename}")
+        try:
+            shared.loaded_hypernetwork = Hypernetwork(path)
+        except Exception:
+            print(f"Error loading hypernetwork {path}", file=sys.stderr)
+            print(traceback.format_exc(), file=sys.stderr)
+    else:
+        if shared.loaded_hypernetwork is not None:
+            print(f"Unloading hypernetwork")
+
+        shared.loaded_hypernetwork = None
 
 
 def attention_CrossAttention_forward(self, x, context=None, mask=None):
@@ -60,7 +70,7 @@ def attention_CrossAttention_forward(self, x, context=None, mask=None):
     q = self.to_q(x)
     context = default(context, x)
 
-    hypernetwork = shared.selected_hypernetwork()
+    hypernetwork = shared.loaded_hypernetwork
     hypernetwork_layers = (hypernetwork.layers if hypernetwork is not None else {}).get(context.shape[2], None)
 
     if hypernetwork_layers is not None:
