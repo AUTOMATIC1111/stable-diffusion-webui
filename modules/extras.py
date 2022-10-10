@@ -73,16 +73,6 @@ def run_extras(extras_mode, resize_mode, image, image_folder, gfpgan_visibility,
             crop_info = " (crop)" if upscaling_crop else ""
             info += f"Resize to: {upscaling_resize_w:g}x{upscaling_resize_h:g}{crop_info}\n"
 
-            def crop_upscaled_center(image, resize_w, resize_h):
-                left = int(math.ceil((image.width - resize_w) / 2))
-                right = image.width - int(math.floor((image.width - resize_w) / 2))
-                top = int(math.ceil((image.height - resize_h) / 2))
-                bottom = image.height - int(math.floor((image.height - resize_h) / 2))
-
-                image = image.crop((left, top, right, bottom))
-                return image
-
-
         if upscaling_resize != 1.0:
             def upscale(image, scaler_index, resize, mode, resize_w, resize_h, crop):
                 small = image.crop((image.width // 2, image.height // 2, image.width // 2 + 10, image.height // 2 + 10))
@@ -94,7 +84,9 @@ def run_extras(extras_mode, resize_mode, image, image_folder, gfpgan_visibility,
                     upscaler = shared.sd_upscalers[scaler_index]
                     c = upscaler.scaler.upscale(image, resize, upscaler.data_path)
                     if mode == 1 and crop:
-                        c = crop_upscaled_center(c, resize_w, resize_h)
+                        cropped = Image.new("RGB", (resize_w, resize_h))
+                        cropped.paste(c, box=(resize_w // 2 - c.width // 2, resize_h // 2 - c.height // 2))
+                        c = cropped
                     cached_images[key] = c
 
                 return c
