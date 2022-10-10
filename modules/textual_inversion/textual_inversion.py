@@ -7,7 +7,8 @@ import tqdm
 import html
 import datetime
 
-from modules import shared, devices, sd_hijack, processing
+
+from modules import shared, devices, sd_hijack, processing, sd_models
 import modules.textual_inversion.dataset
 
 
@@ -17,6 +18,8 @@ class Embedding:
         self.name = name
         self.step = step
         self.cached_checksum = None
+        self.sd_checkpoint = None
+        self.sd_checkpoint_name = None
 
     def save(self, filename):
         embedding_data = {
@@ -24,6 +27,8 @@ class Embedding:
             "string_to_param": {"*": self.vec},
             "name": self.name,
             "step": self.step,
+            "sd_checkpoint": self.sd_checkpoint,
+            "sd_checkpoint_name": self.sd_checkpoint_name,
         }
 
         torch.save(embedding_data, filename)
@@ -41,6 +46,7 @@ class Embedding:
         self.cached_checksum = f'{const_hash(self.vec.reshape(-1) * 100) & 0xffff:04x}'
         return self.cached_checksum
 
+
 class EmbeddingDatabase:
     def __init__(self, embeddings_dir):
         self.ids_lookup = {}
@@ -57,7 +63,8 @@ class EmbeddingDatabase:
         first_id = ids[0]
         if first_id not in self.ids_lookup:
             self.ids_lookup[first_id] = []
-        self.ids_lookup[first_id].append((ids, embedding))
+
+        self.ids_lookup[first_id] = sorted(self.ids_lookup[first_id] + [(ids, embedding)], key=lambda x: len(x[0]), reverse=True)
 
         return embedding
 
@@ -95,6 +102,8 @@ class EmbeddingDatabase:
             vec = emb.detach().to(devices.device, dtype=torch.float32)
             embedding = Embedding(vec, name)
             embedding.step = data.get('step', None)
+            embedding.sd_checkpoint = data.get('hash', None)
+            embedding.sd_checkpoint_name = data.get('sd_checkpoint_name', None)
             self.register_embedding(embedding, shared.sd_model)
 
         for fn in os.listdir(self.embeddings_dir):
@@ -155,7 +164,7 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, steps,
 
     filename = os.path.join(shared.cmd_opts.embeddings_dir, f'{embedding_name}.pt')
 
-    log_directory = os.path.join(log_directory, datetime.datetime.now().strftime("%Y-%d-%m"), embedding_name)
+    log_directory = os.path.join(log_directory, datetime.datetime.now().strftime("%Y-%m-%d"), embedding_name)
 
     if save_embedding_every > 0:
         embedding_dir = os.path.join(log_directory, "embeddings")
@@ -203,7 +212,10 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, steps,
 
         with torch.autocast("cuda"):
             c = cond_model([text])
+
+            x = x.to(devices.device)
             loss = shared.sd_model(x.unsqueeze(0), c)[0]
+            del x
 
             losses[embedding.step % losses.shape[0]] = loss.item()
 
@@ -248,6 +260,10 @@ Last saved image: {html.escape(last_saved_image)}<br/>
 </p>
 """
 
+    checkpoint = sd_models.select_checkpoint()
+
+    embedding.sd_checkpoint = checkpoint.hash
+    embedding.sd_checkpoint_name = checkpoint.model_name
     embedding.cached_checksum = None
     embedding.save(filename)
 

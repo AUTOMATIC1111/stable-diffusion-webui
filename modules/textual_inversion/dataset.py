@@ -8,6 +8,10 @@ from torchvision import transforms
 
 import random
 import tqdm
+from modules import devices
+import re
+
+re_tag = re.compile(r"[a-zA-Z][_\w\d()]+")
 
 
 class PersonalizedBase(Dataset):
@@ -37,8 +41,8 @@ class PersonalizedBase(Dataset):
             image = image.resize((self.width, self.height), PIL.Image.BICUBIC)
 
             filename = os.path.basename(path)
-            filename_tokens = os.path.splitext(filename)[0].replace('_', '-').replace(' ', '-').split('-')
-            filename_tokens = [token for token in filename_tokens if token.isalpha()]
+            filename_tokens = os.path.splitext(filename)[0]
+            filename_tokens = re_tag.findall(filename_tokens)
 
             npimage = np.array(image).astype(np.uint8)
             npimage = (npimage / 127.5 - 1.0).astype(np.float32)
@@ -47,6 +51,7 @@ class PersonalizedBase(Dataset):
             torchdata = torch.moveaxis(torchdata, 2, 0)
 
             init_latent = model.get_first_stage_encoding(model.encode_first_stage(torchdata.unsqueeze(dim=0))).squeeze()
+            init_latent = init_latent.to(devices.cpu)
 
             self.dataset.append((init_latent, filename_tokens))
 
