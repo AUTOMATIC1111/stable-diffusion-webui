@@ -7,7 +7,7 @@ import tqdm
 import html
 import datetime
 
-from PIL import Image,PngImagePlugin
+from PIL import Image,PngImagePlugin,ImageDraw
 from ..images import captionImageOverlay
 import numpy as np
 import base64
