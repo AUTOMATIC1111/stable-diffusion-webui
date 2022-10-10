@@ -1029,6 +1029,7 @@ def create_ui(wrap_gradio_gpu_call):
 
                     process_src = gr.Textbox(label='Source directory')
                     process_dst = gr.Textbox(label='Destination directory')
+                    process_size = gr.Slider(minimum=64, maximum=2048, step=64, label="Size (width and height)", value=512)
 
                     with gr.Row():
                         process_flip = gr.Checkbox(label='Create flipped copies')
@@ -1043,13 +1044,15 @@ def create_ui(wrap_gradio_gpu_call):
                             run_preprocess = gr.Button(value="Preprocess", variant='primary')
 
                 with gr.Group():
-                    gr.HTML(value="<p style='margin-bottom: 0.7em'>Train an embedding; must specify a directory with a set of 512x512 images</p>")
+                    gr.HTML(value="<p style='margin-bottom: 0.7em'>Train an embedding; must specify a directory with a set of 1:1 ratio images</p>")
                     train_embedding_name = gr.Dropdown(label='Embedding', choices=sorted(sd_hijack.model_hijack.embedding_db.word_embeddings.keys()))
                     learn_rate = gr.Number(label='Learning rate', value=5.0e-03)
                     dataset_directory = gr.Textbox(label='Dataset directory', placeholder="Path to directory with input images")
                     log_directory = gr.Textbox(label='Log directory', placeholder="Path to directory where to write outputs", value="textual_inversion")
                     template_file = gr.Textbox(label='Prompt template file', value=os.path.join(script_path, "textual_inversion_templates", "style_filewords.txt"))
+                    training_size = gr.Slider(minimum=64, maximum=2048, step=64, label="Size (width and height)", value=512)
                     steps = gr.Number(label='Max steps', value=100000, precision=0)
+                    num_repeats = gr.Number(label='Number of repeats for a single input image per epoch', value=100, precision=0)
                     create_image_every = gr.Number(label='Save an image to log directory every N steps, 0 to disable', value=500, precision=0)
                     save_embedding_every = gr.Number(label='Save a copy of embedding to log directory every N steps, 0 to disable', value=500, precision=0)
 
@@ -1092,6 +1095,7 @@ def create_ui(wrap_gradio_gpu_call):
             inputs=[
                 process_src,
                 process_dst,
+                process_size,
                 process_flip,
                 process_split,
                 process_caption,
@@ -1110,7 +1114,9 @@ def create_ui(wrap_gradio_gpu_call):
                 learn_rate,
                 dataset_directory,
                 log_directory,
+                training_size,
                 steps,
+                num_repeats,
                 create_image_every,
                 save_embedding_every,
                 template_file,
