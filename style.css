@@ -2,6 +2,18 @@
     max-width: 100%;
 }
 
+#txt2img_token_counter {
+    height: 0px;
+}
+
+#img2img_token_counter {
+    height: 0px;
+}
+
+#negative_prompt {
+    width: 97.9%;
+}
+
 .output-html p {margin: 0 0.5em;}
 
 .row > *,
