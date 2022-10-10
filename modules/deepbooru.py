@@ -15,7 +15,6 @@ def get_deepbooru_tags(pil_image, threshold=0.5):
     while shared.deepbooru_process_return["value"] == -1:
         time.sleep(0.2)
     release_process()
-    return ret
 
 
 def deepbooru_process(queue, deepbooru_process_return, threshold):
