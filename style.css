@@ -103,7 +103,12 @@
 
 #style_apply, #style_create, #interrogate{
     margin: 0.75em 0.25em 0.25em 0.25em;
-    min-width: 3em;
+    min-width: 5em;
+}
+
+#style_apply, #style_create, #deepbooru{
+    margin: 0.75em 0.25em 0.25em 0.25em;
+    min-width: 5em;
 }
 
 #style_pos_col, #style_neg_col{
@@ -447,4 +452,14 @@ input[type="range"]{
 
 .context-menu-items a:hover{
     background: #a55000;
+}
+
+#quicksettings > div{
+    border: none;
+    background: none;
+}
+
+#quicksettings > div > div{
+    max-width: 32em;
+    padding: 0;
 }
