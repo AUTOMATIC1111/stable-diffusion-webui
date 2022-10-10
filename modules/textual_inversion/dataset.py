@@ -15,11 +15,10 @@ re_tag = re.compile(r"[a-zA-Z][_\w\d()]+")
 
 
 class PersonalizedBase(Dataset):
-    def __init__(self, data_root, size=None, repeats=100, flip_p=0.5, placeholder_token="*", width=512, height=512, model=None, device=None, template_file=None):
+    def __init__(self, data_root, width, height, repeats, flip_p=0.5, placeholder_token="*", model=None, device=None, template_file=None):
 
         self.placeholder_token = placeholder_token
 
-        self.size = size
         self.width = width
         self.height = height
         self.flip = transforms.RandomHorizontalFlip(p=flip_p)
