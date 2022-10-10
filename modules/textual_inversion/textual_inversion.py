@@ -161,7 +161,7 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
 
     shared.state.textinfo = "Initializing textual inversion training..."
     shared.state.job_count = steps
-    extns = [".jpg",".jpeg",".png"]
+    extns = [".jpg",".jpeg",".png",".webp",".bmp"]
 
     filename = os.path.join(shared.cmd_opts.embeddings_dir, f'{embedding_name}.pt')
 

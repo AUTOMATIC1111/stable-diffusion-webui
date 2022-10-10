@@ -22,7 +22,7 @@ class PersonalizedBase(Dataset):
         self.width = width
         self.height = height
         self.flip = transforms.RandomHorizontalFlip(p=flip_p)
-        self.extns = [".jpg",".jpeg",".png"]
+        self.extns = [".jpg",".jpeg",".png",".webp",".bmp"]
 
         self.dataset = []
 
