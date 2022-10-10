@@ -1,3 +1,7 @@
+.container {
+    max-width: 100%;
+}
+
 .output-html p {margin: 0 0.5em;}
 
 .row > *,
@@ -462,4 +466,11 @@ input[type="range"]{
 #quicksettings > div > div{
     max-width: 32em;
     padding: 0;
+}
+
+canvas[key="mask"] {
+    z-index: 12 !important;
+    filter: invert();
+    mix-blend-mode: multiply;
+    pointer-events: none;
 }
