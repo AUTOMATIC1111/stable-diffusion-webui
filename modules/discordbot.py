@@ -102,7 +102,7 @@ nsfw_id = bot_config['channel_id']['nsfw_id']
 admin_roleid = bot_config['admin']['admin_roleid']
 botmod_roleid = bot_config['admin']['botmod_roleid']
 
-@tree.command(name="togglepost", description="Toggle post result", guild = (id = 1008397331512696893))
+@tree.command(name="togglepost", description="Toggle post result", guild = discord.Object(id = 1008397331512696893))
 async def self(interaction: discord.Interaction):
     bot_config['main']['post_result'] = not bot_config['main']['post_result']
     with open(botconfigfile, "w", encoding="utf8") as f:
