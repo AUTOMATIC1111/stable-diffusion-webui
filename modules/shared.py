@@ -261,6 +261,12 @@ options_templates.update(options_section(('sampler-params', "Sampler parameters"
     's_noise': OptionInfo(1.0, "sigma noise", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
 }))
 
+if cmd_opts.deepdanbooru:
+    options_templates.update(options_section(('deepbooru-params', "DeepBooru parameters"), {
+        "deepbooru_sort_alpha": OptionInfo(True, "Sort Alphabetical", gr.Checkbox),
+        'deepbooru_threshold': OptionInfo(0.5, "Threshold", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
+    }))
+
 
 class Options:
     data = None
