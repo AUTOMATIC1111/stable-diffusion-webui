@@ -961,7 +961,7 @@ def create_ui(wrap_gradio_gpu_call):
         
         extras_send_to_inpaint.click(
             fn=lambda x: image_from_url_text(x),
-            _js="extract_image_from_gallery_img2img",
+            _js="extract_image_from_gallery_inpaint",
             inputs=[result_images],
             outputs=[init_img_with_mask],
         )
