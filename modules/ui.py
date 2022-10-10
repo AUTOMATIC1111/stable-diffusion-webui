@@ -1036,6 +1036,10 @@ def create_ui(wrap_gradio_gpu_call):
                         process_flip = gr.Checkbox(label='Create flipped copies')
                         process_split = gr.Checkbox(label='Split oversized images into two')
                         process_caption = gr.Checkbox(label='Use BLIP caption as filename')
+                        if cmd_opts.deepdanbooru:
+                            process_caption_deepbooru = gr.Checkbox(label='Use deepbooru caption as filename')
+                        else:
+                            process_caption_deepbooru = gr.Checkbox(label='Use deepbooru caption as filename', visible=False)
 
                     with gr.Row():
                         with gr.Column(scale=3):
@@ -1102,6 +1106,7 @@ def create_ui(wrap_gradio_gpu_call):
                 process_flip,
                 process_split,
                 process_caption,
+                process_caption_deepbooru
             ],
             outputs=[
                 ti_output,
