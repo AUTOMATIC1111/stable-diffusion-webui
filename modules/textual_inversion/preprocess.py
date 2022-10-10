@@ -7,8 +7,8 @@ import tqdm
 from modules import shared, images
 
 
-def preprocess(process_src, process_dst, process_flip, process_split, process_caption):
-    size = 512
+def preprocess(process_src, process_dst, process_size, process_flip, process_split, process_caption):
+    size = process_size
     src = os.path.abspath(process_src)
     dst = os.path.abspath(process_dst)
 
