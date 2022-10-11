@@ -177,13 +177,12 @@ class DreamBooth:
 
                 sample_dataloader = accelerator.prepare(sample_dataloader)
                 pipeline.to(accelerator.device)
-
-                context = torch.autocast("cuda") if accelerator.device.type == "cuda" else nullcontext
+                # Disabled in opt
+                # context = torch.autocast("cuda") if accelerator.device.type == "cuda" else nullcontext
                 for example in tqdm(
                         sample_dataloader, desc="Generating class images", disable=not accelerator.is_local_main_process
                 ):
-                    with context:
-                        images = pipeline(example["prompt"]).images
+                    images = pipeline(example["prompt"]).images
 
                     for i, image in enumerate(images):
                         image.save(class_images_dir / f"{example['index'][i] + cur_class_images}.jpg")
@@ -295,25 +294,26 @@ class DreamBooth:
         )
 
         # Move text_encode and vae to gpu
-        text_encoder.to(accelerator.device)
-        vae.to(accelerator.device)
+        # Disabled in OPT
+        #        text_encoder.to(accelerator.device)
+        #        vae.to(accelerator.device)
 
-        if not self.not_cache_latents:
-            latents_cache = []
-            text_encoder_cache = []
-            for batch in tqdm(train_dataloader, desc="Caching latents"):
-                with torch.no_grad():
-                    batch["pixel_values"] = batch["pixel_values"].to(accelerator.device, non_blocking=True)
-                    batch["input_ids"] = batch["input_ids"].to(accelerator.device, non_blocking=True)
-                    latents_cache.append(vae.encode(batch["pixel_values"]).latent_dist)
-                    text_encoder_cache.append(text_encoder(batch["input_ids"])[0])
-            train_dataset = LatentsDataset(latents_cache, text_encoder_cache)
-            train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=1, collate_fn=lambda x: x,
-                                                           shuffle=True)
+        #        if not self.not_cache_latents:
+        #            latents_cache = []
+        #            text_encoder_cache = []
+        #            for batch in tqdm(train_dataloader, desc="Caching latents"):
+        #                with torch.no_grad():
+        #                    batch["pixel_values"] = batch["pixel_values"].to(accelerator.device, non_blocking=True)
+        #                    batch["input_ids"] = batch["input_ids"].to(accelerator.device, non_blocking=True)
+        #                    latents_cache.append(vae.encode(batch["pixel_values"]).latent_dist)
+        #                    text_encoder_cache.append(text_encoder(batch["input_ids"])[0])
+        #            train_dataset = LatentsDataset(latents_cache, text_encoder_cache)
+        #            train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=1, collate_fn=lambda x: x,
+        #                                                           shuffle=True)
 
-            del vae, text_encoder
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
+        #            del vae, text_encoder
+        #            if torch.cuda.is_available():
+        #                torch.cuda.empty_cache()
 
         # Scheduler and math around the number of training steps.
         overrode_max_train_steps = False
@@ -332,7 +332,18 @@ class DreamBooth:
         unet, optimizer, train_dataloader, lr_scheduler = accelerator.prepare(
             unet, optimizer, train_dataloader, lr_scheduler
         )
-
+        # Added in OPT
+        weight_dtype = torch.float32
+        if self.mixed_precision == "fp16":
+            weight_dtype = torch.float16
+        elif self.mixed_precision == "bf16":
+            weight_dtype = torch.bfloat16
+        # T this was moved in OPT from above
+        # Move text_encode and vae to gpu.
+        # For mixed precision training we cast the text_encoder and vae weights to half-precision
+        # as these models are only used for inference, keeping weights in full precision is not required.
+        text_encoder.to(accelerator.device, dtype=weight_dtype)
+        vae.to(accelerator.device, dtype=weight_dtype)
         # We need to recalculate our total training steps as the size of the training dataloader may have changed.
         num_update_steps_per_epoch = math.ceil(len(train_dataloader) / self.gradient_accumulation_steps)
         if overrode_max_train_steps:
@@ -367,30 +378,19 @@ class DreamBooth:
                 with accelerator.accumulate(unet):
                     # Convert images to latent space
                     with torch.no_grad():
-                        if not self.not_cache_latents:
-                            latent_dist = batch[0][0]
-                        else:
-                            latent_dist = vae.encode(batch["pixel_values"]).latent_dist
-                        latents = latent_dist.sample() * 0.18215
-
-                    # Sample noise that we'll add to the latents
-                    noise = torch.randn(latents.shape).to(latents.device)
+                        latents = vae.encode(batch["pixel_values"].to(dtype=weight_dtype)).latent_dist.sample()
+                        latents = latents * 0.18215
+                    noise = torch.randn_like(latents)
                     bsz = latents.shape[0]
                     # Sample a random timestep for each image
                     timesteps = torch.randint(0, noise_scheduler.config.num_train_timesteps, (bsz,),
                                               device=latents.device)
                     timesteps = timesteps.long()
-
-                    # Add noise to the latents according to the noise magnitude at each timestep
-                    # (this is the forward diffusion process)
                     noisy_latents = noise_scheduler.add_noise(latents, noise, timesteps)
 
                     # Get the text embedding for conditioning
                     with torch.no_grad():
-                        if not self.not_cache_latents:
-                            encoder_hidden_states = batch[0][1]
-                        else:
-                            encoder_hidden_states = text_encoder(batch["input_ids"])[0]
+                        encoder_hidden_states = text_encoder(batch["input_ids"])[0]
 
                     # Predict the noise residual
                     noise_pred = unet(noisy_latents, timesteps, encoder_hidden_states).sample
@@ -404,25 +404,20 @@ class DreamBooth:
                         loss = F.mse_loss(noise_pred, noise, reduction="none").mean([1, 2, 3]).mean()
 
                         # Compute prior loss
-                        prior_loss = F.mse_loss(noise_pred_prior, noise_prior, reduction="none").mean([1, 2, 3]).mean()
+                        prior_loss = F.mse_loss(noise_pred_prior.float(), noise_prior.float(), reduction="mean")
 
                         # Add the prior loss to the instance loss.
                         loss = loss + self.prior_loss_weight * prior_loss
                     else:
-                        loss = F.mse_loss(noise_pred, noise, reduction="none").mean([1, 2, 3]).mean()
+                        loss = F.mse_loss(noise_pred.float(), noise.float(), reduction="mean")
 
-                    accelerator.backward(loss)
-                    if accelerator.sync_gradients:
-                        accelerator.clip_grad_norm_(unet.parameters(), self.max_grad_norm)
-                    optimizer.step()
-                    lr_scheduler.step()
-                    optimizer.zero_grad(set_to_none=True)
-                    loss_avg.update(loss.detach_(), bsz)
+                accelerator.backward(loss)
+                if accelerator.sync_gradients:
+                    accelerator.clip_grad_norm_(unet.parameters(), self.max_grad_norm)
+                optimizer.step()
+                lr_scheduler.step()
+                optimizer.zero_grad()
 
-                if not global_step % self.log_interval:
-                    logs = {"loss": loss_avg.avg.item(), "lr": lr_scheduler.get_last_lr()[0]}
-                    progress_bar.set_postfix(**logs)
-                    accelerator.log(logs, step=global_step)
 
                 # Only save a preview image if we're not training with the CPU
                 if not global_step % self.save_img_every and use_cpu is not True:
@@ -463,6 +458,9 @@ class DreamBooth:
                 progress_bar.update(1)
                 global_step += 1
 
+                logs = {"loss": loss.detach().item(), "lr": lr_scheduler.get_last_lr()[0]}
+                progress_bar.set_postfix(**logs)
+                accelerator.log(logs, step=global_step)
                 if global_step >= self.max_train_steps:
                     break
 
@@ -503,15 +501,15 @@ def start_training(model_name, initialization_text, classification_text, learn_r
             out_file = os.path.join(paths.models_path, "Stable-diffusion", f"{model_name}.ckpt")
             src_path = modules.sd_models.get_closet_checkpoint_match(src_checkpoint)[0]
             print(f"Out file set to {out_file}")
-            converted = conversion.convert_diff_to_sd(model_dir, src_path, out_file)
+            converted = conversion.convert_diff_to_sd(model_dir, src_path, out_file, True)
             sd_models.list_models()
     except Exception:
         raise
     finally:
         print("Re-applying optimizations...")
         sd_hijack.apply_optimizations()
-    res = f"Training {'interrupted' if shared.state.interrupted else 'finished'}."\
-        f"Embedding saved to {html.escape(converted)}"
+    res = f"Training {'interrupted' if shared.state.interrupted else 'finished'}." \
+          f"Embedding saved to {html.escape(converted)}"
     print(f"Returning result: {res}")
     return res, ""
 

@@ -171,7 +171,6 @@ def wrap_gradio_call(func, extra_outputs=None):
 
         try:
             res = list(func(*args, **kwargs))
-            print(f"Received result: {res}")
         except Exception as e:
             print("Error completing request", file=sys.stderr)
             print("Arguments:", args, kwargs, file=sys.stderr)
