@@ -1111,7 +1111,7 @@ def create_ui(wrap_gradio_gpu_call):
         )
 
         create_hypernetwork.click(
-            fn=modules.hypernetwork.ui.create_hypernetwork,
+            fn=modules.hypernetworks.ui.create_hypernetwork,
             inputs=[
                 new_hypernetwork_name,
             ],
@@ -1164,7 +1164,7 @@ def create_ui(wrap_gradio_gpu_call):
         )
 
         train_hypernetwork.click(
-            fn=wrap_gradio_gpu_call(modules.hypernetwork.ui.train_hypernetwork, extra_outputs=[gr.update()]),
+            fn=wrap_gradio_gpu_call(modules.hypernetworks.ui.train_hypernetwork, extra_outputs=[gr.update()]),
             _js="start_training_textual_inversion",
             inputs=[
                 train_hypernetwork_name,
