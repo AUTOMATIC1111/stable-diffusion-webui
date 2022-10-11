@@ -20,6 +20,7 @@
     padding-right: 0.25em;
     margin: 0.1em 0;
     opacity: 0%;
+    cursor: default;	
 }
 
 .output-html p {margin: 0 0.5em;}
