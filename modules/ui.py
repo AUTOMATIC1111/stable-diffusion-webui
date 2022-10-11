@@ -1331,7 +1331,7 @@ Requested path was: {f}
         
         with gr.Tabs() as tabs:
             for interface, label, ifid in interfaces:
-                with gr.TabItem(label, id=ifid):
+                with gr.TabItem(label, id=ifid, elem_id='tab_' + ifid):
                     interface.render()
         
         if os.path.exists(os.path.join(script_path, "notification.mp3")):
