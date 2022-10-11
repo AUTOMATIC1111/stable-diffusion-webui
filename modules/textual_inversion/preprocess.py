@@ -59,7 +59,7 @@ def preprocess(process_src, process_dst, process_width, process_height, process_
         is_wide = ratio < 1 / 1.35
 
         if process_split and is_tall:
-            img = img.resize((width, height * img.height // img.width))
+            img = images.resize_image(1, img, width, height * img.height // img.width)
 
             top = img.crop((0, 0, width, height))
             save_pic(top, index)
@@ -67,7 +67,7 @@ def preprocess(process_src, process_dst, process_width, process_height, process_
             bot = img.crop((0, img.height - height, width, img.height))
             save_pic(bot, index)
         elif process_split and is_wide:
-            img = img.resize((width * img.width // img.height, height))
+            img = images.resize_image(1, img, width * img.width // img.height, height)
 
             left = img.crop((0, 0, width, height))
             save_pic(left, index)
