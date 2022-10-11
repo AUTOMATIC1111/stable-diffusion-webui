@@ -238,12 +238,9 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
             p = processing.StableDiffusionProcessingTxt2Img(
                 sd_model=shared.sd_model,
                 prompt=text,
-                steps=28,
-				height=768,
+                steps=20,
+				height=training_height,
 				width=training_width,
-                negative_prompt="lowres, bad anatomy, bad hands, text, error, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts,signature, watermark, username, blurry, artist name",
-                cfg_scale=7.0,
-                sampler_index=0,
                 do_not_save_grid=True,
                 do_not_save_samples=True,
             )
