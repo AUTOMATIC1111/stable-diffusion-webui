@@ -1,7 +1,7 @@
 import math
 import sys
 import traceback
-import psutil
+import importlib
 
 import torch
 from torch import einsum
@@ -117,9 +117,20 @@ def split_cross_attention_forward(self, x, context=None, mask=None):
 
     return self.to_out(r2)
 
-# -- From https://github.com/invoke-ai/InvokeAI/blob/main/ldm/modules/attention.py (with hypernetworks support added) --
 
-mem_total_gb = psutil.virtual_memory().total // (1 << 30)
+def check_for_psutil():
+    try:
+        spec = importlib.util.find_spec('psutil')
+        return spec is not None
+    except ModuleNotFoundError:
+        return False
+
+invokeAI_mps_available = check_for_psutil()
+
+# -- Taken from https://github.com/invoke-ai/InvokeAI --
+if invokeAI_mps_available:
+    import psutil
+    mem_total_gb = psutil.virtual_memory().total // (1 << 30)
 
 def einsum_op_compvis(q, k, v):
     s = einsum('b i d, b j d -> b i j', q, k)
@@ -193,7 +204,7 @@ def split_cross_attention_forward_invokeAI(self, x, context=None, mask=None):
     r = einsum_op(q, k, v)
     return self.to_out(rearrange(r, '(b h) n d -> b n (h d)', h=h))
 
-# -- End of code from https://github.com/invoke-ai/InvokeAI/blob/main/ldm/modules/attention.py --
+# -- End of code from https://github.com/invoke-ai/InvokeAI --
 
 def xformers_attention_forward(self, x, context=None, mask=None):
     h = self.heads
