@@ -39,6 +39,7 @@ import modules.generation_parameters_copypaste
 from modules import prompt_parser
 from modules.images import save_image
 import modules.textual_inversion.ui
+import modules.hypernetwork.ui
 import modules.images_history as img_his
 
 # this is a fix for Windows users. Without it, javascript files will be served with text/html content-type and the browser will not show any UI
@@ -312,7 +313,7 @@ def interrogate(image):
 
 
 def interrogate_deepbooru(image):
-    prompt = get_deepbooru_tags(image)
+    prompt = get_deepbooru_tags(image, opts.interrogate_deepbooru_score_threshold)
     return gr_show(True) if prompt is None else prompt
 
 
@@ -525,7 +526,7 @@ def create_ui(wrap_gradio_gpu_call):
                     denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.7)
 
                 with gr.Row():
-                    batch_count = gr.Slider(minimum=1, maximum=cmd_opts.max_batch_count, step=1, label='Batch count', value=1)
+                    batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1)
                     batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1)
 
                 cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='CFG Scale', value=7.0)
@@ -712,7 +713,7 @@ def create_ui(wrap_gradio_gpu_call):
                     tiling = gr.Checkbox(label='Tiling', value=False)
 
                 with gr.Row():
-                    batch_count = gr.Slider(minimum=1, maximum=cmd_opts.max_batch_count, step=1, label='Batch count', value=1)
+                    batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1)
                     batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1)
 
                 with gr.Group():
@@ -964,7 +965,7 @@ def create_ui(wrap_gradio_gpu_call):
         
         extras_send_to_inpaint.click(
             fn=lambda x: image_from_url_text(x),
-            _js="extract_image_from_gallery_img2img",
+            _js="extract_image_from_gallery_inpaint",
             inputs=[result_images],
             outputs=[init_img_with_mask],
         )
@@ -1025,13 +1026,27 @@ def create_ui(wrap_gradio_gpu_call):
                             gr.HTML(value="")
 
                         with gr.Column():
-                            create_embedding = gr.Button(value="Create", variant='primary')
+                            create_embedding = gr.Button(value="Create embedding", variant='primary')
+
+                with gr.Group():
+                    gr.HTML(value="<p style='margin-bottom: 0.7em'>Create a new hypernetwork</p>")
+
+                    new_hypernetwork_name = gr.Textbox(label="Name")
+
+                    with gr.Row():
+                        with gr.Column(scale=3):
+                            gr.HTML(value="")
+
+                        with gr.Column():
+                            create_hypernetwork = gr.Button(value="Create hypernetwork", variant='primary')
 
                 with gr.Group():
                     gr.HTML(value="<p style='margin-bottom: 0.7em'>Preprocess images</p>")
 
                     process_src = gr.Textbox(label='Source directory')
                     process_dst = gr.Textbox(label='Destination directory')
+                    process_width = gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512)
+                    process_height = gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512)
 
                     with gr.Row():
                         process_flip = gr.Checkbox(label='Create flipped copies')
@@ -1046,24 +1061,25 @@ def create_ui(wrap_gradio_gpu_call):
                             run_preprocess = gr.Button(value="Preprocess", variant='primary')
 
                 with gr.Group():
-                    gr.HTML(value="<p style='margin-bottom: 0.7em'>Train an embedding; must specify a directory with a set of 512x512 images</p>")
+                    gr.HTML(value="<p style='margin-bottom: 0.7em'>Train an embedding; must specify a directory with a set of 1:1 ratio images</p>")
                     train_embedding_name = gr.Dropdown(label='Embedding', choices=sorted(sd_hijack.model_hijack.embedding_db.word_embeddings.keys()))
+                    train_hypernetwork_name = gr.Dropdown(label='Hypernetwork', choices=[x for x in shared.hypernetworks.keys()])
                     learn_rate = gr.Number(label='Learning rate', value=5.0e-03)
                     dataset_directory = gr.Textbox(label='Dataset directory', placeholder="Path to directory with input images")
                     log_directory = gr.Textbox(label='Log directory', placeholder="Path to directory where to write outputs", value="textual_inversion")
                     template_file = gr.Textbox(label='Prompt template file', value=os.path.join(script_path, "textual_inversion_templates", "style_filewords.txt"))
+                    training_width = gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512)
+                    training_height = gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512)
                     steps = gr.Number(label='Max steps', value=100000, precision=0)
+                    num_repeats = gr.Number(label='Number of repeats for a single input image per epoch', value=100, precision=0)
                     create_image_every = gr.Number(label='Save an image to log directory every N steps, 0 to disable', value=500, precision=0)
                     save_embedding_every = gr.Number(label='Save a copy of embedding to log directory every N steps, 0 to disable', value=500, precision=0)
+                    preview_image_prompt = gr.Textbox(label='Preview prompt', value="")
 
                     with gr.Row():
-                        with gr.Column(scale=2):
-                            gr.HTML(value="")
-
-                        with gr.Column():
-                            with gr.Row():
-                                interrupt_training = gr.Button(value="Interrupt")
-                                train_embedding = gr.Button(value="Train", variant='primary')
+                        interrupt_training = gr.Button(value="Interrupt")
+                        train_hypernetwork = gr.Button(value="Train Hypernetwork", variant='primary')
+                        train_embedding = gr.Button(value="Train Embedding", variant='primary')
 
             with gr.Column():
                 progressbar = gr.HTML(elem_id="ti_progressbar")
@@ -1089,12 +1105,26 @@ def create_ui(wrap_gradio_gpu_call):
             ]
         )
 
+        create_hypernetwork.click(
+            fn=modules.hypernetwork.ui.create_hypernetwork,
+            inputs=[
+                new_hypernetwork_name,
+            ],
+            outputs=[
+                train_hypernetwork_name,
+                ti_output,
+                ti_outcome,
+            ]
+        )
+
         run_preprocess.click(
             fn=wrap_gradio_gpu_call(modules.textual_inversion.ui.preprocess, extra_outputs=[gr.update()]),
             _js="start_training_textual_inversion",
             inputs=[
                 process_src,
                 process_dst,
+                process_width,
+                process_height,
                 process_flip,
                 process_split,
                 process_caption,
@@ -1113,10 +1143,34 @@ def create_ui(wrap_gradio_gpu_call):
                 learn_rate,
                 dataset_directory,
                 log_directory,
+                training_width,
+                training_height,
+                steps,
+                num_repeats,
+                create_image_every,
+                save_embedding_every,
+                template_file,
+                preview_image_prompt,
+            ],
+            outputs=[
+                ti_output,
+                ti_outcome,
+            ]
+        )
+
+        train_hypernetwork.click(
+            fn=wrap_gradio_gpu_call(modules.hypernetwork.ui.train_hypernetwork, extra_outputs=[gr.update()]),
+            _js="start_training_textual_inversion",
+            inputs=[
+                train_hypernetwork_name,
+                learn_rate,
+                dataset_directory,
+                log_directory,
                 steps,
                 create_image_every,
                 save_embedding_every,
                 template_file,
+                preview_image_prompt,
             ],
             outputs=[
                 ti_output,
@@ -1129,6 +1183,7 @@ def create_ui(wrap_gradio_gpu_call):
             inputs=[],
             outputs=[],
         )
+
 
     def create_setting_component(key):
         def fun():
@@ -1335,7 +1390,7 @@ Requested path was: {f}
         
         with gr.Tabs() as tabs:
             for interface, label, ifid in interfaces:
-                with gr.TabItem(label, id=ifid):
+                with gr.TabItem(label, id=ifid, elem_id='tab_' + ifid):
                     interface.render()
         
         if os.path.exists(os.path.join(script_path, "notification.mp3")):
