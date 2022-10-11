@@ -247,22 +247,27 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
             last_saved_image = os.path.join(images_dir, f'{embedding_name}-{embedding.step}.png')
 
             preview_text = text if preview_image_prompt == "" else preview_image_prompt
+            preview_text = preview_text.replace("{name}", embedding_name)
+            preview_texts = preview_text.split("|")
+            image_count = 0
+            for current_preview_text in preview_texts:
+                p = processing.StableDiffusionProcessingTxt2Img(
+                    sd_model=shared.sd_model,
+                    prompt=current_preview_text,
+                    steps=20,
+                    height=training_height,
+                    width=training_width,
+                    do_not_save_grid=True,
+                    do_not_save_samples=True,
+                )
 
-            p = processing.StableDiffusionProcessingTxt2Img(
-                sd_model=shared.sd_model,
-                prompt=preview_text,
-                steps=20,
-                height=training_height,
-                width=training_width,
-                do_not_save_grid=True,
-                do_not_save_samples=True,
-            )
+                processed = processing.process_images(p)
+                image = processed.images[0]
 
-            processed = processing.process_images(p)
-            image = processed.images[0]
-
-            shared.state.current_image = image
-            image.save(last_saved_image)
+                shared.state.current_image = image
+                image_count = image_count + 1
+                current_file_name = last_saved_image.replace(".png",f'_{image_count}.png') if len(preview_texts) > 1 else current_file_name
+                image.save(current_file_name)
 
             last_saved_image += f", prompt: {preview_text}"
 
