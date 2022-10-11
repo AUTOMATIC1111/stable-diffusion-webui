@@ -29,7 +29,7 @@ from modules import devices
 from modules import modelloader
 from modules.paths import script_path
 from modules.shared import cmd_opts
-import modules.hypernetwork.hypernetwork
+import modules.hypernetworks.hypernetwork
 
 modelloader.cleanup_models()
 modules.sd_models.setup_model()

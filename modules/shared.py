@@ -14,7 +14,7 @@ import modules.sd_models
 import modules.styles
 import modules.devices as devices
 from modules import sd_samplers
-from modules.hypernetwork import hypernetwork
+from modules.hypernetworks import hypernetwork
 from modules.paths import models_path, script_path, sd_path
 
 sd_model_file = os.path.join(script_path, 'model.ckpt')
