@@ -248,15 +248,20 @@ options_templates.update(options_section(('sd', "Stable Diffusion"), {
     "random_artist_categories": OptionInfo([], "Allowed categories for random artists selection when using the Roll button", gr.CheckboxGroup, {"choices": artist_db.categories()}),
 }))
 
-options_templates.update(options_section(('interrogate', "Interrogate Options"), {
+interrogate_option_dictionary = {
     "interrogate_keep_models_in_memory": OptionInfo(False, "Interrogate: keep models in VRAM"),
     "interrogate_use_builtin_artists": OptionInfo(True, "Interrogate: use artists from artists.csv"),
     "interrogate_clip_num_beams": OptionInfo(1, "Interrogate: num_beams for BLIP", gr.Slider, {"minimum": 1, "maximum": 16, "step": 1}),
     "interrogate_clip_min_length": OptionInfo(24, "Interrogate: minimum description length (excluding artists, etc..)", gr.Slider, {"minimum": 1, "maximum": 128, "step": 1}),
     "interrogate_clip_max_length": OptionInfo(48, "Interrogate: maximum description length", gr.Slider, {"minimum": 1, "maximum": 256, "step": 1}),
-    "interrogate_clip_dict_limit": OptionInfo(1500, "Interrogate: maximum number of lines in text file (0 = No limit)"),
-    "interrogate_deepbooru_score_threshold": OptionInfo(0.5, "Interrogate: deepbooru score threshold", gr.Slider, {"minimum": 0, "maximum": 1, "step": 0.01}),
-}))
+    "interrogate_clip_dict_limit": OptionInfo(1500, "Interrogate: maximum number of lines in text file (0 = No limit)")
+}
+
+if cmd_opts.deepdanbooru:
+    interrogate_option_dictionary["interrogate_deepbooru_score_threshold"] = OptionInfo(0.5, "Interrogate: deepbooru score threshold", gr.Slider, {"minimum": 0, "maximum": 1, "step": 0.01})
+    interrogate_option_dictionary["deepbooru_sort_alpha"] = OptionInfo(True, "Interrogate: deepbooru sort alphabetically", gr.Checkbox)
+
+options_templates.update(options_section(('interrogate', "Interrogate Options"), interrogate_option_dictionary))
 
 options_templates.update(options_section(('ui', "User interface"), {
     "show_progressbar": OptionInfo(True, "Show progressbar"),
@@ -281,12 +286,6 @@ options_templates.update(options_section(('sampler-params', "Sampler parameters"
     's_noise': OptionInfo(1.0, "sigma noise", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     'eta_noise_seed_delta': OptionInfo(0, "Eta noise seed delta", gr.Number, {"precision": 0}),
 }))
-
-if cmd_opts.deepdanbooru:
-    options_templates.update(options_section(('deepbooru-params', "DeepBooru parameters"), {
-        "deepbooru_sort_alpha": OptionInfo(True, "Sort Alphabetical", gr.Checkbox),
-        'deepbooru_threshold': OptionInfo(0.5, "Threshold", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
-    }))
 
 
 class Options:

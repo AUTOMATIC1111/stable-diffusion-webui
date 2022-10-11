@@ -317,7 +317,7 @@ def interrogate(image):
 
 
 def interrogate_deepbooru(image):
-    prompt = get_deepbooru_tags(image, opts.interrogate_deepbooru_score_threshold)
+    prompt = get_deepbooru_tags(image)
     return gr_show(True) if prompt is None else prompt
 
 

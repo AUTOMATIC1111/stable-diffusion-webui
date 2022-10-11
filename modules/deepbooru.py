@@ -8,7 +8,7 @@ def get_deepbooru_tags(pil_image):
     This method is for running only one image at a time for simple use.  Used to the img2img interrogate.
     """
     from modules import shared  # prevents circular reference
-    create_deepbooru_process(shared.opts.deepbooru_threshold, shared.opts.deepbooru_sort_alpha)
+    create_deepbooru_process(shared.opts.interrogate_deepbooru_score_threshold, shared.opts.deepbooru_sort_alpha)
     shared.deepbooru_process_return["value"] = -1
     shared.deepbooru_process_queue.put(pil_image)
     while shared.deepbooru_process_return["value"] == -1:
