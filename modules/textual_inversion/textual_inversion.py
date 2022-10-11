@@ -12,6 +12,9 @@ from PIL import Image,PngImagePlugin
 from modules import shared, devices, sd_hijack, processing, sd_models
 import modules.textual_inversion.dataset
 
+from modules.textual_inversion.image_embedding import( embedding_to_b64,embedding_from_b64,
+                                                       insert_image_data_embed,extract_image_data_embed,
+                                                       caption_image_overlay )
 
 class Embedding:
     def __init__(self, vec, name, step=None):
