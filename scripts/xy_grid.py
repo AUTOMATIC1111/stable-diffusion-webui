@@ -205,7 +205,10 @@ class Script(scripts.Script):
         if not no_fixed_seeds:
             modules.processing.fix_seed(p)
 
-        p.batch_size = 1
+        if not opts.return_grid:
+            p.batch_size = 1
+
+
         CLIP_stop_at_last_layers = opts.CLIP_stop_at_last_layers
 
         def process_axis(opt, vals):

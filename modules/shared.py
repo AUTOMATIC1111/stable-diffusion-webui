@@ -66,6 +66,7 @@ parser.add_argument("--autolaunch", action='store_true', help="open the webui UR
 parser.add_argument("--use-textbox-seed", action='store_true', help="use textbox for seeds in UI (no up/down, but possible to input long seeds)", default=False)
 parser.add_argument("--disable-console-progressbars", action='store_true', help="do not output progressbars to console", default=False)
 parser.add_argument("--enable-console-prompts", action='store_true', help="print prompts to console when generating with txt2img and img2img", default=False)
+parser.add_argument('--vae-path', type=str, help='Path to Variational Autoencoders model', default=None)
 parser.add_argument("--disable-safe-unpickle", action='store_true', help="disable checking pytorch models for malicious code", default=False)
 
 
@@ -172,6 +173,7 @@ options_templates.update(options_section(('saving-images', "Saving images/grids"
 
     "use_original_name_batch": OptionInfo(False, "Use original name for output filename during batch process in extras tab"),
     "save_selected_only": OptionInfo(True, "When using 'Save' button, only save a single selected image"),
+    "do_not_add_watermark": OptionInfo(False, "Do not add watermark to images"),
 }))
 
 options_templates.update(options_section(('saving-paths', "Paths for saving"), {
@@ -260,6 +262,7 @@ options_templates.update(options_section(('sampler-params', "Sampler parameters"
     's_churn': OptionInfo(0.0, "sigma churn", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     's_tmin':  OptionInfo(0.0, "sigma tmin",  gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     's_noise': OptionInfo(1.0, "sigma noise", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
+    'eta_noise_seed_delta': OptionInfo(0, "Eta noise seed delta", gr.Number, {"precision": 0}),
 }))
 
 

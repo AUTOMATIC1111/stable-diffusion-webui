@@ -467,3 +467,10 @@ input[type="range"]{
     max-width: 32em;
     padding: 0;
 }
+
+canvas[key="mask"] {
+    z-index: 12 !important;
+    filter: invert();
+    mix-blend-mode: multiply;
+    pointer-events: none;
+}
