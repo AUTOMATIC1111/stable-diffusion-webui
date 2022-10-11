@@ -9,11 +9,11 @@ from modules import sd_hijack, shared
 from modules.hypernetworks import hypernetwork
 
 
-def create_hypernetwork(name):
+def create_hypernetwork(name, enable_sizes):
     fn = os.path.join(shared.cmd_opts.hypernetwork_dir, f"{name}.pt")
     assert not os.path.exists(fn), f"file {fn} already exists"
 
-    hypernet = modules.hypernetworks.hypernetwork.Hypernetwork(name=name)
+    hypernet = modules.hypernetworks.hypernetwork.Hypernetwork(name=name, enable_sizes=[int(x) for x in enable_sizes])
     hypernet.save(fn)
 
     shared.reload_hypernetworks()
