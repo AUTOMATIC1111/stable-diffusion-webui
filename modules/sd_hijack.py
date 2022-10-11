@@ -107,6 +107,8 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
         self.tokenizer = wrapped.tokenizer
         self.token_mults = {}
 
+        self.comma_token = [v for k, v in self.tokenizer.get_vocab().items() if k == ',</w>'][0]
+
         tokens_with_parens = [(k, v) for k, v in self.tokenizer.get_vocab().items() if '(' in k or ')' in k or '[' in k or ']' in k]
         for text, ident in tokens_with_parens:
             mult = 1.0
@@ -136,6 +138,7 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
         fixes = []
         remade_tokens = []
         multipliers = []
+        last_comma = -1
 
         for tokens, (text, weight) in zip(tokenized, parsed):
             i = 0
@@ -144,6 +147,20 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
 
                 embedding, embedding_length_in_tokens = self.hijack.embedding_db.find_embedding_at_position(tokens, i)
 
+                if token == self.comma_token:
+                    last_comma = len(remade_tokens)
+                elif opts.comma_padding_backtrack != 0 and max(len(remade_tokens), 1) % 75 == 0 and last_comma != -1 and len(remade_tokens) - last_comma <= opts.comma_padding_backtrack:
+                    last_comma += 1
+                    reloc_tokens = remade_tokens[last_comma:]
+                    reloc_mults = multipliers[last_comma:]
+
+                    remade_tokens = remade_tokens[:last_comma]
+                    length = len(remade_tokens)
+                    
+                    rem = int(math.ceil(length / 75)) * 75 - length
+                    remade_tokens += [id_end] * rem + reloc_tokens
+                    multipliers = multipliers[:last_comma] + [1.0] * rem + reloc_mults
+                
                 if embedding is None:
                     remade_tokens.append(token)
                     multipliers.append(weight)
@@ -284,7 +301,7 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
         while max(map(len, remade_batch_tokens)) != 0:
             rem_tokens = [x[75:] for x in remade_batch_tokens]
             rem_multipliers = [x[75:] for x in batch_multipliers]
-            
+
             self.hijack.fixes = []
             for unfiltered in hijack_fixes:
                 fixes = []
