@@ -64,12 +64,12 @@ def show_images_history(gr, opts, tabname, run_pnginfo, switch_dict):
         elif tabname == "extras":
             dir_name = opts.outdir_extras_samples
         with gr.Row():    
-                renew_page = gr.Button('Renew', elem_id=tabname + "_images_history_renew_page") 
-                first_page = gr.Button('First', elem_id=tabname + "_images_history_first_page")
-                prev_page = gr.Button('Prev') 
-                page_index = gr.Number(value=1, label="Page Index")
-                next_page = gr.Button('Next', elem_id=tabname + "_images_history_next_page") 
-                end_page = gr.Button('End')    
+            renew_page = gr.Button('Renew', elem_id=tabname + "_images_history_renew_page") 
+            first_page = gr.Button('First', elem_id=tabname + "_images_history_first_page")
+            prev_page = gr.Button('Prev') 
+            page_index = gr.Number(value=1, label="Page Index")
+            next_page = gr.Button('Next', elem_id=tabname + "_images_history_next_page") 
+            end_page = gr.Button('End')    
         with gr.Row(elem_id=tabname + "_images_history"):            
             with gr.Row():     
                 with gr.Column():
@@ -84,15 +84,15 @@ def show_images_history(gr, opts, tabname, run_pnginfo, switch_dict):
                             img_file_info = gr.Textbox(label="Generate Info")
                             img_file_name = gr.Textbox(label="File Name")    
                     with gr.Row():    
-                            # hiden items
-                            img_path = gr.Textbox(dir_name, visible=False)                
-                            tabname_box = gr.Textbox(tabname, visible=False)    
-                            image_index = gr.Textbox(value=-1, visible=False)                        
-                            set_index = gr.Button('set_index',  elem_id=tabname + "_images_history_set_index", visible=False)
-                            filenames = gr.State()
-                            hide_image = gr.Image(visible=False, type="pil")
-                            info1 = gr.Textbox(visible=False)
-                            info2 = gr.Textbox(visible=False)
+                        # hiden items
+                        img_path = gr.Textbox(dir_name, visible=False)                
+                        tabname_box = gr.Textbox(tabname, visible=False)    
+                        image_index = gr.Textbox(value=-1, visible=False)                        
+                        set_index = gr.Button('set_index',  elem_id=tabname + "_images_history_set_index", visible=False)
+                        filenames = gr.State()
+                        hide_image = gr.Image(visible=False, type="pil")
+                        info1 = gr.Textbox(visible=False)
+                        info2 = gr.Textbox(visible=False)
 
                 
         # turn pages

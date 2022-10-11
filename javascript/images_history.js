@@ -93,7 +93,6 @@ function images_history_delete(tabname, img_path, img_file_name, page_index, fil
             buttons.push(e)
         }
     })
-
     
     img_num = buttons.length / 2
     if (img_num == 1){
@@ -110,15 +109,14 @@ function images_history_delete(tabname, img_path, img_file_name, page_index, fil
             btn = buttons[image_index + 1]           
         }    
         setTimeout(function(btn){btn.click()}, 30, btn)
-    }  
-    
+    }      
     return [tabname, img_path, img_file_name, page_index, filenames, image_index]
 }
 
 function images_history_turnpage(img_path, page_index, image_index, tabname){
     buttons = gradioApp().getElementById(tabname + '_images_history').querySelectorAll(".gallery-item")
     buttons.forEach(function(elem) {
-         elem.style.display = 'block'
+        elem.style.display = 'block'
     })
     return [img_path, page_index, image_index, tabname]
 }
