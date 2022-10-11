@@ -9,7 +9,7 @@ from ldm.util import default
 from einops import rearrange
 
 from modules import shared
-from modules.hypernetwork import hypernetwork
+from modules.hypernetworks import hypernetwork
 
 
 if shared.cmd_opts.xformers or shared.cmd_opts.force_enable_xformers:
