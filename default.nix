@@ -1,4 +1,9 @@
-{ pkgs ? import <nixpkgs> {}}:
+{ pkgs ? import <nixpkgs> {
+  config = {
+      allowUnfree = true;
+      cudaSupport = true;
+   };
+}}:
 
 with pkgs;
 let
