@@ -1023,7 +1023,7 @@ def create_ui(wrap_gradio_gpu_call):
                             gr.HTML(value="")
 
                         with gr.Column():
-                            create_embedding = gr.Button(value="Create", variant='primary')
+                            create_embedding = gr.Button(value="Create embedding", variant='primary')
 
                 with gr.Group():
                     gr.HTML(value="<p style='margin-bottom: 0.7em'>Create a new hypernetwork</p>")
@@ -1035,7 +1035,7 @@ def create_ui(wrap_gradio_gpu_call):
                             gr.HTML(value="")
 
                         with gr.Column():
-                            create_hypernetwork = gr.Button(value="Create", variant='primary')
+                            create_hypernetwork = gr.Button(value="Create hypernetwork", variant='primary')
 
                 with gr.Group():
                     gr.HTML(value="<p style='margin-bottom: 0.7em'>Preprocess images</p>")
@@ -1147,6 +1147,7 @@ def create_ui(wrap_gradio_gpu_call):
                 create_image_every,
                 save_embedding_every,
                 template_file,
+                preview_image_prompt,
             ],
             outputs=[
                 ti_output,

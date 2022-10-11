@@ -8,7 +8,8 @@ from torch import einsum
 from ldm.util import default
 from einops import rearrange
 
-from modules import shared, hypernetwork
+from modules import shared
+from modules.hypernetwork import hypernetwork
 
 
 if shared.cmd_opts.xformers or shared.cmd_opts.force_enable_xformers:

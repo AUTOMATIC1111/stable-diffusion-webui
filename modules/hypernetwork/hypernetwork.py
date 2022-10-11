@@ -26,10 +26,11 @@ class HypernetworkModule(torch.nn.Module):
         if state_dict is not None:
             self.load_state_dict(state_dict, strict=True)
         else:
-            self.linear1.weight.data.fill_(0.0001)
-            self.linear1.bias.data.fill_(0.0001)
-            self.linear2.weight.data.fill_(0.0001)
-            self.linear2.bias.data.fill_(0.0001)
+
+            self.linear1.weight.data.normal_(mean=0.0, std=0.01)
+            self.linear1.bias.data.zero_()
+            self.linear2.weight.data.normal_(mean=0.0, std=0.01)
+            self.linear2.bias.data.zero_()
 
         self.to(devices.device)
 
@@ -92,19 +93,45 @@ class Hypernetwork:
         self.sd_checkpoint_name = state_dict.get('sd_checkpoint_name', None)
 
 
-def load_hypernetworks(path):
+def list_hypernetworks(path):
     res = {}
-
-    for filename in glob.iglob(path + '**/*.pt', recursive=True):
-        try:
-            hn = Hypernetwork()
-            hn.load(filename)
-            res[hn.name] = hn
-        except Exception:
-            print(f"Error loading hypernetwork {filename}", file=sys.stderr)
-            print(traceback.format_exc(), file=sys.stderr)
-
+    for filename in glob.iglob(os.path.join(path, '**/*.pt'), recursive=True):
+        name = os.path.splitext(os.path.basename(filename))[0]
+        res[name] = filename
     return res
+
+
+def load_hypernetwork(filename):
+    path = shared.hypernetworks.get(filename, None)
+    if path is not None:
+        print(f"Loading hypernetwork {filename}")
+        try:
+            shared.loaded_hypernetwork = Hypernetwork()
+            shared.loaded_hypernetwork.load(path)
+
+        except Exception:
+            print(f"Error loading hypernetwork {path}", file=sys.stderr)
+            print(traceback.format_exc(), file=sys.stderr)
+    else:
+        if shared.loaded_hypernetwork is not None:
+            print(f"Unloading hypernetwork")
+
+        shared.loaded_hypernetwork = None
+
+
+def apply_hypernetwork(hypernetwork, context, layer=None):
+    hypernetwork_layers = (hypernetwork.layers if hypernetwork is not None else {}).get(context.shape[2], None)
+
+    if hypernetwork_layers is None:
+        return context, context
+
+    if layer is not None:
+        layer.hyper_k = hypernetwork_layers[0]
+        layer.hyper_v = hypernetwork_layers[1]
+
+    context_k = hypernetwork_layers[0](context)
+    context_v = hypernetwork_layers[1](context)
+    return context_k, context_v
 
 
 def attention_CrossAttention_forward(self, x, context=None, mask=None):
@@ -113,20 +140,7 @@ def attention_CrossAttention_forward(self, x, context=None, mask=None):
     q = self.to_q(x)
     context = default(context, x)
 
-    hypernetwork_layers = (shared.hypernetwork.layers if shared.hypernetwork is not None else {}).get(context.shape[2], None)
-
-    if hypernetwork_layers is not None:
-        hypernetwork_k, hypernetwork_v = hypernetwork_layers
-
-        self.hypernetwork_k = hypernetwork_k
-        self.hypernetwork_v = hypernetwork_v
-
-        context_k = hypernetwork_k(context)
-        context_v = hypernetwork_v(context)
-    else:
-        context_k = context
-        context_v = context
-
+    context_k, context_v = apply_hypernetwork(shared.loaded_hypernetwork, context, self)
     k = self.to_k(context_k)
     v = self.to_v(context_v)
 
@@ -151,7 +165,9 @@ def attention_CrossAttention_forward(self, x, context=None, mask=None):
 def train_hypernetwork(hypernetwork_name, learn_rate, data_root, log_directory, steps, create_image_every, save_hypernetwork_every, template_file, preview_image_prompt):
     assert hypernetwork_name, 'embedding not selected'
 
-    shared.hypernetwork = shared.hypernetworks[hypernetwork_name]
+    path = shared.hypernetworks.get(hypernetwork_name, None)
+    shared.loaded_hypernetwork = Hypernetwork()
+    shared.loaded_hypernetwork.load(path)
 
     shared.state.textinfo = "Initializing hypernetwork training..."
     shared.state.job_count = steps
@@ -176,9 +192,9 @@ def train_hypernetwork(hypernetwork_name, learn_rate, data_root, log_directory, 
 
     shared.state.textinfo = f"Preparing dataset from {html.escape(data_root)}..."
     with torch.autocast("cuda"):
-        ds = modules.textual_inversion.dataset.PersonalizedBase(data_root=data_root, size=512, placeholder_token=hypernetwork_name, model=shared.sd_model, device=devices.device, template_file=template_file)
+        ds = modules.textual_inversion.dataset.PersonalizedBase(data_root=data_root, width=512, height=512, repeats=1, placeholder_token=hypernetwork_name, model=shared.sd_model, device=devices.device, template_file=template_file)
 
-    hypernetwork = shared.hypernetworks[hypernetwork_name]
+    hypernetwork = shared.loaded_hypernetwork
     weights = hypernetwork.weights()
     for weight in weights:
         weight.requires_grad = True
@@ -194,7 +210,7 @@ def train_hypernetwork(hypernetwork_name, learn_rate, data_root, log_directory, 
     if ititial_step > steps:
         return hypernetwork, filename
 
-    pbar = tqdm.tqdm(enumerate(ds), total=steps-ititial_step)
+    pbar = tqdm.tqdm(enumerate(ds), total=steps - ititial_step)
     for i, (x, text) in pbar:
         hypernetwork.step = i + ititial_step
 
