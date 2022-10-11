@@ -27,16 +27,11 @@ def apply_field(field):
 
 
 def apply_prompt(p, x, xs):
-
-    orig_prompt = p.prompt
-    orig_negative_prompt = p.negative_prompt
+    if xs[0] not in p.prompt and xs[0] not in p.negative_prompt:
+        raise RuntimeError(f"Prompt S/R did not find {xs[0]} in prompt or negative prompt.")
 
     p.prompt = p.prompt.replace(xs[0], x)
     p.negative_prompt = p.negative_prompt.replace(xs[0], x)
-
-    if p.prompt == orig_prompt and p.negative_prompt == orig_negative_prompt:
-        pass
-        #raise RuntimeError(f"Prompt S/R did not find {xs[0]} in prompt or negative prompt. Did you forget to add the token?")
 
 
 def apply_order(p, x, xs):
