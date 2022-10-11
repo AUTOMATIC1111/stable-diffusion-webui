@@ -28,6 +28,9 @@ def apply_field(field):
 
 
 def apply_prompt(p, x, xs):
+    if xs[0] not in p.prompt and xs[0] not in p.negative_prompt:
+        raise RuntimeError(f"Prompt S/R did not find {xs[0]} in prompt or negative prompt.")
+
     p.prompt = p.prompt.replace(xs[0], x)
     p.negative_prompt = p.negative_prompt.replace(xs[0], x)
 
