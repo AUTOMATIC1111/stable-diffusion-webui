@@ -12,13 +12,12 @@ def preprocess(process_src, process_dst, process_width, process_height, process_
     height = process_height
     src = os.path.abspath(process_src)
     dst = os.path.abspath(process_dst)
-    extns = [".jpg",".jpeg",".png",".webp",".bmp"]
 
     assert src != dst, 'same directory specified as source and destination'
 
     os.makedirs(dst, exist_ok=True)
 
-    files = [i for i in os.listdir(src) if os.path.splitext(i.casefold())[1] in extns]
+    files = os.listdir(src)
 
     shared.state.textinfo = "Preprocessing..."
     shared.state.job_count = len(files)
@@ -47,7 +46,10 @@ def preprocess(process_src, process_dst, process_width, process_height, process_
     for index, imagefile in enumerate(tqdm.tqdm(files)):
         subindex = [0]
         filename = os.path.join(src, imagefile)
-        img = Image.open(filename).convert("RGB")
+        try:
+            img = Image.open(filename).convert("RGB")
+        except Exception:
+            continue
 
         if shared.state.interrupted:
             break
