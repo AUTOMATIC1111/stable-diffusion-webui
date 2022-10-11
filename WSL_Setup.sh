@@ -3,11 +3,14 @@ sudo apt update
 sudo apt upgrade
 sudo apt install git wget
 
-wget https://repo.anaconda.com/archive/Anaconda3-2022.05-Linux-x86_64.sh
-chmod +x ./Anaconda3-2022.05-Linux-x86_64.sh
-# Accept license and install
-
-yes | ./Anaconda3-2022.05-Linux-x86_64.sh
+if ! command -v conda &> /dev/null
+then
+    echo "Installing anaconda"
+    wget https://repo.anaconda.com/archive/Anaconda3-2022.05-Linux-x86_64.sh
+    chmod +x ./Anaconda3-2022.05-Linux-x86_64.sh
+    # Accept license and install
+    yes | ./Anaconda3-2022.05-Linux-x86_64.sh
+fi
 
 # Nvidia CUDA toolkit for Ubuntu WSL - https://developer.nvidia.com/cuda-downloads
 wget https://developer.download.nvidia.com/compute/cuda/repos/wsl-ubuntu/x86_64/cuda-wsl-ubuntu.pin
