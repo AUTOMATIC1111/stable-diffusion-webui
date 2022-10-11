@@ -54,6 +54,11 @@ if not cmd_opts.share and not cmd_opts.listen:
     gradio.utils.version_check = lambda: None
     gradio.utils.get_local_ip_address = lambda: '127.0.0.1'
 
+if cmd_opts.ngrok != None:
+    import modules.ngrok as ngrok
+    print('ngrok authtoken detected, trying to connect...')
+    ngrok.connect(cmd_opts.ngrok, cmd_opts.port if cmd_opts.port != None else 7860)
+
 
 def gr_show(visible=True):
     return {"visible": visible, "__type__": "update"}
@@ -441,7 +446,10 @@ def create_toprow(is_img2img):
 
             with gr.Row():
                 with gr.Column(scale=8):
-                    negative_prompt = gr.Textbox(label="Negative prompt", elem_id="negative_prompt", show_label=False, placeholder="Negative prompt", lines=2)
+                    with gr.Row():
+                        negative_prompt = gr.Textbox(label="Negative prompt", elem_id="negative_prompt", show_label=False, placeholder="Negative prompt", lines=2)
+                with gr.Column(scale=1, elem_id="roll_col"):
+                    sh = gr.Button(elem_id="sh", visible=True)                           
 
                 with gr.Column(scale=1, elem_id="style_neg_col"):
                     prompt_style2 = gr.Dropdown(label="Style 2", elem_id=f"{id_part}_style2_index", choices=[k for k, v in shared.prompt_styles.styles.items()], value=next(iter(shared.prompt_styles.styles.keys())), visible=len(shared.prompt_styles.styles) > 1)
@@ -562,15 +570,15 @@ def create_ui(wrap_gradio_gpu_call):
                         button_id = "hidden_element" if shared.cmd_opts.hide_ui_dir_config else 'open_folder'
                         open_txt2img_folder = gr.Button(folder_symbol, elem_id=button_id)
 
-                    with gr.Row():
-                        do_make_zip = gr.Checkbox(label="Make Zip when Save?", value=False)
+                with gr.Row():
+                    do_make_zip = gr.Checkbox(label="Make Zip when Save?", value=False)
                     
-                    with gr.Row():
-                        download_files = gr.File(None, file_count="multiple", interactive=False, show_label=False, visible=False)
+                with gr.Row():
+                    download_files = gr.File(None, file_count="multiple", interactive=False, show_label=False, visible=False)
 
-                with gr.Group():
-                    html_info = gr.HTML()
-                    generation_info = gr.Textbox(visible=False)
+                    with gr.Group():
+                        html_info = gr.HTML()
+                        generation_info = gr.Textbox(visible=False)
 
             connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
             connect_reuse_seed(subseed, reuse_subseed, generation_info, dummy_component, is_subseed=True)
@@ -750,15 +758,15 @@ def create_ui(wrap_gradio_gpu_call):
                         button_id = "hidden_element" if shared.cmd_opts.hide_ui_dir_config else 'open_folder'
                         open_img2img_folder = gr.Button(folder_symbol, elem_id=button_id)
 
-                    with gr.Row():
-                        do_make_zip = gr.Checkbox(label="Make Zip when Save?", value=False)
+                with gr.Row():
+                    do_make_zip = gr.Checkbox(label="Make Zip when Save?", value=False)
                     
-                    with gr.Row():
-                        download_files = gr.File(None, file_count="multiple", interactive=False, show_label=False, visible=False)
+                with gr.Row():
+                    download_files = gr.File(None, file_count="multiple", interactive=False, show_label=False, visible=False)
 
-                with gr.Group():
-                    html_info = gr.HTML()
-                    generation_info = gr.Textbox(visible=False)
+                    with gr.Group():
+                        html_info = gr.HTML()
+                        generation_info = gr.Textbox(visible=False)
 
             connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
             connect_reuse_seed(subseed, reuse_subseed, generation_info, dummy_component, is_subseed=True)
