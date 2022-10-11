@@ -57,7 +57,7 @@ def set_samplers():
     global samplers, samplers_for_img2img
 
     hidden = set(opts.hide_samplers)
-    hidden_img2img = set(opts.hide_samplers + ['PLMS', 'DPM fast', 'DPM adaptive'])
+    hidden_img2img = set(opts.hide_samplers + ['PLMS'])
 
     samplers = [x for x in all_samplers if x.name not in hidden]
     samplers_for_img2img = [x for x in all_samplers if x.name not in hidden_img2img]
@@ -365,16 +365,26 @@ class KDiffusionSampler:
         else:
             sigmas = self.model_wrap.get_sigmas(steps)
 
-        noise = noise * sigmas[steps - t_enc - 1]
-        xi = x + noise
-
-        extra_params_kwargs = self.initialize(p)
-
         sigma_sched = sigmas[steps - t_enc - 1:]
+        xi = x + noise * sigma_sched[0]
+        
+        extra_params_kwargs = self.initialize(p)
+        if 'sigma_min' in inspect.signature(self.func).parameters:
+            ## last sigma is zero which isn't allowed by DPM Fast & Adaptive so taking value before last
+            extra_params_kwargs['sigma_min'] = sigma_sched[-2]
+        if 'sigma_max' in inspect.signature(self.func).parameters:
+            extra_params_kwargs['sigma_max'] = sigma_sched[0]
+        if 'n' in inspect.signature(self.func).parameters:
+            extra_params_kwargs['n'] = len(sigma_sched) - 1
+        if 'sigma_sched' in inspect.signature(self.func).parameters:
+            extra_params_kwargs['sigma_sched'] = sigma_sched
+        if 'sigmas' in inspect.signature(self.func).parameters:
+            extra_params_kwargs['sigmas'] = sigma_sched
 
         self.model_wrap_cfg.init_latent = x
 
-        return self.func(self.model_wrap_cfg, xi, sigma_sched, extra_args={'cond': conditioning, 'uncond': unconditional_conditioning, 'cond_scale': p.cfg_scale}, disable=False, callback=self.callback_state, **extra_params_kwargs)
+        return self.func(self.model_wrap_cfg, xi, extra_args={'cond': conditioning, 'uncond': unconditional_conditioning, 'cond_scale': p.cfg_scale}, disable=False, callback=self.callback_state, **extra_params_kwargs)
+
 
     def sample(self, p, x, conditioning, unconditional_conditioning, steps=None):
         steps = steps or p.steps
