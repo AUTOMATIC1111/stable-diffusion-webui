@@ -1,8 +1,8 @@
+import datetime
 import html
 import json
 import math
 import os
-from contextlib import nullcontext
 from pathlib import Path
 from typing import Optional
 
@@ -15,7 +15,6 @@ from accelerate import Accelerator
 from accelerate.utils import set_seed
 from diffusers import AutoencoderKL, DDPMScheduler, StableDiffusionPipeline, UNet2DConditionModel
 from diffusers.optimization import get_scheduler
-import datetime
 from huggingface_hub import HfFolder, whoami
 from torch import autocast, distributed
 from torch.utils.data import Dataset
@@ -33,7 +32,8 @@ class DreamBooth:
     def __init__(self, name, training_data: str, instance_prompt: str, class_prompt: str, learn_rate: float = 5e-6,
                  save_img_every=500, save_data_every=200, max_steps: int = 800, batch_size: int = 1,
                  grad_steps: int = 1, scheduler: str = "constant", warmup_steps: int = 0, use_adam=False,
-                 class_data=None, seed=None, log_interval=10, mixed_precision="no", no_cache_latents=True, total_steps=0):
+                 class_data=None, seed=None, log_interval=10, mixed_precision="no", no_cache_latents=True, total_steps=0,
+                 num_class_images = 200):
         self.tokenizer_name = None
         self.total_steps = total_steps
         self.resolution = 512
@@ -53,7 +53,6 @@ class DreamBooth:
         # Flag to add prior perservation loss.
         self.prior_loss_weight = 1.0
         # "The weight of prior preservation loss."
-        self.num_class_images = 100
         name = "".join(x for x in name if x.isalnum())
         model_path = paths.models_path
         model_dir = os.path.join(model_path, "dreambooth", name)
@@ -74,6 +73,10 @@ class DreamBooth:
         # Batch size (per device) for sampling images."
         self.num_train_epochs = 1
         self.max_train_steps = max_steps
+        # TODO: Decide if this should be in the UI, or if we do math to use the 'recommended' amount
+        # self.num_class_images = self.num_train_epoch * self.max_train_steps
+        self.num_class_images = num_class_images
+
         # Total number of training steps to perform.  If provided, overrides num_train_epochs.
         self.gradient_accumulation_steps = grad_steps
         # Number of updates steps to accumulate before performing a backward/update pass.
@@ -484,7 +487,7 @@ class DreamBooth:
 
 
 def start_training(model_name, initialization_text, classification_text, learn_rate, dataset_directory,
-                   classifier_directory, steps, create_image_every, save_embedding_every):
+                   classifier_directory, steps, create_image_every, save_embedding_every, db_num_class_images):
     print("Starting Dreambooth training...")
     converted = ""
     try:
@@ -507,7 +510,8 @@ def start_training(model_name, initialization_text, classification_text, learn_r
         src_checkpoint = config["src"]
         total_steps = config["total_steps"]
         dream = DreamBooth(model_name, dataset_directory, initialization_text, classification_text, learn_rate,
-                           create_image_every, save_embedding_every, steps, class_data=classifier_directory)
+                           create_image_every, save_embedding_every, steps, class_data=classifier_directory,
+                           num_class_images=db_num_class_images)
 
         out_dir, trained_steps = dream.train()
         total_steps += trained_steps

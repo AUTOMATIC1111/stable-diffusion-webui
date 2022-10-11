@@ -1236,9 +1236,10 @@ def create_ui(wrap_gradio_gpu_call):
                     db_learn_rate = gr.Number(label='Learning rate', value=5e-6)
                     db_dataset_directory = gr.Textbox(label='Dataset directory',
                                                       placeholder="Path to directory with input images")
-                    db_classification_directory = gr.Textbox(label='Classification dataset directory (optional)',
-                                                      placeholder="Path to directory with classification images")
-
+                    db_classification_directory = gr.Textbox(label='Classification dataset directory (optional).',
+                                                             placeholder="Path to directory with classification images")
+                    db_num_class_images = gr.Number(label='Number of classification images to generate.', value=200,
+                                                    precision=0)
                     db_steps = gr.Number(label='Max steps', value=5000, precision=0)
                     db_create_image_every = gr.Number(
                         label='Save an image to log directory every N steps, 0 to disable', value=500, precision=0)
@@ -1262,7 +1263,7 @@ def create_ui(wrap_gradio_gpu_call):
                 db_preview = gr.Image(elem_id='db_preview', visible=False)
                 db_progress = gr.HTML(elem_id="db_progress", value="")
                 db_outcome = gr.HTML(elem_id="db_error", value="")
-                setup_progressbar(progressbar, db_preview, 'ti', textinfo=db_progress)
+                setup_progressbar(db_progressbar, db_preview, 'ti', textinfo=db_progress)
 
         db_create_embedding.click(
             fn=conversion.extract_checkpoint,
@@ -1306,7 +1307,8 @@ def create_ui(wrap_gradio_gpu_call):
                 db_classification_directory,
                 db_steps,
                 db_create_image_every,
-                db_save_embedding_every
+                db_save_embedding_every,
+                db_num_class_images
             ],
             outputs=[
                 db_output,
