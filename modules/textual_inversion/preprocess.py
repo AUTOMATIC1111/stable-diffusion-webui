@@ -60,7 +60,10 @@ def preprocess(process_src, process_dst, process_width, process_height, process_
     for index, imagefile in enumerate(tqdm.tqdm(files)):
         subindex = [0]
         filename = os.path.join(src, imagefile)
-        img = Image.open(filename).convert("RGB")
+        try:
+            img = Image.open(filename).convert("RGB")
+        except Exception:
+            continue
 
         if shared.state.interrupted:
             break
