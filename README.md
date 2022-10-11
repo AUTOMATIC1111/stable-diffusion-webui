@@ -123,6 +123,7 @@ The documentation was moved from this README over to the project's [wiki](https:
 - LDSR - https://github.com/Hafiidz/latent-diffusion
 - Ideas for optimizations - https://github.com/basujindal/stable-diffusion
 - Doggettx - Cross Attention layer optimization - https://github.com/Doggettx/stable-diffusion, original idea for prompt editing.
+- InvokeAI, lstein - Cross Attention layer optimization - https://github.com/invoke-ai/InvokeAI (originally http://github.com/lstein/stable-diffusion)
 - Rinon Gal - Textual Inversion - https://github.com/rinongal/textual_inversion (we're not using his code, but we are using his ideas).
 - Idea for SD upscale - https://github.com/jquesnelle/txt2imghd
 - Noise generation for outpainting mk2 - https://github.com/parlance-zz/g-diffuser-bot

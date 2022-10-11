@@ -173,7 +173,20 @@ def einsum_op_tensor_mem(q, k, v, max_tensor_mb):
         return einsum_op_slice_0(q, k, v, q.shape[0] // div)
     return einsum_op_slice_1(q, k, v, max(q.shape[1] // div, 1))
 
+def einsum_op_cuda(q, k, v):
+    stats = torch.cuda.memory_stats(q.device)
+    mem_active = stats['active_bytes.all.current']
+    mem_reserved = stats['reserved_bytes.all.current']
+    mem_free_cuda, _ = torch.cuda.mem_get_info(q.device)
+    mem_free_torch = mem_reserved - mem_active
+    mem_free_total = mem_free_cuda + mem_free_torch
+    # Divide factor of safety as there's copying and fragmentation
+    return self.einsum_op_tensor_mem(q, k, v, mem_free_total / 3.3 / (1 << 20))
+
 def einsum_op(q, k, v):
+    if q.device.type == 'cuda':
+        return einsum_op_cuda(q, k, v)
+
     if q.device.type == 'mps':
         if mem_total_gb >= 32:
             return einsum_op_mps_v1(q, k, v)
