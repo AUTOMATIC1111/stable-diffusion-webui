@@ -463,3 +463,6 @@ input[type="range"]{
     max-width: 32em;
     padding: 0;
 }
+.images-history-hidden{
+    display: none;
+}
