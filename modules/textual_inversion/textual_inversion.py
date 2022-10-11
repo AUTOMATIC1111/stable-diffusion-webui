@@ -10,6 +10,7 @@ import datetime
 
 from modules import shared, devices, sd_hijack, processing, sd_models
 import modules.textual_inversion.dataset
+from modules.textual_inversion.learn_schedule import LearnSchedule
 
 
 class Embedding:
@@ -189,8 +190,6 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
     embedding = hijack.embedding_db.word_embeddings[embedding_name]
     embedding.vec.requires_grad = True
 
-    optimizer = torch.optim.AdamW([embedding.vec], lr=learn_rate)
-
     losses = torch.zeros((32,))
 
     last_saved_file = "<none>"
@@ -200,12 +199,24 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
     if ititial_step > steps:
         return embedding, filename
 
+    schedules = iter(LearnSchedule(learn_rate, steps, ititial_step))
+    (learn_rate, end_step) = next(schedules)
+    print(f'Training at rate of {learn_rate} until step {end_step}')
+
+    optimizer = torch.optim.AdamW([embedding.vec], lr=learn_rate)
+
     pbar = tqdm.tqdm(enumerate(ds), total=steps-ititial_step)
     for i, (x, text, _) in pbar:
         embedding.step = i + ititial_step
 
-        if embedding.step > steps:
-            break
+        if embedding.step > end_step:
+            try:
+                (learn_rate, end_step) = next(schedules)
+            except:
+                break
+            tqdm.tqdm.write(f'Training at rate of {learn_rate} until step {end_step}')
+            for pg in optimizer.param_groups:
+                pg['lr'] = learn_rate
 
         if shared.state.interrupted:
             break
@@ -275,4 +286,3 @@ Last saved image: {html.escape(last_saved_image)}<br/>
     embedding.save(filename)
 
     return embedding, filename
-
