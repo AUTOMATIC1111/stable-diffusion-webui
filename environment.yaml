@@ -1,0 +1,31 @@
+name: webui
+channels:
+  - pytorch
+  - defaults
+dependencies:
+  - python=3.10.6
+  - pip=22.2
+  # - cudatoolkit=11.3
+  # - pytorch=1.10.2
+  # - torchvision=0.11.3
+  # - numpy=1.22.3
+  # - pip:
+  #   - albumentations==1.1.0
+  #   - opencv-python==4.2.0.34
+  #   - pudb==2019.2
+  #   - imageio==2.14.1
+  #   - imageio-ffmpeg==0.4.7
+  #   - pytorch-lightning==1.5.9
+  #   - omegaconf==2.1.1
+  #   - test-tube>=0.7.5
+  #   - streamlit>=0.73.1
+  #   - setuptools==59.5.0
+  #   - pillow==9.0.1
+  #   - einops==0.4.1
+  #   - torch-fidelity==0.3.0
+  #   - transformers==4.18.0
+  #   - torchmetrics==0.6.0
+  #   - kornia==0.6
+  #   - -e git+https://github.com/CompVis/taming-transformers.git@master#egg=taming-transformers
+  #   - -e git+https://github.com/openai/CLIP.git@main#egg=clip
+  #   - -e .
