@@ -156,7 +156,7 @@ def create_embedding(name, num_vectors_per_token, init_text='*'):
     return fn
 
 
-def train_embedding(embedding_name, learn_rate, data_root, log_directory, training_width, training_height, steps, num_repeats, create_image_every, save_embedding_every, template_file):
+def train_embedding(embedding_name, learn_rate, data_root, log_directory, training_width, training_height, steps, num_repeats, create_image_every, save_embedding_every, template_file, preview_image_prompt):
     assert embedding_name, 'embedding not selected'
 
     shared.state.textinfo = "Initializing textual inversion training..."
@@ -208,7 +208,7 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
     optimizer = torch.optim.AdamW([embedding.vec], lr=learn_rate)
 
     pbar = tqdm.tqdm(enumerate(ds), total=steps-ititial_step)
-    for i, (x, text) in pbar:
+    for i, (x, text, _) in pbar:
         embedding.step = i + ititial_step
 
         if embedding.step > end_step:
@@ -236,10 +236,10 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
             loss.backward()
             optimizer.step()
 
-        epoch_num = embedding.step // epoch_len
-        epoch_step = embedding.step - (epoch_num * epoch_len) + 1
+        epoch_num = embedding.step // len(ds)
+        epoch_step = embedding.step - (epoch_num * len(ds)) + 1
 
-        pbar.set_description(f"[Epoch {epoch_num}: {epoch_step}/{epoch_len}]loss: {losses.mean():.7f}")
+        pbar.set_description(f"[Epoch {epoch_num}: {epoch_step}/{len(ds)}]loss: {losses.mean():.7f}")
 
         if embedding.step > 0 and embedding_dir is not None and embedding.step % save_embedding_every == 0:
             last_saved_file = os.path.join(embedding_dir, f'{embedding_name}-{embedding.step}.pt')
@@ -248,12 +248,14 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
         if embedding.step > 0 and images_dir is not None and embedding.step % create_image_every == 0:
             last_saved_image = os.path.join(images_dir, f'{embedding_name}-{embedding.step}.png')
 
+            preview_text = text if preview_image_prompt == "" else preview_image_prompt
+
             p = processing.StableDiffusionProcessingTxt2Img(
                 sd_model=shared.sd_model,
-                prompt=text,
+                prompt=preview_text,
                 steps=20,
-				height=training_height,
-				width=training_width,
+                height=training_height,
+                width=training_width,
                 do_not_save_grid=True,
                 do_not_save_samples=True,
             )
@@ -264,7 +266,7 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
             shared.state.current_image = image
             image.save(last_saved_image)
 
-            last_saved_image += f", prompt: {text}"
+            last_saved_image += f", prompt: {preview_text}"
 
         shared.state.job_no = embedding.step
 
