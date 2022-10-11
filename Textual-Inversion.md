@@ -86,3 +86,13 @@ Other options are to train on colabs and/or using diffusers library, which I kno
 - [viper1](https://gitgud.io/viper1/stable-diffusion-embeddings) - NSFW, furry girls.
 - [anon's embeddings](https://mega.nz/folder/7k0R2arB#5_u6PYfdn-ZS7sRdoecD2A) - NSFW, anime artists.
 - [rentry](https://rentry.org/embeddings) - a page with links to embeddings from many sources.
+
+# Hypernetworks
+
+Hypernetworks is a novel (get it?) concept for fine tuning a model without touching any of its weights.
+
+The current way to train hypernets is in the textual inversion tab.
+
+Training works the same way as with textual inversion.
+
+The only requirement is to use a very, very low learning rate, something like 0.000005 or 0.0000005.
