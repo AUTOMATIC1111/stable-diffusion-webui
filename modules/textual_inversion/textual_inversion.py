@@ -10,6 +10,7 @@ import datetime
 
 from modules import shared, devices, sd_hijack, processing, sd_models
 import modules.textual_inversion.dataset
+from modules.textual_inversion.learn_schedule import LearnSchedule
 
 
 class Embedding:
@@ -156,7 +157,7 @@ def create_embedding(name, num_vectors_per_token, init_text='*'):
     return fn
 
 
-def train_embedding(embedding_name, learn_rate, data_root, log_directory, training_width, training_height, steps, num_repeats, create_image_every, save_embedding_every, template_file):
+def train_embedding(embedding_name, learn_rate, data_root, log_directory, training_width, training_height, steps, num_repeats, create_image_every, save_embedding_every, template_file, preview_image_prompt):
     assert embedding_name, 'embedding not selected'
 
     shared.state.textinfo = "Initializing textual inversion training..."
@@ -189,8 +190,6 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
     embedding = hijack.embedding_db.word_embeddings[embedding_name]
     embedding.vec.requires_grad = True
 
-    optimizer = torch.optim.AdamW([embedding.vec], lr=learn_rate)
-
     losses = torch.zeros((32,))
 
     last_saved_file = "<none>"
@@ -200,15 +199,24 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
     if ititial_step > steps:
         return embedding, filename
 
-    tr_img_len = len([os.path.join(data_root, file_path) for file_path in os.listdir(data_root)])
-    epoch_len = (tr_img_len * num_repeats) + tr_img_len
+    schedules = iter(LearnSchedule(learn_rate, steps, ititial_step))
+    (learn_rate, end_step) = next(schedules)
+    print(f'Training at rate of {learn_rate} until step {end_step}')
+
+    optimizer = torch.optim.AdamW([embedding.vec], lr=learn_rate)
 
     pbar = tqdm.tqdm(enumerate(ds), total=steps-ititial_step)
-    for i, (x, text) in pbar:
+    for i, (x, text, _) in pbar:
         embedding.step = i + ititial_step
 
-        if embedding.step > steps:
-            break
+        if embedding.step > end_step:
+            try:
+                (learn_rate, end_step) = next(schedules)
+            except:
+                break
+            tqdm.tqdm.write(f'Training at rate of {learn_rate} until step {end_step}')
+            for pg in optimizer.param_groups:
+                pg['lr'] = learn_rate
 
         if shared.state.interrupted:
             break
@@ -226,10 +234,10 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
             loss.backward()
             optimizer.step()
 
-        epoch_num = embedding.step // epoch_len
-        epoch_step = embedding.step - (epoch_num * epoch_len) + 1
+        epoch_num = embedding.step // len(ds)
+        epoch_step = embedding.step - (epoch_num * len(ds)) + 1
 
-        pbar.set_description(f"[Epoch {epoch_num}: {epoch_step}/{epoch_len}]loss: {losses.mean():.7f}")
+        pbar.set_description(f"[Epoch {epoch_num}: {epoch_step}/{len(ds)}]loss: {losses.mean():.7f}")
 
         if embedding.step > 0 and embedding_dir is not None and embedding.step % save_embedding_every == 0:
             last_saved_file = os.path.join(embedding_dir, f'{embedding_name}-{embedding.step}.pt')
@@ -238,12 +246,14 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
         if embedding.step > 0 and images_dir is not None and embedding.step % create_image_every == 0:
             last_saved_image = os.path.join(images_dir, f'{embedding_name}-{embedding.step}.png')
 
+            preview_text = text if preview_image_prompt == "" else preview_image_prompt
+
             p = processing.StableDiffusionProcessingTxt2Img(
                 sd_model=shared.sd_model,
-                prompt=text,
+                prompt=preview_text,
                 steps=20,
-				height=training_height,
-				width=training_width,
+                height=training_height,
+                width=training_width,
                 do_not_save_grid=True,
                 do_not_save_samples=True,
             )
@@ -254,7 +264,7 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
             shared.state.current_image = image
             image.save(last_saved_image)
 
-            last_saved_image += f", prompt: {text}"
+            last_saved_image += f", prompt: {preview_text}"
 
         shared.state.job_no = embedding.step
 
@@ -276,4 +286,3 @@ Last saved image: {html.escape(last_saved_image)}<br/>
     embedding.save(filename)
 
     return embedding, filename
-
