@@ -22,7 +22,6 @@ def preprocess(*args):
 
 
 def train_embedding(*args):
-
     try:
         sd_hijack.undo_optimizations()
 
