@@ -311,7 +311,7 @@ def interrogate(image):
 
 
 def interrogate_deepbooru(image):
-    prompt = get_deepbooru_tags(image)
+    prompt = get_deepbooru_tags(image, opts.interrogate_deepbooru_score_threshold)
     return gr_show(True) if prompt is None else prompt
 
 
@@ -1331,7 +1331,7 @@ Requested path was: {f}
         
         with gr.Tabs() as tabs:
             for interface, label, ifid in interfaces:
-                with gr.TabItem(label, id=ifid):
+                with gr.TabItem(label, id=ifid, elem_id='tab_' + ifid):
                     interface.render()
         
         if os.path.exists(os.path.join(script_path, "notification.mp3")):
