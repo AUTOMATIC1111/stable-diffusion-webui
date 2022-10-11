@@ -201,7 +201,7 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
         return embedding, filename
 
     pbar = tqdm.tqdm(enumerate(ds), total=steps-ititial_step)
-    for i, (x, text) in pbar:
+    for i, (x, text, _) in pbar:
         embedding.step = i + ititial_step
 
         if embedding.step > steps:

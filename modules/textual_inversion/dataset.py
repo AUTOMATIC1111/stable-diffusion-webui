@@ -8,14 +8,14 @@ from torchvision import transforms
 
 import random
 import tqdm
-from modules import devices
+from modules import devices, shared
 import re
 
 re_tag = re.compile(r"[a-zA-Z][_\w\d()]+")
 
 
 class PersonalizedBase(Dataset):
-    def __init__(self, data_root, width, height, repeats, flip_p=0.5, placeholder_token="*", model=None, device=None, template_file=None):
+    def __init__(self, data_root, width, height, repeats, flip_p=0.5, placeholder_token="*", model=None, device=None, template_file=None, include_cond=False):
 
         self.placeholder_token = placeholder_token
 
@@ -31,6 +31,8 @@ class PersonalizedBase(Dataset):
         self.lines = lines
 
         assert data_root, 'dataset directory not specified'
+
+        cond_model = shared.sd_model.cond_stage_model
 
         self.image_paths = [os.path.join(data_root, file_path) for file_path in os.listdir(data_root)]
         print("Preparing dataset...")
@@ -53,7 +55,13 @@ class PersonalizedBase(Dataset):
             init_latent = model.get_first_stage_encoding(model.encode_first_stage(torchdata.unsqueeze(dim=0))).squeeze()
             init_latent = init_latent.to(devices.cpu)
 
-            self.dataset.append((init_latent, filename_tokens))
+            if include_cond:
+                text = self.create_text(filename_tokens)
+                cond = cond_model([text]).to(devices.cpu)
+            else:
+                cond = None
+
+            self.dataset.append((init_latent, filename_tokens, cond))
 
         self.length = len(self.dataset) * repeats
 
@@ -64,6 +72,12 @@ class PersonalizedBase(Dataset):
     def shuffle(self):
         self.indexes = self.initial_indexes[torch.randperm(self.initial_indexes.shape[0])]
 
+    def create_text(self, filename_tokens):
+        text = random.choice(self.lines)
+        text = text.replace("[name]", self.placeholder_token)
+        text = text.replace("[filewords]", ' '.join(filename_tokens))
+        return text
+
     def __len__(self):
         return self.length
 
@@ -72,10 +86,7 @@ class PersonalizedBase(Dataset):
             self.shuffle()
 
         index = self.indexes[i % len(self.indexes)]
-        x, filename_tokens = self.dataset[index]
+        x, filename_tokens, cond = self.dataset[index]
 
-        text = random.choice(self.lines)
-        text = text.replace("[name]", self.placeholder_token)
-        text = text.replace("[filewords]", ' '.join(filename_tokens))
-
-        return x, text
+        text = self.create_text(filename_tokens)
+        return x, text, cond
