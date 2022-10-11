@@ -281,7 +281,8 @@ def create_embedding(name, num_vectors_per_token, init_text='*'):
     return fn
 
 
-def train_embedding(embedding_name, learn_rate, data_root, log_directory, training_width, training_height, steps, num_repeats, create_image_every, save_embedding_every, template_file, save_image_with_stored_embedding):
+
+def train_embedding(embedding_name, learn_rate, data_root, log_directory, training_width, training_height, steps, num_repeats, create_image_every, save_embedding_every, template_file, save_image_with_stored_embedding, preview_image_prompt)
     assert embedding_name, 'embedding not selected'
 
     shared.state.textinfo = "Initializing textual inversion training..."
@@ -369,12 +370,14 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
         if embedding.step > 0 and images_dir is not None and embedding.step % create_image_every == 0:
             last_saved_image = os.path.join(images_dir, f'{embedding_name}-{embedding.step}.png')
 
+            preview_text = text if preview_image_prompt == "" else preview_image_prompt
+
             p = processing.StableDiffusionProcessingTxt2Img(
                 sd_model=shared.sd_model,
-                prompt=text,
+                prompt=preview_text,
                 steps=20,
-				height=training_height,
-				width=training_width,
+                height=training_height,
+                width=training_width,
                 do_not_save_grid=True,
                 do_not_save_samples=True,
             )
@@ -405,7 +408,7 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
             
             image.save(last_saved_image)
 
-            last_saved_image += f", prompt: {text}"
+            last_saved_image += f", prompt: {preview_text}"
 
         shared.state.job_no = embedding.step
 

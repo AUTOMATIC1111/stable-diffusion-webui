@@ -29,6 +29,7 @@ from modules import devices
 from modules import modelloader
 from modules.paths import script_path
 from modules.shared import cmd_opts
+import modules.hypernetworks.hypernetwork
 
 modelloader.cleanup_models()
 modules.sd_models.setup_model()
@@ -82,8 +83,7 @@ modules.scripts.load_scripts(os.path.join(script_path, "scripts"))
 shared.sd_model = modules.sd_models.load_model()
 shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights(shared.sd_model)))
 
-loaded_hypernetwork = modules.hypernetwork.load_hypernetwork(shared.opts.sd_hypernetwork)
-shared.opts.onchange("sd_hypernetwork", wrap_queued_call(lambda: modules.hypernetwork.load_hypernetwork(shared.opts.sd_hypernetwork)))
+shared.opts.onchange("sd_hypernetwork", wrap_queued_call(lambda: modules.hypernetworks.hypernetwork.load_hypernetwork(shared.opts.sd_hypernetwork)))
 
 
 def webui():
@@ -108,7 +108,7 @@ def webui():
             prevent_thread_lock=True
         )
         
-        app.add_middleware(GZipMiddleware,minimum_size=1000)
+        app.add_middleware(GZipMiddleware, minimum_size=1000)
 
         while 1:
             time.sleep(0.5)

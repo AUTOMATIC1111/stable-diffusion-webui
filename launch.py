@@ -104,6 +104,7 @@ def prepare_enviroment():
     args, skip_torch_cuda_test = extract_arg(args, '--skip-torch-cuda-test')
     xformers = '--xformers' in args
     deepdanbooru = '--deepdanbooru' in args
+    ngrok = '--ngrok' in args
 
     try:
         commit = run(f"{git} rev-parse HEAD").strip()
@@ -127,12 +128,15 @@ def prepare_enviroment():
 
     if not is_installed("xformers") and xformers and platform.python_version().startswith("3.10"):
         if platform.system() == "Windows":
-            run_pip("install https://github.com/C43H66N12O12S2/stable-diffusion-webui/releases/download/a/xformers-0.0.14.dev0-cp310-cp310-win_amd64.whl", "xformers")
+            run_pip("install https://github.com/C43H66N12O12S2/stable-diffusion-webui/releases/download/c/xformers-0.0.14.dev0-cp310-cp310-win_amd64.whl", "xformers")
         elif platform.system() == "Linux":
             run_pip("install xformers", "xformers")
 
     if not is_installed("deepdanbooru") and deepdanbooru:
         run_pip("install git+https://github.com/KichangKim/DeepDanbooru.git@edf73df4cdaeea2cf00e9ac08bd8a9026b7a7b26#egg=deepdanbooru[tensorflow] tensorflow==2.10.0 tensorflow-io==0.27.0", "deepdanbooru")
+
+    if not is_installed("pyngrok") and ngrok:
+        run_pip("install pyngrok", "ngrok")
 
     os.makedirs(dir_repos, exist_ok=True)
 
