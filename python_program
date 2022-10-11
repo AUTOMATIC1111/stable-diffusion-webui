@@ -1,0 +1,6 @@
+s="welcome to FYCS"
+print(s)
+print(s[2:5])
+print(s[:10])
+print(s[13:])
+print(s[::3])
