@@ -117,37 +117,6 @@ def extract_image_data_embed(image):
     data = zlib.decompress(data_block)
     return json.loads(data,cls=EmbeddingDecoder)
 
-def addCaptionLines(lines,image,initialx,textfont):
-    draw = ImageDraw.Draw(image)
-    hstart =initialx
-    for fill,line in lines:
-        fontsize = 32
-        font = ImageFont.truetype(textfont, fontsize)
-        _,_,w, h = draw.textbbox((0,0),line,font=font)
-        fontsize =  min( int(fontsize * ((image.size[0]-35)/w) ), 28)
-        font = ImageFont.truetype(textfont, fontsize)
-        _,_,w,h = draw.textbbox((0,0),line,font=font)
-        draw.text(((image.size[0]-w)/2,hstart), line, font=font, fill=fill)
-        hstart += h
-    return hstart
-
-def caption_image(image,prelines,postlines,background=(51, 51, 51),font=None):
-    if font is None:
-        try:
-            font = ImageFont.truetype(opts.font or Roboto, fontsize)
-            font = opts.font or Roboto
-        except Exception:
-            font = Roboto
-
-    sample_image = image
-    background = Image.new("RGBA", (sample_image.size[0],sample_image.size[1]+1024), background)
-    hoffset = addCaptionLines(prelines,background,5,font)+16
-    background.paste(sample_image,(0,hoffset))
-    hoffset = hoffset+sample_image.size[1]+8
-    hoffset = addCaptionLines(postlines,background,hoffset,font)
-    background = background.crop((0,0,sample_image.size[0],hoffset+8))
-    return background
-
 def caption_image_overlay(srcimage,title,footerLeft,footerMid,footerRight,textfont=None):
     from math import cos
 
@@ -195,11 +164,7 @@ def caption_image_overlay(srcimage,title,footerLeft,footerMid,footerRight,textfo
     return image
 
 if __name__ == '__main__':
-
-    image = Image.new('RGBA',(512,512),(255,255,200,255))
-    caption_image(image,[((255,255,255),'line a'),((255,255,255),'line b')],
-                        [((255,255,255),'line c'),((255,255,255),'line d')])
-
+    
     image = Image.new('RGBA',(512,512),(255,255,200,255))
     cap_image = caption_image_overlay(image, 'title', 'footerLeft', 'footerMid', 'footerRight')
 
