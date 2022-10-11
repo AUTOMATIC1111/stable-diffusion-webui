@@ -50,7 +50,7 @@ class Hypernetwork:
         self.sd_checkpoint = None
         self.sd_checkpoint_name = None
 
-        for size in enable_sizes or [320, 640, 768, 1280]:
+        for size in enable_sizes or []:
             self.layers[size] = (HypernetworkModule(size), HypernetworkModule(size))
 
     def weights(self):
