@@ -35,9 +35,10 @@ class PersonalizedBase(Dataset):
         self.image_paths = [os.path.join(data_root, file_path) for file_path in os.listdir(data_root)]
         print("Preparing dataset...")
         for path in tqdm.tqdm(self.image_paths):
-            image = Image.open(path)
-            image = image.convert('RGB')
-            image = image.resize((self.width, self.height), PIL.Image.BICUBIC)
+            try:
+                image = Image.open(path).convert('RGB').resize((self.width, self.height), PIL.Image.BICUBIC)
+            except Exception:
+                continue
 
             filename = os.path.basename(path)
             filename_tokens = os.path.splitext(filename)[0]
