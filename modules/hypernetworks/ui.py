@@ -6,7 +6,7 @@ import gradio as gr
 import modules.textual_inversion.textual_inversion
 import modules.textual_inversion.preprocess
 from modules import sd_hijack, shared
-from modules.hypernetwork import hypernetwork
+from modules.hypernetworks import hypernetwork
 
 
 def create_hypernetwork(name):

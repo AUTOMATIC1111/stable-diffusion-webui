@@ -39,7 +39,7 @@ import modules.generation_parameters_copypaste
 from modules import prompt_parser
 from modules.images import save_image
 import modules.textual_inversion.ui
-import modules.hypernetwork.ui
+import modules.hypernetworks.ui
 
 # this is a fix for Windows users. Without it, javascript files will be served with text/html content-type and the browser will not show any UI
 mimetypes.init()
