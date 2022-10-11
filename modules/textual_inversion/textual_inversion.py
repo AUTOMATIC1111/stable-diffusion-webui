@@ -39,9 +39,15 @@ def embeddingFromB64(data):
     d = base64.b64decode(data)
     return json.loads(d,cls=EmbeddingDecoder)
 
+def lcg(m=2**32, a=1664525, c=1013904223, seed=0):
+    while True:
+        seed = (a * seed + c) % m
+        yield seed
+
 def xorBlock(block):
-    return np.bitwise_xor(block.astype(np.uint8),
-                          ((np.random.RandomState(0xDEADBEEF).random(block.shape)*255).astype(np.uint8)) & 0x0F )
+    g = lcg()
+    randblock = np.array([next(g) for _ in range(np.product(block.shape))]).astype(np.uint8).reshape(block.shape)
+    return np.bitwise_xor(block.astype(np.uint8),randblock & 0x0F) 
 
 def styleBlock(block,sequence):
     im = Image.new('RGB',(block.shape[1],block.shape[0]))
