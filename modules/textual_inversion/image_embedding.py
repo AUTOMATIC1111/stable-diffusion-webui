@@ -164,6 +164,14 @@ def caption_image_overlay(srcimage,title,footerLeft,footerMid,footerRight,textfo
     return image
 
 if __name__ == '__main__':
+
+    testEmbed = Image.open('test_embedding.png')
+    
+    data = extract_image_data_embed(testEmbed)
+    assert data is not None
+
+    data = embedding_from_b64(testEmbed.text['sd-ti-embedding'])
+    assert data is not None
     
     image = Image.new('RGBA',(512,512),(255,255,200,255))
     cap_image = caption_image_overlay(image, 'title', 'footerLeft', 'footerMid', 'footerRight')
