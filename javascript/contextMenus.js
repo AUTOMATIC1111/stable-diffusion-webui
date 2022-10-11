@@ -16,7 +16,7 @@ contextMenuInit = function(){
       oldMenu.remove()
     }
 
-    let tabButton = gradioApp().querySelector('button')
+    let tabButton = uiCurrentTab
     let baseStyle = window.getComputedStyle(tabButton)
 
     const contextMenu = document.createElement('nav')
@@ -130,9 +130,9 @@ addContextMenuEventListener = initResponse[2]
 
 
 //Start example Context Menu Items
-generateOnRepeatId = appendContextMenuOption('#txt2img_generate','Generate forever',function(){
-  let genbutton = gradioApp().querySelector('#txt2img_generate');
-  let interruptbutton = gradioApp().querySelector('#txt2img_interrupt');
+generateOnRepeat = function(genbuttonid,interruptbuttonid){
+  let genbutton = gradioApp().querySelector(genbuttonid);
+  let interruptbutton = gradioApp().querySelector(interruptbuttonid);
   if(!interruptbutton.offsetParent){
     genbutton.click();
   }
@@ -142,8 +142,15 @@ generateOnRepeatId = appendContextMenuOption('#txt2img_generate','Generate forev
       genbutton.click();
     }
   },
-  500)}
-)
+  500)
+}
+
+generateOnRepeatId = appendContextMenuOption('#txt2img_generate','Generate forever',function(){
+  generateOnRepeat('#txt2img_generate','#txt2img_interrupt');
+})
+generateOnRepeatId = appendContextMenuOption('#img2img_generate','Generate forever',function(){
+  generateOnRepeat('#img2img_generate','#img2img_interrupt');
+})
 
 cancelGenerateForever = function(){ 
   clearInterval(window.generateOnRepeatInterval) 
@@ -151,11 +158,12 @@ cancelGenerateForever = function(){
 
 appendContextMenuOption('#txt2img_interrupt','Cancel generate forever',cancelGenerateForever)
 appendContextMenuOption('#txt2img_generate', 'Cancel generate forever',cancelGenerateForever)
-
+appendContextMenuOption('#img2img_interrupt','Cancel generate forever',cancelGenerateForever)
+appendContextMenuOption('#img2img_generate', 'Cancel generate forever',cancelGenerateForever)
 
 appendContextMenuOption('#roll','Roll three',
   function(){ 
-    let rollbutton = gradioApp().querySelector('#roll');
+    let rollbutton = get_uiCurrentTabContent().querySelector('#roll');
     setTimeout(function(){rollbutton.click()},100)
     setTimeout(function(){rollbutton.click()},200)
     setTimeout(function(){rollbutton.click()},300)
