@@ -39,7 +39,6 @@ import modules.generation_parameters_copypaste
 from modules import prompt_parser
 from modules.images import save_image
 import modules.textual_inversion.ui
-from modules.sd_models import list_models
 
 # this is a fix for Windows users. Without it, javascript files will be served with text/html content-type and the browser will not show any UI
 mimetypes.init()
@@ -1291,8 +1290,6 @@ Requested path was: {f}
             shared.state.interrupt()
             settings_interface.gradio_ref.do_restart = True
 
-            # refresh models so that new models/.ckpt's show up on reload
-            list_models()
 
         restart_gradio.click(
             fn=request_restart,
