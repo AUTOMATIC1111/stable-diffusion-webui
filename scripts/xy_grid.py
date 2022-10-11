@@ -11,7 +11,7 @@ import modules.scripts as scripts
 import gradio as gr
 
 from modules import images
-from modules.hypernetwork import hypernetwork
+from modules.hypernetworks import hypernetwork
 from modules.processing import process_images, Processed, get_correct_sampler
 from modules.shared import opts, cmd_opts, state
 import modules.shared as shared
@@ -197,7 +197,7 @@ class Script(scripts.Script):
             x_values = gr.Textbox(label="X values", visible=False, lines=1)
 
         with gr.Row():
-            y_type = gr.Dropdown(label="Y type", choices=[x.label for x in current_axis_options], value=current_axis_options[4].label, visible=False, type="index", elem_id="y_type")
+            y_type = gr.Dropdown(label="Y type", choices=[x.label for x in current_axis_options], value=current_axis_options[0].label, visible=False, type="index", elem_id="y_type")
             y_values = gr.Textbox(label="Y values", visible=False, lines=1)
         
         draw_legend = gr.Checkbox(label='Draw legend', value=True)

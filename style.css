@@ -240,6 +240,7 @@ fieldset span.text-gray-500, .gr-block.gr-box span.text-gray-500,  label.block s
 #settings fieldset span.text-gray-500, #settings .gr-block.gr-box span.text-gray-500, #settings label.block span{
     position: relative;
     border: none;
+    margin-right: 8em;
 }
 
 .gr-panel div.flex-col div.justify-between label span{
@@ -494,4 +495,14 @@ canvas[key="mask"] {
     filter: invert();
     mix-blend-mode: multiply;
     pointer-events: none;
+}
+
+
+/* gradio 3.4.1 stuff for editable scrollbar values */
+.gr-box > div > div > input.gr-text-input{
+    position: absolute;
+    right: 0.5em;
+    top: -0.6em;
+    z-index: 200;
+    width: 8em;
 }
