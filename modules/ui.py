@@ -1037,6 +1037,7 @@ def create_ui(wrap_gradio_gpu_call):
                     gr.HTML(value="<p style='margin-bottom: 0.7em'>Create a new hypernetwork</p>")
 
                     new_hypernetwork_name = gr.Textbox(label="Name")
+                    new_hypernetwork_sizes = gr.CheckboxGroup(label="Modules", value=["768", "320", "640", "1280"], choices=["768", "320", "640", "1280"])
 
                     with gr.Row():
                         with gr.Column(scale=3):
@@ -1114,6 +1115,7 @@ def create_ui(wrap_gradio_gpu_call):
             fn=modules.hypernetworks.ui.create_hypernetwork,
             inputs=[
                 new_hypernetwork_name,
+                new_hypernetwork_sizes,
             ],
             outputs=[
                 train_hypernetwork_name,
@@ -1342,6 +1344,7 @@ Requested path was: {f}
         def request_restart():
             shared.state.interrupt()
             settings_interface.gradio_ref.do_restart = True
+
 
         restart_gradio.click(
             fn=request_restart,
