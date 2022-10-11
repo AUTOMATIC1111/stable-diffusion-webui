@@ -10,7 +10,8 @@ import numpy as np
 import modules.scripts as scripts
 import gradio as gr
 
-from modules import images, hypernetwork
+from modules import images
+from modules.hypernetwork import hypernetwork
 from modules.processing import process_images, Processed, get_correct_sampler
 from modules.shared import opts, cmd_opts, state
 import modules.shared as shared
@@ -27,6 +28,9 @@ def apply_field(field):
 
 
 def apply_prompt(p, x, xs):
+    if xs[0] not in p.prompt and xs[0] not in p.negative_prompt:
+        raise RuntimeError(f"Prompt S/R did not find {xs[0]} in prompt or negative prompt.")
+
     p.prompt = p.prompt.replace(xs[0], x)
     p.negative_prompt = p.negative_prompt.replace(xs[0], x)
 
