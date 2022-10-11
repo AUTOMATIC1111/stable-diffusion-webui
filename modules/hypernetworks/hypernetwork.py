@@ -42,7 +42,7 @@ class Hypernetwork:
     filename = None
     name = None
 
-    def __init__(self, name=None):
+    def __init__(self, name=None, enable_sizes=None):
         self.filename = None
         self.name = name
         self.layers = {}
@@ -50,7 +50,7 @@ class Hypernetwork:
         self.sd_checkpoint = None
         self.sd_checkpoint_name = None
 
-        for size in [320, 640, 768, 1280]:
+        for size in enable_sizes or [320, 640, 768, 1280]:
             self.layers[size] = (HypernetworkModule(size), HypernetworkModule(size))
 
     def weights(self):
