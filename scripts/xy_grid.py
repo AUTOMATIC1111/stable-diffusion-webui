@@ -27,6 +27,9 @@ def apply_field(field):
 
 
 def apply_prompt(p, x, xs):
+    if xs[0] not in p.prompt and xs[0] not in p.negative_prompt:
+        raise RuntimeError(f"Prompt S/R did not find {xs[0]} in prompt or negative prompt.")
+
     p.prompt = p.prompt.replace(xs[0], x)
     p.negative_prompt = p.negative_prompt.replace(xs[0], x)
 
@@ -205,7 +208,10 @@ class Script(scripts.Script):
         if not no_fixed_seeds:
             modules.processing.fix_seed(p)
 
-        p.batch_size = 1
+        if not opts.return_grid:
+            p.batch_size = 1
+
+
         CLIP_stop_at_last_layers = opts.CLIP_stop_at_last_layers
 
         def process_axis(opt, vals):
