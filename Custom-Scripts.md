@@ -75,10 +75,6 @@ https://github.com/Filarius/stable-diffusion-webui/blob/master/scripts/vid2vid.p
 
 From real video, img2img the frames and stitch them together. Does not unpack frames to hard drive.
 
-V2: https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/1902/files 
-
-Adds seed walking.
-
 ## Txt2VectorGraphics
 https://github.com/GeorgLegato/Txt2Vectorgraphics
 
@@ -112,6 +108,11 @@ https://github.com/feffy380/prompt-morph
 Generate morph sequences with Stable Diffusion. Interpolate between two or more prompts and create an image at each step.
 
 Uses the new AND keyword and can optionally export the sequence as a video.
+
+## Asymmetric Tiling
+https://github.com/tjm35/asymmetric-tiling-sd-webui/
+
+Control horizontal/vertical seamless tiling independently of each other.
 
 ## Saving steps of the sampling process
 
