@@ -119,7 +119,6 @@ def get_deepbooru_tags_from_model(model, tags, pil_image, threshold, alpha_sort)
     # sort tags
     result_tags_out = []
     sort_ndx = 0
-    print(alpha_sort)
     if alpha_sort:
         sort_ndx = 1
 
