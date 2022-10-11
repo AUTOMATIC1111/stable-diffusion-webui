@@ -126,6 +126,14 @@ If you want to use any of the literal `()[]` characters in the prompt, use the b
 
 On 2022-09-29, a new implementation was added that supports escape characters and numerical weights. A downside of the new implementation is that the old one was not perfect and sometimes ate characters: "a (((farm))), daytime", for example, would become "a farm daytime" without the comma. This behavior is not shared by the new implementation which preserves all text correctly, and this means that your saved seeds may produce different pictures. For now, there is an option in settings to use the old implementation.
 
+NAI uses my implementation from before 2022-09-29, except they have 1.05 as the multiplier and use `{}` instead of `()`. So the conversion applies:
+
+ - their `{word}` = our `(word:1.05)`
+ - their `{{word}}` = our `(word:1.1025)`
+ - their `[word]` = our `(word:0.952)` (0.952 = 1/1.05)
+ - their `[[word]]` = our `(word:0.907)` (0.907 = 1/1.05/1.05)
+
+
 # Loopback
 Selecting the loopback script in img2img allows you to automatically feed output image as input for the next batch. Equivalent to
 saving output image, and replacing the input image with it. Batch count setting controls how many iterations of
