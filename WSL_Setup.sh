@@ -21,19 +21,6 @@ sudo apt-get -y install cuda
 # Install g++
 sudo apt install build-essential deepspeed
 
-# New virtual Python environment
-conda update -n base -c defaults conda
-conda create --name diffusers python=3.9
-conda activate diffusers
-
-# Make a directory for all your github downloads, then download diffusers
-mkdir ~/github
-cd ~/github
-git clone https://github.com/Ttl/diffusers.git
-cd diffusers
-git checkout dreambooth_deepspeed
-git pull
-
 conda install pytorch torchvision torchaudio cudatoolkit=11.3 -c pytorch
 pip install -r requirements.txt
 pip install -U --pre triton
