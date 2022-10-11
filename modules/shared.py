@@ -14,7 +14,7 @@ import modules.sd_models
 import modules.styles
 import modules.devices as devices
 from modules import sd_samplers
-from modules.hypernetwork import hypernetwork
+from modules.hypernetworks import hypernetwork
 from modules.paths import models_path, script_path, sd_path
 
 sd_model_file = os.path.join(script_path, 'model.ckpt')
@@ -38,6 +38,7 @@ parser.add_argument("--always-batch-cond-uncond", action='store_true', help="dis
 parser.add_argument("--unload-gfpgan", action='store_true', help="does not do anything.")
 parser.add_argument("--precision", type=str, help="evaluate at this precision", choices=["full", "autocast"], default="autocast")
 parser.add_argument("--share", action='store_true', help="use share=True for gradio and make the UI accessible through their site (doesn't work for me but you might have better luck)")
+parser.add_argument("--ngrok", type=str, help="ngrok authtoken, alternative to gradio --share", default=None)
 parser.add_argument("--codeformer-models-path", type=str, help="Path to directory with codeformer model file(s).", default=os.path.join(models_path, 'Codeformer'))
 parser.add_argument("--gfpgan-models-path", type=str, help="Path to directory with GFPGAN model file(s).", default=os.path.join(models_path, 'GFPGAN'))
 parser.add_argument("--esrgan-models-path", type=str, help="Path to directory with ESRGAN model file(s).", default=os.path.join(models_path, 'ESRGAN'))
