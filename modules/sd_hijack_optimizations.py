@@ -1,24 +1,39 @@
 import math
+import sys
+import traceback
+
 import torch
 from torch import einsum
 
 from ldm.util import default
 from einops import rearrange
 
-from modules import shared
+from modules import shared, hypernetwork
+
+
+if shared.cmd_opts.xformers or shared.cmd_opts.force_enable_xformers:
+    try:
+        import xformers.ops
+        shared.xformers_available = True
+    except Exception:
+        print("Cannot import xformers", file=sys.stderr)
+        print(traceback.format_exc(), file=sys.stderr)
 
 
 # see https://github.com/basujindal/stable-diffusion/pull/117 for discussion
 def split_cross_attention_forward_v1(self, x, context=None, mask=None):
     h = self.heads
 
-    q = self.to_q(x)
+    q_in = self.to_q(x)
     context = default(context, x)
-    k = self.to_k(context)
-    v = self.to_v(context)
-    del context, x
 
-    q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> (b h) n d', h=h), (q, k, v))
+    context_k, context_v = hypernetwork.apply_hypernetwork(shared.loaded_hypernetwork, context)
+    k_in = self.to_k(context_k)
+    v_in = self.to_v(context_v)
+    del context, context_k, context_v, x
+
+    q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> (b h) n d', h=h), (q_in, k_in, v_in))
+    del q_in, k_in, v_in
 
     r1 = torch.zeros(q.shape[0], q.shape[1], v.shape[2], device=q.device)
     for i in range(0, q.shape[0], 2):
@@ -31,6 +46,7 @@ def split_cross_attention_forward_v1(self, x, context=None, mask=None):
 
         r1[i:end] = einsum('b i j, b j d -> b i d', s2, v[i:end])
         del s2
+    del q, k, v
 
     r2 = rearrange(r1, '(b h) n d -> b n (h d)', h=h)
     del r1
@@ -38,21 +54,16 @@ def split_cross_attention_forward_v1(self, x, context=None, mask=None):
     return self.to_out(r2)
 
 
-# taken from https://github.com/Doggettx/stable-diffusion
+# taken from https://github.com/Doggettx/stable-diffusion and modified
 def split_cross_attention_forward(self, x, context=None, mask=None):
     h = self.heads
 
     q_in = self.to_q(x)
     context = default(context, x)
 
-    hypernetwork_layers = (shared.hypernetwork.layers if shared.hypernetwork is not None else {}).get(context.shape[2], None)
-
-    if hypernetwork_layers is not None:
-        k_in = self.to_k(hypernetwork_layers[0](context))
-        v_in = self.to_v(hypernetwork_layers[1](context))
-    else:
-        k_in = self.to_k(context)
-        v_in = self.to_v(context)
+    context_k, context_v = hypernetwork.apply_hypernetwork(shared.loaded_hypernetwork, context)
+    k_in = self.to_k(context_k)
+    v_in = self.to_v(context_v)
 
     k_in *= self.scale
 
@@ -103,6 +114,22 @@ def split_cross_attention_forward(self, x, context=None, mask=None):
     del r1
 
     return self.to_out(r2)
+
+def xformers_attention_forward(self, x, context=None, mask=None):
+    h = self.heads
+    q_in = self.to_q(x)
+    context = default(context, x)
+
+    context_k, context_v = hypernetwork.apply_hypernetwork(shared.loaded_hypernetwork, context)
+    k_in = self.to_k(context_k)
+    v_in = self.to_v(context_v)
+
+    q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> b n h d', h=h), (q_in, k_in, v_in))
+    del q_in, k_in, v_in
+    out = xformers.ops.memory_efficient_attention(q, k, v, attn_bias=None)
+
+    out = rearrange(out, 'b n h d -> b n (h d)', h=h)
+    return self.to_out(out)
 
 def cross_attention_attnblock_forward(self, x):
         h_ = x
@@ -166,3 +193,16 @@ def cross_attention_attnblock_forward(self, x):
         h3 += x
 
         return h3
+    
+def xformers_attnblock_forward(self, x):
+    try:
+        h_ = x
+        h_ = self.norm(h_)
+        q1 = self.q(h_).contiguous()
+        k1 = self.k(h_).contiguous()
+        v = self.v(h_).contiguous()
+        out = xformers.ops.memory_efficient_attention(q1, k1, v)
+        out = self.proj_out(out)
+        return x + out
+    except NotImplementedError:
+        return cross_attention_attnblock_forward(self, x)
