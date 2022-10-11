@@ -124,6 +124,8 @@ def webui():
         modules.scripts.reload_scripts(os.path.join(script_path, "scripts"))
         print('Reloading modules: modules.ui')
         importlib.reload(modules.ui)
+        print('Refreshing Model List')
+        modules.sd_models.list_models()
         print('Restarting Gradio')
 
 

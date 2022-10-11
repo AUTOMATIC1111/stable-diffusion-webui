@@ -1343,6 +1343,7 @@ Requested path was: {f}
             shared.state.interrupt()
             settings_interface.gradio_ref.do_restart = True
 
+
         restart_gradio.click(
             fn=request_restart,
             inputs=[],
