@@ -147,10 +147,6 @@ generateOnRepeatId = appendContextMenuOption('#txt2img_generate','Generate forev
 
 cancelGenerateForever = function(){ 
   clearInterval(window.generateOnRepeatInterval) 
-  let interruptbutton = gradioApp().querySelector('#txt2img_interrupt');
-  if(interruptbutton.offsetParent){
-      interruptbutton.click();
-  }
 }
 
 appendContextMenuOption('#txt2img_interrupt','Cancel generate forever',cancelGenerateForever)
