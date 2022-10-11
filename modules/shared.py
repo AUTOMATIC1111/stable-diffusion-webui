@@ -13,7 +13,8 @@ import modules.memmon
 import modules.sd_models
 import modules.styles
 import modules.devices as devices
-from modules import sd_samplers, hypernetwork
+from modules import sd_samplers
+from modules.hypernetwork import hypernetwork
 from modules.paths import models_path, script_path, sd_path
 
 sd_model_file = os.path.join(script_path, 'model.ckpt')
@@ -29,6 +30,7 @@ parser.add_argument("--no-half-vae", action='store_true', help="do not switch th
 parser.add_argument("--no-progressbar-hiding", action='store_true', help="do not hide progressbar in gradio UI (we hide it because it slows down ML if you have hardware acceleration in browser)")
 parser.add_argument("--max-batch-count", type=int, default=16, help="maximum batch count value for the UI")
 parser.add_argument("--embeddings-dir", type=str, default=os.path.join(script_path, 'embeddings'), help="embeddings directory for textual inversion (default: embeddings)")
+parser.add_argument("--hypernetwork-dir", type=str, default=os.path.join(models_path, 'hypernetworks'), help="hypernetwork directory")
 parser.add_argument("--allow-code", action='store_true', help="allow custom script execution from webui")
 parser.add_argument("--medvram", action='store_true', help="enable stable diffusion model optimizations for sacrificing a little speed for low VRM usage")
 parser.add_argument("--lowvram", action='store_true', help="enable stable diffusion model optimizations for sacrificing a lot of speed for very low VRM usage")
@@ -82,8 +84,15 @@ parallel_processing_allowed = not cmd_opts.lowvram and not cmd_opts.medvram
 xformers_available = False
 config_filename = cmd_opts.ui_settings_file
 
-hypernetworks = hypernetwork.list_hypernetworks(os.path.join(models_path, 'hypernetworks'))
+hypernetworks = hypernetwork.list_hypernetworks(cmd_opts.hypernetwork_dir)
 loaded_hypernetwork = None
+
+
+def reload_hypernetworks():
+    global hypernetworks
+
+    hypernetworks = hypernetwork.list_hypernetworks(cmd_opts.hypernetwork_dir)
+    hypernetwork.load_hypernetwork(opts.sd_hypernetwork)
 
 
 class State:
