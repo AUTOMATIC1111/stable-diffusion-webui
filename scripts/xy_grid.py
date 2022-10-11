@@ -35,7 +35,8 @@ def apply_prompt(p, x, xs):
     p.negative_prompt = p.negative_prompt.replace(xs[0], x)
 
     if p.prompt == orig_prompt and p.negative_prompt == orig_negative_prompt:
-        raise RuntimeError(f"Prompt S/R did not find {xs[0]} in prompt or negative prompt. Did you forget to add the token?")
+        pass
+        #raise RuntimeError(f"Prompt S/R did not find {xs[0]} in prompt or negative prompt. Did you forget to add the token?")
 
 
 def apply_order(p, x, xs):
