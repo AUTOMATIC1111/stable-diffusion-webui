@@ -6,5 +6,7 @@
 
     
 ## Paperspace
+   - [maintained by Cyberes](https://github.com/Engineer-of-Stuff/stable-diffusion-paperspace)
 
 ## api projects
+   - [diffusion-ui](https://github.com/leszekhanusz/diffusion-ui)
