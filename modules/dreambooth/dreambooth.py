@@ -1,4 +1,5 @@
 import html
+import json
 import math
 import os
 from contextlib import nullcontext
@@ -32,8 +33,9 @@ class DreamBooth:
     def __init__(self, name, training_data: str, instance_prompt: str, class_prompt: str, learn_rate: float = 5e-6,
                  save_img_every=500, save_data_every=200, max_steps: int = 800, batch_size: int = 1,
                  grad_steps: int = 1, scheduler: str = "constant", warmup_steps: int = 0, use_adam=False,
-                 class_data=None, seed=None, log_interval=10, mixed_precision="no", no_cache_latents=True):
+                 class_data=None, seed=None, log_interval=10, mixed_precision="no", no_cache_latents=True, total_steps=0):
         self.tokenizer_name = None
+        self.total_steps = total_steps
         self.resolution = 512
         # Pretrained tokenizer name or path if not the same as model_name
         self.instance_data_dir = training_data
@@ -113,28 +115,47 @@ class DreamBooth:
         #                 Do not precompute and cache latents from VAE.")
 
     def train(self):
+        if not os.path.exists(self.instance_data_dir):
+            print("Invalid training data dir!")
+            shared.state.textinfo = "Invalid training data dir"
+            return 0
 
+        shared.state.textinfo = "Initializing dreambooth training..."
         logging_dir = Path(self.output_dir, self.logging_dir)
-        use_cpu = shared.cmd_opts.medvram is True or shared.cmd_opts.lowvram is True
+        use_cpu = False
         has_deepspeed = False
         ds = None
-        try:
-            torch.distributed.init_process_group("mpi", init_method=None, timeout=datetime.timedelta(seconds=1800),
-                                                 world_size=- 1, rank=- 1, store=None, group_name='', pg_options=None)
-            import deepspeed
-            ds = accelerate.utils.dataclasses.DeepSpeedPlugin()
-            conf_dict = {
-                "zero_optimization.offload_optimizer.device": "cpu",
-                "zero_optimization.offload_param.device": "cpu",
-                "zero_optimization.stage": 2
-            }
-            ds.hf_ds_config = accelerate.utils.deepspeed.HfDeepSpeedConfig(conf_dict)
-            has_deepspeed = True
-            use_cpu = False
-        except Exception as e:
-            print(f"Exception importing deepspeed: {e}")
-            pass
-        print(f"Creating accelerator. Using cpu: {use_cpu}. Using deepspeed: {has_deepspeed}")
+
+        if shared.cmd_opts.medvram or shared.cmd_opts.lowvram:
+            use_cpu = True
+            # self.mixed_precision = "fp16"
+            self.use_8bit_adam = True
+            try:
+                import bitsandbytes
+                use_cpu = False
+            except Exception as f:
+                print(f"Exception importing ADAM: {f}")
+                self.use_8bit_adam = False
+            if use_cpu:
+                try:
+                    torch.distributed.init_process_group("mpi", init_method=None,
+                                                         timeout=datetime.timedelta(seconds=1800),
+                                                         world_size=- 1, rank=- 1, store=None, group_name='',
+                                                         pg_options=None)
+                    import deepspeed
+                    ds = accelerate.utils.dataclasses.DeepSpeedPlugin()
+                    conf_dict = {
+                        "zero_optimization.offload_optimizer.device": "cpu",
+                        "zero_optimization.offload_param.device": "cpu",
+                        "zero_optimization.stage": 2
+                    }
+                    ds.hf_ds_config = accelerate.utils.deepspeed.HfDeepSpeedConfig(conf_dict)
+                    has_deepspeed = True
+                    use_cpu = False
+                except Exception as e:
+                    print(f"Exception importing deepspeed: {e}")
+                    pass
+                print(f"Creating accelerator. Using cpu: {use_cpu}. Using deepspeed: {has_deepspeed}")
         if has_deepspeed:
             accelerator = Accelerator(
                 gradient_accumulation_steps=self.gradient_accumulation_steps,
@@ -163,6 +184,7 @@ class DreamBooth:
             cur_class_images = len(list(class_images_dir.iterdir()))
 
             if cur_class_images < self.num_class_images:
+                shared.state.textinfo = f"Generating class images for training..."
                 torch_dtype = torch.float16 if accelerator.device.type == "cuda" else torch.float32
                 pipeline = StableDiffusionPipeline.from_pretrained(
                     self.pretrained_model_path, use_auth_token=False, torch_dtype=torch_dtype
@@ -192,37 +214,28 @@ class DreamBooth:
                     torch.cuda.empty_cache()
 
         # Handle the repository creation
-        if accelerator.is_main_process:
-            if self.output_dir is not None:
-                os.makedirs(self.output_dir, exist_ok=True)
+        if self.output_dir is not None:
+            os.makedirs(self.output_dir, exist_ok=True)
+        ex_encoder = os.path.join(self.output_dir, "text_encoder", "pytorch_model.bin")
+        ex_vae = os.path.join(self.output_dir, "vae", "diffusion_pytorch_model.bin")
+        ex_unet = os.path.join(self.output_dir, "unet", "diffusion_pytorch_model.bin")
+        ex_tokenizer = os.path.join(self.output_dir, "tokenizer")
+        ex_model_path = self.pretrained_model_path
+        if os.path.exists(ex_encoder) and os.path.exists(ex_vae) and os.path.exists(ex_unet) and os.path.exists(
+                ex_tokenizer):
+            ex_model_path = self.output_dir
+            print(f"Loading existing pre-trained model data from {ex_model_path}")
 
         # Load the tokenizer
         if self.tokenizer_name:
             tokenizer = CLIPTokenizer.from_pretrained(self.tokenizer_name)
-        elif self.pretrained_model_path:
-            tokenizer = CLIPTokenizer.from_pretrained(
-                self.pretrained_model_path, subfolder="tokenizer", use_auth_token=False
-            )
-
-        # TODO: If we have already saved pretrained data, load encoder/vae/unet from that model, versus original
-        ex_encoder = os.path.join(self.output_dir, "text_encoder", "pytorch_model.bin")
-        ex_vae = os.path.join(self.output_dir, "vae", "diffusion_pytorch_model.bin")
-        ex_unet = os.path.join(self.output_dir, "unet", "diffusion_pytorch_model.bin")
-        ex_model_path = self.pretrained_model_path
-        if os.path.exists(ex_encoder) and os.path.exists(ex_vae) and os.path.exists(ex_unet):
-            ex_model_path = self.output_dir
-            print(f"Loading existing pre-trained model data from {ex_model_path}")
+        else:
+            tokenizer = CLIPTokenizer.from_pretrained(os.path.join(ex_model_path, "tokenizer"))
 
         # Load models and create wrapper for stable diffusion
-        text_encoder = CLIPTextModel.from_pretrained(
-            os.path.join(ex_model_path, "text_encoder"), use_auth_token=False
-        )
-        vae = AutoencoderKL.from_pretrained(
-            os.path.join(ex_model_path, "vae"), use_auth_token=False
-        )
-        unet = UNet2DConditionModel.from_pretrained(
-            os.path.join(ex_model_path, "unet"), use_auth_token=False
-        )
+        text_encoder = CLIPTextModel.from_pretrained(os.path.join(ex_model_path, "text_encoder"))
+        vae = AutoencoderKL.from_pretrained(os.path.join(ex_model_path, "vae"))
+        unet = UNet2DConditionModel.from_pretrained(os.path.join(ex_model_path, "unet"))
 
         if self.gradient_checkpointing:
             unet.enable_gradient_checkpointing()
@@ -293,28 +306,6 @@ class DreamBooth:
             train_dataset, batch_size=self.train_batch_size, shuffle=True, collate_fn=collate_fn, pin_memory=True
         )
 
-        # Move text_encode and vae to gpu
-        # Disabled in OPT
-        #        text_encoder.to(accelerator.device)
-        #        vae.to(accelerator.device)
-
-        #        if not self.not_cache_latents:
-        #            latents_cache = []
-        #            text_encoder_cache = []
-        #            for batch in tqdm(train_dataloader, desc="Caching latents"):
-        #                with torch.no_grad():
-        #                    batch["pixel_values"] = batch["pixel_values"].to(accelerator.device, non_blocking=True)
-        #                    batch["input_ids"] = batch["input_ids"].to(accelerator.device, non_blocking=True)
-        #                    latents_cache.append(vae.encode(batch["pixel_values"]).latent_dist)
-        #                    text_encoder_cache.append(text_encoder(batch["input_ids"])[0])
-        #            train_dataset = LatentsDataset(latents_cache, text_encoder_cache)
-        #            train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=1, collate_fn=lambda x: x,
-        #                                                           shuffle=True)
-
-        #            del vae, text_encoder
-        #            if torch.cuda.is_available():
-        #                torch.cuda.empty_cache()
-
         # Scheduler and math around the number of training steps.
         overrode_max_train_steps = False
         num_update_steps_per_epoch = math.ceil(len(train_dataloader) / self.gradient_accumulation_steps)
@@ -358,8 +349,10 @@ class DreamBooth:
 
         # Train!
         total_batch_size = self.train_batch_size * accelerator.num_processes * self.gradient_accumulation_steps
-
+        shared.state.textinfo = f"Training: UseCPU: {use_cpu} 8BitAdam: {self.use_8bit_adam} Precision: {self.mixed_precision} Deepspeed: {has_deepspeed}"
         print("***** Running training *****")
+        print(
+            f"  UseCPU: {use_cpu} 8BitAdam: {self.use_8bit_adam} Precision: {self.mixed_precision} Deepspeed: {has_deepspeed}")
         print(f"  Num examples = {len(train_dataset)}")
         print(f"  Num batches each epoch = {len(train_dataloader)}")
         print(f"  Num Epochs = {self.num_train_epochs}")
@@ -367,11 +360,14 @@ class DreamBooth:
         print(f"  Total train batch size (w. parallel, distributed & accumulation) = {total_batch_size}")
         print(f"  Gradient Accumulation steps = {self.gradient_accumulation_steps}")
         print(f"  Total optimization steps = {self.max_train_steps}")
+        print(f"  Total lifetime optimization steps = {self.max_train_steps + self.total_steps}")
         # Only show the progress bar once on each machine.
         progress_bar = tqdm(range(self.max_train_steps), disable=not accelerator.is_local_main_process)
         progress_bar.set_description("Steps")
         global_step = 0
         loss_avg = AverageMeter()
+        shared.state.job_count = self.max_train_steps
+        shared.state.job_no = global_step
         for epoch in range(self.num_train_epochs):
             unet.train()
             for step, batch in enumerate(train_dataloader):
@@ -418,7 +414,6 @@ class DreamBooth:
                 lr_scheduler.step()
                 optimizer.zero_grad()
 
-
                 # Only save a preview image if we're not training with the CPU
                 if not global_step % self.save_img_every and use_cpu is not True:
                     prompt = self.instance_prompt
@@ -457,15 +452,18 @@ class DreamBooth:
 
                 progress_bar.update(1)
                 global_step += 1
+                shared.state.job_no = global_step
 
                 logs = {"loss": loss.detach().item(), "lr": lr_scheduler.get_last_lr()[0]}
                 progress_bar.set_postfix(**logs)
                 accelerator.log(logs, step=global_step)
-                if global_step >= self.max_train_steps:
+                if global_step >= self.max_train_steps or shared.state.interrupted:
                     break
-
             accelerator.wait_for_everyone()
-
+            if shared.state.interrupted:
+                shared.state.textinfo = f"Training canceled {global_step}/{self.max_train_steps}"
+                break
+            shared.state.job_no += 1
         # Create the pipeline using using the trained modules and save it.
         if accelerator.is_main_process:
             pipeline = StableDiffusionPipeline.from_pretrained(
@@ -476,7 +474,7 @@ class DreamBooth:
             pipeline.save_pretrained(self.output_dir)
 
         accelerator.end_training()
-        return self.output_dir
+        return self.output_dir, global_step
 
     def unpack_model(self):
         pass
@@ -486,29 +484,53 @@ class DreamBooth:
 
 
 def start_training(model_name, initialization_text, classification_text, learn_rate, dataset_directory,
-                   classifier_directory, steps, create_image_every, save_embedding_every, src_checkpoint):
+                   classifier_directory, steps, create_image_every, save_embedding_every):
     print("Starting Dreambooth training...")
     converted = ""
     try:
         sd_hijack.undo_optimizations()
-        dream = DreamBooth(model_name, dataset_directory, initialization_text, classification_text, learn_rate,
-                           create_image_every, save_embedding_every, steps, class_data=classifier_directory)
-        dream.train()
+        shared.sd_model = None
         model_path = paths.models_path
         model_dir = os.path.join(model_path, "dreambooth", model_name, "working")
+        config = None
+        config_file = os.path.join(model_dir, "config.json")
+        try:
+            with open(config_file, 'r') as openfile:
+                config = json.load(openfile)
+        except:
+            pass
+
+        if config is None:
+            print("Unable to load config?")
+            return "Invalid source checkpoint", ""
+
+        src_checkpoint = config["src"]
+        total_steps = config["total_steps"]
+        dream = DreamBooth(model_name, dataset_directory, initialization_text, classification_text, learn_rate,
+                           create_image_every, save_embedding_every, steps, class_data=classifier_directory)
+
+        out_dir, trained_steps = dream.train()
+        total_steps += trained_steps
+        config["total_steps"] = total_steps
+        json_object = json.dumps(config, indent=4)
+
+        # Writing to sample.json
+        with open(config_file, "w") as outfile:
+            outfile.write(json_object)
+        out_file = os.path.join(paths.models_path, "Stable-diffusion", f"{model_name}_{total_steps}.ckpt")
         if os.path.exists(os.path.join(model_dir, "model_index.json")):
-            print(f"Successfully trained model to {model_dir}, converting.")
-            out_file = os.path.join(paths.models_path, "Stable-diffusion", f"{model_name}.ckpt")
+            print(f"Successfully trained model for a total of {total_steps} steps, converting to ckpt.")
             src_path = modules.sd_models.get_closet_checkpoint_match(src_checkpoint)[0]
-            print(f"Out file set to {out_file}")
             converted = conversion.convert_diff_to_sd(model_dir, src_path, out_file, True)
             sd_models.list_models()
     except Exception:
         raise
     finally:
+        modules.sd_models.load_model()
         print("Re-applying optimizations...")
         sd_hijack.apply_optimizations()
     res = f"Training {'interrupted' if shared.state.interrupted else 'finished'}." \
+          f"Total steps: {total_steps}" \
           f"Embedding saved to {html.escape(converted)}"
     print(f"Returning result: {res}")
     return res, ""
@@ -536,7 +558,7 @@ class DreamBoothDataset(Dataset):
 
         self.instance_data_root = Path(instance_data_root)
         if not self.instance_data_root.exists():
-            raise ValueError("Instance images root doesn't exists.")
+            shared.state.textinfo = f"Invalid directory for training data: {self.instance_data_root}"
 
         self.instance_images_path = [x for x in Path(instance_data_root).iterdir() if x.is_file()]
         self.num_instance_images = len(self.instance_images_path)

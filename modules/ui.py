@@ -1192,7 +1192,7 @@ def create_ui(wrap_gradio_gpu_call):
                                 db_train_embedding = gr.Button(value="Train", variant='primary')
 
             with gr.Column():
-                progressbar = gr.HTML(elem_id="db_progressbar")
+                db_progressbar = gr.HTML(elem_id="db_progressbar")
                 db_output = gr.Text(elem_id="db_output", value="", show_label=False)
                 db_gallery = gr.Gallery(label='Output', show_label=False, elem_id='db_gallery').style(grid=4)
                 db_preview = gr.Image(elem_id='db_preview', visible=False)
@@ -1242,8 +1242,7 @@ def create_ui(wrap_gradio_gpu_call):
                 db_classification_directory,
                 db_steps,
                 db_create_image_every,
-                db_save_embedding_every,
-                src_checkpoint
+                db_save_embedding_every
             ],
             outputs=[
                 db_output,
