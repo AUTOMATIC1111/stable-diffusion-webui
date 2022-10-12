@@ -468,7 +468,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
 #########################################
 #   Call Discord Bot to post picture    #
     try:
-        post_result(str(fullfn),prompt,str(seed),str(p.subseed),str(p.subseed_strength),sd_samplers.samplers[p.sampler_index].name,str(p.steps),str(p.cfg_scale),str(p.width),str(p.height),shared.sd_model.sd_model_hash)
+        post_result(str(fullfn),prompt,str(p.negative_prompt),str(seed),str(p.subseed),str(p.subseed_strength),sd_samplers.samplers[p.sampler_index].name,str(p.steps),str(p.cfg_scale),str(p.width),str(p.height),shared.sd_model.sd_model_hash)
     except:
         pass
 #########################################
