@@ -61,7 +61,7 @@ def delete_image(tabname, dir_name, name, page_index, filenames, image_index):
         os.remove(path)
         txt_file = os.path.splitext(path)[0]  + ".txt"
         if os.path.exists(txt_file):
-        	os.remove(txt_file)
+            os.remove(txt_file)
         new_file_list = []
         for f in filenames:
             if f == name:
@@ -88,7 +88,7 @@ def show_images_history(gr, opts, tabname, run_pnginfo, switch_dict):
             end_page = gr.Button('End Page')    
         with gr.Row(elem_id=tabname + "_images_history"):            
             with gr.Row():     
-                with gr.Column(scale=2):                	
+                with gr.Column(scale=2):                    
                     history_gallery = gr.Gallery(show_label=False, elem_id=tabname + "_images_history_gallery").style(grid=6)
                     delete = gr.Button('Delete',  elem_id=tabname + "_images_history_del_button")
                 with gr.Column():     
@@ -126,9 +126,10 @@ def show_images_history(gr, opts, tabname, run_pnginfo, switch_dict):
 
         #other funcitons
         set_index.click(show_image_info, _js="images_history_get_current_img", inputs=[tabname_box,  img_path, filenames], outputs=[img_file_name, image_index, hide_image])
+        img_file_name.change(fn=None, _js="images_history_enable_del_buttons", inputs=None, outputs=None)
         delete.click(delete_image,_js="images_history_delete", inputs=[tabname_box, img_path, img_file_name, page_index, filenames, image_index], outputs=[page_index, filenames]) 
         hide_image.change(fn=run_pnginfo, inputs=[hide_image], outputs=[info1, img_file_info, info2])
-        hide_image.change(fn=None, _js="images_history_enable_del_buttons", inputs=None, outputs=None)
+       
         #pnginfo.click(fn=run_pnginfo, inputs=[hide_image], outputs=[info1, img_file_info, info2])
         switch_dict["fn"](pnginfo_send_to_txt2img, switch_dict["t2i"], img_file_info, 'switch_to_txt2img')
         switch_dict["fn"](pnginfo_send_to_img2img, switch_dict["i2i"], img_file_info, 'switch_to_img2img_img2img')
