@@ -148,10 +148,7 @@ def save_files(js_data, images, do_make_zip, index):
             is_grid = image_index < p.index_of_first_image
             i = 0 if is_grid else (image_index - p.index_of_first_image)
 
-            seed = p.all_seeds[i] if len(p.all_seeds) > 1 else p.seed
-            prompt = p.all_prompts[i] if len(p.all_prompts) > 1 else p.prompt
-            info = p.infotexts[image_index] if len(p.infotexts) > 1 else p.infotexts[0]
-            fullfn, txt_fullfn = save_image(image, path, "", seed=seed, prompt=prompt, extension=extension, info=info, grid=is_grid, p=p, save_to_dirs=save_to_dirs)
+            fullfn, txt_fullfn = save_image(image, path, "", seed=p.all_seeds[i], prompt=p.all_prompts[i], extension=extension, info=p.infotexts[image_index], grid=is_grid, p=p, save_to_dirs=save_to_dirs)
 
             filename = os.path.relpath(fullfn, path)
             filenames.append(filename)

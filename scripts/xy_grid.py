@@ -176,13 +176,16 @@ axis_options = [
 
 
 def draw_xy_grid(p, xs, ys, x_labels, y_labels, cell, draw_legend, include_lone_images):
-    res = []
-    successful_images = []
-
     ver_texts = [[images.GridAnnotation(y)] for y in y_labels]
     hor_texts = [[images.GridAnnotation(x)] for x in x_labels]
 
-    first_processed = None
+    # Temporary list of all the images that are generated to be populated into the grid.
+    # Will be filled with empty images for any individual step that fails to process properly
+    image_cache = []
+
+    processed_result = None
+    cell_mode = "P"
+    cell_size = (1,1)
 
     state.job_count = len(xs) * len(ys) * p.n_iter
 
@@ -190,26 +193,39 @@ def draw_xy_grid(p, xs, ys, x_labels, y_labels, cell, draw_legend, include_lone_
         for ix, x in enumerate(xs):
             state.job = f"{ix + iy * len(xs) + 1} out of {len(xs) * len(ys)}"
 
-            processed = cell(x, y)
-            if first_processed is None:
-                first_processed = processed
-
+            processed:Processed = cell(x, y)
             try:
-              processed_image = processed.images[0]
-              res.append(processed_image)
-              successful_images.append(processed_image)
+                # this dereference will throw an exception if the image was not processed
+                # (this happens in cases such as if the user stops the process from the UI)
+                processed_image = processed.images[0]
+                
+                if processed_result is None:
+                    # Use our first valid processed result as a template container to hold our full results
+                    processed_result = copy(processed)
+                    cell_mode = processed_image.mode
+                    cell_size = processed_image.size
+                    processed_result.images = [Image.new(cell_mode, cell_size)]
+
+                image_cache.append(processed_image)
+                if include_lone_images:
+                    processed_result.images.append(processed_image)
+                    processed_result.all_prompts.append(processed.prompt)
+                    processed_result.all_seeds.append(processed.seed)
+                    processed_result.infotexts.append(processed.infotexts[0])
             except:
-              res.append(Image.new(res[0].mode, res[0].size))
+                image_cache.append(Image.new(cell_mode, cell_size))
 
-    grid = images.image_grid(res, rows=len(ys))
+    if not processed_result:
+        print("Unexpected error: draw_xy_grid failed to return even a single processed image")
+        return Processed()
+
+    grid = images.image_grid(image_cache, rows=len(ys))
     if draw_legend:
-        grid = images.draw_grid_annotations(grid, res[0].width, res[0].height, hor_texts, ver_texts)
+        grid = images.draw_grid_annotations(grid, cell_size[0], cell_size[1], hor_texts, ver_texts)
 
-    first_processed.images = [grid]
-    if include_lone_images:
-        first_processed.images += successful_images
+    processed_result.images[0] = grid
 
-    return first_processed
+    return processed_result
 
 
 re_range = re.compile(r"\s*([+-]?\s*\d+)\s*-\s*([+-]?\s*\d+)(?:\s*\(([+-]\d+)\s*\))?\s*")
