@@ -181,8 +181,15 @@ def wrap_gradio_call(func, extra_outputs=None):
         try:
             res = list(func(*args, **kwargs))
         except Exception as e:
+            # When printing out our debug argument list, do not print out more than a MB of text
+            max_debug_str_len = 131072 # (1024*1024)/8
+
             print("Error completing request", file=sys.stderr)
-            print("Arguments:", args, kwargs, file=sys.stderr)
+            argStr = f"Arguments: {str(args)} {str(kwargs)}"
+            print(argStr[:max_debug_str_len], file=sys.stderr)
+            if len(argStr) > max_debug_str_len:
+                print(f"(Argument list truncated at {max_debug_str_len}/{len(argStr)} characters)", file=sys.stderr)
+
             print(traceback.format_exc(), file=sys.stderr)
 
             shared.state.job = ""
