@@ -89,6 +89,8 @@ def initialize():
 
 
 def webui():
+    initialize()
+    
     # make the program just exit at ctrl+c without waiting for anything
     def sigint_handler(sig, frame):
         print(f'Interrupted with signal {sig} in {frame}')
@@ -132,5 +134,4 @@ def webui():
 
 
 if __name__ == "__main__":
-    initialize()
     webui()
