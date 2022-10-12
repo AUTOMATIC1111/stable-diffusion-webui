@@ -109,6 +109,12 @@ Generate morph sequences with Stable Diffusion. Interpolate between two or more 
 
 Uses the new AND keyword and can optionally export the sequence as a video.
 
+## prompt interpolation
+https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/2425/files
+
+With this script, you can interpolate between two prompts (using the "AND" keyword), generate as many images as you want.
+You can also generate a gif with the result.
+
 ## Asymmetric Tiling
 https://github.com/tjm35/asymmetric-tiling-sd-webui/
 
