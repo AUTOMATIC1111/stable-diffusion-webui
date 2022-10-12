@@ -37,7 +37,7 @@ def apply_optimizations():
 
 
 def undo_optimizations():
-    from modules.hypernetwork import hypernetwork
+    from modules.hypernetworks import hypernetwork
 
     ldm.modules.attention.CrossAttention.forward = hypernetwork.attention_CrossAttention_forward
     ldm.modules.diffusionmodules.model.nonlinearity = diffusionmodules_model_nonlinearity
