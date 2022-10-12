@@ -1,7 +1,8 @@
 #!/bin/bash
 
 INSTALL_ENV_DIR=$(pwd)/installer_files/env
-export PATH=$PATH;$INSTALL_ENV_DIR/bin
+
+if [ -e "$INSTALL_ENV_DIR" ]; then export PATH=$PATH;$INSTALL_ENV_DIR/bin; fi
 
 # update the repo
 if [ -e ".git" ]; then
