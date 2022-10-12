@@ -175,8 +175,9 @@ axis_options = [
 ]
 
 
-def draw_xy_grid(p, xs, ys, x_labels, y_labels, cell, draw_legend):
+def draw_xy_grid(p, xs, ys, x_labels, y_labels, cell, draw_legend, include_lone_images):
     res = []
+    successful_images = []
 
     ver_texts = [[images.GridAnnotation(y)] for y in y_labels]
     hor_texts = [[images.GridAnnotation(x)] for x in x_labels]
@@ -194,7 +195,9 @@ def draw_xy_grid(p, xs, ys, x_labels, y_labels, cell, draw_legend):
                 first_processed = processed
 
             try:
-              res.append(processed.images[0])
+              processed_image = processed.images[0]
+              res.append(processed_image)
+              successful_images.append(processed_image)
             except:
               res.append(Image.new(res[0].mode, res[0].size))
 
@@ -203,6 +206,8 @@ def draw_xy_grid(p, xs, ys, x_labels, y_labels, cell, draw_legend):
         grid = images.draw_grid_annotations(grid, res[0].width, res[0].height, hor_texts, ver_texts)
 
     first_processed.images = [grid]
+    if include_lone_images:
+        first_processed.images += successful_images
 
     return first_processed
 
@@ -229,11 +234,12 @@ class Script(scripts.Script):
             y_values = gr.Textbox(label="Y values", visible=False, lines=1)
         
         draw_legend = gr.Checkbox(label='Draw legend', value=True)
+        include_lone_images = gr.Checkbox(label='Include Separate Images', value=True)
         no_fixed_seeds = gr.Checkbox(label='Keep -1 for seeds', value=False)
 
-        return [x_type, x_values, y_type, y_values, draw_legend, no_fixed_seeds]
+        return [x_type, x_values, y_type, y_values, draw_legend, include_lone_images, no_fixed_seeds]
 
-    def run(self, p, x_type, x_values, y_type, y_values, draw_legend, no_fixed_seeds):
+    def run(self, p, x_type, x_values, y_type, y_values, draw_legend, include_lone_images, no_fixed_seeds):
         if not no_fixed_seeds:
             modules.processing.fix_seed(p)
 
@@ -344,7 +350,8 @@ class Script(scripts.Script):
             x_labels=[x_opt.format_value(p, x_opt, x) for x in xs],
             y_labels=[y_opt.format_value(p, y_opt, y) for y in ys],
             cell=cell,
-            draw_legend=draw_legend
+            draw_legend=draw_legend,
+            include_lone_images=include_lone_images
         )
 
         if opts.grid_save:
