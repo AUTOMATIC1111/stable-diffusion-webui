@@ -3,12 +3,16 @@ from PIL import Image, ImageOps
 import platform
 import sys
 import tqdm
+import time
 
 from modules import shared, images
+from modules.shared import opts, cmd_opts
+if cmd_opts.deepdanbooru:
+    import modules.deepbooru as deepbooru
 
-
-def preprocess(process_src, process_dst, process_flip, process_split, process_caption):
-    size = 512
+def preprocess(process_src, process_dst, process_width, process_height, process_flip, process_split, process_caption, process_caption_deepbooru=False):
+    width = process_width
+    height = process_height
     src = os.path.abspath(process_src)
     dst = os.path.abspath(process_dst)
 
@@ -24,10 +28,21 @@ def preprocess(process_src, process_dst, process_flip, process_split, process_ca
     if process_caption:
         shared.interrogator.load()
 
+    if process_caption_deepbooru:
+        deepbooru.create_deepbooru_process(opts.interrogate_deepbooru_score_threshold, opts.deepbooru_sort_alpha)
+
     def save_pic_with_caption(image, index):
         if process_caption:
             caption = "-" + shared.interrogator.generate_caption(image)
             caption = sanitize_caption(os.path.join(dst, f"{index:05}-{subindex[0]}"), caption, ".png")
+        elif process_caption_deepbooru:
+            shared.deepbooru_process_return["value"] = -1
+            shared.deepbooru_process_queue.put(image)
+            while shared.deepbooru_process_return["value"] == -1:
+                time.sleep(0.2)
+            caption = "-" + shared.deepbooru_process_return["value"]
+            caption = sanitize_caption(os.path.join(dst, f"{index:05}-{subindex[0]}"), caption, ".png")
+            shared.deepbooru_process_return["value"] = -1
         else:
             caption = filename
             caption = os.path.splitext(caption)[0]
@@ -45,7 +60,10 @@ def preprocess(process_src, process_dst, process_flip, process_split, process_ca
     for index, imagefile in enumerate(tqdm.tqdm(files)):
         subindex = [0]
         filename = os.path.join(src, imagefile)
-        img = Image.open(filename).convert("RGB")
+        try:
+            img = Image.open(filename).convert("RGB")
+        except Exception:
+            continue
 
         if shared.state.interrupted:
             break
@@ -55,29 +73,33 @@ def preprocess(process_src, process_dst, process_flip, process_split, process_ca
         is_wide = ratio < 1 / 1.35
 
         if process_split and is_tall:
-            img = img.resize((size, size * img.height // img.width))
+            img = img.resize((width, height * img.height // img.width))
 
-            top = img.crop((0, 0, size, size))
+            top = img.crop((0, 0, width, height))
             save_pic(top, index)
 
-            bot = img.crop((0, img.height - size, size, img.height))
+            bot = img.crop((0, img.height - height, width, img.height))
             save_pic(bot, index)
         elif process_split and is_wide:
-            img = img.resize((size * img.width // img.height, size))
+            img = img.resize((width * img.width // img.height, height))
 
-            left = img.crop((0, 0, size, size))
+            left = img.crop((0, 0, width, height))
             save_pic(left, index)
 
-            right = img.crop((img.width - size, 0, img.width, size))
+            right = img.crop((img.width - width, 0, img.width, height))
             save_pic(right, index)
         else:
-            img = images.resize_image(1, img, size, size)
+            img = images.resize_image(1, img, width, height)
             save_pic(img, index)
 
         shared.state.nextjob()
 
     if process_caption:
         shared.interrogator.send_blip_to_ram()
+
+    if process_caption_deepbooru:
+        deepbooru.release_process()
+
 
 def sanitize_caption(base_path, original_caption, suffix):
     operating_system = platform.system().lower()
