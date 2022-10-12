@@ -7,11 +7,15 @@ import tqdm
 import html
 import datetime
 
+from PIL import Image, PngImagePlugin
 
 from modules import shared, devices, sd_hijack, processing, sd_models
 import modules.textual_inversion.dataset
 from modules.textual_inversion.learn_schedule import LearnSchedule
 
+from modules.textual_inversion.image_embedding import (embedding_to_b64, embedding_from_b64,
+                                                       insert_image_data_embed, extract_image_data_embed,
+                                                       caption_image_overlay)
 
 class Embedding:
     def __init__(self, vec, name, step=None):
@@ -81,7 +85,18 @@ class EmbeddingDatabase:
         def process_file(path, filename):
             name = os.path.splitext(filename)[0]
 
-            data = torch.load(path, map_location="cpu")
+            data = []
+
+            if filename.upper().endswith('.PNG'):
+                embed_image = Image.open(path)
+                if 'sd-ti-embedding' in embed_image.text:
+                    data = embedding_from_b64(embed_image.text['sd-ti-embedding'])
+                    name = data.get('name', name)
+                else:
+                    data = extract_image_data_embed(embed_image)
+                    name = data.get('name', name)
+            else:
+                data = torch.load(path, map_location="cpu")
 
             # textual inversion embeddings
             if 'string_to_param' in data:
@@ -157,7 +172,8 @@ def create_embedding(name, num_vectors_per_token, init_text='*'):
     return fn
 
 
-def train_embedding(embedding_name, learn_rate, data_root, log_directory, training_width, training_height, steps, num_repeats, create_image_every, save_embedding_every, template_file, preview_image_prompt):
+
+def train_embedding(embedding_name, learn_rate, data_root, log_directory, training_width, training_height, steps, num_repeats, create_image_every, save_embedding_every, template_file, save_image_with_stored_embedding, preview_image_prompt):
     assert embedding_name, 'embedding not selected'
 
     shared.state.textinfo = "Initializing textual inversion training..."
@@ -179,6 +195,12 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
     else:
         images_dir = None
 
+    if create_image_every > 0 and save_image_with_stored_embedding:
+        images_embeds_dir = os.path.join(log_directory, "image_embeddings")
+        os.makedirs(images_embeds_dir, exist_ok=True)
+    else:
+        images_embeds_dir = None
+        
     cond_model = shared.sd_model.cond_stage_model
 
     shared.state.textinfo = f"Preparing dataset from {html.escape(data_root)}..."
@@ -262,6 +284,26 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
             image = processed.images[0]
 
             shared.state.current_image = image
+
+            if save_image_with_stored_embedding and os.path.exists(last_saved_file):
+
+                last_saved_image_chunks = os.path.join(images_embeds_dir, f'{embedding_name}-{embedding.step}.png')
+
+                info = PngImagePlugin.PngInfo()
+                data = torch.load(last_saved_file)
+                info.add_text("sd-ti-embedding", embedding_to_b64(data))
+
+                title = "<{}>".format(data.get('name', '???'))
+                checkpoint = sd_models.select_checkpoint()
+                footer_left = checkpoint.model_name
+                footer_mid = '[{}]'.format(checkpoint.hash)
+                footer_right = '{}'.format(embedding.step)
+
+                captioned_image = caption_image_overlay(image, title, footer_left, footer_mid, footer_right)
+                captioned_image = insert_image_data_embed(captioned_image, data)
+
+                captioned_image.save(last_saved_image_chunks, "PNG", pnginfo=info)
+
             image.save(last_saved_image)
 
             last_saved_image += f", prompt: {preview_text}"
