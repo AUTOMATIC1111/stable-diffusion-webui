@@ -11,8 +11,7 @@ import tqdm
 from modules import devices, shared
 import re
 
-re_tag = re.compile(r"[a-zA-Z][_\w\d()]+")
-
+re_tag = re.compile(r"[a-zA-Z][_\s\w\d()]+")
 
 class PersonalizedBase(Dataset):
     def __init__(self, data_root, width, height, repeats, flip_p=0.5, placeholder_token="*", model=None, device=None, template_file=None, include_cond=False):
@@ -45,6 +44,7 @@ class PersonalizedBase(Dataset):
             filename = os.path.basename(path)
             filename_tokens = os.path.splitext(filename)[0]
             filename_tokens = re_tag.findall(filename_tokens)
+            filename_tokens = [tag.strip() for tag in filename_tokens]
 
             npimage = np.array(image).astype(np.uint8)
             npimage = (npimage / 127.5 - 1.0).astype(np.float32)
@@ -73,9 +73,10 @@ class PersonalizedBase(Dataset):
         self.indexes = self.initial_indexes[torch.randperm(self.initial_indexes.shape[0])]
 
     def create_text(self, filename_tokens):
+        filewords_join_character = shared.opts.filewords_join_character.strip().ljust(1)[0] # force 1 char and at least to be a space
         text = random.choice(self.lines)
         text = text.replace("[name]", self.placeholder_token)
-        text = text.replace("[filewords]", ' '.join(filename_tokens))
+        text = text.replace("[filewords]", filewords_join_character.join(filename_tokens))
         return text
 
     def __len__(self):

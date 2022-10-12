@@ -231,6 +231,7 @@ options_templates.update(options_section(('system', "System"), {
 
 options_templates.update(options_section(('training', "Training"), {
     "unload_models_when_training": OptionInfo(False, "Unload VAE and CLIP from VRAM when training"),
+    "filewords_join_character": OptionInfo(" ", "Override character used to join tags in [filewords] prompt template. (default: ' ')")
 }))
 
 options_templates.update(options_section(('sd', "Stable Diffusion"), {
