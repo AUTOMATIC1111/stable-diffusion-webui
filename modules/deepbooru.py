@@ -2,33 +2,44 @@ import os.path
 from concurrent.futures import ProcessPoolExecutor
 import multiprocessing
 import time
+import re
+
+re_special = re.compile(r'([\\()])')
 
 def get_deepbooru_tags(pil_image):
     """
     This method is for running only one image at a time for simple use.  Used to the img2img interrogate.
     """
     from modules import shared  # prevents circular reference
-    create_deepbooru_process(shared.opts.interrogate_deepbooru_score_threshold, shared.opts.deepbooru_sort_alpha)
-    shared.deepbooru_process_return["value"] = -1
-    shared.deepbooru_process_queue.put(pil_image)
-    while shared.deepbooru_process_return["value"] == -1:
-        time.sleep(0.2)
-    tags = shared.deepbooru_process_return["value"]
-    release_process()
-    return tags
+
+    try:
+        create_deepbooru_process(shared.opts.interrogate_deepbooru_score_threshold, create_deepbooru_opts())
+        return get_tags_from_process(pil_image)
+    finally:
+        release_process()
 
 
-def deepbooru_process(queue, deepbooru_process_return, threshold, alpha_sort):
+def create_deepbooru_opts():
+    from modules import shared
+
+    return {
+        "use_spaces": shared.opts.deepbooru_use_spaces,
+        "use_escape": shared.opts.deepbooru_escape,
+        "alpha_sort": shared.opts.deepbooru_sort_alpha,
+    }
+
+
+def deepbooru_process(queue, deepbooru_process_return, threshold, deepbooru_opts):
     model, tags = get_deepbooru_tags_model()
     while True: # while process is running, keep monitoring queue for new image
         pil_image = queue.get()
         if pil_image == "QUIT":
             break
         else:
-            deepbooru_process_return["value"] = get_deepbooru_tags_from_model(model, tags, pil_image, threshold, alpha_sort)
+            deepbooru_process_return["value"] = get_deepbooru_tags_from_model(model, tags, pil_image, threshold, deepbooru_opts)
 
 
-def create_deepbooru_process(threshold, alpha_sort):
+def create_deepbooru_process(threshold, deepbooru_opts):
     """
     Creates deepbooru process.  A queue is created to send images into the process.  This enables multiple images
     to be processed in a row without reloading the model or creating a new process.  To return the data, a shared
@@ -41,8 +52,21 @@ def create_deepbooru_process(threshold, alpha_sort):
     shared.deepbooru_process_queue = shared.deepbooru_process_manager.Queue()
     shared.deepbooru_process_return = shared.deepbooru_process_manager.dict()
     shared.deepbooru_process_return["value"] = -1
-    shared.deepbooru_process = multiprocessing.Process(target=deepbooru_process, args=(shared.deepbooru_process_queue, shared.deepbooru_process_return, threshold, alpha_sort))
+    shared.deepbooru_process = multiprocessing.Process(target=deepbooru_process, args=(shared.deepbooru_process_queue, shared.deepbooru_process_return, threshold, deepbooru_opts))
     shared.deepbooru_process.start()
+
+
+def get_tags_from_process(image):
+    from modules import shared
+
+    shared.deepbooru_process_return["value"] = -1
+    shared.deepbooru_process_queue.put(image)
+    while shared.deepbooru_process_return["value"] == -1:
+        time.sleep(0.2)
+    caption = shared.deepbooru_process_return["value"]
+    shared.deepbooru_process_return["value"] = -1
+
+    return caption
 
 
 def release_process():
@@ -81,10 +105,15 @@ def get_deepbooru_tags_model():
     return model, tags
 
 
-def get_deepbooru_tags_from_model(model, tags, pil_image, threshold, alpha_sort):
+def get_deepbooru_tags_from_model(model, tags, pil_image, threshold, deepbooru_opts):
     import deepdanbooru as dd
     import tensorflow as tf
     import numpy as np
+
+    alpha_sort = deepbooru_opts['alpha_sort']
+    use_spaces = deepbooru_opts['use_spaces']
+    use_escape = deepbooru_opts['use_escape']
+
     width = model.input_shape[2]
     height = model.input_shape[1]
     image = np.array(pil_image)
@@ -129,4 +158,12 @@ def get_deepbooru_tags_from_model(model, tags, pil_image, threshold, alpha_sort)
 
     print('\n'.join(sorted(result_tags_print, reverse=True)))
 
-    return ', '.join(result_tags_out).replace('_', ' ').replace(':', ' ')
+    tags_text = ', '.join(result_tags_out)
+
+    if use_spaces:
+        tags_text = tags_text.replace('_', ' ')
+
+    if use_escape:
+        tags_text = re.sub(re_special, r'\\\1', tags_text)
+
+    return tags_text.replace(':', ' ')

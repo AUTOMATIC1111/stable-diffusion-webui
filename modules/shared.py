@@ -260,6 +260,8 @@ options_templates.update(options_section(('interrogate', "Interrogate Options"),
     "interrogate_clip_max_length": OptionInfo(48, "Interrogate: maximum description length", gr.Slider, {"minimum": 1, "maximum": 256, "step": 1}),
     "interrogate_deepbooru_score_threshold": OptionInfo(0.5, "Interrogate: deepbooru score threshold", gr.Slider, {"minimum": 0, "maximum": 1, "step": 0.01}),
     "deepbooru_sort_alpha": OptionInfo(True, "Interrogate: deepbooru sort alphabetically"),
+    "deepbooru_use_spaces": OptionInfo(False, "use spaces for tags in deepbooru"),
+    "deepbooru_escape": OptionInfo(True, "escape (\\) brackets in deepbooru (so they are used as literal brackets and not for emphasis)"),
 }))
 
 options_templates.update(options_section(('ui', "User interface"), {
