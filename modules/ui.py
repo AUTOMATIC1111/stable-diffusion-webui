@@ -107,7 +107,7 @@ def send_gradio_gallery_to_image(x):
 
 
 def save_files(js_data, images, do_make_zip, index):
-    import csv    
+    import csv
     filenames = []
     fullfns = []
 
@@ -130,6 +130,8 @@ def save_files(js_data, images, do_make_zip, index):
 
         images = [images[index]]
         start_index = index
+
+    os.makedirs(opts.outdir_save, exist_ok=True)
 
     with open(os.path.join(opts.outdir_save, "log.csv"), "a", encoding="utf8", newline='') as file:
         at_start = file.tell() == 0
@@ -181,8 +183,15 @@ def wrap_gradio_call(func, extra_outputs=None):
         try:
             res = list(func(*args, **kwargs))
         except Exception as e:
+            # When printing out our debug argument list, do not print out more than a MB of text
+            max_debug_str_len = 131072 # (1024*1024)/8
+
             print("Error completing request", file=sys.stderr)
-            print("Arguments:", args, kwargs, file=sys.stderr)
+            argStr = f"Arguments: {str(args)} {str(kwargs)}"
+            print(argStr[:max_debug_str_len], file=sys.stderr)
+            if len(argStr) > max_debug_str_len:
+                print(f"(Argument list truncated at {max_debug_str_len}/{len(argStr)} characters)", file=sys.stderr)
+
             print(traceback.format_exc(), file=sys.stderr)
 
             shared.state.job = ""
@@ -317,7 +326,7 @@ def interrogate(image):
 
 
 def interrogate_deepbooru(image):
-    prompt = get_deepbooru_tags(image, opts.interrogate_deepbooru_score_threshold)
+    prompt = get_deepbooru_tags(image)
     return gr_show(True) if prompt is None else prompt
 
 
@@ -559,11 +568,11 @@ def create_ui(wrap_gradio_gpu_call):
                         button_id = "hidden_element" if shared.cmd_opts.hide_ui_dir_config else 'open_folder'
                         open_txt2img_folder = gr.Button(folder_symbol, elem_id=button_id)
 
-                with gr.Row():
-                    do_make_zip = gr.Checkbox(label="保存时制作Zip?", value=False)
-                    
-                with gr.Row():
-                    download_files = gr.File(None, file_count="multiple", interactive=False, show_label=False, visible=False)
+                    with gr.Row():
+                        do_make_zip = gr.Checkbox(label="保存时制作Zip?", value=False)
+
+                    with gr.Row():
+                        download_files = gr.File(None, file_count="multiple", interactive=False, show_label=False, visible=False)
 
                     with gr.Group():
                         html_info = gr.HTML()
@@ -747,11 +756,12 @@ def create_ui(wrap_gradio_gpu_call):
                         button_id = "hidden_element" if shared.cmd_opts.hide_ui_dir_config else 'open_folder'
                         open_img2img_folder = gr.Button(folder_symbol, elem_id=button_id)
 
-                with gr.Row():
-                    do_make_zip = gr.Checkbox(label="保存时制作Zip?", value=False)
-                    
-                with gr.Row():
-                    download_files = gr.File(None, file_count="multiple", interactive=False, show_label=False, visible=False)
+
+                    with gr.Row():
+                        do_make_zip = gr.Checkbox(label="保存时制作Zip?", value=False)
+
+                    with gr.Row():
+                        download_files = gr.File(None, file_count="multiple", interactive=False, show_label=False, visible=False)
 
                     with gr.Group():
                         html_info = gr.HTML()
@@ -913,7 +923,16 @@ def create_ui(wrap_gradio_gpu_call):
                     with gr.TabItem('批量处理'):
                         image_batch = gr.File(label="P处理", file_count="multiple", interactive=True, type="file")
 
-                upscaling_resize = gr.Slider(minimum=1.0, maximum=4.0, step=0.05, label="调整大小", value=2)
+
+                with gr.Tabs(elem_id="extras_resize_mode"):
+                    with gr.TabItem('Scale by'):
+                        upscaling_resize = gr.Slider(minimum=1.0, maximum=4.0, step=0.05, label="调整大小", value=2)
+                    with gr.TabItem('Scale to'):
+                        with gr.Group():
+                            with gr.Row():
+                                upscaling_resize_w = gr.Number(label="Width", value=512, precision=0)
+                                upscaling_resize_h = gr.Number(label="Height", value=512, precision=0)
+                            upscaling_crop = gr.Checkbox(label='Crop to fit', value=True)
 
                 with gr.Group():
                     extras_upscaler_1 = gr.Radio(label='升频器 1', choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name, type="index")
@@ -945,12 +964,16 @@ def create_ui(wrap_gradio_gpu_call):
             _js="get_extras_tab_index",
             inputs=[
                 dummy_component,
+                dummy_component,
                 extras_image,
                 image_batch,
                 gfpgan_visibility,
                 codeformer_visibility,
                 codeformer_weight,
                 upscaling_resize,
+                upscaling_resize_w,
+                upscaling_resize_h,
+                upscaling_crop,
                 extras_upscaler_1,
                 extras_upscaler_2,
                 extras_upscaler_2_visibility,
@@ -961,14 +984,14 @@ def create_ui(wrap_gradio_gpu_call):
                 html_info,
             ]
         )
-     
+
         extras_send_to_img2img.click(
             fn=lambda x: image_from_url_text(x),
             _js="extract_image_from_gallery_img2img",
             inputs=[result_images],
             outputs=[init_img],
         )
-        
+
         extras_send_to_inpaint.click(
             fn=lambda x: image_from_url_text(x),
             _js="extract_image_from_gallery_inpaint",
@@ -1015,14 +1038,15 @@ def create_ui(wrap_gradio_gpu_call):
 
     sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings()
 
-    with gr.Blocks() as textual_inversion_interface:
+    with gr.Blocks() as train_interface:
         with gr.Row().style(equal_height=False):
-            with gr.Column():
-                with gr.Group():
-                    gr.HTML(value="<p style='margin-bottom: 0.7em'>有关详细说明，请参阅 <b><a href=\"https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Textual-Inversion\">wiki</a></b> </p>")
 
-                    gr.HTML(value="<p style='margin-bottom: 0.7em'>创建一个新的嵌入</p>")
+            gr.HTML(value="<p style='margin-bottom: 0.7em'>有关详细说明，请参阅<b><a href=\"https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Textual-Inversion\">wiki</a></b> </p>")
 
+        with gr.Row().style(equal_height=False):
+            with gr.Tabs(elem_id="train_tabs"):
+
+                with gr.Tab(label="创建一个新的嵌入"):
                     new_embedding_name = gr.Textbox(label="名称")
                     initialization_text = gr.Textbox(label="初始化文本", value="*")
                     nvpt = gr.Slider(label="每个标记的向量数", minimum=1, maximum=75, step=1, value=1)
@@ -1034,9 +1058,8 @@ def create_ui(wrap_gradio_gpu_call):
                         with gr.Column():
                             create_embedding = gr.Button(value="创建嵌入", variant='primary')
 
-                with gr.Group():
-                    gr.HTML(value="<p style='margin-bottom: 0.7em'>创建一个新的超网络</p>")
 
+                with gr.Tab(label="创建一个新的超网络"):
                     new_hypernetwork_name = gr.Textbox(label="名称")
                     new_hypernetwork_sizes = gr.CheckboxGroup(label="模块", value=["768", "320", "640", "1280"], choices=["768", "320", "640", "1280"])
 
@@ -1047,18 +1070,22 @@ def create_ui(wrap_gradio_gpu_call):
                         with gr.Column():
                             create_hypernetwork = gr.Button(value="创建超网络", variant='primary')
 
-                with gr.Group():
-                    gr.HTML(value="<p style='margin-bottom: 0.7em'>预处理图像</p>")
-
+                with gr.Tab(label="预处理图像"):
                     process_src = gr.Textbox(label='源目录')
                     process_dst = gr.Textbox(label='目标目录')
+
                     process_width = gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512)
                     process_height = gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512)
 
                     with gr.Row():
+
                         process_flip = gr.Checkbox(label='创建翻转副本')
                         process_split = gr.Checkbox(label='将超大图像一分为二')
                         process_caption = gr.Checkbox(label='使用 BLIP 标题作为文件名')
+                        if cmd_opts.deepdanbooru:
+                            process_caption_deepbooru = gr.Checkbox(label='Use deepbooru caption as filename')
+                        else:
+                            process_caption_deepbooru = gr.Checkbox(label='Use deepbooru caption as filename', visible=False)
 
                     with gr.Row():
                         with gr.Column(scale=3):
@@ -1067,13 +1094,14 @@ def create_ui(wrap_gradio_gpu_call):
                         with gr.Column():
                             run_preprocess = gr.Button(value="预处理", variant='primary')
 
-                with gr.Group():
+
+                with gr.Tab(label="Train"):
                     gr.HTML(value="<p style='margin-bottom: 0.7em'>训练嵌入；必须指定具有一组 1:1 比例图像的目录</p>")
                     train_embedding_name = gr.Dropdown(label='嵌入', choices=sorted(sd_hijack.model_hijack.embedding_db.word_embeddings.keys()))
                     train_hypernetwork_name = gr.Dropdown(label='超网络', choices=[x for x in shared.hypernetworks.keys()])
                     learn_rate = gr.Textbox(label='学习率', placeholder="Learning rate", value="0.005")
                     dataset_directory = gr.Textbox(label='数据集目录', placeholder="带有输入图像的目录路径")
-                    log_directory = gr.Textbox(label='日志目录', placeholder="Path to directory where to write outputs", value="textual_inversion")
+                    log_directory = gr.Textbox(label='日志目录', placeholder="写入输出的目录的路径", value="textual_inversion")
                     template_file = gr.Textbox(label='提示模板文件', value=os.path.join(script_path, "textual_inversion_templates", "style_filewords.txt"))
                     training_width = gr.Slider(minimum=64, maximum=2048, step=64, label="宽度", value=512)
                     training_height = gr.Slider(minimum=64, maximum=2048, step=64, label="高度", value=512)
@@ -1136,6 +1164,7 @@ def create_ui(wrap_gradio_gpu_call):
                 process_flip,
                 process_split,
                 process_caption,
+                process_caption_deepbooru
             ],
             outputs=[
                 ti_output,
@@ -1353,18 +1382,20 @@ Requested path was: {f}
             outputs=[],
             _js='function(){restart_reload()}'
         )
-        
+
         if column is not None:
             column.__exit__()
 
     interfaces = [
+    
         (txt2img_interface, "文生图", "txt2img"),
         (img2img_interface, "图生图", "img2img"),
         (extras_interface, "高清处理", "extras"),
         (pnginfo_interface, "PNG信息", "pnginfo"),
         (modelmerger_interface, "检查点合并", "modelmerger"),
-        (textual_inversion_interface, "文本反转", "ti"),
+        (train_interface, "训练", "ti"),
         (settings_interface, "设置", "settings"),
+        
     ]
 
     with open(os.path.join(script_path, "style.css"), "r", encoding="utf8") as file:
@@ -1385,12 +1416,12 @@ Requested path was: {f}
                 component_dict[k] = component
 
         settings_interface.gradio_ref = demo
-        
+
         with gr.Tabs() as tabs:
             for interface, label, ifid in interfaces:
                 with gr.TabItem(label, id=ifid, elem_id='tab_' + ifid):
                     interface.render()
-        
+
         if os.path.exists(os.path.join(script_path, "notification.mp3")):
             audio_notification = gr.Audio(interactive=False, value=os.path.join(script_path, "notification.mp3"), elem_id="audio_notification", visible=False)
 
@@ -1523,10 +1554,10 @@ Requested path was: {f}
 
             if getattr(obj,'custom_script_source',None) is not None:
               key = 'customscript/' + obj.custom_script_source + '/' + key
-            
+
             if getattr(obj, 'do_not_save_to_config', False):
                 return
-            
+
             saved_value = ui_settings.get(key, None)
             if saved_value is None:
                 ui_settings[key] = getattr(obj, field)
@@ -1550,10 +1581,10 @@ Requested path was: {f}
 
         if type(x) == gr.Textbox:
             apply_field(x, 'value')
-        
+
         if type(x) == gr.Number:
             apply_field(x, 'value')
-        
+
     visit(txt2img_interface, loadsave, "txt2img")
     visit(img2img_interface, loadsave, "img2img")
     visit(extras_interface, loadsave, "extras")
