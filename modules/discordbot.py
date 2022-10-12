@@ -219,27 +219,31 @@ async def die(ctx):
 
 
 
-async def image_send(filename,prompt,negative_prompt,seed,subseed,seedvar,sampler_name,steps,cfg_scale,width,height,modelhash):
+async def image_send(filename,prompt,negative_prompt,seed,subseed,seedvar,sampler_name,steps,cfg_scale,width,height,modelhash,seed_resize_w, seed_resize_h):
         channel = bot.get_channel(post_id)
         view=Buttons()
         print(f"Uploading: {filename}")
         #await channel.send(f"Prompt: `{prompt}`\nSeed: `{seed}` - Subseed: `{subseed}` - Var Amount: `{seedvar}`\nSampler: `{sampler_name}` - Steps: `{steps}` - CFG Scale: `{cfg_scale}`\nImage Dimensions: `{width}x{height}`\nModel Hash: `{modelhash}`", file=discord.File(filename), view=view)
         prompt_info = prompt
+
         if negative_prompt != "":
-            prompt_info = f"`{prompt_info}`\nNegative prompt: `{negative_prompt}`\nSteps: `{steps}`, Sampler `{sampler_name}`, CFG scale: `{cfg_scale}`, Seed: `{seed}`, Size: `{width}x{height}`, Model hash: `{modelhash}`"
+            prompt_info = f"{prompt_info}\nNegative prompt: {negative_prompt}\nSteps: {steps}, Sampler {sampler_name}, CFG scale: {cfg_scale}, Seed: {seed}, Size: {width}x{height}, Model hash: {modelhash}"
         else:
-            prompt_info = f"`{prompt_info}`\nSteps: `{steps}`, Sampler `{sampler_name}`, CFG scale: `{cfg_scale}`, Seed: `{seed}`, Size: `{width}x{height}`, Model hash: `{modelhash}`"
-        if seedvar != -1:
-            prompt_info = f"`{prompt_info}`, Variation seed `{subseed}`, Variation seed strength: `{seedvar}`"
+            prompt_info = f"{prompt_info}\nSteps: {steps}, Sampler {sampler_name}, CFG scale: {cfg_scale}, Seed: {seed}, Size: {width}x{height}, Model hash: {modelhash}"
+        if subseed != -1:
+            prompt_info = f"{prompt_info}, Variation seed {subseed}, Variation seed strength: {seedvar}"
+        if seed_resize_w != 0 and seed_resize_h != 0:
+            prompt_info = f"{prompt_info}, Seed resize from: {seed_resize_w}x{seed_resize_h}"
+
         await channel.send(prompt_info, file=discord.File(filename), view=view)
-        
+
 ##########################
 #save_sample part
-def post_result(image,prompt,negative_prompt,seed,subseed,seedvar,sampler_name,steps,cfg_scale,width,height,modelhash):
+def post_result(image,prompt,negative_prompt,seed,subseed,seedvar,sampler_name,steps,cfg_scale,width,height,modelhash,seed_resize_w, seed_resize_h):
     if bot_config['main']['post_result'] == True:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        bot.loop.create_task(image_send(image,prompt,negative_prompt,seed,subseed,seedvar,sampler_name,steps,cfg_scale,width,height,modelhash))
+        bot.loop.create_task(image_send(image,prompt,negative_prompt,seed,subseed,seedvar,sampler_name,steps,cfg_scale,width,height,modelhash,seed_resize_w,seed_resize_h))
         loop.close()
 ######################
 #
