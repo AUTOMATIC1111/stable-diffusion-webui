@@ -66,8 +66,16 @@ This takes images from a directory, processes them to be ready for textual inver
 - **Log directory**: sample images and copies of partially trained embeddings will be written to this directory.
 - **Prompt template file**: text file with prompts, one per line, for training the model on. See files in directory `textual_inversion_templates` for what you can do with those. Use `style.txt` when training styles, and `subject.txt` when training object embeddings. Following tags can be used in the file:
   - `[name]`: the name of embedding
-  - `[filewords]`: words from the file name of the image from the dataset, separated by spaces.
+  - `[filewords]`: words from the file name of the image from the dataset. See below for more info.
 - **Max steps**: training will stop after this many steps have been completed. A step is when one picture (or one batch of pictures, but batches are currently not supported) is shown to the model and is used to improve embedding. if you interrupt training and resume it at a later date, the number of steps is preserved.
+- **Preview prompt**: if not empty, this prompt will be used to generate preview pictures. If empty, the prompt from training will be used.
+
+### filewords
+`[filewords]` is a tag for prompt template file that allows you to insert text from filename into the prompt. By default, file's extension is removed, as well as all numbers and dashes (`-`) at the start of filename. So this filename: `000001-1-a man in suit.png` will become this text for prompt: `a man in suit`. Formatting of the text in the filename is left as it is.
+
+It's possible to use options `Filename word regex` and `Filename join string` to alter the text from filename: for example, with word regex = `\w+` and join string = `, `, the file from above will produce this text: `a, man, in, suit`. regex is used to extract words from text (and they are `['a', 'man', 'in', 'suit', ]`), and join string (', ') is placed between those words to create one text: `a, man, in, suit`.
+
+It's also possible to make a text file with same filename as image (`000001-1-a man in suit.txt`) and just put the prompt text there. The filename and regex options will not be used.
 
 ## Third party repos
 I successfully trained embeddings using those repositories:
@@ -76,7 +84,6 @@ I successfully trained embeddings using those repositories:
  - [lstein](https://github.com/invoke-ai/InvokeAI)
 
 Other options are to train on colabs and/or using diffusers library, which I know nothing about.
-
 
 # Finding embeddings online
 
@@ -96,3 +103,6 @@ The current way to train hypernets is in the textual inversion tab.
 Training works the same way as with textual inversion.
 
 The only requirement is to use a very, very low learning rate, something like 0.000005 or 0.0000005.
+
+## Unload VAE and CLIP from VRAM when training
+This option on settings tab allows you to save some memoryat the cost of slower preview picture generation.
