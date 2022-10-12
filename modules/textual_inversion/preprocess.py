@@ -3,11 +3,14 @@ from PIL import Image, ImageOps
 import platform
 import sys
 import tqdm
+import time
 
 from modules import shared, images
+from modules.shared import opts, cmd_opts
+if cmd_opts.deepdanbooru:
+    import modules.deepbooru as deepbooru
 
-
-def preprocess(process_src, process_dst, process_width, process_height, process_flip, process_split, process_caption):
+def preprocess(process_src, process_dst, process_width, process_height, process_flip, process_split, process_caption, process_caption_deepbooru=False):
     width = process_width
     height = process_height
     src = os.path.abspath(process_src)
@@ -25,10 +28,21 @@ def preprocess(process_src, process_dst, process_width, process_height, process_
     if process_caption:
         shared.interrogator.load()
 
+    if process_caption_deepbooru:
+        deepbooru.create_deepbooru_process(opts.interrogate_deepbooru_score_threshold, opts.deepbooru_sort_alpha)
+
     def save_pic_with_caption(image, index):
         if process_caption:
             caption = "-" + shared.interrogator.generate_caption(image)
             caption = sanitize_caption(os.path.join(dst, f"{index:05}-{subindex[0]}"), caption, ".png")
+        elif process_caption_deepbooru:
+            shared.deepbooru_process_return["value"] = -1
+            shared.deepbooru_process_queue.put(image)
+            while shared.deepbooru_process_return["value"] == -1:
+                time.sleep(0.2)
+            caption = "-" + shared.deepbooru_process_return["value"]
+            caption = sanitize_caption(os.path.join(dst, f"{index:05}-{subindex[0]}"), caption, ".png")
+            shared.deepbooru_process_return["value"] = -1
         else:
             caption = filename
             caption = os.path.splitext(caption)[0]
@@ -82,6 +96,10 @@ def preprocess(process_src, process_dst, process_width, process_height, process_
 
     if process_caption:
         shared.interrogator.send_blip_to_ram()
+
+    if process_caption_deepbooru:
+        deepbooru.release_process()
+
 
 def sanitize_caption(base_path, original_caption, suffix):
     operating_system = platform.system().lower()
