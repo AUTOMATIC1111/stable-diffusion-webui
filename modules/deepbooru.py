@@ -19,6 +19,7 @@ def get_deepbooru_tags(pil_image):
         release_process()
 
 
+OPT_INCLUDE_RANKS = "include_ranks"
 def create_deepbooru_opts():
     from modules import shared
 
@@ -26,7 +27,7 @@ def create_deepbooru_opts():
         "use_spaces": shared.opts.deepbooru_use_spaces,
         "use_escape": shared.opts.deepbooru_escape,
         "alpha_sort": shared.opts.deepbooru_sort_alpha,
-        "include_ranks": shared.opts.interrogate_return_ranks,
+        OPT_INCLUDE_RANKS: shared.opts.interrogate_return_ranks,
     }
 
 
