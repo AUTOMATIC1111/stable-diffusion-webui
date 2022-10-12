@@ -1035,14 +1035,14 @@ def create_ui(wrap_gradio_gpu_call):
 
     sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings()
 
-    with gr.Blocks() as textual_inversion_interface:
+    with gr.Blocks() as train_interface:
         with gr.Row().style(equal_height=False):
-            with gr.Column():
-                with gr.Group():
-                    gr.HTML(value="<p style='margin-bottom: 0.7em'>See <b><a href=\"https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Textual-Inversion\">wiki</a></b> for detailed explanation.</p>")
+            gr.HTML(value="<p style='margin-bottom: 0.7em'>See <b><a href=\"https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Textual-Inversion\">wiki</a></b> for detailed explanation.</p>")
 
-                    gr.HTML(value="<p style='margin-bottom: 0.7em'>Create a new embedding</p>")
+        with gr.Row().style(equal_height=False):
+            with gr.Tabs(elem_id="train_tabs"):
 
+                with gr.Tab(label="Create embedding"):
                     new_embedding_name = gr.Textbox(label="Name")
                     initialization_text = gr.Textbox(label="Initialization text", value="*")
                     nvpt = gr.Slider(label="Number of vectors per token", minimum=1, maximum=75, step=1, value=1)
@@ -1054,9 +1054,7 @@ def create_ui(wrap_gradio_gpu_call):
                         with gr.Column():
                             create_embedding = gr.Button(value="Create embedding", variant='primary')
 
-                with gr.Group():
-                    gr.HTML(value="<p style='margin-bottom: 0.7em'>Create a new hypernetwork</p>")
-
+                with gr.Tab(label="Create hypernetwork"):
                     new_hypernetwork_name = gr.Textbox(label="Name")
                     new_hypernetwork_sizes = gr.CheckboxGroup(label="Modules", value=["768", "320", "640", "1280"], choices=["768", "320", "640", "1280"])
 
@@ -1067,9 +1065,7 @@ def create_ui(wrap_gradio_gpu_call):
                         with gr.Column():
                             create_hypernetwork = gr.Button(value="Create hypernetwork", variant='primary')
 
-                with gr.Group():
-                    gr.HTML(value="<p style='margin-bottom: 0.7em'>Preprocess images</p>")
-
+                with gr.Tab(label="Preprocess images"):
                     process_src = gr.Textbox(label='Source directory')
                     process_dst = gr.Textbox(label='Destination directory')
                     process_width = gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512)
@@ -1091,7 +1087,7 @@ def create_ui(wrap_gradio_gpu_call):
                         with gr.Column():
                             run_preprocess = gr.Button(value="Preprocess", variant='primary')
 
-                with gr.Group():
+                with gr.Tab(label="Train"):
                     gr.HTML(value="<p style='margin-bottom: 0.7em'>Train an embedding; must specify a directory with a set of 1:1 ratio images</p>")
                     train_embedding_name = gr.Dropdown(label='Embedding', choices=sorted(sd_hijack.model_hijack.embedding_db.word_embeddings.keys()))
                     train_hypernetwork_name = gr.Dropdown(label='Hypernetwork', choices=[x for x in shared.hypernetworks.keys()])
@@ -1388,7 +1384,7 @@ Requested path was: {f}
         (extras_interface, "Extras", "extras"),
         (pnginfo_interface, "PNG Info", "pnginfo"),
         (modelmerger_interface, "Checkpoint Merger", "modelmerger"),
-        (textual_inversion_interface, "Textual inversion", "ti"),
+        (train_interface, "Train", "ti"),
         (settings_interface, "Settings", "settings"),
     ]
 
