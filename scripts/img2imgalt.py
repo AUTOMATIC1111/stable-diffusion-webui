@@ -120,15 +120,44 @@ class Script(scripts.Script):
         return is_img2img
 
     def ui(self, is_img2img):
+        info = gr.Markdown('''
+        * `Sampling method` is overriden as Euler, as this script is built on it.
+        * `CFG Scale` should be 2 or lower.
+        ''')
+
+        override_prompt = gr.Checkbox(label="Override `prompt` to the same value as `original prompt`?(and `negative prompt`)", value=True)
         original_prompt = gr.Textbox(label="Original prompt", lines=1)
         original_negative_prompt = gr.Textbox(label="Original negative prompt", lines=1)
-        cfg = gr.Slider(label="Decode CFG scale", minimum=0.0, maximum=15.0, step=0.1, value=1.0)
+
+        override_steps = gr.Checkbox(label="Override `Sampling Steps` to the same value as `Decode steps`?", value=True)
         st = gr.Slider(label="Decode steps", minimum=1, maximum=150, step=1, value=50)
+
+        override_strength = gr.Checkbox(label="Override `Denoising strength` to 1?", value=True)
+
+        cfg = gr.Slider(label="Decode CFG scale", minimum=0.0, maximum=15.0, step=0.1, value=1.0)
         randomness = gr.Slider(label="Randomness", minimum=0.0, maximum=1.0, step=0.01, value=0.0)
         sigma_adjustment = gr.Checkbox(label="Sigma adjustment for finding noise for image", value=False)
-        return [original_prompt, original_negative_prompt, cfg, st, randomness, sigma_adjustment]
 
-    def run(self, p, original_prompt, original_negative_prompt, cfg, st, randomness, sigma_adjustment):
+        return [
+            info, 
+            override_prompt, original_prompt, original_negative_prompt, 
+            override_steps, st,
+            override_strength,
+            cfg, randomness, sigma_adjustment,
+        ]
+
+    def run(self, p, _, override_prompt, original_prompt, original_negative_prompt, override_steps, st, override_strength, cfg, randomness, sigma_adjustment):
+        # MUST Override
+        p.sampler_index = [sampler.name for sampler in sd_samplers.samplers].index("Euler")
+
+        # OPTIONAL Override
+        if override_prompt:
+            p.prompt = original_prompt
+            p.negative_prompt = original_negative_prompt
+        if override_steps:
+            p.steps = st
+        if override_strength:
+            p.denoising_strength = 1.0
 
 
         def sample_extra(conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength):
