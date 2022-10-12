@@ -1263,7 +1263,7 @@ def create_ui(wrap_gradio_gpu_call):
                 db_preview = gr.Image(elem_id='db_preview', visible=False)
                 db_progress = gr.HTML(elem_id="db_progress", value="")
                 db_outcome = gr.HTML(elem_id="db_error", value="")
-                setup_progressbar(db_progressbar, db_preview, 'ti', textinfo=db_progress)
+                setup_progressbar(db_progressbar, db_preview, 'db', textinfo=db_progress)
 
         db_create_embedding.click(
             fn=conversion.extract_checkpoint,
@@ -1281,7 +1281,7 @@ def create_ui(wrap_gradio_gpu_call):
 
         db_run_preprocess.click(
             fn=wrap_gradio_gpu_call(modules.textual_inversion.ui.preprocess, extra_outputs=[gr.update()]),
-            _js="start_training_textual_inversion",
+            _js="start_training_dreambooth",
             inputs=[
                 db_process_src,
                 db_process_dst,
@@ -1297,7 +1297,7 @@ def create_ui(wrap_gradio_gpu_call):
 
         db_train_embedding.click(
             fn=wrap_gradio_gpu_call(modules.dreambooth.dreambooth.start_training, extra_outputs=[gr.update()]),
-            _js="start_training_textual_inversion",
+            _js="start_training_dreambooth",
             inputs=[
                 db_model_name,
                 db_initialization_text,

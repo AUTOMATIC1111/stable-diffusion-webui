@@ -3,6 +3,7 @@ import html
 import json
 import math
 import os
+from contextlib import nullcontext
 from pathlib import Path
 from typing import Optional
 
@@ -39,17 +40,15 @@ class DreamBooth:
         self.resolution = 512
         # Pretrained tokenizer name or path if not the same as model_name
         self.instance_data_dir = training_data
-        # A folder containing the training data of instance images.
-        if class_data is not None:
-            self.class_data_dir = class_data
-        else:
-            self.class_data_dir = ""
         # A folder containing the training data of class images.
         self.instance_prompt = instance_prompt
         # The prompt with identifier specifing the instance
         self.class_prompt = class_prompt
-        # The prompt to specify images in the same class as provided intance images.
+        # The prompt to specify images in the same class as provided instance images.
         self.with_prior_preservation = False
+
+        if class_prompt != "*" and class_prompt != "":
+            self.with_prior_preservation = True
         # Flag to add prior perservation loss.
         self.prior_loss_weight = 1.0
         # "The weight of prior preservation loss."
@@ -58,6 +57,14 @@ class DreamBooth:
         model_dir = os.path.join(model_path, "dreambooth", name)
         # This is where all dreambooth trainings are saved
         self.output_dir = os.path.join(model_dir, "working")
+        # A folder containing the training data of instance images.
+        if class_data is not None and class_data != "":
+            self.class_data_dir = class_data
+        else:
+            self.class_data_dir = os.path.join(self.output_dir, "classifiers")
+            if not os.path.exists(self.class_data_dir):
+                os.makedirs(self.class_data_dir)
+
         self.logging_dir = os.path.join(self.output_dir, "logging")
         self.pretrained_model_path = os.path.join(model_dir, "stable-diffusion-v1-4")
         # The output directory where the model predictions and checkpoints will be written.
@@ -73,10 +80,7 @@ class DreamBooth:
         # Batch size (per device) for sampling images."
         self.num_train_epochs = 1
         self.max_train_steps = max_steps
-        # TODO: Decide if this should be in the UI, or if we do math to use the 'recommended' amount
-        # self.num_class_images = self.num_train_epoch * self.max_train_steps
         self.num_class_images = num_class_images
-
         # Total number of training steps to perform.  If provided, overrides num_train_epochs.
         self.gradient_accumulation_steps = grad_steps
         # Number of updates steps to accumulate before performing a backward/update pass.
@@ -121,14 +125,14 @@ class DreamBooth:
         if not os.path.exists(self.instance_data_dir):
             print("Invalid training data dir!")
             shared.state.textinfo = "Invalid training data dir"
-            return 0
+            return "", 0
 
         shared.state.textinfo = "Initializing dreambooth training..."
         logging_dir = Path(self.output_dir, self.logging_dir)
         use_cpu = False
         has_deepspeed = False
         ds = None
-
+        #self.mixed_precision="fp16"
         if shared.cmd_opts.medvram or shared.cmd_opts.lowvram:
             use_cpu = True
             # self.mixed_precision = "fp16"
@@ -180,6 +184,12 @@ class DreamBooth:
         if self.seed is not None:
             set_seed(self.seed)
 
+        weight_dtype = torch.float32
+        if self.mixed_precision == "fp16":
+            weight_dtype = torch.float16
+        elif self.mixed_precision == "bf16":
+            weight_dtype = torch.bfloat16
+
         if self.with_prior_preservation:
             class_images_dir = Path(self.class_data_dir)
             if not class_images_dir.exists():
@@ -203,14 +213,15 @@ class DreamBooth:
                 sample_dataloader = accelerator.prepare(sample_dataloader)
                 pipeline.to(accelerator.device)
                 # Disabled in opt
-                # context = torch.autocast("cuda") if accelerator.device.type == "cuda" else nullcontext
-                for example in tqdm(
-                        sample_dataloader, desc="Generating class images", disable=not accelerator.is_local_main_process
-                ):
-                    images = pipeline(example["prompt"]).images
+                context = torch.autocast("cuda") if accelerator.device.type == "cuda" else nullcontext
+                with context:
+                    for example in tqdm(
+                            sample_dataloader, desc="Generating class images", disable=not accelerator.is_local_main_process
+                    ):
+                        images = pipeline(example["prompt"]).images
 
-                    for i, image in enumerate(images):
-                        image.save(class_images_dir / f"{example['index'][i] + cur_class_images}.jpg")
+                        for i, image in enumerate(images):
+                            image.save(class_images_dir / f"{example['index'][i] + cur_class_images}.jpg")
 
                 del pipeline
                 if torch.cuda.is_available():
@@ -326,18 +337,13 @@ class DreamBooth:
         unet, optimizer, train_dataloader, lr_scheduler = accelerator.prepare(
             unet, optimizer, train_dataloader, lr_scheduler
         )
-        # Added in OPT
-        weight_dtype = torch.float32
-        if self.mixed_precision == "fp16":
-            weight_dtype = torch.float16
-        elif self.mixed_precision == "bf16":
-            weight_dtype = torch.bfloat16
         # T this was moved in OPT from above
         # Move text_encode and vae to gpu.
         # For mixed precision training we cast the text_encoder and vae weights to half-precision
         # as these models are only used for inference, keeping weights in full precision is not required.
         text_encoder.to(accelerator.device, dtype=weight_dtype)
         vae.to(accelerator.device, dtype=weight_dtype)
+
         # We need to recalculate our total training steps as the size of the training dataloader may have changed.
         num_update_steps_per_epoch = math.ceil(len(train_dataloader) / self.gradient_accumulation_steps)
         if overrode_max_train_steps:
@@ -375,8 +381,7 @@ class DreamBooth:
             unet.train()
             for step, batch in enumerate(train_dataloader):
                 with accelerator.accumulate(unet):
-                    # Convert images to latent space
-                    with torch.no_grad():
+                    with torch.autocast("cuda"), torch.no_grad():
                         latents = vae.encode(batch["pixel_values"].to(dtype=weight_dtype)).latent_dist.sample()
                         latents = latents * 0.18215
                     noise = torch.randn_like(latents)
@@ -388,10 +393,8 @@ class DreamBooth:
                     noisy_latents = noise_scheduler.add_noise(latents, noise, timesteps)
 
                     # Get the text embedding for conditioning
-                    with torch.no_grad():
+                    with torch.autocast("cuda"), torch.no_grad():
                         encoder_hidden_states = text_encoder(batch["input_ids"])[0]
-
-                    # Predict the noise residual
                     noise_pred = unet(noisy_latents, timesteps, encoder_hidden_states).sample
 
                     if self.with_prior_preservation:
@@ -467,7 +470,7 @@ class DreamBooth:
                 shared.state.textinfo = f"Training canceled {global_step}/{self.max_train_steps}"
                 break
             shared.state.job_no += 1
-        # Create the pipeline using using the trained modules and save it.
+        # Create the pipeline using the trained modules and save it.
         if accelerator.is_main_process:
             pipeline = StableDiffusionPipeline.from_pretrained(
                 self.pretrained_model_path,
@@ -490,49 +493,45 @@ def start_training(model_name, initialization_text, classification_text, learn_r
                    classifier_directory, steps, create_image_every, save_embedding_every, db_num_class_images):
     print("Starting Dreambooth training...")
     converted = ""
+    sd_hijack.undo_optimizations()
+    shared.sd_model = None
+    model_path = paths.models_path
+    model_dir = os.path.join(model_path, "dreambooth", model_name, "working")
+    config = None
+    config_file = os.path.join(model_dir, "config.json")
     try:
-        sd_hijack.undo_optimizations()
-        shared.sd_model = None
-        model_path = paths.models_path
-        model_dir = os.path.join(model_path, "dreambooth", model_name, "working")
-        config = None
-        config_file = os.path.join(model_dir, "config.json")
-        try:
-            with open(config_file, 'r') as openfile:
-                config = json.load(openfile)
-        except:
-            pass
+        with open(config_file, 'r') as openfile:
+            config = json.load(openfile)
+    except:
+        pass
 
-        if config is None:
-            print("Unable to load config?")
-            return "Invalid source checkpoint", ""
+    if config is None:
+        print("Unable to load config?")
+        return "Invalid source checkpoint", ""
 
-        src_checkpoint = config["src"]
-        total_steps = config["total_steps"]
-        dream = DreamBooth(model_name, dataset_directory, initialization_text, classification_text, learn_rate,
-                           create_image_every, save_embedding_every, steps, class_data=classifier_directory,
-                           num_class_images=db_num_class_images)
+    src_checkpoint = config["src"]
+    total_steps = config["total_steps"]
+    dream = DreamBooth(model_name, dataset_directory, initialization_text, classification_text, learn_rate,
+                       create_image_every, save_embedding_every, steps, class_data=classifier_directory,
+                       num_class_images=db_num_class_images)
+    out_dir, trained_steps = dream.train()
+    total_steps += trained_steps
+    config["total_steps"] = total_steps
+    json_object = json.dumps(config, indent=4)
 
-        out_dir, trained_steps = dream.train()
-        total_steps += trained_steps
-        config["total_steps"] = total_steps
-        json_object = json.dumps(config, indent=4)
+    # Writing to sample.json
+    with open(config_file, "w") as outfile:
+        outfile.write(json_object)
+    out_file = os.path.join(paths.models_path, "Stable-diffusion", f"{model_name}_{total_steps}.ckpt")
+    if os.path.exists(os.path.join(model_dir, "model_index.json")):
+        print(f"Successfully trained model for a total of {total_steps} steps, converting to ckpt.")
+        src_path = modules.sd_models.get_closet_checkpoint_match(src_checkpoint)[0]
+        converted = conversion.convert_diff_to_sd(model_dir, src_path, out_file, True)
+        sd_models.list_models()
 
-        # Writing to sample.json
-        with open(config_file, "w") as outfile:
-            outfile.write(json_object)
-        out_file = os.path.join(paths.models_path, "Stable-diffusion", f"{model_name}_{total_steps}.ckpt")
-        if os.path.exists(os.path.join(model_dir, "model_index.json")):
-            print(f"Successfully trained model for a total of {total_steps} steps, converting to ckpt.")
-            src_path = modules.sd_models.get_closet_checkpoint_match(src_checkpoint)[0]
-            converted = conversion.convert_diff_to_sd(model_dir, src_path, out_file, True)
-            sd_models.list_models()
-    except Exception:
-        raise
-    finally:
-        modules.sd_models.load_model()
-        print("Re-applying optimizations...")
-        sd_hijack.apply_optimizations()
+    modules.sd_models.load_model()
+    print("Re-applying optimizations...")
+    sd_hijack.apply_optimizations()
     res = f"Training {'interrupted' if shared.state.interrupted else 'finished'}." \
           f"Total steps: {total_steps}" \
           f"Embedding saved to {html.escape(converted)}"
