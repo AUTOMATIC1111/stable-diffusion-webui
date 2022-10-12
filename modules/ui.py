@@ -131,6 +131,8 @@ def save_files(js_data, images, do_make_zip, index):
         images = [images[index]]
         start_index = index
 
+    os.makedirs(opts.outdir_save, exist_ok=True)
+
     with open(os.path.join(opts.outdir_save, "log.csv"), "a", encoding="utf8", newline='') as file:
         at_start = file.tell() == 0
         writer = csv.writer(file)
