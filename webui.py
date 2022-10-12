@@ -31,12 +31,7 @@ from modules.paths import script_path
 from modules.shared import cmd_opts
 import modules.hypernetworks.hypernetwork
 
-modelloader.cleanup_models()
-modules.sd_models.setup_model()
-codeformer.setup_model(cmd_opts.codeformer_models_path)
-gfpgan.setup_model(cmd_opts.gfpgan_models_path)
-shared.face_restorers.append(modules.face_restoration.FaceRestoration())
-modelloader.load_upscalers()
+
 queue_lock = threading.Lock()
 
 
@@ -78,12 +73,19 @@ def wrap_gradio_gpu_call(func, extra_outputs=None):
     return modules.ui.wrap_gradio_call(f, extra_outputs=extra_outputs)
 
 
-modules.scripts.load_scripts(os.path.join(script_path, "scripts"))
+def initialize():
+    modelloader.cleanup_models()
+    modules.sd_models.setup_model()
+    codeformer.setup_model(cmd_opts.codeformer_models_path)
+    gfpgan.setup_model(cmd_opts.gfpgan_models_path)
+    shared.face_restorers.append(modules.face_restoration.FaceRestoration())
+    modelloader.load_upscalers()
 
-shared.sd_model = modules.sd_models.load_model()
-shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights(shared.sd_model)))
+    modules.scripts.load_scripts(os.path.join(script_path, "scripts"))
 
-shared.opts.onchange("sd_hypernetwork", wrap_queued_call(lambda: modules.hypernetworks.hypernetwork.load_hypernetwork(shared.opts.sd_hypernetwork)))
+    shared.sd_model = modules.sd_models.load_model()
+    shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights(shared.sd_model)))
+    shared.opts.onchange("sd_hypernetwork", wrap_queued_call(lambda: modules.hypernetworks.hypernetwork.load_hypernetwork(shared.opts.sd_hypernetwork)))
 
 
 def webui():
@@ -98,7 +100,7 @@ def webui():
 
         demo = modules.ui.create_ui(wrap_gradio_gpu_call=wrap_gradio_gpu_call)
         
-        app,local_url,share_url = demo.launch(
+        app, local_url, share_url = demo.launch(
             share=cmd_opts.share,
             server_name="0.0.0.0" if cmd_opts.listen else None,
             server_port=cmd_opts.port,
@@ -129,6 +131,6 @@ def webui():
         print('Restarting Gradio')
 
 
-
 if __name__ == "__main__":
+    initialize()
     webui()
