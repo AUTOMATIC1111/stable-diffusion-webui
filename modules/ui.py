@@ -107,7 +107,7 @@ def send_gradio_gallery_to_image(x):
 
 
 def save_files(js_data, images, do_make_zip, index):
-    import csv    
+    import csv
     filenames = []
     fullfns = []
 
@@ -567,11 +567,11 @@ def create_ui(wrap_gradio_gpu_call):
                         button_id = "hidden_element" if shared.cmd_opts.hide_ui_dir_config else 'open_folder'
                         open_txt2img_folder = gr.Button(folder_symbol, elem_id=button_id)
 
-                with gr.Row():
-                    do_make_zip = gr.Checkbox(label="Make Zip when Save?", value=False)
-                    
-                with gr.Row():
-                    download_files = gr.File(None, file_count="multiple", interactive=False, show_label=False, visible=False)
+                    with gr.Row():
+                        do_make_zip = gr.Checkbox(label="Make Zip when Save?", value=False)
+
+                    with gr.Row():
+                        download_files = gr.File(None, file_count="multiple", interactive=False, show_label=False, visible=False)
 
                     with gr.Group():
                         html_info = gr.HTML()
@@ -755,11 +755,11 @@ def create_ui(wrap_gradio_gpu_call):
                         button_id = "hidden_element" if shared.cmd_opts.hide_ui_dir_config else 'open_folder'
                         open_img2img_folder = gr.Button(folder_symbol, elem_id=button_id)
 
-                with gr.Row():
-                    do_make_zip = gr.Checkbox(label="Make Zip when Save?", value=False)
-                    
-                with gr.Row():
-                    download_files = gr.File(None, file_count="multiple", interactive=False, show_label=False, visible=False)
+                    with gr.Row():
+                        do_make_zip = gr.Checkbox(label="Make Zip when Save?", value=False)
+
+                    with gr.Row():
+                        download_files = gr.File(None, file_count="multiple", interactive=False, show_label=False, visible=False)
 
                     with gr.Group():
                         html_info = gr.HTML()
@@ -921,7 +921,15 @@ def create_ui(wrap_gradio_gpu_call):
                     with gr.TabItem('Batch Process'):
                         image_batch = gr.File(label="Batch Process", file_count="multiple", interactive=True, type="file")
 
-                upscaling_resize = gr.Slider(minimum=1.0, maximum=4.0, step=0.05, label="Resize", value=2)
+                with gr.Tabs(elem_id="extras_resize_mode"):
+                    with gr.TabItem('Scale by'):
+                        upscaling_resize = gr.Slider(minimum=1.0, maximum=4.0, step=0.05, label="Resize", value=2)
+                    with gr.TabItem('Scale to'):
+                        with gr.Group():
+                            with gr.Row():
+                                upscaling_resize_w = gr.Number(label="Width", value=512, precision=0)
+                                upscaling_resize_h = gr.Number(label="Height", value=512, precision=0)
+                            upscaling_crop = gr.Checkbox(label='Crop to fit', value=True)
 
                 with gr.Group():
                     extras_upscaler_1 = gr.Radio(label='Upscaler 1', choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name, type="index")
@@ -953,12 +961,16 @@ def create_ui(wrap_gradio_gpu_call):
             _js="get_extras_tab_index",
             inputs=[
                 dummy_component,
+                dummy_component,
                 extras_image,
                 image_batch,
                 gfpgan_visibility,
                 codeformer_visibility,
                 codeformer_weight,
                 upscaling_resize,
+                upscaling_resize_w,
+                upscaling_resize_h,
+                upscaling_crop,
                 extras_upscaler_1,
                 extras_upscaler_2,
                 extras_upscaler_2_visibility,
@@ -969,14 +981,14 @@ def create_ui(wrap_gradio_gpu_call):
                 html_info,
             ]
         )
-     
+
         extras_send_to_img2img.click(
             fn=lambda x: image_from_url_text(x),
             _js="extract_image_from_gallery_img2img",
             inputs=[result_images],
             outputs=[init_img],
         )
-        
+
         extras_send_to_inpaint.click(
             fn=lambda x: image_from_url_text(x),
             _js="extract_image_from_gallery_inpaint",
@@ -1366,7 +1378,7 @@ Requested path was: {f}
             outputs=[],
             _js='function(){restart_reload()}'
         )
-        
+
         if column is not None:
             column.__exit__()
 
@@ -1398,12 +1410,12 @@ Requested path was: {f}
                 component_dict[k] = component
 
         settings_interface.gradio_ref = demo
-        
+
         with gr.Tabs() as tabs:
             for interface, label, ifid in interfaces:
                 with gr.TabItem(label, id=ifid, elem_id='tab_' + ifid):
                     interface.render()
-        
+
         if os.path.exists(os.path.join(script_path, "notification.mp3")):
             audio_notification = gr.Audio(interactive=False, value=os.path.join(script_path, "notification.mp3"), elem_id="audio_notification", visible=False)
 
@@ -1536,10 +1548,10 @@ Requested path was: {f}
 
             if getattr(obj,'custom_script_source',None) is not None:
               key = 'customscript/' + obj.custom_script_source + '/' + key
-            
+
             if getattr(obj, 'do_not_save_to_config', False):
                 return
-            
+
             saved_value = ui_settings.get(key, None)
             if saved_value is None:
                 ui_settings[key] = getattr(obj, field)
@@ -1563,10 +1575,10 @@ Requested path was: {f}
 
         if type(x) == gr.Textbox:
             apply_field(x, 'value')
-        
+
         if type(x) == gr.Number:
             apply_field(x, 'value')
-        
+
     visit(txt2img_interface, loadsave, "txt2img")
     visit(img2img_interface, loadsave, "img2img")
     visit(extras_interface, loadsave, "extras")
