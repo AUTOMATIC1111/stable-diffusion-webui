@@ -129,8 +129,6 @@ class Script(scripts.Script):
         return [original_prompt, original_negative_prompt, cfg, st, randomness, sigma_adjustment]
 
     def run(self, p, original_prompt, original_negative_prompt, cfg, st, randomness, sigma_adjustment):
-        p.batch_size = 1
-        p.batch_count = 1
 
 
         def sample_extra(conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength):
@@ -154,7 +152,7 @@ class Script(scripts.Script):
                     rec_noise = find_noise_for_image(p, cond, uncond, cfg, st)
                 self.cache = Cached(rec_noise, cfg, st, lat, original_prompt, original_negative_prompt, sigma_adjustment)
 
-            rand_noise = processing.create_random_tensors(p.init_latent.shape[1:], [p.seed + x + 1 for x in range(p.init_latent.shape[0])])
+            rand_noise = processing.create_random_tensors(p.init_latent.shape[1:], seeds=seeds, subseeds=subseeds, subseed_strength=p.subseed_strength, seed_resize_from_h=p.seed_resize_from_h, seed_resize_from_w=p.seed_resize_from_w, p=p)
             
             combined_noise = ((1 - randomness) * rec_noise + randomness * rand_noise) / ((randomness**2 + (1-randomness)**2) ** 0.5)
             
