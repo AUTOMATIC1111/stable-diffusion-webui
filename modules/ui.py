@@ -1262,9 +1262,9 @@ def create_ui(wrap_gradio_gpu_call):
                                                       placeholder="Path to directory with input images")
                     db_classification_directory = gr.Textbox(label='Classification dataset directory (optional).',
                                                              placeholder="Path to directory with classification images")
-                    db_num_class_images = gr.Number(label='Number of classification images to generate.', value=200,
+                    db_num_class_images = gr.Number(label='Total number of classification images to use. Set to 0 to disable.', value=0,
                                                     precision=0)
-                    db_steps = gr.Number(label='Max steps', value=5000, precision=0)
+                    db_steps = gr.Number(label='Training steps', value=1000, precision=0)
                     db_create_image_every = gr.Number(
                         label='Save an image to log directory every N steps, 0 to disable', value=500, precision=0)
                     db_save_embedding_every = gr.Number(

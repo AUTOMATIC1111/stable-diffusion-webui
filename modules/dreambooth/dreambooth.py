@@ -47,7 +47,7 @@ class DreamBooth:
         # The prompt to specify images in the same class as provided instance images.
         self.with_prior_preservation = False
 
-        if class_prompt != "*" and class_prompt != "":
+        if class_prompt != "*" and class_prompt != "" and num_class_images != 0:
             self.with_prior_preservation = True
         # Flag to add prior perservation loss.
         self.prior_loss_weight = 1.0
