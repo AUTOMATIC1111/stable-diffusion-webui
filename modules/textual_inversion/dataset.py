@@ -44,7 +44,6 @@ class PersonalizedBase(Dataset):
             filename = os.path.basename(path)
             filename_tokens = os.path.splitext(filename)[0]
             filename_tokens = re_tag.findall(filename_tokens)
-            filename_tokens = [tag.strip() for tag in filename_tokens]
 
             npimage = np.array(image).astype(np.uint8)
             npimage = (npimage / 127.5 - 1.0).astype(np.float32)
