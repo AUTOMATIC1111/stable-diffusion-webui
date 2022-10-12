@@ -121,9 +121,10 @@ class Script(scripts.Script):
 
     def ui(self, is_img2img):
         info = gr.Markdown('''
-        * `Sampling method` is overriden as Euler, as this script is built on it.
         * `CFG Scale` should be 2 or lower.
         ''')
+
+        override_sampler = gr.Checkbox(label="Override `Sampling method` to Euler?(this method is built for it)", value=True)
 
         override_prompt = gr.Checkbox(label="Override `prompt` to the same value as `original prompt`?(and `negative prompt`)", value=True)
         original_prompt = gr.Textbox(label="Original prompt", lines=1)
@@ -140,17 +141,17 @@ class Script(scripts.Script):
 
         return [
             info, 
+            override_sampler,
             override_prompt, original_prompt, original_negative_prompt, 
             override_steps, st,
             override_strength,
             cfg, randomness, sigma_adjustment,
         ]
 
-    def run(self, p, _, override_prompt, original_prompt, original_negative_prompt, override_steps, st, override_strength, cfg, randomness, sigma_adjustment):
-        # MUST Override
-        p.sampler_index = [sampler.name for sampler in sd_samplers.samplers].index("Euler")
-
-        # OPTIONAL Override
+    def run(self, p, _, override_sampler, override_prompt, original_prompt, original_negative_prompt, override_steps, st, override_strength, cfg, randomness, sigma_adjustment):
+        # Override
+        if override_sampler:
+            p.sampler_index = [sampler.name for sampler in sd_samplers.samplers].index("Euler")
         if override_prompt:
             p.prompt = original_prompt
             p.negative_prompt = original_negative_prompt
