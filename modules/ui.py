@@ -181,8 +181,15 @@ def wrap_gradio_call(func, extra_outputs=None):
         try:
             res = list(func(*args, **kwargs))
         except Exception as e:
+            # When printing out our debug argument list, do not print out more than a MB of text
+            max_debug_str_len = 131072 # (1024*1024)/8
+
             print("Error completing request", file=sys.stderr)
-            print("Arguments:", args, kwargs, file=sys.stderr)
+            argStr = f"Arguments: {str(args)} {str(kwargs)}"
+            print(argStr[:max_debug_str_len], file=sys.stderr)
+            if len(argStr) > max_debug_str_len:
+                print(f"(Argument list truncated at {max_debug_str_len}/{len(argStr)} characters)", file=sys.stderr)
+
             print(traceback.format_exc(), file=sys.stderr)
 
             shared.state.job = ""
@@ -317,7 +324,7 @@ def interrogate(image):
 
 
 def interrogate_deepbooru(image):
-    prompt = get_deepbooru_tags(image, opts.interrogate_deepbooru_score_threshold)
+    prompt = get_deepbooru_tags(image)
     return gr_show(True) if prompt is None else prompt
 
 
@@ -1058,6 +1065,10 @@ def create_ui(wrap_gradio_gpu_call):
                         process_flip = gr.Checkbox(label='Create flipped copies')
                         process_split = gr.Checkbox(label='Split oversized images into two')
                         process_caption = gr.Checkbox(label='Use BLIP caption as filename')
+                        if cmd_opts.deepdanbooru:
+                            process_caption_deepbooru = gr.Checkbox(label='Use deepbooru caption as filename')
+                        else:
+                            process_caption_deepbooru = gr.Checkbox(label='Use deepbooru caption as filename', visible=False)
 
                     with gr.Row():
                         with gr.Column(scale=3):
@@ -1135,6 +1146,7 @@ def create_ui(wrap_gradio_gpu_call):
                 process_flip,
                 process_split,
                 process_caption,
+                process_caption_deepbooru
             ],
             outputs=[
                 ti_output,
