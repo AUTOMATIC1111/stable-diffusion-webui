@@ -229,7 +229,7 @@ options_templates.update(options_section(('system', "System"), {
 }))
 
 options_templates.update(options_section(('training', "Training"), {
-    "unload_models_when_training": OptionInfo(False, "Unload VAE and CLIP form VRAM when training"),
+    "unload_models_when_training": OptionInfo(False, "Unload VAE and CLIP from VRAM when training"),
 }))
 
 options_templates.update(options_section(('sd', "Stable Diffusion"), {
