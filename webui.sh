@@ -10,6 +10,9 @@ then
     source ./webui-user.sh
 fi
 
+INSTALL_ENV_DIR=$(pwd)/installer_files/env
+export PATH=$PATH;$INSTALL_ENV_DIR/bin
+
 # Set defaults
 # Install directory without trailing slash
 if [[ -z "${install_dir}" ]]

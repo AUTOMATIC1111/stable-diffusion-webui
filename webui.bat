@@ -1,5 +1,8 @@
 @echo off
 
+set INSTALL_ENV_DIR=%cd%\installer_files\env
+set PATH=%PATH%;%INSTALL_ENV_DIR%;%INSTALL_ENV_DIR%\Library\bin;%INSTALL_ENV_DIR%\Scripts
+
 if not defined PYTHON (set PYTHON=python)
 if not defined VENV_DIR (set VENV_DIR=venv)
 
