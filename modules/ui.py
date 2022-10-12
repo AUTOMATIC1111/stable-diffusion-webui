@@ -444,9 +444,9 @@ def create_toprow(is_img2img):
 
         with gr.Column(scale=1):
             with gr.Row():
-                skip = gr.Button('Skip', elem_id=f"{id_part}_skip")
-                interrupt = gr.Button('Interrupt', elem_id=f"{id_part}_interrupt")
-                submit = gr.Button('Generate', elem_id=f"{id_part}_generate", variant='primary')
+                skip = gr.Button('跳过', elem_id=f"{id_part}_skip")
+                interrupt = gr.Button('中断', elem_id=f"{id_part}_interrupt")
+                submit = gr.Button('生成', elem_id=f"{id_part}_generate", variant='primary')
 
                 skip.click(
                     fn=lambda: shared.state.skip(),
@@ -555,7 +555,7 @@ def create_ui(wrap_gradio_gpu_call):
                         save = gr.Button('保存图片')
                         send_to_img2img = gr.Button('发送至图生图')
                         send_to_inpaint = gr.Button('发送至局部绘制')
-                        send_to_extras = gr.Button('发送到高清化')
+                        send_to_extras = gr.Button('发送到高清处理')
                         button_id = "hidden_element" if shared.cmd_opts.hide_ui_dir_config else 'open_folder'
                         open_txt2img_folder = gr.Button(folder_symbol, elem_id=button_id)
 
@@ -907,10 +907,10 @@ def create_ui(wrap_gradio_gpu_call):
         with gr.Row().style(equal_height=False):
             with gr.Column(variant='panel'):
                 with gr.Tabs(elem_id="mode_extras"):
-                    with gr.TabItem('Single Image'):
+                    with gr.TabItem('单张处理'):
                         extras_image = gr.Image(label="源", source="upload", interactive=True, type="pil")
 
-                    with gr.TabItem('Batch Process'):
+                    with gr.TabItem('批量处理'):
                         image_batch = gr.File(label="P处理", file_count="multiple", interactive=True, type="file")
 
                 upscaling_resize = gr.Slider(minimum=1.0, maximum=4.0, step=0.05, label="调整大小", value=2)
@@ -927,9 +927,9 @@ def create_ui(wrap_gradio_gpu_call):
 
                 with gr.Group():
                     codeformer_visibility = gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="CodeFormer 可见度", value=0, interactive=modules.codeformer_model.have_codeformer)
-                    codeformer_weight = gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="CodeFormer weight (0 = maximum effect, 1 = minimum effect)", value=0, interactive=modules.codeformer_model.have_codeformer)
+                    codeformer_weight = gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="CodeFormer 权重 (0 = 最大效果, 1 = 最小效果)", value=0, interactive=modules.codeformer_model.have_codeformer)
 
-                submit = gr.Button('Generate', elem_id="extras_generate", variant='primary')
+                submit = gr.Button('生成', elem_id="extras_generate", variant='primary')
 
             with gr.Column(variant='panel'):
                 result_images = gr.Gallery(label="结果", show_label=False)
@@ -987,8 +987,8 @@ def create_ui(wrap_gradio_gpu_call):
                 html2 = gr.HTML()
 
                 with gr.Row():
-                    pnginfo_send_to_txt2img = gr.Button('Send to txt2img')
-                    pnginfo_send_to_img2img = gr.Button('Send to img2img')
+                    pnginfo_send_to_txt2img = gr.Button('发送到文生图')
+                    pnginfo_send_to_img2img = gr.Button('发送到图生图')
 
         image.change(
             fn=wrap_gradio_call(modules.extras.run_pnginfo),
@@ -999,7 +999,7 @@ def create_ui(wrap_gradio_gpu_call):
     with gr.Blocks() as modelmerger_interface:
         with gr.Row().style(equal_height=False):
             with gr.Column(variant='panel'):
-                gr.HTML(value="<p>A merger of the two checkpoints will be generated in your <b>checkpoint</b> directory.</p>")
+                gr.HTML(value="<p>两个检查点的合并后将在您的 <b>检查点</b> 目录中生成。</p>")
 
                 with gr.Row():
                     primary_model_name = gr.Dropdown(modules.sd_models.checkpoint_tiles(), elem_id="modelmerger_primary_model_name", label="主要模型名称")
@@ -1021,7 +1021,7 @@ def create_ui(wrap_gradio_gpu_call):
                 with gr.Group():
                     gr.HTML(value="<p style='margin-bottom: 0.7em'>See <b><a href=\"https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Textual-Inversion\">wiki</a></b> for detailed explanation.</p>")
 
-                    gr.HTML(value="<p style='margin-bottom: 0.7em'>Create a new embedding</p>")
+                    gr.HTML(value="<p style='margin-bottom: 0.7em'>创建一个新的嵌入</p>")
 
                     new_embedding_name = gr.Textbox(label="名称")
                     initialization_text = gr.Textbox(label="初始化文本", value="*")
@@ -1032,61 +1032,61 @@ def create_ui(wrap_gradio_gpu_call):
                             gr.HTML(value="")
 
                         with gr.Column():
-                            create_embedding = gr.Button(value="Create embedding", variant='primary')
+                            create_embedding = gr.Button(value="创建嵌入", variant='primary')
 
                 with gr.Group():
-                    gr.HTML(value="<p style='margin-bottom: 0.7em'>Create a new hypernetwork</p>")
+                    gr.HTML(value="<p style='margin-bottom: 0.7em'>创建一个新的超网络</p>")
 
-                    new_hypernetwork_name = gr.Textbox(label="Name")
-                    new_hypernetwork_sizes = gr.CheckboxGroup(label="Modules", value=["768", "320", "640", "1280"], choices=["768", "320", "640", "1280"])
+                    new_hypernetwork_name = gr.Textbox(label="名称")
+                    new_hypernetwork_sizes = gr.CheckboxGroup(label="模块", value=["768", "320", "640", "1280"], choices=["768", "320", "640", "1280"])
 
                     with gr.Row():
                         with gr.Column(scale=3):
                             gr.HTML(value="")
 
                         with gr.Column():
-                            create_hypernetwork = gr.Button(value="Create hypernetwork", variant='primary')
+                            create_hypernetwork = gr.Button(value="创建超网络", variant='primary')
 
                 with gr.Group():
                     gr.HTML(value="<p style='margin-bottom: 0.7em'>Preprocess images</p>")
 
-                    process_src = gr.Textbox(label='Source directory')
-                    process_dst = gr.Textbox(label='Destination directory')
+                    process_src = gr.Textbox(label='源目录')
+                    process_dst = gr.Textbox(label='目标目录')
                     process_width = gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512)
                     process_height = gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512)
 
                     with gr.Row():
-                        process_flip = gr.Checkbox(label='Create flipped copies')
-                        process_split = gr.Checkbox(label='Split oversized images into two')
-                        process_caption = gr.Checkbox(label='Use BLIP caption as filename')
+                        process_flip = gr.Checkbox(label='创建翻转副本')
+                        process_split = gr.Checkbox(label='将超大图像一分为二')
+                        process_caption = gr.Checkbox(label='使用 BLIP 标题作为文件名')
 
                     with gr.Row():
                         with gr.Column(scale=3):
                             gr.HTML(value="")
 
                         with gr.Column():
-                            run_preprocess = gr.Button(value="Preprocess", variant='primary')
+                            run_preprocess = gr.Button(value="预处理", variant='primary')
 
                 with gr.Group():
-                    gr.HTML(value="<p style='margin-bottom: 0.7em'>Train an embedding; must specify a directory with a set of 1:1 ratio images</p>")
-                    train_embedding_name = gr.Dropdown(label='Embedding', choices=sorted(sd_hijack.model_hijack.embedding_db.word_embeddings.keys()))
-                    train_hypernetwork_name = gr.Dropdown(label='Hypernetwork', choices=[x for x in shared.hypernetworks.keys()])
-                    learn_rate = gr.Textbox(label='Learning rate', placeholder="Learning rate", value="0.005")
-                    dataset_directory = gr.Textbox(label='Dataset directory', placeholder="Path to directory with input images")
-                    log_directory = gr.Textbox(label='Log directory', placeholder="Path to directory where to write outputs", value="textual_inversion")
-                    template_file = gr.Textbox(label='Prompt template file', value=os.path.join(script_path, "textual_inversion_templates", "style_filewords.txt"))
-                    training_width = gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512)
-                    training_height = gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512)
-                    steps = gr.Number(label='Max steps', value=100000, precision=0)
-                    num_repeats = gr.Number(label='Number of repeats for a single input image per epoch', value=100, precision=0)
-                    create_image_every = gr.Number(label='Save an image to log directory every N steps, 0 to disable', value=500, precision=0)
-                    save_embedding_every = gr.Number(label='Save a copy of embedding to log directory every N steps, 0 to disable', value=500, precision=0)
-                    preview_image_prompt = gr.Textbox(label='Preview prompt', value="")
+                    gr.HTML(value="<p style='margin-bottom: 0.7em'>训练嵌入；必须指定具有一组 1:1 比例图像的目录</p>")
+                    train_embedding_name = gr.Dropdown(label='嵌入', choices=sorted(sd_hijack.model_hijack.embedding_db.word_embeddings.keys()))
+                    train_hypernetwork_name = gr.Dropdown(label='超网络', choices=[x for x in shared.hypernetworks.keys()])
+                    learn_rate = gr.Textbox(label='学习率', placeholder="Learning rate", value="0.005")
+                    dataset_directory = gr.Textbox(label='数据集目录', placeholder="带有输入图像的目录路径")
+                    log_directory = gr.Textbox(label='日志目录', placeholder="Path to directory where to write outputs", value="textual_inversion")
+                    template_file = gr.Textbox(label='提示模板文件', value=os.path.join(script_path, "textual_inversion_templates", "style_filewords.txt"))
+                    training_width = gr.Slider(minimum=64, maximum=2048, step=64, label="宽度", value=512)
+                    training_height = gr.Slider(minimum=64, maximum=2048, step=64, label="高度", value=512)
+                    steps = gr.Number(label='最大步数', value=100000, precision=0)
+                    num_repeats = gr.Number(label='每个时期单个输入图像的重复次数', value=100, precision=0)
+                    create_image_every = gr.Number(label='每 N 步保存一个图像到日志目录，0 表示禁用', value=500, precision=0)
+                    save_embedding_every = gr.Number(label='每 N 步将嵌入的副本保存到日志目录，0 表示禁用', value=500, precision=0)
+                    preview_image_prompt = gr.Textbox(label='预览提示', value="")
 
                     with gr.Row():
-                        interrupt_training = gr.Button(value="Interrupt")
-                        train_hypernetwork = gr.Button(value="Train Hypernetwork", variant='primary')
-                        train_embedding = gr.Button(value="Train Embedding", variant='primary')
+                        interrupt_training = gr.Button(value="打断")
+                        train_hypernetwork = gr.Button(value="训练超网络", variant='primary')
+                        train_embedding = gr.Button(value="训练嵌入", variant='primary')
 
             with gr.Column():
                 progressbar = gr.HTML(elem_id="ti_progressbar")
@@ -1329,8 +1329,8 @@ Requested path was: {f}
         )
 
         with gr.Row():
-            reload_script_bodies = gr.Button(value='Reload custom script bodies (No ui updates, No restart)', variant='secondary')
-            restart_gradio = gr.Button(value='Restart Gradio and Refresh components (Custom Scripts, ui.py, js and css only)', variant='primary')
+            reload_script_bodies = gr.Button(value='重新加载自定义脚本主体 (无UI更新，无重启)', variant='secondary')
+            restart_gradio = gr.Button(value='重启 Gradio 和 Refresh 组件 (仅限自定义脚本, ui.py, js 和 css)', variant='primary')
 
         def reload_scripts():
             modules.scripts.reload_script_body_only()
@@ -1358,13 +1358,13 @@ Requested path was: {f}
             column.__exit__()
 
     interfaces = [
-        (txt2img_interface, "txt2img", "txt2img"),
-        (img2img_interface, "img2img", "img2img"),
-        (extras_interface, "Extras", "extras"),
-        (pnginfo_interface, "PNG Info", "pnginfo"),
-        (modelmerger_interface, "Checkpoint Merger", "modelmerger"),
-        (textual_inversion_interface, "Textual inversion", "ti"),
-        (settings_interface, "Settings", "settings"),
+        (txt2img_interface, "文生图", "txt2img"),
+        (img2img_interface, "图生图", "img2img"),
+        (extras_interface, "高清处理", "extras"),
+        (pnginfo_interface, "PNG信息", "pnginfo"),
+        (modelmerger_interface, "检查点合并", "modelmerger"),
+        (textual_inversion_interface, "文本反转", "ti"),
+        (settings_interface, "设置", "settings"),
     ]
 
     with open(os.path.join(script_path, "style.css"), "r", encoding="utf8") as file:
