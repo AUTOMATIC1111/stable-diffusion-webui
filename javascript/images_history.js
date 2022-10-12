@@ -172,7 +172,7 @@ function images_history_init(){
 }
 
 var images_history_tab_list = ["txt2img", "img2img", "extras"];
-setTimeout(images_history_init, 500)
+setTimeout(images_history_init, 500);
 document.addEventListener("DOMContentLoaded", function() {
     var mutationObserver = new MutationObserver(function(m){
         for (var i in images_history_tab_list ){
