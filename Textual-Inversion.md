@@ -68,6 +68,7 @@ This takes images from a directory, processes them to be ready for textual inver
   - `[name]`: the name of embedding
   - `[filewords]`: words from the file name of the image from the dataset. See below for more info.
 - **Max steps**: training will stop after this many steps have been completed. A step is when one picture (or one batch of pictures, but batches are currently not supported) is shown to the model and is used to improve embedding. if you interrupt training and resume it at a later date, the number of steps is preserved.
+- **Save images with embedding in PNG chunks**: every time an image is generated it is combined with the most recently logged embedding and saved to image_embeddings in a format that can be both shared as an image, and placed into your embeddings folder and loaded.
 - **Preview prompt**: if not empty, this prompt will be used to generate preview pictures. If empty, the prompt from training will be used.
 
 ### filewords
