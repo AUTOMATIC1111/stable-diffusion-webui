@@ -18,34 +18,34 @@ The download link provides tar.bz2 files.
 # Create the installer
 Create the following folder structure, and zip it up.
 
-For Linux/Mac: Make sure the `chmod u+x` permission is granted to `installer.sh` and the corresponding `micromamba` binary.
+For Linux/Mac: Make sure the `chmod u+x` permission is granted to `install.sh` and the corresponding `micromamba` binary.
 
 ### Windows x64:
 ```
-.\installer.bat
+.\install.bat
 .\installer_files\micromamba_win_x64.exe
 ```
 
 ### Linux x64:
 ```
-.\installer.sh
+.\install.sh
 .\installer_files\micromamba_linux_x64
 ```
 
 ### Linux arm64:
 ```
-.\installer.sh
+.\install.sh
 .\installer_files\micromamba_linux_arm64
 ```
 
 ### Mac x64:
 ```
-.\installer.sh
+.\install.sh
 .\installer_files\micromamba_mac_x64
 ```
 
 ### Mac arm64 (M1/Apple Silicon):
 ```
-.\installer.sh
+.\install.sh
 .\installer_files\micromamba_mac_arm64
 ```
