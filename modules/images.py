@@ -350,7 +350,7 @@ def get_next_sequence_number(path, basename):
     return result + 1
 
 
-def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None, forced_filename=None, suffix="", save_to_dirs=None):
+def save_image(image, path, basename, seed=None, subseed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None, forced_filename=None, suffix="", save_to_dirs=None):
     '''Save an image.
 
     Args:
@@ -468,7 +468,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
 #########################################
 #   Call Discord Bot to post picture    #
     try:
-        post_result(str(fullfn),prompt,str(p.negative_prompt),str(seed),str(p.subseed),str(p.subseed_strength),sd_samplers.samplers[p.sampler_index].name,str(p.steps),str(p.cfg_scale),str(p.width),str(p.height),shared.sd_model.sd_model_hash, p.seed_resize_from_w, p.seed_resize_from_h)
+        post_result(str(fullfn),prompt,str(p.negative_prompt),str(seed),str(subseed),str(p.subseed_strength),sd_samplers.samplers[p.sampler_index].name,str(p.steps),str(p.cfg_scale),str(p.width),str(p.height),shared.sd_model.sd_model_hash, p.seed_resize_from_w, p.seed_resize_from_h)
     except:
         pass
 #########################################

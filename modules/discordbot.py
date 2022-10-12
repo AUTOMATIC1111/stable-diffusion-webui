@@ -4,7 +4,6 @@
 #
 #
 import discord
-from discord import app_commands
 from discord.ext import commands, tasks
 from discord.ext.commands import bot
 import threading, asyncio
@@ -223,17 +222,17 @@ async def image_send(filename,prompt,negative_prompt,seed,subseed,seedvar,sample
         channel = bot.get_channel(post_id)
         view=Buttons()
         print(f"Uploading: {filename}")
-        #await channel.send(f"Prompt: `{prompt}`\nSeed: `{seed}` - Subseed: `{subseed}` - Var Amount: `{seedvar}`\nSampler: `{sampler_name}` - Steps: `{steps}` - CFG Scale: `{cfg_scale}`\nImage Dimensions: `{width}x{height}`\nModel Hash: `{modelhash}`", file=discord.File(filename), view=view)
+
         prompt_info = prompt
 
         if negative_prompt != "":
             prompt_info = f"{prompt_info}\nNegative prompt: {negative_prompt}\nSteps: {steps}, Sampler {sampler_name}, CFG scale: {cfg_scale}, Seed: {seed}, Size: {width}x{height}, Model hash: {modelhash}"
         else:
-            prompt_info = f"{prompt_info}\nSteps: {steps}, Sampler {sampler_name}, CFG scale: {cfg_scale}, Seed: {seed}, Size: {width}x{height}, Model hash: {modelhash}"
+            prompt_info = f"{prompt_info}\nSteps: {steps}, Sampler: {sampler_name}, CFG scale: {cfg_scale}, Seed: {seed}, Size: {width}x{height}, Model hash: {modelhash}"
 
-        if subseed != -1 or subseed != -1.0:
-            prompt_info = f"{prompt_info}, Variation seed {subseed}, Variation seed strength: {seedvar}"
-            
+        if str(seedvar) != "0":
+            prompt_info = f"{prompt_info}, Variation seed: {subseed}, Variation seed strength: {seedvar}"
+
         if seed_resize_w != 0 and seed_resize_h != 0:
             prompt_info = f"{prompt_info}, Seed resize from: {seed_resize_w}x{seed_resize_h}"
 
