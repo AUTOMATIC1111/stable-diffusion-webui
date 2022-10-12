@@ -41,14 +41,14 @@ class Script(scripts.Script):
 
 
     def show(self, is_img2img):
-        return not is_img2img
+        return True
 
 
     def ui(self, is_img2img):
         prompt2 = gr.TextArea(label="Interpolation prompt")
         n_images = gr.Slider(minimum=1, maximum=128, step=1, value=1, label="Number of images")
         make_a_gif = gr.Checkbox(label="Make a gif", value=True)
-        duration = gr.Slider(minimum=1, maximum=1000, step=1, value=100, label="Duration of images (ms)", visible=False)
+        duration = gr.Slider(minimum=1, maximum=1000, step=1, value=100, label="Duration of images (ms)", visible=True)
         make_a_gif.change(fn=lambda x: gr.update(visible=x), inputs=[make_a_gif], outputs=[duration])
         return [prompt2, n_images, make_a_gif, duration]
 
