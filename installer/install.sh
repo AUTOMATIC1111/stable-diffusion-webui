@@ -27,7 +27,7 @@ esac
 export MAMBA_ROOT_PREFIX=$(pwd)/installer_files/mamba
 INSTALL_ENV_DIR=$(pwd)/installer_files/env
 MICROMAMBA_BINARY_FILE=$(pwd)/installer_files/micromamba_${OS_NAME}_${OS_ARCH}
-export PATH=$PATH;$INSTALL_ENV_DIR/bin
+if [ -e "$INSTALL_ENV_DIR" ]; then export PATH=$PATH;$INSTALL_ENV_DIR/bin; fi
 
 # figure out what needs to be installed
 PACKAGES_TO_INSTALL=
@@ -70,4 +70,4 @@ if [ ! -e ".git" ]; then
 fi
 
 # run the script
-bash webui-user.sh
+bash webui.sh
