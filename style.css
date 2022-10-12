@@ -81,6 +81,13 @@
     padding-right: 0.25em;
 }
 
+#test_button {
+    min-width: auto;
+    flex-grow: 0;
+    padding-left: 0.25em;
+    padding-right: 0.25em;
+}
+
 #hidden_element{
     display: none;
 }
@@ -483,6 +490,7 @@ input[type="range"]{
 #quicksettings > div{
     border: none;
     background: none;
+    justify-content: left;
 }
 
 #quicksettings > div > div{

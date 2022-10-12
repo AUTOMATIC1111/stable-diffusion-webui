@@ -1425,11 +1425,14 @@ Requested path was: {f}
         for i, k, item in quicksettings_list:
             component = component_dict[k]
 
-            component.change(
-                fn=lambda value, k=k: run_settings_single(value, key=k),
-                inputs=[component],
-                outputs=[component, text_settings],
-            )
+            try:
+             component.change(
+                 fn=lambda value, k=k: run_settings_single(value, key=k),
+                 inputs=[component],
+                 outputs=[component, text_settings],
+             )
+            except AttributeError:
+                print('this is probably a button or something')
 
         def modelmerger(*args):
             try:
