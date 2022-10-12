@@ -114,6 +114,11 @@ https://github.com/tjm35/asymmetric-tiling-sd-webui/
 
 Control horizontal/vertical seamless tiling independently of each other.
 
+## Booru tag autocompletion
+https://github.com/DominikDoom/a1111-sd-webui-tagcomplete
+
+Displays autocompletion hints for tags from "image booru" boards such as Danbooru. Uses local tag CSV files and includes a config for customization.
+
 ## Saving steps of the sampling process
 
 This script will save steps of the sampling process to a directory.
