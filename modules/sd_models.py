@@ -160,8 +160,9 @@ def load_model_weights(model, checkpoint_info):
         print(f"Loading VAE weights from: {vae_file}")
         vae_ckpt = torch.load(vae_file, map_location="cpu")
         vae_dict = {k: v for k, v in vae_ckpt["state_dict"].items() if k[0:4] != "loss"}
+        vae_dict = {"first_stage_model." + k: v for k, v in vae_dict.items()}
 
-        model.first_stage_model.load_state_dict(vae_dict)
+        model.first_stage_model.load_state_dict(vae_dict, strict=False)
 
     model.first_stage_model.to(devices.dtype_vae)
 
