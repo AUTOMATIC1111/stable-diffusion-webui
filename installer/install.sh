@@ -24,13 +24,13 @@ case "${OS_ARCH}" in
 esac
 
 # config
-export MAMBA_ROOT_PREFIX=$(pwd)/installer_files/mamba
-INSTALL_ENV_DIR=$(pwd)/installer_files/env
-MICROMAMBA_BINARY_FILE=$(pwd)/installer_files/micromamba_${OS_NAME}_${OS_ARCH}
-if [ -e "$INSTALL_ENV_DIR" ]; then export PATH=$PATH;$INSTALL_ENV_DIR/bin; fi
+export MAMBA_ROOT_PREFIX="$(pwd)/installer_files/mamba"
+INSTALL_ENV_DIR="$(pwd)/installer_files/env"
+MICROMAMBA_BINARY_FILE="$(pwd)/installer_files/micromamba_${OS_NAME}_${OS_ARCH}"
+if [ -e "$INSTALL_ENV_DIR" ]; then export PATH="$PATH;$INSTALL_ENV_DIR/bin"; fi
 
 # figure out what needs to be installed
-PACKAGES_TO_INSTALL=
+PACKAGES_TO_INSTALL=""
 
 if ! hash "python" &>/dev/null; then PACKAGES_TO_INSTALL="$PACKAGES_TO_INSTALL python"; fi
 if ! hash "git" &>/dev/null; then PACKAGES_TO_INSTALL="$PACKAGES_TO_INSTALL git"; fi
