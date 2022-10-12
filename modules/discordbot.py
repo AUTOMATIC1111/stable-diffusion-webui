@@ -230,8 +230,10 @@ async def image_send(filename,prompt,negative_prompt,seed,subseed,seedvar,sample
             prompt_info = f"{prompt_info}\nNegative prompt: {negative_prompt}\nSteps: {steps}, Sampler {sampler_name}, CFG scale: {cfg_scale}, Seed: {seed}, Size: {width}x{height}, Model hash: {modelhash}"
         else:
             prompt_info = f"{prompt_info}\nSteps: {steps}, Sampler {sampler_name}, CFG scale: {cfg_scale}, Seed: {seed}, Size: {width}x{height}, Model hash: {modelhash}"
-        if subseed != -1:
+
+        if subseed != -1 or subseed != -1.0:
             prompt_info = f"{prompt_info}, Variation seed {subseed}, Variation seed strength: {seedvar}"
+            
         if seed_resize_w != 0 and seed_resize_h != 0:
             prompt_info = f"{prompt_info}, Seed resize from: {seed_resize_w}x{seed_resize_h}"
 
