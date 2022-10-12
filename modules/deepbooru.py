@@ -26,6 +26,7 @@ def create_deepbooru_opts():
         "use_spaces": shared.opts.deepbooru_use_spaces,
         "use_escape": shared.opts.deepbooru_escape,
         "alpha_sort": shared.opts.deepbooru_sort_alpha,
+        "include_ranks": shared.opts.interrogate_return_ranks,
     }
 
 
@@ -113,6 +114,7 @@ def get_deepbooru_tags_from_model(model, tags, pil_image, threshold, deepbooru_o
     alpha_sort = deepbooru_opts['alpha_sort']
     use_spaces = deepbooru_opts['use_spaces']
     use_escape = deepbooru_opts['use_escape']
+    include_ranks = deepbooru_opts['include_ranks']
 
     width = model.input_shape[2]
     height = model.input_shape[1]
@@ -151,19 +153,20 @@ def get_deepbooru_tags_from_model(model, tags, pil_image, threshold, deepbooru_o
     if alpha_sort:
         sort_ndx = 1
 
-    # sort by reverse by likelihood and normal for alpha
+    # sort by reverse by likelihood and normal for alpha, and format tag text as requested
     unsorted_tags_in_theshold.sort(key=lambda y: y[sort_ndx], reverse=(not alpha_sort))
     for weight, tag in unsorted_tags_in_theshold:
-        result_tags_out.append(tag)
+        # note: tag_outformat will still have a colon if include_ranks is True
+        tag_outformat = tag.replace(':', ' ')
+        if use_spaces:
+            tag_outformat = tag_outformat.replace('_', ' ')
+        if use_escape:
+            tag_outformat = re.sub(re_special, r'\\\1', tag_outformat)
+        if include_ranks:
+            use_escape += f":{weight:.3f}"
+
+        result_tags_out.append(tag_outformat)
 
     print('\n'.join(sorted(result_tags_print, reverse=True)))
 
-    tags_text = ', '.join(result_tags_out)
-
-    if use_spaces:
-        tags_text = tags_text.replace('_', ' ')
-
-    if use_escape:
-        tags_text = re.sub(re_special, r'\\\1', tags_text)
-
-    return tags_text.replace(':', ' ')
+    return ', '.join(result_tags_out)
