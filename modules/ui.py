@@ -311,13 +311,12 @@ def apply_styles(prompt, prompt_neg, style1_name, style2_name):
 
 
 def interrogate(image):
-    prompt = shared.interrogator.interrogate(image)
-
+    prompt = shared.interrogator.interrogate(image, include_ranks=opts.interrogate_return_ranks)
     return gr_show(True) if prompt is None else prompt
 
 
 def interrogate_deepbooru(image):
-    prompt = get_deepbooru_tags(image, opts.interrogate_deepbooru_score_threshold)
+    prompt = get_deepbooru_tags(image, opts.interrogate_deepbooru_score_threshold, opts.interrogate_return_ranks)
     return gr_show(True) if prompt is None else prompt
 
 

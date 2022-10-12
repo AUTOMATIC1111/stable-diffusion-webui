@@ -3,7 +3,7 @@ from concurrent.futures import ProcessPoolExecutor
 from multiprocessing import get_context
 
 
-def _load_tf_and_return_tags(pil_image, threshold):
+def _load_tf_and_return_tags(pil_image, threshold, include_ranks):
     import deepdanbooru as dd
     import tensorflow as tf
     import numpy as np
@@ -52,12 +52,16 @@ def _load_tf_and_return_tags(pil_image, threshold):
         if result_dict[tag] >= threshold:
             if tag.startswith("rating:"):
                 continue
-            result_tags_out.append(tag)
+            tag_formatted = tag.replace('_', ' ').replace(':', ' ')
+            if include_ranks:
+                result_tags_out.append(f'({tag_formatted}:{result_dict[tag]})')
+            else:
+                result_tags_out.append(tag_formatted)
             result_tags_print.append(f'{result_dict[tag]} {tag}')
 
     print('\n'.join(sorted(result_tags_print, reverse=True)))
 
-    return ', '.join(result_tags_out).replace('_', ' ').replace(':', ' ')
+    return ', '.join(result_tags_out)
 
 
 def subprocess_init_no_cuda():
@@ -65,9 +69,9 @@ def subprocess_init_no_cuda():
     os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 
-def get_deepbooru_tags(pil_image, threshold=0.5):
+def get_deepbooru_tags(pil_image, threshold=0.5, include_ranks=False):
     context = get_context('spawn')
     with ProcessPoolExecutor(initializer=subprocess_init_no_cuda, mp_context=context) as executor:
-        f = executor.submit(_load_tf_and_return_tags, pil_image, threshold, )
+        f = executor.submit(_load_tf_and_return_tags, pil_image, threshold, include_ranks)
         ret = f.result()  # will rethrow any exceptions
     return ret
