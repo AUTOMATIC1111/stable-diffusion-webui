@@ -200,9 +200,84 @@ async def togglepost(ctx):
                 save_config = yaml.dump(bot_config, f, default_flow_style=False)
             await ctx.channel.send(f"Image posting set to: {bot_config['main']['post_result']}", delete_after=10)
             return
-    
-    
 
+
+async def update_bot_config():
+    with open(botconfigfile, "w", encoding="utf8") as f:
+        save_config = yaml.dump(bot_config, f, default_flow_style=False)
+    
+@bot.command(pass_context=True)
+async def setid(ctx, arg1 = None, arg2: int = None):
+    await ctx.message.delete()
+    for r in ctx.message.author.roles:
+        if r.id == admin_roleid or botmod_roleid:
+            if arg1 != None and arg2 != None:
+                if arg1 == "post": 
+                    bot_config['channel_id']['post_id'] = arg2
+                    post_id = arg2
+                    await ctx.channel.send(f"Post channel ID set to: {arg2}", delete_after=10)
+                    await update_bot_config()
+                    return
+                elif arg1 == "keep": 
+                    bot_config['channel_id']['heart_id'] = arg2
+                    heart_id = arg2
+                    await ctx.channel.send(f"Keeper channel ID set to: {arg2}", delete_after=10)
+                    await update_bot_config()
+                    return
+                elif arg1 == "average": 
+                    bot_config['channel_id']['average_id'] = arg2
+                    average_id = arg2
+                    await ctx.channel.send(f"Average channel ID set to: {arg2}", delete_after=10)
+                    await update_bot_config()
+                    return
+                elif arg1 == "cursed": 
+                    bot_config['channel_id']['cursed_id'] = arg2
+                    cursed_id = arg2
+                    await ctx.channel.send(f"Cursed channel ID set to: {arg2}", delete_after=10)
+                    await update_bot_config()
+                    return
+                elif arg1 == "nsfw": 
+                    bot_config['channel_id']['nsfw_id'] = arg2
+                    nsfw_id = arg2
+                    await ctx.channel.send(f"NSFW channel ID set to: {arg2}", delete_after=10)
+                    await update_bot_config()
+                    return
+                else:
+                    await ctx.channel.send(f"Invalid argument: {arg1}", delete_after=10)
+                    return
+            else:
+                await ctx.channel.send(f"Missing arguments, use: !setid <name> <id>", delete_after=10)
+                return
+
+@bot.command(pass_context=True)
+async def setkeepchannel(ctx, arg):
+    await ctx.message.delete()
+    for r in ctx.message.author.roles:
+        if r.id == admin_roleid or botmod_roleid: 
+            bot_config['channel_id']['heart_id'] = arg
+            heart_id = arg
+            await ctx.channel.send(f"Post channel ID set to: {arg}")
+            return
+
+@bot.command(pass_context=True)
+async def setaveragechannel(ctx, arg):
+    await ctx.message.delete()
+    for r in ctx.message.author.roles:
+        if r.id == admin_roleid or botmod_roleid: 
+            bot_config['channel_id']['average_id'] = arg
+            heart_id = arg
+            await ctx.channel.send(f"Post channel ID set to: {arg}")
+            return
+
+@bot.command(pass_context=True)
+async def setcursedchannel(ctx, arg):
+    await ctx.message.delete()
+    for r in ctx.message.author.roles:
+        if r.id == admin_roleid or botmod_roleid: 
+            bot_config['channel_id']['heart_id'] = arg
+            heart_id = arg
+            await ctx.channel.send(f"Post channel ID set to: {arg}")
+            return
 
 @bot.command(pass_context=True)
 async def about(ctx):
