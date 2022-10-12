@@ -60,7 +60,7 @@ if "%PACKAGES_TO_INSTALL%" NEQ "" (
 @rem get the repo (and load into the current directory)
 if not exist ".git" (
     call git init
-    call git remote add origin https://github.com/cmdr2/stable-diffusion-webui.git
+    call git remote add origin https://github.com/AUTOMATIC1111/stable-diffusion-webui.git
     call git fetch
     call git checkout origin/master -ft
 )

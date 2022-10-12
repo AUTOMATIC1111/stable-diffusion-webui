@@ -64,7 +64,7 @@ fi
 # get the repo (and load into the current directory)
 if [ ! -e ".git" ]; then
     git init
-    git remote add origin https://github.com/cmdr2/stable-diffusion-webui.git
+    git remote add origin https://github.com/AUTOMATIC1111/stable-diffusion-webui.git
     git fetch
     git checkout origin/master -ft
 fi
