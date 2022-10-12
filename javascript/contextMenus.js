@@ -26,21 +26,38 @@ contextMenuInit = function(){
     contextMenu.style.fontFamily = baseStyle.fontFamily
     contextMenu.style.top = posy+'px'
     contextMenu.style.left = posx+'px'
-
-
+    contextMenu.style.width = Math.min(window.innerWidth,400)+'px'
 
     const contextMenuList = document.createElement('ul')
     contextMenuList.className = 'context-menu-items';
     contextMenu.append(contextMenuList);
 
     menuEntries.forEach(function(entry){
-      let contextMenuEntry = document.createElement('a')
-      contextMenuEntry.innerHTML = entry['name']
-      contextMenuEntry.addEventListener("click", function(e) {
-        entry['func']();
-      })
-      contextMenuList.append(contextMenuEntry);
 
+      if(entry['isDynamicSubmenu']){
+        let contextMenuEntry = document.createElement('span')
+        contextMenuEntry.innerHTML = entry['name']
+        contextMenuEntry.style.paddingLeft = '5px'
+        contextMenuEntry.style.color = 'grey'
+        contextMenuList.append(contextMenuEntry);
+
+        entry['func']().forEach(function(innerEntry){
+          let contextMenuEntry = document.createElement('a')
+          contextMenuEntry.innerHTML = innerEntry['name']
+          contextMenuEntry.addEventListener("click", function(e) {
+            innerEntry['func']();
+          })
+          contextMenuList.append(contextMenuEntry);
+        });
+
+      }else{
+        let contextMenuEntry = document.createElement('a')
+        contextMenuEntry.innerHTML = entry['name']
+        contextMenuEntry.addEventListener("click", function(e) {
+          entry['func']();
+        })
+        contextMenuList.append(contextMenuEntry);
+      }
     })
 
     gradioApp().getRootNode().appendChild(contextMenu)
@@ -61,7 +78,7 @@ contextMenuInit = function(){
 
   }
 
-  function appendContextMenuOption(targetEmementSelector,entryName,entryFunction){
+  function appendContextMenuOption(targetEmementSelector,entryName,entryFunction,isDynamicSubmenu=false,displayToggleFunc=null){
     
     currentItems = menuSpecs.get(targetEmementSelector)
     
@@ -72,6 +89,8 @@ contextMenuInit = function(){
     let newItem = {'id':targetEmementSelector+'_'+uid(), 
                    'name':entryName,
                    'func':entryFunction,
+                   'isDynamicSubmenu':isDynamicSubmenu,
+                   'displayToggleFunc':displayToggleFunc,
                    'isNew':true}
 
     currentItems.push(newItem)
@@ -94,7 +113,8 @@ contextMenuInit = function(){
     }
     gradioApp().addEventListener("click", function(e) {
       let source = e.composedPath()[0]
-      if(source.id && source.indexOf('check_progress')>-1){
+      console.log(source);
+      if( source.id && source.id.indexOf('check_progress')>-1 ){
         return
       }
       
@@ -167,11 +187,40 @@ addContextMenuEventListener = initResponse[2];
       setTimeout(function(){rollbutton.click()},100)
       setTimeout(function(){rollbutton.click()},200)
       setTimeout(function(){rollbutton.click()},300)
-    }
+  })
+
+  function truncate(input,len) {
+     if (input.length > len) {
+        return input.substring(0, len) + '...';
+     }
+     return input;
+  };
+
+  appendContextMenuOption('#txt2img_prompt  textarea','Prior prompts',
+    function(){
+      let l=[];
+      let n =0;
+      (Storage['promptHistory'] || []).forEach(function(prompt){
+        if(n>10){
+          return;
+        }
+        l.push({'name':truncate(prompt,20),'func':function(){ get_uiCurrentTabContent().querySelector('#txt2img_prompt  textarea').value = prompt }},)
+      })
+      return l;
+    },
+    true
   )
 })();
 //End example Context Menu Items
 
 onUiUpdate(function(){
   addContextMenuEventListener()
+  if(window.window.getLastGenerationArgs){
+    let priorPrompts = Storage['promptHistory'] || [];
+    let lastPrompt = window.getLastGenerationArgs()[0];
+    if( priorPrompts[priorPrompts.length - 1] !=  lastPrompt){
+      priorPrompts.push(lastPrompt)
+    }
+    Storage['promptHistory'] = priorPrompts
+  }
 });
