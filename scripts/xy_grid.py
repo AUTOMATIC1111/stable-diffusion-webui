@@ -11,7 +11,8 @@ import modules.scripts as scripts
 import gradio as gr
 
 from modules import images
-from modules.processing import process_images, Processed
+from modules.hypernetworks import hypernetwork
+from modules.processing import process_images, Processed, get_correct_sampler
 from modules.shared import opts, cmd_opts, state
 import modules.shared as shared
 import modules.sd_samplers
@@ -27,6 +28,9 @@ def apply_field(field):
 
 
 def apply_prompt(p, x, xs):
+    if xs[0] not in p.prompt and xs[0] not in p.negative_prompt:
+        raise RuntimeError(f"Prompt S/R did not find {xs[0]} in prompt or negative prompt.")
+
     p.prompt = p.prompt.replace(xs[0], x)
     p.negative_prompt = p.negative_prompt.replace(xs[0], x)
 
@@ -56,15 +60,17 @@ def apply_order(p, x, xs):
     p.prompt = prompt_tmp + p.prompt
     
 
-samplers_dict = {}
-for i, sampler in enumerate(modules.sd_samplers.samplers):
-    samplers_dict[sampler.name.lower()] = i
-    for alias in sampler.aliases:
-        samplers_dict[alias.lower()] = i
+def build_samplers_dict(p):
+    samplers_dict = {}
+    for i, sampler in enumerate(get_correct_sampler(p)):
+        samplers_dict[sampler.name.lower()] = i
+        for alias in sampler.aliases:
+            samplers_dict[alias.lower()] = i
+    return samplers_dict
 
 
 def apply_sampler(p, x, xs):
-    sampler_index = samplers_dict.get(x.lower(), None)
+    sampler_index = build_samplers_dict(p).get(x.lower(), None)
     if sampler_index is None:
         raise RuntimeError(f"Unknown sampler: {x}")
 
@@ -78,8 +84,11 @@ def apply_checkpoint(p, x, xs):
 
 
 def apply_hypernetwork(p, x, xs):
-    hn = shared.hypernetworks.get(x, None)
-    opts.data["sd_hypernetwork"] = hn.name if hn is not None else 'None'
+    hypernetwork.load_hypernetwork(x)
+
+
+def apply_clip_skip(p, x, xs):
+    opts.data["CLIP_stop_at_last_layers"] = x
 
 
 def format_value_add_label(p, opt, x):
@@ -133,6 +142,7 @@ axis_options = [
     AxisOption("Sigma max", float, apply_field("s_tmax"), format_value_add_label),
     AxisOption("Sigma noise", float, apply_field("s_noise"), format_value_add_label),
     AxisOption("Eta", float, apply_field("eta"), format_value_add_label),
+    AxisOption("Clip skip", int, apply_clip_skip, format_value_add_label),
     AxisOptionImg2Img("Denoising", float, apply_field("denoising_strength"), format_value_add_label),  # as it is now all AxisOptionImg2Img items must go after AxisOption ones
 ]
 
@@ -143,7 +153,7 @@ def draw_xy_grid(p, xs, ys, x_labels, y_labels, cell, draw_legend):
     ver_texts = [[images.GridAnnotation(y)] for y in y_labels]
     hor_texts = [[images.GridAnnotation(x)] for x in x_labels]
 
-    first_pocessed = None
+    first_processed = None
 
     state.job_count = len(xs) * len(ys) * p.n_iter
 
@@ -152,8 +162,8 @@ def draw_xy_grid(p, xs, ys, x_labels, y_labels, cell, draw_legend):
             state.job = f"{ix + iy * len(xs) + 1} out of {len(xs) * len(ys)}"
 
             processed = cell(x, y)
-            if first_pocessed is None:
-                first_pocessed = processed
+            if first_processed is None:
+                first_processed = processed
 
             try:
               res.append(processed.images[0])
@@ -164,9 +174,9 @@ def draw_xy_grid(p, xs, ys, x_labels, y_labels, cell, draw_legend):
     if draw_legend:
         grid = images.draw_grid_annotations(grid, res[0].width, res[0].height, hor_texts, ver_texts)
 
-    first_pocessed.images = [grid]
+    first_processed.images = [grid]
 
-    return first_pocessed
+    return first_processed
 
 
 re_range = re.compile(r"\s*([+-]?\s*\d+)\s*-\s*([+-]?\s*\d+)(?:\s*\(([+-]\d+)\s*\))?\s*")
@@ -187,7 +197,7 @@ class Script(scripts.Script):
             x_values = gr.Textbox(label="X values", visible=False, lines=1)
 
         with gr.Row():
-            y_type = gr.Dropdown(label="Y type", choices=[x.label for x in current_axis_options], value=current_axis_options[4].label, visible=False, type="index", elem_id="y_type")
+            y_type = gr.Dropdown(label="Y type", choices=[x.label for x in current_axis_options], value=current_axis_options[0].label, visible=False, type="index", elem_id="y_type")
             y_values = gr.Textbox(label="Y values", visible=False, lines=1)
         
         draw_legend = gr.Checkbox(label='Draw legend', value=True)
@@ -196,10 +206,14 @@ class Script(scripts.Script):
         return [x_type, x_values, y_type, y_values, draw_legend, no_fixed_seeds]
 
     def run(self, p, x_type, x_values, y_type, y_values, draw_legend, no_fixed_seeds):
-        modules.processing.fix_seed(p)
-        p.batch_size = 1
+        if not no_fixed_seeds:
+            modules.processing.fix_seed(p)
 
-        initial_hn = opts.sd_hypernetwork
+        if not opts.return_grid:
+            p.batch_size = 1
+
+
+        CLIP_stop_at_last_layers = opts.CLIP_stop_at_last_layers
 
         def process_axis(opt, vals):
             if opt.label == 'Nothing':
@@ -214,7 +228,6 @@ class Script(scripts.Script):
                     m = re_range.fullmatch(val)
                     mc = re_range_count.fullmatch(val)
                     if m is not None:
-
                         start = int(m.group(1))
                         end = int(m.group(2))+1
                         step = int(m.group(3)) if m.group(3) is not None else 1
@@ -256,6 +269,17 @@ class Script(scripts.Script):
                 valslist = list(permutations(valslist))
 
             valslist = [opt.type(x) for x in valslist]
+            
+            # Confirm options are valid before starting
+            if opt.label == "Sampler":
+                samplers_dict = build_samplers_dict(p)
+                for sampler_val in valslist:
+                    if sampler_val.lower() not in samplers_dict.keys():
+                        raise RuntimeError(f"Unknown sampler: {sampler_val}")
+            elif opt.label == "Checkpoint name":
+                for ckpt_val in valslist:
+                    if modules.sd_models.get_closet_checkpoint_match(ckpt_val) is None:
+                        raise RuntimeError(f"Checkpoint for {ckpt_val} not found")
 
             return valslist
 
@@ -308,6 +332,8 @@ class Script(scripts.Script):
         # restore checkpoint in case it was changed by axes
         modules.sd_models.reload_model_weights(shared.sd_model)
 
-        opts.data["sd_hypernetwork"] = initial_hn
+        hypernetwork.load_hypernetwork(opts.sd_hypernetwork)
+
+        opts.data["CLIP_stop_at_last_layers"] = CLIP_stop_at_last_layers
 
         return processed

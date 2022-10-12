@@ -1,6 +1,7 @@
 import argparse
 import os
 import sys
+import modules.safe
 
 script_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 models_path = os.path.join(script_path, "models")
