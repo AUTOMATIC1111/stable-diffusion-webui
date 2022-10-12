@@ -463,3 +463,23 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
         txt_fullfn = None
 
     return fullfn, txt_fullfn
+
+
+def image_data(image_path):
+    file, ext = os.path.splitext(image_path.name)
+    data = {}
+    if "png" in ext:
+        image = Image.open(image_path.name, "r")
+        print(f"Image data requested for {image_path.name} {image.format} of {type(image)}")
+        try:
+            data = image.text["parameters"]
+        except Exception as e:
+            print(f"Exception: {e}")
+            pass
+        print(f"Image data: {data}")
+    if "txt" in ext:
+        myfile = open(image_path.name, 'r')
+        data = myfile.read()
+        myfile.close()
+
+    return data, None
