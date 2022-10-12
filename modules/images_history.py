@@ -1,7 +1,7 @@
 import os
 import shutil
 def get_recent_images(dir_name, page_index, step, image_index, tabname):
-    print(f"renew page {page_index}")
+    #print(f"renew page {page_index}")
     page_index = int(page_index)
     f_list = os.listdir(dir_name)
     file_list = []
@@ -51,7 +51,7 @@ def page_index_change(dir_name, page_index, image_index, tabname):
     return get_recent_images(dir_name, page_index, 0, image_index, tabname)
 
 def show_image_info(num, image_path, filenames):
-    print(f"select image {num}")
+    #print(f"select image {num}")
     file = filenames[int(num)]
     return file, num, os.path.join(image_path, file)
 def delete_image(tabname, dir_name, name, page_index, filenames, image_index):
