@@ -462,7 +462,7 @@ def create_toprow(is_img2img):
 
             with gr.Row(scale=1):
                 if is_img2img:
-                    interrogate = gr.Button('Interrogate\nCLIP', elem_id="interrogate")
+                    interrogate = gr.Button('询问\nCLIP', elem_id="interrogate")
                     if cmd_opts.deepdanbooru:
                         deepbooru = gr.Button('Interrogate\nDeepBooru', elem_id="deepbooru")
                     else:
@@ -470,7 +470,7 @@ def create_toprow(is_img2img):
                 else:
                     interrogate = None
                     deepbooru = None
-                prompt_style_apply = gr.Button('Apply style', elem_id="style_apply")
+                prompt_style_apply = gr.Button('应用样式', elem_id="style_apply")
                 save_style = gr.Button('Create style', elem_id="style_create")
 
     return prompt, roll, prompt_style, negative_prompt, prompt_style2, submit, interrogate, deepbooru, prompt_style_apply, save_style, paste, token_counter, token_button
@@ -678,10 +678,10 @@ def create_ui(wrap_gradio_gpu_call):
             with gr.Column(variant='panel'):
 
                 with gr.Tabs(elem_id="mode_img2img") as tabs_img2img_mode:
-                    with gr.TabItem('img2img', id='img2img'):
+                    with gr.TabItem('图生图', id='img2img'):
                         init_img = gr.Image(label="Image for img2img", elem_id="img2img_image", show_label=False, source="upload", interactive=True, type="pil", tool=cmd_opts.gradio_img2img_tool)
 
-                    with gr.TabItem('Inpaint', id='inpaint'):
+                    with gr.TabItem('局部绘制', id='inpaint'):
                         init_img_with_mask = gr.Image(label="Image for inpainting with mask",  show_label=False, elem_id="img2maskimg", source="upload", interactive=True, type="pil", tool="sketch", image_mode="RGBA")
 
                         init_img_inpaint = gr.Image(label="Image for img2img", show_label=False, source="upload", interactive=True, type="pil", visible=False, elem_id="img_inpaint_base")
@@ -699,7 +699,7 @@ def create_ui(wrap_gradio_gpu_call):
                             inpaint_full_res = gr.Checkbox(label='全分辨率修复', value=False)
                             inpaint_full_res_padding = gr.Slider(label='以全分辨率填充像素进行修复', minimum=0, maximum=256, step=4, value=32)
 
-                    with gr.TabItem('Batch img2img', id='batch'):
+                    with gr.TabItem('批量图生图', id='batch'):
                         hidden = '<br>Disabled when launched with --hide-ui-dir-config.' if shared.cmd_opts.hide_ui_dir_config else ''
                         gr.HTML(f"<p class=\"text-gray-500\">Process images in a directory on the same machine where the server is running.<br>Use an empty output directory to save pictures normally instead of writing to the output directory.{hidden}</p>")
                         img2img_batch_input_dir = gr.Textbox(label="输入目录", **shared.hide_dirs)
@@ -935,10 +935,10 @@ def create_ui(wrap_gradio_gpu_call):
                 result_images = gr.Gallery(label="结果", show_label=False)
                 html_info_x = gr.HTML()
                 html_info = gr.HTML()
-                extras_send_to_img2img = gr.Button('Send to img2img')
-                extras_send_to_inpaint = gr.Button('Send to inpaint')
+                extras_send_to_img2img = gr.Button('发送到图生图')
+                extras_send_to_inpaint = gr.Button('发送到局部绘制')
                 button_id = "hidden_element" if shared.cmd_opts.hide_ui_dir_config else ''
-                open_extras_folder = gr.Button('Open output directory', elem_id=button_id)
+                open_extras_folder = gr.Button('打开输出目录', elem_id=button_id)
 
         submit.click(
             fn=wrap_gradio_gpu_call(modules.extras.run_extras),
@@ -1019,7 +1019,7 @@ def create_ui(wrap_gradio_gpu_call):
         with gr.Row().style(equal_height=False):
             with gr.Column():
                 with gr.Group():
-                    gr.HTML(value="<p style='margin-bottom: 0.7em'>See <b><a href=\"https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Textual-Inversion\">wiki</a></b> for detailed explanation.</p>")
+                    gr.HTML(value="<p style='margin-bottom: 0.7em'>有关详细说明，请参阅 <b><a href=\"https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Textual-Inversion\">wiki</a></b> </p>")
 
                     gr.HTML(value="<p style='margin-bottom: 0.7em'>创建一个新的嵌入</p>")
 
@@ -1048,7 +1048,7 @@ def create_ui(wrap_gradio_gpu_call):
                             create_hypernetwork = gr.Button(value="创建超网络", variant='primary')
 
                 with gr.Group():
-                    gr.HTML(value="<p style='margin-bottom: 0.7em'>Preprocess images</p>")
+                    gr.HTML(value="<p style='margin-bottom: 0.7em'>预处理图像</p>")
 
                     process_src = gr.Textbox(label='源目录')
                     process_dst = gr.Textbox(label='目标目录')
@@ -1281,7 +1281,7 @@ Requested path was: {f}
         return gr.update(value=value), opts.dumpjson()
 
     with gr.Blocks(analytics_enabled=False) as settings_interface:
-        settings_submit = gr.Button(value="Apply settings", variant='primary')
+        settings_submit = gr.Button(value="应用设置", variant='primary')
         result = gr.HTML()
 
         settings_cols = 3
@@ -1320,7 +1320,7 @@ Requested path was: {f}
                     components.append(component)
                     items_displayed += 1
 
-        request_notifications = gr.Button(value='Request browser notifications', elem_id="request_notifications")
+        request_notifications = gr.Button(value='请求浏览器通知', elem_id="request_notifications")
         request_notifications.click(
             fn=lambda: None,
             inputs=[],
