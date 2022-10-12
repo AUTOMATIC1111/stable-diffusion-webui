@@ -21,10 +21,10 @@ set PATH=%PATH%;%INSTALL_ENV_DIR%;%INSTALL_ENV_DIR%\Library\bin;%INSTALL_ENV_DIR
 @rem figure out what needs to be installed
 set PACKAGES_TO_INSTALL=
 
-call python --version >tmp/stdout.txt 2>tmp/stderr.txt
+call python --version >.tmp1 2>.tmp2
 if "%ERRORLEVEL%" NEQ "0" set PACKAGES_TO_INSTALL=%PACKAGES_TO_INSTALL% python
 
-call git --version >tmp/stdout.txt 2>tmp/stderr.txt
+call git --version >.tmp1 2>.tmp2
 if "%ERRORLEVEL%" NEQ "0" set PACKAGES_TO_INSTALL=%PACKAGES_TO_INSTALL% git
 
 @rem install git and python into a contained environment (if necessary)
