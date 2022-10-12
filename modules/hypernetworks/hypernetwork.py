@@ -175,7 +175,7 @@ def attention_CrossAttention_forward(self, x, context=None, mask=None):
 
 
 def train_hypernetwork(hypernetwork_name, learn_rate, data_root, log_directory, steps, create_image_every, save_hypernetwork_every, template_file, preview_image_prompt):
-    assert hypernetwork_name, 'embedding not selected'
+    assert hypernetwork_name, 'hypernetwork not selected'
 
     path = shared.hypernetworks.get(hypernetwork_name, None)
     shared.loaded_hypernetwork = Hypernetwork()
