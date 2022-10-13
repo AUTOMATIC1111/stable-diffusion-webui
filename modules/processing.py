@@ -506,13 +506,14 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
     firstphase_width_truncated = 0
     firstphase_height_truncated = 0
 
-    def __init__(self, enable_hr=False, scale_latent=True, denoising_strength=0.75, first_pass_width=512, first_pass_height=512, **kwargs):
+    def __init__(self, enable_hr=False, scale_latent=True, denoising_strength=0.75, firstphase_width=512, firstphase_height=512, crop_scale=False, **kwargs):
         super().__init__(**kwargs)
         self.enable_hr = enable_hr
         self.scale_latent = scale_latent
         self.denoising_strength = denoising_strength
-        self.first_pass_width = first_pass_width
-        self.first_pass_height = first_pass_height
+        self.firstphase_width = firstphase_width
+        self.firstphase_height = firstphase_height
+        self.crop_scale = crop_scale
 
     def init(self, all_prompts, all_seeds, all_subseeds):
         if self.enable_hr:
@@ -521,14 +522,14 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             else:
                 state.job_count = state.job_count * 2
 
-            desired_pixel_count = self.first_pass_width * self.first_pass_height
-            actual_pixel_count = self.width * self.height
-            scale = math.sqrt(desired_pixel_count / actual_pixel_count)
+            #desired_pixel_count = self.firstphase_width * self.firstphase_height
+            #actual_pixel_count = self.width * self.height
+            #scale = math.sqrt(desired_pixel_count / actual_pixel_count)
 
-            self.firstphase_width = math.ceil(scale * self.width / 64) * 64
-            self.firstphase_height = math.ceil(scale * self.height / 64) * 64
-            self.firstphase_width_truncated = int(scale * self.width)
-            self.firstphase_height_truncated = int(scale * self.height)
+            #self.firstphase_width = math.ceil(scale * self.width / 64) * 64
+            #self.firstphase_height = math.ceil(scale * self.height / 64) * 64
+            #self.firstphase_width_truncated = int(scale * self.width)
+            #self.firstphase_height_truncated = int(scale * self.height)
 
     def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength):
         self.sampler = sd_samplers.create_sampler_with_index(sd_samplers.samplers, self.sampler_index, self.sd_model)
@@ -541,8 +542,17 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         x = create_random_tensors([opt_C, self.firstphase_height // opt_f, self.firstphase_width // opt_f], seeds=seeds, subseeds=subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
         samples = self.sampler.sample(self, x, conditioning, unconditional_conditioning)
 
-        truncate_x = (self.firstphase_width - self.firstphase_width_truncated) // opt_f
-        truncate_y = (self.firstphase_height - self.firstphase_height_truncated) // opt_f
+        truncate_x = 0
+        truncate_y = 0
+
+        if self.crop_scale:
+            if self.width/self.firstphase_width > self.height/self.firstphase_height:
+                #Crop to landscape
+                truncate_y = (self.width -  self.firstphase_width)//2 // opt_f
+
+            elif self.width/self.firstphase_width < self.height/self.firstphase_height:
+                #Crop to portrait
+                truncate_x = (self.height - self.firstphase_height)//2 // opt_f
 
         samples = samples[:, :, truncate_y//2:samples.shape[2]-truncate_y//2, truncate_x//2:samples.shape[3]-truncate_x//2]
 
