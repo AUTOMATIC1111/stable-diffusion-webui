@@ -17,6 +17,8 @@ class Script(scripts.Script):
             n = gr.Textbox(label="n")
         with gr.Row():
             seed_type = gr.Radio(label='Seed Type', choices=["RandomSeed","RandomVariationSeed","RandomAllSeed"], value="RandomSeed", type="value", interactive=True)
+        with gr.Row():
+            instructions = gr.Textbox(label="For RandomVariationSeed and RandomAllSeed please enable the extras next to seed.", interactive=False)
         return [n, seed_type]
 
     def run(self, p, n, seed_type):
