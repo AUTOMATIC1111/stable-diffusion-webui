@@ -13,7 +13,7 @@
 set MAMBA_ROOT_PREFIX=%cd%\installer_files\mamba
 set INSTALL_ENV_DIR=%cd%\installer_files\env
 set MICROMAMBA_BINARY_FILE=%cd%\installer_files\micromamba_win_x64.exe
-set PATH=%PATH%;%INSTALL_ENV_DIR%;%INSTALL_ENV_DIR%\Library\bin;%INSTALL_ENV_DIR%\Scripts
+set PATH=%INSTALL_ENV_DIR%;%INSTALL_ENV_DIR%\Library\bin;%INSTALL_ENV_DIR%\Scripts;%PATH%
 
 @rem figure out what needs to be installed
 set PACKAGES_TO_INSTALL=
