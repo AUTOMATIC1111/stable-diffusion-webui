@@ -228,6 +228,8 @@ fieldset span.text-gray-500, .gr-block.gr-box span.text-gray-500,  label.block s
     border-top: 1px solid #eee;
     border-left: 1px solid #eee;
     border-right: 1px solid #eee;
+
+    z-index: 300;
 }
 
 .dark fieldset span.text-gray-500, .dark .gr-block.gr-box span.text-gray-500, .dark label.block span{
@@ -480,16 +482,29 @@ input[type="range"]{
     background: #a55000;
 }
 
+#quicksettings {
+    gap: 0.4em;
+}
+
 #quicksettings > div{
     border: none;
     background: none;
+    flex: unset;
+    gap: 0.5em;
 }
 
 #quicksettings > div > div{
     max-width: 32em;
+    min-width: 24em;
     padding: 0;
-    margin-right: 0.75em;
 }
+
+#refresh_sd_model_checkpoint, #refresh_sd_hypernetwork{
+    max-width: 2.5em;
+    min-width: 2.5em;
+    height: 2.4em;
+}
+
 
 canvas[key="mask"] {
     z-index: 12 !important;
@@ -506,4 +521,8 @@ canvas[key="mask"] {
     top: -0.6em;
     z-index: 200;
     width: 8em;
+}
+
+.row.gr-compact{
+    overflow: visible;
 }
