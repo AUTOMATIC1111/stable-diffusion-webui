@@ -11,7 +11,7 @@ import yaml
 
 
 def new_config():
-    newconfig = {'channel_id':{'post_id':0,'heart_id':0,'average_id':0,'cursed_id':0,'nsfw_id':0},'admin':{'admin_roleid':0,'botmod_roleid':0},'main':{'enabled':False,'post_result':False,'post_prompt':True}}
+    newconfig = {'channel_id':{'post_id':0,'heart_id':0,'average_id':0,'cursed_id':0,'nsfw_id':0},'admin':{'admin_roleid':0,'botmod_roleid':0},'main':{'enabled':False,'post_result':False,'post_prompt':True,'mod_buttons':True}}
     return newconfig
 
 
@@ -200,6 +200,8 @@ async def sdhelp(ctx, arg1 = None):
                 await ctx.channel.send("!togglepost :: Toggles posting of imageresults to discord.", delete_after=10)
             elif arg1 == "!togglepostprompt" or arg1 == "togglepostprompt":
                 await ctx.channel.send("!togglepostprompt :: Toggles posting prompt and settings used for the generation.", delete_after=10)
+            elif arg1 == "!togglemodbuttons" or arg1 == "togglemodbuttons":
+                await ctx.channel.send("!togglemodbuttons :: Toggles showing moderation buttons with posted results.", delete_after=10)
             elif arg1 == "!setid" or arg1 == "setid":
                 await ctx.channel.send("!setid :: Usage !setid <post/keep/average/cursed/nsfw> <discord channel id>", delete_after=10)
             else:
@@ -229,7 +231,17 @@ async def togglepostprompt(ctx):
             await ctx.channel.send(f"Prompt posting set to: {bot_config['main']['post_prompt']}", delete_after=10)
             return
 
-    
+@bot.command(pass_context=True)
+async def togglemodbuttons(ctx):
+    await ctx.message.delete()
+    for r in ctx.message.author.roles:
+        if r.id == admin_roleid or r.id == botmod_roleid:
+            bot_config['main']['mod_buttons'] = not bot_config['main']['mod_buttons']
+            with open(botconfigfile, "w", encoding="utf8") as f:
+                save_config = yaml.dump(bot_config, f, default_flow_style=False)
+            await ctx.channel.send(f"Show moderation buttons set to: {bot_config['main']['mod_buttons']}", delete_after=10)
+            return
+
 @bot.command(pass_context=True)
 async def setid(ctx, arg1 = None, arg2: int = None):
     await ctx.message.delete()
@@ -310,7 +322,10 @@ async def image_send(filename,prompt,negative_prompt,seed,subseed,seedvar,sample
         else:
             prompt_info = ""
 
-        await channel.send(prompt_info, file=discord.File(filename), view=view)
+        if bot_config['main']['mod_buttons']:
+            await channel.send(prompt_info, file=discord.File(filename), view=view)
+        else:
+            await channel.send(prompt_info, file=discord.File(filename))
 
 ##########################
 #save_sample part
