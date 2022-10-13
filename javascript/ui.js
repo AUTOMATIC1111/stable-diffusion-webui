@@ -83,12 +83,29 @@ function extract_image_from_gallery_extras(gallery){
 }
 
 function get_tab_index(tabId){
-    var res = 0
+	var res = 0
+	
+	//Note: This is a quick and dirty fix
+	switch (tabId) {
+		case 'mode_img2img':
+			res = 1;
+			break;
+		case 'mode_extras':
+			res = 2;
+			break;
+		case 'extras_resize_mode':
+			res = 3;
+			break;
+		default:
+			break;
+	}
 
-    gradioApp().getElementById(tabId).querySelector('div').querySelectorAll('button').forEach(function(button, i){
+	/* Old code:
+	gradioApp().getElementById(tabId).querySelector('div').querySelectorAll('button').forEach(function(button, i){
         if(button.className.indexOf('bg-white') != -1)
             res = i
     })
+	//*/
 
     return res
 }
