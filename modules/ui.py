@@ -40,6 +40,7 @@ from modules import prompt_parser
 from modules.images import save_image
 import modules.textual_inversion.ui
 import modules.hypernetworks.ui
+import modules.sd_models
 
 # this is a fix for Windows users. Without it, javascript files will be served with text/html content-type and the browser will not show any UI
 mimetypes.init()
@@ -232,6 +233,19 @@ def wrap_gradio_call(func, extra_outputs=None):
         return tuple(res)
 
     return f
+
+
+def refresh_quicksettings(comps):
+    print("Refreshing Model List")
+
+    modules.sd_models.list_models()
+
+    # actually update the list visually
+    for component in comps:
+
+        if component.elem_id == "sd_model_checkpoint":
+            component.update(choices=lambda: modules.sd_models.checkpoint_tiles())
+            # ui still doesn't update
 
 
 def check_progress_call(id_part):
@@ -1330,6 +1344,7 @@ Requested path was: {f}
 
                     gr.HTML(elem_id="settings_header_text_{}".format(item.section[0]), value='<h1 class="gr-button-lg">{}</h1>'.format(item.section[1]))
 
+
                 if item.show_on_main_page:
                     quicksettings_list.append((i, k, item))
                     components.append(dummy_component)
@@ -1399,9 +1414,19 @@ Requested path was: {f}
 
     with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion") as demo:
         with gr.Row(elem_id="quicksettings"):
+            raw_qs_components = []
             for i, k, item in quicksettings_list:
                 component = create_setting_component(k)
                 component_dict[k] = component
+                raw_qs_components.append(component)
+
+            # quicksettings bar refresh button
+            ref_quick_button = gradio.Button(refresh_symbol,visible=True, elem_id="refresh_quicksett")
+            ref_quick_button.click(
+                fn=lambda: refresh_quicksettings(raw_qs_components),
+                inputs=[],
+                outputs=[]
+            )
 
         settings_interface.gradio_ref = demo
 
@@ -1423,25 +1448,11 @@ Requested path was: {f}
         for i, k, item in quicksettings_list:
             component = component_dict[k]
 
-            try:
-             component.change(
-                 fn=lambda value, k=k: run_settings_single(value, key=k),
-                 inputs=[component],
-                 outputs=[component, text_settings],
-             )
-            except AttributeError:
-                # buttons don't have a change event so map to their click event instead
-                if type(component) == gradio.Button:
-                    print("yup thats a button")
-                    component.click(
-                        fn=lambda value, k=k: run_settings_single(value, key=k),
-                        inputs=[component],
-                        outputs=[component, text_settings],
-                    )
-
-
-        #def connect_quicksett_refresh():
-        #    print("event fired")
+            component.change(
+                fn=lambda value, k=k: run_settings_single(value, key=k),
+                inputs=[component],
+                outputs=[component, text_settings],
+            )
 
         def modelmerger(*args):
             try:

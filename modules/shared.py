@@ -154,15 +154,6 @@ class OptionInfo:
         self.section = None
         self.show_on_main_page = show_on_main_page
 
-    def __init__(self, default=None, label="", component=None, component_args=None, click=None, show_on_main_page=False):
-        self.default = default
-        self.label = label
-        self.component = component
-        self.component_args = component_args
-        self.click = click
-        self.section = None
-        self.show_on_main_page = show_on_main_page
-
 
 def options_section(section_identifier, options_dict):
     for k, v in options_dict.items():
@@ -233,7 +224,7 @@ options_templates.update(options_section(('face-restoration', "Face restoration"
 }))
 
 options_templates.update(options_section(('system', "System"), {
-    "memmon_poll_rate": OptionInfo(8, "VRAM usage polls per second during generation. Set to 0 to disable.", gr.Slider, {"minimum": 0, "maximum": 40, "step": 1}),
+    "memmon_poll_rate": OptionInfo(8, "VRAM usage polls per secorefreshnd during generation. Set to 0 to disable.", gr.Slider, {"minimum": 0, "maximum": 40, "step": 1}),
     "samples_log_stdout": OptionInfo(False, "Always print all generation info to standard output"),
     "multiple_tqdm": OptionInfo(True, "Add a second progress bar to the console that shows progress for an entire job."),
 }))
@@ -247,7 +238,6 @@ options_templates.update(options_section(('training', "Training"), {
 
 options_templates.update(options_section(('sd', "Stable Diffusion"), {
     "sd_model_checkpoint": OptionInfo(None, "Stable Diffusion checkpoint", gr.Dropdown, lambda: {"choices": modules.sd_models.checkpoint_tiles()}, show_on_main_page=True),
-    "test_button": OptionInfo(None, "my test button", gr.Button, {"elem_id": "test_button"}, print("test test test"), show_on_main_page=True),
     "sd_hypernetwork": OptionInfo("None", "Stable Diffusion finetune hypernetwork", gr.Dropdown, lambda: {"choices": ["None"] + [x for x in hypernetworks.keys()]}),
     "img2img_color_correction": OptionInfo(False, "Apply color correction to img2img results to match original colors."),
     "save_images_before_color_correction": OptionInfo(False, "Save a copy of image before applying color correction to img2img results"),
