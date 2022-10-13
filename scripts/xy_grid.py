@@ -107,6 +107,10 @@ def apply_hypernetwork(p, x, xs):
     hypernetwork.load_hypernetwork(name)
 
 
+def apply_hypernetwork_strength(p, x, xs):
+    hypernetwork.apply_strength(x)
+
+
 def confirm_hypernetworks(p, xs):
     for x in xs:
         if x.lower() in ["", "none"]:
@@ -165,6 +169,7 @@ axis_options = [
     AxisOption("Sampler", str, apply_sampler, format_value, confirm_samplers),
     AxisOption("Checkpoint name", str, apply_checkpoint, format_value, confirm_checkpoints),
     AxisOption("Hypernetwork", str, apply_hypernetwork, format_value, confirm_hypernetworks),
+    AxisOption("Hypernet str.", float, apply_hypernetwork_strength, format_value_add_label, None),
     AxisOption("Sigma Churn", float, apply_field("s_churn"), format_value_add_label, None),
     AxisOption("Sigma min", float, apply_field("s_tmin"), format_value_add_label, None),
     AxisOption("Sigma max", float, apply_field("s_tmax"), format_value_add_label, None),
@@ -250,7 +255,7 @@ class Script(scripts.Script):
             y_values = gr.Textbox(label="Y values", visible=False, lines=1)
         
         draw_legend = gr.Checkbox(label='Draw legend', value=True)
-        include_lone_images = gr.Checkbox(label='Include Separate Images', value=True)
+        include_lone_images = gr.Checkbox(label='Include Separate Images', value=False)
         no_fixed_seeds = gr.Checkbox(label='Keep -1 for seeds', value=False)
 
         return [x_type, x_values, y_type, y_values, draw_legend, include_lone_images, no_fixed_seeds]
@@ -377,6 +382,8 @@ class Script(scripts.Script):
         modules.sd_models.reload_model_weights(shared.sd_model)
 
         hypernetwork.load_hypernetwork(opts.sd_hypernetwork)
+        hypernetwork.apply_strength()
+
 
         opts.data["CLIP_stop_at_last_layers"] = CLIP_stop_at_last_layers
 
