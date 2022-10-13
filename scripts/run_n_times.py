@@ -40,6 +40,7 @@ class Script(scripts.Script):
         return [n, seed_type]
 
     def run(self, p, n, seed_type):
+        original_prompt = p.prompt
         if seed_type == "RandomVariationSeed":
             fixed_seed = p.seed
         for x in range(int(n)):
@@ -51,8 +52,8 @@ class Script(scripts.Script):
             else:
                 p.seed = -1
             
-            p.prompt = "".join(replace_wildcard(chunk) for chunk in p.prompt.split("__"))
-            
+            p.prompt = "".join(replace_wildcard(chunk) for chunk in original_prompt.split("__"))
+
             proc = process_images(p)
             image = proc.images
         return Processed(p, image, p.seed, proc.info)
