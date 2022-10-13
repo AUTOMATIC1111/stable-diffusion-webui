@@ -1309,6 +1309,9 @@ Requested path was: {f}
         settings_cols = 3
         items_per_col = int(len(opts.data_labels) * 0.9 / settings_cols)
 
+        quicksettings_names = [x.strip() for x in opts.quicksettings.split(",")]
+        quicksettings_names = set(x for x in quicksettings_names if x != 'quicksettings')
+
         quicksettings_list = []
 
         cols_displayed = 0
@@ -1333,7 +1336,7 @@ Requested path was: {f}
 
                     gr.HTML(elem_id="settings_header_text_{}".format(item.section[0]), value='<h1 class="gr-button-lg">{}</h1>'.format(item.section[1]))
 
-                if item.show_on_main_page:
+                if k in quicksettings_names:
                     quicksettings_list.append((i, k, item))
                     components.append(dummy_component)
                 else:
@@ -1342,17 +1345,18 @@ Requested path was: {f}
                     components.append(component)
                     items_displayed += 1
 
-        request_notifications = gr.Button(value='请求浏览器通知', elem_id="request_notifications")
+
+        with gr.Row():
+            request_notifications = gr.Button(value='请求浏览器通知', elem_id="request_notifications")
+            reload_script_bodies = gr.Button(value='重新加载自定义脚本主体 (无UI更新，无重启)', variant='secondary')
+            restart_gradio = gr.Button(value='重启 Gradio 和 Refresh 组件 (仅限自定义脚本, ui.py, js 和 css)', variant='primary')
+
         request_notifications.click(
             fn=lambda: None,
             inputs=[],
             outputs=[],
             _js='function(){}'
         )
-
-        with gr.Row():
-            reload_script_bodies = gr.Button(value='重新加载自定义脚本主体 (无UI更新，无重启)', variant='secondary')
-            restart_gradio = gr.Button(value='重启 Gradio 和 Refresh 组件 (仅限自定义脚本, ui.py, js 和 css)', variant='primary')
 
         def reload_scripts():
             modules.scripts.reload_script_body_only()
@@ -1367,7 +1371,6 @@ Requested path was: {f}
         def request_restart():
             shared.state.interrupt()
             settings_interface.gradio_ref.do_restart = True
-
 
         restart_gradio.click(
             fn=request_restart,
