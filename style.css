@@ -522,6 +522,9 @@ canvas[key="mask"] {
     z-index: 200;
     width: 8em;
 }
+#quicksettings .gr-box > div > div > input.gr-text-input {
+  top: -1.12em;
+}
 
 .row.gr-compact{
     overflow: visible;
