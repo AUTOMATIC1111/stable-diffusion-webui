@@ -40,18 +40,18 @@ function switch_to_txt2img(){
 
 function switch_to_img2img_img2img(){
     gradioApp().querySelectorAll('.tabs button')[1].click();
-	setTimeout(() => {
+	window.requestAnimationFrame( () => {
 		gradioApp().querySelectorAll('.tabs .tabs button')[0].click();
-	}, 200);
+	});
 
     return args_to_array(arguments);
 }
 
 function switch_to_img2img_inpaint(){
     gradioApp().querySelectorAll('.tabs button')[1].click();
-	setTimeout(() => {
+	window.requestAnimationFrame( () => {
 		gradioApp().querySelectorAll('.tabs .tabs button')[1].click();
-	}, 200);
+	});
 
     return args_to_array(arguments);
 }
