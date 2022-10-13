@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands, tasks
 from discord.ext.commands import bot
+from discord import app_commands
 import threading, asyncio
 from datetime import datetime
 import time
@@ -11,7 +12,7 @@ import yaml
 
 
 def new_config():
-    newconfig = {'channel_id':{'post_id':0,'heart_id':0,'average_id':0,'cursed_id':0,'nsfw_id':0},'admin':{'admin_roleid':0,'botmod_roleid':0},'main':{'enabled':False,'post_result':False,'post_prompt':True,'mod_buttons':True}}
+    newconfig = {'channel_id':{'server_id':0,'post_id':0,'heart_id':0,'average_id':0,'cursed_id':0,'nsfw_id':0},'admin':{'admin_roleid':0,'botmod_roleid':0},'main':{'enabled':False,'post_result':False,'post_prompt':True,'mod_buttons':True}}
     return newconfig
 
 
@@ -74,7 +75,11 @@ class PersistentButtons(commands.Bot):
         # If you have the message_id you can also pass it as a keyword argument, but for this example
         # we don't have one.
         self.add_view(Buttons())
+        await self.tree.sync(guild = discord.Object(id = bot_config['channel_id']['server_id']))
+        print(f"Synced slash commands for {self.user}.")
 
+    async def on_command_error(self, ctx, error):
+        await ctx.reply(error, ephemeral = True)
     async def on_ready(self):
         await self.wait_until_ready()
         print(f'Logged in as {self.user} (ID: {self.user.id})')
@@ -189,116 +194,117 @@ async def update_bot_config():
     with open(botconfigfile, "w", encoding="utf8") as f:
         save_config = yaml.dump(bot_config, f, default_flow_style=False)
 
-@bot.command(pass_context=True)
-async def sdhelp(ctx, arg1 = None):
-    await ctx.message.delete()
-    for r in ctx.message.author.roles:
-        if r.id == admin_roleid or r.id == botmod_roleid:
-            if arg1 == None:
-                await ctx.channel.send(":: Supported Commands ::\n\n!togglepost\n!togglepostprompt\n!setid\n!about\n!die\n\nUse !sdhelp <command> for more info.", delete_after=10)
-            elif arg1 == "!togglepost" or arg1 == "togglepost":
-                await ctx.channel.send("!togglepost :: Toggles posting of imageresults to discord.", delete_after=10)
-            elif arg1 == "!togglepostprompt" or arg1 == "togglepostprompt":
-                await ctx.channel.send("!togglepostprompt :: Toggles posting prompt and settings used for the generation.", delete_after=10)
-            elif arg1 == "!togglemodbuttons" or arg1 == "togglemodbuttons":
-                await ctx.channel.send("!togglemodbuttons :: Toggles showing moderation buttons with posted results.", delete_after=10)
-            elif arg1 == "!setid" or arg1 == "setid":
-                await ctx.channel.send("!setid :: Usage !setid <post/keep/average/cursed/nsfw> <discord channel id>", delete_after=10)
-            else:
-                await ctx.channel.send(f"Unknown command: {arg1}", delete_after=10)
+@bot.hybrid_command(name = "postresult", with_app_command = True, description = "Toggles rusulting image posting.")
+@app_commands.guilds(discord.Object(id = bot_config['channel_id']['server_id']))
+@commands.has_any_role(bot_config['admin']['admin_roleid'], bot_config['admin']['botmod_roleid'])
+async def postresult(ctx: commands.Context):
+    await ctx.defer(ephemeral = True)
+    bot_config['main']['post_result'] = not bot_config['main']['post_result']
+    with open(botconfigfile, "w", encoding="utf8") as f:
+        save_config = yaml.dump(bot_config, f, default_flow_style=False)
+    await ctx.reply(f"Image posting set to: {bot_config['main']['post_result']}", delete_after=10)
+    return
 
 
-@bot.command(pass_context=True)
-async def togglepost(ctx):
-    await ctx.message.delete()
-    for r in ctx.message.author.roles:
-        if r.id == admin_roleid or r.id == botmod_roleid:
-            bot_config['main']['post_result'] = not bot_config['main']['post_result']
-            with open(botconfigfile, "w", encoding="utf8") as f:
-                save_config = yaml.dump(bot_config, f, default_flow_style=False)
-            await ctx.channel.send(f"Image posting set to: {bot_config['main']['post_result']}", delete_after=10)
+@bot.hybrid_command(name = "sdhelp", with_app_command = True, description = "Displays bot help.")
+@app_commands.guilds(discord.Object(id = bot_config['channel_id']['server_id']))
+@commands.has_any_role(bot_config['admin']['admin_roleid'], bot_config['admin']['botmod_roleid'])
+async def sdhelp(ctx: commands.Context, arg1 = None):
+    await ctx.defer(ephemeral = True)
+    if arg1 == None:
+        await ctx.reply(":: Supported Commands ::\n\n/postresult\n/postprompt\n/modbuttons\n/setid\n/about\n/die\n\nUse /sdhelp <command> for more info.", delete_after=10)
+    elif arg1 == "!postresult" or arg1 == "postresult":
+        await ctx.reply("/postresult :: Toggles posting of imageresults to discord.", delete_after=10)
+    elif arg1 == "!postprompt" or arg1 == "postprompt":
+        await ctx.reply("/postprompt :: Toggles posting prompt and settings used for the generation.", delete_after=10)
+    elif arg1 == "!modbuttons" or arg1 == "modbuttons":
+        await ctx.reply("/modbuttons :: Toggles showing moderation buttons with posted results.", delete_after=10)
+    elif arg1 == "!setid" or arg1 == "setid":
+        await ctx.reply("/setid :: Usage !setid <post/keep/average/cursed/nsfw> <discord channel id>", delete_after=10)
+    else:
+        await ctx.reply(f"Unknown command: {arg1}", delete_after=10)
+
+
+@bot.hybrid_command(name = "postprompt", with_app_command = True, description = "Toggles image result posting..")
+@app_commands.guilds(discord.Object(id = bot_config['channel_id']['server_id']))
+@commands.has_any_role(bot_config['admin']['admin_roleid'], bot_config['admin']['botmod_roleid'])
+async def postprompt(ctx: commands.Context):
+    await ctx.defer(ephemeral = True)
+    bot_config['main']['post_prompt'] = not bot_config['main']['post_prompt']
+    with open(botconfigfile, "w", encoding="utf8") as f:
+        save_config = yaml.dump(bot_config, f, default_flow_style=False)
+    await ctx.reply(f"Prompt posting set to: {bot_config['main']['post_prompt']}", delete_after=10)
+    return
+
+@bot.hybrid_command(name = "modbuttons", with_app_command = True, description = "Toggles showing of moderation buttons when posting image result.")
+@app_commands.guilds(discord.Object(id = bot_config['channel_id']['server_id']))
+@commands.has_any_role(bot_config['admin']['admin_roleid'], bot_config['admin']['botmod_roleid'])
+async def modbuttons(ctx: commands.Context):
+    await ctx.defer(ephemeral = True)
+    bot_config['main']['mod_buttons'] = not bot_config['main']['mod_buttons']
+    with open(botconfigfile, "w", encoding="utf8") as f:
+        save_config = yaml.dump(bot_config, f, default_flow_style=False)
+    await ctx.reply(f"Show moderation buttons set to: {bot_config['main']['mod_buttons']}", delete_after=10)
+    return
+
+@bot.hybrid_command(name = "setid", with_app_command = True, description = "Sets channel and role id's.")
+@app_commands.guilds(discord.Object(id = bot_config['channel_id']['server_id']))
+@commands.has_any_role(bot_config['admin']['admin_roleid'], bot_config['admin']['botmod_roleid'])
+async def setid(ctx: commands.Context, arg1 = None, arg2: int = None):
+    await ctx.defer(ephemeral = True)
+    if arg1 != None and arg2 != None:
+        if arg1 == "post": 
+            bot_config['channel_id']['post_id'] = arg2
+            post_id = arg2
+            await ctx.reply(f"Post channel ID set to: {arg2}", delete_after=10)
+            await update_bot_config()
             return
-
-
-@bot.command(pass_context=True)
-async def togglepostprompt(ctx):
-    await ctx.message.delete()
-    for r in ctx.message.author.roles:
-        if r.id == admin_roleid or r.id == botmod_roleid:
-            bot_config['main']['post_prompt'] = not bot_config['main']['post_prompt']
-            with open(botconfigfile, "w", encoding="utf8") as f:
-                save_config = yaml.dump(bot_config, f, default_flow_style=False)
-            await ctx.channel.send(f"Prompt posting set to: {bot_config['main']['post_prompt']}", delete_after=10)
+        elif arg1 == "keep": 
+            bot_config['channel_id']['heart_id'] = arg2
+            heart_id = arg2
+            await ctx.reply(f"Keeper channel ID set to: {arg2}", delete_after=10)
+            await update_bot_config()
             return
-
-@bot.command(pass_context=True)
-async def togglemodbuttons(ctx):
-    await ctx.message.delete()
-    for r in ctx.message.author.roles:
-        if r.id == admin_roleid or r.id == botmod_roleid:
-            bot_config['main']['mod_buttons'] = not bot_config['main']['mod_buttons']
-            with open(botconfigfile, "w", encoding="utf8") as f:
-                save_config = yaml.dump(bot_config, f, default_flow_style=False)
-            await ctx.channel.send(f"Show moderation buttons set to: {bot_config['main']['mod_buttons']}", delete_after=10)
+        elif arg1 == "average": 
+            bot_config['channel_id']['average_id'] = arg2
+            average_id = arg2
+            await ctx.reply(f"Average channel ID set to: {arg2}", delete_after=10)
+            await update_bot_config()
             return
-
-@bot.command(pass_context=True)
-async def setid(ctx, arg1 = None, arg2: int = None):
-    await ctx.message.delete()
-    for r in ctx.message.author.roles:
-        if r.id == admin_roleid or r.id == botmod_roleid:
-            if arg1 != None and arg2 != None:
-                if arg1 == "post": 
-                    bot_config['channel_id']['post_id'] = arg2
-                    post_id = arg2
-                    await ctx.channel.send(f"Post channel ID set to: {arg2}", delete_after=10)
-                    await update_bot_config()
-                    return
-                elif arg1 == "keep": 
-                    bot_config['channel_id']['heart_id'] = arg2
-                    heart_id = arg2
-                    await ctx.channel.send(f"Keeper channel ID set to: {arg2}", delete_after=10)
-                    await update_bot_config()
-                    return
-                elif arg1 == "average": 
-                    bot_config['channel_id']['average_id'] = arg2
-                    average_id = arg2
-                    await ctx.channel.send(f"Average channel ID set to: {arg2}", delete_after=10)
-                    await update_bot_config()
-                    return
-                elif arg1 == "cursed": 
-                    bot_config['channel_id']['cursed_id'] = arg2
-                    cursed_id = arg2
-                    await ctx.channel.send(f"Cursed channel ID set to: {arg2}", delete_after=10)
-                    await update_bot_config()
-                    return
-                elif arg1 == "nsfw": 
-                    bot_config['channel_id']['nsfw_id'] = arg2
-                    nsfw_id = arg2
-                    await ctx.channel.send(f"NSFW channel ID set to: {arg2}", delete_after=10)
-                    await update_bot_config()
-                    return
-                else:
-                    await ctx.channel.send(f"Invalid argument: {arg1}", delete_after=10)
-                    return
-            else:
-                await ctx.channel.send(f"Missing arguments, use: !setid <name> <id>", delete_after=10)
-                return
+        elif arg1 == "cursed": 
+            bot_config['channel_id']['cursed_id'] = arg2
+            cursed_id = arg2
+            await ctx.reply(f"Cursed channel ID set to: {arg2}", delete_after=10)
+            await update_bot_config()
+            return
+        elif arg1 == "nsfw": 
+            bot_config['channel_id']['nsfw_id'] = arg2
+            nsfw_id = arg2
+            await ctx.reply(f"NSFW channel ID set to: {arg2}", delete_after=10)
+            await update_bot_config()
+            return
+        else:
+            await ctx.reply(f"Invalid argument: {arg1}", delete_after=10)
+            return
+    else:
+        await ctx.reply(f"Missing arguments, use: /setid <name> <id>\nValid names are: post, keep, average, cursed, nsfw", delete_after=10)
+        return
 
 
-@bot.command(pass_context=True)
-async def about(ctx):
-    await ctx.message.delete()
-    channel = bot.get_channel(post_id)
-    await channel.send(f"Stable Diffusion Image Poster\nCreated by Vetchems\n\nAutomatically posts newly generated images (if any) from Stable Diffusion every minute", delete_after=10)
+@bot.hybrid_command(name = "about", with_app_command = True, description = "Shows info about the bot.")
+@app_commands.guilds(discord.Object(id = bot_config['channel_id']['server_id']))
+async def about(ctx: commands.Context):
+    await ctx.defer(ephemeral = True)
+    await ctx.reply(f"Stable Diffusion Image Poster\nCreated by Vetchems\n\nAutomatically posts newly generated images generated by Stable Diffusions Web UI.\n\nhttps://github.com/Vetchems/stable-diffusion-discord-vetch", delete_after=10)
 
 
-@bot.command(pass_context=True)
-async def die(ctx):
-    for r in ctx.message.author.roles:
-        if r.id == admin_roleid or r.id == botmod_roleid:
-            await ctx.message.delete()
-            await bot.close()
+@bot.hybrid_command(name = "die", with_app_command = True, description = "Force disconnect the bot (restart stable diffusion to reconnect).")
+@app_commands.guilds(discord.Object(id = bot_config['channel_id']['server_id']))
+@commands.has_any_role(bot_config['admin']['admin_roleid'], bot_config['admin']['botmod_roleid'])
+async def die(ctx: commands.Context):
+    await ctx.defer(ephemeral = True)
+    await ctx.reply("Bot will now disconnect.")
+    await bot.close()
 
 
 
