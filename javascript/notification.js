@@ -29,14 +29,13 @@ onUiUpdate(function(){
 	// Multiple copies of the images are in the DOM when one is selected. Dedup with a Set to get the real number generated.
 	const imgs = new Set(Array.from(galleryPreviews).map(img => img.src)).size;
 
-    const notification = new Notification(
-        'Stable Diffusion',
-        {
-            body: `Generated ${imgs.size > 1 ? imgs.size - 1 : 1} image${imgs.size > 1 ? 's' : ''}`,
-            icon: headImg,
-            image: headImg,
-        }
-    );
+	const n = new Notification(
+		'Stable Diffusion', {
+			body: `Generated ${imgs>1 ? imgs-1 : 1} img`,
+			icon: headImg,
+			image: headImg,
+		}
+	);
 
 	n.onclick = function() {
 		parent.focus();
