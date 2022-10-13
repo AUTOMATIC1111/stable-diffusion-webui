@@ -21,17 +21,24 @@ def run(command, desc=None, errdesc=None):
 
     result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 
-    if result.returncode != 0:
+    version_num = [int(num) for num in platform.python_version().split(".")]
+    if version_num[0] > 3 or (version_num[0] == 3 and version_num[1] >= 10 and version_num[2] > 5):
+        stdout = result.stdout.decode(encoding="utf8", errors="ignore") if len(result.stdout)>0 else '<empty>'
+        stderr = result.stderr.decode(encoding="utf8", errors="ignore") if len(result.stderr)>0 else '<empty>'
+    else:
+        stdout = result.stdout.encode().decode(encoding="utf8", errors="ignore") if len(result.stdout) > 0 else '<empty>'
+        stderr = result.stderr.encode().decode(encoding="utf8", errors="ignore") if len(result.stderr) > 0 else '<empty>'
 
+    if result.returncode != 0:
         message = f"""{errdesc or 'Error running command'}.
 Command: {command}
 Error code: {result.returncode}
-stdout: {result.stdout.decode(encoding="utf8", errors="ignore") if len(result.stdout)>0 else '<empty>'}
-stderr: {result.stderr.decode(encoding="utf8", errors="ignore") if len(result.stderr)>0 else '<empty>'}
+stdout: {stdout}
+stderr: {stderr}
 """
         raise RuntimeError(message)
 
-    return result.stdout.decode(encoding="utf8", errors="ignore")
+    return result.stdout.encode().decode(encoding="utf8", errors="ignore")
 
 
 def check_run(command):
@@ -86,7 +93,7 @@ def git_clone(url, dir, name, commithash=None):
 
 
 def prepare_enviroment():
-    torch_command = os.environ.get('TORCH_COMMAND', "pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 --extra-index-url https://download.pytorch.org/whl/cu113")
+    torch_command = os.environ.get('TORCH_COMMAND', "pip install torch torchvision --extra-index-url https://download.pytorch.org/whl/cu116")
     requirements_file = os.environ.get('REQS_FILE', "requirements_versions.txt")
     commandline_args = os.environ.get('COMMANDLINE_ARGS', "")
 
