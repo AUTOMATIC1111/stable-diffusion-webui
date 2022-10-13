@@ -1,6 +1,8 @@
 import re
 import gradio as gr
 
+from modules import sd_models
+
 re_param_code = r"\s*([\w ]+):\s*([^,]+)(?:,|$)"
 re_param = re.compile(re_param_code)
 re_params = re.compile(r"^(?:" + re_param_code + "){3,}$")
@@ -69,6 +71,14 @@ def connect_paste(button, paste_fields, input_comp, js=None):
                 v = key(params)
             else:
                 v = params.get(key, None)
+                if key == "Model hash":
+                    if v is not None and v != "":
+                        ckpt_info = sd_models.get_closet_checkpoint_match(v)
+                        checkpoint_info = sd_models.select_checkpoint()
+                        if ckpt_info.filename == checkpoint_info.filename:
+                            v = None
+                        else:
+                            v = ckpt_info.title
 
             if v is None:
                 res.append(gr.update())
