@@ -116,7 +116,7 @@ class Script(scripts.Script):
             dummy = gr.Textbox(label='Wildcard List', value=f'{txt_list}', interactive=False, lines=3)
         return [same_seed, dummy]
 
-    def run(self, p, same_seed):
+    def run(self, p, same_seed, dummy):
         modules.processing.fix_seed(p)
         original_prompt = p.prompt[0] if type(p.prompt) == list else p.prompt
 

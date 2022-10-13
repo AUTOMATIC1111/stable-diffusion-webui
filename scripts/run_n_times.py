@@ -42,7 +42,7 @@ class Script(scripts.Script):
             dummy = gr.Textbox(label='Wildcard List', value=f'{txt_list}', interactive=False, lines=3)
         return [n, seed_type, wildcard_behaviour, dummy]
 
-    def run(self, p, n, seed_type, wildcard_behaviour):
+    def run(self, p, n, seed_type, wildcard_behaviour, dummy):
         original_prompt = p.prompt
         if wildcard_behaviour == "Batch":
             p.prompt = "".join(replace_wildcard(chunk) for chunk in original_prompt.split("__"))
