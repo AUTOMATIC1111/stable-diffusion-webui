@@ -33,27 +33,31 @@ function args_to_array(args){
 }
 
 function switch_to_txt2img(){
-    gradioApp().querySelector('#tabs').querySelectorAll('button')[0].click();
+    gradioApp().querySelectorAll('.tabs button')[0].click();
 
     return args_to_array(arguments);
 }
 
 function switch_to_img2img_img2img(){
-    gradioApp().querySelector('#tabs').querySelectorAll('button')[1].click();
-    gradioApp().getElementById('mode_img2img').querySelectorAll('button')[0].click();
+    gradioApp().querySelectorAll('.tabs button')[1].click();
+	setTimeout(() => {
+		gradioApp().querySelectorAll('.tabs .tabs button')[0].click();
+	}, 200);
 
     return args_to_array(arguments);
 }
 
 function switch_to_img2img_inpaint(){
-    gradioApp().querySelector('#tabs').querySelectorAll('button')[1].click();
-    gradioApp().getElementById('mode_img2img').querySelectorAll('button')[1].click();
+    gradioApp().querySelectorAll('.tabs button')[1].click();
+	setTimeout(() => {
+		gradioApp().querySelectorAll('.tabs .tabs button')[1].click();
+	}, 200);
 
     return args_to_array(arguments);
 }
 
 function switch_to_extras(){
-    gradioApp().querySelector('#tabs').querySelectorAll('button')[2].click();
+    gradioApp().querySelectorAll('.tabs button').click();
 
     return args_to_array(arguments);
 }
