@@ -1082,11 +1082,8 @@ def create_ui(wrap_gradio_gpu_call):
                     with gr.Row():
                         process_flip = gr.Checkbox(label='Create flipped copies')
                         process_split = gr.Checkbox(label='Split oversized images into two')
-                        process_caption = gr.Checkbox(label='Use BLIP caption as filename')
-                        if cmd_opts.deepdanbooru:
-                            process_caption_deepbooru = gr.Checkbox(label='Use deepbooru caption as filename')
-                        else:
-                            process_caption_deepbooru = gr.Checkbox(label='Use deepbooru caption as filename', visible=False)
+                        process_caption = gr.Checkbox(label='Use BLIP for caption')
+                        process_caption_deepbooru = gr.Checkbox(label='Use deepbooru for caption', visible=True if cmd_opts.deepdanbooru else False)
 
                     with gr.Row():
                         with gr.Column(scale=3):
@@ -1106,7 +1103,6 @@ def create_ui(wrap_gradio_gpu_call):
                     training_width = gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512)
                     training_height = gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512)
                     steps = gr.Number(label='Max steps', value=100000, precision=0)
-                    num_repeats = gr.Number(label='Number of repeats for a single input image per epoch', value=100, precision=0)
                     create_image_every = gr.Number(label='Save an image to log directory every N steps, 0 to disable', value=500, precision=0)
                     save_embedding_every = gr.Number(label='Save a copy of embedding to log directory every N steps, 0 to disable', value=500, precision=0)
                     save_image_with_stored_embedding = gr.Checkbox(label='Save images with embedding in PNG chunks', value=True)
@@ -1184,7 +1180,6 @@ def create_ui(wrap_gradio_gpu_call):
                 training_width,
                 training_height,
                 steps,
-                num_repeats,
                 create_image_every,
                 save_embedding_every,
                 template_file,
