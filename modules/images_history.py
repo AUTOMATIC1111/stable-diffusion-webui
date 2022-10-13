@@ -54,23 +54,26 @@ def show_image_info(num, image_path, filenames):
     #print(f"select image {num}")
     file = filenames[int(num)]
     return file, num, os.path.join(image_path, file)
-def delete_image(tabname, dir_name, name, page_index, filenames, image_index):
-    path = os.path.join(dir_name, name)           
-    if os.path.exists(path):        
-        print(f"Delete file {path}")
-        os.remove(path)
-        txt_file = os.path.splitext(path)[0]  + ".txt"
-        if os.path.exists(txt_file):
-            os.remove(txt_file)
-        new_file_list = []
-        for f in filenames:
-            if f == name:
-                continue
-            new_file_list.append(f)
-    else:
-        print(f"Not exists file {path}")
-        new_file_list = filenames
-    return page_index, new_file_list
+def delete_image(delete_num, tabname, dir_name, name, page_index, filenames, image_index):
+    delete_num = int(delete_num)
+    index = list(filenames).index(name)
+    i = 0
+    new_file_list = []
+    for name in filenames:
+        if i  >= index and i < index + delete_num:            
+            path = os.path.join(dir_name, name)
+            if os.path.exists(path):        
+                print(f"Delete file {path}")
+                os.remove(path)
+                txt_file = os.path.splitext(path)[0]  + ".txt"
+                if os.path.exists(txt_file):
+                    os.remove(txt_file)       
+            else:
+                print(f"Not exists file {path}")
+        else:
+            new_file_list.append(name)
+        i += 1
+    return page_index, new_file_list, 1
 
 def show_images_history(gr, opts, tabname, run_pnginfo, switch_dict):
         if tabname == "txt2img":
@@ -90,10 +93,11 @@ def show_images_history(gr, opts, tabname, run_pnginfo, switch_dict):
             with gr.Row():     
                 with gr.Column(scale=2):                    
                     history_gallery = gr.Gallery(show_label=False, elem_id=tabname + "_images_history_gallery").style(grid=6)
-                    delete = gr.Button('Delete',  elem_id=tabname + "_images_history_del_button")
+                    with gr.Row():
+                        delete = gr.Button('Delete',  elem_id=tabname + "_images_history_del_button")
+                        delete_num = gr.Number(value=1, interactive=True, label="number of images to delete consecutively next")                                           
                 with gr.Column():     
                     with gr.Row():          
-                        #pnginfo = gr.Button('PNG info')
                         pnginfo_send_to_txt2img = gr.Button('Send to txt2img')
                         pnginfo_send_to_img2img = gr.Button('Send to img2img')
                     with gr.Row():
@@ -127,7 +131,7 @@ def show_images_history(gr, opts, tabname, run_pnginfo, switch_dict):
         #other funcitons
         set_index.click(show_image_info, _js="images_history_get_current_img", inputs=[tabname_box,  img_path, filenames], outputs=[img_file_name, image_index, hide_image])
         img_file_name.change(fn=None, _js="images_history_enable_del_buttons", inputs=None, outputs=None)
-        delete.click(delete_image,_js="images_history_delete", inputs=[tabname_box, img_path, img_file_name, page_index, filenames, image_index], outputs=[page_index, filenames]) 
+        delete.click(delete_image,_js="images_history_delete", inputs=[delete_num, tabname_box, img_path, img_file_name, page_index, filenames, image_index], outputs=[page_index, filenames, delete_num]) 
         hide_image.change(fn=run_pnginfo, inputs=[hide_image], outputs=[info1, img_file_info, info2])
        
         #pnginfo.click(fn=run_pnginfo, inputs=[hide_image], outputs=[info1, img_file_info, info2])

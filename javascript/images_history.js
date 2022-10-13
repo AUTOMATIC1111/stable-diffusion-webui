@@ -101,7 +101,7 @@ function images_history_get_current_img(tabname, image_path, files){
     ];
 }
 
-function images_history_delete(tabname, img_path, img_file_name, page_index, filenames, image_index){
+function images_history_delete(del_num, tabname, img_path, img_file_name, page_index, filenames, image_index){
     image_index = parseInt(image_index);
     var tab = gradioApp().getElementById(tabname + '_images_history');
     var set_btn = tab.querySelector(".images_history_set_index");
@@ -112,23 +112,29 @@ function images_history_delete(tabname, img_path, img_file_name, page_index, fil
         }
     });    
     var img_num = buttons.length / 2;
-    if (img_num === 1){
+    if (img_num <= del_num){
         setTimeout(function(tabname){
             gradioApp().getElementById(tabname + '_images_history_renew_page').click();
         }, 30, tabname); 
-    } else {        
-        buttons[image_index].style.display = 'none';
-        buttons[image_index + img_num].style.display = 'none';
+    } else {
+        var next_img  
+        for (var i = 0; i < del_num; i++){
+            if (image_index + i < image_index + img_num){
+                buttons[image_index + i].style.display = 'none';
+                buttons[image_index + img_num + 1].style.display = 'none';
+                next_img = image_index + i + 1
+            }
+        }
         var bnt;
-        if (image_index >= img_num - 1){
-            btn = buttons[img_num - 2];
+        if (next_img  >= img_num){
+            btn = buttons[image_index - del_num];
         } else {            
-            btn = buttons[image_index + 1] ;          
+            btn = buttons[next_img];          
         } 
         setTimeout(function(btn){btn.click()}, 30, btn);
     }
     images_history_disabled_del();  
-    return [tabname, img_path, img_file_name, page_index, filenames, image_index];
+    return [del_num, tabname, img_path, img_file_name, page_index, filenames, image_index];
 }
 
 function images_history_turnpage(img_path, page_index, image_index, tabname){
