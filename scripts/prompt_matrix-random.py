@@ -111,8 +111,10 @@ class Script(scripts.Script):
 
     def ui(self, is_img2img):
         same_seed = gr.Checkbox(label='Use same seed (off = random)', value=False)
-
-        return [same_seed]
+        with gr.Row():
+            txt_list = str(glob.glob(r'cfg/promptgen\*.csv')).replace(".csv","").replace("cfg/promptgen\\\\","")
+            dummy = gr.Textbox(label='Wildcard List', value=f'{txt_list}', interactive=False, lines=3)
+        return [same_seed, dummy]
 
     def run(self, p, same_seed):
         modules.processing.fix_seed(p)

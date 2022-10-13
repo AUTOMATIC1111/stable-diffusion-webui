@@ -28,21 +28,25 @@ def replace_wildcard(chunk):
 
 class Script(scripts.Script):
     def title(self):
-        return "To Infinity and Beyond"
+        return "To Infinity and Beyond (Wildcard Support)"
 
     def ui(self, is_img2img):
         with gr.Row():
-            n = gr.Textbox(label="n")
+            n = gr.Textbox(label="Images to generate")
         with gr.Row():
-            seed_type = gr.Radio(label='Seed Type', choices=["RandomSeed","RandomVariationSeed","RandomAllSeed"], value="RandomSeed", type="value", interactive=True)
+            seed_type = gr.Radio(label='Seed Type. (For RandomVariationSeed and RandomAllSeed please enable the extras next to seed.)', choices=["RandomSeed","RandomVariationSeed","RandomAllSeed"], value="RandomSeed", type="value", interactive=True)
         with gr.Row():
-            instructions = gr.Textbox(label="For RandomVariationSeed and RandomAllSeed please enable the extras next to seed.", interactive=False)
-        return [n, seed_type]
+            wildcard_behaviour = gr.Radio(label='Wildcard behaviour. Randomise wildcards per image or batch.', choices=["Batch","Image"], value="Batch", type="value", interactive=True)
+        with gr.Row():
+            txt_list = str(glob.glob(r'cfg/promptgen\*.csv')).replace(".csv","").replace("cfg/promptgen\\\\","")
+            dummy = gr.Textbox(label='Wildcard List', value=f'{txt_list}', interactive=False, lines=3)
+        return [n, seed_type, wildcard_behaviour, dummy]
 
     def run(self, p, n, seed_type):
         original_prompt = p.prompt
-        if seed_type == "RandomVariationSeed":
-            fixed_seed = p.seed
+        if wildcard_behaviour == "Batch":
+            p.prompt = "".join(replace_wildcard(chunk) for chunk in original_prompt.split("__"))
+
         for x in range(int(n)):
             if seed_type == "RandomVariationSeed":
                 p.subseed = -1
@@ -51,9 +55,11 @@ class Script(scripts.Script):
                 p.subseed = -1
             else:
                 p.seed = -1
-            
-            p.prompt = "".join(replace_wildcard(chunk) for chunk in original_prompt.split("__"))
+
+            if wildcard_behaviour == "Image":
+                p.prompt = "".join(replace_wildcard(chunk) for chunk in original_prompt.split("__"))
 
             proc = process_images(p)
             image = proc.images
+
         return Processed(p, image, p.seed, proc.info)
