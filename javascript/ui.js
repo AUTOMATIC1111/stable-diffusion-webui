@@ -57,7 +57,7 @@ function switch_to_img2img_inpaint(){
 }
 
 function switch_to_extras(){
-    gradioApp().querySelectorAll('.tabs button').click();
+    gradioApp().querySelectorAll('.tabs > .flex > button')[2].click();
 
     return args_to_array(arguments);
 }
