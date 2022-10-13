@@ -1,76 +1,61 @@
 // code related to showing and updating progressbar shown as the image is being made
-global_progressbars = {}
 
-function check_progressbar(id_part, id_progressbar, id_progressbar_span, id_skip, id_interrupt, id_preview, id_gallery){
-    var progressbar = gradioApp().getElementById(id_progressbar)
-    var skip = id_skip ? gradioApp().getElementById(id_skip) : null
-    var interrupt = gradioApp().getElementById(id_interrupt)
-    
-    if(opts.show_progress_in_title && progressbar && progressbar.offsetParent){
-        if(progressbar.innerText){
-            let newtitle = 'Stable Diffusion - ' + progressbar.innerText
-            if(document.title != newtitle){
-                document.title =  newtitle;          
-            }
-        }else{
-            let newtitle = 'Stable Diffusion'
-            if(document.title != newtitle){
-                document.title =  newtitle;          
-            }
-        }
-    }
-    
-	if(progressbar!= null && progressbar != global_progressbars[id_progressbar]){
-	    global_progressbars[id_progressbar] = progressbar
+(function() {
+var global_progressbars = {};
 
-        var mutationObserver = new MutationObserver(function(m){
-            preview = gradioApp().getElementById(id_preview)
-            gallery = gradioApp().getElementById(id_gallery)
+var avl_progressbars = "txt2img|img2img|ti".split("|");
+let title;
 
-            if(preview != null && gallery != null){
-                preview.style.width = gallery.clientWidth + "px"
-                preview.style.height = gallery.clientHeight + "px"
+onLoad(function() {
+	title = document.title;
+	avl_progressbars.forEach((id) => {
+		var bar = gradioApp().getElementById(id+"_progressbar");
+		var skip = gradioApp().getElementById(id+"_skip");
+		var interrupt = gradioApp().getElementById(id+"_interrupt");
 
-                var progressDiv = gradioApp().querySelectorAll('#' + id_progressbar_span).length > 0;
-                if(!progressDiv){
-                    if (skip) {
-                        skip.style.display = "none"
-                    }
-                    interrupt.style.display = "none"
-                }
-            }
+		var mo = new MutationObserver(function(m){
+			var is_progress = !!gradioApp().getElementById(id+"_progress_span");
+			if (skip)skip.style.display = is_progress?"block":"none";
+			interrupt.style.display = is_progress?"block":"none";
 
-            window.setTimeout(function() { requestMoreProgress(id_part, id_progressbar_span, id_skip, id_interrupt) }, 500)
-        });
-        mutationObserver.observe( progressbar, { childList:true, subtree:true })
+			var preview = gradioApp().getElementById(id+"_preview");
+			var gallery = gradioApp().getElementById(id+"_gallery");
+
+			if(preview != null && gallery != null){
+				preview.style.width = gallery.clientWidth + "px";
+				preview.style.height = gallery.clientHeight + "px";
+			}
+
+			setTimeout(function progressLoop() {
+				var btn = gradioApp().getElementById(id+"_check_progress");
+				if(btn==null) return;
+				btn.click();
+			}, 500);
+		});
+
+		mo.observe(bar, {childList:true});
+		global_progressbars[id]=bar;
+	});
+});
+
+function check_progressbar(prefix) {
+	var bar = global_progressbars[prefix];
+
+	if(opts.show_progress_in_title && bar && bar.offsetParent) {
+		if(bar.innerText) document.title =title + ' - ' + bar.innerText;
+		else document.title = title;
 	}
 }
 
 onUiUpdate(function(){
-    check_progressbar('txt2img', 'txt2img_progressbar', 'txt2img_progress_span', 'txt2img_skip', 'txt2img_interrupt', 'txt2img_preview', 'txt2img_gallery')
-    check_progressbar('img2img', 'img2img_progressbar', 'img2img_progress_span', 'img2img_skip', 'img2img_interrupt', 'img2img_preview', 'img2img_gallery')
-    check_progressbar('ti', 'ti_progressbar', 'ti_progress_span', '', 'ti_interrupt', 'ti_preview', 'ti_gallery')
+	check_progressbar('txt2img');
+	check_progressbar('img2img');
+	check_progressbar('ti');
 })
 
-function requestMoreProgress(id_part, id_progressbar_span, id_skip, id_interrupt){
-    btn = gradioApp().getElementById(id_part+"_check_progress");
-    if(btn==null) return;
+})();
 
-    btn.click();
-    var progressDiv = gradioApp().querySelectorAll('#' + id_progressbar_span).length > 0;
-    var skip = id_skip ? gradioApp().getElementById(id_skip) : null
-    var interrupt = gradioApp().getElementById(id_interrupt)
-    if(progressDiv && interrupt){
-        if (skip) {
-            skip.style.display = "block"
-        }
-        interrupt.style.display = "block"
-    }
-}
-
-function requestProgress(id_part){
-    btn = gradioApp().getElementById(id_part+"_check_progress_initial");
-    if(btn==null) return;
-
-    btn.click();
+function requestProgress(id) {
+	var btn = gradioApp().getElementById(id+"_check_progress_initial");
+	btn&&btn.click();
 }

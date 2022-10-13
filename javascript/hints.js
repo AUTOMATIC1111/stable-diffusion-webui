@@ -1,6 +1,8 @@
 // mouseover tooltips for various UI elements
 
-titles = {
+(function(){
+
+const titles = {
     "Sampling steps": "How many times to improve the generated image iteratively; higher values take longer; very low values can produce bad results",
     "Sampling method": "Which algorithm to use to produce the image",
 	"GFPGAN": "Restore low quality faces using GFPGAN neural network",
@@ -81,41 +83,28 @@ titles = {
 
     "Eta noise seed delta": "If this values is non-zero, it will be added to seed and used to initialize RNG for noises when using samplers with Eta. You can use this to produce even more variation of images, or you can use this to match images of other software if you know what you are doing.",
     "Do not add watermark to images": "If this option is enabled, watermark will not be added to created images. Warning: if you do not add watermark, you may be behaving in an unethical manner.",
-
     "Filename word regex": "This regular expression will be used extract words from filename, and they will be joined using the option below into label text used for training. Leave empty to keep filename text as it is.",
     "Filename join string": "This string will be used to hoin split words into a single line if the option above is enabled.",
 
-    "Quicksettings list": "List of setting names, separated by commas, for settings that should go to the quick access bar at the top, rather than the usual stetting tab. See modules/shared.py for setting names. Requires restart to apply."
-}
+// todo instant show title
+onLoad(function() {
+	gradioApp().querySelectorAll('span, button, select, p').forEach(function(e){
+		var tooltip = titles[e.textContent]||titles[e.value];
 
-
-onUiUpdate(function(){
-	gradioApp().querySelectorAll('span, button, select, p').forEach(function(span){
-		tooltip = titles[span.textContent];
-
-		if(!tooltip){
-		    tooltip = titles[span.value];
-		}
-
-		if(!tooltip){
-			for (const c of span.classList) {
-				if (c in titles) {
-					tooltip = titles[c];
-					break;
-				}
+		if (!tooltip) {
+			for (let c of e.classList) {
+				if(tooltip = titles[c]) break;
 			}
 		}
 
-		if(tooltip){
-			span.title = tooltip;
-		}
+		if(tooltip) e.title = tooltip;
 	})
 
-	gradioApp().querySelectorAll('select').forEach(function(select){
-	    if (select.onchange != null) return;
-
-	    select.onchange = function(){
-            select.title = titles[select.value] || "";
-	    }
+	gradioApp().querySelectorAll('select').forEach(function(e) {
+		e.onchange = function(){
+			e.title = titles[e.value] || "";
+		};
 	})
-})
+});
+
+})();

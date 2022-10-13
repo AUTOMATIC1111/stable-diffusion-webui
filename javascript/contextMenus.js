@@ -1,177 +1,143 @@
 
-contextMenuInit = function(){
-  let eventListenerApplied=false;
-  let menuSpecs = new Map();
+let appendContextMenuOption;
+let removeContextMenuOption;
 
-  const uid = function(){
-    return Date.now().toString(36) + Math.random().toString(36).substr(2);
-  }
+onLoad(function(){
+	let menuSpecs = new Map();
 
-  function showContextMenu(event,element,menuEntries){
-    let posx = event.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
-    let posy = event.clientY + document.body.scrollTop + document.documentElement.scrollTop; 
+	let contextMenu, contextMenuList;
+	(function() {
+		let baseStyle = window.getComputedStyle(get_uiCurrentTab());
+		contextMenu = document.createElement('nav');
+		contextMenu.id = "context-menu";
+		contextMenu.style.background = baseStyle.background;
+		contextMenu.style.color = baseStyle.color;
+		contextMenu.style.fontFamily = baseStyle.fontFamily;
 
-    let oldMenu = gradioApp().querySelector('#context-menu')
-    if(oldMenu){
-      oldMenu.remove()
-    }
+		contextMenuList = document.createElement('ul');
+		contextMenuList.className = 'context-menu-items';
+		contextMenu.append(contextMenuList);
+	})();
 
-    let tabButton = uiCurrentTab
-    let baseStyle = window.getComputedStyle(tabButton)
+	function display(e,menuEntries) {
+		let posx = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
+		let posy = e.clientY + document.body.scrollTop + document.documentElement.scrollTop;
+		contextMenu.style.top = posy+'px';
+		contextMenu.style.left = posx+'px'; 
 
-    const contextMenu = document.createElement('nav')
-    contextMenu.id = "context-menu"
-    contextMenu.style.background = baseStyle.background
-    contextMenu.style.color = baseStyle.color
-    contextMenu.style.fontFamily = baseStyle.fontFamily
-    contextMenu.style.top = posy+'px'
-    contextMenu.style.left = posx+'px'
+		contextMenuList.innerHTML="";
+		menuEntries.forEach(function(entry){
+			let a = document.createElement('a');
+			a.innerHTML = entry.name;
+			a.addEventListener("click", entry.func);
+			contextMenuList.append(a);
+		})
+
+		gradioApp().getRootNode().appendChild(contextMenu);
+
+		let menuWidth = contextMenu.offsetWidth + 4;
+		let menuHeight = contextMenu.offsetHeight + 4;
+
+		let windowWidth = window.innerWidth;
+		let windowHeight = window.innerHeight;
+
+		if ((windowWidth - posx) < menuWidth) {
+			contextMenu.style.left = windowWidth - menuWidth + "px";
+		}
+
+		if ((windowHeight - posy) < menuHeight) {
+			contextMenu.style.top = windowHeight - menuHeight + "px";
+		}
+	}
+
+	function append(selector,name,func){
+		var items = menuSpecs.get(selector);
+		if(!items) menuSpecs.set(selector,items=[]);
+
+		let item = {
+			owner:selector,
+			name:name,
+			func:func
+		};
+
+		items.push(item);
+		return item;
+	}
+
+	function remove(item) {
+		var items = menuSpecs.get(item.owner);
+		if (!items) return;
+
+		var i = items.indexOf(item);
+		if (i < 0) return;
+		items.splice(i, 1);
+
+		if (!items.length) menuSpecs.remove(item.owner);
+	}
+
+	gradioApp().addEventListener("click", function(e) {
+		let source = e.composedPath()[0];
+		if(source.id && source.id.indexOf('check_progress')>-1) {
+			return;
+		}
+
+		contextMenu.remove();
+	});
+
+	gradioApp().addEventListener("contextmenu", function(e) {
+		contextMenu.remove();
+		menuSpecs.forEach(function(v,k) {
+			if(e.composedPath()[0].matches(k)) {
+				display(e,v);
+				e.preventDefault();
+				return;
+			}
+		})
+	});
+
+	appendContextMenuOption = append;
+	removeContextMenuOption = remove;
+});
 
 
+onLoad(function(){
+	//Start example Context Menu Items
+	var id;
+	let generateOnRepeat = function(genId,intId){
+		let genBtn = gradioApp().querySelector(genId);
+		let intBtn = gradioApp().querySelector(intId);
+		if(!intBtn.offsetParent) genBtn.click();
 
-    const contextMenuList = document.createElement('ul')
-    contextMenuList.className = 'context-menu-items';
-    contextMenu.append(contextMenuList);
+		clearInterval(id);
+		id = setInterval(function(){
+			if(!intBtn.offsetParent)genBtn.click();
+		}, 500);
+	}
 
-    menuEntries.forEach(function(entry){
-      let contextMenuEntry = document.createElement('a')
-      contextMenuEntry.innerHTML = entry['name']
-      contextMenuEntry.addEventListener("click", function(e) {
-        entry['func']();
-      })
-      contextMenuList.append(contextMenuEntry);
+	appendContextMenuOption('#txt2img_generate','Generate forever',function(){
+		generateOnRepeat('#txt2img_generate','#txt2img_interrupt');
+	});
+	appendContextMenuOption('#img2img_generate','Generate forever',function(){
+		generateOnRepeat('#img2img_generate','#img2img_interrupt');
+	});
 
-    })
+	let cancelGenerateForever = function() {
+		clearInterval(id); 
+	};
 
-    gradioApp().getRootNode().appendChild(contextMenu)
+	appendContextMenuOption('#txt2img_interrupt','Cancel generate forever',cancelGenerateForever);
+	appendContextMenuOption('#txt2img_generate', 'Cancel generate forever',cancelGenerateForever);
+	appendContextMenuOption('#img2img_interrupt','Cancel generate forever',cancelGenerateForever);
+	appendContextMenuOption('#img2img_generate', 'Cancel generate forever',cancelGenerateForever);
 
-    let menuWidth = contextMenu.offsetWidth + 4;
-    let menuHeight = contextMenu.offsetHeight + 4;
+	appendContextMenuOption('#roll','Roll three',
+		function(){ 
+			let btn = get_uiCurrentTabContent().querySelector('#roll');
+			setTimeout(function(){btn.click()},100);
+			setTimeout(function(){btn.click()},200);
+			setTimeout(function(){btn.click()},300);
+		}
+	);
 
-    let windowWidth = window.innerWidth;
-    let windowHeight = window.innerHeight;
-
-    if ( (windowWidth - posx) < menuWidth ) {
-      contextMenu.style.left = windowWidth - menuWidth + "px";
-    }
-
-    if ( (windowHeight - posy) < menuHeight ) {
-      contextMenu.style.top = windowHeight - menuHeight + "px";
-    }
-
-  }
-
-  function appendContextMenuOption(targetEmementSelector,entryName,entryFunction){
-    
-    currentItems = menuSpecs.get(targetEmementSelector)
-    
-    if(!currentItems){
-      currentItems = []
-      menuSpecs.set(targetEmementSelector,currentItems);
-    }
-    let newItem = {'id':targetEmementSelector+'_'+uid(), 
-                   'name':entryName,
-                   'func':entryFunction,
-                   'isNew':true}
-
-    currentItems.push(newItem)
-    return newItem['id']
-  }
-
-  function removeContextMenuOption(uid){
-    menuSpecs.forEach(function(v,k) {
-      let index = -1
-      v.forEach(function(e,ei){if(e['id']==uid){index=ei}})
-      if(index>=0){
-        v.splice(index, 1);
-      }
-    })
-  }
-
-  function addContextMenuEventListener(){
-    if(eventListenerApplied){
-      return;
-    }
-    gradioApp().addEventListener("click", function(e) {
-      let source = e.composedPath()[0]
-      if(source.id && source.id.indexOf('check_progress')>-1){
-        return
-      }
-      
-      let oldMenu = gradioApp().querySelector('#context-menu')
-      if(oldMenu){
-        oldMenu.remove()
-      }
-    });
-    gradioApp().addEventListener("contextmenu", function(e) {
-      let oldMenu = gradioApp().querySelector('#context-menu')
-      if(oldMenu){
-        oldMenu.remove()
-      }
-      menuSpecs.forEach(function(v,k) {
-        if(e.composedPath()[0].matches(k)){
-          showContextMenu(e,e.composedPath()[0],v)
-          e.preventDefault()
-          return
-        }
-      })
-    });
-    eventListenerApplied=true
-  
-  }
-
-  return [appendContextMenuOption, removeContextMenuOption, addContextMenuEventListener]
-}
-
-initResponse = contextMenuInit();
-appendContextMenuOption     = initResponse[0];
-removeContextMenuOption     = initResponse[1];
-addContextMenuEventListener = initResponse[2];
-
-(function(){
-  //Start example Context Menu Items
-  let generateOnRepeat = function(genbuttonid,interruptbuttonid){
-    let genbutton = gradioApp().querySelector(genbuttonid);
-    let interruptbutton = gradioApp().querySelector(interruptbuttonid);
-    if(!interruptbutton.offsetParent){
-      genbutton.click();
-    }
-    clearInterval(window.generateOnRepeatInterval)
-    window.generateOnRepeatInterval = setInterval(function(){
-      if(!interruptbutton.offsetParent){
-        genbutton.click();
-      }
-    },
-    500)
-  }
-
-  appendContextMenuOption('#txt2img_generate','Generate forever',function(){
-    generateOnRepeat('#txt2img_generate','#txt2img_interrupt');
-  })
-  appendContextMenuOption('#img2img_generate','Generate forever',function(){
-    generateOnRepeat('#img2img_generate','#img2img_interrupt');
-  })
-
-  let cancelGenerateForever = function(){ 
-    clearInterval(window.generateOnRepeatInterval) 
-  }
-
-  appendContextMenuOption('#txt2img_interrupt','Cancel generate forever',cancelGenerateForever)
-  appendContextMenuOption('#txt2img_generate', 'Cancel generate forever',cancelGenerateForever)
-  appendContextMenuOption('#img2img_interrupt','Cancel generate forever',cancelGenerateForever)
-  appendContextMenuOption('#img2img_generate', 'Cancel generate forever',cancelGenerateForever)
-
-  appendContextMenuOption('#roll','Roll three',
-    function(){ 
-      let rollbutton = get_uiCurrentTabContent().querySelector('#roll');
-      setTimeout(function(){rollbutton.click()},100)
-      setTimeout(function(){rollbutton.click()},200)
-      setTimeout(function(){rollbutton.click()},300)
-    }
-  )
-})();
-//End example Context Menu Items
-
-onUiUpdate(function(){
-  addContextMenuEventListener()
+	//End example Context Menu Items
 });
