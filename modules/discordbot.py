@@ -310,7 +310,7 @@ async def image_send(filename,prompt,negative_prompt,seed,subseed,seedvar,sample
             prompt_info = prompt
     
             if negative_prompt != "":
-                prompt_info = f"{prompt_info}\nNegative prompt: {negative_prompt}\nSteps: {steps}, Sampler {sampler_name}, CFG scale: {cfg_scale}, Seed: {seed}, Size: {width}x{height}, Model hash: {modelhash}"
+                prompt_info = f"{prompt_info}\nNegative prompt: {negative_prompt}\nSteps: {steps}, Sampler: {sampler_name}, CFG scale: {cfg_scale}, Seed: {seed}, Size: {width}x{height}, Model hash: {modelhash}"
             else:
                 prompt_info = f"{prompt_info}\nSteps: {steps}, Sampler: {sampler_name}, CFG scale: {cfg_scale}, Seed: {seed}, Size: {width}x{height}, Model hash: {modelhash}"
     
