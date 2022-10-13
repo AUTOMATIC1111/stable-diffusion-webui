@@ -105,5 +105,8 @@ Training works the same way as with textual inversion.
 
 The only requirement is to use a very, very low learning rate, something like 0.000005 or 0.0000005.
 
-## Unload VAE and CLIP from VRAM when training
+### Dum Dum Guide
+An anonymous user has written a guide with pictures for using hypernetworks: https://rentry.org/hypernetwork4dumdums
+
+### Unload VAE and CLIP from VRAM when training
 This option on settings tab allows you to save some memoryat the cost of slower preview picture generation.
