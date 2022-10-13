@@ -257,19 +257,19 @@ def train_hypernetwork(hypernetwork_name, learn_rate, data_root, log_directory, 
             last_saved_file = os.path.join(hypernetwork_dir, f'{hypernetwork_name}-{hypernetwork.step}.pt')
             hypernetwork.save(last_saved_file)
 
-        print(f"{write_csv_every} > {hypernetwork.step % write_csv_every == 0}, {write_csv_every}")
         if write_csv_every > 0 and hypernetwork_dir is not None and hypernetwork.step % write_csv_every == 0:
             write_csv_header = False if os.path.exists(os.path.join(hypernetwork_dir, "hypernetwork_loss.csv")) else True
             
             with open(os.path.join(hypernetwork_dir, "hypernetwork_loss.csv"), "a+") as fout:
 
-                csv_writer = csv.DictWriter(fout, fieldnames=["step", "loss"])
+                csv_writer = csv.DictWriter(fout, fieldnames=["step", "loss", "learn_rate"])
                 
                 if write_csv_header:
                     csv_writer.writeheader()
 
                 csv_writer.writerow({"step": hypernetwork.step, 
-                    "loss": f"{losses.mean():.7f}"})
+                    "loss": f"{losses.mean():.7f}",
+                    "learn_rate": scheduler.learn_rate})
 
         if hypernetwork.step > 0 and images_dir is not None and hypernetwork.step % create_image_every == 0:
             last_saved_image = os.path.join(images_dir, f'{hypernetwork_name}-{hypernetwork.step}.png')
