@@ -101,7 +101,8 @@ function create_tab_index_args(tabId, args){
 }
 
 function get_extras_tab_index(){
-    return create_tab_index_args('mode_extras', arguments)
+    const [,,...args] = [...arguments]
+    return [get_tab_index('mode_extras'), get_tab_index('extras_resize_mode'), ...args]
 }
 
 function create_submit_args(args){
