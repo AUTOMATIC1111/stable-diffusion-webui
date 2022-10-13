@@ -131,5 +131,6 @@ The documentation was moved from this README over to the project's [wiki](https:
 - Idea for Composable Diffusion - https://github.com/energy-based-model/Compositional-Visual-Generation-with-Composable-Diffusion-Models-PyTorch
 - xformers - https://github.com/facebookresearch/xformers
 - DeepDanbooru - interrogator for anime diffusers https://github.com/KichangKim/DeepDanbooru
+- Víctor Gallego - Stable Diffusion with Aesthetic Gradients - https://github.com/vicgalle/stable-diffusion-aesthetic-gradients
 - Initial Gradio script - posted on 4chan by an Anonymous user. Thank you Anonymous user.
 - (You)

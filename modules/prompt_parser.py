@@ -197,10 +197,16 @@ def get_multicond_learned_conditioning(model, prompts, steps) -> MulticondLearne
 
     https://energy-based-model.github.io/Compositional-Visual-Generation-with-Composable-Diffusion-Models/
     """
-
+    from modules.shared import opts
+    from modules.aesthetic_gradients import adjust_for_aesthetic_gradient
+    
     res_indexes, prompt_flat_list, prompt_indexes = get_multicond_prompt_list(prompts)
 
     learned_conditioning = get_learned_conditioning(model, prompt_flat_list, steps)
+
+    if opts.data['aesthetic_embedding_steps'] != 0:
+        aesthetic_conditioning = adjust_for_aesthetic_gradient(learned_conditioning, prompt_flat_list)
+        learned_conditioning[0][0] = ScheduledPromptConditioning(end_at_step=learned_conditioning[0][0].end_at_step, cond=aesthetic_conditioning[0])
 
     res = []
     for indexes in res_indexes:
