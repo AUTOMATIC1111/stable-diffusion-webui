@@ -204,9 +204,10 @@ def get_multicond_learned_conditioning(model, prompts, steps) -> MulticondLearne
 
     learned_conditioning = get_learned_conditioning(model, prompt_flat_list, steps)
 
-    if opts.data['aesthetic_embedding_steps'] != 0:
-        aesthetic_conditioning = adjust_for_aesthetic_gradient(learned_conditioning, prompt_flat_list)
-        learned_conditioning[0][0] = ScheduledPromptConditioning(end_at_step=learned_conditioning[0][0].end_at_step, cond=aesthetic_conditioning[0])
+    if opts.data['aesthetic_embedding'] is not None and opts.data['aesthetic_embedding_steps'] > 0:
+        for idx, prompt in enumerate(prompts):
+            aesthetic_conditioning = adjust_for_aesthetic_gradient(learned_conditioning, prompt)
+            learned_conditioning[idx][0] = ScheduledPromptConditioning(end_at_step=learned_conditioning[0][0].end_at_step, cond=aesthetic_conditioning[0])
 
     res = []
     for indexes in res_indexes:
