@@ -9,9 +9,6 @@
 
 @rem This enables a user to install this project without manually installing python and git.
 
-@rem prevent the window from closing after an error
-if not defined in_subprocess (cmd /k set in_subprocess=y ^& %0 %*) & exit )
-
 @rem config
 set MAMBA_ROOT_PREFIX=%cd%\installer_files\mamba
 set INSTALL_ENV_DIR=%cd%\installer_files\env
