@@ -40,29 +40,25 @@ def _adjust_for_aesthetic_gradient(device, prompt, aesthetic_embedding, aestheti
         # We load the aesthetic embeddings
         image_embs = torch.load(aesthetic_embedding_path).to(device)
 
-        # We compute the loss (similarity between the prompt embedding and the aesthetic embedding)
         image_embs /= image_embs.norm(dim=-1, keepdim=True)
-        text_embs = aesthetic_clip_model.get_text_features(tokens)
-        text_embs /= text_embs.norm(dim=-1, keepdim=True)
-        sim = text_embs @ image_embs.T
-        loss = -sim
+        # We compute the loss (similarity between the prompt embedding and the aesthetic embedding)
+        def getLoss():
+            text_embs = aesthetic_clip_model.get_text_features(tokens)
+            text_embs /= text_embs.norm(dim=-1, keepdim=True)
+            sim = text_embs @ image_embs.T
+            return -sim
 
+        loss = getLoss()
         # lr = 0.0001
 
         # We optimize the model to maximize the similarity
         optimizer = optim.Adam(aesthetic_clip_model.text_model.parameters(), aesthetic_lr)
 
-        # T = 0
         for i in range(aesthetic_embedding_steps):
             optimizer.zero_grad()
-
             loss.mean().backward()
             optimizer.step()
-
-            text_embs = aesthetic_clip_model.get_text_features(tokens)
-            text_embs /= text_embs.norm(dim=-1, keepdim=True)
-            sim = text_embs @ image_embs.T
-            loss = -sim
+            loss = getLoss()
 
         z = aesthetic_clip_model.text_model(input_ids=tokens).last_hidden_state
 
