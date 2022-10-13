@@ -164,7 +164,7 @@ def get_deepbooru_tags_from_model(model, tags, pil_image, threshold, deepbooru_o
         if use_escape:
             tag_outformat = re.sub(re_special, r'\\\1', tag_outformat)
         if include_ranks:
-            tag_outformat += f":{weight:.3f}"
+            tag_outformat = f"({tag_outformat}:{weight:.3f})"
 
         result_tags_out.append(tag_outformat)
 
