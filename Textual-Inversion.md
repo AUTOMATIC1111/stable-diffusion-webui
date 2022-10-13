@@ -1,7 +1,7 @@
 # What is Textual Inversion?
-Textual Inversion allows you to train a tiny part of the neural network on your own pictures, and use results when generating new ones.
+Textual Inversion allows you to train a tiny part of the neural network on your own pictures, and use results when generating new ones. In this context, embedding is the name of the tiny bit of the neural network you trained.
 
-The result of training is a .pt or a .bin file (former is the format used by original author, latter is by the diffusers library).
+The result of the training is a .pt or a .bin file (former is the format used by original author, latter is by the diffusers library) with the embedding in it.
 
 See original site for more details about what textual inversion is: https://textual-inversion.github.io/.
 
