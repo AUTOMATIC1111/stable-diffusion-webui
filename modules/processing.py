@@ -506,11 +506,13 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
     firstphase_width_truncated = 0
     firstphase_height_truncated = 0
 
-    def __init__(self, enable_hr=False, scale_latent=True, denoising_strength=0.75, **kwargs):
+    def __init__(self, enable_hr=False, scale_latent=True, denoising_strength=0.75, first_pass_width=512, first_pass_height=512, **kwargs):
         super().__init__(**kwargs)
         self.enable_hr = enable_hr
         self.scale_latent = scale_latent
         self.denoising_strength = denoising_strength
+        self.first_pass_width = first_pass_width
+        self.first_pass_height = first_pass_height
 
     def init(self, all_prompts, all_seeds, all_subseeds):
         if self.enable_hr:
@@ -519,7 +521,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             else:
                 state.job_count = state.job_count * 2
 
-            desired_pixel_count = 512 * 512
+            desired_pixel_count = self.first_pass_width * self.first_pass_height
             actual_pixel_count = self.width * self.height
             scale = math.sqrt(desired_pixel_count / actual_pixel_count)
 
