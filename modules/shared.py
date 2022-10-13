@@ -112,6 +112,8 @@ class State:
     current_image_sampling_step = 0
     textinfo = None
 
+    image_updated = False
+
     def skip(self):
         self.skipped = True
 
@@ -122,7 +124,18 @@ class State:
         self.job_no += 1
         self.sampling_step = 0
         self.current_image_sampling_step = 0
-        
+
+    def reset(self):
+        self.job_count = -1
+        self.current_latent = None
+        self.current_image = None
+        self.textinfo = None
+        self.image_updated = False
+
+    def update_image(self, image):
+        self.current_image = image
+        self.image_updated = True
+
     def get_job_timestamp(self):
         return datetime.datetime.now().strftime("%Y%m%d%H%M%S")  # shouldn't this return job_timestamp?
 

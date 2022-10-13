@@ -281,7 +281,7 @@ def train_hypernetwork(hypernetwork_name, learn_rate, data_root, log_directory, 
                 shared.sd_model.first_stage_model.to(devices.cpu)
 
             if image is not None:
-                shared.state.current_image = image
+                shared.state.update_image(image)
                 image.save(last_saved_image)
                 last_saved_image += f", prompt: {preview_text}"
 

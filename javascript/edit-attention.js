@@ -1,7 +1,7 @@
 addEventListener('keydown', (event) => {
 	let target = event.originalTarget || event.composedPath()[0];
 	if (!target.hasAttribute("placeholder")) return;
-	if (!target.placeholder.toLowerCase().includes("prompt")) return;
+	if (!target.placeholder.toLowerCase().includes(I18N("prompt"))) return;
 
 	let plus = "ArrowUp"
 	let minus = "ArrowDown"

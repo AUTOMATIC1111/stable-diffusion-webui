@@ -274,7 +274,7 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
             processed = processing.process_images(p)
             image = processed.images[0]
 
-            shared.state.current_image = image
+            shared.state.update_image(image)
 
             if save_image_with_stored_embedding and os.path.exists(last_saved_file):
 

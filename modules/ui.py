@@ -253,22 +253,27 @@ def check_progress_call(id_part):
     image = gr_show(False)
     preview_visibility = gr_show(False)
 
+    st = shared.state
     if opts.show_progress_every_n_steps > 0:
         if shared.parallel_processing_allowed:
+            if st.sampling_step - st.current_image_sampling_step >= opts.show_progress_every_n_steps and st.current_latent is not None:
+                st.current_image = modules.sd_samplers.sample_to_image(st.current_latent)
+                st.current_image_sampling_step = st.sampling_step
+                st.image_updated = True
 
-            if shared.state.sampling_step - shared.state.current_image_sampling_step >= opts.show_progress_every_n_steps and shared.state.current_latent is not None:
-                shared.state.current_image = modules.sd_samplers.sample_to_image(shared.state.current_latent)
-                shared.state.current_image_sampling_step = shared.state.sampling_step
+        if st.image_updated:
+            image = st.current_image
+            st.image_updated = False
+        else:
+            image = gr_show(True)
 
-        image = shared.state.current_image
-
-        if image is None:
+        if st.current_image is None:
             image = gr.update(value=None)
         else:
             preview_visibility = gr_show(True)
 
-    if shared.state.textinfo is not None:
-        textinfo_result = gr.HTML.update(value=shared.state.textinfo, visible=True)
+    if st.textinfo is not None:
+        textinfo_result = gr.HTML.update(value=st.textinfo, visible=True)
     else:
         textinfo_result = gr_show(False)
 
@@ -276,11 +281,7 @@ def check_progress_call(id_part):
 
 
 def check_progress_call_initial(id_part):
-    shared.state.job_count = -1
-    shared.state.current_latent = None
-    shared.state.current_image = None
-    shared.state.textinfo = None
-
+    shared.state.reset()
     return check_progress_call(id_part)
 
 

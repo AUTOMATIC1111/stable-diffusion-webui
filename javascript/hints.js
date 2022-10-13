@@ -1,6 +1,14 @@
 // mouseover tooltips for various UI elements
 
-titles = {
+(function(){
+    window.I18N = function(en) {
+        return en;
+    };
+    window.I18NL = function(imgs) {
+        return `Generated ${imgs.size > 1 ? imgs.size - opts.return_grid : 1} image${imgs.size > 1 ? 's' : ''}`;
+    };
+
+    const titles = {
     "Sampling steps": "How many times to improve the generated image iteratively; higher values take longer; very low values can produce bad results",
     "Sampling method": "Which algorithm to use to produce the image",
 	"GFPGAN": "Restore low quality faces using GFPGAN neural network",
@@ -89,20 +97,14 @@ titles = {
 }
 
 
-onUiUpdate(function(){
+onLoad(function() {
 	gradioApp().querySelectorAll('span, button, select, p').forEach(function(span){
-		tooltip = titles[span.textContent];
+        tooltip = titles[span.textContent]||titles[span.value];
 
-		if(!tooltip){
-		    tooltip = titles[span.value];
-		}
-
-		if(!tooltip){
-			for (const c of span.classList) {
-				if (c in titles) {
-					tooltip = titles[c];
-					break;
-				}
+		if (!tooltip) {
+			for (let c of span.classList) {
+                // one equal not two
+				if(tooltip = titles[c]) break;
 			}
 		}
 
@@ -111,11 +113,11 @@ onUiUpdate(function(){
 		}
 	})
 
-	gradioApp().querySelectorAll('select').forEach(function(select){
-	    if (select.onchange != null) return;
-
-	    select.onchange = function(){
-            select.title = titles[select.value] || "";
-	    }
+	gradioApp().querySelectorAll('select').forEach(function(select) {
+		select.onchange = function(){
+			select.title = titles[select.value] || "";
+		};
 	})
-})
+});
+
+})();

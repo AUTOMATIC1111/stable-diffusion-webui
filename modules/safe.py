@@ -1,5 +1,6 @@
 # this code is adapted from the script contributed by anon from /h/
 
+import os
 import io
 import pickle
 import collections
@@ -93,8 +94,10 @@ def load(filename, *args, **kwargs):
     from modules import shared
 
     try:
-        if not shared.cmd_opts.disable_safe_unpickle:
+        if not shared.cmd_opts.disable_safe_unpickle and not os.path.isfile(filename+".chk"):
             check_pt(filename)
+            with open(filename+".chk", "w") as s:
+                s.close()
 
     except Exception:
         print(f"Error verifying pickled file from {filename}:", file=sys.stderr)
