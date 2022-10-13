@@ -1244,7 +1244,10 @@ def create_ui(wrap_gradio_gpu_call):
             def refresh():
                 info.refresh()
                 refreshed_args = info.component_args() if callable(info.component_args) else info.component_args
-                res.choices = refreshed_args["choices"]
+
+                for k, v in refreshed_args.items():
+                    setattr(res, k, v)
+
                 return gr.update(**(refreshed_args or {}))
 
             refresh_button.click(
