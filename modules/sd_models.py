@@ -86,14 +86,41 @@ def get_closet_checkpoint_match(searchString):
 
 
 def model_hash(filename):
+    import hashlib
     try:
-        with open(filename, "rb") as file:
-            import hashlib
-            m = hashlib.sha256()
+        hex_hash = ''
 
-            file.seek(0x100000)
-            m.update(file.read(0x10000))
-            return m.hexdigest()[0:8]
+        if shared.opts.model_hash_file:
+            hash_file = os.path.splitext(filename)[0] + '.sha256'
+
+            if os.path.exists(hash_file):
+                with open(hash_file, "r") as file:
+                    hex_hash = file.readline().split(' ')[0]
+            else:
+                print(f"Creating the checkpoint hash for {os.path.abspath(filename)}")
+
+                m = hashlib.sha256()
+
+                with open(filename, "rb") as file:
+                    while chunk := file.read(0x10000):
+                        m.update(chunk)
+
+                hex_hash = m.hexdigest()
+
+                with open(hash_file, "w") as file:
+                    file.write(f"{hex_hash} *{os.path.basename(filename)}\n")
+
+                print(f"Checkpoint hash saved to {os.path.abspath(hash_file)}")
+
+        else:
+            with open(filename, "rb") as file:
+                m = hashlib.sha256()
+
+                file.seek(0x100000)
+                m.update(file.read(0x10000))
+                hex_hash = m.hexdigest()
+
+        return hex_hash[0:8]
     except FileNotFoundError:
         return 'NOFILE'
 
