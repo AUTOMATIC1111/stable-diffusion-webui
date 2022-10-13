@@ -107,6 +107,10 @@ def apply_hypernetwork(p, x, xs):
     hypernetwork.load_hypernetwork(name)
 
 
+def apply_hypernetwork_strength(p, x, xs):
+    hypernetwork.apply_strength(x)
+
+
 def confirm_hypernetworks(p, xs):
     for x in xs:
         if x.lower() in ["", "none"]:
@@ -165,6 +169,7 @@ axis_options = [
     AxisOption("Sampler", str, apply_sampler, format_value, confirm_samplers),
     AxisOption("Checkpoint name", str, apply_checkpoint, format_value, confirm_checkpoints),
     AxisOption("Hypernetwork", str, apply_hypernetwork, format_value, confirm_hypernetworks),
+    AxisOption("Hypernet str.", float, apply_hypernetwork_strength, format_value_add_label, None),
     AxisOption("Sigma Churn", float, apply_field("s_churn"), format_value_add_label, None),
     AxisOption("Sigma min", float, apply_field("s_tmin"), format_value_add_label, None),
     AxisOption("Sigma max", float, apply_field("s_tmax"), format_value_add_label, None),
@@ -175,13 +180,17 @@ axis_options = [
 ]
 
 
-def draw_xy_grid(p, xs, ys, x_labels, y_labels, cell, draw_legend):
-    res = []
-
+def draw_xy_grid(p, xs, ys, x_labels, y_labels, cell, draw_legend, include_lone_images):
     ver_texts = [[images.GridAnnotation(y)] for y in y_labels]
     hor_texts = [[images.GridAnnotation(x)] for x in x_labels]
 
-    first_processed = None
+    # Temporary list of all the images that are generated to be populated into the grid.
+    # Will be filled with empty images for any individual step that fails to process properly
+    image_cache = []
+
+    processed_result = None
+    cell_mode = "P"
+    cell_size = (1,1)
 
     state.job_count = len(xs) * len(ys) * p.n_iter
 
@@ -189,22 +198,39 @@ def draw_xy_grid(p, xs, ys, x_labels, y_labels, cell, draw_legend):
         for ix, x in enumerate(xs):
             state.job = f"{ix + iy * len(xs) + 1} out of {len(xs) * len(ys)}"
 
-            processed = cell(x, y)
-            if first_processed is None:
-                first_processed = processed
-
+            processed:Processed = cell(x, y)
             try:
-              res.append(processed.images[0])
+                # this dereference will throw an exception if the image was not processed
+                # (this happens in cases such as if the user stops the process from the UI)
+                processed_image = processed.images[0]
+                
+                if processed_result is None:
+                    # Use our first valid processed result as a template container to hold our full results
+                    processed_result = copy(processed)
+                    cell_mode = processed_image.mode
+                    cell_size = processed_image.size
+                    processed_result.images = [Image.new(cell_mode, cell_size)]
+
+                image_cache.append(processed_image)
+                if include_lone_images:
+                    processed_result.images.append(processed_image)
+                    processed_result.all_prompts.append(processed.prompt)
+                    processed_result.all_seeds.append(processed.seed)
+                    processed_result.infotexts.append(processed.infotexts[0])
             except:
-              res.append(Image.new(res[0].mode, res[0].size))
+                image_cache.append(Image.new(cell_mode, cell_size))
 
-    grid = images.image_grid(res, rows=len(ys))
+    if not processed_result:
+        print("Unexpected error: draw_xy_grid failed to return even a single processed image")
+        return Processed()
+
+    grid = images.image_grid(image_cache, rows=len(ys))
     if draw_legend:
-        grid = images.draw_grid_annotations(grid, res[0].width, res[0].height, hor_texts, ver_texts)
+        grid = images.draw_grid_annotations(grid, cell_size[0], cell_size[1], hor_texts, ver_texts)
 
-    first_processed.images = [grid]
+    processed_result.images[0] = grid
 
-    return first_processed
+    return processed_result
 
 
 re_range = re.compile(r"\s*([+-]?\s*\d+)\s*-\s*([+-]?\s*\d+)(?:\s*\(([+-]\d+)\s*\))?\s*")
@@ -229,11 +255,12 @@ class Script(scripts.Script):
             y_values = gr.Textbox(label="Y values", visible=False, lines=1)
         
         draw_legend = gr.Checkbox(label='Draw legend', value=True)
+        include_lone_images = gr.Checkbox(label='Include Separate Images', value=False)
         no_fixed_seeds = gr.Checkbox(label='Keep -1 for seeds', value=False)
 
-        return [x_type, x_values, y_type, y_values, draw_legend, no_fixed_seeds]
+        return [x_type, x_values, y_type, y_values, draw_legend, include_lone_images, no_fixed_seeds]
 
-    def run(self, p, x_type, x_values, y_type, y_values, draw_legend, no_fixed_seeds):
+    def run(self, p, x_type, x_values, y_type, y_values, draw_legend, include_lone_images, no_fixed_seeds):
         if not no_fixed_seeds:
             modules.processing.fix_seed(p)
 
@@ -344,7 +371,8 @@ class Script(scripts.Script):
             x_labels=[x_opt.format_value(p, x_opt, x) for x in xs],
             y_labels=[y_opt.format_value(p, y_opt, y) for y in ys],
             cell=cell,
-            draw_legend=draw_legend
+            draw_legend=draw_legend,
+            include_lone_images=include_lone_images
         )
 
         if opts.grid_save:
@@ -354,6 +382,8 @@ class Script(scripts.Script):
         modules.sd_models.reload_model_weights(shared.sd_model)
 
         hypernetwork.load_hypernetwork(opts.sd_hypernetwork)
+        hypernetwork.apply_strength()
+
 
         opts.data["CLIP_stop_at_last_layers"] = CLIP_stop_at_last_layers
 
