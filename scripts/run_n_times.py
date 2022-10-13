@@ -7,6 +7,24 @@ import modules.scripts as scripts
 import gradio as gr
 
 from modules.processing import Processed, process_images
+import glob
+import random
+
+def replace_wildcard(chunk):
+    if " " not in chunk:
+        file_dir = os.path.dirname(os.path.realpath("__file__"))
+        replacement_file = os.path.join(file_dir, f"cfg/promptgen/{chunk}.csv")
+        if os.path.exists(replacement_file):
+            with open(replacement_file, "r", encoding="utf8", newline='') as f:
+                lines = f.readlines()
+                stripped = []
+                for line in lines:
+                    stripped.append(line.strip())                        
+                stripped.remove('name,blank,blank2')
+                #print(stripped)
+                return random.choice(stripped).replace(",,","")
+    return chunk
+
 
 class Script(scripts.Script):
     def title(self):
@@ -32,6 +50,8 @@ class Script(scripts.Script):
                 p.subseed = -1
             else:
                 p.seed = -1
+            
+            p.prompt = "".join(replace_wildcard(chunk) for chunk in p.prompt.split("__"))
             
             proc = process_images(p)
             image = proc.images
