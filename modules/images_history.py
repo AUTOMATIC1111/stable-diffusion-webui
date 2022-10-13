@@ -38,7 +38,7 @@ def get_recent_images(dir_name, page_index, step, image_index, tabname):
     else:
         current_file =  file_list[int(image_index)]
         hide_image = os.path.join(dir_name, current_file)
-    return [os.path.join(dir_name, file) for file in file_list], page_index, file_list, current_file, hide_image
+    return [os.path.join(dir_name, file) for file in file_list], page_index, file_list, current_file, hide_image, ""
 def first_page_click(dir_name, page_index, image_index, tabname):
     return get_recent_images(dir_name, 1, 0, image_index, tabname)
 def end_page_click(dir_name, page_index, image_index, tabname):
@@ -55,25 +55,28 @@ def show_image_info(num, image_path, filenames):
     file = filenames[int(num)]
     return file, num, os.path.join(image_path, file)
 def delete_image(delete_num, tabname, dir_name, name, page_index, filenames, image_index):
-    delete_num = int(delete_num)
-    index = list(filenames).index(name)
-    i = 0
-    new_file_list = []
-    for name in filenames:
-        if i  >= index and i < index + delete_num:            
-            path = os.path.join(dir_name, name)
-            if os.path.exists(path):        
-                print(f"Delete file {path}")
-                os.remove(path)
-                txt_file = os.path.splitext(path)[0]  + ".txt"
-                if os.path.exists(txt_file):
-                    os.remove(txt_file)       
+    if name == "":
+        return filenames, delete_num
+    else:
+        delete_num = int(delete_num)
+        index = list(filenames).index(name)
+        i = 0
+        new_file_list = []
+        for name in filenames:
+            if i  >= index and i < index + delete_num:            
+                path = os.path.join(dir_name, name)
+                if os.path.exists(path):        
+                    print(f"Delete file {path}")
+                    os.remove(path)
+                    txt_file = os.path.splitext(path)[0]  + ".txt"
+                    if os.path.exists(txt_file):
+                        os.remove(txt_file)       
+                else:
+                    print(f"Not exists file {path}")
             else:
-                print(f"Not exists file {path}")
-        else:
-            new_file_list.append(name)
-        i += 1
-    return page_index, new_file_list, 1
+                new_file_list.append(name)
+            i += 1
+    return new_file_list, 1
 
 def show_images_history(gr, opts, tabname, run_pnginfo, switch_dict):
         if tabname == "txt2img":
@@ -93,9 +96,9 @@ def show_images_history(gr, opts, tabname, run_pnginfo, switch_dict):
             with gr.Row():     
                 with gr.Column(scale=2):                    
                     history_gallery = gr.Gallery(show_label=False, elem_id=tabname + "_images_history_gallery").style(grid=6)
-                    with gr.Row():
-                        delete = gr.Button('Delete',  elem_id=tabname + "_images_history_del_button")
-                        delete_num = gr.Number(value=1, interactive=True, label="number of images to delete consecutively next")                                           
+                    with gr.Row():                        
+                        delete_num = gr.Number(value=1, interactive=True, label="number of images to delete consecutively next")   
+                        delete = gr.Button('Delete',  elem_id=tabname + "_images_history_del_button")                                        
                 with gr.Column():     
                     with gr.Row():          
                         pnginfo_send_to_txt2img = gr.Button('Send to txt2img')
@@ -118,7 +121,7 @@ def show_images_history(gr, opts, tabname, run_pnginfo, switch_dict):
                 
         # turn pages
         gallery_inputs = [img_path, page_index, image_index, tabname_box]
-        gallery_outputs = [history_gallery, page_index, filenames, img_file_name, hide_image]
+        gallery_outputs = [history_gallery, page_index, filenames, img_file_name, hide_image, img_file_name]
 
         first_page.click(first_page_click, _js="images_history_turnpage", inputs=gallery_inputs, outputs=gallery_outputs)
         next_page.click(next_page_click, _js="images_history_turnpage", inputs=gallery_inputs, outputs=gallery_outputs)
@@ -131,7 +134,7 @@ def show_images_history(gr, opts, tabname, run_pnginfo, switch_dict):
         #other funcitons
         set_index.click(show_image_info, _js="images_history_get_current_img", inputs=[tabname_box,  img_path, filenames], outputs=[img_file_name, image_index, hide_image])
         img_file_name.change(fn=None, _js="images_history_enable_del_buttons", inputs=None, outputs=None)
-        delete.click(delete_image,_js="images_history_delete", inputs=[delete_num, tabname_box, img_path, img_file_name, page_index, filenames, image_index], outputs=[page_index, filenames, delete_num]) 
+        delete.click(delete_image,_js="images_history_delete", inputs=[delete_num, tabname_box, img_path, img_file_name, page_index, filenames, image_index], outputs=[filenames, delete_num]) 
         hide_image.change(fn=run_pnginfo, inputs=[hide_image], outputs=[info1, img_file_info, info2])
        
         #pnginfo.click(fn=run_pnginfo, inputs=[hide_image], outputs=[info1, img_file_info, info2])

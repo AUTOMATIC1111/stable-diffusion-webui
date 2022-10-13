@@ -25,11 +25,6 @@ var images_history_click_tab = function(){
     }                
 }
 
-var images_history_close_full_view = function(){
-    var box = images_history_get_parent_by_class(this, "images_history_cantainor");
-    box.querySelector(".images_history_del_button").setAttribute("disabled", "disabled");
-}
-
 function images_history_disabled_del(){
     gradioApp().querySelectorAll(".images_history_del_button").forEach(function(btn){
         btn.setAttribute('disabled','disabled');
@@ -182,18 +177,18 @@ setTimeout(images_history_init, 500);
 document.addEventListener("DOMContentLoaded", function() {
     var mutationObserver = new MutationObserver(function(m){
         for (var i in images_history_tab_list ){
-            var buttons = gradioApp().querySelectorAll('#' + images_history_tab_list[i] + '_images_history .gallery-item');
+            let tabname = images_history_tab_list[i]
+            var buttons = gradioApp().querySelectorAll('#' + tabname + '_images_history .gallery-item');
             buttons.forEach(function(bnt){    
                 bnt.addEventListener('click', images_history_click_image, true);
             });
-        // var cls_btn = gradioApp().getElementById(tabname + '_images_history_gallery').querySelector("svg");
-        // if (cls_btn){
-        //     cls_btn.addEventListener('click', images_history_close_full_view, false);
-        // }
-        // console.log(cls_btn, cls_btn.parentElement.parentElement)
-        // if (cls_btn) {
-        //     cls_btn = images_history_get_parent_by_tagname(cls_btn, "BUTTON");
-        //     cls_btn.addEventListener('click', images_history_close_full_view, true);
+            var cls_btn = gradioApp().getElementById(tabname + '_images_history_gallery').querySelector("svg");
+            if (cls_btn){
+                cls_btn.addEventListener('click', function(){
+                    gradioApp().getElementById(tabname + '_images_history_renew_page').click();
+                }, false);
+            }
+
         }     
     });
     mutationObserver.observe( gradioApp(), { childList:true, subtree:true });
