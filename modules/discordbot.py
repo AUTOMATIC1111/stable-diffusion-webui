@@ -86,8 +86,8 @@ class PersistentButtons(commands.Bot):
         print('------')
 
 
-
 bot = PersistentButtons()
+bot.remove_command("help")
 
 post_id = bot_config['channel_id']['post_id']
 heart_id = bot_config['channel_id']['heart_id']
