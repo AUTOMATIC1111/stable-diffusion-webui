@@ -540,12 +540,18 @@ def create_ui(wrap_gradio_gpu_call):
                     enable_hr = gr.Checkbox(label='Highres. fix', value=False)
 
                 with gr.Row(visible=False) as hr_options:
-                    first_pass_width = gr.Slider(minimum=64, maximum=1024, step=64, label="First pass width", value=512)
-                    first_pass_height = gr.Slider(minimum=64, maximum=1024, step=64, label="First pass height", value=512)
-                    scale_latent = gr.Checkbox(label='Scale latent', value=False)
-                    denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.7)
+                    with gr.Column(scale=1.0):
+                        firstphase_width = gr.Slider(minimum=64, maximum=1024, step=64, label="First pass width", value=512)
+                        firstphase_height = gr.Slider(minimum=64, maximum=1024, step=64, label="First pass height", value=512)
+                        
+                    with gr.Column(scale=1.0):
+                        with gr.Row():
+                            crop_scale = gr.Checkbox(label='Crop when scaling', value=False)
+                            scale_latent = gr.Checkbox(label='Scale latent', value=False)
+                        with gr.Row():
+                            denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.7)
 
-                with gr.Row():
+                with gr.Row(equal_height=True):
                     batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1)
                     batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1)
 
@@ -606,8 +612,9 @@ def create_ui(wrap_gradio_gpu_call):
                     enable_hr,
                     scale_latent,
                     denoising_strength,
-                    first_pass_width,
-                    first_pass_height,
+                    firstphase_width,
+                    firstphase_height,
+                    crop_scale,
                 ] + custom_inputs,
                 outputs=[
                     txt2img_gallery,
@@ -672,8 +679,8 @@ def create_ui(wrap_gradio_gpu_call):
                 (denoising_strength, "Denoising strength"),
                 (enable_hr, lambda d: "Denoising strength" in d),
                 (hr_options, lambda d: gr.Row.update(visible="Denoising strength" in d)),
-                (first_pass_width, "First pass width"),
-                (first_pass_height, "First pass height"),
+                (firstphase_width, "First pass width"),
+                (firstphase_height, "First pass height"),
             ]
             modules.generation_parameters_copypaste.connect_paste(paste, txt2img_paste_fields, txt2img_prompt)
             token_button.click(fn=update_token_counter, inputs=[txt2img_prompt, steps], outputs=[token_counter])
