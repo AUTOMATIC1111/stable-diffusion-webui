@@ -1,8 +1,3 @@
-###################################################################################
-###################################################################################
-###################################################################################
-#
-#
 import discord
 from discord.ext import commands, tasks
 from discord.ext.commands import bot
@@ -87,7 +82,6 @@ class PersistentButtons(commands.Bot):
 
 
 bot = PersistentButtons()
-bot.remove_command("help")
 
 post_id = bot_config['channel_id']['post_id']
 heart_id = bot_config['channel_id']['heart_id']
@@ -196,20 +190,20 @@ async def update_bot_config():
         save_config = yaml.dump(bot_config, f, default_flow_style=False)
 
 @bot.command(pass_context=True)
-async def help(ctx, arg1 = None):
+async def sdhelp(ctx, arg1 = None):
     await ctx.message.delete()
     for r in ctx.message.author.roles:
         if r.id == admin_roleid or r.id == botmod_roleid:
             if arg1 == None:
-                await ctx.channel.send(":: Supported Commands ::\n\n!togglepost\n!togglepostprompt\n!setid\n!about\n!die")
-            elif arg1 == "!togglepost":
-                await ctx.channel.send("!togglepost :: Toggles posting of imageresults to discord.")
-            elif arg1 == "!togglepostprompt":
-                await ctx.channel.send("!togglepostprompt :: Toggles posting prompt and settings used for the generation.")
-            elif arg1 == "!setid":
-                await ctx.channel.send("!setid :: Usage !setid <post/keep/average/cursed/nsfw> <discord channel id>")
+                await ctx.channel.send(":: Supported Commands ::\n\n!togglepost\n!togglepostprompt\n!setid\n!about\n!die\n\nUse !sdhelp <command> for more info.", delete_after=10)
+            elif arg1 == "!togglepost" or arg1 == "togglepost":
+                await ctx.channel.send("!togglepost :: Toggles posting of imageresults to discord.", delete_after=10)
+            elif arg1 == "!togglepostprompt" or arg1 == "togglepostprompt":
+                await ctx.channel.send("!togglepostprompt :: Toggles posting prompt and settings used for the generation.", delete_after=10)
+            elif arg1 == "!setid" or arg1 == "setid":
+                await ctx.channel.send("!setid :: Usage !setid <post/keep/average/cursed/nsfw> <discord channel id>", delete_after=10)
             else:
-                await ctx.channel.send(f"Unknown command: {arg1}")
+                await ctx.channel.send(f"Unknown command: {arg1}", delete_after=10)
 
 
 @bot.command(pass_context=True)
