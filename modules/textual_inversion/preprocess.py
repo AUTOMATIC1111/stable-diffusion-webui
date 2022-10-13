@@ -17,7 +17,9 @@ def preprocess(process_src, process_dst, process_width, process_height, process_
             shared.interrogator.load()
 
         if process_caption_deepbooru:
-            deepbooru.create_deepbooru_process(opts.interrogate_deepbooru_score_threshold, deepbooru.create_deepbooru_opts())
+            db_opts = deepbooru.create_deepbooru_opts()
+            db_opts[deepbooru.OPT_INCLUDE_RANKS] = False
+            deepbooru.create_deepbooru_process(opts.interrogate_deepbooru_score_threshold, db_opts)
 
         preprocess_work(process_src, process_dst, process_width, process_height, process_flip, process_split, process_caption, process_caption_deepbooru)
 
