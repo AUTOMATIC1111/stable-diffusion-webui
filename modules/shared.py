@@ -152,7 +152,6 @@ class OptionInfo:
         self.component_args = component_args
         self.onchange = onchange
         self.section = None
-        self.show_on_main_page = show_on_main_page
 
 
 def options_section(section_identifier, options_dict):
@@ -237,7 +236,7 @@ options_templates.update(options_section(('training', "Training"), {
 }))
 
 options_templates.update(options_section(('sd', "Stable Diffusion"), {
-    "sd_model_checkpoint": OptionInfo(None, "Stable Diffusion checkpoint", gr.Dropdown, lambda: {"choices": modules.sd_models.checkpoint_tiles()}, show_on_main_page=True),
+    "sd_model_checkpoint": OptionInfo(None, "Stable Diffusion checkpoint", gr.Dropdown, lambda: {"choices": modules.sd_models.checkpoint_tiles()}),
     "sd_hypernetwork": OptionInfo("None", "Stable Diffusion finetune hypernetwork", gr.Dropdown, lambda: {"choices": ["None"] + [x for x in hypernetworks.keys()]}),
     "img2img_color_correction": OptionInfo(False, "Apply color correction to img2img results to match original colors."),
     "save_images_before_color_correction": OptionInfo(False, "Save a copy of image before applying color correction to img2img results"),
@@ -250,6 +249,7 @@ options_templates.update(options_section(('sd', "Stable Diffusion"), {
     "filter_nsfw": OptionInfo(False, "Filter NSFW content"),
     'CLIP_stop_at_last_layers': OptionInfo(1, "Stop At last layers of CLIP model", gr.Slider, {"minimum": 1, "maximum": 12, "step": 1}),
     "random_artist_categories": OptionInfo([], "Allowed categories for random artists selection when using the Roll button", gr.CheckboxGroup, {"choices": artist_db.categories()}),
+    'quicksettings': OptionInfo("sd_model_checkpoint", "Quicksettings list"),
 }))
 
 options_templates.update(options_section(('interrogate', "Interrogate Options"), {
