@@ -18,6 +18,8 @@ from modules.textual_inversion.learn_schedule import LearnRateScheduler
 
 
 class HypernetworkModule(torch.nn.Module):
+    multiplier = 1.0
+
     def __init__(self, dim, state_dict=None):
         super().__init__()
 
@@ -36,7 +38,11 @@ class HypernetworkModule(torch.nn.Module):
         self.to(devices.device)
 
     def forward(self, x):
-        return x + (self.linear2(self.linear1(x)))
+        return x + (self.linear2(self.linear1(x))) * self.multiplier
+
+
+def apply_strength(value=None):
+    HypernetworkModule.multiplier = value if value is not None else shared.opts.sd_hypernetwork_strength
 
 
 class Hypernetwork:
