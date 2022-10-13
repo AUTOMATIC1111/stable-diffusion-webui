@@ -11,6 +11,7 @@ import modules.artists
 import modules.interrogate
 import modules.memmon
 import modules.sd_models
+import modules.aesthetic_gradients
 import modules.styles
 import modules.devices as devices
 from modules import sd_samplers
@@ -238,6 +239,8 @@ options_templates.update(options_section(('training', "Training"), {
 
 options_templates.update(options_section(('sd', "Stable Diffusion"), {
     "sd_model_checkpoint": OptionInfo(None, "Stable Diffusion checkpoint", gr.Dropdown, lambda: {"choices": modules.sd_models.checkpoint_tiles()}, show_on_main_page=True),
+    "aesthetic_embedding": OptionInfo(None, "Aesthetic Embedding", gr.Dropdown, lambda: {"choices": modules.aesthetic_gradients.get_embeddings()}, show_on_main_page=True),
+    "aesthetic_embedding_steps": OptionInfo(0, "Aesthetic Embedding Steps", gr.Slider, {"minimum": 0, "maximum": 50, "step": 1}, show_on_main_page=True),
     "sd_hypernetwork": OptionInfo("None", "Stable Diffusion finetune hypernetwork", gr.Dropdown, lambda: {"choices": ["None"] + [x for x in hypernetworks.keys()]}),
     "img2img_color_correction": OptionInfo(False, "Apply color correction to img2img results to match original colors."),
     "save_images_before_color_correction": OptionInfo(False, "Save a copy of image before applying color correction to img2img results"),

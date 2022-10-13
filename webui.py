@@ -21,6 +21,7 @@ import modules.paths
 import modules.scripts
 import modules.sd_hijack
 import modules.sd_models
+import modules.aesthetic_gradients
 import modules.shared as shared
 import modules.txt2img
 
@@ -130,6 +131,8 @@ def webui():
         importlib.reload(modules.ui)
         print('Refreshing Model List')
         modules.sd_models.list_models()
+        print('Refreshing Aesthetic Embeddings')
+        modules.aesthetic_gradients.list_embeddings()
         print('Restarting Gradio')
 
 
