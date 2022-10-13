@@ -522,15 +522,6 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             else:
                 state.job_count = state.job_count * 2
 
-            #desired_pixel_count = self.firstphase_width * self.firstphase_height
-            #actual_pixel_count = self.width * self.height
-            #scale = math.sqrt(desired_pixel_count / actual_pixel_count)
-
-            #self.firstphase_width = math.ceil(scale * self.width / 64) * 64
-            #self.firstphase_height = math.ceil(scale * self.height / 64) * 64
-            #self.firstphase_width_truncated = int(scale * self.width)
-            #self.firstphase_height_truncated = int(scale * self.height)
-
     def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength):
         self.sampler = sd_samplers.create_sampler_with_index(sd_samplers.samplers, self.sampler_index, self.sd_model)
 
@@ -544,17 +535,23 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
         truncate_x = 0
         truncate_y = 0
+        width_ratio = self.width/self.firstphase_width
+        height_ratio = self.height/self.firstphase_height
 
         if self.crop_scale:
-            if self.width/self.firstphase_width > self.height/self.firstphase_height:
+            if width_ratio > height_ratio:
                 #Crop to landscape
-                truncate_y = (self.width -  self.firstphase_width)//2 // opt_f
+                truncate_y = int((self.width - self.firstphase_width) / width_ratio / height_ratio / opt_f)
 
-            elif self.width/self.firstphase_width < self.height/self.firstphase_height:
+            elif width_ratio < height_ratio:
                 #Crop to portrait
-                truncate_x = (self.height - self.firstphase_height)//2 // opt_f
+                truncate_x = int((self.height - self.firstphase_height) / width_ratio / height_ratio / opt_f)
+                
+            samples = samples[:, :, truncate_y//2:samples.shape[2]-truncate_y//2, truncate_x//2:samples.shape[3]-truncate_x//2]
 
-        samples = samples[:, :, truncate_y//2:samples.shape[2]-truncate_y//2, truncate_x//2:samples.shape[3]-truncate_x//2]
+        
+
+        
 
         if self.scale_latent:
             samples = torch.nn.functional.interpolate(samples, size=(self.height // opt_f, self.width // opt_f), mode="bilinear")
