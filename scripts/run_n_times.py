@@ -13,12 +13,24 @@ class Script(scripts.Script):
         return "To Infinity and Beyond"
 
     def ui(self, is_img2img):
-        n = gr.Textbox(label="n")
-        return [n]
+        with gr.Row():
+            n = gr.Textbox(label="n")
+        with gr.Row():
+            seed_type = gr.Radio(label='Seed Type', choices=["RandomSeed","RandomVariationSeed","RandomAllSeed"], value="RandomSeed", type="value", interactive=True)
+        return [n, seed_type]
 
-    def run(self, p, n):
+    def run(self, p, n, seed_type):
+        if seed_type == "RandomVariationSeed":
+            fixed_seed = p.seed
         for x in range(int(n)):
-            p.seed = -1
+            if seed_type == "RandomVariationSeed":
+                p.subseed = -1
+            elif seed_type == "RandomAllSeed":
+                p.seed = -1
+                p.subseed = -1
+            else:
+                p.seed = -1
+            
             proc = process_images(p)
             image = proc.images
         return Processed(p, image, p.seed, proc.info)
