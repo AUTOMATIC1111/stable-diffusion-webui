@@ -1,3 +1,7 @@
+**Important:** These instructions are for the developers of this project, not for users! The users should use the pre-created zip files for installation.
+
+This guide explains how to create the zip files that users will use for installing.
+
 The installer zip contains two files: the script, and the micromamba binary.
 
 Micromamba is a single ~8mb binary file, that acts like a package manager (drop-in replacement for conda).
