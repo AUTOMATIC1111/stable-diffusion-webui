@@ -16,7 +16,7 @@ import yaml
 
 
 def new_config():
-    newconfig = {'channel_id':{'post_id':0,'heart_id':0,'average_id':0,'cursed_id':0,'nsfw_id':0},'admin':{'admin_roleid':0,'botmod_roleid':0},'main':{'enabled':False,'post_result':False}}
+    newconfig = {'channel_id':{'post_id':0,'heart_id':0,'average_id':0,'cursed_id':0,'nsfw_id':0},'admin':{'admin_roleid':0,'botmod_roleid':0},'main':{'enabled':False,'post_result':False,'post_prompt':True}}
     return newconfig
 
 
@@ -48,7 +48,7 @@ if bottokenfile is not None and os.path.isfile(bottokenfile):
             print("Loaded Token from file.")
     except:
         print(f"Error Loading token file, please check {bottokenfile} and make sure your token is there")
-        bot_config['main']['enabled'] == False
+        bot_config['main']['enabled'] = False
 else:
     print("No TOKEN file found, Creating one.")
     with open(bottokenfile,'w') as file:
@@ -108,7 +108,7 @@ async def on_raw_reaction_add(payload):
         return
     do_react = False
     for r in payload.user.roles:
-        if r.id == admin_roleid or botmod_roleid:
+        if r.id == admin_roleid or r.id == botmod_roleid:
             do_react = True
 
     if do_react == False:
@@ -134,7 +134,7 @@ class Buttons(discord.ui.View):
         async def heart_button(self,interaction:discord.Interaction,button:discord.ui.Button):
             do_post = False
             for r in interaction.user.roles:
-                if r.id == admin_roleid or botmod_roleid:
+                if r.id == admin_roleid or r.id == botmod_roleid:
                     do_post = True
             if do_post == True:
                 heart_channel = bot.get_channel(heart_id)
@@ -147,7 +147,7 @@ class Buttons(discord.ui.View):
         async def average_button(self,interaction:discord.Interaction,button:discord.ui.Button):
             do_post = False
             for r in interaction.user.roles:
-                if r.id == admin_roleid or botmod_roleid:
+                if r.id == admin_roleid or r.id == botmod_roleid:
                     do_post = True
             if do_post == True:
                 average_channel = bot.get_channel(average_id)
@@ -160,7 +160,7 @@ class Buttons(discord.ui.View):
         async def cursed_button(self,interaction:discord.Interaction,button:discord.ui.Button):
             do_post = False
             for r in interaction.user.roles:
-                if r.id == admin_roleid or botmod_roleid:
+                if r.id == admin_roleid or r.id == botmod_roleid:
                     do_post = True
             if do_post == True:
                 cursed_channel = bot.get_channel(cursed_id)
@@ -172,7 +172,7 @@ class Buttons(discord.ui.View):
         async def nsfw_button(self,interaction:discord.Interaction,button:discord.ui.Button):
             do_post = False
             for r in interaction.user.roles:
-                if r.id == admin_roleid or botmod_roleid:
+                if r.id == admin_roleid or r.id == botmod_roleid:
                     do_post = True
             if do_post == True:
                 nsfw_channel = bot.get_channel(nsfw_id)
@@ -185,16 +185,38 @@ class Buttons(discord.ui.View):
         async def delete_button(self,interaction:discord.Interaction,button:discord.ui.Button):
             do_post = False
             for r in interaction.user.roles:
-                if r.id == admin_roleid or botmod_roleid:
+                if r.id == admin_roleid or r.id == botmod_roleid:
                     do_post = True
             if do_post == True:
                 await interaction.message.delete()
+
+
+async def update_bot_config():
+    with open(botconfigfile, "w", encoding="utf8") as f:
+        save_config = yaml.dump(bot_config, f, default_flow_style=False)
+
+@bot.command(pass_context=True)
+async def help(ctx, arg1 = None):
+    await ctx.message.delete()
+    for r in ctx.message.author.roles:
+        if r.id == admin_roleid or r.id == botmod_roleid:
+            if arg1 == None:
+                await ctx.channel.send(":: Supported Commands ::\n\n!togglepost\n!togglepostprompt\n!setid\n!about\n!die")
+            elif arg1 == "!togglepost":
+                await ctx.channel.send("!togglepost :: Toggles posting of imageresults to discord.")
+            elif arg1 == "!togglepostprompt":
+                await ctx.channel.send("!togglepostprompt :: Toggles posting prompt and settings used for the generation.")
+            elif arg1 == "!setid":
+                await ctx.channel.send("!setid :: Usage !setid <post/keep/average/cursed/nsfw> <discord channel id>")
+            else:
+                await ctx.channel.send(f"Unknown command: {arg1}")
+
 
 @bot.command(pass_context=True)
 async def togglepost(ctx):
     await ctx.message.delete()
     for r in ctx.message.author.roles:
-        if r.id == admin_roleid or botmod_roleid:
+        if r.id == admin_roleid or r.id == botmod_roleid:
             bot_config['main']['post_result'] = not bot_config['main']['post_result']
             with open(botconfigfile, "w", encoding="utf8") as f:
                 save_config = yaml.dump(bot_config, f, default_flow_style=False)
@@ -202,15 +224,23 @@ async def togglepost(ctx):
             return
 
 
-async def update_bot_config():
-    with open(botconfigfile, "w", encoding="utf8") as f:
-        save_config = yaml.dump(bot_config, f, default_flow_style=False)
+@bot.command(pass_context=True)
+async def togglepostprompt(ctx):
+    await ctx.message.delete()
+    for r in ctx.message.author.roles:
+        if r.id == admin_roleid or r.id == botmod_roleid:
+            bot_config['main']['post_prompt'] = not bot_config['main']['post_prompt']
+            with open(botconfigfile, "w", encoding="utf8") as f:
+                save_config = yaml.dump(bot_config, f, default_flow_style=False)
+            await ctx.channel.send(f"Prompt posting set to: {bot_config['main']['post_prompt']}", delete_after=10)
+            return
+
     
 @bot.command(pass_context=True)
 async def setid(ctx, arg1 = None, arg2: int = None):
     await ctx.message.delete()
     for r in ctx.message.author.roles:
-        if r.id == admin_roleid or botmod_roleid:
+        if r.id == admin_roleid or r.id == botmod_roleid:
             if arg1 != None and arg2 != None:
                 if arg1 == "post": 
                     bot_config['channel_id']['post_id'] = arg2
@@ -249,35 +279,6 @@ async def setid(ctx, arg1 = None, arg2: int = None):
                 await ctx.channel.send(f"Missing arguments, use: !setid <name> <id>", delete_after=10)
                 return
 
-@bot.command(pass_context=True)
-async def setkeepchannel(ctx, arg):
-    await ctx.message.delete()
-    for r in ctx.message.author.roles:
-        if r.id == admin_roleid or botmod_roleid: 
-            bot_config['channel_id']['heart_id'] = arg
-            heart_id = arg
-            await ctx.channel.send(f"Post channel ID set to: {arg}")
-            return
-
-@bot.command(pass_context=True)
-async def setaveragechannel(ctx, arg):
-    await ctx.message.delete()
-    for r in ctx.message.author.roles:
-        if r.id == admin_roleid or botmod_roleid: 
-            bot_config['channel_id']['average_id'] = arg
-            heart_id = arg
-            await ctx.channel.send(f"Post channel ID set to: {arg}")
-            return
-
-@bot.command(pass_context=True)
-async def setcursedchannel(ctx, arg):
-    await ctx.message.delete()
-    for r in ctx.message.author.roles:
-        if r.id == admin_roleid or botmod_roleid: 
-            bot_config['channel_id']['heart_id'] = arg
-            heart_id = arg
-            await ctx.channel.send(f"Post channel ID set to: {arg}")
-            return
 
 @bot.command(pass_context=True)
 async def about(ctx):
@@ -288,8 +289,10 @@ async def about(ctx):
 
 @bot.command(pass_context=True)
 async def die(ctx):
-    await ctx.message.delete()
-    await bot.close()
+    for r in ctx.message.author.roles:
+        if r.id == admin_roleid or r.id == botmod_roleid:
+            await ctx.message.delete()
+            await bot.close()
 
 
 
@@ -297,19 +300,21 @@ async def image_send(filename,prompt,negative_prompt,seed,subseed,seedvar,sample
         channel = bot.get_channel(post_id)
         view=Buttons()
         print(f"Uploading: {filename}")
-
-        prompt_info = prompt
-
-        if negative_prompt != "":
-            prompt_info = f"{prompt_info}\nNegative prompt: {negative_prompt}\nSteps: {steps}, Sampler {sampler_name}, CFG scale: {cfg_scale}, Seed: {seed}, Size: {width}x{height}, Model hash: {modelhash}"
+        if bot_config['main']['post_prompt'] == True:
+            prompt_info = prompt
+    
+            if negative_prompt != "":
+                prompt_info = f"{prompt_info}\nNegative prompt: {negative_prompt}\nSteps: {steps}, Sampler {sampler_name}, CFG scale: {cfg_scale}, Seed: {seed}, Size: {width}x{height}, Model hash: {modelhash}"
+            else:
+                prompt_info = f"{prompt_info}\nSteps: {steps}, Sampler: {sampler_name}, CFG scale: {cfg_scale}, Seed: {seed}, Size: {width}x{height}, Model hash: {modelhash}"
+    
+            if str(seedvar) != "0":
+                prompt_info = f"{prompt_info}, Variation seed: {subseed}, Variation seed strength: {seedvar}"
+    
+            if seed_resize_w != 0 and seed_resize_h != 0:
+                prompt_info = f"{prompt_info}, Seed resize from: {seed_resize_w}x{seed_resize_h}"
         else:
-            prompt_info = f"{prompt_info}\nSteps: {steps}, Sampler: {sampler_name}, CFG scale: {cfg_scale}, Seed: {seed}, Size: {width}x{height}, Model hash: {modelhash}"
-
-        if str(seedvar) != "0":
-            prompt_info = f"{prompt_info}, Variation seed: {subseed}, Variation seed strength: {seedvar}"
-
-        if seed_resize_w != 0 and seed_resize_h != 0:
-            prompt_info = f"{prompt_info}, Seed resize from: {seed_resize_w}x{seed_resize_h}"
+            prompt_info = ""
 
         await channel.send(prompt_info, file=discord.File(filename), view=view)
 
