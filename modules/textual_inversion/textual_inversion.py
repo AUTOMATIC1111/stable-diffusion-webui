@@ -262,14 +262,15 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
 
             with open(os.path.join(log_directory, "textual_inversion_loss.csv"), "a+") as fout:
 
-                csv_writer = csv.DictWriter(fout, fieldnames=["epoch", "epoch_step", "loss"])
+                csv_writer = csv.DictWriter(fout, fieldnames=["epoch", "epoch_step", "loss", "learn_rate"])
                 
                 if write_csv_header:
                     csv_writer.writeheader()
 
                 csv_writer.writerow({"epoch": epoch_num + 1, 
                     "epoch_step": epoch_step - 1, 
-                    "loss": f"{losses.mean():.7f}"})
+                    "loss": f"{losses.mean():.7f}",
+                    "learn_rate": scheduler.learn_rate})
 
         if embedding.step > 0 and images_dir is not None and embedding.step % create_image_every == 0:
             last_saved_image = os.path.join(images_dir, f'{embedding_name}-{embedding.step}.png')
