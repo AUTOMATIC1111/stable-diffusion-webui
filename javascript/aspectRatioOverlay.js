@@ -1,119 +1,91 @@
 
-let currentWidth = null;
-let currentHeight = null;
-let arFrameTimeout = setTimeout(function(){},0);
+(function() {
 
-function dimensionChange(e,dimname){
+let currentWidth, currentHeight;
+let arPreviewRect, arFrameTimeout;
 
-	if(dimname == 'Width'){
-		currentWidth = e.target.value*1.0
-	}
-	if(dimname == 'Height'){
-		currentHeight = e.target.value*1.0
-	}
+function dimensionChange(e,_isWidth) {
+	if(_isWidth) currentWidth = Number(e.target.value);
+	else currentHeight = Number(e.target.value);
 
-	var inImg2img   = Boolean(gradioApp().querySelector("button.rounded-t-lg.border-gray-200"))
-
-	if(!inImg2img){
-		return;
-	}
+	var inImg2img = gradioApp().querySelector(".tabs button.bg-white.rounded-t-lg").innerText == "innerText";
+	if(!inImg2img) return;
 
 	var img2imgMode = gradioApp().querySelector('#mode_img2img.tabs > div > button.rounded-t-lg.border-gray-200')
-	if(img2imgMode){
-		img2imgMode=img2imgMode.innerText
-	}else{
-		return;
-	}
+	if(img2imgMode) img2imgMode=img2imgMode.innerText
+	else return;
 
-	var redrawImage = gradioApp().querySelector('div[data-testid=image] img');
-	var inpaintImage = gradioApp().querySelector('#img2maskimg div[data-testid=image] img')
+	var img;
+	if(img2imgMode=='img2img') {
+		img = gradioApp().querySelector('div[data-testid=image] img');
+	}else if(img2imgMode=='innerText') {
+		img = gradioApp().querySelector('#img2maskimg div[data-testid=image] img');
+	} else return;
 
-	var targetElement = null;
+	var viewportOffset = img.getBoundingClientRect();
 
-	if(img2imgMode=='img2img' && redrawImage){
-		targetElement = redrawImage;
-	}else if(img2imgMode=='Inpaint' && inpaintImage){
-		targetElement = inpaintImage;
-	}
+	viewportscale = Math.min(img.clientWidth/img.naturalWidth, img.clientHeight/img.naturalHeight);
 
-	if(targetElement){
+	scaledx = img.naturalWidth*viewportscale;
+	scaledy = img.naturalHeight*viewportscale;
 
-		var arPreviewRect = gradioApp().querySelector('#imageARPreview');
-		if(!arPreviewRect){
-		    arPreviewRect = document.createElement('div')
-		    arPreviewRect.id = "imageARPreview";
-		    gradioApp().getRootNode().appendChild(arPreviewRect)
-		}
+	cleintRectTop    = (viewportOffset.top+window.scrollY);
+	cleintRectLeft   = (viewportOffset.left+window.scrollX);
+	cleintRectCentreY = cleintRectTop  + (img.clientHeight/2);
+	cleintRectCentreX = cleintRectLeft + (img.clientWidth/2);
 
+	viewRectTop    = cleintRectCentreY-(scaledy/2);
+	viewRectLeft   = cleintRectCentreX-(scaledx/2);
+	arRectWidth  = scaledx;
+	arRectHeight = scaledy;
 
+	arscale = Math.min(  arRectWidth/currentWidth, arRectHeight/currentHeight );
+	arscaledx = currentWidth*arscale;
+	arscaledy = currentHeight*arscale;
 
-		var viewportOffset = targetElement.getBoundingClientRect();
+	arRectTop    = cleintRectCentreY-(arscaledy/2);
+	arRectLeft   = cleintRectCentreX-(arscaledx/2);
+	arRectWidth  = arscaledx;
+	arRectHeight = arscaledy;
 
-		viewportscale = Math.min(  targetElement.clientWidth/targetElement.naturalWidth, targetElement.clientHeight/targetElement.naturalHeight )
+	arPreviewRect.style.top  = arRectTop+'px';
+	arPreviewRect.style.left = arRectLeft+'px';
+	arPreviewRect.style.width = arRectWidth+'px';
+	arPreviewRect.style.height = arRectHeight+'px';
 
-		scaledx = targetElement.naturalWidth*viewportscale
-		scaledy = targetElement.naturalHeight*viewportscale
-
-		cleintRectTop    = (viewportOffset.top+window.scrollY)
-		cleintRectLeft   = (viewportOffset.left+window.scrollX)
-		cleintRectCentreY = cleintRectTop  + (targetElement.clientHeight/2)
-		cleintRectCentreX = cleintRectLeft + (targetElement.clientWidth/2)
-
-		viewRectTop    = cleintRectCentreY-(scaledy/2)
-		viewRectLeft   = cleintRectCentreX-(scaledx/2)
-		arRectWidth  = scaledx
-		arRectHeight = scaledy
-
-		arscale = Math.min(  arRectWidth/currentWidth, arRectHeight/currentHeight )
-		arscaledx = currentWidth*arscale
-		arscaledy = currentHeight*arscale
-
-		arRectTop    = cleintRectCentreY-(arscaledy/2)
-		arRectLeft   = cleintRectCentreX-(arscaledx/2)
-		arRectWidth  = arscaledx
-		arRectHeight = arscaledy
-
-	    arPreviewRect.style.top  = arRectTop+'px';
-	    arPreviewRect.style.left = arRectLeft+'px';
-	    arPreviewRect.style.width = arRectWidth+'px';
-	    arPreviewRect.style.height = arRectHeight+'px';
-
-	    clearTimeout(arFrameTimeout);
-	    arFrameTimeout = setTimeout(function(){
-	    	arPreviewRect.style.display = 'none';
-	    },2000);
-
-	    arPreviewRect.style.display = 'block';
-
-	}
-
+	clearTimeout(arFrameTimeout);
+	arFrameTimeout = setTimeout(function(){
+		arPreviewRect.style.display = 'none';
+	},2000);
+	arPreviewRect.style.display = 'block';
 }
 
+onLoad(function() {
+	arPreviewRect = document.createElement('div');
+	arPreviewRect.id = "imageARPreview";
+	gradioApp().getRootNode().appendChild(arPreviewRect);
 
-onUiUpdate(function(){
-	var arPreviewRect = gradioApp().querySelector('#imageARPreview');
-	if(arPreviewRect){
-		arPreviewRect.style.display = 'none';
-	}
-	var inImg2img   = Boolean(gradioApp().querySelector("button.rounded-t-lg.border-gray-200"))
-	if(inImg2img){
-		let inputs = gradioApp().querySelectorAll('input');
-		inputs.forEach(function(e){ 
-			let parentLabel = e.parentElement.querySelector('label')
-			if(parentLabel && parentLabel.innerText){
-				if(!e.classList.contains('scrollwatch')){
-					if(parentLabel.innerText == 'Width' || parentLabel.innerText == 'Height'){
-						e.addEventListener('input', function(e){dimensionChange(e,parentLabel.innerText)} )
-						e.classList.add('scrollwatch')
-					}
-					if(parentLabel.innerText == 'Width'){
-						currentWidth = e.value*1.0
-					}
-					if(parentLabel.innerText == 'Height'){
-						currentHeight = e.value*1.0
-					}
-				}
-			} 
-		})
-	}
+	// however, gradio intiialize all inputs at one time and this method only executes once
+	gradioApp().querySelectorAll("input").forEach(function(e){
+		let text = e.parentElement.querySelector('label')
+		if(text&&(text=text.innerText)) {
+			switch(text) {
+				default: return;
+				case "Width":
+					currentWidth = Number(e.value);
+					break;
+				case "Height":
+					currentHeight = Number(e.value);
+					break;
+			}
+			e.addEventListener('input', function(e){dimensionChange(e,text=="Width")});
+		}
+	});
 });
+
+// todo is this needed?
+onUiUpdate(function(){
+	arPreviewRect&&(arPreviewRect.style.display = 'none');
+});
+
+})();

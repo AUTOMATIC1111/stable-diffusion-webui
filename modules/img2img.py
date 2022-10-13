@@ -31,7 +31,7 @@ def process_batch(p, input_dir, output_dir, args):
     state.job_count = len(images) * p.n_iter
 
     for i, image in enumerate(images):
-        state.job = f"{i+1} out of {len(images)}"
+        state.job = f"{i+1} / {len(images)}"
         if state.skipped:
             state.skipped = False
 

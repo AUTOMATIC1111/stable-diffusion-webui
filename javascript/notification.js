@@ -1,37 +1,33 @@
 // Monitors the gallery and sends a browser notification when the leading image is new.
 
-let lastHeadImg = null;
+let lastHeadImg;
 
-notificationButton = null
+onLoad(function() {
+	var btn = gradioApp().getElementById('request_notifications');
+
+	if(btn) {
+		btn.addEventListener('click', function (e) {
+			Notification.requestPermission();
+		}, true);
+	}
+});
 
 onUiUpdate(function(){
-    if(notificationButton == null){
-        notificationButton = gradioApp().getElementById('request_notifications')
+	const galleryPreviews = gradioApp().querySelectorAll('img.h-full.w-full.overflow-hidden');
+	if (!galleryPreviews) return;
 
-        if(notificationButton != null){
-            notificationButton.addEventListener('click', function (evt) {
-                Notification.requestPermission();
-            },true);
-        }
-    }
+	const headImg = galleryPreviews[0]?.src;
 
-    const galleryPreviews = gradioApp().querySelectorAll('img.h-full.w-full.overflow-hidden');
+	if (!headImg || headImg == lastHeadImg) return;
+	lastHeadImg = headImg;
 
-    if (galleryPreviews == null) return;
+	// play notification sound if available
+	gradioApp().querySelector('#audio_notification audio')?.play();
 
-    const headImg = galleryPreviews[0]?.src;
+	if (document.hasFocus()) return;
 
-    if (headImg == null || headImg == lastHeadImg) return;
-
-    lastHeadImg = headImg;
-
-    // play notification sound if available
-    gradioApp().querySelector('#audio_notification audio')?.play();
-
-    if (document.hasFocus()) return;
-
-    // Multiple copies of the images are in the DOM when one is selected. Dedup with a Set to get the real number generated.
-    const imgs = new Set(Array.from(galleryPreviews).map(img => img.src));
+	// Multiple copies of the images are in the DOM when one is selected. Dedup with a Set to get the real number generated.
+	const imgs = new Set(Array.from(galleryPreviews).map(img => img.src)).size;
 
     const notification = new Notification(
         'Stable Diffusion',
@@ -42,8 +38,8 @@ onUiUpdate(function(){
         }
     );
 
-    notification.onclick = function(_){
-        parent.focus();
-        this.close();
-    };
+	n.onclick = function() {
+		parent.focus();
+		this.close();
+	};
 });

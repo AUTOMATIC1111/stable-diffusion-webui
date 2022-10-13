@@ -24,7 +24,7 @@ class Script(scripts.Script):
         # so we will use a checkbox! :)
         checkbox_txt = gr.Checkbox(label="Show Textbox", value=False)
         file = gr.File(label="File with inputs", type='bytes')
-        prompt_txt = gr.TextArea(label="Prompts")
+        prompt_txt = gr.TextArea(label="Prompts", visible=False)
         checkbox_txt.change(fn=lambda x: [gr.File.update(visible = not x), gr.TextArea.update(visible = x)], inputs=[checkbox_txt], outputs=[file, prompt_txt])
         return [checkbox_txt, file, prompt_txt]
 
@@ -49,7 +49,7 @@ class Script(scripts.Script):
 
         images = []
         for loop_no in range(loop_count):
-            state.job = f"{loop_no + 1} out of {loop_count}"
+            state.job = f"{loop_no + 1} / {loop_count}"
             p.prompt = lines[loop_no*p.batch_size:(loop_no+1)*p.batch_size] * p.n_iter
             proc = process_images(p)
             images += proc.images
