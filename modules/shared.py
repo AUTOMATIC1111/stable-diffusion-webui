@@ -237,8 +237,8 @@ options_templates.update(options_section(('training', "Training"), {
 }))
 
 options_templates.update(options_section(('sd', "Stable Diffusion"), {
-    "sd_model_checkpoint": OptionInfo(None, "Stable Diffusion checkpoint", gr.Dropdown, lambda: {"choices": modules.sd_models.checkpoint_tiles()}),
-    "aesthetic_embedding": OptionInfo(None, "Aesthetic Embedding", gr.Dropdown, lambda: {"choices": modules.aesthetic_gradients.get_embeddings()}),
+    "sd_model_checkpoint": OptionInfo(None, "Stable Diffusion checkpoint", gr.Dropdown, lambda: {"choices": modules.sd_models.checkpoint_tiles()),
+    "aesthetic_embedding": OptionInfo(None, "Aesthetic Embedding", gr.Dropdown, lambda: {"choices": modules.aesthetic_gradients.get_embeddings()),
     "aesthetic_embedding_steps": OptionInfo(0, "Aesthetic Embedding Steps", gr.Slider, {"minimum": 0, "maximum": 50, "step": 1}),
     "sd_hypernetwork": OptionInfo("None", "Stable Diffusion finetune hypernetwork", gr.Dropdown, lambda: {"choices": ["None"] + [x for x in hypernetworks.keys()]}),
     "img2img_color_correction": OptionInfo(False, "Apply color correction to img2img results to match original colors."),
