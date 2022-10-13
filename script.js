@@ -81,7 +81,6 @@ document.addEventListener('keydown', function(e) {
  */
 function uiElementIsVisible(el) {
 	console.warn(el);
-	alert(1);
 	let isVisible = !el.closest('.\\!hidden');
 	if (!isVisible) return false;
 
