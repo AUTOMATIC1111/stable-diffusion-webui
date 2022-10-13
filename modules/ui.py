@@ -1434,7 +1434,7 @@ Requested path was: {f}
 
         settings_interface.gradio_ref = demo
 
-        with gr.Tabs() as tabs:
+        with gr.Tabs(elem_id="tabs") as tabs:
             for interface, label, ifid in interfaces:
                 with gr.TabItem(label, id=ifid, elem_id='tab_' + ifid):
                     interface.render()
