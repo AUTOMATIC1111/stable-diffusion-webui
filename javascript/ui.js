@@ -161,6 +161,13 @@ onUiUpdate(function(){
 	json_elem = gradioApp().getElementById('settings_json')
 	if(json_elem == null) return;
 
+
+    // hack to get user-visible button title to change
+    test_button = gradioApp().getElementById('test_button')
+    test_button.innerText = "Refresh Model list"
+    console.log(test_button)
+
+
     textarea = json_elem.querySelector('textarea')
     jsdata = textarea.value
     opts = JSON.parse(jsdata)

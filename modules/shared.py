@@ -154,6 +154,15 @@ class OptionInfo:
         self.section = None
         self.show_on_main_page = show_on_main_page
 
+    def __init__(self, default=None, label="", component=None, component_args=None, click=None, show_on_main_page=False):
+        self.default = default
+        self.label = label
+        self.component = component
+        self.component_args = component_args
+        self.click = click
+        self.section = None
+        self.show_on_main_page = show_on_main_page
+
 
 def options_section(section_identifier, options_dict):
     for k, v in options_dict.items():
@@ -238,7 +247,7 @@ options_templates.update(options_section(('training', "Training"), {
 
 options_templates.update(options_section(('sd', "Stable Diffusion"), {
     "sd_model_checkpoint": OptionInfo(None, "Stable Diffusion checkpoint", gr.Dropdown, lambda: {"choices": modules.sd_models.checkpoint_tiles()}, show_on_main_page=True),
-    "test_button": OptionInfo(None, "my test button", gr.Button, {"elem_id": "test_button"}, show_on_main_page=True),
+    "test_button": OptionInfo(None, "my test button", gr.Button, {"elem_id": "test_button"}, print("test test test"), show_on_main_page=True),
     "sd_hypernetwork": OptionInfo("None", "Stable Diffusion finetune hypernetwork", gr.Dropdown, lambda: {"choices": ["None"] + [x for x in hypernetworks.keys()]}),
     "img2img_color_correction": OptionInfo(False, "Apply color correction to img2img results to match original colors."),
     "save_images_before_color_correction": OptionInfo(False, "Save a copy of image before applying color correction to img2img results"),

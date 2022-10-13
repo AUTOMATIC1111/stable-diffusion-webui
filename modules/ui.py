@@ -78,6 +78,7 @@ reuse_symbol = '\u267b\ufe0f'  # ♻️
 art_symbol = '\U0001f3a8'  # 🎨
 paste_symbol = '\u2199\ufe0f'  # ↙
 folder_symbol = '\U0001f4c2'  # 📂
+refresh_symbol = '\U0001F504' # 🔄
 
 def plaintext_to_html(text):
     text = "<p>" + "<br>\n".join([f"{html.escape(x)}" for x in text.split('\n')]) + "</p>"
@@ -446,7 +447,7 @@ def create_toprow(is_img2img):
                     with gr.Row():
                         negative_prompt = gr.Textbox(label="Negative prompt", elem_id="negative_prompt", show_label=False, placeholder="Negative prompt", lines=2)
                 with gr.Column(scale=1, elem_id="roll_col"):
-                    sh = gr.Button(elem_id="sh", visible=True)                           
+                    sh = gr.Button(elem_id="sh", visible=True)
 
                 with gr.Column(scale=1, elem_id="style_neg_col"):
                     prompt_style2 = gr.Dropdown(label="Style 2", elem_id=f"{id_part}_style2_index", choices=[k for k, v in shared.prompt_styles.styles.items()], value=next(iter(shared.prompt_styles.styles.keys())), visible=len(shared.prompt_styles.styles) > 1)
@@ -1429,7 +1430,18 @@ Requested path was: {f}
                  outputs=[component, text_settings],
              )
             except AttributeError:
-                print('this is probably a button or something')
+                # buttons don't have a change event so map to their click event instead
+                if type(component) == gradio.Button:
+                    print("yup thats a button")
+                    component.click(
+                        fn=lambda value, k=k: run_settings_single(value, key=k),
+                        inputs=[component],
+                        outputs=[component, text_settings],
+                    )
+
+
+        #def connect_quicksett_refresh():
+        #    print("event fired")
 
         def modelmerger(*args):
             try:
