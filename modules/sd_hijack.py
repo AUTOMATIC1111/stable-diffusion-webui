@@ -323,10 +323,10 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
             
             tokens = []
             multipliers = []
-            for i in range(len(remade_batch_tokens)):
-                if len(remade_batch_tokens[i]) > 0:
-                    tokens.append(remade_batch_tokens[i][:75])
-                    multipliers.append(batch_multipliers[i][:75])
+            for j in range(len(remade_batch_tokens)):
+                if len(remade_batch_tokens[j]) > 0:
+                    tokens.append(remade_batch_tokens[j][:75])
+                    multipliers.append(batch_multipliers[j][:75])
                 else:
                     tokens.append([self.wrapped.tokenizer.eos_token_id] * 75)
                     multipliers.append([1.0] * 75)

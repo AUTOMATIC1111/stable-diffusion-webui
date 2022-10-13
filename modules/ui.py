@@ -1078,22 +1078,15 @@ def create_ui(wrap_gradio_gpu_call):
                     process_height = gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512)
 
                     with gr.Row():
-
                         process_flip = gr.Checkbox(label='创建翻转副本')
                         process_split = gr.Checkbox(label='将超大图像一分为二')
                         process_caption = gr.Checkbox(label='使用 BLIP 标题作为文件名')
-                        if cmd_opts.deepdanbooru:
-                            process_caption_deepbooru = gr.Checkbox(label='Use deepbooru caption as filename')
-                        else:
-                            process_caption_deepbooru = gr.Checkbox(label='Use deepbooru caption as filename', visible=False)
-
-                    with gr.Row():
+                        process_caption_deepbooru = gr.Checkbox(label='Use deepbooru for caption', visible=True if cmd_opts.deepdanbooru else False)
+                        with gr.Row():
                         with gr.Column(scale=3):
                             gr.HTML(value="")
-
                         with gr.Column():
                             run_preprocess = gr.Button(value="预处理", variant='primary')
-
 
                 with gr.Tab(label="Train"):
                     gr.HTML(value="<p style='margin-bottom: 0.7em'>训练嵌入；必须指定具有一组 1:1 比例图像的目录</p>")
@@ -1106,9 +1099,9 @@ def create_ui(wrap_gradio_gpu_call):
                     training_width = gr.Slider(minimum=64, maximum=2048, step=64, label="宽度", value=512)
                     training_height = gr.Slider(minimum=64, maximum=2048, step=64, label="高度", value=512)
                     steps = gr.Number(label='最大步数', value=100000, precision=0)
-                    num_repeats = gr.Number(label='每个时期单个输入图像的重复次数', value=100, precision=0)
                     create_image_every = gr.Number(label='每 N 步保存一个图像到日志目录，0 表示禁用', value=500, precision=0)
                     save_embedding_every = gr.Number(label='每 N 步将嵌入的副本保存到日志目录，0 表示禁用', value=500, precision=0)
+                    save_image_with_stored_embedding = gr.Checkbox(label='保存图像与嵌入在PNG块', value=True)
                     preview_image_prompt = gr.Textbox(label='预览提示', value="")
 
                     with gr.Row():
@@ -1183,10 +1176,10 @@ def create_ui(wrap_gradio_gpu_call):
                 training_width,
                 training_height,
                 steps,
-                num_repeats,
                 create_image_every,
                 save_embedding_every,
                 template_file,
+                save_image_with_stored_embedding,
                 preview_image_prompt,
             ],
             outputs=[
