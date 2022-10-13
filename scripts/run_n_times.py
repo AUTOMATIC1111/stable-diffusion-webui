@@ -50,6 +50,8 @@ class Script(scripts.Script):
         for x in range(int(n)):
             if seed_type == "RandomVariationSeed":
                 p.subseed = -1
+                if int(p.seed) == -1:
+                    p.seed = int(random.randrange(4294967294)) 
             elif seed_type == "RandomAllSeed":
                 p.seed = -1
                 p.subseed = -1
