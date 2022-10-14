@@ -40,6 +40,7 @@ from modules import prompt_parser
 from modules.images import save_image
 import modules.textual_inversion.ui
 import modules.hypernetworks.ui
+import modules.images_history as img_his
 
 # this is a fix for Windows users. Without it, javascript files will be served with text/html content-type and the browser will not show any UI
 mimetypes.init()
@@ -1070,6 +1071,13 @@ def create_ui(wrap_gradio_gpu_call):
             inputs=[image],
             outputs=[html, generation_info, html2],
         )
+    #images history
+    images_history_switch_dict = {
+        "fn":modules.generation_parameters_copypaste.connect_paste,
+        "t2i":txt2img_paste_fields,
+        "i2i":img2img_paste_fields
+    }
+    images_history = img_his.create_history_tabs(gr, opts, wrap_gradio_call(modules.extras.run_pnginfo), images_history_switch_dict) 
 
     with gr.Blocks() as modelmerger_interface:
         with gr.Row().style(equal_height=False):
@@ -1464,6 +1472,7 @@ Requested path was: {f}
         (img2img_interface, "img2img", "img2img"),
         (extras_interface, "Extras", "extras"),
         (pnginfo_interface, "PNG Info", "pnginfo"),
+        (images_history, "History", "images_history"),
         (modelmerger_interface, "Checkpoint Merger", "modelmerger"),
         (train_interface, "Train", "ti"),
         (settings_interface, "Settings", "settings"),
@@ -1701,3 +1710,4 @@ if 'gradio_routes_templates_response' not in globals():
 
     gradio_routes_templates_response = gradio.routes.templates.TemplateResponse
     gradio.routes.templates.TemplateResponse = template_response
+
