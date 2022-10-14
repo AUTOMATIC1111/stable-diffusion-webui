@@ -1,4 +1,5 @@
 import datetime
+import io
 import math
 import os
 from collections import namedtuple
@@ -25,6 +26,10 @@ def image_grid(imgs, batch_size=1, rows=None):
             rows = opts.n_rows
         elif opts.n_rows == 0:
             rows = batch_size
+        elif opts.grid_prevent_empty_spots:
+            rows = math.floor(math.sqrt(len(imgs)))
+            while len(imgs) % rows != 0:
+                rows -= 1
         else:
             rows = math.sqrt(len(imgs))
             rows = round(rows)
@@ -475,3 +480,20 @@ def save_image(image, path, basename, seed=None, subseed=None, prompt=None, exte
 
     return fullfn, txt_fullfn
 
+def image_data(data):
+    try:
+        image = Image.open(io.BytesIO(data))
+        textinfo = image.text["parameters"]
+        return textinfo, None
+    except Exception:
+        pass
+
+    try:
+        text = data.decode('utf8')
+        assert len(text) < 10000
+        return text, None
+
+    except Exception:
+        pass
+
+    return '', None
