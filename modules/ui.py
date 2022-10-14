@@ -1172,6 +1172,7 @@ def create_ui(wrap_gradio_gpu_call):
                     training_height = gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512)
                     steps = gr.Number(label='Max steps', value=100000, precision=0)
                     create_image_every = gr.Number(label='Save an image to log directory every N steps, 0 to disable', value=500, precision=0)
+                    write_csv_every = gr.Number(label='Save an csv containing the loss to log directory every N steps, 0 to disable', value=500, precision=0)
                     save_embedding_every = gr.Number(label='Save a copy of embedding to log directory every N steps, 0 to disable', value=500, precision=0)
                     save_image_with_stored_embedding = gr.Checkbox(label='Save images with embedding in PNG chunks', value=True)
                     preview_from_txt2img = gr.Checkbox(label='Read parameters (prompt, etc...) from txt2img tab when making previews', value=False)
@@ -1250,6 +1251,7 @@ def create_ui(wrap_gradio_gpu_call):
                 steps,
                 create_image_every,
                 save_embedding_every,
+                write_csv_every,
                 template_file,
                 save_image_with_stored_embedding,
                 preview_from_txt2img,
@@ -1272,6 +1274,7 @@ def create_ui(wrap_gradio_gpu_call):
                 steps,
                 create_image_every,
                 save_embedding_every,
+                write_csv_every,
                 template_file,
                 preview_from_txt2img,
                 *txt2img_preview_params,
