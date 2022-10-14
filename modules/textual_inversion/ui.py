@@ -23,6 +23,8 @@ def preprocess(*args):
 
 def train_embedding(*args):
 
+    assert not shared.cmd_opts.lowvram, 'Training models with lowvram not possible'
+
     try:
         sd_hijack.undo_optimizations()
 
