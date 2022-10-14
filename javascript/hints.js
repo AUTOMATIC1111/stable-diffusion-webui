@@ -87,8 +87,8 @@ titles = {
 
     "Quicksettings list": "List of setting names, separated by commas, for settings that should go to the quick access bar at the top, rather than the usual setting tab. See modules/shared.py for setting names. Requires restarting to apply.",
 
-    "Weighted Sum": "Result = A * (1 - M) + B * M",
-    "Add difference": "Result = A + (B - C) * (1 - M)",
+    "Weighted sum": "Result = A * (1 - M) + B * M",
+    "Add difference": "Result = A + (B - C) * M",
 }
 
 
