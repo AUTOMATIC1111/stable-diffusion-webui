@@ -60,11 +60,12 @@ printf "\e[1m\e[32mInstall script for stable-diffusion + Web UI\n"
 printf "\e[1m\e[34mTested on Debian 11 (Bullseye)\e[0m"
 printf "\n%s\n" "${delimiter}"
 
-# Do not run as root
+# May not run as root
 if [[ $(id -u) -eq 0 ]]
 then
     printf "\n%s\n" "${delimiter}"
-    printf "\e[1m\e[31mERROR: This script must not be launched as root...\e[0m"
+    printf "\e[1m\e[31mWARN: This script may not be launched as root.\e[0m"
+    printf "\e[1m\e[31mWARN: The program may not be stable, use at own risk.\e[0m"
     printf "\n%s\n" "${delimiter}"
 #    exit 1
 else
