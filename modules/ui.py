@@ -567,8 +567,8 @@ def create_ui(wrap_gradio_gpu_call):
                     enable_hr = gr.Checkbox(label='Highres. fix', value=False)
 
                 with gr.Row(visible=False) as hr_options:
-                    firstphase_width = gr.Slider(minimum=0, maximum=1024, step=64, label="First pass width", value=0)
-                    firstphase_height = gr.Slider(minimum=0, maximum=1024, step=64, label="First pass height", value=0)
+                    firstphase_width = gr.Slider(minimum=0, maximum=1024, step=64, label="Firstpass width", value=0)
+                    firstphase_height = gr.Slider(minimum=0, maximum=1024, step=64, label="Firstpass height", value=0)
                     denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.7)
 
                 with gr.Row(equal_height=True):
