@@ -12,7 +12,7 @@
 # Commandline arguments for webui.py, for example: export COMMANDLINE_ARGS="--medvram --opt-split-attention"
 export COMMANDLINE_ARGS=""
 
-# Are you sure you want to run it as root? This may harm your machine
+# Are you sure you want to run it as root? This may harm your machine. If intend to do so, please check webui.sh
 #export ALLOW_RUN_AS_ROOT=""
 
 # python3 executable
