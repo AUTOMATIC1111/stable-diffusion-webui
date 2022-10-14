@@ -61,13 +61,12 @@ printf "\e[1m\e[34mTested on Debian 11 (Bullseye)\e[0m"
 printf "\n%s\n" "${delimiter}"
 
 # May not run as root
-if [[ $(id -u) -eq 0 ]]
+if [[ $(id -u) -eq 0 ]] && [ "${ALLOW_RUN_AS_ROOT}" != "I_KNOW_WHAT_THIS_MEANS_AND_RUN_IT" ]
 then
     printf "\n%s\n" "${delimiter}"
     printf "\e[1m\e[31mWARN: This script may not be launched as root.\e[0m"
-    printf "\e[1m\e[31mWARN: The program may not be stable, use at own risk.\e[0m"
     printf "\n%s\n" "${delimiter}"
-#    exit 1
+    exit 1
 else
     printf "\n%s\n" "${delimiter}"
     printf "Running on \e[1m\e[32m%s\e[0m user" "$(whoami)"
