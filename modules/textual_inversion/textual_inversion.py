@@ -327,10 +327,16 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
                 info.add_text("sd-ti-embedding", embedding_to_b64(data))
 
                 title = "<{}>".format(data.get('name', '???'))
+
+                try:
+                    vectorSize = list(data['string_to_param'].values())[0].shape[0]
+                except Exception as e:
+                    vectorSize = '?'
+
                 checkpoint = sd_models.select_checkpoint()
                 footer_left = checkpoint.model_name
                 footer_mid = '[{}]'.format(checkpoint.hash)
-                footer_right = '{}'.format(embedding.step)
+                footer_right = 'v{} {}s'.format(vectorSize, embedding.step)
 
                 captioned_image = caption_image_overlay(image, title, footer_left, footer_mid, footer_right)
                 captioned_image = insert_image_data_embed(captioned_image, data)
