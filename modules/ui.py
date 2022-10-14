@@ -79,6 +79,8 @@ reuse_symbol = '\u267b\ufe0f'  # ♻️
 art_symbol = '\U0001f3a8'  # 🎨
 paste_symbol = '\u2199\ufe0f'  # ↙
 folder_symbol = '\U0001f4c2'  # 📂
+refresh_symbol = '\U0001f504'  # 🔄
+
 
 def plaintext_to_html(text):
     text = "<p>" + "<br>\n".join([f"{html.escape(x)}" for x in text.split('\n')]) + "</p>"
@@ -1218,8 +1220,7 @@ def create_ui(wrap_gradio_gpu_call):
             outputs=[],
         )
 
-
-    def create_setting_component(key):
+    def create_setting_component(key, is_quicksettings=False):
         def fun():
             return opts.data[key] if key in opts.data else opts.data_labels[key].default
 
@@ -1239,7 +1240,34 @@ def create_ui(wrap_gradio_gpu_call):
         else:
             raise Exception(f'bad options item type: {str(t)} for key {key}')
 
-        return comp(label=info.label, value=fun, **(args or {}))
+        if info.refresh is not None:
+            if is_quicksettings:
+                res = comp(label=info.label, value=fun, **(args or {}))
+                refresh_button = gr.Button(value=refresh_symbol, elem_id="refresh_"+key)
+            else:
+                with gr.Row(variant="compact"):
+                    res = comp(label=info.label, value=fun, **(args or {}))
+                    refresh_button = gr.Button(value=refresh_symbol, elem_id="refresh_" + key)
+
+            def refresh():
+                info.refresh()
+                refreshed_args = info.component_args() if callable(info.component_args) else info.component_args
+
+                for k, v in refreshed_args.items():
+                    setattr(res, k, v)
+
+                return gr.update(**(refreshed_args or {}))
+
+            refresh_button.click(
+                fn=refresh,
+                inputs=[],
+                outputs=[res],
+            )
+        else:
+            res = comp(label=info.label, value=fun, **(args or {}))
+
+
+        return res
 
     components = []
     component_dict = {}
@@ -1313,6 +1341,9 @@ Requested path was: {f}
         settings_cols = 3
         items_per_col = int(len(opts.data_labels) * 0.9 / settings_cols)
 
+        quicksettings_names = [x.strip() for x in opts.quicksettings.split(",")]
+        quicksettings_names = set(x for x in quicksettings_names if x != 'quicksettings')
+
         quicksettings_list = []
 
         cols_displayed = 0
@@ -1337,7 +1368,7 @@ Requested path was: {f}
 
                     gr.HTML(elem_id="settings_header_text_{}".format(item.section[0]), value='<h1 class="gr-button-lg">{}</h1>'.format(item.section[1]))
 
-                if item.show_on_main_page:
+                if k in quicksettings_names:
                     quicksettings_list.append((i, k, item))
                     components.append(dummy_component)
                 else:
@@ -1346,17 +1377,17 @@ Requested path was: {f}
                     components.append(component)
                     items_displayed += 1
 
-        request_notifications = gr.Button(value='Request browser notifications', elem_id="request_notifications")
+        with gr.Row():
+            request_notifications = gr.Button(value='Request browser notifications', elem_id="request_notifications")
+            reload_script_bodies = gr.Button(value='Reload custom script bodies (No ui updates, No restart)', variant='secondary')
+            restart_gradio = gr.Button(value='Restart Gradio and Refresh components (Custom Scripts, ui.py, js and css only)', variant='primary')
+
         request_notifications.click(
             fn=lambda: None,
             inputs=[],
             outputs=[],
             _js='function(){}'
         )
-
-        with gr.Row():
-            reload_script_bodies = gr.Button(value='Reload custom script bodies (No ui updates, No restart)', variant='secondary')
-            restart_gradio = gr.Button(value='Restart Gradio and Refresh components (Custom Scripts, ui.py, js and css only)', variant='primary')
 
         def reload_scripts():
             modules.scripts.reload_script_body_only()
@@ -1371,7 +1402,6 @@ Requested path was: {f}
         def request_restart():
             shared.state.interrupt()
             settings_interface.gradio_ref.do_restart = True
-
 
         restart_gradio.click(
             fn=request_restart,
@@ -1408,12 +1438,12 @@ Requested path was: {f}
     with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion") as demo:
         with gr.Row(elem_id="quicksettings"):
             for i, k, item in quicksettings_list:
-                component = create_setting_component(k)
+                component = create_setting_component(k, is_quicksettings=True)
                 component_dict[k] = component
 
         settings_interface.gradio_ref = demo
 
-        with gr.Tabs() as tabs:
+        with gr.Tabs(elem_id="tabs") as tabs:
             for interface, label, ifid in interfaces:
                 with gr.TabItem(label, id=ifid, elem_id='tab_' + ifid):
                     interface.render()
