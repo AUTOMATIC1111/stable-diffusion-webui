@@ -24,7 +24,8 @@ import gradio.routes
 
 from modules import sd_hijack
 from modules.paths import script_path
-from modules.shared import opts, cmd_opts
+from modules.shared import opts, cmd_opts,aesthetic_embeddings
+
 if cmd_opts.deepdanbooru:
     from modules.deepbooru import get_deepbooru_tags
 import modules.shared as shared
@@ -534,6 +535,14 @@ def create_ui(wrap_gradio_gpu_call):
                     width = gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512)
                     height = gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512)
 
+                with gr.Group():
+                    aesthetic_lr = gr.Textbox(label='Learning rate', placeholder="Learning rate", value="0.005")
+                    aesthetic_weight = gr.Slider(minimum=0, maximum=1, step=0.01, label="Aesthetic weight", value=0.7)
+                    aesthetic_steps = gr.Slider(minimum=0, maximum=50, step=1, label="Aesthetic steps", value=50)
+
+                    aesthetic_imgs = gr.Dropdown(sorted(aesthetic_embeddings.keys()), label="Imgs embedding", value=sorted(aesthetic_embeddings.keys())[0] if len(aesthetic_embeddings) > 0 else None)
+                    aesthetic_slerp = gr.Checkbox(label="Slerp interpolation", value=False)
+
                 with gr.Row():
                     restore_faces = gr.Checkbox(label='Restore faces', value=False, visible=len(shared.face_restorers) > 1)
                     tiling = gr.Checkbox(label='Tiling', value=False)
@@ -586,25 +595,30 @@ def create_ui(wrap_gradio_gpu_call):
                 fn=wrap_gradio_gpu_call(modules.txt2img.txt2img),
                 _js="submit",
                 inputs=[
-                    txt2img_prompt,
-                    txt2img_negative_prompt,
-                    txt2img_prompt_style,
-                    txt2img_prompt_style2,
-                    steps,
-                    sampler_index,
-                    restore_faces,
-                    tiling,
-                    batch_count,
-                    batch_size,
-                    cfg_scale,
-                    seed,
-                    subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox,
-                    height,
-                    width,
-                    enable_hr,
-                    scale_latent,
-                    denoising_strength,
-                ] + custom_inputs,
+                           txt2img_prompt,
+                           txt2img_negative_prompt,
+                           txt2img_prompt_style,
+                           txt2img_prompt_style2,
+                           steps,
+                           sampler_index,
+                           restore_faces,
+                           tiling,
+                           batch_count,
+                           batch_size,
+                           cfg_scale,
+                           seed,
+                           subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox,
+                           height,
+                           width,
+                           enable_hr,
+                           scale_latent,
+                           denoising_strength,
+                           aesthetic_lr,
+                           aesthetic_weight,
+                           aesthetic_steps,
+                           aesthetic_imgs,
+                           aesthetic_slerp
+                       ] + custom_inputs,
                 outputs=[
                     txt2img_gallery,
                     generation_info,
@@ -1097,6 +1111,9 @@ def create_ui(wrap_gradio_gpu_call):
                     template_file = gr.Textbox(label='Prompt template file', value=os.path.join(script_path, "textual_inversion_templates", "style_filewords.txt"))
                     training_width = gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512)
                     training_height = gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512)
+                    batch_size = gr.Slider(minimum=1, maximum=64, step=1, label="Batch Size", value=4)
+                    gradient_accumulation = gr.Slider(minimum=1, maximum=256, step=1, label="Gradient accumulation",
+                                                      value=1)
                     steps = gr.Number(label='Max steps', value=100000, precision=0)
                     create_image_every = gr.Number(label='Save an image to log directory every N steps, 0 to disable', value=500, precision=0)
                     save_embedding_every = gr.Number(label='Save a copy of embedding to log directory every N steps, 0 to disable', value=500, precision=0)
@@ -1180,6 +1197,8 @@ def create_ui(wrap_gradio_gpu_call):
                 template_file,
                 save_image_with_stored_embedding,
                 preview_image_prompt,
+                batch_size,
+                gradient_accumulation
             ],
             outputs=[
                 ti_output,

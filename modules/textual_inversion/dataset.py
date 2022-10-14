@@ -48,7 +48,7 @@ class PersonalizedBase(Dataset):
         print("Preparing dataset...")
         for path in tqdm.tqdm(self.image_paths):
             try:
-                image = Image.open(path).convert('RGB').resize((self.width, self.height), PIL.Image.BICUBIC)
+                image = Image.open(path).convert('RGB').resize((self.width, self.height), PIL.Image.Resampling.BICUBIC)
             except Exception:
                 continue
 
