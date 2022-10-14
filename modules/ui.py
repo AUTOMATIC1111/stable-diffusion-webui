@@ -1101,6 +1101,12 @@ def create_ui(wrap_gradio_gpu_call):
                     save_embedding_every = gr.Number(label='Save a copy of embedding to log directory every N steps, 0 to disable', value=500, precision=0)
                     save_image_with_stored_embedding = gr.Checkbox(label='Save images with embedding in PNG chunks', value=True)
                     preview_image_prompt = gr.Textbox(label='Preview prompt', value="")
+                    preview_image_negative_prompt = gr.Textbox(label='Preview negative prompt', value="")
+                    preview_image_steps = gr.Slider(minimum=1, maximum=150, step=1, label="Preview sampling steps", value=20)
+                    preview_image_sampler_index = gr.Radio(label='Preview sampling method', elem_id="txt2img_sampling", choices=[x.name for x in samplers], value=samplers[0].name, type="index")
+                    preview_image_width = gr.Slider(minimum=64, maximum=2048, step=64, label="Preview width", value=512)
+                    preview_image_height = gr.Slider(minimum=64, maximum=2048, step=64, label="Preview weight", value=512)
+                    preview_image_cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='Preview CFG scale', value=7.0)
 
                     with gr.Row():
                         interrupt_training = gr.Button(value="Interrupt")
@@ -1179,6 +1185,12 @@ def create_ui(wrap_gradio_gpu_call):
                 template_file,
                 save_image_with_stored_embedding,
                 preview_image_prompt,
+                preview_image_steps,
+                preview_image_width,
+                preview_image_height,
+                preview_image_negative_prompt,
+                preview_image_cfg_scale,
+                preview_image_sampler_index
             ],
             outputs=[
                 ti_output,
@@ -1199,6 +1211,12 @@ def create_ui(wrap_gradio_gpu_call):
                 save_embedding_every,
                 template_file,
                 preview_image_prompt,
+                preview_image_steps,
+                preview_image_width,
+                preview_image_height,
+                preview_image_negative_prompt,
+                preview_image_cfg_scale,
+                preview_image_sampler_index
             ],
             outputs=[
                 ti_output,

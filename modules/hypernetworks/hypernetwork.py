@@ -180,7 +180,7 @@ def attention_CrossAttention_forward(self, x, context=None, mask=None):
     return self.to_out(out)
 
 
-def train_hypernetwork(hypernetwork_name, learn_rate, data_root, log_directory, steps, create_image_every, save_hypernetwork_every, template_file, preview_image_prompt):
+def train_hypernetwork(hypernetwork_name, learn_rate, data_root, log_directory, steps, create_image_every, save_hypernetwork_every, template_file, preview_image_prompt, preview_image_steps, preview_image_width, preview_image_height, preview_image_negative_prompt, preview_image_cfg_scale, preview_image_sampler_index):
     assert hypernetwork_name, 'hypernetwork not selected'
 
     path = shared.hypernetworks.get(hypernetwork_name, None)
@@ -274,7 +274,12 @@ def train_hypernetwork(hypernetwork_name, learn_rate, data_root, log_directory, 
             p = processing.StableDiffusionProcessingTxt2Img(
                 sd_model=shared.sd_model,
                 prompt=preview_text,
-                steps=20,
+                steps=preview_image_steps,
+                width=preview_image_width,
+                height=preview_image_height,
+                negative_prompt=preview_image_negative_prompt,
+                cfg_scale=preview_image_cfg_scale,
+                sampler_index=preview_image_sampler_index,
                 do_not_save_grid=True,
                 do_not_save_samples=True,
             )

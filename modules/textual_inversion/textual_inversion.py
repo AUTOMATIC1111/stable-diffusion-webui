@@ -172,7 +172,7 @@ def create_embedding(name, num_vectors_per_token, init_text='*'):
     return fn
 
 
-def train_embedding(embedding_name, learn_rate, data_root, log_directory, training_width, training_height, steps, create_image_every, save_embedding_every, template_file, save_image_with_stored_embedding, preview_image_prompt):
+def train_embedding(embedding_name, learn_rate, data_root, log_directory, training_width, training_height, steps, create_image_every, save_embedding_every, template_file, save_image_with_stored_embedding, preview_image_prompt, preview_image_steps, preview_image_width, preview_image_height, preview_image_negative_prompt, preview_image_cfg_scale, preview_image_sampler_index):
     assert embedding_name, 'embedding not selected'
 
     shared.state.textinfo = "Initializing textual inversion training..."
@@ -264,9 +264,12 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
             p = processing.StableDiffusionProcessingTxt2Img(
                 sd_model=shared.sd_model,
                 prompt=preview_text,
-                steps=20,
-                height=training_height,
-                width=training_width,
+                steps=preview_image_steps,
+                negative_prompt=preview_image_negative_prompt,
+                cfg_scale=preview_image_cfg_scale,
+                sampler_index=preview_image_sampler_index,
+                width=preview_image_width,
+                height=preview_image_height,
                 do_not_save_grid=True,
                 do_not_save_samples=True,
             )
