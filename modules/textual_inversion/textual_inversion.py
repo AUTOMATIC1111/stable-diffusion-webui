@@ -96,6 +96,10 @@ class EmbeddingDatabase:
                 else:
                     data = extract_image_data_embed(embed_image)
                     name = data.get('name', name)
+            elif filename.upper().endswith('.WEBP'):
+                embed_image = Image.open(path)
+                data = extract_image_data_embed(embed_image)
+                name = data.get('name', name)
             else:
                 data = torch.load(path, map_location="cpu")
 
