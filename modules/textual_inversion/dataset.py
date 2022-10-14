@@ -81,7 +81,8 @@ class PersonalizedBase(Dataset):
                 entry.cond = cond_model([entry.cond_text]).to(devices.cpu)
 
             self.dataset.append(entry)
-
+        
+        assert len(self.dataset) > 1, "No images have been found in the dataset."
         self.length = len(self.dataset) * repeats
 
         self.initial_indexes = np.arange(self.length) % len(self.dataset)
