@@ -194,9 +194,20 @@ onUiUpdate(function(){
 		img2img_textarea?.addEventListener("input", () => update_token_counter("img2img_token_button"));
         img2img_textarea?.addEventListener("keyup", (event) => submit_prompt(event, "img2img_generate"));
 	}
+	if (!txt2img_neg_textarea) {
+        txt2img_neg_textarea = gradioApp().querySelector("#txt2img_neg_prompt > label > textarea");
+        txt2img_neg_textarea?.addEventListener("input", () => update_token_counter("txt2img_neg_token_button"));
+        txt2img_neg_textarea?.addEventListener("keyup", (event) => submit_prompt(event, "txt2img_generate"));
+	}
+	if (!img2img_neg_textarea) {
+        img2img_neg_textarea = gradioApp().querySelector("#img2img_neg_prompt > label > textarea");
+        img2img_neg_textarea?.addEventListener("input", () => update_token_counter("img2img_neg_token_button"));
+        img2img_neg_textarea?.addEventListener("keyup", (event) => submit_prompt(event, "img2img_generate"));
+	}
 })
 
 let txt2img_textarea, img2img_textarea = undefined;
+let txt2img_neg_textarea, img2img_neg_textarea = undefined;
 let wait_time = 800
 let token_timeout;
 
