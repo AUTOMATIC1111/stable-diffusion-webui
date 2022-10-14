@@ -163,10 +163,15 @@ function images_history_init(){
         for (var i in images_history_tab_list){               
             var tabname = images_history_tab_list[i]
             tab_btns[i].setAttribute("tabname", tabname);
-            tab_btns[i].addEventListener('click', images_history_click_tab);
+
+            // this refreshes history upon tab switch
+            // until the history is known to work well, which is not the case now, we do not do this at startup
+            //tab_btns[i].addEventListener('click', images_history_click_tab);
         }    
-        tabs_box.classList.add(images_history_tab_list[0]);   
-           load_txt2img_button.click();
+        tabs_box.classList.add(images_history_tab_list[0]);
+
+        // same as above, at page load
+        //load_txt2img_button.click();
     } else {
         setTimeout(images_history_init, 500);
     } 
@@ -182,12 +187,15 @@ document.addEventListener("DOMContentLoaded", function() {
             buttons.forEach(function(bnt){    
                 bnt.addEventListener('click', images_history_click_image, true);
             });
+
+            // same as load_txt2img_button.click() above
+            /*
             var cls_btn = gradioApp().getElementById(tabname + '_images_history_gallery').querySelector("svg");
             if (cls_btn){
                 cls_btn.addEventListener('click', function(){
                     gradioApp().getElementById(tabname + '_images_history_renew_page').click();
                 }, false);
-            }
+            }*/
 
         }     
     });
