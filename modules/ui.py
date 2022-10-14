@@ -514,7 +514,7 @@ def create_ui(wrap_gradio_gpu_call):
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
         txt2img_prompt, roll, txt2img_prompt_style, txt2img_negative_prompt, txt2img_prompt_style2, submit, _, _, txt2img_prompt_style_apply, txt2img_save_style, paste, token_counter, token_button = create_toprow(is_img2img=False)
         dummy_component = gr.Label(visible=False)
-        txt_prompt_img = gr.File(label="", elem_id="txt2img_prompt_image", file_count="single", type="file", visible=False)
+        txt_prompt_img = gr.File(label="", elem_id="txt2img_prompt_image", file_count="single", type="bytes", visible=False)
 
         with gr.Row(elem_id='txt2img_progress_row'):
             with gr.Column(scale=1):
@@ -620,7 +620,6 @@ def create_ui(wrap_gradio_gpu_call):
 
             txt_prompt_img.change(
                 fn=modules.images.image_data,
-                # _js = "get_extras_tab_index",
                 inputs=[
                     txt_prompt_img
                 ],
@@ -692,8 +691,7 @@ def create_ui(wrap_gradio_gpu_call):
         img2img_prompt, roll, img2img_prompt_style, img2img_negative_prompt, img2img_prompt_style2, submit, img2img_interrogate, img2img_deepbooru, img2img_prompt_style_apply, img2img_save_style, paste, token_counter, token_button = create_toprow(is_img2img=True)
 
         with gr.Row(elem_id='img2img_progress_row'):
-            img2img_prompt_img = gr.File(label="", elem_id="txt_prompt_image", file_count="single", type="file",
-                                         visible=False)
+            img2img_prompt_img = gr.File(label="", elem_id="img2img_prompt_image", file_count="single", type="bytes", visible=False)
 
             with gr.Column(scale=1):
                 pass
@@ -791,9 +789,8 @@ def create_ui(wrap_gradio_gpu_call):
 
             img2img_prompt_img.change(
                 fn=modules.images.image_data,
-                # _js = "get_extras_tab_index",
                 inputs=[
-                    txt_prompt_img
+                    img2img_prompt_img
                 ],
                 outputs=[
                     img2img_prompt,
