@@ -1,6 +1,8 @@
 __pycache__
 *.ckpt
 *.pth
+/*.custom.bat
+/*.custom.sh
 /ESRGAN/*
 /SwinIR/*
 /repositories
