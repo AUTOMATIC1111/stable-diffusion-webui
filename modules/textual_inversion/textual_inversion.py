@@ -88,18 +88,14 @@ class EmbeddingDatabase:
 
             data = []
 
-            if filename.upper().endswith('.PNG'):
+            if os.path.splitext(filename.upper())[-1] in ['.PNG', '.WEBP', '.JXL', '.AVIF']:
                 embed_image = Image.open(path)
-                if 'sd-ti-embedding' in embed_image.text:
+                if hasattr(embed_image, 'text') and 'sd-ti-embedding' in embed_image.text:
                     data = embedding_from_b64(embed_image.text['sd-ti-embedding'])
                     name = data.get('name', name)
                 else:
                     data = extract_image_data_embed(embed_image)
                     name = data.get('name', name)
-            elif filename.upper().endswith('.WEBP'):
-                embed_image = Image.open(path)
-                data = extract_image_data_embed(embed_image)
-                name = data.get('name', name)
             else:
                 data = torch.load(path, map_location="cpu")
 
