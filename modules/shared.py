@@ -175,6 +175,7 @@ options_templates.update(options_section(('saving-images', "Saving images/grids"
     "grid_format": OptionInfo('png', 'File format for grids'),
     "grid_extended_filename": OptionInfo(False, "Add extended info (seed, prompt) to filename when saving grid"),
     "grid_only_if_multiple": OptionInfo(True, "Do not save grids consisting of one picture"),
+    "grid_prevent_empty_spots": OptionInfo(False, "Prevent empty spots in grid (when set to autodetect)"),
     "n_rows": OptionInfo(-1, "Grid row count; use -1 for autodetect and 0 for it to be same as batch size", gr.Slider, {"minimum": -1, "maximum": 16, "step": 1}),
 
     "enable_pnginfo": OptionInfo(True, "Save text information about generation parameters as chunks to png files"),
