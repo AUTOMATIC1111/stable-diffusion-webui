@@ -1,5 +1,7 @@
 // code related to showing and updating progressbar shown as the image is being made
 global_progressbars = {}
+galleries = {}
+galleryObservers = {}
 
 function check_progressbar(id_part, id_progressbar, id_progressbar_span, id_skip, id_interrupt, id_preview, id_gallery){
     var progressbar = gradioApp().getElementById(id_progressbar)
@@ -31,6 +33,9 @@ function check_progressbar(id_part, id_progressbar, id_progressbar_span, id_skip
                 preview.style.width = gallery.clientWidth + "px"
                 preview.style.height = gallery.clientHeight + "px"
 
+				//only watch gallery if there is a generation process going on
+                check_gallery(id_gallery);    
+
                 var progressDiv = gradioApp().querySelectorAll('#' + id_progressbar_span).length > 0;
                 if(!progressDiv){
                     if (skip) {
@@ -38,12 +43,39 @@ function check_progressbar(id_part, id_progressbar, id_progressbar_span, id_skip
                     }
                     interrupt.style.display = "none"
                 }
+
+				//disconnect observer once generation finished, so user can close selected image if they want
+				if (galleryObservers[id_gallery]) {
+					galleryObservers[id_gallery].disconnect();
+					galleries[id_gallery] = null;
+				}    
             }
 
             window.setTimeout(function() { requestMoreProgress(id_part, id_progressbar_span, id_skip, id_interrupt) }, 500)
         });
         mutationObserver.observe( progressbar, { childList:true, subtree:true })
 	}
+}
+
+function check_gallery(id_gallery){
+    let gallery = gradioApp().getElementById(id_gallery)
+    // if gallery has no change, no need to setting up observer again.
+    if (gallery && galleries[id_gallery] !== gallery){
+        galleries[id_gallery] = gallery;
+        if(galleryObservers[id_gallery]){
+            galleryObservers[id_gallery].disconnect();
+        }
+        galleryObservers[id_gallery] = new MutationObserver(function (){
+            let galleryButtons = gradioApp().querySelectorAll('#'+id_gallery+' .gallery-item')
+            let galleryBtnSelected = gradioApp().querySelector('#'+id_gallery+' .gallery-item.\\!ring-2')
+            if (galleryButtons.length === 1 && !galleryBtnSelected) {
+                //automatically open when there is only 1 gallery btn, and was previously selected
+                galleryButtons[0].click();
+                console.log('clicked');
+            }
+        })
+        galleryObservers[id_gallery].observe( gallery, { childList:true, subtree:false })
+    }
 }
 
 onUiUpdate(function(){
