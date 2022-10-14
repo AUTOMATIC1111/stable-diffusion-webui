@@ -123,7 +123,7 @@ class InterrogateModels:
 
         return caption[0]
 
-    def interrogate(self, pil_image):
+    def interrogate(self, pil_image, include_ranks=False):
         res = None
 
         try:
@@ -140,11 +140,11 @@ class InterrogateModels:
 
             res = caption
 
-            cilp_image = self.clip_preprocess(pil_image).unsqueeze(0).type(self.dtype).to(shared.device)
+            clip_image = self.clip_preprocess(pil_image).unsqueeze(0).type(self.dtype).to(shared.device)
 
             precision_scope = torch.autocast if shared.cmd_opts.precision == "autocast" else contextlib.nullcontext
             with torch.no_grad(), precision_scope("cuda"):
-                image_features = self.clip_model.encode_image(cilp_image).type(self.dtype)
+                image_features = self.clip_model.encode_image(clip_image).type(self.dtype)
 
                 image_features /= image_features.norm(dim=-1, keepdim=True)
 
@@ -156,7 +156,10 @@ class InterrogateModels:
                 for name, topn, items in self.categories:
                     matches = self.rank(image_features, items, top_count=topn)
                     for match, score in matches:
-                        res += ", " + match
+                        if include_ranks:
+                            res += ", " + match
+                        else:
+                            res += f", ({match}:{score})"
 
         except Exception:
             print(f"Error interrogating", file=sys.stderr)
