@@ -506,14 +506,12 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
     firstphase_width_truncated = 0
     firstphase_height_truncated = 0
 
-    def __init__(self, enable_hr=False, scale_latent=True, denoising_strength=0.75, firstphase_width=512, firstphase_height=512, crop_scale=False, **kwargs):
+    def __init__(self, enable_hr=False, denoising_strength=0.75, firstphase_width=512, firstphase_height=512, **kwargs):
         super().__init__(**kwargs)
         self.enable_hr = enable_hr
-        self.scale_latent = scale_latent
         self.denoising_strength = denoising_strength
         self.firstphase_width = firstphase_width
         self.firstphase_height = firstphase_height
-        self.crop_scale = crop_scale
 
     def init(self, all_prompts, all_seeds, all_subseeds):
         if self.enable_hr:
@@ -530,6 +528,8 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             samples = self.sampler.sample(self, x, conditioning, unconditional_conditioning)
             return samples
 
+        self.extra_generation_params["First pass size"] = f"{self.firstphase_width}x{self.firstphase_height}"
+
         x = create_random_tensors([opt_C, self.firstphase_height // opt_f, self.firstphase_width // opt_f], seeds=seeds, subseeds=subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
         samples = self.sampler.sample(self, x, conditioning, unconditional_conditioning)
 
@@ -538,46 +538,36 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         width_ratio = self.width/self.firstphase_width
         height_ratio = self.height/self.firstphase_height
 
-        if self.crop_scale:
-            if width_ratio > height_ratio:
-                #Crop to landscape
-                truncate_y = int((self.width - self.firstphase_width) / width_ratio / height_ratio / opt_f)
+        if width_ratio > height_ratio:
+            truncate_y = int((self.width - self.firstphase_width) / width_ratio / height_ratio / opt_f)
 
-            elif width_ratio < height_ratio:
-                #Crop to portrait
-                truncate_x = int((self.height - self.firstphase_height) / width_ratio / height_ratio / opt_f)
+        elif width_ratio < height_ratio:
+            truncate_x = int((self.height - self.firstphase_height) / width_ratio / height_ratio / opt_f)
                 
-            samples = samples[:, :, truncate_y//2:samples.shape[2]-truncate_y//2, truncate_x//2:samples.shape[3]-truncate_x//2]
+        samples = samples[:, :, truncate_y//2:samples.shape[2]-truncate_y//2, truncate_x//2:samples.shape[3]-truncate_x//2]
 
-        
+        decoded_samples = decode_first_stage(self.sd_model, samples)
 
-        
-
-        if self.scale_latent:
-            samples = torch.nn.functional.interpolate(samples, size=(self.height // opt_f, self.width // opt_f), mode="bilinear")
+        if opts.upscaler_for_img2img is None or opts.upscaler_for_img2img == "None":
+            decoded_samples = torch.nn.functional.interpolate(decoded_samples, size=(self.height, self.width), mode="bilinear")
         else:
-            decoded_samples = decode_first_stage(self.sd_model, samples)
+            lowres_samples = torch.clamp((decoded_samples + 1.0) / 2.0, min=0.0, max=1.0)
 
-            if opts.upscaler_for_img2img is None or opts.upscaler_for_img2img == "None":
-                decoded_samples = torch.nn.functional.interpolate(decoded_samples, size=(self.height, self.width), mode="bilinear")
-            else:
-                lowres_samples = torch.clamp((decoded_samples + 1.0) / 2.0, min=0.0, max=1.0)
+            batch_images = []
+            for i, x_sample in enumerate(lowres_samples):
+                x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
+                x_sample = x_sample.astype(np.uint8)
+                image = Image.fromarray(x_sample)
+                image = images.resize_image(0, image, self.width, self.height)
+                image = np.array(image).astype(np.float32) / 255.0
+                image = np.moveaxis(image, 2, 0)
+                batch_images.append(image)
 
-                batch_images = []
-                for i, x_sample in enumerate(lowres_samples):
-                    x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
-                    x_sample = x_sample.astype(np.uint8)
-                    image = Image.fromarray(x_sample)
-                    image = images.resize_image(0, image, self.width, self.height)
-                    image = np.array(image).astype(np.float32) / 255.0
-                    image = np.moveaxis(image, 2, 0)
-                    batch_images.append(image)
+            decoded_samples = torch.from_numpy(np.array(batch_images))
+            decoded_samples = decoded_samples.to(shared.device)
+            decoded_samples = 2. * decoded_samples - 1.
 
-                decoded_samples = torch.from_numpy(np.array(batch_images))
-                decoded_samples = decoded_samples.to(shared.device)
-                decoded_samples = 2. * decoded_samples - 1.
-
-            samples = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(decoded_samples))
+        samples = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(decoded_samples))
 
         shared.state.nextjob()
 
