@@ -12,6 +12,8 @@
 # Commandline arguments for webui.py, for example: export COMMANDLINE_ARGS="--medvram --opt-split-attention"
 export COMMANDLINE_ARGS=""
 
+#export STABLE_DIFFUSION_WEBUI_REPO="https://github.com/AUTOMATIC1111/stable-diffusion-webui.git"
+
 # python3 executable
 #python_cmd="python3"
 
