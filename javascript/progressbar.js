@@ -42,13 +42,15 @@ function check_progressbar(id_part, id_progressbar, id_progressbar_span, id_skip
                         skip.style.display = "none"
                     }
                     interrupt.style.display = "none"
+			
+                    //disconnect observer once generation finished, so user can close selected image if they want
+                    if (galleryObservers[id_gallery]) {
+                        galleryObservers[id_gallery].disconnect();
+                        galleries[id_gallery] = null;
+                    }    
                 }
 
-				//disconnect observer once generation finished, so user can close selected image if they want
-				if (galleryObservers[id_gallery]) {
-					galleryObservers[id_gallery].disconnect();
-					galleries[id_gallery] = null;
-				}    
+
             }
 
             window.setTimeout(function() { requestMoreProgress(id_part, id_progressbar_span, id_skip, id_interrupt) }, 500)
