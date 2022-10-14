@@ -167,14 +167,6 @@ button{
     align-self: stretch !important;
 }
 
-#prompt, #negative_prompt{
-    border: none !important;
-}
-#prompt textarea, #negative_prompt textarea{
-    border: none !important;
-}
-
-
 #img2maskimg .h-60{
     height: 30rem;
 }
