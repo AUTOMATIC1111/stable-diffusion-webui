@@ -1,13 +1,13 @@
-name: webui
+name: webui2
 channels:
   - pytorch
   - defaults
 dependencies:
   - python=3.10.6
   - pip=22.2
-  # - cudatoolkit=11.3
-  # - pytorch=1.10.2
-  # - torchvision=0.11.3
+  - cudatoolkit
+  - pytorch=1.12.1
+  - torchvision=0.13.1
   # - numpy=1.22.3
   # - pip:
   #   - albumentations==1.1.0

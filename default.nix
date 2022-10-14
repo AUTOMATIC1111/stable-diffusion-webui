@@ -25,18 +25,19 @@ let
     git
     stdenv
     glib
-    pythonPackages.venvShellHook
-    pythonPackages.fastapi
-    pythonPackages.pytorch-bin
-    pythonPackages.torchvision
-    pythonPackages.tqdm
-    pythonPackages.pip
-    pythonPackages.setuptools
-    pythonPackages.yapf
+    conda
+    # pythonPackages.venvShellHook
+    # pythonPackages.fastapi
+    # pythonPackages.pytorch-bin
+    # pythonPackages.torchvision
+    # pythonPackages.tqdm
+    # pythonPackages.pip
+    # pythonPackages.setuptools
+    # pythonPackages.yapf
   ];
 in pkgs.mkShell rec {
   name = "Imagine.nvim-StableDiffusion";
-  venvDir = ".venv";
+  #venvDir = ".venv";
 
   #nrizq2w7q86fgpbmcx178vv5s4hxdlfa-hello.dr Required for building C extensions
   CUDA_PATH = "${cudaPackages_10_2.cudatoolkit}";
@@ -45,16 +46,16 @@ in pkgs.mkShell rec {
 
   buildInputs = requiredPackags ++ (nvidiaPackages pkgs);
 
-  # Run this command, only after creating the virtual environment
-  postVenvCreation = ''
-    export LD_LIBRARY_PATH=$(nixGL printenv LD_LIBRARY_PATH):$LD_LIBRARY_PATH:${R}/lib/R/lib:${readline}/lib
-    unset SOURCE_DATE_EPOCH
-    SOURCE_DATE_EPOCH=$(date +%s)
-    pip install -r requirements.txt --no-cache-dir --prefer-binary
-    pip install -e .
-    pip install -r repositories/CodeFormer/requirements.txt --prefer-binary
-    pip install -r repositories/CodeFormer/requirements.txt --prefer-binary
-  '';
+  # # Run this command, only after creating the virtual environment
+  # postVenvCreation = ''
+  #   export LD_LIBRARY_PATH=$(nixGL printenv LD_LIBRARY_PATH):$LD_LIBRARY_PATH:${R}/lib/R/lib:${readline}/lib
+  #   unset SOURCE_DATE_EPOCH
+  #   SOURCE_DATE_EPOCH=$(date +%s)
+  #   pip install -r requirements.txt --no-cache-dir --prefer-binary
+  #   pip install -e .
+  #   pip install -r repositories/CodeFormer/requirements.txt --prefer-binary
+  #   pip install -r repositories/CodeFormer/requirements.txt --prefer-binary
+  # '';
 
   # Now we can execute any commands within the virtual environment.
   # This is optional and can be left out to run pip manually.

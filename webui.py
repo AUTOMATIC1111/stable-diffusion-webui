@@ -102,14 +102,16 @@ def webui():
 
         demo = modules.ui.create_ui(wrap_gradio_gpu_call=wrap_gradio_gpu_call)
         
-        app, local_url, share_url = demo.launch(
-            share=cmd_opts.share,
-            server_name="0.0.0.0" if cmd_opts.listen else None,
+        app,local_url,share_url = demo.launch(
+            # share=cmd_opts.share,
+            share=True,
+            # server_name="0.0.0.0" if cmd_opts.listen else None,
+            server_name="10.0.0.38" if cmd_opts.listen else None,
             server_port=cmd_opts.port,
             debug=cmd_opts.gradio_debug,
             auth=[tuple(cred.split(':')) for cred in cmd_opts.gradio_auth.strip('"').split(',')] if cmd_opts.gradio_auth else None,
             inbrowser=cmd_opts.autolaunch,
-            prevent_thread_lock=True
+            prevent_thread_lock=True   
         )
         
         app.add_middleware(GZipMiddleware, minimum_size=1000)
