@@ -5,6 +5,7 @@ import os
 import sys
 import traceback
 import tqdm
+import csv
 
 import torch
 
@@ -14,6 +15,7 @@ import torch
 from torch import einsum
 from einops import rearrange, repeat
 import modules.textual_inversion.dataset
+from modules.textual_inversion import textual_inversion
 from modules.textual_inversion.learn_schedule import LearnRateScheduler
 
 
@@ -209,7 +211,7 @@ def train_hypernetwork(hypernetwork_name, learn_rate, data_root, log_directory, 
 
     shared.state.textinfo = f"Preparing dataset from {html.escape(data_root)}..."
     with torch.autocast("cuda"):
-        ds = modules.textual_inversion.dataset.PersonalizedBase(data_root=data_root, width=512, height=512, repeats=1, placeholder_token=hypernetwork_name, model=shared.sd_model, device=devices.device, template_file=template_file, include_cond=True)
+        ds = modules.textual_inversion.dataset.PersonalizedBase(data_root=data_root, width=512, height=512, repeats=shared.opts.training_image_repeats_per_epoch, placeholder_token=hypernetwork_name, model=shared.sd_model, device=devices.device, template_file=template_file, include_cond=True)
 
     if unload:
         shared.sd_model.cond_stage_model.to(devices.cpu)
@@ -261,6 +263,11 @@ def train_hypernetwork(hypernetwork_name, learn_rate, data_root, log_directory, 
         if hypernetwork.step > 0 and hypernetwork_dir is not None and hypernetwork.step % save_hypernetwork_every == 0:
             last_saved_file = os.path.join(hypernetwork_dir, f'{hypernetwork_name}-{hypernetwork.step}.pt')
             hypernetwork.save(last_saved_file)
+
+        textual_inversion.write_loss(log_directory, "hypernetwork_loss.csv", hypernetwork.step, len(ds), {
+            "loss": f"{losses.mean():.7f}",
+            "learn_rate": scheduler.learn_rate
+        })
 
         if hypernetwork.step > 0 and images_dir is not None and hypernetwork.step % create_image_every == 0:
             last_saved_image = os.path.join(images_dir, f'{hypernetwork_name}-{hypernetwork.step}.png')
