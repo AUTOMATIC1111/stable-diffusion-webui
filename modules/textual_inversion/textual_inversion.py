@@ -173,6 +173,32 @@ def create_embedding(name, num_vectors_per_token, init_text='*'):
     return fn
 
 
+def write_loss(log_directory, filename, step, epoch_len, values):
+    if shared.opts.training_write_csv_every == 0:
+        return
+
+    if step % shared.opts.training_write_csv_every != 0:
+        return
+
+    write_csv_header = False if os.path.exists(os.path.join(log_directory, filename)) else True
+
+    with open(os.path.join(log_directory, filename), "a+", newline='') as fout:
+        csv_writer = csv.DictWriter(fout, fieldnames=["step", "epoch", "epoch_step", *(values.keys())])
+
+        if write_csv_header:
+            csv_writer.writeheader()
+
+        epoch = step // epoch_len
+        epoch_step = step - epoch * epoch_len
+
+        csv_writer.writerow({
+            "step": step + 1,
+            "epoch": epoch + 1,
+            "epoch_step": epoch_step + 1,
+            **values,
+        })
+
+
 def train_embedding(embedding_name, learn_rate, data_root, log_directory, training_width, training_height, steps, create_image_every, save_embedding_every, template_file, save_image_with_stored_embedding, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height):
     assert embedding_name, 'embedding not selected'
 
@@ -257,20 +283,10 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
             last_saved_file = os.path.join(embedding_dir, f'{embedding_name}-{embedding.step}.pt')
             embedding.save(last_saved_file)
 
-        if write_csv_every > 0 and log_directory is not None and embedding.step % write_csv_every == 0:
-            write_csv_header = False if os.path.exists(os.path.join(log_directory, "textual_inversion_loss.csv")) else True
-
-            with open(os.path.join(log_directory, "textual_inversion_loss.csv"), "a+") as fout:
-
-                csv_writer = csv.DictWriter(fout, fieldnames=["epoch", "epoch_step", "loss", "learn_rate"])
-                
-                if write_csv_header:
-                    csv_writer.writeheader()
-
-                csv_writer.writerow({"epoch": epoch_num + 1, 
-                    "epoch_step": epoch_step - 1, 
-                    "loss": f"{losses.mean():.7f}",
-                    "learn_rate": scheduler.learn_rate})
+        write_loss(log_directory, "textual_inversion_loss.csv", embedding.step, len(ds), {
+            "loss": f"{losses.mean():.7f}",
+            "learn_rate": scheduler.learn_rate
+        })
 
         if embedding.step > 0 and images_dir is not None and embedding.step % create_image_every == 0:
             last_saved_image = os.path.join(images_dir, f'{embedding_name}-{embedding.step}.png')
