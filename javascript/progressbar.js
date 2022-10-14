@@ -71,7 +71,6 @@ function check_gallery(id_gallery){
             if (galleryButtons.length === 1 && !galleryBtnSelected) {
                 //automatically open when there is only 1 gallery btn, and was previously selected
                 galleryButtons[0].click();
-                console.log('clicked');
             }
         })
         galleryObservers[id_gallery].observe( gallery, { childList:true, subtree:false })
