@@ -13,7 +13,7 @@ __pycache__
 /ui-config.json
 /outputs
 /config.json
-/log/*
+/log/**/*
 /webui.settings.bat
 /embeddings
 /styles.csv
