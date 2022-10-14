@@ -14,7 +14,7 @@ titles = {
     "\u{1f3b2}\ufe0f": "Set seed to -1, which will cause a new random number to be used every time",
     "\u267b\ufe0f": "Reuse seed from last generation, mostly useful if it was randomed",
     "\u{1f3a8}": "Add a random artist to the prompt.",
-    "\u2199\ufe0f": "Read generation parameters from prompt into user interface.",
+    "\u2199\ufe0f": "Read generation parameters from prompt or last generation if prompt is empty into user interface.",
     "\u{1f4c2}": "Open images output directory",
 
     "Inpaint a part of image": "Draw a mask over an image, and the script will regenerate the masked area with content according to prompt",
@@ -35,6 +35,7 @@ titles = {
     "Denoising strength": "Determines how little respect the algorithm should have for image's content. At 0, nothing will change, and at 1 you'll get an unrelated image. With values below 1.0, processing will take less steps than the Sampling Steps slider specifies.",
     "Denoising strength change factor": "In loopback mode, on each loop the denoising strength is multiplied by this value. <1 means decreasing variety so your sequence will converge on a fixed picture. >1 means increasing variety so your sequence will become more and more chaotic.",
 
+    "Skip": "Stop processing current image and continue processing.",
     "Interrupt": "Stop processing images and return any results accumulated so far.",
     "Save": "Write image to a directory (default - log/images) and generation parameters into csv file.",
 
@@ -78,6 +79,16 @@ titles = {
     "Highres. fix": "Use a two step process to partially create an image at smaller resolution, upscale, and then improve details in it without changing composition",
     "Scale latent": "Uscale the image in latent space. Alternative is to produce the full image from latent representation, upscale that, and then move it back to latent space.",
 
+    "Eta noise seed delta": "If this values is non-zero, it will be added to seed and used to initialize RNG for noises when using samplers with Eta. You can use this to produce even more variation of images, or you can use this to match images of other software if you know what you are doing.",
+    "Do not add watermark to images": "If this option is enabled, watermark will not be added to created images. Warning: if you do not add watermark, you may be behaving in an unethical manner.",
+
+    "Filename word regex": "This regular expression will be used extract words from filename, and they will be joined using the option below into label text used for training. Leave empty to keep filename text as it is.",
+    "Filename join string": "This string will be used to join split words into a single line if the option above is enabled.",
+
+    "Quicksettings list": "List of setting names, separated by commas, for settings that should go to the quick access bar at the top, rather than the usual setting tab. See modules/shared.py for setting names. Requires restarting to apply.",
+
+    "Weighted Sum": "Result = A * (1 - M) + B * M",
+    "Add difference": "Result = A + (B - C) * (1 - M)",
 }
 
 
