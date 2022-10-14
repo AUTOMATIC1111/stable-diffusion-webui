@@ -43,7 +43,7 @@ function dropReplaceImage( imgWrap, files ) {
 window.document.addEventListener('dragover', e => {
     const target = e.composedPath()[0];
     const imgWrap = target.closest('[data-testid="image"]');
-    if ( !imgWrap ) {
+    if ( !imgWrap && target.placeholder != "Prompt") {
         return;
     }
     e.stopPropagation();
