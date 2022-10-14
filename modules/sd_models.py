@@ -134,11 +134,7 @@ def load_model_weights(model, checkpoint_info):
 
     print(f"Loading weights [{sd_model_hash}] from {checkpoint_file}")
 
-    if shared.cmd_opts.lowram:
-        print("Load to VRAM if GPU is available (low RAM)")
-        pl_sd = torch.load(checkpoint_file)
-    else:
-        pl_sd = torch.load(checkpoint_file, map_location="cpu")
+    pl_sd = torch.load(checkpoint_file, map_location=shared.weight_load_location)
 
     if "global_step" in pl_sd:
         print(f"Global Step: {pl_sd['global_step']}")
@@ -164,11 +160,7 @@ def load_model_weights(model, checkpoint_info):
     if os.path.exists(vae_file):
         print(f"Loading VAE weights from: {vae_file}")
 
-        if shared.cmd_opts.lowram:
-            print("Load to VRAM if GPU is available (low RAM)")
-            vae_ckpt = torch.load(vae_file)
-        else:
-            vae_ckpt = torch.load(vae_file, map_location="cpu")
+        vae_ckpt = torch.load(vae_file, map_location=shared.weight_load_location)
 
         vae_dict = {k: v for k, v in vae_ckpt["state_dict"].items() if k[0:4] != "loss"}
 
