@@ -177,7 +177,6 @@ axis_options = [
     AxisOption("Eta", float, apply_field("eta"), format_value_add_label, None),
     AxisOption("Clip skip", int, apply_clip_skip, format_value_add_label, None),
     AxisOption("Denoising", float, apply_field("denoising_strength"), format_value_add_label, None),
-    AxisOptionImg2Img("Denoising", float, apply_field("denoising_strength"), format_value_add_label, None),  # as it is now all AxisOptionImg2Img items must go after AxisOption ones
 ]
 
 
