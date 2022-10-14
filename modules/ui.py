@@ -78,6 +78,8 @@ reuse_symbol = '\u267b\ufe0f'  # ♻️
 art_symbol = '\U0001f3a8'  # 🎨
 paste_symbol = '\u2199\ufe0f'  # ↙
 folder_symbol = '\U0001f4c2'  # 📂
+refresh_symbol = '\U0001f504'  # 🔄
+
 
 def plaintext_to_html(text):
     text = "<p>" + "<br>\n".join([f"{html.escape(x)}" for x in text.split('\n')]) + "</p>"
@@ -538,10 +540,11 @@ def create_ui(wrap_gradio_gpu_call):
                     enable_hr = gr.Checkbox(label='Highres. fix', value=False)
 
                 with gr.Row(visible=False) as hr_options:
-                    scale_latent = gr.Checkbox(label='Scale latent', value=False)
+                    firstphase_width = gr.Slider(minimum=64, maximum=1024, step=64, label="First pass width", value=512)
+                    firstphase_height = gr.Slider(minimum=64, maximum=1024, step=64, label="First pass height", value=512)
                     denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.7)
 
-                with gr.Row():
+                with gr.Row(equal_height=True):
                     batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1)
                     batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1)
 
@@ -600,8 +603,9 @@ def create_ui(wrap_gradio_gpu_call):
                     height,
                     width,
                     enable_hr,
-                    scale_latent,
                     denoising_strength,
+                    firstphase_width,
+                    firstphase_height,
                 ] + custom_inputs,
                 outputs=[
                     txt2img_gallery,
@@ -666,6 +670,8 @@ def create_ui(wrap_gradio_gpu_call):
                 (denoising_strength, "Denoising strength"),
                 (enable_hr, lambda d: "Denoising strength" in d),
                 (hr_options, lambda d: gr.Row.update(visible="Denoising strength" in d)),
+                (firstphase_width, "First pass size-1"),
+                (firstphase_height, "First pass size-2"),
             ]
             modules.generation_parameters_copypaste.connect_paste(paste, txt2img_paste_fields, txt2img_prompt)
             token_button.click(fn=update_token_counter, inputs=[txt2img_prompt, steps], outputs=[token_counter])
@@ -1022,11 +1028,12 @@ def create_ui(wrap_gradio_gpu_call):
                 gr.HTML(value="<p>A merger of the two checkpoints will be generated in your <b>checkpoint</b> directory.</p>")
 
                 with gr.Row():
-                    primary_model_name = gr.Dropdown(modules.sd_models.checkpoint_tiles(), elem_id="modelmerger_primary_model_name", label="Primary Model Name")
-                    secondary_model_name = gr.Dropdown(modules.sd_models.checkpoint_tiles(), elem_id="modelmerger_secondary_model_name", label="Secondary Model Name")
+                    primary_model_name = gr.Dropdown(modules.sd_models.checkpoint_tiles(), elem_id="modelmerger_primary_model_name", label="Primary model (A)")
+                    secondary_model_name = gr.Dropdown(modules.sd_models.checkpoint_tiles(), elem_id="modelmerger_secondary_model_name", label="Secondary model (B)")
+                    tertiary_model_name = gr.Dropdown(modules.sd_models.checkpoint_tiles(), elem_id="modelmerger_tertiary_model_name", label="Tertiary model (C)")
                 custom_name = gr.Textbox(label="Custom Name (Optional)")
-                interp_amount = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Interpolation Amount', value=0.3)
-                interp_method = gr.Radio(choices=["Weighted Sum", "Sigmoid", "Inverse Sigmoid"], value="Weighted Sum", label="Interpolation Method")
+                interp_amount = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Interpolation amount (1 - M)', value=0.3)
+                interp_method = gr.Radio(choices=["Weighted Sum", "Sigmoid", "Inverse Sigmoid", "Add difference"], value="Weighted Sum", label="Interpolation Method")
                 save_as_half = gr.Checkbox(value=False, label="Save as float16")
                 modelmerger_merge = gr.Button(elem_id="modelmerger_merge", label="Merge", variant='primary')
 
@@ -1074,11 +1081,8 @@ def create_ui(wrap_gradio_gpu_call):
                     with gr.Row():
                         process_flip = gr.Checkbox(label='Create flipped copies')
                         process_split = gr.Checkbox(label='Split oversized images into two')
-                        process_caption = gr.Checkbox(label='Use BLIP caption as filename')
-                        if cmd_opts.deepdanbooru:
-                            process_caption_deepbooru = gr.Checkbox(label='Use deepbooru caption as filename')
-                        else:
-                            process_caption_deepbooru = gr.Checkbox(label='Use deepbooru caption as filename', visible=False)
+                        process_caption = gr.Checkbox(label='Use BLIP for caption')
+                        process_caption_deepbooru = gr.Checkbox(label='Use deepbooru for caption', visible=True if cmd_opts.deepdanbooru else False)
 
                     with gr.Row():
                         with gr.Column(scale=3):
@@ -1213,8 +1217,7 @@ def create_ui(wrap_gradio_gpu_call):
             outputs=[],
         )
 
-
-    def create_setting_component(key):
+    def create_setting_component(key, is_quicksettings=False):
         def fun():
             return opts.data[key] if key in opts.data else opts.data_labels[key].default
 
@@ -1234,7 +1237,34 @@ def create_ui(wrap_gradio_gpu_call):
         else:
             raise Exception(f'bad options item type: {str(t)} for key {key}')
 
-        return comp(label=info.label, value=fun, **(args or {}))
+        if info.refresh is not None:
+            if is_quicksettings:
+                res = comp(label=info.label, value=fun, **(args or {}))
+                refresh_button = gr.Button(value=refresh_symbol, elem_id="refresh_"+key)
+            else:
+                with gr.Row(variant="compact"):
+                    res = comp(label=info.label, value=fun, **(args or {}))
+                    refresh_button = gr.Button(value=refresh_symbol, elem_id="refresh_" + key)
+
+            def refresh():
+                info.refresh()
+                refreshed_args = info.component_args() if callable(info.component_args) else info.component_args
+
+                for k, v in refreshed_args.items():
+                    setattr(res, k, v)
+
+                return gr.update(**(refreshed_args or {}))
+
+            refresh_button.click(
+                fn=refresh,
+                inputs=[],
+                outputs=[res],
+            )
+        else:
+            res = comp(label=info.label, value=fun, **(args or {}))
+
+
+        return res
 
     components = []
     component_dict = {}
@@ -1308,6 +1338,9 @@ Requested path was: {f}
         settings_cols = 3
         items_per_col = int(len(opts.data_labels) * 0.9 / settings_cols)
 
+        quicksettings_names = [x.strip() for x in opts.quicksettings.split(",")]
+        quicksettings_names = set(x for x in quicksettings_names if x != 'quicksettings')
+
         quicksettings_list = []
 
         cols_displayed = 0
@@ -1332,7 +1365,7 @@ Requested path was: {f}
 
                     gr.HTML(elem_id="settings_header_text_{}".format(item.section[0]), value='<h1 class="gr-button-lg">{}</h1>'.format(item.section[1]))
 
-                if item.show_on_main_page:
+                if k in quicksettings_names:
                     quicksettings_list.append((i, k, item))
                     components.append(dummy_component)
                 else:
@@ -1341,17 +1374,17 @@ Requested path was: {f}
                     components.append(component)
                     items_displayed += 1
 
-        request_notifications = gr.Button(value='Request browser notifications', elem_id="request_notifications")
+        with gr.Row():
+            request_notifications = gr.Button(value='Request browser notifications', elem_id="request_notifications")
+            reload_script_bodies = gr.Button(value='Reload custom script bodies (No ui updates, No restart)', variant='secondary')
+            restart_gradio = gr.Button(value='Restart Gradio and Refresh components (Custom Scripts, ui.py, js and css only)', variant='primary')
+
         request_notifications.click(
             fn=lambda: None,
             inputs=[],
             outputs=[],
             _js='function(){}'
         )
-
-        with gr.Row():
-            reload_script_bodies = gr.Button(value='Reload custom script bodies (No ui updates, No restart)', variant='secondary')
-            restart_gradio = gr.Button(value='Restart Gradio and Refresh components (Custom Scripts, ui.py, js and css only)', variant='primary')
 
         def reload_scripts():
             modules.scripts.reload_script_body_only()
@@ -1366,7 +1399,6 @@ Requested path was: {f}
         def request_restart():
             shared.state.interrupt()
             settings_interface.gradio_ref.do_restart = True
-
 
         restart_gradio.click(
             fn=request_restart,
@@ -1402,12 +1434,12 @@ Requested path was: {f}
     with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion") as demo:
         with gr.Row(elem_id="quicksettings"):
             for i, k, item in quicksettings_list:
-                component = create_setting_component(k)
+                component = create_setting_component(k, is_quicksettings=True)
                 component_dict[k] = component
 
         settings_interface.gradio_ref = demo
 
-        with gr.Tabs() as tabs:
+        with gr.Tabs(elem_id="tabs") as tabs:
             for interface, label, ifid in interfaces:
                 with gr.TabItem(label, id=ifid, elem_id='tab_' + ifid):
                     interface.render()
@@ -1446,6 +1478,7 @@ Requested path was: {f}
             inputs=[
                 primary_model_name,
                 secondary_model_name,
+                tertiary_model_name,
                 interp_method,
                 interp_amount,
                 save_as_half,
@@ -1455,6 +1488,7 @@ Requested path was: {f}
                 submit_result,
                 primary_model_name,
                 secondary_model_name,
+                tertiary_model_name,
                 component_dict['sd_model_checkpoint'],
             ]
         )
