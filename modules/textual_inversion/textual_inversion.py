@@ -215,6 +215,7 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
 
     last_saved_file = "<none>"
     last_saved_image = "<none>"
+    embedding_yet_to_be_embedded = False
 
     ititial_step = embedding.step or 0
     if ititial_step > steps:
@@ -255,6 +256,7 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
         if embedding.step > 0 and embedding_dir is not None and embedding.step % save_embedding_every == 0:
             last_saved_file = os.path.join(embedding_dir, f'{embedding_name}-{embedding.step}.pt')
             embedding.save(last_saved_file)
+            embedding_yet_to_be_embedded = True
 
         if embedding.step > 0 and images_dir is not None and embedding.step % create_image_every == 0:
             last_saved_image = os.path.join(images_dir, f'{embedding_name}-{embedding.step}.png')
@@ -276,7 +278,7 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
 
             shared.state.current_image = image
 
-            if save_image_with_stored_embedding and os.path.exists(last_saved_file):
+            if save_image_with_stored_embedding and os.path.exists(last_saved_file) and embedding_yet_to_be_embedded:
 
                 last_saved_image_chunks = os.path.join(images_embeds_dir, f'{embedding_name}-{embedding.step}.png')
 
@@ -300,6 +302,7 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
                 captioned_image = insert_image_data_embed(captioned_image, data)
 
                 captioned_image.save(last_saved_image_chunks, "PNG", pnginfo=info)
+                embedding_yet_to_be_embedded = False
 
             image.save(last_saved_image)
 
