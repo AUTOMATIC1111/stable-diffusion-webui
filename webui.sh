@@ -64,7 +64,7 @@ printf "\n%s\n" "${delimiter}"
 if [[ $(id -u) -eq 0 ]] && [ "${ALLOW_RUN_AS_ROOT}" != "I_KNOW_WHAT_THIS_MEANS_AND_RUN_IT" ]
 then
     printf "\n%s\n" "${delimiter}"
-    printf "\e[1m\e[31mWARN: This script may not be launched as root, aborting...\e[0m"
+    printf "\e[1m\e[31mERROR: This script may not be launched as root, aborting...\e[0m"
     printf "\n%s\n" "${delimiter}"
     exit 1
 else
