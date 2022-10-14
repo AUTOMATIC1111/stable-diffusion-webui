@@ -1,4 +1,5 @@
 import datetime
+import io
 import math
 import os
 from collections import namedtuple
@@ -465,21 +466,20 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     return fullfn, txt_fullfn
 
 
-def image_data(image_path):
-    file, ext = os.path.splitext(image_path.name)
-    data = {}
-    if "png" in ext:
-        image = Image.open(image_path.name, "r")
-        print(f"Image data requested for {image_path.name} {image.format} of {type(image)}")
-        try:
-            data = image.text["parameters"]
-        except Exception as e:
-            print(f"Exception: {e}")
-            pass
-        print(f"Image data: {data}")
-    if "txt" in ext:
-        myfile = open(image_path.name, 'r')
-        data = myfile.read()
-        myfile.close()
+def image_data(data):
+    try:
+        image = Image.open(io.BytesIO(data))
+        textinfo = image.text["parameters"]
+        return textinfo, None
+    except Exception:
+        pass
 
-    return data, None
+    try:
+        text = data.decode('utf8')
+        assert len(text) < 10000
+        return text, None
+
+    except Exception:
+        pass
+
+    return '', None
