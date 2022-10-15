@@ -507,13 +507,19 @@ def create_toprow(is_img2img):
                 )
 
             with gr.Row():
-                with gr.Column(scale=1, elem_id="style_pos_col"):
-                    prompt_style = gr.Dropdown(label="Style 1", elem_id=f"{id_part}_style_index", choices=[k for k, v in shared.prompt_styles.styles.items()], value=next(iter(shared.prompt_styles.styles.keys())))
+                style_btn = gr.Button(value=checkbox_btn_show, elem_id=f"{id_part}_styles_btn")
+                with gr.Box(visible=False, elem_id="styles_checkboxgroup") as styles_container:
+                    styles_checkboxgroup = gr.CheckboxGroup(label="Styles", choices=[k for k, v in shared.prompt_styles.styles.items()])
 
-                with gr.Column(scale=1, elem_id="style_neg_col"):
-                    prompt_style2 = gr.Dropdown(label="Style 2", elem_id=f"{id_part}_style2_index", choices=[k for k, v in shared.prompt_styles.styles.items()], value=next(iter(shared.prompt_styles.styles.keys())))
+                def toggle_styles(btn_state):
+                    if btn_state == checkbox_btn_hide:
+                        return [checkbox_btn_show, gr.update(visible=False)]
+                    else:
+                        return [checkbox_btn_hide, gr.update(visible=True)]
+                    
+                style_btn.click(toggle_styles, inputs=[style_btn], outputs=[style_btn, styles_container])
 
-    return prompt, roll, prompt_style, negative_prompt, prompt_style2, submit, button_interrogate, button_deepbooru, prompt_style_apply, save_style, paste, token_counter, token_button
+    return prompt, roll, negative_prompt, styles_checkboxgroup, submit, button_interrogate, button_deepbooru, prompt_style_apply, save_style, paste, token_counter, token_button
 
 
 def setup_progressbar(progressbar, preview, id_part, textinfo=None):
