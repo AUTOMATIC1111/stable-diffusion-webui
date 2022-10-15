@@ -1654,6 +1654,25 @@ Requested path was: {f}
         modules.generation_parameters_copypaste.connect_paste(pnginfo_send_to_txt2img, txt2img_paste_fields + settings_paste_fields, generation_info, 'switch_to_txt2img')
         modules.generation_parameters_copypaste.connect_paste(pnginfo_send_to_img2img, img2img_paste_fields + settings_paste_fields, generation_info, 'switch_to_img2img_img2img')
 
+        def setup_load_last_cb(iface, paste_fields, tabname):
+            def load_last_prompt():
+                prompt = ""
+                recent_image = img_his.get_most_recent_image(dir_name=opts.outdir_txt2img_samples, tabname=tabname)
+                if recent_image is not None:
+                    prompt_file = os.path.splitext(recent_image)[0] + ".txt"
+                    if os.path.exists(prompt_file):
+                        print(f"Loading last prompt from {prompt_file} into {tabname}")
+                        with open(prompt_file, "r", encoding="utf8") as file:
+                            prompt = file.read()
+                return modules.generation_parameters_copypaste.paste_parameters(prompt, paste_fields)
+
+            iface.load(load_last_prompt, inputs=None, outputs=[x[0] for x in paste_fields])
+
+        if opts.restore_last_prompt_into_txt2img:
+            setup_load_last_cb(txt2img_interface, txt2img_paste_fields + settings_paste_fields, "txt2img")
+        if opts.restore_last_prompt_into_img2img:
+            setup_load_last_cb(img2img_interface, img2img_paste_fields + settings_paste_fields, "img2img")
+
     ui_config_file = cmd_opts.ui_config_file
     ui_settings = {}
     settings_count = len(ui_settings)

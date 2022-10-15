@@ -22,13 +22,14 @@ def traverse_all_files(output_dir, image_list, curr_dir=None):
     return image_list
 
 
-def get_recent_images(dir_name, page_index, step, image_index, tabname):
+def get_recent_images(dir_name, page_index, step, image_index, tabname, num=None):
     page_index = int(page_index)
     f_list = os.listdir(dir_name)
     image_list = []
     image_list = traverse_all_files(dir_name, image_list)
     image_list = sorted(image_list, key=lambda file: -os.path.getctime(os.path.join(dir_name, file)))
-    num = 48 if tabname != "extras" else 12
+    if num is None:
+        num = 48 if tabname != "extras" else 12
     max_page_index = len(image_list) // num + 1
     page_index = max_page_index if page_index == -1 else page_index + step
     page_index = 1 if page_index < 1 else page_index
@@ -63,6 +64,11 @@ def next_page_click(dir_name, page_index, image_index, tabname):
 
 def page_index_change(dir_name, page_index, image_index, tabname):
     return get_recent_images(dir_name, page_index, 0, image_index, tabname)
+
+
+def get_most_recent_image(dir_name, tabname):
+    _, _, _, current_file, _, _ = get_recent_images(dir_name, 1, 0, 0, tabname, num=1)
+    return current_file
 
 
 def show_image_info(num, image_path, filenames):

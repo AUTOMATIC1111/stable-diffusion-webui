@@ -61,40 +61,39 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
 
     return res
 
+def paste_parameters(prompt, paste_fields):
+    if not prompt and not shared.cmd_opts.hide_ui_dir_config:
+        filename = os.path.join(script_path, "params.txt")
+        if os.path.exists(filename):
+            with open(filename, "r", encoding="utf8") as file:
+                prompt = file.read()
+
+    params = parse_generation_parameters(prompt)
+    res = []
+
+    for output, key in paste_fields:
+        if callable(key):
+            v = key(params)
+        else:
+            v = params.get(key, None)
+
+        if v is None:
+            res.append(gr.update())
+        elif isinstance(v, type_of_gr_update):
+            res.append(v)
+        else:
+            try:
+                valtype = type(output.value)
+                val = valtype(v)
+                res.append(gr.update(value=val))
+            except Exception:
+                res.append(gr.update())
+
+    return res
 
 def connect_paste(button, paste_fields, input_comp, js=None):
-    def paste_func(prompt):
-        if not prompt and not shared.cmd_opts.hide_ui_dir_config:
-            filename = os.path.join(script_path, "params.txt")
-            if os.path.exists(filename):
-                with open(filename, "r", encoding="utf8") as file:
-                    prompt = file.read()
-
-        params = parse_generation_parameters(prompt)
-        res = []
-
-        for output, key in paste_fields:
-            if callable(key):
-                v = key(params)
-            else:
-                v = params.get(key, None)
-
-            if v is None:
-                res.append(gr.update())
-            elif isinstance(v, type_of_gr_update):
-                res.append(v)
-            else:
-                try:
-                    valtype = type(output.value)
-                    val = valtype(v)
-                    res.append(gr.update(value=val))
-                except Exception:
-                    res.append(gr.update())
-
-        return res
-
     button.click(
-        fn=paste_func,
+        fn=lambda prompt: paste_parameters(prompt, paste_fields),
         _js=js,
         inputs=[input_comp],
         outputs=[x[0] for x in paste_fields],

@@ -284,6 +284,8 @@ options_templates.update(options_section(('ui', "User interface"), {
     "js_modal_lightbox": OptionInfo(True, "Enable full page image viewer"),
     "js_modal_lightbox_initially_zoomed": OptionInfo(True, "Show images zoomed in by default in full page image viewer"),
     "show_progress_in_title": OptionInfo(True, "Show generation progress in window title."),
+    "restore_last_prompt_into_txt2img": OptionInfo(True, "Load the last generated prompt into txt2img on startup."),
+    "restore_last_prompt_into_img2img": OptionInfo(False, "Load the last generated prompt into img2img on startup."),
 }))
 
 options_templates.update(options_section(('sampler-params', "Sampler parameters"), {
