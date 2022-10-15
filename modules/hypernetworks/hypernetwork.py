@@ -8,7 +8,7 @@ import tqdm
 import csv
 
 import torch
-
+from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts, ExponentialLR
 from ldm.util import default
 from modules import devices, shared, processing, sd_models
 import torch
@@ -19,30 +19,58 @@ from modules.textual_inversion import textual_inversion
 from modules.textual_inversion.learn_schedule import LearnRateScheduler
 
 
+def parse_multipliers(dim, state_dict):
+    i = 0
+    res = [1]
+    while (key := "linear.{}.weight".format(i)) in state_dict:
+        weight = state_dict[key]
+        res.append(len(weight) // dim)
+        i += 1
+    return res
+
+
 class HypernetworkModule(torch.nn.Module):
     multiplier = 1.0
 
-    def __init__(self, dim, state_dict=None):
+    def __init__(self, dim, state_dict=None, multipliers = None):
         super().__init__()
-
-        self.linear1 = torch.nn.Linear(dim, dim * 2)
-        self.linear2 = torch.nn.Linear(dim * 2, dim)
-
-        if state_dict is not None:
-            self.load_state_dict(state_dict, strict=True)
+        if (state_dict is None or 'linear.0.weight' not in state_dict) and multipliers is None:
+            multipliers = (1, 2, 1)
         else:
+            if multipliers is not None:
+                assert multipliers[0] == 1, "Multiplier Sequence should start with size 1!"
+                assert multipliers[-1] == 1, "Multiplier Sequence should end with size 1!"
+            else:
+                multipliers = parse_multipliers(dim, state_dict)
 
-            self.linear1.weight.data.normal_(mean=0.0, std=0.01)
-            self.linear1.bias.data.zero_()
-            self.linear2.weight.data.normal_(mean=0.0, std=0.01)
-            self.linear2.bias.data.zero_()
-
+        linears = [torch.nn.Linear(int(dim * multipliers[i]), int(dim * multipliers[i+1])) for i in range(len(multipliers) - 1)]
+        self.linear = torch.nn.Sequential(*linears)
+        if state_dict is not None:
+            try:
+                self.load_state_dict(state_dict)
+            except RuntimeError:
+                self.try_load_previous(state_dict)
+        else:
+            for layer in self.linear:
+                layer.weight.data.normal_(mean = 0.0, std = 0.01)
+                layer.bias.data.zero_()
         self.to(devices.device)
 
+    def try_load_previous(self, state_dict):
+        states = self.state_dict()
+        states['linear.0.bias'].copy_(state_dict['linear1.bias'])
+        states['linear.0.weight'].copy_(state_dict['linear1.weight'])
+        states['linear.1.bias'].copy_(state_dict['linear2.bias'])
+        states['linear.1.weight'].copy_(state_dict['linear2.weight'])
+
     def forward(self, x):
-        return x + (self.linear2(self.linear1(x))) * self.multiplier
+        return x + self.linear(x) * self.multiplier
 
-
+    def trainables(self):
+        res = []
+        for layer in self.linear:
+            res += [layer.weight, layer.bias]
+        return res
 def apply_strength(value=None):
     HypernetworkModule.multiplier = value if value is not None else shared.opts.sd_hypernetwork_strength
 
@@ -60,7 +88,7 @@ class Hypernetwork:
         self.sd_checkpoint_name = None
 
         for size in enable_sizes or []:
-            self.layers[size] = (HypernetworkModule(size), HypernetworkModule(size))
+            self.layers[size] = (HypernetworkModule(size, multipliers=[1, 2, 1]), HypernetworkModule(size, multipliers=[1, 2, 1]))
 
     def weights(self):
         res = []
@@ -68,8 +96,7 @@ class Hypernetwork:
         for k, layers in self.layers.items():
             for layer in layers:
                 layer.train()
-                res += [layer.linear1.weight, layer.linear1.bias, layer.linear2.weight, layer.linear2.bias]
-
+                res += layer.trainables()
         return res
 
     def save(self, filename):
@@ -181,7 +208,6 @@ def attention_CrossAttention_forward(self, x, context=None, mask=None):
     out = rearrange(out, '(b h) n d -> b n (h d)', h=h)
     return self.to_out(out)
 
-
 def stack_conds(conds):
     if len(conds) == 1:
         return torch.stack(conds)
@@ -226,7 +252,7 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
     shared.state.textinfo = f"Preparing dataset from {html.escape(data_root)}..."
     with torch.autocast("cuda"):
         ds = modules.textual_inversion.dataset.PersonalizedBase(data_root=data_root, width=512, height=512, repeats=shared.opts.training_image_repeats_per_epoch, placeholder_token=hypernetwork_name, model=shared.sd_model, device=devices.device, template_file=template_file, include_cond=True, batch_size=batch_size)
-
+        assert ds.length > 1, "Dataset should contain more than 1 images"
     if unload:
         shared.sd_model.cond_stage_model.to(devices.cpu)
         shared.sd_model.first_stage_model.to(devices.cpu)
@@ -244,16 +270,16 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
     ititial_step = hypernetwork.step or 0
     if ititial_step > steps:
         return hypernetwork, filename
-
-    scheduler = LearnRateScheduler(learn_rate, steps, ititial_step)
-    optimizer = torch.optim.AdamW(weights, lr=scheduler.learn_rate)
-
+    if type(learn_rate) is not float:
+        learn_rate = float(learn_rate)
+    optimizer = torch.optim.AdamW(weights, lr=learn_rate)
+    scheduler = CosineAnnealingWarmRestarts(optimizer, 20, 2, 1e-9)
+    scheduler2 = ExponentialLR(optimizer, gamma = 0.01 ** (1 / steps))
     pbar = tqdm.tqdm(enumerate(ds), total=steps - ititial_step)
     for i, entries in pbar:
         hypernetwork.step = i + ititial_step
 
-        scheduler.apply(optimizer, hypernetwork.step)
-        if scheduler.finished:
+        if hypernetwork.step >= steps:
             break
 
         if shared.state.interrupted:
@@ -261,7 +287,7 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
 
         with torch.autocast("cuda"):
             c = stack_conds([entry.cond for entry in entries]).to(devices.device)
-#            c = torch.vstack([entry.cond for entry in entries]).to(devices.device)
+            #            c = torch.vstack([entry.cond for entry in entries]).to(devices.device)
             x = torch.stack([entry.latent for entry in entries]).to(devices.device)
             loss = shared.sd_model(x, c)[0]
             del x
@@ -272,6 +298,8 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+            scheduler.step()
+            scheduler2.step()
         mean_loss = losses.mean()
         if torch.isnan(mean_loss):
             raise RuntimeError("Loss diverged.")
@@ -283,7 +311,7 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
 
         textual_inversion.write_loss(log_directory, "hypernetwork_loss.csv", hypernetwork.step, len(ds), {
             "loss": f"{mean_loss:.7f}",
-            "learn_rate": scheduler.learn_rate
+            "learn_rate": f"{scheduler.get_last_lr()[-1]:.7f}"
         })
 
         if hypernetwork.step > 0 and images_dir is not None and hypernetwork.step % create_image_every == 0:
