@@ -70,7 +70,7 @@ def generate_imgs_embd(name, folder, batch_size):
         torch.cuda.empty_cache()
         res = f"""
         Done generating embedding for {name}!
-        Hypernetwork saved to {html.escape(path)}
+        Aesthetic embedding saved to {html.escape(path)}
         """
         shared.update_aesthetic_embeddings()
         return gr.Dropdown(sorted(aesthetic_embeddings.keys()), label="Imgs embedding",
