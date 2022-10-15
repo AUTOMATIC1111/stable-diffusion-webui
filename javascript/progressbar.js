@@ -74,6 +74,9 @@ function check_gallery(id_gallery){
             if (prevSelectedIndex !== -1 && galleryButtons.length>prevSelectedIndex && !galleryBtnSelected) {
                 //automatically re-open previously selected index (if exists)
                 galleryButtons[prevSelectedIndex].click();
+		setTimeout(function (){
+                    showGalleryImage()
+                },100)
             }
         })
         galleryObservers[id_gallery].observe( gallery, { childList:true, subtree:false })
