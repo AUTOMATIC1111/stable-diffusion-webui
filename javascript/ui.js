@@ -33,27 +33,27 @@ function args_to_array(args){
 }
 
 function switch_to_txt2img(){
-    gradioApp().querySelectorAll('button')[0].click();
+    gradioApp().querySelector('#tabs').querySelectorAll('button')[0].click();
 
     return args_to_array(arguments);
 }
 
 function switch_to_img2img_img2img(){
-    gradioApp().querySelectorAll('button')[1].click();
+    gradioApp().querySelector('#tabs').querySelectorAll('button')[1].click();
     gradioApp().getElementById('mode_img2img').querySelectorAll('button')[0].click();
 
     return args_to_array(arguments);
 }
 
 function switch_to_img2img_inpaint(){
-    gradioApp().querySelectorAll('button')[1].click();
+    gradioApp().querySelector('#tabs').querySelectorAll('button')[1].click();
     gradioApp().getElementById('mode_img2img').querySelectorAll('button')[1].click();
 
     return args_to_array(arguments);
 }
 
 function switch_to_extras(){
-    gradioApp().querySelectorAll('button')[2].click();
+    gradioApp().querySelector('#tabs').querySelectorAll('button')[2].click();
 
     return args_to_array(arguments);
 }
@@ -101,7 +101,8 @@ function create_tab_index_args(tabId, args){
 }
 
 function get_extras_tab_index(){
-    return create_tab_index_args('mode_extras', arguments)
+    const [,,...args] = [...arguments]
+    return [get_tab_index('mode_extras'), get_tab_index('extras_resize_mode'), ...args]
 }
 
 function create_submit_args(args){
