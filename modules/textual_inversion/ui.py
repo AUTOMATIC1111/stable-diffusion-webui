@@ -61,9 +61,10 @@ def create_embedding(name, initialization_text, nvpt):
     filename = modules.textual_inversion.textual_inversion.create_embedding(name, nvpt, init_text=initialization_text)
 
     sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings()
-    save_pts(filename)
-    return gr.Dropdown.update(choices=sorted(sd_hijack.model_hijack.embedding_db.word_embeddings.keys())), f"Created: {filename}", ""
 
+    a = gr.Dropdown.update(choices=sorted(sd_hijack.model_hijack.embedding_db.word_embeddings.keys())), f"Created: {filename}", ""
+    save_pts(filename)
+    return a
 
 def preprocess(*args):
     modules.textual_inversion.preprocess.preprocess(*args)
