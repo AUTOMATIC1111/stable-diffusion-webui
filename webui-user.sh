@@ -36,19 +36,19 @@ export COMMANDLINE_ARGS=""
 # Example: "git+https://github.com/TencentARC/GFPGAN.git@8d2447a2d918f8eba5a4a01463fd48e45126a379"
 #export K_DIFFUSION_PACKAGE=""
 
-#export GFPGAN_PACKAGE="git+https://github.com/TencentARC/GFPGAN.git@8d2447a2d918f8eba5a4a01463fd48e45126a379"
-#export DEEPDANBOORU_PACKAGE="git+https://github.com/KichangKim/DeepDanbooru.git@edf73df4cdaeea2cf00e9ac08bd8a9026b7a7b26"
-#export CLIP_PACKAGE="git+https://github.com/openai/CLIP.git@d50d76daa670286dd6cacf3bcd80b5e4823fc8e1"
+#export GFPGAN_PACKAGE=""
+#export DEEPDANBOORU_PACKAGE=""
+#export CLIP_PACKAGE=""
 
-#export XFORMERS_WINDOWS_PACKAGE="https://github.com/C43H66N12O12S2/stable-diffusion-webui/releases/download/c/xformers-0.0.14.dev0-cp310-cp310-win_amd64.whl"
+#export XFORMERS_WINDOWS_PACKAGE=""
 
 # Fixed git repos
 # Example: "https://github.com/C43H66N12O12S2/stable-diffusion-webui/releases/download/c/xformers-0.0.14.dev0-cp310-cp310-win_amd64.whl"
-#export STABLE_DIFFUSION_REPO="https://github.com/CompVis/stable-diffusion.git"
-#export TAMING_REANSFORMERS_REPO="https://github.com/CompVis/taming-transformers.git"
-#export K_DIFFUSION_REPO="https://github.com/crowsonkb/k-diffusion.git"
-#export CODEFORMET_REPO="https://github.com/sczhou/CodeFormer.git"
-#export BLIP_REPO="https://github.com/salesforce/BLIP.git"
+#export STABLE_DIFFUSION_REPO=""
+#export TAMING_REANSFORMERS_REPO=""
+#export K_DIFFUSION_REPO=""
+#export CODEFORMET_REPO=""
+#export BLIP_REPO=""
 
 # Fixed git commits
 # Example: "69ae4b35e0a0f6ee1af8bb9a5d0016ccb27e36dc"
