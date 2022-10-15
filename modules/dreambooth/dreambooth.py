@@ -143,25 +143,17 @@ class DreamBooth:
             except Exception as f:
                 print(f"Exception importing ADAM: {f}")
                 self.use_8bit_adam = False
-            if use_cpu:
-                try:
-                    torch.distributed.init_process_group("mpi", init_method=None,
-                                                         timeout=datetime.timedelta(seconds=1800),
-                                                         world_size=- 1, rank=- 1, store=None, group_name='',
-                                                         pg_options=None)
-                    import deepspeed
-                    ds = accelerate.utils.dataclasses.DeepSpeedPlugin()
-                    conf_dict = {
-                        "zero_optimization.offload_optimizer.device": "cpu",
-                        "zero_optimization.offload_param.device": "cpu",
-                        "zero_optimization.stage": 2
-                    }
-                    ds.hf_ds_config = accelerate.utils.deepspeed.HfDeepSpeedConfig(conf_dict)
-                    has_deepspeed = True
-                    use_cpu = False
-                except Exception as e:
-                    print(f"Exception importing deepspeed: {e}")
-                    pass
+            try:
+                torch.distributed.init_process_group("mpi", init_method=None,
+                                                     timeout=datetime.timedelta(seconds=1800),
+                                                     world_size=- 1, rank=- 1, store=None, group_name='',
+                                                     pg_options=None)
+                import deepspeed
+                ds = accelerate.utils.dataclasses.DeepSpeedPlugin()
+                has_deepspeed = True
+            except Exception as e:
+                print(f"Exception importing deepspeed: {e}")
+                pass
                 print(f"Creating accelerator. Using cpu: {use_cpu}. Using deepspeed: {has_deepspeed}")
         if has_deepspeed:
             accelerator = Accelerator(
@@ -421,40 +413,42 @@ class DreamBooth:
                 optimizer.zero_grad()
 
                 # Only save a preview image if we're not training with the CPU
-                if not global_step % self.save_img_every and use_cpu is not True:
-                    prompt = self.instance_prompt
-                    last_saved_image = os.path.join(self.output_dir, f'{self.instance_prompt}_{global_step}.png')
-                    if accelerator.is_main_process:
-                        print(f"Saving pretrained model data at step {global_step}.")
-                        pipeline = StableDiffusionPipeline.from_pretrained(
-                            self.pretrained_model_path,
-                            unet=accelerator.unwrap_model(unet),
-                            use_auth_token=False
-                        )
-                        pipeline = pipeline.to("cuda")
-                        pipeline.save_pretrained(self.output_dir)
-                        with autocast("cuda"):
-                            image = pipeline(prompt, num_inference_steps=50, guidance_scale=7.5).images[0]
-                            shared.state.current_image = image
-                            image.save(last_saved_image)
-                    pass
-
-                # Check to make sure this doesn't throw OOM if training on CPU
-                if not global_step % self.save_data_every and global_step != 0:
-                    if accelerator.is_main_process:
-                        print(f"Saving pretrained model data at step {global_step}.")
-                        pipeline = StableDiffusionPipeline.from_pretrained(
-                            self.pretrained_model_path,
-                            unet=accelerator.unwrap_model(unet),
-                            use_auth_token=False,
-                        )
-                        if use_cpu:
-                            pipeline.save_pretrained(self.output_dir)
-                        else:
+                if self.save_img_every:
+                    if not global_step % self.save_img_every and use_cpu is not True:
+                        prompt = self.instance_prompt
+                        last_saved_image = os.path.join(self.output_dir, f'{self.instance_prompt}_{global_step}.png')
+                        if accelerator.is_main_process:
+                            print(f"Saving pretrained model data at step {global_step}.")
+                            pipeline = StableDiffusionPipeline.from_pretrained(
+                                self.pretrained_model_path,
+                                unet=accelerator.unwrap_model(unet),
+                                use_auth_token=False
+                            )
                             pipeline = pipeline.to("cuda")
+                            pipeline.save_pretrained(self.output_dir)
                             with autocast("cuda"):
+                                image = pipeline(prompt, num_inference_steps=50, guidance_scale=7.5).images[0]
+                                shared.state.current_image = image
+                                image.save(last_saved_image)
+                        pass
+
+                if self.save_data_every:
+                    # Check to make sure this doesn't throw OOM if training on CPU
+                    if not global_step % self.save_data_every and global_step != 0:
+                        if accelerator.is_main_process:
+                            print(f"Saving pretrained model data at step {global_step}.")
+                            pipeline = StableDiffusionPipeline.from_pretrained(
+                                self.pretrained_model_path,
+                                unet=accelerator.unwrap_model(unet),
+                                use_auth_token=False,
+                            )
+                            if use_cpu:
                                 pipeline.save_pretrained(self.output_dir)
-                    pass
+                            else:
+                                pipeline = pipeline.to("cuda")
+                                with autocast("cuda"):
+                                    pipeline.save_pretrained(self.output_dir)
+                        pass
 
                 progress_bar.update(1)
                 global_step += 1
