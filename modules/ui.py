@@ -1717,7 +1717,9 @@ Requested path was: {f}
             saved_value = ui_settings.get(key, None)
             if saved_value is None:
                 ui_settings[key] = getattr(obj, field)
-            elif condition is None or condition(saved_value):
+            elif condition and not condition(saved_value):
+                print(f'Warning: Bad ui setting value: {key}: {saved_value}; Default value "{getattr(obj, field)}" will be used instead.')
+            else:
                 setattr(obj, field, saved_value)
 
         if type(x) in [gr.Slider, gr.Radio, gr.Checkbox, gr.Textbox, gr.Number] and x.visible:
