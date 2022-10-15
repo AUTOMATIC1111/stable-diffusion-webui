@@ -41,6 +41,7 @@ from modules import prompt_parser
 from modules.images import save_image
 import modules.textual_inversion.ui
 import modules.hypernetworks.ui
+import modules.aesthetic_clip
 
 # this is a fix for Windows users. Without it, javascript files will be served with text/html content-type and the browser will not show any UI
 mimetypes.init()
@@ -449,7 +450,7 @@ def create_toprow(is_img2img):
                     with gr.Row():
                         negative_prompt = gr.Textbox(label="Negative prompt", elem_id="negative_prompt", show_label=False, placeholder="Negative prompt", lines=2)
                 with gr.Column(scale=1, elem_id="roll_col"):
-                    sh = gr.Button(elem_id="sh", visible=True)                           
+                    sh = gr.Button(elem_id="sh", visible=True)
 
                 with gr.Column(scale=1, elem_id="style_neg_col"):
                     prompt_style2 = gr.Dropdown(label="Style 2", elem_id=f"{id_part}_style2_index", choices=[k for k, v in shared.prompt_styles.styles.items()], value=next(iter(shared.prompt_styles.styles.keys())), visible=len(shared.prompt_styles.styles) > 1)
@@ -536,9 +537,13 @@ def create_ui(wrap_gradio_gpu_call):
                     height = gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512)
 
                 with gr.Group():
-                    aesthetic_lr = gr.Textbox(label='Learning rate', placeholder="Learning rate", value="0.005")
-                    aesthetic_weight = gr.Slider(minimum=0, maximum=1, step=0.01, label="Aesthetic weight", value=0.7)
-                    aesthetic_steps = gr.Slider(minimum=0, maximum=50, step=1, label="Aesthetic steps", value=50)
+                    aesthetic_lr = gr.Textbox(label='Learning rate', placeholder="Learning rate", value="0.0001")
+                    aesthetic_weight = gr.Slider(minimum=0, maximum=1, step=0.01, label="Aesthetic weight", value=0.9)
+                    aesthetic_steps = gr.Slider(minimum=0, maximum=256, step=1, label="Aesthetic steps", value=5)
+                    with gr.Row():
+                        aesthetic_imgs_text = gr.Textbox(label='Aesthetic text for imgs', placeholder="This text is used to rotate the feature space of the imgs embs", value="")
+                        aesthetic_slerp_angle = gr.Slider(label='Slerp angle',minimum=0, maximum=1, step=0.01, value=0.1)
+                        aesthetic_text_negative = gr.Checkbox(label="Is negative text", value=False)
 
                     aesthetic_imgs = gr.Dropdown(sorted(aesthetic_embeddings.keys()), label="Imgs embedding", value=sorted(aesthetic_embeddings.keys())[0] if len(aesthetic_embeddings) > 0 else None)
                     aesthetic_slerp = gr.Checkbox(label="Slerp interpolation", value=False)
@@ -617,7 +622,10 @@ def create_ui(wrap_gradio_gpu_call):
                            aesthetic_weight,
                            aesthetic_steps,
                            aesthetic_imgs,
-                           aesthetic_slerp
+                           aesthetic_slerp,
+                           aesthetic_imgs_text,
+                           aesthetic_slerp_angle,
+                           aesthetic_text_negative
                        ] + custom_inputs,
                 outputs=[
                     txt2img_gallery,
@@ -721,7 +729,7 @@ def create_ui(wrap_gradio_gpu_call):
 
                         with gr.Row():
                             inpaint_full_res = gr.Checkbox(label='Inpaint at full resolution', value=False)
-                            inpaint_full_res_padding = gr.Slider(label='Inpaint at full resolution padding, pixels', minimum=0, maximum=256, step=4, value=32)
+                            inpaint_full_res_padding = gr.Slider(label='Inpaint at full resolution padding, pixels', minimum=0, maximum=1024, step=4, value=32)
 
                     with gr.TabItem('Batch img2img', id='batch'):
                         hidden = '<br>Disabled when launched with --hide-ui-dir-config.' if shared.cmd_opts.hide_ui_dir_config else ''
@@ -1071,6 +1079,17 @@ def create_ui(wrap_gradio_gpu_call):
                         with gr.Column():
                             create_embedding = gr.Button(value="Create embedding", variant='primary')
 
+                with gr.Tab(label="Create images embedding"):
+                    new_embedding_name_ae = gr.Textbox(label="Name")
+                    process_src_ae = gr.Textbox(label='Source directory')
+                    batch_ae = gr.Slider(minimum=1, maximum=1024, step=1, label="Batch size", value=256)
+                    with gr.Row():
+                        with gr.Column(scale=3):
+                            gr.HTML(value="")
+
+                        with gr.Column():
+                            create_embedding_ae = gr.Button(value="Create images embedding", variant='primary')
+
                 with gr.Tab(label="Create hypernetwork"):
                     new_hypernetwork_name = gr.Textbox(label="Name")
                     new_hypernetwork_sizes = gr.CheckboxGroup(label="Modules", value=["768", "320", "640", "1280"], choices=["768", "320", "640", "1280"])
@@ -1139,11 +1158,25 @@ def create_ui(wrap_gradio_gpu_call):
             fn=modules.textual_inversion.ui.create_embedding,
             inputs=[
                 new_embedding_name,
-                initialization_text,
+                process_src,
                 nvpt,
             ],
             outputs=[
                 train_embedding_name,
+                ti_output,
+                ti_outcome,
+            ]
+        )
+
+        create_embedding_ae.click(
+            fn=modules.aesthetic_clip.generate_imgs_embd,
+            inputs=[
+                new_embedding_name_ae,
+                process_src_ae,
+                batch_ae
+            ],
+            outputs=[
+                aesthetic_imgs,
                 ti_output,
                 ti_outcome,
             ]

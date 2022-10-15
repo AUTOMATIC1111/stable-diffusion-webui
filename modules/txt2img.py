@@ -13,7 +13,11 @@ def txt2img(prompt: str, negative_prompt: str, prompt_style: str, prompt_style2:
             aesthetic_lr=0,
             aesthetic_weight=0, aesthetic_steps=0,
             aesthetic_imgs=None,
-            aesthetic_slerp=False, *args):
+            aesthetic_slerp=False,
+            aesthetic_imgs_text="",
+            aesthetic_slerp_angle=0.15,
+            aesthetic_text_negative=False,
+            *args):
     p = StableDiffusionProcessingTxt2Img(
         sd_model=shared.sd_model,
         outpath_samples=opts.outdir_samples or opts.outdir_txt2img_samples,
@@ -47,7 +51,9 @@ def txt2img(prompt: str, negative_prompt: str, prompt_style: str, prompt_style2:
     processed = modules.scripts.scripts_txt2img.run(p, *args)
 
     if processed is None:
-        processed = process_images(p, aesthetic_lr, aesthetic_weight, aesthetic_steps, aesthetic_imgs, aesthetic_slerp)
+        processed = process_images(p, aesthetic_lr, aesthetic_weight, aesthetic_steps, aesthetic_imgs, aesthetic_slerp,aesthetic_imgs_text,
+                           aesthetic_slerp_angle,
+                           aesthetic_text_negative)
 
     shared.total_tqdm.clear()
 
