@@ -482,8 +482,8 @@ def create_toprow(is_img2img):
                 else:
                     interrogate = None
                     deepbooru = None
-                prompt_style_apply = gr.Button('button.apply_style', elem_id="style_apply")
-                save_style = gr.Button('Create style', elem_id="style_create")
+                prompt_style_apply = gr.Button(tr('button.apply_style'), elem_id="style_apply")
+                save_style = gr.Button(tr('button.create_style'), elem_id="style_create")
 
     return prompt, roll, prompt_style, negative_prompt, prompt_style2, submit, interrogate, deepbooru, prompt_style_apply, save_style, paste, token_counter, token_button
 
