@@ -5,6 +5,7 @@ import os
 import sys
 import traceback
 import tqdm
+import csv
 
 import torch
 
@@ -14,6 +15,7 @@ import torch
 from torch import einsum
 from einops import rearrange, repeat
 import modules.textual_inversion.dataset
+from modules.textual_inversion import textual_inversion
 from modules.textual_inversion.learn_schedule import LearnRateScheduler
 
 
@@ -180,7 +182,21 @@ def attention_CrossAttention_forward(self, x, context=None, mask=None):
     return self.to_out(out)
 
 
-def train_hypernetwork(hypernetwork_name, learn_rate, data_root, log_directory, steps, create_image_every, save_hypernetwork_every, template_file, preview_image_prompt):
+def stack_conds(conds):
+    if len(conds) == 1:
+        return torch.stack(conds)
+
+    # same as in reconstruct_multicond_batch
+    token_count = max([x.shape[0] for x in conds])
+    for i in range(len(conds)):
+        if conds[i].shape[0] != token_count:
+            last_vector = conds[i][-1:]
+            last_vector_repeated = last_vector.repeat([token_count - conds[i].shape[0], 1])
+            conds[i] = torch.vstack([conds[i], last_vector_repeated])
+
+    return torch.stack(conds)
+
+def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log_directory, steps, create_image_every, save_hypernetwork_every, template_file, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height):
     assert hypernetwork_name, 'hypernetwork not selected'
 
     path = shared.hypernetworks.get(hypernetwork_name, None)
@@ -209,7 +225,7 @@ def train_hypernetwork(hypernetwork_name, learn_rate, data_root, log_directory, 
 
     shared.state.textinfo = f"Preparing dataset from {html.escape(data_root)}..."
     with torch.autocast("cuda"):
-        ds = modules.textual_inversion.dataset.PersonalizedBase(data_root=data_root, width=512, height=512, repeats=1, placeholder_token=hypernetwork_name, model=shared.sd_model, device=devices.device, template_file=template_file, include_cond=True)
+        ds = modules.textual_inversion.dataset.PersonalizedBase(data_root=data_root, width=512, height=512, repeats=shared.opts.training_image_repeats_per_epoch, placeholder_token=hypernetwork_name, model=shared.sd_model, device=devices.device, template_file=template_file, include_cond=True, batch_size=batch_size)
 
     if unload:
         shared.sd_model.cond_stage_model.to(devices.cpu)
@@ -233,7 +249,7 @@ def train_hypernetwork(hypernetwork_name, learn_rate, data_root, log_directory, 
     optimizer = torch.optim.AdamW(weights, lr=scheduler.learn_rate)
 
     pbar = tqdm.tqdm(enumerate(ds), total=steps - ititial_step)
-    for i, entry in pbar:
+    for i, entries in pbar:
         hypernetwork.step = i + ititial_step
 
         scheduler.apply(optimizer, hypernetwork.step)
@@ -244,11 +260,12 @@ def train_hypernetwork(hypernetwork_name, learn_rate, data_root, log_directory, 
             break
 
         with torch.autocast("cuda"):
-            cond = entry.cond.to(devices.device)
-            x = entry.latent.to(devices.device)
-            loss = shared.sd_model(x.unsqueeze(0), cond)[0]
+            c = stack_conds([entry.cond for entry in entries]).to(devices.device)
+#            c = torch.vstack([entry.cond for entry in entries]).to(devices.device)
+            x = torch.stack([entry.latent for entry in entries]).to(devices.device)
+            loss = shared.sd_model(x, c)[0]
             del x
-            del cond
+            del c
 
             losses[hypernetwork.step % losses.shape[0]] = loss.item()
 
@@ -262,10 +279,13 @@ def train_hypernetwork(hypernetwork_name, learn_rate, data_root, log_directory, 
             last_saved_file = os.path.join(hypernetwork_dir, f'{hypernetwork_name}-{hypernetwork.step}.pt')
             hypernetwork.save(last_saved_file)
 
+        textual_inversion.write_loss(log_directory, "hypernetwork_loss.csv", hypernetwork.step, len(ds), {
+            "loss": f"{losses.mean():.7f}",
+            "learn_rate": scheduler.learn_rate
+        })
+
         if hypernetwork.step > 0 and images_dir is not None and hypernetwork.step % create_image_every == 0:
             last_saved_image = os.path.join(images_dir, f'{hypernetwork_name}-{hypernetwork.step}.png')
-
-            preview_text = entry.cond_text if preview_image_prompt == "" else preview_image_prompt
 
             optimizer.zero_grad()
             shared.sd_model.cond_stage_model.to(devices.device)
@@ -273,11 +293,24 @@ def train_hypernetwork(hypernetwork_name, learn_rate, data_root, log_directory, 
 
             p = processing.StableDiffusionProcessingTxt2Img(
                 sd_model=shared.sd_model,
-                prompt=preview_text,
-                steps=20,
                 do_not_save_grid=True,
                 do_not_save_samples=True,
             )
+
+            if preview_from_txt2img:
+                p.prompt = preview_prompt
+                p.negative_prompt = preview_negative_prompt
+                p.steps = preview_steps
+                p.sampler_index = preview_sampler_index
+                p.cfg_scale = preview_cfg_scale
+                p.seed = preview_seed
+                p.width = preview_width
+                p.height = preview_height
+            else:
+                p.prompt = entries[0].cond_text
+                p.steps = 20
+
+            preview_text = p.prompt
 
             processed = processing.process_images(p)
             image = processed.images[0] if len(processed.images)>0 else None
@@ -297,7 +330,7 @@ def train_hypernetwork(hypernetwork_name, learn_rate, data_root, log_directory, 
 <p>
 Loss: {losses.mean():.7f}<br/>
 Step: {hypernetwork.step}<br/>
-Last prompt: {html.escape(entry.cond_text)}<br/>
+Last prompt: {html.escape(entries[0].cond_text)}<br/>
 Last saved embedding: {html.escape(last_saved_file)}<br/>
 Last saved image: {html.escape(last_saved_image)}<br/>
 </p>
