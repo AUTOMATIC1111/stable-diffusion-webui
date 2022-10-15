@@ -127,6 +127,12 @@ Displays autocompletion hints for tags from "image booru" boards such as Danboor
 
 Also supports completion for [wildcards](Custom-Scripts#wildcards)
 
+
+## Deforum
+https://github.com/deforum-art/deforum-for-automatic1111-webui
+The official port of Deforum, an extensive script for 2D and 3D animations, supporting keyframable sequences, dynamic math parameters (even inside the prompts), dynamic masking, depth estimation and warping.
+
+
 ## Saving steps of the sampling process
 
 This script will save steps of the sampling process to a directory.
