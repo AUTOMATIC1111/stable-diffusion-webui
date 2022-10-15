@@ -6,11 +6,17 @@ import torch
 import tqdm
 import html
 import datetime
+import csv
 
+from PIL import Image, PngImagePlugin
 
 from modules import shared, devices, sd_hijack, processing, sd_models
 import modules.textual_inversion.dataset
+from modules.textual_inversion.learn_schedule import LearnRateScheduler
 
+from modules.textual_inversion.image_embedding import (embedding_to_b64, embedding_from_b64,
+                                                       insert_image_data_embed, extract_image_data_embed,
+                                                       caption_image_overlay)
 
 class Embedding:
     def __init__(self, vec, name, step=None):
@@ -80,7 +86,18 @@ class EmbeddingDatabase:
         def process_file(path, filename):
             name = os.path.splitext(filename)[0]
 
-            data = torch.load(path, map_location="cpu")
+            data = []
+
+            if filename.upper().endswith('.PNG'):
+                embed_image = Image.open(path)
+                if 'sd-ti-embedding' in embed_image.text:
+                    data = embedding_from_b64(embed_image.text['sd-ti-embedding'])
+                    name = data.get('name', name)
+                else:
+                    data = extract_image_data_embed(embed_image)
+                    name = data.get('name', name)
+            else:
+                data = torch.load(path, map_location="cpu")
 
             # textual inversion embeddings
             if 'string_to_param' in data:
@@ -156,7 +173,33 @@ def create_embedding(name, num_vectors_per_token, init_text='*'):
     return fn
 
 
-def train_embedding(embedding_name, learn_rate, data_root, log_directory, steps, create_image_every, save_embedding_every, template_file):
+def write_loss(log_directory, filename, step, epoch_len, values):
+    if shared.opts.training_write_csv_every == 0:
+        return
+
+    if step % shared.opts.training_write_csv_every != 0:
+        return
+
+    write_csv_header = False if os.path.exists(os.path.join(log_directory, filename)) else True
+
+    with open(os.path.join(log_directory, filename), "a+", newline='') as fout:
+        csv_writer = csv.DictWriter(fout, fieldnames=["step", "epoch", "epoch_step", *(values.keys())])
+
+        if write_csv_header:
+            csv_writer.writeheader()
+
+        epoch = step // epoch_len
+        epoch_step = step - epoch * epoch_len
+
+        csv_writer.writerow({
+            "step": step + 1,
+            "epoch": epoch + 1,
+            "epoch_step": epoch_step + 1,
+            **values,
+        })
+
+
+def train_embedding(embedding_name, learn_rate, data_root, log_directory, training_width, training_height, steps, create_image_every, save_embedding_every, template_file, save_image_with_stored_embedding, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height):
     assert embedding_name, 'embedding not selected'
 
     shared.state.textinfo = "Initializing textual inversion training..."
@@ -178,18 +221,22 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, steps,
     else:
         images_dir = None
 
+    if create_image_every > 0 and save_image_with_stored_embedding:
+        images_embeds_dir = os.path.join(log_directory, "image_embeddings")
+        os.makedirs(images_embeds_dir, exist_ok=True)
+    else:
+        images_embeds_dir = None
+        
     cond_model = shared.sd_model.cond_stage_model
 
     shared.state.textinfo = f"Preparing dataset from {html.escape(data_root)}..."
     with torch.autocast("cuda"):
-        ds = modules.textual_inversion.dataset.PersonalizedBase(data_root=data_root, size=512, placeholder_token=embedding_name, model=shared.sd_model, device=devices.device, template_file=template_file)
+        ds = modules.textual_inversion.dataset.PersonalizedBase(data_root=data_root, width=training_width, height=training_height, repeats=shared.opts.training_image_repeats_per_epoch, placeholder_token=embedding_name, model=shared.sd_model, device=devices.device, template_file=template_file)
 
     hijack = sd_hijack.model_hijack
 
     embedding = hijack.embedding_db.word_embeddings[embedding_name]
     embedding.vec.requires_grad = True
-
-    optimizer = torch.optim.AdamW([embedding.vec], lr=learn_rate)
 
     losses = torch.zeros((32,))
 
@@ -200,20 +247,24 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, steps,
     if ititial_step > steps:
         return embedding, filename
 
+    scheduler = LearnRateScheduler(learn_rate, steps, ititial_step)
+    optimizer = torch.optim.AdamW([embedding.vec], lr=scheduler.learn_rate)
+
     pbar = tqdm.tqdm(enumerate(ds), total=steps-ititial_step)
-    for i, (x, text) in pbar:
+    for i, entry in pbar:
         embedding.step = i + ititial_step
 
-        if embedding.step > steps:
+        scheduler.apply(optimizer, embedding.step)
+        if scheduler.finished:
             break
 
         if shared.state.interrupted:
             break
 
         with torch.autocast("cuda"):
-            c = cond_model([text])
+            c = cond_model([entry.cond_text])
 
-            x = x.to(devices.device)
+            x = entry.latent.to(devices.device)
             loss = shared.sd_model(x.unsqueeze(0), c)[0]
             del x
 
@@ -223,30 +274,73 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, steps,
             loss.backward()
             optimizer.step()
 
-        pbar.set_description(f"loss: {losses.mean():.7f}")
+        epoch_num = embedding.step // len(ds)
+        epoch_step = embedding.step - (epoch_num * len(ds)) + 1
+
+        pbar.set_description(f"[Epoch {epoch_num}: {epoch_step}/{len(ds)}]loss: {losses.mean():.7f}")
 
         if embedding.step > 0 and embedding_dir is not None and embedding.step % save_embedding_every == 0:
             last_saved_file = os.path.join(embedding_dir, f'{embedding_name}-{embedding.step}.pt')
             embedding.save(last_saved_file)
+
+        write_loss(log_directory, "textual_inversion_loss.csv", embedding.step, len(ds), {
+            "loss": f"{losses.mean():.7f}",
+            "learn_rate": scheduler.learn_rate
+        })
 
         if embedding.step > 0 and images_dir is not None and embedding.step % create_image_every == 0:
             last_saved_image = os.path.join(images_dir, f'{embedding_name}-{embedding.step}.png')
 
             p = processing.StableDiffusionProcessingTxt2Img(
                 sd_model=shared.sd_model,
-                prompt=text,
-                steps=20,
                 do_not_save_grid=True,
                 do_not_save_samples=True,
             )
+
+            if preview_from_txt2img:
+                p.prompt = preview_prompt
+                p.negative_prompt = preview_negative_prompt
+                p.steps = preview_steps
+                p.sampler_index = preview_sampler_index
+                p.cfg_scale = preview_cfg_scale
+                p.seed = preview_seed
+                p.width = preview_width
+                p.height = preview_height
+            else:
+                p.prompt = entry.cond_text
+                p.steps = 20
+                p.width = training_width
+                p.height = training_height
+
+            preview_text = p.prompt
 
             processed = processing.process_images(p)
             image = processed.images[0]
 
             shared.state.current_image = image
+
+            if save_image_with_stored_embedding and os.path.exists(last_saved_file):
+
+                last_saved_image_chunks = os.path.join(images_embeds_dir, f'{embedding_name}-{embedding.step}.png')
+
+                info = PngImagePlugin.PngInfo()
+                data = torch.load(last_saved_file)
+                info.add_text("sd-ti-embedding", embedding_to_b64(data))
+
+                title = "<{}>".format(data.get('name', '???'))
+                checkpoint = sd_models.select_checkpoint()
+                footer_left = checkpoint.model_name
+                footer_mid = '[{}]'.format(checkpoint.hash)
+                footer_right = '{}'.format(embedding.step)
+
+                captioned_image = caption_image_overlay(image, title, footer_left, footer_mid, footer_right)
+                captioned_image = insert_image_data_embed(captioned_image, data)
+
+                captioned_image.save(last_saved_image_chunks, "PNG", pnginfo=info)
+
             image.save(last_saved_image)
 
-            last_saved_image += f", prompt: {text}"
+            last_saved_image += f", prompt: {preview_text}"
 
         shared.state.job_no = embedding.step
 
@@ -254,7 +348,7 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, steps,
 <p>
 Loss: {losses.mean():.7f}<br/>
 Step: {embedding.step}<br/>
-Last prompt: {html.escape(text)}<br/>
+Last prompt: {html.escape(entry.cond_text)}<br/>
 Last saved embedding: {html.escape(last_saved_file)}<br/>
 Last saved image: {html.escape(last_saved_image)}<br/>
 </p>
@@ -268,4 +362,3 @@ Last saved image: {html.escape(last_saved_image)}<br/>
     embedding.save(filename)
 
     return embedding, filename
-
