@@ -163,6 +163,7 @@ class Script(QObject):
             filter_nsfw=self.cfg("filter_nsfw", bool),
             color_correct=self.cfg("color_correct", bool),
             do_exact_steps=self.cfg("do_exact_steps", bool),
+            include_grid=self.cfg("include_grid", bool),
         )
         return params
 
@@ -174,6 +175,7 @@ class Script(QObject):
                 if not self.cfg("txt2img_seed", str).strip() == ""
                 else -1
             )
+            params.update(self.get_common_params())
             params.update(
                 prompt=self.fix_prompt(self.cfg("txt2img_prompt", str)),
                 negative_prompt=self.fix_prompt(
@@ -186,7 +188,6 @@ class Script(QObject):
                 highres_fix=self.cfg("txt2img_highres", bool),
                 denoising_strength=self.cfg("txt2img_denoising_strength", float),
             )
-            params.update(self.get_common_params())
 
         return self.post(self.cfg("base_url", str) + "/txt2img", params)
 
@@ -198,6 +199,7 @@ class Script(QObject):
                 if not self.cfg("img2img_seed", str).strip() == ""
                 else -1
             )
+            params.update(self.get_common_params())
             params.update(
                 prompt=self.fix_prompt(self.cfg("img2img_prompt", str)),
                 negative_prompt=self.fix_prompt(
@@ -209,7 +211,6 @@ class Script(QObject):
                 denoising_strength=self.cfg("img2img_denoising_strength", float),
                 seed=seed,
             )
-            params.update(self.get_common_params())
 
         return self.post(self.cfg("base_url", str) + "/img2img", params)
 
@@ -224,6 +225,7 @@ class Script(QObject):
             fill = self.cfg("inpaint_fill_list", "QStringList").index(
                 self.cfg("inpaint_fill", str)
             )
+            params.update(self.get_common_params())
             params.update(
                 prompt=self.fix_prompt(self.cfg("inpaint_prompt", str)),
                 negative_prompt=self.fix_prompt(
@@ -239,8 +241,8 @@ class Script(QObject):
                 inpainting_fill=fill,
                 inpaint_full_res=self.cfg("inpaint_full_res", bool),
                 inpaint_full_res_padding=self.cfg("inpaint_full_res_padding", int),
+                include_grid=False,  # it is never useful for inpaint mode
             )
-            params.update(self.get_common_params())
 
         return self.post(self.cfg("base_url", str) + "/img2img", params)
 

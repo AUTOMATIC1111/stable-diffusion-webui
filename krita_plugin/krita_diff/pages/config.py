@@ -28,6 +28,7 @@ class ConfigTabWidget(QWidget):
         self.del_temp_files = QCheckBox("Auto delete temporary image files")
         self.fix_aspect_ratio = QCheckBox("Fix aspect ratio for selections")
         self.only_full_img_tiling = QCheckBox("Only allow tiling with no selection")
+        self.include_grid = QCheckBox("Include grid for txt2img and img2img")
 
         # webUI/backend settings
         self.filter_nsfw = QCheckBox("Filter NSFW content")
@@ -64,6 +65,7 @@ class ConfigTabWidget(QWidget):
         layout.addWidget(self.del_temp_files)
         layout.addWidget(self.fix_aspect_ratio)
         layout.addWidget(self.only_full_img_tiling)
+        layout.addWidget(self.include_grid)
 
         layout.addWidget(QLabel("<em>Backend/webUI settings:</em>"))
         layout.addWidget(self.filter_nsfw)
@@ -86,6 +88,7 @@ class ConfigTabWidget(QWidget):
         self.del_temp_files.setChecked(script.cfg("delete_temp_files", bool))
         self.fix_aspect_ratio.setChecked(script.cfg("fix_aspect_ratio", bool))
         self.only_full_img_tiling.setChecked(script.cfg("only_full_img_tiling", bool))
+        self.include_grid.setChecked(script.cfg("include_grid", bool))
         self.filter_nsfw.setChecked(script.cfg("filter_nsfw", bool))
         self.color_correct.setChecked(script.cfg("color_correct", bool))
         self.do_exact_steps.setChecked(script.cfg("do_exact_steps", bool))
@@ -108,6 +111,7 @@ class ConfigTabWidget(QWidget):
         self.only_full_img_tiling.toggled.connect(
             partial(script.set_cfg, "only_full_img_tiling")
         )
+        self.include_grid.toggled.connect(partial(script.set_cfg, "include_grid"))
         self.filter_nsfw.toggled.connect(partial(script.set_cfg, "filter_nsfw"))
         self.color_correct.toggled.connect(partial(script.set_cfg, "color_correct"))
         self.do_exact_steps.toggled.connect(partial(script.set_cfg, "do_exact_steps"))

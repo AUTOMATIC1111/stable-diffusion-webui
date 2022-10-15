@@ -42,6 +42,7 @@ class Defaults:
     face_restorer_model_list: List[str] = field(default_factory=lambda: [ERROR_MSG])
     face_restorer_model: str = "None"
     codeformer_weight: float = 0.5
+    include_grid: bool = False
 
     txt2img_prompt: str = ""
     txt2img_negative_prompt: str = ""

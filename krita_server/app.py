@@ -110,6 +110,9 @@ async def f_txt2img(req: Txt2ImgRequest):
         0,  # selects which script to use. 0 to not run any.
     )
 
+    if not req.include_grid:
+        output_images = output_images[1:]
+
     resized_images = [
         modules.images.resize_image(0, image, req.orig_width, req.orig_height)
         for image in output_images
@@ -203,6 +206,9 @@ async def f_img2img(req: Img2ImgRequest):
         # *args below
         0,  # selects which script to use. 0 to not run any.
     )
+
+    if not req.include_grid:
+        output_images = output_images[1:]
 
     resized_images = [
         modules.images.resize_image(0, image, orig_width, orig_height)

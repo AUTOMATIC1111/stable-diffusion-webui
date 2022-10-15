@@ -68,6 +68,9 @@ class GenerationOptions(BaseModel):
     filter_nsfw: bool = False
     """filter NSFW content."""
 
+    include_grid: bool = False
+    """Whether to include the image grid in the results sent to Krita"""
+
 
 class SamplerParamOptions(BaseModel):
     # TODO: More conveniently expose config options for samplers/explain them.
