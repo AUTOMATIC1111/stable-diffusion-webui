@@ -67,12 +67,13 @@ function check_gallery(id_gallery){
         if(galleryObservers[id_gallery]){
             galleryObservers[id_gallery].disconnect();
         }
+        let prevSelectedIndex = selected_gallery_index();
         galleryObservers[id_gallery] = new MutationObserver(function (){
             let galleryButtons = gradioApp().querySelectorAll('#'+id_gallery+' .gallery-item')
             let galleryBtnSelected = gradioApp().querySelector('#'+id_gallery+' .gallery-item.\\!ring-2')
-            if (galleryButtons.length === 1 && !galleryBtnSelected) {
-                //automatically open when there is only 1 gallery btn, and was previously selected
-                galleryButtons[0].click();
+            if (prevSelectedIndex !== -1 && galleryButtons.length>prevSelectedIndex && !galleryBtnSelected) {
+                //automatically re-open previously selected index (if exists)
+                galleryButtons[prevSelectedIndex].click();
             }
         })
         galleryObservers[id_gallery].observe( gallery, { childList:true, subtree:false })
