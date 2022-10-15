@@ -91,6 +91,14 @@ def plaintext_to_html(text):
 
 
 def image_from_url_text(filedata):
+    if type(filedata) == dict and filedata["is_file"]:
+        filename = filedata["name"]
+        tempdir = os.path.normpath(tempfile.gettempdir())
+        normfn = os.path.normpath(filename)
+        assert normfn.startswith(tempdir), 'trying to open image file not in temporary directory'
+
+        return Image.open(filename)
+
     if type(filedata) == list:
         if len(filedata) == 0:
             return None
