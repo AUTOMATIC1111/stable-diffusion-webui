@@ -28,6 +28,44 @@ class Script(scripts.Script):
         checkbox_txt.change(fn=lambda x: [gr.File.update(visible = not x), gr.TextArea.update(visible = x)], inputs=[checkbox_txt], outputs=[file, prompt_txt])
         return [checkbox_txt, file, prompt_txt]
 
+    def process_string_tag(self, tag):
+        return tag[1:-2]
+
+    def process_int_tag(self, tag):
+        return int(tag)
+
+    def process_float_tag(self, tag):
+        return float(tag)
+
+    def process_boolean_tag(self, tag):
+        return True if (tag == "true") else False
+
+    prompt_tags = {
+        "sd_model": None,
+        "outpath_samples": process_string_tag,
+        "outpath_grids": process_string_tag,
+        "prompt_for_display": process_string_tag,
+        "prompt": process_string_tag,
+        "negative_prompt": process_string_tag,
+        "styles": process_string_tag,
+        "seed": process_int_tag,
+        "subseed_strength": process_float_tag,
+        "subseed": process_int_tag,
+        "seed_resize_from_h": process_int_tag,
+        "seed_resize_from_w": process_int_tag,
+        "sampler_index": process_int_tag,
+        "batch_size": process_int_tag,
+        "n_iter": process_int_tag,
+        "steps": process_int_tag,
+        "cfg_scale": process_float_tag,
+        "width": process_int_tag,
+        "height": process_int_tag,
+        "restore_faces": process_boolean_tag,
+        "tiling": process_boolean_tag,
+        "do_not_save_samples": process_boolean_tag,
+        "do_not_save_grid": process_boolean_tag
+    }
+
     def on_show(self, checkbox_txt, file, prompt_txt):
         return [ gr.Checkbox.update(visible = True), gr.File.update(visible = not checkbox_txt), gr.TextArea.update(visible = checkbox_txt) ]
 
@@ -41,6 +79,7 @@ class Script(scripts.Script):
         img_count = len(lines) * p.n_iter
         batch_count = math.ceil(img_count / p.batch_size)
         loop_count = math.ceil(batch_count / p.n_iter)
+        # These numbers no longer accurately reflect the total images and number of batches
         print(f"Will process {img_count} images in {batch_count} batches.")
 
         p.do_not_save_grid = True
@@ -50,7 +89,25 @@ class Script(scripts.Script):
         images = []
         for loop_no in range(loop_count):
             state.job = f"{loop_no + 1} out of {loop_count}"
-            p.prompt = lines[loop_no*p.batch_size:(loop_no+1)*p.batch_size] * p.n_iter
+            # The following line may need revising to remove batch_size references
+            current_line = lines[loop_no*p.batch_size:(loop_no+1)*p.batch_size] * p.n_iter
+
+            # If the current line has no tags, parse the whole line as a prompt, else parse each tag
+            if(current_line[0][:2] != "--"):
+                p.prompt = current_line
+            else:
+                tokenized_line = current_line[0].split("--")
+
+                for tag in tokenized_line:
+                    tag_split = tag.split(" ", 1)
+                    if(tag_split[0] != ''):
+                        value_func = self.prompt_tags.get(tag_split[0], None)
+                        if(value_func != None):
+                            value = value_func(self, tag_split[1])
+                            setattr(p, tag_split[0], value)
+                        else:
+                            print(f"Unknown option \"{tag_split}\"")
+
             proc = process_images(p)
             images += proc.images
 
