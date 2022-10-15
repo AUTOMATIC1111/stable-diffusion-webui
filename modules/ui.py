@@ -1744,7 +1744,7 @@ Requested path was: {f}
         # Since there are many dropdowns that shouldn't be saved,
         # we only mark dropdowns that should be saved.
         if type(x) == gr.Dropdown and getattr(x, 'save_to_config', False):
-            apply_field(x, 'value')
+            apply_field(x, 'value', lambda val: val in x.choices)
 
     visit(txt2img_interface, loadsave, "txt2img")
     visit(img2img_interface, loadsave, "img2img")
