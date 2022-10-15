@@ -58,6 +58,10 @@ async def read_item():
     }
 
 
+# TODO: Filter out/prevent the grid images from ever being added for inpaint mode
+# make it togglable for img2img & txt2img
+
+
 @app.post("/txt2img")
 async def f_txt2img(req: Txt2ImgRequest):
     """Post request for Txt2Img.
@@ -99,8 +103,9 @@ async def f_txt2img(req: Txt2ImgRequest):
         height,  # height
         width,  # width
         req.highres_fix,  # enable_hr: high res fix
-        req.upscale_latent,  # scale_latent
         req.denoising_strength,  # denoising_strength: only applicable if high res fix in use
+        req.firstphase_width,  # firstphase_width
+        req.firstphase_height,  # firstphase_height (yes its inconsistently width/height first)
         # *args below
         0,  # selects which script to use. 0 to not run any.
     )
