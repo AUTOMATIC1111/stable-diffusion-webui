@@ -6,6 +6,7 @@ import torch
 import tqdm
 import html
 import datetime
+import csv
 
 from PIL import Image, PngImagePlugin
 
@@ -172,7 +173,33 @@ def create_embedding(name, num_vectors_per_token, init_text='*'):
     return fn
 
 
-def train_embedding(embedding_name, learn_rate, data_root, log_directory, training_width, training_height, steps, create_image_every, save_embedding_every, template_file, save_image_with_stored_embedding, preview_image_prompt):
+def write_loss(log_directory, filename, step, epoch_len, values):
+    if shared.opts.training_write_csv_every == 0:
+        return
+
+    if step % shared.opts.training_write_csv_every != 0:
+        return
+
+    write_csv_header = False if os.path.exists(os.path.join(log_directory, filename)) else True
+
+    with open(os.path.join(log_directory, filename), "a+", newline='') as fout:
+        csv_writer = csv.DictWriter(fout, fieldnames=["step", "epoch", "epoch_step", *(values.keys())])
+
+        if write_csv_header:
+            csv_writer.writeheader()
+
+        epoch = step // epoch_len
+        epoch_step = step - epoch * epoch_len
+
+        csv_writer.writerow({
+            "step": step + 1,
+            "epoch": epoch + 1,
+            "epoch_step": epoch_step + 1,
+            **values,
+        })
+
+
+def train_embedding(embedding_name, learn_rate, data_root, log_directory, training_width, training_height, steps, create_image_every, save_embedding_every, template_file, save_image_with_stored_embedding, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height):
     assert embedding_name, 'embedding not selected'
 
     shared.state.textinfo = "Initializing textual inversion training..."
@@ -256,20 +283,36 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
             last_saved_file = os.path.join(embedding_dir, f'{embedding_name}-{embedding.step}.pt')
             embedding.save(last_saved_file)
 
+        write_loss(log_directory, "textual_inversion_loss.csv", embedding.step, len(ds), {
+            "loss": f"{losses.mean():.7f}",
+            "learn_rate": scheduler.learn_rate
+        })
+
         if embedding.step > 0 and images_dir is not None and embedding.step % create_image_every == 0:
             last_saved_image = os.path.join(images_dir, f'{embedding_name}-{embedding.step}.png')
 
-            preview_text = entry.cond_text if preview_image_prompt == "" else preview_image_prompt
-
             p = processing.StableDiffusionProcessingTxt2Img(
                 sd_model=shared.sd_model,
-                prompt=preview_text,
-                steps=20,
-                height=training_height,
-                width=training_width,
                 do_not_save_grid=True,
                 do_not_save_samples=True,
             )
+
+            if preview_from_txt2img:
+                p.prompt = preview_prompt
+                p.negative_prompt = preview_negative_prompt
+                p.steps = preview_steps
+                p.sampler_index = preview_sampler_index
+                p.cfg_scale = preview_cfg_scale
+                p.seed = preview_seed
+                p.width = preview_width
+                p.height = preview_height
+            else:
+                p.prompt = entry.cond_text
+                p.steps = 20
+                p.width = training_width
+                p.height = training_height
+
+            preview_text = p.prompt
 
             processed = processing.process_images(p)
             image = processed.images[0]

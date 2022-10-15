@@ -24,6 +24,10 @@ def image_grid(imgs, batch_size=1, rows=None):
             rows = opts.n_rows
         elif opts.n_rows == 0:
             rows = batch_size
+        elif opts.grid_prevent_empty_spots:
+            rows = math.floor(math.sqrt(len(imgs)))
+            while len(imgs) % rows != 0:
+                rows -= 1
         else:
             rows = math.sqrt(len(imgs))
             rows = round(rows)
