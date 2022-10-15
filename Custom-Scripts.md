@@ -130,6 +130,7 @@ Also supports completion for [wildcards](Custom-Scripts#wildcards)
 
 ## Deforum
 https://github.com/deforum-art/deforum-for-automatic1111-webui
+
 The official port of Deforum, an extensive script for 2D and 3D animations, supporting keyframable sequences, dynamic math parameters (even inside the prompts), dynamic masking, depth estimation and warping.
 
 
