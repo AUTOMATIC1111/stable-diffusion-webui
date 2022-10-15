@@ -104,7 +104,7 @@ def webui():
         
         app,local_url,share_url = demo.launch(
             # share=cmd_opts.share,
-            share=True,
+            share=False,
             # server_name="0.0.0.0" if cmd_opts.listen else None,
             server_name="10.0.0.38" if cmd_opts.listen else None,
             server_port=cmd_opts.port,
