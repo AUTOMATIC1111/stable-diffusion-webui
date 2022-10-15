@@ -104,10 +104,10 @@ def prepare_enviroment():
     args = shlex.split(commandline_args)
 
     args, skip_torch_cuda_test = extract_arg(args, '--skip-torch-cuda-test')
+    args, reinstall_xformers = extract_argg(args, '--reinstall-xformers')
     xformers = '--xformers' in args
     deepdanbooru = '--deepdanbooru' in args
     ngrok = '--ngrok' in args
-    reinstall_xformers = '--reinstall-xformers' in args
 
     try:
         commit = run(f"{git} rev-parse HEAD").strip()
