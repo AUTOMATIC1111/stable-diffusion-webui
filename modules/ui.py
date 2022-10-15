@@ -154,10 +154,7 @@ def save_files(js_data, images, do_make_zip, index):
             writer.writerow(["prompt", "seed", "width", "height", "sampler", "cfgs", "steps", "filename", "negative_prompt"])
 
         for image_index, filedata in enumerate(images, start_index):
-            if filedata.startswith("data:image/png;base64,"):
-                filedata = filedata[len("data:image/png;base64,"):]
-
-            image = Image.open(io.BytesIO(base64.decodebytes(filedata.encode('utf-8'))))
+            image = image_from_url_text(filedata)
 
             is_grid = image_index < p.index_of_first_image
             i = 0 if is_grid else (image_index - p.index_of_first_image)
