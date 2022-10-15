@@ -9,6 +9,7 @@ import platform
 dir_repos = "repositories"
 python = sys.executable
 git = os.environ.get('GIT', "git")
+index_url = os.environ.get('INDEX_URL',"")
 
 
 def extract_arg(args, name):
@@ -57,7 +58,7 @@ def run_python(code, desc=None, errdesc=None):
 
 
 def run_pip(args, desc=None):
-    return run(f'"{python}" -m pip {args} --prefer-binary', desc=f"Installing {desc}", errdesc=f"Couldn't install {desc}")
+    return run(f'"{python}" -m pip {args} --prefer-binary{f' --index-url {index_url}' if index_url!='' else ''}', desc=f"Installing {desc}", errdesc=f"Couldn't install {desc}")
 
 
 def check_run_python(code):
@@ -89,7 +90,6 @@ def prepare_enviroment():
     torch_command = os.environ.get('TORCH_COMMAND', "pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 --extra-index-url https://download.pytorch.org/whl/cu113")
     requirements_file = os.environ.get('REQS_FILE', "requirements_versions.txt")
     commandline_args = os.environ.get('COMMANDLINE_ARGS', "")
-    index_url = os.environ.get('INDEX_URL',"")
 
     gfpgan_package = os.environ.get('GFPGAN_PACKAGE', "git+https://github.com/TencentARC/GFPGAN.git@8d2447a2d918f8eba5a4a01463fd48e45126a379")
     clip_package = os.environ.get('CLIP_PACKAGE', "git+https://github.com/openai/CLIP.git@d50d76daa670286dd6cacf3bcd80b5e4823fc8e1")
@@ -122,22 +122,22 @@ def prepare_enviroment():
         run_python("import torch; assert torch.cuda.is_available(), 'Torch is not able to use GPU; add --skip-torch-cuda-test to COMMANDLINE_ARGS variable to disable this check'")
 
     if not is_installed("gfpgan"):
-        run_pip(f"install {gfpgan_package}{f' --index-url {index_url}' if index_url!='' else ''}", "gfpgan")
+        run_pip(f"install {gfpgan_package}", "gfpgan")
 
     if not is_installed("clip"):
-        run_pip(f"install {clip_package}{f' --index-url {index_url}' if index_url!='' else ''}", "clip")
+        run_pip(f"install {clip_package}", "clip")
 
     if not is_installed("xformers") and xformers and platform.python_version().startswith("3.10"):
         if platform.system() == "Windows":
             run_pip("install https://github.com/C43H66N12O12S2/stable-diffusion-webui/releases/download/c/xformers-0.0.14.dev0-cp310-cp310-win_amd64.whl", "xformers")
         elif platform.system() == "Linux":
-            run_pip("install xformers{f' --index-url {index_url}' if index_url!='' else ''}", "xformers")
+            run_pip("install xformers", "xformers")
 
     if not is_installed("deepdanbooru") and deepdanbooru:
         run_pip("install git+https://github.com/KichangKim/DeepDanbooru.git@edf73df4cdaeea2cf00e9ac08bd8a9026b7a7b26#egg=deepdanbooru[tensorflow] tensorflow==2.10.0 tensorflow-io==0.27.0", "deepdanbooru")
 
     if not is_installed("pyngrok") and ngrok:
-        run_pip("install pyngrok{f' --index-url {index_url}' if index_url!='' else ''}", "ngrok")
+        run_pip("install pyngrok", "ngrok")
 
     os.makedirs(dir_repos, exist_ok=True)
 
@@ -148,9 +148,9 @@ def prepare_enviroment():
     git_clone("https://github.com/salesforce/BLIP.git", repo_dir('BLIP'), "BLIP", blip_commit_hash)
 
     if not is_installed("lpips"):
-        run_pip(f"install -r {os.path.join(repo_dir('CodeFormer'), 'requirements.txt')}{f' --index-url {index_url}' if index_url!='' else ''}", "requirements for CodeFormer")
+        run_pip(f"install -r {os.path.join(repo_dir('CodeFormer'), 'requirements.txt')}", "requirements for CodeFormer")
 
-    run_pip(f"install -r {requirements_file}{f' --index-url {index_url}' if index_url!='' else ''}", "requirements for Web UI")
+    run_pip(f"install -r {requirements_file}", "requirements for Web UI")
 
     sys.argv += args
 
