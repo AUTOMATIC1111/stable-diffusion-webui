@@ -115,7 +115,7 @@
     padding: 0.4em 0;
 }
 
-#roll, #paste{
+#roll, #paste, #style_create, #style_apply{
     min-width: 2em;
     min-height: 2em;
     max-width: 2em;
@@ -126,14 +126,14 @@
     margin: 0.1em 0;
 }
 
-#style_apply, #style_create, #interrogate{
-    margin: 0.75em 0.25em 0.25em 0.25em;
-    min-width: 5em;
+#interrogate_col{
+    min-width: 0 !important;
+    max-width: 8em !important;
 }
-
-#style_apply, #style_create, #deepbooru{
-    margin: 0.75em 0.25em 0.25em 0.25em;
-    min-width: 5em;
+#interrogate, #deepbooru{
+    margin: 0em 0.25em 0.9em 0.25em;
+    min-width: 8em;
+    max-width: 8em;
 }
 
 #style_pos_col, #style_neg_col{

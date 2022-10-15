@@ -141,7 +141,7 @@ function submit_img2img(){
 
 function ask_for_style_name(_, prompt_text, negative_prompt_text) {
     name_ = prompt('Style name:')
-    return name_ === null ? [null, null, null]: [name_, prompt_text, negative_prompt_text]
+    return [name_, prompt_text, negative_prompt_text]
 }
 
 
