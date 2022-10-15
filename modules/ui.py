@@ -78,6 +78,7 @@ random_symbol = '\U0001f3b2\ufe0f'  # 🎲️
 reuse_symbol = '\u267b\ufe0f'  # ♻️
 art_symbol = '\U0001f3a8'  # 🎨
 paste_symbol = '\u2199\ufe0f'  # ↙
+clear_symbol = '\u274c' # ❌
 folder_symbol = '\U0001f4c2'  # 📂
 refresh_symbol = '\U0001f504'  # 🔄
 
@@ -321,6 +322,8 @@ def apply_styles(prompt, prompt_neg, style1_name, style2_name):
 
     return [gr.Textbox.update(value=prompt), gr.Textbox.update(value=prompt_neg), gr.Dropdown.update(value="None"), gr.Dropdown.update(value="None")]
 
+def clear_prompts():
+    return [gr.Textbox.update(value=''), gr.Textbox.update(value='')]
 
 def interrogate(image):
     prompt = shared.interrogator.interrogate(image)
@@ -440,6 +443,7 @@ def create_toprow(is_img2img):
                 with gr.Column(scale=1, elem_id="roll_col"):
                     roll = gr.Button(value=art_symbol, elem_id="roll", visible=len(shared.artist_db.artists) > 0)
                     paste = gr.Button(value=paste_symbol, elem_id="paste")
+                    clear = gr.Button(value=clear_symbol, elem_id="clear")
                     token_counter = gr.HTML(value="<span></span>", elem_id=f"{id_part}_token_counter")
                     token_button = gr.Button(visible=False, elem_id=f"{id_part}_token_button")
 
@@ -490,7 +494,7 @@ def create_toprow(is_img2img):
                 prompt_style_apply = gr.Button('Apply style', elem_id="style_apply")
                 save_style = gr.Button('Create style', elem_id="style_create")
 
-    return prompt, roll, prompt_style, negative_prompt, prompt_style2, submit, interrogate, deepbooru, prompt_style_apply, save_style, paste, token_counter, token_button
+    return prompt, roll, prompt_style, negative_prompt, prompt_style2, submit, interrogate, deepbooru, prompt_style_apply, save_style, paste, clear, token_counter, token_button
 
 
 def setup_progressbar(progressbar, preview, id_part, textinfo=None):
@@ -545,7 +549,7 @@ def create_ui(wrap_gradio_gpu_call):
     import modules.txt2img
 
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
-        txt2img_prompt, roll, txt2img_prompt_style, txt2img_negative_prompt, txt2img_prompt_style2, submit, _, _, txt2img_prompt_style_apply, txt2img_save_style, txt2img_paste, token_counter, token_button = create_toprow(is_img2img=False)
+        txt2img_prompt, roll, txt2img_prompt_style, txt2img_negative_prompt, txt2img_prompt_style2, submit, _, _, txt2img_prompt_style_apply, txt2img_save_style, txt2img_paste, txt2img_clear, token_counter, token_button = create_toprow(is_img2img=False)
         dummy_component = gr.Label(visible=False)
         txt_prompt_img = gr.File(label="", elem_id="txt2img_prompt_image", file_count="single", type="bytes", visible=False)
 
@@ -732,7 +736,7 @@ def create_ui(wrap_gradio_gpu_call):
             token_button.click(fn=update_token_counter, inputs=[txt2img_prompt, steps], outputs=[token_counter])
 
     with gr.Blocks(analytics_enabled=False) as img2img_interface:
-        img2img_prompt, roll, img2img_prompt_style, img2img_negative_prompt, img2img_prompt_style2, submit, img2img_interrogate, img2img_deepbooru, img2img_prompt_style_apply, img2img_save_style, img2img_paste, token_counter, token_button = create_toprow(is_img2img=True)
+        img2img_prompt, roll, img2img_prompt_style, img2img_negative_prompt, img2img_prompt_style2, submit, img2img_interrogate, img2img_deepbooru, img2img_prompt_style_apply, img2img_save_style, img2img_paste, img2img_clear, token_counter, token_button = create_toprow(is_img2img=True)
 
         with gr.Row(elem_id='img2img_progress_row'):
             img2img_prompt_img = gr.File(label="", elem_id="img2img_prompt_image", file_count="single", type="bytes", visible=False)
@@ -963,6 +967,13 @@ def create_ui(wrap_gradio_gpu_call):
                     _js=js_func,
                     inputs=[prompt, negative_prompt, style1, style2],
                     outputs=[prompt, negative_prompt, style1, style2],
+                )
+
+            for button, (prompt, negative_prompt) in zip([txt2img_clear, img2img_clear], prompts):
+                button.click(
+                    fn=clear_prompts,
+                    inputs=[],
+                    outputs=[prompt, negative_prompt],
                 )
 
             img2img_paste_fields = [
