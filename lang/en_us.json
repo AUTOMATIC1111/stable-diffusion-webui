@@ -108,5 +108,10 @@
     "label.save_image_with_stored_embedding": "Save images with embedding in PNG chunks",
     "label.preview_from_txt2img": "Read parameters (prompt, etc...) from txt2img tab when making previews",
     "button.train_hypernetwork": "Train Hypernetwork",
-    "button.train_embedding": "Train Embedding"
+    "button.train_embedding": "Train Embedding",
+    "label.custom_name": "Custom Name (Optional)",
+    "button.apply_settings": "Apply settings",
+    "button.request_notifications": "Request browser notifications",
+    "button.reload_script_bodies": "Reload custom script bodies (No ui updates, No restart)",
+    "button.restart_gradio": "Restart Gradio and Refresh components (Custom Scripts, ui.py, js and css only)"
 }

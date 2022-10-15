@@ -452,7 +452,7 @@ def create_toprow(is_img2img):
                     sh = gr.Button(elem_id="sh", visible=True)                           
 
                 with gr.Column(scale=1, elem_id="style_neg_col"):
-                    prompt_style2 = gr.Dropdown(label="Style 2", elem_id=f"{id_part}_style2_index", choices=[k for k, v in shared.prompt_styles.styles.items()], value=next(iter(shared.prompt_styles.styles.keys())), visible=len(shared.prompt_styles.styles) > 1)
+                    prompt_style2 = gr.Dropdown(label=tr('label.style_2'), elem_id=f"{id_part}_style2_index", choices=[k for k, v in shared.prompt_styles.styles.items()], value=next(iter(shared.prompt_styles.styles.keys())), visible=len(shared.prompt_styles.styles) > 1)
 
         with gr.Column(scale=1):
             with gr.Row():
@@ -559,8 +559,8 @@ def create_ui(wrap_gradio_gpu_call):
                 sampler_index = gr.Radio(label=tr('label.sampling_method'), elem_id="txt2img_sampling", choices=[x.name for x in samplers], value=samplers[0].name, type="index")
 
                 with gr.Group():
-                    width = gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512)
-                    height = gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512)
+                    width = gr.Slider(minimum=64, maximum=2048, step=64, label=tr('label.width'), value=512)
+                    height = gr.Slider(minimum=64, maximum=2048, step=64, label=tr('label.height'), value=512)
 
                 with gr.Row():
                     restore_faces = gr.Checkbox(label=tr('label.restore_faces'), value=False, visible=len(shared.face_restorers) > 1)
@@ -1102,7 +1102,7 @@ def create_ui(wrap_gradio_gpu_call):
                     primary_model_name = gr.Dropdown(modules.sd_models.checkpoint_tiles(), elem_id="modelmerger_primary_model_name", label=tr('label.primary_model'))
                     secondary_model_name = gr.Dropdown(modules.sd_models.checkpoint_tiles(), elem_id="modelmerger_secondary_model_name", label=tr('label.secondary_model'))
                     tertiary_model_name = gr.Dropdown(modules.sd_models.checkpoint_tiles(), elem_id="modelmerger_tertiary_model_name", label=tr('label.tertiary_model'))
-                custom_name = gr.Textbox(label="Custom Name (Optional)")
+                custom_name = gr.Textbox(label=tr('label.custom_name'))
                 interp_amount = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label=tr('label.multiplier'), value=0.3)
                 interp_method = gr.Radio(choices=["Weighted sum", "Add difference"], value="Weighted sum", label=tr('label.interpolation_method'))
                 save_as_half = gr.Checkbox(value=False, label=tr('label.save_as_float16'))
@@ -1170,8 +1170,8 @@ def create_ui(wrap_gradio_gpu_call):
                     dataset_directory = gr.Textbox(label=tr('label.dataset_directory'), placeholder=tr('placeholder.dataset_directory'))
                     log_directory = gr.Textbox(label=tr('label.log_directory'), placeholder=tr('placeholder.log_directory'), value="textual_inversion")
                     template_file = gr.Textbox(label=tr('label.prompt_template_file'), value=os.path.join(script_path, "textual_inversion_templates", "style_filewords.txt"))
-                    training_width = gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512)
-                    training_height = gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512)
+                    training_width = gr.Slider(minimum=64, maximum=2048, step=64, label=tr('label.width'), value=512)
+                    training_height = gr.Slider(minimum=64, maximum=2048, step=64, label=tr('label.height'), value=512)
                     steps = gr.Number(label=tr('label.max_steps'), value=100000, precision=0)
                     create_image_every = gr.Number(label=tr('label.create_image_every'), value=500, precision=0)
                     save_embedding_every = gr.Number(label=tr('label.save_embedding_every'), value=500, precision=0)
@@ -1187,7 +1187,7 @@ def create_ui(wrap_gradio_gpu_call):
                 progressbar = gr.HTML(elem_id="ti_progressbar")
                 ti_output = gr.Text(elem_id="ti_output", value="", show_label=False)
 
-                ti_gallery = gr.Gallery(label='Output', show_label=False, elem_id='ti_gallery').style(grid=4)
+                ti_gallery = gr.Gallery(label=tr('label.output'), show_label=False, elem_id='ti_gallery').style(grid=4)
                 ti_preview = gr.Image(elem_id='ti_preview', visible=False)
                 ti_progress = gr.HTML(elem_id="ti_progress", value="")
                 ti_outcome = gr.HTML(elem_id="ti_error", value="")
@@ -1405,7 +1405,7 @@ Requested path was: {f}
         return gr.update(value=value), opts.dumpjson()
 
     with gr.Blocks(analytics_enabled=False) as settings_interface:
-        settings_submit = gr.Button(value="Apply settings", variant='primary')
+        settings_submit = gr.Button(value=tr('button.apply_settings'), variant='primary')
         result = gr.HTML()
 
         settings_cols = 3
@@ -1448,9 +1448,9 @@ Requested path was: {f}
                     items_displayed += 1
 
         with gr.Row():
-            request_notifications = gr.Button(value='Request browser notifications', elem_id="request_notifications")
-            reload_script_bodies = gr.Button(value='Reload custom script bodies (No ui updates, No restart)', variant='secondary')
-            restart_gradio = gr.Button(value='Restart Gradio and Refresh components (Custom Scripts, ui.py, js and css only)', variant='primary')
+            request_notifications = gr.Button(value=tr('button.request_notifications'), elem_id="request_notifications")
+            reload_script_bodies = gr.Button(value=tr('button.reload_script_bodies'), variant='secondary')
+            restart_gradio = gr.Button(value=tr('button.restart_gradio'), variant='primary')
 
         request_notifications.click(
             fn=lambda: None,
