@@ -199,7 +199,7 @@ def write_loss(log_directory, filename, step, epoch_len, values):
         })
 
 
-def train_embedding(embedding_name, learn_rate, data_root, log_directory, training_width, training_height, steps, create_image_every, save_embedding_every, template_file, save_image_with_stored_embedding, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height):
+def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_directory, training_width, training_height, steps, create_image_every, save_embedding_every, template_file, save_image_with_stored_embedding, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height):
     assert embedding_name, 'embedding not selected'
 
     shared.state.textinfo = "Initializing textual inversion training..."
@@ -231,7 +231,7 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
 
     shared.state.textinfo = f"Preparing dataset from {html.escape(data_root)}..."
     with torch.autocast("cuda"):
-        ds = modules.textual_inversion.dataset.PersonalizedBase(data_root=data_root, width=training_width, height=training_height, repeats=shared.opts.training_image_repeats_per_epoch, placeholder_token=embedding_name, model=shared.sd_model, device=devices.device, template_file=template_file)
+        ds = modules.textual_inversion.dataset.PersonalizedBase(data_root=data_root, width=training_width, height=training_height, repeats=shared.opts.training_image_repeats_per_epoch, placeholder_token=embedding_name, model=shared.sd_model, device=devices.device, template_file=template_file, batch_size=batch_size)
 
     hijack = sd_hijack.model_hijack
 
@@ -251,7 +251,7 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
     optimizer = torch.optim.AdamW([embedding.vec], lr=scheduler.learn_rate)
 
     pbar = tqdm.tqdm(enumerate(ds), total=steps-ititial_step)
-    for i, entry in pbar:
+    for i, entries in pbar:
         embedding.step = i + ititial_step
 
         scheduler.apply(optimizer, embedding.step)
@@ -262,10 +262,9 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
             break
 
         with torch.autocast("cuda"):
-            c = cond_model([entry.cond_text])
-
-            x = entry.latent.to(devices.device)
-            loss = shared.sd_model(x.unsqueeze(0), c)[0]
+            c = cond_model([entry.cond_text for entry in entries])
+            x = torch.stack([entry.latent for entry in entries]).to(devices.device)
+            loss = shared.sd_model(x, c)[0]
             del x
 
             losses[embedding.step % losses.shape[0]] = loss.item()
@@ -307,7 +306,7 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
                 p.width = preview_width
                 p.height = preview_height
             else:
-                p.prompt = entry.cond_text
+                p.prompt = entries[0].cond_text
                 p.steps = 20
                 p.width = training_width
                 p.height = training_height
@@ -348,7 +347,7 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
 <p>
 Loss: {losses.mean():.7f}<br/>
 Step: {embedding.step}<br/>
-Last prompt: {html.escape(entry.cond_text)}<br/>
+Last prompt: {html.escape(entries[0].cond_text)}<br/>
 Last saved embedding: {html.escape(last_saved_file)}<br/>
 Last saved image: {html.escape(last_saved_image)}<br/>
 </p>
