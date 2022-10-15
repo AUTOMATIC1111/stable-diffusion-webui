@@ -257,10 +257,10 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
             import threading
             queue_lock = threading.Lock()
             def wrap_gradio_gpu_call(func, extra_outputs=None):
-                
+
                 def f(*args, **kwargs):
                     devices.torch_gc()
-        
+
                     shared.state.sampling_step = 0
                     shared.state.job_count = -1
                     shared.state.job_no = 0
@@ -271,17 +271,17 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
                     shared.state.skipped = False
                     shared.state.interrupted = False
                     shared.state.textinfo = None
-        
+
                     with queue_lock:
                         res = func(*args, **kwargs)
-        
+
                     shared.state.job = ""
                     shared.state.job_count = 0
-        
+
                     devices.torch_gc()
-        
+
                     #return res
-        
+
                 #return modules.ui.wrap_gradio_call(f, extra_outputs=extra_outputs)
             def copy(filename):
                 import shutil,os
@@ -295,7 +295,8 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
                     shutil.copy(filename, "/content/drive/StableDiffusionTraining/{}".format(
                             filename.split("/")[-1].split(".")[0]))
                 except Exception as e:
-                    print("保存训练模型至Google Drive时出错：{}".format(e))
+                    import traceback
+                    print("保存训练模型至Google Drive时出错：{}".format(traceback.format_exc()))
             wrap_gradio_gpu_call(copy(filename), extra_outputs=None)
 
         if embedding.step > 0 and embedding_dir is not None and embedding.step % save_embedding_every == 0:
