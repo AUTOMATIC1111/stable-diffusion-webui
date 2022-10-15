@@ -309,6 +309,8 @@ input[type="range"]{
   height: 100%;
   overflow: auto;
   background-color: rgba(20, 20, 20, 0.95);
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .modalControls {
