@@ -272,15 +272,17 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-
-        pbar.set_description(f"loss: {losses.mean():.7f}")
+        mean_loss = losses.mean()
+        if torch.isnan(mean_loss):
+            raise RuntimeError("Loss diverged.")
+        pbar.set_description(f"loss: {mean_loss:.7f}")
 
         if hypernetwork.step > 0 and hypernetwork_dir is not None and hypernetwork.step % save_hypernetwork_every == 0:
             last_saved_file = os.path.join(hypernetwork_dir, f'{hypernetwork_name}-{hypernetwork.step}.pt')
             hypernetwork.save(last_saved_file)
 
         textual_inversion.write_loss(log_directory, "hypernetwork_loss.csv", hypernetwork.step, len(ds), {
-            "loss": f"{losses.mean():.7f}",
+            "loss": f"{mean_loss:.7f}",
             "learn_rate": scheduler.learn_rate
         })
 
@@ -328,7 +330,7 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
 
         shared.state.textinfo = f"""
 <p>
-Loss: {losses.mean():.7f}<br/>
+Loss: {mean_loss:.7f}<br/>
 Step: {hypernetwork.step}<br/>
 Last prompt: {html.escape(entries[0].cond_text)}<br/>
 Last saved embedding: {html.escape(last_saved_file)}<br/>
