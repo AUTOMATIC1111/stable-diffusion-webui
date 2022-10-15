@@ -50,6 +50,7 @@
 
 #txt2img_generate, #img2img_generate, #txt2img_styles_btn, #img2img_styles_btn {
     min-height: 4.5em;
+    margin-bottom: 0.5em;
 }
 
 @media screen and (min-width: 2500px) {
@@ -509,15 +510,9 @@ canvas[key="mask"] {
     overflow: visible;
 }
 
-#txt2img_styles_btn, #img2img_styles_btn{
-    margin-left: 0.5em;
-}
-
 #styles_checkboxgroup{
     position: absolute;
-    z-index: 99999999;
-    left: 0.5em;
-    top: 6em;
+    z-index: 500;
     padding: 0em;
 }
 

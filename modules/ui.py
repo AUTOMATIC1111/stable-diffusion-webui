@@ -508,6 +508,7 @@ def create_toprow(is_img2img):
 
             with gr.Row():
                 style_btn = gr.Button(value=checkbox_btn_show, elem_id=f"{id_part}_styles_btn")
+            with gr.Row():
                 with gr.Box(visible=False, elem_id="styles_checkboxgroup") as styles_container:
                     styles_checkboxgroup = gr.CheckboxGroup(label="Styles", choices=[k for k, v in shared.prompt_styles.styles.items()])
 
