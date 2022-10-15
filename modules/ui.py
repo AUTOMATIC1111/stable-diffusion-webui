@@ -619,7 +619,7 @@ def create_ui(wrap_gradio_gpu_call):
                     txt2img_preview = gr.Image(elem_id='txt2img_preview', visible=False)
                     txt2img_gallery = gr.Gallery(label='Output', show_label=False, elem_id='txt2img_gallery').style(grid=4)
 
-                with gr.Group():
+                with gr.Column():
                     with gr.Row():
                         save = gr.Button('Save')
                         send_to_img2img = gr.Button('Send to img2img')
@@ -834,7 +834,7 @@ def create_ui(wrap_gradio_gpu_call):
                     img2img_preview = gr.Image(elem_id='img2img_preview', visible=False)
                     img2img_gallery = gr.Gallery(label='Output', show_label=False, elem_id='img2img_gallery').style(grid=4)
 
-                with gr.Group():
+                with gr.Column():
                     with gr.Row():
                         save = gr.Button('Save')
                         img2img_send_to_img2img = gr.Button('Send to img2img')
