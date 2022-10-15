@@ -8,15 +8,13 @@ import torch
 from basicsr.utils.download_util import load_file_from_url
 
 import modules.upscaler
-from modules import shared, modelloader
+from modules import devices, modelloader
 from modules.bsrgan_model_arch import RRDBNet
-from modules.paths import models_path
 
 
 class UpscalerBSRGAN(modules.upscaler.Upscaler):
     def __init__(self, dirname):
         self.name = "BSRGAN"
-        self.model_path = os.path.join(models_path, self.name)
         self.model_name = "BSRGAN 4x"
         self.model_url = "https://github.com/cszn/KAIR/releases/download/v1.0/BSRGAN.pth"
         self.user_path = dirname
@@ -44,13 +42,13 @@ class UpscalerBSRGAN(modules.upscaler.Upscaler):
         model = self.load_model(selected_file)
         if model is None:
             return img
-        model.to(shared.device)
+        model.to(devices.device_bsrgan)
         torch.cuda.empty_cache()
         img = np.array(img)
         img = img[:, :, ::-1]
         img = np.moveaxis(img, 2, 0) / 255
         img = torch.from_numpy(img).float()
-        img = img.unsqueeze(0).to(shared.device)
+        img = img.unsqueeze(0).to(devices.device_bsrgan)
         with torch.no_grad():
             output = model(img)
         output = output.squeeze().float().cpu().clamp_(0, 1).numpy()

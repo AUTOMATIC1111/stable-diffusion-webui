@@ -1,8 +1,10 @@
+import contextlib
+
 import torch
 
-# has_mps is only available in nightly pytorch (for now), `getattr` for compatibility
 from modules import errors
 
+# has_mps is only available in nightly pytorch (for now), `getattr` for compatibility
 has_mps = getattr(torch, 'has_mps', False)
 
 cpu = torch.device("cpu")
@@ -32,10 +34,9 @@ def enable_tf32():
 
 errors.run(enable_tf32, "Enabling TF32")
 
-
-device = get_optimal_device()
-device_codeformer = cpu if has_mps else device
-
+device = device_interrogate = device_gfpgan = device_bsrgan = device_esrgan = device_scunet = device_codeformer = get_optimal_device()
+dtype = torch.float16
+dtype_vae = torch.float16
 
 def randn(seed, shape):
     # Pytorch currently doesn't handle setting randomness correctly when the metal backend is used.
@@ -58,3 +59,14 @@ def randn_without_seed(shape):
 
     return torch.randn(shape, device=device)
 
+
+def autocast(disable=False):
+    from modules import shared
+
+    if disable:
+        return contextlib.nullcontext()
+
+    if dtype == torch.float32 or shared.cmd_opts.precision == "full":
+        return contextlib.nullcontext()
+
+    return torch.autocast("cuda")

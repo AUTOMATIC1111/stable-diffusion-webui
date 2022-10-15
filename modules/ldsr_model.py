@@ -7,13 +7,11 @@ from basicsr.utils.download_util import load_file_from_url
 from modules.upscaler import Upscaler, UpscalerData
 from modules.ldsr_model_arch import LDSR
 from modules import shared
-from modules.paths import models_path
 
 
 class UpscalerLDSR(Upscaler):
     def __init__(self, user_path):
         self.name = "LDSR"
-        self.model_path = os.path.join(models_path, self.name)
         self.user_path = user_path
         self.model_url = "https://heibox.uni-heidelberg.de/f/578df07c8fc04ffbadf3/?dl=1"
         self.yaml_url = "https://heibox.uni-heidelberg.de/f/31a76b13ea27482981b4/?dl=1"
