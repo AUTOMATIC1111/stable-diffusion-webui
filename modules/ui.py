@@ -478,7 +478,7 @@ def create_toprow(is_img2img):
         with gr.Column(scale=1, elem_id="roll_col"):
             roll = gr.Button(value=art_symbol, elem_id="roll", visible=len(shared.artist_db.artists) > 0)
             paste = gr.Button(value=paste_symbol, elem_id="paste")
-            clear = gr.Button(value=clear_symbol, elem_id="clear")
+            clear = gr.Button(value=clear_symbol, elem_id="clear", visible=opts.show_clearbutton)
             save_style = gr.Button(value=save_style_symbol, elem_id="style_create")
             prompt_style_apply = gr.Button(value=apply_style_symbol, elem_id="style_apply")
 
