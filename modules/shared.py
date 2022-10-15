@@ -284,7 +284,7 @@ options_templates.update(options_section(('ui', "User interface"), {
     "js_modal_lightbox": OptionInfo(True, "Enable full page image viewer"),
     "js_modal_lightbox_initially_zoomed": OptionInfo(True, "Show images zoomed in by default in full page image viewer"),
     "show_progress_in_title": OptionInfo(True, "Show generation progress in window title."),
-    'quicksettings': OptionInfo("sd_model_checkpoint", "Quicksettings list"),
+    'quicksettings': OptionInfo("sd_model_checkpoint, sd_hypernetwork, sd_hypernetwork_strength", "Quicksettings list"),
 }))
 
 options_templates.update(options_section(('sampler-params', "Sampler parameters"), {
