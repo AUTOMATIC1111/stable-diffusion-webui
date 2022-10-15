@@ -9,7 +9,7 @@ from torch.nn.functional import silu
 
 import modules.textual_inversion.textual_inversion
 from modules import prompt_parser, devices, sd_hijack_optimizations, shared
-from modules.shared import opts, device, cmd_opts, aesthetic_embeddings
+from modules.shared import opts, device, cmd_opts
 from modules.sd_hijack_optimizations import invokeAI_mps_available
 
 import ldm.modules.attention
@@ -182,7 +182,7 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
             image_embs_name = None
         if image_embs_name is not None and self.image_embs_name != image_embs_name:
             self.image_embs_name = image_embs_name
-            self.image_embs = torch.load(aesthetic_embeddings[self.image_embs_name], map_location=device)
+            self.image_embs = torch.load(shared.aesthetic_embeddings[self.image_embs_name], map_location=device)
             self.image_embs /= self.image_embs.norm(dim=-1, keepdim=True)
             self.image_embs.requires_grad_(False)
 
