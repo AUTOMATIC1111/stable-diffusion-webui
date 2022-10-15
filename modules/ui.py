@@ -607,7 +607,8 @@ def create_ui(wrap_gradio_gpu_call):
                         aesthetic_slerp_angle = gr.Slider(label='Slerp angle',minimum=0, maximum=1, step=0.01, value=0.1)
                         aesthetic_text_negative = gr.Checkbox(label="Is negative text", value=False)
 
-                    aesthetic_imgs = gr.Dropdown(sorted(aesthetic_embeddings.keys()), label="Imgs embedding", value=sorted(aesthetic_embeddings.keys())[0] if len(aesthetic_embeddings) > 0 else None)
+                    aesthetic_imgs = gr.Dropdown(sorted(aesthetic_embeddings.keys()), label="Aesthetic imgs embedding", value=sorted(aesthetic_embeddings.keys())[0] if len(aesthetic_embeddings) > 0 else None)
+
                     aesthetic_slerp = gr.Checkbox(label="Slerp interpolation", value=False)
 
                 with gr.Row():
