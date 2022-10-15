@@ -1190,7 +1190,8 @@ def create_ui(wrap_gradio_gpu_call):
                         with gr.Column():
                             create_embedding = gr.Button(value="Create embedding", variant='primary')
 
-                with gr.Tab(label="Create images embedding"):
+                with gr.Tab(label="Create aesthetic images embedding"):
+
                     new_embedding_name_ae = gr.Textbox(label="Name")
                     process_src_ae = gr.Textbox(label='Source directory')
                     batch_ae = gr.Slider(minimum=1, maximum=1024, step=1, label="Batch size", value=256)
