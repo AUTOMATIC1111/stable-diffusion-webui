@@ -21,7 +21,7 @@ also includes how to uncuck yourself from sm86 restriction on voldy's new commit
 ***
 
 
-### If you use a Pascal, Turing or Ampere card, you shouldn't need to build manually anymore. Uninstall your existing xformers and launch the repo with `--xformers`. A compatible wheel will be installed.
+### If you use a Pascal, Turing, Ampere, Lovelace or Hopper card, you shouldn't need to build manually anymore. Uninstall your existing xformers and launch the repo with `--xformers`. A compatible wheel will be installed.
 
 
 
