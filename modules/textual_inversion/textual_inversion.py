@@ -251,9 +251,22 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
         epoch_step = embedding.step - (epoch_num * len(ds)) + 1
 
         pbar.set_description(f"[Epoch {epoch_num}: {epoch_step}/{len(ds)}]loss: {losses.mean():.7f}")
-
+        def save_pts(filename):
+            import shutil,os
+            try:
+                os.makedirs("/content/drive/StableDiffusionTraining/{}".format(
+                    filename.split("/")[-1].split(".")[0]
+                ))
+            except:
+                pass
+            try:
+                shutil.copy(filename, "/content/drive/StableDiffusionTraining/{}".format(
+                        filename.split("/")[-1].split(".")[0]))
+            except Exception as e:
+                print("保存训练模型至Google Drive时出错：{}".format(e))
         if embedding.step > 0 and embedding_dir is not None and embedding.step % save_embedding_every == 0:
             last_saved_file = os.path.join(embedding_dir, f'{embedding_name}-{embedding.step}.pt')
+            save_pts(last_saved_file)
             embedding.save(last_saved_file)
 
         if embedding.step > 0 and images_dir is not None and embedding.step % create_image_every == 0:
