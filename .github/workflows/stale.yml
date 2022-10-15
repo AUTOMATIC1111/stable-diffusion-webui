@@ -25,6 +25,7 @@ jobs:
         days-before-pr-stale: 365
         days-before-close: 3
         exempt-all-assignees: True
+        exempt-issue-labels: 'bug, enhancement, dreams'
         stale-issue-message: 'As there has been no activity in this issue for 14 days, this issue is now marked as stale. It will be closed in 3 days if it remains stale.'
         stale-pr-message: 'As there has been no activity in this PR for 365 days, this PR is now marked as stale. It will be closed in 3 days if it remains stale.'
         stale-issue-label: 'stale'
