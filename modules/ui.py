@@ -13,6 +13,7 @@ import traceback
 import platform
 import subprocess as sp
 from functools import reduce
+from types import NoneType
 
 import numpy as np
 import torch
@@ -104,6 +105,10 @@ def image_from_url_text(filedata):
             return None
 
         filedata = filedata[0]
+        
+    if type(filedata) == NoneType:
+        print("An image must be selected in the gallery before using the \"Send\" buttons.", file=sys.stderr)
+        return None
 
     if filedata.startswith("data:image/png;base64,"):
         filedata = filedata[len("data:image/png;base64,"):]
