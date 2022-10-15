@@ -107,6 +107,7 @@ def prepare_enviroment():
     xformers = '--xformers' in args
     deepdanbooru = '--deepdanbooru' in args
     ngrok = '--ngrok' in args
+    reinstall_xformers = '--reinstall-xformers' in args
 
     try:
         commit = run(f"{git} rev-parse HEAD").strip()
@@ -128,9 +129,9 @@ def prepare_enviroment():
     if not is_installed("clip"):
         run_pip(f"install {clip_package}", "clip")
 
-    if not is_installed("xformers") and xformers and platform.python_version().startswith("3.10"):
+    if (not is_installed("xformers") or reinstall_xformers) and xformers and platform.python_version().startswith("3.10"):
         if platform.system() == "Windows":
-            run_pip("install https://github.com/C43H66N12O12S2/stable-diffusion-webui/releases/download/c/xformers-0.0.14.dev0-cp310-cp310-win_amd64.whl", "xformers")
+            run_pip("install -U -I --no-deps https://github.com/C43H66N12O12S2/stable-diffusion-webui/releases/download/f/xformers-0.0.14.dev0-cp310-cp310-win_amd64.whl", "xformers")
         elif platform.system() == "Linux":
             run_pip("install xformers", "xformers")
 
