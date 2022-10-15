@@ -237,13 +237,6 @@ fieldset span.text-gray-500, .gr-block.gr-box span.text-gray-500,  label.block s
     margin: 0;
 }
 
-.gr-panel div.flex-col div.justify-between div{
-  position: absolute;
-  top: -0.1em;
-  right: 1em;
-  padding: 0 0.5em;
-}
-
 #settings .gr-panel div.flex-col div.justify-between div{
     position: relative;
     z-index: 200;
@@ -316,6 +309,8 @@ input[type="range"]{
   height: 100%;
   overflow: auto;
   background-color: rgba(20, 20, 20, 0.95);
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .modalControls {
