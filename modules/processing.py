@@ -140,7 +140,7 @@ class Processed:
         self.sampler_noise_scheduler_override = p.sampler_noise_scheduler_override
         self.prompt = self.prompt if type(self.prompt) != list else self.prompt[0]
         self.negative_prompt = self.negative_prompt if type(self.negative_prompt) != list else self.negative_prompt[0]
-        self.seed = int(self.seed if type(self.seed) != list else self.seed[0])
+        self.seed = int(self.seed if type(self.seed) != list else self.seed[0]) if self.seed is not None else -1
         self.subseed = int(self.subseed if type(self.subseed) != list else self.subseed[0]) if self.subseed is not None else -1
 
         self.all_prompts = all_prompts or [self.prompt]
