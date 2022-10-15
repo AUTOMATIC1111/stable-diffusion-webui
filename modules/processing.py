@@ -528,7 +528,6 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                 firstphase_height_truncated = int(scale * self.height)
 
             else:
-                self.extra_generation_params["First pass size"] = f"{self.firstphase_width}x{self.firstphase_height}"
 
                 width_ratio = self.width / self.firstphase_width
                 height_ratio = self.height / self.firstphase_height
@@ -540,6 +539,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                     firstphase_width_truncated = self.firstphase_height * self.width / self.height
                     firstphase_height_truncated = self.firstphase_height
 
+            self.extra_generation_params["First pass size"] = f"{self.firstphase_width}x{self.firstphase_height}"
             self.truncate_x = int(self.firstphase_width - firstphase_width_truncated) // opt_f
             self.truncate_y = int(self.firstphase_height - firstphase_height_truncated) // opt_f
 
