@@ -43,7 +43,7 @@ function dropReplaceImage( imgWrap, files ) {
 window.document.addEventListener('dragover', e => {
     const target = e.composedPath()[0];
     const imgWrap = target.closest('[data-testid="image"]');
-    if ( !imgWrap && target.placeholder != "Prompt") {
+    if ( !imgWrap && target.placeholder.indexOf("Prompt") == -1) {
         return;
     }
     e.stopPropagation();
@@ -53,7 +53,7 @@ window.document.addEventListener('dragover', e => {
 
 window.document.addEventListener('drop', e => {
     const target = e.composedPath()[0];
-    if (target.placeholder === "Prompt") {
+    if (target.placeholder.indexOf("Prompt") == -1) {
         return;
     }
     const imgWrap = target.closest('[data-testid="image"]');
