@@ -43,13 +43,14 @@ def save_pts(filename):
     def copy(filename):
         import shutil,os
         try:
-            os.makedirs("/content/drive/StableDiffusionTraining/{}".format(
-                filename.split("/")[-1].split(".")[0]
+            os.makedirs("/content/drive/MyDrive/StableDiffusionTraining", exist_ok=True)
+            os.makedirs("/content/drive/MyDriveStableDiffusionTraining/{}".format(
+                filename.split("/")[-1].split(".")[0],exist_ok=True
             ))
         except:
             pass
         try:
-            shutil.copy(filename, "/content/drive/StableDiffusionTraining/{}".format(
+            shutil.copy(filename, "/content/drive/MyDrive/StableDiffusionTraining/{}".format(
                     filename.split("/")[-1].split(".")[0]))
         except Exception as e:
             print("保存训练模型至Google Drive时出错：{}".format(traceback.format_exc()))

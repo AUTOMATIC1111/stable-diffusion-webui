@@ -286,14 +286,14 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
             def copy(filename):
                 import shutil,os
                 try:
-                    os.makedirs("/content/drive/StableDiffusionTraining/{}".format(
-                        filename.split("/")[-1].split(".")[0]
+                    os.makedirs("/content/drive/MyDrive/StableDiffusionTraining/{}".format(
+                        filename.split("/")[-1].split(".")[0],exist_ok=True
                     ))
                 except:
                     pass
                 try:
-                    shutil.copy(filename, "/content/drive/StableDiffusionTraining/{}".format(
-                            filename.split("/")[-1].split(".")[0]))
+                    shutil.copy(filename, "/content/drive/MyDrive/StableDiffusionTraining/{}".format(
+                            filename.split("/")[-1].split(".")[0],exist_ok=True))
                 except Exception as e:
                     import traceback
                     print("保存训练模型至Google Drive时出错：{}".format(traceback.format_exc()))
