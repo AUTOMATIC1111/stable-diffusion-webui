@@ -31,6 +31,8 @@ from modules.paths import script_path
 from modules.shared import cmd_opts
 import modules.hypernetworks.hypernetwork
 
+import modules.translate_manage
+
 
 queue_lock = threading.Lock()
 
@@ -73,6 +75,7 @@ def wrap_gradio_gpu_call(func, extra_outputs=None):
     return modules.ui.wrap_gradio_call(f, extra_outputs=extra_outputs)
 
 def initialize():
+    modules.translate_manage.init_translation(cmd_opts.language)
     modelloader.cleanup_models()
     modules.sd_models.setup_model()
     codeformer.setup_model(cmd_opts.codeformer_models_path)
