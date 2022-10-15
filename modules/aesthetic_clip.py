@@ -8,7 +8,7 @@ import gradio as gr
 import torch
 from PIL import Image
 from modules import shared
-from modules.shared import device, aesthetic_embeddings
+from modules.shared import device
 from transformers import CLIPModel, CLIPProcessor
 
 from tqdm.auto import tqdm
@@ -20,7 +20,7 @@ def get_all_images_in_folder(folder):
 
 
 def check_is_valid_image_file(filename):
-    return filename.lower().endswith(('.png', '.jpg', '.jpeg'))
+    return filename.lower().endswith(('.png', '.jpg', '.jpeg', ".gif", ".tiff", ".webp"))
 
 
 def batched(dataset, total, n=1):
@@ -73,6 +73,6 @@ def generate_imgs_embd(name, folder, batch_size):
         Aesthetic embedding saved to {html.escape(path)}
         """
         shared.update_aesthetic_embeddings()
-        return gr.Dropdown(sorted(aesthetic_embeddings.keys()), label="Imgs embedding",
-                           value=sorted(aesthetic_embeddings.keys())[0] if len(
-                               aesthetic_embeddings) > 0 else None), res, ""
+        return gr.Dropdown.update(choices=sorted(shared.aesthetic_embeddings.keys()), label="Imgs embedding",
+                           value=sorted(shared.aesthetic_embeddings.keys())[0] if len(
+                               shared.aesthetic_embeddings) > 0 else None), res, ""
