@@ -2,7 +2,7 @@ transformers==4.19.2
 diffusers==0.3.0
 basicsr==1.4.2
 gfpgan==1.3.8
-gradio==3.4b3
+gradio==3.4.1
 numpy==1.23.3
 Pillow==9.2.0
 realesrgan==0.3.0
@@ -18,7 +18,7 @@ piexif==1.1.3
 einops==0.4.1
 jsonmerge==1.8.0
 clean-fid==0.1.29
-git+https://github.com/openai/CLIP@d50d76daa670286dd6cacf3bcd80b5e4823fc8e1
 resize-right==0.0.2
 torchdiffeq==0.2.3
 kornia==0.6.7
+lark==1.1.2

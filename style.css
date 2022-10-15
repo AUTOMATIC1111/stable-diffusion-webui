@@ -1,3 +1,28 @@
+.container {
+    max-width: 100%;
+}
+
+#txt2img_token_counter {
+    height: 0px;
+}
+
+#img2img_token_counter {
+    height: 0px;
+}
+
+#sh{
+    min-width: 2em;
+    min-height: 2em;
+    max-width: 2em;
+    max-height: 2em;
+    flex-grow: 0;
+    padding-left: 0.25em;
+    padding-right: 0.25em;
+    margin: 0.1em 0;
+    opacity: 0%;
+    cursor: default;	
+}
+
 .output-html p {margin: 0 0.5em;}
 
 .row > *,
@@ -103,7 +128,12 @@
 
 #style_apply, #style_create, #interrogate{
     margin: 0.75em 0.25em 0.25em 0.25em;
-    min-width: 3em;
+    min-width: 5em;
+}
+
+#style_apply, #style_create, #deepbooru{
+    margin: 0.75em 0.25em 0.25em 0.25em;
+    min-width: 5em;
 }
 
 #style_pos_col, #style_neg_col{
@@ -137,14 +167,6 @@ button{
     align-self: stretch !important;
 }
 
-#prompt, #negative_prompt{
-    border: none !important;
-}
-#prompt textarea, #negative_prompt textarea{
-    border: none !important;
-}
-
-
 #img2maskimg .h-60{
     height: 30rem;
 }
@@ -157,7 +179,7 @@ button{
     max-width: 10em;
 }
 
-#txt2img_preview, #img2img_preview{
+#txt2img_preview, #img2img_preview, #ti_preview{
     position: absolute;
     width: 320px;
     left: 0;
@@ -172,18 +194,18 @@ button{
 }
 
 @media screen and (min-width: 768px) {
-    #txt2img_preview, #img2img_preview {
+    #txt2img_preview, #img2img_preview, #ti_preview {
         position: absolute;
     }
 }
 
 @media screen and (max-width: 767px) {
-    #txt2img_preview, #img2img_preview {
+    #txt2img_preview, #img2img_preview, #ti_preview {
         position: relative;
     }
 }
 
-#txt2img_preview div.left-0.top-0, #img2img_preview div.left-0.top-0{
+#txt2img_preview div.left-0.top-0, #img2img_preview div.left-0.top-0, #ti_preview div.left-0.top-0{
     display: none;
 }
 
@@ -198,6 +220,8 @@ fieldset span.text-gray-500, .gr-block.gr-box span.text-gray-500,  label.block s
     border-top: 1px solid #eee;
     border-left: 1px solid #eee;
     border-right: 1px solid #eee;
+
+    z-index: 300;
 }
 
 .dark fieldset span.text-gray-500, .dark .gr-block.gr-box span.text-gray-500, .dark label.block span{
@@ -210,6 +234,7 @@ fieldset span.text-gray-500, .gr-block.gr-box span.text-gray-500,  label.block s
 #settings fieldset span.text-gray-500, #settings .gr-block.gr-box span.text-gray-500, #settings label.block span{
     position: relative;
     border: none;
+    margin-right: 8em;
 }
 
 .gr-panel div.flex-col div.justify-between label span{
@@ -247,7 +272,7 @@ input[type="range"]{
 #txt2img_negative_prompt, #img2img_negative_prompt{
 }
 
-#txt2img_progressbar, #img2img_progressbar{
+#txt2img_progressbar, #img2img_progressbar, #ti_progressbar{
   position: absolute;
   z-index: 1000;
   right: 0;
@@ -393,13 +418,106 @@ input[type="range"]{
 
 #txt2img_interrupt, #img2img_interrupt{
   position: absolute;
-  width: 100%;
+  width: 50%;
   height: 72px;
   background: #b4c0cc;
-  border-radius: 8px;
+  border-radius: 0px;
+  display: none;
+}
+
+#txt2img_skip, #img2img_skip{
+  position: absolute;
+  width: 50%;
+  right: 0px;
+  height: 72px;
+  background: #b4c0cc;
+  border-radius: 0px;
   display: none;
 }
 
 .red {
 	color: red;
+}
+
+.gallery-item {
+    --tw-bg-opacity: 0 !important;
+}
+
+#img2img_image div.h-60{
+    height: 480px;
+}
+
+#context-menu{
+    z-index:9999;
+    position:absolute;
+    display:block;
+    padding:0px 0;
+    border:2px solid #a55000;
+    border-radius:8px;
+    box-shadow:1px 1px 2px #CE6400;
+    width: 200px;
+}
+
+.context-menu-items{
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.context-menu-items a{
+    display:block;
+    padding:5px;
+    cursor:pointer;
+}
+
+.context-menu-items a:hover{
+    background: #a55000;
+}
+
+#quicksettings {
+    gap: 0.4em;
+}
+
+#quicksettings > div{
+    border: none;
+    background: none;
+    flex: unset;
+    gap: 0.5em;
+}
+
+#quicksettings > div > div{
+    max-width: 32em;
+    min-width: 24em;
+    padding: 0;
+}
+
+#refresh_sd_model_checkpoint, #refresh_sd_hypernetwork{
+    max-width: 2.5em;
+    min-width: 2.5em;
+    height: 2.4em;
+}
+
+
+canvas[key="mask"] {
+    z-index: 12 !important;
+    filter: invert();
+    mix-blend-mode: multiply;
+    pointer-events: none;
+}
+
+
+/* gradio 3.4.1 stuff for editable scrollbar values */
+.gr-box > div > div > input.gr-text-input{
+    position: absolute;
+    right: 0.5em;
+    top: -0.6em;
+    z-index: 200;
+    width: 8em;
+}
+#quicksettings .gr-box > div > div > input.gr-text-input {
+  top: -1.12em;
+}
+
+.row.gr-compact{
+    overflow: visible;
 }

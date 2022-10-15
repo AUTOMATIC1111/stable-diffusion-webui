@@ -8,7 +8,6 @@ import gradio as gr
 
 from modules import processing, shared, sd_samplers, prompt_parser
 from modules.processing import Processed
-from modules.sd_samplers import samplers
 from modules.shared import opts, cmd_opts, state
 
 import torch
@@ -121,17 +120,45 @@ class Script(scripts.Script):
         return is_img2img
 
     def ui(self, is_img2img):
+        info = gr.Markdown('''
+        * `CFG Scale` should be 2 or lower.
+        ''')
+
+        override_sampler = gr.Checkbox(label="Override `Sampling method` to Euler?(this method is built for it)", value=True)
+
+        override_prompt = gr.Checkbox(label="Override `prompt` to the same value as `original prompt`?(and `negative prompt`)", value=True)
         original_prompt = gr.Textbox(label="Original prompt", lines=1)
         original_negative_prompt = gr.Textbox(label="Original negative prompt", lines=1)
-        cfg = gr.Slider(label="Decode CFG scale", minimum=0.0, maximum=15.0, step=0.1, value=1.0)
+
+        override_steps = gr.Checkbox(label="Override `Sampling Steps` to the same value as `Decode steps`?", value=True)
         st = gr.Slider(label="Decode steps", minimum=1, maximum=150, step=1, value=50)
+
+        override_strength = gr.Checkbox(label="Override `Denoising strength` to 1?", value=True)
+
+        cfg = gr.Slider(label="Decode CFG scale", minimum=0.0, maximum=15.0, step=0.1, value=1.0)
         randomness = gr.Slider(label="Randomness", minimum=0.0, maximum=1.0, step=0.01, value=0.0)
         sigma_adjustment = gr.Checkbox(label="Sigma adjustment for finding noise for image", value=False)
-        return [original_prompt, original_negative_prompt, cfg, st, randomness, sigma_adjustment]
 
-    def run(self, p, original_prompt, original_negative_prompt, cfg, st, randomness, sigma_adjustment):
-        p.batch_size = 1
-        p.batch_count = 1
+        return [
+            info, 
+            override_sampler,
+            override_prompt, original_prompt, original_negative_prompt, 
+            override_steps, st,
+            override_strength,
+            cfg, randomness, sigma_adjustment,
+        ]
+
+    def run(self, p, _, override_sampler, override_prompt, original_prompt, original_negative_prompt, override_steps, st, override_strength, cfg, randomness, sigma_adjustment):
+        # Override
+        if override_sampler:
+            p.sampler_index = [sampler.name for sampler in sd_samplers.samplers].index("Euler")
+        if override_prompt:
+            p.prompt = original_prompt
+            p.negative_prompt = original_negative_prompt
+        if override_steps:
+            p.steps = st
+        if override_strength:
+            p.denoising_strength = 1.0
 
 
         def sample_extra(conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength):
@@ -155,11 +182,11 @@ class Script(scripts.Script):
                     rec_noise = find_noise_for_image(p, cond, uncond, cfg, st)
                 self.cache = Cached(rec_noise, cfg, st, lat, original_prompt, original_negative_prompt, sigma_adjustment)
 
-            rand_noise = processing.create_random_tensors(p.init_latent.shape[1:], [p.seed + x + 1 for x in range(p.init_latent.shape[0])])
+            rand_noise = processing.create_random_tensors(p.init_latent.shape[1:], seeds=seeds, subseeds=subseeds, subseed_strength=p.subseed_strength, seed_resize_from_h=p.seed_resize_from_h, seed_resize_from_w=p.seed_resize_from_w, p=p)
             
             combined_noise = ((1 - randomness) * rec_noise + randomness * rand_noise) / ((randomness**2 + (1-randomness)**2) ** 0.5)
             
-            sampler = samplers[p.sampler_index].constructor(p.sd_model)
+            sampler = sd_samplers.create_sampler_with_index(sd_samplers.samplers, p.sampler_index, p.sd_model)
 
             sigmas = sampler.model_wrap.get_sigmas(p.steps)
             

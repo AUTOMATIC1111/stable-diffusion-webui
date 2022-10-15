@@ -85,8 +85,11 @@ def get_matched_noise(_np_src_image, np_mask_rgb, noise_q=1, color_variation=0.0
     src_dist = np.absolute(src_fft)
     src_phase = src_fft / src_dist
 
+    # create a generator with a static seed to make outpainting deterministic / only follow global seed
+    rng = np.random.default_rng(0)
+
     noise_window = _get_gaussian_window(width, height, mode=1)  # start with simple gaussian noise
-    noise_rgb = np.random.random_sample((width, height, num_channels))
+    noise_rgb = rng.random((width, height, num_channels))
     noise_grey = (np.sum(noise_rgb, axis=2) / 3.)
     noise_rgb *= color_variation  # the colorfulness of the starting noise is blended to greyscale with a parameter
     for c in range(num_channels):

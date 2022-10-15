@@ -10,7 +10,6 @@ from modules.processing import Processed, process_images
 from PIL import Image
 from modules.shared import opts, cmd_opts, state
 
-
 class Script(scripts.Script):
     def title(self):
         return "Prompts from file or textbox"
@@ -66,6 +65,9 @@ class Script(scripts.Script):
         "do_not_save_samples": process_boolean_tag,
         "do_not_save_grid": process_boolean_tag
     }
+
+    def on_show(self, checkbox_txt, file, prompt_txt):
+        return [ gr.Checkbox.update(visible = True), gr.File.update(visible = not checkbox_txt), gr.TextArea.update(visible = checkbox_txt) ]
 
     def run(self, p, checkbox_txt, data: bytes, prompt_txt: str):
         if (checkbox_txt):

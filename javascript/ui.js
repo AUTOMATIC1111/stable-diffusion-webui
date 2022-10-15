@@ -33,27 +33,27 @@ function args_to_array(args){
 }
 
 function switch_to_txt2img(){
-    gradioApp().querySelectorAll('button')[0].click();
+    gradioApp().querySelector('#tabs').querySelectorAll('button')[0].click();
 
     return args_to_array(arguments);
 }
 
 function switch_to_img2img_img2img(){
-    gradioApp().querySelectorAll('button')[1].click();
+    gradioApp().querySelector('#tabs').querySelectorAll('button')[1].click();
     gradioApp().getElementById('mode_img2img').querySelectorAll('button')[0].click();
 
     return args_to_array(arguments);
 }
 
 function switch_to_img2img_inpaint(){
-    gradioApp().querySelectorAll('button')[1].click();
+    gradioApp().querySelector('#tabs').querySelectorAll('button')[1].click();
     gradioApp().getElementById('mode_img2img').querySelectorAll('button')[1].click();
 
     return args_to_array(arguments);
 }
 
 function switch_to_extras(){
-    gradioApp().querySelectorAll('button')[2].click();
+    gradioApp().querySelector('#tabs').querySelectorAll('button')[2].click();
 
     return args_to_array(arguments);
 }
@@ -101,7 +101,8 @@ function create_tab_index_args(tabId, args){
 }
 
 function get_extras_tab_index(){
-    return create_tab_index_args('mode_extras', arguments)
+    const [,,...args] = [...arguments]
+    return [get_tab_index('mode_extras'), get_tab_index('extras_resize_mode'), ...args]
 }
 
 function create_submit_args(args){
@@ -186,12 +187,10 @@ onUiUpdate(function(){
 	if (!txt2img_textarea) {
 		txt2img_textarea = gradioApp().querySelector("#txt2img_prompt > label > textarea");
 		txt2img_textarea?.addEventListener("input", () => update_token_counter("txt2img_token_button"));
-        txt2img_textarea?.addEventListener("keyup", (event) => submit_prompt(event, "txt2img_generate"));
 	}
 	if (!img2img_textarea) {
 		img2img_textarea = gradioApp().querySelector("#img2img_prompt > label > textarea");
 		img2img_textarea?.addEventListener("input", () => update_token_counter("img2img_token_button"));
-        img2img_textarea?.addEventListener("keyup", (event) => submit_prompt(event, "img2img_generate"));
 	}
 })
 
@@ -199,16 +198,27 @@ let txt2img_textarea, img2img_textarea = undefined;
 let wait_time = 800
 let token_timeout;
 
-function submit_prompt(event, generate_button_id) {
-    if (event.altKey && event.keyCode === 13) {
-        event.preventDefault();
-        gradioApp().getElementById(generate_button_id).click();
-        return;
-    }
+function update_txt2img_tokens(...args) {
+	update_token_counter("txt2img_token_button")
+	if (args.length == 2)
+		return args[0]
+	return args;
+}
+
+function update_img2img_tokens(...args) {
+	update_token_counter("img2img_token_button")
+	if (args.length == 2)
+		return args[0]
+	return args;
 }
 
 function update_token_counter(button_id) {
 	if (token_timeout)
 		clearTimeout(token_timeout);
 	token_timeout = setTimeout(() => gradioApp().getElementById(button_id)?.click(), wait_time);
+}
+
+function restart_reload(){
+    document.body.innerHTML='<h1 style="font-family:monospace;margin-top:20%;color:lightgray;text-align:center;">Reloading...</h1>';
+    setTimeout(function(){location.reload()},2000)
 }
