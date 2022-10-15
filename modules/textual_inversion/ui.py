@@ -5,7 +5,6 @@ import gradio as gr
 import modules.textual_inversion.textual_inversion
 import modules.textual_inversion.preprocess
 from modules import sd_hijack, shared
-from symbol import except_clause
 
 
 def save_pts(filename):
