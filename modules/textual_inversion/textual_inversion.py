@@ -296,7 +296,7 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
                 checkpoint = sd_models.select_checkpoint()
                 footer_left = checkpoint.model_name
                 footer_mid = '[{}]'.format(checkpoint.hash)
-                footer_right = 'v{} {}s'.format(vectorSize, embedding.step)
+                footer_right = '{}v {}s'.format(vectorSize, embedding.step)
 
                 captioned_image = caption_image_overlay(image, title, footer_left, footer_mid, footer_right)
                 captioned_image = insert_image_data_embed(captioned_image, data)
