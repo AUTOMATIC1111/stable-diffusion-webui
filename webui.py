@@ -127,6 +127,8 @@ def webui():
 
         sd_samplers.set_samplers()
 
+        print('Reloading translate files')
+        modules.translate_manage.init_translation(cmd_opts.language)
         print('Reloading Custom Scripts')
         modules.scripts.reload_scripts(os.path.join(script_path, "scripts"))
         print('Reloading modules: modules.ui')
