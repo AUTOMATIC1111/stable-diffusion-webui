@@ -12,7 +12,7 @@ import gradio as gr
 
 from modules import images
 from modules.hypernetworks import hypernetwork
-from modules.processing import process_images, Processed, get_correct_sampler
+from modules.processing import process_images, Processed, get_correct_sampler, StableDiffusionProcessingTxt2Img
 from modules.shared import opts, cmd_opts, state
 import modules.shared as shared
 import modules.sd_samplers
@@ -353,6 +353,9 @@ class Script(scripts.Script):
             total_steps = sum(ys) * len(xs)
         else:
             total_steps = p.steps * len(xs) * len(ys)
+
+        if isinstance(p, StableDiffusionProcessingTxt2Img) and p.enable_hr:
+            total_steps *= 2
 
         print(f"X/Y plot will create {len(xs) * len(ys) * p.n_iter} images on a {len(xs)}x{len(ys)} grid. (Total steps to process: {total_steps * p.n_iter})")
         shared.total_tqdm.updateTotal(total_steps * p.n_iter)
