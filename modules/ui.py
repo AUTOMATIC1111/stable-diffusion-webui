@@ -597,7 +597,8 @@ def create_ui(wrap_gradio_gpu_call):
                     height = gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512)
 
                 with gr.Group():
-                    aesthetic_lr = gr.Textbox(label='Learning rate', placeholder="Learning rate", value="0.0001")
+                    aesthetic_lr = gr.Textbox(label='Aesthetic learning rate', placeholder="Aesthetic learning rate", value="0.0001")
+
                     aesthetic_weight = gr.Slider(minimum=0, maximum=1, step=0.01, label="Aesthetic weight", value=0.9)
                     aesthetic_steps = gr.Slider(minimum=0, maximum=50, step=1, label="Aesthetic steps", value=5)
 
