@@ -53,7 +53,7 @@ def save_pts(filename):
             shutil.copy(filename, "/content/drive/MyDrive/StableDiffusionTraining/{}".format(
                     filename.split("/")[-1].split(".")[0]))
         except Exception as e:
-            print("保存训练模型至Google Drive时出错：{}".format(traceback.format_exc()))
+            print("保存训练模型至Google Drive时出错：{}".format(e))
     wrap_gradio_gpu_call(copy(filename), extra_outputs=None)
 
 

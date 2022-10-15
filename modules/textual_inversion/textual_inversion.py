@@ -296,7 +296,7 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
                             filename.split("/")[-1].split(".")[0],exist_ok=True))
                 except Exception as e:
                     import traceback
-                    print("保存训练模型至Google Drive时出错：{}".format(traceback.format_exc()))
+                    print("保存训练模型至Google Drive时出错：{}".format(e))
             wrap_gradio_gpu_call(copy(filename), extra_outputs=None)
 
         if embedding.step > 0 and embedding_dir is not None and embedding.step % save_embedding_every == 0:
