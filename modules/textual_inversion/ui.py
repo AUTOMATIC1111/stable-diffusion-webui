@@ -11,6 +11,7 @@ def save_pts(filename):
     from modules import devices
     from modules import modelloader
     import threading
+    import traceback
     queue_lock = threading.Lock()
     def wrap_gradio_gpu_call(func, extra_outputs=None):
         

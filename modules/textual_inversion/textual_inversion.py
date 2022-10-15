@@ -301,11 +301,12 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
 
         if embedding.step > 0 and embedding_dir is not None and embedding.step % save_embedding_every == 0:
             last_saved_file = os.path.join(embedding_dir, f'{embedding_name}-{embedding.step}.pt')
-            save_pts(last_saved_file)
             embedding.save(last_saved_file)
+            save_pts(last_saved_file)
 
         if embedding.step > 0 and images_dir is not None and embedding.step % create_image_every == 0:
             last_saved_image = os.path.join(images_dir, f'{embedding_name}-{embedding.step}.png')
+            
 
             preview_text = entry.cond_text if preview_image_prompt == "" else preview_image_prompt
 
@@ -344,7 +345,7 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
                 captioned_image.save(last_saved_image_chunks, "PNG", pnginfo=info)
 
             image.save(last_saved_image)
-
+            save_pts(last_saved_image)
             last_saved_image += f", prompt: {preview_text}"
 
         shared.state.job_no = embedding.step
