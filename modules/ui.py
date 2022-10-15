@@ -599,7 +599,8 @@ def create_ui(wrap_gradio_gpu_call):
                 with gr.Group():
                     aesthetic_lr = gr.Textbox(label='Learning rate', placeholder="Learning rate", value="0.0001")
                     aesthetic_weight = gr.Slider(minimum=0, maximum=1, step=0.01, label="Aesthetic weight", value=0.9)
-                    aesthetic_steps = gr.Slider(minimum=0, maximum=256, step=1, label="Aesthetic steps", value=5)
+                    aesthetic_steps = gr.Slider(minimum=0, maximum=50, step=1, label="Aesthetic steps", value=5)
+
                     with gr.Row():
                         aesthetic_imgs_text = gr.Textbox(label='Aesthetic text for imgs', placeholder="This text is used to rotate the feature space of the imgs embs", value="")
                         aesthetic_slerp_angle = gr.Slider(label='Slerp angle',minimum=0, maximum=1, step=0.01, value=0.1)
