@@ -44,7 +44,7 @@ def save_pts(filename):
         import shutil,os
         try:
             os.makedirs("/content/drive/MyDrive/StableDiffusionTraining", exist_ok=True)
-            os.makedirs("/content/drive/MyDriveStableDiffusionTraining/{}".format(
+            os.makedirs("/content/drive/MyDrive/StableDiffusionTraining/{}".format(
                 filename.split("/")[-1].split(".")[0],exist_ok=True
             ))
         except:
