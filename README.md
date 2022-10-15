@@ -70,7 +70,8 @@ Check the [custom scripts](https://github.com/AUTOMATIC1111/stable-diffusion-web
 - No token limit for prompts (original stable diffusion lets you use up to 75 tokens)
 - DeepDanbooru integration, creates danbooru style tags for anime prompts (add --deepdanbooru to commandline args)
 - [xformers](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Xformers), major speed increase for select cards: (add --xformers to commandline args)
-- Aesthetic, a way to generate images with a specific aesthetic by using clip images embds (implementation of https://github.com/vicgalle/stable-diffusion-aesthetic-gradients)
+- Aesthetic Gradients, a way to generate images with a specific aesthetic by using clip images embds (implementation of [https://github.com/vicgalle/stable-diffusion-aesthetic-gradients](https://github.com/vicgalle/stable-diffusion-aesthetic-gradients))
+
 
 ## Installation and Running
 Make sure the required [dependencies](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Dependencies) are met and follow the instructions available for both [NVidia](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-NVidia-GPUs) (recommended) and [AMD](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-AMD-GPUs) GPUs.
