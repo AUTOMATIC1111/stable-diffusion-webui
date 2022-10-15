@@ -48,7 +48,7 @@
     text-align: right;
 }
 
-#txt2img_generate, #img2img_generate {
+#txt2img_generate, #img2img_generate, #txt2img_styles_btn, #img2img_styles_btn {
     min-height: 4.5em;
 }
 
@@ -112,7 +112,7 @@
 #roll_col{
     min-width: unset !important;
     flex-grow: 0 !important;
-    padding: 0.4em 0;
+    padding: 0.4em 0.4em 0 0;
 }
 
 #roll, #paste{
@@ -520,4 +520,20 @@ canvas[key="mask"] {
 
 .row.gr-compact{
     overflow: visible;
+}
+
+#txt2img_styles_btn, #img2img_styles_btn{
+    margin-left: 0.5em;
+}
+
+#styles_checkboxgroup{
+    position: absolute;
+    z-index: 99999999;
+    left: 0.5em;
+    top: 6em;
+    padding: 0em;
+}
+
+#styles_checkboxgroup > div{
+    border: 0.2em solid white;
 }

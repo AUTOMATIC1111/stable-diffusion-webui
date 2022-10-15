@@ -40,7 +40,7 @@ def apply_styles_to_prompt(prompt, styles):
 class StyleDatabase:
     def __init__(self, path: str):
         self.no_style = PromptStyle("None", "", "")
-        self.styles = {"None": self.no_style}
+        self.styles = {}
 
         if not os.path.exists(path):
             return
