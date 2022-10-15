@@ -82,8 +82,8 @@ then
     clone_dir="${PWD##*/}"
 fi
 
-# Check prequisites
-for preq in git python3
+# Check prerequisites
+for preq in "${GIT}" "${python_cmd}"
 do
     if ! hash "${preq}" &>/dev/null
     then
