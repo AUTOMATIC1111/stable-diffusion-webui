@@ -352,6 +352,47 @@ def get_next_sequence_number(path, basename):
 
     return result + 1
 
+def load_sections_from_exif(exif_bytes):
+    items = {}
+    exif = piexif.load(exif_bytes)
+    exif_comment = (exif or {}).get("Exif", {}).get(piexif.ExifIFD.UserComment, b'')
+    try:
+        exif_comment = piexif.helper.UserComment.load(exif_comment)
+    except ValueError:
+        exif_comment = exif_comment.decode('utf8', errors="ignore")
+    sections_splitter = '\n####################\n'
+    exif_terminator = '\n####################'
+    
+    if exif_comment.endswith(exif_terminator):
+        exif_comment = exif_comment[:-len(exif_terminator)]
+        sections = exif_comment.split(sections_splitter)
+        for section in sections:
+            parts = section.split(': ', 1)
+            if len(parts) != 2:
+                print(f'Bad UserComment exif section. Ignore. Raw: {section}')
+            else:
+                items[parts[0]] = parts[1]
+    # back compatibility/ if image generated before exif fix
+    else:
+        items['parameters'] = exif_comment
+    return items
+
+def save_sections_to_exif(sections):
+    sections_splitter = '####################' # pls don't change 20x# splitter
+    exif_comment = ""
+    first = True
+    if sections is not None:
+        for name, value in sections.items():
+            value = value
+            if not first:
+               exif_comment += "\n"
+            exif_comment += f"{name}: {str(value)}\n{sections_splitter}"
+            first = False
+    return piexif.dump({
+        "Exif": {
+            piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(exif_comment, encoding="unicode")
+        },
+    })
 
 def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None, forced_filename=None, suffix="", save_to_dirs=None):
     '''Save an image.
@@ -433,11 +474,17 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
         fullfn_without_extension = os.path.join(path, forced_filename)
 
     def exif_bytes():
-        return piexif.dump({
-            "Exif": {
-                piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(info or "", encoding="unicode")
-            },
-        })
+        sections_dict = {}
+        if existing_info is not None:
+            if 'exif' in existing_info:
+                sections_dict = load_sections_from_exif(existing_info['exif'])
+            for k, v in existing_info.items():
+                if k in ['jfif', 'jfif_version', 'jfif_unit', 'jfif_density', 'dpi', 'exif',
+                      'loop', 'background', 'timestamp', 'duration']:
+                      continue
+                sections_dict[k] = v
+        sections_dict[pnginfo_section_name] = info
+        return save_sections_to_exif(sections_dict)
 
     if extension.lower() in ("jpg", "jpeg", "webp"):
         image.save(fullfn, quality=opts.jpeg_quality)

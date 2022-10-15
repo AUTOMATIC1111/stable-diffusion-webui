@@ -126,20 +126,14 @@ def run_pnginfo(image):
     items = image.info
     geninfo = ''
 
-    if "exif" in image.info:
-        exif = piexif.load(image.info["exif"])
-        exif_comment = (exif or {}).get("Exif", {}).get(piexif.ExifIFD.UserComment, b'')
-        try:
-            exif_comment = piexif.helper.UserComment.load(exif_comment)
-        except ValueError:
-            exif_comment = exif_comment.decode('utf8', errors="ignore")
-
-        items['exif comment'] = exif_comment
-        geninfo = exif_comment
-
+    if "exif" in items:
+        dict_from_exif = images.load_sections_from_exif(items["exif"])
         for field in ['jfif', 'jfif_version', 'jfif_unit', 'jfif_density', 'dpi', 'exif',
                       'loop', 'background', 'timestamp', 'duration']:
             items.pop(field, None)
+        for k,v in dict_from_exif.items():
+            if k not in items:
+                items[k] = v
 
     geninfo = items.get('parameters', geninfo)
 
