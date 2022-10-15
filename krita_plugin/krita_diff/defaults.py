@@ -52,7 +52,6 @@ class Defaults:
     txt2img_denoising_strength: float = 0.7
     txt2img_seed: str = ""
     txt2img_highres: bool = False
-    # txt2img_scale_latent: bool = None
     # TODO: Seed variation
 
     img2img_prompt: str = ""

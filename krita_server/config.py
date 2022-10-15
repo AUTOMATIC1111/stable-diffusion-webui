@@ -56,8 +56,10 @@ class GenerationOptions(BaseModel):
     """Whether to generate a tileable image."""
     highres_fix: bool = False
     """Whether to enable workaround for higher resolution at cost of time."""
-    upscale_latent: bool = False
-    """Upscale in latent space."""
+    firstphase_height: int = 512
+    """Max height for first phase of highres fix (before upscaling to requested resolution)."""
+    firstphase_width: int = 512
+    """Max width for first phase of highres fix (before upscaling to requested resolution)."""
 
     # upscale_overlap: int = 64
     # """Size of overlap in pixels for upscaling.""" Configure this in WebUI
