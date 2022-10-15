@@ -85,7 +85,7 @@ class SDPluginDocker(DockWidget):
 
         self.refresh_btn.released.connect(self.update_remote_config)
         self.update_timer.timeout.connect(self.update_remote_config)
-        self.update_timer.start(1000)
+        self.update_timer.start(4000) # hardcoded to 4 seconds
 
     def update_remote_config(self):
         if script.update_config():

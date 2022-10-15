@@ -109,13 +109,14 @@ class Script(QObject):
                 self.height = self.selection.height()
 
     def update_config(self):
-        res = None
         try:
-            with urllib.request.urlopen(self.cfg("base_url", str) + "/config") as req:
-                res = req.read()
-                self.opt = json.loads(res)
-        except URLError:
-            self.set_status(STATE_URLERROR)
+            with urllib.request.urlopen(self.cfg("base_url", str) + "/config") as res:
+                self.opt = json.loads(res.read())
+        except URLError as e:
+            self.set_status(f"{STATE_URLERROR}: {e.reason}")
+            return False
+        except json.JSONDecodeError:
+            self.set_status(f"{STATE_URLERROR}: invalid response")
             return False
 
         assert len(self.opt["upscalers"]) > 0
@@ -141,8 +142,10 @@ class Script(QObject):
         try:
             with urllib.request.urlopen(req, body_encoded) as res:
                 return json.loads(res.read())
-        except URLError:
-            self.set_status(STATE_URLERROR)
+        except URLError as e:
+            self.set_status(f"{STATE_URLERROR}: {e.reason}")
+        except json.JSONDecodeError:
+            self.set_status(f"{STATE_URLERROR}: invalid response")
 
     def get_common_params(self):
         tiling = self.cfg("sd_tiling", bool) and (
