@@ -113,5 +113,6 @@
     "button.apply_settings": "Apply settings",
     "button.request_notifications": "Request browser notifications",
     "button.reload_script_bodies": "Reload custom script bodies (No ui updates, No restart)",
-    "button.restart_gradio": "Restart Gradio and Refresh components (Custom Scripts, ui.py, js and css only)"
+    "button.restart_gradio": "Restart Gradio and Refresh components (Custom Scripts, ui.py, js and css only)",
+    "label.script": "Script"
 }

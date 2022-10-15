@@ -7,6 +7,7 @@ import gradio as gr
 
 from modules.processing import StableDiffusionProcessing
 from modules import shared
+from modules.translate_manage import translate as tr
 
 class Script:
     filename = None
@@ -106,7 +107,7 @@ class ScriptRunner:
 
         titles = [wrap_call(script.title, script.filename, "title") or f"{script.filename} [error]" for script in self.scripts]
 
-        dropdown = gr.Dropdown(label="Script", choices=["None"] + titles, value="None", type="index")
+        dropdown = gr.Dropdown(label=tr('label.script'), choices=["None"] + titles, value="None", type="index")
         inputs = [dropdown]
 
         for script in self.scripts:

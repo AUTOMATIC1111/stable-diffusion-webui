@@ -1132,7 +1132,7 @@ def create_ui(wrap_gradio_gpu_call):
                         with gr.Column():
                             create_embedding = gr.Button(value=tr('button.create_embedding'), variant='primary')
 
-                with gr.Tab(label=tr('create_hypernetwork')):
+                with gr.Tab(label=tr('tab.create_hypernetwork')):
                     new_hypernetwork_name = gr.Textbox(label=tr('label.name'))
                     new_hypernetwork_sizes = gr.CheckboxGroup(label=tr('label.modules'), value=["768", "320", "640", "1280"], choices=["768", "320", "640", "1280"])
 
