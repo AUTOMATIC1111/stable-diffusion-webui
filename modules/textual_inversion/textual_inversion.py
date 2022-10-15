@@ -252,18 +252,52 @@ def train_embedding(embedding_name, learn_rate, data_root, log_directory, traini
 
         pbar.set_description(f"[Epoch {epoch_num}: {epoch_step}/{len(ds)}]loss: {losses.mean():.7f}")
         def save_pts(filename):
-            import shutil,os
-            try:
-                os.makedirs("/content/drive/StableDiffusionTraining/{}".format(
-                    filename.split("/")[-1].split(".")[0]
-                ))
-            except:
-                pass
-            try:
-                shutil.copy(filename, "/content/drive/StableDiffusionTraining/{}".format(
-                        filename.split("/")[-1].split(".")[0]))
-            except Exception as e:
-                print("保存训练模型至Google Drive时出错：{}".format(e))
+            from modules import devices
+            from modules import modelloader
+            import threading
+            queue_lock = threading.Lock()
+            def wrap_gradio_gpu_call(func, extra_outputs=None):
+                
+                def f(*args, **kwargs):
+                    devices.torch_gc()
+        
+                    shared.state.sampling_step = 0
+                    shared.state.job_count = -1
+                    shared.state.job_no = 0
+                    shared.state.job_timestamp = shared.state.get_job_timestamp()
+                    shared.state.current_latent = None
+                    shared.state.current_image = None
+                    shared.state.current_image_sampling_step = 0
+                    shared.state.skipped = False
+                    shared.state.interrupted = False
+                    shared.state.textinfo = None
+        
+                    with queue_lock:
+                        res = func(*args, **kwargs)
+        
+                    shared.state.job = ""
+                    shared.state.job_count = 0
+        
+                    devices.torch_gc()
+        
+                    #return res
+        
+                #return modules.ui.wrap_gradio_call(f, extra_outputs=extra_outputs)
+            def copy(filename):
+                import shutil,os
+                try:
+                    os.makedirs("/content/drive/StableDiffusionTraining/{}".format(
+                        filename.split("/")[-1].split(".")[0]
+                    ))
+                except:
+                    pass
+                try:
+                    shutil.copy(filename, "/content/drive/StableDiffusionTraining/{}".format(
+                            filename.split("/")[-1].split(".")[0]))
+                except Exception as e:
+                    print("保存训练模型至Google Drive时出错：{}".format(e))
+            wrap_gradio_gpu_call(copy(filename), extra_outputs=None)
+
         if embedding.step > 0 and embedding_dir is not None and embedding.step % save_embedding_every == 0:
             last_saved_file = os.path.join(embedding_dir, f'{embedding_name}-{embedding.step}.pt')
             save_pts(last_saved_file)
