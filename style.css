@@ -167,10 +167,6 @@ button{
     align-self: stretch !important;
 }
 
-#img2maskimg .h-60{
-    height: 30rem;
-}
-
 .overflow-hidden, .gr-panel{
     overflow: visible !important;
 }
@@ -443,10 +439,6 @@ input[type="range"]{
     --tw-bg-opacity: 0 !important;
 }
 
-#img2img_image div.h-60{
-    height: 480px;
-}
-
 #context-menu{
     z-index:9999;
     position:absolute;
@@ -520,4 +512,12 @@ canvas[key="mask"] {
 
 .row.gr-compact{
     overflow: visible;
+}
+
+#img2img_image, #img2img_image > .h-60, #img2img_image > .h-60 > div, #img2img_image > .h-60 > div > img,
+img2maskimg, #img2maskimg > .h-60, #img2maskimg > .h-60 > div, #img2maskimg > .h-60 > div > img
+{
+    height: 480px !important;
+    max-height: 480px !important;
+    min-height: 480px !important;
 }
