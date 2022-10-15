@@ -113,5 +113,6 @@
     "button.apply_settings": "应用设置",
     "button.request_notifications": "请求浏览器通知",
     "button.reload_script_bodies": "重新加载自定义脚本主体（无 ui 更新，无重启）",
-    "button.restart_gradio": "重启 Gradio 和刷新组件（仅限自定义脚本、ui.py、js 和 css）"
+    "button.restart_gradio": "重启 Gradio 和刷新组件（仅限自定义脚本、ui.py、js 和 css）",
+    "label.script": "脚本"
 }
