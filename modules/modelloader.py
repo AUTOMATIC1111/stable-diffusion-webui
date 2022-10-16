@@ -10,7 +10,7 @@ from modules.upscaler import Upscaler
 from modules.paths import script_path, models_path
 
 
-def load_models(model_path: str, model_url: str = None, command_path: str = None, ext_filter=None, download_name=None) -> list:
+def load_models(model_path: str, model_url: str = None, command_path: str = None, ext_filter=None, neg_filter=None, download_name=None) -> list:
     """
     A one-and done loader to try finding the desired models in specified directories.
 
@@ -19,12 +19,16 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
     @param model_path: The location to store/find models in.
     @param command_path: A command-line argument to search for models in first.
     @param ext_filter: An optional list of filename extensions to filter by
+    @param neg_filter: An optional list of filename filter to block
     @return: A list of paths containing the desired model(s)
     """
     output = []
 
     if ext_filter is None:
         ext_filter = []
+
+    if neg_filter is None:
+        neg_filter = []
 
     try:
         places = []
@@ -49,6 +53,13 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
                         model_name, extension = os.path.splitext(file)
                         if extension not in ext_filter:
                             continue
+                    if len(neg_filter) != 0:
+                        if type(neg_filter) is str:
+                            if neg_filter in file:
+                                continue
+                        else:
+                            if any(i in file for i in neg_filter):
+                                continue
                     if file not in output:
                         output.append(full_path)
 
@@ -96,7 +107,7 @@ def cleanup_models():
     move_files(src_path, dest_path)
 
 
-def move_files(src_path: str, dest_path: str, ext_filter: str = None):
+def move_files(src_path: str, dest_path: str, ext_filter: str = None, neg_filter: str = None):
     try:
         if not os.path.exists(dest_path):
             os.makedirs(dest_path)
@@ -106,6 +117,9 @@ def move_files(src_path: str, dest_path: str, ext_filter: str = None):
                 if os.path.isfile(fullpath):
                     if ext_filter is not None:
                         if ext_filter not in file:
+                            continue
+                    if neg_filter is not None:
+                        if neg_filter in file:
                             continue
                     print(f"Moving {file} from {src_path} to {dest_path}.")
                     try:
