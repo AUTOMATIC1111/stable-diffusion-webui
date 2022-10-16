@@ -14,7 +14,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Please fill this form with as much information as possible, don't forget to fill "What OS..." and "What browsers" and *provide screenshots if possible*
+        *Please fill this form with as much information as possible, don't forget to fill "What OS..." and "What browsers" and *provide screenshots if possible**
   - type: textarea
     id: what-did
     attributes:
