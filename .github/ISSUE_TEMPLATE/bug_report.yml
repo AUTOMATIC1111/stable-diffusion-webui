@@ -7,8 +7,18 @@ body:
   - type: textarea
     id: what-did
     attributes:
-      label: What did happened?
-      description: Also tell us, what did you expect to happen?
+      label: What happened?
+      description: Tell us what happened in a very clear and simple way
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce the problem
+      description: Please provide us with precise step by step information to reproduce the bug
+      value: 1. Go to .... |
+        2. Press ....
+        3. ...
     validations:
       required: true
   - type: textarea
@@ -18,7 +28,7 @@ body:
       description: tell what you think the normal behavior should be
     validations:
       required: true
-  - type: textarea
+  - type: input
     id: commit
     attributes:
       label: Commit where the problem happens
