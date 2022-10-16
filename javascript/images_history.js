@@ -20,7 +20,7 @@ var images_history_click_image = function(){
 var images_history_click_tab = function(){
     var tabs_box = gradioApp().getElementById("images_history_tab");
     if (!tabs_box.classList.contains(this.getAttribute("tabname"))) {
-        gradioApp().getElementById(this.getAttribute("tabname") + "_images_history_renew_page").click();
+        gradioApp().getElementById(this.getAttribute("tabname") + "_images_history_start").click();
         tabs_box.classList.add(this.getAttribute("tabname"))
     }                
 }
@@ -96,7 +96,7 @@ function images_history_get_current_img(tabname, img_index, files){
     ];
 }
 
-function images_history_delete(del_num, tabname, img_file_name, page_index, filenames, image_index){
+function images_history_delete(del_num, tabname, image_index){
     image_index = parseInt(image_index);
     var tab = gradioApp().getElementById(tabname + '_images_history');
     var set_btn = tab.querySelector(".images_history_set_index");
@@ -107,6 +107,7 @@ function images_history_delete(del_num, tabname, img_file_name, page_index, file
         }
     });    
     var img_num = buttons.length / 2;
+    del_num = Math.min(img_num - image_index, del_num)    
     if (img_num <= del_num){
         setTimeout(function(tabname){
             gradioApp().getElementById(tabname + '_images_history_renew_page').click();
@@ -114,30 +115,29 @@ function images_history_delete(del_num, tabname, img_file_name, page_index, file
     } else {
         var next_img  
         for (var i = 0; i < del_num; i++){
-            if (image_index + i < image_index + img_num){
-                buttons[image_index + i].style.display = 'none';
-                buttons[image_index + img_num + 1].style.display = 'none';
-                next_img = image_index + i + 1
-            }
+            buttons[image_index + i].style.display = 'none';
+            buttons[image_index + i + img_num].style.display = 'none';
+            next_img = image_index + i + 1
         }
         var bnt;
         if (next_img  >= img_num){
-            btn = buttons[image_index - del_num];
+            btn = buttons[image_index - 1];
         } else {            
             btn = buttons[next_img];          
         } 
         setTimeout(function(btn){btn.click()}, 30, btn);
     }
     images_history_disabled_del();  
-    return [del_num, tabname, img_file_name, page_index, filenames, image_index];
+   
 }
 
-function images_history_turnpage(img_path, page_index, image_index, tabname, date_from, date_to){
+function images_history_turnpage(tabname){
+    console.log("del_button")
+    gradioApp().getElementById(tabname + '_images_history_del_button').setAttribute('disabled','disabled');
     var buttons = gradioApp().getElementById(tabname + '_images_history').querySelectorAll(".gallery-item");
     buttons.forEach(function(elem) {
         elem.style.display = 'block';
-    })
-    return [img_path, page_index, image_index, tabname, date_from, date_to];
+    })   
 }
 
 function images_history_enable_del_buttons(){
@@ -147,7 +147,7 @@ function images_history_enable_del_buttons(){
 }
 
 function images_history_init(){ 
-    var load_txt2img_button = gradioApp().getElementById('txt2img_images_history_renew_page')
+    var load_txt2img_button = gradioApp().getElementById('saved_images_history_start')
     if (load_txt2img_button){        
         for (var i in images_history_tab_list ){
             tab = images_history_tab_list[i];
@@ -166,7 +166,8 @@ function images_history_init(){
 
             // this refreshes history upon tab switch
             // until the history is known to work well, which is not the case now, we do not do this at startup
-            //tab_btns[i].addEventListener('click', images_history_click_tab);
+            // -- load page very fast now,  so better user experience by automatically activating pages
+            tab_btns[i].addEventListener('click', images_history_click_tab);
         }    
         tabs_box.classList.add(images_history_tab_list[0]);
 
@@ -177,7 +178,7 @@ function images_history_init(){
     } 
 }
 
-var images_history_tab_list = ["txt2img", "img2img", "extras"];
+var images_history_tab_list = ["saved", "txt2img", "img2img", "extras"];
 setTimeout(images_history_init, 500);
 document.addEventListener("DOMContentLoaded", function() {
     var mutationObserver = new MutationObserver(function(m){
@@ -188,18 +189,16 @@ document.addEventListener("DOMContentLoaded", function() {
                 bnt.addEventListener('click', images_history_click_image, true);
             });
 
-            // same as load_txt2img_button.click() above
-            /*
             var cls_btn = gradioApp().getElementById(tabname + '_images_history_gallery').querySelector("svg");
             if (cls_btn){
                 cls_btn.addEventListener('click', function(){
-                    gradioApp().getElementById(tabname + '_images_history_renew_page').click();
+                    gradioApp().getElementById(tabname + '_images_history_del_button').setAttribute('disabled','disabled');
                 }, false);
-            }*/
+            }
 
         }     
     });
-    mutationObserver.observe( gradioApp(), { childList:true, subtree:true });
+    mutationObserver.observe(gradioApp(), { childList:true, subtree:true });
 
 });
 

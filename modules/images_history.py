@@ -3,8 +3,10 @@ import shutil
 import time
 import hashlib
 import gradio
-show_max_dates_num = 3
+
 system_bak_path = "webui_log_and_bak"
+loads_files_num = 216
+num_of_imgs_per_page = 36
 def is_valid_date(date):
     try:
         time.strptime(date, "%Y%m%d")
@@ -53,38 +55,7 @@ def traverse_all_files(curr_path, image_list, all_type=False):
             image_list = traverse_all_files(file, image_list)
     return image_list
 
-def get_recent_images(dir_name, page_index, step, image_index, tabname, date_from, date_to):
-    #print(f"turn_page {page_index}",date_from)
-    if date_from is None or date_from == "":
-        return None, 1, None, ""
-    image_list = []
-    date_list = auto_sorting(dir_name)
-    page_index = int(page_index)
-    today = time.strftime("%Y%m%d",time.localtime(time.time()))
-    for date in date_list:
-        if date >= date_from and date <= date_to:
-            path = os.path.join(dir_name, date)
-            if date == today and not os.path.exists(path):
-                continue
-            image_list = traverse_all_files(path, image_list)
-
-    image_list = sorted(image_list, key=lambda file: -os.path.getctime(file))
-    num = 48 if tabname != "extras" else 12
-    max_page_index = len(image_list) // num + 1
-    page_index = max_page_index if page_index == -1 else page_index + step
-    page_index = 1 if page_index < 1 else page_index
-    page_index = max_page_index if page_index > max_page_index else page_index
-    idx_frm = (page_index - 1) * num
-    image_list = image_list[idx_frm:idx_frm + num]
-    image_index = int(image_index)
-    if image_index < 0 or image_index > len(image_list) - 1:
-        current_file = None
-    else:
-        current_file = image_list[image_index]
-    return image_list, page_index, image_list,  ""
-
-def auto_sorting(dir_name):
-    #print(f"auto sorting")
+def auto_sorting(dir_name):    
     bak_path = os.path.join(dir_name, system_bak_path)
     if not os.path.exists(bak_path):
         os.mkdir(bak_path)
@@ -126,102 +97,131 @@ def auto_sorting(dir_name):
     today = time.strftime("%Y%m%d",time.localtime(time.time()))
     if today not in date_list:
         date_list.append(today)
-    return sorted(date_list)
+    return sorted(date_list, reverse=True)
 
 
 
-def archive_images(dir_name):
+def archive_images(dir_name, date_to):
     date_list = auto_sorting(dir_name)
-    date_from = date_list[-show_max_dates_num] if len(date_list) > show_max_dates_num else date_list[0]
+    today = time.strftime("%Y%m%d",time.localtime(time.time()))
+    date_to = today if date_to is None  or date_to == "" else date_to
+    filenames = []
+    for date in date_list:
+        if date <= date_to:
+            path = os.path.join(dir_name, date)
+            if date == today and not os.path.exists(path):
+                continue
+            filenames = traverse_all_files(path, filenames)
+        if len(filenames) > loads_files_num:            
+            break
+    filenames = sorted(filenames, key=lambda file: -os.path.getctime(file))
+    _, image_list, _, visible_num = get_recent_images(1, 0, filenames)
     return (
         gradio.update(visible=False), 
         gradio.update(visible=True), 
-        gradio.Dropdown.update(choices=date_list, value=date_list[-1]),
-        gradio.Dropdown.update(choices=date_list, value=date_from)
+        gradio.Dropdown.update(choices=date_list, value=date_to),
+        date,
+        filenames,        
+        1,
+        image_list,
+        "",
+        visible_num
     )
+def system_init(dir_name):
+    ret =  [x for x in  archive_images(dir_name, None)]
+    ret += [gradio.update(visible=False)]
+    return ret    
 
-def date_to_change(dir_name, page_index, image_index, tabname, date_from, date_to):
-    #print("date_to", date_to)
-    date_list = auto_sorting(dir_name)
-    date_from_list = [date for date in date_list if date <= date_to]
-    date_from = date_from_list[0] if len(date_from_list) < show_max_dates_num else date_from_list[-show_max_dates_num]
-    image_list, page_index, image_list, _  =get_recent_images(dir_name, 1, 0, image_index, tabname, date_from, date_to)
-    return image_list, page_index, image_list, _, gradio.Dropdown.update(choices=date_from_list, value=date_from)
+def newest_click(dir_name,  date_to):
+    if date_to == "start":
+         return  True,  False, "start", None, None, 1, None, ""
+    else:
+        return archive_images(dir_name, time.strftime("%Y%m%d",time.localtime(time.time())))
 
-def first_page_click(dir_name, page_index, image_index, tabname, date_from, date_to):
-    return get_recent_images(dir_name, 1, 0, image_index, tabname, date_from, date_to)
-
-
-def end_page_click(dir_name, page_index, image_index, tabname, date_from, date_to):
-    return get_recent_images(dir_name, -1, 0, image_index, tabname, date_from, date_to)
-
-
-def prev_page_click(dir_name, page_index, image_index, tabname, date_from, date_to):
-    return get_recent_images(dir_name, page_index, -1, image_index, tabname, date_from, date_to)
-
-
-def next_page_click(dir_name, page_index, image_index, tabname, date_from, date_to):
-    return get_recent_images(dir_name, page_index, 1, image_index, tabname, date_from, date_to)
-
-
-def page_index_change(dir_name, page_index, image_index, tabname, date_from, date_to):
-    return get_recent_images(dir_name, page_index, 0, image_index, tabname, date_from, date_to)
-
-
-def show_image_info(tabname_box, num, filenames):
-    # #print(f"select image {num}")
-    file = filenames[int(num)]
-    return file, num, file
-
-def delete_image(delete_num, tabname, name, page_index, filenames, image_index):
+def delete_image(delete_num, name, filenames, image_index, visible_num):
     if name == "":
         return filenames, delete_num
     else:
         delete_num = int(delete_num)
+        visible_num = int(visible_num)
+        image_index = int(image_index)
         index = list(filenames).index(name)
         i = 0
         new_file_list = []
         for name in filenames:
             if i >= index and i < index + delete_num:
                 if os.path.exists(name):
-                    #print(f"Delete file {name}")
+                    if visible_num == image_index:
+                        new_file_list.append(name)
+                        continue                    
+                    print(f"Delete file {name}")
                     os.remove(name)
+                    visible_num -= 1
                     txt_file = os.path.splitext(name)[0] + ".txt"
                     if os.path.exists(txt_file):
                         os.remove(txt_file)
                 else:
-                    #print(f"Not exists file {name}")
+                    print(f"Not exists file {name}")
             else:
                 new_file_list.append(name)
             i += 1
-    return new_file_list, 1
+    return new_file_list, 1, visible_num
+
+def get_recent_images(page_index, step, filenames):
+    page_index = int(page_index)
+    max_page_index = len(filenames) // num_of_imgs_per_page + 1
+    page_index = max_page_index if page_index == -1 else page_index + step
+    page_index = 1 if page_index < 1 else page_index
+    page_index = max_page_index if page_index > max_page_index else page_index
+    idx_frm = (page_index - 1) * num_of_imgs_per_page
+    image_list = filenames[idx_frm:idx_frm + num_of_imgs_per_page]
+    length = len(filenames)
+    visible_num = num_of_imgs_per_page if  idx_frm + num_of_imgs_per_page <= length else length % num_of_imgs_per_page 
+    visible_num = num_of_imgs_per_page if visible_num == 0 else visible_num
+    return page_index, image_list,  "", visible_num
+
+def first_page_click(page_index, filenames):
+    return get_recent_images(1, 0, filenames)
+
+def end_page_click(page_index, filenames):
+    return get_recent_images(-1, 0, filenames)
+
+def prev_page_click(page_index, filenames):
+    return get_recent_images(page_index, -1, filenames)
+
+def next_page_click(page_index, filenames):
+    return get_recent_images(page_index, 1, filenames)
+
+def page_index_change(page_index, filenames):
+    return get_recent_images(page_index, 0, filenames)
+
+def show_image_info(tabname_box, num, page_index, filenames):
+    file = filenames[int(num) + int((page_index - 1) * num_of_imgs_per_page)] 
+    return file, num, file
 
 def show_images_history(gr, opts, tabname, run_pnginfo, switch_dict):
-    if opts.outdir_samples != "":
-        dir_name = opts.outdir_samples
-    elif tabname == "txt2img":
+    if tabname == "txt2img":
         dir_name = opts.outdir_txt2img_samples
     elif tabname == "img2img":
         dir_name = opts.outdir_img2img_samples
     elif tabname == "extras":
         dir_name = opts.outdir_extras_samples
+    elif tabname == "saved":
+        dir_name = opts.outdir_save
+        if not os.path.exists(dir_name):
+            os.makedirs(dir_name)
     d = dir_name.split("/")
-    dir_name = "/" if dir_name.startswith("/") else d[0]
+    dir_name = d[0]
     for p in d[1:]:
         dir_name = os.path.join(dir_name, p)
 
     f_list = os.listdir(dir_name)
     sorted_flag = os.path.exists(os.path.join(dir_name, system_bak_path)) or len(f_list) == 0 
     date_list, date_from, date_to = None, None, None
-    if sorted_flag:
-        #print(sorted_flag)
-        date_list = auto_sorting(dir_name)
-        date_to = date_list[-1]
-        date_from = date_list[-show_max_dates_num] if len(date_list) > show_max_dates_num else date_list[0] 
 
     with gr.Column(visible=sorted_flag) as page_panel:
         with gr.Row():
-            renew_page = gr.Button('Refresh', elem_id=tabname + "_images_history_renew_page", interactive=sorted_flag)
+            #renew_page = gr.Button('Refresh')
             first_page = gr.Button('First Page')
             prev_page = gr.Button('Prev Page')
             page_index = gr.Number(value=1, label="Page Index")
@@ -231,9 +231,9 @@ def show_images_history(gr, opts, tabname, run_pnginfo, switch_dict):
         with gr.Row(elem_id=tabname + "_images_history"):
             with gr.Column(scale=2):
                 with gr.Row():
-                    newest = gr.Button('Newest')
-                    date_to = gr.Dropdown(choices=date_list, value=date_to, label="Date to")
-                    date_from = gr.Dropdown(choices=date_list, value=date_from, label="Date from")                    
+                    newest = gr.Button('Refresh', elem_id=tabname + "_images_history_start")                    
+                    date_from = gr.Textbox(label="Date from", interactive=False)  
+                    date_to = gr.Dropdown(value="start" if not sorted_flag else None, label="Date to")                  
 
                 history_gallery = gr.Gallery(show_label=False, elem_id=tabname + "_images_history_gallery").style(grid=6)
                 with gr.Row():
@@ -247,66 +247,72 @@ def show_images_history(gr, opts, tabname, run_pnginfo, switch_dict):
                     with gr.Column():
                         img_file_info = gr.Textbox(label="Generate Info", interactive=False)
                         img_file_name = gr.Textbox(value="", label="File Name", interactive=False)
+                        
                     # hiden items
-                    with gr.Row(visible=False):
+                    with gr.Row(visible=False):   
+                        visible_img_num = gr.Number()                     
                         img_path = gr.Textbox(dir_name)
                         tabname_box = gr.Textbox(tabname)
                         image_index = gr.Textbox(value=-1)
                         set_index = gr.Button('set_index', elem_id=tabname + "_images_history_set_index")
                         filenames = gr.State()
+                        all_images_list = gr.State()
                         hidden = gr.Image(type="pil")
                         info1 = gr.Textbox()
                         info2 = gr.Textbox()
+
     with gr.Column(visible=not sorted_flag) as init_warning:
         with gr.Row():
-            gr.Textbox("The system needs to archive the files according to the date. This requires changing the directory structure of the files",
-             label="Waring",
-             css="")
+            warning = gr.Textbox(
+                label="Waring",
+                value=f"The system needs to archive the files according to the date. This requires changing the directory structure of the files.If you have doubts about this operation, you can first back up the files in the '{dir_name}' directory"
+            )
+            warning.style(height=100, width=50)
         with gr.Row():
             sorted_button = gr.Button('Confirme')
 
-                  
-           
+    change_date_output = [init_warning, page_panel, date_to, date_from, filenames, page_index, history_gallery, img_file_name, visible_img_num]           
+    sorted_button.click(system_init, inputs=[img_path], outputs=change_date_output + [sorted_button]) 
+    newest.click(newest_click, inputs=[img_path, date_to], outputs=change_date_output)
+    date_to.change(archive_images, inputs=[img_path, date_to], outputs=change_date_output) 
+    date_to.change(fn=None, inputs=[tabname_box], outputs=None, _js="images_history_turnpage")
+    newest.click(fn=None, inputs=[tabname_box], outputs=None, _js="images_history_turnpage")
+
+    delete.click(delete_image, inputs=[delete_num, img_file_name, filenames, image_index, visible_img_num], outputs=[filenames, delete_num, visible_img_num])
+    delete.click(fn=None, _js="images_history_delete", inputs=[delete_num, tabname_box, image_index], outputs=None)  
+    
    
     # turn pages
-    gallery_inputs = [img_path, page_index, image_index, tabname_box, date_from, date_to]
-    gallery_outputs = [history_gallery, page_index, filenames, img_file_name]
+    gallery_inputs = [page_index, filenames]
+    gallery_outputs = [page_index, history_gallery, img_file_name, visible_img_num]
 
-    first_page.click(first_page_click, _js="images_history_turnpage", inputs=gallery_inputs, outputs=gallery_outputs)
-    next_page.click(next_page_click, _js="images_history_turnpage", inputs=gallery_inputs, outputs=gallery_outputs)
-    prev_page.click(prev_page_click, _js="images_history_turnpage", inputs=gallery_inputs, outputs=gallery_outputs)
-    end_page.click(end_page_click, _js="images_history_turnpage", inputs=gallery_inputs, outputs=gallery_outputs)
-    page_index.submit(page_index_change, _js="images_history_turnpage", inputs=gallery_inputs, outputs=gallery_outputs)
-    renew_page.click(page_index_change, _js="images_history_turnpage", inputs=gallery_inputs, outputs=gallery_outputs)
-    # page_index.change(page_index_change, inputs=[tabname_box, img_path,  page_index], outputs=[history_gallery, page_index])
+    first_page.click(first_page_click, inputs=gallery_inputs, outputs=gallery_outputs)
+    next_page.click(next_page_click, inputs=gallery_inputs, outputs=gallery_outputs)
+    prev_page.click(prev_page_click, inputs=gallery_inputs, outputs=gallery_outputs)
+    end_page.click(end_page_click, inputs=gallery_inputs, outputs=gallery_outputs)
+    page_index.submit(page_index_change, inputs=gallery_inputs, outputs=gallery_outputs)
+
+    first_page.click(fn=None, inputs=[tabname_box], outputs=None, _js="images_history_turnpage")
+    next_page.click(fn=None, inputs=[tabname_box], outputs=None, _js="images_history_turnpage")
+    prev_page.click(fn=None, inputs=[tabname_box], outputs=None, _js="images_history_turnpage")
+    end_page.click(fn=None, inputs=[tabname_box], outputs=None, _js="images_history_turnpage")
+    page_index.submit(fn=None, inputs=[tabname_box], outputs=None, _js="images_history_turnpage")
 
     # other funcitons
-    set_index.click(show_image_info, _js="images_history_get_current_img", inputs=[tabname_box, image_index, filenames], outputs=[img_file_name, image_index, hidden])
-    img_file_name.change(fn=None, _js="images_history_enable_del_buttons", inputs=None, outputs=None)
-    delete.click(delete_image, _js="images_history_delete", inputs=[delete_num, tabname_box, img_file_name, page_index, filenames, image_index], outputs=[filenames, delete_num])
+    set_index.click(show_image_info, _js="images_history_get_current_img", inputs=[tabname_box, image_index, page_index, filenames], outputs=[img_file_name, image_index, hidden])
+    img_file_name.change(fn=None, _js="images_history_enable_del_buttons", inputs=None, outputs=None)   
     hidden.change(fn=run_pnginfo, inputs=[hidden], outputs=[info1, img_file_info, info2])
-    date_to.change(date_to_change, _js="images_history_turnpage", inputs=gallery_inputs, outputs=gallery_outputs + [date_from])
-    # pnginfo.click(fn=run_pnginfo, inputs=[hidden], outputs=[info1, img_file_info, info2])
+
     switch_dict["fn"](pnginfo_send_to_txt2img, switch_dict["t2i"], img_file_info, 'switch_to_txt2img')
     switch_dict["fn"](pnginfo_send_to_img2img, switch_dict["i2i"], img_file_info, 'switch_to_img2img_img2img')
 
-    sorted_button.click(archive_images, inputs=[img_path], outputs=[init_warning, page_panel, date_to, date_from])
-    newest.click(archive_images, inputs=[img_path], outputs=[init_warning, page_panel, date_to, date_from])
-   
-    
-    
 
 
 def create_history_tabs(gr, opts, run_pnginfo, switch_dict):
     with gr.Blocks(analytics_enabled=False) as images_history:
         with gr.Tabs() as tabs:
-            with gr.Tab("txt2img history"):
-                with gr.Blocks(analytics_enabled=False) as images_history_txt2img:
-                    show_images_history(gr, opts, "txt2img", run_pnginfo, switch_dict)
-            with gr.Tab("img2img history"):
-                with gr.Blocks(analytics_enabled=False) as images_history_img2img:
-                    show_images_history(gr, opts, "img2img", run_pnginfo, switch_dict)
-            with gr.Tab("extras history"):
-                with gr.Blocks(analytics_enabled=False) as images_history_img2img:
-                    show_images_history(gr, opts, "extras", run_pnginfo, switch_dict)
+            for tab in ["saved", "txt2img", "img2img", "extras"]:
+                with gr.Tab(tab):
+                    with gr.Blocks(analytics_enabled=False) as images_history_img2img:
+                        show_images_history(gr, opts, tab, run_pnginfo, switch_dict) 
     return images_history
