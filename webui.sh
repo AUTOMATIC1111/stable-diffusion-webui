@@ -41,6 +41,11 @@ then
     venv_dir="venv"
 fi
 
+if [[ -z "${STABLE_DIFFUSION_WEBUI_REPO}" ]]
+then
+    STABLE_DIFFUSION_WEBUI_REPO="https://github.com/AUTOMATIC1111/stable-diffusion-webui.git"
+fi
+
 if [[ -z "${LAUNCH_SCRIPT}" ]]
 then
     LAUNCH_SCRIPT="launch.py"
@@ -111,7 +116,7 @@ then
     cd "${clone_dir}"/ || { printf "\e[1m\e[31mERROR: Can't cd to %s/%s/, aborting...\e[0m" "${install_dir}" "${clone_dir}"; exit 1; }
     "${GIT}" pull
 else
-    "${GIT}" clone https://github.com/AUTOMATIC1111/stable-diffusion-webui.git "${clone_dir}"
+    "${GIT}" clone "${STABLE_DIFFUSION_WEBUI_REPO}" "${clone_dir}"
     cd "${clone_dir}"/ || { printf "\e[1m\e[31mERROR: Can't cd to %s/%s/, aborting...\e[0m" "${install_dir}" "${clone_dir}"; exit 1; }
 fi
 
