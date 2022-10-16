@@ -27,4 +27,5 @@ Your installed xformers is incompatible with your GPU. If you use Python 3.10, h
 
 # NameError: name 'xformers' is not defined
 If you use Windows, this means your Python is too old. Use 3.10
-If Linux, you'll have to build xformers yourself or just avoid it.
+
+If Linux, you'll have to build xformers yourself or just avoid using xformers.
