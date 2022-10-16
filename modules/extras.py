@@ -175,11 +175,14 @@ def run_pnginfo(image):
 
 
 def run_modelmerger(primary_model_name, secondary_model_name, teritary_model_name, interp_method, multiplier, save_as_half, custom_name):
-    def weighted_sum(theta0, theta1, theta2, alpha):
+    def weighted_sum(theta0, theta1, alpha):
         return ((1 - alpha) * theta0) + (alpha * theta1)
 
-    def add_difference(theta0, theta1, theta2, alpha):
-        return theta0 + (theta1 - theta2) * alpha
+    def get_difference(theta1, theta2):
+        return theta1 - theta2
+
+    def add_difference(theta0, theta1_2_diff, alpha):
+        return theta0 + (alpha * theta1_2_diff)
 
     primary_model_info = sd_models.checkpoints_list[primary_model_name]
     secondary_model_info = sd_models.checkpoints_list[secondary_model_name]
@@ -201,20 +204,24 @@ def run_modelmerger(primary_model_name, secondary_model_name, teritary_model_nam
         theta_2 = None
 
     theta_funcs = {
-        "Weighted sum": weighted_sum,
-        "Add difference": add_difference,
+        "Weighted sum": (None, weighted_sum),
+        "Add difference": (get_difference, add_difference),
     }
-    theta_func = theta_funcs[interp_method]
+    theta_func1, theta_func2 = theta_funcs[interp_method]
 
     print(f"Merging...")
 
+    if theta_func1:
+        for key in tqdm.tqdm(theta_1.keys()):
+            if 'model' in key:
+                t2 = theta_2.get(key, torch.zeros_like(theta_1[key]))
+                theta_1[key] = theta_func1(theta_1[key], t2)
+    del theta_2, teritary_model
+
     for key in tqdm.tqdm(theta_0.keys()):
         if 'model' in key and key in theta_1:
-            t2 = (theta_2 or {}).get(key)
-            if t2 is None:
-                t2 = torch.zeros_like(theta_0[key])
 
-            theta_0[key] = theta_func(theta_0[key], theta_1[key], t2, multiplier)
+            theta_0[key] = theta_func2(theta_0[key], theta_1[key], multiplier)
 
             if save_as_half:
                 theta_0[key] = theta_0[key].half()
