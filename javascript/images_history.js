@@ -108,6 +108,7 @@ function images_history_delete(del_num, tabname, image_index){
     });    
     var img_num = buttons.length / 2;
     del_num = Math.min(img_num - image_index, del_num)    
+    console.log(del_num, img_num)
     if (img_num <= del_num){
         setTimeout(function(tabname){
             gradioApp().getElementById(tabname + '_images_history_renew_page').click();

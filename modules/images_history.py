@@ -153,6 +153,7 @@ def delete_image(delete_num, name, filenames, image_index, visible_num):
                 if os.path.exists(name):
                     if visible_num == image_index:
                         new_file_list.append(name)
+                        i += 1
                         continue                    
                     print(f"Delete file {name}")
                     os.remove(name)
@@ -221,7 +222,7 @@ def show_images_history(gr, opts, tabname, run_pnginfo, switch_dict):
 
     with gr.Column(visible=sorted_flag) as page_panel:
         with gr.Row():
-            #renew_page = gr.Button('Refresh')
+            renew_page = gr.Button('Refresh page', elem_id=tabname + "_images_history_renew_page")
             first_page = gr.Button('First Page')
             prev_page = gr.Button('Prev Page')
             page_index = gr.Number(value=1, label="Page Index")
@@ -231,7 +232,7 @@ def show_images_history(gr, opts, tabname, run_pnginfo, switch_dict):
         with gr.Row(elem_id=tabname + "_images_history"):
             with gr.Column(scale=2):
                 with gr.Row():
-                    newest = gr.Button('Refresh', elem_id=tabname + "_images_history_start")                    
+                    newest = gr.Button('Reload', elem_id=tabname + "_images_history_start")                    
                     date_from = gr.Textbox(label="Date from", interactive=False)  
                     date_to = gr.Dropdown(value="start" if not sorted_flag else None, label="Date to")                  
 
@@ -291,12 +292,14 @@ def show_images_history(gr, opts, tabname, run_pnginfo, switch_dict):
     prev_page.click(prev_page_click, inputs=gallery_inputs, outputs=gallery_outputs)
     end_page.click(end_page_click, inputs=gallery_inputs, outputs=gallery_outputs)
     page_index.submit(page_index_change, inputs=gallery_inputs, outputs=gallery_outputs)
+    renew_page.click(page_index_change, inputs=gallery_inputs, outputs=gallery_outputs)
 
     first_page.click(fn=None, inputs=[tabname_box], outputs=None, _js="images_history_turnpage")
     next_page.click(fn=None, inputs=[tabname_box], outputs=None, _js="images_history_turnpage")
     prev_page.click(fn=None, inputs=[tabname_box], outputs=None, _js="images_history_turnpage")
     end_page.click(fn=None, inputs=[tabname_box], outputs=None, _js="images_history_turnpage")
     page_index.submit(fn=None, inputs=[tabname_box], outputs=None, _js="images_history_turnpage")
+    renew_page.click(fn=None, inputs=[tabname_box], outputs=None, _js="images_history_turnpage")
 
     # other funcitons
     set_index.click(show_image_info, _js="images_history_get_current_img", inputs=[tabname_box, image_index, page_index, filenames], outputs=[img_file_name, image_index, hidden])
