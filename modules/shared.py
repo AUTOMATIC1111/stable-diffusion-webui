@@ -169,134 +169,133 @@ hide_dirs = {"visible": not cmd_opts.hide_ui_dir_config}
 
 options_templates = {}
 
-options_templates.update(options_section(('saving-images', "Saving images/grids"), {
-    "samples_save": OptionInfo(True, "Always save all generated images"),
-    "samples_format": OptionInfo('png', 'File format for images'),
-    "samples_filename_pattern": OptionInfo("", "Images filename pattern"),
+options_templates.update(options_section(('saving-images', "保存图片/网格图片（单次生成多张）"), {
+    "samples_save": OptionInfo(True, "保存所有生成的照片"),
+    "samples_format": OptionInfo('png', '图像文件格式'),
+    "samples_filename_pattern": OptionInfo("", "图像文件名格式"),
 
-    "grid_save": OptionInfo(True, "Always save all generated image grids"),
-    "grid_format": OptionInfo('png', 'File format for grids'),
-    "grid_extended_filename": OptionInfo(False, "Add extended info (seed, prompt) to filename when saving grid"),
-    "grid_only_if_multiple": OptionInfo(True, "Do not save grids consisting of one picture"),
-    "grid_prevent_empty_spots": OptionInfo(False, "Prevent empty spots in grid (when set to autodetect)"),
-    "n_rows": OptionInfo(-1, "Grid row count; use -1 for autodetect and 0 for it to be same as batch size", gr.Slider, {"minimum": -1, "maximum": 16, "step": 1}),
+    "grid_save": OptionInfo(True, "保存所有生成的网格图"),
+    "grid_format": OptionInfo('png', '网格的文件格式'),
+    "grid_extended_filename": OptionInfo(False, "保存网格时将扩展信息（图像生成种子、关键词语句）添加到文件名"),
+    "grid_only_if_multiple": OptionInfo(True, "不保存由张图像组成的网格"),
+    "grid_prevent_empty_spots": OptionInfo(False, "防止网格中出现空点（当设置为自动检测时）"),
+    "n_rows": OptionInfo(-1, "网格行数；使用-1表示自动检测，使用0表示与批次大小相同。", gr.Slider, {"minimum": -1, "maximum": 16, "step": 1}),
 
-    "enable_pnginfo": OptionInfo(True, "Save text information about generation parameters as chunks to png files"),
-    "save_txt": OptionInfo(False, "Create a text file next to every image with generation parameters."),
-    "save_images_before_face_restoration": OptionInfo(False, "Save a copy of image before doing face restoration."),
-    "jpeg_quality": OptionInfo(80, "Quality for saved jpeg images", gr.Slider, {"minimum": 1, "maximum": 100, "step": 1}),
-    "export_for_4chan": OptionInfo(True, "If PNG image is larger than 4MB or any dimension is larger than 4000, downscale and save copy as JPG"),
+    "enable_pnginfo": OptionInfo(True, "将关于生成参数的文本信息保存到png文件中（使用记事本打开可以看到信息）"),
+    "save_txt": OptionInfo(False, "在生成图片时，将参数以.txt格式保存到同目录中"),
+    "save_images_before_face_restoration": OptionInfo(False, "在面部修复前保存一份图像的副本"),
+    "jpeg_quality": OptionInfo(80, "保存jpeg图像的质量", gr.Slider, {"minimum": 1, "maximum": 100, "step": 1}),
+    "export_for_4chan": OptionInfo(True, "如果PNG大于4MB或任何尺寸大于4000,缩小尺寸并保存为JPG"),
 
-    "use_original_name_batch": OptionInfo(False, "Use original name for output filename during batch process in extras tab"),
-    "save_selected_only": OptionInfo(True, "When using 'Save' button, only save a single selected image"),
-    "do_not_add_watermark": OptionInfo(False, "Do not add watermark to images"),
+    "use_original_name_batch": OptionInfo(False, "在额外标签的批处理过程中,为输出文件名使用原始名称"),
+    "save_selected_only": OptionInfo(True, "使用“保存”按钮时,只保存一个选定的图像"),
+    "do_not_add_watermark": OptionInfo(False, "不在图像中添加水印"),
 }))
 
-options_templates.update(options_section(('saving-paths', "Paths for saving"), {
-    "outdir_samples": OptionInfo("", "Output directory for images; if empty, defaults to three directories below", component_args=hide_dirs),
-    "outdir_txt2img_samples": OptionInfo("outputs/txt2img-images", 'Output directory for txt2img images', component_args=hide_dirs),
-    "outdir_img2img_samples": OptionInfo("outputs/img2img-images", 'Output directory for img2img images', component_args=hide_dirs),
-    "outdir_extras_samples": OptionInfo("outputs/extras-images", 'Output directory for images from extras tab', component_args=hide_dirs),
-    "outdir_grids": OptionInfo("", "Output directory for grids; if empty, defaults to two directories below", component_args=hide_dirs),
-    "outdir_txt2img_grids": OptionInfo("outputs/txt2img-grids", 'Output directory for txt2img grids', component_args=hide_dirs),
-    "outdir_img2img_grids": OptionInfo("outputs/img2img-grids", 'Output directory for img2img grids', component_args=hide_dirs),
-    "outdir_save": OptionInfo("log/images", "Directory for saving images using the Save button", component_args=hide_dirs),
+options_templates.update(options_section(('saving-paths', "保存路径"), {
+    "outdir_samples": OptionInfo("", "图像的输出目录;如果为空,默认为下面的三个目录", component_args=hide_dirs),
+    "outdir_txt2img_samples": OptionInfo("outputs/txt2img-images", 'txt2img图像的输出目录', component_args=hide_dirs),
+    "outdir_img2img_samples": OptionInfo("outputs/img2img-images", 'img2img图像的输出目录', component_args=hide_dirs),
+    "outdir_extras_samples": OptionInfo("outputs/extras-images", '额外标签的输出目录', component_args=hide_dirs),
+    "outdir_grids": OptionInfo("", "网格的输出目录;如果为空,默认为下面的两个目录", component_args=hide_dirs),
+    "outdir_txt2img_grids": OptionInfo("outputs/txt2img-grids", 'txt2img网格的输出目录', component_args=hide_dirs),
+    "outdir_img2img_grids": OptionInfo("outputs/img2img-grids", 'img2img网格的输出目录', component_args=hide_dirs),
+    "outdir_save": OptionInfo("log/images", "使用“保存”按钮保存图像的目录", component_args=hide_dirs),
 }))
 
-options_templates.update(options_section(('saving-to-dirs', "Saving to a directory"), {
-    "save_to_dirs": OptionInfo(False, "Save images to a subdirectory"),
-    "grid_save_to_dirs": OptionInfo(False, "Save grids to a subdirectory"),
-    "use_save_to_dirs_for_ui": OptionInfo(False, "When using \"Save\" button, save images to a subdirectory"),
-    "directories_filename_pattern": OptionInfo("", "Directory name pattern"),
-    "directories_max_prompt_words": OptionInfo(8, "Max prompt words for [prompt_words] pattern", gr.Slider, {"minimum": 1, "maximum": 20, "step": 1}),
+options_templates.update(options_section(('saving-to-dirs', "保存到目录"), {
+    "save_to_dirs": OptionInfo(False, "将图像保存到子目录"),
+    "grid_save_to_dirs": OptionInfo(False, "将网格保存到子目录"),
+    "use_save_to_dirs_for_ui": OptionInfo(False, "当使用“保存”按钮时,将图像保存到子目录"),
+    "directories_filename_pattern": OptionInfo("", "目录命名方式"),
+    "directories_max_prompt_words": OptionInfo(8, "使用[]描述时的最大提示词数量 (可能指的是所有类型的括号)", gr.Slider, {"minimum": 1, "maximum": 20, "step": 1}),
 }))
 
-options_templates.update(options_section(('upscaling', "Upscaling"), {
-    "ESRGAN_tile": OptionInfo(192, "Tile size for ESRGAN upscalers. 0 = no tiling.", gr.Slider, {"minimum": 0, "maximum": 512, "step": 16}),
-    "ESRGAN_tile_overlap": OptionInfo(8, "Tile overlap, in pixels for ESRGAN upscalers. Low values = visible seam.", gr.Slider, {"minimum": 0, "maximum": 48, "step": 1}),
-    "realesrgan_enabled_models": OptionInfo(["R-ESRGAN x4+", "R-ESRGAN x4+ Anime6B"], "Select which Real-ESRGAN models to show in the web UI. (Requires restart)", gr.CheckboxGroup, lambda: {"choices": realesrgan_models_names()}),
-    "SWIN_tile": OptionInfo(192, "Tile size for all SwinIR.", gr.Slider, {"minimum": 16, "maximum": 512, "step": 16}),
-    "SWIN_tile_overlap": OptionInfo(8, "Tile overlap, in pixels for SwinIR. Low values = visible seam.", gr.Slider, {"minimum": 0, "maximum": 48, "step": 1}),
-    "ldsr_steps": OptionInfo(100, "LDSR processing steps. Lower = faster", gr.Slider, {"minimum": 1, "maximum": 200, "step": 1}),
-    "upscaler_for_img2img": OptionInfo(None, "Upscaler for img2img", gr.Dropdown, lambda: {"choices": [x.name for x in sd_upscalers]}),
-    "use_scale_latent_for_hires_fix": OptionInfo(False, "Upscale latent space image when doing hires. fix"),
+options_templates.update(options_section(('upscaling', "图像高清化"), {
+    "ESRGAN_tile": OptionInfo(192, "ESRGAN图像放大器的图块大小. 0 = 不平铺", gr.Slider, {"minimum": 0, "maximum": 512, "step": 16}),
+    "ESRGAN_tile_overlap": OptionInfo(8, "贴图重叠范围,以ESRGAN图像放大器的像素为单位, 低输入值将导致明显可见接缝", gr.Slider, {"minimum": 0, "maximum": 48, "step": 1}),
+    "realesrgan_enabled_models": OptionInfo(["R-ESRGAN x4+", "R-ESRGAN x4+ Anime6B"], "选择要在WebUI中显示的RealESRGAN模型(需要重启)", gr.CheckboxGroup, lambda: {"choices": realesrgan_models_names()}),
+    "SWIN_tile": OptionInfo(192, "SwinIR模型的无缝拼接图像尺寸.", gr.Slider, {"minimum": 16, "maximum": 512, "step": 16}),
+    "SWIN_tile_overlap": OptionInfo(8, "贴图重叠范围,以SwinIR图像放大器的像素为单位, 低输入值将导致明显可见接缝", gr.Slider, {"minimum": 0, "maximum": 48, "step": 1}),
+    "ldsr_steps": OptionInfo(100, "LDSR处理次数，次数越低处理越快", gr.Slider, {"minimum": 1, "maximum": 200, "step": 1}),
+    "upscaler_for_img2img": OptionInfo(None, "对img2img使用图像放大器", gr.Dropdown, lambda: {"choices": [x.name for x in sd_upscalers]}),
+    "use_scale_latent_for_hires_fix": OptionInfo(False, "在进行高清修复时，提升图像的质量（翻译存疑"),
 }))
 
-options_templates.update(options_section(('face-restoration', "Face restoration"), {
-    "face_restoration_model": OptionInfo(None, "Face restoration model", gr.Radio, lambda: {"choices": [x.name() for x in face_restorers]}),
-    "code_former_weight": OptionInfo(0.5, "CodeFormer weight parameter; 0 = maximum effect; 1 = minimum effect", gr.Slider, {"minimum": 0, "maximum": 1, "step": 0.01}),
-    "face_restoration_unload": OptionInfo(False, "Move face restoration model from VRAM into RAM after processing"),
+options_templates.update(options_section(('face-restoration', "面部修复"), {
+    "face_restoration_model": OptionInfo(None, "面部修复模型", gr.Radio, lambda: {"choices": [x.name() for x in face_restorers]}),
+    "code_former_weight": OptionInfo(0.5, "编码器权重, 越接近0权重越高，范围为0-1", gr.Slider, {"minimum": 0, "maximum": 1, "step": 0.01}),
+    "face_restoration_unload": OptionInfo(False, "处理后将面部修复模型从显存移到内存"),
 }))
 
-options_templates.update(options_section(('system', "System"), {
-    "memmon_poll_rate": OptionInfo(8, "VRAM usage polls per second during generation. Set to 0 to disable.", gr.Slider, {"minimum": 0, "maximum": 40, "step": 1}),
-    "samples_log_stdout": OptionInfo(False, "Always print all generation info to standard output"),
-    "multiple_tqdm": OptionInfo(True, "Add a second progress bar to the console that shows progress for an entire job."),
+options_templates.update(options_section(('system', "系统"), {
+    "memmon_poll_rate": OptionInfo(8, "在生成时，检测VRAM的占用情况，设置为0禁用.", gr.Slider, {"minimum": 0, "maximum": 40, "step": 1}),
+    "samples_log_stdout": OptionInfo(False, "始终将所有信息打印到标准输出（后台）"),
+    "multiple_tqdm": OptionInfo(True, "在控制台添加第二个进度条，显示批处理的进度."),
 }))
 
-options_templates.update(options_section(('training', "Training"), {
-    "unload_models_when_training": OptionInfo(False, "Unload VAE and CLIP from VRAM when training"),
-    "dataset_filename_word_regex": OptionInfo("", "Filename word regex"),
-    "dataset_filename_join_string": OptionInfo(" ", "Filename join string"),
-    "training_image_repeats_per_epoch": OptionInfo(1, "Number of repeats for a single input image per epoch; used only for displaying epoch number", gr.Number, {"precision": 0}),
-    "training_write_csv_every": OptionInfo(500, "Save an csv containing the loss to log directory every N steps, 0 to disable"),
+options_templates.update(options_section(('training', "训练"), {
+    "unload_models_when_training": OptionInfo(False, "在训练时，卸载VAE权重模型和CLIP生成模型"),
+    "dataset_filename_word_regex": OptionInfo("", "正则文件名"),
+    "dataset_filename_join_string": OptionInfo(" ", "文件名连接的字符串"),
+    "training_image_repeats_per_epoch": OptionInfo(1, "每一代训练的单个输入图像的重复次数;仅用于显示训练代数", gr.Number, {"precision": 0}),
+    "training_write_csv_every": OptionInfo(500, "每隔N步保存一个包含loss值的csv文件到日志目录, 0表示禁用"),
 }))
 
 options_templates.update(options_section(('sd', "Stable Diffusion"), {
-    "sd_model_checkpoint": OptionInfo(None, "Stable Diffusion checkpoint", gr.Dropdown, lambda: {"choices": modules.sd_models.checkpoint_tiles()}, refresh=sd_models.list_models),
-    "sd_checkpoint_cache": OptionInfo(0, "Checkpoints to cache in RAM", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
-    "sd_hypernetwork": OptionInfo("None", "Hypernetwork", gr.Dropdown, lambda: {"choices": ["None"] + [x for x in hypernetworks.keys()]}, refresh=reload_hypernetworks),
-    "sd_hypernetwork_strength": OptionInfo(1.0, "Hypernetwork strength", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.001}),
-    "img2img_color_correction": OptionInfo(False, "Apply color correction to img2img results to match original colors."),
-    "save_images_before_color_correction": OptionInfo(False, "Save a copy of image before applying color correction to img2img results"),
-    "img2img_fix_steps": OptionInfo(False, "With img2img, do exactly the amount of steps the slider specifies (normally you'd do less with less denoising)."),
-    "enable_quantization": OptionInfo(False, "Enable quantization in K samplers for sharper and cleaner results. This may change existing seeds. Requires restart to apply."),
-    "enable_emphasis": OptionInfo(True, "Emphasis: use (text) to make model pay more attention to text and [text] to make it pay less attention"),
-    "use_old_emphasis_implementation": OptionInfo(False, "Use old emphasis implementation. Can be useful to reproduce old seeds."),
-    "enable_batch_seeds": OptionInfo(True, "Make K-diffusion samplers produce same images in a batch as when making a single image"),
-    "comma_padding_backtrack": OptionInfo(20, "Increase coherency by padding from the last comma within n tokens when using more than 75 tokens", gr.Slider, {"minimum": 0, "maximum": 74, "step": 1 }),
-    "filter_nsfw": OptionInfo(False, "Filter NSFW content"),
-    'CLIP_stop_at_last_layers': OptionInfo(1, "Stop At last layers of CLIP model", gr.Slider, {"minimum": 1, "maximum": 12, "step": 1}),
-    "random_artist_categories": OptionInfo([], "Allowed categories for random artists selection when using the Roll button", gr.CheckboxGroup, {"choices": artist_db.categories()}),
+    "sd_model_checkpoint": OptionInfo(None, "Stable Diffusion 存档点模型", gr.Dropdown, lambda: {"choices": modules.sd_models.checkpoint_tiles()}, refresh=sd_models.list_models),
+    "sd_checkpoint_cache": OptionInfo(0, "存档点模型缓存在RAM中的大小", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
+    "sd_hypernetwork": OptionInfo("None", "Hypernetwork 模型", gr.Dropdown, lambda: {"choices": ["None"] + [x for x in hypernetworks.keys()]}, refresh=reload_hypernetworks),
+    "sd_hypernetwork_strength": OptionInfo(1.0, "Hypernetwork 模型强度", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.001}),
+    "img2img_color_correction": OptionInfo(False, "对img2img生成的结果应用颜色校正来与原始颜色相匹配"),
+    "save_images_before_color_correction": OptionInfo(False, "在对img2img生成的结果应用颜色校正之前,保存图像的副本"),
+    "img2img_fix_steps": OptionInfo(False, "在img2img时, 解析次数等于设定值（通常解析次数会小于设定值，去噪更少）"),
+    "enable_quantization": OptionInfo(False, "在K-diffusion采样器中启动量化来获得更清晰简洁的结果,这可能会改变现有的图像生成种子,需要重新启动才能应用."),
+    "enable_emphasis": OptionInfo(True, "描述强调: 使用()增加权重，使用[]降低权重"),
+    "use_old_emphasis_implementation": OptionInfo(False, "使用旧版强调实现. 这对于老种子有用."),
+    "enable_batch_seeds": OptionInfo(True, "使用K-diffusion采样器批量生成与生成单个图像时相同的图像"),
+    "comma_padding_backtrack": OptionInfo(20, "当使用超过75个token时,从n个token内的最后一个逗号开始填充,以提高一致性", gr.Slider, {"minimum": 0, "maximum": 74, "step": 1 }),
+    "filter_nsfw": OptionInfo(False, "过滤NSFW（R-18）内容"),
+    'CLIP_stop_at_last_layers': OptionInfo(1, "在CLIP模型的最后几层停止", gr.Slider, {"minimum": 1, "maximum": 12, "step": 1}),
+    "random_artist_categories": OptionInfo([], "当使用随机关键词按钮时,允许选择随机艺术家类别", gr.CheckboxGroup, {"choices": artist_db.categories()}),
 }))
 
-options_templates.update(options_section(('interrogate', "Interrogate Options"), {
-    "interrogate_keep_models_in_memory": OptionInfo(False, "Interrogate: keep models in VRAM"),
-    "interrogate_use_builtin_artists": OptionInfo(True, "Interrogate: use artists from artists.csv"),
-    "interrogate_return_ranks": OptionInfo(False, "Interrogate: include ranks of model tags matches in results (Has no effect on caption-based interrogators)."),
-    "interrogate_clip_num_beams": OptionInfo(1, "Interrogate: num_beams for BLIP", gr.Slider, {"minimum": 1, "maximum": 16, "step": 1}),
-    "interrogate_clip_min_length": OptionInfo(24, "Interrogate: minimum description length (excluding artists, etc..)", gr.Slider, {"minimum": 1, "maximum": 128, "step": 1}),
-    "interrogate_clip_max_length": OptionInfo(48, "Interrogate: maximum description length", gr.Slider, {"minimum": 1, "maximum": 256, "step": 1}),
-    "interrogate_clip_dict_limit": OptionInfo(1500, "CLIP: maximum number of lines in text file (0 = No limit)"),
-    "interrogate_deepbooru_score_threshold": OptionInfo(0.5, "Interrogate: deepbooru score threshold", gr.Slider, {"minimum": 0, "maximum": 1, "step": 0.01}),
-    "deepbooru_sort_alpha": OptionInfo(True, "Interrogate: deepbooru sort alphabetically"),
-    "deepbooru_use_spaces": OptionInfo(False, "use spaces for tags in deepbooru"),
-    "deepbooru_escape": OptionInfo(True, "escape (\\) brackets in deepbooru (so they are used as literal brackets and not for emphasis)"),
+options_templates.update(options_section(('interrogate', "询问设置"), {
+    "interrogate_keep_models_in_memory": OptionInfo(False, "询问:将模型保存在显存中"),
+    "interrogate_use_builtin_artists": OptionInfo(True, "询问:使用artsts.csv中的艺术家"),
+    "interrogate_return_ranks": OptionInfo(False, "询问:在结果中包含模型标签匹配的排名(对基于标题的询问器没有影响)"),
+    "interrogate_clip_num_beams": OptionInfo(1, "询问:集数数量来自BLIP", gr.Slider, {"minimum": 1, "maximum": 16, "step": 1}),
+    "interrogate_clip_min_length": OptionInfo(24, "询问:最小描述长度(不包括艺术家等)", gr.Slider, {"minimum": 1, "maximum": 128, "step": 1}),
+    "interrogate_clip_max_length": OptionInfo(48, "询问:最大描述长度", gr.Slider, {"minimum": 1, "maximum": 256, "step": 1}),
+    "interrogate_clip_dict_limit": OptionInfo(1500, "CLIP:文本文件中的最大行数(0 =无限制)"),
+    "interrogate_deepbooru_score_threshold": OptionInfo(0.5, "询问:deepbooru可信度分数阈值", gr.Slider, {"minimum": 0, "maximum": 1, "step": 0.01}),
+    "deepbooru_sort_alpha": OptionInfo(True, "询问:deepbooru分类整理"),
+    "deepbooru_use_spaces": OptionInfo(False, "在deepbooru中为标签使用空格"),
+    "deepbooru_escape": OptionInfo(True, "deepbooru转义(\\)方括号(这将不影响权重值，只是字面意义上的括号)/escape (\\) brackets in deepbooru (so they are used as literal brackets and not for emphasis)"),
+    }))
+options_templates.update(options_section(('ui', "用户界面"), {
+    "show_progressbar": OptionInfo(True, "显示进度条"),
+    "show_progress_every_n_steps": OptionInfo(0, "每N个采样步数更新图像的生成进度,设置0禁用", gr.Slider, {"minimum": 0, "maximum": 32, "step": 1}),
+    "return_grid": OptionInfo(True, "在web中显示网格"),
+    "do_not_show_images": OptionInfo(False, "网页不显示任何生成图像的结果"),
+    "add_model_hash_to_info": OptionInfo(True, "在生成信息中添加模型哈希"),
+    "add_model_name_to_info": OptionInfo(False, "将模型名称添加到生成信息中"),
+    "font": OptionInfo("", "具有文本的图像网格的字体"),
+    "js_modal_lightbox": OptionInfo(True, "启用整页图像查看界面"),
+    "js_modal_lightbox_initially_zoomed": OptionInfo(True, "在整页图像查看界面中默认显示放大的图像"),
+    "show_progress_in_title": OptionInfo(True, "在浏览器标题中显示生成进度"),
+    'quicksettings': OptionInfo("sd_model_checkpoint", "快速设置列表"),
 }))
 
-options_templates.update(options_section(('ui', "User interface"), {
-    "show_progressbar": OptionInfo(True, "Show progressbar"),
-    "show_progress_every_n_steps": OptionInfo(0, "Show image creation progress every N sampling steps. Set 0 to disable.", gr.Slider, {"minimum": 0, "maximum": 32, "step": 1}),
-    "return_grid": OptionInfo(True, "Show grid in results for web"),
-    "do_not_show_images": OptionInfo(False, "Do not show any images in results for web"),
-    "add_model_hash_to_info": OptionInfo(True, "Add model hash to generation information"),
-    "add_model_name_to_info": OptionInfo(False, "Add model name to generation information"),
-    "font": OptionInfo("", "Font for image grids that have text"),
-    "js_modal_lightbox": OptionInfo(True, "Enable full page image viewer"),
-    "js_modal_lightbox_initially_zoomed": OptionInfo(True, "Show images zoomed in by default in full page image viewer"),
-    "show_progress_in_title": OptionInfo(True, "Show generation progress in window title."),
-    'quicksettings': OptionInfo("sd_model_checkpoint", "Quicksettings list"),
-}))
-
-options_templates.update(options_section(('sampler-params', "Sampler parameters"), {
-    "hide_samplers": OptionInfo([], "Hide samplers in user interface (requires restart)", gr.CheckboxGroup, lambda: {"choices": [x.name for x in sd_samplers.all_samplers]}),
-    "eta_ddim": OptionInfo(0.0, "eta (noise multiplier) for DDIM", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
-    "eta_ancestral": OptionInfo(1.0, "eta (noise multiplier) for ancestral samplers", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
-    "ddim_discretize": OptionInfo('uniform', "img2img DDIM discretize", gr.Radio, {"choices": ['uniform', 'quad']}),
-    's_churn': OptionInfo(0.0, "sigma churn", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
-    's_tmin':  OptionInfo(0.0, "sigma tmin",  gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
-    's_noise': OptionInfo(1.0, "sigma noise", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
-    'eta_noise_seed_delta': OptionInfo(0, "Eta noise seed delta", gr.Number, {"precision": 0}),
+options_templates.update(options_section(('sampler-params', "采样器器参数"), {
+    "hide_samplers": OptionInfo([], "在用户界面中隐藏采样工具(需要重新启动)", gr.CheckboxGroup, lambda: {"choices": [x.name for x in sd_samplers.all_samplers]}),
+    "eta_ddim": OptionInfo(0.0, "eta(噪声倍增器)用于DDIM", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
+    "eta_ancestral": OptionInfo(1.0, "eta(噪声倍增器)用于原始采样工具", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
+    "ddim_discretize": OptionInfo('uniform', "img2img DDIM 离散化", gr.Radio, {"choices": ['uniform', 'quad']}),
+    's_churn': OptionInfo(0.0, "sigma混合", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
+    's_tmin':  OptionInfo(0.0, "sigma时长",  gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
+    's_noise': OptionInfo(1.0, "sigma噪点", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
+    'eta_noise_seed_delta': OptionInfo(0, "Eta噪声种子/Eta noise seed delta", gr.Number, {"precision": 0}),
 }))
 
 
