@@ -1395,7 +1395,7 @@ def create_ui(wrap_gradio_gpu_call):
 
     def open_folder(f):
         if not os.path.exists(f):
-            print(f"{f} doesn't exist. After you create an image, the folder will be created.")
+            print(f'Folder "{f}" does not exist. After you create an image, the folder will be created.')
             return
         elif not os.path.isdir(f):
             print(f"""
