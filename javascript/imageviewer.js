@@ -31,7 +31,7 @@ function updateOnBackgroundChange() {
             }
         })
 
-        if (modalImage.src != currentButton.children[0].src) {
+        if (currentButton?.children?.length > 0 && modalImage.src != currentButton.children[0].src) {
             modalImage.src = currentButton.children[0].src;
             if (modalImage.style.display === 'none') {
                 modal.style.setProperty('background-image', `url(${modalImage.src})`)
