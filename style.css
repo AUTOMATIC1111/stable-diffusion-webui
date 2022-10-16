@@ -50,6 +50,10 @@
 
 #txt2img_generate, #img2img_generate {
     min-height: 4.5em;
+    flex:1; 
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    margin-top: 0.75rem;
 }
 
 @media screen and (min-width: 2500px) {
@@ -115,7 +119,15 @@
     padding: 0.4em 0;
 }
 
-#roll, #paste, #style_create, #style_apply{
+/*
+#embStyle>label>select {
+    background-image: none;
+    background-size: 0;
+    padding-right: 0;
+}
+*/
+
+#embStyleButton{
     min-width: 2em;
     min-height: 2em;
     max-width: 2em;
@@ -126,21 +138,36 @@
     margin: 0.1em 0;
 }
 
+#pasteRollButtonRow, #zipRow {
+    margin-top: 0.5rem;
+}
+
+#stylesButtonRow, #pasteRollButtonRow {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    margin-top: 0.75rem;
+    gap: 0.5rem!important;
+}
 #interrogate_col{
-    min-width: 0 !important;
+/*    min-width: 0 !important; */
     max-width: 8em !important;
 }
-#interrogate, #deepbooru{
-    margin: 0em 0.25em 0.9em 0.25em;
+#interrogate, #deepbooru, #roll, #paste{
+/*    margin: 0em 0.25em 0.9em 0.25em; */
     min-width: 8em;
     max-width: 8em;
+}
+
+#toprow_button_col {
+    min-width: 2em !important;
+    max-width: 2em !important;
 }
 
 #style_pos_col, #style_neg_col{
     min-width: 8em !important;
 }
 
-#txt2img_style_index, #txt2img_style2_index, #img2img_style_index, #img2img_style2_index{
+#txt2img_style_index, #txt2img_style2_index, #img2img_style_index, #img2img_style2_index, #embStyle, #artistsDD{
     margin-top: 1em;
 }
 
@@ -155,8 +182,9 @@
 
 #toprow div{
     border: none;
-    gap: 0;
-    background: transparent;
+    gap: 0.25rem;
+    /*align-items: center;*/
+    /*background: transparent;*/
 }
 
 #resize_mode{
@@ -167,6 +195,25 @@ button{
     align-self: stretch !important;
 }
 
+#prompt, #negative_prompt{
+    border: none !important;
+    flex: 1;
+}
+
+
+#tokenRow {
+    /* upper prompts win, take rest */
+    flex:0
+}
+
+#txt2img_prompt {
+    flex:1;
+}
+
+#img2maskimg .h-60{
+    height: 30rem;
+}
+
 .overflow-hidden, .gr-panel{
     overflow: visible !important;
 }
@@ -174,6 +221,19 @@ button{
 #x_type, #y_type{
     max-width: 10em;
 }
+
+textarea {
+    resize: none;
+    border: none !important;
+    height: 100% !important;
+    flex:1;
+}
+
+/* very brutfore because gradio create label around textarea*/
+ label {
+    height: 100%; 
+}
+
 
 #txt2img_preview, #img2img_preview, #ti_preview{
     position: absolute;
@@ -256,9 +316,6 @@ input[type="range"]{
   display: block;
   margin-top: -0.75em;
   margin-bottom: -0.75em;
-}
-
-#txt2img_negative_prompt, #img2img_negative_prompt{
 }
 
 #txt2img_progressbar, #img2img_progressbar, #ti_progressbar{
@@ -410,7 +467,7 @@ input[type="range"]{
 #txt2img_interrupt, #img2img_interrupt{
   position: absolute;
   width: 50%;
-  height: 72px;
+  height: -webkit-fill-available;
   background: #b4c0cc;
   border-radius: 0px;
   display: none;
@@ -420,10 +477,14 @@ input[type="range"]{
   position: absolute;
   width: 50%;
   right: 0px;
-  height: 72px;
+  height: -webkit-fill-available;
   background: #b4c0cc;
   border-radius: 0px;
   display: none;
+}
+
+#generateRow {
+    flex: 1;
 }
 
 .red {
@@ -461,6 +522,21 @@ input[type="range"]{
     background: #a55000;
 }
 
+#promptsCol {
+    flex:1;
+}
+
+#promptRow {
+    flex: 2;
+}
+#negPromptRow {
+    flex: 1;
+}
+
+.dark .dark\:bg-gray-700 {
+    --tw-bg-opacity: 0!important;
+    background-color: rgb(55 65 81 / var(--tw-bg-opacity));
+}
 #quicksettings {
     gap: 0.4em;
 }
