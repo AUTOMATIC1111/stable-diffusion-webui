@@ -1,4 +1,6 @@
+from ast import Interactive
 import base64
+from collections import namedtuple
 import html
 import io
 import json
@@ -79,6 +81,7 @@ random_symbol = '\U0001f3b2\ufe0f'  # 🎲️
 reuse_symbol = '\u267b\ufe0f'  # ♻️
 art_symbol = '\U0001f3a8'  # 🎨
 paste_symbol = '\u2199\ufe0f'  # ↙
+embStyle_symbol = "👓"
 folder_symbol = '\U0001f4c2'  # 📂
 refresh_symbol = '\U0001f504'  # 🔄
 save_style_symbol = '\U0001f4be'  # 💾
@@ -312,11 +315,34 @@ def check_progress_call_initial(id_part):
     return check_progress_call(id_part)
 
 
-def roll_artist(prompt):
-    allowed_cats = set([x for x in shared.artist_db.categories() if len(opts.random_artist_categories)==0 or x in opts.random_artist_categories])
-    artist = random.choice([x for x in shared.artist_db.artists if x.category in allowed_cats])
+def getAllowedArtistsCategory():
+    return set([x for x in shared.artist_db.categories() if len(opts.random_artist_categories)==0 or x in opts.random_artist_categories])
 
+def getAllowedArtists():
+    return [x for x in shared.artist_db.artists if x.category in getAllowedArtistsCategory()]    
+
+def getAllowedArtistsNames():
+    return [x.name for x in getAllowedArtists()]    
+
+def roll_artist(prompt):
+    artist = random.choice(getAllowedArtists())
     return prompt + ", " + artist.name if prompt != '' else artist.name
+
+
+def add_embStyle(embDD, prompt):
+    return prompt + " <" + embDD +">"
+
+
+def add_artist(artist, prompt):
+    return prompt + ", " + artist if prompt != '' else artist
+
+
+def add_embStyle(embDD, prompt):
+    return prompt + " <" + embDD +">"
+
+
+def add_artist(artist, prompt):
+    return prompt + ", " + artist if prompt != '' else artist
 
 
 def visit(x, func, path=""):
@@ -451,32 +477,22 @@ def update_token_counter(text, steps):
 
 
 def create_toprow(is_img2img):
+
+    allowedArtists = getAllowedArtistsNames()
     id_part = "img2img" if is_img2img else "txt2img"
 
     with gr.Row(elem_id="toprow"):
-        with gr.Column(scale=6):
-            with gr.Row():
-                with gr.Column(scale=80):
-                    with gr.Row():
-                        prompt = gr.Textbox(label="Prompt", elem_id=f"{id_part}_prompt", show_label=False, lines=2, 
-                            placeholder="Prompt (press Ctrl+Enter or Alt+Enter to generate)"
-                        )
 
-            with gr.Row():
-                with gr.Column(scale=80):
-                    with gr.Row():
-                        negative_prompt = gr.Textbox(label="Negative prompt", elem_id=f"{id_part}_neg_prompt", show_label=False, lines=2, 
-                            placeholder="Negative prompt (press Ctrl+Enter or Alt+Enter to generate)"
-                        )
+        with gr.Column(variant='panel', elem_id="big_left"): #big left
 
-        with gr.Column(scale=1, elem_id="roll_col"):
-            roll = gr.Button(value=art_symbol, elem_id="roll", visible=len(shared.artist_db.artists) > 0)
-            paste = gr.Button(value=paste_symbol, elem_id="paste")
-            save_style = gr.Button(value=save_style_symbol, elem_id="style_create")
-            prompt_style_apply = gr.Button(value=apply_style_symbol, elem_id="style_apply")
-
-            token_counter = gr.HTML(value="<span></span>", elem_id=f"{id_part}_token_counter")
-            token_button = gr.Button(visible=False, elem_id=f"{id_part}_token_button")
+            with gr.Column(scale=3, elem_id="promptsCol"):
+                with gr.Row(elem_id="promptRow"):
+                    prompt = gr.Textbox( lines=2,elem_id=f"{id_part}_prompt", show_label=False, placeholder="Prompt")
+                with gr.Row(elem_id="negPromptRow"):
+                    negative_prompt = gr.Textbox(lines=2,elem_id="negative_prompt", show_label=False, placeholder="Negative prompt")
+                with gr.Row(elem_id="tokenRow"):
+                    token_counter = gr.HTML(value="<span></span>", elem_id=f"{id_part}_token_counter", visible = True)
+                    token_button = gr.Button(visible=False, elem_id=f"{id_part}_token_button")
 
         button_interrogate = None
         button_deepbooru = None
@@ -484,15 +500,29 @@ def create_toprow(is_img2img):
             with gr.Column(scale=1, elem_id="interrogate_col"):
                 button_interrogate = gr.Button('Interrogate\nCLIP', elem_id="interrogate")
 
-                if cmd_opts.deepdanbooru:
-                    button_deepbooru = gr.Button('Interrogate\nDeepBooru', elem_id="deepbooru")
-
-        with gr.Column(scale=1):
+        with gr.Column(variant='panel'): #big right
             with gr.Row():
-                skip = gr.Button('Skip', elem_id=f"{id_part}_skip")
-                interrupt = gr.Button('Interrupt', elem_id=f"{id_part}_interrupt")
-                submit = gr.Button('Generate', elem_id=f"{id_part}_generate", variant='primary')
+                with gr.Column(scale=1):
+                    prompt_style = gr.Dropdown(label="Style 1", elem_id=f"{id_part}_style_index", choices=[k for k, v in shared.prompt_styles.styles.items()], value=next(iter(shared.prompt_styles.styles.keys())), visible=len(shared.prompt_styles.styles) > 1, lines=4)
+                    prompt_style2 = gr.Dropdown(label="Style 2", elem_id=f"{id_part}_style2_index", choices=[k for k, v in shared.prompt_styles.styles.items()], value=next(iter(shared.prompt_styles.styles.keys())), visible=len(shared.prompt_styles.styles) > 1)
 
+                    with gr.Row(elem_id="stylesButtonRow"):
+                        prompt_style_apply = gr.Button('Apply style', elem_id="style_apply")
+                        save_style = gr.Button('Create style', elem_id="style_create")
+                    with gr.Row():
+                        with gr.Column(scale=1):
+                            with gr.Row(elem_id="pasteRollButtonRow"):
+                                paste = gr.Button(value=paste_symbol + " Apply prompt", elem_id="paste")
+                                roll = gr.Button(value=art_symbol+" Random artist", elem_id="roll", visible=len(shared.artist_db.artists) > 0)
+        
+                with gr.Column(scale=1):
+                    artistsDD = gr.Dropdown(allowedArtists, Interactive=True, label="Artists", show_label=True, elem_id="artistsDD", visible=len(allowedArtists) > 0)
+                    embStyleDD = gr.Dropdown(list(model_hijack.embedding_db.word_embeddings.keys()), Interactive=True, label="Embbedings", show_label=True, elem_id="embStyle", visible=len(model_hijack.embedding_db.word_embeddings.keys()) > 0)
+                    with gr.Row(scale=1, elem_id="generateRow"):
+                        skip = gr.Button('Skip', elem_id=f"{id_part}_skip")
+                        interrupt = gr.Button('Interrupt', elem_id=f"{id_part}_interrupt")
+                        submit = gr.Button('Generate', elem_id=f"{id_part}_generate", variant='primary')
+  
                 skip.click(
                     fn=lambda: shared.state.skip(),
                     inputs=[],
@@ -505,14 +535,18 @@ def create_toprow(is_img2img):
                     outputs=[],
                 )
 
-            with gr.Row():
-                with gr.Column(scale=1, elem_id="style_pos_col"):
-                    prompt_style = gr.Dropdown(label="Style 1", elem_id=f"{id_part}_style_index", choices=[k for k, v in shared.prompt_styles.styles.items()], value=next(iter(shared.prompt_styles.styles.keys())))
+            with gr.Row(scale=1):
+                if is_img2img:
+                    interrogate = gr.Button('Interrogate\nCLIP', elem_id="interrogate")
+                    if cmd_opts.deepdanbooru:
+                        deepbooru = gr.Button('Interrogate\nDeepBooru', elem_id="deepbooru")
+                    else:
+                        deepbooru = None
+                else:
+                    interrogate = None
+                    deepbooru = None
 
-                with gr.Column(scale=1, elem_id="style_neg_col"):
-                    prompt_style2 = gr.Dropdown(label="Style 2", elem_id=f"{id_part}_style2_index", choices=[k for k, v in shared.prompt_styles.styles.items()], value=next(iter(shared.prompt_styles.styles.keys())))
-
-    return prompt, roll, prompt_style, negative_prompt, prompt_style2, submit, button_interrogate, button_deepbooru, prompt_style_apply, save_style, paste, token_counter, token_button
+    return prompt, roll, prompt_style, negative_prompt, prompt_style2, submit, interrogate, deepbooru, prompt_style_apply, save_style, paste, token_counter, token_button, embStyleDD, artistsDD
 
 
 def setup_progressbar(progressbar, preview, id_part, textinfo=None):
@@ -566,8 +600,11 @@ def create_ui(wrap_gradio_gpu_call):
     import modules.img2img
     import modules.txt2img
 
+    if os.path.exists(cmd_opts.embeddings_dir):
+        model_hijack.embedding_db.load_textual_inversion_embeddings()
+
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
-        txt2img_prompt, roll, txt2img_prompt_style, txt2img_negative_prompt, txt2img_prompt_style2, submit, _, _, txt2img_prompt_style_apply, txt2img_save_style, txt2img_paste, token_counter, token_button = create_toprow(is_img2img=False)
+        txt2img_prompt, roll, txt2img_prompt_style, txt2img_negative_prompt, txt2img_prompt_style2, submit, _, _, txt2img_prompt_style_apply, txt2img_save_style, txt2img_paste, token_counter, token_button, embStyleDD, artistsDD = create_toprow(is_img2img=False)
         dummy_component = gr.Label(visible=False)
         txt_prompt_img = gr.File(label="", elem_id="txt2img_prompt_image", file_count="single", type="bytes", visible=False)
 
@@ -707,6 +744,31 @@ def create_ui(wrap_gradio_gpu_call):
                 ]
             )
 
+            artistsDD.change(
+                show_progress=False,
+                fn=add_artist,
+                inputs=[
+                    artistsDD,
+                    txt2img_prompt
+                ],
+                outputs=[
+                    txt2img_prompt,
+                ]
+            )
+
+            embStyleDD.change(
+                show_progress=False,
+                fn=add_embStyle,
+                inputs=[
+                    embStyleDD,
+                    txt2img_prompt
+                ],
+                outputs=[
+                    txt2img_prompt,
+                ]
+            )
+
+
             roll.click(
                 fn=roll_artist,
                 _js="update_txt2img_tokens",
@@ -754,7 +816,7 @@ def create_ui(wrap_gradio_gpu_call):
             token_button.click(fn=update_token_counter, inputs=[txt2img_prompt, steps], outputs=[token_counter])
 
     with gr.Blocks(analytics_enabled=False) as img2img_interface:
-        img2img_prompt, roll, img2img_prompt_style, img2img_negative_prompt, img2img_prompt_style2, submit, img2img_interrogate, img2img_deepbooru, img2img_prompt_style_apply, img2img_save_style, img2img_paste, token_counter, token_button = create_toprow(is_img2img=True)
+        img2img_prompt, roll, img2img_prompt_style, img2img_negative_prompt, img2img_prompt_style2, submit, img2img_interrogate, img2img_deepbooru, img2img_prompt_style_apply, img2img_save_style, img2img_paste, token_counter, token_button, embStyleDD, artistsDD = create_toprow(is_img2img=True)
 
         with gr.Row(elem_id='img2img_progress_row'):
             img2img_prompt_img = gr.File(label="", elem_id="img2img_prompt_image", file_count="single", type="bytes", visible=False)
@@ -959,6 +1021,30 @@ def create_ui(wrap_gradio_gpu_call):
                 _js="update_img2img_tokens",
                 inputs=[
                     img2img_prompt,
+                ],
+                outputs=[
+                    img2img_prompt,
+                ]
+            )
+
+            artistsDD.change(
+                show_progress=False,
+                fn=add_artist,
+                inputs=[
+                    artistsDD,
+                    img2img_prompt
+                ],
+                outputs=[
+                    img2img_prompt,
+                ]
+            )
+
+            embStyleDD.change(
+                show_progress=False,
+                fn=add_embStyle,
+                inputs=[
+                    embStyleDD,
+                    img2img_prompt
                 ],
                 outputs=[
                     img2img_prompt,
@@ -1756,4 +1842,3 @@ if 'gradio_routes_templates_response' not in globals():
 
     gradio_routes_templates_response = gradio.routes.templates.TemplateResponse
     gradio.routes.templates.TemplateResponse = template_response
-
