@@ -31,6 +31,8 @@ from modules.paths import script_path
 from modules.shared import cmd_opts
 import modules.hypernetworks.hypernetwork
 
+from modules import translate_manager
+
 
 queue_lock = threading.Lock()
 
@@ -73,6 +75,7 @@ def wrap_gradio_gpu_call(func, extra_outputs=None):
     return modules.ui.wrap_gradio_call(f, extra_outputs=extra_outputs)
 
 def initialize():
+    translate_manager.init_translation(cmd_opts.language)
     modelloader.cleanup_models()
     modules.sd_models.setup_model()
     codeformer.setup_model(cmd_opts.codeformer_models_path)
@@ -89,6 +92,10 @@ def initialize():
 
 
 def webui():
+    if cmd_opts.marge_language:
+        translate_manager.marge_translation()
+        print('languages merged')
+        return
     initialize()
     
     # make the program just exit at ctrl+c without waiting for anything
@@ -124,6 +131,8 @@ def webui():
 
         sd_samplers.set_samplers()
 
+        print('Reloading translate files')
+        translate_manager.init_translation(cmd_opts.language)
         print('Reloading Custom Scripts')
         modules.scripts.reload_scripts(os.path.join(script_path, "scripts"))
         print('Reloading modules: modules.ui')
