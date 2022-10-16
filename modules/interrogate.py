@@ -157,9 +157,9 @@ class InterrogateModels:
                     matches = self.rank(image_features, items, top_count=topn)
                     for match, score in matches:
                         if include_ranks:
-                            res += ", " + match
-                        else:
                             res += f", ({match}:{score})"
+                        else:
+                            res += ", " + match
 
         except Exception:
             print(f"Error interrogating", file=sys.stderr)
