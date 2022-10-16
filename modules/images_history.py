@@ -109,10 +109,8 @@ def show_images_history(gr, opts, tabname, run_pnginfo, switch_dict):
         dir_name = opts.outdir_img2img_samples
     elif tabname == "extras":
         dir_name = opts.outdir_extras_samples
-    d = dir_name.split("/")
-    dir_name = "/" if dir_name.startswith("/") else d[0]
-    for p in d[1:]:
-        dir_name = os.path.join(dir_name, p)
+    else:
+        return
     with gr.Row():
         renew_page = gr.Button('Renew Page', elem_id=tabname + "_images_history_renew_page")
         first_page = gr.Button('First Page')
