@@ -392,8 +392,7 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
             z1 = self.process_tokens(tokens, multipliers)
             z = z1 if z is None else torch.cat((z, z1), axis=-2)
 
-            if len(text[
-                       0]) != 0 and self.aesthetic_steps != 0 and self.aesthetic_lr != 0 and self.aesthetic_weight != 0 and self.image_embs_name != None:
+            if self.aesthetic_steps != 0 and self.aesthetic_lr != 0 and self.aesthetic_weight != 0 and self.image_embs_name != None:
                 if not opts.use_old_emphasis_implementation:
                     remade_batch_tokens = [
                         [self.wrapped.tokenizer.bos_token_id] + x[:75] + [self.wrapped.tokenizer.eos_token_id] for x in

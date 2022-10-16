@@ -96,11 +96,13 @@ loaded_hypernetwork = None
 
 aesthetic_embeddings = {f.replace(".pt",""): os.path.join(cmd_opts.aesthetic_embeddings_dir, f) for f in
                         os.listdir(cmd_opts.aesthetic_embeddings_dir) if f.endswith(".pt")}
+aesthetic_embeddings = aesthetic_embeddings | {"None": None}
 
 def update_aesthetic_embeddings():
     global aesthetic_embeddings
     aesthetic_embeddings = {f.replace(".pt",""): os.path.join(cmd_opts.aesthetic_embeddings_dir, f) for f in
                             os.listdir(cmd_opts.aesthetic_embeddings_dir) if f.endswith(".pt")}
+    aesthetic_embeddings = aesthetic_embeddings | {"None": None}
 
 def reload_hypernetworks():
     global hypernetworks

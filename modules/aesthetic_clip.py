@@ -74,5 +74,4 @@ def generate_imgs_embd(name, folder, batch_size):
         """
         shared.update_aesthetic_embeddings()
         return gr.Dropdown.update(choices=sorted(shared.aesthetic_embeddings.keys()), label="Imgs embedding",
-                           value=sorted(shared.aesthetic_embeddings.keys())[0] if len(
-                               shared.aesthetic_embeddings) > 0 else None), res, ""
+                           value="None"), res, ""
