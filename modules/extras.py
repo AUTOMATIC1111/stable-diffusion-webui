@@ -20,26 +20,38 @@ import gradio as gr
 cached_images = {}
 
 
-def run_extras(extras_mode, resize_mode, image, image_folder, gfpgan_visibility, codeformer_visibility, codeformer_weight, upscaling_resize, upscaling_resize_w, upscaling_resize_h, upscaling_crop, extras_upscaler_1, extras_upscaler_2, extras_upscaler_2_visibility):
+def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_dir, show_extras_results, gfpgan_visibility, codeformer_visibility, codeformer_weight, upscaling_resize, upscaling_resize_w, upscaling_resize_h, upscaling_crop, extras_upscaler_1, extras_upscaler_2, extras_upscaler_2_visibility):
     devices.torch_gc()
 
     imageArr = []
     # Also keep track of original file names
     imageNameArr = []
-
+    outputs = []
+    
     if extras_mode == 1:
         #convert file to pillow image
         for img in image_folder:
             image = Image.open(img)
             imageArr.append(image)
             imageNameArr.append(os.path.splitext(img.orig_name)[0])
+    elif extras_mode == 2:
+        if input_dir == '':
+            return outputs, "Please select an input directory.", ''
+        image_list = [file for file in [os.path.join(input_dir, x) for x in os.listdir(input_dir)] if os.path.isfile(file)]
+        for img in image_list:
+            image = Image.open(img)
+            imageArr.append(image)
+            imageNameArr.append(img)
     else:
         imageArr.append(image)
         imageNameArr.append(None)
 
-    outpath = opts.outdir_samples or opts.outdir_extras_samples
+    if extras_mode == 2 and output_dir != '':
+        outpath = output_dir
+    else:
+        outpath = opts.outdir_samples or opts.outdir_extras_samples
 
-    outputs = []
+    
     for image, image_name in zip(imageArr, imageNameArr):
         if image is None:
             return outputs, "Please select an input image.", ''
@@ -112,7 +124,8 @@ def run_extras(extras_mode, resize_mode, image, image_folder, gfpgan_visibility,
             image.info = existing_pnginfo
             image.info["extras"] = info
 
-        outputs.append(image)
+        if extras_mode != 2 or show_extras_results :
+            outputs.append(image)
 
     devices.torch_gc()
 
