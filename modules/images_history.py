@@ -197,14 +197,16 @@ def delete_image(delete_num, tabname, name, page_index, filenames, image_index):
     return new_file_list, 1
 
 def show_images_history(gr, opts, tabname, run_pnginfo, switch_dict):
-    if tabname == "txt2img":
+    if opts.outdir_samples != "":
+        dir_name = opts.outdir_samples
+    elif tabname == "txt2img":
         dir_name = opts.outdir_txt2img_samples
     elif tabname == "img2img":
         dir_name = opts.outdir_img2img_samples
     elif tabname == "extras":
         dir_name = opts.outdir_extras_samples
     d = dir_name.split("/")
-    dir_name = d[0]
+    dir_name = "/" if dir_name.startswith("/") else d[0]
     for p in d[1:]:
         dir_name = os.path.join(dir_name, p)
 

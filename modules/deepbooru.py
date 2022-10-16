@@ -102,7 +102,7 @@ def get_deepbooru_tags_model():
 
     tags = dd.project.load_tags_from_project(model_path)
     model = dd.project.load_model_from_project(
-        model_path, compile_model=True
+        model_path, compile_model=False
     )
     return model, tags
 
