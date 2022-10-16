@@ -1,13 +1,20 @@
 name: Bug Report
-description: File a bug report
+description: You think somethings is broken in the UI
 title: "[Bug]: "
-labels: ["bug-report"]
+labels: ["bug"]
 
 body:
   - type: markdown
     attributes:
       value: |
-        Please fill this form with as much information as possible, don't forget to fill "What OS..." and "What browsers"
+        Make sure this issue hasn't been posted already and wasn't solved in recent commits, then fill this form with as much information as possible, don't forget to fill "What OS..." and "What browsers"
+  - type: checkboxes
+    attributes:
+      label: Is there an existing issue for this?
+      description: Please search to see if an issue already exists for the bug you encountered, and that it hasn't been fixed in a recent build/commit.
+      options:
+        - label: I have searched the existing issues and checked the recent builds/commits
+          required: true
   - type: textarea
     id: what-did
     attributes:
