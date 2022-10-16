@@ -15,7 +15,7 @@ body:
     id: steps
     attributes:
       label: Steps to reproduce the problem
-      description: Please provide us with precise step by step information to reproduce the bug
+      description: Please provide us with precise step by step information on how to reproduce the bug
       value: |
         1. Go to .... 
         2. Press ....
@@ -44,6 +44,7 @@ body:
         - Windows
         - Linux
         - MacOS
+      required: true
   - type: dropdown
     id: browsers
     attributes:
@@ -55,6 +56,7 @@ body:
         - Brave
         - Apple Safari
         - Microsoft Edge
+      required: true
   - type: textarea
     id: cmdargs
     attributes:
