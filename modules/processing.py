@@ -334,12 +334,6 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
     seed = get_fixed_seed(p.seed)
     subseed = get_fixed_seed(p.subseed)
 
-    if p.outpath_samples is not None:
-        os.makedirs(p.outpath_samples, exist_ok=True)
-
-    if p.outpath_grids is not None:
-        os.makedirs(p.outpath_grids, exist_ok=True)
-
     modules.sd_hijack.model_hijack.apply_circular(p.tiling)
     modules.sd_hijack.model_hijack.clear_comments()
 
