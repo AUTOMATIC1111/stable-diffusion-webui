@@ -112,7 +112,66 @@
 #roll_col{
     min-width: unset !important;
     flex-grow: 0 !important;
-    padding: 0.4em 0;
+    gap: 0 0.4em;
+}
+
+/* Adapt for mobile phones */
+@media screen and (max-width: 505px){
+    /* Swap icon direction */
+    #roll_col{
+        flex-direction: row;
+    }
+
+    /* Drop excess outer padding */
+    .container{
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    /* Drop notebook border sides */
+    .tabitem{
+        border-right-width: 0;
+        border-left-width: 0;
+    }
+
+    /* Remove padding from entry boxes */
+    #toprow > :first-child .gr-box:not(textarea){
+        padding: 0;
+    }
+
+    /* Indent quick settings and tabs tabs a little */
+    #quicksettings,
+    #tabs > :first-child{
+        padding-left: 0.5rem;
+    }
+
+    /* Add a little padding between pill-style tabs */
+    #tabs > :first-child{
+        padding-bottom: 0.5rem;
+    }
+
+    /* Make detached tabs a "pill" style */
+    #tabs > :first-child > button{
+        border-radius: 0.5rem;
+        border-width: 2px;
+    }
+
+    /* Make performance stats wrap */
+    .performance{
+        white-space: normal;
+        display: block;
+    }
+
+    /* Use same margin on stats*/
+    .output-html p{
+        margin: 0;
+        text-align: left !important;
+    }
+
+    #txt2img_token_counter{
+        align-self: center;
+        height: auto;
+    }
 }
 
 #roll, #paste, #style_create, #style_apply{
@@ -153,9 +212,10 @@
     margin-bottom: 0;
 }
 
-#toprow div{
+#toprow > :not(#roll_col),
+#toprow > :not(#roll_col) div{
     border: none;
-    gap: 0;
+    gap: 0.5rem;
     background: transparent;
 }
 
