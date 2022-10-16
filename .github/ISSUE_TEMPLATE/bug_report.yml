@@ -4,10 +4,6 @@ title: "[Bug]: "
 labels: ["bug-report"]
 
 body:
-  - type: markdown
-    attributes:
-      value: |
-        Thanks for taking the time to fill out this bug report!
   - type: textarea
     id: what-did
     attributes:
@@ -25,8 +21,18 @@ body:
   - type: textarea
     id: commit
     attributes:
-      label: commit
+      label: Commit where the problem happens
       description: Which commit are you running ? (copy the **Commit hash** shown in the cmd/terminal when you launch the UI)
+  - type: dropdown
+    id: os
+    attributes:
+      label: What OS do you use to run the webui?
+      multiple: true
+      options:
+        - Colab/Runpod or Cloud based
+        - Windows
+        - Linux
+        - MacOS
   - type: dropdown
     id: browsers
     attributes:
@@ -38,16 +44,6 @@ body:
         - Brave
         - Apple Safari
         - Microsoft Edge
-  - type: dropdown
-    id: os
-    attributes:
-      label: Where are you running the webui?
-      multiple: true
-      options:
-        - Colab/Cloud
-        - Windows
-        - Linux
-        - MacOS
   - type: textarea
     id: cmdargs
     attributes:
