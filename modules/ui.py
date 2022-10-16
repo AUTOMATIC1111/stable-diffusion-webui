@@ -496,9 +496,7 @@ def create_toprow(is_img2img):
 
         button_interrogate = None
         button_deepbooru = None
-        if is_img2img:
-            with gr.Column(scale=1, elem_id="interrogate_col"):
-                button_interrogate = gr.Button('Interrogate\nCLIP', elem_id="interrogate")
+        
 
         with gr.Column(variant='panel'): #big right
             with gr.Row():
@@ -514,6 +512,12 @@ def create_toprow(is_img2img):
                             with gr.Row(elem_id="pasteRollButtonRow"):
                                 paste = gr.Button(value=paste_symbol + " Apply prompt", elem_id="paste")
                                 roll = gr.Button(value=art_symbol+" Random artist", elem_id="roll", visible=len(shared.artist_db.artists) > 0)
+   
+                                if is_img2img:
+                                    with gr.Row(scale=1):
+                                        button_interrogate = gr.Button('Interrogate\nCLIP', elem_id="interrogate")
+                                        if cmd_opts.deepdanbooru:
+                                            button_deepbooru = gr.Button('Interrogate\nDeepBooru', elem_id="deepbooru")
         
                 with gr.Column(scale=1):
                     artistsDD = gr.Dropdown(allowedArtists, Interactive=True, label="Artists", show_label=True, elem_id="artistsDD", visible=len(allowedArtists) > 0)
@@ -522,7 +526,8 @@ def create_toprow(is_img2img):
                         skip = gr.Button('Skip', elem_id=f"{id_part}_skip")
                         interrupt = gr.Button('Interrupt', elem_id=f"{id_part}_interrupt")
                         submit = gr.Button('Generate', elem_id=f"{id_part}_generate", variant='primary')
-  
+
+ 
                 skip.click(
                     fn=lambda: shared.state.skip(),
                     inputs=[],
@@ -535,18 +540,8 @@ def create_toprow(is_img2img):
                     outputs=[],
                 )
 
-            with gr.Row(scale=1):
-                if is_img2img:
-                    interrogate = gr.Button('Interrogate\nCLIP', elem_id="interrogate")
-                    if cmd_opts.deepdanbooru:
-                        deepbooru = gr.Button('Interrogate\nDeepBooru', elem_id="deepbooru")
-                    else:
-                        deepbooru = None
-                else:
-                    interrogate = None
-                    deepbooru = None
 
-    return prompt, roll, prompt_style, negative_prompt, prompt_style2, submit, interrogate, deepbooru, prompt_style_apply, save_style, paste, token_counter, token_button, embStyleDD, artistsDD
+    return prompt, roll, prompt_style, negative_prompt, prompt_style2, submit, button_interrogate, button_deepbooru, prompt_style_apply, save_style, paste, token_counter, token_button, embStyleDD, artistsDD
 
 
 def setup_progressbar(progressbar, preview, id_part, textinfo=None):
