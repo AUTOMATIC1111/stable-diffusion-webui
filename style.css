@@ -53,7 +53,6 @@
     flex:1; 
     padding-left: 0.75rem;
     padding-right: 0.75rem;
-    margin-top: 0.75rem;
 }
 
 @media screen and (min-width: 2500px) {
@@ -138,24 +137,23 @@
     margin: 0.1em 0;
 }
 
-#pasteRollButtonRow, #zipRow {
+#zipRow {
     margin-top: 0.5rem;
 }
 
 #stylesButtonRow, #pasteRollButtonRow {
     padding-left: 0.75rem;
     padding-right: 0.75rem;
-    margin-top: 0.75rem;
-    gap: 0.5rem!important;
 }
 #interrogate_col{
 /*    min-width: 0 !important; */
-    max-width: 8em !important;
+/*    max-width: 8em !important; */
 }
+
 #interrogate, #deepbooru, #roll, #paste{
 /*    margin: 0em 0.25em 0.9em 0.25em; */
     min-width: 8em;
-    max-width: 8em;
+/*    max-width: 8em;  use row/flex instead of hard coded max width"
 }
 
 #toprow_button_col {
