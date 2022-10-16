@@ -5,6 +5,7 @@ import sys
 import importlib.util
 import shlex
 import platform
+import requests
 
 dir_repos = "repositories"
 python = sys.executable
@@ -126,6 +127,16 @@ def prepare_enviroment():
     print(f"Python {sys.version}")
     print(f"Commit hash: {commit}")
 
+    try:
+        commits = requests.get('https://api.github.com/repos/AUTOMATIC1111/stable-diffusion-webui/branches/master').json()
+        if commit != "<none>" and commits['commit']['sha'] != commit:
+            print("--------------------------------------------------------")
+            print("| You are not up to date with the most recent release. |")
+            print("| Consider running `git pull` to update.               |")
+            print("--------------------------------------------------------")
+    except Exception as e:
+        pass
+    
     if not is_installed("torch") or not is_installed("torchvision"):
         run(f'"{python}" -m {torch_command}', "Installing torch and torchvision", "Couldn't install torch")
 
