@@ -178,7 +178,7 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
         self.load_image_embs(image_embs_name)
 
     def load_image_embs(self, image_embs_name):
-        if image_embs_name is None or len(image_embs_name) == 0:
+        if image_embs_name is None or len(image_embs_name) == 0 or image_embs_name == "None":
             image_embs_name = None
         if image_embs_name is not None and self.image_embs_name != image_embs_name:
             self.image_embs_name = image_embs_name
