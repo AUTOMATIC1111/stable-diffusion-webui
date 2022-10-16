@@ -1,4 +1,4 @@
-- The program is tested to work on 3.10.6. Don't use other versions unless you are looking for trouble.
+- **The program is tested to work on Python 3.10.6. Don't use other versions unless you are looking for trouble.**
 - The installer creates a python virtual environment, so none of the installed modules will affect existing system installations of python.
 - To use the system's python rather than creating a virtual environment, use custom parameter replacing `set VENV_DIR=-`.
 - To reinstall from scratch, delete directories: `venv`, `repositories`.
@@ -21,3 +21,10 @@ Various optimizations may be enabled through command line arguments, sacrificing
 Video cards
 When running on video cards which don't support half precision floating point numbers (a known issue with 16xx cards), a green or black screen may appear instead of the generated pictures.
 This may be fixed by using the command line arguments `--precision full --no-half` at a significant increase in VRAM usage, which may require `--medvram`.
+
+# "CUDA error: no kernel image is available for execution on the device" after enabling xformers
+Your installed xformers is incompatible with your GPU. If you use Python 3.10, have a Pascal or higher card and run on Windows, add `--reinstall-xformers --xformers` to your `COMMANDLINE_ARGS` to upgrade to a working version. Remove `--reinstall-xformers` after upgrading.
+
+# NameError: name 'xformers' is not defined
+If you use Windows, this means your Python is too old. Use 3.10
+If Linux, you'll have to build xformers yourself or just avoid it.
