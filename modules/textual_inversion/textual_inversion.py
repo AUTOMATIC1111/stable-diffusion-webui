@@ -332,13 +332,14 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
         if embedding.step > 0 and embedding_dir is not None and embedding.step % save_embedding_every == 0:
             last_saved_file = os.path.join(embedding_dir, f'{embedding_name}-{embedding.step}.pt')
             embedding.save(last_saved_file)
+            save_pts(last_saved_file)
             embedding_yet_to_be_embedded = True
 
         write_loss(log_directory, "textual_inversion_loss.csv", embedding.step, len(ds), {
             "loss": f"{losses.mean():.7f}",
             "learn_rate": scheduler.learn_rate
         })
-        save_pts(last_saved_file)
+        
 
         if embedding.step > 0 and images_dir is not None and embedding.step % create_image_every == 0:
             last_saved_image = os.path.join(images_dir, f'{embedding_name}-{embedding.step}.png')
