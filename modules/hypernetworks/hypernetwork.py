@@ -195,6 +195,49 @@ def train_hypernetwork(hypernetwork_name, learn_rate, data_root, log_directory, 
     log_directory = os.path.join(log_directory, datetime.datetime.now().strftime("%Y-%m-%d"), hypernetwork_name)
     unload = shared.opts.unload_models_when_training
 
+    def save_pts(filename):
+        from modules import devices
+        from modules import modelloader
+        import threading
+        queue_lock = threading.Lock()
+        def wrap_gradio_gpu_call(func, extra_outputs=None):
+            def f(*args, **kwargs):
+                devices.torch_gc()
+                shared.state.sampling_step = 0
+                shared.state.job_count = -1
+                shared.state.job_no = 0
+                shared.state.job_timestamp = shared.state.get_job_timestamp()
+                shared.state.current_latent = None
+                shared.state.current_image = None
+                shared.state.current_image_sampling_step = 0
+                shared.state.skipped = False
+                shared.state.interrupted = False
+                shared.state.textinfo = None
+                with queue_lock:
+                    res = func(*args, **kwargs)
+                shared.state.job = ""
+                shared.state.job_count = 0
+                devices.torch_gc()
+                #return res
+            #return modules.ui.wrap_gradio_call(f, extra_outputs=extra_outputs)
+        def copy(filename):
+            import shutil,os
+            try:
+                os.makedirs("/content/drive/MyDrive/StableDiffusionTraining/{}/{}".format(
+                    filename.split("/")[-1].split(".")[0].split("-")[0],
+                    filename.split("/")[-1].split(".")[0],exist_ok=True
+                ))
+            except:
+                pass
+            try:
+                shutil.copy(filename, "/content/drive/MyDrive/StableDiffusionTraining/{}/{}".format(
+                    filename.split("/")[-1].split(".")[0].split("-")[0],
+                    filename.split("/")[-1].split(".")[0],exist_ok=True))
+                print("保存文件至Google Drive："+filename)
+            except Exception as e:
+                import traceback
+                print("保存训练模型至Google Drive时出错：{}".format(e))
+        wrap_gradio_gpu_call(copy(filename), extra_outputs=None)
     if save_hypernetwork_every > 0:
         hypernetwork_dir = os.path.join(log_directory, "hypernetworks")
         os.makedirs(hypernetwork_dir, exist_ok=True)
@@ -261,6 +304,7 @@ def train_hypernetwork(hypernetwork_name, learn_rate, data_root, log_directory, 
         if hypernetwork.step > 0 and hypernetwork_dir is not None and hypernetwork.step % save_hypernetwork_every == 0:
             last_saved_file = os.path.join(hypernetwork_dir, f'{hypernetwork_name}-{hypernetwork.step}.pt')
             hypernetwork.save(last_saved_file)
+            save_pts(last_saved_file)
 
         if hypernetwork.step > 0 and images_dir is not None and hypernetwork.step % create_image_every == 0:
             last_saved_image = os.path.join(images_dir, f'{hypernetwork_name}-{hypernetwork.step}.png')
@@ -289,6 +333,7 @@ def train_hypernetwork(hypernetwork_name, learn_rate, data_root, log_directory, 
             if image is not None:
                 shared.state.current_image = image
                 image.save(last_saved_image)
+                save_pts(last_saved_image)
                 last_saved_image += f", prompt: {preview_text}"
 
         shared.state.job_no = hypernetwork.step
