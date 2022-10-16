@@ -29,35 +29,22 @@ def apply_clip_skip(p, x):
     opts.data["CLIP_stop_at_last_layers"] = x
 
 
-def format_value_add_label(p, opt, x):
-    if type(x) == float:
-        x = round(x, 8)
-
-    return f"{opt.label}: {x}"
-
-
-def format_value(p, opt, x):
-    if type(x) == float:
-        x = round(x, 8)
-    return x
-
-
-AxisOption = namedtuple("AxisOption", ["label", "type", "apply", "format_value", "confirm"])
+AxisOption = namedtuple("AxisOption", ["label", "type", "apply"])
 
 axis_options = [
-    AxisOption("Seed", int, apply_field("seed"), format_value_add_label, None),
-    AxisOption("Var. seed", int, apply_field("subseed"), format_value_add_label, None),
-    AxisOption("Var. strength", float, apply_field("subseed_strength"), format_value_add_label, None),
-    AxisOption("Steps", int, apply_field("steps"), format_value_add_label, None),
-    AxisOption("CFG Scale", float, apply_field("cfg_scale"), format_value_add_label, None),
-    AxisOption("Hypernet str.", float, apply_hypernetwork_strength, format_value_add_label, None),
-    AxisOption("Sigma Churn", float, apply_field("s_churn"), format_value_add_label, None),
-    AxisOption("Sigma min", float, apply_field("s_tmin"), format_value_add_label, None),
-    AxisOption("Sigma max", float, apply_field("s_tmax"), format_value_add_label, None),
-    AxisOption("Sigma noise", float, apply_field("s_noise"), format_value_add_label, None),
-    AxisOption("Eta", float, apply_field("eta"), format_value_add_label, None),
-    AxisOption("Clip skip", int, apply_clip_skip, format_value_add_label, None),
-    AxisOption("Denoising", float, apply_field("denoising_strength"), format_value_add_label, None),
+    AxisOption("Seed", int, apply_field("seed")),
+    AxisOption("Var. seed", int, apply_field("subseed")),
+    AxisOption("Var. strength", float, apply_field("subseed_strength")),
+    AxisOption("Steps", int, apply_field("steps")),
+    AxisOption("CFG Scale", float, apply_field("cfg_scale")),
+    AxisOption("Hypernet str.", float, apply_hypernetwork_strength),
+    AxisOption("Sigma Churn", float, apply_field("s_churn")),
+    AxisOption("Sigma min", float, apply_field("s_tmin")),
+    AxisOption("Sigma max", float, apply_field("s_tmax")),
+    AxisOption("Sigma noise", float, apply_field("s_noise")),
+    AxisOption("Eta", float, apply_field("eta")),
+    AxisOption("Clip skip", int, apply_clip_skip),
+    AxisOption("Denoising", float, apply_field("denoising_strength")),
 ]
 
 class Script(scripts.Script):
