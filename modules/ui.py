@@ -1016,6 +1016,15 @@ def create_ui(wrap_gradio_gpu_call):
                     with gr.TabItem('Batch Process'):
                         image_batch = gr.File(label="Batch Process", file_count="multiple", interactive=True, type="file")
 
+                    with gr.TabItem('Batch from Directory'):
+                        extras_batch_input_dir = gr.Textbox(label="Input directory", **shared.hide_dirs,
+                            placeholder="A directory on the same machine where the server is running."
+                        )
+                        extras_batch_output_dir = gr.Textbox(label="Output directory", **shared.hide_dirs,
+                            placeholder="Leave blank to save images to the default path."
+                        )
+                        show_extras_results = gr.Checkbox(label='Show result images', value=True)
+
                 with gr.Tabs(elem_id="extras_resize_mode"):
                     with gr.TabItem('Scale by'):
                         upscaling_resize = gr.Slider(minimum=1.0, maximum=4.0, step=0.05, label="Resize", value=2)
@@ -1060,6 +1069,9 @@ def create_ui(wrap_gradio_gpu_call):
                 dummy_component,
                 extras_image,
                 image_batch,
+                extras_batch_input_dir,
+                extras_batch_output_dir,
+                show_extras_results,
                 gfpgan_visibility,
                 codeformer_visibility,
                 codeformer_weight,
