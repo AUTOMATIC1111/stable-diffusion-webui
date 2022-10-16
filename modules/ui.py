@@ -487,9 +487,9 @@ def create_toprow(is_img2img):
 
             with gr.Column(scale=3, elem_id="promptsCol"):
                 with gr.Row(elem_id="promptRow"):
-                    prompt = gr.Textbox( lines=2,elem_id=f"{id_part}_prompt", show_label=False, placeholder="Prompt")
+                    prompt = gr.Textbox( lines=2,elem_id=f"{id_part}_prompt", show_label=False, placeholder="Prompt (press Ctrl+Enter or Alt+Enter to generate)")
                 with gr.Row(elem_id="negPromptRow"):
-                    negative_prompt = gr.Textbox(lines=2,elem_id="negative_prompt", show_label=False, placeholder="Negative prompt")
+                    negative_prompt = gr.Textbox(lines=2,elem_id="negative_prompt", show_label=False, placeholder="Negative prompt (press Ctrl+Enter or Alt+Enter to generate)")
                 with gr.Row(elem_id="tokenRow"):
                     token_counter = gr.HTML(value="<span></span>", elem_id=f"{id_part}_token_counter", visible = True)
                     token_button = gr.Button(visible=False, elem_id=f"{id_part}_token_button")
