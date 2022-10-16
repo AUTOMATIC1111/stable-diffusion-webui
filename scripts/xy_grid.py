@@ -12,7 +12,7 @@ import gradio as gr
 
 from modules import images
 from modules.hypernetworks import hypernetwork
-from modules.processing import process_images, Processed, get_correct_sampler
+from modules.processing import process_images, Processed, get_correct_sampler, StableDiffusionProcessingTxt2Img
 from modules.shared import opts, cmd_opts, state
 import modules.shared as shared
 import modules.sd_samplers
@@ -176,7 +176,7 @@ axis_options = [
     AxisOption("Sigma noise", float, apply_field("s_noise"), format_value_add_label, None),
     AxisOption("Eta", float, apply_field("eta"), format_value_add_label, None),
     AxisOption("Clip skip", int, apply_clip_skip, format_value_add_label, None),
-    AxisOptionImg2Img("Denoising", float, apply_field("denoising_strength"), format_value_add_label, None),  # as it is now all AxisOptionImg2Img items must go after AxisOption ones
+    AxisOption("Denoising", float, apply_field("denoising_strength"), format_value_add_label, None),
 ]
 
 
@@ -338,7 +338,7 @@ class Script(scripts.Script):
         ys = process_axis(y_opt, y_values)
 
         def fix_axis_seeds(axis_opt, axis_list):
-            if axis_opt.label == 'Seed':
+            if axis_opt.label in ['Seed','Var. seed']:
                 return [int(random.randrange(4294967294)) if val is None or val == '' or val == -1 else val for val in axis_list]
             else:
                 return axis_list
@@ -353,6 +353,9 @@ class Script(scripts.Script):
             total_steps = sum(ys) * len(xs)
         else:
             total_steps = p.steps * len(xs) * len(ys)
+
+        if isinstance(p, StableDiffusionProcessingTxt2Img) and p.enable_hr:
+            total_steps *= 2
 
         print(f"X/Y plot will create {len(xs) * len(ys) * p.n_iter} images on a {len(xs)}x{len(ys)} grid. (Total steps to process: {total_steps * p.n_iter})")
         shared.total_tqdm.updateTotal(total_steps * p.n_iter)

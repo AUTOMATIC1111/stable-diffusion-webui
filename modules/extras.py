@@ -20,26 +20,40 @@ import gradio as gr
 cached_images = {}
 
 
-def run_extras(extras_mode, resize_mode, image, image_folder, gfpgan_visibility, codeformer_visibility, codeformer_weight, upscaling_resize, upscaling_resize_w, upscaling_resize_h, upscaling_crop, extras_upscaler_1, extras_upscaler_2, extras_upscaler_2_visibility):
+def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_dir, show_extras_results, gfpgan_visibility, codeformer_visibility, codeformer_weight, upscaling_resize, upscaling_resize_w, upscaling_resize_h, upscaling_crop, extras_upscaler_1, extras_upscaler_2, extras_upscaler_2_visibility):
     devices.torch_gc()
 
     imageArr = []
     # Also keep track of original file names
     imageNameArr = []
-
+    outputs = []
+    
     if extras_mode == 1:
         #convert file to pillow image
         for img in image_folder:
             image = Image.open(img)
             imageArr.append(image)
             imageNameArr.append(os.path.splitext(img.orig_name)[0])
+    elif extras_mode == 2:
+        assert not shared.cmd_opts.hide_ui_dir_config, '--hide-ui-dir-config option must be disabled'
+
+        if input_dir == '':
+            return outputs, "Please select an input directory.", ''
+        image_list = [file for file in [os.path.join(input_dir, x) for x in os.listdir(input_dir)] if os.path.isfile(file)]
+        for img in image_list:
+            image = Image.open(img)
+            imageArr.append(image)
+            imageNameArr.append(img)
     else:
         imageArr.append(image)
         imageNameArr.append(None)
 
-    outpath = opts.outdir_samples or opts.outdir_extras_samples
+    if extras_mode == 2 and output_dir != '':
+        outpath = output_dir
+    else:
+        outpath = opts.outdir_samples or opts.outdir_extras_samples
 
-    outputs = []
+    
     for image, image_name in zip(imageArr, imageNameArr):
         if image is None:
             return outputs, "Please select an input image.", ''
@@ -112,7 +126,8 @@ def run_extras(extras_mode, resize_mode, image, image_folder, gfpgan_visibility,
             image.info = existing_pnginfo
             image.info["extras"] = info
 
-        outputs.append(image)
+        if extras_mode != 2 or show_extras_results :
+            outputs.append(image)
 
     devices.torch_gc()
 
@@ -159,48 +174,52 @@ def run_pnginfo(image):
     return '', geninfo, info
 
 
-def run_modelmerger(primary_model_name, secondary_model_name, interp_method, interp_amount, save_as_half, custom_name):
-    # Linear interpolation (https://en.wikipedia.org/wiki/Linear_interpolation)
-    def weighted_sum(theta0, theta1, alpha):
+def run_modelmerger(primary_model_name, secondary_model_name, teritary_model_name, interp_method, multiplier, save_as_half, custom_name):
+    def weighted_sum(theta0, theta1, theta2, alpha):
         return ((1 - alpha) * theta0) + (alpha * theta1)
 
-    # Smoothstep (https://en.wikipedia.org/wiki/Smoothstep)
-    def sigmoid(theta0, theta1, alpha):
-        alpha = alpha * alpha * (3 - (2 * alpha))
-        return theta0 + ((theta1 - theta0) * alpha)
-
-    # Inverse Smoothstep (https://en.wikipedia.org/wiki/Smoothstep)
-    def inv_sigmoid(theta0, theta1, alpha):
-        import math
-        alpha = 0.5 - math.sin(math.asin(1.0 - 2.0 * alpha) / 3.0)
-        return theta0 + ((theta1 - theta0) * alpha)
+    def add_difference(theta0, theta1, theta2, alpha):
+        return theta0 + (theta1 - theta2) * alpha
 
     primary_model_info = sd_models.checkpoints_list[primary_model_name]
     secondary_model_info = sd_models.checkpoints_list[secondary_model_name]
+    teritary_model_info = sd_models.checkpoints_list.get(teritary_model_name, None)
 
     print(f"Loading {primary_model_info.filename}...")
     primary_model = torch.load(primary_model_info.filename, map_location='cpu')
+    theta_0 = sd_models.get_state_dict_from_checkpoint(primary_model)
 
     print(f"Loading {secondary_model_info.filename}...")
     secondary_model = torch.load(secondary_model_info.filename, map_location='cpu')
-
-    theta_0 = sd_models.get_state_dict_from_checkpoint(primary_model)
     theta_1 = sd_models.get_state_dict_from_checkpoint(secondary_model)
 
+    if teritary_model_info is not None:
+        print(f"Loading {teritary_model_info.filename}...")
+        teritary_model = torch.load(teritary_model_info.filename, map_location='cpu')
+        theta_2 = sd_models.get_state_dict_from_checkpoint(teritary_model)
+    else:
+        theta_2 = None
+
     theta_funcs = {
-        "Weighted Sum": weighted_sum,
-        "Sigmoid": sigmoid,
-        "Inverse Sigmoid": inv_sigmoid,
+        "Weighted sum": weighted_sum,
+        "Add difference": add_difference,
     }
     theta_func = theta_funcs[interp_method]
 
     print(f"Merging...")
+
     for key in tqdm.tqdm(theta_0.keys()):
         if 'model' in key and key in theta_1:
-            theta_0[key] = theta_func(theta_0[key], theta_1[key], (float(1.0) - interp_amount))  # Need to reverse the interp_amount to match the desired mix ration in the merged checkpoint
+            t2 = (theta_2 or {}).get(key)
+            if t2 is None:
+                t2 = torch.zeros_like(theta_0[key])
+
+            theta_0[key] = theta_func(theta_0[key], theta_1[key], t2, multiplier)
+
             if save_as_half:
                 theta_0[key] = theta_0[key].half()
 
+    # I believe this part should be discarded, but I'll leave it for now until I am sure
     for key in theta_1.keys():
         if 'model' in key and key not in theta_0:
             theta_0[key] = theta_1[key]
@@ -209,7 +228,7 @@ def run_modelmerger(primary_model_name, secondary_model_name, interp_method, int
 
     ckpt_dir = shared.cmd_opts.ckpt_dir or sd_models.model_path
 
-    filename = primary_model_info.model_name + '_' + str(round(interp_amount, 2)) + '-' + secondary_model_info.model_name + '_' + str(round((float(1.0) - interp_amount), 2)) + '-' + interp_method.replace(" ", "_") + '-merged.ckpt'
+    filename = primary_model_info.model_name + '_' + str(round(1-multiplier, 2)) + '-' + secondary_model_info.model_name + '_' + str(round(multiplier, 2)) + '-' + interp_method.replace(" ", "_") + '-merged.ckpt'
     filename = filename if custom_name == '' else (custom_name + '.ckpt')
     output_modelname = os.path.join(ckpt_dir, filename)
 
@@ -219,4 +238,4 @@ def run_modelmerger(primary_model_name, secondary_model_name, interp_method, int
     sd_models.list_models()
 
     print(f"Checkpoint saved.")
-    return ["Checkpoint saved to " + output_modelname] + [gr.Dropdown.update(choices=sd_models.checkpoint_tiles()) for _ in range(3)]
+    return ["Checkpoint saved to " + output_modelname] + [gr.Dropdown.update(choices=sd_models.checkpoint_tiles()) for _ in range(4)]
