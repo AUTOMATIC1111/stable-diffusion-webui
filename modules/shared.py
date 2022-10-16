@@ -77,6 +77,16 @@ parser.add_argument("--disable-safe-unpickle", action='store_true', help="disabl
 
 
 cmd_opts = parser.parse_args()
+restricted_opts = [
+    "samples_filename_pattern",
+    "outdir_samples",
+    "outdir_txt2img_samples",
+    "outdir_img2img_samples",
+    "outdir_extras_samples",
+    "outdir_grids",
+    "outdir_txt2img_grids",
+    "outdir_save",
+]
 
 devices.device, devices.device_interrogate, devices.device_gfpgan, devices.device_bsrgan, devices.device_esrgan, devices.device_scunet, devices.device_codeformer = \
 (devices.cpu if any(y in cmd_opts.use_cpu for y in [x, 'all']) else devices.get_optimal_device() for x in ['sd', 'interrogate', 'gfpgan', 'bsrgan', 'esrgan', 'scunet', 'codeformer'])
