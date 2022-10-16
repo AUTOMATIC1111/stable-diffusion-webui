@@ -137,8 +137,9 @@
       })()
     );
     if (hideIfBlur) {
-      document.addEventListener("click", hide);
-      $board.addEventListener("click", function (event) {
+      // use the `mouseup` instead of `click` to avoid the custom trigger event
+      document.addEventListener("mouseup", hide);
+      $board.addEventListener("mouseup", function (event) {
         event.stopPropagation();
       });
     }
@@ -210,13 +211,17 @@
     /** @type {{ localTags: Tag[], "prompt-tags": { [group: string]: Tag[] }, "preset-styles": { [group: string]: Preset[] } }} */
     var state = JSON.parse(localStorage.getItem(storeKey) || initState);
 
+    function empty() {
+      return localStorage.getItem(storeKey) == null;
+    }
+
     var activedMethods;
     function active(methods) {
       activedMethods = methods;
     }
 
     function parseTag(/** @type {string} */ line) {
-      var matched = line.match(/^([\+-])\s([^:]+):\s+([^#]+)(.*)/);
+      var matched = line.match(/^([\+-])\s([^:]+)(.*)/);
       if (matched == null) return;
       var attr = matched[1];
       var keys = matched[2]
@@ -228,21 +233,18 @@
         .filter(function (key) {
           return key !== "";
         });
-      var desc = matched[3].trim();
-      var note = matched[4].substring(1).trim();
+      var supplement = matched[3].match(/:([^#]+)(.*)/);
+      if (!supplement) return { attr, keys, desc: "", note: "" };
+      var desc = supplement[1].trim();
+      var note = supplement[2].substring(1).trim();
       return { attr, keys, desc, note };
     }
 
     function stringifyTag(/** @type {Tag} */ tag) {
-      return (
-        tag.attr +
-        " " +
-        tag.keys.join(" ") +
-        " : " +
-        tag.desc +
-        " # " +
-        tag.note
-      );
+      var key = tag.attr + " " + tag.keys.join(" ");
+      if (tag.desc) key += " : " + tag.desc;
+      if (tag.note) key += " # " + tag.note;
+      return key;
     }
 
     var renderDom = (function () {
@@ -339,11 +341,11 @@
         var key = tag.keys.join(" ");
         return (
           '<span title="' +
-          (tag.note || tag.desc) +
+          (tag.note || tag.desc || key) +
           '">' +
           "<small>" +
-          key +
-          ": </small>" +
+          (tag.desc ? key + ":" : key) +
+          "</small>" +
           tag.desc +
           "</span>"
         );
@@ -551,7 +553,13 @@
       $title.innerHTML = "shrea prompt - dump";
       $win.document.head.appendChild($title);
     }
-    return { active: active, load: load, dump: dump, $dom: renderDom() };
+    return {
+      empty: empty,
+      active: active,
+      load: load,
+      dump: dump,
+      $dom: renderDom(),
+    };
   })();
 
   document.addEventListener("DOMContentLoaded", function () {
@@ -583,35 +591,53 @@
     );
     dashboard.$head.appendChild(
       (function () {
-        var urlStoreKey = "sharePromptUrl";
-        var $input = createSimpleTextInput(
-          "input load prompts url, or load from clipboard if no value present",
-          "Load prompts url (https://path/to/prompts/json)",
-          function (event) {
-            var url = event.target.value.trim();
-            var done = dashboard.wait("L O A D I N G . . .");
-            if (done == null) return;
-            (url
+        function load(url) {
+          var done = dashboard.wait("L O A D I N G . . .");
+          if (done == null) return;
+          var loadFrom = url ? url : "clipboard";
+          return (
+            url
               ? fetch(url).then(function (r) {
                   localStorage.setItem(urlStoreKey, url);
                   return r.text();
                 })
               : navigator.clipboard.readText()
-            )
-              .then(state.load)
-              .then(function () {
-                console.info("loaded prompts from " + url);
-              })
-              .catch(function (error) {
-                console.error("failed to load prompts from " + url, error);
-              })
-              .then(done);
+          )
+            .then(state.load)
+            .then(function () {
+              console.info("loaded prompts from " + loadFrom);
+            })
+            .catch(function (error) {
+              console.error("failed to load prompts from " + loadFrom, error);
+            })
+            .then(done);
+        }
+        var urlStoreKey = "sharePromptUrl";
+        var $input = createSimpleTextInput(
+          "input load prompts url, or load from clipboard if no value present",
+          "Load prompts url (https://path/to/prompts/json)",
+          function (event) {
+            load(event.target.value.trim());
           }
         );
-        var url =
-          localStorage.getItem(urlStoreKey) ||
-          "https://api.github.com/gists/ccf3fc8a51b1bcce9709b237fa860e01";
-        url && ($input.value = url);
+        var url = localStorage.getItem(urlStoreKey);
+        if (url == null) {
+          // find in configuration
+          var url = ""; 
+          if (!url) {
+            // find in location search, for example: ?share=https://api.github.com/gists/ccf3fc8a51b1bcce9709b237fa860e01
+            var matched = location.search.match(/[\?&]share=([\S^\?^&]+)/);
+            matched && matched[1] && (url = matched[1]);
+          }
+          // initial local storage
+          url &&
+            state.empty() &&
+            load(url).then(function () {
+              localStorage.setItem(urlStoreKey, "");
+            });
+        } else {
+          $input.defaultValue = url;
+        }
         return $input;
       })()
     );
@@ -640,7 +666,7 @@
       $button.style.maxWidth = "2.5em";
       $button.style.minWidth = "2.5em";
       $button.style.height = "2.4em";
-      $button.innerHTML = "\u{1f4da}";  // '📚' // '\u2601';  // '☁'
+      $button.innerHTML = "\u{1f4da}"; // '📚' // '\u2601';  // '☁'
       $button.title = "browse share-prompt";
       $button.addEventListener("click", function (event) {
         state.active(activedMethods);
