@@ -1,10 +1,10 @@
 # this scripts installs necessary requirements and launches main program in webui.py
-import subprocess
 import os
 import sys
 import importlib.util
 import shlex
 import platform
+from helpers.commands import check_run, run
 
 dir_repos = "repositories"
 python = sys.executable
@@ -14,31 +14,6 @@ index_url = os.environ.get('INDEX_URL', "")
 
 def extract_arg(args, name):
     return [x for x in args if x != name], name in args
-
-
-def run(command, desc=None, errdesc=None):
-    if desc is not None:
-        print(desc)
-
-    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-
-    if result.returncode != 0:
-
-        message = f"""{errdesc or 'Error running command'}.
-Command: {command}
-Error code: {result.returncode}
-stdout: {result.stdout.decode(encoding="utf8", errors="ignore") if len(result.stdout)>0 else '<empty>'}
-stderr: {result.stderr.decode(encoding="utf8", errors="ignore") if len(result.stderr)>0 else '<empty>'}
-"""
-        raise RuntimeError(message)
-
-    return result.stdout.decode(encoding="utf8", errors="ignore")
-
-
-def check_run(command):
-    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-    return result.returncode == 0
-
 
 def is_installed(package):
     try:
@@ -179,3 +154,4 @@ def start_webui():
 if __name__ == "__main__":
     prepare_enviroment()
     start_webui()
+    

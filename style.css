@@ -484,6 +484,13 @@ input[type="range"]{
     height: 2.4em;
 }
 
+#git_update_button{
+    height: 2.4em;
+    min-width: fit-content;
+    max-width: fit-content;
+    margin-left: auto; 
+    margin-right: 0;
+}
 
 canvas[key="mask"] {
     z-index: 12 !important;

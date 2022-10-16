@@ -93,10 +93,20 @@ titles = {
     "Add difference": "Result = A + (B - C) * M",
 }
 
+// Maps element ID to specific tooltip
+// This allows us, for example, to use the same icons in different contexts with different tooltips
+// Also tooltips don't break if we change the Element Text or Icon (and forget to update hints.js)
+id_tooltips = {
+    "git_update_button": "Update to latest version",
+}
 
 onUiUpdate(function(){
 	gradioApp().querySelectorAll('span, button, select, p').forEach(function(span){
 		tooltip = titles[span.textContent];
+
+        if(!tooltip){
+		    tooltip = id_tooltips[span.id];
+		}
 
 		if(!tooltip){
 		    tooltip = titles[span.value];

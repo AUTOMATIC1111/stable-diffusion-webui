@@ -43,6 +43,8 @@ import modules.textual_inversion.ui
 import modules.hypernetworks.ui
 import modules.images_history as img_his
 
+import helpers.git
+
 # this is a fix for Windows users. Without it, javascript files will be served with text/html content-type and the browser will not show any UI
 mimetypes.init()
 mimetypes.add_type('application/javascript', '.js')
@@ -83,6 +85,7 @@ folder_symbol = '\U0001f4c2'  # 📂
 refresh_symbol = '\U0001f504'  # 🔄
 save_style_symbol = '\U0001f4be'  # 💾
 apply_style_symbol = '\U0001f4cb'  # 📋
+update_symbol = '\u2b07\ufe0f'  # ⬇️
 
 
 def plaintext_to_html(text):
@@ -1390,6 +1393,22 @@ def create_ui(wrap_gradio_gpu_call):
 
         return res
 
+    def create_update_button_component():
+        repo = helpers.git.repo_StableDiffusionWebUi
+        pending_updates_count = helpers.git.get_diff_count(repo)
+
+        button_label = f"{update_symbol}({pending_updates_count})"
+
+        git_update_button = gr.Button(value=button_label, elem_id="git_update_button", visible = pending_updates_count > 0)
+        git_update_button.click(
+            fn =lambda:helpers.git.pull(repo),
+            inputs = [],
+            outputs = []
+        )
+
+        return git_update_button
+
+
     components = []
     component_dict = {}
 
@@ -1564,6 +1583,7 @@ Requested path was: {f}
             for i, k, item in quicksettings_list:
                 component = create_setting_component(k, is_quicksettings=True)
                 component_dict[k] = component
+            create_update_button_component();
 
         settings_interface.gradio_ref = demo
 
