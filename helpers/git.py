@@ -1,5 +1,4 @@
 import os
-import enum
 from helpers.commands import run
 
 
@@ -34,4 +33,4 @@ def pull(repoUrl):
     remote_type = get_remote_type(repoUrl)
 
     merged_commits = run(f"{git} pull {remote_type} master:master", None, f"failed to merge from {remote_type} to master")
-    print(f"Update Successful:\n{merged_commits}")
+    print(f"Update Result:\n{merged_commits}")
