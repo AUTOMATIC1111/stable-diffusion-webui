@@ -34,7 +34,7 @@ function check_progressbar(id_part, id_progressbar, id_progressbar_span, id_skip
                 preview.style.height = gallery.clientHeight + "px"
 
 				//only watch gallery if there is a generation process going on
-                check_gallery(id_gallery);    
+                check_gallery(id_gallery);
 
                 var progressDiv = gradioApp().querySelectorAll('#' + id_progressbar_span).length > 0;
                 if(!progressDiv){
@@ -73,8 +73,10 @@ function check_gallery(id_gallery){
             let galleryBtnSelected = gradioApp().querySelector('#'+id_gallery+' .gallery-item.\\!ring-2')
             if (prevSelectedIndex !== -1 && galleryButtons.length>prevSelectedIndex && !galleryBtnSelected) {
                 //automatically re-open previously selected index (if exists)
+                activeElement = document.activeElement;
                 galleryButtons[prevSelectedIndex].click();
-		showGalleryImage();
+                showGalleryImage();
+                if(activeElement) activeElement.focus()
             }
         })
         galleryObservers[id_gallery].observe( gallery, { childList:true, subtree:false })
