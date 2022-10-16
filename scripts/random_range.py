@@ -5,9 +5,8 @@ import random
 import modules.scripts as scripts
 import gradio as gr
 
-from modules import images
 from modules.hypernetworks import hypernetwork
-from modules.processing import process_images, Processed, StableDiffusionProcessingTxt2Img
+from modules.processing import process_images, Processed, StableDiffusionProcessing, StableDiffusionProcessingTxt2Img
 from modules.shared import opts
 import modules.shared as shared
 import modules.sd_samplers
@@ -62,41 +61,47 @@ class Script(scripts.Script):
         return control_list
 
     def run(self, p, *control_list):
-        p = copy(p)
-        if not opts.return_grid:
-            p.batch_size = 1
+        p:StableDiffusionProcessing = copy(p)
+        processed_result = None
 
         CLIP_stop_at_last_layers = opts.CLIP_stop_at_last_layers
+        batch_count = p.n_iter
+        p.n_iter = 1
+        for n in range(batch_count):
+            applied_settings = []
+            for opt_idx, (ui_value_min, ui_value_max) in enumerate(zip(control_list[1::3], control_list[2::3])):
+                if ui_value_min == "" and ui_value_max == "":
+                    continue
+                axis_option = axis_options[opt_idx]
+                if axis_option.type is float:
+                    val = random.uniform(float(ui_value_min), float(ui_value_max))
+                    val = round(val, 2)
+                elif axis_option.type is int:
+                    val = random.randint(int(ui_value_min), int(ui_value_max))
+                else:
+                    raise Exception(f"random_range: Unknown type: {axis_option.type}")
 
-        applied_settings = []
-        for opt_idx, (ui_value_min, ui_value_max) in enumerate(zip(control_list[1::3], control_list[2::3])):
-            if ui_value_min == "" and ui_value_max == "":
-                continue
-            axis_option = axis_options[opt_idx]
-            if axis_option.type is float:
-                val = random.uniform(float(ui_value_min), float(ui_value_max))
-                val = round(val, 2)
-            elif axis_option.type is int:
-                val = random.randint(int(ui_value_min), int(ui_value_max))
+                axis_option.apply(p, val)
+                applied_settings.append((axis_option.label, val))
+
+            if len(applied_settings) == 0:
+                raise Exception("random_range: No settings specified.")
+
+            settings_str = ", ".join([f"{label}: {val}" for label,val in applied_settings])
+            print(f"random_range overriding {len(applied_settings)} settings: {settings_str}")
+
+            if batch_count > 1:
+                shared.state.job = f"Batch {n+1} out of {batch_count}"
+            processed:Processed = process_images(p)
+            if not processed_result:
+                processed_result = processed
             else:
-                raise Exception(f"random_range: Unknown type: {axis_option.type}")
-
-            axis_option.apply(p, val)
-            applied_settings.append((axis_option.label, val))
-
-        if len(applied_settings) == 0:
-            raise Exception("random_range: No settings specified.")
-
-        settings_str = ", ".join([f"{label}: {val}" for label,val in applied_settings])
-        print(f"random_range overriding {len(applied_settings)} settings: {settings_str}")
-
-        total_steps = p.steps
-        if isinstance(p, StableDiffusionProcessingTxt2Img) and p.enable_hr:
-            total_steps *= 2
-
-        shared.total_tqdm.updateTotal(total_steps * p.n_iter)
-
-        processed:Processed = process_images(p)
+                try:
+                    processed_result.images.append(processed.images[0])
+                    processed_result.all_prompts.append(processed.prompt)
+                    processed_result.all_seeds.append(processed.seed)
+                    processed_result.infotexts.append(processed.infotexts[0])
+                except: pass
 
         # restore checkpoint in case it was changed by axes
         modules.sd_models.reload_model_weights(shared.sd_model)
@@ -106,4 +111,4 @@ class Script(scripts.Script):
 
         opts.data["CLIP_stop_at_last_layers"] = CLIP_stop_at_last_layers
 
-        return processed
+        return processed_result
