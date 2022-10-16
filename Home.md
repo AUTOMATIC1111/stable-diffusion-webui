@@ -8,7 +8,7 @@
 - [Installation and run on NVidia GPUs](Install-and-Run-on-NVidia-GPUs)
 - [Install and run on AMD GPUs](Install-and-Run-on-AMD-GPUs)
 - [Install and run on Apple Silicon](Installation-on-Apple-Silicon) 
-- [Running with custom parameters](Run-with-Custom-Parameters)
+- [Command Line Arguments and Settings](Command-Line-Arguments-and-Settings)
 - [Optimizations](Optimizations)
 - [Changing UI defaults](Change-UI-Defaults)
 - [Custom scripts](Custom-Scripts)
