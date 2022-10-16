@@ -133,6 +133,10 @@ https://github.com/deforum-art/deforum-for-automatic1111-webui
 
 The official port of Deforum, an extensive script for 2D and 3D animations, supporting keyframable sequences, dynamic math parameters (even inside the prompts), dynamic masking, depth estimation and warping.
 
+## Embedding to PNG
+https://github.com/dfaker/embedding-to-png-script
+
+Converts existing embeddings to the shareable image versions.
 
 ## Saving steps of the sampling process
 
