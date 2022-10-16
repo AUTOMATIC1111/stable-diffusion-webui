@@ -31,7 +31,7 @@ def get_recent_images(dir_name, page_index, step, image_index, tabname):
         image_list = traverse_all_files(dir_name, image_list)
         image_list = sorted(image_list, key=lambda file: -os.path.getctime(os.path.join(dir_name, file)))
     else:
-        print(f"ERROR: {dir_name} is not a directory. Check the path in the settings.", file=sys.stderr)
+        print(f'ERROR: "{dir_name}" is not a directory. Check the path in the settings.', file=sys.stderr)
     num = 48 if tabname != "extras" else 12
     max_page_index = len(image_list) // num + 1
     page_index = max_page_index if page_index == -1 else page_index + step
