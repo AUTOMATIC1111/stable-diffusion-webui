@@ -1,6 +1,6 @@
 import os
 import shutil
-
+import sys
 
 def traverse_all_files(output_dir, image_list, curr_dir=None):
     curr_path = output_dir if curr_dir is None else os.path.join(output_dir, curr_dir)
@@ -24,10 +24,14 @@ def traverse_all_files(output_dir, image_list, curr_dir=None):
 
 def get_recent_images(dir_name, page_index, step, image_index, tabname):
     page_index = int(page_index)
-    f_list = os.listdir(dir_name)
     image_list = []
-    image_list = traverse_all_files(dir_name, image_list)
-    image_list = sorted(image_list, key=lambda file: -os.path.getctime(os.path.join(dir_name, file)))
+    if not os.path.exists(dir_name):
+        pass
+    elif os.path.isdir(dir_name):
+        image_list = traverse_all_files(dir_name, image_list)
+        image_list = sorted(image_list, key=lambda file: -os.path.getctime(os.path.join(dir_name, file)))
+    else:
+        print(f"ERROR: {dir_name} is not a directory. Check the path in the settings.", file=sys.stderr)
     num = 48 if tabname != "extras" else 12
     max_page_index = len(image_list) // num + 1
     page_index = max_page_index if page_index == -1 else page_index + step
