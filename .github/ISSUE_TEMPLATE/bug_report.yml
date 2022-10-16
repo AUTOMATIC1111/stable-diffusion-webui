@@ -1,13 +1,9 @@
 name: Bug Report
 description: You think somethings is broken in the UI
 title: "[Bug]: "
-labels: ["bug"]
+labels: ["bug-report"]
 
 body:
-  - type: markdown
-    attributes:
-      value: |
-        Make sure this issue hasn't been posted already and wasn't solved in recent commits, then fill this form with as much information as possible, don't forget to fill "What OS..." and "What browsers"
   - type: checkboxes
     attributes:
       label: Is there an existing issue for this?
@@ -15,6 +11,10 @@ body:
       options:
         - label: I have searched the existing issues and checked the recent builds/commits
           required: true
+  - type: markdown
+    attributes:
+      value: |
+        Please fill this form with as much information as possible, don't forget to fill "What OS..." and "What browsers" and *provide screenshots if possible*
   - type: textarea
     id: what-did
     attributes:
