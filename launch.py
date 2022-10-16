@@ -1,10 +1,14 @@
 # this scripts installs necessary requirements and launches main program in webui.py
+import json
 import subprocess
 import os
 import sys
 import importlib.util
 import shlex
 import platform
+import traceback
+import urllib.request
+
 
 dir_repos = "repositories"
 python = sys.executable
@@ -87,6 +91,59 @@ def git_clone(url, dir, name, commithash=None):
         run(f'"{git}" -C {dir} checkout {commithash}', None, "Couldn't checkout {name}'s hash: {commithash}")
 
 
+#region install plugins
+
+py_plg_dir = "scripts"
+js_plg_dir = "javascript"
+
+
+def find_plugin(name):
+    repo = {}   # TODO access the plugin repo, { name: [file, repo] }
+    return repo.get(name, None)
+
+
+def write_plugin(dir, name, text):
+    path = os.path.join(dir, f"plg-{name}")
+    with open(path, "w", encoding='utf-8', newline="") as file:
+        file.write(text)
+
+
+def install_plugin(name: str):
+    print(f"Installing plugin {name}")
+    if name.find("@") == -1:
+        plugin = find_plugin(name)
+        if not plugin:
+            print(f"[WARN] plugin not found, name: {name}")
+            return
+        name, address = plugin
+    else:
+        name, repo = name.split("@")
+        address = f"https://api.github.com/gists/{repo}"
+
+    try:
+        response = urllib.request.urlopen(address)
+        text: str = response.read().decode("utf-8")
+        if not text.startswith("{"):
+            path = py_plg_dir if name.endswith(".py") else js_plg_dir
+            write_plugin(path, name, text)
+            return
+        data = json.loads(text)
+        data = data["files"].get(name, None)
+        if name is None:
+            print(f"[WARN] plugin file not found, name: {name}, name: {name}")
+            return
+        laungage = data["language"]
+        content = data["content"]
+        path = py_plg_dir if laungage == "Python" else js_plg_dir
+        write_plugin(path, name, content)
+    except Exception as e:
+        print(
+            "[WARN] load plugin failed, " +
+            f"name: {name}, reason: {e}", file=sys.stderr)
+        print(traceback.format_exc(), file=sys.stderr)
+#endregion
+
+
 def prepare_enviroment():
     torch_command = os.environ.get('TORCH_COMMAND', "pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 --extra-index-url https://download.pytorch.org/whl/cu113")
     requirements_file = os.environ.get('REQS_FILE', "requirements_versions.txt")
@@ -100,6 +157,7 @@ def prepare_enviroment():
     k_diffusion_commit_hash = os.environ.get('K_DIFFUSION_COMMIT_HASH', "f4e99857772fc3a126ba886aadf795a332774878")
     codeformer_commit_hash = os.environ.get('CODEFORMER_COMMIT_HASH', "c5b4593074ba6214284d6acd5f1719b6c5d739af")
     blip_commit_hash = os.environ.get('BLIP_COMMIT_HASH', "48211a1594f1321b00f14c9f7a5b4813144b2fb9")
+    plugin_list = os.environ.get("PLUGIN_LIST", "").split(",")
 
     args = shlex.split(commandline_args)
 
@@ -153,6 +211,9 @@ def prepare_enviroment():
         run_pip(f"install -r {os.path.join(repo_dir('CodeFormer'), 'requirements.txt')}", "requirements for CodeFormer")
 
     run_pip(f"install -r {requirements_file}", "requirements for Web UI")
+
+    for plugin_name in plugin_list:
+        install_plugin(plugin_name)
 
     sys.argv += args
 
