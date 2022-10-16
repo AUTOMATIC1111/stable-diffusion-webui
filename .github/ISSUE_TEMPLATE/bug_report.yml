@@ -16,7 +16,8 @@ body:
     attributes:
       label: Steps to reproduce the problem
       description: Please provide us with precise step by step information to reproduce the bug
-      value: 1. Go to .... |
+      value: |
+        1. Go to .... 
         2. Press ....
         3. ...
     validations:
