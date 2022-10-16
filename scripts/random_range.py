@@ -104,7 +104,6 @@ class Script(scripts.Script):
         print(f"random_range overriding {len(applied_settings)} settings: {settings_str}")
 
         total_steps = p.steps
-
         if isinstance(p, StableDiffusionProcessingTxt2Img) and p.enable_hr:
             total_steps *= 2
 
@@ -112,15 +111,11 @@ class Script(scripts.Script):
 
         processed:Processed = process_images(p)
 
-        if opts.grid_save:
-            images.save_image(processed.images[0], p.outpath_grids, "random_range", prompt=p.prompt, seed=processed.seed, grid=True, p=p)
-
         # restore checkpoint in case it was changed by axes
         modules.sd_models.reload_model_weights(shared.sd_model)
 
         hypernetwork.load_hypernetwork(opts.sd_hypernetwork)
         hypernetwork.apply_strength()
-
 
         opts.data["CLIP_stop_at_last_layers"] = CLIP_stop_at_last_layers
 
