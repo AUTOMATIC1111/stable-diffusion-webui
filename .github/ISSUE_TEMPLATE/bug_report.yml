@@ -76,4 +76,4 @@ body:
     id: misc
     attributes:
       label: Additionnal information, context and logs
-      description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
+      description: Please provide us with any relevant additional info, context or log output.
