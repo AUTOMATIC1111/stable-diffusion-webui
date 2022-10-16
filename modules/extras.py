@@ -35,6 +35,8 @@ def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_
             imageArr.append(image)
             imageNameArr.append(os.path.splitext(img.orig_name)[0])
     elif extras_mode == 2:
+        assert not shared.cmd_opts.hide_ui_dir_config, '--hide-ui-dir-config option must be disabled'
+
         if input_dir == '':
             return outputs, "Please select an input directory.", ''
         image_list = [file for file in [os.path.join(input_dir, x) for x in os.listdir(input_dir)] if os.path.isfile(file)]
