@@ -88,10 +88,10 @@ function images_history_set_image_info(button){
     
 }
 
-function images_history_get_current_img(tabname, image_path, files){
+function images_history_get_current_img(tabname, img_index, files){
     return [
-        gradioApp().getElementById(tabname + '_images_history_set_index').getAttribute("img_index"), 
-        image_path, 
+        tabname, 
+        gradioApp().getElementById(tabname + '_images_history_set_index').getAttribute("img_index"),         
         files
     ];
 }
@@ -129,7 +129,7 @@ function images_history_delete(del_num, tabname, img_file_name, page_index, file
         setTimeout(function(btn){btn.click()}, 30, btn);
     }
     images_history_disabled_del();  
-    return [del_num, tabname, img_path, img_file_name, page_index, filenames, image_index];
+    return [del_num, tabname, img_file_name, page_index, filenames, image_index];
 }
 
 function images_history_turnpage(img_path, page_index, image_index, tabname, date_from, date_to){
@@ -170,8 +170,8 @@ function images_history_init(){
         }    
         tabs_box.classList.add(images_history_tab_list[0]);
 
-        // same as above, at page load
-        //load_txt2img_button.click();
+        // same as above, at page load-- load very fast now
+        load_txt2img_button.click();
     } else {
         setTimeout(images_history_init, 500);
     } 
