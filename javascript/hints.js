@@ -16,6 +16,8 @@ titles = {
     "\u{1f3a8}": "Add a random artist to the prompt.",
     "\u2199\ufe0f": "Read generation parameters from prompt or last generation if prompt is empty into user interface.",
     "\u{1f4c2}": "Open images output directory",
+    "\u{1f4be}": "Save style",
+    "\u{1f4cb}": "Apply selected styles to current prompt",
 
     "Inpaint a part of image": "Draw a mask over an image, and the script will regenerate the masked area with content according to prompt",
     "SD upscale": "Upscale image normally, split result into tiles, improve each tile using img2img, merge whole image back",
@@ -87,8 +89,8 @@ titles = {
 
     "Quicksettings list": "List of setting names, separated by commas, for settings that should go to the quick access bar at the top, rather than the usual setting tab. See modules/shared.py for setting names. Requires restarting to apply.",
 
-    "Weighted Sum": "Result = A * (1 - M) + B * M",
-    "Add difference": "Result = A + (B - C) * (1 - M)",
+    "Weighted sum": "Result = A * (1 - M) + B * M",
+    "Add difference": "Result = A + (B - C) * M",
 }
 
 
