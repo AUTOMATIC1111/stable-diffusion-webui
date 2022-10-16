@@ -56,7 +56,7 @@ if not cmd_opts.share and not cmd_opts.listen:
 if cmd_opts.ngrok != None:
     import modules.ngrok as ngrok
     print('ngrok authtoken detected, trying to connect...')
-    ngrok.connect(cmd_opts.ngrok, cmd_opts.port if cmd_opts.port != None else 7860)
+    ngrok.connect(cmd_opts.ngrok, cmd_opts.port if cmd_opts.port != None else 7860, cmd_opts.ngrok_region)
 
 
 def gr_show(visible=True):
