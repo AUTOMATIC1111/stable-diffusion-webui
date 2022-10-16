@@ -3,6 +3,7 @@ import datetime
 import json
 import os
 import sys
+from collections import OrderedDict
 
 import gradio as gr
 import tqdm
@@ -94,15 +95,15 @@ os.makedirs(cmd_opts.hypernetwork_dir, exist_ok=True)
 hypernetworks = hypernetwork.list_hypernetworks(cmd_opts.hypernetwork_dir)
 loaded_hypernetwork = None
 
-aesthetic_embeddings = {f.replace(".pt",""): os.path.join(cmd_opts.aesthetic_embeddings_dir, f) for f in
-                        os.listdir(cmd_opts.aesthetic_embeddings_dir) if f.endswith(".pt")}
-aesthetic_embeddings = aesthetic_embeddings | {"None": None}
+aesthetic_embeddings = {}
 
 def update_aesthetic_embeddings():
     global aesthetic_embeddings
     aesthetic_embeddings = {f.replace(".pt",""): os.path.join(cmd_opts.aesthetic_embeddings_dir, f) for f in
                             os.listdir(cmd_opts.aesthetic_embeddings_dir) if f.endswith(".pt")}
-    aesthetic_embeddings = aesthetic_embeddings | {"None": None}
+    aesthetic_embeddings = OrderedDict(**{"None": None}, **aesthetic_embeddings)
+
+update_aesthetic_embeddings()
 
 def reload_hypernetworks():
     global hypernetworks
@@ -380,6 +381,11 @@ if os.path.exists(config_filename):
 sd_upscalers = []
 
 sd_model = None
+
+clip_model = None
+
+from modules.aesthetic_clip import AestheticCLIP
+aesthetic_clip = AestheticCLIP()
 
 progress_print_out = sys.stdout
 

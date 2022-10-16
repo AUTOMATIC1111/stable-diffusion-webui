@@ -43,7 +43,7 @@ from modules.images import save_image
 import modules.textual_inversion.ui
 import modules.hypernetworks.ui
 
-import modules.aesthetic_clip
+import modules.aesthetic_clip as aesthetic_clip
 import modules.images_history as img_his
 
 
@@ -593,23 +593,25 @@ def create_ui(wrap_gradio_gpu_call):
                     width = gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512)
                     height = gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512)
 
-                with gr.Group():
-                    with gr.Accordion("Open for Clip Aesthetic!",open=False):
-                        with gr.Row():
-                            aesthetic_weight = gr.Slider(minimum=0, maximum=1, step=0.01, label="Aesthetic weight", value=0.9)
-                            aesthetic_steps = gr.Slider(minimum=0, maximum=50, step=1, label="Aesthetic steps", value=5)
+                # with gr.Group():
+                #     with gr.Accordion("Open for Clip Aesthetic!",open=False):
+                #         with gr.Row():
+                #             aesthetic_weight = gr.Slider(minimum=0, maximum=1, step=0.01, label="Aesthetic weight", value=0.9)
+                #             aesthetic_steps = gr.Slider(minimum=0, maximum=50, step=1, label="Aesthetic steps", value=5)
+                #
+                #         with gr.Row():
+                #             aesthetic_lr = gr.Textbox(label='Aesthetic learning rate', placeholder="Aesthetic learning rate", value="0.0001")
+                #             aesthetic_slerp = gr.Checkbox(label="Slerp interpolation", value=False)
+                #             aesthetic_imgs = gr.Dropdown(sorted(aesthetic_embeddings.keys()),
+                #                                          label="Aesthetic imgs embedding",
+                #                                          value="None")
+                #
+                #         with gr.Row():
+                #             aesthetic_imgs_text = gr.Textbox(label='Aesthetic text for imgs', placeholder="This text is used to rotate the feature space of the imgs embs", value="")
+                #             aesthetic_slerp_angle = gr.Slider(label='Slerp angle',minimum=0, maximum=1, step=0.01, value=0.1)
+                #             aesthetic_text_negative = gr.Checkbox(label="Is negative text", value=False)
 
-                        with gr.Row():
-                            aesthetic_lr = gr.Textbox(label='Aesthetic learning rate', placeholder="Aesthetic learning rate", value="0.0001")
-                            aesthetic_slerp = gr.Checkbox(label="Slerp interpolation", value=False)
-                            aesthetic_imgs = gr.Dropdown(sorted(aesthetic_embeddings.keys()),
-                                                         label="Aesthetic imgs embedding",
-                                                         value="None")
-
-                        with gr.Row():
-                            aesthetic_imgs_text = gr.Textbox(label='Aesthetic text for imgs', placeholder="This text is used to rotate the feature space of the imgs embs", value="")
-                            aesthetic_slerp_angle = gr.Slider(label='Slerp angle',minimum=0, maximum=1, step=0.01, value=0.1)
-                            aesthetic_text_negative = gr.Checkbox(label="Is negative text", value=False)
+                aesthetic_weight, aesthetic_steps, aesthetic_lr, aesthetic_slerp, aesthetic_imgs, aesthetic_imgs_text, aesthetic_slerp_angle, aesthetic_text_negative = aesthetic_clip.create_ui()
 
 
                 with gr.Row():
@@ -840,6 +842,9 @@ def create_ui(wrap_gradio_gpu_call):
                     width = gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512)
                     height = gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512)
 
+                aesthetic_weight_im, aesthetic_steps_im, aesthetic_lr_im, aesthetic_slerp_im, aesthetic_imgs_im, aesthetic_imgs_text_im, aesthetic_slerp_angle_im, aesthetic_text_negative_im = aesthetic_clip.create_ui()
+
+
                 with gr.Row():
                     restore_faces = gr.Checkbox(label='Restore faces', value=False, visible=len(shared.face_restorers) > 1)
                     tiling = gr.Checkbox(label='Tiling', value=False)
@@ -944,6 +949,14 @@ def create_ui(wrap_gradio_gpu_call):
                     inpainting_mask_invert,
                     img2img_batch_input_dir,
                     img2img_batch_output_dir,
+                    aesthetic_lr_im,
+                    aesthetic_weight_im,
+                    aesthetic_steps_im,
+                    aesthetic_imgs_im,
+                    aesthetic_slerp_im,
+                    aesthetic_imgs_text_im,
+                    aesthetic_slerp_angle_im,
+                    aesthetic_text_negative_im,
                 ] + custom_inputs,
                 outputs=[
                     img2img_gallery,
@@ -1283,7 +1296,7 @@ def create_ui(wrap_gradio_gpu_call):
         )
 
         create_embedding_ae.click(
-            fn=modules.aesthetic_clip.generate_imgs_embd,
+            fn=aesthetic_clip.generate_imgs_embd,
             inputs=[
                 new_embedding_name_ae,
                 process_src_ae,
@@ -1291,6 +1304,7 @@ def create_ui(wrap_gradio_gpu_call):
             ],
             outputs=[
                 aesthetic_imgs,
+                aesthetic_imgs_im,
                 ti_output,
                 ti_outcome,
             ]

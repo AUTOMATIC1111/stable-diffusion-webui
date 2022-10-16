@@ -146,7 +146,8 @@ class Processed:
         self.prompt = self.prompt if type(self.prompt) != list else self.prompt[0]
         self.negative_prompt = self.negative_prompt if type(self.negative_prompt) != list else self.negative_prompt[0]
         self.seed = int(self.seed if type(self.seed) != list else self.seed[0]) if self.seed is not None else -1
-        self.subseed = int(self.subseed if type(self.subseed) != list else self.subseed[0]) if self.subseed is not None else -1
+        self.subseed = int(
+            self.subseed if type(self.subseed) != list else self.subseed[0]) if self.subseed is not None else -1
 
         self.all_prompts = all_prompts or [self.prompt]
         self.all_seeds = all_seeds or [self.seed]
@@ -332,15 +333,8 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration
     return f"{all_prompts[index]}{negative_prompt_text}\n{generation_params_text}".strip()
 
 
-def process_images(p: StableDiffusionProcessing, aesthetic_lr=0, aesthetic_weight=0, aesthetic_steps=0,
-                   aesthetic_imgs=None, aesthetic_slerp=False, aesthetic_imgs_text="",
-                   aesthetic_slerp_angle=0.15,
-                   aesthetic_text_negative=False) -> Processed:
+def process_images(p: StableDiffusionProcessing) -> Processed:
     """this is the main loop that both txt2img and img2img use; it calls func_init once inside all the scopes and func_sample once per batch"""
-
-    aesthetic_lr = float(aesthetic_lr)
-    aesthetic_weight = float(aesthetic_weight)
-    aesthetic_steps = int(aesthetic_steps)
 
     if type(p.prompt) == list:
         assert (len(p.prompt) > 0)
@@ -417,16 +411,10 @@ def process_images(p: StableDiffusionProcessing, aesthetic_lr=0, aesthetic_weigh
             # uc = p.sd_model.get_learned_conditioning(len(prompts) * [p.negative_prompt])
             # c = p.sd_model.get_learned_conditioning(prompts)
             with devices.autocast():
-                if hasattr(shared.sd_model.cond_stage_model, "set_aesthetic_params"):
-                    shared.sd_model.cond_stage_model.set_aesthetic_params()
+                shared.aesthetic_clip.set_skip(True)
                 uc = prompt_parser.get_learned_conditioning(shared.sd_model, len(prompts) * [p.negative_prompt],
                                                             p.steps)
-                if hasattr(shared.sd_model.cond_stage_model, "set_aesthetic_params"):
-                    shared.sd_model.cond_stage_model.set_aesthetic_params(aesthetic_lr, aesthetic_weight,
-                                                                          aesthetic_steps, aesthetic_imgs,
-                                                                          aesthetic_slerp, aesthetic_imgs_text,
-                                                                          aesthetic_slerp_angle,
-                                                                          aesthetic_text_negative)
+                shared.aesthetic_clip.set_skip(False)
                 c = prompt_parser.get_multicond_learned_conditioning(shared.sd_model, prompts, p.steps)
 
             if len(model_hijack.comments) > 0:
@@ -582,7 +570,6 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             self.truncate_x = int(self.firstphase_width - firstphase_width_truncated) // opt_f
             self.truncate_y = int(self.firstphase_height - firstphase_height_truncated) // opt_f
 
-
     def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength):
         self.sampler = sd_samplers.create_sampler_with_index(sd_samplers.samplers, self.sampler_index, self.sd_model)
 
@@ -600,10 +587,12 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                                   seed_resize_from_w=self.seed_resize_from_w, p=self)
         samples = self.sampler.sample(self, x, conditioning, unconditional_conditioning)
 
-        samples = samples[:, :, self.truncate_y//2:samples.shape[2]-self.truncate_y//2, self.truncate_x//2:samples.shape[3]-self.truncate_x//2]
+        samples = samples[:, :, self.truncate_y // 2:samples.shape[2] - self.truncate_y // 2,
+                  self.truncate_x // 2:samples.shape[3] - self.truncate_x // 2]
 
         if opts.use_scale_latent_for_hires_fix:
-            samples = torch.nn.functional.interpolate(samples, size=(self.height // opt_f, self.width // opt_f), mode="bilinear")
+            samples = torch.nn.functional.interpolate(samples, size=(self.height // opt_f, self.width // opt_f),
+                                                      mode="bilinear")
         else:
             decoded_samples = decode_first_stage(self.sd_model, samples)
             lowres_samples = torch.clamp((decoded_samples + 1.0) / 2.0, min=0.0, max=1.0)

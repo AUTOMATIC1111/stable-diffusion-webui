@@ -29,8 +29,8 @@ def apply_optimizations():
 
     ldm.modules.diffusionmodules.model.nonlinearity = silu
 
-
-    if cmd_opts.force_enable_xformers or (cmd_opts.xformers and shared.xformers_available and torch.version.cuda and (6, 0) <= torch.cuda.get_device_capability(shared.device) <= (9, 0)):
+    if cmd_opts.force_enable_xformers or (cmd_opts.xformers and shared.xformers_available and torch.version.cuda and (
+    6, 0) <= torch.cuda.get_device_capability(shared.device) <= (9, 0)):
         print("Applying xformers cross attention optimization.")
         ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.xformers_attention_forward
         ldm.modules.diffusionmodules.model.AttnBlock.forward = sd_hijack_optimizations.xformers_attnblock_forward
@@ -118,33 +118,14 @@ class StableDiffusionModelHijack:
         return remade_batch_tokens[0], token_count, get_target_prompt_token_count(token_count)
 
 
-def slerp(low, high, val):
-    low_norm = low / torch.norm(low, dim=1, keepdim=True)
-    high_norm = high / torch.norm(high, dim=1, keepdim=True)
-    omega = torch.acos((low_norm * high_norm).sum(1))
-    so = torch.sin(omega)
-    res = (torch.sin((1.0 - val) * omega) / so).unsqueeze(1) * low + (torch.sin(val * omega) / so).unsqueeze(1) * high
-    return res
-
-
 class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
     def __init__(self, wrapped, hijack):
         super().__init__()
         self.wrapped = wrapped
-        self.clipModel = CLIPModel.from_pretrained(
-            self.wrapped.transformer.name_or_path
-        )
-        del self.clipModel.vision_model
-        self.tokenizer = CLIPTokenizer.from_pretrained(self.wrapped.transformer.name_or_path)
-        self.hijack: StableDiffusionModelHijack = hijack
-        self.tokenizer = wrapped.tokenizer
-        # self.vision = CLIPVisionModel.from_pretrained(self.wrapped.transformer.name_or_path).eval()
-        self.image_embs_name = None
-        self.image_embs = None
-        self.load_image_embs(None)
 
         self.token_mults = {}
-
+        self.hijack: StableDiffusionModelHijack = hijack
+        self.tokenizer = wrapped.tokenizer
         self.comma_token = [v for k, v in self.tokenizer.get_vocab().items() if k == ',</w>'][0]
 
         tokens_with_parens = [(k, v) for k, v in self.tokenizer.get_vocab().items() if
@@ -163,28 +144,6 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
 
             if mult != 1.0:
                 self.token_mults[ident] = mult
-
-    def set_aesthetic_params(self, aesthetic_lr=0, aesthetic_weight=0, aesthetic_steps=0, image_embs_name=None,
-                             aesthetic_slerp=True, aesthetic_imgs_text="",
-                             aesthetic_slerp_angle=0.15,
-                             aesthetic_text_negative=False):
-        self.aesthetic_imgs_text = aesthetic_imgs_text
-        self.aesthetic_slerp_angle = aesthetic_slerp_angle
-        self.aesthetic_text_negative = aesthetic_text_negative
-        self.slerp = aesthetic_slerp
-        self.aesthetic_lr = aesthetic_lr
-        self.aesthetic_weight = aesthetic_weight
-        self.aesthetic_steps = aesthetic_steps
-        self.load_image_embs(image_embs_name)
-
-    def load_image_embs(self, image_embs_name):
-        if image_embs_name is None or len(image_embs_name) == 0 or image_embs_name == "None":
-            image_embs_name = None
-        if image_embs_name is not None and self.image_embs_name != image_embs_name:
-            self.image_embs_name = image_embs_name
-            self.image_embs = torch.load(shared.aesthetic_embeddings[self.image_embs_name], map_location=device)
-            self.image_embs /= self.image_embs.norm(dim=-1, keepdim=True)
-            self.image_embs.requires_grad_(False)
 
     def tokenize_line(self, line, used_custom_terms, hijack_comments):
         id_end = self.wrapped.tokenizer.eos_token_id
@@ -391,58 +350,7 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
 
             z1 = self.process_tokens(tokens, multipliers)
             z = z1 if z is None else torch.cat((z, z1), axis=-2)
-
-            if self.aesthetic_steps != 0 and self.aesthetic_lr != 0 and self.aesthetic_weight != 0 and self.image_embs_name != None:
-                if not opts.use_old_emphasis_implementation:
-                    remade_batch_tokens = [
-                        [self.wrapped.tokenizer.bos_token_id] + x[:75] + [self.wrapped.tokenizer.eos_token_id] for x in
-                        remade_batch_tokens]
-
-                tokens = torch.asarray(remade_batch_tokens).to(device)
-
-                model = copy.deepcopy(self.clipModel).to(device)
-                model.requires_grad_(True)
-                if self.aesthetic_imgs_text is not None and len(self.aesthetic_imgs_text) > 0:
-                    text_embs_2 = model.get_text_features(
-                        **self.tokenizer([self.aesthetic_imgs_text], padding=True, return_tensors="pt").to(device))
-                    if self.aesthetic_text_negative:
-                        text_embs_2 = self.image_embs - text_embs_2
-                        text_embs_2 /= text_embs_2.norm(dim=-1, keepdim=True)
-                    img_embs = slerp(self.image_embs, text_embs_2, self.aesthetic_slerp_angle)
-                else:
-                    img_embs = self.image_embs
-
-                with torch.enable_grad():
-
-                    # We optimize the model to maximize the similarity
-                    optimizer = optim.Adam(
-                        model.text_model.parameters(), lr=self.aesthetic_lr
-                    )
-
-                    for i in trange(self.aesthetic_steps, desc="Aesthetic optimization"):
-                        text_embs = model.get_text_features(input_ids=tokens)
-                        text_embs = text_embs / text_embs.norm(dim=-1, keepdim=True)
-                        sim = text_embs @ img_embs.T
-                        loss = -sim
-                        optimizer.zero_grad()
-                        loss.mean().backward()
-                        optimizer.step()
-
-                    zn = model.text_model(input_ids=tokens, output_hidden_states=-opts.CLIP_stop_at_last_layers)
-                    if opts.CLIP_stop_at_last_layers > 1:
-                        zn = zn.hidden_states[-opts.CLIP_stop_at_last_layers]
-                        zn = model.text_model.final_layer_norm(zn)
-                    else:
-                        zn = zn.last_hidden_state
-                    model.cpu()
-                    del model
-
-                zn = torch.concat([zn for i in range(z.shape[1] // 77)], 1)
-                if self.slerp:
-                    z = slerp(z, zn, self.aesthetic_weight)
-                else:
-                    z = z * (1 - self.aesthetic_weight) + zn * self.aesthetic_weight
-
+            z = shared.aesthetic_clip(z, remade_batch_tokens)
             remade_batch_tokens = rem_tokens
             batch_multipliers = rem_multipliers
             i += 1

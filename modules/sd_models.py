@@ -20,7 +20,7 @@ checkpoints_loaded = collections.OrderedDict()
 try:
     # this silences the annoying "Some weights of the model checkpoint were not used when initializing..." message at start.
 
-    from transformers import logging
+    from transformers import logging, CLIPModel
 
     logging.set_verbosity_error()
 except Exception:
@@ -195,6 +195,9 @@ def load_model():
         sd_model.to(shared.device)
 
     sd_hijack.model_hijack.hijack(sd_model)
+
+    if shared.clip_model is None or shared.clip_model.transformer.name_or_path != sd_model.cond_stage_model.wrapped.transformer.name_or_path:
+        shared.clip_model = CLIPModel.from_pretrained(sd_model.cond_stage_model.wrapped.transformer.name_or_path)
 
     sd_model.eval()
 
