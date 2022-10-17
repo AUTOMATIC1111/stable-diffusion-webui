@@ -1,4 +1,5 @@
 @echo off
+cd /d "%~dp0"
 
 set PYTHON=
 set GIT=
