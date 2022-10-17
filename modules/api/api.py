@@ -23,8 +23,13 @@ class Api:
         app.add_api_route("/v1/txt2img", self.text2imgapi, methods=["POST"])
 
     def text2imgapi(self, txt2imgreq: StableDiffusionProcessingAPI ):
-        p = StableDiffusionProcessingTxt2Img(**vars(txt2imgreq))
-        p.sd_model = shared.sd_model
+        populate = txt2imgreq.copy(update={ # Override __init__ params
+            "sd_model": shared.sd_model, 
+            "sampler_index": 0,
+            }
+        )
+        p = StableDiffusionProcessingTxt2Img(**vars(populate))
+        # Override object param
         processed = process_images(p)
         
         b64images = []
