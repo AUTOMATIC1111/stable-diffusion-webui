@@ -162,7 +162,8 @@ def prepare_enviroment():
     git_clone(convnext_repo, repo_dir('conv_next'), "conv_next", convnext_commit_hash)
 
     # rename conv_next models to avoid conflict with BLIP
-    os.rename(os.path.join(repo_dir('conv_next'), 'models'), os.path.join(repo_dir('conv_next'), 'models_cnx'))
+    if os.path.exists(os.path.join(repo_dir('conv_next'), 'models')):
+        os.rename(os.path.join(repo_dir('conv_next'), 'models'), os.path.join(repo_dir('conv_next'), 'models_cnx'))
 
     if not is_installed("lpips"):
         run_pip(f"install -r {os.path.join(repo_dir('CodeFormer'), 'requirements.txt')}", "requirements for CodeFormer")
