@@ -23,3 +23,7 @@ resize-right
 torchdiffeq
 kornia
 lark
+scikit_learn
+requests
+opencv-python
+tqdm

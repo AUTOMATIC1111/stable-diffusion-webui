@@ -18,7 +18,7 @@ from modules.textual_inversion.learn_schedule import LearnRateScheduler
 from modules.textual_inversion.image_embedding import (embedding_to_b64, embedding_from_b64,
                                                        insert_image_data_embed, extract_image_data_embed,
                                                        caption_image_overlay)
-from modules.conv_next.interface import XPDiscriminator
+from modules.convnext_discriminator import XPDiscriminator
 
 class Embedding:
     def __init__(self, vec, name, step=None):
