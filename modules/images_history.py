@@ -44,7 +44,7 @@ def traverse_all_files(curr_path, image_list, all_type=False):
         return image_list
     for file in f_list:
         file = os.path.join(curr_path, file)
-        if (not all_type) and file[-4:] == ".txt":
+        if (not all_type) and (file[-4:] == ".txt" or file[-4:] == ".csv"):
             pass
         elif os.path.isfile(file) and file[-10:].rfind(".") > 0:
             image_list.append(file)
@@ -182,7 +182,7 @@ def delete_image(delete_num, name, filenames, image_index, visible_num):
 
 def save_image(file_name):
     if file_name is not None and os.path.exists(file_name):
-        shutil.copy2(file_name, opts.outdir_save)
+        shutil.copy(file_name, opts.outdir_save)
 
 def get_recent_images(page_index, step, filenames):
     page_index = int(page_index)
