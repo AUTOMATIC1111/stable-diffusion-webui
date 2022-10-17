@@ -1,0 +1,17 @@
+cone
+cube
+hexagon
+kite
+organic
+oval
+parallelogram
+pentagon
+polygonal
+rectangle
+rhombus
+rubik cube
+semi-circle
+sphere
+square
+trapezoid
+triangle

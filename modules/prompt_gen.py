@@ -33,3 +33,16 @@ def load_promptgen(path: str) -> dict[str, PromptGen]:
                 gendata[row["name"]] = PromptGen(row["name"], blank, blank2)
 
     return gendata
+
+def load_promptgen_text(path: str):
+    if os.path.exists(path):
+        promptgen_dict = {}
+        with open(path, "r", encoding="utf8") as file:
+            count = 1
+            for line in file:
+ 
+                value = line.split()
+ 
+                promptgen_dict[int(count)] = value
+                count += 1
+    return promptgen_dict

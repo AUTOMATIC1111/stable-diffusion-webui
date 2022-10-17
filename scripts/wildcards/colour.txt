@@ -1,0 +1,70 @@
+Amber
+Apricot
+Aqua
+Auburn
+Azure
+Beige
+Black
+Blue
+Bronze
+Brown
+Burgundy
+Charcoal
+Cherry blossom pink
+Chocolate
+Cobalt
+Copper
+Cream
+Crimson
+Cyan
+Dandelion
+Dark Blue
+Denim
+Ecru
+Emerald green
+Forest green
+Fuchsia
+Gold
+Green
+Grey
+Indigo
+Ivory
+Jade
+Khaki
+Lavender
+Lemon
+Lilac
+Lime green
+Magenta
+Maroon
+Mauve
+Mint green
+Moss green
+Mustard
+Navy blue
+Olive
+Orange
+Peach
+Pink
+Powder blue
+Prussian blue
+Puce
+Purple
+Quartz grey
+Red
+Rose
+Royal blue
+Ruby
+Salmon pink
+Sandy brown
+Sapphire
+Scarlet
+Shocking pink
+Silver
+Sky blue
+Tan
+Tangerine
+Turquoise
+Violet
+White
+Yellow

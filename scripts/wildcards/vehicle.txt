@@ -1,0 +1,26 @@
+car
+truck
+motorcycle
+boat
+bicycle
+wagon
+ambulance
+helicopter
+bus
+tricycle
+roller skates
+roller blades
+stroller
+skateboard
+train
+airplane
+taxi
+snowmobile
+moped
+golf cart
+4 wheeler
+fire truck
+station wagon
+compact car
+sedan
+SUV
