@@ -26,6 +26,8 @@ class Api:
         populate = txt2imgreq.copy(update={ # Override __init__ params
             "sd_model": shared.sd_model, 
             "sampler_index": 0,
+            "do_not_save_samples": True,
+            "do_not_save_grid": True
             }
         )
         p = StableDiffusionProcessingTxt2Img(**vars(populate))
