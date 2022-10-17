@@ -103,7 +103,7 @@ def find_plugin(name):
 
 
 def write_plugin(dir, name, text):
-    path = os.path.join(dir, f"plg-{name}")
+    path = os.path.join(dir, f"plg-{name.strip()}")
     with open(path, "w", encoding='utf-8', newline="") as file:
         file.write(text)
 
@@ -117,11 +117,12 @@ def install_plugin(name: str):
             return
         name, address = plugin
     else:
-        name, repo = name.split("@")
-        address = f"https://api.github.com/gists/{repo}"
+        name, repo = name.split("@", 1)
+        address = repo if repo.startswith(
+            "http") else f"https://api.github.com/gists/{repo}"
 
     try:
-        response = urllib.request.urlopen(address)
+        response = urllib.request.urlopen(address.strip())
         text: str = response.read().decode("utf-8")
         if not text.startswith("{"):
             path = py_plg_dir if name.endswith(".py") else js_plg_dir
@@ -141,7 +142,7 @@ def install_plugin(name: str):
             "[WARN] load plugin failed, " +
             f"name: {name}, reason: {e}", file=sys.stderr)
         print(traceback.format_exc(), file=sys.stderr)
-#endregion
+# endregion
 
 
 def prepare_enviroment():
