@@ -1783,8 +1783,8 @@ for filename in sorted(os.listdir(jsdir)):
     with open(os.path.join(jsdir, filename), "r", encoding="utf8") as jsfile:
         javascript += f"\n<script>{jsfile.read()}</script>"
 
-if cmd_opts.dark_mode:
-    javascript += "\n<script>go_dark_mode();</script>\n"
+if cmd_opts.theme is not None:
+    javascript += f"\n<script>set_theme('{cmd_opts.theme}');</script>\n"
 
 if 'gradio_routes_templates_response' not in globals():
     def template_response(*args, **kwargs):
