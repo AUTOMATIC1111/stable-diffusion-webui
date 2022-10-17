@@ -133,7 +133,7 @@ def archive_images(dir_name, date_to):
             date = sort_array[loads_num][2]
             filenames = [x[1] for x in sort_array]
         else:
-            date =  sort_array[-1][2]
+            date =  None if len(sort_array) == 0 else sort_array[-1][2]
             filenames = [x[1] for x in sort_array]
         filenames = [x[1] for x in sort_array if x[2]>= date]
     _, image_list, _, visible_num = get_recent_images(1, 0, filenames)
