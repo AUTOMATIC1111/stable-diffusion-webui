@@ -11,6 +11,7 @@ python = sys.executable
 git = os.environ.get('GIT', "git")
 index_url = os.environ.get('INDEX_URL', "")
 
+
 def extract_arg(args, name):
     return [x for x in args if x != name], name in args
 
