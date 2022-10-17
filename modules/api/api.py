@@ -18,7 +18,7 @@ class TextToImageResponse(BaseModel):
 
 
 class Api:
-    def __init__(self, txt2img, img2img, run_extras, run_pnginfo):
+    def __init__(self):
         self.router = APIRouter()
         app.add_api_route("/v1/txt2img", self.text2imgapi, methods=["POST"])
 
