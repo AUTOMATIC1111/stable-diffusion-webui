@@ -18,7 +18,7 @@ class TextToImageResponse(BaseModel):
 class Api:
     def __init__(self, app):
         self.router = APIRouter()
-        app.add_api_route("/v1/txt2img", self.text2imgapi, methods=["POST"])
+        app.add_api_route("/sdapi/v1/txt2img", self.text2imgapi, methods=["POST"])
 
     def text2imgapi(self, txt2imgreq: StableDiffusionProcessingAPI ):
         populate = txt2imgreq.copy(update={ # Override __init__ params
