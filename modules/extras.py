@@ -201,6 +201,7 @@ def run_modelmerger(primary_model_name, secondary_model_name, teritary_model_nam
         teritary_model = torch.load(teritary_model_info.filename, map_location='cpu')
         theta_2 = sd_models.get_state_dict_from_checkpoint(teritary_model)
     else:
+        teritary_model = None
         theta_2 = None
 
     theta_funcs = {
