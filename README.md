@@ -1,6 +1,6 @@
 # Stable Diffusion web UI
 A browser interface based on Gradio library for Stable Diffusion.
-
+[本存储库用途说明](./readme_zhCN.md)
 ![](txt2img_Screenshot.png)
 
 Check the [custom scripts](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Custom-Scripts) wiki page for extra scripts developed by users.
