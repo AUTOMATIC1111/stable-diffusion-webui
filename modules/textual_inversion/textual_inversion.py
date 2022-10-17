@@ -9,6 +9,7 @@ import datetime
 import csv
 
 from PIL import Image, PngImagePlugin
+from torch.nn import functional as F
 
 from modules import shared, devices, sd_hijack, processing, sd_models
 import modules.textual_inversion.dataset
@@ -17,6 +18,7 @@ from modules.textual_inversion.learn_schedule import LearnRateScheduler
 from modules.textual_inversion.image_embedding import (embedding_to_b64, embedding_from_b64,
                                                        insert_image_data_embed, extract_image_data_embed,
                                                        caption_image_overlay)
+from modules.conv_next.interface import XPDiscriminator
 
 class Embedding:
     def __init__(self, vec, name, step=None):
@@ -199,9 +201,62 @@ def write_loss(log_directory, filename, step, epoch_len, values):
             **values,
         })
 
+#hook DDPM p_losses to support negative prompt training and get output latent
+from ldm.util import default
+def p_losses_hook(x_start, cond, t, noise=None, scale=5.0):
+    self=shared.sd_model
+    noise = default(noise, lambda: torch.randn_like(x_start))
+    x_noisy = self.q_sample(x_start=x_start, t=t, noise=noise)
 
-def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_directory, training_width, training_height, steps, create_image_every, save_embedding_every, template_file, save_image_with_stored_embedding, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height):
+    # support negative prompt tuning
+    if cond.shape[0] == 2 and scale != 1.0:
+        x_noisy = torch.cat([x_noisy] * 2)
+        t = torch.cat([t] * 2)
+
+    model_output = self.apply_model(x_noisy, t, cond)
+
+    # support negative prompt tuning
+    if cond.shape[0] == 2 and scale != 1.0:
+        e_t_uncond, e_t = model_output.chunk(2)
+        model_output = e_t_uncond + scale * (e_t - e_t_uncond)
+
+    loss_dict = {}
+    prefix = 'train' if self.training else 'val'
+
+    if self.parameterization == "x0":
+        target = x_start
+    elif self.parameterization == "eps":
+        target = noise
+    else:
+        raise NotImplementedError()
+    target = target[0:1, ...]
+
+    loss_simple = self.get_loss(model_output, target, mean=False).mean([1, 2, 3])
+    loss_dict.update({f'{prefix}/loss_simple': loss_simple.mean()})
+
+    logvar_t = self.logvar[t].to(self.device)
+    loss = loss_simple / torch.exp(logvar_t) + logvar_t
+    # loss = loss_simple / torch.exp(self.logvar) + self.logvar
+    if self.learn_logvar:
+        loss_dict.update({f'{prefix}/loss_gamma': loss.mean()})
+        loss_dict.update({'logvar': self.logvar.data.mean()})
+
+    loss = self.l_simple_weight * loss.mean()
+
+    loss_vlb = self.get_loss(model_output, target, mean=False).mean(dim=(1, 2, 3))
+    loss_vlb = (self.lvlb_weights[t] * loss_vlb).mean()
+    loss_dict.update({f'{prefix}/loss_vlb': loss_vlb})
+    loss += (self.original_elbo_weight * loss_vlb)
+    loss_dict.update({f'{prefix}/loss': loss})
+
+    return loss, loss_dict, model_output
+
+#supprot Advance Prompt Tuning by 7eu7d7 https://github.com/7eu7d7/APT-stable-diffusion-auto-prompt
+def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_directory, training_width, training_height, steps, create_image_every, save_embedding_every, template_file, save_image_with_stored_embedding, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height,
+                    cfg_scale, classifier_path, use_negative, use_rec):
     assert embedding_name, 'embedding not selected'
+
+    shared.sd_model.p_losses=p_losses_hook # hook p_losses
 
     shared.state.textinfo = "Initializing textual inversion training..."
     shared.state.job_count = steps
@@ -238,6 +293,14 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
 
     embedding = hijack.embedding_db.word_embeddings[embedding_name]
     embedding.vec.requires_grad = True
+    if use_negative:
+        embedding_uc = hijack.embedding_db.word_embeddings[embedding_name + '-uc'] # negative prompt embeddings
+        embedding_uc.vec.requires_grad = True
+
+    disc = XPDiscriminator(classifier_path) if (classifier_path is not None) and os.path.exists(classifier_path) else None
+
+    if disc is not None:
+        print('use convnext discriminator')
 
     losses = torch.zeros((32,))
 
@@ -250,11 +313,15 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
         return embedding, filename
 
     scheduler = LearnRateScheduler(learn_rate, steps, ititial_step)
-    optimizer = torch.optim.AdamW([embedding.vec], lr=scheduler.learn_rate)
+    if use_negative:
+        optimizer = torch.optim.AdamW([embedding.vec, embedding_uc.vec], lr=scheduler.learn_rate)
+    else:
+        optimizer = torch.optim.AdamW([embedding.vec], lr=scheduler.learn_rate)
 
     pbar = tqdm.tqdm(enumerate(ds), total=steps-ititial_step)
     for i, entries in pbar:
         embedding.step = i + ititial_step
+        embedding_uc.step = i + ititial_step
 
         scheduler.apply(optimizer, embedding.step)
         if scheduler.finished:
@@ -265,8 +332,26 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
 
         with torch.autocast("cuda"):
             c = cond_model([entry.cond_text for entry in entries])
+            if use_negative:
+                uc = cond_model([entry.cond_text.replace(ds.placeholder_token, ds.placeholder_token+'-uc') for entry in entries])
+                c_in = torch.cat([uc, c])
+            else:
+                c_in = c
+
             x = torch.stack([entry.latent for entry in entries]).to(devices.device)
-            loss = shared.sd_model(x, c)[0]
+            output = shared.sd_model(x, c_in, scale=cfg_scale)
+
+            if disc is not None or use_rec:
+                x_samples_ddim = shared.sd_model.decode_first_stage.__wrapped__(shared.sd_model, output[2]) # forward with grad
+
+            if disc is not None:
+                #loss = ce(disc.get_all(x_samples_ddim), disc_label)
+                loss = (1-disc.get_score(x_samples_ddim)).mean()
+            elif use_rec:
+                loss = output[0] + F.l1_loss(torch.cat([entry.timg for entry in entries]), x_samples_ddim)
+            else:
+                loss = output[0]
+
             del x
 
             losses[embedding.step % losses.shape[0]] = loss.item()
@@ -283,6 +368,9 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
         if embedding.step > 0 and embedding_dir is not None and embedding.step % save_embedding_every == 0:
             last_saved_file = os.path.join(embedding_dir, f'{embedding_name}-{embedding.step}.pt')
             embedding.save(last_saved_file)
+            if use_negative:
+                last_saved_file = os.path.join(embedding_dir, f'{embedding_name}-uc-{embedding.step}.pt')
+                embedding_uc.save(last_saved_file)
             embedding_yet_to_be_embedded = True
 
         write_loss(log_directory, "textual_inversion_loss.csv", embedding.step, len(ds), {
@@ -295,9 +383,12 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
 
             p = processing.StableDiffusionProcessingTxt2Img(
                 sd_model=shared.sd_model,
+                prompt=preview_prompt,
                 do_not_save_grid=True,
                 do_not_save_samples=True,
                 do_not_reload_embeddings=True,
+                negative_prompt=preview_prompt.replace(ds.placeholder_token, ds.placeholder_token + '-uc') if use_negative else None,
+                cfg_scale=cfg_scale if use_negative else 1.0,
             )
 
             if preview_from_txt2img:
@@ -370,5 +461,11 @@ Last saved image: {html.escape(last_saved_image)}<br/>
     embedding.sd_checkpoint_name = checkpoint.model_name
     embedding.cached_checksum = None
     embedding.save(filename)
+
+    if use_negative:
+        embedding_uc.sd_checkpoint = checkpoint.hash
+        embedding_uc.sd_checkpoint_name = checkpoint.model_name
+        embedding_uc.cached_checksum = None
+        embedding_uc.save(f'{filename[:-3]}-uc.pt')
 
     return embedding, filename

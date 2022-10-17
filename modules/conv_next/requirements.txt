@@ -1,0 +1,12 @@
+numpy==1.20.3
+opencv_python
+Pillow==9.2.0
+pyquery==1.4.3
+requests==2.26.0
+scikit_learn==1.1.2
+tensorboardX
+timm==0.3.2
+torch==1.8.2+cu111
+torchvision==0.9.2+cu111
+tqdm
+wandb

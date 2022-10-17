@@ -1183,6 +1183,8 @@ def create_ui(wrap_gradio_gpu_call):
                     new_embedding_name = gr.Textbox(label="Name")
                     initialization_text = gr.Textbox(label="Initialization text", value="*")
                     nvpt = gr.Slider(label="Number of vectors per token", minimum=1, maximum=75, step=1, value=1)
+                    use_negative = gr.Checkbox(label='Use negative embedding training (APT)', value=True)
+                    nvpt_uc = gr.Slider(label="Number of negative vectors per token", minimum=1, maximum=75, step=1, value=1)
 
                     with gr.Row():
                         with gr.Column(scale=3):
@@ -1229,11 +1231,20 @@ def create_ui(wrap_gradio_gpu_call):
                     with gr.Row():
                         train_hypernetwork_name = gr.Dropdown(label='Hypernetwork', choices=[x for x in shared.hypernetworks.keys()])
                         create_refresh_button(train_hypernetwork_name, shared.reload_hypernetworks, lambda: {"choices": sorted([x for x in shared.hypernetworks.keys()])}, "refresh_train_hypernetwork_name")
+
+                    # support APT
+                    gr.HTML(value='<p style="margin-bottom: 0.7em">May be batter used with "Stop At last layers of CLIP model = 1"</p>')
+                    with gr.Row():
+                        neg_train = gr.Checkbox(label='Train with negative embeddings', value=True)
+                        rec_train = gr.Checkbox(label='Train with reconstruction', value=True)
+
                     learn_rate = gr.Textbox(label='Learning rate', placeholder="Learning rate", value="0.005")
+                    cfg_scale = gr.Number(label='CFG scale (negative embeddings only)', value=5.0)
                     batch_size = gr.Number(label='Batch size', value=1, precision=0)
                     dataset_directory = gr.Textbox(label='Dataset directory', placeholder="Path to directory with input images")
                     log_directory = gr.Textbox(label='Log directory', placeholder="Path to directory where to write outputs", value="textual_inversion")
-                    template_file = gr.Textbox(label='Prompt template file', value=os.path.join(script_path, "textual_inversion_templates", "style_filewords.txt"))
+                    disc_path = gr.Textbox(label='Classifier path', placeholder="Path to classifier ckpt", value="")
+                    template_file = gr.Textbox(label='Prompt template file', value=os.path.join(script_path, "textual_inversion_templates", "style.txt"))
                     training_width = gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512)
                     training_height = gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512)
                     steps = gr.Number(label='Max steps', value=100000, precision=0)
@@ -1263,6 +1274,8 @@ def create_ui(wrap_gradio_gpu_call):
                 new_embedding_name,
                 initialization_text,
                 nvpt,
+                use_negative,
+                nvpt_uc
             ],
             outputs=[
                 train_embedding_name,
@@ -1321,6 +1334,10 @@ def create_ui(wrap_gradio_gpu_call):
                 save_image_with_stored_embedding,
                 preview_from_txt2img,
                 *txt2img_preview_params,
+                cfg_scale,
+                disc_path,
+                neg_train,
+                rec_train
             ],
             outputs=[
                 ti_output,
