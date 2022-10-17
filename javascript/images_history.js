@@ -43,7 +43,6 @@ function images_history_get_parent_by_tagname(item, tagname){
     var parent = item.parentElement;
     tagname = tagname.toUpperCase()
     while(parent.tagName != tagname){
-        console.log(parent.tagName, tagname)
         parent = parent.parentElement;
     }  
     return parent;
@@ -108,7 +107,6 @@ function images_history_delete(del_num, tabname, image_index){
     });    
     var img_num = buttons.length / 2;
     del_num = Math.min(img_num - image_index, del_num)    
-    console.log(del_num, img_num)
     if (img_num <= del_num){
         setTimeout(function(tabname){
             gradioApp().getElementById(tabname + '_images_history_renew_page').click();
@@ -133,7 +131,6 @@ function images_history_delete(del_num, tabname, image_index){
 }
 
 function images_history_turnpage(tabname){
-    console.log("del_button")
     gradioApp().getElementById(tabname + '_images_history_del_button').setAttribute('disabled','disabled');
     var buttons = gradioApp().getElementById(tabname + '_images_history').querySelectorAll(".gallery-item");
     buttons.forEach(function(elem) {
@@ -148,8 +145,9 @@ function images_history_enable_del_buttons(){
 }
 
 function images_history_init(){ 
-    var load_txt2img_button = gradioApp().getElementById('saved_images_history_start')
-    if (load_txt2img_button){        
+    var loaded = gradioApp().getElementById("images_history_reconstruct_directory")
+    if (loaded){  
+        var init_status = loaded.querySelector("input").checked       
         for (var i in images_history_tab_list ){
             tab = images_history_tab_list[i];
             gradioApp().getElementById(tab + '_images_history').classList.add("images_history_cantainor");
@@ -160,26 +158,24 @@ function images_history_init(){
         }
         var tabs_box = gradioApp().getElementById("tab_images_history").querySelector("div").querySelector("div").querySelector("div");
         tabs_box.setAttribute("id", "images_history_tab");        
-        var tab_btns = tabs_box.querySelectorAll("button");        
+        var tab_btns = tabs_box.querySelectorAll("button"); 
+
         for (var i in images_history_tab_list){               
             var tabname = images_history_tab_list[i]
             tab_btns[i].setAttribute("tabname", tabname);
-
-            // this refreshes history upon tab switch
-            // until the history is known to work well, which is not the case now, we do not do this at startup
-            // -- load page very fast now,  so better user experience by automatically activating pages
-            tab_btns[i].addEventListener('click', images_history_click_tab);
-        }    
-        tabs_box.classList.add(images_history_tab_list[0]);
-
-        // same as above, at page load-- load very fast now
-        load_txt2img_button.click();
+            if (init_status){
+                tab_btns[i].addEventListener('click', images_history_click_tab);
+            }
+        }  
+        if (init_status){
+                tab_btns[0].click();
+        }  
     } else {
         setTimeout(images_history_init, 500);
     } 
 }
 
-var images_history_tab_list = ["saved", "txt2img", "img2img", "extras"];
+var images_history_tab_list = ["txt2img", "img2img", "extras", "saved"];
 setTimeout(images_history_init, 500);
 document.addEventListener("DOMContentLoaded", function() {
     var mutationObserver = new MutationObserver(function(m){

@@ -3,10 +3,7 @@ import shutil
 import time
 import hashlib
 import gradio
-
 system_bak_path = "webui_log_and_bak"
-loads_files_num = 216
-num_of_imgs_per_page = 36
 def is_valid_date(date):
     try:
         time.strptime(date, "%Y%m%d")
@@ -42,7 +39,7 @@ def traverse_all_files(curr_path, image_list, all_type=False):
     try:
         f_list = os.listdir(curr_path)
     except:
-        if all_type or curr_path[-10:].rfind(".") > 0 and curr_path[-4:] != ".txt":
+        if all_type or (curr_path[-10:].rfind(".") > 0 and curr_path[-4:] != ".txt" and curr_path[-4:] != ".csv"):
             image_list.append(curr_path)
         return image_list
     for file in f_list:
@@ -73,7 +70,7 @@ def auto_sorting(dir_name):
                 files_list = traverse_all_files(file_path, files_list, all_type=True)
 
     for file in files_list:        
-        date_str = time.strftime("%Y%m%d",time.localtime(os.path.getctime(file)))
+        date_str = time.strftime("%Y%m%d",time.localtime(os.path.getmtime(file)))
         file_path = os.path.dirname(file)
         hash_path = hashlib.md5(file_path.encode()).hexdigest()
         path = os.path.join(dir_name, date_str, hash_path)
@@ -92,33 +89,55 @@ def auto_sorting(dir_name):
         elif f == system_bak_path:
             continue
         else:
-            reduplicative_file_move(os.path.join(dir_name, f), bak_path)           
+            try:
+                reduplicative_file_move(os.path.join(dir_name, f), bak_path)  
+            except:
+                pass         
             
     today = time.strftime("%Y%m%d",time.localtime(time.time()))
     if today not in date_list:
         date_list.append(today)
     return sorted(date_list, reverse=True)
 
-
-
-def archive_images(dir_name, date_to):
-    date_list = auto_sorting(dir_name)
-    today = time.strftime("%Y%m%d",time.localtime(time.time()))
-    date_to = today if date_to is None  or date_to == "" else date_to
-    filenames = []
-    for date in date_list:
-        if date <= date_to:
-            path = os.path.join(dir_name, date)
-            if date == today and not os.path.exists(path):
-                continue
-            filenames = traverse_all_files(path, filenames)
-        if len(filenames) > loads_files_num:            
-            break
-    filenames = sorted(filenames, key=lambda file: -os.path.getctime(file))
+def archive_images(dir_name, date_to): 
+    filenames = []   
+    loads_num =int(opts.images_history_num_per_page * opts.images_history_pages_num)
+    if opts.images_history_reconstruct_directory:        
+        date_list = auto_sorting(dir_name)
+        today = time.strftime("%Y%m%d",time.localtime(time.time()))
+        date_to = today if date_to is None  or date_to == "" else date_to        
+        for date in date_list:
+            if date <= date_to:
+                path = os.path.join(dir_name, date)
+                if date == today and not os.path.exists(path):
+                    continue
+                filenames = traverse_all_files(path, filenames)
+            if len(filenames) > loads_num:            
+                break
+        filenames = sorted(filenames, key=lambda file: -os.path.getmtime(file))
+    else:
+        filenames = traverse_all_files(dir_name, filenames)       
+        tmparray = [(os.path.getmtime(file), file) for file in filenames ]
+        date_stamp = time.mktime(time.strptime(date_to, "%Y%m%d")) + 86400      
+        filenames = []
+        date_list = {}
+        date = time.strftime("%Y%m%d",time.localtime(time.time()))
+        for t, f in tmparray:
+            date = time.strftime("%Y%m%d",time.localtime(t))
+            date_list[date] = None
+            if t <= date_stamp:
+                filenames.append((t, f ,date))
+        date_list = sorted(list(date_list.keys()), reverse=True)
+        sort_array = sorted(filenames, key=lambda x:-x[0])
+        if len(sort_array) > loads_num:
+            date = sort_array[loads_num][2]
+            filenames = [x[1] for x in sort_array]
+        else:
+            date =  sort_array[loads_num][2]
+            filenames = [x[1] for x in sort_array]
+        filenames = [x[1] for x in sort_array if x[2]>= date]
     _, image_list, _, visible_num = get_recent_images(1, 0, filenames)
     return (
-        gradio.update(visible=False), 
-        gradio.update(visible=True), 
         gradio.Dropdown.update(choices=date_list, value=date_to),
         date,
         filenames,        
@@ -127,15 +146,8 @@ def archive_images(dir_name, date_to):
         "",
         visible_num
     )
-def system_init(dir_name):
-    ret =  [x for x in  archive_images(dir_name, None)]
-    ret += [gradio.update(visible=False)]
-    return ret    
 
 def newest_click(dir_name,  date_to):
-    if date_to == "start":
-         return  True,  False, "start", None, None, 1, None, ""
-    else:
         return archive_images(dir_name, time.strftime("%Y%m%d",time.localtime(time.time())))
 
 def delete_image(delete_num, name, filenames, image_index, visible_num):
@@ -168,8 +180,12 @@ def delete_image(delete_num, name, filenames, image_index, visible_num):
             i += 1
     return new_file_list, 1, visible_num
 
+def save_image(file_name):
+    shutil.copy2(file_name, opts.outdir_save)
+
 def get_recent_images(page_index, step, filenames):
     page_index = int(page_index)
+    num_of_imgs_per_page = int(opts.images_history_num_per_page)
     max_page_index = len(filenames) // num_of_imgs_per_page + 1
     page_index = max_page_index if page_index == -1 else page_index + step
     page_index = 1 if page_index < 1 else page_index
@@ -197,8 +213,11 @@ def page_index_change(page_index, filenames):
     return get_recent_images(page_index, 0, filenames)
 
 def show_image_info(tabname_box, num, page_index, filenames):
-    file = filenames[int(num) + int((page_index - 1) * num_of_imgs_per_page)] 
+    file = filenames[int(num) + int((page_index - 1) * int(opts.images_history_num_per_page))]     
     return file, num, file
+
+def enable_page_buttons():
+    return gradio.update(visible=True)
 
 def show_images_history(gr, opts, tabname, run_pnginfo, switch_dict):
     if tabname == "txt2img":
@@ -209,19 +228,16 @@ def show_images_history(gr, opts, tabname, run_pnginfo, switch_dict):
         dir_name = opts.outdir_extras_samples
     elif tabname == "saved":
         dir_name = opts.outdir_save
-        if not os.path.exists(dir_name):
-            os.makedirs(dir_name)
+
     d = dir_name.split("/")
     dir_name = d[0]
     for p in d[1:]:
         dir_name = os.path.join(dir_name, p)
+    if not os.path.exists(dir_name):
+        os.makedirs(dir_name)
 
-    f_list = os.listdir(dir_name)
-    sorted_flag = os.path.exists(os.path.join(dir_name, system_bak_path)) or len(f_list) == 0 
-    date_list, date_from, date_to = None, None, None
-
-    with gr.Column(visible=sorted_flag) as page_panel:
-        with gr.Row():
+    with gr.Column() as page_panel:
+        with gr.Row(visible=False) as turn_page_buttons:
             renew_page = gr.Button('Refresh page', elem_id=tabname + "_images_history_renew_page")
             first_page = gr.Button('First Page')
             prev_page = gr.Button('Prev Page')
@@ -234,20 +250,24 @@ def show_images_history(gr, opts, tabname, run_pnginfo, switch_dict):
                 with gr.Row():
                     newest = gr.Button('Reload', elem_id=tabname + "_images_history_start")                    
                     date_from = gr.Textbox(label="Date from", interactive=False)  
-                    date_to = gr.Dropdown(value="start" if not sorted_flag else None, label="Date to")                  
+                    date_to = gr.Dropdown(label="Date to")                  
 
                 history_gallery = gr.Gallery(show_label=False, elem_id=tabname + "_images_history_gallery").style(grid=6)
                 with gr.Row():
                     delete_num = gr.Number(value=1, interactive=True, label="number of images to delete consecutively next")
                     delete = gr.Button('Delete', elem_id=tabname + "_images_history_del_button")
+                    
             with gr.Column():
                 with gr.Row():
+                    if tabname != "saved":
+                        save_btn = gr.Button('Save')
                     pnginfo_send_to_txt2img = gr.Button('Send to txt2img')
                     pnginfo_send_to_img2img = gr.Button('Send to img2img')
                 with gr.Row():
                     with gr.Column():
                         img_file_info = gr.Textbox(label="Generate Info", interactive=False)
                         img_file_name = gr.Textbox(value="", label="File Name", interactive=False)
+
                         
                     # hiden items
                     with gr.Row(visible=False):   
@@ -262,31 +282,25 @@ def show_images_history(gr, opts, tabname, run_pnginfo, switch_dict):
                         info1 = gr.Textbox()
                         info2 = gr.Textbox()
 
-    with gr.Column(visible=not sorted_flag) as init_warning:
-        with gr.Row():
-            warning = gr.Textbox(
-                label="Waring",
-                value=f"The system needs to archive the files according to the date. This requires changing the directory structure of the files.If you have doubts about this operation, you can first back up the files in the '{dir_name}' directory"
-            )
-            warning.style(height=100, width=50)
-        with gr.Row():
-            sorted_button = gr.Button('Confirme')
-
-    change_date_output = [init_warning, page_panel, date_to, date_from, filenames, page_index, history_gallery, img_file_name, visible_img_num]           
-    sorted_button.click(system_init, inputs=[img_path], outputs=change_date_output + [sorted_button]) 
-    newest.click(newest_click, inputs=[img_path, date_to], outputs=change_date_output)
-    date_to.change(archive_images, inputs=[img_path, date_to], outputs=change_date_output) 
-    date_to.change(fn=None, inputs=[tabname_box], outputs=None, _js="images_history_turnpage")
-    newest.click(fn=None, inputs=[tabname_box], outputs=None, _js="images_history_turnpage")
-
-    delete.click(delete_image, inputs=[delete_num, img_file_name, filenames, image_index, visible_img_num], outputs=[filenames, delete_num, visible_img_num])
-    delete.click(fn=None, _js="images_history_delete", inputs=[delete_num, tabname_box, image_index], outputs=None)  
     
-   
-    # turn pages
+    #change date
+    change_date_output = [date_to, date_from, filenames, page_index, history_gallery, img_file_name, visible_img_num]  
+    newest.click(newest_click, inputs=[img_path, date_to], outputs=change_date_output)
+    date_to.change(archive_images, inputs=[img_path, date_to], outputs=change_date_output)     
+    newest.click(fn=None, inputs=[tabname_box], outputs=None, _js="images_history_turnpage")
+    date_to.change(fn=None, inputs=[tabname_box], outputs=None, _js="images_history_turnpage")
+    date_to.change(enable_page_buttons, inputs=None, outputs=[turn_page_buttons])
+    newest.click(enable_page_buttons, inputs=None, outputs=[turn_page_buttons])
+
+    #delete
+    delete.click(delete_image, inputs=[delete_num, img_file_name, filenames, image_index, visible_img_num], outputs=[filenames, delete_num, visible_img_num])
+    delete.click(fn=None, _js="images_history_delete", inputs=[delete_num, tabname_box, image_index], outputs=None) 
+    if tabname != "saved": 
+        save_btn.click(save_image, inputs=[img_file_name], outputs=None)     
+
+    #turn page
     gallery_inputs = [page_index, filenames]
     gallery_outputs = [page_index, history_gallery, img_file_name, visible_img_num]
-
     first_page.click(first_page_click, inputs=gallery_inputs, outputs=gallery_outputs)
     next_page.click(next_page_click, inputs=gallery_inputs, outputs=gallery_outputs)
     prev_page.click(prev_page_click, inputs=gallery_inputs, outputs=gallery_outputs)
@@ -305,17 +319,21 @@ def show_images_history(gr, opts, tabname, run_pnginfo, switch_dict):
     set_index.click(show_image_info, _js="images_history_get_current_img", inputs=[tabname_box, image_index, page_index, filenames], outputs=[img_file_name, image_index, hidden])
     img_file_name.change(fn=None, _js="images_history_enable_del_buttons", inputs=None, outputs=None)   
     hidden.change(fn=run_pnginfo, inputs=[hidden], outputs=[info1, img_file_info, info2])
-
     switch_dict["fn"](pnginfo_send_to_txt2img, switch_dict["t2i"], img_file_info, 'switch_to_txt2img')
     switch_dict["fn"](pnginfo_send_to_img2img, switch_dict["i2i"], img_file_info, 'switch_to_img2img_img2img')
 
-
-
-def create_history_tabs(gr, opts, run_pnginfo, switch_dict):
+def create_history_tabs(gr, sys_opts, run_pnginfo, switch_dict):
+    global opts;
+    opts = sys_opts
+    loads_files_num = int(opts.images_history_num_per_page)
+    num_of_imgs_per_page = int(opts.images_history_num_per_page * opts.images_history_pages_num)
+    backup_flag = opts.images_history_backup
     with gr.Blocks(analytics_enabled=False) as images_history:
         with gr.Tabs() as tabs:
-            for tab in ["saved", "txt2img", "img2img", "extras"]:
+            for tab in ["txt2img", "img2img", "extras", "saved"]:
                 with gr.Tab(tab):
                     with gr.Blocks(analytics_enabled=False) as images_history_img2img:
                         show_images_history(gr, opts, tab, run_pnginfo, switch_dict) 
+        gradio.Checkbox(opts.images_history_reconstruct_directory, elem_id="images_history_reconstruct_directory") #, visible=False)
+    
     return images_history

@@ -1394,7 +1394,10 @@ def create_ui(wrap_gradio_gpu_call):
     component_dict = {}
 
     def open_folder(f):
-        if not os.path.isdir(f):
+        if not os.path.exists(f):
+            print(f'Folder "{f}" does not exist. After you create an image, the folder will be created.')
+            return
+        elif not os.path.isdir(f):
             print(f"""
 WARNING
 An open_folder request was made with an argument that is not a folder.
