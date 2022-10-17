@@ -301,6 +301,9 @@ def xformers_attnblock_forward(self, x):
         v = self.v(h_)
         b, c, h, w = q.shape
         q, k, v = map(lambda t: rearrange(t, 'b c h w -> b (h w) c'), (q, k, v))
+        q = q.contiguous()
+        k = k.contiguous()
+        v = v.contiguous()
         out = xformers.ops.memory_efficient_attention(q, k, v)
         out = rearrange(out, 'b (h w) c -> b c h w', h=h)
         out = self.proj_out(out)
