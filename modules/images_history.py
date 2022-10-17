@@ -133,7 +133,7 @@ def archive_images(dir_name, date_to):
             date = sort_array[loads_num][2]
             filenames = [x[1] for x in sort_array]
         else:
-            date =  sort_array[loads_num][2]
+            date =  sort_array[-1][2]
             filenames = [x[1] for x in sort_array]
         filenames = [x[1] for x in sort_array if x[2]>= date]
     _, image_list, _, visible_num = get_recent_images(1, 0, filenames)
@@ -334,6 +334,6 @@ def create_history_tabs(gr, sys_opts, run_pnginfo, switch_dict):
                 with gr.Tab(tab):
                     with gr.Blocks(analytics_enabled=False) as images_history_img2img:
                         show_images_history(gr, opts, tab, run_pnginfo, switch_dict) 
-        gradio.Checkbox(opts.images_history_reconstruct_directory, elem_id="images_history_reconstruct_directory") #, visible=False)
+        gradio.Checkbox(opts.images_history_reconstruct_directory, elem_id="images_history_reconstruct_directory", visible=False)
     
     return images_history
