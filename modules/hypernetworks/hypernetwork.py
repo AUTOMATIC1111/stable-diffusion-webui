@@ -4,6 +4,7 @@ import html
 import os
 import sys
 import traceback
+from sympy import hyper
 import tqdm
 import csv
 
@@ -196,7 +197,7 @@ def stack_conds(conds):
 
     return torch.stack(conds)
 
-def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log_directory, steps, create_image_every, save_hypernetwork_every, template_file, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height):
+def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log_directory, steps, create_image_every, save_hypernetwork_every, template_file, hypernetwork_weight_decay, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height):
     assert hypernetwork_name, 'hypernetwork not selected'
 
     path = shared.hypernetworks.get(hypernetwork_name, None)
@@ -245,8 +246,9 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
     if ititial_step > steps:
         return hypernetwork, filename
 
+    hypernetwork_weight_decay = float(hypernetwork_weight_decay)
     scheduler = LearnRateScheduler(learn_rate, steps, ititial_step)
-    optimizer = torch.optim.AdamW(weights, lr=scheduler.learn_rate)
+    optimizer = torch.optim.AdamW(weights, lr=scheduler.learn_rate, weight_decay=hypernetwork_weight_decay)
 
     pbar = tqdm.tqdm(enumerate(ds), total=steps - ititial_step)
     for i, entries in pbar:
