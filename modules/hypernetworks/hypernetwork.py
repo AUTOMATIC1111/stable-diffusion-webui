@@ -249,7 +249,7 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
                 shutil.copy(filename, "/content/drive/MyDrive/StableDiffusionTraining/{}/{}".format(
                     filename.split("/")[-1].split(".")[0].split("-")[0],
                     filename.split("/")[-1].split(".")[0],exist_ok=True))
-                print("保存文件至Google Drive："+filename)
+                print("\n保存文件至Google Drive："+filename)
             except Exception as e:
                 import traceback
                 print("保存训练模型至Google Drive时出错：{}".format(e))
