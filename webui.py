@@ -95,7 +95,7 @@ def initialize():
     signal.signal(signal.SIGINT, sigint_handler)
 
 
-def api()
+def api():
     initialize()
 
     from modules.api.api import Api
