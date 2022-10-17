@@ -30,7 +30,6 @@ class pydanticModelGenerator:
         optionals: Dict = {},
     ):
         def field_type_generator(k, v, overrides, optionals):
-            print(k, v)
             field_type = str if not overrides.get(k) else overrides[k]["type"]
             if v is None:
                 field_type = Any
