@@ -96,14 +96,11 @@ def initialize():
 
 
 def api():
-    initialize()
-
     from modules.api.api import Api
-    api = Api()
-    api.launch(server_name="0.0.0.0" if cmd_opts.listen else "127.0.0.1", port=cmd_opts.port if cmd_opts.port else 7861)
+    api = Api(app)
 
 
-def webui():
+def webui(launch_api=False):
     initialize()
 
     while 1:
@@ -121,6 +118,9 @@ def webui():
         )
 
         app.add_middleware(GZipMiddleware, minimum_size=1000)
+
+        if (launch_api):
+            api(app)
 
         while 1:
             time.sleep(0.5)
@@ -143,6 +143,6 @@ def webui():
 
 if __name__ == "__main__":
     if cmd_opts.api:
-        api()
+        webui(True)
     else:
-        webui()
+        webui(False)

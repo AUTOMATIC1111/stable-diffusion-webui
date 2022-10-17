@@ -2,14 +2,12 @@ from modules.api.processing import StableDiffusionProcessingAPI
 from modules.processing import StableDiffusionProcessingTxt2Img, process_images
 import modules.shared as shared
 import uvicorn
-from fastapi import FastAPI, Body, APIRouter
+from fastapi import Body, APIRouter
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, Json
 import json
 import io
 import base64
-
-app = FastAPI()
 
 class TextToImageResponse(BaseModel):
     images: list[str] = Field(default=None, title="Image", description="The generated image in base64 format.")
@@ -18,7 +16,7 @@ class TextToImageResponse(BaseModel):
 
 
 class Api:
-    def __init__(self):
+    def __init__(self, app):
         self.router = APIRouter()
         app.add_api_route("/v1/txt2img", self.text2imgapi, methods=["POST"])
 
