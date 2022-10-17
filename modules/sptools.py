@@ -40,7 +40,7 @@ def save_pts(filename):
             print("\n保存文件至Google Drive: "+filename)
         except Exception as e:
             import traceback
-            print("保存训练模型至Google Drive时出错：{}".format(e))
+            print("\n保存训练模型至Google Drive时出错：{}".format(e))
     wrap_gradio_gpu_call(copy(filename), extra_outputs=None)
 
 def save_outcsv(filename):
