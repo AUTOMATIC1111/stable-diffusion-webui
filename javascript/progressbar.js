@@ -72,11 +72,17 @@ function check_gallery(id_gallery){
             let galleryButtons = gradioApp().querySelectorAll('#'+id_gallery+' .gallery-item')
             let galleryBtnSelected = gradioApp().querySelector('#'+id_gallery+' .gallery-item.\\!ring-2')
             if (prevSelectedIndex !== -1 && galleryButtons.length>prevSelectedIndex && !galleryBtnSelected) {
-                //automatically re-open previously selected index (if exists)
-                activeElement = document.activeElement;
+                // automatically re-open previously selected index (if exists)
+                activeElement = gradioApp().activeElement;
+
                 galleryButtons[prevSelectedIndex].click();
                 showGalleryImage();
-                if(activeElement) activeElement.focus()
+
+                if(activeElement){
+                    // i fought this for about an hour; i don't know why the focus is lost or why this helps recover it
+                    // if somenoe has a better solution please by all means
+                    setTimeout(function() { activeElement.focus() }, 1);
+                }
             }
         })
         galleryObservers[id_gallery].observe( gallery, { childList:true, subtree:false })
