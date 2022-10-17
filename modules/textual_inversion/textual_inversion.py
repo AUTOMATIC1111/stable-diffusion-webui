@@ -137,6 +137,7 @@ class EmbeddingDatabase:
                 continue
 
         print(f"Loaded a total of {len(self.word_embeddings)} textual inversion embeddings.")
+        print("Embeddings:", ', '.join(self.word_embeddings.keys()))
 
     def find_embedding_at_position(self, tokens, offset):
         token = tokens[offset]

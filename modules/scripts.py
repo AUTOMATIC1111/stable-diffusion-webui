@@ -60,6 +60,9 @@ def load_scripts(basedir):
     for filename in sorted(os.listdir(basedir)):
         path = os.path.join(basedir, filename)
 
+        if os.path.splitext(path)[1].lower() != '.py':
+            continue
+
         if not os.path.isfile(path):
             continue
 
