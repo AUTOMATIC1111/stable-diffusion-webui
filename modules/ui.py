@@ -1223,7 +1223,7 @@ def create_ui(wrap_gradio_gpu_call):
                         with gr.Column():
                             run_preprocess = gr.Button(value=tr("Preprocess"), variant='primary')
 
-                with gr.Tab(label="Train"):
+                with gr.Tab(label=tr("Train")):
                     gr.HTML(value=f"<p style='margin-bottom: 0.7em'>{tr('Train an embedding; must specify a directory with a set of 1:1 ratio images')}</p>")
                     with gr.Row():
                         train_embedding_name = gr.Dropdown(label=tr('Embedding'), choices=sorted(sd_hijack.model_hijack.embedding_db.word_embeddings.keys()))

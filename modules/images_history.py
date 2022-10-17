@@ -174,13 +174,13 @@ def show_images_history(gr, opts, tabname, run_pnginfo, switch_dict):
 def create_history_tabs(gr, opts, run_pnginfo, switch_dict):
     with gr.Blocks(analytics_enabled=False) as images_history:
         with gr.Tabs() as tabs:
-            with gr.Tab("txt2img history"):
+            with gr.Tab(tr("txt2img history")):
                 with gr.Blocks(analytics_enabled=False) as images_history_txt2img:
                     show_images_history(gr, opts, "txt2img", run_pnginfo, switch_dict)
-            with gr.Tab("img2img history"):
+            with gr.Tab(tr("img2img history")):
                 with gr.Blocks(analytics_enabled=False) as images_history_img2img:
                     show_images_history(gr, opts, "img2img", run_pnginfo, switch_dict)
-            with gr.Tab("extras history"):
+            with gr.Tab(tr("extras history")):
                 with gr.Blocks(analytics_enabled=False) as images_history_img2img:
                     show_images_history(gr, opts, "extras", run_pnginfo, switch_dict)
     return images_history

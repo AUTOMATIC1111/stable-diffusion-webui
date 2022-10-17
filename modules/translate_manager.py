@@ -45,6 +45,7 @@ def init_translation(current_lang: str = None):
                 current = json.load(f)
         except FileNotFoundError:
             print(f"ERROR: language file \"{current_lang}.json\" not found, use the default language")
+            current = None
 
     _load_default()
 
