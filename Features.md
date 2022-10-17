@@ -81,6 +81,13 @@ Another example, this time with 5 prompts and 16 variations:
 
 You can find the feature at the bottom, under Script -> Prompt matrix.
 
+# Color Sketch
+
+Basic coloring tool for img2img. Enable with **--gradio-img2img-tool color-sketch** in commandline args. Sending from txt2img currently causes severe lag, so upload the image instead. Chromium-based browsers support a dropper tool.
+
+![dropper](https://user-images.githubusercontent.com/98228077/196115764-1029bd0c-0b63-4db2-8fbf-f27b97782cc4.png)
+
+
 # Stable Diffusion upscale
 Upscale image using RealESRGAN/ESRGAN and then go through tiles of the result, improving them with img2img.
 It also has an option to let you do the upscaling part yourself in an external program, and just go through tiles with img2img.
@@ -307,6 +314,19 @@ The picture at the top was made with the prompt:
 And the number 0.99 is replaced with whatever you see in column labels on the image.
 
 The last column in the picture is [male:female:0.0], which essentially means that you are asking the model to draw a female from the start, without starting with a male general, and that is why it looks so different from others.
+
+## Alternating Words
+
+Convenient Syntax for swapping every other step.
+
+    [cow|horse] in a field
+
+On step 1, prompt is "cow in a field." Step 2 is "horse in a field." Step 3 is "cow in a field" and so on.
+
+
+See more advanced example below. On step 8, the chain loops back from "man" to "cow."
+
+    [cow|cow|horse|man|siberian tiger|ox|man] in a field
 
 Prompt editing was first implemented by Doggettx in [this myspace.com post](https://www.reddit.com/r/StableDiffusion/comments/xas2os/simple_prompt2prompt_implementation_with_prompt/).
 
