@@ -4,6 +4,8 @@ import time
 import importlib
 import signal
 import threading
+import random
+import string
 
 from fastapi.middleware.gzip import GZipMiddleware
 
@@ -30,7 +32,6 @@ from modules import modelloader
 from modules.paths import script_path
 from modules.shared import cmd_opts
 import modules.hypernetworks.hypernetwork
-
 
 queue_lock = threading.Lock()
 
@@ -72,6 +73,7 @@ def wrap_gradio_gpu_call(func, extra_outputs=None):
 
     return modules.ui.wrap_gradio_call(f, extra_outputs=extra_outputs)
 
+
 def initialize():
     modelloader.cleanup_models()
     modules.sd_models.setup_model()
@@ -83,14 +85,16 @@ def initialize():
     modules.scripts.load_scripts(os.path.join(script_path, "scripts"))
 
     shared.sd_model = modules.sd_models.load_model()
-    shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights(shared.sd_model)))
-    shared.opts.onchange("sd_hypernetwork", wrap_queued_call(lambda: modules.hypernetworks.hypernetwork.load_hypernetwork(shared.opts.sd_hypernetwork)))
+    shared.opts.onchange("sd_model_checkpoint",
+                         wrap_queued_call(lambda: modules.sd_models.reload_model_weights(shared.sd_model)))
+    shared.opts.onchange("sd_hypernetwork", wrap_queued_call(
+        lambda: modules.hypernetworks.hypernetwork.load_hypernetwork(shared.opts.sd_hypernetwork)))
     shared.opts.onchange("sd_hypernetwork_strength", modules.hypernetworks.hypernetwork.apply_strength)
 
 
 def webui():
     initialize()
-    
+
     # make the program just exit at ctrl+c without waiting for anything
     def sigint_handler(sig, frame):
         print(f'Interrupted with signal {sig} in {frame}')
@@ -101,17 +105,32 @@ def webui():
     while 1:
 
         demo = modules.ui.create_ui(wrap_gradio_gpu_call=wrap_gradio_gpu_call)
-        
+
+        # if there are no credentials, generate them
+        # RCE exploits have been found, and there are no security audits being done new on code
+        # so it is dangerous to directly expose it to the internet
+        credentials = cmd_opts.gradio_auth
+        if (not cmd_opts.gradio_auth) and cmd_opts.share and not cmd_opts.no_gradio_auth:
+            # generate username
+            credentials = ''.join(random.choice(string.ascii_uppercase) for _ in range(5))
+            credentials += ':'
+            # generate alphanumeric password
+            credentials += ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(8))
+
+        # If we generated the login, print it to console
+        if (not cmd_opts.gradio_auth) and cmd_opts.share and not cmd_opts.no_gradio_auth:
+            print(f'Gradio login is:\nUsername: {credentials.split(":")[0]}\nPassword: {credentials.split(":")[1]}')
+
         app, local_url, share_url = demo.launch(
             share=cmd_opts.share,
             server_name="0.0.0.0" if cmd_opts.listen else None,
             server_port=cmd_opts.port,
             debug=cmd_opts.gradio_debug,
-            auth=[tuple(cred.split(':')) for cred in cmd_opts.gradio_auth.strip('"').split(',')] if cmd_opts.gradio_auth else None,
+            auth=[tuple(cred.split(':')) for cred in
+                  credentials.strip('"').split(',')] if credentials else None,
             inbrowser=cmd_opts.autolaunch,
             prevent_thread_lock=True
         )
-        
         app.add_middleware(GZipMiddleware, minimum_size=1000)
 
         while 1:
