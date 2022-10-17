@@ -231,6 +231,8 @@ Press the "Save prompt as style" button to write your current prompt to styles.c
 the right of the prompt will allow you to choose any style out of previously saved, and automatically append it to your input.
 To delete a style, manually delete it from styles.csv and restart the program.
 
+if you use the special string `{prompt}` in your style, it will substitute anything currently in the prompt into that position, rather than appending the style to your prompt.
+
 # Negative prompt
 
 Allows you to use another prompt of things the model should avoid when generating the picture. This works by using the
