@@ -95,16 +95,34 @@ def initialize():
     signal.signal(signal.SIGINT, sigint_handler)
 
 
-def api():
+def create_api(app):
     from modules.api.api import Api
     api = Api(app)
+    return api
+
+def wait_on_server(demo=None):
+    while 1:
+        time.sleep(0.5)
+        if demo and getattr(demo, 'do_restart', False):
+            time.sleep(0.5)
+            demo.close()
+            time.sleep(0.5)
+            break
+
+def api_only():
+    initialize()
+
+    app = FastAPI()
+    app.add_middleware(GZipMiddleware, minimum_size=1000)
+    api = create_api(app)
+
+    api.launch(server_name="0.0.0.0" if cmd_opts.listen else "127.0.0.1", port=cmd_opts.port if cmd_opts.port else 7861)
 
 
 def webui(launch_api=False):
     initialize()
 
     while 1:
-
         demo = modules.ui.create_ui(wrap_gradio_gpu_call=wrap_gradio_gpu_call)
 
         app, local_url, share_url = demo.launch(
@@ -120,15 +138,9 @@ def webui(launch_api=False):
         app.add_middleware(GZipMiddleware, minimum_size=1000)
 
         if (launch_api):
-            api(app)
+            create_api(app)
 
-        while 1:
-            time.sleep(0.5)
-            if getattr(demo, 'do_restart', False):
-                time.sleep(0.5)
-                demo.close()
-                time.sleep(0.5)
-                break
+        wait_on_server(demo)
 
         sd_samplers.set_samplers()
 
@@ -142,6 +154,9 @@ def webui(launch_api=False):
 
 
 if __name__ == "__main__":
+    if not cmd_opts.nowebui:
+        api_only()
+
     if cmd_opts.api:
         webui(True)
     else:
