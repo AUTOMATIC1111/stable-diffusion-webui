@@ -1,9 +1,9 @@
 // various functions for interation with ui.py not large enough to warrant putting them in separate files
 
-function go_dark_mode(){
+function set_theme(theme){
     gradioURL = window.location.href
-    if (!gradioURL.endsWith('?__theme=dark')) {
-      window.location.replace(gradioURL + '?__theme=dark');
+    if (!gradioURL.includes('?__theme=')) {
+      window.location.replace(gradioURL + '?__theme=' + theme);
     }
 }
 
