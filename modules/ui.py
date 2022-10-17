@@ -25,7 +25,7 @@ import gradio.routes
 
 from modules import sd_hijack, sd_models
 from modules.paths import script_path
-from modules.shared import opts, cmd_opts
+from modules.shared import opts, cmd_opts, restricted_opts
 if cmd_opts.deepdanbooru:
     from modules.deepbooru import get_deepbooru_tags
 import modules.shared as shared
@@ -1449,6 +1449,9 @@ Requested path was: {f}
             if comp_args and isinstance(comp_args, dict) and comp_args.get('visible') is False:
                 continue
 
+            if cmd_opts.hide_ui_dir_config and key in restricted_opts:
+                continue
+
             oldval = opts.data.get(key, None)
             opts.data[key] = value
 
@@ -1465,6 +1468,9 @@ Requested path was: {f}
     def run_settings_single(value, key):
         if not opts.same_type(value, opts.data_labels[key].default):
             return gr.update(visible=True), opts.dumpjson()
+
+        if cmd_opts.hide_ui_dir_config and key in restricted_opts:
+            return gr.update(value=oldval), opts.dumpjson()
 
         oldval = opts.data.get(key, None)
         opts.data[key] = value
@@ -1781,6 +1787,7 @@ Requested path was: {f}
     visit(txt2img_interface, loadsave, "txt2img")
     visit(img2img_interface, loadsave, "img2img")
     visit(extras_interface, loadsave, "extras")
+    visit(modelmerger_interface, loadsave, "modelmerger")
 
     if not error_loading and (not os.path.exists(ui_config_file) or settings_count != len(ui_settings)):
         with open(ui_config_file, "w", encoding="utf8") as file:
