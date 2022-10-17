@@ -100,10 +100,7 @@ def webui():
     
     if cmd_opts.api:
         from modules.api.api import Api
-        api = Api(txt2img=modules.txt2img.txt2img,
-          img2img=modules.img2img.img2img,
-          run_extras=modules.extras.run_extras,
-          run_pnginfo=modules.extras.run_pnginfo)
+        api = Api()
 
         api.launch(server_name="0.0.0.0" if cmd_opts.listen else "127.0.0.1",
                    port=cmd_opts.port if cmd_opts.port else 7861)
