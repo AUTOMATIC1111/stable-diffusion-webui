@@ -26,6 +26,7 @@ echo Unable to create venv in directory %VENV_DIR%
 goto :show_stdout_stderr
 
 :activate_venv
+echo "Activating VENV"
 set PYTHON="%~dp0%VENV_DIR%\Scripts\Python.exe"
 set ACTIVATE="%~dp0%VENV_DIR%\Scripts\activate.bat"
 call %ACTIVATE%
@@ -34,8 +35,15 @@ goto :launch
 :skip_venv
 
 :launch
-%PYTHON% launch.py
-pause
+ECHO %ACCELERATE% | FIND /I "True">Nul && (  
+	echo "Accelerating launch"
+	accelerate launch launch.py
+	pause
+) || (
+	Echo.Normal Launch"
+	%PYTHON% launch.py	
+	pause
+)
 exit /b
 
 :show_stdout_stderr

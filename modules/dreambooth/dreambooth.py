@@ -1,4 +1,3 @@
-import datetime
 import html
 import json
 import math
@@ -7,7 +6,6 @@ from contextlib import nullcontext
 from pathlib import Path
 from typing import Optional
 
-import accelerate.utils.dataclasses
 import torch
 import torch.nn.functional as F
 import torch.utils.checkpoint
@@ -17,7 +15,7 @@ from accelerate.utils import set_seed
 from diffusers import AutoencoderKL, DDPMScheduler, StableDiffusionPipeline, UNet2DConditionModel
 from diffusers.optimization import get_scheduler
 from huggingface_hub import HfFolder, whoami
-from torch import autocast, distributed
+from torch import autocast
 from torch.utils.data import Dataset
 from torchvision import transforms
 from tqdm.auto import tqdm
@@ -33,8 +31,9 @@ class DreamBooth:
     def __init__(self, name, training_data: str, instance_prompt: str, class_prompt: str, learn_rate: float = 5e-6,
                  save_img_every=500, save_data_every=200, max_steps: int = 800, batch_size: int = 1,
                  grad_steps: int = 1, scheduler: str = "constant", warmup_steps: int = 0, use_adam=False,
-                 class_data=None, seed=None, log_interval=10, mixed_precision="no", no_cache_latents=True, total_steps=0,
-                 num_class_images = 200):
+                 class_data=None, seed=None, log_interval=10, mixed_precision="no", no_cache_latents=True,
+                 total_steps=0,
+                 num_class_images=200):
         self.tokenizer_name = None
         self.total_steps = total_steps
         self.resolution = 512
@@ -129,58 +128,16 @@ class DreamBooth:
 
         shared.state.textinfo = "Initializing dreambooth training..."
         logging_dir = Path(self.output_dir, self.logging_dir)
-        use_cpu = False
-        has_deepspeed = False
-        ds = None
-        #self.mixed_precision="fp16"
-        if shared.cmd_opts.medvram or shared.cmd_opts.lowvram:
-            use_cpu = True
-            # self.mixed_precision = "fp16"
-            self.use_8bit_adam = True
-            try:
-                import bitsandbytes
-                use_cpu = False
-            except Exception as f:
-                print(f"Exception importing ADAM: {f}")
-                self.use_8bit_adam = False
-            try:
-                torch.distributed.init_process_group("mpi", init_method=None,
-                                                     timeout=datetime.timedelta(seconds=1800),
-                                                     world_size=- 1, rank=- 1, store=None, group_name='',
-                                                     pg_options=None)
-                import deepspeed
-                ds = accelerate.utils.dataclasses.DeepSpeedPlugin()
-                has_deepspeed = True
-            except Exception as e:
-                print(f"Exception importing deepspeed: {e}")
-                pass
-                print(f"Creating accelerator. Using cpu: {use_cpu}. Using deepspeed: {has_deepspeed}")
-        if has_deepspeed:
-            accelerator = Accelerator(
-                gradient_accumulation_steps=self.gradient_accumulation_steps,
-                mixed_precision=self.mixed_precision,
-                log_with="tensorboard",
-                logging_dir=logging_dir,
-                deepspeed_plugin=ds,
-                cpu=use_cpu
-            )
-        else:
-            accelerator = Accelerator(
-                gradient_accumulation_steps=self.gradient_accumulation_steps,
-                mixed_precision=self.mixed_precision,
-                log_with="tensorboard",
-                logging_dir=logging_dir,
-                cpu=use_cpu
-            )
+
+        accelerator = Accelerator(
+            gradient_accumulation_steps=self.gradient_accumulation_steps,
+            mixed_precision=self.mixed_precision,
+            log_with="tensorboard",
+            logging_dir=logging_dir,
+        )
 
         if self.seed is not None:
             set_seed(self.seed)
-
-        weight_dtype = torch.float32
-        if self.mixed_precision == "fp16":
-            weight_dtype = torch.float16
-        elif self.mixed_precision == "bf16":
-            weight_dtype = torch.bfloat16
 
         if self.with_prior_preservation:
             class_images_dir = Path(self.class_data_dir)
@@ -192,34 +149,44 @@ class DreamBooth:
                 shared.state.textinfo = f"Generating class images for training..."
                 torch_dtype = torch.float16 if accelerator.device.type == "cuda" else torch.float32
                 pipeline = StableDiffusionPipeline.from_pretrained(
-                    self.pretrained_model_path, use_auth_token=False, torch_dtype=torch_dtype
+                    self.pretrained_model_path, torch_dtype=torch_dtype
                 )
+
+                def foo(images, clip_input):
+                    return images, False
+
+                pipeline.safety_checker = foo
                 pipeline.set_progress_bar_config(disable=True)
 
                 num_new_images = self.num_class_images - cur_class_images
                 print(f"Number of class images to sample: {num_new_images}.")
-
+                shared.state.job_count = num_new_images
+                shared.state.job_no = 0
                 sample_dataset = PromptDataset(self.class_prompt, num_new_images)
                 sample_dataloader = torch.utils.data.DataLoader(sample_dataset, batch_size=self.sample_batch_size)
 
                 sample_dataloader = accelerator.prepare(sample_dataloader)
+
                 pipeline.to(accelerator.device)
                 # Disabled in opt
                 context = torch.autocast("cuda") if accelerator.device.type == "cuda" else nullcontext
                 with context:
                     for example in tqdm(
-                            sample_dataloader, desc="Generating class images", disable=not accelerator.is_local_main_process
+                            sample_dataloader, desc="Generating class images",
+                            disable=not accelerator.is_local_main_process
                     ):
                         images = pipeline(example["prompt"]).images
 
                         for i, image in enumerate(images):
                             image.save(class_images_dir / f"{example['index'][i] + cur_class_images}.jpg")
+                            shared.state.job_no += 1
 
                 del pipeline
                 if torch.cuda.is_available():
                     torch.cuda.empty_cache()
 
         # Handle the repository creation
+        shared.state.textinfo = "Loading models..."
         if self.output_dir is not None:
             os.makedirs(self.output_dir, exist_ok=True)
         ex_encoder = os.path.join(self.output_dir, "text_encoder", "pytorch_model.bin")
@@ -260,8 +227,6 @@ class DreamBooth:
                 print(
                     "To use 8-bit Adam, please install the bitsandbytes library: `pip install bitsandbytes`."
                 )
-                optimizer_class = torch.optim.AdamW
-
         else:
             optimizer_class = torch.optim.AdamW
 
@@ -309,7 +274,7 @@ class DreamBooth:
             return batch
 
         train_dataloader = torch.utils.data.DataLoader(
-            train_dataset, batch_size=self.train_batch_size, shuffle=True, collate_fn=collate_fn, pin_memory=True
+            train_dataset, batch_size=self.train_batch_size, shuffle=True, collate_fn=collate_fn
         )
 
         # Scheduler and math around the number of training steps.
@@ -329,7 +294,13 @@ class DreamBooth:
         unet, optimizer, train_dataloader, lr_scheduler = accelerator.prepare(
             unet, optimizer, train_dataloader, lr_scheduler
         )
-        # T this was moved in OPT from above
+
+        weight_dtype = torch.float32
+        if self.mixed_precision == "fp16":
+            weight_dtype = torch.float16
+        elif self.mixed_precision == "bf16":
+            weight_dtype = torch.bfloat16
+
         # Move text_encode and vae to gpu.
         # For mixed precision training we cast the text_encoder and vae weights to half-precision
         # as these models are only used for inference, keeping weights in full precision is not required.
@@ -350,10 +321,8 @@ class DreamBooth:
 
         # Train!
         total_batch_size = self.train_batch_size * accelerator.num_processes * self.gradient_accumulation_steps
-        shared.state.textinfo = f"Training: UseCPU: {use_cpu} 8BitAdam: {self.use_8bit_adam} Precision: {self.mixed_precision} Deepspeed: {has_deepspeed}"
+
         print("***** Running training *****")
-        print(
-            f"  UseCPU: {use_cpu} 8BitAdam: {self.use_8bit_adam} Precision: {self.mixed_precision} Deepspeed: {has_deepspeed}")
         print(f"  Num examples = {len(train_dataset)}")
         print(f"  Num batches each epoch = {len(train_dataloader)}")
         print(f"  Num Epochs = {self.num_train_epochs}")
@@ -366,7 +335,7 @@ class DreamBooth:
         progress_bar = tqdm(range(self.max_train_steps), disable=not accelerator.is_local_main_process)
         progress_bar.set_description("Steps")
         global_step = 0
-        loss_avg = AverageMeter()
+
         shared.state.job_count = self.max_train_steps
         shared.state.job_no = global_step
         for epoch in range(self.num_train_epochs):
@@ -395,7 +364,7 @@ class DreamBooth:
                         noise, noise_prior = torch.chunk(noise, 2, dim=0)
 
                         # Compute instance loss
-                        loss = F.mse_loss(noise_pred, noise, reduction="none").mean([1, 2, 3]).mean()
+                        loss = F.mse_loss(noise_pred.float(), noise.float(), reduction="none").mean([1, 2, 3]).mean()
 
                         # Compute prior loss
                         prior_loss = F.mse_loss(noise_pred_prior.float(), noise_prior.float(), reduction="mean")
@@ -414,7 +383,7 @@ class DreamBooth:
 
                 # Only save a preview image if we're not training with the CPU
                 if self.save_img_every:
-                    if not global_step % self.save_img_every and use_cpu is not True:
+                    if not global_step % self.save_img_every:
                         prompt = self.instance_prompt
                         last_saved_image = os.path.join(self.output_dir, f'{self.instance_prompt}_{global_step}.png')
                         if accelerator.is_main_process:
@@ -442,17 +411,15 @@ class DreamBooth:
                                 unet=accelerator.unwrap_model(unet),
                                 use_auth_token=False,
                             )
-                            if use_cpu:
+                            pipeline = pipeline.to("cuda")
+                            with autocast("cuda"):
                                 pipeline.save_pretrained(self.output_dir)
-                            else:
-                                pipeline = pipeline.to("cuda")
-                                with autocast("cuda"):
-                                    pipeline.save_pretrained(self.output_dir)
                         pass
 
-                progress_bar.update(1)
-                global_step += 1
-                shared.state.job_no = global_step
+                if accelerator.sync_gradients:
+                    progress_bar.update(1)
+                    global_step += 1
+                    shared.state.job_no = global_step
 
                 logs = {"loss": loss.detach().item(), "lr": lr_scheduler.get_last_lr()[0]}
                 progress_bar.set_postfix(**logs)
@@ -467,20 +434,12 @@ class DreamBooth:
         # Create the pipeline using the trained modules and save it.
         if accelerator.is_main_process:
             pipeline = StableDiffusionPipeline.from_pretrained(
-                self.pretrained_model_path,
-                unet=accelerator.unwrap_model(unet),
-                use_auth_token=False,
+                self.pretrained_model_path, unet=accelerator.unwrap_model(unet)
             )
             pipeline.save_pretrained(self.output_dir)
 
         accelerator.end_training()
         return self.output_dir, global_step
-
-    def unpack_model(self):
-        pass
-
-    def pack_model(self):
-        pass
 
 
 def start_training(model_name, initialization_text, classification_text, learn_rate, dataset_directory,
@@ -535,7 +494,7 @@ def start_training(model_name, initialization_text, classification_text, learn_r
 
 class DreamBoothDataset(Dataset):
     """
-    A dataset to prepare the instance and class images with the promots for fine-tuning the model.
+    A dataset to prepare the instance and class images with the prompts for fine-tuning the model.
     It pre-processes the images and the tokenizes prompts.
     """
 
