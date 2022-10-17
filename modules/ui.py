@@ -13,7 +13,6 @@ import traceback
 import platform
 import subprocess as sp
 from functools import reduce
-from types import NoneType
 
 import numpy as np
 import torch
@@ -105,7 +104,7 @@ def image_from_url_text(filedata):
             return None
 
         filedata = filedata[0]
-
+        
     if filedata is None:
         print("An image must be selected in the gallery before using the \"Send\" buttons.", file=sys.stderr)
         return None
@@ -463,14 +462,14 @@ def create_toprow(is_img2img):
             with gr.Row():
                 with gr.Column(scale=80):
                     with gr.Row():
-                        prompt = gr.Textbox(label="Prompt", elem_id=f"{id_part}_prompt", show_label=False, lines=2,
+                        prompt = gr.Textbox(label="Prompt", elem_id=f"{id_part}_prompt", show_label=False, lines=2, 
                             placeholder="Prompt (press Ctrl+Enter or Alt+Enter to generate)"
                         )
 
             with gr.Row():
                 with gr.Column(scale=80):
                     with gr.Row():
-                        negative_prompt = gr.Textbox(label="Negative prompt", elem_id=f"{id_part}_neg_prompt", show_label=False, lines=2,
+                        negative_prompt = gr.Textbox(label="Negative prompt", elem_id=f"{id_part}_neg_prompt", show_label=False, lines=2, 
                             placeholder="Negative prompt (press Ctrl+Enter or Alt+Enter to generate)"
                         )
 
@@ -1812,3 +1811,4 @@ if 'gradio_routes_templates_response' not in globals():
 
     gradio_routes_templates_response = gradio.routes.templates.TemplateResponse
     gradio.routes.templates.TemplateResponse = template_response
+
