@@ -83,9 +83,9 @@ You can find the feature at the bottom, under Script -> Prompt matrix.
 
 # Color Sketch
 
-Basic coloring tool for img2img. Enable with **--gradio-img2img-tool color-sketch** in commandline args. Sending from txt2img currently causes severe lag, so upload the image instead. Chromium-based browsers support a dropper tool.
+Basic coloring tool for img2img. To use this feature, enable with **--gradio-img2img-tool color-sketch** in commandline args. Sending from txt2img will currently cause the browser to severely lag, so upload the image instead. Chromium-based browsers support a dropper tool. (see picture)
 
-![dropper](https://user-images.githubusercontent.com/98228077/196115764-1029bd0c-0b63-4db2-8fbf-f27b97782cc4.png)
+![dropper](https://user-images.githubusercontent.com/98228077/196140222-54bc71ad-2746-4c38-8075-5c53fbcde2a9.png)
 
 
 # Stable Diffusion upscale
