@@ -1,5 +1,12 @@
 // various functions for interation with ui.py not large enough to warrant putting them in separate files
 
+function go_dark_mode(){
+    gradioURL = window.location.href
+    if (!gradioURL.endsWith('?__theme=dark')) {
+      window.location.replace(gradioURL + '?__theme=dark');
+    }
+}
+
 function selected_gallery_index(){
     var buttons = gradioApp().querySelectorAll('[style="display: block;"].tabitem .gallery-item')
     var button = gradioApp().querySelector('[style="display: block;"].tabitem .gallery-item.\\!ring-2')
