@@ -46,19 +46,21 @@ body:
       label: Commit where the problem happens
       description: Which commit are you running ? (copy the **Commit hash** shown in the cmd/terminal when you launch the UI)
   - type: dropdown
-    id: os
+    id: platforms
     attributes:
-      label: What OS do you use to run the webui?
+      label: What platforms do you use to access UI ?
       multiple: true
       options:
-        - Colab/Runpod or Cloud based
         - Windows
         - Linux
         - MacOS
+        - iOS
+        - Android
+        - Other/Cloud
   - type: dropdown
     id: browsers
     attributes:
-      label: What browsers do you use to run the UI ?
+      label: What browsers do you use to access the UI ?
       multiple: true
       options:
         - Mozilla Firefox
