@@ -102,14 +102,8 @@ def webui():
 
         demo = modules.ui.create_ui(wrap_gradio_gpu_call=wrap_gradio_gpu_call)
         
-<<<<<<< HEAD
-        app,local_url,share_url = demo.launch(
-            #share=cmd_opts.share,
-            share=True,
-=======
         app, local_url, share_url = demo.launch(
             share=cmd_opts.share,
->>>>>>> 08b3f7aef15f74f4d2254b1274dd66fcc7940348
             server_name="0.0.0.0" if cmd_opts.listen else None,
             server_port=cmd_opts.port,
             debug=cmd_opts.gradio_debug,
