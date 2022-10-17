@@ -23,10 +23,8 @@ class Api:
         app.add_api_route("/v1/txt2img", self.text2imgapi, methods=["POST"])
 
     def text2imgapi(self, txt2imgreq: StableDiffusionProcessingAPI ):
-        print(txt2imgreq)
         p = StableDiffusionProcessingTxt2Img(**vars(txt2imgreq))
         p.sd_model = shared.sd_model
-        print(p)
         processed = process_images(p)
         
         b64images = []
@@ -34,13 +32,6 @@ class Api:
             buffer = io.BytesIO()
             i.save(buffer, format="png")
             b64images.append(base64.b64encode(buffer.getvalue()))
-        
-        response = {
-            "images": b64images,
-            "info": processed.js(),
-            "parameters": json.dumps(vars(txt2imgreq))
-        }
-        
 
         return TextToImageResponse(images=b64images, parameters=json.dumps(vars(txt2imgreq)), info=json.dumps(processed.info))
         
