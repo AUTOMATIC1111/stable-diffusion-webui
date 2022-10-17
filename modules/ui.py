@@ -13,7 +13,6 @@ import traceback
 import platform
 import subprocess as sp
 from functools import reduce
-from types import NoneType
 
 import numpy as np
 import torch
@@ -106,7 +105,7 @@ def image_from_url_text(filedata):
 
         filedata = filedata[0]
         
-    if type(filedata) == NoneType:
+    if filedata is None:
         print("An image must be selected in the gallery before using the \"Send\" buttons.", file=sys.stderr)
         return None
 
