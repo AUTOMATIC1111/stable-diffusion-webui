@@ -181,7 +181,8 @@ def delete_image(delete_num, name, filenames, image_index, visible_num):
     return new_file_list, 1, visible_num
 
 def save_image(file_name):
-    shutil.copy2(file_name, opts.outdir_save)
+    if file_name is not None and os.path.exists(file_name):
+        shutil.copy2(file_name, opts.outdir_save)
 
 def get_recent_images(page_index, step, filenames):
     page_index = int(page_index)
@@ -327,7 +328,6 @@ def create_history_tabs(gr, sys_opts, run_pnginfo, switch_dict):
     opts = sys_opts
     loads_files_num = int(opts.images_history_num_per_page)
     num_of_imgs_per_page = int(opts.images_history_num_per_page * opts.images_history_pages_num)
-    backup_flag = opts.images_history_backup
     with gr.Blocks(analytics_enabled=False) as images_history:
         with gr.Tabs() as tabs:
             for tab in ["txt2img", "img2img", "extras", "saved"]:
