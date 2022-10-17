@@ -75,7 +75,7 @@ parser.add_argument("--enable-console-prompts", action='store_true', help="print
 parser.add_argument('--vae-path', type=str, help='Path to Variational Autoencoders model', default=None)
 parser.add_argument("--disable-safe-unpickle", action='store_true', help="disable checking pytorch models for malicious code", default=False)
 parser.add_argument("--language", type=str, help='Language for Webui', default='en_us')
-parser.add_argument("--marge-language", action="store_true", help="Marge languages with default")
+parser.add_argument("--merge-language", action="store_true", help="Marge languages with default")
 
 
 cmd_opts = parser.parse_args()

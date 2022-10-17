@@ -92,9 +92,9 @@ def initialize():
 
 
 def webui():
-    if cmd_opts.marge_language:
-        translate_manager.marge_translation()
-        print('languages merged')
+    if cmd_opts.merge_language:
+        translate_manager.merge_translation()
+        print('languages merge')
         return
     initialize()
     

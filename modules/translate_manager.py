@@ -30,7 +30,7 @@ def _load_default():
         _save_default()
 
 
-def _marge(lang_dict: dict):
+def _merge(lang_dict: dict):
     for key in default:
         if key not in lang_dict:
             lang_dict[key] = "UNLOCALIZED: " + default[key]
@@ -39,7 +39,7 @@ def _marge(lang_dict: dict):
 def init_translation(current_lang: str = None):
     global current
     global default
-    if current_lang is not None or current_lang == 'en_us':
+    if current_lang is not None and current_lang != 'en_us':
         try:
             with open(lang_path / f'{current_lang}.json', 'r', encoding='utf-8') as f:
                 current = json.load(f)
@@ -63,7 +63,7 @@ def translate(original: str) -> str:
     return original
 
 
-def marge_translation():
+def merge_translation():
     """
     add missed translation to json
     """
@@ -73,6 +73,6 @@ def marge_translation():
         if lang != 'default.json' and lang.endswith('.json'):
             with open(f'lang/{lang}', 'r', encoding='utf-8') as f:
                 lang_dict = json.load(f)
-            _marge(lang_dict)
+            _merge(lang_dict)
             with open(f'lang/{lang}', 'w', encoding='utf-8') as f:
                 json.dump(lang_dict, f, ensure_ascii=False, indent=4)

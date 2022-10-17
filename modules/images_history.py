@@ -2,6 +2,9 @@ import os
 import shutil
 import sys
 
+from modules.translate_manager import translate as tr
+
+
 def traverse_all_files(output_dir, image_list, curr_dir=None):
     curr_path = output_dir if curr_dir is None else os.path.join(output_dir, curr_dir)
     try:
@@ -112,34 +115,34 @@ def show_images_history(gr, opts, tabname, run_pnginfo, switch_dict):
     else:
         return
     with gr.Row():
-        renew_page = gr.Button('Renew Page', elem_id=tabname + "_images_history_renew_page")
-        first_page = gr.Button('First Page')
-        prev_page = gr.Button('Prev Page')
-        page_index = gr.Number(value=1, label="Page Index")
-        next_page = gr.Button('Next Page')
-        end_page = gr.Button('End Page')
+        renew_page = gr.Button(tr('Renew Page'), elem_id=tabname + "_images_history_renew_page")
+        first_page = gr.Button(tr('First Page'))
+        prev_page = gr.Button(tr('Prev Page'))
+        page_index = gr.Number(value=1, label=tr("Page Index"))
+        next_page = gr.Button(tr('Next Page'))
+        end_page = gr.Button(tr('End Page'))
     with gr.Row(elem_id=tabname + "_images_history"):
         with gr.Row():
             with gr.Column(scale=2):
                 history_gallery = gr.Gallery(show_label=False, elem_id=tabname + "_images_history_gallery").style(grid=6)
                 with gr.Row():
-                    delete_num = gr.Number(value=1, interactive=True, label="number of images to delete consecutively next")
-                    delete = gr.Button('Delete', elem_id=tabname + "_images_history_del_button")
+                    delete_num = gr.Number(value=1, interactive=True, label=tr("number of images to delete consecutively next"))
+                    delete = gr.Button(tr('Delete'), elem_id=tabname + "_images_history_del_button")
             with gr.Column():
                 with gr.Row():
-                    pnginfo_send_to_txt2img = gr.Button('Send to txt2img')
-                    pnginfo_send_to_img2img = gr.Button('Send to img2img')
+                    pnginfo_send_to_txt2img = gr.Button(tr('Send to txt2img'))
+                    pnginfo_send_to_img2img = gr.Button(tr('Send to img2img'))
                 with gr.Row():
                     with gr.Column():
-                        img_file_info = gr.Textbox(label="Generate Info", interactive=False)
-                        img_file_name = gr.Textbox(label="File Name", interactive=False)
+                        img_file_info = gr.Textbox(label=tr("Generate Info"), interactive=False)
+                        img_file_name = gr.Textbox(label=tr("File Name"), interactive=False)
                 with gr.Row():
                     # hiden items
 
                     img_path = gr.Textbox(dir_name.rstrip("/"), visible=False)
                     tabname_box = gr.Textbox(tabname, visible=False)
                     image_index = gr.Textbox(value=-1, visible=False)
-                    set_index = gr.Button('set_index', elem_id=tabname + "_images_history_set_index", visible=False)
+                    set_index = gr.Button(tr('set_index'), elem_id=tabname + "_images_history_set_index", visible=False)
                     filenames = gr.State()
                     hidden = gr.Image(type="pil", visible=False)
                     info1 = gr.Textbox(visible=False)
