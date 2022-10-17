@@ -123,7 +123,7 @@ class InterrogateModels:
 
         return caption[0]
 
-    def interrogate(self, pil_image, include_ranks=False):
+    def interrogate(self, pil_image):
         res = None
 
         try:
@@ -156,8 +156,8 @@ class InterrogateModels:
                 for name, topn, items in self.categories:
                     matches = self.rank(image_features, items, top_count=topn)
                     for match, score in matches:
-                        if include_ranks:
-                            res += f", ({match}:{score})"
+                        if shared.opts.interrogate_return_ranks:
+                            res += f", ({match}:{score/100:.3f})"
                         else:
                             res += ", " + match
 
