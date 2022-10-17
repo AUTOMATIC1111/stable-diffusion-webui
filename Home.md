@@ -16,3 +16,4 @@
 - [Troubleshooting](Troubleshooting)
 - [Contributing](Contributing)
 - [SAAS and API](SAAS-and-API)
+- [Localization](Localization)
