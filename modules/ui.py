@@ -1480,7 +1480,7 @@ def create_ui(wrap_gradio_gpu_call):
                     extras_upscaler_1 = gr.Radio(label='Upscaler 1', elem_id="extras_upscaler_1", choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name, type="index")
 
                 with gr.Group():
-                    extras_upscaler_2 = gr.Radio(label='Upscaler 2', celem_id="extras_upscaler_2", choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name, type="index")
+                    extras_upscaler_2 = gr.Radio(label='Upscaler 2', elem_id="extras_upscaler_2", choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name, type="index")
                     extras_upscaler_2_visibility = gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="Upscaler 2 visibility", value=1)
 
                 with gr.Group():
@@ -2222,6 +2222,9 @@ jsdir = os.path.join(script_path, "javascript")
 for filename in sorted(os.listdir(jsdir)):
     with open(os.path.join(jsdir, filename), "r", encoding="utf8") as jsfile:
         javascript += f"\n<script>{jsfile.read()}</script>"
+
+if cmd_opts.theme is not None:
+    javascript += f"\n<script>set_theme('{cmd_opts.theme}');</script>\n"
 
 javascript += f"\n<script>{localization.localization_js(shared.opts.localization)}</script>"
 
