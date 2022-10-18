@@ -1548,7 +1548,7 @@ Requested path was: {f}
         (img2img_interface, "img2img", "img2img"),
         (extras_interface, "Extras", "extras"),
         (pnginfo_interface, "PNG Info", "pnginfo"),
-        (images_history, "History", "images_history"),
+        (images_history, "Image Browser", "images_history"),
         (modelmerger_interface, "Checkpoint Merger", "modelmerger"),
         (train_interface, "Train", "ti"),
         (settings_interface, "Settings", "settings"),

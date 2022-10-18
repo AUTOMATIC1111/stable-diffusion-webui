@@ -309,10 +309,11 @@ options_templates.update(options_section(('sampler-params', "Sampler parameters"
     'eta_noise_seed_delta': OptionInfo(0, "Eta noise seed delta", gr.Number, {"precision": 0}),
 }))
 
-options_templates.update(options_section(('images-history', "Images history"), {
-    "images_history_reconstruct_directory": OptionInfo(False, "Reconstruct output directory structure.This can greatly improve the speed of loading , but will change the original output directory structure"),
+options_templates.update(options_section(('images-history', "Images Browser"), {
+    #"images_history_reconstruct_directory": OptionInfo(False, "Reconstruct output directory structure.This can greatly improve the speed of loading , but will change the original output directory structure"),
     "images_history_num_per_page": OptionInfo(36, "Number of pictures displayed on each page"),
-    "images_history_pages_num": OptionInfo(6, "Maximum number of pages per load "),   
+    "images_history_pages_num": OptionInfo(6, "Minimum number of pages per load "),   
+    "images_history_grid_num": OptionInfo(6, "Number of grids in each row"),   
 
 }))
 

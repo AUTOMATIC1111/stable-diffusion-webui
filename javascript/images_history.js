@@ -145,9 +145,10 @@ function images_history_enable_del_buttons(){
 }
 
 function images_history_init(){ 
-    var loaded = gradioApp().getElementById("images_history_reconstruct_directory")
-    if (loaded){  
-        var init_status = loaded.querySelector("input").checked       
+    // var loaded = gradioApp().getElementById("images_history_reconstruct_directory")
+    // if (loaded){  
+        // var init_status = loaded.querySelector("input").checked 
+    if (gradioApp().getElementById("images_history_finish_render")){      
         for (var i in images_history_tab_list ){
             tab = images_history_tab_list[i];
             gradioApp().getElementById(tab + '_images_history').classList.add("images_history_cantainor");
@@ -163,19 +164,17 @@ function images_history_init(){
         for (var i in images_history_tab_list){               
             var tabname = images_history_tab_list[i]
             tab_btns[i].setAttribute("tabname", tabname);
-            if (init_status){
-                tab_btns[i].addEventListener('click', images_history_click_tab);
-            }
-        }  
-        if (init_status){
-                tab_btns[0].click();
+            // if (!init_status){
+            //     tab_btns[i].addEventListener('click', images_history_click_tab);
+            // }
+            tab_btns[i].addEventListener('click', images_history_click_tab);
         }  
     } else {
         setTimeout(images_history_init, 500);
     } 
 }
 
-var images_history_tab_list = ["txt2img", "img2img", "extras", "saved"];
+var images_history_tab_list = ["custom", "txt2img", "img2img", "extras", "saved"];
 setTimeout(images_history_init, 500);
 document.addEventListener("DOMContentLoaded", function() {
     var mutationObserver = new MutationObserver(function(m){
