@@ -268,7 +268,7 @@ def calc_time_left(progress, threshold, label, force_display):
         time_since_start = time.time() - shared.state.time_start
         eta = (time_since_start/progress)
         eta_relative = eta-time_since_start
-        if eta_relative > threshold or force_display:              
+        if (eta_relative > threshold and progress > 0.02) or force_display:           
             return label + time.strftime('%H:%M:%S', time.gmtime(eta_relative))        
         else:
             return ""
