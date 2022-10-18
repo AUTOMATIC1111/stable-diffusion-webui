@@ -53,7 +53,7 @@ def get_correct_sampler(p):
         return sd_samplers.samplers_for_img2img
 
 class StableDiffusionProcessing:
-    def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt="", styles=None, seed=-1, subseed=-1, subseed_strength=0, seed_resize_from_h=-1, seed_resize_from_w=-1, seed_enable_extras=True, sampler_index=0, batch_size=1, n_iter=1, steps=50, cfg_scale=7.0, width=512, height=512, restore_faces=False, tiling=False, do_not_save_samples=False, do_not_save_grid=False, extra_generation_params=None, overlay_images=None, negative_prompt=None, eta=None):
+    def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt="", styles=None, seed=-1, subseed=-1, subseed_strength=0, seed_resize_from_h=-1, seed_resize_from_w=-1, seed_enable_extras=True, sampler_index=0, batch_size=1, n_iter=1, steps=50, cfg_scale=7.0, width=512, height=512, restore_faces=False, tiling=False, do_not_save_samples=False, do_not_save_grid=False, extra_generation_params=None, overlay_images=None, negative_prompt=None, eta=None, do_not_reload_embeddings=False):
         self.sd_model = sd_model
         self.outpath_samples: str = outpath_samples
         self.outpath_grids: str = outpath_grids
@@ -80,6 +80,7 @@ class StableDiffusionProcessing:
         self.extra_generation_params: dict = extra_generation_params or {}
         self.overlay_images = overlay_images
         self.eta = eta
+        self.do_not_reload_embeddings = do_not_reload_embeddings
         self.paste_to = None
         self.color_corrections = None
         self.denoising_strength: float = 0
@@ -140,7 +141,7 @@ class Processed:
         self.sampler_noise_scheduler_override = p.sampler_noise_scheduler_override
         self.prompt = self.prompt if type(self.prompt) != list else self.prompt[0]
         self.negative_prompt = self.negative_prompt if type(self.negative_prompt) != list else self.negative_prompt[0]
-        self.seed = int(self.seed if type(self.seed) != list else self.seed[0])
+        self.seed = int(self.seed if type(self.seed) != list else self.seed[0]) if self.seed is not None else -1
         self.subseed = int(self.subseed if type(self.subseed) != list else self.subseed[0]) if self.subseed is not None else -1
 
         self.all_prompts = all_prompts or [self.prompt]
@@ -333,12 +334,6 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
     seed = get_fixed_seed(p.seed)
     subseed = get_fixed_seed(p.subseed)
 
-    if p.outpath_samples is not None:
-        os.makedirs(p.outpath_samples, exist_ok=True)
-
-    if p.outpath_grids is not None:
-        os.makedirs(p.outpath_grids, exist_ok=True)
-
     modules.sd_hijack.model_hijack.apply_circular(p.tiling)
     modules.sd_hijack.model_hijack.clear_comments()
 
@@ -364,7 +359,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
     def infotext(iteration=0, position_in_batch=0):
         return create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration, position_in_batch)
 
-    if os.path.exists(cmd_opts.embeddings_dir):
+    if os.path.exists(cmd_opts.embeddings_dir) and not p.do_not_reload_embeddings:
         model_hijack.embedding_db.load_textual_inversion_embeddings()
 
     infotexts = []
@@ -528,7 +523,6 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                 firstphase_height_truncated = int(scale * self.height)
 
             else:
-                self.extra_generation_params["First pass size"] = f"{self.firstphase_width}x{self.firstphase_height}"
 
                 width_ratio = self.width / self.firstphase_width
                 height_ratio = self.height / self.firstphase_height
@@ -540,6 +534,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                     firstphase_width_truncated = self.firstphase_height * self.width / self.height
                     firstphase_height_truncated = self.firstphase_height
 
+            self.extra_generation_params["First pass size"] = f"{self.firstphase_width}x{self.firstphase_height}"
             self.truncate_x = int(self.firstphase_width - firstphase_width_truncated) // opt_f
             self.truncate_y = int(self.firstphase_height - firstphase_height_truncated) // opt_f
 
@@ -557,11 +552,11 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
         samples = samples[:, :, self.truncate_y//2:samples.shape[2]-self.truncate_y//2, self.truncate_x//2:samples.shape[3]-self.truncate_x//2]
 
-        decoded_samples = decode_first_stage(self.sd_model, samples)
+        if opts.use_scale_latent_for_hires_fix:
+            samples = torch.nn.functional.interpolate(samples, size=(self.height // opt_f, self.width // opt_f), mode="bilinear")
 
-        if opts.upscaler_for_img2img is None or opts.upscaler_for_img2img == "None":
-            decoded_samples = torch.nn.functional.interpolate(decoded_samples, size=(self.height, self.width), mode="bilinear")
         else:
+            decoded_samples = decode_first_stage(self.sd_model, samples)
             lowres_samples = torch.clamp((decoded_samples + 1.0) / 2.0, min=0.0, max=1.0)
 
             batch_images = []
@@ -578,7 +573,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             decoded_samples = decoded_samples.to(shared.device)
             decoded_samples = 2. * decoded_samples - 1.
 
-        samples = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(decoded_samples))
+            samples = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(decoded_samples))
 
         shared.state.nextjob()
 

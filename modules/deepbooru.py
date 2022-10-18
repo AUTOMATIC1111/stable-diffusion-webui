@@ -102,7 +102,7 @@ def get_deepbooru_tags_model():
 
     tags = dd.project.load_tags_from_project(model_path)
     model = dd.project.load_model_from_project(
-        model_path, compile_model=True
+        model_path, compile_model=False
     )
     return model, tags
 
@@ -157,8 +157,7 @@ def get_deepbooru_tags_from_model(model, tags, pil_image, threshold, deepbooru_o
     # sort by reverse by likelihood and normal for alpha, and format tag text as requested
     unsorted_tags_in_theshold.sort(key=lambda y: y[sort_ndx], reverse=(not alpha_sort))
     for weight, tag in unsorted_tags_in_theshold:
-        # note: tag_outformat will still have a colon if include_ranks is True
-        tag_outformat = tag.replace(':', ' ')
+        tag_outformat = tag
         if use_spaces:
             tag_outformat = tag_outformat.replace('_', ' ')
         if use_escape:

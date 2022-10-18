@@ -1,5 +1,12 @@
 // various functions for interation with ui.py not large enough to warrant putting them in separate files
 
+function set_theme(theme){
+    gradioURL = window.location.href
+    if (!gradioURL.includes('?__theme=')) {
+      window.location.replace(gradioURL + '?__theme=' + theme);
+    }
+}
+
 function selected_gallery_index(){
     var buttons = gradioApp().querySelectorAll('[style="display: block;"].tabitem .gallery-item')
     var button = gradioApp().querySelector('[style="display: block;"].tabitem .gallery-item.\\!ring-2')
@@ -141,7 +148,7 @@ function submit_img2img(){
 
 function ask_for_style_name(_, prompt_text, negative_prompt_text) {
     name_ = prompt('Style name:')
-    return name_ === null ? [null, null, null]: [name_, prompt_text, negative_prompt_text]
+    return [name_, prompt_text, negative_prompt_text]
 }
 
 
@@ -187,12 +194,10 @@ onUiUpdate(function(){
 	if (!txt2img_textarea) {
 		txt2img_textarea = gradioApp().querySelector("#txt2img_prompt > label > textarea");
 		txt2img_textarea?.addEventListener("input", () => update_token_counter("txt2img_token_button"));
-        txt2img_textarea?.addEventListener("keyup", (event) => submit_prompt(event, "txt2img_generate"));
 	}
 	if (!img2img_textarea) {
 		img2img_textarea = gradioApp().querySelector("#img2img_prompt > label > textarea");
 		img2img_textarea?.addEventListener("input", () => update_token_counter("img2img_token_button"));
-        img2img_textarea?.addEventListener("keyup", (event) => submit_prompt(event, "img2img_generate"));
 	}
 })
 
@@ -218,14 +223,6 @@ function update_token_counter(button_id) {
 	if (token_timeout)
 		clearTimeout(token_timeout);
 	token_timeout = setTimeout(() => gradioApp().getElementById(button_id)?.click(), wait_time);
-}
-
-function submit_prompt(event, generate_button_id) {
-    if (event.altKey && event.keyCode === 13) {
-        event.preventDefault();
-        gradioApp().getElementById(generate_button_id).click();
-        return;
-    }
 }
 
 function restart_reload(){
