@@ -1,11 +1,6 @@
 import os
 import shutil
 import sys
-import base64
-from PIL import Image, PngImagePlugin
-import html
-import io
-import tempfile
 
 def traverse_all_files(output_dir, image_list, curr_dir=None):
     curr_path = output_dir if curr_dir is None else os.path.join(output_dir, curr_dir)
