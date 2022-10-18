@@ -402,12 +402,6 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             with devices.autocast():
                 samples_ddim = p.sample(conditioning=c, unconditional_conditioning=uc, seeds=seeds, subseeds=subseeds, subseed_strength=p.subseed_strength)
 
-            if state.interrupted or state.skipped:
-
-                # if we are interrupted, sample returns just noise
-                # use the image collected previously in sampler loop
-                samples_ddim = shared.state.current_latent
-
             samples_ddim = samples_ddim.to(devices.dtype_vae)
             x_samples_ddim = decode_first_stage(p.sd_model, samples_ddim)
             x_samples_ddim = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
