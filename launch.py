@@ -86,7 +86,24 @@ def git_clone(url, dir, name, commithash=None):
     if commithash is not None:
         run(f'"{git}" -C {dir} checkout {commithash}', None, "Couldn't checkout {name}'s hash: {commithash}")
 
+        
+def version_check(commit):
+    try:
+        import requests
+        commits = requests.get('https://api.github.com/repos/AUTOMATIC1111/stable-diffusion-webui/branches/master').json()
+        if commit != "<none>" and commits['commit']['sha'] != commit:
+            print("--------------------------------------------------------")
+            print("| You are not up to date with the most recent release. |")
+            print("| Consider running `git pull` to update.               |")
+            print("--------------------------------------------------------")
+        elif commits['commit']['sha'] == commit:
+            print("You are up to date with the most recent release.")
+        else:
+            print("Not a git clone, can't perform version check.")
+    except Exception as e:
+        print("versipm check failed",e)
 
+        
 def prepare_enviroment():
     torch_command = os.environ.get('TORCH_COMMAND', "pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 --extra-index-url https://download.pytorch.org/whl/cu113")
     requirements_file = os.environ.get('REQS_FILE', "requirements_versions.txt")
@@ -110,13 +127,14 @@ def prepare_enviroment():
     codeformer_commit_hash = os.environ.get('CODEFORMER_COMMIT_HASH', "c5b4593074ba6214284d6acd5f1719b6c5d739af")
     blip_commit_hash = os.environ.get('BLIP_COMMIT_HASH', "48211a1594f1321b00f14c9f7a5b4813144b2fb9")
 
-    args = shlex.split(commandline_args)
+    sys.argv += shlex.split(commandline_args)
 
-    args, skip_torch_cuda_test = extract_arg(args, '--skip-torch-cuda-test')
-    args, reinstall_xformers = extract_arg(args, '--reinstall-xformers')
-    xformers = '--xformers' in args
-    deepdanbooru = '--deepdanbooru' in args
-    ngrok = '--ngrok' in args
+    sys.argv, skip_torch_cuda_test = extract_arg(sys.argv, '--skip-torch-cuda-test')
+    sys.argv, reinstall_xformers = extract_arg(sys.argv, '--reinstall-xformers')
+    sys.argv, update_check = extract_arg(sys.argv, '--update-check')
+    xformers = '--xformers' in sys.argv
+    deepdanbooru = '--deepdanbooru' in sys.argv
+    ngrok = '--ngrok' in sys.argv
 
     try:
         commit = run(f"{git} rev-parse HEAD").strip()
@@ -125,7 +143,7 @@ def prepare_enviroment():
 
     print(f"Python {sys.version}")
     print(f"Commit hash: {commit}")
-
+    
     if not is_installed("torch") or not is_installed("torchvision"):
         run(f'"{python}" -m {torch_command}', "Installing torch and torchvision", "Couldn't install torch")
 
@@ -163,9 +181,10 @@ def prepare_enviroment():
 
     run_pip(f"install -r {requirements_file}", "requirements for Web UI")
 
-    sys.argv += args
-
-    if "--exit" in args:
+    if update_check:
+        version_check(commit)
+    
+    if "--exit" in sys.argv:
         print("Exiting because of --exit argument")
         exit(0)
 
