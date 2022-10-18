@@ -62,7 +62,7 @@ Use `--port xxxx` to make the server listen on a specific port, xxxx being the w
 --opt-split-attention-v1 | None | False 				| enable older version of split attention optimization that does not consume all the VRAM it can find |
 --opt-channelslast | None | False    					| change memory type for stable diffusion to channels last |
 --disable-opt-split-attention | None | False 			| force-disables cross-attention layer optimization |
---use-cpu | {all,sd,interrogate,gfpgan,bsrgan,esrgan,scunet,codeformer} | None | use CPU as torch device for specified modules |
+--use-cpu | {all, sd, interrogate, gfpgan, bsrgan, esrgan, scunet, codeformer} | None | use CPU as torch device for specified modules |
 --no-half     | None | False         				 | do not switch the model to 16-bit floats |
 --precision | {full,autocast} | autocast			 | evaluate at this precision |
 --no-half-vae | None | False         				 | do not switch the VAE model to 16-bit floats |
