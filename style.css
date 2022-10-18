@@ -516,3 +516,7 @@ img2maskimg, #img2maskimg > .h-60, #img2maskimg > .h-60 > div, #img2maskimg > .h
     max-height: 480px !important;
     min-height: 480px !important;
 }
+
+.gr-form > .gr-block {
+	border-radius: 7px;
+}
