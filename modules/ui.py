@@ -1150,7 +1150,7 @@ def create_ui(wrap_gradio_gpu_call):
         "i2i":img2img_paste_fields
     }
 
-    images_history = img_his.create_history_tabs(gr, opts, wrap_gradio_call(modules.extras.run_pnginfo), images_history_switch_dict)
+    images_history = img_his.create_history_tabs(gr, opts, wrap_gradio_call(modules.extras.run_pnginfo), images_history_switch_dict, init_img)
 
     with gr.Blocks() as modelmerger_interface:
         with gr.Row().style(equal_height=False):
@@ -1717,6 +1717,13 @@ Requested path was: {f}
 
         modules.generation_parameters_copypaste.connect_paste(pnginfo_send_to_txt2img, txt2img_paste_fields + settings_paste_fields, generation_info, 'switch_to_txt2img')
         modules.generation_parameters_copypaste.connect_paste(pnginfo_send_to_img2img, img2img_paste_fields + settings_paste_fields, generation_info, 'switch_to_img2img_img2img')
+
+        pnginfo_send_to_img2img.click(
+            fn=lambda x: x,
+            _js="extract_image_from_pnginfo",
+            inputs=[image],
+            outputs=[init_img],
+        )
 
     ui_config_file = cmd_opts.ui_config_file
     ui_settings = {}

@@ -25,6 +25,16 @@ var images_history_click_tab = function(){
     }                
 }
 
+function switch_to_hustory(){
+    gradioApp().querySelector('#tabs').querySelectorAll('button')[4].click();
+    return args_to_array(arguments);
+}
+
+function extract_image_from_history(gallery) {
+    switch_to_img2img_img2img()
+    return extract_image_from_gallery(gallery);
+}
+
 function images_history_disabled_del(){
     gradioApp().querySelectorAll(".images_history_del_button").forEach(function(btn){
         btn.setAttribute('disabled','disabled');

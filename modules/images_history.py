@@ -1,6 +1,11 @@
 import os
 import shutil
 import sys
+import base64
+from PIL import Image, PngImagePlugin
+import html
+import io
+import tempfile
 
 def traverse_all_files(output_dir, image_list, curr_dir=None):
     curr_path = output_dir if curr_dir is None else os.path.join(output_dir, curr_dir)
@@ -20,6 +25,29 @@ def traverse_all_files(output_dir, image_list, curr_dir=None):
         else:
             image_list = traverse_all_files(output_dir, image_list, file)
     return image_list
+
+
+def image_from_url_text(filedata):
+    if type(filedata) == dict and filedata["is_file"]:
+        filename = filedata["name"]
+        tempdir = os.path.normpath(tempfile.gettempdir())
+        normfn = os.path.normpath(filename)
+        assert normfn.startswith(tempdir), 'trying to open image file not in temporary directory'
+
+        return Image.open(filename)
+
+    if type(filedata) == list:
+        if len(filedata) == 0:
+            return None
+
+        filedata = filedata[0]
+
+    if filedata.startswith("data:image/png;base64,"):
+        filedata = filedata[len("data:image/png;base64,"):]
+
+    filedata = base64.decodebytes(filedata.encode('utf-8'))
+    image = Image.open(io.BytesIO(filedata))
+    return image
 
 
 def get_recent_images(dir_name, page_index, step, image_index, tabname):
@@ -100,7 +128,7 @@ def delete_image(delete_num, tabname, dir_name, name, page_index, filenames, ima
     return new_file_list, 1
 
 
-def show_images_history(gr, opts, tabname, run_pnginfo, switch_dict):
+def show_images_history(gr, opts, tabname, run_pnginfo, switch_dict, init_img):
     if opts.outdir_samples != "":
         dir_name = opts.outdir_samples
     elif tabname == "txt2img":
@@ -129,6 +157,13 @@ def show_images_history(gr, opts, tabname, run_pnginfo, switch_dict):
                 with gr.Row():
                     pnginfo_send_to_txt2img = gr.Button('Send to txt2img')
                     pnginfo_send_to_img2img = gr.Button('Send to img2img')
+                    
+                    pnginfo_send_to_img2img.click(
+                        fn=lambda x: image_from_url_text(x),
+                        _js="extract_image_from_history",
+                        inputs=[history_gallery],
+                        outputs=[init_img],
+                    )
                 with gr.Row():
                     with gr.Column():
                         img_file_info = gr.Textbox(label="Generate Info", interactive=False)
@@ -168,16 +203,16 @@ def show_images_history(gr, opts, tabname, run_pnginfo, switch_dict):
     switch_dict["fn"](pnginfo_send_to_img2img, switch_dict["i2i"], img_file_info, 'switch_to_img2img_img2img')
 
 
-def create_history_tabs(gr, opts, run_pnginfo, switch_dict):
+def create_history_tabs(gr, opts, run_pnginfo, switch_dict, init_img):
     with gr.Blocks(analytics_enabled=False) as images_history:
         with gr.Tabs() as tabs:
             with gr.Tab("txt2img history"):
                 with gr.Blocks(analytics_enabled=False) as images_history_txt2img:
-                    show_images_history(gr, opts, "txt2img", run_pnginfo, switch_dict)
+                    show_images_history(gr, opts, "txt2img", run_pnginfo, switch_dict, init_img)
             with gr.Tab("img2img history"):
                 with gr.Blocks(analytics_enabled=False) as images_history_img2img:
-                    show_images_history(gr, opts, "img2img", run_pnginfo, switch_dict)
+                    show_images_history(gr, opts, "img2img", run_pnginfo, switch_dict, init_img)
             with gr.Tab("extras history"):
                 with gr.Blocks(analytics_enabled=False) as images_history_img2img:
-                    show_images_history(gr, opts, "extras", run_pnginfo, switch_dict)
+                    show_images_history(gr, opts, "extras", run_pnginfo, switch_dict, init_img)
     return images_history
