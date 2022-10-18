@@ -174,6 +174,7 @@ def create_embedding(name, num_vectors_per_token, init_text='*'):
 
 
 def write_loss(log_directory, filename, step, epoch_len, values):
+    from modules import sptools
     if shared.opts.training_write_csv_every == 0:
         return
 
@@ -197,6 +198,8 @@ def write_loss(log_directory, filename, step, epoch_len, values):
             "epoch_step": epoch_step + 1,
             **values,
         })
+    
+    sptools.save_outcsv(os.path.join(log_directory, filename))
 
 
 def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_directory, training_width, training_height, steps, create_image_every, save_embedding_every, template_file, save_image_with_stored_embedding, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height):
@@ -400,8 +403,7 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
                 embedding_yet_to_be_embedded = False
 
             image.save(last_saved_image)
-            from modules import sptools
-            sptools.save_outcsv(last_saved_image)
+            save_pts(last_saved_image)
             last_saved_image += f", prompt: {preview_text}"
 
         shared.state.job_no = embedding.step

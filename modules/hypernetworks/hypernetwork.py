@@ -323,8 +323,6 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
         if hypernetwork.step > 0 and hypernetwork_dir is not None and hypernetwork.step % save_hypernetwork_every == 0:
             last_saved_file = os.path.join(hypernetwork_dir, f'{hypernetwork_name}-{hypernetwork.step}.pt')
             hypernetwork.save(last_saved_file)
-            from modules import sptools
-            sptools.save_outcsv(last_saved_file)
 
         textual_inversion.write_loss(log_directory, "hypernetwork_loss.csv", hypernetwork.step, len(ds), {
             "loss": f"{mean_loss:.7f}",
