@@ -1737,7 +1737,7 @@ Requested path was: {f}
         print(traceback.format_exc(), file=sys.stderr)
 
     def loadsave(path, x):
-        def apply_field(obj, field, condition=None):
+        def apply_field(obj, field, condition=None, init_field=None):
             key = path + "/" + field
 
             if getattr(obj,'custom_script_source',None) is not None:
@@ -1753,8 +1753,8 @@ Requested path was: {f}
                 print(f'Warning: Bad ui setting value: {key}: {saved_value}; Default value "{getattr(obj, field)}" will be used instead.')
             else:
                 setattr(obj, field, saved_value)
-                if getattr(x, 'init_field', False):
-                    x.init_field(saved_value)
+                if init_field is not None:
+                    init_field(saved_value)
 
         if type(x) in [gr.Slider, gr.Radio, gr.Checkbox, gr.Textbox, gr.Number] and x.visible:
             apply_field(x, 'visible')
@@ -1780,7 +1780,8 @@ Requested path was: {f}
         # Since there are many dropdowns that shouldn't be saved,
         # we only mark dropdowns that should be saved.
         if type(x) == gr.Dropdown and getattr(x, 'save_to_config', False):
-            apply_field(x, 'value', lambda val: val in x.choices)
+            apply_field(x, 'value', lambda val: val in x.choices, getattr(x, 'init_field', None))
+            apply_field(x, 'visible')
 
     visit(txt2img_interface, loadsave, "txt2img")
     visit(img2img_interface, loadsave, "img2img")
