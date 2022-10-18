@@ -1,20 +1,22 @@
-import csv
 import datetime
 import glob
 import html
 import os
 import sys
 import traceback
-
-import modules.textual_inversion.dataset
-import torch
 import tqdm
-from einops import rearrange, repeat
+import csv
+
+import torch
+
 from ldm.util import default
-from modules import devices, processing, sd_models, shared
+from modules import devices, shared, processing, sd_models
+import torch
+from torch import einsum
+from einops import rearrange, repeat
+import modules.textual_inversion.dataset
 from modules.textual_inversion import textual_inversion
 from modules.textual_inversion.learn_schedule import LearnRateScheduler
-from torch import einsum
 
 
 def parse_layer_structure(dim, state_dict):
