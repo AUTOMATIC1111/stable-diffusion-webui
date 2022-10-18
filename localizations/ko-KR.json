@@ -115,5 +115,6 @@
   "Clip skip": "클립 건너뛰기",
   "Denoising": "디노이징",
   "Nothing": "없음",
+  "Apply settings": "설정 적용하기",
   "Always save all generated images": "생성된 이미지 항상 저장하기"
 }
