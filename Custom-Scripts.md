@@ -63,6 +63,11 @@ Animation Script - https://github.com/Animator-Anon/Animator
 
 A basic img2img script that will dump frames and build a video file. Suitable for creating interesting zoom in warping movies, but not too much else at this time.
 
+## Parameter Sequencer
+https://github.com/rewbs/sd-parseq
+
+Generate videos with tight control and flexible interpolation over many Stable Diffusion parameters (such as seed, scale, prompt weights, denoising strength...), as well as input processing parameter (such as zoom, pan, 3D rotation...)
+
 ## Alternate Noise Schedules
 https://gist.github.com/dfaker/f88aa62e3a14b559fe4e5f6b345db664
 
