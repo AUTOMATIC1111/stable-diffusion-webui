@@ -1233,6 +1233,7 @@ def create_ui(wrap_gradio_gpu_call):
                     batch_size = gr.Number(label='Batch size', value=1, precision=0)
                     dataset_directory = gr.Textbox(label='Dataset directory', placeholder="Path to directory with input images")
                     log_directory = gr.Textbox(label='Log directory', placeholder="Path to directory where to write outputs", value="textual_inversion")
+                    use_prompts_csv = gr.Checkbox(label="Use prompts.csv from dataset directory", value=False)
                     template_file = gr.Textbox(label='Prompt template file', value=os.path.join(script_path, "textual_inversion_templates", "style_filewords.txt"))
                     training_width = gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512)
                     training_height = gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512)
@@ -1317,6 +1318,7 @@ def create_ui(wrap_gradio_gpu_call):
                 steps,
                 create_image_every,
                 save_embedding_every,
+                use_prompts_csv,
                 template_file,
                 save_image_with_stored_embedding,
                 preview_from_txt2img,
@@ -1340,6 +1342,7 @@ def create_ui(wrap_gradio_gpu_call):
                 steps,
                 create_image_every,
                 save_embedding_every,
+                use_prompts_csv,
                 template_file,
                 preview_from_txt2img,
                 *txt2img_preview_params,

@@ -4,6 +4,7 @@ import platform
 import sys
 import tqdm
 import time
+import shutil
 
 from modules import shared, images
 from modules.shared import opts, cmd_opts
@@ -77,6 +78,9 @@ def preprocess_work(process_src, process_dst, process_width, process_height, pro
 
         if process_flip:
             save_pic_with_caption(ImageOps.mirror(image), index)
+
+    if os.path.exists(os.path.join(src, "prompts.csv")):
+        shutil.copyfile(os.path.join(src, "prompts.csv"), os.path.join(dst, "prompts.csv"))
 
     for index, imagefile in enumerate(tqdm.tqdm(files)):
         subindex = [0]

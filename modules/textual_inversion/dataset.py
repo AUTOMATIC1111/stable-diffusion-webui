@@ -10,6 +10,7 @@ import random
 import tqdm
 from modules import devices, shared
 import re
+import csv
 
 re_numbers_at_start = re.compile(r"^[-\d]+\s*")
 
@@ -24,7 +25,7 @@ class DatasetEntry:
 
 
 class PersonalizedBase(Dataset):
-    def __init__(self, data_root, width, height, repeats, flip_p=0.5, placeholder_token="*", model=None, device=None, template_file=None, include_cond=False, batch_size=1):
+    def __init__(self, data_root, width, height, repeats, flip_p=0.5, placeholder_token="*", model=None, device=None, use_prompts_csv=False, template_file=None, include_cond=False, batch_size=1):
         re_word = re.compile(shared.opts.dataset_filename_word_regex) if len(shared.opts.dataset_filename_word_regex) > 0 else None
 
         self.placeholder_token = placeholder_token
@@ -33,6 +34,16 @@ class PersonalizedBase(Dataset):
         self.width = width
         self.height = height
         self.flip = transforms.RandomHorizontalFlip(p=flip_p)
+        self.use_prompts_csv = use_prompts_csv
+
+        self.prompts = {}
+        if use_prompts_csv:
+            prompts_file = os.path.join(data_root, "prompts.csv")
+            assert os.path.exists(prompts_file), "Could not find \"prompts.csv\""
+            with open(prompts_file, "r", newline="") as f:
+                csvreader = csv.DictReader(f)
+                for row in csvreader:
+                    self.prompts[row["file"]] = row["prompt"]
 
         self.dataset = []
 
@@ -94,6 +105,9 @@ class PersonalizedBase(Dataset):
         self.indexes = self.initial_indexes[torch.randperm(self.initial_indexes.shape[0])]
 
     def create_text(self, filename_text):
+        if self.use_prompts_csv:
+            return self.placeholder_token + ", " + self.prompts[filename_text]
+
         text = random.choice(self.lines)
         text = text.replace("[name]", self.placeholder_token)
         text = text.replace("[filewords]", filename_text)
