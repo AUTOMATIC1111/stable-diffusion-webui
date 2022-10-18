@@ -4,7 +4,7 @@ import time
 import importlib
 import signal
 import threading
-
+from fastapi import FastAPI
 from fastapi.middleware.gzip import GZipMiddleware
 
 from modules.paths import script_path
@@ -30,7 +30,6 @@ from modules import modelloader
 from modules.paths import script_path
 from modules.shared import cmd_opts
 import modules.hypernetworks.hypernetwork
-
 
 queue_lock = threading.Lock()
 
@@ -97,7 +96,7 @@ def initialize():
 
 def create_api(app):
     from modules.api.api import Api
-    api = Api(app)
+    api = Api(app, queue_lock)
     return api
 
 def wait_on_server(demo=None):
@@ -141,7 +140,7 @@ def webui(launch_api=False):
             create_api(app)
 
         wait_on_server(demo)
-
+        
         sd_samplers.set_samplers()
 
         print('Reloading Custom Scripts')
@@ -153,11 +152,10 @@ def webui(launch_api=False):
         print('Restarting Gradio')
 
 
-if __name__ == "__main__":
-    if not cmd_opts.nowebui:
-        api_only()
 
-    if cmd_opts.api:
-        webui(True)
+task = []
+if __name__ == "__main__":
+    if cmd_opts.nowebui:
+        api_only()
     else:
-        webui(False)
+        webui(cmd_opts.api)
