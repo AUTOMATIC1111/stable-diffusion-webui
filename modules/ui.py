@@ -1796,6 +1796,9 @@ for filename in sorted(os.listdir(jsdir)):
     with open(os.path.join(jsdir, filename), "r", encoding="utf8") as jsfile:
         javascript += f"\n<script>{jsfile.read()}</script>"
 
+if cmd_opts.theme is not None:
+    javascript += f"\n<script>set_theme('{cmd_opts.theme}');</script>\n"
+
 javascript += f"\n<script>{localization.localization_js(shared.opts.localization)}</script>"
 
 if 'gradio_routes_templates_response' not in globals():
