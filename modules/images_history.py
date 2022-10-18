@@ -100,14 +100,15 @@ def auto_sorting(dir_name):
         date_list.append(today)
     return sorted(date_list, reverse=True)
 
-def archive_images(dir_name, date_to):
-    
+def archive_images(dir_name, date_to):    
     filenames = []   
-    loads_num =int(opts.images_history_num_per_page * opts.images_history_pages_num)
+    batch_size =int(opts.images_history_num_per_page * opts.images_history_pages_num)
+    if batch_size <= 0:
+        batch_size = opts.images_history_num_per_page * 6
     today = time.strftime("%Y%m%d",time.localtime(time.time()))
     date_to = today if date_to is None  or date_to == "" else date_to
     date_to_bak = date_to 
-    if opts.images_history_reconstruct_directory:        
+    if False: #opts.images_history_reconstruct_directory:        
         date_list = auto_sorting(dir_name)               
         for date in date_list:
             if date <= date_to:
@@ -115,11 +116,13 @@ def archive_images(dir_name, date_to):
                 if date == today and not os.path.exists(path):
                     continue
                 filenames = traverse_all_files(path, filenames)
-            if len(filenames) > loads_num:            
+            if len(filenames) > batch_size:            
                 break
         filenames = sorted(filenames, key=lambda file: -os.path.getmtime(file))
     else:
-        filenames = traverse_all_files(dir_name, filenames)       
+        filenames = traverse_all_files(dir_name, filenames)  
+        total_num = len(filenames) 
+        batch_count = len(filenames) + 1 //  batch_size + 1
         tmparray = [(os.path.getmtime(file), file) for file in filenames ]
         date_stamp = time.mktime(time.strptime(date_to, "%Y%m%d")) + 86400      
         filenames = []
@@ -132,8 +135,8 @@ def archive_images(dir_name, date_to):
                 filenames.append((t, f ,date))
         date_list = sorted(list(date_list.keys()), reverse=True)
         sort_array = sorted(filenames, key=lambda x:-x[0])
-        if len(sort_array) > loads_num:
-            date = sort_array[loads_num][2]
+        if len(sort_array) > batch_size:
+            date = sort_array[batch_size][2]
             filenames = [x[1] for x in sort_array]
         else:
             date =  date_to if len(sort_array) == 0 else sort_array[-1][2]
@@ -141,9 +144,9 @@ def archive_images(dir_name, date_to):
         filenames = [x[1] for x in sort_array if x[2]>= date]   
     num = len(filenames)  
     last_date_from = date_to_bak if num == 0 else time.strftime("%Y%m%d", time.localtime(time.mktime(time.strptime(date, "%Y%m%d")) - 1000))
-    date = date[:4] + "-" + date[4:6] + "-" + date[6:8]
-    date_to_bak = date_to_bak[:4] + "-" + date_to_bak[4:6] + "-" + date_to_bak[6:8]
-    load_info = f"Loaded {(num + 1) // opts.images_history_pages_num} pades, {num} images, during {date} - {date_to_bak}"
+    date = date[:4] + "/" + date[4:6] + "/" + date[6:8]
+    date_to_bak = date_to_bak[:4] + "/" + date_to_bak[4:6] + "/" + date_to_bak[6:8]
+    load_info = f"{total_num} images in this directory. Loaded {num} images during {date} - {date_to_bak}, divided into {int((num + 1) // opts.images_history_num_per_page + 1)} pages"
     _, image_list, _, _, visible_num = get_recent_images(1, 0, filenames)
     return (
         gradio.Dropdown.update(choices=date_list, value=date_to),
@@ -154,11 +157,9 @@ def archive_images(dir_name, date_to):
         "",
         "",
         visible_num, 
-        last_date_from
+        last_date_from, 
+        #gradio.update(visible=batch_count > 1)
     )
-
-
-
 
 def delete_image(delete_num, name, filenames, image_index, visible_num):
     if name == "":
@@ -295,16 +296,16 @@ def show_images_history(gr, opts, tabname, run_pnginfo, switch_dict):
 
     with gr.Column() as page_panel:            
             with gr.Row():  
-                img_path = gr.Textbox(dir_name, label="Images directory", placeholder="Input images directory") 
+                img_path = gr.Textbox(dir_name, label="Images directory", placeholder="Input images directory", interactive=custom_dir) 
             with gr.Row(visible=False) as warning:                 
                 warning_box = gr.Textbox("Message", interactive=False)                        
 
             with gr.Row(visible=not custom_dir, elem_id=tabname + "_images_history") as main_panel:
                 with gr.Column(scale=2):                   
-                    with gr.Row():                    
-                        backward = gr.Button('Backward')         
-                        date_to = gr.Dropdown(label="Date to") 
-                        forward = gr.Button('Forward')  
+                    with gr.Row() as batch_panel:                    
+                        forward = gr.Button('Forward')        
+                        date_to = gr.Dropdown(label="Date to")
+                        backward = gr.Button('Backward')                           
                         newest = gr.Button('Reload', elem_id=tabname + "_images_history_start")   
                     with gr.Row():
                         load_info = gr.Textbox(show_label=False, interactive=False)  
@@ -335,7 +336,7 @@ def show_images_history(gr, opts, tabname, run_pnginfo, switch_dict):
 
                             
                         # hiden items
-                        with gr.Row(): #visible=False):   
+                        with gr.Row(visible=False):   
                             visible_img_num = gr.Number()                     
                             date_to_recorder = gr.State([])
                             last_date_from = gr.Textbox()
