@@ -31,7 +31,7 @@ function updateOnBackgroundChange() {
             }
         })
 
-        if (modalImage.src != currentButton.children[0].src) {
+        if (currentButton?.children?.length > 0 && modalImage.src != currentButton.children[0].src) {
             modalImage.src = currentButton.children[0].src;
             if (modalImage.style.display === 'none') {
                 modal.style.setProperty('background-image', `url(${modalImage.src})`)
@@ -116,6 +116,7 @@ function showGalleryImage() {
                 e.dataset.modded = true;
                 if(e && e.parentElement.tagName == 'DIV'){
                     e.style.cursor='pointer'
+                    e.style.userSelect='none'
                     e.addEventListener('click', function (evt) {
                         if(!opts.js_modal_lightbox) return;
                         modalZoomSet(gradioApp().getElementById('modalImage'), opts.js_modal_lightbox_initially_zoomed)
