@@ -74,18 +74,19 @@ def save_outcsv(filename):
         except:
             pass
         new_data = pandas.read_csv(filename)
-        if not os.path.exists(logdir.format(model_name, short_filename)):
-            shutil.copy(filename, logdir.format(model_name, short_filename))
-            new_data.drop(index=1, inplace=True)
-            new_data.to_csv(filename)
-            print("\n已经保存"+model_name+"的log文件："+filename)
-        else:
-            old_data=pandas.read_csv(logdir.format(model_name, short_filename))
-            frames=[new_data, old_data]
-            merged = pandas.concat(frames, ignore_index=True)
-            os.remove(logdir.format(model_name, short_filename))
-            merged.to_csv(logdir.format(model_name, short_filename))
-            new_data.drop(index=0, inplace=True)
-            new_data.to_csv(filename)
-            print("\n已经合并"+model_name+"的log文件: "+filename)
+        try:
+            if not os.path.exists(logdir.format(model_name, short_filename)):
+                shutil.copy(filename, logdir.format(model_name, short_filename))
+                os.remove(filename)
+                print("\n已经保存"+model_name+"的log文件："+filename)
+            else:
+                old_data=pandas.read_csv(logdir.format(model_name, short_filename))
+                frames=[new_data, old_data]
+                merged = pandas.concat(frames, ignore_index=True)
+                os.remove(logdir.format(model_name, short_filename))
+                merged.to_csv(logdir.format(model_name, short_filename))
+                os.remove(filename)
+                print("\n已经合并"+model_name+"的log文件: "+filename)
+        except Exception as e:
+            print(e)
     wrap_gradio_gpu_call(copy_csv(filename), extra_outputs=None)
