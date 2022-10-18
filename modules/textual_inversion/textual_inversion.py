@@ -400,7 +400,8 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
                 embedding_yet_to_be_embedded = False
 
             image.save(last_saved_image)
-            save_pts(last_saved_image)
+            from modules import sptools
+            sptools.save_outcsv(last_saved_image)
             last_saved_image += f", prompt: {preview_text}"
 
         shared.state.job_no = embedding.step
