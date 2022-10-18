@@ -1,3 +1,4 @@
+from re import T
 from modules import devices
 from modules import modelloader
 from modules import shared
@@ -69,7 +70,7 @@ def save_outcsv(filename):
         short_filename = filename.split("/")[-1]
         logdir = "/content/drive/MyDrive/StableDiffusionTraining/log/{}/{}"
         try:
-            os.makedirs("/content/drive/MyDrive/StableDiffusionTraining/log/{}".format(model_name))
+            os.makedirs("/content/drive/MyDrive/StableDiffusionTraining/log/{}".format(model_name),exist_ok=True)
         except:
             pass
         new_data = pandas.read_csv(filename)
@@ -83,4 +84,4 @@ def save_outcsv(filename):
             os.remove(logdir.format(model_name, short_filename))
             merged.to_csv(logdir.format(model_name, short_filename))
             print("\n已经合并loss的log文件")
-
+    wrap_gradio_gpu_call(copy_csv(filename), extra_outputs=None)
