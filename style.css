@@ -34,9 +34,6 @@
 .performance {
     font-size: 0.85em;
     color: #444;
-    display: flex;
-    justify-content: space-between;
-    white-space: nowrap;
 }
 
 .performance .time {
@@ -44,8 +41,6 @@
 }
 
 .performance .vram {
-    margin-left: 0;
-    text-align: right;
 }
 
 #txt2img_generate, #img2img_generate {
