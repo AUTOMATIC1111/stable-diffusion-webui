@@ -27,29 +27,6 @@ def traverse_all_files(output_dir, image_list, curr_dir=None):
     return image_list
 
 
-def image_from_url_text(filedata):
-    if type(filedata) == dict and filedata["is_file"]:
-        filename = filedata["name"]
-        tempdir = os.path.normpath(tempfile.gettempdir())
-        normfn = os.path.normpath(filename)
-        assert normfn.startswith(tempdir), 'trying to open image file not in temporary directory'
-
-        return Image.open(filename)
-
-    if type(filedata) == list:
-        if len(filedata) == 0:
-            return None
-
-        filedata = filedata[0]
-
-    if filedata.startswith("data:image/png;base64,"):
-        filedata = filedata[len("data:image/png;base64,"):]
-
-    filedata = base64.decodebytes(filedata.encode('utf-8'))
-    image = Image.open(io.BytesIO(filedata))
-    return image
-
-
 def get_recent_images(dir_name, page_index, step, image_index, tabname):
     page_index = int(page_index)
     image_list = []
@@ -128,7 +105,7 @@ def delete_image(delete_num, tabname, dir_name, name, page_index, filenames, ima
     return new_file_list, 1
 
 
-def show_images_history(gr, opts, tabname, run_pnginfo, switch_dict, init_img):
+def show_images_history(gr, opts, tabname, run_pnginfo, switch_dict, init_img, image_from_url_text):
     if opts.outdir_samples != "":
         dir_name = opts.outdir_samples
     elif tabname == "txt2img":
@@ -208,11 +185,11 @@ def create_history_tabs(gr, opts, run_pnginfo, switch_dict, init_img):
         with gr.Tabs() as tabs:
             with gr.Tab("txt2img history"):
                 with gr.Blocks(analytics_enabled=False) as images_history_txt2img:
-                    show_images_history(gr, opts, "txt2img", run_pnginfo, switch_dict, init_img)
+                    show_images_history(gr, opts, "txt2img", run_pnginfo, switch_dict, init_img, switch_dict["ifu"])
             with gr.Tab("img2img history"):
                 with gr.Blocks(analytics_enabled=False) as images_history_img2img:
-                    show_images_history(gr, opts, "img2img", run_pnginfo, switch_dict, init_img)
+                    show_images_history(gr, opts, "img2img", run_pnginfo, switch_dict, init_img, switch_dict["ifu"])
             with gr.Tab("extras history"):
                 with gr.Blocks(analytics_enabled=False) as images_history_img2img:
-                    show_images_history(gr, opts, "extras", run_pnginfo, switch_dict, init_img)
+                    show_images_history(gr, opts, "extras", run_pnginfo, switch_dict, init_img, switch_dict["ifu"])
     return images_history
