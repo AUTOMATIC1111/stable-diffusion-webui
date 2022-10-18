@@ -137,6 +137,7 @@ class EmbeddingDatabase:
                 continue
 
         print(f"Loaded a total of {len(self.word_embeddings)} textual inversion embeddings.")
+        print("Embeddings:", ', '.join(self.word_embeddings.keys()))
 
     def find_embedding_at_position(self, tokens, offset):
         token = tokens[offset]
@@ -296,6 +297,7 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
                 sd_model=shared.sd_model,
                 do_not_save_grid=True,
                 do_not_save_samples=True,
+                do_not_reload_embeddings=True,
             )
 
             if preview_from_txt2img:
