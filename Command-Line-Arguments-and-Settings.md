@@ -72,6 +72,7 @@ Use `--port xxxx` to make the server listen on a specific port, xxxx being the w
 --always-batch-cond-uncond | None | False			 | disables cond/uncond batching that is enabled to save memory with --medvram or --lowvram
 | **FEATURES** |
 --autolaunch | None | False         					| open the webui URL in the system's default browser upon launch |
+--theme | None | Unset         					| open the webui with the specified theme ("light" or "dark"). If not specified, uses the default browser theme |
 --use-textbox-seed | None | False   					| use textbox for seeds in UI (no up/down, but possible to input long seeds) |
 --disable-safe-unpickle | None | False				| disable checking pytorch models for malicious code |
 --ngrok | NGROK | Unset         				 | ngrok authtoken, alternative to gradio --share
