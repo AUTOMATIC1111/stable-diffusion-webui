@@ -309,7 +309,7 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
 
         with torch.autocast("cuda"):
             c = stack_conds([entry.cond for entry in entries]).to(devices.device)
-            c = torch.vstack([entry.cond for entry in entries]).to(devices.device)
+            # c = torch.vstack([entry.cond for entry in entries]).to(devices.device)
             x = torch.stack([entry.latent for entry in entries]).to(devices.device)
             loss = shared.sd_model(x, c)[0]
             del x
@@ -331,7 +331,7 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
 
         textual_inversion.write_loss(log_directory, "hypernetwork_loss.csv", hypernetwork.step, len(ds), {
             "loss": f"{mean_loss:.7f}",
-            "learn_rate": f"{scheduler.learn_rate:.7f}"
+            "learn_rate": scheduler.learn_rate
         })
 
         if hypernetwork.step > 0 and images_dir is not None and hypernetwork.step % create_image_every == 0:
