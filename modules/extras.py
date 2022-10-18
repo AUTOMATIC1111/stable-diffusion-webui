@@ -91,7 +91,8 @@ def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_
             def upscale(image, scaler_index, resize, mode, resize_w, resize_h, crop):
                 small = image.crop((image.width // 2, image.height // 2, image.width // 2 + 10, image.height // 2 + 10))
                 pixels = tuple(np.array(small).flatten().tolist())
-                key = (resize, scaler_index, image.width, image.height, gfpgan_visibility, codeformer_visibility, codeformer_weight) + pixels
+                key = (resize, scaler_index, image.width, image.height, gfpgan_visibility, codeformer_visibility, codeformer_weight, 
+                       resize_mode, upscaling_resize, upscaling_resize_w, upscaling_resize_h, upscaling_crop) + pixels
 
                 c = cached_images.get(key)
                 if c is None:
@@ -215,8 +216,11 @@ def run_modelmerger(primary_model_name, secondary_model_name, teritary_model_nam
     if theta_func1:
         for key in tqdm.tqdm(theta_1.keys()):
             if 'model' in key:
-                t2 = theta_2.get(key, torch.zeros_like(theta_1[key]))
-                theta_1[key] = theta_func1(theta_1[key], t2)
+                if key in theta_2:
+                    t2 = theta_2.get(key, torch.zeros_like(theta_1[key]))
+                    theta_1[key] = theta_func1(theta_1[key], t2)
+                else:
+                    theta_1[key] = torch.zeros_like(theta_1[key])
     del theta_2, teritary_model
 
     for key in tqdm.tqdm(theta_0.keys()):
