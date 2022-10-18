@@ -127,13 +127,14 @@ def prepare_enviroment():
     codeformer_commit_hash = os.environ.get('CODEFORMER_COMMIT_HASH', "c5b4593074ba6214284d6acd5f1719b6c5d739af")
     blip_commit_hash = os.environ.get('BLIP_COMMIT_HASH', "48211a1594f1321b00f14c9f7a5b4813144b2fb9")
 
-    args = shlex.split(commandline_args)
+    sys.argv += shlex.split(commandline_args)
 
-    args, skip_torch_cuda_test = extract_arg(args, '--skip-torch-cuda-test')
-    args, reinstall_xformers = extract_arg(args, '--reinstall-xformers')
-    xformers = '--xformers' in args
-    deepdanbooru = '--deepdanbooru' in args
-    ngrok = '--ngrok' in args
+    sys.argv, skip_torch_cuda_test = extract_arg(sys.argv, '--skip-torch-cuda-test')
+    sys.argv, reinstall_xformers = extract_arg(sys.argv, '--reinstall-xformers')
+    sys.argv, update_check = extract_arg(sys.argv, '--update-check')
+    xformers = '--xformers' in sys.argv
+    deepdanbooru = '--deepdanbooru' in sys.argv
+    ngrok = '--ngrok' in sys.argv
 
     try:
         commit = run(f"{git} rev-parse HEAD").strip()
@@ -180,12 +181,10 @@ def prepare_enviroment():
 
     run_pip(f"install -r {requirements_file}", "requirements for Web UI")
 
-    sys.argv += args
-
-    if '--update-check' in args:
+    if update_check:
         version_check(commit)
     
-    if "--exit" in args:
+    if "--exit" in sys.argv:
         print("Exiting because of --exit argument")
         exit(0)
 
