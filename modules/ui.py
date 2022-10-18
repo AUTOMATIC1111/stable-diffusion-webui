@@ -23,7 +23,7 @@ import gradio as gr
 import gradio.utils
 import gradio.routes
 
-from modules import sd_hijack, sd_models
+from modules import sd_hijack, sd_models, localization
 from modules.paths import script_path
 
 from modules.shared import opts, cmd_opts, restricted_opts, aesthetic_embeddings
@@ -1102,10 +1102,10 @@ def create_ui(wrap_gradio_gpu_call):
                             upscaling_crop = gr.Checkbox(label='Crop to fit', value=True)
 
                 with gr.Group():
-                    extras_upscaler_1 = gr.Radio(label='Upscaler 1', choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name, type="index")
+                    extras_upscaler_1 = gr.Radio(label='Upscaler 1', elem_id="extras_upscaler_1", choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name, type="index")
 
                 with gr.Group():
-                    extras_upscaler_2 = gr.Radio(label='Upscaler 2', choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name, type="index")
+                    extras_upscaler_2 = gr.Radio(label='Upscaler 2', elem_id="extras_upscaler_2", choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name, type="index")
                     extras_upscaler_2_visibility = gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="Upscaler 2 visibility", value=1)
 
                 with gr.Group():
@@ -1282,10 +1282,10 @@ def create_ui(wrap_gradio_gpu_call):
                 with gr.Tab(label="Train"):
                     gr.HTML(value="<p style='margin-bottom: 0.7em'>Train an embedding; must specify a directory with a set of 1:1 ratio images</p>")
                     with gr.Row():
-                        train_embedding_name = gr.Dropdown(label='Embedding', choices=sorted(sd_hijack.model_hijack.embedding_db.word_embeddings.keys()))
+                        train_embedding_name = gr.Dropdown(label='Embedding', elem_id="train_embedding", choices=sorted(sd_hijack.model_hijack.embedding_db.word_embeddings.keys()))
                         create_refresh_button(train_embedding_name, sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings, lambda: {"choices": sorted(sd_hijack.model_hijack.embedding_db.word_embeddings.keys())}, "refresh_train_embedding_name")
                     with gr.Row():
-                        train_hypernetwork_name = gr.Dropdown(label='Hypernetwork', choices=[x for x in shared.hypernetworks.keys()])
+                        train_hypernetwork_name = gr.Dropdown(label='Hypernetwork', elem_id="train_hypernetwork", choices=[x for x in shared.hypernetworks.keys()])
                         create_refresh_button(train_hypernetwork_name, shared.reload_hypernetworks, lambda: {"choices": sorted([x for x in shared.hypernetworks.keys()])}, "refresh_train_hypernetwork_name")
                     learn_rate = gr.Textbox(label='Learning rate', placeholder="Learning rate", value="0.005")
                     batch_size = gr.Number(label='Batch size', value=1, precision=0)
@@ -1452,16 +1452,18 @@ def create_ui(wrap_gradio_gpu_call):
         else:
             raise Exception(f'bad options item type: {str(t)} for key {key}')
 
+        elem_id = "setting_"+key
+
         if info.refresh is not None:
             if is_quicksettings:
-                res = comp(label=info.label, value=fun, **(args or {}))
-                refresh_button = create_refresh_button(res, info.refresh, info.component_args, "refresh_" + key)
+                res = comp(label=info.label, value=fun, elem_id=elem_id, **(args or {}))
+                create_refresh_button(res, info.refresh, info.component_args, "refresh_" + key)
             else:
                 with gr.Row(variant="compact"):
-                    res = comp(label=info.label, value=fun, **(args or {}))
-                    refresh_button = create_refresh_button(res, info.refresh, info.component_args, "refresh_" + key)
+                    res = comp(label=info.label, value=fun, elem_id=elem_id, **(args or {}))
+                    create_refresh_button(res, info.refresh, info.component_args, "refresh_" + key)
         else:
-            res = comp(label=info.label, value=fun, **(args or {}))
+            res = comp(label=info.label, value=fun, elem_id=elem_id, **(args or {}))
 
 
         return res
@@ -1585,6 +1587,9 @@ Requested path was: {f}
 
         with gr.Row():
             request_notifications = gr.Button(value='Request browser notifications', elem_id="request_notifications")
+            download_localization = gr.Button(value='Download localization template', elem_id="download_localization")
+
+        with gr.Row():
             reload_script_bodies = gr.Button(value='Reload custom script bodies (No ui updates, No restart)', variant='secondary')
             restart_gradio = gr.Button(value='Restart Gradio and Refresh components (Custom Scripts, ui.py, js and css only)', variant='primary')
 
@@ -1593,6 +1598,13 @@ Requested path was: {f}
             inputs=[],
             outputs=[],
             _js='function(){}'
+        )
+
+        download_localization.click(
+            fn=lambda: None,
+            inputs=[],
+            outputs=[],
+            _js='download_localization'
         )
 
         def reload_scripts():
@@ -1843,6 +1855,7 @@ Requested path was: {f}
     visit(txt2img_interface, loadsave, "txt2img")
     visit(img2img_interface, loadsave, "img2img")
     visit(extras_interface, loadsave, "extras")
+    visit(modelmerger_interface, loadsave, "modelmerger")
 
     if not error_loading and (not os.path.exists(ui_config_file) or settings_count != len(ui_settings)):
         with open(ui_config_file, "w", encoding="utf8") as file:
@@ -1859,6 +1872,7 @@ for filename in sorted(os.listdir(jsdir)):
     with open(os.path.join(jsdir, filename), "r", encoding="utf8") as jsfile:
         javascript += f"\n<script>{jsfile.read()}</script>"
 
+javascript += f"\n<script>{localization.localization_js(shared.opts.localization)}</script>"
 
 if 'gradio_routes_templates_response' not in globals():
     def template_response(*args, **kwargs):

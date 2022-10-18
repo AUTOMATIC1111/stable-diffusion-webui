@@ -14,7 +14,7 @@ import modules.memmon
 import modules.sd_models
 import modules.styles
 import modules.devices as devices
-from modules import sd_samplers, sd_models
+from modules import sd_samplers, sd_models, localization
 from modules.hypernetworks import hypernetwork
 from modules.paths import models_path, script_path, sd_path
 
@@ -34,6 +34,7 @@ parser.add_argument("--embeddings-dir", type=str, default=os.path.join(script_pa
 parser.add_argument("--aesthetic_embeddings-dir", type=str, default=os.path.join(script_path, 'aesthetic_embeddings'),
                     help="aesthetic_embeddings directory(default: aesthetic_embeddings)")
 parser.add_argument("--hypernetwork-dir", type=str, default=os.path.join(models_path, 'hypernetworks'), help="hypernetwork directory")
+parser.add_argument("--localizations-dir", type=str, default=os.path.join(script_path, 'localizations'), help="localizations directory")
 parser.add_argument("--allow-code", action='store_true', help="allow custom script execution from webui")
 parser.add_argument("--medvram", action='store_true', help="enable stable diffusion model optimizations for sacrificing a little speed for low VRM usage")
 parser.add_argument("--lowvram", action='store_true', help="enable stable diffusion model optimizations for sacrificing a lot of speed for very low VRM usage")
@@ -106,6 +107,7 @@ os.makedirs(cmd_opts.hypernetwork_dir, exist_ok=True)
 hypernetworks = hypernetwork.list_hypernetworks(cmd_opts.hypernetwork_dir)
 loaded_hypernetwork = None
 
+
 aesthetic_embeddings = {}
 
 def update_aesthetic_embeddings():
@@ -115,6 +117,7 @@ def update_aesthetic_embeddings():
     aesthetic_embeddings = OrderedDict(**{"None": None}, **aesthetic_embeddings)
 
 update_aesthetic_embeddings()
+
 
 def reload_hypernetworks():
     global hypernetworks
@@ -162,6 +165,8 @@ prompt_styles = modules.styles.StyleDatabase(styles_filename)
 interrogator = modules.interrogate.InterrogateModels("interrogate")
 
 face_restorers = []
+
+localization.list_localizations(cmd_opts.localizations_dir)
 
 
 def realesrgan_models_names():
@@ -308,6 +313,7 @@ options_templates.update(options_section(('ui', "User interface"), {
     "js_modal_lightbox_initially_zoomed": OptionInfo(True, "Show images zoomed in by default in full page image viewer"),
     "show_progress_in_title": OptionInfo(True, "Show generation progress in window title."),
     'quicksettings': OptionInfo("sd_model_checkpoint", "Quicksettings list"),
+    'localization': OptionInfo("None", "Localization (requires restart)", gr.Dropdown, lambda: {"choices": ["None"] + list(localization.localizations.keys())}, refresh=lambda: localization.list_localizations(cmd_opts.localizations_dir)),
 }))
 
 options_templates.update(options_section(('sampler-params', "Sampler parameters"), {
