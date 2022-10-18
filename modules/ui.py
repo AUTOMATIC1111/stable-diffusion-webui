@@ -261,13 +261,17 @@ def wrap_gradio_call(func, extra_outputs=None):
     return f
 
 
-def calc_time_left(progress):
+def calc_time_left(progress, threshold, label, force_display):
     if progress == 0:
-        return "N/A"
+        return ""
     else:
         time_since_start = time.time() - shared.state.time_start
         eta = (time_since_start/progress)
-        return time.strftime('%H:%M:%S', time.gmtime(eta-time_since_start))        
+        eta_relative = eta-time_since_start
+        if eta_relative > threshold or force_display:              
+            return label + time.strftime('%H:%M:%S', time.gmtime(eta_relative))        
+        else:
+            return ""
 
 
 def check_progress_call(id_part):
@@ -281,13 +285,15 @@ def check_progress_call(id_part):
     if shared.state.sampling_steps > 0:
         progress += 1 / shared.state.job_count * shared.state.sampling_step / shared.state.sampling_steps
 
-    time_left = calc_time_left( progress )
+    time_left = calc_time_left( progress, 60, " ETA:", shared.state.time_left_force_display )
+    if time_left != "":
+        shared.state.time_left_force_display = True
 
     progress = min(progress, 1)
 
     progressbar = ""
     if opts.show_progressbar:
-        progressbar = f"""<div class='progressDiv'><div class='progress' style="overflow:hidden;width:{progress * 100}%">{str(int(progress*100))+"% ETA:"+time_left if progress > 0.01 else ""}</div></div>"""
+        progressbar = f"""<div class='progressDiv'><div class='progress' style="overflow:hidden;width:{progress * 100}%">{str(int(progress*100))+"%"+time_left if progress > 0.01 else ""}</div></div>"""
 
     image = gr_show(False)
     preview_visibility = gr_show(False)
@@ -320,6 +326,7 @@ def check_progress_call_initial(id_part):
     shared.state.current_image = None
     shared.state.textinfo = None
     shared.state.time_start = time.time()
+    shared.state.time_left_force_display = False
 
     return check_progress_call(id_part)
 
