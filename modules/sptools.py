@@ -83,5 +83,7 @@ def save_outcsv(filename):
             merged = pandas.concat(frames, ignore_index=True)
             os.remove(logdir.format(model_name, short_filename))
             merged.to_csv(logdir.format(model_name, short_filename))
+            new_data.drop(new_data.index[1:99])
+            new_data.to_csv(filename, mode='w')
             print("\n已经合并loss的log文件: "+filename)
     wrap_gradio_gpu_call(copy_csv(filename), extra_outputs=None)
