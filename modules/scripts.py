@@ -142,7 +142,7 @@ class ScriptRunner:
             return [ui.gr_show(True if i == 0 else args_from <= i < args_to) for i in range(len(inputs))]
 
         def init_field(title):
-            if title == "None":
+            if title == 'None':
                 return
             script_index = self.titles.index(title)
             script = self.scripts[script_index]
