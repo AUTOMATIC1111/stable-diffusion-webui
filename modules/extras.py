@@ -216,8 +216,11 @@ def run_modelmerger(primary_model_name, secondary_model_name, teritary_model_nam
     if theta_func1:
         for key in tqdm.tqdm(theta_1.keys()):
             if 'model' in key:
-                t2 = theta_2.get(key, torch.zeros_like(theta_1[key]))
-                theta_1[key] = theta_func1(theta_1[key], t2)
+                if key in theta_2:
+                    t2 = theta_2.get(key, torch.zeros_like(theta_1[key]))
+                    theta_1[key] = theta_func1(theta_1[key], t2)
+                else:
+                    theta_1[key] = 0
     del theta_2, teritary_model
 
     for key in tqdm.tqdm(theta_0.keys()):
