@@ -1754,10 +1754,7 @@ Requested path was: {f}
             else:
                 setattr(obj, field, saved_value)
                 if getattr(x, 'init_field', False):
-                    try:
-                        x.init_field(saved_value)
-                    except Exception:
-                        print(f'Warning: Bad ui setting value: {key}: {saved_value}; Default value "{getattr(obj, field)}" will be used instead.')
+                    x.init_field(saved_value)
 
         if type(x) in [gr.Slider, gr.Radio, gr.Checkbox, gr.Textbox, gr.Number] and x.visible:
             apply_field(x, 'visible')
