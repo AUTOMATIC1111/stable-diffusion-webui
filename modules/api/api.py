@@ -16,9 +16,11 @@ class TextToImageResponse(BaseModel):
 
 
 class Api:
-    def __init__(self, app):
+    def __init__(self, app, queue_lock):
         self.router = APIRouter()
-        app.add_api_route("/sdapi/v1/txt2img", self.text2imgapi, methods=["POST"])
+        self.app = app
+        self.queue_lock = queue_lock
+        self.app.add_api_route("/sdapi/v1/txt2img", self.text2imgapi, methods=["POST"])
 
     def text2imgapi(self, txt2imgreq: StableDiffusionProcessingAPI ):
         populate = txt2imgreq.copy(update={ # Override __init__ params
@@ -30,7 +32,8 @@ class Api:
         )
         p = StableDiffusionProcessingTxt2Img(**vars(populate))
         # Override object param
-        processed = process_images(p)
+        with self.queue_lock:
+            processed = process_images(p)
         
         b64images = []
         for i in processed.images:
@@ -52,5 +55,5 @@ class Api:
         raise NotImplementedError
 
     def launch(self, server_name, port):
-        app.include_router(self.router)
-        uvicorn.run(app, host=server_name, port=port)
+        self.app.include_router(self.router)
+        uvicorn.run(self.app, host=server_name, port=port)
