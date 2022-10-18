@@ -11,6 +11,7 @@ Check the [custom scripts](https://github.com/AUTOMATIC1111/stable-diffusion-web
 - One click install and run script (but you still must install python and git)
 - Outpainting
 - Inpainting
+- Color Sketch
 - Prompt Matrix
 - Stable Diffusion Upscale
 - Attention, specify parts of text that the model should pay more attention to
@@ -37,14 +38,14 @@ Check the [custom scripts](https://github.com/AUTOMATIC1111/stable-diffusion-web
 - Interrupt processing at any time
 - 4GB video card support (also reports of 2GB working)
 - Correct seeds for batches
-- Prompt length validation
-     - get length of prompt in tokens as you type
-     - get a warning after generation if some text was truncated
+- Live prompt token length validation
 - Generation parameters
      - parameters you used to generate images are saved with that image
      - in PNG chunks for PNG, in EXIF for JPEG
      - can drag the image to PNG info tab to restore generation parameters and automatically copy them into UI
      - can be disabled in settings
+     - drag and drop an image/text-parameters to promptbox
+- Read Generation Parameters Button, loads parameters in promptbox to UI
 - Settings page
 - Running arbitrary python code from UI (must run with --allow-code to enable)
 - Mouseover hints for most UI elements
@@ -62,7 +63,7 @@ Check the [custom scripts](https://github.com/AUTOMATIC1111/stable-diffusion-web
 - Img2img Alternative
 - Highres Fix, a convenience option to produce high resolution pictures in one click without usual distortions
 - Reloading checkpoints on the fly
-- Checkpoint Merger, a tab that allows you to merge two checkpoints into one
+- Checkpoint Merger, a tab that allows you to merge up to 3 checkpoints into one
 - [Custom scripts](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Custom-Scripts) with many extensions from community
 - [Composable-Diffusion](https://energy-based-model.github.io/Compositional-Visual-Generation-with-Composable-Diffusion-Models/), a way to use multiple prompts at once
      - separate prompts using uppercase `AND`
@@ -70,14 +71,19 @@ Check the [custom scripts](https://github.com/AUTOMATIC1111/stable-diffusion-web
 - No token limit for prompts (original stable diffusion lets you use up to 75 tokens)
 - DeepDanbooru integration, creates danbooru style tags for anime prompts (add --deepdanbooru to commandline args)
 - [xformers](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Xformers), major speed increase for select cards: (add --xformers to commandline args)
+- History tab: view, direct and delete images conveniently within the UI
+- Generate forever option
+- Training Tab
+- Preprocessing Image Datasets: cropping, mirroring, autotagging using BLIP or deepdanbooru (for anime)
+
+
 
 ## Installation and Running
 Make sure the required [dependencies](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Dependencies) are met and follow the instructions available for both [NVidia](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-NVidia-GPUs) (recommended) and [AMD](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-AMD-GPUs) GPUs.
 
-Alternatively, use Google Colab:
+Alternatively, use online services(like Google Colab):
 
-- [Colab, maintained by Akaibu](https://colab.research.google.com/drive/1kw3egmSn-KgWsikYvOMjJkVDsPLjEMzl)
-- [Colab, original by me, outdated](https://colab.research.google.com/drive/1Iy-xW9t1-OQWhb0hNxueGij8phCyluOh).
+- [List of Online Services](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Online-Services)
 
 ### Automatic Installation on Windows
 1. Install [Python 3.10.6](https://www.python.org/downloads/windows/), checking "Add Python to PATH"
