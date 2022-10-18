@@ -547,6 +547,10 @@ def apply_setting(key, value):
     if value is None:
         return gr.update()
 
+    # dont allow model to be swapped when model hash exists in prompt
+    if key == "sd_model_checkpoint" and opts.disable_weights_auto_swap:
+        return gr.update()
+
     if key == "sd_model_checkpoint":
         ckpt_info = sd_models.get_closet_checkpoint_match(value)
 
@@ -1809,7 +1813,7 @@ Requested path was: {f}
         print(traceback.format_exc(), file=sys.stderr)
 
     def loadsave(path, x):
-        def apply_field(obj, field, condition=None):
+        def apply_field(obj, field, condition=None, init_field=None):
             key = path + "/" + field
 
             if getattr(obj,'custom_script_source',None) is not None:
@@ -1825,6 +1829,8 @@ Requested path was: {f}
                 print(f'Warning: Bad ui setting value: {key}: {saved_value}; Default value "{getattr(obj, field)}" will be used instead.')
             else:
                 setattr(obj, field, saved_value)
+                if init_field is not None:
+                    init_field(saved_value)
 
         if type(x) in [gr.Slider, gr.Radio, gr.Checkbox, gr.Textbox, gr.Number] and x.visible:
             apply_field(x, 'visible')
@@ -1850,7 +1856,8 @@ Requested path was: {f}
         # Since there are many dropdowns that shouldn't be saved,
         # we only mark dropdowns that should be saved.
         if type(x) == gr.Dropdown and getattr(x, 'save_to_config', False):
-            apply_field(x, 'value', lambda val: val in x.choices)
+            apply_field(x, 'value', lambda val: val in x.choices, getattr(x, 'init_field', None))
+            apply_field(x, 'visible')
 
     visit(txt2img_interface, loadsave, "txt2img")
     visit(img2img_interface, loadsave, "img2img")
@@ -1871,6 +1878,9 @@ jsdir = os.path.join(script_path, "javascript")
 for filename in sorted(os.listdir(jsdir)):
     with open(os.path.join(jsdir, filename), "r", encoding="utf8") as jsfile:
         javascript += f"\n<script>{jsfile.read()}</script>"
+
+if cmd_opts.theme is not None:
+    javascript += f"\n<script>set_theme('{cmd_opts.theme}');</script>\n"
 
 javascript += f"\n<script>{localization.localization_js(shared.opts.localization)}</script>"
 
