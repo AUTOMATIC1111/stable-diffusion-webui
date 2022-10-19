@@ -139,7 +139,7 @@ class ScriptRunner:
                 args_from = 0
                 args_to = 0
 
-            return [ui.gr_show(True if i == 0 else args_from <= i < args_to) for i in range(len(inputs))]
+            return [ui.gr_show(True if i == 0 else args_from <= i < args_to and inputs[i].visible) for i in range(len(inputs))]
 
         def init_field(title):
             if title == 'None':
