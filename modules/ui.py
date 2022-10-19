@@ -1341,6 +1341,8 @@ def create_ui(wrap_gradio_gpu_call):
                 batch_size,
                 dataset_directory,
                 log_directory,
+                training_width,
+                training_height,
                 steps,
                 create_image_every,
                 save_embedding_every,
