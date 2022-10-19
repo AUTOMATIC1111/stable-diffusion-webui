@@ -208,6 +208,12 @@ class VanillaStableDiffusionSampler:
         self.init_latent = x
         self.step = 0
 
+        # Wrap the conditioning models with additional image conditioning for inpainting model
+        if image_conditioning is not None:
+            conditioning = {"c_concat": [image_conditioning], "c_crossattn": [conditioning]}
+            unconditional_conditioning = {"c_concat": [image_conditioning], "c_crossattn": [unconditional_conditioning]}
+            
+            
         samples = self.launch_sampling(steps, lambda: self.sampler.decode(x1, conditioning, t_enc, unconditional_guidance_scale=p.cfg_scale, unconditional_conditioning=unconditional_conditioning))
 
         return samples
