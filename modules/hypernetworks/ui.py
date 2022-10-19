@@ -1,5 +1,6 @@
 import html
 import os
+import re
 
 import gradio as gr
 
@@ -12,6 +13,9 @@ from modules.hypernetworks import hypernetwork
 def create_hypernetwork(name, enable_sizes, layer_structure=None, add_layer_norm=False):
     fn = os.path.join(shared.cmd_opts.hypernetwork_dir, f"{name}.pt")
     assert not os.path.exists(fn), f"file {fn} already exists"
+
+    if type(layer_structure) == str:
+        layer_structure = tuple(map(int, re.sub(r'\D', '', layer_structure)))
 
     hypernet = modules.hypernetworks.hypernetwork.Hypernetwork(
         name=name,
