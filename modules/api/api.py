@@ -1,6 +1,7 @@
 from modules.api.processing import StableDiffusionProcessingAPI
 from modules.processing import StableDiffusionProcessingTxt2Img, process_images
-from modules.sd_samplers import samplers_k_diffusion
+from modules.sd_samplers import all_samplers
+from modules.extras import run_pnginfo
 import modules.shared as shared
 import uvicorn
 from fastapi import Body, APIRouter, HTTPException
@@ -10,7 +11,7 @@ import json
 import io
 import base64
 
-sampler_to_index = lambda name: next(filter(lambda row: name in row[1][2], enumerate(samplers_k_diffusion)), None)
+sampler_to_index = lambda name: next(filter(lambda row: name.lower() == row[1].name.lower(), enumerate(all_samplers)), None)
 
 class TextToImageResponse(BaseModel):
     images: list[str] = Field(default=None, title="Image", description="The generated image in base64 format.")
@@ -53,13 +54,13 @@ class Api:
         
         
 
-    def img2imgendoint(self):
+    def img2imgapi(self):
         raise NotImplementedError
 
-    def extrasendoint(self):
+    def extrasapi(self):
         raise NotImplementedError
 
-    def pnginfoendoint(self):
+    def pnginfoapi(self):
         raise NotImplementedError
 
     def launch(self, server_name, port):
