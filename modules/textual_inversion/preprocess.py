@@ -48,7 +48,7 @@ def preprocess_work(process_src, process_dst, process_width, process_height, pro
     shared.state.textinfo = "Preprocessing..."
     shared.state.job_count = len(files)
 
-    def save_pic_with_caption(image, index):
+    def save_pic_with_caption(image, index, existing_caption=None):
         caption = ""
 
         if process_caption:
@@ -66,17 +66,26 @@ def preprocess_work(process_src, process_dst, process_width, process_height, pro
         basename = f"{index:05}-{subindex[0]}-{filename_part}"
         image.save(os.path.join(dst, f"{basename}.png"))
 
+        if preprocess_txt_action == 'prepend' and existing_caption:
+            caption = existing_caption + ' ' + caption
+        elif preprocess_txt_action == 'append' and existing_caption:
+            caption = caption + ' ' + existing_caption
+        elif preprocess_txt_action == 'copy' and existing_caption:
+            caption = existing_caption
+
+        caption = caption.strip()
+        
         if len(caption) > 0:
             with open(os.path.join(dst, f"{basename}.txt"), "w", encoding="utf8") as file:
                 file.write(caption)
 
         subindex[0] += 1
 
-    def save_pic(image, index):
+    def save_pic(image, index, existing_caption=None):
         save_pic_with_caption(image, index)
 
         if process_flip:
-            save_pic_with_caption(ImageOps.mirror(image), index)
+            save_pic_with_caption(ImageOps.mirror(image), index, existing_caption=existing_caption)
 
     for index, imagefile in enumerate(tqdm.tqdm(files)):
         subindex = [0]
@@ -85,6 +94,13 @@ def preprocess_work(process_src, process_dst, process_width, process_height, pro
             img = Image.open(filename).convert("RGB")
         except Exception:
             continue
+
+        existing_caption = None
+
+        try:
+            existing_caption = open(os.path.splitext(filename)[0] + '.txt', 'r').read()
+        except Exception as e:
+            print(e)
 
         if shared.state.interrupted:
             break
@@ -97,20 +113,20 @@ def preprocess_work(process_src, process_dst, process_width, process_height, pro
             img = img.resize((width, height * img.height // img.width))
 
             top = img.crop((0, 0, width, height))
-            save_pic(top, index)
+            save_pic(top, index, existing_caption=existing_caption)
 
             bot = img.crop((0, img.height - height, width, img.height))
-            save_pic(bot, index)
+            save_pic(bot, index, existing_caption=existing_caption)
         elif process_split and is_wide:
             img = img.resize((width * img.width // img.height, height))
 
             left = img.crop((0, 0, width, height))
-            save_pic(left, index)
+            save_pic(left, index, existing_caption=existing_caption)
 
             right = img.crop((img.width - width, 0, img.width, height))
-            save_pic(right, index)
+            save_pic(right, index, existing_caption=existing_caption)
         else:
             img = images.resize_image(1, img, width, height)
-            save_pic(img, index)
+            save_pic(img, index, existing_caption=existing_caption)
 
         shared.state.nextjob()
