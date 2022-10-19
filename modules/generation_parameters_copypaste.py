@@ -1,5 +1,8 @@
+import os
 import re
 import gradio as gr
+from modules.shared import script_path
+from modules import shared
 
 re_param_code = r"\s*([\w ]+):\s*([^,]+)(?:,|$)"
 re_param = re.compile(re_param_code)
@@ -42,11 +45,8 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
         else:
             prompt += ("" if prompt == "" else "\n") + line
 
-    if len(prompt) > 0:
-        res["Prompt"] = prompt
-
-    if len(negative_prompt) > 0:
-        res["Negative prompt"] = negative_prompt
+    res["Prompt"] = prompt
+    res["Negative prompt"] = negative_prompt
 
     for k, v in re_param.findall(lastline):
         m = re_imagesize.match(v)
@@ -61,6 +61,12 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
 
 def connect_paste(button, paste_fields, input_comp, js=None):
     def paste_func(prompt):
+        if not prompt and not shared.cmd_opts.hide_ui_dir_config:
+            filename = os.path.join(script_path, "params.txt")
+            if os.path.exists(filename):
+                with open(filename, "r", encoding="utf8") as file:
+                    prompt = file.read()
+
         params = parse_generation_parameters(prompt)
         res = []
 

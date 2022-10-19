@@ -35,15 +35,8 @@ goto :launch
 :skip_venv
 
 :launch
-ECHO %ACCELERATE% | FIND /I "True">Nul && (  
-	echo "Accelerating launch"
-	accelerate launch launch.py
-	pause
-) || (
-	Echo.Normal Launch"
-	%PYTHON% launch.py	
-	pause
-)
+%PYTHON% launch.py %*
+pause
 exit /b
 
 :show_stdout_stderr

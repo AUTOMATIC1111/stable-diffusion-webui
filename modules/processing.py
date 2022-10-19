@@ -9,6 +9,7 @@ from PIL import Image, ImageFilter, ImageOps
 import random
 import cv2
 from skimage import exposure
+from typing import Any, Dict, List, Optional
 
 import modules.sd_hijack
 from modules import devices, prompt_parser, masking, sd_samplers, lowvram
@@ -51,9 +52,15 @@ def get_correct_sampler(p):
         return sd_samplers.samplers
     elif isinstance(p, modules.processing.StableDiffusionProcessingImg2Img):
         return sd_samplers.samplers_for_img2img
+    elif isinstance(p, modules.api.processing.StableDiffusionProcessingAPI):
+        return sd_samplers.samplers
 
-class StableDiffusionProcessing:
-    def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt="", styles=None, seed=-1, subseed=-1, subseed_strength=0, seed_resize_from_h=-1, seed_resize_from_w=-1, seed_enable_extras=True, sampler_index=0, batch_size=1, n_iter=1, steps=50, cfg_scale=7.0, width=512, height=512, restore_faces=False, tiling=False, do_not_save_samples=False, do_not_save_grid=False, extra_generation_params=None, overlay_images=None, negative_prompt=None, eta=None):
+class StableDiffusionProcessing():
+    """
+    The first set of paramaters: sd_models -> do_not_reload_embeddings represent the minimum required to create a StableDiffusionProcessing
+    
+    """
+    def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt: str="", styles: List[str]=None, seed: int=-1, subseed: int=-1, subseed_strength: float=0, seed_resize_from_h: int=-1, seed_resize_from_w: int=-1, seed_enable_extras: bool=True, sampler_index: int=0, batch_size: int=1, n_iter: int=1, steps:int =50, cfg_scale:float=7.0, width:int=512, height:int=512, restore_faces:bool=False, tiling:bool=False, do_not_save_samples:bool=False, do_not_save_grid:bool=False, extra_generation_params: Dict[Any,Any]=None, overlay_images: Any=None, negative_prompt: str=None, eta: float =None, do_not_reload_embeddings: bool=False, denoising_strength: float = 0, ddim_discretize: str = "uniform", s_churn: float = 0.0, s_tmax: float = None, s_tmin: float = 0.0, s_noise: float = 1.0):
         self.sd_model = sd_model
         self.outpath_samples: str = outpath_samples
         self.outpath_grids: str = outpath_grids
@@ -80,21 +87,23 @@ class StableDiffusionProcessing:
         self.extra_generation_params: dict = extra_generation_params or {}
         self.overlay_images = overlay_images
         self.eta = eta
+        self.do_not_reload_embeddings = do_not_reload_embeddings
         self.paste_to = None
         self.color_corrections = None
         self.denoising_strength: float = 0
         self.sampler_noise_scheduler_override = None
         self.ddim_discretize = opts.ddim_discretize
-        self.s_churn = opts.s_churn
-        self.s_tmin = opts.s_tmin
-        self.s_tmax = float('inf')  # not representable as a standard ui option
-        self.s_noise = opts.s_noise
+        self.s_churn = s_churn or opts.s_churn
+        self.s_tmin = s_tmin or opts.s_tmin
+        self.s_tmax = s_tmax or float('inf')  # not representable as a standard ui option
+        self.s_noise = s_noise or opts.s_noise
 
         if not seed_enable_extras:
             self.subseed = -1
             self.subseed_strength = 0
             self.seed_resize_from_h = 0
             self.seed_resize_from_w = 0
+
 
     def init(self, all_prompts, all_seeds, all_subseeds):
         pass
@@ -140,7 +149,7 @@ class Processed:
         self.sampler_noise_scheduler_override = p.sampler_noise_scheduler_override
         self.prompt = self.prompt if type(self.prompt) != list else self.prompt[0]
         self.negative_prompt = self.negative_prompt if type(self.negative_prompt) != list else self.negative_prompt[0]
-        self.seed = int(self.seed if type(self.seed) != list else self.seed[0])
+        self.seed = int(self.seed if type(self.seed) != list else self.seed[0]) if self.seed is not None else -1
         self.subseed = int(self.subseed if type(self.subseed) != list else self.subseed[0]) if self.subseed is not None else -1
 
         self.all_prompts = all_prompts or [self.prompt]
@@ -295,7 +304,7 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration
         "Size": f"{p.width}x{p.height}",
         "Model hash": getattr(p, 'sd_model_hash', None if not opts.add_model_hash_to_info or not shared.sd_model.sd_model_hash else shared.sd_model.sd_model_hash),
         "Model": (None if not opts.add_model_name_to_info or not shared.sd_model.sd_checkpoint_info.model_name else shared.sd_model.sd_checkpoint_info.model_name.replace(',', '').replace(':', '')),
-        "Hypernet": (None if shared.loaded_hypernetwork is None else shared.loaded_hypernetwork.name.replace(',', '').replace(':', '')),
+        "Hypernet": (None if shared.loaded_hypernetwork is None else shared.loaded_hypernetwork.filename.split('\\')[-1].split('.')[0]),
         "Batch size": (None if p.batch_size < 2 else p.batch_size),
         "Batch pos": (None if p.batch_size < 2 else position_in_batch),
         "Variation seed": (None if p.subseed_strength == 0 else all_subseeds[index]),
@@ -324,16 +333,14 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
     else:
         assert p.prompt is not None
 
+    with open(os.path.join(shared.script_path, "params.txt"), "w", encoding="utf8") as file:
+        processed = Processed(p, [], p.seed, "")
+        file.write(processed.infotext(p, 0))
+
     devices.torch_gc()
 
     seed = get_fixed_seed(p.seed)
     subseed = get_fixed_seed(p.subseed)
-
-    if p.outpath_samples is not None:
-        os.makedirs(p.outpath_samples, exist_ok=True)
-
-    if p.outpath_grids is not None:
-        os.makedirs(p.outpath_grids, exist_ok=True)
 
     modules.sd_hijack.model_hijack.apply_circular(p.tiling)
     modules.sd_hijack.model_hijack.clear_comments()
@@ -360,7 +367,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
     def infotext(iteration=0, position_in_batch=0):
         return create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration, position_in_batch)
 
-    if os.path.exists(cmd_opts.embeddings_dir):
+    if os.path.exists(cmd_opts.embeddings_dir) and not p.do_not_reload_embeddings:
         model_hijack.embedding_db.load_textual_inversion_embeddings()
 
     infotexts = []
@@ -402,12 +409,6 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
 
             with devices.autocast():
                 samples_ddim = p.sample(conditioning=c, unconditional_conditioning=uc, seeds=seeds, subseeds=subseeds, subseed_strength=p.subseed_strength)
-
-            if state.interrupted or state.skipped:
-
-                # if we are interrupted, sample returns just noise
-                # use the image collected previously in sampler loop
-                samples_ddim = shared.state.current_latent
 
             samples_ddim = samples_ddim.to(devices.dtype_vae)
             x_samples_ddim = decode_first_stage(p.sd_model, samples_ddim)
@@ -497,16 +498,15 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
 
 class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
     sampler = None
-    firstphase_width = 0
-    firstphase_height = 0
-    firstphase_width_truncated = 0
-    firstphase_height_truncated = 0
 
-    def __init__(self, enable_hr=False, scale_latent=True, denoising_strength=0.75, **kwargs):
+    def __init__(self, enable_hr: bool=False, denoising_strength: float=0.75, firstphase_width: int=0, firstphase_height: int=0, **kwargs):
         super().__init__(**kwargs)
         self.enable_hr = enable_hr
-        self.scale_latent = scale_latent
         self.denoising_strength = denoising_strength
+        self.firstphase_width = firstphase_width
+        self.firstphase_height = firstphase_height
+        self.truncate_x = 0
+        self.truncate_y = 0
 
     def init(self, all_prompts, all_seeds, all_subseeds):
         if self.enable_hr:
@@ -515,14 +515,31 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             else:
                 state.job_count = state.job_count * 2
 
-            desired_pixel_count = 512 * 512
-            actual_pixel_count = self.width * self.height
-            scale = math.sqrt(desired_pixel_count / actual_pixel_count)
+            if self.firstphase_width == 0 or self.firstphase_height == 0:
+                desired_pixel_count = 512 * 512
+                actual_pixel_count = self.width * self.height
+                scale = math.sqrt(desired_pixel_count / actual_pixel_count)
+                self.firstphase_width = math.ceil(scale * self.width / 64) * 64
+                self.firstphase_height = math.ceil(scale * self.height / 64) * 64
+                firstphase_width_truncated = int(scale * self.width)
+                firstphase_height_truncated = int(scale * self.height)
 
-            self.firstphase_width = math.ceil(scale * self.width / 64) * 64
-            self.firstphase_height = math.ceil(scale * self.height / 64) * 64
-            self.firstphase_width_truncated = int(scale * self.width)
-            self.firstphase_height_truncated = int(scale * self.height)
+            else:
+
+                width_ratio = self.width / self.firstphase_width
+                height_ratio = self.height / self.firstphase_height
+
+                if width_ratio > height_ratio:
+                    firstphase_width_truncated = self.firstphase_width
+                    firstphase_height_truncated = self.firstphase_width * self.height / self.width
+                else:
+                    firstphase_width_truncated = self.firstphase_height * self.width / self.height
+                    firstphase_height_truncated = self.firstphase_height
+
+            self.extra_generation_params["First pass size"] = f"{self.firstphase_width}x{self.firstphase_height}"
+            self.truncate_x = int(self.firstphase_width - firstphase_width_truncated) // opt_f
+            self.truncate_y = int(self.firstphase_height - firstphase_height_truncated) // opt_f
+
 
     def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength):
         self.sampler = sd_samplers.create_sampler_with_index(sd_samplers.samplers, self.sampler_index, self.sd_model)
@@ -535,34 +552,28 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         x = create_random_tensors([opt_C, self.firstphase_height // opt_f, self.firstphase_width // opt_f], seeds=seeds, subseeds=subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
         samples = self.sampler.sample(self, x, conditioning, unconditional_conditioning)
 
-        truncate_x = (self.firstphase_width - self.firstphase_width_truncated) // opt_f
-        truncate_y = (self.firstphase_height - self.firstphase_height_truncated) // opt_f
+        samples = samples[:, :, self.truncate_y//2:samples.shape[2]-self.truncate_y//2, self.truncate_x//2:samples.shape[3]-self.truncate_x//2]
 
-        samples = samples[:, :, truncate_y//2:samples.shape[2]-truncate_y//2, truncate_x//2:samples.shape[3]-truncate_x//2]
-
-        if self.scale_latent:
+        if opts.use_scale_latent_for_hires_fix:
             samples = torch.nn.functional.interpolate(samples, size=(self.height // opt_f, self.width // opt_f), mode="bilinear")
+
         else:
             decoded_samples = decode_first_stage(self.sd_model, samples)
+            lowres_samples = torch.clamp((decoded_samples + 1.0) / 2.0, min=0.0, max=1.0)
 
-            if opts.upscaler_for_img2img is None or opts.upscaler_for_img2img == "None":
-                decoded_samples = torch.nn.functional.interpolate(decoded_samples, size=(self.height, self.width), mode="bilinear")
-            else:
-                lowres_samples = torch.clamp((decoded_samples + 1.0) / 2.0, min=0.0, max=1.0)
+            batch_images = []
+            for i, x_sample in enumerate(lowres_samples):
+                x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
+                x_sample = x_sample.astype(np.uint8)
+                image = Image.fromarray(x_sample)
+                image = images.resize_image(0, image, self.width, self.height)
+                image = np.array(image).astype(np.float32) / 255.0
+                image = np.moveaxis(image, 2, 0)
+                batch_images.append(image)
 
-                batch_images = []
-                for i, x_sample in enumerate(lowres_samples):
-                    x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
-                    x_sample = x_sample.astype(np.uint8)
-                    image = Image.fromarray(x_sample)
-                    image = images.resize_image(0, image, self.width, self.height)
-                    image = np.array(image).astype(np.float32) / 255.0
-                    image = np.moveaxis(image, 2, 0)
-                    batch_images.append(image)
-
-                decoded_samples = torch.from_numpy(np.array(batch_images))
-                decoded_samples = decoded_samples.to(shared.device)
-                decoded_samples = 2. * decoded_samples - 1.
+            decoded_samples = torch.from_numpy(np.array(batch_images))
+            decoded_samples = decoded_samples.to(shared.device)
+            decoded_samples = 2. * decoded_samples - 1.
 
             samples = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(decoded_samples))
 

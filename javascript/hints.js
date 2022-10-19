@@ -14,8 +14,10 @@ titles = {
     "\u{1f3b2}\ufe0f": "Set seed to -1, which will cause a new random number to be used every time",
     "\u267b\ufe0f": "Reuse seed from last generation, mostly useful if it was randomed",
     "\u{1f3a8}": "Add a random artist to the prompt.",
-    "\u2199\ufe0f": "Read generation parameters from prompt into user interface.",
+    "\u2199\ufe0f": "Read generation parameters from prompt or last generation if prompt is empty into user interface.",
     "\u{1f4c2}": "Open images output directory",
+    "\u{1f4be}": "Save style",
+    "\u{1f4cb}": "Apply selected styles to current prompt",
 
     "Inpaint a part of image": "Draw a mask over an image, and the script will regenerate the masked area with content according to prompt",
     "SD upscale": "Upscale image normally, split result into tiles, improve each tile using img2img, merge whole image back",
@@ -81,6 +83,16 @@ titles = {
 
     "Eta noise seed delta": "If this values is non-zero, it will be added to seed and used to initialize RNG for noises when using samplers with Eta. You can use this to produce even more variation of images, or you can use this to match images of other software if you know what you are doing.",
     "Do not add watermark to images": "If this option is enabled, watermark will not be added to created images. Warning: if you do not add watermark, you may be behaving in an unethical manner.",
+
+    "Filename word regex": "This regular expression will be used extract words from filename, and they will be joined using the option below into label text used for training. Leave empty to keep filename text as it is.",
+    "Filename join string": "This string will be used to join split words into a single line if the option above is enabled.",
+
+    "Quicksettings list": "List of setting names, separated by commas, for settings that should go to the quick access bar at the top, rather than the usual setting tab. See modules/shared.py for setting names. Requires restarting to apply.",
+
+    "Weighted sum": "Result = A * (1 - M) + B * M",
+    "Add difference": "Result = A + (B - C) * M",
+
+    "Learning rate": "how fast should the training go. Low values will take longer to train, high values may fail to converge (not generate accurate results) and/or may break the embedding (This has happened if you see Loss: nan in the training info textbox. If this happens, you need to manually restore your embedding from an older not-broken backup).\n\nYou can set a single numeric value, or multiple learning rates using the syntax:\n\n   rate_1:max_steps_1, rate_2:max_steps_2, ...\n\nEG:   0.005:100, 1e-3:1000, 1e-5\n\nWill train with rate of 0.005 for first 100 steps, then 1e-3 until 1000 steps, then 1e-5 for all remaining steps.",
 }
 
 
