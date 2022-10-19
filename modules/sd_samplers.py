@@ -7,7 +7,7 @@ import inspect
 import k_diffusion.sampling
 import ldm.models.diffusion.ddim
 import ldm.models.diffusion.plms
-from modules import prompt_parser, devices, processing
+from modules import prompt_parser, devices, processing, images
 
 from modules.shared import opts, cmd_opts, state
 import modules.shared as shared
@@ -89,6 +89,30 @@ def sample_to_image(samples):
     x_sample = x_sample.astype(np.uint8)
     return Image.fromarray(x_sample)
 
+def samples_to_image_grid(samples):
+    progress_images = []
+    for i in range(len(samples)):
+        # Decode the samples individually to reduce VRAM usage at the cost of a bit of speed.
+        x_sample = processing.decode_first_stage(shared.sd_model, samples[i:i+1])[0]
+        x_sample = torch.clamp((x_sample + 1.0) / 2.0, min=0.0, max=1.0)
+        x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
+        x_sample = x_sample.astype(np.uint8)
+        progress_images.append(Image.fromarray(x_sample))
+
+    return images.image_grid(progress_images)
+
+def samples_to_image_grid_combined(samples):
+    progress_images = []
+    # Decode all samples at once to increase speed at the cost of VRAM usage.
+    x_samples = processing.decode_first_stage(shared.sd_model, samples)
+    x_samples = torch.clamp((x_samples + 1.0) / 2.0, min=0.0, max=1.0)
+
+    for x_sample in x_samples:
+        x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
+        x_sample = x_sample.astype(np.uint8)
+        progress_images.append(Image.fromarray(x_sample))
+
+    return images.image_grid(progress_images)
 
 def store_latent(decoded):
     state.current_latent = decoded
