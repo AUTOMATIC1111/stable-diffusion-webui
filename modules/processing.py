@@ -547,8 +547,11 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         if not self.enable_hr:
             x = create_random_tensors([opt_C, self.height // opt_f, self.width // opt_f], seeds=seeds, subseeds=subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
             
+            # The "masked-image" in this case will just be all zeros since the entire image is masked.
             image_conditioning = torch.zeros(x.shape[0], 3, self.height, self.width, device=x.device)
             image_conditioning = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(image_conditioning)) 
+
+            # Add the fake full 1s mask to the first dimension.
             image_conditioning = torch.nn.functional.pad(image_conditioning, (0, 0, 0, 0, 1, 0), value=1.0)
             image_conditioning = image_conditioning.to(x.dtype)
 
@@ -723,17 +726,19 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         if self.image_mask is not None:
             conditioning_mask = np.array(self.image_mask.convert("L"))
             conditioning_mask = conditioning_mask.astype(np.float32) / 255.0
-            conditioning_mask = conditioning_mask[None, None]
-            conditioning_mask[conditioning_mask < 0.5] = 0
-            conditioning_mask[conditioning_mask >= 0.5] = 1
-            conditioning_mask = torch.from_numpy(conditioning_mask)
+            conditioning_mask = torch.from_numpy(conditioning_mask[None, None])
+
+            # Inpainting model uses a discretized mask as input, so we round to either 1.0 or 0.0
+            conditioning_mask = torch.round(conditioning_mask)
         else:
             conditioning_mask = torch.ones(1, 1, *image.shape[-2:])
 
+        # Create another latent image, this time with a masked version of the original input.
         conditioning_mask = conditioning_mask.to(image.device)
-        conditioning_image = image * (conditioning_mask < 0.5)
+        conditioning_image = image * (1.0 - conditioning_mask)
         conditioning_image = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(conditioning_image))
 
+        # Create the concatenated conditioning tensor to be fed to `c_concat`
         conditioning_mask = torch.nn.functional.interpolate(conditioning_mask, size=self.init_latent.shape[-2:])
         conditioning_mask = conditioning_mask.expand(conditioning_image.shape[0], -1, -1, -1)
         self.image_conditioning = torch.cat([conditioning_mask, conditioning_image], dim=1)
