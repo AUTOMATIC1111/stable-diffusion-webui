@@ -12,7 +12,7 @@ import time
 import traceback
 import platform
 import subprocess as sp
-from functools import reduce
+from functools import partial, reduce
 
 import numpy as np
 import torch
@@ -1558,6 +1558,7 @@ Requested path was: {f}
 
         def reload_scripts():
             modules.scripts.reload_script_body_only()
+            reload_javascript() # need to refresh the html page
 
         reload_script_bodies.click(
             fn=reload_scripts,
@@ -1816,26 +1817,30 @@ Requested path was: {f}
     return demo
 
 
-with open(os.path.join(script_path, "script.js"), "r", encoding="utf8") as jsfile:
-    javascript = f'<script>{jsfile.read()}</script>'
+def load_javascript(raw_response):
+    with open(os.path.join(script_path, "script.js"), "r", encoding="utf8") as jsfile:
+        javascript = f'<script>{jsfile.read()}</script>'
 
-jsdir = os.path.join(script_path, "javascript")
-for filename in sorted(os.listdir(jsdir)):
-    with open(os.path.join(jsdir, filename), "r", encoding="utf8") as jsfile:
-        javascript += f"\n<script>{jsfile.read()}</script>"
+    jsdir = os.path.join(script_path, "javascript")
+    for filename in sorted(os.listdir(jsdir)):
+        with open(os.path.join(jsdir, filename), "r", encoding="utf8") as jsfile:
+            javascript += f"\n<!-- {filename} --><script>{jsfile.read()}</script>"
 
-if cmd_opts.theme is not None:
-    javascript += f"\n<script>set_theme('{cmd_opts.theme}');</script>\n"
+    if cmd_opts.theme is not None:
+        javascript += f"\n<script>set_theme('{cmd_opts.theme}');</script>\n"
 
-javascript += f"\n<script>{localization.localization_js(shared.opts.localization)}</script>"
+    javascript += f"\n<script>{localization.localization_js(shared.opts.localization)}</script>"
 
-if 'gradio_routes_templates_response' not in globals():
     def template_response(*args, **kwargs):
-        res = gradio_routes_templates_response(*args, **kwargs)
-        res.body = res.body.replace(b'</head>', f'{javascript}</head>'.encode("utf8"))
+        res = raw_response(*args, **kwargs)
+        res.body = res.body.replace(
+            b'</head>', f'{javascript}</head>'.encode("utf8"))
         res.init_headers()
         return res
 
-    gradio_routes_templates_response = gradio.routes.templates.TemplateResponse
     gradio.routes.templates.TemplateResponse = template_response
 
+
+reload_javascript = partial(load_javascript,
+                            gradio.routes.templates.TemplateResponse)
+reload_javascript()
