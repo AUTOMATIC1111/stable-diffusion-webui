@@ -1247,7 +1247,7 @@ def create_ui(wrap_gradio_gpu_call):
                             run_preprocess = gr.Button(value="Preprocess", variant='primary')
 
                 with gr.Tab(label="Train"):
-                    gr.HTML(value="<p style='margin-bottom: 0.7em'>Train an embedding or Hypernetwork; you must specify a directory with a set of 1:1 ratio images<br/>Initial learning rates: 0.005 for an Embedding, 0.00001 for Hypernetwork <a href="https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Textual-Inversion">wiki</a></p>")
+                    gr.HTML(value="<p style='margin-bottom: 0.7em'>Train an embedding or Hypernetwork; you must specify a directory with a set of 1:1 ratio images<br/>Initial learning rates: 0.005 for an Embedding, 0.00001 for Hypernetwork <a href=\"https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Textual-Inversion\" style=\"font-weight:bold;\">[wiki]</a></p>")
                     with gr.Row():
                         train_embedding_name = gr.Dropdown(label='Embedding', elem_id="train_embedding", choices=sorted(sd_hijack.model_hijack.embedding_db.word_embeddings.keys()))
                         create_refresh_button(train_embedding_name, sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings, lambda: {"choices": sorted(sd_hijack.model_hijack.embedding_db.word_embeddings.keys())}, "refresh_train_embedding_name")
