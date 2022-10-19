@@ -112,12 +112,12 @@ def show_images_history(gr, opts, tabname, run_pnginfo, switch_dict):
     else:
         return
     with gr.Row():
-        renew_page = gr.Button('Renew Page', elem_id=tabname + "_images_history_renew_page")
-        first_page = gr.Button('First Page')
-        prev_page = gr.Button('Prev Page')
+        renew_page = gr.Button('Refresh', elem_id=tabname + "_images_history_renew_page")
+        prev_page = gr.Button('<<')
+        next_page = gr.Button('>>')
         page_index = gr.Number(value=1, label="Page Index")
-        next_page = gr.Button('Next Page')
-        end_page = gr.Button('End Page')
+        first_page = gr.Button('First Page')
+        end_page = gr.Button('Last Page')
     with gr.Row(elem_id=tabname + "_images_history"):
         with gr.Row():
             with gr.Column(scale=2):
