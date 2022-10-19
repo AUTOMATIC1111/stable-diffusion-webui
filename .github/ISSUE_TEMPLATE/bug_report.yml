@@ -77,5 +77,5 @@ body:
   - type: textarea
     id: misc
     attributes:
-      label: Additionnal information, context and logs
+      label: Additional information, context and logs
       description: Please provide us with any relevant additional info, context or log output.
