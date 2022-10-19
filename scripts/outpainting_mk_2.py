@@ -150,6 +150,7 @@ class Script(scripts.Script):
         p.inpainting_fill = 1
         p.do_not_save_samples = True
         p.do_not_save_grid = True
+        p.n_iter = 1
 
         left = pixels if "left" in direction else 0
         right = pixels if "right" in direction else 0
