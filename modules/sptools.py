@@ -83,6 +83,7 @@ def save_outcsv(filename):
                 old_data=pandas.read_csv(logdir.format(model_name, short_filename))
                 frames=[new_data, old_data]
                 merged = pandas.concat(frames, ignore_index=True)
+                del merged['G']
                 os.remove(logdir.format(model_name, short_filename))
                 merged.to_csv(logdir.format(model_name, short_filename))
                 os.remove(filename)
