@@ -36,6 +36,10 @@
     color: #444;
 }
 
+.performance p{
+    display: inline-block;
+}
+
 .performance .time {
     margin-right: 0;
 }
