@@ -140,7 +140,7 @@ def webui(launch_api=False):
             create_api(app)
 
         wait_on_server(demo)
-        
+
         sd_samplers.set_samplers()
 
         print('Reloading Custom Scripts')
