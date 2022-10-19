@@ -117,6 +117,8 @@ class VanillaStableDiffusionSampler:
         self.config = None
         self.last_latent = None
 
+        self.conditioning_key = sd_model.model.conditioning_key
+
     def number_of_needed_noises(self, p):
         return 0
 
@@ -327,6 +329,8 @@ class KDiffusionSampler:
         self.default_eta = 1.0
         self.config = None
         self.last_latent = None
+
+        self.conditioning_key = sd_model.model.conditioning_key
 
     def callback_state(self, d):
         step = d['i']
