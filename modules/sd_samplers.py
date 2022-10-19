@@ -136,9 +136,15 @@ class VanillaStableDiffusionSampler:
         if self.stop_at is not None and self.step > self.stop_at:
             raise InterruptedException
 
+        # Have to unwrap the inpainting conditioning here to perform pre-preocessing
+        image_conditioning = None
+        if isinstance(cond, dict):
+            image_conditioning = cond["c_concat"][0]
+            cond = cond["c_crossattn"][0]
+            unconditional_conditioning = unconditional_conditioning["c_crossattn"][0]
 
         conds_list, tensor = prompt_parser.reconstruct_multicond_batch(cond, self.step)
-        unconditional_conditioning = prompt_parser.reconstruct_cond_batch(unconditional_conditioning, self.step)
+        unconditional_conditioning = prompt_parser.reconstruct_cond_batch(unconditional_conditioning, self.step)            
 
         assert all([len(conds) == 1 for conds in conds_list]), 'composition via AND is not supported for DDIM/PLMS samplers'
         cond = tensor
@@ -156,6 +162,10 @@ class VanillaStableDiffusionSampler:
         if self.mask is not None:
             img_orig = self.sampler.model.q_sample(self.init_latent, ts)
             x_dec = img_orig * self.mask + self.nmask * x_dec
+
+        if image_conditioning is not None:
+            cond = {"c_concat": [image_conditioning], "c_crossattn": [cond]}
+            unconditional_conditioning = {"c_concat": [image_conditioning], "c_crossattn": [unconditional_conditioning]}
 
         res = self.orig_p_sample_ddim(x_dec, cond, ts, unconditional_conditioning=unconditional_conditioning, *args, **kwargs)
 
@@ -209,6 +219,11 @@ class VanillaStableDiffusionSampler:
         self.step = 0
 
         steps = steps or p.steps
+
+        # Wrap the conditioning models with additional image conditioning for inpainting model
+        if image_conditioning is not None:
+            conditioning = {"c_concat": [image_conditioning], "c_crossattn": [conditioning]}
+            unconditional_conditioning = {"c_concat": [image_conditioning], "c_crossattn": [unconditional_conditioning]}
 
         # existing code fails with certain step counts, like 9
         try:

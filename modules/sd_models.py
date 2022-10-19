@@ -9,7 +9,7 @@ from ldm.util import instantiate_from_config
 
 from modules import shared, modelloader, devices
 from modules.paths import models_path
-from modules.sd_hijack_loading import do_inpainting_hijack
+from modules.sd_hijack_inpainting import do_inpainting_hijack, should_hijack_inpainting
 
 model_dir = "Stable-diffusion"
 model_path = os.path.abspath(os.path.join(models_path, model_dir))
@@ -212,8 +212,8 @@ def load_model():
         print(f"Loading config from: {checkpoint_info.config}")
 
     sd_config = OmegaConf.load(checkpoint_info.config)
-
-    if str(checkpoint_info.filename).endswith("inpainting.ckpt"):
+    
+    if should_hijack_inpainting(checkpoint_info):
         do_inpainting_hijack()
 
         # Hardcoded config for now...
@@ -221,6 +221,9 @@ def load_model():
         sd_config.model.params.use_ema = False
         sd_config.model.params.conditioning_key = "hybrid"
         sd_config.model.params.unet_config.params.in_channels = 9
+
+        # Create a "fake" config with a different name so that we know to unload it when switching models.
+        checkpoint_info = checkpoint_info._replace(config=checkpoint_info.config.replace(".yaml", "-inpainting.yaml"))
 
     sd_model = instantiate_from_config(sd_config.model)
     load_model_weights(sd_model, checkpoint_info)
@@ -245,7 +248,7 @@ def reload_model_weights(sd_model, info=None):
     if sd_model.sd_model_checkpoint == checkpoint_info.filename:
         return
 
-    if sd_model.sd_checkpoint_info.config != checkpoint_info.config:
+    if sd_model.sd_checkpoint_info.config != checkpoint_info.config or should_hijack_inpainting(checkpoint_info) != should_hijack_inpainting(sd_model.sd_checkpoint_info):
         checkpoints_loaded.clear()
         shared.sd_model = load_model()
         return shared.sd_model
