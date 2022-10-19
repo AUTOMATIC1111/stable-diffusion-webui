@@ -22,25 +22,55 @@ from modules.textual_inversion.learn_schedule import LearnRateScheduler
 class HypernetworkModule(torch.nn.Module):
     multiplier = 1.0
 
-    def __init__(self, dim, state_dict=None):
+    def __init__(self, dim, state_dict=None, layer_structure=None, add_layer_norm=False):
         super().__init__()
 
-        self.linear1 = torch.nn.Linear(dim, dim * 2)
-        self.linear2 = torch.nn.Linear(dim * 2, dim)
+        assert layer_structure is not None, "layer_structure mut not be None"
+        assert layer_structure[0] == 1, "Multiplier Sequence should start with size 1!"
+        assert layer_structure[-1] == 1, "Multiplier Sequence should end with size 1!"
+
+        linears = []
+        for i in range(len(layer_structure) - 1):
+            linears.append(torch.nn.Linear(int(dim * layer_structure[i]), int(dim * layer_structure[i+1])))
+            if add_layer_norm:
+                linears.append(torch.nn.LayerNorm(int(dim * layer_structure[i+1])))
+
+        self.linear = torch.nn.Sequential(*linears)
 
         if state_dict is not None:
-            self.load_state_dict(state_dict, strict=True)
+            self.fix_old_state_dict(state_dict)
+            self.load_state_dict(state_dict)
         else:
-
-            self.linear1.weight.data.normal_(mean=0.0, std=0.01)
-            self.linear1.bias.data.zero_()
-            self.linear2.weight.data.normal_(mean=0.0, std=0.01)
-            self.linear2.bias.data.zero_()
+            for layer in self.linear:
+                layer.weight.data.normal_(mean=0.0, std=0.01)
+                layer.bias.data.zero_()
 
         self.to(devices.device)
 
+    def fix_old_state_dict(self, state_dict):
+        changes = {
+            'linear1.bias': 'linear.0.bias',
+            'linear1.weight': 'linear.0.weight',
+            'linear2.bias': 'linear.1.bias',
+            'linear2.weight': 'linear.1.weight',
+        }
+
+        for fr, to in changes.items():
+            x = state_dict.get(fr, None)
+            if x is None:
+                continue
+
+            del state_dict[fr]
+            state_dict[to] = x
+
     def forward(self, x):
-        return x + (self.linear2(self.linear1(x))) * self.multiplier
+        return x + self.linear(x) * self.multiplier
+
+    def trainables(self):
+        layer_structure = []
+        for layer in self.linear:
+            layer_structure += [layer.weight, layer.bias]
+        return layer_structure
 
 
 def apply_strength(value=None):
@@ -51,16 +81,21 @@ class Hypernetwork:
     filename = None
     name = None
 
-    def __init__(self, name=None, enable_sizes=None):
+    def __init__(self, name=None, enable_sizes=None, layer_structure=None, add_layer_norm=False):
         self.filename = None
         self.name = name
         self.layers = {}
         self.step = 0
         self.sd_checkpoint = None
         self.sd_checkpoint_name = None
+        self.layer_structure = layer_structure
+        self.add_layer_norm = add_layer_norm
 
         for size in enable_sizes or []:
-            self.layers[size] = (HypernetworkModule(size), HypernetworkModule(size))
+            self.layers[size] = (
+                HypernetworkModule(size, None, self.layer_structure, self.add_layer_norm),
+                HypernetworkModule(size, None, self.layer_structure, self.add_layer_norm),
+            )
 
     def weights(self):
         res = []
@@ -68,7 +103,7 @@ class Hypernetwork:
         for k, layers in self.layers.items():
             for layer in layers:
                 layer.train()
-                res += [layer.linear1.weight, layer.linear1.bias, layer.linear2.weight, layer.linear2.bias]
+                res += layer.trainables()
 
         return res
 
@@ -80,6 +115,8 @@ class Hypernetwork:
 
         state_dict['step'] = self.step
         state_dict['name'] = self.name
+        state_dict['layer_structure'] = self.layer_structure
+        state_dict['is_layer_norm'] = self.add_layer_norm
         state_dict['sd_checkpoint'] = self.sd_checkpoint
         state_dict['sd_checkpoint_name'] = self.sd_checkpoint_name
 
@@ -92,9 +129,15 @@ class Hypernetwork:
 
         state_dict = torch.load(filename, map_location='cpu')
 
+        self.layer_structure = state_dict.get('layer_structure', [1, 2, 1])
+        self.add_layer_norm = state_dict.get('is_layer_norm', False)
+
         for size, sd in state_dict.items():
             if type(size) == int:
-                self.layers[size] = (HypernetworkModule(size, sd[0]), HypernetworkModule(size, sd[1]))
+                self.layers[size] = (
+                    HypernetworkModule(size, sd[0], self.layer_structure, self.add_layer_norm),
+                    HypernetworkModule(size, sd[1], self.layer_structure, self.add_layer_norm),
+                )
 
         self.name = state_dict.get('name', self.name)
         self.step = state_dict.get('step', 0)
@@ -196,7 +239,8 @@ def stack_conds(conds):
 
     return torch.stack(conds)
 
-def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log_directory, steps, create_image_every, save_hypernetwork_every, template_file, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height):
+
+def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log_directory, training_width, training_height, steps, create_image_every, save_hypernetwork_every, template_file, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height):
     assert hypernetwork_name, 'hypernetwork not selected'
 
     path = shared.hypernetworks.get(hypernetwork_name, None)
@@ -225,8 +269,7 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
 
     shared.state.textinfo = f"Preparing dataset from {html.escape(data_root)}..."
     with torch.autocast("cuda"):
-        ds = modules.textual_inversion.dataset.PersonalizedBase(data_root=data_root, width=512, height=512, repeats=shared.opts.training_image_repeats_per_epoch, placeholder_token=hypernetwork_name, model=shared.sd_model, device=devices.device, template_file=template_file, include_cond=True, batch_size=batch_size)
-
+        ds = modules.textual_inversion.dataset.PersonalizedBase(data_root=data_root, width=training_width, height=training_height, repeats=shared.opts.training_image_repeats_per_epoch, placeholder_token=hypernetwork_name, model=shared.sd_model, device=devices.device, template_file=template_file, include_cond=True, batch_size=batch_size)
     if unload:
         shared.sd_model.cond_stage_model.to(devices.cpu)
         shared.sd_model.first_stage_model.to(devices.cpu)
@@ -261,7 +304,7 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
 
         with torch.autocast("cuda"):
             c = stack_conds([entry.cond for entry in entries]).to(devices.device)
-#            c = torch.vstack([entry.cond for entry in entries]).to(devices.device)
+            # c = torch.vstack([entry.cond for entry in entries]).to(devices.device)
             x = torch.stack([entry.latent for entry in entries]).to(devices.device)
             loss = shared.sd_model(x, c)[0]
             del x

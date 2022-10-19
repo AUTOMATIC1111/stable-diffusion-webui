@@ -9,6 +9,7 @@ from PIL import Image, ImageFilter, ImageOps
 import random
 import cv2
 from skimage import exposure
+from typing import Any, Dict, List, Optional
 
 import modules.sd_hijack
 from modules import devices, prompt_parser, masking, sd_samplers, lowvram
@@ -51,9 +52,15 @@ def get_correct_sampler(p):
         return sd_samplers.samplers
     elif isinstance(p, modules.processing.StableDiffusionProcessingImg2Img):
         return sd_samplers.samplers_for_img2img
+    elif isinstance(p, modules.api.processing.StableDiffusionProcessingAPI):
+        return sd_samplers.samplers
 
-class StableDiffusionProcessing:
-    def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt="", styles=None, seed=-1, subseed=-1, subseed_strength=0, seed_resize_from_h=-1, seed_resize_from_w=-1, seed_enable_extras=True, sampler_index=0, batch_size=1, n_iter=1, steps=50, cfg_scale=7.0, width=512, height=512, restore_faces=False, tiling=False, do_not_save_samples=False, do_not_save_grid=False, extra_generation_params=None, overlay_images=None, negative_prompt=None, eta=None, do_not_reload_embeddings=False):
+class StableDiffusionProcessing():
+    """
+    The first set of paramaters: sd_models -> do_not_reload_embeddings represent the minimum required to create a StableDiffusionProcessing
+    
+    """
+    def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt: str="", styles: List[str]=None, seed: int=-1, subseed: int=-1, subseed_strength: float=0, seed_resize_from_h: int=-1, seed_resize_from_w: int=-1, seed_enable_extras: bool=True, sampler_index: int=0, batch_size: int=1, n_iter: int=1, steps:int =50, cfg_scale:float=7.0, width:int=512, height:int=512, restore_faces:bool=False, tiling:bool=False, do_not_save_samples:bool=False, do_not_save_grid:bool=False, extra_generation_params: Dict[Any,Any]=None, overlay_images: Any=None, negative_prompt: str=None, eta: float =None, do_not_reload_embeddings: bool=False, denoising_strength: float = 0, ddim_discretize: str = "uniform", s_churn: float = 0.0, s_tmax: float = None, s_tmin: float = 0.0, s_noise: float = 1.0):
         self.sd_model = sd_model
         self.outpath_samples: str = outpath_samples
         self.outpath_grids: str = outpath_grids
@@ -86,16 +93,17 @@ class StableDiffusionProcessing:
         self.denoising_strength: float = 0
         self.sampler_noise_scheduler_override = None
         self.ddim_discretize = opts.ddim_discretize
-        self.s_churn = opts.s_churn
-        self.s_tmin = opts.s_tmin
-        self.s_tmax = float('inf')  # not representable as a standard ui option
-        self.s_noise = opts.s_noise
+        self.s_churn = s_churn or opts.s_churn
+        self.s_tmin = s_tmin or opts.s_tmin
+        self.s_tmax = s_tmax or float('inf')  # not representable as a standard ui option
+        self.s_noise = s_noise or opts.s_noise
 
         if not seed_enable_extras:
             self.subseed = -1
             self.subseed_strength = 0
             self.seed_resize_from_h = 0
             self.seed_resize_from_w = 0
+
 
     def init(self, all_prompts, all_seeds, all_subseeds):
         pass
@@ -296,7 +304,7 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration
         "Size": f"{p.width}x{p.height}",
         "Model hash": getattr(p, 'sd_model_hash', None if not opts.add_model_hash_to_info or not shared.sd_model.sd_model_hash else shared.sd_model.sd_model_hash),
         "Model": (None if not opts.add_model_name_to_info or not shared.sd_model.sd_checkpoint_info.model_name else shared.sd_model.sd_checkpoint_info.model_name.replace(',', '').replace(':', '')),
-        "Hypernet": (None if shared.loaded_hypernetwork is None else shared.loaded_hypernetwork.name.replace(',', '').replace(':', '')),
+        "Hypernet": (None if shared.loaded_hypernetwork is None else shared.loaded_hypernetwork.filename.split('\\')[-1].split('.')[0]),
         "Batch size": (None if p.batch_size < 2 else p.batch_size),
         "Batch pos": (None if p.batch_size < 2 else position_in_batch),
         "Variation seed": (None if p.subseed_strength == 0 else all_subseeds[index]),
@@ -491,7 +499,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
 class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
     sampler = None
 
-    def __init__(self, enable_hr=False, denoising_strength=0.75, firstphase_width=0, firstphase_height=0, **kwargs):
+    def __init__(self, enable_hr: bool=False, denoising_strength: float=0.75, firstphase_width: int=0, firstphase_height: int=0, **kwargs):
         super().__init__(**kwargs)
         self.enable_hr = enable_hr
         self.denoising_strength = denoising_strength
