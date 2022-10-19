@@ -186,7 +186,7 @@ For example, with prompt `a man holding an apple, 8k clean`, and Prompt S/R `an 
 - `a man holding a watermelon, 8k clean`
 - `a man holding a gun, 8k clean`
 
-The list of text fields uses the same syntax as a CSV file, so if you want to include commas into your items you have to put text in quotes and make sure there is no space between quotes and separating commas:
+The list uses the same syntax as a line in a CSV file, so if you want to include commas into your entries you have to put text in quotes and make sure there is no space between quotes and separating commas:
 
 - `darkness, light, green, heat` - 4 items - `darkness`, `light`, `green`, `heat`
 - `darkness, "light, green", heat` - WRONG - 4 items - `darkness`, `"light`, `green"`, `heat`
