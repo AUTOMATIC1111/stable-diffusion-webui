@@ -25,3 +25,4 @@ kornia==0.6.7
 lark==1.1.2
 functorch==0.2.1
 moviepy==1.0.3
+inflection==0.5.1
