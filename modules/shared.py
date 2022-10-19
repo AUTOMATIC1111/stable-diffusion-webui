@@ -74,6 +74,10 @@ parser.add_argument("--disable-console-progressbars", action='store_true', help=
 parser.add_argument("--enable-console-prompts", action='store_true', help="print prompts to console when generating with txt2img and img2img", default=False)
 parser.add_argument('--vae-path', type=str, help='Path to Variational Autoencoders model', default=None)
 parser.add_argument("--disable-safe-unpickle", action='store_true', help="disable checking pytorch models for malicious code", default=False)
+parser.add_argument("--browse-all-images", action='store_true', help="Allow browsing all images by Image Browser", default=False)
+
+
+cmd_opts = parser.parse_args()
 
 
 cmd_opts = parser.parse_args()
@@ -311,6 +315,7 @@ options_templates.update(options_section(('sampler-params', "Sampler parameters"
 
 options_templates.update(options_section(('images-history', "Images Browser"), {
     #"images_history_reconstruct_directory": OptionInfo(False, "Reconstruct output directory structure.This can greatly improve the speed of loading , but will change the original output directory structure"),
+    "images_history_preload": OptionInfo(False, "Preload images at startup"),
     "images_history_num_per_page": OptionInfo(36, "Number of pictures displayed on each page"),
     "images_history_pages_num": OptionInfo(6, "Minimum number of pages per load "),   
     "images_history_grid_num": OptionInfo(6, "Number of grids in each row"),   

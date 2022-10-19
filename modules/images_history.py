@@ -4,7 +4,9 @@ import time
 import hashlib
 import gradio
 system_bak_path = "webui_log_and_bak"
-browser_tabname = "custom"
+custom_tab_name = "custom fold"
+faverate_tab_name = "favorites"
+tabs_list = ["txt2img", "img2img", "extras", faverate_tab_name]
 def is_valid_date(date):
     try:
         time.strptime(date, "%Y%m%d")
@@ -122,7 +124,6 @@ def archive_images(dir_name, date_to):
     else:
         filenames = traverse_all_files(dir_name, filenames)  
         total_num = len(filenames) 
-        batch_count = len(filenames) + 1 //  batch_size + 1
         tmparray = [(os.path.getmtime(file), file) for file in filenames ]
         date_stamp = time.mktime(time.strptime(date_to, "%Y%m%d")) + 86400      
         filenames = []
@@ -146,10 +147,12 @@ def archive_images(dir_name, date_to):
     last_date_from = date_to_bak if num == 0 else time.strftime("%Y%m%d", time.localtime(time.mktime(time.strptime(date, "%Y%m%d")) - 1000))
     date = date[:4] + "/" + date[4:6] + "/" + date[6:8]
     date_to_bak = date_to_bak[:4] + "/" + date_to_bak[4:6] + "/" + date_to_bak[6:8]
-    load_info = f"{total_num} images in this directory. Loaded {num} images during {date} - {date_to_bak}, divided into {int((num + 1) // opts.images_history_num_per_page + 1)} pages"
+    load_info = "<div style='color:#999' align='center'>"
+    load_info += f"{total_num} images in this directory. Loaded {num} images during {date} - {date_to_bak}, divided into {int((num + 1) // opts.images_history_num_per_page + 1)} pages"
+    load_info += "</div>"
     _, image_list, _, _, visible_num = get_recent_images(1, 0, filenames)
     return (
-        gradio.Dropdown.update(choices=date_list, value=date_to),
+        date_to,
         load_info,
         filenames,        
         1,
@@ -158,7 +161,7 @@ def archive_images(dir_name, date_to):
         "",
         visible_num, 
         last_date_from, 
-        #gradio.update(visible=batch_count > 1)
+        gradio.update(visible=total_num > num)
     )
 
 def delete_image(delete_num, name, filenames, image_index, visible_num):
@@ -209,7 +212,7 @@ def get_recent_images(page_index, step, filenames):
     visible_num = num_of_imgs_per_page if visible_num == 0 else visible_num
     return page_index, image_list,  "", "",  visible_num
 
-def newest_click(date_to):
+def loac_batch_click(date_to):
     if date_to is None:
         return time.strftime("%Y%m%d",time.localtime(time.time())), []
     else:
@@ -248,7 +251,7 @@ def page_index_change(page_index, filenames):
 
 def show_image_info(tabname_box, num, page_index, filenames):
     file = filenames[int(num) + int((page_index - 1) * int(opts.images_history_num_per_page))]   
-    tm =   time.strftime("%Y-%m-%d %H:%M:%S",time.localtime(os.path.getmtime(file)))
+    tm =   "<div style='color:#999' align='right'>" + time.strftime("%Y-%m-%d %H:%M:%S",time.localtime(os.path.getmtime(file))) + "</div>"
     return file, tm, num, file
 
 def enable_page_buttons():
@@ -268,9 +271,9 @@ def change_dir(img_dir, date_to):
         warning = "The format of the directory is incorrect"
     if warning is None:        
         today = time.strftime("%Y%m%d",time.localtime(time.time()))
-        return gradio.update(visible=False), gradio.update(visible=True), None,   None if date_to != today else today
+        return gradio.update(visible=False), gradio.update(visible=True), None,   None if date_to != today else today, gradio.update(visible=True), gradio.update(visible=True)
     else:
-        return gradio.update(visible=True), gradio.update(visible=False), warning, date_to
+        return gradio.update(visible=True), gradio.update(visible=False), warning, date_to, gradio.update(visible=False), gradio.update(visible=False)
 
 def show_images_history(gr, opts, tabname, run_pnginfo, switch_dict):
     custom_dir = False
@@ -280,7 +283,7 @@ def show_images_history(gr, opts, tabname, run_pnginfo, switch_dict):
         dir_name = opts.outdir_img2img_samples
     elif tabname == "extras":
         dir_name = opts.outdir_extras_samples
-    elif tabname == "saved":
+    elif tabname == faverate_tab_name:
         dir_name = opts.outdir_save
     else:
         custom_dir = True
@@ -295,22 +298,26 @@ def show_images_history(gr, opts, tabname, run_pnginfo, switch_dict):
             os.makedirs(dir_name)
 
     with gr.Column() as page_panel:            
-            with gr.Row():  
-                img_path = gr.Textbox(dir_name, label="Images directory", placeholder="Input images directory", interactive=custom_dir) 
+            with gr.Row():                
+                with gr.Column(scale=1, visible=not custom_dir) as load_batch_box: 
+                    load_batch = gr.Button('Load', elem_id=tabname + "_images_history_start", full_width=True)    
+                with gr.Column(scale=4): 
+                    with gr.Row():                        
+                        img_path = gr.Textbox(dir_name, label="Images directory", placeholder="Input images directory", interactive=custom_dir)  
+            with gr.Row():
+                with gr.Column(visible=False, scale=1) as batch_panel: 
+                    with gr.Row():
+                        forward = gr.Button('Prev batch')
+                        backward = gr.Button('Next batch')
+                with gr.Column(scale=3):
+                    load_info =  gr.HTML(visible=not custom_dir)   
             with gr.Row(visible=False) as warning:                 
                 warning_box = gr.Textbox("Message", interactive=False)                        
 
             with gr.Row(visible=not custom_dir, elem_id=tabname + "_images_history") as main_panel:
-                with gr.Column(scale=2):                   
-                    with gr.Row() as batch_panel:                    
-                        forward = gr.Button('Forward')        
-                        date_to = gr.Dropdown(label="Date to")
-                        backward = gr.Button('Backward')                           
-                        newest = gr.Button('Reload', elem_id=tabname + "_images_history_start")   
-                    with gr.Row():
-                        load_info = gr.Textbox(show_label=False, interactive=False)  
-                    with gr.Row(visible=False) as turn_page_buttons:
-                        renew_page = gr.Button('Refresh page', elem_id=tabname + "_images_history_renew_page")
+                with gr.Column(scale=2):                     
+                    with gr.Row(visible=True) as turn_page_buttons:                        
+                        #date_to = gr.Dropdown(label="Date to")                          
                         first_page = gr.Button('First Page')
                         prev_page = gr.Button('Prev Page')
                         page_index = gr.Number(value=1, label="Page Index")
@@ -322,50 +329,54 @@ def show_images_history(gr, opts, tabname, run_pnginfo, switch_dict):
                         delete_num = gr.Number(value=1, interactive=True, label="number of images to delete consecutively next")
                         delete = gr.Button('Delete', elem_id=tabname + "_images_history_del_button")
                         
-                with gr.Column():
-                    with gr.Row():
-                        if tabname != "saved":
-                            save_btn = gr.Button('Save')
-                        pnginfo_send_to_txt2img = gr.Button('Send to txt2img')
-                        pnginfo_send_to_img2img = gr.Button('Send to img2img')
+                with gr.Column():                    
                     with gr.Row():
                         with gr.Column():
-                            img_file_info = gr.Textbox(label="Generate Info", interactive=False)
+                            img_file_info = gr.Textbox(label="Generate Info", interactive=False, lines=6)
+                            gr.HTML("<hr>")                           
                             img_file_name = gr.Textbox(value="", label="File Name", interactive=False)
-                            img_file_time= gr.Textbox(value="", label="Create Time", interactive=False)
-
+                            img_file_time= gr.HTML()
+                    with gr.Row():
+                        if tabname != faverate_tab_name:
+                            save_btn = gr.Button('Collect')
+                        pnginfo_send_to_txt2img = gr.Button('Send to txt2img')
+                        pnginfo_send_to_img2img = gr.Button('Send to img2img')
+                           
                             
-                        # hiden items
-                        with gr.Row(visible=False):   
-                            visible_img_num = gr.Number()                     
-                            date_to_recorder = gr.State([])
-                            last_date_from = gr.Textbox()
-                            tabname_box = gr.Textbox(tabname)
-                            image_index = gr.Textbox(value=-1)
-                            set_index = gr.Button('set_index', elem_id=tabname + "_images_history_set_index")
-                            filenames = gr.State()
-                            all_images_list = gr.State()
-                            hidden = gr.Image(type="pil")
-                            info1 = gr.Textbox()
-                            info2 = gr.Textbox()
+                    # hiden items
+                    with gr.Row(visible=False): 
+                        renew_page = gr.Button('Refresh page', elem_id=tabname + "_images_history_renew_page")
+                        batch_date_to = gr.Textbox(label="Date to")  
+                        visible_img_num = gr.Number()                     
+                        date_to_recorder = gr.State([])
+                        last_date_from = gr.Textbox()
+                        tabname_box = gr.Textbox(tabname)
+                        image_index = gr.Textbox(value=-1)
+                        set_index = gr.Button('set_index', elem_id=tabname + "_images_history_set_index")
+                        filenames = gr.State()
+                        all_images_list = gr.State()
+                        hidden = gr.Image(type="pil")
+                        info1 = gr.Textbox()
+                        info2 = gr.Textbox()
 
-    img_path.submit(change_dir, inputs=[img_path, date_to], outputs=[warning, main_panel, warning_box, date_to])
-    #change date
-    change_date_output = [date_to, load_info, filenames, page_index, history_gallery, img_file_name, img_file_time, visible_img_num, last_date_from]  
+    img_path.submit(change_dir, inputs=[img_path, batch_date_to], outputs=[warning, main_panel, warning_box, batch_date_to, load_batch_box, load_info])
+
+    #change batch
+    change_date_output = [batch_date_to, load_info, filenames, page_index, history_gallery, img_file_name, img_file_time, visible_img_num, last_date_from,  batch_panel]  
    
-    date_to.change(archive_images, inputs=[img_path, date_to], outputs=change_date_output)   
-    date_to.change(enable_page_buttons, inputs=None, outputs=[turn_page_buttons])  
-    date_to.change(fn=None, inputs=[tabname_box], outputs=None, _js="images_history_turnpage")  
+    batch_date_to.change(archive_images, inputs=[img_path, batch_date_to], outputs=change_date_output)   
+    batch_date_to.change(enable_page_buttons, inputs=None, outputs=[turn_page_buttons])  
+    batch_date_to.change(fn=None, inputs=[tabname_box], outputs=None, _js="images_history_turnpage")  
 
-    newest.click(newest_click, inputs=[date_to], outputs=[date_to, date_to_recorder])
-    forward.click(forward_click, inputs=[last_date_from, date_to_recorder], outputs=[date_to, date_to_recorder])
-    backward.click(backward_click, inputs=[last_date_from, date_to_recorder], outputs=[date_to, date_to_recorder])
+    load_batch.click(loac_batch_click, inputs=[batch_date_to], outputs=[batch_date_to, date_to_recorder])
+    forward.click(forward_click, inputs=[last_date_from, date_to_recorder], outputs=[batch_date_to, date_to_recorder])
+    backward.click(backward_click, inputs=[last_date_from, date_to_recorder], outputs=[batch_date_to, date_to_recorder])
 
 
     #delete
     delete.click(delete_image, inputs=[delete_num, img_file_name, filenames, image_index, visible_img_num], outputs=[filenames, delete_num, visible_img_num])
     delete.click(fn=None, _js="images_history_delete", inputs=[delete_num, tabname_box, image_index], outputs=None) 
-    if tabname != "saved": 
+    if tabname != faverate_tab_name: 
         save_btn.click(save_image, inputs=[img_file_name], outputs=None)     
 
     #turn page
@@ -394,18 +405,20 @@ def show_images_history(gr, opts, tabname, run_pnginfo, switch_dict):
 
    
 
-def create_history_tabs(gr, sys_opts, run_pnginfo, switch_dict):
+def create_history_tabs(gr, sys_opts, cmp_ops, run_pnginfo, switch_dict):
     global opts;
     opts = sys_opts
     loads_files_num = int(opts.images_history_num_per_page)
     num_of_imgs_per_page = int(opts.images_history_num_per_page * opts.images_history_pages_num)
+    if cmp_ops.browse_all_images:
+        tabs_list.append(custom_tab_name)
     with gr.Blocks(analytics_enabled=False) as images_history:
         with gr.Tabs() as tabs:
-            for tab in [browser_tabname, "txt2img", "img2img", "extras", "saved"]:
+            for tab in tabs_list:
                 with gr.Tab(tab):
                     with gr.Blocks(analytics_enabled=False) :
-                        show_images_history(gr, opts, tab, run_pnginfo, switch_dict) 
-        #gradio.Checkbox(opts.images_history_reconstruct_directory, elem_id="images_history_reconstruct_directory", visible=False)
-        gradio.Checkbox(opts.images_history_reconstruct_directory, elem_id="images_history_finish_render", visible=False)
-    
+                        show_images_history(gr, opts, tab, run_pnginfo, switch_dict)
+        gradio.Checkbox(opts.images_history_preload, elem_id="images_history_preload", visible=False)         
+        gradio.Textbox(",".join(tabs_list), elem_id="images_history_tabnames_list", visible=False)    
+        
     return images_history

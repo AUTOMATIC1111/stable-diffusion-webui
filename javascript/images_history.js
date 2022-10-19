@@ -17,14 +17,6 @@ var images_history_click_image = function(){
     images_history_set_image_info(this); 
 }
 
-var images_history_click_tab = function(){
-    var tabs_box = gradioApp().getElementById("images_history_tab");
-    if (!tabs_box.classList.contains(this.getAttribute("tabname"))) {
-        gradioApp().getElementById(this.getAttribute("tabname") + "_images_history_start").click();
-        tabs_box.classList.add(this.getAttribute("tabname"))
-    }                
-}
-
 function images_history_disabled_del(){
     gradioApp().querySelectorAll(".images_history_del_button").forEach(function(btn){
         btn.setAttribute('disabled','disabled');
@@ -145,57 +137,64 @@ function images_history_enable_del_buttons(){
 }
 
 function images_history_init(){ 
-    // var loaded = gradioApp().getElementById("images_history_reconstruct_directory")
-    // if (loaded){  
-        // var init_status = loaded.querySelector("input").checked 
-    if (gradioApp().getElementById("images_history_finish_render")){      
+    var tabnames = gradioApp().getElementById("images_history_tabnames_list")   
+    if (tabnames){  
+        images_history_tab_list = tabnames.querySelector("textarea").value.split(",")    
         for (var i in images_history_tab_list ){
-            tab = images_history_tab_list[i];
+            var tab = images_history_tab_list[i];
             gradioApp().getElementById(tab + '_images_history').classList.add("images_history_cantainor");
             gradioApp().getElementById(tab + '_images_history_set_index').classList.add("images_history_set_index");
             gradioApp().getElementById(tab + '_images_history_del_button').classList.add("images_history_del_button");
-            gradioApp().getElementById(tab + '_images_history_gallery').classList.add("images_history_gallery");            
-                     
+            gradioApp().getElementById(tab + '_images_history_gallery').classList.add("images_history_gallery");  
+             gradioApp().getElementById(tab + "_images_history_start").setAttribute("style","padding:20px;font-size:25px");           
         }
-        var tabs_box = gradioApp().getElementById("tab_images_history").querySelector("div").querySelector("div").querySelector("div");
-        tabs_box.setAttribute("id", "images_history_tab");        
-        var tab_btns = tabs_box.querySelectorAll("button"); 
 
-        for (var i in images_history_tab_list){               
-            var tabname = images_history_tab_list[i]
-            tab_btns[i].setAttribute("tabname", tabname);
-            // if (!init_status){
-            //     tab_btns[i].addEventListener('click', images_history_click_tab);
-            // }
-            tab_btns[i].addEventListener('click', images_history_click_tab);
-        }  
+        //preload
+        if (gradioApp().getElementById("images_history_preload").querySelector("input").checked ){
+            var tabs_box = gradioApp().getElementById("tab_images_history").querySelector("div").querySelector("div").querySelector("div");
+            tabs_box.setAttribute("id", "images_history_tab");        
+            var tab_btns = tabs_box.querySelectorAll("button"); 
+            for (var i in images_history_tab_list){               
+                var tabname = images_history_tab_list[i]
+                tab_btns[i].setAttribute("tabname", tabname);
+                tab_btns[i].addEventListener('click', function(){
+                    var tabs_box = gradioApp().getElementById("images_history_tab");
+                    if (!tabs_box.classList.contains(this.getAttribute("tabname"))) {
+                        gradioApp().getElementById(this.getAttribute("tabname") + "_images_history_start").click();
+                        tabs_box.classList.add(this.getAttribute("tabname"))
+                    }                
+                });
+            }            
+            tab_btns[0].click()
+        }
     } else {
         setTimeout(images_history_init, 500);
     } 
 }
 
-var images_history_tab_list = ["custom", "txt2img", "img2img", "extras", "saved"];
+var images_history_tab_list = "";
 setTimeout(images_history_init, 500);
 document.addEventListener("DOMContentLoaded", function() {
     var mutationObserver = new MutationObserver(function(m){
-        for (var i in images_history_tab_list ){
-            let tabname = images_history_tab_list[i]
-            var buttons = gradioApp().querySelectorAll('#' + tabname + '_images_history .gallery-item');
-            buttons.forEach(function(bnt){    
-                bnt.addEventListener('click', images_history_click_image, true);
-            });
+        if (images_history_tab_list != ""){
+            for (var i in images_history_tab_list ){
+                let tabname = images_history_tab_list[i]
+                var buttons = gradioApp().querySelectorAll('#' + tabname + '_images_history .gallery-item');
+                buttons.forEach(function(bnt){    
+                    bnt.addEventListener('click', images_history_click_image, true);
+                });
 
-            var cls_btn = gradioApp().getElementById(tabname + '_images_history_gallery').querySelector("svg");
-            if (cls_btn){
-                cls_btn.addEventListener('click', function(){
-                    gradioApp().getElementById(tabname + '_images_history_del_button').setAttribute('disabled','disabled');
-                }, false);
-            }
+                var cls_btn = gradioApp().getElementById(tabname + '_images_history_gallery').querySelector("svg");
+                if (cls_btn){
+                    cls_btn.addEventListener('click', function(){
+                        gradioApp().getElementById(tabname + '_images_history_renew_page').click();
+                    }, false);
+                }
 
-        }     
+            }     
+        }
     });
     mutationObserver.observe(gradioApp(), { childList:true, subtree:true });
-
 });
 
 
