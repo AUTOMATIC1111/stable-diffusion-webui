@@ -416,7 +416,11 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
         dirname = apply_filename_pattern(opts.directories_filename_pattern or "[prompt_words]", p, seed, prompt).strip('\\ /')
         path = os.path.join(path, dirname)
 
-    os.makedirs(path, exist_ok=True)
+    try:
+        os.makedirs(path, exist_ok=True)
+    except FileExistsError:
+        # If the file already exists, continue and allow said file to be overwritten.
+        pass
 
     if forced_filename is None:
         basecount = get_next_sequence_number(path, basename)
