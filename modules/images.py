@@ -419,7 +419,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     try:
         os.makedirs(path, exist_ok=True)
     except FileExistsError:
-        # If the file already exists, continue and allow said file to be overwritten.
+        # If the file already exists, allow said file to be overwritten.
         pass
 
     if forced_filename is None:
