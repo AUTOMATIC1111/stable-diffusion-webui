@@ -12,7 +12,7 @@ import time
 import traceback
 import platform
 import subprocess as sp
-from functools import reduce
+from functools import partial, reduce
 
 import numpy as np
 import torch
@@ -261,6 +261,24 @@ def wrap_gradio_call(func, extra_outputs=None):
     return f
 
 
+def calc_time_left(progress, threshold, label, force_display):
+    if progress == 0:
+        return ""
+    else:
+        time_since_start = time.time() - shared.state.time_start
+        eta = (time_since_start/progress)
+        eta_relative = eta-time_since_start
+        if (eta_relative > threshold and progress > 0.02) or force_display:
+            if eta_relative > 3600:
+                return label + time.strftime('%H:%M:%S', time.gmtime(eta_relative))
+            elif eta_relative > 60:
+                return label + time.strftime('%M:%S',  time.gmtime(eta_relative))
+            else:
+                return label + time.strftime('%Ss',  time.gmtime(eta_relative))
+        else:
+            return ""
+
+
 def check_progress_call(id_part):
     if shared.state.job_count == 0:
         return "", gr_show(False), gr_show(False), gr_show(False)
@@ -272,11 +290,15 @@ def check_progress_call(id_part):
     if shared.state.sampling_steps > 0:
         progress += 1 / shared.state.job_count * shared.state.sampling_step / shared.state.sampling_steps
 
+    time_left = calc_time_left( progress, 1, " ETA: ", shared.state.time_left_force_display )
+    if time_left != "":
+        shared.state.time_left_force_display = True
+
     progress = min(progress, 1)
 
     progressbar = ""
     if opts.show_progressbar:
-        progressbar = f"""<div class='progressDiv'><div class='progress' style="width:{progress * 100}%">{str(int(progress*100))+"%" if progress > 0.01 else ""}</div></div>"""
+        progressbar = f"""<div class='progressDiv'><div class='progress' style="overflow:visible;width:{progress * 100}%;white-space:nowrap;">{"&nbsp;" * 2 + str(int(progress*100))+"%" + time_left if progress > 0.01 else ""}</div></div>"""
 
     image = gr_show(False)
     preview_visibility = gr_show(False)
@@ -308,6 +330,8 @@ def check_progress_call_initial(id_part):
     shared.state.current_latent = None
     shared.state.current_image = None
     shared.state.textinfo = None
+    shared.state.time_start = time.time()
+    shared.state.time_left_force_display = False
 
     return check_progress_call(id_part)
 
@@ -458,14 +482,14 @@ def create_toprow(is_img2img):
             with gr.Row():
                 with gr.Column(scale=80):
                     with gr.Row():
-                        prompt = gr.Textbox(label="Prompt", elem_id=f"{id_part}_prompt", show_label=False, lines=2, 
+                        prompt = gr.Textbox(label="Prompt", elem_id=f"{id_part}_prompt", show_label=False, lines=2,
                             placeholder="Prompt (press Ctrl+Enter or Alt+Enter to generate)"
                         )
 
             with gr.Row():
                 with gr.Column(scale=80):
                     with gr.Row():
-                        negative_prompt = gr.Textbox(label="Negative prompt", elem_id=f"{id_part}_neg_prompt", show_label=False, lines=2, 
+                        negative_prompt = gr.Textbox(label="Negative prompt", elem_id=f"{id_part}_neg_prompt", show_label=False, lines=2,
                             placeholder="Negative prompt (press Ctrl+Enter or Alt+Enter to generate)"
                         )
 
@@ -540,6 +564,10 @@ def setup_progressbar(progressbar, preview, id_part, textinfo=None):
 
 def apply_setting(key, value):
     if value is None:
+        return gr.update()
+
+    # dont allow model to be swapped when model hash exists in prompt
+    if key == "sd_model_checkpoint" and opts.disable_weights_auto_swap:
         return gr.update()
 
     if key == "sd_model_checkpoint":
@@ -1194,6 +1222,8 @@ def create_ui(wrap_gradio_gpu_call):
                 with gr.Tab(label="Create hypernetwork"):
                     new_hypernetwork_name = gr.Textbox(label="Name")
                     new_hypernetwork_sizes = gr.CheckboxGroup(label="Modules", value=["768", "320", "640", "1280"], choices=["768", "320", "640", "1280"])
+                    new_hypernetwork_layer_structure = gr.Textbox("1, 2, 1", label="Enter hypernetwork layer structure", placeholder="1st and last digit must be 1. ex:'1, 2, 1'")
+                    new_hypernetwork_add_layer_norm = gr.Checkbox(label="Add layer normalization")
 
                     with gr.Row():
                         with gr.Column(scale=3):
@@ -1276,6 +1306,8 @@ def create_ui(wrap_gradio_gpu_call):
             inputs=[
                 new_hypernetwork_name,
                 new_hypernetwork_sizes,
+                new_hypernetwork_layer_structure,
+                new_hypernetwork_add_layer_norm,
             ],
             outputs=[
                 train_hypernetwork_name,
@@ -1337,6 +1369,8 @@ def create_ui(wrap_gradio_gpu_call):
                 batch_size,
                 dataset_directory,
                 log_directory,
+                training_width,
+                training_height,
                 steps,
                 create_image_every,
                 save_embedding_every,
@@ -1533,6 +1567,7 @@ Requested path was: {f}
 
         def reload_scripts():
             modules.scripts.reload_script_body_only()
+            reload_javascript() # need to refresh the html page
 
         reload_script_bodies.click(
             fn=reload_scripts,
@@ -1733,7 +1768,7 @@ Requested path was: {f}
         print(traceback.format_exc(), file=sys.stderr)
 
     def loadsave(path, x):
-        def apply_field(obj, field, condition=None):
+        def apply_field(obj, field, condition=None, init_field=None):
             key = path + "/" + field
 
             if getattr(obj,'custom_script_source',None) is not None:
@@ -1749,6 +1784,8 @@ Requested path was: {f}
                 print(f'Warning: Bad ui setting value: {key}: {saved_value}; Default value "{getattr(obj, field)}" will be used instead.')
             else:
                 setattr(obj, field, saved_value)
+                if init_field is not None:
+                    init_field(saved_value)
 
         if type(x) in [gr.Slider, gr.Radio, gr.Checkbox, gr.Textbox, gr.Number] and x.visible:
             apply_field(x, 'visible')
@@ -1774,7 +1811,8 @@ Requested path was: {f}
         # Since there are many dropdowns that shouldn't be saved,
         # we only mark dropdowns that should be saved.
         if type(x) == gr.Dropdown and getattr(x, 'save_to_config', False):
-            apply_field(x, 'value', lambda val: val in x.choices)
+            apply_field(x, 'value', lambda val: val in x.choices, getattr(x, 'init_field', None))
+            apply_field(x, 'visible')
 
     visit(txt2img_interface, loadsave, "txt2img")
     visit(img2img_interface, loadsave, "img2img")
@@ -1788,23 +1826,30 @@ Requested path was: {f}
     return demo
 
 
-with open(os.path.join(script_path, "script.js"), "r", encoding="utf8") as jsfile:
-    javascript = f'<script>{jsfile.read()}</script>'
+def load_javascript(raw_response):
+    with open(os.path.join(script_path, "script.js"), "r", encoding="utf8") as jsfile:
+        javascript = f'<script>{jsfile.read()}</script>'
 
-jsdir = os.path.join(script_path, "javascript")
-for filename in sorted(os.listdir(jsdir)):
-    with open(os.path.join(jsdir, filename), "r", encoding="utf8") as jsfile:
-        javascript += f"\n<script>{jsfile.read()}</script>"
+    jsdir = os.path.join(script_path, "javascript")
+    for filename in sorted(os.listdir(jsdir)):
+        with open(os.path.join(jsdir, filename), "r", encoding="utf8") as jsfile:
+            javascript += f"\n<!-- {filename} --><script>{jsfile.read()}</script>"
 
-javascript += f"\n<script>{localization.localization_js(shared.opts.localization)}</script>"
+    if cmd_opts.theme is not None:
+        javascript += f"\n<script>set_theme('{cmd_opts.theme}');</script>\n"
 
-if 'gradio_routes_templates_response' not in globals():
+    javascript += f"\n<script>{localization.localization_js(shared.opts.localization)}</script>"
+
     def template_response(*args, **kwargs):
-        res = gradio_routes_templates_response(*args, **kwargs)
-        res.body = res.body.replace(b'</head>', f'{javascript}</head>'.encode("utf8"))
+        res = raw_response(*args, **kwargs)
+        res.body = res.body.replace(
+            b'</head>', f'{javascript}</head>'.encode("utf8"))
         res.init_headers()
         return res
 
-    gradio_routes_templates_response = gradio.routes.templates.TemplateResponse
     gradio.routes.templates.TemplateResponse = template_response
 
+
+reload_javascript = partial(load_javascript,
+                            gradio.routes.templates.TemplateResponse)
+reload_javascript()
