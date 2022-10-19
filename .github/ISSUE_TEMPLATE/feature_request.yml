@@ -36,5 +36,5 @@ body:
   - type: textarea
     id: misc
     attributes:
-      label: Additionnal information
+      label: Additional information
       description: Add any other context or screenshots about the feature request here.
