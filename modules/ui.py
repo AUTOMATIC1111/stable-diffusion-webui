@@ -23,9 +23,9 @@ import gradio as gr
 import gradio.utils
 import gradio.routes
 
-from modules import sd_hijack, sd_models
+from modules import sd_hijack, sd_models, localization
 from modules.paths import script_path
-from modules.shared import opts, cmd_opts
+from modules.shared import opts, cmd_opts, restricted_opts
 if cmd_opts.deepdanbooru:
     from modules.deepbooru import get_deepbooru_tags
 import modules.shared as shared
@@ -56,7 +56,7 @@ if not cmd_opts.share and not cmd_opts.listen:
 if cmd_opts.ngrok != None:
     import modules.ngrok as ngrok
     print('ngrok authtoken detected, trying to connect...')
-    ngrok.connect(cmd_opts.ngrok, cmd_opts.port if cmd_opts.port != None else 7860)
+    ngrok.connect(cmd_opts.ngrok, cmd_opts.port if cmd_opts.port != None else 7860, cmd_opts.ngrok_region)
 
 
 def gr_show(visible=True):
@@ -261,6 +261,19 @@ def wrap_gradio_call(func, extra_outputs=None):
     return f
 
 
+def calc_time_left(progress, threshold, label, force_display):
+    if progress == 0:
+        return ""
+    else:
+        time_since_start = time.time() - shared.state.time_start
+        eta = (time_since_start/progress)
+        eta_relative = eta-time_since_start
+        if (eta_relative > threshold and progress > 0.02) or force_display:           
+            return label + time.strftime('%H:%M:%S', time.gmtime(eta_relative))        
+        else:
+            return ""
+
+
 def check_progress_call(id_part):
     if shared.state.job_count == 0:
         return "", gr_show(False), gr_show(False), gr_show(False)
@@ -272,11 +285,15 @@ def check_progress_call(id_part):
     if shared.state.sampling_steps > 0:
         progress += 1 / shared.state.job_count * shared.state.sampling_step / shared.state.sampling_steps
 
+    time_left = calc_time_left( progress, 60, " ETA:", shared.state.time_left_force_display )
+    if time_left != "":
+        shared.state.time_left_force_display = True
+
     progress = min(progress, 1)
 
     progressbar = ""
     if opts.show_progressbar:
-        progressbar = f"""<div class='progressDiv'><div class='progress' style="width:{progress * 100}%">{str(int(progress*100))+"%" if progress > 0.01 else ""}</div></div>"""
+        progressbar = f"""<div class='progressDiv'><div class='progress' style="overflow:hidden;width:{progress * 100}%">{str(int(progress*100))+"%"+time_left if progress > 0.01 else ""}</div></div>"""
 
     image = gr_show(False)
     preview_visibility = gr_show(False)
@@ -308,6 +325,8 @@ def check_progress_call_initial(id_part):
     shared.state.current_latent = None
     shared.state.current_image = None
     shared.state.textinfo = None
+    shared.state.time_start = time.time()
+    shared.state.time_left_force_display = False
 
     return check_progress_call(id_part)
 
@@ -508,9 +527,11 @@ def create_toprow(is_img2img):
             with gr.Row():
                 with gr.Column(scale=1, elem_id="style_pos_col"):
                     prompt_style = gr.Dropdown(label="Style 1", elem_id=f"{id_part}_style_index", choices=[k for k, v in shared.prompt_styles.styles.items()], value=next(iter(shared.prompt_styles.styles.keys())))
+                    prompt_style.save_to_config = True
 
                 with gr.Column(scale=1, elem_id="style_neg_col"):
                     prompt_style2 = gr.Dropdown(label="Style 2", elem_id=f"{id_part}_style2_index", choices=[k for k, v in shared.prompt_styles.styles.items()], value=next(iter(shared.prompt_styles.styles.keys())))
+                    prompt_style2.save_to_config = True
 
     return prompt, roll, prompt_style, negative_prompt, prompt_style2, submit, button_interrogate, button_deepbooru, prompt_style_apply, save_style, paste, token_counter, token_button
 
@@ -540,6 +561,10 @@ def apply_setting(key, value):
     if value is None:
         return gr.update()
 
+    # dont allow model to be swapped when model hash exists in prompt
+    if key == "sd_model_checkpoint" and opts.disable_weights_auto_swap:
+        return gr.update()
+
     if key == "sd_model_checkpoint":
         ckpt_info = sd_models.get_closet_checkpoint_match(value)
 
@@ -565,6 +590,24 @@ def apply_setting(key, value):
 def create_ui(wrap_gradio_gpu_call):
     import modules.img2img
     import modules.txt2img
+
+    def create_refresh_button(refresh_component, refresh_method, refreshed_args, elem_id):
+        def refresh():
+            refresh_method()
+            args = refreshed_args() if callable(refreshed_args) else refreshed_args
+
+            for k, v in args.items():
+                setattr(refresh_component, k, v)
+
+            return gr.update(**(args or {}))
+
+        refresh_button = gr.Button(value=refresh_symbol, elem_id=elem_id)
+        refresh_button.click(
+            fn = refresh,
+            inputs = [],
+            outputs = [refresh_component]
+        )
+        return refresh_button
 
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
         txt2img_prompt, roll, txt2img_prompt_style, txt2img_negative_prompt, txt2img_prompt_style2, submit, _, _, txt2img_prompt_style_apply, txt2img_save_style, txt2img_paste, token_counter, token_button = create_toprow(is_img2img=False)
@@ -1016,6 +1059,15 @@ def create_ui(wrap_gradio_gpu_call):
                     with gr.TabItem('Batch Process'):
                         image_batch = gr.File(label="Batch Process", file_count="multiple", interactive=True, type="file")
 
+                    with gr.TabItem('Batch from Directory'):
+                        extras_batch_input_dir = gr.Textbox(label="Input directory", **shared.hide_dirs,
+                            placeholder="A directory on the same machine where the server is running."
+                        )
+                        extras_batch_output_dir = gr.Textbox(label="Output directory", **shared.hide_dirs,
+                            placeholder="Leave blank to save images to the default path."
+                        )
+                        show_extras_results = gr.Checkbox(label='Show result images', value=True)
+
                 with gr.Tabs(elem_id="extras_resize_mode"):
                     with gr.TabItem('Scale by'):
                         upscaling_resize = gr.Slider(minimum=1.0, maximum=4.0, step=0.05, label="Resize", value=2)
@@ -1027,10 +1079,10 @@ def create_ui(wrap_gradio_gpu_call):
                             upscaling_crop = gr.Checkbox(label='Crop to fit', value=True)
 
                 with gr.Group():
-                    extras_upscaler_1 = gr.Radio(label='Upscaler 1', choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name, type="index")
+                    extras_upscaler_1 = gr.Radio(label='Upscaler 1', elem_id="extras_upscaler_1", choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name, type="index")
 
                 with gr.Group():
-                    extras_upscaler_2 = gr.Radio(label='Upscaler 2', choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name, type="index")
+                    extras_upscaler_2 = gr.Radio(label='Upscaler 2', elem_id="extras_upscaler_2", choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name, type="index")
                     extras_upscaler_2_visibility = gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="Upscaler 2 visibility", value=1)
 
                 with gr.Group():
@@ -1060,6 +1112,9 @@ def create_ui(wrap_gradio_gpu_call):
                 dummy_component,
                 extras_image,
                 image_batch,
+                extras_batch_input_dir,
+                extras_batch_output_dir,
+                show_extras_results,
                 gfpgan_visibility,
                 codeformer_visibility,
                 codeformer_weight,
@@ -1191,8 +1246,12 @@ def create_ui(wrap_gradio_gpu_call):
 
                 with gr.Tab(label="Train"):
                     gr.HTML(value="<p style='margin-bottom: 0.7em'>Train an embedding; must specify a directory with a set of 1:1 ratio images</p>")
-                    train_embedding_name = gr.Dropdown(label='Embedding', choices=sorted(sd_hijack.model_hijack.embedding_db.word_embeddings.keys()))
-                    train_hypernetwork_name = gr.Dropdown(label='Hypernetwork', choices=[x for x in shared.hypernetworks.keys()])
+                    with gr.Row():
+                        train_embedding_name = gr.Dropdown(label='Embedding', elem_id="train_embedding", choices=sorted(sd_hijack.model_hijack.embedding_db.word_embeddings.keys()))
+                        create_refresh_button(train_embedding_name, sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings, lambda: {"choices": sorted(sd_hijack.model_hijack.embedding_db.word_embeddings.keys())}, "refresh_train_embedding_name")
+                    with gr.Row():
+                        train_hypernetwork_name = gr.Dropdown(label='Hypernetwork', elem_id="train_hypernetwork", choices=[x for x in shared.hypernetworks.keys()])
+                        create_refresh_button(train_hypernetwork_name, shared.reload_hypernetworks, lambda: {"choices": sorted([x for x in shared.hypernetworks.keys()])}, "refresh_train_hypernetwork_name")
                     learn_rate = gr.Textbox(label='Learning rate', placeholder="Learning rate", value="0.005")
                     batch_size = gr.Number(label='Batch size', value=1, precision=0)
                     dataset_directory = gr.Textbox(label='Dataset directory', placeholder="Path to directory with input images")
@@ -1301,6 +1360,8 @@ def create_ui(wrap_gradio_gpu_call):
                 batch_size,
                 dataset_directory,
                 log_directory,
+                training_width,
+                training_height,
                 steps,
                 create_image_every,
                 save_embedding_every,
@@ -1340,31 +1401,18 @@ def create_ui(wrap_gradio_gpu_call):
         else:
             raise Exception(f'bad options item type: {str(t)} for key {key}')
 
+        elem_id = "setting_"+key
+
         if info.refresh is not None:
             if is_quicksettings:
-                res = comp(label=info.label, value=fun, **(args or {}))
-                refresh_button = gr.Button(value=refresh_symbol, elem_id="refresh_"+key)
+                res = comp(label=info.label, value=fun, elem_id=elem_id, **(args or {}))
+                create_refresh_button(res, info.refresh, info.component_args, "refresh_" + key)
             else:
                 with gr.Row(variant="compact"):
-                    res = comp(label=info.label, value=fun, **(args or {}))
-                    refresh_button = gr.Button(value=refresh_symbol, elem_id="refresh_" + key)
-
-            def refresh():
-                info.refresh()
-                refreshed_args = info.component_args() if callable(info.component_args) else info.component_args
-
-                for k, v in refreshed_args.items():
-                    setattr(res, k, v)
-
-                return gr.update(**(refreshed_args or {}))
-
-            refresh_button.click(
-                fn=refresh,
-                inputs=[],
-                outputs=[res],
-            )
+                    res = comp(label=info.label, value=fun, elem_id=elem_id, **(args or {}))
+                    create_refresh_button(res, info.refresh, info.component_args, "refresh_" + key)
         else:
-            res = comp(label=info.label, value=fun, **(args or {}))
+            res = comp(label=info.label, value=fun, elem_id=elem_id, **(args or {}))
 
 
         return res
@@ -1373,7 +1421,10 @@ def create_ui(wrap_gradio_gpu_call):
     component_dict = {}
 
     def open_folder(f):
-        if not os.path.isdir(f):
+        if not os.path.exists(f):
+            print(f'Folder "{f}" does not exist. After you create an image, the folder will be created.')
+            return
+        elif not os.path.isdir(f):
             print(f"""
 WARNING
 An open_folder request was made with an argument that is not a folder.
@@ -1406,6 +1457,9 @@ Requested path was: {f}
             if comp_args and isinstance(comp_args, dict) and comp_args.get('visible') is False:
                 continue
 
+            if cmd_opts.hide_ui_dir_config and key in restricted_opts:
+                continue
+
             oldval = opts.data.get(key, None)
             opts.data[key] = value
 
@@ -1422,6 +1476,9 @@ Requested path was: {f}
     def run_settings_single(value, key):
         if not opts.same_type(value, opts.data_labels[key].default):
             return gr.update(visible=True), opts.dumpjson()
+
+        if cmd_opts.hide_ui_dir_config and key in restricted_opts:
+            return gr.update(value=oldval), opts.dumpjson()
 
         oldval = opts.data.get(key, None)
         opts.data[key] = value
@@ -1479,6 +1536,9 @@ Requested path was: {f}
 
         with gr.Row():
             request_notifications = gr.Button(value='Request browser notifications', elem_id="request_notifications")
+            download_localization = gr.Button(value='Download localization template', elem_id="download_localization")
+
+        with gr.Row():
             reload_script_bodies = gr.Button(value='Reload custom script bodies (No ui updates, No restart)', variant='secondary')
             restart_gradio = gr.Button(value='Restart Gradio and Refresh components (Custom Scripts, ui.py, js and css only)', variant='primary')
 
@@ -1487,6 +1547,13 @@ Requested path was: {f}
             inputs=[],
             outputs=[],
             _js='function(){}'
+        )
+
+        download_localization.click(
+            fn=lambda: None,
+            inputs=[],
+            outputs=[],
+            _js='download_localization'
         )
 
         def reload_scripts():
@@ -1692,7 +1759,7 @@ Requested path was: {f}
         print(traceback.format_exc(), file=sys.stderr)
 
     def loadsave(path, x):
-        def apply_field(obj, field, condition=None):
+        def apply_field(obj, field, condition=None, init_field=None):
             key = path + "/" + field
 
             if getattr(obj,'custom_script_source',None) is not None:
@@ -1704,8 +1771,12 @@ Requested path was: {f}
             saved_value = ui_settings.get(key, None)
             if saved_value is None:
                 ui_settings[key] = getattr(obj, field)
-            elif condition is None or condition(saved_value):
+            elif condition and not condition(saved_value):
+                print(f'Warning: Bad ui setting value: {key}: {saved_value}; Default value "{getattr(obj, field)}" will be used instead.')
+            else:
                 setattr(obj, field, saved_value)
+                if init_field is not None:
+                    init_field(saved_value)
 
         if type(x) in [gr.Slider, gr.Radio, gr.Checkbox, gr.Textbox, gr.Number] and x.visible:
             apply_field(x, 'visible')
@@ -1728,9 +1799,16 @@ Requested path was: {f}
         if type(x) == gr.Number:
             apply_field(x, 'value')
 
+        # Since there are many dropdowns that shouldn't be saved,
+        # we only mark dropdowns that should be saved.
+        if type(x) == gr.Dropdown and getattr(x, 'save_to_config', False):
+            apply_field(x, 'value', lambda val: val in x.choices, getattr(x, 'init_field', None))
+            apply_field(x, 'visible')
+
     visit(txt2img_interface, loadsave, "txt2img")
     visit(img2img_interface, loadsave, "img2img")
     visit(extras_interface, loadsave, "extras")
+    visit(modelmerger_interface, loadsave, "modelmerger")
 
     if not error_loading and (not os.path.exists(ui_config_file) or settings_count != len(ui_settings)):
         with open(ui_config_file, "w", encoding="utf8") as file:
@@ -1747,6 +1825,11 @@ def load_javascript(raw_response):
     for filename in sorted(os.listdir(jsdir)):
         with open(os.path.join(jsdir, filename), "r", encoding="utf8") as jsfile:
             javascript += f"\n<!-- {filename} --><script>{jsfile.read()}</script>"
+
+    if cmd_opts.theme is not None:
+        javascript += f"\n<script>set_theme('{cmd_opts.theme}');</script>\n"
+
+    javascript += f"\n<script>{localization.localization_js(shared.opts.localization)}</script>"
 
     def template_response(*args, **kwargs):
         res = raw_response(*args, **kwargs)

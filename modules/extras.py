@@ -20,26 +20,40 @@ import gradio as gr
 cached_images = {}
 
 
-def run_extras(extras_mode, resize_mode, image, image_folder, gfpgan_visibility, codeformer_visibility, codeformer_weight, upscaling_resize, upscaling_resize_w, upscaling_resize_h, upscaling_crop, extras_upscaler_1, extras_upscaler_2, extras_upscaler_2_visibility):
+def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_dir, show_extras_results, gfpgan_visibility, codeformer_visibility, codeformer_weight, upscaling_resize, upscaling_resize_w, upscaling_resize_h, upscaling_crop, extras_upscaler_1, extras_upscaler_2, extras_upscaler_2_visibility):
     devices.torch_gc()
 
     imageArr = []
     # Also keep track of original file names
     imageNameArr = []
-
+    outputs = []
+    
     if extras_mode == 1:
         #convert file to pillow image
         for img in image_folder:
             image = Image.open(img)
             imageArr.append(image)
             imageNameArr.append(os.path.splitext(img.orig_name)[0])
+    elif extras_mode == 2:
+        assert not shared.cmd_opts.hide_ui_dir_config, '--hide-ui-dir-config option must be disabled'
+
+        if input_dir == '':
+            return outputs, "Please select an input directory.", ''
+        image_list = [file for file in [os.path.join(input_dir, x) for x in os.listdir(input_dir)] if os.path.isfile(file)]
+        for img in image_list:
+            image = Image.open(img)
+            imageArr.append(image)
+            imageNameArr.append(img)
     else:
         imageArr.append(image)
         imageNameArr.append(None)
 
-    outpath = opts.outdir_samples or opts.outdir_extras_samples
+    if extras_mode == 2 and output_dir != '':
+        outpath = output_dir
+    else:
+        outpath = opts.outdir_samples or opts.outdir_extras_samples
 
-    outputs = []
+    
     for image, image_name in zip(imageArr, imageNameArr):
         if image is None:
             return outputs, "Please select an input image.", ''
@@ -77,7 +91,8 @@ def run_extras(extras_mode, resize_mode, image, image_folder, gfpgan_visibility,
             def upscale(image, scaler_index, resize, mode, resize_w, resize_h, crop):
                 small = image.crop((image.width // 2, image.height // 2, image.width // 2 + 10, image.height // 2 + 10))
                 pixels = tuple(np.array(small).flatten().tolist())
-                key = (resize, scaler_index, image.width, image.height, gfpgan_visibility, codeformer_visibility, codeformer_weight) + pixels
+                key = (resize, scaler_index, image.width, image.height, gfpgan_visibility, codeformer_visibility, codeformer_weight, 
+                       resize_mode, upscaling_resize, upscaling_resize_w, upscaling_resize_h, upscaling_crop) + pixels
 
                 c = cached_images.get(key)
                 if c is None:
@@ -112,7 +127,8 @@ def run_extras(extras_mode, resize_mode, image, image_folder, gfpgan_visibility,
             image.info = existing_pnginfo
             image.info["extras"] = info
 
-        outputs.append(image)
+        if extras_mode != 2 or show_extras_results :
+            outputs.append(image)
 
     devices.torch_gc()
 
@@ -160,11 +176,14 @@ def run_pnginfo(image):
 
 
 def run_modelmerger(primary_model_name, secondary_model_name, teritary_model_name, interp_method, multiplier, save_as_half, custom_name):
-    def weighted_sum(theta0, theta1, theta2, alpha):
+    def weighted_sum(theta0, theta1, alpha):
         return ((1 - alpha) * theta0) + (alpha * theta1)
 
-    def add_difference(theta0, theta1, theta2, alpha):
-        return theta0 + (theta1 - theta2) * alpha
+    def get_difference(theta1, theta2):
+        return theta1 - theta2
+
+    def add_difference(theta0, theta1_2_diff, alpha):
+        return theta0 + (alpha * theta1_2_diff)
 
     primary_model_info = sd_models.checkpoints_list[primary_model_name]
     secondary_model_info = sd_models.checkpoints_list[secondary_model_name]
@@ -183,23 +202,31 @@ def run_modelmerger(primary_model_name, secondary_model_name, teritary_model_nam
         teritary_model = torch.load(teritary_model_info.filename, map_location='cpu')
         theta_2 = sd_models.get_state_dict_from_checkpoint(teritary_model)
     else:
+        teritary_model = None
         theta_2 = None
 
     theta_funcs = {
-        "Weighted sum": weighted_sum,
-        "Add difference": add_difference,
+        "Weighted sum": (None, weighted_sum),
+        "Add difference": (get_difference, add_difference),
     }
-    theta_func = theta_funcs[interp_method]
+    theta_func1, theta_func2 = theta_funcs[interp_method]
 
     print(f"Merging...")
 
+    if theta_func1:
+        for key in tqdm.tqdm(theta_1.keys()):
+            if 'model' in key:
+                if key in theta_2:
+                    t2 = theta_2.get(key, torch.zeros_like(theta_1[key]))
+                    theta_1[key] = theta_func1(theta_1[key], t2)
+                else:
+                    theta_1[key] = torch.zeros_like(theta_1[key])
+    del theta_2, teritary_model
+
     for key in tqdm.tqdm(theta_0.keys()):
         if 'model' in key and key in theta_1:
-            t2 = (theta_2 or {}).get(key)
-            if t2 is None:
-                t2 = torch.zeros_like(theta_0[key])
 
-            theta_0[key] = theta_func(theta_0[key], theta_1[key], t2, multiplier)
+            theta_0[key] = theta_func2(theta_0[key], theta_1[key], multiplier)
 
             if save_as_half:
                 theta_0[key] = theta_0[key].half()
