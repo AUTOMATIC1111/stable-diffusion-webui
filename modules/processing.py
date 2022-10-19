@@ -728,7 +728,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             conditioning_mask[conditioning_mask >= 0.5] = 1
             conditioning_mask = torch.from_numpy(conditioning_mask)
         else:
-            conditioning_mask = torch.ones(image.shape[-2], image.shape[-1])
+            conditioning_mask = torch.ones(1, 1, *image.shape[-2:])
 
         conditioning_mask = conditioning_mask.to(image.device)
         conditioning_image = image * (conditioning_mask < 0.5)
