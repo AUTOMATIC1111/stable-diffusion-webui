@@ -1831,10 +1831,13 @@ def load_javascript(raw_response):
 
     javascript += f"\n<script>{localization.localization_js(shared.opts.localization)}</script>"
 
+    javascript += "<script src=\"https://code.jquery.com/jquery-3.6.1.min.js\"></script>"
+    extra_body = "<span id=\"google_translate_element\"></span><span id=\"google_translate_element_neg\"></span>"
+
     def template_response(*args, **kwargs):
         res = raw_response(*args, **kwargs)
         res.body = res.body.replace(
-            b'</head>', f'{javascript}</head>'.encode("utf8"))
+            b'</head>', f'{javascript}</head>{extra_body}'.encode("utf8"))
         res.init_headers()
         return res
 

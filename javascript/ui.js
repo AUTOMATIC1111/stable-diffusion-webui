@@ -191,17 +191,53 @@ onUiUpdate(function(){
 
     json_elem.parentElement.style.display="none"
 
-	if (!txt2img_textarea) {
-		txt2img_textarea = gradioApp().querySelector("#txt2img_prompt > label > textarea");
-		txt2img_textarea?.addEventListener("input", () => update_token_counter("txt2img_token_button"));
-	}
-	if (!img2img_textarea) {
-		img2img_textarea = gradioApp().querySelector("#img2img_prompt > label > textarea");
-		img2img_textarea?.addEventListener("input", () => update_token_counter("img2img_token_button"));
-	}
+
+    if (!txt2img_textarea) {
+        txt2img_textarea = gradioApp().querySelector("#txt2img_prompt > label > textarea");
+        txt2img_textarea?.addEventListener("input", () => {
+            update_token_counter("txt2img_token_button");
+            if (isTranslateEnable) {
+                jQuery("#google_translate_element").text('✔️: ' + txt2img_textarea.value);
+                jQuery('#\\:1\\.container').contents().find('#\\:1\\.restore').click();
+                jQuery('#\\:1\\.container').contents().find('#\\:1\\.confirm').click();
+            }
+        });
+    }
+    if (!img2img_textarea) {
+        img2img_textarea = gradioApp().querySelector("#img2img_prompt > label > textarea");
+        img2img_textarea?.addEventListener("input", () => {
+            update_token_counter("img2img_token_button");
+            if (isTranslateEnable) {
+                jQuery("#google_translate_element").text('✔️: ' + img2img_textarea.value);
+                jQuery('#\\:1\\.container').contents().find('#\\:1\\.restore').click();
+                jQuery('#\\:1\\.container').contents().find('#\\:1\\.confirm').click();
+            }
+        });
+    }
+    if (!txt2img_textarea_neg) {
+        txt2img_textarea_neg = gradioApp().querySelector("#txt2img_neg_prompt > label > textarea");
+        txt2img_textarea_neg?.addEventListener("input", () => {
+            if (isTranslateEnable) {
+                jQuery("#google_translate_element_neg").text('❌: ' + txt2img_textarea_neg.value);
+                jQuery('#\\:1\\.container').contents().find('#\\:1\\.restore').click();
+                jQuery('#\\:1\\.container').contents().find('#\\:1\\.confirm').click();
+            }
+        });
+    }
+    if (!img2img_textarea_neg) {
+        img2img_textarea_neg = gradioApp().querySelector("#img2img_neg_prompt > label > textarea");
+        img2img_textarea_neg?.addEventListener("input", () => {
+            if (isTranslateEnable) {
+                jQuery("#google_translate_element_neg").text('❌: ' + img2img_textarea_neg.value);
+                jQuery('#\\:1\\.container').contents().find('#\\:1\\.restore').click();
+                jQuery('#\\:1\\.container').contents().find('#\\:1\\.confirm').click();
+            }
+        });
+    }
 })
 
 let txt2img_textarea, img2img_textarea = undefined;
+let txt2img_textarea_neg, img2img_textarea_neg = undefined;
 let wait_time = 800
 let token_timeout;
 
@@ -229,3 +265,31 @@ function restart_reload(){
     document.body.innerHTML='<h1 style="font-family:monospace;margin-top:20%;color:lightgray;text-align:center;">Reloading...</h1>';
     setTimeout(function(){location.reload()},2000)
 }
+
+function googleTranslateElementInit() {
+    jQuery.getScript(
+        "https://translate.google.com/translate_a/element.js",
+        () => {
+            jQuery(".goog-logo-link").css("display", "none");
+            jQuery(".goog-te-gadget").css("font-size", "0");
+            isTranslateEnable = true;
+            jQuery('#\\:1\\.container').contents().find('#\\:1\\.restore').click();
+            jQuery('#\\:1\\.container').contents().find('#\\:1\\.confirm').click();
+        }
+    );
+}
+
+let isTranslateEnable = false;
+
+let observer = new MutationObserver(function () {
+    if (document.documentElement.className.match('translated')) {
+        googleTranslateElementInit();
+    }
+});
+
+observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['class'],
+    childList: false,
+    characterData: false
+});
