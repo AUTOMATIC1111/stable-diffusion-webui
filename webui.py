@@ -85,9 +85,7 @@ def initialize():
     shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights(shared.sd_model)))
     shared.opts.onchange("sd_hypernetwork", wrap_queued_call(lambda: modules.hypernetworks.hypernetwork.load_hypernetwork(shared.opts.sd_hypernetwork)))
     shared.opts.onchange("sd_hypernetwork_strength", modules.hypernetworks.hypernetwork.apply_strength)
-    shared.opts.onchange("sd_hypernetwork_layer_structure", modules.hypernetworks.hypernetwork.apply_layer_structure)
-    shared.opts.onchange("sd_hypernetwork_add_layer_norm", modules.hypernetworks.hypernetwork.apply_layer_norm)
-    
+
     # make the program just exit at ctrl+c without waiting for anything
     def sigint_handler(sig, frame):
         print(f'Interrupted with signal {sig} in {frame}')
@@ -142,7 +140,7 @@ def webui(launch_api=False):
             create_api(app)
 
         wait_on_server(demo)
-        
+
         sd_samplers.set_samplers()
 
         print('Reloading Custom Scripts')

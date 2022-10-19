@@ -458,14 +458,14 @@ def create_toprow(is_img2img):
             with gr.Row():
                 with gr.Column(scale=80):
                     with gr.Row():
-                        prompt = gr.Textbox(label="Prompt", elem_id=f"{id_part}_prompt", show_label=False, lines=2, 
+                        prompt = gr.Textbox(label="Prompt", elem_id=f"{id_part}_prompt", show_label=False, lines=2,
                             placeholder="Prompt (press Ctrl+Enter or Alt+Enter to generate)"
                         )
 
             with gr.Row():
                 with gr.Column(scale=80):
                     with gr.Row():
-                        negative_prompt = gr.Textbox(label="Negative prompt", elem_id=f"{id_part}_neg_prompt", show_label=False, lines=2, 
+                        negative_prompt = gr.Textbox(label="Negative prompt", elem_id=f"{id_part}_neg_prompt", show_label=False, lines=2,
                             placeholder="Negative prompt (press Ctrl+Enter or Alt+Enter to generate)"
                         )
 
@@ -1198,6 +1198,8 @@ def create_ui(wrap_gradio_gpu_call):
                 with gr.Tab(label="Create hypernetwork"):
                     new_hypernetwork_name = gr.Textbox(label="Name")
                     new_hypernetwork_sizes = gr.CheckboxGroup(label="Modules", value=["768", "320", "640", "1280"], choices=["768", "320", "640", "1280"])
+                    new_hypernetwork_layer_structure = gr.Dropdown(label="Hypernetwork layer structure", choices=[(1, 2, 1), (1, 2, 2, 1), (1, 2, 4, 2, 1)])
+                    new_hypernetwork_add_layer_norm = gr.Checkbox(label="Add layer normalization")
 
                     with gr.Row():
                         with gr.Column(scale=3):
@@ -1280,6 +1282,8 @@ def create_ui(wrap_gradio_gpu_call):
             inputs=[
                 new_hypernetwork_name,
                 new_hypernetwork_sizes,
+                new_hypernetwork_layer_structure,
+                new_hypernetwork_add_layer_norm,
             ],
             outputs=[
                 train_hypernetwork_name,
