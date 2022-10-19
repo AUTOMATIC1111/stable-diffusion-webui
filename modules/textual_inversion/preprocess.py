@@ -196,9 +196,9 @@ def image_focal_points(im):
 
     points = cv2.goodFeaturesToTrack(
         np_im,
-        maxCorners=50,
+        maxCorners=100,
         qualityLevel=0.04,
-        minDistance=min(grayscale.width, grayscale.height)*0.05,
+        minDistance=min(grayscale.width, grayscale.height)*0.07,
         useHarrisDetector=False,
     )
 
@@ -218,28 +218,32 @@ def image_focal_points(im):
 
 
 def image_entropy_point(im, crop_width, crop_height):
-    img = im.copy()
-    # just make it easier to slide the test crop with images oriented the same way
-    if (img.size[0] < img.size[1]):
-        portrait = True
-        img = img.rotate(90, expand=1)
+    landscape = im.height < im.width
+    portrait = im.height > im.width
+    if landscape:
+      move_idx = [0, 2]
+      move_max = im.size[0]
+    elif portrait:
+      move_idx = [1, 3]
+      move_max = im.size[1]
 
     e_max = 0
     crop_current = [0, 0, crop_width, crop_height]
     crop_best = crop_current
-    while crop_current[2] < img.size[0]:
-        crop = img.crop(tuple(crop_current))
+    while crop_current[move_idx[1]] < move_max:
+        crop = im.crop(tuple(crop_current))
         e = image_entropy(crop)
 
-        if (e_max < e):
+        if (e > e_max):
           e_max = e
           crop_best = list(crop_current)
 
-        crop_current[0] += 4
-        crop_current[2] += 4
+        crop_current[move_idx[0]] += 4
+        crop_current[move_idx[1]] += 4
 
-    x_mid = int((crop_best[2] - crop_best[0])/2)
-    y_mid = int((crop_best[3] - crop_best[1])/2)
+    x_mid = int(crop_best[0] + crop_width/2)
+    y_mid = int(crop_best[1] + crop_height/2)
+
 
     return {
         'x': x_mid,
@@ -250,7 +254,7 @@ def image_entropy_point(im, crop_width, crop_height):
 
 def image_entropy(im):
     # greyscale image entropy
-    band = np.asarray(im.convert("L"))
+    band = np.asarray(im.convert("1"))
     hist, _ = np.histogram(band, bins=range(0, 256))
     hist = hist[hist > 0]
     return -np.log2(hist / hist.sum()).sum()
