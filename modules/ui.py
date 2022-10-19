@@ -1307,9 +1307,9 @@ def create_ui(wrap_gradio_gpu_call):
             inputs=[
                 new_hypernetwork_name,
                 new_hypernetwork_sizes,
+                overwrite_old_hypernetwork,
                 new_hypernetwork_layer_structure,
                 new_hypernetwork_add_layer_norm,
-                overwrite_old_hypernetwork,
             ],
             outputs=[
                 train_hypernetwork_name,
