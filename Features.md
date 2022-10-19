@@ -177,7 +177,20 @@ Here are the settings that create the graph above:
 
 ![](images/xy_grid-medusa-ui.png)
 
-For Prompt S/R, include the first value in your main prompt. (shown above)
+### Prompt S/R
+Prompt S/R is one of more difficult to understand modes of operation for X/Y Plot. S/R stands for search/replace, and that's what it does - you input a list of words or phrases, it takes the first from the list and treats it as keyword, and replaces all instances of that keyword with other entries from  the list.
+
+For example, with prompt `a man holding an apple, 8k clean`, and Prompt S/R `an apple, a watermelon, a gun` you will get three prompts:
+
+- `a man holding an apple, 8k clean`
+- `a man holding a watermelon, 8k clean`
+- `a man holding a gun, 8k clean`
+
+The list of text fields uses the same syntax as a CSV file, so if you want to include commas into your items you have to put text in quotes and make sure there is no space between quotes and separating commas:
+
+- `darkness, light, green, heat` - 4 items - `darkness`, `light`, `green`, `heat`
+- `darkness, "light, green", heat` - WRONG - 4 items - `darkness`, `"light`, `green"`, `heat`
+- `darkness,"light, green",heat` - RIGHT - 3 items - `darkness`, `light, green`, `heat`
 
 # Textual Inversion
 Short explanation: place your embeddings into the `embeddings` directory, and use the filename in the prompt.
