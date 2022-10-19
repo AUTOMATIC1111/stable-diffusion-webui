@@ -43,9 +43,17 @@ class InterrogateModels:
                 self.categories.append(Category(name=filename, topn=topn, items=lines))
 
     def load_blip_model(self):
+        this_folder = os.path.dirname(__file__)
+        blip_model_dir = os.path.abspath(os.path.join(this_folder, '..', 'models', 'BLIP'))
+        pretrained_path = os.path.join(blip_model_dir, 'model_base_caption_capfilt_large.pth')
+        # download BLIP checkpoint if not exist
+        if not os.path.exists(pretrained_path):
+            from basicsr.utils.download_util import load_file_from_url
+            load_file_from_url(url=blip_model_url, model_dir=blip_model_dir, progress=True)
+                
         import models.blip
 
-        blip_model = models.blip.blip_decoder(pretrained=blip_model_url, image_size=blip_image_eval_size, vit='base', med_config=os.path.join(paths.paths["BLIP"], "configs", "med_config.json"))
+        blip_model = models.blip.blip_decoder(pretrained=pretrained_path, image_size=blip_image_eval_size, vit='base', med_config=os.path.join(paths.paths["BLIP"], "configs", "med_config.json"))
         blip_model.eval()
 
         return blip_model
