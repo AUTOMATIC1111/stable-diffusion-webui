@@ -148,7 +148,10 @@ def get_state_dict_from_checkpoint(pl_sd):
         if new_key is not None:
             sd[new_key] = v
 
-    return sd
+    pl_sd.clear()
+    pl_sd.update(sd)
+
+    return pl_sd
 
 
 def load_model_weights(model, checkpoint_info):

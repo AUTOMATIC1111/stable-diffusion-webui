@@ -12,7 +12,7 @@ import time
 import traceback
 import platform
 import subprocess as sp
-from functools import reduce
+from functools import partial, reduce
 
 import numpy as np
 import torch
@@ -261,6 +261,19 @@ def wrap_gradio_call(func, extra_outputs=None):
     return f
 
 
+def calc_time_left(progress, threshold, label, force_display):
+    if progress == 0:
+        return ""
+    else:
+        time_since_start = time.time() - shared.state.time_start
+        eta = (time_since_start/progress)
+        eta_relative = eta-time_since_start
+        if (eta_relative > threshold and progress > 0.02) or force_display:           
+            return label + time.strftime('%H:%M:%S', time.gmtime(eta_relative))        
+        else:
+            return ""
+
+
 def check_progress_call(id_part):
     if shared.state.job_count == 0:
         return "", gr_show(False), gr_show(False), gr_show(False)
@@ -272,11 +285,15 @@ def check_progress_call(id_part):
     if shared.state.sampling_steps > 0:
         progress += 1 / shared.state.job_count * shared.state.sampling_step / shared.state.sampling_steps
 
+    time_left = calc_time_left( progress, 60, " ETA:", shared.state.time_left_force_display )
+    if time_left != "":
+        shared.state.time_left_force_display = True
+
     progress = min(progress, 1)
 
     progressbar = ""
     if opts.show_progressbar:
-        progressbar = f"""<div class='progressDiv'><div class='progress' style="width:{progress * 100}%">{str(int(progress*100))+"%" if progress > 0.01 else ""}</div></div>"""
+        progressbar = f"""<div class='progressDiv'><div class='progress' style="overflow:hidden;width:{progress * 100}%">{str(int(progress*100))+"%"+time_left if progress > 0.01 else ""}</div></div>"""
 
     image = gr_show(False)
     preview_visibility = gr_show(False)
@@ -308,6 +325,8 @@ def check_progress_call_initial(id_part):
     shared.state.current_latent = None
     shared.state.current_image = None
     shared.state.textinfo = None
+    shared.state.time_start = time.time()
+    shared.state.time_left_force_display = False
 
     return check_progress_call(id_part)
 
@@ -1543,6 +1562,7 @@ Requested path was: {f}
 
         def reload_scripts():
             modules.scripts.reload_script_body_only()
+            reload_javascript() # need to refresh the html page
 
         reload_script_bodies.click(
             fn=reload_scripts,
@@ -1801,26 +1821,30 @@ Requested path was: {f}
     return demo
 
 
-with open(os.path.join(script_path, "script.js"), "r", encoding="utf8") as jsfile:
-    javascript = f'<script>{jsfile.read()}</script>'
+def load_javascript(raw_response):
+    with open(os.path.join(script_path, "script.js"), "r", encoding="utf8") as jsfile:
+        javascript = f'<script>{jsfile.read()}</script>'
 
-jsdir = os.path.join(script_path, "javascript")
-for filename in sorted(os.listdir(jsdir)):
-    with open(os.path.join(jsdir, filename), "r", encoding="utf8") as jsfile:
-        javascript += f"\n<script>{jsfile.read()}</script>"
+    jsdir = os.path.join(script_path, "javascript")
+    for filename in sorted(os.listdir(jsdir)):
+        with open(os.path.join(jsdir, filename), "r", encoding="utf8") as jsfile:
+            javascript += f"\n<!-- {filename} --><script>{jsfile.read()}</script>"
 
-if cmd_opts.theme is not None:
-    javascript += f"\n<script>set_theme('{cmd_opts.theme}');</script>\n"
+    if cmd_opts.theme is not None:
+        javascript += f"\n<script>set_theme('{cmd_opts.theme}');</script>\n"
 
-javascript += f"\n<script>{localization.localization_js(shared.opts.localization)}</script>"
+    javascript += f"\n<script>{localization.localization_js(shared.opts.localization)}</script>"
 
-if 'gradio_routes_templates_response' not in globals():
     def template_response(*args, **kwargs):
-        res = gradio_routes_templates_response(*args, **kwargs)
-        res.body = res.body.replace(b'</head>', f'{javascript}</head>'.encode("utf8"))
+        res = raw_response(*args, **kwargs)
+        res.body = res.body.replace(
+            b'</head>', f'{javascript}</head>'.encode("utf8"))
         res.init_headers()
         return res
 
-    gradio_routes_templates_response = gradio.routes.templates.TemplateResponse
     gradio.routes.templates.TemplateResponse = template_response
 
+
+reload_javascript = partial(load_javascript,
+                            gradio.routes.templates.TemplateResponse)
+reload_javascript()
