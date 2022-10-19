@@ -1,3 +1,4 @@
+import datetime
 import html
 import itertools
 import json
@@ -7,6 +8,7 @@ from contextlib import nullcontext
 from pathlib import Path
 from typing import Optional
 
+import accelerate
 import torch
 import torch.nn.functional as F
 import torch.utils.checkpoint
@@ -90,13 +92,41 @@ class DreamBooth:
 
     def train(self):
         logging_dir = Path(self.output_dir, self.logging_dir)
+        has_deepspeed = False
+        ds = None
+        use_cpu = False
+        if shared.cmd_opts.medvram or shared.cmd_opts.lowvram:
+            use_cpu = True
 
-        accelerator = Accelerator(
-            gradient_accumulation_steps=self.gradient_accumulation_steps,
-            mixed_precision=self.mixed_precision,
-            log_with="tensorboard",
-            logging_dir=logging_dir,
-        )
+
+        try:
+            torch.distributed.init_process_group("mpi", init_method=None,
+                                                 timeout=datetime.timedelta(seconds=1800),
+                                                 world_size=- 1, rank=- 1, store=None, group_name='',
+                                                 pg_options=None)
+            import deepspeed
+            ds = accelerate.utils.dataclasses.DeepSpeedPlugin()
+            has_deepspeed = True
+        except Exception as e:
+            print(f"Exception importing deepspeed: {e}")
+            pass
+        if has_deepspeed:
+            accelerator = Accelerator(
+                gradient_accumulation_steps=self.gradient_accumulation_steps,
+                mixed_precision=self.mixed_precision,
+                log_with="tensorboard",
+                logging_dir=logging_dir,
+                deepspeed_plugin=ds,
+                cpu=use_cpu
+            )
+        else:
+            accelerator = Accelerator(
+                gradient_accumulation_steps=self.gradient_accumulation_steps,
+                mixed_precision=self.mixed_precision,
+                log_with="tensorboard",
+                logging_dir=logging_dir,
+                cpu=use_cpu
+            )
 
         if self.seed is not None:
             set_seed(self.seed)
@@ -304,8 +334,6 @@ class DreamBooth:
         # The trackers initializes automatically on the main process.
         if accelerator.is_main_process:
             accelerator.init_trackers("dreambooth", config=vars(self))
-        use_cpu = accelerator.state.cpu
-        use_deepspeed = accelerator.state.deepspeed_plugin is not None
         precision = accelerator.use_fp16
 
 
@@ -313,7 +341,7 @@ class DreamBooth:
         total_batch_size = self.train_batch_size * accelerator.num_processes * self.gradient_accumulation_steps
 
         print("***** Running training *****")
-        print(f"  CPU: {use_cpu}, Deepspeed: {use_deepspeed}, Adam: {use_adam}, Precision: {precision}")
+        print(f"  CPU: {use_cpu}, Deepspeed: {has_deepspeed}, Adam: {use_adam}, Precision: {precision}")
         print(f"  Num examples = {len(train_dataset)}")
         print(f"  Num batches each epoch = {len(train_dataloader)}")
         print(f"  Num Epochs = {self.num_train_epochs}")
@@ -442,7 +470,7 @@ class DreamBooth:
         # Create the pipeline using the trained modules and save it.
         if accelerator.is_main_process:
             pipeline = StableDiffusionPipeline.from_pretrained(
-                self.pretrained_model_name_or_path,
+                self.pretrained_model_path,
                 unet=accelerator.unwrap_model(unet),
                 text_encoder=accelerator.unwrap_model(text_encoder),
                 use_auth_token=False

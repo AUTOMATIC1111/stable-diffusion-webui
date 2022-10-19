@@ -18,7 +18,7 @@ from functools import partial, reduce
 import gradio as gr
 import gradio.routes
 import gradio.utils
-from PIL import Image
+from PIL import Image, PngImagePlugin
 
 from modules import sd_hijack, sd_models, localization
 from modules.dreambooth import dreambooth, conversion
@@ -1618,10 +1618,11 @@ Requested path was: {f}
         if not opts.same_type(value, opts.data_labels[key].default):
             return gr.update(visible=True), opts.dumpjson()
 
+
+        oldval = opts.data.get(key, None)
         if cmd_opts.hide_ui_dir_config and key in restricted_opts:
             return gr.update(value=oldval), opts.dumpjson()
 
-        oldval = opts.data.get(key, None)
         opts.data[key] = value
 
         if oldval != value:
