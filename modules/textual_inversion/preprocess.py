@@ -1,5 +1,7 @@
 import os
-from PIL import Image, ImageOps
+import cv2
+import numpy as np
+from PIL import Image, ImageOps, ImageDraw
 import platform
 import sys
 import tqdm
@@ -11,7 +13,7 @@ if cmd_opts.deepdanbooru:
     import modules.deepbooru as deepbooru
 
 
-def preprocess(process_src, process_dst, process_width, process_height, process_flip, process_split, process_caption, process_caption_deepbooru=False):
+def preprocess(process_src, process_dst, process_width, process_height, process_flip, process_split, process_caption, process_caption_deepbooru=False, process_entropy_focus=False):
     try:
         if process_caption:
             shared.interrogator.load()
@@ -21,7 +23,7 @@ def preprocess(process_src, process_dst, process_width, process_height, process_
             db_opts[deepbooru.OPT_INCLUDE_RANKS] = False
             deepbooru.create_deepbooru_process(opts.interrogate_deepbooru_score_threshold, db_opts)
 
-        preprocess_work(process_src, process_dst, process_width, process_height, process_flip, process_split, process_caption, process_caption_deepbooru)
+        preprocess_work(process_src, process_dst, process_width, process_height, process_flip, process_split, process_caption, process_caption_deepbooru, process_entropy_focus)
 
     finally:
 
@@ -33,7 +35,7 @@ def preprocess(process_src, process_dst, process_width, process_height, process_
 
 
 
-def preprocess_work(process_src, process_dst, process_width, process_height, process_flip, process_split, process_caption, process_caption_deepbooru=False):
+def preprocess_work(process_src, process_dst, process_width, process_height, process_flip, process_split, process_caption, process_caption_deepbooru=False, process_entropy_focus=False):
     width = process_width
     height = process_height
     src = os.path.abspath(process_src)
@@ -93,6 +95,8 @@ def preprocess_work(process_src, process_dst, process_width, process_height, pro
         is_tall = ratio > 1.35
         is_wide = ratio < 1 / 1.35
 
+        processing_option_ran = False
+
         if process_split and is_tall:
             img = img.resize((width, height * img.height // img.width))
 
@@ -101,6 +105,8 @@ def preprocess_work(process_src, process_dst, process_width, process_height, pro
 
             bot = img.crop((0, img.height - height, width, img.height))
             save_pic(bot, index)
+
+            processing_option_ran = True
         elif process_split and is_wide:
             img = img.resize((width * img.width // img.height, height))
 
@@ -109,8 +115,143 @@ def preprocess_work(process_src, process_dst, process_width, process_height, pro
 
             right = img.crop((img.width - width, 0, img.width, height))
             save_pic(right, index)
-        else:
+            
+            processing_option_ran = True
+
+        if process_entropy_focus and (is_tall or is_wide):
+            if is_tall:
+                img = img.resize((width, height * img.height // img.width))
+            else:
+                img = img.resize((width * img.width // img.height, height))
+
+            x_focal_center, y_focal_center = image_central_focal_point(img, width, height)
+
+            # take the focal point and turn it into crop coordinates that try to center over the focal
+            # point but then get adjusted back into the frame
+            y_half = int(height / 2)
+            x_half = int(width / 2)
+
+            x1 = x_focal_center - x_half
+            if x1 < 0:
+                x1 = 0
+            elif x1 + width > img.width:
+                x1 = img.width - width
+
+            y1 = y_focal_center - y_half
+            if y1 < 0:
+                y1 = 0
+            elif y1 + height > img.height:
+                y1 = img.height - height
+
+            x2 = x1 + width
+            y2 = y1 + height
+
+            crop = [x1, y1, x2, y2]
+
+            focal = img.crop(tuple(crop))
+            save_pic(focal, index)
+
+            processing_option_ran = True
+
+        if not processing_option_ran:
             img = images.resize_image(1, img, width, height)
             save_pic(img, index)
 
         shared.state.nextjob()
+
+
+def image_central_focal_point(im, target_width, target_height):
+    focal_points = []
+
+    focal_points.extend(
+        image_focal_points(im)
+    )
+
+    fp_entropy = image_entropy_point(im, target_width, target_height)
+    fp_entropy['weight'] = len(focal_points) + 1 # about half of the weight to entropy
+
+    focal_points.append(fp_entropy)
+
+    weight = 0.0
+    x = 0.0
+    y = 0.0
+    for focal_point in focal_points:
+        weight += focal_point['weight']
+        x += focal_point['x'] * focal_point['weight']
+        y += focal_point['y'] * focal_point['weight']
+    avg_x = round(x // weight)
+    avg_y = round(y // weight)
+
+    return avg_x, avg_y
+
+
+def image_focal_points(im):
+    grayscale = im.convert("L")
+
+    # naive attempt at preventing focal points from collecting at watermarks near the bottom
+    gd = ImageDraw.Draw(grayscale)
+    gd.rectangle([0, im.height*.9, im.width, im.height], fill="#999")
+
+    np_im = np.array(grayscale)
+
+    points = cv2.goodFeaturesToTrack(
+        np_im,
+        maxCorners=50,
+        qualityLevel=0.04,
+        minDistance=min(grayscale.width, grayscale.height)*0.05,
+        useHarrisDetector=False,
+    )
+
+    if points is None:
+        return []
+
+    focal_points = []
+    for point in points:
+        x, y = point.ravel()
+        focal_points.append({
+            'x': x,
+            'y': y,
+            'weight': 1.0
+        })
+
+    return focal_points
+
+
+def image_entropy_point(im, crop_width, crop_height):
+    img = im.copy()
+    # just make it easier to slide the test crop with images oriented the same way
+    if (img.size[0] < img.size[1]):
+        portrait = True
+        img = img.rotate(90, expand=1)
+
+    e_max = 0
+    crop_current = [0, 0, crop_width, crop_height]
+    crop_best = crop_current
+    while crop_current[2] < img.size[0]:
+        crop = img.crop(tuple(crop_current))
+        e = image_entropy(crop)
+
+        if (e_max < e):
+          e_max = e
+          crop_best = list(crop_current)
+
+        crop_current[0] += 4
+        crop_current[2] += 4
+
+    x_mid = int((crop_best[2] - crop_best[0])/2)
+    y_mid = int((crop_best[3] - crop_best[1])/2)
+
+    return {
+        'x': x_mid,
+        'y': y_mid,
+        'weight': 1.0
+    }
+
+
+def image_entropy(im):
+    # greyscale image entropy
+    band = np.asarray(im.convert("L"))
+    hist, _ = np.histogram(band, bins=range(0, 256))
+    hist = hist[hist > 0]
+    return -np.log2(hist / hist.sum()).sum()
+
