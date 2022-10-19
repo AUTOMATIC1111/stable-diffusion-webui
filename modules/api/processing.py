@@ -1,7 +1,7 @@
 from inflection import underscore
 from typing import Any, Dict, Optional
 from pydantic import BaseModel, Field, create_model
-from modules.processing import StableDiffusionProcessing, Processed, StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img, process_images
+from modules.processing import StableDiffusionProcessingTxt2Img
 import inspect
 
 
@@ -95,5 +95,5 @@ class PydanticModelGenerator:
 StableDiffusionProcessingAPI = PydanticModelGenerator(
     "StableDiffusionProcessingTxt2Img", 
     StableDiffusionProcessingTxt2Img,
-    [{"key": "sampler_index", "type": str, "default": "k_euler_a"}]
+    [{"key": "sampler_index", "type": str, "default": "Euler"}]
 ).generate_model()
