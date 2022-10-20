@@ -284,19 +284,19 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
     last_saved_file = "<none>"
     last_saved_image = "<none>"
 
-    ititial_step = hypernetwork.step or 0
-    if ititial_step > steps:
+    initial_step = hypernetwork.step or 0
+    if initial_step > steps:
         return hypernetwork, filename
 
-    scheduler = LearnRateScheduler(learn_rate, steps, ititial_step)
+    scheduler = LearnRateScheduler(learn_rate, steps, initial_step)
     optimizer = torch.optim.AdamW(weights, lr=scheduler.learn_rate)
 
     if shared.opts.training_enable_tensorboard:
         tensorboard_writer = textual_inversion.tensorboard_setup(log_directory)
 
-    pbar = tqdm.tqdm(enumerate(ds), total=steps - ititial_step)
+    pbar = tqdm.tqdm(enumerate(ds), total=steps - initial_step)
     for i, entries in pbar:
-        hypernetwork.step = i + ititial_step
+        hypernetwork.step = i + initial_step
 
         scheduler.apply(optimizer, hypernetwork.step)
         if scheduler.finished:
