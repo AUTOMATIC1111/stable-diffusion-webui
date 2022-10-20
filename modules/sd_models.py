@@ -214,8 +214,6 @@ def load_model():
     sd_config = OmegaConf.load(checkpoint_info.config)
     
     if should_hijack_inpainting(checkpoint_info):
-        do_inpainting_hijack()
-
         # Hardcoded config for now...
         sd_config.model.target = "ldm.models.diffusion.ddpm.LatentInpaintDiffusion"
         sd_config.model.params.use_ema = False
@@ -225,6 +223,7 @@ def load_model():
         # Create a "fake" config with a different name so that we know to unload it when switching models.
         checkpoint_info = checkpoint_info._replace(config=checkpoint_info.config.replace(".yaml", "-inpainting.yaml"))
 
+    do_inpainting_hijack()
     sd_model = instantiate_from_config(sd_config.model)
     load_model_weights(sd_model, checkpoint_info)
 
