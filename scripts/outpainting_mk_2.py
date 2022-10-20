@@ -242,21 +242,37 @@ class Script(scripts.Script):
             out = out.crop((0, 0, res_w, res_h))
             return out
 
-        img = init_image
+        batch_count = p.n_iter
+        p.n_iter = 1
+        state.job_count = batch_count
+        all_images = []
 
-        if left > 0:
-            img = expand(img, left, is_left=True)
-        if right > 0:
-            img = expand(img, right, is_right=True)
-        if up > 0:
-            img = expand(img, up, is_top=True)
-        if down > 0:
-            img = expand(img, down, is_bottom=True)
+        for i in range(batch_count):
+            img = init_image
+            state.job = f"Batch {i + 1} out of {state.job_count}"
 
-        res = Processed(p, [img], initial_seed_and_info[0], initial_seed_and_info[1])
+            if left > 0:
+                img = expand(img, left, is_left=True)
+            if right > 0:
+                img = expand(img, right, is_right=True)
+            if up > 0:
+                img = expand(img, up, is_top=True)
+            if down > 0:
+                img = expand(img, down, is_bottom=True)
+
+            all_images.append(img)
+
+        combined_grid_image = images.image_grid(all_images)
+        if opts.return_grid:
+            all_images = [combined_grid_image] + all_images
+        
+        res = Processed(p, all_images, initial_seed_and_info[0], initial_seed_and_info[1])
 
         if opts.samples_save:
             images.save_image(img, p.outpath_samples, "", res.seed, p.prompt, opts.grid_format, info=res.info, p=p)
+
+        if opts.grid_save:
+            images.save_image(combined_grid_image, p.outpath_grids, "grid", res.seed, p.prompt, opts.grid_format, info=res.info, short_filename=not opts.grid_extended_filename, grid=True, p=p)
 
         return res
 
