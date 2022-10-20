@@ -5,43 +5,44 @@ import json
 import math
 import mimetypes
 import os
+import platform
 import random
+import subprocess as sp
 import sys
 import tempfile
 import time
 import traceback
-import platform
-import subprocess as sp
 from functools import partial, reduce
 
+import gradio as gr
+import gradio.routes
+import gradio.utils
 import numpy as np
+import piexif
 import torch
 from PIL import Image, PngImagePlugin
-import piexif
 
-import gradio as gr
-import gradio.utils
-import gradio.routes
-
-from modules import sd_hijack, sd_models, localization
+from modules import localization, sd_hijack, sd_models
 from modules.paths import script_path
-from modules.shared import opts, cmd_opts, restricted_opts
+from modules.shared import cmd_opts, opts, restricted_opts
+
 if cmd_opts.deepdanbooru:
     from modules.deepbooru import get_deepbooru_tags
-import modules.shared as shared
-from modules.sd_samplers import samplers, samplers_for_img2img
-from modules.sd_hijack import model_hijack
-import modules.ldsr_model
-import modules.scripts
-import modules.gfpgan_model
+
 import modules.codeformer_model
-import modules.styles
 import modules.generation_parameters_copypaste
-from modules import prompt_parser
-from modules.images import save_image
-import modules.textual_inversion.ui
+import modules.gfpgan_model
 import modules.hypernetworks.ui
 import modules.images_history as img_his
+import modules.ldsr_model
+import modules.scripts
+import modules.shared as shared
+import modules.styles
+import modules.textual_inversion.ui
+from modules import prompt_parser
+from modules.images import save_image
+from modules.sd_hijack import model_hijack
+from modules.sd_samplers import samplers, samplers_for_img2img
 
 # this is a fix for Windows users. Without it, javascript files will be served with text/html content-type and the browser will not show any UI
 mimetypes.init()
@@ -268,8 +269,8 @@ def calc_time_left(progress, threshold, label, force_display):
         time_since_start = time.time() - shared.state.time_start
         eta = (time_since_start/progress)
         eta_relative = eta-time_since_start
-        if (eta_relative > threshold and progress > 0.02) or force_display:           
-            return label + time.strftime('%H:%M:%S', time.gmtime(eta_relative))        
+        if (eta_relative > threshold and progress > 0.02) or force_display:
+            return label + time.strftime('%H:%M:%S', time.gmtime(eta_relative))
         else:
             return ""
 
@@ -1219,6 +1220,7 @@ def create_ui(wrap_gradio_gpu_call):
                     new_hypernetwork_sizes = gr.CheckboxGroup(label="Modules", value=["768", "320", "640", "1280"], choices=["768", "320", "640", "1280"])
                     new_hypernetwork_layer_structure = gr.Textbox("1, 2, 1", label="Enter hypernetwork layer structure", placeholder="1st and last digit must be 1. ex:'1, 2, 1'")
                     new_hypernetwork_add_layer_norm = gr.Checkbox(label="Add layer normalization")
+                    new_hypernetwork_activation_func = gr.Dropdown(value="relu", label="Select activation function of hypernetwork", choices=["relu", "leakyrelu"])
 
                     with gr.Row():
                         with gr.Column(scale=3):
@@ -1303,6 +1305,7 @@ def create_ui(wrap_gradio_gpu_call):
                 new_hypernetwork_sizes,
                 new_hypernetwork_layer_structure,
                 new_hypernetwork_add_layer_norm,
+                new_hypernetwork_activation_func,
             ],
             outputs=[
                 train_hypernetwork_name,
