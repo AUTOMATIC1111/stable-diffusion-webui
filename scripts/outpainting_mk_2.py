@@ -183,6 +183,7 @@ class Script(scripts.Script):
             pixels_vert = expand_pixels if is_vert else 0
 
             images_to_process = []
+            output_images = []
             for n in range(count):
                 res_w = init[n].width + pixels_horiz
                 res_h = init[n].height + pixels_vert
@@ -203,7 +204,7 @@ class Script(scripts.Script):
                 np_image = (np.asarray(img) / 255.0).astype(np.float64)
                 np_mask = (np.asarray(mask) / 255.0).astype(np.float64)
                 noised = get_matched_noise(np_image, np_mask, noise_q, color_variation)
-                out = Image.fromarray(np.clip(noised * 255., 0., 255.).astype(np.uint8), mode="RGB")
+                output_images.append(Image.fromarray(np.clip(noised * 255., 0., 255.).astype(np.uint8), mode="RGB"))
 
                 target_width = min(process_width, init[n].width + pixels_horiz) if is_horiz else img.width
                 target_height = min(process_height, init[n].height + pixels_vert) if is_vert else img.height
@@ -211,15 +212,15 @@ class Script(scripts.Script):
                 p.height = target_height if is_vert else img.height
 
                 crop_region = (
-                    0 if is_left else out.width - target_width,
-                    0 if is_top else out.height - target_height,
-                    target_width if is_left else out.width,
-                    target_height if is_top else out.height,
+                    0 if is_left else output_images[n].width - target_width,
+                    0 if is_top else output_images[n].height - target_height,
+                    target_width if is_left else output_images[n].width,
+                    target_height if is_top else output_images[n].height,
                 )
                 mask = mask.crop(crop_region)
                 p.image_mask = mask
 
-                image_to_process = out.crop(crop_region)
+                image_to_process = output_images[n].crop(crop_region)
                 images_to_process.append(image_to_process)
 
             p.init_images = images_to_process
@@ -240,11 +241,11 @@ class Script(scripts.Script):
                 initial_seed_and_info[0] = proc.seed
                 initial_seed_and_info[1] = proc.info
 
-            for proc_img in proc.images:
-                out.paste(proc_img, (0 if is_left else out.width - proc_img.width, 0 if is_top else out.height - proc_img.height))
-                out = out.crop((0, 0, res_w, res_h))
+            for n in range(count):
+                output_images[n].paste(proc.images[n], (0 if is_left else output_images[n].width - proc.images[n].width, 0 if is_top else output_images[n].height - proc.images[n].height))
+                output_images[n] = output_images[n].crop((0, 0, res_w, res_h))
 
-            return proc.images
+            return output_images
 
         batch_count = p.n_iter
         batch_size = p.batch_size
