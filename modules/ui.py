@@ -192,6 +192,12 @@ def save_pil_to_file(pil_image, dir=None):
             metadata.add_text(key, value)
             use_metadata = True
 
+    if dir is not None:
+        try:
+            os.mkdir(dir)
+        except:
+            pass
+
     file_obj = tempfile.NamedTemporaryFile(delete=False, suffix=".png", dir=dir)
     pil_image.save(file_obj, pnginfo=(metadata if use_metadata else None))
     return file_obj
