@@ -12,7 +12,7 @@ if cmd_opts.deepdanbooru:
     import modules.deepbooru as deepbooru
 
 
-def preprocess(process_src, process_dst, process_width, process_height, process_flip, process_split, process_caption, process_caption_deepbooru=False):
+def preprocess(process_src, process_dst, process_width, process_height, process_flip, process_split, process_caption, process_caption_deepbooru=False, split_threshold=0.5, overlap_ratio=0.2):
     try:
         if process_caption:
             shared.interrogator.load()
@@ -22,7 +22,7 @@ def preprocess(process_src, process_dst, process_width, process_height, process_
             db_opts[deepbooru.OPT_INCLUDE_RANKS] = False
             deepbooru.create_deepbooru_process(opts.interrogate_deepbooru_score_threshold, db_opts)
 
-        preprocess_work(process_src, process_dst, process_width, process_height, process_flip, process_split, process_caption, process_caption_deepbooru)
+        preprocess_work(process_src, process_dst, process_width, process_height, process_flip, process_split, process_caption, process_caption_deepbooru, split_threshold, overlap_ratio)
 
     finally:
 
@@ -34,13 +34,13 @@ def preprocess(process_src, process_dst, process_width, process_height, process_
 
 
 
-def preprocess_work(process_src, process_dst, process_width, process_height, process_flip, process_split, process_caption, process_caption_deepbooru=False):
+def preprocess_work(process_src, process_dst, process_width, process_height, process_flip, process_split, process_caption, process_caption_deepbooru=False, split_threshold=0.5, overlap_ratio=0.2):
     width = process_width
     height = process_height
     src = os.path.abspath(process_src)
     dst = os.path.abspath(process_dst)
-    split_threshold = 0.5
-    overlap_ratio = 0.2
+    split_threshold = max(0.0, min(1.0, split_threshold))
+    overlap_ratio = max(0.0, min(0.9, overlap_ratio))
 
     assert src != dst, 'same directory specified as source and destination'
 
