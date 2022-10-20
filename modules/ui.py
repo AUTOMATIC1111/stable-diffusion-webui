@@ -1240,6 +1240,7 @@ def create_ui(wrap_gradio_gpu_call):
 
                     learn_rate = gr.Textbox(label='Learning rate', placeholder="Learning rate", value="0.005")
                     cfg_scale = gr.Number(label='CFG scale (negative embeddings only)', value=5.0)
+                    rec_loss_w = gr.Slider(minimum=0.01, maximum=1.0, step=0.01, label="Reconstruction loss weight (reconstruction only)", value=0.2)
                     batch_size = gr.Number(label='Batch size', value=1, precision=0)
                     dataset_directory = gr.Textbox(label='Dataset directory', placeholder="Path to directory with input images")
                     log_directory = gr.Textbox(label='Log directory', placeholder="Path to directory where to write outputs", value="textual_inversion")
@@ -1337,7 +1338,8 @@ def create_ui(wrap_gradio_gpu_call):
                 cfg_scale,
                 disc_path,
                 neg_train,
-                rec_train
+                rec_train,
+                rec_loss_w
             ],
             outputs=[
                 ti_output,

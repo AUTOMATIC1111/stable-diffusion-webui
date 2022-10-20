@@ -253,7 +253,7 @@ def p_losses_hook(x_start, cond, t, noise=None, scale=5.0):
 
 #supprot Advance Prompt Tuning by 7eu7d7 https://github.com/7eu7d7/APT-stable-diffusion-auto-prompt
 def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_directory, training_width, training_height, steps, create_image_every, save_embedding_every, template_file, save_image_with_stored_embedding, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height,
-                    cfg_scale, classifier_path, use_negative, use_rec):
+                    cfg_scale, classifier_path, use_negative, use_rec, rec_loss_w):
     assert embedding_name, 'embedding not selected'
 
     shared.sd_model.p_losses=p_losses_hook # hook p_losses
@@ -349,7 +349,7 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
                 #loss = ce(disc.get_all(x_samples_ddim), disc_label)
                 loss = (1-disc.get_score(x_samples_ddim)).mean()
             elif use_rec:
-                loss = output[0] + F.l1_loss(torch.cat([entry.timg for entry in entries]), x_samples_ddim)*0.2
+                loss = output[0] + F.l1_loss(torch.cat([entry.timg for entry in entries]), x_samples_ddim)*rec_loss_w
             else:
                 loss = output[0]
 
