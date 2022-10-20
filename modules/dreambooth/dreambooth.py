@@ -31,40 +31,68 @@ from modules.dreambooth import conversion
 
 class DreamBooth:
     # TODO: Clean up notes below and make them a proper docstring
-    def __init__(self, name, training_data: str, instance_prompt: str, class_prompt: str, learn_rate: float = 5e-6,
-                 save_img_every=500, save_data_every=200, max_steps: int = 800, batch_size: int = 1,
-                 grad_steps: int = 1, scheduler: str = "constant", warmup_steps: int = 0, use_adam=False,
-                 class_data=None, seed=None, log_interval=10, mixed_precision="no", no_cache_latents=True,
-                 total_steps=0,
-                 num_class_images=200):
+    def __init__(self,
+                 model_name,
+                 initialization_text,
+                 classification_text,
+                 learn_rate,
+                 dataset_directory,
+                 classification_directory,
+                 steps,
+                 create_image_every,
+                 save_embedding_every,
+                 num_class_images,
+                 use_cpu,
+                 train_text_encoder,
+                 no_cache_latents,
+                 use_adam,
+                 center_crop,
+                 grad_check,
+                 scale_lr,
+                 mixed_precision,
+                 scheduler,
+                 resolution,
+                 prior_loss_weight,
+                 num_train_epochs,
+                 adam_beta1,
+                 adam_beta2,
+                 adam_weight_decay,
+                 adam_epsilon,
+                 max_grad_norm,
+                 batch_size,
+                 seed,
+                 grad_acc_steps,
+                 warmup_steps,
+                 total_steps
+                 ):
         self.total_steps = total_steps
-        self.instance_data_dir = training_data
-        self.instance_prompt = instance_prompt
-        self.class_prompt = class_prompt
+        self.instance_data_dir = dataset_directory
+        self.instance_prompt = initialization_text
+        self.class_prompt = classification_text
         self.seed = seed
         self.train_batch_size = batch_size
         self.sample_batch_size = batch_size
-        self.max_train_steps = max_steps
+        self.max_train_steps = steps
         self.num_class_images = num_class_images
-        self.gradient_accumulation_steps = grad_steps
+        self.gradient_accumulation_steps = grad_acc_steps
         self.learning_rate = learn_rate
         self.lr_scheduler = scheduler
         self.lr_warmup_steps = warmup_steps
         self.use_8bit_adam = use_adam
-        self.log_interval = log_interval
-        self.save_img_every = save_img_every
-        self.save_data_every = save_data_every
+        self.log_interval = 10
+        self.save_img_every = create_image_every
+        self.save_data_every = save_embedding_every
         # choices=["no", "fp16", "bf16"],
         self.mixed_precision = mixed_precision
         self.not_cache_latents = no_cache_latents
 
-        name = "".join(x for x in name if x.isalnum())
+        name = "".join(x for x in model_name if x.isalnum())
         model_path = paths.models_path
         model_dir = os.path.join(model_path, "dreambooth", name)
         self.output_dir = os.path.join(model_dir, "working")
         # A folder containing the training data of instance images.
-        if class_data is not None and class_data != "":
-            self.class_data_dir = class_data
+        if dataset_directory is not None and dataset_directory != "":
+            self.class_data_dir = dataset_directory
         else:
             self.class_data_dir = os.path.join(self.output_dir, "classifiers")
             if not os.path.exists(self.class_data_dir):
@@ -73,22 +101,23 @@ class DreamBooth:
         self.logging_dir = os.path.join(self.output_dir, "logging")
         self.pretrained_model_path = os.path.join(model_dir, "stable-diffusion-v1-4")
         self.with_prior_preservation = False
-        self.train_text_encoder = True
-        self.resolution = 512
 
-        if class_prompt != "*" and class_prompt != "" and num_class_images != 0:
+        if classification_text != "*" and classification_text != "" and num_class_images != 0:
             self.with_prior_preservation = True
 
-        self.prior_loss_weight = 1.0
-        self.center_crop = False
-        self.num_train_epochs = 1
-        self.gradient_checkpointing = False
-        self.scale_lr = False
-        self.adam_beta1 = 0.9
-        self.adam_beta2 = 0.999
-        self.adam_weight_decay = 1e-2
-        self.adam_epsilon = 1e-08
-        self.max_grad_norm = 1.0
+        self.train_text_encoder = train_text_encoder
+        self.resolution = resolution
+        self.use_cpu = use_cpu
+        self.prior_loss_weight = prior_loss_weight
+        self.center_crop = center_crop
+        self.num_train_epochs = num_train_epochs
+        self.gradient_checkpointing = grad_check
+        self.scale_lr = scale_lr
+        self.adam_beta1 = adam_beta1
+        self.adam_beta2 = adam_beta2
+        self.adam_weight_decay = adam_weight_decay
+        self.adam_epsilon = adam_epsilon
+        self.max_grad_norm = max_grad_norm
 
     def train(self):
         logging_dir = Path(self.output_dir, self.logging_dir)
@@ -97,7 +126,6 @@ class DreamBooth:
         use_cpu = False
         if shared.cmd_opts.medvram or shared.cmd_opts.lowvram:
             use_cpu = True
-
 
         try:
             torch.distributed.init_process_group("mpi", init_method=None,
@@ -162,7 +190,8 @@ class DreamBooth:
                 # Disabled in opt
                 with torch.autocast("cuda"), torch.inference_mode():
                     for example in tqdm(
-                        sample_dataloader, desc="Generating class images", disable=not accelerator.is_local_main_process
+                            sample_dataloader, desc="Generating class images",
+                            disable=not accelerator.is_local_main_process
                     ):
                         images = pipeline(example["prompt"]).images
 
@@ -223,7 +252,8 @@ class DreamBooth:
             optimizer_class = torch.optim.AdamW
 
         params_to_optimize = (
-            itertools.chain(unet.parameters(), text_encoder.parameters()) if self.train_text_encoder else unet.parameters()
+            itertools.chain(unet.parameters(),
+                            text_encoder.parameters()) if self.train_text_encoder else unet.parameters()
         )
         optimizer = optimizer_class(
             params_to_optimize,
@@ -284,7 +314,8 @@ class DreamBooth:
             text_encoder_cache = []
             for batch in tqdm(train_dataloader, desc="Caching latents"):
                 with torch.no_grad():
-                    batch["pixel_values"] = batch["pixel_values"].to(accelerator.device, non_blocking=True, dtype=weight_dtype)
+                    batch["pixel_values"] = batch["pixel_values"].to(accelerator.device, non_blocking=True,
+                                                                     dtype=weight_dtype)
                     batch["input_ids"] = batch["input_ids"].to(accelerator.device, non_blocking=True)
                     latents_cache.append(vae.encode(batch["pixel_values"]).latent_dist)
                     if self.train_text_encoder:
@@ -292,7 +323,8 @@ class DreamBooth:
                     else:
                         text_encoder_cache.append(text_encoder(batch["input_ids"])[0])
             train_dataset = LatentsDataset(latents_cache, text_encoder_cache)
-            train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=1, collate_fn=lambda x: x, shuffle=True)
+            train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=1, collate_fn=lambda x: x,
+                                                           shuffle=True)
             del vae
             if not self.train_text_encoder:
                 del text_encoder
@@ -336,7 +368,6 @@ class DreamBooth:
             accelerator.init_trackers("dreambooth", config=vars(self))
         precision = accelerator.use_fp16
 
-
         # Train!
         total_batch_size = self.train_batch_size * accelerator.num_processes * self.gradient_accumulation_steps
 
@@ -359,7 +390,7 @@ class DreamBooth:
         shared.state.job_no = global_step
         loss_avg = AverageMeter()
         text_enc_context = nullcontext() if self.train_text_encoder else torch.no_grad()
-        
+
         for epoch in range(self.num_train_epochs):
             unet.train()
             for step, batch in enumerate(train_dataloader):
@@ -374,7 +405,8 @@ class DreamBooth:
                     noise = torch.randn_like(latents)
                     bsz = latents.shape[0]
                     # Sample a random timestep for each image
-                    timesteps = torch.randint(0, noise_scheduler.config.num_train_timesteps, (bsz,), device=latents.device)
+                    timesteps = torch.randint(0, noise_scheduler.config.num_train_timesteps, (bsz,),
+                                              device=latents.device)
                     timesteps = timesteps.long()
                     noisy_latents = noise_scheduler.add_noise(latents, noise, timesteps)
 
@@ -481,8 +513,38 @@ class DreamBooth:
         return self.output_dir, global_step
 
 
-def start_training(model_name, initialization_text, classification_text, learn_rate, dataset_directory,
-                   classifier_directory, steps, create_image_every, save_embedding_every, db_num_class_images):
+def start_training(model_name,
+                   initialization_text,
+                   classification_text,
+                   learn_rate,
+                   dataset_directory,
+                   classification_directory,
+                   steps,
+                   create_image_every,
+                   save_embedding_every,
+                   num_class_images,
+                   use_cpu,
+                   train_text_encoder,
+                   no_cache_latents,
+                   use_adam,
+                   center_crop,
+                   grad_check,
+                   scale_lr,
+                   mixed_precision,
+                   scheduler,
+                   resolution,
+                   prior_loss_weight,
+                   num_train_epochs,
+                   adam_beta1,
+                   adam_beta2,
+                   adam_weight_decay,
+                   adam_epsilon,
+                   max_grad_norm,
+                   batch_size,
+                   seed,
+                   grad_acc_steps,
+                   warmup_steps
+                   ):
     print("Starting Dreambooth training...")
     converted = ""
     sd_hijack.undo_optimizations()
@@ -503,9 +565,38 @@ def start_training(model_name, initialization_text, classification_text, learn_r
 
     src_checkpoint = config["src"]
     total_steps = config["total_steps"]
-    dream = DreamBooth(model_name, dataset_directory, initialization_text, classification_text, learn_rate,
-                       create_image_every, save_embedding_every, steps, class_data=classifier_directory,
-                       num_class_images=db_num_class_images)
+    dream = DreamBooth(model_name,
+                       initialization_text,
+                       classification_text,
+                       learn_rate,
+                       dataset_directory,
+                       classification_directory,
+                       steps,
+                       create_image_every,
+                       save_embedding_every,
+                       num_class_images,
+                       use_cpu,
+                       train_text_encoder,
+                       no_cache_latents,
+                       use_adam,
+                       center_crop,
+                       grad_check,
+                       scale_lr,
+                       mixed_precision,
+                       scheduler,
+                       resolution,
+                       prior_loss_weight,
+                       num_train_epochs,
+                       adam_beta1,
+                       adam_beta2,
+                       adam_weight_decay,
+                       adam_epsilon,
+                       max_grad_norm,
+                       batch_size,
+                       seed,
+                       grad_acc_steps,
+                       warmup_steps,
+                       total_steps)
     if not os.path.exists(dream.instance_data_dir):
         print("Invalid training data dir!")
         shared.state.textinfo = "Invalid training data dir"
