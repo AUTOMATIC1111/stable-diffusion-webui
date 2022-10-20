@@ -151,6 +151,34 @@ function ask_for_style_name(_, prompt_text, negative_prompt_text) {
     return [name_, prompt_text, negative_prompt_text]
 }
 
+// returns css id for currently selected tab in ui
+function selected_tab_id() {
+    tabs = gradioApp().querySelectorAll('#tabs div.tabitem')
+
+    for(var tab = 0; tab < tabs.length; tab++) {
+        if (tabs[tab].style.display != "none") return tabs[tab].id
+
+    }
+
+}
+
+function trash_prompt(_,_, is_img2img) {
+
+    if(selected_tab_id() == "tab_txt2img") {
+     pos_prompt = txt2img_textarea = gradioApp().querySelector("#txt2img_prompt > label > textarea");
+     neg_prompt = txt2img_textarea = gradioApp().querySelector("#txt2img_neg_prompt > label > textarea");
+
+     pos_prompt.value = ""
+     neg_prompt.value = ""
+    } else {
+     pos_prompt = txt2img_textarea = gradioApp().querySelector("#img2img_prompt > label > textarea");
+     neg_prompt = txt2img_textarea = gradioApp().querySelector("#img2img_neg_prompt > label > textarea");
+
+     pos_prompt.value = ""
+     neg_prompt.value = ""
+    }
+}
+
 
 
 opts = {}
