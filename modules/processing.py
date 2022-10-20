@@ -587,7 +587,9 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         x = None
         devices.torch_gc()
 
-        return self.sampler.sample_img2img(self, samples, noise, conditioning, unconditional_conditioning, steps=self.steps) or samples
+        samples = self.sampler.sample_img2img(self, samples, noise, conditioning, unconditional_conditioning, steps=self.steps)
+
+        return samples
 
 
 class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
