@@ -155,7 +155,8 @@ def webui(launch_api=False):
 
 task = []
 if __name__ == "__main__":
-    if cmd_opts.nowebui:
-        api_only()
-    else:
-        webui(cmd_opts.api)
+    webui(launch_api=False)
+    # if cmd_opts.nowebui:
+    #     api_only()
+    # else:
+    #     webui(cmd_opts.api)
