@@ -3,6 +3,7 @@ from __future__ import annotations
 import inspect
 import logging
 import os
+from math import ceil
 
 import yaml
 from PIL import Image
@@ -151,7 +152,9 @@ def sddebz_highres_fix(
     This method requires less user input than the builtin highres fix, which uses
     firstphase_width and firstphase_height.
 
-    The original plugin writer, @sddebz, wrote this.
+    The original plugin writer, @sddebz, wrote this. I modified it to `ceil`
+    instead of `round` to make selected region resizing easier in the plugin, and
+    to avoid rounding to 0.
 
     Args:
         base_size (int): Native/base input size of the model.
@@ -165,8 +168,7 @@ def sddebz_highres_fix(
 
     def rnd(r, x, z=64):
         """Scale dimension x with stride z while attempting to preserve aspect ratio r."""
-        # dont let dimension be rounded to 0
-        return z * max(round(r * x / z), 1)
+        return z * ceil(r * x / z)
 
     ratio = orig_width / orig_height
 
