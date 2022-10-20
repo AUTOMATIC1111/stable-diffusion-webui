@@ -1840,6 +1840,8 @@ def load_javascript(raw_response):
 
     javascript += f"\n<script>{localization.localization_js(shared.opts.localization)}</script>"
 
+    raw_response = vars(raw_response).get("raw_response", raw_response)
+
     def template_response(*args, **kwargs):
         res = raw_response(*args, **kwargs)
         res.body = res.body.replace(
@@ -1847,6 +1849,7 @@ def load_javascript(raw_response):
         res.init_headers()
         return res
 
+    template_response.raw_response = raw_response
     gradio.routes.templates.TemplateResponse = template_response
 
 
