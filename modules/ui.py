@@ -268,8 +268,13 @@ def calc_time_left(progress, threshold, label, force_display):
         time_since_start = time.time() - shared.state.time_start
         eta = (time_since_start/progress)
         eta_relative = eta-time_since_start
-        if (eta_relative > threshold and progress > 0.02) or force_display:           
-            return label + time.strftime('%H:%M:%S', time.gmtime(eta_relative))        
+        if (eta_relative > threshold and progress > 0.02) or force_display:
+            if eta_relative > 3600:
+                return label + time.strftime('%H:%M:%S', time.gmtime(eta_relative))
+            elif eta_relative > 60:
+                return label + time.strftime('%M:%S',  time.gmtime(eta_relative))
+            else:
+                return label + time.strftime('%Ss',  time.gmtime(eta_relative))
         else:
             return ""
 
@@ -285,7 +290,7 @@ def check_progress_call(id_part):
     if shared.state.sampling_steps > 0:
         progress += 1 / shared.state.job_count * shared.state.sampling_step / shared.state.sampling_steps
 
-    time_left = calc_time_left( progress, 60, " ETA:", shared.state.time_left_force_display )
+    time_left = calc_time_left( progress, 1, " ETA: ", shared.state.time_left_force_display )
     if time_left != "":
         shared.state.time_left_force_display = True
 
@@ -293,7 +298,7 @@ def check_progress_call(id_part):
 
     progressbar = ""
     if opts.show_progressbar:
-        progressbar = f"""<div class='progressDiv'><div class='progress' style="overflow:hidden;width:{progress * 100}%">{str(int(progress*100))+"%"+time_left if progress > 0.01 else ""}</div></div>"""
+        progressbar = f"""<div class='progressDiv'><div class='progress' style="overflow:visible;width:{progress * 100}%;white-space:nowrap;">{"&nbsp;" * 2 + str(int(progress*100))+"%" + time_left if progress > 0.01 else ""}</div></div>"""
 
     image = gr_show(False)
     preview_visibility = gr_show(False)
@@ -477,14 +482,14 @@ def create_toprow(is_img2img):
             with gr.Row():
                 with gr.Column(scale=80):
                     with gr.Row():
-                        prompt = gr.Textbox(label="Prompt", elem_id=f"{id_part}_prompt", show_label=False, lines=2, 
+                        prompt = gr.Textbox(label="Prompt", elem_id=f"{id_part}_prompt", show_label=False, lines=2,
                             placeholder="Prompt (press Ctrl+Enter or Alt+Enter to generate)"
                         )
 
             with gr.Row():
                 with gr.Column(scale=80):
                     with gr.Row():
-                        negative_prompt = gr.Textbox(label="Negative prompt", elem_id=f"{id_part}_neg_prompt", show_label=False, lines=2, 
+                        negative_prompt = gr.Textbox(label="Negative prompt", elem_id=f"{id_part}_neg_prompt", show_label=False, lines=2,
                             placeholder="Negative prompt (press Ctrl+Enter or Alt+Enter to generate)"
                         )
 
@@ -1217,6 +1222,8 @@ def create_ui(wrap_gradio_gpu_call):
                 with gr.Tab(label="Create hypernetwork"):
                     new_hypernetwork_name = gr.Textbox(label="Name")
                     new_hypernetwork_sizes = gr.CheckboxGroup(label="Modules", value=["768", "320", "640", "1280"], choices=["768", "320", "640", "1280"])
+                    new_hypernetwork_layer_structure = gr.Textbox("1, 2, 1", label="Enter hypernetwork layer structure", placeholder="1st and last digit must be 1. ex:'1, 2, 1'")
+                    new_hypernetwork_add_layer_norm = gr.Checkbox(label="Add layer normalization")
 
                     with gr.Row():
                         with gr.Column(scale=3):
@@ -1299,6 +1306,8 @@ def create_ui(wrap_gradio_gpu_call):
             inputs=[
                 new_hypernetwork_name,
                 new_hypernetwork_sizes,
+                new_hypernetwork_layer_structure,
+                new_hypernetwork_add_layer_norm,
             ],
             outputs=[
                 train_hypernetwork_name,
