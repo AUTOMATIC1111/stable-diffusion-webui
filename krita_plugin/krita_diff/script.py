@@ -110,13 +110,20 @@ class Script(QObject):
 
     def update_config(self):
         try:
-            with urllib.request.urlopen(self.cfg("base_url", str) + "/config") as res:
+            # This should be quick unlike the post() requests which might take minutes
+            # so add timeout to prevent freezing
+            with urllib.request.urlopen(
+                self.cfg("base_url", str) + "/config", timeout=2
+            ) as res:
                 self.opt = json.loads(res.read())
         except URLError as e:
             self.set_status(f"{STATE_URLERROR}: {e.reason}")
             return False
         except json.JSONDecodeError:
             self.set_status(f"{STATE_URLERROR}: invalid JSON response")
+            return False
+        except ValueError:
+            self.set_status(f"{STATE_URLERROR}: Invalid backend URL!")
             return False
 
         try:
@@ -147,12 +154,16 @@ class Script(QObject):
         body_encoded = body.encode("utf-8")
         req.add_header("Content-Length", str(len(body_encoded)))
         try:
-            with urllib.request.urlopen(req, body_encoded) as res:
+            # TODO: how to cancel this? might as well refactor the API to be async...
+            # setting timeout to None explicitly means no timeout
+            with urllib.request.urlopen(req, body_encoded, timeout=None) as res:
                 return json.loads(res.read())
         except URLError as e:
             self.set_status(f"{STATE_URLERROR}: {e.reason}")
         except json.JSONDecodeError:
             self.set_status(f"{STATE_URLERROR}: invalid response")
+        except ValueError:
+            self.set_status(f"{STATE_URLERROR}: Invalid backend URL!")
 
     def get_common_params(self):
         tiling = self.cfg("sd_tiling", bool) and (
