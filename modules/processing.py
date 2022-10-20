@@ -557,7 +557,8 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         else:
             # Dummy zero conditioning if we're not using inpainting model.
             # Still takes up a bit of memory, but no encoder call.
-            image_conditioning = torch.zeros(x.shape[0], 5, x.shape[-2], x.shape[-1], dtype=x.dtype, device=x.device)
+            # Pretty sure we can just make this a 1x1 image since its not going to be used besides its batch size.
+            image_conditioning = torch.zeros(x.shape[0], 5, 1, 1, dtype=x.dtype, device=x.device)
 
         return image_conditioning
 
@@ -759,8 +760,8 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             self.image_conditioning = self.image_conditioning.to(shared.device).type(self.sd_model.dtype)
         else:
             self.image_conditioning = torch.zeros(
-                self.init_latent.shape[0], 5, self.init_latent.shape[-2], self.init_latent.shape[-1], 
-                dtype=self.init_latent.dtype, 
+                self.init_latent.shape[0], 5, 1, 1,
+                dtype=self.init_latent.dtype,
                 device=self.init_latent.device
             )
 

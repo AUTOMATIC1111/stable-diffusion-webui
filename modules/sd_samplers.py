@@ -138,7 +138,7 @@ class VanillaStableDiffusionSampler:
         if self.stop_at is not None and self.step > self.stop_at:
             raise InterruptedException
 
-        # Have to unwrap the inpainting conditioning here to perform pre-preocessing
+        # Have to unwrap the inpainting conditioning here to perform pre-processing
         image_conditioning = None
         if isinstance(cond, dict):
             image_conditioning = cond["c_concat"][0]
@@ -146,7 +146,7 @@ class VanillaStableDiffusionSampler:
             unconditional_conditioning = unconditional_conditioning["c_crossattn"][0]
 
         conds_list, tensor = prompt_parser.reconstruct_multicond_batch(cond, self.step)
-        unconditional_conditioning = prompt_parser.reconstruct_cond_batch(unconditional_conditioning, self.step)            
+        unconditional_conditioning = prompt_parser.reconstruct_cond_batch(unconditional_conditioning, self.step)
 
         assert all([len(conds) == 1 for conds in conds_list]), 'composition via AND is not supported for DDIM/PLMS samplers'
         cond = tensor
@@ -165,6 +165,8 @@ class VanillaStableDiffusionSampler:
             img_orig = self.sampler.model.q_sample(self.init_latent, ts)
             x_dec = img_orig * self.mask + self.nmask * x_dec
 
+        # Wrap the image conditioning back up since the DDIM code can accept the dict directly.
+        # Note that they need to be lists because it just concatenates them later.
         if image_conditioning is not None:
             cond = {"c_concat": [image_conditioning], "c_crossattn": [cond]}
             unconditional_conditioning = {"c_concat": [image_conditioning], "c_crossattn": [unconditional_conditioning]}
