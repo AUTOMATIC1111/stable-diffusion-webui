@@ -268,8 +268,13 @@ def calc_time_left(progress, threshold, label, force_display):
         time_since_start = time.time() - shared.state.time_start
         eta = (time_since_start/progress)
         eta_relative = eta-time_since_start
-        if (eta_relative > threshold and progress > 0.02) or force_display:           
-            return label + time.strftime('%H:%M:%S', time.gmtime(eta_relative))        
+        if (eta_relative > threshold and progress > 0.02) or force_display:
+            if eta_relative > 3600:
+                return label + time.strftime('%H:%M:%S', time.gmtime(eta_relative))
+            elif eta_relative > 60:
+                return label + time.strftime('%M:%S',  time.gmtime(eta_relative))
+            else:
+                return label + time.strftime('%Ss',  time.gmtime(eta_relative))
         else:
             return ""
 
@@ -285,7 +290,7 @@ def check_progress_call(id_part):
     if shared.state.sampling_steps > 0:
         progress += 1 / shared.state.job_count * shared.state.sampling_step / shared.state.sampling_steps
 
-    time_left = calc_time_left( progress, 60, " ETA:", shared.state.time_left_force_display )
+    time_left = calc_time_left( progress, 1, " ETA: ", shared.state.time_left_force_display )
     if time_left != "":
         shared.state.time_left_force_display = True
 
@@ -293,7 +298,7 @@ def check_progress_call(id_part):
 
     progressbar = ""
     if opts.show_progressbar:
-        progressbar = f"""<div class='progressDiv'><div class='progress' style="overflow:hidden;width:{progress * 100}%">{str(int(progress*100))+"%"+time_left if progress > 0.01 else ""}</div></div>"""
+        progressbar = f"""<div class='progressDiv'><div class='progress' style="overflow:visible;width:{progress * 100}%;white-space:nowrap;">{"&nbsp;" * 2 + str(int(progress*100))+"%" + time_left if progress > 0.01 else ""}</div></div>"""
 
     image = gr_show(False)
     preview_visibility = gr_show(False)
