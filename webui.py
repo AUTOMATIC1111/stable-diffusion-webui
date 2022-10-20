@@ -72,6 +72,11 @@ def wrap_gradio_gpu_call(func, extra_outputs=None):
     return modules.ui.wrap_gradio_call(f, extra_outputs=extra_outputs)
 
 def initialize():
+    if cmd_opts.ui_debug_mode:
+        class enmpty():
+            name = None
+        shared.sd_upscalers = [enmpty()]
+        return
     modelloader.cleanup_models()
     modules.sd_models.setup_model()
     codeformer.setup_model(cmd_opts.codeformer_models_path)
