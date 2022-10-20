@@ -4,7 +4,7 @@ import time
 import importlib
 import signal
 import threading
-
+from fastapi import FastAPI
 from fastapi.middleware.gzip import GZipMiddleware
 
 from modules.paths import script_path
@@ -30,7 +30,6 @@ from modules import modelloader
 from modules.paths import script_path
 from modules.shared import cmd_opts
 import modules.hypernetworks.hypernetwork
-
 
 queue_lock = threading.Lock()
 
@@ -87,10 +86,6 @@ def initialize():
     shared.opts.onchange("sd_hypernetwork", wrap_queued_call(lambda: modules.hypernetworks.hypernetwork.load_hypernetwork(shared.opts.sd_hypernetwork)))
     shared.opts.onchange("sd_hypernetwork_strength", modules.hypernetworks.hypernetwork.apply_strength)
 
-
-def webui():
-    initialize()
-    
     # make the program just exit at ctrl+c without waiting for anything
     def sigint_handler(sig, frame):
         print(f'Interrupted with signal {sig} in {frame}')
@@ -98,10 +93,37 @@ def webui():
 
     signal.signal(signal.SIGINT, sigint_handler)
 
-    while 1:
 
+def create_api(app):
+    from modules.api.api import Api
+    api = Api(app, queue_lock)
+    return api
+
+def wait_on_server(demo=None):
+    while 1:
+        time.sleep(0.5)
+        if demo and getattr(demo, 'do_restart', False):
+            time.sleep(0.5)
+            demo.close()
+            time.sleep(0.5)
+            break
+
+def api_only():
+    initialize()
+
+    app = FastAPI()
+    app.add_middleware(GZipMiddleware, minimum_size=1000)
+    api = create_api(app)
+
+    api.launch(server_name="0.0.0.0" if cmd_opts.listen else "127.0.0.1", port=cmd_opts.port if cmd_opts.port else 7861)
+
+
+def webui(launch_api=False):
+    initialize()
+
+    while 1:
         demo = modules.ui.create_ui(wrap_gradio_gpu_call=wrap_gradio_gpu_call)
-        
+
         app, local_url, share_url = demo.launch(
             share=cmd_opts.share,
             server_name="0.0.0.0" if cmd_opts.listen else None,
@@ -111,16 +133,13 @@ def webui():
             inbrowser=cmd_opts.autolaunch,
             prevent_thread_lock=True
         )
-        
+
         app.add_middleware(GZipMiddleware, minimum_size=1000)
 
-        while 1:
-            time.sleep(0.5)
-            if getattr(demo, 'do_restart', False):
-                time.sleep(0.5)
-                demo.close()
-                time.sleep(0.5)
-                break
+        if (launch_api):
+            create_api(app)
+
+        wait_on_server(demo)
 
         sd_samplers.set_samplers()
 
@@ -133,5 +152,10 @@ def webui():
         print('Restarting Gradio')
 
 
+
+task = []
 if __name__ == "__main__":
-    webui()
+    if cmd_opts.nowebui:
+        api_only()
+    else:
+        webui(cmd_opts.api)
