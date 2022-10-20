@@ -5,44 +5,43 @@ import json
 import math
 import mimetypes
 import os
-import platform
 import random
-import subprocess as sp
 import sys
 import tempfile
 import time
 import traceback
+import platform
+import subprocess as sp
 from functools import partial, reduce
 
-import gradio as gr
-import gradio.routes
-import gradio.utils
 import numpy as np
-import piexif
 import torch
 from PIL import Image, PngImagePlugin
+import piexif
 
-from modules import localization, sd_hijack, sd_models
+import gradio as gr
+import gradio.utils
+import gradio.routes
+
+from modules import sd_hijack, sd_models, localization
 from modules.paths import script_path
-from modules.shared import cmd_opts, opts, restricted_opts
-
+from modules.shared import opts, cmd_opts, restricted_opts
 if cmd_opts.deepdanbooru:
     from modules.deepbooru import get_deepbooru_tags
-
-import modules.codeformer_model
-import modules.generation_parameters_copypaste
-import modules.gfpgan_model
-import modules.hypernetworks.ui
-import modules.images_history as img_his
+import modules.shared as shared
+from modules.sd_samplers import samplers, samplers_for_img2img
+from modules.sd_hijack import model_hijack
 import modules.ldsr_model
 import modules.scripts
-import modules.shared as shared
+import modules.gfpgan_model
+import modules.codeformer_model
 import modules.styles
-import modules.textual_inversion.ui
+import modules.generation_parameters_copypaste
 from modules import prompt_parser
 from modules.images import save_image
-from modules.sd_hijack import model_hijack
-from modules.sd_samplers import samplers, samplers_for_img2img
+import modules.textual_inversion.ui
+import modules.hypernetworks.ui
+import modules.images_history as img_his
 
 # this is a fix for Windows users. Without it, javascript files will be served with text/html content-type and the browser will not show any UI
 mimetypes.init()
