@@ -37,6 +37,10 @@ class Defaults:
     color_correct: bool = True
     do_exact_steps: bool = True
 
+    # TODO: consider what to do with these
+    new_img_path: str = "debug_image.png"
+    new_img_mask_path: str = "debug_image_mask.png"
+
     sd_model_list: List[str] = field(default_factory=lambda: [ERROR_MSG])
     sd_model: str = "model.ckpt"
     sd_batch_size: int = 1

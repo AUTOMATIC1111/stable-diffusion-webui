@@ -1,17 +1,10 @@
-import json
-import math
 import os
-from dataclasses import asdict
-from urllib.error import URLError
-from urllib.parse import urljoin
-from urllib.request import Request, urlopen
 
-from krita import Krita, QByteArray, QImage, QObject, QSettings, QTimer
+from krita import Krita, QByteArray, QImage, QObject, QTimer
 
+from .client import Client
 from .config import Config
 from .defaults import (
-    GET_CONFIG_TIMEOUT,
-    POST_TIMEOUT,
     STATE_IMG2IMG,
     STATE_INIT,
     STATE_INPAINT,
@@ -22,14 +15,17 @@ from .defaults import (
     STATE_URLERROR,
     STATE_WAIT,
 )
-from .utils import create_layer, find_optimal_selection_region, fix_prompt
+from .utils import create_layer, find_optimal_selection_region
 
 
+# Does it actually have to be a QObject?
+# The only possible use I see is for event emitting
 class Script(QObject):
     def __init__(self):
         # Persistent settings (should reload between Krita sessions)
         # NOTE: delete this file between tests, should be in ~/.config/krita/krita_diff_plugin.ini
         self.config = Config()
+        self.client = Client(self.config, lambda s: self.set_status(s))
         self.is_busy = False
 
         # Status bar
@@ -98,171 +94,7 @@ class Script(QObject):
             self.height = height
 
     def update_config(self):
-        cfg = None
-        try:
-            with urlopen(
-                urljoin(self.cfg("base_url", str), "config"), None, GET_CONFIG_TIMEOUT
-            ) as res:
-                cfg = json.loads(res.read())
-        except Exception as e:
-            self.handle_api_error(e)
-            return False
-
-        try:
-            assert len(cfg["upscalers"]) > 0
-            assert len(cfg["samplers"]) > 0
-            assert len(cfg["samplers_img2img"]) > 0
-            assert len(cfg["face_restorers"]) > 0
-            assert len(cfg["sd_models"]) > 0
-        except:
-            self.set_status(
-                f"{STATE_URLERROR}: incompatible response, are you running the right API?"
-            )
-            return False
-
-        # replace only after verifying
-        self.opt = cfg
-        self.set_cfg("upscaler_list", self.opt["upscalers"])
-        self.set_cfg("txt2img_sampler_list", self.opt["samplers"])
-        self.set_cfg("img2img_sampler_list", self.opt["samplers_img2img"])
-        self.set_cfg("inpaint_sampler_list", self.opt["samplers_img2img"])
-        self.set_cfg("face_restorer_model_list", self.opt["face_restorers"])
-        self.set_cfg("sd_model_list", self.opt["sd_models"])
-        return True
-
-    def post(self, route, body, base_url=...):
-        base_url = self.cfg("base_url", str) if base_url is ... else base_url
-        # FastAPI doesn't support urlencoded data transparently
-        body = json.dumps(body).encode("utf-8")
-        req = Request(urljoin(base_url, route))
-        req.add_header("Content-Type", "application/json")
-        req.add_header("Content-Length", str(len(body)))
-        try:
-            # TODO: how to cancel this? might as well refactor the API to be async...
-            with urlopen(req, body, POST_TIMEOUT) as res:
-                return json.loads(res.read())
-        except Exception as e:
-            self.handle_api_error(e)
-
-    def handle_api_error(self, exc: Exception):
-        """Handle exceptions that can occur while interacting with the backend."""
-        try:
-            # conveniently allows error to bubble back up if not handled by here
-            raise exc
-        except URLError as e:
-            self.set_status(f"{STATE_URLERROR}: {e.reason}")
-        except json.JSONDecodeError:
-            self.set_status(f"{STATE_URLERROR}: invalid JSON response")
-        except ValueError:
-            self.set_status(f"{STATE_URLERROR}: Invalid backend URL")
-
-    def get_common_params(self):
-        tiling = self.cfg("sd_tiling", bool) and (
-            not self.cfg("only_full_img_tiling", bool) or self.selection is None
-        )
-        # its fine to stuff extra stuff here; pydantic will shave off irrelevant params
-        params = dict(
-            sd_model=self.cfg("sd_model", str),
-            batch_count=self.cfg("sd_batch_count", int),
-            batch_size=self.cfg("sd_batch_size", int),
-            base_size=self.cfg("sd_base_size", int),
-            max_size=self.cfg("sd_max_size", int),
-            tiling=tiling,
-            upscaler_name=self.cfg("upscaler_name", str),
-            restore_faces=self.cfg("face_restorer_model", str) != "None",
-            face_restorer=self.cfg("face_restorer_model", str),
-            codeformer_weight=self.cfg("codeformer_weight", float),
-            filter_nsfw=self.cfg("filter_nsfw", bool),
-            color_correct=self.cfg("color_correct", bool),
-            do_exact_steps=self.cfg("do_exact_steps", bool),
-            include_grid=self.cfg("include_grid", bool),
-        )
-        return params
-
-    def post_txt2img(self):
-        params = dict(orig_width=self.width, orig_height=self.height)
-        if not self.cfg("just_use_yaml", bool):
-            seed = (
-                self.cfg("txt2img_seed", int)
-                if not self.cfg("txt2img_seed", str).strip() == ""
-                else -1
-            )
-            params.update(self.get_common_params())
-            params.update(
-                prompt=fix_prompt(self.cfg("txt2img_prompt", str)),
-                negative_prompt=fix_prompt(self.cfg("txt2img_negative_prompt", str)),
-                sampler_name=self.cfg("txt2img_sampler", str),
-                steps=self.cfg("txt2img_steps", int),
-                cfg_scale=self.cfg("txt2img_cfg_scale", float),
-                seed=seed,
-                highres_fix=self.cfg("txt2img_highres", bool),
-                denoising_strength=self.cfg("txt2img_denoising_strength", float),
-            )
-
-        return self.post("/txt2img", params)
-
-    def post_img2img(self, path, mask_path):
-        params = dict(mode=0, src_path=path, mask_path=mask_path)
-        if not self.cfg("just_use_yaml", bool):
-            seed = (
-                self.cfg("img2img_seed", int)
-                if not self.cfg("img2img_seed", str).strip() == ""
-                else -1
-            )
-            params.update(self.get_common_params())
-            params.update(
-                prompt=fix_prompt(self.cfg("img2img_prompt", str)),
-                negative_prompt=fix_prompt(self.cfg("img2img_negative_prompt", str)),
-                sampler_name=self.cfg("img2img_sampler", str),
-                steps=self.cfg("img2img_steps", int),
-                cfg_scale=self.cfg("img2img_cfg_scale", float),
-                denoising_strength=self.cfg("img2img_denoising_strength", float),
-                seed=seed,
-            )
-
-        return self.post("/img2img", params)
-
-    def post_inpaint(self, path, mask_path):
-        params = dict(mode=1, src_path=path, mask_path=mask_path)
-        if not self.cfg("just_use_yaml", bool):
-            seed = (
-                self.cfg("inpaint_seed", int)
-                if not self.cfg("inpaint_seed", str).strip() == ""
-                else -1
-            )
-            fill = self.cfg("inpaint_fill_list", "QStringList").index(
-                self.cfg("inpaint_fill", str)
-            )
-            params.update(self.get_common_params())
-            params.update(
-                prompt=fix_prompt(self.cfg("inpaint_prompt", str)),
-                negative_prompt=fix_prompt(self.cfg("inpaint_negative_prompt", str)),
-                sampler_name=self.cfg("inpaint_sampler", str),
-                steps=self.cfg("inpaint_steps", int),
-                cfg_scale=self.cfg("inpaint_cfg_scale", float),
-                denoising_strength=self.cfg("inpaint_denoising_strength", float),
-                seed=seed,
-                invert_mask=self.cfg("inpaint_invert_mask", bool),
-                mask_blur=self.cfg("inpaint_mask_blur", int),
-                inpainting_fill=fill,
-                inpaint_full_res=self.cfg("inpaint_full_res", bool),
-                inpaint_full_res_padding=self.cfg("inpaint_full_res_padding", int),
-                include_grid=False,  # it is never useful for inpaint mode
-            )
-
-        return self.post("/img2img", params)
-
-    def post_upscale(self, path):
-        params = (
-            {
-                "src_path": path,
-                "upscaler_name": self.cfg("upscale_upscaler_name", str),
-                "downscale_first": self.cfg("upscale_downscale_first", bool),
-            }
-            if not self.cfg("just_use_yaml", bool)
-            else {"src_path": path}
-        )
-        return self.post("/upscale", params)
+        return self.client.get_config()
 
     def save_img(self, path, is_mask=False):
         if is_mask:
@@ -295,7 +127,9 @@ class Script(QObject):
         print(f"Inserted image: {path}")
 
     def apply_txt2img(self):
-        response = self.post_txt2img()
+        response = self.client.post_txt2img(
+            self.width, self.height, self.selection is not None
+        )
         assert response is not None, "Backend Error, check terminal"
         outputs = response["outputs"]
         print(f"Getting images: {outputs}")
@@ -309,16 +143,16 @@ class Script(QObject):
         self.doc.refreshProjection()
 
     def apply_img2img(self, mode):
-        path = self.opt["new_img"]
-        mask_path = self.opt["new_img_mask"]
+        path = self.cfg("new_img_path", str)
+        mask_path = self.cfg("new_img_mask_path", str)
         self.save_img(path)
         if mode == 1:
             self.save_img(mask_path, is_mask=True)
 
         response = (
-            self.post_inpaint(path, mask_path)
+            self.client.post_inpaint(path, mask_path, self.selection is not None)
             if mode == 1
-            else self.post_img2img(path, mask_path)
+            else self.client.post_img2img(path, mask_path, self.selection is not None)
         )
         assert response is not None, "Backend Error, check terminal"
 
@@ -342,10 +176,10 @@ class Script(QObject):
         self.doc.refreshProjection()
 
     def apply_simple_upscale(self):
-        path = self.opt["new_img"]
+        path = self.cfg("new_img_path", str)
         self.save_img(path)
 
-        response = self.post_upscale(path)
+        response = self.client.post_upscale(path)
         assert response is not None, "Backend Error, check terminal"
         output = response["output"]
         print(f"Getting image: {output}")

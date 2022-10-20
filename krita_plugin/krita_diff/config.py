@@ -10,6 +10,10 @@ class Config:
     def __init__(self, folder=CFG_FOLDER, name=CFG_NAME, model=DEFAULTS):
         """Sorta like a controller for QSettings.
 
+        I'm going to treat this as a singleton global app state, but implemented
+        correctly such that it should be theoretically possible to have multiple
+        instances (maybe multiple dockers controlling multiple remotes?)
+
         Args:
             folder (str, optional): Which folder to store settings in. Defaults to CFG_FOLDER.
             name (str, optional): Name of settings file. Defaults to CFG_NAME.
@@ -20,6 +24,10 @@ class Config:
 
         # add in new config settings
         self.restore_defaults(overwrite=False)
+
+    def __call__(self, key: str, type: type = str):
+        """Shorthand for Config.get()"""
+        return self.get(key, type)
 
     def get(self, key: str, type: type = str):
         """Get config value by key & cast to type.
