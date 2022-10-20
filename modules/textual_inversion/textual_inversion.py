@@ -260,11 +260,11 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
     last_saved_image = "<none>"
     embedding_yet_to_be_embedded = False
 
-    ititial_step = embedding.step or 0
-    if ititial_step > steps:
+    initial_step = embedding.step or 0
+    if initial_step > steps:
         return embedding, filename
 
-    scheduler = LearnRateScheduler(learn_rate, steps, ititial_step)
+    scheduler = LearnRateScheduler(learn_rate, steps, initial_step)
     optimizer = torch.optim.AdamW([embedding.vec], lr=scheduler.learn_rate)
 
     if shared.opts.training_enable_tensorboard:
@@ -273,9 +273,9 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
                 log_dir=os.path.join(log_directory, "tensorboard"),
                 flush_secs=shared.opts.training_tensorboard_flush_every)
 
-    pbar = tqdm.tqdm(enumerate(ds), total=steps-ititial_step)
+    pbar = tqdm.tqdm(enumerate(ds), total=steps-initial_step)
     for i, entries in pbar:
-        embedding.step = i + ititial_step
+        embedding.step = i + initial_step
 
         scheduler.apply(optimizer, embedding.step)
         if scheduler.finished:
