@@ -242,17 +242,14 @@ class DreamBooth:
 
         # Use 8-bit Adam for lower memory usage or to fine-tune the model in 16GB GPUs
         use_adam = False
+        optimizer_class = torch.optim.AdamW
         if self.use_8bit_adam:
             try:
                 import bitsandbytes as bnb
                 optimizer_class = bnb.optim.AdamW8bit
                 use_adam = True
-            except ImportError:
-                print(
-                    "To use 8-bit Adam, please install the bitsandbytes library: `pip install bitsandbytes`."
-                )
-        else:
-            optimizer_class = torch.optim.AdamW
+            except Exception as a:
+                print(f"Exception importing 8bit adam: {a}")
 
         params_to_optimize = (
             itertools.chain(unet.parameters(),
@@ -393,126 +390,135 @@ class DreamBooth:
         shared.state.job_no = global_step
         loss_avg = AverageMeter()
         text_enc_context = nullcontext() if self.train_text_encoder else torch.no_grad()
+        training_failed = False
 
-        for epoch in range(self.num_train_epochs):
-            unet.train()
-            for step, batch in enumerate(train_dataloader):
-                with accelerator.accumulate(unet):
-                    # Convert images to latent space
-                    with torch.no_grad():
-                        if not self.not_cache_latents:
-                            latent_dist = batch[0][0]
-                        else:
-                            latent_dist = vae.encode(batch["pixel_values"].to(dtype=weight_dtype)).latent_dist
-                        latents = latent_dist.sample() * 0.18215
-                    noise = torch.randn_like(latents)
-                    bsz = latents.shape[0]
-                    # Sample a random timestep for each image
-                    timesteps = torch.randint(0, noise_scheduler.config.num_train_timesteps, (bsz,),
-                                              device=latents.device)
-                    timesteps = timesteps.long()
-                    noisy_latents = noise_scheduler.add_noise(latents, noise, timesteps)
-
-                    # Get the text embedding for conditioning
-                    with text_enc_context:
-                        if not self.not_cache_latents:
-                            if self.train_text_encoder:
-                                encoder_hidden_states = text_encoder(batch[0][1])[0]
+        try:
+            for epoch in range(self.num_train_epochs):
+                unet.train()
+                for step, batch in enumerate(train_dataloader):
+                    with accelerator.accumulate(unet):
+                        # Convert images to latent space
+                        with torch.no_grad():
+                            if not self.not_cache_latents:
+                                latent_dist = batch[0][0]
                             else:
-                                encoder_hidden_states = batch[0][1]
+                                latent_dist = vae.encode(batch["pixel_values"].to(dtype=weight_dtype)).latent_dist
+                            latents = latent_dist.sample() * 0.18215
+                        noise = torch.randn_like(latents)
+                        bsz = latents.shape[0]
+                        # Sample a random timestep for each image
+                        timesteps = torch.randint(0, noise_scheduler.config.num_train_timesteps, (bsz,),
+                                                  device=latents.device)
+                        timesteps = timesteps.long()
+                        noisy_latents = noise_scheduler.add_noise(latents, noise, timesteps)
+
+                        # Get the text embedding for conditioning
+                        with text_enc_context:
+                            if not self.not_cache_latents:
+                                if self.train_text_encoder:
+                                    encoder_hidden_states = text_encoder(batch[0][1])[0]
+                                else:
+                                    encoder_hidden_states = batch[0][1]
+                            else:
+                                encoder_hidden_states = text_encoder(batch["input_ids"])[0]
+
+                        # Predict the noise residual
+                        noise_pred = unet(noisy_latents, timesteps, encoder_hidden_states).sample
+
+                        if self.with_prior_preservation:
+                            # Chunk the noise and noise_pred into two parts and compute the loss on each part separately.
+                            noise_pred, noise_pred_prior = torch.chunk(noise_pred, 2, dim=0)
+                            noise, noise_prior = torch.chunk(noise, 2, dim=0)
+
+                            # Compute instance loss
+                            loss = F.mse_loss(noise_pred.float(), noise.float(), reduction="none").mean([1, 2, 3]).mean()
+
+                            # Compute prior loss
+                            prior_loss = F.mse_loss(noise_pred_prior.float(), noise_prior.float(), reduction="mean")
+
+                            # Add the prior loss to the instance loss.
+                            loss = loss + self.prior_loss_weight * prior_loss
                         else:
-                            encoder_hidden_states = text_encoder(batch["input_ids"])[0]
+                            loss = F.mse_loss(noise_pred.float(), noise.float(), reduction="mean")
 
-                    # Predict the noise residual
-                    noise_pred = unet(noisy_latents, timesteps, encoder_hidden_states).sample
-
-                    if self.with_prior_preservation:
-                        # Chunk the noise and noise_pred into two parts and compute the loss on each part separately.
-                        noise_pred, noise_pred_prior = torch.chunk(noise_pred, 2, dim=0)
-                        noise, noise_prior = torch.chunk(noise, 2, dim=0)
-
-                        # Compute instance loss
-                        loss = F.mse_loss(noise_pred.float(), noise.float(), reduction="none").mean([1, 2, 3]).mean()
-
-                        # Compute prior loss
-                        prior_loss = F.mse_loss(noise_pred_prior.float(), noise_prior.float(), reduction="mean")
-
-                        # Add the prior loss to the instance loss.
-                        loss = loss + self.prior_loss_weight * prior_loss
-                    else:
-                        loss = F.mse_loss(noise_pred.float(), noise.float(), reduction="mean")
-
-                    accelerator.backward(loss)
-                    # if accelerator.sync_gradients:
-                    #     params_to_clip = (
-                    #         itertools.chain(unet.parameters(), text_encoder.parameters())
-                    #         if self.train_text_encoder
-                    #         else unet.parameters()
-                    #     )
-                    optimizer.step()
-                    lr_scheduler.step()
-                    optimizer.zero_grad(set_to_none=True)
-                    loss_avg.update(loss.detach_(), bsz)
-                if self.save_img_every:
-                    if not global_step % self.save_img_every and global_step != 0:
-                        prompt = self.instance_prompt
-                        last_saved_image = os.path.join(self.output_dir, f'{self.instance_prompt}_{global_step}.png')
-                        if accelerator.is_main_process:
-                            print(f"Saving pretrained model data at step {global_step}.")
-                            pipeline = StableDiffusionPipeline.from_pretrained(
-                                self.pretrained_model_path,
-                                unet=accelerator.unwrap_model(unet),
-                                use_auth_token=False
-                            )
-                            pipeline = pipeline.to("cuda")
-                            pipeline.save_pretrained(self.output_dir)
-                            with autocast("cuda"):
-                                image = pipeline(prompt, num_inference_steps=50, guidance_scale=7.5).images[0]
-                                shared.state.current_image = image
-                                image.save(last_saved_image)
-                        pass
-
-                if self.save_data_every:
-                    # Check to make sure this doesn't throw OOM if training on CPU
-                    if not global_step % self.save_data_every and global_step != 0:
-                        if accelerator.is_main_process:
-                            print(f"Saving pretrained model data at step {global_step}.")
-                            pipeline = StableDiffusionPipeline.from_pretrained(
-                                self.pretrained_model_path,
-                                unet=accelerator.unwrap_model(unet),
-                                use_auth_token=False,
-                            )
-                            pipeline = pipeline.to("cuda")
-                            with autocast("cuda"):
+                        accelerator.backward(loss)
+                        # if accelerator.sync_gradients:
+                        #     params_to_clip = (
+                        #         itertools.chain(unet.parameters(), text_encoder.parameters())
+                        #         if self.train_text_encoder
+                        #         else unet.parameters()
+                        #     )
+                        optimizer.step()
+                        lr_scheduler.step()
+                        optimizer.zero_grad(set_to_none=True)
+                        loss_avg.update(loss.detach_(), bsz)
+                    if self.save_img_every:
+                        if not global_step % self.save_img_every and global_step != 0:
+                            prompt = self.instance_prompt
+                            last_saved_image = os.path.join(self.output_dir, f'{self.instance_prompt}_{global_step}.png')
+                            if accelerator.is_main_process:
+                                print(f"Saving pretrained model data at step {global_step}.")
+                                pipeline = StableDiffusionPipeline.from_pretrained(
+                                    self.pretrained_model_path,
+                                    unet=accelerator.unwrap_model(unet),
+                                    use_auth_token=False
+                                )
+                                pipeline = pipeline.to("cuda")
                                 pipeline.save_pretrained(self.output_dir)
-                        pass
-                if not global_step % self.log_interval:
-                    # Check to make sure this doesn't throw OOM if training on CPU
-                    logs = {"loss": loss_avg.avg.item(), "lr": lr_scheduler.get_last_lr()[0]}
-                    progress_bar.set_postfix(**logs)
-                    accelerator.log(logs, step=global_step)
+                                with autocast("cuda"):
+                                    image = pipeline(prompt, num_inference_steps=50, guidance_scale=7.5).images[0]
+                                    shared.state.current_image = image
+                                    image.save(last_saved_image)
+                            pass
 
-                progress_bar.update(1)
-                global_step += 1
+                    if self.save_data_every:
+                        # Check to make sure this doesn't throw OOM if training on CPU
+                        if not global_step % self.save_data_every and global_step != 0:
+                            if accelerator.is_main_process:
+                                print(f"Saving pretrained model data at step {global_step}.")
+                                pipeline = StableDiffusionPipeline.from_pretrained(
+                                    self.pretrained_model_path,
+                                    unet=accelerator.unwrap_model(unet),
+                                    use_auth_token=False,
+                                )
+                                pipeline = pipeline.to("cuda")
+                                with autocast("cuda"):
+                                    pipeline.save_pretrained(self.output_dir)
+                            pass
+                    if not global_step % self.log_interval:
+                        # Check to make sure this doesn't throw OOM if training on CPU
+                        logs = {"loss": loss_avg.avg.item(), "lr": lr_scheduler.get_last_lr()[0]}
+                        progress_bar.set_postfix(**logs)
+                        accelerator.log(logs, step=global_step)
 
-                if global_step >= self.max_train_steps:
+                    progress_bar.update(1)
+                    global_step += 1
+
+                    if global_step >= self.max_train_steps:
+                        break
+                accelerator.wait_for_everyone()
+                if shared.state.interrupted:
+                    shared.state.textinfo = f"Training canceled {global_step}/{self.max_train_steps}"
                     break
-            accelerator.wait_for_everyone()
-            if shared.state.interrupted:
-                shared.state.textinfo = f"Training canceled {global_step}/{self.max_train_steps}"
-                break
-            shared.state.job_no += 1
-        # Create the pipeline using the trained modules and save it.
-        if accelerator.is_main_process:
-            pipeline = StableDiffusionPipeline.from_pretrained(
-                self.pretrained_model_path,
-                unet=accelerator.unwrap_model(unet),
-                text_encoder=accelerator.unwrap_model(text_encoder),
-                use_auth_token=False
-            )
-            pipeline.save_pretrained(self.output_dir)
+                shared.state.job_no += 1
+            # Create the pipeline using the trained modules and save it.
+        except Exception as e:
+            print(f"Exception training db: {e}")
+            training_failed = True
+        if not training_failed:
+            if accelerator.is_main_process:
+                pipeline = StableDiffusionPipeline.from_pretrained(
+                    self.pretrained_model_path,
+                    unet=accelerator.unwrap_model(unet),
+                    text_encoder=accelerator.unwrap_model(text_encoder),
+                    use_auth_token=False
+                )
+                pipeline.save_pretrained(self.output_dir)
+        try:
+            accelerator.end_training()
+        except Exception as f:
+            print(f"Exception ending training: {f}")
 
-        accelerator.end_training()
         return self.output_dir, global_step
 
 
@@ -610,23 +616,26 @@ def start_training(model_name,
     total_steps += trained_steps
     config["total_steps"] = total_steps
     json_object = json.dumps(config, indent=4)
-
-    # Writing to sample.json
-    with open(config_file, "w") as outfile:
-        outfile.write(json_object)
-    out_file = os.path.join(paths.models_path, "Stable-diffusion", f"{model_name}_{total_steps}.ckpt")
-    if os.path.exists(os.path.join(model_dir, "model_index.json")):
-        print(f"Successfully trained model for a total of {total_steps} steps, converting to ckpt.")
-        src_path = modules.sd_models.get_closet_checkpoint_match(src_checkpoint)[0]
-        converted = conversion.convert_diff_to_sd(model_dir, src_path, out_file, True)
-        sd_models.list_models()
+    embed_msg = ""
+    if trained_steps > 0:
+        with open(config_file, "w") as outfile:
+            outfile.write(json_object)
+        out_file = os.path.join(paths.models_path, "Stable-diffusion", f"{model_name}_{total_steps}.ckpt")
+        if os.path.exists(os.path.join(model_dir, "model_index.json")):
+            print(f"Successfully trained model for a total of {total_steps} steps, converting to ckpt.")
+            src_path = modules.sd_models.get_closet_checkpoint_match(src_checkpoint)[0]
+            converted = conversion.convert_diff_to_sd(model_dir, src_path, out_file, True)
+            sd_models.list_models()
+        embed_msg = f"Embedding saved to {html.escape(converted)}"
+    else:
+        print("Oops, something must have happened, unable to train model.")
+        embed_msg = "Nothing to save."
 
     modules.sd_models.load_model()
     print("Re-applying optimizations...")
     sd_hijack.apply_optimizations()
     res = f"Training {'interrupted' if shared.state.interrupted else 'finished'}." \
-          f"Total steps: {total_steps}" \
-          f"Embedding saved to {html.escape(converted)}"
+          f"Total steps: {total_steps} \n {embed_msg}"
     print(f"Returning result: {res}")
     return res, ""
 

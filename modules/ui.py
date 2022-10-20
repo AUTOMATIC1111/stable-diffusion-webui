@@ -1563,7 +1563,7 @@ def create_ui(wrap_gradio_gpu_call):
                                 db_batch_size = gr.Number(label="Batch Size", precision=1, value=1)
                                 db_seed = gr.Number(label="Seed", precision=1, value=-1)
                                 db_grad_acc_steps = gr.Number(label="Grad Accumulation Steps", precision=1, value=1)
-                                db_warmup_steps = gr.Number(label="Warmupu Steps", precision=1, value=0)
+                                db_warmup_steps = gr.Number(label="Warmup Steps", precision=1, value=0)
                     with gr.Row():
                         with gr.Column(scale=2):
                             gr.HTML(value="")
