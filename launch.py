@@ -156,9 +156,15 @@ def prepare_enviroment():
     if not is_installed("clip"):
         run_pip(f"install {clip_package}", "clip")
 
-    if (not is_installed("xformers") or reinstall_xformers) and xformers and platform.python_version().startswith("3.10"):
+    if (not is_installed("xformers") or reinstall_xformers) and xformers:
         if platform.system() == "Windows":
-            run_pip(f"install -U -I --no-deps {xformers_windows_package}", "xformers")
+            if platform.python_version().startswith("3.10"):
+                run_pip(f"install -U -I --no-deps {xformers_windows_package}", "xformers")
+            else:
+                print("Installation of xformers is not supported in this version of Python.")
+                print("You can also check this and build manually: https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Xformers#building-xformers-on-windows-by-duckness")
+                if not is_installed("xformers"):
+                    exit(0)
         elif platform.system() == "Linux":
             run_pip("install xformers", "xformers")
 

@@ -87,8 +87,10 @@ titles = {
 
     "快速设置列表/Quicksettings list": "设置列表名称.,以逗号分隔.,用于设置应该进入顶部的快速访问栏.,而不是通常的设置选项。参见modules/shared.py设置名称。需要重新启动才能应用/List of setting names, separated by commas, for settings that should go to the quick access bar at the top, rather than the usual setting tab. See modules/shared.py for setting names. Requires restarting to apply.",
 
-    "加权和/Weighted Sum": "结果=A * (1 - M) + B * M/Result = A * (1 - M) + B * M",
-    "添加不同/Add difference": "结果=A + (B - C) * (1 - M)/Result = A + (B - C) * (1 - M)",
+    "Weighted sum": "Result = A * (1 - M) + B * M",
+    "Add difference": "Result = A + (B - C) * M",
+
+    "Learning rate": "how fast should the training go. Low values will take longer to train, high values may fail to converge (not generate accurate results) and/or may break the embedding (This has happened if you see Loss: nan in the training info textbox. If this happens, you need to manually restore your embedding from an older not-broken backup).\n\nYou can set a single numeric value, or multiple learning rates using the syntax:\n\n   rate_1:max_steps_1, rate_2:max_steps_2, ...\n\nEG:   0.005:100, 1e-3:1000, 1e-5\n\nWill train with rate of 0.005 for first 100 steps, then 1e-3 until 1000 steps, then 1e-5 for all remaining steps.",
 }
 
 
