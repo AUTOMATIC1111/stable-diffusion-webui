@@ -63,6 +63,14 @@ Q. Will it work with other Krita plugins?
 
 A. Unfortunately no, all plugins so far have different APIs.
 
+<hr/>
+
+Q. How does the base_size, max_size system work?
+
+A.
+
+The selection will be resized such that the shorter dimension is base_size. However, if the aforementioned resize causes the longer dimension to exceed max_size, the shorter dimension may be resized to less than base_size. This is actually smarter than the builtin highres fix + firstphase width/height system. Thank the original plugin writer, @sddebz, for writing this.
+
 ## Credits
 
 - [@sddebz](https://github.com/sddebz) for writing the original backend API and Krita plugin while keeping the Gradio webUI functionality intact.

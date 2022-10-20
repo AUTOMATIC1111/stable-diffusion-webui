@@ -17,7 +17,7 @@ from .structs import (
     UpscaleResponse,
 )
 from .utils import (
-    fix_aspect_ratio,
+    sddebz_highres_fix,
     get_sampler_index,
     get_upscaler_index,
     load_config,
@@ -80,7 +80,7 @@ async def f_txt2img(req: Txt2ImgRequest):
     req = merge_default_config(req, opt)
     prepare_backend(req)
 
-    width, height = fix_aspect_ratio(
+    width, height = sddebz_highres_fix(
         req.base_size, req.max_size, req.orig_width, req.orig_height
     )
 
@@ -154,7 +154,7 @@ async def f_img2img(req: Img2ImgRequest):
         if upscaler_index > 0:
             image = image.convert("RGB")
     else:
-        width, height = fix_aspect_ratio(
+        width, height = sddebz_highres_fix(
             req.base_size, req.max_size, orig_width, orig_height
         )
 

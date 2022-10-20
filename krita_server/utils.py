@@ -132,7 +132,9 @@ def save_img(image: Image.Image, sample_path: str, filename: str):
     return os.path.abspath(path)
 
 
-def fix_aspect_ratio(base_size: int, max_size: int, orig_width: int, orig_height: int):
+def sddebz_highres_fix(
+    base_size: int, max_size: int, orig_width: int, orig_height: int
+):
     """Calculate an appropiate image resolution given the base input size of the
     model and max input size allowed.
 
@@ -140,14 +142,20 @@ def fix_aspect_ratio(base_size: int, max_size: int, orig_width: int, orig_height
     larger than its base/native input size of 512, which can cause weird issues
     such as duplicated features in the image. Hence, it is typically better to
     render at a smaller appropiate resolution before using other methods to upscale
-    to the original resolution.
+    to the original resolution. Setting max_size to 512, matching the base_size,
+    imitates how the highres fix works.
 
     Stable Diffusion also messes up for resolutions smaller than 512. In which case,
     it is better to render at the base resolution before downscaling to the original.
 
+    This method requires less user input than the builtin highres fix, which uses
+    firstphase_width and firstphase_height.
+
+    The original plugin writer, @sddebz, wrote this.
+
     Args:
         base_size (int): Native/base input size of the model.
-        max_size (int): Bax input size to accept.
+        max_size (int): Max input size to accept.
         orig_width (int): Original width requested.
         orig_height (int): Original height requested.
 
@@ -155,16 +163,19 @@ def fix_aspect_ratio(base_size: int, max_size: int, orig_width: int, orig_height
         Tuple[int, int]: Appropiate (width, height) to use for the model.
     """
 
-    def rnd(r, x):
-        z = 64
-        return z * round(r * x / z)
+    def rnd(r, x, z=64):
+        """Scale dimension x with stride z while attempting to preserve aspect ratio r."""
+        # dont let dimension be rounded to 0
+        return z * max(round(r * x / z), 1)
 
     ratio = orig_width / orig_height
 
+    # height is smaller dimension
     if orig_width > orig_height:
         width, height = rnd(ratio, base_size), base_size
         if width > max_size:
             width, height = max_size, rnd(1 / ratio, max_size)
+    # width is smaller dimension
     else:
         width, height = base_size, rnd(1 / ratio, base_size)
         if height > max_size:
