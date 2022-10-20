@@ -129,37 +129,14 @@ class DreamBooth:
 
     def train(self):
         logging_dir = Path(self.output_dir, self.logging_dir)
-        has_deepspeed = False
-        ds = None
 
-        try:
-            torch.distributed.init_process_group("mpi", init_method=None,
-                                                 timeout=datetime.timedelta(seconds=1800),
-                                                 world_size=- 1, rank=- 1, store=None, group_name='',
-                                                 pg_options=None)
-            import deepspeed
-            ds = accelerate.utils.dataclasses.DeepSpeedPlugin()
-            has_deepspeed = True
-        except Exception as e:
-            print(f"Exception importing deepspeed: {e}")
-            pass
-        if has_deepspeed:
-            accelerator = Accelerator(
-                gradient_accumulation_steps=self.gradient_accumulation_steps,
-                mixed_precision=self.mixed_precision,
-                log_with="tensorboard",
-                logging_dir=logging_dir,
-                deepspeed_plugin=ds,
-                cpu=self.use_cpu
-            )
-        else:
-            accelerator = Accelerator(
-                gradient_accumulation_steps=self.gradient_accumulation_steps,
-                mixed_precision=self.mixed_precision,
-                log_with="tensorboard",
-                logging_dir=logging_dir,
-                cpu=self.use_cpu
-            )
+        accelerator = Accelerator(
+            gradient_accumulation_steps=self.gradient_accumulation_steps,
+            mixed_precision=self.mixed_precision,
+            log_with="tensorboard",
+            logging_dir=logging_dir,
+            cpu=self.use_cpu
+        )
 
         if self.seed is not None:
             set_seed(self.seed)
@@ -349,6 +326,7 @@ class DreamBooth:
         )
 
         if self.train_text_encoder and text_encoder is not None:
+            print("Training text encoder.")
             unet, text_encoder, optimizer, train_dataloader, lr_scheduler = accelerator.prepare(
                 unet, text_encoder, optimizer, train_dataloader, lr_scheduler
             )
@@ -374,7 +352,7 @@ class DreamBooth:
         total_batch_size = self.train_batch_size * accelerator.num_processes * self.gradient_accumulation_steps
 
         print("***** Running training *****")
-        print(f"  CPU: {self.use_cpu}, Deepspeed: {has_deepspeed}, Adam: {use_adam}, Precision: {precision}")
+        print(f"  CPU: {self.use_cpu}, Adam: {use_adam}, Precision: {precision}")
         print(f"  Num examples = {len(train_dataset)}")
         print(f"  Num batches each epoch = {len(train_dataloader)}")
         print(f"  Num Epochs = {self.num_train_epochs}")
@@ -390,6 +368,7 @@ class DreamBooth:
 
         shared.state.job_count = self.max_train_steps
         shared.state.job_no = global_step
+        shared.state.textinfo = f"Training: {global_step}/{self.max_train_steps} steps"
         loss_avg = AverageMeter()
         text_enc_context = nullcontext() if self.train_text_encoder else torch.no_grad()
         training_failed = False
@@ -497,14 +476,19 @@ class DreamBooth:
 
                     progress_bar.update(1)
                     global_step += 1
-
+                    shared.state.job_no = global_step
+                    shared.state.textinfo = f"Training: {global_step}/{self.max_train_steps} steps"
+                    if shared.state.interrupted:
+                        shared.state.textinfo = f"Training canceled {global_step}/{self.max_train_steps}"
+                        break
                     if global_step >= self.max_train_steps:
                         break
                 accelerator.wait_for_everyone()
                 if shared.state.interrupted:
                     shared.state.textinfo = f"Training canceled {global_step}/{self.max_train_steps}"
                     break
-                shared.state.job_no += 1
+                shared.state.job_no = global_step
+                shared.state.textinfo = f"Training: {global_step}/{self.max_train_steps} steps"
             # Create the pipeline using the trained modules and save it.
         except Exception as e:
             print(f"Exception training db: {e}")
