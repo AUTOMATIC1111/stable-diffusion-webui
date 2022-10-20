@@ -163,21 +163,20 @@ function selected_tab_id() {
 }
 
 function trash_prompt(_,_, is_img2img) {
+//txt2img_token_button
 
 if(!confirm("Delete prompt?")) return false
 
     if(selected_tab_id() == "tab_txt2img") {
-     pos_prompt = txt2img_textarea = gradioApp().querySelector("#txt2img_prompt > label > textarea");
-     neg_prompt = txt2img_textarea = gradioApp().querySelector("#txt2img_neg_prompt > label > textarea");
+        gradioApp().querySelector("#txt2img_prompt > label > textarea").value = "";
+        gradioApp().querySelector("#txt2img_neg_prompt > label > textarea").value = "";
 
-     pos_prompt.value = ""
-     neg_prompt.value = ""
+        update_token_counter("img2img_token_button")
     } else {
-     pos_prompt = txt2img_textarea = gradioApp().querySelector("#img2img_prompt > label > textarea");
-     neg_prompt = txt2img_textarea = gradioApp().querySelector("#img2img_neg_prompt > label > textarea");
+        gradioApp().querySelector("#img2img_prompt > label > textarea").value = "";
+        gradioApp().querySelector("#img2img_neg_prompt > label > textarea").value = "";
 
-     pos_prompt.value = ""
-     neg_prompt.value = ""
+        update_token_counter("txt2img_token_button")
     }
 
     return true
