@@ -204,9 +204,9 @@ def load_model_weights(model, checkpoint_info):
     model.sd_checkpoint_info = checkpoint_info
 
 
-def load_model():
+def load_model(checkpoint_info=None):
     from modules import lowvram, sd_hijack
-    checkpoint_info = select_checkpoint()
+    checkpoint_info = checkpoint_info or select_checkpoint()
 
     if checkpoint_info.config != shared.cmd_opts.config:
         print(f"Loading config from: {checkpoint_info.config}")
@@ -249,7 +249,7 @@ def reload_model_weights(sd_model, info=None):
 
     if sd_model.sd_checkpoint_info.config != checkpoint_info.config or should_hijack_inpainting(checkpoint_info) != should_hijack_inpainting(sd_model.sd_checkpoint_info):
         checkpoints_loaded.clear()
-        shared.sd_model = load_model()
+        shared.sd_model = load_model(checkpoint_info)
         return shared.sd_model
 
     if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
