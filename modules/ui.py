@@ -83,7 +83,7 @@ folder_symbol = '\U0001f4c2'  # 📂
 refresh_symbol = '\U0001f504'  # 🔄
 save_style_symbol = '\U0001f4be'  # 💾
 apply_style_symbol = '\U0001f4cb'  # 📋
-trash_prompt_symbol = '\U0001F5D1' # 🗑🗑🗑
+trash_prompt_symbol = '\U0001F5D1' #
 
 
 def plaintext_to_html(text):
@@ -617,7 +617,10 @@ def create_ui(wrap_gradio_gpu_call):
         return refresh_button
 
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
-        txt2img_prompt, roll, txt2img_prompt_style, txt2img_negative_prompt, txt2img_prompt_style2, submit, _, _, txt2img_prompt_style_apply, txt2img_save_style, txt2img_paste, token_counter, token_button = create_toprow(is_img2img=False)
+        txt2img_prompt, roll, txt2img_prompt_style, txt2img_negative_prompt, txt2img_prompt_style2, submit, _, _,\
+        txt2img_prompt_style_apply, txt2img_save_style, txt2img_paste, token_counter,\
+        token_button = create_toprow(is_img2img=False)
+
         dummy_component = gr.Label(visible=False)
         txt_prompt_img = gr.File(label="", elem_id="txt2img_prompt_image", file_count="single", type="bytes", visible=False)
 
