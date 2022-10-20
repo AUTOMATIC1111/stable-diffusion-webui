@@ -116,14 +116,21 @@ class Script(QObject):
             self.set_status(f"{STATE_URLERROR}: {e.reason}")
             return False
         except json.JSONDecodeError:
-            self.set_status(f"{STATE_URLERROR}: invalid response")
+            self.set_status(f"{STATE_URLERROR}: invalid JSON response")
             return False
 
-        assert len(self.opt["upscalers"]) > 0
-        assert len(self.opt["samplers"]) > 0
-        assert len(self.opt["samplers_img2img"]) > 0
-        assert len(self.opt["face_restorers"]) > 0
-        assert len(self.opt["sd_models"]) > 0
+        try:
+            assert len(self.opt["upscalers"]) > 0
+            assert len(self.opt["samplers"]) > 0
+            assert len(self.opt["samplers_img2img"]) > 0
+            assert len(self.opt["face_restorers"]) > 0
+            assert len(self.opt["sd_models"]) > 0
+        except:
+            self.set_status(
+                f"{STATE_URLERROR}: incompatible response, are you running the right API?"
+            )
+            return False
+
         self.set_cfg("upscaler_list", self.opt["upscalers"])
         self.set_cfg("txt2img_sampler_list", self.opt["samplers"])
         self.set_cfg("img2img_sampler_list", self.opt["samplers_img2img"])
