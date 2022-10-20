@@ -197,9 +197,8 @@ onUiUpdate(function(){
         txt2img_textarea?.addEventListener("input", () => {
             update_token_counter("txt2img_token_button");
             if (isTranslateEnable) {
-                jQuery("#google_translate_element").text('✔️: ' + txt2img_textarea.value);
-                jQuery('#\\:1\\.container').contents().find('#\\:1\\.restore').click();
-                jQuery('#\\:1\\.container').contents().find('#\\:1\\.confirm').click();
+                const translatedText = txt2img_textarea.value.replaceAll('_',' ');
+                document.querySelector("#google_translate_element").textContent = '✔️' + translatedText;
             }
         });
     }
@@ -208,9 +207,8 @@ onUiUpdate(function(){
         img2img_textarea?.addEventListener("input", () => {
             update_token_counter("img2img_token_button");
             if (isTranslateEnable) {
-                jQuery("#google_translate_element").text('✔️: ' + img2img_textarea.value);
-                jQuery('#\\:1\\.container').contents().find('#\\:1\\.restore').click();
-                jQuery('#\\:1\\.container').contents().find('#\\:1\\.confirm').click();
+                const translatedText = img2img_textarea.value.replaceAll('_',' ');
+                document.querySelector("#google_translate_element").textContent = '✔️' + translatedText;
             }
         });
     }
@@ -218,9 +216,8 @@ onUiUpdate(function(){
         txt2img_textarea_neg = gradioApp().querySelector("#txt2img_neg_prompt > label > textarea");
         txt2img_textarea_neg?.addEventListener("input", () => {
             if (isTranslateEnable) {
-                jQuery("#google_translate_element_neg").text('❌: ' + txt2img_textarea_neg.value);
-                jQuery('#\\:1\\.container').contents().find('#\\:1\\.restore').click();
-                jQuery('#\\:1\\.container').contents().find('#\\:1\\.confirm').click();
+                const translatedText = txt2img_textarea_neg.value.replaceAll('_',' ');
+                document.querySelector("#google_translate_element_neg").textContent = '❌' + translatedText;
             }
         });
     }
@@ -228,9 +225,8 @@ onUiUpdate(function(){
         img2img_textarea_neg = gradioApp().querySelector("#img2img_neg_prompt > label > textarea");
         img2img_textarea_neg?.addEventListener("input", () => {
             if (isTranslateEnable) {
-                jQuery("#google_translate_element_neg").text('❌: ' + img2img_textarea_neg.value);
-                jQuery('#\\:1\\.container').contents().find('#\\:1\\.restore').click();
-                jQuery('#\\:1\\.container').contents().find('#\\:1\\.confirm').click();
+                const translatedText = img2img_textarea_neg.value.replaceAll('_',' ');
+                document.querySelector("#google_translate_element_neg").textContent = '❌' + translatedText;
             }
         });
     }
@@ -266,30 +262,16 @@ function restart_reload(){
     setTimeout(function(){location.reload()},2000)
 }
 
-function googleTranslateElementInit() {
-    jQuery.getScript(
-        "https://translate.google.com/translate_a/element.js",
-        () => {
-            jQuery(".goog-logo-link").css("display", "none");
-            jQuery(".goog-te-gadget").css("font-size", "0");
-            isTranslateEnable = true;
-            jQuery('#\\:1\\.container').contents().find('#\\:1\\.restore').click();
-            jQuery('#\\:1\\.container').contents().find('#\\:1\\.confirm').click();
-        }
-    );
-}
-
 let isTranslateEnable = false;
-
-let observer = new MutationObserver(function () {
-    if (document.documentElement.className.match('translated')) {
-        googleTranslateElementInit();
-    }
-});
-
-observer.observe(document.documentElement, {
-    attributes: true,
-    attributeFilter: ['class'],
-    childList: false,
-    characterData: false
+// observer for user using google translate
+new MutationObserver(function () {
+  if (document.documentElement.className.match("translated")) {
+    // enabled translate!
+    isTranslateEnable = true;
+  }
+}).observe(document.documentElement, {
+  attributes: true,
+  attributeFilter: ["class"],
+  childList: false,
+  characterData: false,
 });
