@@ -104,3 +104,10 @@ def find_optimal_selection_region(
                 best_height = new_height
 
     return best_x, best_y, best_width, best_height
+
+
+def create_layer(doc, name):
+    root = doc.rootNode()
+    layer = doc.createNode(name, "paintLayer")
+    root.addChildNode(layer, None)
+    return layer

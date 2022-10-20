@@ -22,7 +22,7 @@ from .defaults import (
     STATE_URLERROR,
     STATE_WAIT,
 )
-from .utils import find_optimal_selection_region, fix_prompt
+from .utils import create_layer, find_optimal_selection_region, fix_prompt
 
 
 class Script(QObject):
@@ -88,6 +88,24 @@ class Script(QObject):
                 self.y = self.selection.y()
                 self.width = self.selection.width()
                 self.height = self.selection.height()
+
+    def adjust_selection(self):
+        if self.selection is not None and self.cfg("fix_aspect_ratio", bool):
+            x, y, width, height = find_optimal_selection_region(
+                self.cfg("sd_base_size", int),
+                self.cfg("sd_max_size", int),
+                self.x,
+                self.y,
+                self.width,
+                self.height,
+                self.doc.width(),
+                self.doc.height(),
+            )
+
+            self.x = x
+            self.y = y
+            self.width = width
+            self.height = height
 
     def update_config(self):
         cfg = None
@@ -171,7 +189,7 @@ class Script(QObject):
         )
         return params
 
-    def txt2img(self):
+    def post_txt2img(self):
         params = dict(orig_width=self.width, orig_height=self.height)
         if not self.cfg("just_use_yaml", bool):
             seed = (
@@ -193,7 +211,7 @@ class Script(QObject):
 
         return self.post("/txt2img", params)
 
-    def img2img(self, path, mask_path):
+    def post_img2img(self, path, mask_path):
         params = dict(mode=0, src_path=path, mask_path=mask_path)
         if not self.cfg("just_use_yaml", bool):
             seed = (
@@ -214,7 +232,7 @@ class Script(QObject):
 
         return self.post("/img2img", params)
 
-    def inpaint(self, path, mask_path):
+    def post_inpaint(self, path, mask_path):
         params = dict(mode=1, src_path=path, mask_path=mask_path)
         if not self.cfg("just_use_yaml", bool):
             seed = (
@@ -244,7 +262,7 @@ class Script(QObject):
 
         return self.post("/img2img", params)
 
-    def simple_upscale(self, path):
+    def post_upscale(self, path):
         params = (
             {
                 "src_path": path,
@@ -255,24 +273,6 @@ class Script(QObject):
             else {"src_path": path}
         )
         return self.post("/upscale", params)
-
-    def adjust_selection(self):
-        if self.selection is not None and self.cfg("fix_aspect_ratio", bool):
-            x, y, width, height = find_optimal_selection_region(
-                self.cfg("sd_base_size", int),
-                self.cfg("sd_max_size", int),
-                self.x,
-                self.y,
-                self.width,
-                self.height,
-                self.doc.width(),
-                self.doc.height(),
-            )
-
-            self.x = x
-            self.y = y
-            self.width = width
-            self.height = height
 
     def save_img(self, path, is_mask=False):
         if is_mask:
@@ -287,13 +287,6 @@ class Script(QObject):
         print(f"Saved {'mask' if is_mask else 'image'}: {path}")
 
     # Krita tools
-    def create_layer(self, name):
-        root = self.doc.rootNode()
-        layer = self.doc.createNode(name, "paintLayer")
-        root.addChildNode(layer, None)
-        print(f"created layer: {layer}")
-        return layer
-
     def image_to_ba(self, image):
         ptr = image.bits()
         ptr.setsize(image.byteCount())
@@ -304,7 +297,7 @@ class Script(QObject):
         image.load(path, "PNG")
         ba = self.image_to_ba(image)
 
-        layer = self.create_layer(layer_name)
+        layer = create_layer(layer_name)
         if not visible:
             layer.setVisible(False)
 
@@ -312,7 +305,7 @@ class Script(QObject):
         print(f"Inserted image: {path}")
 
     def apply_txt2img(self):
-        response = self.txt2img()
+        response = self.post_txt2img()
         assert response is not None, "Backend Error, check terminal"
         outputs = response["outputs"]
         print(f"Getting images: {outputs}")
@@ -333,9 +326,9 @@ class Script(QObject):
             self.save_img(mask_path, is_mask=True)
 
         response = (
-            self.inpaint(path, mask_path)
+            self.post_inpaint(path, mask_path)
             if mode == 1
-            else self.img2img(path, mask_path)
+            else self.post_img2img(path, mask_path)
         )
         assert response is not None, "Backend Error, check terminal"
 
@@ -362,7 +355,7 @@ class Script(QObject):
         path = self.opt["new_img"]
         self.save_img(path)
 
-        response = self.simple_upscale(path)
+        response = self.post_upscale(path)
         assert response is not None, "Backend Error, check terminal"
         output = response["output"]
         print(f"Getting image: {output}")
