@@ -30,3 +30,4 @@ notification.mp3
 /webui-user.bat.template
 /krita_config.yaml
 /textual_inversion
+.vscode
