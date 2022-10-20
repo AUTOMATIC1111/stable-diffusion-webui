@@ -8,6 +8,7 @@ from krita import (
     QWidget,
 )
 
+from .defaults import REFRESH_INTERVAL
 from .pages import (
     ConfigTabWidget,
     Img2ImgTabWidget,
@@ -85,7 +86,7 @@ class SDPluginDocker(DockWidget):
 
         self.refresh_btn.released.connect(self.update_remote_config)
         self.update_timer.timeout.connect(self.update_remote_config)
-        self.update_timer.start(4000) # hardcoded to 4 seconds
+        self.update_timer.start(REFRESH_INTERVAL)
 
     def update_remote_config(self):
         if script.update_config():

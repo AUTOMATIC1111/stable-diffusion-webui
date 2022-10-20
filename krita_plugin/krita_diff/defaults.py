@@ -15,6 +15,11 @@ STATE_IMG2IMG = "img2img done!"
 STATE_INPAINT = "inpaint done!"
 STATE_UPSCALE = "upscale done!"
 
+# Other currently hardcoded stuff
+GET_CONFIG_TIMEOUT = 2  # 2 second timeout as getting config should be near instant
+POST_TIMEOUT = None  # post might take forever depending on batch size/count
+REFRESH_INTERVAL = 4000  # 4 seconds between auto-config refresh
+
 
 @dataclass(frozen=True)
 class Defaults:

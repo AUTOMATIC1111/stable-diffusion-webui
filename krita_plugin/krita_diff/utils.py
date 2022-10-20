@@ -16,7 +16,7 @@ def find_fixed_aspect_ratio(
 ):
     """Copy of `krita_server.utils.sddebz_highres_fix()`.
 
-    This is used by `adjust_selection_ratio()` below to adjust the selected region.
+    This is used by `find_optimal_selection_region()` below to adjust the selected region.
     """
 
     def rnd(r, x, z=64):
@@ -50,7 +50,7 @@ def find_optimal_selection_region(
     canvas_height: int,
 ):
     """Adjusts the selected region in order to attempt to preserve the original
-    aspect ratio of the selection. This prvents the image from being stretched
+    aspect ratio of the selection. This prevents the image from being stretched
     after being scaled and strided.
 
     After grasping what @sddebz intended to do, I fixed some logical errors &
@@ -58,7 +58,8 @@ def find_optimal_selection_region(
 
     Iterating the padding is naive, but easier to understand & verify then figuring
     out how to grow the rectangle using the fixed aspect ratio alone while accounting
-    for the canvas boundary.
+    for the canvas boundary. Also, it only grows the selection, not shrink, to
+    prevent clipping what the user selected.
 
     Args:
         base_size (int): Native/base input size of the model.
@@ -92,7 +93,7 @@ def find_optimal_selection_region(
             # padding is on both sides i.e the selection grows while center anchored
             x1 = max(0, orig_x - x // 2)
             x2 = min(canvas_width, x1 + orig_width + x)
-            y1 = max(0, orig_y - x // 2)
+            y1 = max(0, orig_y - y // 2)
             y2 = min(canvas_height, y1 + orig_height + y)
 
             new_width = x2 - x1

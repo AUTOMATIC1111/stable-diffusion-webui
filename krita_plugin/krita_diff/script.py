@@ -1,15 +1,17 @@
 import json
 import math
 import os
-import urllib.parse
-import urllib.request
 from dataclasses import asdict
 from urllib.error import URLError
+from urllib.parse import urljoin
+from urllib.request import Request, urlopen
 
 from krita import Krita, QByteArray, QImage, QObject, QSettings, QTimer
 
 from .defaults import (
     DEFAULTS,
+    GET_CONFIG_TIMEOUT,
+    POST_TIMEOUT,
     STATE_IMG2IMG,
     STATE_INIT,
     STATE_INPAINT,
@@ -31,7 +33,7 @@ class Script(QObject):
             QSettings.IniFormat, QSettings.UserScope, "krita", "krita_diff_plugin"
         )
         self.restore_defaults(if_empty=True)
-        self.working = False
+        self.is_busy = False
 
         # Status bar
         self._status_cb = lambda s: None
@@ -88,35 +90,30 @@ class Script(QObject):
                 self.height = self.selection.height()
 
     def update_config(self):
+        cfg = None
         try:
-            # This should be quick unlike the post() requests which might take minutes
-            # so add timeout to prevent freezing
-            with urllib.request.urlopen(
-                self.cfg("base_url", str) + "/config", timeout=2
+            with urlopen(
+                urljoin(self.cfg("base_url", str), "config"), None, GET_CONFIG_TIMEOUT
             ) as res:
-                self.opt = json.loads(res.read())
-        except URLError as e:
-            self.set_status(f"{STATE_URLERROR}: {e.reason}")
-            return False
-        except json.JSONDecodeError:
-            self.set_status(f"{STATE_URLERROR}: invalid JSON response")
-            return False
-        except ValueError:
-            self.set_status(f"{STATE_URLERROR}: Invalid backend URL!")
+                cfg = json.loads(res.read())
+        except Exception as e:
+            self.handle_api_error(e)
             return False
 
         try:
-            assert len(self.opt["upscalers"]) > 0
-            assert len(self.opt["samplers"]) > 0
-            assert len(self.opt["samplers_img2img"]) > 0
-            assert len(self.opt["face_restorers"]) > 0
-            assert len(self.opt["sd_models"]) > 0
+            assert len(cfg["upscalers"]) > 0
+            assert len(cfg["samplers"]) > 0
+            assert len(cfg["samplers_img2img"]) > 0
+            assert len(cfg["face_restorers"]) > 0
+            assert len(cfg["sd_models"]) > 0
         except:
             self.set_status(
                 f"{STATE_URLERROR}: incompatible response, are you running the right API?"
             )
             return False
 
+        # replace only after verifying
+        self.opt = cfg
         self.set_cfg("upscaler_list", self.opt["upscalers"])
         self.set_cfg("txt2img_sampler_list", self.opt["samplers"])
         self.set_cfg("img2img_sampler_list", self.opt["samplers_img2img"])
@@ -125,24 +122,31 @@ class Script(QObject):
         self.set_cfg("sd_model_list", self.opt["sd_models"])
         return True
 
-    # Server API    @staticmethod
-    def post(self, url, body):
-        req = urllib.request.Request(url)
+    def post(self, route, body, base_url=...):
+        base_url = self.cfg("base_url", str) if base_url is ... else base_url
+        # FastAPI doesn't support urlencoded data transparently
+        body = json.dumps(body).encode("utf-8")
+        req = Request(urljoin(base_url, route))
         req.add_header("Content-Type", "application/json")
-        body = json.dumps(body)
-        body_encoded = body.encode("utf-8")
-        req.add_header("Content-Length", str(len(body_encoded)))
+        req.add_header("Content-Length", str(len(body)))
         try:
             # TODO: how to cancel this? might as well refactor the API to be async...
-            # setting timeout to None explicitly means no timeout
-            with urllib.request.urlopen(req, body_encoded, timeout=None) as res:
+            with urlopen(req, body, POST_TIMEOUT) as res:
                 return json.loads(res.read())
+        except Exception as e:
+            self.handle_api_error(e)
+
+    def handle_api_error(self, exc: Exception):
+        """Handle exceptions that can occur while interacting with the backend."""
+        try:
+            # conveniently allows error to bubble back up if not handled by here
+            raise exc
         except URLError as e:
             self.set_status(f"{STATE_URLERROR}: {e.reason}")
         except json.JSONDecodeError:
-            self.set_status(f"{STATE_URLERROR}: invalid response")
+            self.set_status(f"{STATE_URLERROR}: invalid JSON response")
         except ValueError:
-            self.set_status(f"{STATE_URLERROR}: Invalid backend URL!")
+            self.set_status(f"{STATE_URLERROR}: Invalid backend URL")
 
     def get_common_params(self):
         tiling = self.cfg("sd_tiling", bool) and (
@@ -187,7 +191,7 @@ class Script(QObject):
                 denoising_strength=self.cfg("txt2img_denoising_strength", float),
             )
 
-        return self.post(self.cfg("base_url", str) + "/txt2img", params)
+        return self.post("/txt2img", params)
 
     def img2img(self, path, mask_path):
         params = dict(mode=0, src_path=path, mask_path=mask_path)
@@ -208,7 +212,7 @@ class Script(QObject):
                 seed=seed,
             )
 
-        return self.post(self.cfg("base_url", str) + "/img2img", params)
+        return self.post("/img2img", params)
 
     def inpaint(self, path, mask_path):
         params = dict(mode=1, src_path=path, mask_path=mask_path)
@@ -238,7 +242,7 @@ class Script(QObject):
                 include_grid=False,  # it is never useful for inpaint mode
             )
 
-        return self.post(self.cfg("base_url", str) + "/img2img", params)
+        return self.post("/img2img", params)
 
     def simple_upscale(self, path):
         params = (
@@ -250,7 +254,7 @@ class Script(QObject):
             if not self.cfg("just_use_yaml", bool)
             else {"src_path": path}
         )
-        return self.post(self.cfg("base_url", str) + "/upscale", params)
+        return self.post("/upscale", params)
 
     def adjust_selection(self):
         if self.selection is not None and self.cfg("fix_aspect_ratio", bool):
@@ -374,11 +378,11 @@ class Script(QObject):
                 print(f"created mask layer")
                 self.doc.setSelection(self.selection)
         finally:
-            self.working = False
+            self.is_busy = False
 
     def create_mask_layer_workaround(self):
         if self.cfg("create_mask_layer", bool):
-            self.working = True
+            self.is_busy = True
             QTimer.singleShot(
                 self.cfg("workaround_timeout", int),
                 lambda: self.create_mask_layer_internal(),
@@ -392,7 +396,7 @@ class Script(QObject):
     # Actions
     def action_txt2img(self):
         self.set_status(STATE_WAIT)
-        if self.working:
+        if self.is_busy:
             pass
 
         def cb():
@@ -407,7 +411,7 @@ class Script(QObject):
 
     def action_img2img(self):
         self.set_status(STATE_WAIT)
-        if self.working:
+        if self.is_busy:
             pass
 
         def cb():
@@ -423,7 +427,7 @@ class Script(QObject):
     def action_sd_upscale(self):
         assert False, "disabled"
         self.set_status(STATE_WAIT)
-        if self.working:
+        if self.is_busy:
             pass
         self.update_config()
         self.update_selection()
@@ -432,7 +436,7 @@ class Script(QObject):
 
     def action_inpaint(self):
         self.set_status(STATE_WAIT)
-        if self.working:
+        if self.is_busy:
             pass
 
         def cb():
@@ -446,7 +450,7 @@ class Script(QObject):
 
     def action_simple_upscale(self):
         self.set_status(STATE_WAIT)
-        if self.working:
+        if self.is_busy:
             pass
 
         def cb():
