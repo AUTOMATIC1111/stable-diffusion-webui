@@ -118,10 +118,14 @@ def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_
 
         while len(cached_images) > 2:
             del cached_images[next(iter(cached_images.keys()))]
+        
+        if opts.use_original_name_batch and image_name != None:
+            basename = os.path.splitext(os.path.basename(image_name))[0]
+        else:
+            basename = ''
 
-        images.save_image(image, path=outpath, basename="", seed=None, prompt=None, extension=opts.samples_format, info=info, short_filename=True,
-                          no_prompt=True, grid=False, pnginfo_section_name="extras", existing_info=existing_pnginfo,
-                          forced_filename=image_name if opts.use_original_name_batch else None)
+        images.save_image(image, path=outpath, basename=basename, seed=None, prompt=None, extension=opts.samples_format, info=info, short_filename=True,
+                          no_prompt=True, grid=False, pnginfo_section_name="extras", existing_info=existing_pnginfo, forced_filename=None)
 
         if opts.enable_pnginfo:
             image.info = existing_pnginfo
