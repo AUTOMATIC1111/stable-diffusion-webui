@@ -321,7 +321,8 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
     pbar = tqdm.tqdm(enumerate(ds), total=steps-ititial_step)
     for i, entries in pbar:
         embedding.step = i + ititial_step
-        embedding_uc.step = i + ititial_step
+        if use_negative:
+            embedding_uc.step = i + ititial_step
 
         scheduler.apply(optimizer, embedding.step)
         if scheduler.finished:
@@ -348,7 +349,7 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
                 #loss = ce(disc.get_all(x_samples_ddim), disc_label)
                 loss = (1-disc.get_score(x_samples_ddim)).mean()
             elif use_rec:
-                loss = output[0] + F.l1_loss(torch.cat([entry.timg for entry in entries]), x_samples_ddim)
+                loss = output[0] + F.l1_loss(torch.cat([entry.timg for entry in entries]), x_samples_ddim)*0.2
             else:
                 loss = output[0]
 
