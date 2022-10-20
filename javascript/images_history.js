@@ -132,12 +132,12 @@ function images_history_delete(del_num, tabname, img_path, img_file_name, page_i
     return [del_num, tabname, img_path, img_file_name, page_index, filenames, image_index];
 }
 
-function images_history_turnpage(img_path, page_index, image_index, tabname){
+function images_history_turnpage(img_path, page_index, image_index, tabname, serach_txt){
     var buttons = gradioApp().getElementById(tabname + '_images_history').querySelectorAll(".gallery-item");
     buttons.forEach(function(elem) {
         elem.style.display = 'block';
     })
-    return [img_path, page_index, image_index, tabname];
+    return [img_path, page_index, image_index, tabname, serach_txt];
 }
 
 function images_history_enable_del_buttons(){

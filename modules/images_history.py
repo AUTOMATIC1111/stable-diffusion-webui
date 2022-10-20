@@ -1,14 +1,37 @@
 import os
 import shutil
 import sys
+import gradio as gr
+from PIL import Image
+import piexif
 
-def traverse_all_files(output_dir, image_list, curr_dir=None):
+def search_pnginfo(image_filepath, search_txt):
+    if search_txt == "": return True
+    with Image.open(image_filepath) as image:
+        geninfo = ''
+        items = image.info
+        if 'exif' in image.info:
+            exif = piexif.load(image.info['exif'])
+            exif_comment = (exif or {}).get("Exif", {}).get(piexif.ExifIFD.UserComment, b'')
+            try:
+                exif_comment = piexif.helper.UserComment.load(exif_comment)
+            except ValueError:
+                exif_comment = exif_comment.decode('utf8', errors="ignore")
+            geninfo = exif_comment
+        geninfo = items.get('parameters', geninfo)
+        for x in search_txt.split(","):
+            if x.strip() != "" and x.strip() not in geninfo:
+                return False
+        return True
+    
+def traverse_all_files(output_dir, image_list, search_txt, curr_dir=None):
     curr_path = output_dir if curr_dir is None else os.path.join(output_dir, curr_dir)
     try:
         f_list = os.listdir(curr_path)
     except:
         if curr_dir[-10:].rfind(".") > 0 and curr_dir[-4:] != ".txt":
-            image_list.append(curr_dir)
+            if search_pnginfo(curr_path, search_txt):
+                image_list.append(curr_dir)
         return image_list
     for file in f_list:
         file = file if curr_dir is None else os.path.join(curr_dir, file)
@@ -16,19 +39,20 @@ def traverse_all_files(output_dir, image_list, curr_dir=None):
         if file[-4:] == ".txt":
             pass
         elif os.path.isfile(file_path) and file[-10:].rfind(".") > 0:
-            image_list.append(file)
+            if search_pnginfo(file_path, search_txt):
+                image_list.append(file)
         else:
-            image_list = traverse_all_files(output_dir, image_list, file)
+            image_list = traverse_all_files(output_dir, image_list, search_txt, file)
     return image_list
 
 
-def get_recent_images(dir_name, page_index, step, image_index, tabname):
+def get_recent_images(dir_name, page_index, step, image_index, tabname, search_txt):
     page_index = int(page_index)
     image_list = []
     if not os.path.exists(dir_name):
         pass
     elif os.path.isdir(dir_name):
-        image_list = traverse_all_files(dir_name, image_list)
+        image_list = traverse_all_files(dir_name, image_list, search_txt)
         image_list = sorted(image_list, key=lambda file: -os.path.getctime(os.path.join(dir_name, file)))
     else:
         print(f'ERROR: "{dir_name}" is not a directory. Check the path in the settings.', file=sys.stderr)
@@ -46,27 +70,27 @@ def get_recent_images(dir_name, page_index, step, image_index, tabname):
     else:
         current_file = image_list[int(image_index)]
         hidden = os.path.join(dir_name, current_file)
-    return [os.path.join(dir_name, file) for file in image_list], page_index, image_list, current_file, hidden, ""
+    return [os.path.join(dir_name, file) for file in image_list], page_index, image_list, current_file, hidden, "", search_txt
 
 
-def first_page_click(dir_name, page_index, image_index, tabname):
-    return get_recent_images(dir_name, 1, 0, image_index, tabname)
+def first_page_click(dir_name, page_index, image_index, tabname, search_txt):
+    return get_recent_images(dir_name, 1, 0, image_index, tabname, search_txt)
 
 
-def end_page_click(dir_name, page_index, image_index, tabname):
-    return get_recent_images(dir_name, -1, 0, image_index, tabname)
+def end_page_click(dir_name, page_index, image_index, tabname, search_txt):
+    return get_recent_images(dir_name, -1, 0, image_index, tabname, search_txt)
 
 
-def prev_page_click(dir_name, page_index, image_index, tabname):
-    return get_recent_images(dir_name, page_index, -1, image_index, tabname)
+def prev_page_click(dir_name, page_index, image_index, tabname, search_txt):
+    return get_recent_images(dir_name, page_index, -1, image_index, tabname, search_txt)
 
 
-def next_page_click(dir_name, page_index, image_index, tabname):
-    return get_recent_images(dir_name, page_index, 1, image_index, tabname)
+def next_page_click(dir_name, page_index, image_index, tabname, search_txt):
+    return get_recent_images(dir_name, page_index, 1, image_index, tabname, search_txt)
 
 
-def page_index_change(dir_name, page_index, image_index, tabname):
-    return get_recent_images(dir_name, page_index, 0, image_index, tabname)
+def page_index_change(dir_name, page_index, image_index, tabname, search_txt):
+    return get_recent_images(dir_name, page_index, 0, image_index, tabname, search_txt)
 
 
 def show_image_info(num, image_path, filenames):
@@ -100,7 +124,7 @@ def delete_image(delete_num, tabname, dir_name, name, page_index, filenames, ima
     return new_file_list, 1
 
 
-def show_images_history(gr, opts, tabname, run_pnginfo, switch_dict):
+def show_images_history(gr:gr, opts, tabname, run_pnginfo, switch_dict):
     if opts.outdir_samples != "":
         dir_name = opts.outdir_samples
     elif tabname == "txt2img":
@@ -111,28 +135,30 @@ def show_images_history(gr, opts, tabname, run_pnginfo, switch_dict):
         dir_name = opts.outdir_extras_samples
     else:
         return
-    with gr.Row():
-        renew_page = gr.Button('Renew Page', elem_id=tabname + "_images_history_renew_page")
-        first_page = gr.Button('First Page')
-        prev_page = gr.Button('Prev Page')
-        page_index = gr.Number(value=1, label="Page Index")
-        next_page = gr.Button('Next Page')
-        end_page = gr.Button('End Page')
     with gr.Row(elem_id=tabname + "_images_history"):
         with gr.Row():
             with gr.Column(scale=2):
-                history_gallery = gr.Gallery(show_label=False, elem_id=tabname + "_images_history_gallery").style(grid=6)
                 with gr.Row():
+                    renew_page = gr.Button('Renew Page', elem_id=tabname + "_images_history_renew_page")
+                    first_page = gr.Button('First Page')
+                    prev_page = gr.Button('Prev Page')
+                    page_index = gr.Number(value=1, label="Page Index")
+                    next_page = gr.Button('Next Page')
+                    end_page = gr.Button('End Page')
+                history_gallery = gr.Gallery(show_label=False, elem_id=tabname + "_images_history_gallery").style(grid=6)
+                with gr.Row():                    
                     delete_num = gr.Number(value=1, interactive=True, label="number of images to delete consecutively next")
                     delete = gr.Button('Delete', elem_id=tabname + "_images_history_del_button")
             with gr.Column():
                 with gr.Row():
-                    pnginfo_send_to_txt2img = gr.Button('Send to txt2img')
-                    pnginfo_send_to_img2img = gr.Button('Send to img2img')
+                    search_txt = gr.Textbox(label="search")
                 with gr.Row():
                     with gr.Column():
                         img_file_info = gr.Textbox(label="Generate Info", interactive=False)
                         img_file_name = gr.Textbox(label="File Name", interactive=False)
+                with gr.Row():
+                    pnginfo_send_to_txt2img = gr.Button('Send to txt2img')
+                    pnginfo_send_to_img2img = gr.Button('Send to img2img')
                 with gr.Row():
                     # hiden items
 
@@ -146,14 +172,15 @@ def show_images_history(gr, opts, tabname, run_pnginfo, switch_dict):
                     info2 = gr.Textbox(visible=False)
 
     # turn pages
-    gallery_inputs = [img_path, page_index, image_index, tabname_box]
-    gallery_outputs = [history_gallery, page_index, filenames, img_file_name, hidden, img_file_name]
+    gallery_inputs = [img_path, page_index, image_index, tabname_box, search_txt]
+    gallery_outputs = [history_gallery, page_index, filenames, img_file_name, hidden, img_file_name, search_txt]
 
     first_page.click(first_page_click, _js="images_history_turnpage", inputs=gallery_inputs, outputs=gallery_outputs)
     next_page.click(next_page_click, _js="images_history_turnpage", inputs=gallery_inputs, outputs=gallery_outputs)
     prev_page.click(prev_page_click, _js="images_history_turnpage", inputs=gallery_inputs, outputs=gallery_outputs)
     end_page.click(end_page_click, _js="images_history_turnpage", inputs=gallery_inputs, outputs=gallery_outputs)
     page_index.submit(page_index_change, _js="images_history_turnpage", inputs=gallery_inputs, outputs=gallery_outputs)
+    search_txt.submit(page_index_change, _js="images_history_turnpage", inputs=gallery_inputs, outputs=gallery_outputs)
     renew_page.click(page_index_change, _js="images_history_turnpage", inputs=gallery_inputs, outputs=gallery_outputs)
     # page_index.change(page_index_change, inputs=[tabname_box, img_path,  page_index], outputs=[history_gallery, page_index])
 
