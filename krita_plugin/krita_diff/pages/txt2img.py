@@ -1,6 +1,7 @@
 from krita import QCheckBox, QHBoxLayout, QPushButton
 
 from ..script import script
+from ..widgets import QLabel
 from .img_base import ImgTabBaseWidget
 
 
@@ -17,6 +18,11 @@ class Txt2ImgTabWidget(ImgTabBaseWidget):
         self.btn = QPushButton("Start txt2img")
 
         self.layout.addLayout(inline_layout)
+        self.layout.addWidget(
+            QLabel(
+                "<em>Tip:</em> Set base_size and max_size higher for AUTO's txt2img highres fix to work."
+            )
+        )
         self.layout.addStretch()
         self.layout.addWidget(self.btn)
 

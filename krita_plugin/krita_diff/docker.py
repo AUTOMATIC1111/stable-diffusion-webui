@@ -39,8 +39,6 @@ class SDPluginDocker(DockWidget):
         self.upscale_widget = UpscaleTabWidget()
         self.config_widget = ConfigTabWidget(self.update_interfaces)
 
-        self.refresh_btn = QPushButton("Auto-Refresh Options Now")
-
         tabs = QTabWidget()
         tabs.addTab(self.txt2img_widget, "Txt2Img")
         tabs.addTab(self.img2img_widget, "Img2Img")
@@ -54,9 +52,8 @@ class SDPluginDocker(DockWidget):
         script.set_status(STATE_INIT)
 
         layout = QVBoxLayout()
-        layout.addWidget(status_bar)
-        layout.addWidget(self.refresh_btn)
         layout.addWidget(self.quick_widget)
+        layout.addWidget(status_bar)
         layout.addWidget(tabs)
         layout.addStretch()
 
@@ -84,7 +81,6 @@ class SDPluginDocker(DockWidget):
         self.upscale_widget.cfg_connect()
         self.config_widget.cfg_connect()
 
-        self.refresh_btn.released.connect(self.update_remote_config)
         self.update_timer.timeout.connect(self.update_remote_config)
         self.update_timer.start(REFRESH_INTERVAL)
 

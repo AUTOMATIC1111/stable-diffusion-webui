@@ -2,7 +2,7 @@ from functools import partial
 
 from krita import QCheckBox, QHBoxLayout, QLineEdit, QPushButton, QVBoxLayout, QWidget
 
-from ..defaults import DEFAULTS
+from ..defaults import DEFAULTS, STATE_READY
 from ..script import script
 from ..widgets import QLabel
 
@@ -39,6 +39,7 @@ class ConfigTabWidget(QWidget):
             "Don't decrease steps based on denoising strength"
         )
 
+        self.refresh_btn = QPushButton("Auto-Refresh Options Now")
         self.restore_defaults = QPushButton("Restore Defaults")
 
         info_label = QLabel(
@@ -72,6 +73,7 @@ class ConfigTabWidget(QWidget):
         layout.addWidget(self.color_correct)
         layout.addWidget(self.do_exact_steps)
         layout.addStretch()
+        layout.addWidget(self.refresh_btn)
         layout.addWidget(self.restore_defaults)
         layout.addWidget(info_label)
 
@@ -116,10 +118,17 @@ class ConfigTabWidget(QWidget):
         self.color_correct.toggled.connect(partial(script.set_cfg, "color_correct"))
         self.do_exact_steps.toggled.connect(partial(script.set_cfg, "do_exact_steps"))
 
+        def update_remote_config():
+            if script.update_config():
+                script.set_status(STATE_READY)
+
+            self.update_func()
+
         def restore_defaults():
             script.restore_defaults()
             # retrieve list of available stuff again
             script.update_config()
             self.update_func()
 
+        self.refresh_btn.released.connect(update_remote_config)
         self.restore_defaults.released.connect(restore_defaults)

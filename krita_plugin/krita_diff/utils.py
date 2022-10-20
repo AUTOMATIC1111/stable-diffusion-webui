@@ -7,10 +7,6 @@ def fix_prompt(prompt):
     return joined if joined != "" else None
 
 
-# TODO: make it toggleable in settings whether to use AUTO's highres fix, or sddebz
-# highres fix.
-
-
 def find_fixed_aspect_ratio(
     base_size: int, max_size: int, orig_width: int, orig_height: int
 ):
