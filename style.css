@@ -114,7 +114,7 @@
     padding: 0.4em 0;
 }
 
-#roll, #paste, #style_create, #style_apply{
+#roll_col > button {
     min-width: 2em;
     min-height: 2em;
     max-width: 2em;

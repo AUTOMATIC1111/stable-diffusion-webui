@@ -83,6 +83,7 @@ folder_symbol = '\U0001f4c2'  # 📂
 refresh_symbol = '\U0001f504'  # 🔄
 save_style_symbol = '\U0001f4be'  # 💾
 apply_style_symbol = '\U0001f4cb'  # 📋
+trash_prompt_symbol = '\U0001F5D1' # 🗑🗑🗑
 
 
 def plaintext_to_html(text):
@@ -498,6 +499,7 @@ def create_toprow(is_img2img):
             paste = gr.Button(value=paste_symbol, elem_id="paste")
             save_style = gr.Button(value=save_style_symbol, elem_id="style_create")
             prompt_style_apply = gr.Button(value=apply_style_symbol, elem_id="style_apply")
+            trash_prompt = gr.Button(value=trash_prompt_symbol, elem_id="trash_prompt")
 
             token_counter = gr.HTML(value="<span></span>", elem_id=f"{id_part}_token_counter")
             token_button = gr.Button(visible=False, elem_id=f"{id_part}_token_button")
