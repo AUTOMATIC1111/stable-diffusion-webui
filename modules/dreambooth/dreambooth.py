@@ -69,7 +69,10 @@ class DreamBooth:
         self.instance_data_dir = dataset_directory
         self.instance_prompt = initialization_text
         self.class_prompt = classification_text
-        self.seed = seed
+        if seed == -1:
+            self.seed = None
+        else:
+            self.seed = seed
         self.train_batch_size = batch_size
         self.sample_batch_size = batch_size
         self.max_train_steps = steps
