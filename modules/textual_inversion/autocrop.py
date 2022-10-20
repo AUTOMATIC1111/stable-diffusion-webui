@@ -8,12 +8,18 @@ GREEN = "#0F0"
 BLUE = "#00F"
 RED = "#F00"
 
+
 def crop_image(im, settings):
   """ Intelligently crop an image to the subject matter """
   if im.height > im.width:
       im = im.resize((settings.crop_width, settings.crop_height * im.height // im.width))
-  else:
+  elif im.width > im.height:
       im = im.resize((settings.crop_width * im.width // im.height, settings.crop_height))
+  else:
+      im = im.resize((settings.crop_width, settings.crop_height))
+
+  if im.height == im.width:
+    return im
 
   focus = focal_point(im, settings)
 
@@ -78,13 +84,18 @@ def focal_point(im, settings):
       [ PointOfInterest( p.x, p.y, weight=p.weight * ( (face_weight/weight_pref_total) / (len(face_points)/total_points) )) for p in face_points ]
     )
 
+    average_point = poi_average(pois, settings)
+
     if settings.annotate_image:
       d = ImageDraw.Draw(im)
-
-    average_point = poi_average(pois, settings, im=im)
-
-    if settings.annotate_image:
-      d.ellipse([average_point.x - 25, average_point.y - 25, average_point.x + 25, average_point.y + 25], outline=GREEN)
+      for f in face_points:
+        d.rectangle(f.bounding(f.size), outline=RED)
+      for f in entropy_points:
+        d.rectangle(f.bounding(30), outline=BLUE)
+      for poi in pois:
+        w = max(4, 4 * 0.5 * sqrt(poi.weight))
+        d.ellipse(poi.bounding(w), fill=BLUE)
+      d.ellipse(average_point.bounding(25), outline=GREEN)
       
     return average_point
 
@@ -92,22 +103,32 @@ def focal_point(im, settings):
 def image_face_points(im, settings):
     np_im = np.array(im)
     gray = cv2.cvtColor(np_im, cv2.COLOR_BGR2GRAY)
-    classifier = cv2.CascadeClassifier(f'{cv2.data.haarcascades}haarcascade_frontalface_default.xml')
 
-    minsize = int(min(im.width, im.height) * 0.15) # at least N percent of the smallest side
-    faces = classifier.detectMultiScale(gray, scaleFactor=1.05,
-      minNeighbors=5, minSize=(minsize, minsize), flags=cv2.CASCADE_SCALE_IMAGE)
+    tries = [
+      [ f'{cv2.data.haarcascades}haarcascade_eye.xml', 0.01 ],
+      [ f'{cv2.data.haarcascades}haarcascade_frontalface_default.xml', 0.05 ],
+      [ f'{cv2.data.haarcascades}haarcascade_profileface.xml', 0.05 ],
+      [ f'{cv2.data.haarcascades}haarcascade_frontalface_alt.xml', 0.05 ],
+      [ f'{cv2.data.haarcascades}haarcascade_frontalface_alt2.xml', 0.05 ],
+      [ f'{cv2.data.haarcascades}haarcascade_frontalface_alt_tree.xml', 0.05 ],
+      [ f'{cv2.data.haarcascades}haarcascade_eye_tree_eyeglasses.xml', 0.05 ],
+      [ f'{cv2.data.haarcascades}haarcascade_upperbody.xml', 0.05 ]
+    ]
 
-    if len(faces) == 0:
-      return []
+    for t in tries:
+      # print(t[0])
+      classifier = cv2.CascadeClassifier(t[0])
+      minsize = int(min(im.width, im.height) * t[1]) # at least N percent of the smallest side
+      try:
+        faces = classifier.detectMultiScale(gray, scaleFactor=1.1,
+          minNeighbors=7, minSize=(minsize, minsize), flags=cv2.CASCADE_SCALE_IMAGE)
+      except:
+        continue
 
-    rects = [[f[0], f[1], f[0] + f[2], f[1] + f[3]] for f in faces]
-    if settings.annotate_image:
-      for f in rects:
-        d = ImageDraw.Draw(im)
-        d.rectangle(f, outline=RED)
-    
-    return [PointOfInterest((r[0] +r[2]) // 2, (r[1] + r[3]) // 2) for r in rects]
+      if len(faces) > 0:
+        rects = [[f[0], f[1], f[0] + f[2], f[1] + f[3]] for f in faces]
+        return [PointOfInterest((r[0] +r[2]) // 2, (r[1] + r[3]) // 2, size=abs(r[0]-r[2])) for r in rects]
+    return []
 
 
 def image_corner_points(im, settings):
@@ -132,8 +153,8 @@ def image_corner_points(im, settings):
 
     focal_points = []
     for point in points:
-        x, y = point.ravel()
-        focal_points.append(PointOfInterest(x, y))
+      x, y = point.ravel()
+      focal_points.append(PointOfInterest(x, y, size=4))
 
     return focal_points
 
@@ -167,31 +188,26 @@ def image_entropy_points(im, settings):
     x_mid = int(crop_best[0] + settings.crop_width/2)
     y_mid = int(crop_best[1] + settings.crop_height/2)
 
-    return [PointOfInterest(x_mid, y_mid)]
+    return [PointOfInterest(x_mid, y_mid, size=25)]
 
 
 def image_entropy(im):
     # greyscale image entropy
-    band = np.asarray(im.convert("1"))
+    # band = np.asarray(im.convert("L"))
+    band = np.asarray(im.convert("1"), dtype=np.uint8)
     hist, _ = np.histogram(band, bins=range(0, 256))
     hist = hist[hist > 0]
     return -np.log2(hist / hist.sum()).sum()
 
 
-def poi_average(pois, settings, im=None):
+def poi_average(pois, settings):
     weight = 0.0
     x = 0.0
     y = 0.0
-    for pois in pois:
-        if settings.annotate_image and im is not None:
-          w = 4 * 0.5 * sqrt(pois.weight)
-          d = ImageDraw.Draw(im)
-          d.ellipse([
-            pois.x - w, pois.y - w,
-            pois.x + w, pois.y + w ], fill=BLUE)
-        weight += pois.weight
-        x += pois.x * pois.weight
-        y += pois.y * pois.weight
+    for poi in pois:
+        weight += poi.weight
+        x += poi.x * poi.weight
+        y += poi.y * poi.weight
     avg_x = round(x / weight)
     avg_y = round(y / weight)
 
@@ -199,10 +215,19 @@ def poi_average(pois, settings, im=None):
 
 
 class PointOfInterest:
-  def __init__(self, x, y, weight=1.0):
+  def __init__(self, x, y, weight=1.0, size=10):
     self.x = x
     self.y = y
     self.weight = weight
+    self.size = size
+
+  def bounding(self, size):
+    return [
+      self.x - size//2,
+      self.y - size//2,
+      self.x + size//2,
+      self.y + size//2
+    ]
 
 
 class Settings:
