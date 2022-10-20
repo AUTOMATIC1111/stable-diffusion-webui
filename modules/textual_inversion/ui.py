@@ -7,12 +7,15 @@ import modules.textual_inversion.preprocess
 from modules import sd_hijack, shared
 
 
-def create_embedding(name, initialization_text, nvpt):
+def create_embedding(name, initialization_text, nvpt, use_negative, nvpt_uc):
     filename = modules.textual_inversion.textual_inversion.create_embedding(name, nvpt, init_text=initialization_text)
+    if use_negative:
+        modules.textual_inversion.textual_inversion.create_embedding(name+'-uc', nvpt_uc, init_text=initialization_text)
+        filename=f'{filename} and {filename[:-3]}-uc.pt'
 
     sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings()
 
-    return gr.Dropdown.update(choices=sorted(sd_hijack.model_hijack.embedding_db.word_embeddings.keys())), f"Created: {filename}", ""
+    return gr.Dropdown.update(choices=sorted(sd_hijack.model_hijack.embedding_db.word_embeddings.keys())),f"Created: {filename}", ""
 
 
 def preprocess(*args):
