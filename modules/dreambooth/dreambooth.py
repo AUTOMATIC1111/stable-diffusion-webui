@@ -1,9 +1,11 @@
 import datetime
+import gc
 import html
 import itertools
 import json
 import math
 import os
+import traceback
 from contextlib import nullcontext
 from pathlib import Path
 from typing import Optional
@@ -111,6 +113,9 @@ class DreamBooth:
         self.train_text_encoder = train_text_encoder
         self.resolution = resolution
         self.use_cpu = use_cpu
+        # We get an error if using 'fp16' and CPU at the same time?
+        if use_cpu:
+            self.mixed_precision = "no"
         self.prior_loss_weight = prior_loss_weight
         self.center_crop = center_crop
         self.num_train_epochs = num_train_epochs
@@ -126,9 +131,6 @@ class DreamBooth:
         logging_dir = Path(self.output_dir, self.logging_dir)
         has_deepspeed = False
         ds = None
-        use_cpu = False
-        if shared.cmd_opts.medvram or shared.cmd_opts.lowvram:
-            use_cpu = True
 
         try:
             torch.distributed.init_process_group("mpi", init_method=None,
@@ -148,7 +150,7 @@ class DreamBooth:
                 log_with="tensorboard",
                 logging_dir=logging_dir,
                 deepspeed_plugin=ds,
-                cpu=use_cpu
+                cpu=self.use_cpu
             )
         else:
             accelerator = Accelerator(
@@ -156,7 +158,7 @@ class DreamBooth:
                 mixed_precision=self.mixed_precision,
                 log_with="tensorboard",
                 logging_dir=logging_dir,
-                cpu=use_cpu
+                cpu=self.use_cpu
             )
 
         if self.seed is not None:
@@ -372,7 +374,7 @@ class DreamBooth:
         total_batch_size = self.train_batch_size * accelerator.num_processes * self.gradient_accumulation_steps
 
         print("***** Running training *****")
-        print(f"  CPU: {use_cpu}, Deepspeed: {has_deepspeed}, Adam: {use_adam}, Precision: {precision}")
+        print(f"  CPU: {self.use_cpu}, Deepspeed: {has_deepspeed}, Adam: {use_adam}, Precision: {precision}")
         print(f"  Num examples = {len(train_dataset)}")
         print(f"  Num batches each epoch = {len(train_dataloader)}")
         print(f"  Num Epochs = {self.num_train_epochs}")
@@ -398,7 +400,7 @@ class DreamBooth:
                 for step, batch in enumerate(train_dataloader):
                     with accelerator.accumulate(unet):
                         # Convert images to latent space
-                        with torch.no_grad():
+                        with torch.no_grad(), torch.autocast("cuda"):
                             if not self.not_cache_latents:
                                 latent_dist = batch[0][0]
                             else:
@@ -431,7 +433,8 @@ class DreamBooth:
                             noise, noise_prior = torch.chunk(noise, 2, dim=0)
 
                             # Compute instance loss
-                            loss = F.mse_loss(noise_pred.float(), noise.float(), reduction="none").mean([1, 2, 3]).mean()
+                            loss = F.mse_loss(noise_pred.float(), noise.float(), reduction="none").mean(
+                                [1, 2, 3]).mean()
 
                             # Compute prior loss
                             prior_loss = F.mse_loss(noise_pred_prior.float(), noise_prior.float(), reduction="mean")
@@ -455,7 +458,8 @@ class DreamBooth:
                     if self.save_img_every:
                         if not global_step % self.save_img_every and global_step != 0:
                             prompt = self.instance_prompt
-                            last_saved_image = os.path.join(self.output_dir, f'{self.instance_prompt}_{global_step}.png')
+                            last_saved_image = os.path.join(self.output_dir,
+                                                            f'{self.instance_prompt}_{global_step}.png')
                             if accelerator.is_main_process:
                                 print(f"Saving pretrained model data at step {global_step}.")
                                 pipeline = StableDiffusionPipeline.from_pretrained(
@@ -504,7 +508,9 @@ class DreamBooth:
             # Create the pipeline using the trained modules and save it.
         except Exception as e:
             print(f"Exception training db: {e}")
+            print(traceback.format_exc())
             training_failed = True
+
         if not training_failed:
             if accelerator.is_main_process:
                 pipeline = StableDiffusionPipeline.from_pretrained(
@@ -514,6 +520,22 @@ class DreamBooth:
                     use_auth_token=False
                 )
                 pipeline.save_pretrained(self.output_dir)
+        else:
+            # Free memory after OOM?
+            try:
+                if unet:
+                    del unet
+                if vae:
+                    del vae
+                if text_encoder:
+                    del text_encoder
+                if tokenizer:
+                    del tokenizer
+                gc.collect()  # Python thing
+                torch.cuda.empty_cache()  # PyTorch thing
+            except:
+                pass
+
         try:
             accelerator.end_training()
         except Exception as f:
