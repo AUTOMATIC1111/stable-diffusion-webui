@@ -151,7 +151,7 @@ def show_images_history(gr:gr, opts, tabname, run_pnginfo, switch_dict):
                     delete = gr.Button('Delete', elem_id=tabname + "_images_history_del_button")
             with gr.Column():
                 with gr.Row():
-                    search_txt = gr.Textbox(label="search")
+                    search_txt = gr.Textbox(label="search", placeholder="Search by comma separated (text1, text2)")
                 with gr.Row():
                     with gr.Column():
                         img_file_info = gr.Textbox(label="Generate Info", interactive=False)
