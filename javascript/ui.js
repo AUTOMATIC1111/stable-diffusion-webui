@@ -164,6 +164,8 @@ function selected_tab_id() {
 
 function trash_prompt(_,_, is_img2img) {
 
+if(!confirm("Delete prompt?")) return false
+
     if(selected_tab_id() == "tab_txt2img") {
      pos_prompt = txt2img_textarea = gradioApp().querySelector("#txt2img_prompt > label > textarea");
      neg_prompt = txt2img_textarea = gradioApp().querySelector("#txt2img_neg_prompt > label > textarea");
@@ -177,6 +179,8 @@ function trash_prompt(_,_, is_img2img) {
      pos_prompt.value = ""
      neg_prompt.value = ""
     }
+
+    return true
 }
 
 
