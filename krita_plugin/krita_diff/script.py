@@ -8,8 +8,8 @@ from urllib.request import Request, urlopen
 
 from krita import Krita, QByteArray, QImage, QObject, QSettings, QTimer
 
+from .config import Config
 from .defaults import (
-    DEFAULTS,
     GET_CONFIG_TIMEOUT,
     POST_TIMEOUT,
     STATE_IMG2IMG,
@@ -29,10 +29,7 @@ class Script(QObject):
     def __init__(self):
         # Persistent settings (should reload between Krita sessions)
         # NOTE: delete this file between tests, should be in ~/.config/krita/krita_diff_plugin.ini
-        self.config = QSettings(
-            QSettings.IniFormat, QSettings.UserScope, "krita", "krita_diff_plugin"
-        )
-        self.restore_defaults(if_empty=True)
+        self.config = Config()
         self.is_busy = False
 
         # Status bar
@@ -40,20 +37,13 @@ class Script(QObject):
         self.status = STATE_INIT
 
     def cfg(self, name: str, type):
-        assert self.config.contains(
-            name
-        ), "Report this bug, developer missed out a config key somewhere."
-        return self.config.value(name, type=type)
+        return self.config.get(name, type)
 
     def set_cfg(self, name: str, value, if_empty=False):
-        if not if_empty or not self.config.contains(name):
-            self.config.setValue(name, value)
+        return self.config.set(name, value, not if_empty)
 
     def restore_defaults(self, if_empty=False):
-        default = asdict(DEFAULTS)
-
-        for k, v in default.items():
-            self.set_cfg(k, v, if_empty)
+        self.config.restore_defaults(not if_empty)
 
         if not if_empty:
             self.set_status(STATE_RESET_DEFAULT)

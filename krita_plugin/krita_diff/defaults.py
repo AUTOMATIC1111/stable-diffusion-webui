@@ -19,6 +19,8 @@ STATE_UPSCALE = "upscale done!"
 GET_CONFIG_TIMEOUT = 2  # 2 second timeout as getting config should be near instant
 POST_TIMEOUT = None  # post might take forever depending on batch size/count
 REFRESH_INTERVAL = 10000  # 10 seconds between auto-config refresh
+CFG_FOLDER = "krita"
+CFG_NAME = "krita_diff_plugin"
 
 
 @dataclass(frozen=True)
