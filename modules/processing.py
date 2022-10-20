@@ -541,10 +541,13 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             self.truncate_y = int(self.firstphase_height - firstphase_height_truncated) // opt_f
 
 
-    def create_dummy_mask(self, x):
+    def create_dummy_mask(self, x, first_phase: bool = False):
         if self.sampler.conditioning_key in {'hybrid', 'concat'}:
+            height = self.firstphase_height if first_phase else self.height
+            width = self.firstphase_width if first_phase else self.width
+
             # The "masked-image" in this case will just be all zeros since the entire image is masked.
-            image_conditioning = torch.zeros(x.shape[0], 3, self.height, self.width, device=x.device)
+            image_conditioning = torch.zeros(x.shape[0], 3, height, width, device=x.device)
             image_conditioning = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(image_conditioning)) 
 
             # Add the fake full 1s mask to the first dimension.
@@ -567,7 +570,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             return samples
 
         x = create_random_tensors([opt_C, self.firstphase_height // opt_f, self.firstphase_width // opt_f], seeds=seeds, subseeds=subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
-        samples = self.sampler.sample(self, x, conditioning, unconditional_conditioning, image_conditioning=self.create_dummy_mask(x))
+        samples = self.sampler.sample(self, x, conditioning, unconditional_conditioning, image_conditioning=self.create_dummy_mask(x, first_phase=True))
 
         samples = samples[:, :, self.truncate_y//2:samples.shape[2]-self.truncate_y//2, self.truncate_x//2:samples.shape[3]-self.truncate_x//2]
 
