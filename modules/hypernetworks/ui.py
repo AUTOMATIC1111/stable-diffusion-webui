@@ -15,7 +15,7 @@ def create_hypernetwork(name, enable_sizes, layer_structure=None, add_layer_norm
     assert not os.path.exists(fn), f"file {fn} already exists"
 
     if type(layer_structure) == str:
-        layer_structure = tuple(map(int, re.sub(r'\D', '', layer_structure)))
+        layer_structure = [float(x.strip()) for x in layer_structure.split(",")]
 
     hypernet = modules.hypernetworks.hypernetwork.Hypernetwork(
         name=name,
