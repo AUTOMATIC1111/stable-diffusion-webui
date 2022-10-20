@@ -45,7 +45,7 @@ class StyleDatabase:
         if not os.path.exists(path):
             return
 
-        with open(path, "r", encoding="utf8", newline='') as file:
+        with open(path, "r", encoding="utf-8-sig", newline='') as file:
             reader = csv.DictReader(file)
             for row in reader:
                 # Support loading old CSV format with "name, text"-columns
@@ -79,7 +79,7 @@ class StyleDatabase:
     def save_styles(self, path: str) -> None:
         # Write to temporary file first, so we don't nuke the file if something goes wrong
         fd, temp_path = tempfile.mkstemp(".csv")
-        with os.fdopen(fd, "w", encoding="utf8", newline='') as file:
+        with os.fdopen(fd, "w", encoding="utf-8-sig", newline='') as file:
             # _fields is actually part of the public API: typing.NamedTuple is a replacement for collections.NamedTuple,
             # and collections.NamedTuple has explicit documentation for accessing _fields. Same goes for _asdict()
             writer = csv.DictWriter(file, fieldnames=PromptStyle._fields)

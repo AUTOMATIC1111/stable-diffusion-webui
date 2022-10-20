@@ -25,3 +25,4 @@ resize-right
 torchdiffeq
 kornia
 lark
+inflection
