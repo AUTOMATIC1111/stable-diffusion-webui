@@ -82,7 +82,7 @@ def preprocess_work(process_src, process_dst, process_width, process_height, pre
         subindex[0] += 1
 
     def save_pic(image, index, existing_caption=None):
-        save_pic_with_caption(image, index)
+        save_pic_with_caption(image, index, existing_caption=existing_caption)
 
         if process_flip:
             save_pic_with_caption(ImageOps.mirror(image), index, existing_caption=existing_caption)
