@@ -8,7 +8,14 @@ from fastapi import FastAPI
 from PIL import Image, ImageOps
 from webui import modules, shared
 
-from .structs import Img2ImgRequest, Txt2ImgRequest, UpscaleRequest
+from .structs import (
+    ConfigResponse,
+    ImageResponse,
+    Img2ImgRequest,
+    Txt2ImgRequest,
+    UpscaleRequest,
+    UpscaleResponse,
+)
 from .utils import (
     fix_aspect_ratio,
     get_sampler_index,
@@ -26,7 +33,7 @@ app = FastAPI()
 log = logging.getLogger(__name__)
 
 
-@app.get("/config")
+@app.get("/config", response_model=ConfigResponse)
 async def read_item():
     """Get information about backend API.
 
@@ -39,7 +46,6 @@ async def read_item():
     # TODO:
     # - function and route name isn't descriptive, feels more like get_state()
     # - response isn't well typed but is deeply tied into the krita_plugin side..
-    # - ensuring the folders for images exist should be refactored out
     opt = load_config().plugin
     prepare_backend(opt)
 
@@ -58,11 +64,7 @@ async def read_item():
     }
 
 
-# TODO: Filter out/prevent the grid images from ever being added for inpaint mode
-# make it togglable for img2img & txt2img
-
-
-@app.post("/txt2img")
+@app.post("/txt2img", response_model=ImageResponse)
 async def f_txt2img(req: Txt2ImgRequest):
     """Post request for Txt2Img.
 
@@ -125,7 +127,7 @@ async def f_txt2img(req: Txt2ImgRequest):
     return {"outputs": outputs, "info": info}
 
 
-@app.post("/img2img")
+@app.post("/img2img", response_model=ImageResponse)
 async def f_img2img(req: Img2ImgRequest):
     """Post request for Img2Img.
 
@@ -234,7 +236,7 @@ async def f_img2img(req: Img2ImgRequest):
     return {"outputs": outputs, "info": info}
 
 
-@app.post("/upscale")
+@app.post("/upscale", response_model=UpscaleResponse)
 async def f_upscale(req: UpscaleRequest):
     """Post request for upscaling.
 

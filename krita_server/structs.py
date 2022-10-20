@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-from typing import Optional
+from typing import List, Optional
 
-from .config import Img2ImgOptions, Txt2ImgOptions, UpscaleOptions
+from pydantic import BaseModel
+
+from .config import Img2ImgOptions, PluginOptions, Txt2ImgOptions, UpscaleOptions
 from .utils import optional
 
 
@@ -50,3 +52,36 @@ class UpscaleRequest(DefaultUpscaleOptions):
 
     src_path: str
     """Path to image being used."""
+
+
+class ConfigResponse(PluginOptions):
+    # sddebz decided the server determines where images are saved (to keep it neat i guess)
+    # this doesn't affect where the server read images from
+    # i might decide to keep this mechanism for the user/me to debug images
+    # although we are transitioning to sending the image instead of the image path
+    new_img: str
+    """Where the Krita plugin should save the selected region."""
+    new_img_mask: str
+    """Where the Krita plugin should save the image mask."""
+    upscalers: List[str]
+    """List of available upscalers."""
+    samplers: List[str]
+    """List of available samplers."""
+    samplers_img2img: List[str]
+    """List of available samplers specifically for img2img (upstream separated them for a reason)."""
+    face_restorers: List[str]
+    """List of available face restorers."""
+    sd_models: List[str]
+    """List of available models."""
+
+
+class ImageResponse(BaseModel):
+    outputs: List[str]
+    """List of file paths to generated images."""
+    info: str
+    """Generation info already jsonified."""
+
+
+class UpscaleResponse(BaseModel):
+    output: str
+    """File path to upscaled image."""
