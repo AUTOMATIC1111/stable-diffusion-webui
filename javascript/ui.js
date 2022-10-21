@@ -162,9 +162,13 @@ function selected_tab_id() {
 
 }
 
-function trash_prompt(_,_, is_img2img) {
+function trash_prompt(_, confirmed) {
 
-if(!confirm("Delete prompt?")) return false
+if(confirm("Delete prompt?")) {
+    confirmed = true
+} else {
+return [_, confirmed]
+}
 
     if(selected_tab_id() == "tab_txt2img") {
         gradioApp().querySelector("#txt2img_prompt > label > textarea").value = "";
@@ -178,7 +182,7 @@ if(!confirm("Delete prompt?")) return false
         update_token_counter("txt2img_token_button")
     }
 
-    return true
+    return [_, confirmed]
 }
 
 

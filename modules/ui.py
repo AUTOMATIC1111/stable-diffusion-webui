@@ -429,15 +429,16 @@ def create_seed_inputs():
     return seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox
 
 
-# setup button for clearing prompt input boxes on client side of webui
-def connect_trash_prompt(dummy_component, button, is_img2img):
+def clear_prompt(prompt):
+    print(f"type: '{prompt}'")
+    print(prompt)
 
-    button.click(
-        fn=lambda: print("Clearing prompt"),
-        _js="trash_prompt",
-        inputs=[],
-        outputs=[],
-    )
+    # update_token_counter(prompt, steps)
+    return ""
+
+def connect_trash_prompt(prompt, confirmed):
+        if(confirmed): clear_prompt(prompt)
+
 
 def connect_reuse_seed(seed: gr.Number, reuse_seed: gr.Button, generation_info: gr.Textbox, dummy_component, is_subseed):
     """ Connects a 'reuse (sub)seed' button's click event so that it copies last used
@@ -640,7 +641,16 @@ def create_ui(wrap_gradio_gpu_call):
 
         dummy_component = gr.Label(visible=False)
         txt_prompt_img = gr.File(label="", elem_id="txt2img_prompt_image", file_count="single", type="bytes", visible=False)
-        connect_trash_prompt(dummy_component, trash_prompt_button, False)
+
+
+        trash_prompt_button.click(
+            # fn=lambda: print("Clearing prompt"),
+            _js="trash_prompt",
+            fn=lambda: clear_prompt(),
+            inputs=[txt2img_prompt, dummy_component],
+            outputs=[txt2img_prompt, dummy_component],
+        )
+
 
         with gr.Row(elem_id='txt2img_progress_row'):
             with gr.Column(scale=1):
@@ -848,7 +858,6 @@ def create_ui(wrap_gradio_gpu_call):
         img2img_interrogate, img2img_deepbooru, img2img_prompt_style_apply, img2img_save_style, img2img_paste,\
         token_counter, token_button, trash_prompt_button = create_toprow(is_img2img=True)
 
-        connect_trash_prompt(dummy_component,trash_prompt_button, True)
 
         with gr.Row(elem_id='img2img_progress_row'):
             img2img_prompt_img = gr.File(label="", elem_id="img2img_prompt_image", file_count="single", type="bytes", visible=False)
