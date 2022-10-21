@@ -34,7 +34,6 @@ class Defaults:
     fix_aspect_ratio: bool = True
     only_full_img_tiling: bool = True
     filter_nsfw: bool = False
-    color_correct: bool = True
     do_exact_steps: bool = True
 
     # TODO: consider what to do with these
@@ -74,6 +73,7 @@ class Defaults:
     img2img_cfg_scale: float = 12.0
     img2img_denoising_strength: float = 0.8
     img2img_seed: str = ""
+    img2img_color_correct: bool = False
 
     inpaint_prompt: str = ""
     inpaint_negative_prompt: str = ""
@@ -92,6 +92,7 @@ class Defaults:
     inpaint_fill: str = "preserve"
     inpaint_full_res: bool = False
     inpaint_full_res_padding: int = 32
+    inpaint_color_correct: bool = True
 
     upscale_upscaler_name: str = "None"
     upscale_downscale_first: bool = False

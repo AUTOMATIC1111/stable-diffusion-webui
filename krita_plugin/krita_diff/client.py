@@ -60,7 +60,6 @@ class Client:
             face_restorer=self.cfg("face_restorer_model", str),
             codeformer_weight=self.cfg("codeformer_weight", float),
             filter_nsfw=self.cfg("filter_nsfw", bool),
-            color_correct=self.cfg("color_correct", bool),
             do_exact_steps=self.cfg("do_exact_steps", bool),
             include_grid=self.cfg("include_grid", bool),
         )
@@ -142,6 +141,7 @@ class Client:
                 steps=self.cfg("img2img_steps", int),
                 cfg_scale=self.cfg("img2img_cfg_scale", float),
                 denoising_strength=self.cfg("img2img_denoising_strength", float),
+                color_correct=self.cfg("img2img_color_correct", bool),
                 seed=seed,
             )
 
@@ -166,6 +166,7 @@ class Client:
                 steps=self.cfg("inpaint_steps", int),
                 cfg_scale=self.cfg("inpaint_cfg_scale", float),
                 denoising_strength=self.cfg("inpaint_denoising_strength", float),
+                color_correct=self.cfg("inpaint_color_correct", bool),
                 seed=seed,
                 invert_mask=self.cfg("inpaint_invert_mask", bool),
                 mask_blur=self.cfg("inpaint_mask_blur", int),

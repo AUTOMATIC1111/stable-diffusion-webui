@@ -32,8 +32,11 @@ class ConfigTabWidget(QWidget):
 
         # webUI/backend settings
         self.filter_nsfw = QCheckBox("Filter NSFW content")
-        self.color_correct = QCheckBox(
-            "Color correct img2img/inpaint for better blending"
+        self.img2img_color_correct = QCheckBox(
+            "Color correct img2img for better blending"
+        )
+        self.inpaint_color_correct = QCheckBox(
+            "Color correct inpaint for better blending"
         )
         self.do_exact_steps = QCheckBox(
             "Don't decrease steps based on denoising strength"
@@ -70,7 +73,8 @@ class ConfigTabWidget(QWidget):
 
         layout.addWidget(QLabel("<em>Backend/webUI settings:</em>"))
         layout.addWidget(self.filter_nsfw)
-        layout.addWidget(self.color_correct)
+        layout.addWidget(self.img2img_color_correct)
+        layout.addWidget(self.inpaint_color_correct)
         layout.addWidget(self.do_exact_steps)
         layout.addStretch()
         layout.addWidget(self.refresh_btn)
@@ -92,7 +96,8 @@ class ConfigTabWidget(QWidget):
         self.only_full_img_tiling.setChecked(script.cfg("only_full_img_tiling", bool))
         self.include_grid.setChecked(script.cfg("include_grid", bool))
         self.filter_nsfw.setChecked(script.cfg("filter_nsfw", bool))
-        self.color_correct.setChecked(script.cfg("color_correct", bool))
+        self.img2img_color_correct.setChecked(script.cfg("img2img_color_correct", bool))
+        self.inpaint_color_correct.setChecked(script.cfg("inpaint_color_correct", bool))
         self.do_exact_steps.setChecked(script.cfg("do_exact_steps", bool))
 
     def cfg_connect(self):
@@ -115,7 +120,12 @@ class ConfigTabWidget(QWidget):
         )
         self.include_grid.toggled.connect(partial(script.cfg.set, "include_grid"))
         self.filter_nsfw.toggled.connect(partial(script.cfg.set, "filter_nsfw"))
-        self.color_correct.toggled.connect(partial(script.cfg.set, "color_correct"))
+        self.img2img_color_correct.toggled.connect(
+            partial(script.cfg.set, "img2img_color_correct")
+        )
+        self.inpaint_color_correct.toggled.connect(
+            partial(script.cfg.set, "inpaint_color_correct")
+        )
         self.do_exact_steps.toggled.connect(partial(script.cfg.set, "do_exact_steps"))
 
         def update_remote_config():

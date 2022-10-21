@@ -14,7 +14,7 @@ class Img2ImgTabWidget(ImgTabBaseWidget):
         self.layout.addLayout(self.denoising_strength_layout)
         self.layout.addWidget(
             QLabel(
-                "<em>Tip:</em> Select (rectangle, square, polygon, etc) what you want the model to perform img2img on."
+                "<em>Tip:</em> Select what you want the model to perform img2img on."
             )
         )
         self.layout.addStretch()

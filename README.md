@@ -27,6 +27,15 @@ Usage & Workflow Demo:
 
 [![Youtube Video](http://img.youtube.com/vi/nP8MuRwcDN8/0.jpg)](https://youtu.be/nP8MuRwcDN8 "Inpaint like a pro with Stable Diffusion! auto-sd-krita workflow guide")
 
+## UI Changelog
+
+- No need to manually hide inpainting layer anymore; It will be auto-hidden.
+- Color correction can be toggled separately for img2img/inpainting.
+- Status bar:
+  - In middle of page to be more visible even when scrolling.
+  - Warning when using features with no document open.
+- Inpaint is now the default tab.
+
 ## FAQ
 
 Q: How hard is it to install?

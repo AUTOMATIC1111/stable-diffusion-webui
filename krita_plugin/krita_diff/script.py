@@ -1,6 +1,6 @@
 import os
 
-from krita import Application, Document, Krita, Node, QImage, QObject, QTimer, Selection
+from krita import Document, Krita, Node, QImage, QObject, QTimer, Selection
 
 from .client import Client
 from .config import Config
@@ -28,7 +28,7 @@ class Script(QObject):
     """API client singleton"""
     status: str
     """Current status (shown in status bar)"""
-    app: Application
+    app: Krita
     """Krita's Application instance (KDE Application)"""
     doc: Document
     """Currently opened document if any"""
@@ -98,6 +98,7 @@ class Script(QObject):
 
         # self.doc doesnt exist at app startup
         if not self.doc:
+            self.set_status("No document open yet!")
             return
 
         self.node = self.doc.activeNode()
@@ -148,7 +149,7 @@ class Script(QObject):
         image.load(path, "PNG")
         ba = img_to_ba(image)
 
-        layer = create_layer(layer_name)
+        layer = create_layer(self.doc, layer_name)
         if not visible:
             layer.setVisible(False)
 
@@ -169,14 +170,16 @@ class Script(QObject):
                 i + 1 == len(outputs),
             )
         self.clear_temp_images(outputs)
-        self.doc.refreshProjection()
 
     def apply_img2img(self, mode):
         path = self.cfg("new_img_path", str)
         mask_path = self.cfg("new_img_mask_path", str)
-        save_img(self.selection_image, path)
         if mode == 1:
             save_img(self.mask_image, mask_path)
+            # auto-hide mask layer before getting selection image
+            self.node.setVisible(False)
+            self.doc.refreshProjection()
+        save_img(self.selection_image, path)
 
         response = (
             self.client.post_inpaint(path, mask_path, self.selection is not None)
@@ -202,8 +205,6 @@ class Script(QObject):
         else:
             self.clear_temp_images([path, *outputs])
 
-        self.doc.refreshProjection()
-
     def apply_simple_upscale(self):
         path = self.cfg("new_img_path", str)
         save_img(self.selection_image, path)
@@ -215,7 +216,6 @@ class Script(QObject):
 
         self.insert_img(f"upscale: {os.path.basename(output)}", output)
         self.clear_temp_images([path, output])
-        self.doc.refreshProjection()
 
     def create_mask_layer_internal(self):
         if self.selection is not None:
