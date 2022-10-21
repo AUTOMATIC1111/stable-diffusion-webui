@@ -163,7 +163,6 @@ function selected_tab_id() {
 }
 
 function trash_prompt(_,_, is_img2img) {
-//txt2img_token_button
 
 if(!confirm("Delete prompt?")) return false
 
