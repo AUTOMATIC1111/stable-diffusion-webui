@@ -1,5 +1,6 @@
 import os
 from PIL import Image, ImageOps
+import math
 import platform
 import sys
 import tqdm
@@ -11,7 +12,7 @@ if cmd_opts.deepdanbooru:
     import modules.deepbooru as deepbooru
 
 
-def preprocess(process_src, process_dst, process_width, process_height, preprocess_txt_action, process_flip, process_split, process_caption, process_caption_deepbooru=False):
+def preprocess(process_src, process_dst, process_width, process_height, preprocess_txt_action, process_flip, process_split, process_caption, process_caption_deepbooru=False, split_threshold=0.5, overlap_ratio=0.2):
     try:
         if process_caption:
             shared.interrogator.load()
@@ -21,7 +22,7 @@ def preprocess(process_src, process_dst, process_width, process_height, preproce
             db_opts[deepbooru.OPT_INCLUDE_RANKS] = False
             deepbooru.create_deepbooru_process(opts.interrogate_deepbooru_score_threshold, db_opts)
 
-        preprocess_work(process_src, process_dst, process_width, process_height, preprocess_txt_action, process_flip, process_split, process_caption, process_caption_deepbooru)
+        preprocess_work(process_src, process_dst, process_width, process_height, preprocess_txt_action, process_flip, process_split, process_caption, process_caption_deepbooru, split_threshold, overlap_ratio)
 
     finally:
 
@@ -33,11 +34,13 @@ def preprocess(process_src, process_dst, process_width, process_height, preproce
 
 
 
-def preprocess_work(process_src, process_dst, process_width, process_height, preprocess_txt_action, process_flip, process_split, process_caption, process_caption_deepbooru=False):
+def preprocess_work(process_src, process_dst, process_width, process_height, preprocess_txt_action, process_flip, process_split, process_caption, process_caption_deepbooru=False, split_threshold=0.5, overlap_ratio=0.2):
     width = process_width
     height = process_height
     src = os.path.abspath(process_src)
     dst = os.path.abspath(process_dst)
+    split_threshold = max(0.0, min(1.0, split_threshold))
+    overlap_ratio = max(0.0, min(0.9, overlap_ratio))
 
     assert src != dst, 'same directory specified as source and destination'
 
@@ -87,6 +90,29 @@ def preprocess_work(process_src, process_dst, process_width, process_height, pre
         if process_flip:
             save_pic_with_caption(ImageOps.mirror(image), index, existing_caption=existing_caption)
 
+    def split_pic(image, inverse_xy):
+        if inverse_xy:
+            from_w, from_h = image.height, image.width
+            to_w, to_h = height, width
+        else:
+            from_w, from_h = image.width, image.height
+            to_w, to_h = width, height
+        h = from_h * to_w // from_w
+        if inverse_xy:
+            image = image.resize((h, to_w))
+        else:
+            image = image.resize((to_w, h))
+
+        split_count = math.ceil((h - to_h * overlap_ratio) / (to_h * (1.0 - overlap_ratio)))
+        y_step = (h - to_h) / (split_count - 1)
+        for i in range(split_count):
+            y = int(y_step * i)
+            if inverse_xy:
+                splitted = image.crop((y, 0, y + to_h, to_w))
+            else:
+                splitted = image.crop((0, y, to_w, y + to_h))
+            yield splitted
+
     for index, imagefile in enumerate(tqdm.tqdm(files)):
         subindex = [0]
         filename = os.path.join(src, imagefile)
@@ -105,26 +131,16 @@ def preprocess_work(process_src, process_dst, process_width, process_height, pre
         if shared.state.interrupted:
             break
 
-        ratio = img.height / img.width
-        is_tall = ratio > 1.35
-        is_wide = ratio < 1 / 1.35
+        if img.height > img.width:
+            ratio = (img.width * height) / (img.height * width)
+            inverse_xy = False
+        else:
+            ratio = (img.height * width) / (img.width * height)
+            inverse_xy = True
 
-        if process_split and is_tall:
-            img = img.resize((width, height * img.height // img.width))
-
-            top = img.crop((0, 0, width, height))
-            save_pic(top, index, existing_caption=existing_caption)
-
-            bot = img.crop((0, img.height - height, width, img.height))
-            save_pic(bot, index, existing_caption=existing_caption)
-        elif process_split and is_wide:
-            img = img.resize((width * img.width // img.height, height))
-
-            left = img.crop((0, 0, width, height))
-            save_pic(left, index, existing_caption=existing_caption)
-
-            right = img.crop((img.width - width, 0, img.width, height))
-            save_pic(right, index, existing_caption=existing_caption)
+        if process_split and ratio < 1.0 and ratio <= split_threshold:
+            for splitted in split_pic(img, inverse_xy):
+                save_pic(splitted, index, existing_caption=existing_caption)
         else:
             img = images.resize_image(1, img, width, height)
             save_pic(img, index, existing_caption=existing_caption)
