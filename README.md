@@ -24,6 +24,7 @@ Check the [custom scripts](https://github.com/AUTOMATIC1111/stable-diffusion-web
     - have as many embeddings as you want and use any names you like for them
     - use multiple embeddings with different numbers of vectors per token
     - works with half precision floating point numbers
+    - train embeddings on 8GB (also reports of 6GB working)
 - Extras tab with:
     - GFPGAN, neural network that fixes faces
     - CodeFormer, face restoration tool as an alternative to GFPGAN
@@ -60,7 +61,7 @@ Check the [custom scripts](https://github.com/AUTOMATIC1111/stable-diffusion-web
 - CLIP interrogator, a button that tries to guess prompt from an image
 - Prompt Editing, a way to change prompt mid-generation, say to start making a watermelon and switch to anime girl midway
 - Batch Processing, process a group of files using img2img
-- Img2img Alternative
+- Img2img Alternative, reverse Euler method of cross attention control
 - Highres Fix, a convenience option to produce high resolution pictures in one click without usual distortions
 - Reloading checkpoints on the fly
 - Checkpoint Merger, a tab that allows you to merge up to 3 checkpoints into one
@@ -73,15 +74,22 @@ Check the [custom scripts](https://github.com/AUTOMATIC1111/stable-diffusion-web
 - [xformers](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Xformers), major speed increase for select cards: (add --xformers to commandline args)
 - History tab: view, direct and delete images conveniently within the UI
 - Generate forever option
-- Training Tab
-- Preprocessing Image Datasets: cropping, mirroring, autotagging using BLIP or deepdanbooru (for anime)
+- Training tab
+     - hypernetworks and embeddings options
+     - Preprocessing images: cropping, mirroring, autotagging using BLIP or deepdanbooru (for anime)
+- Clip skip
+- Use Hypernetworks
+- Use VAEs
+- Estimated completion time in progress bar
+- API
+- Support for dedicated inpainting model by RunwayML.
 
 
 
 ## Installation and Running
 Make sure the required [dependencies](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Dependencies) are met and follow the instructions available for both [NVidia](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-NVidia-GPUs) (recommended) and [AMD](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-AMD-GPUs) GPUs.
 
-Alternatively, use online services(like Google Colab):
+Alternatively, use online services (like Google Colab):
 
 - [List of Online Services](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Online-Services)
 
