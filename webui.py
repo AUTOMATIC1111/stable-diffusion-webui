@@ -72,6 +72,7 @@ def wrap_gradio_gpu_call(func, extra_outputs=None):
     return modules.ui.wrap_gradio_call(f, extra_outputs=extra_outputs)
 
 def initialize():
+    modules.scripts.load_scripts(os.path.join(script_path, "scripts"))
     if cmd_opts.ui_debug_mode:
         class enmpty():
             name = None
@@ -84,7 +85,7 @@ def initialize():
     shared.face_restorers.append(modules.face_restoration.FaceRestoration())
     modelloader.load_upscalers()
 
-    modules.scripts.load_scripts(os.path.join(script_path, "scripts"))
+    
 
     shared.sd_model = modules.sd_models.load_model()
     shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights(shared.sd_model)))
