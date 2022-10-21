@@ -122,11 +122,10 @@ def preprocess_work(process_src, process_dst, process_width, process_height, pre
             continue
 
         existing_caption = None
-
-        try:
-            existing_caption = open(os.path.splitext(filename)[0] + '.txt', 'r').read()
-        except Exception as e:
-            print(e)
+        existing_caption_filename = os.path.splitext(filename)[0] + '.txt'
+        if os.path.exists(existing_caption_filename):
+            with open(existing_caption_filename, 'r', encoding="utf8") as file:
+                existing_caption = file.read()
 
         if shared.state.interrupted:
             break
