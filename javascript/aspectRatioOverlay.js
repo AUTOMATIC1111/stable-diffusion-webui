@@ -18,22 +18,13 @@ function dimensionChange(e, is_width, is_height){
 		return;
 	}
 
-	var img2imgMode = gradioApp().querySelector('#mode_img2img.tabs > div > button.rounded-t-lg.border-gray-200')
-	if(img2imgMode){
-		img2imgMode=img2imgMode.innerText
-	}else{
-		return;
-	}
-
-	var redrawImage = gradioApp().querySelector('div[data-testid=image] img');
-	var inpaintImage = gradioApp().querySelector('#img2maskimg div[data-testid=image] img')
-
 	var targetElement = null;
 
-	if(img2imgMode=='img2img' && redrawImage){
-		targetElement = redrawImage;
-	}else if(img2imgMode=='Inpaint' && inpaintImage){
-		targetElement = inpaintImage;
+    var tabIndex = get_tab_index('mode_img2img')
+	if(tabIndex == 0){
+		targetElement = gradioApp().querySelector('div[data-testid=image] img');
+	} else if(tabIndex == 1){
+		targetElement = gradioApp().querySelector('#img2maskimg div[data-testid=image] img');
 	}
 
 	if(targetElement){
