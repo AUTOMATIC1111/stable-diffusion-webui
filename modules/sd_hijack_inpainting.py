@@ -301,6 +301,7 @@ def get_unconditional_conditioning(self, batch_size, null_label=None):
     c = repeat(c, "1 ... -> b ...", b=batch_size).to(self.device)
     return c
 
+
 class LatentInpaintDiffusion(LatentDiffusion):
     def __init__(
         self,
@@ -314,8 +315,10 @@ class LatentInpaintDiffusion(LatentDiffusion):
         assert self.masked_image_key in concat_keys
         self.concat_keys = concat_keys
 
+
 def should_hijack_inpainting(checkpoint_info):
     return str(checkpoint_info.filename).endswith("inpainting.ckpt") and not checkpoint_info.config.endswith("inpainting.yaml")
+
 
 def do_inpainting_hijack():
     ldm.models.diffusion.ddpm.get_unconditional_conditioning = get_unconditional_conditioning
