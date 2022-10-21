@@ -55,6 +55,27 @@ class Script(QObject):
     height: int
     """Height of selection"""
 
+    # NOTE: using property getters should be the exception, not the norm
+    @property
+    def selection_image(self) -> QImage:
+        """QImage of selection"""
+        return QImage(
+            self.doc.pixelData(self.x, self.y, self.width, self.height),
+            self.width,
+            self.height,
+            QImage.Format_RGBA8888,
+        ).rgbSwapped()
+
+    @property
+    def mask_image(self) -> QImage:
+        """QImage of mask layer"""
+        return QImage(
+            self.node.pixelData(self.x, self.y, self.width, self.height),
+            self.width,
+            self.height,
+            QImage.Format_RGBA8888,
+        ).rgbSwapped()
+
     def __init__(self):
         # Persistent settings (should reload between Krita sessions)
         self.cfg = Config()
@@ -84,26 +105,29 @@ class Script(QObject):
         """Update references to key Krita objects as well as selection information."""
         self.app = Krita.instance()
         self.doc = self.app.activeDocument()
-        # self.doc doesnt exist at app startup
-        if self.doc:
-            self.node = self.doc.activeNode()
-            self.selection = self.doc.selection()
 
-            is_not_selected = (
-                self.selection is None
-                or self.selection.width() < 1
-                or self.selection.height() < 1
-            )
-            if is_not_selected:
-                self.x = 0
-                self.y = 0
-                self.width = self.doc.width()
-                self.height = self.doc.height()
-            else:
-                self.x = self.selection.x()
-                self.y = self.selection.y()
-                self.width = self.selection.width()
-                self.height = self.selection.height()
+        # self.doc doesnt exist at app startup
+        if not self.doc:
+            return
+
+        self.node = self.doc.activeNode()
+        self.selection = self.doc.selection()
+
+        is_not_selected = (
+            self.selection is None
+            or self.selection.width() < 1
+            or self.selection.height() < 1
+        )
+        if is_not_selected:
+            self.x = 0
+            self.y = 0
+            self.width = self.doc.width()
+            self.height = self.doc.height()
+        else:
+            self.x = self.selection.x()
+            self.y = self.selection.y()
+            self.width = self.selection.width()
+            self.height = self.selection.height()
 
     def adjust_selection(self):
         """Adjust selection region to account for scaling and striding to prevent image stretch."""
@@ -127,19 +151,6 @@ class Script(QObject):
     def update_config(self):
         """Update certain config/state from the backend."""
         return self.client.get_config()
-
-    def save_img(self, path, is_mask=False):
-        if is_mask:
-            pixel_bytes = self.node.pixelData(self.x, self.y, self.width, self.height)
-        else:
-            pixel_bytes = self.doc.pixelData(self.x, self.y, self.width, self.height)
-
-        image_data = QImage(
-            pixel_bytes, self.width, self.height, QImage.Format_RGBA8888
-        ).rgbSwapped()
-        # max compression to transmit over network; rmb png is lossless
-        image_data.save(path, "PNG", 0)
-        print(f"Saved {'mask' if is_mask else 'image'}: {path}")
 
     # Krita tools
     def image_to_ba(self, image):
@@ -178,9 +189,9 @@ class Script(QObject):
     def apply_img2img(self, mode):
         path = self.cfg("new_img_path", str)
         mask_path = self.cfg("new_img_mask_path", str)
-        self.save_img(path)
+        self.selection_image.save(path, "PNG", 0)
         if mode == 1:
-            self.save_img(mask_path, is_mask=True)
+            self.mask_image.save(mask_path, "PNG", 0)
 
         response = (
             self.client.post_inpaint(path, mask_path, self.selection is not None)
@@ -210,7 +221,7 @@ class Script(QObject):
 
     def apply_simple_upscale(self):
         path = self.cfg("new_img_path", str)
-        self.save_img(path)
+        self.selection_image.save(path, "PNG", 0)
 
         response = self.client.post_upscale(path)
         assert response is not None, "Backend Error, check terminal"
