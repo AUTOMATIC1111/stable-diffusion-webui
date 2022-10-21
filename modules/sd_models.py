@@ -9,6 +9,7 @@ from ldm.util import instantiate_from_config
 
 from modules import shared, modelloader, devices
 from modules.paths import models_path
+from modules.sd_hijack_inpainting import do_inpainting_hijack, should_hijack_inpainting
 
 model_dir = "Stable-diffusion"
 model_path = os.path.abspath(os.path.join(models_path, model_dir))
@@ -203,14 +204,26 @@ def load_model_weights(model, checkpoint_info):
     model.sd_checkpoint_info = checkpoint_info
 
 
-def load_model():
+def load_model(checkpoint_info=None):
     from modules import lowvram, sd_hijack
-    checkpoint_info = select_checkpoint()
+    checkpoint_info = checkpoint_info or select_checkpoint()
 
     if checkpoint_info.config != shared.cmd_opts.config:
         print(f"Loading config from: {checkpoint_info.config}")
 
     sd_config = OmegaConf.load(checkpoint_info.config)
+    
+    if should_hijack_inpainting(checkpoint_info):
+        # Hardcoded config for now...
+        sd_config.model.target = "ldm.models.diffusion.ddpm.LatentInpaintDiffusion"
+        sd_config.model.params.use_ema = False
+        sd_config.model.params.conditioning_key = "hybrid"
+        sd_config.model.params.unet_config.params.in_channels = 9
+
+        # Create a "fake" config with a different name so that we know to unload it when switching models.
+        checkpoint_info = checkpoint_info._replace(config=checkpoint_info.config.replace(".yaml", "-inpainting.yaml"))
+
+    do_inpainting_hijack()
     sd_model = instantiate_from_config(sd_config.model)
     load_model_weights(sd_model, checkpoint_info)
 
@@ -234,9 +247,9 @@ def reload_model_weights(sd_model, info=None):
     if sd_model.sd_model_checkpoint == checkpoint_info.filename:
         return
 
-    if sd_model.sd_checkpoint_info.config != checkpoint_info.config:
+    if sd_model.sd_checkpoint_info.config != checkpoint_info.config or should_hijack_inpainting(checkpoint_info) != should_hijack_inpainting(sd_model.sd_checkpoint_info):
         checkpoints_loaded.clear()
-        shared.sd_model = load_model()
+        shared.sd_model = load_model(checkpoint_info)
         return shared.sd_model
 
     if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
