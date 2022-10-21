@@ -429,19 +429,19 @@ def create_seed_inputs():
     return seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox
 
 
-def clear_prompt(_prompt, confirmed, _token_counter):
+def clear_prompt(_prompt, _prompt_neg, confirmed, _token_counter):
     """Given confirmation from a user on the client-side, go ahead with clearing prompt"""
     if confirmed:
-        return ["", confirmed, update_token_counter("", 1)]
+        return ["", "", confirmed, update_token_counter("", 1)]
 
 
-def connect_clear_prompt(button, prompt, _dummy_confirmed, token_counter):
+def connect_clear_prompt(button, prompt, prompt_neg, _dummy_confirmed, token_counter):
     """Given clear button, prompt, and token_counter objects, setup clear prompt button click event"""
     button.click(
         _js="clear_prompt",
         fn=clear_prompt,
-        inputs=[prompt, _dummy_confirmed, token_counter],
-        outputs=[prompt, _dummy_confirmed, token_counter],
+        inputs=[prompt, prompt_neg, _dummy_confirmed, token_counter],
+        outputs=[prompt, prompt_neg, _dummy_confirmed, token_counter],
     )
 
 
@@ -723,7 +723,7 @@ def create_ui(wrap_gradio_gpu_call):
 
             connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
             connect_reuse_seed(subseed, reuse_subseed, generation_info, dummy_component, is_subseed=True)
-            connect_clear_prompt(clear_prompt_button, txt2img_prompt, dummy_component, token_counter)
+            connect_clear_prompt(clear_prompt_button, txt2img_prompt, txt2img_negative_prompt, dummy_component, token_counter)
 
             txt2img_args = dict(
                 fn=wrap_gradio_gpu_call(modules.txt2img.txt2img),
@@ -961,7 +961,7 @@ def create_ui(wrap_gradio_gpu_call):
 
             connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
             connect_reuse_seed(subseed, reuse_subseed, generation_info, dummy_component, is_subseed=True)
-            connect_clear_prompt(clear_prompt_button, img2img_prompt, dummy_component, token_counter)
+            connect_clear_prompt(clear_prompt_button, img2img_prompt, img2img_negative_prompt, dummy_component, token_counter)
 
             img2img_prompt_img.change(
                 fn=modules.images.image_data,

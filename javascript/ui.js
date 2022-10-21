@@ -162,7 +162,7 @@ function selected_tab_id() {
 
 }
 
-function clear_prompt(_, confirmed,_steps) {
+function clear_prompt(_, _prompt_neg, confirmed,_steps) {
 
 if(confirm("Delete prompt?")) {
     confirmed = true
@@ -176,7 +176,7 @@ return [_, confirmed]
         update_token_counter("txt2img_token_button")
     }
 
-    return [_, confirmed,_steps]
+    return [_, _prompt_neg, confirmed,_steps]
 }
 
 

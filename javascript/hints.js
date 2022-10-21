@@ -17,6 +17,7 @@ titles = {
     "\u2199\ufe0f": "Read generation parameters from prompt or last generation if prompt is empty into user interface.",
     "\u{1f4c2}": "Open images output directory",
     "\u{1f4be}": "Save style",
+    "\U0001F5D1": "Clear prompt"
     "\u{1f4cb}": "Apply selected styles to current prompt",
 
     "Inpaint a part of image": "Draw a mask over an image, and the script will regenerate the masked area with content according to prompt",
