@@ -4,6 +4,7 @@ import html
 import os
 import sys
 import traceback
+import tensorboard
 import tqdm
 import csv
 
@@ -17,7 +18,6 @@ from einops import rearrange, repeat
 import modules.textual_inversion.dataset
 from modules.textual_inversion import textual_inversion
 from modules.textual_inversion.learn_schedule import LearnRateScheduler
-
 
 class HypernetworkModule(torch.nn.Module):
     multiplier = 1.0
@@ -303,16 +303,19 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
     last_saved_image = "<none>"
     forced_filename = "<none>"
 
-    ititial_step = hypernetwork.step or 0
-    if ititial_step > steps:
+    initial_step = hypernetwork.step or 0
+    if initial_step > steps:
         return hypernetwork, filename
 
-    scheduler = LearnRateScheduler(learn_rate, steps, ititial_step)
+    scheduler = LearnRateScheduler(learn_rate, steps, initial_step)
     optimizer = torch.optim.AdamW(weights, lr=scheduler.learn_rate)
 
-    pbar = tqdm.tqdm(enumerate(ds), total=steps - ititial_step)
+    if shared.opts.training_enable_tensorboard:
+        tensorboard_writer = textual_inversion.tensorboard_setup(log_directory)
+
+    pbar = tqdm.tqdm(enumerate(ds), total=steps - initial_step)
     for i, entries in pbar:
-        hypernetwork.step = i + ititial_step
+        hypernetwork.step = i + initial_step
 
         scheduler.apply(optimizer, hypernetwork.step)
         if scheduler.finished:
@@ -334,6 +337,7 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+
         mean_loss = losses.mean()
         if torch.isnan(mean_loss):
             raise RuntimeError("Loss diverged.")
@@ -344,6 +348,14 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
             hypernetwork.name = f'{hypernetwork_name}-{hypernetwork.step}'
             last_saved_file = os.path.join(hypernetwork_dir, f'{hypernetwork.name}.pt')
             hypernetwork.save(last_saved_file)
+        
+        if shared.opts.training_enable_tensorboard:
+            epoch_num = hypernetwork.step // len(ds)
+            epoch_step = hypernetwork.step - (epoch_num * len(ds)) + 1
+            
+            textual_inversion.tensorboard_add(tensorboard_writer, loss=mean_loss,
+                global_step=hypernetwork.step, step=epoch_step, 
+                learn_rate=scheduler.learn_rate, epoch_num=epoch_num)
 
         textual_inversion.write_loss(log_directory, "hypernetwork_loss.csv", hypernetwork.step, len(ds), {
             "loss": f"{mean_loss:.7f}",
@@ -381,6 +393,10 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
 
             processed = processing.process_images(p)
             image = processed.images[0] if len(processed.images)>0 else None
+
+            if shared.opts.training_enable_tensorboard and shared.opts.training_tensorboard_save_images:
+                textual_inversion.tensorboard_add_image(tensorboard_writer, f"Validation at epoch {epoch_num}",
+                      image, hypernetwork.step)
 
             if unload:
                 shared.sd_model.cond_stage_model.to(devices.cpu)

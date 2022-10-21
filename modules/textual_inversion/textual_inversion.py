@@ -7,9 +7,11 @@ import tqdm
 import html
 import datetime
 import csv
+import numpy as np
 
+import torchvision.transforms
 from PIL import Image, PngImagePlugin
-
+from torch.utils.tensorboard import SummaryWriter
 from modules import shared, devices, sd_hijack, processing, sd_models
 import modules.textual_inversion.dataset
 from modules.textual_inversion.learn_schedule import LearnRateScheduler
@@ -200,6 +202,30 @@ def write_loss(log_directory, filename, step, epoch_len, values):
             **values,
         })
 
+def tensorboard_setup(log_directory):
+    os.makedirs(os.path.join(log_directory, "tensorboard"), exist_ok=True)
+    return SummaryWriter(
+            log_dir=os.path.join(log_directory, "tensorboard"),
+            flush_secs=shared.opts.training_tensorboard_flush_every)
+
+def tensorboard_add(tensorboard_writer, loss, global_step, step, learn_rate, epoch_num):
+    tensorboard_add_scaler(tensorboard_writer, "Loss/train", loss, global_step)
+    tensorboard_add_scaler(tensorboard_writer, f"Loss/train/epoch-{epoch_num}", loss, step)
+    tensorboard_add_scaler(tensorboard_writer, "Learn rate/train", learn_rate, global_step)
+    tensorboard_add_scaler(tensorboard_writer, f"Learn rate/train/epoch-{epoch_num}", learn_rate, step)
+
+def tensorboard_add_scaler(tensorboard_writer, tag, value, step):
+    tensorboard_writer.add_scalar(tag=tag, 
+        scalar_value=value, global_step=step)
+
+def tensorboard_add_image(tensorboard_writer, tag, pil_image, step):
+    # Convert a pil image to a torch tensor
+    img_tensor = torch.as_tensor(np.array(pil_image, copy=True))
+    img_tensor = img_tensor.view(pil_image.size[1], pil_image.size[0], 
+        len(pil_image.getbands()))
+    img_tensor = img_tensor.permute((2, 0, 1))
+                
+    tensorboard_writer.add_image(tag, img_tensor, global_step=step)
 
 def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_directory, training_width, training_height, steps, create_image_every, save_embedding_every, template_file, save_image_with_stored_embedding, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height):
     assert embedding_name, 'embedding not selected'
@@ -246,16 +272,19 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
     last_saved_image = "<none>"
     embedding_yet_to_be_embedded = False
 
-    ititial_step = embedding.step or 0
-    if ititial_step > steps:
+    initial_step = embedding.step or 0
+    if initial_step > steps:
         return embedding, filename
 
-    scheduler = LearnRateScheduler(learn_rate, steps, ititial_step)
+    scheduler = LearnRateScheduler(learn_rate, steps, initial_step)
     optimizer = torch.optim.AdamW([embedding.vec], lr=scheduler.learn_rate)
 
-    pbar = tqdm.tqdm(enumerate(ds), total=steps-ititial_step)
+    if shared.opts.training_enable_tensorboard:
+        tensorboard_writer = tensorboard_setup(log_directory)
+
+    pbar = tqdm.tqdm(enumerate(ds), total=steps-initial_step)
     for i, entries in pbar:
-        embedding.step = i + ititial_step
+        embedding.step = i + initial_step
 
         scheduler.apply(optimizer, embedding.step)
         if scheduler.finished:
@@ -271,6 +300,7 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
             del x
 
             losses[embedding.step % losses.shape[0]] = loss.item()
+            
 
             optimizer.zero_grad()
             loss.backward()
@@ -286,6 +316,10 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
             last_saved_file = os.path.join(embedding_dir, f'{embedding_name}-{embedding.step}.pt')
             embedding.save(last_saved_file)
             embedding_yet_to_be_embedded = True
+
+        if shared.opts.training_enable_tensorboard:
+            tensorboard_add(tensorboard_writer, loss=losses.mean(), global_step=embedding.step, 
+                step=epoch_step, learn_rate=scheduler.learn_rate, epoch_num=epoch_num)
 
         write_loss(log_directory, "textual_inversion_loss.csv", embedding.step, len(ds), {
             "loss": f"{losses.mean():.7f}",
@@ -351,6 +385,10 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
                 embedding_yet_to_be_embedded = False
 
             image.save(last_saved_image)
+
+            if shared.opts.training_enable_tensorboard and shared.opts.training_tensorboard_save_images:
+                tensorboard_add_image(tensorboard_writer, f"Validation at epoch {epoch_num}", 
+                    image, embedding.step)
 
             last_saved_image += f", prompt: {preview_text}"
 
