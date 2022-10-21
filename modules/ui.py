@@ -430,19 +430,16 @@ def create_seed_inputs():
 
 
 
-def connect_trash_prompt(_, confirmed):
+def connect_trash_prompt(_prompt, confirmed, _token_counter):
         if(confirmed):
-            # update_token_counter(prompt, steps)
-            return ["", confirmed]
+            return ["", confirmed, update_token_counter("", 1)]
 
-def trash_prompt_click(button, prompt):
-    dummy_component = gradio.Label(visible=False)
-
+def trash_prompt_click(button, prompt, _dummy_confirmed, token_counter):
     button.click(
         _js="trash_prompt",
         fn=connect_trash_prompt,
-        inputs=[prompt, dummy_component],
-        outputs=[prompt, dummy_component],
+        inputs=[prompt, _dummy_confirmed, token_counter],
+        outputs=[prompt, _dummy_confirmed, token_counter],
     )
 
 
@@ -649,7 +646,6 @@ def create_ui(wrap_gradio_gpu_call):
         txt_prompt_img = gr.File(label="", elem_id="txt2img_prompt_image", file_count="single", type="bytes", visible=False)
 
 
-        trash_prompt_click(trash_prompt_button, txt2img_prompt)
 
 
         with gr.Row(elem_id='txt2img_progress_row'):
@@ -720,6 +716,7 @@ def create_ui(wrap_gradio_gpu_call):
 
             connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
             connect_reuse_seed(subseed, reuse_subseed, generation_info, dummy_component, is_subseed=True)
+            trash_prompt_click(trash_prompt_button, txt2img_prompt, dummy_component, token_counter)
 
             txt2img_args = dict(
                 fn=wrap_gradio_gpu_call(modules.txt2img.txt2img),
@@ -858,7 +855,6 @@ def create_ui(wrap_gradio_gpu_call):
         img2img_interrogate, img2img_deepbooru, img2img_prompt_style_apply, img2img_save_style, img2img_paste,\
         token_counter, token_button, trash_prompt_button = create_toprow(is_img2img=True)
 
-        trash_prompt_click(trash_prompt_button, img2img_prompt)
 
         with gr.Row(elem_id='img2img_progress_row'):
             img2img_prompt_img = gr.File(label="", elem_id="img2img_prompt_image", file_count="single", type="bytes", visible=False)
@@ -958,6 +954,7 @@ def create_ui(wrap_gradio_gpu_call):
 
             connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
             connect_reuse_seed(subseed, reuse_subseed, generation_info, dummy_component, is_subseed=True)
+            trash_prompt_click(trash_prompt_button, img2img_prompt, dummy_component, token_counter)
 
             img2img_prompt_img.change(
                 fn=modules.images.image_data,
