@@ -11,6 +11,9 @@ from modules.hypernetworks import hypernetwork
 
 
 def create_hypernetwork(name, enable_sizes, overwrite_old, layer_structure=None, add_layer_norm=False, activation_func=None):
+    # Remove illegal characters from name.
+    name = "".join( x for x in name if (x.isalnum() or x in "._- "))
+
     fn = os.path.join(shared.cmd_opts.hypernetwork_dir, f"{name}.pt")
     if not overwrite_old:
         assert not os.path.exists(fn), f"file {fn} already exists"
