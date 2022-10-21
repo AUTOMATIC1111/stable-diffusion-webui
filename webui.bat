@@ -35,7 +35,14 @@ goto :launch
 :skip_venv
 
 :launch
+if [%ACCELERATE%] == [True] goto :launch_accel
 %PYTHON% launch.py %*
+pause
+exit /b
+
+:launch_accel
+echo "Accelerating"
+accelerate launch launch.py %*
 pause
 exit /b
 
