@@ -133,6 +133,7 @@ class DreamBooth:
             mixed_precision=self.mixed_precision,
             log_with="tensorboard",
             logging_dir=logging_dir,
+            cpu=self.use_cpu
         )
         # Currently, it's not possible to do gradient accumulation when training two models with accelerate.accumulate
         # This will be enabled soon in accelerate. For now, we don't allow gradient accumulation when training two models.
