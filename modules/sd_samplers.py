@@ -210,6 +210,7 @@ class VanillaStableDiffusionSampler:
         x1 = self.sampler.stochastic_encode(x, torch.tensor([t_enc] * int(x.shape[0])).to(shared.device), noise=noise)
 
         self.init_latent = x
+        self.last_latent = x
         self.step = 0
 
         # Wrap the conditioning models with additional image conditioning for inpainting model
@@ -226,6 +227,7 @@ class VanillaStableDiffusionSampler:
         self.initialize(p)
 
         self.init_latent = None
+        self.last_latent = x
         self.step = 0
 
         steps = steps or p.steps
@@ -416,6 +418,7 @@ class KDiffusionSampler:
             extra_params_kwargs['sigmas'] = sigma_sched
 
         self.model_wrap_cfg.init_latent = x
+        self.last_latent = x
 
         samples = self.launch_sampling(steps, lambda: self.func(self.model_wrap_cfg, xi, extra_args={
             'cond': conditioning, 
@@ -447,6 +450,7 @@ class KDiffusionSampler:
         else:
             extra_params_kwargs['sigmas'] = sigmas
 
+        self.last_latent = x
         samples = self.launch_sampling(steps, lambda: self.func(self.model_wrap_cfg, x, extra_args={
             'cond': conditioning, 
             'image_cond': image_conditioning, 
