@@ -76,7 +76,7 @@ async def f_txt2img(req: Txt2ImgRequest):
     Returns:
         Dict: Outputs and info.
     """
-    log.info(f"txt2img: {req}")
+    log.info(f"txt2img:\n{req}")
 
     opt = load_config().txt2img
     req = merge_default_config(req, opt)
@@ -129,7 +129,7 @@ async def f_txt2img(req: Txt2ImgRequest):
     ]
     outputs = [img_to_b64(image) for image in resized_images]
 
-    log.info(f"finished: {output_paths}\n{info}")
+    log.info(f"finished: {output_paths}")
     return {"outputs": outputs, "info": info}
 
 
@@ -143,7 +143,7 @@ async def f_img2img(req: Img2ImgRequest):
     Returns:
         Dict: Outputs and info.
     """
-    log.info(f"img2img: {req}")
+    log.info(f"img2img:\n{req.dict(exclude={'src_img', 'mask_img'})}")
 
     opt = load_config().img2img
     req = merge_default_config(req, opt)
@@ -241,7 +241,7 @@ async def f_img2img(req: Img2ImgRequest):
     ]
     outputs = [img_to_b64(image) for image in resized_images]
 
-    log.info(f"finished: {output_paths}\n{info}")
+    log.info(f"finished: {output_paths}")
     return {"outputs": outputs, "info": info}
 
 
@@ -255,13 +255,13 @@ async def f_upscale(req: UpscaleRequest):
     Returns:
         Dict: Output.
     """
-    log.info(f"upscale: {req}")
+    log.info(f"upscale: {req.dict(exclude={'src_img'})}")
 
     opt = load_config().upscale
     req = merge_default_config(req, opt)
     prepare_backend(req)
 
-    image = b64_to_img(req.src_path).convert("RGB")
+    image = b64_to_img(req.src_img).convert("RGB")
     orig_width, orig_height = image.size
 
     upscaler_index = get_upscaler_index(req.upscaler_name)

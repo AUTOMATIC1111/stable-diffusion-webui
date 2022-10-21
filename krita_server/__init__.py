@@ -42,12 +42,12 @@ def start():
     # logging stuff
     root_logger = logging.getLogger("krita_server")
     handler = logging.StreamHandler()
-    handler.setFormatter(
-        logging.Formatter(
-            fmt="[%(asctime)s][%(name)s:%(lineno)d][%(levelname)s] %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
-        )
-    )
+    # handler.setFormatter(
+    #     logging.Formatter(
+    #         fmt="[%(asctime)s][%(name)s:%(lineno)d][%(levelname)s] %(message)s",
+    #         datefmt="%Y-%m-%d %H:%M:%S",
+    #     )
+    # )
     root_logger.addHandler(handler)
     root_logger.setLevel(logging.INFO)
 
