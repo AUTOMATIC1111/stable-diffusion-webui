@@ -162,7 +162,7 @@ function selected_tab_id() {
 
 }
 
-function trash_prompt(_, confirmed,_steps) {
+function clear_prompt(_, confirmed,_steps) {
 
 if(confirm("Delete prompt?")) {
     confirmed = true

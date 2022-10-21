@@ -88,7 +88,7 @@ folder_symbol = '\U0001f4c2'  # 📂
 refresh_symbol = '\U0001f504'  # 🔄
 save_style_symbol = '\U0001f4be'  # 💾
 apply_style_symbol = '\U0001f4cb'  # 📋
-trash_prompt_symbol = '\U0001F5D1' #
+clear_prompt_symbol = '\U0001F5D1' # 🗑️
 
 
 def plaintext_to_html(text):
@@ -430,14 +430,14 @@ def create_seed_inputs():
 
 
 
-def connect_trash_prompt(_prompt, confirmed, _token_counter):
+def clear_prompt(_prompt, confirmed, _token_counter):
         if(confirmed):
             return ["", confirmed, update_token_counter("", 1)]
 
-def trash_prompt_click(button, prompt, _dummy_confirmed, token_counter):
+def connect_clear_prompt(button, prompt, _dummy_confirmed, token_counter):
     button.click(
-        _js="trash_prompt",
-        fn=connect_trash_prompt,
+        _js="clear_prompt",
+        fn=clear_prompt,
         inputs=[prompt, _dummy_confirmed, token_counter],
         outputs=[prompt, _dummy_confirmed, token_counter],
     )
@@ -518,7 +518,7 @@ def create_toprow(is_img2img):
             paste = gr.Button(value=paste_symbol, elem_id="paste")
             save_style = gr.Button(value=save_style_symbol, elem_id="style_create")
             prompt_style_apply = gr.Button(value=apply_style_symbol, elem_id="style_apply")
-            trash_prompt = gr.Button(value=trash_prompt_symbol, elem_id="trash_prompt", visible=opts.trash_prompt_visible)
+            clear_prompt_button = gr.Button(value=clear_prompt_symbol, elem_id="clear_prompt", visible=opts.clear_prompt_visible)
 
             token_counter = gr.HTML(value="<span></span>", elem_id=f"{id_part}_token_counter")
             token_button = gr.Button(visible=False, elem_id=f"{id_part}_token_button")
@@ -559,7 +559,7 @@ def create_toprow(is_img2img):
                     prompt_style2 = gr.Dropdown(label="Style 2", elem_id=f"{id_part}_style2_index", choices=[k for k, v in shared.prompt_styles.styles.items()], value=next(iter(shared.prompt_styles.styles.keys())))
                     prompt_style2.save_to_config = True
 
-    return prompt, roll, prompt_style, negative_prompt, prompt_style2, submit, button_interrogate, button_deepbooru, prompt_style_apply, save_style, paste, token_counter, token_button, trash_prompt
+    return prompt, roll, prompt_style, negative_prompt, prompt_style2, submit, button_interrogate, button_deepbooru, prompt_style_apply, save_style, paste, token_counter, token_button, clear_prompt_button
 
 
 def setup_progressbar(progressbar, preview, id_part, textinfo=None):
@@ -640,7 +640,7 @@ def create_ui(wrap_gradio_gpu_call):
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
         txt2img_prompt, roll, txt2img_prompt_style, txt2img_negative_prompt, txt2img_prompt_style2, submit, _, _,\
         txt2img_prompt_style_apply, txt2img_save_style, txt2img_paste, token_counter,\
-        token_button, trash_prompt_button = create_toprow(is_img2img=False)
+        token_button, clear_prompt_button = create_toprow(is_img2img=False)
 
         dummy_component = gr.Label(visible=False)
         txt_prompt_img = gr.File(label="", elem_id="txt2img_prompt_image", file_count="single", type="bytes", visible=False)
@@ -716,7 +716,7 @@ def create_ui(wrap_gradio_gpu_call):
 
             connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
             connect_reuse_seed(subseed, reuse_subseed, generation_info, dummy_component, is_subseed=True)
-            trash_prompt_click(trash_prompt_button, txt2img_prompt, dummy_component, token_counter)
+            connect_clear_prompt(clear_prompt_button, txt2img_prompt, dummy_component, token_counter)
 
             txt2img_args = dict(
                 fn=wrap_gradio_gpu_call(modules.txt2img.txt2img),
@@ -853,7 +853,7 @@ def create_ui(wrap_gradio_gpu_call):
     with gr.Blocks(analytics_enabled=False) as img2img_interface:
         img2img_prompt, roll, img2img_prompt_style, img2img_negative_prompt, img2img_prompt_style2, submit,\
         img2img_interrogate, img2img_deepbooru, img2img_prompt_style_apply, img2img_save_style, img2img_paste,\
-        token_counter, token_button, trash_prompt_button = create_toprow(is_img2img=True)
+        token_counter, token_button, clear_prompt_button = create_toprow(is_img2img=True)
 
 
         with gr.Row(elem_id='img2img_progress_row'):
@@ -954,7 +954,7 @@ def create_ui(wrap_gradio_gpu_call):
 
             connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
             connect_reuse_seed(subseed, reuse_subseed, generation_info, dummy_component, is_subseed=True)
-            trash_prompt_click(trash_prompt_button, img2img_prompt, dummy_component, token_counter)
+            connect_clear_prompt(clear_prompt_button, img2img_prompt, dummy_component, token_counter)
 
             img2img_prompt_img.change(
                 fn=modules.images.image_data,
