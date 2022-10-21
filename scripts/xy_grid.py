@@ -89,6 +89,7 @@ def apply_checkpoint(p, x, xs):
     if info is None:
         raise RuntimeError(f"Unknown checkpoint: {x}")
     modules.sd_models.reload_model_weights(shared.sd_model, info)
+    p.sd_model = shared.sd_model
 
 
 def confirm_checkpoints(p, xs):

@@ -25,7 +25,9 @@ import gradio.routes
 
 from modules import sd_hijack, sd_models, localization
 from modules.paths import script_path
-from modules.shared import opts, cmd_opts, restricted_opts
+
+from modules.shared import opts, cmd_opts, restricted_opts, aesthetic_embeddings
+
 if cmd_opts.deepdanbooru:
     from modules.deepbooru import get_deepbooru_tags
 import modules.shared as shared
@@ -41,7 +43,10 @@ from modules import prompt_parser
 from modules.images import save_image
 import modules.textual_inversion.ui
 import modules.hypernetworks.ui
+
+import modules.aesthetic_clip as aesthetic_clip
 import modules.images_history as img_his
+
 
 # this is a fix for Windows users. Without it, javascript files will be served with text/html content-type and the browser will not show any UI
 mimetypes.init()
@@ -604,27 +609,29 @@ def apply_setting(key, value):
     return value
 
 
+def create_refresh_button(refresh_component, refresh_method, refreshed_args, elem_id):
+    def refresh():
+        refresh_method()
+        args = refreshed_args() if callable(refreshed_args) else refreshed_args
+
+        for k, v in args.items():
+            setattr(refresh_component, k, v)
+
+        return gr.update(**(args or {}))
+
+    refresh_button = gr.Button(value=refresh_symbol, elem_id=elem_id)
+    refresh_button.click(
+        fn=refresh,
+        inputs=[],
+        outputs=[refresh_component]
+    )
+    return refresh_button
+
+
 def create_ui(wrap_gradio_gpu_call):
     import modules.img2img
     import modules.txt2img
 
-    def create_refresh_button(refresh_component, refresh_method, refreshed_args, elem_id):
-        def refresh():
-            refresh_method()
-            args = refreshed_args() if callable(refreshed_args) else refreshed_args
-
-            for k, v in args.items():
-                setattr(refresh_component, k, v)
-
-            return gr.update(**(args or {}))
-
-        refresh_button = gr.Button(value=refresh_symbol, elem_id=elem_id)
-        refresh_button.click(
-            fn = refresh,
-            inputs = [],
-            outputs = [refresh_component]
-        )
-        return refresh_button
 
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
         txt2img_prompt, roll, txt2img_prompt_style, txt2img_negative_prompt, txt2img_prompt_style2, submit, _, _,\
@@ -670,6 +677,8 @@ def create_ui(wrap_gradio_gpu_call):
                 cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='CFG Scale', value=7.0)
 
                 seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox = create_seed_inputs()
+
+                aesthetic_weight, aesthetic_steps, aesthetic_lr, aesthetic_slerp, aesthetic_imgs, aesthetic_imgs_text, aesthetic_slerp_angle, aesthetic_text_negative = aesthetic_clip.create_ui()
 
                 with gr.Group():
                     custom_inputs = modules.scripts.scripts_txt2img.setup_ui(is_img2img=False)
@@ -725,7 +734,16 @@ def create_ui(wrap_gradio_gpu_call):
                     denoising_strength,
                     firstphase_width,
                     firstphase_height,
+                    aesthetic_lr,
+                    aesthetic_weight,
+                    aesthetic_steps,
+                    aesthetic_imgs,
+                    aesthetic_slerp,
+                    aesthetic_imgs_text,
+                    aesthetic_slerp_angle,
+                    aesthetic_text_negative
                 ] + custom_inputs,
+
                 outputs=[
                     txt2img_gallery,
                     generation_info,
@@ -802,6 +820,14 @@ def create_ui(wrap_gradio_gpu_call):
                 (hr_options, lambda d: gr.Row.update(visible="Denoising strength" in d)),
                 (firstphase_width, "First pass size-1"),
                 (firstphase_height, "First pass size-2"),
+                (aesthetic_lr, "Aesthetic LR"),
+                (aesthetic_weight, "Aesthetic weight"),
+                (aesthetic_steps, "Aesthetic steps"),
+                (aesthetic_imgs, "Aesthetic embedding"),
+                (aesthetic_slerp, "Aesthetic slerp"),
+                (aesthetic_imgs_text, "Aesthetic text"),
+                (aesthetic_text_negative, "Aesthetic text negative"),
+                (aesthetic_slerp_angle, "Aesthetic slerp angle"),
             ]
 
             txt2img_preview_params = [
@@ -873,8 +899,8 @@ def create_ui(wrap_gradio_gpu_call):
                 sampler_index = gr.Radio(label='Sampling method', choices=[x.name for x in samplers_for_img2img], value=samplers_for_img2img[0].name, type="index")
 
                 with gr.Group():
-                    width = gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512)
-                    height = gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512)
+                    width = gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512, elem_id="img2img_width")
+                    height = gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512, elem_id="img2img_height")
 
                 with gr.Row():
                     restore_faces = gr.Checkbox(label='Restore faces', value=False, visible=len(shared.face_restorers) > 1)
@@ -889,6 +915,8 @@ def create_ui(wrap_gradio_gpu_call):
                     denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.75)
 
                 seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox = create_seed_inputs()
+
+                aesthetic_weight_im, aesthetic_steps_im, aesthetic_lr_im, aesthetic_slerp_im, aesthetic_imgs_im, aesthetic_imgs_text_im, aesthetic_slerp_angle_im, aesthetic_text_negative_im = aesthetic_clip.create_ui()
 
                 with gr.Group():
                     custom_inputs = modules.scripts.scripts_img2img.setup_ui(is_img2img=True)
@@ -980,6 +1008,14 @@ def create_ui(wrap_gradio_gpu_call):
                     inpainting_mask_invert,
                     img2img_batch_input_dir,
                     img2img_batch_output_dir,
+                    aesthetic_lr_im,
+                    aesthetic_weight_im,
+                    aesthetic_steps_im,
+                    aesthetic_imgs_im,
+                    aesthetic_slerp_im,
+                    aesthetic_imgs_text_im,
+                    aesthetic_slerp_angle_im,
+                    aesthetic_text_negative_im,
                 ] + custom_inputs,
                 outputs=[
                     img2img_gallery,
@@ -1071,6 +1107,14 @@ def create_ui(wrap_gradio_gpu_call):
                 (seed_resize_from_w, "Seed resize from-1"),
                 (seed_resize_from_h, "Seed resize from-2"),
                 (denoising_strength, "Denoising strength"),
+                (aesthetic_lr_im, "Aesthetic LR"),
+                (aesthetic_weight_im, "Aesthetic weight"),
+                (aesthetic_steps_im, "Aesthetic steps"),
+                (aesthetic_imgs_im, "Aesthetic embedding"),
+                (aesthetic_slerp_im, "Aesthetic slerp"),
+                (aesthetic_imgs_text_im, "Aesthetic text"),
+                (aesthetic_text_negative_im, "Aesthetic text negative"),
+                (aesthetic_slerp_angle_im, "Aesthetic slerp angle"),
             ]
             token_button.click(fn=update_token_counter, inputs=[img2img_prompt, steps], outputs=[token_counter])
 
@@ -1231,6 +1275,7 @@ def create_ui(wrap_gradio_gpu_call):
                     new_embedding_name = gr.Textbox(label="Name")
                     initialization_text = gr.Textbox(label="Initialization text", value="*")
                     nvpt = gr.Slider(label="Number of vectors per token", minimum=1, maximum=75, step=1, value=1)
+                    overwrite_old_embedding = gr.Checkbox(value=False, label="Overwrite Old Embedding")
 
                     with gr.Row():
                         with gr.Column(scale=3):
@@ -1239,11 +1284,25 @@ def create_ui(wrap_gradio_gpu_call):
                         with gr.Column():
                             create_embedding = gr.Button(value="Create embedding", variant='primary')
 
+                with gr.Tab(label="Create aesthetic images embedding"):
+
+                    new_embedding_name_ae = gr.Textbox(label="Name")
+                    process_src_ae = gr.Textbox(label='Source directory')
+                    batch_ae = gr.Slider(minimum=1, maximum=1024, step=1, label="Batch size", value=256)
+                    with gr.Row():
+                        with gr.Column(scale=3):
+                            gr.HTML(value="")
+
+                        with gr.Column():
+                            create_embedding_ae = gr.Button(value="Create images embedding", variant='primary')
+
                 with gr.Tab(label="Create hypernetwork"):
                     new_hypernetwork_name = gr.Textbox(label="Name")
                     new_hypernetwork_sizes = gr.CheckboxGroup(label="Modules", value=["768", "320", "640", "1280"], choices=["768", "320", "640", "1280"])
                     new_hypernetwork_layer_structure = gr.Textbox("1, 2, 1", label="Enter hypernetwork layer structure", placeholder="1st and last digit must be 1. ex:'1, 2, 1'")
                     new_hypernetwork_add_layer_norm = gr.Checkbox(label="Add layer normalization")
+                    overwrite_old_hypernetwork = gr.Checkbox(value=False, label="Overwrite Old Hypernetwork")
+                    new_hypernetwork_activation_func = gr.Dropdown(value="relu", label="Select activation function of hypernetwork", choices=["linear", "relu", "leakyrelu"])
 
                     with gr.Row():
                         with gr.Column(scale=3):
@@ -1257,12 +1316,17 @@ def create_ui(wrap_gradio_gpu_call):
                     process_dst = gr.Textbox(label='Destination directory')
                     process_width = gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512)
                     process_height = gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512)
+                    preprocess_txt_action = gr.Dropdown(label='Existing Caption txt Action', value="ignore", choices=["ignore", "copy", "prepend", "append"])
 
                     with gr.Row():
                         process_flip = gr.Checkbox(label='Create flipped copies')
-                        process_split = gr.Checkbox(label='Split oversized images into two')
+                        process_split = gr.Checkbox(label='Split oversized images')
                         process_caption = gr.Checkbox(label='Use BLIP for caption')
                         process_caption_deepbooru = gr.Checkbox(label='Use deepbooru for caption', visible=True if cmd_opts.deepdanbooru else False)
+
+                    with gr.Row(visible=False) as process_split_extra_row:
+                        process_split_threshold = gr.Slider(label='Split image threshold', value=0.5, minimum=0.0, maximum=1.0, step=0.05)
+                        process_overlap_ratio = gr.Slider(label='Split image overlap ratio', value=0.2, minimum=0.0, maximum=0.9, step=0.05)
 
                     with gr.Row():
                         with gr.Column(scale=3):
@@ -1271,15 +1335,24 @@ def create_ui(wrap_gradio_gpu_call):
                         with gr.Column():
                             run_preprocess = gr.Button(value="Preprocess", variant='primary')
 
+                    process_split.change(
+                        fn=lambda show: gr_show(show),
+                        inputs=[process_split],
+                        outputs=[process_split_extra_row],
+                    )
+
                 with gr.Tab(label="Train"):
-                    gr.HTML(value="<p style='margin-bottom: 0.7em'>Train an embedding; must specify a directory with a set of 1:1 ratio images</p>")
+                    gr.HTML(value="<p style='margin-bottom: 0.7em'>Train an embedding or Hypernetwork; you must specify a directory with a set of 1:1 ratio images <a href=\"https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Textual-Inversion\" style=\"font-weight:bold;\">[wiki]</a></p>")
                     with gr.Row():
                         train_embedding_name = gr.Dropdown(label='Embedding', elem_id="train_embedding", choices=sorted(sd_hijack.model_hijack.embedding_db.word_embeddings.keys()))
                         create_refresh_button(train_embedding_name, sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings, lambda: {"choices": sorted(sd_hijack.model_hijack.embedding_db.word_embeddings.keys())}, "refresh_train_embedding_name")
                     with gr.Row():
                         train_hypernetwork_name = gr.Dropdown(label='Hypernetwork', elem_id="train_hypernetwork", choices=[x for x in shared.hypernetworks.keys()])
                         create_refresh_button(train_hypernetwork_name, shared.reload_hypernetworks, lambda: {"choices": sorted([x for x in shared.hypernetworks.keys()])}, "refresh_train_hypernetwork_name")
-                    learn_rate = gr.Textbox(label='Learning rate', placeholder="Learning rate", value="0.005")
+                    with gr.Row():
+                        embedding_learn_rate = gr.Textbox(label='Embedding Learning rate', placeholder="Embedding Learning rate", value="0.005")
+                        hypernetwork_learn_rate = gr.Textbox(label='Hypernetwork Learning rate', placeholder="Hypernetwork Learning rate", value="0.00001")
+                    
                     batch_size = gr.Number(label='Batch size', value=1, precision=0)
                     dataset_directory = gr.Textbox(label='Dataset directory', placeholder="Path to directory with input images")
                     log_directory = gr.Textbox(label='Log directory', placeholder="Path to directory where to write outputs", value="textual_inversion")
@@ -1313,9 +1386,25 @@ def create_ui(wrap_gradio_gpu_call):
                 new_embedding_name,
                 initialization_text,
                 nvpt,
+                overwrite_old_embedding,
             ],
             outputs=[
                 train_embedding_name,
+                ti_output,
+                ti_outcome,
+            ]
+        )
+
+        create_embedding_ae.click(
+            fn=aesthetic_clip.generate_imgs_embd,
+            inputs=[
+                new_embedding_name_ae,
+                process_src_ae,
+                batch_ae
+            ],
+            outputs=[
+                aesthetic_imgs,
+                aesthetic_imgs_im,
                 ti_output,
                 ti_outcome,
             ]
@@ -1326,8 +1415,10 @@ def create_ui(wrap_gradio_gpu_call):
             inputs=[
                 new_hypernetwork_name,
                 new_hypernetwork_sizes,
+                overwrite_old_hypernetwork,
                 new_hypernetwork_layer_structure,
                 new_hypernetwork_add_layer_norm,
+                new_hypernetwork_activation_func,
             ],
             outputs=[
                 train_hypernetwork_name,
@@ -1344,10 +1435,13 @@ def create_ui(wrap_gradio_gpu_call):
                 process_dst,
                 process_width,
                 process_height,
+                preprocess_txt_action,
                 process_flip,
                 process_split,
                 process_caption,
-                process_caption_deepbooru
+                process_caption_deepbooru,
+                process_split_threshold,
+                process_overlap_ratio,
             ],
             outputs=[
                 ti_output,
@@ -1360,7 +1454,7 @@ def create_ui(wrap_gradio_gpu_call):
             _js="start_training_textual_inversion",
             inputs=[
                 train_embedding_name,
-                learn_rate,
+                embedding_learn_rate,
                 batch_size,
                 dataset_directory,
                 log_directory,
@@ -1385,7 +1479,7 @@ def create_ui(wrap_gradio_gpu_call):
             _js="start_training_textual_inversion",
             inputs=[
                 train_hypernetwork_name,
-                learn_rate,
+                hypernetwork_learn_rate,
                 batch_size,
                 dataset_directory,
                 log_directory,

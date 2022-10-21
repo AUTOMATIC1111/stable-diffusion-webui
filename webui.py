@@ -118,7 +118,8 @@ def api_only():
     api.launch(server_name="0.0.0.0" if cmd_opts.listen else "127.0.0.1", port=cmd_opts.port if cmd_opts.port else 7861)
 
 
-def webui(launch_api=False):
+def webui():
+    launch_api = cmd_opts.api
     initialize()
 
     while 1:
@@ -158,4 +159,4 @@ if __name__ == "__main__":
     if cmd_opts.nowebui:
         api_only()
     else:
-        webui(cmd_opts.api)
+        webui()
