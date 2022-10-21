@@ -17,15 +17,17 @@ from .structs import (
     UpscaleResponse,
 )
 from .utils import (
-    sddebz_highres_fix,
+    b64_to_img,
     get_sampler_index,
     get_upscaler_index,
+    img_to_b64,
     load_config,
     merge_default_config,
     parse_prompt,
     prepare_backend,
     prepare_mask,
     save_img,
+    sddebz_highres_fix,
 )
 
 app = FastAPI()
@@ -119,11 +121,15 @@ async def f_txt2img(req: Txt2ImgRequest):
         modules.images.resize_image(0, image, req.orig_width, req.orig_height)
         for image in output_images
     ]
-    outputs = [
+
+    # save images for debugging/logging purposes
+    output_paths = [
         save_img(image, opt.sample_path, filename=f"{int(time.time())}_{i}.png")
         for i, image in enumerate(resized_images)
     ]
-    log.info(f"finished: {outputs}\n{info}")
+    outputs = [img_to_b64(image) for image in resized_images]
+
+    log.info(f"finished: {output_paths}\n{info}")
     return {"outputs": outputs, "info": info}
 
 
@@ -143,8 +149,8 @@ async def f_img2img(req: Img2ImgRequest):
     req = merge_default_config(req, opt)
     prepare_backend(req)
 
-    image = Image.open(req.src_path)
-    mask = prepare_mask(Image.open(req.mask_path)) if req.mode == 1 else None
+    image = b64_to_img(req.src_img)
+    mask = prepare_mask(b64_to_img(req.mask_img)) if req.mode == 1 else None
 
     orig_width, orig_height = image.size
 
@@ -228,11 +234,14 @@ async def f_img2img(req: Img2ImgRequest):
 
         resized_images = [remove_not_masked(x) for x in resized_images]
 
-    outputs = [
+    # save images for debugging/logging purposes
+    output_paths = [
         save_img(image, opt.sample_path, filename=f"{int(time.time())}_{i}.png")
         for i, image in enumerate(resized_images)
     ]
-    log.info(f"finished: {outputs}\n{info}")
+    outputs = [img_to_b64(image) for image in resized_images]
+
+    log.info(f"finished: {output_paths}\n{info}")
     return {"outputs": outputs, "info": info}
 
 
@@ -252,7 +261,7 @@ async def f_upscale(req: UpscaleRequest):
     req = merge_default_config(req, opt)
     prepare_backend(req)
 
-    image = Image.open(req.src_path).convert("RGB")
+    image = b64_to_img(req.src_path).convert("RGB")
     orig_width, orig_height = image.size
 
     upscaler_index = get_upscaler_index(req.upscaler_name)
@@ -270,8 +279,8 @@ async def f_upscale(req: UpscaleRequest):
         0, upscaled_image, orig_width, orig_height
     )
 
-    output = save_img(
+    output_path = save_img(
         resized_image, opt.sample_path, filename=f"{int(time.time())}.png"
     )
-    log.info(f"finished: {output}")
-    return {"output": output}
+    log.info(f"finished: {output_path}")
+    return {"output": img_to_b64(resized_image)}

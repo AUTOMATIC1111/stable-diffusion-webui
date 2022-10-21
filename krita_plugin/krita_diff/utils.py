@@ -1,6 +1,6 @@
 from math import ceil
 
-from krita import Document, QByteArray, QImage
+from krita import Document, QBuffer, QByteArray, QImage, QIODevice
 
 
 def fix_prompt(prompt: str):
@@ -127,3 +127,18 @@ def img_to_ba(img: QImage):
     ptr = img.bits()
     ptr.setsize(img.byteCount())
     return QByteArray(ptr.asstring())
+
+
+def img_to_b64(img: QImage):
+    """Converts QImage to base64-encoded string"""
+    ba = QByteArray()
+    buffer = QBuffer(ba)
+    buffer.open(QIODevice.WriteOnly)
+    img.save(buffer, "PNG", 0)
+    return ba.toBase64().data().decode("utf-8")
+
+
+def b64_to_img(enc: str):
+    """Converts base64-encoded string to QImage"""
+    ba = QByteArray.fromBase64(enc.encode("utf-8"))
+    return QImage.fromData(ba, "PNG")

@@ -3,6 +3,8 @@ from __future__ import annotations
 import inspect
 import logging
 import os
+from base64 import b64decode, b64encode
+from io import BytesIO
 from math import ceil
 
 import yaml
@@ -131,6 +133,32 @@ def save_img(image: Image.Image, sample_path: str, filename: str):
     path = os.path.join(sample_path, filename)
     image.save(path)
     return os.path.abspath(path)
+
+
+def img_to_b64(image: Image.Image):
+    """Convert an image to base64-encoded string.
+
+    Args:
+        image (Image): Image to encode.
+
+    Returns:
+        str: Base64-encoded image.
+    """
+    buf = BytesIO()
+    image.save(buf, format="png")
+    return b64encode(buf.getvalue()).decode("utf-8")
+
+
+def b64_to_img(enc: str):
+    """Convert base64-encoded string to image.
+
+    Args:
+        enc (str): Base64-encoded image.
+
+    Returns:
+        Image: Image.
+    """
+    return Image.open(BytesIO(b64decode(enc)))
 
 
 def sddebz_highres_fix(

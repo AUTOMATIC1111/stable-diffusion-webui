@@ -6,7 +6,7 @@ from urllib.request import Request, urlopen
 
 from .config import Config
 from .defaults import GET_CONFIG_TIMEOUT, POST_TIMEOUT, STATE_URLERROR
-from .utils import fix_prompt
+from .utils import fix_prompt, img_to_b64
 
 
 class Client:
@@ -125,8 +125,10 @@ class Client:
 
         return self.post("/txt2img", params)
 
-    def post_img2img(self, path, mask_path, has_selection):
-        params = dict(mode=0, src_path=path, mask_path=mask_path)
+    def post_img2img(self, src_img, mask_img, has_selection):
+        params = dict(
+            mode=0, src_img=img_to_b64(src_img), mask_img=img_to_b64(mask_img)
+        )
         if not self.cfg("just_use_yaml", bool):
             seed = (
                 self.cfg("img2img_seed", int)
@@ -147,8 +149,10 @@ class Client:
 
         return self.post("/img2img", params)
 
-    def post_inpaint(self, path, mask_path, has_selection):
-        params = dict(mode=1, src_path=path, mask_path=mask_path)
+    def post_inpaint(self, src_img, mask_img, has_selection):
+        params = dict(
+            mode=1, src_img=img_to_b64(src_img), mask_img=img_to_b64(mask_img)
+        )
         if not self.cfg("just_use_yaml", bool):
             seed = (
                 self.cfg("inpaint_seed", int)
@@ -178,14 +182,14 @@ class Client:
 
         return self.post("/img2img", params)
 
-    def post_upscale(self, path):
+    def post_upscale(self, src_img):
         params = (
             {
-                "src_path": path,
+                "src_img": img_to_b64(src_img),
                 "upscaler_name": self.cfg("upscale_upscaler_name", str),
                 "downscale_first": self.cfg("upscale_downscale_first", bool),
             }
             if not self.cfg("just_use_yaml", bool)
-            else {"src_path": path}
+            else {"src_img": img_to_b64(src_img)}
         )
         return self.post("/upscale", params)

@@ -25,7 +25,7 @@ class ConfigTabWidget(QWidget):
             "Override with krita_config.yaml (unrecommended)"
         )
         self.create_mask_layer = QCheckBox("Create transparency mask from selection")
-        self.del_temp_files = QCheckBox("Auto delete temporary image files")
+        self.del_temp_files = QCheckBox("Auto delete debug image files")
         self.fix_aspect_ratio = QCheckBox("Fix aspect ratio for selections")
         self.only_full_img_tiling = QCheckBox("Only allow tiling with no selection")
         self.include_grid = QCheckBox("Include grid for txt2img and img2img")
@@ -60,7 +60,7 @@ class ConfigTabWidget(QWidget):
 
         layout = QVBoxLayout()
 
-        layout.addWidget(QLabel("<em>Backend url (Remote URL still broken :p):</em>"))
+        layout.addWidget(QLabel("<em>Backend url:</em>"))
         layout.addLayout(inline1)
 
         layout.addWidget(QLabel("<em>Plugin settings:</em>"))

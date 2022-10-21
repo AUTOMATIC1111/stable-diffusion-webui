@@ -16,7 +16,13 @@ from .defaults import (
     STATE_URLERROR,
     STATE_WAIT,
 )
-from .utils import create_layer, find_optimal_selection_region, img_to_ba, save_img
+from .utils import (
+    b64_to_img,
+    create_layer,
+    find_optimal_selection_region,
+    img_to_ba,
+    save_img,
+)
 
 
 # Does it actually have to be a QObject?
@@ -143,18 +149,16 @@ class Script(QObject):
         """Update certain config/state from the backend."""
         return self.client.get_config()
 
-    def insert_img(self, layer_name, path, visible=True):
+    def insert_img(self, layer_name, enc, visible=True):
         """Insert image as new layer."""
-        image = QImage()
-        image.load(path, "PNG")
+        image = b64_to_img(enc)
         ba = img_to_ba(image)
 
         layer = create_layer(self.doc, layer_name)
-        if not visible:
-            layer.setVisible(False)
+        layer.setVisible(visible)
 
         layer.setPixelData(ba, self.x, self.y, self.width, self.height)
-        print(f"Inserted image: {path}")
+        print(f"Inserted image: {enc}")
 
     def apply_txt2img(self):
         response = self.client.post_txt2img(
@@ -164,11 +168,7 @@ class Script(QObject):
         outputs = response["outputs"]
         print(f"Getting images: {outputs}")
         for i, output in enumerate(outputs):
-            self.insert_img(
-                f"txt2img {i + 1}: {os.path.basename(output)}",
-                output,
-                i + 1 == len(outputs),
-            )
+            self.insert_img(f"txt2img {i + 1}", output, i + 1 == len(outputs))
         self.clear_temp_images(outputs)
 
     def apply_img2img(self, mode):
@@ -182,9 +182,13 @@ class Script(QObject):
         save_img(self.selection_image, path)
 
         response = (
-            self.client.post_inpaint(path, mask_path, self.selection is not None)
+            self.client.post_inpaint(
+                self.selection_image, self.mask_image, self.selection is not None
+            )
             if mode == 1
-            else self.client.post_img2img(path, mask_path, self.selection is not None)
+            else self.client.post_img2img(
+                self.selection_image, self.mask_image, self.selection is not None
+            )
         )
         assert response is not None, "Backend Error, check terminal"
 
@@ -195,9 +199,7 @@ class Script(QObject):
         )
         for i, output in enumerate(outputs):
             self.insert_img(
-                f"{layer_name_prefix} {i + 1}: {os.path.basename(output)}",
-                output,
-                i + 1 == len(outputs),
+                f"{layer_name_prefix} {i + 1}", output, i + 1 == len(outputs)
             )
 
         if mode == 1:
@@ -209,12 +211,12 @@ class Script(QObject):
         path = self.cfg("new_img_path", str)
         save_img(self.selection_image, path)
 
-        response = self.client.post_upscale(path)
+        response = self.client.post_upscale(self.selection_image)
         assert response is not None, "Backend Error, check terminal"
         output = response["output"]
         print(f"Getting image: {output}")
 
-        self.insert_img(f"upscale: {os.path.basename(output)}", output)
+        self.insert_img(f"upscale", output)
         self.clear_temp_images([path, output])
 
     def create_mask_layer_internal(self):

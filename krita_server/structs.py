@@ -34,9 +34,9 @@ class Img2ImgRequest(DefaultImg2ImgOptions):
     `krita_config.yaml` will be used.
     """
 
-    src_path: str
+    src_img: str
     """Path to image being used."""
-    mask_path: Optional[str]
+    mask_img: Optional[str]
     """Path to image mask being used."""
 
 
@@ -50,7 +50,7 @@ class UpscaleRequest(DefaultUpscaleOptions):
     `krita_config.yaml` will be used.
     """
 
-    src_path: str
+    src_img: str
     """Path to image being used."""
 
 
@@ -77,11 +77,11 @@ class ConfigResponse(PluginOptions):
 
 class ImageResponse(BaseModel):
     outputs: List[str]
-    """List of file paths to generated images."""
+    """List of generated images encoded in base64."""
     info: str
     """Generation info already jsonified."""
 
 
 class UpscaleResponse(BaseModel):
     output: str
-    """File path to upscaled image."""
+    """Upscaled image in base64."""
