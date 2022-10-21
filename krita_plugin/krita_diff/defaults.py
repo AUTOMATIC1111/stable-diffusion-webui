@@ -19,8 +19,10 @@ STATE_UPSCALE = "upscale done!"
 GET_CONFIG_TIMEOUT = 2  # 2 second timeout as getting config should be near instant
 POST_TIMEOUT = None  # post might take forever depending on batch size/count
 REFRESH_INTERVAL = 10000  # 10 seconds between auto-config refresh
-CFG_FOLDER = "krita"
-CFG_NAME = "krita_diff_plugin"
+CFG_FOLDER = "krita"  # which folder in ~/.config to store config
+CFG_NAME = "krita_diff_plugin"  # name of config file
+# selection mask can only be added after image is added, so timeout is needed
+ADD_MASK_TIMEOUT = 100
 
 
 @dataclass(frozen=True)
@@ -29,8 +31,6 @@ class Defaults:
     just_use_yaml: bool = False
     create_mask_layer: bool = True
     delete_temp_files: bool = True
-    workaround_timeout: int = 100
-    png_quality: int = -1
     fix_aspect_ratio: bool = True
     only_full_img_tiling: bool = True
     filter_nsfw: bool = False

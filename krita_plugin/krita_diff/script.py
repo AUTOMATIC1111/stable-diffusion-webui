@@ -5,6 +5,7 @@ from krita import Krita, QByteArray, QImage, QObject, QTimer
 from .client import Client
 from .config import Config
 from .defaults import (
+    ADD_MASK_TIMEOUT,
     STATE_IMG2IMG,
     STATE_INIT,
     STATE_INPAINT,
@@ -98,7 +99,8 @@ class Script(QObject):
         image_data = QImage(
             pixel_bytes, self.width, self.height, QImage.Format_RGBA8888
         ).rgbSwapped()
-        image_data.save(path, "PNG", self.cfg("png_quality", int))
+        # max compression to transmit over network; rmb png is lossless
+        image_data.save(path, "PNG", 0)
         print(f"Saved {'mask' if is_mask else 'image'}: {path}")
 
     # Krita tools
@@ -195,7 +197,7 @@ class Script(QObject):
             self.is_busy = True
             # TODO: this needn't be a config option, can be hardcoded global
             QTimer.singleShot(
-                self.cfg("workaround_timeout", int),
+                ADD_MASK_TIMEOUT,
                 lambda: self.create_mask_layer_internal(),
             )
 
