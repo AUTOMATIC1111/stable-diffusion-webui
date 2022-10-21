@@ -21,7 +21,7 @@ checkpoints_loaded = collections.OrderedDict()
 try:
     # this silences the annoying "Some weights of the model checkpoint were not used when initializing..." message at start.
 
-    from transformers import logging
+    from transformers import logging, CLIPModel
 
     logging.set_verbosity_error()
 except Exception:
