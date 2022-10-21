@@ -1,4 +1,3 @@
-import datetime
 import gc
 import html
 import itertools
@@ -10,7 +9,6 @@ from contextlib import nullcontext
 from pathlib import Path
 from typing import Optional
 
-import accelerate
 import torch
 import torch.nn.functional as F
 import torch.utils.checkpoint
@@ -35,21 +33,21 @@ class DreamBooth:
     # TODO: Clean up notes below and make them a proper docstring
     def __init__(self,
                  model_name,
-                 initialization_text,
-                 classification_text,
+                 instance_prompt,
+                 class_prompt,
                  learn_rate,
-                 dataset_directory,
-                 classification_directory,
+                 instance_data_dir,
+                 class_data_dir,
                  steps,
                  create_image_every,
                  save_embedding_every,
                  num_class_images,
                  use_cpu,
                  train_text_encoder,
-                 no_cache_latents,
+                 not_cache_latents,
                  use_adam,
                  center_crop,
-                 grad_check,
+                 gradient_checkpointing,
                  scale_lr,
                  mixed_precision,
                  scheduler,
@@ -68,9 +66,9 @@ class DreamBooth:
                  total_steps
                  ):
         self.total_steps = total_steps
-        self.instance_data_dir = dataset_directory
-        self.instance_prompt = initialization_text
-        self.class_prompt = classification_text
+        self.instance_data_dir = instance_data_dir
+        self.instance_prompt = instance_prompt
+        self.class_prompt = class_prompt
         if seed == -1:
             self.seed = None
         else:
@@ -89,15 +87,15 @@ class DreamBooth:
         self.save_data_every = save_embedding_every
         # choices=["no", "fp16", "bf16"],
         self.mixed_precision = mixed_precision
-        self.not_cache_latents = no_cache_latents
+        self.not_cache_latents = not_cache_latents
 
         name = "".join(x for x in model_name if x.isalnum())
         model_path = paths.models_path
         model_dir = os.path.join(model_path, "dreambooth", name)
         self.output_dir = os.path.join(model_dir, "working")
         # A folder containing the training data of instance images.
-        if dataset_directory is not None and dataset_directory != "":
-            self.class_data_dir = dataset_directory
+        if class_data_dir is not None and class_data_dir != "":
+            self.class_data_dir = class_data_dir
         else:
             self.class_data_dir = os.path.join(self.output_dir, "classifiers")
             if not os.path.exists(self.class_data_dir):
@@ -107,9 +105,9 @@ class DreamBooth:
         self.pretrained_model_path = os.path.join(model_dir, "stable-diffusion-v1-4")
         self.with_prior_preservation = False
 
-        if classification_text != "*" and classification_text != "" and num_class_images != 0:
+        if class_prompt != "*" and class_prompt != "" and num_class_images != 0:
             self.with_prior_preservation = True
-
+        self.local_rank = int(os.environ.get("LOCAL_RANK", -1))
         self.train_text_encoder = train_text_encoder
         self.resolution = resolution
         self.use_cpu = use_cpu
@@ -119,7 +117,7 @@ class DreamBooth:
         self.prior_loss_weight = prior_loss_weight
         self.center_crop = center_crop
         self.num_train_epochs = num_train_epochs
-        self.gradient_checkpointing = grad_check
+        self.gradient_checkpointing = gradient_checkpointing
         self.scale_lr = scale_lr
         self.adam_beta1 = adam_beta1
         self.adam_beta2 = adam_beta2
@@ -135,8 +133,17 @@ class DreamBooth:
             mixed_precision=self.mixed_precision,
             log_with="tensorboard",
             logging_dir=logging_dir,
-            cpu=self.use_cpu
         )
+        # Currently, it's not possible to do gradient accumulation when training two models with accelerate.accumulate
+        # This will be enabled soon in accelerate. For now, we don't allow gradient accumulation when training two models.
+        # TODO (patil-suraj): Remove this check when gradient accumulation with two models is enabled in accelerate.
+        if self.train_text_encoder and self.gradient_accumulation_steps > 1 and accelerator.num_processes > 1:
+            msg = "Gradient accumulation is not supported when training the text encoder in distributed training. " \
+                    "Please set gradient_accumulation_steps to 1. This feature will be supported in the future. Text " \
+                    "encoder training will be disabled."
+            print(msg)
+            shared.state.textinfo = msg
+            self.train_text_encoder = False
 
         if self.seed is not None:
             set_seed(self.seed)
@@ -307,7 +314,6 @@ class DreamBooth:
             del vae
             if not self.train_text_encoder:
                 del text_encoder
-                text_encoder = None
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
 
@@ -346,13 +352,12 @@ class DreamBooth:
         # The trackers initializes automatically on the main process.
         if accelerator.is_main_process:
             accelerator.init_trackers("dreambooth", config=vars(self))
-        precision = accelerator.use_fp16
 
         # Train!
         total_batch_size = self.train_batch_size * accelerator.num_processes * self.gradient_accumulation_steps
 
         print("***** Running training *****")
-        print(f"  CPU: {self.use_cpu}, Adam: {use_adam}, Precision: {precision}")
+        print(f"  CPU: {self.use_cpu}, Adam: {use_adam}, Precision: {accelerator.use_fp16}")
         print(f"  Num examples = {len(train_dataset)}")
         print(f"  Num batches each epoch = {len(train_dataloader)}")
         print(f"  Num Epochs = {self.num_train_epochs}")
@@ -407,7 +412,8 @@ class DreamBooth:
                         noise_pred = unet(noisy_latents, timesteps, encoder_hidden_states).sample
 
                         if self.with_prior_preservation:
-                            # Chunk the noise and noise_pred into two parts and compute the loss on each part separately.
+                            # Chunk the noise and noise_pred into two parts and compute the loss on each part
+                            # separately.
                             noise_pred, noise_pred_prior = torch.chunk(noise_pred, 2, dim=0)
                             noise, noise_prior = torch.chunk(noise, 2, dim=0)
 
@@ -424,12 +430,6 @@ class DreamBooth:
                             loss = F.mse_loss(noise_pred.float(), noise.float(), reduction="mean")
 
                         accelerator.backward(loss)
-                        # if accelerator.sync_gradients:
-                        #     params_to_clip = (
-                        #         itertools.chain(unet.parameters(), text_encoder.parameters())
-                        #         if self.train_text_encoder
-                        #         else unet.parameters()
-                        #     )
                         optimizer.step()
                         lr_scheduler.step()
                         optimizer.zero_grad(set_to_none=True)
@@ -529,8 +529,8 @@ class DreamBooth:
 
 
 def start_training(model_name,
-                   initialization_text,
-                   classification_text,
+                   instance_prompt,
+                   class_prompt,
                    learn_rate,
                    dataset_directory,
                    classification_directory,
@@ -540,10 +540,10 @@ def start_training(model_name,
                    num_class_images,
                    use_cpu,
                    train_text_encoder,
-                   no_cache_latents,
+                   not_cache_latents,
                    use_adam,
                    center_crop,
-                   grad_check,
+                   gradient_checkpointing,
                    scale_lr,
                    mixed_precision,
                    scheduler,
@@ -581,8 +581,8 @@ def start_training(model_name,
     src_checkpoint = config["src"]
     total_steps = config["total_steps"]
     dream = DreamBooth(model_name,
-                       initialization_text,
-                       classification_text,
+                       instance_prompt,
+                       class_prompt,
                        learn_rate,
                        dataset_directory,
                        classification_directory,
@@ -592,10 +592,10 @@ def start_training(model_name,
                        num_class_images,
                        use_cpu,
                        train_text_encoder,
-                       no_cache_latents,
+                       not_cache_latents,
                        use_adam,
                        center_crop,
-                       grad_check,
+                       gradient_checkpointing,
                        scale_lr,
                        mixed_precision,
                        scheduler,
