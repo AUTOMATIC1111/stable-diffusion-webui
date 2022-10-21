@@ -34,7 +34,7 @@ class Txt2ImgTabWidget(ImgTabBaseWidget):
         super(Txt2ImgTabWidget, self).cfg_connect()
 
         def toggle_highres(enabled):
-            script.set_cfg("txt2img_highres", enabled)
+            script.cfg.set("txt2img_highres", enabled)
 
             # hide/show denoising strength
             self.denoising_strength_layout.qlabel.setVisible(enabled)

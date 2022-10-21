@@ -69,10 +69,10 @@ class InpaintTabWidget(ImgTabBaseWidget):
         self.fill_layout.cfg_connect()
         self.full_res_padding_layout.cfg_connect()
 
-        self.invert_mask.toggled.connect(partial(script.set_cfg, "inpaint_invert_mask"))
+        self.invert_mask.toggled.connect(partial(script.cfg.set, "inpaint_invert_mask"))
 
         def toggle_fullres(enabled):
-            script.set_cfg("inpaint_full_res", enabled)
+            script.cfg.set("inpaint_full_res", enabled)
 
             # hide/show fullres padding
             self.full_res_padding_layout.qlabel.setVisible(enabled)

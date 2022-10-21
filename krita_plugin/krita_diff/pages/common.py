@@ -93,7 +93,7 @@ class SDCommonWidget(QWidget):
         self.upscaler_layout.cfg_connect()
         self.face_restorer_layout.cfg_connect()
         self.codeformer_weight_layout.cfg_init()
-        self.tiling.toggled.connect(partial(script.set_cfg, "sd_tiling"))
+        self.tiling.toggled.connect(partial(script.cfg.set, "sd_tiling"))
 
         # Hide codeformer_weight when model isnt codeformer
         def toggle_codeformer_weights(visible):

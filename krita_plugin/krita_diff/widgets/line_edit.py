@@ -41,4 +41,4 @@ class QLineEditLayout(QHBoxLayout):
             self.qedit.setText(val)
 
     def cfg_connect(self):
-        self.qedit.textChanged.connect(partial(self.script.set_cfg, self.field_cfg))
+        self.qedit.textChanged.connect(partial(self.script.cfg.set, self.field_cfg))

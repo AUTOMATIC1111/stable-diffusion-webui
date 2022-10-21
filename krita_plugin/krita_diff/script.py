@@ -23,23 +23,16 @@ from .utils import create_layer, find_optimal_selection_region
 class Script(QObject):
     def __init__(self):
         # Persistent settings (should reload between Krita sessions)
-        # NOTE: delete this file between tests, should be in ~/.config/krita/krita_diff_plugin.ini
-        self.config = Config()
-        self.client = Client(self.config, lambda s: self.set_status(s))
+        self.cfg = Config()
+        self.client = Client(self.cfg, lambda s: self.set_status(s))
         self.is_busy = False
 
         # Status bar
         self._status_cb = lambda s: None
         self.status = STATE_INIT
 
-    def cfg(self, name: str, type):
-        return self.config.get(name, type)
-
-    def set_cfg(self, name: str, value, if_empty=False):
-        return self.config.set(name, value, not if_empty)
-
     def restore_defaults(self, if_empty=False):
-        self.config.restore_defaults(not if_empty)
+        self.cfg.restore_defaults(not if_empty)
 
         if not if_empty:
             self.set_status(STATE_RESET_DEFAULT)
@@ -200,6 +193,7 @@ class Script(QObject):
     def create_mask_layer_workaround(self):
         if self.cfg("create_mask_layer", bool):
             self.is_busy = True
+            # TODO: this needn't be a config option, can be hardcoded global
             QTimer.singleShot(
                 self.cfg("workaround_timeout", int),
                 lambda: self.create_mask_layer_internal(),

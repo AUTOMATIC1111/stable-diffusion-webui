@@ -58,12 +58,12 @@ class QPromptLayout(QVBoxLayout):
 
     def cfg_connect(self):
         self.qedit_prompt.textChanged.connect(
-            lambda: self.script.set_cfg(
+            lambda: self.script.cfg.set(
                 self.prompt_cfg, self.qedit_prompt.toPlainText()
             )
         )
         self.qedit_neg_prompt.textChanged.connect(
-            lambda: self.script.set_cfg(
+            lambda: self.script.cfg.set(
                 self.neg_prompt_cfg, self.qedit_neg_prompt.toPlainText()
             )
         )

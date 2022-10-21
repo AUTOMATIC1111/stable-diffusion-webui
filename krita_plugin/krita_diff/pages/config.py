@@ -96,27 +96,27 @@ class ConfigTabWidget(QWidget):
         self.do_exact_steps.setChecked(script.cfg("do_exact_steps", bool))
 
     def cfg_connect(self):
-        self.base_url.textChanged.connect(partial(script.set_cfg, "base_url"))
+        self.base_url.textChanged.connect(partial(script.cfg.set, "base_url"))
         self.base_url_reset.released.connect(
             lambda: self.base_url.setText(DEFAULTS.base_url)
         )
-        self.just_use_yaml.toggled.connect(partial(script.set_cfg, "just_use_yaml"))
+        self.just_use_yaml.toggled.connect(partial(script.cfg.set, "just_use_yaml"))
         self.create_mask_layer.toggled.connect(
-            partial(script.set_cfg, "create_mask_layer")
+            partial(script.cfg.set, "create_mask_layer")
         )
         self.del_temp_files.toggled.connect(
-            partial(script.set_cfg, "delete_temp_files")
+            partial(script.cfg.set, "delete_temp_files")
         )
         self.fix_aspect_ratio.toggled.connect(
-            partial(script.set_cfg, "fix_aspect_ratio")
+            partial(script.cfg.set, "fix_aspect_ratio")
         )
         self.only_full_img_tiling.toggled.connect(
-            partial(script.set_cfg, "only_full_img_tiling")
+            partial(script.cfg.set, "only_full_img_tiling")
         )
-        self.include_grid.toggled.connect(partial(script.set_cfg, "include_grid"))
-        self.filter_nsfw.toggled.connect(partial(script.set_cfg, "filter_nsfw"))
-        self.color_correct.toggled.connect(partial(script.set_cfg, "color_correct"))
-        self.do_exact_steps.toggled.connect(partial(script.set_cfg, "do_exact_steps"))
+        self.include_grid.toggled.connect(partial(script.cfg.set, "include_grid"))
+        self.filter_nsfw.toggled.connect(partial(script.cfg.set, "filter_nsfw"))
+        self.color_correct.toggled.connect(partial(script.cfg.set, "color_correct"))
+        self.do_exact_steps.toggled.connect(partial(script.cfg.set, "do_exact_steps"))
 
         def update_remote_config():
             if script.update_config():

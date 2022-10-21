@@ -45,6 +45,6 @@ NOTE:<br/>
     def cfg_connect(self):
         self.upscaler_layout.cfg_connect()
         self.downscale_first.toggled.connect(
-            partial(script.set_cfg, "upscale_downscale_first")
+            partial(script.cfg.set, "upscale_downscale_first")
         )
         self.btn.released.connect(lambda: script.action_simple_upscale())

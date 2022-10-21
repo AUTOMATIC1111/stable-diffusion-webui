@@ -56,4 +56,4 @@ class QSpinBoxLayout(QHBoxLayout):
         self.qspin.setValue(self.script.cfg(self.field_cfg, self.cast))
 
     def cfg_connect(self):
-        self.qspin.valueChanged.connect(partial(self.script.set_cfg, self.field_cfg))
+        self.qspin.valueChanged.connect(partial(self.script.cfg.set, self.field_cfg))

@@ -53,5 +53,5 @@ class QComboBoxLayout(QHBoxLayout):
 
     def cfg_connect(self):
         self.qcombo.currentTextChanged.connect(
-            partial(self.script.set_cfg, self.selected_cfg)
+            partial(self.script.cfg.set, self.selected_cfg)
         )
