@@ -98,25 +98,8 @@ def store_latent(decoded):
             shared.state.current_image = sample_to_image(decoded)
 
 
-
-def extended_tdqm(sequence, *args, desc=None, **kwargs):
-    state.sampling_steps = len(sequence)
-    state.sampling_step = 0
-
-    seq = sequence if cmd_opts.disable_console_progressbars else tqdm.tqdm(sequence, *args, desc=state.job, file=shared.progress_print_out, **kwargs)
-
-    for x in seq:
-        if state.interrupted or state.skipped:
-            break
-
-        yield x
-
-        state.sampling_step += 1
-        shared.total_tqdm.update()
-
-
-ldm.models.diffusion.ddim.tqdm = lambda *args, desc=None, **kwargs: extended_tdqm(*args, desc=desc, **kwargs)
-ldm.models.diffusion.plms.tqdm = lambda *args, desc=None, **kwargs: extended_tdqm(*args, desc=desc, **kwargs)
+class InterruptedException(BaseException):
+    pass
 
 
 class VanillaStableDiffusionSampler:
@@ -128,14 +111,40 @@ class VanillaStableDiffusionSampler:
         self.init_latent = None
         self.sampler_noises = None
         self.step = 0
+        self.stop_at = None
         self.eta = None
         self.default_eta = 0.0
         self.config = None
+        self.last_latent = None
+
+        self.conditioning_key = sd_model.model.conditioning_key
 
     def number_of_needed_noises(self, p):
         return 0
 
+    def launch_sampling(self, steps, func):
+        state.sampling_steps = steps
+        state.sampling_step = 0
+
+        try:
+            return func()
+        except InterruptedException:
+            return self.last_latent
+
     def p_sample_ddim_hook(self, x_dec, cond, ts, unconditional_conditioning, *args, **kwargs):
+        if state.interrupted or state.skipped:
+            raise InterruptedException
+
+        if self.stop_at is not None and self.step > self.stop_at:
+            raise InterruptedException
+
+        # Have to unwrap the inpainting conditioning here to perform pre-processing
+        image_conditioning = None
+        if isinstance(cond, dict):
+            image_conditioning = cond["c_concat"][0]
+            cond = cond["c_crossattn"][0]
+            unconditional_conditioning = unconditional_conditioning["c_crossattn"][0]
+
         conds_list, tensor = prompt_parser.reconstruct_multicond_batch(cond, self.step)
         unconditional_conditioning = prompt_parser.reconstruct_cond_batch(unconditional_conditioning, self.step)
 
@@ -156,14 +165,25 @@ class VanillaStableDiffusionSampler:
             img_orig = self.sampler.model.q_sample(self.init_latent, ts)
             x_dec = img_orig * self.mask + self.nmask * x_dec
 
+        # Wrap the image conditioning back up since the DDIM code can accept the dict directly.
+        # Note that they need to be lists because it just concatenates them later.
+        if image_conditioning is not None:
+            cond = {"c_concat": [image_conditioning], "c_crossattn": [cond]}
+            unconditional_conditioning = {"c_concat": [image_conditioning], "c_crossattn": [unconditional_conditioning]}
+
         res = self.orig_p_sample_ddim(x_dec, cond, ts, unconditional_conditioning=unconditional_conditioning, *args, **kwargs)
 
         if self.mask is not None:
-            store_latent(self.init_latent * self.mask + self.nmask * res[1])
+            self.last_latent = self.init_latent * self.mask + self.nmask * res[1]
         else:
-            store_latent(res[1])
+            self.last_latent = res[1]
+
+        store_latent(self.last_latent)
 
         self.step += 1
+        state.sampling_step = self.step
+        shared.total_tqdm.update()
+
         return res
 
     def initialize(self, p):
@@ -176,7 +196,7 @@ class VanillaStableDiffusionSampler:
         self.mask = p.mask if hasattr(p, 'mask') else None
         self.nmask = p.nmask if hasattr(p, 'nmask') else None
 
-    def sample_img2img(self, p, x, noise, conditioning, unconditional_conditioning, steps=None):
+    def sample_img2img(self, p, x, noise, conditioning, unconditional_conditioning, steps=None, image_conditioning=None):
         steps, t_enc = setup_img2img_steps(p, steps)
 
         self.initialize(p)
@@ -190,25 +210,38 @@ class VanillaStableDiffusionSampler:
         x1 = self.sampler.stochastic_encode(x, torch.tensor([t_enc] * int(x.shape[0])).to(shared.device), noise=noise)
 
         self.init_latent = x
+        self.last_latent = x
         self.step = 0
 
-        samples = self.sampler.decode(x1, conditioning, t_enc, unconditional_guidance_scale=p.cfg_scale, unconditional_conditioning=unconditional_conditioning)
+        # Wrap the conditioning models with additional image conditioning for inpainting model
+        if image_conditioning is not None:
+            conditioning = {"c_concat": [image_conditioning], "c_crossattn": [conditioning]}
+            unconditional_conditioning = {"c_concat": [image_conditioning], "c_crossattn": [unconditional_conditioning]}
+            
+            
+        samples = self.launch_sampling(steps, lambda: self.sampler.decode(x1, conditioning, t_enc, unconditional_guidance_scale=p.cfg_scale, unconditional_conditioning=unconditional_conditioning))
 
         return samples
 
-    def sample(self, p, x, conditioning, unconditional_conditioning, steps=None):
+    def sample(self, p, x, conditioning, unconditional_conditioning, steps=None, image_conditioning=None):
         self.initialize(p)
 
         self.init_latent = None
+        self.last_latent = x
         self.step = 0
 
         steps = steps or p.steps
 
+        # Wrap the conditioning models with additional image conditioning for inpainting model
+        if image_conditioning is not None:
+            conditioning = {"c_concat": [image_conditioning], "c_crossattn": [conditioning]}
+            unconditional_conditioning = {"c_concat": [image_conditioning], "c_crossattn": [unconditional_conditioning]}
+
         # existing code fails with certain step counts, like 9
         try:
-            samples_ddim, _ = self.sampler.sample(S=steps, conditioning=conditioning, batch_size=int(x.shape[0]), shape=x[0].shape, verbose=False, unconditional_guidance_scale=p.cfg_scale, unconditional_conditioning=unconditional_conditioning, x_T=x, eta=self.eta)
+            samples_ddim = self.launch_sampling(steps, lambda: self.sampler.sample(S=steps, conditioning=conditioning, batch_size=int(x.shape[0]), shape=x[0].shape, verbose=False, unconditional_guidance_scale=p.cfg_scale, unconditional_conditioning=unconditional_conditioning, x_T=x, eta=self.eta)[0])
         except Exception:
-            samples_ddim, _ = self.sampler.sample(S=steps+1, conditioning=conditioning, batch_size=int(x.shape[0]), shape=x[0].shape, verbose=False, unconditional_guidance_scale=p.cfg_scale, unconditional_conditioning=unconditional_conditioning, x_T=x, eta=self.eta)
+            samples_ddim = self.launch_sampling(steps, lambda: self.sampler.sample(S=steps+1, conditioning=conditioning, batch_size=int(x.shape[0]), shape=x[0].shape, verbose=False, unconditional_guidance_scale=p.cfg_scale, unconditional_conditioning=unconditional_conditioning, x_T=x, eta=self.eta)[0])
 
         return samples_ddim
 
@@ -222,7 +255,10 @@ class CFGDenoiser(torch.nn.Module):
         self.init_latent = None
         self.step = 0
 
-    def forward(self, x, sigma, uncond, cond, cond_scale):
+    def forward(self, x, sigma, uncond, cond, cond_scale, image_cond):
+        if state.interrupted or state.skipped:
+            raise InterruptedException
+
         conds_list, tensor = prompt_parser.reconstruct_multicond_batch(cond, self.step)
         uncond = prompt_parser.reconstruct_cond_batch(uncond, self.step)
 
@@ -230,28 +266,29 @@ class CFGDenoiser(torch.nn.Module):
         repeats = [len(conds_list[i]) for i in range(batch_size)]
 
         x_in = torch.cat([torch.stack([x[i] for _ in range(n)]) for i, n in enumerate(repeats)] + [x])
+        image_cond_in = torch.cat([torch.stack([image_cond[i] for _ in range(n)]) for i, n in enumerate(repeats)] + [image_cond])
         sigma_in = torch.cat([torch.stack([sigma[i] for _ in range(n)]) for i, n in enumerate(repeats)] + [sigma])
 
         if tensor.shape[1] == uncond.shape[1]:
             cond_in = torch.cat([tensor, uncond])
 
             if shared.batch_cond_uncond:
-                x_out = self.inner_model(x_in, sigma_in, cond=cond_in)
+                x_out = self.inner_model(x_in, sigma_in, cond={"c_crossattn": [cond_in], "c_concat": [image_cond_in]})
             else:
                 x_out = torch.zeros_like(x_in)
                 for batch_offset in range(0, x_out.shape[0], batch_size):
                     a = batch_offset
                     b = a + batch_size
-                    x_out[a:b] = self.inner_model(x_in[a:b], sigma_in[a:b], cond=cond_in[a:b])
+                    x_out[a:b] = self.inner_model(x_in[a:b], sigma_in[a:b], cond={"c_crossattn": [cond_in[a:b]], "c_concat": [image_cond_in[a:b]]})
         else:
             x_out = torch.zeros_like(x_in)
             batch_size = batch_size*2 if shared.batch_cond_uncond else batch_size
             for batch_offset in range(0, tensor.shape[0], batch_size):
                 a = batch_offset
                 b = min(a + batch_size, tensor.shape[0])
-                x_out[a:b] = self.inner_model(x_in[a:b], sigma_in[a:b], cond=tensor[a:b])
+                x_out[a:b] = self.inner_model(x_in[a:b], sigma_in[a:b], cond={"c_crossattn": [tensor[a:b]], "c_concat": [image_cond_in[a:b]]})
 
-            x_out[-uncond.shape[0]:] = self.inner_model(x_in[-uncond.shape[0]:], sigma_in[-uncond.shape[0]:], cond=uncond)
+            x_out[-uncond.shape[0]:] = self.inner_model(x_in[-uncond.shape[0]:], sigma_in[-uncond.shape[0]:], cond={"c_crossattn": [uncond], "c_concat": [image_cond_in[-uncond.shape[0]:]]})
 
         denoised_uncond = x_out[-uncond.shape[0]:]
         denoised = torch.clone(denoised_uncond)
@@ -266,25 +303,6 @@ class CFGDenoiser(torch.nn.Module):
         self.step += 1
 
         return denoised
-
-
-def extended_trange(sampler, count, *args, **kwargs):
-    state.sampling_steps = count
-    state.sampling_step = 0
-
-    seq = range(count) if cmd_opts.disable_console_progressbars else tqdm.trange(count, *args, desc=state.job, file=shared.progress_print_out, **kwargs)
-
-    for x in seq:
-        if state.interrupted or state.skipped:
-            break
-
-        if sampler.stop_at is not None and x > sampler.stop_at:
-            break
-
-        yield x
-
-        state.sampling_step += 1
-        shared.total_tqdm.update()
 
 
 class TorchHijack:
@@ -314,9 +332,30 @@ class KDiffusionSampler:
         self.eta = None
         self.default_eta = 1.0
         self.config = None
+        self.last_latent = None
+
+        self.conditioning_key = sd_model.model.conditioning_key
 
     def callback_state(self, d):
-        store_latent(d["denoised"])
+        step = d['i']
+        latent = d["denoised"]
+        store_latent(latent)
+        self.last_latent = latent
+
+        if self.stop_at is not None and step > self.stop_at:
+            raise InterruptedException
+
+        state.sampling_step = step
+        shared.total_tqdm.update()
+
+    def launch_sampling(self, steps, func):
+        state.sampling_steps = steps
+        state.sampling_step = 0
+
+        try:
+            return func()
+        except InterruptedException:
+            return self.last_latent
 
     def number_of_needed_noises(self, p):
         return p.steps
@@ -339,9 +378,6 @@ class KDiffusionSampler:
         self.sampler_noise_index = 0
         self.eta = p.eta or opts.eta_ancestral
 
-        if hasattr(k_diffusion.sampling, 'trange'):
-            k_diffusion.sampling.trange = lambda *args, **kwargs: extended_trange(self, *args, **kwargs)
-
         if self.sampler_noises is not None:
             k_diffusion.sampling.torch = TorchHijack(self)
 
@@ -355,7 +391,7 @@ class KDiffusionSampler:
 
         return extra_params_kwargs
 
-    def sample_img2img(self, p, x, noise, conditioning, unconditional_conditioning, steps=None):
+    def sample_img2img(self, p, x, noise, conditioning, unconditional_conditioning, steps=None, image_conditioning=None):
         steps, t_enc = setup_img2img_steps(p, steps)
 
         if p.sampler_noise_scheduler_override:
@@ -382,11 +418,18 @@ class KDiffusionSampler:
             extra_params_kwargs['sigmas'] = sigma_sched
 
         self.model_wrap_cfg.init_latent = x
+        self.last_latent = x
 
-        return self.func(self.model_wrap_cfg, xi, extra_args={'cond': conditioning, 'uncond': unconditional_conditioning, 'cond_scale': p.cfg_scale}, disable=False, callback=self.callback_state, **extra_params_kwargs)
+        samples = self.launch_sampling(steps, lambda: self.func(self.model_wrap_cfg, xi, extra_args={
+            'cond': conditioning, 
+            'image_cond': image_conditioning, 
+            'uncond': unconditional_conditioning, 
+            'cond_scale': p.cfg_scale
+        }, disable=False, callback=self.callback_state, **extra_params_kwargs))
 
+        return samples
 
-    def sample(self, p, x, conditioning, unconditional_conditioning, steps=None):
+    def sample(self, p, x, conditioning, unconditional_conditioning, steps=None, image_conditioning = None):
         steps = steps or p.steps
 
         if p.sampler_noise_scheduler_override:
@@ -406,6 +449,14 @@ class KDiffusionSampler:
                 extra_params_kwargs['n'] = steps
         else:
             extra_params_kwargs['sigmas'] = sigmas
-        samples = self.func(self.model_wrap_cfg, x, extra_args={'cond': conditioning, 'uncond': unconditional_conditioning, 'cond_scale': p.cfg_scale}, disable=False, callback=self.callback_state, **extra_params_kwargs)
+
+        self.last_latent = x
+        samples = self.launch_sampling(steps, lambda: self.func(self.model_wrap_cfg, x, extra_args={
+            'cond': conditioning, 
+            'image_cond': image_conditioning, 
+            'uncond': unconditional_conditioning, 
+            'cond_scale': p.cfg_scale
+        }, disable=False, callback=self.callback_state, **extra_params_kwargs))
+
         return samples
 

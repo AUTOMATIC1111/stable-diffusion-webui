@@ -3,6 +3,7 @@ import datetime
 import json
 import os
 import sys
+from collections import OrderedDict
 
 import gradio as gr
 import tqdm
@@ -30,6 +31,7 @@ parser.add_argument("--no-half-vae", action='store_true', help="do not switch th
 parser.add_argument("--no-progressbar-hiding", action='store_true', help="do not hide progressbar in gradio UI (we hide it because it slows down ML if you have hardware acceleration in browser)")
 parser.add_argument("--max-batch-count", type=int, default=16, help="maximum batch count value for the UI")
 parser.add_argument("--embeddings-dir", type=str, default=os.path.join(script_path, 'embeddings'), help="embeddings directory for textual inversion (default: embeddings)")
+parser.add_argument("--aesthetic_embeddings-dir", type=str, default=os.path.join(models_path, 'aesthetic_embeddings'), help="aesthetic_embeddings directory(default: aesthetic_embeddings)")
 parser.add_argument("--hypernetwork-dir", type=str, default=os.path.join(models_path, 'hypernetworks'), help="hypernetwork directory")
 parser.add_argument("--localizations-dir", type=str, default=os.path.join(script_path, 'localizations'), help="localizations directory")
 parser.add_argument("--allow-code", action='store_true', help="allow custom script execution from webui")
@@ -70,12 +72,14 @@ parser.add_argument("--gradio-img2img-tool", type=str, help='gradio image upload
 parser.add_argument("--opt-channelslast", action='store_true', help="change memory type for stable diffusion to channels last")
 parser.add_argument("--styles-file", type=str, help="filename to use for styles", default=os.path.join(script_path, 'styles.csv'))
 parser.add_argument("--autolaunch", action='store_true', help="open the webui URL in the system's default browser upon launch", default=False)
+parser.add_argument("--theme", type=str, help="launches the UI with light or dark theme", default=None)
 parser.add_argument("--use-textbox-seed", action='store_true', help="use textbox for seeds in UI (no up/down, but possible to input long seeds)", default=False)
 parser.add_argument("--disable-console-progressbars", action='store_true', help="do not output progressbars to console", default=False)
 parser.add_argument("--enable-console-prompts", action='store_true', help="print prompts to console when generating with txt2img and img2img", default=False)
 parser.add_argument('--vae-path', type=str, help='Path to Variational Autoencoders model', default=None)
 parser.add_argument("--disable-safe-unpickle", action='store_true', help="disable checking pytorch models for malicious code", default=False)
-
+parser.add_argument("--api", action='store_true', help="use api=True to launch the api with the webui")
+parser.add_argument("--nowebui", action='store_true', help="use api=True to launch the api instead of the webui")
 
 cmd_opts = parser.parse_args()
 restricted_opts = [
@@ -103,6 +107,21 @@ config_filename = cmd_opts.ui_settings_file
 os.makedirs(cmd_opts.hypernetwork_dir, exist_ok=True)
 hypernetworks = hypernetwork.list_hypernetworks(cmd_opts.hypernetwork_dir)
 loaded_hypernetwork = None
+
+
+os.makedirs(cmd_opts.aesthetic_embeddings_dir, exist_ok=True)
+aesthetic_embeddings = {}
+
+
+def update_aesthetic_embeddings():
+    global aesthetic_embeddings
+    aesthetic_embeddings = {f.replace(".pt", ""): os.path.join(cmd_opts.aesthetic_embeddings_dir, f) for f in
+                            os.listdir(cmd_opts.aesthetic_embeddings_dir) if f.endswith(".pt")}
+    aesthetic_embeddings = OrderedDict(**{"None": None}, **aesthetic_embeddings)
+
+
+update_aesthetic_embeddings()
+
 
 def reload_hypernetworks():
     global hypernetworks
@@ -135,7 +154,7 @@ class State:
         self.job_no += 1
         self.sampling_step = 0
         self.current_image_sampling_step = 0
-        
+
     def get_job_timestamp(self):
         return datetime.datetime.now().strftime("%Y%m%d%H%M%S")  # shouldn't this return job_timestamp?
 
@@ -293,6 +312,7 @@ options_templates.update(options_section(('ui', "User interface"), {
     "do_not_show_images": OptionInfo(False, "Do not show any images in results for web"),
     "add_model_hash_to_info": OptionInfo(True, "Add model hash to generation information"),
     "add_model_name_to_info": OptionInfo(False, "Add model name to generation information"),
+    "disable_weights_auto_swap": OptionInfo(False, "When reading generation parameters from text into UI (from PNG info or pasted text), do not change the selected model/checkpoint."),
     "font": OptionInfo("", "Font for image grids that have text"),
     "js_modal_lightbox": OptionInfo(True, "Enable full page image viewer"),
     "js_modal_lightbox_initially_zoomed": OptionInfo(True, "Show images zoomed in by default in full page image viewer"),
@@ -383,6 +403,11 @@ if os.path.exists(config_filename):
 sd_upscalers = []
 
 sd_model = None
+
+clip_model = None
+
+from modules.aesthetic_clip import AestheticCLIP
+aesthetic_clip = AestheticCLIP()
 
 progress_print_out = sys.stdout
 
