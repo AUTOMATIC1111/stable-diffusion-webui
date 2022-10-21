@@ -26,7 +26,6 @@ class Script(QObject):
         # Persistent settings (should reload between Krita sessions)
         self.cfg = Config()
         self.client = Client(self.cfg, lambda s: self.set_status(s))
-        self.is_busy = False
 
         # Status bar
         self._status_cb = lambda s: None
@@ -184,17 +183,13 @@ class Script(QObject):
         self.doc.refreshProjection()
 
     def create_mask_layer_internal(self):
-        try:
-            if self.selection is not None:
-                self.app.action("add_new_transparency_mask").trigger()
-                print(f"created mask layer")
-                self.doc.setSelection(self.selection)
-        finally:
-            self.is_busy = False
+        if self.selection is not None:
+            self.app.action("add_new_transparency_mask").trigger()
+            print(f"created mask layer")
+            self.doc.setSelection(self.selection)
 
     def create_mask_layer_workaround(self):
         if self.cfg("create_mask_layer", bool):
-            self.is_busy = True
             # TODO: this needn't be a config option, can be hardcoded global
             QTimer.singleShot(
                 ADD_MASK_TIMEOUT,
@@ -209,8 +204,6 @@ class Script(QObject):
     # Actions
     def action_txt2img(self):
         self.set_status(STATE_WAIT)
-        if self.is_busy:
-            pass
 
         def cb():
             self.update_config()
@@ -224,8 +217,6 @@ class Script(QObject):
 
     def action_img2img(self):
         self.set_status(STATE_WAIT)
-        if self.is_busy:
-            pass
 
         def cb():
             self.update_config()
@@ -240,8 +231,6 @@ class Script(QObject):
     def action_sd_upscale(self):
         assert False, "disabled"
         self.set_status(STATE_WAIT)
-        if self.is_busy:
-            pass
         self.update_config()
         self.update_selection()
         self.apply_img2img(mode=2)
@@ -249,8 +238,6 @@ class Script(QObject):
 
     def action_inpaint(self):
         self.set_status(STATE_WAIT)
-        if self.is_busy:
-            pass
 
         def cb():
             self.update_config()
@@ -263,8 +250,6 @@ class Script(QObject):
 
     def action_simple_upscale(self):
         self.set_status(STATE_WAIT)
-        if self.is_busy:
-            pass
 
         def cb():
             self.update_config()
