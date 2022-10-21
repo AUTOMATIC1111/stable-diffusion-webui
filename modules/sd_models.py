@@ -234,9 +234,6 @@ def load_model(checkpoint_info=None):
 
     sd_hijack.model_hijack.hijack(sd_model)
 
-    if shared.clip_model is None or shared.clip_model.transformer.name_or_path != sd_model.cond_stage_model.wrapped.transformer.name_or_path:
-        shared.clip_model = CLIPModel.from_pretrained(sd_model.cond_stage_model.wrapped.transformer.name_or_path)
-
     sd_model.eval()
 
     print(f"Model loaded.")

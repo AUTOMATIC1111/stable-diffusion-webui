@@ -597,27 +597,29 @@ def apply_setting(key, value):
     return value
 
 
+def create_refresh_button(refresh_component, refresh_method, refreshed_args, elem_id):
+    def refresh():
+        refresh_method()
+        args = refreshed_args() if callable(refreshed_args) else refreshed_args
+
+        for k, v in args.items():
+            setattr(refresh_component, k, v)
+
+        return gr.update(**(args or {}))
+
+    refresh_button = gr.Button(value=refresh_symbol, elem_id=elem_id)
+    refresh_button.click(
+        fn=refresh,
+        inputs=[],
+        outputs=[refresh_component]
+    )
+    return refresh_button
+
+
 def create_ui(wrap_gradio_gpu_call):
     import modules.img2img
     import modules.txt2img
 
-    def create_refresh_button(refresh_component, refresh_method, refreshed_args, elem_id):
-        def refresh():
-            refresh_method()
-            args = refreshed_args() if callable(refreshed_args) else refreshed_args
-
-            for k, v in args.items():
-                setattr(refresh_component, k, v)
-
-            return gr.update(**(args or {}))
-
-        refresh_button = gr.Button(value=refresh_symbol, elem_id=elem_id)
-        refresh_button.click(
-            fn = refresh,
-            inputs = [],
-            outputs = [refresh_component]
-        )
-        return refresh_button
 
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
         txt2img_prompt, roll, txt2img_prompt_style, txt2img_negative_prompt, txt2img_prompt_style2, submit, _, _, txt2img_prompt_style_apply, txt2img_save_style, txt2img_paste, token_counter, token_button = create_toprow(is_img2img=False)
@@ -802,6 +804,14 @@ def create_ui(wrap_gradio_gpu_call):
                 (hr_options, lambda d: gr.Row.update(visible="Denoising strength" in d)),
                 (firstphase_width, "First pass size-1"),
                 (firstphase_height, "First pass size-2"),
+                (aesthetic_lr, "Aesthetic LR"),
+                (aesthetic_weight, "Aesthetic weight"),
+                (aesthetic_steps, "Aesthetic steps"),
+                (aesthetic_imgs, "Aesthetic embedding"),
+                (aesthetic_slerp, "Aesthetic slerp"),
+                (aesthetic_imgs_text, "Aesthetic text"),
+                (aesthetic_text_negative, "Aesthetic text negative"),
+                (aesthetic_slerp_angle, "Aesthetic slerp angle"),
             ]
 
             txt2img_preview_params = [
@@ -1077,6 +1087,14 @@ def create_ui(wrap_gradio_gpu_call):
                 (seed_resize_from_w, "Seed resize from-1"),
                 (seed_resize_from_h, "Seed resize from-2"),
                 (denoising_strength, "Denoising strength"),
+                (aesthetic_lr_im, "Aesthetic LR"),
+                (aesthetic_weight_im, "Aesthetic weight"),
+                (aesthetic_steps_im, "Aesthetic steps"),
+                (aesthetic_imgs_im, "Aesthetic embedding"),
+                (aesthetic_slerp_im, "Aesthetic slerp"),
+                (aesthetic_imgs_text_im, "Aesthetic text"),
+                (aesthetic_text_negative_im, "Aesthetic text negative"),
+                (aesthetic_slerp_angle_im, "Aesthetic slerp angle"),
             ]
             token_button.click(fn=update_token_counter, inputs=[img2img_prompt, steps], outputs=[token_counter])
 

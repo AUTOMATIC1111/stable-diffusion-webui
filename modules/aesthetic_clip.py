@@ -40,6 +40,8 @@ def iter_to_batched(iterable, n=1):
 
 
 def create_ui():
+    import modules.ui
+
     with gr.Group():
         with gr.Accordion("Open for Clip Aesthetic!", open=False):
             with gr.Row():
@@ -55,6 +57,8 @@ def create_ui():
                                              label="Aesthetic imgs embedding",
                                              value="None")
 
+                modules.ui.create_refresh_button(aesthetic_imgs, shared.update_aesthetic_embeddings, lambda: {"choices": sorted(shared.aesthetic_embeddings.keys())}, "refresh_aesthetic_embeddings")
+
             with gr.Row():
                 aesthetic_imgs_text = gr.Textbox(label='Aesthetic text for imgs',
                                                  placeholder="This text is used to rotate the feature space of the imgs embs",
@@ -66,11 +70,21 @@ def create_ui():
     return aesthetic_weight, aesthetic_steps, aesthetic_lr, aesthetic_slerp, aesthetic_imgs, aesthetic_imgs_text, aesthetic_slerp_angle, aesthetic_text_negative
 
 
+aesthetic_clip_model = None
+
+
+def aesthetic_clip():
+    global aesthetic_clip_model
+
+    if aesthetic_clip_model is None or aesthetic_clip_model.name_or_path != shared.sd_model.cond_stage_model.wrapped.transformer.name_or_path:
+        aesthetic_clip_model = CLIPModel.from_pretrained(shared.sd_model.cond_stage_model.wrapped.transformer.name_or_path)
+        aesthetic_clip_model.cpu()
+
+    return aesthetic_clip_model
+
+
 def generate_imgs_embd(name, folder, batch_size):
-    # clipModel = CLIPModel.from_pretrained(
-    #     shared.sd_model.cond_stage_model.clipModel.name_or_path
-    # )
-    model = shared.clip_model.to(device)
+    model = aesthetic_clip().to(device)
     processor = CLIPProcessor.from_pretrained(model.name_or_path)
 
     with torch.no_grad():
@@ -91,7 +105,7 @@ def generate_imgs_embd(name, folder, batch_size):
         path = str(Path(shared.cmd_opts.aesthetic_embeddings_dir) / f"{name}.pt")
         torch.save(embs, path)
 
-        model = model.cpu()
+        model.cpu()
         del processor
         del embs
         gc.collect()
@@ -132,7 +146,7 @@ class AestheticCLIP:
         self.image_embs = None
         self.load_image_embs(None)
 
-    def set_aesthetic_params(self, aesthetic_lr=0, aesthetic_weight=0, aesthetic_steps=0, image_embs_name=None,
+    def set_aesthetic_params(self, p, aesthetic_lr=0, aesthetic_weight=0, aesthetic_steps=0, image_embs_name=None,
                              aesthetic_slerp=True, aesthetic_imgs_text="",
                              aesthetic_slerp_angle=0.15,
                              aesthetic_text_negative=False):
@@ -144,6 +158,18 @@ class AestheticCLIP:
         self.aesthetic_weight = aesthetic_weight
         self.aesthetic_steps = aesthetic_steps
         self.load_image_embs(image_embs_name)
+
+        if self.image_embs_name is not None:
+            p.extra_generation_params.update({
+                "Aesthetic LR": aesthetic_lr,
+                "Aesthetic weight": aesthetic_weight,
+                "Aesthetic steps": aesthetic_steps,
+                "Aesthetic embedding": self.image_embs_name,
+                "Aesthetic slerp": aesthetic_slerp,
+                "Aesthetic text": aesthetic_imgs_text,
+                "Aesthetic text negative": aesthetic_text_negative,
+                "Aesthetic slerp angle": aesthetic_slerp_angle,
+            })
 
     def set_skip(self, skip):
         self.skip = skip
@@ -168,7 +194,7 @@ class AestheticCLIP:
 
             tokens = torch.asarray(remade_batch_tokens).to(device)
 
-            model = copy.deepcopy(shared.clip_model).to(device)
+            model = copy.deepcopy(aesthetic_clip()).to(device)
             model.requires_grad_(True)
             if self.aesthetic_imgs_text is not None and len(self.aesthetic_imgs_text) > 0:
                 text_embs_2 = model.get_text_features(
