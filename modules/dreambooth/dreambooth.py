@@ -112,8 +112,9 @@ class DreamBooth:
         self.resolution = resolution
         self.use_cpu = use_cpu
         # We get an error if using 'fp16' and CPU at the same time?
-        if use_cpu:
-            self.mixed_precision = "no"
+        # Maybe not?
+        #if use_cpu:
+            #self.mixed_precision = "no"
         self.prior_loss_weight = prior_loss_weight
         self.center_crop = center_crop
         self.num_train_epochs = num_train_epochs
@@ -358,7 +359,7 @@ class DreamBooth:
         total_batch_size = self.train_batch_size * accelerator.num_processes * self.gradient_accumulation_steps
 
         print("***** Running training *****")
-        print(f"  CPU: {self.use_cpu}, Adam: {use_adam}, Precision: {accelerator.use_fp16}")
+        print(f"  CPU: {self.use_cpu}, Adam: {use_adam}, Precision: {self.mixed_precision}")
         print(f"  Num examples = {len(train_dataset)}")
         print(f"  Num batches each epoch = {len(train_dataloader)}")
         print(f"  Num Epochs = {self.num_train_epochs}")
