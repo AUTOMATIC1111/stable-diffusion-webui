@@ -45,6 +45,8 @@ body:
     attributes:
       label: Commit where the problem happens
       description: Which commit are you running ? (copy the **Commit hash** shown in the cmd/terminal when you launch the UI)
+    validations:
+      required: true
   - type: dropdown
     id: platforms
     attributes:

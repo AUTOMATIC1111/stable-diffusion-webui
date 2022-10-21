@@ -3,12 +3,12 @@ let currentWidth = null;
 let currentHeight = null;
 let arFrameTimeout = setTimeout(function(){},0);
 
-function dimensionChange(e,dimname){
+function dimensionChange(e, is_width, is_height){
 
-	if(dimname == 'Width'){
+	if(is_width){
 		currentWidth = e.target.value*1.0
 	}
-	if(dimname == 'Height'){
+	if(is_height){
 		currentHeight = e.target.value*1.0
 	}
 
@@ -18,22 +18,13 @@ function dimensionChange(e,dimname){
 		return;
 	}
 
-	var img2imgMode = gradioApp().querySelector('#mode_img2img.tabs > div > button.rounded-t-lg.border-gray-200')
-	if(img2imgMode){
-		img2imgMode=img2imgMode.innerText
-	}else{
-		return;
-	}
-
-	var redrawImage = gradioApp().querySelector('div[data-testid=image] img');
-	var inpaintImage = gradioApp().querySelector('#img2maskimg div[data-testid=image] img')
-
 	var targetElement = null;
 
-	if(img2imgMode=='img2img' && redrawImage){
-		targetElement = redrawImage;
-	}else if(img2imgMode=='Inpaint' && inpaintImage){
-		targetElement = inpaintImage;
+    var tabIndex = get_tab_index('mode_img2img')
+	if(tabIndex == 0){
+		targetElement = gradioApp().querySelector('div[data-testid=image] img');
+	} else if(tabIndex == 1){
+		targetElement = gradioApp().querySelector('#img2maskimg div[data-testid=image] img');
 	}
 
 	if(targetElement){
@@ -98,22 +89,20 @@ onUiUpdate(function(){
 	var inImg2img   = Boolean(gradioApp().querySelector("button.rounded-t-lg.border-gray-200"))
 	if(inImg2img){
 		let inputs = gradioApp().querySelectorAll('input');
-		inputs.forEach(function(e){ 
-			let parentLabel = e.parentElement.querySelector('label')
-			if(parentLabel && parentLabel.innerText){
-				if(!e.classList.contains('scrollwatch')){
-					if(parentLabel.innerText == 'Width' || parentLabel.innerText == 'Height'){
-						e.addEventListener('input', function(e){dimensionChange(e,parentLabel.innerText)} )
-						e.classList.add('scrollwatch')
-					}
-					if(parentLabel.innerText == 'Width'){
-						currentWidth = e.value*1.0
-					}
-					if(parentLabel.innerText == 'Height'){
-						currentHeight = e.value*1.0
-					}
-				}
-			} 
+		inputs.forEach(function(e){
+		    var is_width = e.parentElement.id == "img2img_width"
+		    var is_height = e.parentElement.id == "img2img_height"
+
+			if((is_width || is_height) && !e.classList.contains('scrollwatch')){
+				e.addEventListener('input', function(e){dimensionChange(e, is_width, is_height)} )
+				e.classList.add('scrollwatch')
+			}
+			if(is_width){
+				currentWidth = e.value*1.0
+			}
+			if(is_height){
+				currentHeight = e.value*1.0
+			}
 		})
 	}
 });

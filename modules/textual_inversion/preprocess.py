@@ -12,7 +12,7 @@ if cmd_opts.deepdanbooru:
     import modules.deepbooru as deepbooru
 
 
-def preprocess(process_src, process_dst, process_width, process_height, process_flip, process_split, process_caption, process_caption_deepbooru=False, split_threshold=0.5, overlap_ratio=0.2):
+def preprocess(process_src, process_dst, process_width, process_height, preprocess_txt_action, process_flip, process_split, process_caption, process_caption_deepbooru=False, split_threshold=0.5, overlap_ratio=0.2):
     try:
         if process_caption:
             shared.interrogator.load()
@@ -22,7 +22,7 @@ def preprocess(process_src, process_dst, process_width, process_height, process_
             db_opts[deepbooru.OPT_INCLUDE_RANKS] = False
             deepbooru.create_deepbooru_process(opts.interrogate_deepbooru_score_threshold, db_opts)
 
-        preprocess_work(process_src, process_dst, process_width, process_height, process_flip, process_split, process_caption, process_caption_deepbooru, split_threshold, overlap_ratio)
+        preprocess_work(process_src, process_dst, process_width, process_height, preprocess_txt_action, process_flip, process_split, process_caption, process_caption_deepbooru, split_threshold, overlap_ratio)
 
     finally:
 
@@ -34,7 +34,7 @@ def preprocess(process_src, process_dst, process_width, process_height, process_
 
 
 
-def preprocess_work(process_src, process_dst, process_width, process_height, process_flip, process_split, process_caption, process_caption_deepbooru=False, split_threshold=0.5, overlap_ratio=0.2):
+def preprocess_work(process_src, process_dst, process_width, process_height, preprocess_txt_action, process_flip, process_split, process_caption, process_caption_deepbooru=False, split_threshold=0.5, overlap_ratio=0.2):
     width = process_width
     height = process_height
     src = os.path.abspath(process_src)
@@ -51,7 +51,7 @@ def preprocess_work(process_src, process_dst, process_width, process_height, pro
     shared.state.textinfo = "Preprocessing..."
     shared.state.job_count = len(files)
 
-    def save_pic_with_caption(image, index):
+    def save_pic_with_caption(image, index, existing_caption=None):
         caption = ""
 
         if process_caption:
@@ -69,17 +69,26 @@ def preprocess_work(process_src, process_dst, process_width, process_height, pro
         basename = f"{index:05}-{subindex[0]}-{filename_part}"
         image.save(os.path.join(dst, f"{basename}.png"))
 
+        if preprocess_txt_action == 'prepend' and existing_caption:
+            caption = existing_caption + ' ' + caption
+        elif preprocess_txt_action == 'append' and existing_caption:
+            caption = caption + ' ' + existing_caption
+        elif preprocess_txt_action == 'copy' and existing_caption:
+            caption = existing_caption
+
+        caption = caption.strip()
+        
         if len(caption) > 0:
             with open(os.path.join(dst, f"{basename}.txt"), "w", encoding="utf8") as file:
                 file.write(caption)
 
         subindex[0] += 1
 
-    def save_pic(image, index):
-        save_pic_with_caption(image, index)
+    def save_pic(image, index, existing_caption=None):
+        save_pic_with_caption(image, index, existing_caption=existing_caption)
 
         if process_flip:
-            save_pic_with_caption(ImageOps.mirror(image), index)
+            save_pic_with_caption(ImageOps.mirror(image), index, existing_caption=existing_caption)
 
     def split_pic(image, inverse_xy):
         if inverse_xy:
@@ -112,6 +121,13 @@ def preprocess_work(process_src, process_dst, process_width, process_height, pro
         except Exception:
             continue
 
+        existing_caption = None
+
+        try:
+            existing_caption = open(os.path.splitext(filename)[0] + '.txt', 'r').read()
+        except Exception as e:
+            print(e)
+
         if shared.state.interrupted:
             break
 
@@ -124,9 +140,9 @@ def preprocess_work(process_src, process_dst, process_width, process_height, pro
 
         if process_split and ratio < 1.0 and ratio <= split_threshold:
             for splitted in split_pic(img, inverse_xy):
-                save_pic(splitted, index)
+                save_pic(splitted, index, existing_caption=existing_caption)
         else:
             img = images.resize_image(1, img, width, height)
-            save_pic(img, index)
+            save_pic(img, index, existing_caption=existing_caption)
 
         shared.state.nextjob()
