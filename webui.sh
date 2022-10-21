@@ -26,8 +26,15 @@ fi
 # python3 executable
 if [[ -z "${python_cmd}" ]]
 then
-    python_cmd="python3"
+  python_cmd="python3"
 fi
+
+if [[ -z "${accelerate_launch}" ]]
+  then
+    launch_cmd=python_cmd
+  else
+    launch_cmd="accelerate launch"
+  fi
 
 # git executable
 if [[ -z "${GIT}" ]]
@@ -136,6 +143,6 @@ else
 fi
 
 printf "\n%s\n" "${delimiter}"
-printf "Launching launch.py..."
+printf "Launching: '${launch_cmd} ${LAUNCH_SCRIPT}'..."
 printf "\n%s\n" "${delimiter}"
-"${python_cmd}" "${LAUNCH_SCRIPT}" "$@"
+"${launch_cmd}" "${LAUNCH_SCRIPT}"

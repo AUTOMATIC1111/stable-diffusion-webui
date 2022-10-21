@@ -12,6 +12,10 @@
 # Commandline arguments for webui.py, for example: export COMMANDLINE_ARGS="--medvram --opt-split-attention"
 export COMMANDLINE_ARGS=""
 
+# Uncomment to enable accelerated launch
+printf "accelerated..."
+export accelerate_launch="True"
+
 # python3 executable
 #python_cmd="python3"
 
@@ -39,5 +43,4 @@ export COMMANDLINE_ARGS=""
 #export TAMING_TRANSFORMERS_COMMIT_HASH=""
 #export CODEFORMER_COMMIT_HASH=""
 #export BLIP_COMMIT_HASH=""
-
 ###########################################
