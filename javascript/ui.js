@@ -171,14 +171,8 @@ return [_, confirmed]
 }
 
     if(selected_tab_id() == "tab_txt2img") {
-        gradioApp().querySelector("#txt2img_prompt > label > textarea").value = "";
-        gradioApp().querySelector("#txt2img_neg_prompt > label > textarea").value = "";
-
         update_token_counter("img2img_token_button")
     } else {
-        gradioApp().querySelector("#img2img_prompt > label > textarea").value = "";
-        gradioApp().querySelector("#img2img_neg_prompt > label > textarea").value = "";
-
         update_token_counter("txt2img_token_button")
     }
 

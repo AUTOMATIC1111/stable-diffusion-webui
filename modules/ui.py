@@ -429,15 +429,21 @@ def create_seed_inputs():
     return seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox
 
 
-def clear_prompt(prompt):
-    print(f"type: '{prompt}'")
-    print(prompt)
 
-    # update_token_counter(prompt, steps)
-    return ""
+def connect_trash_prompt(_, confirmed):
+        if(confirmed):
+            # update_token_counter(prompt, steps)
+            return ["", confirmed]
 
-def connect_trash_prompt(prompt, confirmed):
-        if(confirmed): clear_prompt(prompt)
+def trash_prompt_click(button, prompt):
+    dummy_component = gradio.Label(visible=False)
+
+    button.click(
+        _js="trash_prompt",
+        fn=connect_trash_prompt,
+        inputs=[prompt, dummy_component],
+        outputs=[prompt, dummy_component],
+    )
 
 
 def connect_reuse_seed(seed: gr.Number, reuse_seed: gr.Button, generation_info: gr.Textbox, dummy_component, is_subseed):
@@ -643,13 +649,7 @@ def create_ui(wrap_gradio_gpu_call):
         txt_prompt_img = gr.File(label="", elem_id="txt2img_prompt_image", file_count="single", type="bytes", visible=False)
 
 
-        trash_prompt_button.click(
-            # fn=lambda: print("Clearing prompt"),
-            _js="trash_prompt",
-            fn=lambda: clear_prompt(),
-            inputs=[txt2img_prompt, dummy_component],
-            outputs=[txt2img_prompt, dummy_component],
-        )
+        trash_prompt_click(trash_prompt_button, txt2img_prompt)
 
 
         with gr.Row(elem_id='txt2img_progress_row'):
@@ -858,6 +858,7 @@ def create_ui(wrap_gradio_gpu_call):
         img2img_interrogate, img2img_deepbooru, img2img_prompt_style_apply, img2img_save_style, img2img_paste,\
         token_counter, token_button, trash_prompt_button = create_toprow(is_img2img=True)
 
+        trash_prompt_click(trash_prompt_button, img2img_prompt)
 
         with gr.Row(elem_id='img2img_progress_row'):
             img2img_prompt_img = gr.File(label="", elem_id="img2img_prompt_image", file_count="single", type="bytes", visible=False)
