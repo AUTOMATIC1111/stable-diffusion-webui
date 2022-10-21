@@ -88,7 +88,7 @@ folder_symbol = '\U0001f4c2'  # 📂
 refresh_symbol = '\U0001f504'  # 🔄
 save_style_symbol = '\U0001f4be'  # 💾
 apply_style_symbol = '\U0001f4cb'  # 📋
-clear_prompt_symbol = '\U0001F5D1' # 🗑️
+clear_prompt_symbol = '\U0001F5D1'  # 🗑️
 
 
 def plaintext_to_html(text):
@@ -429,12 +429,14 @@ def create_seed_inputs():
     return seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox
 
 
-
 def clear_prompt(_prompt, confirmed, _token_counter):
-        if(confirmed):
-            return ["", confirmed, update_token_counter("", 1)]
+    """Given confirmation from a user on the client-side, go ahead with clearing prompt"""
+    if confirmed:
+        return ["", confirmed, update_token_counter("", 1)]
+
 
 def connect_clear_prompt(button, prompt, _dummy_confirmed, token_counter):
+    """Given clear button, prompt, and token_counter objects, setup clear prompt button click event"""
     button.click(
         _js="clear_prompt",
         fn=clear_prompt,
@@ -518,7 +520,12 @@ def create_toprow(is_img2img):
             paste = gr.Button(value=paste_symbol, elem_id="paste")
             save_style = gr.Button(value=save_style_symbol, elem_id="style_create")
             prompt_style_apply = gr.Button(value=apply_style_symbol, elem_id="style_apply")
-            clear_prompt_button = gr.Button(value=clear_prompt_symbol, elem_id="clear_prompt", visible=opts.clear_prompt_visible)
+
+            clear_prompt_button = gr.Button(
+                value=clear_prompt_symbol,
+                elem_id="clear_prompt",
+                visible=opts.clear_prompt_visible
+            )
 
             token_counter = gr.HTML(value="<span></span>", elem_id=f"{id_part}_token_counter")
             token_button = gr.Button(visible=False, elem_id=f"{id_part}_token_button")
