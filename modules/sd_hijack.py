@@ -332,8 +332,8 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
                     multipliers.append([1.0] * 75)
 
             z1 = self.process_tokens(tokens, multipliers)
+            z1 = shared.aesthetic_clip(z1, remade_batch_tokens)
             z = z1 if z is None else torch.cat((z, z1), axis=-2)
-            z = shared.aesthetic_clip(z, remade_batch_tokens)
 
             remade_batch_tokens = rem_tokens
             batch_multipliers = rem_multipliers
