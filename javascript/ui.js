@@ -1,4 +1,3 @@
-// various functions for interation with ui.py not large enough to warrant putting them in separate files
 
 function set_theme(theme){
     gradioURL = window.location.href
@@ -206,23 +205,21 @@ onUiUpdate(function(){
                 }, 500);
             }
         });
-        if (!other_language_prompt) {
-            other_language_prompt = document.querySelector("#other_language_prompt");
-            other_language_prompt?.addEventListener("input", () => {
-                if (isTranslateEnable) {
-                    const translatedText = document.querySelector(
-                        "#other_language_prompt"
-                    ).value;
-                    document.querySelector("#google_translate_element").textContent =
-                        "✔️" + translatedText;
-                    setTimeout(function () {
-                        txt2img_textarea.value = document
-                            .querySelector("#google_translate_element")
-                            .textContent.replace("✔️", "");
-                    }, 500);
-                }
-            });
-        }
+        other_language_prompt = document.querySelector("#other_language_prompt");
+        other_language_prompt?.addEventListener("input", () => {
+            if (isTranslateEnable) {
+                const translatedText = document.querySelector(
+                    "#other_language_prompt"
+                ).value;
+                document.querySelector("#google_translate_element").textContent =
+                    "✔️" + translatedText;
+                setTimeout(function () {
+                    txt2img_textarea.value = document
+                        .querySelector("#google_translate_element")
+                        .textContent.replace("✔️", "");
+                }, 500);
+            }
+        });
     }
     if (!img2img_textarea) {
         img2img_textarea = gradioApp().querySelector("#img2img_prompt > label > textarea");
@@ -238,23 +235,21 @@ onUiUpdate(function(){
                 }, 500);
             }
         });
-        if (!other_language_prompt) {
-            other_language_prompt = document.querySelector("#other_language_prompt");
-            other_language_prompt?.addEventListener("input", () => {
-                if (isTranslateEnable) {
-                    const translatedText = document.querySelector(
-                        "#other_language_prompt"
-                    ).value;
-                    document.querySelector("#google_translate_element").textContent =
-                        "✔️" + translatedText;
-                    setTimeout(function () {
-                        img2img_textarea.value = document
-                            .querySelector("#google_translate_element")
-                            .textContent.replace("✔️", "");
-                    }, 500);
-                }
-            });
-        }
+        other_language_prompt = document.querySelector("#other_language_prompt");
+        other_language_prompt?.addEventListener("input", () => {
+            if (isTranslateEnable) {
+                const translatedText = document.querySelector(
+                    "#other_language_prompt"
+                ).value;
+                document.querySelector("#google_translate_element").textContent =
+                    "✔️" + translatedText;
+                setTimeout(function () {
+                    img2img_textarea.value = document
+                        .querySelector("#google_translate_element")
+                        .textContent.replace("✔️", "");
+                }, 500);
+            }
+        });
     }
     if (!txt2img_textarea_neg) {
         txt2img_textarea_neg = gradioApp().querySelector("#txt2img_neg_prompt > label > textarea");
@@ -269,23 +264,21 @@ onUiUpdate(function(){
                 }, 500);
             }
         });
-        if (!other_language_neg_prompt) {
-            other_language_neg_prompt = document.querySelector("#other_language_neg_prompt");
-            other_language_neg_prompt?.addEventListener("input", () => {
-                if (isTranslateEnable) {
-                    const translatedText = document.querySelector(
-                        "#other_language_neg_prompt"
-                    ).value;
-                    document.querySelector("#google_translate_element_neg").textContent =
-                        "❌" + translatedText;
-                    setTimeout(function () {
-                        txt2img_textarea_neg.value = document
-                            .querySelector("#google_translate_element_neg")
-                            .textContent.replace("❌", "");
-                    }, 500);
-                }
-            });
-        }
+        other_language_neg_prompt = document.querySelector("#other_language_neg_prompt");
+        other_language_neg_prompt?.addEventListener("input", () => {
+            if (isTranslateEnable) {
+                const translatedText = document.querySelector(
+                    "#other_language_neg_prompt"
+                ).value;
+                document.querySelector("#google_translate_element_neg").textContent =
+                    "❌" + translatedText;
+                setTimeout(function () {
+                    txt2img_textarea_neg.value = document
+                        .querySelector("#google_translate_element_neg")
+                        .textContent.replace("❌", "");
+                }, 500);
+            }
+        });
     }
     if (!img2img_textarea_neg) {
         img2img_textarea_neg = gradioApp().querySelector("#img2img_neg_prompt > label > textarea");
@@ -300,23 +293,21 @@ onUiUpdate(function(){
                 }, 500);
             }
         });
-        if (!other_language_neg_prompt) {
-            other_language_neg_prompt = document.querySelector("#other_language_neg_prompt");
-            other_language_neg_prompt?.addEventListener("input", () => {
-                if (isTranslateEnable) {
-                    const translatedText = document.querySelector(
-                        "#other_language_neg_prompt"
-                    ).value;
-                    document.querySelector("#google_translate_element_neg").textContent =
-                        "❌" + translatedText;
-                    setTimeout(function () {
-                        img2img_textarea_neg.value = document
-                            .querySelector("#google_translate_element_neg")
-                            .textContent.replace("❌", "");
-                    }, 500);
-                }
-            });
-        }
+        other_language_neg_prompt = document.querySelector("#other_language_neg_prompt");
+        other_language_neg_prompt?.addEventListener("input", () => {
+            if (isTranslateEnable) {
+                const translatedText = document.querySelector(
+                    "#other_language_neg_prompt"
+                ).value;
+                document.querySelector("#google_translate_element_neg").textContent =
+                    "❌" + translatedText;
+                setTimeout(function () {
+                    img2img_textarea_neg.value = document
+                        .querySelector("#google_translate_element_neg")
+                        .textContent.replace("❌", "");
+                }, 500);
+            }
+        });
     }
 })
 
