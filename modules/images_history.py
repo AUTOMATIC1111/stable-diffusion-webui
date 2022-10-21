@@ -109,6 +109,8 @@ def show_images_history(gr, opts, tabname, run_pnginfo, switch_dict):
         dir_name = opts.outdir_img2img_samples
     elif tabname == "extras":
         dir_name = opts.outdir_extras_samples
+    elif tabname == "saved":
+        dir_name = opts.outdir_save
     else:
         return
     with gr.Row():
@@ -178,6 +180,9 @@ def create_history_tabs(gr, opts, run_pnginfo, switch_dict):
                 with gr.Blocks(analytics_enabled=False) as images_history_img2img:
                     show_images_history(gr, opts, "img2img", run_pnginfo, switch_dict)
             with gr.Tab("extras history"):
-                with gr.Blocks(analytics_enabled=False) as images_history_img2img:
+                with gr.Blocks(analytics_enabled=False) as images_history_extras:
                     show_images_history(gr, opts, "extras", run_pnginfo, switch_dict)
+            with gr.Tab("saved history"):
+                with gr.Blocks(analytics_enabled=False) as images_history_saved:
+                    show_images_history(gr, opts, "saved", run_pnginfo, switch_dict)
     return images_history
