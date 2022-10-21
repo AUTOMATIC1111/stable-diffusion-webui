@@ -1,16 +1,6 @@
 import os
 
-from krita import (
-    Application,
-    Document,
-    Krita,
-    Node,
-    QByteArray,
-    QImage,
-    QObject,
-    QTimer,
-    Selection,
-)
+from krita import Application, Document, Krita, Node, QImage, QObject, QTimer, Selection
 
 from .client import Client
 from .config import Config
@@ -26,7 +16,7 @@ from .defaults import (
     STATE_URLERROR,
     STATE_WAIT,
 )
-from .utils import create_layer, find_optimal_selection_region
+from .utils import create_layer, find_optimal_selection_region, img_to_ba, save_img
 
 
 # Does it actually have to be a QObject?
@@ -152,16 +142,11 @@ class Script(QObject):
         """Update certain config/state from the backend."""
         return self.client.get_config()
 
-    # Krita tools
-    def image_to_ba(self, image):
-        ptr = image.bits()
-        ptr.setsize(image.byteCount())
-        return QByteArray(ptr.asstring())
-
     def insert_img(self, layer_name, path, visible=True):
+        """Insert image as new layer."""
         image = QImage()
         image.load(path, "PNG")
-        ba = self.image_to_ba(image)
+        ba = img_to_ba(image)
 
         layer = create_layer(layer_name)
         if not visible:
@@ -189,9 +174,9 @@ class Script(QObject):
     def apply_img2img(self, mode):
         path = self.cfg("new_img_path", str)
         mask_path = self.cfg("new_img_mask_path", str)
-        self.selection_image.save(path, "PNG", 0)
+        save_img(self.selection_image, path)
         if mode == 1:
-            self.mask_image.save(mask_path, "PNG", 0)
+            save_img(self.mask_image, mask_path)
 
         response = (
             self.client.post_inpaint(path, mask_path, self.selection is not None)
@@ -221,7 +206,7 @@ class Script(QObject):
 
     def apply_simple_upscale(self):
         path = self.cfg("new_img_path", str)
-        self.selection_image.save(path, "PNG", 0)
+        save_img(self.selection_image, path)
 
         response = self.client.post_upscale(path)
         assert response is not None, "Backend Error, check terminal"
@@ -240,7 +225,6 @@ class Script(QObject):
 
     def create_mask_layer_workaround(self):
         if self.cfg("create_mask_layer", bool):
-            # TODO: this needn't be a config option, can be hardcoded global
             QTimer.singleShot(
                 ADD_MASK_TIMEOUT,
                 lambda: self.create_mask_layer_internal(),

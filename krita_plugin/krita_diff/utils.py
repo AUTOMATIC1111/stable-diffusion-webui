@@ -1,7 +1,9 @@
 from math import ceil
 
+from krita import Document, QByteArray, QImage
 
-def fix_prompt(prompt):
+
+def fix_prompt(prompt: str):
     """Multiline tokens -> comma-separated tokens. Replace empty prompts with None."""
     joined = ", ".join(filter(bool, [x.strip() for x in prompt.splitlines()]))
     return joined if joined != "" else None
@@ -106,8 +108,22 @@ def find_optimal_selection_region(
     return best_x, best_y, best_width, best_height
 
 
-def create_layer(doc, name):
+def create_layer(doc: Document, name: str):
+    """Create new layer in document"""
     root = doc.rootNode()
     layer = doc.createNode(name, "paintLayer")
     root.addChildNode(layer, None)
     return layer
+
+
+def save_img(img: QImage, path: str):
+    """Expects QImage"""
+    # png is lossless; setting compression to max (0) won't affect quality
+    img.save(path, "PNG", 0)
+
+
+def img_to_ba(img: QImage):
+    """Converts QImage to QByteArray"""
+    ptr = img.bits()
+    ptr.setsize(img.byteCount())
+    return QByteArray(ptr.asstring())

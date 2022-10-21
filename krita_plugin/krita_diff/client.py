@@ -42,6 +42,7 @@ class Client:
             self.handle_api_error(e)
 
     def get_common_params(self, has_selection):
+        """Parameters nearly all the post routes share."""
         tiling = self.cfg("sd_tiling", bool) and not (
             self.cfg("only_full_img_tiling", bool) and has_selection
         )
