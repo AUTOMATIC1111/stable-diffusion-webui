@@ -340,7 +340,6 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
         pbar.set_description(f"loss: {mean_loss:.7f}")
 
         if hypernetwork.step > 0 and hypernetwork_dir is not None and hypernetwork.step % save_hypernetwork_every == 0:
-            temp = hypernetwork.name
             # Before saving, change name to match current checkpoint.
             hypernetwork.name = f'{hypernetwork_name}-{hypernetwork.step}'
             last_saved_file = os.path.join(hypernetwork_dir, f'{hypernetwork.name}.pt')
