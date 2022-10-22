@@ -104,6 +104,12 @@ class StableDiffusionProcessing():
             self.seed_resize_from_h = 0
             self.seed_resize_from_w = 0
 
+        self.scripts = None
+        self.script_args = None
+        self.all_prompts = None
+        self.all_seeds = None
+        self.all_subseeds = None
+
 
     def init(self, all_prompts, all_seeds, all_subseeds):
         pass
@@ -350,32 +356,35 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
     shared.prompt_styles.apply_styles(p)
 
     if type(p.prompt) == list:
-        all_prompts = p.prompt
+        p.all_prompts = p.prompt
     else:
-        all_prompts = p.batch_size * p.n_iter * [p.prompt]
+        p.all_prompts = p.batch_size * p.n_iter * [p.prompt]
 
     if type(seed) == list:
-        all_seeds = seed
+        p.all_seeds = seed
     else:
-        all_seeds = [int(seed) + (x if p.subseed_strength == 0 else 0) for x in range(len(all_prompts))]
+        p.all_seeds = [int(seed) + (x if p.subseed_strength == 0 else 0) for x in range(len(p.all_prompts))]
 
     if type(subseed) == list:
-        all_subseeds = subseed
+        p.all_subseeds = subseed
     else:
-        all_subseeds = [int(subseed) + x for x in range(len(all_prompts))]
+        p.all_subseeds = [int(subseed) + x for x in range(len(p.all_prompts))]
 
     def infotext(iteration=0, position_in_batch=0):
-        return create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration, position_in_batch)
+        return create_infotext(p, p.all_prompts, p.all_seeds, p.all_subseeds, comments, iteration, position_in_batch)
 
     if os.path.exists(cmd_opts.embeddings_dir) and not p.do_not_reload_embeddings:
         model_hijack.embedding_db.load_textual_inversion_embeddings()
+
+    if p.scripts is not None:
+        p.scripts.run_alwayson_scripts(p)
 
     infotexts = []
     output_images = []
 
     with torch.no_grad(), p.sd_model.ema_scope():
         with devices.autocast():
-            p.init(all_prompts, all_seeds, all_subseeds)
+            p.init(p.all_prompts, p.all_seeds, p.all_subseeds)
 
         if state.job_count == -1:
             state.job_count = p.n_iter
@@ -387,9 +396,9 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             if state.interrupted:
                 break
 
-            prompts = all_prompts[n * p.batch_size:(n + 1) * p.batch_size]
-            seeds = all_seeds[n * p.batch_size:(n + 1) * p.batch_size]
-            subseeds = all_subseeds[n * p.batch_size:(n + 1) * p.batch_size]
+            prompts = p.all_prompts[n * p.batch_size:(n + 1) * p.batch_size]
+            seeds = p.all_seeds[n * p.batch_size:(n + 1) * p.batch_size]
+            subseeds = p.all_subseeds[n * p.batch_size:(n + 1) * p.batch_size]
 
             if (len(prompts) == 0):
                 break
@@ -490,10 +499,10 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
                 index_of_first_image = 1
 
             if opts.grid_save:
-                images.save_image(grid, p.outpath_grids, "grid", all_seeds[0], all_prompts[0], opts.grid_format, info=infotext(), short_filename=not opts.grid_extended_filename, p=p, grid=True)
+                images.save_image(grid, p.outpath_grids, "grid", p.all_seeds[0], p.all_prompts[0], opts.grid_format, info=infotext(), short_filename=not opts.grid_extended_filename, p=p, grid=True)
 
     devices.torch_gc()
-    return Processed(p, output_images, all_seeds[0], infotext() + "".join(["\n\n" + x for x in comments]), subseed=all_subseeds[0], all_prompts=all_prompts, all_seeds=all_seeds, all_subseeds=all_subseeds, index_of_first_image=index_of_first_image, infotexts=infotexts)
+    return Processed(p, output_images, p.all_seeds[0], infotext() + "".join(["\n\n" + x for x in comments]), subseed=p.all_subseeds[0], all_prompts=p.all_prompts, all_seeds=p.all_seeds, all_subseeds=p.all_subseeds, index_of_first_image=index_of_first_image, infotexts=infotexts)
 
 
 class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):

@@ -477,7 +477,7 @@ input[type="range"]{
     padding: 0;
 }
 
-#refresh_sd_model_checkpoint, #refresh_sd_hypernetwork, #refresh_train_hypernetwork_name, #refresh_train_embedding_name, #refresh_localization, #refresh_aesthetic_embeddings{
+#refresh_sd_model_checkpoint, #refresh_sd_hypernetwork, #refresh_train_hypernetwork_name, #refresh_train_embedding_name, #refresh_localization{
     max-width: 2.5em;
     min-width: 2.5em;
     height: 2.4em;

@@ -31,7 +31,6 @@ parser.add_argument("--no-half-vae", action='store_true', help="do not switch th
 parser.add_argument("--no-progressbar-hiding", action='store_true', help="do not hide progressbar in gradio UI (we hide it because it slows down ML if you have hardware acceleration in browser)")
 parser.add_argument("--max-batch-count", type=int, default=16, help="maximum batch count value for the UI")
 parser.add_argument("--embeddings-dir", type=str, default=os.path.join(script_path, 'embeddings'), help="embeddings directory for textual inversion (default: embeddings)")
-parser.add_argument("--aesthetic_embeddings-dir", type=str, default=os.path.join(models_path, 'aesthetic_embeddings'), help="aesthetic_embeddings directory(default: aesthetic_embeddings)")
 parser.add_argument("--hypernetwork-dir", type=str, default=os.path.join(models_path, 'hypernetworks'), help="hypernetwork directory")
 parser.add_argument("--localizations-dir", type=str, default=os.path.join(script_path, 'localizations'), help="localizations directory")
 parser.add_argument("--allow-code", action='store_true', help="allow custom script execution from webui")
@@ -81,6 +80,7 @@ parser.add_argument("--disable-safe-unpickle", action='store_true', help="disabl
 parser.add_argument("--api", action='store_true', help="use api=True to launch the api with the webui")
 parser.add_argument("--nowebui", action='store_true', help="use api=True to launch the api instead of the webui")
 parser.add_argument("--device-id", type=str, help="Select the default CUDA device to use (export CUDA_VISIBLE_DEVICES=0,1,etc might be needed before)", default=None)
+parser.add_argument("--browse-all-images", action='store_true', help="Allow browsing all images by Image Browser", default=False)
 
 cmd_opts = parser.parse_args()
 restricted_opts = [
@@ -108,21 +108,6 @@ config_filename = cmd_opts.ui_settings_file
 os.makedirs(cmd_opts.hypernetwork_dir, exist_ok=True)
 hypernetworks = hypernetwork.list_hypernetworks(cmd_opts.hypernetwork_dir)
 loaded_hypernetwork = None
-
-
-os.makedirs(cmd_opts.aesthetic_embeddings_dir, exist_ok=True)
-aesthetic_embeddings = {}
-
-
-def update_aesthetic_embeddings():
-    global aesthetic_embeddings
-    aesthetic_embeddings = {f.replace(".pt", ""): os.path.join(cmd_opts.aesthetic_embeddings_dir, f) for f in
-                            os.listdir(cmd_opts.aesthetic_embeddings_dir) if f.endswith(".pt")}
-    aesthetic_embeddings = OrderedDict(**{"None": None}, **aesthetic_embeddings)
-
-
-update_aesthetic_embeddings()
-
 
 def reload_hypernetworks():
     global hypernetworks
@@ -333,6 +318,14 @@ options_templates.update(options_section(('sampler-params', "Sampler parameters"
     'eta_noise_seed_delta': OptionInfo(0, "Eta noise seed delta", gr.Number, {"precision": 0}),
 }))
 
+options_templates.update(options_section(('images-history', "Images Browser"), {
+    #"images_history_reconstruct_directory": OptionInfo(False, "Reconstruct output directory structure.This can greatly improve the speed of loading , but will change the original output directory structure"),
+    "images_history_preload": OptionInfo(False, "Preload images at startup"),
+    "images_history_num_per_page": OptionInfo(36, "Number of pictures displayed on each page"),
+    "images_history_pages_num": OptionInfo(6, "Minimum number of pages per load "),   
+    "images_history_grid_num": OptionInfo(6, "Number of grids in each row"),   
+
+}))
 
 class Options:
     data = None
@@ -406,9 +399,6 @@ sd_upscalers = []
 sd_model = None
 
 clip_model = None
-
-from modules.aesthetic_clip import AestheticCLIP
-aesthetic_clip = AestheticCLIP()
 
 progress_print_out = sys.stdout
 
