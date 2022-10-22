@@ -48,6 +48,6 @@ def on_ui_tabs(callback):
 
 
 def on_ui_settings(callback):
-    """register a function to be called before UI  settingsare populated; add your settings
+    """register a function to be called before UI settings are populated; add your settings
     by using shared.opts.add_option(shared.OptionInfo(...)) """
     callbacks_ui_settings.append(callback)
