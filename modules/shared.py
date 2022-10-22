@@ -3,6 +3,7 @@ import datetime
 import json
 import os
 import sys
+from collections import OrderedDict
 
 import gradio as gr
 import tqdm
@@ -78,6 +79,8 @@ parser.add_argument('--vae-path', type=str, help='Path to Variational Autoencode
 parser.add_argument("--disable-safe-unpickle", action='store_true', help="disable checking pytorch models for malicious code", default=False)
 parser.add_argument("--api", action='store_true', help="use api=True to launch the api with the webui")
 parser.add_argument("--nowebui", action='store_true', help="use api=True to launch the api instead of the webui")
+parser.add_argument("--device-id", type=str, help="Select the default CUDA device to use (export CUDA_VISIBLE_DEVICES=0,1,etc might be needed before)", default=None)
+parser.add_argument("--browse-all-images", action='store_true', help="Allow browsing all images by Image Browser", default=False)
 
 cmd_opts = parser.parse_args()
 restricted_opts = [
@@ -249,7 +252,7 @@ options_templates.update(options_section(('system', "System"), {
 }))
 
 options_templates.update(options_section(('training', "Training"), {
-    "unload_models_when_training": OptionInfo(False, "Unload VAE and CLIP from VRAM when training"),
+    "unload_models_when_training": OptionInfo(False, "Move VAE and CLIP to RAM when training hypernetwork. Saves VRAM."),
     "dataset_filename_word_regex": OptionInfo("", "Filename word regex"),
     "dataset_filename_join_string": OptionInfo(" ", "Filename join string"),
     "training_image_repeats_per_epoch": OptionInfo(1, "Number of repeats for a single input image per epoch; used only for displaying epoch number", gr.Number, {"precision": 0}),
@@ -315,6 +318,14 @@ options_templates.update(options_section(('sampler-params', "Sampler parameters"
     'eta_noise_seed_delta': OptionInfo(0, "Eta noise seed delta", gr.Number, {"precision": 0}),
 }))
 
+options_templates.update(options_section(('images-history', "Images Browser"), {
+    #"images_history_reconstruct_directory": OptionInfo(False, "Reconstruct output directory structure.This can greatly improve the speed of loading , but will change the original output directory structure"),
+    "images_history_preload": OptionInfo(False, "Preload images at startup"),
+    "images_history_num_per_page": OptionInfo(36, "Number of pictures displayed on each page"),
+    "images_history_pages_num": OptionInfo(6, "Minimum number of pages per load "),   
+    "images_history_grid_num": OptionInfo(6, "Number of grids in each row"),   
+
+}))
 
 class Options:
     data = None
@@ -386,6 +397,8 @@ if os.path.exists(config_filename):
 sd_upscalers = []
 
 sd_model = None
+
+clip_model = None
 
 progress_print_out = sys.stdout
 

@@ -41,12 +41,12 @@ class HypernetworkModule(torch.nn.Module):
             linears.append(torch.nn.Linear(int(dim * layer_structure[i]), int(dim * layer_structure[i+1])))
 
             # Add an activation func
-            if activation_func == "linear":
+            if activation_func == "linear" or activation_func is None:
                 pass
             elif activation_func in self.activation_dict:
                 linears.append(self.activation_dict[activation_func]())
             else:
-                raise NotImplementedError(
+                raise RuntimeError(
                     "Valid activation funcs: 'linear', 'relu', 'leakyrelu', 'elu', 'swish'"
                 )
 
@@ -65,7 +65,7 @@ class HypernetworkModule(torch.nn.Module):
             self.load_state_dict(state_dict)
         else:
             for layer in self.linear:
-                if isinstance(layer, torch.nn.Linear):
+                if type(layer) == torch.nn.Linear or type(layer) == torch.nn.LayerNorm:
                     layer.weight.data.normal_(mean=0.0, std=0.01)
                     layer.bias.data.zero_()
 
@@ -93,7 +93,7 @@ class HypernetworkModule(torch.nn.Module):
     def trainables(self):
         layer_structure = []
         for layer in self.linear:
-            if isinstance(layer, torch.nn.Linear):
+            if type(layer) == torch.nn.Linear or type(layer) == torch.nn.LayerNorm:
                 layer_structure += [layer.weight, layer.bias]
         return layer_structure
 
@@ -272,6 +272,9 @@ def stack_conds(conds):
 
 
 def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log_directory, training_width, training_height, steps, create_image_every, save_hypernetwork_every, template_file, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height):
+    # images allows training previews to have infotext. Importing it at the top causes a circular import problem.
+    from modules import images
+
     assert hypernetwork_name, 'hypernetwork not selected'
 
     path = shared.hypernetworks.get(hypernetwork_name, None)
@@ -314,6 +317,7 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
 
     last_saved_file = "<none>"
     last_saved_image = "<none>"
+    forced_filename = "<none>"
 
     ititial_step = hypernetwork.step or 0
     if ititial_step > steps:
@@ -353,7 +357,9 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
         pbar.set_description(f"loss: {mean_loss:.7f}")
 
         if hypernetwork.step > 0 and hypernetwork_dir is not None and hypernetwork.step % save_hypernetwork_every == 0:
-            last_saved_file = os.path.join(hypernetwork_dir, f'{hypernetwork_name}-{hypernetwork.step}.pt')
+            # Before saving, change name to match current checkpoint.
+            hypernetwork.name = f'{hypernetwork_name}-{hypernetwork.step}'
+            last_saved_file = os.path.join(hypernetwork_dir, f'{hypernetwork.name}.pt')
             hypernetwork.save(last_saved_file)
 
         textual_inversion.write_loss(log_directory, "hypernetwork_loss.csv", hypernetwork.step, len(ds), {
@@ -362,7 +368,8 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
         })
 
         if hypernetwork.step > 0 and images_dir is not None and hypernetwork.step % create_image_every == 0:
-            last_saved_image = os.path.join(images_dir, f'{hypernetwork_name}-{hypernetwork.step}.png')
+            forced_filename = f'{hypernetwork_name}-{hypernetwork.step}'
+            last_saved_image = os.path.join(images_dir, forced_filename)
 
             optimizer.zero_grad()
             shared.sd_model.cond_stage_model.to(devices.device)
@@ -398,7 +405,7 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
 
             if image is not None:
                 shared.state.current_image = image
-                image.save(last_saved_image)
+                last_saved_image, last_text_info = images.save_image(image, images_dir, "", p.seed, p.prompt, shared.opts.samples_format, processed.infotexts[0], p=p, forced_filename=forced_filename)
                 last_saved_image += f", prompt: {preview_text}"
 
         shared.state.job_no = hypernetwork.step
@@ -408,7 +415,7 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
 Loss: {mean_loss:.7f}<br/>
 Step: {hypernetwork.step}<br/>
 Last prompt: {html.escape(entries[0].cond_text)}<br/>
-Last saved embedding: {html.escape(last_saved_file)}<br/>
+Last saved hypernetwork: {html.escape(last_saved_file)}<br/>
 Last saved image: {html.escape(last_saved_image)}<br/>
 </p>
 """
@@ -417,6 +424,9 @@ Last saved image: {html.escape(last_saved_image)}<br/>
 
     hypernetwork.sd_checkpoint = checkpoint.hash
     hypernetwork.sd_checkpoint_name = checkpoint.model_name
+    # Before saving for the last time, change name back to the base name (as opposed to the save_hypernetwork_every step-suffixed naming convention).
+    hypernetwork.name = hypernetwork_name
+    filename = os.path.join(shared.cmd_opts.hypernetwork_dir, f'{hypernetwork.name}.pt')
     hypernetwork.save(filename)
 
     return hypernetwork, filename
