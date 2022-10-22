@@ -310,7 +310,7 @@ def show_images_history(gr, opts, tabname, run_pnginfo, switch_dict):
                         forward = gr.Button('Prev batch')
                         backward = gr.Button('Next batch')
                 with gr.Column(scale=3):
-                    load_info =  gr.HTML(visible=not custom_dir)   
+                    load_info =     gr.HTML(visible=not custom_dir)
             with gr.Row(visible=False) as warning:                 
                 warning_box = gr.Textbox("Message", interactive=False)                        
 
