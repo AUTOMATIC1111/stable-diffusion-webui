@@ -72,6 +72,10 @@ class Api:
         if init_images is None:
             raise HTTPException(status_code=404, detail="Init image not found") 
 
+        mask = img2imgreq.mask
+        if mask:
+            raise HTTPException(status_code=400, detail="Mask not supported yet") 
+
         
         populate = img2imgreq.copy(update={ # Override __init__ params
             "sd_model": shared.sd_model, 
