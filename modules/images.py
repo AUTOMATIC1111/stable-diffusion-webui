@@ -386,18 +386,6 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
         txt_fullfn (`str` or None):
             If a text file is saved for this image, this will be its full path. Otherwise None.
     '''
-    if short_filename or prompt is None or seed is None:
-        file_decoration = ""
-    elif opts.save_to_dirs:
-        file_decoration = opts.samples_filename_pattern or "[seed]"
-    else:
-        file_decoration = opts.samples_filename_pattern or "[seed]-[prompt_spaces]"
-
-    if file_decoration != "":
-        file_decoration = "-" + file_decoration.lower()
-
-    file_decoration = apply_filename_pattern(file_decoration, p, seed, prompt) + suffix
-
     if extension == 'png' and opts.enable_pnginfo and info is not None:
         pnginfo = PngImagePlugin.PngInfo()
 
@@ -419,6 +407,18 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     os.makedirs(path, exist_ok=True)
 
     if forced_filename is None:
+        if short_filename or prompt is None or seed is None:
+            file_decoration = ""
+        elif opts.save_to_dirs:
+            file_decoration = opts.samples_filename_pattern or "[seed]"
+        else:
+            file_decoration = opts.samples_filename_pattern or "[seed]-[prompt_spaces]"
+
+        if file_decoration != "":
+            file_decoration = "-" + file_decoration.lower()
+
+        file_decoration = apply_filename_pattern(file_decoration, p, seed, prompt) + suffix
+
         basecount = get_next_sequence_number(path, basename)
         fullfn = "a.png"
         fullfn_without_extension = "a"
