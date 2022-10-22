@@ -162,12 +162,13 @@ function selected_tab_id() {
 
 }
 
-function clear_prompt(_, _prompt_neg, confirmed,_steps) {
+function clear_prompt(_, _prompt_neg, confirmed, _token_counter) {
+confirmed = false
 
 if(confirm("Delete prompt?")) {
     confirmed = true
 } else {
-return [_, confirmed]
+return [_, _prompt_neg, confirmed, _token_counter]
 }
 
     if(selected_tab_id() == "tab_txt2img") {
@@ -176,7 +177,7 @@ return [_, confirmed]
         update_token_counter("txt2img_token_button")
     }
 
-    return [_, _prompt_neg, confirmed,_steps]
+    return [_, _prompt_neg, confirmed, _token_counter]
 }
 
 
