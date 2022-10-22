@@ -136,7 +136,7 @@ class State:
     job = ""
     job_no = 0
     job_count = 0
-    job_timestamp = '0'
+    job_time = datetime.datetime.now()
     sampling_step = 0
     sampling_steps = 0
     current_latent = None
@@ -155,8 +155,13 @@ class State:
         self.sampling_step = 0
         self.current_image_sampling_step = 0
 
-    def get_job_timestamp(self):
-        return datetime.datetime.now().strftime("%Y%m%d%H%M%S")  # shouldn't this return job_timestamp?
+    @property
+    def job_timestamp(self):
+        return self.job_time.strftime("%Y%m%d%H%M%S")
+
+    @property
+    def job_unixtime(self):
+        return self.job_time.timestamp()
 
 
 state = State()

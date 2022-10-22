@@ -301,9 +301,17 @@ def apply_filename_pattern(x, p, seed, prompt):
         x = x.replace("[sampler]", sanitize_filename_part(sd_samplers.samplers[p.sampler_index].name, replace_spaces=False))
 
     x = x.replace("[model_hash]", getattr(p, "sd_model_hash", shared.sd_model.sd_model_hash))
-    x = x.replace("[date]", datetime.date.today().isoformat())
-    x = x.replace("[datetime]", datetime.datetime.now().strftime("%Y%m%d%H%M%S"))
+
+    # provide consistent current time request to smallest details
+    ctime = datetime.datetime.now()
+    cdate = ctime.date()
+
+    x = x.replace("[date]", cdate.isoformat())
+    x = x.replace("[datetime]", ctime.strftime("%Y%m%d%H%M%S"))
     x = x.replace("[job_timestamp]", getattr(p, "job_timestamp", shared.state.job_timestamp))
+
+    x = x.replace("[unixtime]", str(int(ctime.timestamp())))
+    x = x.replace("[job_unixtime]", str(int(getattr(p, "job_unixtime", shared.state.job_unixtime))))
 
     # Apply [prompt] at last. Because it may contain any replacement word.^M
     if prompt is not None:

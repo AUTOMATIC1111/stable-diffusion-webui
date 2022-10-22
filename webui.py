@@ -1,5 +1,6 @@
 import os
 import threading
+import datetime
 import time
 import importlib
 import signal
@@ -51,7 +52,7 @@ def wrap_gradio_gpu_call(func, extra_outputs=None):
         shared.state.sampling_step = 0
         shared.state.job_count = -1
         shared.state.job_no = 0
-        shared.state.job_timestamp = shared.state.get_job_timestamp()
+        shared.state.job_time = datetime.datetime.now()
         shared.state.current_latent = None
         shared.state.current_image = None
         shared.state.current_image_sampling_step = 0

@@ -137,6 +137,7 @@ class Processed:
         self.extra_generation_params = p.extra_generation_params
         self.index_of_first_image = index_of_first_image
         self.styles = p.styles
+        self.job_unixtime = state.job_unixtime
         self.job_timestamp = state.job_timestamp
         self.clip_skip = opts.CLIP_stop_at_last_layers
 
@@ -185,6 +186,7 @@ class Processed:
             "infotexts": self.infotexts,
             "styles": self.styles,
             "job_timestamp": self.job_timestamp,
+            "job_unixtime": self.job_unixtime,
             "clip_skip": self.clip_skip,
         }
 
