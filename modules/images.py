@@ -1,4 +1,5 @@
 import datetime
+import pytz
 import io
 import math
 import os
@@ -302,7 +303,7 @@ def apply_filename_pattern(x, p, seed, prompt):
 
     x = x.replace("[model_hash]", getattr(p, "sd_model_hash", shared.sd_model.sd_model_hash))
     x = x.replace("[date]", datetime.date.today().isoformat())
-    x = x.replace("[datetime]", datetime.datetime.now().strftime("%Y%m%d%H%M%S"))
+    x = replace_datetime(x)
     x = x.replace("[job_timestamp]", getattr(p, "job_timestamp", shared.state.job_timestamp))
 
     # Apply [prompt] at last. Because it may contain any replacement word.^M
@@ -351,6 +352,57 @@ def get_next_sequence_number(path, basename):
                 pass
 
     return result + 1
+
+
+def replace_datetime(input_str: str):
+    """
+    Formats sub_string of input_str with formatted datetime with time zone support.
+    accepts sub_string format: [datetime], [datetime<Format>], [datetime<Format><Time Zone>]
+    case insensitive
+
+    e.g.
+    input: "___[Datetime<%Y_%m_%d %H-%M-%S><Asia/Tokyo>]___"
+    return: "___2022_10_22 20-40-14___"
+
+    handles invalid Formats and Time Zones
+
+    time format reference:
+    https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes
+
+    valid time zones
+    print(pytz.all_timezones)
+    https://pytz.sourceforge.net/
+    """
+    default_time_format = '%Y%m%d%H%M%S'
+    time_now = datetime.datetime.now()
+
+    # match all datetime to be replace
+    match_itr = re.finditer(r'\[datetime(?:<([^>]*)>(?:<([^>]*)>)?)?]', input_str, re.IGNORECASE)
+    for match in reversed(list(match_itr)):
+        # extract format
+        time_format = match.group(1)
+        if time_format == '':
+            # if time_format is blank use default YYYYMMDDHHMMSS
+            time_format = default_time_format
+
+        # extract timezone
+        try:
+            time_zone = pytz.timezone(match.group(2))
+        except pytz.exceptions.UnknownTimeZoneError as _:
+            # if no time_zone or invalid, use system time
+            time_zone = None
+
+        # generate time string
+        time_zone_time = time_now.astimezone(time_zone)
+        try:
+            formatted_time = time_zone_time.strftime(time_format)
+
+        except (ValueError, TypeError) as _:
+            # if format error then use default_time_format
+            formatted_time = time_zone_time.strftime(default_time_format)
+
+        input_str = input_str[:match.start()] + formatted_time + input_str[match.end():]
+    return input_str
 
 
 def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None, forced_filename=None, suffix="", save_to_dirs=None):
