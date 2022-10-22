@@ -360,7 +360,7 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
     pbar = tqdm.tqdm(enumerate(ds), total=steps - ititial_step)
     for i, entries in pbar:
         hypernetwork.step = i + ititial_step
-        if loss_dict and i % size == 0:
+        if len(loss_dict) > 0:
             previous_mean_loss = sum(i[-1] for i in loss_dict.values()) / len(loss_dict)
             
         scheduler.apply(optimizer, hypernetwork.step)
