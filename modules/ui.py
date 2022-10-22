@@ -23,10 +23,10 @@ import gradio as gr
 import gradio.utils
 import gradio.routes
 
-from modules import sd_hijack, sd_models, localization
+from modules import sd_hijack, sd_models, localization, script_callbacks
 from modules.paths import script_path
 
-from modules.shared import opts, cmd_opts, restricted_opts, aesthetic_embeddings
+from modules.shared import opts, cmd_opts, restricted_opts
 
 if cmd_opts.deepdanbooru:
     from modules.deepbooru import get_deepbooru_tags
@@ -44,7 +44,6 @@ from modules.images import save_image
 import modules.textual_inversion.ui
 import modules.hypernetworks.ui
 
-import modules.aesthetic_clip as aesthetic_clip
 import modules.images_history as img_his
 
 
@@ -662,8 +661,6 @@ def create_ui(wrap_gradio_gpu_call):
 
                 seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox = create_seed_inputs()
 
-                aesthetic_weight, aesthetic_steps, aesthetic_lr, aesthetic_slerp, aesthetic_imgs, aesthetic_imgs_text, aesthetic_slerp_angle, aesthetic_text_negative = aesthetic_clip.create_ui()
-
                 with gr.Group():
                     custom_inputs = modules.scripts.scripts_txt2img.setup_ui(is_img2img=False)
 
@@ -718,14 +715,6 @@ def create_ui(wrap_gradio_gpu_call):
                     denoising_strength,
                     firstphase_width,
                     firstphase_height,
-                    aesthetic_lr,
-                    aesthetic_weight,
-                    aesthetic_steps,
-                    aesthetic_imgs,
-                    aesthetic_slerp,
-                    aesthetic_imgs_text,
-                    aesthetic_slerp_angle,
-                    aesthetic_text_negative
                 ] + custom_inputs,
 
                 outputs=[
@@ -804,14 +793,7 @@ def create_ui(wrap_gradio_gpu_call):
                 (hr_options, lambda d: gr.Row.update(visible="Denoising strength" in d)),
                 (firstphase_width, "First pass size-1"),
                 (firstphase_height, "First pass size-2"),
-                (aesthetic_lr, "Aesthetic LR"),
-                (aesthetic_weight, "Aesthetic weight"),
-                (aesthetic_steps, "Aesthetic steps"),
-                (aesthetic_imgs, "Aesthetic embedding"),
-                (aesthetic_slerp, "Aesthetic slerp"),
-                (aesthetic_imgs_text, "Aesthetic text"),
-                (aesthetic_text_negative, "Aesthetic text negative"),
-                (aesthetic_slerp_angle, "Aesthetic slerp angle"),
+                *modules.scripts.scripts_txt2img.infotext_fields
             ]
 
             txt2img_preview_params = [
@@ -895,8 +877,6 @@ def create_ui(wrap_gradio_gpu_call):
                     denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.75)
 
                 seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox = create_seed_inputs()
-
-                aesthetic_weight_im, aesthetic_steps_im, aesthetic_lr_im, aesthetic_slerp_im, aesthetic_imgs_im, aesthetic_imgs_text_im, aesthetic_slerp_angle_im, aesthetic_text_negative_im = aesthetic_clip.create_ui()
 
                 with gr.Group():
                     custom_inputs = modules.scripts.scripts_img2img.setup_ui(is_img2img=True)
@@ -988,14 +968,6 @@ def create_ui(wrap_gradio_gpu_call):
                     inpainting_mask_invert,
                     img2img_batch_input_dir,
                     img2img_batch_output_dir,
-                    aesthetic_lr_im,
-                    aesthetic_weight_im,
-                    aesthetic_steps_im,
-                    aesthetic_imgs_im,
-                    aesthetic_slerp_im,
-                    aesthetic_imgs_text_im,
-                    aesthetic_slerp_angle_im,
-                    aesthetic_text_negative_im,
                 ] + custom_inputs,
                 outputs=[
                     img2img_gallery,
@@ -1087,14 +1059,7 @@ def create_ui(wrap_gradio_gpu_call):
                 (seed_resize_from_w, "Seed resize from-1"),
                 (seed_resize_from_h, "Seed resize from-2"),
                 (denoising_strength, "Denoising strength"),
-                (aesthetic_lr_im, "Aesthetic LR"),
-                (aesthetic_weight_im, "Aesthetic weight"),
-                (aesthetic_steps_im, "Aesthetic steps"),
-                (aesthetic_imgs_im, "Aesthetic embedding"),
-                (aesthetic_slerp_im, "Aesthetic slerp"),
-                (aesthetic_imgs_text_im, "Aesthetic text"),
-                (aesthetic_text_negative_im, "Aesthetic text negative"),
-                (aesthetic_slerp_angle_im, "Aesthetic slerp angle"),
+                *modules.scripts.scripts_img2img.infotext_fields
             ]
             token_button.click(fn=update_token_counter, inputs=[img2img_prompt, steps], outputs=[token_counter])
 
@@ -1217,12 +1182,12 @@ def create_ui(wrap_gradio_gpu_call):
         )
     #images history
     images_history_switch_dict = {
-        "fn":modules.generation_parameters_copypaste.connect_paste,
-        "t2i":txt2img_paste_fields,
-        "i2i":img2img_paste_fields
+        "fn": modules.generation_parameters_copypaste.connect_paste,
+        "t2i": txt2img_paste_fields,
+        "i2i": img2img_paste_fields
     }
 
-    images_history = img_his.create_history_tabs(gr, opts, wrap_gradio_call(modules.extras.run_pnginfo), images_history_switch_dict)
+    images_history = img_his.create_history_tabs(gr, opts, cmd_opts, wrap_gradio_call(modules.extras.run_pnginfo), images_history_switch_dict)
 
     with gr.Blocks() as modelmerger_interface:
         with gr.Row().style(equal_height=False):
@@ -1263,18 +1228,6 @@ def create_ui(wrap_gradio_gpu_call):
 
                         with gr.Column():
                             create_embedding = gr.Button(value="Create embedding", variant='primary')
-
-                with gr.Tab(label="Create aesthetic images embedding"):
-
-                    new_embedding_name_ae = gr.Textbox(label="Name")
-                    process_src_ae = gr.Textbox(label='Source directory')
-                    batch_ae = gr.Slider(minimum=1, maximum=1024, step=1, label="Batch size", value=256)
-                    with gr.Row():
-                        with gr.Column(scale=3):
-                            gr.HTML(value="")
-
-                        with gr.Column():
-                            create_embedding_ae = gr.Button(value="Create images embedding", variant='primary')
 
                 with gr.Tab(label="Create hypernetwork"):
                     new_hypernetwork_name = gr.Textbox(label="Name")
@@ -1370,21 +1323,6 @@ def create_ui(wrap_gradio_gpu_call):
             ],
             outputs=[
                 train_embedding_name,
-                ti_output,
-                ti_outcome,
-            ]
-        )
-
-        create_embedding_ae.click(
-            fn=aesthetic_clip.generate_imgs_embd,
-            inputs=[
-                new_embedding_name_ae,
-                process_src_ae,
-                batch_ae
-            ],
-            outputs=[
-                aesthetic_imgs,
-                aesthetic_imgs_im,
                 ti_output,
                 ti_outcome,
             ]
@@ -1580,10 +1518,10 @@ Requested path was: {f}
         if not opts.same_type(value, opts.data_labels[key].default):
             return gr.update(visible=True), opts.dumpjson()
 
+        oldval = opts.data.get(key, None)
         if cmd_opts.hide_ui_dir_config and key in restricted_opts:
             return gr.update(value=oldval), opts.dumpjson()
 
-        oldval = opts.data.get(key, None)
         opts.data[key] = value
 
         if oldval != value:
@@ -1689,19 +1627,24 @@ Requested path was: {f}
         (img2img_interface, "img2img", "img2img"),
         (extras_interface, "Extras", "extras"),
         (pnginfo_interface, "PNG Info", "pnginfo"),
-        (images_history, "History", "images_history"),
+        (images_history, "Image Browser", "images_history"),
         (modelmerger_interface, "Checkpoint Merger", "modelmerger"),
         (train_interface, "Train", "ti"),
-        (settings_interface, "Settings", "settings"),
     ]
 
-    with open(os.path.join(script_path, "style.css"), "r", encoding="utf8") as file:
-        css = file.read()
+    interfaces += script_callbacks.ui_tabs_callback()
+
+    interfaces += [(settings_interface, "Settings", "settings")]
+
+    css = ""
+
+    for cssfile in modules.scripts.list_files_with_name("style.css"):
+        with open(cssfile, "r", encoding="utf8") as file:
+            css += file.read() + "\n"
 
     if os.path.exists(os.path.join(script_path, "user.css")):
         with open(os.path.join(script_path, "user.css"), "r", encoding="utf8") as file:
-            usercss = file.read()
-            css += usercss
+            css += file.read() + "\n"
 
     if not cmd_opts.no_progressbar_hiding:
         css += css_hide_progressbar
@@ -1924,9 +1867,9 @@ def load_javascript(raw_response):
     with open(os.path.join(script_path, "script.js"), "r", encoding="utf8") as jsfile:
         javascript = f'<script>{jsfile.read()}</script>'
 
-    jsdir = os.path.join(script_path, "javascript")
-    for filename in sorted(os.listdir(jsdir)):
-        with open(os.path.join(jsdir, filename), "r", encoding="utf8") as jsfile:
+    scripts_list = modules.scripts.list_scripts("javascript", ".js")
+    for basedir, filename, path in scripts_list:
+        with open(path, "r", encoding="utf8") as jsfile:
             javascript += f"\n<!-- {filename} --><script>{jsfile.read()}</script>"
 
     if cmd_opts.theme is not None:
@@ -1944,6 +1887,5 @@ def load_javascript(raw_response):
     gradio.routes.templates.TemplateResponse = template_response
 
 
-reload_javascript = partial(load_javascript,
-                            gradio.routes.templates.TemplateResponse)
+reload_javascript = partial(load_javascript, gradio.routes.templates.TemplateResponse)
 reload_javascript()
