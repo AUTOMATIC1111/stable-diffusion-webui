@@ -467,7 +467,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
             file_decoration = opts.samples_filename_pattern or "[seed]-[prompt_spaces]"
 
         if file_decoration != "":
-            file_decoration = "-" + file_decoration.lower()
+            file_decoration = "-" + file_decoration
 
         file_decoration = apply_filename_pattern(file_decoration, p, seed, prompt) + suffix
 
