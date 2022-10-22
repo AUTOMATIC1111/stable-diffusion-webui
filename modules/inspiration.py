@@ -160,12 +160,13 @@ def ui(gr, opts, txt2img_prompt, img2img_prompt):
                 with gr.Row():                     
                     send_to_txt2img = gr.Button('to txt2img')
                     send_to_img2img = gr.Button('to img2img')
-                style_gallery = gr.Gallery(show_label=False).style(grid=2, height='auto') 
-                warning = gr.HTML()
-                with gr.Row():
                     collect = gr.Button('Collect')     
                     give_up = gr.Button("Don't show again")
-                moveout = gr.Button("Move out", visible=False)
+                    moveout = gr.Button("Move out", visible=False)
+                warning = gr.HTML()
+                style_gallery = gr.Gallery(show_label=False).style(grid=2, height='auto') 
+                    
+               
                 
         with gr.Row(visible=False):
             select_button = gr.Button('set button', elem_id="inspiration_select_button")
