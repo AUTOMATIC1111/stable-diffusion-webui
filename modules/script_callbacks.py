@@ -1,6 +1,7 @@
 
 callbacks_model_loaded = []
 callbacks_ui_tabs = []
+callbacks_ui_settings = []
 
 
 def clear_callbacks():
@@ -22,6 +23,11 @@ def ui_tabs_callback():
     return res
 
 
+def ui_settings_callback():
+    for callback in callbacks_ui_settings:
+        callback()
+
+
 def on_model_loaded(callback):
     """register a function to be called when the stable diffusion model is created; the model is
     passed as an argument"""
@@ -40,3 +46,8 @@ def on_ui_tabs(callback):
     """
     callbacks_ui_tabs.append(callback)
 
+
+def on_ui_settings(callback):
+    """register a function to be called before UI  settingsare populated; add your settings
+    by using shared.opts.add_option(shared.OptionInfo(...)) """
+    callbacks_ui_settings.append(callback)

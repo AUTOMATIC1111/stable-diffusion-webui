@@ -1461,6 +1461,9 @@ def create_ui(wrap_gradio_gpu_call):
     components = []
     component_dict = {}
 
+    script_callbacks.ui_settings_callback()
+    opts.reorder()
+
     def open_folder(f):
         if not os.path.exists(f):
             print(f'Folder "{f}" does not exist. After you create an image, the folder will be created.')
@@ -1564,7 +1567,8 @@ Requested path was: {f}
 
                     previous_section = item.section
 
-                    gr.HTML(elem_id="settings_header_text_{}".format(item.section[0]), value='<h1 class="gr-button-lg">{}</h1>'.format(item.section[1]))
+                    elem_id, text = item.section
+                    gr.HTML(elem_id="settings_header_text_{}".format(elem_id), value='<h1 class="gr-button-lg">{}</h1>'.format(text))
 
                 if k in quicksettings_names:
                     quicksettings_list.append((i, k, item))
