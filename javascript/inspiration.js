@@ -1,5 +1,5 @@
 function public_image_index_in_gallery(item, gallery){
-    var imgs = gallery.querySelectorAll("img.h-full")
+    var imgs = gallery.querySelectorAll("img.h-full")    
     var index;
     var i = 0;
     imgs.forEach(function(e){
@@ -7,18 +7,23 @@ function public_image_index_in_gallery(item, gallery){
             index = i;
         i += 1;
     });
-    var num = imgs.length / 2
-    index = (index < num) ? index : (index - num)
+    var all_imgs = gallery.querySelectorAll("img")
+    if (all_imgs.length > imgs.length){
+        var num = imgs.length / 2
+        index = (index < num) ? index : (index - num)
+    }   
     return index;
 }
 
 function inspiration_selected(name, name_list){
     var btn = gradioApp().getElementById("inspiration_select_button")
     return [gradioApp().getElementById("inspiration_select_button").getAttribute("img-index")];
-}   
+}  
+
 function inspiration_click_get_button(){
     gradioApp().getElementById("inspiration_get_button").click();
 }  
+
 var inspiration_image_click = function(){
     var index =  public_image_index_in_gallery(this, gradioApp().getElementById("inspiration_gallery"));
     var btn = gradioApp().getElementById("inspiration_select_button");
@@ -32,16 +37,12 @@ document.addEventListener("DOMContentLoaded", function() {
         if (gallery) {
             var node = gallery.querySelector(".absolute.backdrop-blur.h-full")
             if (node) {
-                node.style.display = "None"; //parentNode.removeChild(node) 
+                node.style.display = "None";
             } 
             gallery.querySelectorAll('img').forEach(function(e){    
                 e.onclick = inspiration_image_click
             });
-
         }
-
-
     });
     mutationObserver.observe( gradioApp(), { childList:true, subtree:true });
-
 });
