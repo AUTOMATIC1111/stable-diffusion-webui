@@ -4,12 +4,21 @@ import gradio as gr
 from modules.shared import script_path
 from modules import shared
 
-re_param_code = r"\s*([\w ]+):\s*([^,]+)(?:,|$)"
+re_param_code = r'\s*([\w ]+):\s*("(?:\\|\"|[^\"])+"|[^,]*)(?:,|$)'
 re_param = re.compile(re_param_code)
 re_params = re.compile(r"^(?:" + re_param_code + "){3,}$")
 re_imagesize = re.compile(r"^(\d+)x(\d+)$")
 type_of_gr_update = type(gr.update())
 
+
+def quote(text):
+    if ',' not in str(text):
+        return text
+
+    text = str(text)
+    text = text.replace('\\', '\\\\')
+    text = text.replace('"', '\\"')
+    return f'"{text}"'
 
 def parse_generation_parameters(x: str):
     """parses generation parameters string, the one you see in text field under the picture in UI:
@@ -83,7 +92,12 @@ def connect_paste(button, paste_fields, input_comp, js=None):
             else:
                 try:
                     valtype = type(output.value)
-                    val = valtype(v)
+
+                    if valtype == bool and v == "False":
+                        val = False
+                    else:
+                        val = valtype(v)
+
                     res.append(gr.update(value=val))
                 except Exception:
                     res.append(gr.update())

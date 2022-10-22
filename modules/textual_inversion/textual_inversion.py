@@ -276,6 +276,7 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
             loss.backward()
             optimizer.step()
 
+
         epoch_num = embedding.step // len(ds)
         epoch_step = embedding.step - (epoch_num * len(ds)) + 1
 
