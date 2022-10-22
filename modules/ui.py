@@ -580,6 +580,9 @@ def apply_setting(key, value):
     if value is None:
         return gr.update()
 
+    if shared.cmd_opts.freeze_settings:
+        return gr.update()
+
     # dont allow model to be swapped when model hash exists in prompt
     if key == "sd_model_checkpoint" and opts.disable_weights_auto_swap:
         return gr.update()
@@ -1501,6 +1504,8 @@ Requested path was: {f}
     def run_settings(*args):
         changed = 0
 
+        assert not shared.cmd_opts.freeze_settings, "changing settings is disabled"
+
         for key, value, comp in zip(opts.data_labels.keys(), args, components):
             if comp != dummy_component and not opts.same_type(value, opts.data_labels[key].default):
                 return f"Bad value for setting {key}: {value}; expecting {type(opts.data_labels[key].default).__name__}", opts.dumpjson()
@@ -1530,6 +1535,8 @@ Requested path was: {f}
         return f'{changed} settings changed.', opts.dumpjson()
 
     def run_settings_single(value, key):
+        assert not shared.cmd_opts.freeze_settings, "changing settings is disabled"
+
         if not opts.same_type(value, opts.data_labels[key].default):
             return gr.update(visible=True), opts.dumpjson()
 
@@ -1582,7 +1589,7 @@ Requested path was: {f}
                     elem_id, text = item.section
                     gr.HTML(elem_id="settings_header_text_{}".format(elem_id), value='<h1 class="gr-button-lg">{}</h1>'.format(text))
 
-                if k in quicksettings_names:
+                if k in quicksettings_names and not shared.cmd_opts.freeze_settings:
                     quicksettings_list.append((i, k, item))
                     components.append(dummy_component)
                 else:
@@ -1615,7 +1622,7 @@ Requested path was: {f}
 
         def reload_scripts():
             modules.scripts.reload_script_body_only()
-            reload_javascript() # need to refresh the html page
+            reload_javascript()  # need to refresh the html page
 
         reload_script_bodies.click(
             fn=reload_scripts,

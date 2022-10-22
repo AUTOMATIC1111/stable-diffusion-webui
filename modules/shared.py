@@ -64,6 +64,7 @@ parser.add_argument("--port", type=int, help="launch gradio with given server po
 parser.add_argument("--show-negative-prompt", action='store_true', help="does not do anything", default=False)
 parser.add_argument("--ui-config-file", type=str, help="filename to use for ui configuration", default=os.path.join(script_path, 'ui-config.json'))
 parser.add_argument("--hide-ui-dir-config", action='store_true', help="hide directory configuration from webui", default=False)
+parser.add_argument("--freeze-settings", action='store_true', help="disable editing settings", default=False)
 parser.add_argument("--ui-settings-file", type=str, help="filename to use for ui settings", default=os.path.join(script_path, 'config.json'))
 parser.add_argument("--gradio-debug",  action='store_true', help="launch gradio with --debug option")
 parser.add_argument("--gradio-auth", type=str, help='set gradio authentication like "username:password"; or comma-delimit multiple like "u1:p1,u2:p2,u3:p3"', default=None)
