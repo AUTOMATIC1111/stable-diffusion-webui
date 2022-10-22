@@ -685,6 +685,9 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             self.color_corrections = []
         imgs = []
         for img in self.init_images:
+            if img is None:
+                continue
+
             image = img.convert("RGB")
 
             if crop_region is None:
@@ -712,7 +715,9 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
             imgs.append(image)
 
-        if len(imgs) == 1:
+        if len(imgs) == 0:
+            raise RuntimeError("image must be uploaded")
+        elif len(imgs) == 1:
             batch_images = np.expand_dims(imgs[0], axis=0).repeat(self.batch_size, axis=0)
             if self.overlay_images is not None:
                 self.overlay_images = self.overlay_images * self.batch_size
