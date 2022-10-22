@@ -1648,6 +1648,9 @@ Requested path was: {f}
     css = ""
 
     for cssfile in modules.scripts.list_files_with_name("style.css"):
+        if not os.path.isfile(cssfile):
+            continue
+
         with open(cssfile, "r", encoding="utf8") as file:
             css += file.read() + "\n"
 
