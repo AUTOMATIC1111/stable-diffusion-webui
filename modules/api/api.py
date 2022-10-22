@@ -4,17 +4,17 @@ from modules.sd_samplers import all_samplers
 import modules.shared as shared
 import uvicorn
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field, Json
 import json
 import io
 import base64
+from modules.api.models import *
 
 sampler_to_index = lambda name: next(filter(lambda row: name.lower() == row[1].name.lower(), enumerate(all_samplers)), None)
 
-class TextToImageResponse(BaseModel):
-    images: list[str] = Field(default=None, title="Image", description="The generated image in base64 format.")
-    parameters: Json
-    info: Json
+def img_to_base64(img):
+    buffer = io.BytesIO()
+    img.save(buffer, format="png")
+    return base64.b64encode(buffer.getvalue())
 
 class Api:
     def __init__(self, app, queue_lock):
@@ -41,14 +41,9 @@ class Api:
         with self.queue_lock:
             processed = process_images(p)
         
-        b64images = []
-        for i in processed.images:
-            buffer = io.BytesIO()
-            i.save(buffer, format="png")
-            b64images.append(base64.b64encode(buffer.getvalue()))
+        b64images = list(map(img_to_base64, processed.images))
 
         return TextToImageResponse(images=b64images, parameters=json.dumps(vars(txt2imgreq)), info=json.dumps(processed.info))
-        
         
 
     def img2imgapi(self):
