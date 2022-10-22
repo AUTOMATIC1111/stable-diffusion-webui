@@ -73,8 +73,11 @@ def get_inspiration_images(source, types, keyword):
     image_list = []
     for a in names:
         image_path = os.path.join(opts.inspiration_dir, a)
-        images = os.listdir(image_path)        
-        image_list.append((os.path.join(image_path, random.choice(images)), a))
+        images = os.listdir(image_path)
+        if len(images) > 0:        
+            image_list.append((os.path.join(image_path, random.choice(images)), a))
+        else:
+            print(image_path)
     return image_list, names
 
 def select_click(index, name_list):
