@@ -291,25 +291,24 @@ def apply_filename_pattern(x, p, seed, prompt):
     max_prompt_words = opts.directories_max_prompt_words
 
     if seed is not None:
-        x = x.replace("[seed]", str(seed))
+        x = re.sub(r'\[seed]', str(seed), x, flags=re.IGNORECASE)
 
     if p is not None:
-        x = x.replace("[steps]", str(p.steps))
-        x = x.replace("[cfg]", str(p.cfg_scale))
-        x = x.replace("[width]", str(p.width))
-        x = x.replace("[height]", str(p.height))
-        x = x.replace("[styles]", sanitize_filename_part(", ".join([x for x in p.styles if not x == "None"]) or "None", replace_spaces=False))
-        x = x.replace("[sampler]", sanitize_filename_part(sd_samplers.samplers[p.sampler_index].name, replace_spaces=False))
+        x = re.sub(r'\[steps]', str(p.steps), x, flags=re.IGNORECASE)
+        x = re.sub(r'\[cfg]', str(p.cfg_scale), x, flags=re.IGNORECASE)
+        x = re.sub(r'\[width]', str(p.width), x, flags=re.IGNORECASE)
+        x = re.sub(r'\[height]', str(p.height), x, flags=re.IGNORECASE)
+        x = re.sub(r'\[styles]', sanitize_filename_part(", ".join([x for x in p.styles if not x == "None"]) or "None", replace_spaces=False), x, flags=re.IGNORECASE)
+        x = re.sub(r'\[sampler]', sanitize_filename_part(sd_samplers.samplers[p.sampler_index].name, replace_spaces=False), x, flags=re.IGNORECASE)
 
-    x = x.replace("[model_hash]", getattr(p, "sd_model_hash", shared.sd_model.sd_model_hash))
-    x = x.replace("[date]", datetime.date.today().isoformat())
+    x = re.sub(r'\[model_hash]', getattr(p, "sd_model_hash", shared.sd_model.sd_model_hash), x, flags=re.IGNORECASE)
+    x = re.sub(r'\[date]', datetime.date.today().isoformat(), x, flags=re.IGNORECASE)
     x = replace_datetime(x)
-    x = x.replace("[job_timestamp]", getattr(p, "job_timestamp", shared.state.job_timestamp))
-
+    x = re.sub(r'\[job_timestamp]', getattr(p, "job_timestamp", shared.state.job_timestamp), x, flags=re.IGNORECASE)
     # Apply [prompt] at last. Because it may contain any replacement word.^M
     if prompt is not None:
-        x = x.replace("[prompt]", sanitize_filename_part(prompt))
-        if "[prompt_no_styles]" in x:
+        x = re.sub(r'\[prompt]', sanitize_filename_part(prompt), x, flags=re.IGNORECASE)
+        if re.search(r'\[prompt_no_styles]', x, re.IGNORECASE):
             prompt_no_style = prompt
             for style in shared.prompt_styles.get_style_prompts(p.styles):
                 if len(style) > 0:
@@ -317,14 +316,14 @@ def apply_filename_pattern(x, p, seed, prompt):
                     for part in style_parts:
                         prompt_no_style = prompt_no_style.replace(part, "").replace(", ,", ",").strip().strip(',')
             prompt_no_style = prompt_no_style.replace(style, "").strip().strip(',').strip()
-            x = x.replace("[prompt_no_styles]", sanitize_filename_part(prompt_no_style, replace_spaces=False))
+            x = re.sub(r'\[prompt_no_styles]', sanitize_filename_part(prompt_no_style, replace_spaces=False), x, flags=re.IGNORECASE)
 
-        x = x.replace("[prompt_spaces]", sanitize_filename_part(prompt, replace_spaces=False))
-        if "[prompt_words]" in x:
+        x = re.sub(r'\[prompt_spaces]', sanitize_filename_part(prompt, replace_spaces=False), x, flags=re.IGNORECASE)
+        if re.search(r'\[prompt_words]', x, re.IGNORECASE):
             words = [x for x in re_nonletters.split(prompt or "") if len(x) > 0]
             if len(words) == 0:
                 words = ["empty"]
-            x = x.replace("[prompt_words]", sanitize_filename_part(" ".join(words[0:max_prompt_words]), replace_spaces=False))
+            x = re.sub(r'\[prompt_words]', sanitize_filename_part(" ".join(words[0:max_prompt_words]), replace_spaces=False), x, flags=re.IGNORECASE)
 
     if cmd_opts.hide_ui_dir_config:
         x = re.sub(r'^[\\/]+|\.{2,}[\\/]+|[\\/]+\.{2,}', '', x)
