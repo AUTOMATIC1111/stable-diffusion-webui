@@ -125,6 +125,18 @@ https://github.com/tjm35/asymmetric-tiling-sd-webui/
 
 Control horizontal/vertical seamless tiling independently of each other.
 
+## Force Symmetry
+https://gist.github.com/1ort/2fe6214cf1abe4c07087aac8d91d0d8a
+
+see https://github.com/AUTOMATIC1111/stable-diffusion-webui/discussions/2441
+
+applies symmetry to the image every n steps and sends the result further to img2img.
+
+## Style Pile
+https://github.com/some9000/StylePile
+
+Mix and match keywords to quickly get different results without wasting a lot of time writing prompts.
+
 ## Booru tag autocompletion
 https://github.com/DominikDoom/a1111-sd-webui-tagcomplete
 
