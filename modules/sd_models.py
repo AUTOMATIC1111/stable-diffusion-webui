@@ -236,10 +236,11 @@ def load_model(checkpoint_info=None):
         sd_model.to(shared.device)
 
     sd_hijack.model_hijack.hijack(sd_model)
-    script_callbacks.model_loaded_callback(sd_model)
 
     sd_model.eval()
     shared.sd_model = sd_model
+
+    script_callbacks.model_loaded_callback(sd_model)
 
     print(f"Model loaded.")
     return sd_model
