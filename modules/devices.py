@@ -15,14 +15,10 @@ def extract_device_id(args, name):
 
 def get_optimal_device():
     if torch.cuda.is_available():
-        # CUDA device selection support:
-        if "shared" not in sys.modules:
-            commandline_args = os.environ.get('COMMANDLINE_ARGS', "") #re-parse the commandline arguments because using the shared.py module creates an import loop.
-            sys.argv += shlex.split(commandline_args)
-            device_id = extract_device_id(sys.argv, '--device-id')
-        else:
-            device_id = shared.cmd_opts.device_id
-            
+        from modules import shared
+
+        device_id = shared.cmd_opts.device_id
+
         if device_id is not None:
             cuda_device = f"cuda:{device_id}"
             return torch.device(cuda_device)
@@ -49,7 +45,7 @@ def enable_tf32():
 
 errors.run(enable_tf32, "Enabling TF32")
 
-device = device_interrogate = device_gfpgan = device_bsrgan = device_esrgan = device_scunet = device_codeformer = get_optimal_device()
+device = device_interrogate = device_gfpgan = device_bsrgan = device_esrgan = device_scunet = device_codeformer = None
 dtype = torch.float16
 dtype_vae = torch.float16
 
