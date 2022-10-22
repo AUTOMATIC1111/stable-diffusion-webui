@@ -318,10 +318,10 @@ def check_progress_call(id_part):
         if shared.parallel_processing_allowed:
 
             if shared.state.sampling_step - shared.state.current_image_sampling_step >= opts.show_progress_every_n_steps and shared.state.current_latent is not None:
-                if opts.progress_decode_combined:
-                    shared.state.current_image = modules.sd_samplers.samples_to_image_grid_combined(shared.state.current_latent)
-                else:
+                if opts.show_progress_grid:
                     shared.state.current_image = modules.sd_samplers.samples_to_image_grid(shared.state.current_latent)
+                else:
+                    shared.state.current_image = modules.sd_samplers.sample_to_image(shared.state.current_latent)
                 shared.state.current_image_sampling_step = shared.state.sampling_step
 
         image = shared.state.current_image

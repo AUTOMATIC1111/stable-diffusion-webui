@@ -71,6 +71,7 @@ sampler_extra_params = {
     'sample_dpm_2': ['s_churn', 's_tmin', 's_tmax', 's_noise'],
 }
 
+
 def setup_img2img_steps(p, steps=None):
     if opts.img2img_fix_steps or steps is not None:
         steps = int((steps or p.steps) / min(p.denoising_strength, 0.999)) if p.denoising_strength > 0 else 0
@@ -82,37 +83,21 @@ def setup_img2img_steps(p, steps=None):
     return steps, t_enc
 
 
-def sample_to_image(samples):
-    x_sample = processing.decode_first_stage(shared.sd_model, samples[0:1])[0]
+def single_sample_to_image(sample):
+    x_sample = processing.decode_first_stage(shared.sd_model, sample.unsqueeze(0))[0]
     x_sample = torch.clamp((x_sample + 1.0) / 2.0, min=0.0, max=1.0)
     x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
     x_sample = x_sample.astype(np.uint8)
     return Image.fromarray(x_sample)
 
+
+def sample_to_image(samples):
+    return single_sample_to_image(samples[0])
+
+
 def samples_to_image_grid(samples):
-    progress_images = []
-    for i in range(len(samples)):
-        # Decode the samples individually to reduce VRAM usage at the cost of a bit of speed.
-        x_sample = processing.decode_first_stage(shared.sd_model, samples[i:i+1])[0]
-        x_sample = torch.clamp((x_sample + 1.0) / 2.0, min=0.0, max=1.0)
-        x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
-        x_sample = x_sample.astype(np.uint8)
-        progress_images.append(Image.fromarray(x_sample))
+    return images.image_grid([single_sample_to_image(sample) for sample in samples])
 
-    return images.image_grid(progress_images)
-
-def samples_to_image_grid_combined(samples):
-    progress_images = []
-    # Decode all samples at once to increase speed at the cost of VRAM usage.
-    x_samples = processing.decode_first_stage(shared.sd_model, samples)
-    x_samples = torch.clamp((x_samples + 1.0) / 2.0, min=0.0, max=1.0)
-
-    for x_sample in x_samples:
-        x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
-        x_sample = x_sample.astype(np.uint8)
-        progress_images.append(Image.fromarray(x_sample))
-
-    return images.image_grid(progress_images)
 
 def store_latent(decoded):
     state.current_latent = decoded
