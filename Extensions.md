@@ -17,3 +17,6 @@ Alternatively you can just copy-paste a directory into `extensions`.
 
 ## Aesthetic Gradients
 https://github.com/AUTOMATIC1111/stable-diffusion-webui-aesthetic-gradients
+
+## Wildcards
+https://github.com/AUTOMATIC1111/stable-diffusion-webui-wildcards
