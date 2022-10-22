@@ -420,8 +420,8 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
         file_decoration = apply_filename_pattern(file_decoration, p, seed, prompt) + suffix
 
         basecount = get_next_sequence_number(path, basename)
-        fullfn = "a.png"
-        fullfn_without_extension = "a"
+        fullfn = None
+        fullfn_without_extension = None
         for i in range(500):
             fn = f"{basecount + i:05}" if basename == '' else f"{basename}-{basecount + i:04}"
             fullfn = os.path.join(path, f"{fn}{file_decoration}.{extension}")
