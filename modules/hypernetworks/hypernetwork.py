@@ -42,21 +42,19 @@ class HypernetworkModule(torch.nn.Module):
             # Add an activation func
             if activation_func == "linear" or activation_func is None:
                 pass
-            # If ReLU, Skip adding it to the first layer to avoid dying ReLU
-            elif activation_func == "relu" and i < 1:
-                pass
             elif activation_func in self.activation_dict:
                 linears.append(self.activation_dict[activation_func]())
             else:
                 raise RuntimeError(f'hypernetwork uses an unsupported activation function: {activation_func}')
 
-            # Add dropout
-            if use_dropout:
-                linears.append(torch.nn.Dropout(p=0.3))
-
             # Add layer normalization
             if add_layer_norm:
                 linears.append(torch.nn.LayerNorm(int(dim * layer_structure[i+1])))
+
+            # Add dropout
+            if use_dropout:
+                p = 0.5 if 0 <= i <= len(layer_structure) - 3 else 0.2
+                linears.append(torch.nn.Dropout(p=p))
 
         self.linear = torch.nn.Sequential(*linears)
 

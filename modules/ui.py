@@ -1244,7 +1244,6 @@ def create_ui(wrap_gradio_gpu_call):
                     new_hypernetwork_add_layer_norm = gr.Checkbox(label="Add layer normalization")
                     new_hypernetwork_use_dropout = gr.Checkbox(label="Use dropout")
                     overwrite_old_hypernetwork = gr.Checkbox(value=False, label="Overwrite Old Hypernetwork")
-                    new_hypernetwork_activation_func = gr.Dropdown(value="relu", label="Select activation function of hypernetwork", choices=["linear", "relu", "leakyrelu"])
 
                     with gr.Row():
                         with gr.Column(scale=3):
