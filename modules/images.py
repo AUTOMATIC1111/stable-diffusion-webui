@@ -400,6 +400,7 @@ def replace_datetime(input_str: str):
             # if format error then use default_time_format
             formatted_time = time_zone_time.strftime(default_time_format)
 
+        formatted_time = sanitize_filename_part(formatted_time, replace_spaces=False)
         input_str = input_str[:match.start()] + formatted_time + input_str[match.end():]
     return input_str
 
