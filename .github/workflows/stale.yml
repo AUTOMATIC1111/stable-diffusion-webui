@@ -1,0 +1,18 @@
+name: 'Close stale issues and PRs'
+on:
+  schedule:
+    - cron: '00 10 * * *'
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v6
+        with:
+          enable-statistics: true
+          operations-per-run : 1000
+          debug-only: true
+          stale-issue-message: 'The issues/feature request process has been updated to allow for faster & more efficient resolution for the devs, this issue will now be closed as it uses the old process. If the issue is still there for you/the feature has not been implemented yet, please do submit a new issue and fill the forms carefuly. We are sorry for the inconvenience'
+          days-before-issue-stale: 5
+          days-before-issue-close: 0
+          stale-issue-label: 'Obsolete'
