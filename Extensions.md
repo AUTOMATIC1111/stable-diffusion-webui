@@ -10,7 +10,7 @@ git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui-aesthetic-grad
 
 This installs an extension from `https://github.com/AUTOMATIC1111/stable-diffusion-webui-aesthetic-gradients` into the `extensions/aesthetic-gradients` directory.
 
-Alternatively you can just copy-paste a directory.
+Alternatively you can just copy-paste a directory into `extensions`.
 
 
 # Extensions
