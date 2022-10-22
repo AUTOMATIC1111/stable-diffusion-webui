@@ -13,6 +13,8 @@
 - [Changing UI defaults](Change-UI-Defaults)
 - [Custom scripts](Custom-Scripts)
   - [Developing custom scripts](Developing-custom-scripts)
+- [Extensions](Extensions)
+  - [Developing extensions](Developing-extensions)
 - [Troubleshooting](Troubleshooting)
 - [Contributing](Contributing)
 - [Online Services](Online-Services)
