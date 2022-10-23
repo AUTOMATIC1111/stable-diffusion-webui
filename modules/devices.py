@@ -1,7 +1,6 @@
+import sys, os, shlex
 import contextlib
-
 import torch
-
 from modules import errors
 
 # has_mps is only available in nightly pytorch (for now), `getattr` for compatibility
@@ -9,10 +8,22 @@ has_mps = getattr(torch, 'has_mps', False)
 
 cpu = torch.device("cpu")
 
+def extract_device_id(args, name):
+    for x in range(len(args)):
+        if name in args[x]: return args[x+1]
+    return None
 
 def get_optimal_device():
     if torch.cuda.is_available():
-        return torch.device("cuda")
+        from modules import shared
+
+        device_id = shared.cmd_opts.device_id
+
+        if device_id is not None:
+            cuda_device = f"cuda:{device_id}"
+            return torch.device(cuda_device)
+        else:
+            return torch.device("cuda")
 
     if has_mps:
         return torch.device("mps")
@@ -34,7 +45,7 @@ def enable_tf32():
 
 errors.run(enable_tf32, "Enabling TF32")
 
-device = device_interrogate = device_gfpgan = device_bsrgan = device_esrgan = device_scunet = device_codeformer = get_optimal_device()
+device = device_interrogate = device_gfpgan = device_bsrgan = device_esrgan = device_scunet = device_codeformer = None
 dtype = torch.float16
 dtype_vae = torch.float16
 

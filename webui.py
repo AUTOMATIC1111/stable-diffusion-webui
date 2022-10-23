@@ -71,8 +71,9 @@ def wrap_gradio_gpu_call(func, extra_outputs=None):
 
     return modules.ui.wrap_gradio_call(f, extra_outputs=extra_outputs)
 
+
 def initialize():
-    modules.scripts.load_scripts(os.path.join(script_path, "scripts"))
+    modules.scripts.load_scripts()
     if cmd_opts.ui_debug_mode:
         class enmpty():
             name = None
@@ -85,9 +86,7 @@ def initialize():
     shared.face_restorers.append(modules.face_restoration.FaceRestoration())
     modelloader.load_upscalers()
 
-    
-
-    shared.sd_model = modules.sd_models.load_model()
+    modules.sd_models.load_model()
     shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights(shared.sd_model)))
     shared.opts.onchange("sd_hypernetwork", wrap_queued_call(lambda: modules.hypernetworks.hypernetwork.load_hypernetwork(shared.opts.sd_hypernetwork)))
     shared.opts.onchange("sd_hypernetwork_strength", modules.hypernetworks.hypernetwork.apply_strength)
@@ -124,7 +123,8 @@ def api_only():
     api.launch(server_name="0.0.0.0" if cmd_opts.listen else "127.0.0.1", port=cmd_opts.port if cmd_opts.port else 7861)
 
 
-def webui(launch_api=False):
+def webui():
+    launch_api = cmd_opts.api
     initialize()
 
     while 1:
@@ -150,7 +150,7 @@ def webui(launch_api=False):
         sd_samplers.set_samplers()
 
         print('Reloading Custom Scripts')
-        modules.scripts.reload_scripts(os.path.join(script_path, "scripts"))
+        modules.scripts.reload_scripts()
         print('Reloading modules: modules.ui')
         importlib.reload(modules.ui)
         print('Refreshing Model List')
@@ -164,4 +164,4 @@ if __name__ == "__main__":
     if cmd_opts.nowebui:
         api_only()
     else:
-        webui(cmd_opts.api)
+        webui()

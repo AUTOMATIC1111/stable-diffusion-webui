@@ -28,4 +28,6 @@ notification.mp3
 /SwinIR
 /textual_inversion
 .vscode
-/inspiration
+/extensions
+ /inspiration
+
