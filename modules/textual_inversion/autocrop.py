@@ -11,14 +11,31 @@ RED = "#F00"
 
 def crop_image(im, settings):
   """ Intelligently crop an image to the subject matter """
-  if im.height > im.width:
-      im = im.resize((settings.crop_width, settings.crop_height * im.height // im.width))
-  elif im.width > im.height:
-      im = im.resize((settings.crop_width * im.width // im.height, settings.crop_height))
-  else:
-      im = im.resize((settings.crop_width, settings.crop_height))
 
-  if im.height == im.width:
+  scale_by = 1
+  if is_landscape(im.width, im.height):
+    scale_by = settings.crop_height / im.height
+  elif is_portrait(im.width, im.height):
+    scale_by = settings.crop_width / im.width
+  elif is_square(im.width, im.height):
+    if is_square(settings.crop_width, settings.crop_height):
+      scale_by = settings.crop_width / im.width
+    elif is_landscape(settings.crop_width, settings.crop_height):
+      scale_by = settings.crop_width / im.width
+    elif is_portrait(settings.crop_width, settings.crop_height):
+      scale_by = settings.crop_height / im.height
+
+  im = im.resize((int(im.width * scale_by), int(im.height * scale_by)))
+
+  if im.width == settings.crop_width and im.height == settings.crop_height:
+    if settings.annotate_image:
+      d = ImageDraw.Draw(im)
+      rect = [0, 0, im.width, im.height]
+      rect[2] -= 1
+      rect[3] -= 1
+      d.rectangle(rect, outline=GREEN)
+      if settings.destop_view_image:
+        im.show()
     return im
 
   focus = focal_point(im, settings)
@@ -212,6 +229,18 @@ def poi_average(pois, settings):
     avg_y = round(y / weight)
 
     return PointOfInterest(avg_x, avg_y)
+
+
+def is_landscape(w, h):
+  return w > h
+
+
+def is_portrait(w, h):
+  return h > w
+
+
+def is_square(w, h):
+  return w == h
 
 
 class PointOfInterest:
