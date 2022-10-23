@@ -274,8 +274,8 @@ def log_statistics(loss_info:dict, key, value):
         loss_info[key] = [value]
     else:
         loss_info[key].append(value)
-        if len(loss_info) > 1024:
-            loss_info.pop(0)
+        if len(loss_info[key]) > 1024:
+            loss_info[key].pop(0)
 
 
 def statistics(data):
