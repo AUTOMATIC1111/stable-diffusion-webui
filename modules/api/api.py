@@ -1,5 +1,5 @@
 import uvicorn
-from gradio import processing_utils
+from gradio.processing_utils import encode_pil_to_base64, decode_base64_to_file, decode_base64_to_image
 from fastapi import APIRouter, HTTPException
 import modules.shared as shared
 from modules.api.models import *
@@ -11,9 +11,17 @@ def upscaler_to_index(name: str):
     try:
         return [x.name.lower() for x in shared.sd_upscalers].index(name.lower())
     except:
-        raise HTTPException(status_code=400, detail="Upscaler not found")
+        raise HTTPException(status_code=400, detail=f"Invalid upscaler, needs to be on of these: {' , '.join([x.name for x in sd_upscalers])}")
 
 sampler_to_index = lambda name: next(filter(lambda row: name.lower() == row[1].name.lower(), enumerate(all_samplers)), None)
+
+def setUpscalers(req: dict):
+    reqDict = vars(req)
+    reqDict['extras_upscaler_1'] = upscaler_to_index(req.upscaler_1)
+    reqDict['extras_upscaler_2'] = upscaler_to_index(req.upscaler_2)
+    reqDict.pop('upscaler_1')
+    reqDict.pop('upscaler_2')
+    return reqDict
 
 class Api:
     def __init__(self, app, queue_lock):
@@ -24,6 +32,7 @@ class Api:
         self.app.add_api_route("/sdapi/v1/img2img", self.img2imgapi, methods=["POST"], response_model=ImageToImageResponse)
         self.app.add_api_route("/sdapi/v1/extra-single-image", self.extras_single_image_api, methods=["POST"], response_model=ExtrasSingleImageResponse)
         self.app.add_api_route("/sdapi/v1/extra-batch-images", self.extras_batch_images_api, methods=["POST"], response_model=ExtrasBatchImagesResponse)
+        self.app.add_api_route("/sdapi/v1/extra-folder-images", self.extras_folder_processing_api, methods=["POST"], response_model=ExtrasBatchImagesResponse)
 
     def text2imgapi(self, txt2imgreq: StableDiffusionTxt2ImgProcessingAPI):
         sampler_index = sampler_to_index(txt2imgreq.sampler_index)
@@ -43,7 +52,7 @@ class Api:
         with self.queue_lock:
             processed = process_images(p)
         
-        b64images = list(map(processing_utils.encode_pil_to_base64, processed.images))
+        b64images = list(map(encode_pil_to_base64, processed.images))
         
         return TextToImageResponse(images=b64images, parameters=vars(txt2imgreq), info=processed.info)
 
@@ -60,7 +69,7 @@ class Api:
 
         mask = img2imgreq.mask
         if mask:
-            mask = processing_utils.decode_base64_to_image(mask)
+            mask = decode_base64_to_image(mask)
 
         
         populate = img2imgreq.copy(update={ # Override __init__ params
@@ -75,7 +84,7 @@ class Api:
 
         imgs = []
         for img in init_images:
-            img = processing_utils.decode_base64_to_image(img)
+            img = decode_base64_to_image(img)
             imgs = [img] * p.batch_size
 
         p.init_images = imgs
@@ -83,43 +92,38 @@ class Api:
         with self.queue_lock:
             processed = process_images(p)
         
-        b64images = list(map(processing_utils.encode_pil_to_base64, processed.images))
+        b64images = list(map(encode_pil_to_base64, processed.images))
        
         return ImageToImageResponse(images=b64images, parameters=vars(img2imgreq), info=processed.info)
 
     def extras_single_image_api(self, req: ExtrasSingleImageRequest):
-        upscaler1Index = upscaler_to_index(req.upscaler_1)
-        upscaler2Index = upscaler_to_index(req.upscaler_2)
+        reqDict = setUpscalers(req)
 
-        reqDict = vars(req)
-        reqDict.pop('upscaler_1')
-        reqDict.pop('upscaler_2')
-
-        reqDict['image'] = processing_utils.decode_base64_to_image(reqDict['image'])
+        reqDict['image'] = decode_base64_to_image(reqDict['image'])
 
         with self.queue_lock:
-            result = run_extras(**reqDict, extras_upscaler_1=upscaler1Index, extras_upscaler_2=upscaler2Index, extras_mode=0, image_folder="", input_dir="", output_dir="")
+            result = run_extras(extras_mode=0, image_folder="", input_dir="", output_dir="", **reqDict)
 
-        return ExtrasSingleImageResponse(image=processing_utils.encode_pil_to_base64(result[0][0]), html_info_x=result[1], html_info=result[2])
+        return ExtrasSingleImageResponse(image=encode_pil_to_base64(result[0][0]), html_info_x=result[1], html_info=result[2])
 
     def extras_batch_images_api(self, req: ExtrasBatchImagesRequest):
-        upscaler1Index = upscaler_to_index(req.upscaler_1)
-        upscaler2Index = upscaler_to_index(req.upscaler_2)
+        reqDict = setUpscalers(req)
 
-        reqDict = vars(req)
-        reqDict.pop('upscaler_1')
-        reqDict.pop('upscaler_2')
-
-        reqDict['image_folder'] = list(map(processing_utils.decode_base64_to_file, reqDict['imageList']))
+        reqDict['image_folder'] = list(map(decode_base64_to_file, reqDict['imageList']))
         reqDict.pop('imageList')
 
         with self.queue_lock:
-            result = run_extras(**reqDict, extras_upscaler_1=upscaler1Index, extras_upscaler_2=upscaler2Index, extras_mode=1, image="", input_dir="", output_dir="")
+            result = run_extras(extras_mode=1, image="", input_dir="", output_dir="", **reqDict)
 
-        return ExtrasBatchImagesResponse(images=list(map(processing_utils.encode_pil_to_base64, result[0])), html_info_x=result[1], html_info=result[2])
+        return ExtrasBatchImagesResponse(images=list(map(encode_pil_to_base64, result[0])), html_info_x=result[1], html_info=result[2])
     
-    def extras_folder_processing_api(self):
-        raise NotImplementedError
+    def extras_folder_processing_api(self, req:ExtrasFoldersRequest):
+        reqDict = setUpscalers(req)
+
+        with self.queue_lock:
+            result = run_extras(extras_mode=2, image=None, image_folder=None, **reqDict)
+
+        return ExtrasBatchImagesResponse(images=list(map(encode_pil_to_base64, result[0])), html_info_x=result[1], html_info=result[2])
 
     def pnginfoapi(self):
         raise NotImplementedError
