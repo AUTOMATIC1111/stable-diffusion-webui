@@ -71,6 +71,7 @@ parser.add_argument("--port", type=int, help="launch gradio with given server po
 parser.add_argument("--show-negative-prompt", action='store_true', help="does not do anything", default=False)
 parser.add_argument("--ui-config-file", type=str, help="filename to use for ui configuration", default=os.path.join(script_path, 'ui-config.json'))
 parser.add_argument("--hide-ui-dir-config", action='store_true', help="hide directory configuration from webui", default=False)
+parser.add_argument("--freeze-settings", action='store_true', help="disable editing settings", default=False)
 parser.add_argument("--ui-settings-file", type=str, help="filename to use for ui settings", default=os.path.join(script_path, 'config.json'))
 parser.add_argument("--gradio-debug",  action='store_true', help="launch gradio with --debug option")
 parser.add_argument("--gradio-auth", type=str, help='set gradio authentication like "username:password"; or comma-delimit multiple like "u1:p1,u2:p2,u3:p3"', default=None)
@@ -206,13 +207,13 @@ def realesrgan_models_names():
 
 
 class OptionInfo:
-    def __init__(self, default=None, label="", component=None, component_args=None, onchange=None, show_on_main_page=False, refresh=None):
+    def __init__(self, default=None, label="", component=None, component_args=None, onchange=None, section=None, refresh=None):
         self.default = default
         self.label = label
         self.component = component
         self.component_args = component_args
         self.onchange = onchange
-        self.section = None
+        self.section = section
         self.refresh = refresh
 
 
@@ -335,6 +336,7 @@ options_templates.update(options_section(('interrogate', "Interrogate Options"),
 options_templates.update(options_section(('ui', "User interface"), {
     "show_progressbar": OptionInfo(True, "Show progressbar"),
     "show_progress_every_n_steps": OptionInfo(0, "Show image creation progress every N sampling steps. Set 0 to disable.", gr.Slider, {"minimum": 0, "maximum": 32, "step": 1}),
+    "show_progress_grid": OptionInfo(True, "Show previews of all images generated in a batch as a grid"),
     "return_grid": OptionInfo(True, "Show grid in results for web"),
     "do_not_show_images": OptionInfo(False, "Do not show any images in results for web"),
     "add_model_hash_to_info": OptionInfo(True, "Add model hash to generation information"),
@@ -367,6 +369,7 @@ options_templates.update(options_section(('images-history', "Images Browser"), {
     "images_history_grid_num": OptionInfo(6, "Number of grids in each row"),   
 
 }))
+
 
 class Options:
     data = None
@@ -429,6 +432,20 @@ class Options:
     def dumpjson(self):
         d = {k: self.data.get(k, self.data_labels.get(k).default) for k in self.data_labels.keys()}
         return json.dumps(d)
+
+    def add_option(self, key, info):
+        self.data_labels[key] = info
+
+    def reorder(self):
+        """reorder settings so that all items related to section always go together"""
+
+        section_ids = {}
+        settings_items = self.data_labels.items()
+        for k, item in settings_items:
+            if item.section not in section_ids:
+                section_ids[item.section] = len(section_ids)
+
+        self.data_labels = {k: v for k, v in sorted(settings_items, key=lambda x: section_ids[x[1].section])}
 
 
 opts = Options()

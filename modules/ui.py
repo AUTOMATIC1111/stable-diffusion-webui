@@ -5,19 +5,22 @@ import json
 import math
 import mimetypes
 import os
+import platform
 import random
+import subprocess as sp
 import sys
 import tempfile
 import time
 import traceback
-import platform
-import subprocess as sp
 from functools import partial, reduce
 
+import gradio as gr
+import gradio.routes
+import gradio.utils
 import numpy as np
+import piexif
 import torch
 from PIL import Image, PngImagePlugin
-import piexif
 
 import gradio as gr
 import gradio.utils
@@ -32,17 +35,21 @@ from modules.shared import opts, cmd_opts, restricted_opts
 
 if cmd_opts.deepdanbooru:
     from modules.deepbooru import get_deepbooru_tags
-import modules.shared as shared
-from modules.sd_samplers import samplers, samplers_for_img2img
-from modules.sd_hijack import model_hijack
+
+import modules.codeformer_model
+import modules.generation_parameters_copypaste
+import modules.gfpgan_model
+import modules.hypernetworks.ui
+import modules.images_history as img_his
 import modules.ldsr_model
 import modules.scripts
-import modules.gfpgan_model
-import modules.codeformer_model
+import modules.shared as shared
 import modules.styles
-import modules.generation_parameters_copypaste
+import modules.textual_inversion.ui
 from modules import prompt_parser
 from modules.images import save_image
+from modules.sd_hijack import model_hijack
+from modules.sd_samplers import samplers, samplers_for_img2img
 import modules.textual_inversion.ui
 import modules.hypernetworks.ui
 
@@ -316,7 +323,10 @@ def check_progress_call(id_part):
         if shared.parallel_processing_allowed:
 
             if shared.state.sampling_step - shared.state.current_image_sampling_step >= opts.show_progress_every_n_steps and shared.state.current_latent is not None:
-                shared.state.current_image = modules.sd_samplers.sample_to_image(shared.state.current_latent)
+                if opts.show_progress_grid:
+                    shared.state.current_image = modules.sd_samplers.samples_to_image_grid(shared.state.current_latent)
+                else:
+                    shared.state.current_image = modules.sd_samplers.sample_to_image(shared.state.current_latent)
                 shared.state.current_image_sampling_step = shared.state.sampling_step
 
         image = shared.state.current_image
@@ -582,6 +592,9 @@ def setup_progressbar(progressbar, preview, id_part, textinfo=None):
 
 def apply_setting(key, value):
     if value is None:
+        return gr.update()
+
+    if shared.cmd_opts.freeze_settings:
         return gr.update()
 
     # dont allow model to be swapped when model hash exists in prompt
@@ -1656,9 +1669,10 @@ def create_ui(wrap_gradio_gpu_call):
                     new_hypernetwork_name = gr.Textbox(label="Name")
                     new_hypernetwork_sizes = gr.CheckboxGroup(label="Modules", value=["768", "320", "640", "1280"], choices=["768", "320", "640", "1280"])
                     new_hypernetwork_layer_structure = gr.Textbox("1, 2, 1", label="Enter hypernetwork layer structure", placeholder="1st and last digit must be 1. ex:'1, 2, 1'")
+                    new_hypernetwork_activation_func = gr.Dropdown(value="relu", label="Select activation function of hypernetwork", choices=["linear", "relu", "leakyrelu", "elu", "swish"])
                     new_hypernetwork_add_layer_norm = gr.Checkbox(label="Add layer normalization")
+                    new_hypernetwork_use_dropout = gr.Checkbox(label="Use dropout")
                     overwrite_old_hypernetwork = gr.Checkbox(value=False, label="Overwrite Old Hypernetwork")
-                    new_hypernetwork_activation_func = gr.Dropdown(value="relu", label="Select activation function of hypernetwork", choices=["linear", "relu", "leakyrelu"])
 
                     with gr.Row():
                         with gr.Column(scale=3):
@@ -1708,7 +1722,7 @@ def create_ui(wrap_gradio_gpu_call):
                     with gr.Row():
                         embedding_learn_rate = gr.Textbox(label='Embedding Learning rate', placeholder="Embedding Learning rate", value="0.005")
                         hypernetwork_learn_rate = gr.Textbox(label='Hypernetwork Learning rate', placeholder="Hypernetwork Learning rate", value="0.00001")
-                    
+
                     batch_size = gr.Number(label='Batch size', value=1, precision=0)
                     dataset_directory = gr.Textbox(label='Dataset directory', placeholder="Path to directory with input images")
                     log_directory = gr.Textbox(label='Log directory', placeholder="Path to directory where to write outputs", value="textual_inversion")
@@ -1758,8 +1772,9 @@ def create_ui(wrap_gradio_gpu_call):
                 new_hypernetwork_sizes,
                 overwrite_old_hypernetwork,
                 new_hypernetwork_layer_structure,
-                new_hypernetwork_add_layer_norm,
                 new_hypernetwork_activation_func,
+                new_hypernetwork_add_layer_norm,
+                new_hypernetwork_use_dropout
             ],
             outputs=[
                 train_hypernetwork_name,
@@ -1884,6 +1899,9 @@ def create_ui(wrap_gradio_gpu_call):
     components = []
     component_dict = {}
 
+    script_callbacks.ui_settings_callback()
+    opts.reorder()
+
     def open_folder(f):
         if not os.path.exists(f):
             print(f'Folder "{f}" does not exist. After you create an image, the folder will be created.')
@@ -1908,6 +1926,8 @@ Requested path was: {f}
 
     def run_settings(*args):
         changed = 0
+
+        assert not shared.cmd_opts.freeze_settings, "changing settings is disabled"
 
         for key, value, comp in zip(opts.data_labels.keys(), args, components):
             if comp != dummy_component and not opts.same_type(value, opts.data_labels[key].default):
@@ -1938,6 +1958,8 @@ Requested path was: {f}
         return f'{changed} settings changed.', opts.dumpjson()
 
     def run_settings_single(value, key):
+        assert not shared.cmd_opts.freeze_settings, "changing settings is disabled"
+
         if not opts.same_type(value, opts.data_labels[key].default):
             return gr.update(visible=True), opts.dumpjson()
 
@@ -1987,9 +2009,10 @@ Requested path was: {f}
 
                     previous_section = item.section
 
-                    gr.HTML(elem_id="settings_header_text_{}".format(item.section[0]), value='<h1 class="gr-button-lg">{}</h1>'.format(item.section[1]))
+                    elem_id, text = item.section
+                    gr.HTML(elem_id="settings_header_text_{}".format(elem_id), value='<h1 class="gr-button-lg">{}</h1>'.format(text))
 
-                if k in quicksettings_names:
+                if k in quicksettings_names and not shared.cmd_opts.freeze_settings:
                     quicksettings_list.append((i, k, item))
                     components.append(dummy_component)
                 else:
@@ -2022,7 +2045,7 @@ Requested path was: {f}
 
         def reload_scripts():
             modules.scripts.reload_script_body_only()
-            reload_javascript() # need to refresh the html page
+            reload_javascript()  # need to refresh the html page
 
         reload_script_bodies.click(
             fn=reload_scripts,
