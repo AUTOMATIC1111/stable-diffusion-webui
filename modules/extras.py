@@ -33,7 +33,7 @@ def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_
         for img in image_folder:
             image = Image.open(img)
             imageArr.append(image)
-            imageNameArr.append(os.path.splitext(img.orig_name)[0])
+            imageNameArr.append(os.path.splitext(img.name)[0])
     elif extras_mode == 2:
         assert not shared.cmd_opts.hide_ui_dir_config, '--hide-ui-dir-config option must be disabled'
 
