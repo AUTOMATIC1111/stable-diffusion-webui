@@ -155,6 +155,17 @@ https://github.com/dfaker/embedding-to-png-script
 
 Converts existing embeddings to the shareable image versions.
 
+## Basic Canvas Outpainting Test
+https://github.com/TKoestlerx/sdexperiments
+
+Script to allow for easier outpainting. Appears to be infinite outpainting.
+
+## Random Steps and CFG
+https://github.com/lilly1987/AI-WEBUI-scripts-Random
+
+## Stable Diffusion Aesthetic Scorer
+https://github.com/grexzen/SD-Chad
+
 ## Saving steps of the sampling process
 
 This script will save steps of the sampling process to a directory.
