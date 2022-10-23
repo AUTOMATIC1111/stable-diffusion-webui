@@ -10,6 +10,7 @@ import base64
 from modules.api.models import *
 from PIL import Image
 from modules.extras import run_extras
+from gradio import processing_utils
 
 def upscaler_to_index(name: str):
     try:
@@ -44,6 +45,7 @@ class Api:
         self.queue_lock = queue_lock
         self.app.add_api_route("/sdapi/v1/txt2img", self.text2imgapi, methods=["POST"], response_model=TextToImageResponse)
         self.app.add_api_route("/sdapi/v1/extra-single-image", self.extras_single_image_api, methods=["POST"], response_model=ExtrasSingleImageResponse)
+        self.app.add_api_route("/sdapi/v1/extra-batch-image", self.extras_batch_images_api, methods=["POST"], response_model=ExtrasBatchImagesResponse)
 
     def text2imgapi(self, txt2imgreq: StableDiffusionProcessingAPI ):
         sampler_index = sampler_to_index(txt2imgreq.sampler_index)
@@ -78,12 +80,31 @@ class Api:
         reqDict.pop('upscaler_1')
         reqDict.pop('upscaler_2')
 
-        reqDict['image'] = base64_to_images([reqDict['image']])[0]
+        reqDict['image'] = processing_utils.decode_base64_to_file(reqDict['image'])
 
         with self.queue_lock:
             result = run_extras(**reqDict, extras_upscaler_1=upscaler1Index, extras_upscaler_2=upscaler2Index, extras_mode=0, image_folder="", input_dir="", output_dir="")
 
-        return ExtrasSingleImageResponse(image="data:image/png;base64,"+img_to_base64(result[0]), html_info_x=result[1], html_info=result[2])
+        return ExtrasSingleImageResponse(image=processing_utils.encode_pil_to_base64(result[0]), html_info_x=result[1], html_info=result[2])
+
+    def extras_batch_images_api(self, req: ExtrasBatchImagesRequest):
+        upscaler1Index = upscaler_to_index(req.upscaler_1)
+        upscaler2Index = upscaler_to_index(req.upscaler_2)
+
+        reqDict = vars(req)
+        reqDict.pop('upscaler_1')
+        reqDict.pop('upscaler_2')
+
+        reqDict['image_folder'] = list(map(processing_utils.decode_base64_to_file, reqDict['imageList']))
+        reqDict.pop('imageList')
+
+        with self.queue_lock:
+            result = run_extras(**reqDict, extras_upscaler_1=upscaler1Index, extras_upscaler_2=upscaler2Index, extras_mode=1, image="", input_dir="", output_dir="")
+
+        return ExtrasBatchImagesResponse(images=list(map(processing_utils.encode_pil_to_base64, result[0])), html_info_x=result[1], html_info=result[2])
+    
+    def extras_folder_processing_api(self):
+        raise NotImplementedError
 
     def pnginfoapi(self):
         raise NotImplementedError
