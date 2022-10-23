@@ -8,20 +8,42 @@ import json
 import io
 import base64
 from modules.api.models import *
+from PIL import Image
+from modules.extras import run_extras
+
+def upscaler_to_index(name: str):
+    try:
+        return [x.name.lower() for x in shared.sd_upscalers].index(name.lower())
+    except:
+        raise HTTPException(status_code=400, detail="Upscaler not found")
 
 sampler_to_index = lambda name: next(filter(lambda row: name.lower() == row[1].name.lower(), enumerate(all_samplers)), None)
 
-def img_to_base64(img):
+def img_to_base64(img: str):
     buffer = io.BytesIO()
     img.save(buffer, format="png")
     return base64.b64encode(buffer.getvalue())
+
+def base64_to_bytes(base64Img: str):
+    if "," in base64Img:
+        base64Img = base64Img.split(",")[1]
+    return io.BytesIO(base64.b64decode(base64Img))
+
+def base64_to_images(base64Imgs: list[str]):
+    imgs = []
+    for img in base64Imgs:
+        img = Image.open(base64_to_bytes(img))
+        imgs.append(img)
+    return imgs
+
 
 class Api:
     def __init__(self, app, queue_lock):
         self.router = APIRouter()
         self.app = app
         self.queue_lock = queue_lock
-        self.app.add_api_route("/sdapi/v1/txt2img", self.text2imgapi, methods=["POST"])
+        self.app.add_api_route("/sdapi/v1/txt2img", self.text2imgapi, methods=["POST"], response_model=TextToImageResponse)
+        self.app.add_api_route("/sdapi/v1/extra-single-image", self.extras_single_image_api, methods=["POST"], response_model=ExtrasSingleImageResponse)
 
     def text2imgapi(self, txt2imgreq: StableDiffusionProcessingAPI ):
         sampler_index = sampler_to_index(txt2imgreq.sampler_index)
@@ -45,12 +67,23 @@ class Api:
 
         return TextToImageResponse(images=b64images, parameters=json.dumps(vars(txt2imgreq)), info=json.dumps(processed.info))
         
-
     def img2imgapi(self):
         raise NotImplementedError
 
-    def extrasapi(self):
-        raise NotImplementedError
+    def extras_single_image_api(self, req: ExtrasSingleImageRequest):
+        upscaler1Index = upscaler_to_index(req.upscaler_1)
+        upscaler2Index = upscaler_to_index(req.upscaler_2)
+
+        reqDict = vars(req)
+        reqDict.pop('upscaler_1')
+        reqDict.pop('upscaler_2')
+
+        reqDict['image'] = base64_to_images([reqDict['image']])[0]
+
+        with self.queue_lock:
+            result = run_extras(**reqDict, extras_upscaler_1=upscaler1Index, extras_upscaler_2=upscaler2Index, extras_mode=0, image_folder="", input_dir="", output_dir="")
+
+        return ExtrasSingleImageResponse(image="data:image/png;base64,"+img_to_base64(result[0]), html_info_x=result[1], html_info=result[2])
 
     def pnginfoapi(self):
         raise NotImplementedError
