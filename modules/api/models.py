@@ -130,17 +130,13 @@ class ExtrasBaseRequest(BaseModel):
     extras_upscaler_2_visibility: float = Field(default=0, title="Secondary upscaler visibility", ge=0, le=1, allow_inf_nan=False, description="Sets the visibility of secondary upscaler, values should be between 0 and 1.")
 
 class ExtraBaseResponse(BaseModel):
-    html_info_x: str
-    html_info: str
+    html_info: str = Field(title="HTML info", description="A series of HTML tags containing the process info.")
 
 class ExtrasSingleImageRequest(ExtrasBaseRequest):
     image: str = Field(default="", title="Image", description="Image to work on, must be a Base64 string containing the image's data.")
 
 class ExtrasSingleImageResponse(ExtraBaseResponse):
     image: str = Field(default=None, title="Image", description="The generated image in base64 format.")
-
-class SerializableImage(BaseModel):
-  path: str = Field(title="Path", description="The image's path ()")
 
 class ImageItem(BaseModel):
     data: str = Field(title="image data")

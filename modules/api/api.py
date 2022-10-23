@@ -104,7 +104,7 @@ class Api:
         with self.queue_lock:
             result = run_extras(extras_mode=0, image_folder="", input_dir="", output_dir="", **reqDict)
 
-        return ExtrasSingleImageResponse(image=encode_pil_to_base64(result[0][0]), html_info_x=result[1], html_info=result[2])
+        return ExtrasSingleImageResponse(image=encode_pil_to_base64(result[0][0]), html_info=result[1])
 
     def extras_batch_images_api(self, req: ExtrasBatchImagesRequest):
         reqDict = setUpscalers(req)
@@ -115,7 +115,7 @@ class Api:
         with self.queue_lock:
             result = run_extras(extras_mode=1, image="", input_dir="", output_dir="", **reqDict)
 
-        return ExtrasBatchImagesResponse(images=list(map(encode_pil_to_base64, result[0])), html_info_x=result[1], html_info=result[2])
+        return ExtrasBatchImagesResponse(images=list(map(encode_pil_to_base64, result[0])), html_info=result[1])
     
     def extras_folder_processing_api(self, req:ExtrasFoldersRequest):
         reqDict = setUpscalers(req)
@@ -123,7 +123,7 @@ class Api:
         with self.queue_lock:
             result = run_extras(extras_mode=2, image=None, image_folder=None, **reqDict)
 
-        return ExtrasBatchImagesResponse(images=list(map(encode_pil_to_base64, result[0])), html_info_x=result[1], html_info=result[2])
+        return ExtrasBatchImagesResponse(images=list(map(encode_pil_to_base64, result[0])), html_info=result[1])
 
     def pnginfoapi(self):
         raise NotImplementedError
