@@ -209,11 +209,14 @@ class DreamBooth:
             print(f"Loading existing pre-trained model data from {ex_model_path}")
 
         tokenizer = CLIPTokenizer.from_pretrained(os.path.join(ex_model_path, "tokenizer"))
-
+        print("Tokenizer")
         # Load models and create wrapper for stable diffusion
         text_encoder = CLIPTextModel.from_pretrained(os.path.join(ex_model_path, "text_encoder"))
+        print("Encoder")
         vae = AutoencoderKL.from_pretrained(os.path.join(ex_model_path, "vae"))
+        print("Vae")
         unet = UNet2DConditionModel.from_pretrained(os.path.join(ex_model_path, "unet"))
+        print("Unet")
 
         vae.requires_grad_(False)
         if not self.train_text_encoder:
@@ -254,7 +257,7 @@ class DreamBooth:
         noise_scheduler = DDPMScheduler(
             beta_start=0.00085, beta_end=0.012, beta_schedule="scaled_linear", num_train_timesteps=1000
         )
-
+        print("Loading dataset")
         train_dataset = DreamBoothDataset(
             instance_data_root=self.instance_data_dir,
             instance_prompt=self.instance_prompt,
@@ -298,6 +301,7 @@ class DreamBooth:
         if not self.train_text_encoder:
             text_encoder.to(accelerator.device, dtype=weight_dtype)
         if not self.not_cache_latents:
+            print("Caching latents")
             latents_cache = []
             text_encoder_cache = []
             for batch in tqdm(train_dataloader, desc="Caching latents"):
@@ -313,10 +317,13 @@ class DreamBooth:
             train_dataset = LatentsDataset(latents_cache, text_encoder_cache)
             train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=1, collate_fn=lambda x: x,
                                                            shuffle=True)
+            print("Del vae")
             del vae
             if not self.train_text_encoder:
+                print("Del encoder")
                 del text_encoder
             if torch.cuda.is_available():
+                print("Empty cache")
                 torch.cuda.empty_cache()
 
         # Scheduler and math around the number of training steps.
@@ -381,15 +388,20 @@ class DreamBooth:
         training_failed = False
 
         try:
+            print("Training?")
             for epoch in range(self.num_train_epochs):
+                print("Unet.train()")
                 unet.train()
                 for step, batch in enumerate(train_dataloader):
+                    print("Accuumulate?")
                     with accelerator.accumulate(unet):
                         # Convert images to latent space
                         with torch.no_grad(), torch.autocast("cuda"):
                             if not self.not_cache_latents:
+                                print("Latent_dist")
                                 latent_dist = batch[0][0]
                             else:
+                                print("VAE ENCODE")
                                 latent_dist = vae.encode(batch["pixel_values"].to(dtype=weight_dtype)).latent_dist
                             latents = latent_dist.sample() * 0.18215
                         noise = torch.randn_like(latents)
@@ -404,13 +416,16 @@ class DreamBooth:
                         with text_enc_context:
                             if not self.not_cache_latents:
                                 if self.train_text_encoder:
+                                    print("Enc hidden (trained)")
                                     encoder_hidden_states = text_encoder(batch[0][1])[0]
                                 else:
+                                    print("Enc hidden (notrain)")
                                     encoder_hidden_states = batch[0][1]
                             else:
                                 encoder_hidden_states = text_encoder(batch["input_ids"])[0]
 
                         # Predict the noise residual
+                        print("Noise prediction...")
                         noise_pred = unet(noisy_latents, timesteps, encoder_hidden_states).sample
 
                         if self.with_prior_preservation:
@@ -506,22 +521,48 @@ class DreamBooth:
                     use_auth_token=False
                 )
                 pipeline.save_pretrained(self.output_dir)
-        else:
-            # Free memory after OOM?
-            try:
-                if unet:
-                    del unet
-                if vae:
-                    del vae
-                if text_encoder:
-                    del text_encoder
-                if tokenizer:
-                    del tokenizer
-                gc.collect()  # Python thing
-                torch.cuda.empty_cache()  # PyTorch thing
-            except:
-                pass
-
+                del pipeline
+        def cleanup():
+            gc.collect()  # Python thing
+            torch.cuda.empty_cache()  # PyTorch thing
+        # Free memory after OOM?
+        try:
+            print("CLEANUP: ")
+            if unet:
+                print("unet...")
+                del unet
+                cleanup()
+            if text_encoder:
+                print("encoder...")
+                del text_encoder
+                cleanup()
+            if tokenizer:
+                print('tokenizer...')
+                del tokenizer
+                cleanup()
+            if optimizer:
+                print("optimizer...")
+                del optimizer
+                cleanup()
+            if train_dataloader:
+                print("dataloader...")
+                del train_dataloader
+                cleanup()
+            if train_dataset:
+                print("dataset...")
+                del train_dataset
+                cleanup()
+            if lr_scheduler:
+                print("scheduler...")
+                del lr_scheduler
+                cleanup()
+            if vae:
+                print("vae...")
+                del vae
+                cleanup()
+        except:
+            pass
+        print("All things cleared??")
         try:
             accelerator.end_training()
         except Exception as f:
@@ -643,8 +684,11 @@ def start_training(model_name,
         embed_msg = "Nothing to save."
     torch.cuda.empty_cache()
     gc.collect()
+    allocated = round(torch.cuda.memory_allocated(0) / 1024 ** 3, 1)
+    cached = round(torch.cuda.memory_reserved(0) / 1024 ** 3, 1)
+    print(f'   Memory (preload): \n Allocated: {allocated}GB \n Reserved: {cached}GB')
     shared.sd_model.to(shared.device)
-    modules.sd_models.load_model()
+    #modules.sd_models.load_model()
     print("Re-applying optimizations...")
     sd_hijack.apply_optimizations()
     res = f"Training {'interrupted' if shared.state.interrupted else 'finished'}." \

@@ -55,14 +55,12 @@ class MemUsageMonitor(threading.Thread):
                     last_alloc = allocated
                     last_cached = cached
                     allocated = round(torch.cuda.memory_allocated(0) / 1024 ** 3, 1)
-                    cached = round(torch.cuda.memory_cached(0) / 1024 ** 3, 1)
+                    cached = round(torch.cuda.memory_reserved(0) / 1024 ** 3, 1)
                     if last_alloc != allocated or last_cached != cached:
                         logged = False
                     else:
                         if not logged:
-                            print('Memory changed:')
-                            print('Allocated:', allocated, 'GB')
-                            print('Reserved:   ', cached, 'GB')
+                            print(f'   Memory changed: \n Allocated: {allocated}GB \n Reserved: {cached}GB')
                             logged = True
 
                 free, total = torch.cuda.mem_get_info()  # calling with self.device errors, torch bug?
