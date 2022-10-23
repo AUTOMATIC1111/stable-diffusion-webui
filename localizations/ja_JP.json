@@ -366,7 +366,7 @@
     "Make K-diffusion samplers produce same images in a batch as when making a single image": "Make K-diffusion samplers produce same images in a batch as when making a single image",
     "Increase coherency by padding from the last comma within n tokens when using more than 75 tokens": "Increase coherency by padding from the last comma within n tokens when using more than 75 tokens",
     "Filter NSFW content": "NSFW(≒R-18)なコンテンツを検閲する",
-    "Stop At last layers of CLIP model": "最後から何層目でCLIPを止めるか(stop…layers of CLIP model)",
+    "Stop At last layers of CLIP model": "最後から何層目でCLIPを止めるか",
     "Interrogate Options": "Interrogate 設定",
     "Interrogate: keep models in VRAM": "Interrogate: モデルをVRAMに保持する",
     "Interrogate: use artists from artists.csv": "Interrogate: artists.csvにある芸術家などの名称を利用する",
