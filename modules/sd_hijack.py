@@ -305,7 +305,7 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
 
         if use_old:
             self.hijack.fixes = hijack_fixes
-            return self.process_tokens(remade_batch_tokens, batch_multipliers, text)
+            return self.process_tokens(remade_batch_tokens, batch_multipliers, text=text)
 
         z = None
         i = 0
@@ -331,7 +331,7 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
                     tokens.append([self.wrapped.tokenizer.eos_token_id] * 75)
                     multipliers.append([1.0] * 75)
 
-            z1 = self.process_tokens(tokens, multipliers, text)
+            z1 = self.process_tokens(tokens, multipliers, text=text)
             z = z1 if z is None else torch.cat((z, z1), axis=-2)
 
             remade_batch_tokens = rem_tokens
