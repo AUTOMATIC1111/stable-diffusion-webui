@@ -50,11 +50,12 @@ def create_deepbooru_process(threshold, deepbooru_opts):
     the tags.
     """
     from modules import shared  # prevents circular reference
-    shared.deepbooru_process_manager = multiprocessing.Manager()
+    context = multiprocessing.get_context("spawn")
+    shared.deepbooru_process_manager = context.Manager()
     shared.deepbooru_process_queue = shared.deepbooru_process_manager.Queue()
     shared.deepbooru_process_return = shared.deepbooru_process_manager.dict()
     shared.deepbooru_process_return["value"] = -1
-    shared.deepbooru_process = multiprocessing.Process(target=deepbooru_process, args=(shared.deepbooru_process_queue, shared.deepbooru_process_return, threshold, deepbooru_opts))
+    shared.deepbooru_process = context.Process(target=deepbooru_process, args=(shared.deepbooru_process_queue, shared.deepbooru_process_return, threshold, deepbooru_opts))
     shared.deepbooru_process.start()
 
 
@@ -157,8 +158,7 @@ def get_deepbooru_tags_from_model(model, tags, pil_image, threshold, deepbooru_o
     # sort by reverse by likelihood and normal for alpha, and format tag text as requested
     unsorted_tags_in_theshold.sort(key=lambda y: y[sort_ndx], reverse=(not alpha_sort))
     for weight, tag in unsorted_tags_in_theshold:
-        # note: tag_outformat will still have a colon if include_ranks is True
-        tag_outformat = tag.replace(':', ' ')
+        tag_outformat = tag
         if use_spaces:
             tag_outformat = tag_outformat.replace('_', ' ')
         if use_escape:

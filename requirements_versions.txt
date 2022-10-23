@@ -22,3 +22,4 @@ resize-right==0.0.2
 torchdiffeq==0.2.3
 kornia==0.6.7
 lark==1.1.2
+inflection==0.5.1

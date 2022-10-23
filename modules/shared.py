@@ -3,6 +3,7 @@ import datetime
 import json
 import os
 import sys
+from collections import OrderedDict
 
 import gradio as gr
 import tqdm
@@ -63,6 +64,7 @@ parser.add_argument("--port", type=int, help="launch gradio with given server po
 parser.add_argument("--show-negative-prompt", action='store_true', help="does not do anything", default=False)
 parser.add_argument("--ui-config-file", type=str, help="filename to use for ui configuration", default=os.path.join(script_path, 'ui-config.json'))
 parser.add_argument("--hide-ui-dir-config", action='store_true', help="hide directory configuration from webui", default=False)
+parser.add_argument("--freeze-settings", action='store_true', help="disable editing settings", default=False)
 parser.add_argument("--ui-settings-file", type=str, help="filename to use for ui settings", default=os.path.join(script_path, 'config.json'))
 parser.add_argument("--gradio-debug",  action='store_true', help="launch gradio with --debug option")
 parser.add_argument("--gradio-auth", type=str, help='set gradio authentication like "username:password"; or comma-delimit multiple like "u1:p1,u2:p2,u3:p3"', default=None)
@@ -70,12 +72,16 @@ parser.add_argument("--gradio-img2img-tool", type=str, help='gradio image upload
 parser.add_argument("--opt-channelslast", action='store_true', help="change memory type for stable diffusion to channels last")
 parser.add_argument("--styles-file", type=str, help="filename to use for styles", default=os.path.join(script_path, 'styles.csv'))
 parser.add_argument("--autolaunch", action='store_true', help="open the webui URL in the system's default browser upon launch", default=False)
+parser.add_argument("--theme", type=str, help="launches the UI with light or dark theme", default=None)
 parser.add_argument("--use-textbox-seed", action='store_true', help="use textbox for seeds in UI (no up/down, but possible to input long seeds)", default=False)
 parser.add_argument("--disable-console-progressbars", action='store_true', help="do not output progressbars to console", default=False)
 parser.add_argument("--enable-console-prompts", action='store_true', help="print prompts to console when generating with txt2img and img2img", default=False)
 parser.add_argument('--vae-path', type=str, help='Path to Variational Autoencoders model', default=None)
 parser.add_argument("--disable-safe-unpickle", action='store_true', help="disable checking pytorch models for malicious code", default=False)
-
+parser.add_argument("--api", action='store_true', help="use api=True to launch the api with the webui")
+parser.add_argument("--nowebui", action='store_true', help="use api=True to launch the api instead of the webui")
+parser.add_argument("--device-id", type=str, help="Select the default CUDA device to use (export CUDA_VISIBLE_DEVICES=0,1,etc might be needed before)", default=None)
+parser.add_argument("--browse-all-images", action='store_true', help="Allow browsing all images by Image Browser", default=False)
 
 cmd_opts = parser.parse_args()
 restricted_opts = [
@@ -135,7 +141,7 @@ class State:
         self.job_no += 1
         self.sampling_step = 0
         self.current_image_sampling_step = 0
-        
+
     def get_job_timestamp(self):
         return datetime.datetime.now().strftime("%Y%m%d%H%M%S")  # shouldn't this return job_timestamp?
 
@@ -160,13 +166,13 @@ def realesrgan_models_names():
 
 
 class OptionInfo:
-    def __init__(self, default=None, label="", component=None, component_args=None, onchange=None, show_on_main_page=False, refresh=None):
+    def __init__(self, default=None, label="", component=None, component_args=None, onchange=None, section=None, refresh=None):
         self.default = default
         self.label = label
         self.component = component
         self.component_args = component_args
         self.onchange = onchange
-        self.section = None
+        self.section = section
         self.refresh = refresh
 
 
@@ -247,7 +253,7 @@ options_templates.update(options_section(('system', "System"), {
 }))
 
 options_templates.update(options_section(('training', "Training"), {
-    "unload_models_when_training": OptionInfo(False, "Unload VAE and CLIP from VRAM when training"),
+    "unload_models_when_training": OptionInfo(False, "Move VAE and CLIP to RAM when training hypernetwork. Saves VRAM."),
     "dataset_filename_word_regex": OptionInfo("", "Filename word regex"),
     "dataset_filename_join_string": OptionInfo(" ", "Filename join string"),
     "training_image_repeats_per_epoch": OptionInfo(1, "Number of repeats for a single input image per epoch; used only for displaying epoch number", gr.Number, {"precision": 0}),
@@ -289,10 +295,12 @@ options_templates.update(options_section(('interrogate', "Interrogate Options"),
 options_templates.update(options_section(('ui', "User interface"), {
     "show_progressbar": OptionInfo(True, "Show progressbar"),
     "show_progress_every_n_steps": OptionInfo(0, "Show image creation progress every N sampling steps. Set 0 to disable.", gr.Slider, {"minimum": 0, "maximum": 32, "step": 1}),
+    "show_progress_grid": OptionInfo(True, "Show previews of all images generated in a batch as a grid"),
     "return_grid": OptionInfo(True, "Show grid in results for web"),
     "do_not_show_images": OptionInfo(False, "Do not show any images in results for web"),
     "add_model_hash_to_info": OptionInfo(True, "Add model hash to generation information"),
     "add_model_name_to_info": OptionInfo(False, "Add model name to generation information"),
+    "disable_weights_auto_swap": OptionInfo(False, "When reading generation parameters from text into UI (from PNG info or pasted text), do not change the selected model/checkpoint."),
     "font": OptionInfo("", "Font for image grids that have text"),
     "js_modal_lightbox": OptionInfo(True, "Enable full page image viewer"),
     "js_modal_lightbox_initially_zoomed": OptionInfo(True, "Show images zoomed in by default in full page image viewer"),
@@ -310,6 +318,15 @@ options_templates.update(options_section(('sampler-params', "Sampler parameters"
     's_tmin':  OptionInfo(0.0, "sigma tmin",  gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     's_noise': OptionInfo(1.0, "sigma noise", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     'eta_noise_seed_delta': OptionInfo(0, "Eta noise seed delta", gr.Number, {"precision": 0}),
+}))
+
+options_templates.update(options_section(('images-history', "Images Browser"), {
+    #"images_history_reconstruct_directory": OptionInfo(False, "Reconstruct output directory structure.This can greatly improve the speed of loading , but will change the original output directory structure"),
+    "images_history_preload": OptionInfo(False, "Preload images at startup"),
+    "images_history_num_per_page": OptionInfo(36, "Number of pictures displayed on each page"),
+    "images_history_pages_num": OptionInfo(6, "Minimum number of pages per load "),   
+    "images_history_grid_num": OptionInfo(6, "Number of grids in each row"),   
+
 }))
 
 
@@ -375,6 +392,20 @@ class Options:
         d = {k: self.data.get(k, self.data_labels.get(k).default) for k in self.data_labels.keys()}
         return json.dumps(d)
 
+    def add_option(self, key, info):
+        self.data_labels[key] = info
+
+    def reorder(self):
+        """reorder settings so that all items related to section always go together"""
+
+        section_ids = {}
+        settings_items = self.data_labels.items()
+        for k, item in settings_items:
+            if item.section not in section_ids:
+                section_ids[item.section] = len(section_ids)
+
+        self.data_labels = {k: v for k, v in sorted(settings_items, key=lambda x: section_ids[x[1].section])}
+
 
 opts = Options()
 if os.path.exists(config_filename):
@@ -383,6 +414,8 @@ if os.path.exists(config_filename):
 sd_upscalers = []
 
 sd_model = None
+
+clip_model = None
 
 progress_print_out = sys.stdout
 
