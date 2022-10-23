@@ -20,27 +20,27 @@ def upscaler_to_index(name: str):
 
 sampler_to_index = lambda name: next(filter(lambda row: name.lower() == row[1].name.lower(), enumerate(all_samplers)), None)
 
-def img_to_base64(img: str):
-    buffer = io.BytesIO()
-    img.save(buffer, format="png")
-    return base64.b64encode(buffer.getvalue())
+# def img_to_base64(img: str):
+#     buffer = io.BytesIO()
+#     img.save(buffer, format="png")
+#     return base64.b64encode(buffer.getvalue())
 
-def base64_to_bytes(base64Img: str):
-    if "," in base64Img:
-        base64Img = base64Img.split(",")[1]
-    return io.BytesIO(base64.b64decode(base64Img))
+# def base64_to_bytes(base64Img: str):
+#     if "," in base64Img:
+#         base64Img = base64Img.split(",")[1]
+#     return io.BytesIO(base64.b64decode(base64Img))
 
-def base64_to_images(base64Imgs: list[str]):
-    imgs = []
-    for img in base64Imgs:
-        img = Image.open(base64_to_bytes(img))
-        imgs.append(img)
-    return imgs
+# def base64_to_images(base64Imgs: list[str]):
+#     imgs = []
+#     for img in base64Imgs:
+#         img = Image.open(base64_to_bytes(img))
+#         imgs.append(img)
+#     return imgs
 
 class ImageToImageResponse(BaseModel):
     images: list[str] = Field(default=None, title="Image", description="The generated image in base64 format.")
-    parameters: Json
-    info: Json
+    parameters: dict
+    info: str
 
 
 class Api:
@@ -49,17 +49,17 @@ class Api:
         self.app = app
         self.queue_lock = queue_lock
         self.app.add_api_route("/sdapi/v1/txt2img", self.text2imgapi, methods=["POST"], response_model=TextToImageResponse)
-        self.app.add_api_route("/sdapi/v1/img2img", self.img2imgapi, methods=["POST"])
+        self.app.add_api_route("/sdapi/v1/img2img", self.img2imgapi, methods=["POST"], response_model=ImageToImageResponse)
         self.app.add_api_route("/sdapi/v1/extra-single-image", self.extras_single_image_api, methods=["POST"], response_model=ExtrasSingleImageResponse)
         self.app.add_api_route("/sdapi/v1/extra-batch-image", self.extras_batch_images_api, methods=["POST"], response_model=ExtrasBatchImagesResponse)
 
-    def __base64_to_image(self, base64_string):
-        # if has a comma, deal with prefix
-        if "," in base64_string:
-            base64_string = base64_string.split(",")[1]
-        imgdata = base64.b64decode(base64_string)
-        # convert base64 to PIL image
-        return Image.open(io.BytesIO(imgdata))
+    # def __base64_to_image(self, base64_string):
+    #     # if has a comma, deal with prefix
+    #     if "," in base64_string:
+    #         base64_string = base64_string.split(",")[1]
+    #     imgdata = base64.b64decode(base64_string)
+    #     # convert base64 to PIL image
+    #     return Image.open(io.BytesIO(imgdata))
 
     def text2imgapi(self, txt2imgreq: StableDiffusionTxt2ImgProcessingAPI):
         sampler_index = sampler_to_index(txt2imgreq.sampler_index)
@@ -79,11 +79,9 @@ class Api:
         with self.queue_lock:
             processed = process_images(p)
         
-        b64images = list(map(img_to_base64, processed.images))
-
-        return TextToImageResponse(images=b64images, parameters=json.dumps(vars(txt2imgreq)), info=json.dumps(processed.info))
+        b64images = list(map(processing_utils.encode_pil_to_base64, processed.images))
         
-        
+        return TextToImageResponse(images=b64images, parameters=json.dumps(vars(txt2imgreq)), info=processed.info)
 
     def img2imgapi(self, img2imgreq: StableDiffusionImg2ImgProcessingAPI):
         sampler_index = sampler_to_index(img2imgreq.sampler_index)
@@ -98,7 +96,7 @@ class Api:
 
         mask = img2imgreq.mask
         if mask:
-            mask = self.__base64_to_image(mask)
+            mask = processing_utils.decode_base64_to_image(mask)
 
         
         populate = img2imgreq.copy(update={ # Override __init__ params
@@ -113,7 +111,7 @@ class Api:
 
         imgs = []
         for img in init_images:
-            img = self.__base64_to_image(img)
+            img = processing_utils.decode_base64_to_image(img)
             imgs = [img] * p.batch_size
 
         p.init_images = imgs
@@ -121,13 +119,12 @@ class Api:
         with self.queue_lock:
             processed = process_images(p)
         
-        b64images = []
-        for i in processed.images:
-            buffer = io.BytesIO()
-            i.save(buffer, format="png")
-            b64images.append(base64.b64encode(buffer.getvalue()))
-
-        return ImageToImageResponse(images=b64images, parameters=json.dumps(vars(img2imgreq)), info=json.dumps(processed.info))
+        b64images = list(map(processing_utils.encode_pil_to_base64, processed.images))
+        # for i in processed.images:
+        #     buffer = io.BytesIO()
+        #     i.save(buffer, format="png")
+        #     b64images.append(base64.b64encode(buffer.getvalue()))
+        return ImageToImageResponse(images=b64images, parameters=vars(img2imgreq), info=processed.info)
 
     def extras_single_image_api(self, req: ExtrasSingleImageRequest):
         upscaler1Index = upscaler_to_index(req.upscaler_1)
