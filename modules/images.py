@@ -353,7 +353,7 @@ def get_next_sequence_number(path, basename):
     return result + 1
 
 
-def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None, forced_filename=None, suffix="", save_to_dirs=None):
+def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None, forced_filename=None, suffix="", save_to_dirs=None, return_path_only=False):
     '''Save an image.
 
     Args:
@@ -379,6 +379,8 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
             If specified, `basename` and filename pattern will be ignored.
         save_to_dirs (bool):
             If true, the image will be saved into a subdirectory of `path`.
+        return_path_only:
+            If True, doesn't save an image and only returns the path.
 
     Returns: (fullfn, txt_fullfn)
         fullfn (`str`):
@@ -438,7 +440,10 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
                 piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(info or "", encoding="unicode")
             },
         })
-
+        
+    if return_path_only:
+        return fullfn, fullfn_without_extension
+        
     if extension.lower() in ("jpg", "jpeg", "webp"):
         image.save(fullfn, quality=opts.jpeg_quality)
         if opts.enable_pnginfo and info is not None:

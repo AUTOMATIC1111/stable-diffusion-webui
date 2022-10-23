@@ -137,4 +137,4 @@ def img2img(mode: int, prompt: str, negative_prompt: str, prompt_style: str, pro
     if opts.do_not_show_images:
         processed.images = []
 
-    return processed.images, generation_info_js, plaintext_to_html(processed.info)
+    return processed.images, processed.video_update(), generation_info_js, plaintext_to_html(processed.info)

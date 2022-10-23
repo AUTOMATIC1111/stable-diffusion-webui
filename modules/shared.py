@@ -218,6 +218,7 @@ options_templates.update(options_section(('saving-paths', "Paths for saving"), {
     "outdir_grids": OptionInfo("", "Output directory for grids; if empty, defaults to two directories below", component_args=hide_dirs),
     "outdir_txt2img_grids": OptionInfo("outputs/txt2img-grids", 'Output directory for txt2img grids', component_args=hide_dirs),
     "outdir_img2img_grids": OptionInfo("outputs/img2img-grids", 'Output directory for img2img grids', component_args=hide_dirs),
+    "outdir_videos": OptionInfo("outputs/videos", 'Output directory for videos', component_args=hide_dirs),
     "outdir_save": OptionInfo("log/images", "Directory for saving images using the Save button", component_args=hide_dirs),
 }))
 
@@ -422,7 +423,10 @@ progress_print_out = sys.stdout
 
 class TotalTQDM:
     def __init__(self):
+        self.use_for_ui_progress_bar = False
         self._tqdm = None
+        self.total = 0
+        self.current = 0
 
     def reset(self):
         self._tqdm = tqdm.tqdm(
@@ -433,6 +437,7 @@ class TotalTQDM:
         )
 
     def update(self):
+        self.current += 1
         if not opts.multiple_tqdm or cmd_opts.disable_console_progressbars:
             return
         if self._tqdm is None:
@@ -440,6 +445,7 @@ class TotalTQDM:
         self._tqdm.update()
 
     def updateTotal(self, new_total):
+        self.total = new_total
         if not opts.multiple_tqdm or cmd_opts.disable_console_progressbars:
             return
         if self._tqdm is None:
@@ -447,9 +453,18 @@ class TotalTQDM:
         self._tqdm.total=new_total
 
     def clear(self):
+        self.use_for_ui_progress_bar = False
+        self.total = 0
+        self.current = 0
         if self._tqdm is not None:
             self._tqdm.close()
             self._tqdm = None
+    
+    def progress(self):
+        if self.total == 0:
+            return 0
+        return self.current / self.total
+        
 
 
 total_tqdm = TotalTQDM()

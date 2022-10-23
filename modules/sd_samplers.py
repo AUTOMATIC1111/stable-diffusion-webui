@@ -341,6 +341,8 @@ class KDiffusionSampler:
         self.eta = None
         self.default_eta = 1.0
         self.config = None
+        self.sigma_start_index = 0
+        self.sigma_end_index = None
         self.last_latent = None
 
         self.conditioning_key = sd_model.model.conditioning_key
@@ -411,9 +413,20 @@ class KDiffusionSampler:
             sigmas = self.model_wrap.get_sigmas(steps)
 
         sigma_sched = sigmas[steps - t_enc - 1:]
-        xi = x + noise * sigma_sched[0]
-        
+        print(f"sigma_sched len: {len(sigma_sched)}, {steps - t_enc - 1}")
+        if self.sigma_start_index == 0:
+            xi = x + noise * sigma_sched[0]
+            self.model_wrap_cfg.init_latent = x
+        else:
+            xi = x
+
+        if self.sigma_end_index is not None:
+            sigma_sched = sigma_sched[self.sigma_start_index:self.sigma_end_index]
+        else:
+            sigma_sched = sigma_sched[self.sigma_start_index:]
+            
         extra_params_kwargs = self.initialize(p)
+
         if 'sigma_min' in inspect.signature(self.func).parameters:
             ## last sigma is zero which isn't allowed by DPM Fast & Adaptive so taking value before last
             extra_params_kwargs['sigma_min'] = sigma_sched[-2]
@@ -426,7 +439,6 @@ class KDiffusionSampler:
         if 'sigmas' in inspect.signature(self.func).parameters:
             extra_params_kwargs['sigmas'] = sigma_sched
 
-        self.model_wrap_cfg.init_latent = x
         self.last_latent = x
 
         samples = self.launch_sampling(steps, lambda: self.func(self.model_wrap_cfg, xi, extra_args={
@@ -440,6 +452,7 @@ class KDiffusionSampler:
 
     def sample(self, p, x, conditioning, unconditional_conditioning, steps=None, image_conditioning = None):
         steps = steps or p.steps
+        
 
         if p.sampler_noise_scheduler_override:
             sigmas = p.sampler_noise_scheduler_override(steps)
@@ -448,8 +461,14 @@ class KDiffusionSampler:
         else:
             sigmas = self.model_wrap.get_sigmas(steps)
 
-        x = x * sigmas[0]
-
+        if self.sigma_start_index == 0:
+            x = x * sigmas[0]
+            
+        if self.sigma_end_index is not None:
+            sigmas = sigmas[self.sigma_start_index:self.sigma_end_index]
+        else:
+            sigmas = sigmas[self.sigma_start_index:]
+            
         extra_params_kwargs = self.initialize(p)
         if 'sigma_min' in inspect.signature(self.func).parameters:
             extra_params_kwargs['sigma_min'] = self.model_wrap.sigmas[0].item()
@@ -468,4 +487,9 @@ class KDiffusionSampler:
         }, disable=False, callback=self.callback_state, **extra_params_kwargs))
 
         return samples
-
+        
+    # Used for animation. Need to only partially denoise.
+    def set_sigma_start_end_indices(self, sigma_start_index, sigma_end_index): # Note: this is important for animation.
+        self.sigma_start_index = sigma_start_index
+        self.sigma_end_index = sigma_end_index
+        
