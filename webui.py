@@ -116,7 +116,7 @@ def api_only():
     app.add_middleware(GZipMiddleware, minimum_size=1000)
     api = create_api(app)
 
-    api.launch(server_name="0.0.0.0" if cmd_opts.listen else "127.0.0.1", port=cmd_opts.port if cmd_opts.port else 7861)
+    api.launch(server_name=cmd_opts.ip if cmd_opts.listen else "127.0.0.1", port=cmd_opts.port if cmd_opts.port else 7861)
 
 
 def webui():
@@ -128,7 +128,7 @@ def webui():
 
         app, local_url, share_url = demo.launch(
             share=cmd_opts.share,
-            server_name="0.0.0.0" if cmd_opts.listen else None,
+            server_name=cmd_opts.ip if cmd_opts.listen else None,
             server_port=cmd_opts.port,
             debug=cmd_opts.gradio_debug,
             auth=[tuple(cred.split(':')) for cred in cmd_opts.gradio_auth.strip('"').split(',')] if cmd_opts.gradio_auth else None,
