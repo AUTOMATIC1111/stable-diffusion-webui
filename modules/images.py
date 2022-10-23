@@ -303,7 +303,7 @@ def apply_filename_pattern(x, p, seed, prompt):
 
     x = re.sub(r'\[model_hash]', getattr(p, "sd_model_hash", shared.sd_model.sd_model_hash), x, flags=re.IGNORECASE)
     x = re.sub(r'\[date]', datetime.date.today().isoformat(), x, flags=re.IGNORECASE)
-    x = replace_datetime(x)
+    x = replace_datetime(x, datetime.datetime.now())
     x = re.sub(r'\[job_timestamp]', getattr(p, "job_timestamp", shared.state.job_timestamp), x, flags=re.IGNORECASE)
     # Apply [prompt] at last. Because it may contain any replacement word.^M
     if prompt is not None:
@@ -353,8 +353,14 @@ def get_next_sequence_number(path, basename):
     return result + 1
 
 
-def replace_datetime(input_str: str):
+def replace_datetime(input_str: str, time_datetime: datetime.datetime = None):
     """
+    Args:
+        input_str (`str`):
+            the String to be Formatted
+        time_datetime (`datetime.datetime`)
+            the time to be used, if None, use datetime.datetime.now()
+
     Formats sub_string of input_str with formatted datetime with time zone support.
     accepts sub_string format: [datetime], [datetime<Format>], [datetime<Format><Time Zone>]
     case insensitive
@@ -373,8 +379,8 @@ def replace_datetime(input_str: str):
     https://pytz.sourceforge.net/
     """
     default_time_format = '%Y%m%d%H%M%S'
-    time_now = datetime.datetime.now()
-
+    if time_datetime is None:
+        time_datetime = datetime.datetime.now()
     # match all datetime to be replace
     match_itr = re.finditer(r'\[datetime(?:<([^>]*)>(?:<([^>]*)>)?)?]', input_str, re.IGNORECASE)
     for match in reversed(list(match_itr)):
@@ -392,7 +398,7 @@ def replace_datetime(input_str: str):
             time_zone = None
 
         # generate time string
-        time_zone_time = time_now.astimezone(time_zone)
+        time_zone_time = time_datetime.astimezone(time_zone)
         try:
             formatted_time = time_zone_time.strftime(time_format)
 
