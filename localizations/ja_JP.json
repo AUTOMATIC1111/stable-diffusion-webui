@@ -437,7 +437,7 @@
     "How many image to create in a single batch": "1回のバッチ処理で何枚の画像を生成するか",
     "Classifier Free Guidance Scale - how strongly the image should conform to prompt - lower values produce more creative results": "Classifier Free Guidance Scale - 生成する画像がどの程度プロンプトに沿ったものになるか。 - 低い値の方がよりクリエイティブな結果を生み出します。",
     "A value that determines the output of random number generator - if you create an image with same parameters and seed as another image, you'll get the same result": "乱数発生器の出力を決定する値。同じパラメータとシードで画像を作成すれば、同じ結果が得られます。",
-    "Set seed to -1, which will cause a new random number to be used every time": "シード値を -1 に設定するとランダムに生成します。",
+    "Set seed to -1, which will cause a new random number to be used every time": "シード値を-1に設定。つまり、毎回ランダムに生成します。",
     "Reuse seed from last generation, mostly useful if it was randomed": "前回生成時のシード値を読み出す。(ランダム生成時に便利)",
     "Seed of a different picture to be mixed into the generation.": "生成時に混合されることになる画像のシード値",
     "How strong of a variation to produce. At 0, there will be no effect. At 1, you will get the complete picture with variation seed (except for ancestral samplers, where you will just get something).": "Variationの強度。0の場合、何の効果もありません。1では、バリエーションシードで完全な画像を得ることができます（Ancestalなアルゴリズム以外では、何か(?)を得るだけです）。",
