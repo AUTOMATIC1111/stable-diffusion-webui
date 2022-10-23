@@ -202,7 +202,7 @@
     "CodeFormer visibility": "CodeFormer 可见度",
     "CodeFormer weight (0 = maximum effect, 1 = minimum effect)": "CodeFormer 权重 (0 = 最大效果, 1 = 最小效果)",
     "Open output directory": "打开输出目录",
-    "Send to txt2img": "输出到文转图",
+    "Send to txt2img": "传送到文转图",
     "txt2img history": "文转图历史记录",
     "img2img history": "图转图历史记录",
     "extras history": "后处理历史记录",
