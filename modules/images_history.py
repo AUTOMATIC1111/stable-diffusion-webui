@@ -294,7 +294,7 @@ def show_images_history(gr, opts, tabname, run_pnginfo, switch_dict):
         dir_name = d[0]
         for p in d[1:]:
             dir_name = os.path.join(dir_name, p)
-        if not os.path.exists(dir_name):
+        if dir_name != '' and not os.path.exists(dir_name):
             os.makedirs(dir_name)
 
     with gr.Column() as page_panel:            
