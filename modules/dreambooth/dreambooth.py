@@ -564,8 +564,11 @@ def start_training(model_name,
                    ):
     print("Starting Dreambooth training...")
     converted = ""
+    print("Undoing SD optimizations")
     sd_hijack.undo_optimizations()
-    shared.sd_model = None
+    print("Clearing shared sd model")
+    shared.sd_model.to('cpu')
+    torch.cuda.empty_cache()
     model_path = paths.models_path
     model_dir = os.path.join(model_path, "dreambooth", model_name, "working")
     config = None
@@ -638,7 +641,9 @@ def start_training(model_name,
     else:
         print("Oops, something must have happened, unable to train model.")
         embed_msg = "Nothing to save."
-
+    torch.cuda.empty_cache()
+    gc.collect()
+    shared.sd_model.to(shared.device)
     modules.sd_models.load_model()
     print("Re-applying optimizations...")
     sd_hijack.apply_optimizations()
