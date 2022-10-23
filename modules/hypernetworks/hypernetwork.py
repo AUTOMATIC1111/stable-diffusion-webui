@@ -288,10 +288,13 @@ def statistics(data):
 def report_statistics(loss_info:dict):
     keys = sorted(loss_info.keys(), key=lambda x: sum(loss_info[x]) / len(loss_info[x]))
     for key in keys:
-        info, recent = statistics(loss_info[key])
-        print("Loss statistics for file " + key)
-        print(info)
-        print(recent)
+        try:
+            print("Loss statistics for file " + key)
+            info, recent = statistics(loss_info[key])
+            print(info)
+            print(recent)
+        except Exception as e:
+            print(e)
 
 
 
