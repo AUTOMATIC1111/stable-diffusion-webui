@@ -1,7 +1,8 @@
+from array import array
 from inflection import underscore
 from typing import Any, Dict, Optional
 from pydantic import BaseModel, Field, create_model
-from modules.processing import StableDiffusionProcessingTxt2Img
+from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img
 import inspect
 
 
@@ -92,8 +93,14 @@ class PydanticModelGenerator:
         DynamicModel.__config__.allow_mutation = True
         return DynamicModel
     
-StableDiffusionProcessingAPI = PydanticModelGenerator(
+StableDiffusionTxt2ImgProcessingAPI = PydanticModelGenerator(
     "StableDiffusionProcessingTxt2Img", 
     StableDiffusionProcessingTxt2Img,
     [{"key": "sampler_index", "type": str, "default": "Euler"}]
+).generate_model()
+
+StableDiffusionImg2ImgProcessingAPI = PydanticModelGenerator(
+    "StableDiffusionProcessingImg2Img", 
+    StableDiffusionProcessingImg2Img,
+    [{"key": "sampler_index", "type": str, "default": "Euler"}, {"key": "init_images", "type": list, "default": None}, {"key": "denoising_strength", "type": float, "default": 0.75}, {"key": "mask", "type": str, "default": None}]
 ).generate_model()
