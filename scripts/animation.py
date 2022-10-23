@@ -9,7 +9,7 @@ import gradio as gr
 
 from modules import images, devices
 from modules.images import get_next_sequence_number, save_image
-from modules.processing import process_images, Processed
+from modules.processing import process_images, Processed, StableDiffusionProcessingImg2Img
 from modules.shared import opts, cmd_opts, state
 from modules.prompt_parser import get_multicond_learned_conditioning, ComposableScheduledPromptConditioning, MulticondLearnedConditioning
 import modules.sd_samplers
@@ -29,12 +29,13 @@ def int_log2(x):
 def sample_animation_frames(p, x, sample_func, sample_args, conditioning_from_ratio):
     MIN_SQUARE_DIFF_FACTOR = 0.5 # TODO: want this as a parameter? Increasing this can result in smoother animation.
     DONT_AVERAGE_LAST_LEVEL = False # TODO: want it as parameter? probably not, not so helpful as I thought.
-    ANIMATION_START_END_CONSTANT = True 
     
     current_samples = x
     previous_conditioning_ratios = [0]
     num_animation_frames = p.num_animation_frames
     num_levels = len(p.levels_sizes)
+    x_copy = x
+    first_sampling_done = False
     
     for current_level in range(num_levels):
         print(f"animation: level {current_level+1}/{num_levels}")
@@ -44,17 +45,19 @@ def sample_animation_frames(p, x, sample_func, sample_args, conditioning_from_ra
         new_sample_inputs = []
         new_sample_inputs_indices = []
         new_sample_ratios = []
-        if current_level <= 1:
+        if len(previous_conditioning_ratios) <= 1:
             new_sample_inputs = [current_samples[0]] * current_level_size
             new_sample_inputs_indices = [0] * current_level_size
             new_sample_ratios = [1] * current_level_size
             if current_level_size == 1:
                 conditioning_ratios = [0.5]
+                if p.img2img_img_is_first_frame:
+                    conditioning_ratios = [1] # The first frame should already give us enough in common, condition to the end.
             else:
-                if ANIMATION_START_END_CONSTANT:
-                    conditioning_ratios = [i / (current_level_size - 1) for i in range(current_level_size)]
+                if p.img2img_img_is_first_frame:
+                    conditioning_ratios = [(i+1) / (current_level_size) for i in range(current_level_size)]
                 else:
-                    conditioning_ratios = [i / (current_level_size + 1) for i in range(1, current_level_size + 1)]
+                    conditioning_ratios = [i / (current_level_size - 1) for i in range(current_level_size)]
         else:
             squared_diffs = torch.sqrt(
                 torch.sum(
@@ -73,8 +76,8 @@ def sample_animation_frames(p, x, sample_func, sample_args, conditioning_from_ra
             j = 0
             max_j = len(previous_conditioning_ratios) - 1
             for i in range(current_level_size):
-                if current_level != num_levels - 1 and not ANIMATION_START_END_CONSTANT:
-                    wanted_ratio = (i + 1) / (current_level_size + 1)
+                if p.img2img_img_is_first_frame:
+                    wanted_ratio = (i+1) / (current_level_size) # First frame is ratio 0.
                 else:
                     wanted_ratio = i / (current_level_size - 1)
                 
@@ -97,7 +100,7 @@ def sample_animation_frames(p, x, sample_func, sample_args, conditioning_from_ra
                     new_sample_ratios.append(first_ratio)
                     conditioning_ratio = previous_conditioning_ratios[j] * first_ratio + (1-first_ratio) * previous_conditioning_ratios[j+1]
                     conditioning_ratios.append(conditioning_ratio)
-                    if current_level == num_levels - 1 and DONT_AVERAGE_LAST_LEVEL: # Don't average in the last level
+                    if (current_level == num_levels - 1 and DONT_AVERAGE_LAST_LEVEL) or p.dont_average_animation: # Don't average in the last level
                         if first_ratio >= 0.5:
                             new_sample = current_samples[j]
                         else:
@@ -105,6 +108,8 @@ def sample_animation_frames(p, x, sample_func, sample_args, conditioning_from_ra
                     else:
                         new_sample = current_samples[j] * first_ratio + (1-first_ratio) * current_samples[j+1]
                     new_sample_inputs.append(new_sample)
+                if i == current_level_size - 1:
+                    assert(torch.all(torch.eq(new_sample_inputs[-1], current_samples[-1])))
                 new_sample_inputs_indices.append(j)
                 
 
@@ -120,15 +125,24 @@ def sample_animation_frames(p, x, sample_func, sample_args, conditioning_from_ra
         print(f"animation: level {current_level+1}/{num_levels}, sigma_start={sigma_start}, sigma_end={sigma_end}")
         print(f"new_sample_inputs shape={new_sample_inputs.shape}, current_samples.shape = {current_samples.shape}")
         p.sampler.set_sigma_start_end_indices(sigma_start, sigma_end)
-        for new_index in range(0, current_level_size, p.batch_size):
+        for new_index in range(current_level_size):
+            assert(sigma_start > 0 or not first_sampling_done) # we sample ony once with the first sigma index.
             if state.interrupted:
                 print(f"stopped prematurely")
                 return current_samples
                 
             batch_results = sample_func(x=new_sample_inputs[new_index:new_index+1], conditioning=conditioning_from_ratio(conditioning_ratios[new_index]), **sample_args)
+            first_sampling_done = True
             devices.torch_gc()
             if new_index == 0:
-                current_samples = batch_results
+                if p.img2img_img_is_first_frame:
+                    # Always inject the original image sample into this. 
+                    # We're faking a "perfect" denoising by just reducing the noise multiplier.
+                    # We still need noise or the images will turn out blurry.
+                    # Note that the last sample will be identical to the img2img frame as we multiply by 0 the noise.
+                    current_samples = torch.cat((x_copy + sample_args["noise"] * p.sigma_sched[sigma_end or -1], batch_results)) 
+                else:
+                    current_samples = batch_results
             else:
                 current_samples = torch.cat((current_samples, batch_results))
                 
@@ -137,6 +151,9 @@ def sample_animation_frames(p, x, sample_func, sample_args, conditioning_from_ra
         del new_sample_inputs
         devices.torch_gc()
         previous_conditioning_ratios = conditioning_ratios
+        if p.img2img_img_is_first_frame:
+            previous_conditioning_ratios = [0] + conditioning_ratios
+        assert(len(previous_conditioning_ratios) == current_samples.shape[0])
     
     return current_samples
 
@@ -174,9 +191,12 @@ def sample_animation(p, x, conditioning, unconditional_conditioning, steps, is_i
     if is_img2img:
         sample_args['noise'] = noise
         sample_func = p.sampler.sample_img2img
+        p.sigma_sched = list(p.sampler.get_sigmas(p, p.fake_steps)[p.fake_steps-p.t_enc-1:])
     else:
         sample_func = p.sampler.sample
+        p.img2img_img_is_first_frame = False
         
+    print(f"sample_animation: steps={steps}, p.steps={p.steps}")
     conditioning_end = get_multicond_learned_conditioning(shared.sd_model, [p.prompt_end], p.steps)
      
     def conditioning_from_ratio(ratio):
@@ -204,18 +224,31 @@ class Script(scripts.Script):
         animation_levels = gr.Textbox(label="Animation levels", lines=1)
         animation_steps =  gr.Textbox(label="Animation steps", lines=1)
         fps = gr.Slider(label="FPS", minimum=1, maximum=60, step=1, value=2)
-        return [prompt_end, num_animation_frames, animation_levels, animation_steps, fps]
+        reverse_animation = gr.Checkbox(label="Reverse animation", value=False)
+        ping_pong_loop = gr.Checkbox(label="Ping-pong loop the animation back and forth", value=False)
+        dont_average_animation = gr.Checkbox(label="Don't average latents", value=False)
+        if is_img2img:
+            img2img_img_is_first_frame = [gr.Checkbox(label="img2img image is the first frame", value=True)]
+        else:
+            img2img_img_is_first_frame = []
+        return [prompt_end, num_animation_frames, animation_levels, animation_steps, fps, reverse_animation, ping_pong_loop, dont_average_animation] + img2img_img_is_first_frame
     
-    def run(self, p, prompt_end, num_animation_frames, animation_levels, animation_steps, fps):
+    def run(self, p, prompt_end, num_animation_frames, animation_levels, animation_steps, fps, reverse_animation, ping_pong_loop, dont_average_animation, img2img_img_is_first_frame = False):
         animation_info = {
         "prompt_end":prompt_end,
         "num_animation_frames":num_animation_frames,
         "animation_levels":animation_levels,
         "animation_steps":animation_steps,
-        "fps":fps
+        "fps":fps,
+        "reverse_animation": reverse_animation,
+        "ping_pong_loop": ping_pong_loop,
+        "img2img_img_is_first_frame":img2img_img_is_first_frame,
+        "dont_average_animation":dont_average_animation
         }
         p.do_not_save_grid = True # Don't save a huge grid.
         p.decode_batch_one_by_one = True # This is required because no GPU can ever process all frames in a single batch. (when there are a lot of frames)
+        p.img2img_img_is_first_frame = img2img_img_is_first_frame
+        p.dont_average_animation = dont_average_animation
         
         if "enable_hr" in dir(p) and p.enable_hr:
             raise NotImplementedError("Animation didn't implement high resolution fix yet")
@@ -231,7 +264,13 @@ class Script(scripts.Script):
         p.animation_steps = animation_steps
         
         steps = p.steps
-        
+        if type(p) is StableDiffusionProcessingImg2Img:
+            fake_steps, t_enc = modules.sd_samplers.setup_img2img_steps(p, None)
+            steps = t_enc + 1
+            self.real_steps = steps
+            p.fake_steps = fake_steps
+            p.t_enc = t_enc
+            
         # Initialize animation levels:
         if p.animation_levels:
             p.levels_sizes = [int(x) for x in p.animation_levels.split(",")]
@@ -291,6 +330,13 @@ class Script(scripts.Script):
         with open(output_video_path + ".txt","w") as animation_params_file:
             json.dump(animation_info, animation_params_file)
             
-        save_animation(processed.images, output_video_path, fps=fps)
+        frames = processed.images
+        if reverse_animation:
+            frames = frames[::-1]
+            
+        if ping_pong_loop:
+            frames += frames[::-1]
+            
+        save_animation(frames, output_video_path, fps=fps)
         processed.video =  output_video_path
         return processed

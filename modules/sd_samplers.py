@@ -79,7 +79,7 @@ def setup_img2img_steps(p, steps=None):
     else:
         steps = p.steps
         t_enc = int(min(p.denoising_strength, 0.999) * steps)
-
+        
     return steps, t_enc
 
 
@@ -401,29 +401,22 @@ class KDiffusionSampler:
             extra_params_kwargs['eta'] = self.eta
 
         return extra_params_kwargs
+        
+
 
     def sample_img2img(self, p, x, noise, conditioning, unconditional_conditioning, steps=None, image_conditioning=None):
         steps, t_enc = setup_img2img_steps(p, steps)
 
-        if p.sampler_noise_scheduler_override:
-            sigmas = p.sampler_noise_scheduler_override(steps)
-        elif self.config is not None and self.config.options.get('scheduler', None) == 'karras':
-            sigmas = k_diffusion.sampling.get_sigmas_karras(n=steps, sigma_min=0.1, sigma_max=10, device=shared.device)
-        else:
-            sigmas = self.model_wrap.get_sigmas(steps)
+        sigmas = self.get_sigmas(p, steps)
 
         sigma_sched = sigmas[steps - t_enc - 1:]
-        print(f"sigma_sched len: {len(sigma_sched)}, {steps - t_enc - 1}")
         if self.sigma_start_index == 0:
             xi = x + noise * sigma_sched[0]
             self.model_wrap_cfg.init_latent = x
         else:
             xi = x
 
-        if self.sigma_end_index is not None:
-            sigma_sched = sigma_sched[self.sigma_start_index:self.sigma_end_index]
-        else:
-            sigma_sched = sigma_sched[self.sigma_start_index:]
+        sigma_sched = self.get_sigmas_subset(sigma_sched)
             
         extra_params_kwargs = self.initialize(p)
 
@@ -453,21 +446,12 @@ class KDiffusionSampler:
     def sample(self, p, x, conditioning, unconditional_conditioning, steps=None, image_conditioning = None):
         steps = steps or p.steps
         
-
-        if p.sampler_noise_scheduler_override:
-            sigmas = p.sampler_noise_scheduler_override(steps)
-        elif self.config is not None and self.config.options.get('scheduler', None) == 'karras':
-            sigmas = k_diffusion.sampling.get_sigmas_karras(n=steps, sigma_min=0.1, sigma_max=10, device=shared.device)
-        else:
-            sigmas = self.model_wrap.get_sigmas(steps)
+        sigmas = self.get_sigmas(p, steps)
 
         if self.sigma_start_index == 0:
             x = x * sigmas[0]
             
-        if self.sigma_end_index is not None:
-            sigmas = sigmas[self.sigma_start_index:self.sigma_end_index]
-        else:
-            sigmas = sigmas[self.sigma_start_index:]
+        sigmas = self.get_sigmas_subset(sigmas)
             
         extra_params_kwargs = self.initialize(p)
         if 'sigma_min' in inspect.signature(self.func).parameters:
@@ -492,4 +476,19 @@ class KDiffusionSampler:
     def set_sigma_start_end_indices(self, sigma_start_index, sigma_end_index): # Note: this is important for animation.
         self.sigma_start_index = sigma_start_index
         self.sigma_end_index = sigma_end_index
+        
+    def get_sigmas(self, p, steps):
+        if p.sampler_noise_scheduler_override:
+            sigmas = p.sampler_noise_scheduler_override(steps)
+        elif self.config is not None and self.config.options.get('scheduler', None) == 'karras':
+            sigmas = k_diffusion.sampling.get_sigmas_karras(n=steps, sigma_min=0.1, sigma_max=10, device=shared.device)
+        else:
+            sigmas = self.model_wrap.get_sigmas(steps)  
+        return sigmas
+    
+    def get_sigmas_subset(self, sigmas):
+        if self.sigma_end_index is not None:
+            return sigmas[self.sigma_start_index:self.sigma_end_index]
+        else:
+            return sigmas[self.sigma_start_index:]
         
