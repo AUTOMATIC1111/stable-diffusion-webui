@@ -460,7 +460,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
                     devices.torch_gc()
 
                 image = Image.fromarray(x_sample)
-                
+
                 if p.color_corrections is not None and i < len(p.color_corrections):
                     if opts.save and not p.do_not_save_samples and opts.save_images_before_color_correction:
                         image_without_cc = apply_overlay(p.overlay_images is not None and i < len(p.overlay_images), p.overlay_images[i], p.paste_to, image)
