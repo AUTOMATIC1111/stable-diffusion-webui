@@ -282,7 +282,7 @@ def report_statistics(loss_info:dict):
     for key in keys:
         try:
             print("Loss statistics for file " + key)
-            info, recent = statistics(loss_info[key])
+            info, recent = statistics(list(loss_info[key]))
             print(info)
             print(recent)
         except Exception as e:
