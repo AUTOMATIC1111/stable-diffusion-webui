@@ -174,7 +174,7 @@
     "right": "右",
     "up": "上",
     "down": "下",
-    "Fall-off exponent (lower=higher detail)": "衰减指数（低=高细节）",
+    "Fall-off exponent (lower=higher detail)": "衰减指数(越低细节越好)",
     "Color variation": "色彩变化",
     "Will upscale the image to twice the dimensions; use width and height sliders to set tile size": "将图像放大到两倍尺寸； 使用宽度和高度滑块设置图块尺寸(tile size)",
     "Tile overlap": "图块重叠的像素(Tile overlap)",
