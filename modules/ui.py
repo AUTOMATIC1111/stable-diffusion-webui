@@ -1885,7 +1885,7 @@ def load_javascript(raw_response):
         javascript = f'<script>{jsfile.read()}</script>'
 
     scripts_list = modules.scripts.list_scripts("javascript", ".js")
-    scripts_list += modules.scripts.list_scripts("scripts", ".js")
+    
     for basedir, filename, path in scripts_list:
         with open(path, "r", encoding="utf8") as jsfile:
             javascript += f"\n<!-- {filename} --><script>{jsfile.read()}</script>"
