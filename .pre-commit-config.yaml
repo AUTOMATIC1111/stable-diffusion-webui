@@ -1,0 +1,16 @@
+minimum_pre_commit_version: 2.15.0
+ci:
+  autofix_prs: false
+repos:
+  - repo: local
+    hooks:
+    - id: pylint
+      name: pylint
+      entry: pylint
+      language: system
+      types: [python]
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.3.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
