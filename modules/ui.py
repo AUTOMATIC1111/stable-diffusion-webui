@@ -784,6 +784,7 @@ def create_ui(wrap_gradio_gpu_call):
                 ]
             )
 
+            global txt2img_paste_fields 
             txt2img_paste_fields = [
                 (txt2img_prompt, "Prompt"),
                 (txt2img_negative_prompt, "Negative prompt"),
@@ -1054,6 +1055,7 @@ def create_ui(wrap_gradio_gpu_call):
                     outputs=[prompt, negative_prompt, style1, style2],
                 )
 
+            global img2img_paste_fields
             img2img_paste_fields = [
                 (img2img_prompt, "Prompt"),
                 (img2img_negative_prompt, "Negative prompt"),
