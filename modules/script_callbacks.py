@@ -16,7 +16,7 @@ def model_loaded_callback(sd_model):
 
 def ui_tabs_callback():
     res = []
-
+    
     for callback in callbacks_ui_tabs:
         res += callback() or []
 
