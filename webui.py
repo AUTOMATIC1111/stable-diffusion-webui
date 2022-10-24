@@ -139,6 +139,8 @@ def webui():
             inbrowser=cmd_opts.autolaunch,
             prevent_thread_lock=True
         )
+        # after initial launch, disable --autolaunch for subsequent restarts
+        cmd_opts.autolaunch = False
 
         app.add_middleware(GZipMiddleware, minimum_size=1000)
 

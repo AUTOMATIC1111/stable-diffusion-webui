@@ -46,6 +46,20 @@ def apply_color_correction(correction, image):
 
     return image
 
+def apply_overlay(overlay_exists, overlay, paste_loc, image):
+    if overlay_exists:
+        if paste_loc is not None:
+            x, y, w, h = paste_loc
+            base_image = Image.new('RGBA', (overlay.width, overlay.height))
+            image = images.resize_image(1, image, w, h)
+            base_image.paste(image, (x, y))
+            image = base_image
+
+        image = image.convert('RGBA')
+        image.alpha_composite(overlay)
+        image = image.convert('RGB')
+
+    return image
 
 def get_correct_sampler(p):
     if isinstance(p, modules.processing.StableDiffusionProcessingTxt2Img):
@@ -449,22 +463,11 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
 
                 if p.color_corrections is not None and i < len(p.color_corrections):
                     if opts.save and not p.do_not_save_samples and opts.save_images_before_color_correction:
-                        images.save_image(image, p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, info=infotext(n, i), p=p, suffix="-before-color-correction")
+                        image_without_cc = apply_overlay(p.overlay_images is not None and i < len(p.overlay_images), p.overlay_images[i], p.paste_to, image)
+                        images.save_image(image_without_cc, p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, info=infotext(n, i), p=p, suffix="-before-color-correction")
                     image = apply_color_correction(p.color_corrections[i], image)
 
-                if p.overlay_images is not None and i < len(p.overlay_images):
-                    overlay = p.overlay_images[i]
-
-                    if p.paste_to is not None:
-                        x, y, w, h = p.paste_to
-                        base_image = Image.new('RGBA', (overlay.width, overlay.height))
-                        image = images.resize_image(1, image, w, h)
-                        base_image.paste(image, (x, y))
-                        image = base_image
-
-                    image = image.convert('RGBA')
-                    image.alpha_composite(overlay)
-                    image = image.convert('RGB')
+                image = apply_overlay(p.overlay_images is not None and i < len(p.overlay_images), p.overlay_images[i], p.paste_to, image)
 
                 if opts.samples_save and not p.do_not_save_samples:
                     images.save_image(image, p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, info=infotext(n, i), p=p)
