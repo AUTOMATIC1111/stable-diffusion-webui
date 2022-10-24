@@ -348,7 +348,7 @@ class Options:
 
     def save(self, filename):
         with open(filename, "w", encoding="utf8") as file:
-            json.dump(self.data, file)
+            json.dump(self.data, file, indent=4)
 
     def same_type(self, x, y):
         if x is None or y is None:
