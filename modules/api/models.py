@@ -69,7 +69,7 @@ class PydanticModelGenerator:
                 field=underscore(k),
                 field_alias=k,
                 field_type=field_type_generator(k, v),
-                field_value=v.default,
+                field_value=v.default
             )
             for (k,v) in self._class_data.items() if k not in API_NOT_ALLOWED
         ]

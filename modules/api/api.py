@@ -42,9 +42,6 @@ class Api:
         # convert base64 to PIL image
         return Image.open(io.BytesIO(imgdata))
 
-    def __processed_info_to_json(self, processed):
-        return json.dumps(processed.info)
-
     def text2imgapi(self, txt2imgreq: StableDiffusionTxt2ImgProcessingAPI):
         sampler_index = sampler_to_index(txt2imgreq.sampler_index)
         
@@ -116,7 +113,6 @@ class Api:
             b64images.append(base64.b64encode(buffer.getvalue()))
 
         if (not img2imgreq.include_init_images):
-            # remove img2imgreq.init_images and img2imgreq.mask
             img2imgreq.init_images = None
             img2imgreq.mask = None
 
