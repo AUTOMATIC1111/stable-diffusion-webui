@@ -21,6 +21,7 @@
   "Add layer normalization": "레이어 정규화(normalization) 추가",
   "Add model hash to generation information": "생성 정보에 모델 해시 추가",
   "Add model name to generation information": "생성 정보에 모델 이름 추가",
+  "Add number to filename when saving": "이미지를 저장할 때 파일명에 숫자 추가하기",
   "Aesthetic imgs embedding": "스타일 이미지 임베딩",
   "Aesthetic learning rate": "스타일 학습 수",
   "Aesthetic steps": "스타일 스텝 수",
