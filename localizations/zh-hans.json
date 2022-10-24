@@ -454,7 +454,7 @@
     "Resize image to target resolution. Unless height and width match, you will get incorrect aspect ratio.": "将图像大小调整为目标分辨率。除非高度和宽度匹配，否则你将获得不正确的纵横比",
     "Resize the image so that entirety of target resolution is filled with the image. Crop parts that stick out.": "调整图像大小，使整个目标分辨率都被图像填充。裁剪多出来的部分",
     "Resize the image so that entirety of image is inside target resolution. Fill empty space with image's colors.": "调整图像大小，使整个图像在目标分辨率内。用图像的颜色填充空白区域",
-    "How many times to repeat processing an image and using it as input for the next iteration": "重复处理图像多少次并将其用作下一次迭代的输入",
+    "How many times to repeat processing an image and using it as input for the next iteration": "处理图片并作为下次迭代输入的重复次数",
     "In loopback mode, on each loop the denoising strength is multiplied by this value. <1 means decreasing variety so your sequence will converge on a fixed picture. >1 means increasing variety so your sequence will become more and more chaotic.": "在回送模式下，在每个循环中，降噪强度都会乘以该值。<1 表示减少多样性，因此你的这一组图将集中在固定的图像上。>1 意味着增加多样性，因此你的这一组图将变得越来越混乱",
     "For SD upscale, how much overlap in pixels should there be between tiles. Tiles overlap so that when they are merged back into one picture, there is no clearly visible seam.": "使用 SD 放大(SD upscale)时，图块(Tiles)之间应该有多少像素重叠。图块(Tiles)之间需要重叠才可以让它们在合并回一张图像时，没有清晰可见的接缝",
     "A directory on the same machine where the server is running.": "与服务器主机上的目录",
