@@ -305,7 +305,7 @@
     "File format for grids": "概览图的文件格式",
     "Add extended info (seed, prompt) to filename when saving grid": "保存概览时将扩展信息（随机种子、提示词）添加到文件名",
     "Do not save grids consisting of one picture": "不要保存由一张图像组成的概览图",
-    "Prevent empty spots in grid (when set to autodetect)": "防止概览图中出现空白点（设置为自动检测时）",
+    "Prevent empty spots in grid (when set to autodetect)": "（在自动检测时）防止概览图中出现空位",
     "Grid row count; use -1 for autodetect and 0 for it to be same as batch size": "概览行数； 使用 -1 进行自动检测，使用 0 使其与批量大小相同",
     "Save text information about generation parameters as chunks to png files": "将有关生成参数的文本信息作为块保存到 png 文件中",
     "Create a text file next to every image with generation parameters.": "保存图像时在每个图像旁边创建一个文本文件储存生成参数",
