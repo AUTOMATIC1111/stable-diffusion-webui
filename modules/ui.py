@@ -38,7 +38,6 @@ import modules.codeformer_model
 import modules.generation_parameters_copypaste
 import modules.gfpgan_model
 import modules.hypernetworks.ui
-import modules.images_history as img_his
 import modules.ldsr_model
 import modules.scripts
 import modules.shared as shared
@@ -51,12 +50,11 @@ from modules.sd_samplers import samplers, samplers_for_img2img
 import modules.textual_inversion.ui
 import modules.hypernetworks.ui
 
-import modules.images_history as img_his
-
-
 # this is a fix for Windows users. Without it, javascript files will be served with text/html content-type and the browser will not show any UI
 mimetypes.init()
 mimetypes.add_type('application/javascript', '.js')
+txt2img_paste_fields = []
+img2img_paste_fields = []
 
 
 if not cmd_opts.share and not cmd_opts.listen:
@@ -786,6 +784,7 @@ def create_ui(wrap_gradio_gpu_call):
                 ]
             )
 
+            global txt2img_paste_fields 
             txt2img_paste_fields = [
                 (txt2img_prompt, "Prompt"),
                 (txt2img_negative_prompt, "Negative prompt"),
@@ -1056,6 +1055,7 @@ def create_ui(wrap_gradio_gpu_call):
                     outputs=[prompt, negative_prompt, style1, style2],
                 )
 
+            global img2img_paste_fields
             img2img_paste_fields = [
                 (img2img_prompt, "Prompt"),
                 (img2img_negative_prompt, "Negative prompt"),
@@ -1104,9 +1104,9 @@ def create_ui(wrap_gradio_gpu_call):
                                 upscaling_resize_w = gr.Number(label="Width", value=512, precision=0)
                                 upscaling_resize_h = gr.Number(label="Height", value=512, precision=0)
                             upscaling_crop = gr.Checkbox(label='Crop to fit', value=True)
-
+                
                 with gr.Group():
-                    extras_upscaler_1 = gr.Radio(label='Upscaler 1', elem_id="extras_upscaler_1", choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name, type="index")
+                    extras_upscaler_1 = gr.Radio(label='Upscaler 1', elem_id="extras_upscaler_1", choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name, type="index") 
 
                 with gr.Group():
                     extras_upscaler_2 = gr.Radio(label='Upscaler 2', elem_id="extras_upscaler_2", choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name, type="index")
@@ -1193,15 +1193,7 @@ def create_ui(wrap_gradio_gpu_call):
             inputs=[image],
             outputs=[html, generation_info, html2],
         )
-    #images history
-    images_history_switch_dict = {
-        "fn": modules.generation_parameters_copypaste.connect_paste,
-        "t2i": txt2img_paste_fields,
-        "i2i": img2img_paste_fields
-    }
-
-    images_history = img_his.create_history_tabs(gr, opts, cmd_opts, wrap_gradio_call(modules.extras.run_pnginfo), images_history_switch_dict)
-
+   
     with gr.Blocks() as modelmerger_interface:
         with gr.Row().style(equal_height=False):
             with gr.Column(variant='panel'):
@@ -1650,7 +1642,6 @@ Requested path was: {f}
         (img2img_interface, "img2img", "img2img"),
         (extras_interface, "Extras", "extras"),
         (pnginfo_interface, "PNG Info", "pnginfo"),
-        (images_history, "Image Browser", "images_history"),
         (modelmerger_interface, "Checkpoint Merger", "modelmerger"),
         (train_interface, "Train", "ti"),
     ]
@@ -1894,6 +1885,7 @@ def load_javascript(raw_response):
         javascript = f'<script>{jsfile.read()}</script>'
 
     scripts_list = modules.scripts.list_scripts("javascript", ".js")
+    
     for basedir, filename, path in scripts_list:
         with open(path, "r", encoding="utf8") as jsfile:
             javascript += f"\n<!-- {filename} --><script>{jsfile.read()}</script>"

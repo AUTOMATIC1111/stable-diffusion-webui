@@ -1,5 +1,5 @@
 import inspect
-from pydantic import BaseModel, Field, Json, create_model
+from pydantic import BaseModel, Field, create_model
 from typing import Any, Optional
 from typing_extensions import Literal
 from inflection import underscore
