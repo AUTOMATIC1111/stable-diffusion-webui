@@ -9,7 +9,6 @@ import datetime
 import csv
 import numpy as np
 
-import torchvision.transforms
 from PIL import Image, PngImagePlugin
 from torch.utils.tensorboard import SummaryWriter
 from modules import shared, devices, sd_hijack, processing, sd_models
