@@ -344,7 +344,10 @@ class FilenameGenerator:
         time_datetime = datetime.datetime.now()
 
         time_format = args[0] if len(args) > 0 else self.default_time_format
-        time_zone = pytz.timezone(args[1]) if len(args) > 1 else None
+        try:
+            time_zone = pytz.timezone(args[1]) if len(args) > 1 else None
+        except pytz.exceptions.UnknownTimeZoneError as _:
+            time_zone = None
 
         time_zone_time = time_datetime.astimezone(time_zone)
         try:
