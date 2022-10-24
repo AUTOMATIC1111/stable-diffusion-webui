@@ -312,10 +312,14 @@ def check_progress_call(id_part):
     image = gr_show(False)
     preview_visibility = gr_show(False)
 
-    if opts.show_progress_every_n_steps > 0:
+    # Update progress images OR Train tab's previews.
+    if opts.show_progress_every_n_steps > 0 or id_part == 'ti':
         if shared.parallel_processing_allowed:
-
-            if shared.state.sampling_step - shared.state.current_image_sampling_step >= opts.show_progress_every_n_steps and shared.state.current_latent is not None:
+            # Updating Train tab with progress disabled. 
+            if opts.show_progress_every_n_steps == 0:
+                pass
+            # Every other case.
+            elif shared.state.sampling_step - shared.state.current_image_sampling_step >= opts.show_progress_every_n_steps and shared.state.current_latent is not None:
                 if opts.show_progress_grid:
                     shared.state.current_image = modules.sd_samplers.samples_to_image_grid(shared.state.current_latent)
                 else:
