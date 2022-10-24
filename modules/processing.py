@@ -77,7 +77,7 @@ def get_correct_sampler(p):
 class StableDiffusionProcessing():
     """
     The first set of paramaters: sd_models -> do_not_reload_embeddings represent the minimum required to create a StableDiffusionProcessing
-    
+
     """
     def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt: str="", styles: List[str]=None, seed: int=-1, subseed: int=-1, subseed_strength: float=0, seed_resize_from_h: int=-1, seed_resize_from_w: int=-1, seed_enable_extras: bool=True, sampler_index: int=0, batch_size: int=1, n_iter: int=1, steps:int =50, cfg_scale:float=7.0, width:int=512, height:int=512, restore_faces:bool=False, tiling:bool=False, do_not_save_samples:bool=False, do_not_save_grid:bool=False, extra_generation_params: Dict[Any,Any]=None, overlay_images: Any=None, negative_prompt: str=None, eta: float =None, do_not_reload_embeddings: bool=False, denoising_strength: float = 0, ddim_discretize: str = "uniform", s_churn: float = 0.0, s_tmax: float = None, s_tmin: float = 0.0, s_noise: float = 1.0):
         self.sd_model = sd_model
@@ -411,7 +411,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
         for n in range(p.n_iter):
             if state.skipped:
                 state.skipped = False
-            
+
             if state.interrupted:
                 break
 
@@ -483,7 +483,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
                     image.info["parameters"] = text
                 output_images.append(image)
 
-            del x_samples_ddim 
+            del x_samples_ddim
 
             devices.torch_gc()
 
@@ -563,7 +563,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
             # The "masked-image" in this case will just be all zeros since the entire image is masked.
             image_conditioning = torch.zeros(x.shape[0], 3, height, width, device=x.device)
-            image_conditioning = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(image_conditioning)) 
+            image_conditioning = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(image_conditioning))
 
             # Add the fake full 1s mask to the first dimension.
             image_conditioning = torch.nn.functional.pad(image_conditioning, (0, 0, 0, 0, 1, 0), value=1.0)

@@ -38,5 +38,5 @@ class Script(scripts.Script):
         exec(compiled, module.__dict__)
 
         return Processed(p, *display_result_data)
-    
-    
+
+

@@ -228,7 +228,7 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
         os.makedirs(images_embeds_dir, exist_ok=True)
     else:
         images_embeds_dir = None
-        
+
     cond_model = shared.sd_model.cond_stage_model
 
     shared.state.textinfo = f"Preparing dataset from {html.escape(data_root)}..."

@@ -784,7 +784,7 @@ def create_ui(wrap_gradio_gpu_call):
                 ]
             )
 
-            global txt2img_paste_fields 
+            global txt2img_paste_fields
             txt2img_paste_fields = [
                 (txt2img_prompt, "Prompt"),
                 (txt2img_negative_prompt, "Negative prompt"),
@@ -1104,9 +1104,9 @@ def create_ui(wrap_gradio_gpu_call):
                                 upscaling_resize_w = gr.Number(label="Width", value=512, precision=0)
                                 upscaling_resize_h = gr.Number(label="Height", value=512, precision=0)
                             upscaling_crop = gr.Checkbox(label='Crop to fit', value=True)
-                
+
                 with gr.Group():
-                    extras_upscaler_1 = gr.Radio(label='Upscaler 1', elem_id="extras_upscaler_1", choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name, type="index") 
+                    extras_upscaler_1 = gr.Radio(label='Upscaler 1', elem_id="extras_upscaler_1", choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name, type="index")
 
                 with gr.Group():
                     extras_upscaler_2 = gr.Radio(label='Upscaler 2', elem_id="extras_upscaler_2", choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name, type="index")
@@ -1193,7 +1193,7 @@ def create_ui(wrap_gradio_gpu_call):
             inputs=[image],
             outputs=[html, generation_info, html2],
         )
-   
+
     with gr.Blocks() as modelmerger_interface:
         with gr.Row().style(equal_height=False):
             with gr.Column(variant='panel'):
@@ -1885,7 +1885,7 @@ def load_javascript(raw_response):
         javascript = f'<script>{jsfile.read()}</script>'
 
     scripts_list = modules.scripts.list_scripts("javascript", ".js")
-    
+
     for basedir, filename, path in scripts_list:
         with open(path, "r", encoding="utf8") as jsfile:
             javascript += f"\n<!-- {filename} --><script>{jsfile.read()}</script>"

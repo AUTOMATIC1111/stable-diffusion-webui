@@ -66,4 +66,3 @@ class LearnRateScheduler:
 
         for pg in optimizer.param_groups:
             pg['lr'] = self.learn_rate
-

@@ -7,21 +7,21 @@ function check_progressbar(id_part, id_progressbar, id_progressbar_span, id_skip
     var progressbar = gradioApp().getElementById(id_progressbar)
     var skip = id_skip ? gradioApp().getElementById(id_skip) : null
     var interrupt = gradioApp().getElementById(id_interrupt)
-    
+
     if(opts.show_progress_in_title && progressbar && progressbar.offsetParent){
         if(progressbar.innerText){
             let newtitle = 'Stable Diffusion - ' + progressbar.innerText
             if(document.title != newtitle){
-                document.title =  newtitle;          
+                document.title =  newtitle;
             }
         }else{
             let newtitle = 'Stable Diffusion'
             if(document.title != newtitle){
-                document.title =  newtitle;          
+                document.title =  newtitle;
             }
         }
     }
-    
+
 	if(progressbar!= null && progressbar != global_progressbars[id_progressbar]){
 	    global_progressbars[id_progressbar] = progressbar
 
@@ -42,12 +42,12 @@ function check_progressbar(id_part, id_progressbar, id_progressbar_span, id_skip
                         skip.style.display = "none"
                     }
                     interrupt.style.display = "none"
-			
+
                     //disconnect observer once generation finished, so user can close selected image if they want
                     if (galleryObservers[id_gallery]) {
                         galleryObservers[id_gallery].disconnect();
                         galleries[id_gallery] = null;
-                    }    
+                    }
                 }
 
 

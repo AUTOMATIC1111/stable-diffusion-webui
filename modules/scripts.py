@@ -340,4 +340,3 @@ def reload_scripts():
 
     scripts_txt2img = ScriptRunner()
     scripts_img2img = ScriptRunner()
-

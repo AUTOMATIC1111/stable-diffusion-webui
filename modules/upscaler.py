@@ -119,4 +119,3 @@ class UpscalerLanczos(Upscaler):
         super().__init__(False)
         self.name = "Lanczos"
         self.scalers = [UpscalerData("Lanczos", None, self)]
-

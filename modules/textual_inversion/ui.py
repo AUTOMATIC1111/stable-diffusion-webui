@@ -39,4 +39,3 @@ Embedding saved to {html.escape(filename)}
         raise
     finally:
         sd_hijack.apply_optimizations()
-

@@ -27,7 +27,7 @@ def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_
     # Also keep track of original file names
     imageNameArr = []
     outputs = []
-    
+
     if extras_mode == 1:
         #convert file to pillow image
         for img in image_folder:
@@ -56,7 +56,7 @@ def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_
     else:
         outpath = opts.outdir_samples or opts.outdir_extras_samples
 
-    
+
     for image, image_name in zip(imageArr, imageNameArr):
         if image is None:
             return outputs, "Please select an input image.", ''
@@ -94,7 +94,7 @@ def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_
             def upscale(image, scaler_index, resize, mode, resize_w, resize_h, crop):
                 small = image.crop((image.width // 2, image.height // 2, image.width // 2 + 10, image.height // 2 + 10))
                 pixels = tuple(np.array(small).flatten().tolist())
-                key = (resize, scaler_index, image.width, image.height, gfpgan_visibility, codeformer_visibility, codeformer_weight, 
+                key = (resize, scaler_index, image.width, image.height, gfpgan_visibility, codeformer_visibility, codeformer_weight,
                        resize_mode, upscaling_resize, upscaling_resize_w, upscaling_resize_h, upscaling_crop) + pixels
 
                 c = cached_images.get(key)
@@ -121,7 +121,7 @@ def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_
 
         while len(cached_images) > 2:
             del cached_images[next(iter(cached_images.keys()))]
-        
+
         if opts.use_original_name_batch and image_name != None:
             basename = os.path.splitext(os.path.basename(image_name))[0]
         else:

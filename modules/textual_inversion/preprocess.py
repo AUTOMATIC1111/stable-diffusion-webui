@@ -77,7 +77,7 @@ def preprocess_work(process_src, process_dst, process_width, process_height, pre
             caption = existing_caption
 
         caption = caption.strip()
-        
+
         if len(caption) > 0:
             with open(os.path.join(dst, f"{basename}.txt"), "w", encoding="utf8") as file:
                 file.write(caption)

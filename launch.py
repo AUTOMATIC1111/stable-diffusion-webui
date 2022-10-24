@@ -86,7 +86,7 @@ def git_clone(url, dir, name, commithash=None):
     if commithash is not None:
         run(f'"{git}" -C {dir} checkout {commithash}', None, "Couldn't checkout {name}'s hash: {commithash}")
 
-        
+
 def version_check(commit):
     try:
         import requests
@@ -103,7 +103,7 @@ def version_check(commit):
     except Exception as e:
         print("versipm check failed",e)
 
-        
+
 def prepare_enviroment():
     torch_command = os.environ.get('TORCH_COMMAND', "pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 --extra-index-url https://download.pytorch.org/whl/cu113")
     requirements_file = os.environ.get('REQS_FILE', "requirements_versions.txt")
@@ -143,7 +143,7 @@ def prepare_enviroment():
 
     print(f"Python {sys.version}")
     print(f"Commit hash: {commit}")
-    
+
     if not is_installed("torch") or not is_installed("torchvision"):
         run(f'"{python}" -m {torch_command}', "Installing torch and torchvision", "Couldn't install torch")
 
@@ -189,7 +189,7 @@ def prepare_enviroment():
 
     if update_check:
         version_check(commit)
-    
+
     if "--exit" in sys.argv:
         print("Exiting because of --exit argument")
         exit(0)

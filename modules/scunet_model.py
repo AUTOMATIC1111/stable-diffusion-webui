@@ -85,4 +85,3 @@ class UpscalerScuNET(modules.upscaler.Upscaler):
         model = model.to(device)
 
         return model
-

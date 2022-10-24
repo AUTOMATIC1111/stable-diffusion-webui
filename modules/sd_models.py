@@ -215,7 +215,7 @@ def load_model(checkpoint_info=None):
         print(f"Loading config from: {checkpoint_info.config}")
 
     sd_config = OmegaConf.load(checkpoint_info.config)
-    
+
     if should_hijack_inpainting(checkpoint_info):
         # Hardcoded config for now...
         sd_config.model.target = "ldm.models.diffusion.ddpm.LatentInpaintDiffusion"
