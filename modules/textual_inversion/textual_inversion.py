@@ -200,6 +200,18 @@ def write_loss(log_directory, filename, step, epoch_len, values):
             **values,
         })
 
+def save_settings_to_file(num_of_dataset_images , embedding_name, vectors_per_token , learn_rate, batch_size, data_root, log_directory, training_width, training_height, steps, create_image_every, save_embedding_every, template_file, save_image_with_stored_embedding, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height):
+    checkpoint = sd_models.select_checkpoint()
+    model_name = checkpoint.model_name
+    model_hash = '[{}]'.format(checkpoint.hash)
+    names = ('model_name', 'model_hash' , 'embedding_name', 'vectors_per_token', 'learn_rate', 'batch_size', 'data_root', 'num_of_dataset_images',  'log_directory', 'training_width', 'training_height', 'steps', 'create_image_every', 'save_embedding_every', 'template_file', 'save_image_with_stored_embedding', 'preview_from_txt2img', 'preview_prompt', 'preview_negative_prompt', 'preview_steps', 'preview_sampler_index', 'preview_cfg_scale', 'preview_seed', 'preview_width', 'preview_height')
+    te_settings_str = "datetime : " + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + "\n"
+    for i in names:
+        te_settings_str = te_settings_str  + i + ": " + str(eval(i)) +"\n"
+    
+    with open(os.path.join(log_directory, 'settings.txt'), "a+") as fout:
+        fout.write(te_settings_str + "\n\n")
+
 
 def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_directory, training_width, training_height, steps, create_image_every, save_embedding_every, template_file, save_image_with_stored_embedding, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height):
     assert embedding_name, 'embedding not selected'
@@ -241,6 +253,9 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
     embedding.vec.requires_grad = True
 
     losses = torch.zeros((32,))
+    
+    save_settings_to_file(len(ds) , embedding_name, len(embedding.vec) , learn_rate, batch_size, data_root, log_directory, training_width, training_height, steps, create_image_every, save_embedding_every, template_file, save_image_with_stored_embedding, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height);
+
 
     last_saved_file = "<none>"
     last_saved_image = "<none>"
