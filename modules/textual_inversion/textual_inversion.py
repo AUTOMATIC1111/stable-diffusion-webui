@@ -211,7 +211,6 @@ def statistics(data):
         std = stdev(data)
     total_information = f"loss:{mean(data):.3f}" + u"\u00B1" + f"({std/ (len(data) ** 0.5):.3f})"
     recent_data = data[-32:]
-    recent_information = f"recent 32 loss:{mean(recent_data):.3f}"+u"\u00B1"+f"({stdev(recent_data)/ (len(recent_data)**0.5):.3f})"
     if len(recent_data) < 2:
         std = 0
     else:
