@@ -205,7 +205,6 @@ def write_loss(log_directory, filename, step, epoch_len, values):
 
 
 def statistics(data):
-    total_information = f"loss:{mean(data):.3f}"+u"\u00B1"+f"({stdev(data)/ (len(data)**0.5):.3f})"
     if len(data) < 2:
         std = 0
     else:
@@ -290,7 +289,6 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
     for i, entries in pbar:
     
         if len(loss_dict) > 0:
-            previous_mean_loss = sum(i[-1] for i in loss_dict.values()) / len(loss_dict)
             previous_mean_losses = [i[-1] for i in loss_dict.values()]
             previous_mean_loss = mean(previous_mean_losses)
             
