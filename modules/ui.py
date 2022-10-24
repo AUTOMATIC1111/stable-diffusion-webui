@@ -55,6 +55,7 @@ mimetypes.init()
 mimetypes.add_type('application/javascript', '.js')
 txt2img_paste_fields = []
 img2img_paste_fields = []
+init_img_components = {}
 
 
 if not cmd_opts.share and not cmd_opts.listen:
@@ -1173,6 +1174,9 @@ def create_ui(wrap_gradio_gpu_call):
             inputs=[result_images],
             outputs=[init_img_with_mask],
         )
+
+    global  init_img_components
+    init_img_components = {"img2img":init_img, "inpaint":init_img_with_mask, "extras":extras_image}
 
     with gr.Blocks(analytics_enabled=False) as pnginfo_interface:
         with gr.Row().style(equal_height=False):
