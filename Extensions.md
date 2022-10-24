@@ -22,7 +22,7 @@ https://github.com/AUTOMATIC1111/stable-diffusion-webui-aesthetic-gradients
 https://github.com/AUTOMATIC1111/stable-diffusion-webui-wildcards
 
 ## Image browser
-https://github.com/yfszzx/stable-diffusion-images-browser
+https://github.com/yfszzx/stable-diffusion-webui-images-browser
 
 ## Inspiration
 https://github.com/yfszzx/stable-diffusion-webui-inspiration
