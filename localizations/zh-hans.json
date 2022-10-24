@@ -234,7 +234,7 @@
     "Primary model (A)": "主要模型 (A)",
     "Secondary model (B)": "第二模型 (B)",
     "Tertiary model (C)": "第三模型 (C)",
-    "Custom Name (Optional)": "自定义名字 (可选)",
+    "Custom Name (Optional)": "自定义名称 (可选)",
     "Multiplier (M) - set to 0 to get model A": "倍率 (M) - 设为 0 等价于模型 A",
     "Interpolation Method": "插值方法",
     "Weighted sum": "加权和",
