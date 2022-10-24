@@ -228,7 +228,7 @@ class Script(scripts.Script):
         ping_pong_loop = gr.Checkbox(label="Ping-pong loop the animation back and forth", value=False)
         dont_average_animation = gr.Checkbox(label="Don't average latents", value=False)
         if is_img2img:
-            img2img_img_is_first_frame = [gr.Checkbox(label="img2img image is the first frame", value=True)]
+            img2img_img_is_first_frame = [gr.Checkbox(label="img2img image is the first frame", value=False)] # There's a bug where this generates noise that I'm still debugging.
         else:
             img2img_img_is_first_frame = []
         return [prompt_end, num_animation_frames, animation_levels, animation_steps, fps, reverse_animation, ping_pong_loop, dont_average_animation] + img2img_img_is_first_frame
