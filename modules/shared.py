@@ -321,21 +321,6 @@ options_templates.update(options_section(('sampler-params', "Sampler parameters"
     'eta_noise_seed_delta': OptionInfo(0, "Eta noise seed delta", gr.Number, {"precision": 0}),
 }))
 
-options_templates.update(options_section(('inspiration', "Inspiration"), {
-    "inspiration_dir": OptionInfo("inspiration", "Directory of inspiration", component_args=hide_dirs),
-    "inspiration_max_samples": OptionInfo(4, "Maximum number of samples, used to determine which folders to skip when continue running the create script", gr.Slider, {"minimum": 1, "maximum": 20, "step": 1}),
-    "inspiration_rows_num":  OptionInfo(4, "Rows of inspiration interface frame", gr.Slider, {"minimum": 4, "maximum": 16, "step": 1}),
-    "inspiration_cols_num":  OptionInfo(8, "Columns of inspiration interface frame", gr.Slider, {"minimum": 4, "maximum": 16, "step": 1}),
-}))
-
-options_templates.update(options_section(('images-history', "Images Browser"), {
-    #"images_history_reconstruct_directory": OptionInfo(False, "Reconstruct output directory structure.This can greatly improve the speed of loading , but will change the original output directory structure"),
-    "images_history_preload": OptionInfo(False, "Preload images at startup"),
-    "images_history_num_per_page": OptionInfo(36, "Number of pictures displayed on each page"),
-    "images_history_pages_num": OptionInfo(6, "Minimum number of pages per load "),   
-    "images_history_grid_num": OptionInfo(6, "Number of grids in each row"),   
-
-}))
 
 class Options:
     data = None
