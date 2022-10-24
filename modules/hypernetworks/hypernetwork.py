@@ -16,6 +16,7 @@ from modules.textual_inversion import textual_inversion
 from modules.textual_inversion.learn_schedule import LearnRateScheduler
 from torch import einsum
 
+from collections import defaultdict, deque
 from statistics import stdev, mean
 
 class HypernetworkModule(torch.nn.Module):
@@ -269,19 +270,18 @@ def stack_conds(conds):
     return torch.stack(conds)
 
 
-def log_statistics(loss_info:dict, key, value):
-    if key not in loss_info:
-        loss_info[key] = [value]
-    else:
-        loss_info[key].append(value)
-        if len(loss_info) > 1024:
-            loss_info.pop(0)
-
-
 def statistics(data):
-    total_information = f"loss:{mean(data):.3f}"+u"\u00B1"+f"({stdev(data)/ (len(data)**0.5):.3f})"
+    if len(data) < 2:
+        std = 0
+    else:
+        std = stdev(data)
+    total_information = f"loss:{mean(data):.3f}" + u"\u00B1" + f"({std/ (len(data) ** 0.5):.3f})"
     recent_data = data[-32:]
-    recent_information = f"recent 32 loss:{mean(recent_data):.3f}"+u"\u00B1"+f"({stdev(recent_data)/ (len(recent_data)**0.5):.3f})"
+    if len(recent_data) < 2:
+        std = 0
+    else:
+        std = stdev(recent_data)
+    recent_information = f"recent 32 loss:{mean(recent_data):.3f}" + u"\u00B1" + f"({std / (len(recent_data) ** 0.5):.3f})"
     return total_information, recent_information
 
 
@@ -290,7 +290,7 @@ def report_statistics(loss_info:dict):
     for key in keys:
         try:
             print("Loss statistics for file " + key)
-            info, recent = statistics(loss_info[key])
+            info, recent = statistics(list(loss_info[key]))
             print(info)
             print(recent)
         except Exception as e:
@@ -341,8 +341,9 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
         weight.requires_grad = True
 
     size = len(ds.indexes)
-    loss_dict = {}
+    loss_dict = defaultdict(lambda : deque(maxlen = 1024))
     losses = torch.zeros((size,))
+    previous_mean_losses = [0]
     previous_mean_loss = 0
     print("Mean loss of {} elements".format(size))
 
@@ -364,7 +365,8 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
     for i, entries in pbar:
         hypernetwork.step = i + ititial_step
         if len(loss_dict) > 0:
-            previous_mean_loss = sum(i[-1] for i in loss_dict.values()) / len(loss_dict)
+            previous_mean_losses = [i[-1] for i in loss_dict.values()]
+            previous_mean_loss = mean(previous_mean_losses)
             
         scheduler.apply(optimizer, hypernetwork.step)
         if scheduler.finished:
@@ -383,7 +385,7 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
 
             losses[hypernetwork.step % losses.shape[0]] = loss.item()
             for entry in entries:
-                log_statistics(loss_dict, entry.filename, loss.item())
+                loss_dict[entry.filename].append(loss.item())
                 
             optimizer.zero_grad()
             weights[0].grad = None
@@ -399,7 +401,13 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
 
         if torch.isnan(losses[hypernetwork.step % losses.shape[0]]):
             raise RuntimeError("Loss diverged.")
-        pbar.set_description(f"dataset loss: {previous_mean_loss:.7f}")
+        
+        if len(previous_mean_losses) > 1:
+            std = stdev(previous_mean_losses)
+        else:
+            std = 0
+        dataset_loss_info = f"dataset loss:{mean(previous_mean_losses):.3f}" + u"\u00B1" + f"({std / (len(previous_mean_losses) ** 0.5):.3f})"
+        pbar.set_description(dataset_loss_info)
 
         if hypernetwork.step > 0 and hypernetwork_dir is not None and hypernetwork.step % save_hypernetwork_every == 0:
             # Before saving, change name to match current checkpoint.
