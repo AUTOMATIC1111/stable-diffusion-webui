@@ -9,7 +9,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 
 from modules.paths import script_path
 
-from modules import devices, sd_samplers
+from modules import devices, sd_samplers, upscaler
 import modules.codeformer_model as codeformer
 import modules.extras
 import modules.face_restoration
@@ -73,6 +73,11 @@ def wrap_gradio_gpu_call(func, extra_outputs=None):
 
 
 def initialize():
+    if cmd_opts.ui_debug_mode:
+        shared.sd_upscalers = upscaler.UpscalerLanczos().scalers
+        modules.scripts.load_scripts()
+        return
+
     modelloader.cleanup_models()
     modules.sd_models.setup_model()
     codeformer.setup_model(cmd_opts.codeformer_models_path)
@@ -135,6 +140,8 @@ def webui():
             inbrowser=cmd_opts.autolaunch,
             prevent_thread_lock=True
         )
+        # after initial launch, disable --autolaunch for subsequent restarts
+        cmd_opts.autolaunch = False
 
         app.add_middleware(GZipMiddleware, minimum_size=1000)
 

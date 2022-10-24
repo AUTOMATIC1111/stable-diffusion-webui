@@ -3,14 +3,13 @@ import os
 import re
 
 import gradio as gr
-
-import modules.textual_inversion.textual_inversion
 import modules.textual_inversion.preprocess
-from modules import sd_hijack, shared, devices
+import modules.textual_inversion.textual_inversion
+from modules import devices, sd_hijack, shared
 from modules.hypernetworks import hypernetwork
 
 
-def create_hypernetwork(name, enable_sizes, overwrite_old, layer_structure=None, add_layer_norm=False, activation_func=None):
+def create_hypernetwork(name, enable_sizes, overwrite_old, layer_structure=None, activation_func=None, add_layer_norm=False, use_dropout=False):
     # Remove illegal characters from name.
     name = "".join( x for x in name if (x.isalnum() or x in "._- "))
 
@@ -25,8 +24,9 @@ def create_hypernetwork(name, enable_sizes, overwrite_old, layer_structure=None,
         name=name,
         enable_sizes=[int(x) for x in enable_sizes],
         layer_structure=layer_structure,
-        add_layer_norm=add_layer_norm,
         activation_func=activation_func,
+        add_layer_norm=add_layer_norm,
+        use_dropout=use_dropout,
     )
     hypernet.save(fn)
 
