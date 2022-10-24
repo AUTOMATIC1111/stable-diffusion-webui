@@ -20,3 +20,9 @@ https://github.com/AUTOMATIC1111/stable-diffusion-webui-aesthetic-gradients
 
 ## Wildcards
 https://github.com/AUTOMATIC1111/stable-diffusion-webui-wildcards
+
+## Image browser
+https://github.com/yfszzx/stable-diffusion-images-browser
+
+## Inspiration
+https://github.com/yfszzx/stable-diffusion-webui-inspiration
