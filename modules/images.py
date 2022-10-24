@@ -12,7 +12,7 @@ from PIL import Image, ImageFont, ImageDraw, PngImagePlugin
 from fonts.ttf import Roboto
 import string
 
-from modules import sd_samplers, shared
+from modules import sd_samplers, shared, script_callbacks
 from modules.shared import opts, cmd_opts
 
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
@@ -467,6 +467,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     else:
         txt_fullfn = None
 
+    script_callbacks.image_saved_callback(image, p, fullfn, txt_fullfn)
     return fullfn, txt_fullfn
 
 
