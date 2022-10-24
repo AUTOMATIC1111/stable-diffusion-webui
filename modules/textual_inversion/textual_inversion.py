@@ -2,6 +2,7 @@ import os
 import sys
 import traceback
 
+from collections import defaultdict, deque
 from statistics import stdev, mean
 
 import torch
@@ -202,26 +203,28 @@ def write_loss(log_directory, filename, step, epoch_len, values):
             **values,
         })
 
-def log_statistics(loss_info:dict, key, value):
-    if key not in loss_info:
-        loss_info[key] = [value]
-    else:
-        loss_info[key].append(value)
-        if len(loss_info) > 1024:
-            loss_info.pop(0)
-
 
 def statistics(data):
     total_information = f"loss:{mean(data):.3f}"+u"\u00B1"+f"({stdev(data)/ (len(data)**0.5):.3f})"
+    if len(data) < 2:
+        std = 0
+    else:
+        std = stdev(data)
+    total_information = f"loss:{mean(data):.3f}" + u"\u00B1" + f"({std/ (len(data) ** 0.5):.3f})"
     recent_data = data[-32:]
     recent_information = f"recent 32 loss:{mean(recent_data):.3f}"+u"\u00B1"+f"({stdev(recent_data)/ (len(recent_data)**0.5):.3f})"
+    if len(recent_data) < 2:
+        std = 0
+    else:
+        std = stdev(recent_data)
+    recent_information = f"recent 32 loss:{mean(recent_data):.3f}" + u"\u00B1" + f"({std / (len(recent_data) ** 0.5):.3f})"
     return total_information, recent_information
 
 
 def report_statistics(loss_info:dict):
     keys = sorted(loss_info.keys(), key=lambda x: sum(loss_info[x]) / len(loss_info[x]))
     for key in keys:
-        info, recent = statistics(loss_info[key])
+        info, recent = statistics(list(loss_info[key]))
         print("Loss statistics for file " + key)
         print(info)
         print(recent)
@@ -266,8 +269,9 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
     embedding.vec.requires_grad = True
 
     size = len(ds.indexes)
-    loss_dict = {}
+    loss_dict = defaultdict(lambda : deque(maxlen = 1024))
     losses = torch.zeros((size,))
+    previous_mean_losses = [0]
     previous_mean_loss = 0
     print("Mean loss of {} elements".format(size))
 
@@ -285,8 +289,10 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
     pbar = tqdm.tqdm(enumerate(ds), total=steps-ititial_step)
     for i, entries in pbar:
     
-        if loss_dict and i % size == 0:
+        if len(loss_dict) > 0:
             previous_mean_loss = sum(i[-1] for i in loss_dict.values()) / len(loss_dict)
+            previous_mean_losses = [i[-1] for i in loss_dict.values()]
+            previous_mean_loss = mean(previous_mean_losses)
             
         embedding.step = i + ititial_step
 
@@ -305,7 +311,7 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
 
             losses[embedding.step % losses.shape[0]] = loss.item()
             for entry in entries:
-                log_statistics(loss_dict, entry.filename, loss.item())
+                loss_dict[entry.filename].append(loss.item())
 
             optimizer.zero_grad()
             loss.backward()
@@ -315,7 +321,12 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
         epoch_num = embedding.step // len(ds)
         epoch_step = embedding.step - (epoch_num * len(ds)) + 1
 
-        pbar.set_description(f"[Epoch {epoch_num}: {epoch_step}/{len(ds)}]dataset loss: {previous_mean_loss:.7f}")
+        if len(previous_mean_losses) > 1:
+            std = stdev(previous_mean_losses)
+        else:
+            std = 0
+
+        pbar.set_description(f"[Epoch {epoch_num}: {epoch_step}/{len(ds)}]dataset loss:{mean(previous_mean_losses):.3f}" + u"\u00B1" + f"({std / (len(previous_mean_losses) ** 0.5):.3f})")
 
         if embedding.step > 0 and embedding_dir is not None and embedding.step % save_embedding_every == 0:
             last_saved_file = os.path.join(embedding_dir, f'{embedding_name}-{embedding.step}.pt')
