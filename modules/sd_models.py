@@ -268,6 +268,7 @@ def reload_model_weights(sd_model, info=None):
     load_model_weights(sd_model, checkpoint_info)
 
     sd_hijack.model_hijack.hijack(sd_model)
+    script_callbacks.model_loaded_callback(sd_model)
 
     if not shared.cmd_opts.lowvram and not shared.cmd_opts.medvram:
         sd_model.to(devices.device)

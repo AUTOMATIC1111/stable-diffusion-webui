@@ -64,6 +64,7 @@ parser.add_argument("--port", type=int, help="launch gradio with given server po
 parser.add_argument("--show-negative-prompt", action='store_true', help="does not do anything", default=False)
 parser.add_argument("--ui-config-file", type=str, help="filename to use for ui configuration", default=os.path.join(script_path, 'ui-config.json'))
 parser.add_argument("--hide-ui-dir-config", action='store_true', help="hide directory configuration from webui", default=False)
+parser.add_argument("--freeze-settings", action='store_true', help="disable editing settings", default=False)
 parser.add_argument("--ui-settings-file", type=str, help="filename to use for ui settings", default=os.path.join(script_path, 'config.json'))
 parser.add_argument("--gradio-debug",  action='store_true', help="launch gradio with --debug option")
 parser.add_argument("--gradio-auth", type=str, help='set gradio authentication like "username:password"; or comma-delimit multiple like "u1:p1,u2:p2,u3:p3"', default=None)
@@ -79,12 +80,13 @@ parser.add_argument('--vae-path', type=str, help='Path to Variational Autoencode
 parser.add_argument("--disable-safe-unpickle", action='store_true', help="disable checking pytorch models for malicious code", default=False)
 parser.add_argument("--api", action='store_true', help="use api=True to launch the api with the webui")
 parser.add_argument("--nowebui", action='store_true', help="use api=True to launch the api instead of the webui")
+parser.add_argument("--ui-debug-mode", action='store_true', help="Don't load model to quickly launch UI")
 parser.add_argument("--device-id", type=str, help="Select the default CUDA device to use (export CUDA_VISIBLE_DEVICES=0,1,etc might be needed before)", default=None)
-parser.add_argument("--browse-all-images", action='store_true', help="Allow browsing all images by Image Browser", default=False)
 
 cmd_opts = parser.parse_args()
 restricted_opts = [
     "samples_filename_pattern",
+    "directories_filename_pattern",
     "outdir_samples",
     "outdir_txt2img_samples",
     "outdir_img2img_samples",
@@ -165,13 +167,13 @@ def realesrgan_models_names():
 
 
 class OptionInfo:
-    def __init__(self, default=None, label="", component=None, component_args=None, onchange=None, show_on_main_page=False, refresh=None):
+    def __init__(self, default=None, label="", component=None, component_args=None, onchange=None, section=None, refresh=None):
         self.default = default
         self.label = label
         self.component = component
         self.component_args = component_args
         self.onchange = onchange
-        self.section = None
+        self.section = section
         self.refresh = refresh
 
 
@@ -189,7 +191,8 @@ options_templates = {}
 options_templates.update(options_section(('saving-images', "Saving images/grids"), {
     "samples_save": OptionInfo(True, "Always save all generated images"),
     "samples_format": OptionInfo('png', 'File format for images'),
-    "samples_filename_pattern": OptionInfo("", "Images filename pattern"),
+    "samples_filename_pattern": OptionInfo("", "Images filename pattern", component_args=hide_dirs),
+    "save_images_add_number": OptionInfo(True, "Add number to filename when saving", component_args=hide_dirs),
 
     "grid_save": OptionInfo(True, "Always save all generated image grids"),
     "grid_format": OptionInfo('png', 'File format for grids'),
@@ -224,8 +227,8 @@ options_templates.update(options_section(('saving-to-dirs', "Saving to a directo
     "save_to_dirs": OptionInfo(False, "Save images to a subdirectory"),
     "grid_save_to_dirs": OptionInfo(False, "Save grids to a subdirectory"),
     "use_save_to_dirs_for_ui": OptionInfo(False, "When using \"Save\" button, save images to a subdirectory"),
-    "directories_filename_pattern": OptionInfo("", "Directory name pattern"),
-    "directories_max_prompt_words": OptionInfo(8, "Max prompt words for [prompt_words] pattern", gr.Slider, {"minimum": 1, "maximum": 20, "step": 1}),
+    "directories_filename_pattern": OptionInfo("", "Directory name pattern", component_args=hide_dirs),
+    "directories_max_prompt_words": OptionInfo(8, "Max prompt words for [prompt_words] pattern", gr.Slider, {"minimum": 1, "maximum": 20, "step": 1, **hide_dirs}),
 }))
 
 options_templates.update(options_section(('upscaling', "Upscaling"), {
@@ -294,6 +297,7 @@ options_templates.update(options_section(('interrogate', "Interrogate Options"),
 options_templates.update(options_section(('ui', "User interface"), {
     "show_progressbar": OptionInfo(True, "Show progressbar"),
     "show_progress_every_n_steps": OptionInfo(0, "Show image creation progress every N sampling steps. Set 0 to disable.", gr.Slider, {"minimum": 0, "maximum": 32, "step": 1}),
+    "show_progress_grid": OptionInfo(True, "Show previews of all images generated in a batch as a grid"),
     "return_grid": OptionInfo(True, "Show grid in results for web"),
     "do_not_show_images": OptionInfo(False, "Do not show any images in results for web"),
     "add_model_hash_to_info": OptionInfo(True, "Add model hash to generation information"),
@@ -318,14 +322,6 @@ options_templates.update(options_section(('sampler-params', "Sampler parameters"
     'eta_noise_seed_delta': OptionInfo(0, "Eta noise seed delta", gr.Number, {"precision": 0}),
 }))
 
-options_templates.update(options_section(('images-history', "Images Browser"), {
-    #"images_history_reconstruct_directory": OptionInfo(False, "Reconstruct output directory structure.This can greatly improve the speed of loading , but will change the original output directory structure"),
-    "images_history_preload": OptionInfo(False, "Preload images at startup"),
-    "images_history_num_per_page": OptionInfo(36, "Number of pictures displayed on each page"),
-    "images_history_pages_num": OptionInfo(6, "Minimum number of pages per load "),   
-    "images_history_grid_num": OptionInfo(6, "Number of grids in each row"),   
-
-}))
 
 class Options:
     data = None
@@ -354,7 +350,7 @@ class Options:
 
     def save(self, filename):
         with open(filename, "w", encoding="utf8") as file:
-            json.dump(self.data, file)
+            json.dump(self.data, file, indent=4)
 
     def same_type(self, x, y):
         if x is None or y is None:
@@ -388,6 +384,20 @@ class Options:
     def dumpjson(self):
         d = {k: self.data.get(k, self.data_labels.get(k).default) for k in self.data_labels.keys()}
         return json.dumps(d)
+
+    def add_option(self, key, info):
+        self.data_labels[key] = info
+
+    def reorder(self):
+        """reorder settings so that all items related to section always go together"""
+
+        section_ids = {}
+        settings_items = self.data_labels.items()
+        for k, item in settings_items:
+            if item.section not in section_ids:
+                section_ids[item.section] = len(section_ids)
+
+        self.data_labels = {k: v for k, v in sorted(settings_items, key=lambda x: section_ids[x[1].section])}
 
 
 opts = Options()
