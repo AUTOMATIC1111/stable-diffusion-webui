@@ -36,7 +36,7 @@ onUiUpdate(function(){
     const notification = new Notification(
         'Stable Diffusion',
         {
-            body: `Generated ${imgs.size > 1 ? imgs.size - 1 : 1} image${imgs.size > 1 ? 's' : ''}`,
+            body: `Generated ${imgs.size > 1 ? imgs.size - opts.return_grid : 1} image${imgs.size > 1 ? 's' : ''}`,
             icon: headImg,
             image: headImg,
         }

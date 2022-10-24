@@ -31,8 +31,8 @@ function imageMaskResize() {
 
     wrapper.style.width = `${wW}px`;
     wrapper.style.height = `${wH}px`;
-    wrapper.style.left = `${(w-wW)/2}px`;
-    wrapper.style.top = `${(h-wH)/2}px`;
+    wrapper.style.left = `0px`;
+    wrapper.style.top = `0px`;
 
     canvases.forEach( c => {
         c.style.width = c.style.height = '';

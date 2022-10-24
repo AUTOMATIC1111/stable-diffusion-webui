@@ -21,20 +21,20 @@ function onUiTabChange(callback){
     uiTabChangeCallbacks.push(callback)
 }
 
-function runCallback(x){
+function runCallback(x, m){
     try {
-        x()
+        x(m)
     } catch (e) {
         (console.error || console.log).call(console, e.message, e);
     }
 }
-function executeCallbacks(queue) {
-    queue.forEach(runCallback)
+function executeCallbacks(queue, m) {
+    queue.forEach(function(x){runCallback(x, m)})
 }
 
 document.addEventListener("DOMContentLoaded", function() {
     var mutationObserver = new MutationObserver(function(m){
-        executeCallbacks(uiUpdateCallbacks);
+        executeCallbacks(uiUpdateCallbacks, m);
         const newTab = get_uiCurrentTab();
         if ( newTab && ( newTab !== uiCurrentTab ) ) {
             uiCurrentTab = newTab;
@@ -50,9 +50,9 @@ document.addEventListener("DOMContentLoaded", function() {
  document.addEventListener('keydown', function(e) {
     var handled = false;
     if (e.key !== undefined) {
-        if((e.key == "Enter" && (e.metaKey || e.ctrlKey))) handled = true;
+        if((e.key == "Enter" && (e.metaKey || e.ctrlKey || e.altKey))) handled = true;
     } else if (e.keyCode !== undefined) {
-        if((e.keyCode == 13 && (e.metaKey || e.ctrlKey))) handled = true;
+        if((e.keyCode == 13 && (e.metaKey || e.ctrlKey || e.altKey))) handled = true;
     }
     if (handled) {
         button = get_uiCurrentTabContent().querySelector('button[id$=_generate]');

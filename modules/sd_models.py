@@ -1,4 +1,4 @@
-import glob
+import collections
 import os.path
 import sys
 from collections import namedtuple
@@ -7,19 +7,21 @@ from omegaconf import OmegaConf
 
 from ldm.util import instantiate_from_config
 
-from modules import shared, modelloader, devices
+from modules import shared, modelloader, devices, script_callbacks
 from modules.paths import models_path
+from modules.sd_hijack_inpainting import do_inpainting_hijack, should_hijack_inpainting
 
 model_dir = "Stable-diffusion"
 model_path = os.path.abspath(os.path.join(models_path, model_dir))
 
 CheckpointInfo = namedtuple("CheckpointInfo", ['filename', 'title', 'hash', 'model_name', 'config'])
 checkpoints_list = {}
+checkpoints_loaded = collections.OrderedDict()
 
 try:
     # this silences the annoying "Some weights of the model checkpoint were not used when initializing..." message at start.
 
-    from transformers import logging
+    from transformers import logging, CLIPModel
 
     logging.set_verbosity_error()
 except Exception:
@@ -148,63 +150,110 @@ def select_checkpoint():
     return checkpoint_info
 
 
+chckpoint_dict_replacements = {
+    'cond_stage_model.transformer.embeddings.': 'cond_stage_model.transformer.text_model.embeddings.',
+    'cond_stage_model.transformer.encoder.': 'cond_stage_model.transformer.text_model.encoder.',
+    'cond_stage_model.transformer.final_layer_norm.': 'cond_stage_model.transformer.text_model.final_layer_norm.',
+}
+
+
+def transform_checkpoint_dict_key(k):
+    for text, replacement in chckpoint_dict_replacements.items():
+        if k.startswith(text):
+            k = replacement + k[len(text):]
+
+    return k
+
+
 def get_state_dict_from_checkpoint(pl_sd):
     if "state_dict" in pl_sd:
-        return pl_sd["state_dict"]
+        pl_sd = pl_sd["state_dict"]
+
+    sd = {}
+    for k, v in pl_sd.items():
+        new_key = transform_checkpoint_dict_key(k)
+
+        if new_key is not None:
+            sd[new_key] = v
+
+    pl_sd.clear()
+    pl_sd.update(sd)
 
     return pl_sd
+
+
+vae_ignore_keys = {"model_ema.decay", "model_ema.num_updates"}
 
 
 def load_model_weights(model, checkpoint_info):
     checkpoint_file = checkpoint_info.filename
     sd_model_hash = checkpoint_info.hash
 
-    print(f"Loading weights [{sd_model_hash}] from {checkpoint_file}")
+    if checkpoint_info not in checkpoints_loaded:
+        print(f"Loading weights [{sd_model_hash}] from {checkpoint_file}")
 
-    pl_sd = torch.load(checkpoint_file, map_location="cpu")
-    if "global_step" in pl_sd:
-        print(f"Global Step: {pl_sd['global_step']}")
+        pl_sd = torch.load(checkpoint_file, map_location=shared.weight_load_location)
+        if "global_step" in pl_sd:
+            print(f"Global Step: {pl_sd['global_step']}")
 
-    sd = get_state_dict_from_checkpoint(pl_sd)
+        sd = get_state_dict_from_checkpoint(pl_sd)
+        missing, extra = model.load_state_dict(sd, strict=False)
 
-    model.load_state_dict(sd, strict=False)
+        if shared.cmd_opts.opt_channelslast:
+            model.to(memory_format=torch.channels_last)
 
-    if shared.cmd_opts.opt_channelslast:
-        model.to(memory_format=torch.channels_last)
+        if not shared.cmd_opts.no_half:
+            model.half()
 
-    if not shared.cmd_opts.no_half:
-        model.half()
+        devices.dtype = torch.float32 if shared.cmd_opts.no_half else torch.float16
+        devices.dtype_vae = torch.float32 if shared.cmd_opts.no_half or shared.cmd_opts.no_half_vae else torch.float16
 
-    devices.dtype = torch.float32 if shared.cmd_opts.no_half else torch.float16
-    devices.dtype_vae = torch.float32 if shared.cmd_opts.no_half or shared.cmd_opts.no_half_vae else torch.float16
+        vae_file = os.path.splitext(checkpoint_file)[0] + ".vae.pt"
 
-    vae_file = os.path.splitext(checkpoint_file)[0] + ".vae.pt"
+        if not os.path.exists(vae_file) and shared.cmd_opts.vae_path is not None:
+            vae_file = shared.cmd_opts.vae_path
 
-    if not os.path.exists(vae_file) and shared.cmd_opts.vae_path is not None:
-        vae_file = shared.cmd_opts.vae_path
+        if os.path.exists(vae_file):
+            print(f"Loading VAE weights from: {vae_file}")
+            vae_ckpt = torch.load(vae_file, map_location=shared.weight_load_location)
+            vae_dict = {k: v for k, v in vae_ckpt["state_dict"].items() if k[0:4] != "loss" and k not in vae_ignore_keys}
+            model.first_stage_model.load_state_dict(vae_dict)
 
-    if os.path.exists(vae_file):
-        print(f"Loading VAE weights from: {vae_file}")
-        vae_ckpt = torch.load(vae_file, map_location="cpu")
-        vae_dict = {k: v for k, v in vae_ckpt["state_dict"].items() if k[0:4] != "loss"}
+        model.first_stage_model.to(devices.dtype_vae)
 
-        model.first_stage_model.load_state_dict(vae_dict)
-
-    model.first_stage_model.to(devices.dtype_vae)
+        checkpoints_loaded[checkpoint_info] = model.state_dict().copy()
+        while len(checkpoints_loaded) > shared.opts.sd_checkpoint_cache:
+            checkpoints_loaded.popitem(last=False)  # LRU
+    else:
+        print(f"Loading weights [{sd_model_hash}] from cache")
+        checkpoints_loaded.move_to_end(checkpoint_info)
+        model.load_state_dict(checkpoints_loaded[checkpoint_info])
 
     model.sd_model_hash = sd_model_hash
     model.sd_model_checkpoint = checkpoint_file
     model.sd_checkpoint_info = checkpoint_info
 
 
-def load_model():
+def load_model(checkpoint_info=None):
     from modules import lowvram, sd_hijack
-    checkpoint_info = select_checkpoint()
+    checkpoint_info = checkpoint_info or select_checkpoint()
 
     if checkpoint_info.config != shared.cmd_opts.config:
         print(f"Loading config from: {checkpoint_info.config}")
 
     sd_config = OmegaConf.load(checkpoint_info.config)
+    
+    if should_hijack_inpainting(checkpoint_info):
+        # Hardcoded config for now...
+        sd_config.model.target = "ldm.models.diffusion.ddpm.LatentInpaintDiffusion"
+        sd_config.model.params.use_ema = False
+        sd_config.model.params.conditioning_key = "hybrid"
+        sd_config.model.params.unet_config.params.in_channels = 9
+
+        # Create a "fake" config with a different name so that we know to unload it when switching models.
+        checkpoint_info = checkpoint_info._replace(config=checkpoint_info.config.replace(".yaml", "-inpainting.yaml"))
+
+    do_inpainting_hijack()
     sd_model = instantiate_from_config(sd_config.model)
     load_model_weights(sd_model, checkpoint_info)
 
@@ -216,6 +265,9 @@ def load_model():
     sd_hijack.model_hijack.hijack(sd_model)
 
     sd_model.eval()
+    shared.sd_model = sd_model
+
+    script_callbacks.model_loaded_callback(sd_model)
 
     print(f"Model loaded.")
     return sd_model
@@ -228,8 +280,9 @@ def reload_model_weights(sd_model, info=None):
     if sd_model.sd_model_checkpoint == checkpoint_info.filename:
         return
 
-    if sd_model.sd_checkpoint_info.config != checkpoint_info.config:
-        shared.sd_model = load_model()
+    if sd_model.sd_checkpoint_info.config != checkpoint_info.config or should_hijack_inpainting(checkpoint_info) != should_hijack_inpainting(sd_model.sd_checkpoint_info):
+        checkpoints_loaded.clear()
+        load_model(checkpoint_info)
         return shared.sd_model
 
     if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
@@ -242,6 +295,7 @@ def reload_model_weights(sd_model, info=None):
     load_model_weights(sd_model, checkpoint_info)
 
     sd_hijack.model_hijack.hijack(sd_model)
+    script_callbacks.model_loaded_callback(sd_model)
 
     if not shared.cmd_opts.lowvram and not shared.cmd_opts.medvram:
         sd_model.to(devices.device)

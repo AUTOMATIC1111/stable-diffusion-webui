@@ -9,6 +9,7 @@ import platform
 dir_repos = "repositories"
 python = sys.executable
 git = os.environ.get('GIT', "git")
+index_url = os.environ.get('INDEX_URL', "")
 
 
 def extract_arg(args, name):
@@ -57,7 +58,8 @@ def run_python(code, desc=None, errdesc=None):
 
 
 def run_pip(args, desc=None):
-    return run(f'"{python}" -m pip {args} --prefer-binary', desc=f"Installing {desc}", errdesc=f"Couldn't install {desc}")
+    index_url_line = f' --index-url {index_url}' if index_url != '' else ''
+    return run(f'"{python}" -m pip {args} --prefer-binary{index_url_line}', desc=f"Installing {desc}", errdesc=f"Couldn't install {desc}")
 
 
 def check_run_python(code):
@@ -76,7 +78,7 @@ def git_clone(url, dir, name, commithash=None):
             return
 
         run(f'"{git}" -C {dir} fetch', f"Fetching updates for {name}...", f"Couldn't fetch {name}")
-        run(f'"{git}" -C {dir} checkout {commithash}', f"Checking out commint for {name} with hash: {commithash}...", f"Couldn't checkout commit {commithash} for {name}")
+        run(f'"{git}" -C {dir} checkout {commithash}', f"Checking out commit for {name} with hash: {commithash}...", f"Couldn't checkout commit {commithash} for {name}")
         return
 
     run(f'"{git}" clone "{url}" "{dir}"', f"Cloning {name} into {dir}...", f"Couldn't clone {name}")
@@ -84,7 +86,24 @@ def git_clone(url, dir, name, commithash=None):
     if commithash is not None:
         run(f'"{git}" -C {dir} checkout {commithash}', None, "Couldn't checkout {name}'s hash: {commithash}")
 
+        
+def version_check(commit):
+    try:
+        import requests
+        commits = requests.get('https://api.github.com/repos/AUTOMATIC1111/stable-diffusion-webui/branches/master').json()
+        if commit != "<none>" and commits['commit']['sha'] != commit:
+            print("--------------------------------------------------------")
+            print("| You are not up to date with the most recent release. |")
+            print("| Consider running `git pull` to update.               |")
+            print("--------------------------------------------------------")
+        elif commits['commit']['sha'] == commit:
+            print("You are up to date with the most recent release.")
+        else:
+            print("Not a git clone, can't perform version check.")
+    except Exception as e:
+        print("versipm check failed",e)
 
+        
 def prepare_enviroment():
     torch_command = os.environ.get('TORCH_COMMAND', "pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 --extra-index-url https://download.pytorch.org/whl/cu113")
     requirements_file = os.environ.get('REQS_FILE', "requirements_versions.txt")
@@ -92,6 +111,15 @@ def prepare_enviroment():
 
     gfpgan_package = os.environ.get('GFPGAN_PACKAGE', "git+https://github.com/TencentARC/GFPGAN.git@8d2447a2d918f8eba5a4a01463fd48e45126a379")
     clip_package = os.environ.get('CLIP_PACKAGE', "git+https://github.com/openai/CLIP.git@d50d76daa670286dd6cacf3bcd80b5e4823fc8e1")
+    deepdanbooru_package = os.environ.get('DEEPDANBOORU_PACKAGE', "git+https://github.com/KichangKim/DeepDanbooru.git@edf73df4cdaeea2cf00e9ac08bd8a9026b7a7b26")
+
+    xformers_windows_package = os.environ.get('XFORMERS_WINDOWS_PACKAGE', 'https://github.com/C43H66N12O12S2/stable-diffusion-webui/releases/download/f/xformers-0.0.14.dev0-cp310-cp310-win_amd64.whl')
+
+    stable_diffusion_repo = os.environ.get('STABLE_DIFFUSION_REPO', "https://github.com/CompVis/stable-diffusion.git")
+    taming_transformers_repo = os.environ.get('TAMING_REANSFORMERS_REPO', "https://github.com/CompVis/taming-transformers.git")
+    k_diffusion_repo = os.environ.get('K_DIFFUSION_REPO', 'https://github.com/crowsonkb/k-diffusion.git')
+    codeformer_repo = os.environ.get('CODEFORMET_REPO', 'https://github.com/sczhou/CodeFormer.git')
+    blip_repo = os.environ.get('BLIP_REPO', 'https://github.com/salesforce/BLIP.git')
 
     stable_diffusion_commit_hash = os.environ.get('STABLE_DIFFUSION_COMMIT_HASH', "69ae4b35e0a0f6ee1af8bb9a5d0016ccb27e36dc")
     taming_transformers_commit_hash = os.environ.get('TAMING_TRANSFORMERS_COMMIT_HASH', "24268930bf1dce879235a7fddd0b2355b84d7ea6")
@@ -99,12 +127,14 @@ def prepare_enviroment():
     codeformer_commit_hash = os.environ.get('CODEFORMER_COMMIT_HASH', "c5b4593074ba6214284d6acd5f1719b6c5d739af")
     blip_commit_hash = os.environ.get('BLIP_COMMIT_HASH', "48211a1594f1321b00f14c9f7a5b4813144b2fb9")
 
-    args = shlex.split(commandline_args)
+    sys.argv += shlex.split(commandline_args)
 
-    args, skip_torch_cuda_test = extract_arg(args, '--skip-torch-cuda-test')
-    xformers = '--xformers' in args
-    deepdanbooru = '--deepdanbooru' in args
-    ngrok = '--ngrok' in args
+    sys.argv, skip_torch_cuda_test = extract_arg(sys.argv, '--skip-torch-cuda-test')
+    sys.argv, reinstall_xformers = extract_arg(sys.argv, '--reinstall-xformers')
+    sys.argv, update_check = extract_arg(sys.argv, '--update-check')
+    xformers = '--xformers' in sys.argv
+    deepdanbooru = '--deepdanbooru' in sys.argv
+    ngrok = '--ngrok' in sys.argv
 
     try:
         commit = run(f"{git} rev-parse HEAD").strip()
@@ -113,7 +143,7 @@ def prepare_enviroment():
 
     print(f"Python {sys.version}")
     print(f"Commit hash: {commit}")
-
+    
     if not is_installed("torch") or not is_installed("torchvision"):
         run(f'"{python}" -m {torch_command}', "Installing torch and torchvision", "Couldn't install torch")
 
@@ -126,34 +156,41 @@ def prepare_enviroment():
     if not is_installed("clip"):
         run_pip(f"install {clip_package}", "clip")
 
-    if not is_installed("xformers") and xformers and platform.python_version().startswith("3.10"):
+    if (not is_installed("xformers") or reinstall_xformers) and xformers:
         if platform.system() == "Windows":
-            run_pip("install https://github.com/C43H66N12O12S2/stable-diffusion-webui/releases/download/c/xformers-0.0.14.dev0-cp310-cp310-win_amd64.whl", "xformers")
+            if platform.python_version().startswith("3.10"):
+                run_pip(f"install -U -I --no-deps {xformers_windows_package}", "xformers")
+            else:
+                print("Installation of xformers is not supported in this version of Python.")
+                print("You can also check this and build manually: https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Xformers#building-xformers-on-windows-by-duckness")
+                if not is_installed("xformers"):
+                    exit(0)
         elif platform.system() == "Linux":
             run_pip("install xformers", "xformers")
 
     if not is_installed("deepdanbooru") and deepdanbooru:
-        run_pip("install git+https://github.com/KichangKim/DeepDanbooru.git@edf73df4cdaeea2cf00e9ac08bd8a9026b7a7b26#egg=deepdanbooru[tensorflow] tensorflow==2.10.0 tensorflow-io==0.27.0", "deepdanbooru")
+        run_pip(f"install {deepdanbooru_package}#egg=deepdanbooru[tensorflow] tensorflow==2.10.0 tensorflow-io==0.27.0", "deepdanbooru")
 
     if not is_installed("pyngrok") and ngrok:
         run_pip("install pyngrok", "ngrok")
 
     os.makedirs(dir_repos, exist_ok=True)
 
-    git_clone("https://github.com/CompVis/stable-diffusion.git", repo_dir('stable-diffusion'), "Stable Diffusion", stable_diffusion_commit_hash)
-    git_clone("https://github.com/CompVis/taming-transformers.git", repo_dir('taming-transformers'), "Taming Transformers", taming_transformers_commit_hash)
-    git_clone("https://github.com/crowsonkb/k-diffusion.git", repo_dir('k-diffusion'), "K-diffusion", k_diffusion_commit_hash)
-    git_clone("https://github.com/sczhou/CodeFormer.git", repo_dir('CodeFormer'), "CodeFormer", codeformer_commit_hash)
-    git_clone("https://github.com/salesforce/BLIP.git", repo_dir('BLIP'), "BLIP", blip_commit_hash)
+    git_clone(stable_diffusion_repo, repo_dir('stable-diffusion'), "Stable Diffusion", stable_diffusion_commit_hash)
+    git_clone(taming_transformers_repo, repo_dir('taming-transformers'), "Taming Transformers", taming_transformers_commit_hash)
+    git_clone(k_diffusion_repo, repo_dir('k-diffusion'), "K-diffusion", k_diffusion_commit_hash)
+    git_clone(codeformer_repo, repo_dir('CodeFormer'), "CodeFormer", codeformer_commit_hash)
+    git_clone(blip_repo, repo_dir('BLIP'), "BLIP", blip_commit_hash)
 
     if not is_installed("lpips"):
         run_pip(f"install -r {os.path.join(repo_dir('CodeFormer'), 'requirements.txt')}", "requirements for CodeFormer")
 
     run_pip(f"install -r {requirements_file}", "requirements for Web UI")
 
-    sys.argv += args
-
-    if "--exit" in args:
+    if update_check:
+        version_check(commit)
+    
+    if "--exit" in sys.argv:
         print("Exiting because of --exit argument")
         exit(0)
 
