@@ -165,7 +165,7 @@
     "Decode CFG scale": "解码提示词相关性(CFG scale)",
     "Randomness": "随机度",
     "Sigma adjustment for finding noise for image": "为寻找图中噪点的 Sigma 调整",
-    "Loops": "循环",
+    "Loops": "迭代次数",
     "Denoising strength change factor": "降噪强度的调整系数",
     "Recommended settings: Sampling Steps: 80-100, Sampler: Euler a, Denoising strength: 0.8": "推荐设置：采样迭代步数：80-100，采样器：Euler a，降噪强度：0.8",
     "Pixels to expand": "拓展的像素数",
