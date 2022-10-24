@@ -43,4 +43,7 @@ Randomly display the pictures of the artist's or artistic genres typical style, 
 ## Deforum
 https://github.com/deforum-art/deforum-for-automatic1111-webui
 
+
 The official port of Deforum, an extensive script for 2D and 3D animations, supporting keyframable sequences, dynamic math parameters (even inside the prompts), dynamic masking, depth estimation and warping.
+
+![ui](https://user-images.githubusercontent.com/20920490/197619558-c088a329-3672-4f0a-8685-cf539996ad1e.png)
