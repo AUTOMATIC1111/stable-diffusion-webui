@@ -1,6 +1,7 @@
 import copy
 import math
 import os
+import random
 import sys
 import traceback
 import shlex
@@ -81,32 +82,34 @@ def cmdargs(line):
     return res
 
 
+def load_prompt_file(file):
+    if (file is None):
+        lines = []
+    else:
+        lines = [x.strip() for x in file.decode('utf8', errors='ignore').split("\n")]
+
+    return None, "\n".join(lines), gr.update(lines=7)
+
 class Script(scripts.Script):
     def title(self):
         return "Prompts from file or textbox"
 
     def ui(self, is_img2img):
-        # This checkbox would look nicer as two tabs, but there are two problems:
-        # 1) There is a bug in Gradio 3.3 that prevents visibility from working on Tabs
-        # 2) Even with Gradio 3.3.1, returning a control (like Tabs) that can't be used as input
-        #    causes a AttributeError: 'Tabs' object has no attribute 'preprocess' assert,
-        #    due to the way Script assumes all controls returned can be used as inputs.
-        # Therefore, there's no good way to use grouping components right now,
-        # so we will use a checkbox! :)
-        checkbox_txt = gr.Checkbox(label="Show Textbox", value=False)
-        file = gr.File(label="File with inputs", type='bytes')
-        prompt_txt = gr.TextArea(label="Prompts")
-        checkbox_txt.change(fn=lambda x: [gr.File.update(visible = not x), gr.TextArea.update(visible = x)], inputs=[checkbox_txt], outputs=[file, prompt_txt])
-        return [checkbox_txt, file, prompt_txt]
+        checkbox_iterate = gr.Checkbox(label="Iterate seed every line", value=False)
 
-    def on_show(self, checkbox_txt, file, prompt_txt):
-        return [ gr.Checkbox.update(visible = True), gr.File.update(visible = not checkbox_txt), gr.TextArea.update(visible = checkbox_txt) ]
+        prompt_txt = gr.Textbox(label="List of prompt inputs", lines=1)
+        file = gr.File(label="Upload prompt inputs", type='bytes')
 
-    def run(self, p, checkbox_txt, data: bytes, prompt_txt: str):
-        if checkbox_txt:
-            lines = [x.strip() for x in prompt_txt.splitlines()]
-        else:
-            lines = [x.strip() for x in data.decode('utf8', errors='ignore').split("\n")]
+        file.change(fn=load_prompt_file, inputs=[file], outputs=[file, prompt_txt, prompt_txt])
+
+        # We start at one line. When the text changes, we jump to seven lines, or two lines if no \n.
+        # We don't shrink back to 1, because that causes the control to ignore [enter], and it may
+        # be unclear to the user that shift-enter is needed.
+        prompt_txt.change(lambda tb: gr.update(lines=7) if ("\n" in tb) else gr.update(lines=2), inputs=[prompt_txt], outputs=[prompt_txt])
+        return [checkbox_iterate, file, prompt_txt]
+
+    def run(self, p, checkbox_iterate, file, prompt_txt: str):
+        lines = [x.strip() for x in prompt_txt.splitlines()]
         lines = [x for x in lines if len(x) > 0]
 
         p.do_not_save_grid = True
@@ -134,6 +137,9 @@ class Script(scripts.Script):
             jobs.append(args)
 
         print(f"Will process {len(lines)} lines in {job_count} jobs.")
+        if (checkbox_iterate and p.seed == -1):
+            p.seed = int(random.randrange(4294967294))
+
         state.job_count = job_count
 
         images = []
@@ -146,5 +152,9 @@ class Script(scripts.Script):
 
             proc = process_images(copy_p)
             images += proc.images
+            
+            if (checkbox_iterate):
+                p.seed = p.seed + (p.batch_size * p.n_iter)
+
 
         return Processed(p, images, p.seed, "")
