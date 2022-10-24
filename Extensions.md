@@ -31,7 +31,11 @@ https://github.com/yfszzx/stable-diffusion-webui-images-browser
 
 Provides an interface to browse created images in the web browser.
 
-![firefox_ULc7VFNPvB](https://user-images.githubusercontent.com/20920490/197465890-bad34b41-e9b2-4cb7-99f3-f34d8d332614.png)
+![68747470733a2f2f73362e6a70672e636d2f323032322f31302f32342f504a6a755a742e706e67](https://user-images.githubusercontent.com/20920490/197518762-a23f3e34-f174-4275-8283-eb8d2ff65ef2.png)
 
 ## Inspiration
 https://github.com/yfszzx/stable-diffusion-webui-inspiration
+
+Randomly display the pictures of the artist's or artistic genres typical style, more pictures of this artist or genre is displayed after selecting. So you don't have to worry about how hard it is to choose the right style of art when you create.
+
+![68747470733a2f2f73362e6a70672e636d2f323032322f31302f32322f504a596f4e4c2e706e67](https://user-images.githubusercontent.com/20920490/197518700-3f753132-8799-4ad0-8cdf-bcdcbf7798aa.png)
