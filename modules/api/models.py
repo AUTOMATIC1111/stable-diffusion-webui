@@ -138,12 +138,12 @@ class ExtrasSingleImageRequest(ExtrasBaseRequest):
 class ExtrasSingleImageResponse(ExtraBaseResponse):
     image: str = Field(default=None, title="Image", description="The generated image in base64 format.")
 
-class ImageItem(BaseModel):
-    data: str = Field(title="image data")
-    name: str = Field(title="filename")
+class FileData(BaseModel):
+    data: str = Field(title="File data", description="Base64 representation of the file")
+    name: str = Field(title="File name")
 
 class ExtrasBatchImagesRequest(ExtrasBaseRequest):
-    imageList: list[str] = Field(title="Images", description="List of images to work on. Must be Base64 strings")
+    imageList: list[FileData] = Field(title="Images", description="List of images to work on. Must be Base64 strings")
 
 class ExtrasBatchImagesResponse(ExtraBaseResponse):
     images: list[str] = Field(title="Images", description="The generated images in base64 format.")

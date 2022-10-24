@@ -109,7 +109,12 @@ class Api:
     def extras_batch_images_api(self, req: ExtrasBatchImagesRequest):
         reqDict = setUpscalers(req)
 
-        reqDict['image_folder'] = list(map(decode_base64_to_file, reqDict['imageList']))
+        def prepareFiles(file):
+            file = decode_base64_to_file(file.data, file_path=file.name)
+            file.orig_name = file.name
+            return file
+
+        reqDict['image_folder'] = list(map(prepareFiles, reqDict['imageList']))
         reqDict.pop('imageList')
 
         with self.queue_lock:
