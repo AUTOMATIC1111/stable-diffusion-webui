@@ -410,12 +410,6 @@ class DreamBooth:
                                 latent_dist = vae.encode(batch["pixel_values"].to(dtype=weight_dtype)).latent_dist
                                 printm("VAE Encode Latent Dist")
                             latents = latent_dist.sample() * 0.18215
-                        if not self.use_cpu:
-                            try:
-                                vae = vae.to('cpu')
-                                printm("Unload VAE...")
-                            except:
-                                pass
                         noise = torch.randn_like(latents)
                         bsz = latents.shape[0]
                         # Sample a random timestep for each image
@@ -438,9 +432,6 @@ class DreamBooth:
                                 encoder_hidden_states = text_encoder(batch["input_ids"])[0]
                                 printm("Input States")
 
-                        if not self.use_cpu:
-                            text_encoder = text_encoder.to('cpu')
-                            printm("Unload text encoder.")
                         # Predict the noise residual
                         printm("Noise prediction...")
                         noise_pred = unet(noisy_latents, timesteps, encoder_hidden_states).sample
@@ -471,11 +462,6 @@ class DreamBooth:
                         printm("Zero grad opt")
                         optimizer.zero_grad(set_to_none=True)
                         loss_avg.update(loss.detach_(), bsz)
-                        if not self.use_cpu:
-                            printm("Reloading vae, unet, te")
-                            vae = vae.to(accelerator.device, dtype=weight_dtype)
-                            unet = unet.to(accelerator.device, dtype=weight_dtype)
-                            text_encoder = text_encoder.to(accelerator.device, dtype=weight_dtype)
 
                     if self.save_img_every:
                         if not global_step % self.save_img_every and global_step != 0:
