@@ -347,6 +347,10 @@ Convenient Syntax for swapping every other step.
 
 On step 1, prompt is "cow in a field." Step 2 is "horse in a field." Step 3 is "cow in a field" and so on.
 
+![Alternating Words](https://user-images.githubusercontent.com/39339941/197556926-49ceb72b-daf3-4208-86f3-c2e7e9cd775a.gif)
+
+
+
 
 See more advanced example below. On step 8, the chain loops back from "man" to "cow."
 
