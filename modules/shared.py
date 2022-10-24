@@ -86,6 +86,7 @@ parser.add_argument("--device-id", type=str, help="Select the default CUDA devic
 cmd_opts = parser.parse_args()
 restricted_opts = [
     "samples_filename_pattern",
+    "directories_filename_pattern",
     "outdir_samples",
     "outdir_txt2img_samples",
     "outdir_img2img_samples",
@@ -190,7 +191,8 @@ options_templates = {}
 options_templates.update(options_section(('saving-images', "Saving images/grids"), {
     "samples_save": OptionInfo(True, "Always save all generated images"),
     "samples_format": OptionInfo('png', 'File format for images'),
-    "samples_filename_pattern": OptionInfo("", "Images filename pattern"),
+    "samples_filename_pattern": OptionInfo("", "Images filename pattern", component_args=hide_dirs),
+    "save_images_add_number": OptionInfo(True, "Add number to filename when saving", component_args=hide_dirs),
 
     "grid_save": OptionInfo(True, "Always save all generated image grids"),
     "grid_format": OptionInfo('png', 'File format for grids'),
@@ -225,8 +227,8 @@ options_templates.update(options_section(('saving-to-dirs', "Saving to a directo
     "save_to_dirs": OptionInfo(False, "Save images to a subdirectory"),
     "grid_save_to_dirs": OptionInfo(False, "Save grids to a subdirectory"),
     "use_save_to_dirs_for_ui": OptionInfo(False, "When using \"Save\" button, save images to a subdirectory"),
-    "directories_filename_pattern": OptionInfo("", "Directory name pattern"),
-    "directories_max_prompt_words": OptionInfo(8, "Max prompt words for [prompt_words] pattern", gr.Slider, {"minimum": 1, "maximum": 20, "step": 1}),
+    "directories_filename_pattern": OptionInfo("", "Directory name pattern", component_args=hide_dirs),
+    "directories_max_prompt_words": OptionInfo(8, "Max prompt words for [prompt_words] pattern", gr.Slider, {"minimum": 1, "maximum": 20, "step": 1, **hide_dirs}),
 }))
 
 options_templates.update(options_section(('upscaling', "Upscaling"), {
@@ -348,7 +350,7 @@ class Options:
 
     def save(self, filename):
         with open(filename, "w", encoding="utf8") as file:
-            json.dump(self.data, file)
+            json.dump(self.data, file, indent=4)
 
     def same_type(self, x, y):
         if x is None or y is None:
