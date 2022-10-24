@@ -14,6 +14,8 @@ import modules.shared as shared
 from modules import devices, paths, lowvram
 
 blip_image_eval_size = 384
+blip_filename = "model_base_caption_capfilt_large.pth"
+blip_filepath =  os.path.join(paths.models_path, "BLIP", blip_filename)
 blip_model_url = 'https://storage.googleapis.com/sfr-vision-language-research/BLIP/models/model_base_caption_capfilt_large.pth'
 clip_model_name = 'ViT-L/14'
 
@@ -47,7 +49,12 @@ class InterrogateModels:
     def load_blip_model(self):
         import models.blip
 
-        blip_model = models.blip.blip_decoder(pretrained=blip_model_url, image_size=blip_image_eval_size, vit='base', med_config=os.path.join(paths.paths["BLIP"], "configs", "med_config.json"))
+        med_config_path = os.path.join(paths.paths["BLIP"], "configs", "med_config.json")
+
+        if os.path.exists(blip_filepath):
+            blip_model = models.blip.blip_decoder(pretrained= blip_filepath, image_size=blip_image_eval_size, vit='base', med_config=med_config_path)
+        else:
+             blip_model = models.blip.blip_decoder(pretrained=blip_model_url, image_size=blip_image_eval_size, vit='base', med_config=med_config_path)
         blip_model.eval()
 
         return blip_model
