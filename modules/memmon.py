@@ -14,7 +14,6 @@ class MemUsageMonitor(threading.Thread):
 
     def __init__(self, name, device, opts):
         threading.Thread.__init__(self)
-        print("Init memmmon")
         self.name = name
         self.device = device
         self.opts = opts
@@ -32,37 +31,21 @@ class MemUsageMonitor(threading.Thread):
 
     def run(self):
         if self.disabled:
-            print("Memmmon disabled")
             return
-        print("Running memmon")
-        logged = False
+
         while True:
-            #self.run_flag.wait()
+            self.run_flag.wait()
+
             torch.cuda.reset_peak_memory_stats()
             self.data.clear()
 
-            self.data["min_free"] = torch.cuda.mem_get_info()[0]
-            allocated = round(torch.cuda.memory_allocated(0) / 1024 ** 3, 1)
-            cached = round(torch.cuda.memory_reserved(0) / 1024 ** 3, 1)
-            print('Monitoring memory:')
-            print('Allocated:', allocated, 'GB')
-            print('Reserved:   ', cached, 'GB')
-            logged = True
-            while True:
-                device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-                # Additional Info when using cuda
-                if device.type == 'cuda':
-                    last_alloc = allocated
-                    last_cached = cached
-                    allocated = round(torch.cuda.memory_allocated(0) / 1024 ** 3, 1)
-                    cached = round(torch.cuda.memory_reserved(0) / 1024 ** 3, 1)
-                    if last_alloc != allocated or last_cached != cached:
-                        logged = False
-                    else:
-                        if not logged:
-                            print(f'   Memory changed: \n Allocated: {allocated}GB \n Reserved: {cached}GB')
-                            logged = True
+            if self.opts.memmon_poll_rate <= 0:
+                self.run_flag.clear()
+                continue
 
+            self.data["min_free"] = torch.cuda.mem_get_info()[0]
+
+            while self.run_flag.is_set():
                 free, total = torch.cuda.mem_get_info()  # calling with self.device errors, torch bug?
                 self.data["min_free"] = min(self.data["min_free"], free)
 

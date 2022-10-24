@@ -120,13 +120,14 @@ def prepare_enviroment():
     k_diffusion_repo = os.environ.get('K_DIFFUSION_REPO', 'https://github.com/crowsonkb/k-diffusion.git')
     codeformer_repo = os.environ.get('CODEFORMET_REPO', 'https://github.com/sczhou/CodeFormer.git')
     blip_repo = os.environ.get('BLIP_REPO', 'https://github.com/salesforce/BLIP.git')
+    diffusers_repo = os.environ.get('DIFFUSERS_REPO', 'https://github.com/ShivamShrirao/diffusers.git')
 
     stable_diffusion_commit_hash = os.environ.get('STABLE_DIFFUSION_COMMIT_HASH', "69ae4b35e0a0f6ee1af8bb9a5d0016ccb27e36dc")
     taming_transformers_commit_hash = os.environ.get('TAMING_TRANSFORMERS_COMMIT_HASH', "24268930bf1dce879235a7fddd0b2355b84d7ea6")
     k_diffusion_commit_hash = os.environ.get('K_DIFFUSION_COMMIT_HASH', "f4e99857772fc3a126ba886aadf795a332774878")
     codeformer_commit_hash = os.environ.get('CODEFORMER_COMMIT_HASH', "c5b4593074ba6214284d6acd5f1719b6c5d739af")
     blip_commit_hash = os.environ.get('BLIP_COMMIT_HASH', "48211a1594f1321b00f14c9f7a5b4813144b2fb9")
-
+    diffusers_commit_hash = os.environ.get('DIFFUSERS_COMMIT_HASH', '6d5d9e2bd0a70c7dee7bb4a7e0e072788073e115')
     sys.argv += shlex.split(commandline_args)
 
     sys.argv, skip_torch_cuda_test = extract_arg(sys.argv, '--skip-torch-cuda-test')
@@ -156,6 +157,10 @@ def prepare_enviroment():
     if not is_installed("clip"):
         run_pip(f"install {clip_package}", "clip")
 
+    if is_installed("diffusers"):
+        run(f'"{python}" -m pip uninstall diffusers', desc=f"Uninstalling diffusers", errdesc=f"Couldn't uninstall "
+                                                                                              f"diffusers.")
+
     if (not is_installed("xformers") or reinstall_xformers) and xformers:
         if platform.system() == "Windows":
             if platform.python_version().startswith("3.10"):
@@ -181,7 +186,7 @@ def prepare_enviroment():
     git_clone(k_diffusion_repo, repo_dir('k-diffusion'), "K-diffusion", k_diffusion_commit_hash)
     git_clone(codeformer_repo, repo_dir('CodeFormer'), "CodeFormer", codeformer_commit_hash)
     git_clone(blip_repo, repo_dir('BLIP'), "BLIP", blip_commit_hash)
-
+    git_clone(diffusers_repo, repo_dir('diffusers'), "diffusers", diffusers_commit_hash)
     if not is_installed("lpips"):
         run_pip(f"install -r {os.path.join(repo_dir('CodeFormer'), 'requirements.txt')}", "requirements for CodeFormer")
 

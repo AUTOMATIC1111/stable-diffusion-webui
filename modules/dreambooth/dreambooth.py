@@ -28,6 +28,21 @@ import modules.sd_models
 from modules import paths, sd_hijack, shared, sd_models
 from modules.dreambooth import conversion
 
+mem_record = {}
+
+
+def printm(msg, reset=False):
+    global mem_record
+    if reset:
+        mem_record = {}
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+    gc.collect()
+    allocated = round(torch.cuda.memory_allocated(0) / 1024 ** 3, 1)
+    cached = round(torch.cuda.memory_reserved(0) / 1024 ** 3, 1)
+    mem_record[msg] = f"{allocated}/{cached}GB"
+    print(f' {msg} \n Allocated: {allocated}GB \n Reserved: {cached}GB \n')
+
 
 class DreamBooth:
     # TODO: Clean up notes below and make them a proper docstring
@@ -85,7 +100,6 @@ class DreamBooth:
         self.log_interval = 10
         self.save_img_every = create_image_every
         self.save_data_every = save_embedding_every
-        # choices=["no", "fp16", "bf16"],
         self.mixed_precision = mixed_precision
         self.not_cache_latents = not_cache_latents
 
@@ -111,10 +125,6 @@ class DreamBooth:
         self.train_text_encoder = train_text_encoder
         self.resolution = resolution
         self.use_cpu = use_cpu
-        # We get an error if using 'fp16' and CPU at the same time?
-        # Maybe not?
-        #if use_cpu:
-            #self.mixed_precision = "no"
         self.prior_loss_weight = prior_loss_weight
         self.center_crop = center_crop
         self.num_train_epochs = num_train_epochs
@@ -141,8 +151,8 @@ class DreamBooth:
         # TODO (patil-suraj): Remove this check when gradient accumulation with two models is enabled in accelerate.
         if self.train_text_encoder and self.gradient_accumulation_steps > 1 and accelerator.num_processes > 1:
             msg = "Gradient accumulation is not supported when training the text encoder in distributed training. " \
-                    "Please set gradient_accumulation_steps to 1. This feature will be supported in the future. Text " \
-                    "encoder training will be disabled."
+                  "Please set gradient_accumulation_steps to 1. This feature will be supported in the future. Text " \
+                  "encoder training will be disabled."
             print(msg)
             shared.state.textinfo = msg
             self.train_text_encoder = False
@@ -206,18 +216,13 @@ class DreamBooth:
         if os.path.exists(ex_encoder) and os.path.exists(ex_vae) and os.path.exists(ex_unet) and os.path.exists(
                 ex_tokenizer):
             ex_model_path = self.output_dir
-            print(f"Loading existing pre-trained model data from {ex_model_path}")
 
         tokenizer = CLIPTokenizer.from_pretrained(os.path.join(ex_model_path, "tokenizer"))
-        print("Tokenizer")
         # Load models and create wrapper for stable diffusion
         text_encoder = CLIPTextModel.from_pretrained(os.path.join(ex_model_path, "text_encoder"))
-        print("Encoder")
         vae = AutoencoderKL.from_pretrained(os.path.join(ex_model_path, "vae"))
-        print("Vae")
         unet = UNet2DConditionModel.from_pretrained(os.path.join(ex_model_path, "unet"))
-        print("Unet")
-
+        printm("Loaded model")
         vae.requires_grad_(False)
         if not self.train_text_encoder:
             text_encoder.requires_grad_(False)
@@ -257,7 +262,6 @@ class DreamBooth:
         noise_scheduler = DDPMScheduler(
             beta_start=0.00085, beta_end=0.012, beta_schedule="scaled_linear", num_train_timesteps=1000
         )
-        print("Loading dataset")
         train_dataset = DreamBoothDataset(
             instance_data_root=self.instance_data_dir,
             instance_prompt=self.instance_prompt,
@@ -298,10 +302,10 @@ class DreamBooth:
         elif self.mixed_precision == "bf16":
             weight_dtype = torch.bfloat16
         vae.to(accelerator.device, dtype=weight_dtype)
+        printm("Vae to device")
         if not self.train_text_encoder:
             text_encoder.to(accelerator.device, dtype=weight_dtype)
         if not self.not_cache_latents:
-            print("Caching latents")
             latents_cache = []
             text_encoder_cache = []
             for batch in tqdm(train_dataloader, desc="Caching latents"):
@@ -317,13 +321,13 @@ class DreamBooth:
             train_dataset = LatentsDataset(latents_cache, text_encoder_cache)
             train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=1, collate_fn=lambda x: x,
                                                            shuffle=True)
-            print("Del vae")
+            printm("Latents Cached")
             del vae
+            printm("VAE Deleted")
             if not self.train_text_encoder:
-                print("Del encoder")
                 del text_encoder
+                printm("Encoder Deleted")
             if torch.cuda.is_available():
-                print("Empty cache")
                 torch.cuda.empty_cache()
 
         # Scheduler and math around the number of training steps.
@@ -339,9 +343,8 @@ class DreamBooth:
             num_warmup_steps=self.lr_warmup_steps * self.gradient_accumulation_steps,
             num_training_steps=self.max_train_steps * self.gradient_accumulation_steps,
         )
-
+        printm("Scheduler Loaded")
         if self.train_text_encoder and text_encoder is not None:
-            print("Training text encoder.")
             unet, text_encoder, optimizer, train_dataloader, lr_scheduler = accelerator.prepare(
                 unet, text_encoder, optimizer, train_dataloader, lr_scheduler
             )
@@ -349,7 +352,7 @@ class DreamBooth:
             unet, optimizer, train_dataloader, lr_scheduler = accelerator.prepare(
                 unet, optimizer, train_dataloader, lr_scheduler
             )
-
+        printm("Accelerator Prepared")
         # We need to recalculate our total training steps as the size of the training dataloader may have changed.
         num_update_steps_per_epoch = math.ceil(len(train_dataloader) / self.gradient_accumulation_steps)
         if overrode_max_train_steps:
@@ -361,12 +364,15 @@ class DreamBooth:
         # The trackers initializes automatically on the main process.
         if accelerator.is_main_process:
             accelerator.init_trackers("dreambooth", config=vars(self))
-
+        printm("Trackers initialized")
         # Train!
         total_batch_size = self.train_batch_size * accelerator.num_processes * self.gradient_accumulation_steps
-
+        stats = f"CPU: {self.use_cpu} Adam: {self.use_8bit_adam}, Prec: {self.mixed_precision}, " \
+                f"Prior: {self.with_prior_preservation}, Grad: {self.gradient_checkpointing}, " \
+                f"TextTr: {self.train_text_encoder}, NoCacheLatent: {self.not_cache_latents} "
+        printm(stats)
         print("***** Running training *****")
-        print(f"  CPU: {self.use_cpu}, Adam: {use_adam}, Precision: {self.mixed_precision}")
+        print(f"  CPU: {self.use_cpu}, Adam: {use_adam}, Precision: {self.mixed_precision}, GradCkpt: {self.gradient_checkpointing}")
         print(f"  Num examples = {len(train_dataset)}")
         print(f"  Num batches each epoch = {len(train_dataloader)}")
         print(f"  Num Epochs = {self.num_train_epochs}")
@@ -375,6 +381,7 @@ class DreamBooth:
         print(f"  Gradient Accumulation steps = {self.gradient_accumulation_steps}")
         print(f"  Total optimization steps = {self.max_train_steps}")
         print(f"  Total lifetime optimization steps = {self.max_train_steps + self.total_steps}")
+
         # Only show the progress bar once on each machine.
         progress_bar = tqdm(range(self.max_train_steps), disable=not accelerator.is_local_main_process)
         progress_bar.set_description("Steps")
@@ -388,9 +395,8 @@ class DreamBooth:
         training_failed = False
 
         try:
-            print("Training?")
             for epoch in range(self.num_train_epochs):
-                print("Unet.train()")
+                printm("Training Unet")
                 unet.train()
                 for step, batch in enumerate(train_dataloader):
                     print("Accuumulate?")
@@ -398,46 +404,57 @@ class DreamBooth:
                         # Convert images to latent space
                         with torch.no_grad(), torch.autocast("cuda"):
                             if not self.not_cache_latents:
-                                print("Latent_dist")
                                 latent_dist = batch[0][0]
+                                printm("Loaded LatentDist")
                             else:
-                                print("VAE ENCODE")
                                 latent_dist = vae.encode(batch["pixel_values"].to(dtype=weight_dtype)).latent_dist
+                                printm("VAE Encode Latent Dist")
                             latents = latent_dist.sample() * 0.18215
+                        if not self.use_cpu:
+                            try:
+                                vae = vae.to('cpu')
+                                printm("Unload VAE...")
+                            except:
+                                pass
                         noise = torch.randn_like(latents)
                         bsz = latents.shape[0]
                         # Sample a random timestep for each image
                         timesteps = torch.randint(0, noise_scheduler.config.num_train_timesteps, (bsz,),
                                                   device=latents.device)
+                        printm("Got Timesteps")
                         timesteps = timesteps.long()
                         noisy_latents = noise_scheduler.add_noise(latents, noise, timesteps)
-
+                        printm("Added Noise")
                         # Get the text embedding for conditioning
                         with text_enc_context:
                             if not self.not_cache_latents:
                                 if self.train_text_encoder:
-                                    print("Enc hidden (trained)")
                                     encoder_hidden_states = text_encoder(batch[0][1])[0]
+                                    printm("TextEnc States")
                                 else:
-                                    print("Enc hidden (notrain)")
                                     encoder_hidden_states = batch[0][1]
+                                    printm("Batch States")
                             else:
                                 encoder_hidden_states = text_encoder(batch["input_ids"])[0]
+                                printm("Input States")
 
+                        if not self.use_cpu:
+                            text_encoder = text_encoder.to('cpu')
+                            printm("Unload text encoder.")
                         # Predict the noise residual
-                        print("Noise prediction...")
+                        printm("Noise prediction...")
                         noise_pred = unet(noisy_latents, timesteps, encoder_hidden_states).sample
-
+                        printm("Prior Preservation")
                         if self.with_prior_preservation:
                             # Chunk the noise and noise_pred into two parts and compute the loss on each part
                             # separately.
                             noise_pred, noise_pred_prior = torch.chunk(noise_pred, 2, dim=0)
                             noise, noise_prior = torch.chunk(noise, 2, dim=0)
-
+                            printm("Loss")
                             # Compute instance loss
                             loss = F.mse_loss(noise_pred.float(), noise.float(), reduction="none").mean(
                                 [1, 2, 3]).mean()
-
+                            printm("Prior Loss")
                             # Compute prior loss
                             prior_loss = F.mse_loss(noise_pred_prior.float(), noise_prior.float(), reduction="mean")
 
@@ -445,12 +462,21 @@ class DreamBooth:
                             loss = loss + self.prior_loss_weight * prior_loss
                         else:
                             loss = F.mse_loss(noise_pred.float(), noise.float(), reduction="mean")
-
+                            printm("No prior")
                         accelerator.backward(loss)
+                        printm("Opt Step")
                         optimizer.step()
+                        printm("Sched step")
                         lr_scheduler.step()
+                        printm("Zero grad opt")
                         optimizer.zero_grad(set_to_none=True)
                         loss_avg.update(loss.detach_(), bsz)
+                        if not self.use_cpu:
+                            printm("Reloading vae, unet, te")
+                            vae = vae.to(accelerator.device, dtype=weight_dtype)
+                            unet = unet.to(accelerator.device, dtype=weight_dtype)
+                            text_encoder = text_encoder.to(accelerator.device, dtype=weight_dtype)
+
                     if self.save_img_every:
                         if not global_step % self.save_img_every and global_step != 0:
                             prompt = self.instance_prompt
@@ -508,6 +534,7 @@ class DreamBooth:
                 shared.state.textinfo = f"Training: {global_step}/{self.max_train_steps} steps"
             # Create the pipeline using the trained modules and save it.
         except Exception as e:
+            printm("Caught exception.")
             print(f"Exception training db: {e}")
             print(traceback.format_exc())
             training_failed = True
@@ -522,47 +549,34 @@ class DreamBooth:
                 )
                 pipeline.save_pretrained(self.output_dir)
                 del pipeline
+
         def cleanup():
             gc.collect()  # Python thing
             torch.cuda.empty_cache()  # PyTorch thing
+
         # Free memory after OOM?
         try:
             print("CLEANUP: ")
             if unet:
-                print("unet...")
                 del unet
-                cleanup()
             if text_encoder:
-                print("encoder...")
                 del text_encoder
-                cleanup()
             if tokenizer:
-                print('tokenizer...')
                 del tokenizer
-                cleanup()
             if optimizer:
-                print("optimizer...")
                 del optimizer
-                cleanup()
             if train_dataloader:
-                print("dataloader...")
                 del train_dataloader
-                cleanup()
             if train_dataset:
-                print("dataset...")
                 del train_dataset
-                cleanup()
             if lr_scheduler:
-                print("scheduler...")
                 del lr_scheduler
-                cleanup()
             if vae:
-                print("vae...")
                 del vae
-                cleanup()
         except:
             pass
-        print("All things cleared??")
+        cleanup()
+        printm("Cleanup Complete")
         try:
             accelerator.end_training()
         except Exception as f:
@@ -605,11 +619,11 @@ def start_training(model_name,
                    ):
     print("Starting Dreambooth training...")
     converted = ""
-    print("Undoing SD optimizations")
     sd_hijack.undo_optimizations()
-    print("Clearing shared sd model")
     shared.sd_model.to('cpu')
     torch.cuda.empty_cache()
+    gc.collect()
+    printm("VRAM cleared, beginning training.", True)
     model_path = paths.models_path
     model_dir = os.path.join(model_path, "dreambooth", model_name, "working")
     config = None
@@ -668,7 +682,6 @@ def start_training(model_name,
     total_steps += trained_steps
     config["total_steps"] = total_steps
     json_object = json.dumps(config, indent=4)
-    embed_msg = ""
     if trained_steps > 0:
         with open(config_file, "w") as outfile:
             outfile.write(json_object)
@@ -684,11 +697,10 @@ def start_training(model_name,
         embed_msg = "Nothing to save."
     torch.cuda.empty_cache()
     gc.collect()
-    allocated = round(torch.cuda.memory_allocated(0) / 1024 ** 3, 1)
-    cached = round(torch.cuda.memory_reserved(0) / 1024 ** 3, 1)
-    print(f'   Memory (preload): \n Allocated: {allocated}GB \n Reserved: {cached}GB')
+    printm("Training completed, reloading SD Model.")
+    print(f'Memory output: {mem_record}')
     shared.sd_model.to(shared.device)
-    #modules.sd_models.load_model()
+    # modules.sd_models.load_model()
     print("Re-applying optimizations...")
     sd_hijack.apply_optimizations()
     res = f"Training {'interrupted' if shared.state.interrupted else 'finished'}." \
