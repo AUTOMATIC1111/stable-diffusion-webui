@@ -7,10 +7,10 @@ import modules.textual_inversion.preprocess
 from modules import sd_hijack, shared
 
 
-def create_embedding(name, initialization_text, nvpt, use_negative, nvpt_uc):
-    filename = modules.textual_inversion.textual_inversion.create_embedding(name, nvpt, init_text=initialization_text)
+def create_embedding(name, initialization_text, nvpt, overwrite_old, use_negative, nvpt_uc):
+    filename = modules.textual_inversion.textual_inversion.create_embedding(name, nvpt, overwrite_old, init_text=initialization_text)
     if use_negative:
-        modules.textual_inversion.textual_inversion.create_embedding(name+'-uc', nvpt_uc, init_text=initialization_text)
+        modules.textual_inversion.textual_inversion.create_embedding(name+'-uc', nvpt_uc, overwrite_old, init_text=initialization_text)
         filename=f'{filename} and {filename[:-3]}-uc.pt'
 
     sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings()

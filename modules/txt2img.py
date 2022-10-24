@@ -1,5 +1,6 @@
 import modules.scripts
-from modules.processing import StableDiffusionProcessing, Processed, StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img, process_images
+from modules.processing import StableDiffusionProcessing, Processed, StableDiffusionProcessingTxt2Img, \
+    StableDiffusionProcessingImg2Img, process_images
 from modules.shared import opts, cmd_opts
 import modules.shared as shared
 import modules.processing as processing
@@ -35,6 +36,9 @@ def txt2img(prompt: str, negative_prompt: str, prompt_style: str, prompt_style2:
         firstphase_height=firstphase_height if enable_hr else None,
     )
 
+    p.scripts = modules.scripts.scripts_txt2img
+    p.script_args = args
+
     if cmd_opts.enable_console_prompts:
         print(f"\ntxt2img: {prompt}", file=shared.progress_print_out)
 
@@ -53,4 +57,3 @@ def txt2img(prompt: str, negative_prompt: str, prompt_style: str, prompt_style2:
         processed.images = []
 
     return processed.images, generation_info_js, plaintext_to_html(processed.info)
-

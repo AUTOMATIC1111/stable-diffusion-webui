@@ -88,7 +88,7 @@ class PersonalizedBase(Dataset):
 
             self.dataset.append(entry)
 
-        assert len(self.dataset) >= 1, "No images have been found in the dataset." # support one-shot training
+        assert len(self.dataset) > 0, "No images have been found in the dataset."
         self.length = len(self.dataset) * repeats // batch_size
 
         self.initial_indexes = np.arange(len(self.dataset))
@@ -96,7 +96,7 @@ class PersonalizedBase(Dataset):
         self.shuffle()
 
     def shuffle(self):
-        self.indexes = self.initial_indexes[torch.randperm(self.initial_indexes.shape[0])] if len(self.dataset)>1 else self.initial_indexes
+        self.indexes = self.initial_indexes[torch.randperm(self.initial_indexes.shape[0]).numpy()]
 
     def create_text(self, filename_text):
         text = random.choice(self.lines)
