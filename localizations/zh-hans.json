@@ -316,7 +316,7 @@
     "When using 'Save' button, only save a single selected image": "使用“保存”按钮时，只保存一个选定的图像",
     "Do not add watermark to images": "不要给图像加水印",
     "Paths for saving": "保存路径",
-    "Output directory for images; if empty, defaults to three directories below": "图像的输出目录； 如果为空，则默认为下面三个目录",
+    "Output directory for images; if empty, defaults to three directories below": "图像的输出目录； 如果为空，则默认为以下三个目录",
     "Output directory for txt2img images": "文生图的输出目录",
     "Output directory for img2img images": "图生图的输出目录",
     "Output directory for images from extras tab": "后处理的输出目录",
