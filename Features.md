@@ -514,7 +514,7 @@ Create a file named `user.css` near `webui.py` and put custom CSS code into it. 
 }
 ```
 A useful tip is you can append `/?__theme=dark` to your webui url to enable a built in *dark theme*
-e.g. (`http://127.0.0.1:7860/?__theme=dark`)
+<br>e.g. (`http://127.0.0.1:7860/?__theme=dark`)
 
 
 ![chrome_O1kvfKs1es](https://user-images.githubusercontent.com/39339941/197560013-51e535d6-7cef-4946-ab6b-747e1c76b007.png)
