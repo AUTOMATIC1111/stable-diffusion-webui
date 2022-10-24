@@ -35,9 +35,6 @@ def printm(msg, reset=False):
     global mem_record
     if reset:
         mem_record = {}
-    if torch.cuda.is_available():
-        torch.cuda.empty_cache()
-    gc.collect()
     allocated = round(torch.cuda.memory_allocated(0) / 1024 ** 3, 1)
     cached = round(torch.cuda.memory_reserved(0) / 1024 ** 3, 1)
     mem_record[msg] = f"{allocated}/{cached}GB"
