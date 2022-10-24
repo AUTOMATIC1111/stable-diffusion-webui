@@ -19,3 +19,5 @@
 - [Contributing](Contributing)
 - [Online Services](Online-Services)
 - [Localization](Localization)
+- [Custom Filename Name and Subdirectory](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Custom-Images-Filename-Name-and-Subdirectory)
+  - [List of Time Zones](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/List-of-Time-Zones)
