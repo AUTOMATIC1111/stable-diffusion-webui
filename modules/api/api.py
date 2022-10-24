@@ -7,6 +7,7 @@ import uvicorn
 from fastapi import Body, APIRouter, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, Json
+from typing import List
 import json
 import io
 import base64
@@ -15,12 +16,12 @@ from PIL import Image
 sampler_to_index = lambda name: next(filter(lambda row: name.lower() == row[1].name.lower(), enumerate(all_samplers)), None)
 
 class TextToImageResponse(BaseModel):
-    images: list[str] = Field(default=None, title="Image", description="The generated image in base64 format.")
+    images: List[str] = Field(default=None, title="Image", description="The generated image in base64 format.")
     parameters: Json
     info: Json
 
 class ImageToImageResponse(BaseModel):
-    images: list[str] = Field(default=None, title="Image", description="The generated image in base64 format.")
+    images: List[str] = Field(default=None, title="Image", description="The generated image in base64 format.")
     parameters: Json
     info: Json
 
@@ -40,6 +41,9 @@ class Api:
         imgdata = base64.b64decode(base64_string)
         # convert base64 to PIL image
         return Image.open(io.BytesIO(imgdata))
+
+    def __processed_info_to_json(self, processed):
+        return json.dumps(processed.info)
 
     def text2imgapi(self, txt2imgreq: StableDiffusionTxt2ImgProcessingAPI):
         sampler_index = sampler_to_index(txt2imgreq.sampler_index)
@@ -65,7 +69,7 @@ class Api:
             i.save(buffer, format="png")
             b64images.append(base64.b64encode(buffer.getvalue()))
 
-        return TextToImageResponse(images=b64images, parameters=json.dumps(vars(txt2imgreq)), info=json.dumps(processed.info))
+        return TextToImageResponse(images=b64images, parameters=json.dumps(vars(txt2imgreq)), info=processed.js())
         
         
 
@@ -111,7 +115,12 @@ class Api:
             i.save(buffer, format="png")
             b64images.append(base64.b64encode(buffer.getvalue()))
 
-        return ImageToImageResponse(images=b64images, parameters=json.dumps(vars(img2imgreq)), info=json.dumps(processed.info))
+        if (not img2imgreq.include_init_images):
+            # remove img2imgreq.init_images and img2imgreq.mask
+            img2imgreq.init_images = None
+            img2imgreq.mask = None
+
+        return ImageToImageResponse(images=b64images, parameters=json.dumps(vars(img2imgreq)), info=processed.js())
 
     def extrasapi(self):
         raise NotImplementedError
