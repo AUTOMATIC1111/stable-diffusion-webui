@@ -34,6 +34,9 @@ def find_noise_for_image(p, cond, uncond, cfg_scale, steps):
         sigma_in = torch.cat([sigmas[i] * s_in] * 2)
         cond_in = torch.cat([uncond, cond])
 
+        image_conditioning = torch.cat([p.image_conditioning] * 2)
+        cond_in = {"c_concat": [image_conditioning], "c_crossattn": [cond_in]}
+
         c_out, c_in = [K.utils.append_dims(k, x_in.ndim) for k in dnw.get_scalings(sigma_in)]
         t = dnw.sigma_to_t(sigma_in)
 
@@ -77,6 +80,9 @@ def find_noise_for_image_sigma_adjustment(p, cond, uncond, cfg_scale, steps):
         x_in = torch.cat([x] * 2)
         sigma_in = torch.cat([sigmas[i - 1] * s_in] * 2)
         cond_in = torch.cat([uncond, cond])
+
+        image_conditioning = torch.cat([p.image_conditioning] * 2)
+        cond_in = {"c_concat": [image_conditioning], "c_crossattn": [cond_in]}
 
         c_out, c_in = [K.utils.append_dims(k, x_in.ndim) for k in dnw.get_scalings(sigma_in)]
 
@@ -194,7 +200,7 @@ class Script(scripts.Script):
             
             p.seed = p.seed + 1
             
-            return sampler.sample_img2img(p, p.init_latent, noise_dt, conditioning, unconditional_conditioning)
+            return sampler.sample_img2img(p, p.init_latent, noise_dt, conditioning, unconditional_conditioning, image_conditioning=p.image_conditioning)
 
         p.sample = sample_extra
 

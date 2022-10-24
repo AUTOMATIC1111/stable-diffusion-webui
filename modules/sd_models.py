@@ -7,7 +7,7 @@ from omegaconf import OmegaConf
 
 from ldm.util import instantiate_from_config
 
-from modules import shared, modelloader, devices
+from modules import shared, modelloader, devices, script_callbacks
 from modules.paths import models_path
 from modules.sd_hijack_inpainting import do_inpainting_hijack, should_hijack_inpainting
 
@@ -21,7 +21,7 @@ checkpoints_loaded = collections.OrderedDict()
 try:
     # this silences the annoying "Some weights of the model checkpoint were not used when initializing..." message at start.
 
-    from transformers import logging
+    from transformers import logging, CLIPModel
 
     logging.set_verbosity_error()
 except Exception:
@@ -155,6 +155,9 @@ def get_state_dict_from_checkpoint(pl_sd):
     return pl_sd
 
 
+vae_ignore_keys = {"model_ema.decay", "model_ema.num_updates"}
+
+
 def load_model_weights(model, checkpoint_info):
     checkpoint_file = checkpoint_info.filename
     sd_model_hash = checkpoint_info.hash
@@ -186,7 +189,7 @@ def load_model_weights(model, checkpoint_info):
         if os.path.exists(vae_file):
             print(f"Loading VAE weights from: {vae_file}")
             vae_ckpt = torch.load(vae_file, map_location=shared.weight_load_location)
-            vae_dict = {k: v for k, v in vae_ckpt["state_dict"].items() if k[0:4] != "loss"}
+            vae_dict = {k: v for k, v in vae_ckpt["state_dict"].items() if k[0:4] != "loss" and k not in vae_ignore_keys}
             model.first_stage_model.load_state_dict(vae_dict)
 
         model.first_stage_model.to(devices.dtype_vae)
@@ -235,6 +238,9 @@ def load_model(checkpoint_info=None):
     sd_hijack.model_hijack.hijack(sd_model)
 
     sd_model.eval()
+    shared.sd_model = sd_model
+
+    script_callbacks.model_loaded_callback(sd_model)
 
     print(f"Model loaded.")
     return sd_model
@@ -249,7 +255,7 @@ def reload_model_weights(sd_model, info=None):
 
     if sd_model.sd_checkpoint_info.config != checkpoint_info.config or should_hijack_inpainting(checkpoint_info) != should_hijack_inpainting(sd_model.sd_checkpoint_info):
         checkpoints_loaded.clear()
-        shared.sd_model = load_model(checkpoint_info)
+        load_model(checkpoint_info)
         return shared.sd_model
 
     if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
@@ -262,6 +268,7 @@ def reload_model_weights(sd_model, info=None):
     load_model_weights(sd_model, checkpoint_info)
 
     sd_hijack.model_hijack.hijack(sd_model)
+    script_callbacks.model_loaded_callback(sd_model)
 
     if not shared.cmd_opts.lowvram and not shared.cmd_opts.medvram:
         sd_model.to(devices.device)

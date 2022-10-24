@@ -1,9 +1,8 @@
 import torch
-from modules.devices import get_optimal_device
+from modules import devices
 
 module_in_gpu = None
 cpu = torch.device("cpu")
-device = gpu = get_optimal_device()
 
 
 def send_everything_to_cpu():
@@ -33,7 +32,7 @@ def setup_for_low_vram(sd_model, use_medvram):
         if module_in_gpu is not None:
             module_in_gpu.to(cpu)
 
-        module.to(gpu)
+        module.to(devices.device)
         module_in_gpu = module
 
     # see below for register_forward_pre_hook;
@@ -51,7 +50,7 @@ def setup_for_low_vram(sd_model, use_medvram):
     # send the model to GPU. Then put modules back. the modules will be in CPU.
     stored = sd_model.cond_stage_model.transformer, sd_model.first_stage_model, sd_model.model
     sd_model.cond_stage_model.transformer, sd_model.first_stage_model, sd_model.model = None, None, None
-    sd_model.to(device)
+    sd_model.to(devices.device)
     sd_model.cond_stage_model.transformer, sd_model.first_stage_model, sd_model.model = stored
 
     # register hooks for those the first two models
@@ -70,7 +69,7 @@ def setup_for_low_vram(sd_model, use_medvram):
         # so that only one of them is in GPU at a time
         stored = diff_model.input_blocks, diff_model.middle_block, diff_model.output_blocks, diff_model.time_embed
         diff_model.input_blocks, diff_model.middle_block, diff_model.output_blocks, diff_model.time_embed = None, None, None, None
-        sd_model.model.to(device)
+        sd_model.model.to(devices.device)
         diff_model.input_blocks, diff_model.middle_block, diff_model.output_blocks, diff_model.time_embed = stored
 
         # install hooks for bits of third model

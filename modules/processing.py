@@ -12,7 +12,7 @@ from skimage import exposure
 from typing import Any, Dict, List, Optional
 
 import modules.sd_hijack
-from modules import devices, prompt_parser, masking, sd_samplers, lowvram
+from modules import devices, prompt_parser, masking, sd_samplers, lowvram, generation_parameters_copypaste
 from modules.sd_hijack import model_hijack
 from modules.shared import opts, cmd_opts, state
 import modules.shared as shared
@@ -46,6 +46,25 @@ def apply_color_correction(correction, image):
 
     return image
 
+
+def apply_overlay(image, paste_loc, index, overlays):
+    if overlays is None or index >= len(overlays):
+        return image
+
+    overlay = overlays[index]
+
+    if paste_loc is not None:
+        x, y, w, h = paste_loc
+        base_image = Image.new('RGBA', (overlay.width, overlay.height))
+        image = images.resize_image(1, image, w, h)
+        base_image.paste(image, (x, y))
+        image = base_image
+
+    image = image.convert('RGBA')
+    image.alpha_composite(overlay)
+    image = image.convert('RGB')
+
+    return image
 
 def get_correct_sampler(p):
     if isinstance(p, modules.processing.StableDiffusionProcessingTxt2Img):
@@ -103,6 +122,12 @@ class StableDiffusionProcessing():
             self.subseed_strength = 0
             self.seed_resize_from_h = 0
             self.seed_resize_from_w = 0
+
+        self.scripts = None
+        self.script_args = None
+        self.all_prompts = None
+        self.all_seeds = None
+        self.all_subseeds = None
 
 
     def init(self, all_prompts, all_seeds, all_subseeds):
@@ -304,7 +329,7 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration
         "Size": f"{p.width}x{p.height}",
         "Model hash": getattr(p, 'sd_model_hash', None if not opts.add_model_hash_to_info or not shared.sd_model.sd_model_hash else shared.sd_model.sd_model_hash),
         "Model": (None if not opts.add_model_name_to_info or not shared.sd_model.sd_checkpoint_info.model_name else shared.sd_model.sd_checkpoint_info.model_name.replace(',', '').replace(':', '')),
-        "Hypernet": (None if shared.loaded_hypernetwork is None else os.path.splitext(os.path.basename(shared.loaded_hypernetwork.filename))[0]),
+        "Hypernet": (None if shared.loaded_hypernetwork is None else shared.loaded_hypernetwork.name),
         "Batch size": (None if p.batch_size < 2 else p.batch_size),
         "Batch pos": (None if p.batch_size < 2 else position_in_batch),
         "Variation seed": (None if p.subseed_strength == 0 else all_subseeds[index]),
@@ -318,7 +343,7 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration
 
     generation_params.update(p.extra_generation_params)
 
-    generation_params_text = ", ".join([k if k == v else f'{k}: {v}' for k, v in generation_params.items() if v is not None])
+    generation_params_text = ", ".join([k if k == v else f'{k}: {generation_parameters_copypaste.quote(v)}' for k, v in generation_params.items() if v is not None])
 
     negative_prompt_text = "\nNegative prompt: " + p.negative_prompt if p.negative_prompt else ""
 
@@ -350,32 +375,35 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
     shared.prompt_styles.apply_styles(p)
 
     if type(p.prompt) == list:
-        all_prompts = p.prompt
+        p.all_prompts = p.prompt
     else:
-        all_prompts = p.batch_size * p.n_iter * [p.prompt]
+        p.all_prompts = p.batch_size * p.n_iter * [p.prompt]
 
     if type(seed) == list:
-        all_seeds = seed
+        p.all_seeds = seed
     else:
-        all_seeds = [int(seed) + (x if p.subseed_strength == 0 else 0) for x in range(len(all_prompts))]
+        p.all_seeds = [int(seed) + (x if p.subseed_strength == 0 else 0) for x in range(len(p.all_prompts))]
 
     if type(subseed) == list:
-        all_subseeds = subseed
+        p.all_subseeds = subseed
     else:
-        all_subseeds = [int(subseed) + x for x in range(len(all_prompts))]
+        p.all_subseeds = [int(subseed) + x for x in range(len(p.all_prompts))]
 
     def infotext(iteration=0, position_in_batch=0):
-        return create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration, position_in_batch)
+        return create_infotext(p, p.all_prompts, p.all_seeds, p.all_subseeds, comments, iteration, position_in_batch)
 
     if os.path.exists(cmd_opts.embeddings_dir) and not p.do_not_reload_embeddings:
         model_hijack.embedding_db.load_textual_inversion_embeddings()
+
+    if p.scripts is not None:
+        p.scripts.run_alwayson_scripts(p)
 
     infotexts = []
     output_images = []
 
     with torch.no_grad(), p.sd_model.ema_scope():
         with devices.autocast():
-            p.init(all_prompts, all_seeds, all_subseeds)
+            p.init(p.all_prompts, p.all_seeds, p.all_subseeds)
 
         if state.job_count == -1:
             state.job_count = p.n_iter
@@ -387,15 +415,13 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             if state.interrupted:
                 break
 
-            prompts = all_prompts[n * p.batch_size:(n + 1) * p.batch_size]
-            seeds = all_seeds[n * p.batch_size:(n + 1) * p.batch_size]
-            subseeds = all_subseeds[n * p.batch_size:(n + 1) * p.batch_size]
+            prompts = p.all_prompts[n * p.batch_size:(n + 1) * p.batch_size]
+            seeds = p.all_seeds[n * p.batch_size:(n + 1) * p.batch_size]
+            subseeds = p.all_subseeds[n * p.batch_size:(n + 1) * p.batch_size]
 
             if (len(prompts) == 0):
                 break
 
-            #uc = p.sd_model.get_learned_conditioning(len(prompts) * [p.negative_prompt])
-            #c = p.sd_model.get_learned_conditioning(prompts)
             with devices.autocast():
                 uc = prompt_parser.get_learned_conditioning(shared.sd_model, len(prompts) * [p.negative_prompt], p.steps)
                 c = prompt_parser.get_multicond_learned_conditioning(shared.sd_model, prompts, p.steps)
@@ -442,22 +468,11 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
 
                 if p.color_corrections is not None and i < len(p.color_corrections):
                     if opts.save and not p.do_not_save_samples and opts.save_images_before_color_correction:
-                        images.save_image(image, p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, info=infotext(n, i), p=p, suffix="-before-color-correction")
+                        image_without_cc = apply_overlay(image, p.paste_to, i, p.overlay_images)
+                        images.save_image(image_without_cc, p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, info=infotext(n, i), p=p, suffix="-before-color-correction")
                     image = apply_color_correction(p.color_corrections[i], image)
 
-                if p.overlay_images is not None and i < len(p.overlay_images):
-                    overlay = p.overlay_images[i]
-
-                    if p.paste_to is not None:
-                        x, y, w, h = p.paste_to
-                        base_image = Image.new('RGBA', (overlay.width, overlay.height))
-                        image = images.resize_image(1, image, w, h)
-                        base_image.paste(image, (x, y))
-                        image = base_image
-
-                    image = image.convert('RGBA')
-                    image.alpha_composite(overlay)
-                    image = image.convert('RGB')
+                image = apply_overlay(image, p.paste_to, i, p.overlay_images)
 
                 if opts.samples_save and not p.do_not_save_samples:
                     images.save_image(image, p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, info=infotext(n, i), p=p)
@@ -490,10 +505,10 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
                 index_of_first_image = 1
 
             if opts.grid_save:
-                images.save_image(grid, p.outpath_grids, "grid", all_seeds[0], all_prompts[0], opts.grid_format, info=infotext(), short_filename=not opts.grid_extended_filename, p=p, grid=True)
+                images.save_image(grid, p.outpath_grids, "grid", p.all_seeds[0], p.all_prompts[0], opts.grid_format, info=infotext(), short_filename=not opts.grid_extended_filename, p=p, grid=True)
 
     devices.torch_gc()
-    return Processed(p, output_images, all_seeds[0], infotext() + "".join(["\n\n" + x for x in comments]), subseed=all_subseeds[0], all_prompts=all_prompts, all_seeds=all_seeds, all_subseeds=all_subseeds, index_of_first_image=index_of_first_image, infotexts=infotexts)
+    return Processed(p, output_images, p.all_seeds[0], infotext() + "".join(["\n\n" + x for x in comments]), subseed=p.all_subseeds[0], all_prompts=p.all_prompts, all_seeds=p.all_seeds, all_subseeds=p.all_subseeds, index_of_first_image=index_of_first_image, infotexts=infotexts)
 
 
 class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
@@ -514,6 +529,8 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                 state.job_count = self.n_iter * 2
             else:
                 state.job_count = state.job_count * 2
+
+            self.extra_generation_params["First pass size"] = f"{self.firstphase_width}x{self.firstphase_height}"
 
             if self.firstphase_width == 0 or self.firstphase_height == 0:
                 desired_pixel_count = 512 * 512
@@ -536,7 +553,6 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                     firstphase_width_truncated = self.firstphase_height * self.width / self.height
                     firstphase_height_truncated = self.firstphase_height
 
-            self.extra_generation_params["First pass size"] = f"{self.firstphase_width}x{self.firstphase_height}"
             self.truncate_x = int(self.firstphase_width - firstphase_width_truncated) // opt_f
             self.truncate_y = int(self.firstphase_height - firstphase_height_truncated) // opt_f
 
@@ -615,7 +631,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
     sampler = None
 
-    def __init__(self, init_images=None, resize_mode=0, denoising_strength=0.75, mask=None, mask_blur=4, inpainting_fill=0, inpaint_full_res=True, inpaint_full_res_padding=0, inpainting_mask_invert=0, **kwargs):
+    def __init__(self, init_images: list=None, resize_mode: int=0, denoising_strength: float=0.75, mask: Any=None, mask_blur: int=4, inpainting_fill: int=0, inpaint_full_res: bool=True, inpaint_full_res_padding: int=0, inpainting_mask_invert: int=0, **kwargs):
         super().__init__(**kwargs)
 
         self.init_images = init_images
@@ -706,6 +722,10 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             batch_images = np.expand_dims(imgs[0], axis=0).repeat(self.batch_size, axis=0)
             if self.overlay_images is not None:
                 self.overlay_images = self.overlay_images * self.batch_size
+
+            if self.color_corrections is not None and len(self.color_corrections) == 1:
+                self.color_corrections = self.color_corrections * self.batch_size
+
         elif len(imgs) <= self.batch_size:
             self.batch_size = len(imgs)
             batch_images = np.array(imgs)
