@@ -1,5 +1,3 @@
-# Images Filename Name and Subdirectory
-
 By default, the Wub UI save images with a file name structure of
 
 `number`-`seed`-`[prompt_spaces]`
