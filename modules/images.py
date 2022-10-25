@@ -16,7 +16,7 @@ from PIL import Image, ImageFont, ImageDraw, PngImagePlugin
 from fonts.ttf import Roboto
 import string
 
-from modules import sd_samplers, shared
+from modules import sd_samplers, shared, script_callbacks
 from modules.shared import opts, cmd_opts
 
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
@@ -344,7 +344,10 @@ class FilenameGenerator:
         time_datetime = datetime.datetime.now()
 
         time_format = args[0] if len(args) > 0 else self.default_time_format
-        time_zone = pytz.timezone(args[1]) if len(args) > 1 else None
+        try:
+            time_zone = pytz.timezone(args[1]) if len(args) > 1 else None
+        except pytz.exceptions.UnknownTimeZoneError as _:
+            time_zone = None
 
         time_zone_time = time_datetime.astimezone(time_zone)
         try:
@@ -474,8 +477,10 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     if forced_filename is None:
         if short_filename or seed is None:
             file_decoration = ""
-        else:
+        elif opts.save_to_dirs:
             file_decoration = opts.samples_filename_pattern or "[seed]"
+        else:
+            file_decoration = opts.samples_filename_pattern or "[seed]-[prompt_spaces]"
 
         add_number = opts.save_images_add_number or file_decoration == ''
 
@@ -536,6 +541,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     else:
         txt_fullfn = None
 
+    script_callbacks.image_saved_callback(image, p, fullfn, txt_fullfn)
     return fullfn, txt_fullfn
 
 
