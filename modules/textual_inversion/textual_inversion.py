@@ -10,7 +10,7 @@ import csv
 
 from PIL import Image, PngImagePlugin
 
-from modules import shared, devices, sd_hijack, processing, sd_models
+from modules import shared, devices, sd_hijack, processing, sd_models, lowvram
 import modules.textual_inversion.dataset
 from modules.textual_inversion.learn_schedule import LearnRateScheduler
 
@@ -154,9 +154,14 @@ class EmbeddingDatabase:
 
 
 def create_embedding(name, num_vectors_per_token, init_text='*'):
+    if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
+        try:
+            shared.sd_model.to(shared.device)
+        except:
+            pass
+
     cond_model = shared.sd_model.cond_stage_model
     embedding_layer = cond_model.wrapped.transformer.text_model.embeddings
-
     ids = cond_model.tokenizer(init_text, max_length=num_vectors_per_token, return_tensors="pt", add_special_tokens=False)["input_ids"]
     embedded = embedding_layer.token_embedding.wrapped(ids.to(devices.device)).squeeze(0)
     vec = torch.zeros((num_vectors_per_token, embedded.shape[1]), device=devices.device)
@@ -170,6 +175,11 @@ def create_embedding(name, num_vectors_per_token, init_text='*'):
     embedding = Embedding(vec, name)
     embedding.step = 0
     embedding.save(fn)
+    if shared.cmd_opts.medvram or shared.cmd_opts.lowvram:
+        try:
+            lowvram.setup_for_low_vram(shared.sd_model, shared.cmd_opts.medvram)
+        except:
+            pass
 
     return fn
 
