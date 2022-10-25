@@ -82,9 +82,9 @@ def on_ui_tabs(callback):
 def on_ui_settings(callback):
     """register a function to be called before UI settings are populated; add your settings
     by using shared.opts.add_option(shared.OptionInfo(...)) """
-    callbacks_ui_settings.append(callback)
+    add_callback(callbacks_ui_settings, callback)
 
 
 def on_save_imaged(callback):
     """register a function to call after modules.images.save_image is called returning same values, original image and p """
-    callbacks_image_saved.append(callback)
+    add_callback(callbacks_image_saved, callback)
