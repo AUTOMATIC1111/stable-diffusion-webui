@@ -82,6 +82,7 @@ parser.add_argument("--api", action='store_true', help="use api=True to launch t
 parser.add_argument("--nowebui", action='store_true', help="use api=True to launch the api instead of the webui")
 parser.add_argument("--ui-debug-mode", action='store_true', help="Don't load model to quickly launch UI")
 parser.add_argument("--device-id", type=str, help="Select the default CUDA device to use (export CUDA_VISIBLE_DEVICES=0,1,etc might be needed before)", default=None)
+parser.add_argument("--administrator", type=str, help="Administrator rights", default=None)
 
 cmd_opts = parser.parse_args()
 restricted_opts = [
