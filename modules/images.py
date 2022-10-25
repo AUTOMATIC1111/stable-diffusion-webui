@@ -477,8 +477,10 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     if forced_filename is None:
         if short_filename or seed is None:
             file_decoration = ""
-        else:
+        elif opts.save_to_dirs:
             file_decoration = opts.samples_filename_pattern or "[seed]"
+        else:
+            file_decoration = opts.samples_filename_pattern or "[seed]-[prompt_spaces]"
 
         add_number = opts.save_images_add_number or file_decoration == ''
 
