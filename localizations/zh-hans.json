@@ -59,7 +59,7 @@
     "Highres. fix": "高分辨率修复",
     "Firstpass width": "第一遍的宽度",
     "Firstpass height": "第一遍的高度",
-    "Denoising strength": "降噪(模糊)强度",
+    "Denoising strength": "去噪强度",
     "Batch count": "批次",
     "Batch size": "批量",
     "CFG Scale": "提示词相关性(CFG Scale)",
