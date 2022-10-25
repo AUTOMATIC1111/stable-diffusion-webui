@@ -1895,12 +1895,10 @@ def load_javascript(raw_response):
 
     javascript += f"\n<script>{localization.localization_js(shared.opts.localization)}</script>"
 
-    extra_body = '<div id="translate_tools" style="display: none;"><span id="google_translate_element"></span><br /><span id="google_translate_element_neg"></span><br /><button onclick="jp2en()">jp2en</button><br /><textarea  id="other_language_prompt"  data-testid="textbox"  class="scroll-hide block gr-box gr-input w-full gr-text-input"  placeholder="In put Prompt here to translate"  rows="2"  style="overflow-y: scroll; height: 63px"  spellcheck="false"></textarea><br /><textarea  id="other_language_neg_prompt"  data-testid="textbox"  class="scroll-hide block gr-box gr-input w-full gr-text-input"  placeholder="In put Negative Prompt here to translate"  rows="2"  style="overflow-y: scroll; height: 63px"  spellcheck="false"></textarea>  </div><button onclick="en2jp()">en2jp</button>'
-
     def template_response(*args, **kwargs):
         res = raw_response(*args, **kwargs)
         res.body = res.body.replace(
-            b'</head>', f'{javascript}</head>{extra_body}'.encode("utf8"))
+            b'</head>', f'{javascript}</head>'.encode("utf8"))
         res.init_headers()
         return res
 
