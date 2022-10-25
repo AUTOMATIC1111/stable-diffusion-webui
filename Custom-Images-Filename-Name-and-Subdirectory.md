@@ -1,4 +1,5 @@
-By default, the Wub UI save images with a file name structure of
+> the following information is about the image filename and subdirectory name, not the `Paths for saving \ Output directorys`
+### By default, the Wub UI save images in the output directorys with a filename structure of
 
 `number`-`seed`-`[prompt_spaces]`
 
@@ -6,17 +7,19 @@ By default, the Wub UI save images with a file name structure of
 01234-987654321-((masterpiece)), ((best quality)), ((illustration)), extremely detailed,style girl.png
 ```
 
-If this does not suit you it can be configured under settings.
+A different image filename and optional subdirectory can be used if a user wishes.
+
+Image filename pattern can be configured under.
 
 `settings tab` > `Saving images/grids` > `Images filename pattern`
 
-subdirectory can also be configured under settings.
+Subdirectory can be configured under settings.
 
 `settings tab` > `Saving to a directory` > `Directory name pattern`
 
 # Pattens
-Web-Ui provides several patterns that can be used as placeholders for inserting information into the file name,
-user can chain these patterns together, forming a filename that suits their use case.
+Web-Ui provides several patterns that can be used as placeholders for inserting information into the filename or subdirectory,
+user can chain these patterns togetherm forming a filename that suits their use case.
 
 | Pattern                        | Description                                          | Example                                                                                                                               |
 |--------------------------------|------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------|
@@ -41,7 +44,7 @@ user can chain these patterns together, forming a filename that suits their use 
 Reference python documentation for more details on [Format Codes](https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes)
 
 ### Datetime Time Zone details
-Reference [List of Time Zones](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/List-of-Time-Zones)
+Reference [List of Time Zones](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/List-of-Time-Zones) for a list of valid time zones
 
 If `<Format>` is blank or invalid, it will use the default time format "%Y%m%d%H%M%S"
 tip: you can use extra characters inside `<Format>` for punctuation, such as `_ -`
