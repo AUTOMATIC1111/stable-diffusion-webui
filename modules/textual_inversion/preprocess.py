@@ -7,6 +7,7 @@ import tqdm
 import time
 
 from modules import shared, images
+from modules.paths import models_path
 from modules.shared import opts, cmd_opts
 from modules.textual_inversion import autocrop
 if cmd_opts.deepdanbooru:
@@ -146,14 +147,22 @@ def preprocess_work(process_src, process_dst, process_width, process_height, pre
                 save_pic(splitted, index, existing_caption=existing_caption)
             process_default_resize = False
 
-        if process_entropy_focus and img.height != img.width:
+        if process_focal_crop and img.height != img.width:
+
+            dnn_model_path = None
+            try:
+                dnn_model_path = autocrop.download_and_cache_models(os.path.join(models_path, "opencv"))
+            except Exception as e:
+                print("Unable to load face detection model for auto crop selection. Falling back to lower quality haar method.", e)
+
             autocrop_settings = autocrop.Settings(
                 crop_width = width,
                 crop_height = height,
                 face_points_weight = process_focal_crop_face_weight,
                 entropy_points_weight = process_focal_crop_entropy_weight,
                 corner_points_weight = process_focal_crop_edges_weight,
-                annotate_image = process_focal_crop_debug
+                annotate_image = process_focal_crop_debug,
+                dnn_model_path = dnn_model_path,
             )
             for focal in autocrop.crop_image(img, autocrop_settings):
                 save_pic(focal, index, existing_caption=existing_caption)

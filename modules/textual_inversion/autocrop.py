@@ -1,4 +1,5 @@
 import cv2
+import requests
 import os
 from collections import defaultdict
 from math import log, sqrt
@@ -291,6 +292,25 @@ def is_portrait(w, h):
 
 def is_square(w, h):
   return w == h
+
+
+def download_and_cache_models(dirname):
+  download_url = 'https://github.com/opencv/opencv_zoo/blob/91fb0290f50896f38a0ab1e558b74b16bc009428/models/face_detection_yunet/face_detection_yunet_2022mar.onnx?raw=true'
+  model_file_name = 'face_detection_yunet.onnx'
+
+  if not os.path.exists(dirname):
+    os.makedirs(dirname)
+
+  cache_file = os.path.join(dirname, model_file_name)
+  if not os.path.exists(cache_file):
+    print(f"downloading face detection model from '{download_url}' to '{cache_file}'")
+    response = requests.get(download_url)
+    with open(cache_file, "wb") as f:
+      f.write(response.content)
+
+  if os.path.exists(cache_file):
+    return cache_file
+  return None
 
 
 class PointOfInterest:
