@@ -109,6 +109,9 @@ def img2img(mode: int, prompt: str, negative_prompt: str, prompt_style: str, pro
         inpainting_mask_invert=inpainting_mask_invert,
     )
 
+    p.scripts = modules.scripts.scripts_txt2img
+    p.script_args = args
+
     if shared.cmd_opts.enable_console_prompts:
         print(f"\nimg2img: {prompt}", file=shared.progress_print_out)
 

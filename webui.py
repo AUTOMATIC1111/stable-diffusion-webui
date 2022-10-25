@@ -9,7 +9,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 
 from modules.paths import script_path
 
-from modules import devices, sd_samplers
+from modules import devices, sd_samplers, upscaler
 import modules.codeformer_model as codeformer
 import modules.extras
 import modules.face_restoration
@@ -71,7 +71,13 @@ def wrap_gradio_gpu_call(func, extra_outputs=None):
 
     return modules.ui.wrap_gradio_call(f, extra_outputs=extra_outputs)
 
+
 def initialize():
+    if cmd_opts.ui_debug_mode:
+        shared.sd_upscalers = upscaler.UpscalerLanczos().scalers
+        modules.scripts.load_scripts()
+        return
+
     modelloader.cleanup_models()
     modules.sd_models.setup_model()
     codeformer.setup_model(cmd_opts.codeformer_models_path)
@@ -79,9 +85,9 @@ def initialize():
     shared.face_restorers.append(modules.face_restoration.FaceRestoration())
     modelloader.load_upscalers()
 
-    modules.scripts.load_scripts(os.path.join(script_path, "scripts"))
+    modules.scripts.load_scripts()
 
-    shared.sd_model = modules.sd_models.load_model()
+    modules.sd_models.load_model()
     shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights(shared.sd_model)))
     shared.opts.onchange("sd_hypernetwork", wrap_queued_call(lambda: modules.hypernetworks.hypernetwork.load_hypernetwork(shared.opts.sd_hypernetwork)))
     shared.opts.onchange("sd_hypernetwork_strength", modules.hypernetworks.hypernetwork.apply_strength)
@@ -118,7 +124,8 @@ def api_only():
     api.launch(server_name="0.0.0.0" if cmd_opts.listen else "127.0.0.1", port=cmd_opts.port if cmd_opts.port else 7861)
 
 
-def webui(launch_api=False):
+def webui():
+    launch_api = cmd_opts.api
     initialize()
 
     while 1:
@@ -133,6 +140,8 @@ def webui(launch_api=False):
             inbrowser=cmd_opts.autolaunch,
             prevent_thread_lock=True
         )
+        # after initial launch, disable --autolaunch for subsequent restarts
+        cmd_opts.autolaunch = False
 
         app.add_middleware(GZipMiddleware, minimum_size=1000)
 
@@ -140,11 +149,11 @@ def webui(launch_api=False):
             create_api(app)
 
         wait_on_server(demo)
-        
+
         sd_samplers.set_samplers()
 
         print('Reloading Custom Scripts')
-        modules.scripts.reload_scripts(os.path.join(script_path, "scripts"))
+        modules.scripts.reload_scripts()
         print('Reloading modules: modules.ui')
         importlib.reload(modules.ui)
         print('Refreshing Model List')
@@ -158,4 +167,4 @@ if __name__ == "__main__":
     if cmd_opts.nowebui:
         api_only()
     else:
-        webui(cmd_opts.api)
+        webui()
