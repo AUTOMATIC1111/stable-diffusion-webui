@@ -1,0 +1,246 @@
+<div id="translate_tools">
+  <span id="google_translate_element"></span>
+  <br />
+  <span id="google_translate_element_neg"></span>
+  <br />
+  <button onclick="jp2en()">jp2en</button>
+  <br />
+  <textarea
+    id="other_language_prompt"
+    data-testid="textbox"
+    class="scroll-hide block gr-box gr-input w-full gr-text-input"
+    placeholder="In put Prompt here to translate"
+    rows="2"
+    style="overflow-y: scroll; height: 63px"
+    spellcheck="false"
+  ></textarea>
+  <br />
+  <textarea
+    id="other_language_neg_prompt"
+    data-testid="textbox"
+    class="scroll-hide block gr-box gr-input w-full gr-text-input"
+    placeholder="In put Negative Prompt here to translate"
+    rows="2"
+    style="overflow-y: scroll; height: 63px"
+    spellcheck="false"
+  ></textarea>
+</div>
+<div
+  id="txt2img_prompt"
+  class="gr-block gr-box relative w-full overflow-hidden border-solid border border-gray-200 gr-padded"
+>
+  <div class="wrap svelte-1ka70lm opacity-0"></div>
+  <label class="block w-full"
+    ><span
+      class="text-gray-500 text-[0.855rem] mb-2 block dark:text-gray-200 relative z-40 sr-only h-0 !m-0"
+      >Prompt</span
+    >
+    <textarea
+      data-testid="textbox"
+      class="scroll-hide block gr-box gr-input w-full gr-text-input"
+      placeholder="Prompt (press Ctrl+Enter or Alt+Enter to generate)"
+      rows="2"
+      style="overflow-y: scroll; height: 63px"
+      spellcheck="false"
+    ></textarea>
+  </label>
+</div>
+<button onclick="en2jp()">en2jp</button>
+<script>
+  let isTranslateEnable = false;
+
+  // observer for user using google translate
+  new MutationObserver(function () {
+    isTranslateEnable = false;
+    document.querySelector("#translate_tools").style.display = "none";
+
+    if (document.documentElement.className.match("translated")) {
+      isTranslateEnable = true;
+      document.querySelector("#translate_tools").style.display = "block";
+    }
+  }).observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["class"],
+    childList: false,
+    characterData: false,
+  });
+
+  txt2img_textarea = document
+    .evaluate(
+      '//*[@id="txt2img_prompt"]/label/textarea',
+      document,
+      null,
+      XPathResult.ANY_TYPE,
+      null
+    )
+    .iterateNext();
+  txt2img_textarea.addEventListener("input", () => {
+    if (isTranslateEnable) {
+      document.querySelector("#google_translate_element").textContent =
+        "✔️" + txt2img_textarea.value.replaceAll("_", " ");
+      setTimeout(function () {
+        document.querySelector("#other_language_prompt").value = document
+          .querySelector("#google_translate_element")
+          .textContent.replace("✔️", "");
+      }, 500);
+    }
+  });
+
+  document
+    .querySelector("#other_language_prompt")
+    ?.addEventListener("input", () => {
+      if (isTranslateEnable) {
+        const translatedText = document.querySelector(
+          "#other_language_prompt"
+        ).value;
+        document.querySelector("#google_translate_element").textContent =
+          "✔️" + translatedText;
+        setTimeout(function () {
+          txt2img_textarea.value = document
+            .querySelector("#google_translate_element")
+            .textContent.replace("✔️", "");
+        }, 500);
+      }
+    });
+
+  let google_iframe;
+
+  function jp2en() {
+    if (isTranslateEnable) {
+      google_iframe = document
+        .evaluate(
+          '//*[@id=":1.container"]',
+          document,
+          null,
+          XPathResult.ANY_TYPE,
+          null
+        )
+        .iterateNext().contentDocument;
+
+      const close = google_iframe
+        ?.evaluate(
+          '//*[@id=":1.close"]',
+          google_iframe,
+          null,
+          XPathResult.ANY_TYPE,
+          null
+        )
+        .iterateNext();
+      close.click();
+    }
+
+    getScript("https://translate.google.com/translate_a/element.js", () => {
+      setTimeout(() => {
+        new google.translate.TranslateElement(
+          {
+            pageLanguage: "ja",
+            // autoDisplay: false,
+          },
+          "google_translate_element"
+        );
+
+        doGTranslate("ja|en");
+      }, 1000);
+    });
+  }
+
+  function en2jp() {
+    if (isTranslateEnable) {
+      google_iframe = document
+        .evaluate(
+          '//*[@id=":1.container"]',
+          document,
+          null,
+          XPathResult.ANY_TYPE,
+          null
+        )
+        .iterateNext().contentDocument;
+
+      const close = google_iframe
+        ?.evaluate(
+          '//*[@id=":1.close"]',
+          google_iframe,
+          null,
+          XPathResult.ANY_TYPE,
+          null
+        )
+        .iterateNext();
+      close.click();
+    }
+
+    getScript("https://translate.google.com/translate_a/element.js", () => {
+      setTimeout(() => {
+        new google.translate.TranslateElement(
+          {
+            pageLanguage: "en",
+            // autoDisplay: false,
+          },
+          "google_translate_element"
+        );
+
+        doGTranslate("en|ja");
+      }, 1000);
+    });
+  }
+</script>
+<script>
+  function getScript(source, callback) {
+    var script = document.createElement("script");
+    var prior = document.getElementsByTagName("script")[0];
+    script.async = 1;
+
+    script.onload = script.onreadystatechange = function (_, isAbort) {
+      if (
+        isAbort ||
+        !script.readyState ||
+        /loaded|complete/.test(script.readyState)
+      ) {
+        script.onload = script.onreadystatechange = null;
+        script = undefined;
+
+        if (!isAbort && callback) setTimeout(callback, 0);
+      }
+    };
+
+    script.src = source;
+    prior.parentNode.insertBefore(script, prior);
+  }
+</script>
+<script type="text/javascript">
+  /* <![CDATA[ */
+  eval(
+    (function (p, a, c, k, e, r) {
+      e = function (c) {
+        return (
+          (c < a ? "" : e(parseInt(c / a))) +
+          ((c = c % a) > 35 ? String.fromCharCode(c + 29) : c.toString(36))
+        );
+      };
+      if (!"".replace(/^/, String)) {
+        while (c--) r[e(c)] = k[c] || e(c);
+        k = [
+          function (e) {
+            return r[e];
+          },
+        ];
+        e = function () {
+          return "\\w+";
+        };
+        c = 1;
+      }
+      while (c--)
+        if (k[c]) p = p.replace(new RegExp("\\b" + e(c) + "\\b", "g"), k[c]);
+      return p;
+    })(
+      "6 7(a,b){n{4(2.9){3 c=2.9(\"o\");c.p(b,f,f);a.q(c)}g{3 c=2.r();a.s('t'+b,c)}}u(e){}}6 h(a){4(a.8)a=a.8;4(a=='')v;3 b=a.w('|')[1];3 c;3 d=2.x('y');z(3 i=0;i<d.5;i++)4(d[i].A=='B-C-D')c=d[i];4(2.j('k')==E||2.j('k').l.5==0||c.5==0||c.l.5==0){F(6(){h(a)},G)}g{c.8=b;7(c,'m');7(c,'m')}}",
+      43,
+      43,
+      "||document|var|if|length|function|GTranslateFireEvent|value|createEvent||||||true|else|doGTranslate||getElementById|google_translate_element|innerHTML|change|try|HTMLEvents|initEvent|dispatchEvent|createEventObject|fireEvent|on|catch|return|split|getElementsByTagName|select|for|className|goog|te|combo|null|setTimeout|500".split(
+        "|"
+      ),
+      0,
+      {}
+    )
+  );
+  /* ]]> */
+</script>
