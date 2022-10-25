@@ -1259,7 +1259,6 @@ def create_ui(wrap_gradio_gpu_call):
 
                     with gr.Row():
                         process_flip = gr.Checkbox(label='Create flipped copies')
-                        process_split = gr.Checkbox(label='Split oversized images into two')
                         process_smart_crop = gr.Checkbox(label='Use smart cropping for images')
                         process_split = gr.Checkbox(label='Split oversized images')
                         process_caption = gr.Checkbox(label='Use BLIP for caption')
