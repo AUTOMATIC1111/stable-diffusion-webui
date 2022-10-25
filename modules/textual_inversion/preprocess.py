@@ -149,7 +149,7 @@ def preprocess_work(process_src, process_dst, process_width, process_height, pre
             if smart_crop:
                 smart_failed = False
                 try:
-                    cv_im = cropper.crop(img, True, [width, height])
+                    cv_im = cropper.crop(img, False, [width, height])
                     cv_im = cv2.cvtColor(cv_im, cv2.COLOR_BGR2RGB)
                     img = Image.fromarray(cv_im)
                 except:
