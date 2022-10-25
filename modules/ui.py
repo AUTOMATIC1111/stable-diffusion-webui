@@ -310,6 +310,7 @@ def check_progress_call(id_part):
         progressbar = f"""<div class='progressDiv'><div class='progress' style="overflow:visible;width:{progress * 100}%;white-space:nowrap;">{"&nbsp;" * 2 + str(int(progress*100))+"%" + time_left if progress > 0.01 else ""}</div></div>"""
 
     image = gr_show(False)
+    imgtag = "";
     preview_visibility = gr_show(False)
 
     if opts.show_progress_every_n_steps > 0:
@@ -326,15 +327,21 @@ def check_progress_call(id_part):
 
         if image is None:
             image = gr.update(value=None)
+            imgtag = ""
         else:
             preview_visibility = gr_show(True)
+            buffered = io.BytesIO()
+            image.save(buffered, format="webp")
+            image_b64_str = base64.b64encode(buffered.getvalue()).decode('utf-8')
+            image_dataurl = f"data:image/webp;base64,{image_b64_str}"
+            imgtag = f"<img src='{image_dataurl}'></img>"
 
     if shared.state.textinfo is not None:
         textinfo_result = gr.HTML.update(value=shared.state.textinfo, visible=True)
     else:
         textinfo_result = gr_show(False)
 
-    return f"<span id='{id_part}_progress_span' style='display: none'>{time.time()}</span><p>{progressbar}</p>", preview_visibility, image, textinfo_result
+    return f"<span id='{id_part}_progress_span' style='display: none'>{time.time()}</span><p>{progressbar}</p>", preview_visibility, imgtag, textinfo_result
 
 
 def check_progress_call_initial(id_part):
@@ -642,7 +649,8 @@ def create_ui(wrap_gradio_gpu_call):
 
             with gr.Column(scale=1):
                 progressbar = gr.HTML(elem_id="txt2img_progressbar")
-                txt2img_preview = gr.Image(elem_id='txt2img_preview', visible=False)
+                # txt2img_preview = gr.Image(elem_id='txt2img_preview', visible=False)
+                txt2img_preview = gr.HTML(elem_id="txt2img_preview_img")
                 setup_progressbar(progressbar, txt2img_preview, 'txt2img')
 
         with gr.Row().style(equal_height=False):
@@ -832,7 +840,8 @@ def create_ui(wrap_gradio_gpu_call):
 
             with gr.Column(scale=1):
                 progressbar = gr.HTML(elem_id="img2img_progressbar")
-                img2img_preview = gr.Image(elem_id='img2img_preview', visible=False)
+                # img2img_preview = gr.Image(elem_id='img2img_preview', visible=False)
+                img2img_preview = gr.HTML(elem_id="img2img_preview_img")
                 setup_progressbar(progressbar, img2img_preview, 'img2img')
 
         with gr.Row().style(equal_height=False):
@@ -1314,7 +1323,8 @@ def create_ui(wrap_gradio_gpu_call):
                 ti_output = gr.Text(elem_id="ti_output", value="", show_label=False)
 
                 ti_gallery = gr.Gallery(label='Output', show_label=False, elem_id='ti_gallery').style(grid=4)
-                ti_preview = gr.Image(elem_id='ti_preview', visible=False)
+                # ti_preview = gr.Image(elem_id='ti_preview', visible=False)
+                ti_preview = gr.HTML(elem_id="ti_preview_img")
                 ti_progress = gr.HTML(elem_id="ti_progress", value="")
                 ti_outcome = gr.HTML(elem_id="ti_error", value="")
                 setup_progressbar(progressbar, ti_preview, 'ti', textinfo=ti_progress)
