@@ -361,7 +361,7 @@
     "Hypernetwork strength": "Hypernetwork 强度",
     "Apply color correction to img2img results to match original colors.": "对图生图结果应用颜色校正以匹配原始颜色",
     "Save a copy of image before applying color correction to img2img results": "在对图生图结果应用颜色校正之前保存图像副本",
-    "With img2img, do exactly the amount of steps the slider specifies (normally you'd do less with less denoising).": "在进行图生图的时候，确切地执行滑块指定的迭代步数（正常情況下更弱的去噪需要更少的迭代步数）",
+    "With img2img, do exactly the amount of steps the slider specifies (normally you'd do less with less denoising).": "在进行图生图的时候，确切地执行滑块指定的迭代步数（正常情况下更弱的去噪需要更少的迭代步数）",
     "Enable quantization in K samplers for sharper and cleaner results. This may change existing seeds. Requires restart to apply.": "在 K 采样器中启用量化以获得更清晰、更清晰的结果。这可能会改变现有的随机种子。需要重新启动才能应用",
     "Emphasis: use (text) to make model pay more attention to text and [text] to make it pay less attention": "强调符：使用 (文字) 使模型更关注该文本，使用 [文字] 使其减少关注",
     "Use old emphasis implementation. Can be useful to reproduce old seeds.": "使用旧的强调符实现。可用于复现旧随机种子",
