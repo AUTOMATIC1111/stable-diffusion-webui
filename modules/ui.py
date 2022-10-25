@@ -841,7 +841,11 @@ def create_ui(wrap_gradio_gpu_call):
                 with gr.Tabs(elem_id="mode_img2img") as tabs_img2img_mode:
                     with gr.TabItem('img2img', id='img2img'):
                         init_img = gr.Image(label="Image for img2img", elem_id="img2img_image", show_label=False, source="upload", interactive=True, type="pil", tool=cmd_opts.gradio_img2img_tool).style(height=480)
-
+                        indopaint = gr.Checkbox(label='Outpainting for img2img',value = False)
+                        vthresh = gr.Slider(label='Masking threshold', minimum=1, maximum=255, step=1, value=1)
+                        vloch = gr.Slider(label='Mask region height', minimum=1, maximum=99, step=1, value=30)
+                        vlocw = gr.Slider(label='Mask region width', minimum=1, maximum=99, step=1, value=30)
+                        outpainting_fill = gr.Radio(label='Masked content', choices=['fill', 'original', 'latent noise', 'latent nothing'], value='original', type="index")
                     with gr.TabItem('Inpaint', id='inpaint'):
                         init_img_with_mask = gr.Image(label="Image for inpainting with mask",  show_label=False, elem_id="img2maskimg", source="upload", interactive=True, type="pil", tool="sketch", image_mode="RGBA").style(height=480)
 
@@ -951,6 +955,14 @@ def create_ui(wrap_gradio_gpu_call):
                 _js="submit_img2img",
                 inputs=[
                     dummy_component,
+                    # Parms: srcimg,vwt,vww,vwh,vct,vcw,vch.
+                    dummy_component,
+                    dummy_component,
+                    dummy_component,
+                    dummy_component,
+                    dummy_component,
+                    dummy_component,
+                    dummy_component,
                     img2img_prompt,
                     img2img_negative_prompt,
                     img2img_prompt_style,
@@ -959,6 +971,11 @@ def create_ui(wrap_gradio_gpu_call):
                     init_img_with_mask,
                     init_img_inpaint,
                     init_mask_inpaint,
+                    indopaint,
+                    vthresh,
+                    vloch,
+                    vlocw,
+                    outpainting_fill,
                     mask_mode,
                     steps,
                     sampler_index,
