@@ -1,4 +1,15 @@
+import sys
+import traceback
+from collections import namedtuple
+import inspect
 
+
+def report_exception(c, job):
+    print(f"Error executing callback {job} for {c.script}", file=sys.stderr)
+    print(traceback.format_exc(), file=sys.stderr)
+
+
+ScriptCallback = namedtuple("ScriptCallback", ["script", "callback"])
 callbacks_model_loaded = []
 callbacks_ui_tabs = []
 callbacks_ui_settings = []
@@ -11,22 +22,38 @@ def clear_callbacks():
 
 
 def model_loaded_callback(sd_model):
-    for callback in callbacks_model_loaded:
-        callback(sd_model)
+    for c in callbacks_model_loaded:
+        try:
+            c.callback(sd_model)
+        except Exception:
+            report_exception(c, 'model_loaded_callback')
 
 
 def ui_tabs_callback():
     res = []
-
-    for callback in callbacks_ui_tabs:
-        res += callback() or []
+    
+    for c in callbacks_ui_tabs:
+        try:
+            res += c.callback() or []
+        except Exception:
+            report_exception(c, 'ui_tabs_callback')
 
     return res
 
 
 def ui_settings_callback():
-    for callback in callbacks_ui_settings:
-        callback()
+    for c in callbacks_ui_settings:
+        try:
+            c.callback()
+        except Exception:
+            report_exception(c, 'ui_settings_callback')
+
+
+def add_callback(callbacks, fun):
+    stack = [x for x in inspect.stack() if x.filename != __file__]
+    filename = stack[0].filename if len(stack) > 0 else 'unknown file'
+
+    callbacks.append(ScriptCallback(filename, fun))
 
 
 def image_saved_callback(image, p, fullfn, txt_fullfn):
@@ -36,7 +63,7 @@ def image_saved_callback(image, p, fullfn, txt_fullfn):
 def on_model_loaded(callback):
     """register a function to be called when the stable diffusion model is created; the model is
     passed as an argument"""
-    callbacks_model_loaded.append(callback)
+    add_callback(callbacks_model_loaded, callback)
 
 
 def on_ui_tabs(callback):
@@ -49,7 +76,7 @@ def on_ui_tabs(callback):
     title is tab text displayed to user in the UI
     elem_id is HTML id for the tab
     """
-    callbacks_ui_tabs.append(callback)
+    add_callback(callbacks_ui_tabs, callback)
 
 
 def on_ui_settings(callback):

@@ -1,4 +1,8 @@
 import datetime
+import sys
+import traceback
+
+import pytz
 import io
 import math
 import os
@@ -273,10 +277,15 @@ invalid_filename_chars = '<>:"/\\|?*\n'
 invalid_filename_prefix = ' '
 invalid_filename_postfix = ' .'
 re_nonletters = re.compile(r'[\s' + string.punctuation + ']+')
+re_pattern = re.compile(r"([^\[\]]+|\[([^]]+)]|[\[\]]*)")
+re_pattern_arg = re.compile(r"(.*)<([^>]*)>$")
 max_filename_part_length = 128
 
 
 def sanitize_filename_part(text, replace_spaces=True):
+    if text is None:
+        return None
+
     if replace_spaces:
         text = text.replace(' ', '_')
 
@@ -286,49 +295,106 @@ def sanitize_filename_part(text, replace_spaces=True):
     return text
 
 
-def apply_filename_pattern(x, p, seed, prompt):
-    max_prompt_words = opts.directories_max_prompt_words
+class FilenameGenerator:
+    replacements = {
+        'seed': lambda self: self.seed if self.seed is not None else '',
+        'steps': lambda self:  self.p and self.p.steps,
+        'cfg': lambda self: self.p and self.p.cfg_scale,
+        'width': lambda self: self.p and self.p.width,
+        'height': lambda self: self.p and self.p.height,
+        'styles': lambda self: self.p and sanitize_filename_part(", ".join([style for style in self.p.styles if not style == "None"]) or "None", replace_spaces=False),
+        'sampler': lambda self: self.p and sanitize_filename_part(sd_samplers.samplers[self.p.sampler_index].name, replace_spaces=False),
+        'model_hash': lambda self: getattr(self.p, "sd_model_hash", shared.sd_model.sd_model_hash),
+        'date': lambda self: datetime.datetime.now().strftime('%Y-%m-%d'),
+        'datetime': lambda self, *args: self.datetime(*args),  # accepts formats: [datetime], [datetime<Format>], [datetime<Format><Time Zone>]
+        'job_timestamp': lambda self: getattr(self.p, "job_timestamp", shared.state.job_timestamp),
+        'prompt': lambda self: sanitize_filename_part(self.prompt),
+        'prompt_no_styles': lambda self: self.prompt_no_style(),
+        'prompt_spaces': lambda self: sanitize_filename_part(self.prompt, replace_spaces=False),
+        'prompt_words': lambda self: self.prompt_words(),
+    }
+    default_time_format = '%Y%m%d%H%M%S'
 
-    if seed is not None:
-        x = x.replace("[seed]", str(seed))
+    def __init__(self, p, seed, prompt):
+        self.p = p
+        self.seed = seed
+        self.prompt = prompt
 
-    if p is not None:
-        x = x.replace("[steps]", str(p.steps))
-        x = x.replace("[cfg]", str(p.cfg_scale))
-        x = x.replace("[width]", str(p.width))
-        x = x.replace("[height]", str(p.height))
-        x = x.replace("[styles]", sanitize_filename_part(", ".join([x for x in p.styles if not x == "None"]) or "None", replace_spaces=False))
-        x = x.replace("[sampler]", sanitize_filename_part(sd_samplers.samplers[p.sampler_index].name, replace_spaces=False))
+    def prompt_no_style(self):
+        if self.p is None or self.prompt is None:
+            return None
 
-    x = x.replace("[model_hash]", getattr(p, "sd_model_hash", shared.sd_model.sd_model_hash))
-    x = x.replace("[date]", datetime.date.today().isoformat())
-    x = x.replace("[datetime]", datetime.datetime.now().strftime("%Y%m%d%H%M%S"))
-    x = x.replace("[job_timestamp]", getattr(p, "job_timestamp", shared.state.job_timestamp))
+        prompt_no_style = self.prompt
+        for style in shared.prompt_styles.get_style_prompts(self.p.styles):
+            if len(style) > 0:
+                for part in style.split("{prompt}"):
+                    prompt_no_style = prompt_no_style.replace(part, "").replace(", ,", ",").strip().strip(',')
 
-    # Apply [prompt] at last. Because it may contain any replacement word.^M
-    if prompt is not None:
-        x = x.replace("[prompt]", sanitize_filename_part(prompt))
-        if "[prompt_no_styles]" in x:
-            prompt_no_style = prompt
-            for style in shared.prompt_styles.get_style_prompts(p.styles):
-                if len(style) > 0:
-                    style_parts = [y for y in style.split("{prompt}")]
-                    for part in style_parts:
-                        prompt_no_style = prompt_no_style.replace(part, "").replace(", ,", ",").strip().strip(',')
-            prompt_no_style = prompt_no_style.replace(style, "").strip().strip(',').strip()
-            x = x.replace("[prompt_no_styles]", sanitize_filename_part(prompt_no_style, replace_spaces=False))
+                prompt_no_style = prompt_no_style.replace(style, "").strip().strip(',').strip()
 
-        x = x.replace("[prompt_spaces]", sanitize_filename_part(prompt, replace_spaces=False))
-        if "[prompt_words]" in x:
-            words = [x for x in re_nonletters.split(prompt or "") if len(x) > 0]
-            if len(words) == 0:
-                words = ["empty"]
-            x = x.replace("[prompt_words]", sanitize_filename_part(" ".join(words[0:max_prompt_words]), replace_spaces=False))
+        return sanitize_filename_part(prompt_no_style, replace_spaces=False)
 
-    if cmd_opts.hide_ui_dir_config:
-        x = re.sub(r'^[\\/]+|\.{2,}[\\/]+|[\\/]+\.{2,}', '', x)
+    def prompt_words(self):
+        words = [x for x in re_nonletters.split(self.prompt or "") if len(x) > 0]
+        if len(words) == 0:
+            words = ["empty"]
+        return sanitize_filename_part(" ".join(words[0:opts.directories_max_prompt_words]), replace_spaces=False)
 
-    return x
+    def datetime(self, *args):
+        time_datetime = datetime.datetime.now()
+
+        time_format = args[0] if len(args) > 0 else self.default_time_format
+        try:
+            time_zone = pytz.timezone(args[1]) if len(args) > 1 else None
+        except pytz.exceptions.UnknownTimeZoneError as _:
+            time_zone = None
+
+        time_zone_time = time_datetime.astimezone(time_zone)
+        try:
+            formatted_time = time_zone_time.strftime(time_format)
+        except (ValueError, TypeError) as _:
+            formatted_time = time_zone_time.strftime(self.default_time_format)
+
+        return sanitize_filename_part(formatted_time, replace_spaces=False)
+
+    def apply(self, x):
+        res = ''
+
+        for m in re_pattern.finditer(x):
+            text, pattern = m.groups()
+
+            if pattern is None:
+                res += text
+                continue
+
+            pattern_args = []
+            while True:
+                m = re_pattern_arg.match(pattern)
+                if m is None:
+                    break
+
+                pattern, arg = m.groups()
+                pattern_args.insert(0, arg)
+
+            fun = self.replacements.get(pattern.lower())
+            if fun is not None:
+                try:
+                    replacement = fun(self, *pattern_args)
+                except Exception:
+                    replacement = None
+                    print(f"Error adding [{pattern}] to filename", file=sys.stderr)
+                    print(traceback.format_exc(), file=sys.stderr)
+
+                if replacement is None:
+                    res += f'[{pattern}]'
+                else:
+                    res += str(replacement)
+
+                continue
+
+            res += f'[{pattern}]'
+
+        return res
 
 
 def get_next_sequence_number(path, basename):
@@ -354,7 +420,7 @@ def get_next_sequence_number(path, basename):
 
 
 def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None, forced_filename=None, suffix="", save_to_dirs=None):
-    '''Save an image.
+    """Save an image.
 
     Args:
         image (`PIL.Image`):
@@ -385,18 +451,8 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
             The full path of the saved imaged.
         txt_fullfn (`str` or None):
             If a text file is saved for this image, this will be its full path. Otherwise None.
-    '''
-    if short_filename or prompt is None or seed is None:
-        file_decoration = ""
-    elif opts.save_to_dirs:
-        file_decoration = opts.samples_filename_pattern or "[seed]"
-    else:
-        file_decoration = opts.samples_filename_pattern or "[seed]-[prompt_spaces]"
-
-    if file_decoration != "":
-        file_decoration = "-" + file_decoration.lower()
-
-    file_decoration = apply_filename_pattern(file_decoration, p, seed, prompt) + suffix
+    """
+    namegen = FilenameGenerator(p, seed, prompt)
 
     if extension == 'png' and opts.enable_pnginfo and info is not None:
         pnginfo = PngImagePlugin.PngInfo()
@@ -413,21 +469,37 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
         save_to_dirs = (grid and opts.grid_save_to_dirs) or (not grid and opts.save_to_dirs and not no_prompt)
 
     if save_to_dirs:
-        dirname = apply_filename_pattern(opts.directories_filename_pattern or "[prompt_words]", p, seed, prompt).strip('\\ /')
+        dirname = namegen.apply(opts.directories_filename_pattern or "[prompt_words]").lstrip(' ').rstrip('\\ /')
         path = os.path.join(path, dirname)
 
     os.makedirs(path, exist_ok=True)
 
     if forced_filename is None:
-        basecount = get_next_sequence_number(path, basename)
-        fullfn = "a.png"
-        fullfn_without_extension = "a"
-        for i in range(500):
-            fn = f"{basecount + i:05}" if basename == '' else f"{basename}-{basecount + i:04}"
-            fullfn = os.path.join(path, f"{fn}{file_decoration}.{extension}")
-            fullfn_without_extension = os.path.join(path, f"{fn}{file_decoration}")
-            if not os.path.exists(fullfn):
-                break
+        if short_filename or seed is None:
+            file_decoration = ""
+        else:
+            file_decoration = opts.samples_filename_pattern or "[seed]"
+
+        add_number = opts.save_images_add_number or file_decoration == ''
+
+        if file_decoration != "" and add_number:
+            file_decoration = "-" + file_decoration
+
+        file_decoration = namegen.apply(file_decoration) + suffix
+
+        if add_number:
+            basecount = get_next_sequence_number(path, basename)
+            fullfn = None
+            fullfn_without_extension = None
+            for i in range(500):
+                fn = f"{basecount + i:05}" if basename == '' else f"{basename}-{basecount + i:04}"
+                fullfn = os.path.join(path, f"{fn}{file_decoration}.{extension}")
+                fullfn_without_extension = os.path.join(path, f"{fn}{file_decoration}")
+                if not os.path.exists(fullfn):
+                    break
+        else:
+            fullfn = os.path.join(path, f"{file_decoration}.{extension}")
+            fullfn_without_extension = os.path.join(path, file_decoration)
     else:
         fullfn = os.path.join(path, f"{forced_filename}.{extension}")
         fullfn_without_extension = os.path.join(path, forced_filename)
