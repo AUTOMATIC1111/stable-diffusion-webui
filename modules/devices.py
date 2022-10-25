@@ -45,7 +45,7 @@ def enable_tf32():
 
 errors.run(enable_tf32, "Enabling TF32")
 
-device = device_interrogate = device_gfpgan = device_bsrgan = device_esrgan = device_scunet = device_codeformer = None
+device = device_interrogate = device_gfpgan = device_swinir = device_esrgan = device_scunet = device_codeformer = None
 dtype = torch.float16
 dtype_vae = torch.float16
 
