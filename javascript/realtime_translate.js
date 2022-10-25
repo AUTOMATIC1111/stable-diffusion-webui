@@ -20,6 +20,31 @@ new MutationObserver(function () {
             rtt_translate_div.style.display = "block";
         if (rtt_translate_reversed_div && rtt_is_translate_reversed)
             rtt_translate_reversed_div.style.display = "block";
+
+        const rtt_google_iframe = document.evaluate(
+            '//*[@id=":1.container"]',
+            document,
+            null,
+            XPathResult.ANY_TYPE,
+            null
+        ).iterateNext();
+        rtt_google_iframe.style.display = 'none';
+
+        document.evaluate(
+            '//*[@id="google_translate_element"]/div',
+            document,
+            null,
+            XPathResult.ANY_TYPE,
+            null
+        ).iterateNext().style.display = 'none';
+
+        document.evaluate(
+            '//*[@id="google_translate_element"]/div[2]',
+            document,
+            null,
+            XPathResult.ANY_TYPE,
+            null
+        ).iterateNext().style.display = 'none';
     }
 }).observe(document.documentElement, {
     attributes: true,
