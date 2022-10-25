@@ -388,6 +388,10 @@ def interrogate(image):
 
     return gr_show(True) if prompt is None else prompt
 
+def batch_interrogate_clip(input_dir, output_dir):
+    response = shared.interrogator.batch_interrogate(input_dir, output_dir)
+
+    return gr_show(True) if response is None else response
 
 def interrogate_deepbooru(image):
     prompt = get_deepbooru_tags(image)
@@ -865,6 +869,7 @@ def create_ui(wrap_gradio_gpu_call):
                         gr.HTML(f"<p class=\"text-gray-500\">Process images in a directory on the same machine where the server is running.<br>Use an empty output directory to save pictures normally instead of writing to the output directory.{hidden}</p>")
                         img2img_batch_input_dir = gr.Textbox(label="Input directory", **shared.hide_dirs)
                         img2img_batch_output_dir = gr.Textbox(label="Output directory", **shared.hide_dirs)
+                        img2img_batch_clip = gr.Button('Interrogate with CLIP', elem_id="img2img_batch_interrogate")
 
                 with gr.Row():
                     resize_mode = gr.Radio(label="Resize mode", elem_id="resize_mode", show_label=False, choices=["Just resize", "Crop and resize", "Resize and fill"], type="index", value="Just resize")
@@ -996,6 +1001,12 @@ def create_ui(wrap_gradio_gpu_call):
                 fn=interrogate,
                 inputs=[init_img],
                 outputs=[img2img_prompt],
+            )
+
+            img2img_batch_clip.click(
+                fn=batch_interrogate_clip,
+                inputs=[img2img_batch_input_dir, img2img_batch_output_dir],
+                outputs=[]
             )
 
             if cmd_opts.deepdanbooru:

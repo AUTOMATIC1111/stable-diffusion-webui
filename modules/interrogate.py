@@ -2,6 +2,8 @@ import contextlib
 import os
 import sys
 import traceback
+import csv
+from PIL import Image
 from collections import namedtuple
 import re
 
@@ -175,3 +177,70 @@ class InterrogateModels:
         self.unload()
 
         return res
+
+    def batch_interrogate(self, input_dir, output_dir):
+        response = None
+        table = []
+
+        try:
+            files = os.listdir(input_dir)
+
+            if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
+                lowvram.send_everything_to_cpu()
+                devices.torch_gc()
+
+            self.load()
+
+            precision_scope = torch.autocast if shared.cmd_opts.precision == "autocast" else contextlib.nullcontext
+
+            for imagename in files:
+                if not imagename.lower().endswith(('.png', '.jpg', '.jpeg', '.tiff', '.bmp', '.gif')):
+                    continue
+                
+                cur_row = [imagename]
+                cur_prompt = None
+
+                image = Image.open(os.path.join(input_dir, imagename))
+
+                caption = self.generate_caption(image)
+
+                if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
+                    self.send_blip_to_ram() # sending blip to ram for every image sounds slow but not too sure
+                devices.torch_gc()
+
+                cur_prompt = caption
+                clip_image = self.clip_preprocess(image).unsqueeze(0).type(self.dtype).to(devices.device_interrogate)
+
+                with torch.no_grad(), precision_scope("cuda"):
+                    image_features = self.clip_model.encode_image(clip_image).type(self.dtype)
+                    image_features /= image_features.norm(dim=-1, keepdim=True)
+
+                    if shared.opts.interrogate_use_builtin_artists:
+                        artist = self.rank(image_features, ["by " + artist.name for artist in shared.artist_db.artists])[0]
+                        cur_prompt += ", " + artist[0]
+
+                    for name, topn, items in self.categories:
+                        matches = self.rank(image_features, items, top_count=topn)
+                        for match, score in matches:
+                            if shared.opts.interrogate_return_ranks:
+                                cur_prompt += f", ({match}:{score/100:.3f})"
+                            else:
+                                cur_prompt += ", " + match
+
+                cur_row.append(cur_prompt)
+                table.append(cur_row)
+
+        except Exception():
+            print(f"Error interrogating", file=sys.stderr)
+            print(traceback.format_exc(), file=sys.stderr)
+
+        self.unload()
+
+        response = f"Processed {len(table)} images, saving csv to {output_dir}/clip.csv..."
+        print(response)
+        file = open(os.path.join(output_dir if output_dir else input_dir, 'clip.csv'), 'w+', newline ='')
+        with file:
+            write = csv.writer(file)
+            write.writerows(table)
+
+        return response
