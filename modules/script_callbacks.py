@@ -49,6 +49,14 @@ def ui_settings_callback():
             report_exception(c, 'ui_settings_callback')
 
 
+def image_saved_callback(image, p, fullfn, txt_fullfn):
+    for c in callbacks_image_saved:
+        try:
+            c.callback(image, p, fullfn, txt_fullfn)
+        except Exception:
+            report_exception(c, 'image_saved_callback')
+
+
 def add_callback(callbacks, fun):
     stack = [x for x in inspect.stack() if x.filename != __file__]
     filename = stack[0].filename if len(stack) > 0 else 'unknown file'
@@ -56,9 +64,6 @@ def add_callback(callbacks, fun):
     callbacks.append(ScriptCallback(filename, fun))
 
 
-def image_saved_callback(image, p, fullfn, txt_fullfn):
-    for callback in callbacks_image_saved:
-        callback(image, p, fullfn, txt_fullfn)
 
 def on_model_loaded(callback):
     """register a function to be called when the stable diffusion model is created; the model is
@@ -82,9 +87,14 @@ def on_ui_tabs(callback):
 def on_ui_settings(callback):
     """register a function to be called before UI settings are populated; add your settings
     by using shared.opts.add_option(shared.OptionInfo(...)) """
-    callbacks_ui_settings.append(callback)
+    add_callback(callbacks_ui_settings, callback)
 
 
 def on_save_imaged(callback):
-    """register a function to call after modules.images.save_image is called returning same values, original image and p """
-    callbacks_image_saved.append(callback)
+    """register a function to be called after modules.images.save_image is called.
+    The callback is called with three arguments:
+        - p - procesing object (or a dummy object with same fields if the image is saved using save button)
+        - fullfn - image filename
+        - txt_fullfn - text file with parameters; may be None
+    """
+    add_callback(callbacks_image_saved, callback)
