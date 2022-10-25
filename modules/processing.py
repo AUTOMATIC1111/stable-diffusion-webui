@@ -77,9 +77,9 @@ def get_correct_sampler(p):
 class StableDiffusionProcessing():
     """
     The first set of paramaters: sd_models -> do_not_reload_embeddings represent the minimum required to create a StableDiffusionProcessing
-    
+
     """
-    def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt: str="", styles: List[str]=None, seed: int=-1, subseed: int=-1, subseed_strength: float=0, seed_resize_from_h: int=-1, seed_resize_from_w: int=-1, seed_enable_extras: bool=True, sampler_index: int=0, batch_size: int=1, n_iter: int=1, steps:int =50, cfg_scale:float=7.0, width:int=512, height:int=512, restore_faces:bool=False, tiling:bool=False, do_not_save_samples:bool=False, do_not_save_grid:bool=False, extra_generation_params: Dict[Any,Any]=None, overlay_images: Any=None, negative_prompt: str=None, eta: float =None, do_not_reload_embeddings: bool=False, denoising_strength: float = 0, ddim_discretize: str = "uniform", s_churn: float = 0.0, s_tmax: float = None, s_tmin: float = 0.0, s_noise: float = 1.0):
+    def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt: str="", styles: List[str]=None, seed: int=-1, subseed: int=-1, subseed_strength: float=0, seed_resize_from_h: int=-1, seed_resize_from_w: int=-1, seed_enable_extras: bool=True, sampler_index: int=0, batch_size: int=1, n_iter: int=1, steps:int =50, cfg_scale:float=7.0, width:int=512, height:int=512, restore_faces:bool=False, tiling:bool=False, do_not_save_samples:bool=False, do_not_save_grid:bool=False, extra_generation_params: Dict[Any,Any]=None, overlay_images: Any=None, negative_prompt: str=None, eta: float =None, clip_skip: int=None, do_not_reload_embeddings: bool=False, denoising_strength: float = 0, ddim_discretize: str = "uniform", s_churn: float = 0.0, s_tmax: float = None, s_tmin: float = 0.0, s_noise: float = 1.0):
         self.sd_model = sd_model
         self.outpath_samples: str = outpath_samples
         self.outpath_grids: str = outpath_grids
@@ -106,6 +106,7 @@ class StableDiffusionProcessing():
         self.extra_generation_params: dict = extra_generation_params or {}
         self.overlay_images = overlay_images
         self.eta = eta
+        self.clip_skip = clip_skip if clip_skip is not None else opts.CLIP_stop_at_last_layers
         self.do_not_reload_embeddings = do_not_reload_embeddings
         self.paste_to = None
         self.color_corrections = None
@@ -128,7 +129,6 @@ class StableDiffusionProcessing():
         self.all_prompts = None
         self.all_seeds = None
         self.all_subseeds = None
-
 
     def init(self, all_prompts, all_seeds, all_subseeds):
         pass
@@ -353,6 +353,10 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration
 def process_images(p: StableDiffusionProcessing) -> Processed:
     """this is the main loop that both txt2img and img2img use; it calls func_init once inside all the scopes and func_sample once per batch"""
 
+    # override clip skip
+    prev_CLIP_stop_at_last_layers = opts.CLIP_stop_at_last_layers
+    opts.CLIP_stop_at_last_layers = p.clip_skip
+
     if type(p.prompt) == list:
         assert(len(p.prompt) > 0)
     else:
@@ -411,7 +415,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
         for n in range(p.n_iter):
             if state.skipped:
                 state.skipped = False
-            
+
             if state.interrupted:
                 break
 
@@ -483,7 +487,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
                     image.info["parameters"] = text
                 output_images.append(image)
 
-            del x_samples_ddim 
+            del x_samples_ddim
 
             devices.torch_gc()
 
@@ -508,6 +512,10 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
                 images.save_image(grid, p.outpath_grids, "grid", p.all_seeds[0], p.all_prompts[0], opts.grid_format, info=infotext(), short_filename=not opts.grid_extended_filename, p=p, grid=True)
 
     devices.torch_gc()
+
+    # restore clip skip
+    opts.CLIP_stop_at_last_layers = prev_CLIP_stop_at_last_layers
+
     return Processed(p, output_images, p.all_seeds[0], infotext() + "".join(["\n\n" + x for x in comments]), subseed=p.all_subseeds[0], all_prompts=p.all_prompts, all_seeds=p.all_seeds, all_subseeds=p.all_subseeds, index_of_first_image=index_of_first_image, infotexts=infotexts)
 
 
@@ -563,7 +571,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
             # The "masked-image" in this case will just be all zeros since the entire image is masked.
             image_conditioning = torch.zeros(x.shape[0], 3, height, width, device=x.device)
-            image_conditioning = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(image_conditioning)) 
+            image_conditioning = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(image_conditioning))
 
             # Add the fake full 1s mask to the first dimension.
             image_conditioning = torch.nn.functional.pad(image_conditioning, (0, 0, 0, 0, 1, 0), value=1.0)
