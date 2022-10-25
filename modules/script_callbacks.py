@@ -13,11 +13,12 @@ ScriptCallback = namedtuple("ScriptCallback", ["script", "callback"])
 callbacks_model_loaded = []
 callbacks_ui_tabs = []
 callbacks_ui_settings = []
-
+callbacks_image_saved = []
 
 def clear_callbacks():
     callbacks_model_loaded.clear()
     callbacks_ui_tabs.clear()
+    callbacks_image_saved.clear()
 
 
 def model_loaded_callback(sd_model):
@@ -55,6 +56,10 @@ def add_callback(callbacks, fun):
     callbacks.append(ScriptCallback(filename, fun))
 
 
+def image_saved_callback(image, p, fullfn, txt_fullfn):
+    for callback in callbacks_image_saved:
+        callback(image, p, fullfn, txt_fullfn)
+
 def on_model_loaded(callback):
     """register a function to be called when the stable diffusion model is created; the model is
     passed as an argument"""
@@ -77,4 +82,9 @@ def on_ui_tabs(callback):
 def on_ui_settings(callback):
     """register a function to be called before UI settings are populated; add your settings
     by using shared.opts.add_option(shared.OptionInfo(...)) """
-    add_callback(callbacks_ui_settings, callback)
+    callbacks_ui_settings.append(callback)
+
+
+def on_save_imaged(callback):
+    """register a function to call after modules.images.save_image is called returning same values, original image and p """
+    callbacks_image_saved.append(callback)
