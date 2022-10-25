@@ -768,7 +768,11 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
             # Create another latent image, this time with a masked version of the original input.
             conditioning_mask = conditioning_mask.to(image.device)
-            conditioning_image = image * (1.0 - conditioning_mask)
+
+            conditioning_image = image
+            if shared.opts.inpainting_mask_image:
+                conditioning_image = conditioning_image * (1.0 - conditioning_mask)                
+            
             conditioning_image = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(conditioning_image))
 
             # Create the concatenated conditioning tensor to be fed to `c_concat`
