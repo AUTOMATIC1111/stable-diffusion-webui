@@ -1241,6 +1241,7 @@ def create_ui(wrap_gradio_gpu_call):
                     with gr.Row():
                         process_flip = gr.Checkbox(label='Create flipped copies')
                         process_split = gr.Checkbox(label='Split oversized images into two')
+                        process_smart_crop = gr.Checkbox(label='Use smart cropping for images')
                         process_caption = gr.Checkbox(label='Use BLIP for caption')
                         process_caption_deepbooru = gr.Checkbox(label='Use deepbooru for caption', visible=True if cmd_opts.deepdanbooru else False)
 
@@ -1327,7 +1328,8 @@ def create_ui(wrap_gradio_gpu_call):
                 process_flip,
                 process_split,
                 process_caption,
-                process_caption_deepbooru
+                process_caption_deepbooru,
+                process_smart_crop
             ],
             outputs=[
                 ti_output,
