@@ -52,11 +52,10 @@ def ui_settings_callback():
 def before_image_saved_callback(image, p, **kwargs):
     for c in callbacks_before_image_saved:
         try:
-        	image, p, kwargs = callback(image, p, **kwargs)
-		except Exception:
+            image, p, kwargs = c.callback(image, p, **kwargs)
+        except Exception:
             report_exception(c, 'callbacks_before_image_saved')
-    return image, p, kwargs
-
+        return image, p, kwargs
 
 def image_saved_callback(image, p, fullfn, txt_fullfn, **kwargs):
     for c in callbacks_image_saved:
