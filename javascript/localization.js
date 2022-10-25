@@ -107,7 +107,10 @@ function processNode(node){
 }
 
 function dumpTranslations(){
-    dumped = { rtl: localization.rtl || false }
+    dumped = {}
+    if (localization.rtl) {
+        dumped.rtl = true
+    }
 
     Object.keys(original_lines).forEach(function(text){
         if(dumped[text] !== undefined)  return
