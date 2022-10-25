@@ -358,7 +358,7 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
                 captioned_image.save(last_saved_image_chunks, "PNG", pnginfo=info)
                 embedding_yet_to_be_embedded = False
 
-            last_saved_image, last_text_info = images.save_image(image, images_dir, "", p.seed, p.prompt, shared.opts.samples_format, processed.infotexts[0], p=p, forced_filename=forced_filename)
+            last_saved_image, last_text_info = images.save_image(image, images_dir, "", p.seed, p.prompt, shared.opts.samples_format, processed.infotexts[0], p=p, forced_filename=forced_filename, save_to_dirs=False)
             last_saved_image += f", prompt: {preview_text}"
 
         shared.state.job_no = embedding.step
