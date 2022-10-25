@@ -108,6 +108,9 @@ function processNode(node){
 
 function dumpTranslations(){
     dumped = {}
+    if (localization.rtl) {
+        dumped.rtl = true
+    }
 
     Object.keys(original_lines).forEach(function(text){
         if(dumped[text] !== undefined)  return
@@ -129,6 +132,24 @@ onUiUpdate(function(m){
 
 document.addEventListener("DOMContentLoaded", function() {
     processNode(gradioApp())
+
+    if (localization.rtl) {  // if the language is from right to left,
+        (new MutationObserver((mutations, observer) => { // wait for the style to load
+            mutations.forEach(mutation => {
+                mutation.addedNodes.forEach(node => {
+                    if (node.tagName === 'STYLE') {
+                        observer.disconnect();
+
+                        for (const x of node.sheet.rules) {  // find all rtl media rules
+                            if (Array.from(x.media || []).includes('rtl')) {
+                                x.media.appendMedium('all');  // enable them
+                            }
+                        }
+                    }
+                })
+            });
+        })).observe(gradioApp(), { childList: true });
+    }
 })
 
 function download_localization() {
