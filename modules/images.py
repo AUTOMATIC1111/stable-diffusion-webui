@@ -1,4 +1,5 @@
 import datetime
+from operator import itemgetter
 import sys
 import traceback
 
@@ -452,8 +453,10 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
         txt_fullfn (`str` or None):
             If a text file is saved for this image, this will be its full path. Otherwise None.
     """
-    namegen = FilenameGenerator(p, seed, prompt)
+    image, p, kwargs = script_callbacks.before_image_saved_callback(image, p, info=info, existing_info=existing_info)
+    info, existing_info = itemgetter('info', 'existing_info')(kwargs)
 
+    namegen = FilenameGenerator(p, seed, prompt)
     if extension == 'png' and opts.enable_pnginfo and info is not None:
         pnginfo = PngImagePlugin.PngInfo()
 
@@ -541,7 +544,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     else:
         txt_fullfn = None
 
-    script_callbacks.image_saved_callback(image, p, fullfn, txt_fullfn)
+    script_callbacks.image_saved_callback(image, p, fullfn, txt_fullfn, **kwargs)
     return fullfn, txt_fullfn
 
 

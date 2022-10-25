@@ -13,13 +13,14 @@ ScriptCallback = namedtuple("ScriptCallback", ["script", "callback"])
 callbacks_model_loaded = []
 callbacks_ui_tabs = []
 callbacks_ui_settings = []
+callbacks_before_image_saved = []
 callbacks_image_saved = []
 
 def clear_callbacks():
     callbacks_model_loaded.clear()
     callbacks_ui_tabs.clear()
+    callbacks_before_image_saved.clear()
     callbacks_image_saved.clear()
-
 
 def model_loaded_callback(sd_model):
     for c in callbacks_model_loaded:
@@ -48,11 +49,19 @@ def ui_settings_callback():
         except Exception:
             report_exception(c, 'ui_settings_callback')
 
+def before_image_saved_callback(image, p, **kwargs):
+    for c in callbacks_before_image_saved:
+        try:
+        	image, p, kwargs = callback(image, p, **kwargs)
+		except Exception:
+            report_exception(c, 'callbacks_before_image_saved')
+    return image, p, kwargs
 
-def image_saved_callback(image, p, fullfn, txt_fullfn):
+
+def image_saved_callback(image, p, fullfn, txt_fullfn, **kwargs):
     for c in callbacks_image_saved:
         try:
-            c.callback(image, p, fullfn, txt_fullfn)
+            c.callback(image, p, fullfn, txt_fullfn, **kwargs)
         except Exception:
             report_exception(c, 'image_saved_callback')
 
@@ -98,3 +107,10 @@ def on_save_imaged(callback):
         - txt_fullfn - text file with parameters; may be None
     """
     add_callback(callbacks_image_saved, callback)
+
+
+def on_before_image_saved(callback):
+    """register a function to call after modules.images.save_image is called; original image and p (`StableDiffusionProcessing`) alone with kwargs passed as arguments
+    save_image will use modified values returned by callback
+    """
+    add_callback(callbacks_before_image_saved, callback)
