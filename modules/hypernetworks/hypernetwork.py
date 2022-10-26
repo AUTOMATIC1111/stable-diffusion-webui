@@ -337,6 +337,9 @@ def save_settings_to_file(num_of_dataset_images, h, hypernetwork_name, learn_rat
     hypernet_settings_str = "datetime: " + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + "\n"
     for n in names:
         hypernet_settings_str += f'{n}: {str(eval(n))}\n'
+        # Stop early if txt2img settings are not being used.
+        if n == 'preview_from_txt2img' and preview_from_txt2img == False:
+            break
     with open(os.path.join(log_directory, 'settings.txt'), 'a+') as fout:
         fout.write(hypernet_settings_str + '\n\n')
 
