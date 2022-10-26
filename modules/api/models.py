@@ -149,7 +149,3 @@ class ExtrasBatchImagesRequest(ExtrasBaseRequest):
 
 class ExtrasBatchImagesResponse(ExtraBaseResponse):
     images: list[str] = Field(title="Images", description="The generated images in base64 format.")
-
-class ExtrasFoldersRequest(ExtrasBaseRequest):
-    input_dir: str = Field(title="Input directory", description="Directory path from where to take the images")
-    output_dir: str = Field(title="Output directory", description="Directory path to put the processsed images into")
