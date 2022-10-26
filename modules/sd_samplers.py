@@ -304,7 +304,17 @@ class CFGDenoiser(torch.nn.Module):
 
         for i, conds in enumerate(conds_list):
             for cond_index, weight in conds:
-                denoised[i] += (x_out[cond_index] - denoised_uncond[i]) * (weight * cond_scale)
+                # original scaling
+                #denoised[i] += (x_out[cond_index] - denoised_uncond[i]) * (weight * cond_scale)
+                # update to classifier-free guidance by @sebderhy as described from these posts: 
+                # https://twitter.com/jeremyphoward/status/1584667278733324288
+                # https://twitter.com/jeremyphoward/status/1585009792787304448
+                # original guidance update with "whole" rescaling step
+                # denoised *= torch.norm(denoised_uncond[i])/torch.norm(denoised[i])
+                # rescaled guidance update
+                denoised[i] += (x_out[cond_index] - denoised_uncond[i]) * (weight * cond_scale) / torch.norm(x_out[cond_index] - denoised_uncond[i]) * torch.norm(denoised_uncond[i])
+                # rescaled guidance update with "whole" rescaling step
+                denoised *= torch.norm(denoised_uncond[i])/torch.norm(denoised[i])
 
         if self.mask is not None:
             denoised = self.init_latent * self.mask + self.nmask * denoised
