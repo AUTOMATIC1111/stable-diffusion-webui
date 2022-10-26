@@ -4,6 +4,8 @@
 The only 2 samplers that work (at the time of writing this) are `Euler` and `DPM2` - all others result in a black screen.
 Upscaling works, but only using the real-ESRGAN models.
 
+EDIT: They all seem to be working now except for "DPM fast" (which returns random noise), and DDIM and PLMS (both of which fail immediately with the following error: "AssertionError: Torch not compiled with CUDA enabled"). According to a user on an M1 Max macbook pro with 32 gigs of ram https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/3694
+
 People have also had issues completing the installation because they have previous installations of Python and/or Miniconda. This causes the script to be confused about where to install the environment and all related files. 
 
 Please follow [this guide](https://apple.stackexchange.com/questions/284824/remove-and-reinstall-python-on-mac-can-i-trust-these-old-references/285028#285028) if this is the case.
