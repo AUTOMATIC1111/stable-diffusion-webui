@@ -71,9 +71,9 @@ def crop_image(im, settings):
   return results
 
 def focal_point(im, settings):
-    corner_points = image_corner_points(im, settings)
-    entropy_points = image_entropy_points(im, settings)
-    face_points = image_face_points(im, settings)
+    corner_points = image_corner_points(im, settings) if settings.corner_points_weight > 0 else []
+    entropy_points = image_entropy_points(im, settings) if settings.entropy_points_weight > 0 else []
+    face_points = image_face_points(im, settings) if settings.face_points_weight > 0 else []
 
     pois = []
 
@@ -144,7 +144,7 @@ def image_face_points(im, settings):
           settings.dnn_model_path,
           "",
           (im.width, im.height),
-          0.8, # score threshold
+          0.9, # score threshold
           0.3, # nms threshold
           5000 # keep top k before nms
       )
@@ -159,7 +159,7 @@ def image_face_points(im, settings):
           results.append(
             PointOfInterest(
               int(x + (w * 0.5)), # face focus left/right is center
-              int(y + (h * 0)), # face focus up/down is close to the top of the head
+              int(y + (h * 0.33)), # face focus up/down is close to the top of the head
               size = w,
               weight = 1/len(faces[1])
             )
@@ -207,7 +207,7 @@ def image_corner_points(im, settings):
         np_im,
         maxCorners=100,
         qualityLevel=0.04,
-        minDistance=min(grayscale.width, grayscale.height)*0.03,
+        minDistance=min(grayscale.width, grayscale.height)*0.06,
         useHarrisDetector=False,
     )
 
@@ -256,8 +256,8 @@ def image_entropy_points(im, settings):
 
 def image_entropy(im):
     # greyscale image entropy
-    band = np.asarray(im.convert("L"))
-    # band = np.asarray(im.convert("1"), dtype=np.uint8)
+    # band = np.asarray(im.convert("L"))
+    band = np.asarray(im.convert("1"), dtype=np.uint8)
     hist, _ = np.histogram(band, bins=range(0, 256))
     hist = hist[hist > 0]
     return -np.log2(hist / hist.sum()).sum()

@@ -1270,7 +1270,7 @@ def create_ui(wrap_gradio_gpu_call):
 
                     with gr.Row(visible=False) as process_focal_crop_row:
                         process_focal_crop_face_weight = gr.Slider(label='Focal point face weight', value=0.9, minimum=0.0, maximum=1.0, step=0.05)
-                        process_focal_crop_entropy_weight = gr.Slider(label='Focal point entropy weight', value=0.3, minimum=0.0, maximum=1.0, step=0.05)
+                        process_focal_crop_entropy_weight = gr.Slider(label='Focal point entropy weight', value=0.15, minimum=0.0, maximum=1.0, step=0.05)
                         process_focal_crop_edges_weight = gr.Slider(label='Focal point edges weight', value=0.5, minimum=0.0, maximum=1.0, step=0.05)
                         process_focal_crop_debug = gr.Checkbox(label='Create debug image')
 
