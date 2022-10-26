@@ -137,6 +137,13 @@ https://github.com/some9000/StylePile
 
 Mix and match keywords to quickly get different results without wasting a lot of time writing prompts.
 
+## XYZ Plot Script
+https://github.com/xrpgame/xyz_plot_script
+
+Generates an .html file to interactively browse the imageset. Use the scroll wheel or arrow keys to move in the Z dimension.
+
+Check out the Readme for installation/samples!
+
 ## Booru tag autocompletion
 https://github.com/DominikDoom/a1111-sd-webui-tagcomplete
 
