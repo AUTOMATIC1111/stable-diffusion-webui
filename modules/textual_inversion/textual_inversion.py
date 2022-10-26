@@ -380,7 +380,7 @@ Last saved image: {html.escape(last_saved_image)}<br/>
     embedding.cached_checksum = None
     # Before saving for the last time, change name back to base name (as opposed to the save_embedding_every step-suffixed naming convention).
     embedding.name = embedding_name
-    filename = os.path.join(shared.cmd_opts.embedding_dir, f'{embedding.name}.pt')
+    filename = os.path.join(shared.cmd_opts.embeddings_dir, f'{embedding.name}.pt')
     embedding.save(filename)
 
     return embedding, filename
