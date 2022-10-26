@@ -3,6 +3,8 @@ from concurrent.futures import ProcessPoolExecutor
 import multiprocessing
 import time
 import re
+import csv
+from PIL import Image
 
 re_special = re.compile(r'([\\()])')
 
@@ -18,6 +20,40 @@ def get_deepbooru_tags(pil_image):
     finally:
         release_process()
 
+def batch_get_deepbooru_tags(input_dir, output_dir):
+    from modules import shared
+
+    response = None
+    table = []
+
+    try:
+        create_deepbooru_process(shared.opts.interrogate_deepbooru_score_threshold, create_deepbooru_opts())
+        
+        files = os.listdir(input_dir)
+        for imagename in files:
+            if not imagename.lower().endswith(('.png', '.jpg', '.jpeg', '.tiff', '.bmp', '.gif')):
+                continue
+
+            cur_row = [imagename]
+            image = Image.open(os.path.join(input_dir, imagename))
+
+            cur_prompt = get_tags_from_process(image)
+
+            cur_row.append(cur_prompt)
+            table.append(cur_row)
+
+    finally:
+        release_process()
+
+    actual_output = output_dir if output_dir else input_dir
+    response = f"Processed {len(table)} images, saving csv to {actual_output}/batch_prompts.csv..."
+    print(response)
+    file = open(os.path.join(actual_output, 'batch_prompts.csv'), 'w+', newline ='')
+    with file:
+        write = csv.writer(file)
+        write.writerows(table)
+
+    return response
 
 OPT_INCLUDE_RANKS = "include_ranks"
 def create_deepbooru_opts():

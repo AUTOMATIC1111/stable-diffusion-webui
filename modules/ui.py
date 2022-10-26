@@ -32,7 +32,7 @@ from modules.paths import script_path
 from modules.shared import opts, cmd_opts, restricted_opts
 
 if cmd_opts.deepdanbooru:
-    from modules.deepbooru import get_deepbooru_tags
+    from modules.deepbooru import get_deepbooru_tags, batch_get_deepbooru_tags
 
 import modules.codeformer_model
 import modules.generation_parameters_copypaste
@@ -397,6 +397,9 @@ def interrogate_deepbooru(image):
     prompt = get_deepbooru_tags(image)
     return gr_show(True) if prompt is None else prompt
 
+def batch_interrogate_deepbooru(input_dir, output_dir):
+    response = batch_get_deepbooru_tags(input_dir, output_dir)
+    return gr_show(True) if response is None else response
 
 def create_seed_inputs():
     with gr.Row():
@@ -869,7 +872,10 @@ def create_ui(wrap_gradio_gpu_call):
                         gr.HTML(f"<p class=\"text-gray-500\">Process images in a directory on the same machine where the server is running.<br>Use an empty output directory to save pictures normally instead of writing to the output directory.{hidden}</p>")
                         img2img_batch_input_dir = gr.Textbox(label="Input directory", **shared.hide_dirs)
                         img2img_batch_output_dir = gr.Textbox(label="Output directory", **shared.hide_dirs)
-                        img2img_batch_clip = gr.Button('Interrogate with CLIP', elem_id="img2img_batch_interrogate")
+                        with gr.Row():
+                            img2img_batch_clip = gr.Button('Interrogate input dir. with CLIP', elem_id="img2img_batch_interrogate")
+                            if cmd_opts.deepdanbooru:
+                                img2img_batch_deepbooru = gr.Button('Interrogate input dir. with Deepbooru', elem_id="img2img_batch_interrogate_booru")
 
                 with gr.Row():
                     resize_mode = gr.Radio(label="Resize mode", elem_id="resize_mode", show_label=False, choices=["Just resize", "Crop and resize", "Resize and fill"], type="index", value="Just resize")
@@ -1014,6 +1020,11 @@ def create_ui(wrap_gradio_gpu_call):
                     fn=interrogate_deepbooru,
                     inputs=[init_img],
                     outputs=[img2img_prompt],
+                )
+                img2img_batch_deepbooru.click(
+                    fn=batch_interrogate_deepbooru,
+                    inputs=[img2img_batch_input_dir, img2img_batch_output_dir],
+                    outputs=[]
                 )
 
             save.click(
