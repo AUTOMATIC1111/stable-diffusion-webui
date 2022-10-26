@@ -526,18 +526,13 @@ Then, you will need to add the RTL counterpart only if needed in the rtl section
     :host {
         direction: rtl;
     }
-    .file-preview,
-    .gr-text-input,
-    .output-html:has(.performance),
-    #txt2img_style_index > label > select,
-    #txt2img_style2_index > label > select,
-    #img2img_style_index > label > select,
-    #img2img_style2_index > label > select,
-    #setting_sd_model_checkpoint > label > select,
-    #modelmerger_primary_model_name > label > select,
-    #modelmerger_secondary_model_name > label > select,
-    #modelmerger_tertiary_model_name > label > select {
+    select, .file-preview, .gr-text-input, .output-html:has(.performance) {
         direction: ltr;
+    }
+    #script_list > label > select,
+    #x_type > label > select,
+    #y_type > label > select {
+        direction: rtl;
     }
     .gr-radio, .gr-checkbox{
         margin-left: 0.25em;
