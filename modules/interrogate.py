@@ -234,9 +234,10 @@ class InterrogateModels:
 
         self.unload()
 
-        response = f"Processed {len(table)} images, saving csv to {output_dir}/clip.csv..."
+        actual_output = output_dir if output_dir else input_dir
+        response = f"Processed {len(table)} images, saving csv to {actual_output}/batch_prompts.csv..."
         print(response)
-        file = open(os.path.join(output_dir if output_dir else input_dir, 'clip.csv'), 'w+', newline ='')
+        file = open(os.path.join(actual_output, 'batch_prompts.csv'), 'w+', newline ='')
         with file:
             write = csv.writer(file)
             write.writerows(table)
