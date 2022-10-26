@@ -54,7 +54,7 @@ class Api:
         
         b64images = list(map(encode_pil_to_base64, processed.images))
         
-        return TextToImageResponse(images=b64images, parameters=vars(txt2imgreq), info=processed.info)
+        return TextToImageResponse(images=b64images, parameters=vars(txt2imgreq), info=processed.js())
 
     def img2imgapi(self, img2imgreq: StableDiffusionImg2ImgProcessingAPI):
         sampler_index = sampler_to_index(img2imgreq.sampler_index)
@@ -93,8 +93,12 @@ class Api:
             processed = process_images(p)
         
         b64images = list(map(encode_pil_to_base64, processed.images))
+
+        if (not img2imgreq.include_init_images):
+            img2imgreq.init_images = None
+            img2imgreq.mask = None
        
-        return ImageToImageResponse(images=b64images, parameters=vars(img2imgreq), info=processed.info)
+        return ImageToImageResponse(images=b64images, parameters=vars(img2imgreq), info=processed.js())
 
     def extras_single_image_api(self, req: ExtrasSingleImageRequest):
         reqDict = setUpscalers(req)
