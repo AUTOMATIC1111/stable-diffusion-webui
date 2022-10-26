@@ -42,7 +42,7 @@ class HypernetworkModule(torch.nn.Module):
             linears.append(torch.nn.Linear(int(dim * layer_structure[i]), int(dim * layer_structure[i+1])))
 
             # Add an activation func except last layer
-            if activation_func == "linear" or activation_func is None or i >= len(layer_structure) - 3:
+            if activation_func == "linear" or activation_func is None or i >= len(layer_structure) - 2:
                 pass
             elif activation_func in self.activation_dict:
                 linears.append(self.activation_dict[activation_func]())
@@ -54,7 +54,7 @@ class HypernetworkModule(torch.nn.Module):
                 linears.append(torch.nn.LayerNorm(int(dim * layer_structure[i+1])))
 
             # Add dropout except last layer
-            if use_dropout and i < len(layer_structure) - 3:
+            if use_dropout and i < len(layer_structure) - 2:
                 linears.append(torch.nn.Dropout(p=0.3))
 
         self.linear = torch.nn.Sequential(*linears)
