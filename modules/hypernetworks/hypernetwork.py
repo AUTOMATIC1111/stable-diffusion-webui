@@ -35,7 +35,7 @@ class HypernetworkModule(torch.nn.Module):
     activation_dict.update({cls_name.lower(): cls_obj for cls_name, cls_obj in inspect.getmembers(torch.nn.modules.activation) if inspect.isclass(cls_obj) and cls_obj.__module__ == 'torch.nn.modules.activation'})
 
     def __init__(self, dim, state_dict=None, layer_structure=None, activation_func=None, weight_init='Normal',
-                 add_layer_norm=False, use_dropout=False, activate_output=False, **kwargs):
+                 add_layer_norm=False, use_dropout=False, activate_output=False, last_layer_dropout=True):
         super().__init__()
 
         assert layer_structure is not None, "layer_structure must not be None"
@@ -61,7 +61,7 @@ class HypernetworkModule(torch.nn.Module):
                 linears.append(torch.nn.LayerNorm(int(dim * layer_structure[i+1])))
 
             # Add dropout except last layer
-            if 'last_layer_dropout' in kwargs and kwargs['last_layer_dropout'] and use_dropout and i < len(layer_structure) - 2:
+            if use_dropout and (i < len(layer_structure) - 3 or last_layer_dropout and i < len(layer_structure) - 2):
                 linears.append(torch.nn.Dropout(p=0.3))
 
         self.linear = torch.nn.Sequential(*linears)
