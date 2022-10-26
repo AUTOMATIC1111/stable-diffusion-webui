@@ -77,9 +77,8 @@ def get_correct_sampler(p):
 class StableDiffusionProcessing():
     """
     The first set of paramaters: sd_models -> do_not_reload_embeddings represent the minimum required to create a StableDiffusionProcessing
-    
     """
-    def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt: str="", styles: List[str]=None, seed: int=-1, subseed: int=-1, subseed_strength: float=0, seed_resize_from_h: int=-1, seed_resize_from_w: int=-1, seed_enable_extras: bool=True, sampler_index: int=0, batch_size: int=1, n_iter: int=1, steps:int =50, cfg_scale:float=7.0, width:int=512, height:int=512, restore_faces:bool=False, tiling:bool=False, do_not_save_samples:bool=False, do_not_save_grid:bool=False, extra_generation_params: Dict[Any,Any]=None, overlay_images: Any=None, negative_prompt: str=None, eta: float =None, do_not_reload_embeddings: bool=False, denoising_strength: float = 0, ddim_discretize: str = "uniform", s_churn: float = 0.0, s_tmax: float = None, s_tmin: float = 0.0, s_noise: float = 1.0):
+    def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt: str = "", styles: List[str] = None, seed: int = -1, subseed: int = -1, subseed_strength: float = 0, seed_resize_from_h: int = -1, seed_resize_from_w: int = -1, seed_enable_extras: bool = True, sampler_index: int = 0, batch_size: int = 1, n_iter: int = 1, steps: int = 50, cfg_scale: float = 7.0, width: int = 512, height: int = 512, restore_faces: bool = False, tiling: bool = False, do_not_save_samples: bool = False, do_not_save_grid: bool = False, extra_generation_params: Dict[Any, Any] = None, overlay_images: Any = None, negative_prompt: str = None, eta: float = None, do_not_reload_embeddings: bool = False, denoising_strength: float = 0, ddim_discretize: str = None, s_churn: float = 0.0, s_tmax: float = None, s_tmin: float = 0.0, s_noise: float = 1.0, override_settings: Dict[str, Any] = None):
         self.sd_model = sd_model
         self.outpath_samples: str = outpath_samples
         self.outpath_grids: str = outpath_grids
@@ -109,13 +108,14 @@ class StableDiffusionProcessing():
         self.do_not_reload_embeddings = do_not_reload_embeddings
         self.paste_to = None
         self.color_corrections = None
-        self.denoising_strength: float = 0
+        self.denoising_strength: float = denoising_strength
         self.sampler_noise_scheduler_override = None
-        self.ddim_discretize = opts.ddim_discretize
+        self.ddim_discretize = ddim_discretize or opts.ddim_discretize
         self.s_churn = s_churn or opts.s_churn
         self.s_tmin = s_tmin or opts.s_tmin
         self.s_tmax = s_tmax or float('inf')  # not representable as a standard ui option
         self.s_noise = s_noise or opts.s_noise
+        self.override_settings = {k: v for k, v in (override_settings or {}).items() if k not in shared.restricted_opts}
 
         if not seed_enable_extras:
             self.subseed = -1
@@ -128,7 +128,6 @@ class StableDiffusionProcessing():
         self.all_prompts = None
         self.all_seeds = None
         self.all_subseeds = None
-
 
     def init(self, all_prompts, all_seeds, all_subseeds):
         pass
@@ -351,6 +350,22 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration
 
 
 def process_images(p: StableDiffusionProcessing) -> Processed:
+    stored_opts = {k: opts.data[k] for k in p.override_settings.keys()}
+
+    try:
+        for k, v in p.override_settings.items():
+            opts.data[k] = v  # we don't call onchange for simplicity which makes changing model, hypernet impossible
+
+        res = process_images_inner(p)
+
+    finally:
+        for k, v in stored_opts.items():
+            opts.data[k] = v
+
+    return res
+
+
+def process_images_inner(p: StableDiffusionProcessing) -> Processed:
     """this is the main loop that both txt2img and img2img use; it calls func_init once inside all the scopes and func_sample once per batch"""
 
     if type(p.prompt) == list:
