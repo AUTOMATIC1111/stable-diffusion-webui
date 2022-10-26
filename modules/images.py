@@ -277,7 +277,7 @@ invalid_filename_chars = '<>:"/\\|?*\n'
 invalid_filename_prefix = ' '
 invalid_filename_postfix = ' .'
 re_nonletters = re.compile(r'[\s' + string.punctuation + ']+')
-re_pattern = re.compile(r"([^\[\]]+|\[([^]]+)]|[\[\]]*)")
+re_pattern = re.compile(r"(.*?)(?:\[([^\[\]]+)\]|$)")
 re_pattern_arg = re.compile(r"(.*)<([^>]*)>$")
 max_filename_part_length = 128
 
@@ -343,7 +343,7 @@ class FilenameGenerator:
     def datetime(self, *args):
         time_datetime = datetime.datetime.now()
 
-        time_format = args[0] if len(args) > 0 else self.default_time_format
+        time_format = args[0] if len(args) > 0 and args[0] != "" else self.default_time_format
         try:
             time_zone = pytz.timezone(args[1]) if len(args) > 1 else None
         except pytz.exceptions.UnknownTimeZoneError as _:
@@ -362,9 +362,9 @@ class FilenameGenerator:
 
         for m in re_pattern.finditer(x):
             text, pattern = m.groups()
+            res += text
 
             if pattern is None:
-                res += text
                 continue
 
             pattern_args = []
@@ -385,12 +385,9 @@ class FilenameGenerator:
                     print(f"Error adding [{pattern}] to filename", file=sys.stderr)
                     print(traceback.format_exc(), file=sys.stderr)
 
-                if replacement is None:
-                    res += f'[{pattern}]'
-                else:
+                if replacement is not None:
                     res += str(replacement)
-
-                continue
+                    continue
 
             res += f'[{pattern}]'
 
