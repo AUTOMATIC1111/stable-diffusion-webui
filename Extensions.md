@@ -61,3 +61,15 @@ You can add the artist name to the clipboard by clicking on it. (thanks for the 
 
 ![picture](https://user-images.githubusercontent.com/54370274/197829512-e7d30d44-2697-4ecd-b9a7-3665217918c7.jpg)
 
+## Aesthetic Image Scorer
+https://github.com/tsngo/stable-diffusion-webui-aesthetic-image-scorer
+
+Extension for https://github.com/AUTOMATIC1111/stable-diffusion-webui
+
+Calculates aesthetic score for generated images using [CLIP+MLP Aesthetic Score Predictor](https://github.com/christophschuhmann/improved-aesthetic-predictor) based on [Chad Scorer](https://github.com/grexzen/SD-Chad/blob/main/chad_scorer.py)
+
+See [Discussions](https://github.com/AUTOMATIC1111/stable-diffusion-webui/discussions/1831)
+
+Saves score to windows tags with other options planned
+
+![picture](https://github.com/tsngo/stable-diffusion-webui-aesthetic-image-scorer/blob/main/tag_group_by.png)
