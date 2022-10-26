@@ -47,3 +47,17 @@ https://github.com/deforum-art/deforum-for-automatic1111-webui
 The official port of Deforum, an extensive script for 2D and 3D animations, supporting keyframable sequences, dynamic math parameters (even inside the prompts), dynamic masking, depth estimation and warping.
 
 ![ui](https://user-images.githubusercontent.com/20920490/197619558-c088a329-3672-4f0a-8685-cf539996ad1e.png)
+
+## Artists to study
+https://github.com/camenduru/stable-diffusion-webui-artists-to-study
+
+https://artiststostudy.pages.dev/ adapted to an extension for [web ui](https://github.com/AUTOMATIC1111/stable-diffusion-webui).
+
+To install it, clone the repo into the `extensions` directory and restart the web ui:
+
+`git clone https://github.com/camenduru/stable-diffusion-webui-artists-to-study`
+
+You can add the artist name to the clipboard by clicking on it. (thanks for the idea @gmaciocci)
+
+![picture](https://user-images.githubusercontent.com/54370274/197829512-e7d30d44-2697-4ecd-b9a7-3665217918c7.jpg)
+
