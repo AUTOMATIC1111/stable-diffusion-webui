@@ -365,6 +365,10 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
         shared.sd_model.first_stage_model.to(devices.cpu)
 
     hypernetwork = shared.loaded_hypernetwork
+    checkpoint = sd_models.select_checkpoint()
+    hypernetwork.sd_checkpoint = checkpoint.hash
+    hypernetwork.sd_checkpoint_name = checkpoint.model_name
+
     weights = hypernetwork.weights()
     for weight in weights:
         weight.requires_grad = True
@@ -503,10 +507,6 @@ Last saved image: {html.escape(last_saved_image)}<br/>
 """
         
     report_statistics(loss_dict)
-    checkpoint = sd_models.select_checkpoint()
-
-    hypernetwork.sd_checkpoint = checkpoint.hash
-    hypernetwork.sd_checkpoint_name = checkpoint.model_name
     # Before saving for the last time, change name back to the base name (as opposed to the save_hypernetwork_every step-suffixed naming convention).
     hypernetwork.name = hypernetwork_name
     filename = os.path.join(shared.cmd_opts.hypernetwork_dir, f'{hypernetwork.name}.pt')
