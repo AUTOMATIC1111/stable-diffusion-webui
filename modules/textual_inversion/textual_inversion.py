@@ -7,6 +7,7 @@ import tqdm
 import html
 import datetime
 import csv
+import random
 
 from PIL import Image, PngImagePlugin
 
@@ -285,7 +286,8 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
 
         epoch_num = embedding.step // len(ds)
         epoch_step = embedding.step - (epoch_num * len(ds)) + 1
-
+        if embedding.step > 0 and embedding.step % len(ds) == 0:
+            random.shuffle(entries)
         pbar.set_description(f"[Epoch {epoch_num}: {epoch_step}/{len(ds)}]loss: {losses.mean():.7f}")
 
         if embedding.step > 0 and embedding_dir is not None and embedding.step % save_embedding_every == 0:
