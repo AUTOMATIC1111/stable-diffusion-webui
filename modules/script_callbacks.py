@@ -90,7 +90,7 @@ def on_ui_settings(callback):
     add_callback(callbacks_ui_settings, callback)
 
 
-def on_save_imaged(callback):
+def on_image_saved(callback):
     """register a function to be called after modules.images.save_image is called.
     The callback is called with three arguments:
         - p - procesing object (or a dummy object with same fields if the image is saved using save button)
