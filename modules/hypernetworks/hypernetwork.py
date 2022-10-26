@@ -334,7 +334,7 @@ def save_settings_to_file(num_of_dataset_images, h, hypernetwork_name, learn_rat
     add_layer_norm = h.add_layer_norm
     use_dropout = h.use_dropout
     names = ('num_of_dataset_images', 'sd_checkpoint', 'sd_checkpoint_name', 'layer_structure', 'activation_func', 'weight_init', 'add_layer_norm', 'use_dropout', 'hypernetwork_name', 'learn_rate', 'batch_size', 'data_root', 'log_directory', 'training_width', 'training_height', 'steps', 'create_image_every', 'save_hypernetwork_every', 'template_file', 'preview_from_txt2img', 'preview_prompt', 'preview_negative_prompt', 'preview_steps', 'preview_sampler_index', 'preview_cfg_scale', 'preview_seed', 'preview_width', 'preview_height')
-    hypernet_settings_str = "datetime: " + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + "\n"
+    hypernet_settings_str = "datetime: " + datetime.datetime.now().strftime("%Y-%m-%d %H %M %S") + "\n"
     for key in names:
         value = str(eval(key))
         # Remove colons (They'd confuse parsers of settings.txt).
