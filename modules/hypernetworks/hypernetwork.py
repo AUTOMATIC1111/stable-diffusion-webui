@@ -190,7 +190,7 @@ class Hypernetwork:
         print(f"Weight initialization is {self.weight_init}")
         self.add_layer_norm = state_dict.get('is_layer_norm', False)
         print(f"Layer norm is set to {self.add_layer_norm}")
-        self.use_dropout = state_dict.get('use_dropout', False
+        self.use_dropout = state_dict.get('use_dropout', False)
         print(f"Dropout usage is set to {self.use_dropout}" )
         self.activate_output = state_dict.get('activate_output', True)
 
