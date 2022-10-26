@@ -453,12 +453,6 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
                 samples_ddim = p.sample(conditioning=c, unconditional_conditioning=uc, seeds=seeds, subseeds=subseeds, subseed_strength=p.subseed_strength)
 
 
-            if state.interrupted or state.skipped:
-
-                # if we are interruped, sample returns just noise
-                # use the image collected previously in sampler loop
-                samples_ddim = shared.state.current_latent
-
             samples_ddim = samples_ddim.to(devices.dtype_vae)
 
             if p.decode_batch_one_by_one:
