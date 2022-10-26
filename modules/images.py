@@ -451,17 +451,6 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     """
     namegen = FilenameGenerator(p, seed, prompt)
 
-    if extension == 'png' and opts.enable_pnginfo and info is not None:
-        pnginfo = PngImagePlugin.PngInfo()
-
-        if existing_info is not None:
-            for k, v in existing_info.items():
-                pnginfo.add_text(k, str(v))
-
-        pnginfo.add_text(pnginfo_section_name, info)
-    else:
-        pnginfo = None
-
     if save_to_dirs is None:
         save_to_dirs = (grid and opts.grid_save_to_dirs) or (not grid and opts.save_to_dirs and not no_prompt)
 
@@ -489,19 +478,27 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
         if add_number:
             basecount = get_next_sequence_number(path, basename)
             fullfn = None
-            fullfn_without_extension = None
             for i in range(500):
                 fn = f"{basecount + i:05}" if basename == '' else f"{basename}-{basecount + i:04}"
                 fullfn = os.path.join(path, f"{fn}{file_decoration}.{extension}")
-                fullfn_without_extension = os.path.join(path, f"{fn}{file_decoration}")
                 if not os.path.exists(fullfn):
                     break
         else:
             fullfn = os.path.join(path, f"{file_decoration}.{extension}")
-            fullfn_without_extension = os.path.join(path, file_decoration)
     else:
         fullfn = os.path.join(path, f"{forced_filename}.{extension}")
-        fullfn_without_extension = os.path.join(path, forced_filename)
+
+    pnginfo = existing_info or {}
+    if info is not None:
+        pnginfo[pnginfo_section_name] = info
+
+    params = script_callbacks.ImageSaveParams(image, p, fullfn, pnginfo)
+    script_callbacks.before_image_saved_callback(params)
+
+    image = params.image
+    fullfn = params.filename
+    info = params.pnginfo.get(pnginfo_section_name, None)
+    fullfn_without_extension, extension = os.path.splitext(params.filename)
 
     def exif_bytes():
         return piexif.dump({
@@ -510,12 +507,20 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
             },
         })
 
-    if extension.lower() in ("jpg", "jpeg", "webp"):
+    if extension.lower() == '.png':
+        pnginfo_data = PngImagePlugin.PngInfo()
+        for k, v in params.pnginfo.items():
+            pnginfo_data.add_text(k, str(v))
+
+        image.save(fullfn, quality=opts.jpeg_quality, pnginfo=pnginfo_data)
+
+    elif extension.lower() in (".jpg", ".jpeg", ".webp"):
         image.save(fullfn, quality=opts.jpeg_quality)
+
         if opts.enable_pnginfo and info is not None:
             piexif.insert(exif_bytes(), fullfn)
     else:
-        image.save(fullfn, quality=opts.jpeg_quality, pnginfo=pnginfo)
+        image.save(fullfn, quality=opts.jpeg_quality)
 
     target_side_length = 4000
     oversize = image.width > target_side_length or image.height > target_side_length
@@ -538,7 +543,8 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     else:
         txt_fullfn = None
 
-    script_callbacks.image_saved_callback(image, p, fullfn, txt_fullfn)
+    script_callbacks.image_saved_callback(params)
+
     return fullfn, txt_fullfn
 
 
