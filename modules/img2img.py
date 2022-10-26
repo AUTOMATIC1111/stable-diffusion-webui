@@ -102,9 +102,10 @@ def img2img(mode: int,
             if srcimg is None:
                 print("Cannot overlay outpaint, did not receive source image.")
             else:
-                if srcimg.startswith("data:image/png;base64,"):
-                    srcimg = srcimg[len("data:image/png;base64,"):]
-                srcimg_b = base64.decodebytes(srcimg.encode('utf-8'))
+                # if srcimg.startswith("data:image/png;base64,"): # Nope.
+                #     srcimg = srcimg[len("data:image/png;base64,"):]
+                # srcimg_b = base64.decodebytes(srcimg.encode('utf-8'))
+                srcimg_b = base64.b64decode(srcimg.split(",")[-1])
                 srcimg_pil = Image.open(io.BytesIO(srcimg_b))
                 if "translateX" in vwt:
                     fparst = vwt.find("(")
