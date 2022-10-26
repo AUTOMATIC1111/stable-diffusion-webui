@@ -280,6 +280,7 @@ input[type="range"]{
     top: 30px;
     padding: 10px;
     height: 454px;
+    backdrop-filter: blur(20px);
 }
 
 #txt2img_preview_img img, #img2img_preview_img img, #ti_preview_img img {
