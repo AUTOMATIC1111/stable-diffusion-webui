@@ -117,6 +117,10 @@ class StableDiffusionProcessing():
         self.s_noise = s_noise or opts.s_noise
         self.override_settings = {k: v for k, v in (override_settings or {}).items() if k not in shared.restricted_opts}
 
+        self.sample_hook = None
+        self.sample_img2img_hook = None
+        self.decode_batch_one_by_one = False
+
         if not seed_enable_extras:
             self.subseed = -1
             self.subseed_strength = 0
@@ -163,6 +167,8 @@ class Processed:
         self.styles = p.styles
         self.job_timestamp = state.job_timestamp
         self.clip_skip = opts.CLIP_stop_at_last_layers
+        
+        self.enable_hr = False
 
         self.eta = p.eta
         self.ddim_discretize = p.ddim_discretize
@@ -180,6 +186,14 @@ class Processed:
         self.all_seeds = all_seeds or [self.seed]
         self.all_subseeds = all_subseeds or [self.subseed]
         self.infotexts = infotexts or [info]
+        
+        self.video = None
+        
+    def video_update(self):
+        if self.video:
+            return {"visible":True, "__type__": "update", "value":self.video}
+        else:
+            return {"visible":False, "__type__": "update", "value":self.video}
 
     def js(self):
         obj = {
@@ -316,6 +330,8 @@ def fix_seed(p):
 
 def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration=0, position_in_batch=0):
     index = position_in_batch + iteration * p.batch_size
+    if index > 0 and len(all_prompts) == 1 and len(all_seeds) == 1:
+        index = 0
 
     clip_skip = getattr(p, 'clip_skip', opts.CLIP_stop_at_last_layers)
 
@@ -345,7 +361,7 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration
     generation_params_text = ", ".join([k if k == v else f'{k}: {generation_parameters_copypaste.quote(v)}' for k, v in generation_params.items() if v is not None])
 
     negative_prompt_text = "\nNegative prompt: " + p.negative_prompt if p.negative_prompt else ""
-
+    
     return f"{all_prompts[index]}{negative_prompt_text}\n{generation_params_text}".strip()
 
 
@@ -451,10 +467,26 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             with devices.autocast():
                 samples_ddim = p.sample(conditioning=c, unconditional_conditioning=uc, seeds=seeds, subseeds=subseeds, subseed_strength=p.subseed_strength)
 
-            samples_ddim = samples_ddim.to(devices.dtype_vae)
-            x_samples_ddim = decode_first_stage(p.sd_model, samples_ddim)
-            x_samples_ddim = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
 
+            if state.interrupted or state.skipped:
+
+                # if we are interruped, sample returns just noise
+                # use the image collected previously in sampler loop
+                samples_ddim = shared.state.current_latent
+
+            samples_ddim = samples_ddim.to(devices.dtype_vae)
+
+            if p.decode_batch_one_by_one:
+                x_samples_ddim = torch.cat([
+                                torch.clamp(
+                                (decode_first_stage(p.sd_model,samples_ddim[i][None]) + 1.0)/2.0
+                                , min=0.0, max=1.0).cpu()
+                                for i in range(samples_ddim.shape[0])
+                                ])
+            else:
+                x_samples_ddim = decode_first_stage(p.sd_model, samples_ddim)
+                x_samples_ddim = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)                    
+                            
             del samples_ddim
 
             if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
@@ -469,10 +501,19 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             for i, x_sample in enumerate(x_samples_ddim):
                 x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
                 x_sample = x_sample.astype(np.uint8)
-
+                if i > 0 and len(seeds) == 1:
+                    seed_i = seeds[0]
+                else:
+                    seed_i = seeds[i]
+                    
+                if i > 0 and len(prompts) == 1:
+                    prompt_i = prompts[0]
+                else:
+                    prompt_i = prompts[i]
+                    
                 if p.restore_faces:
                     if opts.save and not p.do_not_save_samples and opts.save_images_before_face_restoration:
-                        images.save_image(Image.fromarray(x_sample), p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, info=infotext(n, i), p=p, suffix="-before-face-restoration")
+                        images.save_image(Image.fromarray(x_sample), p.outpath_samples, "", seed_i, prompt_i, opts.samples_format, info=infotext(n, i), p=p, suffix="-before-face-restoration")
 
                     devices.torch_gc()
 
@@ -484,13 +525,13 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 if p.color_corrections is not None and i < len(p.color_corrections):
                     if opts.save and not p.do_not_save_samples and opts.save_images_before_color_correction:
                         image_without_cc = apply_overlay(image, p.paste_to, i, p.overlay_images)
-                        images.save_image(image_without_cc, p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, info=infotext(n, i), p=p, suffix="-before-color-correction")
+                        images.save_image(image_without_cc, p.outpath_samples, "", seed_i, prompt_i, opts.samples_format, info=infotext(n, i), p=p, suffix="-before-color-correction")
                     image = apply_color_correction(p.color_corrections[i], image)
 
                 image = apply_overlay(image, p.paste_to, i, p.overlay_images)
 
                 if opts.samples_save and not p.do_not_save_samples:
-                    images.save_image(image, p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, info=infotext(n, i), p=p)
+                    images.save_image(image, p.outpath_samples, "", seed_i, prompt_i, opts.samples_format, info=infotext(n, i), p=p)
 
                 text = infotext(n, i)
                 infotexts.append(text)
@@ -597,6 +638,8 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
         if not self.enable_hr:
             x = create_random_tensors([opt_C, self.height // opt_f, self.width // opt_f], seeds=seeds, subseeds=subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
+            if self.sample_hook is not None:
+                return self.sample_hook(self, x, conditioning, unconditional_conditioning, image_conditioning=self.create_dummy_mask(x))
             samples = self.sampler.sample(self, x, conditioning, unconditional_conditioning, image_conditioning=self.create_dummy_mask(x))
             return samples
 
@@ -637,8 +680,11 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         # GC now before running the next img2img to prevent running out of memory
         x = None
         devices.torch_gc()
-
-        samples = self.sampler.sample_img2img(self, samples, noise, conditioning, unconditional_conditioning, steps=self.steps, image_conditioning=self.create_dummy_mask(samples))
+        
+        if self.sample_img2img_hook is not None:
+            samples = self.sample_img2img_hook(self, samples, noise, conditioning, unconditional_conditioning, steps=self.steps, image_conditioning=self.create_dummy_mask(samples))
+        else:
+            samples = self.sampler.sample_img2img(self, samples, noise, conditioning, unconditional_conditioning, steps=self.steps, image_conditioning=self.create_dummy_mask(samples))
 
         return samples
 
@@ -801,8 +847,13 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
     def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength):
         x = create_random_tensors([opt_C, self.height // opt_f, self.width // opt_f], seeds=seeds, subseeds=subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
+        
+        sample_img2img_func = self.sampler.sample_img2img
+        if self.sample_img2img_hook is not None:
+            sample_img2img_func = self.sample_img2img_hook
+            
+        samples = sample_img2img_func(self, self.init_latent, x, conditioning, unconditional_conditioning, image_conditioning=self.image_conditioning)
 
-        samples = self.sampler.sample_img2img(self, self.init_latent, x, conditioning, unconditional_conditioning, image_conditioning=self.image_conditioning)
 
         if self.mask is not None:
             samples = samples * self.nmask + self.init_latent * self.mask

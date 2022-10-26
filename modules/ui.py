@@ -29,7 +29,7 @@ import gradio.routes
 from modules import sd_hijack, sd_models, localization, script_callbacks
 from modules.paths import script_path
 
-from modules.shared import opts, cmd_opts, restricted_opts
+from modules.shared import opts, cmd_opts, restricted_opts, total_tqdm
 
 if cmd_opts.deepdanbooru:
     from modules.deepbooru import get_deepbooru_tags
@@ -298,7 +298,9 @@ def check_progress_call(id_part):
         progress += shared.state.job_no / shared.state.job_count
     if shared.state.sampling_steps > 0:
         progress += 1 / shared.state.job_count * shared.state.sampling_step / shared.state.sampling_steps
-
+    if total_tqdm.use_for_ui_progress_bar:
+        progress = total_tqdm.progress()
+        
     time_left = calc_time_left( progress, 1, " ETA: ", shared.state.time_left_force_display )
     if time_left != "":
         shared.state.time_left_force_display = True
@@ -680,6 +682,7 @@ def create_ui(wrap_gradio_gpu_call):
                 with gr.Group():
                     txt2img_preview = gr.Image(elem_id='txt2img_preview', visible=False)
                     txt2img_gallery = gr.Gallery(label='Output', show_label=False, elem_id='txt2img_gallery').style(grid=4)
+                    txt2img_video = gr.Video(elem_id='txt2img_video', visible=False)
 
                 with gr.Column():
                     with gr.Row():
@@ -730,6 +733,7 @@ def create_ui(wrap_gradio_gpu_call):
 
                 outputs=[
                     txt2img_gallery,
+                    txt2img_video,
                     generation_info,
                     html_info
                 ],
@@ -898,6 +902,7 @@ def create_ui(wrap_gradio_gpu_call):
                 with gr.Group():
                     img2img_preview = gr.Image(elem_id='img2img_preview', visible=False)
                     img2img_gallery = gr.Gallery(label='Output', show_label=False, elem_id='img2img_gallery').style(grid=4)
+                    img2img_video = gr.Video(elem_id='img2img_video', visible=False)
 
                 with gr.Column():
                     with gr.Row():
@@ -983,6 +988,7 @@ def create_ui(wrap_gradio_gpu_call):
                 ] + custom_inputs,
                 outputs=[
                     img2img_gallery,
+                    img2img_video,
                     generation_info,
                     html_info
                 ],
