@@ -10,7 +10,7 @@ function check_progressbar(id_part, id_progressbar, id_progressbar_span, id_skip
     
     if(opts.show_progress_in_title && progressbar && progressbar.offsetParent){
         if(progressbar.innerText){
-            let newtitle = 'Stable Diffusion - ' + progressbar.innerText
+            let newtitle = progressbar.innerText + ' - Stable Diffusion';
             if(document.title != newtitle){
                 document.title =  newtitle;          
             }
