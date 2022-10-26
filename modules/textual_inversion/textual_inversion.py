@@ -157,6 +157,9 @@ def create_embedding(name, num_vectors_per_token, overwrite_old, init_text='*'):
     cond_model = shared.sd_model.cond_stage_model
     embedding_layer = cond_model.wrapped.transformer.text_model.embeddings
 
+    with devices.autocast():
+        cond_model([""])  # will send cond model to GPU if lowvram/medvram is active
+
     ids = cond_model.tokenizer(init_text, max_length=num_vectors_per_token, return_tensors="pt", add_special_tokens=False)["input_ids"]
     embedded = embedding_layer.token_embedding.wrapped(ids.to(devices.device)).squeeze(0)
     vec = torch.zeros((num_vectors_per_token, embedded.shape[1]), device=devices.device)
