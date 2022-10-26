@@ -204,8 +204,6 @@ class InterrogateModels:
 
                 caption = self.generate_caption(image)
 
-                if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
-                    self.send_blip_to_ram() # sending blip to ram for every image sounds slow but not too sure
                 devices.torch_gc()
 
                 cur_prompt = caption
