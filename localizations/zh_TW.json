@@ -144,7 +144,7 @@
     "Inpaint at full resolution": "以完整解析度進行內補繪製",
     "Inpaint at full resolution padding, pixels": "以完整解析度進行內補繪製 - 填補畫素",
     "Process images in a directory on the same machine where the server is running.": "在伺服器主機上的目錄中處理圖像",
-    "Use an empty output directory to save pictures normally instead of writing to the output directory.": "指定一個空的檔案夾為輸出目錄而非預設的 output 檔案夾為輸出目錄",
+    "Use an empty output directory to save pictures normally instead of writing to the output directory.": "指定一個空的資料夾為輸出目錄而非預設的 output 資料夾為輸出目錄",
     "Disabled when launched with --hide-ui-dir-config.": "啟動 --hide-ui-dir-config 時禁用",
     "Input directory": "輸入目錄",
     "Output directory": "輸出目錄",
