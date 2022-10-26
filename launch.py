@@ -101,7 +101,7 @@ def version_check(commit):
         else:
             print("Not a git clone, can't perform version check.")
     except Exception as e:
-        print("versipm check failed",e)
+        print("version check failed",e)
 
         
 def prepare_enviroment():
