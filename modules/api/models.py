@@ -31,6 +31,7 @@ class ModelDef(BaseModel):
     field_alias: str
     field_type: Any
     field_value: Any
+    field_exclude: bool = False
 
 
 class PydanticModelGenerator:
@@ -78,7 +79,8 @@ class PydanticModelGenerator:
                 field=underscore(fields["key"]), 
                 field_alias=fields["key"], 
                 field_type=fields["type"],
-                field_value=fields["default"]))
+                field_value=fields["default"],
+                field_exclude=fields["exclude"] if "exclude" in fields else False))
 
     def generate_model(self):
         """
@@ -86,7 +88,7 @@ class PydanticModelGenerator:
         from the json and overrides provided at initialization
         """
         fields = {
-            d.field: (d.field_type, Field(default=d.field_value, alias=d.field_alias)) for d in self._model_def
+            d.field: (d.field_type, Field(default=d.field_value, alias=d.field_alias, exclude=d.field_exclude)) for d in self._model_def
         }
         DynamicModel = create_model(self._model_name, **fields)
         DynamicModel.__config__.allow_population_by_field_name = True
@@ -102,5 +104,5 @@ StableDiffusionTxt2ImgProcessingAPI = PydanticModelGenerator(
 StableDiffusionImg2ImgProcessingAPI = PydanticModelGenerator(
     "StableDiffusionProcessingImg2Img", 
     StableDiffusionProcessingImg2Img,
-    [{"key": "sampler_index", "type": str, "default": "Euler"}, {"key": "init_images", "type": list, "default": None}, {"key": "denoising_strength", "type": float, "default": 0.75}, {"key": "mask", "type": str, "default": None}]
+    [{"key": "sampler_index", "type": str, "default": "Euler"}, {"key": "init_images", "type": list, "default": None}, {"key": "denoising_strength", "type": float, "default": 0.75}, {"key": "mask", "type": str, "default": None}, {"key": "include_init_images", "type": bool, "default": False, "exclude" : True}]
 ).generate_model()

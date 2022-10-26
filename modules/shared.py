@@ -84,7 +84,7 @@ parser.add_argument("--ui-debug-mode", action='store_true', help="Don't load mod
 parser.add_argument("--device-id", type=str, help="Select the default CUDA device to use (export CUDA_VISIBLE_DEVICES=0,1,etc might be needed before)", default=None)
 
 cmd_opts = parser.parse_args()
-restricted_opts = [
+restricted_opts = {
     "samples_filename_pattern",
     "directories_filename_pattern",
     "outdir_samples",
@@ -94,7 +94,7 @@ restricted_opts = [
     "outdir_grids",
     "outdir_txt2img_grids",
     "outdir_save",
-]
+}
 
 devices.device, devices.device_interrogate, devices.device_gfpgan, devices.device_swinir, devices.device_esrgan, devices.device_scunet, devices.device_codeformer = \
 (devices.cpu if any(y in cmd_opts.use_cpu for y in [x, 'all']) else devices.get_optimal_device() for x in ['sd', 'interrogate', 'gfpgan', 'swinir', 'esrgan', 'scunet', 'codeformer'])

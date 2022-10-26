@@ -8,8 +8,9 @@ import modules.textual_inversion.textual_inversion
 from modules import devices, sd_hijack, shared
 from modules.hypernetworks import hypernetwork
 
+keys = list(hypernetwork.HypernetworkModule.activation_dict.keys())
 
-def create_hypernetwork(name, enable_sizes, overwrite_old, layer_structure=None, activation_func=None, add_layer_norm=False, use_dropout=False):
+def create_hypernetwork(name, enable_sizes, overwrite_old, layer_structure=None, activation_func=None, weight_init=None, add_layer_norm=False, use_dropout=False):
     # Remove illegal characters from name.
     name = "".join( x for x in name if (x.isalnum() or x in "._- "))
 
@@ -25,6 +26,7 @@ def create_hypernetwork(name, enable_sizes, overwrite_old, layer_structure=None,
         enable_sizes=[int(x) for x in enable_sizes],
         layer_structure=layer_structure,
         activation_func=activation_func,
+        weight_init=weight_init,
         add_layer_norm=add_layer_norm,
         use_dropout=use_dropout,
     )

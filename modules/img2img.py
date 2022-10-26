@@ -39,6 +39,8 @@ def process_batch(p, input_dir, output_dir, args):
             break
 
         img = Image.open(image)
+        # Use the EXIF orientation of photos taken by smartphones.
+        img = ImageOps.exif_transpose(img) 
         p.init_images = [img] * p.batch_size
 
         proc = modules.scripts.scripts_img2img.run(p, *args)
@@ -61,18 +63,24 @@ def img2img(mode: int, prompt: str, negative_prompt: str, prompt_style: str, pro
     is_batch = mode == 2
 
     if is_inpaint:
+        # Drawn mask
         if mask_mode == 0:
             image = init_img_with_mask['image']
             mask = init_img_with_mask['mask']
             alpha_mask = ImageOps.invert(image.split()[-1]).convert('L').point(lambda x: 255 if x > 0 else 0, mode='1')
             mask = ImageChops.lighter(alpha_mask, mask.convert('L')).convert('L')
             image = image.convert('RGB')
+        # Uploaded mask
         else:
             image = init_img_inpaint
             mask = init_mask_inpaint
+    # No mask
     else:
         image = init_img
         mask = None
+
+    # Use the EXIF orientation of photos taken by smartphones.
+    image = ImageOps.exif_transpose(image) 
 
     assert 0. <= denoising_strength <= 1., 'can only work with strength in [0.0, 1.0]'
 
