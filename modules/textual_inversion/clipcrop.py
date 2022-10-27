@@ -78,6 +78,8 @@ class CropClip:
         l = []
         for crop in cropped:
             l.append(Image.fromarray(crop["im"]))
+        if len(l) == 0:
+            l = [image]
         device = shared.device
         # Take out cropped YOLO images, and get the features?
         model, preprocess = clip.load("ViT-B/32", device=device)
