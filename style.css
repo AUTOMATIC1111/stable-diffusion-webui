@@ -314,8 +314,8 @@ input[type="range"]{
 
 .modalControls {
     display: grid;
-    grid-template-columns: 32px auto 1fr 32px;
-    grid-template-areas: "zoom tile space close";
+    grid-template-columns: 32px auto 32px 1fr 32px;
+    grid-template-areas: "zoom tile save space close";
     position: absolute;
     top: 0;
     left: 0;
@@ -333,6 +333,10 @@ input[type="range"]{
     grid-area: zoom;
 }
 
+.modalSave {
+    grid-area: save;
+}
+
 .modalTileImage {
     grid-area: tile;
 }
@@ -346,8 +350,18 @@ input[type="range"]{
   cursor: pointer;
 }
 
+.modalSave {
+    color: white;
+    font-size: 30px;
+    margin-top: 6px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
 .modalClose:hover,
 .modalClose:focus,
+.modalSave:hover,
+.modalSave:focus,
 .modalZoom:hover,
 .modalZoom:focus {
   color: #999;

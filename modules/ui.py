@@ -630,7 +630,7 @@ def create_ui(wrap_gradio_gpu_call):
     import modules.img2img
     import modules.txt2img
 
-
+    
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
         txt2img_prompt, roll, txt2img_prompt_style, txt2img_negative_prompt, txt2img_prompt_style2, submit, _, _, txt2img_prompt_style_apply, txt2img_save_style, txt2img_paste, token_counter, token_button = create_toprow(is_img2img=False)
         dummy_component = gr.Label(visible=False)
@@ -683,7 +683,8 @@ def create_ui(wrap_gradio_gpu_call):
 
                 with gr.Column():
                     with gr.Row():
-                        save = gr.Button('Save')
+                        saveButtonId = 'save_txt2img'
+                        save = gr.Button('Save', elem_id=saveButtonId)
                         send_to_img2img = gr.Button('Send to img2img')
                         send_to_inpaint = gr.Button('Send to inpaint')
                         send_to_extras = gr.Button('Send to extras')
@@ -901,7 +902,8 @@ def create_ui(wrap_gradio_gpu_call):
 
                 with gr.Column():
                     with gr.Row():
-                        save = gr.Button('Save')
+                        saveButtonId = 'save_img2img'
+                        save = gr.Button('Save', elem_id=saveButtonId)
                         img2img_send_to_img2img = gr.Button('Send to img2img')
                         img2img_send_to_inpaint = gr.Button('Send to inpaint')
                         img2img_send_to_extras = gr.Button('Send to extras')
