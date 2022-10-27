@@ -239,6 +239,7 @@
     "A merger of the two checkpoints will be generated in your": "統合されたチェックポイントはあなたの",
     "checkpoint": "checkpoint",
     "directory.": "フォルダに保存されます.",
+    "Merge inpainting model":"修復モデルのマージ",
     "Primary model (A)": "1つめのmodel (A)",
     "Secondary model (B)": "2つめのmodel (B)",
     "Tertiary model (C)": "3つめのmodel (C)",
