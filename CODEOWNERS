@@ -1,3 +1,4 @@
 *       @AUTOMATIC1111
+
 [Localization]
-localizations/ko_KR.json @36DB
+/localizations/*   @36DB
