@@ -148,4 +148,8 @@ def img2img(mode: int, prompt: str, negative_prompt: str, prompt_style: str, pro
     if opts.do_not_show_images:
         processed.images = []
 
+    # Check if output consists of a single discarded image.
+    if shared.state.discarded and not processed.images:
+        generation_info_js = ''
+        processed.info = 'Image successfully discarded.' if processed.batch_size == 1 else 'Images successfully discarded.'
     return processed.images, generation_info_js, plaintext_to_html(processed.info)
