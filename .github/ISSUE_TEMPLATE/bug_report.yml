@@ -44,7 +44,7 @@ body:
     id: commit
     attributes:
       label: Commit where the problem happens
-      description: Which commit are you running ? (copy the **Commit hash** shown in the cmd/terminal when you launch the UI)
+      description: Which commit are you running ? (Do not write *Latest version/repo/commit*, as this means nothing and will have changed by the time we read your issue. Rather, copy the **Commit hash** shown in the cmd/terminal when you launch the UI)
     validations:
       required: true
   - type: dropdown

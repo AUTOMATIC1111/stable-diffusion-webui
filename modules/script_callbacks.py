@@ -9,15 +9,34 @@ def report_exception(c, job):
     print(traceback.format_exc(), file=sys.stderr)
 
 
+class ImageSaveParams:
+    def __init__(self, image, p, filename, pnginfo):
+        self.image = image
+        """the PIL image itself"""
+
+        self.p = p
+        """p object with processing parameters; either StableDiffusionProcessing or an object with same fields"""
+
+        self.filename = filename
+        """name of file that the image would be saved to"""
+
+        self.pnginfo = pnginfo
+        """dictionary with parameters for image's PNG info data; infotext will have the key 'parameters'"""
+
+
 ScriptCallback = namedtuple("ScriptCallback", ["script", "callback"])
 callbacks_model_loaded = []
 callbacks_ui_tabs = []
 callbacks_ui_settings = []
+callbacks_before_image_saved = []
 callbacks_image_saved = []
+
 
 def clear_callbacks():
     callbacks_model_loaded.clear()
     callbacks_ui_tabs.clear()
+    callbacks_ui_settings.clear()
+    callbacks_before_image_saved.clear()
     callbacks_image_saved.clear()
 
 
@@ -49,10 +68,18 @@ def ui_settings_callback():
             report_exception(c, 'ui_settings_callback')
 
 
-def image_saved_callback(image, p, fullfn, txt_fullfn):
+def before_image_saved_callback(params: ImageSaveParams):
     for c in callbacks_image_saved:
         try:
-            c.callback(image, p, fullfn, txt_fullfn)
+            c.callback(params)
+        except Exception:
+            report_exception(c, 'before_image_saved_callback')
+
+
+def image_saved_callback(params: ImageSaveParams):
+    for c in callbacks_image_saved:
+        try:
+            c.callback(params)
         except Exception:
             report_exception(c, 'image_saved_callback')
 
@@ -62,7 +89,6 @@ def add_callback(callbacks, fun):
     filename = stack[0].filename if len(stack) > 0 else 'unknown file'
 
     callbacks.append(ScriptCallback(filename, fun))
-
 
 
 def on_model_loaded(callback):
@@ -90,11 +116,17 @@ def on_ui_settings(callback):
     add_callback(callbacks_ui_settings, callback)
 
 
-def on_save_imaged(callback):
-    """register a function to be called after modules.images.save_image is called.
-    The callback is called with three arguments:
-        - p - procesing object (or a dummy object with same fields if the image is saved using save button)
-        - fullfn - image filename
-        - txt_fullfn - text file with parameters; may be None
+def on_before_image_saved(callback):
+    """register a function to be called before an image is saved to a file.
+    The callback is called with one argument:
+        - params: ImageSaveParams - parameters the image is to be saved with. You can change fields in this object.
+    """
+    add_callback(callbacks_before_image_saved, callback)
+
+
+def on_image_saved(callback):
+    """register a function to be called after an image is saved to a file.
+    The callback is called with one argument:
+        - params: ImageSaveParams - parameters the image was saved with. Changing fields in this object does nothing.
     """
     add_callback(callbacks_image_saved, callback)
