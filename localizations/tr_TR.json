@@ -188,6 +188,7 @@
     "A merger of the two checkpoints will be generated in your": "İki kontrol noktasının bir birleşimi sizin kontrol noktanızda oluşturulacaktır.",
     "checkpoint": "kontrol noktası",
     "directory.": "dizin.",
+    "Merge inpainting model": "İç boyama modelini birleştir",
     "Primary model (A)": "Birincil model (A)",
     "Secondary model (B)": "İkincil model (B)",
     "Tertiary model (C)": "Üçüncü model (C)",
