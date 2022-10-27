@@ -1,10 +1,8 @@
-import os
-from PIL import Image, ImageOps
 import math
-import platform
-import sys
+import os
+
 import tqdm
-import time
+from PIL import Image, ImageOps
 
 from modules import shared, images
 from modules.paths import models_path
@@ -158,54 +156,39 @@ def preprocess_work(process_src, process_dst, process_width, process_height, pre
                 save_pic(splitted, index, existing_caption=existing_caption)
             process_default_resize = False
         if smart_crop:
-            smart_failed = False
             im_data = clipseg.get_center(img)
-            print(f"Testing: {im_data}")
             crop_width = im_data[1] - im_data[0]
             center_x = im_data[0] + (crop_width / 2)
             crop_height = im_data[3] - im_data[2]
             center_y = im_data[2] + (crop_height / 2)
             crop_ratio = crop_width / crop_height
             dest_ratio = width / height
-            print(f"Dimensions are {crop_width} x {crop_height}")
             tgt_width = crop_width
             tgt_height = crop_height
+
             if crop_ratio != dest_ratio:
                 if crop_width > crop_height:
-                    print("Scale to width")
-                    if dest_ratio < 1:
-                        tgt_width = crop_height / dest_ratio
-                        tgt_height = crop_height
-                        if tgt_width > img.width:
-                            tgt_width = crop_width
-                            tgt_height = crop_width * dest_ratio
-                    else:
-                        tgt_height = crop_width * dest_ratio
-                        tgt_width = crop_width
-                        if tgt_width > img.width:
-                            tgt_height = crop_height
-                            tgt_width = crop_height / dest_ratio
+                    tgt_height = crop_width / dest_ratio
+                    tgt_width = crop_width
                 else:
-                    if dest_ratio < 1:
-                        tgt_width = crop_width
-                        tgt_height = crop_width * dest_ratio
-                        if tgt_height > img.height:
-                            tgt_height = crop_height
-                            tgt_width = crop_height * dest_ratio
+                    tgt_width = crop_height / dest_ratio
+                    tgt_height = crop_height
+                # Reverse the above if dest is too big
+                if tgt_width > img.width or tgt_height > img.height:
+                    if tgt_width > img.width:
+                        tgt_width = img.width
+                        tgt_height = tgt_width / dest_ratio
                     else:
-                        tgt_width = crop_height * dest_ratio
-                        tgt_height = crop_height
-                        if tgt_width > img.width:
-                            tgt_width = crop_width
-                            tgt_height = crop_width * dest_ratio
-            print(f"Targeting {tgt_width} x {tgt_height}")
+                        tgt_height = img.height
+                        tgt_width = tgt_height / dest_ratio
+            tgt_height = int(tgt_height)
+            tgt_width = int(tgt_width)
             left = max(center_x - (tgt_width / 2), 0)
             right = min(center_x + (tgt_width / 2), img.width)
             top = max(center_y - (tgt_height / 2), 0)
             bottom = min(center_y + (tgt_height / 2), img.height)
             img = img.crop((left, top, right, bottom))
             process_default_resize = True
-            print("Smart cropped")
 
         elif process_focal_crop and img.height != img.width:
 

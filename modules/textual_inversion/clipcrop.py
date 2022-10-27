@@ -39,7 +39,6 @@ def interrogate_image(image: Image):
     shared.opts.interrogate_clip_max_length = prev_max
     shared.opts.interrogate_use_builtin_artists = prev_artists
 
-    print(f"Prompt: {prompt}")
     return prompt
 
 
@@ -58,11 +57,10 @@ def find_position(parent: Image, child: Image):
 class CropClip:
     def __init__(self):
         # Model
-        model_name = 'yolov5s.pt'
-        model_url = 'https://github.com/ultralytics/yolov5/releases/download/v6.2/yolov5s.pt'
+        model_name = 'yolov5m6.pt'
+        model_url = 'https://github.com/ultralytics/yolov5/releases/download/v6.2/yolov5m6.pt'
         model_dir = os.path.join(modules.paths.models_path, "yolo")
         model_path = modelloader.load_models(model_dir, model_url, None, '.pt', model_name)
-        print(f"Model path: {model_path}")
         self.model = torch.hub.load('ultralytics/yolov5', 'custom', model_path[0])
         # Prevent BLIP crossfire breakage
         del sys.modules['models']
