@@ -2,6 +2,7 @@ import math
 import os
 import sys
 import traceback
+import csv
 
 import numpy as np
 from PIL import Image, ImageOps, ImageChops
@@ -16,10 +17,10 @@ import modules.images as images
 import modules.scripts
 
 
-def process_batch(p, input_dir, output_dir, args):
+def process_batch(p, input_dir, output_dir, args, use_prompts_from_csv):
     processing.fix_seed(p)
 
-    images = [file for file in [os.path.join(input_dir, x) for x in os.listdir(input_dir)] if os.path.isfile(file)]
+    images = [file for file in [os.path.join(input_dir, x) for x in os.listdir(input_dir)] if os.path.isfile(file) and file.lower().endswith(('.png', '.jpg', '.jpeg', '.tiff', '.bmp', '.gif'))]
 
     print(f"Will process {len(images)} images, creating {p.n_iter * p.batch_size} new images for each.")
 
@@ -30,6 +31,16 @@ def process_batch(p, input_dir, output_dir, args):
 
     state.job_count = len(images) * p.n_iter
 
+    if use_prompts_from_csv:
+        prompt_dict = {}
+        with open(os.path.join(input_dir, 'batch_prompts.csv'), 'r') as f:
+            reader = csv.reader(f)
+            for line in reader:
+                prompt_dict[line[0]] = line[1:]
+
+    pos_prompt = p.prompt
+    neg_prompt = p.negative_prompt
+
     for i, image in enumerate(images):
         state.job = f"{i+1} out of {len(images)}"
         if state.skipped:
@@ -37,6 +48,14 @@ def process_batch(p, input_dir, output_dir, args):
 
         if state.interrupted:
             break
+
+        if use_prompts_from_csv:
+            csv_pos_prompt = csv_neg_prompt = None
+            if os.path.basename(image) in prompt_dict:
+                csv_pos_prompt = prompt_dict[os.path.basename(image)][0] if 0 < len(prompt_dict[os.path.basename(image)]) else None
+                csv_neg_prompt = prompt_dict[os.path.basename(image)][1] if 1 < len(prompt_dict[os.path.basename(image)]) else None
+            p.prompt = str(csv_pos_prompt or pos_prompt or "")
+            p.negative_prompt = str(csv_neg_prompt or neg_prompt or "")
 
         img = Image.open(image)
         # Use the EXIF orientation of photos taken by smartphones.
@@ -58,7 +77,7 @@ def process_batch(p, input_dir, output_dir, args):
                 processed_image.save(os.path.join(output_dir, filename))
 
 
-def img2img(mode: int, prompt: str, negative_prompt: str, prompt_style: str, prompt_style2: str, init_img, init_img_with_mask, init_img_inpaint, init_mask_inpaint, mask_mode, steps: int, sampler_index: int, mask_blur: int, inpainting_fill: int, restore_faces: bool, tiling: bool, n_iter: int, batch_size: int, cfg_scale: float, denoising_strength: float, seed: int, subseed: int, subseed_strength: float, seed_resize_from_h: int, seed_resize_from_w: int, seed_enable_extras: bool, height: int, width: int, resize_mode: int, inpaint_full_res: bool, inpaint_full_res_padding: int, inpainting_mask_invert: int, img2img_batch_input_dir: str, img2img_batch_output_dir: str, *args):
+def img2img(mode: int, prompt: str, negative_prompt: str, prompt_style: str, prompt_style2: str, init_img, init_img_with_mask, init_img_inpaint, init_mask_inpaint, mask_mode, steps: int, sampler_index: int, mask_blur: int, inpainting_fill: int, restore_faces: bool, tiling: bool, n_iter: int, batch_size: int, cfg_scale: float, denoising_strength: float, seed: int, subseed: int, subseed_strength: float, seed_resize_from_h: int, seed_resize_from_w: int, seed_enable_extras: bool, height: int, width: int, resize_mode: int, inpaint_full_res: bool, inpaint_full_res_padding: int, inpainting_mask_invert: int, img2img_batch_input_dir: str, img2img_batch_output_dir: str, img2img_batch_read_prompts_from_csv: bool, *args):
     is_inpaint = mode == 1
     is_batch = mode == 2
 
@@ -128,7 +147,7 @@ def img2img(mode: int, prompt: str, negative_prompt: str, prompt_style: str, pro
     if is_batch:
         assert not shared.cmd_opts.hide_ui_dir_config, "Launched with --hide-ui-dir-config, batch img2img disabled"
 
-        process_batch(p, img2img_batch_input_dir, img2img_batch_output_dir, args)
+        process_batch(p, img2img_batch_input_dir, img2img_batch_output_dir, args, img2img_batch_read_prompts_from_csv)
 
         processed = Processed(p, [], p.seed, "")
     else:

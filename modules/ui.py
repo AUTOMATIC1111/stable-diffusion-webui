@@ -865,6 +865,15 @@ def create_ui(wrap_gradio_gpu_call):
                         gr.HTML(f"<p class=\"text-gray-500\">Process images in a directory on the same machine where the server is running.<br>Use an empty output directory to save pictures normally instead of writing to the output directory.{hidden}</p>")
                         img2img_batch_input_dir = gr.Textbox(label="Input directory", **shared.hide_dirs)
                         img2img_batch_output_dir = gr.Textbox(label="Output directory", **shared.hide_dirs)
+<<<<<<< HEAD
+=======
+                        with gr.Row():
+                            img2img_batch_read_prompts_from_csv = gr.Checkbox(label="Read prompts from 'batch_prompts.csv' in the input directory?", value=False)
+                        with gr.Row():
+                            img2img_batch_clip = gr.Button('Interrogate input dir. with CLIP', elem_id="img2img_batch_interrogate")
+                            if cmd_opts.deepdanbooru:
+                                img2img_batch_deepbooru = gr.Button('Interrogate input dir. with Deepbooru', elem_id="img2img_batch_interrogate_booru")
+>>>>>>> d151eac (Init commit, added a checkbox to the batch img2img panel that will allow a CSV file to be read and override the prompts for each individual image)
 
                 with gr.Row():
                     resize_mode = gr.Radio(label="Resize mode", elem_id="resize_mode", show_label=False, choices=["Just resize", "Crop and resize", "Resize and fill"], type="index", value="Just resize")
@@ -980,6 +989,7 @@ def create_ui(wrap_gradio_gpu_call):
                     inpainting_mask_invert,
                     img2img_batch_input_dir,
                     img2img_batch_output_dir,
+                    img2img_batch_read_prompts_from_csv,
                 ] + custom_inputs,
                 outputs=[
                     img2img_gallery,
