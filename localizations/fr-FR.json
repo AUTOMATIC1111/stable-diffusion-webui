@@ -207,6 +207,7 @@
     "A merger of the two checkpoints will be generated in your": "Une fusion des deux checkpoints sera générée dans votre",
     "checkpoint": "checkpoint",
     "directory.": "dossier",
+    "Merge inpainting model": "Fusionner le modèle d'inpainting",
     "Primary model (A)": "Modèle primaire (A)",
     "Secondary model (B)": "Modèle secondaire (B)",
     "Tertiary model (C)": "Modèle tertiaire (C)",
