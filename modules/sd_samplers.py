@@ -301,6 +301,7 @@ class CFGDenoiser(torch.nn.Module):
 
         denoised_uncond = x_out[-uncond.shape[0]:]
         u = torch.clone(denoised_uncond)
+        denoised_nonscaled = torch.clone(denoised_uncond)
         denoised = torch.clone(denoised_uncond)
         
         for i, conds in enumerate(conds_list):
@@ -319,12 +320,12 @@ class CFGDenoiser(torch.nn.Module):
                 # original scaling
                 #denoised_nonscaled = u[i]+g*(t-u[i])
                 # with "whole" rescaling
-                #denoised[i] = denoised_nonscaled * torch.clamp(torch.norm(u[i])/torch.norm(denoised_nonscaled),min=1,max=40)
+                #denoised[i] = denoised_nonscaled[i] * torch.clamp(torch.norm(u[i])/torch.norm(denoised_nonscaled[i]),min=1,max=40)
 
                 # rescaled guidance update
                 denoised_nonscaled = u[i]+g*(t-u[i])/torch.norm(t-u[i])*torch.norm(u[i])
                 # with "whole" rescaling
-                denoised[i] = denoised_nonscaled * torch.clamp(torch.norm(u[i])/torch.norm(denoised_nonscaled),min=1,max=40)
+                denoised[i] = denoised_nonscaled[i] * torch.clamp(torch.norm(u[i])/torch.norm(denoised_nonscaled[i]),min=1,max=40)
 
         if self.mask is not None:
             denoised = self.init_latent * self.mask + self.nmask * denoised
