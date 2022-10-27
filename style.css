@@ -419,11 +419,22 @@ input[type="range"]{
   position: absolute;
   width: 50%;
   right: 0px;
-  height: 72px;
+  height: 36px;
   background: #b4c0cc;
   border-radius: 0px;
   display: none;
 }
+
+#txt2img_discard, #img2img_discard{
+    position: absolute;
+    width: 50%;
+    right: 0px;
+    top: 36px;
+    height: 36px;
+    background: #db9889;
+    border-radius: 0px;
+    display: none;
+  }
 
 .red {
 	color: red;

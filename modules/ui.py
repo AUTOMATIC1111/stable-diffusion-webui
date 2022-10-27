@@ -262,6 +262,7 @@ def wrap_gradio_call(func, extra_outputs=None):
         res[-1] += f"<div class='performance'><p class='time'>Time taken: <wbr>{elapsed_text}</p>{vram_html}</div>"
 
         shared.state.skipped = False
+        shared.state.discarded = False
         shared.state.interrupted = False
         shared.state.job_count = 0
 
@@ -525,15 +526,21 @@ def create_toprow(is_img2img):
 
         with gr.Column(scale=1):
             with gr.Row():
-                skip = gr.Button('Skip', elem_id=f"{id_part}_skip")
+                with gr.Column():
+                    skip = gr.Button('Skip', elem_id=f"{id_part}_skip")
+                    discard = gr.Button('Discard', elem_id=f"{id_part}_discard")
+                    skip.click(
+                        fn=lambda: shared.state.skip(),
+                        inputs=[],
+                        outputs=[],
+                    )
+                    discard.click(
+                        fn=lambda: shared.state.discard(),
+                        inputs=[],
+                        outputs=[],
+                    )
                 interrupt = gr.Button('Interrupt', elem_id=f"{id_part}_interrupt")
                 submit = gr.Button('Generate', elem_id=f"{id_part}_generate", variant='primary')
-
-                skip.click(
-                    fn=lambda: shared.state.skip(),
-                    inputs=[],
-                    outputs=[],
-                )
 
                 interrupt.click(
                     fn=lambda: shared.state.interrupt(),

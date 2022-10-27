@@ -120,6 +120,7 @@ def reload_hypernetworks():
 
 class State:
     skipped = False
+    discarded = False
     interrupted = False
     job = ""
     job_no = 0
@@ -134,7 +135,8 @@ class State:
 
     def skip(self):
         self.skipped = True
-
+    def discard(self):
+        self.discarded = True
     def interrupt(self):
         self.interrupted = True
 

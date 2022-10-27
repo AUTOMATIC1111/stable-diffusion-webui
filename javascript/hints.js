@@ -38,6 +38,7 @@ titles = {
     "Denoising strength change factor": "In loopback mode, on each loop the denoising strength is multiplied by this value. <1 means decreasing variety so your sequence will converge on a fixed picture. >1 means increasing variety so your sequence will become more and more chaotic.",
 
     "Skip": "Stop processing current image and continue processing.",
+    "Discard": "Delete current image and continue processing.",
     "Interrupt": "Stop processing images and return any results accumulated so far.",
     "Save": "Write image to a directory (default - log/images) and generation parameters into csv file.",
 

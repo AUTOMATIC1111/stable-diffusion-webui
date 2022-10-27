@@ -3,9 +3,10 @@ global_progressbars = {}
 galleries = {}
 galleryObservers = {}
 
-function check_progressbar(id_part, id_progressbar, id_progressbar_span, id_skip, id_interrupt, id_preview, id_gallery){
+function check_progressbar(id_part, id_progressbar, id_progressbar_span, id_skip, id_discard, id_interrupt, id_preview, id_gallery){
     var progressbar = gradioApp().getElementById(id_progressbar)
     var skip = id_skip ? gradioApp().getElementById(id_skip) : null
+    var discard = id_discard ? gradioApp().getElementById(id_discard) : null
     var interrupt = gradioApp().getElementById(id_interrupt)
     
     if(opts.show_progress_in_title && progressbar && progressbar.offsetParent){
@@ -41,6 +42,9 @@ function check_progressbar(id_part, id_progressbar, id_progressbar_span, id_skip
                     if (skip) {
                         skip.style.display = "none"
                     }
+                    if (discard) {
+                        discard.style.display = "none"
+                    }
                     interrupt.style.display = "none"
 			
                     //disconnect observer once generation finished, so user can close selected image if they want
@@ -53,7 +57,7 @@ function check_progressbar(id_part, id_progressbar, id_progressbar_span, id_skip
 
             }
 
-            window.setTimeout(function() { requestMoreProgress(id_part, id_progressbar_span, id_skip, id_interrupt) }, 500)
+            window.setTimeout(function() { requestMoreProgress(id_part, id_progressbar_span, id_skip, id_discard, id_interrupt) }, 500)
         });
         mutationObserver.observe( progressbar, { childList:true, subtree:true })
 	}
@@ -90,22 +94,26 @@ function check_gallery(id_gallery){
 }
 
 onUiUpdate(function(){
-    check_progressbar('txt2img', 'txt2img_progressbar', 'txt2img_progress_span', 'txt2img_skip', 'txt2img_interrupt', 'txt2img_preview', 'txt2img_gallery')
-    check_progressbar('img2img', 'img2img_progressbar', 'img2img_progress_span', 'img2img_skip', 'img2img_interrupt', 'img2img_preview', 'img2img_gallery')
-    check_progressbar('ti', 'ti_progressbar', 'ti_progress_span', '', 'ti_interrupt', 'ti_preview', 'ti_gallery')
+    check_progressbar('txt2img', 'txt2img_progressbar', 'txt2img_progress_span', 'txt2img_skip', 'txt2img_discard', 'txt2img_interrupt', 'txt2img_preview', 'txt2img_gallery')
+    check_progressbar('img2img', 'img2img_progressbar', 'img2img_progress_span', 'img2img_skip', 'img2img_discard', 'img2img_interrupt', 'img2img_preview', 'img2img_gallery')
+    check_progressbar('ti', 'ti_progressbar', 'ti_progress_span', '', '', 'ti_interrupt', 'ti_preview', 'ti_gallery')
 })
 
-function requestMoreProgress(id_part, id_progressbar_span, id_skip, id_interrupt){
+function requestMoreProgress(id_part, id_progressbar_span, id_skip, id_discard, id_interrupt){
     btn = gradioApp().getElementById(id_part+"_check_progress");
     if(btn==null) return;
 
     btn.click();
     var progressDiv = gradioApp().querySelectorAll('#' + id_progressbar_span).length > 0;
     var skip = id_skip ? gradioApp().getElementById(id_skip) : null
+    var discard = id_discard ? gradioApp().getElementById(id_discard) : null
     var interrupt = gradioApp().getElementById(id_interrupt)
     if(progressDiv && interrupt){
         if (skip) {
             skip.style.display = "block"
+        }
+        if (discard) {
+            discard.style.display = "block"
         }
         interrupt.style.display = "block"
     }

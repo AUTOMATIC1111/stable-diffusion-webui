@@ -56,6 +56,7 @@ def wrap_gradio_gpu_call(func, extra_outputs=None):
         shared.state.current_image = None
         shared.state.current_image_sampling_step = 0
         shared.state.skipped = False
+        shared.state.discarded = False
         shared.state.interrupted = False
         shared.state.textinfo = None
 
