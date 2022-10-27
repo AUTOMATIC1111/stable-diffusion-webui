@@ -75,7 +75,7 @@ class HypernetworkModule(torch.nn.Module):
                     w, b = layer.weight.data, layer.bias.data
                     if weight_init == "Normal" or type(layer) == torch.nn.LayerNorm:
                         normal_(w, mean=0.0, std=0.01)
-                        normal_(b, mean=0.0, std=0.005)
+                        normal_(b, mean=0.0, std=0)
                     elif weight_init == 'XavierUniform':
                         xavier_uniform_(w)
                         zeros_(b)
