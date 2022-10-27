@@ -209,6 +209,7 @@
     "A merger of the two checkpoints will be generated in your": "合并后的模型(ckpt)会生成在你的",
     "checkpoint": "模型(ckpt)",
     "directory.": "目录",
+    "Merge inpainting model": "合并修复模型",
     "Primary model (A)": "主要模型 (A)",
     "Secondary model (B)": "第二模型 (B)",
     "Tertiary model (C)": "第三模型 (C)",
