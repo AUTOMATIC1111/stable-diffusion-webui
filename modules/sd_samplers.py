@@ -141,7 +141,7 @@ class VanillaStableDiffusionSampler:
             return self.last_latent
 
     def p_sample_ddim_hook(self, x_dec, cond, ts, unconditional_conditioning, *args, **kwargs):
-        if state.interrupted or state.skipped:
+        if state.interrupted or state.skipped or state.discarded:
             raise InterruptedException
 
         if self.stop_at is not None and self.step > self.stop_at:
@@ -265,7 +265,7 @@ class CFGDenoiser(torch.nn.Module):
         self.step = 0
 
     def forward(self, x, sigma, uncond, cond, cond_scale, image_cond):
-        if state.interrupted or state.skipped:
+        if state.interrupted or state.skipped or state.discarded:
             raise InterruptedException
 
         conds_list, tensor = prompt_parser.reconstruct_multicond_batch(cond, self.step)

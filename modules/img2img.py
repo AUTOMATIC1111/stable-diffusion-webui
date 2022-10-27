@@ -32,8 +32,11 @@ def process_batch(p, input_dir, output_dir, args):
 
     for i, image in enumerate(images):
         state.job = f"{i+1} out of {len(images)}"
+        # Refresh skipped and discarded status.
         if state.skipped:
             state.skipped = False
+        if state.discarded:
+            state.discarded = False
 
         if state.interrupted:
             break
@@ -54,7 +57,7 @@ def process_batch(p, input_dir, output_dir, args):
                 left, right = os.path.splitext(filename)
                 filename = f"{left}-{n}{right}"
 
-            if not save_normally:
+            if not save_normally and not state.discarded:
                 processed_image.save(os.path.join(output_dir, filename))
 
 
