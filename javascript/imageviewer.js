@@ -13,6 +13,15 @@ function showModal(event) {
     }
     lb.style.display = "block";
     lb.focus()
+
+    const tabTxt2Img = gradioApp().getElementById("tab_txt2img")
+    const tabImg2Img = gradioApp().getElementById("tab_img2img")
+    // show the save button in modal only on txt2img or img2img tabs
+    if (tabTxt2Img.style.display != "none" || tabImg2Img.style.display != "none") {
+        gradioApp().getElementById("modal_save").style.display = "inline"
+    } else {
+        gradioApp().getElementById("modal_save").style.display = "none"
+    }
     event.stopPropagation()
 }
 
@@ -86,9 +95,9 @@ function saveImage(){
     const tabImg2Img = gradioApp().getElementById("tab_img2img")
     const saveTxt2Img = "save_txt2img"
     const saveImg2Img = "save_img2img"
-    if (tabTxt2Img.style["display"] != "none") {
+    if (tabTxt2Img.style.display != "none") {
         gradioApp().getElementById(saveTxt2Img).click()
-    } else if (tabImg2Img.style["display"] != "none") {
+    } else if (tabImg2Img.style.display != "none") {
         gradioApp().getElementById(saveImg2Img).click()
     } else {
         console.error("missing implementation for saving modal of this type")
@@ -222,6 +231,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     const modalSave = document.createElement("span")
     modalSave.className = "modalSave cursor"
+    modalSave.id = "modal_save"
     modalSave.innerHTML = "&#x1F5AB;"
     modalSave.addEventListener("click", modalSaveImage, true)
     modalSave.title = "Save Image(s)"
