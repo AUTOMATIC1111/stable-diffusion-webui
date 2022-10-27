@@ -6,6 +6,8 @@ gradio==3.5
 numpy==1.23.3
 Pillow==9.2.0
 realesrgan==0.3.0
+ipython==8.5.0
+seaborn
 torch
 omegaconf==2.2.3
 pytorch_lightning==1.7.6

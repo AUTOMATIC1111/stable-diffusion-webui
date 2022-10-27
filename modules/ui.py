@@ -1260,6 +1260,7 @@ def create_ui(wrap_gradio_gpu_call):
 
                     with gr.Row():
                         process_flip = gr.Checkbox(label='Create flipped copies')
+                        process_smart_crop = gr.Checkbox(label='Use CLIP cropping')
                         process_split = gr.Checkbox(label='Split oversized images')
                         process_focal_crop = gr.Checkbox(label='Auto focal point crop')
                         process_caption = gr.Checkbox(label='Use BLIP for caption')
@@ -1387,6 +1388,7 @@ def create_ui(wrap_gradio_gpu_call):
                 process_focal_crop_entropy_weight,
                 process_focal_crop_edges_weight,
                 process_focal_crop_debug,
+				process_smart_crop
             ],
             outputs=[
                 ti_output,

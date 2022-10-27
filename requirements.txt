@@ -4,6 +4,7 @@ fairscale==0.4.4
 fonts
 font-roboto
 gfpgan
+ipython
 gradio==3.5
 invisible-watermark
 numpy
