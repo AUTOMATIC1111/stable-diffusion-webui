@@ -1,0 +1,6 @@
+[submodule "models/Stable-diffusionDiffusionsHentai-Diffiusion"]
+	path = models/Stable-diffusionDiffusionsHentai-Diffiusion
+	url = https://huggingface.co/Deltaadams/Hentai-Diffusion
+[submodule "models/Stable-diffusion/Triviant/trinart_stable_diffusion_v2"]
+	path = models/Stable-diffusion/Triviant/trinart_stable_diffusion_v2
+	url = https://huggingface.co/naclbit/trinart_stable_diffusion_v2
