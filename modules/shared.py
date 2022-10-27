@@ -279,6 +279,7 @@ options_templates.update(options_section(('sd', "Stable Diffusion"), {
     "filter_nsfw": OptionInfo(False, "Filter NSFW content"),
     'CLIP_stop_at_last_layers': OptionInfo(1, "Stop At last layers of CLIP model", gr.Slider, {"minimum": 1, "maximum": 12, "step": 1}),
     "random_artist_categories": OptionInfo([], "Allowed categories for random artists selection when using the Roll button", gr.CheckboxGroup, {"choices": artist_db.categories()}),
+    "send_seed": OptionInfo(False, "Send seed when sending prompt or image to other interface"),
 }))
 
 options_templates.update(options_section(('interrogate', "Interrogate Options"), {
