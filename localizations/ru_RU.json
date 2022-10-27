@@ -231,6 +231,7 @@
     "A merger of the two checkpoints will be generated in your": "Слияние весов будет создано, где хранятся",
     "checkpoint": "ckpt",
     "directory.": "веса",
+    "Merge inpainting model": "Объединить рисующую модель",
     "Primary model (A)": "Первичная модель (A)",
     "Secondary model (B)": "Вторичная модель (B)",
     "Tertiary model (C)": "Третичная модель (C)",
