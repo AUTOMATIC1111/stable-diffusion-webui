@@ -63,7 +63,12 @@ class PydanticModelGenerator:
             
                 
         self._model_name = model_name
-        self._class_data = merge_class_params(class_instance)
+
+        if class_instance is not None:
+            self._class_data = merge_class_params(class_instance)
+        else:
+            self._class_data = {}            
+
         self._model_def = [
             ModelDef(
                 field=underscore(k),
@@ -105,4 +110,10 @@ StableDiffusionImg2ImgProcessingAPI = PydanticModelGenerator(
     "StableDiffusionProcessingImg2Img", 
     StableDiffusionProcessingImg2Img,
     [{"key": "sampler_index", "type": str, "default": "Euler"}, {"key": "init_images", "type": list, "default": None}, {"key": "denoising_strength", "type": float, "default": 0.75}, {"key": "mask", "type": str, "default": None}, {"key": "include_init_images", "type": bool, "default": False, "exclude" : True}]
+).generate_model()
+
+InterrogateAPI = PydanticModelGenerator(
+    "Interrogate", 
+    None,
+    [{"key": "image", "type": str, "default": None}]
 ).generate_model()

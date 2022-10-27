@@ -146,7 +146,9 @@ def webui():
         app.add_middleware(GZipMiddleware, minimum_size=1000)
 
         if (launch_api):
-            create_api(app)
+            print('launching API')
+            api = create_api(app)
+            api.launch(server_name="0.0.0.0" if cmd_opts.listen else "127.0.0.1", port=cmd_opts.port if cmd_opts.port else 7861)
 
         wait_on_server(demo)
 
@@ -161,10 +163,12 @@ def webui():
         print('Restarting Gradio')
 
 
-
-task = []
-if __name__ == "__main__":
+def webui_or_api():
     if cmd_opts.nowebui:
         api_only()
     else:
         webui()
+
+task = []
+if __name__ == "__main__":
+    webui_or_api()

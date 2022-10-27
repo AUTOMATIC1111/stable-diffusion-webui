@@ -198,7 +198,7 @@ def prepare_enviroment():
 def start_webui():
     print(f"Launching Web UI with arguments: {' '.join(sys.argv[1:])}")
     import webui
-    webui.webui()
+    webui.webui_or_api()
 
 
 if __name__ == "__main__":
