@@ -499,7 +499,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 infotexts.append(text)
                 if opts.enable_pnginfo:
                     image.info["parameters"] = text
-                output_images.append(image)
+                if not state.discarded:
+                    output_images.append(image)
 
             del x_samples_ddim 
 
@@ -524,7 +525,6 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
             if opts.grid_save and not state.discarded:
                 images.save_image(grid, p.outpath_grids, "grid", p.all_seeds[0], p.all_prompts[0], opts.grid_format, info=infotext(), short_filename=not opts.grid_extended_filename, p=p, grid=True)
-
     devices.torch_gc()
     return Processed(p, output_images, p.all_seeds[0], infotext() + "".join(["\n\n" + x for x in comments]), subseed=p.all_subseeds[0], all_prompts=p.all_prompts, all_seeds=p.all_seeds, all_subseeds=p.all_subseeds, index_of_first_image=index_of_first_image, infotexts=infotexts)
 
