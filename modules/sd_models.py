@@ -170,7 +170,9 @@ def load_model_weights(model, checkpoint_info):
             print(f"Global Step: {pl_sd['global_step']}")
 
         sd = get_state_dict_from_checkpoint(pl_sd)
-        missing, extra = model.load_state_dict(sd, strict=False)
+        del pl_sd
+        model.load_state_dict(sd, strict=False)
+        del sd
 
         if shared.cmd_opts.opt_channelslast:
             model.to(memory_format=torch.channels_last)
@@ -194,9 +196,10 @@ def load_model_weights(model, checkpoint_info):
 
         model.first_stage_model.to(devices.dtype_vae)
 
-        checkpoints_loaded[checkpoint_info] = model.state_dict().copy()
-        while len(checkpoints_loaded) > shared.opts.sd_checkpoint_cache:
-            checkpoints_loaded.popitem(last=False)  # LRU
+        if shared.opts.sd_checkpoint_cache > 0:
+            checkpoints_loaded[checkpoint_info] = model.state_dict().copy()
+            while len(checkpoints_loaded) > shared.opts.sd_checkpoint_cache:
+                checkpoints_loaded.popitem(last=False)  # LRU
     else:
         print(f"Loading weights [{sd_model_hash}] from cache")
         checkpoints_loaded.move_to_end(checkpoint_info)
