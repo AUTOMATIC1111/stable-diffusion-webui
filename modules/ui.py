@@ -1568,7 +1568,8 @@ def create_ui(wrap_gradio_gpu_call):
         if column is not None:
             column.__exit__()
 
-        parameters_copypaste.run_bind()
+
+        
 
     interfaces = [
         (txt2img_interface, "txt2img", "txt2img"),
@@ -1581,7 +1582,7 @@ def create_ui(wrap_gradio_gpu_call):
 
     interfaces += script_callbacks.ui_tabs_callback()
 
-    interfaces += [(settings_interface, "Settings", "settings")]
+    interfaces += [(settings_interface, "Settings", "settings")]       
 
     css = ""
 
@@ -1667,7 +1668,8 @@ def create_ui(wrap_gradio_gpu_call):
             'CLIP_stop_at_last_layers': 'Clip skip',
             'sd_model_checkpoint': 'Model hash',
         }
-       
+
+        parameters_copypaste.run_bind()       
 
     ui_config_file = cmd_opts.ui_config_file
     ui_settings = {}
