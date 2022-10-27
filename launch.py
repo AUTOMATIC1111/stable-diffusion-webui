@@ -11,9 +11,6 @@ python = sys.executable
 git = os.environ.get('GIT', "git")
 index_url = os.environ.get('INDEX_URL', "")
 
-def dummy_checker(images, **kwargs): return images, False
-
-pipe.safety_checker = dummy_checker
 
 def extract_arg(args, name):
     return [x for x in args if x != name], name in args
@@ -196,6 +193,7 @@ def prepare_enviroment():
     if "--exit" in sys.argv:
         print("Exiting because of --exit argument")
         exit(0)
+
 
 def start_webui():
     print(f"Launching Web UI with arguments: {' '.join(sys.argv[1:])}")
