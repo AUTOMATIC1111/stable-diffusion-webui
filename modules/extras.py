@@ -249,11 +249,12 @@ def run_modelmerger(primary_model_name, secondary_model_name, teritary_model_nam
     else:
         for key in tqdm.tqdm(theta_1.keys()):
             if key in theta_1:
-                if str(theta_0[key].shape) != str(theta_1[key].shape):
-                    if key == "model.diffusion_model.input_blocks.0.0.weight":
-                        theta_0[key][:,0:3,:,:] = theta_func2(theta_0[key][:,0:3,:,:], theta_1[key][:,0:3,:,:], multiplier)
-                else:
-                    theta_0[key] = theta_func2(theta_0[key], theta_1[key], multiplier)
+                if 'model' in key and key in theta_0:
+                    if str(theta_0[key].shape) != str(theta_1[key].shape):
+                        if key == "model.diffusion_model.input_blocks.0.0.weight":
+                            theta_0[key][:,0:3,:,:] = theta_func2(theta_0[key][:,0:3,:,:], theta_1[key][:,0:3,:,:], multiplier)
+                    else:
+                        theta_0[key] = theta_func2(theta_0[key], theta_1[key], multiplier)
 
     ckpt_dir = shared.cmd_opts.ckpt_dir or sd_models.model_path
 
