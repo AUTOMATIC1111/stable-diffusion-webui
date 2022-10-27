@@ -254,6 +254,7 @@
   "Masking mode": "마스킹 모드",
   "Max prompt words for [prompt_words] pattern": "[prompt_words] 패턴의 최대 프롬프트 단어 수",
   "Max steps": "최대 스텝 수",
+  "Merge inpainting model":"인페인팅 모델 병합",
   "Minimum number of pages per load": "한번 불러올 때마다 불러올 최소 페이지 수",
   "Modules": "모듈",
   "Move face restoration model from VRAM into RAM after processing": "처리가 완료되면 얼굴 보정 모델을 VRAM에서 RAM으로 옮기기",
