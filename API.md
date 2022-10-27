@@ -1,10 +1,6 @@
 ## API guide by [@Kilvoctu](https://github.com/Kilvoctu)
 
 
-I am not a programmer so my knowledge is very limited, but nonetheless after a lot of banging sticks together I was able to figure out how to use the API (small tangential gripe, highly technical and experienced people are not very good at helping beginners how to code). 
-
-I'll go through everything I learned about how to interface with the API. Apologies if I get a lot of terms and such wrong:
-
 -First, of course, is to run web ui with `--api` commandline argument
 -This enables the api which can be reviewed at http://127.0.0.1:7860/docs (or whever the URL is + /docs)
 The basic ones I'm interested in are these two. Let's just focus only on ` /sdapi/v1/txt2img`
