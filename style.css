@@ -314,7 +314,7 @@ input[type="range"]{
 
 .modalControls {
     display: grid;
-    grid-template-columns: 32px auto 32px 1fr 32px;
+    grid-template-columns: 32px 32px 32px 1fr 32px;
     grid-template-areas: "zoom tile save space close";
     position: absolute;
     top: 0;
@@ -352,8 +352,8 @@ input[type="range"]{
 
 .modalSave {
     color: white;
-    font-size: 30px;
-    margin-top: 6px;
+    font-size: 28px;
+    margin-top: 8px;
     font-weight: bold;
     cursor: pointer;
 }
