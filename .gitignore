@@ -29,4 +29,6 @@ notification.mp3
 /textual_inversion
 .vscode
 /extensions
+/webui-user.bat
+/webui-user.sh
 
