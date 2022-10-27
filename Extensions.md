@@ -75,6 +75,7 @@ Saves score to windows tags with other options planned
 ![picture](https://github.com/tsngo/stable-diffusion-webui-aesthetic-image-scorer/blob/main/tag_group_by.png)
 
 ## Dataset Tag Editor
+https://github.com/toshiaki1729/stable-diffusion-webui-dataset-tag-editor
 
 [日本語 Readme](https://github.com/toshiaki1729/stable-diffusion-webui-dataset-tag-editor/blob/main/README-JP.md)
 
