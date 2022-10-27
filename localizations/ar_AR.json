@@ -196,6 +196,7 @@
   "A merger of the two checkpoints will be generated in your": "سيتم إنشاء نموذجمدمج من النموذجين في",
   "checkpoint": "النموذج",
   "directory.": "المجلد.",
+  "Merge inpainting model": "دمج إعادة الرسم الجزئي",
   "Primary model (A)": "النموذج الأساسي (أ)",
   "Secondary model (B)": "النموذج الثانوي (ب)",
   "Tertiary model (C)": "النموذج الثالث (ج)",
