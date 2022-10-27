@@ -323,7 +323,7 @@ class CFGDenoiser(torch.nn.Module):
                 #denoised[i] = denoised_nonscaled[i] * torch.clamp(torch.norm(u[i])/torch.norm(denoised_nonscaled[i]),min=1,max=40)
 
                 # rescaled guidance update
-                denoised_nonscaled = u[i]+g*(t-u[i])/torch.norm(t-u[i])*torch.norm(u[i])
+                denoised_nonscaled[i] = u[i]+g*(t-u[i])/torch.norm(t-u[i])*torch.norm(u[i])
                 # with "whole" rescaling
                 denoised[i] = denoised_nonscaled[i] * torch.clamp(torch.norm(u[i])/torch.norm(denoised_nonscaled[i]),min=1,max=40)
 
