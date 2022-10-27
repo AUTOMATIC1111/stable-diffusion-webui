@@ -526,7 +526,7 @@ Then, you will need to add the RTL counterpart only if needed in the rtl section
     :host {
         direction: rtl;
     }
-    select, .file-preview, .gr-text-input, .output-html:has(.performance) {
+    select, .file-preview, .gr-text-input, .output-html:has(.performance), #ti_progress {
         direction: ltr;
     }
     #script_list > label > select,
