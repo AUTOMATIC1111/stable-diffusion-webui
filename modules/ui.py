@@ -71,6 +71,8 @@ if cmd_opts.ngrok != None:
 def gr_show(visible=True):
     return {"visible": visible, "__type__": "update"}
 
+def gr_set_label(label):
+    return {"label": label, "__type__": "update"}
 
 sample_img2img = "assets/stable-samples/img2img/sketch-mountains-input.jpg"
 sample_img2img = sample_img2img if os.path.exists(sample_img2img) else None
@@ -1198,7 +1200,9 @@ def create_ui(wrap_gradio_gpu_call):
         with gr.Row().style(equal_height=False):
             with gr.Column(variant='panel'):
                 gr.HTML(value="<p>A merger of the two checkpoints will be generated in your <b>checkpoint</b> directory.</p>")
-
+                
+                with gr.Row():
+                    merge_inpainting = gr.Checkbox(label="Merge inpainting model", value=False)
                 with gr.Row():
                     primary_model_name = gr.Dropdown(modules.sd_models.checkpoint_tiles(), elem_id="modelmerger_primary_model_name", label="Primary model (A)")
                     secondary_model_name = gr.Dropdown(modules.sd_models.checkpoint_tiles(), elem_id="modelmerger_secondary_model_name", label="Secondary model (B)")
@@ -1210,7 +1214,19 @@ def create_ui(wrap_gradio_gpu_call):
                 modelmerger_merge = gr.Button(elem_id="modelmerger_merge", label="Merge", variant='primary')
 
             with gr.Column(variant='panel'):
-                submit_result = gr.Textbox(elem_id="modelmerger_result", show_label=False)
+                submit_result = gr.Textbox(elem_id="modelmerger_result", show_label=False)            
+
+            merge_inpainting.change(
+                fn=lambda x: gr_show(not x),
+                inputs=[merge_inpainting],
+                outputs=[tertiary_model_name],
+            )
+
+            merge_inpainting.change(
+                fn=lambda x: gr_set_label("Primary model (A)" if not x else "Inpainting model (A)"),
+                inputs=[merge_inpainting],
+                outputs=[primary_model_name],
+            )
 
     sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings()
 
@@ -1738,6 +1754,7 @@ Requested path was: {f}
                 interp_amount,
                 save_as_half,
                 custom_name,
+                merge_inpainting,
             ],
             outputs=[
                 submit_result,
