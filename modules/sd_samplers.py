@@ -300,21 +300,34 @@ class CFGDenoiser(torch.nn.Module):
             x_out[-uncond.shape[0]:] = self.inner_model(x_in[-uncond.shape[0]:], sigma_in[-uncond.shape[0]:], cond={"c_crossattn": [uncond], "c_concat": [image_cond_in[-uncond.shape[0]:]]})
 
         denoised_uncond = x_out[-uncond.shape[0]:]
+        u = torch.clone(denoised_uncond)
+        denoised_nonscaled = torch.clone(denoised_uncond)
         denoised = torch.clone(denoised_uncond)
-
+        
         for i, conds in enumerate(conds_list):
             for cond_index, weight in conds:
-                # original scaling
-                #denoised[i] += (x_out[cond_index] - denoised_uncond[i]) * (weight * cond_scale)
                 # update to classifier-free guidance by @sebderhy as described from these posts: 
                 # https://twitter.com/jeremyphoward/status/1584667278733324288
                 # https://twitter.com/jeremyphoward/status/1585009792787304448
+                # with clamped scale normalization suggested here: 
+                # https://twitter.com/post_alchemist/status/1584930119654977536
                 # original guidance update with "whole" rescaling step
                 # denoised *= torch.norm(denoised_uncond[i])/torch.norm(denoised[i])
                 # rescaled guidance update
-                denoised[i] += (x_out[cond_index] - denoised_uncond[i]) * (weight * cond_scale) / torch.norm(x_out[cond_index] - denoised_uncond[i]) * torch.norm(denoised_uncond[i])
-                # rescaled guidance update with "whole" rescaling step
-                denoised *= torch.norm(denoised_uncond[i])/torch.norm(denoised[i])
+                g = weight*cond_scale
+                t = x_out[cond_index]
+
+                #old: denoised[i] += (x_out[cond_index] - denoised_uncond[i]) * (weight * cond_scale)
+                #new: denoised[i] = u[i]+g*(t-u[i])
+
+                # original scaling with "whole" rescaling
+                #denoised_nonscaled[i] = u[i]+g*(t-u[i])
+                #denoised[i] = denoised_nonscaled[i] * torch.clamp(torch.norm(u[i])/torch.norm(denoised_nonscaled[i]),min=1,max=40)
+
+                # rescaled guidance update
+                denoised_nonscaled[i] = u[i]+g*(t-u[i])/torch.norm(t-u[i])*torch.norm(u[i])
+                # with "whole" rescaling
+                denoised[i] = denoised_nonscaled[i] * torch.clamp(torch.norm(u[i])/torch.norm(denoised_nonscaled[i]),min=1,max=40)
 
         if self.mask is not None:
             denoised = self.init_latent * self.mask + self.nmask * denoised
