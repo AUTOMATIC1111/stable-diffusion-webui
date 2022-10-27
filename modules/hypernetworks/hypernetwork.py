@@ -6,6 +6,7 @@ import os
 import sys
 import traceback
 import inspect
+import random
 
 import modules.textual_inversion.dataset
 import torch
@@ -435,6 +436,10 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
             std = stdev(previous_mean_losses)
         else:
             std = 0
+            
+        if hypernetwork.step > 0 and hypernetwork.step % len(ds) == 0:
+            random.shuffle(entries)
+            
         dataset_loss_info = f"dataset loss:{mean(previous_mean_losses):.3f}" + u"\u00B1" + f"({std / (len(previous_mean_losses) ** 0.5):.3f})"
         pbar.set_description(dataset_loss_info)
 
