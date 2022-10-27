@@ -34,7 +34,7 @@ class RestrictedUnpickler(pickle.Unpickler):
             return getattr(torch._utils, name)
         if module == 'torch' and name in ['FloatStorage', 'HalfStorage', 'IntStorage', 'LongStorage', 'DoubleStorage']:
             return getattr(torch, name)
-        if module == 'torch.nn.modules.container' and name in ['ParameterDict']:
+        if module == 'torch.nn.modules.container' and name in ['ParameterDict', 'Sequential']:
             return getattr(torch.nn.modules.container, name)
         if module == 'numpy.core.multiarray' and name == 'scalar':
             return numpy.core.multiarray.scalar
@@ -50,8 +50,15 @@ class RestrictedUnpickler(pickle.Unpickler):
             return pytorch_lightning.callbacks.model_checkpoint.ModelCheckpoint
         if module == "__builtin__" and name == 'set':
             return set
-
-        # Forbid everything else.
+        if "yolo" in module:
+            return super().find_class(module, name)
+        if module == "models.common" and name == "Conv":
+            return super().find_class(module, name)
+        if 'torch.nn.modules' in module and name in ['Conv', 'Conv2d', 'BatchNorm2d', "SiLU", "MaxPool2d", "Upsample",
+                                                     "ModuleList"]:
+            return super().find_class(module, name)
+        if "models.common" in module and name in ["C3", "Bottleneck", "SPPF", "Concat"]:
+            return super().find_class(module, name)
         raise pickle.UnpicklingError(f"global '{module}/{name}' is forbidden")
 
 
