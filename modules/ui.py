@@ -854,7 +854,21 @@ def create_ui(wrap_gradio_gpu_call):
                             mask_mode = gr.Radio(label="Mask mode", show_label=False, choices=["Draw mask", "Upload mask"], type="index", value="Draw mask", elem_id="mask_mode")
                             inpainting_mask_invert = gr.Radio(label='Masking mode', show_label=False, choices=['Inpaint masked', 'Inpaint not masked'], value='Inpaint masked', type="index")
 
-                        inpainting_fill = gr.Radio(label='Masked content', choices=['fill', 'original', 'latent noise', 'latent nothing'], value='original', type="index")
+                        inpainting_fill = gr.Radio(label='Masked content', choices=['fill', 'original', 'latent noise', 'latent nothing', 'paint'], value='original', type="index")
+
+                        inpainting_fill_colors = []
+                        with gr.Row(visible=False) as row_of_colors:
+                            with gr.Box() as box:
+                                with gr.Row(elem_id='color_row_1'):
+                                    inpainting_fill_colors += [
+                                        gr.Slider(label='Red', value=0, minimum=0, maximum=255, step=1),
+                                        gr.Slider(label='Green', value=0, minimum=0, maximum=255, step=1),
+                                        gr.Slider(label='Blue', value=0, minimum=0, maximum=255, step=1)
+                                    ]
+                        def change_visibility(idx: int):
+                            show = idx == 4 # 'paint' was used.
+                            return {row_of_colors: gr_show(show)}
+                        inpainting_fill.change(change_visibility, show_progress=False, inputs=[inpainting_fill], outputs=[row_of_colors])
 
                         with gr.Row():
                             inpaint_full_res = gr.Checkbox(label='Inpaint at full resolution', value=False)
@@ -964,6 +978,7 @@ def create_ui(wrap_gradio_gpu_call):
                     sampler_index,
                     mask_blur,
                     inpainting_fill,
+                    *inpainting_fill_colors,
                     restore_faces,
                     tiling,
                     batch_count,
