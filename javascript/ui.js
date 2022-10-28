@@ -229,3 +229,48 @@ function restart_reload(){
     document.body.innerHTML='<h1 style="font-family:monospace;margin-top:20%;color:lightgray;text-align:center;">Reloading...</h1>';
     setTimeout(function(){location.reload()},2000)
 }
+
+/**
+ * Implement script-dependent UI restraints, e.g. forcing a specific sampling method
+ */
+let prev_ui_states = {};
+function updateScriptRestraints() {
+    const currentTab = get_uiCurrentTab()?.textContent.trim();
+    const restraintsField = Array.from(gradioApp().querySelectorAll(`#${currentTab}_script_restraints_json textarea`))
+        .filter(el => uiElementIsVisible(el.closest('.gr-form')))?.[0];
+    
+    if ( ! restraintsField ) {
+        return;
+    }
+
+    if ( typeof prev_ui_states[currentTab] === 'undefined' ) {
+        prev_ui_states[currentTab] = {};
+    }
+
+    window.requestAnimationFrame(() => {
+        const restraints = JSON.parse(restraintsField.value);
+        // const scriptSelect = gradioApp().querySelector(`#${currentTab}_scripts select`);
+        const methodRadios = gradioApp().querySelectorAll(`[name="radio-${currentTab}_sampling"]`);
+
+        if( restraints?.methods?.length ) {
+            prev_ui_states[currentTab].sampling_method = gradioApp().querySelector(`[name="radio-${currentTab}_sampling"]:checked`);
+            methodRadios.forEach(radio => {
+                const isAllowed = restraints.methods.includes(radio.value);
+                const label = radio.closest('label');
+                radio.disabled = !isAllowed;
+                radio.checked = isAllowed;
+                label.classList[isAllowed ? 'remove' : 'add']('!cursor-not-allowed','disabled');
+                label.title = !isAllowed ? `The selected script does not work with this method` : '';
+            });
+        } else {
+            // reset to previously selected method
+            methodRadios.forEach(radio => {
+                const label = radio.closest('label');
+                radio.disabled = false;
+                radio.checked = radio === prev_ui_states[currentTab].sampling_method;
+                label.classList.remove('!cursor-not-allowed','disabled');
+                label.title = '';
+            });
+        }
+    })
+}
