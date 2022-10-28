@@ -1,5 +1,5 @@
 # Installing and Using Custom Scripts
-To install custom scripts, place them into the `scripts` directory and restart the web ui. Custom scripts will appear in the lower-left dropdown menu on the txt2img and img2img tabs after being installed. Below are some notable custom scripts created by Web UI users:
+To install custom scripts, place them into the `scripts` directory and click the `Reload custom script` button at the bottom in the settings tab. Custom scripts will appear in the lower-left dropdown menu on the txt2img and img2img tabs after being installed. Below are some notable custom scripts created by Web UI users:
 
 # Custom Scripts from Users
 
@@ -11,21 +11,19 @@ It allows a matrix prompt as follows:
 
 Does not actually draw a matrix, just produces pictures.
 
-## Wildcards
-https://github.com/jtkelm2/stable-diffusion-webui-1/blob/master/scripts/wildcards.py
+## Dynamic Prompt Templates
+https://github.com/adieyal/sd-dynamic-prompting
 
+A custom script to implement a tiny template language for random prompt generation. Features merged with [Wildcards](https://github.com/jtkelm2/stable-diffusion-webui-1/blob/master/scripts/wildcards.py) script.
+
+## Wildcards
 Script support so that prompts can contain wildcard terms (indicated by surrounding double underscores), with values instantiated randomly from the corresponding .txt file in the folder `/scripts/wildcards/`. For example:
 
 `a woman at a cafe by __artist__ and __artist__`
 
 will draw two random artists from `artist.txt`. This works independently on each prompt, so that one can e.g. generate a batch of 100 images with the same prompt input using wildcards, and each output will have unique artists (or styles, or genres, or anything that the user creates their own .txt file for) attached to it.
 
-(also see https://github.com/jtkelm2/stable-diffusion-webui-1/tree/master/scripts/wildcards for examples of custom lists)
-
-## Dynamic Prompt Templates
-https://github.com/adieyal/sd-dynamic-prompting
-
-A custom script to implement a tiny template language for random prompt generation. Features merged with [Wildcards](https://github.com/jtkelm2/stable-diffusion-webui-1/blob/master/scripts/wildcards.py) script.
+(see [here](https://github.com/jtkelm2/stable-diffusion-webui-1/tree/main/scripts/wildcards) for examples of custom lists)
 
 ## txt2img2img 
 https://github.com/ThereforeGames/txt2img2img/blob/main/scripts/txt2img2img.py
@@ -95,7 +93,16 @@ This script enables you to give a range to the weight of tokens in a prompt and 
 ## Loopback and Superimpose
 https://github.com/DiceOwl/StableDiffusionStuff
 
+https://github.com/DiceOwl/StableDiffusionStuff/blob/main/loopback_superimpose.py
+
 Mixes output of img2img with original input image at strength alpha. The result is fed into img2img again (at loop>=2), and this procedure repeats. Tends to sharpen the image, improve consistency, reduce creativity and reduce fine detail.
+
+## Interpolate
+https://github.com/DiceOwl/StableDiffusionStuff
+
+https://github.com/DiceOwl/StableDiffusionStuff/blob/main/interpolate.py
+
+An img2img script to produce in-between images. Allows two input images for interpolation. More features shown in the [readme](https://github.com/DiceOwl/StableDiffusionStuff).
 
 ## Run n times
 https://gist.github.com/camenduru/9ec5f8141db9902e375967e93250860f
@@ -132,7 +139,7 @@ see https://github.com/AUTOMATIC1111/stable-diffusion-webui/discussions/2441
 
 applies symmetry to the image every n steps and sends the result further to img2img.
 
-## Style Pile
+## StylePile
 https://github.com/some9000/StylePile
 
 Mix and match keywords to quickly get different results without wasting a lot of time writing prompts.
@@ -142,20 +149,12 @@ https://github.com/xrpgame/xyz_plot_script
 
 Generates an .html file to interactively browse the imageset. Use the scroll wheel or arrow keys to move in the Z dimension.
 
-Check out the Readme for installation/samples!
-
 ## Booru tag autocompletion
 https://github.com/DominikDoom/a1111-sd-webui-tagcomplete
 
 Displays autocompletion hints for tags from "image booru" boards such as Danbooru. Uses local tag CSV files and includes a config for customization.
 
 Also supports completion for [wildcards](Custom-Scripts#wildcards)
-
-
-## Deforum
-https://github.com/deforum-art/deforum-for-automatic1111-webui
-
-The official port of Deforum, an extensive script for 2D and 3D animations, supporting keyframable sequences, dynamic math parameters (even inside the prompts), dynamic masking, depth estimation and warping.
 
 ## Embedding to PNG
 https://github.com/dfaker/embedding-to-png-script
@@ -172,6 +171,11 @@ https://github.com/lilly1987/AI-WEBUI-scripts-Random
 
 ## Stable Diffusion Aesthetic Scorer
 https://github.com/grexzen/SD-Chad
+
+## img2tiles
+https://github.com/arcanite24/img2tiles
+
+generate tiles from a base image. Based on SD upscale script.
 
 ## Saving steps of the sampling process
 
