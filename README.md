@@ -72,7 +72,7 @@ Check the [custom scripts](https://github.com/AUTOMATIC1111/stable-diffusion-web
 - No token limit for prompts (original stable diffusion lets you use up to 75 tokens)
 - DeepDanbooru integration, creates danbooru style tags for anime prompts (add --deepdanbooru to commandline args)
 - [xformers](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Xformers), major speed increase for select cards: (add --xformers to commandline args)
-- History tab: view, direct and delete images conveniently within the UI
+- via extension: [History tab](https://github.com/yfszzx/stable-diffusion-webui-images-browser): view, direct and delete images conveniently within the UI
 - Generate forever option
 - Training tab
      - hypernetworks and embeddings options
@@ -83,8 +83,27 @@ Check the [custom scripts](https://github.com/AUTOMATIC1111/stable-diffusion-web
 - Estimated completion time in progress bar
 - API
 - Support for dedicated [inpainting model](https://github.com/runwayml/stable-diffusion#inpainting-with-stable-diffusion) by RunwayML. 
-- Aesthetic Gradients, a way to generate images with a specific aesthetic by using clip images embds (implementation of [https://github.com/vicgalle/stable-diffusion-aesthetic-gradients](https://github.com/vicgalle/stable-diffusion-aesthetic-gradients))
+- via extension: [Aesthetic Gradients](https://github.com/AUTOMATIC1111/stable-diffusion-webui-aesthetic-gradients), a way to generate images with a specific aesthetic by using clip images embds (implementation of [https://github.com/vicgalle/stable-diffusion-aesthetic-gradients](https://github.com/vicgalle/stable-diffusion-aesthetic-gradients))
 
+## Where are Aesthetic Gradients?!?!
+Aesthetic Gradients are now an extension. You can install it using git:
+
+```commandline
+git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui-aesthetic-gradients extensions/aesthetic-gradients
+```
+
+After running this command, make sure that you have `aesthetic-gradients` dir in webui's `extensions` directory and restart
+the UI. The interface for Aesthetic Gradients should appear exactly the same as it was.
+
+## Where is History/Image browser?!?!
+Image browser is now an extension. You can install it using git:
+
+```commandline
+git clone https://github.com/yfszzx/stable-diffusion-webui-images-browser extensions/images-browser
+```
+
+After running this command, make sure that you have `images-browser` dir in webui's `extensions` directory and restart
+the UI. The interface for Image browser should appear exactly the same as it was.
 
 ## Installation and Running
 Make sure the required [dependencies](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Dependencies) are met and follow the instructions available for both [NVidia](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-NVidia-GPUs) (recommended) and [AMD](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-AMD-GPUs) GPUs.

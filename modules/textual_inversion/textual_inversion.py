@@ -10,7 +10,7 @@ import csv
 
 from PIL import Image, PngImagePlugin
 
-from modules import shared, devices, sd_hijack, processing, sd_models
+from modules import shared, devices, sd_hijack, processing, sd_models, images
 import modules.textual_inversion.dataset
 from modules.textual_inversion.learn_schedule import LearnRateScheduler
 
@@ -157,6 +157,9 @@ def create_embedding(name, num_vectors_per_token, overwrite_old, init_text='*'):
     cond_model = shared.sd_model.cond_stage_model
     embedding_layer = cond_model.wrapped.transformer.text_model.embeddings
 
+    with devices.autocast():
+        cond_model([""])  # will send cond model to GPU if lowvram/medvram is active
+
     ids = cond_model.tokenizer(init_text, max_length=num_vectors_per_token, return_tensors="pt", add_special_tokens=False)["input_ids"]
     embedded = embedding_layer.token_embedding.wrapped(ids.to(devices.device)).squeeze(0)
     vec = torch.zeros((num_vectors_per_token, embedded.shape[1]), device=devices.device)
@@ -164,6 +167,8 @@ def create_embedding(name, num_vectors_per_token, overwrite_old, init_text='*'):
     for i in range(num_vectors_per_token):
         vec[i] = embedded[i * int(embedded.shape[0]) // num_vectors_per_token]
 
+    # Remove illegal characters from name.
+    name = "".join( x for x in name if (x.isalnum() or x in "._- "))
     fn = os.path.join(shared.cmd_opts.embeddings_dir, f"{name}.pt")
     if not overwrite_old:
         assert not os.path.exists(fn), f"file {fn} already exists"
@@ -244,6 +249,7 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
 
     last_saved_file = "<none>"
     last_saved_image = "<none>"
+    forced_filename = "<none>"
     embedding_yet_to_be_embedded = False
 
     ititial_step = embedding.step or 0
@@ -283,7 +289,9 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
         pbar.set_description(f"[Epoch {epoch_num}: {epoch_step}/{len(ds)}]loss: {losses.mean():.7f}")
 
         if embedding.step > 0 and embedding_dir is not None and embedding.step % save_embedding_every == 0:
-            last_saved_file = os.path.join(embedding_dir, f'{embedding_name}-{embedding.step}.pt')
+            # Before saving, change name to match current checkpoint.
+            embedding.name = f'{embedding_name}-{embedding.step}'
+            last_saved_file = os.path.join(embedding_dir, f'{embedding.name}.pt')
             embedding.save(last_saved_file)
             embedding_yet_to_be_embedded = True
 
@@ -293,8 +301,8 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
         })
 
         if embedding.step > 0 and images_dir is not None and embedding.step % create_image_every == 0:
-            last_saved_image = os.path.join(images_dir, f'{embedding_name}-{embedding.step}.png')
-
+            forced_filename = f'{embedding_name}-{embedding.step}'
+            last_saved_image = os.path.join(images_dir, forced_filename)
             p = processing.StableDiffusionProcessingTxt2Img(
                 sd_model=shared.sd_model,
                 do_not_save_grid=True,
@@ -350,8 +358,7 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
                 captioned_image.save(last_saved_image_chunks, "PNG", pnginfo=info)
                 embedding_yet_to_be_embedded = False
 
-            image.save(last_saved_image)
-
+            last_saved_image, last_text_info = images.save_image(image, images_dir, "", p.seed, p.prompt, shared.opts.samples_format, processed.infotexts[0], p=p, forced_filename=forced_filename, save_to_dirs=False)
             last_saved_image += f", prompt: {preview_text}"
 
         shared.state.job_no = embedding.step
@@ -371,6 +378,9 @@ Last saved image: {html.escape(last_saved_image)}<br/>
     embedding.sd_checkpoint = checkpoint.hash
     embedding.sd_checkpoint_name = checkpoint.model_name
     embedding.cached_checksum = None
+    # Before saving for the last time, change name back to base name (as opposed to the save_embedding_every step-suffixed naming convention).
+    embedding.name = embedding_name
+    filename = os.path.join(shared.cmd_opts.embeddings_dir, f'{embedding.name}.pt')
     embedding.save(filename)
 
     return embedding, filename

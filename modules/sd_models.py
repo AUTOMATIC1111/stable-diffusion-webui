@@ -7,7 +7,7 @@ from omegaconf import OmegaConf
 
 from ldm.util import instantiate_from_config
 
-from modules import shared, modelloader, devices
+from modules import shared, modelloader, devices, script_callbacks
 from modules.paths import models_path
 from modules.sd_hijack_inpainting import do_inpainting_hijack, should_hijack_inpainting
 
@@ -238,6 +238,9 @@ def load_model(checkpoint_info=None):
     sd_hijack.model_hijack.hijack(sd_model)
 
     sd_model.eval()
+    shared.sd_model = sd_model
+
+    script_callbacks.model_loaded_callback(sd_model)
 
     print(f"Model loaded.")
     return sd_model
@@ -252,7 +255,7 @@ def reload_model_weights(sd_model, info=None):
 
     if sd_model.sd_checkpoint_info.config != checkpoint_info.config or should_hijack_inpainting(checkpoint_info) != should_hijack_inpainting(sd_model.sd_checkpoint_info):
         checkpoints_loaded.clear()
-        shared.sd_model = load_model(checkpoint_info)
+        load_model(checkpoint_info)
         return shared.sd_model
 
     if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
@@ -265,6 +268,7 @@ def reload_model_weights(sd_model, info=None):
     load_model_weights(sd_model, checkpoint_info)
 
     sd_hijack.model_hijack.hijack(sd_model)
+    script_callbacks.model_loaded_callback(sd_model)
 
     if not shared.cmd_opts.lowvram and not shared.cmd_opts.medvram:
         sd_model.to(devices.device)
