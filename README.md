@@ -65,14 +65,14 @@ Check the [custom scripts](https://github.com/AUTOMATIC1111/stable-diffusion-web
 - Highres Fix, a convenience option to produce high resolution pictures in one click without usual distortions
 - Reloading checkpoints on the fly
 - Checkpoint Merger, a tab that allows you to merge up to 3 checkpoints into one
-- [Custom scripts](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Custom-Scripts) with many extensions from community
+- [Custom scripts](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Custom-Scripts) with many [extensions](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Extensions) from community
 - [Composable-Diffusion](https://energy-based-model.github.io/Compositional-Visual-Generation-with-Composable-Diffusion-Models/), a way to use multiple prompts at once
      - separate prompts using uppercase `AND`
      - also supports weights for prompts: `a cat :1.2 AND a dog AND a penguin :2.2`
 - No token limit for prompts (original stable diffusion lets you use up to 75 tokens)
 - DeepDanbooru integration, creates danbooru style tags for anime prompts (add --deepdanbooru to commandline args)
 - [xformers](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Xformers), major speed increase for select cards: (add --xformers to commandline args)
-- via extension: [History tab](https://github.com/yfszzx/stable-diffusion-webui-images-browser): view, direct and delete images conveniently within the UI
+- via [extension](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Extensions): [History tab](https://github.com/yfszzx/stable-diffusion-webui-images-browser): view, direct and delete images conveniently within the UI
 - Generate forever option
 - Training tab
      - hypernetworks and embeddings options
@@ -83,10 +83,10 @@ Check the [custom scripts](https://github.com/AUTOMATIC1111/stable-diffusion-web
 - Estimated completion time in progress bar
 - API
 - Support for dedicated [inpainting model](https://github.com/runwayml/stable-diffusion#inpainting-with-stable-diffusion) by RunwayML. 
-- via extension: [Aesthetic Gradients](https://github.com/AUTOMATIC1111/stable-diffusion-webui-aesthetic-gradients), a way to generate images with a specific aesthetic by using clip images embds (implementation of [https://github.com/vicgalle/stable-diffusion-aesthetic-gradients](https://github.com/vicgalle/stable-diffusion-aesthetic-gradients))
+- via [extension](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Extensions): [Aesthetic Gradients](https://github.com/AUTOMATIC1111/stable-diffusion-webui-aesthetic-gradients), a way to generate images with a specific aesthetic by using clip images embds (implementation of [https://github.com/vicgalle/stable-diffusion-aesthetic-gradients](https://github.com/vicgalle/stable-diffusion-aesthetic-gradients))
 
 ## Where are Aesthetic Gradients?!?!
-Aesthetic Gradients are now an extension. You can install it using git:
+Aesthetic Gradients are now an [extension](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Extensions). You can install it using git:
 
 ```commandline
 git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui-aesthetic-gradients extensions/aesthetic-gradients
@@ -96,7 +96,7 @@ After running this command, make sure that you have `aesthetic-gradients` dir in
 the UI. The interface for Aesthetic Gradients should appear exactly the same as it was.
 
 ## Where is History/Image browser?!?!
-Image browser is now an extension. You can install it using git:
+Image browser is now an [extension](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Extensions). You can install it using git:
 
 ```commandline
 git clone https://github.com/yfszzx/stable-diffusion-webui-images-browser extensions/images-browser
