@@ -304,7 +304,7 @@ input[type="range"]{
 #lightboxModal{
   display: none;
   position: fixed;
-  z-index: 1001;
+  z-index: 900;
   padding-top: 100px;
   left: 0;
   top: 0;
@@ -341,19 +341,24 @@ input[type="range"]{
     grid-area: tile;
 }
 
+<<<<<<< HEAD
 .modalClose, 
 .modalZoom,
 .modalTileImage {
+=======
+.modalClose {
+>>>>>>> 205ba6e1168e04aab4f0dd80fa0954e88790b66e
   color: white;
   font-size: 35px;
   font-weight: bold;
+<<<<<<< HEAD
   cursor: pointer;
+=======
+>>>>>>> 205ba6e1168e04aab4f0dd80fa0954e88790b66e
 }
 
 .modalClose:hover,
-.modalClose:focus,
-.modalZoom:hover,
-.modalZoom:focus {
+.modalClose:focus {
   color: #999;
   text-decoration: none;
   cursor: pointer;
@@ -367,11 +372,14 @@ input[type="range"]{
     width: auto;
 }
 
+<<<<<<< HEAD
 .modalImageFullscreen {
     object-fit: contain;
     height: 90%;
 }
 
+=======
+>>>>>>> 205ba6e1168e04aab4f0dd80fa0954e88790b66e
 .modalPrev,
 .modalNext {
   cursor: pointer;

@@ -129,6 +129,7 @@ function showGalleryImage() {
     }, 100);
 }
 
+<<<<<<< HEAD
 function modalZoomSet(modalImage, enable) {
     if (enable) {
         modalImage.classList.add('modalImageFullscreen');
@@ -160,22 +161,35 @@ function modalTileImageToggle(event) {
 
 function galleryImageHandler(e) {
     if (e && e.parentElement.tagName == 'BUTTON') {
+=======
+function galleryImageHandler(e){
+    if(e && e.parentElement.tagName == 'BUTTON'){
+>>>>>>> 205ba6e1168e04aab4f0dd80fa0954e88790b66e
         e.onclick = showGalleryImage;
     }
 }
 
+<<<<<<< HEAD
 onUiUpdate(function() {
     fullImg_preview = gradioApp().querySelectorAll('img.w-full')
     if (fullImg_preview != null) {
         fullImg_preview.forEach(galleryImageHandler);
     }
     updateOnBackgroundChange();
+=======
+onUiUpdate(function(){
+	fullImg_preview = gradioApp().querySelectorAll('img.w-full')
+	    if(fullImg_preview != null){
+		fullImg_preview.forEach(galleryImageHandler);
+	}
+>>>>>>> 205ba6e1168e04aab4f0dd80fa0954e88790b66e
 })
 
 document.addEventListener("DOMContentLoaded", function() {
     const modalFragment = document.createDocumentFragment();
     const modal = document.createElement('div')
     modal.onclick = closeModal;
+<<<<<<< HEAD
     modal.id = "lightboxModal";
     modal.tabIndex = 0
     modal.addEventListener('keydown', modalKeyHandler, true)
@@ -205,6 +219,18 @@ document.addEventListener("DOMContentLoaded", function() {
     modalClose.title = "Close image viewer";
     modalControls.appendChild(modalClose)
 
+=======
+    
+    const modalClose = document.createElement('span')
+    modalClose.className = 'modalClose cursor';
+    modalClose.innerHTML = '&times;'
+    modalClose.onclick = closeModal;
+    modal.id = "lightboxModal";
+    modal.tabIndex=0
+    modal.addEventListener('keydown', modalKeyHandler, true)
+    modal.appendChild(modalClose)
+
+>>>>>>> 205ba6e1168e04aab4f0dd80fa0954e88790b66e
     const modalImage = document.createElement('img')
     modalImage.id = 'modalImage';
     modalImage.onclick = closeModal;
