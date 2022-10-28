@@ -1606,6 +1606,7 @@ def create_ui(wrap_gradio_gpu_call):
                                 db_adam_epsilon = gr.Number(label="Adam Epsilon", precision=8, value=0.00000001)
                                 db_max_grad_norm = gr.Number(label="Max Grad Norms", value=1.0, precision=1)
                                 db_batch_size = gr.Number(label="Batch Size", precision=1, value=1)
+                                db_class_batch_size = gr.Number(label="Class Batch Size", precision=1, value=1)
                                 db_seed = gr.Number(label="Seed", precision=1, value=-1)
                                 db_grad_acc_steps = gr.Number(label="Grad Accumulation Steps", precision=1, value=1)
                                 db_warmup_steps = gr.Number(label="Warmup Steps", precision=1, value=0)
@@ -1689,6 +1690,7 @@ def create_ui(wrap_gradio_gpu_call):
                 db_adam_epsilon,
                 db_max_grad_norm,
                 db_batch_size,
+                db_class_batch_size,
                 db_seed,
                 db_grad_acc_steps,
                 db_warmup_steps

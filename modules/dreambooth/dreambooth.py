@@ -1,11 +1,11 @@
 import gc
+import hashlib
 import html
 import itertools
 import json
 import math
 import os
 import traceback
-from contextlib import nullcontext
 from pathlib import Path
 from typing import Optional
 
@@ -72,6 +72,7 @@ class DreamBooth:
                  adam_epsilon,
                  max_grad_norm,
                  batch_size,
+                 class_batch_size,
                  seed,
                  grad_acc_steps,
                  warmup_steps,
@@ -86,7 +87,7 @@ class DreamBooth:
         else:
             self.seed = seed
         self.train_batch_size = batch_size
-        self.sample_batch_size = batch_size
+        self.sample_batch_size = class_batch_size
         self.max_train_steps = steps
         self.num_class_images = num_class_images
         self.gradient_accumulation_steps = grad_acc_steps
@@ -143,9 +144,7 @@ class DreamBooth:
             logging_dir=logging_dir,
             cpu=self.use_cpu
         )
-        # Currently, it's not possible to do gradient accumulation when training two models with accelerate.accumulate
-        # This will be enabled soon in accelerate. For now, we don't allow gradient accumulation when training two models.
-        # TODO (patil-suraj): Remove this check when gradient accumulation with two models is enabled in accelerate.
+
         if self.train_text_encoder and self.gradient_accumulation_steps > 1 and accelerator.num_processes > 1:
             msg = "Gradient accumulation is not supported when training the text encoder in distributed training. " \
                   "Please set gradient_accumulation_steps to 1. This feature will be supported in the future. Text " \
@@ -167,13 +166,11 @@ class DreamBooth:
                 shared.state.textinfo = f"Generating class images for training..."
                 torch_dtype = torch.float16 if accelerator.device.type == "cuda" else torch.float32
                 pipeline = StableDiffusionPipeline.from_pretrained(
-                    self.pretrained_model_path, torch_dtype=torch_dtype
+                    self.pretrained_model_path,
+                    torch_dtype=torch_dtype,
+                    safety_checker=None,
+                    revision=self.total_steps,
                 )
-
-                def foo(images, clip_input):
-                    return images, False
-
-                pipeline.safety_checker = foo
                 pipeline.set_progress_bar_config(disable=True)
 
                 num_new_images = self.num_class_images - cur_class_images
@@ -182,25 +179,29 @@ class DreamBooth:
                 shared.state.job_no = 0
                 sample_dataset = PromptDataset(self.class_prompt, num_new_images)
                 sample_dataloader = torch.utils.data.DataLoader(sample_dataset, batch_size=self.sample_batch_size)
-
                 sample_dataloader = accelerator.prepare(sample_dataloader)
                 pipeline.to(accelerator.device)
-                # Disabled in opt
-                with torch.autocast("cuda"), torch.inference_mode():
-                    for example in tqdm(
-                            sample_dataloader, desc="Generating class images",
-                            disable=not accelerator.is_local_main_process
-                    ):
-                        images = pipeline(example["prompt"]).images
+                for example in tqdm(
+                    sample_dataloader, desc="Generating class images", disable=not accelerator.is_local_main_process
+                ):
+                    images = pipeline(example["prompt"]).images
 
-                        for i, image in enumerate(images):
-                            image.save(class_images_dir / f"{example['index'][i] + cur_class_images}.jpg")
-                            shared.state.job_no += 1
+                    for i, image in enumerate(images):
+                        shared.state.job_no += 1
+                        hash_image = hashlib.sha1(image.tobytes()).hexdigest()
+                        image_filename = class_images_dir / f"{example['index'][i] + cur_class_images}-{hash_image}.jpg"
+                        shared.state.current_image = image
+                        image.save(image_filename)
+
+                    if shared.state.interrupted:
+                        break
 
                 del pipeline
                 if torch.cuda.is_available():
                     torch.cuda.empty_cache()
-
+                if shared.state.interrupted:
+                    shared.state.textinfo = "Training canceled..."
+                    return self.output_dir, 0
         # Load existing training data if exist
         shared.state.textinfo = "Loading models..."
         if self.output_dir is not None:
@@ -219,7 +220,7 @@ class DreamBooth:
         text_encoder = CLIPTextModel.from_pretrained(os.path.join(ex_model_path, "text_encoder"))
         vae = AutoencoderKL.from_pretrained(os.path.join(ex_model_path, "vae"))
         unet = UNet2DConditionModel.from_pretrained(os.path.join(ex_model_path, "unet"))
-        printm("Loaded model")
+        printm("Loaded model.")
         vae.requires_grad_(False)
         if not self.train_text_encoder:
             text_encoder.requires_grad_(False)
@@ -293,39 +294,6 @@ class DreamBooth:
         train_dataloader = torch.utils.data.DataLoader(
             train_dataset, batch_size=self.train_batch_size, shuffle=True, collate_fn=collate_fn, pin_memory=True
         )
-        weight_dtype = torch.float32
-        if self.mixed_precision == "fp16":
-            weight_dtype = torch.float16
-        elif self.mixed_precision == "bf16":
-            weight_dtype = torch.bfloat16
-        vae.to(accelerator.device, dtype=weight_dtype)
-        printm("Vae to device")
-        if not self.train_text_encoder:
-            text_encoder.to(accelerator.device, dtype=weight_dtype)
-        if not self.not_cache_latents:
-            latents_cache = []
-            text_encoder_cache = []
-            for batch in tqdm(train_dataloader, desc="Caching latents"):
-                with torch.no_grad():
-                    batch["pixel_values"] = batch["pixel_values"].to(accelerator.device, non_blocking=True,
-                                                                     dtype=weight_dtype)
-                    batch["input_ids"] = batch["input_ids"].to(accelerator.device, non_blocking=True)
-                    latents_cache.append(vae.encode(batch["pixel_values"]).latent_dist)
-                    if self.train_text_encoder:
-                        text_encoder_cache.append(batch["input_ids"])
-                    else:
-                        text_encoder_cache.append(text_encoder(batch["input_ids"])[0])
-            train_dataset = LatentsDataset(latents_cache, text_encoder_cache)
-            train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=1, collate_fn=lambda x: x,
-                                                           shuffle=True)
-            printm("Latents Cached")
-            del vae
-            printm("VAE Deleted")
-            if not self.train_text_encoder:
-                del text_encoder
-                printm("Encoder Deleted")
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
 
         # Scheduler and math around the number of training steps.
         overrode_max_train_steps = False
@@ -349,7 +317,14 @@ class DreamBooth:
             unet, optimizer, train_dataloader, lr_scheduler = accelerator.prepare(
                 unet, optimizer, train_dataloader, lr_scheduler
             )
-        printm("Accelerator Prepared")
+        weight_dtype = torch.float32
+        if self.mixed_precision == "fp16":
+            weight_dtype = torch.float16
+        elif self.mixed_precision == "bf16":
+            weight_dtype = torch.bfloat16
+        vae.to(accelerator.device, dtype=weight_dtype)
+        if not self.train_text_encoder:
+            text_encoder.to(accelerator.device, dtype=weight_dtype)
         # We need to recalculate our total training steps as the size of the training dataloader may have changed.
         num_update_steps_per_epoch = math.ceil(len(train_dataloader) / self.gradient_accumulation_steps)
         if overrode_max_train_steps:
@@ -361,15 +336,14 @@ class DreamBooth:
         # The trackers initializes automatically on the main process.
         if accelerator.is_main_process:
             accelerator.init_trackers("dreambooth", config=vars(self))
-        printm("Trackers initialized")
+
         # Train!
         total_batch_size = self.train_batch_size * accelerator.num_processes * self.gradient_accumulation_steps
-        stats = f"CPU: {self.use_cpu} Adam: {self.use_8bit_adam}, Prec: {self.mixed_precision}, " \
+        stats = f"CPU: {self.use_cpu} Adam: {use_adam}, Prec: {self.mixed_precision}, " \
                 f"Prior: {self.with_prior_preservation}, Grad: {self.gradient_checkpointing}, " \
-                f"TextTr: {self.train_text_encoder}, NoCacheLatent: {self.not_cache_latents} "
+                f"TextTr: {self.train_text_encoder} "
         printm(stats)
         print("***** Running training *****")
-        print(f"  CPU: {self.use_cpu}, Adam: {use_adam}, Precision: {self.mixed_precision}, GradCkpt: {self.gradient_checkpointing}")
         print(f"  Num examples = {len(train_dataset)}")
         print(f"  Num batches each epoch = {len(train_dataloader)}")
         print(f"  Num Epochs = {self.num_train_epochs}")
@@ -387,62 +361,46 @@ class DreamBooth:
         shared.state.job_count = self.max_train_steps
         shared.state.job_no = global_step
         shared.state.textinfo = f"Training: {global_step}/{self.max_train_steps} steps"
-        loss_avg = AverageMeter()
-        text_enc_context = nullcontext() if self.train_text_encoder else torch.no_grad()
         training_failed = False
 
         try:
             for epoch in range(self.num_train_epochs):
-                printm("Training Unet")
                 unet.train()
+                if self.train_text_encoder:
+                    text_encoder.train()
                 for step, batch in enumerate(train_dataloader):
-                    print("Accuumulate?")
                     with accelerator.accumulate(unet):
                         # Convert images to latent space
-                        with torch.no_grad(), torch.autocast("cuda"):
-                            if not self.not_cache_latents:
-                                latent_dist = batch[0][0]
-                                printm("Loaded LatentDist")
-                            else:
-                                latent_dist = vae.encode(batch["pixel_values"].to(dtype=weight_dtype)).latent_dist
-                                printm("VAE Encode Latent Dist")
-                            latents = latent_dist.sample() * 0.18215
+                        latents = vae.encode(batch["pixel_values"].to(dtype=weight_dtype)).latent_dist.sample()
+                        latents = latents * 0.18215
+
+                        # Sample noise that we'll add to the latents
                         noise = torch.randn_like(latents)
                         bsz = latents.shape[0]
                         # Sample a random timestep for each image
                         timesteps = torch.randint(0, noise_scheduler.config.num_train_timesteps, (bsz,),
                                                   device=latents.device)
-                        printm("Got Timesteps")
                         timesteps = timesteps.long()
+
+                        # Add noise to the latents according to the noise magnitude at each timestep
+                        # (this is the forward diffusion process)
                         noisy_latents = noise_scheduler.add_noise(latents, noise, timesteps)
-                        printm("Added Noise")
+
                         # Get the text embedding for conditioning
-                        with text_enc_context:
-                            if not self.not_cache_latents:
-                                if self.train_text_encoder:
-                                    encoder_hidden_states = text_encoder(batch[0][1])[0]
-                                    printm("TextEnc States")
-                                else:
-                                    encoder_hidden_states = batch[0][1]
-                                    printm("Batch States")
-                            else:
-                                encoder_hidden_states = text_encoder(batch["input_ids"])[0]
-                                printm("Input States")
+                        encoder_hidden_states = text_encoder(batch["input_ids"])[0]
 
                         # Predict the noise residual
-                        printm("Noise prediction...")
                         noise_pred = unet(noisy_latents, timesteps, encoder_hidden_states).sample
-                        printm("Prior Preservation")
+
                         if self.with_prior_preservation:
-                            # Chunk the noise and noise_pred into two parts and compute the loss on each part
-                            # separately.
+                            # Chunk the noise and noise_pred into two parts and compute the loss on each part separately.
                             noise_pred, noise_pred_prior = torch.chunk(noise_pred, 2, dim=0)
                             noise, noise_prior = torch.chunk(noise, 2, dim=0)
-                            printm("Loss")
+
                             # Compute instance loss
                             loss = F.mse_loss(noise_pred.float(), noise.float(), reduction="none").mean(
                                 [1, 2, 3]).mean()
-                            printm("Prior Loss")
+
                             # Compute prior loss
                             prior_loss = F.mse_loss(noise_pred_prior.float(), noise_prior.float(), reduction="mean")
 
@@ -450,72 +408,68 @@ class DreamBooth:
                             loss = loss + self.prior_loss_weight * prior_loss
                         else:
                             loss = F.mse_loss(noise_pred.float(), noise.float(), reduction="mean")
-                            printm("No prior")
+
                         accelerator.backward(loss)
-                        printm("Opt Step")
+                        if accelerator.sync_gradients:
+                            params_to_clip = (
+                                itertools.chain(unet.parameters(), text_encoder.parameters())
+                                if self.train_text_encoder
+                                else unet.parameters()
+                            )
+                            accelerator.clip_grad_norm_(params_to_clip, self.max_grad_norm)
                         optimizer.step()
-                        printm("Sched step")
                         lr_scheduler.step()
-                        printm("Zero grad opt")
-                        optimizer.zero_grad(set_to_none=True)
-                        loss_avg.update(loss.detach_(), bsz)
+                        optimizer.zero_grad()
 
-                    if self.save_img_every:
-                        if not global_step % self.save_img_every and global_step != 0:
-                            prompt = self.instance_prompt
-                            last_saved_image = os.path.join(self.output_dir,
-                                                            f'{self.instance_prompt}_{global_step}.png')
-                            if accelerator.is_main_process:
-                                print(f"Saving pretrained model data at step {global_step}.")
-                                pipeline = StableDiffusionPipeline.from_pretrained(
-                                    self.pretrained_model_path,
-                                    unet=accelerator.unwrap_model(unet),
-                                    use_auth_token=False
-                                )
-                                pipeline = pipeline.to("cuda")
-                                pipeline.save_pretrained(self.output_dir)
-                                with autocast("cuda"):
-                                    image = pipeline(prompt, num_inference_steps=50, guidance_scale=7.5).images[0]
-                                    shared.state.current_image = image
-                                    image.save(last_saved_image)
-                            pass
+                        if self.save_img_every:
+                            if not global_step % self.save_img_every and global_step != 0:
+                                prompt = self.instance_prompt
+                                last_saved_image = os.path.join(self.output_dir,
+                                                                f'{self.instance_prompt}_{global_step}.png')
+                                if accelerator.is_main_process:
+                                    pipeline = StableDiffusionPipeline.from_pretrained(
+                                        self.pretrained_model_path,
+                                        unet=accelerator.unwrap_model(unet),
+                                        revision=self.total_steps + global_step
+                                    )
+                                    with autocast("cuda"):
+                                        image = pipeline(prompt, num_inference_steps=50, guidance_scale=7.5).images[0]
+                                        shared.state.current_image = image
+                                        image.save(last_saved_image)
+                                pass
 
-                    if self.save_data_every:
-                        # Check to make sure this doesn't throw OOM if training on CPU
-                        if not global_step % self.save_data_every and global_step != 0:
-                            if accelerator.is_main_process:
-                                print(f"Saving pretrained model data at step {global_step}.")
-                                pipeline = StableDiffusionPipeline.from_pretrained(
-                                    self.pretrained_model_path,
-                                    unet=accelerator.unwrap_model(unet),
-                                    use_auth_token=False,
-                                )
-                                pipeline = pipeline.to("cuda")
-                                with autocast("cuda"):
-                                    pipeline.save_pretrained(self.output_dir)
-                            pass
-                    if not global_step % self.log_interval:
-                        # Check to make sure this doesn't throw OOM if training on CPU
-                        logs = {"loss": loss_avg.avg.item(), "lr": lr_scheduler.get_last_lr()[0]}
-                        progress_bar.set_postfix(**logs)
-                        accelerator.log(logs, step=global_step)
-
-                    progress_bar.update(1)
-                    global_step += 1
-                    shared.state.job_no = global_step
-                    shared.state.textinfo = f"Training: {global_step}/{self.max_train_steps} steps"
+                        if self.save_data_every:
+                            # Check to make sure this doesn't throw OOM if training on CPU
+                            if not global_step % self.save_data_every and global_step != 0:
+                                if accelerator.is_main_process:
+                                    print(f"Saving pretrained model data at step {global_step}.")
+                                    pipeline = StableDiffusionPipeline.from_pretrained(
+                                        self.pretrained_model_path,
+                                        unet=accelerator.unwrap_model(unet),
+                                        revision=self.total_steps + global_step
+                                    )
+                                    pipeline = pipeline.to("cuda")
+                                    with autocast("cuda"):
+                                        pipeline.save_pretrained(self.output_dir)
+                                pass
+                    # Checks if the accelerator has performed an optimization step behind the scenes
+                    if accelerator.sync_gradients:
+                        progress_bar.update(1)
+                        global_step += 1
+                        shared.state.job_no = global_step
+                        shared.state.textinfo = f"Training: {global_step}/{self.max_train_steps} steps"
+                        if shared.state.interrupted:
+                            shared.state.textinfo = f"Training canceled {global_step}/{self.max_train_steps}"
+                            break
+                        if global_step >= self.max_train_steps:
+                            break
+                    accelerator.wait_for_everyone()
                     if shared.state.interrupted:
                         shared.state.textinfo = f"Training canceled {global_step}/{self.max_train_steps}"
                         break
-                    if global_step >= self.max_train_steps:
-                        break
-                accelerator.wait_for_everyone()
-                if shared.state.interrupted:
-                    shared.state.textinfo = f"Training canceled {global_step}/{self.max_train_steps}"
-                    break
-                shared.state.job_no = global_step
-                shared.state.textinfo = f"Training: {global_step}/{self.max_train_steps} steps"
-            # Create the pipeline using the trained modules and save it.
+                    shared.state.job_no = global_step
+                    shared.state.textinfo = f"Training: {global_step}/{self.max_train_steps} steps"
+                # Create the pipeline using the trained modules and save it.
         except Exception as e:
             printm("Caught exception.")
             print(f"Exception training db: {e}")
@@ -528,7 +482,7 @@ class DreamBooth:
                     self.pretrained_model_path,
                     unet=accelerator.unwrap_model(unet),
                     text_encoder=accelerator.unwrap_model(text_encoder),
-                    use_auth_token=False
+                    revision=self.total_steps + global_step
                 )
                 pipeline.save_pretrained(self.output_dir)
                 del pipeline
@@ -596,6 +550,7 @@ def start_training(model_name,
                    adam_epsilon,
                    max_grad_norm,
                    batch_size,
+                   class_batch_size,
                    seed,
                    grad_acc_steps,
                    warmup_steps
@@ -651,6 +606,7 @@ def start_training(model_name,
                        adam_epsilon,
                        max_grad_norm,
                        batch_size,
+                       class_batch_size,
                        seed,
                        grad_acc_steps,
                        warmup_steps,
@@ -699,14 +655,14 @@ class DreamBoothDataset(Dataset):
     """
 
     def __init__(
-            self,
-            instance_data_root,
-            instance_prompt,
-            tokenizer,
-            class_data_root=None,
-            class_prompt=None,
-            size=512,
-            center_crop=False,
+        self,
+        instance_data_root,
+        instance_prompt,
+        tokenizer,
+        class_data_root=None,
+        class_prompt=None,
+        size=512,
+        center_crop=False,
     ):
         self.size = size
         self.center_crop = center_crop
@@ -716,7 +672,7 @@ class DreamBoothDataset(Dataset):
         if not self.instance_data_root.exists():
             shared.state.textinfo = f"Invalid directory for training data: {self.instance_data_root}"
 
-        self.instance_images_path = [x for x in Path(instance_data_root).iterdir() if x.is_file()]
+        self.instance_images_path = list(Path(instance_data_root).iterdir())
         self.num_instance_images = len(self.instance_images_path)
         self.instance_prompt = instance_prompt
         self._length = self.num_instance_images
@@ -724,7 +680,7 @@ class DreamBoothDataset(Dataset):
         if class_data_root is not None:
             self.class_data_root = Path(class_data_root)
             self.class_data_root.mkdir(parents=True, exist_ok=True)
-            self.class_images_path = [x for x in Path(class_data_root).iterdir() if x.is_file()]
+            self.class_images_path = list(self.class_data_root.iterdir())
             self.num_class_images = len(self.class_images_path)
             self._length = max(self.num_class_images, self.num_instance_images)
             self.class_prompt = class_prompt
@@ -786,32 +742,6 @@ class PromptDataset(Dataset):
         example["prompt"] = self.prompt
         example["index"] = index
         return example
-
-
-class LatentsDataset(Dataset):
-    def __init__(self, latents_cache, text_encoder_cache):
-        self.latents_cache = latents_cache
-        self.text_encoder_cache = text_encoder_cache
-
-    def __len__(self):
-        return len(self.latents_cache)
-
-    def __getitem__(self, index):
-        return self.latents_cache[index], self.text_encoder_cache[index]
-
-
-class AverageMeter:
-    def __init__(self, name=None):
-        self.name = name
-        self.reset()
-
-    def reset(self):
-        self.sum = self.count = self.avg = 0
-
-    def update(self, val, n=1):
-        self.sum += val * n
-        self.count += n
-        self.avg = self.sum / self.count
 
 
 def get_full_repo_name(model_id: str, organization: Optional[str] = None, token: Optional[str] = None):
