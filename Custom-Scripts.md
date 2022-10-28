@@ -14,7 +14,15 @@ Does not actually draw a matrix, just produces pictures.
 ## Dynamic Prompt Templates
 https://github.com/adieyal/sd-dynamic-prompting
 
-A custom script to implement a tiny template language for random prompt generation. Features merged with [Wildcards](https://github.com/jtkelm2/stable-diffusion-webui-1/blob/master/scripts/wildcards.py) script.
+A custom script to implement an expressive template language for random or combinatorial prompt generation along with features to support deep wildcard directory structures.
+
+The script supports both file-based wildcards using the `__wildcard__` syntax (which matches wildcard.txt), as well as inline `{summer|autumn|winter|spring}`. Other features include:
+- wildcard globbing - `__colours*__` will match both `colours1.txt` and `colours2.txt`. This also includes recursive globbing through directories, i.e. `/path/to/colours3.txt`
+- combinatorial generation - generates every possible prompt from a given template.
+- wildcard combinations - `{2$$blue|green|brown}` will generate one of `blue, green`, `blue, brown`, `green, brown`.
+- recursive templates - `{__warm_colours__|__cold_colours__}` will pick a wildcard from either warm_colours.txt or cold_colours.txt. Wildcard files can also contain templates.
+
+Features merged with the **[Wildcards](https://github.com/jtkelm2/stable-diffusion-webui-1/blob/master/scripts/wildcards.py)** script.   
 
 ## Wildcards
 Script support so that prompts can contain wildcard terms (indicated by surrounding double underscores), with values instantiated randomly from the corresponding .txt file in the folder `/scripts/wildcards/`. For example:
