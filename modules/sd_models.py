@@ -36,7 +36,9 @@ def setup_model():
 
 
 def checkpoint_tiles():
-    return sorted([x.title for x in checkpoints_list.values()])
+    def natural_key(string_):
+        return [int(s) if s.isdigit() else s for s in re.split(r'(\d+)', string_) if s]
+    return sorted([x.title for x in checkpoints_list.values()], key=natural_key)
 
 
 def list_models():
