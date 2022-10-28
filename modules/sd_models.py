@@ -3,6 +3,7 @@ import os.path
 import sys
 from collections import namedtuple
 import torch
+import re
 from omegaconf import OmegaConf
 
 from ldm.util import instantiate_from_config
@@ -35,8 +36,10 @@ def setup_model():
     list_models()
 
 
-def checkpoint_tiles():
-    return sorted([x.title for x in checkpoints_list.values()])
+def checkpoint_tiles(): 
+    convert = lambda name: int(name) if name.isdigit() else name.lower() 
+    alphanumeric_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)] 
+    return sorted([x.title for x in checkpoints_list.values()], key = alphanumeric_key)
 
 
 def list_models():
