@@ -437,6 +437,7 @@ class DreamBooth:
                                         unet=accelerator.unwrap_model(unet),
                                         revision=self.total_steps + global_step
                                     )
+                                    pipeline = pipeline.to("cuda")
                                     with autocast("cuda"), torch.no_grad():
                                         image = pipeline(prompt, num_inference_steps=50, guidance_scale=7.5).images[0]
                                         shared.state.current_image = image
