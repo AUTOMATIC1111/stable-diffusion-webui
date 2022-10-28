@@ -1409,8 +1409,6 @@ def create_ui(wrap_gradio_gpu_call):
                 training_width,
                 training_height,
                 steps,
-                clip_grad_mode,
-                clip_grad_value,
                 create_image_every,
                 save_embedding_every,
                 template_file,
