@@ -19,7 +19,7 @@ import modules.scripts
 def process_batch(p, input_dir, output_dir, args):
     processing.fix_seed(p)
 
-    images = [file for file in [os.path.join(input_dir, x) for x in os.listdir(input_dir)] if os.path.isfile(file)]
+    images = [file for file in [os.path.join(input_dir, x) for x in os.listdir(input_dir)] if (os.path.isfile(file) and not os.path.basename(file).startswith('.'))]
 
     print(f"Will process {len(images)} images, creating {p.n_iter * p.batch_size} new images for each.")
 
