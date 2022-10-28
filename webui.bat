@@ -26,7 +26,7 @@ echo Unable to create venv in directory %VENV_DIR%
 goto :show_stdout_stderr
 
 :activate_venv
-set PYTHON="%~dp0%VENV_DIR%\Scripts\Python.exe"
+set PYTHON="%~dp0%VENV_DIR%\bin\python.exe"
 echo venv %PYTHON%
 goto :launch
 
