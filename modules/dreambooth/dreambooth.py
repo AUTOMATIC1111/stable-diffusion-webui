@@ -171,6 +171,11 @@ class DreamBooth:
                     safety_checker=None,
                     revision=self.total_steps,
                 )
+
+                def foo(images, clip_input):
+                    return images, False
+
+                pipeline.safety_checker = foo
                 pipeline.set_progress_bar_config(disable=True)
 
                 num_new_images = self.num_class_images - cur_class_images
@@ -450,6 +455,7 @@ class DreamBooth:
                                     )
                                     pipeline = pipeline.to("cuda")
                                     with autocast("cuda"):
+                                        pipeline.text_encoder.resize_token_embeddings(49409)
                                         pipeline.save_pretrained(self.output_dir)
                                 pass
                     # Checks if the accelerator has performed an optimization step behind the scenes
@@ -484,6 +490,7 @@ class DreamBooth:
                     text_encoder=accelerator.unwrap_model(text_encoder),
                     revision=self.total_steps + global_step
                 )
+                pipeline.text_encoder.resize_token_embeddings(49409)
                 pipeline.save_pretrained(self.output_dir)
                 del pipeline
 
