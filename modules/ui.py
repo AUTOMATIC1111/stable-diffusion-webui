@@ -1812,6 +1812,7 @@ Requested path was: {f}
 
         settings_map = {
             'sd_hypernetwork': 'Hypernet',
+            'sd_hypernetwork_strength': 'Hypernetwork strength',
             'CLIP_stop_at_last_layers': 'Clip skip',
             'sd_model_checkpoint': 'Model hash',
         }
