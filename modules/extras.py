@@ -34,14 +34,14 @@ class LruCache(OrderedDict):
         image: Image.Image
         info: str
 
-    def __init__(self, max_size:int = 5, *args, **kwargs):
+    def __init__(self, max_size: int = 5, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._max_size = max_size
 
     def get(self, key: LruCache.Key) -> LruCache.Value:
         ret = super().get(key)
         if ret is not None:
-            self.move_to_end(key) # Move to end of eviction list
+            self.move_to_end(key)  # Move to end of eviction list
         return ret
 
     def put(self, key: LruCache.Key, value: LruCache.Value) -> None:
@@ -49,10 +49,11 @@ class LruCache(OrderedDict):
         while len(self) > self._max_size:
             self.popitem(last=False)
 
-cached_images: LruCache = LruCache(max_size = 5)
+
+cached_images: LruCache = LruCache(max_size=5)
 
 
-def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_dir, show_extras_results, gfpgan_visibility, codeformer_visibility, codeformer_weight, upscaling_resize, upscaling_resize_w, upscaling_resize_h, upscaling_crop, extras_upscaler_1, extras_upscaler_2, extras_upscaler_2_visibility, upscale_first: bool ):
+def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_dir, show_extras_results, gfpgan_visibility, codeformer_visibility, codeformer_weight, upscaling_resize, upscaling_resize_w, upscaling_resize_h, upscaling_crop, extras_upscaler_1, extras_upscaler_2, extras_upscaler_2_visibility, upscale_first: bool):
     devices.torch_gc()
 
     imageArr = []
@@ -88,8 +89,8 @@ def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_
     else:
         outpath = opts.outdir_samples or opts.outdir_extras_samples
 
-
     # Extra operation definitions
+
     def run_gfpgan(image: Image.Image, info: str) -> Tuple[Image.Image, str]:
         restored_img = modules.gfpgan_model.gfpgan_fix_faces(np.array(image, dtype=np.uint8))
         res = Image.fromarray(restored_img)
@@ -109,7 +110,6 @@ def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_
 
         info += f"CodeFormer w: {round(codeformer_weight, 2)}, CodeFormer visibility:{round(codeformer_visibility, 2)}\n"
         return (res, info)
-
 
     def upscale(image, scaler_index, resize, mode, resize_w, resize_h, crop):
         upscaler = shared.sd_upscalers[scaler_index]
@@ -134,13 +134,14 @@ def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_
         upscaler_idx: int
         blend_alpha: float
 
-    def run_upscalers_blend( params: List[UpscaleParams], image: Image.Image, info: str) -> Tuple[Image.Image, str]:
+    def run_upscalers_blend(params: List[UpscaleParams], image: Image.Image, info: str) -> Tuple[Image.Image, str]:
         blended_result: Image.Image = None
         for upscaler in params:
-            upscale_args = (upscaler.upscaler_idx, upscaling_resize, resize_mode, upscaling_resize_w, upscaling_resize_h, upscaling_crop)
-            cache_key = LruCache.Key( image_hash = hash(np.array(image.getdata()).tobytes()),
-                                  info_hash = hash(info),
-                                  args_hash = hash(upscale_args + (upscaler.blend_alpha,)) )
+            upscale_args = (upscaler.upscaler_idx, upscaling_resize, resize_mode,
+                            upscaling_resize_w, upscaling_resize_h, upscaling_crop)
+            cache_key = LruCache.Key(image_hash=hash(np.array(image.getdata()).tobytes()),
+                                     info_hash=hash(info),
+                                     args_hash=hash(upscale_args + (upscaler.blend_alpha,)))
             cached_entry = cached_images.get(cache_key)
             if cached_entry is None:
                 res = upscale(image, *upscale_args)
@@ -165,14 +166,13 @@ def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_
 
     if upscaling_resize != 0:
         step_params: List[UpscaleParams] = []
-        step_params.append( UpscaleParams( upscaler_idx=extras_upscaler_1, blend_alpha=1.0 ))
+        step_params.append(UpscaleParams(upscaler_idx=extras_upscaler_1, blend_alpha=1.0))
         if extras_upscaler_2 != 0 and extras_upscaler_2_visibility > 0:
-            step_params.append( UpscaleParams( upscaler_idx=extras_upscaler_2, blend_alpha=extras_upscaler_2_visibility ) )
+            step_params.append(UpscaleParams(upscaler_idx=extras_upscaler_2, blend_alpha=extras_upscaler_2_visibility))
 
-        upscale_ops.append( partial(run_upscalers_blend, step_params) )
+        upscale_ops.append(partial(run_upscalers_blend, step_params))
 
     extras_ops: List[Callable] = (upscale_ops + facefix_ops) if upscale_first else (facefix_ops + upscale_ops)
-
 
     for image, image_name in zip(imageArr, imageNameArr):
         if image is None:
