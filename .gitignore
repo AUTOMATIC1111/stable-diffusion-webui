@@ -30,3 +30,4 @@ notification.mp3
 .vscode
 /extensions
 
+tmp/stdout.txt
