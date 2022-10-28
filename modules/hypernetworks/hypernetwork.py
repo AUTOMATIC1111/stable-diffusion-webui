@@ -208,13 +208,16 @@ def list_hypernetworks(path):
     res = {}
     for filename in glob.iglob(os.path.join(path, '**/*.pt'), recursive=True):
         name = os.path.splitext(os.path.basename(filename))[0]
-        res[name] = filename
+        # Prevent a hypothetical "None.pt" from being listed.
+        if name != "None":
+            res[name] = filename
     return res
 
 
 def load_hypernetwork(filename):
     path = shared.hypernetworks.get(filename, None)
-    if path is not None:
+    # Prevent any file named "None.pt" from being loaded.
+    if path is not None and filename != "None":
         print(f"Loading hypernetwork {filename}")
         try:
             shared.loaded_hypernetwork = Hypernetwork()
