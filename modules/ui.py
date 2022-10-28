@@ -858,13 +858,12 @@ def create_ui(wrap_gradio_gpu_call):
 
                         inpainting_fill_colors = []
                         with gr.Row(visible=False) as row_of_colors:
-                            with gr.Box() as box:
-                                with gr.Row(elem_id='color_row_1'):
-                                    inpainting_fill_colors += [
-                                        gr.Slider(label='Red', value=0, minimum=0, maximum=255, step=1),
-                                        gr.Slider(label='Green', value=0, minimum=0, maximum=255, step=1),
-                                        gr.Slider(label='Blue', value=0, minimum=0, maximum=255, step=1)
-                                    ]
+                            with gr.Box():
+                                for color_name in ("Red", "Green", "Blue", "Alpha"):
+                                    with gr.Row(elem_id="color_row_"+color_name):
+                                        inpainting_fill_colors.append(
+                                            gr.Slider(label=color_name, value=255 if color_name == 'Alpha' else 0, minimum=0, maximum=255, step=1)
+                                        )
                         def change_visibility(idx: int):
                             show = idx == 4 # 'paint' was used.
                             return {row_of_colors: gr_show(show)}
