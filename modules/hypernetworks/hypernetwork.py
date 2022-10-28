@@ -327,7 +327,7 @@ def report_statistics(loss_info:dict):
 
 
 
-def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log_directory, training_width, training_height, steps, create_image_every, save_hypernetwork_every, template_file, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height):
+def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log_directory, training_width, training_height, steps, clip_grad_mode, clip_grad_value, create_image_every, save_hypernetwork_every, template_file, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height):
     # images allows training previews to have infotext. Importing it at the top causes a circular import problem.
     from modules import images
 
@@ -384,6 +384,9 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
     if ititial_step > steps:
         return hypernetwork, filename
 
+    clip_grad_mode_value = clip_grad_mode == "value"
+    clip_grad_mode_norm = clip_grad_mode == "norm"
+
     scheduler = LearnRateScheduler(learn_rate, steps, ititial_step)
     # if optimizer == "AdamW": or else Adam / AdamW / SGD, etc...
     optimizer = torch.optim.AdamW(weights, lr=scheduler.learn_rate)
@@ -425,6 +428,11 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
             else:
                 steps_without_grad = 0
             assert steps_without_grad < 10, 'no gradient found for the trained weight after backward() for 10 steps in a row; this is a bug; training cannot continue'
+
+            if clip_grad_mode_value:
+                torch.nn.utils.clip_grad_value_(weights, clip_value=clip_grad_value)
+            elif clip_grad_mode_norm:
+                torch.nn.utils.clip_grad_norm_(weights, max_norm=clip_grad_value)
 
             optimizer.step()
 
