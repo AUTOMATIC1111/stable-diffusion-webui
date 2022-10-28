@@ -724,11 +724,14 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
             if self.image_mask is not None:
                 if self.inpainting_fill == 4: # 'paint' mode
-                    image = Image.composite(
-                        image,
-                        Image.new("RGB", image.size, tuple(self.inpainting_fill_colors)),
-                        ImageOps.invert(latent_mask)
+                    color_layer = Image.new("RGBA", image.size, (0,0,0,0))
+                    color_layer.paste(
+                        Image.new("RGBA", image.size, tuple(self.inpainting_fill_colors)),
+                        None, latent_mask
                     )
+                    image_rgba = image.convert("RGBA")
+                    image_rgba.alpha_composite(color_layer)
+                    image = image_rgba.convert("RGB")
                 elif self.inpainting_fill != 1:
                     image = masking.fill(image, latent_mask)
 
