@@ -1,3 +1,5 @@
-Looking in links: c:\Users\KRUPIN~1\AppData\Local\Temp\tmpu8ozjhly
-Requirement already satisfied: setuptools in c:\users\krupinskim\desktop\sd\stable-diffusion-webui\venv\lib\python3.10\site-packages (58.1.0)
-Requirement already satisfied: pip in c:\users\krupinskim\desktop\sd\stable-diffusion-webui\venv\lib\python3.10\site-packages (22.0.4)
+Looking in links: c:\Users\KRUPIN~1\AppData\Local\Temp\tmp6v8ix2gk
+Processing c:\users\krupinskim\appdata\local\temp\tmp6v8ix2gk\setuptools-58.1.0-py3-none-any.whl
+Processing c:\users\krupinskim\appdata\local\temp\tmp6v8ix2gk\pip-22.0.4-py3-none-any.whl
+Installing collected packages: setuptools, pip
+Successfully installed pip-22.0.4 setuptools-58.1.0
