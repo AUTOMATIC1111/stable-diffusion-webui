@@ -187,10 +187,12 @@ def prepare_enviroment():
 
     run_pip(f"install -r {requirements_file}", "requirements for Web UI")
 
-    if update_check:
+    sys.argv += args
+
+    if '--update-check' in args:
         version_check(commit)
     
-    if "--exit" in sys.argv:
+    if "--exit" in args:
         print("Exiting because of --exit argument")
         exit(0)
 
