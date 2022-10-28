@@ -1,3 +1,8 @@
-Looking in links: c:\Users\KRUPIN~1\AppData\Local\Temp\tmpu8ozjhly
-Requirement already satisfied: setuptools in c:\users\krupinskim\desktop\sd\stable-diffusion-webui\venv\lib\python3.10\site-packages (58.1.0)
-Requirement already satisfied: pip in c:\users\krupinskim\desktop\sd\stable-diffusion-webui\venv\lib\python3.10\site-packages (22.0.4)
+ Volume in drive D is DATA
+ Volume Serial Number is 7069-8DCB
+
+ Directory of D:\unstable-diffusion-webui\venv\Scripts
+
+28.10.2022  00:27           263 120 python.exe
+               1 File(s)        263 120 bytes
+               0 Dir(s)  239 989 116 928 bytes free
