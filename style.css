@@ -45,6 +45,8 @@
 }
 
 .performance .vram {
+    margin-left: 0;
+    text-align: right;
 }
 
 #txt2img_generate, #img2img_generate {
@@ -147,11 +149,6 @@
     background: transparent;
 }
 
-.my-4{
-    margin-top: 0;
-    margin-bottom: 0;
-}
-
 #toprow div{
     border: none;
     gap: 0;
@@ -164,6 +161,18 @@
 
 button{
     align-self: stretch !important;
+}
+
+#prompt, #negative_prompt{
+    border: none !important;
+}
+#prompt textarea, #negative_prompt textarea{
+    border: none !important;
+}
+
+
+#img2maskimg .h-60{
+    height: 30rem;
 }
 
 .overflow-hidden, .gr-panel{
@@ -236,6 +245,13 @@ fieldset span.text-gray-500, .gr-block.gr-box span.text-gray-500,  label.block s
     margin: 0;
 }
 
+.gr-panel div.flex-col div.justify-between div{
+  position: absolute;
+  top: -0.1em;
+  right: 1em;
+  padding: 0 0.5em;
+}
+
 #settings .gr-panel div.flex-col div.justify-between div{
     position: relative;
     z-index: 200;
@@ -304,7 +320,7 @@ input[type="range"]{
 #lightboxModal{
   display: none;
   position: fixed;
-  z-index: 1001;
+  z-index: 900;
   padding-top: 100px;
   left: 0;
   top: 0;
@@ -345,9 +361,17 @@ input[type="range"]{
 .modalZoom,
 .modalTileImage {
   color: white;
+  position: absolute;
+  top: 10px;
+  right: 25px;
   font-size: 35px;
   font-weight: bold;
   cursor: pointer;
+}
+
+.modalZoom {
+  left: 10px;
+  right: auto;
 }
 
 .modalClose:hover,
@@ -368,7 +392,7 @@ input[type="range"]{
 }
 
 .modalImageFullscreen {
-    object-fit: contain;
+    max-width: max-content;
     height: 90%;
 }
 
