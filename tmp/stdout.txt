@@ -1,3 +1,3 @@
-Looking in links: c:\Users\KRUPIN~1\AppData\Local\Temp\tmptiartpn4
+Looking in links: c:\Users\KRUPIN~1\AppData\Local\Temp\tmpl1s98134
 Requirement already satisfied: setuptools in c:\users\krupinskim\desktop\sd\stable-diffusion-webui-1\venv\lib\python3.10\site-packages (58.1.0)
 Requirement already satisfied: pip in c:\users\krupinskim\desktop\sd\stable-diffusion-webui-1\venv\lib\python3.10\site-packages (22.3)

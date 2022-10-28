@@ -105,7 +105,7 @@ def version_check(commit):
 
         
 def prepare_enviroment():
-    torch_command = os.environ.get('TORCH_COMMAND', "pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 --extra-index-url https://download.pytorch.org/whl/cu113")
+    torch_command = os.environ.get('TORCH_COMMAND', "pip install git+https://github.com/pytorch/pytorch.git#egg=subdir&subdirectory=subdir_path")
     requirements_file = os.environ.get('REQS_FILE', "requirements_versions.txt")
     commandline_args = os.environ.get('COMMANDLINE_ARGS', "")
 
