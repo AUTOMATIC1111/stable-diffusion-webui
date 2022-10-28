@@ -646,7 +646,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
     sampler = None
 
-    def __init__(self, init_images: list=None, resize_mode: int=0, denoising_strength: float=0.75, mask: Any=None, mask_blur: int=4, inpainting_fill: int=0, inpaint_full_res: bool=True, inpaint_full_res_padding: int=0, inpainting_mask_invert: int=0, **kwargs):
+    def __init__(self, init_images: list=None, resize_mode: int=0, denoising_strength: float=0.75, mask: Any=None, mask_blur: int=4, inpainting_fill: int=0, inpainting_fill_colors: list[int]=[], inpaint_full_res: bool=True, inpaint_full_res_padding: int=0, inpainting_mask_invert: int=0, **kwargs):
         super().__init__(**kwargs)
 
         self.init_images = init_images
@@ -659,6 +659,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         self.mask_for_overlay = None
         self.mask_blur = mask_blur
         self.inpainting_fill = inpainting_fill
+        self.inpainting_fill_colors = inpainting_fill_colors
         self.inpaint_full_res = inpaint_full_res
         self.inpaint_full_res_padding = inpaint_full_res_padding
         self.inpainting_mask_invert = inpainting_mask_invert
@@ -722,7 +723,13 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                 image = images.resize_image(2, image, self.width, self.height)
 
             if self.image_mask is not None:
-                if self.inpainting_fill != 1:
+                if self.inpainting_fill == 4: # 'paint' mode
+                    image = Image.composite(
+                        image,
+                        Image.new("RGB", image.size, tuple(self.inpainting_fill_colors)),
+                        ImageOps.invert(latent_mask)
+                    )
+                elif self.inpainting_fill != 1:
                     image = masking.fill(image, latent_mask)
 
             if add_color_corrections:
