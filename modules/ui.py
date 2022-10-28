@@ -1178,6 +1178,11 @@ def create_ui(wrap_gradio_gpu_call):
             outputs=[init_img_with_mask],
         )
 
+        extras_image.change(
+            fn=modules.extras.clear_cache,
+            inputs=[], outputs=[]
+        )
+
     with gr.Blocks(analytics_enabled=False) as pnginfo_interface:
         with gr.Row().style(equal_height=False):
             with gr.Column(variant='panel'):
