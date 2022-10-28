@@ -1305,7 +1305,9 @@ def create_ui(wrap_gradio_gpu_call):
                     with gr.Row():
                         embedding_learn_rate = gr.Textbox(label='Embedding Learning rate', placeholder="Embedding Learning rate", value="0.005")
                         hypernetwork_learn_rate = gr.Textbox(label='Hypernetwork Learning rate', placeholder="Hypernetwork Learning rate", value="0.00001")
-
+                    with gr.Row():
+                        clip_grad_mode = gr.Dropdown(value="disabled", label="Gradient Clipping", choices=["disabled", "value", "norm"])
+                        clip_grad_value = gr.Textbox(placeholder="Gradient clip value", value="1.0", show_label=False)
                     batch_size = gr.Number(label='Batch size', value=1, precision=0)
                     dataset_directory = gr.Textbox(label='Dataset directory', placeholder="Path to directory with input images")
                     log_directory = gr.Textbox(label='Log directory', placeholder="Path to directory where to write outputs", value="textual_inversion")
@@ -1313,9 +1315,6 @@ def create_ui(wrap_gradio_gpu_call):
                     training_width = gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512)
                     training_height = gr.Slider(minimum=64, maximum=2048, step=64, label="Height", value=512)
                     steps = gr.Number(label='Max steps', value=100000, precision=0)
-                    with gr.Row():
-                        clip_grad_mode = gr.Dropdown(value="disabled", label="Gradient Clipping", choices=["disabled", "value", "norm"])
-                        clip_grad_value = gr.Number(value=1.0, show_label=False)
                     create_image_every = gr.Number(label='Save an image to log directory every N steps, 0 to disable', value=500, precision=0)
                     save_embedding_every = gr.Number(label='Save a copy of embedding to log directory every N steps, 0 to disable', value=500, precision=0)
                     save_image_with_stored_embedding = gr.Checkbox(label='Save images with embedding in PNG chunks', value=True)
