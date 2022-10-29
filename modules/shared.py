@@ -13,11 +13,6 @@ import modules.interrogate
 import modules.memmon
 import modules.sd_models
 
-#############################################
-#   Prompt Gen import                       #
-import modules.prompt_gen
-#############################################
-
 import modules.styles
 import modules.devices as devices
 from modules import sd_samplers, sd_models, localization
