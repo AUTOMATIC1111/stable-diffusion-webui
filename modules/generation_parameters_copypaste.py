@@ -1,14 +1,20 @@
+import base64
+import io
 import os
 import re
 import gradio as gr
 from modules.shared import script_path
 from modules import shared
+import tempfile
+from PIL import Image, PngImagePlugin
 
 re_param_code = r'\s*([\w ]+):\s*("(?:\\|\"|[^\"])+"|[^,]*)(?:,|$)'
 re_param = re.compile(re_param_code)
 re_params = re.compile(r"^(?:" + re_param_code + "){3,}$")
 re_imagesize = re.compile(r"^(\d+)x(\d+)$")
 type_of_gr_update = type(gr.update())
+paste_fields = {}
+bind_list = []
 
 
 def quote(text):
@@ -19,6 +25,94 @@ def quote(text):
     text = text.replace('\\', '\\\\')
     text = text.replace('"', '\\"')
     return f'"{text}"'
+
+
+def image_from_url_text(filedata):
+    if type(filedata) == dict and filedata["is_file"]:
+        filename = filedata["name"]
+        tempdir = os.path.normpath(tempfile.gettempdir())
+        normfn = os.path.normpath(filename)
+        assert normfn.startswith(tempdir), 'trying to open image file not in temporary directory'
+
+        return Image.open(filename)
+
+    if type(filedata) == list:
+        if len(filedata) == 0:
+            return None
+
+        filedata = filedata[0]
+
+    if filedata.startswith("data:image/png;base64,"):
+        filedata = filedata[len("data:image/png;base64,"):]
+
+    filedata = base64.decodebytes(filedata.encode('utf-8'))
+    image = Image.open(io.BytesIO(filedata))
+    return image
+
+
+def add_paste_fields(tabname, init_img, fields):
+    paste_fields[tabname] = {"init_img": init_img, "fields": fields}
+
+    # backwards compatibility for existing extensions
+    import modules.ui
+    if tabname == 'txt2img':
+        modules.ui.txt2img_paste_fields = fields
+    elif tabname == 'img2img':
+        modules.ui.img2img_paste_fields = fields
+
+
+def create_buttons(tabs_list):
+    buttons = {}
+    for tab in tabs_list:
+        buttons[tab] = gr.Button(f"Send to {tab}")
+    return buttons
+
+
+#if send_generate_info is a tab name, mean generate_info comes from the params fields of the tab
+def bind_buttons(buttons, send_image, send_generate_info):
+    bind_list.append([buttons, send_image, send_generate_info])
+
+
+def run_bind():
+    for buttons, send_image, send_generate_info in bind_list:
+        for tab in buttons:
+            button = buttons[tab]
+            if send_image and paste_fields[tab]["init_img"]:
+                if type(send_image) == gr.Gallery:
+                    button.click(
+                        fn=lambda x: image_from_url_text(x),
+                        _js="extract_image_from_gallery",
+                        inputs=[send_image],
+                        outputs=[paste_fields[tab]["init_img"]],
+                    )
+                else:
+                    button.click(
+                        fn=lambda x:x,
+                        inputs=[send_image],
+                        outputs=[paste_fields[tab]["init_img"]],
+                    )
+
+            if send_generate_info and paste_fields[tab]["fields"] is not None:
+                paste_field_names = ['Prompt', 'Negative prompt', 'Steps', 'Face restoration', 'Size-1', 'Size-2']
+                if shared.opts.send_seed:
+                    paste_field_names += ["Seed"]
+                if send_generate_info in paste_fields:
+                    button.click(
+                        fn=lambda *x:x,
+                        inputs=[field for field,name in paste_fields[send_generate_info]["fields"] if name in paste_field_names],
+                        outputs=[field for field,name in paste_fields[tab]["fields"] if name in paste_field_names],
+                    )
+
+                else:
+                    connect_paste(button, [(field, name) for field, name in paste_fields[tab]["fields"]  if name in paste_field_names], send_generate_info)
+
+            button.click(
+                fn=None,
+                _js=f"switch_to_{tab}",
+                inputs=None,
+                outputs=None,
+            )
+
 
 def parse_generation_parameters(x: str):
     """parses generation parameters string, the one you see in text field under the picture in UI:
@@ -68,7 +162,7 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
     return res
 
 
-def connect_paste(button, paste_fields, input_comp, js=None):
+def connect_paste(button, paste_fields, input_comp, jsfunc=None):
     def paste_func(prompt):
         if not prompt and not shared.cmd_opts.hide_ui_dir_config:
             filename = os.path.join(script_path, "params.txt")
@@ -106,7 +200,9 @@ def connect_paste(button, paste_fields, input_comp, js=None):
 
     button.click(
         fn=paste_func,
-        _js=js,
+        _js=jsfunc,
         inputs=[input_comp],
         outputs=[x[0] for x in paste_fields],
     )
+
+

@@ -1,10 +1,10 @@
-from array import array
-from inflection import underscore
-from typing import Any, Dict, Optional
-from pydantic import BaseModel, Field, create_model
-from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img
 import inspect
-
+from pydantic import BaseModel, Field, create_model
+from typing import Any, Optional
+from typing_extensions import Literal
+from inflection import underscore
+from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img
+from modules.shared import sd_upscalers
 
 API_NOT_ALLOWED = [
     "self",
@@ -106,3 +106,46 @@ StableDiffusionImg2ImgProcessingAPI = PydanticModelGenerator(
     StableDiffusionProcessingImg2Img,
     [{"key": "sampler_index", "type": str, "default": "Euler"}, {"key": "init_images", "type": list, "default": None}, {"key": "denoising_strength", "type": float, "default": 0.75}, {"key": "mask", "type": str, "default": None}, {"key": "include_init_images", "type": bool, "default": False, "exclude" : True}]
 ).generate_model()
+
+class TextToImageResponse(BaseModel):
+    images: list[str] = Field(default=None, title="Image", description="The generated image in base64 format.")
+    parameters: dict
+    info: str
+
+class ImageToImageResponse(BaseModel):
+    images: list[str] = Field(default=None, title="Image", description="The generated image in base64 format.")
+    parameters: dict
+    info: str
+
+class ExtrasBaseRequest(BaseModel):
+    resize_mode: Literal[0, 1] = Field(default=0, title="Resize Mode", description="Sets the resize mode: 0 to upscale by upscaling_resize amount, 1 to upscale up to upscaling_resize_h x upscaling_resize_w.")
+    show_extras_results: bool = Field(default=True, title="Show results", description="Should the backend return the generated image?")
+    gfpgan_visibility: float = Field(default=0, title="GFPGAN Visibility", ge=0, le=1, allow_inf_nan=False, description="Sets the visibility of GFPGAN, values should be between 0 and 1.")
+    codeformer_visibility: float = Field(default=0, title="CodeFormer Visibility", ge=0, le=1, allow_inf_nan=False, description="Sets the visibility of CodeFormer, values should be between 0 and 1.")
+    codeformer_weight: float = Field(default=0, title="CodeFormer Weight", ge=0, le=1, allow_inf_nan=False, description="Sets the weight of CodeFormer, values should be between 0 and 1.")
+    upscaling_resize: float = Field(default=2, title="Upscaling Factor", ge=1, le=4, description="By how much to upscale the image, only used when resize_mode=0.")
+    upscaling_resize_w: int = Field(default=512, title="Target Width", ge=1, description="Target width for the upscaler to hit. Only used when resize_mode=1.")
+    upscaling_resize_h: int = Field(default=512, title="Target Height", ge=1, description="Target height for the upscaler to hit. Only used when resize_mode=1.")
+    upscaling_crop: bool = Field(default=True, title="Crop to fit", description="Should the upscaler crop the image to fit in the choosen size?")
+    upscaler_1: str = Field(default="None", title="Main upscaler", description=f"The name of the main upscaler to use, it has to be one of this list: {' , '.join([x.name for x in sd_upscalers])}")
+    upscaler_2: str = Field(default="None", title="Secondary upscaler", description=f"The name of the secondary upscaler to use, it has to be one of this list: {' , '.join([x.name for x in sd_upscalers])}")
+    extras_upscaler_2_visibility: float = Field(default=0, title="Secondary upscaler visibility", ge=0, le=1, allow_inf_nan=False, description="Sets the visibility of secondary upscaler, values should be between 0 and 1.")
+
+class ExtraBaseResponse(BaseModel):
+    html_info: str = Field(title="HTML info", description="A series of HTML tags containing the process info.")
+
+class ExtrasSingleImageRequest(ExtrasBaseRequest):
+    image: str = Field(default="", title="Image", description="Image to work on, must be a Base64 string containing the image's data.")
+
+class ExtrasSingleImageResponse(ExtraBaseResponse):
+    image: str = Field(default=None, title="Image", description="The generated image in base64 format.")
+
+class FileData(BaseModel):
+    data: str = Field(title="File data", description="Base64 representation of the file")
+    name: str = Field(title="File name")
+
+class ExtrasBatchImagesRequest(ExtrasBaseRequest):
+    imageList: list[FileData] = Field(title="Images", description="List of images to work on. Must be Base64 strings")
+
+class ExtrasBatchImagesResponse(ExtraBaseResponse):
+    images: list[str] = Field(title="Images", description="The generated images in base64 format.")
