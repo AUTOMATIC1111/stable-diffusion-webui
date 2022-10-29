@@ -1,33 +1,3 @@
-# import time
-
-# from modules.api.models import StableDiffusionTxt2ImgProcessingAPI, StableDiffusionImg2ImgProcessingAPI
-# from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img, process_images
-# from modules.sd_samplers import all_samplers
-# from modules.extras import run_pnginfo
-# import modules.shared as shared
-# from modules import devices
-# import uvicorn
-# from fastapi import Body, APIRouter, HTTPException
-# from fastapi.responses import JSONResponse
-# from pydantic import BaseModel, Field, Json
-# from typing import List
-# import json
-# import io
-# import base64
-# from PIL import Image
-
-# sampler_to_index = lambda name: next(filter(lambda row: name.lower() == row[1].name.lower(), enumerate(all_samplers)), None)
-
-# class TextToImageResponse(BaseModel):
-#     images: List[str] = Field(default=None, title="Image", description="The generated image in base64 format.")
-#     parameters: Json
-#     info: Json
-
-# class ImageToImageResponse(BaseModel):
-#     images: List[str] = Field(default=None, title="Image", description="The generated image in base64 format.")
-#     parameters: Json
-#     info: Json
-
 import time
 import uvicorn
 from gradio.processing_utils import encode_pil_to_base64, decode_base64_to_file, decode_base64_to_image
