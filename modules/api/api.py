@@ -5,7 +5,7 @@ import modules.shared as shared
 from modules.api.models import *
 from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img, process_images
 from modules.sd_samplers import all_samplers
-from modules.extras import run_extras
+from modules.extras import run_extras, run_pnginfo
 
 def upscaler_to_index(name: str):
     try:
@@ -32,6 +32,7 @@ class Api:
         self.app.add_api_route("/sdapi/v1/img2img", self.img2imgapi, methods=["POST"], response_model=ImageToImageResponse)
         self.app.add_api_route("/sdapi/v1/extra-single-image", self.extras_single_image_api, methods=["POST"], response_model=ExtrasSingleImageResponse)
         self.app.add_api_route("/sdapi/v1/extra-batch-images", self.extras_batch_images_api, methods=["POST"], response_model=ExtrasBatchImagesResponse)
+        self.app.add_api_route("/sdapi/v1/png-info", self.pnginfoapi, methods=["POST"], response_model=PNGInfoResponse)
 
     def text2imgapi(self, txt2imgreq: StableDiffusionTxt2ImgProcessingAPI):
         sampler_index = sampler_to_index(txt2imgreq.sampler_index)
@@ -125,8 +126,13 @@ class Api:
 
         return ExtrasBatchImagesResponse(images=list(map(encode_pil_to_base64, result[0])), html_info=result[1])
     
-    def pnginfoapi(self):
-        raise NotImplementedError
+    def pnginfoapi(self, req: PNGInfoRequest):
+        if(not req.image.strip()):
+            return PNGInfoResponse(info="")
+
+        result = run_pnginfo(decode_base64_to_image(req.image.strip()))
+
+        return PNGInfoResponse(info=result[1])
 
     def launch(self, server_name, port):
         self.app.include_router(self.router)
