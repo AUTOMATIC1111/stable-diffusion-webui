@@ -112,7 +112,7 @@ def run_bind():
 
             if send_generate_info and paste_fields[tab]["fields"] is not None:
                 if send_generate_info in paste_fields:
-                    paste_field_names = ['Prompt', 'Negative prompt', 'Steps', 'Face restoration', 'Size-1', 'Size-2'] + (["Seed"] if shared.opts.send_seed else [])
+                    paste_field_names = ['Prompt', 'Negative prompt', 'Steps', 'Face restoration', 'Size-1', 'Size-2', 'Clip skip'] + (["Seed"] if shared.opts.send_seed else [])
 
                     button.click(
                         fn=lambda *x: x,

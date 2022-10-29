@@ -894,8 +894,10 @@ def create_ui(wrap_gradio_gpu_call):
 
                 with gr.Group():
                     cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='CFG Scale', value=7.0)
-                    clip_skip = gr.Slider(minimum=1, maximum=12, step=1, label='Clip Skip', value=1)
                     denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.75)
+                    
+                with gr.Group():
+                    clip_skip = gr.Slider(minimum=1, maximum=12, step=1, label='Clip Skip', value=1)
 
                 seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox = create_seed_inputs()
 
