@@ -653,6 +653,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
         if opts.use_scale_latent_for_hires_fix:
             samples = torch.nn.functional.interpolate(samples, size=(self.height // opt_f, self.width // opt_f), mode="bilinear")
+            image_conditioning = self.txt2img_image_conditioning(samples)
 
         else:
             decoded_samples = decode_first_stage(self.sd_model, samples)
@@ -674,6 +675,12 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
             samples = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(decoded_samples))
 
+            image_conditioning = self.img2img_image_conditioning(
+                decoded_samples, 
+                samples, 
+                decoded_samples.new_ones(decoded_samples.shape[0], 1, decoded_samples.shape[2], decoded_samples.shape[3])
+            )
+
         shared.state.nextjob()
 
         self.sampler = sd_samplers.create_sampler_with_index(sd_samplers.samplers, self.sampler_index, self.sd_model)
@@ -684,11 +691,6 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         x = None
         devices.torch_gc()
 
-        image_conditioning = self.img2img_image_conditioning(
-            decoded_samples, 
-            samples, 
-            decoded_samples.new_ones(decoded_samples.shape[0], 1, decoded_samples.shape[2], decoded_samples.shape[3])
-        )
         samples = self.sampler.sample_img2img(self, samples, noise, conditioning, unconditional_conditioning, steps=self.steps, image_conditioning=image_conditioning)
 
         return samples
