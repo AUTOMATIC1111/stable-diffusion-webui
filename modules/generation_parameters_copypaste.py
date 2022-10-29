@@ -66,7 +66,7 @@ def integrate_settings_paste_fields(component_dict):
 
     settings_map = {
         'sd_hypernetwork': 'Hypernet',
-        'CLIP_stop_at_last_layers': 'Clip skip',
+        #'CLIP_stop_at_last_layers': 'Clip skip',
         'sd_model_checkpoint': 'Model hash',
     }
     settings_paste_fields = [
