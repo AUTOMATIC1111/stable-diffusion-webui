@@ -72,7 +72,7 @@ def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_
 
         if input_dir == '':
             return outputs, "Please select an input directory.", ''
-        image_list = [file for file in [os.path.join(input_dir, x) for x in sorted(os.listdir(input_dir))] if os.path.isfile(file)]
+        image_list = shared.listfiles(input_dir)
         for img in image_list:
             try:
                 image = Image.open(img)

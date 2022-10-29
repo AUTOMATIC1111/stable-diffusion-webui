@@ -450,3 +450,8 @@ total_tqdm = TotalTQDM()
 
 mem_mon = modules.memmon.MemUsageMonitor("MemMon", device, opts)
 mem_mon.start()
+
+
+def listfiles(dirname):
+    filenames = [os.path.join(dirname, x) for x in sorted(os.listdir(dirname)) if not x.startswith(".")]
+    return [file for file in filenames if os.path.isfile(file)]
