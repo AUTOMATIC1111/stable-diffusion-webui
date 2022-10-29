@@ -1,6 +1,6 @@
 import inspect
 from click import prompt
-from pydantic import BaseModel, Field, Json, create_model
+from pydantic import BaseModel, Field, create_model
 from typing import Any, Optional
 from typing_extensions import Literal
 from inflection import underscore
@@ -160,4 +160,4 @@ class PNGInfoResponse(BaseModel):
 class ProgressResponse(BaseModel):
     progress: float = Field(title="Progress", description="The progress with a range of 0 to 1")
     eta_relative: float = Field(title="ETA in secs")
-    state: Json = Field(title="State", description="The current state snapshot")
+    state: dict = Field(title="State", description="The current state snapshot")

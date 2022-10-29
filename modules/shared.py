@@ -147,7 +147,7 @@ class State:
     def get_job_timestamp(self):
         return datetime.datetime.now().strftime("%Y%m%d%H%M%S")  # shouldn't this return job_timestamp?
 
-    def js(self):
+    def dict(self):
         obj = {
             "skipped": self.skipped,
             "interrupted": self.skipped,
@@ -158,7 +158,7 @@ class State:
             "sampling_steps": self.sampling_steps,
         }
 
-        return json.dumps(obj)
+        return obj
 
 
 state = State()

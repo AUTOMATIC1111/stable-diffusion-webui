@@ -61,7 +61,7 @@ class Api:
         self.app.add_api_route("/sdapi/v1/extra-single-image", self.extras_single_image_api, methods=["POST"], response_model=ExtrasSingleImageResponse)
         self.app.add_api_route("/sdapi/v1/extra-batch-images", self.extras_batch_images_api, methods=["POST"], response_model=ExtrasBatchImagesResponse)
         self.app.add_api_route("/sdapi/v1/png-info", self.pnginfoapi, methods=["POST"], response_model=PNGInfoResponse)
-        self.app.add_api_route("/sdapi/v1/progress", self.progressapi, methods=["GET"])
+        self.app.add_api_route("/sdapi/v1/progress", self.progressapi, methods=["GET"], response_model=ProgressResponse)
 
     def text2imgapi(self, txt2imgreq: StableDiffusionTxt2ImgProcessingAPI):
         sampler_index = sampler_to_index(txt2imgreq.sampler_index)
@@ -171,7 +171,7 @@ class Api:
         # copy from check_progress_call of ui.py
 
         if shared.state.job_count == 0:
-            return ProgressResponse(progress=0, eta_relative=0, state=shared.state.js())
+            return ProgressResponse(progress=0, eta_relative=0, state=shared.state.dict())
 
         # avoid dividing zero
         progress = 0.01
@@ -187,7 +187,7 @@ class Api:
 
         progress = min(progress, 1)
 
-        return ProgressResponse(progress=progress, eta_relative=eta_relative, state=shared.state.js())
+        return ProgressResponse(progress=progress, eta_relative=eta_relative, state=shared.state.dict())
 
     def launch(self, server_name, port):
         self.app.include_router(self.router)
