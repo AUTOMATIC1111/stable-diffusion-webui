@@ -620,7 +620,7 @@ Requested path was: {f}
             with gr.Column():
                 with gr.Row():
                     if tabname != "extras":
-                        save = gr.Button('Save')
+                        save = gr.Button('Save', elem_id=f'save_{tabname}')
 
                     buttons = parameters_copypaste.create_buttons(["img2img", "inpaint", "extras"])
                     button_id = "hidden_element" if shared.cmd_opts.hide_ui_dir_config else 'open_folder'
