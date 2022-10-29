@@ -51,7 +51,14 @@ def image_from_url_text(filedata):
 
 
 def add_paste_fields(tabname, init_img, fields):
-    paste_fields[tabname] = {"init_img":init_img, "fields": fields}
+    paste_fields[tabname] = {"init_img": init_img, "fields": fields}
+
+    # backwards compatibility for existing extensions
+    import modules.ui
+    if tabname == 'txt2img':
+        modules.ui.txt2img_paste_fields = fields
+    elif tabname == 'img2img':
+        modules.ui.img2img_paste_fields = fields
 
 
 def create_buttons(tabs_list):
@@ -61,7 +68,7 @@ def create_buttons(tabs_list):
     return buttons
 
 
-#if send_generate_info is a tab name, mean generate_info comes from the params fields of the tab 
+#if send_generate_info is a tab name, mean generate_info comes from the params fields of the tab
 def bind_buttons(buttons, send_image, send_generate_info):
     bind_list.append([buttons, send_image, send_generate_info])
 
@@ -84,12 +91,12 @@ def run_bind():
                         inputs=[send_image],
                         outputs=[paste_fields[tab]["init_img"]],
                     )
-            
+
             if send_generate_info and paste_fields[tab]["fields"] is not None:
                 paste_field_names = ['Prompt', 'Negative prompt', 'Steps', 'Face restoration', 'Size-1', 'Size-2']
                 if shared.opts.send_seed:
                     paste_field_names += ["Seed"]
-                if send_generate_info in paste_fields:                    
+                if send_generate_info in paste_fields:
                     button.click(
                         fn=lambda *x:x,
                         inputs=[field for field,name in paste_fields[send_generate_info]["fields"] if name in paste_field_names],
@@ -154,7 +161,8 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
 
     return res
 
-def connect_paste(button, paste_fields, input_comp):
+
+def connect_paste(button, paste_fields, input_comp, jsfunc=None):
     def paste_func(prompt):
         if not prompt and not shared.cmd_opts.hide_ui_dir_config:
             filename = os.path.join(script_path, "params.txt")
@@ -192,6 +200,7 @@ def connect_paste(button, paste_fields, input_comp):
 
     button.click(
         fn=paste_func,
+        _js=jsfunc,
         inputs=[input_comp],
         outputs=[x[0] for x in paste_fields],
     )
