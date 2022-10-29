@@ -1,6 +1,7 @@
 from __future__ import annotations
 import math
 import os
+import ast
 
 import numpy as np
 from PIL import Image
@@ -64,9 +65,7 @@ def get_image_info(image):
             exif_comment = exif_comment.decode('utf8', errors="ignore")
         
         if exif_comment.startswith("{'"):
-            exist_exif_data = eval(exif_comment)
-            print(exist_exif_data)
-            print(type(exist_exif_data))
+            exist_exif_data = ast.literal_eval(exif_comment)
             for k, v in exist_exif_data.items():
                 image_info[k] = v
         else:
