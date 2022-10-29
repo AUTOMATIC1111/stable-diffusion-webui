@@ -118,6 +118,7 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
         self.hijack: StableDiffusionModelHijack = hijack
         self.tokenizer = wrapped.tokenizer
         self.token_mults = {}
+        self.clip_skip = 1
 
         self.comma_token = [v for k, v in self.tokenizer.get_vocab().items() if k == ',</w>'][0]
 
@@ -305,7 +306,7 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
 
         if use_old:
             self.hijack.fixes = hijack_fixes
-            return self.process_tokens(remade_batch_tokens, batch_multipliers)
+            return self.process_tokens(remade_batch_tokens, batch_multipliers, self.clip_skip)
 
         z = None
         i = 0
@@ -331,7 +332,7 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
                     tokens.append([self.wrapped.tokenizer.eos_token_id] * 75)
                     multipliers.append([1.0] * 75)
 
-            z1 = self.process_tokens(tokens, multipliers)
+            z1 = self.process_tokens(tokens, multipliers, self.clip_skip)
             z = z1 if z is None else torch.cat((z, z1), axis=-2)
 
             remade_batch_tokens = rem_tokens
@@ -340,16 +341,16 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
 
         return z
 
-    def process_tokens(self, remade_batch_tokens, batch_multipliers):
+    def process_tokens(self, remade_batch_tokens, batch_multipliers, clip_skip=1):
         if not opts.use_old_emphasis_implementation:
             remade_batch_tokens = [[self.wrapped.tokenizer.bos_token_id] + x[:75] + [self.wrapped.tokenizer.eos_token_id] for x in remade_batch_tokens]
             batch_multipliers = [[1.0] + x[:75] + [1.0] for x in batch_multipliers]
 
         tokens = torch.asarray(remade_batch_tokens).to(device)
-        outputs = self.wrapped.transformer(input_ids=tokens, output_hidden_states=-opts.CLIP_stop_at_last_layers)
+        outputs = self.wrapped.transformer(input_ids=tokens, output_hidden_states=-clip_skip)
 
-        if opts.CLIP_stop_at_last_layers > 1:
-            z = outputs.hidden_states[-opts.CLIP_stop_at_last_layers]
+        if clip_skip > 1:
+            z = outputs.hidden_states[-clip_skip]
             z = self.wrapped.transformer.text_model.final_layer_norm(z)
         else:
             z = outputs.last_hidden_state
