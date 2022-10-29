@@ -6,7 +6,7 @@ import gradio as gr
 from modules.shared import script_path
 from modules import shared
 import tempfile
-from PIL import Image, PngImagePlugin
+from PIL import Image
 
 re_param_code = r'\s*([\w ]+):\s*("(?:\\|\"|[^\"])+"|[^,]*)(?:,|$)'
 re_param = re.compile(re_param_code)
@@ -61,6 +61,24 @@ def add_paste_fields(tabname, init_img, fields):
         modules.ui.img2img_paste_fields = fields
 
 
+def integrate_settings_paste_fields(component_dict):
+    from modules import ui
+
+    settings_map = {
+        'sd_hypernetwork': 'Hypernet',
+        'CLIP_stop_at_last_layers': 'Clip skip',
+        'sd_model_checkpoint': 'Model hash',
+    }
+    settings_paste_fields = [
+        (component_dict[k], lambda d, k=k, v=v: ui.apply_setting(k, d.get(v, None)))
+        for k, v in settings_map.items()
+    ]
+
+    for tabname, info in paste_fields.items():
+        if info["fields"] is not None:
+            info["fields"] += settings_paste_fields
+
+
 def create_buttons(tabs_list):
     buttons = {}
     for tab in tabs_list:
@@ -87,24 +105,22 @@ def run_bind():
                     )
                 else:
                     button.click(
-                        fn=lambda x:x,
+                        fn=lambda x: x,
                         inputs=[send_image],
                         outputs=[paste_fields[tab]["init_img"]],
                     )
 
             if send_generate_info and paste_fields[tab]["fields"] is not None:
-                paste_field_names = ['Prompt', 'Negative prompt', 'Steps', 'Face restoration', 'Size-1', 'Size-2']
-                if shared.opts.send_seed:
-                    paste_field_names += ["Seed"]
                 if send_generate_info in paste_fields:
-                    button.click(
-                        fn=lambda *x:x,
-                        inputs=[field for field,name in paste_fields[send_generate_info]["fields"] if name in paste_field_names],
-                        outputs=[field for field,name in paste_fields[tab]["fields"] if name in paste_field_names],
-                    )
+                    paste_field_names = ['Prompt', 'Negative prompt', 'Steps', 'Face restoration', 'Size-1', 'Size-2'] + (["Seed"] if shared.opts.send_seed else [])
 
+                    button.click(
+                        fn=lambda *x: x,
+                        inputs=[field for field, name in paste_fields[send_generate_info]["fields"] if name in paste_field_names],
+                        outputs=[field for field, name in paste_fields[tab]["fields"] if name in paste_field_names],
+                    )
                 else:
-                    connect_paste(button, [(field, name) for field, name in paste_fields[tab]["fields"]  if name in paste_field_names], send_generate_info)
+                    connect_paste(button, paste_fields[tab]["fields"], send_generate_info)
 
             button.click(
                 fn=None,
