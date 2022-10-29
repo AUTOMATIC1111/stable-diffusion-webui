@@ -126,7 +126,7 @@ class Api:
 
         return ExtrasBatchImagesResponse(images=list(map(encode_pil_to_base64, result[0])), html_info=result[1])
     
-    def pnginfoapi(self, req:PNGInfoRequest):
+    def pnginfoapi(self, req: PNGInfoRequest):
         if(not req.image.strip()):
             return PNGInfoResponse(info="")
 
