@@ -25,6 +25,7 @@ from statistics import stdev, mean
 class HypernetworkModule(torch.nn.Module):
     multiplier = 1.0
     activation_dict = {
+        "linear": torch.nn.Identity,
         "relu": torch.nn.ReLU,
         "leakyrelu": torch.nn.LeakyReLU,
         "elu": torch.nn.ELU,
