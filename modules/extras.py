@@ -52,6 +52,32 @@ class LruCache(OrderedDict):
 
 cached_images: LruCache = LruCache(max_size=5)
 
+def get_image_info(image):
+    image_info = image.info
+    if "exif" in image.info:
+        # if image has exif comment, convert it to the same format as the current png info using dictionary type
+        exif = piexif.load(image.info["exif"])
+        exif_comment = (exif or {}).get("Exif", {}).get(piexif.ExifIFD.UserComment, b'')
+        try:
+            exif_comment = piexif.helper.UserComment.load(exif_comment)
+        except ValueError:
+            exif_comment = exif_comment.decode('utf8', errors="ignore")
+        
+        if exif_comment.startswith("{'"):
+            exist_exif_data = eval(exif_comment)
+            print(exist_exif_data)
+            print(type(exist_exif_data))
+            for k, v in exist_exif_data.items():
+                image_info[k] = v
+        else:
+            # for extracting parameters from already saved jpg images without dictionary type in exif
+            image_info['parameters'] = exif_comment
+        for field in ['jfif', 'jfif_version', 'jfif_unit', 'jfif_density', 'dpi', 'exif',
+                      'loop', 'background', 'timestamp', 'duration']:
+            image_info.pop(field, None)
+    if len(image_info) == 0:
+        image_info['parameters'] = "Warning. Parameters for image generation doesn't exist."
+    return image_info
 
 def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_dir, show_extras_results, gfpgan_visibility, codeformer_visibility, codeformer_weight, upscaling_resize, upscaling_resize_w, upscaling_resize_h, upscaling_crop, extras_upscaler_1, extras_upscaler_2, extras_upscaler_2_visibility, upscale_first: bool):
     devices.torch_gc()
@@ -177,7 +203,7 @@ def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_
     for image, image_name in zip(imageArr, imageNameArr):
         if image is None:
             return outputs, "Please select an input image.", ''
-        existing_pnginfo = image.info or {}
+        existing_pnginfo = get_image_info(image)
 
         image = image.convert("RGB")
         info = ""
@@ -212,28 +238,9 @@ def run_pnginfo(image):
     if image is None:
         return '', '', ''
 
-    items = image.info
-    geninfo = ''
-
-    if "exif" in image.info:
-        exif = piexif.load(image.info["exif"])
-        exif_comment = (exif or {}).get("Exif", {}).get(piexif.ExifIFD.UserComment, b'')
-        try:
-            exif_comment = piexif.helper.UserComment.load(exif_comment)
-        except ValueError:
-            exif_comment = exif_comment.decode('utf8', errors="ignore")
-
-        items['exif comment'] = exif_comment
-        geninfo = exif_comment
-
-        for field in ['jfif', 'jfif_version', 'jfif_unit', 'jfif_density', 'dpi', 'exif',
-                      'loop', 'background', 'timestamp', 'duration']:
-            items.pop(field, None)
-
-    geninfo = items.get('parameters', geninfo)
-
+    image_info = get_image_info(image)
     info = ''
-    for key, text in items.items():
+    for key, text in image_info.items():
         info += f"""
 <div>
 <p><b>{plaintext_to_html(str(key))}</b></p>
@@ -245,7 +252,7 @@ def run_pnginfo(image):
         message = "Nothing found in the image."
         info = f"<div><p>{message}<p></div>"
 
-    return '', geninfo, info
+    return '', image_info['parameters'], info
 
 
 def run_modelmerger(primary_model_name, secondary_model_name, teritary_model_name, interp_method, multiplier, save_as_half, custom_name):
