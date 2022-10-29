@@ -236,7 +236,7 @@ class ScriptRunner:
             with gr.Group():
                 create_script_ui(script, inputs, inputs_alwayson)
 
-        dropdown = gr.Dropdown(label="Script", choices=["None"] + self.titles, value="None", type="index")
+        dropdown = gr.Dropdown(label="Script", elem_id="script_list", choices=["None"] + self.titles, value="None", type="index")
         dropdown.save_to_config = True
         inputs[0] = dropdown
 
