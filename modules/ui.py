@@ -596,6 +596,7 @@ def create_refresh_button(refresh_component, refresh_method, refreshed_args, ele
     )
     return refresh_button
 
+
 def create_output_panel(tabname, outdir):
     def open_folder(f):
         if not os.path.exists(f):
@@ -723,6 +724,7 @@ def create_ui(wrap_gradio_gpu_call):
                     custom_inputs = modules.scripts.scripts_txt2img.setup_ui(is_img2img=False)
 
             txt2img_gallery, generation_info, html_info = create_output_panel("txt2img", opts.outdir_txt2img_samples)
+            parameters_copypaste.bind_buttons({"txt2img": txt2img_paste}, None, txt2img_prompt)
 
             connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
             connect_reuse_seed(subseed, reuse_subseed, generation_info, dummy_component, is_subseed=True)
@@ -791,7 +793,7 @@ def create_ui(wrap_gradio_gpu_call):
                 ]
             )
 
-            parameters_copypaste.add_paste_fields("txt2img", None, [
+            txt2img_paste_fields = [
                 (txt2img_prompt, "Prompt"),
                 (txt2img_negative_prompt, "Negative prompt"),
                 (steps, "Steps"),
@@ -812,7 +814,8 @@ def create_ui(wrap_gradio_gpu_call):
                 (firstphase_width, "First pass size-1"),
                 (firstphase_height, "First pass size-2"),
                 *modules.scripts.scripts_txt2img.infotext_fields
-            ])
+            ]
+            parameters_copypaste.add_paste_fields("txt2img", None, txt2img_paste_fields)
 
             txt2img_preview_params = [
                 txt2img_prompt,
@@ -900,6 +903,7 @@ def create_ui(wrap_gradio_gpu_call):
                     custom_inputs = modules.scripts.scripts_img2img.setup_ui(is_img2img=True)
 
             img2img_gallery, generation_info, html_info = create_output_panel("img2img", opts.outdir_img2img_samples)
+            parameters_copypaste.bind_buttons({"img2img": img2img_paste}, None, img2img_prompt)
 
             connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
             connect_reuse_seed(subseed, reuse_subseed, generation_info, dummy_component, is_subseed=True)
@@ -1045,7 +1049,6 @@ def create_ui(wrap_gradio_gpu_call):
             parameters_copypaste.add_paste_fields("img2img", init_img, img2img_paste_fields)
             parameters_copypaste.add_paste_fields("inpaint", init_img_with_mask, img2img_paste_fields)
 
-
     with gr.Blocks(analytics_enabled=False) as extras_interface:
         with gr.Row().style(equal_height=False):
             with gr.Column(variant='panel'):
@@ -1057,12 +1060,8 @@ def create_ui(wrap_gradio_gpu_call):
                         image_batch = gr.File(label="Batch Process", file_count="multiple", interactive=True, type="file")
 
                     with gr.TabItem('Batch from Directory'):
-                        extras_batch_input_dir = gr.Textbox(label="Input directory", **shared.hide_dirs,
-                            placeholder="A directory on the same machine where the server is running."
-                        )
-                        extras_batch_output_dir = gr.Textbox(label="Output directory", **shared.hide_dirs,
-                            placeholder="Leave blank to save images to the default path."
-                        )
+                        extras_batch_input_dir = gr.Textbox(label="Input directory", **shared.hide_dirs, placeholder="A directory on the same machine where the server is running.")
+                        extras_batch_output_dir = gr.Textbox(label="Output directory", **shared.hide_dirs, placeholder="Leave blank to save images to the default path.")
                         show_extras_results = gr.Checkbox(label='Show result images', value=True)
 
                 with gr.Tabs(elem_id="extras_resize_mode"):
@@ -1093,7 +1092,6 @@ def create_ui(wrap_gradio_gpu_call):
                     upscale_before_face_fix = gr.Checkbox(label='Upscale Before Restoring Faces', value=False)
 
                 submit = gr.Button('Generate', elem_id="extras_generate", variant='primary')
-
 
             result_images, html_info_x, html_info = create_output_panel("extras", opts.outdir_extras_samples)
 
@@ -1127,7 +1125,6 @@ def create_ui(wrap_gradio_gpu_call):
             ]
         )
         parameters_copypaste.add_paste_fields("extras", extras_image, None)
-
 
         extras_image.change(
             fn=modules.extras.clear_cache,
@@ -1594,9 +1591,6 @@ def create_ui(wrap_gradio_gpu_call):
         if column is not None:
             column.__exit__()
 
-
-
-
     interfaces = [
         (txt2img_interface, "txt2img", "txt2img"),
         (img2img_interface, "img2img", "img2img"),
@@ -1605,10 +1599,6 @@ def create_ui(wrap_gradio_gpu_call):
         (modelmerger_interface, "Checkpoint Merger", "modelmerger"),
         (train_interface, "Train", "ti"),
     ]
-
-    interfaces += script_callbacks.ui_tabs_callback()
-
-    interfaces += [(settings_interface, "Settings", "settings")]
 
     css = ""
 
@@ -1626,6 +1616,9 @@ def create_ui(wrap_gradio_gpu_call):
     if not cmd_opts.no_progressbar_hiding:
         css += css_hide_progressbar
 
+    interfaces += script_callbacks.ui_tabs_callback()
+    interfaces += [(settings_interface, "Settings", "settings")]
+
     with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion") as demo:
         with gr.Row(elem_id="quicksettings"):
             for i, k, item in quicksettings_list:
@@ -1633,6 +1626,9 @@ def create_ui(wrap_gradio_gpu_call):
                 component_dict[k] = component
 
         settings_interface.gradio_ref = demo
+
+        parameters_copypaste.integrate_settings_paste_fields(component_dict)
+        parameters_copypaste.run_bind()
 
         with gr.Tabs(elem_id="tabs") as tabs:
             for interface, label, ifid in interfaces:
@@ -1688,15 +1684,6 @@ def create_ui(wrap_gradio_gpu_call):
             ]
         )
 
-
-        settings_map = {
-            'sd_hypernetwork': 'Hypernet',
-            'CLIP_stop_at_last_layers': 'Clip skip',
-            'sd_model_checkpoint': 'Model hash',
-        }
-
-        parameters_copypaste.run_bind()
-
     ui_config_file = cmd_opts.ui_config_file
     ui_settings = {}
     settings_count = len(ui_settings)
@@ -1715,7 +1702,7 @@ def create_ui(wrap_gradio_gpu_call):
         def apply_field(obj, field, condition=None, init_field=None):
             key = path + "/" + field
 
-            if getattr(obj,'custom_script_source',None) is not None:
+            if getattr(obj, 'custom_script_source', None) is not None:
               key = 'customscript/' + obj.custom_script_source + '/' + key
 
             if getattr(obj, 'do_not_save_to_config', False):
