@@ -21,6 +21,9 @@ from torch.nn.init import normal_, xavier_normal_, xavier_uniform_, kaiming_norm
 from collections import defaultdict, deque
 from statistics import stdev, mean
 
+# Optimizer dict. Optimizer is not actually an optimizer, and SparseAdam is not appropriate, but we'll just allow here.
+optimizer_dict = {optim_name : cls_obj for optim_name, cls_obj in inspect.getmembers(torch.optim, inspect.isclass) if optim_name != "Optimizer"}
+
 
 class HypernetworkModule(torch.nn.Module):
     multiplier = 1.0
@@ -139,6 +142,8 @@ class Hypernetwork:
         self.weight_init = weight_init
         self.add_layer_norm = add_layer_norm
         self.use_dropout = use_dropout
+        self.optimizer_name = None
+        self.optimizer_state_dict = None
 
         for size in enable_sizes or []:
             self.layers[size] = (
@@ -171,6 +176,10 @@ class Hypernetwork:
         state_dict['use_dropout'] = self.use_dropout
         state_dict['sd_checkpoint'] = self.sd_checkpoint
         state_dict['sd_checkpoint_name'] = self.sd_checkpoint_name
+        if self.optimizer_name is not None:
+            state_dict['optimizer_name'] = self.optimizer_name
+        if self.optimizer_state_dict:
+            state_dict['optimizer_state_dict'] = self.optimizer_state_dict
 
         torch.save(state_dict, filename)
 
@@ -190,7 +199,14 @@ class Hypernetwork:
         self.add_layer_norm = state_dict.get('is_layer_norm', False)
         print(f"Layer norm is set to {self.add_layer_norm}")
         self.use_dropout = state_dict.get('use_dropout', False)
-        print(f"Dropout usage is set to {self.use_dropout}" )
+        print(f"Dropout usage is set to {self.use_dropout}")
+        self.optimizer_name = state_dict.get('optimizer_name', 'AdamW')
+        print(f"Optimizer name is {self.optimizer_name}")
+        self.optimizer_state_dict = state_dict.get('optimizer_state_dict', None)
+        if self.optimizer_state_dict:
+            print("Loaded existing optimizer from checkpoint")
+        else:
+            print("No saved optimizer exists in checkpoint")
 
         for size, sd in state_dict.items():
             if type(size) == int:
@@ -386,9 +402,19 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
         return hypernetwork, filename
 
     scheduler = LearnRateScheduler(learn_rate, steps, ititial_step)
-    # if optimizer == "AdamW": or else Adam / AdamW / SGD, etc...
-    optimizer = torch.optim.AdamW(weights, lr=scheduler.learn_rate)
-
+    # Here we use optimizer from saved HN, or we can specify as UI option.
+    if (optimizer_name := hypernetwork.optimizer_name) in optimizer_dict:
+        optimizer = optimizer_dict[hypernetwork.optimizer_name](params=weights, lr=scheduler.learn_rate)
+    else:
+        print(f"Optimizer type {optimizer_name} is not defined!")
+        optimizer = torch.optim.AdamW(params=weights, lr=scheduler.learn_rate)
+        optimizer_name = 'AdamW'
+    if hypernetwork.optimizer_state_dict:  # This line must be changed if Optimizer type can be different from saved optimizer.
+        try:
+            optimizer.load_state_dict(hypernetwork.optimizer_state_dict)
+        except RuntimeError as e:
+            print("Cannot resume from saved optimizer!")
+            print(e)
     steps_without_grad = 0
 
     pbar = tqdm.tqdm(enumerate(ds), total=steps - ititial_step)
@@ -445,6 +471,11 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
             # Before saving, change name to match current checkpoint.
             hypernetwork.name = f'{hypernetwork_name}-{steps_done}'
             last_saved_file = os.path.join(hypernetwork_dir, f'{hypernetwork.name}.pt')
+            hypernetwork.optimizer_name = optimizer_name
+            if shared.opts.save_optimizer_state:
+                hypernetwork.optimizer_state_dict = optimizer.state_dict()
+            else:
+                hypernetwork.optimizer_state_dict = None
             hypernetwork.save(last_saved_file)
 
         textual_inversion.write_loss(log_directory, "hypernetwork_loss.csv", hypernetwork.step, len(ds), {
@@ -513,6 +544,11 @@ Last saved image: {html.escape(last_saved_image)}<br/>
     # Before saving for the last time, change name back to the base name (as opposed to the save_hypernetwork_every step-suffixed naming convention).
     hypernetwork.name = hypernetwork_name
     filename = os.path.join(shared.cmd_opts.hypernetwork_dir, f'{hypernetwork.name}.pt')
+    hypernetwork.optimizer_name = optimizer_name
+    if shared.opts.save_optimizer_state:
+        hypernetwork.optimizer_state_dict = optimizer.state_dict()
+    else:
+        hypernetwork.optimizer_state_dict = None
     hypernetwork.save(filename)
 
     return hypernetwork, filename
