@@ -82,6 +82,7 @@ parser.add_argument("--api", action='store_true', help="use api=True to launch t
 parser.add_argument("--nowebui", action='store_true', help="use api=True to launch the api instead of the webui")
 parser.add_argument("--ui-debug-mode", action='store_true', help="Don't load model to quickly launch UI")
 parser.add_argument("--device-id", type=str, help="Select the default CUDA device to use (export CUDA_VISIBLE_DEVICES=0,1,etc might be needed before)", default=None)
+parser.add_argument("--administrator", action='store_true', help="Administrator rights", default=False)
 
 cmd_opts = parser.parse_args()
 restricted_opts = {
@@ -267,6 +268,7 @@ options_templates.update(options_section(('sd', "Stable Diffusion"), {
     "sd_checkpoint_cache": OptionInfo(0, "Checkpoints to cache in RAM", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
     "sd_hypernetwork": OptionInfo("None", "Hypernetwork", gr.Dropdown, lambda: {"choices": ["None"] + [x for x in hypernetworks.keys()]}, refresh=reload_hypernetworks),
     "sd_hypernetwork_strength": OptionInfo(1.0, "Hypernetwork strength", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.001}),
+    "inpainting_mask_weight": OptionInfo(1.0, "Inpainting conditioning mask strength", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     "img2img_color_correction": OptionInfo(False, "Apply color correction to img2img results to match original colors."),
     "save_images_before_color_correction": OptionInfo(False, "Save a copy of image before applying color correction to img2img results"),
     "img2img_fix_steps": OptionInfo(False, "With img2img, do exactly the amount of steps the slider specifies (normally you'd do less with less denoising)."),
@@ -303,6 +305,7 @@ options_templates.update(options_section(('ui', "User interface"), {
     "add_model_hash_to_info": OptionInfo(True, "Add model hash to generation information"),
     "add_model_name_to_info": OptionInfo(False, "Add model name to generation information"),
     "disable_weights_auto_swap": OptionInfo(False, "When reading generation parameters from text into UI (from PNG info or pasted text), do not change the selected model/checkpoint."),
+    "send_seed": OptionInfo(True, "Send seed when sending prompt or image to other interface"),
     "font": OptionInfo("", "Font for image grids that have text"),
     "js_modal_lightbox": OptionInfo(True, "Enable full page image viewer"),
     "js_modal_lightbox_initially_zoomed": OptionInfo(True, "Show images zoomed in by default in full page image viewer"),
@@ -449,3 +452,8 @@ total_tqdm = TotalTQDM()
 
 mem_mon = modules.memmon.MemUsageMonitor("MemMon", device, opts)
 mem_mon.start()
+
+
+def listfiles(dirname):
+    filenames = [os.path.join(dirname, x) for x in sorted(os.listdir(dirname)) if not x.startswith(".")]
+    return [file for file in filenames if os.path.isfile(file)]
