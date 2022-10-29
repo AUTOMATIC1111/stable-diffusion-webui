@@ -3,7 +3,7 @@ import requests
 from gradio.processing_utils import encode_pil_to_base64
 from PIL import Image
 
-class Img2ImgWorking(unittest.TestCase):
+class TestImg2ImgWorking(unittest.TestCase):
     def setUp(self):
         self.url_img2img = "http://localhost:7860/sdapi/v1/img2img"
         self.simple_img2img = {
