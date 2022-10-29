@@ -17,6 +17,7 @@
 """ Conversion script for the LDM checkpoints. """
 import json
 import os
+from typing import Union
 
 import gradio as gr
 import torch
@@ -602,7 +603,7 @@ def convert_ldm_clip_checkpoint(checkpoint):
 
 
 def extract_checkpoint(new_model_name: str, checkpoint_path: str, scheduler_type="ddim"):
-    shared.state.job_count = 5
+    shared.state.job_count = 8
     # Set up our base directory for the model and sanitize our file name
     new_model_name = "".join(x for x in new_model_name if x.isalnum())
     config = TrainConfig().create_new(new_model_name, scheduler_type, checkpoint_path, 0)
@@ -611,7 +612,7 @@ def extract_checkpoint(new_model_name: str, checkpoint_path: str, scheduler_type
     out_dir = os.path.join(new_model_dir, "stable-diffusion-v1-5")
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
-
+    shared.state.job_no = 0
     # Todo: What impact does using the 'og' model config if not using that model as our base?
     original_config_file = load_file_from_url("https://raw.githubusercontent.com/CompVis/stable-diffusion/main"
                                               "/configs/stable-diffusion/v1-inference.yaml", new_model_dir
@@ -622,8 +623,11 @@ def extract_checkpoint(new_model_name: str, checkpoint_path: str, scheduler_type
     checkpoint_file = modules.sd_models.get_closet_checkpoint_match(checkpoint_path)
     if checkpoint_file is None or not os.path.exists(checkpoint_file[0]):
         print("Unable to find checkpoint file!")
+        shared.state.job_no = 8
         return None, "Unable to find base checkpoint.", ""
     checkpoint = torch.load(checkpoint_file[0])["state_dict"]
+    shared.state.textinfo = "Loaded state dict..."
+    shared.state.job_no = 1
     print(f"Checkpoint loaded from {checkpoint_file}")
     num_train_timesteps = original_config.model.params.timesteps
     beta_start = original_config.model.params.linear_start
@@ -649,19 +653,29 @@ def extract_checkpoint(new_model_name: str, checkpoint_path: str, scheduler_type
     else:
         raise ValueError(f"Scheduler of type {scheduler_type} doesn't exist!")
     # Convert the UNet2DConditionModel model.
+    shared.state.textinfo = "Created scheduler..."
+    shared.state.job_no = 2
     unet_config = create_unet_diffusers_config(original_config)
+    shared.state.textinfo = "Created unet config..."
+    shared.state.job_no = 3
     converted_unet_checkpoint = convert_ldm_unet_checkpoint(checkpoint, unet_config)
+    shared.state.textinfo = "Converted unet checkpoint..."
+    shared.state.job_no = 4
 
     unet = UNet2DConditionModel(**unet_config)
     unet.load_state_dict(converted_unet_checkpoint)
 
     # Convert the VAE model.
     vae_config = create_vae_diffusers_config(original_config)
+    shared.state.textinfo = "Converted VAE Config..."
+    shared.state.job_no = 5
     converted_vae_checkpoint = convert_ldm_vae_checkpoint(checkpoint, vae_config)
-
+    shared.state.textinfo = "Converted VAE Checkpoint..."
+    shared.state.job_no = 6
     vae = AutoencoderKL(**vae_config)
     vae.load_state_dict(converted_vae_checkpoint)
-
+    shared.state.textinfo = "Loaded VAE State Dict..."
+    shared.state.job_no = 7
     # Convert the text model.
     text_model_type = original_config.model.params.cond_stage_config.target.split(".")[-1]
     if text_model_type == "FrozenCLIPEmbedder":
@@ -684,10 +698,12 @@ def extract_checkpoint(new_model_name: str, checkpoint_path: str, scheduler_type
         tokenizer = BertTokenizerFast.from_pretrained("bert-base-uncased")
         pipe = LDMTextToImagePipeline(vqvae=vae, bert=text_model, tokenizer=tokenizer, unet=unet, scheduler=scheduler)
     pipe.save_pretrained(out_dir)
+    shared.state.textinfo = "Pretrained saved..."
+    shared.state.job_no = 8
     if os.path.isfile(original_config_file):
         os.remove(original_config_file)
     dirs = dreambooth.get_db_models()
-    return gr.Dropdown.update(choices=sorted(dirs)), f"Created: {new_model_name}", ""
+    return gr.Dropdown.update(choices=sorted(dirs)), f"Created working directory for {new_model_name} at {out_dir}.", ""
 
 
 KeyMap = {
@@ -1385,12 +1401,12 @@ class StableDiffusionPipelineStripped(DiffusionPipeline):
         self.unet = unet
 
 
-def convert_diff_to_sd(diffusers_model_path: str, base_ckpt_path: str, output_ckpt_path: str,
-                       overwrite=False):
+def convert_diff_to_sd(diffusers_model_path_or_pipe: Union[str, DiffusionPipeline], base_ckpt_path: str,
+                       output_ckpt_path: str, overwrite=False):
     """
 
     Args:
-        diffusers_model_path: Path to the output of training
+        diffusers_model_path_or_pipe: Path to the output of training, or pre-existing pipeline
         base_ckpt_path: The source checkpoint that was extracted before training
         output_ckpt_path: Where to save the new checkpoint. Should be the stable-diffusion directory.
         overwrite: Whether to overwrite an existing checkpoint or not.
@@ -1398,22 +1414,24 @@ def convert_diff_to_sd(diffusers_model_path: str, base_ckpt_path: str, output_ck
     Returns:
         The path to the saved model.
     """
-    huggingface_use_auth_token = None
-    if not overwrite and os.path.exists(output_ckpt_path):
-        print("Specified model already exists and overwrite not set, nothing to do!")
-        return None
+    if type(diffusers_model_path_or_pipe) is str:
+        huggingface_use_auth_token = None
+        if not overwrite and os.path.exists(output_ckpt_path):
+            print("Specified model already exists and overwrite not set, nothing to do!")
+            return None
 
-    try:
-        diff_pipe = StableDiffusionPipeline.from_pretrained(diffusers_model_path,
-                                                            use_auth_token=huggingface_use_auth_token)
-    except Exception as ex:
-        if "required positional arguments" in str(ex):
-            print("load error, trying loading stripped version", ex)
-            diff_pipe = StableDiffusionPipelineStripped.from_pretrained(diffusers_model_path,
-                                                                        use_auth_token=huggingface_use_auth_token)
-        else:
-            raise
-
+        try:
+            diff_pipe = StableDiffusionPipeline.from_pretrained(diffusers_model_path_or_pipe,
+                                                                use_auth_token=huggingface_use_auth_token)
+        except Exception as ex:
+            if "required positional arguments" in str(ex):
+                print("load error, trying loading stripped version", ex)
+                diff_pipe = StableDiffusionPipelineStripped.from_pretrained(diffusers_model_path_or_pipe,
+                                                                            use_auth_token=huggingface_use_auth_token)
+            else:
+                raise
+    else:
+        diff_pipe = diffusers_model_path_or_pipe
     diff_pipe_unet_sd = diff_pipe.unet.state_dict()
     org_model = torch.load(base_ckpt_path)
     org_sd = org_model["state_dict"]
