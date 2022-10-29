@@ -589,3 +589,7 @@ Then, you will need to add the RTL counterpart only if needed in the rtl section
         left: 0.5em;
     }
 }
+
+#inpainting_fill_color {
+    flex-grow: unset
+}

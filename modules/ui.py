@@ -856,14 +856,9 @@ def create_ui(wrap_gradio_gpu_call):
 
                         inpainting_fill = gr.Radio(label='Masked content', choices=['fill', 'original', 'latent noise', 'latent nothing', 'paint'], value='original', type="index")
 
-                        inpainting_fill_colors = []
                         with gr.Row(visible=False) as row_of_colors:
-                            with gr.Box():
-                                for color_name in ("Red", "Green", "Blue", "Alpha"):
-                                    with gr.Row(elem_id="color_row_"+color_name):
-                                        inpainting_fill_colors.append(
-                                            gr.Slider(label=color_name, value=255 if color_name == 'Alpha' else 0, minimum=0, maximum=255, step=1)
-                                        )
+                            inpainting_fill_color = gr.ColorPicker("#000000", label="Color", interactive=True, elem_id="inpainting_fill_color")
+                            inpainting_fill_alpha = gr.Slider(label="Alpha", value=255, minimum=0, maximum=255, step=1)
                         def change_visibility(idx: int):
                             show = idx == 4 # 'paint' was used.
                             return {row_of_colors: gr_show(show)}
@@ -977,7 +972,8 @@ def create_ui(wrap_gradio_gpu_call):
                     sampler_index,
                     mask_blur,
                     inpainting_fill,
-                    *inpainting_fill_colors,
+                    inpainting_fill_color,
+                    inpainting_fill_alpha,
                     restore_faces,
                     tiling,
                     batch_count,
