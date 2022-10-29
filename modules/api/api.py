@@ -1,7 +1,7 @@
 import time
 import uvicorn
 from gradio.processing_utils import encode_pil_to_base64, decode_base64_to_file, decode_base64_to_image
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 import modules.shared as shared
 from modules import devices
 from modules.api.models import *
@@ -187,7 +187,11 @@ class Api:
 
         progress = min(progress, 1)
 
-        return ProgressResponse(progress=progress, eta_relative=eta_relative, state=shared.state.dict())
+        current_image = None
+        if shared.state.current_image:
+            current_image = encode_pil_to_base64(shared.state.current_image)
+
+        return ProgressResponse(progress=progress, eta_relative=eta_relative, state=shared.state.dict(), current_image=current_image)
 
     def launch(self, server_name, port):
         self.app.include_router(self.router)
