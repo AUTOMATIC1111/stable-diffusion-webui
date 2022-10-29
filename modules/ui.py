@@ -5,6 +5,7 @@ import mimetypes
 import os
 import platform
 import random
+import shutil
 import subprocess as sp
 import sys
 import tempfile
@@ -169,6 +170,17 @@ def save_pil_to_file(pil_image, dir=None):
     pil_image.save(file_obj, pnginfo=(metadata if use_metadata else None))
     return file_obj
 
+class Gallery(gr.Gallery):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        shutil.rmtree(self.temp_dir) # Kill inital temp folder
+        self.temp_dir = os.path.join(os.getcwd(), "gradio_temp")
+        if os.path.exists(self.temp_dir):
+            shutil.rmtree(self.temp_dir)
+        os.mkdir(self.temp_dir)
+
+gr.Gallery = Gallery
 
 # override save to file function so that it also writes PNG info
 gr.processing_utils.save_pil_to_file = save_pil_to_file
