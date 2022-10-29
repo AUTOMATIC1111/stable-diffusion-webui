@@ -478,7 +478,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         model_hijack.embedding_db.load_textual_inversion_embeddings()
 
     if p.scripts is not None:
-        p.scripts.run_alwayson_scripts(p)
+        p.scripts.process(p)
 
     infotexts = []
     output_images = []
@@ -501,7 +501,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             seeds = p.all_seeds[n * p.batch_size:(n + 1) * p.batch_size]
             subseeds = p.all_subseeds[n * p.batch_size:(n + 1) * p.batch_size]
 
-            if (len(prompts) == 0):
+            if len(prompts) == 0:
                 break
 
             with devices.autocast():
@@ -590,7 +590,13 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 images.save_image(grid, p.outpath_grids, "grid", p.all_seeds[0], p.all_prompts[0], opts.grid_format, info=infotext(), short_filename=not opts.grid_extended_filename, p=p, grid=True)
 
     devices.torch_gc()
-    return Processed(p, output_images, p.all_seeds[0], infotext() + "".join(["\n\n" + x for x in comments]), subseed=p.all_subseeds[0], all_prompts=p.all_prompts, all_seeds=p.all_seeds, all_subseeds=p.all_subseeds, index_of_first_image=index_of_first_image, infotexts=infotexts)
+
+    res = Processed(p, output_images, p.all_seeds[0], infotext() + "".join(["\n\n" + x for x in comments]), subseed=p.all_subseeds[0], all_prompts=p.all_prompts, all_seeds=p.all_seeds, all_subseeds=p.all_subseeds, index_of_first_image=index_of_first_image, infotexts=infotexts)
+
+    if p.scripts is not None:
+        p.scripts.postprocess(p, res)
+
+    return res
 
 
 class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
