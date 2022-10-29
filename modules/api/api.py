@@ -37,7 +37,7 @@ from modules import devices
 from modules.api.models import *
 from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img, process_images
 from modules.sd_samplers import all_samplers
-from modules.extras import run_extras
+from modules.extras import run_extras, run_pnginfo
 
 # copy from wrap_gradio_gpu_call of webui.py
 # because queue lock will be acquired in api handlers
@@ -90,6 +90,7 @@ class Api:
         self.app.add_api_route("/sdapi/v1/img2img", self.img2imgapi, methods=["POST"], response_model=ImageToImageResponse)
         self.app.add_api_route("/sdapi/v1/extra-single-image", self.extras_single_image_api, methods=["POST"], response_model=ExtrasSingleImageResponse)
         self.app.add_api_route("/sdapi/v1/extra-batch-images", self.extras_batch_images_api, methods=["POST"], response_model=ExtrasBatchImagesResponse)
+        self.app.add_api_route("/sdapi/v1/png-info", self.pnginfoapi, methods=["POST"], response_model=PNGInfoResponse)
         self.app.add_api_route("/sdapi/v1/progress", self.progressapi, methods=["GET"])
 
     def text2imgapi(self, txt2imgreq: StableDiffusionTxt2ImgProcessingAPI):
@@ -188,6 +189,14 @@ class Api:
 
         return ExtrasBatchImagesResponse(images=list(map(encode_pil_to_base64, result[0])), html_info=result[1])
 
+    def pnginfoapi(self, req: PNGInfoRequest):
+        if(not req.image.strip()):
+            return PNGInfoResponse(info="")
+
+        result = run_pnginfo(decode_base64_to_image(req.image.strip()))
+
+        return PNGInfoResponse(info=result[1])
+
     def progressapi(self):
         # copy from check_progress_call of ui.py
 
@@ -209,9 +218,6 @@ class Api:
         progress = min(progress, 1)
 
         return ProgressResponse(progress=progress, eta_relative=eta_relative, state=shared.state.js())
-
-    def pnginfoapi(self):
-        raise NotImplementedError
 
     def launch(self, server_name, port):
         self.app.include_router(self.router)
