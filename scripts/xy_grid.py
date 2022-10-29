@@ -121,7 +121,8 @@ def confirm_hypernetworks(p, xs):
 
 
 def apply_clip_skip(p, x, xs):
-    opts.data["CLIP_stop_at_last_layers"] = x
+    p.clip_skip = x
+    p.sd_model.cond_stage_model.clip_skip = x
 
 
 def format_value_add_label(p, opt, x):
