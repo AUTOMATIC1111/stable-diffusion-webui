@@ -30,7 +30,7 @@ def quote(text):
 def image_from_url_text(filedata):
     if type(filedata) == dict and filedata["is_file"]:
         filename = filedata["name"]
-        tempdir = os.path.normpath(tempfile.gettempdir())
+        tempdir = os.path.normpath(os.path.join(os.getcwd(), "gradio_temp"))
         normfn = os.path.normpath(filename)
         assert normfn.startswith(tempdir), 'trying to open image file not in temporary directory'
 
