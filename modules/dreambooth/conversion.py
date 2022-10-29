@@ -23,8 +23,9 @@ import torch
 from basicsr.utils.download_util import load_file_from_url
 
 import modules.sd_models
-from modules import paths
+from modules import paths, shared
 from modules.dreambooth import dreambooth
+from modules.dreambooth.train_config import TrainConfig
 
 try:
     from omegaconf import OmegaConf
@@ -601,17 +602,13 @@ def convert_ldm_clip_checkpoint(checkpoint):
 
 
 def extract_checkpoint(new_model_name: str, checkpoint_path: str, scheduler_type="ddim"):
+    shared.state.job_count = 5
     # Set up our base directory for the model and sanitize our file name
     new_model_name = "".join(x for x in new_model_name if x.isalnum())
-    config_data = {
-        "name": new_model_name,
-        "scheduler": scheduler_type,
-        "src": checkpoint_path,
-        "total_steps": 0
-    }
-    new_model_dir = create_output_dir(new_model_name, config_data)
+    config = TrainConfig().create_new(new_model_name, scheduler_type, checkpoint_path, 0)
+    new_model_dir = create_output_dir(new_model_name, config)
     # Create folder for the 'extracted' diffusion model.
-    out_dir = os.path.join(new_model_dir, "stable-diffusion-v1-4")
+    out_dir = os.path.join(new_model_dir, "stable-diffusion-v1-5")
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
 
@@ -1430,25 +1427,10 @@ def convert_diff_to_sd(diffusers_model_path: str, base_ckpt_path: str, output_ck
 
 def create_output_dir(new_model, config_data):
     print(f"Creating dreambooth model folder: {new_model}")
-    model_dir = paths.models_path
-    # This is where all dreambooth trainings are saved
-    db_dir = os.path.join(model_dir, "dreambooth")
-    if not os.path.exists(db_dir):
-        os.makedirs(db_dir)
-    # This is where our specific model is going to live
-    out_dir = os.path.join(db_dir, new_model)
-    if not os.path.exists(out_dir):
-        os.makedirs(out_dir)
-    # This is where ourrent training data is stored.
-    output_dir = os.path.join(out_dir, "working")
-    # I think we can save the pipeline midstream. If not, add an else statement here to delete old working data
+    models_dir = paths.models_path
+    model_dir = os.path.join(models_dir, "dreambooth", new_model)
+    output_dir = os.path.join(model_dir, "working")
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-        config_file = os.path.join(output_dir, "config.json")
-        json_object = json.dumps(config_data, indent=4)
-
-        # Writing to sample.json
-        with open(config_file, "w") as outfile:
-            outfile.write(json_object)
-
-    return out_dir
+    config_data.save()
+    return model_dir

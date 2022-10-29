@@ -5,7 +5,7 @@ fairscale==0.4.4
 fonts
 font-roboto
 gfpgan
-gradio==3.5
+gradio==3.8
 invisible-watermark
 numpy
 omegaconf
@@ -17,7 +17,7 @@ pytorch_lightning
 realesrgan
 scikit-image>=0.19
 timm==0.4.12
-transformers==4.19.2
+transformers==4.21.0
 torch
 einops
 jsonmerge

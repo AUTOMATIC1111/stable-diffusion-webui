@@ -27,6 +27,7 @@ from transformers import CLIPTextModel, CLIPTokenizer
 import modules.sd_models
 from modules import paths, sd_hijack, shared, sd_models
 from modules.dreambooth import conversion
+from modules.dreambooth.train_config import TrainConfig
 
 mem_record = {}
 
@@ -41,98 +42,138 @@ def printm(msg, reset=False):
     print(f' {msg} \n Allocated: {allocated}GB \n Reserved: {cached}GB \n')
 
 
+def dumb_safety(images, clip_input):
+    return images, False
+
+
+def load_params(model_name,
+                initialization_text,
+                classification_text,
+                learn_rate,
+                dataset_directory,
+                classification_directory,
+                steps,
+                save_preview_every,
+                save_embedding_every,
+                num_class_images,
+                use_cpu,
+                train_text_encoder,
+                use_adam,
+                center_crop,
+                grad_check,
+                scale_lr,
+                mixed_precision,
+                scheduler,
+                resolution,
+                prior_loss_weight,
+                num_train_epochs,
+                adam_beta1,
+                adam_beta2,
+                adam_weight_decay,
+                adam_epsilon,
+                max_grad_norm,
+                batch_size,
+                class_batch_size,
+                seed,
+                grad_acc_steps,
+                warmup_steps):
+    print("Dict created?")
+    output = {"model_name": model_name, "initialization_text": initialization_text,
+              "classification_text": classification_text, "learn_rate": learn_rate,
+              "dataset_directory": dataset_directory, "classification_directory": classification_directory,
+              "steps": steps, "save_preview_every": save_preview_every, "save_embedding_every": save_embedding_every,
+              "num_class_images": num_class_images, "use_cpu": use_cpu, "train_text_encoder": train_text_encoder,
+              "use_adam": use_adam, "center_crop": center_crop, "grad_check": grad_check, "scale_lr": scale_lr,
+              "mixed_precision": mixed_precision, "scheduler": scheduler, "resolution": resolution,
+              "prior_loss_weight": prior_loss_weight, "num_train_epochs": num_train_epochs, "adam_beta1": adam_beta1,
+              "adam_beta2": adam_beta2, "adam_weight_decay": adam_weight_decay, "adam_epsilon": adam_epsilon,
+              "max_grad_norm": max_grad_norm, "batch_size": batch_size, "class_batch_size": class_batch_size,
+              "seed": seed, "grad_acc_steps": grad_acc_steps, "warmup_steps": warmup_steps}
+    print("Loading model?")
+    data = TrainConfig().from_file(model_name)
+    values = []
+    if data is not None:
+        if not "db_initialization_text" in data:
+            shared.state.textinfo = "Please train your model before loading config."
+        else:
+            shared.state.textinfo = "Loaded config data."
+        for key in data:
+            value = data[key]
+            print(f"Loading from existing {key}:{value}")
+            output[key] = value
+
+        for key in output:
+            value = output[key]
+            if key != "model_name":
+                print(f"Appending {key}: {value}")
+                values.append(value)
+
+    return values
+
+
 class DreamBooth:
     # TODO: Clean up notes below and make them a proper docstring
     def __init__(self,
-                 model_name,
-                 instance_prompt,
-                 class_prompt,
-                 learn_rate,
-                 instance_data_dir,
-                 class_data_dir,
-                 steps,
-                 create_image_every,
-                 save_embedding_every,
-                 num_class_images,
-                 use_cpu,
-                 train_text_encoder,
-                 not_cache_latents,
-                 use_adam,
-                 center_crop,
-                 gradient_checkpointing,
-                 scale_lr,
-                 mixed_precision,
-                 scheduler,
-                 resolution,
-                 prior_loss_weight,
-                 num_train_epochs,
-                 adam_beta1,
-                 adam_beta2,
-                 adam_weight_decay,
-                 adam_epsilon,
-                 max_grad_norm,
-                 batch_size,
-                 class_batch_size,
-                 seed,
-                 grad_acc_steps,
-                 warmup_steps,
-                 total_steps
+                 config: TrainConfig
                  ):
-        self.total_steps = total_steps
-        self.instance_data_dir = instance_data_dir
-        self.instance_prompt = instance_prompt
-        self.class_prompt = class_prompt
+        self.model_name = config["model_name"]
+        self.model_dir = config["model_dir"]
+        self.src = config["src"]
+        self.total_steps = config["total_steps"]
+        self.instance_data_dir = config["instance_data_dir"]
+        self.instance_prompt = config["instance_prompt"]
+        self.class_prompt = config["class_prompt"]
+        seed = config["seed"]
         if seed == -1:
             self.seed = None
         else:
             self.seed = seed
-        self.train_batch_size = batch_size
-        self.sample_batch_size = class_batch_size
-        self.max_train_steps = steps
-        self.num_class_images = num_class_images
-        self.gradient_accumulation_steps = grad_acc_steps
-        self.learning_rate = learn_rate
-        self.lr_scheduler = scheduler
-        self.lr_warmup_steps = warmup_steps
-        self.use_8bit_adam = use_adam
+        self.train_batch_size = config["batch_size"]
+        self.sample_batch_size = config["class_batch_size"]
+        self.max_train_steps = config["steps"]
+        self.num_class_images = config["num_class_images"]
+        self.gradient_accumulation_steps = config["grad_acc_steps"]
+        self.learning_rate = config["learn_rate"]
+        self.lr_scheduler = config["scheduler"]
+        self.lr_warmup_steps = config["warmup_steps"]
+        self.use_8bit_adam = config["use_adam"]
         self.log_interval = 10
-        self.save_img_every = create_image_every
-        self.save_data_every = save_embedding_every
-        self.mixed_precision = mixed_precision
-        self.not_cache_latents = not_cache_latents
+        self.save_preview_every = config["save_preview_every"]
+        self.save_data_every = config["save_embedding_every"]
+        self.mixed_precision = config["mixed_precision"]
 
-        name = "".join(x for x in model_name if x.isalnum())
+        name = "".join(x for x in config["model_name"] if x.isalnum())
         model_path = paths.models_path
         model_dir = os.path.join(model_path, "dreambooth", name)
         self.output_dir = os.path.join(model_dir, "working")
         # A folder containing the training data of instance images.
-        if class_data_dir is not None and class_data_dir != "":
-            self.class_data_dir = class_data_dir
+        if config["class_data_dir"] is not None and config["class_data_dir"] != "":
+            self.class_data_dir = config["class_data_dir"]
         else:
-            self.class_data_dir = os.path.join(self.output_dir, "classifiers")
+            self.class_data_dir = os.path.join(model_dir, "classifiers")
             if not os.path.exists(self.class_data_dir):
                 os.makedirs(self.class_data_dir)
 
         self.logging_dir = os.path.join(self.output_dir, "logging")
-        self.pretrained_model_path = os.path.join(model_dir, "stable-diffusion-v1-4")
+        self.pretrained_model_path = os.path.join(model_dir, "stable-diffusion-v1-5")
         self.with_prior_preservation = False
 
-        if class_prompt != "*" and class_prompt != "" and num_class_images != 0:
+        if config["class_prompt"] != "*" and config["class_prompt"] != "" and config["num_class_images"] != 0:
             self.with_prior_preservation = True
         self.local_rank = int(os.environ.get("LOCAL_RANK", -1))
-        self.train_text_encoder = train_text_encoder
-        self.resolution = resolution
-        self.use_cpu = use_cpu
-        self.prior_loss_weight = prior_loss_weight
-        self.center_crop = center_crop
-        self.num_train_epochs = num_train_epochs
-        self.gradient_checkpointing = gradient_checkpointing
-        self.scale_lr = scale_lr
-        self.adam_beta1 = adam_beta1
-        self.adam_beta2 = adam_beta2
-        self.adam_weight_decay = adam_weight_decay
-        self.adam_epsilon = adam_epsilon
-        self.max_grad_norm = max_grad_norm
+        self.train_text_encoder = config["train_text_encoder"]
+        self.resolution = config["resolution"]
+        self.use_cpu = config["use_cpu"]
+        self.prior_loss_weight = config["prior_loss_weight"]
+        self.center_crop = config["center_crop"]
+        self.num_train_epochs = config["num_train_epochs"]
+        self.gradient_checkpointing = config["gradient_checkpointing"]
+        self.scale_lr = config["scale_lr"]
+        self.adam_beta1 = config["adam_beta1"]
+        self.adam_beta2 = config["adam_beta2"]
+        self.adam_weight_decay = config["adam_weight_decay"]
+        self.adam_epsilon = config["adam_epsilon"]
+        self.max_grad_norm = config["max_grad_norm"]
 
     def train(self):
         logging_dir = Path(self.output_dir, self.logging_dir)
@@ -168,16 +209,10 @@ class DreamBooth:
                 pipeline = StableDiffusionPipeline.from_pretrained(
                     self.pretrained_model_path,
                     torch_dtype=torch_dtype,
-                    safety_checker=None,
                     revision=self.total_steps,
                 )
-
-                def foo(images, clip_input):
-                    return images, False
-
-                pipeline.safety_checker = foo
+                pipeline.safety_checker = dumb_safety
                 pipeline.set_progress_bar_config(disable=True)
-
                 num_new_images = self.num_class_images - cur_class_images
                 print(f"Number of class images to sample: {num_new_images}.")
                 shared.state.job_count = num_new_images
@@ -187,7 +222,7 @@ class DreamBooth:
                 sample_dataloader = accelerator.prepare(sample_dataloader)
                 pipeline.to(accelerator.device)
                 for example in tqdm(
-                    sample_dataloader, desc="Generating class images", disable=not accelerator.is_local_main_process
+                        sample_dataloader, desc="Generating class images", disable=not accelerator.is_local_main_process
                 ):
                     images = pipeline(example["prompt"]).images
 
@@ -425,30 +460,13 @@ class DreamBooth:
                         optimizer.step()
                         lr_scheduler.step()
                         optimizer.zero_grad()
-
-                        if self.save_img_every:
-                            if not global_step % self.save_img_every and global_step != 0:
-                                prompt = self.instance_prompt
-                                last_saved_image = os.path.join(self.output_dir,
-                                                                f'{self.instance_prompt}_{global_step}.png')
-                                if accelerator.is_main_process:
-                                    pipeline = StableDiffusionPipeline.from_pretrained(
-                                        self.pretrained_model_path,
-                                        unet=accelerator.unwrap_model(unet),
-                                        revision=self.total_steps + global_step
-                                    )
-                                    pipeline = pipeline.to("cuda")
-                                    with autocast("cuda"), torch.no_grad():
-                                        image = pipeline(prompt, num_inference_steps=50, guidance_scale=7.5).images[0]
-                                        shared.state.current_image = image
-                                        image.save(last_saved_image)
-                                pass
-
+                        # Save checkpoint data *before* generating preview image
                         if self.save_data_every:
                             # Check to make sure this doesn't throw OOM if training on CPU
-                            if not global_step % self.save_data_every and global_step != 0:
+                            if (not global_step % self.save_data_every and global_step != 0) or \
+                                    (not global_step % self.save_preview_every and global_step != 0):
                                 if accelerator.is_main_process:
-                                    print(f"Saving pretrained model data at step {global_step}.")
+                                    print(f"Saving pretrained model data {global_step}.")
                                     pipeline = StableDiffusionPipeline.from_pretrained(
                                         self.pretrained_model_path,
                                         unet=accelerator.unwrap_model(unet),
@@ -457,8 +475,26 @@ class DreamBooth:
                                     pipeline = pipeline.to("cuda")
                                     with autocast("cuda"):
                                         pipeline.text_encoder.resize_token_embeddings(49409)
-                                        pipeline.save_pretrained(self.output_dir)
-                                pass
+                                        if not global_step % self.save_data_every and global_step != 0:
+                                            try:
+                                                print(f"Saving to {self.output_dir}")
+                                                pipeline.save_pretrained(self.output_dir)
+                                                save_checkpoint(self.total_steps + global_step, self.src,
+                                                                self.model_name,
+                                                                self.model_dir)
+                                            except Exception as e:
+                                                print(f"YEah, you should fix this checkpoint error: {e}")
+
+                                        if not global_step % self.save_preview_every and global_step != 0:
+                                            pipeline.safety_checker = dumb_safety
+                                            prompt = self.instance_prompt
+                                            last_saved_image = os.path.join(self.logging_dir,
+                                                                            f'{self.instance_prompt}_{global_step}.png')
+                                            image = pipeline(prompt, num_inference_steps=50, guidance_scale=7.5).images[
+                                                0]
+                                            shared.state.current_image = image
+                                            image.save(last_saved_image)
+
                     # Checks if the accelerator has performed an optimization step behind the scenes
                     if accelerator.sync_gradients:
                         progress_bar.update(1)
@@ -537,12 +573,11 @@ def start_training(model_name,
                    dataset_directory,
                    classification_directory,
                    steps,
-                   create_image_every,
+                   save_preview_every,
                    save_embedding_every,
                    num_class_images,
                    use_cpu,
                    train_text_encoder,
-                   not_cache_latents,
                    use_adam,
                    center_crop,
                    gradient_checkpointing,
@@ -572,13 +607,7 @@ def start_training(model_name,
     printm("VRAM cleared, beginning training.", True)
     model_path = paths.models_path
     model_dir = os.path.join(model_path, "dreambooth", model_name, "working")
-    config = None
-    config_file = os.path.join(model_dir, "config.json")
-    try:
-        with open(config_file, 'r') as openfile:
-            config = json.load(openfile)
-    except:
-        pass
+    config = TrainConfig().from_file(model_name)
 
     if config is None:
         print("Unable to load config?")
@@ -586,39 +615,21 @@ def start_training(model_name,
 
     src_checkpoint = config["src"]
     total_steps = config["total_steps"]
-    dream = DreamBooth(model_name,
-                       instance_prompt,
-                       class_prompt,
-                       learn_rate,
-                       dataset_directory,
-                       classification_directory,
-                       steps,
-                       create_image_every,
-                       save_embedding_every,
-                       num_class_images,
-                       use_cpu,
-                       train_text_encoder,
-                       not_cache_latents,
-                       use_adam,
-                       center_crop,
-                       gradient_checkpointing,
-                       scale_lr,
-                       mixed_precision,
-                       scheduler,
-                       resolution,
-                       prior_loss_weight,
-                       num_train_epochs,
-                       adam_beta1,
-                       adam_beta2,
-                       adam_weight_decay,
-                       adam_epsilon,
-                       max_grad_norm,
-                       batch_size,
-                       class_batch_size,
-                       seed,
-                       grad_acc_steps,
-                       warmup_steps,
-                       total_steps)
+    config.from_ui(model_name=model_name, instance_prompt=instance_prompt,
+                   class_prompt=class_prompt, learn_rate=learn_rate,
+                   instance_data_dir=dataset_directory, class_data_dir=classification_directory,
+                   steps=steps, save_preview_every=save_preview_every, save_embedding_every=save_embedding_every,
+                   num_class_images=num_class_images, use_cpu=use_cpu, train_text_encoder=train_text_encoder,
+                   use_adam=use_adam, center_crop=center_crop, gradient_checkpointing=gradient_checkpointing,
+                   scale_lr=scale_lr,
+                   mixed_precision=mixed_precision, scheduler=scheduler, resolution=resolution,
+                   prior_loss_weight=prior_loss_weight, num_train_epochs=num_train_epochs, adam_beta1=adam_beta1,
+                   adam_beta2=adam_beta2, adam_weight_decay=adam_weight_decay, adam_epsilon=adam_epsilon,
+                   max_grad_norm=max_grad_norm, batch_size=batch_size, class_batch_size=class_batch_size,
+                   seed=seed, grad_acc_steps=grad_acc_steps, warmup_steps=warmup_steps, total_steps=total_steps,
+                   src=src_checkpoint, model_dir=model_dir)
+    config.save()
+    dream = DreamBooth(config)
     if not os.path.exists(dream.instance_data_dir):
         print("Invalid training data dir!")
         shared.state.textinfo = "Invalid training data dir"
@@ -628,16 +639,12 @@ def start_training(model_name,
     out_dir, trained_steps = dream.train()
     total_steps += trained_steps
     config["total_steps"] = total_steps
-    json_object = json.dumps(config, indent=4)
+
     if trained_steps > 0:
-        with open(config_file, "w") as outfile:
-            outfile.write(json_object)
-        out_file = os.path.join(paths.models_path, "Stable-diffusion", f"{model_name}_{total_steps}.ckpt")
+        config.save()
         if os.path.exists(os.path.join(model_dir, "model_index.json")):
             print(f"Successfully trained model for a total of {total_steps} steps, converting to ckpt.")
-            src_path = modules.sd_models.get_closet_checkpoint_match(src_checkpoint)[0]
-            converted = conversion.convert_diff_to_sd(model_dir, src_path, out_file, True)
-            sd_models.list_models()
+            save_checkpoint(total_steps, src_checkpoint, model_name, model_dir)
         embed_msg = f"Embedding saved to {html.escape(converted)}"
     else:
         print("Oops, something must have happened, unable to train model.")
@@ -656,6 +663,14 @@ def start_training(model_name,
     return res, ""
 
 
+def save_checkpoint(total_steps, src_checkpoint, model_name, model_dir):
+    print(f"Successfully trained model for a total of {total_steps} steps, converting to ckpt.")
+    src_path = modules.sd_models.get_closet_checkpoint_match(src_checkpoint)[0]
+    out_file = os.path.join(paths.models_path, "Stable-diffusion", f"{model_name}_{total_steps}.ckpt")
+    conversion.convert_diff_to_sd(model_dir, src_path, out_file, True)
+    sd_models.list_models()
+
+
 class DreamBoothDataset(Dataset):
     """
     A dataset to prepare the instance and class images with the prompts for fine-tuning the model.
@@ -663,14 +678,14 @@ class DreamBoothDataset(Dataset):
     """
 
     def __init__(
-        self,
-        instance_data_root,
-        instance_prompt,
-        tokenizer,
-        class_data_root=None,
-        class_prompt=None,
-        size=512,
-        center_crop=False,
+            self,
+            instance_data_root,
+            instance_prompt,
+            tokenizer,
+            class_data_root=None,
+            class_prompt=None,
+            size=512,
+            center_crop=False,
     ):
         self.size = size
         self.center_crop = center_crop
