@@ -314,8 +314,8 @@ input[type="range"]{
 
 .modalControls {
     display: grid;
-    grid-template-columns: 32px auto 1fr 32px;
-    grid-template-areas: "zoom tile space close";
+    grid-template-columns: 32px 32px 32px 1fr 32px;
+    grid-template-areas: "zoom tile save space close";
     position: absolute;
     top: 0;
     left: 0;
@@ -333,6 +333,10 @@ input[type="range"]{
     grid-area: zoom;
 }
 
+.modalSave {
+    grid-area: save;
+}
+
 .modalTileImage {
     grid-area: tile;
 }
@@ -346,8 +350,18 @@ input[type="range"]{
   cursor: pointer;
 }
 
+.modalSave {
+    color: white;
+    font-size: 28px;
+    margin-top: 8px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
 .modalClose:hover,
 .modalClose:focus,
+.modalSave:hover,
+.modalSave:focus,
 .modalZoom:hover,
 .modalZoom:focus {
   color: #999;
@@ -522,18 +536,23 @@ If you change anything above, you need to make sure it is RTL compliant by just 
 your changes through converters like https://cssjanus.github.io/ or https://rtlcss.com/.
 Then, you will need to add the RTL counterpart only if needed in the rtl section below.*/
 @media rtl {
-    /* this part was manualy added */
+    /* this part was added manually */
     :host {
         direction: rtl;
     }
-    .output-html:has(.performance), .gr-text-input {
+    select, .file-preview, .gr-text-input, .output-html:has(.performance), #ti_progress {
         direction: ltr;
+    }
+    #script_list > label > select,
+    #x_type > label > select,
+    #y_type > label > select {
+        direction: rtl;
     }
     .gr-radio, .gr-checkbox{
         margin-left: 0.25em;
     }
 
-    /* this part was automatically generated with few manual modifications */
+    /* automatically generated with few manual modifications */
     .performance .time {
         margin-right: unset;
         margin-left: 0;
