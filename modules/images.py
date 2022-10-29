@@ -300,8 +300,8 @@ class FilenameGenerator:
         'seed': lambda self: self.seed if self.seed is not None else '',
         'steps': lambda self:  self.p and self.p.steps,
         'cfg': lambda self: self.p and self.p.cfg_scale,
-        'width': lambda self: self.p and self.p.width,
-        'height': lambda self: self.p and self.p.height,
+        'width': lambda self: self.image.width,
+        'height': lambda self: self.image.height,
         'styles': lambda self: self.p and sanitize_filename_part(", ".join([style for style in self.p.styles if not style == "None"]) or "None", replace_spaces=False),
         'sampler': lambda self: self.p and sanitize_filename_part(sd_samplers.samplers[self.p.sampler_index].name, replace_spaces=False),
         'model_hash': lambda self: getattr(self.p, "sd_model_hash", shared.sd_model.sd_model_hash),
@@ -315,10 +315,11 @@ class FilenameGenerator:
     }
     default_time_format = '%Y%m%d%H%M%S'
 
-    def __init__(self, p, seed, prompt):
+    def __init__(self, p, seed, prompt, image):
         self.p = p
         self.seed = seed
         self.prompt = prompt
+        self.image = image
 
     def prompt_no_style(self):
         if self.p is None or self.prompt is None:
@@ -449,7 +450,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
         txt_fullfn (`str` or None):
             If a text file is saved for this image, this will be its full path. Otherwise None.
     """
-    namegen = FilenameGenerator(p, seed, prompt)
+    namegen = FilenameGenerator(p, seed, prompt, image)
 
     if save_to_dirs is None:
         save_to_dirs = (grid and opts.grid_save_to_dirs) or (not grid and opts.save_to_dirs and not no_prompt)
