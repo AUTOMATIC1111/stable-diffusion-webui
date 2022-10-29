@@ -4,7 +4,7 @@ import tqdm
 class LearnScheduleIterator:
     def __init__(self, learn_rate, max_steps, cur_step=0):
         """
-        specify learn_rate as "0.001:100, 0.00001:1000, 1e-5:10000" to have lr of 0.001 until step 100, 0.00001 until 1000, 1e-5:10000 until 10000
+        specify learn_rate as "0.001:100, 0.00001:1000, 1e-5:10000" to have lr of 0.001 until step 100, 0.00001 until 1000, and 1e-5 until 10000
         """
 
         pairs = learn_rate.split(',')
@@ -33,7 +33,7 @@ class LearnScheduleIterator:
                     return
             assert self.rates
         except (ValueError, AssertionError):
-            raise Exception("Invalid learning rate schedule")
+            raise Exception('Invalid learning rate schedule. It should be a number or, for example, like "0.001:100, 0.00001:1000, 1e-5:10000" to have lr of 0.001 until step 100, 0.00001 until 1000, and 1e-5 until 10000.')
 
 
     def __iter__(self):
