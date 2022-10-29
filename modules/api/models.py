@@ -160,4 +160,4 @@ class PNGInfoResponse(BaseModel):
 class ProgressResponse(BaseModel):
     progress: float = Field(title="Progress", description="The progress with a range of 0 to 1")
     eta_relative: float = Field(title="ETA in secs")
-    state: Json
+    state: Json = Field(title="State", description="The current state snapshot")
