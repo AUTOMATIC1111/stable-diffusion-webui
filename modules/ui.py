@@ -749,7 +749,7 @@ def create_ui(wrap_gradio_gpu_call):
                     denoising_strength,
                     firstphase_width,
                     firstphase_height,
-                    clip_skip
+                    clip_skip,
                 ] + custom_inputs,
 
                 outputs=[
@@ -893,6 +893,7 @@ def create_ui(wrap_gradio_gpu_call):
 
                 with gr.Group():
                     cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='CFG Scale', value=7.0)
+                    clip_skip = gr.Slider(minimum=1, maximum=12, step=1, label='Clip Skip', value=1)
                     denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.75)
 
                 seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox = create_seed_inputs()
@@ -965,6 +966,7 @@ def create_ui(wrap_gradio_gpu_call):
                     inpainting_mask_invert,
                     img2img_batch_input_dir,
                     img2img_batch_output_dir,
+                    clip_skip,
                 ] + custom_inputs,
                 outputs=[
                     img2img_gallery,
