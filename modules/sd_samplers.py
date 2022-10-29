@@ -7,7 +7,7 @@ import inspect
 import k_diffusion.sampling
 import ldm.models.diffusion.ddim
 import ldm.models.diffusion.plms
-from modules import prompt_parser
+from modules import prompt_parser, devices
 
 from modules.shared import opts, cmd_opts, state
 import modules.shared as shared
@@ -339,8 +339,12 @@ class KDiffusionSampler:
 
         if p.sampler_noise_scheduler_override:
           sigmas = p.sampler_noise_scheduler_override(steps)
+        elif self.config is not None and self.config.options.get('scheduler', None) == 'karras':
+            sigmas = k_diffusion.sampling.get_sigmas_karras(n=steps, sigma_min=0.1, sigma_max=10, device=shared.device)
         else:
           sigmas = self.model_wrap.get_sigmas(steps)
+
+        sigmas = sigmas.to(devices.dtype)
 
         noise = noise * sigmas[steps - t_enc - 1]
         xi = x + noise
@@ -362,6 +366,8 @@ class KDiffusionSampler:
             sigmas = k_diffusion.sampling.get_sigmas_karras(n=steps, sigma_min=0.1, sigma_max=10, device=shared.device)
         else:
             sigmas = self.model_wrap.get_sigmas(steps)
+
+        sigmas = sigmas.to(devices.dtype)
 
         x = x * sigmas[0]
 

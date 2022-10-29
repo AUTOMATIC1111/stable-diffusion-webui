@@ -10,6 +10,7 @@ import lark
 # [60, 'fantasy landscape with a lake and an oak in foreground in background masterful']
 # [75, 'fantasy landscape with a lake and an oak in background masterful']
 # [100, 'fantasy landscape with a lake and a christmas tree in background masterful']
+from modules import devices
 
 schedule_parser = lark.Lark(r"""
 !start: (prompt | /[][():]/+)*
@@ -130,7 +131,7 @@ def get_learned_conditioning(model, prompts, steps):
             continue
 
         texts = [x[1] for x in prompt_schedule]
-        conds = model.get_learned_conditioning(texts)
+        conds = model.get_learned_conditioning(texts).to(devices.dtype)
 
         cond_schedule = []
         for i, (end_at_step, text) in enumerate(prompt_schedule):

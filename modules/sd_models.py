@@ -5,7 +5,9 @@ from collections import namedtuple
 import torch
 from omegaconf import OmegaConf
 
-
+import ldm.modules.diffusionmodules.model
+import ldm.modules.diffusionmodules.openaimodel
+import ldm.modules.diffusionmodules.util
 from ldm.util import instantiate_from_config
 
 from modules import shared, modelloader, devices
@@ -25,6 +27,23 @@ try:
     logging.set_verbosity_error()
 except Exception:
     pass
+
+
+def timestep_embedding(*args, **kwargs):
+    return ldm_modules_diffusionmodules_util_timestep_embedding(*args, **kwargs).to(devices.dtype)
+
+
+ldm_modules_diffusionmodules_util_timestep_embedding = ldm.modules.diffusionmodules.openaimodel.timestep_embedding
+ldm.modules.diffusionmodules.openaimodel.timestep_embedding = timestep_embedding
+
+
+class GroupNorm32(torch.nn.GroupNorm):
+    def forward(self, x):
+        return super().forward(x).type(x.dtype)
+
+
+ldm.modules.diffusionmodules.util.GroupNorm32 = GroupNorm32
+
 
 
 def setup_model():
@@ -133,6 +152,8 @@ def load_model_weights(model, checkpoint_file, sd_model_hash):
         model.half()
 
     devices.dtype = torch.float32 if shared.cmd_opts.no_half else torch.float16
+    model.model.diffusion_model.dtype = devices.dtype
+    torch.set_default_tensor_type(torch.FloatTensor if shared.cmd_opts.no_half else torch.HalfTensor)
 
     model.sd_model_hash = sd_model_hash
     model.sd_model_checkpint = checkpoint_file
