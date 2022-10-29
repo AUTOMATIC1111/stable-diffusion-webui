@@ -156,41 +156,7 @@ artist_db = modules.artists.ArtistsDatabase(os.path.join(script_path, 'artists.c
 
 styles_filename = cmd_opts.styles_file
 prompt_styles = modules.styles.StyleDatabase(styles_filename)
-###########################################################
-#   Descriptors
-prompt_adjectives = modules.prompt_gen.load_promptgen_text('scripts/wildcards/adjective.txt')
-prompt_animals = modules.prompt_gen.load_promptgen_text('scripts/wildcards/animal.txt')
-prompt_artists = modules.prompt_gen.load_promptgen_text('scripts/wildcards/artist.txt')
-prompt_artstyles = modules.prompt_gen.load_promptgen_text('scripts/wildcards/artstyle.txt')
-prompt_bodys = modules.prompt_gen.load_promptgen_text('scripts/wildcards/body.txt')
-prompt_cars = modules.prompt_gen.load_promptgen_text('scripts/wildcards/car.txt')
-prompt_celebrities = modules.prompt_gen.load_promptgen_text('scripts/wildcards/celebrity.txt')
-prompt_clothes = modules.prompt_gen.load_promptgen_text('scripts/wildcards/clothing.txt')
-prompt_colours = modules.prompt_gen.load_promptgen_text('scripts/wildcards/colour.txt')
-prompt_decoarts = modules.prompt_gen.load_promptgen_text('scripts/wildcards/decoart.txt')
-prompt_descriptors = modules.prompt_gen.load_promptgen_text('scripts/wildcards/descriptor.txt')
-prompt_dogs = modules.prompt_gen.load_promptgen_text('scripts/wildcards/dog.txt')
-prompt_elements = modules.prompt_gen.load_promptgen_text('scripts/wildcards/element.txt')
-prompt_emotions = modules.prompt_gen.load_promptgen_text('scripts/wildcards/emotion.txt')
-prompt_flowers = modules.prompt_gen.load_promptgen_text('scripts/wildcards/flower.txt')
-prompt_genres = modules.prompt_gen.load_promptgen_text('scripts/wildcards/genre.txt')
-prompt_hairstyles = modules.prompt_gen.load_promptgen_text('scripts/wildcards/hairstyle.txt')
-prompt_inkchalks = modules.prompt_gen.load_promptgen_text('scripts/wildcards/inkchalk.txt')
-prompt_lightings = modules.prompt_gen.load_promptgen_text('scripts/wildcards/lighting.txt')
-prompt_oddmaterials = modules.prompt_gen.load_promptgen_text('scripts/wildcards/oddmaterial.txt')
-prompt_paints = modules.prompt_gen.load_promptgen_text('scripts/wildcards/paint.txt')
-prompt_photographys = modules.prompt_gen.load_promptgen_text('scripts/wildcards/photography.txt')
-prompt_prints = modules.prompt_gen.load_promptgen_text('scripts/wildcards/print.txt')
-prompt_renderings = modules.prompt_gen.load_promptgen_text('scripts/wildcards/rendering.txt')
-prompt_shapes = modules.prompt_gen.load_promptgen_text('scripts/wildcards/shape.txt')
-prompt_sites = modules.prompt_gen.load_promptgen_text('scripts/wildcards/site.txt')
-prompt_sports = modules.prompt_gen.load_promptgen_text('scripts/wildcards/sport.txt')
-prompt_genstyles = modules.prompt_gen.load_promptgen_text('scripts/wildcards/style.txt')
-prompt_timeperiods = modules.prompt_gen.load_promptgen_text('scripts/wildcards/timeperiod.txt')
-prompt_vehicles = modules.prompt_gen.load_promptgen_text('scripts/wildcards/vehicle.txt')
 
-
-###########################################################
 interrogator = modules.interrogate.InterrogateModels("interrogate")
 
 face_restorers = []
