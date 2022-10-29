@@ -364,7 +364,7 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
     checkpoint = sd_models.select_checkpoint()
 
     ititial_step = hypernetwork.step or 0
-    if ititial_step > steps:
+    if ititial_step >= steps:
         shared.state.textinfo = f"Model has already been trained beyond specified max steps"
         return hypernetwork, filename
 

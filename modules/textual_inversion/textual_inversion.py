@@ -262,7 +262,7 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
     checkpoint = sd_models.select_checkpoint()
 
     ititial_step = embedding.step or 0
-    if ititial_step > steps:
+    if ititial_step >= steps:
         shared.state.textinfo = f"Model has already been trained beyond specified max steps"
         return embedding, filename
 
