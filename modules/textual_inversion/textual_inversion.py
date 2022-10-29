@@ -283,113 +283,111 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
     embedding_yet_to_be_embedded = False
 
     pbar = tqdm.tqdm(enumerate(ds), total=steps-ititial_step)
+    for i, entries in pbar:
+        embedding.step = i + ititial_step
 
-    try:
-        for i, entries in pbar:
-            embedding.step = i + ititial_step
+        scheduler.apply(optimizer, embedding.step)
+        if scheduler.finished:
+            break
 
-            scheduler.apply(optimizer, embedding.step)
-            if scheduler.finished:
-                break
+        if shared.state.interrupted:
+            break
 
-            if shared.state.interrupted:
-                break
+        with torch.autocast("cuda"):
+            c = cond_model([entry.cond_text for entry in entries])
+            x = torch.stack([entry.latent for entry in entries]).to(devices.device)
+            loss = shared.sd_model(x, c)[0]
+            del x
 
-            with torch.autocast("cuda"):
-                c = cond_model([entry.cond_text for entry in entries])
-                x = torch.stack([entry.latent for entry in entries]).to(devices.device)
-                loss = shared.sd_model(x, c)[0]
-                del x
+            losses[embedding.step % losses.shape[0]] = loss.item()
 
-                losses[embedding.step % losses.shape[0]] = loss.item()
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
 
-                optimizer.zero_grad()
-                loss.backward()
-                optimizer.step()
+        steps_done = embedding.step + 1
 
-            steps_done = embedding.step + 1
+        epoch_num = embedding.step // len(ds)
+        epoch_step = embedding.step % len(ds)
 
-            epoch_num = embedding.step // len(ds)
-            epoch_step = embedding.step % len(ds)
+        pbar.set_description(f"[Epoch {epoch_num}: {epoch_step+1}/{len(ds)}]loss: {losses.mean():.7f}")
 
-            pbar.set_description(f"[Epoch {epoch_num}: {epoch_step+1}/{len(ds)}]loss: {losses.mean():.7f}")
+        if embedding_dir is not None and steps_done % save_embedding_every == 0:
+            # Before saving, change name to match current checkpoint.
+            embedding.name = f'{embedding_name}-{steps_done}'
+            last_saved_file = os.path.join(embedding_dir, f'{embedding.name}.pt')
+            embedding.save(last_saved_file)
+            embedding_yet_to_be_embedded = True
 
-            if embedding_dir is not None and steps_done % save_embedding_every == 0:
-                # Before saving, change name to match current checkpoint.
-                embedding.name = f'{embedding_name}-{steps_done}'
-                last_saved_file = os.path.join(embedding_dir, f'{embedding.name}.pt')
-                embedding.save(last_saved_file)
-                embedding_yet_to_be_embedded = True
+        write_loss(log_directory, "textual_inversion_loss.csv", embedding.step, len(ds), {
+            "loss": f"{losses.mean():.7f}",
+            "learn_rate": scheduler.learn_rate
+        })
 
-            write_loss(log_directory, "textual_inversion_loss.csv", embedding.step, len(ds), {
-                "loss": f"{losses.mean():.7f}",
-                "learn_rate": scheduler.learn_rate
-            })
+        if images_dir is not None and steps_done % create_image_every == 0:
+            forced_filename = f'{embedding_name}-{steps_done}'
+            last_saved_image = os.path.join(images_dir, forced_filename)
+            p = processing.StableDiffusionProcessingTxt2Img(
+                sd_model=shared.sd_model,
+                do_not_save_grid=True,
+                do_not_save_samples=True,
+                do_not_reload_embeddings=True,
+            )
 
-            if images_dir is not None and steps_done % create_image_every == 0:
-                forced_filename = f'{embedding_name}-{steps_done}'
-                last_saved_image = os.path.join(images_dir, forced_filename)
-                p = processing.StableDiffusionProcessingTxt2Img(
-                    sd_model=shared.sd_model,
-                    do_not_save_grid=True,
-                    do_not_save_samples=True,
-                    do_not_reload_embeddings=True,
-                )
+            if preview_from_txt2img:
+                p.prompt = preview_prompt
+                p.negative_prompt = preview_negative_prompt
+                p.steps = preview_steps
+                p.sampler_index = preview_sampler_index
+                p.cfg_scale = preview_cfg_scale
+                p.seed = preview_seed
+                p.width = preview_width
+                p.height = preview_height
+            else:
+                p.prompt = entries[0].cond_text
+                p.steps = 20
+                p.width = training_width
+                p.height = training_height
 
-                if preview_from_txt2img:
-                    p.prompt = preview_prompt
-                    p.negative_prompt = preview_negative_prompt
-                    p.steps = preview_steps
-                    p.sampler_index = preview_sampler_index
-                    p.cfg_scale = preview_cfg_scale
-                    p.seed = preview_seed
-                    p.width = preview_width
-                    p.height = preview_height
-                else:
-                    p.prompt = entries[0].cond_text
-                    p.steps = 20
-                    p.width = training_width
-                    p.height = training_height
+            preview_text = p.prompt
 
-                preview_text = p.prompt
+            processed = processing.process_images(p)
+            image = processed.images[0]
 
-                processed = processing.process_images(p)
-                image = processed.images[0]
+            shared.state.current_image = image
 
-                shared.state.current_image = image
+            if save_image_with_stored_embedding and os.path.exists(last_saved_file) and embedding_yet_to_be_embedded:
 
-                if save_image_with_stored_embedding and os.path.exists(last_saved_file) and embedding_yet_to_be_embedded:
+                last_saved_image_chunks = os.path.join(images_embeds_dir, f'{embedding_name}-{steps_done}.png')
 
-                    last_saved_image_chunks = os.path.join(images_embeds_dir, f'{embedding_name}-{steps_done}.png')
+                info = PngImagePlugin.PngInfo()
+                data = torch.load(last_saved_file)
+                info.add_text("sd-ti-embedding", embedding_to_b64(data))
 
-                    info = PngImagePlugin.PngInfo()
-                    data = torch.load(last_saved_file)
-                    info.add_text("sd-ti-embedding", embedding_to_b64(data))
+                title = "<{}>".format(data.get('name', '???'))
 
-                    title = "<{}>".format(data.get('name', '???'))
+                try:
+                    vectorSize = list(data['string_to_param'].values())[0].shape[0]
+                except Exception as e:
+                    vectorSize = '?'
 
-                    try:
-                        vectorSize = list(data['string_to_param'].values())[0].shape[0]
-                    except Exception as e:
-                        vectorSize = '?'
+                checkpoint = sd_models.select_checkpoint()
+                footer_left = checkpoint.model_name
+                footer_mid = '[{}]'.format(checkpoint.hash)
+                footer_right = '{}v {}s'.format(vectorSize, steps_done)
 
-                    checkpoint = sd_models.select_checkpoint()
-                    footer_left = checkpoint.model_name
-                    footer_mid = '[{}]'.format(checkpoint.hash)
-                    footer_right = '{}v {}s'.format(vectorSize, steps_done)
+                captioned_image = caption_image_overlay(image, title, footer_left, footer_mid, footer_right)
+                captioned_image = insert_image_data_embed(captioned_image, data)
 
-                    captioned_image = caption_image_overlay(image, title, footer_left, footer_mid, footer_right)
-                    captioned_image = insert_image_data_embed(captioned_image, data)
+                captioned_image.save(last_saved_image_chunks, "PNG", pnginfo=info)
+                embedding_yet_to_be_embedded = False
 
-                    captioned_image.save(last_saved_image_chunks, "PNG", pnginfo=info)
-                    embedding_yet_to_be_embedded = False
+            last_saved_image, last_text_info = images.save_image(image, images_dir, "", p.seed, p.prompt, shared.opts.samples_format, processed.infotexts[0], p=p, forced_filename=forced_filename, save_to_dirs=False)
+            last_saved_image += f", prompt: {preview_text}"
 
-                last_saved_image, last_text_info = images.save_image(image, images_dir, "", p.seed, p.prompt, shared.opts.samples_format, processed.infotexts[0], p=p, forced_filename=forced_filename, save_to_dirs=False)
-                last_saved_image += f", prompt: {preview_text}"
+        shared.state.job_no = embedding.step
 
-            shared.state.job_no = embedding.step
-
-            shared.state.textinfo = f"""
+        shared.state.textinfo = f"""
 <p>
 Loss: {losses.mean():.7f}<br/>
 Step: {embedding.step}<br/>
@@ -398,9 +396,6 @@ Last saved embedding: {html.escape(last_saved_file)}<br/>
 Last saved image: {html.escape(last_saved_image)}<br/>
 </p>
 """
-    finally:
-        if embedding and embedding.vec is not None:
-            embedding.vec.requires_grad = False
 
     checkpoint = sd_models.select_checkpoint()
 
