@@ -1,4 +1,5 @@
 import inspect
+from click import prompt
 from pydantic import BaseModel, Field, create_model
 from typing import Any, Optional
 from typing_extensions import Literal
@@ -149,3 +150,9 @@ class ExtrasBatchImagesRequest(ExtrasBaseRequest):
 
 class ExtrasBatchImagesResponse(ExtraBaseResponse):
     images: list[str] = Field(title="Images", description="The generated images in base64 format.")
+
+class PNGInfoRequest(BaseModel):
+    image: str = Field(title="Image", description="The base64 encoded PNG image")
+
+class PNGInfoResponse(BaseModel):
+    info: str = Field(title="Image info", description="A string with all the info the image had")
