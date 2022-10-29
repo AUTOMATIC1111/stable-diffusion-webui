@@ -167,7 +167,7 @@ class Api:
 
         return PNGInfoResponse(info=result[1])
 
-    def progressapi(self):
+    def progressapi(self, req: ProgressRequest = Depends()):
         # copy from check_progress_call of ui.py
 
         if shared.state.job_count == 0:
@@ -188,7 +188,7 @@ class Api:
         progress = min(progress, 1)
 
         current_image = None
-        if shared.state.current_image:
+        if shared.state.current_image and not req.skip_current_image:
             current_image = encode_pil_to_base64(shared.state.current_image)
 
         return ProgressResponse(progress=progress, eta_relative=eta_relative, state=shared.state.dict(), current_image=current_image)

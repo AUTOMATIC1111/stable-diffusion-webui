@@ -157,6 +157,9 @@ class PNGInfoRequest(BaseModel):
 class PNGInfoResponse(BaseModel):
     info: str = Field(title="Image info", description="A string with all the info the image had")
 
+class ProgressRequest(BaseModel):
+    skip_current_image: bool = Field(default=False, title="Skip current image", description="Skip current image serialization")
+
 class ProgressResponse(BaseModel):
     progress: float = Field(title="Progress", description="The progress with a range of 0 to 1")
     eta_relative: float = Field(title="ETA in secs")
