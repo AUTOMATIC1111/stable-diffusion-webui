@@ -16,7 +16,7 @@ import gradio as gr
 import gradio.routes
 import gradio.utils
 import numpy as np
-from PIL import Image, PngImagePlugin
+from PIL import Image, PngImagePlugin , ImageGrab
 
 
 from modules import sd_hijack, sd_models, localization, script_callbacks
@@ -357,6 +357,11 @@ def interrogate_deepbooru(image):
     prompt = get_deepbooru_tags(image)
     return gr_show(True) if prompt is None else prompt
 
+def grab_clipboard_img():
+    img = ImageGrab.grabclipboard()
+    pt = os.path.join(os.getcwd(), "outputs/clipboard.png")
+    img.save(pt)
+    return pt , pt
 
 def create_seed_inputs():
     with gr.Row():
@@ -449,7 +454,6 @@ def update_token_counter(text, steps):
     style_class = ' class="red"' if (token_count > max_length) else ""
     return f"<span {style_class}>{token_count}/{max_length}</span>"
 
-
 def create_toprow(is_img2img):
     id_part = "img2img" if is_img2img else "txt2img"
 
@@ -479,10 +483,12 @@ def create_toprow(is_img2img):
             token_button = gr.Button(visible=False, elem_id=f"{id_part}_token_button")
 
         button_interrogate = None
+        button_paste_clipboard = None
         button_deepbooru = None
         if is_img2img:
             with gr.Column(scale=1, elem_id="interrogate_col"):
                 button_interrogate = gr.Button('Interrogate\nCLIP', elem_id="interrogate")
+                button_paste_clipboard = gr.Button('Paste\nCLIP', elem_id="interrogate")
 
                 if cmd_opts.deepdanbooru:
                     button_deepbooru = gr.Button('Interrogate\nDeepBooru', elem_id="deepbooru")
@@ -514,7 +520,7 @@ def create_toprow(is_img2img):
                     prompt_style2 = gr.Dropdown(label="Style 2", elem_id=f"{id_part}_style2_index", choices=[k for k, v in shared.prompt_styles.styles.items()], value=next(iter(shared.prompt_styles.styles.keys())))
                     prompt_style2.save_to_config = True
 
-    return prompt, roll, prompt_style, negative_prompt, prompt_style2, submit, button_interrogate, button_deepbooru, prompt_style_apply, save_style, paste, token_counter, token_button
+    return prompt, roll, prompt_style, negative_prompt, prompt_style2, submit, button_interrogate, button_deepbooru, button_paste_clipboard, prompt_style_apply, save_style, paste, token_counter, token_button
 
 
 def setup_progressbar(progressbar, preview, id_part, textinfo=None):
@@ -673,7 +679,7 @@ def create_ui(wrap_gradio_gpu_call):
 
 
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
-        txt2img_prompt, roll, txt2img_prompt_style, txt2img_negative_prompt, txt2img_prompt_style2, submit, _, _, txt2img_prompt_style_apply, txt2img_save_style, txt2img_paste, token_counter, token_button = create_toprow(is_img2img=False)
+        txt2img_prompt, roll, txt2img_prompt_style, txt2img_negative_prompt, txt2img_prompt_style2, submit, _, _, _, txt2img_prompt_style_apply, txt2img_save_style, txt2img_paste, token_counter, token_button = create_toprow(is_img2img=False)
         dummy_component = gr.Label(visible=False)
         txt_prompt_img = gr.File(label="", elem_id="txt2img_prompt_image", file_count="single", type="bytes", visible=False)
 
@@ -824,7 +830,7 @@ def create_ui(wrap_gradio_gpu_call):
             token_button.click(fn=update_token_counter, inputs=[txt2img_prompt, steps], outputs=[token_counter])
 
     with gr.Blocks(analytics_enabled=False) as img2img_interface:
-        img2img_prompt, roll, img2img_prompt_style, img2img_negative_prompt, img2img_prompt_style2, submit, img2img_interrogate, img2img_deepbooru, img2img_prompt_style_apply, img2img_save_style, img2img_paste, token_counter, token_button = create_toprow(is_img2img=True)
+        img2img_prompt, roll, img2img_prompt_style, img2img_negative_prompt, img2img_prompt_style2, submit, img2img_interrogate, img2img_deepbooru, img2img_paste_from_clip, img2img_prompt_style_apply, img2img_save_style, img2img_paste, token_counter, token_button = create_toprow(is_img2img=True)
 
         with gr.Row(elem_id='img2img_progress_row'):
             img2img_prompt_img = gr.File(label="", elem_id="img2img_prompt_image", file_count="single", type="bytes", visible=False)
@@ -976,6 +982,12 @@ def create_ui(wrap_gradio_gpu_call):
                 fn=interrogate,
                 inputs=[init_img],
                 outputs=[img2img_prompt],
+            )
+
+            img2img_paste_from_clip.click(
+                fn=grab_clipboard_img,
+                inputs=[],
+                outputs=[init_img,init_img_with_mask],
             )
 
             if cmd_opts.deepdanbooru:
