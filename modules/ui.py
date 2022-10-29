@@ -596,7 +596,7 @@ def create_refresh_button(refresh_component, refresh_method, refreshed_args, ele
     )
     return refresh_button
 
-def create_output_panel(tabname, outdir):    
+def create_output_panel(tabname, outdir):
     def open_folder(f):
         if not os.path.exists(f):
             print(f'Folder "{f}" does not exist. After you create an image, the folder will be created.')
@@ -618,11 +618,11 @@ Requested path was: {f}
                 sp.Popen(["open", path])
             else:
                 sp.Popen(["xdg-open", path])
-    
-    with gr.Column(variant='panel'):        
-            with gr.Group():                
+
+    with gr.Column(variant='panel'):
+            with gr.Group():
                 result_gallery = gr.Gallery(label='Output', show_label=False, elem_id=f"{tabname}_gallery").style(grid=4)
-               
+
             generation_info = None
             with gr.Column():
                 with gr.Row():
@@ -639,7 +639,7 @@ Requested path was: {f}
                     outputs=[],
                 )
 
-                if tabname != "extras":           
+                if tabname != "extras":
                     with gr.Row():
                         do_make_zip = gr.Checkbox(label="Make Zip when Save?", value=False)
 
@@ -671,8 +671,7 @@ Requested path was: {f}
                     html_info = gr.HTML()
                 parameters_copypaste.bind_buttons(buttons, result_gallery, "txt2img" if tabname == "txt2img" else None)
                 return result_gallery, generation_info if tabname != "extras" else html_info_x, html_info
-                    
-            
+
 
 def create_ui(wrap_gradio_gpu_call):
     import modules.img2img
@@ -723,10 +722,10 @@ def create_ui(wrap_gradio_gpu_call):
                 with gr.Group():
                     custom_inputs = modules.scripts.scripts_txt2img.setup_ui(is_img2img=False)
 
-     
 
-            txt2img_gallery, generation_info, html_info = create_output_panel("txt2img", opts.outdir_txt2img_samples)  
-                
+
+            txt2img_gallery, generation_info, html_info = create_output_panel("txt2img", opts.outdir_txt2img_samples)
+
             connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
             connect_reuse_seed(subseed, reuse_subseed, generation_info, dummy_component, is_subseed=True)
 
@@ -781,7 +780,7 @@ def create_ui(wrap_gradio_gpu_call):
                 fn=lambda x: gr_show(x),
                 inputs=[enable_hr],
                 outputs=[hr_options],
-            )            
+            )
 
             roll.click(
                 fn=roll_artist,
@@ -902,7 +901,7 @@ def create_ui(wrap_gradio_gpu_call):
                 with gr.Group():
                     custom_inputs = modules.scripts.scripts_img2img.setup_ui(is_img2img=True)
 
-            img2img_gallery, generation_info, html_info = create_output_panel("img2img", opts.outdir_img2img_samples)                 
+            img2img_gallery, generation_info, html_info = create_output_panel("img2img", opts.outdir_img2img_samples)
 
             connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
             connect_reuse_seed(subseed, reuse_subseed, generation_info, dummy_component, is_subseed=True)
@@ -990,7 +989,7 @@ def create_ui(wrap_gradio_gpu_call):
                     inputs=[init_img],
                     outputs=[img2img_prompt],
             )
-           
+
 
             roll.click(
                 fn=roll_artist,
@@ -1045,7 +1044,7 @@ def create_ui(wrap_gradio_gpu_call):
                 (denoising_strength, "Denoising strength"),
                 *modules.scripts.scripts_img2img.infotext_fields
             ]
-            parameters_copypaste.add_paste_fields("img2img", init_img, img2img_paste_fields) 
+            parameters_copypaste.add_paste_fields("img2img", init_img, img2img_paste_fields)
             parameters_copypaste.add_paste_fields("inpaint", init_img_with_mask, img2img_paste_fields)
 
 
@@ -1077,9 +1076,9 @@ def create_ui(wrap_gradio_gpu_call):
                                 upscaling_resize_w = gr.Number(label="Width", value=512, precision=0)
                                 upscaling_resize_h = gr.Number(label="Height", value=512, precision=0)
                             upscaling_crop = gr.Checkbox(label='Crop to fit', value=True)
-                
+
                 with gr.Group():
-                    extras_upscaler_1 = gr.Radio(label='Upscaler 1', elem_id="extras_upscaler_1", choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name, type="index") 
+                    extras_upscaler_1 = gr.Radio(label='Upscaler 1', elem_id="extras_upscaler_1", choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name, type="index")
 
                 with gr.Group():
                     extras_upscaler_2 = gr.Radio(label='Upscaler 2', elem_id="extras_upscaler_2", choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name, type="index")
@@ -1125,7 +1124,7 @@ def create_ui(wrap_gradio_gpu_call):
                 html_info,
             ]
         )
-        parameters_copypaste.add_paste_fields("extras", extras_image, None) 
+        parameters_copypaste.add_paste_fields("extras", extras_image, None)
 
 
     with gr.Blocks(analytics_enabled=False) as pnginfo_interface:
@@ -1139,14 +1138,14 @@ def create_ui(wrap_gradio_gpu_call):
                 html2 = gr.HTML()
                 with gr.Row():
                     buttons = parameters_copypaste.create_buttons(["txt2img", "img2img", "inpaint", "extras"])
-                parameters_copypaste.bind_buttons(buttons, image, generation_info)                
-                
+                parameters_copypaste.bind_buttons(buttons, image, generation_info)
+
         image.change(
             fn=wrap_gradio_call(modules.extras.run_pnginfo),
             inputs=[image],
             outputs=[html, generation_info, html2],
         )
-   
+
     with gr.Blocks() as modelmerger_interface:
         with gr.Row().style(equal_height=False):
             with gr.Column(variant='panel'):
@@ -1569,7 +1568,7 @@ def create_ui(wrap_gradio_gpu_call):
             column.__exit__()
 
 
-        
+
 
     interfaces = [
         (txt2img_interface, "txt2img", "txt2img"),
@@ -1582,7 +1581,7 @@ def create_ui(wrap_gradio_gpu_call):
 
     interfaces += script_callbacks.ui_tabs_callback()
 
-    interfaces += [(settings_interface, "Settings", "settings")]       
+    interfaces += [(settings_interface, "Settings", "settings")]
 
     css = ""
 
@@ -1661,7 +1660,7 @@ def create_ui(wrap_gradio_gpu_call):
                 component_dict['sd_model_checkpoint'],
             ]
         )
- 
+
 
         settings_map = {
             'sd_hypernetwork': 'Hypernet',
@@ -1669,7 +1668,7 @@ def create_ui(wrap_gradio_gpu_call):
             'sd_model_checkpoint': 'Model hash',
         }
 
-        parameters_copypaste.run_bind()       
+        parameters_copypaste.run_bind()
 
     ui_config_file = cmd_opts.ui_config_file
     ui_settings = {}
@@ -1749,7 +1748,7 @@ def load_javascript(raw_response):
         javascript = f'<script>{jsfile.read()}</script>'
 
     scripts_list = modules.scripts.list_scripts("javascript", ".js")
-    
+
     for basedir, filename, path in scripts_list:
         with open(path, "r", encoding="utf8") as jsfile:
             javascript += f"\n<!-- {filename} --><script>{jsfile.read()}</script>"
