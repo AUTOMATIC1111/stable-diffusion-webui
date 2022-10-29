@@ -398,110 +398,112 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
     forced_filename = "<none>"
 
     pbar = tqdm.tqdm(enumerate(ds), total=steps - ititial_step)
-    for i, entries in pbar:
-        hypernetwork.step = i + ititial_step
-        if len(loss_dict) > 0:
-            previous_mean_losses = [i[-1] for i in loss_dict.values()]
-            previous_mean_loss = mean(previous_mean_losses)
-            
-        scheduler.apply(optimizer, hypernetwork.step)
-        if scheduler.finished:
-            break
 
-        if shared.state.interrupted:
-            break
-
-        with torch.autocast("cuda"):
-            c = stack_conds([entry.cond for entry in entries]).to(devices.device)
-            # c = torch.vstack([entry.cond for entry in entries]).to(devices.device)
-            x = torch.stack([entry.latent for entry in entries]).to(devices.device)
-            loss = shared.sd_model(x, c)[0]
-            del x
-            del c
-
-            losses[hypernetwork.step % losses.shape[0]] = loss.item()
-            for entry in entries:
-                loss_dict[entry.filename].append(loss.item())
+    try:
+        for i, entries in pbar:
+            hypernetwork.step = i + ititial_step
+            if len(loss_dict) > 0:
+                previous_mean_losses = [i[-1] for i in loss_dict.values()]
+                previous_mean_loss = mean(previous_mean_losses)
                 
-            optimizer.zero_grad()
-            weights[0].grad = None
-            loss.backward()
+            scheduler.apply(optimizer, hypernetwork.step)
+            if scheduler.finished:
+                break
 
-            if weights[0].grad is None:
-                steps_without_grad += 1
+            if shared.state.interrupted:
+                break
+
+            with torch.autocast("cuda"):
+                c = stack_conds([entry.cond for entry in entries]).to(devices.device)
+                # c = torch.vstack([entry.cond for entry in entries]).to(devices.device)
+                x = torch.stack([entry.latent for entry in entries]).to(devices.device)
+                loss = shared.sd_model(x, c)[0]
+                del x
+                del c
+
+                losses[hypernetwork.step % losses.shape[0]] = loss.item()
+                for entry in entries:
+                    loss_dict[entry.filename].append(loss.item())
+                    
+                optimizer.zero_grad()
+                weights[0].grad = None
+                loss.backward()
+
+                if weights[0].grad is None:
+                    steps_without_grad += 1
+                else:
+                    steps_without_grad = 0
+                assert steps_without_grad < 10, 'no gradient found for the trained weight after backward() for 10 steps in a row; this is a bug; training cannot continue'
+
+                optimizer.step()
+
+            steps_done = hypernetwork.step + 1
+
+            if torch.isnan(losses[hypernetwork.step % losses.shape[0]]): 
+                raise RuntimeError("Loss diverged.")
+            
+            if len(previous_mean_losses) > 1:
+                std = stdev(previous_mean_losses)
             else:
-                steps_without_grad = 0
-            assert steps_without_grad < 10, 'no gradient found for the trained weight after backward() for 10 steps in a row; this is a bug; training cannot continue'
+                std = 0
+            dataset_loss_info = f"dataset loss:{mean(previous_mean_losses):.3f}" + u"\u00B1" + f"({std / (len(previous_mean_losses) ** 0.5):.3f})"
+            pbar.set_description(dataset_loss_info)
 
-            optimizer.step()
+            if hypernetwork_dir is not None and steps_done % save_hypernetwork_every == 0:
+                # Before saving, change name to match current checkpoint.
+                hypernetwork.name = f'{hypernetwork_name}-{steps_done}'
+                last_saved_file = os.path.join(hypernetwork_dir, f'{hypernetwork.name}.pt')
+                hypernetwork.save(last_saved_file)
 
-        steps_done = hypernetwork.step + 1
+            textual_inversion.write_loss(log_directory, "hypernetwork_loss.csv", hypernetwork.step, len(ds), {
+                "loss": f"{previous_mean_loss:.7f}",
+                "learn_rate": scheduler.learn_rate
+            })
 
-        if torch.isnan(losses[hypernetwork.step % losses.shape[0]]): 
-            raise RuntimeError("Loss diverged.")
-        
-        if len(previous_mean_losses) > 1:
-            std = stdev(previous_mean_losses)
-        else:
-            std = 0
-        dataset_loss_info = f"dataset loss:{mean(previous_mean_losses):.3f}" + u"\u00B1" + f"({std / (len(previous_mean_losses) ** 0.5):.3f})"
-        pbar.set_description(dataset_loss_info)
+            if images_dir is not None and steps_done % create_image_every == 0:
+                forced_filename = f'{hypernetwork_name}-{steps_done}'
+                last_saved_image = os.path.join(images_dir, forced_filename)
 
-        if hypernetwork_dir is not None and steps_done % save_hypernetwork_every == 0:
-            # Before saving, change name to match current checkpoint.
-            hypernetwork.name = f'{hypernetwork_name}-{steps_done}'
-            last_saved_file = os.path.join(hypernetwork_dir, f'{hypernetwork.name}.pt')
-            hypernetwork.save(last_saved_file)
+                optimizer.zero_grad()
+                shared.sd_model.cond_stage_model.to(devices.device)
+                shared.sd_model.first_stage_model.to(devices.device)
 
-        textual_inversion.write_loss(log_directory, "hypernetwork_loss.csv", hypernetwork.step, len(ds), {
-            "loss": f"{previous_mean_loss:.7f}",
-            "learn_rate": scheduler.learn_rate
-        })
+                p = processing.StableDiffusionProcessingTxt2Img(
+                    sd_model=shared.sd_model,
+                    do_not_save_grid=True,
+                    do_not_save_samples=True,
+                )
 
-        if images_dir is not None and steps_done % create_image_every == 0:
-            forced_filename = f'{hypernetwork_name}-{steps_done}'
-            last_saved_image = os.path.join(images_dir, forced_filename)
+                if preview_from_txt2img:
+                    p.prompt = preview_prompt
+                    p.negative_prompt = preview_negative_prompt
+                    p.steps = preview_steps
+                    p.sampler_index = preview_sampler_index
+                    p.cfg_scale = preview_cfg_scale
+                    p.seed = preview_seed
+                    p.width = preview_width
+                    p.height = preview_height
+                else:
+                    p.prompt = entries[0].cond_text
+                    p.steps = 20
 
-            optimizer.zero_grad()
-            shared.sd_model.cond_stage_model.to(devices.device)
-            shared.sd_model.first_stage_model.to(devices.device)
+                preview_text = p.prompt
 
-            p = processing.StableDiffusionProcessingTxt2Img(
-                sd_model=shared.sd_model,
-                do_not_save_grid=True,
-                do_not_save_samples=True,
-            )
+                processed = processing.process_images(p)
+                image = processed.images[0] if len(processed.images)>0 else None
 
-            if preview_from_txt2img:
-                p.prompt = preview_prompt
-                p.negative_prompt = preview_negative_prompt
-                p.steps = preview_steps
-                p.sampler_index = preview_sampler_index
-                p.cfg_scale = preview_cfg_scale
-                p.seed = preview_seed
-                p.width = preview_width
-                p.height = preview_height
-            else:
-                p.prompt = entries[0].cond_text
-                p.steps = 20
+                if unload:
+                    shared.sd_model.cond_stage_model.to(devices.cpu)
+                    shared.sd_model.first_stage_model.to(devices.cpu)
 
-            preview_text = p.prompt
+                if image is not None:
+                    shared.state.current_image = image
+                    last_saved_image, last_text_info = images.save_image(image, images_dir, "", p.seed, p.prompt, shared.opts.samples_format, processed.infotexts[0], p=p, forced_filename=forced_filename, save_to_dirs=False)
+                    last_saved_image += f", prompt: {preview_text}"
 
-            processed = processing.process_images(p)
-            image = processed.images[0] if len(processed.images)>0 else None
+            shared.state.job_no = hypernetwork.step
 
-            if unload:
-                shared.sd_model.cond_stage_model.to(devices.cpu)
-                shared.sd_model.first_stage_model.to(devices.cpu)
-
-            if image is not None:
-                shared.state.current_image = image
-                last_saved_image, last_text_info = images.save_image(image, images_dir, "", p.seed, p.prompt, shared.opts.samples_format, processed.infotexts[0], p=p, forced_filename=forced_filename, save_to_dirs=False)
-                last_saved_image += f", prompt: {preview_text}"
-
-        shared.state.job_no = hypernetwork.step
-
-        shared.state.textinfo = f"""
+            shared.state.textinfo = f"""
 <p>
 Loss: {previous_mean_loss:.7f}<br/>
 Step: {hypernetwork.step}<br/>
@@ -510,7 +512,14 @@ Last saved hypernetwork: {html.escape(last_saved_file)}<br/>
 Last saved image: {html.escape(last_saved_image)}<br/>
 </p>
 """
-        
+    finally:
+        if weights:
+            for weight in weights:
+                weight.requires_grad = False
+        if unload:
+            shared.sd_model.cond_stage_model.to(devices.device)
+            shared.sd_model.first_stage_model.to(devices.device)
+
     report_statistics(loss_dict)
     checkpoint = sd_models.select_checkpoint()
 
