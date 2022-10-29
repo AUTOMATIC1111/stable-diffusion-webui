@@ -1,6 +1,4 @@
-import base64
 import html
-import io
 import json
 import math
 import mimetypes
@@ -18,13 +16,8 @@ import gradio as gr
 import gradio.routes
 import gradio.utils
 import numpy as np
-import piexif
-import torch
 from PIL import Image, PngImagePlugin
 
-import gradio as gr
-import gradio.utils
-import gradio.routes
 
 from modules import sd_hijack, sd_models, localization, script_callbacks
 from modules.paths import script_path

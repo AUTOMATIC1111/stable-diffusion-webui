@@ -1,3 +1,5 @@
+import base64
+import io
 import os
 import re
 import gradio as gr
@@ -14,6 +16,7 @@ type_of_gr_update = type(gr.update())
 paste_fields = {}
 bind_list = []
 
+
 def quote(text):
     if ',' not in str(text):
         return text
@@ -22,6 +25,7 @@ def quote(text):
     text = text.replace('\\', '\\\\')
     text = text.replace('"', '\\"')
     return f'"{text}"'
+
 
 def image_from_url_text(filedata):
     if type(filedata) == dict and filedata["is_file"]:
@@ -45,8 +49,10 @@ def image_from_url_text(filedata):
     image = Image.open(io.BytesIO(filedata))
     return image
 
+
 def add_paste_fields(tabname, init_img, fields):
     paste_fields[tabname] = {"init_img":init_img, "fields": fields}
+
 
 def create_buttons(tabs_list):
     buttons = {}
@@ -54,9 +60,11 @@ def create_buttons(tabs_list):
         buttons[tab] = gr.Button(f"Send to {tab}")
     return buttons
 
+
 #if send_generate_info is a tab name, mean generate_info comes from the params fields of the tab 
 def bind_buttons(buttons, send_image, send_generate_info):
     bind_list.append([buttons, send_image, send_generate_info])
+
 
 def run_bind():
     for buttons, send_image, send_generate_info in bind_list:
@@ -97,6 +105,7 @@ def run_bind():
                 inputs=None,
                 outputs=None,
             )
+
 
 def parse_generation_parameters(x: str):
     """parses generation parameters string, the one you see in text field under the picture in UI:
