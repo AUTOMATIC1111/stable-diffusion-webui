@@ -52,7 +52,7 @@ class LearnRateScheduler:
         self.finished = False
 
     def apply(self, optimizer, step_number):
-        if step_number <= self.end_step:
+        if step_number < self.end_step:
             return
 
         try:
