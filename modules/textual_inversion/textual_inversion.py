@@ -119,7 +119,7 @@ class EmbeddingDatabase:
             vec = emb.detach().to(devices.device, dtype=torch.float32)
             embedding = Embedding(vec, name)
             embedding.step = data.get('step', None)
-            embedding.sd_checkpoint = data.get('hash', None)
+            embedding.sd_checkpoint = data.get('sd_checkpoint', None)
             embedding.sd_checkpoint_name = data.get('sd_checkpoint_name', None)
             self.register_embedding(embedding, shared.sd_model)
 
@@ -259,6 +259,7 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
     hijack = sd_hijack.model_hijack
 
     embedding = hijack.embedding_db.word_embeddings[embedding_name]
+    checkpoint = sd_models.select_checkpoint()
 
     ititial_step = embedding.step or 0
     if ititial_step > steps:
@@ -314,9 +315,9 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
 
         if embedding_dir is not None and steps_done % save_embedding_every == 0:
             # Before saving, change name to match current checkpoint.
-            embedding.name = f'{embedding_name}-{steps_done}'
-            last_saved_file = os.path.join(embedding_dir, f'{embedding.name}.pt')
-            embedding.save(last_saved_file)
+            embedding_name_every = f'{embedding_name}-{steps_done}'
+            last_saved_file = os.path.join(embedding_dir, f'{embedding_name_every}.pt')
+            save_embedding(embedding, checkpoint, embedding_name_every, last_saved_file, remove_cached_checksum=True)
             embedding_yet_to_be_embedded = True
 
         write_loss(log_directory, "textual_inversion_loss.csv", embedding.step, len(ds), {
@@ -397,14 +398,26 @@ Last saved image: {html.escape(last_saved_image)}<br/>
 </p>
 """
 
-    checkpoint = sd_models.select_checkpoint()
-
-    embedding.sd_checkpoint = checkpoint.hash
-    embedding.sd_checkpoint_name = checkpoint.model_name
-    embedding.cached_checksum = None
-    # Before saving for the last time, change name back to base name (as opposed to the save_embedding_every step-suffixed naming convention).
-    embedding.name = embedding_name
-    filename = os.path.join(shared.cmd_opts.embeddings_dir, f'{embedding.name}.pt')
-    embedding.save(filename)
+    filename = os.path.join(shared.cmd_opts.embeddings_dir, f'{embedding_name}.pt')
+    save_embedding(embedding, checkpoint, embedding_name, filename, remove_cached_checksum=True)
 
     return embedding, filename
+
+def save_embedding(embedding, checkpoint, embedding_name, filename, remove_cached_checksum=True):
+    old_embedding_name = embedding.name
+    old_sd_checkpoint = embedding.sd_checkpoint if hasattr(embedding, "sd_checkpoint") else None
+    old_sd_checkpoint_name = embedding.sd_checkpoint_name if hasattr(embedding, "sd_checkpoint_name") else None
+    old_cached_checksum = embedding.cached_checksum if hasattr(embedding, "cached_checksum") else None
+    try:
+        embedding.sd_checkpoint = checkpoint.hash
+        embedding.sd_checkpoint_name = checkpoint.model_name
+        if remove_cached_checksum:
+            embedding.cached_checksum = None
+        embedding.name = embedding_name
+        embedding.save(filename)
+    except:
+        embedding.sd_checkpoint = old_sd_checkpoint
+        embedding.sd_checkpoint_name = old_sd_checkpoint_name
+        embedding.name = old_embedding_name
+        embedding.cached_checksum = old_cached_checksum
+        raise
