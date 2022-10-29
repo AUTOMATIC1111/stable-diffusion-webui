@@ -631,9 +631,9 @@ Requested path was: {f}
 
                     buttons = parameters_copypaste.create_buttons(["img2img", "inpaint", "extras"])
                     button_id = "hidden_element" if shared.cmd_opts.hide_ui_dir_config else 'open_folder'
-                    open_folder = gr.Button(folder_symbol, elem_id=button_id)
+                    open_folder_button = gr.Button(folder_symbol, elem_id=button_id)
 
-                open_folder.click(
+                open_folder_button.click(
                     fn=lambda: open_folder(opts.outdir_samples or outdir),
                     inputs=[],
                     outputs=[],
