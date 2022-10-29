@@ -482,7 +482,7 @@
     "If this values is non-zero, it will be added to seed and used to initialize RNG for noises when using samplers with Eta. You can use this to produce even more variation of images, or you can use this to match images of other software if you know what you are doing.": "如果这个值不为零，它将被添加到随机种子中，并在使用带有 Eta 的采样器时用于初始化随机噪声。你可以使用它来产生更多的图像变化，或者你可以使用它来模仿其他软件生成的图像，如果你知道你在做什么",
     "Enable Autocomplete": "开启Tag补全",
     "Allowed categories for random artists selection when using the Roll button": "使用抽选艺术家按钮时将会随机的艺术家类别",
-    "Roll three": "抽三位出來",
+    "Roll three": "抽三位出来",
     "Generate forever": "不停地生成",
     "Cancel generate forever": "取消不停地生成"
 }
