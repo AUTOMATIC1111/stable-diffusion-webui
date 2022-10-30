@@ -10,6 +10,7 @@ import sys
 import tempfile
 import time
 import traceback
+import re  
 from functools import partial, reduce
 
 import gradio as gr
@@ -1578,7 +1579,7 @@ def create_ui(wrap_gradio_gpu_call):
             fn=request_restart,
             inputs=[],
             outputs=[],
-            _js='function(){restart_reload()}'
+            _js='function(){restart_reload(); return []}'
         )
 
         if column is not None:
@@ -1767,8 +1768,13 @@ def load_javascript(raw_response):
 
     def template_response(*args, **kwargs):
         res = raw_response(*args, **kwargs)
-        res.body = res.body.replace(
-            b'</head>', f'{javascript}</head>'.encode("utf8"))
+        
+        scripts: list[str] = re.findall(r'(<script>.*?</script>)', res.body.decode("utf-8"), re.DOTALL)
+        if(len(scripts) > 3): # When reloading, the template keeps the old scripts, so we have to remove all but the first 2
+            for s in scripts[2:]:
+                res.body = res.body.replace(s.encode("utf8"), b"")
+            
+        res.body = res.body.replace(b'</head>', f'{javascript}</head>'.encode("utf8"))
         res.init_headers()
         return res
 
