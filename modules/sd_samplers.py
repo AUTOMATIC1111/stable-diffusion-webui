@@ -264,6 +264,34 @@ class CFGDenoiser(torch.nn.Module):
         self.init_latent = None
         self.step = 0
 
+    def _dynthresh(self, cond, uncond, cond_scale, weight, mimic_scale, threshold_percentile):
+        scale_factor = 0.18215 # todo: get from sd model config
+        diff = cond - uncond
+
+        dynthresh_target = uncond + diff * mimic_scale
+        dt_unscaled = dynthresh_target / scale_factor
+        dt_flattened = dt_unscaled.flatten(2)
+        dt_means = dt_flattened.mean(dim=2).unsqueeze(2)
+        dt_recentered = dt_flattened-dt_means
+        dt_q = torch.quantile(dt_recentered.abs(), threshold_percentile, dim=2)
+
+        ut = uncond + diff * cond_scale * weight
+        ut_unscaled = ut / scale_factor
+        ut_flattened = ut_unscaled.flatten(2)
+        ut_means = ut_flattened.mean(dim=2).unsqueeze(2)
+        ut_centered = ut_flattened-ut_means
+        ut_q = torch.quantile(ut_centered.abs(), threshold_percentile, dim=2)
+        ut_q = torch.maximum(ut_q, dt_q)
+        q_ratio = ut_q / dt_q
+        q_ratio = q_ratio.unsqueeze(2).expand(*ut_centered.shape)
+        t = ut_centered / q_ratio
+
+        uncentered = t+ut_means
+        unflattened = uncentered.unflatten(2, dynthresh_target.shape[2:])
+        scaled = unflattened * scale_factor
+        
+        return scaled
+
     def forward(self, x, sigma, uncond, cond, cond_scale, image_cond):
         if state.interrupted or state.skipped:
             raise InterruptedException
@@ -302,9 +330,15 @@ class CFGDenoiser(torch.nn.Module):
         denoised_uncond = x_out[-uncond.shape[0]:]
         denoised = torch.clone(denoised_uncond)
 
+        do_dynthresh = True # todo make option
+        mimic_scale = 7.5
+        threshold_percentile = 0.9995
         for i, conds in enumerate(conds_list):
             for cond_index, weight in conds:
-                denoised[i] += (x_out[cond_index] - denoised_uncond[i]) * (weight * cond_scale)
+                if do_dynthresh:
+                    denoised[i] = self._dynthresh(x_out[cond_index], denoised_uncond[i], cond_scale, weight, mimic_scale, threshold_percentile)
+                else:
+                    denoised[i] += (x_out[cond_index] - denoised_uncond[i]) * (weight * cond_scale)
 
         if self.mask is not None:
             denoised = self.init_latent * self.mask + self.nmask * denoised
