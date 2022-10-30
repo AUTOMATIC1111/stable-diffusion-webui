@@ -208,7 +208,7 @@ class VanillaStableDiffusionSampler:
 
 
     def adjust_steps_if_invalid(self, p, num_steps):
-        if self.config.name == 'DDIM' and p.ddim_discretize == 'uniform':
+        if  (self.config.name == 'DDIM' and p.ddim_discretize == 'uniform') or (self.config.name == 'PLMS'):
             valid_step = 999 / (1000 // num_steps)
             if valid_step == floor(valid_step):
                 return int(valid_step) + 1
