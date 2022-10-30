@@ -64,7 +64,10 @@ class Api:
 
         shared.state.end()
 
-        b64images = list(map(encode_pil_to_base64, processed.images))
+        def encode_pil_to_base64_fixed(pil_image):
+            return encode_pil_to_base64(pil_image).replace("data:image/png;base64,", "")
+
+        b64images = list(map(encode_pil_to_base64_fixed, processed.images))
 
         return TextToImageResponse(images=b64images, parameters=vars(txt2imgreq), info=processed.js())
 
