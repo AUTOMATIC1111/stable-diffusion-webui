@@ -688,8 +688,6 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
         noise = create_random_tensors(samples.shape[1:], seeds=seeds, subseeds=subseeds, subseed_strength=subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
 
-        image_conditioning = self.txt2img_image_conditioning(x)
-
         # GC now before running the next img2img to prevent running out of memory
         x = None
         devices.torch_gc()
