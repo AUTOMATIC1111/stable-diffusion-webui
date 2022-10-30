@@ -245,10 +245,13 @@ def statistics(data):
 def report_statistics(loss_info:dict):
     keys = sorted(loss_info.keys(), key=lambda x: sum(loss_info[x]) / len(loss_info[x]))
     for key in keys:
-        info, recent = statistics(list(loss_info[key]))
-        print("Loss statistics for file " + key)
-        print(info)
-        print(recent)
+        try:
+            print("Loss statistics for file " + key)
+            info, recent = statistics(list(loss_info[key]))
+            print(info)
+            print(recent)
+        except Exception as e:
+            print(e)
 
 def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_directory, training_width, training_height, steps, create_image_every, save_embedding_every, template_file, save_image_with_stored_embedding, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height):
     save_embedding_every = save_embedding_every or 0
