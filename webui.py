@@ -23,6 +23,7 @@ import modules.sd_hijack
 import modules.sd_models
 import modules.shared as shared
 import modules.txt2img
+import modules.script_callbacks
 
 import modules.ui
 from modules import devices
@@ -134,6 +135,8 @@ def webui():
 
         if (launch_api):
             create_api(app)
+
+        modules.script_callbacks.app_started_callback(demo, app)
 
         wait_on_server(demo)
 
