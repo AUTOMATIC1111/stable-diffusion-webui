@@ -1,7 +1,6 @@
 let prevSelectedIndex = -1;
 
 window.JobController.addEventListener("jobStart", (jobName) => {
-  console.log("Job started:", jobName);
   const interruptBtn = gradioApp().getElementById(jobName + "_interrupt");
   const skipBtn = gradioApp().getElementById(jobName + "_skip");
 
@@ -14,10 +13,18 @@ window.JobController.addEventListener("jobStart", (jobName) => {
   }
 
   prevSelectedIndex = selected_gallery_index();
+
+  preview = gradioApp().getElementById(jobName + '_preview');
+  gallery = gradioApp().getElementById(jobName + '_gallery');
+
+  if (preview && gallery) {
+    preview.style.width = gallery.clientWidth + "px";
+    preview.style.height = gallery.clientHeight + "px";
+    gallery.style.opacity = 0;
+  }
 });
 
 window.JobController.addEventListener("jobEnd", (jobName) => {
-  console.log("Job ended:", jobName);
   const interruptBtn = gradioApp().getElementById(jobName + "_interrupt");
   const skipBtn = gradioApp().getElementById(jobName + "_skip");
 
@@ -26,6 +33,8 @@ window.JobController.addEventListener("jobEnd", (jobName) => {
   if (skipBtn) {
     skipBtn.style.display = "none";
   }
+
+  gradioApp().getElementById(jobName + "_gallery").style.opacity = 1;
 
   updateGallery(jobName);
   updatePageTitle(opts);
@@ -71,8 +80,6 @@ onUiUpdate(function () {
 
   if (jobName) {
     const existsNow = !!gradioApp().getElementById(jobName + "_progress_span");
-    console.log("UI update jobName: " + jobName);
-    console.log("progressSpanExists: " + progressSpanExists);
 
     if (progressSpanExists && !existsNow) {
       window.JobController.endJob();
@@ -84,14 +91,10 @@ onUiUpdate(function () {
       const progressBar = gradioApp().getElementById(jobName + "_progressbar");
       updatePageTitle(opts, progressBar.innerText);
 
-      console.log("Calling check progress", jobName);
-
       const checkProgressBtn = gradioApp().getElementById(jobName + "_check_progress");
       if (checkProgressBtn) {
         checkProgressBtn.click();
       }
-    } else {
-      console.log("UI update, no job");
     }
   }
 });
