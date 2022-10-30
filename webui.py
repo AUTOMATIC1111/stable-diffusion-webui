@@ -21,6 +21,7 @@ import modules.paths
 import modules.scripts
 import modules.sd_hijack
 import modules.sd_models
+import modules.sd_vae
 import modules.shared as shared
 import modules.txt2img
 
@@ -74,8 +75,12 @@ def initialize():
 
     modules.scripts.load_scripts()
 
+    modules.sd_vae.refresh_vae_list()
     modules.sd_models.load_model()
     shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights(shared.sd_model)))
+    # I don't know what needs to be done to only reload VAE, with all those hijacks callbacks, and lowvram, 
+    # so for now this reloads the whole model too, and no cache
+    shared.opts.onchange("sd_vae", wrap_queued_call(lambda: modules.sd_models.reload_model_weights(shared.sd_model, force=True)), call=False)
     shared.opts.onchange("sd_hypernetwork", wrap_queued_call(lambda: modules.hypernetworks.hypernetwork.load_hypernetwork(shared.opts.sd_hypernetwork)))
     shared.opts.onchange("sd_hypernetwork_strength", modules.hypernetworks.hypernetwork.apply_strength)
 
