@@ -246,6 +246,7 @@ class DreamBooth:
                 shared.state.textinfo = f"Generating class images for training..."
                 torch_dtype = torch.float16 if accelerator.device.type == "cuda" else torch.float32
                 pipeline = StableDiffusionPipeline.from_pretrained(
+                    self.working_dir,
                     torch_dtype=torch_dtype,
                     revision=self.total_steps,
                 )
