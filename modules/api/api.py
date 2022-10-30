@@ -120,9 +120,10 @@ class Api:
         reqDict = setUpscalers(req)
 
         reqDict['image'] = decode_base64_to_image(reqDict['image'])
+        upscale_first = reqDict.pop("upscale_first")
 
         with self.queue_lock:
-            result = run_extras(extras_mode=0, image_folder="", input_dir="", output_dir="", **reqDict)
+            result = run_extras(extras_mode=0, image_folder="", input_dir="", output_dir="", upscale_first=upscale_first, **reqDict)
 
         return ExtrasSingleImageResponse(image=encode_pil_to_base64(result[0][0]), html_info=result[1])
 
@@ -136,9 +137,10 @@ class Api:
 
         reqDict['image_folder'] = list(map(prepareFiles, reqDict['imageList']))
         reqDict.pop('imageList')
+        upscale_first = reqDict.pop("upscale_first")
 
         with self.queue_lock:
-            result = run_extras(extras_mode=1, image="", input_dir="", output_dir="", **reqDict)
+            result = run_extras(extras_mode=1, image="", input_dir="", output_dir="", upscale_first=upscale_first, **reqDict)
 
         return ExtrasBatchImagesResponse(images=list(map(encode_pil_to_base64, result[0])), html_info=result[1])
 
