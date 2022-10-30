@@ -396,6 +396,7 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration
         "Model hash": getattr(p, 'sd_model_hash', None if not opts.add_model_hash_to_info or not shared.sd_model.sd_model_hash else shared.sd_model.sd_model_hash),
         "Model": (None if not opts.add_model_name_to_info or not shared.sd_model.sd_checkpoint_info.model_name else shared.sd_model.sd_checkpoint_info.model_name.replace(',', '').replace(':', '')),
         "Hypernet": (None if shared.loaded_hypernetwork is None else shared.loaded_hypernetwork.name),
+        "Hypernet strength": (None if shared.loaded_hypernetwork is None or shared.opts.sd_hypernetwork_strength >= 1 else shared.opts.sd_hypernetwork_strength),
         "Batch size": (None if p.batch_size < 2 else p.batch_size),
         "Batch pos": (None if p.batch_size < 2 else position_in_batch),
         "Variation seed": (None if p.subseed_strength == 0 else all_subseeds[index]),
@@ -478,7 +479,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         model_hijack.embedding_db.load_textual_inversion_embeddings()
 
     if p.scripts is not None:
-        p.scripts.run_alwayson_scripts(p)
+        p.scripts.process(p)
 
     infotexts = []
     output_images = []
@@ -501,7 +502,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             seeds = p.all_seeds[n * p.batch_size:(n + 1) * p.batch_size]
             subseeds = p.all_subseeds[n * p.batch_size:(n + 1) * p.batch_size]
 
-            if (len(prompts) == 0):
+            if len(prompts) == 0:
                 break
 
             with devices.autocast():
@@ -590,7 +591,13 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 images.save_image(grid, p.outpath_grids, "grid", p.all_seeds[0], p.all_prompts[0], opts.grid_format, info=infotext(), short_filename=not opts.grid_extended_filename, p=p, grid=True)
 
     devices.torch_gc()
-    return Processed(p, output_images, p.all_seeds[0], infotext() + "".join(["\n\n" + x for x in comments]), subseed=p.all_subseeds[0], all_prompts=p.all_prompts, all_seeds=p.all_seeds, all_subseeds=p.all_subseeds, index_of_first_image=index_of_first_image, infotexts=infotexts)
+
+    res = Processed(p, output_images, p.all_seeds[0], infotext() + "".join(["\n\n" + x for x in comments]), subseed=p.all_subseeds[0], all_prompts=p.all_prompts, all_seeds=p.all_seeds, all_subseeds=p.all_subseeds, index_of_first_image=index_of_first_image, infotexts=infotexts)
+
+    if p.scripts is not None:
+        p.scripts.postprocess(p, res)
+
+    return res
 
 
 class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
@@ -680,15 +687,12 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
         noise = create_random_tensors(samples.shape[1:], seeds=seeds, subseeds=subseeds, subseed_strength=subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
 
+        image_conditioning = self.txt2img_image_conditioning(x)
+
         # GC now before running the next img2img to prevent running out of memory
         x = None
         devices.torch_gc()
 
-        image_conditioning = self.img2img_image_conditioning(
-            decoded_samples, 
-            samples, 
-            decoded_samples.new_ones(decoded_samples.shape[0], 1, decoded_samples.shape[2], decoded_samples.shape[3])
-        )
         samples = self.sampler.sample_img2img(self, samples, noise, conditioning, unconditional_conditioning, steps=self.steps, image_conditioning=image_conditioning)
 
         return samples
