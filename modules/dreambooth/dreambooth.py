@@ -23,7 +23,6 @@ from torchvision import transforms
 from tqdm.auto import tqdm
 from transformers import CLIPTextModel, CLIPTokenizer
 
-import modules.sd_models
 from modules import paths, sd_hijack, shared, sd_models
 from modules.dreambooth import conversion
 from modules.dreambooth.train_config import TrainConfig
@@ -76,33 +75,75 @@ def load_params(model_name,
                 seed,
                 grad_acc_steps,
                 warmup_steps):
+    tc = TrainConfig()
+    tc.from_ui(model_name,
+               initialization_text,
+               classification_text,
+               learn_rate,
+               dataset_directory,
+               classification_directory,
+               steps,
+               save_preview_every,
+               save_embedding_every,
+               num_class_images,
+               use_cpu,
+               train_text_encoder,
+               use_adam,
+               center_crop,
+               grad_check,
+               scale_lr,
+               mixed_precision,
+               scheduler,
+               resolution,
+               prior_loss_weight,
+               num_train_epochs,
+               adam_beta1,
+               adam_beta2,
+               adam_weight_decay,
+               adam_epsilon,
+               max_grad_norm,
+               batch_size,
+               class_batch_size,
+               seed,
+               grad_acc_steps,
+               warmup_steps)
 
-    output = {"model_name": model_name, "initialization_text": initialization_text,
-              "classification_text": classification_text, "learn_rate": learn_rate,
-              "dataset_directory": dataset_directory, "classification_directory": classification_directory,
-              "steps": steps, "save_preview_every": save_preview_every, "save_embedding_every": save_embedding_every,
-              "num_class_images": num_class_images, "use_cpu": use_cpu, "train_text_encoder": train_text_encoder,
-              "use_adam": use_adam, "center_crop": center_crop, "grad_check": grad_check, "scale_lr": scale_lr,
-              "mixed_precision": mixed_precision, "scheduler": scheduler, "resolution": resolution,
-              "prior_loss_weight": prior_loss_weight, "num_train_epochs": num_train_epochs, "adam_beta1": adam_beta1,
-              "adam_beta2": adam_beta2, "adam_weight_decay": adam_weight_decay, "adam_epsilon": adam_epsilon,
-              "max_grad_norm": max_grad_norm, "batch_size": batch_size, "class_batch_size": class_batch_size,
-              "seed": seed, "grad_acc_steps": grad_acc_steps, "warmup_steps": warmup_steps}
-    data = TrainConfig().from_file(model_name)
+    target_values = ["instance_prompt",
+                     "class_prompt",
+                     "learn_rate",
+                     "instance_data_dir",
+                     "class_data_dir",
+                     "steps",
+                     "save_preview_every",
+                     "save_embedding_every",
+                     "num_class_images",
+                     "use_cpu",
+                     "train_text_encoder",
+                     "use_adam",
+                     "center_crop",
+                     "gradient_checkpointing",
+                     "scale_lr",
+                     "mixed_precision",
+                     "scheduler",
+                     "resolution",
+                     "prior_loss_weight",
+                     "num_train_epochs",
+                     "adam_beta1",
+                     "adam_beta2",
+                     "adam_weight_decay",
+                     "adam_epsilon",
+                     "max_grad_norm",
+                     "batch_size",
+                     "class_batch_size",
+                     "seed",
+                     "grad_acc_steps",
+                     "warmup_steps"]
+
+    data = tc.from_file(model_name)
     values = []
-    if data is not None:
-        if not "db_initialization_text" in data:
-            shared.state.textinfo = "Please train your model before loading config."
-        else:
-            shared.state.textinfo = "Loaded config data."
-        for key in data:
-            value = data[key]
-            output[key] = value
+    for target in target_values:
+        values.append(data[target])
 
-        for key in output:
-            value = output[key]
-            if key != "model_name":
-                values.append(value)
     else:
         print(f"Unable to load config for {model_name}")
     return values
@@ -153,7 +194,7 @@ class DreamBooth:
                 os.makedirs(self.class_data_dir)
 
         self.logging_dir = os.path.join(model_dir, "logging")
-        
+
         self.with_prior_preservation = False
 
         if config["class_prompt"] != "*" and config["class_prompt"] != "" and config["num_class_images"] != 0:
@@ -241,7 +282,7 @@ class DreamBooth:
                     return self.working_dir, 0
         # Load existing training data if exist
         shared.state.textinfo = "Loading models..."
-        
+
         tokenizer = CLIPTokenizer.from_pretrained(os.path.join(self.working_dir, "tokenizer"))
         # Load models and create wrapper for stable diffusion
         text_encoder = CLIPTextModel.from_pretrained(os.path.join(self.working_dir, "text_encoder"))
@@ -378,20 +419,23 @@ class DreamBooth:
         print(f"  Total train batch size (w. parallel, distributed & accumulation) = {total_batch_size}")
         print(f"  Gradient Accumulation steps = {self.gradient_accumulation_steps}")
         print(f"  Total optimization steps = {self.max_train_steps}")
-        print(f"  Total lifetime optimization steps = {self.max_train_steps + self.total_steps}")
+        print(f"  Total target lifetime optimization steps = {self.max_train_steps + self.total_steps}")
         printm(stats)
         # Only show the progress bar once on each machine.
         progress_bar = tqdm(range(self.max_train_steps), disable=not accelerator.is_local_main_process)
         progress_bar.set_description("Steps")
         global_step = 0
-
+        lifetime_step = self.total_steps
         shared.state.job_count = self.max_train_steps
         shared.state.job_no = global_step
         shared.state.textinfo = f"Training step: {global_step}/{self.max_train_steps}"
-
+        first_step = True
         try:
             for epoch in range(self.num_train_epochs):
                 unet.train()
+                if first_step:
+                    first_step = False
+                    printm(" First unet step completed.")
                 if self.train_text_encoder:
                     text_encoder.train()
                 for step, batch in enumerate(train_dataloader):
@@ -451,6 +495,7 @@ class DreamBooth:
                     if accelerator.sync_gradients:
                         progress_bar.update(1)
                         global_step += 1
+                        lifetime_step += 1
                         shared.state.job_no = global_step
 
                     accelerator.wait_for_everyone()
@@ -467,24 +512,33 @@ class DreamBooth:
                             save_ckpt = True
                         if save_ckpt or save_img or training_complete:
                             if accelerator.is_main_process:
+                                if self.train_text_encoder:
+                                    text_enc_model = accelerator.unwrap_model(text_encoder)
+                                else:
+                                    text_enc_model = CLIPTextModel.from_pretrained(self.model_name,
+                                                                                   subfolder="text_encoder",
+                                                                                   revision=lifetime_step)
+
                                 pipeline = StableDiffusionPipeline.from_pretrained(
                                     self.working_dir,
                                     unet=accelerator.unwrap_model(unet),
-                                    text_encoder=accelerator.unwrap_model(text_encoder),
-                                    vae=accelerator.unwrap_model(vae),
-                                    revision=self.total_steps + global_step
+                                    text_encoder=text_enc_model,
+                                    vae=AutoencoderKL.from_pretrained(
+                                        os.path.join(self.working_dir, "vae"),
+                                        revision=lifetime_step),
+                                    revision=lifetime_step
                                 )
                                 pipeline = pipeline.to("cuda")
                                 with autocast("cuda"):
-                                    pipeline.text_encoder.resize_token_embeddings(49409)
+                                    #pipeline.text_encoder.resize_token_embeddings(49408)
                                     printm("Loaded pipeline for preview...")
                                     if save_ckpt:
                                         shared.state.textinfo = "Saving checkpoint..."
-                                        print(f"Saving checkpoint at {global_step}.")
+                                        print(f"Saving checkpoint at step {lifetime_step}.")
 
                                         try:
                                             pipeline.save_pretrained(self.working_dir)
-                                            save_checkpoint(self.model_name, self.total_steps + global_step,
+                                            save_checkpoint(self.model_name, lifetime_step,
                                                             self.mixed_precision == "fp16")
                                         except Exception as e:
                                             print(f"Exception saving checkpoint/model: {e}")
@@ -496,7 +550,7 @@ class DreamBooth:
                                         pipeline.safety_checker = dumb_safety
                                         prompt = self.instance_prompt
                                         last_saved_image = os.path.join(self.logging_dir,
-                                                                        f'{self.instance_prompt}_{self.total_steps + global_step}.png')
+                                                                        f'{self.instance_prompt}_{lifetime_step}.png')
                                         image = pipeline(prompt, num_inference_steps=60, guidance_scale=7.5).images[0]
                                         shared.state.current_image = image
                                         image.save(last_saved_image)
@@ -504,16 +558,16 @@ class DreamBooth:
                                 if torch.cuda.is_available():
                                     torch.cuda.empty_cache()
                                 printm("Pipeline cleared...")
-                    shared.state.textinfo = f"Training: {global_step}/{self.max_train_steps} steps"
+                    shared.state.textinfo = f"Training, step {global_step}/{self.max_train_steps} current, {lifetime_step}/{self.max_train_steps + self.total_steps} lifetime"
 
                     if training_complete:
                         if shared.state.interrupted:
                             state = "cancelled"
                         else:
                             state = "complete"
-                        shared.state.textinfo = f"Training {state} {global_step}/{self.max_train_steps}"
+                        shared.state.textinfo = f"Training {state} {global_step}/{self.max_train_steps}, {lifetime_step}" \
+                                                f" total."
                         break
-                # Create the pipeline using the trained modules and save it.
         except Exception as e:
             printm("Caught exception.")
             print(f"Exception training db: {e}")
@@ -648,13 +702,13 @@ def start_training(model_name,
     shared.sd_model.to(shared.device)
     print("Re-applying optimizations...")
     sd_hijack.apply_optimizations()
-    res = f"Training {'interrupted' if shared.state.interrupted else 'finished'}." \
-          f"Total steps: {total_steps} \n"
+    res = f"Training {'interrupted' if shared.state.interrupted else 'finished'}. " \
+          f"Total lifetime steps: {total_steps} \n"
     print(f"Returning result: {res}")
     return res, ""
 
 
-def save_checkpoint(model_name: str, total_steps: int, use_half: bool=False):
+def save_checkpoint(model_name: str, total_steps: int, use_half: bool = False):
     print(f"Successfully trained model for a total of {total_steps} steps, converting to ckpt.")
     src_path = os.path.join(paths.models_path, "dreambooth", model_name, "working")
     out_file = os.path.join(paths.models_path, "Stable-diffusion", f"{model_name}_{total_steps}.ckpt")

@@ -16,7 +16,6 @@ class TrainConfig(dict):
 
     def create_new(self, name, scheduler, src, total_steps):
         name = images.sanitize_filename_part(name, True)
-        self.name = name
         self.model_name = name
         self.scheduler = scheduler
         self.src = src

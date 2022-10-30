@@ -1526,46 +1526,23 @@ def create_ui(wrap_gradio_gpu_call):
         )
 
     with gr.Blocks() as dreambooth_interface:
+        with gr.Row():
+            with gr.Column(scale=6):
+                with gr.Row():
+                    with gr.Column(scale=80):
+                        db_model_name = gr.Dropdown(label='Model', choices=sorted(dreambooth.get_db_models()))
+            with gr.Column(scale=1, elem_id="roll_col"):
+                db_load_params = gr.Button(label='Load Training Params', value=paste_symbol)
+
+            with gr.Column(scale=1):
+                with gr.Row():
+                    db_interrupt_training = gr.Button(value="Cancel")
+                    db_train_embedding = gr.Button(value="Train", variant='primary')
+            # cancel/load buttons
         with gr.Row().style(equal_height=False):
-            with gr.Column():
-                with gr.Tab("Create Model"):
-                    db_new_model_name = gr.Textbox(label="Name")
-                    src_checkpoint = gr.Dropdown(label='Source Checkpoint', choices=sorted(
-                        sd_models.checkpoints_list.keys()))
-                    # I just randomly chose ddim here because we use it everywhere else. Not sure which of these
-                    # are ideal, or if it matters at all.
-                    diff_type = gr.Dropdown(label='Scheduler', choices=["pndm", "ddim", "lms"], value="pndm")
-
-                    with gr.Row():
-                        with gr.Column(scale=3):
-                            gr.HTML(value="")
-
-                        with gr.Column():
-                            db_create_embedding = gr.Button(value="Create", variant='primary')
-
-                with gr.Tab("Preprocess"):
-                    db_process_src = gr.Textbox(label='Source directory')
-                    db_process_dst = gr.Textbox(label='Destination directory')
-
-                    with gr.Row():
-                        db_process_flip = gr.Checkbox(label='Flip')
-                        db_process_split = gr.Checkbox(label='Split into two')
-                        db_process_caption = gr.Checkbox(label='Add caption')
-
-                    with gr.Row():
-                        with gr.Column(scale=3):
-                            gr.HTML(value="")
-
-                        with gr.Column():
-                            db_run_preprocess = gr.Button(value="Preprocess", variant='primary')
-
-                with gr.Tab("Train"):
-                    with gr.Row():
-                        db_interrupt_training = gr.Button(value="Cancel")
-                        db_train_embedding = gr.Button(value="Train", variant='primary')
-                    db_model_name = gr.Dropdown(label='Model', choices=sorted(dreambooth.get_db_models()))
-                    db_load_params = gr.Button(label='Load Training Params', value=paste_symbol)
-                    with gr.Accordion(open=False, label="Settings"):
+            with gr.Column(variant="panel"):
+                with gr.Tab("Training"):
+                    with gr.Accordion(open=True, label="Settings"):
                         db_initialization_text = gr.Textbox(label="Initialization text", value="*")
                         db_classification_text = gr.Textbox(label="Classification text", value="*")
                         db_learn_rate = gr.Number(label='Learning rate', value=5e-6)
@@ -1612,7 +1589,38 @@ def create_ui(wrap_gradio_gpu_call):
                         with gr.Column(scale=2):
                             gr.HTML(value="")
 
-            with gr.Column():
+                with gr.Tab("Create Model"):
+                    db_new_model_name = gr.Textbox(label="Name")
+                    src_checkpoint = gr.Dropdown(label='Source Checkpoint', choices=sorted(
+                        sd_models.checkpoints_list.keys()))
+                    # I just randomly chose ddim here because we use it everywhere else. Not sure which of these
+                    # are ideal, or if it matters at all.
+                    diff_type = gr.Dropdown(label='Scheduler', choices=["pndm", "ddim", "lms"], value="pndm")
+
+                    with gr.Row():
+                        with gr.Column(scale=3):
+                            gr.HTML(value="")
+
+                        with gr.Column():
+                            db_create_embedding = gr.Button(value="Create", variant='primary')
+
+                with gr.Tab("Preprocess Images"):
+                    db_process_src = gr.Textbox(label='Source directory')
+                    db_process_dst = gr.Textbox(label='Destination directory')
+
+                    with gr.Row():
+                        db_process_flip = gr.Checkbox(label='Flip')
+                        db_process_split = gr.Checkbox(label='Split into two')
+                        db_process_caption = gr.Checkbox(label='Add caption')
+
+                    with gr.Row():
+                        with gr.Column(scale=3):
+                            gr.HTML(value="")
+
+                        with gr.Column():
+                            db_run_preprocess = gr.Button(value="Preprocess", variant='primary')
+
+            with gr.Column(variant="panel"):
                 db_output = gr.Text(elem_id="db_output", value="", show_label=False)
                 db_preview = gr.Image(elem_id='db_preview', visible=False)
                 db_progress = gr.HTML(elem_id="db_progress", value="")
