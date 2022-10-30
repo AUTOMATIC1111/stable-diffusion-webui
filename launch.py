@@ -202,6 +202,9 @@ def prepare_enviroment():
 
 
 def tests(argv):
+    if "--api" not in argv:
+        argv.append("--api")
+
     print(f"Launching Web UI in another process for testing with arguments: {' '.join(argv[1:])}")
 
     with open('test/stdout.txt', "w", encoding="utf8") as stdout, open('test/stderr.txt', "w", encoding="utf8") as stderr:
