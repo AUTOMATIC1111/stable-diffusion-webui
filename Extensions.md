@@ -12,6 +12,8 @@ This installs an extension from `https://github.com/AUTOMATIC1111/stable-diffusi
 
 Alternatively you can just copy-paste a directory into `extensions`.
 
+For developing extensions, see [Developing extensions](Developing-extensions).
+
 # Extensions
 
 ## Aesthetic Gradients
