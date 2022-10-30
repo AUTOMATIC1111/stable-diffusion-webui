@@ -222,6 +222,20 @@ axis_options = [
 
 alwayson_scripts_axis_options_dict = {}
 alwayson_scripts_parameters = {}
+
+def populate_extension_axis_options():
+    import inspect
+    for s in scripts.scripts_txt2img.alwayson_scripts:
+        script_name = type(s).__name__
+        fill_alwayson_scripts_axis_options(script_name)
+
+        for idx, param in enumerate(inspect.signature(s.process).parameters.items()):
+            param_name = param[0]
+            if param_name == 'p':
+                continue
+            alwayson_scripts_parameters[(script_name, param_name)] = idx
+
+
 def fill_alwayson_scripts_axis_options(script_name):
     if script_name == "AestheticScript" and "AestheticScript" not in alwayson_scripts_axis_options_dict:
         axis_options.append(AxisOption("Aesthetic Weight", float, apply_aesthetic_weight, format_value_add_label, None))
@@ -308,19 +322,6 @@ re_range_float = re.compile(r"\s*([+-]?\s*\d+(?:.\d*)?)\s*-\s*([+-]?\s*\d+(?:.\d
 
 re_range_count = re.compile(r"\s*([+-]?\s*\d+)\s*-\s*([+-]?\s*\d+)(?:\s*\[(\d+)\s*\])?\s*")
 re_range_count_float = re.compile(r"\s*([+-]?\s*\d+(?:.\d*)?)\s*-\s*([+-]?\s*\d+(?:.\d*)?)(?:\s*\[(\d+(?:.\d*)?)\s*\])?\s*")
-
-
-def populate_extension_axis_options():
-    for s in scripts.scripts_txt2img.alwayson_scripts:
-        script_name = type(s).__name__
-        fill_alwayson_scripts_axis_options(script_name)
-        import inspect        
-        for idx, param in enumerate(inspect.signature(s.process).parameters.items()):
-            param_name = param[0]
-            if param_name == 'p':
-                continue
-            alwayson_scripts_parameters[(script_name, param_name)] = idx
-
 
 class Script(scripts.Script):
     def title(self):
