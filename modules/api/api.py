@@ -1,11 +1,20 @@
 import uvicorn
 from gradio.processing_utils import encode_pil_to_base64, decode_base64_to_file, decode_base64_to_image
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, FastAPI, HTTPException
 import modules.shared as shared
 from modules.api.models import *
 from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img, process_images
 from modules.sd_samplers import all_samplers
 from modules.extras import run_extras
+
+apisToExtendWith: list[tuple[str, FastAPI]] = list()
+
+def extendApi(mountUrl: str, subApi: FastAPI):
+    """Adds a custom API, mountUrl is the base of the subapi endpoints, for example: if your sub-api has an endpoint
+    called 'example-endpoint' and the mountUrl is '/subapi' then the final url of the endpoint is <hots>:<port>/subapi/example-endpoint.
+    The mountUrl must ALWAYS start with '/'"""
+    
+    apisToExtendWith.append((mountUrl, subApi))
 
 def upscaler_to_index(name: str):
     try:
@@ -32,6 +41,11 @@ class Api:
         self.app.add_api_route("/sdapi/v1/img2img", self.img2imgapi, methods=["POST"], response_model=ImageToImageResponse)
         self.app.add_api_route("/sdapi/v1/extra-single-image", self.extras_single_image_api, methods=["POST"], response_model=ExtrasSingleImageResponse)
         self.app.add_api_route("/sdapi/v1/extra-batch-images", self.extras_batch_images_api, methods=["POST"], response_model=ExtrasBatchImagesResponse)
+
+        for mountPoint, mountApp in apisToExtendWith:
+            self.app.mount(mountPoint, mountApp)
+
+        if(len(apisToExtendWith)): print(f"{len(apisToExtendWith)} sub-apis mounted")
 
     def text2imgapi(self, txt2imgreq: StableDiffusionTxt2ImgProcessingAPI):
         sampler_index = sampler_to_index(txt2imgreq.sampler_index)
