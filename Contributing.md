@@ -1,6 +1,8 @@
 # Pull requests
 To contribute, clone the repository, make your changes, commit and push to your clone, and submit a pull request.
 
+Make sure that your changes do not break anything by running [tests](Tests).
+
 If you're adding a lot of code, consider making your contribution an [extension](Extensions), and only PR small changes you need in main code to make the extension possible.
 
 If you are making changes to used libraries or the installation script, you must verify them to work on default Windows installation from scratch. If you cannot test if it works (due to your OS or anything else), do not make those changes (with possible exception of changes that explicitly are guarded from being executed on Windows by `if`s or something else).
