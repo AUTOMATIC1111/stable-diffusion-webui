@@ -120,15 +120,18 @@ def confirm_hypernetworks(p, xs):
             raise RuntimeError(f"Unknown hypernetwork: {x}")
 
 
-def update_alwayson_script_args(p, value, arg_idx, script_name):
+def update_alwayson_script_args(p, value, param_name, script_name):
     for s in scripts.scripts_txt2img.alwayson_scripts:
         if type(s).__name__ == script_name:
+            if (script_name, param_name) not in alwayson_scripts_parameters:
+                raise RuntimeError(f"Error: {param_name} not found in {script_name} run parameters")
+            
+            arg_idx = alwayson_scripts_parameters[(script_name, param_name)]
             args = list(p.script_args)
-            print(f"Changed {args[s.args_from + arg_idx - 1]} to {value}")
+            print(f"Changed {param_name} from {args[s.args_from + arg_idx - 1]} to {value}")
             args[s.args_from + arg_idx - 1] = value
             p.script_args = tuple(args)
             break
-        break
 
 
 def confirm_aesthetic_embedding(p, xs):
@@ -139,34 +142,22 @@ def confirm_aesthetic_embedding(p, xs):
         #     raise RuntimeError(f"Unknown aesthetic embedding: {x}")
 
 
-def confirm_aesthetic_slerp(p, xs):
-    for x in xs:
-        if x not in (0, 1):
-            raise RuntimeError(f"Unknown Aesthetic Slerp: {x} use 0 or 1")
-
-
-def confirm_aesthetic_text_negative(p, xs):
-    for x in xs:
-        if x not in (0, 1):
-            raise RuntimeError(f"Unknown Aesthetic Text Negative: {x} use 0 or 1")
-
-
 def apply_aesthetic_weight(p, x, xs):
-    update_alwayson_script_args(p, x, 1, "AestheticScript")
+    update_alwayson_script_args(p, x, "aesthetic_weight", "AestheticScript")
 def apply_aesthetic_steps(p, x, xs):
-    update_alwayson_script_args(p, x, 2, "AestheticScript")
+    update_alwayson_script_args(p, x, "aesthetic_steps", "AestheticScript")
 def apply_aesthetic_lr(p, x, xs):
-    update_alwayson_script_args(p, x, 3, "AestheticScript")
+    update_alwayson_script_args(p, x, "aesthetic_lr", "AestheticScript")
 def apply_aesthetic_slerp(p, x, xs):
-    update_alwayson_script_args(p, True if x == 1 else False, 4, "AestheticScript")
-def apply_aesthetic_embedding(p, x, xs):
-    update_alwayson_script_args(p, x, 5, "AestheticScript")
-def apply_aesthetic_text(p, x, xs):
-    update_alwayson_script_args(p, x, 6, "AestheticScript")
+    update_alwayson_script_args(p, x, "aesthetic_slerp", "AestheticScript")
+def apply_aesthetic_imgs(p, x, xs):
+    update_alwayson_script_args(p, x, "aesthetic_imgs", "AestheticScript")
+def apply_aesthetic_imgs_text(p, x, xs):
+    update_alwayson_script_args(p, x, "aesthetic_imgs_text", "AestheticScript")
 def apply_aesthetic_slerp_angle(p, x, xs):
-    update_alwayson_script_args(p, x, 7, "AestheticScript")
+    update_alwayson_script_args(p, x, "aesthetic_slerp_angle", "AestheticScript")
 def apply_aesthetic_text_negative(p, x, xs):
-    update_alwayson_script_args(p, True if x == 1 else False, 8, "AestheticScript")    
+    update_alwayson_script_args(p, x, "aesthetic_text_negative", "AestheticScript")    
 
 
 def apply_clip_skip(p, x, xs):
@@ -230,16 +221,17 @@ axis_options = [
 ]
 
 alwayson_scripts_axis_options_dict = {}
+alwayson_scripts_parameters = {}
 def fill_alwayson_scripts_axis_options(script_name):
     if script_name == "AestheticScript" and "AestheticScript" not in alwayson_scripts_axis_options_dict:
         axis_options.append(AxisOption("Aesthetic Weight", float, apply_aesthetic_weight, format_value_add_label, None))
         axis_options.append(AxisOption("Aesthetic Steps", int, apply_aesthetic_steps, format_value_add_label, None))
-        axis_options.append(AxisOption("Aesthetic Embedding", str, apply_aesthetic_embedding, format_value, confirm_aesthetic_embedding))
+        axis_options.append(AxisOption("Aesthetic Embedding", str, apply_aesthetic_imgs, format_value, confirm_aesthetic_embedding))
         axis_options.append(AxisOption("Aesthetic LR", float, apply_aesthetic_lr, format_value_add_label, None))
-        axis_options.append(AxisOption("Aesthetic Slerp", int, apply_aesthetic_slerp, format_value_add_label, confirm_aesthetic_slerp))
+        axis_options.append(AxisOption("Aesthetic Slerp", bool, apply_aesthetic_slerp, format_value_add_label, None))
         axis_options.append(AxisOption("Aesthetic Slerp Angle", float, apply_aesthetic_slerp_angle, format_value_add_label, None))
-        axis_options.append(AxisOption("Aesthetic Text", str, apply_aesthetic_text, format_value_add_label, None))
-        axis_options.append(AxisOption("Aesthetic Text Negative", int, apply_aesthetic_text_negative, format_value_add_label, confirm_aesthetic_text_negative))
+        axis_options.append(AxisOption("Aesthetic Text", str, apply_aesthetic_imgs_text, format_value_add_label, None))
+        axis_options.append(AxisOption("Aesthetic Text Negative", bool, apply_aesthetic_text_negative, format_value_add_label, None))
         alwayson_scripts_axis_options_dict[script_name] = True
 
 
@@ -317,13 +309,25 @@ re_range_float = re.compile(r"\s*([+-]?\s*\d+(?:.\d*)?)\s*-\s*([+-]?\s*\d+(?:.\d
 re_range_count = re.compile(r"\s*([+-]?\s*\d+)\s*-\s*([+-]?\s*\d+)(?:\s*\[(\d+)\s*\])?\s*")
 re_range_count_float = re.compile(r"\s*([+-]?\s*\d+(?:.\d*)?)\s*-\s*([+-]?\s*\d+(?:.\d*)?)(?:\s*\[(\d+(?:.\d*)?)\s*\])?\s*")
 
+
+def populate_extension_axis_options():
+    for s in scripts.scripts_txt2img.alwayson_scripts:
+        script_name = type(s).__name__
+        fill_alwayson_scripts_axis_options(script_name)
+        import inspect        
+        for idx, param in enumerate(inspect.signature(s.process).parameters.items()):
+            param_name = param[0]
+            if param_name == 'p':
+                continue
+            alwayson_scripts_parameters[(script_name, param_name)] = idx
+
+
 class Script(scripts.Script):
     def title(self):
         return "X/Y plot"
 
     def ui(self, is_img2img):
-        for s in scripts.scripts_txt2img.alwayson_scripts:
-            fill_alwayson_scripts_axis_options(type(s).__name__)
+        populate_extension_axis_options()
 
         current_axis_options = [x for x in axis_options if type(x) == AxisOption or type(x) == AxisOptionImg2Img and is_img2img]
 
@@ -349,6 +353,9 @@ class Script(scripts.Script):
             p.batch_size = 1
 
         def process_axis(opt, vals):
+            if opt.type == bool:
+                return [False, True]
+            
             if opt.label == 'Nothing':
                 return [0]
 
