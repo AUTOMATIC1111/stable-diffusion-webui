@@ -128,18 +128,17 @@ def update_alwayson_script_args(p, value, param_name, script_name):
             
             arg_idx = alwayson_scripts_parameters[(script_name, param_name)]
             args = list(p.script_args)
-            print(f"Changed {param_name} from {args[s.args_from + arg_idx - 1]} to {value}")
+            # print(f"Changed {param_name} from {args[s.args_from + arg_idx - 1]} to {value}")
             args[s.args_from + arg_idx - 1] = value
             p.script_args = tuple(args)
             break
 
 
-def confirm_aesthetic_embedding(p, xs):
+def confirm_aesthetic_imgs(p, xs):
     for x in xs:
         if x.lower() in ["", "none"]:
             continue
-        # if not hypernetwork.find_closest_hypernetwork_name(x):
-        #     raise RuntimeError(f"Unknown aesthetic embedding: {x}")
+        # I need to access the aesthetic_embeddings dict in aesthetic_clip to get the valid list of imgs
 
 
 def apply_aesthetic_weight(p, x, xs):
@@ -223,6 +222,19 @@ axis_options = [
 alwayson_scripts_axis_options_dict = {}
 alwayson_scripts_parameters = {}
 
+def fill_alwayson_scripts_axis_options(script_name):
+    if script_name == "AestheticScript" and "AestheticScript" not in alwayson_scripts_axis_options_dict:
+        axis_options.append(AxisOption("Aesthetic Weight", float, apply_aesthetic_weight, format_value_add_label, None))
+        axis_options.append(AxisOption("Aesthetic Steps", int, apply_aesthetic_steps, format_value_add_label, None))
+        axis_options.append(AxisOption("Aesthetic Embedding", str, apply_aesthetic_imgs, format_value, confirm_aesthetic_imgs))
+        axis_options.append(AxisOption("Aesthetic LR", float, apply_aesthetic_lr, format_value_add_label, None))
+        axis_options.append(AxisOption("Aesthetic Slerp", bool, apply_aesthetic_slerp, format_value_add_label, None))
+        axis_options.append(AxisOption("Aesthetic Slerp Angle", float, apply_aesthetic_slerp_angle, format_value_add_label, None))
+        axis_options.append(AxisOption("Aesthetic Text", str, apply_aesthetic_imgs_text, format_value_add_label, None))
+        axis_options.append(AxisOption("Aesthetic Text Negative", bool, apply_aesthetic_text_negative, format_value_add_label, None))
+        alwayson_scripts_axis_options_dict[script_name] = True
+
+
 def populate_extension_axis_options():
     import inspect
     for s in scripts.scripts_txt2img.alwayson_scripts:
@@ -234,19 +246,6 @@ def populate_extension_axis_options():
             if param_name == 'p':
                 continue
             alwayson_scripts_parameters[(script_name, param_name)] = idx
-
-
-def fill_alwayson_scripts_axis_options(script_name):
-    if script_name == "AestheticScript" and "AestheticScript" not in alwayson_scripts_axis_options_dict:
-        axis_options.append(AxisOption("Aesthetic Weight", float, apply_aesthetic_weight, format_value_add_label, None))
-        axis_options.append(AxisOption("Aesthetic Steps", int, apply_aesthetic_steps, format_value_add_label, None))
-        axis_options.append(AxisOption("Aesthetic Embedding", str, apply_aesthetic_imgs, format_value, confirm_aesthetic_embedding))
-        axis_options.append(AxisOption("Aesthetic LR", float, apply_aesthetic_lr, format_value_add_label, None))
-        axis_options.append(AxisOption("Aesthetic Slerp", bool, apply_aesthetic_slerp, format_value_add_label, None))
-        axis_options.append(AxisOption("Aesthetic Slerp Angle", float, apply_aesthetic_slerp_angle, format_value_add_label, None))
-        axis_options.append(AxisOption("Aesthetic Text", str, apply_aesthetic_imgs_text, format_value_add_label, None))
-        axis_options.append(AxisOption("Aesthetic Text Negative", bool, apply_aesthetic_text_negative, format_value_add_label, None))
-        alwayson_scripts_axis_options_dict[script_name] = True
 
 
 def draw_xy_grid(p, xs, ys, x_labels, y_labels, cell, draw_legend, include_lone_images):
