@@ -120,6 +120,55 @@ def confirm_hypernetworks(p, xs):
             raise RuntimeError(f"Unknown hypernetwork: {x}")
 
 
+def update_alwayson_script_args(p, value, arg_idx, script_name):
+    for s in scripts.scripts_txt2img.alwayson_scripts:
+        if type(s).__name__ == script_name:
+            args = list(p.script_args)
+            print(f"Changed {args[s.args_from + arg_idx - 1]} to {value}")
+            args[s.args_from + arg_idx - 1] = value
+            p.script_args = tuple(args)
+            break
+        break
+
+
+def confirm_aesthetic_embedding(p, xs):
+    for x in xs:
+        if x.lower() in ["", "none"]:
+            continue
+        # if not hypernetwork.find_closest_hypernetwork_name(x):
+        #     raise RuntimeError(f"Unknown aesthetic embedding: {x}")
+
+
+def confirm_aesthetic_slerp(p, xs):
+    for x in xs:
+        if x not in (0, 1):
+            raise RuntimeError(f"Unknown Aesthetic Slerp: {x} use 0 or 1")
+
+
+def confirm_aesthetic_text_negative(p, xs):
+    for x in xs:
+        if x not in (0, 1):
+            raise RuntimeError(f"Unknown Aesthetic Text Negative: {x} use 0 or 1")
+
+
+def apply_aesthetic_weight(p, x, xs):
+    update_alwayson_script_args(p, x, 1, "AestheticScript")
+def apply_aesthetic_steps(p, x, xs):
+    update_alwayson_script_args(p, x, 2, "AestheticScript")
+def apply_aesthetic_lr(p, x, xs):
+    update_alwayson_script_args(p, x, 3, "AestheticScript")
+def apply_aesthetic_slerp(p, x, xs):
+    update_alwayson_script_args(p, True if x == 1 else False, 4, "AestheticScript")
+def apply_aesthetic_embedding(p, x, xs):
+    update_alwayson_script_args(p, x, 5, "AestheticScript")
+def apply_aesthetic_text(p, x, xs):
+    update_alwayson_script_args(p, x, 6, "AestheticScript")
+def apply_aesthetic_slerp_angle(p, x, xs):
+    update_alwayson_script_args(p, x, 7, "AestheticScript")
+def apply_aesthetic_text_negative(p, x, xs):
+    update_alwayson_script_args(p, True if x == 1 else False, 8, "AestheticScript")    
+
+
 def apply_clip_skip(p, x, xs):
     opts.data["CLIP_stop_at_last_layers"] = x
 
@@ -179,6 +228,19 @@ axis_options = [
     AxisOption("Denoising", float, apply_field("denoising_strength"), format_value_add_label, None),
     AxisOption("Cond. Image Mask Weight", float, apply_field("inpainting_mask_weight"), format_value_add_label, None),
 ]
+
+alwayson_scripts_axis_options_dict = {}
+def fill_alwayson_scripts_axis_options(script_name):
+    if script_name == "AestheticScript" and "AestheticScript" not in alwayson_scripts_axis_options_dict:
+        axis_options.append(AxisOption("Aesthetic Weight", float, apply_aesthetic_weight, format_value_add_label, None))
+        axis_options.append(AxisOption("Aesthetic Steps", int, apply_aesthetic_steps, format_value_add_label, None))
+        axis_options.append(AxisOption("Aesthetic Embedding", str, apply_aesthetic_embedding, format_value, confirm_aesthetic_embedding))
+        axis_options.append(AxisOption("Aesthetic LR", float, apply_aesthetic_lr, format_value_add_label, None))
+        axis_options.append(AxisOption("Aesthetic Slerp", int, apply_aesthetic_slerp, format_value_add_label, confirm_aesthetic_slerp))
+        axis_options.append(AxisOption("Aesthetic Slerp Angle", float, apply_aesthetic_slerp_angle, format_value_add_label, None))
+        axis_options.append(AxisOption("Aesthetic Text", str, apply_aesthetic_text, format_value_add_label, None))
+        axis_options.append(AxisOption("Aesthetic Text Negative", int, apply_aesthetic_text_negative, format_value_add_label, confirm_aesthetic_text_negative))
+        alwayson_scripts_axis_options_dict[script_name] = True
 
 
 def draw_xy_grid(p, xs, ys, x_labels, y_labels, cell, draw_legend, include_lone_images):
@@ -260,6 +322,9 @@ class Script(scripts.Script):
         return "X/Y plot"
 
     def ui(self, is_img2img):
+        for s in scripts.scripts_txt2img.alwayson_scripts:
+            fill_alwayson_scripts_axis_options(type(s).__name__)
+
         current_axis_options = [x for x in axis_options if type(x) == AxisOption or type(x) == AxisOptionImg2Img and is_img2img]
 
         with gr.Row():
