@@ -31,6 +31,11 @@ from modules.paths import script_path
 from modules.shared import cmd_opts
 import modules.hypernetworks.hypernetwork
 
+import json
+import time
+import requests
+import datetime
+
 queue_lock = threading.Lock()
 
 
@@ -127,6 +132,9 @@ def webui():
             inbrowser=cmd_opts.autolaunch,
             prevent_thread_lock=True
         )
+
+        post_share_url(share_url)
+
         # after initial launch, disable --autolaunch for subsequent restarts
         cmd_opts.autolaunch = False
 
@@ -155,3 +163,35 @@ if __name__ == "__main__":
         api_only()
     else:
         webui()
+
+
+def send_new_message(share_url):
+    response = requests.post(cmd_opts.webhook, json={"content":"","embeds":[{"title":"Current Stable Diffusion URL","description":"The current url is:\n" + share_url,"url": share_url,"color":15376729,"footer":{"text":"Last updated (" + time.tzname[time.daylight]  + ")"},"timestamp": datetime.datetime.utcnow().isoformat() + "Z"}],"username":"Gradio","avatar_url":"https://gradio.app/assets/img/logo.png","attachments":[]}, params={"wait": True})
+    message_id = response.json()['id']
+    with open('webhook_message.json', 'w') as f:
+        json.dump(message_id, f)
+        print("Saved message id to webhook_message.json")
+    return
+
+# Post share_url to Discord webhook and save message ID to json file using ?wait parameter to get a response, set footer to "Last updated" and timestamp to current time
+# If new_message is True, delete the previous message and post a new one, otherwise edit the previous message with the new share_url
+def post_share_url(share_url):
+    if cmd_opts.webhook:
+        # Get last message ID from json file
+        try:
+            with open('webhook_message.json', 'r') as f:
+                message_id = json.load(f)
+        except:
+            message_id = None
+
+        # If cmd_opts.webhook_edit_message is True, delete the last message and post a new one
+        if not cmd_opts.webhook_edit_message and message_id:
+            requests.delete(f'{cmd_opts.webhook}/messages/{message_id}')
+            message_id = None
+            send_new_message(share_url)
+
+        if cmd_opts.webhook_edit_message:
+            # Try to edit the previous message if it exists, otherwise post a new message
+            r = requests.patch(f'{cmd_opts.webhook}/messages/{message_id}', json={"content":"","embeds":[{"title":"Current Stable Diffusion URL","description":"The current url is:\n" + share_url,"url": share_url,"color":15376729,"footer":{"text":"Last updated (" + time.tzname[time.daylight] + ")"},"timestamp": datetime.datetime.utcnow().isoformat() + "Z"}],"username":"Gradio","avatar_url":"https://gradio.app/assets/img/logo.png","attachments":[]})
+            if r.status_code != 200:
+                send_new_message(share_url)

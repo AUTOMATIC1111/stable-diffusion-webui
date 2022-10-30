@@ -76,13 +76,15 @@ parser.add_argument("--theme", type=str, help="launches the UI with light or dar
 parser.add_argument("--use-textbox-seed", action='store_true', help="use textbox for seeds in UI (no up/down, but possible to input long seeds)", default=False)
 parser.add_argument("--disable-console-progressbars", action='store_true', help="do not output progressbars to console", default=False)
 parser.add_argument("--enable-console-prompts", action='store_true', help="print prompts to console when generating with txt2img and img2img", default=False)
-parser.add_argument('--vae-path', type=str, help='Path to Variational Autoencoders model', default=None)
+parser.add_argument("--vae-path", type=str, help='Path to Variational Autoencoders model', default=None)
 parser.add_argument("--disable-safe-unpickle", action='store_true', help="disable checking pytorch models for malicious code", default=False)
 parser.add_argument("--api", action='store_true', help="use api=True to launch the api with the webui")
 parser.add_argument("--nowebui", action='store_true', help="use api=True to launch the api instead of the webui")
 parser.add_argument("--ui-debug-mode", action='store_true', help="Don't load model to quickly launch UI")
 parser.add_argument("--device-id", type=str, help="Select the default CUDA device to use (export CUDA_VISIBLE_DEVICES=0,1,etc might be needed before)", default=None)
 parser.add_argument("--administrator", action='store_true', help="Administrator rights", default=False)
+parser.add_argument("--webhook", type=str, help="Webhook URL", default=None)
+parser.add_argument("--webhook-edit-message", action='store_true', help="Should the Webhook try to edit the last message or delete the old one and send another", default=False)
 
 cmd_opts = parser.parse_args()
 restricted_opts = {
