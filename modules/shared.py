@@ -222,7 +222,7 @@ options_templates.update(options_section(('saving-paths', "Paths for saving"), {
     "outdir_txt2img_grids": OptionInfo("outputs/txt2img-grids", 'Output directory for txt2img grids', component_args=hide_dirs),
     "outdir_img2img_grids": OptionInfo("outputs/img2img-grids", 'Output directory for img2img grids', component_args=hide_dirs),
     "outdir_save": OptionInfo("log/images", "Directory for saving images using the Save button", component_args=hide_dirs),
-    "outdir_gradio_temp": OptionInfo("", "Directory for temporary png files for gradio UI. If empty, uses system's default temporary folder. (e.g. \"C:\\Users\<Username>\\AppData\\Local\\Temp\\tmp<123XYZ>\" )", component_args=hide_dirs),
+    "outdir_gradio_temp": OptionInfo("", "Directory for temporary png files for gradio UI. If empty, uses system's default temporary folder. (Requires restart)", component_args=hide_dirs),
 }))
 
 options_templates.update(options_section(('saving-to-dirs', "Saving to a directory"), {

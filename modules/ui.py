@@ -170,18 +170,19 @@ def save_pil_to_file(pil_image, dir=None):
     pil_image.save(file_obj, pnginfo=(metadata if use_metadata else None))
     return file_obj
 
-if opts.outdir_gradio_temp.strip() != "":
-    class Gallery(gr.Gallery):
 
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
+class Gallery(gr.Gallery):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if opts.outdir_gradio_temp.strip() != "":
             shutil.rmtree(self.temp_dir)  # Kill inital temp folder
             self.temp_dir = os.path.realpath(opts.outdir_gradio_temp.strip())
             if os.path.exists(self.temp_dir):
                 shutil.rmtree(self.temp_dir)
             os.mkdir(self.temp_dir)
 
-    gr.Gallery = Gallery
+gr.Gallery = Gallery
 
 # override save to file function so that it also writes PNG info
 gr.processing_utils.save_pil_to_file = save_pil_to_file
