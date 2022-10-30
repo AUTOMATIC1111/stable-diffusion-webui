@@ -11,27 +11,8 @@ It allows a matrix prompt as follows:
 
 Does not actually draw a matrix, just produces pictures.
 
-## Dynamic Prompt Templates
-https://github.com/adieyal/sd-dynamic-prompting
-
-A custom script to implement an expressive template language for random or combinatorial prompt generation along with features to support deep wildcard directory structures.
-
-The script supports both file-based wildcards using the `__wildcard__` syntax (which matches wildcard.txt), as well as inline `{summer|autumn|winter|spring}`. Other features include:
-- wildcard globbing - `__colours*__` will match both `colours1.txt` and `colours2.txt`. This also includes recursive globbing through directories, i.e. `/path/to/colours3.txt`
-- combinatorial generation - generates every possible prompt from a given template.
-- wildcard combinations - `{2$$blue|green|brown}` will generate one of `blue, green`, `blue, brown`, `green, brown`.
-- recursive templates - `{__warm_colours__|__cold_colours__}` will pick a wildcard from either warm_colours.txt or cold_colours.txt. Wildcard files can also contain templates.
-
-Features merged with the **[Wildcards](https://github.com/jtkelm2/stable-diffusion-webui-1/blob/master/scripts/wildcards.py)** script.   
-
 ## Wildcards
-Script support so that prompts can contain wildcard terms (indicated by surrounding double underscores), with values instantiated randomly from the corresponding .txt file in the folder `/scripts/wildcards/`. For example:
-
-`a woman at a cafe by __artist__ and __artist__`
-
-will draw two random artists from `artist.txt`. This works independently on each prompt, so that one can e.g. generate a batch of 100 images with the same prompt input using wildcards, and each output will have unique artists (or styles, or genres, or anything that the user creates their own .txt file for) attached to it.
-
-(see [here](https://github.com/jtkelm2/stable-diffusion-webui-1/tree/main/scripts/wildcards) for examples of custom lists)
+This and the more feature rich dynamic prompts script have been turned into [extensions.](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Extensions)
 
 ## txt2img2img 
 https://github.com/ThereforeGames/txt2img2img/blob/main/scripts/txt2img2img.py
