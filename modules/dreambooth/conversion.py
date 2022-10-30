@@ -1,5 +1,5 @@
 # From https://github.com/huggingface/diffusers/blob/main/scripts/convert_original_stable_diffusion_to_diffusers.py
-
+# AND https://github.com/huggingface/diffusers/blob/main/scripts/convert_diffusers_to_original_stable_diffusion.py
 # coding=utf-8
 # Copyright 2022 The HuggingFace Inc. team.
 #
@@ -15,9 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """ Conversion script for the LDM checkpoints. """
-import json
 import os
-from typing import Union
 
 import gradio as gr
 import torch
@@ -42,12 +40,129 @@ from diffusers import (
     LMSDiscreteScheduler,
     PNDMScheduler,
     StableDiffusionPipeline,
-    UNet2DConditionModel,
-    DiffusionPipeline
+    UNet2DConditionModel
 )
 from diffusers.pipelines.latent_diffusion.pipeline_latent_diffusion import LDMBertConfig, LDMBertModel
 from diffusers.pipelines.stable_diffusion import StableDiffusionSafetyChecker
 from transformers import AutoFeatureExtractor, BertTokenizerFast, CLIPTextModel, CLIPTokenizer
+
+unet_conversion_map = [
+    # (stable-diffusion, HF Diffusers)
+    ("time_embed.0.weight", "time_embedding.linear_1.weight"),
+    ("time_embed.0.bias", "time_embedding.linear_1.bias"),
+    ("time_embed.2.weight", "time_embedding.linear_2.weight"),
+    ("time_embed.2.bias", "time_embedding.linear_2.bias"),
+    ("input_blocks.0.0.weight", "conv_in.weight"),
+    ("input_blocks.0.0.bias", "conv_in.bias"),
+    ("out.0.weight", "conv_norm_out.weight"),
+    ("out.0.bias", "conv_norm_out.bias"),
+    ("out.2.weight", "conv_out.weight"),
+    ("out.2.bias", "conv_out.bias"),
+]
+
+unet_conversion_map_resnet = [
+    # (stable-diffusion, HF Diffusers)
+    ("in_layers.0", "norm1"),
+    ("in_layers.2", "conv1"),
+    ("out_layers.0", "norm2"),
+    ("out_layers.3", "conv2"),
+    ("emb_layers.1", "time_emb_proj"),
+    ("skip_connection", "conv_shortcut"),
+]
+
+unet_conversion_map_layer = []
+
+for i in range(4):
+    # loop over downblocks/upblocks
+
+    for j in range(2):
+        # loop over resnets/attentions for downblocks
+        hf_down_res_prefix = f"down_blocks.{i}.resnets.{j}."
+        sd_down_res_prefix = f"input_blocks.{3 * i + j + 1}.0."
+        unet_conversion_map_layer.append((sd_down_res_prefix, hf_down_res_prefix))
+
+        if i < 3:
+            # no attention layers in down_blocks.3
+            hf_down_atn_prefix = f"down_blocks.{i}.attentions.{j}."
+            sd_down_atn_prefix = f"input_blocks.{3 * i + j + 1}.1."
+            unet_conversion_map_layer.append((sd_down_atn_prefix, hf_down_atn_prefix))
+
+    for j in range(3):
+        # loop over resnets/attentions for upblocks
+        hf_up_res_prefix = f"up_blocks.{i}.resnets.{j}."
+        sd_up_res_prefix = f"output_blocks.{3 * i + j}.0."
+        unet_conversion_map_layer.append((sd_up_res_prefix, hf_up_res_prefix))
+
+        if i > 0:
+            # no attention layers in up_blocks.0
+            hf_up_atn_prefix = f"up_blocks.{i}.attentions.{j}."
+            sd_up_atn_prefix = f"output_blocks.{3 * i + j}.1."
+            unet_conversion_map_layer.append((sd_up_atn_prefix, hf_up_atn_prefix))
+
+    if i < 3:
+        # no downsample in down_blocks.3
+        hf_downsample_prefix = f"down_blocks.{i}.downsamplers.0.conv."
+        sd_downsample_prefix = f"input_blocks.{3 * (i + 1)}.0.op."
+        unet_conversion_map_layer.append((sd_downsample_prefix, hf_downsample_prefix))
+
+        # no upsample in up_blocks.3
+        hf_upsample_prefix = f"up_blocks.{i}.upsamplers.0."
+        sd_upsample_prefix = f"output_blocks.{3 * i + 2}.{1 if i == 0 else 2}."
+        unet_conversion_map_layer.append((sd_upsample_prefix, hf_upsample_prefix))
+
+hf_mid_atn_prefix = "mid_block.attentions.0."
+sd_mid_atn_prefix = "middle_block.1."
+unet_conversion_map_layer.append((sd_mid_atn_prefix, hf_mid_atn_prefix))
+
+for j in range(2):
+    hf_mid_res_prefix = f"mid_block.resnets.{j}."
+    sd_mid_res_prefix = f"middle_block.{2 * j}."
+    unet_conversion_map_layer.append((sd_mid_res_prefix, hf_mid_res_prefix))
+
+vae_conversion_map = [
+    # (stable-diffusion, HF Diffusers)
+    ("nin_shortcut", "conv_shortcut"),
+    ("norm_out", "conv_norm_out"),
+    ("mid.attn_1.", "mid_block.attentions.0."),
+]
+
+for i in range(4):
+    # down_blocks have two resnets
+    for j in range(2):
+        hf_down_prefix = f"encoder.down_blocks.{i}.resnets.{j}."
+        sd_down_prefix = f"encoder.down.{i}.block.{j}."
+        vae_conversion_map.append((sd_down_prefix, hf_down_prefix))
+
+    if i < 3:
+        hf_downsample_prefix = f"down_blocks.{i}.downsamplers.0."
+        sd_downsample_prefix = f"down.{i}.downsample."
+        vae_conversion_map.append((sd_downsample_prefix, hf_downsample_prefix))
+
+        hf_upsample_prefix = f"up_blocks.{i}.upsamplers.0."
+        sd_upsample_prefix = f"up.{3 - i}.upsample."
+        vae_conversion_map.append((sd_upsample_prefix, hf_upsample_prefix))
+
+    # up_blocks have three resnets
+    # also, up blocks in hf are numbered in reverse from sd
+    for j in range(3):
+        hf_up_prefix = f"decoder.up_blocks.{i}.resnets.{j}."
+        sd_up_prefix = f"decoder.up.{3 - i}.block.{j}."
+        vae_conversion_map.append((sd_up_prefix, hf_up_prefix))
+
+# this part accounts for mid blocks in both the encoder and the decoder
+for i in range(2):
+    hf_mid_res_prefix = f"mid_block.resnets.{i}."
+    sd_mid_res_prefix = f"mid.block_{i + 1}."
+    vae_conversion_map.append((sd_mid_res_prefix, hf_mid_res_prefix))
+
+vae_conversion_map_attn = [
+    # (stable-diffusion, HF Diffusers)
+    ("norm.", "group_norm."),
+    ("q.", "query."),
+    ("k.", "key."),
+    ("v.", "value."),
+    ("proj_out.", "proj_attn."),
+]
 
 
 def shave_segments(path, n_shave_prefix_segments=1):
@@ -602,6 +717,55 @@ def convert_ldm_clip_checkpoint(checkpoint):
     return text_model
 
 
+def convert_unet_state_dict(unet_state_dict):
+    # buyer beware: this is a *brittle* function,
+    # and correct output requires that all of these pieces interact in
+    # the exact order in which I have arranged them.
+    mapping = {k: k for k in unet_state_dict.keys()}
+    for sd_name, hf_name in unet_conversion_map:
+        mapping[hf_name] = sd_name
+    for k, v in mapping.items():
+        if "resnets" in k:
+            for sd_part, hf_part in unet_conversion_map_resnet:
+                v = v.replace(hf_part, sd_part)
+            mapping[k] = v
+    for k, v in mapping.items():
+        for sd_part, hf_part in unet_conversion_map_layer:
+            v = v.replace(hf_part, sd_part)
+        mapping[k] = v
+    new_state_dict = {v: unet_state_dict[k] for k, v in mapping.items()}
+    return new_state_dict
+
+
+def reshape_weight_for_sd(w):
+    # convert HF linear weights to SD conv2d weights
+    return w.reshape(*w.shape, 1, 1)
+
+
+def convert_vae_state_dict(vae_state_dict):
+    mapping = {k: k for k in vae_state_dict.keys()}
+    for k, v in mapping.items():
+        for sd_part, hf_part in vae_conversion_map:
+            v = v.replace(hf_part, sd_part)
+        mapping[k] = v
+    for k, v in mapping.items():
+        if "attentions" in k:
+            for sd_part, hf_part in vae_conversion_map_attn:
+                v = v.replace(hf_part, sd_part)
+            mapping[k] = v
+    new_state_dict = {v: vae_state_dict[k] for k, v in mapping.items()}
+    weights_to_convert = ["q", "k", "v", "proj_out"]
+    for k, v in new_state_dict.items():
+        for weight_name in weights_to_convert:
+            if f"mid.attn_1.{weight_name}.weight" in k:
+                new_state_dict[k] = reshape_weight_for_sd(v)
+    return new_state_dict
+
+
+def convert_text_enc_state_dict(text_enc_dict):
+    return text_enc_dict
+
+
 def extract_checkpoint(new_model_name: str, checkpoint_path: str, scheduler_type="ddim"):
     shared.state.job_count = 8
     # Set up our base directory for the model and sanitize our file name
@@ -609,7 +773,7 @@ def extract_checkpoint(new_model_name: str, checkpoint_path: str, scheduler_type
     config = TrainConfig().create_new(new_model_name, scheduler_type, checkpoint_path, 0)
     new_model_dir = create_output_dir(new_model_name, config)
     # Create folder for the 'extracted' diffusion model.
-    out_dir = os.path.join(new_model_dir, "stable-diffusion-v1-5")
+    out_dir = os.path.join(new_model_dir, "working")
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
     shared.state.job_no = 0
@@ -706,741 +870,32 @@ def extract_checkpoint(new_model_name: str, checkpoint_path: str, scheduler_type
     return gr.Dropdown.update(choices=sorted(dirs)), f"Created working directory for {new_model_name} at {out_dir}.", ""
 
 
-KeyMap = {
-    "model.diffusion_model.time_embed.0.weight": "time_embedding.linear_1.weight",
-    "model.diffusion_model.time_embed.0.bias": "time_embedding.linear_1.bias",
-    "model.diffusion_model.time_embed.2.weight": "time_embedding.linear_2.weight",
-    "model.diffusion_model.time_embed.2.bias": "time_embedding.linear_2.bias",
-    "model.diffusion_model.input_blocks.0.0.weight": "conv_in.weight",
-    "model.diffusion_model.input_blocks.0.0.bias": "conv_in.bias",
-    "model.diffusion_model.out.0.weight": "conv_norm_out.weight",
-    "model.diffusion_model.out.0.bias": "conv_norm_out.bias",
-    "model.diffusion_model.out.2.weight": "conv_out.weight",
-    "model.diffusion_model.out.2.bias": "conv_out.bias",
-    "model.diffusion_model.input_blocks.1.0.in_layers.0.weight": "down_blocks.0.resnets.0.norm1.weight",
-    "model.diffusion_model.input_blocks.1.0.in_layers.0.bias": "down_blocks.0.resnets.0.norm1.bias",
-    "model.diffusion_model.input_blocks.1.0.in_layers.2.weight": "down_blocks.0.resnets.0.conv1.weight",
-    "model.diffusion_model.input_blocks.1.0.in_layers.2.bias": "down_blocks.0.resnets.0.conv1.bias",
-    "model.diffusion_model.input_blocks.1.0.emb_layers.1.weight": "down_blocks.0.resnets.0.time_emb_proj.weight",
-    "model.diffusion_model.input_blocks.1.0.emb_layers.1.bias": "down_blocks.0.resnets.0.time_emb_proj.bias",
-    "model.diffusion_model.input_blocks.1.0.out_layers.0.weight": "down_blocks.0.resnets.0.norm2.weight",
-    "model.diffusion_model.input_blocks.1.0.out_layers.0.bias": "down_blocks.0.resnets.0.norm2.bias",
-    "model.diffusion_model.input_blocks.1.0.out_layers.3.weight": "down_blocks.0.resnets.0.conv2.weight",
-    "model.diffusion_model.input_blocks.1.0.out_layers.3.bias": "down_blocks.0.resnets.0.conv2.bias",
-    "model.diffusion_model.input_blocks.1.1.norm.weight": "down_blocks.0.attentions.0.norm.weight",
-    "model.diffusion_model.input_blocks.1.1.norm.bias": "down_blocks.0.attentions.0.norm.bias",
-    "model.diffusion_model.input_blocks.1.1.proj_in.weight": "down_blocks.0.attentions.0.proj_in.weight",
-    "model.diffusion_model.input_blocks.1.1.proj_in.bias": "down_blocks.0.attentions.0.proj_in.bias",
-    "model.diffusion_model.input_blocks.1.1.transformer_blocks.0.attn1.to_q.weight": "down_blocks.0.attentions.0.transformer_blocks.0.attn1.to_q.weight",
-    "model.diffusion_model.input_blocks.1.1.transformer_blocks.0.attn1.to_k.weight": "down_blocks.0.attentions.0.transformer_blocks.0.attn1.to_k.weight",
-    "model.diffusion_model.input_blocks.1.1.transformer_blocks.0.attn1.to_v.weight": "down_blocks.0.attentions.0.transformer_blocks.0.attn1.to_v.weight",
-    "model.diffusion_model.input_blocks.1.1.transformer_blocks.0.attn1.to_out.0.weight": "down_blocks.0.attentions.0.transformer_blocks.0.attn1.to_out.0.weight",
-    "model.diffusion_model.input_blocks.1.1.transformer_blocks.0.attn1.to_out.0.bias": "down_blocks.0.attentions.0.transformer_blocks.0.attn1.to_out.0.bias",
-    "model.diffusion_model.input_blocks.1.1.transformer_blocks.0.ff.net.0.proj.weight": "down_blocks.0.attentions.0.transformer_blocks.0.ff.net.0.proj.weight",
-    "model.diffusion_model.input_blocks.1.1.transformer_blocks.0.ff.net.0.proj.bias": "down_blocks.0.attentions.0.transformer_blocks.0.ff.net.0.proj.bias",
-    "model.diffusion_model.input_blocks.1.1.transformer_blocks.0.ff.net.2.weight": "down_blocks.0.attentions.0.transformer_blocks.0.ff.net.2.weight",
-    "model.diffusion_model.input_blocks.1.1.transformer_blocks.0.ff.net.2.bias": "down_blocks.0.attentions.0.transformer_blocks.0.ff.net.2.bias",
-    "model.diffusion_model.input_blocks.1.1.transformer_blocks.0.attn2.to_q.weight": "down_blocks.0.attentions.0.transformer_blocks.0.attn2.to_q.weight",
-    "model.diffusion_model.input_blocks.1.1.transformer_blocks.0.attn2.to_k.weight": "down_blocks.0.attentions.0.transformer_blocks.0.attn2.to_k.weight",
-    "model.diffusion_model.input_blocks.1.1.transformer_blocks.0.attn2.to_v.weight": "down_blocks.0.attentions.0.transformer_blocks.0.attn2.to_v.weight",
-    "model.diffusion_model.input_blocks.1.1.transformer_blocks.0.attn2.to_out.0.weight": "down_blocks.0.attentions.0.transformer_blocks.0.attn2.to_out.0.weight",
-    "model.diffusion_model.input_blocks.1.1.transformer_blocks.0.attn2.to_out.0.bias": "down_blocks.0.attentions.0.transformer_blocks.0.attn2.to_out.0.bias",
-    "model.diffusion_model.input_blocks.1.1.transformer_blocks.0.norm1.weight": "down_blocks.0.attentions.0.transformer_blocks.0.norm1.weight",
-    "model.diffusion_model.input_blocks.1.1.transformer_blocks.0.norm1.bias": "down_blocks.0.attentions.0.transformer_blocks.0.norm1.bias",
-    "model.diffusion_model.input_blocks.1.1.transformer_blocks.0.norm2.weight": "down_blocks.0.attentions.0.transformer_blocks.0.norm2.weight",
-    "model.diffusion_model.input_blocks.1.1.transformer_blocks.0.norm2.bias": "down_blocks.0.attentions.0.transformer_blocks.0.norm2.bias",
-    "model.diffusion_model.input_blocks.1.1.transformer_blocks.0.norm3.weight": "down_blocks.0.attentions.0.transformer_blocks.0.norm3.weight",
-    "model.diffusion_model.input_blocks.1.1.transformer_blocks.0.norm3.bias": "down_blocks.0.attentions.0.transformer_blocks.0.norm3.bias",
-    "model.diffusion_model.input_blocks.1.1.proj_out.weight": "down_blocks.0.attentions.0.proj_out.weight",
-    "model.diffusion_model.input_blocks.1.1.proj_out.bias": "down_blocks.0.attentions.0.proj_out.bias",
-    "model.diffusion_model.input_blocks.2.0.in_layers.0.weight": "down_blocks.0.resnets.1.norm1.weight",
-    "model.diffusion_model.input_blocks.2.0.in_layers.0.bias": "down_blocks.0.resnets.1.norm1.bias",
-    "model.diffusion_model.input_blocks.2.0.in_layers.2.weight": "down_blocks.0.resnets.1.conv1.weight",
-    "model.diffusion_model.input_blocks.2.0.in_layers.2.bias": "down_blocks.0.resnets.1.conv1.bias",
-    "model.diffusion_model.input_blocks.2.0.emb_layers.1.weight": "down_blocks.0.resnets.1.time_emb_proj.weight",
-    "model.diffusion_model.input_blocks.2.0.emb_layers.1.bias": "down_blocks.0.resnets.1.time_emb_proj.bias",
-    "model.diffusion_model.input_blocks.2.0.out_layers.0.weight": "down_blocks.0.resnets.1.norm2.weight",
-    "model.diffusion_model.input_blocks.2.0.out_layers.0.bias": "down_blocks.0.resnets.1.norm2.bias",
-    "model.diffusion_model.input_blocks.2.0.out_layers.3.weight": "down_blocks.0.resnets.1.conv2.weight",
-    "model.diffusion_model.input_blocks.2.0.out_layers.3.bias": "down_blocks.0.resnets.1.conv2.bias",
-    "model.diffusion_model.input_blocks.2.1.norm.weight": "down_blocks.0.attentions.1.norm.weight",
-    "model.diffusion_model.input_blocks.2.1.norm.bias": "down_blocks.0.attentions.1.norm.bias",
-    "model.diffusion_model.input_blocks.2.1.proj_in.weight": "down_blocks.0.attentions.1.proj_in.weight",
-    "model.diffusion_model.input_blocks.2.1.proj_in.bias": "down_blocks.0.attentions.1.proj_in.bias",
-    "model.diffusion_model.input_blocks.2.1.transformer_blocks.0.attn1.to_q.weight": "down_blocks.0.attentions.1.transformer_blocks.0.attn1.to_q.weight",
-    "model.diffusion_model.input_blocks.2.1.transformer_blocks.0.attn1.to_k.weight": "down_blocks.0.attentions.1.transformer_blocks.0.attn1.to_k.weight",
-    "model.diffusion_model.input_blocks.2.1.transformer_blocks.0.attn1.to_v.weight": "down_blocks.0.attentions.1.transformer_blocks.0.attn1.to_v.weight",
-    "model.diffusion_model.input_blocks.2.1.transformer_blocks.0.attn1.to_out.0.weight": "down_blocks.0.attentions.1.transformer_blocks.0.attn1.to_out.0.weight",
-    "model.diffusion_model.input_blocks.2.1.transformer_blocks.0.attn1.to_out.0.bias": "down_blocks.0.attentions.1.transformer_blocks.0.attn1.to_out.0.bias",
-    "model.diffusion_model.input_blocks.2.1.transformer_blocks.0.ff.net.0.proj.weight": "down_blocks.0.attentions.1.transformer_blocks.0.ff.net.0.proj.weight",
-    "model.diffusion_model.input_blocks.2.1.transformer_blocks.0.ff.net.0.proj.bias": "down_blocks.0.attentions.1.transformer_blocks.0.ff.net.0.proj.bias",
-    "model.diffusion_model.input_blocks.2.1.transformer_blocks.0.ff.net.2.weight": "down_blocks.0.attentions.1.transformer_blocks.0.ff.net.2.weight",
-    "model.diffusion_model.input_blocks.2.1.transformer_blocks.0.ff.net.2.bias": "down_blocks.0.attentions.1.transformer_blocks.0.ff.net.2.bias",
-    "model.diffusion_model.input_blocks.2.1.transformer_blocks.0.attn2.to_q.weight": "down_blocks.0.attentions.1.transformer_blocks.0.attn2.to_q.weight",
-    "model.diffusion_model.input_blocks.2.1.transformer_blocks.0.attn2.to_k.weight": "down_blocks.0.attentions.1.transformer_blocks.0.attn2.to_k.weight",
-    "model.diffusion_model.input_blocks.2.1.transformer_blocks.0.attn2.to_v.weight": "down_blocks.0.attentions.1.transformer_blocks.0.attn2.to_v.weight",
-    "model.diffusion_model.input_blocks.2.1.transformer_blocks.0.attn2.to_out.0.weight": "down_blocks.0.attentions.1.transformer_blocks.0.attn2.to_out.0.weight",
-    "model.diffusion_model.input_blocks.2.1.transformer_blocks.0.attn2.to_out.0.bias": "down_blocks.0.attentions.1.transformer_blocks.0.attn2.to_out.0.bias",
-    "model.diffusion_model.input_blocks.2.1.transformer_blocks.0.norm1.weight": "down_blocks.0.attentions.1.transformer_blocks.0.norm1.weight",
-    "model.diffusion_model.input_blocks.2.1.transformer_blocks.0.norm1.bias": "down_blocks.0.attentions.1.transformer_blocks.0.norm1.bias",
-    "model.diffusion_model.input_blocks.2.1.transformer_blocks.0.norm2.weight": "down_blocks.0.attentions.1.transformer_blocks.0.norm2.weight",
-    "model.diffusion_model.input_blocks.2.1.transformer_blocks.0.norm2.bias": "down_blocks.0.attentions.1.transformer_blocks.0.norm2.bias",
-    "model.diffusion_model.input_blocks.2.1.transformer_blocks.0.norm3.weight": "down_blocks.0.attentions.1.transformer_blocks.0.norm3.weight",
-    "model.diffusion_model.input_blocks.2.1.transformer_blocks.0.norm3.bias": "down_blocks.0.attentions.1.transformer_blocks.0.norm3.bias",
-    "model.diffusion_model.input_blocks.2.1.proj_out.weight": "down_blocks.0.attentions.1.proj_out.weight",
-    "model.diffusion_model.input_blocks.2.1.proj_out.bias": "down_blocks.0.attentions.1.proj_out.bias",
-    "model.diffusion_model.input_blocks.3.0.op.weight": "down_blocks.0.downsamplers.0.conv.weight",
-    "model.diffusion_model.input_blocks.3.0.op.bias": "down_blocks.0.downsamplers.0.conv.bias",
-    "model.diffusion_model.input_blocks.4.0.in_layers.0.weight": "down_blocks.1.resnets.0.norm1.weight",
-    "model.diffusion_model.input_blocks.4.0.in_layers.0.bias": "down_blocks.1.resnets.0.norm1.bias",
-    "model.diffusion_model.input_blocks.4.0.in_layers.2.weight": "down_blocks.1.resnets.0.conv1.weight",
-    "model.diffusion_model.input_blocks.4.0.in_layers.2.bias": "down_blocks.1.resnets.0.conv1.bias",
-    "model.diffusion_model.input_blocks.4.0.emb_layers.1.weight": "down_blocks.1.resnets.0.time_emb_proj.weight",
-    "model.diffusion_model.input_blocks.4.0.emb_layers.1.bias": "down_blocks.1.resnets.0.time_emb_proj.bias",
-    "model.diffusion_model.input_blocks.4.0.out_layers.0.weight": "down_blocks.1.resnets.0.norm2.weight",
-    "model.diffusion_model.input_blocks.4.0.out_layers.0.bias": "down_blocks.1.resnets.0.norm2.bias",
-    "model.diffusion_model.input_blocks.4.0.out_layers.3.weight": "down_blocks.1.resnets.0.conv2.weight",
-    "model.diffusion_model.input_blocks.4.0.out_layers.3.bias": "down_blocks.1.resnets.0.conv2.bias",
-    "model.diffusion_model.input_blocks.4.0.skip_connection.weight": "down_blocks.1.resnets.0.conv_shortcut.weight",
-    "model.diffusion_model.input_blocks.4.0.skip_connection.bias": "down_blocks.1.resnets.0.conv_shortcut.bias",
-    "model.diffusion_model.input_blocks.4.1.norm.weight": "down_blocks.1.attentions.0.norm.weight",
-    "model.diffusion_model.input_blocks.4.1.norm.bias": "down_blocks.1.attentions.0.norm.bias",
-    "model.diffusion_model.input_blocks.4.1.proj_in.weight": "down_blocks.1.attentions.0.proj_in.weight",
-    "model.diffusion_model.input_blocks.4.1.proj_in.bias": "down_blocks.1.attentions.0.proj_in.bias",
-    "model.diffusion_model.input_blocks.4.1.transformer_blocks.0.attn1.to_q.weight": "down_blocks.1.attentions.0.transformer_blocks.0.attn1.to_q.weight",
-    "model.diffusion_model.input_blocks.4.1.transformer_blocks.0.attn1.to_k.weight": "down_blocks.1.attentions.0.transformer_blocks.0.attn1.to_k.weight",
-    "model.diffusion_model.input_blocks.4.1.transformer_blocks.0.attn1.to_v.weight": "down_blocks.1.attentions.0.transformer_blocks.0.attn1.to_v.weight",
-    "model.diffusion_model.input_blocks.4.1.transformer_blocks.0.attn1.to_out.0.weight": "down_blocks.1.attentions.0.transformer_blocks.0.attn1.to_out.0.weight",
-    "model.diffusion_model.input_blocks.4.1.transformer_blocks.0.attn1.to_out.0.bias": "down_blocks.1.attentions.0.transformer_blocks.0.attn1.to_out.0.bias",
-    "model.diffusion_model.input_blocks.4.1.transformer_blocks.0.ff.net.0.proj.weight": "down_blocks.1.attentions.0.transformer_blocks.0.ff.net.0.proj.weight",
-    "model.diffusion_model.input_blocks.4.1.transformer_blocks.0.ff.net.0.proj.bias": "down_blocks.1.attentions.0.transformer_blocks.0.ff.net.0.proj.bias",
-    "model.diffusion_model.input_blocks.4.1.transformer_blocks.0.ff.net.2.weight": "down_blocks.1.attentions.0.transformer_blocks.0.ff.net.2.weight",
-    "model.diffusion_model.input_blocks.4.1.transformer_blocks.0.ff.net.2.bias": "down_blocks.1.attentions.0.transformer_blocks.0.ff.net.2.bias",
-    "model.diffusion_model.input_blocks.4.1.transformer_blocks.0.attn2.to_q.weight": "down_blocks.1.attentions.0.transformer_blocks.0.attn2.to_q.weight",
-    "model.diffusion_model.input_blocks.4.1.transformer_blocks.0.attn2.to_k.weight": "down_blocks.1.attentions.0.transformer_blocks.0.attn2.to_k.weight",
-    "model.diffusion_model.input_blocks.4.1.transformer_blocks.0.attn2.to_v.weight": "down_blocks.1.attentions.0.transformer_blocks.0.attn2.to_v.weight",
-    "model.diffusion_model.input_blocks.4.1.transformer_blocks.0.attn2.to_out.0.weight": "down_blocks.1.attentions.0.transformer_blocks.0.attn2.to_out.0.weight",
-    "model.diffusion_model.input_blocks.4.1.transformer_blocks.0.attn2.to_out.0.bias": "down_blocks.1.attentions.0.transformer_blocks.0.attn2.to_out.0.bias",
-    "model.diffusion_model.input_blocks.4.1.transformer_blocks.0.norm1.weight": "down_blocks.1.attentions.0.transformer_blocks.0.norm1.weight",
-    "model.diffusion_model.input_blocks.4.1.transformer_blocks.0.norm1.bias": "down_blocks.1.attentions.0.transformer_blocks.0.norm1.bias",
-    "model.diffusion_model.input_blocks.4.1.transformer_blocks.0.norm2.weight": "down_blocks.1.attentions.0.transformer_blocks.0.norm2.weight",
-    "model.diffusion_model.input_blocks.4.1.transformer_blocks.0.norm2.bias": "down_blocks.1.attentions.0.transformer_blocks.0.norm2.bias",
-    "model.diffusion_model.input_blocks.4.1.transformer_blocks.0.norm3.weight": "down_blocks.1.attentions.0.transformer_blocks.0.norm3.weight",
-    "model.diffusion_model.input_blocks.4.1.transformer_blocks.0.norm3.bias": "down_blocks.1.attentions.0.transformer_blocks.0.norm3.bias",
-    "model.diffusion_model.input_blocks.4.1.proj_out.weight": "down_blocks.1.attentions.0.proj_out.weight",
-    "model.diffusion_model.input_blocks.4.1.proj_out.bias": "down_blocks.1.attentions.0.proj_out.bias",
-    "model.diffusion_model.input_blocks.5.0.in_layers.0.weight": "down_blocks.1.resnets.1.norm1.weight",
-    "model.diffusion_model.input_blocks.5.0.in_layers.0.bias": "down_blocks.1.resnets.1.norm1.bias",
-    "model.diffusion_model.input_blocks.5.0.in_layers.2.weight": "down_blocks.1.resnets.1.conv1.weight",
-    "model.diffusion_model.input_blocks.5.0.in_layers.2.bias": "down_blocks.1.resnets.1.conv1.bias",
-    "model.diffusion_model.input_blocks.5.0.emb_layers.1.weight": "down_blocks.1.resnets.1.time_emb_proj.weight",
-    "model.diffusion_model.input_blocks.5.0.emb_layers.1.bias": "down_blocks.1.resnets.1.time_emb_proj.bias",
-    "model.diffusion_model.input_blocks.5.0.out_layers.0.weight": "down_blocks.1.resnets.1.norm2.weight",
-    "model.diffusion_model.input_blocks.5.0.out_layers.0.bias": "down_blocks.1.resnets.1.norm2.bias",
-    "model.diffusion_model.input_blocks.5.0.out_layers.3.weight": "down_blocks.1.resnets.1.conv2.weight",
-    "model.diffusion_model.input_blocks.5.0.out_layers.3.bias": "down_blocks.1.resnets.1.conv2.bias",
-    "model.diffusion_model.input_blocks.5.1.norm.weight": "down_blocks.1.attentions.1.norm.weight",
-    "model.diffusion_model.input_blocks.5.1.norm.bias": "down_blocks.1.attentions.1.norm.bias",
-    "model.diffusion_model.input_blocks.5.1.proj_in.weight": "down_blocks.1.attentions.1.proj_in.weight",
-    "model.diffusion_model.input_blocks.5.1.proj_in.bias": "down_blocks.1.attentions.1.proj_in.bias",
-    "model.diffusion_model.input_blocks.5.1.transformer_blocks.0.attn1.to_q.weight": "down_blocks.1.attentions.1.transformer_blocks.0.attn1.to_q.weight",
-    "model.diffusion_model.input_blocks.5.1.transformer_blocks.0.attn1.to_k.weight": "down_blocks.1.attentions.1.transformer_blocks.0.attn1.to_k.weight",
-    "model.diffusion_model.input_blocks.5.1.transformer_blocks.0.attn1.to_v.weight": "down_blocks.1.attentions.1.transformer_blocks.0.attn1.to_v.weight",
-    "model.diffusion_model.input_blocks.5.1.transformer_blocks.0.attn1.to_out.0.weight": "down_blocks.1.attentions.1.transformer_blocks.0.attn1.to_out.0.weight",
-    "model.diffusion_model.input_blocks.5.1.transformer_blocks.0.attn1.to_out.0.bias": "down_blocks.1.attentions.1.transformer_blocks.0.attn1.to_out.0.bias",
-    "model.diffusion_model.input_blocks.5.1.transformer_blocks.0.ff.net.0.proj.weight": "down_blocks.1.attentions.1.transformer_blocks.0.ff.net.0.proj.weight",
-    "model.diffusion_model.input_blocks.5.1.transformer_blocks.0.ff.net.0.proj.bias": "down_blocks.1.attentions.1.transformer_blocks.0.ff.net.0.proj.bias",
-    "model.diffusion_model.input_blocks.5.1.transformer_blocks.0.ff.net.2.weight": "down_blocks.1.attentions.1.transformer_blocks.0.ff.net.2.weight",
-    "model.diffusion_model.input_blocks.5.1.transformer_blocks.0.ff.net.2.bias": "down_blocks.1.attentions.1.transformer_blocks.0.ff.net.2.bias",
-    "model.diffusion_model.input_blocks.5.1.transformer_blocks.0.attn2.to_q.weight": "down_blocks.1.attentions.1.transformer_blocks.0.attn2.to_q.weight",
-    "model.diffusion_model.input_blocks.5.1.transformer_blocks.0.attn2.to_k.weight": "down_blocks.1.attentions.1.transformer_blocks.0.attn2.to_k.weight",
-    "model.diffusion_model.input_blocks.5.1.transformer_blocks.0.attn2.to_v.weight": "down_blocks.1.attentions.1.transformer_blocks.0.attn2.to_v.weight",
-    "model.diffusion_model.input_blocks.5.1.transformer_blocks.0.attn2.to_out.0.weight": "down_blocks.1.attentions.1.transformer_blocks.0.attn2.to_out.0.weight",
-    "model.diffusion_model.input_blocks.5.1.transformer_blocks.0.attn2.to_out.0.bias": "down_blocks.1.attentions.1.transformer_blocks.0.attn2.to_out.0.bias",
-    "model.diffusion_model.input_blocks.5.1.transformer_blocks.0.norm1.weight": "down_blocks.1.attentions.1.transformer_blocks.0.norm1.weight",
-    "model.diffusion_model.input_blocks.5.1.transformer_blocks.0.norm1.bias": "down_blocks.1.attentions.1.transformer_blocks.0.norm1.bias",
-    "model.diffusion_model.input_blocks.5.1.transformer_blocks.0.norm2.weight": "down_blocks.1.attentions.1.transformer_blocks.0.norm2.weight",
-    "model.diffusion_model.input_blocks.5.1.transformer_blocks.0.norm2.bias": "down_blocks.1.attentions.1.transformer_blocks.0.norm2.bias",
-    "model.diffusion_model.input_blocks.5.1.transformer_blocks.0.norm3.weight": "down_blocks.1.attentions.1.transformer_blocks.0.norm3.weight",
-    "model.diffusion_model.input_blocks.5.1.transformer_blocks.0.norm3.bias": "down_blocks.1.attentions.1.transformer_blocks.0.norm3.bias",
-    "model.diffusion_model.input_blocks.5.1.proj_out.weight": "down_blocks.1.attentions.1.proj_out.weight",
-    "model.diffusion_model.input_blocks.5.1.proj_out.bias": "down_blocks.1.attentions.1.proj_out.bias",
-    "model.diffusion_model.input_blocks.6.0.op.weight": "down_blocks.1.downsamplers.0.conv.weight",
-    "model.diffusion_model.input_blocks.6.0.op.bias": "down_blocks.1.downsamplers.0.conv.bias",
-    "model.diffusion_model.input_blocks.7.0.in_layers.0.weight": "down_blocks.2.resnets.0.norm1.weight",
-    "model.diffusion_model.input_blocks.7.0.in_layers.0.bias": "down_blocks.2.resnets.0.norm1.bias",
-    "model.diffusion_model.input_blocks.7.0.in_layers.2.weight": "down_blocks.2.resnets.0.conv1.weight",
-    "model.diffusion_model.input_blocks.7.0.in_layers.2.bias": "down_blocks.2.resnets.0.conv1.bias",
-    "model.diffusion_model.input_blocks.7.0.emb_layers.1.weight": "down_blocks.2.resnets.0.time_emb_proj.weight",
-    "model.diffusion_model.input_blocks.7.0.emb_layers.1.bias": "down_blocks.2.resnets.0.time_emb_proj.bias",
-    "model.diffusion_model.input_blocks.7.0.out_layers.0.weight": "down_blocks.2.resnets.0.norm2.weight",
-    "model.diffusion_model.input_blocks.7.0.out_layers.0.bias": "down_blocks.2.resnets.0.norm2.bias",
-    "model.diffusion_model.input_blocks.7.0.out_layers.3.weight": "down_blocks.2.resnets.0.conv2.weight",
-    "model.diffusion_model.input_blocks.7.0.out_layers.3.bias": "down_blocks.2.resnets.0.conv2.bias",
-    "model.diffusion_model.input_blocks.7.0.skip_connection.weight": "down_blocks.2.resnets.0.conv_shortcut.weight",
-    "model.diffusion_model.input_blocks.7.0.skip_connection.bias": "down_blocks.2.resnets.0.conv_shortcut.bias",
-    "model.diffusion_model.input_blocks.7.1.norm.weight": "down_blocks.2.attentions.0.norm.weight",
-    "model.diffusion_model.input_blocks.7.1.norm.bias": "down_blocks.2.attentions.0.norm.bias",
-    "model.diffusion_model.input_blocks.7.1.proj_in.weight": "down_blocks.2.attentions.0.proj_in.weight",
-    "model.diffusion_model.input_blocks.7.1.proj_in.bias": "down_blocks.2.attentions.0.proj_in.bias",
-    "model.diffusion_model.input_blocks.7.1.transformer_blocks.0.attn1.to_q.weight": "down_blocks.2.attentions.0.transformer_blocks.0.attn1.to_q.weight",
-    "model.diffusion_model.input_blocks.7.1.transformer_blocks.0.attn1.to_k.weight": "down_blocks.2.attentions.0.transformer_blocks.0.attn1.to_k.weight",
-    "model.diffusion_model.input_blocks.7.1.transformer_blocks.0.attn1.to_v.weight": "down_blocks.2.attentions.0.transformer_blocks.0.attn1.to_v.weight",
-    "model.diffusion_model.input_blocks.7.1.transformer_blocks.0.attn1.to_out.0.weight": "down_blocks.2.attentions.0.transformer_blocks.0.attn1.to_out.0.weight",
-    "model.diffusion_model.input_blocks.7.1.transformer_blocks.0.attn1.to_out.0.bias": "down_blocks.2.attentions.0.transformer_blocks.0.attn1.to_out.0.bias",
-    "model.diffusion_model.input_blocks.7.1.transformer_blocks.0.ff.net.0.proj.weight": "down_blocks.2.attentions.0.transformer_blocks.0.ff.net.0.proj.weight",
-    "model.diffusion_model.input_blocks.7.1.transformer_blocks.0.ff.net.0.proj.bias": "down_blocks.2.attentions.0.transformer_blocks.0.ff.net.0.proj.bias",
-    "model.diffusion_model.input_blocks.7.1.transformer_blocks.0.ff.net.2.weight": "down_blocks.2.attentions.0.transformer_blocks.0.ff.net.2.weight",
-    "model.diffusion_model.input_blocks.7.1.transformer_blocks.0.ff.net.2.bias": "down_blocks.2.attentions.0.transformer_blocks.0.ff.net.2.bias",
-    "model.diffusion_model.input_blocks.7.1.transformer_blocks.0.attn2.to_q.weight": "down_blocks.2.attentions.0.transformer_blocks.0.attn2.to_q.weight",
-    "model.diffusion_model.input_blocks.7.1.transformer_blocks.0.attn2.to_k.weight": "down_blocks.2.attentions.0.transformer_blocks.0.attn2.to_k.weight",
-    "model.diffusion_model.input_blocks.7.1.transformer_blocks.0.attn2.to_v.weight": "down_blocks.2.attentions.0.transformer_blocks.0.attn2.to_v.weight",
-    "model.diffusion_model.input_blocks.7.1.transformer_blocks.0.attn2.to_out.0.weight": "down_blocks.2.attentions.0.transformer_blocks.0.attn2.to_out.0.weight",
-    "model.diffusion_model.input_blocks.7.1.transformer_blocks.0.attn2.to_out.0.bias": "down_blocks.2.attentions.0.transformer_blocks.0.attn2.to_out.0.bias",
-    "model.diffusion_model.input_blocks.7.1.transformer_blocks.0.norm1.weight": "down_blocks.2.attentions.0.transformer_blocks.0.norm1.weight",
-    "model.diffusion_model.input_blocks.7.1.transformer_blocks.0.norm1.bias": "down_blocks.2.attentions.0.transformer_blocks.0.norm1.bias",
-    "model.diffusion_model.input_blocks.7.1.transformer_blocks.0.norm2.weight": "down_blocks.2.attentions.0.transformer_blocks.0.norm2.weight",
-    "model.diffusion_model.input_blocks.7.1.transformer_blocks.0.norm2.bias": "down_blocks.2.attentions.0.transformer_blocks.0.norm2.bias",
-    "model.diffusion_model.input_blocks.7.1.transformer_blocks.0.norm3.weight": "down_blocks.2.attentions.0.transformer_blocks.0.norm3.weight",
-    "model.diffusion_model.input_blocks.7.1.transformer_blocks.0.norm3.bias": "down_blocks.2.attentions.0.transformer_blocks.0.norm3.bias",
-    "model.diffusion_model.input_blocks.7.1.proj_out.weight": "down_blocks.2.attentions.0.proj_out.weight",
-    "model.diffusion_model.input_blocks.7.1.proj_out.bias": "down_blocks.2.attentions.0.proj_out.bias",
-    "model.diffusion_model.input_blocks.8.0.in_layers.0.weight": "down_blocks.2.resnets.1.norm1.weight",
-    "model.diffusion_model.input_blocks.8.0.in_layers.0.bias": "down_blocks.2.resnets.1.norm1.bias",
-    "model.diffusion_model.input_blocks.8.0.in_layers.2.weight": "down_blocks.2.resnets.1.conv1.weight",
-    "model.diffusion_model.input_blocks.8.0.in_layers.2.bias": "down_blocks.2.resnets.1.conv1.bias",
-    "model.diffusion_model.input_blocks.8.0.emb_layers.1.weight": "down_blocks.2.resnets.1.time_emb_proj.weight",
-    "model.diffusion_model.input_blocks.8.0.emb_layers.1.bias": "down_blocks.2.resnets.1.time_emb_proj.bias",
-    "model.diffusion_model.input_blocks.8.0.out_layers.0.weight": "down_blocks.2.resnets.1.norm2.weight",
-    "model.diffusion_model.input_blocks.8.0.out_layers.0.bias": "down_blocks.2.resnets.1.norm2.bias",
-    "model.diffusion_model.input_blocks.8.0.out_layers.3.weight": "down_blocks.2.resnets.1.conv2.weight",
-    "model.diffusion_model.input_blocks.8.0.out_layers.3.bias": "down_blocks.2.resnets.1.conv2.bias",
-    "model.diffusion_model.input_blocks.8.1.norm.weight": "down_blocks.2.attentions.1.norm.weight",
-    "model.diffusion_model.input_blocks.8.1.norm.bias": "down_blocks.2.attentions.1.norm.bias",
-    "model.diffusion_model.input_blocks.8.1.proj_in.weight": "down_blocks.2.attentions.1.proj_in.weight",
-    "model.diffusion_model.input_blocks.8.1.proj_in.bias": "down_blocks.2.attentions.1.proj_in.bias",
-    "model.diffusion_model.input_blocks.8.1.transformer_blocks.0.attn1.to_q.weight": "down_blocks.2.attentions.1.transformer_blocks.0.attn1.to_q.weight",
-    "model.diffusion_model.input_blocks.8.1.transformer_blocks.0.attn1.to_k.weight": "down_blocks.2.attentions.1.transformer_blocks.0.attn1.to_k.weight",
-    "model.diffusion_model.input_blocks.8.1.transformer_blocks.0.attn1.to_v.weight": "down_blocks.2.attentions.1.transformer_blocks.0.attn1.to_v.weight",
-    "model.diffusion_model.input_blocks.8.1.transformer_blocks.0.attn1.to_out.0.weight": "down_blocks.2.attentions.1.transformer_blocks.0.attn1.to_out.0.weight",
-    "model.diffusion_model.input_blocks.8.1.transformer_blocks.0.attn1.to_out.0.bias": "down_blocks.2.attentions.1.transformer_blocks.0.attn1.to_out.0.bias",
-    "model.diffusion_model.input_blocks.8.1.transformer_blocks.0.ff.net.0.proj.weight": "down_blocks.2.attentions.1.transformer_blocks.0.ff.net.0.proj.weight",
-    "model.diffusion_model.input_blocks.8.1.transformer_blocks.0.ff.net.0.proj.bias": "down_blocks.2.attentions.1.transformer_blocks.0.ff.net.0.proj.bias",
-    "model.diffusion_model.input_blocks.8.1.transformer_blocks.0.ff.net.2.weight": "down_blocks.2.attentions.1.transformer_blocks.0.ff.net.2.weight",
-    "model.diffusion_model.input_blocks.8.1.transformer_blocks.0.ff.net.2.bias": "down_blocks.2.attentions.1.transformer_blocks.0.ff.net.2.bias",
-    "model.diffusion_model.input_blocks.8.1.transformer_blocks.0.attn2.to_q.weight": "down_blocks.2.attentions.1.transformer_blocks.0.attn2.to_q.weight",
-    "model.diffusion_model.input_blocks.8.1.transformer_blocks.0.attn2.to_k.weight": "down_blocks.2.attentions.1.transformer_blocks.0.attn2.to_k.weight",
-    "model.diffusion_model.input_blocks.8.1.transformer_blocks.0.attn2.to_v.weight": "down_blocks.2.attentions.1.transformer_blocks.0.attn2.to_v.weight",
-    "model.diffusion_model.input_blocks.8.1.transformer_blocks.0.attn2.to_out.0.weight": "down_blocks.2.attentions.1.transformer_blocks.0.attn2.to_out.0.weight",
-    "model.diffusion_model.input_blocks.8.1.transformer_blocks.0.attn2.to_out.0.bias": "down_blocks.2.attentions.1.transformer_blocks.0.attn2.to_out.0.bias",
-    "model.diffusion_model.input_blocks.8.1.transformer_blocks.0.norm1.weight": "down_blocks.2.attentions.1.transformer_blocks.0.norm1.weight",
-    "model.diffusion_model.input_blocks.8.1.transformer_blocks.0.norm1.bias": "down_blocks.2.attentions.1.transformer_blocks.0.norm1.bias",
-    "model.diffusion_model.input_blocks.8.1.transformer_blocks.0.norm2.weight": "down_blocks.2.attentions.1.transformer_blocks.0.norm2.weight",
-    "model.diffusion_model.input_blocks.8.1.transformer_blocks.0.norm2.bias": "down_blocks.2.attentions.1.transformer_blocks.0.norm2.bias",
-    "model.diffusion_model.input_blocks.8.1.transformer_blocks.0.norm3.weight": "down_blocks.2.attentions.1.transformer_blocks.0.norm3.weight",
-    "model.diffusion_model.input_blocks.8.1.transformer_blocks.0.norm3.bias": "down_blocks.2.attentions.1.transformer_blocks.0.norm3.bias",
-    "model.diffusion_model.input_blocks.8.1.proj_out.weight": "down_blocks.2.attentions.1.proj_out.weight",
-    "model.diffusion_model.input_blocks.8.1.proj_out.bias": "down_blocks.2.attentions.1.proj_out.bias",
-    "model.diffusion_model.input_blocks.9.0.op.weight": "down_blocks.2.downsamplers.0.conv.weight",
-    "model.diffusion_model.input_blocks.9.0.op.bias": "down_blocks.2.downsamplers.0.conv.bias",
-    "model.diffusion_model.input_blocks.10.0.in_layers.0.weight": "down_blocks.3.resnets.0.norm1.weight",
-    "model.diffusion_model.input_blocks.10.0.in_layers.0.bias": "down_blocks.3.resnets.0.norm1.bias",
-    "model.diffusion_model.input_blocks.10.0.in_layers.2.weight": "down_blocks.3.resnets.0.conv1.weight",
-    "model.diffusion_model.input_blocks.10.0.in_layers.2.bias": "down_blocks.3.resnets.0.conv1.bias",
-    "model.diffusion_model.input_blocks.10.0.emb_layers.1.weight": "down_blocks.3.resnets.0.time_emb_proj.weight",
-    "model.diffusion_model.input_blocks.10.0.emb_layers.1.bias": "down_blocks.3.resnets.0.time_emb_proj.bias",
-    "model.diffusion_model.input_blocks.10.0.out_layers.0.weight": "down_blocks.3.resnets.0.norm2.weight",
-    "model.diffusion_model.input_blocks.10.0.out_layers.0.bias": "down_blocks.3.resnets.0.norm2.bias",
-    "model.diffusion_model.input_blocks.10.0.out_layers.3.weight": "down_blocks.3.resnets.0.conv2.weight",
-    "model.diffusion_model.input_blocks.10.0.out_layers.3.bias": "down_blocks.3.resnets.0.conv2.bias",
-    "model.diffusion_model.input_blocks.11.0.in_layers.0.weight": "down_blocks.3.resnets.1.norm1.weight",
-    "model.diffusion_model.input_blocks.11.0.in_layers.0.bias": "down_blocks.3.resnets.1.norm1.bias",
-    "model.diffusion_model.input_blocks.11.0.in_layers.2.weight": "down_blocks.3.resnets.1.conv1.weight",
-    "model.diffusion_model.input_blocks.11.0.in_layers.2.bias": "down_blocks.3.resnets.1.conv1.bias",
-    "model.diffusion_model.input_blocks.11.0.emb_layers.1.weight": "down_blocks.3.resnets.1.time_emb_proj.weight",
-    "model.diffusion_model.input_blocks.11.0.emb_layers.1.bias": "down_blocks.3.resnets.1.time_emb_proj.bias",
-    "model.diffusion_model.input_blocks.11.0.out_layers.0.weight": "down_blocks.3.resnets.1.norm2.weight",
-    "model.diffusion_model.input_blocks.11.0.out_layers.0.bias": "down_blocks.3.resnets.1.norm2.bias",
-    "model.diffusion_model.input_blocks.11.0.out_layers.3.weight": "down_blocks.3.resnets.1.conv2.weight",
-    "model.diffusion_model.input_blocks.11.0.out_layers.3.bias": "down_blocks.3.resnets.1.conv2.bias",
-    "model.diffusion_model.middle_block.0.in_layers.0.weight": "mid_block.resnets.0.norm1.weight",
-    "model.diffusion_model.middle_block.0.in_layers.0.bias": "mid_block.resnets.0.norm1.bias",
-    "model.diffusion_model.middle_block.0.in_layers.2.weight": "mid_block.resnets.0.conv1.weight",
-    "model.diffusion_model.middle_block.0.in_layers.2.bias": "mid_block.resnets.0.conv1.bias",
-    "model.diffusion_model.middle_block.0.emb_layers.1.weight": "mid_block.resnets.0.time_emb_proj.weight",
-    "model.diffusion_model.middle_block.0.emb_layers.1.bias": "mid_block.resnets.0.time_emb_proj.bias",
-    "model.diffusion_model.middle_block.0.out_layers.0.weight": "mid_block.resnets.0.norm2.weight",
-    "model.diffusion_model.middle_block.0.out_layers.0.bias": "mid_block.resnets.0.norm2.bias",
-    "model.diffusion_model.middle_block.0.out_layers.3.weight": "mid_block.resnets.0.conv2.weight",
-    "model.diffusion_model.middle_block.0.out_layers.3.bias": "mid_block.resnets.0.conv2.bias",
-    "model.diffusion_model.middle_block.2.in_layers.0.weight": "mid_block.resnets.1.norm1.weight",
-    "model.diffusion_model.middle_block.2.in_layers.0.bias": "mid_block.resnets.1.norm1.bias",
-    "model.diffusion_model.middle_block.2.in_layers.2.weight": "mid_block.resnets.1.conv1.weight",
-    "model.diffusion_model.middle_block.2.in_layers.2.bias": "mid_block.resnets.1.conv1.bias",
-    "model.diffusion_model.middle_block.2.emb_layers.1.weight": "mid_block.resnets.1.time_emb_proj.weight",
-    "model.diffusion_model.middle_block.2.emb_layers.1.bias": "mid_block.resnets.1.time_emb_proj.bias",
-    "model.diffusion_model.middle_block.2.out_layers.0.weight": "mid_block.resnets.1.norm2.weight",
-    "model.diffusion_model.middle_block.2.out_layers.0.bias": "mid_block.resnets.1.norm2.bias",
-    "model.diffusion_model.middle_block.2.out_layers.3.weight": "mid_block.resnets.1.conv2.weight",
-    "model.diffusion_model.middle_block.2.out_layers.3.bias": "mid_block.resnets.1.conv2.bias",
-    "model.diffusion_model.middle_block.1.norm.weight": "mid_block.attentions.0.norm.weight",
-    "model.diffusion_model.middle_block.1.norm.bias": "mid_block.attentions.0.norm.bias",
-    "model.diffusion_model.middle_block.1.proj_in.weight": "mid_block.attentions.0.proj_in.weight",
-    "model.diffusion_model.middle_block.1.proj_in.bias": "mid_block.attentions.0.proj_in.bias",
-    "model.diffusion_model.middle_block.1.transformer_blocks.0.attn1.to_q.weight": "mid_block.attentions.0.transformer_blocks.0.attn1.to_q.weight",
-    "model.diffusion_model.middle_block.1.transformer_blocks.0.attn1.to_k.weight": "mid_block.attentions.0.transformer_blocks.0.attn1.to_k.weight",
-    "model.diffusion_model.middle_block.1.transformer_blocks.0.attn1.to_v.weight": "mid_block.attentions.0.transformer_blocks.0.attn1.to_v.weight",
-    "model.diffusion_model.middle_block.1.transformer_blocks.0.attn1.to_out.0.weight": "mid_block.attentions.0.transformer_blocks.0.attn1.to_out.0.weight",
-    "model.diffusion_model.middle_block.1.transformer_blocks.0.attn1.to_out.0.bias": "mid_block.attentions.0.transformer_blocks.0.attn1.to_out.0.bias",
-    "model.diffusion_model.middle_block.1.transformer_blocks.0.ff.net.0.proj.weight": "mid_block.attentions.0.transformer_blocks.0.ff.net.0.proj.weight",
-    "model.diffusion_model.middle_block.1.transformer_blocks.0.ff.net.0.proj.bias": "mid_block.attentions.0.transformer_blocks.0.ff.net.0.proj.bias",
-    "model.diffusion_model.middle_block.1.transformer_blocks.0.ff.net.2.weight": "mid_block.attentions.0.transformer_blocks.0.ff.net.2.weight",
-    "model.diffusion_model.middle_block.1.transformer_blocks.0.ff.net.2.bias": "mid_block.attentions.0.transformer_blocks.0.ff.net.2.bias",
-    "model.diffusion_model.middle_block.1.transformer_blocks.0.attn2.to_q.weight": "mid_block.attentions.0.transformer_blocks.0.attn2.to_q.weight",
-    "model.diffusion_model.middle_block.1.transformer_blocks.0.attn2.to_k.weight": "mid_block.attentions.0.transformer_blocks.0.attn2.to_k.weight",
-    "model.diffusion_model.middle_block.1.transformer_blocks.0.attn2.to_v.weight": "mid_block.attentions.0.transformer_blocks.0.attn2.to_v.weight",
-    "model.diffusion_model.middle_block.1.transformer_blocks.0.attn2.to_out.0.weight": "mid_block.attentions.0.transformer_blocks.0.attn2.to_out.0.weight",
-    "model.diffusion_model.middle_block.1.transformer_blocks.0.attn2.to_out.0.bias": "mid_block.attentions.0.transformer_blocks.0.attn2.to_out.0.bias",
-    "model.diffusion_model.middle_block.1.transformer_blocks.0.norm1.weight": "mid_block.attentions.0.transformer_blocks.0.norm1.weight",
-    "model.diffusion_model.middle_block.1.transformer_blocks.0.norm1.bias": "mid_block.attentions.0.transformer_blocks.0.norm1.bias",
-    "model.diffusion_model.middle_block.1.transformer_blocks.0.norm2.weight": "mid_block.attentions.0.transformer_blocks.0.norm2.weight",
-    "model.diffusion_model.middle_block.1.transformer_blocks.0.norm2.bias": "mid_block.attentions.0.transformer_blocks.0.norm2.bias",
-    "model.diffusion_model.middle_block.1.transformer_blocks.0.norm3.weight": "mid_block.attentions.0.transformer_blocks.0.norm3.weight",
-    "model.diffusion_model.middle_block.1.transformer_blocks.0.norm3.bias": "mid_block.attentions.0.transformer_blocks.0.norm3.bias",
-    "model.diffusion_model.middle_block.1.proj_out.weight": "mid_block.attentions.0.proj_out.weight",
-    "model.diffusion_model.middle_block.1.proj_out.bias": "mid_block.attentions.0.proj_out.bias",
-    "model.diffusion_model.output_blocks.0.0.in_layers.0.weight": "up_blocks.0.resnets.0.norm1.weight",
-    "model.diffusion_model.output_blocks.0.0.in_layers.0.bias": "up_blocks.0.resnets.0.norm1.bias",
-    "model.diffusion_model.output_blocks.0.0.in_layers.2.weight": "up_blocks.0.resnets.0.conv1.weight",
-    "model.diffusion_model.output_blocks.0.0.in_layers.2.bias": "up_blocks.0.resnets.0.conv1.bias",
-    "model.diffusion_model.output_blocks.0.0.emb_layers.1.weight": "up_blocks.0.resnets.0.time_emb_proj.weight",
-    "model.diffusion_model.output_blocks.0.0.emb_layers.1.bias": "up_blocks.0.resnets.0.time_emb_proj.bias",
-    "model.diffusion_model.output_blocks.0.0.out_layers.0.weight": "up_blocks.0.resnets.0.norm2.weight",
-    "model.diffusion_model.output_blocks.0.0.out_layers.0.bias": "up_blocks.0.resnets.0.norm2.bias",
-    "model.diffusion_model.output_blocks.0.0.out_layers.3.weight": "up_blocks.0.resnets.0.conv2.weight",
-    "model.diffusion_model.output_blocks.0.0.out_layers.3.bias": "up_blocks.0.resnets.0.conv2.bias",
-    "model.diffusion_model.output_blocks.0.0.skip_connection.weight": "up_blocks.0.resnets.0.conv_shortcut.weight",
-    "model.diffusion_model.output_blocks.0.0.skip_connection.bias": "up_blocks.0.resnets.0.conv_shortcut.bias",
-    "model.diffusion_model.output_blocks.1.0.in_layers.0.weight": "up_blocks.0.resnets.1.norm1.weight",
-    "model.diffusion_model.output_blocks.1.0.in_layers.0.bias": "up_blocks.0.resnets.1.norm1.bias",
-    "model.diffusion_model.output_blocks.1.0.in_layers.2.weight": "up_blocks.0.resnets.1.conv1.weight",
-    "model.diffusion_model.output_blocks.1.0.in_layers.2.bias": "up_blocks.0.resnets.1.conv1.bias",
-    "model.diffusion_model.output_blocks.1.0.emb_layers.1.weight": "up_blocks.0.resnets.1.time_emb_proj.weight",
-    "model.diffusion_model.output_blocks.1.0.emb_layers.1.bias": "up_blocks.0.resnets.1.time_emb_proj.bias",
-    "model.diffusion_model.output_blocks.1.0.out_layers.0.weight": "up_blocks.0.resnets.1.norm2.weight",
-    "model.diffusion_model.output_blocks.1.0.out_layers.0.bias": "up_blocks.0.resnets.1.norm2.bias",
-    "model.diffusion_model.output_blocks.1.0.out_layers.3.weight": "up_blocks.0.resnets.1.conv2.weight",
-    "model.diffusion_model.output_blocks.1.0.out_layers.3.bias": "up_blocks.0.resnets.1.conv2.bias",
-    "model.diffusion_model.output_blocks.1.0.skip_connection.weight": "up_blocks.0.resnets.1.conv_shortcut.weight",
-    "model.diffusion_model.output_blocks.1.0.skip_connection.bias": "up_blocks.0.resnets.1.conv_shortcut.bias",
-    "model.diffusion_model.output_blocks.2.0.in_layers.0.weight": "up_blocks.0.resnets.2.norm1.weight",
-    "model.diffusion_model.output_blocks.2.0.in_layers.0.bias": "up_blocks.0.resnets.2.norm1.bias",
-    "model.diffusion_model.output_blocks.2.0.in_layers.2.weight": "up_blocks.0.resnets.2.conv1.weight",
-    "model.diffusion_model.output_blocks.2.0.in_layers.2.bias": "up_blocks.0.resnets.2.conv1.bias",
-    "model.diffusion_model.output_blocks.2.0.emb_layers.1.weight": "up_blocks.0.resnets.2.time_emb_proj.weight",
-    "model.diffusion_model.output_blocks.2.0.emb_layers.1.bias": "up_blocks.0.resnets.2.time_emb_proj.bias",
-    "model.diffusion_model.output_blocks.2.0.out_layers.0.weight": "up_blocks.0.resnets.2.norm2.weight",
-    "model.diffusion_model.output_blocks.2.0.out_layers.0.bias": "up_blocks.0.resnets.2.norm2.bias",
-    "model.diffusion_model.output_blocks.2.0.out_layers.3.weight": "up_blocks.0.resnets.2.conv2.weight",
-    "model.diffusion_model.output_blocks.2.0.out_layers.3.bias": "up_blocks.0.resnets.2.conv2.bias",
-    "model.diffusion_model.output_blocks.2.0.skip_connection.weight": "up_blocks.0.resnets.2.conv_shortcut.weight",
-    "model.diffusion_model.output_blocks.2.0.skip_connection.bias": "up_blocks.0.resnets.2.conv_shortcut.bias",
-    "model.diffusion_model.output_blocks.2.1.conv.weight": "up_blocks.0.upsamplers.0.conv.weight",
-    "model.diffusion_model.output_blocks.2.1.conv.bias": "up_blocks.0.upsamplers.0.conv.bias",
-    "model.diffusion_model.output_blocks.3.0.in_layers.0.weight": "up_blocks.1.resnets.0.norm1.weight",
-    "model.diffusion_model.output_blocks.3.0.in_layers.0.bias": "up_blocks.1.resnets.0.norm1.bias",
-    "model.diffusion_model.output_blocks.3.0.in_layers.2.weight": "up_blocks.1.resnets.0.conv1.weight",
-    "model.diffusion_model.output_blocks.3.0.in_layers.2.bias": "up_blocks.1.resnets.0.conv1.bias",
-    "model.diffusion_model.output_blocks.3.0.emb_layers.1.weight": "up_blocks.1.resnets.0.time_emb_proj.weight",
-    "model.diffusion_model.output_blocks.3.0.emb_layers.1.bias": "up_blocks.1.resnets.0.time_emb_proj.bias",
-    "model.diffusion_model.output_blocks.3.0.out_layers.0.weight": "up_blocks.1.resnets.0.norm2.weight",
-    "model.diffusion_model.output_blocks.3.0.out_layers.0.bias": "up_blocks.1.resnets.0.norm2.bias",
-    "model.diffusion_model.output_blocks.3.0.out_layers.3.weight": "up_blocks.1.resnets.0.conv2.weight",
-    "model.diffusion_model.output_blocks.3.0.out_layers.3.bias": "up_blocks.1.resnets.0.conv2.bias",
-    "model.diffusion_model.output_blocks.3.0.skip_connection.weight": "up_blocks.1.resnets.0.conv_shortcut.weight",
-    "model.diffusion_model.output_blocks.3.0.skip_connection.bias": "up_blocks.1.resnets.0.conv_shortcut.bias",
-    "model.diffusion_model.output_blocks.3.1.norm.weight": "up_blocks.1.attentions.0.norm.weight",
-    "model.diffusion_model.output_blocks.3.1.norm.bias": "up_blocks.1.attentions.0.norm.bias",
-    "model.diffusion_model.output_blocks.3.1.proj_in.weight": "up_blocks.1.attentions.0.proj_in.weight",
-    "model.diffusion_model.output_blocks.3.1.proj_in.bias": "up_blocks.1.attentions.0.proj_in.bias",
-    "model.diffusion_model.output_blocks.3.1.transformer_blocks.0.attn1.to_q.weight": "up_blocks.1.attentions.0.transformer_blocks.0.attn1.to_q.weight",
-    "model.diffusion_model.output_blocks.3.1.transformer_blocks.0.attn1.to_k.weight": "up_blocks.1.attentions.0.transformer_blocks.0.attn1.to_k.weight",
-    "model.diffusion_model.output_blocks.3.1.transformer_blocks.0.attn1.to_v.weight": "up_blocks.1.attentions.0.transformer_blocks.0.attn1.to_v.weight",
-    "model.diffusion_model.output_blocks.3.1.transformer_blocks.0.attn1.to_out.0.weight": "up_blocks.1.attentions.0.transformer_blocks.0.attn1.to_out.0.weight",
-    "model.diffusion_model.output_blocks.3.1.transformer_blocks.0.attn1.to_out.0.bias": "up_blocks.1.attentions.0.transformer_blocks.0.attn1.to_out.0.bias",
-    "model.diffusion_model.output_blocks.3.1.transformer_blocks.0.ff.net.0.proj.weight": "up_blocks.1.attentions.0.transformer_blocks.0.ff.net.0.proj.weight",
-    "model.diffusion_model.output_blocks.3.1.transformer_blocks.0.ff.net.0.proj.bias": "up_blocks.1.attentions.0.transformer_blocks.0.ff.net.0.proj.bias",
-    "model.diffusion_model.output_blocks.3.1.transformer_blocks.0.ff.net.2.weight": "up_blocks.1.attentions.0.transformer_blocks.0.ff.net.2.weight",
-    "model.diffusion_model.output_blocks.3.1.transformer_blocks.0.ff.net.2.bias": "up_blocks.1.attentions.0.transformer_blocks.0.ff.net.2.bias",
-    "model.diffusion_model.output_blocks.3.1.transformer_blocks.0.attn2.to_q.weight": "up_blocks.1.attentions.0.transformer_blocks.0.attn2.to_q.weight",
-    "model.diffusion_model.output_blocks.3.1.transformer_blocks.0.attn2.to_k.weight": "up_blocks.1.attentions.0.transformer_blocks.0.attn2.to_k.weight",
-    "model.diffusion_model.output_blocks.3.1.transformer_blocks.0.attn2.to_v.weight": "up_blocks.1.attentions.0.transformer_blocks.0.attn2.to_v.weight",
-    "model.diffusion_model.output_blocks.3.1.transformer_blocks.0.attn2.to_out.0.weight": "up_blocks.1.attentions.0.transformer_blocks.0.attn2.to_out.0.weight",
-    "model.diffusion_model.output_blocks.3.1.transformer_blocks.0.attn2.to_out.0.bias": "up_blocks.1.attentions.0.transformer_blocks.0.attn2.to_out.0.bias",
-    "model.diffusion_model.output_blocks.3.1.transformer_blocks.0.norm1.weight": "up_blocks.1.attentions.0.transformer_blocks.0.norm1.weight",
-    "model.diffusion_model.output_blocks.3.1.transformer_blocks.0.norm1.bias": "up_blocks.1.attentions.0.transformer_blocks.0.norm1.bias",
-    "model.diffusion_model.output_blocks.3.1.transformer_blocks.0.norm2.weight": "up_blocks.1.attentions.0.transformer_blocks.0.norm2.weight",
-    "model.diffusion_model.output_blocks.3.1.transformer_blocks.0.norm2.bias": "up_blocks.1.attentions.0.transformer_blocks.0.norm2.bias",
-    "model.diffusion_model.output_blocks.3.1.transformer_blocks.0.norm3.weight": "up_blocks.1.attentions.0.transformer_blocks.0.norm3.weight",
-    "model.diffusion_model.output_blocks.3.1.transformer_blocks.0.norm3.bias": "up_blocks.1.attentions.0.transformer_blocks.0.norm3.bias",
-    "model.diffusion_model.output_blocks.3.1.proj_out.weight": "up_blocks.1.attentions.0.proj_out.weight",
-    "model.diffusion_model.output_blocks.3.1.proj_out.bias": "up_blocks.1.attentions.0.proj_out.bias",
-    "model.diffusion_model.output_blocks.4.0.in_layers.0.weight": "up_blocks.1.resnets.1.norm1.weight",
-    "model.diffusion_model.output_blocks.4.0.in_layers.0.bias": "up_blocks.1.resnets.1.norm1.bias",
-    "model.diffusion_model.output_blocks.4.0.in_layers.2.weight": "up_blocks.1.resnets.1.conv1.weight",
-    "model.diffusion_model.output_blocks.4.0.in_layers.2.bias": "up_blocks.1.resnets.1.conv1.bias",
-    "model.diffusion_model.output_blocks.4.0.emb_layers.1.weight": "up_blocks.1.resnets.1.time_emb_proj.weight",
-    "model.diffusion_model.output_blocks.4.0.emb_layers.1.bias": "up_blocks.1.resnets.1.time_emb_proj.bias",
-    "model.diffusion_model.output_blocks.4.0.out_layers.0.weight": "up_blocks.1.resnets.1.norm2.weight",
-    "model.diffusion_model.output_blocks.4.0.out_layers.0.bias": "up_blocks.1.resnets.1.norm2.bias",
-    "model.diffusion_model.output_blocks.4.0.out_layers.3.weight": "up_blocks.1.resnets.1.conv2.weight",
-    "model.diffusion_model.output_blocks.4.0.out_layers.3.bias": "up_blocks.1.resnets.1.conv2.bias",
-    "model.diffusion_model.output_blocks.4.0.skip_connection.weight": "up_blocks.1.resnets.1.conv_shortcut.weight",
-    "model.diffusion_model.output_blocks.4.0.skip_connection.bias": "up_blocks.1.resnets.1.conv_shortcut.bias",
-    "model.diffusion_model.output_blocks.4.1.norm.weight": "up_blocks.1.attentions.1.norm.weight",
-    "model.diffusion_model.output_blocks.4.1.norm.bias": "up_blocks.1.attentions.1.norm.bias",
-    "model.diffusion_model.output_blocks.4.1.proj_in.weight": "up_blocks.1.attentions.1.proj_in.weight",
-    "model.diffusion_model.output_blocks.4.1.proj_in.bias": "up_blocks.1.attentions.1.proj_in.bias",
-    "model.diffusion_model.output_blocks.4.1.transformer_blocks.0.attn1.to_q.weight": "up_blocks.1.attentions.1.transformer_blocks.0.attn1.to_q.weight",
-    "model.diffusion_model.output_blocks.4.1.transformer_blocks.0.attn1.to_k.weight": "up_blocks.1.attentions.1.transformer_blocks.0.attn1.to_k.weight",
-    "model.diffusion_model.output_blocks.4.1.transformer_blocks.0.attn1.to_v.weight": "up_blocks.1.attentions.1.transformer_blocks.0.attn1.to_v.weight",
-    "model.diffusion_model.output_blocks.4.1.transformer_blocks.0.attn1.to_out.0.weight": "up_blocks.1.attentions.1.transformer_blocks.0.attn1.to_out.0.weight",
-    "model.diffusion_model.output_blocks.4.1.transformer_blocks.0.attn1.to_out.0.bias": "up_blocks.1.attentions.1.transformer_blocks.0.attn1.to_out.0.bias",
-    "model.diffusion_model.output_blocks.4.1.transformer_blocks.0.ff.net.0.proj.weight": "up_blocks.1.attentions.1.transformer_blocks.0.ff.net.0.proj.weight",
-    "model.diffusion_model.output_blocks.4.1.transformer_blocks.0.ff.net.0.proj.bias": "up_blocks.1.attentions.1.transformer_blocks.0.ff.net.0.proj.bias",
-    "model.diffusion_model.output_blocks.4.1.transformer_blocks.0.ff.net.2.weight": "up_blocks.1.attentions.1.transformer_blocks.0.ff.net.2.weight",
-    "model.diffusion_model.output_blocks.4.1.transformer_blocks.0.ff.net.2.bias": "up_blocks.1.attentions.1.transformer_blocks.0.ff.net.2.bias",
-    "model.diffusion_model.output_blocks.4.1.transformer_blocks.0.attn2.to_q.weight": "up_blocks.1.attentions.1.transformer_blocks.0.attn2.to_q.weight",
-    "model.diffusion_model.output_blocks.4.1.transformer_blocks.0.attn2.to_k.weight": "up_blocks.1.attentions.1.transformer_blocks.0.attn2.to_k.weight",
-    "model.diffusion_model.output_blocks.4.1.transformer_blocks.0.attn2.to_v.weight": "up_blocks.1.attentions.1.transformer_blocks.0.attn2.to_v.weight",
-    "model.diffusion_model.output_blocks.4.1.transformer_blocks.0.attn2.to_out.0.weight": "up_blocks.1.attentions.1.transformer_blocks.0.attn2.to_out.0.weight",
-    "model.diffusion_model.output_blocks.4.1.transformer_blocks.0.attn2.to_out.0.bias": "up_blocks.1.attentions.1.transformer_blocks.0.attn2.to_out.0.bias",
-    "model.diffusion_model.output_blocks.4.1.transformer_blocks.0.norm1.weight": "up_blocks.1.attentions.1.transformer_blocks.0.norm1.weight",
-    "model.diffusion_model.output_blocks.4.1.transformer_blocks.0.norm1.bias": "up_blocks.1.attentions.1.transformer_blocks.0.norm1.bias",
-    "model.diffusion_model.output_blocks.4.1.transformer_blocks.0.norm2.weight": "up_blocks.1.attentions.1.transformer_blocks.0.norm2.weight",
-    "model.diffusion_model.output_blocks.4.1.transformer_blocks.0.norm2.bias": "up_blocks.1.attentions.1.transformer_blocks.0.norm2.bias",
-    "model.diffusion_model.output_blocks.4.1.transformer_blocks.0.norm3.weight": "up_blocks.1.attentions.1.transformer_blocks.0.norm3.weight",
-    "model.diffusion_model.output_blocks.4.1.transformer_blocks.0.norm3.bias": "up_blocks.1.attentions.1.transformer_blocks.0.norm3.bias",
-    "model.diffusion_model.output_blocks.4.1.proj_out.weight": "up_blocks.1.attentions.1.proj_out.weight",
-    "model.diffusion_model.output_blocks.4.1.proj_out.bias": "up_blocks.1.attentions.1.proj_out.bias",
-    "model.diffusion_model.output_blocks.5.0.in_layers.0.weight": "up_blocks.1.resnets.2.norm1.weight",
-    "model.diffusion_model.output_blocks.5.0.in_layers.0.bias": "up_blocks.1.resnets.2.norm1.bias",
-    "model.diffusion_model.output_blocks.5.0.in_layers.2.weight": "up_blocks.1.resnets.2.conv1.weight",
-    "model.diffusion_model.output_blocks.5.0.in_layers.2.bias": "up_blocks.1.resnets.2.conv1.bias",
-    "model.diffusion_model.output_blocks.5.0.emb_layers.1.weight": "up_blocks.1.resnets.2.time_emb_proj.weight",
-    "model.diffusion_model.output_blocks.5.0.emb_layers.1.bias": "up_blocks.1.resnets.2.time_emb_proj.bias",
-    "model.diffusion_model.output_blocks.5.0.out_layers.0.weight": "up_blocks.1.resnets.2.norm2.weight",
-    "model.diffusion_model.output_blocks.5.0.out_layers.0.bias": "up_blocks.1.resnets.2.norm2.bias",
-    "model.diffusion_model.output_blocks.5.0.out_layers.3.weight": "up_blocks.1.resnets.2.conv2.weight",
-    "model.diffusion_model.output_blocks.5.0.out_layers.3.bias": "up_blocks.1.resnets.2.conv2.bias",
-    "model.diffusion_model.output_blocks.5.0.skip_connection.weight": "up_blocks.1.resnets.2.conv_shortcut.weight",
-    "model.diffusion_model.output_blocks.5.0.skip_connection.bias": "up_blocks.1.resnets.2.conv_shortcut.bias",
-    "model.diffusion_model.output_blocks.5.2.conv.weight": "up_blocks.1.upsamplers.0.conv.weight",
-    "model.diffusion_model.output_blocks.5.2.conv.bias": "up_blocks.1.upsamplers.0.conv.bias",
-    "model.diffusion_model.output_blocks.5.1.norm.weight": "up_blocks.1.attentions.2.norm.weight",
-    "model.diffusion_model.output_blocks.5.1.norm.bias": "up_blocks.1.attentions.2.norm.bias",
-    "model.diffusion_model.output_blocks.5.1.proj_in.weight": "up_blocks.1.attentions.2.proj_in.weight",
-    "model.diffusion_model.output_blocks.5.1.proj_in.bias": "up_blocks.1.attentions.2.proj_in.bias",
-    "model.diffusion_model.output_blocks.5.1.transformer_blocks.0.attn1.to_q.weight": "up_blocks.1.attentions.2.transformer_blocks.0.attn1.to_q.weight",
-    "model.diffusion_model.output_blocks.5.1.transformer_blocks.0.attn1.to_k.weight": "up_blocks.1.attentions.2.transformer_blocks.0.attn1.to_k.weight",
-    "model.diffusion_model.output_blocks.5.1.transformer_blocks.0.attn1.to_v.weight": "up_blocks.1.attentions.2.transformer_blocks.0.attn1.to_v.weight",
-    "model.diffusion_model.output_blocks.5.1.transformer_blocks.0.attn1.to_out.0.weight": "up_blocks.1.attentions.2.transformer_blocks.0.attn1.to_out.0.weight",
-    "model.diffusion_model.output_blocks.5.1.transformer_blocks.0.attn1.to_out.0.bias": "up_blocks.1.attentions.2.transformer_blocks.0.attn1.to_out.0.bias",
-    "model.diffusion_model.output_blocks.5.1.transformer_blocks.0.ff.net.0.proj.weight": "up_blocks.1.attentions.2.transformer_blocks.0.ff.net.0.proj.weight",
-    "model.diffusion_model.output_blocks.5.1.transformer_blocks.0.ff.net.0.proj.bias": "up_blocks.1.attentions.2.transformer_blocks.0.ff.net.0.proj.bias",
-    "model.diffusion_model.output_blocks.5.1.transformer_blocks.0.ff.net.2.weight": "up_blocks.1.attentions.2.transformer_blocks.0.ff.net.2.weight",
-    "model.diffusion_model.output_blocks.5.1.transformer_blocks.0.ff.net.2.bias": "up_blocks.1.attentions.2.transformer_blocks.0.ff.net.2.bias",
-    "model.diffusion_model.output_blocks.5.1.transformer_blocks.0.attn2.to_q.weight": "up_blocks.1.attentions.2.transformer_blocks.0.attn2.to_q.weight",
-    "model.diffusion_model.output_blocks.5.1.transformer_blocks.0.attn2.to_k.weight": "up_blocks.1.attentions.2.transformer_blocks.0.attn2.to_k.weight",
-    "model.diffusion_model.output_blocks.5.1.transformer_blocks.0.attn2.to_v.weight": "up_blocks.1.attentions.2.transformer_blocks.0.attn2.to_v.weight",
-    "model.diffusion_model.output_blocks.5.1.transformer_blocks.0.attn2.to_out.0.weight": "up_blocks.1.attentions.2.transformer_blocks.0.attn2.to_out.0.weight",
-    "model.diffusion_model.output_blocks.5.1.transformer_blocks.0.attn2.to_out.0.bias": "up_blocks.1.attentions.2.transformer_blocks.0.attn2.to_out.0.bias",
-    "model.diffusion_model.output_blocks.5.1.transformer_blocks.0.norm1.weight": "up_blocks.1.attentions.2.transformer_blocks.0.norm1.weight",
-    "model.diffusion_model.output_blocks.5.1.transformer_blocks.0.norm1.bias": "up_blocks.1.attentions.2.transformer_blocks.0.norm1.bias",
-    "model.diffusion_model.output_blocks.5.1.transformer_blocks.0.norm2.weight": "up_blocks.1.attentions.2.transformer_blocks.0.norm2.weight",
-    "model.diffusion_model.output_blocks.5.1.transformer_blocks.0.norm2.bias": "up_blocks.1.attentions.2.transformer_blocks.0.norm2.bias",
-    "model.diffusion_model.output_blocks.5.1.transformer_blocks.0.norm3.weight": "up_blocks.1.attentions.2.transformer_blocks.0.norm3.weight",
-    "model.diffusion_model.output_blocks.5.1.transformer_blocks.0.norm3.bias": "up_blocks.1.attentions.2.transformer_blocks.0.norm3.bias",
-    "model.diffusion_model.output_blocks.5.1.proj_out.weight": "up_blocks.1.attentions.2.proj_out.weight",
-    "model.diffusion_model.output_blocks.5.1.proj_out.bias": "up_blocks.1.attentions.2.proj_out.bias",
-    "model.diffusion_model.output_blocks.6.0.in_layers.0.weight": "up_blocks.2.resnets.0.norm1.weight",
-    "model.diffusion_model.output_blocks.6.0.in_layers.0.bias": "up_blocks.2.resnets.0.norm1.bias",
-    "model.diffusion_model.output_blocks.6.0.in_layers.2.weight": "up_blocks.2.resnets.0.conv1.weight",
-    "model.diffusion_model.output_blocks.6.0.in_layers.2.bias": "up_blocks.2.resnets.0.conv1.bias",
-    "model.diffusion_model.output_blocks.6.0.emb_layers.1.weight": "up_blocks.2.resnets.0.time_emb_proj.weight",
-    "model.diffusion_model.output_blocks.6.0.emb_layers.1.bias": "up_blocks.2.resnets.0.time_emb_proj.bias",
-    "model.diffusion_model.output_blocks.6.0.out_layers.0.weight": "up_blocks.2.resnets.0.norm2.weight",
-    "model.diffusion_model.output_blocks.6.0.out_layers.0.bias": "up_blocks.2.resnets.0.norm2.bias",
-    "model.diffusion_model.output_blocks.6.0.out_layers.3.weight": "up_blocks.2.resnets.0.conv2.weight",
-    "model.diffusion_model.output_blocks.6.0.out_layers.3.bias": "up_blocks.2.resnets.0.conv2.bias",
-    "model.diffusion_model.output_blocks.6.0.skip_connection.weight": "up_blocks.2.resnets.0.conv_shortcut.weight",
-    "model.diffusion_model.output_blocks.6.0.skip_connection.bias": "up_blocks.2.resnets.0.conv_shortcut.bias",
-    "model.diffusion_model.output_blocks.6.1.norm.weight": "up_blocks.2.attentions.0.norm.weight",
-    "model.diffusion_model.output_blocks.6.1.norm.bias": "up_blocks.2.attentions.0.norm.bias",
-    "model.diffusion_model.output_blocks.6.1.proj_in.weight": "up_blocks.2.attentions.0.proj_in.weight",
-    "model.diffusion_model.output_blocks.6.1.proj_in.bias": "up_blocks.2.attentions.0.proj_in.bias",
-    "model.diffusion_model.output_blocks.6.1.transformer_blocks.0.attn1.to_q.weight": "up_blocks.2.attentions.0.transformer_blocks.0.attn1.to_q.weight",
-    "model.diffusion_model.output_blocks.6.1.transformer_blocks.0.attn1.to_k.weight": "up_blocks.2.attentions.0.transformer_blocks.0.attn1.to_k.weight",
-    "model.diffusion_model.output_blocks.6.1.transformer_blocks.0.attn1.to_v.weight": "up_blocks.2.attentions.0.transformer_blocks.0.attn1.to_v.weight",
-    "model.diffusion_model.output_blocks.6.1.transformer_blocks.0.attn1.to_out.0.weight": "up_blocks.2.attentions.0.transformer_blocks.0.attn1.to_out.0.weight",
-    "model.diffusion_model.output_blocks.6.1.transformer_blocks.0.attn1.to_out.0.bias": "up_blocks.2.attentions.0.transformer_blocks.0.attn1.to_out.0.bias",
-    "model.diffusion_model.output_blocks.6.1.transformer_blocks.0.ff.net.0.proj.weight": "up_blocks.2.attentions.0.transformer_blocks.0.ff.net.0.proj.weight",
-    "model.diffusion_model.output_blocks.6.1.transformer_blocks.0.ff.net.0.proj.bias": "up_blocks.2.attentions.0.transformer_blocks.0.ff.net.0.proj.bias",
-    "model.diffusion_model.output_blocks.6.1.transformer_blocks.0.ff.net.2.weight": "up_blocks.2.attentions.0.transformer_blocks.0.ff.net.2.weight",
-    "model.diffusion_model.output_blocks.6.1.transformer_blocks.0.ff.net.2.bias": "up_blocks.2.attentions.0.transformer_blocks.0.ff.net.2.bias",
-    "model.diffusion_model.output_blocks.6.1.transformer_blocks.0.attn2.to_q.weight": "up_blocks.2.attentions.0.transformer_blocks.0.attn2.to_q.weight",
-    "model.diffusion_model.output_blocks.6.1.transformer_blocks.0.attn2.to_k.weight": "up_blocks.2.attentions.0.transformer_blocks.0.attn2.to_k.weight",
-    "model.diffusion_model.output_blocks.6.1.transformer_blocks.0.attn2.to_v.weight": "up_blocks.2.attentions.0.transformer_blocks.0.attn2.to_v.weight",
-    "model.diffusion_model.output_blocks.6.1.transformer_blocks.0.attn2.to_out.0.weight": "up_blocks.2.attentions.0.transformer_blocks.0.attn2.to_out.0.weight",
-    "model.diffusion_model.output_blocks.6.1.transformer_blocks.0.attn2.to_out.0.bias": "up_blocks.2.attentions.0.transformer_blocks.0.attn2.to_out.0.bias",
-    "model.diffusion_model.output_blocks.6.1.transformer_blocks.0.norm1.weight": "up_blocks.2.attentions.0.transformer_blocks.0.norm1.weight",
-    "model.diffusion_model.output_blocks.6.1.transformer_blocks.0.norm1.bias": "up_blocks.2.attentions.0.transformer_blocks.0.norm1.bias",
-    "model.diffusion_model.output_blocks.6.1.transformer_blocks.0.norm2.weight": "up_blocks.2.attentions.0.transformer_blocks.0.norm2.weight",
-    "model.diffusion_model.output_blocks.6.1.transformer_blocks.0.norm2.bias": "up_blocks.2.attentions.0.transformer_blocks.0.norm2.bias",
-    "model.diffusion_model.output_blocks.6.1.transformer_blocks.0.norm3.weight": "up_blocks.2.attentions.0.transformer_blocks.0.norm3.weight",
-    "model.diffusion_model.output_blocks.6.1.transformer_blocks.0.norm3.bias": "up_blocks.2.attentions.0.transformer_blocks.0.norm3.bias",
-    "model.diffusion_model.output_blocks.6.1.proj_out.weight": "up_blocks.2.attentions.0.proj_out.weight",
-    "model.diffusion_model.output_blocks.6.1.proj_out.bias": "up_blocks.2.attentions.0.proj_out.bias",
-    "model.diffusion_model.output_blocks.7.0.in_layers.0.weight": "up_blocks.2.resnets.1.norm1.weight",
-    "model.diffusion_model.output_blocks.7.0.in_layers.0.bias": "up_blocks.2.resnets.1.norm1.bias",
-    "model.diffusion_model.output_blocks.7.0.in_layers.2.weight": "up_blocks.2.resnets.1.conv1.weight",
-    "model.diffusion_model.output_blocks.7.0.in_layers.2.bias": "up_blocks.2.resnets.1.conv1.bias",
-    "model.diffusion_model.output_blocks.7.0.emb_layers.1.weight": "up_blocks.2.resnets.1.time_emb_proj.weight",
-    "model.diffusion_model.output_blocks.7.0.emb_layers.1.bias": "up_blocks.2.resnets.1.time_emb_proj.bias",
-    "model.diffusion_model.output_blocks.7.0.out_layers.0.weight": "up_blocks.2.resnets.1.norm2.weight",
-    "model.diffusion_model.output_blocks.7.0.out_layers.0.bias": "up_blocks.2.resnets.1.norm2.bias",
-    "model.diffusion_model.output_blocks.7.0.out_layers.3.weight": "up_blocks.2.resnets.1.conv2.weight",
-    "model.diffusion_model.output_blocks.7.0.out_layers.3.bias": "up_blocks.2.resnets.1.conv2.bias",
-    "model.diffusion_model.output_blocks.7.0.skip_connection.weight": "up_blocks.2.resnets.1.conv_shortcut.weight",
-    "model.diffusion_model.output_blocks.7.0.skip_connection.bias": "up_blocks.2.resnets.1.conv_shortcut.bias",
-    "model.diffusion_model.output_blocks.7.1.norm.weight": "up_blocks.2.attentions.1.norm.weight",
-    "model.diffusion_model.output_blocks.7.1.norm.bias": "up_blocks.2.attentions.1.norm.bias",
-    "model.diffusion_model.output_blocks.7.1.proj_in.weight": "up_blocks.2.attentions.1.proj_in.weight",
-    "model.diffusion_model.output_blocks.7.1.proj_in.bias": "up_blocks.2.attentions.1.proj_in.bias",
-    "model.diffusion_model.output_blocks.7.1.transformer_blocks.0.attn1.to_q.weight": "up_blocks.2.attentions.1.transformer_blocks.0.attn1.to_q.weight",
-    "model.diffusion_model.output_blocks.7.1.transformer_blocks.0.attn1.to_k.weight": "up_blocks.2.attentions.1.transformer_blocks.0.attn1.to_k.weight",
-    "model.diffusion_model.output_blocks.7.1.transformer_blocks.0.attn1.to_v.weight": "up_blocks.2.attentions.1.transformer_blocks.0.attn1.to_v.weight",
-    "model.diffusion_model.output_blocks.7.1.transformer_blocks.0.attn1.to_out.0.weight": "up_blocks.2.attentions.1.transformer_blocks.0.attn1.to_out.0.weight",
-    "model.diffusion_model.output_blocks.7.1.transformer_blocks.0.attn1.to_out.0.bias": "up_blocks.2.attentions.1.transformer_blocks.0.attn1.to_out.0.bias",
-    "model.diffusion_model.output_blocks.7.1.transformer_blocks.0.ff.net.0.proj.weight": "up_blocks.2.attentions.1.transformer_blocks.0.ff.net.0.proj.weight",
-    "model.diffusion_model.output_blocks.7.1.transformer_blocks.0.ff.net.0.proj.bias": "up_blocks.2.attentions.1.transformer_blocks.0.ff.net.0.proj.bias",
-    "model.diffusion_model.output_blocks.7.1.transformer_blocks.0.ff.net.2.weight": "up_blocks.2.attentions.1.transformer_blocks.0.ff.net.2.weight",
-    "model.diffusion_model.output_blocks.7.1.transformer_blocks.0.ff.net.2.bias": "up_blocks.2.attentions.1.transformer_blocks.0.ff.net.2.bias",
-    "model.diffusion_model.output_blocks.7.1.transformer_blocks.0.attn2.to_q.weight": "up_blocks.2.attentions.1.transformer_blocks.0.attn2.to_q.weight",
-    "model.diffusion_model.output_blocks.7.1.transformer_blocks.0.attn2.to_k.weight": "up_blocks.2.attentions.1.transformer_blocks.0.attn2.to_k.weight",
-    "model.diffusion_model.output_blocks.7.1.transformer_blocks.0.attn2.to_v.weight": "up_blocks.2.attentions.1.transformer_blocks.0.attn2.to_v.weight",
-    "model.diffusion_model.output_blocks.7.1.transformer_blocks.0.attn2.to_out.0.weight": "up_blocks.2.attentions.1.transformer_blocks.0.attn2.to_out.0.weight",
-    "model.diffusion_model.output_blocks.7.1.transformer_blocks.0.attn2.to_out.0.bias": "up_blocks.2.attentions.1.transformer_blocks.0.attn2.to_out.0.bias",
-    "model.diffusion_model.output_blocks.7.1.transformer_blocks.0.norm1.weight": "up_blocks.2.attentions.1.transformer_blocks.0.norm1.weight",
-    "model.diffusion_model.output_blocks.7.1.transformer_blocks.0.norm1.bias": "up_blocks.2.attentions.1.transformer_blocks.0.norm1.bias",
-    "model.diffusion_model.output_blocks.7.1.transformer_blocks.0.norm2.weight": "up_blocks.2.attentions.1.transformer_blocks.0.norm2.weight",
-    "model.diffusion_model.output_blocks.7.1.transformer_blocks.0.norm2.bias": "up_blocks.2.attentions.1.transformer_blocks.0.norm2.bias",
-    "model.diffusion_model.output_blocks.7.1.transformer_blocks.0.norm3.weight": "up_blocks.2.attentions.1.transformer_blocks.0.norm3.weight",
-    "model.diffusion_model.output_blocks.7.1.transformer_blocks.0.norm3.bias": "up_blocks.2.attentions.1.transformer_blocks.0.norm3.bias",
-    "model.diffusion_model.output_blocks.7.1.proj_out.weight": "up_blocks.2.attentions.1.proj_out.weight",
-    "model.diffusion_model.output_blocks.7.1.proj_out.bias": "up_blocks.2.attentions.1.proj_out.bias",
-    "model.diffusion_model.output_blocks.8.0.in_layers.0.weight": "up_blocks.2.resnets.2.norm1.weight",
-    "model.diffusion_model.output_blocks.8.0.in_layers.0.bias": "up_blocks.2.resnets.2.norm1.bias",
-    "model.diffusion_model.output_blocks.8.0.in_layers.2.weight": "up_blocks.2.resnets.2.conv1.weight",
-    "model.diffusion_model.output_blocks.8.0.in_layers.2.bias": "up_blocks.2.resnets.2.conv1.bias",
-    "model.diffusion_model.output_blocks.8.0.emb_layers.1.weight": "up_blocks.2.resnets.2.time_emb_proj.weight",
-    "model.diffusion_model.output_blocks.8.0.emb_layers.1.bias": "up_blocks.2.resnets.2.time_emb_proj.bias",
-    "model.diffusion_model.output_blocks.8.0.out_layers.0.weight": "up_blocks.2.resnets.2.norm2.weight",
-    "model.diffusion_model.output_blocks.8.0.out_layers.0.bias": "up_blocks.2.resnets.2.norm2.bias",
-    "model.diffusion_model.output_blocks.8.0.out_layers.3.weight": "up_blocks.2.resnets.2.conv2.weight",
-    "model.diffusion_model.output_blocks.8.0.out_layers.3.bias": "up_blocks.2.resnets.2.conv2.bias",
-    "model.diffusion_model.output_blocks.8.0.skip_connection.weight": "up_blocks.2.resnets.2.conv_shortcut.weight",
-    "model.diffusion_model.output_blocks.8.0.skip_connection.bias": "up_blocks.2.resnets.2.conv_shortcut.bias",
-    "model.diffusion_model.output_blocks.8.2.conv.weight": "up_blocks.2.upsamplers.0.conv.weight",
-    "model.diffusion_model.output_blocks.8.2.conv.bias": "up_blocks.2.upsamplers.0.conv.bias",
-    "model.diffusion_model.output_blocks.8.1.norm.weight": "up_blocks.2.attentions.2.norm.weight",
-    "model.diffusion_model.output_blocks.8.1.norm.bias": "up_blocks.2.attentions.2.norm.bias",
-    "model.diffusion_model.output_blocks.8.1.proj_in.weight": "up_blocks.2.attentions.2.proj_in.weight",
-    "model.diffusion_model.output_blocks.8.1.proj_in.bias": "up_blocks.2.attentions.2.proj_in.bias",
-    "model.diffusion_model.output_blocks.8.1.transformer_blocks.0.attn1.to_q.weight": "up_blocks.2.attentions.2.transformer_blocks.0.attn1.to_q.weight",
-    "model.diffusion_model.output_blocks.8.1.transformer_blocks.0.attn1.to_k.weight": "up_blocks.2.attentions.2.transformer_blocks.0.attn1.to_k.weight",
-    "model.diffusion_model.output_blocks.8.1.transformer_blocks.0.attn1.to_v.weight": "up_blocks.2.attentions.2.transformer_blocks.0.attn1.to_v.weight",
-    "model.diffusion_model.output_blocks.8.1.transformer_blocks.0.attn1.to_out.0.weight": "up_blocks.2.attentions.2.transformer_blocks.0.attn1.to_out.0.weight",
-    "model.diffusion_model.output_blocks.8.1.transformer_blocks.0.attn1.to_out.0.bias": "up_blocks.2.attentions.2.transformer_blocks.0.attn1.to_out.0.bias",
-    "model.diffusion_model.output_blocks.8.1.transformer_blocks.0.ff.net.0.proj.weight": "up_blocks.2.attentions.2.transformer_blocks.0.ff.net.0.proj.weight",
-    "model.diffusion_model.output_blocks.8.1.transformer_blocks.0.ff.net.0.proj.bias": "up_blocks.2.attentions.2.transformer_blocks.0.ff.net.0.proj.bias",
-    "model.diffusion_model.output_blocks.8.1.transformer_blocks.0.ff.net.2.weight": "up_blocks.2.attentions.2.transformer_blocks.0.ff.net.2.weight",
-    "model.diffusion_model.output_blocks.8.1.transformer_blocks.0.ff.net.2.bias": "up_blocks.2.attentions.2.transformer_blocks.0.ff.net.2.bias",
-    "model.diffusion_model.output_blocks.8.1.transformer_blocks.0.attn2.to_q.weight": "up_blocks.2.attentions.2.transformer_blocks.0.attn2.to_q.weight",
-    "model.diffusion_model.output_blocks.8.1.transformer_blocks.0.attn2.to_k.weight": "up_blocks.2.attentions.2.transformer_blocks.0.attn2.to_k.weight",
-    "model.diffusion_model.output_blocks.8.1.transformer_blocks.0.attn2.to_v.weight": "up_blocks.2.attentions.2.transformer_blocks.0.attn2.to_v.weight",
-    "model.diffusion_model.output_blocks.8.1.transformer_blocks.0.attn2.to_out.0.weight": "up_blocks.2.attentions.2.transformer_blocks.0.attn2.to_out.0.weight",
-    "model.diffusion_model.output_blocks.8.1.transformer_blocks.0.attn2.to_out.0.bias": "up_blocks.2.attentions.2.transformer_blocks.0.attn2.to_out.0.bias",
-    "model.diffusion_model.output_blocks.8.1.transformer_blocks.0.norm1.weight": "up_blocks.2.attentions.2.transformer_blocks.0.norm1.weight",
-    "model.diffusion_model.output_blocks.8.1.transformer_blocks.0.norm1.bias": "up_blocks.2.attentions.2.transformer_blocks.0.norm1.bias",
-    "model.diffusion_model.output_blocks.8.1.transformer_blocks.0.norm2.weight": "up_blocks.2.attentions.2.transformer_blocks.0.norm2.weight",
-    "model.diffusion_model.output_blocks.8.1.transformer_blocks.0.norm2.bias": "up_blocks.2.attentions.2.transformer_blocks.0.norm2.bias",
-    "model.diffusion_model.output_blocks.8.1.transformer_blocks.0.norm3.weight": "up_blocks.2.attentions.2.transformer_blocks.0.norm3.weight",
-    "model.diffusion_model.output_blocks.8.1.transformer_blocks.0.norm3.bias": "up_blocks.2.attentions.2.transformer_blocks.0.norm3.bias",
-    "model.diffusion_model.output_blocks.8.1.proj_out.weight": "up_blocks.2.attentions.2.proj_out.weight",
-    "model.diffusion_model.output_blocks.8.1.proj_out.bias": "up_blocks.2.attentions.2.proj_out.bias",
-    "model.diffusion_model.output_blocks.9.0.in_layers.0.weight": "up_blocks.3.resnets.0.norm1.weight",
-    "model.diffusion_model.output_blocks.9.0.in_layers.0.bias": "up_blocks.3.resnets.0.norm1.bias",
-    "model.diffusion_model.output_blocks.9.0.in_layers.2.weight": "up_blocks.3.resnets.0.conv1.weight",
-    "model.diffusion_model.output_blocks.9.0.in_layers.2.bias": "up_blocks.3.resnets.0.conv1.bias",
-    "model.diffusion_model.output_blocks.9.0.emb_layers.1.weight": "up_blocks.3.resnets.0.time_emb_proj.weight",
-    "model.diffusion_model.output_blocks.9.0.emb_layers.1.bias": "up_blocks.3.resnets.0.time_emb_proj.bias",
-    "model.diffusion_model.output_blocks.9.0.out_layers.0.weight": "up_blocks.3.resnets.0.norm2.weight",
-    "model.diffusion_model.output_blocks.9.0.out_layers.0.bias": "up_blocks.3.resnets.0.norm2.bias",
-    "model.diffusion_model.output_blocks.9.0.out_layers.3.weight": "up_blocks.3.resnets.0.conv2.weight",
-    "model.diffusion_model.output_blocks.9.0.out_layers.3.bias": "up_blocks.3.resnets.0.conv2.bias",
-    "model.diffusion_model.output_blocks.9.0.skip_connection.weight": "up_blocks.3.resnets.0.conv_shortcut.weight",
-    "model.diffusion_model.output_blocks.9.0.skip_connection.bias": "up_blocks.3.resnets.0.conv_shortcut.bias",
-    "model.diffusion_model.output_blocks.9.1.norm.weight": "up_blocks.3.attentions.0.norm.weight",
-    "model.diffusion_model.output_blocks.9.1.norm.bias": "up_blocks.3.attentions.0.norm.bias",
-    "model.diffusion_model.output_blocks.9.1.proj_in.weight": "up_blocks.3.attentions.0.proj_in.weight",
-    "model.diffusion_model.output_blocks.9.1.proj_in.bias": "up_blocks.3.attentions.0.proj_in.bias",
-    "model.diffusion_model.output_blocks.9.1.transformer_blocks.0.attn1.to_q.weight": "up_blocks.3.attentions.0.transformer_blocks.0.attn1.to_q.weight",
-    "model.diffusion_model.output_blocks.9.1.transformer_blocks.0.attn1.to_k.weight": "up_blocks.3.attentions.0.transformer_blocks.0.attn1.to_k.weight",
-    "model.diffusion_model.output_blocks.9.1.transformer_blocks.0.attn1.to_v.weight": "up_blocks.3.attentions.0.transformer_blocks.0.attn1.to_v.weight",
-    "model.diffusion_model.output_blocks.9.1.transformer_blocks.0.attn1.to_out.0.weight": "up_blocks.3.attentions.0.transformer_blocks.0.attn1.to_out.0.weight",
-    "model.diffusion_model.output_blocks.9.1.transformer_blocks.0.attn1.to_out.0.bias": "up_blocks.3.attentions.0.transformer_blocks.0.attn1.to_out.0.bias",
-    "model.diffusion_model.output_blocks.9.1.transformer_blocks.0.ff.net.0.proj.weight": "up_blocks.3.attentions.0.transformer_blocks.0.ff.net.0.proj.weight",
-    "model.diffusion_model.output_blocks.9.1.transformer_blocks.0.ff.net.0.proj.bias": "up_blocks.3.attentions.0.transformer_blocks.0.ff.net.0.proj.bias",
-    "model.diffusion_model.output_blocks.9.1.transformer_blocks.0.ff.net.2.weight": "up_blocks.3.attentions.0.transformer_blocks.0.ff.net.2.weight",
-    "model.diffusion_model.output_blocks.9.1.transformer_blocks.0.ff.net.2.bias": "up_blocks.3.attentions.0.transformer_blocks.0.ff.net.2.bias",
-    "model.diffusion_model.output_blocks.9.1.transformer_blocks.0.attn2.to_q.weight": "up_blocks.3.attentions.0.transformer_blocks.0.attn2.to_q.weight",
-    "model.diffusion_model.output_blocks.9.1.transformer_blocks.0.attn2.to_k.weight": "up_blocks.3.attentions.0.transformer_blocks.0.attn2.to_k.weight",
-    "model.diffusion_model.output_blocks.9.1.transformer_blocks.0.attn2.to_v.weight": "up_blocks.3.attentions.0.transformer_blocks.0.attn2.to_v.weight",
-    "model.diffusion_model.output_blocks.9.1.transformer_blocks.0.attn2.to_out.0.weight": "up_blocks.3.attentions.0.transformer_blocks.0.attn2.to_out.0.weight",
-    "model.diffusion_model.output_blocks.9.1.transformer_blocks.0.attn2.to_out.0.bias": "up_blocks.3.attentions.0.transformer_blocks.0.attn2.to_out.0.bias",
-    "model.diffusion_model.output_blocks.9.1.transformer_blocks.0.norm1.weight": "up_blocks.3.attentions.0.transformer_blocks.0.norm1.weight",
-    "model.diffusion_model.output_blocks.9.1.transformer_blocks.0.norm1.bias": "up_blocks.3.attentions.0.transformer_blocks.0.norm1.bias",
-    "model.diffusion_model.output_blocks.9.1.transformer_blocks.0.norm2.weight": "up_blocks.3.attentions.0.transformer_blocks.0.norm2.weight",
-    "model.diffusion_model.output_blocks.9.1.transformer_blocks.0.norm2.bias": "up_blocks.3.attentions.0.transformer_blocks.0.norm2.bias",
-    "model.diffusion_model.output_blocks.9.1.transformer_blocks.0.norm3.weight": "up_blocks.3.attentions.0.transformer_blocks.0.norm3.weight",
-    "model.diffusion_model.output_blocks.9.1.transformer_blocks.0.norm3.bias": "up_blocks.3.attentions.0.transformer_blocks.0.norm3.bias",
-    "model.diffusion_model.output_blocks.9.1.proj_out.weight": "up_blocks.3.attentions.0.proj_out.weight",
-    "model.diffusion_model.output_blocks.9.1.proj_out.bias": "up_blocks.3.attentions.0.proj_out.bias",
-    "model.diffusion_model.output_blocks.10.0.in_layers.0.weight": "up_blocks.3.resnets.1.norm1.weight",
-    "model.diffusion_model.output_blocks.10.0.in_layers.0.bias": "up_blocks.3.resnets.1.norm1.bias",
-    "model.diffusion_model.output_blocks.10.0.in_layers.2.weight": "up_blocks.3.resnets.1.conv1.weight",
-    "model.diffusion_model.output_blocks.10.0.in_layers.2.bias": "up_blocks.3.resnets.1.conv1.bias",
-    "model.diffusion_model.output_blocks.10.0.emb_layers.1.weight": "up_blocks.3.resnets.1.time_emb_proj.weight",
-    "model.diffusion_model.output_blocks.10.0.emb_layers.1.bias": "up_blocks.3.resnets.1.time_emb_proj.bias",
-    "model.diffusion_model.output_blocks.10.0.out_layers.0.weight": "up_blocks.3.resnets.1.norm2.weight",
-    "model.diffusion_model.output_blocks.10.0.out_layers.0.bias": "up_blocks.3.resnets.1.norm2.bias",
-    "model.diffusion_model.output_blocks.10.0.out_layers.3.weight": "up_blocks.3.resnets.1.conv2.weight",
-    "model.diffusion_model.output_blocks.10.0.out_layers.3.bias": "up_blocks.3.resnets.1.conv2.bias",
-    "model.diffusion_model.output_blocks.10.0.skip_connection.weight": "up_blocks.3.resnets.1.conv_shortcut.weight",
-    "model.diffusion_model.output_blocks.10.0.skip_connection.bias": "up_blocks.3.resnets.1.conv_shortcut.bias",
-    "model.diffusion_model.output_blocks.10.1.norm.weight": "up_blocks.3.attentions.1.norm.weight",
-    "model.diffusion_model.output_blocks.10.1.norm.bias": "up_blocks.3.attentions.1.norm.bias",
-    "model.diffusion_model.output_blocks.10.1.proj_in.weight": "up_blocks.3.attentions.1.proj_in.weight",
-    "model.diffusion_model.output_blocks.10.1.proj_in.bias": "up_blocks.3.attentions.1.proj_in.bias",
-    "model.diffusion_model.output_blocks.10.1.transformer_blocks.0.attn1.to_q.weight": "up_blocks.3.attentions.1.transformer_blocks.0.attn1.to_q.weight",
-    "model.diffusion_model.output_blocks.10.1.transformer_blocks.0.attn1.to_k.weight": "up_blocks.3.attentions.1.transformer_blocks.0.attn1.to_k.weight",
-    "model.diffusion_model.output_blocks.10.1.transformer_blocks.0.attn1.to_v.weight": "up_blocks.3.attentions.1.transformer_blocks.0.attn1.to_v.weight",
-    "model.diffusion_model.output_blocks.10.1.transformer_blocks.0.attn1.to_out.0.weight": "up_blocks.3.attentions.1.transformer_blocks.0.attn1.to_out.0.weight",
-    "model.diffusion_model.output_blocks.10.1.transformer_blocks.0.attn1.to_out.0.bias": "up_blocks.3.attentions.1.transformer_blocks.0.attn1.to_out.0.bias",
-    "model.diffusion_model.output_blocks.10.1.transformer_blocks.0.ff.net.0.proj.weight": "up_blocks.3.attentions.1.transformer_blocks.0.ff.net.0.proj.weight",
-    "model.diffusion_model.output_blocks.10.1.transformer_blocks.0.ff.net.0.proj.bias": "up_blocks.3.attentions.1.transformer_blocks.0.ff.net.0.proj.bias",
-    "model.diffusion_model.output_blocks.10.1.transformer_blocks.0.ff.net.2.weight": "up_blocks.3.attentions.1.transformer_blocks.0.ff.net.2.weight",
-    "model.diffusion_model.output_blocks.10.1.transformer_blocks.0.ff.net.2.bias": "up_blocks.3.attentions.1.transformer_blocks.0.ff.net.2.bias",
-    "model.diffusion_model.output_blocks.10.1.transformer_blocks.0.attn2.to_q.weight": "up_blocks.3.attentions.1.transformer_blocks.0.attn2.to_q.weight",
-    "model.diffusion_model.output_blocks.10.1.transformer_blocks.0.attn2.to_k.weight": "up_blocks.3.attentions.1.transformer_blocks.0.attn2.to_k.weight",
-    "model.diffusion_model.output_blocks.10.1.transformer_blocks.0.attn2.to_v.weight": "up_blocks.3.attentions.1.transformer_blocks.0.attn2.to_v.weight",
-    "model.diffusion_model.output_blocks.10.1.transformer_blocks.0.attn2.to_out.0.weight": "up_blocks.3.attentions.1.transformer_blocks.0.attn2.to_out.0.weight",
-    "model.diffusion_model.output_blocks.10.1.transformer_blocks.0.attn2.to_out.0.bias": "up_blocks.3.attentions.1.transformer_blocks.0.attn2.to_out.0.bias",
-    "model.diffusion_model.output_blocks.10.1.transformer_blocks.0.norm1.weight": "up_blocks.3.attentions.1.transformer_blocks.0.norm1.weight",
-    "model.diffusion_model.output_blocks.10.1.transformer_blocks.0.norm1.bias": "up_blocks.3.attentions.1.transformer_blocks.0.norm1.bias",
-    "model.diffusion_model.output_blocks.10.1.transformer_blocks.0.norm2.weight": "up_blocks.3.attentions.1.transformer_blocks.0.norm2.weight",
-    "model.diffusion_model.output_blocks.10.1.transformer_blocks.0.norm2.bias": "up_blocks.3.attentions.1.transformer_blocks.0.norm2.bias",
-    "model.diffusion_model.output_blocks.10.1.transformer_blocks.0.norm3.weight": "up_blocks.3.attentions.1.transformer_blocks.0.norm3.weight",
-    "model.diffusion_model.output_blocks.10.1.transformer_blocks.0.norm3.bias": "up_blocks.3.attentions.1.transformer_blocks.0.norm3.bias",
-    "model.diffusion_model.output_blocks.10.1.proj_out.weight": "up_blocks.3.attentions.1.proj_out.weight",
-    "model.diffusion_model.output_blocks.10.1.proj_out.bias": "up_blocks.3.attentions.1.proj_out.bias",
-    "model.diffusion_model.output_blocks.11.0.in_layers.0.weight": "up_blocks.3.resnets.2.norm1.weight",
-    "model.diffusion_model.output_blocks.11.0.in_layers.0.bias": "up_blocks.3.resnets.2.norm1.bias",
-    "model.diffusion_model.output_blocks.11.0.in_layers.2.weight": "up_blocks.3.resnets.2.conv1.weight",
-    "model.diffusion_model.output_blocks.11.0.in_layers.2.bias": "up_blocks.3.resnets.2.conv1.bias",
-    "model.diffusion_model.output_blocks.11.0.emb_layers.1.weight": "up_blocks.3.resnets.2.time_emb_proj.weight",
-    "model.diffusion_model.output_blocks.11.0.emb_layers.1.bias": "up_blocks.3.resnets.2.time_emb_proj.bias",
-    "model.diffusion_model.output_blocks.11.0.out_layers.0.weight": "up_blocks.3.resnets.2.norm2.weight",
-    "model.diffusion_model.output_blocks.11.0.out_layers.0.bias": "up_blocks.3.resnets.2.norm2.bias",
-    "model.diffusion_model.output_blocks.11.0.out_layers.3.weight": "up_blocks.3.resnets.2.conv2.weight",
-    "model.diffusion_model.output_blocks.11.0.out_layers.3.bias": "up_blocks.3.resnets.2.conv2.bias",
-    "model.diffusion_model.output_blocks.11.0.skip_connection.weight": "up_blocks.3.resnets.2.conv_shortcut.weight",
-    "model.diffusion_model.output_blocks.11.0.skip_connection.bias": "up_blocks.3.resnets.2.conv_shortcut.bias",
-    "model.diffusion_model.output_blocks.11.1.norm.weight": "up_blocks.3.attentions.2.norm.weight",
-    "model.diffusion_model.output_blocks.11.1.norm.bias": "up_blocks.3.attentions.2.norm.bias",
-    "model.diffusion_model.output_blocks.11.1.proj_in.weight": "up_blocks.3.attentions.2.proj_in.weight",
-    "model.diffusion_model.output_blocks.11.1.proj_in.bias": "up_blocks.3.attentions.2.proj_in.bias",
-    "model.diffusion_model.output_blocks.11.1.transformer_blocks.0.attn1.to_q.weight": "up_blocks.3.attentions.2.transformer_blocks.0.attn1.to_q.weight",
-    "model.diffusion_model.output_blocks.11.1.transformer_blocks.0.attn1.to_k.weight": "up_blocks.3.attentions.2.transformer_blocks.0.attn1.to_k.weight",
-    "model.diffusion_model.output_blocks.11.1.transformer_blocks.0.attn1.to_v.weight": "up_blocks.3.attentions.2.transformer_blocks.0.attn1.to_v.weight",
-    "model.diffusion_model.output_blocks.11.1.transformer_blocks.0.attn1.to_out.0.weight": "up_blocks.3.attentions.2.transformer_blocks.0.attn1.to_out.0.weight",
-    "model.diffusion_model.output_blocks.11.1.transformer_blocks.0.attn1.to_out.0.bias": "up_blocks.3.attentions.2.transformer_blocks.0.attn1.to_out.0.bias",
-    "model.diffusion_model.output_blocks.11.1.transformer_blocks.0.ff.net.0.proj.weight": "up_blocks.3.attentions.2.transformer_blocks.0.ff.net.0.proj.weight",
-    "model.diffusion_model.output_blocks.11.1.transformer_blocks.0.ff.net.0.proj.bias": "up_blocks.3.attentions.2.transformer_blocks.0.ff.net.0.proj.bias",
-    "model.diffusion_model.output_blocks.11.1.transformer_blocks.0.ff.net.2.weight": "up_blocks.3.attentions.2.transformer_blocks.0.ff.net.2.weight",
-    "model.diffusion_model.output_blocks.11.1.transformer_blocks.0.ff.net.2.bias": "up_blocks.3.attentions.2.transformer_blocks.0.ff.net.2.bias",
-    "model.diffusion_model.output_blocks.11.1.transformer_blocks.0.attn2.to_q.weight": "up_blocks.3.attentions.2.transformer_blocks.0.attn2.to_q.weight",
-    "model.diffusion_model.output_blocks.11.1.transformer_blocks.0.attn2.to_k.weight": "up_blocks.3.attentions.2.transformer_blocks.0.attn2.to_k.weight",
-    "model.diffusion_model.output_blocks.11.1.transformer_blocks.0.attn2.to_v.weight": "up_blocks.3.attentions.2.transformer_blocks.0.attn2.to_v.weight",
-    "model.diffusion_model.output_blocks.11.1.transformer_blocks.0.attn2.to_out.0.weight": "up_blocks.3.attentions.2.transformer_blocks.0.attn2.to_out.0.weight",
-    "model.diffusion_model.output_blocks.11.1.transformer_blocks.0.attn2.to_out.0.bias": "up_blocks.3.attentions.2.transformer_blocks.0.attn2.to_out.0.bias",
-    "model.diffusion_model.output_blocks.11.1.transformer_blocks.0.norm1.weight": "up_blocks.3.attentions.2.transformer_blocks.0.norm1.weight",
-    "model.diffusion_model.output_blocks.11.1.transformer_blocks.0.norm1.bias": "up_blocks.3.attentions.2.transformer_blocks.0.norm1.bias",
-    "model.diffusion_model.output_blocks.11.1.transformer_blocks.0.norm2.weight": "up_blocks.3.attentions.2.transformer_blocks.0.norm2.weight",
-    "model.diffusion_model.output_blocks.11.1.transformer_blocks.0.norm2.bias": "up_blocks.3.attentions.2.transformer_blocks.0.norm2.bias",
-    "model.diffusion_model.output_blocks.11.1.transformer_blocks.0.norm3.weight": "up_blocks.3.attentions.2.transformer_blocks.0.norm3.weight",
-    "model.diffusion_model.output_blocks.11.1.transformer_blocks.0.norm3.bias": "up_blocks.3.attentions.2.transformer_blocks.0.norm3.bias",
-    "model.diffusion_model.output_blocks.11.1.proj_out.weight": "up_blocks.3.attentions.2.proj_out.weight",
-    "model.diffusion_model.output_blocks.11.1.proj_out.bias": "up_blocks.3.attentions.2.proj_out.bias"
-}
+def diff_to_sd(model_path, checkpoint_name, half=False):
+    unet_path = os.path.join(model_path, "unet", "diffusion_pytorch_model.bin")
+    vae_path = os.path.join(model_path, "vae", "diffusion_pytorch_model.bin")
+    text_enc_path = os.path.join(model_path, "text_encoder", "pytorch_model.bin")
 
+    # Convert the UNet model
+    unet_state_dict = torch.load(unet_path, map_location="cpu")
+    unet_state_dict = convert_unet_state_dict(unet_state_dict)
+    unet_state_dict = {"model.diffusion_model." + k: v for k, v in unet_state_dict.items()}
 
-class StableDiffusionPipelineStripped(DiffusionPipeline):
-    def __init__(self, unet=None, *args, **kwargs):
-        self.unet = unet
+    # Convert the VAE model
+    vae_state_dict = torch.load(vae_path, map_location="cpu")
+    vae_state_dict = convert_vae_state_dict(vae_state_dict)
+    vae_state_dict = {"first_stage_model." + k: v for k, v in vae_state_dict.items()}
 
+    # Convert the text encoder model
+    text_enc_dict = torch.load(text_enc_path, map_location="cpu")
+    text_enc_dict = convert_text_enc_state_dict(text_enc_dict)
+    text_enc_dict = {"cond_stage_model.transformer." + k: v for k, v in text_enc_dict.items()}
 
-def convert_diff_to_sd(diffusers_model_path_or_pipe: Union[str, DiffusionPipeline], base_ckpt_path: str,
-                       output_ckpt_path: str, overwrite=False):
-    """
-
-    Args:
-        diffusers_model_path_or_pipe: Path to the output of training, or pre-existing pipeline
-        base_ckpt_path: The source checkpoint that was extracted before training
-        output_ckpt_path: Where to save the new checkpoint. Should be the stable-diffusion directory.
-        overwrite: Whether to overwrite an existing checkpoint or not.
-
-    Returns:
-        The path to the saved model.
-    """
-    if type(diffusers_model_path_or_pipe) is str:
-        huggingface_use_auth_token = None
-        if not overwrite and os.path.exists(output_ckpt_path):
-            print("Specified model already exists and overwrite not set, nothing to do!")
-            return None
-
-        try:
-            diff_pipe = StableDiffusionPipeline.from_pretrained(diffusers_model_path_or_pipe,
-                                                                use_auth_token=huggingface_use_auth_token)
-        except Exception as ex:
-            if "required positional arguments" in str(ex):
-                print("load error, trying loading stripped version", ex)
-                diff_pipe = StableDiffusionPipelineStripped.from_pretrained(diffusers_model_path_or_pipe,
-                                                                            use_auth_token=huggingface_use_auth_token)
-            else:
-                raise
-    else:
-        diff_pipe = diffusers_model_path_or_pipe
-    diff_pipe_unet_sd = diff_pipe.unet.state_dict()
-    org_model = torch.load(base_ckpt_path)
-    org_sd = org_model["state_dict"]
-
-    for ckpt_key, diff_key in KeyMap.items():
-        org_sd[ckpt_key] = diff_pipe_unet_sd[diff_key]
-
-    torch.save(org_model, output_ckpt_path)
-    return output_ckpt_path
+    # Put together new checkpoint
+    state_dict = {**unet_state_dict, **vae_state_dict, **text_enc_dict}
+    if half:
+        state_dict = {k: v.half() for k, v in state_dict.items()}
+    state_dict = {"state_dict": state_dict}
+    torch.save(state_dict, checkpoint_name)
 
 
 def create_output_dir(new_model, config_data):

@@ -143,7 +143,7 @@ class DreamBooth:
         name = "".join(x for x in config["model_name"] if x.isalnum())
         model_path = paths.models_path
         model_dir = os.path.join(model_path, "dreambooth", name)
-        self.output_dir = os.path.join(model_dir, "working")
+        self.working_dir = os.path.join(model_dir, "working")
         # A folder containing the training data of instance images.
         if config["class_data_dir"] is not None and config["class_data_dir"] != "":
             self.class_data_dir = config["class_data_dir"]
@@ -153,7 +153,7 @@ class DreamBooth:
                 os.makedirs(self.class_data_dir)
 
         self.logging_dir = os.path.join(model_dir, "logging")
-        self.pretrained_model_path = os.path.join(model_dir, "stable-diffusion-v1-5")
+        
         self.with_prior_preservation = False
 
         if config["class_prompt"] != "*" and config["class_prompt"] != "" and config["num_class_images"] != 0:
@@ -174,7 +174,7 @@ class DreamBooth:
         self.max_grad_norm = config["max_grad_norm"]
 
     def train(self):
-        logging_dir = Path(self.output_dir, self.logging_dir)
+        logging_dir = Path(self.working_dir, self.logging_dir)
 
         accelerator = Accelerator(
             gradient_accumulation_steps=self.gradient_accumulation_steps,
@@ -205,7 +205,6 @@ class DreamBooth:
                 shared.state.textinfo = f"Generating class images for training..."
                 torch_dtype = torch.float16 if accelerator.device.type == "cuda" else torch.float32
                 pipeline = StableDiffusionPipeline.from_pretrained(
-                    self.pretrained_model_path,
                     torch_dtype=torch_dtype,
                     revision=self.total_steps,
                 )
@@ -239,25 +238,15 @@ class DreamBooth:
                     torch.cuda.empty_cache()
                 if shared.state.interrupted:
                     shared.state.textinfo = "Training canceled..."
-                    return self.output_dir, 0
+                    return self.working_dir, 0
         # Load existing training data if exist
         shared.state.textinfo = "Loading models..."
-        if self.output_dir is not None:
-            os.makedirs(self.output_dir, exist_ok=True)
-        ex_encoder = os.path.join(self.output_dir, "text_encoder", "pytorch_model.bin")
-        ex_vae = os.path.join(self.output_dir, "vae", "diffusion_pytorch_model.bin")
-        ex_unet = os.path.join(self.output_dir, "unet", "diffusion_pytorch_model.bin")
-        ex_tokenizer = os.path.join(self.output_dir, "tokenizer")
-        ex_model_path = self.pretrained_model_path
-        if os.path.exists(ex_encoder) and os.path.exists(ex_vae) and os.path.exists(ex_unet) and os.path.exists(
-                ex_tokenizer):
-            ex_model_path = self.output_dir
-
-        tokenizer = CLIPTokenizer.from_pretrained(os.path.join(ex_model_path, "tokenizer"))
+        
+        tokenizer = CLIPTokenizer.from_pretrained(os.path.join(self.working_dir, "tokenizer"))
         # Load models and create wrapper for stable diffusion
-        text_encoder = CLIPTextModel.from_pretrained(os.path.join(ex_model_path, "text_encoder"))
-        vae = AutoencoderKL.from_pretrained(os.path.join(ex_model_path, "vae"))
-        unet = UNet2DConditionModel.from_pretrained(os.path.join(ex_model_path, "unet"))
+        text_encoder = CLIPTextModel.from_pretrained(os.path.join(self.working_dir, "text_encoder"))
+        vae = AutoencoderKL.from_pretrained(os.path.join(self.working_dir, "vae"))
+        unet = UNet2DConditionModel.from_pretrained(os.path.join(self.working_dir, "unet"))
         printm("Loaded model.")
         vae.requires_grad_(False)
         if not self.train_text_encoder:
@@ -479,21 +468,22 @@ class DreamBooth:
                         if save_ckpt or save_img or training_complete:
                             if accelerator.is_main_process:
                                 pipeline = StableDiffusionPipeline.from_pretrained(
-                                    self.pretrained_model_path,
+                                    self.working_dir,
                                     unet=accelerator.unwrap_model(unet),
                                     revision=self.total_steps + global_step
                                 )
                                 pipeline = pipeline.to("cuda")
                                 with autocast("cuda"):
                                     pipeline.text_encoder.resize_token_embeddings(49409)
+                                    printm("Loaded pipeline for preview...")
                                     if save_ckpt:
                                         shared.state.textinfo = "Saving checkpoint..."
                                         print(f"Saving checkpoint at {global_step}.")
 
                                         try:
-                                            pipeline.save_pretrained(self.output_dir)
-                                            save_checkpoint(self.model_name, pipeline, self.src,
-                                                            self.total_steps + global_step)
+                                            pipeline.save_pretrained(self.working_dir)
+                                            save_checkpoint(self.model_name, self.total_steps + global_step,
+                                                            self.mixed_precision == "fp16")
                                         except Exception as e:
                                             print(f"Exception saving checkpoint/model: {e}")
                                             traceback.print_exception(*sys.exc_info())
@@ -508,6 +498,10 @@ class DreamBooth:
                                         image = pipeline(prompt, num_inference_steps=60, guidance_scale=7.5).images[0]
                                         shared.state.current_image = image
                                         image.save(last_saved_image)
+                                del pipeline
+                                if torch.cuda.is_available():
+                                    torch.cuda.empty_cache()
+                                printm("Pipeline cleared...")
                     shared.state.textinfo = f"Training: {global_step}/{self.max_train_steps} steps"
 
                     if training_complete:
@@ -552,7 +546,7 @@ class DreamBooth:
         except Exception as f:
             print(f"Exception ending training: {f}")
 
-        return self.output_dir, global_step
+        return self.working_dir, global_step
 
 
 def start_training(model_name,
@@ -658,11 +652,11 @@ def start_training(model_name,
     return res, ""
 
 
-def save_checkpoint(model_name, pipeline, src_checkpoint, total_steps,):
+def save_checkpoint(model_name: str, total_steps: int, use_half: bool=False):
     print(f"Successfully trained model for a total of {total_steps} steps, converting to ckpt.")
-    src_path = modules.sd_models.get_closet_checkpoint_match(src_checkpoint)[0]
+    src_path = os.path.join(paths.models_path, "dreambooth", model_name, "working")
     out_file = os.path.join(paths.models_path, "Stable-diffusion", f"{model_name}_{total_steps}.ckpt")
-    conversion.convert_diff_to_sd(pipeline, src_path, out_file, True)
+    conversion.diff_to_sd(src_path, out_file, use_half)
     sd_models.list_models()
 
 
