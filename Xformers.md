@@ -64,7 +64,23 @@ pip install wheel
 
 7. You can finally build xFormers, note that the build will take a long time (probably 10-20minutes), it may initially complain of some errors but it should still compile correctly. 
 
-```sh
+> OPTIONAL tip: To further speed up on multi-core CPU Windows systems, install ninja https://github.com/ninja-build/ninja.
+> Steps to install:
+> 1. download ninja-win.zip from https://github.com/ninja-build/ninja/releases and unzip
+> 2. place ninja.exe under C:\Windows OR add the full path to the extracted ninja.exe into system PATH
+> 3. Run ninja -h in cmd and verify if you see a help message printed
+> 4. Run the follow commands to start building. It should automatically use Ninja, no extra config is needed. You should see significantly higher CPU usage (40%+).
+> ```
+> python setup.py build
+> python setup.py bdist_wheel
+> ```
+> This has reduced build time on a windows PC with a AMD 5800X CPU from 1.5hr to 10min.
+> Ninja is also supported on Linux and MacOS but I do not have these OS to test thus can not provide step-by-step tutorial.
+
+
+
+8. Run the following:
+ ```sh
 python setup.py build
 python setup.py bdist_wheel
 ```
