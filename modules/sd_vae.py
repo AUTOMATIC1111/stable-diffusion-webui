@@ -25,10 +25,10 @@ def refresh_vae_list(vae_path=vae_path, model_path=model_path):
     global vae_dict, vae_list
     res = {}
     candidates = [
-        *glob.iglob(os.path.join(model_path, '**/*.vae.pt'), recursive=True),
         *glob.iglob(os.path.join(model_path, '**/*.vae.ckpt'), recursive=True),
-        *glob.iglob(os.path.join(vae_path, '**/*.pt'), recursive=True),
+        *glob.iglob(os.path.join(model_path, '**/*.vae.pt'), recursive=True),
         *glob.iglob(os.path.join(vae_path, '**/*.ckpt'), recursive=True)
+        *glob.iglob(os.path.join(vae_path, '**/*.pt'), recursive=True),
     ]
     if shared.cmd_opts.vae_path is not None and os.path.isfile(shared.cmd_opts.vae_path):
         candidates.append(shared.cmd_opts.vae_path)
