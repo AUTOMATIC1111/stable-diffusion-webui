@@ -28,6 +28,45 @@ https://github.com/AUTOMATIC1111/stable-diffusion-webui-wildcards
 
 Allows you to use `__name__` syntax in your prompt to get a random line from a file named `name.txt` in the wildcards directory.
 
+## Dynamic Prompts
+A custom extension for [AUTOMATIC1111/stable-diffusion-webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui) that implements an expressive template language for random or combinatorial prompt generation along with features to support deep wildcard directory structures.
+
+Using this script, the prompt:
+
+`A {house|apartment|lodge|cottage} in {summer|winter|autumn|spring} by {2$$artist1|artist2|artist3}`
+
+Will any of the following prompts:
+
+- A house in summer by artist1, artist2
+- A lodge in autumn by artist3, artist1
+- A cottage in winter by artist2, artist3
+- ...
+
+This is especially useful if you are searching for interesting combinations of artists and styles.
+
+You can also pick a random string from a file. Assuming you have the file seasons.txt in WILDCARD_DIR (see below), then:
+
+`__seasons__ is coming`
+
+Might generate the following:
+
+- Winter is coming
+- Spring is coming
+- ...
+
+You can also use the same wildcard twice
+
+`I love __seasons__ better than __seasons__`
+
+- I love Winter better than Summer
+- I love Spring better than Spring
+
+To install, run the following command from within the webui directory:
+
+`git clone https://github.com/adieyal/sd-dynamic-prompting/ extensions/dynamic-prompts`
+
+If you are upgrading from a version prior to 0.11.0, be sure to delete the old dynamic_prompting.py from the webui's scripts directory and the old dynamic_prompting.js from the webui's javascript directory.
+
 ## Image browser
 https://github.com/yfszzx/stable-diffusion-webui-images-browser
 
