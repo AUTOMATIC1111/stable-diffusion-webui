@@ -26,6 +26,8 @@ __pycache__
 /.idea
 notification.mp3
 /SwinIR
+/test/stdout.txt
+/test/stderr.txt
 /textual_inversion
 .vscode
 /extensions
