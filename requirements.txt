@@ -8,6 +8,8 @@ gradio==3.5
 invisible-watermark
 numpy
 omegaconf
+opencv-python
+requests
 piexif
 Pillow
 pytorch_lightning

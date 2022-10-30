@@ -9,7 +9,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 
 from modules.paths import script_path
 
-from modules import devices, sd_samplers
+from modules import devices, sd_samplers, upscaler
 import modules.codeformer_model as codeformer
 import modules.extras
 import modules.face_restoration
@@ -46,26 +46,13 @@ def wrap_queued_call(func):
 
 def wrap_gradio_gpu_call(func, extra_outputs=None):
     def f(*args, **kwargs):
-        devices.torch_gc()
 
-        shared.state.sampling_step = 0
-        shared.state.job_count = -1
-        shared.state.job_no = 0
-        shared.state.job_timestamp = shared.state.get_job_timestamp()
-        shared.state.current_latent = None
-        shared.state.current_image = None
-        shared.state.current_image_sampling_step = 0
-        shared.state.skipped = False
-        shared.state.interrupted = False
-        shared.state.textinfo = None
+        shared.state.begin()
 
         with queue_lock:
             res = func(*args, **kwargs)
 
-        shared.state.job = ""
-        shared.state.job_count = 0
-
-        devices.torch_gc()
+        shared.state.end()
 
         return res
 
@@ -73,6 +60,11 @@ def wrap_gradio_gpu_call(func, extra_outputs=None):
 
 
 def initialize():
+    if cmd_opts.ui_debug_mode:
+        shared.sd_upscalers = upscaler.UpscalerLanczos().scalers
+        modules.scripts.load_scripts()
+        return
+
     modelloader.cleanup_models()
     modules.sd_models.setup_model()
     codeformer.setup_model(cmd_opts.codeformer_models_path)

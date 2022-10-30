@@ -111,7 +111,7 @@ def prepare_enviroment():
 
     gfpgan_package = os.environ.get('GFPGAN_PACKAGE', "git+https://github.com/TencentARC/GFPGAN.git@8d2447a2d918f8eba5a4a01463fd48e45126a379")
     clip_package = os.environ.get('CLIP_PACKAGE', "git+https://github.com/openai/CLIP.git@d50d76daa670286dd6cacf3bcd80b5e4823fc8e1")
-    deepdanbooru_package = os.environ.get('DEEPDANBOORU_PACKAGE', "git+https://github.com/KichangKim/DeepDanbooru.git@edf73df4cdaeea2cf00e9ac08bd8a9026b7a7b26")
+    deepdanbooru_package = os.environ.get('DEEPDANBOORU_PACKAGE', "git+https://github.com/KichangKim/DeepDanbooru.git@d91a2963bf87c6a770d74894667e9ffa9f6de7ff")
 
     xformers_windows_package = os.environ.get('XFORMERS_WINDOWS_PACKAGE', 'https://github.com/C43H66N12O12S2/stable-diffusion-webui/releases/download/f/xformers-0.0.14.dev0-cp310-cp310-win_amd64.whl')
 
@@ -128,10 +128,12 @@ def prepare_enviroment():
     blip_commit_hash = os.environ.get('BLIP_COMMIT_HASH', "48211a1594f1321b00f14c9f7a5b4813144b2fb9")
 
     sys.argv += shlex.split(commandline_args)
+    test_argv = [x for x in sys.argv if x != '--tests']
 
     sys.argv, skip_torch_cuda_test = extract_arg(sys.argv, '--skip-torch-cuda-test')
     sys.argv, reinstall_xformers = extract_arg(sys.argv, '--reinstall-xformers')
     sys.argv, update_check = extract_arg(sys.argv, '--update-check')
+    sys.argv, run_tests = extract_arg(sys.argv, '--tests')
     xformers = '--xformers' in sys.argv
     deepdanbooru = '--deepdanbooru' in sys.argv
     ngrok = '--ngrok' in sys.argv
@@ -193,6 +195,26 @@ def prepare_enviroment():
     if "--exit" in sys.argv:
         print("Exiting because of --exit argument")
         exit(0)
+
+    if run_tests:
+        tests(test_argv)
+        exit(0)
+
+
+def tests(argv):
+    if "--api" not in argv:
+        argv.append("--api")
+
+    print(f"Launching Web UI in another process for testing with arguments: {' '.join(argv[1:])}")
+
+    with open('test/stdout.txt', "w", encoding="utf8") as stdout, open('test/stderr.txt', "w", encoding="utf8") as stderr:
+        proc = subprocess.Popen([sys.executable, *argv], stdout=stdout, stderr=stderr)
+
+    import test.server_poll
+    test.server_poll.run_tests()
+
+    print(f"Stopping Web UI process with id {proc.pid}")
+    proc.kill()
 
 
 def start_webui():

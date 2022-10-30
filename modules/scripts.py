@@ -64,7 +64,16 @@ class Script:
     def process(self, p, *args):
         """
         This function is called before processing begins for AlwaysVisible scripts.
-        scripts. You can modify the processing object (p) here, inject hooks, etc.
+        You can modify the processing object (p) here, inject hooks, etc.
+        args contains all values returned by components from ui()
+        """
+
+        pass
+
+    def postprocess(self, p, processed, *args):
+        """
+        This function is called after processing ends for AlwaysVisible scripts.
+        args contains all values returned by components from ui()
         """
 
         pass
@@ -236,7 +245,7 @@ class ScriptRunner:
             with gr.Group():
                 create_script_ui(script, inputs, inputs_alwayson)
 
-        dropdown = gr.Dropdown(label="Script", choices=["None"] + self.titles, value="None", type="index")
+        dropdown = gr.Dropdown(label="Script", elem_id="script_list", choices=["None"] + self.titles, value="None", type="index")
         dropdown.save_to_config = True
         inputs[0] = dropdown
 
@@ -289,13 +298,22 @@ class ScriptRunner:
 
         return processed
 
-    def run_alwayson_scripts(self, p):
+    def process(self, p):
         for script in self.alwayson_scripts:
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.process(p, *script_args)
             except Exception:
-                print(f"Error running alwayson script: {script.filename}", file=sys.stderr)
+                print(f"Error running process: {script.filename}", file=sys.stderr)
+                print(traceback.format_exc(), file=sys.stderr)
+
+    def postprocess(self, p, processed):
+        for script in self.alwayson_scripts:
+            try:
+                script_args = p.script_args[script.args_from:script.args_to]
+                script.postprocess(p, processed, *script_args)
+            except Exception:
+                print(f"Error running postprocess: {script.filename}", file=sys.stderr)
                 print(traceback.format_exc(), file=sys.stderr)
 
     def reload_sources(self, cache):
