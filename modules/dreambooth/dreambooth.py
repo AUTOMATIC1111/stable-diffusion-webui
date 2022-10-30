@@ -470,6 +470,8 @@ class DreamBooth:
                                 pipeline = StableDiffusionPipeline.from_pretrained(
                                     self.working_dir,
                                     unet=accelerator.unwrap_model(unet),
+                                    text_encoder=accelerator.unwrap_model(text_encoder),
+                                    vae=accelerator.unwrap_model(vae),
                                     revision=self.total_steps + global_step
                                 )
                                 pipeline = pipeline.to("cuda")

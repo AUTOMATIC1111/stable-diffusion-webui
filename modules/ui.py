@@ -1615,8 +1615,8 @@ def create_ui(wrap_gradio_gpu_call):
             with gr.Column():
                 db_output = gr.Text(elem_id="db_output", value="", show_label=False)
                 db_preview = gr.Image(elem_id='db_preview', visible=False)
-                db_progressbar = gr.HTML(elem_id="db_progressbar")
                 db_progress = gr.HTML(elem_id="db_progress", value="")
+                db_progressbar = gr.HTML(elem_id="db_progressbar")
                 db_outcome = gr.HTML(elem_id="db_error", value="")
                 setup_progressbar(db_progressbar, db_preview, 'db', textinfo=db_progress)
 
