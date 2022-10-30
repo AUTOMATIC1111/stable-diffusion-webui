@@ -3,13 +3,12 @@ import requests
 from gradio.processing_utils import encode_pil_to_base64
 from PIL import Image
 
+
 class TestImg2ImgWorking(unittest.TestCase):
     def setUp(self):
         self.url_img2img = "http://localhost:7860/sdapi/v1/img2img"
         self.simple_img2img = {
-            "init_images": [
-                encode_pil_to_base64(Image.open(r"test/test_files/img2img_basic.png"))
-                ],
+            "init_images": [encode_pil_to_base64(Image.open(r"test/test_files/img2img_basic.png"))],
             "resize_mode": 0,
             "denoising_strength": 0.75,
             "mask": None,
@@ -19,9 +18,7 @@ class TestImg2ImgWorking(unittest.TestCase):
             "inpaint_full_res_padding": 0,
             "inpainting_mask_invert": 0,
             "prompt": "example prompt",
-            "styles": [
-                ""
-                ],
+            "styles": [],
             "seed": -1,
             "subseed": -1,
             "subseed_strength": 0,
@@ -45,6 +42,7 @@ class TestImg2ImgWorking(unittest.TestCase):
             "sampler_index": "Euler a",
             "include_init_images": False
             }
+
     def test_img2img_simple_performed(self):
         self.assertEqual(requests.post(self.url_img2img, json=self.simple_img2img).status_code, 200)
 
@@ -52,8 +50,10 @@ class TestImg2ImgWorking(unittest.TestCase):
         self.simple_img2img["mask"] = encode_pil_to_base64(Image.open(r"test/test_files/mask_basic.png"))
         self.assertEqual(requests.post(self.url_img2img, json=self.simple_img2img).status_code, 200)
 
+
 class TestImg2ImgCorrectness(unittest.TestCase):
     pass
+
 
 if __name__ == "__main__":
     unittest.main()

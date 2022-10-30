@@ -1,6 +1,7 @@
 import unittest
 import requests
 
+
 class TestTxt2ImgWorking(unittest.TestCase):
     def setUp(self):
         self.url_txt2img = "http://localhost:7860/sdapi/v1/txt2img"
@@ -10,9 +11,7 @@ class TestTxt2ImgWorking(unittest.TestCase):
             "firstphase_width": 0,
             "firstphase_height": 0,
             "prompt": "example prompt",
-            "styles": [
-            ""
-            ],
+            "styles": [],
             "seed": -1,
             "subseed": -1,
             "subseed_strength": 0,
@@ -34,6 +33,7 @@ class TestTxt2ImgWorking(unittest.TestCase):
             "s_noise": 1,
             "sampler_index": "Euler a"
         }
+
     def test_txt2img_simple_performed(self):
         self.assertEqual(requests.post(self.url_txt2img, json=self.simple_txt2img).status_code, 200)
 
@@ -65,8 +65,10 @@ class TestTxt2ImgWorking(unittest.TestCase):
         self.simple_txt2img["n_iter"] = 2
         self.assertEqual(requests.post(self.url_txt2img, json=self.simple_txt2img).status_code, 200)
 
+
 class TestTxt2ImgCorrectness(unittest.TestCase):
     pass
+
 
 if __name__ == "__main__":
     unittest.main()

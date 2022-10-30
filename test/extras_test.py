@@ -1,7 +1,5 @@
 import unittest
-import requests
-from gradio.processing_utils import encode_pil_to_base64
-from PIL import Image
+
 
 class TestExtrasWorking(unittest.TestCase):
     def setUp(self):
@@ -22,8 +20,10 @@ class TestExtrasWorking(unittest.TestCase):
             "image": ""
             }
 
+
 class TestExtrasCorrectness(unittest.TestCase):
     pass
+
 
 if __name__ == "__main__":
     unittest.main()
