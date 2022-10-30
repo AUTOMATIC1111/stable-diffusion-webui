@@ -11,6 +11,7 @@ from modules import prompt_parser, devices, processing, images
 
 from modules.shared import opts, cmd_opts, state
 import modules.shared as shared
+from modules.script_callbacks import CGFDenoiserParams, cfg_denoiser_callback
 
 
 SamplerData = namedtuple('SamplerData', ['name', 'constructor', 'aliases', 'options'])
@@ -277,6 +278,8 @@ class CFGDenoiser(torch.nn.Module):
         x_in = torch.cat([torch.stack([x[i] for _ in range(n)]) for i, n in enumerate(repeats)] + [x])
         image_cond_in = torch.cat([torch.stack([image_cond[i] for _ in range(n)]) for i, n in enumerate(repeats)] + [image_cond])
         sigma_in = torch.cat([torch.stack([sigma[i] for _ in range(n)]) for i, n in enumerate(repeats)] + [sigma])
+
+        cfg_denoiser_callback(CGFDenoiserParams(x_in, image_cond_in, sigma_in, state.sampling_step, state.sampling_steps))
 
         if tensor.shape[1] == uncond.shape[1]:
             cond_in = torch.cat([tensor, uncond])
