@@ -111,7 +111,7 @@ function create_submit_args(args){
 
 function submit(){
     requestProgress('txt2img')
-    
+
     return create_submit_args(arguments)
 }
 
