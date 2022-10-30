@@ -1567,8 +1567,7 @@ def create_ui(wrap_gradio_gpu_call):
         reload_script_bodies.click(
             fn=reload_scripts,
             inputs=[],
-            outputs=[],
-            _js='function(){}'
+            outputs=[]
         )
 
         def request_restart():
