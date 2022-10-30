@@ -1,119 +1,107 @@
-// code related to showing and updating progressbar shown as the image is being made
-global_progressbars = {}
-galleries = {}
-galleryObservers = {}
+let prevSelectedIndex = -1;
 
-function check_progressbar(id_part, id_progressbar, id_progressbar_span, id_skip, id_interrupt, id_preview, id_gallery){
-    var progressbar = gradioApp().getElementById(id_progressbar)
-    var skip = id_skip ? gradioApp().getElementById(id_skip) : null
-    var interrupt = gradioApp().getElementById(id_interrupt)
-    
-    if(opts.show_progress_in_title && progressbar && progressbar.offsetParent){
-        if(progressbar.innerText){
-            let newtitle = 'Stable Diffusion - ' + progressbar.innerText
-            if(document.title != newtitle){
-                document.title =  newtitle;          
-            }
-        }else{
-            let newtitle = 'Stable Diffusion'
-            if(document.title != newtitle){
-                document.title =  newtitle;          
-            }
-        }
+window.JobController.addEventListener("jobStart", (jobName) => {
+  console.log("Job started:", jobName);
+  const interruptBtn = gradioApp().getElementById(jobName + "_interrupt");
+  const skipBtn = gradioApp().getElementById(jobName + "_skip");
+
+  if (interruptBtn) {
+    interruptBtn.style.display = "block";
+  }
+
+  if (skipBtn) {
+    skipBtn.style.display = "block";
+  }
+
+  prevSelectedIndex = selected_gallery_index();
+});
+
+window.JobController.addEventListener("jobEnd", (jobName) => {
+  console.log("Job ended:", jobName);
+  const interruptBtn = gradioApp().getElementById(jobName + "_interrupt");
+  const skipBtn = gradioApp().getElementById(jobName + "_skip");
+
+  interruptBtn.style.display = "none";
+
+  if (skipBtn) {
+    skipBtn.style.display = "none";
+  }
+
+  updateGallery(jobName);
+  updatePageTitle(opts);
+});
+
+function updatePageTitle(opts, textToAppend) {
+  if (opts.show_progress_in_title) {
+    let newTitle = "Stable Diffusion";
+
+    if (textToAppend) {
+      newTitle = "Stable Diffusion - " + textToAppend;
     }
-    
-	if(progressbar!= null && progressbar != global_progressbars[id_progressbar]){
-	    global_progressbars[id_progressbar] = progressbar
 
-        var mutationObserver = new MutationObserver(function(m){
-            preview = gradioApp().getElementById(id_preview)
-            gallery = gradioApp().getElementById(id_gallery)
-
-            if(preview != null && gallery != null){
-                preview.style.width = gallery.clientWidth + "px"
-                preview.style.height = gallery.clientHeight + "px"
-
-				//only watch gallery if there is a generation process going on
-                check_gallery(id_gallery);
-
-                var progressDiv = gradioApp().querySelectorAll('#' + id_progressbar_span).length > 0;
-                if(!progressDiv){
-                    if (skip) {
-                        skip.style.display = "none"
-                    }
-                    interrupt.style.display = "none"
-			
-                    //disconnect observer once generation finished, so user can close selected image if they want
-                    if (galleryObservers[id_gallery]) {
-                        galleryObservers[id_gallery].disconnect();
-                        galleries[id_gallery] = null;
-                    }    
-                }
-
-
-            }
-
-            window.setTimeout(function() { requestMoreProgress(id_part, id_progressbar_span, id_skip, id_interrupt) }, 500)
-        });
-        mutationObserver.observe( progressbar, { childList:true, subtree:true })
-	}
+    document.title = newTitle;
+  }
 }
 
-function check_gallery(id_gallery){
-    let gallery = gradioApp().getElementById(id_gallery)
-    // if gallery has no change, no need to setting up observer again.
-    if (gallery && galleries[id_gallery] !== gallery){
-        galleries[id_gallery] = gallery;
-        if(galleryObservers[id_gallery]){
-            galleryObservers[id_gallery].disconnect();
-        }
-        let prevSelectedIndex = selected_gallery_index();
-        galleryObservers[id_gallery] = new MutationObserver(function (){
-            let galleryButtons = gradioApp().querySelectorAll('#'+id_gallery+' .gallery-item')
-            let galleryBtnSelected = gradioApp().querySelector('#'+id_gallery+' .gallery-item.\\!ring-2')
-            if (prevSelectedIndex !== -1 && galleryButtons.length>prevSelectedIndex && !galleryBtnSelected) {
-                // automatically re-open previously selected index (if exists)
-                activeElement = gradioApp().activeElement;
+function updateGallery(jobName) {
+  let galleryButtons = gradioApp().querySelectorAll(`#${jobName}_gallery .gallery-item`);
+  let galleryBtnSelected = gradioApp().querySelector(`#${jobName}_gallery .gallery-item.\\!ring-2`);
 
-                galleryButtons[prevSelectedIndex].click();
-                showGalleryImage();
+  if (prevSelectedIndex !== -1 && galleryButtons.length > prevSelectedIndex && !galleryBtnSelected) {
+    // automatically re-open previously selected index (if exists)
+    activeElement = gradioApp().activeElement;
 
-                if(activeElement){
-                    // i fought this for about an hour; i don't know why the focus is lost or why this helps recover it
-                    // if somenoe has a better solution please by all means
-                    setTimeout(function() { activeElement.focus() }, 1);
-                }
-            }
-        })
-        galleryObservers[id_gallery].observe( gallery, { childList:true, subtree:false })
+    galleryButtons[prevSelectedIndex].click();
+    showGalleryImage();
+
+    if (activeElement) {
+      // i fought this for about an hour; i don't know why the focus is lost or why this helps recover it
+      // if somenoe has a better solution please by all means
+      setTimeout(function () {
+        activeElement.focus();
+      }, 1);
     }
+  }
 }
 
-onUiUpdate(function(){
-    check_progressbar('txt2img', 'txt2img_progressbar', 'txt2img_progress_span', 'txt2img_skip', 'txt2img_interrupt', 'txt2img_preview', 'txt2img_gallery')
-    check_progressbar('img2img', 'img2img_progressbar', 'img2img_progress_span', 'img2img_skip', 'img2img_interrupt', 'img2img_preview', 'img2img_gallery')
-    check_progressbar('ti', 'ti_progressbar', 'ti_progress_span', '', 'ti_interrupt', 'ti_preview', 'ti_gallery')
-})
+let progressSpanExists = false;
 
-function requestMoreProgress(id_part, id_progressbar_span, id_skip, id_interrupt){
-    btn = gradioApp().getElementById(id_part+"_check_progress");
-    if(btn==null) return;
+onUiUpdate(function () {
+  const jobName = window.JobController.getJob();
 
+  if (jobName) {
+    const existsNow = !!gradioApp().getElementById(jobName + "_progress_span");
+    console.log("UI update jobName: " + jobName);
+    console.log("progressSpanExists: " + progressSpanExists);
+
+    if (progressSpanExists && !existsNow) {
+      window.JobController.endJob();
+    }
+
+    progressSpanExists = existsNow;
+
+    if (progressSpanExists) {
+      const progressBar = gradioApp().getElementById(jobName + "_progressbar");
+      updatePageTitle(opts, progressBar.innerText);
+
+      console.log("Calling check progress", jobName);
+
+      const checkProgressBtn = gradioApp().getElementById(jobName + "_check_progress");
+      if (checkProgressBtn) {
+        checkProgressBtn.click();
+      }
+    } else {
+      console.log("UI update, no job");
+    }
+  }
+});
+
+function requestProgress(id_part) {
+  window.JobController.startJob(id_part);
+
+  btn = gradioApp().getElementById(id_part + "_check_progress_initial");
+
+  if (btn) {
     btn.click();
-    var progressDiv = gradioApp().querySelectorAll('#' + id_progressbar_span).length > 0;
-    var skip = id_skip ? gradioApp().getElementById(id_skip) : null
-    var interrupt = gradioApp().getElementById(id_interrupt)
-    if(progressDiv && interrupt){
-        if (skip) {
-            skip.style.display = "block"
-        }
-        interrupt.style.display = "block"
-    }
-}
-
-function requestProgress(id_part){
-    btn = gradioApp().getElementById(id_part+"_check_progress_initial");
-    if(btn==null) return;
-
-    btn.click();
+  }
 }
