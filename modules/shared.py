@@ -4,6 +4,7 @@ import json
 import os
 import sys
 from collections import OrderedDict
+import time
 
 import gradio as gr
 import tqdm
@@ -132,6 +133,7 @@ class State:
     current_image = None
     current_image_sampling_step = 0
     textinfo = None
+    time_start = None
 
     def skip(self):
         self.skipped = True
@@ -168,6 +170,7 @@ class State:
         self.skipped = False
         self.interrupted = False
         self.textinfo = None
+        self.time_start = time.time()
 
         devices.torch_gc()
 
