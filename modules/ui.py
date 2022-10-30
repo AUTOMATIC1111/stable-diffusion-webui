@@ -20,8 +20,8 @@ from PIL import Image, PngImagePlugin
 
 
 from modules import sd_hijack, sd_models, localization, script_callbacks
-from modules.dreambooth import dreambooth, conversion
 from modules.paths import script_path
+from modules.dreambooth import dreambooth, conversion
 
 from modules.shared import opts, cmd_opts, restricted_opts
 
@@ -1533,7 +1533,7 @@ def create_ui(wrap_gradio_gpu_call):
         )
 
         db_train_embedding.click(
-            fn=wrap_gradio_gpu_call(modules.dreambooth.dreambooth.start_training, extra_outputs=[gr.update()]),
+            fn=wrap_gradio_gpu_call(dreambooth.start_training, extra_outputs=[gr.update()]),
             _js="start_training_dreambooth",
             inputs=[
                 db_model_name,
@@ -1575,7 +1575,7 @@ def create_ui(wrap_gradio_gpu_call):
         )
 
         db_load_params.click(
-            fn=modules.dreambooth.dreambooth.load_params,
+            fn=dreambooth.load_params,
             inputs=[
                 db_model_name,
                 db_initialization_text,
