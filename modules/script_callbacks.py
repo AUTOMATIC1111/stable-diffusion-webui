@@ -48,7 +48,7 @@ def clear_callbacks():
     callbacks_ui_settings.clear()
     callbacks_before_image_saved.clear()
     callbacks_image_saved.clear()
-
+    callbacks_cfg_denoiser.clear()
 
 def model_loaded_callback(sd_model):
     for c in callbacks_model_loaded:
