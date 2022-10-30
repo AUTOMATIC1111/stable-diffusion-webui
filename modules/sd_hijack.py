@@ -121,18 +121,22 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
 
         self.comma_token = [v for k, v in self.tokenizer.get_vocab().items() if k == ',</w>'][0]
 
-        tokens_with_parens = [(k, v) for k, v in self.tokenizer.get_vocab().items() if '(' in k or ')' in k or '[' in k or ']' in k]
+        tokens_with_parens = [(k, v) for k, v in self.tokenizer.get_vocab().items() if '(' in k or ')' in k or '[' in k or ']' in k or '{' in k or '}' in k]
         for text, ident in tokens_with_parens:
             mult = 1.0
             for c in text:
                 if c == '[':
-                    mult /= 1.1
+                    mult /= 1.05
                 if c == ']':
-                    mult *= 1.1
+                    mult *= 1.05
                 if c == '(':
-                    mult *= 1.1
+                    mult *= 1.05
                 if c == ')':
-                    mult /= 1.1
+                    mult /= 1.05
+                if c == '{':
+                    mult *= 1.05
+                if c == '}':
+                    mult /= 1.05
 
             if mult != 1.0:
                 self.token_mults[ident] = mult
