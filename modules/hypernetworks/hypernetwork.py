@@ -356,7 +356,8 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
         os.makedirs(hypernetwork_dir, exist_ok=True)
     else:
         hypernetwork_dir = None
-
+    hypernetwork_name = hypernetwork_name.rsplit('(', 1)[0]
+        
     if create_image_every > 0:
         images_dir = os.path.join(log_directory, "images")
         os.makedirs(images_dir, exist_ok=True)
