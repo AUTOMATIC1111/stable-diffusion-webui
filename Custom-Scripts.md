@@ -43,6 +43,9 @@ Pick two (or more) seeds and generate a sequence of images interpolating between
 Example of what you can do with it:
 https://www.youtube.com/watch?v=4c71iUclY4U
 
+## Advanced Seed Blending
+
+
 ## Animator
 https://github.com/Animator-Anon/Animator/blob/main/animation.py
 
