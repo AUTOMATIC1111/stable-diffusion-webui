@@ -142,7 +142,7 @@
     "latent noise": "潜空间噪声",
     "latent nothing": "潜空间数值零",
     "Inpaint at full resolution": "以完整分辨率进行局部重绘",
-    "Inpaint at full resolution padding, pixels": "以完整分辨率进行局部重绘 - 填补像素",
+    "Inpaint at full resolution padding, pixels": "填补像素",
     "Process images in a directory on the same machine where the server is running.": "在服务器主机上的目录中处理图像",
     "Use an empty output directory to save pictures normally instead of writing to the output directory.": "指定一个空的文件夹为输出目录而非默认的 output 文件夹为输出目录",
     "Input directory": "输入目录",
