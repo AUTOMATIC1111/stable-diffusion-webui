@@ -409,6 +409,7 @@ Last saved image: {html.escape(last_saved_image)}<br/>
 
     filename = os.path.join(shared.cmd_opts.embeddings_dir, f'{embedding_name}.pt')
     save_embedding(embedding, checkpoint, embedding_name, filename, remove_cached_checksum=True)
+    shared.sd_model.first_stage_model.to(devices.device)
 
     return embedding, filename
 
