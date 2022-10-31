@@ -43,7 +43,7 @@ def refresh_vae_list(vae_path=vae_path, model_path=model_path):
     vae_dict.update(res)
     return vae_list
 
-def load_vae(model, checkpoint_file, vae_file="auto"):
+def resolve_vae(checkpoint_file, vae_file="auto"):
     global first_load, vae_dict, vae_list
     # save_settings = False
 
@@ -93,6 +93,12 @@ def load_vae(model, checkpoint_file, vae_file="auto"):
     # Last check, just because
     if vae_file and not os.path.exists(vae_file):
         vae_file = None
+
+    return vae_file
+
+def load_vae(model, vae_file):
+    global first_load, vae_dict, vae_list
+    # save_settings = False
 
     if vae_file:
         print(f"Loading VAE weights from: {vae_file}")
