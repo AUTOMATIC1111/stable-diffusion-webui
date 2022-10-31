@@ -26,3 +26,4 @@ torchdiffeq
 kornia
 lark
 inflection
+GitPython

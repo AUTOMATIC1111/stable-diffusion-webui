@@ -128,10 +128,12 @@ def prepare_enviroment():
     blip_commit_hash = os.environ.get('BLIP_COMMIT_HASH', "48211a1594f1321b00f14c9f7a5b4813144b2fb9")
 
     sys.argv += shlex.split(commandline_args)
+    test_argv = [x for x in sys.argv if x != '--tests']
 
     sys.argv, skip_torch_cuda_test = extract_arg(sys.argv, '--skip-torch-cuda-test')
     sys.argv, reinstall_xformers = extract_arg(sys.argv, '--reinstall-xformers')
     sys.argv, update_check = extract_arg(sys.argv, '--update-check')
+    sys.argv, run_tests = extract_arg(sys.argv, '--tests')
     xformers = '--xformers' in sys.argv
     deepdanbooru = '--deepdanbooru' in sys.argv
     ngrok = '--ngrok' in sys.argv
@@ -193,6 +195,26 @@ def prepare_enviroment():
     if "--exit" in sys.argv:
         print("Exiting because of --exit argument")
         exit(0)
+
+    if run_tests:
+        tests(test_argv)
+        exit(0)
+
+
+def tests(argv):
+    if "--api" not in argv:
+        argv.append("--api")
+
+    print(f"Launching Web UI in another process for testing with arguments: {' '.join(argv[1:])}")
+
+    with open('test/stdout.txt', "w", encoding="utf8") as stdout, open('test/stderr.txt', "w", encoding="utf8") as stderr:
+        proc = subprocess.Popen([sys.executable, *argv], stdout=stdout, stderr=stderr)
+
+    import test.server_poll
+    test.server_poll.run_tests()
+
+    print(f"Stopping Web UI process with id {proc.pid}")
+    proc.kill()
 
 
 def start_webui():
