@@ -132,6 +132,7 @@ class State:
     current_image = None
     current_image_sampling_step = 0
     textinfo = None
+    need_restart = False
 
     def skip(self):
         self.skipped = True
@@ -354,6 +355,12 @@ options_templates.update(options_section(('sampler-params', "Sampler parameters"
     'eta_noise_seed_delta': OptionInfo(0, "Eta noise seed delta", gr.Number, {"precision": 0}),
 }))
 
+options_templates.update(options_section((None, "Hidden options"), {
+    "disabled_extensions": OptionInfo([], "Disable those extensions"),
+}))
+
+options_templates.update()
+
 
 class Options:
     data = None
@@ -365,8 +372,9 @@ class Options:
 
     def __setattr__(self, key, value):
         if self.data is not None:
-            if key in self.data:
+            if key in self.data or key in self.data_labels:
                 self.data[key] = value
+                return
 
         return super(Options, self).__setattr__(key, value)
 

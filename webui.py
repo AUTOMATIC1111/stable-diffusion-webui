@@ -9,7 +9,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 
 from modules.paths import script_path
 
-from modules import devices, sd_samplers, upscaler
+from modules import devices, sd_samplers, upscaler, extensions
 import modules.codeformer_model as codeformer
 import modules.extras
 import modules.face_restoration
@@ -60,6 +60,11 @@ def wrap_gradio_gpu_call(func, extra_outputs=None):
 
 
 def initialize():
+    extensions.list_extensions()
+    #for ext in extensions.extensions:
+    #    print(ext.name, ext.path, ext.enabled, ext.remote)
+    #exit()
+
     if cmd_opts.ui_debug_mode:
         shared.sd_upscalers = upscaler.UpscalerLanczos().scalers
         modules.scripts.load_scripts()
@@ -92,14 +97,17 @@ def create_api(app):
     api = Api(app, queue_lock)
     return api
 
+
 def wait_on_server(demo=None):
     while 1:
         time.sleep(0.5)
-        if demo and getattr(demo, 'do_restart', False):
+        if shared.state.need_restart:
+            shared.state.need_restart = False
             time.sleep(0.5)
             demo.close()
             time.sleep(0.5)
             break
+
 
 def api_only():
     initialize()
@@ -132,14 +140,16 @@ def webui():
 
         app.add_middleware(GZipMiddleware, minimum_size=1000)
 
-        if (launch_api):
+        if launch_api:
             create_api(app)
 
         wait_on_server(demo)
 
         sd_samplers.set_samplers()
 
-        print('Reloading Custom Scripts')
+        print('Reloading extensions')
+        extensions.list_extensions()
+        print('Reloading custom scripts')
         modules.scripts.reload_scripts()
         print('Reloading modules: modules.ui')
         importlib.reload(modules.ui)
@@ -148,8 +158,6 @@ def webui():
         print('Restarting Gradio')
 
 
-
-task = []
 if __name__ == "__main__":
     if cmd_opts.nowebui:
         api_only()

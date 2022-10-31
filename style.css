@@ -530,6 +530,26 @@ img2maskimg, #img2maskimg > .h-60, #img2maskimg > .h-60 > div, #img2maskimg > .h
     min-height: 480px !important;
 }
 
+/* Extensions */
+
+#extensions{
+    border-collapse: collapse;
+}
+
+#extensions td, #extensions th{
+    border: 1px solid #ccc;
+    padding: 0.25em 0.5em;
+}
+
+#extensions input[type="checkbox"]{
+    margin-right: 0.5em;
+}
+
+#tab_extensions button{
+    max-width: 16em;
+}
+
+
 /* The following handles localization for right-to-left (RTL) languages like Arabic.
 The rtl media type will only be activated by the logic in javascript/localization.js.
 If you change anything above, you need to make sure it is RTL compliant by just running
