@@ -182,10 +182,6 @@ class Api:
         if image_b64 is None:
             raise HTTPException(status_code=404, detail="Image not found") 
 
-        populate = interrogatereq.copy(update={ # Override __init__ params
-            }
-        )
-
         img = self.__base64_to_image(image_b64)
 
         # Override object param
