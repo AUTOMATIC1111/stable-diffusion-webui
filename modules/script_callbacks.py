@@ -103,6 +103,8 @@ def add_callback(callbacks, fun):
 
 
 def on_app_started(callback):
+    """register a function to be called when the webui started, the gradio `Block` component and
+    fastapi `FastAPI` object are passed as the arguments"""
     add_callback(callbacks_app_started, callback)
 
 
