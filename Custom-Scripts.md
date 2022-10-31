@@ -44,7 +44,28 @@ Example of what you can do with it:
 https://www.youtube.com/watch?v=4c71iUclY4U
 
 ## Advanced Seed Blending
+https://github.com/amotile/stable-diffusion-backend/tree/master/src/process/implementations/automatic1111_scripts
 
+This script allows you to base the initial noise on multiple weighted seeds.
+
+Ex. `seed1:2, seed2:1, seed3:1`
+
+The weights are normalized so you can use bigger once like above, or you can do floating point numbers:
+
+Ex. `seed1:0.5, seed2:0.25, seed3:0.25`
+
+## Prompt Blending
+https://github.com/amotile/stable-diffusion-backend/tree/master/src/process/implementations/automatic1111_scripts
+
+This script allows you to combine multiple weighted prompts together by mathematically combining their textual embeddings before generating the image.
+
+Ex.
+
+`Crystal containing elemental {fire|ice}`
+
+It supports nested definitions so you can do this as well:
+
+`Crystal containing elemental {{fire:5|ice}|earth}`
 
 ## Animator
 https://github.com/Animator-Anon/Animator/blob/main/animation.py
