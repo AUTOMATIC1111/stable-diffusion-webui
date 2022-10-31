@@ -688,7 +688,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                 img = sd_samplers.sample_to_image(samples, i)
                 # Index that accounts for both batch size and batch count.
                 ind = i + self.batch_size*n
-                images.save_image(img, self.outpath_samples, "", self.all_seeds[ind], self.all_prompts[ind], opts.samples_format, suffix=f"-before-highres-fix", save_to_dirs=False)
+                images.save_image(img, self.outpath_samples, "", self.all_seeds[ind], self.all_prompts[ind], opts.samples_format, suffix=f"-before-highres-fix")
 
         shared.state.nextjob()
 
