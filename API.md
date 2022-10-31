@@ -23,10 +23,9 @@ payload = {
 ```
 I can put in as few or as many values as I want in the payload. The API will use the defaults for anything I don't set.
 
--After that, I dump the json, whatever that means, then I can send it to the API
+-After that, I can send it to the API
 ```
-payload_json = json.dumps(payload)
-response = requests.post(url=f'http://127.0.0.1:7860/sdapi/v1/txt2img', data=payload_json).json()
+response = requests.post(url=f'http://127.0.0.1:7860/sdapi/v1/txt2img', json=payload)
 ```
 Again, this URL needs to match the web ui's URL.
 If we execute this code, the web ui will generate an image based on the payload. That's great, but then what? There is no image anywhere...
@@ -34,13 +33,18 @@ If we execute this code, the web ui will generate an image based on the payload.
 ------
 
 -After the backend does its thing, the API sends the response back in a variable that was assigned above: `response`. The response contains three entries; "images", "parameters", and "info", and I have to find some way to get the information from these entries.
+-First, I put this line `r = response.json()` to make it easier to work with the response.
 -"images" is the generated image, which is what I want mostly. There's no link or anything; it's a giant string of random characters, apparently we have to decode it. This is how I do it:
 ```
-for i in response['images']:
+for i in r['images']:
     image = Image.open(io.BytesIO(base64.b64decode(i.split(",",1)[1])))
 ```
 -With that, we have an image in the `image` variable that we can work with, for example saving it with `image.save('output.png')`.
--"parameters" shows what was sent to the API, which could be useful, but what I want in this case is "info". I use it to insert metadata into the image, so I can drop it into web ui PNG Info. For that I simply reference it with `response['info']`
+-"parameters" shows what was sent to the API, which could be useful, but what I want in this case is "info". I use it to insert metadata into the image, so I can drop it into web ui PNG Info. For that, I'll backtrack a little bit and pull what I need, which is nested in "info"
+```
+load_r = json.loads(r['info'])
+meta = load_r["infotexts"][0]
+```
 
 ------
 
@@ -59,24 +63,27 @@ payload = {
     "steps": 5
 }
 
-payload_json = json.dumps(payload)
-response = requests.post(url=f'{url}/sdapi/v1/txt2img', data=payload_json).json()
+response = requests.post(url=f'{url}/sdapi/v1/txt2img', json=payload)
 
-for i in response['images']:
+r = response.json()
+load_r = json.loads(r['info'])
+meta = load_r["infotexts"][0]
+
+for i in r['images']:
     image = Image.open(io.BytesIO(base64.b64decode(i.split(",",1)[1])))
     pnginfo = PngImagePlugin.PngInfo()
-    pnginfo.add_text("parameters", str(response['info']))
+    pnginfo.add_text("parameters", meta)
     image.save('output.png', pnginfo=pnginfo)
 ```
 -Import the things I need
 -define the url and the payload to send
 -send said payload to said url through the API
--when we get the response, grab "images" and decode it
--define a plugin to add png info, then add "info" into it
+-when I get the response, grab png info from "infotexts" inside of "info"
+-then grab "images" and decode it
+-define a plugin to add png info, then add the png info I defined into it
 -at the end here, save the image with the png info
 
-This is as of [commit](https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/e7254746bbfbff45099db44a8d4d25dd6181877d) e7254746bbfbff45099db44a8d4d25dd6181877d 
-
+This is as of [commit](https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/e7254746bbfbff45099db44a8d4d25dd6181877d)
 
 For a more complete implementation of a frontend, my Discord bot is [here](https://github.com/Kilvoctu/aiyabot) if anyone wants to look at it as an example. Most of the action happens in stablecog.py. There are many comments explaining what each code does.
 
