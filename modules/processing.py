@@ -78,7 +78,7 @@ class StableDiffusionProcessing():
     """
     The first set of paramaters: sd_models -> do_not_reload_embeddings represent the minimum required to create a StableDiffusionProcessing
     """
-    def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt: str = "", styles: List[str] = None, seed: int = -1, subseed: int = -1, subseed_strength: float = 0, seed_resize_from_h: int = -1, seed_resize_from_w: int = -1, seed_enable_extras: bool = True, sampler_index: int = 0, batch_size: int = 1, n_iter: int = 1, steps: int = 50, cfg_scale: float = 7.0, width: int = 512, height: int = 512, restore_faces: bool = False, tiling: bool = False, do_not_save_samples: bool = False, do_not_save_grid: bool = False, extra_generation_params: Dict[Any, Any] = None, overlay_images: Any = None, negative_prompt: str = None, eta: float = None, do_not_reload_embeddings: bool = False, denoising_strength: float = 0, ddim_discretize: str = None, s_churn: float = 0.0, s_tmax: float = None, s_tmin: float = 0.0, s_noise: float = 1.0, override_settings: Dict[str, Any] = None):
+    def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt: str = "", styles: List[str] = None, seed: int = -1, subseed: int = -1, subseed_strength: float = 0, seed_resize_from_h: int = -1, seed_resize_from_w: int = -1, seed_enable_extras: bool = True, sampler_index: int = 0, batch_size: int = 1, n_iter: int = 1, steps: int = 50, cfg_scale: float = 7.0, mimic_scale: float = 7.5, threshold_percentile: float = 0.995, threshold_enable: bool = False, width: int = 512, height: int = 512, restore_faces: bool = False, tiling: bool = False, do_not_save_samples: bool = False, do_not_save_grid: bool = False, extra_generation_params: Dict[Any, Any] = None, overlay_images: Any = None, negative_prompt: str = None, eta: float = None, do_not_reload_embeddings: bool = False, denoising_strength: float = 0, ddim_discretize: str = None, s_churn: float = 0.0, s_tmax: float = None, s_tmin: float = 0.0, s_noise: float = 1.0, override_settings: Dict[str, Any] = None):
         self.sd_model = sd_model
         self.outpath_samples: str = outpath_samples
         self.outpath_grids: str = outpath_grids
@@ -96,6 +96,9 @@ class StableDiffusionProcessing():
         self.n_iter: int = n_iter
         self.steps: int = steps
         self.cfg_scale: float = cfg_scale
+        self.mimic_scale: float = mimic_scale
+        self.threshold_percentile: float = threshold_percentile
+        self.threshold_enable: float = threshold_enable
         self.width: int = width
         self.height: int = height
         self.restore_faces: bool = restore_faces
@@ -122,6 +125,10 @@ class StableDiffusionProcessing():
             self.subseed_strength = 0
             self.seed_resize_from_h = 0
             self.seed_resize_from_w = 0
+
+        if not threshold_enable:
+            self.mimic_scale = 0
+            self.threshold_percentile = 1
 
         self.scripts = None
         self.script_args = None
@@ -217,6 +224,8 @@ class Processed:
         self.sampler_index = p.sampler_index
         self.sampler = sd_samplers.samplers[p.sampler_index].name
         self.cfg_scale = p.cfg_scale
+        self.mimic_scale = p.mimic_scale
+        self.threshold_percentile = p.threshold_percentile
         self.steps = p.steps
         self.batch_size = p.batch_size
         self.restore_faces = p.restore_faces
@@ -263,6 +272,8 @@ class Processed:
             "sampler_index": self.sampler_index,
             "sampler": self.sampler,
             "cfg_scale": self.cfg_scale,
+            "mimic_scale": self.mimic_scale,
+            "threshold_percentile": self.threshold_percentile,
             "steps": self.steps,
             "batch_size": self.batch_size,
             "restore_faces": self.restore_faces,
@@ -405,6 +416,8 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration
         "Eta": (None if p.sampler is None or p.sampler.eta == p.sampler.default_eta else p.sampler.eta),
         "Clip skip": None if clip_skip <= 1 else clip_skip,
         "ENSD": None if opts.eta_noise_seed_delta == 0 else opts.eta_noise_seed_delta,
+        "Mimic CFG Scale": None if p.mimic_scale == 0 else p.mimic_scale,
+        "Threshold percentile": None if p.threshold_percentile >= 1 else p.threshold_percentile,
     }
 
     generation_params.update(p.extra_generation_params)
@@ -649,11 +662,11 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
         if not self.enable_hr:
             x = create_random_tensors([opt_C, self.height // opt_f, self.width // opt_f], seeds=seeds, subseeds=subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
-            samples = self.sampler.sample(self, x, conditioning, unconditional_conditioning, image_conditioning=self.txt2img_image_conditioning(x))
+            samples = self.sampler.sample(self, x, conditioning, unconditional_conditioning, image_conditioning=self.txt2img_image_conditioning(x), mimic_scale=self.mimic_scale, threshold_percentile=self.threshold_percentile, threshold_enable=self.threshold_enable)
             return samples
 
         x = create_random_tensors([opt_C, self.firstphase_height // opt_f, self.firstphase_width // opt_f], seeds=seeds, subseeds=subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
-        samples = self.sampler.sample(self, x, conditioning, unconditional_conditioning, image_conditioning=self.txt2img_image_conditioning(x, self.firstphase_width, self.firstphase_height))
+        samples = self.sampler.sample(self, x, conditioning, unconditional_conditioning, image_conditioning=self.txt2img_image_conditioning(x, self.firstphase_width, self.firstphase_height), mimic_scale=self.mimic_scale, threshold_percentile=self.threshold_percentile, threshold_enable=self.threshold_enable)
 
         samples = samples[:, :, self.truncate_y//2:samples.shape[2]-self.truncate_y//2, self.truncate_x//2:samples.shape[3]-self.truncate_x//2]
 
@@ -830,7 +843,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
     def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength):
         x = create_random_tensors([opt_C, self.height // opt_f, self.width // opt_f], seeds=seeds, subseeds=subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
 
-        samples = self.sampler.sample_img2img(self, self.init_latent, x, conditioning, unconditional_conditioning, image_conditioning=self.image_conditioning)
+        samples = self.sampler.sample_img2img(self, self.init_latent, x, conditioning, unconditional_conditioning, image_conditioning=self.image_conditioning, mimic_scale=self.mimic_scale, threshold_percentile=self.threshold_percentile, threshold_enable=self.threshold_enable)
 
         if self.mask is not None:
             samples = samples * self.nmask + self.init_latent * self.mask

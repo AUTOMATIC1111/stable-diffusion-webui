@@ -398,6 +398,30 @@ def create_seed_inputs():
 
     return seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox
 
+def create_threshold_inputs(is_img2img: bool = False):
+    with gr.Row(elem_id='cfg_row'):
+        if is_img2img:
+            with gr.Group():
+                cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='CFG Scale', value=7.0)
+                denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.75)
+        else:
+            cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='CFG Scale', value=7.0)
+            denoising_strength = None
+        with gr.Box(elem_id='threshold_show_box'):
+            threshold_checkbox = gr.Checkbox(label='Latent fix', elem_id='threshold_show', value=False)
+    threshold_extras = []
+    with gr.Row(visible=False) as threshold_extra_row_1:
+        threshold_extras.append(threshold_extra_row_1)
+        mimic_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='Mimic Scale', value=7.0)
+        threshold_percentile = gr.Slider(minimum=0, maximum=1, step=0.005, label='Threshold percentile', value=0.995)
+
+    def change_visibility(show):
+        return {comp: gr_show(show) for comp in threshold_extras}
+
+    threshold_checkbox.change(change_visibility, show_progress=False, inputs=[threshold_checkbox], outputs=threshold_extras)
+
+    return cfg_scale, denoising_strength, mimic_scale, threshold_percentile, threshold_checkbox
+
 
 def connect_reuse_seed(seed: gr.Number, reuse_seed: gr.Button, generation_info: gr.Textbox, dummy_component, is_subseed):
     """ Connects a 'reuse (sub)seed' button's click event so that it copies last used
@@ -709,7 +733,7 @@ def create_ui(wrap_gradio_gpu_call):
                     batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1)
                     batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1)
 
-                cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='CFG Scale', value=7.0)
+                cfg_scale, _, mimic_scale, threshold_percentile, threshold_checkbox = create_threshold_inputs()
 
                 seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox = create_seed_inputs()
 
@@ -737,6 +761,7 @@ def create_ui(wrap_gradio_gpu_call):
                     batch_count,
                     batch_size,
                     cfg_scale,
+                    mimic_scale, threshold_percentile, threshold_checkbox,
                     seed,
                     subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox,
                     height,
@@ -886,9 +911,7 @@ def create_ui(wrap_gradio_gpu_call):
                     batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1)
                     batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1)
 
-                with gr.Group():
-                    cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='CFG Scale', value=7.0)
-                    denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.75)
+                cfg_scale, denoising_strength, mimic_scale, threshold_percentile, threshold_checkbox = create_threshold_inputs(is_img2img=True)
 
                 seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox = create_seed_inputs()
 
@@ -950,6 +973,7 @@ def create_ui(wrap_gradio_gpu_call):
                     batch_size,
                     cfg_scale,
                     denoising_strength,
+                    mimic_scale, threshold_percentile, threshold_checkbox,
                     seed,
                     subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox,
                     height,
