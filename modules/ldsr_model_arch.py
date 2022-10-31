@@ -107,7 +107,7 @@ class LDSR:
         if down_sample_rate != 1:
             print(
                 f'Downsampling from [{width_og}, {height_og}] to [{width_downsampled_pre}, {height_downsampled_pre}]')
-            im_og = im_og.resize((width_downsampled_pre, height_downsampled_pre), Image.LANCZOS)
+            im_og = im_og.resize((width_downsampled_pre, height_downsampled_pre), Image.Resampling.LANCZOS)
         else:
             print(f"Down sample rate is 1 from {target_scale} / 4 (Not downsampling)")
         logs = self.run(model["model"], im_og, diffusion_steps, eta)
