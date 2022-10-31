@@ -61,9 +61,6 @@ def wrap_gradio_gpu_call(func, extra_outputs=None):
 
 def initialize():
     extensions.list_extensions()
-    #for ext in extensions.extensions:
-    #    print(ext.name, ext.path, ext.enabled, ext.remote)
-    #exit()
 
     if cmd_opts.ui_debug_mode:
         shared.sd_upscalers = upscaler.UpscalerLanczos().scalers

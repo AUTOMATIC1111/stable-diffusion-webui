@@ -46,7 +46,7 @@ class Extension:
 
         res = []
         for filename in sorted(os.listdir(dirpath)):
-            res.append(scripts.ScriptFile(dirpath, filename, os.path.join(dirpath, filename)))
+            res.append(scripts.ScriptFile(self.path, filename, os.path.join(dirpath, filename)))
 
         res = [x for x in res if os.path.splitext(x.path)[1].lower() == extension and os.path.isfile(x.path)]
 
