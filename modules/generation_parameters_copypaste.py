@@ -17,6 +17,11 @@ paste_fields = {}
 bind_list = []
 
 
+def reset():
+    paste_fields.clear()
+    bind_list.clear()
+
+
 def quote(text):
     if ',' not in str(text):
         return text
