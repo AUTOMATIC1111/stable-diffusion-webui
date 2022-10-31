@@ -86,6 +86,11 @@ def setup_img2img_steps(p, steps=None):
 def single_sample_to_image(sample):
     x_sample = processing.decode_first_stage(shared.sd_model, sample.unsqueeze(0))[0]
     x_sample = torch.clamp((x_sample + 1.0) / 2.0, min=0.0, max=1.0)
+    if opts.filter_nsfw:
+        import modules.safety as safety
+        x_sample_numpy = x_sample.cpu().permute(1, 2, 0).numpy()
+        x_checked_image, has_nsfw_concept = safety.check_safety(x_sample_numpy)
+        x_sample = torch.from_numpy(x_checked_image).permute(2, 0, 1)
     x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
     x_sample = x_sample.astype(np.uint8)
     return Image.fromarray(x_sample)
