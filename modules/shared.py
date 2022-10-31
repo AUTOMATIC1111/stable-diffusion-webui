@@ -97,8 +97,7 @@ restricted_opts = {
     "outdir_save",
 }
 
-if cmd_opts.share or cmd_opts.listen:
-    cmd_opts.disable_extension_access = True
+cmd_opts.disable_extension_access = cmd_opts.share or cmd_opts.listen
 
 devices.device, devices.device_interrogate, devices.device_gfpgan, devices.device_swinir, devices.device_esrgan, devices.device_scunet, devices.device_codeformer = \
 (devices.cpu if any(y in cmd_opts.use_cpu for y in [x, 'all']) else devices.get_optimal_device() for x in ['sd', 'interrogate', 'gfpgan', 'swinir', 'esrgan', 'scunet', 'codeformer'])
