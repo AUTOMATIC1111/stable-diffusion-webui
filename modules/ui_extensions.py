@@ -13,7 +13,13 @@ import html
 from modules import extensions, shared, paths
 
 
+def check_access():
+    assert not shared.cmd_opts.disable_extension_access, "extension access disabed because of commandline flags"
+
+
 def apply_and_restart(disable_list, update_list):
+    check_access()
+
     disabled = json.loads(disable_list)
     assert type(disabled) == list, f"wrong disable_list data for apply_and_restart: {disable_list}"
 
@@ -40,6 +46,8 @@ def apply_and_restart(disable_list, update_list):
 
 
 def check_updates():
+    check_access()
+
     for ext in extensions.extensions:
         if ext.remote is None:
             continue
@@ -89,6 +97,8 @@ def extension_table():
 
 
 def install_extension_from_url(dirname, url):
+    check_access()
+
     assert url, 'No URL specified'
 
     if dirname is None or dirname == "":
