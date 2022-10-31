@@ -88,23 +88,23 @@
     gap: 0.5rem;
 }
 
-#subseed_show_box{
+#subseed_show_box, #threshold_show_box{
     min-width: auto;
     flex-grow: 0;
 }
 
-#subseed_show_box > div{
+#subseed_show_box > div, #threshold_show_box > div{
     border: 0;
     height: 100%;
 }
 
-#subseed_show{
+#subseed_show, #threshold_show{
     min-width: auto;
     flex-grow: 0;
     padding: 0;
 }
 
-#subseed_show label{
+#subseed_show label, #threshold_show label{
     height: 100%;
 }
 

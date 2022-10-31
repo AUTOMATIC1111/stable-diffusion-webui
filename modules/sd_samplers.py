@@ -205,7 +205,7 @@ class VanillaStableDiffusionSampler:
         self.mask = p.mask if hasattr(p, 'mask') else None
         self.nmask = p.nmask if hasattr(p, 'nmask') else None
 
-    def sample_img2img(self, p, x, noise, conditioning, unconditional_conditioning, steps=None, image_conditioning=None):
+    def sample_img2img(self, p, x, noise, conditioning, unconditional_conditioning, steps=None, image_conditioning=None, mimic_scale=None, threshold_percentile=None, threshold_enable=False):
         steps, t_enc = setup_img2img_steps(p, steps)
 
         self.initialize(p)
@@ -232,7 +232,7 @@ class VanillaStableDiffusionSampler:
 
         return samples
 
-    def sample(self, p, x, conditioning, unconditional_conditioning, steps=None, image_conditioning=None):
+    def sample(self, p, x, conditioning, unconditional_conditioning, steps=None, image_conditioning=None, mimic_scale=None, threshold_percentile=None, threshold_enable=False):
         self.initialize(p)
 
         self.init_latent = None
