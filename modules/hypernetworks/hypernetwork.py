@@ -395,11 +395,6 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
     previous_mean_loss = 0
     print("Mean loss of {} elements".format(size))
 
-    ititial_step = hypernetwork.step or 0
-    if ititial_step > steps:
-        return hypernetwork, filename
-    
-
     weights = hypernetwork.weights()
     for weight in weights:
         weight.requires_grad = True
