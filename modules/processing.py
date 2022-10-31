@@ -539,7 +539,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 x_sample = x_sample.astype(np.uint8)
 
                 if p.restore_faces:
-                    if opts.save and not p.do_not_save_samples and opts.save_images_before_face_restoration:
+                    if opts.save and not p.do_not_save_samples and opts.save_intermediates:
                         images.save_image(Image.fromarray(x_sample), p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, info=infotext(n, i), p=p, suffix="-before-face-restoration")
 
                     devices.torch_gc()
@@ -550,7 +550,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 image = Image.fromarray(x_sample)
 
                 if p.color_corrections is not None and i < len(p.color_corrections):
-                    if opts.save and not p.do_not_save_samples and opts.save_images_before_color_correction:
+                    if opts.save and not p.do_not_save_samples and opts.save_intermediates:
                         image_without_cc = apply_overlay(image, p.paste_to, i, p.overlay_images)
                         images.save_image(image_without_cc, p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, info=infotext(n, i), p=p, suffix="-before-color-correction")
                     image = apply_color_correction(p.color_corrections[i], image)
@@ -682,7 +682,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             samples = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(decoded_samples))
 
         # Save a copy of the image/s before doing highres fix.
-        if opts.samples_save:
+        if opts.samples_save and opts.save_intermediates:
             for i in range(self.batch_size):
                 im = sd_samplers.sample_to_image(samples, i)
                 images.save_image(im, self.outpath_samples, "", self.all_seeds[i], self.all_prompts[i], opts.samples_format, suffix=f"-before-highres-fix", save_to_dirs=False)
