@@ -117,8 +117,6 @@ class Api:
 
         return ImageToImageResponse(images=b64images, parameters=vars(img2imgreq), info=processed.js())
 
-    def extrasapi(self):
-        raise NotImplementedError
     def extras_single_image_api(self, req: ExtrasSingleImageRequest):
         reqDict = setUpscalers(req)
 

@@ -64,11 +64,7 @@ class PydanticModelGenerator:
 
 
         self._model_name = model_name
-
-        if class_instance is not None:
-            self._class_data = merge_class_params(class_instance)
-        else:
-            self._class_data = {}            
+        self._class_data = merge_class_params(class_instance)
 
         self._model_def = [
             ModelDef(
