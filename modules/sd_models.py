@@ -201,7 +201,7 @@ def load_model_weights(model, checkpoint_info):
 
         if shared.opts.sd_checkpoint_cache > 0:
             checkpoints_loaded[checkpoint_info] = model.state_dict().copy()
-            while len(checkpoints_loaded) > shared.opts.sd_checkpoint_cache:
+            while len(checkpoints_loaded) > shared.opts.sd_checkpoint_cache + 1:
                 checkpoints_loaded.popitem(last=False)  # LRU
     else:
         print(f"Loading weights [{sd_model_hash}] from cache")
