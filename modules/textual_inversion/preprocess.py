@@ -7,12 +7,14 @@ import tqdm
 import time
 
 from modules import shared, images
+from modules.paths import models_path
 from modules.shared import opts, cmd_opts
+from modules.textual_inversion import autocrop
 if cmd_opts.deepdanbooru:
     import modules.deepbooru as deepbooru
 
 
-def preprocess(process_src, process_dst, process_width, process_height, preprocess_txt_action, process_flip, process_split, process_caption, process_caption_deepbooru=False, split_threshold=0.5, overlap_ratio=0.2):
+def preprocess(process_src, process_dst, process_width, process_height, preprocess_txt_action, process_flip, process_split, process_caption, process_caption_deepbooru=False, split_threshold=0.5, overlap_ratio=0.2, process_focal_crop=False, process_focal_crop_face_weight=0.9, process_focal_crop_entropy_weight=0.3, process_focal_crop_edges_weight=0.5, process_focal_crop_debug=False):
     try:
         if process_caption:
             shared.interrogator.load()
@@ -22,7 +24,7 @@ def preprocess(process_src, process_dst, process_width, process_height, preproce
             db_opts[deepbooru.OPT_INCLUDE_RANKS] = False
             deepbooru.create_deepbooru_process(opts.interrogate_deepbooru_score_threshold, db_opts)
 
-        preprocess_work(process_src, process_dst, process_width, process_height, preprocess_txt_action, process_flip, process_split, process_caption, process_caption_deepbooru, split_threshold, overlap_ratio)
+        preprocess_work(process_src, process_dst, process_width, process_height, preprocess_txt_action, process_flip, process_split, process_caption, process_caption_deepbooru, split_threshold, overlap_ratio, process_focal_crop, process_focal_crop_face_weight, process_focal_crop_entropy_weight, process_focal_crop_edges_weight, process_focal_crop_debug)
 
     finally:
 
@@ -34,7 +36,7 @@ def preprocess(process_src, process_dst, process_width, process_height, preproce
 
 
 
-def preprocess_work(process_src, process_dst, process_width, process_height, preprocess_txt_action, process_flip, process_split, process_caption, process_caption_deepbooru=False, split_threshold=0.5, overlap_ratio=0.2):
+def preprocess_work(process_src, process_dst, process_width, process_height, preprocess_txt_action, process_flip, process_split, process_caption, process_caption_deepbooru=False, split_threshold=0.5, overlap_ratio=0.2, process_focal_crop=False, process_focal_crop_face_weight=0.9, process_focal_crop_entropy_weight=0.3, process_focal_crop_edges_weight=0.5, process_focal_crop_debug=False):
     width = process_width
     height = process_height
     src = os.path.abspath(process_src)
@@ -113,6 +115,7 @@ def preprocess_work(process_src, process_dst, process_width, process_height, pre
                 splitted = image.crop((0, y, to_w, y + to_h))
             yield splitted
 
+
     for index, imagefile in enumerate(tqdm.tqdm(files)):
         subindex = [0]
         filename = os.path.join(src, imagefile)
@@ -137,10 +140,35 @@ def preprocess_work(process_src, process_dst, process_width, process_height, pre
             ratio = (img.height * width) / (img.width * height)
             inverse_xy = True
 
+        process_default_resize = True
+
         if process_split and ratio < 1.0 and ratio <= split_threshold:
             for splitted in split_pic(img, inverse_xy):
                 save_pic(splitted, index, existing_caption=existing_caption)
-        else:
+            process_default_resize = False
+
+        if process_focal_crop and img.height != img.width:
+
+            dnn_model_path = None
+            try:
+                dnn_model_path = autocrop.download_and_cache_models(os.path.join(models_path, "opencv"))
+            except Exception as e:
+                print("Unable to load face detection model for auto crop selection. Falling back to lower quality haar method.", e)
+
+            autocrop_settings = autocrop.Settings(
+                crop_width = width,
+                crop_height = height,
+                face_points_weight = process_focal_crop_face_weight,
+                entropy_points_weight = process_focal_crop_entropy_weight,
+                corner_points_weight = process_focal_crop_edges_weight,
+                annotate_image = process_focal_crop_debug,
+                dnn_model_path = dnn_model_path,
+            )
+            for focal in autocrop.crop_image(img, autocrop_settings):
+                save_pic(focal, index, existing_caption=existing_caption)
+            process_default_resize = False
+
+        if process_default_resize:
             img = images.resize_image(1, img, width, height)
             save_pic(img, index, existing_caption=existing_caption)
 

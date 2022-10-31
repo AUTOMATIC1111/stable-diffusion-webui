@@ -45,14 +45,14 @@ function switch_to_txt2img(){
     return args_to_array(arguments);
 }
 
-function switch_to_img2img_img2img(){
+function switch_to_img2img(){
     gradioApp().querySelector('#tabs').querySelectorAll('button')[1].click();
     gradioApp().getElementById('mode_img2img').querySelectorAll('button')[0].click();
 
     return args_to_array(arguments);
 }
 
-function switch_to_img2img_inpaint(){
+function switch_to_inpaint(){
     gradioApp().querySelector('#tabs').querySelectorAll('button')[1].click();
     gradioApp().getElementById('mode_img2img').querySelectorAll('button')[1].click();
 
@@ -63,26 +63,6 @@ function switch_to_extras(){
     gradioApp().querySelector('#tabs').querySelectorAll('button')[2].click();
 
     return args_to_array(arguments);
-}
-
-function extract_image_from_gallery_txt2img(gallery){
-    switch_to_txt2img()
-    return extract_image_from_gallery(gallery);
-}
-
-function extract_image_from_gallery_img2img(gallery){
-    switch_to_img2img_img2img()
-    return extract_image_from_gallery(gallery);
-}
-
-function extract_image_from_gallery_inpaint(gallery){
-    switch_to_img2img_inpaint()
-    return extract_image_from_gallery(gallery);
-}
-
-function extract_image_from_gallery_extras(gallery){
-    switch_to_extras()
-    return extract_image_from_gallery(gallery);
 }
 
 function get_tab_index(tabId){

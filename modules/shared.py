@@ -31,7 +31,6 @@ parser.add_argument("--no-half-vae", action='store_true', help="do not switch th
 parser.add_argument("--no-progressbar-hiding", action='store_true', help="do not hide progressbar in gradio UI (we hide it because it slows down ML if you have hardware acceleration in browser)")
 parser.add_argument("--max-batch-count", type=int, default=16, help="maximum batch count value for the UI")
 parser.add_argument("--embeddings-dir", type=str, default=os.path.join(script_path, 'embeddings'), help="embeddings directory for textual inversion (default: embeddings)")
-parser.add_argument("--aesthetic_embeddings-dir", type=str, default=os.path.join(models_path, 'aesthetic_embeddings'), help="aesthetic_embeddings directory(default: aesthetic_embeddings)")
 parser.add_argument("--hypernetwork-dir", type=str, default=os.path.join(models_path, 'hypernetworks'), help="hypernetwork directory")
 parser.add_argument("--localizations-dir", type=str, default=os.path.join(script_path, 'localizations'), help="localizations directory")
 parser.add_argument("--allow-code", action='store_true', help="allow custom script execution from webui")
@@ -41,7 +40,7 @@ parser.add_argument("--lowram", action='store_true', help="load stable diffusion
 parser.add_argument("--always-batch-cond-uncond", action='store_true', help="disables cond/uncond batching that is enabled to save memory with --medvram or --lowvram")
 parser.add_argument("--unload-gfpgan", action='store_true', help="does not do anything.")
 parser.add_argument("--precision", type=str, help="evaluate at this precision", choices=["full", "autocast"], default="autocast")
-parser.add_argument("--share", action='store_true', help="use share=True for gradio and make the UI accessible through their site (doesn't work for me but you might have better luck)")
+parser.add_argument("--share", action='store_true', help="use share=True for gradio and make the UI accessible through their site")
 parser.add_argument("--ngrok", type=str, help="ngrok authtoken, alternative to gradio --share", default=None)
 parser.add_argument("--ngrok-region", type=str, help="The region in which ngrok should start.", default="us")
 parser.add_argument("--codeformer-models-path", type=str, help="Path to directory with codeformer model file(s).", default=os.path.join(models_path, 'Codeformer'))
@@ -59,12 +58,13 @@ parser.add_argument("--opt-split-attention", action='store_true', help="force-en
 parser.add_argument("--opt-split-attention-invokeai", action='store_true', help="force-enables InvokeAI's cross-attention layer optimization. By default, it's on when cuda is unavailable.")
 parser.add_argument("--opt-split-attention-v1", action='store_true', help="enable older version of split attention optimization that does not consume all the VRAM it can find")
 parser.add_argument("--disable-opt-split-attention", action='store_true', help="force-disables cross-attention layer optimization")
-parser.add_argument("--use-cpu", nargs='+',choices=['all', 'sd', 'interrogate', 'gfpgan', 'bsrgan', 'esrgan', 'scunet', 'codeformer'], help="use CPU as torch device for specified modules", default=[], type=str.lower)
+parser.add_argument("--use-cpu", nargs='+',choices=['all', 'sd', 'interrogate', 'gfpgan', 'swinir', 'esrgan', 'scunet', 'codeformer'], help="use CPU as torch device for specified modules", default=[], type=str.lower)
 parser.add_argument("--listen", action='store_true', help="launch gradio with 0.0.0.0 as server name, allowing to respond to network requests")
 parser.add_argument("--port", type=int, help="launch gradio with given server port, you need root/admin rights for ports < 1024, defaults to 7860 if available", default=None)
 parser.add_argument("--show-negative-prompt", action='store_true', help="does not do anything", default=False)
 parser.add_argument("--ui-config-file", type=str, help="filename to use for ui configuration", default=os.path.join(script_path, 'ui-config.json'))
 parser.add_argument("--hide-ui-dir-config", action='store_true', help="hide directory configuration from webui", default=False)
+parser.add_argument("--freeze-settings", action='store_true', help="disable editing settings", default=False)
 parser.add_argument("--ui-settings-file", type=str, help="filename to use for ui settings", default=os.path.join(script_path, 'config.json'))
 parser.add_argument("--gradio-debug",  action='store_true', help="launch gradio with --debug option")
 parser.add_argument("--gradio-auth", type=str, help='set gradio authentication like "username:password"; or comma-delimit multiple like "u1:p1,u2:p2,u3:p3"', default=None)
@@ -80,10 +80,14 @@ parser.add_argument('--vae-path', type=str, help='Path to Variational Autoencode
 parser.add_argument("--disable-safe-unpickle", action='store_true', help="disable checking pytorch models for malicious code", default=False)
 parser.add_argument("--api", action='store_true', help="use api=True to launch the api with the webui")
 parser.add_argument("--nowebui", action='store_true', help="use api=True to launch the api instead of the webui")
+parser.add_argument("--ui-debug-mode", action='store_true', help="Don't load model to quickly launch UI")
+parser.add_argument("--device-id", type=str, help="Select the default CUDA device to use (export CUDA_VISIBLE_DEVICES=0,1,etc might be needed before)", default=None)
+parser.add_argument("--administrator", action='store_true', help="Administrator rights", default=False)
 
 cmd_opts = parser.parse_args()
-restricted_opts = [
+restricted_opts = {
     "samples_filename_pattern",
+    "directories_filename_pattern",
     "outdir_samples",
     "outdir_txt2img_samples",
     "outdir_img2img_samples",
@@ -91,10 +95,12 @@ restricted_opts = [
     "outdir_grids",
     "outdir_txt2img_grids",
     "outdir_save",
-]
+}
 
-devices.device, devices.device_interrogate, devices.device_gfpgan, devices.device_bsrgan, devices.device_esrgan, devices.device_scunet, devices.device_codeformer = \
-(devices.cpu if any(y in cmd_opts.use_cpu for y in [x, 'all']) else devices.get_optimal_device() for x in ['sd', 'interrogate', 'gfpgan', 'bsrgan', 'esrgan', 'scunet', 'codeformer'])
+cmd_opts.disable_extension_access = cmd_opts.share or cmd_opts.listen
+
+devices.device, devices.device_interrogate, devices.device_gfpgan, devices.device_swinir, devices.device_esrgan, devices.device_scunet, devices.device_codeformer = \
+(devices.cpu if any(y in cmd_opts.use_cpu for y in [x, 'all']) else devices.get_optimal_device() for x in ['sd', 'interrogate', 'gfpgan', 'swinir', 'esrgan', 'scunet', 'codeformer'])
 
 device = devices.device
 weight_load_location = None if cmd_opts.lowram else "cpu"
@@ -107,21 +113,6 @@ config_filename = cmd_opts.ui_settings_file
 os.makedirs(cmd_opts.hypernetwork_dir, exist_ok=True)
 hypernetworks = hypernetwork.list_hypernetworks(cmd_opts.hypernetwork_dir)
 loaded_hypernetwork = None
-
-
-os.makedirs(cmd_opts.aesthetic_embeddings_dir, exist_ok=True)
-aesthetic_embeddings = {}
-
-
-def update_aesthetic_embeddings():
-    global aesthetic_embeddings
-    aesthetic_embeddings = {f.replace(".pt", ""): os.path.join(cmd_opts.aesthetic_embeddings_dir, f) for f in
-                            os.listdir(cmd_opts.aesthetic_embeddings_dir) if f.endswith(".pt")}
-    aesthetic_embeddings = OrderedDict(**{"None": None}, **aesthetic_embeddings)
-
-
-update_aesthetic_embeddings()
-
 
 def reload_hypernetworks():
     global hypernetworks
@@ -143,6 +134,7 @@ class State:
     current_image = None
     current_image_sampling_step = 0
     textinfo = None
+    need_restart = False
 
     def skip(self):
         self.skipped = True
@@ -155,9 +147,38 @@ class State:
         self.sampling_step = 0
         self.current_image_sampling_step = 0
 
-    def get_job_timestamp(self):
-        return datetime.datetime.now().strftime("%Y%m%d%H%M%S")  # shouldn't this return job_timestamp?
+    def dict(self):
+        obj = {
+            "skipped": self.skipped,
+            "interrupted": self.skipped,
+            "job": self.job,
+            "job_count": self.job_count,
+            "job_no": self.job_no,
+            "sampling_step": self.sampling_step,
+            "sampling_steps": self.sampling_steps,
+        }
 
+        return obj
+
+    def begin(self):
+        self.sampling_step = 0
+        self.job_count = -1
+        self.job_no = 0
+        self.job_timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+        self.current_latent = None
+        self.current_image = None
+        self.current_image_sampling_step = 0
+        self.skipped = False
+        self.interrupted = False
+        self.textinfo = None
+
+        devices.torch_gc()
+
+    def end(self):
+        self.job = ""
+        self.job_count = 0
+
+        devices.torch_gc()
 
 state = State()
 
@@ -179,13 +200,13 @@ def realesrgan_models_names():
 
 
 class OptionInfo:
-    def __init__(self, default=None, label="", component=None, component_args=None, onchange=None, show_on_main_page=False, refresh=None):
+    def __init__(self, default=None, label="", component=None, component_args=None, onchange=None, section=None, refresh=None):
         self.default = default
         self.label = label
         self.component = component
         self.component_args = component_args
         self.onchange = onchange
-        self.section = None
+        self.section = section
         self.refresh = refresh
 
 
@@ -203,7 +224,8 @@ options_templates = {}
 options_templates.update(options_section(('saving-images', "Saving images/grids"), {
     "samples_save": OptionInfo(True, "Always save all generated images"),
     "samples_format": OptionInfo('png', 'File format for images'),
-    "samples_filename_pattern": OptionInfo("", "Images filename pattern"),
+    "samples_filename_pattern": OptionInfo("", "Images filename pattern", component_args=hide_dirs),
+    "save_images_add_number": OptionInfo(True, "Add number to filename when saving", component_args=hide_dirs),
 
     "grid_save": OptionInfo(True, "Always save all generated image grids"),
     "grid_format": OptionInfo('png', 'File format for grids'),
@@ -238,8 +260,8 @@ options_templates.update(options_section(('saving-to-dirs', "Saving to a directo
     "save_to_dirs": OptionInfo(False, "Save images to a subdirectory"),
     "grid_save_to_dirs": OptionInfo(False, "Save grids to a subdirectory"),
     "use_save_to_dirs_for_ui": OptionInfo(False, "When using \"Save\" button, save images to a subdirectory"),
-    "directories_filename_pattern": OptionInfo("", "Directory name pattern"),
-    "directories_max_prompt_words": OptionInfo(8, "Max prompt words for [prompt_words] pattern", gr.Slider, {"minimum": 1, "maximum": 20, "step": 1}),
+    "directories_filename_pattern": OptionInfo("", "Directory name pattern", component_args=hide_dirs),
+    "directories_max_prompt_words": OptionInfo(8, "Max prompt words for [prompt_words] pattern", gr.Slider, {"minimum": 1, "maximum": 20, "step": 1, **hide_dirs}),
 }))
 
 options_templates.update(options_section(('upscaling', "Upscaling"), {
@@ -278,6 +300,7 @@ options_templates.update(options_section(('sd', "Stable Diffusion"), {
     "sd_checkpoint_cache": OptionInfo(0, "Checkpoints to cache in RAM", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
     "sd_hypernetwork": OptionInfo("None", "Hypernetwork", gr.Dropdown, lambda: {"choices": ["None"] + [x for x in hypernetworks.keys()]}, refresh=reload_hypernetworks),
     "sd_hypernetwork_strength": OptionInfo(1.0, "Hypernetwork strength", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.001}),
+    "inpainting_mask_weight": OptionInfo(1.0, "Inpainting conditioning mask strength", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     "img2img_color_correction": OptionInfo(False, "Apply color correction to img2img results to match original colors."),
     "save_images_before_color_correction": OptionInfo(False, "Save a copy of image before applying color correction to img2img results"),
     "img2img_fix_steps": OptionInfo(False, "With img2img, do exactly the amount of steps the slider specifies (normally you'd do less with less denoising)."),
@@ -308,11 +331,13 @@ options_templates.update(options_section(('interrogate', "Interrogate Options"),
 options_templates.update(options_section(('ui', "User interface"), {
     "show_progressbar": OptionInfo(True, "Show progressbar"),
     "show_progress_every_n_steps": OptionInfo(0, "Show image creation progress every N sampling steps. Set 0 to disable.", gr.Slider, {"minimum": 0, "maximum": 32, "step": 1}),
+    "show_progress_grid": OptionInfo(True, "Show previews of all images generated in a batch as a grid"),
     "return_grid": OptionInfo(True, "Show grid in results for web"),
     "do_not_show_images": OptionInfo(False, "Do not show any images in results for web"),
     "add_model_hash_to_info": OptionInfo(True, "Add model hash to generation information"),
     "add_model_name_to_info": OptionInfo(False, "Add model name to generation information"),
     "disable_weights_auto_swap": OptionInfo(False, "When reading generation parameters from text into UI (from PNG info or pasted text), do not change the selected model/checkpoint."),
+    "send_seed": OptionInfo(True, "Send seed when sending prompt or image to other interface"),
     "font": OptionInfo("", "Font for image grids that have text"),
     "js_modal_lightbox": OptionInfo(True, "Enable full page image viewer"),
     "js_modal_lightbox_initially_zoomed": OptionInfo(True, "Show images zoomed in by default in full page image viewer"),
@@ -333,6 +358,12 @@ options_templates.update(options_section(('sampler-params', "Sampler parameters"
     'eta_noise_seed_delta': OptionInfo(0, "Eta noise seed delta", gr.Number, {"precision": 0}),
 }))
 
+options_templates.update(options_section((None, "Hidden options"), {
+    "disabled_extensions": OptionInfo([], "Disable those extensions"),
+}))
+
+options_templates.update()
+
 
 class Options:
     data = None
@@ -344,8 +375,9 @@ class Options:
 
     def __setattr__(self, key, value):
         if self.data is not None:
-            if key in self.data:
+            if key in self.data or key in self.data_labels:
                 self.data[key] = value
+                return
 
         return super(Options, self).__setattr__(key, value)
 
@@ -361,7 +393,7 @@ class Options:
 
     def save(self, filename):
         with open(filename, "w", encoding="utf8") as file:
-            json.dump(self.data, file)
+            json.dump(self.data, file, indent=4)
 
     def same_type(self, x, y):
         if x is None or y is None:
@@ -396,6 +428,20 @@ class Options:
         d = {k: self.data.get(k, self.data_labels.get(k).default) for k in self.data_labels.keys()}
         return json.dumps(d)
 
+    def add_option(self, key, info):
+        self.data_labels[key] = info
+
+    def reorder(self):
+        """reorder settings so that all items related to section always go together"""
+
+        section_ids = {}
+        settings_items = self.data_labels.items()
+        for k, item in settings_items:
+            if item.section not in section_ids:
+                section_ids[item.section] = len(section_ids)
+
+        self.data_labels = {k: v for k, v in sorted(settings_items, key=lambda x: section_ids[x[1].section])}
+
 
 opts = Options()
 if os.path.exists(config_filename):
@@ -406,9 +452,6 @@ sd_upscalers = []
 sd_model = None
 
 clip_model = None
-
-from modules.aesthetic_clip import AestheticCLIP
-aesthetic_clip = AestheticCLIP()
 
 progress_print_out = sys.stdout
 
@@ -449,3 +492,8 @@ total_tqdm = TotalTQDM()
 
 mem_mon = modules.memmon.MemUsageMonitor("MemMon", device, opts)
 mem_mon.start()
+
+
+def listfiles(dirname):
+    filenames = [os.path.join(dirname, x) for x in sorted(os.listdir(dirname)) if not x.startswith(".")]
+    return [file for file in filenames if os.path.isfile(file)]
