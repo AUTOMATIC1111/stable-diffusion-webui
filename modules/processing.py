@@ -681,8 +681,8 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
             samples = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(decoded_samples))
 
-        # Save a copy of the image/s before doing highres fix.
-        if opts.samples_save:
+        # Save a copy of the image/s before doing highres fix, if applicable.
+        if opts.save and not self.do_not_save_samples and opts.save_images_before_highres_fix:
             for i in range(self.batch_size):
                 # This batch's ith image.
                 img = sd_samplers.sample_to_image(samples, i)
