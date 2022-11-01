@@ -204,11 +204,11 @@ def write_loss(log_directory, filename, step, epoch_len, values):
             **values,
         })
 
-def save_settings_to_file(num_of_dataset_images , embedding_name, vectors_per_token , learn_rate, batch_size, data_root, log_directory, training_width, training_height, steps, create_image_every, save_embedding_every, template_file, save_image_with_stored_embedding, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height):
+def save_settings_to_file(initial_step ,num_of_dataset_images , embedding_name, vectors_per_token , learn_rate, batch_size, data_root, log_directory, training_width, training_height, steps, create_image_every, save_embedding_every, template_file, save_image_with_stored_embedding, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height):
     checkpoint = sd_models.select_checkpoint()
     model_name = checkpoint.model_name
     model_hash = '[{}]'.format(checkpoint.hash)
-    names = ['model_name', 'model_hash' , 'embedding_name', 'vectors_per_token', 'learn_rate', 'batch_size', 'data_root', 'num_of_dataset_images',  'log_directory', 'training_width', 'training_height', 'steps', 'create_image_every', 'save_embedding_every', 'template_file', 'save_image_with_stored_embedding', 'preview_from_txt2img']
+    names = ['initial_step','model_name', 'model_hash' , 'embedding_name', 'vectors_per_token', 'learn_rate', 'batch_size', 'data_root', 'num_of_dataset_images',  'log_directory', 'training_width', 'training_height', 'steps', 'create_image_every', 'save_embedding_every', 'template_file', 'save_image_with_stored_embedding', 'preview_from_txt2img']
     if ( eval('preview_from_txt2img') ) :
         names.extend( ['model_name', 'model_hash' , 'embedding_name', 'vectors_per_token', 'learn_rate', 'batch_size', 'data_root', 'num_of_dataset_images',  'log_directory', 'training_width', 'training_height', 'steps', 'create_image_every', 'save_embedding_every', 'template_file', 'save_image_with_stored_embedding', 'preview_from_txt2img', 'preview_prompt', 'preview_negative_prompt', 'preview_steps', 'preview_sampler_index', 'preview_cfg_scale', 'preview_seed', 'preview_width', 'preview_height'] )
  
@@ -293,7 +293,7 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
 
     losses = torch.zeros((32,))
     
-    save_settings_to_file(len(ds) , embedding_name, len(embedding.vec) , learn_rate, batch_size, data_root, log_directory, training_width, training_height, steps, create_image_every, save_embedding_every, template_file, save_image_with_stored_embedding, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height);
+    save_settings_to_file(ititial_step , len(ds) , embedding_name, len(embedding.vec) , learn_rate, batch_size, data_root, log_directory, training_width, training_height, steps, create_image_every, save_embedding_every, template_file, save_image_with_stored_embedding, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height);
 
 
     last_saved_file = "<none>"
