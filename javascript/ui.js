@@ -65,7 +65,7 @@ function switch_to_extras(){
     return args_to_array(arguments);
 }
 
-function switch_to_img2img_outpaint(){
+function switch_to_outpaint(){
     gradioApp().querySelector('#tabs').querySelectorAll('button')[1].click();
     gradioApp().getElementById('mode_img2img').querySelectorAll('button')[3].click();
 
