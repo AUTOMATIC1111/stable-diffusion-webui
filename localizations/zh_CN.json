@@ -179,7 +179,6 @@
     "Color variation": "色彩变化",
     "Will upscale the image to twice the dimensions; use width and height sliders to set tile size": "将图像放大到两倍尺寸； 使用宽度和高度滑块设置图块尺寸(tile size)",
     "Tile overlap": "图块重叠的像素(Tile overlap)",
-    "Upscaler": "Upscaler",
     "Lanczos": "Lanczos",
     "LDSR": "LDSR",
     "BSRGAN 4x": "BSRGAN 4x",
