@@ -142,22 +142,33 @@ function selected_tab_id() {
 
 }
 
-function clear_prompt(_, _prompt_neg, confirmed, _token_counter) {
-confirmed = false
+function clear_prompt() {
 
 if(confirm("Delete prompt?")) {
-    confirmed = true
-} else {
-return [_, _prompt_neg, confirmed, _token_counter]
-}
 
-    if(selected_tab_id() == "tab_txt2img") {
-        update_token_counter("img2img_token_button")
+    let pos_prompt = gradioApp().querySelector("#txt2img_prompt > label > textarea");
+    let neg_prompt = gradioApp().querySelector("#txt2img_neg_prompt > label > textarea");
+
+    if (selected_tab_id() == "tab_txt2img") {
     } else {
-        update_token_counter("txt2img_token_button")
+        pos_prompt = gradioApp().querySelector("#img2img_prompt > label > textarea");
+        neg_prompt = gradioApp().querySelector("#img2img_neg_prompt > label > textarea");
     }
 
-    return [_, _prompt_neg, confirmed, _token_counter]
+    pos_prompt.value = ""
+    neg_prompt.value = ""
+
+    //update prompt values on server-side
+    pos_prompt.dispatchEvent(
+        new Event("input", {bubbles: true})
+    )
+    neg_prompt.dispatchEvent(
+        new Event("input", {bubbles: true})
+    )
+
+    return true
+} else return false
+
 }
 
 

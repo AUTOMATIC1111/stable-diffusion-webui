@@ -400,19 +400,12 @@ def create_seed_inputs():
     return seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox
 
 
-def clear_prompt(prompt, _prompt_neg, confirmed, _token_counter):
-    """Given confirmation from a user on the client-side, go ahead with clearing prompt"""
-    if confirmed:
-        return ["", "", confirmed, update_token_counter("", 1)]
-    else:
-        return [prompt, _prompt_neg, confirmed, _token_counter]
-
 
 def connect_clear_prompt(button, prompt, prompt_neg, _dummy_confirmed, token_counter):
     """Given clear button, prompt, and token_counter objects, setup clear prompt button click event"""
     button.click(
         _js="clear_prompt",
-        fn=clear_prompt,
+        fn=None,
         inputs=[prompt, prompt_neg, _dummy_confirmed, token_counter],
         outputs=[prompt, prompt_neg, _dummy_confirmed, token_counter],
     )
