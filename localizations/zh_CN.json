@@ -127,7 +127,7 @@
     "Batch img2img": "批量图生图",
     "Image for img2img": "图生图的图像",
     "Drop Image Here": "拖拽图像到此",
-    "Image for inpainting with mask": "用于提取蒙版的图像",
+    "Image for inpainting with mask": "用于局部重绘并手动画蒙版的图像",
     "Mask": "蒙版",
     "Mask blur": "蒙版模糊",
     "Mask mode": "蒙版模式",
