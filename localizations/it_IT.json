@@ -589,7 +589,7 @@
     "Split image overlap ratio": "Rapporto di sovrapposizione dell'immagine",
     "Focal point face weight": "Peso della faccia del punto focale",
     "Focal point entropy weight": "Peso dell'entropia del punto focale",
-    "Focal point edges weight": "Peso dei bordi del punto focalePeso dei bordi del punto focale",
+    "Focal point edges weight": "Peso dei bordi del punto focale",
     "Create debug image": "Crea immagine di debug",
     "Preprocess": "Preprocessa",
     "Train an embedding or Hypernetwork; you must specify a directory with a set of 1:1 ratio images": "Addestra un Incorporamento o Iperrete; è necessario specificare una directory con un set di immagini con rapporto 1:1",
