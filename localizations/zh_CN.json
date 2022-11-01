@@ -431,7 +431,7 @@
     "eta (noise multiplier) for DDIM": "DDIM 的 eta (噪声乘数) ",
     "eta (noise multiplier) for ancestral samplers": "ancestral 采样器的 eta (噪声乘数)",
     "img2img DDIM discretize": "图生图 DDIM 离散化",
-    "uniform": "均勻",
+    "uniform": "均匀",
     "quad": "二阶",
     "sigma churn": "sigma churn",
     "sigma tmin": "最小(tmin) sigma",
