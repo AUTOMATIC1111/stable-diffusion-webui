@@ -14,6 +14,13 @@ Does not actually draw a matrix, just produces pictures.
 ## Wildcards
 This and the more feature rich dynamic prompts script have been turned into [extensions.](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Extensions)
 
+## Unprompted
+https://github.com/ThereforeGames/unprompted
+
+a highly modular addon for [AUTOMATIC1111's Stable Diffusion Web UI](https://github.com/AUTOMATIC1111/stable-diffusion-webui) that allows you to include various shortcodes in your prompts. You can pull text from files, set up your own variables, process text through conditional functions, and so much more - it's like wildcards on steroids.
+
+While the intended usecase is Stable Diffusion, this engine is also flexible enough to serve as an all-purpose text generator.
+
 ## txt2img2img 
 https://github.com/ThereforeGames/txt2img2img/blob/main/scripts/txt2img2img.py
 
