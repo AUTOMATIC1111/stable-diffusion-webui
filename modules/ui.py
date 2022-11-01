@@ -401,13 +401,13 @@ def create_seed_inputs():
 
 
 
-def connect_clear_prompt(button, prompt, prompt_neg, _dummy_confirmed, token_counter):
+def connect_clear_prompt(button):
     """Given clear button, prompt, and token_counter objects, setup clear prompt button click event"""
     button.click(
         _js="clear_prompt",
         fn=None,
-        inputs=[prompt, prompt_neg, _dummy_confirmed, token_counter],
-        outputs=[prompt, prompt_neg, _dummy_confirmed, token_counter],
+        inputs=[],
+        outputs=[],
     )
 
 
@@ -746,7 +746,7 @@ def create_ui(wrap_gradio_gpu_call):
 
             connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
             connect_reuse_seed(subseed, reuse_subseed, generation_info, dummy_component, is_subseed=True)
-            connect_clear_prompt(clear_prompt_button, txt2img_prompt, txt2img_negative_prompt, dummy_component, token_counter)
+            connect_clear_prompt(clear_prompt_button)
 
             txt2img_args = dict(
                 fn=wrap_gradio_gpu_call(modules.txt2img.txt2img),
@@ -929,7 +929,7 @@ def create_ui(wrap_gradio_gpu_call):
 
             connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
             connect_reuse_seed(subseed, reuse_subseed, generation_info, dummy_component, is_subseed=True)
-            connect_clear_prompt(clear_prompt_button, img2img_prompt, img2img_negative_prompt, dummy_component, token_counter)
+            connect_clear_prompt(clear_prompt_button)
 
             img2img_prompt_img.change(
                 fn=modules.images.image_data,
