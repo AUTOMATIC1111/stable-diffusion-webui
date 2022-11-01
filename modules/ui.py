@@ -19,7 +19,7 @@ import numpy as np
 from PIL import Image, PngImagePlugin
 
 
-from modules import sd_hijack, sd_models, localization, script_callbacks
+from modules import sd_hijack, sd_models, localization, script_callbacks, ui_extensions
 from modules.paths import script_path
 
 from modules.shared import opts, cmd_opts, restricted_opts
@@ -671,6 +671,7 @@ def create_ui(wrap_gradio_gpu_call):
     import modules.img2img
     import modules.txt2img
 
+    parameters_copypaste.reset()
 
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
         txt2img_prompt, roll, txt2img_prompt_style, txt2img_negative_prompt, txt2img_prompt_style2, submit, _, _, txt2img_prompt_style_apply, txt2img_save_style, txt2img_paste, token_counter, token_button = create_toprow(is_img2img=False)
@@ -1511,8 +1512,9 @@ def create_ui(wrap_gradio_gpu_call):
         column = None
         with gr.Row(elem_id="settings").style(equal_height=False):
             for i, (k, item) in enumerate(opts.data_labels.items()):
+                section_must_be_skipped = item.section[0] is None
 
-                if previous_section != item.section:
+                if previous_section != item.section and not section_must_be_skipped:
                     if cols_displayed < settings_cols and (items_displayed >= items_per_col or previous_section is None):
                         if column is not None:
                             column.__exit__()
@@ -1530,6 +1532,8 @@ def create_ui(wrap_gradio_gpu_call):
 
                 if k in quicksettings_names and not shared.cmd_opts.freeze_settings:
                     quicksettings_list.append((i, k, item))
+                    components.append(dummy_component)
+                elif section_must_be_skipped:
                     components.append(dummy_component)
                 else:
                     component = create_setting_component(k)
@@ -1572,9 +1576,10 @@ def create_ui(wrap_gradio_gpu_call):
 
         def request_restart():
             shared.state.interrupt()
-            settings_interface.gradio_ref.do_restart = True
+            shared.state.need_restart = True
 
         restart_gradio.click(
+
             fn=request_restart,
             inputs=[],
             outputs=[],
@@ -1612,13 +1617,14 @@ def create_ui(wrap_gradio_gpu_call):
     interfaces += script_callbacks.ui_tabs_callback()
     interfaces += [(settings_interface, "Settings", "settings")]
 
+    extensions_interface = ui_extensions.create_ui()
+    interfaces += [(extensions_interface, "Extensions", "extensions")]
+
     with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion") as demo:
         with gr.Row(elem_id="quicksettings"):
             for i, k, item in quicksettings_list:
                 component = create_setting_component(k, is_quicksettings=True)
                 component_dict[k] = component
-
-        settings_interface.gradio_ref = demo
 
         parameters_copypaste.integrate_settings_paste_fields(component_dict)
         parameters_copypaste.run_bind()

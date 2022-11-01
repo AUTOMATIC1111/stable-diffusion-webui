@@ -40,7 +40,7 @@ parser.add_argument("--lowram", action='store_true', help="load stable diffusion
 parser.add_argument("--always-batch-cond-uncond", action='store_true', help="disables cond/uncond batching that is enabled to save memory with --medvram or --lowvram")
 parser.add_argument("--unload-gfpgan", action='store_true', help="does not do anything.")
 parser.add_argument("--precision", type=str, help="evaluate at this precision", choices=["full", "autocast"], default="autocast")
-parser.add_argument("--share", action='store_true', help="use share=True for gradio and make the UI accessible through their site (doesn't work for me but you might have better luck)")
+parser.add_argument("--share", action='store_true', help="use share=True for gradio and make the UI accessible through their site")
 parser.add_argument("--ngrok", type=str, help="ngrok authtoken, alternative to gradio --share", default=None)
 parser.add_argument("--ngrok-region", type=str, help="The region in which ngrok should start.", default="us")
 parser.add_argument("--codeformer-models-path", type=str, help="Path to directory with codeformer model file(s).", default=os.path.join(models_path, 'Codeformer'))
@@ -97,6 +97,8 @@ restricted_opts = {
     "outdir_save",
 }
 
+cmd_opts.disable_extension_access = cmd_opts.share or cmd_opts.listen
+
 devices.device, devices.device_interrogate, devices.device_gfpgan, devices.device_swinir, devices.device_esrgan, devices.device_scunet, devices.device_codeformer = \
 (devices.cpu if any(y in cmd_opts.use_cpu for y in [x, 'all']) else devices.get_optimal_device() for x in ['sd', 'interrogate', 'gfpgan', 'swinir', 'esrgan', 'scunet', 'codeformer'])
 
@@ -132,6 +134,7 @@ class State:
     current_image = None
     current_image_sampling_step = 0
     textinfo = None
+    need_restart = False
 
     def skip(self):
         self.skipped = True
@@ -144,9 +147,38 @@ class State:
         self.sampling_step = 0
         self.current_image_sampling_step = 0
 
-    def get_job_timestamp(self):
-        return datetime.datetime.now().strftime("%Y%m%d%H%M%S")  # shouldn't this return job_timestamp?
+    def dict(self):
+        obj = {
+            "skipped": self.skipped,
+            "interrupted": self.skipped,
+            "job": self.job,
+            "job_count": self.job_count,
+            "job_no": self.job_no,
+            "sampling_step": self.sampling_step,
+            "sampling_steps": self.sampling_steps,
+        }
 
+        return obj
+
+    def begin(self):
+        self.sampling_step = 0
+        self.job_count = -1
+        self.job_no = 0
+        self.job_timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+        self.current_latent = None
+        self.current_image = None
+        self.current_image_sampling_step = 0
+        self.skipped = False
+        self.interrupted = False
+        self.textinfo = None
+
+        devices.torch_gc()
+
+    def end(self):
+        self.job = ""
+        self.job_count = 0
+
+        devices.torch_gc()
 
 state = State()
 
@@ -325,6 +357,12 @@ options_templates.update(options_section(('sampler-params', "Sampler parameters"
     'eta_noise_seed_delta': OptionInfo(0, "Eta noise seed delta", gr.Number, {"precision": 0}),
 }))
 
+options_templates.update(options_section((None, "Hidden options"), {
+    "disabled_extensions": OptionInfo([], "Disable those extensions"),
+}))
+
+options_templates.update()
+
 
 class Options:
     data = None
@@ -336,8 +374,9 @@ class Options:
 
     def __setattr__(self, key, value):
         if self.data is not None:
-            if key in self.data:
+            if key in self.data or key in self.data_labels:
                 self.data[key] = value
+                return
 
         return super(Options, self).__setattr__(key, value)
 
