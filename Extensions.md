@@ -29,6 +29,8 @@ https://github.com/AUTOMATIC1111/stable-diffusion-webui-wildcards
 Allows you to use `__name__` syntax in your prompt to get a random line from a file named `name.txt` in the wildcards directory.
 
 ## Dynamic Prompts
+https://github.com/adieyal/sd-dynamic-prompts
+
 A custom extension for [AUTOMATIC1111/stable-diffusion-webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui) that implements an expressive template language for random or combinatorial prompt generation along with features to support deep wildcard directory structures.
 
 Using this script, the prompt:
