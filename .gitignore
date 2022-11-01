@@ -29,3 +29,5 @@ notification.mp3
 /textual_inversion
 .vscode
 /extensions
+/test/stdout.txt
+/test/stderr.txt

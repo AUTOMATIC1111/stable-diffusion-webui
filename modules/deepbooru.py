@@ -50,11 +50,12 @@ def create_deepbooru_process(threshold, deepbooru_opts):
     the tags.
     """
     from modules import shared  # prevents circular reference
-    shared.deepbooru_process_manager = multiprocessing.Manager()
+    context = multiprocessing.get_context("spawn")
+    shared.deepbooru_process_manager = context.Manager()
     shared.deepbooru_process_queue = shared.deepbooru_process_manager.Queue()
     shared.deepbooru_process_return = shared.deepbooru_process_manager.dict()
     shared.deepbooru_process_return["value"] = -1
-    shared.deepbooru_process = multiprocessing.Process(target=deepbooru_process, args=(shared.deepbooru_process_queue, shared.deepbooru_process_return, threshold, deepbooru_opts))
+    shared.deepbooru_process = context.Process(target=deepbooru_process, args=(shared.deepbooru_process_queue, shared.deepbooru_process_return, threshold, deepbooru_opts))
     shared.deepbooru_process.start()
 
 
