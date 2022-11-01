@@ -687,6 +687,7 @@ def create_ui(wrap_gradio_gpu_call):
                         send_to_img2img = gr.Button('Send to img2img')
                         send_to_inpaint = gr.Button('Send to inpaint')
                         send_to_extras = gr.Button('Send to extras')
+                        send_to_outpaint = gr.Button('Send to outpaint')
                         button_id = "hidden_element" if shared.cmd_opts.hide_ui_dir_config else 'open_folder'
                         open_txt2img_folder = gr.Button(folder_symbol, elem_id=button_id)
 
@@ -841,11 +842,6 @@ def create_ui(wrap_gradio_gpu_call):
                 with gr.Tabs(elem_id="mode_img2img") as tabs_img2img_mode:
                     with gr.TabItem('img2img', id='img2img'):
                         init_img = gr.Image(label="Image for img2img", elem_id="img2img_image", show_label=False, source="upload", interactive=True, type="pil", tool=cmd_opts.gradio_img2img_tool).style(height=480)
-                        indopaint = gr.Checkbox(label='Outpainting for img2img',value = False)
-                        vthresh = gr.Slider(label='Masking threshold', minimum=1, maximum=255, step=1, value=1)
-                        vloch = gr.Slider(label='Mask region height', minimum=1, maximum=99, step=1, value=30)
-                        vlocw = gr.Slider(label='Mask region width', minimum=1, maximum=99, step=1, value=30)
-                        outpainting_fill = gr.Radio(label='Masked content', choices=['fill', 'original', 'latent noise', 'latent nothing'], value='original', type="index")
                     with gr.TabItem('Inpaint', id='inpaint'):
                         init_img_with_mask = gr.Image(label="Image for inpainting with mask",  show_label=False, elem_id="img2maskimg", source="upload", interactive=True, type="pil", tool="sketch", image_mode="RGBA").style(height=480)
 
@@ -869,6 +865,13 @@ def create_ui(wrap_gradio_gpu_call):
                         gr.HTML(f"<p class=\"text-gray-500\">Process images in a directory on the same machine where the server is running.<br>Use an empty output directory to save pictures normally instead of writing to the output directory.{hidden}</p>")
                         img2img_batch_input_dir = gr.Textbox(label="Input directory", **shared.hide_dirs)
                         img2img_batch_output_dir = gr.Textbox(label="Output directory", **shared.hide_dirs)
+                    
+                    with gr.TabItem('Outpaint', id='outpaint'):
+                        init_img_outpaint = gr.Image(label="Image for outpaint", elem_id="img2img_outpaint", show_label=False, source="upload", interactive=True, type="pil", tool=cmd_opts.gradio_img2img_tool).style(height = 720)
+                        vthresh = gr.Slider(label='Masking threshold', minimum=1, maximum=255, step=1, value=1)
+                        vloch = gr.Slider(label='Mask region height', minimum=1, maximum=100, step=1, value=30)
+                        vlocw = gr.Slider(label='Mask region width', minimum=1, maximum=100, step=1, value=30)
+                        outpainting_fill = gr.Radio(label='Outpaint content', choices=['fill', 'original', 'latent noise', 'latent nothing'], value='fill', type="index")
 
                 with gr.Row():
                     resize_mode = gr.Radio(label="Resize mode", elem_id="resize_mode", show_label=False, choices=["Just resize", "Crop and resize", "Resize and fill"], type="index", value="Just resize")
@@ -909,6 +912,7 @@ def create_ui(wrap_gradio_gpu_call):
                         img2img_send_to_img2img = gr.Button('Send to img2img')
                         img2img_send_to_inpaint = gr.Button('Send to inpaint')
                         img2img_send_to_extras = gr.Button('Send to extras')
+                        img2img_send_to_outpaint = gr.Button('Send to outpaint')
                         button_id = "hidden_element" if shared.cmd_opts.hide_ui_dir_config else 'open_folder'
                         open_img2img_folder = gr.Button(folder_symbol, elem_id=button_id)
 
@@ -941,12 +945,14 @@ def create_ui(wrap_gradio_gpu_call):
                     init_img_with_mask: gr_show(mode == 0),
                     init_img_inpaint: gr_show(mode == 1),
                     init_mask_inpaint: gr_show(mode == 1),
+                    init_img_outpaint: gr_show(mode == 3),
                 },
                 inputs=[mask_mode, init_img_with_mask],
                 outputs=[
                     init_img_with_mask,
                     init_img_inpaint,
                     init_mask_inpaint,
+                    init_img_outpaint,
                 ],
             )
 
@@ -971,7 +977,7 @@ def create_ui(wrap_gradio_gpu_call):
                     init_img_with_mask,
                     init_img_inpaint,
                     init_mask_inpaint,
-                    indopaint,
+                    init_img_outpaint,
                     vthresh,
                     vloch,
                     vlocw,
@@ -1144,6 +1150,7 @@ def create_ui(wrap_gradio_gpu_call):
                 html_info = gr.HTML()
                 extras_send_to_img2img = gr.Button('Send to img2img')
                 extras_send_to_inpaint = gr.Button('Send to inpaint')
+                extras_send_to_outpaint = gr.Button('Send to outpaint')
                 button_id = "hidden_element" if shared.cmd_opts.hide_ui_dir_config else ''
                 open_extras_folder = gr.Button('Open output directory', elem_id=button_id)
 
@@ -1189,6 +1196,13 @@ def create_ui(wrap_gradio_gpu_call):
             _js="extract_image_from_gallery_inpaint",
             inputs=[result_images],
             outputs=[init_img_with_mask],
+        )
+        
+        extras_send_to_outpaint.click(
+            fn=lambda x: image_from_url_text(x),
+            _js="extract_image_from_gallery_outpaint",
+            inputs=[result_images],
+            outputs=[init_img_outpaint],
         )
 
     with gr.Blocks(analytics_enabled=False) as pnginfo_interface:
@@ -1760,6 +1774,13 @@ Requested path was: {f}
             inputs=[txt2img_gallery] + txt2img_fields,
             outputs=[init_img_with_mask] + img2img_fields,
         )
+        
+        send_to_outpaint.click(
+            fn=lambda x, *args: (image_from_url_text(x), *args),
+            _js="(gallery, ...args) => [extract_image_from_gallery_outpaint(gallery), ...args]",
+            inputs=[txt2img_gallery] + txt2img_fields,
+            outputs=[init_img_outpaint] + img2img_fields,
+        )
 
         img2img_send_to_img2img.click(
             fn=lambda x: image_from_url_text(x),
@@ -1773,6 +1794,13 @@ Requested path was: {f}
             _js="extract_image_from_gallery_inpaint",
             inputs=[img2img_gallery],
             outputs=[init_img_with_mask],
+        )
+
+        img2img_send_to_outpaint.click(
+            fn=lambda x: image_from_url_text(x),
+            _js="extract_image_from_gallery_outpaint",
+            inputs=[img2img_gallery],
+            outputs=[init_img_outpaint],
         )
 
         send_to_extras.click(

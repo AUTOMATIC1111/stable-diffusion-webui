@@ -59,6 +59,13 @@ function switch_to_img2img_inpaint(){
     return args_to_array(arguments);
 }
 
+function switch_to_img2img_outpaint(){
+    gradioApp().querySelector('#tabs').querySelectorAll('button')[1].click();
+    gradioApp().getElementById('mode_img2img').querySelectorAll('button')[3].click();
+
+    return args_to_array(arguments);
+}
+
 function switch_to_extras(){
     gradioApp().querySelector('#tabs').querySelectorAll('button')[2].click();
 
@@ -77,6 +84,11 @@ function extract_image_from_gallery_img2img(gallery){
 
 function extract_image_from_gallery_inpaint(gallery){
     switch_to_img2img_inpaint()
+    return extract_image_from_gallery(gallery);
+}
+
+function extract_image_from_gallery_outpaint(gallery){
+    switch_to_img2img_outpaint()
     return extract_image_from_gallery(gallery);
 }
 
@@ -140,7 +152,7 @@ function submit_img2img(){
     var objc = null
     var objw = null
     
-    img1 = document.body.children[0].shadowRoot.getElementById('img2img_image')
+    img1 = document.body.children[0].shadowRoot.getElementById('img2img_outpaint')
     if(typeof(img1) != 'undefined' && img1 != null)
     {
         objc = img1.getElementsByClassName('cropper-crop-box')

@@ -25,6 +25,8 @@ function dimensionChange(e, is_width, is_height){
 		targetElement = gradioApp().querySelector('div[data-testid=image] img');
 	} else if(tabIndex == 1){
 		targetElement = gradioApp().querySelector('#img2maskimg div[data-testid=image] img');
+	} else if(tabIndex == 3){
+		targetElement = gradioApp().querySelector('#img2img_outpaint div[data-testid=image] img');
 	}
 
 	if(targetElement){
