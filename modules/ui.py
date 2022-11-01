@@ -1267,6 +1267,7 @@ def create_ui(wrap_gradio_gpu_call):
                     save_embedding_every = gr.Number(label='Save a copy of embedding to log directory every N steps, 0 to disable', value=500, precision=0)
                     save_image_with_stored_embedding = gr.Checkbox(label='Save images with embedding in PNG chunks', value=True)
                     preview_from_txt2img = gr.Checkbox(label='Read parameters (prompt, etc...) from txt2img tab when making previews', value=False)
+                    shuffle_tags = gr.Checkbox(label='Shuffleing tags by "," when create texts', value=True)
 
                     with gr.Row():
                         interrupt_training = gr.Button(value="Interrupt")
@@ -1361,6 +1362,7 @@ def create_ui(wrap_gradio_gpu_call):
                 template_file,
                 save_image_with_stored_embedding,
                 preview_from_txt2img,
+                shuffle_tags,
                 *txt2img_preview_params,
             ],
             outputs=[
@@ -1385,6 +1387,7 @@ def create_ui(wrap_gradio_gpu_call):
                 save_embedding_every,
                 template_file,
                 preview_from_txt2img,
+                shuffle_tags,
                 *txt2img_preview_params,
             ],
             outputs=[
