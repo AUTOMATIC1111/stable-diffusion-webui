@@ -276,12 +276,12 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
     embedding = hijack.embedding_db.word_embeddings[embedding_name]
     checkpoint = sd_models.select_checkpoint()
 
-    ititial_step = embedding.step or 0
-    if ititial_step >= steps:
+    initial_step = embedding.step or 0
+    if initial_step >= steps:
         shared.state.textinfo = f"Model has already been trained beyond specified max steps"
         return embedding, filename
 
-    scheduler = LearnRateScheduler(learn_rate, steps, ititial_step)
+    scheduler = LearnRateScheduler(learn_rate, steps, initial_step)
 
     # dataset loading may take a while, so input validations and early returns should be done before this
     shared.state.textinfo = f"Preparing dataset from {html.escape(data_root)}..."
@@ -293,7 +293,7 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
 
     losses = torch.zeros((32,))
     
-    save_settings_to_file(ititial_step , len(ds) , embedding_name, len(embedding.vec) , learn_rate, batch_size, data_root, log_directory, training_width, training_height, steps, create_image_every, save_embedding_every, template_file, save_image_with_stored_embedding, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height);
+    save_settings_to_file(initial_step , len(ds) , embedding_name, len(embedding.vec) , learn_rate, batch_size, data_root, log_directory, training_width, training_height, steps, create_image_every, save_embedding_every, template_file, save_image_with_stored_embedding, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height);
 
 
     last_saved_file = "<none>"
@@ -301,9 +301,9 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
     forced_filename = "<none>"
     embedding_yet_to_be_embedded = False
 
-    pbar = tqdm.tqdm(enumerate(ds), total=steps-ititial_step)
+    pbar = tqdm.tqdm(enumerate(ds), total=steps-initial_step)
     for i, entries in pbar:
-        embedding.step = i + ititial_step
+        embedding.step = i + initial_step
 
         scheduler.apply(optimizer, embedding.step)
         if scheduler.finished:
