@@ -33,7 +33,7 @@ goto :launch
 :skip_venv
 
 :launch
-%PYTHON% launch.py
+%PYTHON% launch.py %*
 pause
 exit /b
 

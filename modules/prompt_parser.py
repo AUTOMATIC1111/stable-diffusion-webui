@@ -275,7 +275,7 @@ re_attention = re.compile(r"""
 
 def parse_prompt_attention(text):
     """
-    Parses a string with attention tokens and returns a list of pairs: text and its assoicated weight.
+    Parses a string with attention tokens and returns a list of pairs: text and its associated weight.
     Accepted tokens are:
       (abc) - increases attention to abc by a multiplier of 1.1
       (abc:3.12) - increases attention to abc by a multiplier of 3.12

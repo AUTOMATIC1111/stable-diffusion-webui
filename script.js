@@ -21,20 +21,20 @@ function onUiTabChange(callback){
     uiTabChangeCallbacks.push(callback)
 }
 
-function runCallback(x){
+function runCallback(x, m){
     try {
-        x()
+        x(m)
     } catch (e) {
         (console.error || console.log).call(console, e.message, e);
     }
 }
-function executeCallbacks(queue) {
-    queue.forEach(runCallback)
+function executeCallbacks(queue, m) {
+    queue.forEach(function(x){runCallback(x, m)})
 }
 
 document.addEventListener("DOMContentLoaded", function() {
     var mutationObserver = new MutationObserver(function(m){
-        executeCallbacks(uiUpdateCallbacks);
+        executeCallbacks(uiUpdateCallbacks, m);
         const newTab = get_uiCurrentTab();
         if ( newTab && ( newTab !== uiCurrentTab ) ) {
             uiCurrentTab = newTab;

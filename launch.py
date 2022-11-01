@@ -86,7 +86,24 @@ def git_clone(url, dir, name, commithash=None):
     if commithash is not None:
         run(f'"{git}" -C {dir} checkout {commithash}', None, "Couldn't checkout {name}'s hash: {commithash}")
 
+        
+def version_check(commit):
+    try:
+        import requests
+        commits = requests.get('https://api.github.com/repos/AUTOMATIC1111/stable-diffusion-webui/branches/master').json()
+        if commit != "<none>" and commits['commit']['sha'] != commit:
+            print("--------------------------------------------------------")
+            print("| You are not up to date with the most recent release. |")
+            print("| Consider running `git pull` to update.               |")
+            print("--------------------------------------------------------")
+        elif commits['commit']['sha'] == commit:
+            print("You are up to date with the most recent release.")
+        else:
+            print("Not a git clone, can't perform version check.")
+    except Exception as e:
+        print("versipm check failed",e)
 
+        
 def prepare_enviroment():
     torch_command = os.environ.get('TORCH_COMMAND', "pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 --extra-index-url https://download.pytorch.org/whl/cu113")
     requirements_file = os.environ.get('REQS_FILE', "requirements_versions.txt")
@@ -94,7 +111,7 @@ def prepare_enviroment():
 
     gfpgan_package = os.environ.get('GFPGAN_PACKAGE', "git+https://github.com/TencentARC/GFPGAN.git@8d2447a2d918f8eba5a4a01463fd48e45126a379")
     clip_package = os.environ.get('CLIP_PACKAGE', "git+https://github.com/openai/CLIP.git@d50d76daa670286dd6cacf3bcd80b5e4823fc8e1")
-    deepdanbooru_package = os.environ.get('DEEPDANBOORU_PACKAGE', "git+https://github.com/KichangKim/DeepDanbooru.git@edf73df4cdaeea2cf00e9ac08bd8a9026b7a7b26")
+    deepdanbooru_package = os.environ.get('DEEPDANBOORU_PACKAGE', "git+https://github.com/KichangKim/DeepDanbooru.git@d91a2963bf87c6a770d74894667e9ffa9f6de7ff")
 
     xformers_windows_package = os.environ.get('XFORMERS_WINDOWS_PACKAGE', 'https://github.com/C43H66N12O12S2/stable-diffusion-webui/releases/download/f/xformers-0.0.14.dev0-cp310-cp310-win_amd64.whl')
 
@@ -110,13 +127,16 @@ def prepare_enviroment():
     codeformer_commit_hash = os.environ.get('CODEFORMER_COMMIT_HASH', "c5b4593074ba6214284d6acd5f1719b6c5d739af")
     blip_commit_hash = os.environ.get('BLIP_COMMIT_HASH', "48211a1594f1321b00f14c9f7a5b4813144b2fb9")
 
-    args = shlex.split(commandline_args)
+    sys.argv += shlex.split(commandline_args)
+    test_argv = [x for x in sys.argv if x != '--tests']
 
-    args, skip_torch_cuda_test = extract_arg(args, '--skip-torch-cuda-test')
-    args, reinstall_xformers = extract_arg(args, '--reinstall-xformers')
-    xformers = '--xformers' in args
-    deepdanbooru = '--deepdanbooru' in args
-    ngrok = '--ngrok' in args
+    sys.argv, skip_torch_cuda_test = extract_arg(sys.argv, '--skip-torch-cuda-test')
+    sys.argv, reinstall_xformers = extract_arg(sys.argv, '--reinstall-xformers')
+    sys.argv, update_check = extract_arg(sys.argv, '--update-check')
+    sys.argv, run_tests = extract_arg(sys.argv, '--tests')
+    xformers = '--xformers' in sys.argv
+    deepdanbooru = '--deepdanbooru' in sys.argv
+    ngrok = '--ngrok' in sys.argv
 
     try:
         commit = run(f"{git} rev-parse HEAD").strip()
@@ -125,7 +145,7 @@ def prepare_enviroment():
 
     print(f"Python {sys.version}")
     print(f"Commit hash: {commit}")
-
+    
     if not is_installed("torch") or not is_installed("torchvision"):
         run(f'"{python}" -m {torch_command}', "Installing torch and torchvision", "Couldn't install torch")
 
@@ -138,9 +158,15 @@ def prepare_enviroment():
     if not is_installed("clip"):
         run_pip(f"install {clip_package}", "clip")
 
-    if (not is_installed("xformers") or reinstall_xformers) and xformers and platform.python_version().startswith("3.10"):
+    if (not is_installed("xformers") or reinstall_xformers) and xformers:
         if platform.system() == "Windows":
-            run_pip(f"install -U -I --no-deps {xformers_windows_package}", "xformers")
+            if platform.python_version().startswith("3.10"):
+                run_pip(f"install -U -I --no-deps {xformers_windows_package}", "xformers")
+            else:
+                print("Installation of xformers is not supported in this version of Python.")
+                print("You can also check this and build manually: https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Xformers#building-xformers-on-windows-by-duckness")
+                if not is_installed("xformers"):
+                    exit(0)
         elif platform.system() == "Linux":
             run_pip("install xformers", "xformers")
 
@@ -163,11 +189,32 @@ def prepare_enviroment():
 
     run_pip(f"install -r {requirements_file}", "requirements for Web UI")
 
-    sys.argv += args
-
-    if "--exit" in args:
+    if update_check:
+        version_check(commit)
+    
+    if "--exit" in sys.argv:
         print("Exiting because of --exit argument")
         exit(0)
+
+    if run_tests:
+        tests(test_argv)
+        exit(0)
+
+
+def tests(argv):
+    if "--api" not in argv:
+        argv.append("--api")
+
+    print(f"Launching Web UI in another process for testing with arguments: {' '.join(argv[1:])}")
+
+    with open('test/stdout.txt', "w", encoding="utf8") as stdout, open('test/stderr.txt', "w", encoding="utf8") as stderr:
+        proc = subprocess.Popen([sys.executable, *argv], stdout=stdout, stderr=stderr)
+
+    import test.server_poll
+    test.server_poll.run_tests()
+
+    print(f"Stopping Web UI process with id {proc.pid}")
+    proc.kill()
 
 
 def start_webui():
