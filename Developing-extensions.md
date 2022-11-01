@@ -12,7 +12,7 @@ Web ui interacts with installed extensions in the following way:
 For how to develop custom scripts, which usually will do most of extension's work, see [Developing custom scripts](Developing-custom-scripts).
 
 ## install.py
-`install.py` is the script that is launched by the `launch.py`, the launcher, in a separate process before webui starts, and it's meant to install dependencies of the extension. The script is launched with `PYTHONPATH` environment variable set to webui's path, so you can just `import launch` and use its functionality:
+`install.py` is the script that is launched by the `launch.py`, the launcher, in a separate process before webui starts, and it's meant to install dependencies of the extension. It must be located in the root directory of the extension, not in the scripts directory. The script is launched with `PYTHONPATH` environment variable set to webui's path, so you can just `import launch` and use its functionality:
 
 ```python
 import launch
