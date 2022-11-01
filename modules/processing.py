@@ -597,6 +597,9 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
     if p.scripts is not None:
         p.scripts.postprocess(p, res)
 
+    p.sd_model = None
+    p.sampler = None
+
     return res
 
 
