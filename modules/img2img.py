@@ -55,6 +55,7 @@ def process_batch(p, input_dir, output_dir, args):
                 filename = f"{left}-{n}{right}"
 
             if not save_normally:
+                os.makedirs(output_dir, exist_ok=True)
                 processed_image.save(os.path.join(output_dir, filename))
 
 
