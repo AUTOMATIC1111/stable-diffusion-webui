@@ -3,6 +3,8 @@ import traceback
 from collections import namedtuple
 import inspect
 
+from fastapi import FastAPI
+from gradio import Blocks
 
 def report_exception(c, job):
     print(f"Error executing callback {job} for {c.script}", file=sys.stderr)
@@ -25,6 +27,7 @@ class ImageSaveParams:
 
 
 ScriptCallback = namedtuple("ScriptCallback", ["script", "callback"])
+callbacks_app_started = []
 callbacks_model_loaded = []
 callbacks_ui_tabs = []
 callbacks_ui_settings = []
@@ -38,6 +41,14 @@ def clear_callbacks():
     callbacks_ui_settings.clear()
     callbacks_before_image_saved.clear()
     callbacks_image_saved.clear()
+
+
+def app_started_callback(demo: Blocks, app: FastAPI):
+    for c in callbacks_app_started:
+        try:
+            c.callback(demo, app)
+        except Exception:
+            report_exception(c, 'app_started_callback')
 
 
 def model_loaded_callback(sd_model):
@@ -89,6 +100,12 @@ def add_callback(callbacks, fun):
     filename = stack[0].filename if len(stack) > 0 else 'unknown file'
 
     callbacks.append(ScriptCallback(filename, fun))
+
+
+def on_app_started(callback):
+    """register a function to be called when the webui started, the gradio `Block` component and
+    fastapi `FastAPI` object are passed as the arguments"""
+    add_callback(callbacks_app_started, callback)
 
 
 def on_model_loaded(callback):
