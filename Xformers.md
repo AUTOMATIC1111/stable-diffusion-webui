@@ -95,3 +95,7 @@ pip install xformers-0.0.14.dev0-cp310-cp310-win_amd64.whl
 ```
 
 11. Ensure that `xformers` is activated by launching `stable-diffusion-webui` with `--force-enable-xformers`
+
+## Non-deterministic / unstable / inconsistent results:
+
+Known issue. See [this](https://github.com/AUTOMATIC1111/stable-diffusion-webui/discussions/2705#discussioncomment-4024378 ) list on the discussion page.
