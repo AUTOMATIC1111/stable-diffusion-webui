@@ -623,7 +623,7 @@ Requested path was: {f}
                     if tabname != "extras":
                         save = gr.Button('Save', elem_id=f'save_{tabname}')
 
-                    buttons = parameters_copypaste.create_buttons(["img2img", "inpaint", "extras"])
+                    buttons = parameters_copypaste.create_buttons(["img2img", "inpaint", "extras", "outpaint"])
                     button_id = "hidden_element" if shared.cmd_opts.hide_ui_dir_config else 'open_folder'
                     open_folder_button = gr.Button(folder_symbol, elem_id=button_id)
 
@@ -868,6 +868,13 @@ def create_ui(wrap_gradio_gpu_call):
                         gr.HTML(f"<p class=\"text-gray-500\">Process images in a directory on the same machine where the server is running.<br>Use an empty output directory to save pictures normally instead of writing to the output directory.{hidden}</p>")
                         img2img_batch_input_dir = gr.Textbox(label="Input directory", **shared.hide_dirs)
                         img2img_batch_output_dir = gr.Textbox(label="Output directory", **shared.hide_dirs)
+                    
+                    with gr.TabItem('Outpaint', id='outpaint'):
+                        init_img_outpaint = gr.Image(label="Image for outpaint", elem_id="img2img_outpaint", show_label=False, source="upload", interactive=True, type="pil", tool=cmd_opts.gradio_img2img_tool).style(height = 720)
+                        vthresh = gr.Slider(label='Masking threshold', minimum=1, maximum=255, step=1, value=1)
+                        vloch = gr.Slider(label='Mask region height', minimum=1, maximum=100, step=1, value=30)
+                        vlocw = gr.Slider(label='Mask region width', minimum=1, maximum=100, step=1, value=30)
+                        outpainting_fill = gr.Radio(label='Outpaint content', choices=['fill', 'original', 'latent noise', 'latent nothing'], value='fill', type="index")
 
                 with gr.Row():
                     resize_mode = gr.Radio(label="Resize mode", elem_id="resize_mode", show_label=False, choices=["Just resize", "Crop and resize", "Resize and fill"], type="index", value="Just resize")
@@ -918,12 +925,14 @@ def create_ui(wrap_gradio_gpu_call):
                     init_img_with_mask: gr_show(mode == 0),
                     init_img_inpaint: gr_show(mode == 1),
                     init_mask_inpaint: gr_show(mode == 1),
+                    init_img_outpaint: gr_show(mode == 3),
                 },
                 inputs=[mask_mode, init_img_with_mask],
                 outputs=[
                     init_img_with_mask,
                     init_img_inpaint,
                     init_mask_inpaint,
+                    init_img_outpaint,
                 ],
             )
 
@@ -931,6 +940,13 @@ def create_ui(wrap_gradio_gpu_call):
                 fn=wrap_gradio_gpu_call(modules.img2img.img2img),
                 _js="submit_img2img",
                 inputs=[
+                    dummy_component,
+                    dummy_component,
+                    dummy_component,
+                    dummy_component,
+                    dummy_component,
+                    dummy_component,
+                    dummy_component,
                     dummy_component,
                     img2img_prompt,
                     img2img_negative_prompt,
@@ -940,6 +956,11 @@ def create_ui(wrap_gradio_gpu_call):
                     init_img_with_mask,
                     init_img_inpaint,
                     init_mask_inpaint,
+                    init_img_outpaint,
+                    vthresh,
+                    vloch,
+                    vlocw,
+                    outpainting_fill,
                     mask_mode,
                     steps,
                     sampler_index,
@@ -1042,6 +1063,7 @@ def create_ui(wrap_gradio_gpu_call):
             ]
             parameters_copypaste.add_paste_fields("img2img", init_img, img2img_paste_fields)
             parameters_copypaste.add_paste_fields("inpaint", init_img_with_mask, img2img_paste_fields)
+            parameters_copypaste.add_paste_fields("outpaint", init_img_outpaint, img2img_paste_fields)
 
     with gr.Blocks(analytics_enabled=False) as extras_interface:
         with gr.Row().style(equal_height=False):
@@ -1135,7 +1157,7 @@ def create_ui(wrap_gradio_gpu_call):
                 generation_info = gr.Textbox(visible=False)
                 html2 = gr.HTML()
                 with gr.Row():
-                    buttons = parameters_copypaste.create_buttons(["txt2img", "img2img", "inpaint", "extras"])
+                    buttons = parameters_copypaste.create_buttons(["txt2img", "img2img", "inpaint", "extras", "outpaint"])
                 parameters_copypaste.bind_buttons(buttons, image, generation_info)
 
         image.change(

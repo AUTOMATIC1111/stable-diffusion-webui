@@ -6,6 +6,10 @@ import traceback
 import numpy as np
 from PIL import Image, ImageOps, ImageChops
 
+from scipy import ndimage
+import base64
+import io
+
 from modules import devices
 from modules.processing import Processed, StableDiffusionProcessingImg2Img, process_images
 from modules.shared import opts, state
@@ -59,9 +63,23 @@ def process_batch(p, input_dir, output_dir, args):
                 processed_image.save(os.path.join(output_dir, filename))
 
 
-def img2img(mode: int, prompt: str, negative_prompt: str, prompt_style: str, prompt_style2: str, init_img, init_img_with_mask, init_img_inpaint, init_mask_inpaint, mask_mode, steps: int, sampler_index: int, mask_blur: int, inpainting_fill: int, restore_faces: bool, tiling: bool, n_iter: int, batch_size: int, cfg_scale: float, denoising_strength: float, seed: int, subseed: int, subseed_strength: float, seed_resize_from_h: int, seed_resize_from_w: int, seed_enable_extras: bool, height: int, width: int, resize_mode: int, inpaint_full_res: bool, inpaint_full_res_padding: int, inpainting_mask_invert: int, img2img_batch_input_dir: str, img2img_batch_output_dir: str, *args):
+def img2img(mode: int,
+            srcimg,vwt,vww,vwh,vct,vcw,vch,
+            prompt: str, negative_prompt: str, prompt_style: str, prompt_style2: str,
+            init_img, init_img_with_mask, init_img_inpaint, init_mask_inpaint,
+            init_img_outpaint, vthresh, vloch, vlocw, outpainting_fill,
+            mask_mode, steps: int, sampler_index: int, mask_blur: int, inpainting_fill: int,
+            restore_faces: bool, tiling: bool, n_iter: int, batch_size: int, cfg_scale: float,
+            denoising_strength: float, seed: int, subseed: int, subseed_strength: float,
+            seed_resize_from_h: int, seed_resize_from_w: int, seed_enable_extras: bool,
+            height: int, width: int, resize_mode: int, inpaint_full_res: bool,
+            inpaint_full_res_padding: int, inpainting_mask_invert: int, img2img_batch_input_dir: str,
+            img2img_batch_output_dir: str, *args):
+    outparms = None
+    
     is_inpaint = mode == 1
     is_batch = mode == 2
+    is_outpaint = mode == 3
 
     if is_inpaint:
         # Drawn mask
@@ -75,6 +93,65 @@ def img2img(mode: int, prompt: str, negative_prompt: str, prompt_style: str, pro
         else:
             image = init_img_inpaint
             mask = init_mask_inpaint
+    elif is_outpaint:
+        image = init_img_outpaint
+        mask = None 
+        locmx = np.array(image).max(axis = 2)
+        mx = ndimage.grey_dilation(locmx,size = (vloch,vlocw))
+        mregion = (mx < vthresh)
+        expreg = ndimage.grey_dilation(mregion,size = (vloch,vlocw))
+        mask = np.logical_and(expreg,locmx < vthresh)
+        mask = Image.fromarray(mask)
+        
+        inpainting_fill = outpainting_fill
+
+        if srcimg is None:
+            print("Cannot overlay outpaint, did not receive source image.")
+        else:
+            srcimg_b = base64.b64decode(srcimg.split(",")[-1])
+            srcimg_pil = Image.open(io.BytesIO(srcimg_b))
+            if "translateX" in vwt:
+                fparst = vwt.find("(")
+                fpared = vwt.find(")")
+                vwx = vwt[fparst + 1:fpared]
+            else:
+                fparst = -1
+                fpared = -1
+                vwx = "0px"
+            if "translateY" in vwt:
+                fparst = vwt.find("(",fparst + 1)
+                fpared = vwt.find(")",fpared + 1)
+                vwy = vwt[fparst + 1:fpared]
+            else:
+                fparst = -1
+                fpared = -1
+                vwy = "0px"
+            if "translateX" in vct:    
+                fparst = vct.find("(")
+                fpared = vct.find(")")
+                vcx = vct[fparst + 1:fpared]
+            else:
+                fparst = -1
+                fpared = -1
+                vcx = "0px"
+            if "translateY" in vct:
+                fparst = vct.find("(",fparst + 1)
+                fpared = vct.find(")",fpared + 1)
+                vcy = vct[fparst + 1:fpared]
+            else:
+                fparst = -1
+                fpared = -1
+                vcy = "0px"
+            fpx = lambda x: float(x.replace("px","")) 
+            vwx = fpx(vwx) 
+            vwy = fpx(vwy)
+            vww = fpx(vww)
+            vwh = fpx(vwh)
+            vcx = fpx(vcx)
+            vcy = fpx(vcy)
+            vcw = fpx(vcw)
+            vch = fpx(vch)
+            outparms = (srcimg_pil,vwx,vwy,vww,vwh,vcx,vcy,vcw,vch)
     # No mask
     else:
         image = init_img
@@ -116,6 +193,7 @@ def img2img(mode: int, prompt: str, negative_prompt: str, prompt_style: str, pro
         inpaint_full_res=inpaint_full_res,
         inpaint_full_res_padding=inpaint_full_res_padding,
         inpainting_mask_invert=inpainting_mask_invert,
+        outparms = outparms,
     )
 
     p.scripts = modules.scripts.scripts_txt2img

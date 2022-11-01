@@ -65,6 +65,13 @@ function switch_to_extras(){
     return args_to_array(arguments);
 }
 
+function switch_to_img2img_outpaint(){
+    gradioApp().querySelector('#tabs').querySelectorAll('button')[1].click();
+    gradioApp().getElementById('mode_img2img').querySelectorAll('button')[3].click();
+
+    return args_to_array(arguments);
+}
+
 function get_tab_index(tabId){
     var res = 0
 
@@ -116,11 +123,44 @@ function submit(){
 }
 
 function submit_img2img(){
+    var img1 = null
+    var objc = null
+    var objw = null
+
+    img1 = document.body.children[0].shadowRoot.getElementById('img2img_outpaint')
+    if(typeof(img1) != 'undefined' && img1 != null)
+    {
+        objc = img1.getElementsByClassName('cropper-crop-box')
+        if(typeof(objc) != 'undefined' && objc != null && objc.length > 0)
+        {
+            objc = objc[0]
+            objw = objc.getElementsByTagName('img')[0]
+        }
+        else
+        {
+            objc = null
+            objw = null
+        }
+    }
     requestProgress('img2img')
 
     res = create_submit_args(arguments)
 
     res[0] = get_tab_index('mode_img2img')
+
+    if(typeof(objw) != 'undefined' && objw != null)
+    {
+        res[1] = objw.src
+        res[2] = objw.style['transform']
+        res[3] = objw.style['width']
+        res[4] = objw.style['height']
+    }
+    if(typeof(objc) != 'undefined' && objc != null)
+    {
+        res[5] = objc.style['transform']
+        res[6] = objc.style['width']
+        res[7] = objc.style['height']
+    }
 
     return res
 }

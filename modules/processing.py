@@ -46,6 +46,27 @@ def apply_color_correction(correction, image):
 
     return image
 
+def outpaint_overlay(imgdiff,imgsrc,wx,wy,ww,wh,cx,cy,cw,ch):
+    """Overlay source image with diffusion over region, given location parms."""
+    wx = wx * -1
+    wy = wy * -1
+    wrel = cw / ww 
+    hrel = ch / wh
+    lrel = wx / ww
+    trel = wy / wh
+    xexp = (max(-1 * wx,0) + max(cw + wx - ww,0) + ww) / ww
+    yexp = (max(-1 * wy,0) + max(ch + wy - wh,0) + wh) / wh
+    psrcx = min(wx,0) * -1 / ww
+    psrcy = min(wy,0) * -1 / wh
+    pcrpx = max(wx,0) / ww
+    pcrpy = max(wy,0) / wh
+
+    (srcw,srch) = imgsrc.size 
+    imgdiff_rsz = imgdiff.resize((int(srcw * wrel),int(srch * hrel)))
+    imgpst = Image.new("RGB",(int(srcw * xexp),int(srch * yexp)),0)
+    imgpst.paste(imgsrc,(int(srcw * psrcx),int(srch * psrcy)))
+    imgpst.paste(imgdiff_rsz,(int(srcw * pcrpx),int(srch * pcrpy)))
+    return imgpst
 
 def apply_overlay(image, paste_loc, index, overlays):
     if overlays is None or index >= len(overlays):
@@ -556,6 +577,9 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     image = apply_color_correction(p.color_corrections[i], image)
 
                 image = apply_overlay(image, p.paste_to, i, p.overlay_images)
+                if hasattr(p,"outparms"):
+                    if p.outparms is not None:
+                        image = outpaint_overlay(image,*p.outparms)
 
                 if opts.samples_save and not p.do_not_save_samples:
                     images.save_image(image, p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, info=infotext(n, i), p=p)
@@ -705,6 +729,8 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
     sampler = None
 
     def __init__(self, init_images: list=None, resize_mode: int=0, denoising_strength: float=0.75, mask: Any=None, mask_blur: int=4, inpainting_fill: int=0, inpaint_full_res: bool=True, inpaint_full_res_padding: int=0, inpainting_mask_invert: int=0, **kwargs):
+        self.outparms = kwargs.pop("outparms",None)
+        
         super().__init__(**kwargs)
 
         self.init_images = init_images
