@@ -80,7 +80,7 @@ def ui_settings_callback():
 
 
 def before_image_saved_callback(params: ImageSaveParams):
-    for c in callbacks_image_saved:
+    for c in callbacks_before_image_saved:
         try:
             c.callback(params)
         except Exception:
