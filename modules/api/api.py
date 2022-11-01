@@ -1,6 +1,8 @@
+import base64
+import io
 import time
 import uvicorn
-from gradio.processing_utils import encode_pil_to_base64, decode_base64_to_file, decode_base64_to_image
+from gradio.processing_utils import decode_base64_to_file, decode_base64_to_image
 from fastapi import APIRouter, Depends, HTTPException
 import modules.shared as shared
 from modules import devices
@@ -27,6 +29,12 @@ def setUpscalers(req: dict):
     reqDict.pop('upscaler_1')
     reqDict.pop('upscaler_2')
     return reqDict
+
+
+def encode_pil_to_base64(image):
+    buffer = io.BytesIO()
+    image.save(buffer, format="png")
+    return base64.b64encode(buffer.getvalue())
 
 
 class Api:
