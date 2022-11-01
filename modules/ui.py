@@ -692,9 +692,7 @@ def create_ui(wrap_gradio_gpu_call):
     parameters_copypaste.reset()
 
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
-        txt2img_prompt, roll, txt2img_prompt_style, txt2img_negative_prompt, txt2img_prompt_style2, submit, _, _,\
-        txt2img_prompt_style_apply, txt2img_save_style, txt2img_paste, token_counter,\
-        token_button, clear_prompt_button = create_toprow(is_img2img=False)
+        txt2img_prompt, roll, txt2img_prompt_style, txt2img_negative_prompt, txt2img_prompt_style2, submit, _, _,txt2img_prompt_style_apply, txt2img_save_style, txt2img_paste, token_counter, token_button, clear_prompt_button = create_toprow(is_img2img=False)
 
         dummy_component = gr.Label(visible=False)
         txt_prompt_img = gr.File(label="", elem_id="txt2img_prompt_image", file_count="single", type="bytes", visible=False)
@@ -850,9 +848,7 @@ def create_ui(wrap_gradio_gpu_call):
             token_button.click(fn=update_token_counter, inputs=[txt2img_prompt, steps], outputs=[token_counter])
 
     with gr.Blocks(analytics_enabled=False) as img2img_interface:
-        img2img_prompt, roll, img2img_prompt_style, img2img_negative_prompt, img2img_prompt_style2, submit,\
-        img2img_interrogate, img2img_deepbooru, img2img_prompt_style_apply, img2img_save_style, img2img_paste,\
-        token_counter, token_button, clear_prompt_button = create_toprow(is_img2img=True)
+        img2img_prompt, roll, img2img_prompt_style, img2img_negative_prompt, img2img_prompt_style2, submit, img2img_interrogate, img2img_deepbooru, img2img_prompt_style_apply, img2img_save_style, img2img_paste,token_counter, token_button, clear_prompt_button = create_toprow(is_img2img=True)
 
 
         with gr.Row(elem_id='img2img_progress_row'):
