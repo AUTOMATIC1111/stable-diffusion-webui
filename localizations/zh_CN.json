@@ -453,7 +453,7 @@
     "Add a random artist to the prompt.": "随机添加一个艺术家到提示词中",
     "Read generation parameters from prompt or last generation if prompt is empty into user interface.": "从提示词中读取生成参数，如果提示词为空，则读取上一次的生成参数到用户界面",
     "Save style": "储存为模版风格",
-    "Apply selected styles to current prompt": "将所选样式应用于当前提示",
+    "Apply selected styles to current prompt": "将所选模板风格，应用于当前提示词",
     "Stop processing current image and continue processing.": "停止处理当前图像，并继续处理下一个",
     "Stop processing images and return any results accumulated so far.": "停止处理图像，并返回迄今为止累积的任何结果",
     "Style to apply; styles have components for both positive and negative prompts and apply to both": "要应用的模版风格； 模版风格包含正向和反向提示词，并应用于两者",
