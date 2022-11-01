@@ -102,6 +102,7 @@
     "Sampler": "采样器",
     "Checkpoint name": "模型(ckpt)名",
     "Hypernet str.": "Hypernetwork 强度",
+    "Hypernetwork": "超网络(Hypernetwork)",
     "Sigma Churn": "Sigma Churn",
     "Sigma min": "最小 Sigma",
     "Sigma max": "最大 Sigma",
@@ -304,10 +305,6 @@
     "Create images embedding": "生成图集 embedding",
     "Favorites": "收藏夹(已保存)",
     "Others": "其他",
-    "Move to favorites": "移动到收藏夹(保存)",
-    "favorites": "收藏夹(已保存)",
-    "others": "其他",
-    "Collect": "收藏(保存)",
     "Images directory": "图像目录",
     "Dropdown": "下拉列表",
     "First Page": "首页",
@@ -563,5 +560,8 @@
     "Select which Real-ESRGAN models to show in the web UI. (Requires restart)": "选择哪些Real-ESRGAN模型显示在用户界面。(需要重新启动)",
     "Face restoration model": "面部修复模型",
     "Allowed categories for random artists selection when using the Roll button": "使用抽选艺术家按钮时将会随机的艺术家类别",
-    "Hypernetwork": "超网络(Hypernetwork)"
+    "Move to favorites": "移动到收藏夹(保存)",
+    "favorites": "收藏夹(已保存)",
+    "others": "其他",
+    "Collect": "收藏(保存)"
 }
