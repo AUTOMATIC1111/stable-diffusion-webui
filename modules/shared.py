@@ -83,6 +83,7 @@ parser.add_argument("--nowebui", action='store_true', help="use api=True to laun
 parser.add_argument("--ui-debug-mode", action='store_true', help="Don't load model to quickly launch UI")
 parser.add_argument("--device-id", type=str, help="Select the default CUDA device to use (export CUDA_VISIBLE_DEVICES=0,1,etc might be needed before)", default=None)
 parser.add_argument("--administrator", action='store_true', help="Administrator rights", default=False)
+parser.add_argument("--skip-clear-temp", action='store_true', help="Skips temp dir clear on start", default=False)
 
 cmd_opts = parser.parse_args()
 restricted_opts = {

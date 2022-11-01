@@ -5,6 +5,8 @@ import sys
 import importlib.util
 import shlex
 import platform
+import shutil
+import tempfile
 
 dir_repos = "repositories"
 dir_extensions = "extensions"
@@ -146,6 +148,8 @@ def prepare_enviroment():
     codeformer_commit_hash = os.environ.get('CODEFORMER_COMMIT_HASH', "c5b4593074ba6214284d6acd5f1719b6c5d739af")
     blip_commit_hash = os.environ.get('BLIP_COMMIT_HASH', "48211a1594f1321b00f14c9f7a5b4813144b2fb9")
 
+    path_temp = os.environ.get('PATH_TEMP', os.path.abspath(os.path.join("outputs", ".temp")))
+
     sys.argv += shlex.split(commandline_args)
     test_argv = [x for x in sys.argv if x != '--tests']
 
@@ -156,6 +160,7 @@ def prepare_enviroment():
     xformers = '--xformers' in sys.argv
     deepdanbooru = '--deepdanbooru' in sys.argv
     ngrok = '--ngrok' in sys.argv
+    skip_clear_temp = '--skip-clear-temp' in sys.argv
 
     try:
         commit = run(f"{git} rev-parse HEAD").strip()
@@ -220,6 +225,12 @@ def prepare_enviroment():
     if run_tests:
         tests(test_argv)
         exit(0)
+
+    tempfile.tempdir = path_temp
+    if os.path.isdir(path_temp) and not skip_clear_temp:
+        print(f"Clearing Temp dir '{path_temp}'")
+        shutil.rmtree(path_temp, ignore_errors=True)
+    os.makedirs(path_temp, exist_ok=True) 
 
 
 def tests(argv):
