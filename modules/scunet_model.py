@@ -54,9 +54,8 @@ class UpscalerScuNET(modules.upscaler.Upscaler):
         img = img[:, :, ::-1]
         img = np.moveaxis(img, 2, 0) / 255
         img = torch.from_numpy(img).float()
-        img = img.unsqueeze(0).to(device)
+        img = devices.mps_contiguous_to(img.unsqueeze(0), device)
 
-        img = img.to(device)
         with torch.no_grad():
             output = model(img)
         output = output.squeeze().float().cpu().clamp_(0, 1).numpy()
