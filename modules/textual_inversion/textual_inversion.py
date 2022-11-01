@@ -119,7 +119,7 @@ class EmbeddingDatabase:
             vec = emb.detach().to(devices.device, dtype=torch.float32)
             embedding = Embedding(vec, name)
             embedding.step = data.get('step', None)
-            embedding.sd_checkpoint = data.get('hash', None)
+            embedding.sd_checkpoint = data.get('sd_checkpoint', None)
             embedding.sd_checkpoint_name = data.get('sd_checkpoint_name', None)
             self.register_embedding(embedding, shared.sd_model)
 
@@ -204,9 +204,30 @@ def write_loss(log_directory, filename, step, epoch_len, values):
             **values,
         })
 
+def validate_train_inputs(model_name, learn_rate, batch_size, data_root, template_file, steps, save_model_every, create_image_every, log_directory, name="embedding"):
+    assert model_name, f"{name} not selected"
+    assert learn_rate, "Learning rate is empty or 0"
+    assert isinstance(batch_size, int), "Batch size must be integer"
+    assert batch_size > 0, "Batch size must be positive"
+    assert data_root, "Dataset directory is empty"
+    assert os.path.isdir(data_root), "Dataset directory doesn't exist"
+    assert os.listdir(data_root), "Dataset directory is empty"
+    assert template_file, "Prompt template file is empty"
+    assert os.path.isfile(template_file), "Prompt template file doesn't exist"
+    assert steps, "Max steps is empty or 0"
+    assert isinstance(steps, int), "Max steps must be integer"
+    assert steps > 0 , "Max steps must be positive"
+    assert isinstance(save_model_every, int), "Save {name} must be integer"
+    assert save_model_every >= 0 , "Save {name} must be positive or 0"
+    assert isinstance(create_image_every, int), "Create image must be integer"
+    assert create_image_every >= 0 , "Create image must be positive or 0"
+    if save_model_every or create_image_every:
+        assert log_directory, "Log directory is empty"
 
 def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_directory, training_width, training_height, steps, create_image_every, save_embedding_every, template_file, save_image_with_stored_embedding, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height):
-    assert embedding_name, 'embedding not selected'
+    save_embedding_every = save_embedding_every or 0
+    create_image_every = create_image_every or 0
+    validate_train_inputs(embedding_name, learn_rate, batch_size, data_root, template_file, steps, save_embedding_every, create_image_every, log_directory, name="embedding")
 
     shared.state.textinfo = "Initializing textual inversion training..."
     shared.state.job_count = steps
@@ -232,17 +253,28 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
         os.makedirs(images_embeds_dir, exist_ok=True)
     else:
         images_embeds_dir = None
-        
-    cond_model = shared.sd_model.cond_stage_model
 
-    shared.state.textinfo = f"Preparing dataset from {html.escape(data_root)}..."
-    with torch.autocast("cuda"):
-        ds = modules.textual_inversion.dataset.PersonalizedBase(data_root=data_root, width=training_width, height=training_height, repeats=shared.opts.training_image_repeats_per_epoch, placeholder_token=embedding_name, model=shared.sd_model, device=devices.device, template_file=template_file, batch_size=batch_size)
+    cond_model = shared.sd_model.cond_stage_model
 
     hijack = sd_hijack.model_hijack
 
     embedding = hijack.embedding_db.word_embeddings[embedding_name]
+    checkpoint = sd_models.select_checkpoint()
+
+    ititial_step = embedding.step or 0
+    if ititial_step >= steps:
+        shared.state.textinfo = f"Model has already been trained beyond specified max steps"
+        return embedding, filename
+
+    scheduler = LearnRateScheduler(learn_rate, steps, ititial_step)
+
+    # dataset loading may take a while, so input validations and early returns should be done before this
+    shared.state.textinfo = f"Preparing dataset from {html.escape(data_root)}..."
+    with torch.autocast("cuda"):
+        ds = modules.textual_inversion.dataset.PersonalizedBase(data_root=data_root, width=training_width, height=training_height, repeats=shared.opts.training_image_repeats_per_epoch, placeholder_token=embedding_name, model=shared.sd_model, device=devices.device, template_file=template_file, batch_size=batch_size)
+
     embedding.vec.requires_grad = True
+    optimizer = torch.optim.AdamW([embedding.vec], lr=scheduler.learn_rate)
 
     losses = torch.zeros((32,))
 
@@ -250,13 +282,6 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
     last_saved_image = "<none>"
     forced_filename = "<none>"
     embedding_yet_to_be_embedded = False
-
-    ititial_step = embedding.step or 0
-    if ititial_step > steps:
-        return embedding, filename
-
-    scheduler = LearnRateScheduler(learn_rate, steps, ititial_step)
-    optimizer = torch.optim.AdamW([embedding.vec], lr=scheduler.learn_rate)
 
     pbar = tqdm.tqdm(enumerate(ds), total=steps-ititial_step)
     for i, entries in pbar:
@@ -290,9 +315,9 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
 
         if embedding_dir is not None and steps_done % save_embedding_every == 0:
             # Before saving, change name to match current checkpoint.
-            embedding.name = f'{embedding_name}-{steps_done}'
-            last_saved_file = os.path.join(embedding_dir, f'{embedding.name}.pt')
-            embedding.save(last_saved_file)
+            embedding_name_every = f'{embedding_name}-{steps_done}'
+            last_saved_file = os.path.join(embedding_dir, f'{embedding_name_every}.pt')
+            save_embedding(embedding, checkpoint, embedding_name_every, last_saved_file, remove_cached_checksum=True)
             embedding_yet_to_be_embedded = True
 
         write_loss(log_directory, "textual_inversion_loss.csv", embedding.step, len(ds), {
@@ -373,14 +398,26 @@ Last saved image: {html.escape(last_saved_image)}<br/>
 </p>
 """
 
-    checkpoint = sd_models.select_checkpoint()
-
-    embedding.sd_checkpoint = checkpoint.hash
-    embedding.sd_checkpoint_name = checkpoint.model_name
-    embedding.cached_checksum = None
-    # Before saving for the last time, change name back to base name (as opposed to the save_embedding_every step-suffixed naming convention).
-    embedding.name = embedding_name
-    filename = os.path.join(shared.cmd_opts.embeddings_dir, f'{embedding.name}.pt')
-    embedding.save(filename)
+    filename = os.path.join(shared.cmd_opts.embeddings_dir, f'{embedding_name}.pt')
+    save_embedding(embedding, checkpoint, embedding_name, filename, remove_cached_checksum=True)
 
     return embedding, filename
+
+def save_embedding(embedding, checkpoint, embedding_name, filename, remove_cached_checksum=True):
+    old_embedding_name = embedding.name
+    old_sd_checkpoint = embedding.sd_checkpoint if hasattr(embedding, "sd_checkpoint") else None
+    old_sd_checkpoint_name = embedding.sd_checkpoint_name if hasattr(embedding, "sd_checkpoint_name") else None
+    old_cached_checksum = embedding.cached_checksum if hasattr(embedding, "cached_checksum") else None
+    try:
+        embedding.sd_checkpoint = checkpoint.hash
+        embedding.sd_checkpoint_name = checkpoint.model_name
+        if remove_cached_checksum:
+            embedding.cached_checksum = None
+        embedding.name = embedding_name
+        embedding.save(filename)
+    except:
+        embedding.sd_checkpoint = old_sd_checkpoint
+        embedding.sd_checkpoint_name = old_sd_checkpoint_name
+        embedding.name = old_embedding_name
+        embedding.cached_checksum = old_cached_checksum
+        raise
