@@ -41,7 +41,7 @@ parser.add_argument("--lowram", action='store_true', help="load stable diffusion
 parser.add_argument("--always-batch-cond-uncond", action='store_true', help="disables cond/uncond batching that is enabled to save memory with --medvram or --lowvram")
 parser.add_argument("--unload-gfpgan", action='store_true', help="does not do anything.")
 parser.add_argument("--precision", type=str, help="evaluate at this precision", choices=["full", "autocast"], default="autocast")
-parser.add_argument("--share", action='store_true', help="use share=True for gradio and make the UI accessible through their site (doesn't work for me but you might have better luck)")
+parser.add_argument("--share", action='store_true', help="use share=True for gradio and make the UI accessible through their site")
 parser.add_argument("--ngrok", type=str, help="ngrok authtoken, alternative to gradio --share", default=None)
 parser.add_argument("--ngrok-region", type=str, help="The region in which ngrok should start.", default="us")
 parser.add_argument("--codeformer-models-path", type=str, help="Path to directory with codeformer model file(s).", default=os.path.join(models_path, 'Codeformer'))
@@ -52,6 +52,7 @@ parser.add_argument("--realesrgan-models-path", type=str, help="Path to director
 parser.add_argument("--scunet-models-path", type=str, help="Path to directory with ScuNET model file(s).", default=os.path.join(models_path, 'ScuNET'))
 parser.add_argument("--swinir-models-path", type=str, help="Path to directory with SwinIR model file(s).", default=os.path.join(models_path, 'SwinIR'))
 parser.add_argument("--ldsr-models-path", type=str, help="Path to directory with LDSR model file(s).", default=os.path.join(models_path, 'LDSR'))
+parser.add_argument("--clip-models-path", type=str, help="Path to directory with CLIP model file(s).", default=None)
 parser.add_argument("--xformers", action='store_true', help="enable xformers for cross attention layers")
 parser.add_argument("--force-enable-xformers", action='store_true', help="enable xformers for cross attention layers regardless of whether the checking code thinks you can run it; do not make bug reports if this fails to work")
 parser.add_argument("--deepdanbooru", action='store_true', help="enable deepdanbooru interrogator")
@@ -98,6 +99,8 @@ restricted_opts = {
     "outdir_save",
 }
 
+cmd_opts.disable_extension_access = cmd_opts.share or cmd_opts.listen
+
 devices.device, devices.device_interrogate, devices.device_gfpgan, devices.device_swinir, devices.device_esrgan, devices.device_scunet, devices.device_codeformer = \
 (devices.cpu if any(y in cmd_opts.use_cpu for y in [x, 'all']) else devices.get_optimal_device() for x in ['sd', 'interrogate', 'gfpgan', 'swinir', 'esrgan', 'scunet', 'codeformer'])
 
@@ -134,6 +137,7 @@ class State:
     current_image_sampling_step = 0
     textinfo = None
     time_start = None
+    need_restart = False
 
     def skip(self):
         self.skipped = True
@@ -288,11 +292,12 @@ options_templates.update(options_section(('system', "System"), {
 }))
 
 options_templates.update(options_section(('training', "Training"), {
-    "unload_models_when_training": OptionInfo(False, "Move VAE and CLIP to RAM when training hypernetwork. Saves VRAM."),
+    "unload_models_when_training": OptionInfo(False, "Move VAE and CLIP to RAM when training if possible. Saves VRAM."),
     "dataset_filename_word_regex": OptionInfo("", "Filename word regex"),
     "dataset_filename_join_string": OptionInfo(" ", "Filename join string"),
     "training_image_repeats_per_epoch": OptionInfo(1, "Number of repeats for a single input image per epoch; used only for displaying epoch number", gr.Number, {"precision": 0}),
     "training_write_csv_every": OptionInfo(500, "Save an csv containing the loss to log directory every N steps, 0 to disable"),
+    "training_xattention_optimizations": OptionInfo(False, "Use cross attention optimizations while training"),
 }))
 
 options_templates.update(options_section(('sd', "Stable Diffusion"), {
@@ -357,6 +362,12 @@ options_templates.update(options_section(('sampler-params', "Sampler parameters"
     'eta_noise_seed_delta': OptionInfo(0, "Eta noise seed delta", gr.Number, {"precision": 0}),
 }))
 
+options_templates.update(options_section((None, "Hidden options"), {
+    "disabled_extensions": OptionInfo([], "Disable those extensions"),
+}))
+
+options_templates.update()
+
 
 class Options:
     data = None
@@ -368,8 +379,9 @@ class Options:
 
     def __setattr__(self, key, value):
         if self.data is not None:
-            if key in self.data:
+            if key in self.data or key in self.data_labels:
                 self.data[key] = value
+                return
 
         return super(Options, self).__setattr__(key, value)
 

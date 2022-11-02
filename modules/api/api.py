@@ -1,6 +1,8 @@
+import base64
+import io
 import time
 import uvicorn
-from gradio.processing_utils import encode_pil_to_base64, decode_base64_to_file, decode_base64_to_image
+from gradio.processing_utils import decode_base64_to_file, decode_base64_to_image
 from fastapi import APIRouter, Depends, HTTPException
 import modules.shared as shared
 from modules.api.models import *
@@ -28,6 +30,12 @@ def setUpscalers(req: dict):
     return reqDict
 
 
+def encode_pil_to_base64(image):
+    buffer = io.BytesIO()
+    image.save(buffer, format="png")
+    return base64.b64encode(buffer.getvalue())
+
+
 class Api:
     def __init__(self, app, queue_lock):
         self.router = APIRouter()
@@ -39,6 +47,7 @@ class Api:
         self.app.add_api_route("/sdapi/v1/extra-batch-images", self.extras_batch_images_api, methods=["POST"], response_model=ExtrasBatchImagesResponse)
         self.app.add_api_route("/sdapi/v1/png-info", self.pnginfoapi, methods=["POST"], response_model=PNGInfoResponse)
         self.app.add_api_route("/sdapi/v1/progress", self.progressapi, methods=["GET"], response_model=ProgressResponse)
+        self.app.add_api_route("/sdapi/v1/interrupt", self.interruptapi, methods=["POST"])
 
     def text2imgapi(self, txt2imgreq: StableDiffusionTxt2ImgProcessingAPI):
         sampler_index = sampler_to_index(txt2imgreq.sampler_index)
@@ -184,6 +193,11 @@ class Api:
             current_image = encode_pil_to_base64(shared.state.current_image)
 
         return ProgressResponse(progress=progress, eta_relative=eta_relative, state=shared.state.dict(), current_image=current_image)
+
+    def interruptapi(self):
+        shared.state.interrupt()
+
+        return {}
 
     def launch(self, server_name, port):
         self.app.include_router(self.router)
