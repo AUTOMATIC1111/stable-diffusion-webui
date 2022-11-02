@@ -148,3 +148,17 @@ Outdated demo | New UI (TODO: demo image)
 - Inpainting layer no longer has to be manually hidden, nor use white specifically
 - UI has been improved & squeezed further
 - Scripts API is now possible
+
+## training-picker
+https://github.com/Maurdekye/training-picker
+
+Adds a tab to the webui that allows the user to automatically extract keyframes from video, and manually extract 512x512 crops of those frames for use in model training.
+
+![image](https://user-images.githubusercontent.com/2313721/199614791-1f573573-a2e2-4358-836d-5655825077e1.png)
+
+### Installation
+
+- Install [AUTOMATIC1111's Stable Diffusion Webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui)
+- Install [ffmpeg](https://ffmpeg.org/) for your operating system
+- Clone this repository into the extensions folder inside the webui
+- Drop videos you want to extract cropped frames from into the training-picker/videos folder
