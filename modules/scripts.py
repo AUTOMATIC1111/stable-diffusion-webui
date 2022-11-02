@@ -70,7 +70,7 @@ class Script:
 
         pass
 
-    def process_one(self, p, *args):
+    def process_one(self, p, n, *args):
         """
         Same as process(), but called for every iteration
         """
@@ -301,11 +301,11 @@ class ScriptRunner:
                 print(f"Error running process: {script.filename}", file=sys.stderr)
                 print(traceback.format_exc(), file=sys.stderr)
 
-    def process_one(self, p):
+    def process_one(self, p, n):
         for script in self.alwayson_scripts:
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
-                script.process_one(p, *script_args)
+                script.process_one(p, n, *script_args)
             except Exception:
                 print(f"Error running process_one: {script.filename}", file=sys.stderr)
                 print(traceback.format_exc(), file=sys.stderr)
