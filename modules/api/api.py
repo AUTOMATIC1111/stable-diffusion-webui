@@ -178,15 +178,7 @@ class Api:
 
         progress = min(progress, 1)
 
-        # copy from check_progress_call of ui.py
-
-        if shared.parallel_processing_allowed:
-            if shared.state.sampling_step - shared.state.current_image_sampling_step >= shared.opts.show_progress_every_n_steps and shared.state.current_latent is not None:
-                if shared.opts.show_progress_grid:
-                    shared.state.current_image = samples_to_image_grid(shared.state.current_latent)
-                else:
-                    shared.state.current_image = sample_to_image(shared.state.current_latent)
-                shared.state.current_image_sampling_step = shared.state.sampling_step
+        shared.state.set_current_image()
 
         current_image = None
         if shared.state.current_image and not req.skip_current_image:

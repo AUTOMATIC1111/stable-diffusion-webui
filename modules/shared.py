@@ -184,6 +184,20 @@ class State:
 
         devices.torch_gc()
 
+    """sets self.current_image from self.current_latent if enough sampling steps have been made after the last call to this"""
+    def set_current_image(self):
+        if not parallel_processing_allowed:
+            return
+
+        if self.sampling_step - self.current_image_sampling_step >= opts.show_progress_every_n_steps and self.current_latent is not None:
+            if opts.show_progress_grid:
+                self.current_image = sd_samplers.samples_to_image_grid(self.current_latent)
+            else:
+                self.current_image = sd_samplers.sample_to_image(self.current_latent)
+
+            self.current_image_sampling_step = self.sampling_step
+
+
 state = State()
 
 artist_db = modules.artists.ArtistsDatabase(os.path.join(script_path, 'artists.csv'))
