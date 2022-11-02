@@ -78,27 +78,24 @@ def refresh_vae_list(vae_path=vae_path, model_path=model_path):
     vae_list.extend(default_vae_list)
     vae_list.extend(list(res.keys()))
     vae_dict.clear()
-    vae_dict.update(default_vae_dict)
     vae_dict.update(res)
+    vae_dict.update(default_vae_dict)
     return vae_list
 
 
 def resolve_vae(checkpoint_file, vae_file="auto"):
     global first_load, vae_dict, vae_list
-    # save_settings = False
 
-    # if vae_file argument is provided, it takes priority
+    # if vae_file argument is provided, it takes priority, but not saved
     if vae_file and vae_file not in default_vae_list:
         if not os.path.isfile(vae_file):
             vae_file = "auto"
-            # save_settings = True
             print("VAE provided as function argument doesn't exist")
-    # for the first load, if vae-path is provided, it takes priority and failure is reported
+    # for the first load, if vae-path is provided, it takes priority, saved, and failure is reported
     if first_load and shared.cmd_opts.vae_path is not None:
         if os.path.isfile(shared.cmd_opts.vae_path):
             vae_file = shared.cmd_opts.vae_path
-            # save_settings = True
-            # print("Using VAE provided as command line argument")
+            shared.opts.data['sd_vae'] = get_filename(vae_file)
         else:
             print("VAE provided as command line argument doesn't exist")
     # else, we load from settings
