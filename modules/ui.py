@@ -36,6 +36,7 @@ import modules.scripts
 import modules.shared as shared
 import modules.styles
 import modules.textual_inversion.ui
+import modules.extensions
 from modules import prompt_parser
 from modules.images import save_image
 from modules.sd_hijack import model_hijack
@@ -1782,4 +1783,5 @@ def load_javascript(raw_response):
 
 
 reload_javascript = partial(load_javascript, gradio.routes.templates.TemplateResponse)
+modules.extensions.list_extensions()
 reload_javascript()
