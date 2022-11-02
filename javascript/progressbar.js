@@ -3,8 +3,21 @@ global_progressbars = {}
 galleries = {}
 galleryObservers = {}
 
+// this tracks laumnches of window.setTimeout for progressbar to prevent starting a new timeout when the previous is still running
+timeoutIds = {}
+
 function check_progressbar(id_part, id_progressbar, id_progressbar_span, id_skip, id_interrupt, id_preview, id_gallery){
-    var progressbar = gradioApp().getElementById(id_progressbar)
+    // gradio 3.8's enlightened approach allows them to create two nested div elements inside each other with same id
+    // every time you use gr.HTML(elem_id='xxx'), so we handle this here
+    var progressbar = gradioApp().querySelector("#"+id_progressbar+" #"+id_progressbar)
+    var progressbarParent
+    if(progressbar){
+        progressbarParent = gradioApp().querySelector("#"+id_progressbar)
+    } else{
+        progressbar = gradioApp().getElementById(id_progressbar)
+        progressbarParent = null
+    }
+
     var skip = id_skip ? gradioApp().getElementById(id_skip) : null
     var interrupt = gradioApp().getElementById(id_interrupt)
     
@@ -26,18 +39,26 @@ function check_progressbar(id_part, id_progressbar, id_progressbar_span, id_skip
 	    global_progressbars[id_progressbar] = progressbar
 
         var mutationObserver = new MutationObserver(function(m){
+            if(timeoutIds[id_part]) return;
+
             preview = gradioApp().getElementById(id_preview)
             gallery = gradioApp().getElementById(id_gallery)
 
             if(preview != null && gallery != null){
                 preview.style.width = gallery.clientWidth + "px"
                 preview.style.height = gallery.clientHeight + "px"
+                if(progressbarParent) progressbar.style.width = progressbarParent.clientWidth + "px"
 
 				//only watch gallery if there is a generation process going on
                 check_gallery(id_gallery);
 
                 var progressDiv = gradioApp().querySelectorAll('#' + id_progressbar_span).length > 0;
-                if(!progressDiv){
+                if(progressDiv){
+                    timeoutIds[id_part] = window.setTimeout(function() {
+                        timeoutIds[id_part] = null
+                        requestMoreProgress(id_part, id_progressbar_span, id_skip, id_interrupt)
+                    }, 500)
+                } else{
                     if (skip) {
                         skip.style.display = "none"
                     }
@@ -47,13 +68,10 @@ function check_progressbar(id_part, id_progressbar, id_progressbar_span, id_skip
                     if (galleryObservers[id_gallery]) {
                         galleryObservers[id_gallery].disconnect();
                         galleries[id_gallery] = null;
-                    }    
+                    }
                 }
-
-
             }
 
-            window.setTimeout(function() { requestMoreProgress(id_part, id_progressbar_span, id_skip, id_interrupt) }, 500)
         });
         mutationObserver.observe( progressbar, { childList:true, subtree:true })
 	}

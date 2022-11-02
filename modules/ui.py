@@ -671,6 +671,8 @@ def create_ui(wrap_gradio_gpu_call):
     import modules.img2img
     import modules.txt2img
 
+    reload_javascript()
+
     parameters_copypaste.reset()
 
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
@@ -1573,8 +1575,7 @@ def create_ui(wrap_gradio_gpu_call):
         reload_script_bodies.click(
             fn=reload_scripts,
             inputs=[],
-            outputs=[],
-            _js='function(){}'
+            outputs=[]
         )
 
         def request_restart():
@@ -1586,7 +1587,7 @@ def create_ui(wrap_gradio_gpu_call):
             fn=request_restart,
             inputs=[],
             outputs=[],
-            _js='function(){restart_reload()}'
+            _js='restart_reload'
         )
 
         if column is not None:
@@ -1785,4 +1786,3 @@ def load_javascript(raw_response):
 
 
 reload_javascript = partial(load_javascript, gradio.routes.templates.TemplateResponse)
-reload_javascript()
