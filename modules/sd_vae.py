@@ -59,7 +59,7 @@ def restore_base_vae(model):
 def get_filename(filepath):
     if not filepath:
         return "None"
-    return os.path.splitext(os.path.basename(filepath))[0]
+    return os.path.relpath(filepath, models_path)
 
 
 def refresh_vae_list(vae_dir=vae_dir, model_dir=model_dir):
