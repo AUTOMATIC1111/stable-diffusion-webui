@@ -146,6 +146,9 @@ class State:
         self.interrupted = True
 
     def nextjob(self):
+        if opts.show_progress_every_n_steps == -1: 
+            self.do_set_current_image()
+            
         self.job_no += 1
         self.sampling_step = 0
         self.current_image_sampling_step = 0
@@ -186,17 +189,21 @@ class State:
 
     """sets self.current_image from self.current_latent if enough sampling steps have been made after the last call to this"""
     def set_current_image(self):
+        if self.sampling_step - self.current_image_sampling_step >= opts.show_progress_every_n_steps and opts.show_progress_every_n_steps > 0:
+            self.do_set_current_image()
+
+    def do_set_current_image(self):
         if not parallel_processing_allowed:
             return
+        if self.current_latent is None:
+            return
+            
+        if opts.show_progress_grid:
+            self.current_image = sd_samplers.samples_to_image_grid(self.current_latent)
+        else:
+            self.current_image = sd_samplers.sample_to_image(self.current_latent)
 
-        if self.sampling_step - self.current_image_sampling_step >= opts.show_progress_every_n_steps and self.current_latent is not None:
-            if opts.show_progress_grid:
-                self.current_image = sd_samplers.samples_to_image_grid(self.current_latent)
-            else:
-                self.current_image = sd_samplers.sample_to_image(self.current_latent)
-
-            self.current_image_sampling_step = self.sampling_step
-
+        self.current_image_sampling_step = self.sampling_step
 
 state = State()
 
@@ -351,7 +358,7 @@ options_templates.update(options_section(('interrogate', "Interrogate Options"),
 
 options_templates.update(options_section(('ui', "User interface"), {
     "show_progressbar": OptionInfo(True, "Show progressbar"),
-    "show_progress_every_n_steps": OptionInfo(0, "Show image creation progress every N sampling steps. Set 0 to disable.", gr.Slider, {"minimum": 0, "maximum": 32, "step": 1}),
+    "show_progress_every_n_steps": OptionInfo(0, "Show image creation progress every N sampling steps. Set to 0 to disable. Set to -1 to show after completion of batch.", gr.Slider, {"minimum": -1, "maximum": 32, "step": 1}),
     "show_progress_grid": OptionInfo(True, "Show previews of all images generated in a batch as a grid"),
     "return_grid": OptionInfo(True, "Show grid in results for web"),
     "do_not_show_images": OptionInfo(False, "Do not show any images in results for web"),
