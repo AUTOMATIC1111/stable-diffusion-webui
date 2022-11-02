@@ -137,6 +137,8 @@ def img2img(mode: int, prompt: str, negative_prompt: str, prompt_style: str, pro
         if processed is None:
             processed = process_images(p)
 
+    p.close()
+
     shared.total_tqdm.clear()
 
     generation_info_js = processed.js()
