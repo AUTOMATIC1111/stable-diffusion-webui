@@ -166,8 +166,7 @@ class Script(scripts.Script):
         if override_strength:
             p.denoising_strength = 1.0
 
-
-        def sample_extra(conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength):
+        def sample_extra(conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
             lat = (p.init_latent.cpu().numpy() * 10).astype(int)
 
             same_params = self.cache is not None and self.cache.cfg_scale == cfg and self.cache.steps == st \

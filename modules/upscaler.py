@@ -10,6 +10,7 @@ import modules.shared
 from modules import modelloader, shared
 
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
+NEAREST = (Image.Resampling.NEAREST if hasattr(Image, 'Resampling') else Image.NEAREST)
 from modules.paths import models_path
 
 
@@ -57,7 +58,7 @@ class Upscaler:
         dest_w = img.width * scale
         dest_h = img.height * scale
         for i in range(3):
-            if img.width >= dest_w and img.height >= dest_h:
+            if img.width > dest_w and img.height > dest_h:
                 break
             img = self.do_upscale(img, selected_model)
         if img.width != dest_w or img.height != dest_h:
@@ -120,3 +121,17 @@ class UpscalerLanczos(Upscaler):
         self.name = "Lanczos"
         self.scalers = [UpscalerData("Lanczos", None, self)]
 
+
+class UpscalerNearest(Upscaler):
+    scalers = []
+
+    def do_upscale(self, img, selected_model=None):
+        return img.resize((int(img.width * self.scale), int(img.height * self.scale)), resample=NEAREST)
+
+    def load_model(self, _):
+        pass
+
+    def __init__(self, dirname=None):
+        super().__init__(False)
+        self.name = "Nearest"
+        self.scalers = [UpscalerData("Nearest", None, self)]
