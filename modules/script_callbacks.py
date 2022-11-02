@@ -24,13 +24,22 @@ class ImageSaveParams:
         """dictionary with parameters for image's PNG info data; infotext will have the key 'parameters'"""
 
 
-class CGFDenoiserParams:
-    def __init__(self, x_in, image_cond_in, sigma_in, sampling_step, total_sampling_steps):
-        self.x_in = x_in
-        self.image_cond_in = image_cond_in
-        self.sigma_in = sigma_in
+class CFGDenoiserParams:
+    def __init__(self, x, image_cond, sigma, sampling_step, total_sampling_steps):
+        self.x = x
+        """Latent image representation in the process of being denoised"""
+        
+        self.image_cond = image_cond
+        """Conditioning image"""
+        
+        self.sigma = sigma
+        """Current sigma noise step value"""
+        
         self.sampling_step = sampling_step
+        """Current Sampling step number"""
+        
         self.total_sampling_steps = total_sampling_steps
+        """Total number of sampling steps planned"""
 
 
 ScriptCallback = namedtuple("ScriptCallback", ["script", "callback"])
@@ -94,7 +103,7 @@ def image_saved_callback(params: ImageSaveParams):
             report_exception(c, 'image_saved_callback')
 
 
-def cfg_denoiser_callback(params: CGFDenoiserParams):
+def cfg_denoiser_callback(params: CFGDenoiserParams):
     for c in callbacks_cfg_denoiser:
         try:
             c.callback(params)
@@ -153,7 +162,7 @@ def on_image_saved(callback):
 def on_cfg_denoiser(callback):
     """register a function to be called in the kdiffussion cfg_denoiser method after building the inner model inputs.
     The callback is called with one argument:
-        - params: CGFDenoiserParams - parameters to be passed to the inner model and sampling state details.
+        - params: CFGDenoiserParams - parameters to be passed to the inner model and sampling state details.
     """
     add_callback(callbacks_cfg_denoiser, callback)
 
