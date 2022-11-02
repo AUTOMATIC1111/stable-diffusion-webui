@@ -7,8 +7,9 @@ from fastapi import APIRouter, Depends, HTTPException
 import modules.shared as shared
 from modules.api.models import *
 from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img, process_images
-from modules.sd_samplers import all_samplers, sample_to_image, samples_to_image_grid
+from modules.sd_samplers import all_samplers
 from modules.extras import run_extras, run_pnginfo
+from PIL import PngImagePlugin
 
 
 def upscaler_to_index(name: str):
@@ -31,9 +32,21 @@ def setUpscalers(req: dict):
 
 
 def encode_pil_to_base64(image):
-    buffer = io.BytesIO()
-    image.save(buffer, format="png")
-    return base64.b64encode(buffer.getvalue())
+    with io.BytesIO() as output_bytes:
+
+        # Copy any text-only metadata
+        use_metadata = False
+        metadata = PngImagePlugin.PngInfo()
+        for key, value in image.info.items():
+            if isinstance(key, str) and isinstance(value, str):
+                metadata.add_text(key, value)
+                use_metadata = True
+
+        image.save(
+            output_bytes, "PNG", pnginfo=(metadata if use_metadata else None)
+        )
+        bytes_data = output_bytes.getvalue()
+    return base64.b64encode(bytes_data)
 
 
 class Api:
