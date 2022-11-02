@@ -1054,7 +1054,7 @@ def create_ui(wrap_gradio_gpu_call):
 
                 with gr.Tabs(elem_id="extras_resize_mode"):
                     with gr.TabItem('Scale by'):
-                        upscaling_resize = gr.Slider(minimum=1.0, maximum=4.0, step=0.05, label="Resize", value=2)
+                        upscaling_resize = gr.Slider(minimum=1.0, maximum=8.0, step=0.05, label="Resize", value=4)
                     with gr.TabItem('Scale to'):
                         with gr.Group():
                             with gr.Row():
