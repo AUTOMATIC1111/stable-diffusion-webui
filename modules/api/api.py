@@ -5,10 +5,9 @@ import uvicorn
 from gradio.processing_utils import decode_base64_to_file, decode_base64_to_image
 from fastapi import APIRouter, Depends, HTTPException
 import modules.shared as shared
-from modules import devices
 from modules.api.models import *
 from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img, process_images
-from modules.sd_samplers import all_samplers
+from modules.sd_samplers import all_samplers, sample_to_image, samples_to_image_grid
 from modules.extras import run_extras, run_pnginfo
 
 
@@ -178,6 +177,16 @@ class Api:
         eta_relative = eta-time_since_start
 
         progress = min(progress, 1)
+
+        # copy from check_progress_call of ui.py
+
+        if shared.parallel_processing_allowed:
+            if shared.state.sampling_step - shared.state.current_image_sampling_step >= shared.opts.show_progress_every_n_steps and shared.state.current_latent is not None:
+                if shared.opts.show_progress_grid:
+                    shared.state.current_image = samples_to_image_grid(shared.state.current_latent)
+                else:
+                    shared.state.current_image = sample_to_image(shared.state.current_latent)
+                shared.state.current_image_sampling_step = shared.state.sampling_step
 
         current_image = None
         if shared.state.current_image and not req.skip_current_image:
