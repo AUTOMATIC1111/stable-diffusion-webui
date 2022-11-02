@@ -547,6 +547,7 @@
   "Use following tags to define how subdirectories for images and grids are chosen: [steps], [cfg], [prompt], [prompt_no_styles], [prompt_spaces], [width], [height], [styles], [sampler], [seed], [model_hash], [prompt_words], [date], [datetime], [datetime<Format>], [datetime<Format><Time Zone>], [job_timestamp]; leave empty for default.": "다음 태그들을 사용해 이미지와 그리드의 하위 디렉토리명의 형식을 결정하세요 : [steps], [cfg], [prompt], [prompt_no_styles], [prompt_spaces], [width], [height], [styles], [sampler], [seed], [model_hash], [prompt_words], [date], [datetime], [datetime<Format>], [datetime<Format><Time Zone>], [job_timestamp]. 비워두면 기본값으로 설정됩니다.",
   "Use old emphasis implementation. Can be useful to reproduce old seeds.": "옛 방식의 강조 구현을 사용합니다. 옛 시드를 재현하는 데 효과적일 수 있습니다.",
   "Use original name for output filename during batch process in extras tab": "부가기능 탭에서 이미지를 여러장 처리 시 결과물 파일명에 기존 파일명 사용하기",
+  "Use same random seed for all lines": "모든 줄에 동일한 시드 사용",
   "Use same seed for each image": "각 이미지에 동일한 시드 사용",
   "use spaces for tags in deepbooru": "deepbooru에서 태그에 공백 사용",
   "User interface": "사용자 인터페이스",
