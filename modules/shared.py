@@ -255,6 +255,7 @@ options_templates.update(options_section(('saving-images', "Saving images/grids"
     "enable_pnginfo": OptionInfo(True, "Save text information about generation parameters as chunks to png files"),
     "save_txt": OptionInfo(False, "Create a text file next to every image with generation parameters."),
     "save_images_before_face_restoration": OptionInfo(False, "Save a copy of image before doing face restoration."),
+    "save_images_before_highres_fix": OptionInfo(False, "Save a copy of image before applying highres fix."),
     "jpeg_quality": OptionInfo(80, "Quality for saved jpeg images", gr.Slider, {"minimum": 1, "maximum": 100, "step": 1}),
     "export_for_4chan": OptionInfo(True, "If PNG image is larger than 4MB or any dimension is larger than 4000, downscale and save copy as JPG"),
 
