@@ -50,8 +50,8 @@ def delete_base_vae():
 
 
 def restore_base_vae(model):
-    global base_vae, checkpoint_info
     if base_vae is not None and checkpoint_info == model.sd_checkpoint_info:
+        print("Restoring base VAE")
         load_vae_dict(model, base_vae)
     delete_base_vae()
 
@@ -143,6 +143,7 @@ def load_vae(model, vae_file=None):
         vae_ckpt = torch.load(vae_file, map_location=shared.weight_load_location)
         vae_dict_1 = {k: v for k, v in vae_ckpt["state_dict"].items() if k[0:4] != "loss" and k not in vae_ignore_keys}
         load_vae_dict(model, vae_dict_1)
+        store_base_vae(model)
 
         # If vae used is not in dict, update it
         # It will be removed on refresh though
@@ -150,6 +151,9 @@ def load_vae(model, vae_file=None):
         if vae_opt not in vae_dict:
             vae_dict[vae_opt] = vae_file
             vae_list.append(vae_opt)
+            # shared.opts.data['sd_vae'] = vae_opt
+    else:
+        restore_base_vae(model)
 
     loaded_vae_file = vae_file
 
@@ -166,12 +170,8 @@ def load_vae(model, vae_file=None):
 
 
 # don't call this from outside
-def load_vae_dict(model, vae_dict_1=None):
-    if vae_dict_1:
-        store_base_vae(model)
-        model.first_stage_model.load_state_dict(vae_dict_1)
-    else:
-        restore_base_vae()
+def load_vae_dict(model, vae_dict_1):
+    model.first_stage_model.load_state_dict(vae_dict_1)
     model.first_stage_model.to(devices.dtype_vae)
 
 
