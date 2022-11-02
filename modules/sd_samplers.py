@@ -96,6 +96,7 @@ def single_sample_to_image(sample):
 def sample_to_image(samples, index=0):
     return single_sample_to_image(samples[index])
 
+
 def samples_to_image_grid(samples):
     return images.image_grid([single_sample_to_image(sample) for sample in samples])
 
