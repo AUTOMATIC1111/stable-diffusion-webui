@@ -25,6 +25,7 @@ from statistics import stdev, mean
 class HypernetworkModule(torch.nn.Module):
     multiplier = 1.0
     activation_dict = {
+        "linear": torch.nn.Identity,
         "relu": torch.nn.ReLU,
         "leakyrelu": torch.nn.LeakyReLU,
         "elu": torch.nn.ELU,
@@ -208,13 +209,16 @@ def list_hypernetworks(path):
     res = {}
     for filename in glob.iglob(os.path.join(path, '**/*.pt'), recursive=True):
         name = os.path.splitext(os.path.basename(filename))[0]
-        res[name] = filename
+        # Prevent a hypothetical "None.pt" from being listed.
+        if name != "None":
+            res[name] = filename
     return res
 
 
 def load_hypernetwork(filename):
     path = shared.hypernetworks.get(filename, None)
-    if path is not None:
+    # Prevent any file named "None.pt" from being loaded.
+    if path is not None and filename != "None":
         print(f"Loading hypernetwork {filename}")
         try:
             shared.loaded_hypernetwork = Hypernetwork()
@@ -331,7 +335,9 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
     # images allows training previews to have infotext. Importing it at the top causes a circular import problem.
     from modules import images
 
-    assert hypernetwork_name, 'hypernetwork not selected'
+    save_hypernetwork_every = save_hypernetwork_every or 0
+    create_image_every = create_image_every or 0
+    textual_inversion.validate_train_inputs(hypernetwork_name, learn_rate, batch_size, data_root, template_file, steps, save_hypernetwork_every, create_image_every, log_directory, name="hypernetwork")
 
     path = shared.hypernetworks.get(hypernetwork_name, None)
     shared.loaded_hypernetwork = Hypernetwork()
@@ -357,17 +363,24 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
     else:
         images_dir = None
 
+    hypernetwork = shared.loaded_hypernetwork
+    checkpoint = sd_models.select_checkpoint()
+
+    ititial_step = hypernetwork.step or 0
+    if ititial_step >= steps:
+        shared.state.textinfo = f"Model has already been trained beyond specified max steps"
+        return hypernetwork, filename
+
+    scheduler = LearnRateScheduler(learn_rate, steps, ititial_step)
+    
+    # dataset loading may take a while, so input validations and early returns should be done before this
     shared.state.textinfo = f"Preparing dataset from {html.escape(data_root)}..."
     with torch.autocast("cuda"):
         ds = modules.textual_inversion.dataset.PersonalizedBase(data_root=data_root, width=training_width, height=training_height, repeats=shared.opts.training_image_repeats_per_epoch, placeholder_token=hypernetwork_name, model=shared.sd_model, device=devices.device, template_file=template_file, include_cond=True, batch_size=batch_size)
+
     if unload:
         shared.sd_model.cond_stage_model.to(devices.cpu)
         shared.sd_model.first_stage_model.to(devices.cpu)
-
-    hypernetwork = shared.loaded_hypernetwork
-    weights = hypernetwork.weights()
-    for weight in weights:
-        weight.requires_grad = True
 
     size = len(ds.indexes)
     loss_dict = defaultdict(lambda : deque(maxlen = 1024))
@@ -375,20 +388,18 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
     previous_mean_losses = [0]
     previous_mean_loss = 0
     print("Mean loss of {} elements".format(size))
-
-    last_saved_file = "<none>"
-    last_saved_image = "<none>"
-    forced_filename = "<none>"
-
-    ititial_step = hypernetwork.step or 0
-    if ititial_step > steps:
-        return hypernetwork, filename
-
-    scheduler = LearnRateScheduler(learn_rate, steps, ititial_step)
+    
+    weights = hypernetwork.weights()
+    for weight in weights:
+        weight.requires_grad = True
     # if optimizer == "AdamW": or else Adam / AdamW / SGD, etc...
     optimizer = torch.optim.AdamW(weights, lr=scheduler.learn_rate)
 
     steps_without_grad = 0
+
+    last_saved_file = "<none>"
+    last_saved_image = "<none>"
+    forced_filename = "<none>"
 
     pbar = tqdm.tqdm(enumerate(ds), total=steps - ititial_step)
     for i, entries in pbar:
@@ -428,7 +439,9 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
 
             optimizer.step()
 
-        if torch.isnan(losses[hypernetwork.step % losses.shape[0]]):
+        steps_done = hypernetwork.step + 1
+
+        if torch.isnan(losses[hypernetwork.step % losses.shape[0]]): 
             raise RuntimeError("Loss diverged.")
         
         if len(previous_mean_losses) > 1:
@@ -438,19 +451,19 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
         dataset_loss_info = f"dataset loss:{mean(previous_mean_losses):.3f}" + u"\u00B1" + f"({std / (len(previous_mean_losses) ** 0.5):.3f})"
         pbar.set_description(dataset_loss_info)
 
-        if hypernetwork.step > 0 and hypernetwork_dir is not None and hypernetwork.step % save_hypernetwork_every == 0:
+        if hypernetwork_dir is not None and steps_done % save_hypernetwork_every == 0:
             # Before saving, change name to match current checkpoint.
-            hypernetwork.name = f'{hypernetwork_name}-{hypernetwork.step}'
-            last_saved_file = os.path.join(hypernetwork_dir, f'{hypernetwork.name}.pt')
-            hypernetwork.save(last_saved_file)
+            hypernetwork_name_every = f'{hypernetwork_name}-{steps_done}'
+            last_saved_file = os.path.join(hypernetwork_dir, f'{hypernetwork_name_every}.pt')
+            save_hypernetwork(hypernetwork, checkpoint, hypernetwork_name, last_saved_file)
 
         textual_inversion.write_loss(log_directory, "hypernetwork_loss.csv", hypernetwork.step, len(ds), {
             "loss": f"{previous_mean_loss:.7f}",
             "learn_rate": scheduler.learn_rate
         })
 
-        if hypernetwork.step > 0 and images_dir is not None and hypernetwork.step % create_image_every == 0:
-            forced_filename = f'{hypernetwork_name}-{hypernetwork.step}'
+        if images_dir is not None and steps_done % create_image_every == 0:
+            forced_filename = f'{hypernetwork_name}-{steps_done}'
             last_saved_image = os.path.join(images_dir, forced_filename)
 
             optimizer.zero_grad()
@@ -503,13 +516,23 @@ Last saved image: {html.escape(last_saved_image)}<br/>
 """
         
     report_statistics(loss_dict)
-    checkpoint = sd_models.select_checkpoint()
 
-    hypernetwork.sd_checkpoint = checkpoint.hash
-    hypernetwork.sd_checkpoint_name = checkpoint.model_name
-    # Before saving for the last time, change name back to the base name (as opposed to the save_hypernetwork_every step-suffixed naming convention).
-    hypernetwork.name = hypernetwork_name
-    filename = os.path.join(shared.cmd_opts.hypernetwork_dir, f'{hypernetwork.name}.pt')
-    hypernetwork.save(filename)
+    filename = os.path.join(shared.cmd_opts.hypernetwork_dir, f'{hypernetwork_name}.pt')
+    save_hypernetwork(hypernetwork, checkpoint, hypernetwork_name, filename)
 
     return hypernetwork, filename
+
+def save_hypernetwork(hypernetwork, checkpoint, hypernetwork_name, filename):
+    old_hypernetwork_name = hypernetwork.name
+    old_sd_checkpoint = hypernetwork.sd_checkpoint if hasattr(hypernetwork, "sd_checkpoint") else None
+    old_sd_checkpoint_name = hypernetwork.sd_checkpoint_name if hasattr(hypernetwork, "sd_checkpoint_name") else None
+    try:
+        hypernetwork.sd_checkpoint = checkpoint.hash
+        hypernetwork.sd_checkpoint_name = checkpoint.model_name
+        hypernetwork.name = hypernetwork_name
+        hypernetwork.save(filename)
+    except:
+        hypernetwork.sd_checkpoint = old_sd_checkpoint
+        hypernetwork.sd_checkpoint_name = old_sd_checkpoint_name
+        hypernetwork.name = old_hypernetwork_name
+        raise

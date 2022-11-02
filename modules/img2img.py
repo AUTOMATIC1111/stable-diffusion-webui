@@ -19,7 +19,7 @@ import modules.scripts
 def process_batch(p, input_dir, output_dir, args):
     processing.fix_seed(p)
 
-    images = [file for file in [os.path.join(input_dir, x) for x in os.listdir(input_dir)] if os.path.isfile(file)]
+    images = shared.listfiles(input_dir)
 
     print(f"Will process {len(images)} images, creating {p.n_iter * p.batch_size} new images for each.")
 
@@ -55,6 +55,7 @@ def process_batch(p, input_dir, output_dir, args):
                 filename = f"{left}-{n}{right}"
 
             if not save_normally:
+                os.makedirs(output_dir, exist_ok=True)
                 processed_image.save(os.path.join(output_dir, filename))
 
 
@@ -136,6 +137,8 @@ def img2img(mode: int, prompt: str, negative_prompt: str, prompt_style: str, pro
         processed = modules.scripts.scripts_img2img.run(p, *args)
         if processed is None:
             processed = process_images(p)
+
+    p.close()
 
     shared.total_tqdm.clear()
 

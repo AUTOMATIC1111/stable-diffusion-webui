@@ -40,7 +40,7 @@ parser.add_argument("--lowram", action='store_true', help="load stable diffusion
 parser.add_argument("--always-batch-cond-uncond", action='store_true', help="disables cond/uncond batching that is enabled to save memory with --medvram or --lowvram")
 parser.add_argument("--unload-gfpgan", action='store_true', help="does not do anything.")
 parser.add_argument("--precision", type=str, help="evaluate at this precision", choices=["full", "autocast"], default="autocast")
-parser.add_argument("--share", action='store_true', help="use share=True for gradio and make the UI accessible through their site (doesn't work for me but you might have better luck)")
+parser.add_argument("--share", action='store_true', help="use share=True for gradio and make the UI accessible through their site")
 parser.add_argument("--ngrok", type=str, help="ngrok authtoken, alternative to gradio --share", default=None)
 parser.add_argument("--ngrok-region", type=str, help="The region in which ngrok should start.", default="us")
 parser.add_argument("--codeformer-models-path", type=str, help="Path to directory with codeformer model file(s).", default=os.path.join(models_path, 'Codeformer'))
@@ -51,6 +51,7 @@ parser.add_argument("--realesrgan-models-path", type=str, help="Path to director
 parser.add_argument("--scunet-models-path", type=str, help="Path to directory with ScuNET model file(s).", default=os.path.join(models_path, 'ScuNET'))
 parser.add_argument("--swinir-models-path", type=str, help="Path to directory with SwinIR model file(s).", default=os.path.join(models_path, 'SwinIR'))
 parser.add_argument("--ldsr-models-path", type=str, help="Path to directory with LDSR model file(s).", default=os.path.join(models_path, 'LDSR'))
+parser.add_argument("--clip-models-path", type=str, help="Path to directory with CLIP model file(s).", default=None)
 parser.add_argument("--xformers", action='store_true', help="enable xformers for cross attention layers")
 parser.add_argument("--force-enable-xformers", action='store_true', help="enable xformers for cross attention layers regardless of whether the checking code thinks you can run it; do not make bug reports if this fails to work")
 parser.add_argument("--deepdanbooru", action='store_true', help="enable deepdanbooru interrogator")
@@ -82,6 +83,7 @@ parser.add_argument("--api", action='store_true', help="use api=True to launch t
 parser.add_argument("--nowebui", action='store_true', help="use api=True to launch the api instead of the webui")
 parser.add_argument("--ui-debug-mode", action='store_true', help="Don't load model to quickly launch UI")
 parser.add_argument("--device-id", type=str, help="Select the default CUDA device to use (export CUDA_VISIBLE_DEVICES=0,1,etc might be needed before)", default=None)
+parser.add_argument("--administrator", action='store_true', help="Administrator rights", default=False)
 
 cmd_opts = parser.parse_args()
 restricted_opts = {
@@ -95,6 +97,8 @@ restricted_opts = {
     "outdir_txt2img_grids",
     "outdir_save",
 }
+
+cmd_opts.disable_extension_access = cmd_opts.share or cmd_opts.listen
 
 devices.device, devices.device_interrogate, devices.device_gfpgan, devices.device_swinir, devices.device_esrgan, devices.device_scunet, devices.device_codeformer = \
 (devices.cpu if any(y in cmd_opts.use_cpu for y in [x, 'all']) else devices.get_optimal_device() for x in ['sd', 'interrogate', 'gfpgan', 'swinir', 'esrgan', 'scunet', 'codeformer'])
@@ -131,6 +135,7 @@ class State:
     current_image = None
     current_image_sampling_step = 0
     textinfo = None
+    need_restart = False
 
     def skip(self):
         self.skipped = True
@@ -143,9 +148,38 @@ class State:
         self.sampling_step = 0
         self.current_image_sampling_step = 0
 
-    def get_job_timestamp(self):
-        return datetime.datetime.now().strftime("%Y%m%d%H%M%S")  # shouldn't this return job_timestamp?
+    def dict(self):
+        obj = {
+            "skipped": self.skipped,
+            "interrupted": self.skipped,
+            "job": self.job,
+            "job_count": self.job_count,
+            "job_no": self.job_no,
+            "sampling_step": self.sampling_step,
+            "sampling_steps": self.sampling_steps,
+        }
 
+        return obj
+
+    def begin(self):
+        self.sampling_step = 0
+        self.job_count = -1
+        self.job_no = 0
+        self.job_timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+        self.current_latent = None
+        self.current_image = None
+        self.current_image_sampling_step = 0
+        self.skipped = False
+        self.interrupted = False
+        self.textinfo = None
+
+        devices.torch_gc()
+
+    def end(self):
+        self.job = ""
+        self.job_count = 0
+
+        devices.torch_gc()
 
 state = State()
 
@@ -255,11 +289,12 @@ options_templates.update(options_section(('system', "System"), {
 }))
 
 options_templates.update(options_section(('training', "Training"), {
-    "unload_models_when_training": OptionInfo(False, "Move VAE and CLIP to RAM when training hypernetwork. Saves VRAM."),
+    "unload_models_when_training": OptionInfo(False, "Move VAE and CLIP to RAM when training if possible. Saves VRAM."),
     "dataset_filename_word_regex": OptionInfo("", "Filename word regex"),
     "dataset_filename_join_string": OptionInfo(" ", "Filename join string"),
     "training_image_repeats_per_epoch": OptionInfo(1, "Number of repeats for a single input image per epoch; used only for displaying epoch number", gr.Number, {"precision": 0}),
     "training_write_csv_every": OptionInfo(500, "Save an csv containing the loss to log directory every N steps, 0 to disable"),
+    "training_xattention_optimizations": OptionInfo(False, "Use cross attention optimizations while training"),
 }))
 
 options_templates.update(options_section(('sd', "Stable Diffusion"), {
@@ -267,6 +302,7 @@ options_templates.update(options_section(('sd', "Stable Diffusion"), {
     "sd_checkpoint_cache": OptionInfo(0, "Checkpoints to cache in RAM", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
     "sd_hypernetwork": OptionInfo("None", "Hypernetwork", gr.Dropdown, lambda: {"choices": ["None"] + [x for x in hypernetworks.keys()]}, refresh=reload_hypernetworks),
     "sd_hypernetwork_strength": OptionInfo(1.0, "Hypernetwork strength", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.001}),
+    "inpainting_mask_weight": OptionInfo(1.0, "Inpainting conditioning mask strength", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     "img2img_color_correction": OptionInfo(False, "Apply color correction to img2img results to match original colors."),
     "save_images_before_color_correction": OptionInfo(False, "Save a copy of image before applying color correction to img2img results"),
     "img2img_fix_steps": OptionInfo(False, "With img2img, do exactly the amount of steps the slider specifies (normally you'd do less with less denoising)."),
@@ -303,6 +339,7 @@ options_templates.update(options_section(('ui', "User interface"), {
     "add_model_hash_to_info": OptionInfo(True, "Add model hash to generation information"),
     "add_model_name_to_info": OptionInfo(False, "Add model name to generation information"),
     "disable_weights_auto_swap": OptionInfo(False, "When reading generation parameters from text into UI (from PNG info or pasted text), do not change the selected model/checkpoint."),
+    "send_seed": OptionInfo(True, "Send seed when sending prompt or image to other interface"),
     "font": OptionInfo("", "Font for image grids that have text"),
     "js_modal_lightbox": OptionInfo(True, "Enable full page image viewer"),
     "js_modal_lightbox_initially_zoomed": OptionInfo(True, "Show images zoomed in by default in full page image viewer"),
@@ -322,6 +359,12 @@ options_templates.update(options_section(('sampler-params', "Sampler parameters"
     'eta_noise_seed_delta': OptionInfo(0, "Eta noise seed delta", gr.Number, {"precision": 0}),
 }))
 
+options_templates.update(options_section((None, "Hidden options"), {
+    "disabled_extensions": OptionInfo([], "Disable those extensions"),
+}))
+
+options_templates.update()
+
 
 class Options:
     data = None
@@ -333,8 +376,9 @@ class Options:
 
     def __setattr__(self, key, value):
         if self.data is not None:
-            if key in self.data:
+            if key in self.data or key in self.data_labels:
                 self.data[key] = value
+                return
 
         return super(Options, self).__setattr__(key, value)
 
@@ -449,3 +493,8 @@ total_tqdm = TotalTQDM()
 
 mem_mon = modules.memmon.MemUsageMonitor("MemMon", device, opts)
 mem_mon.start()
+
+
+def listfiles(dirname):
+    filenames = [os.path.join(dirname, x) for x in sorted(os.listdir(dirname)) if not x.startswith(".")]
+    return [file for file in filenames if os.path.isfile(file)]

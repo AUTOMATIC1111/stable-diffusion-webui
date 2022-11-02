@@ -1,8 +1,10 @@
 import collections
 import os.path
 import sys
+import gc
 from collections import namedtuple
 import torch
+import re
 from omegaconf import OmegaConf
 
 from ldm.util import instantiate_from_config
@@ -35,8 +37,10 @@ def setup_model():
     list_models()
 
 
-def checkpoint_tiles():
-    return sorted([x.title for x in checkpoints_list.values()])
+def checkpoint_tiles(): 
+    convert = lambda name: int(name) if name.isdigit() else name.lower() 
+    alphanumeric_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)] 
+    return sorted([x.title for x in checkpoints_list.values()], key = alphanumeric_key)
 
 
 def list_models():
@@ -170,7 +174,9 @@ def load_model_weights(model, checkpoint_info):
             print(f"Global Step: {pl_sd['global_step']}")
 
         sd = get_state_dict_from_checkpoint(pl_sd)
-        missing, extra = model.load_state_dict(sd, strict=False)
+        del pl_sd
+        model.load_state_dict(sd, strict=False)
+        del sd
 
         if shared.cmd_opts.opt_channelslast:
             model.to(memory_format=torch.channels_last)
@@ -194,9 +200,10 @@ def load_model_weights(model, checkpoint_info):
 
         model.first_stage_model.to(devices.dtype_vae)
 
-        checkpoints_loaded[checkpoint_info] = model.state_dict().copy()
-        while len(checkpoints_loaded) > shared.opts.sd_checkpoint_cache:
-            checkpoints_loaded.popitem(last=False)  # LRU
+        if shared.opts.sd_checkpoint_cache > 0:
+            checkpoints_loaded[checkpoint_info] = model.state_dict().copy()
+            while len(checkpoints_loaded) > shared.opts.sd_checkpoint_cache:
+                checkpoints_loaded.popitem(last=False)  # LRU
     else:
         print(f"Loading weights [{sd_model_hash}] from cache")
         checkpoints_loaded.move_to_end(checkpoint_info)
@@ -214,6 +221,12 @@ def load_model(checkpoint_info=None):
     if checkpoint_info.config != shared.cmd_opts.config:
         print(f"Loading config from: {checkpoint_info.config}")
 
+    if shared.sd_model:
+        sd_hijack.model_hijack.undo_hijack(shared.sd_model)
+        shared.sd_model = None
+        gc.collect()
+        devices.torch_gc()
+
     sd_config = OmegaConf.load(checkpoint_info.config)
     
     if should_hijack_inpainting(checkpoint_info):
@@ -227,6 +240,7 @@ def load_model(checkpoint_info=None):
         checkpoint_info = checkpoint_info._replace(config=checkpoint_info.config.replace(".yaml", "-inpainting.yaml"))
 
     do_inpainting_hijack()
+
     sd_model = instantiate_from_config(sd_config.model)
     load_model_weights(sd_model, checkpoint_info)
 
@@ -246,14 +260,18 @@ def load_model(checkpoint_info=None):
     return sd_model
 
 
-def reload_model_weights(sd_model, info=None):
+def reload_model_weights(sd_model=None, info=None):
     from modules import lowvram, devices, sd_hijack
     checkpoint_info = info or select_checkpoint()
+
+    if not sd_model:
+        sd_model = shared.sd_model
 
     if sd_model.sd_model_checkpoint == checkpoint_info.filename:
         return
 
     if sd_model.sd_checkpoint_info.config != checkpoint_info.config or should_hijack_inpainting(checkpoint_info) != should_hijack_inpainting(sd_model.sd_checkpoint_info):
+        del sd_model
         checkpoints_loaded.clear()
         load_model(checkpoint_info)
         return shared.sd_model
