@@ -4,9 +4,11 @@
   - example in your "webui-user.bat": `set COMMANDLINE_ARGS=--api`
 - This enables the api which can be reviewed at http://127.0.0.1:7860/docs (or whever the URL is + /docs)
 The basic ones I'm interested in are these two. Let's just focus only on ` /sdapi/v1/txt2img`
+
 ![image](https://user-images.githubusercontent.com/2993060/198171114-ed1c5edd-76ce-4c34-ad73-04e388423162.png)
 
 - When you expand that tab, it gives an example of a payload to send to the API. I used this often as reference.
+
 ![image](https://user-images.githubusercontent.com/2993060/198171454-5b826ded-5e73-4249-9c0c-a97b32c42569.png)
 
 ------
@@ -80,7 +82,7 @@ for i in r['images']:
 - define a plugin to add png info, then add the png info I defined into it
 - at the end here, save the image with the png info
 
-This is as of this [commit](https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/e7254746bbfbff45099db44a8d4d25dd6181877d)
+This is as of commit [e725474](https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/e7254746bbfbff45099db44a8d4d25dd6181877d)
 
 For a more complete implementation of a frontend, my Discord bot is [here](https://github.com/Kilvoctu/aiyabot) if anyone wants to look at it as an example. Most of the action happens in stablecog.py. There are many comments explaining what each code does.
 
