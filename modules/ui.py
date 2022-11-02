@@ -19,7 +19,7 @@ import numpy as np
 from PIL import Image, PngImagePlugin
 
 
-from modules import sd_hijack, sd_models, localization, script_callbacks
+from modules import sd_hijack, sd_models, localization, script_callbacks, ui_extensions
 from modules.paths import script_path
 
 from modules.shared import opts, cmd_opts, restricted_opts
@@ -277,15 +277,7 @@ def check_progress_call(id_part):
     preview_visibility = gr_show(False)
 
     if opts.show_progress_every_n_steps > 0:
-        if shared.parallel_processing_allowed:
-
-            if shared.state.sampling_step - shared.state.current_image_sampling_step >= opts.show_progress_every_n_steps and shared.state.current_latent is not None:
-                if opts.show_progress_grid:
-                    shared.state.current_image = modules.sd_samplers.samples_to_image_grid(shared.state.current_latent)
-                else:
-                    shared.state.current_image = modules.sd_samplers.sample_to_image(shared.state.current_latent)
-                shared.state.current_image_sampling_step = shared.state.sampling_step
-
+        shared.state.set_current_image()
         image = shared.state.current_image
 
         if image is None:
@@ -671,6 +663,9 @@ def create_ui(wrap_gradio_gpu_call):
     import modules.img2img
     import modules.txt2img
 
+    reload_javascript()
+
+    parameters_copypaste.reset()
 
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
         txt2img_prompt, roll, txt2img_prompt_style, txt2img_negative_prompt, txt2img_prompt_style2, submit, _, _, txt2img_prompt_style_apply, txt2img_save_style, txt2img_paste, token_counter, token_button = create_toprow(is_img2img=False)
@@ -1059,7 +1054,7 @@ def create_ui(wrap_gradio_gpu_call):
 
                 with gr.Tabs(elem_id="extras_resize_mode"):
                     with gr.TabItem('Scale by'):
-                        upscaling_resize = gr.Slider(minimum=1.0, maximum=4.0, step=0.05, label="Resize", value=2)
+                        upscaling_resize = gr.Slider(minimum=1.0, maximum=8.0, step=0.05, label="Resize", value=4)
                     with gr.TabItem('Scale to'):
                         with gr.Group():
                             with gr.Row():
@@ -1511,8 +1506,9 @@ def create_ui(wrap_gradio_gpu_call):
         column = None
         with gr.Row(elem_id="settings").style(equal_height=False):
             for i, (k, item) in enumerate(opts.data_labels.items()):
+                section_must_be_skipped = item.section[0] is None
 
-                if previous_section != item.section:
+                if previous_section != item.section and not section_must_be_skipped:
                     if cols_displayed < settings_cols and (items_displayed >= items_per_col or previous_section is None):
                         if column is not None:
                             column.__exit__()
@@ -1530,6 +1526,8 @@ def create_ui(wrap_gradio_gpu_call):
 
                 if k in quicksettings_names and not shared.cmd_opts.freeze_settings:
                     quicksettings_list.append((i, k, item))
+                    components.append(dummy_component)
+                elif section_must_be_skipped:
                     components.append(dummy_component)
                 else:
                     component = create_setting_component(k)
@@ -1566,19 +1564,19 @@ def create_ui(wrap_gradio_gpu_call):
         reload_script_bodies.click(
             fn=reload_scripts,
             inputs=[],
-            outputs=[],
-            _js='function(){}'
+            outputs=[]
         )
 
         def request_restart():
             shared.state.interrupt()
-            settings_interface.gradio_ref.do_restart = True
+            shared.state.need_restart = True
 
         restart_gradio.click(
+
             fn=request_restart,
             inputs=[],
             outputs=[],
-            _js='function(){restart_reload()}'
+            _js='restart_reload'
         )
 
         if column is not None:
@@ -1612,13 +1610,14 @@ def create_ui(wrap_gradio_gpu_call):
     interfaces += script_callbacks.ui_tabs_callback()
     interfaces += [(settings_interface, "Settings", "settings")]
 
+    extensions_interface = ui_extensions.create_ui()
+    interfaces += [(extensions_interface, "Extensions", "extensions")]
+
     with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion") as demo:
         with gr.Row(elem_id="quicksettings"):
             for i, k, item in quicksettings_list:
                 component = create_setting_component(k, is_quicksettings=True)
                 component_dict[k] = component
-
-        settings_interface.gradio_ref = demo
 
         parameters_copypaste.integrate_settings_paste_fields(component_dict)
         parameters_copypaste.run_bind()
@@ -1776,4 +1775,3 @@ def load_javascript(raw_response):
 
 
 reload_javascript = partial(load_javascript, gradio.routes.templates.TemplateResponse)
-reload_javascript()
