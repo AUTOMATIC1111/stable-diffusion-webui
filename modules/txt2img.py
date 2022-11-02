@@ -47,6 +47,8 @@ def txt2img(prompt: str, negative_prompt: str, prompt_style: str, prompt_style2:
     if processed is None:
         processed = process_images(p)
 
+    p.close()
+
     shared.total_tqdm.clear()
 
     generation_info_js = processed.js()
