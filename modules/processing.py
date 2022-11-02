@@ -202,6 +202,10 @@ class StableDiffusionProcessing():
     def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength):
         raise NotImplementedError()
 
+    def close(self):
+        self.sd_model = None
+        self.sampler = None
+
 
 class Processed:
     def __init__(self, p: StableDiffusionProcessing, images_list, seed=-1, info="", subseed=None, all_prompts=None, all_seeds=None, all_subseeds=None, index_of_first_image=0, infotexts=None):
@@ -596,9 +600,6 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
     if p.scripts is not None:
         p.scripts.postprocess(p, res)
-
-    p.sd_model = None
-    p.sampler = None
 
     return res
 
