@@ -1572,8 +1572,7 @@ def create_ui(wrap_gradio_gpu_call):
         reload_script_bodies.click(
             fn=reload_scripts,
             inputs=[],
-            outputs=[],
-            _js='function(){}'
+            outputs=[]
         )
 
         def request_restart():
@@ -1585,7 +1584,7 @@ def create_ui(wrap_gradio_gpu_call):
             fn=request_restart,
             inputs=[],
             outputs=[],
-            _js='function(){restart_reload()}'
+            _js='restart_reload'
         )
 
         if column is not None:
