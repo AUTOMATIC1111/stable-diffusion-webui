@@ -1,20 +1,17 @@
 ## API guide by [@Kilvoctu](https://github.com/Kilvoctu)
 
-
-
--First, of course, is to run web ui with `--api` commandline argument
--This enables the api which can be reviewed at http://127.0.0.1:7860/docs (or whever the URL is + /docs)
+- First, of course, is to run web ui with `--api` commandline argument
+  - example in your "webui-user.bat": `set COMMANDLINE_ARGS=--api`
+- This enables the api which can be reviewed at http://127.0.0.1:7860/docs (or whever the URL is + /docs)
 The basic ones I'm interested in are these two. Let's just focus only on ` /sdapi/v1/txt2img`
-
 ![image](https://user-images.githubusercontent.com/2993060/198171114-ed1c5edd-76ce-4c34-ad73-04e388423162.png)
 
--When you expand that tab, it gives an example of a payload to send to the API. I used this often as reference.
-
+- When you expand that tab, it gives an example of a payload to send to the API. I used this often as reference.
 ![image](https://user-images.githubusercontent.com/2993060/198171454-5b826ded-5e73-4249-9c0c-a97b32c42569.png)
 
 ------
 
--So that's the backend. The API basically says what's available, what it's asking for, and where to send it. Now moving onto the frontend, I'll start with constructing a payload with the values I want. An example can be:
+- So that's the backend. The API basically says what's available, what it's asking for, and where to send it. Now moving onto the frontend, I'll start with constructing a payload with the values I want. An example can be:
 ```
 payload = {
     "prompt": "maltese puppy",
@@ -23,7 +20,7 @@ payload = {
 ```
 I can put in as few or as many values as I want in the payload. The API will use the defaults for anything I don't set.
 
--After that, I can send it to the API
+- After that, I can send it to the API
 ```
 response = requests.post(url=f'http://127.0.0.1:7860/sdapi/v1/txt2img', json=payload)
 ```
@@ -32,15 +29,15 @@ If we execute this code, the web ui will generate an image based on the payload.
 
 ------
 
--After the backend does its thing, the API sends the response back in a variable that was assigned above: `response`. The response contains three entries; "images", "parameters", and "info", and I have to find some way to get the information from these entries.
--First, I put this line `r = response.json()` to make it easier to work with the response.
--"images" is the generated image, which is what I want mostly. There's no link or anything; it's a giant string of random characters, apparently we have to decode it. This is how I do it:
+- After the backend does its thing, the API sends the response back in a variable that was assigned above: `response`. The response contains three entries; "images", "parameters", and "info", and I have to find some way to get the information from these entries.
+- First, I put this line `r = response.json()` to make it easier to work with the response.
+- "images" is the generated image, which is what I want mostly. There's no link or anything; it's a giant string of random characters, apparently we have to decode it. This is how I do it:
 ```
 for i in r['images']:
     image = Image.open(io.BytesIO(base64.b64decode(i.split(",",1)[1])))
 ```
--With that, we have an image in the `image` variable that we can work with, for example saving it with `image.save('output.png')`.
--"parameters" shows what was sent to the API, which could be useful, but what I want in this case is "info". I use it to insert metadata into the image, so I can drop it into web ui PNG Info. For that, I'll backtrack a little bit and pull what I need, which is nested in "info"
+- With that, we have an image in the `image` variable that we can work with, for example saving it with `image.save('output.png')`.
+- "parameters" shows what was sent to the API, which could be useful, but what I want in this case is "info". I use it to insert metadata into the image, so I can drop it into web ui PNG Info. For that, I'll backtrack a little bit and pull what I need, which is nested in "info"
 ```
 load_r = json.loads(r['info'])
 meta = load_r["infotexts"][0]
@@ -75,15 +72,15 @@ for i in r['images']:
     pnginfo.add_text("parameters", meta)
     image.save('output.png', pnginfo=pnginfo)
 ```
--Import the things I need
--define the url and the payload to send
--send said payload to said url through the API
--when I get the response, grab png info from "infotexts" inside of "info"
--then grab "images" and decode it
--define a plugin to add png info, then add the png info I defined into it
--at the end here, save the image with the png info
+- Import the things I need
+- define the url and the payload to send
+- send said payload to said url through the API
+- when I get the response, grab png info from "infotexts" inside of "info"
+- then grab "images" and decode it
+- define a plugin to add png info, then add the png info I defined into it
+- at the end here, save the image with the png info
 
-This is as of [commit](https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/e7254746bbfbff45099db44a8d4d25dd6181877d)
+This is as of this [commit](https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/e7254746bbfbff45099db44a8d4d25dd6181877d)
 
 For a more complete implementation of a frontend, my Discord bot is [here](https://github.com/Kilvoctu/aiyabot) if anyone wants to look at it as an example. Most of the action happens in stablecog.py. There are many comments explaining what each code does.
 
