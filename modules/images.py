@@ -510,8 +510,9 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
 
     if extension.lower() == '.png':
         pnginfo_data = PngImagePlugin.PngInfo()
-        for k, v in params.pnginfo.items():
-            pnginfo_data.add_text(k, str(v))
+        if opts.enable_pnginfo:
+            for k, v in params.pnginfo.items():
+                pnginfo_data.add_text(k, str(v))
 
         image.save(fullfn, quality=opts.jpeg_quality, pnginfo=pnginfo_data)
 

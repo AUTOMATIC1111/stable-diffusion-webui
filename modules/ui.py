@@ -671,6 +671,8 @@ def create_ui(wrap_gradio_gpu_call):
     import modules.img2img
     import modules.txt2img
 
+    reload_javascript()
+
     parameters_copypaste.reset()
 
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
@@ -1782,4 +1784,3 @@ def load_javascript(raw_response):
 
 
 reload_javascript = partial(load_javascript, gradio.routes.templates.TemplateResponse)
-reload_javascript()
