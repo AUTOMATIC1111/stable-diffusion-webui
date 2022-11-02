@@ -131,6 +131,7 @@ class ExtrasBaseRequest(BaseModel):
     upscaler_1: str = Field(default="None", title="Main upscaler", description=f"The name of the main upscaler to use, it has to be one of this list: {' , '.join([x.name for x in sd_upscalers])}")
     upscaler_2: str = Field(default="None", title="Secondary upscaler", description=f"The name of the secondary upscaler to use, it has to be one of this list: {' , '.join([x.name for x in sd_upscalers])}")
     extras_upscaler_2_visibility: float = Field(default=0, title="Secondary upscaler visibility", ge=0, le=1, allow_inf_nan=False, description="Sets the visibility of secondary upscaler, values should be between 0 and 1.")
+    upscale_first: bool = Field(default=True, title="Upscale first", description="Should the upscaler run before restoring faces?")
 
 class ExtraBaseResponse(BaseModel):
     html_info: str = Field(title="HTML info", description="A series of HTML tags containing the process info.")
