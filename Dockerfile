@@ -14,11 +14,14 @@ RUN ln -sf /usr/bin/python3.10 /usr/bin/python3
 # Install pip using the standalone installer, as the apt package installs python 3.6
 RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python3
 
+# Install xformers dependencies
 RUN pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 --extra-index-url https://download.pytorch.org/whl/cu113
 
 # Build and install xformers
+RUN git clone --recursive https://github.com/facebookresearch/xformers.git
 RUN FORCE_CUDA=1 TORCH_CUDA_ARCH_LIST="7.0 7.5 8.0 8.6" \
-    pip3 wheel git+https://github.com/facebookresearch/xformers.git#egg=xformers
+    pip3 wheel --no-deps -e xformers
+
 
 # Run container
 FROM python:3.10
@@ -41,18 +44,6 @@ RUN pip install opencv-python-headless
 # Install prebuilt xformers
 COPY --from=xformers xformers-0.0.14.dev0-cp310-cp310-linux_x86_64.whl /xformers-0.0.14.dev0-cp310-cp310-linux_x86_64.whl
 RUN pip install /xformers-0.0.14.dev0-cp310-cp310-linux_x86_64.whl
-
-# Install nvidia build tool nvcc and required libraries to build xformers
-#RUN wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-ubuntu2204-keyring.gpg \
-#    -O /usr/share/keyrings/cuda-archive-keyring.gpg && \
-#    echo "deb [signed-by=/usr/share/keyrings/cuda-archive-keyring.gpg] https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/ /" | \
-#    tee /etc/apt/sources.list.d/cuda-ubuntu2204-x86_64.list && \
-#    apt-get update && \
-#    apt-get install -y cuda-nvcc-11-8 libcusparse-dev-11-8 libcublas-dev-11-8 libcusolver-dev-11-8 libcurand-dev-11-8
-#
-## Build and install xformers
-#RUN FORCE_CUDA=1 TORCH_CUDA_ARCH_LIST="7.0 7.5 8.0 8.6" \
-#    pip install git+https://github.com/facebookresearch/xformers.git#egg=xformers
 
 # Download supporting models (e.g. the very large openai/clip-vit-large-patch14)
 # Create a dummy model to pass the "sd model exists" check, so SD continues initialization
