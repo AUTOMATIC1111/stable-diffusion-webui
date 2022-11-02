@@ -159,6 +159,11 @@ see https://github.com/AUTOMATIC1111/stable-diffusion-webui/discussions/2441
 
 applies symmetry to the image every n steps and sends the result further to img2img.
 
+## txt2palette
+https://github.com/1ort/txt2palette
+
+Generate palettes by text description. This script takes the generated images and converts them into color palettes.
+
 ## StylePile
 https://github.com/some9000/StylePile
 
