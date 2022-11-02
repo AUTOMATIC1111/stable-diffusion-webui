@@ -159,15 +159,13 @@ def get_state_dict_from_checkpoint(pl_sd):
     return pl_sd
 
 
-vae_ignore_keys = {"model_ema.decay", "model_ema.num_updates"}
-
 def load_model_weights(model, checkpoint_info, vae_file="auto"):
     checkpoint_file = checkpoint_info.filename
     sd_model_hash = checkpoint_info.hash
 
     vae_file = sd_vae.resolve_vae(checkpoint_file, vae_file=vae_file)
 
-    checkpoint_key = (checkpoint_info, vae_file)
+    checkpoint_key = checkpoint_info
 
     if checkpoint_key not in checkpoints_loaded:
         print(f"Loading weights [{sd_model_hash}] from {checkpoint_file}")
@@ -190,13 +188,12 @@ def load_model_weights(model, checkpoint_info, vae_file="auto"):
         devices.dtype = torch.float32 if shared.cmd_opts.no_half else torch.float16
         devices.dtype_vae = torch.float32 if shared.cmd_opts.no_half or shared.cmd_opts.no_half_vae else torch.float16
 
-        sd_vae.load_vae(model, vae_file)
-        model.first_stage_model.to(devices.dtype_vae)
-
         if shared.opts.sd_checkpoint_cache > 0:
+            # if PR #4035 were to get merged, restore base VAE first before caching
             checkpoints_loaded[checkpoint_key] = model.state_dict().copy()
             while len(checkpoints_loaded) > shared.opts.sd_checkpoint_cache:
                 checkpoints_loaded.popitem(last=False)  # LRU
+
     else:
         vae_name = sd_vae.get_filename(vae_file)
         print(f"Loading weights [{sd_model_hash}] with {vae_name} VAE from cache")
@@ -206,6 +203,8 @@ def load_model_weights(model, checkpoint_info, vae_file="auto"):
     model.sd_model_hash = sd_model_hash
     model.sd_model_checkpoint = checkpoint_file
     model.sd_checkpoint_info = checkpoint_info
+
+    sd_vae.load_vae(model, vae_file)
 
 
 def load_model(checkpoint_info=None):
@@ -254,14 +253,14 @@ def load_model(checkpoint_info=None):
     return sd_model
 
 
-def reload_model_weights(sd_model=None, info=None, force=False):
+def reload_model_weights(sd_model=None, info=None):
     from modules import lowvram, devices, sd_hijack
     checkpoint_info = info or select_checkpoint()
  
     if not sd_model:
         sd_model = shared.sd_model
 
-    if sd_model.sd_model_checkpoint == checkpoint_info.filename and not force:
+    if sd_model.sd_model_checkpoint == checkpoint_info.filename:
         return
 
     if sd_model.sd_checkpoint_info.config != checkpoint_info.config or should_hijack_inpainting(checkpoint_info) != should_hijack_inpainting(sd_model.sd_checkpoint_info):
