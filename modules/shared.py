@@ -4,6 +4,7 @@ import json
 import os
 import sys
 from collections import OrderedDict
+import time
 
 import gradio as gr
 import tqdm
@@ -135,6 +136,7 @@ class State:
     current_image = None
     current_image_sampling_step = 0
     textinfo = None
+    time_start = None
     need_restart = False
 
     def skip(self):
@@ -172,6 +174,7 @@ class State:
         self.skipped = False
         self.interrupted = False
         self.textinfo = None
+        self.time_start = time.time()
 
         devices.torch_gc()
 
@@ -180,6 +183,20 @@ class State:
         self.job_count = 0
 
         devices.torch_gc()
+
+    """sets self.current_image from self.current_latent if enough sampling steps have been made after the last call to this"""
+    def set_current_image(self):
+        if not parallel_processing_allowed:
+            return
+
+        if self.sampling_step - self.current_image_sampling_step >= opts.show_progress_every_n_steps and self.current_latent is not None:
+            if opts.show_progress_grid:
+                self.current_image = sd_samplers.samples_to_image_grid(self.current_latent)
+            else:
+                self.current_image = sd_samplers.sample_to_image(self.current_latent)
+
+            self.current_image_sampling_step = self.sampling_step
+
 
 state = State()
 
@@ -238,6 +255,8 @@ options_templates.update(options_section(('saving-images', "Saving images/grids"
     "enable_pnginfo": OptionInfo(True, "Save text information about generation parameters as chunks to png files"),
     "save_txt": OptionInfo(False, "Create a text file next to every image with generation parameters."),
     "save_images_before_face_restoration": OptionInfo(False, "Save a copy of image before doing face restoration."),
+    "save_images_before_highres_fix": OptionInfo(False, "Save a copy of image before applying highres fix."),
+    "save_images_before_color_correction": OptionInfo(False, "Save a copy of image before applying color correction to img2img results"),
     "jpeg_quality": OptionInfo(80, "Quality for saved jpeg images", gr.Slider, {"minimum": 1, "maximum": 100, "step": 1}),
     "export_for_4chan": OptionInfo(True, "If PNG image is larger than 4MB or any dimension is larger than 4000, downscale and save copy as JPG"),
 
@@ -305,7 +324,6 @@ options_templates.update(options_section(('sd', "Stable Diffusion"), {
     "sd_hypernetwork_strength": OptionInfo(1.0, "Hypernetwork strength", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.001}),
     "inpainting_mask_weight": OptionInfo(1.0, "Inpainting conditioning mask strength", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     "img2img_color_correction": OptionInfo(False, "Apply color correction to img2img results to match original colors."),
-    "save_images_before_color_correction": OptionInfo(False, "Save a copy of image before applying color correction to img2img results"),
     "img2img_fix_steps": OptionInfo(False, "With img2img, do exactly the amount of steps the slider specifies (normally you'd do less with less denoising)."),
     "enable_quantization": OptionInfo(False, "Enable quantization in K samplers for sharper and cleaner results. This may change existing seeds. Requires restart to apply."),
     "enable_emphasis": OptionInfo(True, "Emphasis: use (text) to make model pay more attention to text and [text] to make it pay less attention"),
