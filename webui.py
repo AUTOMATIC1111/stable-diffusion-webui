@@ -82,6 +82,12 @@ def initialize():
     # make the program just exit at ctrl+c without waiting for anything
     def sigint_handler(sig, frame):
         print(f'Interrupted with signal {sig} in {frame}')
+
+        def cleanup_error_handler(function, path, excinfo):
+            if os.path.isfile(path): print(f'WARNING: Temporary file {path} could not be automatically deleted, please clean them up if necessary.')
+
+        import shutil
+        shutil.rmtree(os.environ.get('SD_TEMP', 'temp'), ignore_errors=False, onerror=cleanup_error_handler)
         os._exit(0)
 
     signal.signal(signal.SIGINT, sigint_handler)

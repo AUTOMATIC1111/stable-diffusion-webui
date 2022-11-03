@@ -10,6 +10,9 @@ dir_repos = "repositories"
 python = sys.executable
 git = os.environ.get('GIT', "git")
 index_url = os.environ.get('INDEX_URL', "")
+temp_dir = os.environ.get('SD_TEMP', 'temp')
+os.environ["TEMP"] = os.environ["TMP"] = temp_dir
+os.makedirs(temp_dir, exist_ok=True)
 
 
 def extract_arg(args, name):
