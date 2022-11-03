@@ -202,6 +202,11 @@ https://github.com/arcanite24/img2tiles
 
 generate tiles from a base image. Based on SD upscale script.
 
+## SD-latent-mirroring
+https://github.com/dfaker/SD-latent-mirroring
+
+Applies mirroring and flips to the latent images to produce anything from subtle balanced compositions to perfect reflections
+
 ## Saving steps of the sampling process
 
 This script will save steps of the sampling process to a directory.
