@@ -1,5 +1,6 @@
 from collections import namedtuple
 import numpy as np
+from math import floor
 import torch
 import tqdm
 from PIL import Image
@@ -11,6 +12,7 @@ from modules import prompt_parser, devices, processing, images
 
 from modules.shared import opts, cmd_opts, state
 import modules.shared as shared
+from modules.script_callbacks import CFGDenoiserParams, cfg_denoiser_callback
 
 
 SamplerData = namedtuple('SamplerData', ['name', 'constructor', 'aliases', 'options'])
@@ -91,8 +93,8 @@ def single_sample_to_image(sample):
     return Image.fromarray(x_sample)
 
 
-def sample_to_image(samples):
-    return single_sample_to_image(samples[0])
+def sample_to_image(samples, index=0):
+    return single_sample_to_image(samples[index])
 
 
 def samples_to_image_grid(samples):
@@ -205,17 +207,22 @@ class VanillaStableDiffusionSampler:
         self.mask = p.mask if hasattr(p, 'mask') else None
         self.nmask = p.nmask if hasattr(p, 'nmask') else None
 
+
+    def adjust_steps_if_invalid(self, p, num_steps):
+        if  (self.config.name == 'DDIM' and p.ddim_discretize == 'uniform') or (self.config.name == 'PLMS'):
+            valid_step = 999 / (1000 // num_steps)
+            if valid_step == floor(valid_step):
+                return int(valid_step) + 1
+        
+        return num_steps
+
+
     def sample_img2img(self, p, x, noise, conditioning, unconditional_conditioning, steps=None, image_conditioning=None):
         steps, t_enc = setup_img2img_steps(p, steps)
-
+        steps = self.adjust_steps_if_invalid(p, steps)
         self.initialize(p)
 
-        # existing code fails with certain step counts, like 9
-        try:
-            self.sampler.make_schedule(ddim_num_steps=steps,  ddim_eta=self.eta, ddim_discretize=p.ddim_discretize, verbose=False)
-        except Exception:
-            self.sampler.make_schedule(ddim_num_steps=steps+1, ddim_eta=self.eta, ddim_discretize=p.ddim_discretize, verbose=False)
-
+        self.sampler.make_schedule(ddim_num_steps=steps, ddim_eta=self.eta, ddim_discretize=p.ddim_discretize, verbose=False)
         x1 = self.sampler.stochastic_encode(x, torch.tensor([t_enc] * int(x.shape[0])).to(shared.device), noise=noise)
 
         self.init_latent = x
@@ -239,18 +246,14 @@ class VanillaStableDiffusionSampler:
         self.last_latent = x
         self.step = 0
 
-        steps = steps or p.steps
+        steps = self.adjust_steps_if_invalid(p, steps or p.steps)
 
         # Wrap the conditioning models with additional image conditioning for inpainting model
         if image_conditioning is not None:
             conditioning = {"c_concat": [image_conditioning], "c_crossattn": [conditioning]}
             unconditional_conditioning = {"c_concat": [image_conditioning], "c_crossattn": [unconditional_conditioning]}
 
-        # existing code fails with certain step counts, like 9
-        try:
-            samples_ddim = self.launch_sampling(steps, lambda: self.sampler.sample(S=steps, conditioning=conditioning, batch_size=int(x.shape[0]), shape=x[0].shape, verbose=False, unconditional_guidance_scale=p.cfg_scale, unconditional_conditioning=unconditional_conditioning, x_T=x, eta=self.eta)[0])
-        except Exception:
-            samples_ddim = self.launch_sampling(steps, lambda: self.sampler.sample(S=steps+1, conditioning=conditioning, batch_size=int(x.shape[0]), shape=x[0].shape, verbose=False, unconditional_guidance_scale=p.cfg_scale, unconditional_conditioning=unconditional_conditioning, x_T=x, eta=self.eta)[0])
+        samples_ddim = self.launch_sampling(steps, lambda: self.sampler.sample(S=steps, conditioning=conditioning, batch_size=int(x.shape[0]), shape=x[0].shape, verbose=False, unconditional_guidance_scale=p.cfg_scale, unconditional_conditioning=unconditional_conditioning, x_T=x, eta=self.eta)[0])
 
         return samples_ddim
 
@@ -277,6 +280,12 @@ class CFGDenoiser(torch.nn.Module):
         x_in = torch.cat([torch.stack([x[i] for _ in range(n)]) for i, n in enumerate(repeats)] + [x])
         image_cond_in = torch.cat([torch.stack([image_cond[i] for _ in range(n)]) for i, n in enumerate(repeats)] + [image_cond])
         sigma_in = torch.cat([torch.stack([sigma[i] for _ in range(n)]) for i, n in enumerate(repeats)] + [sigma])
+
+        denoiser_params = CFGDenoiserParams(x_in, image_cond_in, sigma_in, state.sampling_step, state.sampling_steps)
+        cfg_denoiser_callback(denoiser_params)
+        x_in = denoiser_params.x
+        image_cond_in = denoiser_params.image_cond
+        sigma_in = denoiser_params.sigma
 
         if tensor.shape[1] == uncond.shape[1]:
             cond_in = torch.cat([tensor, uncond])

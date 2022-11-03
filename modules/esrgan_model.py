@@ -50,6 +50,7 @@ def mod2normal(state_dict):
 def resrgan2normal(state_dict, nb=23):
     # this code is copied from https://github.com/victorca25/iNNfer
     if "conv_first.weight" in state_dict and "body.0.rdb1.conv1.weight" in state_dict:
+        re8x = 0
         crt_net = {}
         items = []
         for k, v in state_dict.items():
@@ -75,10 +76,18 @@ def resrgan2normal(state_dict, nb=23):
         crt_net['model.3.bias'] = state_dict['conv_up1.bias']
         crt_net['model.6.weight'] = state_dict['conv_up2.weight']
         crt_net['model.6.bias'] = state_dict['conv_up2.bias']
-        crt_net['model.8.weight'] = state_dict['conv_hr.weight']
-        crt_net['model.8.bias'] = state_dict['conv_hr.bias']
-        crt_net['model.10.weight'] = state_dict['conv_last.weight']
-        crt_net['model.10.bias'] = state_dict['conv_last.bias']
+
+        if 'conv_up3.weight' in state_dict:
+            # modification supporting: https://github.com/ai-forever/Real-ESRGAN/blob/main/RealESRGAN/rrdbnet_arch.py
+            re8x = 3
+            crt_net['model.9.weight'] = state_dict['conv_up3.weight']
+            crt_net['model.9.bias'] = state_dict['conv_up3.bias']
+
+        crt_net[f'model.{8+re8x}.weight'] = state_dict['conv_hr.weight']
+        crt_net[f'model.{8+re8x}.bias'] = state_dict['conv_hr.bias']
+        crt_net[f'model.{10+re8x}.weight'] = state_dict['conv_last.weight']
+        crt_net[f'model.{10+re8x}.bias'] = state_dict['conv_last.bias']
+
         state_dict = crt_net
     return state_dict
 

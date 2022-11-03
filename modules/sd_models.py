@@ -1,6 +1,7 @@
 import collections
 import os.path
 import sys
+import gc
 from collections import namedtuple
 import torch
 import re
@@ -8,7 +9,7 @@ from omegaconf import OmegaConf
 
 from ldm.util import instantiate_from_config
 
-from modules import shared, modelloader, devices, script_callbacks
+from modules import shared, modelloader, devices, script_callbacks, sd_vae
 from modules.paths import models_path
 from modules.sd_hijack_inpainting import do_inpainting_hijack, should_hijack_inpainting
 
@@ -158,14 +159,15 @@ def get_state_dict_from_checkpoint(pl_sd):
     return pl_sd
 
 
-vae_ignore_keys = {"model_ema.decay", "model_ema.num_updates"}
-
-
-def load_model_weights(model, checkpoint_info):
+def load_model_weights(model, checkpoint_info, vae_file="auto"):
     checkpoint_file = checkpoint_info.filename
     sd_model_hash = checkpoint_info.hash
 
-    if checkpoint_info not in checkpoints_loaded:
+    vae_file = sd_vae.resolve_vae(checkpoint_file, vae_file=vae_file)
+
+    checkpoint_key = checkpoint_info
+
+    if checkpoint_key not in checkpoints_loaded:
         print(f"Loading weights [{sd_model_hash}] from {checkpoint_file}")
 
         pl_sd = torch.load(checkpoint_file, map_location=shared.weight_load_location)
@@ -181,36 +183,37 @@ def load_model_weights(model, checkpoint_info):
             model.to(memory_format=torch.channels_last)
 
         if not shared.cmd_opts.no_half:
+            vae = model.first_stage_model
+
+            # with --no-half-vae, remove VAE from model when doing half() to prevent its weights from being converted to float16
+            if shared.cmd_opts.no_half_vae:
+                model.first_stage_model = None
+
             model.half()
+            model.first_stage_model = vae
 
         devices.dtype = torch.float32 if shared.cmd_opts.no_half else torch.float16
         devices.dtype_vae = torch.float32 if shared.cmd_opts.no_half or shared.cmd_opts.no_half_vae else torch.float16
 
-        vae_file = os.path.splitext(checkpoint_file)[0] + ".vae.pt"
-
-        if not os.path.exists(vae_file) and shared.cmd_opts.vae_path is not None:
-            vae_file = shared.cmd_opts.vae_path
-
-        if os.path.exists(vae_file):
-            print(f"Loading VAE weights from: {vae_file}")
-            vae_ckpt = torch.load(vae_file, map_location=shared.weight_load_location)
-            vae_dict = {k: v for k, v in vae_ckpt["state_dict"].items() if k[0:4] != "loss" and k not in vae_ignore_keys}
-            model.first_stage_model.load_state_dict(vae_dict)
-
         model.first_stage_model.to(devices.dtype_vae)
 
         if shared.opts.sd_checkpoint_cache > 0:
-            checkpoints_loaded[checkpoint_info] = model.state_dict().copy()
+            # if PR #4035 were to get merged, restore base VAE first before caching
+            checkpoints_loaded[checkpoint_key] = model.state_dict().copy()
             while len(checkpoints_loaded) > shared.opts.sd_checkpoint_cache:
                 checkpoints_loaded.popitem(last=False)  # LRU
+
     else:
-        print(f"Loading weights [{sd_model_hash}] from cache")
-        checkpoints_loaded.move_to_end(checkpoint_info)
-        model.load_state_dict(checkpoints_loaded[checkpoint_info])
+        vae_name = sd_vae.get_filename(vae_file)
+        print(f"Loading weights [{sd_model_hash}] with {vae_name} VAE from cache")
+        checkpoints_loaded.move_to_end(checkpoint_key)
+        model.load_state_dict(checkpoints_loaded[checkpoint_key])
 
     model.sd_model_hash = sd_model_hash
     model.sd_model_checkpoint = checkpoint_file
     model.sd_checkpoint_info = checkpoint_info
+
+    sd_vae.load_vae(model, vae_file)
 
 
 def load_model(checkpoint_info=None):
@@ -219,6 +222,12 @@ def load_model(checkpoint_info=None):
 
     if checkpoint_info.config != shared.cmd_opts.config:
         print(f"Loading config from: {checkpoint_info.config}")
+
+    if shared.sd_model:
+        sd_hijack.model_hijack.undo_hijack(shared.sd_model)
+        shared.sd_model = None
+        gc.collect()
+        devices.torch_gc()
 
     sd_config = OmegaConf.load(checkpoint_info.config)
     
@@ -233,6 +242,7 @@ def load_model(checkpoint_info=None):
         checkpoint_info = checkpoint_info._replace(config=checkpoint_info.config.replace(".yaml", "-inpainting.yaml"))
 
     do_inpainting_hijack()
+
     sd_model = instantiate_from_config(sd_config.model)
     load_model_weights(sd_model, checkpoint_info)
 
@@ -252,14 +262,18 @@ def load_model(checkpoint_info=None):
     return sd_model
 
 
-def reload_model_weights(sd_model, info=None):
+def reload_model_weights(sd_model=None, info=None):
     from modules import lowvram, devices, sd_hijack
     checkpoint_info = info or select_checkpoint()
+ 
+    if not sd_model:
+        sd_model = shared.sd_model
 
     if sd_model.sd_model_checkpoint == checkpoint_info.filename:
         return
 
     if sd_model.sd_checkpoint_info.config != checkpoint_info.config or should_hijack_inpainting(checkpoint_info) != should_hijack_inpainting(sd_model.sd_checkpoint_info):
+        del sd_model
         checkpoints_loaded.clear()
         load_model(checkpoint_info)
         return shared.sd_model
