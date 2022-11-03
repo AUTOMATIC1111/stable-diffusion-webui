@@ -2,6 +2,7 @@ import sys
 import traceback
 from collections import namedtuple
 import inspect
+from typing import Optional
 
 from fastapi import FastAPI
 from gradio import Blocks
@@ -62,7 +63,7 @@ def clear_callbacks():
     callbacks_image_saved.clear()
     callbacks_cfg_denoiser.clear()
 
-def app_started_callback(demo: Blocks, app: FastAPI):
+def app_started_callback(demo: Optional[Blocks], app: FastAPI):
     for c in callbacks_app_started:
         try:
             c.callback(demo, app)

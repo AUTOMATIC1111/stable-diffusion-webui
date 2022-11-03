@@ -17,7 +17,7 @@
     "Checkpoint Merger": "Fusão de Checkpoint",
     "Train": "Treinar",
     "Settings": "Configurações",
-    "Extensions": "Extensions",
+    "Extensions": "Extensões",
     "Prompt": "Prompt",
     "Negative prompt": "Prompt negativo",
     "Run": "Executar",
@@ -57,7 +57,7 @@
     "Highres. fix": "Ajuste de alta resolução",
     "Firstpass width": "Primeira Passagem da largura",
     "Firstpass height": "Primeira Passagem da altura",
-    "Denoising strength": "Denoising strength",
+    "Denoising strength": "Força do denoise",
     "Batch count": "Quantidade por lote",
     "Batch size": "Quantidade de lotes",
     "CFG Scale": "Escala CFG",
@@ -480,6 +480,6 @@
     "This string will be used to join split words into a single line if the option above is enabled.": "Esta string será usada para unir palavras divididas em uma única linha se a opção acima estiver habilitada.",
     "Only applies to inpainting models. Determines how strongly to mask off the original image for inpainting and img2img. 1.0 means fully masked, which is the default behaviour. 0.0 means a fully unmasked conditioning. Lower values will help preserve the overall composition of the image, but will struggle with large changes.": "Aplicável somente para modelos de inpaint. Determina quanto deve mascarar da imagem original para inpaint e img2img. 1.0 significa totalmente mascarado, que é o comportamento padrão. 0.0 significa uma condição totalmente não mascarada. Valores baixos ajudam a preservar a composição geral da imagem, mas vai encontrar dificuldades com grandes mudanças.",
     "List of setting names, separated by commas, for settings that should go to the quick access bar at the top, rather than the usual setting tab. See modules/shared.py for setting names. Requires restarting to apply.": "Lista de nomes de configurações, separados por vírgulas, para configurações que devem ir para a barra de acesso rápido na parte superior, em vez da guia de configuração usual. Veja modules/shared.py para nomes de configuração. Necessita reinicialização para aplicar.",
-    "If this values is non-zero, it will be added to seed and used to initialize RNG for noises when using samplers with Eta. You can use this to produce even more variation of images, or you can use this to match images of other software if you know what you are doing.": "Se este valor for diferente de zero, ele será adicionado à seed e usado para inicializar o RNG para ruídos ao usar amostragens com Tempo Estimado. Você pode usar isso para produzir ainda mais variações de imagens ou pode usar isso para combinar imagens de outro software se souber o que está fazendo."
+    "If this values is non-zero, it will be added to seed and used to initialize RNG for noises when using samplers with Eta. You can use this to produce even more variation of images, or you can use this to match images of other software if you know what you are doing.": "Se este valor for diferente de zero, ele será adicionado à seed e usado para inicializar o RNG para ruídos ao usar amostragens com Tempo Estimado. Você pode usar isso para produzir ainda mais variações de imagens ou pode usar isso para combinar imagens de outro software se souber o que está fazendo.",
     "Leave empty for auto": "Deixar desmarcado para automático"
 }
