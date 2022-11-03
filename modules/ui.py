@@ -1120,7 +1120,7 @@ def create_ui(wrap_gradio_gpu_call):
             inputs=[], outputs=[]
         )
 
-    if "pnginfo" not in opts.disabled_extensions:
+    if "PNG-Info" not in opts.disabled_extensions:
         with gr.Blocks(analytics_enabled=False) as pnginfo_interface:
             with gr.Row().style(equal_height=False):
                 with gr.Column(variant='panel'):
@@ -1141,7 +1141,7 @@ def create_ui(wrap_gradio_gpu_call):
             )
         local_extensions.append((pnginfo_interface, "PNG Info", "pnginfo"))
 
-    if "modelmerger" not in opts.disabled_extensions:
+    if "Checkpoint-Merger" not in opts.disabled_extensions:
         with gr.Blocks() as modelmerger_interface:
             with gr.Row().style(equal_height=False):
                 with gr.Column(variant='panel'):
@@ -1163,7 +1163,7 @@ def create_ui(wrap_gradio_gpu_call):
         sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings()
         local_extensions.append((modelmerger_interface, "Checkpoint Merger", "modelmerger"))
 
-    if "train-embedding" not in opts.disabled_extensions:
+    if "Train-Embedding" not in opts.disabled_extensions:
         with gr.Blocks() as train_interface:
             with gr.Row().style(equal_height=False):
                 gr.HTML(value="<p style='margin-bottom: 0.7em'>See <b><a href=\"https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Textual-Inversion\">wiki</a></b> for detailed explanation.</p>")
@@ -1661,7 +1661,7 @@ def create_ui(wrap_gradio_gpu_call):
                 return ["Error loading/saving model file. It doesn't exist or the name contains illegal characters"] + [gr.Dropdown.update(choices=modules.sd_models.checkpoint_tiles()) for _ in range(3)]
             return results
 
-        if "modelmerger" in local_extensions:
+        if "Checkpoint-Merger" in local_extensions:
             modelmerger_merge.click(
                 fn=modelmerger,
                 inputs=[
@@ -1746,7 +1746,7 @@ def create_ui(wrap_gradio_gpu_call):
     visit(txt2img_interface, loadsave, "txt2img")
     visit(img2img_interface, loadsave, "img2img")
     visit(extras_interface, loadsave, "extras")
-    if "modelmerger" in local_extensions:
+    if "Checkpoint-Merger" in local_extensions:
         visit(modelmerger_interface, loadsave, "modelmerger")
 
     if not error_loading and (not os.path.exists(ui_config_file) or settings_count != len(ui_settings)):

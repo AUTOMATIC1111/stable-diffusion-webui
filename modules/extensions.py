@@ -9,7 +9,7 @@ from modules import paths, shared
 
 extensions = []
 extensions_dir = os.path.join(paths.script_path, "extensions")
-local_extensions = ["pnginfo", "modelmerger", "train-embedding"]
+local_extensions = ["PNG-Info", "Checkpoint-Merger", "Train-Embedding"]
 
 
 def active():
