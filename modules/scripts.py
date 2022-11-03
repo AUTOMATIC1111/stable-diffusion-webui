@@ -121,7 +121,7 @@ def list_files_with_name(filename):
     dirs = [paths.script_path] + [ext.path for ext in extensions.active()]
 
     for dirpath in dirs:
-        if not os.path.isdir(dirpath):
+        if dirpath is None or not os.path.isdir(dirpath):
             continue
 
         path = os.path.join(dirpath, filename)

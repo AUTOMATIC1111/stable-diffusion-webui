@@ -9,6 +9,7 @@ from modules import paths, shared
 
 extensions = []
 extensions_dir = os.path.join(paths.script_path, "extensions")
+local_extensions = ["pnginfo", "modelmerger", "train-embedding"]
 
 
 def active():
@@ -67,9 +68,26 @@ class Extension:
         repo = git.Repo(self.path)
         repo.remotes.origin.pull()
 
+class localExtension(Extension):
+    def __init__(self, name, enabled=True):
+        self.name = name
+        self.path = None
+        self.enabled = enabled
+        self.status = 'local'
+        self.can_update = False
+        self.remote = None
+
+    def list_files(self, subdir, extension):
+        return []
+    def check_updates(self):
+        pass
+    def pull(self):
+        pass
 
 def list_extensions():
-    extensions.clear()
+    extensions.clear()    
+    for ext in local_extensions:
+        extensions.append(localExtension(ext, enabled=ext not in shared.opts.disabled_extensions))
 
     if not os.path.isdir(extensions_dir):
         return
