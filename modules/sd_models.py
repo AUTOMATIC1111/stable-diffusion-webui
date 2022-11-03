@@ -159,7 +159,7 @@ def get_state_dict_from_checkpoint(pl_sd):
     return pl_sd
 
 
-def load_model_weights(model, checkpoint_info, vae_file="auto"):
+def load_model_weights(model, checkpoint_info, vae_file="auto", force=False):
     checkpoint_file = checkpoint_info.filename
     sd_model_hash = checkpoint_info.hash
 
@@ -167,7 +167,7 @@ def load_model_weights(model, checkpoint_info, vae_file="auto"):
 
     checkpoint_key = checkpoint_info
 
-    if checkpoint_key not in checkpoints_loaded:
+    if checkpoint_key not in checkpoints_loaded or force:
         print(f"Loading weights [{sd_model_hash}] from {checkpoint_file}")
 
         pl_sd = torch.load(checkpoint_file, map_location=shared.weight_load_location)
@@ -213,6 +213,7 @@ def load_model_weights(model, checkpoint_info, vae_file="auto"):
     model.sd_model_checkpoint = checkpoint_file
     model.sd_checkpoint_info = checkpoint_info
 
+    sd_vae.delete_base_vae()
     sd_vae.clear_loaded_vae()
     sd_vae.load_vae(model, vae_file)
 

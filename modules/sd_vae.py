@@ -1,5 +1,6 @@
 import torch
 import os
+from pathlib import Path
 from collections import namedtuple
 from modules import shared, devices, script_callbacks
 from modules.paths import models_path
@@ -10,6 +11,9 @@ model_dir_name = "Stable-diffusion"
 model_dir = os.path.abspath(os.path.join(models_path, model_dir_name))
 vae_dir_name = "VAE"
 vae_dir = os.path.abspath(os.path.join(models_path, vae_dir_name))
+temp_dir = "tmp"
+Path(temp_dir).mkdir(parents=True, exist_ok=True)
+temp_vae_file = os.path.join(temp_dir, "base.vae.pt")
 
 
 vae_ignore_keys = {"model_ema.decay", "model_ema.num_updates"}
@@ -30,32 +34,81 @@ loaded_vae_file = None
 checkpoint_info = None
 
 
+def init():
+    global caching_mode
+    caching_mode = shared.opts.data.get("sd_base_vae_cache", "file")
+    refresh_vae_list()
+
+
 def get_base_vae(model):
-    if base_vae is not None and checkpoint_info == model.sd_checkpoint_info and model:
-        return base_vae
+    if base_vae is not None and model and checkpoint_info == model.sd_checkpoint_info:
+        if caching_mode == "ram" or isinstance(base_vae, dict):
+            return base_vae
+        if caching_mode == "file" or isinstance(base_vae, str) and os.path.isfile(base_vae):
+            print(f"Reading Base VAE weights from: {base_vae}")
+            return load_vae_file(base_vae)
     return None
 
 
-def store_base_vae(model):
-    global base_vae, checkpoint_info
+def refresh_caching_mode():
+    global caching_mode
+    caching_mode = shared.opts.sd_base_vae_cache
+
+
+def store_base_vae(model, vae_dict_1=None, skip_vae_check=False):
+    global checkpoint_info
+    refresh_caching_mode()
     if checkpoint_info != model.sd_checkpoint_info:
-        assert not loaded_vae_file, "Trying to store non-base VAE!"
-        base_vae = model.first_stage_model.state_dict().copy()
+        if not skip_vae_check:
+            assert not loaded_vae_file, "Trying to store non-base VAE!"
+        if not vae_dict_1 and caching_mode in {"ram", "file"}:
+            vae_dict_1 = model.first_stage_model.state_dict()
+        store_base_vae_dict(vae_dict_1)
         checkpoint_info = model.sd_checkpoint_info
+
+
+def store_base_vae_dict(vae_dict_1):
+    global base_vae, caching_mode
+    refresh_caching_mode()
+    if caching_mode == "ram":
+        base_vae = vae_dict_1.copy()
+    elif caching_mode == "file":
+        base_vae = temp_vae_file
+        print(f"Writing Base VAE weights to: {base_vae}")
+        torch.save({"state_dict": vae_dict_1}, base_vae)
+    elif caching_mode == "none":
+        base_vae = None
+    else:
+        shared.opts.sd_base_vae_cache = "file"
+        caching_mode = "file"
+        return store_base_vae_dict(vae_dict_1)
 
 
 def delete_base_vae():
     global base_vae, checkpoint_info
-    base_vae = None
+    if base_vae:
+        if (caching_mode == "file" or isinstance(base_vae, str)) and os.path.isfile(base_vae):
+            os.remove(base_vae)
+        base_vae = None
     checkpoint_info = None
 
 
 def restore_base_vae(model):
-    global loaded_vae_file
-    if base_vae is not None and checkpoint_info == model.sd_checkpoint_info:
-        print("Restoring base VAE")
-        load_vae_dict(model, base_vae)
-        loaded_vae_file = None
+    global checkpoint_info
+    base_vae = get_base_vae(model)
+    if loaded_vae_file:
+        if checkpoint_info == model.sd_checkpoint_info:
+            if base_vae is not None:
+                print("Restoring base VAE")
+                load_vae_dict(model, base_vae)
+            else:
+                print("Reloading checkpoint to restore base VAE")
+                from modules import sd_models
+                sd_models.load_model_weights(model, model.sd_checkpoint_info, vae_file="None", force=True)
+        else:
+            raise Exception("Unable to restore base VAE")
+        clear_loaded_vae()
+
     delete_base_vae()
 
 
@@ -88,8 +141,13 @@ def refresh_vae_list(vae_dir=vae_dir, model_dir=model_dir):
     return vae_list
 
 
-def resolve_vae(checkpoint_file, vae_file="auto"):
+def resolve_vae(checkpoint_file=None, vae_file="auto"):
     global first_load, vae_dict, vae_list
+
+    if not checkpoint_file:
+        from modules import sd_models
+        checkpoint_info = sd_models.select_checkpoint()
+        checkpoint_file = checkpoint_info.filename if checkpoint_info else None
 
     # if vae_file argument is provided, it takes priority, but not saved
     if vae_file and vae_file not in default_vae_list:
@@ -147,14 +205,13 @@ def resolve_vae(checkpoint_file, vae_file="auto"):
 
 
 def load_vae(model, vae_file=None):
-    global first_load, vae_dict, vae_list, loaded_vae_file
+    global first_load, vae_dict, vae_list, loaded_vae_file, caching_mode
     # save_settings = False
 
     if vae_file:
-        print(f"Loading VAE weights from: {vae_file}")
         store_base_vae(model)
-        vae_ckpt = torch.load(vae_file, map_location=shared.weight_load_location)
-        vae_dict_1 = {k: v for k, v in vae_ckpt["state_dict"].items() if k[0:4] != "loss" and k not in vae_ignore_keys}
+        print(f"Loading VAE weights from: {vae_file}")
+        vae_dict_1 = load_vae_file(vae_file)
         load_vae_dict(model, vae_dict_1)
 
         # If vae used is not in dict, update it
@@ -164,7 +221,7 @@ def load_vae(model, vae_file=None):
             vae_dict[vae_opt] = vae_file
             vae_list.append(vae_opt)
             # shared.opts.data['sd_vae'] = vae_opt
-    else:
+    elif loaded_vae_file:
         restore_base_vae(model)
 
     loaded_vae_file = vae_file
@@ -173,26 +230,25 @@ def load_vae(model, vae_file=None):
 
 
 # don't call this from outside
+def load_vae_file(vae_file):
+    vae_ckpt = torch.load(vae_file, map_location=shared.weight_load_location)
+    vae_dict_1 = {k: v for k, v in vae_ckpt["state_dict"].items() if k[0:4] != "loss" and k not in vae_ignore_keys}
+    return vae_dict_1
+
+
+# don't call this from outside
 def load_vae_dict(model, vae_dict_1):
     model.first_stage_model.load_state_dict(vae_dict_1)
     model.first_stage_model.to(devices.dtype_vae)
+
 
 def clear_loaded_vae():
     global loaded_vae_file
     loaded_vae_file = None
 
-def reload_vae_weights(sd_model=None, vae_file="auto"):
+
+def pre_reload(sd_model):
     from modules import lowvram, devices, sd_hijack
-
-    if not sd_model:
-        sd_model = shared.sd_model
-
-    checkpoint_info = sd_model.sd_checkpoint_info
-    checkpoint_file = checkpoint_info.filename
-    vae_file = resolve_vae(checkpoint_file, vae_file=vae_file)
-
-    if loaded_vae_file == vae_file:
-        return
 
     if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
         lowvram.send_everything_to_cpu()
@@ -201,7 +257,9 @@ def reload_vae_weights(sd_model=None, vae_file="auto"):
 
     sd_hijack.model_hijack.undo_hijack(sd_model)
 
-    load_vae(sd_model, vae_file)
+
+def post_reload(sd_model):
+    from modules import devices, sd_hijack
 
     sd_hijack.model_hijack.hijack(sd_model)
     script_callbacks.model_loaded_callback(sd_model)
@@ -209,5 +267,42 @@ def reload_vae_weights(sd_model=None, vae_file="auto"):
     if not shared.cmd_opts.lowvram and not shared.cmd_opts.medvram:
         sd_model.to(devices.device)
 
+
+def reload_vae_weights(sd_model=None, vae_file="auto"):
+    if not sd_model:
+        sd_model = shared.sd_model
+
+    vae_file = resolve_vae(vae_file=vae_file)
+
+    if loaded_vae_file == vae_file:
+        return
+
+    pre_reload(sd_model)
+
+    load_vae(sd_model, vae_file)
+
+    post_reload(sd_model)
+
     print(f"VAE Weights loaded.")
-    return sd_model
+
+
+def change_vae_cache(sd_model=None):
+    global caching_mode
+
+    if not sd_model:
+        sd_model = shared.sd_model
+
+    base_vae = get_base_vae(sd_model)
+    if base_vae is not None:
+        delete_base_vae()
+        store_base_vae(sd_model, base_vae, skip_vae_check=True)
+    else:
+        pre_reload(sd_model)
+        
+        if loaded_vae_file:
+            restore_base_vae(sd_model)
+            load_vae(sd_model, resolve_vae())
+        else:
+            store_base_vae(sd_model)
+            
+        post_reload(sd_model)
