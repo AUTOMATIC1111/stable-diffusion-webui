@@ -26,6 +26,8 @@ default_vae_list = ["auto", "None"]
 default_vae_values = [default_vae_dict[x] for x in default_vae_list]
 vae_dict = dict(default_vae_dict)
 vae_list = list(default_vae_list)
+vae_auto_label = vae_list[0]
+vae_auto_set = {"auto", vae_auto_label}
 first_load = True
 
 
@@ -118,8 +120,8 @@ def get_filename(filepath):
     return os.path.relpath(filepath, models_path)
 
 
-def refresh_vae_list(vae_dir=vae_dir, model_dir=model_dir):
-    global vae_dict, vae_list
+def refresh_vae_list(vae_dir=vae_dir, model_dir=model_dir, checkpoint_info=None):
+    global vae_dict, vae_list, vae_auto_label, vae_auto_set
     res = {}
     candidates = [
         *glob.iglob(os.path.join(model_dir, '**/*.vae.ckpt'), recursive=True),
@@ -132,28 +134,44 @@ def refresh_vae_list(vae_dir=vae_dir, model_dir=model_dir):
     for filepath in candidates:
         name = get_filename(filepath)
         res[name] = filepath
+
+    vae_auto_label = f"auto ({get_filename(resolve_vae(verbose=False))})"
+
     vae_list.clear()
-    vae_list.extend(default_vae_list)
+    vae_list.extend([vae_auto_label, *default_vae_list[1:]])
     vae_list.extend(list(res.keys()))
+
+    vae_auto_set.clear()
+    vae_auto_set.update({"auto", vae_auto_label})
+
     vae_dict.clear()
     vae_dict.update(res)
     vae_dict.update(default_vae_dict)
-    return vae_list
+    vae_dict[vae_auto_label] = "auto"
+
+    ret = {"choices": vae_list}
+
+    if shared.opts.data["sd_vae"] not in vae_list:
+        shared.opts.data["sd_vae"] = vae_list[0]
+        ret["value"] = shared.opts.data["sd_vae"]
+
+    return ret
 
 
-def get_vae_from_settings(vae_file="auto"):
+def get_vae_from_settings(vae_file="auto", verbose=True):
     # else, we load from settings, if not set to be default
-    if vae_file == "auto" and shared.opts.sd_vae is not None:
+    if vae_file in vae_auto_set and shared.opts.sd_vae is not None:
         # if saved VAE settings isn't recognized, fallback to auto
-        vae_file = vae_dict.get(shared.opts.sd_vae, "auto")
+        vae_file = vae_dict.get(shared.opts.sd_vae, vae_auto_label)
         # if VAE selected but not found, fallback to auto
         if vae_file not in default_vae_values and not os.path.isfile(vae_file):
-            vae_file = "auto"
-            print("Selected VAE doesn't exist")
+            vae_file = vae_auto_label
+            if verbose:
+                print("Selected VAE doesn't exist: ", vae_file)
     return vae_file
 
 
-def resolve_vae(checkpoint_file=None, vae_file="auto"):
+def resolve_vae(checkpoint_file=None, vae_file="auto", verbose=True):
     global first_load, vae_dict, vae_list
 
     if not checkpoint_file:
@@ -164,25 +182,28 @@ def resolve_vae(checkpoint_file=None, vae_file="auto"):
     # if vae_file argument is provided, it takes priority, but not saved
     if vae_file and vae_file not in default_vae_list:
         if not os.path.isfile(vae_file):
-            vae_file = "auto"
-            print("VAE provided as function argument doesn't exist")
+            vae_file = vae_auto_label
+            if verbose:
+                print("VAE provided as function argument doesn't exist")
     # for the first load, if vae-path is provided, it takes priority, saved, and failure is reported
     if first_load and shared.cmd_opts.vae_path is not None:
         if os.path.isfile(shared.cmd_opts.vae_path):
             vae_file = shared.cmd_opts.vae_path
             shared.opts.data['sd_vae'] = get_filename(vae_file)
         else:
-            print("VAE provided as command line argument doesn't exist")
+            if verbose:
+                print("VAE provided as command line argument doesn't exist")
     # fallback to selector in settings, if vae selector not set to act as default fallback
     if not shared.opts.sd_vae_as_default:
-        vae_file = get_vae_from_settings(vae_file)
+        vae_file = get_vae_from_settings(vae_file, verbose=verbose)
     # vae-path cmd arg takes priority for auto
-    if vae_file == "auto" and shared.cmd_opts.vae_path is not None:
+    if vae_file in vae_auto_set and shared.cmd_opts.vae_path is not None:
         if os.path.isfile(shared.cmd_opts.vae_path):
             vae_file = shared.cmd_opts.vae_path
-            print("Using VAE provided as command line argument")
+            if verbose:
+                print("Using VAE provided as command line argument")
     # if still not found, try look for VAE similar to model
-    if vae_file == "auto" and checkpoint_file:
+    if vae_file in vae_auto_set and checkpoint_file:
         model_path = os.path.splitext(checkpoint_file)[0]
         rel_path = os.path.relpath(model_path, model_dir)
         vae_path = os.path.join(vae_dir, rel_path)
@@ -197,14 +218,15 @@ def resolve_vae(checkpoint_file=None, vae_file="auto"):
         for vae_file_try in trials:
             if os.path.isfile(vae_file_try):
                 vae_file = vae_file_try
-                print("Using VAE found similar to selected model")
+                if verbose:
+                    print("Using VAE found similar to selected model")
                 break
     # if vae selector were set as default fallback, call here
     if shared.opts.sd_vae_as_default:
-        vae_file = get_vae_from_settings(vae_file)
+        vae_file = get_vae_from_settings(vae_file, verbose=verbose)
 
     # No more fallbacks for auto
-    if vae_file == "auto":
+    if vae_file in vae_auto_set:
         vae_file = None
     # Last check, just because
     if vae_file and not os.path.exists(vae_file):
@@ -215,7 +237,6 @@ def resolve_vae(checkpoint_file=None, vae_file="auto"):
 
 def load_vae(model, vae_file=None):
     global first_load, vae_dict, vae_list, loaded_vae_file, caching_mode
-    # save_settings = False
 
     if vae_file:
         store_base_vae(model)

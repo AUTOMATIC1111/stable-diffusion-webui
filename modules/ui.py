@@ -563,15 +563,21 @@ def apply_setting(key, value):
     return value
 
 
-def create_refresh_button(refresh_component, refresh_method, refreshed_args, elem_id):
+def create_refresh_method(refresh_component, refresh_method, refreshed_args):
     def refresh():
-        refresh_method()
-        args = refreshed_args() if callable(refreshed_args) else refreshed_args
+        args = refresh_method()
+        args = args if isinstance(args, dict) else None
+        args = args or (refreshed_args() if callable(refreshed_args) else refreshed_args)
 
         for k, v in args.items():
             setattr(refresh_component, k, v)
 
         return gr.update(**(args or {}))
+    return refresh
+
+
+def create_refresh_button(refresh_component, refresh_method, refreshed_args, elem_id):
+    refresh = create_refresh_method(refresh_component, refresh_method, refreshed_args)
 
     refresh_button = gr.Button(value=refresh_symbol, elem_id=elem_id)
     refresh_button.click(
@@ -1444,39 +1450,52 @@ def create_ui(wrap_gradio_gpu_call):
             if comp != dummy_component and not opts.same_type(value, opts.data_labels[key].default):
                 return f"Bad value for setting {key}: {value}; expecting {type(opts.data_labels[key].default).__name__}", opts.dumpjson()
 
+        onchange_refresh = []
+
         for key, value, comp in zip(opts.data_labels.keys(), args, components):
+            info = opts.data_labels[key]
+
             if comp == dummy_component:
                 continue
 
-            comp_args = opts.data_labels[key].component_args
+            comp_args = info.component_args
             if comp_args and isinstance(comp_args, dict) and comp_args.get('visible') is False:
                 continue
 
             if cmd_opts.hide_ui_dir_config and key in restricted_opts:
                 continue
 
+            onchange_refresh_i = [{} for x in info.onchange_refresh] if info.onchange_refresh else []
+
             oldval = opts.data.get(key, None)
             opts.data[key] = value
 
             if oldval != value:
-                if opts.data_labels[key].onchange is not None:
-                    opts.data_labels[key].onchange()
+                if info.onchange is not None:
+                    info.onchange()
 
                 changed += 1
 
+            if info.onchange_refresh:
+                onchange_refresh_i = [create_refresh_method(component_dict[r], opts.data_labels[r].refresh, opts.data_labels[r].component_args)() for r in info.onchange_refresh]
+            onchange_refresh.extend(onchange_refresh_i)
+
         opts.save(shared.config_filename)
 
-        return f'{changed} settings changed.', opts.dumpjson()
+        return (f'{changed} settings changed.', opts.dumpjson(), *onchange_refresh)
 
     def run_settings_single(value, key):
         assert not shared.cmd_opts.freeze_settings, "changing settings is disabled"
 
-        if not opts.same_type(value, opts.data_labels[key].default):
-            return gr.update(visible=True), opts.dumpjson()
+        info = opts.data_labels[key]
+        onchange_refresh_i = [{} for x in info.onchange_refresh]
+
+        if not opts.same_type(value, info.default):
+            return (gr.update(visible=True), opts.dumpjson(), *onchange_refresh_i)
 
         oldval = opts.data.get(key, None)
         if cmd_opts.hide_ui_dir_config and key in restricted_opts:
-            return gr.update(value=oldval), opts.dumpjson()
+            return (gr.update(value=oldval), opts.dumpjson(), *onchange_refresh_i)
 
         opts.data[key] = value
 
@@ -1484,9 +1503,12 @@ def create_ui(wrap_gradio_gpu_call):
             if opts.data_labels[key].onchange is not None:
                 opts.data_labels[key].onchange()
 
+        if info.onchange_refresh:
+            onchange_refresh_i = [create_refresh_method(component_dict[r], opts.data_labels[r].refresh, opts.data_labels[r].component_args)() for r in info.onchange_refresh]
+
         opts.save(shared.config_filename)
 
-        return gr.update(value=value), opts.dumpjson()
+        return (gr.update(value=value), opts.dumpjson(), *onchange_refresh_i)
 
     with gr.Blocks(analytics_enabled=False) as settings_interface:
         settings_submit = gr.Button(value="Apply settings", variant='primary')
@@ -1630,20 +1652,30 @@ def create_ui(wrap_gradio_gpu_call):
         if os.path.exists(os.path.join(script_path, "notification.mp3")):
             audio_notification = gr.Audio(interactive=False, value=os.path.join(script_path, "notification.mp3"), elem_id="audio_notification", visible=False)
 
+        onchange_refresh = [
+            component_dict[r] 
+            for k, v in opts.data_labels.items() 
+            if k not in quicksettings_names 
+                and not (v.component_args and isinstance(v.component_args, dict) and v.component_args.get('visible') is False)
+                and not (cmd_opts.hide_ui_dir_config and k in restricted_opts)
+            for r in v.onchange_refresh 
+            if v.onchange_refresh
+        ]
         text_settings = gr.Textbox(elem_id="settings_json", value=lambda: opts.dumpjson(), visible=False)
         settings_submit.click(
             fn=run_settings,
             inputs=components,
-            outputs=[result, text_settings],
+            outputs=[result, text_settings, *onchange_refresh],
         )
 
         for i, k, item in quicksettings_list:
             component = component_dict[k]
 
+            onchange_refresh = [component_dict[r] for r in item.onchange_refresh] or []
             component.change(
                 fn=lambda value, k=k: run_settings_single(value, key=k),
                 inputs=[component],
-                outputs=[component, text_settings],
+                outputs=[component, text_settings, *onchange_refresh],
             )
 
         def modelmerger(*args):

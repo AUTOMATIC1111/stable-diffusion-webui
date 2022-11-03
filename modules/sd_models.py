@@ -163,8 +163,6 @@ def load_model_weights(model, checkpoint_info, vae_file="auto", force=False):
     checkpoint_file = checkpoint_info.filename
     sd_model_hash = checkpoint_info.hash
 
-    vae_file = sd_vae.resolve_vae(checkpoint_file, vae_file=vae_file)
-
     checkpoint_key = checkpoint_info
 
     if checkpoint_key not in checkpoints_loaded or force:
@@ -213,6 +211,7 @@ def load_model_weights(model, checkpoint_info, vae_file="auto", force=False):
     model.sd_model_checkpoint = checkpoint_file
     model.sd_checkpoint_info = checkpoint_info
 
+    vae_file = sd_vae.resolve_vae(checkpoint_file, vae_file=vae_file)
     sd_vae.delete_base_vae()
     sd_vae.clear_loaded_vae()
     sd_vae.load_vae(model, vae_file)
@@ -296,4 +295,3 @@ def reload_model_weights(sd_model=None, info=None):
         sd_model.to(devices.device)
 
     print(f"Weights loaded.")
-    return sd_model

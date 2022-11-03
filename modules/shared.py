@@ -218,7 +218,7 @@ def realesrgan_models_names():
 
 
 class OptionInfo:
-    def __init__(self, default=None, label="", component=None, component_args=None, onchange=None, section=None, refresh=None):
+    def __init__(self, default=None, label="", component=None, component_args=None, onchange=None, section=None, refresh=None, onchange_refresh=[]):
         self.default = default
         self.label = label
         self.component = component
@@ -226,6 +226,7 @@ class OptionInfo:
         self.onchange = onchange
         self.section = section
         self.refresh = refresh
+        self.onchange_refresh = onchange_refresh
 
 
 def options_section(section_identifier, options_dict):
@@ -317,10 +318,10 @@ options_templates.update(options_section(('training', "Training"), {
 }))
 
 options_templates.update(options_section(('sd', "Stable Diffusion"), {
-    "sd_model_checkpoint": OptionInfo(None, "Stable Diffusion checkpoint", gr.Dropdown, lambda: {"choices": modules.sd_models.checkpoint_tiles()}, refresh=sd_models.list_models),
+    "sd_model_checkpoint": OptionInfo(None, "Stable Diffusion checkpoint", gr.Dropdown, lambda: {"choices": modules.sd_models.checkpoint_tiles()}, refresh=sd_models.list_models, onchange_refresh=["sd_vae"]),
     "sd_checkpoint_cache": OptionInfo(0, "Checkpoints to cache in RAM", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
     "sd_vae": OptionInfo("auto", "SD VAE", gr.Dropdown, lambda: {"choices": list(sd_vae.vae_list)}, refresh=sd_vae.refresh_vae_list),
-    "sd_vae_as_default": OptionInfo(False, "Use selected VAE as default fallback instead"),
+    "sd_vae_as_default": OptionInfo(False, "Use selected VAE as default fallback instead", onchange_refresh=["sd_vae"]),
     "sd_base_vae_cache": OptionInfo("file", "SD Base VAE Cache", gr.Dropdown, lambda: {"choices": ["ram", "file", "none"]}),
     "sd_hypernetwork": OptionInfo("None", "Hypernetwork", gr.Dropdown, lambda: {"choices": ["None"] + [x for x in hypernetworks.keys()]}, refresh=reload_hypernetworks),
     "sd_hypernetwork_strength": OptionInfo(1.0, "Hypernetwork strength", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.001}),
