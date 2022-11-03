@@ -28,11 +28,15 @@ FROM python:3.10
 
 ENV PYTHONUNBUFFERED=1 DEBIAN_FRONTEND=noninteractive PIP_PREFER_BINARY=1 PIP_NO_CACHE_DIR=1
 
+RUN pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 --extra-index-url https://download.pytorch.org/whl/cu113
+
+# Install prebuilt xformers
+COPY --from=xformers xformers-0.0.14.dev0-cp310-cp310-linux_x86_64.whl /xformers-0.0.14.dev0-cp310-cp310-linux_x86_64.whl
+RUN pip install /xformers-0.0.14.dev0-cp310-cp310-linux_x86_64.whl
+
 COPY . /sd
 
 WORKDIR /sd
-
-RUN pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 --extra-index-url https://download.pytorch.org/whl/cu113
 
 # Install dependencies
 RUN python launch.py --skip-torch-cuda-test --exit
@@ -41,14 +45,26 @@ RUN python launch.py --skip-torch-cuda-test --exit
 # to remove dependency on missing libGL.so.1.
 RUN pip install opencv-python-headless
 
-# Install prebuilt xformers
-COPY --from=xformers xformers-0.0.14.dev0-cp310-cp310-linux_x86_64.whl /xformers-0.0.14.dev0-cp310-cp310-linux_x86_64.whl
-RUN pip install /xformers-0.0.14.dev0-cp310-cp310-linux_x86_64.whl
-
 # Download supporting models (e.g. the very large openai/clip-vit-large-patch14)
 # Create a dummy model to pass the "sd model exists" check, so SD continues initialization
 RUN python -c "import torch; torch.save({}, 'model.ckpt')" \
     && python -c "import webui; webui.initialize()" \
     && rm /sd/model.ckpt
 
-CMD ["python", "launch.py", "--listen", "--xformers"]
+# Download CodeFormer models
+RUN python -c "import webui; \
+    webui.codeformer.setup_model(webui.cmd_opts.codeformer_models_path); \
+    webui.shared.face_restorers[0].create_models();"
+
+# Download GFPGAN models
+RUN python -c "import webui; \
+    webui.gfpgan.setup_model(webui.cmd_opts.gfpgan_models_path); \
+    webui.gfpgan.gfpgann()"
+
+# Download ESRGAN models
+RUN python -c "import webui; \
+    from modules.esrgan_model import UpscalerESRGAN; \
+    upscaler = UpscalerESRGAN('/sd/models/ESRGAN'); \
+    upscaler.load_model(upscaler.model_url)"
+
+CMD ["python", "launch.py", "--api", "--listen", "--xformers"]
