@@ -14,6 +14,7 @@ from modules.shared import opts
 
 def mod2normal(state_dict):
     # this code is copied from https://github.com/victorca25/iNNfer
+    # license reference in LICENSES/esrgan_victorca25_iNNfer.md
     if 'conv_first.weight' in state_dict:
         crt_net = {}
         items = []
@@ -49,6 +50,7 @@ def mod2normal(state_dict):
 
 def resrgan2normal(state_dict, nb=23):
     # this code is copied from https://github.com/victorca25/iNNfer
+    # license reference in LICENSES/esrgan_victorca25_iNNfer.md
     if "conv_first.weight" in state_dict and "body.0.rdb1.conv1.weight" in state_dict:
         re8x = 0
         crt_net = {}
@@ -94,6 +96,7 @@ def resrgan2normal(state_dict, nb=23):
 
 def infer_params(state_dict):
     # this code is copied from https://github.com/victorca25/iNNfer
+    # license reference in LICENSES/esrgan_victorca25_iNNfer.md
     scale2x = 0
     scalemin = 6
     n_uplayer = 0

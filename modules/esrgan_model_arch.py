@@ -1,4 +1,5 @@
 # this file is adapted from https://github.com/victorca25/iNNfer
+# license reference in LICENSES/esrgan_victorca25_iNNfer.md
 
 import math
 import functools
