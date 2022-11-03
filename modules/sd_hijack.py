@@ -94,6 +94,10 @@ class StableDiffusionModelHijack:
         if type(model_embeddings.token_embedding) == EmbeddingsWithFixes:
             model_embeddings.token_embedding = model_embeddings.token_embedding.wrapped
 
+        self.layers = None
+        self.circular_enabled = False
+        self.clip = None
+
     def apply_circular(self, enable):
         if self.circular_enabled == enable:
             return
