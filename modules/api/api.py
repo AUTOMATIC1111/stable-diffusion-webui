@@ -54,7 +54,6 @@ class Api:
         self.app.add_api_route("/sdapi/v1/options", self.get_config, methods=["GET"], response_model=OptionsModel)
         self.app.add_api_route("/sdapi/v1/options", self.set_config, methods=["POST"])
         self.app.add_api_route("/sdapi/v1/cmd-flags", self.get_cmd_flags, methods=["GET"], response_model=FlagsModel)
-        self.app.add_api_route("/sdapi/v1/info", self.get_info, methods=["GET"])
         self.app.add_api_route("/sdapi/v1/samplers", self.get_samplers, methods=["GET"], response_model=List[SamplerItem])
         self.app.add_api_route("/sdapi/v1/upscalers", self.get_upscalers, methods=["GET"], response_model=List[UpscalerItem])
         self.app.add_api_route("/sdapi/v1/sd-models", self.get_sd_models, methods=["GET"], response_model=List[SDModelItem])
@@ -228,17 +227,6 @@ class Api:
 
     def get_cmd_flags(self):
         return vars(shared.cmd_opts)
-
-    def get_info(self):
-
-        return {
-            "hypernetworks": [{"name": name, "path": shared.hypernetworks[name]} for name in shared.hypernetworks],
-            "face_restorers": [{"name":x.name(), "cmd_dir": getattr(x, "cmd_dir", None)} for x in shared.face_restorers],
-            "realesrgan_models":[{"name":x.name,"path":x.data_path, "scale":x.scale} for x in get_realesrgan_models(None)],
-            "promp_styles":[shared.prompt_styles.styles[k] for k in shared.prompt_styles.styles],
-            "artists_categories": shared.artist_db.cats,
-            # "artists": [{"name":x[0], "score":x[1], "category":x[2]} for x in shared.artist_db.artists]
-        }
 
     def get_samplers(self):
         return [{"name":sampler[0], "aliases":sampler[2], "options":sampler[3]} for sampler in all_samplers]
