@@ -5,10 +5,9 @@ import uvicorn
 from gradio.processing_utils import decode_base64_to_file, decode_base64_to_image
 from fastapi import APIRouter, Depends, HTTPException
 import modules.shared as shared
-from modules import devices
 from modules.api.models import *
 from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img, process_images
-from modules.sd_samplers import all_samplers
+from modules.sd_samplers import all_samplers, sample_to_image, samples_to_image_grid
 from modules.extras import run_extras, run_pnginfo
 
 
@@ -178,6 +177,8 @@ class Api:
         eta_relative = eta-time_since_start
 
         progress = min(progress, 1)
+
+        shared.state.set_current_image()
 
         current_image = None
         if shared.state.current_image and not req.skip_current_image:
