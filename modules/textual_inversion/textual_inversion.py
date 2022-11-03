@@ -1,6 +1,7 @@
 import os
 import sys
 import traceback
+import glob
 
 import torch
 import tqdm
@@ -147,7 +148,13 @@ class EmbeddingDatabase:
         print("Embeddings skipped:", ', '.join(skipped))
 
     def get_embedding_files(self):
-        return os.listdir(self.embeddings_dir)
+        return [
+            os.path.relpath(x, self.embeddings_dir) 
+            for x in [
+                *glob.iglob(os.path.join(self.embeddings_dir, '**/*'), recursive=True),
+            ]
+            if os.path.splitext(x.upper())[-1] in ['.BIN', '.PT', '.PNG', '.WEBP', '.JXL', '.AVIF']
+        ]
 
     def find_embedding_at_position(self, tokens, offset):
         token = tokens[offset]
