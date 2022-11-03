@@ -74,9 +74,9 @@ class EmbeddingDatabase:
 
         return embedding
 
-    def load_textual_inversion_embeddings(self):
+    def load_textual_inversion_embeddings(self, force=False):
         mt = os.path.getmtime(self.embeddings_dir)
-        if self.dir_mtime is not None and mt <= self.dir_mtime:
+        if self.dir_mtime is not None and mt <= self.dir_mtime and not force:
             return
 
         self.dir_mtime = mt
@@ -123,8 +123,14 @@ class EmbeddingDatabase:
             embedding.sd_checkpoint_name = data.get('sd_checkpoint_name', None)
             self.register_embedding(embedding, shared.sd_model)
 
-        for fn in os.listdir(self.embeddings_dir):
+        embedding_blacklist = set(shared.opts.embedding_blacklist)
+        skipped = []
+        for fn in self.get_embedding_files():
             try:
+                if fn in embedding_blacklist:
+                    skipped.append(fn)
+                    continue
+
                 fullfn = os.path.join(self.embeddings_dir, fn)
 
                 if os.stat(fullfn).st_size == 0:
@@ -137,7 +143,11 @@ class EmbeddingDatabase:
                 continue
 
         print(f"Loaded a total of {len(self.word_embeddings)} textual inversion embeddings.")
-        print("Embeddings:", ', '.join(self.word_embeddings.keys()))
+        print("Embeddings loaded:", ', '.join(self.word_embeddings.keys()))
+        print("Embeddings skipped:", ', '.join(skipped))
+
+    def get_embedding_files(self):
+        return os.listdir(self.embeddings_dir)
 
     def find_embedding_at_position(self, tokens, offset):
         token = tokens[offset]

@@ -15,7 +15,7 @@ import modules.memmon
 import modules.sd_models
 import modules.styles
 import modules.devices as devices
-from modules import sd_samplers, sd_models, localization, sd_vae
+from modules import sd_samplers, sd_models, localization, sd_vae, sd_hijack
 from modules.hypernetworks import hypernetwork
 from modules.paths import models_path, script_path, sd_path
 
@@ -376,6 +376,10 @@ options_templates.update(options_section(('sampler-params', "Sampler parameters"
     's_tmin':  OptionInfo(0.0, "sigma tmin",  gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     's_noise': OptionInfo(1.0, "sigma noise", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     'eta_noise_seed_delta': OptionInfo(0, "Eta noise seed delta", gr.Number, {"precision": 0}),
+}))
+
+options_templates.update(options_section(('embeddings', "Embeddings"), {
+    "embedding_blacklist": OptionInfo([], "Embedding Blacklist (selected ones will not be loaded)", gr.CheckboxGroup, lambda: {"choices": sd_hijack.model_hijack.embedding_db.get_embedding_files()}, refresh=lambda x: None),
 }))
 
 options_templates.update(options_section((None, "Hidden options"), {

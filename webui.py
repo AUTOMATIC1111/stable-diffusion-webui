@@ -84,6 +84,7 @@ def initialize():
     shared.opts.onchange("sd_vae", wrap_queued_call(lambda: modules.sd_vae.reload_vae_weights()), call=False)
     shared.opts.onchange("sd_hypernetwork", wrap_queued_call(lambda: modules.hypernetworks.hypernetwork.load_hypernetwork(shared.opts.sd_hypernetwork)))
     shared.opts.onchange("sd_hypernetwork_strength", modules.hypernetworks.hypernetwork.apply_strength)
+    shared.opts.onchange("embedding_blacklist", wrap_queued_call(lambda: modules.sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings(force=True)), call=False)
 
     # make the program just exit at ctrl+c without waiting for anything
     def sigint_handler(sig, frame):
