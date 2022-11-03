@@ -1,11 +1,10 @@
 import inspect
-from click import prompt
 from pydantic import BaseModel, Field, create_model
-from typing import Any, Optional
+from typing import Any, Optional, Union
 from typing_extensions import Literal
 from inflection import underscore
 from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img
-from modules.shared import sd_upscalers
+from modules.shared import sd_upscalers, opts, parser
 
 API_NOT_ALLOWED = [
     "self",
@@ -165,3 +164,68 @@ class ProgressResponse(BaseModel):
     eta_relative: float = Field(title="ETA in secs")
     state: dict = Field(title="State", description="The current state snapshot")
     current_image: str = Field(default=None, title="Current image", description="The current image in base64 format. opts.show_progress_every_n_steps is required for this to work.")
+
+fields = {}
+for key, value in opts.data.items():
+    metadata = opts.data_labels.get(key)
+    optType = opts.typemap.get(type(value), type(value))
+
+    if (metadata is not None):
+        fields.update({key: (Optional[optType], Field(
+            default=metadata.default ,description=metadata.label))})
+    else:
+        fields.update({key: (Optional[optType], Field())})
+
+OptionsModel = create_model("Options", **fields)
+
+flags = {}
+_options = vars(parser)['_option_string_actions']
+for key in _options:
+    if(_options[key].dest != 'help'):
+        flag = _options[key]
+        _type = str 
+        if(_options[key].default != None): _type = type(_options[key].default) 
+        flags.update({flag.dest: (_type,Field(default=flag.default, description=flag.help))})
+
+FlagsModel = create_model("Flags", **flags)
+
+class SamplerItem(BaseModel):
+    name: str = Field(title="Name")
+    aliases: list[str]  = Field(title="Aliases")
+    options: dict[str, str] = Field(title="Options")
+
+class UpscalerItem(BaseModel):
+    name: str = Field(title="Name")
+    model_name: str | None = Field(title="Model Name")
+    model_path: str | None = Field(title="Path")
+    model_url: str | None = Field(title="URL")
+
+class SDModelItem(BaseModel):
+    title: str = Field(title="Title")
+    model_name: str = Field(title="Model Name")
+    hash: str = Field(title="Hash")
+    filename: str = Field(title="Filename")
+    config: str = Field(title="Config file")
+
+class HypernetworkItem(BaseModel):
+    name: str = Field(title="Name")
+    path: str | None = Field(title="Path")
+
+class FaceRestorerItem(BaseModel):
+    name: str = Field(title="Name")
+    cmd_dir: str | None = Field(title="Path")
+
+class RealesrganItem(BaseModel):
+    name: str = Field(title="Name")
+    path: str | None = Field(title="Path")
+    scale: int | None = Field(title="Scale")
+
+class PromptStyleItem(BaseModel):
+    name: str = Field(title="Name")
+    prompt: str | None = Field(title="Prompt")
+    negative_prompt: str | None = Field(title="Negative Prompt")
+
+class ArtistItem(BaseModel):
+    name: str = Field(title="Name")
+    score: float = Field(title="Score")
+    category: str = Field(title="Category")
