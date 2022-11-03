@@ -484,7 +484,7 @@
     "keep whatever was there originally": "保留原来的图像，不进行预处理",
     "fill it with latent space noise": "用潜空间的噪声填充它",
     "fill it with latent space zeroes": "用潜空间的零填充它",
-    "Upscale masked region to target resolution, do inpainting, downscale back and paste into original image": "将蒙版区域放大到目标分辨率，做局部重绘，缩小后粘贴到原始图像中。请注意，填补像素 仅对 全分辨率局部重绘 生效。",
+    "Upscale masked region to target resolution, do inpainting, downscale back and paste into original image": "将蒙版区域放大到目标分辨率，做局部重绘，缩小后粘贴到原始图像中。\n请注意，填补像素 仅对 全分辨率局部重绘 生效。",
     "Resize image to target resolution. Unless height and width match, you will get incorrect aspect ratio.": "将图像大小调整为目标分辨率。除非高度和宽度匹配，否则你将获得不正确的纵横比",
     "Resize the image so that entirety of target resolution is filled with the image. Crop parts that stick out.": "调整图像大小，使整个目标分辨率都被图像填充。裁剪多出来的部分",
     "Resize the image so that entirety of image is inside target resolution. Fill empty space with image's colors.": "调整图像大小，使整个图像在目标分辨率内。用图像的颜色填充空白区域",
@@ -508,6 +508,7 @@
     "Only applies to inpainting models. Determines how strongly to mask off the original image for inpainting and img2img. 1.0 means fully masked, which is the default behaviour. 0.0 means a fully unmasked conditioning. Lower values will help preserve the overall composition of the image, but will struggle with large changes.": "仅适用于局部重绘专用的模型。 决定了蒙版在局部重绘以及图生图中屏蔽原图内容的强度。 1.0 表示完全屏蔽，这是默认行为。 0.0 表示完全不屏蔽。 较低的值将有助于保持图像的整体构图，但很难遇到较大的变化。",
     "List of setting names, separated by commas, for settings that should go to the quick access bar at the top, rather than the usual setting tab. See modules/shared.py for setting names. Requires restarting to apply.": "设置名称列表，以逗号分隔，设置应转到顶部的快速访问栏，而不是通常的设置选项卡。有关设置名称，请参见 modules/shared.py。需要重新启动才能应用",
     "If this values is non-zero, it will be added to seed and used to initialize RNG for noises when using samplers with Eta. You can use this to produce even more variation of images, or you can use this to match images of other software if you know what you are doing.": "如果这个值不为零，它将被添加到随机种子中，并在使用带有 Eta 的采样器时用于初始化随机噪声。你可以使用它来产生更多的图像变化，或者你可以使用它来模仿其他软件生成的图像，如果你知道你在做什么",
+
     "Autocomplete options": "自动补全选项",
     "Enable Autocomplete": "开启Tag补全",
     "Append commas": "附加逗号",
@@ -541,11 +542,29 @@
     "Unload VAE and CLIP from VRAM when training": "训练时从显存(VRAM)中取消 VAE 和 CLIP 的加载",
     "Number of pictures displayed on each page": "每页显示的图像数量",
     "Number of grids in each row": "每行显示多少格",
+
     "Start drawing": "开始绘制",
     "how fast should the training go. Low values will take longer to train, high values may fail to converge (not generate accurate results) and/or may break the embedding (This has happened if you see Loss: nan in the training info textbox. If this happens, you need to manually restore your embedding from an older not-broken backup).\n\nYou can set a single numeric value, or multiple learning rates using the syntax:\n\n   rate_1:max_steps_1, rate_2:max_steps_2, ...\n\nEG:   0.005:100, 1e-3:1000, 1e-5\n\nWill train with rate of 0.005 for first 100 steps, then 1e-3 until 1000 steps, then 1e-5 for all remaining steps.": "训练应该多快。低值将需要更长的时间来训练，高值可能无法收敛（无法产生准确的结果）以及/也许可能会破坏 embedding（如果你在训练信息文本框中看到 Loss: nan 就会发生这种情况。如果发生这种情况，你需要从较旧的未损坏的备份手动恢复 embedding）\n\n你可以使用以下语法设置单个数值或多个学习率：\n\n   率1:步限1, 率2:步限2, ...\n\n如:   0.005:100, 1e-3:1000, 1e-5\n\n即前 100 步将以 0.005 的速率训练，接着直到 1000 步为止以 1e-3 训练，然后剩余所有步以 1e-5 训练",
     "Separate prompts into parts using vertical pipe character (|) and the script will create a picture for every combination of them (except for the first part, which will be present in all combinations)": "用竖线分隔符(|)将提示词分成若干部分，脚本将为它们的每一个组合创建一幅图片（除了被分割的第一部分，所有的组合都会包含这部分）",
     "Select which Real-ESRGAN models to show in the web UI. (Requires restart)": "选择哪些Real-ESRGAN模型显示在用户界面。(需要重新启动)",
     "Face restoration model": "面部修复模型",
     "Allowed categories for random artists selection when using the Roll button": "使用抽选艺术家按钮时将会随机的艺术家类别",
-    "Hypernetwork": "超网络(Hypernetwork)"
+    "Hypernetwork": "超网络(Hypernetwork)",
+    "How many times to improve the generated image iteratively; higher values take longer; very low values can produce bad results": "迭代改进生成的图像多少次；更高的值需要更长的时间；非常低的值会产生不好的结果",
+    "Draw a mask over an image, and the script will regenerate the masked area with content according to prompt": "在图像上画一个蒙版，脚本会根据提示重新生成蒙版区域的内容",
+    "Upscale image normally, split result into tiles, improve each tile using img2img, merge whole image back": "正常提升图像，将结果分割成瓦片，用img2img改进每个瓦片，将整个图像合并回来",
+    "Create a grid where images will have different parameters. Use inputs below to specify which parameters will be shared by columns and rows": "创建一个网格，图像将有不同的参数。使用下面的输入来指定哪些参数将由列和行共享",
+    "Run Python code. Advanced user only. Must run program with --allow-code for this to work": "运行Python代码。仅限高级用户。必须用 --allow-code 来运行程序，这样才能工作。",
+    "Separate a list of words with commas, and the first word will be used as a keyword: script will search for this word in the prompt, and replace it with others": "用逗号隔开一个单词列表，第一个单词将被用作关键词：脚本将在提示中搜索这个单词，并用其他单词替换它。",
+    "Separate a list of words with commas, and the script will make a variation of prompt with those words for their every possible order": "用逗号分开一个单词列表，脚本将用这些单词的每一个可能的顺序制作一个变体的提示。",
+    "Reconstruct prompt from existing image and put it into the prompt field.": "从现有的图像中重构提示，并将其放入提示字段。",
+    "Set the maximum number of words to be used in the [prompt_words] option; ATTENTION: If the words are too long, they may exceed the maximum length of the file path that the system can handle": "在[prompt_words]选项中设置要使用的最大字数；注意：如果字数太长，可能会超过系统可处理的文件路径的最大长度",
+    "Process an image, use it as an input, repeat.": "处理一张图片，将其作为输入，重复。",
+    "Insert selected styles into prompt fields": "在提示字段中插入选定的样式",
+    "Save current prompts as a style. If you add the token {prompt} to the text, the style use that as placeholder for your prompt when you use the style in the future.": "将当前的提示语保存为样式。如果你在文本中添加标记{prompt}，当你将来使用该样式时，该样式会将其作为你的提示的占位符。",
+    "Loads weights from checkpoint before making images. You can either use hash or a part of filename (as seen in settings) for checkpoint name. Recommended to use with Y axis for less switching.": "在制作图像之前从检查点加载权重。你可以使用哈希值或文件名的一部分（如设置中所示）作为检查点名称。建议与Y轴一起使用以减少切换。",
+    "Torch active: Peak amount of VRAM used by Torch during generation, excluding cached data.\nTorch reserved: Peak amount of VRAM allocated by Torch, including all active and cached data.\nSys VRAM: Peak amount of VRAM allocation across all applications / total GPU VRAM (peak utilization%).": "Torch active: 在生成过程中，Torch使用的显存(VRAM)峰值，不包括缓存的数据。\nTorch reserved: Torch分配的显存(VRAM)的峰值量，包括所有活动和缓存数据。\nSys VRAM: 所有应用程序的显存(VRAM)分配的峰值量 / GPU的总显存(VRAM)（峰值利用率%）。",
+    "Uscale the image in latent space. Alternative is to produce the full image from latent representation, upscale that, and then move it back to latent space.": "缩放潜在空间中的图像。另一种方法是，从潜在表示中产生完整的图像，提高其比例，然后再将其移回潜在空间。",
+
+    "----": "----"
 }
