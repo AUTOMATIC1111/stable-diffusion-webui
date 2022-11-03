@@ -53,7 +53,7 @@ class LruCache(OrderedDict):
 cached_images: LruCache = LruCache(max_size=5)
 
 
-def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_dir, show_extras_results, gfpgan_visibility, codeformer_visibility, codeformer_weight, upscaling_resize, upscaling_resize_w, upscaling_resize_h, upscaling_crop, extras_upscaler_1, extras_upscaler_2, extras_upscaler_2_visibility, upscale_first: bool):
+def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_dir, show_extras_results, gfpgan_visibility, codeformer_visibility, codeformer_weight, upscaling_resize, upscaling_resize_w, upscaling_resize_h, upscaling_crop, extras_upscaler_1, extras_upscaler_2, extras_upscaler_2_visibility, upscale_first: bool, upscale_loop: bool):
     devices.torch_gc()
 
     imageArr = []
@@ -111,9 +111,9 @@ def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_
         info += f"CodeFormer w: {round(codeformer_weight, 2)}, CodeFormer visibility:{round(codeformer_visibility, 2)}\n"
         return (res, info)
 
-    def upscale(image, scaler_index, resize, mode, resize_w, resize_h, crop):
+    def upscale(image, scaler_index, resize, mode, resize_w, resize_h, crop, upscale_loop):
         upscaler = shared.sd_upscalers[scaler_index]
-        res = upscaler.scaler.upscale(image, resize, upscaler.data_path)
+        res = upscaler.scaler.upscale(image, resize, upscaler.data_path, upscale_loop)
         if mode == 1 and crop:
             cropped = Image.new("RGB", (resize_w, resize_h))
             cropped.paste(res, box=(resize_w // 2 - res.width // 2, resize_h // 2 - res.height // 2))
@@ -138,7 +138,7 @@ def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_
         blended_result: Image.Image = None
         for upscaler in params:
             upscale_args = (upscaler.upscaler_idx, upscaling_resize, resize_mode,
-                            upscaling_resize_w, upscaling_resize_h, upscaling_crop)
+                            upscaling_resize_w, upscaling_resize_h, upscaling_crop, upscale_loop)
             cache_key = LruCache.Key(image_hash=hash(np.array(image.getdata()).tobytes()),
                                      info_hash=hash(info),
                                      args_hash=hash((upscale_args, upscale_first)))

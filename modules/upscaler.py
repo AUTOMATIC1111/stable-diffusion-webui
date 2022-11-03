@@ -53,11 +53,17 @@ class Upscaler:
     def do_upscale(self, img: PIL.Image, selected_model: str):
         return img
 
-    def upscale(self, img: PIL.Image, scale: int, selected_model: str = None):
+    def upscale(self, img: PIL.Image, scale: int, selected_model: str = None, upscale_loop: bool = False):
         self.scale = scale
         dest_w = img.width * scale
         dest_h = img.height * scale
-        img = self.do_upscale(img, selected_model)
+        if upscale_loop:
+            for i in range(3):
+                if img.width >= dest_w and img.height >= dest_h:
+                    break
+                img = self.do_upscale(img, selected_model)
+        else:
+            img = self.do_upscale(img, selected_model)
         if img.width != dest_w or img.height != dest_h:
             img = img.resize((int(dest_w), int(dest_h)), resample=LANCZOS)
 
