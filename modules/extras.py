@@ -136,12 +136,13 @@ def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_
 
     def run_upscalers_blend(params: List[UpscaleParams], image: Image.Image, info: str) -> Tuple[Image.Image, str]:
         blended_result: Image.Image = None
+        image_hash: str = hash(np.array(image.getdata()).tobytes())
         for upscaler in params:
             upscale_args = (upscaler.upscaler_idx, upscaling_resize, resize_mode,
                             upscaling_resize_w, upscaling_resize_h, upscaling_crop)
-            cache_key = LruCache.Key(image_hash=hash(np.array(image.getdata()).tobytes()),
+            cache_key = LruCache.Key(image_hash=image_hash,
                                      info_hash=hash(info),
-                                     args_hash=hash((upscale_args, upscale_first)))
+                                     args_hash=hash(upscale_args))
             cached_entry = cached_images.get(cache_key)
             if cached_entry is None:
                 res = upscale(image, *upscale_args)
