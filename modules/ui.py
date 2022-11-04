@@ -1439,8 +1439,7 @@ def create_ui(wrap_gradio_gpu_call):
         changed = 0
 
         for key, value, comp in zip(opts.data_labels.keys(), args, components):
-            if comp != dummy_component and not opts.same_type(value, opts.data_labels[key].default):
-                return f"Bad value for setting {key}: {value}; expecting {type(opts.data_labels[key].default).__name__}", opts.dumpjson()
+            assert comp == dummy_component or opts.same_type(value, opts.data_labels[key].default), f"Bad value for setting {key}: {value}; expecting {type(opts.data_labels[key].default).__name__}"
 
         for key, value, comp in zip(opts.data_labels.keys(), args, components):
             if comp == dummy_component:
@@ -1458,7 +1457,7 @@ def create_ui(wrap_gradio_gpu_call):
 
         opts.save(shared.config_filename)
 
-        return f'{changed} settings changed.', opts.dumpjson()
+        return opts.dumpjson(), f'{changed} settings changed.'
 
     def run_settings_single(value, key):
         if not opts.same_type(value, opts.data_labels[key].default):
@@ -1622,9 +1621,9 @@ def create_ui(wrap_gradio_gpu_call):
 
         text_settings = gr.Textbox(elem_id="settings_json", value=lambda: opts.dumpjson(), visible=False)
         settings_submit.click(
-            fn=run_settings,
+            fn=wrap_gradio_call(run_settings, extra_outputs=[gr.update()]),
             inputs=components,
-            outputs=[result, text_settings],
+            outputs=[text_settings, result],
         )
 
         for i, k, item in quicksettings_list:
