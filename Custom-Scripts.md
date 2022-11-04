@@ -3,13 +3,18 @@ To install custom scripts, place them into the `scripts` directory and click the
 
 # Custom Scripts from Users
 
-## Advanced prompt matrix
-https://github.com/GRMrGecko/stable-diffusion-webui-automatic/blob/advanced_matrix/scripts/advanced_prompt_matrix.py
+## Improved prompt matrix
 
-It allows a matrix prompt as follows:
-`<cyber|cyborg|> cat <photo|image|artistic photo|oil painting> in a <car|boat|cyber city>`
+This script is [advanced-prompt-matrix](https://github.com/GRMrGecko/stable-diffusion-webui-automatic/blob/advanced_matrix/scripts/advanced_prompt_matrix.py) modified to support `batch count`. Grids are not created.  
 
-Does not actually draw a matrix, just produces pictures.
+**Usage:**
+
+Use `<` `>` to create a group of alternate texts. Separate text options with `|`. Multiple groups and multiple options can be used. For example:
+
+An input of `a <corgi|cat> wearing <goggles|a hat>`  
+Will output 4 prompts: `a corgi wearing goggles`, `a corgi wearing a hat`, `a cat wearing goggles`, `a cat wearing a hat`
+
+When using a `batch count` > 1, each prompt variation will be generated for each seed. `batch size` is ignored.
 
 ## Wildcards
 This, and the more feature-rich `dynamic prompts` script have been turned into [extensions.](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Extensions)
