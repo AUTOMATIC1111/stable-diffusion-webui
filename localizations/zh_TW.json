@@ -75,7 +75,7 @@
     "Aesthetic weight": "美術風格權重",
     "Aesthetic steps": "美術風格疊代步數",
     "Aesthetic learning rate": "美術風格學習率",
-    "Slerp interpolation": "球麵線性插值角度",
+    "Slerp interpolation": "球面線性插值角度",
     "Aesthetic imgs embedding": "美術風格圖集 embedding",
     "None": "無",
     "Aesthetic text for imgs": "該圖集的美術風格描述",
