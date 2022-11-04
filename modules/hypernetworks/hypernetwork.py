@@ -224,7 +224,7 @@ def list_hypernetworks(path):
         # Prevent a hypothetical "None.pt" from being listed.
         if name != "None":
             res[name] = filename
-    return res
+    return dict(sorted(res.items()))
 
 
 def load_hypernetwork(filename):
