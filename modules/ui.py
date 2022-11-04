@@ -1437,6 +1437,7 @@ def create_ui(wrap_gradio_gpu_call):
 
     components = []
     component_dict = {}
+    refresh_dict = {}
 
     script_callbacks.ui_settings_callback()
     opts.reorder()
@@ -1455,7 +1456,7 @@ def create_ui(wrap_gradio_gpu_call):
             if comp == dummy_component:
                 continue
 
-            onchange_refresh_i = [{} for x in info.onchange_refresh] if info.onchange_refresh else []
+            onchange_refresh_i = [gr.update() for x in info.onchange_refresh] if info.onchange_refresh else []
             oldval = opts.data.get(key, None)
 
             setattr(opts, key, value)
@@ -1467,7 +1468,7 @@ def create_ui(wrap_gradio_gpu_call):
                 changed += 1
 
             if info.onchange_refresh:
-                onchange_refresh_i = [create_refresh_method(component_dict[r], opts.data_labels[r].refresh, opts.data_labels[r].component_args)() for r in info.onchange_refresh]
+                onchange_refresh_i = [refresh_dict[r]() for r in info.onchange_refresh]
             onchange_refresh.extend(onchange_refresh_i)
 
         opts.save(shared.config_filename)
@@ -1476,7 +1477,7 @@ def create_ui(wrap_gradio_gpu_call):
 
     def run_settings_single(value, key):
         info = opts.data_labels[key]
-        onchange_refresh_i = [{} for x in info.onchange_refresh]
+        onchange_refresh_i = [gr.update() for x in info.onchange_refresh]
 
         if not opts.same_type(value, opts.data_labels[key].default):
             return (gr.update(visible=True), opts.dumpjson(), *onchange_refresh)
@@ -1492,7 +1493,7 @@ def create_ui(wrap_gradio_gpu_call):
                 info.onchange()
 
         if info.onchange_refresh:
-            onchange_refresh_i = [create_refresh_method(component_dict[r], opts.data_labels[r].refresh, opts.data_labels[r].component_args)() for r in info.onchange_refresh]
+            onchange_refresh_i = [refresh_dict[r]() for r in info.onchange_refresh]
 
         opts.save(shared.config_filename)
 
@@ -1542,6 +1543,7 @@ def create_ui(wrap_gradio_gpu_call):
                 else:
                     component = create_setting_component(k)
                     component_dict[k] = component
+                    refresh_dict[k] = create_refresh_method(component, item.refresh, item.component_args)
                     components.append(component)
                     items_displayed += 1
 
@@ -1628,6 +1630,7 @@ def create_ui(wrap_gradio_gpu_call):
             for i, k, item in quicksettings_list:
                 component = create_setting_component(k, is_quicksettings=True)
                 component_dict[k] = component
+                refresh_dict[k] = create_refresh_method(component, item.refresh, item.component_args)
 
         parameters_copypaste.integrate_settings_paste_fields(component_dict)
         parameters_copypaste.run_bind()
@@ -1643,9 +1646,8 @@ def create_ui(wrap_gradio_gpu_call):
         onchange_refresh = [
             component_dict[r] 
             for k, v in opts.data_labels.items() 
-            if k not in quicksettings_names 
+            if v.onchange_refresh and k not in quicksettings_names
             for r in v.onchange_refresh 
-            if v.onchange_refresh
         ]
         text_settings = gr.Textbox(elem_id="settings_json", value=lambda: opts.dumpjson(), visible=False)
         settings_submit.click(
