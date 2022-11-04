@@ -396,6 +396,15 @@ class Options:
     def __setattr__(self, key, value):
         if self.data is not None:
             if key in self.data or key in self.data_labels:
+                assert not cmd_opts.freeze_settings, "changing settings is disabled"
+
+                comp_args = opts.data_labels[key].component_args
+                if isinstance(comp_args, dict) and comp_args.get('visible', True) is False:
+                    raise RuntimeError(f"not possible to set {key} because it is restricted")
+
+                if cmd_opts.hide_ui_dir_config and key in restricted_opts:
+                    raise RuntimeError(f"not possible to set {key} because it is restricted")
+
                 self.data[key] = value
                 return
 
@@ -412,6 +421,8 @@ class Options:
         return super(Options, self).__getattribute__(item)
 
     def save(self, filename):
+        assert not cmd_opts.freeze_settings, "saving settings is disabled"
+
         with open(filename, "w", encoding="utf8") as file:
             json.dump(self.data, file, indent=4)
 

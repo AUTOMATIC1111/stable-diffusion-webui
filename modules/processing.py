@@ -418,13 +418,13 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
 
     try:
         for k, v in p.override_settings.items():
-            opts.data[k] = v  # we don't call onchange for simplicity which makes changing model, hypernet impossible
+            setattr(opts, k, v) # we don't call onchange for simplicity which makes changing model, hypernet impossible
 
         res = process_images_inner(p)
 
     finally:
         for k, v in stored_opts.items():
-            opts.data[k] = v
+            setattr(opts, k, v)
 
     return res
 

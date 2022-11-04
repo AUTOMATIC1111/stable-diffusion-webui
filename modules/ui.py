@@ -1438,8 +1438,6 @@ def create_ui(wrap_gradio_gpu_call):
     def run_settings(*args):
         changed = 0
 
-        assert not shared.cmd_opts.freeze_settings, "changing settings is disabled"
-
         for key, value, comp in zip(opts.data_labels.keys(), args, components):
             if comp != dummy_component and not opts.same_type(value, opts.data_labels[key].default):
                 return f"Bad value for setting {key}: {value}; expecting {type(opts.data_labels[key].default).__name__}", opts.dumpjson()
@@ -1448,15 +1446,9 @@ def create_ui(wrap_gradio_gpu_call):
             if comp == dummy_component:
                 continue
 
-            comp_args = opts.data_labels[key].component_args
-            if comp_args and isinstance(comp_args, dict) and comp_args.get('visible') is False:
-                continue
-
-            if cmd_opts.hide_ui_dir_config and key in restricted_opts:
-                continue
-
             oldval = opts.data.get(key, None)
-            opts.data[key] = value
+
+            setattr(opts, key, value)
 
             if oldval != value:
                 if opts.data_labels[key].onchange is not None:
@@ -1469,16 +1461,14 @@ def create_ui(wrap_gradio_gpu_call):
         return f'{changed} settings changed.', opts.dumpjson()
 
     def run_settings_single(value, key):
-        assert not shared.cmd_opts.freeze_settings, "changing settings is disabled"
-
         if not opts.same_type(value, opts.data_labels[key].default):
             return gr.update(visible=True), opts.dumpjson()
 
         oldval = opts.data.get(key, None)
-        if cmd_opts.hide_ui_dir_config and key in restricted_opts:
+        try:
+            setattr(opts, key, value)
+        except Exception:
             return gr.update(value=oldval), opts.dumpjson()
-
-        opts.data[key] = value
 
         if oldval != value:
             if opts.data_labels[key].onchange is not None:
