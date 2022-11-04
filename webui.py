@@ -141,6 +141,12 @@ def webui():
         # after initial launch, disable --autolaunch for subsequent restarts
         cmd_opts.autolaunch = False
 
+        # gradio uses a very open CORS policy via app.user_middleware, which makes it possible for
+        # an attacker to trick the user into opening a malicious HTML page, which makes a request to the
+        # running web ui and do whatever the attcker wants, including installing an extension and
+        # runnnig its code. We disable this here. Suggested by RyotaK.
+        app.user_middleware = [x for x in app.user_middleware if x.cls.__name__ != 'CORSMiddleware']
+
         app.add_middleware(GZipMiddleware, minimum_size=1000)
 
         if launch_api:
