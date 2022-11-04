@@ -167,6 +167,9 @@ class ProgressResponse(BaseModel):
     state: dict = Field(title="State", description="The current state snapshot")
     current_image: str = Field(default=None, title="Current image", description="The current image in base64 format. opts.show_progress_every_n_steps is required for this to work.")
 
+class LoadModelRequest(BaseModel):
+    name: str = Field(title="Name", description="The name of the checkpoint")
+
 fields = {}
 for key, value in opts.data.items():
     metadata = opts.data_labels.get(key)
