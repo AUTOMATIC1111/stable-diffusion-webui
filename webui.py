@@ -9,7 +9,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 
 from modules.paths import script_path
 
-from modules import devices, sd_samplers, upscaler
+from modules import devices, sd_samplers, upscaler, extensions
 import modules.codeformer_model as codeformer
 import modules.extras
 import modules.face_restoration
@@ -21,8 +21,10 @@ import modules.paths
 import modules.scripts
 import modules.sd_hijack
 import modules.sd_models
+import modules.sd_vae
 import modules.shared as shared
 import modules.txt2img
+import modules.script_callbacks
 
 import modules.ui
 from modules import devices
@@ -46,26 +48,13 @@ def wrap_queued_call(func):
 
 def wrap_gradio_gpu_call(func, extra_outputs=None):
     def f(*args, **kwargs):
-        devices.torch_gc()
 
-        shared.state.sampling_step = 0
-        shared.state.job_count = -1
-        shared.state.job_no = 0
-        shared.state.job_timestamp = shared.state.get_job_timestamp()
-        shared.state.current_latent = None
-        shared.state.current_image = None
-        shared.state.current_image_sampling_step = 0
-        shared.state.skipped = False
-        shared.state.interrupted = False
-        shared.state.textinfo = None
+        shared.state.begin()
 
         with queue_lock:
             res = func(*args, **kwargs)
 
-        shared.state.job = ""
-        shared.state.job_count = 0
-
-        devices.torch_gc()
+        shared.state.end()
 
         return res
 
@@ -73,6 +62,8 @@ def wrap_gradio_gpu_call(func, extra_outputs=None):
 
 
 def initialize():
+    extensions.list_extensions()
+
     if cmd_opts.ui_debug_mode:
         shared.sd_upscalers = upscaler.UpscalerLanczos().scalers
         modules.scripts.load_scripts()
@@ -87,8 +78,10 @@ def initialize():
 
     modules.scripts.load_scripts()
 
+    modules.sd_vae.refresh_vae_list()
     modules.sd_models.load_model()
-    shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights(shared.sd_model)))
+    shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights()))
+    shared.opts.onchange("sd_vae", wrap_queued_call(lambda: modules.sd_vae.reload_vae_weights()), call=False)
     shared.opts.onchange("sd_hypernetwork", wrap_queued_call(lambda: modules.hypernetworks.hypernetwork.load_hypernetwork(shared.opts.sd_hypernetwork)))
     shared.opts.onchange("sd_hypernetwork_strength", modules.hypernetworks.hypernetwork.apply_strength)
 
@@ -105,14 +98,17 @@ def create_api(app):
     api = Api(app, queue_lock)
     return api
 
+
 def wait_on_server(demo=None):
     while 1:
         time.sleep(0.5)
-        if demo and getattr(demo, 'do_restart', False):
+        if shared.state.need_restart:
+            shared.state.need_restart = False
             time.sleep(0.5)
             demo.close()
             time.sleep(0.5)
             break
+
 
 def api_only():
     initialize()
@@ -120,6 +116,8 @@ def api_only():
     app = FastAPI()
     app.add_middleware(GZipMiddleware, minimum_size=1000)
     api = create_api(app)
+
+    modules.script_callbacks.app_started_callback(None, app)
 
     api.launch(server_name="0.0.0.0" if cmd_opts.listen else "127.0.0.1", port=cmd_opts.port if cmd_opts.port else 7861)
 
@@ -145,14 +143,18 @@ def webui():
 
         app.add_middleware(GZipMiddleware, minimum_size=1000)
 
-        if (launch_api):
+        if launch_api:
             create_api(app)
+
+        modules.script_callbacks.app_started_callback(demo, app)
 
         wait_on_server(demo)
 
         sd_samplers.set_samplers()
 
-        print('Reloading Custom Scripts')
+        print('Reloading extensions')
+        extensions.list_extensions()
+        print('Reloading custom scripts')
         modules.scripts.reload_scripts()
         print('Reloading modules: modules.ui')
         importlib.reload(modules.ui)
@@ -161,8 +163,6 @@ def webui():
         print('Restarting Gradio')
 
 
-
-task = []
 if __name__ == "__main__":
     if cmd_opts.nowebui:
         api_only()
