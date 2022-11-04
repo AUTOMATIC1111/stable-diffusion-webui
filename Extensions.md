@@ -184,3 +184,10 @@ https://github.com/DominikDoom/a1111-sd-webui-tagcomplete
 Displays autocompletion hints for tags from "image booru" boards such as Danbooru. Uses local tag CSV files and includes a config for customization.
 
 ![image](https://user-images.githubusercontent.com/20920490/200016417-9451efdb-5d0d-4131-bd9e-39a687be8dd7.png)
+
+## novelai-2-local-prompt
+https://github.com/animerl/novelai-2-local-prompt
+
+Automatically process the brackets, prefix them with a quality tag, and insert a default value in the negative prompt. Multipliers are rounded off to four decimal places. Call back previously generated prompts, starting with the newest.
+
+![pic](https://user-images.githubusercontent.com/113022648/197382468-65f4a96d-48af-4890-8fcf-0ec7c3b9ec3a.png)
