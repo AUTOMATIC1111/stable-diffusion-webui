@@ -140,7 +140,7 @@ def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_
         for upscaler in params:
             upscale_args = (upscaler.upscaler_idx, upscaling_resize, resize_mode,
                             upscaling_resize_w, upscaling_resize_h, upscaling_crop, upscale_loop)
-            cache_key = LruCache.Key(image_hash=hash(np.array(image.getdata()).tobytes()),
+            cache_key = LruCache.Key(image_hash=image_hash,
                                      info_hash=hash(info),
                                      args_hash=hash(upscale_args))
             cached_entry = cached_images.get(cache_key)
