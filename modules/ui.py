@@ -1472,7 +1472,7 @@ def create_ui(wrap_gradio_gpu_call):
 
         opts.save(shared.config_filename)
 
-        return (opts.dumpjson(), f'{changed} settings changed.', *onchange_refresh)
+        return (opts.dumpjson(), *onchange_refresh, f'{changed} settings changed.')
 
     def run_settings_single(value, key):
         info = opts.data_labels[key]
@@ -1653,7 +1653,7 @@ def create_ui(wrap_gradio_gpu_call):
         settings_submit.click(
             fn=wrap_gradio_call(run_settings, extra_outputs=[gr.update()]),
             inputs=components,
-            outputs=[text_settings, result, *onchange_refresh],
+            outputs=[text_settings, *onchange_refresh, result],
         )
 
         for i, k, item in quicksettings_list:
