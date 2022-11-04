@@ -177,3 +177,10 @@ Supercharge your prompt workflow with this powerful scripting language!
 **Unprompted** is a highly modular extension for [AUTOMATIC1111's Stable Diffusion Web UI](https://github.com/AUTOMATIC1111/stable-diffusion-webui) that allows you to include various shortcodes in your prompts. You can pull text from files, set up your own variables, process text through conditional functions, and so much more - it's like wildcards on steroids.
 
 While the intended usecase is Stable Diffusion, **this engine is also flexible enough to serve as an all-purpose text generator.**
+
+## Booru tag autocompletion
+https://github.com/DominikDoom/a1111-sd-webui-tagcomplete
+
+Displays autocompletion hints for tags from "image booru" boards such as Danbooru. Uses local tag CSV files and includes a config for customization.
+
+![image](https://user-images.githubusercontent.com/20920490/200016417-9451efdb-5d0d-4131-bd9e-39a687be8dd7.png)
