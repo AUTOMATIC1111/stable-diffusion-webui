@@ -146,7 +146,7 @@ Outdated demo | New UI (TODO: demo image)
 --- | ---
 ![demo image](https://user-images.githubusercontent.com/42513874/194701722-e7a3f7eb-be4a-4f43-93a5-480835c9260f.jpg) | ![demo image 2](https://user-images.githubusercontent.com/42513874/199507299-66729f9b-3581-43a3-b5f4-57eb90b8f981.png)
 
-### Differences
+**Differences**
 
 - UI no longer freezes during image update
 - Inpainting layer no longer has to be manually hidden, nor use white specifically
@@ -160,9 +160,20 @@ Adds a tab to the webui that allows the user to automatically extract keyframes 
 
 ![image](https://user-images.githubusercontent.com/2313721/199614791-1f573573-a2e2-4358-836d-5655825077e1.png)
 
-### Installation
+**Installation**
 
 - Install [AUTOMATIC1111's Stable Diffusion Webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui)
 - Install [ffmpeg](https://ffmpeg.org/) for your operating system
 - Clone this repository into the extensions folder inside the webui
 - Drop videos you want to extract cropped frames from into the training-picker/videos folder
+
+## Unprompted
+https://github.com/ThereforeGames/unprompted
+ 
+Supercharge your prompt workflow with this powerful scripting language!
+
+![unprompted_header](https://user-images.githubusercontent.com/95403634/199041569-7c6c5748-e7dc-4068-943f-c2d92745dbb5.png)
+
+**Unprompted** is a highly modular extension for [AUTOMATIC1111's Stable Diffusion Web UI](https://github.com/AUTOMATIC1111/stable-diffusion-webui) that allows you to include various shortcodes in your prompts. You can pull text from files, set up your own variables, process text through conditional functions, and so much more - it's like wildcards on steroids.
+
+While the intended usecase is Stable Diffusion, **this engine is also flexible enough to serve as an all-purpose text generator.**
