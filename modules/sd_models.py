@@ -204,8 +204,9 @@ def load_model_weights(model, checkpoint_info, vae_file="auto"):
                 checkpoints_loaded.popitem(last=False)  # LRU
 
     else:
-        vae_name = sd_vae.get_filename(vae_file)
-        print(f"Loading weights [{sd_model_hash}] with {vae_name} VAE from cache")
+        vae_name = sd_vae.get_filename(vae_file) if vae_file else None
+        vae_message = f" with {vae_name} VAE" if vae_name else ""
+        print(f"Loading weights [{sd_model_hash}]{vae_message} from cache")
         checkpoints_loaded.move_to_end(checkpoint_key)
         model.load_state_dict(checkpoints_loaded[checkpoint_key])
 
