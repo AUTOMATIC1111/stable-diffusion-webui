@@ -21,6 +21,7 @@ import modules.paths
 import modules.scripts
 import modules.sd_hijack
 import modules.sd_models
+import modules.sd_vae
 import modules.shared as shared
 import modules.txt2img
 import modules.script_callbacks
@@ -77,8 +78,10 @@ def initialize():
 
     modules.scripts.load_scripts()
 
+    modules.sd_vae.refresh_vae_list()
     modules.sd_models.load_model()
     shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights()))
+    shared.opts.onchange("sd_vae", wrap_queued_call(lambda: modules.sd_vae.reload_vae_weights()), call=False)
     shared.opts.onchange("sd_hypernetwork", wrap_queued_call(lambda: modules.hypernetworks.hypernetwork.load_hypernetwork(shared.opts.sd_hypernetwork)))
     shared.opts.onchange("sd_hypernetwork_strength", modules.hypernetworks.hypernetwork.apply_strength)
 
@@ -114,6 +117,8 @@ def api_only():
     app.add_middleware(GZipMiddleware, minimum_size=1000)
     api = create_api(app)
 
+    modules.script_callbacks.app_started_callback(None, app)
+
     api.launch(server_name="0.0.0.0" if cmd_opts.listen else "127.0.0.1", port=cmd_opts.port if cmd_opts.port else 7861)
 
 
@@ -135,6 +140,12 @@ def webui():
         )
         # after initial launch, disable --autolaunch for subsequent restarts
         cmd_opts.autolaunch = False
+
+        # gradio uses a very open CORS policy via app.user_middleware, which makes it possible for
+        # an attacker to trick the user into opening a malicious HTML page, which makes a request to the
+        # running web ui and do whatever the attcker wants, including installing an extension and
+        # runnnig its code. We disable this here. Suggested by RyotaK.
+        app.user_middleware = [x for x in app.user_middleware if x.cls.__name__ != 'CORSMiddleware']
 
         app.add_middleware(GZipMiddleware, minimum_size=1000)
 

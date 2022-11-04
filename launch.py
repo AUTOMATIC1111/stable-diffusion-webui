@@ -238,12 +238,15 @@ def tests(argv):
     proc.kill()
 
 
-def start_webui():
-    print(f"Launching Web UI with arguments: {' '.join(sys.argv[1:])}")
+def start():
+    print(f"Launching {'API server' if '--nowebui' in sys.argv else 'Web UI'} with arguments: {' '.join(sys.argv[1:])}")
     import webui
-    webui.webui()
+    if '--nowebui' in sys.argv:
+        webui.api_only()
+    else:
+        webui.webui()
 
 
 if __name__ == "__main__":
     prepare_enviroment()
-    start_webui()
+    start()
