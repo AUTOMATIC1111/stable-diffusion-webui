@@ -501,6 +501,9 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             if len(prompts) == 0:
                 break
 
+            if p.scripts is not None:
+                p.scripts.process_one(p, n)
+
             with devices.autocast():
                 uc = prompt_parser.get_learned_conditioning(shared.sd_model, len(prompts) * [p.negative_prompt], p.steps)
                 c = prompt_parser.get_multicond_learned_conditioning(shared.sd_model, prompts, p.steps)
