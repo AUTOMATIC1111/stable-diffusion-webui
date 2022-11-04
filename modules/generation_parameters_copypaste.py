@@ -15,12 +15,15 @@ re_imagesize = re.compile(r"^(\d+)x(\d+)$")
 type_of_gr_update = type(gr.update())
 paste_fields = {}
 bind_list = []
-
+temp_dir = None
 
 def reset():
     paste_fields.clear()
     bind_list.clear()
 
+def set_tmp_dir(new_dir):
+    global temp_dir
+    temp_dir = new_dir
 
 def quote(text):
     if ',' not in str(text):
@@ -35,7 +38,7 @@ def quote(text):
 def image_from_url_text(filedata):
     if type(filedata) == dict and filedata["is_file"]:
         filename = filedata["name"]
-        tempdir = os.path.normpath(os.path.join(os.getcwd(), "gradio_temp"))
+        tempdir = tempfile.gettempdir() if temp_dir is None else temp_dir
         normfn = os.path.normpath(filename)
         assert normfn.startswith(tempdir), 'trying to open image file not in temporary directory'
 

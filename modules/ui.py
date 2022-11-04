@@ -178,9 +178,11 @@ class Gallery(gr.Gallery):
         if opts.outdir_gradio_temp.strip() != "":
             shutil.rmtree(self.temp_dir)  # Kill inital temp folder
             self.temp_dir = os.path.realpath(opts.outdir_gradio_temp.strip())
+            parameters_copypaste.set_tmp_dir(self.temp_dir)
             if os.path.exists(self.temp_dir):
                 shutil.rmtree(self.temp_dir)
             os.mkdir(self.temp_dir)
+
 
 gr.Gallery = Gallery
 
