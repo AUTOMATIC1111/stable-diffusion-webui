@@ -86,6 +86,7 @@ parser.add_argument("--nowebui", action='store_true', help="use api=True to laun
 parser.add_argument("--ui-debug-mode", action='store_true', help="Don't load model to quickly launch UI")
 parser.add_argument("--device-id", type=str, help="Select the default CUDA device to use (export CUDA_VISIBLE_DEVICES=0,1,etc might be needed before)", default=None)
 parser.add_argument("--administrator", action='store_true', help="Administrator rights", default=False)
+parser.add_argument('--force-accordion-settings', action='store_true', help="force all settings section to use accordion", default=False)
 
 cmd_opts = parser.parse_args()
 restricted_opts = {
@@ -239,7 +240,7 @@ class OptionInfo:
 def options_section(section_identifier, options_dict):
     for k, v in options_dict.items():
         if len(section_identifier) < 3:
-            section_identifier = (*section_identifier, False) # last is accordion flag
+            section_identifier = (*section_identifier, cmd_opts.force_accordion_settings) # last is accordion flag
         v.section = section_identifier
 
     return options_dict
