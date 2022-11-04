@@ -14,6 +14,10 @@ Alternatively you can just copy-paste a directory into `extensions`.
 
 For developing extensions, see [Developing extensions](Developing-extensions).
 
+# Security
+
+As extensions allow the user to install and run arbitrary code, this can be used maliciously, and is disabled by default when running with options that allow remote users to connect to the server (`--share` or `--listen`) - you'll still have the UI, but trying to install anything will result in error. If you want to use those options and still be able to install extensions, use `--enable-insecure-extension-access` command line flag.
+
 # Extensions
 
 ## Aesthetic Gradients
