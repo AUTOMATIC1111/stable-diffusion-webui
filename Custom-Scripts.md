@@ -12,7 +12,7 @@ It allows a matrix prompt as follows:
 Does not actually draw a matrix, just produces pictures.
 
 ## Wildcards
-This and the more feature rich dynamic prompts script have been turned into [extensions.](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Extensions)
+This, and the more feature-rich `dynamic prompts` script have been turned into [extensions.](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Extensions)
 
 ## Unprompted
 https://github.com/ThereforeGames/unprompted
@@ -167,7 +167,7 @@ Generate palettes by text description. This script takes the generated images an
 ## StylePile
 https://github.com/some9000/StylePile
 
-Mix and match keywords to quickly get different results without wasting a lot of time writing prompts.
+An easy way to mix and match elements to prompts that affect the style of the result.
 
 ## XYZ Plot Script
 https://github.com/xrpgame/xyz_plot_script
@@ -186,13 +186,17 @@ https://github.com/dfaker/embedding-to-png-script
 
 Converts existing embeddings to the shareable image versions.
 
-## Basic Canvas Outpainting Test
+## Alpha Canvas
 https://github.com/TKoestlerx/sdexperiments
 
-Script to allow for easier outpainting. Appears to be infinite outpainting.
+Outpaint a region. Infinite outpainting concept, used the two existing outpainting scripts from the AUTOMATIC1111 repo as a basis.
 
-## Random Steps and CFG
+## AI-WEBUI-scripts-Random
 https://github.com/lilly1987/AI-WEBUI-scripts-Random
+
+- Random Steps and CFG
+- Random Grid
+- Random Loop
 
 ## Stable Diffusion Aesthetic Scorer
 https://github.com/grexzen/SD-Chad
@@ -206,6 +210,11 @@ generate tiles from a base image. Based on SD upscale script.
 https://github.com/dfaker/SD-latent-mirroring
 
 Applies mirroring and flips to the latent images to produce anything from subtle balanced compositions to perfect reflections
+
+## Depth Maps
+https://github.com/thygate/stable-diffusion-webui-depthmap-script
+
+This script is an addon for [AUTOMATIC1111's Stable Diffusion Web UI](https://github.com/AUTOMATIC1111/stable-diffusion-webui) that creates `depthmaps` from the generated images. The result can be viewed on 3D or holographic devices like VR headsets or [lookingglass](https://lookingglassfactory.com/) display, used in Render- or Game- Engines on a plane with a displacement modifier, and maybe even 3D printed.
 
 ## Saving steps of the sampling process
 
