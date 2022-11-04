@@ -57,14 +57,16 @@ class Upscaler:
         self.scale = scale
         dest_w = img.width * scale
         dest_h = img.height * scale
+        init_shape = (img.width, img.height)
 
-        if scale == 1 or not upscale_loop:
+        for i in range(3):  
             img = self.do_upscale(img, selected_model)
-        else:
-            for i in range(3):
-                if img.width >= dest_w and img.height >= dest_h:
-                    break
-                img = self.do_upscale(img, selected_model)
+
+            if img.width >= dest_w and img.height >= dest_h:
+                break
+
+            if (img.width, img.height) == init_shape or not upscale_loop:
+                break
 
         if img.width != dest_w or img.height != dest_h:
             img = img.resize((int(dest_w), int(dest_h)), resample=LANCZOS)
