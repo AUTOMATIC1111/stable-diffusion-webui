@@ -1052,6 +1052,8 @@ def create_ui(wrap_gradio_gpu_call):
                         extras_batch_output_dir = gr.Textbox(label="Output directory", **shared.hide_dirs, placeholder="Leave blank to save images to the default path.")
                         show_extras_results = gr.Checkbox(label='Show result images', value=True)
 
+                submit = gr.Button('Generate', elem_id="extras_generate", variant='primary')
+
                 with gr.Tabs(elem_id="extras_resize_mode"):
                     with gr.TabItem('Scale by'):
                         upscaling_resize = gr.Slider(minimum=1.0, maximum=8.0, step=0.05, label="Resize", value=4)
@@ -1078,8 +1080,6 @@ def create_ui(wrap_gradio_gpu_call):
 
                 with gr.Group():
                     upscale_before_face_fix = gr.Checkbox(label='Upscale Before Restoring Faces', value=False)
-
-                submit = gr.Button('Generate', elem_id="extras_generate", variant='primary')
 
             result_images, html_info_x, html_info = create_output_panel("extras", opts.outdir_extras_samples)
 
