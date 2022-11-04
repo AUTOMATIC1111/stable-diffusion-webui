@@ -45,6 +45,16 @@
 			"name": "Dataset Tag Editor",
 			"url": "https://github.com/toshiaki1729/stable-diffusion-webui-dataset-tag-editor",
 			"description": "Lets you edit captions in training datasets."
+		},
+		{
+			"name": "auto-sd-paint-ext",
+			"url": "https://github.com/Interpause/auto-sd-paint-ext",
+			"description": "Krita Plugin."
+		},
+		{
+			"name": "training-picker",
+			"url": "https://github.com/toshiaki1729/stable-diffusion-webui-dataset-tag-editor",
+			"description": "Adds a tab to the webui that allows the user to automatically extract keyframes from video, and manually extract 512x512 crops of those frames for use in model training."
 		}
 	]
 }
