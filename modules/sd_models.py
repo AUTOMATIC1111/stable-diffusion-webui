@@ -198,8 +198,9 @@ def load_model_weights(model, checkpoint_info, vae_file="auto"):
         model.first_stage_model.to(devices.dtype_vae)
 
     else:
-        vae_name = sd_vae.get_filename(vae_file)
-        print(f"Loading weights [{sd_model_hash}] with {vae_name} VAE from cache")
+        vae_name = sd_vae.get_filename(vae_file) if vae_file else None
+        vae_message = f" with {vae_name} VAE" if vae_name else ""
+        print(f"Loading weights [{sd_model_hash}]{vae_message} from cache")
         model.load_state_dict(checkpoints_loaded[checkpoint_info])
 
     if shared.opts.sd_checkpoint_cache > 0:

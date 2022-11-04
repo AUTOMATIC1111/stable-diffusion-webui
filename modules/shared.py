@@ -44,6 +44,7 @@ parser.add_argument("--precision", type=str, help="evaluate at this precision", 
 parser.add_argument("--share", action='store_true', help="use share=True for gradio and make the UI accessible through their site")
 parser.add_argument("--ngrok", type=str, help="ngrok authtoken, alternative to gradio --share", default=None)
 parser.add_argument("--ngrok-region", type=str, help="The region in which ngrok should start.", default="us")
+parser.add_argument("--enable-insecure-extension-access", action='store_true', help="enable extensions tab regardless of other options")
 parser.add_argument("--codeformer-models-path", type=str, help="Path to directory with codeformer model file(s).", default=os.path.join(models_path, 'Codeformer'))
 parser.add_argument("--gfpgan-models-path", type=str, help="Path to directory with GFPGAN model file(s).", default=os.path.join(models_path, 'GFPGAN'))
 parser.add_argument("--esrgan-models-path", type=str, help="Path to directory with ESRGAN model file(s).", default=os.path.join(models_path, 'ESRGAN'))
@@ -99,7 +100,7 @@ restricted_opts = {
     "outdir_save",
 }
 
-cmd_opts.disable_extension_access = cmd_opts.share or cmd_opts.listen
+cmd_opts.disable_extension_access = (cmd_opts.share or cmd_opts.listen) and not cmd_opts.enable_insecure_extension_access
 
 devices.device, devices.device_interrogate, devices.device_gfpgan, devices.device_swinir, devices.device_esrgan, devices.device_scunet, devices.device_codeformer = \
 (devices.cpu if any(y in cmd_opts.use_cpu for y in [x, 'all']) else devices.get_optimal_device() for x in ['sd', 'interrogate', 'gfpgan', 'swinir', 'esrgan', 'scunet', 'codeformer'])
@@ -396,6 +397,15 @@ class Options:
     def __setattr__(self, key, value):
         if self.data is not None:
             if key in self.data or key in self.data_labels:
+                assert not cmd_opts.freeze_settings, "changing settings is disabled"
+
+                comp_args = opts.data_labels[key].component_args
+                if isinstance(comp_args, dict) and comp_args.get('visible', True) is False:
+                    raise RuntimeError(f"not possible to set {key} because it is restricted")
+
+                if cmd_opts.hide_ui_dir_config and key in restricted_opts:
+                    raise RuntimeError(f"not possible to set {key} because it is restricted")
+
                 self.data[key] = value
                 return
 
@@ -412,6 +422,8 @@ class Options:
         return super(Options, self).__getattribute__(item)
 
     def save(self, filename):
+        assert not cmd_opts.freeze_settings, "saving settings is disabled"
+
         with open(filename, "w", encoding="utf8") as file:
             json.dump(self.data, file, indent=4)
 
