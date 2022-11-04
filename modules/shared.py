@@ -238,6 +238,8 @@ class OptionInfo:
 
 def options_section(section_identifier, options_dict):
     for k, v in options_dict.items():
+        if len(section_identifier) < 3:
+            section_identifier = (*section_identifier, False) # last is accordion flag
         v.section = section_identifier
 
     return options_dict
@@ -386,7 +388,7 @@ options_templates.update(options_section(('sampler-params', "Sampler parameters"
     'eta_noise_seed_delta': OptionInfo(0, "Eta noise seed delta", gr.Number, {"precision": 0}),
 }))
 
-options_templates.update(options_section(('embeddings', "Embeddings"), {
+options_templates.update(options_section(('embeddings', "Embeddings", True), {
     "embedding_blacklist": OptionInfo([], "Embedding Blacklist (selected ones will not be loaded)", gr.CheckboxGroup, lambda: {"choices": sd_hijack.model_hijack.embedding_db.get_embedding_files()}, refresh=lambda x: None),
 }))
 

@@ -1493,11 +1493,16 @@ def create_ui(wrap_gradio_gpu_call):
         items_displayed = 0
         previous_section = None
         column = None
+        accordion = None
         with gr.Row(elem_id="settings").style(equal_height=False):
             for i, (k, item) in enumerate(opts.data_labels.items()):
                 section_must_be_skipped = item.section[0] is None
 
                 if previous_section != item.section and not section_must_be_skipped:
+                    if accordion is not None:
+                        accordion.__exit__()
+                        accordion = None
+
                     if cols_displayed < settings_cols and (items_displayed >= items_per_col or previous_section is None):
                         if column is not None:
                             column.__exit__()
@@ -1510,8 +1515,12 @@ def create_ui(wrap_gradio_gpu_call):
 
                     previous_section = item.section
 
-                    elem_id, text = item.section
-                    gr.HTML(elem_id="settings_header_text_{}".format(elem_id), value='<h1 class="gr-button-lg">{}</h1>'.format(text))
+                    elem_id, text, accordion_flag = item.section
+                    if accordion_flag:
+                        accordion = gr.Accordion(label=text)
+                        accordion.__enter__()
+                    else:
+                        gr.HTML(elem_id="settings_header_text_{}".format(elem_id), value='<h1 class="gr-button-lg">{}</h1>'.format(text))
 
                 if k in quicksettings_names and not shared.cmd_opts.freeze_settings:
                     quicksettings_list.append((i, k, item))
