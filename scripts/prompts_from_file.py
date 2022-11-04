@@ -83,12 +83,13 @@ def cmdargs(line):
 
 
 def load_prompt_file(file):
-    if (file is None):
+    if file is None:
         lines = []
     else:
         lines = [x.strip() for x in file.decode('utf8', errors='ignore').split("\n")]
 
     return None, "\n".join(lines), gr.update(lines=7)
+
 
 class Script(scripts.Script):
     def title(self):
@@ -107,9 +108,9 @@ class Script(scripts.Script):
         # We don't shrink back to 1, because that causes the control to ignore [enter], and it may
         # be unclear to the user that shift-enter is needed.
         prompt_txt.change(lambda tb: gr.update(lines=7) if ("\n" in tb) else gr.update(lines=2), inputs=[prompt_txt], outputs=[prompt_txt])
-        return [checkbox_iterate, checkbox_iterate_batch, file, prompt_txt]
+        return [checkbox_iterate, checkbox_iterate_batch, prompt_txt]
 
-    def run(self, p, checkbox_iterate, checkbox_iterate_batch, file, prompt_txt: str):
+    def run(self, p, checkbox_iterate, checkbox_iterate_batch, prompt_txt: str):
         lines = [x.strip() for x in prompt_txt.splitlines()]
         lines = [x for x in lines if len(x) > 0]
 
@@ -156,6 +157,5 @@ class Script(scripts.Script):
             
             if checkbox_iterate:
                 p.seed = p.seed + (p.batch_size * p.n_iter)
-
 
         return Processed(p, images, p.seed, "")
