@@ -276,7 +276,7 @@ def check_progress_call(id_part):
     image = gr_show(False)
     preview_visibility = gr_show(False)
 
-    if opts.show_progress_every_n_steps > 0:
+    if opts.show_progress_every_n_steps != 0:
         shared.state.set_current_image()
         image = shared.state.current_image
 
@@ -1058,6 +1058,8 @@ def create_ui(wrap_gradio_gpu_call):
                         extras_batch_output_dir = gr.Textbox(label="Output directory", **shared.hide_dirs, placeholder="Leave blank to save images to the default path.")
                         show_extras_results = gr.Checkbox(label='Show result images', value=True)
 
+                submit = gr.Button('Generate', elem_id="extras_generate", variant='primary')
+
                 with gr.Tabs(elem_id="extras_resize_mode"):
                     with gr.TabItem('Scale by'):
                         upscaling_resize = gr.Slider(minimum=1.0, maximum=8.0, step=0.05, label="Resize", value=4)
@@ -1084,8 +1086,6 @@ def create_ui(wrap_gradio_gpu_call):
 
                 with gr.Group():
                     upscale_before_face_fix = gr.Checkbox(label='Upscale Before Restoring Faces', value=False)
-
-                submit = gr.Button('Generate', elem_id="extras_generate", variant='primary')
 
             result_images, html_info_x, html_info = create_output_panel("extras", opts.outdir_extras_samples)
 
@@ -1188,8 +1188,8 @@ def create_ui(wrap_gradio_gpu_call):
                     new_hypernetwork_name = gr.Textbox(label="Name")
                     new_hypernetwork_sizes = gr.CheckboxGroup(label="Modules", value=["768", "320", "640", "1280"], choices=["768", "320", "640", "1280"])
                     new_hypernetwork_layer_structure = gr.Textbox("1, 2, 1", label="Enter hypernetwork layer structure", placeholder="1st and last digit must be 1. ex:'1, 2, 1'")
-                    new_hypernetwork_activation_func = gr.Dropdown(value="linear", label="Select activation function of hypernetwork", choices=modules.hypernetworks.ui.keys)
-                    new_hypernetwork_initialization_option = gr.Dropdown(value = "Normal", label="Select Layer weights initialization. relu-like - Kaiming, sigmoid-like - Xavier is recommended", choices=["Normal", "KaimingUniform", "KaimingNormal", "XavierUniform", "XavierNormal"])
+                    new_hypernetwork_activation_func = gr.Dropdown(value="linear", label="Select activation function of hypernetwork. Recommended : Swish / Linear(none)", choices=modules.hypernetworks.ui.keys)
+                    new_hypernetwork_initialization_option = gr.Dropdown(value = "Normal", label="Select Layer weights initialization. Recommended: Kaiming for relu-like, Xavier for sigmoid-like, Normal otherwise", choices=["Normal", "KaimingUniform", "KaimingNormal", "XavierUniform", "XavierNormal"])
                     new_hypernetwork_add_layer_norm = gr.Checkbox(label="Add layer normalization")
                     new_hypernetwork_use_dropout = gr.Checkbox(label="Use dropout")
                     overwrite_old_hypernetwork = gr.Checkbox(value=False, label="Overwrite Old Hypernetwork")
@@ -1444,11 +1444,8 @@ def create_ui(wrap_gradio_gpu_call):
     def run_settings(*args):
         changed = 0
 
-        assert not shared.cmd_opts.freeze_settings, "changing settings is disabled"
-
         for key, value, comp in zip(opts.data_labels.keys(), args, components):
-            if comp != dummy_component and not opts.same_type(value, opts.data_labels[key].default):
-                return f"Bad value for setting {key}: {value}; expecting {type(opts.data_labels[key].default).__name__}", opts.dumpjson()
+            assert comp == dummy_component or opts.same_type(value, opts.data_labels[key].default), f"Bad value for setting {key}: {value}; expecting {type(opts.data_labels[key].default).__name__}"
 
         onchange_refresh = []
 
@@ -1458,17 +1455,10 @@ def create_ui(wrap_gradio_gpu_call):
             if comp == dummy_component:
                 continue
 
-            comp_args = info.component_args
-            if comp_args and isinstance(comp_args, dict) and comp_args.get('visible') is False:
-                continue
-
-            if cmd_opts.hide_ui_dir_config and key in restricted_opts:
-                continue
-
             onchange_refresh_i = [{} for x in info.onchange_refresh] if info.onchange_refresh else []
-
             oldval = opts.data.get(key, None)
-            opts.data[key] = value
+
+            setattr(opts, key, value)
 
             if oldval != value:
                 if info.onchange is not None:
@@ -1482,26 +1472,24 @@ def create_ui(wrap_gradio_gpu_call):
 
         opts.save(shared.config_filename)
 
-        return (f'{changed} settings changed.', opts.dumpjson(), *onchange_refresh)
+        return (opts.dumpjson(), f'{changed} settings changed.', *onchange_refresh)
 
     def run_settings_single(value, key):
-        assert not shared.cmd_opts.freeze_settings, "changing settings is disabled"
-
         info = opts.data_labels[key]
         onchange_refresh_i = [{} for x in info.onchange_refresh]
 
-        if not opts.same_type(value, info.default):
-            return (gr.update(visible=True), opts.dumpjson(), *onchange_refresh_i)
+        if not opts.same_type(value, opts.data_labels[key].default):
+            return (gr.update(visible=True), opts.dumpjson(), *onchange_refresh)
 
         oldval = opts.data.get(key, None)
-        if cmd_opts.hide_ui_dir_config and key in restricted_opts:
-            return (gr.update(value=oldval), opts.dumpjson(), *onchange_refresh_i)
-
-        opts.data[key] = value
+        try:
+            setattr(opts, key, value)
+        except Exception:
+            return (gr.update(value=oldval), opts.dumpjson(), *onchange_refresh)
 
         if oldval != value:
-            if opts.data_labels[key].onchange is not None:
-                opts.data_labels[key].onchange()
+            if info.onchange is not None:
+                info.onchange()
 
         if info.onchange_refresh:
             onchange_refresh_i = [create_refresh_method(component_dict[r], opts.data_labels[r].refresh, opts.data_labels[r].component_args)() for r in info.onchange_refresh]
@@ -1663,9 +1651,9 @@ def create_ui(wrap_gradio_gpu_call):
         ]
         text_settings = gr.Textbox(elem_id="settings_json", value=lambda: opts.dumpjson(), visible=False)
         settings_submit.click(
-            fn=run_settings,
+            fn=wrap_gradio_call(run_settings, extra_outputs=[gr.update()]),
             inputs=components,
-            outputs=[result, text_settings, *onchange_refresh],
+            outputs=[text_settings, result, *onchange_refresh],
         )
 
         for i, k, item in quicksettings_list:
