@@ -390,7 +390,10 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
     with torch.autocast("cuda"):
         ds = modules.textual_inversion.dataset.PersonalizedBase(data_root=data_root, width=training_width, height=training_height, repeats=shared.opts.training_image_repeats_per_epoch, placeholder_token=hypernetwork_name, model=shared.sd_model, device=devices.device, template_file=template_file, include_cond=True, batch_size=batch_size)
 
+    old_parallel_processing_allowed = shared.parallel_processing_allowed
+
     if unload:
+        shared.parallel_processing_allowed = False
         shared.sd_model.cond_stage_model.to(devices.cpu)
         shared.sd_model.first_stage_model.to(devices.cpu)
 
@@ -531,6 +534,7 @@ Last saved image: {html.escape(last_saved_image)}<br/>
 
     filename = os.path.join(shared.cmd_opts.hypernetwork_dir, f'{hypernetwork_name}.pt')
     save_hypernetwork(hypernetwork, checkpoint, hypernetwork_name, filename)
+    shared.parallel_processing_allowed = old_parallel_processing_allowed
 
     return hypernetwork, filename
 

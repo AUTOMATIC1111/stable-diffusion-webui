@@ -273,7 +273,11 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
     shared.state.textinfo = f"Preparing dataset from {html.escape(data_root)}..."
     with torch.autocast("cuda"):
         ds = modules.textual_inversion.dataset.PersonalizedBase(data_root=data_root, width=training_width, height=training_height, repeats=shared.opts.training_image_repeats_per_epoch, placeholder_token=embedding_name, model=shared.sd_model, device=devices.device, template_file=template_file, batch_size=batch_size)
+
+    old_parallel_processing_allowed = shared.parallel_processing_allowed
+
     if unload:
+        shared.parallel_processing_allowed = False
         shared.sd_model.first_stage_model.to(devices.cpu)
 
     embedding.vec.requires_grad = True
@@ -410,6 +414,7 @@ Last saved image: {html.escape(last_saved_image)}<br/>
     filename = os.path.join(shared.cmd_opts.embeddings_dir, f'{embedding_name}.pt')
     save_embedding(embedding, checkpoint, embedding_name, filename, remove_cached_checksum=True)
     shared.sd_model.first_stage_model.to(devices.device)
+    shared.parallel_processing_allowed = old_parallel_processing_allowed
 
     return embedding, filename
 
