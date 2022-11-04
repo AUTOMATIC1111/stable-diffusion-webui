@@ -188,7 +188,7 @@ class Hypernetwork:
             optimizer_saved_dict['optimizer_name'] = self.optimizer_name
 
         torch.save(state_dict, filename)
-        if self.optimizer_state_dict:
+        if shared.opts.save_optimizer_state and self.optimizer_state_dict:
             optimizer_saved_dict['hash'] = sd_models.model_hash(filename)
             optimizer_saved_dict['optimizer_state_dict'] = self.optimizer_state_dict
             torch.save(optimizer_saved_dict, filename + '.optim')
