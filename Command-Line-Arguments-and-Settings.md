@@ -57,8 +57,8 @@ Use `--port xxxx` to make the server listen on a specific port, xxxx being the w
 --gradio-img2img-tool | {color-sketch,editor} | editor | gradio image uploader tool: can be either editor for ctopping, or color-sketch for drawing |
 --disable-console-progressbars | None | False			| do not output progressbars to console |
 --enable-console-prompts | None | False				| print prompts to console when generating with txt2img and img2img |
---api | None | False | use api=True to launch the api with the webui |
---nowebui | None | False | use api=True to launch the api instead of the webui |
+--api | None | False | launch webui with API |
+--nowebui | None | False | only launch the API, without the UI |
 --ui-debug-mode | None | Fales | Don't load model to quickly launch UI |
 --device-id | DEVICE_ID | None | Select the default CUDA device to use (export CUDA_VISIBLE_DEVICES=0,1,etc might be needed before) |
 --administrator | None | False | Administrator rights |
