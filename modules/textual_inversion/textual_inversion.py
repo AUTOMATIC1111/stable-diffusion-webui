@@ -99,7 +99,6 @@ class EmbeddingDatabase:
                     name = data.get('name', name)
             else:
                 data = torch.load(path, map_location="cpu")
-                name = data.get('name', name)
 
             # textual inversion embeddings
             if 'string_to_param' in data:
