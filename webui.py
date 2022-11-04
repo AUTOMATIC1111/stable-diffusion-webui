@@ -5,6 +5,7 @@ import importlib
 import signal
 import threading
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 
 from modules.paths import script_path
@@ -93,6 +94,11 @@ def initialize():
     signal.signal(signal.SIGINT, sigint_handler)
 
 
+def setup_cors(app):
+    if cmd_opts.cors_allow_origins:
+        app.add_middleware(CORSMiddleware, allow_origins=cmd_opts.cors_allow_origins.split(','), allow_methods=['*'])
+
+
 def create_api(app):
     from modules.api.api import Api
     api = Api(app, queue_lock)
@@ -114,6 +120,7 @@ def api_only():
     initialize()
 
     app = FastAPI()
+    setup_cors(app)
     app.add_middleware(GZipMiddleware, minimum_size=1000)
     api = create_api(app)
 
@@ -146,6 +153,8 @@ def webui():
         # running web ui and do whatever the attcker wants, including installing an extension and
         # runnnig its code. We disable this here. Suggested by RyotaK.
         app.user_middleware = [x for x in app.user_middleware if x.cls.__name__ != 'CORSMiddleware']
+
+        setup_cors(app)
 
         app.add_middleware(GZipMiddleware, minimum_size=1000)
 
