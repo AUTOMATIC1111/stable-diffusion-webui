@@ -1080,7 +1080,7 @@ def create_ui(wrap_gradio_gpu_call):
                     upscale_before_face_fix = gr.Checkbox(label='Upscale Before Restoring Faces', value=False)
                 
                 with gr.Group():
-                    upscale_loop = gr.Checkbox(label='Loop upscaler', value=False)
+                    upscale_loop = gr.Checkbox(label='Apply upscaler until scale is reached', value=True)
 
                 submit = gr.Button('Generate', elem_id="extras_generate", variant='primary')
 
