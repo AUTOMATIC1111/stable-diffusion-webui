@@ -55,6 +55,16 @@
 			"name": "training-picker",
 			"url": "https://github.com/Maurdekye/training-picker",
 			"description": "Adds a tab to the webui that allows the user to automatically extract keyframes from video, and manually extract 512x512 crops of those frames for use in model training."
+		},
+		{
+			"name": "Unprompted",
+			"url": "https://github.com/ThereforeGames/unprompted",
+			"description": "Allows you to include various shortcodes in your prompts. You can pull text from files, set up your own variables, process text through conditional functions, and so much more - it's like wildcards on steroids.."
+		},
+		{
+			"name": "Booru tag autocompletion",
+			"url": "https://github.com/DominikDoom/a1111-sd-webui-tagcomplete",
+			"description": "Displays autocompletion hints for tags from image booru boards such as Danbooru. Uses local tag CSV files and includes a config for customization."
 		}
 	]
 }
