@@ -167,6 +167,8 @@ def load_model_weights(model, checkpoint_info, vae_file="auto"):
         sd_vae.restore_base_vae(model)
         checkpoints_loaded[model.sd_checkpoint_info] = model.state_dict().copy()
 
+    vae_file = sd_vae.resolve_vae(checkpoint_file, vae_file=vae_file)
+
     if checkpoint_info not in checkpoints_loaded:
         print(f"Loading weights [{sd_model_hash}] from {checkpoint_file}")
 
