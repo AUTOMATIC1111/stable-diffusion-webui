@@ -18,6 +18,9 @@ class Script:
     args_to = None
     alwayson = False
 
+    """A gr.Group component that has all script's UI inside it"""
+    group = None
+
     infotext_fields = None
     """if set in ui(), this is a list of pairs of gradio component + text; the text will be used when
     parsing infotext to set the value for the component; see ui.py's txt2img_paste_fields for an example
@@ -66,6 +69,19 @@ class Script:
         This function is called before processing begins for AlwaysVisible scripts.
         You can modify the processing object (p) here, inject hooks, etc.
         args contains all values returned by components from ui()
+        """
+
+        pass
+
+    def process_batch(self, p, *args, **kwargs):
+        """
+        Same as process(), but called for every batch.
+
+        **kwargs will have those items:
+          - batch_number - index of current batch, from 0 to number of batches-1
+          - prompts - list of prompts for current batch; you can change contents of this list but changing the number of entries will likely break things
+          - seeds - list of seeds for current batch
+          - subseeds - list of subseeds for current batch
         """
 
         pass
@@ -218,8 +234,6 @@ class ScriptRunner:
 
             for control in controls:
                 control.custom_script_source = os.path.basename(script.filename)
-                if not script.alwayson:
-                    control.visible = False
 
             if script.infotext_fields is not None:
                 self.infotext_fields += script.infotext_fields
@@ -229,40 +243,41 @@ class ScriptRunner:
             script.args_to = len(inputs)
 
         for script in self.alwayson_scripts:
-            with gr.Group():
+            with gr.Group() as group:
                 create_script_ui(script, inputs, inputs_alwayson)
+
+            script.group = group
 
         dropdown = gr.Dropdown(label="Script", elem_id="script_list", choices=["None"] + self.titles, value="None", type="index")
         dropdown.save_to_config = True
         inputs[0] = dropdown
 
         for script in self.selectable_scripts:
-            create_script_ui(script, inputs, inputs_alwayson)
+            with gr.Group(visible=False) as group:
+                create_script_ui(script, inputs, inputs_alwayson)
+
+            script.group = group
 
         def select_script(script_index):
-            if 0 < script_index <= len(self.selectable_scripts):
-                script = self.selectable_scripts[script_index-1]
-                args_from = script.args_from
-                args_to = script.args_to
-            else:
-                args_from = 0
-                args_to = 0
+            selected_script = self.selectable_scripts[script_index - 1] if script_index>0 else None
 
-            return [ui.gr_show(True if i == 0 else args_from <= i < args_to or is_alwayson) for i, is_alwayson in enumerate(inputs_alwayson)]
+            return [gr.update(visible=selected_script == s) for s in self.selectable_scripts]
 
         def init_field(title):
+            """called when an initial value is set from ui-config.json to show script's UI components"""
+
             if title == 'None':
                 return
+
             script_index = self.titles.index(title)
-            script = self.selectable_scripts[script_index]
-            for i in range(script.args_from, script.args_to):
-                inputs[i].visible = True
+            self.selectable_scripts[script_index].group.visible = True
 
         dropdown.init_field = init_field
+
         dropdown.change(
             fn=select_script,
             inputs=[dropdown],
-            outputs=inputs
+            outputs=[script.group for script in self.selectable_scripts]
         )
 
         return inputs
@@ -292,6 +307,15 @@ class ScriptRunner:
                 script.process(p, *script_args)
             except Exception:
                 print(f"Error running process: {script.filename}", file=sys.stderr)
+                print(traceback.format_exc(), file=sys.stderr)
+
+    def process_batch(self, p, **kwargs):
+        for script in self.alwayson_scripts:
+            try:
+                script_args = p.script_args[script.args_from:script.args_to]
+                script.process_batch(p, *script_args, **kwargs)
+            except Exception:
+                print(f"Error running process_batch: {script.filename}", file=sys.stderr)
                 print(traceback.format_exc(), file=sys.stderr)
 
     def postprocess(self, p, processed):
