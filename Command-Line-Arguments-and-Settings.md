@@ -35,9 +35,11 @@ Use `--port xxxx` to make the server listen on a specific port, xxxx being the w
 --scunet-models-path | SCUNET_MODELS_PATH | models/ScuNET | Path to directory with ScuNET model file(s). |
 --swinir-models-path | SWINIR_MODELS_PATH | models/SwinIR | Path to directory with SwinIR and SwinIR v2 model file(s). |
 --ldsr-models-path | LDSR_MODELS_PATH | models/LDSR	| Path to directory with LDSR model file(s). |
+--clip-models-path | CLIP_MODELS_PATH | None | Path to directory with CLIP model file(s). |
 --vae-path | VAE_PATH | None  					| Path to Variational Autoencoders model |
 --embeddings-dir | EMBEDDINGS_DIR | embeddings/		 | embeddings directory for textual inversion (default: embeddings) |
 --hypernetwork-dir | HYPERNETWORK_DIR | models/hypernetworks/	 | hypernetwork directory |
+--localizations-dir | LOCALIZATIONS_DIR | localizations/ | localizations directory
 --styles-file | STYLES_FILE | styles.csv 				| filename to use for styles |
 --ui-config-file | UI_CONFIG_FILE | 	ui-config.json	| filename to use for ui configuration |
 --no-progressbar-hiding | None | False 			 | do not hide progressbar in gradio UI (we hide it because it slows down ML if you have hardware acceleration in browser) |
@@ -48,11 +50,18 @@ Use `--port xxxx` to make the server listen on a specific port, xxxx being the w
 --listen  | None | False            					| launch gradio with 0.0.0.0 as server name, allowing to respond to network requests |
 --port | PORT | 7860           					| launch gradio with given server port, you need root/admin rights for ports < 1024, defaults to 7860 if available |
 --hide-ui-dir-config | None | False  					| hide directory configuration from webui |
+--freeze-settings | None | False | disable editing settings |
+--enable-insecure-extension-access | None | False | enable extensions tab regardless of other options |
 --gradio-debug | None | False        					| launch gradio with --debug option |
 --gradio-auth | GRADIO_AUTH | None 				| set gradio authentication like "username:password"; or comma-delimit multiple like "u1:p1,u2:p2,u3:p3" |
 --gradio-img2img-tool | {color-sketch,editor} | editor | gradio image uploader tool: can be either editor for ctopping, or color-sketch for drawing |
 --disable-console-progressbars | None | False			| do not output progressbars to console |
 --enable-console-prompts | None | False				| print prompts to console when generating with txt2img and img2img |
+--api | None | False | use api=True to launch the api with the webui |
+--nowebui | None | False | use api=True to launch the api instead of the webui |
+--ui-debug-mode | None | Fales | Don't load model to quickly launch UI |
+--device-id | DEVICE_ID | None | Select the default CUDA device to use (export CUDA_VISIBLE_DEVICES=0,1,etc might be needed before) |
+--administrator | None | False | Administrator rights |
 | **PERFORMANCE** |
 --xformers | None | False           					| enable xformers for cross attention layers |
 --reinstall-xformers | None | False           					| force reinstall xformers. Useful for upgrading - but remove it after upgrading or you'll reinstall xformers perpetually. |
