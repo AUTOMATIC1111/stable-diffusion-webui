@@ -1644,8 +1644,6 @@ def create_ui(wrap_gradio_gpu_call):
             component_dict[r] 
             for k, v in opts.data_labels.items() 
             if k not in quicksettings_names 
-                and not (v.component_args and isinstance(v.component_args, dict) and v.component_args.get('visible') is False)
-                and not (cmd_opts.hide_ui_dir_config and k in restricted_opts)
             for r in v.onchange_refresh 
             if v.onchange_refresh
         ]
