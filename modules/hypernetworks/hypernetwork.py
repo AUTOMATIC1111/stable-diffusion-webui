@@ -38,12 +38,14 @@ class HypernetworkModule(torch.nn.Module):
     activation_dict.update({cls_name.lower(): cls_obj for cls_name, cls_obj in inspect.getmembers(torch.nn.modules.activation) if inspect.isclass(cls_obj) and cls_obj.__module__ == 'torch.nn.modules.activation'})
 
     def __init__(self, dim, state_dict=None, layer_structure=None, activation_func=None, weight_init='Normal',
-                 add_layer_norm=False, use_dropout=False, activate_output=False, last_layer_dropout=True):
+                 add_layer_norm=False, activate_output=False, dropout_structure=None):
         super().__init__()
 
         assert layer_structure is not None, "layer_structure must not be None"
         assert layer_structure[0] == 1, "Multiplier Sequence should start with size 1!"
         assert layer_structure[-1] == 1, "Multiplier Sequence should end with size 1!"
+        assert dropout_structure is None or dropout_structure[0] == dropout_structure[-1] == 0, "Dropout Sequence should start and end with probability 0!"
+        assert dropout_structure is None or len(dropout_structure) == len(layer_structure), "Dropout Sequence should match length with layer structure!"
 
         linears = []
         for i in range(len(layer_structure) - 1):
@@ -63,9 +65,12 @@ class HypernetworkModule(torch.nn.Module):
             if add_layer_norm:
                 linears.append(torch.nn.LayerNorm(int(dim * layer_structure[i+1])))
 
-            # Add dropout except last layer
-            if use_dropout and (i < len(layer_structure) - 3 or last_layer_dropout and i < len(layer_structure) - 2):
-                linears.append(torch.nn.Dropout(p=0.3))
+            # Everything should be now parsed into dropout structure, and applied here.
+            # Since we only have dropouts after layers, dropout structure should start with 0 and end with 0.
+            if dropout_structure is not None and (p := dropout_structure[i+1]) > 0:
+                assert 0 < p < 1, "Dropout probability should be 0 or float between 0 and 1!"
+                linears.append(torch.nn.Dropout(p=p))
+            # Code explanation : [1, 2, 1] -> dropout is missing when last_layer_dropout is false. [1, 2, 2, 1] -> [0, 0.3, 0, 0], when its True, [0, 0.3, 0.3, 0].
 
         self.linear = torch.nn.Sequential(*linears)
 
@@ -126,6 +131,21 @@ def apply_strength(value=None):
     HypernetworkModule.multiplier = value if value is not None else shared.opts.sd_hypernetwork_strength
 
 
+def parse_dropout_structure(layer_structure, use_dropout, last_layer_dropout):
+    if layer_structure is None:
+        layer_structure = [1, 2, 1]
+    if not use_dropout:
+        return [0] * len(layer_structure)
+    dropout_values = [0]
+    dropout_values.extend([0.3] * (len(layer_structure) - 3))
+    if last_layer_dropout:
+        dropout_values.append(0.3)
+    else:
+        dropout_values.append(0)
+    dropout_values.append(0)
+    return dropout_values
+
+
 class Hypernetwork:
     filename = None
     name = None
@@ -146,16 +166,20 @@ class Hypernetwork:
         self.last_layer_dropout = kwargs['last_layer_dropout'] if 'last_layer_dropout' in kwargs else True
         self.optimizer_name = None
         self.optimizer_state_dict = None
+        self.dropout_structure = kwargs['dropout_structure'] if 'dropout_structure' in kwargs else None
+        if self.dropout_structure is None:
+            self.dropout_structure = parse_dropout_structure(self.layer_structure, self.use_dropout, self.last_layer_dropout)
 
         for size in enable_sizes or []:
             self.layers[size] = (
                 HypernetworkModule(size, None, self.layer_structure, self.activation_func, self.weight_init,
-                                   self.add_layer_norm, self.use_dropout, self.activate_output, last_layer_dropout=self.last_layer_dropout),
+                                   self.add_layer_norm, self.activate_output, dropout_structure=self.dropout_structure),
                 HypernetworkModule(size, None, self.layer_structure, self.activation_func, self.weight_init,
-                                   self.add_layer_norm, self.use_dropout, self.activate_output, last_layer_dropout=self.last_layer_dropout),
+                                   self.add_layer_norm, self.activate_output, dropout_structure=self.dropout_structure),
             )
+        self.eval()
 
-    def weights(self):
+    def weights(self):  # This is only called when trainable weight is required.
         res = []
 
         for k, layers in self.layers.items():
@@ -164,6 +188,11 @@ class Hypernetwork:
                 res += layer.trainables()
 
         return res
+
+    def eval(self):
+        for k, layers in self.layers.items():
+            for layer in layers:
+                layer.eval()
 
     def save(self, filename):
         state_dict = {}
@@ -178,11 +207,10 @@ class Hypernetwork:
         state_dict['activation_func'] = self.activation_func
         state_dict['is_layer_norm'] = self.add_layer_norm
         state_dict['weight_initialization'] = self.weight_init
-        state_dict['use_dropout'] = self.use_dropout
         state_dict['sd_checkpoint'] = self.sd_checkpoint
         state_dict['sd_checkpoint_name'] = self.sd_checkpoint_name
         state_dict['activate_output'] = self.activate_output
-        state_dict['last_layer_dropout'] = self.last_layer_dropout
+        state_dict['dropout_structure'] = self.dropout_structure
 
         if self.optimizer_name is not None:
             optimizer_saved_dict['optimizer_name'] = self.optimizer_name
@@ -212,7 +240,12 @@ class Hypernetwork:
         print(f"Dropout usage is set to {self.use_dropout}" )
         self.activate_output = state_dict.get('activate_output', True)
         print(f"Activate last layer is set to {self.activate_output}")
-        self.last_layer_dropout = state_dict.get('last_layer_dropout', False)
+        self.last_layer_dropout = state_dict.get('last_layer_dropout', False)  # Silent fix for HNs before 4918eb6
+        # Dropout structure should have same length as layer structure, Every digits should be in [0,1), and last digit must be 0.
+        self.dropout_structure = state_dict.get('dropout_structure', None)
+        if self.dropout_structure is None:
+            self.dropout_structure = parse_dropout_structure(self.layer_structure, self.use_dropout, self.last_layer_dropout)
+        print(f"Dropout structure is set to {self.dropout_structure}")
 
         optimizer_saved_dict = torch.load(self.filename + '.optim', map_location = 'cpu') if os.path.exists(self.filename + '.optim') else {}
         self.optimizer_name = optimizer_saved_dict.get('optimizer_name', 'AdamW')
@@ -230,9 +263,9 @@ class Hypernetwork:
             if type(size) == int:
                 self.layers[size] = (
                     HypernetworkModule(size, sd[0], self.layer_structure, self.activation_func, self.weight_init,
-                                       self.add_layer_norm, self.use_dropout, self.activate_output, last_layer_dropout=self.last_layer_dropout),
+                                       self.add_layer_norm, self.activate_output, self.dropout_structure),
                     HypernetworkModule(size, sd[1], self.layer_structure, self.activation_func, self.weight_init,
-                                       self.add_layer_norm, self.use_dropout, self.activate_output, last_layer_dropout=self.last_layer_dropout),
+                                       self.add_layer_norm, self.activate_output, self.dropout_structure),
                 )
 
         self.name = state_dict.get('name', self.name)
@@ -576,6 +609,7 @@ Last saved image: {html.escape(last_saved_image)}<br/>
     save_hypernetwork(hypernetwork, checkpoint, hypernetwork_name, filename)
     del optimizer
     hypernetwork.optimizer_state_dict = None  # dereference it after saving, to save memory.
+    hypernetwork.eval()
     return hypernetwork, filename
 
 def save_hypernetwork(hypernetwork, checkpoint, hypernetwork_name, filename):
