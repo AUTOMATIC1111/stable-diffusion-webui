@@ -408,6 +408,7 @@
     "Training": "訓練",
     "Unload VAE and CLIP from VRAM when training": "訓練時從顯存（VRAM）中取消 VAE 和 CLIP 的載入",
     "Move VAE and CLIP to RAM when training hypernetwork. Saves VRAM.": "訓練時將 VAE 和 CLIP 從顯存（VRAM）移放到內存（RAM），節省顯存（VRAM）",
+    "Move VAE and CLIP to RAM when training if possible. Saves VRAM.": "訓練時將 VAE 和 CLIP 從顯存（VRAM）移放到內存（RAM）如果可行的話，節省顯存（VRAM）",
     "Filename word regex": "檔案名用詞的正則表達式",
     "Filename join string": "檔案名連接用字串",
     "Number of repeats for a single input image per epoch; used only for displaying epoch number": "每個 epoch 中單個輸入圖像的重複次數； 僅用於顯示 epoch 數",
@@ -590,6 +591,7 @@
     "Artists to study": "藝術家圖庫",
     "Aesthetic Image Scorer": "美術風格評分",
     "Dataset Tag Editor": "數據集標記編輯器",
+    "Face restoration model": "面部修復模型",
     "Install": "安裝",
     "Installing...": "安裝中…",
     "Installed": "已安裝"
