@@ -135,7 +135,7 @@ def refresh_vae_list(vae_dir=vae_dir, model_dir=model_dir, checkpoint_info=None)
         name = get_filename(filepath)
         res[name] = filepath
 
-    vae_auto_label = f"auto ({get_filename(resolve_vae(verbose=False))})"
+    vae_auto_label = f"auto ({get_filename(resolve_vae(verbose=False, skip_selection=True))})"
 
     vae_list.clear()
     vae_list.extend([vae_auto_label, *default_vae_list[1:]])
@@ -171,7 +171,7 @@ def get_vae_from_settings(vae_file="auto", verbose=True):
     return vae_file
 
 
-def resolve_vae(checkpoint_file=None, vae_file="auto", verbose=True):
+def resolve_vae(checkpoint_file=None, vae_file="auto", verbose=True, skip_selection=False):
     global first_load, vae_dict, vae_list
 
     if not checkpoint_file:
@@ -194,7 +194,7 @@ def resolve_vae(checkpoint_file=None, vae_file="auto", verbose=True):
             if verbose:
                 print("VAE provided as command line argument doesn't exist")
     # fallback to selector in settings, if vae selector not set to act as default fallback
-    if not shared.opts.sd_vae_as_default:
+    if not shared.opts.sd_vae_as_default and not skip_selection:
         vae_file = get_vae_from_settings(vae_file, verbose=verbose)
     # vae-path cmd arg takes priority for auto
     if vae_file in vae_auto_set and shared.cmd_opts.vae_path is not None:
@@ -222,7 +222,7 @@ def resolve_vae(checkpoint_file=None, vae_file="auto", verbose=True):
                     print("Using VAE found similar to selected model")
                 break
     # if vae selector were set as default fallback, call here
-    if shared.opts.sd_vae_as_default:
+    if shared.opts.sd_vae_as_default and not skip_selection:
         vae_file = get_vae_from_settings(vae_file, verbose=verbose)
 
     # No more fallbacks for auto
