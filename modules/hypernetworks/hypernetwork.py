@@ -382,6 +382,7 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
     shared.state.textinfo = "Initializing hypernetwork training..."
     shared.state.job_count = steps
 
+    hypernetwork_name = hypernetwork_name.rsplit('(', 1)[0]
     filename = os.path.join(shared.cmd_opts.hypernetwork_dir, f'{hypernetwork_name}.pt')
 
     log_directory = os.path.join(log_directory, datetime.datetime.now().strftime("%Y-%m-%d"), hypernetwork_name)
@@ -393,7 +394,6 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
     else:
         hypernetwork_dir = None
 
-    hypernetwork_name = hypernetwork_name.rsplit('(', 1)[0]
     if create_image_every > 0:
         images_dir = os.path.join(log_directory, "images")
         os.makedirs(images_dir, exist_ok=True)
