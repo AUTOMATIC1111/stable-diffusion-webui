@@ -297,3 +297,4 @@ def reload_model_weights(sd_model=None, info=None):
         sd_model.to(devices.device)
 
     print(f"Weights loaded.")
+    return sd_model
