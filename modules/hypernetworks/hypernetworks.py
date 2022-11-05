@@ -235,7 +235,7 @@ class ParallelForward(Forward):
         # parse
         for keys in sequence:
             self.callers[keys] = Forward.parse(keys)
-            self.weights[keys] = sequence[keys]
+            self.weights[keys] = sequence[keys] / sum(sequence.values())
 
     def forward(self, context, context_v = None, layer = None):
         ctx_k, ctx_v = torch.zeros_like(context, device = context.device), torch.zeros_like(context, device = context.device)
