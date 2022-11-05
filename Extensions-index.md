@@ -69,7 +69,7 @@
 		{
 			"name": "novelai-2-local-prompt",
 			"url": "https://github.com/animerl/novelai-2-local-prompt",
-			"description": "Automatically process the brackets, prefix them with a quality tag, and insert a default value in the negative prompt. Multipliers are rounded off to four decimal places. Call back previously generated prompts, starting with the newest."
+			"description": "Add a button to convert the prompts used in NovelAI for use in the WebUI. In addition, add a button that allows you to recall a previously used prompt."
 		}
 	]
 }
