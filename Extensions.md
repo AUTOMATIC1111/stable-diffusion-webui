@@ -188,6 +188,6 @@ Displays autocompletion hints for tags from "image booru" boards such as Danboor
 ## novelai-2-local-prompt
 https://github.com/animerl/novelai-2-local-prompt
 
-Automatically process the brackets, prefix them with a quality tag, and insert a default value in the negative prompt. Multipliers are rounded off to four decimal places. Call back previously generated prompts, starting with the newest.
+Add a button to convert the prompts used in NovelAI for use in the WebUI. In addition, add a button that allows you to temporarily save the prompt.
 
 ![pic](https://user-images.githubusercontent.com/113022648/197382468-65f4a96d-48af-4890-8fcf-0ec7c3b9ec3a.png)
