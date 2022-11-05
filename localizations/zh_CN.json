@@ -109,7 +109,7 @@
     "Sigma noise": "Sigma noise",
     "Eta": "Eta",
     "Clip skip": "Clip 跳过",
-    "Denoising": "去噪",
+    "Denoising": "重绘幅度",
     "Cond. Image Mask Weight": "图像调节屏蔽度",
     "X values": "X轴数值",
     "Y type": "Y轴类型",

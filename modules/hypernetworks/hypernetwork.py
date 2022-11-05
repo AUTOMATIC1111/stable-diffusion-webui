@@ -276,7 +276,7 @@ class Hypernetwork:
 
 def list_hypernetworks(path):
     res = {}
-    for filename in glob.iglob(os.path.join(path, '**/*.pt'), recursive=True):
+    for filename in sorted(glob.iglob(os.path.join(path, '**/*.pt'), recursive=True)):
         name = os.path.splitext(os.path.basename(filename))[0]
         # Prevent a hypothetical "None.pt" from being listed.
         if name != "None":
@@ -462,13 +462,16 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
     weights = hypernetwork.weights()
     for weight in weights:
         weight.requires_grad = True
+
     # Here we use optimizer from saved HN, or we can specify as UI option.
-    if (optimizer_name := hypernetwork.optimizer_name) in optimizer_dict:
+    if hypernetwork.optimizer_name in optimizer_dict:
         optimizer = optimizer_dict[hypernetwork.optimizer_name](params=weights, lr=scheduler.learn_rate)
+        optimizer_name = hypernetwork.optimizer_name
     else:
-        print(f"Optimizer type {optimizer_name} is not defined!")
+        print(f"Optimizer type {hypernetwork.optimizer_name} is not defined!")
         optimizer = torch.optim.AdamW(params=weights, lr=scheduler.learn_rate)
         optimizer_name = 'AdamW'
+
     if hypernetwork.optimizer_state_dict:  # This line must be changed if Optimizer type can be different from saved optimizer.
         try:
             optimizer.load_state_dict(hypernetwork.optimizer_state_dict)

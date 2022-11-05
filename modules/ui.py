@@ -276,7 +276,7 @@ def check_progress_call(id_part):
     image = gr_show(False)
     preview_visibility = gr_show(False)
 
-    if opts.show_progress_every_n_steps > 0:
+    if opts.show_progress_every_n_steps != 0:
         shared.state.set_current_image()
         image = shared.state.current_image
 
@@ -1441,26 +1441,27 @@ def create_ui(wrap_gradio_gpu_call):
         changed = 0
 
         for key, value, comp in zip(opts.data_labels.keys(), args, components):
-            if comp != dummy_component and not opts.same_type(value, opts.data_labels[key].default):
-                return f"Bad value for setting {key}: {value}; expecting {type(opts.data_labels[key].default).__name__}", opts.dumpjson()
+            assert comp == dummy_component or opts.same_type(value, opts.data_labels[key].default), f"Bad value for setting {key}: {value}; expecting {type(opts.data_labels[key].default).__name__}"
 
         for key, value, comp in zip(opts.data_labels.keys(), args, components):
             if comp == dummy_component:
                 continue
 
             oldval = opts.data.get(key, None)
-
-            setattr(opts, key, value)
-
+            try:
+                setattr(opts, key, value)
+            except RuntimeError:
+                continue
             if oldval != value:
                 if opts.data_labels[key].onchange is not None:
                     opts.data_labels[key].onchange()
 
                 changed += 1
-
-        opts.save(shared.config_filename)
-
-        return f'{changed} settings changed.', opts.dumpjson()
+        try:
+            opts.save(shared.config_filename)
+        except RuntimeError:
+            return opts.dumpjson(), f'{changed} settings changed without save.'
+        return opts.dumpjson(), f'{changed} settings changed.'
 
     def run_settings_single(value, key):
         if not opts.same_type(value, opts.data_labels[key].default):
@@ -1624,9 +1625,9 @@ def create_ui(wrap_gradio_gpu_call):
 
         text_settings = gr.Textbox(elem_id="settings_json", value=lambda: opts.dumpjson(), visible=False)
         settings_submit.click(
-            fn=run_settings,
+            fn=wrap_gradio_call(run_settings, extra_outputs=[gr.update()]),
             inputs=components,
-            outputs=[result, text_settings],
+            outputs=[text_settings, result],
         )
 
         for i, k, item in quicksettings_list:
