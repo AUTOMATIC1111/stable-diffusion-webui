@@ -1580,6 +1580,9 @@ def create_ui(wrap_gradio_gpu_call):
         if column is not None:
             column.__exit__()
 
+        if accordion is not None:
+            accordion.__exit__()
+
     interfaces = [
         (txt2img_interface, "txt2img", "txt2img"),
         (img2img_interface, "img2img", "img2img"),
