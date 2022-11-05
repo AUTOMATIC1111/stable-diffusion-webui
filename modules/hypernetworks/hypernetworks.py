@@ -4,9 +4,6 @@ import os.path
 import torch
 
 from modules import devices, shared
-from modules.hypernetworks.hypernetwork import Hypernetwork
-
-#from modules.hypernetworks.hypernetwork import Hypernetwork
 
 lazy_load : bool = False #when this is enabled, HNs will be loaded when required.
 
@@ -15,16 +12,16 @@ lazy_load : bool = False #when this is enabled, HNs will be loaded when required
 class DynamicDict(dict): # Brief dict that dynamically unloads Hypernetworks if required.
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.current : Hypernetwork | None = None
+        self.current = None
         self.hash = None
         self.dict = {**kwargs}
 
     def prepare(self, key, value):
         if lazy_load and self.current is not None and (key != self.current): # or filename is identical, but somehow hash is changed?
-            self.current: Hypernetwork
             self.current.to('cpu')
         self.current = value
-        self.current.to(devices.device)
+        if self.current is not None:
+            self.current.to(devices.device)
 
     def __getitem__(self, item):
         value = self.dict[item]
@@ -40,7 +37,7 @@ class DynamicDict(dict): # Brief dict that dynamically unloads Hypernetworks if 
         return item in self.dict
 
 
-available_opts: dict[str,Hypernetwork] = DynamicDict()  # string -> HN itself.
+available_opts= DynamicDict()  # string -> HN itself.
 
 
 
@@ -190,7 +187,7 @@ class Forward:
         else:
             raise ValueError(f"Cannot parse non-list sequence {sequence}!")
 
-
+from modules.hypernetworks.hypernetwork import Hypernetwork
 class SingularForward(Forward):
 
     def __init__(self, processor:str, strength:int|float):
@@ -199,7 +196,8 @@ class SingularForward(Forward):
         self.strength: int | float = strength
         super(SingularForward, self).__init__()
         # parse. We expect parsing Singletons or (k,v) pair here, which is HN Name and Strength.
-        available_opts[self.processor] = Hypernetwork().load(shared.hypernetworks[self.processor])
+        available_opts[self.processor] = Hypernetwork()
+        available_opts[self.processor].load(shared.hypernetworks[self.processor])
         # assert self.processor in available_opts, f"Hypernetwork named {processor} is not ready!"
         assert 0 <= self.strength <=1 , "Strength must be between 0 and 1!"
 
@@ -233,7 +231,12 @@ class ParallelForward(Forward):
             self.weights[keys] = sequence[keys]
 
     def forward(self, context, context_v = None, layer = None):
-        return torch.sum(torch.tensor([self.callers[k].forward(context, context_v, layer=layer) * self.weights[k] for k in self.callers]), axis=0)
+        ctx_k, ctx_v = torch.zeros_like(context, device = context.device), torch.zeros_like(context, device = context.device)
+        for key in self.callers:
+            k, v = self.callers[key].forward(context, context_v, layer=layer)
+            ctx_k += k * self.weights[key]
+            ctx_v += v * self.weights[key]
+        return ctx_k, ctx_v
 
     def __str__(self):
         return "ParallelForward>" +str({str(k): str(v) for (k,v) in self.callers.items()})

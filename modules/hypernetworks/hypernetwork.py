@@ -13,8 +13,6 @@ import tqdm
 from einops import rearrange, repeat
 from ldm.util import default
 from modules import devices, processing, sd_models, shared
-from modules.hypernetworks import hypernetworks
-from modules.hypernetworks.hypernetworks import Forward
 from modules.textual_inversion import textual_inversion
 from modules.textual_inversion.learn_schedule import LearnRateScheduler
 from torch import einsum
@@ -229,6 +227,15 @@ class Hypernetwork:
         for values in self.layers.values():
             values[0].to(device)
             values[1].to(device)
+    def forward(self, context, context_v = None, layer = None):
+        context_layers = self.layers.get(context.shape[2], None)
+        if context_v is None:
+            context_v = context
+        if context_layers is None:
+            return context, context
+        if layer is not None and hasattr(layer, 'hyper_k') and hasattr(layer, 'hyper_v'):
+            layer.hyper_v = context_layers[0], layer.hyper_k = context_layers[1]
+        return context_layers[0].forward_strength(context, HypernetworkModule.multiplier), context_layers[1].forward_strength(context_v, HypernetworkModule.multiplier)
 
 
 def list_hypernetworks(path):
@@ -247,10 +254,11 @@ def list_hypernetworks(path):
 
 def load_hypernetwork(filename):
     path = shared.hypernetworks.get(filename, None)
+    print(path)
     # Prevent any file named "None.pt" from being loaded.
     if path is not None and filename != "None":
         print(f"Loading hypernetwork {filename}")
-        if filename.endswith(".pt"):
+        if path.endswith(".pt"):
             try:
                 shared.loaded_hypernetwork = Hypernetwork()
                 shared.loaded_hypernetwork.load(path)
@@ -258,10 +266,11 @@ def load_hypernetwork(filename):
             except Exception:
                 print(f"Error loading hypernetwork {path}", file=sys.stderr)
                 print(traceback.format_exc(), file=sys.stderr)
-        elif filename.endswith(".hns"):
+        elif path.endswith(".hns"):
             # Load Hypernetwork processing
             try:
-                shared.loaded_hypernetwork = hypernetworks.load(filename)
+                from modules.hypernetworks import hypernetworks
+                shared.loaded_hypernetwork = hypernetworks.load(path)
                 print()
             except Exception:
                 print(f"Error loading hypernetwork processing file {path}", file=sys.stderr)
@@ -286,7 +295,7 @@ def find_closest_hypernetwork_name(search: str):
     return applicable[0]
 
 
-def apply_hypernetwork(hypernetwork:Hypernetwork|Forward, context, layer=None):
+def apply_hypernetwork(hypernetwork, context, layer=None):
 
     if hypernetwork is None:
         return context, context
