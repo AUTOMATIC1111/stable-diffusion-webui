@@ -1,1 +1,0 @@
-[($outro) ::<eval>$denoising_strength / $cfg_scale</eval>][a $new_term:$intro $outro:0.95]

@@ -28,3 +28,9 @@
 [submodule "scripts/animator"]
 	path = scripts/animator
 	url = https://github.com/Animator-Anon/Animator.git
+[submodule "extensions/autocomplete"]
+	path = extensions/autocomplete
+	url = https://github.com/DominikDoom/a1111-sd-webui-tagcomplete.git
+[submodule "scripts/advanced_loopback"]
+	path = scripts/advanced_loopback
+	url = https://github.com/Extraltodeus/advanced-loopback-for-sd-webui.git

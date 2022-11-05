@@ -1,1 +1,0 @@
-$intro subject $outro, $new_term
