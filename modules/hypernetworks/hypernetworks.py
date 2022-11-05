@@ -163,12 +163,12 @@ class Forward:
     @staticmethod
     def parseParallel(sequence)-> dict: # accepts sequence, returns {"Name or sequence" : weight...}
         assert len(sequence) > 1, f"Length of sequence {sequence} was not enough for parallel!"
-        if type(sequence) is set:
-            assert all(type(key) is str for key in sequence), f"All keys should be Hypernetwork Name/Sequence for Set but given :{sequence}"
+        if type(sequence) is set: # only allows hashable types. otherwise it should be supplied as string cover
+            assert all(type(key) in (str, tuple) for key in sequence), f"All keys should be Hypernetwork Name/Sequence for Set but given :{sequence}"
             return {key: 1/len(sequence) for key in sequence}
         elif type(sequence) is dict:
             sequence : dict
-            assert all(type(key) is str for key in sequence.keys()), f"All keys should be Hypernetwork Name/Sequence for Dict but given :{sequence}"
+            assert all(type(key) in (str, tuple) for key in sequence.keys()), f"All keys should be Hypernetwork Name/Sequence for Dict but given :{sequence}"
             assert all(type(value) in (int, float) for value in sequence.values()), f"All values should be int/float for Dict but given :{sequence}"
             return sequence
         else:
