@@ -188,6 +188,13 @@ class Forward:
             raise ValueError(f"Cannot parse non-list sequence {sequence}!")
 
 from modules.hypernetworks.hypernetwork import Hypernetwork
+
+
+def find_non_hash_key(target):
+    closest = [x for x in shared.hypernetworks if x.rsplit('(', 1)[0] == target or x == target]
+    if closest:
+        return shared.hypernetworks[closest[0]]
+    raise KeyError(f"{target} is not found in Hypernetworks!")
 class SingularForward(Forward):
 
     def __init__(self, processor, strength):
@@ -197,7 +204,7 @@ class SingularForward(Forward):
         super(SingularForward, self).__init__()
         # parse. We expect parsing Singletons or (k,v) pair here, which is HN Name and Strength.
         available_opts[self.processor] = Hypernetwork()
-        available_opts[self.processor].load(shared.hypernetworks[self.processor])
+        available_opts[self.processor].load(find_non_hash_key(self.processor))
         # assert self.processor in available_opts, f"Hypernetwork named {processor} is not ready!"
         assert 0 <= self.strength <=1 , "Strength must be between 0 and 1!"
 
