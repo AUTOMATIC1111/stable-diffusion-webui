@@ -5,6 +5,7 @@ import importlib
 import signal
 import threading
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 
 from modules.paths import script_path
@@ -34,7 +35,7 @@ from modules.shared import cmd_opts
 import modules.hypernetworks.hypernetwork
 
 queue_lock = threading.Lock()
-
+server_name = "0.0.0.0" if cmd_opts.listen else cmd_opts.server_name
 
 def wrap_queued_call(func):
     def f(*args, **kwargs):
@@ -85,12 +86,31 @@ def initialize():
     shared.opts.onchange("sd_hypernetwork", wrap_queued_call(lambda: modules.hypernetworks.hypernetwork.load_hypernetwork(shared.opts.sd_hypernetwork)))
     shared.opts.onchange("sd_hypernetwork_strength", modules.hypernetworks.hypernetwork.apply_strength)
 
+    if cmd_opts.tls_keyfile is not None and cmd_opts.tls_keyfile is not None:
+
+        try:
+            if not os.path.exists(cmd_opts.tls_keyfile):
+                print("Invalid path to TLS keyfile given")
+            if not os.path.exists(cmd_opts.tls_certfile):
+                print(f"Invalid path to TLS certfile: '{cmd_opts.tls_certfile}'")
+        except TypeError:
+            cmd_opts.tls_keyfile = cmd_opts.tls_certfile = None
+            print("TLS setup invalid, running webui without TLS")
+        else:
+            print("Running with TLS")
+
+
     # make the program just exit at ctrl+c without waiting for anything
     def sigint_handler(sig, frame):
         print(f'Interrupted with signal {sig} in {frame}')
         os._exit(0)
 
     signal.signal(signal.SIGINT, sigint_handler)
+
+
+def setup_cors(app):
+    if cmd_opts.cors_allow_origins:
+        app.add_middleware(CORSMiddleware, allow_origins=cmd_opts.cors_allow_origins.split(','), allow_methods=['*'])
 
 
 def create_api(app):
@@ -114,6 +134,7 @@ def api_only():
     initialize()
 
     app = FastAPI()
+    setup_cors(app)
     app.add_middleware(GZipMiddleware, minimum_size=1000)
     api = create_api(app)
 
@@ -131,8 +152,10 @@ def webui():
 
         app, local_url, share_url = demo.launch(
             share=cmd_opts.share,
-            server_name="0.0.0.0" if cmd_opts.listen else None,
+            server_name=server_name,
             server_port=cmd_opts.port,
+            ssl_keyfile=cmd_opts.tls_keyfile,
+            ssl_certfile=cmd_opts.tls_certfile,
             debug=cmd_opts.gradio_debug,
             auth=[tuple(cred.split(':')) for cred in cmd_opts.gradio_auth.strip('"').split(',')] if cmd_opts.gradio_auth else None,
             inbrowser=cmd_opts.autolaunch,
@@ -146,6 +169,8 @@ def webui():
         # running web ui and do whatever the attcker wants, including installing an extension and
         # runnnig its code. We disable this here. Suggested by RyotaK.
         app.user_middleware = [x for x in app.user_middleware if x.cls.__name__ != 'CORSMiddleware']
+
+        setup_cors(app)
 
         app.add_middleware(GZipMiddleware, minimum_size=1000)
 
