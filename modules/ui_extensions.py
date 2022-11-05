@@ -86,7 +86,7 @@ def extension_table():
         code += f"""
             <tr>
                 <td><label><input class="gr-check-radio gr-checkbox" name="enable_{html.escape(ext.name)}" type="checkbox" {'checked="checked"' if ext.enabled else ''}>{html.escape(ext.name)}</label></td>
-                <td><a href="{html.escape(ext.remote or '')}">{html.escape(ext.remote or '')}</a></td>
+                <td><a href="{html.escape(ext.remote or '')}" target="_blank">{html.escape(ext.remote or '')}</a></td>
                 <td{' class="extension_status"' if ext.remote is not None else ''}>{ext_status}</td>
             </tr>
     """
@@ -188,7 +188,7 @@ def refresh_available_extensions_from_data():
 
         code += f"""
             <tr>
-                <td><a href="{html.escape(url)}">{html.escape(name)}</a></td>
+                <td><a href="{html.escape(url)}" target="_blank">{html.escape(name)}</a></td>
                 <td>{html.escape(description)}</td>
                 <td>{install_code}</td>
             </tr>
