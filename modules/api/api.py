@@ -64,6 +64,7 @@ class Api:
         self.app.add_api_route("/sdapi/v1/png-info", self.pnginfoapi, methods=["POST"], response_model=PNGInfoResponse)
         self.app.add_api_route("/sdapi/v1/progress", self.progressapi, methods=["GET"], response_model=ProgressResponse)
         self.app.add_api_route("/sdapi/v1/interrupt", self.interruptapi, methods=["POST"])
+        self.app.add_api_route("/sdapi/v1/skip", self.skip, methods=["POST"])
         self.app.add_api_route("/sdapi/v1/options", self.get_config, methods=["GET"], response_model=OptionsModel)
         self.app.add_api_route("/sdapi/v1/options", self.set_config, methods=["POST"])
         self.app.add_api_route("/sdapi/v1/cmd-flags", self.get_cmd_flags, methods=["GET"], response_model=FlagsModel)
@@ -218,6 +219,11 @@ class Api:
         shared.state.interrupt()
 
         return {}
+
+    def skip(self):
+        shared.state.skip()
+
+        return
 
     def get_config(self):
         options = {}
