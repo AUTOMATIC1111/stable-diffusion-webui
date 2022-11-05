@@ -21,6 +21,9 @@ from torch.nn.init import normal_, xavier_normal_, xavier_uniform_, kaiming_norm
 from collections import defaultdict, deque
 from statistics import stdev, mean
 
+# Optimizer dict. Optimizer is not actually an optimizer, and SparseAdam is not appropriate, but we'll just allow here.
+optimizer_dict = {optim_name : cls_obj for optim_name, cls_obj in inspect.getmembers(torch.optim, inspect.isclass) if optim_name != "Optimizer"}
+
 
 optimizer_dict = {optim_name : cls_obj for optim_name, cls_obj in inspect.getmembers(torch.optim, inspect.isclass) if optim_name != "Optimizer"}
 
@@ -38,7 +41,7 @@ class HypernetworkModule(torch.nn.Module):
     activation_dict.update({cls_name.lower(): cls_obj for cls_name, cls_obj in inspect.getmembers(torch.nn.modules.activation) if inspect.isclass(cls_obj) and cls_obj.__module__ == 'torch.nn.modules.activation'})
 
     def __init__(self, dim, state_dict=None, layer_structure=None, activation_func=None, weight_init='Normal',
-                 add_layer_norm=False, activate_output=False, dropout_structure=None):
+                 add_layer_norm=False, activate_output=False, dropout_structure=None, device=None):
         super().__init__()
 
         assert layer_structure is not None, "layer_structure must not be None"
@@ -98,7 +101,10 @@ class HypernetworkModule(torch.nn.Module):
                         zeros_(b)
                     else:
                         raise KeyError(f"Key {weight_init} is not defined as initialization!")
-        self.to(devices.device)
+        if device is None:
+            self.to(devices.device)
+        else:
+            self.to(device)
 
     def fix_old_state_dict(self, state_dict):
         changes = {
@@ -118,6 +124,10 @@ class HypernetworkModule(torch.nn.Module):
 
     def forward(self, x):
         return x + self.linear(x) * self.multiplier
+
+    def forward_strength(self, x, multiplier):
+        return x + self.linear(x) * multiplier
+
 
     def trainables(self):
         layer_structure = []
@@ -272,6 +282,11 @@ class Hypernetwork:
         self.step = state_dict.get('step', 0)
         self.sd_checkpoint = state_dict.get('sd_checkpoint', None)
         self.sd_checkpoint_name = state_dict.get('sd_checkpoint_name', None)
+
+    def to(self, device):
+        for values in self.layers.values():
+            values[0].to(device)
+            values[1].to(device)
 
 
 def list_hypernetworks(path):
