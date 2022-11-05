@@ -2,6 +2,7 @@ import os
 import sys
 import traceback
 
+import numpy as np
 import torch
 import tqdm
 import html
@@ -19,6 +20,7 @@ from modules.textual_inversion.image_embedding import (embedding_to_b64, embeddi
                                                        insert_image_data_embed, extract_image_data_embed,
                                                        caption_image_overlay)
 from modules.convnext_discriminator import XPDiscriminator
+import json
 
 class Embedding:
     def __init__(self, vec, name, step=None):
@@ -165,6 +167,8 @@ def create_embedding(name, num_vectors_per_token, init_text='*'):
 
     for i in range(num_vectors_per_token):
         vec[i] = embedded[i * int(embedded.shape[0]) // num_vectors_per_token]
+        if '-uc' in name:
+            vec[i]+=torch.randn_like(vec[i])*1e-3
 
     fn = os.path.join(shared.cmd_opts.embeddings_dir, f"{name}.pt")
     assert not os.path.exists(fn), f"file {fn} already exists"
@@ -203,6 +207,10 @@ def write_loss(log_directory, filename, step, epoch_len, values):
 
 #hook DDPM p_losses to support negative prompt training and get output latent
 from ldm.util import default
+from ldm.modules.diffusionmodules.util import extract_into_tensor
+
+#a_t=0.005
+#sqrt_one_minus_at=np.sqrt(1.-a_t)
 def p_losses_hook(x_start, cond, t, noise=None, scale=5.0):
     self=shared.sd_model
     noise = default(noise, lambda: torch.randn_like(x_start))
@@ -249,11 +257,13 @@ def p_losses_hook(x_start, cond, t, noise=None, scale=5.0):
     loss += (self.original_elbo_weight * loss_vlb)
     loss_dict.update({f'{prefix}/loss': loss})
 
-    return loss, loss_dict, model_output
+    img = (x_noisy-extract_into_tensor(self.sqrt_one_minus_alphas_cumprod, t, x_start.shape) * model_output)/extract_into_tensor(self.sqrt_alphas_cumprod, t, x_start.shape)
+
+    return loss, loss_dict, img
 
 #supprot Advance Prompt Tuning by 7eu7d7 https://github.com/7eu7d7/APT-stable-diffusion-auto-prompt
 def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_directory, training_width, training_height, steps, create_image_every, save_embedding_every, template_file, save_image_with_stored_embedding, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height,
-                    cfg_scale, classifier_path, use_negative, use_rec, rec_loss_w):
+                    cfg_scale, classifier_path, use_negative, use_rec, rec_loss_w, neg_lr_w):
     assert embedding_name, 'embedding not selected'
 
     shared.sd_model.p_losses=p_losses_hook # hook p_losses
@@ -297,6 +307,25 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
         embedding_uc = hijack.embedding_db.word_embeddings[embedding_name + '-uc'] # negative prompt embeddings
         embedding_uc.vec.requires_grad = True
 
+    hyper_param = {
+        'lr': learn_rate,
+        'bs': batch_size,
+        'cfg': cfg_scale,
+        'size': training_height,
+        'neg': use_negative,
+        'rec': use_rec,
+        'prompt_len':embedding.vec.shape,
+    }
+    if use_negative:
+        hyper_param['prompt_len_uc']=embedding_uc.vec.shape
+        hyper_param['neg_lr_w']=neg_lr_w
+    if use_rec:
+        hyper_param['rec_loss_w'] = rec_loss_w
+
+    hyper_param = json.dumps(hyper_param, sort_keys=True, indent=4)
+    with open(os.path.join(log_directory, 'hyper_param.json'), 'w') as f:
+        f.write(hyper_param)
+
     disc = XPDiscriminator(classifier_path) if (classifier_path is not None) and os.path.exists(classifier_path) else None
 
     if disc is not None:
@@ -314,14 +343,19 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
 
     scheduler = LearnRateScheduler(learn_rate, steps, ititial_step)
     if use_negative:
-        optimizer = torch.optim.AdamW([embedding.vec, embedding_uc.vec], lr=scheduler.learn_rate)
+        #optimizer = torch.optim.AdamW([embedding.vec, embedding_uc.vec], lr=scheduler.learn_rate)
+        optimizer = torch.optim.AdamW([
+            {'params': embedding.vec},
+            {'params': embedding_uc.vec, 'lr': scheduler.learn_rate*neg_lr_w}], lr=scheduler.learn_rate)
     else:
         optimizer = torch.optim.AdamW([embedding.vec], lr=scheduler.learn_rate)
 
     pbar = tqdm.tqdm(enumerate(ds), total=steps-ititial_step)
     for i, entries in pbar:
         embedding.step = i + ititial_step
+        #print(embedding.vec)
         if use_negative:
+            #print('uc:', embedding_uc.vec)
             embedding_uc.step = i + ititial_step
 
         scheduler.apply(optimizer, embedding.step)
@@ -364,7 +398,9 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
         epoch_num = embedding.step // len(ds)
         epoch_step = embedding.step - (epoch_num * len(ds)) + 1
 
-        pbar.set_description(f"[Epoch {epoch_num}: {epoch_step}/{len(ds)}]loss: {losses.mean():.7f}")
+        pbar.set_description(f"[Epoch {epoch_num}: {epoch_step}/{len(ds)}]loss: {losses.mean():.7f}, "
+                             f"grad:{embedding.vec.grad.detach().cpu().abs().mean().item():.7f}, "
+                             f"grad_uc:{embedding_uc.vec.grad.detach().cpu().abs().mean().item() if use_negative else 0:.7f}")
 
         if embedding.step > 0 and embedding_dir is not None and embedding.step % save_embedding_every == 0:
             last_saved_file = os.path.join(embedding_dir, f'{embedding_name}-{embedding.step}.pt')
@@ -394,7 +430,8 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
 
             if preview_from_txt2img:
                 p.prompt = preview_prompt
-                p.negative_prompt = preview_negative_prompt
+                #p.negative_prompt = preview_negative_prompt
+                p.negative_prompt = preview_prompt.replace(ds.placeholder_token, ds.placeholder_token + '-uc') if use_negative else preview_negative_prompt,
                 p.steps = preview_steps
                 p.sampler_index = preview_sampler_index
                 p.cfg_scale = preview_cfg_scale
