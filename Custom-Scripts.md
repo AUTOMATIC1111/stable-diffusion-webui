@@ -17,35 +17,38 @@ Will output 4 prompts: `a corgi wearing goggles`, `a corgi wearing a hat`, `a ca
 
 When using a `batch count` > 1, each prompt variation will be generated for each seed. `batch size` is ignored.
 
-## Wildcards
-This, and the more feature-rich `dynamic prompts` script have been turned into [extensions.](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Extensions)
-
-## Unprompted
-https://github.com/ThereforeGames/unprompted
-
-a highly modular addon for [AUTOMATIC1111's Stable Diffusion Web UI](https://github.com/AUTOMATIC1111/stable-diffusion-webui) that allows you to include various shortcodes in your prompts. You can pull text from files, set up your own variables, process text through conditional functions, and so much more - it's like wildcards on steroids.
-
-While the intended usecase is Stable Diffusion, this engine is also flexible enough to serve as an all-purpose text generator.
-
 ## txt2img2img 
-https://github.com/ThereforeGames/txt2img2img/blob/main/scripts/txt2img2img.py
+https://github.com/ThereforeGames/txt2img2img
 
-Greatly improve the editability of any character/subject while retaining their likeness.
+Greatly improve the editability of any character/subject while retaining their likeness. The main motivation for this script is improving the editability of embeddings created through [Textual Inversion](https://textual-inversion.github.io/).
 
-Full description in original repo: https://github.com/ThereforeGames/txt2img2img (be careful with cloning as it has a bit of venv checked in)
+(be careful with cloning as it has a bit of venv checked in)
+
+<details><summary>Example: (Click to expand:)</summary>
+<img src="https://user-images.githubusercontent.com/98228077/200106431-21a22657-db24-4e9c-b7fa-e3a8e9096b89.png" width="624" height="312" />
+</details>
 
 ## txt2mask
 https://github.com/ThereforeGames/txt2mask
 
 Allows you to specify an inpainting mask with text, as opposed to the brush.
 
-## Mask drawing UI
-https://github.com/dfaker/stable-diffusion-webui-cv2-external-masking-script/blob/main/external_masking.py
+<details><summary>Example: (Click to expand:)</summary>
+<img src="https://user-images.githubusercontent.com/95403634/190878562-d020887c-ccb0-411c-ab37-38e2115552eb.png" width="674" height="312" />
+</details>
 
-Provides a local popup window powered by CV2 that allows addition of a mask before processing. [Readme](https://github.com/dfaker/stable-diffusion-webui-cv2-external-masking-script).
+## Mask drawing UI
+https://github.com/dfaker/stable-diffusion-webui-cv2-external-masking-script
+
+Provides a local popup window powered by CV2 that allows addition of a mask before processing.
+
+<details><summary>Example: (Click to expand:)</summary>
+<img src="https://user-images.githubusercontent.com/98228077/200109495-3d6741f1-0e25-4ae5-9f84-d93f886f302a.png" width="302" height="312" />
+</details>
 
 ## Img2img Video
 https://github.com/memes-forever/Stable-diffusion-webui-video
+
 Using img2img, generates pictures one after another.
 
 ## Seed Travel
@@ -81,9 +84,7 @@ It supports nested definitions so you can do this as well:
 `Crystal containing elemental {{fire:5|ice}|earth}`
 
 ## Animator
-https://github.com/Animator-Anon/Animator/blob/main/animation.py
-
-Animation Script - https://github.com/Animator-Anon/Animator
+https://github.com/Animator-Anon/Animator
 
 A basic img2img script that will dump frames and build a video file. Suitable for creating interesting zoom in warping movies, but not too much else at this time.
 
@@ -108,6 +109,17 @@ From real video, img2img the frames and stitch them together. Does not unpack fr
 https://github.com/GeorgLegato/Txt2Vectorgraphics
 
 Create custom, scaleable icons from your prompts as SVG or PDF.
+
+<details><summary>Example: (Click to expand:)</summary>
+
+| prompt  |PNG  |SVG |
+| :--------  | :-----------------: | :---------------------: |
+| Happy Einstein | <img src="https://user-images.githubusercontent.com/7210708/193370360-506eb6b5-4fa7-4b2a-9fec-6430f6d027f5.png" width="40%" /> | <img src="https://user-images.githubusercontent.com/7210708/193370379-2680aa2a-f460-44e7-9c4e-592cf096de71.svg" width=30%/> |
+| Mountainbike Downhill | <img src="https://user-images.githubusercontent.com/7210708/193371353-f0f5ff6f-12f7-423b-a481-f9bd119631dd.png" width=40%/> | <img src="https://user-images.githubusercontent.com/7210708/193371585-68dea4ca-6c1a-4d31-965d-c1b5f145bb6f.svg" width=30%/> |
+coffe mug in shape of a heart | <img src="https://user-images.githubusercontent.com/7210708/193374299-98379ca1-3106-4ceb-bcd3-fa129e30817a.png" width=40%/> | <img src="https://user-images.githubusercontent.com/7210708/193374525-460395af-9588-476e-bcf6-6a8ad426be8e.svg" width=30%/> |
+| Headphones | <img src="https://user-images.githubusercontent.com/7210708/193376238-5c4d4a8f-1f06-4ba4-b780-d2fa2e794eda.png" width=40%/> | <img src="https://user-images.githubusercontent.com/7210708/193376255-80e25271-6313-4bff-a98e-ba3ae48538ca.svg" width=30%/> |
+
+</details>
 
 ## Shift Attention
 https://github.com/yownas/shift-attention
@@ -153,10 +165,20 @@ https://github.com/EugeoSynthesisThirtyTwo/prompt-interpolation-script-for-sd-we
 With this script, you can interpolate between two prompts (using the "AND" keyword), generate as many images as you want.
 You can also generate a gif with the result. Works for both txt2img and img2img.
 
+<details><summary>Example: (Click to expand:)</summary>
+
+![gif](https://user-images.githubusercontent.com/24735555/195470874-afc3dfdc-7b35-4b23-9c34-5888a4100ac1.gif)
+
+</details>
+
 ## Asymmetric Tiling
 https://github.com/tjm35/asymmetric-tiling-sd-webui/
 
 Control horizontal/vertical seamless tiling independently of each other.
+
+<details><summary>Example: (Click to expand:)</summary>
+<img src="https://user-images.githubusercontent.com/19196175/195132862-8c050327-92f3-44a4-9c02-0f11cce0b609.png" width="624" height="312" />
+</details>
 
 ## Force Symmetry
 https://gist.github.com/1ort/2fe6214cf1abe4c07087aac8d91d0d8a
@@ -165,20 +187,36 @@ see https://github.com/AUTOMATIC1111/stable-diffusion-webui/discussions/2441
 
 applies symmetry to the image every n steps and sends the result further to img2img.
 
+<details><summary>Example: (Click to expand:)</summary>
+<img src="https://user-images.githubusercontent.com/83316072/196016119-0a03664b-c3e4-49f0-81ac-a9e719b24bd1.png" width="624" height="312" />
+</details>
+
 ## txt2palette
 https://github.com/1ort/txt2palette
 
 Generate palettes by text description. This script takes the generated images and converts them into color palettes.
 
+<details><summary>Example: (Click to expand:)</summary>
+<img src="https://user-images.githubusercontent.com/83316072/199360686-62f0f5ec-ed3d-4c0f-95b4-af9c67d1e248.png" width="352" height="312" />
+</details>
+
+
 ## StylePile
 https://github.com/some9000/StylePile
 
 An easy way to mix and match elements to prompts that affect the style of the result.
+<details><summary>Example: (Click to expand:)</summary>
+<img src="https://user-images.githubusercontent.com/17021558/199468444-99e78027-1889-4bec-b97b-25f801e33c0a.jpg" width="960" height="120" />
+</details>
 
 ## XYZ Plot Script
 https://github.com/xrpgame/xyz_plot_script
 
 Generates an .html file to interactively browse the imageset. Use the scroll wheel or arrow keys to move in the Z dimension.
+
+<details><summary>Example: (Click to expand:)</summary>
+<img src="https://raw.githubusercontent.com/xrpgame/xyz_plot_script/master/example1.png" width="522" height="312" />
+</details>
 
 ## Booru tag autocompletion
 https://github.com/DominikDoom/a1111-sd-webui-tagcomplete
@@ -192,35 +230,75 @@ https://github.com/dfaker/embedding-to-png-script
 
 Converts existing embeddings to the shareable image versions.
 
+<details><summary>Example: (Click to expand:)</summary>
+<img src="https://user-images.githubusercontent.com/35278260/196052398-268a3a3e-0fad-46cd-b37d-9808480ceb18.png" width="263" height="256" />
+</details>
+
 ## Alpha Canvas
 https://github.com/TKoestlerx/sdexperiments
 
 Outpaint a region. Infinite outpainting concept, used the two existing outpainting scripts from the AUTOMATIC1111 repo as a basis.
 
-## AI-WEBUI-scripts-Random
+<details><summary>Example: (Click to expand:)</summary>
+<img src="https://user-images.githubusercontent.com/86352149/199517938-3430170b-adca-487c-992b-eb89b3b63681.jpg" width="446" height="312" />
+</details>
+
+## Random grid
 https://github.com/lilly1987/AI-WEBUI-scripts-Random
 
-- Random Steps and CFG
-- Random Grid
-- Random Loop
+Randomly enter xy grid values.
+
+<details><summary>Example: (Click to expand:)</summary>
+<img src="https://user-images.githubusercontent.com/20321215/197346726-f93b7e84-f808-4167-9969-dc42763eeff1.png" width="198" height="312" />
+Basic logic is same as x/y plot, only internally, x type is fixed as step, and type y is fixed as cfg.
+Generates x values as many as the number of step counts (10) within the range of step1|2 values (10-30)
+Generates x values as many as the number of cfg counts (10) within the range of cfg1|2 values (6-15)
+Even if you put the 1|2 range cap upside down, it will automatically change it.
+In the case of the cfg value, it is treated as an int type and the decimal value is not read.
+</details>
+
+
+
+## Random
+https://github.com/lilly1987/AI-WEBUI-scripts-Random
+
+Repeat a simple number of times without a grid.
+
+<details><summary>Example: (Click to expand:)</summary>
+<img src="https://user-images.githubusercontent.com/20321215/197346617-0ed1cd09-0ddd-48ad-8161-bc1540d628ad.png" width="258" height="312" />
+</details>
 
 ## Stable Diffusion Aesthetic Scorer
 https://github.com/grexzen/SD-Chad
+
+Rates your images.
 
 ## img2tiles
 https://github.com/arcanite24/img2tiles
 
 generate tiles from a base image. Based on SD upscale script.
 
+<details><summary>Example: (Click to expand:)</summary>
+<img src="https://github.com/arcanite24/img2tiles/raw/master/examples/example5.png" width="312" height="312" />
+</details>
+
 ## SD-latent-mirroring
 https://github.com/dfaker/SD-latent-mirroring
 
 Applies mirroring and flips to the latent images to produce anything from subtle balanced compositions to perfect reflections
 
+<details><summary>Example: (Click to expand:)</summary>
+<img src="https://user-images.githubusercontent.com/35278260/199627881-6f62a227-3a6c-4470-9c18-2ed8bc57194c.png" width="312" height="156" />
+</details>
+
 ## Depth Maps
 https://github.com/thygate/stable-diffusion-webui-depthmap-script
 
 This script is an addon for [AUTOMATIC1111's Stable Diffusion Web UI](https://github.com/AUTOMATIC1111/stable-diffusion-webui) that creates `depthmaps` from the generated images. The result can be viewed on 3D or holographic devices like VR headsets or [lookingglass](https://lookingglassfactory.com/) display, used in Render- or Game- Engines on a plane with a displacement modifier, and maybe even 3D printed.
+
+<details><summary>Example: (Click to expand:)</summary>
+<img src="https://github.com/thygate/stable-diffusion-webui-depthmap-script/raw/main/examples.png" width="390" height="156" />
+</details>
 
 ## Saving steps of the sampling process
 
