@@ -231,6 +231,10 @@ class Api:
         return options
 
     def set_config(self, req: OptionsModel):
+        # currently req has all options fields even if you send a dict like { "send_seed": false }, which means it will
+        # overwrite all options with default values.
+        raise RuntimeError('Setting options via API is not supported')
+
         reqDict = vars(req)
         for o in reqDict:
             setattr(shared.opts, o, reqDict[o])

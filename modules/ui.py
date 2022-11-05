@@ -1446,17 +1446,19 @@ def create_ui(wrap_gradio_gpu_call):
                 continue
 
             oldval = opts.data.get(key, None)
-
-            setattr(opts, key, value)
-
+            try:
+                setattr(opts, key, value)
+            except RuntimeError:
+                continue
             if oldval != value:
                 if opts.data_labels[key].onchange is not None:
                     opts.data_labels[key].onchange()
 
                 changed += 1
-
-        opts.save(shared.config_filename)
-
+        try:
+            opts.save(shared.config_filename)
+        except RuntimeError:
+            return opts.dumpjson(), f'{changed} settings changed without save.'
         return opts.dumpjson(), f'{changed} settings changed.'
 
     def run_settings_single(value, key):
