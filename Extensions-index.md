@@ -59,7 +59,7 @@
 		{
 			"name": "Unprompted",
 			"url": "https://github.com/ThereforeGames/unprompted",
-			"description": "Allows you to include various shortcodes in your prompts. You can pull text from files, set up your own variables, process text through conditional functions, and so much more - it's like wildcards on steroids.."
+			"description": "Allows you to include various shortcodes in your prompts. You can pull text from files, set up your own variables, process text through conditional functions, and so much more - it's like wildcards on steroids."
 		},
 		{
 			"name": "Booru tag autocompletion",
