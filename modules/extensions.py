@@ -2,7 +2,7 @@ import os
 import sys
 import traceback
 
-import git
+#import git
 
 from modules import paths, shared
 

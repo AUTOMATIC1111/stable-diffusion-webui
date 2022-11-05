@@ -4,3 +4,27 @@
 [submodule "models/Stable-diffusion/Triviant/trinart_stable_diffusion_v2"]
 	path = models/Stable-diffusion/Triviant/trinart_stable_diffusion_v2
 	url = https://huggingface.co/naclbit/trinart_stable_diffusion_v2
+[submodule "scripts/video"]
+	path = scripts/video
+	url = https://github.com/AllreadyTaken/Stable-diffusion-webui-video.git
+[submodule "extensions/images-browser"]
+	path = extensions/images-browser
+	url = https://github.com/yfszzx/stable-diffusion-webui-images-browser
+[submodule "scripts/matrix"]
+	path = scripts/matrix
+	url = https://github.com/ArrowM/auto1111-improved-prompt-matrix.git
+[submodule "scripts/txt2img2img"]
+	path = scripts/txt2img2img
+	url = https://github.com/ThereforeGames/txt2img2img.git
+[submodule "txt2mask"]
+	path = txt2mask
+	url = https://github.com/ThereforeGames/txt2mask.git
+[submodule "scripts/mask_ui"]
+	path = scripts/mask_ui
+	url = https://github.com/dfaker/stable-diffusion-webui-cv2-external-masking-script.git
+[submodule "scripts/seed_travel"]
+	path = scripts/seed_travel
+	url = https://github.com/yownas/seed_travel.git
+[submodule "scripts/animator"]
+	path = scripts/animator
+	url = https://github.com/Animator-Anon/Animator.git
