@@ -1517,7 +1517,7 @@ def create_ui(wrap_gradio_gpu_call):
 
                     elem_id, text, accordion_flag = item.section
                     if accordion_flag:
-                        accordion = gr.Accordion(label=text)
+                        accordion = gr.Accordion(label=text, open=False)
                         accordion.__enter__()
                     else:
                         gr.HTML(elem_id="settings_header_text_{}".format(elem_id), value='<h1 class="gr-button-lg">{}</h1>'.format(text))
