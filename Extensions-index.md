@@ -65,6 +65,11 @@
 			"name": "Booru tag autocompletion",
 			"url": "https://github.com/DominikDoom/a1111-sd-webui-tagcomplete",
 			"description": "Displays autocompletion hints for tags from image booru boards such as Danbooru. Uses local tag CSV files and includes a config for customization."
+		},
+		{
+			"name": "novelai-2-local-prompt",
+			"url": "https://github.com/animerl/novelai-2-local-prompt",
+			"description": "Automatically process the brackets, prefix them with a quality tag, and insert a default value in the negative prompt. Multipliers are rounded off to four decimal places. Call back previously generated prompts, starting with the newest."
 		}
 	]
 }
