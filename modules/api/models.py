@@ -168,9 +168,9 @@ class ProgressResponse(BaseModel):
     current_image: str = Field(default=None, title="Current image", description="The current image in base64 format. opts.show_progress_every_n_steps is required for this to work.")
 
 fields = {}
-for key, value in opts.data.items():
-    metadata = opts.data_labels.get(key)
-    optType = opts.typemap.get(type(value), type(value))
+for key, metadata in opts.data_labels.items():
+    value = opts.data.get(key)
+    optType = opts.typemap.get(type(metadata.default), type(value))
 
     if (metadata is not None):
         fields.update({key: (Optional[optType], Field(
