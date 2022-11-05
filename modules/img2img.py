@@ -81,7 +81,8 @@ def img2img(mode: int, prompt: str, negative_prompt: str, prompt_style: str, pro
         mask = None
 
     # Use the EXIF orientation of photos taken by smartphones.
-    image = ImageOps.exif_transpose(image) 
+    if image is not None:
+        image = ImageOps.exif_transpose(image) 
 
     assert 0. <= denoising_strength <= 1., 'can only work with strength in [0.0, 1.0]'
 
@@ -136,6 +137,8 @@ def img2img(mode: int, prompt: str, negative_prompt: str, prompt_style: str, pro
         processed = modules.scripts.scripts_img2img.run(p, *args)
         if processed is None:
             processed = process_images(p)
+
+    p.close()
 
     shared.total_tqdm.clear()
 

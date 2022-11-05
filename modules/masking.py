@@ -49,7 +49,7 @@ def expand_crop_region(crop_region, processing_width, processing_height, image_w
     ratio_processing = processing_width / processing_height
 
     if ratio_crop_region > ratio_processing:
-        desired_height = (x2 - x1) * ratio_processing
+        desired_height = (x2 - x1) / ratio_processing
         desired_height_diff = int(desired_height - (y2-y1))
         y1 -= desired_height_diff//2
         y2 += desired_height_diff - desired_height_diff//2
