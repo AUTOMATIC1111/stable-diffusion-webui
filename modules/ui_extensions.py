@@ -188,7 +188,7 @@ def refresh_available_extensions_from_data():
 
         code += f"""
             <tr>
-                <td><a href="{html.escape(url)}">{html.escape(name)}</a></td>
+                <td><a href="{html.escape(url)}" target="_blank">{html.escape(name)}</a></td>
                 <td>{html.escape(description)}</td>
                 <td>{install_code}</td>
             </tr>
