@@ -5,4 +5,4 @@
 
 28.10.2022  14:33           263 120 python.exe
                1 File(s)        263 120 bytes
-               0 Dir(s)  75 819 315 200 bytes free
+               0 Dir(s)  53 394 665 472 bytes free
