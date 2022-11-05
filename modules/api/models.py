@@ -5,7 +5,7 @@ from typing_extensions import Literal
 from inflection import underscore
 from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img
 from modules.shared import sd_upscalers, opts, parser
-from typing import List
+from typing import Dict, List
 
 API_NOT_ALLOWED = [
     "self",
@@ -193,8 +193,8 @@ FlagsModel = create_model("Flags", **flags)
 
 class SamplerItem(BaseModel):
     name: str = Field(title="Name")
-    aliases: list[str] = Field(title="Aliases")
-    options: dict[str, str] = Field(title="Options")
+    aliases: List[str] = Field(title="Aliases")
+    options: Dict[str, str] = Field(title="Options")
 
 class UpscalerItem(BaseModel):
     name: str = Field(title="Name")
