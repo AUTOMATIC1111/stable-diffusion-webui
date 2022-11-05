@@ -223,8 +223,6 @@ class Api:
     def skip(self):
         shared.state.skip()
 
-        return
-
     def get_config(self):
         options = {}
         for key in shared.opts.data.keys():
