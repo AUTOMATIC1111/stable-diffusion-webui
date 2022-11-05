@@ -243,7 +243,7 @@ class Hypernetwork:
 
 def list_hypernetworks(path):
     res = {}
-    for filename in glob.iglob(os.path.join(path, '**/*.pt'), recursive=True):
+    for filename in sorted(glob.iglob(os.path.join(path, '**/*.pt'), recursive=True)):
         name = os.path.splitext(os.path.basename(filename))[0]
         # Prevent a hypothetical "None.pt" from being listed.
         if name != "None":
