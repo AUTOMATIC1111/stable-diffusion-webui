@@ -430,7 +430,7 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
     for weight in weights:
         weight.requires_grad = True
     # Here we use optimizer from saved HN, or we can specify as UI option.
-    if (optimizer_name := hypernetwork.optimizer_name) in optimizer_dict:
+    if (optimizer_name == hypernetwork.optimizer_name) in optimizer_dict:
         optimizer = optimizer_dict[hypernetwork.optimizer_name](params=weights, lr=scheduler.learn_rate)
     else:
         print(f"Optimizer type {optimizer_name} is not defined!")
