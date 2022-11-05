@@ -191,3 +191,9 @@ https://github.com/animerl/novelai-2-local-prompt
 Add a button to convert the prompts used in NovelAI for use in the WebUI. In addition, add a button that allows you to recall a previously used prompt.
 
 ![pic](https://user-images.githubusercontent.com/113022648/197382468-65f4a96d-48af-4890-8fcf-0ec7c3b9ec3a.png)
+
+## Tokenizer
+
+Adds a tab that lets you preview how CLIP model would tokenize your text.
+
+![about](https://user-images.githubusercontent.com/20920490/200113798-50b55f5a-45db-4b6f-93c0-ae6be75e5788.png)
