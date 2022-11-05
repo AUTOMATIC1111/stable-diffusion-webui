@@ -86,6 +86,7 @@ parser.add_argument("--nowebui", action='store_true', help="use api=True to laun
 parser.add_argument("--ui-debug-mode", action='store_true', help="Don't load model to quickly launch UI")
 parser.add_argument("--device-id", type=str, help="Select the default CUDA device to use (export CUDA_VISIBLE_DEVICES=0,1,etc might be needed before)", default=None)
 parser.add_argument("--administrator", action='store_true', help="Administrator rights", default=False)
+parser.add_argument("--cors-allow-origins", type=str, help="Allowed CORS origins", default=None)
 parser.add_argument("--tls-keyfile", type=str, help="Partially enables TLS, requires --tls-certfile to fully function", default=None)
 parser.add_argument("--tls-certfile", type=str, help="Partially enables TLS, requires --tls-keyfile to fully function", default=None)
 parser.add_argument("--server-name", type=str, help="Sets hostname of server", default=None)
@@ -150,9 +151,9 @@ class State:
         self.interrupted = True
 
     def nextjob(self):
-        if opts.show_progress_every_n_steps == -1: 
+        if opts.show_progress_every_n_steps == -1:
             self.do_set_current_image()
-            
+
         self.job_no += 1
         self.sampling_step = 0
         self.current_image_sampling_step = 0
@@ -201,7 +202,7 @@ class State:
             return
         if self.current_latent is None:
             return
-            
+
         if opts.show_progress_grid:
             self.current_image = sd_samplers.samples_to_image_grid(self.current_latent)
         else:
