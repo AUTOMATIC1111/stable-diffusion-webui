@@ -35,7 +35,7 @@ from modules.shared import cmd_opts
 import modules.hypernetworks.hypernetwork
 
 queue_lock = threading.Lock()
-
+server_name = "0.0.0.0" if cmd_opts.listen else cmd_opts.server_name
 
 def wrap_queued_call(func):
     def f(*args, **kwargs):
@@ -85,6 +85,20 @@ def initialize():
     shared.opts.onchange("sd_vae", wrap_queued_call(lambda: modules.sd_vae.reload_vae_weights()), call=False)
     shared.opts.onchange("sd_hypernetwork", wrap_queued_call(lambda: modules.hypernetworks.hypernetwork.load_hypernetwork(shared.opts.sd_hypernetwork)))
     shared.opts.onchange("sd_hypernetwork_strength", modules.hypernetworks.hypernetwork.apply_strength)
+
+    if cmd_opts.tls_keyfile is not None and cmd_opts.tls_keyfile is not None:
+
+        try:
+            if not os.path.exists(cmd_opts.tls_keyfile):
+                print("Invalid path to TLS keyfile given")
+            if not os.path.exists(cmd_opts.tls_certfile):
+                print(f"Invalid path to TLS certfile: '{cmd_opts.tls_certfile}'")
+        except TypeError:
+            cmd_opts.tls_keyfile = cmd_opts.tls_certfile = None
+            print("TLS setup invalid, running webui without TLS")
+        else:
+            print("Running with TLS")
+
 
     # make the program just exit at ctrl+c without waiting for anything
     def sigint_handler(sig, frame):
@@ -138,8 +152,10 @@ def webui():
 
         app, local_url, share_url = demo.launch(
             share=cmd_opts.share,
-            server_name="0.0.0.0" if cmd_opts.listen else None,
+            server_name=server_name,
             server_port=cmd_opts.port,
+            ssl_keyfile=cmd_opts.tls_keyfile,
+            ssl_certfile=cmd_opts.tls_certfile,
             debug=cmd_opts.gradio_debug,
             auth=[tuple(cred.split(':')) for cred in cmd_opts.gradio_auth.strip('"').split(',')] if cmd_opts.gradio_auth else None,
             inbrowser=cmd_opts.autolaunch,

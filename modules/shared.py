@@ -87,6 +87,9 @@ parser.add_argument("--ui-debug-mode", action='store_true', help="Don't load mod
 parser.add_argument("--device-id", type=str, help="Select the default CUDA device to use (export CUDA_VISIBLE_DEVICES=0,1,etc might be needed before)", default=None)
 parser.add_argument("--administrator", action='store_true', help="Administrator rights", default=False)
 parser.add_argument("--cors-allow-origins", type=str, help="Allowed CORS origins", default=None)
+parser.add_argument("--tls-keyfile", type=str, help="Partially enables TLS, requires --tls-certfile to fully function", default=None)
+parser.add_argument("--tls-certfile", type=str, help="Partially enables TLS, requires --tls-keyfile to fully function", default=None)
+parser.add_argument("--server-name", type=str, help="Sets hostname of server", default=None)
 
 cmd_opts = parser.parse_args()
 restricted_opts = {
@@ -318,6 +321,7 @@ options_templates.update(options_section(('system', "System"), {
 
 options_templates.update(options_section(('training', "Training"), {
     "unload_models_when_training": OptionInfo(False, "Move VAE and CLIP to RAM when training if possible. Saves VRAM."),
+    "save_optimizer_state": OptionInfo(False, "Saves Optimizer state as separate *.optim file. Training can be resumed with HN itself and matching optim file."),
     "dataset_filename_word_regex": OptionInfo("", "Filename word regex"),
     "dataset_filename_join_string": OptionInfo(" ", "Filename join string"),
     "training_image_repeats_per_epoch": OptionInfo(1, "Number of repeats for a single input image per epoch; used only for displaying epoch number", gr.Number, {"precision": 0}),
@@ -407,7 +411,8 @@ class Options:
             if key in self.data or key in self.data_labels:
                 assert not cmd_opts.freeze_settings, "changing settings is disabled"
 
-                comp_args = opts.data_labels[key].component_args
+                info = opts.data_labels.get(key, None)
+                comp_args = info.component_args if info else None
                 if isinstance(comp_args, dict) and comp_args.get('visible', True) is False:
                     raise RuntimeError(f"not possible to set {key} because it is restricted")
 
