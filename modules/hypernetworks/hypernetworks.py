@@ -1,17 +1,48 @@
 import ast
+import os.path
 
 import torch
 
+from modules import devices, shared
+from modules.hypernetworks.hypernetwork import Hypernetwork
+
 #from modules.hypernetworks.hypernetwork import Hypernetwork
 
-#dummy class for testing.
-class Hypernetwork:
-    def __init__(self):
-        pass
-
-
 lazy_load : bool = False #when this is enabled, HNs will be loaded when required.
-available_opts : dict[str,Hypernetwork]= {}  # string -> HN itself.
+
+
+
+class DynamicDict(dict): # Brief dict that dynamically unloads Hypernetworks if required.
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.current : Hypernetwork | None = None
+        self.hash = None
+        self.dict = {**kwargs}
+
+    def prepare(self, key, value):
+        if lazy_load and self.current is not None and (key != self.current): # or filename is identical, but somehow hash is changed?
+            self.current: Hypernetwork
+            self.current.to('cpu')
+        self.current = value
+        self.current.to(devices.device)
+
+    def __getitem__(self, item):
+        value = self.dict[item]
+        self.prepare(item, value)
+        return value
+
+    def __setitem__(self, key, value):
+        if key in self.dict:
+            return
+        self.dict[key] = value
+
+    def __contains__(self, item):
+        return item in self.dict
+
+
+available_opts: dict[str,Hypernetwork] = DynamicDict()  # string -> HN itself.
+
+
 
 # Behavior definition.
 # [[], [], []] -> sequential processing
@@ -44,24 +75,25 @@ def test_parsing(string = None):
 
 class Forward:
     def __init__(self, **kwargs):
+        self.name = "defaultForward" if 'name' not in kwargs else kwargs['name']
         pass
 
     def __call__(self, *args, **kwargs):
         return self.forward(*args, **kwargs)
 
-    def forward(self, context_k, context_v = None):
+    def forward(self, context_k, context_v = None, layer = None):
         raise NotImplementedError
 
     @staticmethod
-    def parse(arg):
+    def parse(arg, name=None):
         arg = Forward.unpack(arg)
         arg = Forward.eval(arg)
         if Forward.isSingleTon(arg):
             return SingularForward(*Forward.parseSingleTon(arg))
         elif Forward.isParallel(arg):
-            return ParallelForward(Forward.parseParallel(arg))
+            return ParallelForward(Forward.parseParallel(arg), name=name)
         elif Forward.isSequential(arg):
-            return SequentialForward(Forward.parseSequential(arg))
+            return SequentialForward(Forward.parseSequential(arg), name=name)
         raise ValueError(f"Cannot parse {arg} into sequences!")
 
     @staticmethod
@@ -162,21 +194,24 @@ class Forward:
 class SingularForward(Forward):
 
     def __init__(self, processor:str, strength:int|float):
-        self.processor = None
-        self.strength: int | float = 1
+        self.name = processor
+        self.processor = processor
+        self.strength: int | float = strength
         super(SingularForward, self).__init__()
         # parse. We expect parsing Singletons or (k,v) pair here, which is HN Name and Strength.
-        self.processor, self.strength = processor, strength
+        available_opts[self.processor] = Hypernetwork().load(shared.hypernetworks[self.processor])
         # assert self.processor in available_opts, f"Hypernetwork named {processor} is not ready!"
         assert 0 <= self.strength <=1 , "Strength must be between 0 and 1!"
 
-    def forward(self, context_k, context_v = None):
+    def forward(self, context_k, context_v = None, layer=None):
         if self.processor in available_opts:
             context_layers = available_opts[self.processor].layers.get(context_k.shape[2], None)
             if context_layers is None:
                 return context_k, context_k
             if context_v is None:
                 context_v = context_k
+            if layer is not None and hasattr(layer, 'hyper_k') and hasattr(layer, 'hyper_v'):
+                layer.hyper_v = context_layers[0], layer.hyper_k = context_layers[1]
             return context_layers[0].forward_strength(context_k, self.strength) , context_layers[1].forward_strength(context_v, self.strength) #define forward_strength, which invokes HNModule with specified strength.
         # Note : we share same HN if it is called multiple time, which means you might not be able to train it via this structure.
         raise KeyError(f"Key {self.processor} is not found in cached Hypernetworks!")
@@ -187,7 +222,8 @@ class SingularForward(Forward):
 
 class ParallelForward(Forward):
 
-    def __init__(self, sequence:dict):
+    def __init__(self, sequence:dict, name=None):
+        self.name = "ParallelForwardHypernet" if name is None else name
         self.callers: dict[str, Forward] = {}
         self.weights: dict[str, float] = {}
         super(ParallelForward, self).__init__()
@@ -196,26 +232,47 @@ class ParallelForward(Forward):
             self.callers[keys] = Forward.parse(keys)
             self.weights[keys] = sequence[keys]
 
-    def forward(self, context, context_v = None):
-        return torch.sum(torch.tensor([self.callers[k](context, context_v) * self.weights[k] for k in self.callers]), axis = 0)
+    def forward(self, context, context_v = None, layer = None):
+        return torch.sum(torch.tensor([self.callers[k].forward(context, context_v, layer=layer) * self.weights[k] for k in self.callers]), axis=0)
 
     def __str__(self):
         return "ParallelForward>" +str({str(k): str(v) for (k,v) in self.callers.items()})
 
 
 class SequentialForward(Forward):
-    def __init__(self, sequence:list):
+    def __init__(self, sequence:list, name=None):
+        self.name = "SequentialForwardHypernet" if name is None else name
         self.callers:list[Forward] = []
         super(SequentialForward, self).__init__()
         for keys in sequence:
             self.callers.append(Forward.parse(keys))
 
-    def forward(self, context, context_v = None):
+    def forward(self, context, context_v = None, layer=None):
         if context_v is None:
             context_v = context
         for keys in self.callers:
-            context, context_v = keys(context, context_v)
+            context, context_v = keys(context, context_v, layer=layer)
         return context, context_v
 
     def __str__(self):
         return "SequentialForward>" + str([str(x) for x in self.callers])
+
+
+class EmptyForward(Forward):
+    def __init__(self):
+        super().__init__()
+        self.name = None
+
+    def forward(self, context, context_v=None, layer=None):
+        if context_v is None:
+            context_v = context
+        return context, context_v
+
+    def __str__(self):
+        return "EmptyForward"
+
+
+def load(filename):
+    with open(filename, 'r') as file:
+        return Forward.parse(file.read(), name=os.path.basename(filename))
+

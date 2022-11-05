@@ -13,6 +13,8 @@ import tqdm
 from einops import rearrange, repeat
 from ldm.util import default
 from modules import devices, processing, sd_models, shared
+from modules.hypernetworks import hypernetworks
+from modules.hypernetworks.hypernetworks import Forward
 from modules.textual_inversion import textual_inversion
 from modules.textual_inversion.learn_schedule import LearnRateScheduler
 from torch import einsum
@@ -236,6 +238,10 @@ def list_hypernetworks(path):
         # Prevent a hypothetical "None.pt" from being listed.
         if name != "None":
             res[name] = filename
+    for filename in glob.iglob(os.path.join(path, '**/*.hns'), recursive=True):
+        name = os.path.splitext(os.path.basename(filename))[0]
+        if name != "None":
+            res[name] = filename
     return res
 
 
@@ -244,13 +250,24 @@ def load_hypernetwork(filename):
     # Prevent any file named "None.pt" from being loaded.
     if path is not None and filename != "None":
         print(f"Loading hypernetwork {filename}")
-        try:
-            shared.loaded_hypernetwork = Hypernetwork()
-            shared.loaded_hypernetwork.load(path)
+        if filename.endswith(".pt"):
+            try:
+                shared.loaded_hypernetwork = Hypernetwork()
+                shared.loaded_hypernetwork.load(path)
 
-        except Exception:
-            print(f"Error loading hypernetwork {path}", file=sys.stderr)
-            print(traceback.format_exc(), file=sys.stderr)
+            except Exception:
+                print(f"Error loading hypernetwork {path}", file=sys.stderr)
+                print(traceback.format_exc(), file=sys.stderr)
+        elif filename.endswith(".hns"):
+            # Load Hypernetwork processing
+            try:
+                shared.loaded_hypernetwork = hypernetworks.load(filename)
+                print()
+            except Exception:
+                print(f"Error loading hypernetwork processing file {path}", file=sys.stderr)
+                print(traceback.format_exc(), file=sys.stderr)
+        else:
+            print(f"Tried to load unknown file extension: {filename}")
     else:
         if shared.loaded_hypernetwork is not None:
             print(f"Unloading hypernetwork")
@@ -269,18 +286,12 @@ def find_closest_hypernetwork_name(search: str):
     return applicable[0]
 
 
-def apply_hypernetwork(hypernetwork, context, layer=None):
-    hypernetwork_layers = (hypernetwork.layers if hypernetwork is not None else {}).get(context.shape[2], None)
+def apply_hypernetwork(hypernetwork:Hypernetwork|Forward, context, layer=None):
 
-    if hypernetwork_layers is None:
+    if hypernetwork is None:
         return context, context
 
-    if layer is not None:
-        layer.hyper_k = hypernetwork_layers[0]
-        layer.hyper_v = hypernetwork_layers[1]
-
-    context_k = hypernetwork_layers[0](context)
-    context_v = hypernetwork_layers[1](context)
+    context_k, context_v = hypernetwork.forward(context, layer=layer)
     return context_k, context_v
 
 
@@ -363,9 +374,7 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
     create_image_every = create_image_every or 0
     textual_inversion.validate_train_inputs(hypernetwork_name, learn_rate, batch_size, data_root, template_file, steps, save_hypernetwork_every, create_image_every, log_directory, name="hypernetwork")
 
-    path = shared.hypernetworks.get(hypernetwork_name, None)
-    shared.loaded_hypernetwork = Hypernetwork()
-    shared.loaded_hypernetwork.load(path)
+    load_hypernetwork(hypernetwork_name)
 
     shared.state.textinfo = "Initializing hypernetwork training..."
     shared.state.job_count = steps
