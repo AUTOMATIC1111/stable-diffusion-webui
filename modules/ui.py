@@ -106,7 +106,11 @@ def save_files(js_data, images, do_make_zip, index):
                 for key, value in d.items():
                     setattr(self, key, value)
 
-    data = json.loads(js_data)
+    try:
+        data = json.loads(js_data)
+    except json.decoder.JSONDecodeError:
+        print("Json loader error when saving image to file. Is the js data for the image missing or malformed?")
+        return
 
     p = MyObject(data)
     path = opts.outdir_save
@@ -810,6 +814,8 @@ def create_ui(wrap_gradio_gpu_call):
                 txt2img_negative_prompt,
                 steps,
                 sampler_index,
+                batch_size,
+                batch_count,
                 cfg_scale,
                 seed,
                 width,
@@ -1260,7 +1266,7 @@ def create_ui(wrap_gradio_gpu_call):
                     create_image_every = gr.Number(label='Save an image to log directory every N steps, 0 to disable', value=500, precision=0)
                     save_embedding_every = gr.Number(label='Save a copy of embedding to log directory every N steps, 0 to disable', value=500, precision=0)
                     save_image_with_stored_embedding = gr.Checkbox(label='Save images with embedding in PNG chunks', value=True)
-                    preview_from_txt2img = gr.Checkbox(label='Read parameters (prompt, etc...) from txt2img tab when making previews', value=False)
+                    preview_from_txt2img = gr.Checkbox(label='Read parameters (prompt, etc...) from txt2img tab when making previews. Recommended sampler: Euler', value=False)
 
                     with gr.Row():
                         interrupt_training = gr.Button(value="Interrupt")

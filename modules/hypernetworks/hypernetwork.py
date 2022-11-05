@@ -367,7 +367,7 @@ def report_statistics(loss_info:dict):
 
 
 
-def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log_directory, training_width, training_height, steps, create_image_every, save_hypernetwork_every, template_file, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height):
+def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log_directory, training_width, training_height, steps, create_image_every, save_hypernetwork_every, template_file, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_batch_size, preview_batch_count, preview_cfg_scale, preview_seed, preview_width, preview_height):
     # images allows training previews to have infotext. Importing it at the top causes a circular import problem.
     from modules import images
 
@@ -403,12 +403,12 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
     hypernetwork = shared.loaded_hypernetwork
     checkpoint = sd_models.select_checkpoint()
 
-    ititial_step = hypernetwork.step or 0
-    if ititial_step >= steps:
+    initial_step = hypernetwork.step or 0
+    if initial_step >= steps:
         shared.state.textinfo = f"Model has already been trained beyond specified max steps"
         return hypernetwork, filename
 
-    scheduler = LearnRateScheduler(learn_rate, steps, ititial_step)
+    scheduler = LearnRateScheduler(learn_rate, steps, initial_step)
     
     # dataset loading may take a while, so input validations and early returns should be done before this
     shared.state.textinfo = f"Preparing dataset from {html.escape(data_root)}..."
@@ -452,9 +452,9 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
     last_saved_image = "<none>"
     forced_filename = "<none>"
 
-    pbar = tqdm.tqdm(enumerate(ds), total=steps - ititial_step)
+    pbar = tqdm.tqdm(enumerate(ds), total=steps - initial_step)
     for i, entries in pbar:
-        hypernetwork.step = i + ititial_step
+        hypernetwork.step = i + initial_step
         if len(loss_dict) > 0:
             previous_mean_losses = [i[-1] for i in loss_dict.values()]
             previous_mean_loss = mean(previous_mean_losses)
@@ -525,10 +525,16 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
             shared.sd_model.cond_stage_model.to(devices.device)
             shared.sd_model.first_stage_model.to(devices.device)
 
+            do_not_save_grid = True
+            if preview_batch_size > 1 or preview_batch_count > 1:
+                do_not_save_grid = False
             p = processing.StableDiffusionProcessingTxt2Img(
                 sd_model=shared.sd_model,
-                do_not_save_grid=True,
+                do_not_save_grid=do_not_save_grid,
                 do_not_save_samples=True,
+                batch_size=preview_batch_size, 
+                n_iter=preview_batch_count,
+                outpath_grids=shared.opts.outdir_grids or shared.opts.outdir_img2img_grids
             )
 
             if preview_from_txt2img:
@@ -536,6 +542,8 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
                 p.negative_prompt = preview_negative_prompt
                 p.steps = preview_steps
                 p.sampler_index = preview_sampler_index
+                p.batch_size = preview_batch_size
+                p.batch_count = preview_batch_count
                 p.cfg_scale = preview_cfg_scale
                 p.seed = preview_seed
                 p.width = preview_width
