@@ -10,7 +10,7 @@ from modules.api.models import *
 from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img, process_images
 from modules.sd_samplers import all_samplers
 from modules.extras import run_extras, run_pnginfo
-from modules.sd_models import checkpoints_list, get_closet_checkpoint_match, reload_model_weights
+from modules.sd_models import checkpoints_list, get_closest_checkpoint_match, reload_model_weights
 from modules.realesrgan_model import get_realesrgan_models
 from typing import List
 
@@ -251,7 +251,7 @@ class Api:
     def set_sd_models(self, req: LoadModelRequest):
         name = req.name
 
-        info = get_closet_checkpoint_match(name)
+        info = get_closest_checkpoint_match(name)
         if info is None:
             raise HTTPException(status_code=404, detail="Checkpoint not found")
 

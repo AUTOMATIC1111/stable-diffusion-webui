@@ -84,7 +84,7 @@ def list_models():
         checkpoints_list[title] = CheckpointInfo(filename, title, h, short_model_name, config)
 
 
-def get_closet_checkpoint_match(searchString):
+def get_closest_checkpoint_match(searchString):
     applicable = sorted([info for info in checkpoints_list.values() if searchString in info.title], key = lambda x:len(x.title))
     if len(applicable) > 0:
         return applicable[0]

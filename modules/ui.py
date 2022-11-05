@@ -542,7 +542,7 @@ def apply_setting(key, value):
         return gr.update()
 
     if key == "sd_model_checkpoint":
-        ckpt_info = sd_models.get_closet_checkpoint_match(value)
+        ckpt_info = sd_models.get_closest_checkpoint_match(value)
 
         if ckpt_info is not None:
             value = ckpt_info.title
