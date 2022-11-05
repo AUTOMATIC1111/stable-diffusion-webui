@@ -5,7 +5,7 @@ import torch
 
 from modules import devices, shared
 
-lazy_load : bool = False #when this is enabled, HNs will be loaded when required.
+lazy_load= False #when this is enabled, HNs will be loaded when required.
 
 
 
@@ -108,7 +108,8 @@ class Forward:
         if arg is None:
             raise ValueError("None cannot be evaluated!")
         try:
-            if type(arg) is str and arg.startswith(("{", "[", "(")) and (newarg:=ast.literal_eval(arg)) is not None:
+            newarg = ast.literal_eval(arg)
+            if type(arg) is str and arg.startswith(("{", "[", "(")) and newarg is not None:
                 if not newarg:
                     raise RuntimeError(f"Cannot eval false object {arg}!")
                 return newarg
@@ -161,13 +162,12 @@ class Forward:
             return False
 
     @staticmethod
-    def parseParallel(sequence)-> dict: # accepts sequence, returns {"Name or sequence" : weight...}
+    def parseParallel(sequence): # accepts sequence, returns {"Name or sequence" : weight...}
         assert len(sequence) > 1, f"Length of sequence {sequence} was not enough for parallel!"
         if type(sequence) is set: # only allows hashable types. otherwise it should be supplied as string cover
             assert all(type(key) in (str, tuple) for key in sequence), f"All keys should be Hypernetwork Name/Sequence for Set but given :{sequence}"
             return {key: 1/len(sequence) for key in sequence}
         elif type(sequence) is dict:
-            sequence : dict
             assert all(type(key) in (str, tuple) for key in sequence.keys()), f"All keys should be Hypernetwork Name/Sequence for Dict but given :{sequence}"
             assert all(type(value) in (int, float) for value in sequence.values()), f"All values should be int/float for Dict but given :{sequence}"
             return sequence
@@ -181,7 +181,7 @@ class Forward:
         return False
 
     @staticmethod
-    def parseSequential(sequence) -> list:  # accepts sequence, only checks if its list, then returns sequence.
+    def parseSequential(sequence):  # accepts sequence, only checks if its list, then returns sequence.
         if type(sequence) is list and len(sequence)>0:
             return sequence
         else:
@@ -190,10 +190,10 @@ class Forward:
 from modules.hypernetworks.hypernetwork import Hypernetwork
 class SingularForward(Forward):
 
-    def __init__(self, processor:str, strength:int|float):
+    def __init__(self, processor, strength):
         self.name = processor
         self.processor = processor
-        self.strength: int | float = strength
+        self.strength = strength
         super(SingularForward, self).__init__()
         # parse. We expect parsing Singletons or (k,v) pair here, which is HN Name and Strength.
         available_opts[self.processor] = Hypernetwork()
@@ -220,10 +220,10 @@ class SingularForward(Forward):
 
 class ParallelForward(Forward):
 
-    def __init__(self, sequence:dict, name=None):
+    def __init__(self, sequence, name=None):
         self.name = "ParallelForwardHypernet" if name is None else name
-        self.callers: dict[str, Forward] = {}
-        self.weights: dict[str, float] = {}
+        self.callers= {}
+        self.weights= {}
         super(ParallelForward, self).__init__()
         # parse
         for keys in sequence:
@@ -243,9 +243,9 @@ class ParallelForward(Forward):
 
 
 class SequentialForward(Forward):
-    def __init__(self, sequence:list, name=None):
+    def __init__(self, sequence, name=None):
         self.name = "SequentialForwardHypernet" if name is None else name
-        self.callers:list[Forward] = []
+        self.callers = []
         super(SequentialForward, self).__init__()
         for keys in sequence:
             self.callers.append(Forward.parse(keys))
