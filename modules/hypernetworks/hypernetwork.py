@@ -384,7 +384,8 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
     textual_inversion.validate_train_inputs(hypernetwork_name, learn_rate, batch_size, data_root, template_file, steps, save_hypernetwork_every, create_image_every, log_directory, name="hypernetwork")
 
     load_hypernetwork(hypernetwork_name)
-
+    if not isinstance(shared.loaded_hypernetwork, Hypernetwork):
+        raise RuntimeError("Cannot perform training for Hypernetwork structure pipeline!")
     shared.state.textinfo = "Initializing hypernetwork training..."
     shared.state.job_count = steps
 
