@@ -224,7 +224,7 @@ def validate_train_inputs(model_name, learn_rate, batch_size, data_root, templat
     if save_model_every or create_image_every:
         assert log_directory, "Log directory is empty"
 
-def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_directory, training_width, training_height, steps, create_image_every, save_embedding_every, template_file, save_image_with_stored_embedding, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height):
+def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_directory, training_width, training_height, steps, create_image_every, save_embedding_every, template_file, save_image_with_stored_embedding, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_batch_size, preview_batch_count, preview_cfg_scale, preview_seed, preview_width, preview_height):
     save_embedding_every = save_embedding_every or 0
     create_image_every = create_image_every or 0
     validate_train_inputs(embedding_name, learn_rate, batch_size, data_root, template_file, steps, save_embedding_every, create_image_every, log_directory, name="embedding")
@@ -262,12 +262,12 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
     embedding = hijack.embedding_db.word_embeddings[embedding_name]
     checkpoint = sd_models.select_checkpoint()
 
-    ititial_step = embedding.step or 0
-    if ititial_step >= steps:
+    initial_step = embedding.step or 0
+    if initial_step >= steps:
         shared.state.textinfo = f"Model has already been trained beyond specified max steps"
         return embedding, filename
 
-    scheduler = LearnRateScheduler(learn_rate, steps, ititial_step)
+    scheduler = LearnRateScheduler(learn_rate, steps, initial_step)
 
     # dataset loading may take a while, so input validations and early returns should be done before this
     shared.state.textinfo = f"Preparing dataset from {html.escape(data_root)}..."
@@ -286,9 +286,9 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
     forced_filename = "<none>"
     embedding_yet_to_be_embedded = False
 
-    pbar = tqdm.tqdm(enumerate(ds), total=steps-ititial_step)
+    pbar = tqdm.tqdm(enumerate(ds), total=steps-initial_step)
     for i, entries in pbar:
-        embedding.step = i + ititial_step
+        embedding.step = i + initial_step
 
         scheduler.apply(optimizer, embedding.step)
         if scheduler.finished:
@@ -346,6 +346,8 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
                 p.negative_prompt = preview_negative_prompt
                 p.steps = preview_steps
                 p.sampler_index = preview_sampler_index
+                p.batch_size = preview_batch_size
+                p.batch_count = preview_batch_count
                 p.cfg_scale = preview_cfg_scale
                 p.seed = preview_seed
                 p.width = preview_width
