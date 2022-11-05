@@ -94,8 +94,6 @@ def initialize():
                 print(f"Invalid path to TLS certfile: '{cmd_opts.tls_certfile}'")
         except TypeError:
             cmd_opts.tls_keyfile = cmd_opts.tls_certfile = None
-            print(f"path: '{cmd_opts.tls_keyfile}' {type(cmd_opts.tls_keyfile)}")
-            print(f"path: '{cmd_opts.tls_certfile}' {type(cmd_opts.tls_certfile)}")
             print("TLS setup invalid, running webui without TLS")
         else:
             print("Running with TLS")
