@@ -70,6 +70,11 @@
 			"name": "novelai-2-local-prompt",
 			"url": "https://github.com/animerl/novelai-2-local-prompt",
 			"description": "Add a button to convert the prompts used in NovelAI for use in the WebUI. In addition, add a button that allows you to recall a previously used prompt."
+		},
+		{
+			"name": "tokenizer",
+			"url": "https://github.com/AUTOMATIC1111/stable-diffusion-webui-tokenizer.git",
+			"description": "Adds a tab that lets you preview how CLIP model would tokenize your text."
 		}
 	]
 }
