@@ -1,3 +1,4 @@
+from lib2to3.pgen2 import token
 import math
 import os
 import sys
@@ -68,10 +69,15 @@ class StableDiffusionModelHijack:
     embedding_db = modules.textual_inversion.textual_inversion.EmbeddingDatabase(cmd_opts.embeddings_dir)
 
     def hijack(self, m):
-        model_embeddings = m.cond_stage_model.transformer.text_model.embeddings
+        if hasattr(m.cond_stage_model.transformer, 'text_model'):
+            model_embeddings = m.cond_stage_model.transformer.text_model.embeddings 
+            model_embeddings.token_embedding = EmbeddingsWithFixes(model_embeddings.token_embedding, self)
+            m.cond_stage_model = FrozenCLIPEmbedderWithCustomWords(m.cond_stage_model, self)
+        else:
+            model_embeddings = m.cond_stage_model.transformer.embeddings 
+            model_embeddings.word_embeddings = EmbeddingsWithFixes(model_embeddings.word_embeddings, self)
+            m.cond_stage_model = FrozenCLIPEmbedderWithCustomWords(m.cond_stage_model, self)
 
-        model_embeddings.token_embedding = EmbeddingsWithFixes(model_embeddings.token_embedding, self)
-        m.cond_stage_model = FrozenCLIPEmbedderWithCustomWords(m.cond_stage_model, self)
 
         self.clip = m.cond_stage_model
 
@@ -90,9 +96,14 @@ class StableDiffusionModelHijack:
         if type(m.cond_stage_model) == FrozenCLIPEmbedderWithCustomWords:
             m.cond_stage_model = m.cond_stage_model.wrapped
 
-        model_embeddings = m.cond_stage_model.transformer.text_model.embeddings
+        if hasattr(m.cond_stage_model.transformer, 'text_model'):
+            model_embeddings = m.cond_stage_model.transformer.text_model.embeddings
+        else:
+            model_embeddings = m.cond_stage_model.transformer.embeddings
         if type(model_embeddings.token_embedding) == EmbeddingsWithFixes:
             model_embeddings.token_embedding = model_embeddings.token_embedding.wrapped
+        if type(model_embeddings.word_embeddings) == EmbeddingsWithFixes:
+            model_embeddings.word_embeddings = model_embeddings.word_embeddings.warpped
 
         self.layers = None
         self.circular_enabled = False
@@ -123,7 +134,8 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
         self.tokenizer = wrapped.tokenizer
         self.token_mults = {}
 
-        self.comma_token = [v for k, v in self.tokenizer.get_vocab().items() if k == ',</w>'][0]
+        # self.comma_token = [v for k, v in self.tokenizer.get_vocab().items() if k == ',</w>'][0]
+        self.comma_token = ','
 
         tokens_with_parens = [(k, v) for k, v in self.tokenizer.get_vocab().items() if '(' in k or ')' in k or '[' in k or ']' in k]
         for text, ident in tokens_with_parens:
@@ -142,13 +154,15 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
                 self.token_mults[ident] = mult
 
     def tokenize_line(self, line, used_custom_terms, hijack_comments):
-        id_end = self.wrapped.tokenizer.eos_token_id
+        # id_end = self.wrapped.tokenizer.eos_token_id
+        id_end = self.wrapped.tokenizer.sep_token_id
 
         if opts.enable_emphasis:
             parsed = prompt_parser.parse_prompt_attention(line)
         else:
             parsed = [[line, 1.0]]
 
+        # tokenized = self.wrapped.tokenizer([text for text, _ in parsed], truncation=False, add_special_tokens=False)["input_ids"]
         tokenized = self.wrapped.tokenizer([text for text, _ in parsed], truncation=False, add_special_tokens=False)["input_ids"]
 
         fixes = []
@@ -229,8 +243,11 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
         return batch_multipliers, remade_batch_tokens, used_custom_terms, hijack_comments, hijack_fixes, token_count
 
     def process_text_old(self, text):
-        id_start = self.wrapped.tokenizer.bos_token_id
-        id_end = self.wrapped.tokenizer.eos_token_id
+        # id_start = self.wrapped.tokenizer.bos_token_id
+        # id_end = self.wrapped.tokenizer.eos_token_id
+        # maxlen = self.wrapped.max_length  # you get to stay at 77
+        id_start = self.wrapped.tokenizer.cls_token_id
+        id_end = self.wrapped.tokenizer.sep_token_id
         maxlen = self.wrapped.max_length  # you get to stay at 77
         used_custom_terms = []
         remade_batch_tokens = []
@@ -295,7 +312,13 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
             batch_multipliers.append(multipliers)
         return batch_multipliers, remade_batch_tokens, used_custom_terms, hijack_comments, hijack_fixes, token_count
 
+
+    # don't use th hijack
     def forward(self, text):
+        z = self.wrapped(text)
+        return z
+
+    def forward1(self, text):
         use_old = opts.use_old_emphasis_implementation
         if use_old:
             batch_multipliers, remade_batch_tokens, used_custom_terms, hijack_comments, hijack_fixes, token_count = self.process_text_old(text)
