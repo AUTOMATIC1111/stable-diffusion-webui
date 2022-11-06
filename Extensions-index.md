@@ -126,6 +126,12 @@
 			"url": "https://github.com/Harvester62/stable-diffusion-webui-localization-it_IT",
 			"description": "Provide Italian localization for the WebUI",
 			"tags": ["localization"]
+		},
+		{
+			"name": "de_DE Localization",
+			"url": "https://github.com/Strothis/stable-diffusion-webui-de_DE",
+			"description": "Provide German localization for the WebUI",
+			"tags": ["localization"]
 		}
 	]
 }
