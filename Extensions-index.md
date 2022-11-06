@@ -78,9 +78,8 @@
 		},
 		{
 			"name": "Latent Mirroring",
-			"url": "https://github.com/dfaker/SD-latent-mirroring"
-			"description": "Applies mirroring and flips to the latent images to produce anything from subtle balanced compositions to perfect reflections",
-			
+			"url": "https://github.com/dfaker/SD-latent-mirroring",
+			"description": "Applies mirroring and flips to the latent images to produce anything from subtle balanced compositions to perfect reflections"
 		}
 	]
 }
