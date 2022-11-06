@@ -10,7 +10,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 
 from modules.paths import script_path
 
-from modules import devices, sd_samplers, upscaler, extensions
+from modules import devices, sd_samplers, upscaler, extensions, localization
 import modules.codeformer_model as codeformer
 import modules.extras
 import modules.face_restoration
@@ -28,9 +28,7 @@ import modules.txt2img
 import modules.script_callbacks
 
 import modules.ui
-from modules import devices
 from modules import modelloader
-from modules.paths import script_path
 from modules.shared import cmd_opts
 import modules.hypernetworks.hypernetwork
 
@@ -64,6 +62,7 @@ def wrap_gradio_gpu_call(func, extra_outputs=None):
 
 def initialize():
     extensions.list_extensions()
+    localization.list_localizations(cmd_opts.localizations_dir)
 
     if cmd_opts.ui_debug_mode:
         shared.sd_upscalers = upscaler.UpscalerLanczos().scalers
@@ -98,7 +97,6 @@ def initialize():
             print("TLS setup invalid, running webui without TLS")
         else:
             print("Running with TLS")
-
 
     # make the program just exit at ctrl+c without waiting for anything
     def sigint_handler(sig, frame):
@@ -185,6 +183,9 @@ def webui():
 
         print('Reloading extensions')
         extensions.list_extensions()
+
+        localization.list_localizations(cmd_opts.localizations_dir)
+
         print('Reloading custom scripts')
         modules.scripts.reload_scripts()
         print('Reloading modules: modules.ui')

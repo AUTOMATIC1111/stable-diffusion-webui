@@ -1563,11 +1563,10 @@ def create_ui(wrap_gradio_gpu_call):
             shared.state.need_restart = True
 
         restart_gradio.click(
-
             fn=request_restart,
+            _js='restart_reload',
             inputs=[],
             outputs=[],
-            _js='restart_reload'
         )
 
         if column is not None:
