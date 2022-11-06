@@ -17,6 +17,7 @@ __pycache__
 /webui.settings.bat
 /embeddings
 /styles.csv
+/params.txt
 /styles.csv.bak
 /webui-user.bat
 /webui-user.sh
@@ -26,3 +27,7 @@ __pycache__
 notification.mp3
 /SwinIR
 /textual_inversion
+.vscode
+/extensions
+/test/stdout.txt
+/test/stderr.txt

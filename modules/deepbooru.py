@@ -19,6 +19,7 @@ def get_deepbooru_tags(pil_image):
         release_process()
 
 
+OPT_INCLUDE_RANKS = "include_ranks"
 def create_deepbooru_opts():
     from modules import shared
 
@@ -26,6 +27,7 @@ def create_deepbooru_opts():
         "use_spaces": shared.opts.deepbooru_use_spaces,
         "use_escape": shared.opts.deepbooru_escape,
         "alpha_sort": shared.opts.deepbooru_sort_alpha,
+        OPT_INCLUDE_RANKS: shared.opts.interrogate_return_ranks,
     }
 
 
@@ -48,11 +50,12 @@ def create_deepbooru_process(threshold, deepbooru_opts):
     the tags.
     """
     from modules import shared  # prevents circular reference
-    shared.deepbooru_process_manager = multiprocessing.Manager()
+    context = multiprocessing.get_context("spawn")
+    shared.deepbooru_process_manager = context.Manager()
     shared.deepbooru_process_queue = shared.deepbooru_process_manager.Queue()
     shared.deepbooru_process_return = shared.deepbooru_process_manager.dict()
     shared.deepbooru_process_return["value"] = -1
-    shared.deepbooru_process = multiprocessing.Process(target=deepbooru_process, args=(shared.deepbooru_process_queue, shared.deepbooru_process_return, threshold, deepbooru_opts))
+    shared.deepbooru_process = context.Process(target=deepbooru_process, args=(shared.deepbooru_process_queue, shared.deepbooru_process_return, threshold, deepbooru_opts))
     shared.deepbooru_process.start()
 
 
@@ -100,7 +103,7 @@ def get_deepbooru_tags_model():
 
     tags = dd.project.load_tags_from_project(model_path)
     model = dd.project.load_model_from_project(
-        model_path, compile_model=True
+        model_path, compile_model=False
     )
     return model, tags
 
@@ -113,6 +116,7 @@ def get_deepbooru_tags_from_model(model, tags, pil_image, threshold, deepbooru_o
     alpha_sort = deepbooru_opts['alpha_sort']
     use_spaces = deepbooru_opts['use_spaces']
     use_escape = deepbooru_opts['use_escape']
+    include_ranks = deepbooru_opts['include_ranks']
 
     width = model.input_shape[2]
     height = model.input_shape[1]
@@ -151,19 +155,19 @@ def get_deepbooru_tags_from_model(model, tags, pil_image, threshold, deepbooru_o
     if alpha_sort:
         sort_ndx = 1
 
-    # sort by reverse by likelihood and normal for alpha
+    # sort by reverse by likelihood and normal for alpha, and format tag text as requested
     unsorted_tags_in_theshold.sort(key=lambda y: y[sort_ndx], reverse=(not alpha_sort))
     for weight, tag in unsorted_tags_in_theshold:
-        result_tags_out.append(tag)
+        tag_outformat = tag
+        if use_spaces:
+            tag_outformat = tag_outformat.replace('_', ' ')
+        if use_escape:
+            tag_outformat = re.sub(re_special, r'\\\1', tag_outformat)
+        if include_ranks:
+            tag_outformat = f"({tag_outformat}:{weight:.3f})"
+
+        result_tags_out.append(tag_outformat)
 
     print('\n'.join(sorted(result_tags_print, reverse=True)))
 
-    tags_text = ', '.join(result_tags_out)
-
-    if use_spaces:
-        tags_text = tags_text.replace('_', ' ')
-
-    if use_escape:
-        tags_text = re.sub(re_special, r'\\\1', tags_text)
-
-    return tags_text.replace(':', ' ')
+    return ', '.join(result_tags_out)

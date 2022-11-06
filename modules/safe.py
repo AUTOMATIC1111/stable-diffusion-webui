@@ -32,7 +32,7 @@ class RestrictedUnpickler(pickle.Unpickler):
             return getattr(collections, name)
         if module == 'torch._utils' and name in ['_rebuild_tensor_v2', '_rebuild_parameter']:
             return getattr(torch._utils, name)
-        if module == 'torch' and name in ['FloatStorage', 'HalfStorage', 'IntStorage', 'LongStorage', 'DoubleStorage']:
+        if module == 'torch' and name in ['FloatStorage', 'HalfStorage', 'IntStorage', 'LongStorage', 'DoubleStorage', 'ByteStorage']:
             return getattr(torch, name)
         if module == 'torch.nn.modules.container' and name in ['ParameterDict']:
             return getattr(torch.nn.modules.container, name)
@@ -96,11 +96,18 @@ def load(filename, *args, **kwargs):
         if not shared.cmd_opts.disable_safe_unpickle:
             check_pt(filename)
 
+    except pickle.UnpicklingError:
+        print(f"Error verifying pickled file from {filename}:", file=sys.stderr)
+        print(traceback.format_exc(), file=sys.stderr)
+        print(f"-----> !!!! The file is most likely corrupted !!!! <-----", file=sys.stderr)
+        print(f"You can skip this check with --disable-safe-unpickle commandline argument, but that is not going to help you.\n\n", file=sys.stderr)
+        return None
+
     except Exception:
         print(f"Error verifying pickled file from {filename}:", file=sys.stderr)
         print(traceback.format_exc(), file=sys.stderr)
         print(f"\nThe file may be malicious, so the program is not going to read it.", file=sys.stderr)
-        print(f"You can skip this check with --disable-safe-unpickle commandline argument.", file=sys.stderr)
+        print(f"You can skip this check with --disable-safe-unpickle commandline argument.\n\n", file=sys.stderr)
         return None
 
     return unsafe_torch_load(filename, *args, **kwargs)

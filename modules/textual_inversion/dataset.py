@@ -24,11 +24,12 @@ class DatasetEntry:
 
 
 class PersonalizedBase(Dataset):
-    def __init__(self, data_root, width, height, repeats, flip_p=0.5, placeholder_token="*", model=None, device=None, template_file=None, include_cond=False):
-        re_word = re.compile(shared.opts.dataset_filename_word_regex) if len(shared.opts.dataset_filename_word_regex)>0 else None
+    def __init__(self, data_root, width, height, repeats, flip_p=0.5, placeholder_token="*", model=None, device=None, template_file=None, include_cond=False, batch_size=1):
+        re_word = re.compile(shared.opts.dataset_filename_word_regex) if len(shared.opts.dataset_filename_word_regex) > 0 else None
 
         self.placeholder_token = placeholder_token
 
+        self.batch_size = batch_size
         self.width = width
         self.height = height
         self.flip = transforms.RandomHorizontalFlip(p=flip_p)
@@ -41,6 +42,8 @@ class PersonalizedBase(Dataset):
         self.lines = lines
 
         assert data_root, 'dataset directory not specified'
+        assert os.path.isdir(data_root), "Dataset directory doesn't exist"
+        assert os.listdir(data_root), "Dataset directory is empty"
 
         cond_model = shared.sd_model.cond_stage_model
 
@@ -78,18 +81,19 @@ class PersonalizedBase(Dataset):
 
             if include_cond:
                 entry.cond_text = self.create_text(filename_text)
-                entry.cond = cond_model([entry.cond_text]).to(devices.cpu)
+                entry.cond = cond_model([entry.cond_text]).to(devices.cpu).squeeze(0)
 
             self.dataset.append(entry)
 
-        self.length = len(self.dataset) * repeats
+        assert len(self.dataset) > 0, "No images have been found in the dataset."
+        self.length = len(self.dataset) * repeats // batch_size
 
-        self.initial_indexes = np.arange(self.length) % len(self.dataset)
+        self.dataset_length = len(self.dataset)
         self.indexes = None
         self.shuffle()
 
     def shuffle(self):
-        self.indexes = self.initial_indexes[torch.randperm(self.initial_indexes.shape[0])]
+        self.indexes = np.random.permutation(self.dataset_length)
 
     def create_text(self, filename_text):
         text = random.choice(self.lines)
@@ -101,13 +105,19 @@ class PersonalizedBase(Dataset):
         return self.length
 
     def __getitem__(self, i):
-        if i % len(self.dataset) == 0:
-            self.shuffle()
+        res = []
 
-        index = self.indexes[i % len(self.indexes)]
-        entry = self.dataset[index]
+        for j in range(self.batch_size):
+            position = i * self.batch_size + j
+            if position % len(self.indexes) == 0:
+                self.shuffle()
 
-        if entry.cond is None:
-            entry.cond_text = self.create_text(entry.filename_text)
+            index = self.indexes[position % len(self.indexes)]
+            entry = self.dataset[index]
 
-        return entry
+            if entry.cond is None:
+                entry.cond_text = self.create_text(entry.filename_text)
+
+            res.append(entry)
+
+        return res
