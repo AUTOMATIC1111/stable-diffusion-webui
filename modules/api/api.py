@@ -63,6 +63,7 @@ class Api:
         self.app.add_api_route("/sdapi/v1/extra-batch-images", self.extras_batch_images_api, methods=["POST"], response_model=ExtrasBatchImagesResponse)
         self.app.add_api_route("/sdapi/v1/png-info", self.pnginfoapi, methods=["POST"], response_model=PNGInfoResponse)
         self.app.add_api_route("/sdapi/v1/progress", self.progressapi, methods=["GET"], response_model=ProgressResponse)
+        self.app.add_api_route("/sdapi/v1/interrogate", self.interrogateapi, methods=["POST"])
         self.app.add_api_route("/sdapi/v1/interrupt", self.interruptapi, methods=["POST"])
         self.app.add_api_route("/sdapi/v1/options", self.get_config, methods=["GET"], response_model=OptionsModel)
         self.app.add_api_route("/sdapi/v1/options", self.set_config, methods=["POST"])
@@ -213,6 +214,19 @@ class Api:
             current_image = encode_pil_to_base64(shared.state.current_image)
 
         return ProgressResponse(progress=progress, eta_relative=eta_relative, state=shared.state.dict(), current_image=current_image)
+
+    def interrogateapi(self, interrogatereq: InterrogateRequest):
+        image_b64 = interrogatereq.image
+        if image_b64 is None:
+            raise HTTPException(status_code=404, detail="Image not found") 
+
+        img = self.__base64_to_image(image_b64)
+
+        # Override object param
+        with self.queue_lock:
+            processed = shared.interrogator.interrogate(img)
+        
+        return InterrogateResponse(caption=processed)
 
     def interruptapi(self):
         shared.state.interrupt()
