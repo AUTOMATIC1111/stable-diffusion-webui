@@ -75,6 +75,12 @@
 			"name": "tokenizer",
 			"url": "https://github.com/AUTOMATIC1111/stable-diffusion-webui-tokenizer.git",
 			"description": "Adds a tab that lets you preview how CLIP model would tokenize your text."
+		},
+		{
+			"name": "Latent Mirroring",
+			"url": "https://github.com/dfaker/SD-latent-mirroring"
+			"description": "Applies mirroring and flips to the latent images to produce anything from subtle balanced compositions to perfect reflections",
+			
 		}
 	]
 }
