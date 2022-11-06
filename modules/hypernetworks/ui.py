@@ -9,7 +9,7 @@ from modules import devices, sd_hijack, shared
 from modules.hypernetworks import hypernetwork
 
 not_available = ["hardswish", "multiheadattention"]
-keys = ["linear"] + list(x for x in hypernetwork.HypernetworkModule.activation_dict.keys() if x not in not_available)
+keys = list(x for x in hypernetwork.HypernetworkModule.activation_dict.keys() if x not in not_available)
 
 def create_hypernetwork(name, enable_sizes, overwrite_old, layer_structure=None, activation_func=None, weight_init=None, add_layer_norm=False, use_dropout=False):
     # Remove illegal characters from name.

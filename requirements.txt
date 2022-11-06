@@ -4,7 +4,7 @@ fairscale==0.4.4
 fonts
 font-roboto
 gfpgan
-gradio==3.5
+gradio==3.8
 invisible-watermark
 numpy
 omegaconf
@@ -12,7 +12,7 @@ opencv-python
 requests
 piexif
 Pillow
-pytorch_lightning
+pytorch_lightning==1.7.7
 realesrgan
 scikit-image>=0.19
 timm==0.4.12

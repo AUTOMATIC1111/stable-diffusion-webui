@@ -22,3 +22,14 @@ function extensions_check(){
 
     return []
 }
+
+function install_extension_from_index(button, url){
+    button.disabled = "disabled"
+    button.value = "Installing..."
+
+    textarea = gradioApp().querySelector('#extension_to_install textarea')
+    textarea.value = url
+	textarea.dispatchEvent(new Event("input", { bubbles: true }))
+
+    gradioApp().querySelector('#install_extension_button').click()
+}
