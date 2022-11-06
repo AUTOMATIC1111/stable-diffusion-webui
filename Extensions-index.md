@@ -108,6 +108,12 @@
 			"url": "https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN",
 			"description": "Provide Simplified Chinese localization",
 			"tags": ["localization"]
+		},
+		{
+			"name": "ko_KR Localization",
+			"url": "https://github.com/36DB/stable-diffusion-webui-kr",
+			"description": "Provide Korean localization for the WebUI",
+			"tags": ["localization"]
 		}
 	]
 }
