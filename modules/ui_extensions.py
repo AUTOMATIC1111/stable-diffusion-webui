@@ -263,7 +263,7 @@ def create_ui():
                     install_extension_button = gr.Button(elem_id="install_extension_button", visible=False)
 
                 with gr.Row():
-                    hide_tags = gr.CheckboxGroup(value=["ads", "localization"], label="Hide extensions with tags", choices=["script", "ads", "localization"])
+                    hide_tags = gr.CheckboxGroup(value=["ads", "localization"], label="Hide extensions with tags", choices=["script", "localization", "tab", "ads"])
 
                 install_result = gr.HTML()
                 available_extensions_table = gr.HTML()
