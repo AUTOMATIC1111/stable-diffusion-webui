@@ -87,3 +87,11 @@ FROM download
 COPY . /sd
 
 CMD ["python", "launch.py", "--api", "--listen", "--xformers"]
+
+
+# Run container, applies local code, with downloads
+FROM download
+
+COPY . /sd
+
+CMD ["python", "launch.py", "--api", "--listen", "--xformers"]
