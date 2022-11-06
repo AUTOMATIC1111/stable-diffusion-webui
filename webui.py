@@ -57,7 +57,7 @@ def wrap_gradio_gpu_call(func, extra_outputs=None):
 
         return res
 
-    return modules.ui.wrap_gradio_call(f, extra_outputs=extra_outputs)
+    return modules.ui.wrap_gradio_call(f, extra_outputs=extra_outputs, add_stats=True)
 
 
 def initialize():
