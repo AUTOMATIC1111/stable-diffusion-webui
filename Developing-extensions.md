@@ -12,6 +12,17 @@ Web ui interacts with installed extensions in the following way:
 
 For how to develop custom scripts, which usually will do most of extension's work, see [Developing custom scripts](Developing-custom-scripts).
 
+## Localization extensions
+The preferred way to do localizations for the project is via making an extension. The basic file structure for the extension should be:
+
+```
+ 📁 localization-la_LA
+ ┗━━ 📁 localization
+     ┗━━ 📄 la_LA.json
+```
+
+Create a github repository with this file structure and ask any of people listed in collaborators section to add your extension to wiki.
+
 ## install.py
 `install.py` is the script that is launched by the `launch.py`, the launcher, in a separate process before webui starts, and it's meant to install dependencies of the extension. It must be located in the root directory of the extension, not in the scripts directory. The script is launched with `PYTHONPATH` environment variable set to webui's path, so you can just `import launch` and use its functionality:
 
