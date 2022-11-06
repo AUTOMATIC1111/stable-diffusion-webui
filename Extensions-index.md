@@ -104,6 +104,12 @@
 			"tags": ["script"]
 		},
 		{
+			"name": "Embeddings editor",
+			"url": "https://github.com/CodeExplode/stable-diffusion-webui-embedding-editor.git",
+			"description": "Allows you to manually edit textual inversion embeddings using sliders.",
+			"tags": ["script", "tab"]
+		},
+		{
 			"name": "localization zh_CN",
 			"url": "https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN",
 			"description": "Provide Simplified Chinese localization",
