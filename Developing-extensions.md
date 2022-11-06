@@ -20,7 +20,7 @@ The preferred way to do localizations for the project is via making an extension
  📁 webui root directory
  ┗━━ 📁 extensions
      ┗━━ 📁 webui-localization-la_LA        <----- name of extension
-         ┗━━ 📁 localization                <----- the single directory inside the extension
+         ┗━━ 📁 localizations                <----- the single directory inside the extension
              ┗━━ 📄 la_LA.json              <----- actual file with translations
 ```
 
