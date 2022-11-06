@@ -1,7 +1,6 @@
 addEventListener('keydown', (event) => {
 	let target = event.originalTarget || event.composedPath()[0];
-	if (!target.hasAttribute("placeholder")) return;
-	if (!target.placeholder.toLowerCase().includes("prompt")) return;
+	if (!target.matches("#toprow textarea.gr-text-input[placeholder]")) return;
 	if (! (event.metaKey || event.ctrlKey)) return;
 
 
