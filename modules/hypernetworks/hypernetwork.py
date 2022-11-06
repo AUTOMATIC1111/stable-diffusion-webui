@@ -489,7 +489,7 @@ Last saved image: {html.escape(last_saved_image)}<br/>
 </p>
 """
         
-    report_statistics(loss_dict)
+    textual_inversion.report_statistics(loss_dict)
 
     filename = os.path.join(shared.cmd_opts.hypernetwork_dir, f'{hypernetwork_name}.pt')
     save_hypernetwork(hypernetwork, checkpoint, hypernetwork_name, filename)
