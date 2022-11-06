@@ -102,6 +102,12 @@
 			"url": "https://github.com/dfaker/SD-latent-mirroring",
 			"description": "Applies mirroring and flips to the latent images to produce anything from subtle balanced compositions to perfect reflections",
 			"tags": ["script"]
+		},
+		{
+			"name": "localization zh_CN",
+			"url": "https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN",
+			"description": "Provide Simplified Chinese localization",
+			"tags": ["localization"]
 		}
 	]
 }
