@@ -120,6 +120,12 @@
 			"url": "https://github.com/36DB/stable-diffusion-webui-kr",
 			"description": "Provide Korean localization for the WebUI",
 			"tags": ["localization"]
+		},
+		{
+			"name": "it_IT Localization",
+			"url": "https://github.com/Harvester62/stable-diffusion-webui-localization-it_IT",
+			"description": "Provide Italian localization for the WebUI",
+			"tags": ["localization"]
 		}
 	]
 }
