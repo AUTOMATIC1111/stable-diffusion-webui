@@ -7,6 +7,7 @@ Web ui interacts with installed extensions in the following way:
   - `sys.path` is extended to include the extension directory, so you can import anything in it without worrying
   - you can use `scripts.basedir()` to get the current extension's directory (since user can name it anything he wants)
 - extension's javascript files in the `javascript` directory are added to the page
+- extension's localization files in the `localizations` directory are added to settings; if there are two localizations with same name, they are not merged, one replaces another.
 - extension's `style.css` file is added to the page
 
 For how to develop custom scripts, which usually will do most of extension's work, see [Developing custom scripts](Developing-custom-scripts).
