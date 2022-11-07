@@ -132,7 +132,7 @@
 			"url": "https://github.com/Strothis/stable-diffusion-webui-de_DE",
 			"description": "Provide German localization for the WebUI",
 			"tags": ["localization"]
-		}
+		},
 		{
 			"name": "ja_JP Localization",
 			"url": "https://github.com/yuuki76/stable-diffusion-webui-ja_JP",
