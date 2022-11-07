@@ -110,7 +110,7 @@
 			"tags": ["script", "tab"]
 		},
 		{
-			"name": "localization zh_CN",
+			"name": "zh_CN localization",
 			"url": "https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN",
 			"description": "Provide Simplified Chinese localization for the WebUI",
 			"tags": ["localization"]
