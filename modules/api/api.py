@@ -57,7 +57,7 @@ class Api:
         self.app.add_api_route("/sdapi/v1/samplers", self.get_samplers, methods=["GET"], response_model=List[SamplerItem])
         self.app.add_api_route("/sdapi/v1/upscalers", self.get_upscalers, methods=["GET"], response_model=List[UpscalerItem])
         self.app.add_api_route("/sdapi/v1/sd-models", self.get_sd_models, methods=["GET"], response_model=List[SDModelItem])
-        self.app.add_api_route("/sdapi/v1/sd-models", self.get_sd_models, methods=["POST"])
+        self.app.add_api_route("/sdapi/v1/sd-models", self.set_sd_models, methods=["POST"])
         self.app.add_api_route("/sdapi/v1/hypernetworks", self.get_hypernetworks, methods=["GET"], response_model=List[HypernetworkItem])
         self.app.add_api_route("/sdapi/v1/face-restorers", self.get_face_restorers, methods=["GET"], response_model=List[FaceRestorerItem])
         self.app.add_api_route("/sdapi/v1/realesrgan-models", self.get_realesrgan_models, methods=["GET"], response_model=List[RealesrganItem])
@@ -66,6 +66,9 @@ class Api:
         self.app.add_api_route("/sdapi/v1/artists", self.get_artists, methods=["GET"], response_model=List[ArtistItem])
 
     def text2imgapi(self, txt2imgreq: StableDiffusionTxt2ImgProcessingAPI):
+        if "sd_model_checkpoint" in txt2imgreq.override_settings:
+            self.set_sd_models(LoadModelRequest(name=txt2imgreq.override_settings['sd_model_checkpoint']))
+        
         sampler_index = sampler_to_index(txt2imgreq.sampler_index)
 
         if sampler_index is None:
@@ -93,6 +96,9 @@ class Api:
         return TextToImageResponse(images=b64images, parameters=vars(txt2imgreq), info=processed.js())
 
     def img2imgapi(self, img2imgreq: StableDiffusionImg2ImgProcessingAPI):
+        if "sd_model_checkpoint" in img2imgreq.override_settings:
+            self.set_sd_models(LoadModelRequest(name=img2imgreq.override_settings['sd_model_checkpoint']))
+        
         sampler_index = sampler_to_index(img2imgreq.sampler_index)
 
         if sampler_index is None:
