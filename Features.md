@@ -366,6 +366,22 @@ A convenience option to partially render your image at a lower resolution, upsca
 | ![00262-836728130](https://user-images.githubusercontent.com/20920490/191177752-ad983e62-8e1c-4197-8f3b-3165a6a6c31d.png) | ![00261-836728130](https://user-images.githubusercontent.com/20920490/191177785-395a951e-0d2e-4db7-9645-4c5af9321772.png) |
 | ![00345-950170121](https://user-images.githubusercontent.com/20920490/191178018-25dcd98d-6c45-4c31-ab7a-3de6c51c52e3.png) | ![00341-950170121](https://user-images.githubusercontent.com/20920490/191178048-3eba3db4-e5be-4617-9bfe-2cb36cebaafc.png) |
 
+# Composable Diffusion
+
+A method to allow the combination of multiple prompts.
+combine prompts using an uppercase AND
+
+    a cat AND a dog
+
+Supports weights for prompts: `a cat :1.2 AND a dog AND a penguin :2.2`
+The default weight value is 1.
+It can be quite useful for combining multiple embeddings to your result: `creature_embedding in the woods:0.7 AND arcane_embedding:0.5 AND glitch_embedding:0.2` 
+
+Using a value lower than 0.1 will barely have an effect. `a cat AND a dog:0.03` will produce basically the same output as `a cat`
+
+This could be handy for generating fine-tuned recursive variations, by continuing to append more prompts to your total. `creature_embedding on log AND frog:0.13 AND yellow eyes:0.08`
+
+
 # Interrupt
 
 Press the Interrupt button to stop current processing.
