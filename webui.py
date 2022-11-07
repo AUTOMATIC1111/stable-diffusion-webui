@@ -7,6 +7,7 @@ import threading
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
+import certifi
 
 from modules.paths import script_path
 
@@ -97,6 +98,18 @@ def initialize():
             print("TLS setup invalid, running webui without TLS")
         else:
             print("Running with TLS")
+
+    if cmd_opts.self_sign:
+        print('Adding local certificate to Certifi trust store...')
+        cafile = certifi.where()
+        with open(cmd_opts.tls_certfile, 'rb') as infile:
+            customca = infile.read()
+
+        with open(cafile, 'ab') as outfile:
+            outfile.write(customca)
+
+        print('python cert store updated')
+
 
     # make the program just exit at ctrl+c without waiting for anything
     def sigint_handler(sig, frame):
