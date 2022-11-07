@@ -133,5 +133,11 @@
 			"description": "Provide German localization for the WebUI",
 			"tags": ["localization"]
 		}
+		{
+			"name": "ja_JP Localization",
+			"url": "https://github.com/yuuki76/stable-diffusion-webui-ja_JP",
+			"description": "Provide Japanese localization for the WebUI",
+			"tags": ["localization"]
+		}
 	]
 }
