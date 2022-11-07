@@ -112,7 +112,7 @@
 		{
 			"name": "localization zh_CN",
 			"url": "https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN",
-			"description": "Provide Simplified Chinese localization",
+			"description": "Provide Simplified Chinese localization for the WebUI",
 			"tags": ["localization"]
 		},
 		{
