@@ -7,7 +7,7 @@ import threading
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-import certifi
+import modules.tls
 
 from modules.paths import script_path
 
@@ -67,6 +67,7 @@ def wrap_gradio_gpu_call(func, extra_outputs=None):
 
 
 def initialize():
+    modules.tls.setup_tls()
     extensions.list_extensions()
     localization.list_localizations(cmd_opts.localizations_dir)
 
@@ -90,36 +91,6 @@ def initialize():
     shared.opts.onchange("sd_vae", wrap_queued_call(lambda: modules.sd_vae.reload_vae_weights()), call=False)
     shared.opts.onchange("sd_hypernetwork", wrap_queued_call(lambda: modules.hypernetworks.hypernetwork.load_hypernetwork(shared.opts.sd_hypernetwork)))
     shared.opts.onchange("sd_hypernetwork_strength", modules.hypernetworks.hypernetwork.apply_strength)
-
-    if cmd_opts.tls_keyfile is not None and cmd_opts.tls_keyfile is not None:
-
-        try:
-            if not os.path.exists(cmd_opts.tls_keyfile):
-                print("Invalid path to TLS keyfile given")
-            if not os.path.exists(cmd_opts.tls_certfile):
-                print(f"Invalid path to TLS certfile: '{cmd_opts.tls_certfile}'")
-        except TypeError:
-            cmd_opts.tls_keyfile = cmd_opts.tls_certfile = None
-            print("TLS setup invalid, running webui without TLS")
-        else:
-            print("Running with TLS")
-
-    if cmd_opts.self_sign:
-        cafile = certifi.where()
-        with open(cmd_opts.tls_certfile, 'rb') as infile:
-            local_cert = infile.read()
-
-        # print('Adding local certificate to Certifi trust store...')
-        with open(cafile, 'r+b') as outfile:
-            # check that we have not already appended the certificate to the certifi trust store/CA bundle
-            if outfile.read().find(local_cert) == -1:
-                outfile.write(local_cert)
-                print('Certificate trust store updated')
-            else:
-                print('Given certificate has already been added to trust store')
-        outfile.close()
-        infile.close()
-
 
 
 
