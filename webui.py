@@ -34,7 +34,12 @@ from modules.shared import cmd_opts
 import modules.hypernetworks.hypernetwork
 
 queue_lock = threading.Lock()
-server_name = "0.0.0.0" if cmd_opts.listen else cmd_opts.server_name
+
+if cmd_opts.server_name:
+    server_name = cmd_opts.server_name
+else:
+    server_name = "0.0.0.0" if cmd_opts.listen else None
+
 
 def wrap_queued_call(func):
     def f(*args, **kwargs):
@@ -100,15 +105,17 @@ def initialize():
             print("Running with TLS")
 
     if cmd_opts.self_sign:
-        print('Adding local certificate to Certifi trust store...')
         cafile = certifi.where()
         with open(cmd_opts.tls_certfile, 'rb') as infile:
             customca = infile.read()
 
+        # print('Adding local certificate to Certifi trust store...')
         with open(cafile, 'ab') as outfile:
+            # check that we have not already appended the certificate to the certifi trust store/CA bundle
+
             outfile.write(customca)
 
-        print('python cert store updated')
+        print('Certificate trust store updated')
 
 
     # make the program just exit at ctrl+c without waiting for anything
