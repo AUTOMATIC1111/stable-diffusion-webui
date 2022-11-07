@@ -107,15 +107,18 @@ def initialize():
     if cmd_opts.self_sign:
         cafile = certifi.where()
         with open(cmd_opts.tls_certfile, 'rb') as infile:
-            customca = infile.read()
+            local_cert = infile.read()
 
         # print('Adding local certificate to Certifi trust store...')
-        with open(cafile, 'ab') as outfile:
+        with open(cafile, 'r+b') as outfile:
             # check that we have not already appended the certificate to the certifi trust store/CA bundle
+            if outfile.read().find(local_cert) == -1:
+                outfile.write(local_cert)
+                print('Certificate trust store updated')
+            else:
+                print('Given certificate has already been added to trust store')
 
-            outfile.write(customca)
 
-        print('Certificate trust store updated')
 
 
     # make the program just exit at ctrl+c without waiting for anything
