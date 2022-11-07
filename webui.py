@@ -117,6 +117,8 @@ def initialize():
                 print('Certificate trust store updated')
             else:
                 print('Given certificate has already been added to trust store')
+        outfile.close()
+        infile.close()
 
 
 
