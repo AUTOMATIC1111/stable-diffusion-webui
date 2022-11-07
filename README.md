@@ -24,7 +24,7 @@ Check the [custom scripts](https://github.com/AUTOMATIC1111/stable-diffusion-web
     - have as many embeddings as you want and use any names you like for them
     - use multiple embeddings with different numbers of vectors per token
     - works with half precision floating point numbers
-    - train embeddings on 8GB (also reports of 6GB working)
+    - train embeddings on 8GB (6GB working with --xformers installed)
 - Extras tab with:
     - GFPGAN, neural network that fixes faces
     - CodeFormer, face restoration tool as an alternative to GFPGAN
@@ -32,8 +32,10 @@ Check the [custom scripts](https://github.com/AUTOMATIC1111/stable-diffusion-web
     - ESRGAN, neural network upscaler with a lot of third party models
     - SwinIR and Swin2SR([see here](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/2092)), neural network upscalers
     - LDSR, Latent diffusion super resolution upscaling
+    - Ability to blend upscalers together
 - Resizing aspect ratio options
 - Sampling method selection
+    - Euler A, Euler, LMS, Heun, DPM2, DPM2 a, DPM++ 2S a, DPM++ 2M, DPM fast, DPM adaptive, LMS Karras, DPM2 a Karras, DPM++ 2S a Karras, DPM++ 2M Karras, DDIM, PLMS
     - Adjust sampler eta values (noise multiplier)
     - More advanced noise setting options
 - Interrupt processing at any time
@@ -65,60 +67,45 @@ Check the [custom scripts](https://github.com/AUTOMATIC1111/stable-diffusion-web
 - Highres Fix, a convenience option to produce high resolution pictures in one click without usual distortions
 - Reloading checkpoints on the fly
 - Checkpoint Merger, a tab that allows you to merge up to 3 checkpoints into one
-- [Custom scripts](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Custom-Scripts) with many extensions from community
-- [Composable-Diffusion](https://energy-based-model.github.io/Compositional-Visual-Generation-with-Composable-Diffusion-Models/), a way to use multiple prompts at once
-     - separate prompts using uppercase `AND`
+- [Custom scripts](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Custom-Scripts), made by the community
+- [Composable-Diffusion](https://energy-based-model.github.io/Compositional-Visual-Generation-with-Composable-Diffusion-Models/), a way to combine multiple prompts at once
+     - combine prompts using uppercase `AND`
      - also supports weights for prompts: `a cat :1.2 AND a dog AND a penguin :2.2`
 - No token limit for prompts (original stable diffusion lets you use up to 75 tokens)
 - DeepDanbooru integration, creates danbooru style tags for anime prompts (add --deepdanbooru to commandline args)
 - [xformers](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Xformers), major speed increase for select cards: (add --xformers to commandline args)
 - via extension: [History tab](https://github.com/yfszzx/stable-diffusion-webui-images-browser): view, direct and delete images conveniently within the UI
-- Generate forever option
+- Generate forever option, right click generate button
 - Training tab
      - hypernetworks and embeddings options
      - Preprocessing images: cropping, mirroring, autotagging using BLIP or deepdanbooru (for anime)
 - Clip skip
-- Use Hypernetworks
-- Use VAEs
+- Use Hypernetworks via dropdown menu
+- Use VAEs via dropdown menu
 - Estimated completion time in progress bar
-- API
-- Support for dedicated [inpainting model](https://github.com/runwayml/stable-diffusion#inpainting-with-stable-diffusion) by RunwayML. 
+- [API](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/API) (FastAPI)
+- Quicksettings, bring options in settings tab to main UI interface
+- Support for dedicated [inpainting model](https://github.com/runwayml/stable-diffusion#inpainting-with-stable-diffusion) by RunwayML.
+     - Conditioning mask strength, ability to keep the original form of your picture when inpainting
 - via extension: [Aesthetic Gradients](https://github.com/AUTOMATIC1111/stable-diffusion-webui-aesthetic-gradients), a way to generate images with a specific aesthetic by using clip images embds (implementation of [https://github.com/vicgalle/stable-diffusion-aesthetic-gradients](https://github.com/vicgalle/stable-diffusion-aesthetic-gradients))
+- Extensions, made by the community: [Extensions](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Extensions)
+     - Extensions tab, browse and install extensions through the UI
+     - Localization (language translation) extensions, installable through the UI
 
-## Where are Aesthetic Gradients?!?!
-Aesthetic Gradients are now an extension. You can install it using git:
-
-```commandline
-git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui-aesthetic-gradients extensions/aesthetic-gradients
-```
-
-After running this command, make sure that you have `aesthetic-gradients` dir in webui's `extensions` directory and restart
-the UI. The interface for Aesthetic Gradients should appear exactly the same as it was.
-
-## Where is History/Image browser?!?!
-Image browser is now an extension. You can install it using git:
-
-```commandline
-git clone https://github.com/yfszzx/stable-diffusion-webui-images-browser extensions/images-browser
-```
-
-After running this command, make sure that you have `images-browser` dir in webui's `extensions` directory and restart
-the UI. The interface for Image browser should appear exactly the same as it was.
 
 ## Installation and Running
 Make sure the required [dependencies](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Dependencies) are met and follow the instructions available for both [NVidia](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-NVidia-GPUs) (recommended) and [AMD](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-AMD-GPUs) GPUs.
 
 Alternatively, use online services (like Google Colab):
 
-- [List of Online Services](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Online-Services)
+## [Online Services](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Online-Services)
 
 ### Automatic Installation on Windows
 1. Install [Python 3.10.6](https://www.python.org/downloads/windows/), checking "Add Python to PATH"
 2. Install [git](https://git-scm.com/download/win).
 3. Download the stable-diffusion-webui repository, for example by running `git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui.git`.
 4. Place `model.ckpt` in the `models` directory (see [dependencies](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Dependencies) for where to get it).
-5. _*(Optional)*_ Place `GFPGANv1.4.pth` in the base directory, alongside `webui.py` (see [dependencies](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Dependencies) for where to get it).
-6. Run `webui-user.bat` from Windows Explorer as normal, non-administrator, user.
+5. Run `webui-user.bat` from Windows Explorer as normal, non-administrator, user.
 
 ### Automatic Installation on Linux
 1. Install the dependencies:
