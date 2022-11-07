@@ -1,11 +1,11 @@
 import inspect
 from pydantic import BaseModel, Field, create_model
-from typing import Any, Optional, Union
+from typing import Any, Optional
 from typing_extensions import Literal
 from inflection import underscore
 from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img
 from modules.shared import sd_upscalers, opts, parser
-from typing import List
+from typing import Dict, List
 
 API_NOT_ALLOWED = [
     "self",
@@ -65,6 +65,7 @@ class PydanticModelGenerator:
 
         self._model_name = model_name
         self._class_data = merge_class_params(class_instance)
+
         self._model_def = [
             ModelDef(
                 field=underscore(k),
@@ -167,6 +168,12 @@ class ProgressResponse(BaseModel):
     state: dict = Field(title="State", description="The current state snapshot")
     current_image: str = Field(default=None, title="Current image", description="The current image in base64 format. opts.show_progress_every_n_steps is required for this to work.")
 
+class InterrogateRequest(BaseModel):
+    image: str = Field(default="", title="Image", description="Image to work on, must be a Base64 string containing the image's data.")
+
+class InterrogateResponse(BaseModel):
+    caption: str = Field(default=None, title="Caption", description="The generated caption for the image.")
+
 fields = {}
 for key, value in opts.data.items():
     metadata = opts.data_labels.get(key)
@@ -185,22 +192,22 @@ _options = vars(parser)['_option_string_actions']
 for key in _options:
     if(_options[key].dest != 'help'):
         flag = _options[key]
-        _type = str 
-        if(_options[key].default != None): _type = type(_options[key].default) 
+        _type = str
+        if _options[key].default is not None: _type = type(_options[key].default)
         flags.update({flag.dest: (_type,Field(default=flag.default, description=flag.help))})
 
 FlagsModel = create_model("Flags", **flags)
 
 class SamplerItem(BaseModel):
     name: str = Field(title="Name")
-    aliases: list[str]  = Field(title="Aliases")
-    options: dict[str, str] = Field(title="Options")
+    aliases: List[str] = Field(title="Aliases")
+    options: Dict[str, str] = Field(title="Options")
 
 class UpscalerItem(BaseModel):
     name: str = Field(title="Name")
-    model_name: str | None = Field(title="Model Name")
-    model_path: str | None = Field(title="Path")
-    model_url: str | None = Field(title="URL")
+    model_name: Optional[str] = Field(title="Model Name")
+    model_path: Optional[str] = Field(title="Path")
+    model_url: Optional[str] = Field(title="URL")
 
 class SDModelItem(BaseModel):
     title: str = Field(title="Title")
@@ -211,23 +218,24 @@ class SDModelItem(BaseModel):
 
 class HypernetworkItem(BaseModel):
     name: str = Field(title="Name")
-    path: str | None = Field(title="Path")
+    path: Optional[str] = Field(title="Path")
 
 class FaceRestorerItem(BaseModel):
     name: str = Field(title="Name")
-    cmd_dir: str | None = Field(title="Path")
+    cmd_dir: Optional[str] = Field(title="Path")
 
 class RealesrganItem(BaseModel):
     name: str = Field(title="Name")
-    path: str | None = Field(title="Path")
-    scale: int | None = Field(title="Scale")
+    path: Optional[str] = Field(title="Path")
+    scale: Optional[int] = Field(title="Scale")
 
 class PromptStyleItem(BaseModel):
     name: str = Field(title="Name")
-    prompt: str | None = Field(title="Prompt")
-    negative_prompt: str | None = Field(title="Negative Prompt")
+    prompt: Optional[str] = Field(title="Prompt")
+    negative_prompt: Optional[str] = Field(title="Negative Prompt")
 
 class ArtistItem(BaseModel):
     name: str = Field(title="Name")
     score: float = Field(title="Score")
     category: str = Field(title="Category")
+

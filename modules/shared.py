@@ -86,6 +86,10 @@ parser.add_argument("--nowebui", action='store_true', help="use api=True to laun
 parser.add_argument("--ui-debug-mode", action='store_true', help="Don't load model to quickly launch UI")
 parser.add_argument("--device-id", type=str, help="Select the default CUDA device to use (export CUDA_VISIBLE_DEVICES=0,1,etc might be needed before)", default=None)
 parser.add_argument("--administrator", action='store_true', help="Administrator rights", default=False)
+parser.add_argument("--cors-allow-origins", type=str, help="Allowed CORS origins", default=None)
+parser.add_argument("--tls-keyfile", type=str, help="Partially enables TLS, requires --tls-certfile to fully function", default=None)
+parser.add_argument("--tls-certfile", type=str, help="Partially enables TLS, requires --tls-keyfile to fully function", default=None)
+parser.add_argument("--server-name", type=str, help="Sets hostname of server", default=None)
 
 cmd_opts = parser.parse_args()
 restricted_opts = {
@@ -147,9 +151,9 @@ class State:
         self.interrupted = True
 
     def nextjob(self):
-        if opts.show_progress_every_n_steps == -1: 
+        if opts.show_progress_every_n_steps == -1:
             self.do_set_current_image()
-            
+
         self.job_no += 1
         self.sampling_step = 0
         self.current_image_sampling_step = 0
@@ -198,7 +202,7 @@ class State:
             return
         if self.current_latent is None:
             return
-            
+
         if opts.show_progress_grid:
             self.current_image = sd_samplers.samples_to_image_grid(self.current_latent)
         else:
@@ -216,8 +220,6 @@ prompt_styles = modules.styles.StyleDatabase(styles_filename)
 interrogator = modules.interrogate.InterrogateModels("interrogate")
 
 face_restorers = []
-
-localization.list_localizations(cmd_opts.localizations_dir)
 
 
 def realesrgan_models_names():
@@ -317,6 +319,7 @@ options_templates.update(options_section(('system', "System"), {
 
 options_templates.update(options_section(('training', "Training"), {
     "unload_models_when_training": OptionInfo(False, "Move VAE and CLIP to RAM when training if possible. Saves VRAM."),
+    "save_optimizer_state": OptionInfo(False, "Saves Optimizer state as separate *.optim file. Training can be resumed with HN itself and matching optim file."),
     "dataset_filename_word_regex": OptionInfo("", "Filename word regex"),
     "dataset_filename_join_string": OptionInfo(" ", "Filename join string"),
     "training_image_repeats_per_epoch": OptionInfo(1, "Number of repeats for a single input image per epoch; used only for displaying epoch number", gr.Number, {"precision": 0}),
@@ -406,7 +409,8 @@ class Options:
             if key in self.data or key in self.data_labels:
                 assert not cmd_opts.freeze_settings, "changing settings is disabled"
 
-                comp_args = opts.data_labels[key].component_args
+                info = opts.data_labels.get(key, None)
+                comp_args = info.component_args if info else None
                 if isinstance(comp_args, dict) and comp_args.get('visible', True) is False:
                     raise RuntimeError(f"not possible to set {key} because it is restricted")
 
