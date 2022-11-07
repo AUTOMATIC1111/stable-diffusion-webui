@@ -26,6 +26,12 @@
 			"tags": ["script"]
 		},
 		{
+			"name": "Dreambooth",
+			"url": "https://github.com/d8ahazard/sd_dreambooth_extension",
+			"description": "Dreambooth training based on Shivam Shiaro's repo, optimized for lower-VRAM GPUs.",
+			"tags": ["script", "tab"]
+		},
+		{
 			"name": "Image browser",
 			"url": "https://github.com/yfszzx/stable-diffusion-webui-images-browser",
 			"description": "Provides an interface to browse created images in the web browser.",
