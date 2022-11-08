@@ -1270,6 +1270,10 @@ def create_ui(wrap_gradio_gpu_call):
                         train_hypernetwork = gr.Button(value="Train Hypernetwork", variant='primary')
                         train_embedding = gr.Button(value="Train Embedding", variant='primary')
 
+                params = script_callbacks.UiTrainTabParams(txt2img_preview_params)
+
+                script_callbacks.ui_train_tabs_callback(params)
+
             with gr.Column():
                 progressbar = gr.HTML(elem_id="ti_progressbar")
                 ti_output = gr.Text(elem_id="ti_output", value="", show_label=False)
