@@ -392,7 +392,7 @@ options_templates.update(options_section(('sampler-params', "Sampler parameters"
 
 options_templates.update(options_section(('network-params', "Network options"), {
     "using_proxy": OptionInfo(False, "Use proxy for updating extensions"),
-    "proxy_type": OptionInfo('HTTPS', "Proxy type", gr.Radio, {"choices": ['HTTPS', 'SOCKS5']}),
+    "proxy_type": OptionInfo('HTTPS', "Proxy protocol", gr.Radio, {"choices": ['HTTPS', 'SOCKS5']}),
     "proxy_host": OptionInfo("127.0.0.1", "Proxy host url"),
     "proxy_port": OptionInfo("7890", "Proxy port"),
 }))
