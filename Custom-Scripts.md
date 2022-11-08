@@ -294,6 +294,15 @@ generate tiles from a base image. Based on SD upscale script.
 <img src="https://github.com/arcanite24/img2tiles/raw/master/examples/example5.png" width="312" height="312" />
 </details>
 
+## img2mosiac
+https://github.com/1ort/img2mosaic
+
+Generate mosaics from images. The script cuts the image into tiles and processes each tile separately. The size of each tile is chosen randomly.
+
+<details><summary>Example: (Click to expand:)</summary>
+<img src="https://user-images.githubusercontent.com/83316072/200170569-0e7131e4-1da8-4caf-9cd9-5b785c9d21b0.png" width="758" height="312" />
+</details>
+
 ## Depth Maps
 https://github.com/thygate/stable-diffusion-webui-depthmap-script
 
