@@ -118,31 +118,37 @@
 		{
 			"name": "zh_CN Localization",
 			"url": "https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN",
-			"description": "Provide Simplified Chinese localization for the WebUI",
+			"description": "Simplified Chinese localization",
 			"tags": ["localization"]
 		},
 		{
 			"name": "ko_KR Localization",
 			"url": "https://github.com/36DB/stable-diffusion-webui-kr",
-			"description": "Provide Korean localization for the WebUI",
+			"description": "Korean localization",
 			"tags": ["localization"]
 		},
 		{
 			"name": "it_IT Localization",
 			"url": "https://github.com/Harvester62/stable-diffusion-webui-localization-it_IT",
-			"description": "Provide Italian localization for the WebUI",
+			"description": "Italian localization",
 			"tags": ["localization"]
 		},
 		{
 			"name": "de_DE Localization",
 			"url": "https://github.com/Strothis/stable-diffusion-webui-de_DE",
-			"description": "Provide German localization for the WebUI",
+			"description": "German localization",
 			"tags": ["localization"]
 		},
 		{
 			"name": "ja_JP Localization",
 			"url": "https://github.com/yuuki76/stable-diffusion-webui-ja_JP",
-			"description": "Provide Japanese localization for the WebUI",
+			"description": "Japanese localization",
+			"tags": ["localization"]
+		},
+		{
+			"name": "old localizations",
+			"url": "https://github.com/AUTOMATIC1111/stable-diffusion-webui-old-localizations.git",
+			"description": "Old unmaintained localizations that used to be a part of main repository",
 			"tags": ["localization"]
 		}
 	]
