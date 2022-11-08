@@ -15,7 +15,7 @@ import modules.memmon
 import modules.sd_models
 import modules.styles
 import modules.devices as devices
-from modules import sd_samplers, sd_models, localization, sd_vae
+from modules import sd_samplers, sd_models, localization, sd_vae, extensions
 from modules.hypernetworks import hypernetwork
 from modules.paths import models_path, script_path, sd_path
 
@@ -91,7 +91,10 @@ parser.add_argument("--tls-keyfile", type=str, help="Partially enables TLS, requ
 parser.add_argument("--tls-certfile", type=str, help="Partially enables TLS, requires --tls-keyfile to fully function", default=None)
 parser.add_argument("--server-name", type=str, help="Sets hostname of server", default=None)
 
+extensions.preload_extensions(parser)
+
 cmd_opts = parser.parse_args()
+
 restricted_opts = {
     "samples_filename_pattern",
     "directories_filename_pattern",
