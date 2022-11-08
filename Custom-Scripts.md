@@ -59,6 +59,10 @@ Pick two (or more) seeds and generate a sequence of images interpolating between
 Example of what you can do with it:
 https://www.youtube.com/watch?v=4c71iUclY4U
 
+<details><summary>Another example by a user:</summary>
+<img src="https://github.com/ClashSAN/bloated-gifs/blob/main/seedtravel.gif" width="512" height="512" />
+</details>
+
 ## Advanced Seed Blending
 https://github.com/amotile/stable-diffusion-backend/tree/master/src/process/implementations/automatic1111_scripts
 
@@ -191,6 +195,15 @@ applies symmetry to the image every n steps and sends the result further to img2
 <img src="https://user-images.githubusercontent.com/83316072/196016119-0a03664b-c3e4-49f0-81ac-a9e719b24bd1.png" width="624" height="312" />
 </details>
 
+## SD-latent-mirroring
+https://github.com/dfaker/SD-latent-mirroring
+
+Applies mirroring and flips to the latent images to produce anything from subtle balanced compositions to perfect reflections
+
+<details><summary>Example: (Click to expand:)</summary>
+<img src="https://user-images.githubusercontent.com/35278260/199627881-6f62a227-3a6c-4470-9c18-2ed8bc57194c.png" width="624" height="312" />
+</details>
+
 ## txt2palette
 https://github.com/1ort/txt2palette
 
@@ -223,7 +236,7 @@ https://github.com/DominikDoom/a1111-sd-webui-tagcomplete
 
 Displays autocompletion hints for tags from "image booru" boards such as Danbooru. Uses local tag CSV files and includes a config for customization.
 
-Also supports completion for [wildcards](Custom-Scripts#wildcards)
+Also supports completion for [wildcards](https://github.com/adieyal/sd-dynamic-prompts#wildcard-files)
 
 ## Embedding to PNG
 https://github.com/dfaker/embedding-to-png-script
@@ -250,14 +263,13 @@ Randomly enter xy grid values.
 
 <details><summary>Example: (Click to expand:)</summary>
 <img src="https://user-images.githubusercontent.com/20321215/197346726-f93b7e84-f808-4167-9969-dc42763eeff1.png" width="198" height="312" />
+
 Basic logic is same as x/y plot, only internally, x type is fixed as step, and type y is fixed as cfg.
 Generates x values as many as the number of step counts (10) within the range of step1|2 values (10-30)
 Generates x values as many as the number of cfg counts (10) within the range of cfg1|2 values (6-15)
 Even if you put the 1|2 range cap upside down, it will automatically change it.
 In the case of the cfg value, it is treated as an int type and the decimal value is not read.
 </details>
-
-
 
 ## Random
 https://github.com/lilly1987/AI-WEBUI-scripts-Random
@@ -282,22 +294,32 @@ generate tiles from a base image. Based on SD upscale script.
 <img src="https://github.com/arcanite24/img2tiles/raw/master/examples/example5.png" width="312" height="312" />
 </details>
 
-## SD-latent-mirroring
-https://github.com/dfaker/SD-latent-mirroring
-
-Applies mirroring and flips to the latent images to produce anything from subtle balanced compositions to perfect reflections
-
-<details><summary>Example: (Click to expand:)</summary>
-<img src="https://user-images.githubusercontent.com/35278260/199627881-6f62a227-3a6c-4470-9c18-2ed8bc57194c.png" width="312" height="156" />
-</details>
-
 ## Depth Maps
 https://github.com/thygate/stable-diffusion-webui-depthmap-script
 
 This script is an addon for [AUTOMATIC1111's Stable Diffusion Web UI](https://github.com/AUTOMATIC1111/stable-diffusion-webui) that creates `depthmaps` from the generated images. The result can be viewed on 3D or holographic devices like VR headsets or [lookingglass](https://lookingglassfactory.com/) display, used in Render- or Game- Engines on a plane with a displacement modifier, and maybe even 3D printed.
 
 <details><summary>Example: (Click to expand:)</summary>
-<img src="https://github.com/thygate/stable-diffusion-webui-depthmap-script/raw/main/examples.png" width="390" height="156" />
+<img src="https://github.com/thygate/stable-diffusion-webui-depthmap-script/raw/main/examples.png" width="780" height="312" />
+</details>
+
+## Test my prompt
+https://github.com/Extraltodeus/test_my_prompt
+
+Have you ever used a very long prompt full of words that you are not sure have any actual impact on your image? Did you lose the courage to try to remove them one by one to test if their effects are worthy of your pwescious GPU?
+
+WELL now you don't need any courage as this script has been MADE FOR YOU!
+
+It generates as many images as there are words in your prompt (you can select the separator of course).
+
+<details><summary>Example: (Click to expand:)</summary>
+
+Here the prompt is simply : "**banana, on fire, snow**" and so as you can see it has generated each image without each description in it.
+
+<img src="https://user-images.githubusercontent.com/15731540/200349119-e45d3cfb-39f0-4999-a8f0-4671a6393824.png" width="512" height="512" />
+
+You can also test your negative prompt.
+
 </details>
 
 ## Saving steps of the sampling process
