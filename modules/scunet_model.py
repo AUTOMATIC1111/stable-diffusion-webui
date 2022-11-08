@@ -56,7 +56,6 @@ class UpscalerScuNET(modules.upscaler.Upscaler):
         img = torch.from_numpy(img).float()
         img = img.unsqueeze(0).to(device)
 
-        img = img.to(device)
         with torch.no_grad():
             output = model(img)
         output = output.squeeze().float().cpu().clamp_(0, 1).numpy()
