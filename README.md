@@ -169,7 +169,7 @@ The documentation was moved from this README over to the project's [wiki](https:
 - (You)
 
 ## Usage Rights
-Everything in this repository is released under CC0 1.0 (public domain, https://creativecommons.org/publicdomain/zero/1.0/) + a waiver of all other IP rights (including patents and trademarks).
+All code native to this repository is released under CC0 1.0 (public domain, https://creativecommons.org/publicdomain/zero/1.0/) + a waiver of all other IP rights (including patents and trademarks).
 
 The additional waiver of all IP rights follows:
 
