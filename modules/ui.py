@@ -1253,8 +1253,8 @@ def create_ui(wrap_gradio_gpu_call):
                         train_hypernetwork_name = gr.Dropdown(label='Hypernetwork', elem_id="train_hypernetwork", choices=[x for x in shared.hypernetworks.keys()])
                         create_refresh_button(train_hypernetwork_name, shared.reload_hypernetworks, lambda: {"choices": sorted([x for x in shared.hypernetworks.keys()])}, "refresh_train_hypernetwork_name")
                     with gr.Row():
-                        embedding_learn_rate = gr.Textbox(label='Embedding Learning rate', placeholder="Embedding Learning rate", value="0.005")
-                        hypernetwork_learn_rate = gr.Textbox(label='Hypernetwork Learning rate', placeholder="Hypernetwork Learning rate", value="0.00001")
+                        embedding_learn_rate = gr.Textbox(label='Embedding learning rate', placeholder="Embedding learning rate", value="5e-3")
+                        hypernetwork_learn_rate = gr.Textbox(label='Hypernetwork learning rate (autolearning: =Rate/TargetChange/HalfLife)', placeholder="Hypernetwork learning rate", value="1e-5")
 
                     batch_size = gr.Number(label='Batch size', value=1, precision=0)
                     dataset_directory = gr.Textbox(label='Dataset directory', placeholder="Path to directory with input images")
