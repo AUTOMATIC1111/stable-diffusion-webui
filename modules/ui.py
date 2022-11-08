@@ -941,6 +941,7 @@ def create_ui(wrap_gradio_gpu_call):
                     img2img_prompt_style2,
                     init_img,
                     init_img_with_mask,
+                    init_img_with_mask_orig,
                     init_img_inpaint,
                     init_mask_inpaint,
                     mask_mode,
