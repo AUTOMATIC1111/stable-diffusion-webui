@@ -173,7 +173,7 @@ def refresh_available_extensions(url, hide_tags):
     import urllib.request
 
     if proxy_type and proxy_url:
-        proxy_handler = urllib.request.ProxyHandler({proxy_type: f'{proxy_type}://{proxy_url}'})
+        proxy_handler = urllib.request.ProxyHandler({'http': f'{proxy_type}://{proxy_url}', 'https': f'{proxy_type}://{proxy_url}'})
         opener = urllib.request.build_opener(proxy_handler)
         urllib.request.install_opener(opener)
 
