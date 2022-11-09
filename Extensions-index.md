@@ -175,13 +175,13 @@
 			"description": "Japanese localization",
 			"tags": ["localization"]
 		},
-                {
-                        "name": "pt_BR Localization",
-	                "url": "https://github.com/M-art-ucci/stable-diffusion-webui-localization-pt_BR",
-	                "description": "Brazillian portuguese localization",
-	                "tags": ["localization"]
-                },
-                {
+		{
+			"name": "pt_BR Localization",
+			"url": "https://github.com/M-art-ucci/stable-diffusion-webui-localization-pt_BR",
+			"description": "Brazillian portuguese localization",
+			"tags": ["localization"]
+		},
+		{
 			"name": "old localizations",
 			"url": "https://github.com/AUTOMATIC1111/stable-diffusion-webui-old-localizations.git",
 			"description": "Old unmaintained localizations that used to be a part of main repository",
