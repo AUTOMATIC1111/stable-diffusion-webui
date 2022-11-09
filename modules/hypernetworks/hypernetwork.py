@@ -17,6 +17,7 @@ from modules.textual_inversion import textual_inversion
 from modules.textual_inversion.learn_schedule import LearnRateScheduler
 from torch import einsum
 from torch.nn.init import normal_, xavier_normal_, xavier_uniform_, kaiming_normal_, kaiming_uniform_, zeros_
+from PIL import ImageChops
 
 from collections import defaultdict, deque
 from statistics import stdev, mean
@@ -408,7 +409,38 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
         shared.state.textinfo = f"Model has already been trained beyond specified max steps"
         return hypernetwork, filename
 
-    scheduler = LearnRateScheduler(learn_rate, steps, initial_step)
+    weights = hypernetwork.weights()
+    for weight in weights:
+        weight.requires_grad = True
+
+    # Create or load the optimizer.
+    DUMMY_LR = 1.357901e-6
+    if hypernetwork.optimizer_name in optimizer_dict:
+        optimizer = optimizer_dict[hypernetwork.optimizer_name](params=weights, lr=DUMMY_LR)
+        optimizer_name = hypernetwork.optimizer_name
+    else:
+        print(f"Optimizer type {hypernetwork.optimizer_name} is not defined!")
+        optimizer = torch.optim.AdamW(params=weights, lr=DUMMY_LR)
+        optimizer_name = 'AdamW'
+
+    if hypernetwork.optimizer_state_dict:
+        try:
+            optimizer.load_state_dict(hypernetwork.optimizer_state_dict)
+        except RuntimeError as e:
+            print("Cannot resume from saved optimizer!")
+            print(e)
+    else:
+        if initial_step > 0:
+            print("No optimizer_state_dict; cannot resume from saved optimizer.")
+
+    try:
+        last_lr = optimizer.state_dict()['param_groups'][0]['lr']
+        if last_lr == DUMMY_LR:
+            last_lr = None
+    except (KeyError, IndexError):
+        print("Failure to extract lr from", optimizer.state_dict())
+        last_lr = None
+    scheduler = LearnRateScheduler(learn_rate, steps, initial_step, last_lr)
     
     # dataset loading may take a while, so input validations and early returns should be done before this
     shared.state.textinfo = f"Preparing dataset from {html.escape(data_root)}..."
@@ -425,32 +457,16 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
     previous_mean_losses = [0]
     previous_mean_loss = 0
     print("Mean loss of {} elements".format(size))
-    
-    weights = hypernetwork.weights()
-    for weight in weights:
-        weight.requires_grad = True
-
-    # Here we use optimizer from saved HN, or we can specify as UI option.
-    if hypernetwork.optimizer_name in optimizer_dict:
-        optimizer = optimizer_dict[hypernetwork.optimizer_name](params=weights, lr=scheduler.learn_rate)
-        optimizer_name = hypernetwork.optimizer_name
-    else:
-        print(f"Optimizer type {hypernetwork.optimizer_name} is not defined!")
-        optimizer = torch.optim.AdamW(params=weights, lr=scheduler.learn_rate)
-        optimizer_name = 'AdamW'
-
-    if hypernetwork.optimizer_state_dict:  # This line must be changed if Optimizer type can be different from saved optimizer.
-        try:
-            optimizer.load_state_dict(hypernetwork.optimizer_state_dict)
-        except RuntimeError as e:
-            print("Cannot resume from saved optimizer!")
-            print(e)
-
+ 
+    for pg in optimizer.param_groups:
+        pg['lr'] = scheduler.learn_rate
+   
     steps_without_grad = 0
 
     last_saved_file = "<none>"
     last_saved_image = "<none>"
     forced_filename = "<none>"
+    last_image= None
 
     pbar = tqdm.tqdm(enumerate(ds), total=steps - initial_step)
     for i, entries in pbar:
@@ -475,6 +491,8 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
             del c
 
             losses[hypernetwork.step % losses.shape[0]] = loss.item()
+#            scheduler.apply_loss(losses[hypernetwork.step % losses.shape[0]])
+            
             for entry in entries:
                 loss_dict[entry.filename].append(loss.item())
                 
@@ -563,8 +581,21 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
 
             if image is not None:
                 shared.state.current_image = image
+                if last_image != None:
+                    diff_img = ImageChops.difference(image, last_image)
+                    width, height = diff_img.size
+                    total = 0
+                    for i in range(0, width):
+                        for j in range(0, height):
+                            pixel = diff_img.getpixel( (i,j) )
+                            total += pixel[0] + pixel[1] + pixel[2]
+                    image_differential = total / (width * height) / 256 / 3
+
+                    scheduler.apply_image_differential(image_differential)
+                
                 last_saved_image, last_text_info = images.save_image(image, images_dir, "", p.seed, p.prompt, shared.opts.samples_format, processed.infotexts[0], p=p, forced_filename=forced_filename, save_to_dirs=False)
                 last_saved_image += f", prompt: {preview_text}"
+                last_image = image
 
         shared.state.job_no = hypernetwork.step
 
@@ -587,6 +618,7 @@ Last saved image: {html.escape(last_saved_image)}<br/>
     save_hypernetwork(hypernetwork, checkpoint, hypernetwork_name, filename)
     del optimizer
     hypernetwork.optimizer_state_dict = None  # dereference it after saving, to save memory.
+    hypernetwork.eval()
     return hypernetwork, filename
 
 def save_hypernetwork(hypernetwork, checkpoint, hypernetwork_name, filename):
