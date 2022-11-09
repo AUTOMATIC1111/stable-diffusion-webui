@@ -50,15 +50,16 @@ dtype = torch.float16
 dtype_vae = torch.float16
 
 def randn(seed, shape):
-    # Pytorch currently doesn't handle setting randomness correctly when the metal backend is used.
-    if device.type == 'mps':
-        generator = torch.Generator(device=cpu)
-        generator.manual_seed(seed)
-        noise = torch.randn(shape, generator=generator, device=cpu).to(device)
-        return noise
+    with torch.random.fork_rng(devices=[device]):
+        # Pytorch currently doesn't handle setting randomness correctly when the metal backend is used.
+        if device.type == 'mps':
+            generator = torch.Generator(device=cpu)
+            generator.manual_seed(seed)
+            noise = torch.randn(shape, generator=generator, device=cpu).to(device)
+            return noise
 
-    torch.manual_seed(seed)
-    return torch.randn(shape, device=device)
+        torch.manual_seed(seed)
+        return torch.randn(shape, device=device)
 
 
 def randn_without_seed(shape):
