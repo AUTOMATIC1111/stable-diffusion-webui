@@ -140,6 +140,12 @@
 			"tags": ["localization"]
 		},
 		{
+			"name": "zh_TW Localization",
+			"url": "https://github.com/benlisquare/stable-diffusion-webui-localization-zh_TW",
+			"description": "Traditional Chinese localization",
+			"tags": ["localization"]
+		},
+		{
 			"name": "ko_KR Localization",
 			"url": "https://github.com/36DB/stable-diffusion-webui-kr",
 			"description": "Korean localization",
