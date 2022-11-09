@@ -146,6 +146,12 @@
 			"tags": ["localization"]
 		},
 		{
+			"name": "es_ES Localization",
+			"url": "https://github.com/innovaciones/stable-diffusion-webui-localization-es_ES",
+			"description": "Spanish localization",
+			"tags": ["localization"]
+		},
+		{
 			"name": "it_IT Localization",
 			"url": "https://github.com/Harvester62/stable-diffusion-webui-localization-it_IT",
 			"description": "Italian localization",
