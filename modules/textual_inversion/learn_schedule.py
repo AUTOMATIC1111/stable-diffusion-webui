@@ -55,7 +55,7 @@ class LearnRateScheduler:
             try:
                 self.initial_learn_rate = float(splits[0][1:])
             except (ValueError, AssertionError):
-                raise Exception('Invalid auto-learning rate. Auto-learning should be of the form "=0.0001" or "=2e-5", where the number is the initial learning rate to use. Optionally you can also add "/" followed by a target change rate, such as "=1e-5/0.08, for an 8% image change per cycle. An additional section separated by a slash can be added for the curve half life, such as "=8e-5/0.08/30000". Make sure to enable saving images to the log directory at a reasonable interval, as rates only change when images are generated, and only slowly.')
+                raise Exception('Invalid auto-learning rate. Auto-learning should be of the form "=0.0001" or "=2e-5", where the number is the step-0 learning rate to use. Optionally you can also add "/" followed by a target change rate, such as "=1e-5/0.08, for an 8% image change per cycle. An additional section separated by a slash can be added for the curve half life, such as "=8e-5/0.08/30000". Make sure to enable saving images to the log directory at a reasonable interval, as rates only change when images are generated, and only slowly.')
             try:
                 self.max_image_differential = float(splits[1])
             except (ValueError, AssertionError):
@@ -84,7 +84,9 @@ class LearnRateScheduler:
             else:
                 if cur_step != 0:
                     print("Could not retrieve the previous learning rate; will guestimate where to start.")
-                self.learn_rate = 0.1 * self.initial_learn_rate * (self.target_image_differential / self.max_image_differential) ** (1 + (cur_step / self.differential_halflife))	# Be very pessimistic, as we lack an optimizer, so training tends to explode.
+                    self.learn_rate = 0.1 * self.initial_learn_rate * (self.target_image_differential / self.max_image_differential) ** (1 + (cur_step / self.differential_halflife))	# Be very pessimistic, as we lack an optimizer, so training tends to explode.
+                else:
+                    self.learn_rate = self.initial_learn_rate
             
         else:
             self.schedules = LearnScheduleIterator(learn_rate, max_steps, cur_step)
