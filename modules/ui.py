@@ -854,6 +854,8 @@ def create_ui(wrap_gradio_gpu_call):
                         init_img_inpaint = gr.Image(label="Image for img2img", show_label=False, source="upload", interactive=True, type="pil", visible=False, elem_id="img_inpaint_base")
                         init_mask_inpaint = gr.Image(label="Mask", source="upload", interactive=True, type="pil", visible=False, elem_id="img_inpaint_mask")
 
+                        show_mask_alpha = cmd_opts.gradio_inpaint_tool == "color-sketch"
+                        mask_alpha = gr.Slider(label="Mask transparency", interactive=show_mask_alpha, visible=show_mask_alpha)
                         mask_blur = gr.Slider(label='Mask blur', minimum=0, maximum=64, step=1, value=4)
 
                         with gr.Row():
@@ -948,6 +950,7 @@ def create_ui(wrap_gradio_gpu_call):
                     steps,
                     sampler_index,
                     mask_blur,
+                    mask_alpha,
                     inpainting_fill,
                     restore_faces,
                     tiling,
