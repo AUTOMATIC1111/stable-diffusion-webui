@@ -175,7 +175,8 @@
 			"description": "Japanese localization",
 			"tags": ["localization"]
 		},
-                }       "name": "pt_BR Localization",
+                {
+                        "name": "pt_BR Localization",
 	                "url": "https://github.com/M-art-ucci/stable-diffusion-webui-localization-pt_BR",
 	                "description": "Brazillian portuguese localization",
 	                "tags": ["localization"]
