@@ -1,6 +1,7 @@
 __pycache__
 *.ckpt
 *.pth
+.DS_Store
 /ESRGAN/*
 /SwinIR/*
 /repositories
