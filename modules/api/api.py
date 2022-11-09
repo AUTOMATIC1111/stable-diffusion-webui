@@ -220,7 +220,7 @@ class Api:
         if image_b64 is None:
             raise HTTPException(status_code=404, detail="Image not found") 
 
-        img = self.__base64_to_image(image_b64)
+        img = decode_base64_to_image(image_b64)
 
         # Override object param
         with self.queue_lock:
