@@ -179,9 +179,17 @@ onUiUpdate(function(){
 		img2img_textarea = gradioApp().querySelector("#img2img_prompt > label > textarea");
 		img2img_textarea?.addEventListener("input", () => update_token_counter("img2img_token_button"));
 	}
+	if (!txt2img_gallery) {
+		txt2img_gallery = gradioApp().querySelector('#txt2img_gallery')
+		txt2img_gallery?.addEventListener('click', () => gradioApp().getElementById("txt2img_generation_info_button").click());
+	}
+	if (!img2img_gallery) {
+		img2img_gallery = gradioApp().querySelector('#img2img_gallery')
+		img2img_gallery?.addEventListener('click', () => gradioApp().getElementById("img2img_generation_info_button").click());
+	}
 })
 
-let txt2img_textarea, img2img_textarea = undefined;
+let txt2img_textarea, img2img_textarea, txt2img_gallery, img2img_gallery = undefined;
 let wait_time = 800
 let token_timeout;
 
