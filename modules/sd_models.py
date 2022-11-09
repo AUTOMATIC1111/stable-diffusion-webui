@@ -213,7 +213,7 @@ def load_model_weights(model, checkpoint_info, vae_file="auto"):
 
     # clean up cache if limit is reached
     if cache_enabled:
-        while len(checkpoints_loaded) > shared.opts.sd_checkpoint_cache:
+        while len(checkpoints_loaded) > shared.opts.sd_checkpoint_cache + 1: # we need to count the current model
             checkpoints_loaded.popitem(last=False)  # LRU
 
     model.sd_model_hash = sd_model_hash
