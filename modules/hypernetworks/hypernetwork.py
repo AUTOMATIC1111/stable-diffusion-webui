@@ -168,6 +168,7 @@ class Hypernetwork:
         for k, layers in self.layers.items():
             for layer in layers:
                 layer.train()
+                layer.requires_grad_(True)
                 res += layer.trainables()
 
         return res
@@ -251,6 +252,7 @@ class Hypernetwork:
         for values in self.layers.values():
             values[0].to(device)
             values[1].to(device)
+
     def forward(self, context, context_v = None, layer = None):
         context_layers = self.layers.get(context.shape[2], None)
         if context_v is None:
@@ -258,7 +260,8 @@ class Hypernetwork:
         if context_layers is None:
             return context, context
         if layer is not None and hasattr(layer, 'hyper_k') and hasattr(layer, 'hyper_v'):
-            layer.hyper_v = context_layers[0], layer.hyper_k = context_layers[1]
+            layer.hyper_k = context_layers[0]
+            layer.hyper_v = context_layers[1]
         return context_layers[0].forward_strength(context, HypernetworkModule.multiplier), context_layers[1].forward_strength(context_v, HypernetworkModule.multiplier)
 
 
@@ -432,6 +435,7 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
         images_dir = None
 
     hypernetwork = shared.loaded_hypernetwork
+    hypernetwork.to(devices.device)
     checkpoint = sd_models.select_checkpoint()
 
     ititial_step = hypernetwork.step or 0
@@ -510,15 +514,14 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
                 loss_dict[entry.filename].append(loss.item())
                 
             optimizer.zero_grad()
-            weights[0].grad = None
-            loss.backward()
-
             if weights[0].grad is None:
                 steps_without_grad += 1
             else:
                 steps_without_grad = 0
-            assert steps_without_grad < 10, 'no gradient found for the trained weight after backward() for 10 steps in a row; this is a bug; training cannot continue'
+            weights[0].grad = None
+            loss.backward()
 
+            assert steps_without_grad < 10, 'no gradient found for the trained weight after backward() for 10 steps in a row; this is a bug; training cannot continue'
             optimizer.step()
 
         steps_done = hypernetwork.step + 1
