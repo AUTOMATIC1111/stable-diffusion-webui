@@ -116,6 +116,24 @@
 			"tags": ["script", "tab"]
 		},
 		{
+			"name": "seed travel",
+			"url": "https://github.com/yownas/seed_travel.git",
+			"description": "Small script for AUTOMATIC1111/stable-diffusion-webui to create images that exists between seeds.",
+			"tags": ["script"]
+		},
+		{
+			"name": "shift-attention",
+			"url": "https://github.com/yownas/shift-attention.git",
+			"description": "Generate a sequence of images shifting attention in the prompt. This script enables you to give a range to the weight of tokens in a prompt and then generate a sequence of images stepping from the first one to the second.",
+			"tags": ["script"]
+		},
+		{
+			"name": "Detection Detailer",
+			"url": "https://github.com/dustysys/ddetailer.git",
+			"description": "An object detection and auto-mask extension for Stable Diffusion web UI.",
+			"tags": ["script"]
+		},
+		{
 			"name": "zh_CN Localization",
 			"url": "https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN",
 			"description": "Simplified Chinese localization",
