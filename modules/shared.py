@@ -221,8 +221,6 @@ interrogator = modules.interrogate.InterrogateModels("interrogate")
 
 face_restorers = []
 
-localization.list_localizations(cmd_opts.localizations_dir)
-
 
 def realesrgan_models_names():
     import modules.realesrgan_model
