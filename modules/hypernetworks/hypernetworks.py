@@ -76,9 +76,6 @@ class Forward:
         pass
 
     def __call__(self, *args, **kwargs):
-        return self.forward(*args, **kwargs)
-
-    def forward(self, context_k, context_v = None, layer = None):
         raise NotImplementedError
 
     @staticmethod
@@ -208,7 +205,7 @@ class SingularForward(Forward):
         # assert self.processor in available_opts, f"Hypernetwork named {processor} is not ready!"
         assert 0 <= self.strength <=1 , "Strength must be between 0 and 1!"
 
-    def forward(self, context_k, context_v = None, layer=None):
+    def __call__(self, context_k, context_v = None, layer=None):
         if self.processor in available_opts:
             context_layers = available_opts[self.processor].layers.get(context_k.shape[2], None)
             if context_layers is None:
@@ -217,7 +214,7 @@ class SingularForward(Forward):
                 context_v = context_k
             if layer is not None and hasattr(layer, 'hyper_k') and hasattr(layer, 'hyper_v'):
                 layer.hyper_v = context_layers[0], layer.hyper_k = context_layers[1]
-            return context_layers[0].forward_strength(context_k, self.strength) , context_layers[1].forward_strength(context_v, self.strength) #define forward_strength, which invokes HNModule with specified strength.
+            return context_layers[0](context_k, multiplier=self.strength), context_layers[1](context_v, multiplier=self.strength) #define forward_strength, which invokes HNModule with specified strength.
         # Note : we share same HN if it is called multiple time, which means you might not be able to train it via this structure.
         raise KeyError(f"Key {self.processor} is not found in cached Hypernetworks!")
 
@@ -237,10 +234,10 @@ class ParallelForward(Forward):
             self.callers[keys] = Forward.parse(keys)
             self.weights[keys] = sequence[keys] / sum(sequence.values())
 
-    def forward(self, context, context_v = None, layer = None):
+    def __call__(self, context, context_v = None, layer = None):
         ctx_k, ctx_v = torch.zeros_like(context, device = context.device), torch.zeros_like(context, device = context.device)
         for key in self.callers:
-            k, v = self.callers[key].forward(context, context_v, layer=layer)
+            k, v = self.callers[key](context, context_v, layer=layer)
             ctx_k += k * self.weights[key]
             ctx_v += v * self.weights[key]
         return ctx_k, ctx_v
@@ -257,7 +254,7 @@ class SequentialForward(Forward):
         for keys in sequence:
             self.callers.append(Forward.parse(keys))
 
-    def forward(self, context, context_v = None, layer=None):
+    def __call__(self, context, context_v=None, layer=None):
         if context_v is None:
             context_v = context
         for keys in self.callers:
@@ -273,7 +270,7 @@ class EmptyForward(Forward):
         super().__init__()
         self.name = None
 
-    def forward(self, context, context_v=None, layer=None):
+    def __call__(self, context, context_v=None, layer=None):
         if context_v is None:
             context_v = context
         return context, context_v

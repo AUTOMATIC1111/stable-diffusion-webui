@@ -21,7 +21,6 @@ from torch.nn.init import normal_, xavier_normal_, xavier_uniform_, kaiming_norm
 from collections import defaultdict, deque
 from statistics import stdev, mean
 
-
 optimizer_dict = {optim_name : cls_obj for optim_name, cls_obj in inspect.getmembers(torch.optim, inspect.isclass) if optim_name != "Optimizer"}
 
 class HypernetworkModule(torch.nn.Module):
@@ -114,16 +113,18 @@ class HypernetworkModule(torch.nn.Module):
             del state_dict[fr]
             state_dict[to] = x
 
-    def forward(self, x):
-        return x + self.linear(x) * self.multiplier
-
-    def forward_strength(self, x, multiplier):
+    def forward(self, x, multiplier=None):
+        if multiplier is None or not isinstance(multiplier, (int, float)):
+            return x + self.linear(x) * self.multiplier
         return x + self.linear(x) * multiplier
 
-
-    def trainables(self):
+    def trainables(self, train=False):
         layer_structure = []
         for layer in self.linear:
+            if train:
+                layer.train()
+            else:
+                layer.eval()
             if type(layer) == torch.nn.Linear or type(layer) == torch.nn.LayerNorm:
                 layer_structure += [layer.weight, layer.bias]
         return layer_structure
@@ -162,15 +163,11 @@ class Hypernetwork:
                                    self.add_layer_norm, self.use_dropout, self.activate_output, last_layer_dropout=self.last_layer_dropout),
             )
 
-    def weights(self):
+    def weights(self, train=False):
         res = []
-
         for k, layers in self.layers.items():
             for layer in layers:
-                layer.train()
-                layer.requires_grad_(True)
-                res += layer.trainables()
-
+                res += layer.trainables(train)
         return res
 
     def save(self, filename):
@@ -253,16 +250,20 @@ class Hypernetwork:
             values[0].to(device)
             values[1].to(device)
 
-    def forward(self, context, context_v = None, layer = None):
+    def __call__(self, context, *args, **kwargs):
+        return self.forward(context, *args, **kwargs)
+
+    def forward(self, context, context_v=None, layer=None):
         context_layers = self.layers.get(context.shape[2], None)
         if context_v is None:
             context_v = context
         if context_layers is None:
-            return context, context
+            return context, context_v
         if layer is not None and hasattr(layer, 'hyper_k') and hasattr(layer, 'hyper_v'):
             layer.hyper_k = context_layers[0]
             layer.hyper_v = context_layers[1]
-        return context_layers[0].forward_strength(context, HypernetworkModule.multiplier), context_layers[1].forward_strength(context_v, HypernetworkModule.multiplier)
+        transform_k, transform_v = context_layers[0](context), context_layers[1](context_v)
+        return transform_k, transform_v
 
 
 def list_hypernetworks(path):
@@ -298,7 +299,7 @@ def load_hypernetwork(filename):
             try:
                 from modules.hypernetworks import hypernetworks
                 shared.loaded_hypernetwork = hypernetworks.load(path)
-                print()
+                print(f"Loaded Hypernetwork Structure {path}")
             except Exception:
                 print(f"Error loading hypernetwork processing file {path}", file=sys.stderr)
                 print(traceback.format_exc(), file=sys.stderr)
@@ -323,11 +324,20 @@ def find_closest_hypernetwork_name(search: str):
 
 
 def apply_hypernetwork(hypernetwork, context, layer=None):
-
     if hypernetwork is None:
         return context, context
+    if isinstance(hypernetwork, Hypernetwork):
+        hypernetwork_layers = (hypernetwork.layers if hypernetwork is not None else {}).get(context.shape[2], None)
+        if hypernetwork_layers is None:
+            return context, context
+        if layer is not None:
+            layer.hyper_k = hypernetwork_layers[0]
+            layer.hyper_v = hypernetwork_layers[1]
 
-    context_k, context_v = hypernetwork.forward(context, layer=layer)
+        context_k = hypernetwork_layers[0](context)
+        context_v = hypernetwork_layers[1](context)
+        return context_k, context_v
+    context_k, context_v = hypernetwork(context, layer=layer)
     return context_k, context_v
 
 
@@ -411,6 +421,7 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
     textual_inversion.validate_train_inputs(hypernetwork_name, learn_rate, batch_size, data_root, template_file, steps, save_hypernetwork_every, create_image_every, log_directory, name="hypernetwork")
 
     load_hypernetwork(hypernetwork_name)
+    assert shared.loaded_hypernetwork is not None, f"Cannot load {hypernetwork_name}!"
     if not isinstance(shared.loaded_hypernetwork, Hypernetwork):
         raise RuntimeError("Cannot perform training for Hypernetwork structure pipeline!")
     shared.state.textinfo = "Initializing hypernetwork training..."
@@ -435,7 +446,6 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
         images_dir = None
 
     hypernetwork = shared.loaded_hypernetwork
-    hypernetwork.to(devices.device)
     checkpoint = sd_models.select_checkpoint()
 
     ititial_step = hypernetwork.step or 0
@@ -454,6 +464,8 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
         shared.sd_model.cond_stage_model.to(devices.cpu)
         shared.sd_model.first_stage_model.to(devices.cpu)
 
+    # for param in shared.sd_model.parameters():
+    #     param.requires_grad = False
     size = len(ds.indexes)
     loss_dict = defaultdict(lambda : deque(maxlen = 1024))
     losses = torch.zeros((size,))
@@ -461,9 +473,7 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
     previous_mean_loss = 0
     print("Mean loss of {} elements".format(size))
     
-    weights = hypernetwork.weights()
-    for weight in weights:
-        weight.requires_grad = True
+    weights = hypernetwork.weights(True)
 
     # Here we use optimizer from saved HN, or we can specify as UI option.
     if hypernetwork.optimizer_name in optimizer_dict:
@@ -506,21 +516,21 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
             # c = torch.vstack([entry.cond for entry in entries]).to(devices.device)
             x = torch.stack([entry.latent for entry in entries]).to(devices.device)
             loss = shared.sd_model(x, c)[0]
+            # loss.requires_grad_(True)
             del x
             del c
 
             losses[hypernetwork.step % losses.shape[0]] = loss.item()
             for entry in entries:
                 loss_dict[entry.filename].append(loss.item())
-                
             optimizer.zero_grad()
+            weights[0].grad = None
+            loss.backward()
+
             if weights[0].grad is None:
                 steps_without_grad += 1
             else:
                 steps_without_grad = 0
-            weights[0].grad = None
-            loss.backward()
-
             assert steps_without_grad < 10, 'no gradient found for the trained weight after backward() for 10 steps in a row; this is a bug; training cannot continue'
             optimizer.step()
 
