@@ -4,9 +4,11 @@
   - example in your "webui-user.bat": `set COMMANDLINE_ARGS=--api`
 - This enables the api which can be reviewed at http://127.0.0.1:7860/docs (or whever the URL is + /docs)
 The basic ones I'm interested in are these two. Let's just focus only on ` /sdapi/v1/txt2img`
+
 ![image](https://user-images.githubusercontent.com/2993060/198171114-ed1c5edd-76ce-4c34-ad73-04e388423162.png)
 
 - When you expand that tab, it gives an example of a payload to send to the API. I used this often as reference.
+
 ![image](https://user-images.githubusercontent.com/2993060/198171454-5b826ded-5e73-4249-9c0c-a97b32c42569.png)
 
 ------
