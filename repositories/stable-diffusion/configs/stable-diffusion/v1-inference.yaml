@@ -71,6 +71,7 @@ model:
     cond_stage_config:
       target: ldm.modules.encoders.modules.TaiyiCLIPEmbedder
       params:
+        # you can git clone the model and change the version to your local model path
         version: IDEA-CCNL/Taiyi-Stable-Diffusion-1B-Chinese-v0.1/
         max_length: 512
       
