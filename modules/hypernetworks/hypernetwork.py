@@ -618,7 +618,6 @@ Last saved image: {html.escape(last_saved_image)}<br/>
     save_hypernetwork(hypernetwork, checkpoint, hypernetwork_name, filename)
     del optimizer
     hypernetwork.optimizer_state_dict = None  # dereference it after saving, to save memory.
-    hypernetwork.eval()
     return hypernetwork, filename
 
 def save_hypernetwork(hypernetwork, checkpoint, hypernetwork_name, filename):
