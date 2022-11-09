@@ -344,7 +344,8 @@ def create_random_tensors(shape, seeds, subseeds=None, subseed_strength=0.0, see
             cnt = p.sampler.number_of_needed_noises(p)
 
             if opts.eta_noise_seed_delta > 0:
-                torch.manual_seed(seed + opts.eta_noise_seed_delta)
+                with torch.random.fork_rng(devices=[device]):
+                    torch.manual_seed(seed + opts.eta_noise_seed_delta)
 
             for j in range(cnt):
                 sampler_noises[j].append(devices.randn_without_seed(tuple(noise_shape)))
