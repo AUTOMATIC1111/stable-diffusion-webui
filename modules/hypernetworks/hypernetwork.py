@@ -23,6 +23,23 @@ from statistics import stdev, mean
 
 optimizer_dict = {optim_name : cls_obj for optim_name, cls_obj in inspect.getmembers(torch.optim, inspect.isclass) if optim_name != "Optimizer"}
 
+
+def optim_to(optim:torch.optim.Optimizer, device="cpu"):
+    def inplace_move(obj: torch.Tensor, target):
+        if hasattr(obj, 'data'):
+            obj.data = obj.data.to(target)
+        if hasattr(obj, '_grad') and obj._grad is not None:
+            obj._grad.data = obj._grad.data.to(target)
+
+    for param in optim.state.values():
+        if isinstance(param, torch.Tensor):
+            inplace_move(param, device)
+        elif isinstance(param, dict):
+            for subparams in param.values():
+                inplace_move(subparams, device)
+    torch.cuda.empty_cache()
+
+
 class HypernetworkModule(torch.nn.Module):
     multiplier = 1.0
     activation_dict = {
@@ -464,8 +481,6 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
         shared.sd_model.cond_stage_model.to(devices.cpu)
         shared.sd_model.first_stage_model.to(devices.cpu)
 
-    # for param in shared.sd_model.parameters():
-    #     param.requires_grad = False
     size = len(ds.indexes)
     loss_dict = defaultdict(lambda : deque(maxlen = 1024))
     losses = torch.zeros((size,))
@@ -481,7 +496,7 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
         optimizer_name = hypernetwork.optimizer_name
     else:
         print(f"Optimizer type {hypernetwork.optimizer_name} is not defined!")
-        optimizer = torch.optim.AdamW(params=weights, lr=scheduler.learn_rate)
+        optimizer: torch.optim.Optimizer = torch.optim.AdamW(params=weights, lr=scheduler.learn_rate)
         optimizer_name = 'AdamW'
 
     if hypernetwork.optimizer_state_dict:  # This line must be changed if Optimizer type can be different from saved optimizer.
@@ -516,7 +531,6 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
             # c = torch.vstack([entry.cond for entry in entries]).to(devices.device)
             x = torch.stack([entry.latent for entry in entries]).to(devices.device)
             loss = shared.sd_model(x, c)[0]
-            # loss.requires_grad_(True)
             del x
             del c
 
@@ -564,8 +578,8 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
         if images_dir is not None and steps_done % create_image_every == 0:
             forced_filename = f'{hypernetwork_name}-{steps_done}'
             last_saved_image = os.path.join(images_dir, forced_filename)
-
             optimizer.zero_grad()
+            optim_to(optimizer, devices.cpu)
             shared.sd_model.cond_stage_model.to(devices.device)
             shared.sd_model.first_stage_model.to(devices.device)
 
@@ -601,6 +615,7 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
                 shared.state.current_image = image
                 last_saved_image, last_text_info = images.save_image(image, images_dir, "", p.seed, p.prompt, shared.opts.samples_format, processed.infotexts[0], p=p, forced_filename=forced_filename, save_to_dirs=False)
                 last_saved_image += f", prompt: {preview_text}"
+            optim_to(optimizer, devices.device)
 
         shared.state.job_no = hypernetwork.step
 
