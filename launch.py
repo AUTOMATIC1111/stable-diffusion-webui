@@ -7,6 +7,7 @@ import shlex
 import platform
 
 dir_repos = "repositories"
+dir_extensions = "extensions"
 python = sys.executable
 git = os.environ.get('GIT', "git")
 index_url = os.environ.get('INDEX_URL', "")
@@ -16,11 +17,11 @@ def extract_arg(args, name):
     return [x for x in args if x != name], name in args
 
 
-def run(command, desc=None, errdesc=None):
+def run(command, desc=None, errdesc=None, custom_env=None):
     if desc is not None:
         print(desc)
 
-    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, env=os.environ if custom_env is None else custom_env)
 
     if result.returncode != 0:
 
@@ -101,9 +102,27 @@ def version_check(commit):
         else:
             print("Not a git clone, can't perform version check.")
     except Exception as e:
-        print("versipm check failed",e)
+        print("version check failed", e)
 
-        
+
+def run_extensions_installers():
+    if not os.path.isdir(dir_extensions):
+        return
+
+    for dirname_extension in os.listdir(dir_extensions):
+        path_installer = os.path.join(dir_extensions, dirname_extension, "install.py")
+        if not os.path.isfile(path_installer):
+            continue
+
+        try:
+            env = os.environ.copy()
+            env['PYTHONPATH'] = os.path.abspath(".")
+
+            print(run(f'"{python}" "{path_installer}"', errdesc=f"Error running install.py for extension {dirname_extension}", custom_env=env))
+        except Exception as e:
+            print(e, file=sys.stderr)
+
+
 def prepare_enviroment():
     torch_command = os.environ.get('TORCH_COMMAND', "pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 --extra-index-url https://download.pytorch.org/whl/cu113")
     requirements_file = os.environ.get('REQS_FILE', "requirements_versions.txt")
@@ -111,7 +130,7 @@ def prepare_enviroment():
 
     gfpgan_package = os.environ.get('GFPGAN_PACKAGE', "git+https://github.com/TencentARC/GFPGAN.git@8d2447a2d918f8eba5a4a01463fd48e45126a379")
     clip_package = os.environ.get('CLIP_PACKAGE', "git+https://github.com/openai/CLIP.git@d50d76daa670286dd6cacf3bcd80b5e4823fc8e1")
-    deepdanbooru_package = os.environ.get('DEEPDANBOORU_PACKAGE', "git+https://github.com/KichangKim/DeepDanbooru.git@edf73df4cdaeea2cf00e9ac08bd8a9026b7a7b26")
+    deepdanbooru_package = os.environ.get('DEEPDANBOORU_PACKAGE', "git+https://github.com/KichangKim/DeepDanbooru.git@d91a2963bf87c6a770d74894667e9ffa9f6de7ff")
 
     xformers_windows_package = os.environ.get('XFORMERS_WINDOWS_PACKAGE', 'https://github.com/C43H66N12O12S2/stable-diffusion-webui/releases/download/f/xformers-0.0.14.dev0-cp310-cp310-win_amd64.whl')
 
@@ -123,15 +142,17 @@ def prepare_enviroment():
 
     stable_diffusion_commit_hash = os.environ.get('STABLE_DIFFUSION_COMMIT_HASH', "69ae4b35e0a0f6ee1af8bb9a5d0016ccb27e36dc")
     taming_transformers_commit_hash = os.environ.get('TAMING_TRANSFORMERS_COMMIT_HASH', "24268930bf1dce879235a7fddd0b2355b84d7ea6")
-    k_diffusion_commit_hash = os.environ.get('K_DIFFUSION_COMMIT_HASH', "f4e99857772fc3a126ba886aadf795a332774878")
+    k_diffusion_commit_hash = os.environ.get('K_DIFFUSION_COMMIT_HASH', "60e5042ca0da89c14d1dd59d73883280f8fce991")
     codeformer_commit_hash = os.environ.get('CODEFORMER_COMMIT_HASH', "c5b4593074ba6214284d6acd5f1719b6c5d739af")
     blip_commit_hash = os.environ.get('BLIP_COMMIT_HASH', "48211a1594f1321b00f14c9f7a5b4813144b2fb9")
 
     sys.argv += shlex.split(commandline_args)
+    test_argv = [x for x in sys.argv if x != '--tests']
 
     sys.argv, skip_torch_cuda_test = extract_arg(sys.argv, '--skip-torch-cuda-test')
     sys.argv, reinstall_xformers = extract_arg(sys.argv, '--reinstall-xformers')
     sys.argv, update_check = extract_arg(sys.argv, '--update-check')
+    sys.argv, run_tests = extract_arg(sys.argv, '--tests')
     xformers = '--xformers' in sys.argv
     deepdanbooru = '--deepdanbooru' in sys.argv
     ngrok = '--ngrok' in sys.argv
@@ -187,6 +208,8 @@ def prepare_enviroment():
 
     run_pip(f"install -r {requirements_file}", "requirements for Web UI")
 
+    run_extensions_installers()
+
     if update_check:
         version_check(commit)
     
@@ -194,13 +217,36 @@ def prepare_enviroment():
         print("Exiting because of --exit argument")
         exit(0)
 
+    if run_tests:
+        tests(test_argv)
+        exit(0)
 
-def start_webui():
-    print(f"Launching Web UI with arguments: {' '.join(sys.argv[1:])}")
+
+def tests(argv):
+    if "--api" not in argv:
+        argv.append("--api")
+
+    print(f"Launching Web UI in another process for testing with arguments: {' '.join(argv[1:])}")
+
+    with open('test/stdout.txt', "w", encoding="utf8") as stdout, open('test/stderr.txt', "w", encoding="utf8") as stderr:
+        proc = subprocess.Popen([sys.executable, *argv], stdout=stdout, stderr=stderr)
+
+    import test.server_poll
+    test.server_poll.run_tests()
+
+    print(f"Stopping Web UI process with id {proc.pid}")
+    proc.kill()
+
+
+def start():
+    print(f"Launching {'API server' if '--nowebui' in sys.argv else 'Web UI'} with arguments: {' '.join(sys.argv[1:])}")
     import webui
-    webui.webui()
+    if '--nowebui' in sys.argv:
+        webui.api_only()
+    else:
+        webui.webui()
 
 
 if __name__ == "__main__":
     prepare_enviroment()
-    start_webui()
+    start()
