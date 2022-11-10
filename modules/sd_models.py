@@ -1,7 +1,6 @@
 import collections
 import os.path
 import sys
-import time
 import gc
 from collections import namedtuple
 import torch
@@ -116,31 +115,15 @@ def model_hash(filename, version=None):
         hash_list = []
 
         if version == 2:
-            hash_file = os.path.splitext(filename)[0] + '.sha256'
+            import zipfile
 
-            if os.path.exists(hash_file) and os.path.getmtime(filename) <= os.path.getmtime(hash_file):
-                with open(hash_file, "r") as file:
-                    hash_list.append(file.readline().split(' ')[0])
-            else:
-                print(f"Creating the checkpoint hash for {os.path.abspath(filename)}")
+            file = zipfile.ZipFile(filename, "r")
+            sum = 0
+            for info in file.infolist():
+                if info.filename.startswith("archive"):
+                    sum = sum + info.CRC & 0xFFFFFFFF
 
-                tic = time.time()
-
-                m = hashlib.sha256()
-
-                with open(filename, "rb") as file:
-                    while chunk := file.read(0x10000):
-                        m.update(chunk)
-
-                hex_hash = m.hexdigest()
-                hash_list.append(hex_hash)
-
-                with open(hash_file, "w") as file:
-                    file.write(f"{hex_hash} *{os.path.basename(filename)}\n")
-
-                toc = time.time()
-
-                print(f"Checkpoint hash created in (%4.2fs) and saved to {os.path.abspath(hash_file)}" % (toc - tic))
+            hash_list.append('{:08x}'.format(sum))
 
         if version == 1 or shared.opts.show_old_model_hash:
             with open(filename, "rb") as file:
