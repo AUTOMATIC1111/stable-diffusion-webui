@@ -77,7 +77,6 @@ class LearnRateScheduler:
             self.LR_SCALEDOWN_PLUS_EXP   = 1.0	# How much to maintain the old learning rate (vs. the new one when one arrives)
             self.MAX_GROWTH              = 1.35 # Cap on how much the LR can grow in each preview cycle.
             
-            self.max_steps = max_steps
             self.target_image_differential = self.max_image_differential * (0.5 ** (cur_step / self.differential_halflife))
             if last_lr:
                 self.learn_rate = last_lr
@@ -87,6 +86,7 @@ class LearnRateScheduler:
                     self.learn_rate = 0.1 * self.initial_learn_rate * (self.target_image_differential / self.max_image_differential) ** (1 + (cur_step / self.differential_halflife))	# Be very pessimistic, as we lack an optimizer, so training tends to explode.
                 else:
                     self.learn_rate = self.initial_learn_rate
+
             
         else:
             self.schedules = LearnScheduleIterator(learn_rate, max_steps, cur_step)
@@ -102,7 +102,11 @@ class LearnRateScheduler:
             else:
                 print(f'Training at a rate of {self.learn_rate}')
 
-        self.finished = False
+        self.max_steps = max_steps
+        if cur_step >= self.max_steps:
+            self.finished = True
+        else:
+            self.finished = False
 
 
     def apply(self, optimizer, step_number):
@@ -116,6 +120,9 @@ class LearnRateScheduler:
                 self.finished = True
                 return
         else:
+            if step_number >= self.max_steps:
+                self.finished = True
+                return
             self.target_image_differential = self.max_image_differential * (0.5 ** (step_number / self.differential_halflife))
 
         if self.verbose:
@@ -127,6 +134,7 @@ class LearnRateScheduler:
 
 
     def apply_image_differential(self, actual_image_differential):
+
         if self.schedules is None:
             old_learn_rate = self.learn_rate
             ratio = self.target_image_differential / actual_image_differential
