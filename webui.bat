@@ -35,8 +35,8 @@ goto :launch
 
 :accelerate
 echo "Checking for accelerate"
-dir %VENV_DIR%\Scripts\accelerate.exe >tmp/stdout.txt 2>tmp/stderr.txt
-if %ERRORLEVEL% == 0 goto :accelerate_launch
+set ACCELERATE="%~dp0%VENV_DIR%\Scripts\accelerate.exe"
+if EXIST %ACCELERATE% goto :accelerate_launch
 
 :launch
 %PYTHON% launch.py %*
@@ -44,8 +44,7 @@ pause
 exit /b
 
 :accelerate_launch
-echo "Accelerating2"
-set ACCELERATE="%~dp0%VENV_DIR%\Scripts\accelerate.exe"
+echo "Accelerating"
 %ACCELERATE% launch --num_cpu_threads_per_process=6 launch.py
 pause
 exit /b
