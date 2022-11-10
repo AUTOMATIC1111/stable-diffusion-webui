@@ -118,12 +118,12 @@ def model_hash(filename, version=None):
             import zipfile
 
             file = zipfile.ZipFile(filename, "r")
-            sum = 0
+            m = hashlib.sha256()
             for info in file.infolist():
                 if info.filename.startswith("archive"):
-                    sum = sum + info.CRC & 0xFFFFFFFF
+                    m.update(bytes.fromhex('{:08x}'.format(info.CRC & 0xFFFFFFFF)))
 
-            hash_list.append('{:08x}'.format(sum))
+            hash_list.append(m.hexdigest())
 
         if version == 1 or shared.opts.show_old_model_hash:
             with open(filename, "rb") as file:
