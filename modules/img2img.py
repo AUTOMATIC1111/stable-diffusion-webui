@@ -30,7 +30,7 @@ def process_batch(p, input_dir, output_dir, args):
 
     state.job_count = len(images) * p.n_iter
 
-    for i, image in enumerate(images):
+    for i, images in enumerate([images[i:i+p.batch_size] for i in range(0, len(images), p.batch_size)]):
         state.job = f"{i+1} out of {len(images)}"
         if state.skipped:
             state.skipped = False
@@ -38,16 +38,16 @@ def process_batch(p, input_dir, output_dir, args):
         if state.interrupted:
             break
 
-        img = Image.open(image)
+        img = [Image.open(image) for image in images]
         # Use the EXIF orientation of photos taken by smartphones.
-        img = ImageOps.exif_transpose(img) 
-        p.init_images = [img] * p.batch_size
+        img = [ImageOps.exif_transpose(i) for i in img]
+        p.init_images = img
 
         proc = modules.scripts.scripts_img2img.run(p, *args)
         if proc is None:
             proc = process_images(p)
 
-        for n, processed_image in enumerate(proc.images):
+        for n, (processed_image, image) in enumerate(zip(proc.images, images)):
             filename = os.path.basename(image)
 
             if n > 0:

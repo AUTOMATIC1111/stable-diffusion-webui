@@ -548,13 +548,20 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
                 image = Image.fromarray(x_sample)
 
+                paste_to = None
+                if p.paste_to is not None:
+                    if len(p.paste_to) == 1:
+                        paste_to = p.paste_to[0]
+                    elif len(p.paste_to) > 1:
+                        paste_to = p.paste_to[i]                                
+
                 if p.color_corrections is not None and i < len(p.color_corrections):
                     if opts.save and not p.do_not_save_samples and opts.save_images_before_color_correction:
-                        image_without_cc = apply_overlay(image, p.paste_to, i, p.overlay_images)
+                        image_without_cc = apply_overlay(image, paste_to, i, p.overlay_images)
                         images.save_image(image_without_cc, p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, info=infotext(n, i), p=p, suffix="-before-color-correction")
                     image = apply_color_correction(p.color_corrections[i], image)
 
-                image = apply_overlay(image, p.paste_to, i, p.overlay_images)
+                image = apply_overlay(image, paste_to, i, p.overlay_images)
 
                 if opts.samples_save and not p.do_not_save_samples:
                     images.save_image(image, p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, info=infotext(n, i), p=p)
@@ -718,7 +725,6 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
         return samples
 
-
 class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
     sampler = None
 
@@ -729,7 +735,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         self.resize_mode: int = resize_mode
         self.denoising_strength: float = denoising_strength
         self.init_latent = None
-        self.image_mask = mask
+        self.image_mask = mask if isinstance(mask, list) else [mask]
         #self.image_unblurred_mask = None
         self.latent_mask = None
         self.mask_for_overlay = None
@@ -747,31 +753,34 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         crop_region = None
 
         if self.image_mask is not None:
-            self.image_mask = self.image_mask.convert('L')
+            self.image_mask = [x.convert('L') for x in self.image_mask]
 
             if self.inpainting_mask_invert:
-                self.image_mask = ImageOps.invert(self.image_mask)
+                self.image_mask = [ImageOps.invert(x) for x in self.image_mask]
 
             #self.image_unblurred_mask = self.image_mask
 
             if self.mask_blur > 0:
-                self.image_mask = self.image_mask.filter(ImageFilter.GaussianBlur(self.mask_blur))
+                self.image_mask = [x.filter(ImageFilter.GaussianBlur(self.mask_blur)) for x in self.image_mask]
 
             if self.inpaint_full_res:
-                self.mask_for_overlay = self.image_mask
-                mask = self.image_mask.convert('L')
-                crop_region = masking.get_crop_region(np.array(mask), self.inpaint_full_res_padding)
-                crop_region = masking.expand_crop_region(crop_region, self.width, self.height, mask.width, mask.height)
-                x1, y1, x2, y2 = crop_region
+                self.mask_for_overlay = [x for x in self.image_mask]
+                self.paste_to = {}
+                crop_region = {}
+                print(len(self.image_mask))
+                for i, mask in enumerate(self.image_mask):
+                    crop_region[i] = masking.get_crop_region(np.array(mask), self.inpaint_full_res_padding)
+                    crop_region[i] = masking.expand_crop_region(crop_region[i], self.width, self.height, mask.width, mask.height)
+                    x1, y1, x2, y2 = crop_region[i]
 
-                mask = mask.crop(crop_region)
-                self.image_mask = images.resize_image(2, mask, self.width, self.height)
-                self.paste_to = (x1, y1, x2-x1, y2-y1)
+                    mask = mask.crop(crop_region[i])
+                    self.image_mask[i] = images.resize_image(2, mask, self.width, self.height)
+                    self.paste_to[i] = (x1, y1, x2-x1, y2-y1)
             else:
-                self.image_mask = images.resize_image(self.resize_mode, self.image_mask, self.width, self.height)
-                np_mask = np.array(self.image_mask)
-                np_mask = np.clip((np_mask.astype(np.float32)) * 2, 0, 255).astype(np.uint8)
-                self.mask_for_overlay = Image.fromarray(np_mask)
+                self.image_mask = [images.resize_image(self.resize_mode, x, self.width, self.height) for x in self.image_mask]
+                np_mask = [np.array(x) for x in self.image_mask]
+                np_mask = [np.clip((x.astype(np.float32)) * 2, 0, 255).astype(np.uint8) for x in np_mask]
+                self.mask_for_overlay = [Image.fromarray(x) for x in np_mask]
 
             self.overlay_images = []
 
@@ -781,25 +790,25 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         if add_color_corrections:
             self.color_corrections = []
         imgs = []
-        for img in self.init_images:
+        for i, img in enumerate(self.init_images):
             image = img.convert("RGB")
 
             if crop_region is None:
                 image = images.resize_image(self.resize_mode, image, self.width, self.height)
 
-            if self.image_mask is not None:
+            if self.image_mask[i] is not None:
                 image_masked = Image.new('RGBa', (image.width, image.height))
-                image_masked.paste(image.convert("RGBA").convert("RGBa"), mask=ImageOps.invert(self.mask_for_overlay.convert('L')))
+                image_masked.paste(image.convert("RGBA").convert("RGBa"), mask=ImageOps.invert(self.mask_for_overlay[i].convert('L')))
 
                 self.overlay_images.append(image_masked.convert('RGBA'))
 
-            if crop_region is not None:
-                image = image.crop(crop_region)
+            if crop_region is not None and crop_region[i] is not None:
+                image = image.crop(crop_region[i])
                 image = images.resize_image(2, image, self.width, self.height)
 
-            if self.image_mask is not None:
+            if self.image_mask[i] is not None:
                 if self.inpainting_fill != 1:
-                    image = masking.fill(image, latent_mask)
+                    image = masking.fill(image, latent_mask[i])
 
             if add_color_corrections:
                 self.color_corrections.append(setup_color_correction(image))
@@ -831,11 +840,11 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
         if self.image_mask is not None:
             init_mask = latent_mask
-            latmask = init_mask.convert('RGB').resize((self.init_latent.shape[3], self.init_latent.shape[2]))
-            latmask = np.moveaxis(np.array(latmask, dtype=np.float32), 2, 0) / 255
-            latmask = latmask[0]
-            latmask = np.around(latmask)
-            latmask = np.tile(latmask[None], (4, 1, 1))
+            latmask = [x.convert('RGB').resize((self.init_latent.shape[3], self.init_latent.shape[2])) for x in init_mask]
+            latmask = [np.moveaxis(np.array(x, dtype=np.float32), 2, 0) / 255 for x in latmask]
+            latmask = [x[0] for x in latmask]
+            latmask = [np.around(x) for x in latmask]
+            latmask = np.array([np.tile(x[None], (4, 1, 1)) for x in latmask])
 
             self.mask = torch.asarray(1.0 - latmask).to(shared.device).type(self.sd_model.dtype)
             self.nmask = torch.asarray(latmask).to(shared.device).type(self.sd_model.dtype)
