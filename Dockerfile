@@ -23,29 +23,24 @@ RUN FORCE_CUDA=1 TORCH_CUDA_ARCH_LIST="7.0 7.5 8.0 8.6" \
     pip3 wheel --no-deps -e xformers
 
 
-# base container, tracks main branch
-FROM python:3.10 AS base
+FROM python:3.10-slim
 
 ENV PYTHONUNBUFFERED=1 DEBIAN_FRONTEND=noninteractive PIP_PREFER_BINARY=1 PIP_NO_CACHE_DIR=1
 
-RUN pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 --extra-index-url https://download.pytorch.org/whl/cu113
+# Store MatPlotLib config files in the app directory
+ENV MPLCONFIGDIR=/sd/.mpl_config
+# Store Transformers models in the app directory
+ENV XDG_CACHE_HOME=/sd/.xdg_cache
 
-# Install prebuilt xformers
-COPY --from=xformers xformers-0.0.14.dev0-cp310-cp310-linux_x86_64.whl /xformers-0.0.14.dev0-cp310-cp310-linux_x86_64.whl
-RUN pip install /xformers-0.0.14.dev0-cp310-cp310-linux_x86_64.whl
-
-# Clone main branch
-RUN git clone https://github.com/Equilibrium-Point/automatic1111-stable-diffusion.git /sd
-
+COPY . /sd
 WORKDIR /sd
 
-# Install dependencies
-RUN python launch.py --skip-torch-cuda-test --exit
+COPY --from=xformers xformers-0.0.14.dev0-cp310-cp310-linux_x86_64.whl /xformers-0.0.14.dev0-cp310-cp310-linux_x86_64.whl
 
-# Replace opencv-python (installed as a side effect of `python launch.py`) with opencv-python-headless,
-# to remove dependency on missing libGL.so.1.
-RUN pip install opencv-python-headless
+RUN apt update && apt install git -y
 
+RUN chown -R 1000 /sd
+USER 1000:1000
 
 # download container, tracks main branch
 FROM base AS download
