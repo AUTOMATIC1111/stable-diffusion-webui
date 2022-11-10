@@ -570,6 +570,8 @@ def update_generation_info(args):
     generation_info, html_info, img_index = args
     try:
         generation_info = json.loads(generation_info)
+        if img_index < 0 or img_index >= len(generation_info["infotexts"]):
+            return html_info
         return plaintext_to_html(generation_info["infotexts"][img_index])
     except Exception:
         pass
