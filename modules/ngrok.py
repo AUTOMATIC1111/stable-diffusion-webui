@@ -1,6 +1,7 @@
 from pyngrok import ngrok, conf, exception
 
 def connect(token, port, region):
+    account = None
     if token == None:
         token = 'None'
     else:
@@ -13,10 +14,10 @@ def connect(token, port, region):
         auth_token=token, region=region
     )
     try:
-        if account:
-            public_url = ngrok.connect(port, pyngrok_config=config, auth=account).public_url
-        else:
+        if account == None:
             public_url = ngrok.connect(port, pyngrok_config=config).public_url
+        else:
+            public_url = ngrok.connect(port, pyngrok_config=config, auth=account).public_url
     except exception.PyngrokNgrokError:
         print(f'Invalid ngrok authtoken, ngrok connection aborted.\n'
               f'Your token: {token}, get the right one on https://dashboard.ngrok.com/get-started/your-authtoken')
