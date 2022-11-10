@@ -1188,7 +1188,8 @@ def create_ui(wrap_gradio_gpu_call):
                     new_hypernetwork_activation_func = gr.Dropdown(value="linear", label="Select activation function of hypernetwork. Recommended : Swish / Linear(none)", choices=modules.hypernetworks.ui.keys)
                     new_hypernetwork_initialization_option = gr.Dropdown(value = "Normal", label="Select Layer weights initialization. Recommended: Kaiming for relu-like, Xavier for sigmoid-like, Normal otherwise", choices=["Normal", "KaimingUniform", "KaimingNormal", "XavierUniform", "XavierNormal"])
                     new_hypernetwork_add_layer_norm = gr.Checkbox(label="Add layer normalization")
-                    new_hypernetwork_use_dropout = gr.Checkbox(label="Use dropout")
+                    new_hypernetwork_use_dropout = gr.Checkbox(label="Use dropout. Might improve training when dataset is small / limited.")
+                    new_hypernetwork_dropout_structure = gr.Textbox("0, 0, 0", label="Enter hypernetwork Dropout structure (or empty). Recommended : 0~0.35 incrementing sequence: 0, 0.05, 0.15", placeholder="1st and last digit must be 0 and values should be between 0 and 1. ex:'0, 0.01, 0'")
                     overwrite_old_hypernetwork = gr.Checkbox(value=False, label="Overwrite Old Hypernetwork")
 
                     with gr.Row():
@@ -1309,7 +1310,8 @@ def create_ui(wrap_gradio_gpu_call):
                 new_hypernetwork_activation_func,
                 new_hypernetwork_initialization_option,
                 new_hypernetwork_add_layer_norm,
-                new_hypernetwork_use_dropout
+                new_hypernetwork_use_dropout,
+                new_hypernetwork_dropout_structure
             ],
             outputs=[
                 train_hypernetwork_name,
