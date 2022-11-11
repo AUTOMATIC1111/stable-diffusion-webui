@@ -3,6 +3,7 @@ import os.path
 import sys
 import gc
 from collections import namedtuple
+from copy import deepcopy
 import torch
 import re
 from omegaconf import OmegaConf
@@ -165,11 +166,11 @@ def load_model_weights(model, checkpoint_info, vae_file="auto"):
 
     if shared.opts.sd_checkpoint_cache > 0 and hasattr(model, "sd_checkpoint_info"):
         sd_vae.restore_base_vae(model)
-        checkpoints_loaded[model.sd_checkpoint_info] = model.state_dict().copy()
+        checkpoints_loaded[model.sd_checkpoint_info.hash] = deepcopy(model.state_dict())
 
     vae_file = sd_vae.resolve_vae(checkpoint_file, vae_file=vae_file)
 
-    if checkpoint_info not in checkpoints_loaded:
+    if checkpoint_info.hash not in checkpoints_loaded:
         print(f"Loading weights [{sd_model_hash}] from {checkpoint_file}")
 
         pl_sd = torch.load(checkpoint_file, map_location=shared.weight_load_location)
@@ -203,7 +204,7 @@ def load_model_weights(model, checkpoint_info, vae_file="auto"):
         vae_name = sd_vae.get_filename(vae_file) if vae_file else None
         vae_message = f" with {vae_name} VAE" if vae_name else ""
         print(f"Loading weights [{sd_model_hash}]{vae_message} from cache")
-        model.load_state_dict(checkpoints_loaded[checkpoint_info])
+        model.load_state_dict(checkpoints_loaded[sd_model_hash])
 
     if shared.opts.sd_checkpoint_cache > 0:
         while len(checkpoints_loaded) > shared.opts.sd_checkpoint_cache:

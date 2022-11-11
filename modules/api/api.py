@@ -6,6 +6,7 @@ from threading import Lock
 from gradio.processing_utils import encode_pil_to_base64, decode_base64_to_file, decode_base64_to_image
 from fastapi import APIRouter, Depends, FastAPI, HTTPException
 import modules.shared as shared
+from modules import sd_models
 from modules.api.models import *
 from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img, process_images
 from modules.sd_samplers import all_samplers
@@ -97,6 +98,16 @@ class Api:
         shared.state.begin()
 
         with self.queue_lock:
+            sd_model_checkpoint = txt2imgreq.override_settings['sd_model_checkpoint']
+            checkpoint_info = next(
+                (
+                    info
+                    for info in sd_models.checkpoints_list.values()
+                    if info.model_name == sd_model_checkpoint
+                ),
+                None
+            )
+            sd_models.reload_model_weights(None, checkpoint_info)
             processed = process_images(p)
 
         shared.state.end()
