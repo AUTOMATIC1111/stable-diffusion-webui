@@ -8,7 +8,7 @@ def connect(token, port, region):
         auth_token=token, region=region
     )
     try:
-        public_url = ngrok.connect(port, pyngrok_config=config).public_url
+        public_url = ngrok.connect(port, pyngrok_config=config, bind_tls=True).public_url
     except exception.PyngrokNgrokError:
         print(f'Invalid ngrok authtoken, ngrok connection aborted.\n'
               f'Your token: {token}, get the right one on https://dashboard.ngrok.com/get-started/your-authtoken')
