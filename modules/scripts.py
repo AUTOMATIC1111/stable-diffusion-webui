@@ -140,7 +140,7 @@ def list_files_with_name(filename):
             continue
 
         path = os.path.join(dirpath, filename)
-        if os.path.isfile(filename):
+        if os.path.isfile(path):
             res.append(path)
 
     return res
