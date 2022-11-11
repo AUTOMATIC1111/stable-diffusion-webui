@@ -105,6 +105,13 @@ def initialize():
 
     signal.signal(signal.SIGINT, sigint_handler)
 
+    if cmd_opts.api or cmd_opts.nowebui:
+        original_checkpoint = modules.sd_models.select_checkpoint()
+        for checkpoint in modules.sd_models.checkpoints_list:
+            modules.sd_models.reload_model_weights(None, modules.sd_models.checkpoints_list[checkpoint])
+        if original_checkpoint:
+            modules.sd_models.reload_model_weights(None, original_checkpoint)
+
 
 def setup_cors(app):
     if cmd_opts.cors_allow_origins:
