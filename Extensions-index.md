@@ -134,6 +134,24 @@
 			"tags": ["script"]
 		},
 		{
+			"name": "prompt travel",
+			"url": "https://github.com/Kahsolt/stable-diffusion-webui-prompt-travel.git",
+			"description": "Extension script for AUTOMATIC1111/stable-diffusion-webui to travel between prompts in latent space.",
+			"tags": ["script"]
+		},
+		{
+			"name": "conditioning-highres-fix",
+			"url": "https://github.com/klimaleksus/stable-diffusion-webui-conditioning-highres-fix.git",
+			"description": "This is Extension for rewriting Inpainting conditioning mask strength value relative to Denoising strength at runtime. This is useful for Inpainting models such as sd-v1-5-inpainting.ckpt",
+			"tags": ["script"]
+		},
+		{
+			"name": "Randomize",
+			"url": "https://github.com/stysmmaker/stable-diffusion-webui-randomize.git",
+			"description": "Allows for random parameters during txt2img generation. This script is processed for all generations, regardless of the script selected, meaning this script will function with others as well, such as AUTOMATIC1111/stable-diffusion-webui-wildcards",
+			"tags": ["script"]
+		},
+		{
 			"name": "zh_CN Localization",
 			"url": "https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN",
 			"description": "Simplified Chinese localization",
