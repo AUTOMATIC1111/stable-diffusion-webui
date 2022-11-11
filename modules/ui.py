@@ -566,6 +566,19 @@ def apply_setting(key, value):
     return value
 
 
+def update_generation_info(args):
+    generation_info, html_info, img_index = args
+    try:
+        generation_info = json.loads(generation_info)
+        if img_index < 0 or img_index >= len(generation_info["infotexts"]):
+            return html_info
+        return plaintext_to_html(generation_info["infotexts"][img_index])
+    except Exception:
+        pass
+    # if the json parse or anything else fails, just return the old html_info
+    return html_info
+
+
 def create_refresh_button(refresh_component, refresh_method, refreshed_args, elem_id):
     def refresh():
         refresh_method()
@@ -638,6 +651,15 @@ Requested path was: {f}
                     with gr.Group():
                         html_info = gr.HTML()
                         generation_info = gr.Textbox(visible=False)
+                        if tabname == 'txt2img' or tabname == 'img2img':
+                            generation_info_button = gr.Button(visible=False, elem_id=f"{tabname}_generation_info_button")
+                            generation_info_button.click(
+                                fn=update_generation_info,
+                                _js="(x, y) => [x, y, selected_gallery_index()]",
+                                inputs=[generation_info, html_info],
+                                outputs=[html_info],
+                                preprocess=False
+                            )
 
                         save.click(
                             fn=wrap_gradio_call(save_files),
