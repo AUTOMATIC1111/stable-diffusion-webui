@@ -15,6 +15,9 @@ from modules.sd_models import checkpoints_list
 from modules.realesrgan_model import get_realesrgan_models
 from typing import List
 
+if shared.cmd_opts.deepdanbooru:
+    from modules.deepbooru import get_deepbooru_tags
+
 def upscaler_to_index(name: str):
     try:
         return [x.name.lower() for x in shared.sd_upscalers].index(name.lower())
@@ -220,11 +223,20 @@ class Api:
         if image_b64 is None:
             raise HTTPException(status_code=404, detail="Image not found") 
 
-        img = self.__base64_to_image(image_b64)
+        img = decode_base64_to_image(image_b64)
+        img = img.convert('RGB')
 
         # Override object param
         with self.queue_lock:
-            processed = shared.interrogator.interrogate(img)
+            if interrogatereq.model == "clip":
+                processed = shared.interrogator.interrogate(img)
+            elif interrogatereq.model == "deepdanbooru":
+                if shared.cmd_opts.deepdanbooru:
+                    processed = get_deepbooru_tags(img)
+                else:
+                    raise HTTPException(status_code=404, detail="Model not found. Add --deepdanbooru when launching for using the model.")
+            else:
+                raise HTTPException(status_code=404, detail="Model not found")
         
         return InterrogateResponse(caption=processed)
 
