@@ -73,6 +73,24 @@ To install, run the following command from within the webui directory:
 
 If you are upgrading from a version prior to 0.11.0, be sure to delete the old dynamic_prompting.py from the webui's scripts directory and the old dynamic_prompting.js from the webui's javascript directory.
 
+## Dreambooth
+https://github.com/d8ahazard/sd_dreambooth_extension
+
+Dreambooth in the UI. Refer to the project readme for tuning and configuration requirements.
+
+Based on ShivamShiaro's repo.
+
+![image](https://user-images.githubusercontent.com/1633844/201434706-2c2744ba-082e-427e-9f8d-af03de204583.png)
+
+
+## Smart Process
+https://github.com/d8ahazard/sd_smartprocess
+
+Intelligent cropping, captioning, and image enhancement.
+
+![image](https://user-images.githubusercontent.com/1633844/201435094-433d765c-56e8-4573-82d9-71af2b112159.png)
+
+
 ## Image browser
 https://github.com/yfszzx/stable-diffusion-webui-images-browser
 
