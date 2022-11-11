@@ -3,7 +3,6 @@ import os.path
 import sys
 import gc
 from collections import namedtuple
-from copy import deepcopy
 import torch
 import re
 from omegaconf import OmegaConf

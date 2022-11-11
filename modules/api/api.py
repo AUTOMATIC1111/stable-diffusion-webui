@@ -11,6 +11,7 @@ from secrets import compare_digest
 import modules.shared as shared
 from modules import sd_models, sd_samplers, deepbooru
 from modules.api.models import *
+from modules.hypernetworks.hypernetwork import load_hypernetwork, find_closest_hypernetwork_name
 from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img, process_images
 from modules.extras import run_extras, run_pnginfo
 from PIL import PngImagePlugin
@@ -118,6 +119,8 @@ class Api:
         shared.state.begin()
 
         with self.queue_lock:
+
+            # set checkpoint
             sd_model_checkpoint = txt2imgreq.override_settings['sd_model_checkpoint']
             checkpoint_info = next(
                 (
@@ -128,7 +131,15 @@ class Api:
                 None
             )
             sd_models.reload_model_weights(None, checkpoint_info)
+            
+            # set hypernet
+            if txt2imgreq.override_settings['sd_hypernetwork']:
+                load_hypernetwork(find_closest_hypernetwork_name(txt2imgreq.override_settings['sd_hypernetwork']))
+            else:
+                shared.loaded_hypernetwork = None
+                
             processed = process_images(p)
+
 
         shared.state.end()
 

@@ -418,9 +418,8 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration
 
     return f"{all_prompts[index]}{negative_prompt_text}\n{generation_params_text}".strip()
 
-
 def process_images(p: StableDiffusionProcessing) -> Processed:
-    stored_opts = {k: opts.data[k] for k in p.override_settings.keys()}
+    stored_opts = {k: opts.data[k] for k in p.override_settings.keys() if k in opts.data}
 
     try:
         for k, v in p.override_settings.items():
