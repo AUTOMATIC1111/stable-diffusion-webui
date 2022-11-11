@@ -100,7 +100,7 @@ class PersonalizedBase(Dataset):
         text = text.replace("[name]", self.placeholder_token)
         tags = filename_text.split(',')
         if shared.opts.tag_drop_out != 0:
-            tags = [t for t in tags if random.random() > shared.opt.tag_drop_out]
+            tags = [t for t in tags if random.random() > shared.opts.tag_drop_out]
         if shared.opts.shuffle_tags:
             random.shuffle(tags)
         text = text.replace("[filewords]", ','.join(tags))
