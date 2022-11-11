@@ -1,0 +1,1 @@
+.\webui-user.bat --share
