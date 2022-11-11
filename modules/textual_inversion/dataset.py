@@ -99,7 +99,7 @@ class PersonalizedBase(Dataset):
         text = random.choice(self.lines)
         text = text.replace("[name]", self.placeholder_token)
         tags = filename_text.split(',')
-        if shared.opt.tag_drop_out != 0:
+        if shared.opts.tag_drop_out != 0:
             tags = [t for t in tags if random.random() > shared.opt.tag_drop_out]
         if shared.opts.shuffle_tags:
             random.shuffle(tags)
