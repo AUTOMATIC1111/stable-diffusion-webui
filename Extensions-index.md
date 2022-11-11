@@ -32,6 +32,12 @@
 			"tags": ["script", "tab"]
 		},
 		{
+			"name": "Smart Process",
+			"url": "https://github.com/d8ahazard/sd_smartprocess",
+			"description": "Smart pre-process including auto subject identification, caption subject swapping, and upscaling/facial restoration.",
+			"tags": ["script", "tab"]
+		},
+		{
 			"name": "Image browser",
 			"url": "https://github.com/yfszzx/stable-diffusion-webui-images-browser",
 			"description": "Provides an interface to browse created images in the web browser.",
