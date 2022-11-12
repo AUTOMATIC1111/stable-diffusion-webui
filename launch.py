@@ -229,6 +229,9 @@ def prepare_enviroment():
 def tests(argv):
     if "--api" not in argv:
         argv.append("--api")
+    if "--ckpt" not in argv:
+        argv.append("--ckpt")
+        argv.append("./test/test_files/empty.pt")
 
     print(f"Launching Web UI in another process for testing with arguments: {' '.join(argv[1:])}")
 
@@ -236,7 +239,7 @@ def tests(argv):
         proc = subprocess.Popen([sys.executable, *argv], stdout=stdout, stderr=stderr)
 
     import test.server_poll
-    test.server_poll.run_tests()
+    test.server_poll.run_tests(proc)
 
     print(f"Stopping Web UI process with id {proc.pid}")
     proc.kill()

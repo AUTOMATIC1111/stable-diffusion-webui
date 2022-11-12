@@ -53,12 +53,14 @@ class TestTxt2ImgWorking(unittest.TestCase):
         self.simple_txt2img["restore_faces"] = True
         self.assertEqual(requests.post(self.url_txt2img, json=self.simple_txt2img).status_code, 200)
 
-    def test_txt2img_with_tiling_faces_performed(self):
+    def test_txt2img_with_tiling_performed(self):
         self.simple_txt2img["tiling"] = True
         self.assertEqual(requests.post(self.url_txt2img, json=self.simple_txt2img).status_code, 200)
 
     def test_txt2img_with_vanilla_sampler_performed(self):
         self.simple_txt2img["sampler_index"] = "PLMS"
+        self.assertEqual(requests.post(self.url_txt2img, json=self.simple_txt2img).status_code, 200)
+        self.simple_txt2img["sampler_index"] = "DDIM"
         self.assertEqual(requests.post(self.url_txt2img, json=self.simple_txt2img).status_code, 200)
 
     def test_txt2img_multiple_batches_performed(self):
