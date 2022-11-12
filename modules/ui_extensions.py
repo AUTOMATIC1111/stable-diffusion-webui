@@ -134,6 +134,9 @@ def install_extension_from_url(dirname, url):
 
         os.rename(tmpdir, target_dir)
 
+        import launch
+        launch.run_extension_installer(target_dir)
+
         extensions.list_extensions()
         return [extension_table(), html.escape(f"Installed into {target_dir}. Use Installed tab to restart.")]
     finally:

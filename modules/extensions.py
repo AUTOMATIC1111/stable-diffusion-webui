@@ -6,7 +6,6 @@ import git
 
 from modules import paths, shared
 
-
 extensions = []
 extensions_dir = os.path.join(paths.script_path, "extensions")
 
@@ -84,3 +83,4 @@ def list_extensions():
 
         extension = Extension(name=dirname, path=path, enabled=dirname not in shared.opts.disabled_extensions)
         extensions.append(extension)
+

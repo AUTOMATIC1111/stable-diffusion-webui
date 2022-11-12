@@ -105,22 +105,26 @@ def version_check(commit):
         print("version check failed", e)
 
 
+def run_extension_installer(extension_dir):
+    path_installer = os.path.join(extension_dir, "install.py")
+    if not os.path.isfile(path_installer):
+        return
+
+    try:
+        env = os.environ.copy()
+        env['PYTHONPATH'] = os.path.abspath(".")
+
+        print(run(f'"{python}" "{path_installer}"', errdesc=f"Error running install.py for extension {extension_dir}", custom_env=env))
+    except Exception as e:
+        print(e, file=sys.stderr)
+
+
 def run_extensions_installers():
     if not os.path.isdir(dir_extensions):
         return
 
     for dirname_extension in os.listdir(dir_extensions):
-        path_installer = os.path.join(dir_extensions, dirname_extension, "install.py")
-        if not os.path.isfile(path_installer):
-            continue
-
-        try:
-            env = os.environ.copy()
-            env['PYTHONPATH'] = os.path.abspath(".")
-
-            print(run(f'"{python}" "{path_installer}"', errdesc=f"Error running install.py for extension {dirname_extension}", custom_env=env))
-        except Exception as e:
-            print(e, file=sys.stderr)
+        run_extension_installer(os.path.join(dir_extensions, dirname_extension))
 
 
 def prepare_enviroment():
