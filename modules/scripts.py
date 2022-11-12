@@ -6,7 +6,7 @@ from collections import namedtuple
 import gradio as gr
 
 from modules.processing import StableDiffusionProcessing
-from modules import shared, paths, script_callbacks, extensions
+from modules import shared, paths, script_callbacks, extensions, script_loading
 
 AlwaysVisible = object()
 
@@ -140,7 +140,7 @@ def list_files_with_name(filename):
             continue
 
         path = os.path.join(dirpath, filename)
-        if os.path.isfile(filename):
+        if os.path.isfile(path):
             res.append(path)
 
     return res
@@ -161,13 +161,7 @@ def load_scripts():
                 sys.path = [scriptfile.basedir] + sys.path
             current_basedir = scriptfile.basedir
 
-            with open(scriptfile.path, "r", encoding="utf8") as file:
-                text = file.read()
-
-            from types import ModuleType
-            compiled = compile(text, scriptfile.path, 'exec')
-            module = ModuleType(scriptfile.filename)
-            exec(compiled, module.__dict__)
+            module = script_loading.load_module(scriptfile.path)
 
             for key, script_class in module.__dict__.items():
                 if type(script_class) == type and issubclass(script_class, Script):
@@ -328,27 +322,21 @@ class ScriptRunner:
 
     def reload_sources(self, cache):
         for si, script in list(enumerate(self.scripts)):
-            with open(script.filename, "r", encoding="utf8") as file:
-                args_from = script.args_from
-                args_to = script.args_to
-                filename = script.filename
-                text = file.read()
+            args_from = script.args_from
+            args_to = script.args_to
+            filename = script.filename
 
-                from types import ModuleType
+            module = cache.get(filename, None)
+            if module is None:
+                module = script_loading.load_module(script.filename)
+                cache[filename] = module
 
-                module = cache.get(filename, None)
-                if module is None:
-                    compiled = compile(text, filename, 'exec')
-                    module = ModuleType(script.filename)
-                    exec(compiled, module.__dict__)
-                    cache[filename] = module
-
-                for key, script_class in module.__dict__.items():
-                    if type(script_class) == type and issubclass(script_class, Script):
-                        self.scripts[si] = script_class()
-                        self.scripts[si].filename = filename
-                        self.scripts[si].args_from = args_from
-                        self.scripts[si].args_to = args_to
+            for key, script_class in module.__dict__.items():
+                if type(script_class) == type and issubclass(script_class, Script):
+                    self.scripts[si] = script_class()
+                    self.scripts[si].filename = filename
+                    self.scripts[si].args_from = args_from
+                    self.scripts[si].args_to = args_to
 
 
 scripts_txt2img = ScriptRunner()
