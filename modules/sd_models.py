@@ -165,7 +165,7 @@ def load_model_weights(model, checkpoint_info, vae_file="auto"):
 
     cache_enabled = shared.opts.sd_checkpoint_cache > 0
 
-    if cache_enabled:
+    if cache_enabled and hasattr(model, "sd_checkpoint_info"):
         sd_vae.restore_base_vae(model)
 
     vae_file = sd_vae.resolve_vae(checkpoint_file, vae_file=vae_file)
