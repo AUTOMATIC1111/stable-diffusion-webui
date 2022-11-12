@@ -6,7 +6,7 @@ from modules import errors
 # has_mps is only available in nightly pytorch (for now) and MasOS 12.3+.
 # check `getattr` and try it for compatibility
 def has_mps() -> bool:
-    if getattr(torch, 'has_mps', False): return False
+    if not getattr(torch, 'has_mps', False): return False
     try:
         torch.zeros(1).to(torch.device("mps"))
         return True
