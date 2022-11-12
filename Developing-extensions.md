@@ -10,7 +10,7 @@ Web ui interacts with installed extensions in the following way:
 - extension's localization files in the `localizations` directory are added to settings; if there are two localizations with same name, they are not merged, one replaces another.
 - extension's `style.css` file is added to the page
 - if extension has `preload.py` file in its root directory, it is loaded before parsing commandline args
-- if extension's `preload.py` has a preload function, it is called, and commandline args parser is passed to it as an argument. Here's an example of how to use it to add a command line argument:
+- if extension's `preload.py` has a `preload` function, it is called, and commandline args parser is passed to it as an argument. Here's an example of how to use it to add a command line argument:
 ```python
 def preload(parser):
     parser.add_argument("--wildcards-dir", type=str, help="directory with wildcards", default=None)
