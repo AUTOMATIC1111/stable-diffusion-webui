@@ -1,3 +1,7 @@
 Dockerfile
+
+.git
+
 models
 repositories
+venv

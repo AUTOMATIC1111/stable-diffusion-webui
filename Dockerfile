@@ -32,14 +32,17 @@ ENV MPLCONFIGDIR=/sd/.mpl_config
 # Store Transformers models in the app directory
 ENV XDG_CACHE_HOME=/sd/.xdg_cache
 
-COPY . /sd
-WORKDIR /sd
+RUN apt update && apt install git wget -y
 
 COPY --from=xformers xformers-0.0.14.dev0-cp310-cp310-linux_x86_64.whl /xformers-0.0.14.dev0-cp310-cp310-linux_x86_64.whl
 
-RUN apt update && apt install git -y
-
+COPY . /sd
+WORKDIR /sd
 RUN chown -R 1000 /sd
+
+RUN mkdir /var/sd
+RUN chown -R 1000 /var/sd
+
 USER 1000:1000
 
 # download container, tracks main branch
