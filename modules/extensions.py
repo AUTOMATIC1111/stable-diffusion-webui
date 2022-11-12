@@ -1,7 +1,6 @@
 import os
 import sys
 import traceback
-from importlib.machinery import SourceFileLoader
 
 import git
 
@@ -85,23 +84,3 @@ def list_extensions():
         extension = Extension(name=dirname, path=path, enabled=dirname not in shared.opts.disabled_extensions)
         extensions.append(extension)
 
-
-def preload_extensions(parser):
-    if not os.path.isdir(extensions_dir):
-        return
-
-    for dirname in sorted(os.listdir(extensions_dir)):
-        path = os.path.join(extensions_dir, dirname)
-        if not os.path.isdir(path):
-            continue
-        for file in os.listdir(path):
-            if "preload.py" in file:
-                full_file = os.path.join(path, file)
-                print(f"Got preload file: {full_file}")
-
-                try:
-                    ext = SourceFileLoader("preload", full_file).load_module()
-                    parser = ext.preload(parser)
-                except Exception as e:
-                    print(f"Exception preloading script: {e}")
-    return parser
