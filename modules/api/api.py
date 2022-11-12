@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, FastAPI, HTTPException
 import modules.shared as shared
 from modules import sd_models
 from modules.api.models import *
+from modules.hypernetworks.hypernetwork import load_hypernetwork, find_closest_hypernetwork_name
 from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img, process_images
 from modules.sd_samplers import all_samplers
 from modules.extras import run_extras, run_pnginfo
@@ -15,6 +16,9 @@ from PIL import PngImagePlugin
 from modules.sd_models import checkpoints_list
 from modules.realesrgan_model import get_realesrgan_models
 from typing import List
+
+if shared.cmd_opts.deepdanbooru:
+    from modules.deepbooru import get_deepbooru_tags
 
 def upscaler_to_index(name: str):
     try:
@@ -98,6 +102,8 @@ class Api:
         shared.state.begin()
 
         with self.queue_lock:
+
+            # set checkpoint
             sd_model_checkpoint = txt2imgreq.override_settings['sd_model_checkpoint']
             checkpoint_info = next(
                 (
@@ -108,7 +114,15 @@ class Api:
                 None
             )
             sd_models.reload_model_weights(None, checkpoint_info)
+            
+            # set hypernet
+            if txt2imgreq.override_settings['sd_hypernetwork']:
+                load_hypernetwork(find_closest_hypernetwork_name(txt2imgreq.override_settings['sd_hypernetwork']))
+            else:
+                shared.loaded_hypernetwork = None
+                
             processed = process_images(p)
+
 
         shared.state.end()
 
@@ -231,11 +245,20 @@ class Api:
         if image_b64 is None:
             raise HTTPException(status_code=404, detail="Image not found") 
 
-        img = self.__base64_to_image(image_b64)
+        img = decode_base64_to_image(image_b64)
+        img = img.convert('RGB')
 
         # Override object param
         with self.queue_lock:
-            processed = shared.interrogator.interrogate(img)
+            if interrogatereq.model == "clip":
+                processed = shared.interrogator.interrogate(img)
+            elif interrogatereq.model == "deepdanbooru":
+                if shared.cmd_opts.deepdanbooru:
+                    processed = get_deepbooru_tags(img)
+                else:
+                    raise HTTPException(status_code=404, detail="Model not found. Add --deepdanbooru when launching for using the model.")
+            else:
+                raise HTTPException(status_code=404, detail="Model not found")
         
         return InterrogateResponse(caption=processed)
 

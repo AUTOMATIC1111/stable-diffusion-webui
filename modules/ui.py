@@ -566,6 +566,19 @@ def apply_setting(key, value):
     return value
 
 
+def update_generation_info(args):
+    generation_info, html_info, img_index = args
+    try:
+        generation_info = json.loads(generation_info)
+        if img_index < 0 or img_index >= len(generation_info["infotexts"]):
+            return html_info
+        return plaintext_to_html(generation_info["infotexts"][img_index])
+    except Exception:
+        pass
+    # if the json parse or anything else fails, just return the old html_info
+    return html_info
+
+
 def create_refresh_button(refresh_component, refresh_method, refreshed_args, elem_id):
     def refresh():
         refresh_method()
@@ -638,6 +651,15 @@ Requested path was: {f}
                     with gr.Group():
                         html_info = gr.HTML()
                         generation_info = gr.Textbox(visible=False)
+                        if tabname == 'txt2img' or tabname == 'img2img':
+                            generation_info_button = gr.Button(visible=False, elem_id=f"{tabname}_generation_info_button")
+                            generation_info_button.click(
+                                fn=update_generation_info,
+                                _js="(x, y) => [x, y, selected_gallery_index()]",
+                                inputs=[generation_info, html_info],
+                                outputs=[html_info],
+                                preprocess=False
+                            )
 
                         save.click(
                             fn=wrap_gradio_call(save_files),
@@ -1270,6 +1292,10 @@ def create_ui(wrap_gradio_gpu_call):
                         train_hypernetwork = gr.Button(value="Train Hypernetwork", variant='primary')
                         train_embedding = gr.Button(value="Train Embedding", variant='primary')
 
+                params = script_callbacks.UiTrainTabParams(txt2img_preview_params)
+
+                script_callbacks.ui_train_tabs_callback(params)
+
             with gr.Column():
                 progressbar = gr.HTML(elem_id="ti_progressbar")
                 ti_output = gr.Text(elem_id="ti_output", value="", show_label=False)
@@ -1752,7 +1778,7 @@ def create_ui(wrap_gradio_gpu_call):
     return demo
 
 
-def load_javascript(raw_response):
+def reload_javascript():
     with open(os.path.join(script_path, "script.js"), "r", encoding="utf8") as jsfile:
         javascript = f'<script>{jsfile.read()}</script>'
 
@@ -1768,7 +1794,7 @@ def load_javascript(raw_response):
     javascript += f"\n<script>{localization.localization_js(shared.opts.localization)}</script>"
 
     def template_response(*args, **kwargs):
-        res = raw_response(*args, **kwargs)
+        res = shared.GradioTemplateResponseOriginal(*args, **kwargs)
         res.body = res.body.replace(
             b'</head>', f'{javascript}</head>'.encode("utf8"))
         res.init_headers()
@@ -1777,4 +1803,5 @@ def load_javascript(raw_response):
     gradio.routes.templates.TemplateResponse = template_response
 
 
-reload_javascript = partial(load_javascript, gradio.routes.templates.TemplateResponse)
+if not hasattr(shared, 'GradioTemplateResponseOriginal'):
+    shared.GradioTemplateResponseOriginal = gradio.routes.templates.TemplateResponse
