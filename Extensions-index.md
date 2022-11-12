@@ -206,6 +206,12 @@
 			"tags": ["localization"]
 		},
 		{
+			"name": "tr_TR Localization",
+			"url": "https://github.com/camenduru/stable-diffusion-webui-localization-tr_TR",
+			"description": "Turkish localization",
+			"tags": ["localization"]
+		},
+		{
 			"name": "old localizations",
 			"url": "https://github.com/AUTOMATIC1111/stable-diffusion-webui-old-localizations.git",
 			"description": "Old unmaintained localizations that used to be a part of main repository",
