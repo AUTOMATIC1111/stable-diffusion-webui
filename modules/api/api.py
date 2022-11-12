@@ -15,6 +15,9 @@ from modules.sd_models import checkpoints_list
 from modules.realesrgan_model import get_realesrgan_models
 from typing import List
 
+if shared.cmd_opts.deepdanbooru:
+    from modules.deepbooru import get_deepbooru_tags
+
 def upscaler_to_index(name: str):
     try:
         return [x.name.lower() for x in shared.sd_upscalers].index(name.lower())
@@ -63,6 +66,7 @@ class Api:
         self.app.add_api_route("/sdapi/v1/extra-batch-images", self.extras_batch_images_api, methods=["POST"], response_model=ExtrasBatchImagesResponse)
         self.app.add_api_route("/sdapi/v1/png-info", self.pnginfoapi, methods=["POST"], response_model=PNGInfoResponse)
         self.app.add_api_route("/sdapi/v1/progress", self.progressapi, methods=["GET"], response_model=ProgressResponse)
+        self.app.add_api_route("/sdapi/v1/interrogate", self.interrogateapi, methods=["POST"])
         self.app.add_api_route("/sdapi/v1/interrupt", self.interruptapi, methods=["POST"])
         self.app.add_api_route("/sdapi/v1/options", self.get_config, methods=["GET"], response_model=OptionsModel)
         self.app.add_api_route("/sdapi/v1/options", self.set_config, methods=["POST"])
@@ -213,6 +217,28 @@ class Api:
             current_image = encode_pil_to_base64(shared.state.current_image)
 
         return ProgressResponse(progress=progress, eta_relative=eta_relative, state=shared.state.dict(), current_image=current_image)
+
+    def interrogateapi(self, interrogatereq: InterrogateRequest):
+        image_b64 = interrogatereq.image
+        if image_b64 is None:
+            raise HTTPException(status_code=404, detail="Image not found") 
+
+        img = decode_base64_to_image(image_b64)
+        img = img.convert('RGB')
+
+        # Override object param
+        with self.queue_lock:
+            if interrogatereq.model == "clip":
+                processed = shared.interrogator.interrogate(img)
+            elif interrogatereq.model == "deepdanbooru":
+                if shared.cmd_opts.deepdanbooru:
+                    processed = get_deepbooru_tags(img)
+                else:
+                    raise HTTPException(status_code=404, detail="Model not found. Add --deepdanbooru when launching for using the model.")
+            else:
+                raise HTTPException(status_code=404, detail="Model not found")
+        
+        return InterrogateResponse(caption=processed)
 
     def interruptapi(self):
         shared.state.interrupt()

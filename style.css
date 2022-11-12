@@ -563,6 +563,11 @@ img2maskimg, #img2maskimg > .h-60, #img2maskimg > .h-60 > div, #img2maskimg > .h
     opacity: 0.5;
 }
 
+.extension-tag{
+    font-weight: bold;
+    font-size: 95%;
+}
+
 /* The following handles localization for right-to-left (RTL) languages like Arabic.
 The rtl media type will only be activated by the logic in javascript/localization.js.
 If you change anything above, you need to make sure it is RTL compliant by just running
