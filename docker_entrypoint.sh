@@ -26,10 +26,10 @@ done
 # If there is no initialized folder at /var/sd, create it
 if [[ ! -f /var/sd/.container_initialized ]]; then
 
+    # Delete the .container_initializing marker on exit
     function cleanup {
         rm -r /var/sd/.container_initializing
     }
-
     trap cleanup EXIT
 
     # Create cache directory and check write access
