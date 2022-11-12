@@ -767,7 +767,6 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                 self.mask_for_overlay = [x for x in self.image_mask]
                 self.paste_to = {}
                 crop_region = {}
-                print(len(self.image_mask))
                 for i, mask in enumerate(self.image_mask):
                     crop_region[i] = masking.get_crop_region(np.array(mask), self.inpaint_full_res_padding)
                     crop_region[i] = masking.expand_crop_region(crop_region[i], self.width, self.height, mask.width, mask.height)
