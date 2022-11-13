@@ -14,6 +14,8 @@ from modules.sd_hijack_optimizations import invokeAI_mps_available
 
 import ldm.modules.attention
 import ldm.modules.diffusionmodules.model
+import ldm.models.diffusion.ddim
+import ldm.models.diffusion.plms
 
 attention_CrossAttention_forward = ldm.modules.attention.CrossAttention.forward
 diffusionmodules_model_nonlinearity = ldm.modules.diffusionmodules.model.nonlinearity
@@ -406,3 +408,23 @@ def add_circular_option_to_conv_2d():
 
 
 model_hijack = StableDiffusionModelHijack()
+
+
+def register_buffer(self, name, attr):
+    """
+    Fix register buffer bug for Mac OS.
+    """
+
+    if type(attr) == torch.Tensor:
+        if attr.device != devices.device:
+
+            if devices.has_mps():
+                attr = attr.to(device="mps", dtype=torch.float32)
+            else:
+                attr = attr.to(devices.device)
+
+    setattr(self, name, attr)
+
+
+ldm.models.diffusion.ddim.DDIMSampler.register_buffer = register_buffer
+ldm.models.diffusion.plms.PLMSSampler.register_buffer = register_buffer
