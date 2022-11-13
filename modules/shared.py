@@ -3,7 +3,6 @@ import datetime
 import json
 import os
 import sys
-from collections import OrderedDict
 import time
 
 import gradio as gr
@@ -15,7 +14,7 @@ import modules.memmon
 import modules.sd_models
 import modules.styles
 import modules.devices as devices
-from modules import sd_samplers, sd_models, localization, sd_vae, extensions
+from modules import sd_samplers, sd_models, localization, sd_vae, extensions, script_loading
 from modules.hypernetworks import hypernetwork
 from modules.paths import models_path, script_path, sd_path
 
@@ -91,7 +90,7 @@ parser.add_argument("--tls-keyfile", type=str, help="Partially enables TLS, requ
 parser.add_argument("--tls-certfile", type=str, help="Partially enables TLS, requires --tls-keyfile to fully function", default=None)
 parser.add_argument("--server-name", type=str, help="Sets hostname of server", default=None)
 
-extensions.preload_extensions(parser)
+script_loading.preload_extensions(extensions.extensions_dir, parser)
 
 cmd_opts = parser.parse_args()
 
