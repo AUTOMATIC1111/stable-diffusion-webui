@@ -139,6 +139,7 @@ def load_vae(model, vae_file=None):
     # save_settings = False
 
     if vae_file:
+        assert os.path.isfile(vae_file), f"VAE file doesn't exist: {vae_file}"
         print(f"Loading VAE weights from: {vae_file}")
         vae_ckpt = torch.load(vae_file, map_location=shared.weight_load_location)
         vae_dict_1 = {k: v for k, v in vae_ckpt["state_dict"].items() if k[0:4] != "loss" and k not in vae_ignore_keys}
