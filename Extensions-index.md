@@ -171,7 +171,7 @@
 		},
 		{
 			"name": "ko_KR Localization",
-			"url": "https://github.com/36DB/stable-diffusion-webui-kr",
+			"url": "https://github.com/36DB/stable-diffusion-webui-ko_KR",
 			"description": "Korean localization",
 			"tags": ["localization"]
 		},
