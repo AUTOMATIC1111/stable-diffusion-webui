@@ -154,8 +154,7 @@ def load_vae(model, vae_file=None):
         if vae_opt not in vae_dict:
             vae_dict[vae_opt] = vae_file
             vae_list.append(vae_opt)
-            # shared.opts.data['sd_vae'] = vae_opt
-    else:
+    elif loaded_vae_file:
         restore_base_vae(model)
 
     loaded_vae_file = vae_file
