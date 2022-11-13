@@ -9,3 +9,6 @@
 ## Paperspace
    - [maintained by Cyberes](https://github.com/Engineer-of-Stuff/stable-diffusion-paperspace)
 
+## Kaggle
+   - [maintained by camenduru](https://www.kaggle.com/code/camenduru/stable-diffusion-webui-kaggle)
+
