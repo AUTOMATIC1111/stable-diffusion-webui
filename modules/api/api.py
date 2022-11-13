@@ -110,9 +110,10 @@ class Api:
             "sd_model": shared.sd_model,
             "sampler_name": validate_sampler_name(txt2imgreq.sampler_index),
             "do_not_save_samples": True,
-            "do_not_save_grid": True
+            "do_not_save_grid": False,
             }
         )
+        setattr(opts, "grid_save", False)
         p = StableDiffusionProcessingTxt2Img(**vars(populate))
         # Override object param
 
