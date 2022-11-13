@@ -160,6 +160,7 @@ def load_vae(model, vae_file=None):
     # save_settings = False
 
     if vae_file:
+        assert os.path.isfile(vae_file), f"VAE file doesn't exist: {vae_file}"
         print(f"Loading VAE weights from: {vae_file}")
         store_base_vae(model)
         vae_ckpt = torch.load(vae_file, map_location=shared.weight_load_location)
@@ -172,7 +173,6 @@ def load_vae(model, vae_file=None):
         if vae_opt not in vae_dict:
             vae_dict[vae_opt] = vae_file
             vae_list.append(vae_opt)
-            # shared.opts.data['sd_vae'] = vae_opt
     else:
         restore_base_vae(model)
 
