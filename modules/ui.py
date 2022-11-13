@@ -16,6 +16,8 @@ import gradio as gr
 import gradio.routes
 import gradio.utils
 import numpy as np
+import piexif
+import piexif.helper
 from PIL import Image, PngImagePlugin
 
 
@@ -158,15 +160,33 @@ def save_files(js_data, images, do_make_zip, index):
     return gr.File.update(value=fullfns, visible=True), '', '', plaintext_to_html(f"Saved: {filenames[0]}")
 
 def save_pil_to_file(pil_image, dir=None):
-    use_metadata = False
-    metadata = PngImagePlugin.PngInfo()
-    for key, value in pil_image.info.items():
-        if isinstance(key, str) and isinstance(value, str):
-            metadata.add_text(key, value)
-            use_metadata = True
+    extension = "." + opts.samples_format
+    file_obj = tempfile.NamedTemporaryFile(delete=False, suffix=extension, dir=dir)
 
-    file_obj = tempfile.NamedTemporaryFile(delete=False, suffix=".png", dir=dir)
-    pil_image.save(file_obj, pnginfo=(metadata if use_metadata else None))
+    if extension.lower() == ".png":
+        use_metadata = False
+        metadata = PngImagePlugin.PngInfo()
+        for key, value in pil_image.info.items():
+            if isinstance(key, str) and isinstance(value, str):
+                metadata.add_text(key, value)
+                use_metadata = True
+
+        pil_image.save(file_obj, pnginfo=(metadata if use_metadata else None))
+
+    elif extension.lower() in (".jpg", ".jpeg", ".webp"):
+        info = pil_image.info.get("parameters", None)
+        exif_bytes = piexif.dump({
+                "Exif": {
+                    piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(info or "", encoding="unicode")
+                },
+            })
+
+        pil_image.save(file_obj, quality=opts.jpeg_quality)
+        piexif.insert(exif_bytes, file_obj.name)
+            
+    else:
+        pil_image.save(file_obj, quality=opts.jpeg_quality)
+
     return file_obj
 
 
