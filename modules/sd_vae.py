@@ -136,15 +136,15 @@ def resolve_vae(checkpoint_file, vae_file="auto"):
     # if vae_file argument is provided, it takes priority, but not saved
     if vae_file and vae_file not in default_vae_list:
         if not os.path.isfile(vae_file):
+            print(f"VAE provided as function argument doesn't exist: {vae_file}")
             vae_file = "auto"
-            print("VAE provided as function argument doesn't exist")
     # for the first load, if vae-path is provided, it takes priority, saved, and failure is reported
     if first_load and shared.cmd_opts.vae_path is not None:
         if os.path.isfile(shared.cmd_opts.vae_path):
             vae_file = shared.cmd_opts.vae_path
             shared.opts.data['sd_vae'] = get_filename(vae_file)
         else:
-            print("VAE provided as command line argument doesn't exist")
+            print(f"VAE provided as command line argument doesn't exist: {vae_file}")
     # else, we load from settings
     if vae_file == "auto" and shared.opts.sd_vae is not None:
         # if saved VAE settings isn't recognized, fallback to auto
@@ -152,13 +152,12 @@ def resolve_vae(checkpoint_file, vae_file="auto"):
         # if VAE selected but not found, fallback to auto
         if vae_file not in default_vae_values and not os.path.isfile(vae_file):
             vae_file = "auto"
-            print("Selected VAE doesn't exist")
+            print(f"Selected VAE doesn't exist: {vae_file}")
     # vae-path cmd arg takes priority for auto
     if vae_file == "auto" and shared.cmd_opts.vae_path is not None:
         if os.path.isfile(shared.cmd_opts.vae_path):
             vae_file = shared.cmd_opts.vae_path
-            print("Using VAE provided as command line argument")
-
+            print(f"Using VAE provided as command line argument: {vae_file}")
     # if still not found, try look for VAE similar to model
     if vae_file == "auto" and checkpoint_file:
         model_path = os.path.splitext(checkpoint_file)[0]
@@ -179,7 +178,7 @@ def resolve_vae(checkpoint_file, vae_file="auto"):
         for vae_file_try in trials:
             if os.path.isfile(vae_file_try):
                 vae_file = vae_file_try
-                print("Using VAE found similar to selected model")
+                print(f"Using VAE found similar to selected model: {vae_file}")
                 break
 
     # No more fallbacks for auto
