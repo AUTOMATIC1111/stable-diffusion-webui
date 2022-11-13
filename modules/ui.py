@@ -159,6 +159,7 @@ def save_files(js_data, images, do_make_zip, index):
 
     return gr.File.update(value=fullfns, visible=True), '', '', plaintext_to_html(f"Saved: {filenames[0]}")
 
+
 def save_pil_to_file(pil_image, dir=None):
     extension = "." + opts.samples_format
     file_obj = tempfile.NamedTemporaryFile(delete=False, suffix=extension, dir=dir)
@@ -174,16 +175,18 @@ def save_pil_to_file(pil_image, dir=None):
         pil_image.save(file_obj, pnginfo=(metadata if use_metadata else None))
 
     elif extension.lower() in (".jpg", ".jpeg", ".webp"):
+        pil_image.save(file_obj, quality=opts.jpeg_quality)
+
         info = pil_image.info.get("parameters", None)
-        exif_bytes = piexif.dump({
+        if info is not None:
+            exif_bytes = piexif.dump({
                 "Exif": {
                     piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(info or "", encoding="unicode")
                 },
             })
 
-        pil_image.save(file_obj, quality=opts.jpeg_quality)
-        piexif.insert(exif_bytes, file_obj.name)
-            
+            piexif.insert(exif_bytes, file_obj.name)
+
     else:
         pil_image.save(file_obj, quality=opts.jpeg_quality)
 
