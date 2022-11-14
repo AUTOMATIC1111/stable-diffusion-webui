@@ -4,7 +4,7 @@ import requests
 
 class TestTxt2ImgWorking(unittest.TestCase):
     def setUp(self):
-        self.url_txt2img = "http://localhost:7860/sdapi/v1/txt2img"
+        self.url_txt2img = "http://127.0.0.1:7860/sdapi/v1/txt2img"
         self.simple_txt2img = {
             "enable_hr": False,
             "denoising_strength": 0,

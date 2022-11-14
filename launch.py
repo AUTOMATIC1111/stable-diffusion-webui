@@ -234,8 +234,8 @@ def prepare_enviroment():
         exit(0)
 
     if run_tests:
-        tests(test_dir)
-        exit(0)
+        exitcode = tests(test_dir)
+        exit(exitcode)
 
 
 def tests(test_dir):
@@ -251,10 +251,11 @@ def tests(test_dir):
         proc = subprocess.Popen([sys.executable, *sys.argv], stdout=stdout, stderr=stderr)
 
     import test.server_poll
-    test.server_poll.run_tests(proc, test_dir)
+    exitcode = test.server_poll.run_tests(proc, test_dir)
 
     print(f"Stopping Web UI process with id {proc.pid}")
     proc.kill()
+    return exitcode
 
 
 def start():

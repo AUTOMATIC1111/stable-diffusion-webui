@@ -8,7 +8,7 @@ def run_tests(proc, test_dir):
     start_time = time.time()
     while time.time()-start_time < timeout_threshold:
         try:
-            requests.head("http://localhost:7860/")
+            requests.head("http://127.0.0.1:7860/")
             break
         except requests.exceptions.ConnectionError:
             if proc.poll() is not None:
@@ -18,5 +18,7 @@ def run_tests(proc, test_dir):
             test_dir = ""
         suite = unittest.TestLoader().discover(test_dir, pattern="*_test.py", top_level_dir="test")
         result = unittest.TextTestRunner(verbosity=2).run(suite)
+        return len(result.failures)
     else:
         print("Launch unsuccessful")
+        return 1
