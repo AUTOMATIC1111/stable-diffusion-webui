@@ -158,6 +158,12 @@
 			"tags": ["script"]
 		},
 		{
+			"name": "Auto TLS-HTTPS",
+			"url": "https://github.com/papuSpartan/stable-diffusion-webui-auto-tls-https.git",
+			"description": "Allows you to easily, or even completely automatically start using HTTPS.",
+			"tags": ["script"]
+		},
+		{
 			"name": "zh_CN Localization",
 			"url": "https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN",
 			"description": "Simplified Chinese localization",
@@ -216,6 +222,7 @@
 			"url": "https://github.com/AUTOMATIC1111/stable-diffusion-webui-old-localizations.git",
 			"description": "Old unmaintained localizations that used to be a part of main repository",
 			"tags": ["localization"]
-		}
+		},
+
 	]
 }
