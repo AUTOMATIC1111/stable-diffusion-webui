@@ -222,7 +222,6 @@
 			"url": "https://github.com/AUTOMATIC1111/stable-diffusion-webui-old-localizations.git",
 			"description": "Old unmaintained localizations that used to be a part of main repository",
 			"tags": ["localization"]
-		},
-
+		}
 	]
 }
