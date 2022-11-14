@@ -1,6 +1,7 @@
 import base64
 import io
 import time
+import json
 import uvicorn
 from threading import Lock
 from gradio.processing_utils import encode_pil_to_base64, decode_base64_to_file, decode_base64_to_image
@@ -15,6 +16,7 @@ from modules.extras import run_extras, run_pnginfo
 from PIL import PngImagePlugin
 from modules.sd_models import checkpoints_list
 from modules.realesrgan_model import get_realesrgan_models
+from modules.sd_hijack import model_hijack
 from typing import List
 
 if shared.cmd_opts.deepdanbooru:
@@ -28,7 +30,6 @@ def upscaler_to_index(name: str):
 
 
 sampler_to_index = lambda name: next(filter(lambda row: name.lower() == row[1].name.lower(), enumerate(all_samplers)), None)
-
 
 def setUpscalers(req: dict):
     reqDict = vars(req)
@@ -124,12 +125,15 @@ class Api:
                 
             processed = process_images(p)
 
+        _, token_count, _ = model_hijack.tokenize(p.prompt)
+        processed_dict = json.loads(processed.js())
+        processed_dict["token_count"] = token_count
 
         shared.state.end()
 
         b64images = list(map(encode_pil_to_base64, processed.images))
 
-        return TextToImageResponse(images=b64images, parameters=vars(txt2imgreq), info=processed.js())
+        return TextToImageResponse(images=b64images, parameters=vars(txt2imgreq), info=json.dumps(processed_dict))
 
     def img2imgapi(self, img2imgreq: StableDiffusionImg2ImgProcessingAPI):
         sampler_index = sampler_to_index(img2imgreq.sampler_index)
