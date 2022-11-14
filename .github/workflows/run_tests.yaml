@@ -22,5 +22,5 @@ jobs:
             ${{ runner.os }}-pip-
       - name: Run tests
         run: |
-          export COMMANDLINE_ARGS="--tests basic_features --no-half --disable-opt-split-attention --use-cpu all --skip-torch-cuda-test"
+          export COMMANDLINE_ARGS="--tests basic_features --no-half --disable-opt-split-attention --use-cpu all --skip-torch-cuda-test --port 80"
           python launch.py
