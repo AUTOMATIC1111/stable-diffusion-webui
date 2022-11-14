@@ -61,3 +61,7 @@ class UtilsTests(unittest.TestCase):
 
   def test_artists(self):
     self.assertEqual(requests.get(self.url_artists).status_code, 200)
+
+
+if __name__ == "__main__":
+    unittest.main()

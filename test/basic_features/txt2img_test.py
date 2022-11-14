@@ -68,9 +68,5 @@ class TestTxt2ImgWorking(unittest.TestCase):
         self.assertEqual(requests.post(self.url_txt2img, json=self.simple_txt2img).status_code, 200)
 
 
-class TestTxt2ImgCorrectness(unittest.TestCase):
-    pass
-
-
 if __name__ == "__main__":
     unittest.main()

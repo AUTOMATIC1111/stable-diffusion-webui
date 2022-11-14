@@ -3,7 +3,7 @@ import requests
 import time
 
 
-def run_tests(proc):
+def run_tests(proc, test_dir):
     timeout_threshold = 240
     start_time = time.time()
     while time.time()-start_time < timeout_threshold:
@@ -14,7 +14,9 @@ def run_tests(proc):
             if proc.poll() is not None:
                 break
     if proc.poll() is None:
-        suite = unittest.TestLoader().discover('', pattern='*_test.py')
+        if test_dir is None:
+            test_dir = ""
+        suite = unittest.TestLoader().discover(test_dir, pattern="*_test.py", top_level_dir="test")
         result = unittest.TextTestRunner(verbosity=2).run(suite)
     else:
         print("Launch unsuccessful")
