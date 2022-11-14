@@ -6,7 +6,7 @@ from PIL import Image
 
 class TestImg2ImgWorking(unittest.TestCase):
     def setUp(self):
-        self.url_img2img = "http://localhost:80/sdapi/v1/img2img"
+        self.url_img2img = "http://localhost:7860/sdapi/v1/img2img"
         self.simple_img2img = {
             "init_images": [encode_pil_to_base64(Image.open(r"test/test_files/img2img_basic.png"))],
             "resize_mode": 0,
