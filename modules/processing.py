@@ -399,7 +399,7 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration
         "Variation seed strength": (None if p.subseed_strength == 0 else p.subseed_strength),
         "Seed resize from": (None if p.seed_resize_from_w == 0 or p.seed_resize_from_h == 0 else f"{p.seed_resize_from_w}x{p.seed_resize_from_h}"),
         "Denoising strength": getattr(p, 'denoising_strength', None),
-        "Inpainting strength": (None if getattr(p, 'denoising_strength', None) is None else shared.opts.inpainting_mask_weight),
+        "Inpainting strength": (None if getattr(p, 'denoising_strength', None) is None else getattr(p, "inpainting_mask_weight", shared.opts.inpainting_mask_weight)),
         "Eta": (None if p.sampler is None or p.sampler.eta == p.sampler.default_eta else p.sampler.eta),
         "Clip skip": None if clip_skip <= 1 else clip_skip,
         "ENSD": None if opts.eta_noise_seed_delta == 0 else opts.eta_noise_seed_delta,
