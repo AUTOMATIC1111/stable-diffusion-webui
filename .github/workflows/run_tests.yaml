@@ -22,7 +22,7 @@ jobs:
             ${{ runner.os }}-pip-
       - name: Run tests
         run: |
-          python launch.py --tests basic_features --no-half --disable-opt-split-attention --use-cpu all --skip-torch-cuda-test
+          python launch.py --tests basic_features --no-half --disable-opt-split-attention --use-cpu all --skip-torch-cuda-test --clip-models-path ./test/test_files/empty.pt
       - name: Upload main app stdout-stderr
         uses: actions/upload-artifact@v3
         if: always()
