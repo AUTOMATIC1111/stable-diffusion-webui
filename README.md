@@ -33,7 +33,7 @@ Can't run without a checkpoint. Find and place a .ckpt file into any of those lo
 
 ## step 3 
 
-Download Taiyi ckpt file from https://huggingface.co/IDEA-CCNL/Taiyi-Stable-Diffusion-1B-Chinese-v0.1
+Download Taiyi model files from https://huggingface.co/IDEA-CCNL/Taiyi-Stable-Diffusion-1B-Chinese-v0.1
 place your **local_path**
 
 (You can use the https://github.com/IDEA-CCNL/Fengshenbang-LM/blob/main/fengshen/utils/convert_diffusers_to_original_stable_diffusion.py
