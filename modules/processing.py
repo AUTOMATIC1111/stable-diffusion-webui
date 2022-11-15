@@ -329,7 +329,7 @@ def create_random_tensors(shape, seeds, subseeds=None, subseed_strength=0.0, see
         # the way I see it, it's better to do this on CPU, so that everyone gets same result;
         # but the original script had it like this, so I do not dare change it for now because
         # it will break everyone's seeds.
-        noise = noise_override if noise_override != None else devices.randn(seed, noise_shape)
+        noise = noise_override if noise_override is not None else devices.randn(seed, noise_shape)
 
         if subnoise is not None:
             noise = slerp(subseed_strength, noise, subnoise)
