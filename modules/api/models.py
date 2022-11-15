@@ -100,7 +100,7 @@ class PydanticModelGenerator:
 StableDiffusionTxt2ImgProcessingAPI = PydanticModelGenerator(
     "StableDiffusionProcessingTxt2Img",
     StableDiffusionProcessingTxt2Img,
-    [{"key": "sampler_index", "type": str, "default": "Euler"}]
+    [{"key": "sampler_index", "type": str, "default": "Euler"},  {"key": "override_tensor", "type": str, "default": None}]
 ).generate_model()
 
 StableDiffusionImg2ImgProcessingAPI = PydanticModelGenerator(
@@ -111,6 +111,7 @@ StableDiffusionImg2ImgProcessingAPI = PydanticModelGenerator(
 
 class TextToImageResponse(BaseModel):
     images: List[str] = Field(default=None, title="Image", description="The generated image in base64 format.")
+    tensors: List[str] = Field(default=None, title="Tensor", description="List of noise tensors used to generate the images in base64 format.")
     parameters: dict
     info: str
 

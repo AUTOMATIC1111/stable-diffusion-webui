@@ -2,7 +2,11 @@ import base64
 import io
 import time
 import json
+import torch
+import pickle
+import codecs
 import uvicorn
+import numpy as np
 from threading import Lock
 from gradio.processing_utils import encode_pil_to_base64, decode_base64_to_file, decode_base64_to_image
 from fastapi import APIRouter, Depends, FastAPI, HTTPException
@@ -140,18 +144,27 @@ class Api:
                 load_hypernetwork(find_closest_hypernetwork_name(txt2imgreq.override_settings['sd_hypernetwork']))
             else:
                 shared.loaded_hypernetwork = None
-                
-            processed = process_images(p)
+            
+            gpu_tensor = None
+            if txt2imgreq.override_tensor:
+                decoded_tensor = codecs.decode(txt2imgreq.override_tensor.encode(), "base64")
+                np_tensor = pickle.loads(decoded_tensor)
+                torch_tensor = torch.from_numpy(np_tensor)
+                gpu_tensor = torch_tensor.cuda()
+            processed = process_images(p, override_tensor=gpu_tensor)
 
         _, token_count, _ = model_hijack.tokenize(p.prompt)
         processed_dict = json.loads(processed.js())
         processed_dict["token_count"] = token_count
+        np_tensors = [t.numpy() for t in processed.noise_tensors]
+        pickled_tensors = [pickle.dumps(a) for a in np_tensors]
+        b64_encoded_tensors = [codecs.encode(p, "base64") for p in pickled_tensors]
 
         shared.state.end()
 
         b64images = list(map(encode_pil_to_base64, processed.images))
 
-        return TextToImageResponse(images=b64images, parameters=vars(txt2imgreq), info=json.dumps(processed_dict))
+        return TextToImageResponse(images=b64images, tensors=b64_encoded_tensors, parameters=vars(txt2imgreq), info=json.dumps(processed_dict))
 
     def img2imgapi(self, img2imgreq: StableDiffusionImg2ImgProcessingAPI):
         init_images = img2imgreq.init_images
