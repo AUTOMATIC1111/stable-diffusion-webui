@@ -164,6 +164,12 @@
 			"tags": ["script"]
 		},
 		{
+			"name": "DreamArtist",
+			"url": "https://github.com/7eu7d7/DreamArtist-sd-webui-extension.git",
+			"description": "Towards Controllable One-Shot Text-to-Image Generation via Contrastive Prompt-Tuning.",
+			"tags": ["script"]
+		},
+		{
 			"name": "zh_CN Localization",
 			"url": "https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN",
 			"description": "Simplified Chinese localization",
