@@ -260,6 +260,16 @@ input[type="range"]{
 #txt2img_negative_prompt, #img2img_negative_prompt{
 }
 
+/* gradio 3.8 adds opacity to progressbar which makes it blink; disable it here */
+.transition.opacity-20 {
+  opacity: 1 !important;
+}
+
+/* more gradio's garbage cleanup */
+.min-h-\[4rem\] {
+  min-height: unset !important;
+}
+
 #txt2img_progressbar, #img2img_progressbar, #ti_progressbar{
   position: absolute;
   z-index: 1000;
@@ -491,7 +501,7 @@ input[type="range"]{
     padding: 0;
 }
 
-#refresh_sd_model_checkpoint, #refresh_sd_hypernetwork, #refresh_train_hypernetwork_name, #refresh_train_embedding_name, #refresh_localization{
+#refresh_sd_model_checkpoint, #refresh_sd_vae, #refresh_sd_hypernetwork, #refresh_train_hypernetwork_name, #refresh_train_embedding_name, #refresh_localization{
     max-width: 2.5em;
     min-width: 2.5em;
     height: 2.4em;
@@ -528,6 +538,34 @@ img2maskimg, #img2maskimg > .h-60, #img2maskimg > .h-60 > div, #img2maskimg > .h
     height: 480px !important;
     max-height: 480px !important;
     min-height: 480px !important;
+}
+
+/* Extensions */
+
+#tab_extensions table{
+    border-collapse: collapse;
+}
+
+#tab_extensions table td, #tab_extensions table th{
+    border: 1px solid #ccc;
+    padding: 0.25em 0.5em;
+}
+
+#tab_extensions table input[type="checkbox"]{
+    margin-right: 0.5em;
+}
+
+#tab_extensions button{
+    max-width: 16em;
+}
+
+#tab_extensions input[disabled="disabled"]{
+    opacity: 0.5;
+}
+
+.extension-tag{
+    font-weight: bold;
+    font-size: 95%;
 }
 
 /* The following handles localization for right-to-left (RTL) languages like Arabic.

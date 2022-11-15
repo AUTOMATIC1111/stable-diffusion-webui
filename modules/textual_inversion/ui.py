@@ -25,8 +25,10 @@ def train_embedding(*args):
 
     assert not shared.cmd_opts.lowvram, 'Training models with lowvram not possible'
 
+    apply_optimizations = shared.opts.training_xattention_optimizations
     try:
-        sd_hijack.undo_optimizations()
+        if not apply_optimizations:
+            sd_hijack.undo_optimizations()
 
         embedding, filename = modules.textual_inversion.textual_inversion.train_embedding(*args)
 
@@ -38,5 +40,6 @@ Embedding saved to {html.escape(filename)}
     except Exception:
         raise
     finally:
-        sd_hijack.apply_optimizations()
+        if not apply_optimizations:
+            sd_hijack.apply_optimizations()
 
