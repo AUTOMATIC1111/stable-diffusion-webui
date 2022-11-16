@@ -96,3 +96,5 @@ For a more complete implementation of a frontend, my Discord bot is [here](https
 ------
 
 This guide can be found in [discussions](https://github.com/AUTOMATIC1111/stable-diffusion-webui/discussions/3734) page.
+
+Also, check out this python API client library for webui: https://github.com/mix1009/sdwebuiapi
