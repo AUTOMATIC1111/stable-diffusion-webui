@@ -69,8 +69,11 @@ sample_img2img = sample_img2img if os.path.exists(sample_img2img) else None
 css_hide_progressbar = """
 .wrap .m-12 svg { display:none!important; }
 .wrap .m-12::before { content:"Loading..." }
+.wrap .z-20 svg { display:none!important; }
+.wrap .z-20::before { content:"Loading..." }
 .progress-bar { display:none!important; }
 .meta-text { display:none!important; }
+.meta-text-center { display:none!important; }
 """
 
 # Using constants for these since the variation selector isn't visible.
