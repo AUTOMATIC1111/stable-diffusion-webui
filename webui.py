@@ -1,12 +1,15 @@
+import logging
 import os
 import threading
 import time
 import importlib
 import signal
 import threading
+import sys
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
+import sentry_sdk
 
 from modules.paths import script_path
 
@@ -31,6 +34,20 @@ import modules.ui
 from modules import modelloader
 from modules.shared import cmd_opts
 import modules.hypernetworks.hypernetwork
+
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
+    datefmt="%Y-%m-%dT%H:%M:%S%z",
+)
+logger = logging.getLogger(__name__)
+
+SENTRY_DSN = os.getenv("SENTRY_DSN")
+if SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=SENTRY_DSN
+    )
 
 queue_lock = threading.Lock()
 if cmd_opts.server_name:
@@ -102,12 +119,13 @@ def initialize():
         else:
             print("Running with TLS")
 
-    # make the program just exit at ctrl+c without waiting for anything
+    # Change from automatic: use sys.exit to wait for error to be uploaded to Signal
     def sigint_handler(sig, frame):
-        print(f'Interrupted with signal {sig} in {frame}')
-        os._exit(0)
+        logger.error(f'Exiting Web UI with signal {sig} in {frame}')
+        sys.exit(0)
 
     signal.signal(signal.SIGINT, sigint_handler)
+    signal.signal(signal.SIGTERM, sigint_handler)
 
 
 def setup_cors(app):
@@ -180,6 +198,8 @@ def webui():
             create_api(app)
 
         modules.script_callbacks.app_started_callback(demo, app)
+
+        logger.info(f"Launched Web UI")
 
         wait_on_server(demo)
 
