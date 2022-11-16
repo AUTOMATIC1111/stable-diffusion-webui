@@ -16,7 +16,7 @@ cd stable-diffusion-webui
 Run webui's own commands to check and install the environment, webui will pull down the required repositories in the stable-diffusion-webui/repositories directory, this process will take some time.
 
 ```
-python launch.py
+sh webui.sh
 ```
 
 ![image](https://user-images.githubusercontent.com/4384420/201310784-19f9032a-4b14-4dfe-9d46-8b353bc74c5b.png)
@@ -33,8 +33,12 @@ Can't run without a checkpoint. Find and place a .ckpt file into any of those lo
 
 ## step 3 
 
-Download Taiyi model files from https://huggingface.co/IDEA-CCNL/Taiyi-Stable-Diffusion-1B-Chinese-v0.1
-place your **local_path**
+Download Taiyi model files from https://huggingface.co/IDEA-CCNL/Taiyi-Stable-Diffusion-1B-Chinese-v0.1 in two ways.
+
+- Download every files except .git from the web page, total size of 5G+
+- Do a "git clone https://huggingface.co/IDEA-CCNL/Taiyi-Stable-Diffusion-1B-Chinese-v0.1", total size of 10G+. Make sure you have git lfs support (do something like "dnf install git-lfs” in Centos)
+
+**local_path** : The absolute path of directory where you just download the diffusion models to.
 
 (You can use the https://github.com/IDEA-CCNL/Fengshenbang-LM/blob/main/fengshen/utils/convert_diffusers_to_original_stable_diffusion.py
 file to transfer your model to ckpt if you finetune our model.)
@@ -43,7 +47,7 @@ file to transfer your model to ckpt if you finetune our model.)
 
 Replace the content of stable-diffusion-webui/repositories/stable-diffusion/configs/stable-diffusion/v1-inference.yaml with our file  stable-diffusion-webui/repositories/stable-diffusion-taiyi/configs/stable-diffusion/v1-inference.yaml , and change the  version with your **local_path**
 
-Replace the content of stable-diffusion-webui/repositories/stable-diffusionldm/modules/encoders/modules.py with our file stable-diffusion-webui/repositories/stable-diffusion-taiyi/ldm/modules/encoders/modules.py
+Replace the content of stable-diffusion-webui/repositories/stable-diffusion/ldm/modules/encoders/modules.py with our file stable-diffusion-webui/repositories/stable-diffusion-taiyi/ldm/modules/encoders/modules.py
 
 
 
@@ -62,5 +66,5 @@ cd ../../
 Run the command to experience Taiyi-Stable-Diffusion-1B-Chinese-v0.1
 
 ```
-python launch.py --ckpt local_path/Taiyi-Stable-Diffusion-1B-Chinese-v0.1.ckpt
+python launch.py --ckpt local_path/Taiyi-Stable-Diffusion-1B-Chinese-v0.1.ckpt --listen --port 12345
 ```
