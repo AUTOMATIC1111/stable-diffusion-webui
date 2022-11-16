@@ -73,19 +73,22 @@ def wrap_gradio_gpu_call(func, extra_outputs=None):
 
 
 def initialize():
-    modelloader.cleanup_models()
-    modules.sd_models.setup_model()
-    codeformer.setup_model(cmd_opts.codeformer_models_path)
+    # modelloader.cleanup_models()
+    # modules.sd_models.setup_model()
+    # codeformer.setup_model(cmd_opts.codeformer_models_path)
     gfpgan.setup_model(cmd_opts.gfpgan_models_path)
     shared.face_restorers.append(modules.face_restoration.FaceRestoration())
     modelloader.load_upscalers()
 
     modules.scripts.load_scripts()
 
-    modules.sd_models.load_model()
-    shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights(shared.sd_model)))
-    shared.opts.onchange("sd_hypernetwork", wrap_queued_call(lambda: modules.hypernetworks.hypernetwork.load_hypernetwork(shared.opts.sd_hypernetwork)))
-    shared.opts.onchange("sd_hypernetwork_strength", modules.hypernetworks.hypernetwork.apply_strength)
+    # modules.sd_models.load_model()
+    # shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(
+    #     lambda: modules.sd_models.reload_model_weights(shared.sd_model)))
+    # shared.opts.onchange("sd_hypernetwork", wrap_queued_call(
+    #     lambda: modules.hypernetworks.hypernetwork.load_hypernetwork(shared.opts.sd_hypernetwork)))
+    # shared.opts.onchange("sd_hypernetwork_strength",
+    #                      modules.hypernetworks.hypernetwork.apply_strength)
 
     # make the program just exit at ctrl+c without waiting for anything
     def sigint_handler(sig, frame):
@@ -100,6 +103,7 @@ def create_api(app):
     api = Api(app, queue_lock)
     return api
 
+
 def wait_on_server(demo=None):
     while 1:
         time.sleep(0.5)
@@ -109,6 +113,7 @@ def wait_on_server(demo=None):
             time.sleep(0.5)
             break
 
+
 def api_only():
     initialize()
 
@@ -116,7 +121,8 @@ def api_only():
     app.add_middleware(GZipMiddleware, minimum_size=1000)
     api = create_api(app)
 
-    api.launch(server_name="0.0.0.0" if cmd_opts.listen else "127.0.0.1", port=cmd_opts.port if cmd_opts.port else 7861)
+    api.launch(server_name="0.0.0.0" if cmd_opts.listen else "127.0.0.1",
+               port=cmd_opts.port if cmd_opts.port else 7861)
 
 
 def webui():
@@ -131,7 +137,8 @@ def webui():
             server_name="0.0.0.0" if cmd_opts.listen else None,
             server_port=cmd_opts.port,
             debug=cmd_opts.gradio_debug,
-            auth=[tuple(cred.split(':')) for cred in cmd_opts.gradio_auth.strip('"').split(',')] if cmd_opts.gradio_auth else None,
+            auth=[tuple(cred.split(':')) for cred in cmd_opts.gradio_auth.strip(
+                '"').split(',')] if cmd_opts.gradio_auth else None,
             inbrowser=cmd_opts.autolaunch,
             prevent_thread_lock=True
         )
@@ -152,7 +159,6 @@ def webui():
         print('Refreshing Model List')
         modules.sd_models.list_models()
         print('Restarting Gradio')
-
 
 
 task = []

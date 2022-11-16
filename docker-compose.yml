@@ -1,0 +1,12 @@
+version: "3.10.6"
+services:
+  app:
+    environment:
+      - PORT=7861
+      - ENV=prod
+    build: 
+      context: ./
+      dockerfile: Dockerfile
+
+    ports:
+      - "7861:7861"
