@@ -28,4 +28,4 @@ kornia
 lark
 inflection
 GitPython
-sentry-sdk=1.11.0
+sentry-sdk==1.11.0
