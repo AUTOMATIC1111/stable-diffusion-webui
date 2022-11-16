@@ -224,6 +224,12 @@
 			"tags": ["localization"]
 		},
 		{
+			"name": "no_NO Localization",
+			"url": "https://github.com/Cyanz83/stable-diffusion-webui-localization-no_NO",
+			"description": "Norwegian localization",
+			"tags": ["localization"]
+		},
+		{
 			"name": "old localizations",
 			"url": "https://github.com/AUTOMATIC1111/stable-diffusion-webui-old-localizations.git",
 			"description": "Old unmaintained localizations that used to be a part of main repository",
