@@ -39,6 +39,7 @@ class Script(scripts.Script):
         grids = []
         all_images = []
         original_init_image = p.init_images
+        original_mask = p.image_mask
         state.job_count = loops * batch_count
 
         initial_color_corrections = [processing.setup_color_correction(p.init_images[0])]
@@ -48,7 +49,8 @@ class Script(scripts.Script):
 
             # Reset to original init image at the start of each batch
             p.init_images = original_init_image
-
+            # Reset to original mask at the start of each batch
+            p.image_mask = original_mask
             for i in range(loops):
                 p.n_iter = 1
                 p.batch_size = 1
@@ -68,6 +70,7 @@ class Script(scripts.Script):
                 init_img = processed.images[0]
 
                 p.init_images = [init_img]
+                p.image_mask = original_mask
                 p.seed = processed.seed + 1
                 p.denoising_strength = min(max(p.denoising_strength * denoising_strength_change_factor, 0.1), 1)
                 history.append(processed.images[0])
