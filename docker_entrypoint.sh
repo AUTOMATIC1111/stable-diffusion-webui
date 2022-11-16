@@ -61,4 +61,4 @@ done
 source venv/bin/activate
 
 # Start service
-python launch.py --api --listen --xformers
+exec python launch.py --api --listen --xformers
