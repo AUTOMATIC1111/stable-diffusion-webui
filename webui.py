@@ -1,3 +1,4 @@
+import atexit
 import logging
 import os
 import threading
@@ -121,11 +122,16 @@ def initialize():
 
     # Change from automatic: use sys.exit to wait for error to be uploaded to Signal
     def sigint_handler(sig, frame):
-        logger.error(f'Exiting Web UI with signal {sig} in {frame}')
+        # Log info here, as log_exit below will log error
+        logger.info(f'Exiting Web UI with signal {sig} in {frame}')
         sys.exit(0)
 
     signal.signal(signal.SIGINT, sigint_handler)
     signal.signal(signal.SIGTERM, sigint_handler)
+
+    @atexit.register
+    def log_exit():
+        logger.error(f'Exiting Web UI')
 
 
 def setup_cors(app):
