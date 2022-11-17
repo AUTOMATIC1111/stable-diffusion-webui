@@ -555,7 +555,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     image = apply_color_correction(p.color_corrections[i], image)
 
                 if p.scripts is not None:
-                    p.scripts.batch_postprocess(p, image)
+                    image = p.scripts.batch_postprocess(p, image)
 
                 image = apply_overlay(image, p.paste_to, i, p.overlay_images)
 
