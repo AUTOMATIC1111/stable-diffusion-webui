@@ -88,7 +88,11 @@ class Script:
     def batch_postprocess(self, p, image, *args, **kwargs):
         """
         Called for every batch after processing.
-        Result image added for visual post-processing ease.
+        It recieves the result image for visual post-processing ease.
+        **kwargs will have those items:
+          - seed : the current seed
+          - prompt : the current prompt
+          - info : the current infotext
         """
         pass
 
