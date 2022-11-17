@@ -45,51 +45,6 @@ RUN chown -R 1000 /var/sd
 
 USER 1000:1000
 
-# download container, tracks main branch
-FROM base AS download
-
-# Download supporting models (e.g. the very large openai/clip-vit-large-patch14)
-# Create a dummy model to pass the "sd model exists" check, so SD continues initialization
-RUN python -c "import torch; torch.save({}, 'model.ckpt')" \
-    && python -c "import webui; webui.initialize()" \
-    && rm /sd/model.ckpt
-
-# Download CodeFormer models
-RUN python -c "import webui; \
-    webui.codeformer.setup_model(webui.cmd_opts.codeformer_models_path); \
-    webui.shared.face_restorers[0].create_models();"
-
-# Download GFPGAN models
-RUN python -c "import webui; \
-    webui.gfpgan.setup_model(webui.cmd_opts.gfpgan_models_path); \
-    webui.gfpgan.gfpgann()"
-
-# Download ESRGAN models
-RUN python -c "import webui; \
-    from modules.esrgan_model import UpscalerESRGAN; \
-    upscaler = UpscalerESRGAN('/sd/models/ESRGAN'); \
-    upscaler.load_model(upscaler.model_url)"
-
-
-# Slim container, applies local code, no downloads
-FROM base AS slim
-
-COPY . /sd
-
-CMD ["python", "launch.py", "--api", "--listen", "--xformers"]
-
-
-# Run container, applies local code, with downloads
-FROM download
-
-COPY . /sd
-
-CMD ["python", "launch.py", "--api", "--listen", "--xformers"]
-
-
-# Run container, applies local code, with downloads
-FROM download
-
-COPY . /sd
-
-CMD ["python", "launch.py", "--api", "--listen", "--xformers"]
+# Python dependencies are installed by the entrypoint to keep the docker image as small as possible.
+# To make startup faster, it's possible to mount a warmed-up SD directory at /var/sd.
+ENTRYPOINT ["bash", "docker_entrypoint.sh"]
