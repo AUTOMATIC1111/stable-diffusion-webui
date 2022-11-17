@@ -318,6 +318,15 @@ class ScriptRunner:
                 print(f"Error running process_batch: {script.filename}", file=sys.stderr)
                 print(traceback.format_exc(), file=sys.stderr)
 
+    def batch_postprocess(self, p, **kwargs):
+        for script in self.alwayson_scripts:
+            try:
+                script_args = p.script_args[script.args_from:script.args_to]
+                script.batch_postprocess(p, *script_args, **kwargs)
+            except Exception:
+                print(f"Error running process_batch: {script.filename}", file=sys.stderr)
+                print(traceback.format_exc(), file=sys.stderr)
+
     def postprocess(self, p, processed):
         for script in self.alwayson_scripts:
             try:
