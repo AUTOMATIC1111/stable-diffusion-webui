@@ -1,4 +1,5 @@
 import argparse
+from argparse import Namespace
 import datetime
 import json
 import os
@@ -21,68 +22,190 @@ from modules.paths import models_path, script_path, sd_path
 sd_model_file = os.path.join(script_path, 'model.ckpt')
 default_sd_model_file = sd_model_file
 parser = argparse.ArgumentParser()
-parser.add_argument("--config", type=str, default=os.path.join(sd_path, "configs/stable-diffusion/v1-inference.yaml"), help="path to config which constructs model",)
-parser.add_argument("--ckpt", type=str, default=sd_model_file, help="path to checkpoint of stable diffusion model; if specified, this checkpoint will be added to the list of checkpoints and loaded",)
-parser.add_argument("--ckpt-dir", type=str, default=None, help="Path to directory with stable diffusion checkpoints")
-parser.add_argument("--gfpgan-dir", type=str, help="GFPGAN directory", default=('./src/gfpgan' if os.path.exists('./src/gfpgan') else './GFPGAN'))
-parser.add_argument("--gfpgan-model", type=str, help="GFPGAN model file name", default=None)
-parser.add_argument("--no-half", action='store_true', help="do not switch the model to 16-bit floats")
-parser.add_argument("--no-half-vae", action='store_true', help="do not switch the VAE model to 16-bit floats")
-parser.add_argument("--no-progressbar-hiding", action='store_true', help="do not hide progressbar in gradio UI (we hide it because it slows down ML if you have hardware acceleration in browser)")
-parser.add_argument("--max-batch-count", type=int, default=16, help="maximum batch count value for the UI")
-parser.add_argument("--embeddings-dir", type=str, default=os.path.join(script_path, 'embeddings'), help="embeddings directory for textual inversion (default: embeddings)")
-parser.add_argument("--hypernetwork-dir", type=str, default=os.path.join(models_path, 'hypernetworks'), help="hypernetwork directory")
-parser.add_argument("--localizations-dir", type=str, default=os.path.join(script_path, 'localizations'), help="localizations directory")
-parser.add_argument("--allow-code", action='store_true', help="allow custom script execution from webui")
-parser.add_argument("--medvram", action='store_true', help="enable stable diffusion model optimizations for sacrificing a little speed for low VRM usage")
-parser.add_argument("--lowvram", action='store_true', help="enable stable diffusion model optimizations for sacrificing a lot of speed for very low VRM usage")
-parser.add_argument("--lowram", action='store_true', help="load stable diffusion checkpoint weights to VRAM instead of RAM")
-parser.add_argument("--always-batch-cond-uncond", action='store_true', help="disables cond/uncond batching that is enabled to save memory with --medvram or --lowvram")
-parser.add_argument("--unload-gfpgan", action='store_true', help="does not do anything.")
-parser.add_argument("--precision", type=str, help="evaluate at this precision", choices=["full", "autocast"], default="autocast")
-parser.add_argument("--share", action='store_true', help="use share=True for gradio and make the UI accessible through their site (doesn't work for me but you might have better luck)")
-parser.add_argument("--ngrok", type=str, help="ngrok authtoken, alternative to gradio --share", default=None)
-parser.add_argument("--ngrok-region", type=str, help="The region in which ngrok should start.", default="us")
-parser.add_argument("--codeformer-models-path", type=str, help="Path to directory with codeformer model file(s).", default=os.path.join(models_path, 'Codeformer'))
-parser.add_argument("--gfpgan-models-path", type=str, help="Path to directory with GFPGAN model file(s).", default=os.path.join(models_path, 'GFPGAN'))
-parser.add_argument("--esrgan-models-path", type=str, help="Path to directory with ESRGAN model file(s).", default=os.path.join(models_path, 'ESRGAN'))
-parser.add_argument("--bsrgan-models-path", type=str, help="Path to directory with BSRGAN model file(s).", default=os.path.join(models_path, 'BSRGAN'))
-parser.add_argument("--realesrgan-models-path", type=str, help="Path to directory with RealESRGAN model file(s).", default=os.path.join(models_path, 'RealESRGAN'))
-parser.add_argument("--scunet-models-path", type=str, help="Path to directory with ScuNET model file(s).", default=os.path.join(models_path, 'ScuNET'))
-parser.add_argument("--swinir-models-path", type=str, help="Path to directory with SwinIR model file(s).", default=os.path.join(models_path, 'SwinIR'))
-parser.add_argument("--ldsr-models-path", type=str, help="Path to directory with LDSR model file(s).", default=os.path.join(models_path, 'LDSR'))
-parser.add_argument("--xformers", action='store_true', help="enable xformers for cross attention layers")
-parser.add_argument("--force-enable-xformers", action='store_true', help="enable xformers for cross attention layers regardless of whether the checking code thinks you can run it; do not make bug reports if this fails to work")
-parser.add_argument("--deepdanbooru", action='store_true', help="enable deepdanbooru interrogator")
-parser.add_argument("--opt-split-attention", action='store_true', help="force-enables Doggettx's cross-attention layer optimization. By default, it's on for torch cuda.")
-parser.add_argument("--opt-split-attention-invokeai", action='store_true', help="force-enables InvokeAI's cross-attention layer optimization. By default, it's on when cuda is unavailable.")
-parser.add_argument("--opt-split-attention-v1", action='store_true', help="enable older version of split attention optimization that does not consume all the VRAM it can find")
-parser.add_argument("--disable-opt-split-attention", action='store_true', help="force-disables cross-attention layer optimization")
-parser.add_argument("--use-cpu", nargs='+',choices=['all', 'sd', 'interrogate', 'gfpgan', 'bsrgan', 'esrgan', 'scunet', 'codeformer'], help="use CPU as torch device for specified modules", default=[], type=str.lower)
-parser.add_argument("--listen", action='store_true', help="launch gradio with 0.0.0.0 as server name, allowing to respond to network requests")
-parser.add_argument("--port", type=int, help="launch gradio with given server port, you need root/admin rights for ports < 1024, defaults to 7860 if available", default=None)
-parser.add_argument("--show-negative-prompt", action='store_true', help="does not do anything", default=False)
-parser.add_argument("--ui-config-file", type=str, help="filename to use for ui configuration", default=os.path.join(script_path, 'ui-config.json'))
-parser.add_argument("--hide-ui-dir-config", action='store_true', help="hide directory configuration from webui", default=False)
-parser.add_argument("--ui-settings-file", type=str, help="filename to use for ui settings", default=os.path.join(script_path, 'config.json'))
-parser.add_argument("--gradio-debug",  action='store_true', help="launch gradio with --debug option")
-parser.add_argument("--gradio-auth", type=str, help='set gradio authentication like "username:password"; or comma-delimit multiple like "u1:p1,u2:p2,u3:p3"', default=None)
-parser.add_argument("--gradio-img2img-tool", type=str, help='gradio image uploader tool: can be either editor for ctopping, or color-sketch for drawing', choices=["color-sketch", "editor"], default="editor")
-parser.add_argument("--opt-channelslast", action='store_true', help="change memory type for stable diffusion to channels last")
-parser.add_argument("--styles-file", type=str, help="filename to use for styles", default=os.path.join(script_path, 'styles.csv'))
-parser.add_argument("--autolaunch", action='store_true', help="open the webui URL in the system's default browser upon launch", default=False)
-parser.add_argument("--theme", type=str, help="launches the UI with light or dark theme", default=None)
-parser.add_argument("--use-textbox-seed", action='store_true', help="use textbox for seeds in UI (no up/down, but possible to input long seeds)", default=False)
-parser.add_argument("--disable-console-progressbars", action='store_true', help="do not output progressbars to console", default=False)
-parser.add_argument("--enable-console-prompts", action='store_true', help="print prompts to console when generating with txt2img and img2img", default=False)
-parser.add_argument('--vae-path', type=str, help='Path to Variational Autoencoders model', default=None)
-parser.add_argument("--disable-safe-unpickle", action='store_true', help="disable checking pytorch models for malicious code", default=False)
-parser.add_argument("--api", action='store_true', help="use api=True to launch the api with the webui")
-parser.add_argument("--nowebui", action='store_true', help="use api=True to launch the api instead of the webui")
-parser.add_argument("--device-id", type=str, help="Select the default CUDA device to use (export CUDA_VISIBLE_DEVICES=0,1,etc might be needed before)", default=None)
-parser.add_argument("--browse-all-images", action='store_true', help="Allow browsing all images by Image Browser", default=False)
+parser.add_argument("--config", type=str, default=os.path.join(sd_path,
+                    "configs/stable-diffusion/v1-inference.yaml"), help="path to config which constructs model",)
+parser.add_argument("--ckpt", type=str, default=sd_model_file,
+                    help="path to checkpoint of stable diffusion model; if specified, this checkpoint will be added to the list of checkpoints and loaded",)
+parser.add_argument("--ckpt-dir", type=str, default=None,
+                    help="Path to directory with stable diffusion checkpoints")
+parser.add_argument("--gfpgan-dir", type=str, help="GFPGAN directory",
+                    default=('./src/gfpgan' if os.path.exists('./src/gfpgan') else './GFPGAN'))
+parser.add_argument("--gfpgan-model", type=str,
+                    help="GFPGAN model file name", default=None)
+parser.add_argument("--no-half", action='store_true',
+                    help="do not switch the model to 16-bit floats")
+parser.add_argument("--no-half-vae", action='store_true',
+                    help="do not switch the VAE model to 16-bit floats")
+parser.add_argument("--no-progressbar-hiding", action='store_true',
+                    help="do not hide progressbar in gradio UI (we hide it because it slows down ML if you have hardware acceleration in browser)")
+parser.add_argument("--max-batch-count", type=int, default=16,
+                    help="maximum batch count value for the UI")
+parser.add_argument("--embeddings-dir", type=str, default=os.path.join(script_path,
+                    'embeddings'), help="embeddings directory for textual inversion (default: embeddings)")
+parser.add_argument("--hypernetwork-dir", type=str, default=os.path.join(
+    models_path, 'hypernetworks'), help="hypernetwork directory")
+parser.add_argument("--localizations-dir", type=str, default=os.path.join(
+    script_path, 'localizations'), help="localizations directory")
+parser.add_argument("--allow-code", action='store_true',
+                    help="allow custom script execution from webui")
+parser.add_argument("--medvram", action='store_true',
+                    help="enable stable diffusion model optimizations for sacrificing a little speed for low VRM usage")
+parser.add_argument("--lowvram", action='store_true',
+                    help="enable stable diffusion model optimizations for sacrificing a lot of speed for very low VRM usage")
+parser.add_argument("--lowram", action='store_true',
+                    help="load stable diffusion checkpoint weights to VRAM instead of RAM")
+parser.add_argument("--always-batch-cond-uncond", action='store_true',
+                    help="disables cond/uncond batching that is enabled to save memory with --medvram or --lowvram")
+parser.add_argument("--unload-gfpgan", action='store_true',
+                    help="does not do anything.")
+parser.add_argument("--precision", type=str, help="evaluate at this precision",
+                    choices=["full", "autocast"], default="autocast")
+parser.add_argument("--share", action='store_true',
+                    help="use share=True for gradio and make the UI accessible through their site (doesn't work for me but you might have better luck)")
+parser.add_argument("--ngrok", type=str,
+                    help="ngrok authtoken, alternative to gradio --share", default=None)
+parser.add_argument("--ngrok-region", type=str,
+                    help="The region in which ngrok should start.", default="us")
+parser.add_argument("--codeformer-models-path", type=str,
+                    help="Path to directory with codeformer model file(s).", default=os.path.join(models_path, 'Codeformer'))
+parser.add_argument("--gfpgan-models-path", type=str,
+                    help="Path to directory with GFPGAN model file(s).", default=os.path.join(models_path, 'GFPGAN'))
+parser.add_argument("--esrgan-models-path", type=str,
+                    help="Path to directory with ESRGAN model file(s).", default=os.path.join(models_path, 'ESRGAN'))
+parser.add_argument("--bsrgan-models-path", type=str,
+                    help="Path to directory with BSRGAN model file(s).", default=os.path.join(models_path, 'BSRGAN'))
+parser.add_argument("--realesrgan-models-path", type=str,
+                    help="Path to directory with RealESRGAN model file(s).", default=os.path.join(models_path, 'RealESRGAN'))
+parser.add_argument("--scunet-models-path", type=str,
+                    help="Path to directory with ScuNET model file(s).", default=os.path.join(models_path, 'ScuNET'))
+parser.add_argument("--swinir-models-path", type=str,
+                    help="Path to directory with SwinIR model file(s).", default=os.path.join(models_path, 'SwinIR'))
+parser.add_argument("--ldsr-models-path", type=str,
+                    help="Path to directory with LDSR model file(s).", default=os.path.join(models_path, 'LDSR'))
+parser.add_argument("--xformers", action='store_true',
+                    help="enable xformers for cross attention layers")
+parser.add_argument("--force-enable-xformers", action='store_true',
+                    help="enable xformers for cross attention layers regardless of whether the checking code thinks you can run it; do not make bug reports if this fails to work")
+parser.add_argument("--deepdanbooru", action='store_true',
+                    help="enable deepdanbooru interrogator")
+parser.add_argument("--opt-split-attention", action='store_true',
+                    help="force-enables Doggettx's cross-attention layer optimization. By default, it's on for torch cuda.")
+parser.add_argument("--opt-split-attention-invokeai", action='store_true',
+                    help="force-enables InvokeAI's cross-attention layer optimization. By default, it's on when cuda is unavailable.")
+parser.add_argument("--opt-split-attention-v1", action='store_true',
+                    help="enable older version of split attention optimization that does not consume all the VRAM it can find")
+parser.add_argument("--disable-opt-split-attention", action='store_true',
+                    help="force-disables cross-attention layer optimization")
+parser.add_argument("--use-cpu", nargs='+', choices=['all', 'sd', 'interrogate', 'gfpgan', 'bsrgan', 'esrgan',
+                    'scunet', 'codeformer'], help="use CPU as torch device for specified modules", default=[], type=str.lower)
+parser.add_argument("--listen", action='store_true',
+                    help="launch gradio with 0.0.0.0 as server name, allowing to respond to network requests")
+parser.add_argument("--port", type=int,
+                    help="launch gradio with given server port, you need root/admin rights for ports < 1024, defaults to 7860 if available", default=None)
+parser.add_argument("--show-negative-prompt", action='store_true',
+                    help="does not do anything", default=False)
+parser.add_argument("--ui-config-file", type=str, help="filename to use for ui configuration",
+                    default=os.path.join(script_path, 'ui-config.json'))
+parser.add_argument("--hide-ui-dir-config", action='store_true',
+                    help="hide directory configuration from webui", default=False)
+parser.add_argument("--ui-settings-file", type=str, help="filename to use for ui settings",
+                    default=os.path.join(script_path, 'config.json'))
+parser.add_argument("--gradio-debug",  action='store_true',
+                    help="launch gradio with --debug option")
+parser.add_argument("--gradio-auth", type=str,
+                    help='set gradio authentication like "username:password"; or comma-delimit multiple like "u1:p1,u2:p2,u3:p3"', default=None)
+parser.add_argument("--gradio-img2img-tool", type=str, help='gradio image uploader tool: can be either editor for ctopping, or color-sketch for drawing',
+                    choices=["color-sketch", "editor"], default="editor")
+parser.add_argument("--opt-channelslast", action='store_true',
+                    help="change memory type for stable diffusion to channels last")
+parser.add_argument("--styles-file", type=str, help="filename to use for styles",
+                    default=os.path.join(script_path, 'styles.csv'))
+parser.add_argument("--autolaunch", action='store_true',
+                    help="open the webui URL in the system's default browser upon launch", default=False)
+parser.add_argument("--theme", type=str,
+                    help="launches the UI with light or dark theme", default=None)
+parser.add_argument("--use-textbox-seed", action='store_true',
+                    help="use textbox for seeds in UI (no up/down, but possible to input long seeds)", default=False)
+parser.add_argument("--disable-console-progressbars", action='store_true',
+                    help="do not output progressbars to console", default=False)
+parser.add_argument("--enable-console-prompts", action='store_true',
+                    help="print prompts to console when generating with txt2img and img2img", default=False)
+parser.add_argument('--vae-path', type=str,
+                    help='Path to Variational Autoencoders model', default=None)
+parser.add_argument("--disable-safe-unpickle", action='store_true',
+                    help="disable checking pytorch models for malicious code", default=False)
+parser.add_argument("--api", action='store_true',
+                    help="use api=True to launch the api with the webui")
+parser.add_argument("--nowebui", action='store_true',
+                    help="use api=True to launch the api instead of the webui")
+parser.add_argument("--device-id", type=str,
+                    help="Select the default CUDA device to use (export CUDA_VISIBLE_DEVICES=0,1,etc might be needed before)", default=None)
+parser.add_argument("--browse-all-images", action='store_true',
+                    help="Allow browsing all images by Image Browser", default=False)
 
-cmd_opts = parser.parse_args()
+# cmd_opts = parser.parse_args()
+
+cmd_opts = Namespace(
+    ckpt_dir=None,
+    gfpgan_dir='./GFPGAN',
+    gfpgan_model=None,
+    no_half=True,
+    no_half_vae=False,
+    no_progressbar_hiding=False,
+    max_batch_count=16,
+    allow_code=False,
+    medvram=False,
+    lowvram=False,
+    lowram=False,
+    always_batch_cond_uncond=False,
+    unload_gfpgan=False,
+    precision='full',
+    share=False,
+    ngrok=None,
+    ngrok_region='us',
+    xformers=False,
+    force_enable_xformers=False,
+    deepdanbooru=False,
+    opt_split_attention=False,
+    opt_split_attention_invokeai=False,
+    opt_split_attention_v1=False,
+    disable_opt_split_attention=False,
+    use_cpu=['interrogate', 'gfpgan', 'bsrgan', 'esrgan', 'scunet'],
+    listen=False,
+    port=None,
+    show_negative_prompt=False,
+    hide_ui_dir_config=False,
+    gradio_debug=False,
+    gradio_auth=None,
+    gradio_img2img_tool='editor',
+    opt_channelslast=False,
+    api=False,
+    nowebui=True,
+    autolaunch=False,
+    no_autolaunch=False,
+    device_id=None,
+    ui_settings_file='./config.json',
+    config='./repositories/stable-diffusion/configs/stable-diffusion/v1-inference.yaml',
+    ckpt='./model.ckpt',
+    embeddings_dir='./embeddings',
+    hypernetwork_dir='./models/hypernetworks',
+    localizations_dir='./localizations',
+    codeformer_models_path='./models/Codeformer',
+    gfpgan_models_path='./models/GFPGAN',
+    esrgan_models_path='./models/ESRGAN',
+    bsrgan_models_path='./models/BSRGAN',
+    realesrgan_models_path='./models/RealESRGAN',
+    scunet_models_path='./models/ScuNET',
+    swinir_models_path='./models/SwinIR',
+    ldsr_models_path='./models/LDSR',
+    styles_file='./styles.csv',
+    theme='light',
+    browse_all_images=False,
+    disable_safe_unpickle=False,
+    vae_path='./models/stable-diffusion/model.vae.pt',
+    disable_console_progressbars=False,
+)
+
 restricted_opts = [
     "samples_filename_pattern",
     "outdir_samples",
@@ -95,12 +218,14 @@ restricted_opts = [
 ]
 
 devices.device, devices.device_interrogate, devices.device_gfpgan, devices.device_bsrgan, devices.device_esrgan, devices.device_scunet, devices.device_codeformer = \
-(devices.cpu if any(y in cmd_opts.use_cpu for y in [x, 'all']) else devices.get_optimal_device() for x in ['sd', 'interrogate', 'gfpgan', 'bsrgan', 'esrgan', 'scunet', 'codeformer'])
+    (devices.cpu if any(y in cmd_opts.use_cpu for y in [x, 'all']) else devices.get_optimal_device(
+    ) for x in ['sd', 'interrogate', 'gfpgan', 'bsrgan', 'esrgan', 'scunet', 'codeformer'])
 
 device = devices.device
 weight_load_location = None if cmd_opts.lowram else "cpu"
 
-batch_cond_uncond = cmd_opts.always_batch_cond_uncond or not (cmd_opts.lowvram or cmd_opts.medvram)
+batch_cond_uncond = cmd_opts.always_batch_cond_uncond or not (
+    cmd_opts.lowvram or cmd_opts.medvram)
 parallel_processing_allowed = not cmd_opts.lowvram and not cmd_opts.medvram
 xformers_available = False
 config_filename = cmd_opts.ui_settings_file
@@ -108,6 +233,7 @@ config_filename = cmd_opts.ui_settings_file
 os.makedirs(cmd_opts.hypernetwork_dir, exist_ok=True)
 hypernetworks = hypernetwork.list_hypernetworks(cmd_opts.hypernetwork_dir)
 loaded_hypernetwork = None
+
 
 def reload_hypernetworks():
     global hypernetworks
@@ -142,12 +268,14 @@ class State:
         self.current_image_sampling_step = 0
 
     def get_job_timestamp(self):
-        return datetime.datetime.now().strftime("%Y%m%d%H%M%S")  # shouldn't this return job_timestamp?
+        # shouldn't this return job_timestamp?
+        return datetime.datetime.now().strftime("%Y%m%d%H%M%S")
 
 
 state = State()
 
-artist_db = modules.artists.ArtistsDatabase(os.path.join(script_path, 'artists.csv'))
+artist_db = modules.artists.ArtistsDatabase(
+    os.path.join(script_path, 'artists.csv'))
 
 styles_filename = cmd_opts.styles_file
 prompt_styles = modules.styles.StyleDatabase(styles_filename)
@@ -271,7 +399,7 @@ options_templates.update(options_section(('sd', "Stable Diffusion"), {
     "enable_emphasis": OptionInfo(True, "Emphasis: use (text) to make model pay more attention to text and [text] to make it pay less attention"),
     "use_old_emphasis_implementation": OptionInfo(False, "Use old emphasis implementation. Can be useful to reproduce old seeds."),
     "enable_batch_seeds": OptionInfo(True, "Make K-diffusion samplers produce same images in a batch as when making a single image"),
-    "comma_padding_backtrack": OptionInfo(20, "Increase coherency by padding from the last comma within n tokens when using more than 75 tokens", gr.Slider, {"minimum": 0, "maximum": 74, "step": 1 }),
+    "comma_padding_backtrack": OptionInfo(20, "Increase coherency by padding from the last comma within n tokens when using more than 75 tokens", gr.Slider, {"minimum": 0, "maximum": 74, "step": 1}),
     "filter_nsfw": OptionInfo(False, "Filter NSFW content"),
     'CLIP_stop_at_last_layers': OptionInfo(1, "Stop At last layers of CLIP model", gr.Slider, {"minimum": 1, "maximum": 12, "step": 1}),
     "random_artist_categories": OptionInfo([], "Allowed categories for random artists selection when using the Roll button", gr.CheckboxGroup, {"choices": artist_db.categories()}),
@@ -319,11 +447,11 @@ options_templates.update(options_section(('sampler-params', "Sampler parameters"
 }))
 
 options_templates.update(options_section(('images-history', "Images Browser"), {
-    #"images_history_reconstruct_directory": OptionInfo(False, "Reconstruct output directory structure.This can greatly improve the speed of loading , but will change the original output directory structure"),
+    # "images_history_reconstruct_directory": OptionInfo(False, "Reconstruct output directory structure.This can greatly improve the speed of loading , but will change the original output directory structure"),
     "images_history_preload": OptionInfo(False, "Preload images at startup"),
     "images_history_num_per_page": OptionInfo(36, "Number of pictures displayed on each page"),
-    "images_history_pages_num": OptionInfo(6, "Minimum number of pages per load "),   
-    "images_history_grid_num": OptionInfo(6, "Number of grids in each row"),   
+    "images_history_pages_num": OptionInfo(6, "Minimum number of pages per load "),
+    "images_history_grid_num": OptionInfo(6, "Number of grids in each row"),
 
 }))
 
@@ -374,11 +502,13 @@ class Options:
         for k, v in self.data.items():
             info = self.data_labels.get(k, None)
             if info is not None and not self.same_type(info.default, v):
-                print(f"Warning: bad setting value: {k}: {v} ({type(v).__name__}; expected {type(info.default).__name__})", file=sys.stderr)
+                print(
+                    f"Warning: bad setting value: {k}: {v} ({type(v).__name__}; expected {type(info.default).__name__})", file=sys.stderr)
                 bad_settings += 1
 
         if bad_settings > 0:
-            print(f"The program is likely to not work with bad settings.\nSettings file: {filename}\nEither fix the file, or delete it and restart.", file=sys.stderr)
+            print(
+                f"The program is likely to not work with bad settings.\nSettings file: {filename}\nEither fix the file, or delete it and restart.", file=sys.stderr)
 
     def onchange(self, key, func):
         item = self.data_labels.get(key)
@@ -387,7 +517,8 @@ class Options:
         func()
 
     def dumpjson(self):
-        d = {k: self.data.get(k, self.data_labels.get(k).default) for k in self.data_labels.keys()}
+        d = {k: self.data.get(k, self.data_labels.get(k).default)
+             for k in self.data_labels.keys()}
         return json.dumps(d)
 
     def add_option(self, key, info):
@@ -402,7 +533,8 @@ class Options:
             if item.section not in section_ids:
                 section_ids[item.section] = len(section_ids)
 
-        self.data_labels = {k: v for k, v in sorted(settings_items, key=lambda x: section_ids[x[1].section])}
+        self.data_labels = {k: v for k, v in sorted(
+            settings_items, key=lambda x: section_ids[x[1].section])}
 
 
 opts = Options()
@@ -442,7 +574,7 @@ class TotalTQDM:
             return
         if self._tqdm is None:
             self.reset()
-        self._tqdm.total=new_total
+        self._tqdm.total = new_total
 
     def clear(self):
         if self._tqdm is not None:

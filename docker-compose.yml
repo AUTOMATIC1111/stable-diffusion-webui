@@ -2,11 +2,12 @@ version: "3.10.6"
 services:
   app:
     environment:
-      - PORT=7861
+      - PORT=5001
       - ENV=prod
-    build: 
+      - DOCKER_DEFAULT_PLATFORM=linux/amd64
+    build:
       context: ./
       dockerfile: Dockerfile
 
     ports:
-      - "7861:7861"
+      - "5001:5001"
