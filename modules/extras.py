@@ -53,14 +53,16 @@ class LruCache(OrderedDict):
 cached_images: LruCache = LruCache(max_size=5)
 
 
-def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_dir, show_extras_results, gfpgan_visibility, codeformer_visibility, codeformer_weight, upscaling_resize, upscaling_resize_w, upscaling_resize_h, upscaling_crop, extras_upscaler_1, extras_upscaler_2, extras_upscaler_2_visibility, upscale_first: bool):
+def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_dir, show_extras_results, gfpgan_visibility, codeformer_visibility, codeformer_weight, upscaling_resize, upscaling_resize_w, upscaling_resize_h, upscaling_crop, extras_upscalers_1, extras_upscaler_2, extras_upscaler_2_visibility, upscale_first: bool):
     devices.torch_gc()
 
     imageArr = []
     # Also keep track of original file names
     imageNameArr = []
     outputs = []
-    
+    # Treat empty Checkbox Group as shared.sd.upscaler[0].
+    if extras_upscalers_1 == []: extras_upscalers_1.append(0)
+
     if extras_mode == 1:
         #convert file to pillow image
         for img in image_folder:
@@ -156,54 +158,60 @@ def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_
             else:
                 blended_result = Image.blend(blended_result, res, upscaler.blend_alpha)
         return (blended_result, info)
+    infos = ""
+    for extras_upscaler_1 in extras_upscalers_1:
+        # Build a list of operations to run
+        facefix_ops: List[Callable] = []
+        facefix_ops += [run_gfpgan] if gfpgan_visibility > 0 else []
+        facefix_ops += [run_codeformer] if codeformer_visibility > 0 else []
 
-    # Build a list of operations to run
-    facefix_ops: List[Callable] = []
-    facefix_ops += [run_gfpgan] if gfpgan_visibility > 0 else []
-    facefix_ops += [run_codeformer] if codeformer_visibility > 0 else []
+        upscale_ops: List[Callable] = []
+        upscale_ops += [run_prepare_crop] if resize_mode == 1 else []
 
-    upscale_ops: List[Callable] = []
-    upscale_ops += [run_prepare_crop] if resize_mode == 1 else []
+        if upscaling_resize != 0:
+            step_params: List[UpscaleParams] = []
+            step_params.append(UpscaleParams(upscaler_idx=extras_upscaler_1, blend_alpha=1.0))
+            if extras_upscaler_2 != 0 and extras_upscaler_2_visibility > 0:
+                step_params.append(UpscaleParams(upscaler_idx=extras_upscaler_2, blend_alpha=extras_upscaler_2_visibility))
 
-    if upscaling_resize != 0:
-        step_params: List[UpscaleParams] = []
-        step_params.append(UpscaleParams(upscaler_idx=extras_upscaler_1, blend_alpha=1.0))
-        if extras_upscaler_2 != 0 and extras_upscaler_2_visibility > 0:
-            step_params.append(UpscaleParams(upscaler_idx=extras_upscaler_2, blend_alpha=extras_upscaler_2_visibility))
+            upscale_ops.append(partial(run_upscalers_blend, step_params))
 
-        upscale_ops.append(partial(run_upscalers_blend, step_params))
+        extras_ops: List[Callable] = (upscale_ops + facefix_ops) if upscale_first else (facefix_ops + upscale_ops)
 
-    extras_ops: List[Callable] = (upscale_ops + facefix_ops) if upscale_first else (facefix_ops + upscale_ops)
+        for image, image_name in zip(imageArr, imageNameArr):
+            if image is None:
+                return outputs, "Please select an input image.", ''
+            # Multiple boxes checked? Alter a COPY of the original image. 
 
-    for image, image_name in zip(imageArr, imageNameArr):
-        if image is None:
-            return outputs, "Please select an input image.", ''
-        existing_pnginfo = image.info or {}
+            if(len(extras_upscalers_1) > 1): image = image.copy()
 
-        image = image.convert("RGB")
-        info = ""
-        # Run each operation on each image
-        for op in extras_ops:
-            image, info = op(image, info)
+            existing_pnginfo = image.info or {}
+            
+            image = image.convert("RGB")
+            info = ""
+            # Run each operation on each image
+            for op in extras_ops:
+                image, info = op(image, info)
 
-        if opts.use_original_name_batch and image_name != None:
-            basename = os.path.splitext(os.path.basename(image_name))[0]
-        else:
-            basename = ''
+            if opts.use_original_name_batch and image_name != None:
+                basename = os.path.splitext(os.path.basename(image_name))[0]
+            else:
+                basename = ''
 
-        images.save_image(image, path=outpath, basename=basename, seed=None, prompt=None, extension=opts.samples_format, info=info, short_filename=True,
-                          no_prompt=True, grid=False, pnginfo_section_name="extras", existing_info=existing_pnginfo, forced_filename=None)
+            images.save_image(image, path=outpath, basename=basename, seed=None, prompt=None, extension=opts.samples_format, info=info, short_filename=True,
+                            no_prompt=True, grid=False, pnginfo_section_name="extras", existing_info=existing_pnginfo, forced_filename=None)
 
-        if opts.enable_pnginfo:
-            image.info = existing_pnginfo
-            image.info["extras"] = info
+            if opts.enable_pnginfo:
+                image.info = existing_pnginfo
+                image.info["extras"] = info
 
-        if extras_mode != 2 or show_extras_results :
-            outputs.append(image)
+            if extras_mode != 2 or show_extras_results :
+                outputs.append(image)
+            # Append this image's info to output log.
+            infos = infos + f"{info}\n"
 
     devices.torch_gc()
-
-    return outputs, plaintext_to_html(info), ''
+    return outputs, plaintext_to_html(infos), ''
 
 def clear_cache():
     cached_images.clear()

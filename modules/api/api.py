@@ -30,7 +30,7 @@ sampler_to_index = lambda name: next(filter(lambda row: name.lower() == row[1].n
 
 def setUpscalers(req: dict):
     reqDict = vars(req)
-    reqDict['extras_upscaler_1'] = upscaler_to_index(req.upscaler_1)
+    reqDict['extras_upscalers_1'] = [upscaler_to_index(req.upscaler_1)]
     reqDict['extras_upscaler_2'] = upscaler_to_index(req.upscaler_2)
     reqDict.pop('upscaler_1')
     reqDict.pop('upscaler_2')

@@ -17,7 +17,7 @@ ignore_ids_for_localization={
     setting_random_artist_categories: 'SPAN',
     setting_face_restoration_model: 'SPAN',
     setting_realesrgan_enabled_models: 'SPAN',
-    extras_upscaler_1: 'SPAN',
+    extras_upscalers_1: 'SPAN',
     extras_upscaler_2: 'SPAN',
 }
 
