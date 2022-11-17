@@ -4,6 +4,7 @@ from collections import namedtuple
 from modules import shared, devices, script_callbacks
 from modules.paths import models_path
 import glob
+from copy import deepcopy
 
 
 model_dir = "Stable-diffusion"
@@ -40,7 +41,7 @@ def store_base_vae(model):
     global base_vae, checkpoint_info
     if checkpoint_info != model.sd_checkpoint_info:
         assert not loaded_vae_file, "Trying to store non-base VAE!"
-        base_vae = model.first_stage_model.state_dict().copy()
+        base_vae = deepcopy(model.first_stage_model.state_dict())
         checkpoint_info = model.sd_checkpoint_info
 
 
