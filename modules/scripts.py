@@ -85,7 +85,7 @@ class Script:
 
         pass
 
-    def batch_postprocess(self, p, image, *args, **kwargs):
+    def batch_postprocess(self, p, image, *args):
         """
         Called for every batch after processing.
         Result image added for visual post-processing ease.
@@ -318,11 +318,11 @@ class ScriptRunner:
                 print(f"Error running process_batch: {script.filename}", file=sys.stderr)
                 print(traceback.format_exc(), file=sys.stderr)
 
-    def batch_postprocess(self, p, image, **kwargs):
+    def batch_postprocess(self, p, image):
         for script in self.alwayson_scripts:
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
-                script.batch_postprocess(p, *script_args, **kwargs)
+                script.batch_postprocess(p, image, *script_args)
             except Exception:
                 print(f"Error running process_batch: {script.filename}", file=sys.stderr)
                 print(traceback.format_exc(), file=sys.stderr)
