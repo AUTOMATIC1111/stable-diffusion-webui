@@ -85,6 +85,13 @@ class Script:
 
         pass
 
+    def batch_postprocess(self, p, image, *args, **kwargs):
+        """
+        Called for every batch after processing.
+        Result image added for visual post-processing ease.
+        """
+        pass
+
     def postprocess(self, p, processed, *args):
         """
         This function is called after processing ends for AlwaysVisible scripts.
@@ -356,4 +363,3 @@ def reload_scripts():
 
     scripts_txt2img = ScriptRunner()
     scripts_img2img = ScriptRunner()
-
