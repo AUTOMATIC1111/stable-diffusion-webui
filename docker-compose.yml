@@ -1,6 +1,9 @@
 version: "3.10.6"
 services:
   app:
+    image: "gcr.io/avatar-staging-67d52/inference:latest"
+    runtime: "nvidia"
+    gpus: "all"
     environment:
       - PORT=5001
       - ENV=prod

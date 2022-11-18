@@ -127,6 +127,36 @@ def create_checkpoint_info(url: str):
     return None
 
 
+def create_checkpoint_info_for_local_file(filename):
+    h = model_hash(filename)
+    title, short_model_name = modeltitle(filename, h)
+    basename, _ = os.path.splitext(filename)
+    config = basename + ".yaml"
+    if not os.path.exists(config):
+        config = shared.cmd_opts.config
+
+    checkpoint_info = CheckpointInfo(
+        filename, title, h, short_model_name, config)
+    return checkpoint_info
+
+
+def get_checkpoint_from_local_volume(model_file_name):
+    if os.getenv('ENV') == 'prod':
+        root = os.path.abspath(os.path.join(
+            os.sep, os.path.join(*os.path.splitdrive(os.getcwd())[:1])))
+    else:
+        root = model_path
+
+    checkpoint_dir = os.path.join(root, "checkpoints")
+
+    if os.path.exists(checkpoint_dir):
+        files = os.listdir(checkpoint_dir)
+        for filename in files:
+            filepath = os.path.join(checkpoint_dir, filename)
+            if os.path.isfile(filepath) and filename == model_file_name and filename.endswith(".ckpt"):
+                return filepath
+
+
 def get_closet_checkpoint_match(searchString):
     applicable = sorted([info for info in checkpoints_list.values(
     ) if searchString in info.title], key=lambda x: len(x.title))
@@ -236,7 +266,7 @@ def load_model_weights(model, checkpoint_info):
         vae_file = os.path.splitext(checkpoint_file)[0] + ".vae.pt"
 
         if not os.path.exists(vae_file) and shared.cmd_opts.vae_path is not None:
-            vae_file = shared.cmd_opts.vae_path
+            vae_file = os.path.join(model_path, shared.cmd_opts.vae_path)
 
         if os.path.exists(vae_file):
             print(f"Loading VAE weights from: {vae_file}")
@@ -245,6 +275,8 @@ def load_model_weights(model, checkpoint_info):
             vae_dict = {k: v for k, v in vae_ckpt["state_dict"].items(
             ) if k[0:4] != "loss" and k not in vae_ignore_keys}
             model.first_stage_model.load_state_dict(vae_dict)
+        else:
+            print(f"VAE weights not found at: {vae_file}")
 
         model.first_stage_model.to(devices.dtype_vae)
 
@@ -262,6 +294,28 @@ def load_model_weights(model, checkpoint_info):
 
 # This is called to load the model weights from the checkpoint file.
 # Figure out how to load checkpoint from URL
+
+
+def load_model_for_txt2img(checkpoint_info=None):
+    from modules import sd_hijack
+    checkpoint_info = checkpoint_info or select_checkpoint()
+
+    if checkpoint_info.config != shared.cmd_opts.config:
+        print(f"Loading config from: {checkpoint_info.config}")
+
+    sd_config = OmegaConf.load(checkpoint_info.config)
+
+    print("checkpoint info", checkpoint_info)
+    sd_model = instantiate_from_config(sd_config.model)
+    load_model_weights(sd_model, checkpoint_info)
+    sd_model.to(shared.device)
+    sd_hijack.model_hijack.hijack(sd_model)
+    sd_model.eval()
+    shared.sd_model = sd_model
+    script_callbacks.model_loaded_callback(sd_model)
+
+    print(f"Model loaded.")
+    return sd_model
 
 
 def load_model(checkpoint_info=None):

@@ -57,4 +57,3 @@ typing_extensions
 uvicorn
 gunicorn
 wandb
-# xformers
