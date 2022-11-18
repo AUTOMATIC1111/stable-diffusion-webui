@@ -78,7 +78,7 @@ def initialize():
 
     modules.scripts.load_scripts()
 
-    modules.sd_vae.refresh_vae_list()
+    modules.sd_vae.init()
     modules.sd_models.load_model()
     shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights()))
     shared.opts.onchange("sd_vae", wrap_queued_call(lambda: modules.sd_vae.reload_vae_weights()), call=False)
