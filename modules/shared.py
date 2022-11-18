@@ -89,6 +89,7 @@ parser.add_argument("--cors-allow-origins", type=str, help="Allowed CORS origins
 parser.add_argument("--tls-keyfile", type=str, help="Partially enables TLS, requires --tls-certfile to fully function", default=None)
 parser.add_argument("--tls-certfile", type=str, help="Partially enables TLS, requires --tls-keyfile to fully function", default=None)
 parser.add_argument("--server-name", type=str, help="Sets hostname of server", default=None)
+parser.add_argument("--offline", type=str, help="Sets Web UI to offline mode", default=False)
 
 script_loading.preload_extensions(extensions.extensions_dir, parser)
 
