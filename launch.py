@@ -157,6 +157,7 @@ def prepare_enviroment():
     sys.argv, reinstall_xformers = extract_arg(sys.argv, '--reinstall-xformers')
     sys.argv, update_check = extract_arg(sys.argv, '--update-check')
     sys.argv, run_tests = extract_arg(sys.argv, '--tests')
+    sys.argv, offline = extract_arg(sys.argv, '--offline')
     xformers = '--xformers' in sys.argv
     deepdanbooru = '--deepdanbooru' in sys.argv
     ngrok = '--ngrok' in sys.argv
@@ -201,22 +202,28 @@ def prepare_enviroment():
 
     os.makedirs(dir_repos, exist_ok=True)
 
-    git_clone(stable_diffusion_repo, repo_dir('stable-diffusion'), "Stable Diffusion", stable_diffusion_commit_hash)
-    git_clone(taming_transformers_repo, repo_dir('taming-transformers'), "Taming Transformers", taming_transformers_commit_hash)
-    git_clone(k_diffusion_repo, repo_dir('k-diffusion'), "K-diffusion", k_diffusion_commit_hash)
-    git_clone(codeformer_repo, repo_dir('CodeFormer'), "CodeFormer", codeformer_commit_hash)
-    git_clone(blip_repo, repo_dir('BLIP'), "BLIP", blip_commit_hash)
+    if offline:
+        print("Running in offline mode")
+    else:
+        try:
+            git_clone(stable_diffusion_repo, repo_dir('stable-diffusion'), "Stable Diffusion", stable_diffusion_commit_hash)
+            git_clone(taming_transformers_repo, repo_dir('taming-transformers'), "Taming Transformers", taming_transformers_commit_hash)
+            git_clone(k_diffusion_repo, repo_dir('k-diffusion'), "K-diffusion", k_diffusion_commit_hash)
+            git_clone(codeformer_repo, repo_dir('CodeFormer'), "CodeFormer", codeformer_commit_hash)
+            git_clone(blip_repo, repo_dir('BLIP'), "BLIP", blip_commit_hash)
 
-    if not is_installed("lpips"):
-        run_pip(f"install -r {os.path.join(repo_dir('CodeFormer'), 'requirements.txt')}", "requirements for CodeFormer")
+            if not is_installed("lpips"):
+                run_pip(f"install -r {os.path.join(repo_dir('CodeFormer'), 'requirements.txt')}", "requirements for CodeFormer")
 
-    run_pip(f"install -r {requirements_file}", "requirements for Web UI")
+            run_pip(f"install -r {requirements_file}", "requirements for Web UI")
 
-    run_extensions_installers()
+            run_extensions_installers()
 
-    if update_check:
-        version_check(commit)
-    
+            if update_check:
+                version_check(commit)
+        except:
+            pass
+
     if "--exit" in sys.argv:
         print("Exiting because of --exit argument")
         exit(0)
