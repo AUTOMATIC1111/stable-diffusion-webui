@@ -3,6 +3,7 @@ import os
 from collections import namedtuple
 from modules import shared, devices, script_callbacks
 from modules.paths import models_path
+from modules.modelloader import model_places
 import glob
 from copy import deepcopy
 from pathlib import Path
@@ -10,7 +11,8 @@ from pathlib import Path
 
 model_dir_name = "Stable-diffusion"
 model_dir = os.path.abspath(os.path.join(models_path, model_dir_name))
-model_dir_path = Path(model_dir)
+model_dirs = [model_dir]
+model_dirs_paths = [Path(x) for x in model_dirs]
 vae_dir_name = "VAE"
 vae_dir = os.path.abspath(os.path.join(models_path, vae_dir_name))
 
@@ -31,6 +33,15 @@ first_load = True
 base_vae = None
 loaded_vae_file = None
 checkpoint_info = None
+
+
+def init():
+    global model_dir, model_dirs, model_dirs_paths
+    from modules.sd_models import model_path
+    model_dir = model_path
+    model_dirs = model_places(model_path=model_dir, command_path=shared.cmd_opts.ckpt_dir)
+    model_dirs_paths = [Path(x) for x in model_dirs]
+    refresh_vae_list()
 
 
 def get_base_vae(model):
@@ -68,16 +79,38 @@ def get_filename(filepath):
     return os.path.relpath(filepath, models_path)
 
 
+def search_parent(file):
+    if file is not None and os.path.isfile(file):
+        path = Path(file)
+        for p in model_dirs_paths:
+            if p in path.parents:
+                path = None
+                break
+        if path:
+            return [
+                *glob.iglob(os.path.join(str(path.parent), '**/*.vae.ckpt'), recursive=True),
+                *glob.iglob(os.path.join(str(path.parent), '**/*.vae.pt'), recursive=True)
+            ]
+    return []
+
+
 def refresh_vae_list(vae_dir=vae_dir, model_dir=model_dir):
     global vae_dict, vae_list
     res = {}
-    candidates = [
-        *glob.iglob(os.path.join(model_dir, '**/*.vae.ckpt'), recursive=True),
-        *glob.iglob(os.path.join(model_dir, '**/*.vae.pt'), recursive=True),
+    candidates = []
+    for model_dir in model_dirs:
+        candidates += [
+            *glob.iglob(os.path.join(model_dir, '**/*.vae.ckpt'), recursive=True),
+            *glob.iglob(os.path.join(model_dir, '**/*.vae.pt'), recursive=True)
+        ]
+    candidates += [
         *glob.iglob(os.path.join(vae_dir, '**/*.ckpt'), recursive=True),
         *glob.iglob(os.path.join(vae_dir, '**/*.pt'), recursive=True)
     ]
+    if shared.cmd_opts.ckpt is not None:
+        candidates += search_parent(shared.cmd_opts.ckpt)
     if shared.cmd_opts.vae_path is not None and os.path.isfile(shared.cmd_opts.vae_path):
+        candidates += search_parent(shared.cmd_opts.vae_path)
         candidates.append(shared.cmd_opts.vae_path)
     for filepath in candidates:
         name = get_filename(filepath)
@@ -133,15 +166,16 @@ def resolve_vae(checkpoint_file=None, vae_file="auto"):
             model_path + ".vae.pt",
             model_path + ".vae.ckpt"
         ]
-        if model_dir_path in Path(checkpoint_file).parents:
-            rel_path = os.path.relpath(model_path, model_dir)
-            vae_path = os.path.join(vae_dir, rel_path)
-            trials += [
-                vae_path + ".vae.pt",
-                vae_path + ".vae.ckpt",
-                vae_path + ".pt",
-                vae_path + ".ckpt"
-            ]
+        for model_dir_path in model_dirs_paths:
+            if model_dir_path in Path(checkpoint_file).parents:
+                rel_path = os.path.relpath(model_path, model_dir)
+                vae_path = os.path.join(vae_dir, rel_path)
+                trials += [
+                    vae_path + ".vae.pt",
+                    vae_path + ".vae.ckpt",
+                    vae_path + ".pt",
+                    vae_path + ".ckpt"
+                ]
         for vae_file_try in trials:
             if os.path.isfile(vae_file_try):
                 vae_file = vae_file_try
