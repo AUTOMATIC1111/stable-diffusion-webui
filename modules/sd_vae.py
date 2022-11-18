@@ -15,6 +15,8 @@ model_dirs = [model_dir]
 model_dirs_paths = [Path(x) for x in model_dirs]
 vae_dir_name = "VAE"
 vae_dir = os.path.abspath(os.path.join(models_path, vae_dir_name))
+vae_dirs = model_dirs + [vae_dir]
+vae_dirs_paths = [Path(x) for x in vae_dirs]
 
 
 vae_ignore_keys = {"model_ema.decay", "model_ema.num_updates"}
@@ -35,13 +37,15 @@ loaded_vae_file = None
 checkpoint_info = None
 
 
-def init():
+def refresh_dirs():
     global model_dir, model_dirs, model_dirs_paths
     from modules.sd_models import model_path
     model_dir = model_path
     model_dirs = model_places(model_path=model_dir, command_path=shared.cmd_opts.ckpt_dir)
     model_dirs_paths = [Path(x) for x in model_dirs]
-    refresh_vae_list()
+    global vae_dirs, vae_dirs_paths
+    vae_dirs = model_dirs + [vae_dir]
+    vae_dirs_paths = [Path(x) for x in vae_dirs]
 
 
 def get_base_vae(model):
@@ -73,7 +77,11 @@ def restore_base_vae(model):
 def get_filename(filepath):
     if not filepath:
         return "None"
-    return os.path.splitext(os.path.basename(filepath))[0]
+    path = Path(filepath)
+    for p in vae_dirs_paths:
+        if p in path.parents:
+            return os.path.relpath(filepath, str(p))
+    return os.path.basename(filepath)
 
 
 def search_parent(file):
@@ -93,12 +101,13 @@ def search_parent(file):
 
 def refresh_vae_list(vae_dir=vae_dir, model_dir=model_dir):
     global vae_dict, vae_list
+    refresh_dirs()
     res = {}
     candidates = []
-    for model_dir in model_dirs:
+    for p in vae_dirs:
         candidates += [
-            *glob.iglob(os.path.join(model_dir, '**/*.vae.ckpt'), recursive=True),
-            *glob.iglob(os.path.join(model_dir, '**/*.vae.pt'), recursive=True)
+            *glob.iglob(os.path.join(p, '**/*.vae.ckpt'), recursive=True),
+            *glob.iglob(os.path.join(p, '**/*.vae.pt'), recursive=True)
         ]
     candidates += [
         *glob.iglob(os.path.join(vae_dir, '**/*.ckpt'), recursive=True),
@@ -114,7 +123,7 @@ def refresh_vae_list(vae_dir=vae_dir, model_dir=model_dir):
         res[name] = filepath
     vae_list.clear()
     vae_list.extend(default_vae_list)
-    vae_list.extend(list(res.keys()))
+    vae_list.extend(sorted(res.keys()))
     vae_dict.clear()
     vae_dict.update(res)
     vae_dict.update(default_vae_dict)
