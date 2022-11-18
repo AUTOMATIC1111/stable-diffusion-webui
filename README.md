@@ -16,7 +16,7 @@ cd stable-diffusion-webui
 Run webui's own commands to check and install the environment, webui will pull down the required repositories in the stable-diffusion-webui/repositories directory, this process will take some time.
 
 ```
-sh webui.sh
+bash webui.sh
 ```
 
 ![image](https://user-images.githubusercontent.com/4384420/201310784-19f9032a-4b14-4dfe-9d46-8b353bc74c5b.png)
