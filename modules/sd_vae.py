@@ -4,10 +4,13 @@ from collections import namedtuple
 from modules import shared, devices, script_callbacks
 from modules.paths import models_path
 import glob
+from copy import deepcopy
+from pathlib import Path
 
 
 model_dir_name = "Stable-diffusion"
 model_dir = os.path.abspath(os.path.join(models_path, model_dir_name))
+model_dir_path = Path(model_dir)
 vae_dir_name = "VAE"
 vae_dir = os.path.abspath(os.path.join(models_path, vae_dir_name))
 
@@ -117,16 +120,19 @@ def resolve_vae(checkpoint_file, vae_file="auto"):
     # if still not found, try look for VAE similar to model
     if vae_file == "auto" and checkpoint_file:
         model_path = os.path.splitext(checkpoint_file)[0]
-        rel_path = os.path.relpath(model_path, model_dir)
-        vae_path = os.path.join(vae_dir, rel_path)
         trials = [
             model_path + ".vae.pt",
-            model_path + ".vae.ckpt",
-            vae_path + ".vae.pt",
-            vae_path + ".vae.ckpt",
-            vae_path + ".pt",
-            vae_path + ".ckpt",
+            model_path + ".vae.ckpt"
         ]
+        if model_dir_path in Path(checkpoint_file).parents:
+            rel_path = os.path.relpath(model_path, model_dir)
+            vae_path = os.path.join(vae_dir, rel_path)
+            trials += [
+                vae_path + ".vae.pt",
+                vae_path + ".vae.ckpt",
+                vae_path + ".pt",
+                vae_path + ".ckpt"
+            ]
         for vae_file_try in trials:
             if os.path.isfile(vae_file_try):
                 vae_file = vae_file_try
