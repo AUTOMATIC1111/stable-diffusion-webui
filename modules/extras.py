@@ -159,6 +159,7 @@ def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_
                 blended_result = Image.blend(blended_result, res, upscaler.blend_alpha)
         return (blended_result, info)
     infos = ""
+    # Run extras for every upscaler checked.
     for extras_upscaler_1 in extras_upscalers_1:
         # Build a list of operations to run
         facefix_ops: List[Callable] = []
@@ -181,8 +182,7 @@ def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_
         for image, image_name in zip(imageArr, imageNameArr):
             if image is None:
                 return outputs, "Please select an input image.", ''
-            # Multiple boxes checked? Alter a COPY of the original image. 
-
+            # Multiple Upscaler 1 boxes checked? Alter a COPY of the original image. 
             if(len(extras_upscalers_1) > 1): image = image.copy()
 
             existing_pnginfo = image.info or {}
@@ -207,7 +207,7 @@ def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_
 
             if extras_mode != 2 or show_extras_results :
                 outputs.append(image)
-            # Append this image's info to output log.
+            # Append info to output.
             infos = infos + f"{info}\n"
 
     devices.torch_gc()
