@@ -241,6 +241,29 @@ Works like x/y plot, like how you would expect, but now has a z. Works like how 
 <img src="https://github.com/Gerschel/xyz-plot-grid/raw/main/000.png" width="574" height="390" />
 </details>
 
+## Expanded-XY-grid
+https://github.com/0xALIVEBEEF/Expanded-XY-grid
+
+Custom script for AUTOMATIC1111's stable-diffusion-webui that adds more features to the standard xy grid:
+
+- Multitool: Allows multiple parameters in one axis, theoretically allows unlimited parameters to be adjusted in one xy grid
+
+- Customizable prompt matrix
+
+- Group files in a directory
+
+- S/R Placeholder - replace a placeholder value (the first value in the list of parameters) with desired values.
+
+- Add PNGinfo to grid image
+
+<details><summary>Example: (Click to expand:)</summary>
+
+<img src="https://user-images.githubusercontent.com/80003301/202277871-a4a3341b-13f7-42f4-a3e6-ca8f8cd8250a.png" width="574" height="197" />
+
+Example images: Prompt: "darth vader riding a bicycle, modifier"; X: Multitool: "Prompt S/R: bicycle, motorcycle | CFG scale: 7.5, 10 | Prompt S/R Placeholder: modifier, 4k, artstation"; Y: Multitool: "Sampler: Euler, Euler a | Steps: 20, 50" 
+
+</details>
+
 
 
 ## Booru tag autocompletion
@@ -361,6 +384,11 @@ Steps: 20, Sampler: DDIM, CFG scale: 7, Seed: 4288895889, Size: 512x512, Model h
 ```
 
 </details>
+
+## Multiple Hypernetworks
+https://github.com/antis0007/sd-webui-multiple-hypernetworks
+
+Adds the ability to apply multiple hypernetworks at once. Overrides the hijack, optimization and CrossAttention forward functions in order to apply multiple hypernetworks sequentially, with different weights.
 
 ## Saving steps of the sampling process
 
