@@ -73,7 +73,7 @@ Run the command to experience Taiyi-Stable-Diffusion-1B-Chinese-v0.1
 python launch.py --ckpt local_path/Taiyi-Stable-Diffusion-1B-Chinese-v0.1.ckpt --listen --port 12345
 ```
 
-If you want to experience the IDEA-CCNL/Taiyi-Stable-Diffusion-1B-Chinese-EN-v0.1 model, clone the latest code, and replace the content of stable-diffusion-webui/repositories/stable-diffusion/configs/stable-diffusion/v1-inference.yaml with stable-diffusion-webui/repositories/stable-diffusion/configs/stable-diffusion-taiyi/v1-inference-en.yaml
+If you want to experience the [IDEA-CCNL/Taiyi-Stable-Diffusion-1B-Chinese-EN-v0.1](https://huggingface.co/IDEA-CCNL/Taiyi-Stable-Diffusion-1B-Chinese-EN-v0.1) model, clone the latest code, and replace the content of stable-diffusion-webui/repositories/stable-diffusion/configs/stable-diffusion/v1-inference.yaml with stable-diffusion-webui/repositories/stable-diffusion/configs/stable-diffusion-taiyi/v1-inference-en.yaml
 
 ```
 python launch.py --ckpt local_path/Taiyi-Stable-Diffusion-1B-Chinese-EN-v0.1.ckpt --listen --port 12345
