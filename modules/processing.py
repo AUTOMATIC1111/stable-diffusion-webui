@@ -453,6 +453,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
     modules.sd_hijack.model_hijack.clear_comments()
 
     comments = {}
+    prompt_tmp = p.prompt
+    negative_prompt_tmp = p.negative_prompt
 
     shared.prompt_styles.apply_styles(p)
 
@@ -598,6 +600,9 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
     if p.scripts is not None:
         p.scripts.postprocess(p, res)
+
+    p.prompt = prompt_tmp
+    p.negative_prompt = negative_prompt_tmp
 
     return res
 
