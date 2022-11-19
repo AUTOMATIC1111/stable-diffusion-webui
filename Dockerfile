@@ -36,9 +36,8 @@ RUN apt update && apt install git wget -y
 
 COPY --from=xformers xformers-0.0.14.dev0-cp310-cp310-linux_x86_64.whl /xformers-0.0.14.dev0-cp310-cp310-linux_x86_64.whl
 
-COPY . /sd
+COPY --chown=1000:1000 . /sd
 WORKDIR /sd
-RUN chown -R 1000 /sd
 
 RUN mkdir /var/sd
 RUN chown -R 1000 /var/sd
@@ -47,4 +46,4 @@ USER 1000:1000
 
 # Python dependencies are installed by the entrypoint to keep the docker image as small as possible.
 # To make startup faster, it's possible to mount a warmed-up SD directory at /var/sd.
-ENTRYPOINT ["bash", "docker_entrypoint.sh"]
+CMD ["bash", "docker_entrypoint.sh"]
