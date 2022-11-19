@@ -105,22 +105,26 @@ def version_check(commit):
         print("version check failed", e)
 
 
+def run_extension_installer(extension_dir):
+    path_installer = os.path.join(extension_dir, "install.py")
+    if not os.path.isfile(path_installer):
+        return
+
+    try:
+        env = os.environ.copy()
+        env['PYTHONPATH'] = os.path.abspath(".")
+
+        print(run(f'"{python}" "{path_installer}"', errdesc=f"Error running install.py for extension {extension_dir}", custom_env=env))
+    except Exception as e:
+        print(e, file=sys.stderr)
+
+
 def run_extensions_installers():
     if not os.path.isdir(dir_extensions):
         return
 
     for dirname_extension in os.listdir(dir_extensions):
-        path_installer = os.path.join(dir_extensions, dirname_extension, "install.py")
-        if not os.path.isfile(path_installer):
-            continue
-
-        try:
-            env = os.environ.copy()
-            env['PYTHONPATH'] = os.path.abspath(".")
-
-            print(run(f'"{python}" "{path_installer}"', errdesc=f"Error running install.py for extension {dirname_extension}", custom_env=env))
-        except Exception as e:
-            print(e, file=sys.stderr)
+        run_extension_installer(os.path.join(dir_extensions, dirname_extension))
 
 
 def prepare_enviroment():
@@ -135,9 +139,9 @@ def prepare_enviroment():
     xformers_windows_package = os.environ.get('XFORMERS_WINDOWS_PACKAGE', 'https://github.com/C43H66N12O12S2/stable-diffusion-webui/releases/download/f/xformers-0.0.14.dev0-cp310-cp310-win_amd64.whl')
 
     stable_diffusion_repo = os.environ.get('STABLE_DIFFUSION_REPO', "https://github.com/CompVis/stable-diffusion.git")
-    taming_transformers_repo = os.environ.get('TAMING_REANSFORMERS_REPO', "https://github.com/CompVis/taming-transformers.git")
+    taming_transformers_repo = os.environ.get('TAMING_TRANSFORMERS_REPO', "https://github.com/CompVis/taming-transformers.git")
     k_diffusion_repo = os.environ.get('K_DIFFUSION_REPO', 'https://github.com/crowsonkb/k-diffusion.git')
-    codeformer_repo = os.environ.get('CODEFORMET_REPO', 'https://github.com/sczhou/CodeFormer.git')
+    codeformer_repo = os.environ.get('CODEFORMER_REPO', 'https://github.com/sczhou/CodeFormer.git')
     blip_repo = os.environ.get('BLIP_REPO', 'https://github.com/salesforce/BLIP.git')
 
     stable_diffusion_commit_hash = os.environ.get('STABLE_DIFFUSION_COMMIT_HASH', "69ae4b35e0a0f6ee1af8bb9a5d0016ccb27e36dc")

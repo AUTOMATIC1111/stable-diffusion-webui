@@ -6,7 +6,6 @@ import git
 
 from modules import paths, shared
 
-
 extensions = []
 extensions_dir = os.path.join(paths.script_path, "extensions")
 
@@ -66,9 +65,12 @@ class Extension:
         self.can_update = False
         self.status = "latest"
 
-    def pull(self):
+    def fetch_and_reset_hard(self):
         repo = git.Repo(self.path)
-        repo.remotes.origin.pull()
+        # Fix: `error: Your local changes to the following files would be overwritten by merge`,
+        # because WSL2 Docker set 755 file permissions instead of 644, this results to the error.
+        repo.git.fetch('--all')
+        repo.git.reset('--hard', 'origin')
 
 
 def list_extensions():
@@ -84,3 +86,4 @@ def list_extensions():
 
         extension = Extension(name=dirname, path=path, enabled=dirname not in shared.opts.disabled_extensions)
         extensions.append(extension)
+

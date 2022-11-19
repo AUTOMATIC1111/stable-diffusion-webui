@@ -36,9 +36,9 @@ def apply_and_restart(disable_list, update_list):
             continue
 
         try:
-            ext.pull()
+            ext.fetch_and_reset_hard()
         except Exception:
-            print(f"Error pulling updates for {ext.name}:", file=sys.stderr)
+            print(f"Error getting updates for {ext.name}:", file=sys.stderr)
             print(traceback.format_exc(), file=sys.stderr)
 
     shared.opts.disabled_extensions = disabled
@@ -133,6 +133,9 @@ def install_extension_from_url(dirname, url):
         repo.remote().fetch()
 
         os.rename(tmpdir, target_dir)
+
+        import launch
+        launch.run_extension_installer(target_dir)
 
         extensions.list_extensions()
         return [extension_table(), html.escape(f"Installed into {target_dir}. Use Installed tab to restart.")]

@@ -145,6 +145,8 @@ class Script(scripts.Script):
         state.job_count = job_count
 
         images = []
+        all_prompts = []
+        infotexts = []
         for n, args in enumerate(jobs):
             state.job = f"{state.job_no + 1} out of {state.job_count}"
 
@@ -157,5 +159,7 @@ class Script(scripts.Script):
             
             if checkbox_iterate:
                 p.seed = p.seed + (p.batch_size * p.n_iter)
+            all_prompts += proc.all_prompts
+            infotexts += proc.infotexts
 
-        return Processed(p, images, p.seed, "")
+        return Processed(p, images, p.seed, "", all_prompts=all_prompts, infotexts=infotexts)
