@@ -83,7 +83,19 @@ def refresh_vae_list(vae_path=vae_path, model_path=model_path):
     return vae_list
 
 
-def resolve_vae(checkpoint_file, vae_file="auto"):
+def get_vae_from_settings(vae_file="auto"):
+    # else, we load from settings, if not set to be default
+    if vae_file == "auto" and shared.opts.sd_vae is not None:
+        # if saved VAE settings isn't recognized, fallback to auto
+        vae_file = vae_dict.get(shared.opts.sd_vae, "auto")
+        # if VAE selected but not found, fallback to auto
+        if vae_file not in default_vae_values and not os.path.isfile(vae_file):
+            vae_file = "auto"
+            print("Selected VAE doesn't exist")
+    return vae_file
+
+
+def resolve_vae(checkpoint_file=None, vae_file="auto"):
     global first_load, vae_dict, vae_list
 
     # if vae_file argument is provided, it takes priority, but not saved
@@ -98,14 +110,9 @@ def resolve_vae(checkpoint_file, vae_file="auto"):
             shared.opts.data['sd_vae'] = get_filename(vae_file)
         else:
             print("VAE provided as command line argument doesn't exist")
-    # else, we load from settings
-    if vae_file == "auto" and shared.opts.sd_vae is not None:
-        # if saved VAE settings isn't recognized, fallback to auto
-        vae_file = vae_dict.get(shared.opts.sd_vae, "auto")
-        # if VAE selected but not found, fallback to auto
-        if vae_file not in default_vae_values and not os.path.isfile(vae_file):
-            vae_file = "auto"
-            print("Selected VAE doesn't exist")
+    # fallback to selector in settings, if vae selector not set to act as default fallback
+    if not shared.opts.sd_vae_as_default:
+        vae_file = get_vae_from_settings(vae_file)
     # vae-path cmd arg takes priority for auto
     if vae_file == "auto" and shared.cmd_opts.vae_path is not None:
         if os.path.isfile(shared.cmd_opts.vae_path):
