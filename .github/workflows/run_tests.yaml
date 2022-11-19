@@ -1,4 +1,4 @@
-name: Run tests on CPU with empty model
+name: Run basic features tests on CPU with empty SD model
 
 on:
   - push
@@ -14,14 +14,13 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: 3.10.6
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
+          restore-keys: ${{ runner.os }}-pip-
       - name: Run tests
-        run: python launch.py --tests basic_features --no-half --disable-opt-split-attention --use-cpu all --skip-torch-cuda-test --clip-models-path ./test/test_files/empty.pt
+        run: python launch.py --tests basic_features --no-half --disable-opt-split-attention --use-cpu all --skip-torch-cuda-test
       - name: Upload main app stdout-stderr
         uses: actions/upload-artifact@v3
         if: always()
