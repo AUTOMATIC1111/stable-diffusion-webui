@@ -253,9 +253,8 @@ class Api:
         return options
 
     def set_config(self, req: Dict[str, Any]):
-       
-        for o in req:
-            setattr(shared.opts, o, req[o])
+        for k, v in req.items():
+            shared.opts.set(k, v)
 
         shared.opts.save(shared.config_filename)
         return
@@ -264,7 +263,7 @@ class Api:
         return vars(shared.cmd_opts)
 
     def get_samplers(self):
-        return [{"name":sampler[0], "aliases":sampler[2], "options":sampler[3]} for sampler in sd_samplers.all_samplers]
+        return [{"name": sampler[0], "aliases":sampler[2], "options":sampler[3]} for sampler in sd_samplers.all_samplers]
 
     def get_upscalers(self):
         upscalers = []

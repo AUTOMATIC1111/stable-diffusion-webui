@@ -437,6 +437,23 @@ class Options:
 
         return super(Options, self).__getattribute__(item)
 
+    def set(self, key, value):
+        """sets an option and calls its onchange callback, returning True if the option changed and False otherwise"""
+
+        oldval = self.data.get(key, None)
+        if oldval == value:
+            return False
+
+        try:
+            setattr(self, key, value)
+        except RuntimeError:
+            return False
+
+        if self.data_labels[key].onchange is not None:
+            self.data_labels[key].onchange()
+
+        return True
+
     def save(self, filename):
         assert not cmd_opts.freeze_settings, "saving settings is disabled"
 

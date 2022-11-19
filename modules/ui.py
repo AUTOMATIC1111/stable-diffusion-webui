@@ -1484,16 +1484,9 @@ def create_ui(wrap_gradio_gpu_call):
             if comp == dummy_component:
                 continue
 
-            oldval = opts.data.get(key, None)
-            try:
-                setattr(opts, key, value)
-            except RuntimeError:
-                continue
-            if oldval != value:
-                if opts.data_labels[key].onchange is not None:
-                    opts.data_labels[key].onchange()
-
+            if opts.set(key, value):
                 changed.append(key)
+
         try:
             opts.save(shared.config_filename)
         except RuntimeError:
@@ -1504,15 +1497,8 @@ def create_ui(wrap_gradio_gpu_call):
         if not opts.same_type(value, opts.data_labels[key].default):
             return gr.update(visible=True), opts.dumpjson()
 
-        oldval = opts.data.get(key, None)
-        try:
-            setattr(opts, key, value)
-        except Exception:
-            return gr.update(value=oldval), opts.dumpjson()
-
-        if oldval != value:
-            if opts.data_labels[key].onchange is not None:
-                opts.data_labels[key].onchange()
+        if not opts.set(key, value):
+            return gr.update(value=getattr(opts, key)), opts.dumpjson()
 
         opts.save(shared.config_filename)
 
