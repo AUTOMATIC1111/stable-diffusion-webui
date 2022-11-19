@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, FastAPI, HTTPException
 import modules.shared as shared
 from modules.api.models import *
 from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img, process_images
-from modules.sd_samplers import all_samplers
+from modules.sd_samplers import samplers
 from modules.extras import run_extras, run_pnginfo
 from PIL import PngImagePlugin
 from modules.sd_models import checkpoints_list
@@ -25,7 +25,7 @@ def upscaler_to_index(name: str):
         raise HTTPException(status_code=400, detail=f"Invalid upscaler, needs to be on of these: {' , '.join([x.name for x in sd_upscalers])}")
 
 
-sampler_to_index = lambda name: next(filter(lambda row: name.lower() == row[1].name.lower(), enumerate(all_samplers)), None)
+sampler_to_index = lambda name: next(filter(lambda row: name.lower() == row[1].name.lower(), enumerate(samplers)), None)
 
 
 def setUpscalers(req: dict):
@@ -272,7 +272,7 @@ class Api:
         return vars(shared.cmd_opts)
 
     def get_samplers(self):
-        return [{"name":sampler[0], "aliases":sampler[2], "options":sampler[3]} for sampler in all_samplers]
+        return [{"name":sampler[0], "aliases":sampler[2], "options":sampler[3]} for sampler in samplers]
 
     def get_upscalers(self):
         upscalers = []
