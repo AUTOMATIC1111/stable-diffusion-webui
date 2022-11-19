@@ -113,6 +113,7 @@ class StableDiffusionProcessing():
         self.s_tmax = s_tmax or float('inf')  # not representable as a standard ui option
         self.s_noise = s_noise or opts.s_noise
         self.override_settings = {k: v for k, v in (override_settings or {}).items() if k not in shared.restricted_opts}
+        self.is_using_inpainting_conditioning = False
 
         if not seed_enable_extras:
             self.subseed = -1
@@ -133,6 +134,8 @@ class StableDiffusionProcessing():
             # Pretty sure we can just make this a 1x1 image since its not going to be used besides its batch size.
             return x.new_zeros(x.shape[0], 5, 1, 1)
 
+        self.is_using_inpainting_conditioning = True
+
         height = height or self.height
         width = width or self.width
 
@@ -150,6 +153,8 @@ class StableDiffusionProcessing():
         if self.sampler.conditioning_key not in {'hybrid', 'concat'}:
             # Dummy zero conditioning if we're not using inpainting model.
             return latent_image.new_zeros(latent_image.shape[0], 5, 1, 1)
+
+        self.is_using_inpainting_conditioning = True
 
         # Handle the different mask inputs
         if image_mask is not None:
@@ -234,6 +239,7 @@ class Processed:
         self.negative_prompt = self.negative_prompt if type(self.negative_prompt) != list else self.negative_prompt[0]
         self.seed = int(self.seed if type(self.seed) != list else self.seed[0]) if self.seed is not None else -1
         self.subseed = int(self.subseed if type(self.subseed) != list else self.subseed[0]) if self.subseed is not None else -1
+        self.is_using_inpainting_conditioning = p.is_using_inpainting_conditioning
 
         self.all_prompts = all_prompts or [self.prompt]
         self.all_seeds = all_seeds or [self.seed]
@@ -268,6 +274,7 @@ class Processed:
             "styles": self.styles,
             "job_timestamp": self.job_timestamp,
             "clip_skip": self.clip_skip,
+            "is_using_inpainting_conditioning": self.is_using_inpainting_conditioning,
         }
 
         return json.dumps(obj)
@@ -394,7 +401,7 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration
         "Variation seed strength": (None if p.subseed_strength == 0 else p.subseed_strength),
         "Seed resize from": (None if p.seed_resize_from_w == 0 or p.seed_resize_from_h == 0 else f"{p.seed_resize_from_w}x{p.seed_resize_from_h}"),
         "Denoising strength": getattr(p, 'denoising_strength', None),
-        "Inpainting strength": (None if getattr(p, 'denoising_strength', None) is None else getattr(p, "inpainting_mask_weight", shared.opts.inpainting_mask_weight)),
+        "Conditional mask weight": getattr(p, "inpainting_mask_weight", shared.opts.inpainting_mask_weight) if p.is_using_inpainting_conditioning else None,
         "Eta": (None if p.sampler is None or p.sampler.eta == p.sampler.default_eta else p.sampler.eta),
         "Clip skip": None if clip_skip <= 1 else clip_skip,
         "ENSD": None if opts.eta_noise_seed_delta == 0 else opts.eta_noise_seed_delta,
