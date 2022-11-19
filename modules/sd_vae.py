@@ -91,7 +91,7 @@ def get_vae_from_settings(vae_file="auto"):
         # if VAE selected but not found, fallback to auto
         if vae_file not in default_vae_values and not os.path.isfile(vae_file):
             vae_file = "auto"
-            print("Selected VAE doesn't exist")
+            print(f"Selected VAE doesn't exist: {vae_file}")
     return vae_file
 
 
@@ -101,15 +101,15 @@ def resolve_vae(checkpoint_file=None, vae_file="auto"):
     # if vae_file argument is provided, it takes priority, but not saved
     if vae_file and vae_file not in default_vae_list:
         if not os.path.isfile(vae_file):
+            print(f"VAE provided as function argument doesn't exist: {vae_file}")
             vae_file = "auto"
-            print("VAE provided as function argument doesn't exist")
     # for the first load, if vae-path is provided, it takes priority, saved, and failure is reported
     if first_load and shared.cmd_opts.vae_path is not None:
         if os.path.isfile(shared.cmd_opts.vae_path):
             vae_file = shared.cmd_opts.vae_path
             shared.opts.data['sd_vae'] = get_filename(vae_file)
         else:
-            print("VAE provided as command line argument doesn't exist")
+            print(f"VAE provided as command line argument doesn't exist: {vae_file}")
     # fallback to selector in settings, if vae selector not set to act as default fallback
     if not shared.opts.sd_vae_as_default:
         vae_file = get_vae_from_settings(vae_file)
@@ -117,20 +117,20 @@ def resolve_vae(checkpoint_file=None, vae_file="auto"):
     if vae_file == "auto" and shared.cmd_opts.vae_path is not None:
         if os.path.isfile(shared.cmd_opts.vae_path):
             vae_file = shared.cmd_opts.vae_path
-            print("Using VAE provided as command line argument")
+            print(f"Using VAE provided as command line argument: {vae_file}")
     # if still not found, try look for ".vae.pt" beside model
     model_path = os.path.splitext(checkpoint_file)[0]
     if vae_file == "auto":
         vae_file_try = model_path + ".vae.pt"
         if os.path.isfile(vae_file_try):
             vae_file = vae_file_try
-            print("Using VAE found beside selected model")
+            print(f"Using VAE found similar to selected model: {vae_file}")
     # if still not found, try look for ".vae.ckpt" beside model
     if vae_file == "auto":
         vae_file_try = model_path + ".vae.ckpt"
         if os.path.isfile(vae_file_try):
             vae_file = vae_file_try
-            print("Using VAE found beside selected model")
+            print(f"Using VAE found similar to selected model: {vae_file}")
     # No more fallbacks for auto
     if vae_file == "auto":
         vae_file = None
@@ -146,6 +146,7 @@ def load_vae(model, vae_file=None):
     # save_settings = False
 
     if vae_file:
+        assert os.path.isfile(vae_file), f"VAE file doesn't exist: {vae_file}"
         print(f"Loading VAE weights from: {vae_file}")
         vae_ckpt = torch.load(vae_file, map_location=shared.weight_load_location)
         vae_dict_1 = {k: v for k, v in vae_ckpt["state_dict"].items() if k[0:4] != "loss" and k not in vae_ignore_keys}

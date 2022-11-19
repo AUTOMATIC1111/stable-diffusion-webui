@@ -165,16 +165,9 @@ def load_model_weights(model, checkpoint_info, vae_file="auto"):
 
     cache_enabled = shared.opts.sd_checkpoint_cache > 0
 
-    if cache_enabled:
-        sd_vae.restore_base_vae(model)
-
-    vae_file = sd_vae.resolve_vae(checkpoint_file, vae_file=vae_file)
-
     if cache_enabled and checkpoint_info in checkpoints_loaded:
         # use checkpoint cache
-        vae_name = sd_vae.get_filename(vae_file) if vae_file else None
-        vae_message = f" with {vae_name} VAE" if vae_name else ""
-        print(f"Loading weights [{sd_model_hash}]{vae_message} from cache")
+        print(f"Loading weights [{sd_model_hash}] from cache")
         model.load_state_dict(checkpoints_loaded[checkpoint_info])
     else:
         # load from file
@@ -220,6 +213,7 @@ def load_model_weights(model, checkpoint_info, vae_file="auto"):
     model.sd_model_checkpoint = checkpoint_file
     model.sd_checkpoint_info = checkpoint_info
 
+    vae_file = sd_vae.resolve_vae(checkpoint_file, vae_file=vae_file)
     sd_vae.load_vae(model, vae_file)
 
 
