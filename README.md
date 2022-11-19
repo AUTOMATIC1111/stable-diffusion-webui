@@ -1,6 +1,10 @@
 # Taiyi stable-diffusion-webui
 Stable Diffusion web UI for Taiyi
 
+Make sure the requirement at least, very helpful.
+
+- transformers>=4.24.0
+- diffusers>=0.7.2
 
 ## step 1
 
