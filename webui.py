@@ -33,7 +33,10 @@ from modules.shared import cmd_opts
 import modules.hypernetworks.hypernetwork
 
 queue_lock = threading.Lock()
-server_name = "0.0.0.0" if cmd_opts.listen else cmd_opts.server_name
+if cmd_opts.server_name:
+    server_name = cmd_opts.server_name
+else:
+    server_name = "0.0.0.0" if cmd_opts.listen else None
 
 def wrap_queued_call(func):
     def f(*args, **kwargs):
