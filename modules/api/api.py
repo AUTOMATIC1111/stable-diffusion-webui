@@ -72,6 +72,7 @@ class Api:
         self.app.add_api_route("/sdapi/v1/progress", self.progressapi, methods=["GET"], response_model=ProgressResponse)
         self.app.add_api_route("/sdapi/v1/interrogate", self.interrogateapi, methods=["POST"])
         self.app.add_api_route("/sdapi/v1/interrupt", self.interruptapi, methods=["POST"])
+        self.app.add_api_route("/sdapi/v1/skip", self.skip, methods=["POST"])
         self.app.add_api_route("/sdapi/v1/options", self.get_config, methods=["GET"], response_model=OptionsModel)
         self.app.add_api_route("/sdapi/v1/options", self.set_config, methods=["POST"])
         self.app.add_api_route("/sdapi/v1/cmd-flags", self.get_cmd_flags, methods=["GET"], response_model=FlagsModel)
@@ -237,6 +238,9 @@ class Api:
 
         return {}
 
+    def skip(self):
+        shared.state.skip()
+
     def get_config(self):
         options = {}
         for key in shared.opts.data.keys():
@@ -248,14 +252,10 @@ class Api:
 
         return options
 
-    def set_config(self, req: OptionsModel):
-        # currently req has all options fields even if you send a dict like { "send_seed": false }, which means it will
-        # overwrite all options with default values.
-        raise RuntimeError('Setting options via API is not supported')
-
-        reqDict = vars(req)
-        for o in reqDict:
-            setattr(shared.opts, o, reqDict[o])
+    def set_config(self, req: Dict[str, Any]):
+       
+        for o in req:
+            setattr(shared.opts, o, req[o])
 
         shared.opts.save(shared.config_filename)
         return
