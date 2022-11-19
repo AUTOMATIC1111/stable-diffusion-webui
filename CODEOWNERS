@@ -1,13 +1,12 @@
 *       @AUTOMATIC1111
-/localizations/ar_AR.json   @xmodar @blackneoo
-/localizations/de_DE.json   @LunixWasTaken
-/localizations/es_ES.json   @innovaciones
-/localizations/fr_FR.json   @tumbly
-/localizations/it_IT.json   @EugenioBuffo
-/localizations/ja_JP.json   @yuuki76
-/localizations/ko_KR.json   @36DB
-/localizations/pt_BR.json   @M-art-ucci
-/localizations/ru_RU.json   @kabachuha
-/localizations/tr_TR.json   @camenduru
-/localizations/zh_CN.json   @dtlnor @bgluminous
-/localizations/zh_TW.json   @benlisquare
+
+# if you were managing a localization and were removed from this file, this is because
+# the intended way to do localizations now is via extensions. See:
+# https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Developing-extensions
+# Make a repo with your localization and since you are still listed as a collaborator
+# you can add it to the wiki page yourself. This change is because some people complained
+# the git commit log is cluttered with things unrelated to almost everyone and
+# because I believe this is the best overall for the project to handle localizations almost
+# entirely without my oversight.
+
+

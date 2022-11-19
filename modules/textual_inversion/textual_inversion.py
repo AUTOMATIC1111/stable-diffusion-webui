@@ -10,7 +10,7 @@ import csv
 
 from PIL import Image, PngImagePlugin
 
-from modules import shared, devices, sd_hijack, processing, sd_models, images
+from modules import shared, devices, sd_hijack, processing, sd_models, images, sd_samplers
 import modules.textual_inversion.dataset
 from modules.textual_inversion.learn_schedule import LearnRateScheduler
 
@@ -345,7 +345,7 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
                 p.prompt = preview_prompt
                 p.negative_prompt = preview_negative_prompt
                 p.steps = preview_steps
-                p.sampler_index = preview_sampler_index
+                p.sampler_name = sd_samplers.samplers[preview_sampler_index].name
                 p.cfg_scale = preview_cfg_scale
                 p.seed = preview_seed
                 p.width = preview_width

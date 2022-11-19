@@ -10,9 +10,9 @@ import numpy as np
 import modules.scripts as scripts
 import gradio as gr
 
-from modules import images
+from modules import images, sd_samplers
 from modules.hypernetworks import hypernetwork
-from modules.processing import process_images, Processed, get_correct_sampler, StableDiffusionProcessingTxt2Img
+from modules.processing import process_images, Processed, StableDiffusionProcessingTxt2Img
 from modules.shared import opts, cmd_opts, state
 import modules.shared as shared
 import modules.sd_samplers
@@ -60,9 +60,9 @@ def apply_order(p, x, xs):
     p.prompt = prompt_tmp + p.prompt
     
 
-def build_samplers_dict(p):
+def build_samplers_dict():
     samplers_dict = {}
-    for i, sampler in enumerate(get_correct_sampler(p)):
+    for i, sampler in enumerate(sd_samplers.all_samplers):
         samplers_dict[sampler.name.lower()] = i
         for alias in sampler.aliases:
             samplers_dict[alias.lower()] = i
@@ -70,7 +70,7 @@ def build_samplers_dict(p):
 
 
 def apply_sampler(p, x, xs):
-    sampler_index = build_samplers_dict(p).get(x.lower(), None)
+    sampler_index = build_samplers_dict().get(x.lower(), None)
     if sampler_index is None:
         raise RuntimeError(f"Unknown sampler: {x}")
 
@@ -78,7 +78,7 @@ def apply_sampler(p, x, xs):
 
 
 def confirm_samplers(p, xs):
-    samplers_dict = build_samplers_dict(p)
+    samplers_dict = build_samplers_dict()
     for x in xs:
         if x.lower() not in samplers_dict.keys():
             raise RuntimeError(f"Unknown sampler: {x}")

@@ -24,11 +24,15 @@ samplers_k_diffusion = [
     ('Heun', 'sample_heun', ['k_heun'], {}),
     ('DPM2', 'sample_dpm_2', ['k_dpm_2'], {}),
     ('DPM2 a', 'sample_dpm_2_ancestral', ['k_dpm_2_a'], {}),
+    ('DPM++ 2S a', 'sample_dpmpp_2s_ancestral', ['k_dpmpp_2s_a'], {}),
+    ('DPM++ 2M', 'sample_dpmpp_2m', ['k_dpmpp_2m'], {}),
     ('DPM fast', 'sample_dpm_fast', ['k_dpm_fast'], {}),
     ('DPM adaptive', 'sample_dpm_adaptive', ['k_dpm_ad'], {}),
     ('LMS Karras', 'sample_lms', ['k_lms_ka'], {'scheduler': 'karras'}),
     ('DPM2 Karras', 'sample_dpm_2', ['k_dpm_2_ka'], {'scheduler': 'karras'}),
     ('DPM2 a Karras', 'sample_dpm_2_ancestral', ['k_dpm_2_a_ka'], {'scheduler': 'karras'}),
+    ('DPM++ 2S a Karras', 'sample_dpmpp_2s_ancestral', ['k_dpmpp_2s_a_ka'], {'scheduler': 'karras'}),
+    ('DPM++ 2M Karras', 'sample_dpmpp_2m', ['k_dpmpp_2m_ka'], {'scheduler': 'karras'}),
 ]
 
 samplers_data_k_diffusion = [
@@ -42,16 +46,23 @@ all_samplers = [
     SamplerData('DDIM', lambda model: VanillaStableDiffusionSampler(ldm.models.diffusion.ddim.DDIMSampler, model), [], {}),
     SamplerData('PLMS', lambda model: VanillaStableDiffusionSampler(ldm.models.diffusion.plms.PLMSSampler, model), [], {}),
 ]
+all_samplers_map = {x.name: x for x in all_samplers}
 
 samplers = []
 samplers_for_img2img = []
 
 
-def create_sampler_with_index(list_of_configs, index, model):
-    config = list_of_configs[index]
+def create_sampler(name, model):
+    if name is not None:
+        config = all_samplers_map.get(name, None)
+    else:
+        config = all_samplers[0]
+
+    assert config is not None, f'bad sampler name: {name}'
+
     sampler = config.constructor(model)
     sampler.config = config
-    
+
     return sampler
 
 
