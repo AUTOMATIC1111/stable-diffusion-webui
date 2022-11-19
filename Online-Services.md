@@ -12,3 +12,5 @@
 ## Kaggle
    - [maintained by camenduru](https://www.kaggle.com/code/camenduru/stable-diffusion-webui-kaggle)
 
+## SageMaker Studio Lab
+   - [maintained by fractality](https://github.com/Miraculix200/StableDiffusionUI_SageMakerSL/blob/main/StableDiffusionUI_SageMakerSL.ipynb)
