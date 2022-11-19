@@ -170,6 +170,12 @@
 			"tags": ["script"]
 		},
 		{
+			"name": "WD 1.4 Tagger",
+			"url": "https://github.com/toriato/stable-diffusion-webui-wd14-tagger.git",
+			"description": "Uses a trained model file, produces WD 1.4 Tags. Model link - https://mega.nz/file/ptA2jSSB#G4INKHQG2x2pGAVQBn-yd_U5dMgevGF8YYM9CR_R1SY",
+			"tags": ["script"]
+		},
+		{
 			"name": "zh_CN Localization",
 			"url": "https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN",
 			"description": "Simplified Chinese localization",
