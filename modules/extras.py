@@ -249,7 +249,7 @@ def run_pnginfo(image):
     return '', geninfo, info
 
 
-def run_modelmerger(primary_model_name, secondary_model_name, teritary_model_name, interp_method, multiplier, save_as_half, custom_name):
+def run_modelmerger(primary_model_name, secondary_model_name, teritary_model_name, interp_method, multiplier, save_as_half, save_as_safetensors, custom_name):
     def weighted_sum(theta0, theta1, alpha):
         return ((1 - alpha) * theta0) + (alpha * theta1)
 
@@ -264,16 +264,16 @@ def run_modelmerger(primary_model_name, secondary_model_name, teritary_model_nam
     teritary_model_info = sd_models.checkpoints_list.get(teritary_model_name, None)
 
     print(f"Loading {primary_model_info.filename}...")
-    primary_model = torch.load(primary_model_info.filename, map_location='cpu')
+    primary_model = sd_models.torch_load(primary_model_info.filename, primary_model_info, map_override='cpu')
     theta_0 = sd_models.get_state_dict_from_checkpoint(primary_model)
 
     print(f"Loading {secondary_model_info.filename}...")
-    secondary_model = torch.load(secondary_model_info.filename, map_location='cpu')
+    secondary_model = sd_models.torch_load(secondary_model_info.filename, primary_model_info, map_override='cpu')
     theta_1 = sd_models.get_state_dict_from_checkpoint(secondary_model)
 
     if teritary_model_info is not None:
         print(f"Loading {teritary_model_info.filename}...")
-        teritary_model = torch.load(teritary_model_info.filename, map_location='cpu')
+        teritary_model = sd_models.torch_load(teritary_model_info.filename, teritary_model_info, map_override='cpu')
         theta_2 = sd_models.get_state_dict_from_checkpoint(teritary_model)
     else:
         teritary_model = None
@@ -314,12 +314,13 @@ def run_modelmerger(primary_model_name, secondary_model_name, teritary_model_nam
 
     ckpt_dir = shared.cmd_opts.ckpt_dir or sd_models.model_path
 
-    filename = primary_model_info.model_name + '_' + str(round(1-multiplier, 2)) + '-' + secondary_model_info.model_name + '_' + str(round(multiplier, 2)) + '-' + interp_method.replace(" ", "_") + '-merged.ckpt'
-    filename = filename if custom_name == '' else (custom_name + '.ckpt')
+    output_exttype = '.safetensors' if save_as_safetensors else '.ckpt'
+    filename = primary_model_info.model_name + '_' + str(round(1-multiplier, 2)) + '-' + secondary_model_info.model_name + '_' + str(round(multiplier, 2)) + '-' + interp_method.replace(" ", "_") + '-merged' + output_exttype
+    filename = filename if custom_name == '' else (custom_name + output_exttype)
     output_modelname = os.path.join(ckpt_dir, filename)
 
     print(f"Saving to {output_modelname}...")
-    torch.save(primary_model, output_modelname)
+    sd_models.torch_save(primary_model, output_modelname)
 
     sd_models.list_models()
 
