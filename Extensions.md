@@ -37,7 +37,11 @@ https://github.com/adieyal/sd-dynamic-prompts
 
 A custom extension for [AUTOMATIC1111/stable-diffusion-webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui) that implements an expressive template language for random or combinatorial prompt generation along with features to support deep wildcard directory structures.
 
-Using this script, the prompt:
+More features and additions are shown in the [readme](https://github.com/adieyal/sd-dynamic-prompts).
+
+![image](https://github.com/adieyal/sd-dynamic-prompts/raw/main/images/extension.png)
+
+Using this extension, the prompt:
 
 `A {house|apartment|lodge|cottage} in {summer|winter|autumn|spring} by {2$$artist1|artist2|artist3}`
 
@@ -66,12 +70,6 @@ You can also use the same wildcard twice
 
 - I love Winter better than Summer
 - I love Spring better than Spring
-
-To install, run the following command from within the webui directory:
-
-`git clone https://github.com/adieyal/sd-dynamic-prompting/ extensions/dynamic-prompts`
-
-If you are upgrading from a version prior to 0.11.0, be sure to delete the old dynamic_prompting.py from the webui's scripts directory and the old dynamic_prompting.js from the webui's javascript directory.
 
 ## Dreambooth
 https://github.com/d8ahazard/sd_dreambooth_extension
@@ -211,6 +209,7 @@ Add a button to convert the prompts used in NovelAI for use in the WebUI. In add
 ![pic](https://user-images.githubusercontent.com/113022648/197382468-65f4a96d-48af-4890-8fcf-0ec7c3b9ec3a.png)
 
 ## Tokenizer
+https://github.com/AUTOMATIC1111/stable-diffusion-webui-tokenizer
 
 Adds a tab that lets you preview how CLIP model would tokenize your text.
 
