@@ -134,7 +134,7 @@ class PersonalizedBase(Dataset):
         if self.tag_drop_out != 0 or self.shuffle_tags:
             entry.cond_text = self.create_text(entry.filename_text)
         if self.latent_sampling_method == "random":
-            entry.latent_sample = shared.sd_model.get_first_stage_encoding(entry.latent_dist)
+            entry.latent_sample = shared.sd_model.get_first_stage_encoding(entry.latent_dist).to(devices.cpu)
         return entry
 
 class PersonalizedDataLoader(DataLoader):
