@@ -103,15 +103,6 @@ class PersonalizedBase(Dataset):
             if include_cond and not (self.tag_drop_out != 0 or self.shuffle_tags):
                 with torch.autocast("cuda"):
                     entry.cond = cond_model([entry.cond_text]).to(devices.cpu).squeeze(0)
-            # elif not include_cond:
-            #     _, _, _, _, hijack_fixes, token_count = cond_model.process_text([entry.cond_text])
-            #     max_n = token_count // 75
-            #     index_list = [ [] for _ in range(max_n + 1) ]
-            #     for n, (z, _) in hijack_fixes[0]:
-            #         index_list[n].append(z)
-            #     with torch.autocast("cuda"):
-            #         entry.cond = cond_model([entry.cond_text]).to(devices.cpu).squeeze(0)
-            #     entry.emb_index = index_list
 
             self.dataset.append(entry)
             del torchdata
