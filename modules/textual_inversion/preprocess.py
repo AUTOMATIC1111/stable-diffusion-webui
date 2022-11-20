@@ -6,12 +6,10 @@ import sys
 import tqdm
 import time
 
-from modules import shared, images
+from modules import shared, images, deepbooru
 from modules.paths import models_path
 from modules.shared import opts, cmd_opts
 from modules.textual_inversion import autocrop
-if cmd_opts.deepdanbooru:
-    import modules.deepbooru as deepbooru
 
 
 def preprocess(process_src, process_dst, process_width, process_height, preprocess_txt_action, process_flip, process_split, process_caption, process_caption_deepbooru=False, split_threshold=0.5, overlap_ratio=0.2, process_focal_crop=False, process_focal_crop_face_weight=0.9, process_focal_crop_entropy_weight=0.3, process_focal_crop_edges_weight=0.5, process_focal_crop_debug=False):
@@ -20,9 +18,7 @@ def preprocess(process_src, process_dst, process_width, process_height, preproce
             shared.interrogator.load()
 
         if process_caption_deepbooru:
-            db_opts = deepbooru.create_deepbooru_opts()
-            db_opts[deepbooru.OPT_INCLUDE_RANKS] = False
-            deepbooru.create_deepbooru_process(opts.interrogate_deepbooru_score_threshold, db_opts)
+            deepbooru.model.start()
 
         preprocess_work(process_src, process_dst, process_width, process_height, preprocess_txt_action, process_flip, process_split, process_caption, process_caption_deepbooru, split_threshold, overlap_ratio, process_focal_crop, process_focal_crop_face_weight, process_focal_crop_entropy_weight, process_focal_crop_edges_weight, process_focal_crop_debug)
 
@@ -32,7 +28,7 @@ def preprocess(process_src, process_dst, process_width, process_height, preproce
             shared.interrogator.send_blip_to_ram()
 
         if process_caption_deepbooru:
-            deepbooru.release_process()
+            deepbooru.model.stop()
 
 
 def listfiles(dirname):
@@ -58,7 +54,7 @@ def save_pic_with_caption(image, index, params: PreprocessParams, existing_capti
     if params.process_caption_deepbooru:
         if len(caption) > 0:
             caption += ", "
-        caption += deepbooru.get_tags_from_process(image)
+        caption += deepbooru.model.tag_multi(image)
 
     filename_part = params.src
     filename_part = os.path.splitext(filename_part)[0]

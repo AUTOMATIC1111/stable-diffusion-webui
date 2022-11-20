@@ -9,7 +9,7 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from secrets import compare_digest
 
 import modules.shared as shared
-from modules import sd_samplers
+from modules import sd_samplers, deepbooru
 from modules.api.models import *
 from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img, process_images
 from modules.extras import run_extras, run_pnginfo
@@ -17,9 +17,6 @@ from PIL import PngImagePlugin
 from modules.sd_models import checkpoints_list
 from modules.realesrgan_model import get_realesrgan_models
 from typing import List
-
-if shared.cmd_opts.deepdanbooru:
-    from modules.deepbooru import get_deepbooru_tags
 
 def upscaler_to_index(name: str):
     try:
@@ -245,10 +242,7 @@ class Api:
             if interrogatereq.model == "clip":
                 processed = shared.interrogator.interrogate(img)
             elif interrogatereq.model == "deepdanbooru":
-                if shared.cmd_opts.deepdanbooru:
-                    processed = get_deepbooru_tags(img)
-                else:
-                    raise HTTPException(status_code=404, detail="Model not found. Add --deepdanbooru when launching for using the model.")
+                processed = deepbooru.model.tag(img)
             else:
                 raise HTTPException(status_code=404, detail="Model not found")
         

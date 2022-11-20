@@ -19,13 +19,10 @@ import numpy as np
 from PIL import Image, PngImagePlugin
 
 
-from modules import sd_hijack, sd_models, localization, script_callbacks, ui_extensions
+from modules import sd_hijack, sd_models, localization, script_callbacks, ui_extensions, deepbooru
 from modules.paths import script_path
 
 from modules.shared import opts, cmd_opts, restricted_opts
-
-if cmd_opts.deepdanbooru:
-    from modules.deepbooru import get_deepbooru_tags
 
 import modules.codeformer_model
 import modules.generation_parameters_copypaste as parameters_copypaste
@@ -352,7 +349,7 @@ def interrogate(image):
 
 
 def interrogate_deepbooru(image):
-    prompt = get_deepbooru_tags(image)
+    prompt = deepbooru.model.tag(image)
     return gr_show(True) if prompt is None else prompt
 
 
