@@ -13,14 +13,14 @@ The basic ones I'm interested in are these two. Let's just focus only on ` /sdap
 
 ------
 
-- So that's the backend. The API basically says what's available, what it's asking for, and where to send it. Now moving onto the frontend, I'll start with constructing a payload with the values I want. An example can be:
+- So that's the backend. The API basically says what's available, what it's asking for, and where to send it. Now moving onto the frontend, I'll start with constructing a payload with the parameters I want. An example can be:
 ```
 payload = {
     "prompt": "maltese puppy",
     "steps": 5
 }
 ```
-I can put in as few or as many values as I want in the payload. The API will use the defaults for anything I don't set.
+I can put in as few or as many parameters as I want in the payload. The API will use the defaults for anything I don't set.
 
 - After that, I can send it to the API
 ```
@@ -89,7 +89,41 @@ for i in r['images']:
 - define a plugin to add png info, then add the png info I defined into it
 - at the end here, save the image with the png info
 
-This is as of commit [ac08562](https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/ac085628540d0ec6a988fad93f5b8f2154209571)
+-----
+
+A note on `"override_settings"`.
+The purpose of this endpoint is to override the web ui settings for a single request, such as the CLIP skip. The settings that can be passed into this parameter are visible here at the url's /docs.
+
+![image](https://user-images.githubusercontent.com/2993060/202877368-c31a6e9e-0d05-40ec-ade0-49ed2c4be22b.png)
+
+You can expand the tab and the API will provide a list. There are a few ways you can add this value to your payload, but this is how I do it. I'll demonstrate with "filter_nsfw", and "CLIP_stop_at_last_layers".
+
+```
+payload = {
+    "prompt": "cirno",
+    "steps": 20
+}
+
+override_settings = {}
+override_settings["filter_nsfw"] = true
+override_settings["CLIP_stop_at_last_layers"] = 2
+
+override_payload = {
+                "override_settings": override_settings
+            }
+payload.update(override_payload)
+```
+- Have the normal payload
+- after that, initialize a dictionary (I call it "override_settings", but maybe not the best name)
+- then I can add as many key:value pairs as I want to it
+- make a new payload with just this parameter
+- update the original payload to add this one to it
+
+So in this case, when I send the payload, I should get a "cirno" at 20 steps, with the CLIP skip at 2, as well as the NSFW filter on.
+
+-----
+
+This is as of commit [47a44c7](https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/47a44c7e421b98ca07e92dbf88769b04c9e28f86)
 
 For a more complete implementation of a frontend, my Discord bot is [here](https://github.com/Kilvoctu/aiyabot) if anyone wants to look at it as an example. Most of the action happens in stablecog.py. There are many comments explaining what each code does.
 
