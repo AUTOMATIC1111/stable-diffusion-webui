@@ -121,6 +121,26 @@ payload.update(override_payload)
 
 So in this case, when I send the payload, I should get a "cirno" at 20 steps, with the CLIP skip at 2, as well as the NSFW filter on.
 
+
+For certain settings or situations, you may want your changes to stay. For that you can post to the `/sdapi/v1/options` API endpoint
+We can use what we learned so far and set up the code easily for this. Here is an example:
+```
+url = "http://127.0.0.1:7860"
+
+option_payload = {
+    "sd_model_checkpoint": "Anything-V3.0-pruned.ckpt [2700c435]",
+    "CLIP_stop_at_last_layers": 2
+}
+
+response = requests.post(url=f'{url}/sdapi/v1/options', json=option_payload)
+```
+After sending this payload to the API, the model should swap to the one I set and set the CLIP skip to 2. Reiterating, this is different from "override_settings", because this change will persist, while "override_settings" is for a single request.
+Note that if you're changing the `sd_model_checkpoint`, the value should be the name of the checkpoint as it appears in the web ui. This can be referenced with this API endpoint (same way we reference "options" API)
+
+![image](https://user-images.githubusercontent.com/2993060/202928589-114aff91-2777-4269-9492-2eab015c5bca.png)
+
+The "title" (name and hash) is what you want to use.
+
 -----
 
 This is as of commit [47a44c7](https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/47a44c7e421b98ca07e92dbf88769b04c9e28f86)
