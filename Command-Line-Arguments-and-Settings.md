@@ -86,7 +86,7 @@ Use `--port xxxx` to make the server listen on a specific port, xxxx being the w
 --disable-safe-unpickle | None | False				| disable checking pytorch models for malicious code |
 --ngrok | NGROK | Unset         				 | ngrok authtoken, alternative to gradio --share
 --ngrok-region | NGROK_REGION | Unset			 | The region in which ngrok should start.
---deepdanbooru | None | False       					| enable deepdanbooru interrogator |
 | **DEFUNCT OPTIONS** |
 --show-negative-prompt | None | False 					| does not do anything |
+--deepdanbooru | None | False 					| does not do anything |
 --unload-gfpgan | None | False      				 | does not do anything.
