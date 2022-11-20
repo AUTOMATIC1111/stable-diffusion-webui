@@ -424,13 +424,15 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
 
     try:
         for k, v in p.override_settings.items():
-            setattr(opts, k, v) # we don't call onchange for simplicity which makes changing model, hypernet impossible
+            setattr(opts, k, v)  # we don't call onchange for simplicity which makes changing model impossible
+            if k == 'sd_hypernetwork': shared.reload_hypernetworks()  # make onchange call for changing hypernet since it is relatively fast to load on-change, while SD models are not
 
         res = process_images_inner(p)
 
-    finally:
+    finally:  # restore opts to original state
         for k, v in stored_opts.items():
             setattr(opts, k, v)
+            if k == 'sd_hypernetwork': shared.reload_hypernetworks()
 
     return res
 
