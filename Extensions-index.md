@@ -176,7 +176,7 @@
 			"tags": ["script", "tab"]
 		},
 		{
-			"name": "https://github.com/Malisius/booru2prompt",
+			"name": "booru2prompt",
 			"url": "https://github.com/Malisius/booru2prompt.git",
 			"description": "This SD extension allows you to turn posts from various image boorus into stable diffusion prompts. It does so by pulling a list of tags down from their API. You can copy-paste in a link to the post you want yourself, or use the built-in search feature to do it all without leaving SD.",
 			"tags": ["script", "tab"]
