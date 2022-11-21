@@ -71,7 +71,7 @@ def build_samplers_dict():
 
 def apply_sampler(p, x, xs):
     sampler_dict = build_samplers_dict()
-    sampler_index = samplers_dict.get(x.lower(), None)
+    sampler_index = sampler_dict.get(x.lower(), None)
     if sampler_index is None:
         raise RuntimeError(f"Unknown sampler: {x}")
 
