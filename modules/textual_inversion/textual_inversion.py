@@ -113,6 +113,8 @@ class EmbeddingDatabase:
                 emb = next(iter(data.values()))
                 if len(emb.shape) == 1:
                     emb = emb.unsqueeze(0)
+                    
+                name = list(data.keys())[0]
             else:
                 raise Exception(f"Couldn't identify {filename} as neither textual inversion embedding nor diffuser concept.")
 
