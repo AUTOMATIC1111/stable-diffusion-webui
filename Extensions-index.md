@@ -176,6 +176,18 @@
 			"tags": ["script", "tab"]
 		},
 		{
+			"name": "https://github.com/Malisius/booru2prompt",
+			"url": "https://github.com/Malisius/booru2prompt.git",
+			"description": "This SD extension allows you to turn posts from various image boorus into stable diffusion prompts. It does so by pulling a list of tags down from their API. You can copy-paste in a link to the post you want yourself, or use the built-in search feature to do it all without leaving SD.",
+			"tags": ["script", "tab"]
+		},
+		{
+			"name": "Merge Board",
+			"url": "https://github.com/bbc-mc/sdweb-merge-board.git",
+			"description": "Multiple lane merge support(up to 10). Save and Load your merging combination as Recipes, which is simple text.",
+			"tags": ["script", "tab"]
+		},
+		{
 			"name": "zh_CN Localization",
 			"url": "https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN",
 			"description": "Simplified Chinese localization",
