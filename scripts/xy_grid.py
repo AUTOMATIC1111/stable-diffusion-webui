@@ -75,7 +75,7 @@ def apply_sampler(p, x, xs):
     if sampler_index is None:
         raise RuntimeError(f"Unknown sampler: {x}")
 
-    p.sampler_name = sampler_dict[sampler_index].name
+    p.sampler_name = sd_samplers.all_samplers[sampler_index].name
 
 
 def confirm_samplers(p, xs):
