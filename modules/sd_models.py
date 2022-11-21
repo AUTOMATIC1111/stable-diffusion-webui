@@ -147,8 +147,9 @@ def torch_load(model_filename, model_info, map_override=None):
     map_override=shared.weight_load_location if not map_override else map_override
     if(checkpoint_types[model_info.exttype] == 'safetensors'):
         # safely load weights
-        # TODO: safetensors supports zero copy fast load to gpu, see issue #684
-        return load_file(model_filename, device=map_override)
+        # TODO: safetensors supports zero copy fast load to gpu, see issue #684.  
+        # GPU only for now, see https://github.com/huggingface/safetensors/issues/95
+        return load_file(model_filename, device='cuda')
     else:
         return torch.load(model_filename, map_location=map_override)
 

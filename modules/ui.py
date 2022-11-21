@@ -1187,7 +1187,8 @@ def create_ui(wrap_gradio_gpu_call):
                 interp_amount = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Multiplier (M) - set to 0 to get model A', value=0.3)
                 interp_method = gr.Radio(choices=["Weighted sum", "Add difference"], value="Weighted sum", label="Interpolation Method")
                 save_as_half = gr.Checkbox(value=False, label="Save as float16")
-                save_as_safetensors = gr.Checkbox(value=False, label="Save as safetensors format")
+                # invisible until feature can be verified
+                save_as_safetensors = gr.Checkbox(value=False, label="Save as safetensors format", visible=False)
                 modelmerger_merge = gr.Button(elem_id="modelmerger_merge", label="Merge", variant='primary')
 
             with gr.Column(variant='panel'):
