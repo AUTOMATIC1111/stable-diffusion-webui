@@ -1,5 +1,5 @@
 {
     "face_restoration_model": "GFPGAN",
     "sd_checkpoint_cache": 10,
-    "sd_model_checkpoint": "sd.ckpt [81761151]"
+    "sd_model_checkpoint": null
 }

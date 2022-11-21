@@ -114,7 +114,6 @@ class StableDiffusionProcessing():
         self.s_noise = s_noise or opts.s_noise
         self.override_settings = {k: v for k, v in (override_settings or {}).items() if k not in shared.restricted_opts}
         self.is_using_inpainting_conditioning = False
-        self.sampler_index = sampler_index
         self.override_tensor = override_tensor
 
         if not seed_enable_extras:
@@ -608,7 +607,7 @@ def process_images_inner(p: StableDiffusionProcessing, override_tensor=None) -> 
 
     devices.torch_gc()
 
-    res = Processed(p, output_images, p.all_seeds[0], infotext() + "".join(["\n\n" + x for x in comments]), subseed=p.all_subseeds[0], all_prompts=p.all_prompts, all_seeds=p.all_seeds, all_subseeds=p.all_subseeds, index_of_first_image=index_of_first_image, infotexts=infotexts, noise_tensors=noise_tensors)
+    res = Processed(p, output_images, p.all_seeds[0], infotext() + "".join(["\n\n" + x for x in comments]), subseed=p.all_subseeds[0], index_of_first_image=index_of_first_image, infotexts=infotexts, noise_tensors=noise_tensors)
 
     if p.scripts is not None:
         p.scripts.postprocess(p, res)
@@ -662,7 +661,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             self.truncate_y = int(self.firstphase_height - firstphase_height_truncated) // opt_f
 
     def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts, override_tensor=None):
-        self.sampler = sd_samplers.create_sampler_with_index(sd_samplers.samplers, self.sampler_index, self.sd_model)
+        self.sampler = sd_samplers.create_sampler(self.sampler_name, self.sd_model)
 
         if not self.enable_hr:
             x = create_random_tensors([opt_C, self.height // opt_f, self.width // opt_f], seeds=seeds, subseeds=subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self, noise_override=override_tensor)
