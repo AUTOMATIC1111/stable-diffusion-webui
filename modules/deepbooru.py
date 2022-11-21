@@ -58,7 +58,7 @@ class DeepDanbooru:
         a = np.expand_dims(np.array(pic, dtype=np.float32), 0) / 255
 
         with torch.no_grad(), devices.autocast():
-            x = torch.from_numpy(a).cuda()
+            x = torch.from_numpy(a).to(devices.device)
             y = self.model(x)[0].detach().cpu().numpy()
 
         probability_dict = {}
