@@ -83,7 +83,7 @@ def confirm_samplers(p, xs):
         if x.lower() not in samplers_dict:
             raise RuntimeError(f"Unknown sampler: {x}")
         if p.enable_hr and sd_samplers.all_samplers[samplers_dict[x.lower()]].name == 'PLMS':
-            raise RuntimeError(f"Sampler PLMS not supported for img2img or highres fix used")
+            raise RuntimeError(f"Sampler PLMS not supported for img2img or highres fix enabled in txt2img")
 
 
 def apply_checkpoint(p, x, xs):
