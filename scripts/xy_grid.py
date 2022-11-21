@@ -70,18 +70,20 @@ def build_samplers_dict():
 
 
 def apply_sampler(p, x, xs):
-    sampler_index = build_samplers_dict().get(x.lower(), None)
-    if sampler_index is None:
+    samplers_dict = build_samplers_dict()
+    if x.lower() not in samplers_dict:
         raise RuntimeError(f"Unknown sampler: {x}")
 
-    p.sampler_index = sampler_index
+    p.sampler_name = sd_samplers.all_samplers[samplers_dict[x.lower()]].name
 
 
 def confirm_samplers(p, xs):
     samplers_dict = build_samplers_dict()
     for x in xs:
-        if x.lower() not in samplers_dict.keys():
+        if x.lower() not in samplers_dict:
             raise RuntimeError(f"Unknown sampler: {x}")
+        if p.enable_hr and sd_samplers.all_samplers[samplers_dict[x.lower()]].name == 'PLMS':
+            raise RuntimeError(f"Sampler PLMS not supported for img2img or highres fix used")
 
 
 def apply_checkpoint(p, x, xs):
@@ -286,6 +288,12 @@ class Script(scripts.Script):
         def process_axis(opt, vals):
             if opt.label == 'Nothing':
                 return [0]
+
+            if opt.label == 'Sampler' and vals.strip() == '*':
+                if p.enable_hr is True:
+                    vals = ','.join([x.name for x in sd_samplers.samplers_for_img2img])
+                else:
+                    vals = ','.join([x.name for x in sd_samplers.all_samplers])
 
             valslist = [x.strip() for x in chain.from_iterable(csv.reader(StringIO(vals)))]
 
