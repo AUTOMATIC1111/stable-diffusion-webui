@@ -210,7 +210,7 @@ class LearnRateScheduler:
                 differential_saturation_divisor = 1.0
             self.saturation_scalar = 0.5 ** (saturation_rise / self.saturation_halflife)
         else:
-            differential_saturation_divisor = 1.0
+            differential_saturation_divisor = 0.0
             self.saturation_scalar = 1.0
 
         change_ratio = None
