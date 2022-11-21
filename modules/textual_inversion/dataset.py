@@ -138,9 +138,12 @@ class PersonalizedBase(Dataset):
         return entry
 
 class PersonalizedDataLoader(DataLoader):
-    def __init__(self, *args, **kwargs):
-        super(PersonalizedDataLoader, self).__init__(shuffle=True, drop_last=True, *args, **kwargs)
-        self.collate_fn = collate_wrapper
+    def __init__(self, dataset, latent_sampling_method="once", batch_size=1, pin_memory=False):
+        super(PersonalizedDataLoader, self).__init__(dataset, shuffle=True, drop_last=True, batch_size=batch_size, pin_memory=pin_memory)
+        if latent_sampling_method == "random":
+            self.collate_fn = collate_wrapper_random
+        else:
+            self.collate_fn = collate_wrapper
         
 
 class BatchLoader:
@@ -148,6 +151,8 @@ class BatchLoader:
         self.cond_text = [entry.cond_text for entry in data]
         self.cond = [entry.cond for entry in data]
         self.latent_sample = torch.stack([entry.latent_sample for entry in data]).squeeze(1)
+        #self.emb_index = [entry.emb_index for entry in data]
+        #print(self.latent_sample.device)
 
     def pin_memory(self):
         self.latent_sample = self.latent_sample.pin_memory()
@@ -155,3 +160,13 @@ class BatchLoader:
 
 def collate_wrapper(batch):
     return BatchLoader(batch)
+
+class BatchLoaderRandom(BatchLoader):
+    def __init__(self, data):
+        super().__init__(data)
+
+    def pin_memory(self):
+        return self
+
+def collate_wrapper_random(batch):
+    return BatchLoaderRandom(batch)

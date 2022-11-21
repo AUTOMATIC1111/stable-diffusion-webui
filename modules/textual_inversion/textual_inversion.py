@@ -277,7 +277,7 @@ def train_embedding(embedding_name, learn_rate, batch_size, gradient_step, data_
 
     latent_sampling_method = ds.latent_sampling_method
 
-    dl = modules.textual_inversion.dataset.PersonalizedDataLoader(ds, batch_size=ds.batch_size, pin_memory=False)
+    dl = modules.textual_inversion.dataset.PersonalizedDataLoader(ds, latent_sampling_method=latent_sampling_method, batch_size=ds.batch_size, pin_memory=pin_memory)
 
     if unload:
         shared.sd_model.first_stage_model.to(devices.cpu)
@@ -333,11 +333,6 @@ def train_embedding(embedding_name, learn_rate, batch_size, gradient_step, data_
                 # go back until we reach gradient accumulation steps
                 if (j + 1) % gradient_step != 0:
                     continue
-                #print(f"grad:{embedding.vec.grad.detach().cpu().abs().mean().item():.7f}")
-                #scaler.unscale_(optimizer)
-                #print(f"grad:{embedding.vec.grad.detach().cpu().abs().mean().item():.7f}")
-                #torch.nn.utils.clip_grad_norm_(embedding.vec, max_norm=1.0)
-                #print(f"grad:{embedding.vec.grad.detach().cpu().abs().mean().item():.7f}")
                 scaler.step(optimizer)
                 scaler.update()
                 embedding.step += 1
