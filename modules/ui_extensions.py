@@ -36,9 +36,9 @@ def apply_and_restart(disable_list, update_list):
             continue
 
         try:
-            ext.pull()
+            ext.fetch_and_reset_hard()
         except Exception:
-            print(f"Error pulling updates for {ext.name}:", file=sys.stderr)
+            print(f"Error getting updates for {ext.name}:", file=sys.stderr)
             print(traceback.format_exc(), file=sys.stderr)
 
     shared.opts.disabled_extensions = disabled
