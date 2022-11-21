@@ -1197,8 +1197,8 @@ def create_ui(wrap_gradio_gpu_call):
                 gr.HTML(value="<p>A merger of the two checkpoints will be generated in your <b>checkpoint</b> directory.</p>")
 
                 with gr.Row():
-                    primary_model_name = gr.Dropdown(modules.sd_models.checkpoint_tiles(), value=random.choice(modules.sd_models.checkpoint_tiles()), elem_id="modelmerger_primary_model_name", label="Primary model (A)")
-                    secondary_model_name = gr.Dropdown(modules.sd_models.checkpoint_tiles(), value=random.choice(modules.sd_models.checkpoint_tiles()), elem_id="modelmerger_secondary_model_name", label="Secondary model (B)")
+                    primary_model_name = gr.Dropdown(modules.sd_models.checkpoint_tiles(), elem_id="modelmerger_primary_model_name", label="Primary model (A)")
+                    secondary_model_name = gr.Dropdown(modules.sd_models.checkpoint_tiles(), elem_id="modelmerger_secondary_model_name", label="Secondary model (B)")
                     tertiary_model_name = gr.Dropdown(modules.sd_models.checkpoint_tiles(), elem_id="modelmerger_tertiary_model_name", label="Tertiary model (C)")
                 custom_name = gr.Textbox(label="Custom Name (Optional)")
                 interp_amount = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Multiplier (M) - set to 0 to get model A', value=0.3)
