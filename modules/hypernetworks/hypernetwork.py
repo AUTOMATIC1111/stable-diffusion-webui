@@ -18,6 +18,7 @@ from modules.textual_inversion.learn_schedule import LearnRateScheduler
 from torch import einsum
 from torch.nn.init import normal_, xavier_normal_, xavier_uniform_, kaiming_normal_, kaiming_uniform_, zeros_
 from PIL import ImageChops
+import colorsys
 
 from collections import defaultdict, deque
 from statistics import stdev, mean
@@ -368,7 +369,7 @@ def report_statistics(loss_info:dict):
 
 
 
-def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log_directory, training_width, training_height, steps, create_image_every, save_hypernetwork_every, template_file, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_batch_size, preview_batch_count, preview_cfg_scale, preview_seed, preview_width, preview_height):
+def train_hypernetwork(hypernetwork_name, learn_rate, max_image_differential, change_rate_weight, differential_halflife, differential_saturation_halflife, saturation_halflife, batch_size, data_root, log_directory, training_width, training_height, steps, create_image_every, save_hypernetwork_every, template_file, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_batch_size, preview_batch_count, preview_cfg_scale, preview_seed, preview_width, preview_height):
     # images allows training previews to have infotext. Importing it at the top causes a circular import problem.
     from modules import images
 
@@ -440,7 +441,8 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
     except (KeyError, IndexError):
         print("Failure to extract lr from", optimizer.state_dict())
         last_lr = None
-    scheduler = LearnRateScheduler(learn_rate, steps, initial_step, last_lr)
+
+    scheduler = LearnRateScheduler(learn_rate, max_image_differential, change_rate_weight, differential_halflife, differential_saturation_halflife, saturation_halflife, steps, initial_step, last_lr)
     
     # dataset loading may take a while, so input validations and early returns should be done before this
     shared.state.textinfo = f"Preparing dataset from {html.escape(data_root)}..."
@@ -491,7 +493,6 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
             del c
 
             losses[hypernetwork.step % losses.shape[0]] = loss.item()
-#            scheduler.apply_loss(losses[hypernetwork.step % losses.shape[0]])
             
             for entry in entries:
                 loss_dict[entry.filename].append(loss.item())
@@ -579,19 +580,30 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
                 shared.sd_model.cond_stage_model.to(devices.cpu)
                 shared.sd_model.first_stage_model.to(devices.cpu)
 
+            diff_img = None
             if image is not None:
                 shared.state.current_image = image
                 if last_image != None:
                     diff_img = ImageChops.difference(image, last_image)
-                    width, height = diff_img.size
-                    total = 0
-                    for i in range(0, width):
-                        for j in range(0, height):
-                            pixel = diff_img.getpixel( (i,j) )
-                            total += pixel[0] + pixel[1] + pixel[2]
-                    image_differential = total / (width * height) / 256 / 3
+                width, height = image.size
+                difference = 0
+                saturation = 0
+                for i in range(0, width):
+                    for j in range(0, height):
+                        if diff_img is not None:
+                            r, g, b = diff_img.getpixel( (i,j) )
+                            difference += r + g + b
+                        pixel = image.getpixel( (i,j) )
+                        r, g, b = (i/256 for i in pixel)
+                        h, s, v = colorsys.rgb_to_hsv(r, g, b)
+                        saturation += s
+                if last_image != None:
+                    image_differential = difference / (width * height) / 256 / 3
+                else:
+                    image_differential = None
+                saturation /= (width * height)
 
-                    scheduler.apply_image_differential(image_differential)
+                scheduler.apply_image_stats(optimizer, image_differential, saturation)
                 
                 last_saved_image, last_text_info = images.save_image(image, images_dir, "", p.seed, p.prompt, shared.opts.samples_format, processed.infotexts[0], p=p, forced_filename=forced_filename, save_to_dirs=False)
                 last_saved_image += f", prompt: {preview_text}"
