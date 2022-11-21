@@ -55,7 +55,7 @@ parser.add_argument("--ldsr-models-path", type=str, help="Path to directory with
 parser.add_argument("--clip-models-path", type=str, help="Path to directory with CLIP model file(s).", default=None)
 parser.add_argument("--xformers", action='store_true', help="enable xformers for cross attention layers")
 parser.add_argument("--force-enable-xformers", action='store_true', help="enable xformers for cross attention layers regardless of whether the checking code thinks you can run it; do not make bug reports if this fails to work")
-parser.add_argument("--deepdanbooru", action='store_true', help="enable deepdanbooru interrogator")
+parser.add_argument("--deepdanbooru", action='store_true', help="does not do anything")
 parser.add_argument("--opt-split-attention", action='store_true', help="force-enables Doggettx's cross-attention layer optimization. By default, it's on for torch cuda.")
 parser.add_argument("--opt-split-attention-invokeai", action='store_true', help="force-enables InvokeAI's cross-attention layer optimization. By default, it's on when cuda is unavailable.")
 parser.add_argument("--opt-split-attention-v1", action='store_true', help="enable older version of split attention optimization that does not consume all the VRAM it can find")
