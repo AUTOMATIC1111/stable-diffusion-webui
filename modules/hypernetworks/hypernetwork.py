@@ -12,7 +12,7 @@ import torch
 import tqdm
 from einops import rearrange, repeat
 from ldm.util import default
-from modules import devices, processing, sd_models, shared
+from modules import devices, processing, sd_models, shared, sd_samplers
 from modules.textual_inversion import textual_inversion
 from modules.textual_inversion.learn_schedule import LearnRateScheduler
 from torch import einsum
@@ -563,6 +563,7 @@ def train_hypernetwork(hypernetwork_name, learn_rate, max_image_differential, ch
                 p.sampler_index = preview_sampler_index
                 p.batch_size = preview_batch_size
                 p.batch_count = preview_batch_count
+                p.sampler_name = sd_samplers.samplers[preview_sampler_index].name
                 p.cfg_scale = preview_cfg_scale
                 p.seed = preview_seed
                 p.width = preview_width

@@ -329,3 +329,4 @@ def do_inpainting_hijack():
 
     ldm.models.diffusion.plms.PLMSSampler.p_sample_plms = p_sample_plms
     ldm.models.diffusion.plms.PLMSSampler.sample = sample_plms
+
