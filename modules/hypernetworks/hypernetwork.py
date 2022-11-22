@@ -435,8 +435,8 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, gradient_step,
         optimizer_name = hypernetwork.optimizer_name
     else:
         print(f"Optimizer type {hypernetwork.optimizer_name} is not defined!")
-    optimizer = torch.optim.AdamW(params=weights, lr=scheduler.learn_rate)
-    optimizer_name = 'AdamW'
+        optimizer = torch.optim.AdamW(params=weights, lr=scheduler.learn_rate)
+        optimizer_name = 'AdamW'
 
     if hypernetwork.optimizer_state_dict:  # This line must be changed if Optimizer type can be different from saved optimizer.
         try:
@@ -582,7 +582,7 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, gradient_step,
                 shared.state.textinfo = f"""
 <p>
 Loss: {loss_step:.7f}<br/>
-Step: {hypernetwork.step}<br/>
+Step: {steps_done}<br/>
 Last prompt: {html.escape(batch.cond_text[0])}<br/>
 Last saved hypernetwork: {html.escape(last_saved_file)}<br/>
 Last saved image: {html.escape(last_saved_image)}<br/>

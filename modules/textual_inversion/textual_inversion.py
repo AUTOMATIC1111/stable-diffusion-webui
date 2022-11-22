@@ -436,7 +436,7 @@ def train_embedding(embedding_name, learn_rate, batch_size, gradient_step, data_
                 shared.state.textinfo = f"""
 <p>
 Loss: {loss_step:.7f}<br/>
-Step: {embedding.step}<br/>
+Step: {steps_done}<br/>
 Last prompt: {html.escape(batch.cond_text[0])}<br/>
 Last saved embedding: {html.escape(last_saved_file)}<br/>
 Last saved image: {html.escape(last_saved_image)}<br/>
