@@ -16,6 +16,7 @@ from modules import devices, processing, sd_models, shared, sd_samplers
 from modules.textual_inversion import textual_inversion
 from modules.textual_inversion.learn_schedule import LearnRateScheduler
 from torch import einsum
+from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts, ExponentialLR
 from torch.nn.init import normal_, xavier_normal_, xavier_uniform_, kaiming_normal_, kaiming_uniform_, zeros_
 
 from collections import defaultdict, deque
@@ -215,14 +216,15 @@ class Hypernetwork:
         self.last_layer_dropout = state_dict.get('last_layer_dropout', False)
 
         optimizer_saved_dict = torch.load(self.filename + '.optim', map_location = 'cpu') if os.path.exists(self.filename + '.optim') else {}
-        self.optimizer_name = optimizer_saved_dict.get('optimizer_name', 'AdamW')
-        print(f"Optimizer name is {self.optimizer_name}")
+        self.optimizer_name = "AdamW"
         if sd_models.model_hash(filename) == optimizer_saved_dict.get('hash', None):
             self.optimizer_state_dict = optimizer_saved_dict.get('optimizer_state_dict', None)
         else:
             self.optimizer_state_dict = None
         if self.optimizer_state_dict:
+            self.optimizer_name = optimizer_saved_dict.get('optimizer_name', 'AdamW')
             print("Loaded existing optimizer from checkpoint")
+            print(f"Optimizer name is {self.optimizer_name}")
         else:
             print("No saved optimizer exists in checkpoint")
 
@@ -367,10 +369,18 @@ def report_statistics(loss_info:dict):
 
 
 
-def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log_directory, training_width, training_height, steps, create_image_every, save_hypernetwork_every, template_file, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height):
+def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log_directory, training_width, training_height, steps, create_image_every, save_hypernetwork_every, template_file, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height, use_beta_scheduler=False, beta_repeat_epoch=4000, min_lr=1e-7, gamma_rate=1):
     # images allows training previews to have infotext. Importing it at the top causes a circular import problem.
     from modules import images
-
+    try:
+        beta_repeat_epoch = int(beta_repeat_epoch)
+        assert beta_repeat_epoch > 0, f"Cannot use too small cycle {beta_repeat_epoch}!"
+        min_lr = float(min_lr)
+        assert min_lr < 1, f"Cannot use minimum lr with {min_lr}!"
+        gamma_rate = float(gamma_rate)
+        assert 0 <= gamma_rate <= 1, f"Cannot use gamma rate with {gamma_rate}!"
+    except ValueError:
+        raise RuntimeError("Cannot use advanced LR scheduler settings!")
     save_hypernetwork_every = save_hypernetwork_every or 0
     create_image_every = create_image_every or 0
     textual_inversion.validate_train_inputs(hypernetwork_name, learn_rate, batch_size, data_root, template_file, steps, save_hypernetwork_every, create_image_every, log_directory, name="hypernetwork")
@@ -445,7 +455,8 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
         except RuntimeError as e:
             print("Cannot resume from saved optimizer!")
             print(e)
-
+    scheduler_beta = CosineAnnealingWarmRestarts(optimizer=optimizer, T_0=beta_repeat_epoch, T_mult=1, eta_min=min_lr)
+    scheduler_gamma = ExponentialLR(optimizer=optimizer, gamma=gamma_rate)
     steps_without_grad = 0
 
     last_saved_file = "<none>"
@@ -458,9 +469,9 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
         if len(loss_dict) > 0:
             previous_mean_losses = [i[-1] for i in loss_dict.values()]
             previous_mean_loss = mean(previous_mean_losses)
-            
-        scheduler.apply(optimizer, hypernetwork.step)
-        if scheduler.finished:
+        if not use_beta_scheduler:
+            scheduler.apply(optimizer, hypernetwork.step)
+        if i + ititial_step > steps:
             break
 
         if shared.state.interrupted:
@@ -489,7 +500,10 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
             assert steps_without_grad < 10, 'no gradient found for the trained weight after backward() for 10 steps in a row; this is a bug; training cannot continue'
 
             optimizer.step()
-
+            if use_beta_scheduler:
+                scheduler_beta.step(hypernetwork.step)
+                scheduler_gamma.step(hypernetwork.step)
+                
         steps_done = hypernetwork.step + 1
 
         if torch.isnan(losses[hypernetwork.step % losses.shape[0]]): 
@@ -514,7 +528,7 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
 
         textual_inversion.write_loss(log_directory, "hypernetwork_loss.csv", hypernetwork.step, len(ds), {
             "loss": f"{previous_mean_loss:.7f}",
-            "learn_rate": scheduler.learn_rate
+            "learn_rate": scheduler.learn_rate if not use_beta_scheduler else scheduler_gamma.get_last_lr()
         })
 
         if images_dir is not None and steps_done % create_image_every == 0:
