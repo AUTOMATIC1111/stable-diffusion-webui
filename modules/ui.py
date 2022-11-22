@@ -1284,7 +1284,12 @@ def create_ui(wrap_gradio_gpu_call):
                     with gr.Row():
                         embedding_learn_rate = gr.Textbox(label='Embedding Learning rate', placeholder="Embedding Learning rate", value="0.005")
                         hypernetwork_learn_rate = gr.Textbox(label='Hypernetwork Learning rate', placeholder="Hypernetwork Learning rate", value="0.00001")
-
+                        use_beta_scheduler_checkbox = gr.Checkbox(label='Show advanced learn rate scheduler options(for Hypernetworks)')
+                    with gr.Row(visible=False) as beta_scheduler_options:
+                        use_beta_scheduler = gr.Checkbox(label='Uses CosineAnnealingWarmRestarts Scheduler')
+                        beta_repeat_epoch = gr.Textbox(label='Epoch for cycle', placeholder="Cycles every nth epoch", value="4000")
+                        min_lr = gr.Textbox(label='Minimum learning rate for beta scheduler', placeholder="restricts decay value, but does not restrict gamma rate decay", value="1e-7")
+                        gamma_rate = gr.Textbox(label='Separate learning rate decay for ExponentialLR', placeholder="Value should be in (0-1]", value="1")
                     batch_size = gr.Number(label='Batch size', value=1, precision=0)
                     dataset_directory = gr.Textbox(label='Dataset directory', placeholder="Path to directory with input images")
                     log_directory = gr.Textbox(label='Log directory', placeholder="Path to directory where to write outputs", value="textual_inversion")
@@ -1301,7 +1306,11 @@ def create_ui(wrap_gradio_gpu_call):
                         interrupt_training = gr.Button(value="Interrupt")
                         train_hypernetwork = gr.Button(value="Train Hypernetwork", variant='primary')
                         train_embedding = gr.Button(value="Train Embedding", variant='primary')
-
+                    use_beta_scheduler_checkbox.change(
+                        fn=lambda show: gr_show(show),
+                        inputs=[use_beta_scheduler_checkbox],
+                        outputs=[beta_scheduler_options],
+                    )
                 params = script_callbacks.UiTrainTabParams(txt2img_preview_params)
 
                 script_callbacks.ui_train_tabs_callback(params)
@@ -1395,6 +1404,10 @@ def create_ui(wrap_gradio_gpu_call):
                 save_image_with_stored_embedding,
                 preview_from_txt2img,
                 *txt2img_preview_params,
+                use_beta_scheduler,
+                beta_repeat_epoch,
+                min_lr,
+                gamma_rate
             ],
             outputs=[
                 ti_output,
