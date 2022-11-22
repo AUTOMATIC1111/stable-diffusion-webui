@@ -305,7 +305,7 @@ class Api:
         styleList = []
         for k in shared.prompt_styles.styles:
             style = shared.prompt_styles.styles[k]
-            styleList.append({"name":style[0], "prompt": style[1], "negative_prompr": style[2]})
+            styleList.append({"name":style[0], "prompt": style[1], "negative_prompt": style[2]})
 
         return styleList
 
