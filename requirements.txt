@@ -28,3 +28,4 @@ kornia
 lark
 inflection
 GitPython
+torchsde
