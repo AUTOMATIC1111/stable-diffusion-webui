@@ -28,4 +28,3 @@ kornia
 lark
 inflection
 GitPython
-safetensors
