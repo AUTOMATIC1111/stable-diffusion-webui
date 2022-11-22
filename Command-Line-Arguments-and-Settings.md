@@ -59,7 +59,7 @@ Use `--port xxxx` to make the server listen on a specific port, xxxx being the w
 --enable-console-prompts | None | False				| print prompts to console when generating with txt2img and img2img |
 --api | None | False | launch webui with API |
 --nowebui | None | False | only launch the API, without the UI |
---ui-debug-mode | None | Fales | Don't load model to quickly launch UI |
+--ui-debug-mode | None | False | Don't load model to quickly launch UI |
 --device-id | DEVICE_ID | None | Select the default CUDA device to use (export CUDA_VISIBLE_DEVICES=0,1,etc might be needed before) |
 --administrator | None | False | Administrator rights |
 | **PERFORMANCE** |
