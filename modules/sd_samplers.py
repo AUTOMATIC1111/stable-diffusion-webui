@@ -46,16 +46,23 @@ all_samplers = [
     SamplerData('DDIM', lambda model: VanillaStableDiffusionSampler(ldm.models.diffusion.ddim.DDIMSampler, model), [], {}),
     SamplerData('PLMS', lambda model: VanillaStableDiffusionSampler(ldm.models.diffusion.plms.PLMSSampler, model), [], {}),
 ]
+all_samplers_map = {x.name: x for x in all_samplers}
 
 samplers = []
 samplers_for_img2img = []
 
 
-def create_sampler_with_index(list_of_configs, index, model):
-    config = list_of_configs[index]
+def create_sampler(name, model):
+    if name is not None:
+        config = all_samplers_map.get(name, None)
+    else:
+        config = all_samplers[0]
+
+    assert config is not None, f'bad sampler name: {name}'
+
     sampler = config.constructor(model)
     sampler.config = config
-    
+
     return sampler
 
 

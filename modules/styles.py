@@ -65,17 +65,6 @@ class StyleDatabase:
     def apply_negative_styles_to_prompt(self, prompt, styles):
         return apply_styles_to_prompt(prompt, [self.styles.get(x, self.no_style).negative_prompt for x in styles])
 
-    def apply_styles(self, p: StableDiffusionProcessing) -> None:
-        if isinstance(p.prompt, list):
-            p.prompt = [self.apply_styles_to_prompt(prompt, p.styles) for prompt in p.prompt]
-        else:
-            p.prompt = self.apply_styles_to_prompt(p.prompt, p.styles)
-
-        if isinstance(p.negative_prompt, list):
-            p.negative_prompt = [self.apply_negative_styles_to_prompt(prompt, p.styles) for prompt in p.negative_prompt]
-        else:
-            p.negative_prompt = self.apply_negative_styles_to_prompt(p.negative_prompt, p.styles)
-
     def save_styles(self, path: str) -> None:
         # Write to temporary file first, so we don't nuke the file if something goes wrong
         fd, temp_path = tempfile.mkstemp(".csv")
