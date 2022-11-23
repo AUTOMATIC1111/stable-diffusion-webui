@@ -112,6 +112,9 @@ class Api:
         raise HTTPException(status_code=401, detail="Incorrect username or password", headers={"WWW-Authenticate": "Basic"})
 
     def text2imgapi(self, txt2imgreq: StableDiffusionTxt2ImgProcessingAPI):
+        if txt2imgreq.override_settings['sd_hypernetwork']:
+            txt2imgreq.override_settings['sd_hypernetwork'] = find_closest_hypernetwork_name(txt2imgreq.override_settings['sd_hypernetwork'])
+
         populate = txt2imgreq.copy(update={ # Override __init__ params
             "sd_model": shared.sd_model,
             "sampler_name": validate_sampler_name(txt2imgreq.sampler_index),
@@ -138,12 +141,6 @@ class Api:
                 None
             )
             sd_models.reload_model_weights(None, checkpoint_info)
-            
-            # set hypernet
-            if txt2imgreq.override_settings['sd_hypernetwork']:
-                load_hypernetwork(find_closest_hypernetwork_name(txt2imgreq.override_settings['sd_hypernetwork']))
-            else:
-                shared.loaded_hypernetwork = None
             
             gpu_tensor = None
             if txt2imgreq.override_tensor:
