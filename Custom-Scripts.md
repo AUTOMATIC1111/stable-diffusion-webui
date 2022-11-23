@@ -390,6 +390,16 @@ https://github.com/antis0007/sd-webui-multiple-hypernetworks
 
 Adds the ability to apply multiple hypernetworks at once. Overrides the hijack, optimization and CrossAttention forward functions in order to apply multiple hypernetworks sequentially, with different weights.
 
+## Hypernetwork Structure(.hns)/Variable Dropout/ Monkey Patches
+https://github.com/aria1th/Hypernetwork-MonkeyPatch-Extension
+
+Adds the ability to apply Hypernetwork Structure, as defining it in .hns file. see [here](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/4334) for detailed information. 
+
+Adds the ability to use proper variable dropout rate, like 0.05. Also fixes issues with using hypernetwork right after training.
+
+Adds creating beta-hypernetwork(dropout), and beta-training which allows automatic cosine annealing, and no-crop usage of original images.
+
+
 ## Saving steps of the sampling process
 
 This script will save steps of the sampling process to a directory.
