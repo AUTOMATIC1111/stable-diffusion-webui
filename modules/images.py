@@ -305,6 +305,7 @@ class FilenameGenerator:
         'styles': lambda self: self.p and sanitize_filename_part(", ".join([style for style in self.p.styles if not style == "None"]) or "None", replace_spaces=False),
         'sampler': lambda self: self.p and sanitize_filename_part(self.p.sampler_name, replace_spaces=False),
         'model_hash': lambda self: getattr(self.p, "sd_model_hash", shared.sd_model.sd_model_hash),
+        'model_name': lambda self: shared.sd_model.sd_checkpoint_info.model_name,
         'date': lambda self: datetime.datetime.now().strftime('%Y-%m-%d'),
         'datetime': lambda self, *args: self.datetime(*args),  # accepts formats: [datetime], [datetime<Format>], [datetime<Format><Time Zone>]
         'job_timestamp': lambda self: getattr(self.p, "job_timestamp", shared.state.job_timestamp),
