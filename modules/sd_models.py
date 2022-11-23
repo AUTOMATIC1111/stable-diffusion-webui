@@ -3,6 +3,7 @@ import os.path
 import sys
 import gc
 from collections import namedtuple
+from copy import deepcopy
 import torch
 import re
 from omegaconf import OmegaConf
@@ -184,7 +185,7 @@ def load_model_weights(model, checkpoint_info, vae_file="auto"):
         
         if cache_enabled:
             # cache newly loaded model
-            checkpoints_loaded[checkpoint_info] = model.state_dict().copy()
+            checkpoints_loaded[checkpoint_info] = deepcopy(model.state_dict())
 
         if shared.cmd_opts.opt_channelslast:
             model.to(memory_format=torch.channels_last)
