@@ -2,6 +2,9 @@ import os
 import sys
 import traceback
 
+from collections import defaultdict, deque
+from statistics import stdev, mean
+
 import torch
 import tqdm
 import html
@@ -224,6 +227,32 @@ def validate_train_inputs(model_name, learn_rate, batch_size, data_root, templat
     if save_model_every or create_image_every:
         assert log_directory, "Log directory is empty"
 
+def statistics(data):
+    if len(data) < 2:
+        std = 0
+    else:
+        std = stdev(data)
+    total_information = f"loss:{mean(data):.3f}" + u"\u00B1" + f"({std/ (len(data) ** 0.5):.3f})"
+    recent_data = data[-32:]
+    if len(recent_data) < 2:
+        std = 0
+    else:
+        std = stdev(recent_data)
+    recent_information = f"recent 32 loss:{mean(recent_data):.3f}" + u"\u00B1" + f"({std / (len(recent_data) ** 0.5):.3f})"
+    return total_information, recent_information
+
+
+def report_statistics(loss_info:dict):
+    keys = sorted(loss_info.keys(), key=lambda x: sum(loss_info[x]) / len(loss_info[x]))
+    for key in keys:
+        try:
+            print("Loss statistics for file " + key)
+            info, recent = statistics(list(loss_info[key]))
+            print(info)
+            print(recent)
+        except Exception as e:
+            print(e)
+
 def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_directory, training_width, training_height, steps, create_image_every, save_embedding_every, template_file, save_image_with_stored_embedding, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height):
     save_embedding_every = save_embedding_every or 0
     create_image_every = create_image_every or 0
@@ -279,7 +308,12 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
     embedding.vec.requires_grad = True
     optimizer = torch.optim.AdamW([embedding.vec], lr=scheduler.learn_rate)
 
-    losses = torch.zeros((32,))
+    size = len(ds.indexes)
+    loss_dict = defaultdict(lambda : deque(maxlen = 1024))
+    losses = torch.zeros((size,))
+    previous_mean_losses = [0]
+    previous_mean_loss = 0
+    print("Mean loss of {} elements".format(size))
 
     last_saved_file = "<none>"
     last_saved_image = "<none>"
@@ -288,6 +322,11 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
 
     pbar = tqdm.tqdm(enumerate(ds), total=steps-ititial_step)
     for i, entries in pbar:
+    
+        if len(loss_dict) > 0:
+            previous_mean_losses = [i[-1] for i in loss_dict.values()]
+            previous_mean_loss = mean(previous_mean_losses)
+            
         embedding.step = i + ititial_step
 
         scheduler.apply(optimizer, embedding.step)
@@ -304,6 +343,8 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
             del x
 
             losses[embedding.step % losses.shape[0]] = loss.item()
+            for entry in entries:
+                loss_dict[entry.filename].append(loss.item())
 
             optimizer.zero_grad()
             loss.backward()
@@ -314,7 +355,14 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
         epoch_num = embedding.step // len(ds)
         epoch_step = embedding.step % len(ds)
 
-        pbar.set_description(f"[Epoch {epoch_num}: {epoch_step+1}/{len(ds)}]loss: {losses.mean():.7f}")
+
+        if len(previous_mean_losses) > 1:
+            std = stdev(previous_mean_losses)
+        else:
+            std = 0
+
+        pbar.set_description(f"[Epoch {epoch_num}: {epoch_step}/{len(ds)}]dataset loss:{mean(previous_mean_losses):.3f}" + u"\u00B1" + f"({std / (len(previous_mean_losses) ** 0.5):.3f})")
+
 
         if embedding_dir is not None and steps_done % save_embedding_every == 0:
             # Before saving, change name to match current checkpoint.
@@ -324,7 +372,7 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
             embedding_yet_to_be_embedded = True
 
         write_loss(log_directory, "textual_inversion_loss.csv", embedding.step, len(ds), {
-            "loss": f"{losses.mean():.7f}",
+            "loss": f"{previous_mean_loss:.7f}",
             "learn_rate": scheduler.learn_rate
         })
 
@@ -399,13 +447,15 @@ def train_embedding(embedding_name, learn_rate, batch_size, data_root, log_direc
 
         shared.state.textinfo = f"""
 <p>
-Loss: {losses.mean():.7f}<br/>
+Loss: {previous_mean_loss:.7f}<br/>
 Step: {embedding.step}<br/>
 Last prompt: {html.escape(entries[0].cond_text)}<br/>
 Last saved embedding: {html.escape(last_saved_file)}<br/>
 Last saved image: {html.escape(last_saved_image)}<br/>
 </p>
 """
+
+    report_statistics(loss_dict)
 
     filename = os.path.join(shared.cmd_opts.embeddings_dir, f'{embedding_name}.pt')
     save_embedding(embedding, checkpoint, embedding_name, filename, remove_cached_checksum=True)
