@@ -380,7 +380,7 @@ options_templates.update(options_section(('ui', "User interface"), {
     "js_modal_lightbox": OptionInfo(True, "Enable full page image viewer"),
     "js_modal_lightbox_initially_zoomed": OptionInfo(True, "Show images zoomed in by default in full page image viewer"),
     "show_progress_in_title": OptionInfo(True, "Show generation progress in window title."),
-    'quicksettings': OptionInfo("sd_model_checkpoint", "Quicksettings list"),
+    'quicksettings': OptionInfo("sd_model_checkpoint, v_sampling", "Quicksettings list"),
     'localization': OptionInfo("None", "Localization (requires restart)", gr.Dropdown, lambda: {"choices": ["None"] + list(localization.localizations.keys())}, refresh=lambda: localization.list_localizations(cmd_opts.localizations_dir)),
 }))
 
@@ -393,6 +393,7 @@ options_templates.update(options_section(('sampler-params', "Sampler parameters"
     's_tmin':  OptionInfo(0.0, "sigma tmin",  gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     's_noise': OptionInfo(1.0, "sigma noise", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     'eta_noise_seed_delta': OptionInfo(0, "Eta noise seed delta", gr.Number, {"precision": 0}),
+    "v_sampling": OptionInfo(False, "Use V-prediction"),
 }))
 
 options_templates.update(options_section((None, "Hidden options"), {
