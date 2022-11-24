@@ -143,7 +143,7 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
             self.comma_token = [v for k, v in self.tokenizer.get_vocab().items() if k == ',</w>'][0]
             tokens_with_parens = [(k, v) for k, v in self.tokenizer.get_vocab().items() if '(' in k or ')' in k or '[' in k or ']' in k]
         else:
-            self.tokenizer = self.tokenizer = open_clip.tokenizer._tokenizer
+            self.tokenizer = open_clip.tokenizer._tokenizer
 
             self.id_sot = self.tokenizer.encoder['<start_of_text>']
             self.id_eot = self.tokenizer.encoder['<end_of_text>']
@@ -174,7 +174,7 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
             parsed = [[line, 1.0]]
 
         if hasattr(self.wrapped, "tokenizer"):
-            tokenized = self.wrapped.tokenizer([text for text, _ in parsed], truncation=False, add_special_tokens=False)["input_ids"]
+            tokenized = self.tokenizer([text for text, _ in parsed], truncation=False, add_special_tokens=False)["input_ids"]
         else:
             tokenized = list(map(self.tokenizer.encode, [text for text, _ in parsed]))
 
@@ -256,8 +256,6 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
         return batch_multipliers, remade_batch_tokens, used_custom_terms, hijack_comments, hijack_fixes, token_count
 
     def process_text_old(self, text):
-        id_start = self.wrapped.tokenizer.bos_token_id
-        id_end = self.wrapped.tokenizer.eos_token_id
         maxlen = self.wrapped.max_length  # you get to stay at 77
         used_custom_terms = []
         remade_batch_tokens = []
@@ -310,8 +308,8 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
                     hijack_comments.append(f"Warning: too many input tokens; some ({len(overflowing_words)}) have been truncated:\n{overflowing_text}\n")
 
                 token_count = len(remade_tokens)
-                remade_tokens = remade_tokens + [id_end] * (maxlen - 2 - len(remade_tokens))
-                remade_tokens = [id_start] + remade_tokens[0:maxlen - 2] + [id_end]
+                remade_tokens = remade_tokens + [self.id_eot] * (maxlen - 2 - len(remade_tokens))
+                remade_tokens = [self.id_sot] + remade_tokens[0:maxlen - 2] + [self.id_eot]
                 cache[tuple_tokens] = (remade_tokens, fixes, multipliers)
 
             multipliers = multipliers + [1.0] * (maxlen - 2 - len(multipliers))
@@ -359,7 +357,7 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
                     tokens.append(remade_batch_tokens[j][:75])
                     multipliers.append(batch_multipliers[j][:75])
                 else:
-                    tokens.append([self.wrapped.tokenizer.eos_token_id] * 75)
+                    tokens.append([self.id_eot] * 75)
                     multipliers.append([1.0] * 75)
 
             z1 = self.process_tokens(tokens, multipliers)
@@ -385,6 +383,7 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
             else:
                 z = outputs.last_hidden_state
         else:
+            self.wrapped.layer_idx = opts.CLIP_stop_at_last_layers
             z = self.wrapped.encode_with_transformer(tokens)
 
         # restoring original mean is likely not correct, but it seems to work well to prevent artifacts that happen otherwise
