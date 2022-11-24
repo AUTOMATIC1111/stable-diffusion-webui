@@ -194,6 +194,12 @@
 			"tags": ["script", "tab"]
 		},
 		{
+			"name": "multi-subject-render",
+			"url": "https://github.com/Extraltodeus/multi-subject-render.git",
+			"description": "It is a depth aware extension that can help to create multiple complex subjects on a single image. It generates a background, then multiple foreground subjects, cuts their backgrounds after a depth analysis, paste them onto the background and finally does an img2img for a clean finish.",
+			"tags": ["script"]
+		},
+		{
 			"name": "zh_CN Localization",
 			"url": "https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN",
 			"description": "Simplified Chinese localization",
