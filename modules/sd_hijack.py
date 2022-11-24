@@ -70,10 +70,10 @@ class StableDiffusionModelHijack:
     embedding_db = modules.textual_inversion.textual_inversion.EmbeddingDatabase(cmd_opts.embeddings_dir)
 
     def hijack(self, m):
-        model_embeddings = m.cond_stage_model.transformer.text_model.embeddings
+        #model_embeddings = m.cond_stage_model.transformer.text_model.embeddings
 
-        model_embeddings.token_embedding = EmbeddingsWithFixes(model_embeddings.token_embedding, self)
-        m.cond_stage_model = FrozenCLIPEmbedderWithCustomWords(m.cond_stage_model, self)
+        #model_embeddings.token_embedding = EmbeddingsWithFixes(model_embeddings.token_embedding, self)
+        #m.cond_stage_model = FrozenCLIPEmbedderWithCustomWords(m.cond_stage_model, self)
 
         self.clip = m.cond_stage_model
 
@@ -92,9 +92,9 @@ class StableDiffusionModelHijack:
         if type(m.cond_stage_model) == FrozenCLIPEmbedderWithCustomWords:
             m.cond_stage_model = m.cond_stage_model.wrapped
 
-        model_embeddings = m.cond_stage_model.transformer.text_model.embeddings
-        if type(model_embeddings.token_embedding) == EmbeddingsWithFixes:
-            model_embeddings.token_embedding = model_embeddings.token_embedding.wrapped
+        #model_embeddings = m.cond_stage_model.transformer.text_model.embeddings
+        #if type(model_embeddings.token_embedding) == EmbeddingsWithFixes:
+        #    model_embeddings.token_embedding = model_embeddings.token_embedding.wrapped
 
         self.apply_circular(False)
         self.layers = None

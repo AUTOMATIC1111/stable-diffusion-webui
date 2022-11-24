@@ -350,7 +350,7 @@ class TorchHijack:
 
 class KDiffusionSampler:
     def __init__(self, funcname, sd_model):
-        self.model_wrap = k_diffusion.external.CompVisDenoiser(sd_model, quantize=shared.opts.enable_quantization)
+        self.model_wrap = k_diffusion.external.CompVisVDenoiser(sd_model, quantize=shared.opts.enable_quantization)
         self.funcname = funcname
         self.func = getattr(k_diffusion.sampling, self.funcname)
         self.extra_params = sampler_extra_params.get(funcname, [])
