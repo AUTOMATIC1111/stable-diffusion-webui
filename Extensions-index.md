@@ -92,6 +92,12 @@
 			"tags": ["script", "ads"]
 		},
 		{
+			"name": "StylePile",
+			"url": "https://github.com/some9000/StylePile",
+			"description": "An easy way to mix and match elements to prompts that affect the style of the result.",
+			"tags": ["script"]
+		},
+		{
 			"name": "Booru tag autocompletion",
 			"url": "https://github.com/DominikDoom/a1111-sd-webui-tagcomplete",
 			"description": "Displays autocompletion hints for tags from image booru boards such as Danbooru. Uses local tag CSV files and includes a config for customization.",
