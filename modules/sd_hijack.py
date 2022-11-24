@@ -265,7 +265,10 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
         token_count = 0
 
         cache = {}
-        batch_tokens = self.wrapped.tokenizer(text, truncation=False, add_special_tokens=False)["input_ids"]
+        if hasattr(self.wrapped, "tokenizer"):
+            batch_tokens = self.wrapped.tokenizer(text, truncation=False, add_special_tokens=False)["input_ids"]
+        else:
+            batch_tokens = list(map(self.tokenizer.encode, text))
         batch_multipliers = []
         for tokens in batch_tokens:
             tuple_tokens = tuple(tokens)
