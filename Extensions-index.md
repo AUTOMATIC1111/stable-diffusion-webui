@@ -225,7 +225,7 @@
 		},
 		{
 			"name": "ja_JP Localization",
-			"url": "https://github.com/yuuki76/webui-localization-ja_JP",
+			"url": "https://github.com/Katsuyuki-Karasawa/stable-diffusion-webui-localization-ja_JP",
 			"description": "Japanese localization",
 			"tags": ["localization"]
 		},
