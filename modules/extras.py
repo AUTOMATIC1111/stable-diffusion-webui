@@ -233,6 +233,20 @@ def run_pnginfo(image):
 
     geninfo = items.get('parameters', geninfo)
 
+    # nai prompt
+    if "Software" in items.keys() and items["Software"] == "NovelAI":
+        import json
+        json_info = json.loads(items["Comment"])
+        geninfo = f'{items["Description"]}\r\nNegative prompt: {json_info["uc"]}\r\n'
+        sampler = "Euler a"
+        if json_info["sampler"] == "k_euler_ancestral":
+            sampler = "Euler a"
+        elif json_info["sampler"] == "k_euler":
+            sampler = "Euler"
+        model_hash = '925997e9'  # assuming this is the correct model hash
+        # not sure with noise and strength parameter
+        geninfo += f'Steps: {json_info["steps"]}, Sampler: {sampler}, CFG scale: {json_info["scale"]}, Seed: {json_info["seed"]}, Size: {image.width}x{image.height}, Model hash: {model_hash}'  # , Denoising strength: {json_info["noise"]}'
+
     info = ''
     for key, text in items.items():
         info += f"""
