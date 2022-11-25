@@ -264,7 +264,7 @@ def load_model(checkpoint_info=None):
 
     sd_config = OmegaConf.load(checkpoint_info.config)
     
-    # check if the model uses v-prediction (currently only the 768x768 model does)
+    # check if the model uses v-prediction (the 768x768 model and x4 upscaler do)
     # see https://arxiv.org/abs/2202.00512
     shared.opts.v_sampling = sd_config.get("model.params.parameterization") == "v"
 
