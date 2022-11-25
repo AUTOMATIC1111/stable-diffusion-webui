@@ -53,12 +53,12 @@ def setup_for_low_vram(sd_model, use_medvram):
 
     # remove three big modules, cond, first_stage, and unet from the model and then
     # send the model to GPU. Then put modules back. the modules will be in CPU.
+    # cond_stage_model.transformer doesn't exist for v2 models
     if hasattr(sd_model.cond_stage_model, "transformer"):
         stored = sd_model.cond_stage_model.transformer, sd_model.first_stage_model, sd_model.model
         sd_model.cond_stage_model.transformer, sd_model.first_stage_model, sd_model.model = None, None, None
         sd_model.to(devices.device)
         sd_model.cond_stage_model.transformer, sd_model.first_stage_model, sd_model.model = stored
-
         # register hooks for those the first two models
         sd_model.cond_stage_model.transformer.register_forward_pre_hook(send_me_to_gpu)
         sd_model.first_stage_model.register_forward_pre_hook(send_me_to_gpu)
@@ -66,15 +66,17 @@ def setup_for_low_vram(sd_model, use_medvram):
         sd_model.first_stage_model.decode = first_stage_model_decode_wrap
         parents[sd_model.cond_stage_model.transformer] = sd_model.cond_stage_model
     else:
-        # TODO: figure out how to unload the cond model when it's openclip instead of clip
-        stored = sd_model.first_stage_model, sd_model.model
-        sd_model.first_stage_model, sd_model.model = None, None
+        stored = sd_model.cond_stage_model, sd_model.first_stage_model, sd_model.model
+        sd_model.cond_stage_model, sd_model.first_stage_model, sd_model.model = None, None, None
         sd_model.to(devices.device)
-        sd_model.first_stage_model, sd_model.model = stored
+        sd_model.cond_stage_model, sd_model.first_stage_model, sd_model.model = stored
 
+        # register hooks for those the first two models
+        sd_model.cond_stage_model.register_forward_pre_hook(send_me_to_gpu)
         sd_model.first_stage_model.register_forward_pre_hook(send_me_to_gpu)
         sd_model.first_stage_model.encode = first_stage_model_encode_wrap
         sd_model.first_stage_model.decode = first_stage_model_decode_wrap
+        sd_model.first_stage_model.register_forward_pre_hook(send_me_to_gpu)
 
     if use_medvram:
         sd_model.model.register_forward_pre_hook(send_me_to_gpu)

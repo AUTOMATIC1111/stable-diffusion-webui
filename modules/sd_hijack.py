@@ -386,6 +386,7 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
             else:
                 z = outputs.last_hidden_state
         else:
+            self.wrapped.to(devices.device) # Prevent RuntimeError: Expected all tensors to be on the same device
             self.wrapped.layer_idx = opts.CLIP_stop_at_last_layers
             z = self.wrapped.encode_with_transformer(tokens)
 
