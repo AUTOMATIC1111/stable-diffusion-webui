@@ -249,7 +249,7 @@ def run_pnginfo(image):
     return '', geninfo, info
 
 
-def run_modelmerger(primary_model_name, secondary_model_name, teritary_model_name, interp_method, multiplier, save_as_half, custom_name):
+def run_modelmerger(primary_model_name, secondary_model_name, tertiary_model_name, interp_method, multiplier, save_as_half, custom_name):
     def weighted_sum(theta0, theta1, alpha):
         return ((1 - alpha) * theta0) + (alpha * theta1)
 
@@ -259,49 +259,69 @@ def run_modelmerger(primary_model_name, secondary_model_name, teritary_model_nam
     def add_difference(theta0, theta1_2_diff, alpha):
         return theta0 + (alpha * theta1_2_diff)
 
-    primary_model_info = sd_models.checkpoints_list[primary_model_name]
-    secondary_model_info = sd_models.checkpoints_list[secondary_model_name]
-    teritary_model_info = sd_models.checkpoints_list.get(teritary_model_name, None)
-
-    print(f"Loading {primary_model_info.filename}...")
-    primary_model = torch.load(primary_model_info.filename, map_location='cpu')
-    theta_0 = sd_models.get_state_dict_from_checkpoint(primary_model)
-
-    print(f"Loading {secondary_model_info.filename}...")
-    secondary_model = torch.load(secondary_model_info.filename, map_location='cpu')
-    theta_1 = sd_models.get_state_dict_from_checkpoint(secondary_model)
-
-    if teritary_model_info is not None:
-        print(f"Loading {teritary_model_info.filename}...")
-        teritary_model = torch.load(teritary_model_info.filename, map_location='cpu')
-        theta_2 = sd_models.get_state_dict_from_checkpoint(teritary_model)
-    else:
-        teritary_model = None
-        theta_2 = None
-
     theta_funcs = {
         "Weighted sum": (None, weighted_sum),
         "Add difference": (get_difference, add_difference),
     }
+
     theta_func1, theta_func2 = theta_funcs[interp_method]
+    
+    # Load info for A and B as they're always required.
+    primary_model_info = sd_models.checkpoints_list[primary_model_name]
+    secondary_model_info = sd_models.checkpoints_list[secondary_model_name]
+    b_loaded = False
 
-    print(f"Merging...")
+    print(f"Interpolation method: {interp_method}")
+    print(f"Merging (Step 1/2)...")
 
-    if theta_func1:
-        for key in tqdm.tqdm(theta_1.keys()):
-            if 'model' in key:
-                if key in theta_2:
-                    t2 = theta_2.get(key, torch.zeros_like(theta_1[key]))
-                    theta_1[key] = theta_func1(theta_1[key], t2)
-                else:
-                    theta_1[key] = torch.zeros_like(theta_1[key])
-    del theta_2, teritary_model
+    if interp_method == "Add difference":
+
+        if tertiary_model_name != "":     
+
+            # Load models B and C.
+            print(f"Loading secondary model (B): {secondary_model_info.filename}...")
+            secondary_model = torch.load(secondary_model_info.filename, map_location='cpu')
+            theta_1 = sd_models.get_state_dict_from_checkpoint(secondary_model)
+            b_loaded = True
+
+            tertiary_model_info = sd_models.checkpoints_list.get(tertiary_model_name, None)
+            if tertiary_model_info is not None:
+                print(f"Loading tertiary model (C): {tertiary_model_info.filename}...")
+                tertiary_model = torch.load(tertiary_model_info.filename, map_location='cpu')
+                theta_2 = sd_models.get_state_dict_from_checkpoint(tertiary_model)
+            else:
+                tertiary_model = None
+                theta_2 = None
+            
+            if theta_func1:
+                for key in tqdm.tqdm(theta_1.keys()):
+                    if 'model' in key:
+                        if key in theta_2:
+                            t2 = theta_2.get(key, torch.zeros_like(theta_1[key]))
+                            theta_1[key] = theta_func1(theta_1[key], t2)
+                        else:
+                            theta_1[key] = torch.zeros_like(theta_1[key])
+            del theta_2, tertiary_model
+        else:
+            print(f"No model selected for C.")
+            return ["Select a tertiary model (C) or consider using 'Weighted sum'"] + [gr.Dropdown.update(choices=sd_models.checkpoint_tiles()) for _ in range(4)]
+
+    # Load model A.
+    print(f"Loading primary model (A): {primary_model_info.filename}...")
+    primary_model = torch.load(primary_model_info.filename, map_location='cpu')
+    theta_0 = sd_models.get_state_dict_from_checkpoint(primary_model)
+
+    # Load model B if we haven't loaded it yet to operate with C.
+    if b_loaded == False:
+        print(f"Loading secondary model (B): {secondary_model_info.filename}...")
+        secondary_model = torch.load(secondary_model_info.filename, map_location='cpu')
+        theta_1 = sd_models.get_state_dict_from_checkpoint(secondary_model)
+
+    print(f"Merging (Step 2/2)...")
 
     for key in tqdm.tqdm(theta_0.keys()):
         if 'model' in key and key in theta_1:
-
             theta_0[key] = theta_func2(theta_0[key], theta_1[key], multiplier)
-
             if save_as_half:
                 theta_0[key] = theta_0[key].half()
 

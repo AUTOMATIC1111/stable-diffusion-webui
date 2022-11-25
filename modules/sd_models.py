@@ -213,6 +213,8 @@ def load_model_weights(model, checkpoint_info, vae_file="auto"):
     model.sd_model_checkpoint = checkpoint_file
     model.sd_checkpoint_info = checkpoint_info
 
+    sd_vae.delete_base_vae()
+    sd_vae.clear_loaded_vae()
     vae_file = sd_vae.resolve_vae(checkpoint_file, vae_file=vae_file)
     sd_vae.load_vae(model, vae_file)
 
@@ -243,6 +245,9 @@ def load_model(checkpoint_info=None):
         checkpoint_info = checkpoint_info._replace(config=checkpoint_info.config.replace(".yaml", "-inpainting.yaml"))
 
     do_inpainting_hijack()
+
+    if shared.cmd_opts.no_half:
+        sd_config.model.params.unet_config.params.use_fp16 = False
 
     sd_model = instantiate_from_config(sd_config.model)
     load_model_weights(sd_model, checkpoint_info)

@@ -70,11 +70,12 @@ def build_samplers_dict():
 
 
 def apply_sampler(p, x, xs):
-    sampler_index = build_samplers_dict().get(x.lower(), None)
+    sampler_dict = build_samplers_dict()
+    sampler_index = sampler_dict.get(x.lower(), None)
     if sampler_index is None:
         raise RuntimeError(f"Unknown sampler: {x}")
 
-    p.sampler_index = sampler_index
+    p.sampler_name = sd_samplers.all_samplers[sampler_index].name
 
 
 def confirm_samplers(p, xs):
@@ -393,6 +394,6 @@ class Script(scripts.Script):
             )
 
         if opts.grid_save:
-            images.save_image(processed.images[0], p.outpath_grids, "xy_grid", prompt=p.prompt, seed=processed.seed, grid=True, p=p)
+            images.save_image(processed.images[0], p.outpath_grids, "xy_grid", extension=opts.grid_format, prompt=p.prompt, seed=processed.seed, grid=True, p=p)
 
         return processed
