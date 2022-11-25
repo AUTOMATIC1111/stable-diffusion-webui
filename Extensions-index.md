@@ -200,6 +200,12 @@
 			"tags": ["script"]
 		},
 		{
+			"name": "Visualize Cross-Attention",
+			"url": "https://github.com/benkyoujouzu/stable-diffusion-webui-visualize-cross-attention-extension.git",
+			"description": "Generates highlighted sectors of a submitted input image, based on input prompts. Use with tokenizer extension. See the readme for more info.",
+			"tags": ["script", "tab"]
+		},
+		{
 			"name": "zh_CN Localization",
 			"url": "https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN",
 			"description": "Simplified Chinese localization",
