@@ -17,6 +17,9 @@ class Script:
     args_to = None
     alwayson = False
 
+    is_txt2img = False
+    is_img2img = False
+
     """A gr.Group component that has all script's UI inside it"""
     group = None
 
@@ -89,6 +92,23 @@ class Script:
         """
         This function is called after processing ends for AlwaysVisible scripts.
         args contains all values returned by components from ui()
+        """
+
+        pass
+
+    def before_component(self, component, **kwargs):
+        """
+        Called before a component is created.
+        Use elem_id/label fields of kwargs to figure out which component it is.
+        This can be useful to inject your own components somewhere in the middle of vanilla UI.
+        You can return created components in the ui() function to add them to the list of arguments for your processing functions
+        """
+
+        pass
+
+    def after_component(self, component, **kwargs):
+        """
+        Called after a component is created. Same as above.
         """
 
         pass
@@ -195,12 +215,18 @@ class ScriptRunner:
         self.titles = []
         self.infotext_fields = []
 
-    def setup_ui(self, is_img2img):
+    def initialize_scripts(self, is_img2img):
+        self.scripts.clear()
+        self.alwayson_scripts.clear()
+        self.selectable_scripts.clear()
+
         for script_class, path, basedir in scripts_data:
             script = script_class()
             script.filename = path
+            script.is_txt2img = not is_img2img
+            script.is_img2img = is_img2img
 
-            visibility = script.show(is_img2img)
+            visibility = script.show(script.is_img2img)
 
             if visibility == AlwaysVisible:
                 self.scripts.append(script)
@@ -211,6 +237,7 @@ class ScriptRunner:
                 self.scripts.append(script)
                 self.selectable_scripts.append(script)
 
+    def setup_ui(self):
         self.titles = [wrap_call(script.title, script.filename, "title") or f"{script.filename} [error]" for script in self.selectable_scripts]
 
         inputs = [None]
@@ -220,7 +247,7 @@ class ScriptRunner:
             script.args_from = len(inputs)
             script.args_to = len(inputs)
 
-            controls = wrap_call(script.ui, script.filename, "ui", is_img2img)
+            controls = wrap_call(script.ui, script.filename, "ui", script.is_img2img)
 
             if controls is None:
                 return
@@ -320,6 +347,22 @@ class ScriptRunner:
                 print(f"Error running postprocess: {script.filename}", file=sys.stderr)
                 print(traceback.format_exc(), file=sys.stderr)
 
+    def before_component(self, component, **kwargs):
+        for script in self.scripts:
+            try:
+                script.before_component(component, **kwargs)
+            except Exception:
+                print(f"Error running before_component: {script.filename}", file=sys.stderr)
+                print(traceback.format_exc(), file=sys.stderr)
+
+    def after_component(self, component, **kwargs):
+        for script in self.scripts:
+            try:
+                script.after_component(component, **kwargs)
+            except Exception:
+                print(f"Error running after_component: {script.filename}", file=sys.stderr)
+                print(traceback.format_exc(), file=sys.stderr)
+
     def reload_sources(self, cache):
         for si, script in list(enumerate(self.scripts)):
             args_from = script.args_from
@@ -341,6 +384,7 @@ class ScriptRunner:
 
 scripts_txt2img = ScriptRunner()
 scripts_img2img = ScriptRunner()
+scripts_current: ScriptRunner = None
 
 
 def reload_script_body_only():
@@ -357,3 +401,22 @@ def reload_scripts():
     scripts_txt2img = ScriptRunner()
     scripts_img2img = ScriptRunner()
 
+
+def IOComponent_init(self, *args, **kwargs):
+    if scripts_current is not None:
+        scripts_current.before_component(self, **kwargs)
+
+    script_callbacks.before_component_callback(self, **kwargs)
+
+    res = original_IOComponent_init(self, *args, **kwargs)
+
+    script_callbacks.after_component_callback(self, **kwargs)
+
+    if scripts_current is not None:
+        scripts_current.after_component(self, **kwargs)
+
+    return res
+
+
+original_IOComponent_init = gr.components.IOComponent.__init__
+gr.components.IOComponent.__init__ = IOComponent_init
