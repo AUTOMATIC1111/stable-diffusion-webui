@@ -74,6 +74,10 @@ def git_clone(url, dir, name, commithash=None):
         if commithash is None:
             return
 
+        current_url = run(f'"{git}" -C {dir}  config --get remote.origin.url', None, f"Couldn't determine {name}'s url: {url}").strip()
+        if current_url != url:
+            run(f'"{git}" -C {dir} remote set-url origin {url}', f"Changing {name}'s url to {url}...", f"Couldn't change {name}'s url")
+
         current_hash = run(f'"{git}" -C {dir} rev-parse HEAD', None, f"Couldn't determine {name}'s hash: {commithash}").strip()
         if current_hash == commithash:
             return

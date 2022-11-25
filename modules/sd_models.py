@@ -66,9 +66,28 @@ def list_models():
 
     cmd_ckpt = shared.cmd_opts.ckpt
     if os.path.exists(cmd_ckpt):
+        filename = cmd_ckpt
         h = model_hash(cmd_ckpt)
-        title, short_model_name = modeltitle(cmd_ckpt, h)
-        checkpoints_list[title] = CheckpointInfo(cmd_ckpt, title, h, short_model_name, shared.cmd_opts.config)
+        title, short_model_name = modeltitle(filename, h)
+
+        basename, _ = os.path.splitext(filename)
+        config = basename + ".yaml"
+        if not os.path.exists(config):
+            config = shared.cmd_opts.config
+            # if it's a Stable Diffusion 2.0 model then use the appropriate built-in .yaml file
+            # the inpainting hack still works for SD 2.0, so no need to use its .yaml file (use v2-inference instead)
+            n = title.lower()
+            if n.startswith(("512-v-", "768-v-")):
+                config = "repositories/stable-diffusion/configs/stable-diffusion/v2-inference-v.yaml"
+            elif n.startswith(("512-depth-", "768-depth-")):
+                config = "repositories/stable-diffusion/configs/stable-diffusion/v2-midas-inference.yaml"
+            elif n.startswith("x4-upscaler"):
+                config = "repositories/stable-diffusion/configs/stable-diffusion/x4-upscaling.yaml"
+            elif n.startswith(("512-", "768-")):
+                config = "repositories/stable-diffusion/configs/stable-diffusion/v2-inference.yaml"
+
+        checkpoints_list[title] = CheckpointInfo(filename, title, h, short_model_name, config)
+                
         shared.opts.data['sd_model_checkpoint'] = title
     elif cmd_ckpt is not None and cmd_ckpt != shared.default_sd_model_file:
         print(f"Checkpoint in --ckpt argument not found (Possible it was moved to {model_path}: {cmd_ckpt}", file=sys.stderr)
@@ -80,6 +99,17 @@ def list_models():
         config = basename + ".yaml"
         if not os.path.exists(config):
             config = shared.cmd_opts.config
+            # if it's a Stable Diffusion 2.0 model then use the appropriate built-in .yaml file
+            # the inpainting hack still works for SD 2.0, so no need to use its .yaml file (use v2-inference instead)
+            n = title.lower()
+            if n.startswith(("512-v-", "768-v-")):
+                config = "repositories/stable-diffusion/configs/stable-diffusion/v2-inference-v.yaml"
+            elif n.startswith(("512-depth-", "768-depth-")):
+                config = "repositories/stable-diffusion/configs/stable-diffusion/v2-midas-inference.yaml"
+            elif n.startswith("x4-upscaler"):
+                config = "repositories/stable-diffusion/configs/stable-diffusion/x4-upscaling.yaml"
+            elif n.startswith(("512-", "768-")):
+                config = "repositories/stable-diffusion/configs/stable-diffusion/v2-inference.yaml"
 
         checkpoints_list[title] = CheckpointInfo(filename, title, h, short_model_name, config)
 
@@ -234,6 +264,10 @@ def load_model(checkpoint_info=None):
 
     sd_config = OmegaConf.load(checkpoint_info.config)
     
+    # check if the model uses v-prediction (the 768x768 model and x4 upscaler do)
+    # see https://arxiv.org/abs/2202.00512
+    shared.opts.v_sampling = sd_config.get("model.params.parameterization") == "v"
+
     if should_hijack_inpainting(checkpoint_info):
         # Hardcoded config for now...
         sd_config.model.target = "ldm.models.diffusion.ddpm.LatentInpaintDiffusion"
