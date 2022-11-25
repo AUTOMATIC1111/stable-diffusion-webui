@@ -52,6 +52,7 @@ def enable_tf32():
     if torch.cuda.is_available():
         torch.backends.cuda.matmul.allow_tf32 = True
         torch.backends.cudnn.allow_tf32 = True
+        torch.backends.cudnn.benchmark = True
 
 
 errors.run(enable_tf32, "Enabling TF32")
