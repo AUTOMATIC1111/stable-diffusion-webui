@@ -2,6 +2,14 @@ This is a feature showcase page for [Stable Diffusion web UI](https://github.com
 
 All examples are non-cherrypicked unless specified otherwise.
 
+# Stable Diffusion 2.0
+So far, only Stable Diffusion 2.0-v model is supported. To use it:
+
+- download [768-v-ema.ckpt](https://huggingface.co/stabilityai/stable-diffusion-2/blob/main/768-v-ema.ckpt) checkpoint (from here: https://huggingface.co/stabilityai/stable-diffusion-2)
+- put it into models/Stable-Diffusion directory
+- grab [config](https://raw.githubusercontent.com/Stability-AI/stablediffusion/main/configs/stable-diffusion/v2-inference-v.yaml) from SD2.0 repository and put it into same place as the checkpoint, renaming it to have same filename (ie if your checkpoint is named `768-v-ema.ckpt`, the config should be named `768-v-ema.yaml`)
+- select the new checkpoint from the UI
+
 # Outpainting
 
 Outpainting extends the original image and inpaints the created empty space.
