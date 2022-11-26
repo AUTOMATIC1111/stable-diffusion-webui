@@ -10,7 +10,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 
 from modules.paths import script_path
 
-from modules import devices, sd_samplers, upscaler, extensions, localization
+from modules import shared, devices, sd_samplers, upscaler, extensions, localization
 import modules.codeformer_model as codeformer
 import modules.extras
 import modules.face_restoration
@@ -23,7 +23,6 @@ import modules.scripts
 import modules.sd_hijack
 import modules.sd_models
 import modules.sd_vae
-import modules.shared as shared
 import modules.txt2img
 import modules.script_callbacks
 
@@ -86,7 +85,7 @@ def initialize():
     shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights()))
     shared.opts.onchange("sd_vae", wrap_queued_call(lambda: modules.sd_vae.reload_vae_weights()), call=False)
     shared.opts.onchange("sd_vae_as_default", wrap_queued_call(lambda: modules.sd_vae.reload_vae_weights()), call=False)
-    shared.opts.onchange("sd_hypernetwork", wrap_queued_call(lambda: modules.hypernetworks.hypernetwork.load_hypernetwork(shared.opts.sd_hypernetwork)))
+    shared.opts.onchange("sd_hypernetwork", wrap_queued_call(lambda: shared.reload_hypernetworks()))
     shared.opts.onchange("sd_hypernetwork_strength", modules.hypernetworks.hypernetwork.apply_strength)
 
     if cmd_opts.tls_keyfile is not None and cmd_opts.tls_keyfile is not None:
