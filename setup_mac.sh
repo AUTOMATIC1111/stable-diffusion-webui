@@ -73,7 +73,7 @@ while true; do
 done
 
 # Clone required repos
-git clone https://github.com/CompVis/stable-diffusion.git repositories/stable-diffusion
+git clone https://github.com/Stability-AI/stablediffusion.git repositories/stable-diffusion-stability-ai
  
 git clone https://github.com/CompVis/taming-transformers.git repositories/taming-transformers
 
@@ -84,7 +84,7 @@ git clone https://github.com/salesforce/BLIP.git repositories/BLIP
 git clone https://github.com/Birch-san/k-diffusion repositories/k-diffusion
 
 # Before we continue, check if 1) the model is in place 2) the repos are cloned
-if ( [ -f "models/sd-v1-4.ckpt" ] || [ -f "models/Stable-diffusion/sd-v1-4.ckpt" ] ) && [ -d "repositories/stable-diffusion" ] && [ -d "repositories/taming-transformers" ] && [ -d "repositories/CodeFormer" ] && [ -d "repositories/BLIP" ]; then
+if ( (ls models/*.ckpt > /dev/null 2>&1;) || (ls models/Stable-diffusion/*.ckpt > /dev/null 2>&1;)  ) && [ -d "repositories/stable-diffusion-stability-ai" ] && [ -d "repositories/taming-transformers" ] && [ -d "repositories/CodeFormer" ] && [ -d "repositories/BLIP" ]; then
     echo "All files are in place. Continuing installation."
 else
     echo "============================================="
@@ -110,6 +110,8 @@ pip install git+https://github.com/TencentARC/GFPGAN.git@8d2447a2d918f8eba5a4a01
 pip install torch==1.12.1 torchvision==0.13.1
 
 pip install torchsde
+
+pip install git+https://github.com/mlfoundations/open_clip.git@bb6e834e9c70d9c27d0dc3ecedeebeaeb1ffad6b
 
 # Patch the bug that prevents torch from working (see https://github.com/Birch-san/stable-diffusion#patch), rather than try to use a nightly build
 echo "--- a/functional.py	2022-10-14 05:28:39.000000000 -0400
@@ -164,7 +166,7 @@ conda activate web-ui
 git pull --rebase
 
 # Run the web ui
-python launch.py --skip-torch-cuda-test --precision full --no-half --use-cpu Interrogate GFPGAN CodeFormer $@
+python webui.py  --precision full --no-half --use-cpu Interrogate GFPGAN CodeFormer $@
 
 # Deactivate conda environment
 conda deactivate
@@ -189,7 +191,7 @@ echo "============================================="
 
 
 # Run the web UI
-python launch.py --skip-torch-cuda-test --precision full --no-half --use-cpu Interrogate GFPGAN CodeFormer $@
+python webui.py --precision full --no-half --use-cpu Interrogate GFPGAN CodeFormer $@
 
 
 
