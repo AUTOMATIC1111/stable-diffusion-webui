@@ -61,27 +61,51 @@ def apply_order(p, x, xs):
     
 
 def build_samplers_dict():
+    """
+    Output: samplers_dict
+    samplers_dict structure:
+        {sampler.name: [sampler.name.lower, alias1, alias2, ...]}
+        key is proper name of sampler, value is a list of aliases including name.lower()
+    """
     samplers_dict = {}
-    for i, sampler in enumerate(sd_samplers.all_samplers):
-        samplers_dict[sampler.name.lower()] = i
+    for sampler in sd_samplers.all_samplers:
+        samplers_dict[sampler.name] = [sampler.name.lower()]
         for alias in sampler.aliases:
-            samplers_dict[alias.lower()] = i
+            samplers_dict[sampler.name].append(alias.lower())
     return samplers_dict
 
 
-def apply_sampler(p, x, xs):
-    sampler_dict = build_samplers_dict()
-    sampler_index = sampler_dict.get(x.lower(), None)
-    if sampler_index is None:
-        raise RuntimeError(f"Unknown sampler: {x}")
+def apply_sampler(p, sampler_name, _dummy_xs):
+    """
+    input: (p)rocess being the process to apply to
+    sampler.name from valslist
+    _dummy_xs are not used in this function, but remain part of func signature for keeping compatibility
+        with the generic call from cell() by opt.apply
+    """
+    p.sampler_name = x
 
-    p.sampler_name = sd_samplers.all_samplers[sampler_index].name
+
+def build_samplers_valslist(xs, samplers_dict):
+    """
+    Finalizes valslist for samplers with proper name; in process_axis,
+    values can be applied directly after exiting process_axis
+    """
+    sampler_valslist = []
+    for user_val in xs:
+        #dict key is proper name recognized by Process
+        #dict.values() is a list of lower() aliases and name
+        for k,v in samplers_dict.items():
+            if user_val.lower() in v:
+                sampler_valslist.append(k)
+                break
+    return sampler_valslist
 
 
-def confirm_samplers(p, xs):
-    samplers_dict = build_samplers_dict()
+def confirm_samplers(xs, samplers_dict):
+    #flatten list of values from samplers_dict before checking for errors
+    samplers_list = set(chain(*samplers_dict.values()))
     for x in xs:
-        if x.lower() not in samplers_dict.keys():
+        if x.lower() not in samplers_list:
             raise RuntimeError(f"Unknown sampler: {x}")
 
 
@@ -341,7 +365,14 @@ class Script(scripts.Script):
 
             # Confirm options are valid before starting
             if opt.confirm:
-                opt.confirm(p, valslist)
+                if opt.label == "Sampler":
+                    #Separated functions to do one thing only
+                    samplers_dict = build_samplers_dict()
+                    opt.confirm(valslist, samplers_dict)
+                    #valslist for samplers is in final form for applying, no further processing required
+                    valslist = build_samplers_valslist(valslist, samplers_dict)
+                else:
+                    opt.confirm(p, valslist)
 
             return valslist
 
