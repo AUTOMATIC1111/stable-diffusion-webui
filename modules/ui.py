@@ -106,7 +106,11 @@ def save_files(js_data, images, do_make_zip, index):
                 for key, value in d.items():
                     setattr(self, key, value)
 
-    data = json.loads(js_data)
+    try:
+        data = json.loads(js_data)
+    except json.decoder.JSONDecodeError:
+        print("Json loader error when saving image to file. Is the js data for the image missing or malformed?")
+        return
 
     p = MyObject(data)
     path = opts.outdir_save
@@ -836,6 +840,8 @@ def create_ui(wrap_gradio_gpu_call):
                 txt2img_negative_prompt,
                 steps,
                 sampler_index,
+                batch_size,
+                batch_count,
                 cfg_scale,
                 seed,
                 width,
@@ -1279,8 +1285,14 @@ def create_ui(wrap_gradio_gpu_call):
                         train_hypernetwork_name = gr.Dropdown(label='Hypernetwork', elem_id="train_hypernetwork", choices=[x for x in shared.hypernetworks.keys()])
                         create_refresh_button(train_hypernetwork_name, shared.reload_hypernetworks, lambda: {"choices": sorted([x for x in shared.hypernetworks.keys()])}, "refresh_train_hypernetwork_name")
                     with gr.Row():
-                        embedding_learn_rate = gr.Textbox(label='Embedding Learning rate', placeholder="Embedding Learning rate", value="0.005")
-                        hypernetwork_learn_rate = gr.Textbox(label='Hypernetwork Learning rate', placeholder="Hypernetwork Learning rate", value="0.00001")
+                        embedding_learn_rate = gr.Textbox(label='Embedding learning rate', placeholder="Embedding learning rate", value="5e-3")
+                        hypernetwork_learn_rate = gr.Textbox(label='Hypernetwork learning rate', placeholder="Hypernetwork learning rate", value="1e-5")
+                    with gr.Row():
+                        max_image_differential = gr.Textbox(label='Target image change rate', placeholder="Ex: 0.08 (aka 8%)", value="")
+                        differential_halflife = gr.Textbox(label='Change half life (steps)', placeholder="Ex: 30000", value="")
+                        differential_saturation_halflife = gr.Textbox(label='Change half life (saturation)', placeholder="Ex: 0.06 (6%)", value="")
+                        saturation_halflife = gr.Textbox(label='LR half life (saturation)', placeholder="Ex: 0.05 (5%)", value="")
+                        change_rate_weight = gr.Textbox(label='Image change weighting (0-1)', placeholder="Ex: 1.0 (aka 100%)", value="")
 
                     batch_size = gr.Number(label='Batch size', value=1, precision=0)
                     dataset_directory = gr.Textbox(label='Dataset directory', placeholder="Path to directory with input images")
@@ -1292,7 +1304,7 @@ def create_ui(wrap_gradio_gpu_call):
                     create_image_every = gr.Number(label='Save an image to log directory every N steps, 0 to disable', value=500, precision=0)
                     save_embedding_every = gr.Number(label='Save a copy of embedding to log directory every N steps, 0 to disable', value=500, precision=0)
                     save_image_with_stored_embedding = gr.Checkbox(label='Save images with embedding in PNG chunks', value=True)
-                    preview_from_txt2img = gr.Checkbox(label='Read parameters (prompt, etc...) from txt2img tab when making previews', value=False)
+                    preview_from_txt2img = gr.Checkbox(label='Read parameters (prompt, etc...) from txt2img tab when making previews. Recommended sampler: Euler', value=False)
 
                     with gr.Row():
                         interrupt_training = gr.Button(value="Interrupt")
@@ -1405,6 +1417,11 @@ def create_ui(wrap_gradio_gpu_call):
             inputs=[
                 train_hypernetwork_name,
                 hypernetwork_learn_rate,
+                max_image_differential,
+                change_rate_weight,
+                differential_halflife,
+                differential_saturation_halflife,
+                saturation_halflife, 
                 batch_size,
                 dataset_directory,
                 log_directory,

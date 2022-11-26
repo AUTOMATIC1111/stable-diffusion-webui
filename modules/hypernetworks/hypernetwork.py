@@ -17,6 +17,8 @@ from modules.textual_inversion import textual_inversion
 from modules.textual_inversion.learn_schedule import LearnRateScheduler
 from torch import einsum
 from torch.nn.init import normal_, xavier_normal_, xavier_uniform_, kaiming_normal_, kaiming_uniform_, zeros_
+from PIL import ImageChops
+import colorsys
 
 from collections import defaultdict, deque
 from statistics import stdev, mean
@@ -367,7 +369,7 @@ def report_statistics(loss_info:dict):
 
 
 
-def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log_directory, training_width, training_height, steps, create_image_every, save_hypernetwork_every, template_file, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height):
+def train_hypernetwork(hypernetwork_name, learn_rate, max_image_differential, change_rate_weight, differential_halflife, differential_saturation_halflife, saturation_halflife, batch_size, data_root, log_directory, training_width, training_height, steps, create_image_every, save_hypernetwork_every, template_file, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_batch_size, preview_batch_count, preview_cfg_scale, preview_seed, preview_width, preview_height):
     # images allows training previews to have infotext. Importing it at the top causes a circular import problem.
     from modules import images
 
@@ -403,12 +405,44 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
     hypernetwork = shared.loaded_hypernetwork
     checkpoint = sd_models.select_checkpoint()
 
-    ititial_step = hypernetwork.step or 0
-    if ititial_step >= steps:
+    initial_step = hypernetwork.step or 0
+    if initial_step >= steps:
         shared.state.textinfo = f"Model has already been trained beyond specified max steps"
         return hypernetwork, filename
 
-    scheduler = LearnRateScheduler(learn_rate, steps, ititial_step)
+    weights = hypernetwork.weights()
+    for weight in weights:
+        weight.requires_grad = True
+
+    # Create or load the optimizer.
+    DUMMY_LR = 1.357901e-6
+    if hypernetwork.optimizer_name in optimizer_dict:
+        optimizer = optimizer_dict[hypernetwork.optimizer_name](params=weights, lr=DUMMY_LR)
+        optimizer_name = hypernetwork.optimizer_name
+    else:
+        print(f"Optimizer type {hypernetwork.optimizer_name} is not defined!")
+        optimizer = torch.optim.AdamW(params=weights, lr=DUMMY_LR)
+        optimizer_name = 'AdamW'
+
+    if hypernetwork.optimizer_state_dict:
+        try:
+            optimizer.load_state_dict(hypernetwork.optimizer_state_dict)
+        except RuntimeError as e:
+            print("Cannot resume from saved optimizer!")
+            print(e)
+    else:
+        if initial_step > 0:
+            print("No optimizer_state_dict; cannot resume from saved optimizer.")
+
+    try:
+        last_lr = optimizer.state_dict()['param_groups'][0]['lr']
+        if last_lr == DUMMY_LR:
+            last_lr = None
+    except (KeyError, IndexError):
+        print("Failure to extract lr from", optimizer.state_dict())
+        last_lr = None
+
+    scheduler = LearnRateScheduler(learn_rate, max_image_differential, change_rate_weight, differential_halflife, differential_saturation_halflife, saturation_halflife, steps, initial_step, last_lr)
     
     # dataset loading may take a while, so input validations and early returns should be done before this
     shared.state.textinfo = f"Preparing dataset from {html.escape(data_root)}..."
@@ -425,36 +459,20 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
     previous_mean_losses = [0]
     previous_mean_loss = 0
     print("Mean loss of {} elements".format(size))
-    
-    weights = hypernetwork.weights()
-    for weight in weights:
-        weight.requires_grad = True
-
-    # Here we use optimizer from saved HN, or we can specify as UI option.
-    if hypernetwork.optimizer_name in optimizer_dict:
-        optimizer = optimizer_dict[hypernetwork.optimizer_name](params=weights, lr=scheduler.learn_rate)
-        optimizer_name = hypernetwork.optimizer_name
-    else:
-        print(f"Optimizer type {hypernetwork.optimizer_name} is not defined!")
-        optimizer = torch.optim.AdamW(params=weights, lr=scheduler.learn_rate)
-        optimizer_name = 'AdamW'
-
-    if hypernetwork.optimizer_state_dict:  # This line must be changed if Optimizer type can be different from saved optimizer.
-        try:
-            optimizer.load_state_dict(hypernetwork.optimizer_state_dict)
-        except RuntimeError as e:
-            print("Cannot resume from saved optimizer!")
-            print(e)
-
+ 
+    for pg in optimizer.param_groups:
+        pg['lr'] = scheduler.learn_rate
+   
     steps_without_grad = 0
 
     last_saved_file = "<none>"
     last_saved_image = "<none>"
     forced_filename = "<none>"
+    last_image= None
 
-    pbar = tqdm.tqdm(enumerate(ds), total=steps - ititial_step)
+    pbar = tqdm.tqdm(enumerate(ds), total=steps - initial_step)
     for i, entries in pbar:
-        hypernetwork.step = i + ititial_step
+        hypernetwork.step = i + initial_step
         if len(loss_dict) > 0:
             previous_mean_losses = [i[-1] for i in loss_dict.values()]
             previous_mean_loss = mean(previous_mean_losses)
@@ -475,6 +493,7 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
             del c
 
             losses[hypernetwork.step % losses.shape[0]] = loss.item()
+            
             for entry in entries:
                 loss_dict[entry.filename].append(loss.item())
                 
@@ -525,16 +544,25 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
             shared.sd_model.cond_stage_model.to(devices.device)
             shared.sd_model.first_stage_model.to(devices.device)
 
+            do_not_save_grid = True
+            if preview_batch_size > 1 or preview_batch_count > 1:
+                do_not_save_grid = False
             p = processing.StableDiffusionProcessingTxt2Img(
                 sd_model=shared.sd_model,
-                do_not_save_grid=True,
+                do_not_save_grid=do_not_save_grid,
                 do_not_save_samples=True,
+                batch_size=preview_batch_size, 
+                n_iter=preview_batch_count,
+                outpath_grids=shared.opts.outdir_grids or shared.opts.outdir_img2img_grids
             )
 
             if preview_from_txt2img:
                 p.prompt = preview_prompt
                 p.negative_prompt = preview_negative_prompt
                 p.steps = preview_steps
+                p.sampler_index = preview_sampler_index
+                p.batch_size = preview_batch_size
+                p.batch_count = preview_batch_count
                 p.sampler_name = sd_samplers.samplers[preview_sampler_index].name
                 p.cfg_scale = preview_cfg_scale
                 p.seed = preview_seed
@@ -553,10 +581,34 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, data_root, log
                 shared.sd_model.cond_stage_model.to(devices.cpu)
                 shared.sd_model.first_stage_model.to(devices.cpu)
 
+            diff_img = None
             if image is not None:
                 shared.state.current_image = image
+                if last_image != None:
+                    diff_img = ImageChops.difference(image, last_image)
+                width, height = image.size
+                difference = 0
+                saturation = 0
+                for i in range(0, width):
+                    for j in range(0, height):
+                        if diff_img is not None:
+                            r, g, b = diff_img.getpixel( (i,j) )
+                            difference += r + g + b
+                        pixel = image.getpixel( (i,j) )
+                        r, g, b = (i/256 for i in pixel)
+                        h, s, v = colorsys.rgb_to_hsv(r, g, b)
+                        saturation += s
+                if last_image != None:
+                    image_differential = difference / (width * height) / 256 / 3
+                else:
+                    image_differential = None
+                saturation /= (width * height)
+
+                scheduler.apply_image_stats(optimizer, image_differential, saturation)
+                
                 last_saved_image, last_text_info = images.save_image(image, images_dir, "", p.seed, p.prompt, shared.opts.samples_format, processed.infotexts[0], p=p, forced_filename=forced_filename, save_to_dirs=False)
                 last_saved_image += f", prompt: {preview_text}"
+                last_image = image
 
         shared.state.job_no = hypernetwork.step
 
