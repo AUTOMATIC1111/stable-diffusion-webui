@@ -200,6 +200,12 @@
 			"tags": ["script"]
 		},
 		{
+			"name": "depthmap2mask",
+			"url": "https://github.com/Extraltodeus/depthmap2mask.git",
+			"description": "Create masks for img2img based on a depth estimation made by MiDaS.",
+			"tags": ["script"]
+		},
+		{
 			"name": "Visualize Cross-Attention",
 			"url": "https://github.com/benkyoujouzu/stable-diffusion-webui-visualize-cross-attention-extension.git",
 			"description": "Generates highlighted sectors of a submitted input image, based on input prompts. Use with tokenizer extension. See the readme for more info.",
