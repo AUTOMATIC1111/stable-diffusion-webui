@@ -478,9 +478,7 @@ def create_toprow(is_img2img):
         if is_img2img:
             with gr.Column(scale=1, elem_id="interrogate_col"):
                 button_interrogate = gr.Button('Interrogate\nCLIP', elem_id="interrogate")
-
-                if cmd_opts.deepdanbooru:
-                    button_deepbooru = gr.Button('Interrogate\nDeepBooru', elem_id="deepbooru")
+                button_deepbooru = gr.Button('Interrogate\nDeepBooru', elem_id="deepbooru")
 
         with gr.Column(scale=1):
             with gr.Row():
@@ -1004,11 +1002,10 @@ def create_ui(wrap_gradio_gpu_call):
                 outputs=[img2img_prompt],
             )
 
-            if cmd_opts.deepdanbooru:
-                img2img_deepbooru.click(
-                    fn=interrogate_deepbooru,
-                    inputs=[init_img],
-                    outputs=[img2img_prompt],
+            img2img_deepbooru.click(
+                fn=interrogate_deepbooru,
+                inputs=[init_img],
+                outputs=[img2img_prompt],
             )
 
 
