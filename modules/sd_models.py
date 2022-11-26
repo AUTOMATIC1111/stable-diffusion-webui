@@ -244,6 +244,9 @@ def load_model(checkpoint_info=None):
 
     do_inpainting_hijack()
 
+    if shared.cmd_opts.no_half:
+        sd_config.model.params.unet_config.params.use_fp16 = False
+
     sd_model = instantiate_from_config(sd_config.model)
     load_model_weights(sd_model, checkpoint_info)
 
