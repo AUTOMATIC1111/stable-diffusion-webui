@@ -9,6 +9,7 @@ from torch.nn.functional import silu
 
 import modules.textual_inversion.textual_inversion
 from modules import prompt_parser, devices, sd_hijack_optimizations, shared
+from modules.hypernetworks import hypernetwork
 from modules.shared import cmd_opts
 from modules import sd_hijack_clip, sd_hijack_open_clip
 
@@ -60,7 +61,7 @@ def apply_optimizations():
 
 
 def undo_optimizations():
-    ldm.modules.attention.CrossAttention.forward = attention_CrossAttention_forward  # this stops hypernets from working
+    ldm.modules.attention.CrossAttention.forward = hypernetwork.attention_CrossAttention_forward
     ldm.modules.diffusionmodules.model.nonlinearity = diffusionmodules_model_nonlinearity
     ldm.modules.diffusionmodules.model.AttnBlock.forward = diffusionmodules_model_AttnBlock_forward
 
