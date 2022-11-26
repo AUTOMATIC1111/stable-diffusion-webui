@@ -82,7 +82,7 @@ def apply_sampler(p, sampler_name, _dummy_xs):
     _dummy_xs are not used in this function, but remain part of func signature for keeping compatibility
         with the generic call from cell() by opt.apply
     """
-    p.sampler_name = x
+    p.sampler_name = sampler_name
 
 
 def build_samplers_valslist(xs, samplers_dict):
