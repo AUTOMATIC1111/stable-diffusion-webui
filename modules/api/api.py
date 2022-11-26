@@ -129,6 +129,8 @@ class Api:
 
         reqDict['image'] = decode_base64_to_image(reqDict['image'])
 
+        print(reqDict)
+
         with self.queue_lock:
             result = run_extras(extras_mode=0, image_folder="", input_dir="", output_dir="", **reqDict)
 
