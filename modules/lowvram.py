@@ -66,12 +66,19 @@ def setup_for_low_vram(sd_model, use_medvram):
         sd_model.first_stage_model.decode = first_stage_model_decode_wrap
         parents[sd_model.cond_stage_model.transformer] = sd_model.cond_stage_model
     else:
-        # TODO: figure out how to unload the cond model when it's openclip instead of clip
-        stored = sd_model.first_stage_model, sd_model.model
-        sd_model.first_stage_model, sd_model.model = None, None
+        stored = sd_model.cond_stage_model, sd_model.first_stage_model, sd_model.model
+        sd_model.cond_stage_model, sd_model.first_stage_model, sd_model.model = None, None, None
         sd_model.to(devices.device)
-        sd_model.first_stage_model, sd_model.model = stored
+        sd_model.cond_stage_model, sd_model.first_stage_model, sd_model.model = stored
 
+        cond_stage_model_encode_with_transformer = sd_model.cond_stage_model.encode_with_transformer
+
+        def cond_stage_model_encode_with_transformer_wrap(tokens):
+            send_me_to_gpu(sd_model.cond_stage_model, None)
+            return cond_stage_model_encode_with_transformer(tokens)
+
+        # register hooks for those the first two models
+        sd_model.cond_stage_model.encode_with_transformer = cond_stage_model_encode_with_transformer_wrap
         sd_model.first_stage_model.register_forward_pre_hook(send_me_to_gpu)
         sd_model.first_stage_model.encode = first_stage_model_encode_wrap
         sd_model.first_stage_model.decode = first_stage_model_decode_wrap
