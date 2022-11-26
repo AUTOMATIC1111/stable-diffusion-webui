@@ -10,6 +10,9 @@ So far, only Stable Diffusion 2.0-v model is supported. To use it:
 - grab [config](https://raw.githubusercontent.com/Stability-AI/stablediffusion/main/configs/stable-diffusion/v2-inference-v.yaml) from SD2.0 repository and put it into same place as the checkpoint, renaming it to have same filename (ie if your checkpoint is named `768-v-ema.ckpt`, the config should be named `768-v-ema.yaml`)
 - select the new checkpoint from the UI
 
+Train tab will most likely be broken for the 2.0 models.
+
+
 # Outpainting
 
 Outpainting extends the original image and inpaints the created empty space.
