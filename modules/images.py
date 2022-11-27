@@ -15,6 +15,7 @@ import piexif.helper
 from PIL import Image, ImageFont, ImageDraw, PngImagePlugin
 from fonts.ttf import Roboto
 import string
+import json
 
 from modules import sd_samplers, shared, script_callbacks
 from modules.shared import opts, cmd_opts
@@ -305,6 +306,7 @@ class FilenameGenerator:
         'styles': lambda self: self.p and sanitize_filename_part(", ".join([style for style in self.p.styles if not style == "None"]) or "None", replace_spaces=False),
         'sampler': lambda self: self.p and sanitize_filename_part(self.p.sampler_name, replace_spaces=False),
         'model_hash': lambda self: getattr(self.p, "sd_model_hash", shared.sd_model.sd_model_hash),
+        'model_name': lambda self: sanitize_filename_part(shared.sd_model.sd_checkpoint_info.model_name, replace_spaces=False),
         'date': lambda self: datetime.datetime.now().strftime('%Y-%m-%d'),
         'datetime': lambda self, *args: self.datetime(*args),  # accepts formats: [datetime], [datetime<Format>], [datetime<Format><Time Zone>]
         'job_timestamp': lambda self: getattr(self.p, "job_timestamp", shared.state.job_timestamp),
@@ -524,6 +526,8 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     else:
         image.save(fullfn, quality=opts.jpeg_quality)
 
+    image.already_saved_as = fullfn
+
     target_side_length = 4000
     oversize = image.width > target_side_length or image.height > target_side_length
     if opts.export_for_4chan and (oversize or os.stat(fullfn).st_size > 4 * 1024 * 1024):
@@ -550,10 +554,45 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     return fullfn, txt_fullfn
 
 
+def read_info_from_image(image):
+    items = image.info or {}
+
+    geninfo = items.pop('parameters', None)
+
+    if "exif" in items:
+        exif = piexif.load(items["exif"])
+        exif_comment = (exif or {}).get("Exif", {}).get(piexif.ExifIFD.UserComment, b'')
+        try:
+            exif_comment = piexif.helper.UserComment.load(exif_comment)
+        except ValueError:
+            exif_comment = exif_comment.decode('utf8', errors="ignore")
+
+        items['exif comment'] = exif_comment
+        geninfo = exif_comment
+
+        for field in ['jfif', 'jfif_version', 'jfif_unit', 'jfif_density', 'dpi', 'exif',
+                      'loop', 'background', 'timestamp', 'duration']:
+            items.pop(field, None)
+
+    if items.get("Software", None) == "NovelAI":
+        try:
+            json_info = json.loads(items["Comment"])
+            sampler = sd_samplers.samplers_map.get(json_info["sampler"], "Euler a")
+
+            geninfo = f"""{items["Description"]}
+Negative prompt: {json_info["uc"]}
+Steps: {json_info["steps"]}, Sampler: {sampler}, CFG scale: {json_info["scale"]}, Seed: {json_info["seed"]}, Size: {image.width}x{image.height}, Clip skip: 2, ENSD: 31337"""
+        except Exception:
+            print(f"Error parsing NovelAI iamge generation parameters:", file=sys.stderr)
+            print(traceback.format_exc(), file=sys.stderr)
+
+    return geninfo, items
+
+
 def image_data(data):
     try:
         image = Image.open(io.BytesIO(data))
-        textinfo = image.text["parameters"]
+        textinfo, _ = read_info_from_image(image)
         return textinfo, None
     except Exception:
         pass

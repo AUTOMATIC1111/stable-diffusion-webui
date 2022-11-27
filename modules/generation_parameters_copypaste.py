@@ -75,6 +75,7 @@ def integrate_settings_paste_fields(component_dict):
         'CLIP_stop_at_last_layers': 'Clip skip',
         'inpainting_mask_weight': 'Conditional mask weight',
         'sd_model_checkpoint': 'Model hash',
+        'eta_noise_seed_delta': 'ENSD',
     }
     settings_paste_fields = [
         (component_dict[k], lambda d, k=k, v=v: ui.apply_setting(k, d.get(v, None)))
