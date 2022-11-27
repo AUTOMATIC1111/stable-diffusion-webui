@@ -1,6 +1,8 @@
 from __future__ import annotations
 import math
 import os
+import sys
+import traceback
 
 import numpy as np
 from PIL import Image
@@ -12,7 +14,7 @@ from typing import Callable, List, OrderedDict, Tuple
 from functools import partial
 from dataclasses import dataclass
 
-from modules import processing, shared, images, devices, sd_models
+from modules import processing, shared, images, devices, sd_models, sd_samplers
 from modules.shared import opts
 import modules.gfpgan_model
 from modules.ui import plaintext_to_html
@@ -21,7 +23,6 @@ import piexif
 import piexif.helper
 import gradio as gr
 import safetensors.torch
-
 
 class LruCache(OrderedDict):
     @dataclass(frozen=True)
@@ -214,39 +215,8 @@ def run_pnginfo(image):
     if image is None:
         return '', '', ''
 
-    items = image.info
-    geninfo = ''
-
-    if "exif" in image.info:
-        exif = piexif.load(image.info["exif"])
-        exif_comment = (exif or {}).get("Exif", {}).get(piexif.ExifIFD.UserComment, b'')
-        try:
-            exif_comment = piexif.helper.UserComment.load(exif_comment)
-        except ValueError:
-            exif_comment = exif_comment.decode('utf8', errors="ignore")
-
-        items['exif comment'] = exif_comment
-        geninfo = exif_comment
-
-        for field in ['jfif', 'jfif_version', 'jfif_unit', 'jfif_density', 'dpi', 'exif',
-                      'loop', 'background', 'timestamp', 'duration']:
-            items.pop(field, None)
-
-    geninfo = items.get('parameters', geninfo)
-
-    # nai prompt
-    if "Software" in items.keys() and items["Software"] == "NovelAI":
-        import json
-        json_info = json.loads(items["Comment"])
-        geninfo = f'{items["Description"]}\r\nNegative prompt: {json_info["uc"]}\r\n'
-        sampler = "Euler a"
-        if json_info["sampler"] == "k_euler_ancestral":
-            sampler = "Euler a"
-        elif json_info["sampler"] == "k_euler":
-            sampler = "Euler"
-        model_hash = '925997e9'  # assuming this is the correct model hash
-        # not sure with noise and strength parameter
-        geninfo += f'Steps: {json_info["steps"]}, Sampler: {sampler}, CFG scale: {json_info["scale"]}, Seed: {json_info["seed"]}, Size: {image.width}x{image.height}, Model hash: {model_hash}'  # , Denoising strength: {json_info["noise"]}'
+    geninfo, items = images.read_info_from_image(image)
+    items = {**{'parameters': geninfo}, **items}
 
     info = ''
     for key, text in items.items():
