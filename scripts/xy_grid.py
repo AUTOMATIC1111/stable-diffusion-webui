@@ -72,6 +72,8 @@ def confirm_samplers(p, xs):
     for x in xs:
         if x.lower() not in sd_samplers.samplers_map:
             raise RuntimeError(f"Unknown sampler: {x}")
+        if p.enable_hr and x.upper() == 'PLMS':
+            raise RuntimeError(f"Sampler PLMS not supported for img2img or when highres fix enabled in txt2img")
 
 
 def apply_checkpoint(p, x, xs):
@@ -348,6 +350,12 @@ class Script(scripts.Script):
             
             if opt.label == 'Nothing':
                 return [0]
+
+            if opt.label == 'Sampler' and vals.strip() == '*':
+                if p.enable_hr is True:
+                    vals = ','.join([x.name for x in sd_samplers.samplers_for_img2img])
+                else:
+                    vals = ','.join([x.name for x in sd_samplers.all_samplers])
 
             valslist = [x.strip() for x in chain.from_iterable(csv.reader(StringIO(vals)))]
 
