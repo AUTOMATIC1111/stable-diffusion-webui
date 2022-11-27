@@ -8,9 +8,9 @@ from torch import einsum
 from torch.nn.functional import silu
 
 import modules.textual_inversion.textual_inversion
-from modules import prompt_parser, devices, sd_hijack_optimizations, shared
+from modules import prompt_parser, devices, sd_hijack_optimizations, shared, sd_hijack_checkpoint
 from modules.hypernetworks import hypernetwork
-from modules.shared import cmd_opts
+from modules.shared import opts, device, cmd_opts
 from modules import sd_hijack_clip, sd_hijack_open_clip
 
 from modules.sd_hijack_optimizations import invokeAI_mps_available
@@ -66,6 +66,10 @@ def undo_optimizations():
     ldm.modules.diffusionmodules.model.AttnBlock.forward = diffusionmodules_model_AttnBlock_forward
 
 
+def fix_checkpoint():
+    ldm.modules.attention.BasicTransformerBlock.forward = sd_hijack_checkpoint.BasicTransformerBlock_forward
+    ldm.modules.diffusionmodules.openaimodel.ResBlock.forward = sd_hijack_checkpoint.ResBlock_forward
+    ldm.modules.diffusionmodules.openaimodel.AttentionBlock.forward = sd_hijack_checkpoint.AttentionBlock_forward
 
 class StableDiffusionModelHijack:
     fixes = None
@@ -88,6 +92,7 @@ class StableDiffusionModelHijack:
         self.clip = m.cond_stage_model
 
         apply_optimizations()
+        fix_checkpoint()
 
         def flatten(el):
             flattened = [flatten(children) for children in el.children()]

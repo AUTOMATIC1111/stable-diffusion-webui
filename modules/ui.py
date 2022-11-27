@@ -1240,7 +1240,7 @@ def create_ui(wrap_gradio_gpu_call):
                         with gr.Column():
                             with gr.Row():
                                 interrupt_preprocessing = gr.Button("Interrupt")
-                                run_preprocess = gr.Button(value="Preprocess", variant='primary')
+                            run_preprocess = gr.Button(value="Preprocess", variant='primary')
 
                     process_split.change(
                         fn=lambda show: gr_show(show),
@@ -1267,6 +1267,7 @@ def create_ui(wrap_gradio_gpu_call):
                         hypernetwork_learn_rate = gr.Textbox(label='Hypernetwork Learning rate', placeholder="Hypernetwork Learning rate", value="0.00001")
 
                     batch_size = gr.Number(label='Batch size', value=1, precision=0)
+                    gradient_step = gr.Number(label='Gradient accumulation steps', value=1, precision=0)
                     dataset_directory = gr.Textbox(label='Dataset directory', placeholder="Path to directory with input images")
                     log_directory = gr.Textbox(label='Log directory', placeholder="Path to directory where to write outputs", value="textual_inversion")
                     template_file = gr.Textbox(label='Prompt template file', value=os.path.join(script_path, "textual_inversion_templates", "style_filewords.txt"))
@@ -1277,6 +1278,11 @@ def create_ui(wrap_gradio_gpu_call):
                     save_embedding_every = gr.Number(label='Save a copy of embedding to log directory every N steps, 0 to disable', value=500, precision=0)
                     save_image_with_stored_embedding = gr.Checkbox(label='Save images with embedding in PNG chunks', value=True)
                     preview_from_txt2img = gr.Checkbox(label='Read parameters (prompt, etc...) from txt2img tab when making previews', value=False)
+                    with gr.Row():
+                        shuffle_tags = gr.Checkbox(label="Shuffle tags by ',' when creating prompts.", value=False)
+                        tag_drop_out = gr.Slider(minimum=0, maximum=1, step=0.1, label="Drop out tags when creating prompts.", value=0)
+                    with gr.Row():
+                        latent_sampling_method = gr.Radio(label='Choose latent sampling method', value="once", choices=['once', 'deterministic', 'random'])
 
                     with gr.Row():
                         interrupt_training = gr.Button(value="Interrupt")
@@ -1365,11 +1371,15 @@ def create_ui(wrap_gradio_gpu_call):
                 train_embedding_name,
                 embedding_learn_rate,
                 batch_size,
+                gradient_step,
                 dataset_directory,
                 log_directory,
                 training_width,
                 training_height,
                 steps,
+                shuffle_tags,
+                tag_drop_out,
+                latent_sampling_method,
                 create_image_every,
                 save_embedding_every,
                 template_file,
@@ -1390,11 +1400,15 @@ def create_ui(wrap_gradio_gpu_call):
                 train_hypernetwork_name,
                 hypernetwork_learn_rate,
                 batch_size,
+                gradient_step,
                 dataset_directory,
                 log_directory,
                 training_width,
                 training_height,
                 steps,
+                shuffle_tags,
+                tag_drop_out,
+                latent_sampling_method,
                 create_image_every,
                 save_embedding_every,
                 template_file,
