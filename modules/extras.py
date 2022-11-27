@@ -20,6 +20,7 @@ import modules.codeformer_model
 import piexif
 import piexif.helper
 import gradio as gr
+import safetensors.torch
 
 
 class LruCache(OrderedDict):
@@ -249,7 +250,7 @@ def run_pnginfo(image):
     return '', geninfo, info
 
 
-def run_modelmerger(primary_model_name, secondary_model_name, teritary_model_name, interp_method, multiplier, save_as_half, custom_name):
+def run_modelmerger(primary_model_name, secondary_model_name, teritary_model_name, interp_method, multiplier, save_as_half, custom_name, checkpoint_format):
     def weighted_sum(theta0, theta1, alpha):
         return ((1 - alpha) * theta0) + (alpha * theta1)
 
@@ -264,19 +265,15 @@ def run_modelmerger(primary_model_name, secondary_model_name, teritary_model_nam
     teritary_model_info = sd_models.checkpoints_list.get(teritary_model_name, None)
 
     print(f"Loading {primary_model_info.filename}...")
-    primary_model = torch.load(primary_model_info.filename, map_location='cpu')
-    theta_0 = sd_models.get_state_dict_from_checkpoint(primary_model)
+    theta_0 = sd_models.read_state_dict(primary_model_info.filename, map_location='cpu')
 
     print(f"Loading {secondary_model_info.filename}...")
-    secondary_model = torch.load(secondary_model_info.filename, map_location='cpu')
-    theta_1 = sd_models.get_state_dict_from_checkpoint(secondary_model)
+    theta_1 = sd_models.read_state_dict(secondary_model_info.filename, map_location='cpu')
 
     if teritary_model_info is not None:
         print(f"Loading {teritary_model_info.filename}...")
-        teritary_model = torch.load(teritary_model_info.filename, map_location='cpu')
-        theta_2 = sd_models.get_state_dict_from_checkpoint(teritary_model)
+        theta_2 = sd_models.read_state_dict(teritary_model_info.filename, map_location='cpu')
     else:
-        teritary_model = None
         theta_2 = None
 
     theta_funcs = {
@@ -295,7 +292,7 @@ def run_modelmerger(primary_model_name, secondary_model_name, teritary_model_nam
                     theta_1[key] = theta_func1(theta_1[key], t2)
                 else:
                     theta_1[key] = torch.zeros_like(theta_1[key])
-    del theta_2, teritary_model
+    del theta_2
 
     for key in tqdm.tqdm(theta_0.keys()):
         if 'model' in key and key in theta_1:
@@ -314,12 +311,17 @@ def run_modelmerger(primary_model_name, secondary_model_name, teritary_model_nam
 
     ckpt_dir = shared.cmd_opts.ckpt_dir or sd_models.model_path
 
-    filename = primary_model_info.model_name + '_' + str(round(1-multiplier, 2)) + '-' + secondary_model_info.model_name + '_' + str(round(multiplier, 2)) + '-' + interp_method.replace(" ", "_") + '-merged.ckpt'
-    filename = filename if custom_name == '' else (custom_name + '.ckpt')
+    filename = primary_model_info.model_name + '_' + str(round(1-multiplier, 2)) + '-' + secondary_model_info.model_name + '_' + str(round(multiplier, 2)) + '-' + interp_method.replace(" ", "_") + '-merged.' + checkpoint_format
+    filename = filename if custom_name == '' else (custom_name + '.' + checkpoint_format)
     output_modelname = os.path.join(ckpt_dir, filename)
 
     print(f"Saving to {output_modelname}...")
-    torch.save(primary_model, output_modelname)
+
+    _, extension = os.path.splitext(output_modelname)
+    if extension.lower() == ".safetensors":
+        safetensors.torch.save_file(theta_0, output_modelname, metadata={"format": "pt"})
+    else:
+        torch.save(theta_0, output_modelname)
 
     sd_models.list_models()
 
