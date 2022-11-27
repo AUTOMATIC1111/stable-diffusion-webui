@@ -1,3 +1,4 @@
+import os
 import torch
 
 from einops import repeat
@@ -319,7 +320,9 @@ class LatentInpaintDiffusion(LatentDiffusion):
 
 
 def should_hijack_inpainting(checkpoint_info):
-    return str(checkpoint_info.filename).endswith("inpainting.ckpt") and not checkpoint_info.config.endswith("inpainting.yaml")
+    ckpt_basename = os.path.basename(checkpoint_info.filename).lower()
+    cfg_basename = os.path.basename(checkpoint_info.config).lower()
+    return "inpainting" in ckpt_basename and not "inpainting" in cfg_basename
 
 
 def do_inpainting_hijack():
