@@ -14,7 +14,7 @@ Savedfile = namedtuple("Savedfile", ["name"])
 
 def save_pil_to_file(pil_image, dir=None):
     already_saved_as = getattr(pil_image, 'already_saved_as', None)
-    if already_saved_as:
+    if already_saved_as and os.path.isfile(already_saved_as):
         shared.demo.temp_dirs = shared.demo.temp_dirs | {os.path.abspath(os.path.dirname(already_saved_as))}
         file_obj = Savedfile(already_saved_as)
         return file_obj
