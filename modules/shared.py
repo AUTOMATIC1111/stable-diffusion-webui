@@ -16,6 +16,9 @@ import modules.devices as devices
 from modules import localization, sd_vae, extensions, script_loading
 from modules.paths import models_path, script_path, sd_path
 
+
+demo = None
+
 sd_model_file = os.path.join(script_path, 'model.ckpt')
 default_sd_model_file = sd_model_file
 parser = argparse.ArgumentParser()
@@ -292,6 +295,10 @@ options_templates.update(options_section(('saving-images', "Saving images/grids"
     "use_original_name_batch": OptionInfo(False, "Use original name for output filename during batch process in extras tab"),
     "save_selected_only": OptionInfo(True, "When using 'Save' button, only save a single selected image"),
     "do_not_add_watermark": OptionInfo(False, "Do not add watermark to images"),
+
+    "temp_dir":  OptionInfo("", "Directory for temporary images; leave empty for default"),
+    "clean_temp_dir_at_start": OptionInfo(False, "Cleanup non-default temporary directory when starting webui"),
+
 }))
 
 options_templates.update(options_section(('saving-paths', "Paths for saving"), {

@@ -157,22 +157,6 @@ def save_files(js_data, images, do_make_zip, index):
 
     return gr.File.update(value=fullfns, visible=True), '', '', plaintext_to_html(f"Saved: {filenames[0]}")
 
-def save_pil_to_file(pil_image, dir=None):
-    use_metadata = False
-    metadata = PngImagePlugin.PngInfo()
-    for key, value in pil_image.info.items():
-        if isinstance(key, str) and isinstance(value, str):
-            metadata.add_text(key, value)
-            use_metadata = True
-
-    file_obj = tempfile.NamedTemporaryFile(delete=False, suffix=".png", dir=dir)
-    pil_image.save(file_obj, pnginfo=(metadata if use_metadata else None))
-    return file_obj
-
-
-# override save to file function so that it also writes PNG info
-gr.processing_utils.save_pil_to_file = save_pil_to_file
-
 
 def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
     def f(*args, extra_outputs_array=extra_outputs, **kwargs):
