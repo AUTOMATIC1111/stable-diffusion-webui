@@ -58,32 +58,22 @@ def apply_order(p, x, xs):
         prompt_tmp += part
         prompt_tmp += x[idx]
     p.prompt = prompt_tmp + p.prompt
-    
-
-def build_samplers_dict():
-    samplers_dict = {}
-    for i, sampler in enumerate(sd_samplers.all_samplers):
-        samplers_dict[sampler.name.lower()] = i
-        for alias in sampler.aliases:
-            samplers_dict[alias.lower()] = i
-    return samplers_dict
 
 
 def apply_sampler(p, x, xs):
-    samplers_dict = build_samplers_dict()
-    if x.lower() not in samplers_dict:
+    sampler_name = sd_samplers.samplers_map.get(x.lower(), None)
+    if sampler_name is None:
         raise RuntimeError(f"Unknown sampler: {x}")
 
-    p.sampler_name = sd_samplers.all_samplers[samplers_dict[x.lower()]].name
+    p.sampler_name = sampler_name
 
 
 def confirm_samplers(p, xs):
-    samplers_dict = build_samplers_dict()
     for x in xs:
-        if x.lower() not in samplers_dict:
+        if x.lower() not in sd_samplers.samplers_map:
             raise RuntimeError(f"Unknown sampler: {x}")
-        if p.enable_hr and sd_samplers.all_samplers[samplers_dict[x.lower()]].name == 'PLMS':
-            raise RuntimeError(f"Sampler PLMS not supported for img2img or highres fix enabled in txt2img")
+        if p.enable_hr and sd_samplers.samplers_map.get(x.lower(), None) == 'PLMS':
+            raise RuntimeError(f"Sampler PLMS not supported for img2img or when highres fix enabled in txt2img")
 
 
 def apply_checkpoint(p, x, xs):
