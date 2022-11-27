@@ -52,6 +52,7 @@ all_samplers_map = {x.name: x for x in all_samplers}
 
 samplers = []
 samplers_for_img2img = []
+samplers_map = {}
 
 
 def create_sampler(name, model):
@@ -76,6 +77,12 @@ def set_samplers():
 
     samplers = [x for x in all_samplers if x.name not in hidden]
     samplers_for_img2img = [x for x in all_samplers if x.name not in hidden_img2img]
+
+    samplers_map.clear()
+    for sampler in all_samplers:
+        samplers_map[sampler.name.lower()] = sampler.name
+        for alias in sampler.aliases:
+            samplers_map[alias.lower()] = sampler.name
 
 
 set_samplers()

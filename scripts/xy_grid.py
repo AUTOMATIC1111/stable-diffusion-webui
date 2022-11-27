@@ -58,19 +58,10 @@ def apply_order(p, x, xs):
         prompt_tmp += part
         prompt_tmp += x[idx]
     p.prompt = prompt_tmp + p.prompt
-    
-
-def build_samplers_dict():
-    samplers_dict = {}
-    for sampler in sd_samplers.all_samplers:
-        samplers_dict[sampler.name.lower()] = sampler.name
-        for alias in sampler.aliases:
-            samplers_dict[alias.lower()] = sampler.name
-    return samplers_dict
 
 
 def apply_sampler(p, x, xs):
-    sampler_name = build_samplers_dict().get(x.lower(), None)
+    sampler_name = sd_samplers.samplers_map.get(x.lower(), None)
     if sampler_name is None:
         raise RuntimeError(f"Unknown sampler: {x}")
 
@@ -78,9 +69,8 @@ def apply_sampler(p, x, xs):
 
 
 def confirm_samplers(p, xs):
-    samplers_dict = build_samplers_dict()
     for x in xs:
-        if x.lower() not in samplers_dict:
+        if x.lower() not in sd_samplers.samplers_map:
             raise RuntimeError(f"Unknown sampler: {x}")
 
 
