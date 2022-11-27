@@ -524,6 +524,8 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     else:
         image.save(fullfn, quality=opts.jpeg_quality)
 
+    image.already_saved_as = fullfn
+
     target_side_length = 4000
     oversize = image.width > target_side_length or image.height > target_side_length
     if opts.export_for_4chan and (oversize or os.stat(fullfn).st_size > 4 * 1024 * 1024):
