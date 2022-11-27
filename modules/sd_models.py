@@ -38,9 +38,9 @@ def setup_model():
     list_models()
 
 
-def checkpoint_tiles(): 
-    convert = lambda name: int(name) if name.isdigit() else name.lower() 
-    alphanumeric_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)] 
+def checkpoint_tiles():
+    convert = lambda name: int(name) if name.isdigit() else name.lower()
+    alphanumeric_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
     return sorted([x.title for x in checkpoints_list.values()], key = alphanumeric_key)
 
 
@@ -191,7 +191,7 @@ def load_model_weights(model, checkpoint_info, vae_file="auto"):
         sd = read_state_dict(checkpoint_file)
         model.load_state_dict(sd, strict=False)
         del sd
-        
+
         if cache_enabled:
             # cache newly loaded model
             checkpoints_loaded[checkpoint_info] = model.state_dict().copy()
@@ -241,7 +241,7 @@ def load_model(checkpoint_info=None):
         devices.torch_gc()
 
     sd_config = OmegaConf.load(checkpoint_info.config)
-    
+
     if should_hijack_inpainting(checkpoint_info):
         # Hardcoded config for now...
         sd_config.model.target = "ldm.models.diffusion.ddpm.LatentInpaintDiffusion"
@@ -279,7 +279,7 @@ def load_model(checkpoint_info=None):
 def reload_model_weights(sd_model=None, info=None):
     from modules import lowvram, devices, sd_hijack
     checkpoint_info = info or select_checkpoint()
- 
+
     if not sd_model:
         sd_model = shared.sd_model
 

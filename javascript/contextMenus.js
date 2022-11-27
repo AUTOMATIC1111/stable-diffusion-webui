@@ -9,7 +9,7 @@ contextMenuInit = function(){
 
   function showContextMenu(event,element,menuEntries){
     let posx = event.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
-    let posy = event.clientY + document.body.scrollTop + document.documentElement.scrollTop; 
+    let posy = event.clientY + document.body.scrollTop + document.documentElement.scrollTop;
 
     let oldMenu = gradioApp().querySelector('#context-menu')
     if(oldMenu){
@@ -62,14 +62,14 @@ contextMenuInit = function(){
   }
 
   function appendContextMenuOption(targetEmementSelector,entryName,entryFunction){
-    
+
     currentItems = menuSpecs.get(targetEmementSelector)
-    
+
     if(!currentItems){
       currentItems = []
       menuSpecs.set(targetEmementSelector,currentItems);
     }
-    let newItem = {'id':targetEmementSelector+'_'+uid(), 
+    let newItem = {'id':targetEmementSelector+'_'+uid(),
                    'name':entryName,
                    'func':entryFunction,
                    'isNew':true}
@@ -97,7 +97,7 @@ contextMenuInit = function(){
       if(source.id && source.id.indexOf('check_progress')>-1){
         return
       }
-      
+
       let oldMenu = gradioApp().querySelector('#context-menu')
       if(oldMenu){
         oldMenu.remove()
@@ -117,7 +117,7 @@ contextMenuInit = function(){
       })
     });
     eventListenerApplied=true
-  
+
   }
 
   return [appendContextMenuOption, removeContextMenuOption, addContextMenuEventListener]
@@ -152,8 +152,8 @@ addContextMenuEventListener = initResponse[2];
     generateOnRepeat('#img2img_generate','#img2img_interrupt');
   })
 
-  let cancelGenerateForever = function(){ 
-    clearInterval(window.generateOnRepeatInterval) 
+  let cancelGenerateForever = function(){
+    clearInterval(window.generateOnRepeatInterval)
   }
 
   appendContextMenuOption('#txt2img_interrupt','Cancel generate forever',cancelGenerateForever)
@@ -162,7 +162,7 @@ addContextMenuEventListener = initResponse[2];
   appendContextMenuOption('#img2img_generate', 'Cancel generate forever',cancelGenerateForever)
 
   appendContextMenuOption('#roll','Roll three',
-    function(){ 
+    function(){
       let rollbutton = get_uiCurrentTabContent().querySelector('#roll');
       setTimeout(function(){rollbutton.click()},100)
       setTimeout(function(){rollbutton.click()},200)

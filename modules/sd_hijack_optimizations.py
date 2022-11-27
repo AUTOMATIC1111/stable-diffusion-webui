@@ -291,7 +291,7 @@ def cross_attention_attnblock_forward(self, x):
         h3 += x
 
         return h3
-    
+
 def xformers_attnblock_forward(self, x):
     try:
         h_ = x

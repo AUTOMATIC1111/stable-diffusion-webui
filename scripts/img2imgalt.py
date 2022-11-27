@@ -146,9 +146,9 @@ class Script(scripts.Script):
         sigma_adjustment = gr.Checkbox(label="Sigma adjustment for finding noise for image", value=False)
 
         return [
-            info, 
+            info,
             override_sampler,
-            override_prompt, original_prompt, original_negative_prompt, 
+            override_prompt, original_prompt, original_negative_prompt,
             override_steps, st,
             override_strength,
             cfg, randomness, sigma_adjustment,
@@ -188,17 +188,17 @@ class Script(scripts.Script):
                 self.cache = Cached(rec_noise, cfg, st, lat, original_prompt, original_negative_prompt, sigma_adjustment)
 
             rand_noise = processing.create_random_tensors(p.init_latent.shape[1:], seeds=seeds, subseeds=subseeds, subseed_strength=p.subseed_strength, seed_resize_from_h=p.seed_resize_from_h, seed_resize_from_w=p.seed_resize_from_w, p=p)
-            
+
             combined_noise = ((1 - randomness) * rec_noise + randomness * rand_noise) / ((randomness**2 + (1-randomness)**2) ** 0.5)
-            
+
             sampler = sd_samplers.create_sampler(p.sampler_name, p.sd_model)
 
             sigmas = sampler.model_wrap.get_sigmas(p.steps)
-            
+
             noise_dt = combined_noise - (p.init_latent / sigmas[0])
-            
+
             p.seed = p.seed + 1
-            
+
             return sampler.sample_img2img(p, p.init_latent, noise_dt, conditioning, unconditional_conditioning, image_conditioning=p.image_conditioning)
 
         p.sample = sample_extra
@@ -213,4 +213,3 @@ class Script(scripts.Script):
         processed = processing.process_images(p)
 
         return processed
-

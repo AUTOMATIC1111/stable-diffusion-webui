@@ -241,7 +241,7 @@ class Api:
     def interrogateapi(self, interrogatereq: InterrogateRequest):
         image_b64 = interrogatereq.image
         if image_b64 is None:
-            raise HTTPException(status_code=404, detail="Image not found") 
+            raise HTTPException(status_code=404, detail="Image not found")
 
         img = decode_base64_to_image(image_b64)
         img = img.convert('RGB')
@@ -254,7 +254,7 @@ class Api:
                 processed = deepbooru.model.tag(img)
             else:
                 raise HTTPException(status_code=404, detail="Model not found")
-        
+
         return InterrogateResponse(caption=processed)
 
     def interruptapi(self):

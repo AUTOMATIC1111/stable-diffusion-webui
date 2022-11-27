@@ -109,7 +109,7 @@ def tensor_to_fix(self, *args, **kwargs):
     return orig_tensor_to(self, *args, **kwargs)
 
 
-# MPS workaround for https://github.com/pytorch/pytorch/issues/80800 
+# MPS workaround for https://github.com/pytorch/pytorch/issues/80800
 orig_layer_norm = torch.nn.functional.layer_norm
 def layer_norm_fix(*args, **kwargs):
     if len(args) > 0 and isinstance(args[0], torch.Tensor) and args[0].device.type == 'mps':

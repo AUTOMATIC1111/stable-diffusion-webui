@@ -62,7 +62,7 @@ def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_
     # Also keep track of original file names
     imageNameArr = []
     outputs = []
-    
+
     if extras_mode == 1:
         #convert file to pillow image
         for img in image_folder:

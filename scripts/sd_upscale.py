@@ -34,8 +34,8 @@ class Script(scripts.Script):
         seed = p.seed
 
         init_img = p.init_images[0]
-        
-        if(upscaler.name != "None"): 
+
+        if(upscaler.name != "None"):
             img = upscaler.scaler.upscale(init_img, 2, upscaler.data_path)
         else:
             img = init_img

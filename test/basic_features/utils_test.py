@@ -35,13 +35,13 @@ class UtilsTests(unittest.TestCase):
 
   def test_face_restorers(self):
     self.assertEqual(requests.get(self.url_face_restorers).status_code, 200)
-  
+
   def test_realesrgan_models(self):
     self.assertEqual(requests.get(self.url_realesrgan_models).status_code, 200)
-  
+
   def test_prompt_styles(self):
     self.assertEqual(requests.get(self.url_prompt_styles).status_code, 200)
-  
+
   def test_artist_categories(self):
     self.assertEqual(requests.get(self.url_artist_categories).status_code, 200)
 

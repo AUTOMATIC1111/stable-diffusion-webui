@@ -233,7 +233,7 @@ class VanillaStableDiffusionSampler:
             valid_step = 999 / (1000 // num_steps)
             if valid_step == floor(valid_step):
                 return int(valid_step) + 1
-        
+
         return num_steps
 
     def sample_img2img(self, p, x, noise, conditioning, unconditional_conditioning, steps=None, image_conditioning=None):
@@ -252,8 +252,8 @@ class VanillaStableDiffusionSampler:
         if image_conditioning is not None:
             conditioning = {"c_concat": [image_conditioning], "c_crossattn": [conditioning]}
             unconditional_conditioning = {"c_concat": [image_conditioning], "c_crossattn": [unconditional_conditioning]}
-            
-            
+
+
         samples = self.launch_sampling(t_enc + 1, lambda: self.sampler.decode(x1, conditioning, t_enc, unconditional_guidance_scale=p.cfg_scale, unconditional_conditioning=unconditional_conditioning))
 
         return samples
@@ -440,7 +440,7 @@ class KDiffusionSampler:
 
         sigma_sched = sigmas[steps - t_enc - 1:]
         xi = x + noise * sigma_sched[0]
-        
+
         extra_params_kwargs = self.initialize(p)
         if 'sigma_min' in inspect.signature(self.func).parameters:
             ## last sigma is zero which isn't allowed by DPM Fast & Adaptive so taking value before last
@@ -458,9 +458,9 @@ class KDiffusionSampler:
         self.last_latent = x
 
         samples = self.launch_sampling(t_enc + 1, lambda: self.func(self.model_wrap_cfg, xi, extra_args={
-            'cond': conditioning, 
-            'image_cond': image_conditioning, 
-            'uncond': unconditional_conditioning, 
+            'cond': conditioning,
+            'image_cond': image_conditioning,
+            'uncond': unconditional_conditioning,
             'cond_scale': p.cfg_scale
         }, disable=False, callback=self.callback_state, **extra_params_kwargs))
 
@@ -489,11 +489,10 @@ class KDiffusionSampler:
 
         self.last_latent = x
         samples = self.launch_sampling(steps, lambda: self.func(self.model_wrap_cfg, x, extra_args={
-            'cond': conditioning, 
-            'image_cond': image_conditioning, 
-            'uncond': unconditional_conditioning, 
+            'cond': conditioning,
+            'image_cond': image_conditioning,
+            'uncond': unconditional_conditioning,
             'cond_scale': p.cfg_scale
         }, disable=False, callback=self.callback_state, **extra_params_kwargs))
 
         return samples
-

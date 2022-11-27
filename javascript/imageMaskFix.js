@@ -41,5 +41,5 @@ function imageMaskResize() {
         c.style.objectFit = 'contain';
     });
  }
-  
+
  onUiUpdate(() => imageMaskResize());

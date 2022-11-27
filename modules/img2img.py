@@ -40,7 +40,7 @@ def process_batch(p, input_dir, output_dir, args):
 
         img = Image.open(image)
         # Use the EXIF orientation of photos taken by smartphones.
-        img = ImageOps.exif_transpose(img) 
+        img = ImageOps.exif_transpose(img)
         p.init_images = [img] * p.batch_size
 
         proc = modules.scripts.scripts_img2img.run(p, *args)
@@ -82,7 +82,7 @@ def img2img(mode: int, prompt: str, negative_prompt: str, prompt_style: str, pro
 
     # Use the EXIF orientation of photos taken by smartphones.
     if image is not None:
-        image = ImageOps.exif_transpose(image) 
+        image = ImageOps.exif_transpose(image)
 
     assert 0. <= denoising_strength <= 1., 'can only work with strength in [0.0, 1.0]'
 

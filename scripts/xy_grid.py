@@ -194,7 +194,7 @@ def draw_xy_grid(p, xs, ys, x_labels, y_labels, cell, draw_legend, include_lone_
                 # this dereference will throw an exception if the image was not processed
                 # (this happens in cases such as if the user stops the process from the UI)
                 processed_image = processed.images[0]
-                
+
                 if processed_result is None:
                     # Use our first valid processed result as a template container to hold our full results
                     processed_result = copy(processed)
@@ -229,7 +229,7 @@ class SharedSettingsStackHelper(object):
         self.CLIP_stop_at_last_layers = opts.CLIP_stop_at_last_layers
         self.hypernetwork = opts.sd_hypernetwork
         self.model = shared.sd_model
-  
+
     def __exit__(self, exc_type, exc_value, tb):
         modules.sd_models.reload_model_weights(self.model)
 
@@ -259,7 +259,7 @@ class Script(scripts.Script):
         with gr.Row():
             y_type = gr.Dropdown(label="Y type", choices=[x.label for x in current_axis_options], value=current_axis_options[0].label, type="index", elem_id="y_type")
             y_values = gr.Textbox(label="Y values", lines=1)
-        
+
         draw_legend = gr.Checkbox(label='Draw legend', value=True)
         include_lone_images = gr.Checkbox(label='Include Separate Images', value=False)
         no_fixed_seeds = gr.Checkbox(label='Keep -1 for seeds', value=False)
@@ -295,7 +295,7 @@ class Script(scripts.Script):
                         start = int(mc.group(1))
                         end   = int(mc.group(2))
                         num   = int(mc.group(3)) if mc.group(3) is not None else 1
-                        
+
                         valslist_ext += [int(x) for x in np.linspace(start=start, stop=end, num=num).tolist()]
                     else:
                         valslist_ext.append(val)
@@ -317,7 +317,7 @@ class Script(scripts.Script):
                         start = float(mc.group(1))
                         end   = float(mc.group(2))
                         num   = int(mc.group(3)) if mc.group(3) is not None else 1
-                        
+
                         valslist_ext += np.linspace(start=start, stop=end, num=num).tolist()
                     else:
                         valslist_ext.append(val)
