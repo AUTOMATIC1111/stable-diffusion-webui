@@ -5,6 +5,7 @@ import gc
 from collections import namedtuple
 import torch
 import re
+import safetensors.torch
 from omegaconf import OmegaConf
 
 from ldm.util import instantiate_from_config
@@ -173,14 +174,12 @@ def load_model_weights(model, checkpoint_info, vae_file="auto"):
         # load from file
         print(f"Loading weights [{sd_model_hash}] from {checkpoint_file}")
 
-        if checkpoint_file.endswith(".safetensors"):
-            try:
-                from safetensors.torch import load_file
-            except ImportError as e:
-                raise ImportError(f"The model is in safetensors format and it is not installed, use `pip install safetensors`: {e}")
-            pl_sd = load_file(checkpoint_file, device=shared.weight_load_location)
+        _, extension = os.path.splitext(checkpoint_file)
+        if extension.lower() == ".safetensors":
+            pl_sd = safetensors.torch.load_file(checkpoint_file, device=shared.weight_load_location)
         else:
             pl_sd = torch.load(checkpoint_file, map_location=shared.weight_load_location)
+
         if "global_step" in pl_sd:
             print(f"Global Step: {pl_sd['global_step']}")
 
