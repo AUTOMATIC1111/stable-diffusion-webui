@@ -18,7 +18,7 @@ from modules.script_callbacks import CFGDenoiserParams, cfg_denoiser_callback
 SamplerData = namedtuple('SamplerData', ['name', 'constructor', 'aliases', 'options'])
 
 samplers_k_diffusion = [
-    ('Euler a', 'sample_euler_ancestral', ['k_euler_a'], {}),
+    ('Euler a', 'sample_euler_ancestral', ['k_euler_a', 'k_euler_ancestral'], {}),
     ('Euler', 'sample_euler', ['k_euler'], {}),
     ('LMS', 'sample_lms', ['k_lms'], {}),
     ('Heun', 'sample_heun', ['k_heun'], {}),
