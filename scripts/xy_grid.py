@@ -72,7 +72,7 @@ def confirm_samplers(p, xs):
     for x in xs:
         if x.lower() not in sd_samplers.samplers_map:
             raise RuntimeError(f"Unknown sampler: {x}")
-        if p.enable_hr and sd_samplers.samplers_map.get(x.lower(), None) == 'PLMS':
+        if p.enable_hr and x.upper() == 'PLMS':
             raise RuntimeError(f"Sampler PLMS not supported for img2img or when highres fix enabled in txt2img")
 
 
