@@ -111,7 +111,7 @@ def upscale(
     img = img[:, :, ::-1]
     img = np.moveaxis(img, 2, 0) / 255
     img = torch.from_numpy(img).float()
-    img = devices.mps_contiguous_to(img.unsqueeze(0), devices.device_swinir)
+    img = img.unsqueeze(0).to(devices.device_swinir)
     with torch.no_grad(), precision_scope("cuda"):
         _, _, h_old, w_old = img.size()
         h_pad = (h_old // window_size + 1) * window_size - h_old

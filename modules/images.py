@@ -305,6 +305,7 @@ class FilenameGenerator:
         'styles': lambda self: self.p and sanitize_filename_part(", ".join([style for style in self.p.styles if not style == "None"]) or "None", replace_spaces=False),
         'sampler': lambda self: self.p and sanitize_filename_part(self.p.sampler_name, replace_spaces=False),
         'model_hash': lambda self: getattr(self.p, "sd_model_hash", shared.sd_model.sd_model_hash),
+        'model_name': lambda self: sanitize_filename_part(shared.sd_model.sd_checkpoint_info.model_name, replace_spaces=False),
         'date': lambda self: datetime.datetime.now().strftime('%Y-%m-%d'),
         'datetime': lambda self, *args: self.datetime(*args),  # accepts formats: [datetime], [datetime<Format>], [datetime<Format><Time Zone>]
         'job_timestamp': lambda self: getattr(self.p, "job_timestamp", shared.state.job_timestamp),
@@ -523,6 +524,8 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
             piexif.insert(exif_bytes(), fullfn)
     else:
         image.save(fullfn, quality=opts.jpeg_quality)
+
+    image.already_saved_as = fullfn
 
     target_side_length = 4000
     oversize = image.width > target_side_length or image.height > target_side_length
