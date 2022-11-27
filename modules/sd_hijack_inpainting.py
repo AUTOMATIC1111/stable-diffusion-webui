@@ -199,8 +199,8 @@ def sample_plms(self,
 
 @torch.no_grad()
 def p_sample_plms(self, x, c, t, index, repeat_noise=False, use_original_steps=False, quantize_denoised=False,
-                    temperature=1., noise_dropout=0., score_corrector=None, corrector_kwargs=None,
-                    unconditional_guidance_scale=1., unconditional_conditioning=None, old_eps=None, t_next=None):
+                  temperature=1., noise_dropout=0., score_corrector=None, corrector_kwargs=None,
+                  unconditional_guidance_scale=1., unconditional_conditioning=None, old_eps=None, t_next=None, dynamic_threshold=None):
     b, *_, device = *x.shape, x.device
 
     def get_model_output(x, t):
@@ -249,6 +249,8 @@ def p_sample_plms(self, x, c, t, index, repeat_noise=False, use_original_steps=F
         pred_x0 = (x - sqrt_one_minus_at * e_t) / a_t.sqrt()
         if quantize_denoised:
             pred_x0, _, *_ = self.model.first_stage_model.quantize(pred_x0)
+        if dynamic_threshold is not None:
+            pred_x0 = norm_thresholding(pred_x0, dynamic_threshold)
         # direction pointing to x_t
         dir_xt = (1. - a_prev - sigma_t**2).sqrt() * e_t
         noise = sigma_t * noise_like(x.shape, device, repeat_noise) * temperature
@@ -321,12 +323,16 @@ def should_hijack_inpainting(checkpoint_info):
 
 
 def do_inpainting_hijack():
-    ldm.models.diffusion.ddpm.get_unconditional_conditioning = get_unconditional_conditioning
+    # most of this stuff seems to no longer be needed because it is already included into SD2.0
+    # LatentInpaintDiffusion remains because SD2.0's LatentInpaintDiffusion can't be loaded without specifying a checkpoint
+    # p_sample_plms is needed because PLMS can't work with dicts as conditionings
+    # this file should be cleaned up later if weverything tuens out to work fine
+
+    # ldm.models.diffusion.ddpm.get_unconditional_conditioning = get_unconditional_conditioning
     ldm.models.diffusion.ddpm.LatentInpaintDiffusion = LatentInpaintDiffusion
 
-    ldm.models.diffusion.ddim.DDIMSampler.p_sample_ddim = p_sample_ddim
-    ldm.models.diffusion.ddim.DDIMSampler.sample = sample_ddim
+    # ldm.models.diffusion.ddim.DDIMSampler.p_sample_ddim = p_sample_ddim
+    # ldm.models.diffusion.ddim.DDIMSampler.sample = sample_ddim
 
     ldm.models.diffusion.plms.PLMSSampler.p_sample_plms = p_sample_plms
-    ldm.models.diffusion.plms.PLMSSampler.sample = sample_plms
-
+    # ldm.models.diffusion.plms.PLMSSampler.sample = sample_plms
