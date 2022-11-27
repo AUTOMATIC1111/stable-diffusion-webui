@@ -117,6 +117,8 @@ class Api:
             "do_not_save_grid": True
             }
         )
+        if populate.sampler_name:
+            populate.sampler_index = None  # prevent a warning later on
         p = StableDiffusionProcessingTxt2Img(**vars(populate))
         # Override object param
 
@@ -148,6 +150,8 @@ class Api:
             "mask": mask
             }
         )
+        if populate.sampler_name:
+            populate.sampler_index = None  # prevent a warning later on
         p = StableDiffusionProcessingImg2Img(**vars(populate))
 
         imgs = []
