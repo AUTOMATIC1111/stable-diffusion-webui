@@ -112,11 +112,13 @@ class Api:
     def text2imgapi(self, txt2imgreq: StableDiffusionTxt2ImgProcessingAPI):
         populate = txt2imgreq.copy(update={ # Override __init__ params
             "sd_model": shared.sd_model,
-            "sampler_name": validate_sampler_name(txt2imgreq.sampler_index),
+            "sampler_name": validate_sampler_name(txt2imgreq.sampler_name or txt2imgreq.sampler_index),
             "do_not_save_samples": True,
             "do_not_save_grid": True
             }
         )
+        if populate.sampler_name:
+            populate.sampler_index = None  # prevent a warning later on
         p = StableDiffusionProcessingTxt2Img(**vars(populate))
         # Override object param
 
@@ -142,12 +144,14 @@ class Api:
 
         populate = img2imgreq.copy(update={ # Override __init__ params
             "sd_model": shared.sd_model,
-            "sampler_name": validate_sampler_name(img2imgreq.sampler_index),
+            "sampler_name": validate_sampler_name(img2imgreq.sampler_name or img2imgreq.sampler_index),
             "do_not_save_samples": True,
             "do_not_save_grid": True,
             "mask": mask
             }
         )
+        if populate.sampler_name:
+            populate.sampler_index = None  # prevent a warning later on
         p = StableDiffusionProcessingImg2Img(**vars(populate))
 
         imgs = []
