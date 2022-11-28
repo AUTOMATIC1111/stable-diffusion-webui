@@ -19,7 +19,7 @@ import modules.img2img
 
 import modules.lowvram
 import modules.paths
-import modules.scripts
+import modules.scripts 
 import modules.sd_hijack
 import modules.sd_models
 import modules.sd_vae
@@ -162,7 +162,7 @@ def webui():
         shared.demo = modules.ui.create_ui(wrap_gradio_gpu_call=wrap_gradio_gpu_call)
 
         app, local_url, share_url = shared.demo.launch(
-            share=cmd_opts.share,
+            share=True,
             server_name=server_name,
             server_port=cmd_opts.port,
             ssl_keyfile=cmd_opts.tls_keyfile,
