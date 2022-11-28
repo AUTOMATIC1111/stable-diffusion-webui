@@ -17,13 +17,16 @@ class Script(scripts.Script):
         return is_img2img
 
     def ui(self, is_img2img):
-        info = gr.HTML("<p style=\"margin-bottom:0.75em\">Will upscale the image to twice the dimensions; use width and height sliders to set tile size</p>")
+        info = gr.HTML(
+            "<p style=\"margin-bottom:0.75em\">Will upscale the image by the selected scale factor; use width and height sliders to set tile size</p>")
         overlap = gr.Slider(minimum=0, maximum=256, step=16, label='Tile overlap', value=64)
-        upscaler_index = gr.Radio(label='Upscaler', choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name, type="index")
+        scale_factor = gr.Slider(minimum=0, maximum=4, step=1, label='Scale Factor', value=2)
+        upscaler_index = gr.Radio(label='Upscaler', choices=[x.name for x in shared.sd_upscalers],
+                                  value=shared.sd_upscalers[0].name, type="index")
 
-        return [info, overlap, upscaler_index]
+        return [info, overlap, upscaler_index, scale_factor]
 
-    def run(self, p, _, overlap, upscaler_index):
+    def run(self, p, _, overlap, upscaler_index, scale_factor):
         processing.fix_seed(p)
         upscaler = shared.sd_upscalers[upscaler_index]
 
@@ -34,9 +37,9 @@ class Script(scripts.Script):
         seed = p.seed
 
         init_img = p.init_images[0]
-        
-        if(upscaler.name != "None"): 
-            img = upscaler.scaler.upscale(init_img, 2, upscaler.data_path)
+
+        if (upscaler.name != "None"):
+            img = upscaler.scaler.upscale(init_img, scale_factor, upscaler.data_path)
         else:
             img = init_img
 
@@ -59,7 +62,8 @@ class Script(scripts.Script):
         batch_count = math.ceil(len(work) / batch_size)
         state.job_count = batch_count * upscale_count
 
-        print(f"SD upscaling will process a total of {len(work)} images tiled as {len(grid.tiles[0][2])}x{len(grid.tiles)} per upscale in a total of {state.job_count} batches.")
+        print(
+            f"SD upscaling will process a total of {len(work)} images tiled as {len(grid.tiles[0][2])}x{len(grid.tiles)} per upscale in a total of {state.job_count} batches.")
 
         result_images = []
         for n in range(upscale_count):
@@ -69,7 +73,7 @@ class Script(scripts.Script):
             work_results = []
             for i in range(batch_count):
                 p.batch_size = batch_size
-                p.init_images = work[i*batch_size:(i+1)*batch_size]
+                p.init_images = work[i * batch_size:(i + 1) * batch_size]
 
                 state.job = f"Batch {i + 1 + n * batch_count} out of {state.job_count}"
                 processed = processing.process_images(p)
@@ -83,14 +87,16 @@ class Script(scripts.Script):
             image_index = 0
             for y, h, row in grid.tiles:
                 for tiledata in row:
-                    tiledata[2] = work_results[image_index] if image_index < len(work_results) else Image.new("RGB", (p.width, p.height))
+                    tiledata[2] = work_results[image_index] if image_index < len(work_results) else Image.new("RGB", (
+                    p.width, p.height))
                     image_index += 1
 
             combined_image = images.combine_grid(grid)
             result_images.append(combined_image)
 
             if opts.samples_save:
-                images.save_image(combined_image, p.outpath_samples, "", start_seed, p.prompt, opts.samples_format, info=initial_info, p=p)
+                images.save_image(combined_image, p.outpath_samples, "", start_seed, p.prompt, opts.samples_format,
+                                  info=initial_info, p=p)
 
         processed = Processed(p, result_images, seed, initial_info)
 
