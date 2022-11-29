@@ -117,13 +117,13 @@ class PersonalizedBase(Dataset):
 
     def create_text(self, filename_text):
         text = random.choice(self.lines)
-        text = text.replace("[name]", self.placeholder_token)
         tags = filename_text.split(',')
         if self.tag_drop_out != 0:
             tags = [t for t in tags if random.random() > self.tag_drop_out]
         if self.shuffle_tags:
             random.shuffle(tags)
         text = text.replace("[filewords]", ','.join(tags))
+        text = text.replace("[name]", self.placeholder_token)
         return text
 
     def __len__(self):

@@ -144,8 +144,8 @@ def transform_checkpoint_dict_key(k):
 
 
 def get_state_dict_from_checkpoint(pl_sd):
-    if "state_dict" in pl_sd:
-        pl_sd = pl_sd["state_dict"]
+    pl_sd = pl_sd.pop("state_dict", pl_sd)
+    pl_sd.pop("state_dict", None)
 
     sd = {}
     for k, v in pl_sd.items():

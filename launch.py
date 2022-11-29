@@ -5,6 +5,8 @@ import sys
 import importlib.util
 import shlex
 import platform
+import argparse
+import json
 
 dir_repos = "repositories"
 dir_extensions = "extensions"
@@ -132,11 +134,26 @@ def run_extension_installer(extension_dir):
         print(e, file=sys.stderr)
 
 
-def run_extensions_installers():
+def list_extensions(settings_file):
+    settings = {}
+
+    try:
+        if os.path.isfile(settings_file):
+            with open(settings_file, "r", encoding="utf8") as file:
+                settings = json.load(file)
+    except Exception as e:
+        print(e, file=sys.stderr)
+
+    disabled_extensions = set(settings.get('disabled_extensions', []))
+
+    return [x for x in os.listdir(dir_extensions) if x not in disabled_extensions]
+
+
+def run_extensions_installers(settings_file):
     if not os.path.isdir(dir_extensions):
         return
 
-    for dirname_extension in os.listdir(dir_extensions):
+    for dirname_extension in list_extensions(settings_file):
         run_extension_installer(os.path.join(dir_extensions, dirname_extension))
 
 
@@ -164,6 +181,10 @@ def prepare_enviroment():
     blip_commit_hash = os.environ.get('BLIP_COMMIT_HASH', "48211a1594f1321b00f14c9f7a5b4813144b2fb9")
 
     sys.argv += shlex.split(commandline_args)
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--ui-settings-file", type=str, help="filename to use for ui settings", default='config.json')
+    args, _ = parser.parse_known_args(sys.argv)
 
     sys.argv, skip_torch_cuda_test = extract_arg(sys.argv, '--skip-torch-cuda-test')
     sys.argv, reinstall_xformers = extract_arg(sys.argv, '--reinstall-xformers')
@@ -223,7 +244,7 @@ def prepare_enviroment():
 
     run_pip(f"install -r {requirements_file}", "requirements for Web UI")
 
-    run_extensions_installers()
+    run_extensions_installers(settings_file=args.ui_settings_file)
 
     if update_check:
         version_check(commit)

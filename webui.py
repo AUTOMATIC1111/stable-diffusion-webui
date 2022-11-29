@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 
+from modules.call_queue import wrap_queued_call, queue_lock, wrap_gradio_gpu_call
 from modules.paths import script_path
 
 from modules import shared, devices, sd_samplers, upscaler, extensions, localization, ui_tempdir
@@ -32,36 +33,10 @@ from modules.shared import cmd_opts
 import modules.hypernetworks.hypernetwork
 
 
-queue_lock = threading.Lock()
 if cmd_opts.server_name:
     server_name = cmd_opts.server_name
 else:
     server_name = "0.0.0.0" if cmd_opts.listen else None
-
-
-def wrap_queued_call(func):
-    def f(*args, **kwargs):
-        with queue_lock:
-            res = func(*args, **kwargs)
-
-        return res
-
-    return f
-
-
-def wrap_gradio_gpu_call(func, extra_outputs=None):
-    def f(*args, **kwargs):
-
-        shared.state.begin()
-
-        with queue_lock:
-            res = func(*args, **kwargs)
-
-        shared.state.end()
-
-        return res
-
-    return modules.ui.wrap_gradio_call(f, extra_outputs=extra_outputs, add_stats=True)
 
 
 def initialize():
@@ -113,8 +88,12 @@ def initialize():
 
 
 def setup_cors(app):
-    if cmd_opts.cors_allow_origins:
+    if cmd_opts.cors_allow_origins and cmd_opts.cors_allow_origins_regex:
+        app.add_middleware(CORSMiddleware, allow_origins=cmd_opts.cors_allow_origins.split(','), allow_origin_regex=cmd_opts.cors_allow_origins_regex, allow_methods=['*'])
+    elif cmd_opts.cors_allow_origins:
         app.add_middleware(CORSMiddleware, allow_origins=cmd_opts.cors_allow_origins.split(','), allow_methods=['*'])
+    elif cmd_opts.cors_allow_origins_regex:
+        app.add_middleware(CORSMiddleware, allow_origin_regex=cmd_opts.cors_allow_origins_regex, allow_methods=['*'])
 
 
 def create_api(app):
@@ -155,7 +134,7 @@ def webui():
         if shared.opts.clean_temp_dir_at_start:
             ui_tempdir.cleanup_tmpdr()
 
-        shared.demo = modules.ui.create_ui(wrap_gradio_gpu_call=wrap_gradio_gpu_call)
+        shared.demo = modules.ui.create_ui()
 
         app, local_url, share_url = shared.demo.launch(
             share=cmd_opts.share,
@@ -184,6 +163,7 @@ def webui():
         if launch_api:
             create_api(app)
 
+        modules.script_callbacks.app_started_callback(shared.demo, app)
         modules.script_callbacks.app_started_callback(shared.demo, app)
 
         wait_on_server(shared.demo)
