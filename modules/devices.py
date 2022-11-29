@@ -36,8 +36,8 @@ def get_optimal_device():
         else:
             return torch.device("cuda")
 
-    if has_mps():
-        return torch.device("mps")
+    # if has_mps():
+    #     return torch.device("mps")
 
     return cpu
 
