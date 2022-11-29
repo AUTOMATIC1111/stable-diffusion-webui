@@ -194,6 +194,12 @@
 			"tags": ["script", "tab"]
 		},
 		{
+			"name": "Depth Maps",
+			"url": "https://github.com/thygate/stable-diffusion-webui-depthmap-script.git",
+			"description": "Creates depthmaps from the generated images. The result can be viewed on 3D or holographic devices like VR headsets or lookingglass display, used in Render or Game- Engines on a plane with a displacement modifier, and maybe even 3D printed.",
+			"tags": ["script"]
+		},
+		{
 			"name": "multi-subject-render",
 			"url": "https://github.com/Extraltodeus/multi-subject-render.git",
 			"description": "It is a depth aware extension that can help to create multiple complex subjects on a single image. It generates a background, then multiple foreground subjects, cuts their backgrounds after a depth analysis, paste them onto the background and finally does an img2img for a clean finish.",
