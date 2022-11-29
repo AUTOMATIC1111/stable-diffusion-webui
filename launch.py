@@ -158,6 +158,8 @@ def run_extensions_installers(settings_file):
 
 
 def prepare_enviroment():
+    flow_command=os.environ.get('FLOW_COMMAND', " pip install -f https://staging.oneflow.info/branch/master/cu112 --pre oneflow")
+    flowvision_command=os.environ.get('FLOWVISION_COMMAND', " pip install flowvision==0.2.0")
     torch_command = os.environ.get('TORCH_COMMAND', "pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 --extra-index-url https://download.pytorch.org/whl/cu113")
     requirements_file = os.environ.get('REQS_FILE', "requirements_versions.txt")
     commandline_args = os.environ.get('COMMANDLINE_ARGS', "")
@@ -173,6 +175,8 @@ def prepare_enviroment():
     k_diffusion_repo = os.environ.get('K_DIFFUSION_REPO', 'https://github.com/crowsonkb/k-diffusion.git')
     codeformer_repo = os.environ.get('CODEFORMER_REPO', 'https://github.com/sczhou/CodeFormer.git')
     blip_repo = os.environ.get('BLIP_REPO', 'https://github.com/salesforce/BLIP.git')
+    diffusion_oneflow_repo=os.environ.get('DIFFUSION_ONEFLOW_REPO', 'https://github.com/Oneflow-Inc/diffusers.git')
+    transformers_repo=os.environ.get('TRANSFORMERS_REPO', 'https://github.com/Oneflow-Inc/transformers.git')
 
     stable_diffusion_commit_hash = os.environ.get('STABLE_DIFFUSION_COMMIT_HASH', "47b6b607fdd31875c9279cd2f4f16b92e4ea958e")
     taming_transformers_commit_hash = os.environ.get('TAMING_TRANSFORMERS_COMMIT_HASH', "24268930bf1dce879235a7fddd0b2355b84d7ea6")
@@ -201,6 +205,12 @@ def prepare_enviroment():
     print(f"Python {sys.version}")
     print(f"Commit hash: {commit}")
     
+    if not is_installed("oneflow"):
+        run(f'"{python}" -m {flow_command}', "Installing oneflow", "Couldn't install oneflow")
+
+    if not is_installed("flowvision"):
+        run(f'"{python}" -m {flowvision_command}', "Installing flowvision", "Couldn't install flowvision")
+
     if not is_installed("torch") or not is_installed("torchvision"):
         run(f'"{python}" -m {torch_command}', "Installing torch and torchvision", "Couldn't install torch")
 
@@ -238,6 +248,8 @@ def prepare_enviroment():
     git_clone(k_diffusion_repo, repo_dir('k-diffusion'), "K-diffusion", k_diffusion_commit_hash)
     git_clone(codeformer_repo, repo_dir('CodeFormer'), "CodeFormer", codeformer_commit_hash)
     git_clone(blip_repo, repo_dir('BLIP'), "BLIP", blip_commit_hash)
+    git_clone(diffusion_oneflow_repo, repo_dir('diffusion-oneflow'), "Diffusion_Oneflow")
+    git_clone(transformers_repo, repo_dir('transformers'), "Transformers")
 
     if not is_installed("lpips"):
         run_pip(f"install -r {os.path.join(repo_dir('CodeFormer'), 'requirements.txt')}", "requirements for CodeFormer")
@@ -291,4 +303,4 @@ def start():
 
 if __name__ == "__main__":
     prepare_enviroment()
-    start()
+    #start()

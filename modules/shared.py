@@ -537,6 +537,8 @@ opts = Options()
 if os.path.exists(config_filename):
     opts.load(config_filename)
 
+oneflow_diffusion_pipe=None
+
 sd_upscalers = []
 
 sd_model = None
