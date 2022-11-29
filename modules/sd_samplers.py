@@ -6,6 +6,7 @@ import tqdm
 from PIL import Image
 import inspect
 import k_diffusion.sampling
+import torchsde._brownian.brownian_interval
 import ldm.models.diffusion.ddim
 import ldm.models.diffusion.plms
 from modules import prompt_parser, devices, processing, images
@@ -365,6 +366,19 @@ class TorchHijack:
                 return noise
 
         return torch.randn_like(x)
+
+
+# MPS fix for randn in torchsde
+def torchsde_randn(size, dtype, device, seed):
+    if device.type == 'mps':
+        generator = torch.Generator(devices.cpu).manual_seed(int(seed))
+        return torch.randn(size, dtype=dtype, device=devices.cpu, generator=generator).to(device)
+    else:
+        generator = torch.Generator(device).manual_seed(int(seed))
+        return torch.randn(size, dtype=dtype, device=device, generator=generator)
+
+
+torchsde._brownian.brownian_interval._randn = torchsde_randn
 
 
 class KDiffusionSampler:
