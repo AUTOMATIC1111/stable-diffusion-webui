@@ -28,7 +28,7 @@ diffusionmodules_model_AttnBlock_forward = ldm.modules.diffusionmodules.model.At
 # new memory efficient cross attention blocks do not support hypernets and we already
 # have memory efficient cross attention anyway, so this disables SD2.0's memory efficient cross attention
 ldm.modules.attention.MemoryEfficientCrossAttention = ldm.modules.attention.CrossAttention
-ldm.modules.attention.BasicTransformerBlock.ATTENTION_MODES["softmax-xformers"] = ldm.modules.attention.CrossAttention
+# ldm.modules.attention.BasicTransformerBlock.ATTENTION_MODES["softmax-xformers"] = ldm.modules.attention.CrossAttention
 
 # silence new console spam from SD2
 ldm.modules.attention.print = lambda *args: None
@@ -82,7 +82,12 @@ class StableDiffusionModelHijack:
 
     def hijack(self, m):
 
-        if type(m.cond_stage_model) == ldm.modules.encoders.modules.FrozenCLIPEmbedder:
+        if shared.text_model_name == "XLMR-Large":
+            model_embeddings = m.cond_stage_model.roberta.embeddings
+            model_embeddings.token_embedding = EmbeddingsWithFixes(model_embeddings.word_embeddings, self)
+            m.cond_stage_model = sd_hijack_clip.FrozenCLIPEmbedderWithCustomWords(m.cond_stage_model, self)
+            
+        elif type(m.cond_stage_model) == ldm.modules.encoders.modules.FrozenCLIPEmbedder:
             model_embeddings = m.cond_stage_model.transformer.text_model.embeddings
             model_embeddings.token_embedding = EmbeddingsWithFixes(model_embeddings.token_embedding, self)
             m.cond_stage_model = sd_hijack_clip.FrozenCLIPEmbedderWithCustomWords(m.cond_stage_model, self)
@@ -91,11 +96,7 @@ class StableDiffusionModelHijack:
             m.cond_stage_model.model.token_embedding = EmbeddingsWithFixes(m.cond_stage_model.model.token_embedding, self)
             m.cond_stage_model = sd_hijack_open_clip.FrozenOpenCLIPEmbedderWithCustomWords(m.cond_stage_model, self)
             apply_optimizations()
-        elif shared.text_model_name == "XLMR-Large":
-            model_embeddings = m.cond_stage_model.roberta.embeddings
-            model_embeddings.token_embedding = EmbeddingsWithFixes(model_embeddings.word_embeddings, self)
-            m.cond_stage_model = sd_hijack_clip.FrozenCLIPEmbedderWithCustomWords(m.cond_stage_model, self)
-            
+        
         self.clip = m.cond_stage_model
         
         fix_checkpoint()
