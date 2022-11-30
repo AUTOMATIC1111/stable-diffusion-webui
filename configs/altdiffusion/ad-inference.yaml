@@ -67,6 +67,6 @@ model:
           target: torch.nn.Identity
 
     cond_stage_config:
-      target: ldm.modules.encoders.xlmr.BertSeriesModelWithTransformation
+      target: modules.xlmr.BertSeriesModelWithTransformation
       params:
         name: "XLMR-Large"
