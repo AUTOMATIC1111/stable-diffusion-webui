@@ -99,7 +99,7 @@ def img2img(mode: int, prompt: str, negative_prompt: str, prompt_style: str, pro
         seed_resize_from_h=seed_resize_from_h,
         seed_resize_from_w=seed_resize_from_w,
         seed_enable_extras=seed_enable_extras,
-        sampler_index=sd_samplers.samplers_for_img2img[sampler_index].name,
+        sampler_name=sd_samplers.samplers_for_img2img[sampler_index].name,
         batch_size=batch_size,
         n_iter=n_iter,
         steps=steps,

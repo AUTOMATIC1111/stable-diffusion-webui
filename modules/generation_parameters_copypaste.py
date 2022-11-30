@@ -2,6 +2,8 @@ import base64
 import io
 import os
 import re
+from pathlib import Path
+
 import gradio as gr
 from modules.shared import script_path
 from modules import shared
@@ -35,9 +37,8 @@ def quote(text):
 def image_from_url_text(filedata):
     if type(filedata) == dict and filedata["is_file"]:
         filename = filedata["name"]
-        tempdir = os.path.normpath(tempfile.gettempdir())
-        normfn = os.path.normpath(filename)
-        assert normfn.startswith(tempdir), 'trying to open image file not in temporary directory'
+        is_in_right_dir = any(Path(temp_dir).resolve() in Path(filename).resolve().parents for temp_dir in shared.demo.temp_dirs)
+        assert is_in_right_dir, 'trying to open image file outside of allowed directories'
 
         return Image.open(filename)
 
@@ -75,6 +76,7 @@ def integrate_settings_paste_fields(component_dict):
         'CLIP_stop_at_last_layers': 'Clip skip',
         'inpainting_mask_weight': 'Conditional mask weight',
         'sd_model_checkpoint': 'Model hash',
+        'eta_noise_seed_delta': 'ENSD',
     }
     settings_paste_fields = [
         (component_dict[k], lambda d, k=k, v=v: ui.apply_setting(k, d.get(v, None)))
