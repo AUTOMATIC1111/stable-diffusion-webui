@@ -46,7 +46,7 @@ def image_from_url_text(filedata):
         if len(filedata) == 0:
             return None
 
-        filedata = filedata[0]
+        filedata = str(filedata[0])
 
     if filedata.startswith("data:image/png;base64,"):
         filedata = filedata[len("data:image/png;base64,"):]
