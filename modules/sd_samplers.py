@@ -365,7 +365,10 @@ class TorchHijack:
             if noise.shape == x.shape:
                 return noise
 
-        return torch.randn_like(x)
+        if x.device.type == 'mps':
+            return torch.randn_like(x, device=devices.cpu).to(x.device)
+        else:
+            return torch.randn_like(x)
 
 
 # MPS fix for randn in torchsde
@@ -429,8 +432,7 @@ class KDiffusionSampler:
         self.model_wrap.step = 0
         self.eta = p.eta or opts.eta_ancestral
 
-        if self.sampler_noises is not None:
-            k_diffusion.sampling.torch = TorchHijack(self.sampler_noises)
+        k_diffusion.sampling.torch = TorchHijack(self.sampler_noises if self.sampler_noises is not None else [])
 
         extra_params_kwargs = {}
         for param_name in self.extra_params:
