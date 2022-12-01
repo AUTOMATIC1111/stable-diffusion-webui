@@ -186,6 +186,7 @@ def prepare_enviroment():
     parser.add_argument("--ui-settings-file", type=str, help="filename to use for ui settings", default='config.json')
     args, _ = parser.parse_known_args(sys.argv)
 
+    sys.argv, _ = extract_arg(sys.argv, '-f')
     sys.argv, skip_torch_cuda_test = extract_arg(sys.argv, '--skip-torch-cuda-test')
     sys.argv, reinstall_xformers = extract_arg(sys.argv, '--reinstall-xformers')
     sys.argv, update_check = extract_arg(sys.argv, '--update-check')

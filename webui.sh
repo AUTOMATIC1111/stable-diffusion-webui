@@ -51,10 +51,11 @@ fi
 can_run_as_root=0
 
 # read any command line flags to the webui.sh script
-while getopts "f" flag
+while getopts "f" flag > /dev/null 2>&1
 do
     case ${flag} in
         f) can_run_as_root=1;;
+        *) break;;
     esac
 done
 
