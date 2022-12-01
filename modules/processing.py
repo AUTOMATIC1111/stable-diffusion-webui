@@ -394,6 +394,7 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration
         "Seed": all_seeds[index],
         "Face restoration": (opts.face_restoration_model if p.restore_faces else None),
         "Size": f"{p.width}x{p.height}",
+        'Model name': shared.sd_model.sd_checkpoint_info.model_name,        
         "Model hash": getattr(p, 'sd_model_hash', None if not opts.add_model_hash_to_info or not shared.sd_model.sd_model_hash else shared.sd_model.sd_model_hash),
         "Model": (None if not opts.add_model_name_to_info or not shared.sd_model.sd_checkpoint_info.model_name else shared.sd_model.sd_checkpoint_info.model_name.replace(',', '').replace(':', '')),
         "Hypernet": (None if shared.loaded_hypernetwork is None else shared.loaded_hypernetwork.name),
