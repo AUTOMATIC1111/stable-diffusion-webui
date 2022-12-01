@@ -111,7 +111,7 @@ def confirm_hypernetworks(p, xs):
 
 
 def apply_clip_skip(p, x, xs):
-    opts.data["CLIP_stop_at_last_layers"] = x
+    p.clip_skip = x
 
 
 def format_value_add_label(p, opt, x):
@@ -226,7 +226,7 @@ def draw_xy_grid(p, xs, ys, x_labels, y_labels, cell, draw_legend, include_lone_
 
 class SharedSettingsStackHelper(object):
     def __enter__(self):
-        self.CLIP_stop_at_last_layers = opts.CLIP_stop_at_last_layers
+        self.CLIP_stop_at_last_layers = shared.CLIP_stop_at_last_layers
         self.hypernetwork = opts.sd_hypernetwork
         self.model = shared.sd_model
   
@@ -236,7 +236,7 @@ class SharedSettingsStackHelper(object):
         hypernetwork.load_hypernetwork(self.hypernetwork)
         hypernetwork.apply_strength()
 
-        opts.data["CLIP_stop_at_last_layers"] = self.CLIP_stop_at_last_layers
+        shared.CLIP_stop_at_last_layers = self.CLIP_stop_at_last_layers
 
 
 re_range = re.compile(r"\s*([+-]?\s*\d+)\s*-\s*([+-]?\s*\d+)(?:\s*\(([+-]\d+)\s*\))?\s*")

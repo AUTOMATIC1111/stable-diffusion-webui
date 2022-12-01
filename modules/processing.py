@@ -72,7 +72,7 @@ class StableDiffusionProcessing():
     """
     The first set of paramaters: sd_models -> do_not_reload_embeddings represent the minimum required to create a StableDiffusionProcessing
     """
-    def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt: str = "", styles: List[str] = None, seed: int = -1, subseed: int = -1, subseed_strength: float = 0, seed_resize_from_h: int = -1, seed_resize_from_w: int = -1, seed_enable_extras: bool = True, sampler_name: str = None, batch_size: int = 1, n_iter: int = 1, steps: int = 50, cfg_scale: float = 7.0, width: int = 512, height: int = 512, restore_faces: bool = False, tiling: bool = False, do_not_save_samples: bool = False, do_not_save_grid: bool = False, extra_generation_params: Dict[Any, Any] = None, overlay_images: Any = None, negative_prompt: str = None, eta: float = None, do_not_reload_embeddings: bool = False, denoising_strength: float = 0, ddim_discretize: str = None, s_churn: float = 0.0, s_tmax: float = None, s_tmin: float = 0.0, s_noise: float = 1.0, override_settings: Dict[str, Any] = None, sampler_index: int = None):
+    def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt: str = "", styles: List[str] = None, seed: int = -1, subseed: int = -1, subseed_strength: float = 0, seed_resize_from_h: int = -1, seed_resize_from_w: int = -1, seed_enable_extras: bool = True, sampler_name: str = None, batch_size: int = 1, n_iter: int = 1, steps: int = 50, cfg_scale: float = 7.0, clip_skip: int = 1, width: int = 512, height: int = 512, restore_faces: bool = False, tiling: bool = False, do_not_save_samples: bool = False, do_not_save_grid: bool = False, extra_generation_params: Dict[Any, Any] = None, overlay_images: Any = None, negative_prompt: str = None, eta: float = None, do_not_reload_embeddings: bool = False, denoising_strength: float = 0, ddim_discretize: str = None, s_churn: float = 0.0, s_tmax: float = None, s_tmin: float = 0.0, s_noise: float = 1.0, override_settings: Dict[str, Any] = None, sampler_index: int = None):
         if sampler_index is not None:
             print("sampler_index argument for StableDiffusionProcessing does not do anything; use sampler_name", file=sys.stderr)
 
@@ -93,6 +93,7 @@ class StableDiffusionProcessing():
         self.n_iter: int = n_iter
         self.steps: int = steps
         self.cfg_scale: float = cfg_scale
+        self.clip_skip: int = clip_skip
         self.width: int = width
         self.height: int = height
         self.restore_faces: bool = restore_faces
@@ -215,6 +216,7 @@ class Processed:
         self.height = p.height
         self.sampler_name = p.sampler_name
         self.cfg_scale = p.cfg_scale
+        self.clip_skip = p.clip_skip
         self.steps = p.steps
         self.batch_size = p.batch_size
         self.restore_faces = p.restore_faces
@@ -227,7 +229,6 @@ class Processed:
         self.index_of_first_image = index_of_first_image
         self.styles = p.styles
         self.job_timestamp = state.job_timestamp
-        self.clip_skip = opts.CLIP_stop_at_last_layers
 
         self.eta = p.eta
         self.ddim_discretize = p.ddim_discretize
@@ -385,8 +386,6 @@ def fix_seed(p):
 def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration=0, position_in_batch=0):
     index = position_in_batch + iteration * p.batch_size
 
-    clip_skip = getattr(p, 'clip_skip', opts.CLIP_stop_at_last_layers)
-
     generation_params = {
         "Steps": p.steps,
         "Sampler": p.sampler_name,
@@ -406,7 +405,7 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration
         "Denoising strength": getattr(p, 'denoising_strength', None),
         "Conditional mask weight": getattr(p, "inpainting_mask_weight", shared.opts.inpainting_mask_weight) if p.is_using_inpainting_conditioning else None,
         "Eta": (None if p.sampler is None or p.sampler.eta == p.sampler.default_eta else p.sampler.eta),
-        "Clip skip": None if clip_skip <= 1 else clip_skip,
+        "Clip skip": None if p.clip_skip <= 1 else p.clip_skip,
         "ENSD": None if opts.eta_noise_seed_delta == 0 else opts.eta_noise_seed_delta,
     }
 
@@ -449,6 +448,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
     seed = get_fixed_seed(p.seed)
     subseed = get_fixed_seed(p.subseed)
+
+    shared.CLIP_stop_at_last_layers = p.clip_skip
 
     modules.sd_hijack.model_hijack.apply_circular(p.tiling)
     modules.sd_hijack.model_hijack.clear_comments()

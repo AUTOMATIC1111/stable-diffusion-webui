@@ -2,7 +2,7 @@ import math
 
 import torch
 
-from modules import prompt_parser, devices
+from modules import prompt_parser, devices, shared
 from modules.shared import opts
 
 
@@ -283,10 +283,10 @@ class FrozenCLIPEmbedderWithCustomWords(FrozenCLIPEmbedderWithCustomWordsBase):
         return tokenized
 
     def encode_with_transformers(self, tokens):
-        outputs = self.wrapped.transformer(input_ids=tokens, output_hidden_states=-opts.CLIP_stop_at_last_layers)
+        outputs = self.wrapped.transformer(input_ids=tokens, output_hidden_states=shared.CLIP_stop_at_last_layers)
 
-        if opts.CLIP_stop_at_last_layers > 1:
-            z = outputs.hidden_states[-opts.CLIP_stop_at_last_layers]
+        if shared.CLIP_stop_at_last_layers > 1:
+            z = outputs.hidden_states[-shared.CLIP_stop_at_last_layers]
             z = self.wrapped.transformer.text_model.final_layer_norm(z)
         else:
             z = outputs.last_hidden_state
