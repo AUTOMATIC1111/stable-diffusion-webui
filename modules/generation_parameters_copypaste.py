@@ -184,6 +184,22 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
         else:
             res[k] = v
 
+    if "Sampler" in res:
+        sampler_name = res["Sampler"]
+        is_ddim = sampler_name == "DDIM" or sampler_name == "PLMS"
+
+        if "Eta" in res:
+            eta = res["Eta"]
+        elif is_ddim:
+            eta = "0.0"
+        else:
+            eta = "1.0"
+
+        if is_ddim:
+            res["Eta (DDIM)"] = eta
+        else:
+            res["Eta (Ancestral)"] = eta
+
     return res
 
 
