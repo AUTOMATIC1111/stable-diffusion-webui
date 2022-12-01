@@ -193,6 +193,20 @@ def prepare_enviroment():
     xformers = '--xformers' in sys.argv
     ngrok = '--ngrok' in sys.argv
 
+    if platform.system() == 'Darwin':
+        os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
+        torch_command = os.environ.get('TORCH_COMMAND', "pip install torch==1.12.1 torchvision==0.13.1")
+        k_diffusion_repo = os.environ.get('K_DIFFUSION_REPO', 'https://github.com/brkirch/k-diffusion.git')
+        k_diffusion_commit_hash = os.environ.get('K_DIFFUSION_COMMIT_HASH', "51c9778f269cedb55a4d88c79c0246d35bdadb71")
+        if os.environ.get('COMMANDLINE_ARGS') == None:
+            if '--use-cpu' in sys.argv:
+                idx = sys.argv.index('--use-cpu')
+                if idx < len(sys.argv) and sys.argv[idx+1][0] != '-':
+                    sys.argv.insert(idx+1, 'interrogate')
+            else:
+                sys.argv += ['--use-cpu', 'interrogate']
+            sys.argv.append('--no-half')
+
     try:
         commit = run(f"{git} rev-parse HEAD").strip()
     except Exception:
@@ -204,7 +218,7 @@ def prepare_enviroment():
     if not is_installed("torch") or not is_installed("torchvision"):
         run(f'"{python}" -m {torch_command}', "Installing torch and torchvision", "Couldn't install torch")
 
-    if not skip_torch_cuda_test:
+    if not skip_torch_cuda_test and platform.system() != 'Darwin':
         run_python("import torch; assert torch.cuda.is_available(), 'Torch is not able to use GPU; add --skip-torch-cuda-test to COMMANDLINE_ARGS variable to disable this check'")
 
     if not is_installed("gfpgan"):
@@ -230,6 +244,9 @@ def prepare_enviroment():
 
     if not is_installed("pyngrok") and ngrok:
         run_pip("install pyngrok", "ngrok")
+
+    if platform.system() == 'Darwin' and not is_installed("psutil"):
+        run_pip("install psutil", "psutil")
 
     os.makedirs(dir_repos, exist_ok=True)
 
