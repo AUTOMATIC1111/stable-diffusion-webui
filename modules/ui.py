@@ -19,7 +19,7 @@ import numpy as np
 from PIL import Image, PngImagePlugin
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_gradio_call
 
-from modules import sd_hijack, sd_models, localization, script_callbacks, ui_extensions, deepbooru
+from modules import sd_hijack, sd_models, localization, script_callbacks, ui_extensions, deepbooru, sd_samplers
 from modules.paths import script_path
 
 from modules.shared import opts, cmd_opts, restricted_opts
@@ -634,6 +634,10 @@ def create_ui():
             with gr.Column(variant='panel'):
                 steps = gr.Slider(minimum=1, maximum=150, step=1, label="Sampling Steps", value=20)
                 sampler_index = gr.Radio(label='Sampling method', elem_id="txt2img_sampling", choices=[x.name for x in samplers], value=samplers[0].name, type="index")
+                with gr.Row(visible=not sd_samplers.is_ddim(0)) as row_opts_ancestral:
+                    eta_ancestral = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='eta (Ancestral)', value=1.0)
+                with gr.Row(visible=sd_samplers.is_ddim(0)) as row_opts_ddim:
+                    eta_ddim = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='eta (DDIM)', value=0.0)
 
                 with gr.Group():
                     width = gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512)
@@ -666,6 +670,11 @@ def create_ui():
             connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
             connect_reuse_seed(subseed, reuse_subseed, generation_info, dummy_component, is_subseed=True)
 
+            def refresh_sampler_opts(sampler_index):
+                is_ddim = sd_samplers.is_ddim(sampler_index)
+                return gr.Row.update(visible=not is_ddim), gr.Row.update(visible=is_ddim)
+            sampler_index.change(fn=refresh_sampler_opts, inputs=[sampler_index], outputs=[row_opts_ancestral, row_opts_ddim])
+
             txt2img_args = dict(
                 fn=wrap_gradio_gpu_call(modules.txt2img.txt2img),
                 _js="submit",
@@ -681,6 +690,8 @@ def create_ui():
                     batch_count,
                     batch_size,
                     cfg_scale,
+                    eta_ancestral,
+                    eta_ddim,
                     seed,
                     subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox,
                     height,
@@ -737,6 +748,8 @@ def create_ui():
                 (sampler_index, "Sampler"),
                 (restore_faces, "Face restoration"),
                 (cfg_scale, "CFG scale"),
+                (eta_ancestral, "eta (Ancestral)"),
+                (eta_ddim, "eta (DDIM)"),
                 (seed, "Seed"),
                 (width, "Size-1"),
                 (height, "Size-2"),
@@ -820,6 +833,10 @@ def create_ui():
 
                 steps = gr.Slider(minimum=1, maximum=150, step=1, label="Sampling Steps", value=20)
                 sampler_index = gr.Radio(label='Sampling method', choices=[x.name for x in samplers_for_img2img], value=samplers_for_img2img[0].name, type="index")
+                with gr.Row(visible=not sd_samplers.is_ddim(0)) as row_opts_ancestral:
+                    eta_ancestral = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='eta (Ancestral)', value=1.0)
+                with gr.Row(visible=sd_samplers.is_ddim(0)) as row_opts_ddim:
+                    eta_ddim = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='eta (DDIM)', value=0.0)
 
                 with gr.Group():
                     width = gr.Slider(minimum=64, maximum=2048, step=64, label="Width", value=512, elem_id="img2img_width")
@@ -847,6 +864,11 @@ def create_ui():
 
             connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
             connect_reuse_seed(subseed, reuse_subseed, generation_info, dummy_component, is_subseed=True)
+
+            def refresh_sampler_opts(sampler_index):
+                is_ddim = sd_samplers.is_ddim(sampler_index)
+                return gr.Row.update(visible=not is_ddim), gr.Row.update(visible=is_ddim)
+            sampler_index.change(fn=refresh_sampler_opts, inputs=[sampler_index], outputs=[row_opts_ancestral, row_opts_ddim])
 
             img2img_prompt_img.change(
                 fn=modules.images.image_data,
@@ -896,6 +918,8 @@ def create_ui():
                     batch_count,
                     batch_size,
                     cfg_scale,
+                    eta_ancestral,
+                    eta_ddim,
                     denoising_strength,
                     seed,
                     subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox,
@@ -974,6 +998,8 @@ def create_ui():
                 (sampler_index, "Sampler"),
                 (restore_faces, "Face restoration"),
                 (cfg_scale, "CFG scale"),
+                (eta_ancestral, "eta (Ancestral)"),
+                (eta_ddim, "eta (DDIM)"),
                 (seed, "Seed"),
                 (width, "Size-1"),
                 (height, "Size-2"),

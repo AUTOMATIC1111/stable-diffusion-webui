@@ -55,6 +55,11 @@ samplers_for_img2img = []
 samplers_map = {}
 
 
+def is_ddim(sampler_index):
+    sampler_name = samplers[sampler_index].name
+    return sampler_name == "DDIM" or sampler_name == "PLMS"
+
+
 def create_sampler(name, model):
     if name is not None:
         config = all_samplers_map.get(name, None)
@@ -219,7 +224,7 @@ class VanillaStableDiffusionSampler:
         return res
 
     def initialize(self, p):
-        self.eta = p.eta if p.eta is not None else opts.eta_ddim
+        self.eta = p.eta if p.eta is not None else self.default_eta
 
         for fieldname in ['p_sample_ddim', 'p_sample_plms']:
             if hasattr(self.sampler, fieldname):
@@ -413,7 +418,7 @@ class KDiffusionSampler:
         self.model_wrap_cfg.mask = p.mask if hasattr(p, 'mask') else None
         self.model_wrap_cfg.nmask = p.nmask if hasattr(p, 'nmask') else None
         self.model_wrap.step = 0
-        self.eta = p.eta or opts.eta_ancestral
+        self.eta = p.eta or self.default_eta
 
         if self.sampler_noises is not None:
             k_diffusion.sampling.torch = TorchHijack(self.sampler_noises)
