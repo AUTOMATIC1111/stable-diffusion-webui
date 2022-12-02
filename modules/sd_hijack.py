@@ -17,6 +17,7 @@ from modules.sd_hijack_optimizations import invokeAI_mps_available
 
 import ldm.modules.attention
 import ldm.modules.diffusionmodules.model
+import ldm.modules.diffusionmodules.openaimodel
 import ldm.models.diffusion.ddim
 import ldm.models.diffusion.plms
 import ldm.modules.encoders.modules
