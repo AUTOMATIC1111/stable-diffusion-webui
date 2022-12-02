@@ -111,7 +111,11 @@ restricted_opts = {
 from omegaconf import OmegaConf
 config = OmegaConf.load(f"{cmd_opts.config}")
 # XLMR-Large
-text_model_name = config.model.params.cond_stage_config.params.name
+try:
+    text_model_name = config.model.params.cond_stage_config.params.name
+
+except :
+    text_model_name = "stable_diffusion"
 
 cmd_opts.disable_extension_access = (cmd_opts.share or cmd_opts.listen or cmd_opts.server_name) and not cmd_opts.enable_insecure_extension_access
 
