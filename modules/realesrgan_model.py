@@ -75,7 +75,7 @@ class UpscalerRealESRGAN(Upscaler):
         except Exception as e:
             print(f"Error making Real-ESRGAN models list: {e}", file=sys.stderr)
             print(traceback.format_exc(), file=sys.stderr)
-        return None
+            return None
 
     def load_models(self, _):
         return get_realesrgan_models(self)
