@@ -224,6 +224,12 @@
 			"tags": ["script"]
 		},
 		{
+			"name": "Prompt Gallery",
+			"url": "https://github.com/dr413677671/PromptGallery-stable-diffusion-webui.git",
+			"description": "Build a yaml file filled with prompts of your character, hit generate, and quickly preview them by their word attributes and modifiers.",
+			"tags": ["script", "tab"]
+		},
+		{
 			"name": "zh_CN Localization",
 			"url": "https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN",
 			"description": "Simplified Chinese localization",
