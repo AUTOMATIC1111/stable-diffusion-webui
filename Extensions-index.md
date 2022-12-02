@@ -218,6 +218,12 @@
 			"tags": ["script", "tab"]
 		},
 		{
+			"name": "DAAM",
+			"url": "https://github.com/kousw/stable-diffusion-webui-daam.git",
+			"description": "DAAM stands for Diffusion Attentive Attribution Maps. Enter the attention text (must be a string contained in the prompt) and run. An overlapping image with a heatmap for each attention will be generated along with the original image.",
+			"tags": ["script"]
+		},
+		{
 			"name": "zh_CN Localization",
 			"url": "https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN",
 			"description": "Simplified Chinese localization",
