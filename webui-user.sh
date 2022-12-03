@@ -27,6 +27,9 @@ export COMMANDLINE_ARGS=""
 # install command for torch
 #export TORCH_COMMAND="pip install torch==1.12.1+cu113 --extra-index-url https://download.pytorch.org/whl/cu113"
 
+# install command for torch on Linux and AMD GPU
+#export TORCH_COMMAND="pip install torch==1.13.0+rocm5.2 torchvision==0.14.0+rocm5.2 --extra-index-url https://download.pytorch.org/whl/rocm5.2/"
+
 # Requirements file to use for stable-diffusion-webui
 #export REQS_FILE="requirements_versions.txt"
 
