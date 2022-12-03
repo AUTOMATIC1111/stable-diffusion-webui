@@ -4,7 +4,7 @@ import sys
 import traceback
 
 import numpy as np
-from PIL import Image, ImageOps, ImageFilter, ImageEnhance
+from PIL import Image, ImageOps, ImageFilter, ImageEnhance, ImageChops
 
 from modules import devices, sd_samplers
 from modules.processing import Processed, StableDiffusionProcessingImg2Img, process_images
@@ -66,22 +66,23 @@ def img2img(mode: int, prompt: str, negative_prompt: str, prompt_style: str, pro
     if is_inpaint:
         # Drawn mask
         if mask_mode == 0:
-            image = init_img_with_mask
-            is_mask_sketch = isinstance(image, dict)
+            is_mask_sketch = isinstance(init_img_with_mask, dict)
             is_mask_paint = not is_mask_sketch
             if is_mask_sketch:
                 # Sketch: mask iff. not transparent
-                image, mask = image["image"], image["mask"]
-                pred = np.array(mask)[..., -1] > 0
+                image, mask = init_img_with_mask["image"], init_img_with_mask["mask"]
+                alpha_mask = ImageOps.invert(image.split()[-1]).convert('L').point(lambda x: 255 if x > 0 else 0, mode='1')
+                mask = ImageChops.lighter(alpha_mask, mask.convert('L')).convert('L')
             else:
                 # Color-sketch: mask iff. painted over
-                orig = init_img_with_mask_orig or image
+                image = init_img_with_mask
+                orig = init_img_with_mask_orig or init_img_with_mask
                 pred = np.any(np.array(image) != np.array(orig), axis=-1)
-            mask = Image.fromarray(pred.astype(np.uint8) * 255, "L")
-            if is_mask_paint:
+                mask = Image.fromarray(pred.astype(np.uint8) * 255, "L")
                 mask = ImageEnhance.Brightness(mask).enhance(1 - mask_alpha / 100)
                 blur = ImageFilter.GaussianBlur(mask_blur)
                 image = Image.composite(image.filter(blur), orig, mask.filter(blur))
+
             image = image.convert("RGB")
         # Uploaded mask
         else:
