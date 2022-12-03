@@ -204,7 +204,7 @@ class State:
             self.do_set_current_image()
 
     def do_set_current_image(self):
-        if not parallel_processing_allowed:
+        if not parallel_processing_allowed and opts.show_progress_every_n_steps > 0:
             return
         if self.current_latent is None:
             return
