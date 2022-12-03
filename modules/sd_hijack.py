@@ -183,11 +183,7 @@ def register_buffer(self, name, attr):
 
     if type(attr) == torch.Tensor:
         if attr.device != devices.device:
-
-            if devices.has_mps():
-                attr = attr.to(device="mps", dtype=torch.float32)
-            else:
-                attr = attr.to(devices.device)
+            attr = attr.to(device=devices.device, dtype=(torch.float32 if devices.device.type == 'mps' else None))
 
     setattr(self, name, attr)
 

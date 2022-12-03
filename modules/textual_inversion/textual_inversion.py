@@ -316,7 +316,7 @@ def train_embedding(embedding_name, learn_rate, batch_size, gradient_step, data_
                 if shared.state.interrupted:
                     break
 
-                with torch.autocast("cuda"):
+                with devices.autocast():
                     # c = stack_conds(batch.cond).to(devices.device)
                     # mask = torch.tensor(batch.emb_index).to(devices.device, non_blocking=pin_memory)
                     # print(mask)
