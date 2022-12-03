@@ -633,7 +633,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             self.extra_generation_params["First pass size"] = f"{self.firstphase_width}x{self.firstphase_height}"
 
             if self.firstphase_width == 0 or self.firstphase_height == 0:
-                desired_pixel_count = 512 * 512
+                desired_pixel_count = self.width /2 * self.height /2
                 actual_pixel_count = self.width * self.height
                 scale = math.sqrt(desired_pixel_count / actual_pixel_count)
                 self.firstphase_width = math.ceil(scale * self.width / 64) * 64
