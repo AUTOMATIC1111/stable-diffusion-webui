@@ -44,6 +44,15 @@ def get_optimal_device():
     return cpu
 
 
+def get_device_for(task):
+    from modules import shared
+
+    if task in shared.cmd_opts.use_cpu:
+        return cpu
+
+    return get_optimal_device()
+
+
 def torch_gc():
     if torch.cuda.is_available():
         with torch.cuda.device(get_cuda_device_string()):
@@ -67,7 +76,7 @@ def enable_tf32():
 errors.run(enable_tf32, "Enabling TF32")
 
 cpu = torch.device("cpu")
-device = device_interrogate = device_gfpgan = device_swinir = device_esrgan = device_scunet = device_codeformer = None
+device = device_interrogate = device_gfpgan = device_esrgan = device_codeformer = None
 dtype = torch.float16
 dtype_vae = torch.float16
 
