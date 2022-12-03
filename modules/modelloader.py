@@ -124,10 +124,9 @@ def move_files(src_path: str, dest_path: str, ext_filter: str = None):
 
 
 def load_upscalers():
-    sd = shared.script_path
     # We can only do this 'magic' method to dynamically load upscalers if they are referenced,
     # so we'll try to import any _model.py files before looking in __subclasses__
-    modules_dir = os.path.join(sd, "modules")
+    modules_dir = os.path.join(shared.script_path, "modules")
     for file in os.listdir(modules_dir):
         if "_model.py" in file:
             model_name = file.replace("_model.py", "")
@@ -136,22 +135,13 @@ def load_upscalers():
                 importlib.import_module(full_model)
             except:
                 pass
+
     datas = []
-    c_o = vars(shared.cmd_opts)
+    commandline_options = vars(shared.cmd_opts)
     for cls in Upscaler.__subclasses__():
         name = cls.__name__
-        module_name = cls.__module__
-        module = importlib.import_module(module_name)
-        class_ = getattr(module, name)
         cmd_name = f"{name.lower().replace('upscaler', '')}_models_path"
-        opt_string = None
-        try:
-            if cmd_name in c_o:
-                opt_string = c_o[cmd_name]
-        except:
-            pass
-        scaler = class_(opt_string)
-        for child in scaler.scalers:
-            datas.append(child)
+        scaler = cls(commandline_options.get(cmd_name, None))
+        datas += scaler.scalers
 
     shared.sd_upscalers = datas

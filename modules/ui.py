@@ -28,7 +28,6 @@ import modules.codeformer_model
 import modules.generation_parameters_copypaste as parameters_copypaste
 import modules.gfpgan_model
 import modules.hypernetworks.ui
-import modules.ldsr_model
 import modules.scripts
 import modules.shared as shared
 import modules.styles
