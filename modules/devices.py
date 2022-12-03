@@ -56,9 +56,9 @@ def enable_tf32():
         for devid in range(0,torch.cuda.device_count()):
             if torch.cuda.get_device_capability(devid) == (7, 5):
                 shd = True
-        if shd:
-            torch.backends.cudnn.benchmark = True
-            torch.backends.cudnn.enabled = True
+                if shd:
+                  torch.backends.cudnn.benchmark = True
+                  torch.backends.cudnn.enabled = True
         torch.backends.cuda.matmul.allow_tf32 = True
         torch.backends.cudnn.allow_tf32 = True
 
