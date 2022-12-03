@@ -218,11 +218,11 @@ class Api:
                 resp.pop(0)  # remove the first empty element
                 response = {}
                 for pair in resp:
-                    pair = pair.split("</p></b></p><p><p>") #
+                    pair = pair.split("</p></b></p><p><p>")  # Split the title and content by the tags between them
                     # unescape HTML entities
-                    pairKey = html.unescape(pair[0])
-                    pairValue = html.unescape(pair[1].replace("</p></p>", ""))
-                    response.update({pairKey: pairValue})
+                    pair_key = html.unescape(pair[0])
+                    pair_value = html.unescape(pair[1].replace("</p></p>", ""))
+                    response.update({pair_key: pair_value})
                 return PNGInfoResponse(info=result[2], verbose_info=response)
             else:
                 return PNGInfoResponse(info=result[2], verbose_info={})
