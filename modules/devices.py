@@ -53,6 +53,7 @@ def torch_gc():
 
 def enable_tf32():
     if torch.cuda.is_available():
+        shd = False
         for devid in range(0,torch.cuda.device_count()):
             if torch.cuda.get_device_capability(devid) == (7, 5):
                 shd = True
