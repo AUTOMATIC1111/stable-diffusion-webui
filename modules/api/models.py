@@ -155,9 +155,11 @@ class ExtrasBatchImagesResponse(ExtraBaseResponse):
 
 class PNGInfoRequest(BaseModel):
     image: str = Field(title="Image", description="The base64 encoded PNG image")
+    verbose: bool = Field(default=False, title="Verbose", description="If false (default), only the info used to generate the image will be returned in a plain string. If true, all info will be returned in verbose_info.")
 
 class PNGInfoResponse(BaseModel):
     info: str = Field(title="Image info", description="A string with all the info the image had")
+    verbose_info: dict = Field(title="Verbose info", description="An object with all the info the image had")
 
 class ProgressRequest(BaseModel):
     skip_current_image: bool = Field(default=False, title="Skip current image", description="Skip current image serialization")

@@ -1,4 +1,5 @@
 import base64
+import html
 import io
 import time
 import uvicorn
@@ -208,7 +209,25 @@ class Api:
 
         result = run_pnginfo(decode_base64_to_image(req.image.strip()))
 
-        return PNGInfoResponse(info=result[1])
+        if req.verbose:
+            html_str = result[2].replace("\n", "").replace("<br>", "\n")
+
+            if "<p><b>" in html_str:
+                resp = html_str.replace("<div>", "").replace("</div>", "")
+                resp = resp.split("<p><b><p>")  # Each item title is surrounded by <p><b><p>
+                resp.pop(0)  # remove the first empty element
+                response = {}
+                for pair in resp:
+                    pair = pair.split("</p></b></p><p><p>") #
+                    # unescape HTML entities
+                    pairKey = html.unescape(pair[0])
+                    pairValue = html.unescape(pair[1].replace("</p></p>", ""))
+                    response.update({pairKey: pairValue})
+                return PNGInfoResponse(info=result[2], verbose_info=response)
+            else:
+                return PNGInfoResponse(info=result[2], verbose_info={})
+        else:
+            return PNGInfoResponse(info=result[1]) if result[1] is not None else PNGInfoResponse(info="")  # return only the info used to generate the image
 
     def progressapi(self, req: ProgressRequest = Depends()):
         # copy from check_progress_call of ui.py
