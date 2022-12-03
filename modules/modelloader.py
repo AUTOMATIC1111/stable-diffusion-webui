@@ -82,6 +82,7 @@ def cleanup_models():
     src_path = models_path
     dest_path = os.path.join(models_path, "Stable-diffusion")
     move_files(src_path, dest_path, ".ckpt")
+    move_files(src_path, dest_path, ".safetensors")
     src_path = os.path.join(root_path, "ESRGAN")
     dest_path = os.path.join(models_path, "ESRGAN")
     move_files(src_path, dest_path)

@@ -13,10 +13,6 @@ from modules.swinir_model_arch import SwinIR as net
 from modules.swinir_model_arch_v2 import Swin2SR as net2
 from modules.upscaler import Upscaler, UpscalerData
 
-precision_scope = (
-    torch.autocast if cmd_opts.precision == "autocast" else contextlib.nullcontext
-)
-
 
 class UpscalerSwinIR(Upscaler):
     def __init__(self, dirname):
@@ -111,8 +107,8 @@ def upscale(
     img = img[:, :, ::-1]
     img = np.moveaxis(img, 2, 0) / 255
     img = torch.from_numpy(img).float()
-    img = devices.mps_contiguous_to(img.unsqueeze(0), devices.device_swinir)
-    with torch.no_grad(), precision_scope("cuda"):
+    img = img.unsqueeze(0).to(devices.device_swinir)
+    with torch.no_grad(), devices.autocast():
         _, _, h_old, w_old = img.size()
         h_pad = (h_old // window_size + 1) * window_size - h_old
         w_pad = (w_old // window_size + 1) * window_size - w_old

@@ -148,8 +148,7 @@ class InterrogateModels:
 
             clip_image = self.clip_preprocess(pil_image).unsqueeze(0).type(self.dtype).to(devices.device_interrogate)
 
-            precision_scope = torch.autocast if shared.cmd_opts.precision == "autocast" else contextlib.nullcontext
-            with torch.no_grad(), precision_scope("cuda"):
+            with torch.no_grad(), devices.autocast():
                 image_features = self.clip_model.encode_image(clip_image).type(self.dtype)
 
                 image_features /= image_features.norm(dim=-1, keepdim=True)

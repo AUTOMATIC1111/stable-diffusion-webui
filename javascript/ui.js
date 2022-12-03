@@ -8,8 +8,8 @@ function set_theme(theme){
 }
 
 function selected_gallery_index(){
-    var buttons = gradioApp().querySelectorAll('[style="display: block;"].tabitem .gallery-item')
-    var button = gradioApp().querySelector('[style="display: block;"].tabitem .gallery-item.\\!ring-2')
+    var buttons = gradioApp().querySelectorAll('[style="display: block;"].tabitem div[id$=_gallery] .gallery-item')
+    var button = gradioApp().querySelector('[style="display: block;"].tabitem div[id$=_gallery] .gallery-item.\\!ring-2')
 
     var result = -1
     buttons.forEach(function(v, i){ if(v==button) { result = i } })
@@ -208,4 +208,6 @@ function update_token_counter(button_id) {
 function restart_reload(){
     document.body.innerHTML='<h1 style="font-family:monospace;margin-top:20%;color:lightgray;text-align:center;">Reloading...</h1>';
     setTimeout(function(){location.reload()},2000)
+
+    return []
 }

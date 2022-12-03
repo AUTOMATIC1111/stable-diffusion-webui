@@ -3,7 +3,6 @@ import datetime
 import json
 import os
 import sys
-from collections import OrderedDict
 import time
 
 import gradio as gr
@@ -12,17 +11,18 @@ import tqdm
 import modules.artists
 import modules.interrogate
 import modules.memmon
-import modules.sd_models
 import modules.styles
 import modules.devices as devices
-from modules import sd_samplers, sd_models, localization, sd_vae
-from modules.hypernetworks import hypernetwork
+from modules import localization, sd_vae, extensions, script_loading
 from modules.paths import models_path, script_path, sd_path
+
+
+demo = None
 
 sd_model_file = os.path.join(script_path, 'model.ckpt')
 default_sd_model_file = sd_model_file
 parser = argparse.ArgumentParser()
-parser.add_argument("--config", type=str, default=os.path.join(sd_path, "configs/stable-diffusion/v1-inference.yaml"), help="path to config which constructs model",)
+parser.add_argument("--config", type=str, default=os.path.join(script_path, "v1-inference.yaml"), help="path to config which constructs model",)
 parser.add_argument("--ckpt", type=str, default=sd_model_file, help="path to checkpoint of stable diffusion model; if specified, this checkpoint will be added to the list of checkpoints and loaded",)
 parser.add_argument("--ckpt-dir", type=str, default=None, help="Path to directory with stable diffusion checkpoints")
 parser.add_argument("--gfpgan-dir", type=str, help="GFPGAN directory", default=('./src/gfpgan' if os.path.exists('./src/gfpgan') else './GFPGAN'))
@@ -44,6 +44,7 @@ parser.add_argument("--precision", type=str, help="evaluate at this precision", 
 parser.add_argument("--share", action='store_true', help="use share=True for gradio and make the UI accessible through their site")
 parser.add_argument("--ngrok", type=str, help="ngrok authtoken, alternative to gradio --share", default=None)
 parser.add_argument("--ngrok-region", type=str, help="The region in which ngrok should start.", default="us")
+parser.add_argument("--enable-insecure-extension-access", action='store_true', help="enable extensions tab regardless of other options")
 parser.add_argument("--codeformer-models-path", type=str, help="Path to directory with codeformer model file(s).", default=os.path.join(models_path, 'Codeformer'))
 parser.add_argument("--gfpgan-models-path", type=str, help="Path to directory with GFPGAN model file(s).", default=os.path.join(models_path, 'GFPGAN'))
 parser.add_argument("--esrgan-models-path", type=str, help="Path to directory with ESRGAN model file(s).", default=os.path.join(models_path, 'ESRGAN'))
@@ -55,7 +56,7 @@ parser.add_argument("--ldsr-models-path", type=str, help="Path to directory with
 parser.add_argument("--clip-models-path", type=str, help="Path to directory with CLIP model file(s).", default=None)
 parser.add_argument("--xformers", action='store_true', help="enable xformers for cross attention layers")
 parser.add_argument("--force-enable-xformers", action='store_true', help="enable xformers for cross attention layers regardless of whether the checking code thinks you can run it; do not make bug reports if this fails to work")
-parser.add_argument("--deepdanbooru", action='store_true', help="enable deepdanbooru interrogator")
+parser.add_argument("--deepdanbooru", action='store_true', help="does not do anything")
 parser.add_argument("--opt-split-attention", action='store_true', help="force-enables Doggettx's cross-attention layer optimization. By default, it's on for torch cuda.")
 parser.add_argument("--opt-split-attention-invokeai", action='store_true', help="force-enables InvokeAI's cross-attention layer optimization. By default, it's on when cuda is unavailable.")
 parser.add_argument("--opt-split-attention-v1", action='store_true', help="enable older version of split attention optimization that does not consume all the VRAM it can find")
@@ -71,6 +72,7 @@ parser.add_argument("--ui-settings-file", type=str, help="filename to use for ui
 parser.add_argument("--gradio-debug",  action='store_true', help="launch gradio with --debug option")
 parser.add_argument("--gradio-auth", type=str, help='set gradio authentication like "username:password"; or comma-delimit multiple like "u1:p1,u2:p2,u3:p3"', default=None)
 parser.add_argument("--gradio-img2img-tool", type=str, help='gradio image uploader tool: can be either editor for ctopping, or color-sketch for drawing', choices=["color-sketch", "editor"], default="editor")
+parser.add_argument("--gradio-inpaint-tool", type=str, choices=["sketch", "color-sketch"], default="sketch", help="gradio inpainting editor: can be either sketch to only blur/noise the input, or color-sketch to paint over it")
 parser.add_argument("--opt-channelslast", action='store_true', help="change memory type for stable diffusion to channels last")
 parser.add_argument("--styles-file", type=str, help="filename to use for styles", default=os.path.join(script_path, 'styles.csv'))
 parser.add_argument("--autolaunch", action='store_true', help="open the webui URL in the system's default browser upon launch", default=False)
@@ -80,13 +82,22 @@ parser.add_argument("--disable-console-progressbars", action='store_true', help=
 parser.add_argument("--enable-console-prompts", action='store_true', help="print prompts to console when generating with txt2img and img2img", default=False)
 parser.add_argument('--vae-path', type=str, help='Path to Variational Autoencoders model', default=None)
 parser.add_argument("--disable-safe-unpickle", action='store_true', help="disable checking pytorch models for malicious code", default=False)
-parser.add_argument("--api", action='store_true', help="use api=True to launch the api with the webui")
-parser.add_argument("--nowebui", action='store_true', help="use api=True to launch the api instead of the webui")
+parser.add_argument("--api", action='store_true', help="use api=True to launch the API together with the webui (use --nowebui instead for only the API)")
+parser.add_argument("--api-auth", type=str, help='Set authentication for API like "username:password"; or comma-delimit multiple like "u1:p1,u2:p2,u3:p3"', default=None)
+parser.add_argument("--nowebui", action='store_true', help="use api=True to launch the API instead of the webui")
 parser.add_argument("--ui-debug-mode", action='store_true', help="Don't load model to quickly launch UI")
 parser.add_argument("--device-id", type=str, help="Select the default CUDA device to use (export CUDA_VISIBLE_DEVICES=0,1,etc might be needed before)", default=None)
 parser.add_argument("--administrator", action='store_true', help="Administrator rights", default=False)
+parser.add_argument("--cors-allow-origins", type=str, help="Allowed CORS origin(s) in the form of a comma-separated list (no spaces)", default=None)
+parser.add_argument("--cors-allow-origins-regex", type=str, help="Allowed CORS origin(s) in the form of a single regular expression", default=None)
+parser.add_argument("--tls-keyfile", type=str, help="Partially enables TLS, requires --tls-certfile to fully function", default=None)
+parser.add_argument("--tls-certfile", type=str, help="Partially enables TLS, requires --tls-keyfile to fully function", default=None)
+parser.add_argument("--server-name", type=str, help="Sets hostname of server", default=None)
+
+script_loading.preload_extensions(extensions.extensions_dir, parser)
 
 cmd_opts = parser.parse_args()
+
 restricted_opts = {
     "samples_filename_pattern",
     "directories_filename_pattern",
@@ -99,7 +110,7 @@ restricted_opts = {
     "outdir_save",
 }
 
-cmd_opts.disable_extension_access = cmd_opts.share or cmd_opts.listen
+cmd_opts.disable_extension_access = (cmd_opts.share or cmd_opts.listen or cmd_opts.server_name) and not cmd_opts.enable_insecure_extension_access
 
 devices.device, devices.device_interrogate, devices.device_gfpgan, devices.device_swinir, devices.device_esrgan, devices.device_scunet, devices.device_codeformer = \
 (devices.cpu if any(y in cmd_opts.use_cpu for y in [x, 'all']) else devices.get_optimal_device() for x in ['sd', 'interrogate', 'gfpgan', 'swinir', 'esrgan', 'scunet', 'codeformer'])
@@ -113,10 +124,12 @@ xformers_available = False
 config_filename = cmd_opts.ui_settings_file
 
 os.makedirs(cmd_opts.hypernetwork_dir, exist_ok=True)
-hypernetworks = hypernetwork.list_hypernetworks(cmd_opts.hypernetwork_dir)
+hypernetworks = {}
 loaded_hypernetwork = None
 
+
 def reload_hypernetworks():
+    from modules.hypernetworks import hypernetwork
     global hypernetworks
 
     hypernetworks = hypernetwork.list_hypernetworks(cmd_opts.hypernetwork_dir)
@@ -146,6 +159,9 @@ class State:
         self.interrupted = True
 
     def nextjob(self):
+        if opts.show_progress_every_n_steps == -1:
+            self.do_set_current_image()
+
         self.job_no += 1
         self.sampling_step = 0
         self.current_image_sampling_step = 0
@@ -186,17 +202,22 @@ class State:
 
     """sets self.current_image from self.current_latent if enough sampling steps have been made after the last call to this"""
     def set_current_image(self):
+        if self.sampling_step - self.current_image_sampling_step >= opts.show_progress_every_n_steps and opts.show_progress_every_n_steps > 0:
+            self.do_set_current_image()
+
+    def do_set_current_image(self):
         if not parallel_processing_allowed:
             return
+        if self.current_latent is None:
+            return
 
-        if self.sampling_step - self.current_image_sampling_step >= opts.show_progress_every_n_steps and self.current_latent is not None:
-            if opts.show_progress_grid:
-                self.current_image = sd_samplers.samples_to_image_grid(self.current_latent)
-            else:
-                self.current_image = sd_samplers.sample_to_image(self.current_latent)
+        import modules.sd_samplers
+        if opts.show_progress_grid:
+            self.current_image = modules.sd_samplers.samples_to_image_grid(self.current_latent)
+        else:
+            self.current_image = modules.sd_samplers.sample_to_image(self.current_latent)
 
-            self.current_image_sampling_step = self.sampling_step
-
+        self.current_image_sampling_step = self.sampling_step
 
 state = State()
 
@@ -208,8 +229,6 @@ prompt_styles = modules.styles.StyleDatabase(styles_filename)
 interrogator = modules.interrogate.InterrogateModels("interrogate")
 
 face_restorers = []
-
-localization.list_localizations(cmd_opts.localizations_dir)
 
 
 def realesrgan_models_names():
@@ -233,6 +252,21 @@ def options_section(section_identifier, options_dict):
         v.section = section_identifier
 
     return options_dict
+
+
+def list_checkpoint_tiles():
+    import modules.sd_models
+    return modules.sd_models.checkpoint_tiles()
+
+
+def refresh_checkpoints():
+    import modules.sd_models
+    return modules.sd_models.list_models()
+
+
+def list_samplers():
+    import modules.sd_samplers
+    return modules.sd_samplers.all_samplers
 
 
 hide_dirs = {"visible": not cmd_opts.hide_ui_dir_config}
@@ -263,6 +297,10 @@ options_templates.update(options_section(('saving-images', "Saving images/grids"
     "use_original_name_batch": OptionInfo(False, "Use original name for output filename during batch process in extras tab"),
     "save_selected_only": OptionInfo(True, "When using 'Save' button, only save a single selected image"),
     "do_not_add_watermark": OptionInfo(False, "Do not add watermark to images"),
+
+    "temp_dir":  OptionInfo("", "Directory for temporary images; leave empty for default"),
+    "clean_temp_dir_at_start": OptionInfo(False, "Cleanup non-default temporary directory when starting webui"),
+
 }))
 
 options_templates.update(options_section(('saving-paths', "Paths for saving"), {
@@ -287,7 +325,7 @@ options_templates.update(options_section(('saving-to-dirs', "Saving to a directo
 options_templates.update(options_section(('upscaling', "Upscaling"), {
     "ESRGAN_tile": OptionInfo(192, "Tile size for ESRGAN upscalers. 0 = no tiling.", gr.Slider, {"minimum": 0, "maximum": 512, "step": 16}),
     "ESRGAN_tile_overlap": OptionInfo(8, "Tile overlap, in pixels for ESRGAN upscalers. Low values = visible seam.", gr.Slider, {"minimum": 0, "maximum": 48, "step": 1}),
-    "realesrgan_enabled_models": OptionInfo(["R-ESRGAN x4+", "R-ESRGAN x4+ Anime6B"], "Select which Real-ESRGAN models to show in the web UI. (Requires restart)", gr.CheckboxGroup, lambda: {"choices": realesrgan_models_names()}),
+    "realesrgan_enabled_models": OptionInfo(["R-ESRGAN 4x+", "R-ESRGAN 4x+ Anime6B"], "Select which Real-ESRGAN models to show in the web UI. (Requires restart)", gr.CheckboxGroup, lambda: {"choices": realesrgan_models_names()}),
     "SWIN_tile": OptionInfo(192, "Tile size for all SwinIR.", gr.Slider, {"minimum": 16, "maximum": 512, "step": 16}),
     "SWIN_tile_overlap": OptionInfo(8, "Tile overlap, in pixels for SwinIR. Low values = visible seam.", gr.Slider, {"minimum": 0, "maximum": 48, "step": 1}),
     "ldsr_steps": OptionInfo(100, "LDSR processing steps. Lower = faster", gr.Slider, {"minimum": 1, "maximum": 200, "step": 1}),
@@ -309,6 +347,8 @@ options_templates.update(options_section(('system', "System"), {
 
 options_templates.update(options_section(('training', "Training"), {
     "unload_models_when_training": OptionInfo(False, "Move VAE and CLIP to RAM when training if possible. Saves VRAM."),
+    "pin_memory": OptionInfo(False, "Turn on pin_memory for DataLoader. Makes training slightly faster but can increase memory usage."),
+    "save_optimizer_state": OptionInfo(False, "Saves Optimizer state as separate *.optim file. Training can be resumed with HN itself and matching optim file."),
     "dataset_filename_word_regex": OptionInfo("", "Filename word regex"),
     "dataset_filename_join_string": OptionInfo(" ", "Filename join string"),
     "training_image_repeats_per_epoch": OptionInfo(1, "Number of repeats for a single input image per epoch; used only for displaying epoch number", gr.Number, {"precision": 0}),
@@ -317,9 +357,10 @@ options_templates.update(options_section(('training', "Training"), {
 }))
 
 options_templates.update(options_section(('sd', "Stable Diffusion"), {
-    "sd_model_checkpoint": OptionInfo(None, "Stable Diffusion checkpoint", gr.Dropdown, lambda: {"choices": modules.sd_models.checkpoint_tiles()}, refresh=sd_models.list_models),
+    "sd_model_checkpoint": OptionInfo(None, "Stable Diffusion checkpoint", gr.Dropdown, lambda: {"choices": list_checkpoint_tiles()}, refresh=refresh_checkpoints),
     "sd_checkpoint_cache": OptionInfo(0, "Checkpoints to cache in RAM", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
-    "sd_vae": OptionInfo("auto", "SD VAE", gr.Dropdown, lambda: {"choices": list(sd_vae.vae_list)}, refresh=sd_vae.refresh_vae_list),
+    "sd_vae": OptionInfo("auto", "SD VAE", gr.Dropdown, lambda: {"choices": sd_vae.vae_list}, refresh=sd_vae.refresh_vae_list),
+    "sd_vae_as_default": OptionInfo(False, "Ignore selected VAE for stable diffusion checkpoints that have their own .vae.pt next to them"),
     "sd_hypernetwork": OptionInfo("None", "Hypernetwork", gr.Dropdown, lambda: {"choices": ["None"] + [x for x in hypernetworks.keys()]}, refresh=reload_hypernetworks),
     "sd_hypernetwork_strength": OptionInfo(1.0, "Hypernetwork strength", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.001}),
     "inpainting_mask_weight": OptionInfo(1.0, "Inpainting conditioning mask strength", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
@@ -331,7 +372,7 @@ options_templates.update(options_section(('sd', "Stable Diffusion"), {
     "enable_batch_seeds": OptionInfo(True, "Make K-diffusion samplers produce same images in a batch as when making a single image"),
     "comma_padding_backtrack": OptionInfo(20, "Increase coherency by padding from the last comma within n tokens when using more than 75 tokens", gr.Slider, {"minimum": 0, "maximum": 74, "step": 1 }),
     "filter_nsfw": OptionInfo(False, "Filter NSFW content"),
-    'CLIP_stop_at_last_layers': OptionInfo(1, "Stop At last layers of CLIP model", gr.Slider, {"minimum": 1, "maximum": 12, "step": 1}),
+    'CLIP_stop_at_last_layers': OptionInfo(1, "Clip skip", gr.Slider, {"minimum": 1, "maximum": 12, "step": 1}),
     "random_artist_categories": OptionInfo([], "Allowed categories for random artists selection when using the Roll button", gr.CheckboxGroup, {"choices": artist_db.categories()}),
 }))
 
@@ -351,7 +392,7 @@ options_templates.update(options_section(('interrogate', "Interrogate Options"),
 
 options_templates.update(options_section(('ui', "User interface"), {
     "show_progressbar": OptionInfo(True, "Show progressbar"),
-    "show_progress_every_n_steps": OptionInfo(0, "Show image creation progress every N sampling steps. Set 0 to disable.", gr.Slider, {"minimum": 0, "maximum": 32, "step": 1}),
+    "show_progress_every_n_steps": OptionInfo(0, "Show image creation progress every N sampling steps. Set to 0 to disable. Set to -1 to show after completion of batch.", gr.Slider, {"minimum": -1, "maximum": 32, "step": 1}),
     "show_progress_grid": OptionInfo(True, "Show previews of all images generated in a batch as a grid"),
     "return_grid": OptionInfo(True, "Show grid in results for web"),
     "do_not_show_images": OptionInfo(False, "Do not show any images in results for web"),
@@ -368,7 +409,7 @@ options_templates.update(options_section(('ui', "User interface"), {
 }))
 
 options_templates.update(options_section(('sampler-params', "Sampler parameters"), {
-    "hide_samplers": OptionInfo([], "Hide samplers in user interface (requires restart)", gr.CheckboxGroup, lambda: {"choices": [x.name for x in sd_samplers.all_samplers]}),
+    "hide_samplers": OptionInfo([], "Hide samplers in user interface (requires restart)", gr.CheckboxGroup, lambda: {"choices": [x.name for x in list_samplers()]}),
     "eta_ddim": OptionInfo(0.0, "eta (noise multiplier) for DDIM", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     "eta_ancestral": OptionInfo(1.0, "eta (noise multiplier) for ancestral samplers", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     "ddim_discretize": OptionInfo('uniform', "img2img DDIM discretize", gr.Radio, {"choices": ['uniform', 'quad']}),
@@ -398,7 +439,8 @@ class Options:
             if key in self.data or key in self.data_labels:
                 assert not cmd_opts.freeze_settings, "changing settings is disabled"
 
-                comp_args = opts.data_labels[key].component_args
+                info = opts.data_labels.get(key, None)
+                comp_args = info.component_args if info else None
                 if isinstance(comp_args, dict) and comp_args.get('visible', True) is False:
                     raise RuntimeError(f"not possible to set {key} because it is restricted")
 
@@ -419,6 +461,23 @@ class Options:
             return self.data_labels[item].default
 
         return super(Options, self).__getattribute__(item)
+
+    def set(self, key, value):
+        """sets an option and calls its onchange callback, returning True if the option changed and False otherwise"""
+
+        oldval = self.data.get(key, None)
+        if oldval == value:
+            return False
+
+        try:
+            setattr(self, key, value)
+        except RuntimeError:
+            return False
+
+        if self.data_labels[key].onchange is not None:
+            self.data_labels[key].onchange()
+
+        return True
 
     def save(self, filename):
         assert not cmd_opts.freeze_settings, "saving settings is disabled"

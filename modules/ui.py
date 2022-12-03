@@ -17,15 +17,12 @@ import gradio.routes
 import gradio.utils
 import numpy as np
 from PIL import Image, PngImagePlugin
+from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_gradio_call
 
-
-from modules import sd_hijack, sd_models, localization, script_callbacks, ui_extensions
+from modules import sd_hijack, sd_models, localization, script_callbacks, ui_extensions, deepbooru
 from modules.paths import script_path
 
 from modules.shared import opts, cmd_opts, restricted_opts
-
-if cmd_opts.deepdanbooru:
-    from modules.deepbooru import get_deepbooru_tags
 
 import modules.codeformer_model
 import modules.generation_parameters_copypaste as parameters_copypaste
@@ -69,8 +66,11 @@ sample_img2img = sample_img2img if os.path.exists(sample_img2img) else None
 css_hide_progressbar = """
 .wrap .m-12 svg { display:none!important; }
 .wrap .m-12::before { content:"Loading..." }
+.wrap .z-20 svg { display:none!important; }
+.wrap .z-20::before { content:"Loading..." }
 .progress-bar { display:none!important; }
 .meta-text { display:none!important; }
+.meta-text-center { display:none!important; }
 """
 
 # Using constants for these since the variation selector isn't visible.
@@ -142,7 +142,7 @@ def save_files(js_data, images, do_make_zip, index):
                 filenames.append(os.path.basename(txt_fullfn))
                 fullfns.append(txt_fullfn)
 
-        writer.writerow([data["prompt"], data["seed"], data["width"], data["height"], data["sampler"], data["cfg_scale"], data["steps"], filenames[0], data["negative_prompt"]])
+        writer.writerow([data["prompt"], data["seed"], data["width"], data["height"], data["sampler_name"], data["cfg_scale"], data["steps"], filenames[0], data["negative_prompt"]])
 
     # Make Zip
     if do_make_zip:
@@ -157,81 +157,7 @@ def save_files(js_data, images, do_make_zip, index):
 
     return gr.File.update(value=fullfns, visible=True), '', '', plaintext_to_html(f"Saved: {filenames[0]}")
 
-def save_pil_to_file(pil_image, dir=None):
-    use_metadata = False
-    metadata = PngImagePlugin.PngInfo()
-    for key, value in pil_image.info.items():
-        if isinstance(key, str) and isinstance(value, str):
-            metadata.add_text(key, value)
-            use_metadata = True
 
-    file_obj = tempfile.NamedTemporaryFile(delete=False, suffix=".png", dir=dir)
-    pil_image.save(file_obj, pnginfo=(metadata if use_metadata else None))
-    return file_obj
-
-
-# override save to file function so that it also writes PNG info
-gr.processing_utils.save_pil_to_file = save_pil_to_file
-
-
-def wrap_gradio_call(func, extra_outputs=None):
-    def f(*args, extra_outputs_array=extra_outputs, **kwargs):
-        run_memmon = opts.memmon_poll_rate > 0 and not shared.mem_mon.disabled
-        if run_memmon:
-            shared.mem_mon.monitor()
-        t = time.perf_counter()
-
-        try:
-            res = list(func(*args, **kwargs))
-        except Exception as e:
-            # When printing out our debug argument list, do not print out more than a MB of text
-            max_debug_str_len = 131072 # (1024*1024)/8
-
-            print("Error completing request", file=sys.stderr)
-            argStr = f"Arguments: {str(args)} {str(kwargs)}"
-            print(argStr[:max_debug_str_len], file=sys.stderr)
-            if len(argStr) > max_debug_str_len:
-                print(f"(Argument list truncated at {max_debug_str_len}/{len(argStr)} characters)", file=sys.stderr)
-
-            print(traceback.format_exc(), file=sys.stderr)
-
-            shared.state.job = ""
-            shared.state.job_count = 0
-
-            if extra_outputs_array is None:
-                extra_outputs_array = [None, '']
-
-            res = extra_outputs_array + [f"<div class='error'>{plaintext_to_html(type(e).__name__+': '+str(e))}</div>"]
-
-        elapsed = time.perf_counter() - t
-        elapsed_m = int(elapsed // 60)
-        elapsed_s = elapsed % 60
-        elapsed_text = f"{elapsed_s:.2f}s"
-        if (elapsed_m > 0):
-            elapsed_text = f"{elapsed_m}m "+elapsed_text
-
-        if run_memmon:
-            mem_stats = {k: -(v//-(1024*1024)) for k, v in shared.mem_mon.stop().items()}
-            active_peak = mem_stats['active_peak']
-            reserved_peak = mem_stats['reserved_peak']
-            sys_peak = mem_stats['system_peak']
-            sys_total = mem_stats['total']
-            sys_pct = round(sys_peak/max(sys_total, 1) * 100, 2)
-
-            vram_html = f"<p class='vram'>Torch active/reserved: {active_peak}/{reserved_peak} MiB, <wbr>Sys VRAM: {sys_peak}/{sys_total} MiB ({sys_pct}%)</p>"
-        else:
-            vram_html = ''
-
-        # last item is always HTML
-        res[-1] += f"<div class='performance'><p class='time'>Time taken: <wbr>{elapsed_text}</p>{vram_html}</div>"
-
-        shared.state.skipped = False
-        shared.state.interrupted = False
-        shared.state.job_count = 0
-
-        return tuple(res)
-
-    return f
 
 
 def calc_time_left(progress, threshold, label, force_display):
@@ -276,7 +202,7 @@ def check_progress_call(id_part):
     image = gr_show(False)
     preview_visibility = gr_show(False)
 
-    if opts.show_progress_every_n_steps > 0:
+    if opts.show_progress_every_n_steps != 0:
         shared.state.set_current_image()
         image = shared.state.current_image
 
@@ -346,7 +272,7 @@ def interrogate(image):
 
 
 def interrogate_deepbooru(image):
-    prompt = get_deepbooru_tags(image)
+    prompt = deepbooru.model.tag(image)
     return gr_show(True) if prompt is None else prompt
 
 
@@ -475,9 +401,7 @@ def create_toprow(is_img2img):
         if is_img2img:
             with gr.Column(scale=1, elem_id="interrogate_col"):
                 button_interrogate = gr.Button('Interrogate\nCLIP', elem_id="interrogate")
-
-                if cmd_opts.deepdanbooru:
-                    button_deepbooru = gr.Button('Interrogate\nDeepBooru', elem_id="deepbooru")
+                button_deepbooru = gr.Button('Interrogate\nDeepBooru', elem_id="deepbooru")
 
         with gr.Column(scale=1):
             with gr.Row():
@@ -563,6 +487,19 @@ def apply_setting(key, value):
     return value
 
 
+def update_generation_info(args):
+    generation_info, html_info, img_index = args
+    try:
+        generation_info = json.loads(generation_info)
+        if img_index < 0 or img_index >= len(generation_info["infotexts"]):
+            return html_info
+        return plaintext_to_html(generation_info["infotexts"][img_index])
+    except Exception:
+        pass
+    # if the json parse or anything else fails, just return the old html_info
+    return html_info
+
+
 def create_refresh_button(refresh_component, refresh_method, refreshed_args, elem_id):
     def refresh():
         refresh_method()
@@ -635,6 +572,15 @@ Requested path was: {f}
                     with gr.Group():
                         html_info = gr.HTML()
                         generation_info = gr.Textbox(visible=False)
+                        if tabname == 'txt2img' or tabname == 'img2img':
+                            generation_info_button = gr.Button(visible=False, elem_id=f"{tabname}_generation_info_button")
+                            generation_info_button.click(
+                                fn=update_generation_info,
+                                _js="(x, y) => [x, y, selected_gallery_index()]",
+                                inputs=[generation_info, html_info],
+                                outputs=[html_info],
+                                preprocess=False
+                            )
 
                         save.click(
                             fn=wrap_gradio_call(save_files),
@@ -659,13 +605,16 @@ Requested path was: {f}
                 return result_gallery, generation_info if tabname != "extras" else html_info_x, html_info
 
 
-def create_ui(wrap_gradio_gpu_call):
+def create_ui():
     import modules.img2img
     import modules.txt2img
 
     reload_javascript()
 
     parameters_copypaste.reset()
+
+    modules.scripts.scripts_current = modules.scripts.scripts_txt2img
+    modules.scripts.scripts_txt2img.initialize_scripts(is_img2img=False)
 
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
         txt2img_prompt, roll, txt2img_prompt_style, txt2img_negative_prompt, txt2img_prompt_style2, submit, _, _, txt2img_prompt_style_apply, txt2img_save_style, txt2img_paste, token_counter, token_button = create_toprow(is_img2img=False)
@@ -709,7 +658,7 @@ def create_ui(wrap_gradio_gpu_call):
                 seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox = create_seed_inputs()
 
                 with gr.Group():
-                    custom_inputs = modules.scripts.scripts_txt2img.setup_ui(is_img2img=False)
+                    custom_inputs = modules.scripts.scripts_txt2img.setup_ui()
 
             txt2img_gallery, generation_info, html_info = create_output_panel("txt2img", opts.outdir_txt2img_samples)
             parameters_copypaste.bind_buttons({"txt2img": txt2img_paste}, None, txt2img_prompt)
@@ -816,7 +765,10 @@ def create_ui(wrap_gradio_gpu_call):
                 height,
             ]
 
-            token_button.click(fn=update_token_counter, inputs=[txt2img_prompt, steps], outputs=[token_counter])
+            token_button.click(fn=wrap_queued_call(update_token_counter), inputs=[txt2img_prompt, steps], outputs=[token_counter])
+
+    modules.scripts.scripts_current = modules.scripts.scripts_img2img
+    modules.scripts.scripts_img2img.initialize_scripts(is_img2img=True)
 
     with gr.Blocks(analytics_enabled=False) as img2img_interface:
         img2img_prompt, roll, img2img_prompt_style, img2img_negative_prompt, img2img_prompt_style2, submit, img2img_interrogate, img2img_deepbooru, img2img_prompt_style_apply, img2img_save_style, img2img_paste, token_counter, token_button = create_toprow(is_img2img=True)
@@ -840,11 +792,22 @@ def create_ui(wrap_gradio_gpu_call):
                         init_img = gr.Image(label="Image for img2img", elem_id="img2img_image", show_label=False, source="upload", interactive=True, type="pil", tool=cmd_opts.gradio_img2img_tool).style(height=480)
 
                     with gr.TabItem('Inpaint', id='inpaint'):
-                        init_img_with_mask = gr.Image(label="Image for inpainting with mask",  show_label=False, elem_id="img2maskimg", source="upload", interactive=True, type="pil", tool="sketch", image_mode="RGBA").style(height=480)
+                        init_img_with_mask_orig = gr.State(None)
+                        init_img_with_mask = gr.Image(label="Image for inpainting with mask", show_label=False, elem_id="img2maskimg", source="upload", interactive=True, type="pil", tool=cmd_opts.gradio_inpaint_tool, image_mode="RGBA").style(height=480)
 
+                        def update_orig(image, state):
+                            if image is not None:
+                                same_size = state is not None and state.size == image.size
+                                has_exact_match = np.any(np.all(np.array(image) == np.array(state), axis=-1))
+                                edited = same_size and has_exact_match
+                                return image if not edited or state is None else state
+
+                        init_img_with_mask.change(update_orig, [init_img_with_mask, init_img_with_mask_orig], init_img_with_mask_orig)
                         init_img_inpaint = gr.Image(label="Image for img2img", show_label=False, source="upload", interactive=True, type="pil", visible=False, elem_id="img_inpaint_base")
                         init_mask_inpaint = gr.Image(label="Mask", source="upload", interactive=True, type="pil", visible=False, elem_id="img_inpaint_mask")
 
+                        show_mask_alpha = cmd_opts.gradio_inpaint_tool == "color-sketch"
+                        mask_alpha = gr.Slider(label="Mask transparency", interactive=show_mask_alpha, visible=show_mask_alpha)
                         mask_blur = gr.Slider(label='Mask blur', minimum=0, maximum=64, step=1, value=4)
 
                         with gr.Row():
@@ -888,7 +851,7 @@ def create_ui(wrap_gradio_gpu_call):
                 seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox = create_seed_inputs()
 
                 with gr.Group():
-                    custom_inputs = modules.scripts.scripts_img2img.setup_ui(is_img2img=True)
+                    custom_inputs = modules.scripts.scripts_img2img.setup_ui()
 
             img2img_gallery, generation_info, html_info = create_output_panel("img2img", opts.outdir_img2img_samples)
             parameters_copypaste.bind_buttons({"img2img": img2img_paste}, None, img2img_prompt)
@@ -932,12 +895,14 @@ def create_ui(wrap_gradio_gpu_call):
                     img2img_prompt_style2,
                     init_img,
                     init_img_with_mask,
+                    init_img_with_mask_orig,
                     init_img_inpaint,
                     init_mask_inpaint,
                     mask_mode,
                     steps,
                     sampler_index,
                     mask_blur,
+                    mask_alpha,
                     inpainting_fill,
                     restore_faces,
                     tiling,
@@ -973,11 +938,10 @@ def create_ui(wrap_gradio_gpu_call):
                 outputs=[img2img_prompt],
             )
 
-            if cmd_opts.deepdanbooru:
-                img2img_deepbooru.click(
-                    fn=interrogate_deepbooru,
-                    inputs=[init_img],
-                    outputs=[img2img_prompt],
+            img2img_deepbooru.click(
+                fn=interrogate_deepbooru,
+                inputs=[init_img],
+                outputs=[img2img_prompt],
             )
 
 
@@ -1032,10 +996,13 @@ def create_ui(wrap_gradio_gpu_call):
                 (seed_resize_from_w, "Seed resize from-1"),
                 (seed_resize_from_h, "Seed resize from-2"),
                 (denoising_strength, "Denoising strength"),
+                (mask_blur, "Mask blur"),
                 *modules.scripts.scripts_img2img.infotext_fields
             ]
             parameters_copypaste.add_paste_fields("img2img", init_img, img2img_paste_fields)
             parameters_copypaste.add_paste_fields("inpaint", init_img_with_mask, img2img_paste_fields)
+
+    modules.scripts.scripts_current = None
 
     with gr.Blocks(analytics_enabled=False) as extras_interface:
         with gr.Row().style(equal_height=False):
@@ -1138,7 +1105,7 @@ def create_ui(wrap_gradio_gpu_call):
             outputs=[html, generation_info, html2],
         )
 
-    with gr.Blocks() as modelmerger_interface:
+    with gr.Blocks(analytics_enabled=False) as modelmerger_interface:
         with gr.Row().style(equal_height=False):
             with gr.Column(variant='panel'):
                 gr.HTML(value="<p>A merger of the two checkpoints will be generated in your <b>checkpoint</b> directory.</p>")
@@ -1150,7 +1117,11 @@ def create_ui(wrap_gradio_gpu_call):
                 custom_name = gr.Textbox(label="Custom Name (Optional)")
                 interp_amount = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Multiplier (M) - set to 0 to get model A', value=0.3)
                 interp_method = gr.Radio(choices=["Weighted sum", "Add difference"], value="Weighted sum", label="Interpolation Method")
-                save_as_half = gr.Checkbox(value=False, label="Save as float16")
+
+                with gr.Row():
+                    checkpoint_format = gr.Radio(choices=["ckpt", "safetensors"], value="ckpt", label="Checkpoint format")
+                    save_as_half = gr.Checkbox(value=False, label="Save as float16")
+
                 modelmerger_merge = gr.Button(elem_id="modelmerger_merge", label="Merge", variant='primary')
 
             with gr.Column(variant='panel'):
@@ -1158,7 +1129,7 @@ def create_ui(wrap_gradio_gpu_call):
 
     sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings()
 
-    with gr.Blocks() as train_interface:
+    with gr.Blocks(analytics_enabled=False) as train_interface:
         with gr.Row().style(equal_height=False):
             gr.HTML(value="<p style='margin-bottom: 0.7em'>See <b><a href=\"https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Textual-Inversion\">wiki</a></b> for detailed explanation.</p>")
 
@@ -1180,7 +1151,7 @@ def create_ui(wrap_gradio_gpu_call):
 
                 with gr.Tab(label="Create hypernetwork"):
                     new_hypernetwork_name = gr.Textbox(label="Name")
-                    new_hypernetwork_sizes = gr.CheckboxGroup(label="Modules", value=["768", "320", "640", "1280"], choices=["768", "320", "640", "1280"])
+                    new_hypernetwork_sizes = gr.CheckboxGroup(label="Modules", value=["768", "320", "640", "1280"], choices=["768", "1024", "320", "640", "1280"])
                     new_hypernetwork_layer_structure = gr.Textbox("1, 2, 1", label="Enter hypernetwork layer structure", placeholder="1st and last digit must be 1. ex:'1, 2, 1'")
                     new_hypernetwork_activation_func = gr.Dropdown(value="linear", label="Select activation function of hypernetwork. Recommended : Swish / Linear(none)", choices=modules.hypernetworks.ui.keys)
                     new_hypernetwork_initialization_option = gr.Dropdown(value = "Normal", label="Select Layer weights initialization. Recommended: Kaiming for relu-like, Xavier for sigmoid-like, Normal otherwise", choices=["Normal", "KaimingUniform", "KaimingNormal", "XavierUniform", "XavierNormal"])
@@ -1207,7 +1178,7 @@ def create_ui(wrap_gradio_gpu_call):
                         process_split = gr.Checkbox(label='Split oversized images')
                         process_focal_crop = gr.Checkbox(label='Auto focal point crop')
                         process_caption = gr.Checkbox(label='Use BLIP for caption')
-                        process_caption_deepbooru = gr.Checkbox(label='Use deepbooru for caption', visible=True if cmd_opts.deepdanbooru else False)
+                        process_caption_deepbooru = gr.Checkbox(label='Use deepbooru for caption', visible=True)
 
                     with gr.Row(visible=False) as process_split_extra_row:
                         process_split_threshold = gr.Slider(label='Split image threshold', value=0.5, minimum=0.0, maximum=1.0, step=0.05)
@@ -1224,6 +1195,8 @@ def create_ui(wrap_gradio_gpu_call):
                             gr.HTML(value="")
 
                         with gr.Column():
+                            with gr.Row():
+                                interrupt_preprocessing = gr.Button("Interrupt")
                             run_preprocess = gr.Button(value="Preprocess", variant='primary')
 
                     process_split.change(
@@ -1251,6 +1224,7 @@ def create_ui(wrap_gradio_gpu_call):
                         hypernetwork_learn_rate = gr.Textbox(label='Hypernetwork Learning rate', placeholder="Hypernetwork Learning rate", value="0.00001")
 
                     batch_size = gr.Number(label='Batch size', value=1, precision=0)
+                    gradient_step = gr.Number(label='Gradient accumulation steps', value=1, precision=0)
                     dataset_directory = gr.Textbox(label='Dataset directory', placeholder="Path to directory with input images")
                     log_directory = gr.Textbox(label='Log directory', placeholder="Path to directory where to write outputs", value="textual_inversion")
                     template_file = gr.Textbox(label='Prompt template file', value=os.path.join(script_path, "textual_inversion_templates", "style_filewords.txt"))
@@ -1261,11 +1235,20 @@ def create_ui(wrap_gradio_gpu_call):
                     save_embedding_every = gr.Number(label='Save a copy of embedding to log directory every N steps, 0 to disable', value=500, precision=0)
                     save_image_with_stored_embedding = gr.Checkbox(label='Save images with embedding in PNG chunks', value=True)
                     preview_from_txt2img = gr.Checkbox(label='Read parameters (prompt, etc...) from txt2img tab when making previews', value=False)
+                    with gr.Row():
+                        shuffle_tags = gr.Checkbox(label="Shuffle tags by ',' when creating prompts.", value=False)
+                        tag_drop_out = gr.Slider(minimum=0, maximum=1, step=0.1, label="Drop out tags when creating prompts.", value=0)
+                    with gr.Row():
+                        latent_sampling_method = gr.Radio(label='Choose latent sampling method', value="once", choices=['once', 'deterministic', 'random'])
 
                     with gr.Row():
                         interrupt_training = gr.Button(value="Interrupt")
                         train_hypernetwork = gr.Button(value="Train Hypernetwork", variant='primary')
                         train_embedding = gr.Button(value="Train Embedding", variant='primary')
+
+                params = script_callbacks.UiTrainTabParams(txt2img_preview_params)
+
+                script_callbacks.ui_train_tabs_callback(params)
 
             with gr.Column():
                 progressbar = gr.HTML(elem_id="ti_progressbar")
@@ -1345,11 +1328,15 @@ def create_ui(wrap_gradio_gpu_call):
                 train_embedding_name,
                 embedding_learn_rate,
                 batch_size,
+                gradient_step,
                 dataset_directory,
                 log_directory,
                 training_width,
                 training_height,
                 steps,
+                shuffle_tags,
+                tag_drop_out,
+                latent_sampling_method,
                 create_image_every,
                 save_embedding_every,
                 template_file,
@@ -1370,11 +1357,15 @@ def create_ui(wrap_gradio_gpu_call):
                 train_hypernetwork_name,
                 hypernetwork_learn_rate,
                 batch_size,
+                gradient_step,
                 dataset_directory,
                 log_directory,
                 training_width,
                 training_height,
                 steps,
+                shuffle_tags,
+                tag_drop_out,
+                latent_sampling_method,
                 create_image_every,
                 save_embedding_every,
                 template_file,
@@ -1388,6 +1379,12 @@ def create_ui(wrap_gradio_gpu_call):
         )
 
         interrupt_training.click(
+            fn=lambda: shared.state.interrupt(),
+            inputs=[],
+            outputs=[],
+        )
+
+        interrupt_preprocessing.click(
             fn=lambda: shared.state.interrupt(),
             inputs=[],
             outputs=[],
@@ -1417,15 +1414,14 @@ def create_ui(wrap_gradio_gpu_call):
 
         if info.refresh is not None:
             if is_quicksettings:
-                res = comp(label=info.label, value=fun, elem_id=elem_id, **(args or {}))
+                res = comp(label=info.label, value=fun(), elem_id=elem_id, **(args or {}))
                 create_refresh_button(res, info.refresh, info.component_args, "refresh_" + key)
             else:
                 with gr.Row(variant="compact"):
-                    res = comp(label=info.label, value=fun, elem_id=elem_id, **(args or {}))
+                    res = comp(label=info.label, value=fun(), elem_id=elem_id, **(args or {}))
                     create_refresh_button(res, info.refresh, info.component_args, "refresh_" + key)
         else:
-            res = comp(label=info.label, value=fun, elem_id=elem_id, **(args or {}))
-
+            res = comp(label=info.label, value=fun(), elem_id=elem_id, **(args or {}))
 
         return res
 
@@ -1436,43 +1432,30 @@ def create_ui(wrap_gradio_gpu_call):
     opts.reorder()
 
     def run_settings(*args):
-        changed = 0
+        changed = []
 
         for key, value, comp in zip(opts.data_labels.keys(), args, components):
-            if comp != dummy_component and not opts.same_type(value, opts.data_labels[key].default):
-                return f"Bad value for setting {key}: {value}; expecting {type(opts.data_labels[key].default).__name__}", opts.dumpjson()
+            assert comp == dummy_component or opts.same_type(value, opts.data_labels[key].default), f"Bad value for setting {key}: {value}; expecting {type(opts.data_labels[key].default).__name__}"
 
         for key, value, comp in zip(opts.data_labels.keys(), args, components):
             if comp == dummy_component:
                 continue
 
-            oldval = opts.data.get(key, None)
+            if opts.set(key, value):
+                changed.append(key)
 
-            setattr(opts, key, value)
-
-            if oldval != value:
-                if opts.data_labels[key].onchange is not None:
-                    opts.data_labels[key].onchange()
-
-                changed += 1
-
-        opts.save(shared.config_filename)
-
-        return f'{changed} settings changed.', opts.dumpjson()
+        try:
+            opts.save(shared.config_filename)
+        except RuntimeError:
+            return opts.dumpjson(), f'{len(changed)} settings changed without save: {", ".join(changed)}.'
+        return opts.dumpjson(), f'{len(changed)} settings changed: {", ".join(changed)}.'
 
     def run_settings_single(value, key):
         if not opts.same_type(value, opts.data_labels[key].default):
             return gr.update(visible=True), opts.dumpjson()
 
-        oldval = opts.data.get(key, None)
-        try:
-            setattr(opts, key, value)
-        except Exception:
-            return gr.update(value=oldval), opts.dumpjson()
-
-        if oldval != value:
-            if opts.data_labels[key].onchange is not None:
-                opts.data_labels[key].onchange()
+        if not opts.set(key, value):
+            return gr.update(value=getattr(opts, key)), opts.dumpjson()
 
         opts.save(shared.config_filename)
 
@@ -1562,11 +1545,10 @@ def create_ui(wrap_gradio_gpu_call):
             shared.state.need_restart = True
 
         restart_gradio.click(
-
             fn=request_restart,
+            _js='restart_reload',
             inputs=[],
             outputs=[],
-            _js='restart_reload'
         )
 
         if column is not None:
@@ -1622,9 +1604,9 @@ def create_ui(wrap_gradio_gpu_call):
 
         text_settings = gr.Textbox(elem_id="settings_json", value=lambda: opts.dumpjson(), visible=False)
         settings_submit.click(
-            fn=run_settings,
+            fn=wrap_gradio_call(run_settings, extra_outputs=[gr.update()]),
             inputs=components,
-            outputs=[result, text_settings],
+            outputs=[text_settings, result],
         )
 
         for i, k, item in quicksettings_list:
@@ -1635,6 +1617,17 @@ def create_ui(wrap_gradio_gpu_call):
                 inputs=[component],
                 outputs=[component, text_settings],
             )
+
+        component_keys = [k for k in opts.data_labels.keys() if k in component_dict]
+
+        def get_settings_values():
+            return [getattr(opts, key) for key in component_keys]
+
+        demo.load(
+            fn=get_settings_values,
+            inputs=[],
+            outputs=[component_dict[k] for k in component_keys],
+        )
 
         def modelmerger(*args):
             try:
@@ -1656,6 +1649,7 @@ def create_ui(wrap_gradio_gpu_call):
                 interp_amount,
                 save_as_half,
                 custom_name,
+                checkpoint_format,
             ],
             outputs=[
                 submit_result,
@@ -1739,7 +1733,7 @@ def create_ui(wrap_gradio_gpu_call):
     return demo
 
 
-def load_javascript(raw_response):
+def reload_javascript():
     with open(os.path.join(script_path, "script.js"), "r", encoding="utf8") as jsfile:
         javascript = f'<script>{jsfile.read()}</script>'
 
@@ -1755,7 +1749,7 @@ def load_javascript(raw_response):
     javascript += f"\n<script>{localization.localization_js(shared.opts.localization)}</script>"
 
     def template_response(*args, **kwargs):
-        res = raw_response(*args, **kwargs)
+        res = shared.GradioTemplateResponseOriginal(*args, **kwargs)
         res.body = res.body.replace(
             b'</head>', f'{javascript}</head>'.encode("utf8"))
         res.init_headers()
@@ -1764,4 +1758,5 @@ def load_javascript(raw_response):
     gradio.routes.templates.TemplateResponse = template_response
 
 
-reload_javascript = partial(load_javascript, gradio.routes.templates.TemplateResponse)
+if not hasattr(shared, 'GradioTemplateResponseOriginal'):
+    shared.GradioTemplateResponseOriginal = gradio.routes.templates.TemplateResponse
