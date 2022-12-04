@@ -82,7 +82,7 @@ class PersonalizedBase(Dataset):
             torchdata = torch.from_numpy(npimage).permute(2, 0, 1).to(device=device, dtype=torch.float32)
             latent_sample = None
 
-            with torch.autocast("cuda"):
+            with devices.autocast():
                 latent_dist = model.encode_first_stage(torchdata.unsqueeze(dim=0))
 
             if latent_sampling_method == "once" or (latent_sampling_method == "deterministic" and not isinstance(latent_dist, DiagonalGaussianDistribution)):
@@ -101,7 +101,7 @@ class PersonalizedBase(Dataset):
                 entry.cond_text = self.create_text(filename_text)
 
             if include_cond and not (self.tag_drop_out != 0 or self.shuffle_tags):
-                with torch.autocast("cuda"):
+                with devices.autocast():
                     entry.cond = cond_model([entry.cond_text]).to(devices.cpu).squeeze(0)
 
             self.dataset.append(entry)

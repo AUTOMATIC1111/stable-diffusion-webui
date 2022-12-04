@@ -433,7 +433,10 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, gradient_step,
 
     dl = modules.textual_inversion.dataset.PersonalizedDataLoader(ds, latent_sampling_method=latent_sampling_method, batch_size=ds.batch_size, pin_memory=pin_memory)
 
+    old_parallel_processing_allowed = shared.parallel_processing_allowed
+
     if unload:
+        shared.parallel_processing_allowed = False
         shared.sd_model.cond_stage_model.to(devices.cpu)
         shared.sd_model.first_stage_model.to(devices.cpu)
     
@@ -495,7 +498,7 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, gradient_step,
                 if shared.state.interrupted:
                     break
 
-                with torch.autocast("cuda"):
+                with devices.autocast():
                     x = batch.latent_sample.to(devices.device, non_blocking=pin_memory)
                     if tag_drop_out != 0 or shuffle_tags:
                         shared.sd_model.cond_stage_model.to(devices.device)
@@ -612,10 +615,12 @@ Last saved image: {html.escape(last_saved_image)}<br/>
     if shared.opts.save_optimizer_state:
         hypernetwork.optimizer_state_dict = optimizer.state_dict()
     save_hypernetwork(hypernetwork, checkpoint, hypernetwork_name, filename)
+
     del optimizer
     hypernetwork.optimizer_state_dict = None  # dereference it after saving, to save memory.
     shared.sd_model.cond_stage_model.to(devices.device)
     shared.sd_model.first_stage_model.to(devices.device)
+    shared.parallel_processing_allowed = old_parallel_processing_allowed
 
     return hypernetwork, filename
 

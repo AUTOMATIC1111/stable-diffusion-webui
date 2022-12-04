@@ -17,7 +17,7 @@ available_extensions = {"extensions": []}
 
 
 def check_access():
-    assert not shared.cmd_opts.disable_extension_access, "extension access disabed because of commandline flags"
+    assert not shared.cmd_opts.disable_extension_access, "extension access disabled because of command line flags"
 
 
 def apply_and_restart(disable_list, update_list):
@@ -78,6 +78,12 @@ def extension_table():
     """
 
     for ext in extensions.extensions:
+        remote = ""
+        if ext.is_builtin:
+            remote = "built-in"
+        elif ext.remote:
+            remote = f"""<a href="{html.escape(ext.remote or '')}" target="_blank">{html.escape("built-in" if ext.is_builtin else ext.remote or '')}</a>"""
+
         if ext.can_update:
             ext_status = f"""<label><input class="gr-check-radio gr-checkbox" name="update_{html.escape(ext.name)}" checked="checked" type="checkbox">{html.escape(ext.status)}</label>"""
         else:
@@ -86,7 +92,7 @@ def extension_table():
         code += f"""
             <tr>
                 <td><label><input class="gr-check-radio gr-checkbox" name="enable_{html.escape(ext.name)}" type="checkbox" {'checked="checked"' if ext.enabled else ''}>{html.escape(ext.name)}</label></td>
-                <td><a href="{html.escape(ext.remote or '')}" target="_blank">{html.escape(ext.remote or '')}</a></td>
+                <td>{remote}</td>
                 <td{' class="extension_status"' if ext.remote is not None else ''}>{ext_status}</td>
             </tr>
     """

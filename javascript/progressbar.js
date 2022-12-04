@@ -92,14 +92,26 @@ function check_gallery(id_gallery){
             if (prevSelectedIndex !== -1 && galleryButtons.length>prevSelectedIndex && !galleryBtnSelected) {
                 // automatically re-open previously selected index (if exists)
                 activeElement = gradioApp().activeElement;
+                let scrollX = window.scrollX;
+                let scrollY = window.scrollY;
 
                 galleryButtons[prevSelectedIndex].click();
                 showGalleryImage();
 
+                // When the gallery button is clicked, it gains focus and scrolls itself into view
+                // We need to scroll back to the previous position
+                setTimeout(function (){
+                    window.scrollTo(scrollX, scrollY);
+                }, 50);
+
                 if(activeElement){
                     // i fought this for about an hour; i don't know why the focus is lost or why this helps recover it
-                    // if somenoe has a better solution please by all means
-                    setTimeout(function() { activeElement.focus() }, 1);
+                    // if someone has a better solution please by all means
+                    setTimeout(function (){
+                        activeElement.focus({
+                            preventScroll: true // Refocus the element that was focused before the gallery was opened without scrolling to it
+                        })
+                    }, 1);
                 }
             }
         })
