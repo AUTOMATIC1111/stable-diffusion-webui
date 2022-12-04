@@ -19,6 +19,7 @@ class TestImg2ImgWorking(unittest.TestCase):
             "inpainting_mask_invert": 0,
             "prompt": "example prompt",
             "styles": [],
+            "white_background":False,
             "seed": -1,
             "subseed": -1,
             "subseed_strength": 0,

@@ -160,6 +160,13 @@ class Api:
         imgs = []
         for img in init_images:
             img = decode_base64_to_image(img)
+            if img_.mode=="RGBA":
+                img_.load()  # needed for split()
+                background = Image.new('RGB', img_.size, (255,255,255) if p.white_background else (0,0,0))
+                background.paste(img_, mask=img_.split()[3])  # 3 is the alpha channel
+                img_=background
+            else:
+                img_=img_.convert('RGB')
             imgs = [img] * p.batch_size
 
         p.init_images = imgs
