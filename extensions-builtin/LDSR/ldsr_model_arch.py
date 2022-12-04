@@ -22,6 +22,7 @@ class LDSR:
         pl_sd = torch.load(self.modelPath, map_location="cpu")
         sd = pl_sd["state_dict"]
         config = OmegaConf.load(self.yamlPath)
+        config.model.target = "ldm.models.diffusion.ddpm.LatentDiffusionV1"
         model = instantiate_from_config(config.model)
         model.load_state_dict(sd, strict=False)
         model.cuda()
