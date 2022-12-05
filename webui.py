@@ -8,9 +8,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 
+from modules.call_queue import wrap_queued_call, queue_lock, wrap_gradio_gpu_call
 from modules.paths import script_path
 
-from modules import devices, sd_samplers, upscaler, extensions, localization
+from modules import shared, devices, sd_samplers, upscaler, extensions, localization, ui_tempdir
 import modules.codeformer_model as codeformer
 import modules.extras
 import modules.face_restoration
@@ -23,7 +24,6 @@ import modules.scripts
 import modules.sd_hijack
 import modules.sd_models
 import modules.sd_vae
-import modules.shared as shared
 import modules.txt2img
 import modules.script_callbacks
 
@@ -32,35 +32,11 @@ from modules import modelloader
 from modules.shared import cmd_opts
 import modules.hypernetworks.hypernetwork
 
-queue_lock = threading.Lock()
+
 if cmd_opts.server_name:
     server_name = cmd_opts.server_name
 else:
     server_name = "0.0.0.0" if cmd_opts.listen else None
-
-def wrap_queued_call(func):
-    def f(*args, **kwargs):
-        with queue_lock:
-            res = func(*args, **kwargs)
-
-        return res
-
-    return f
-
-
-def wrap_gradio_gpu_call(func, extra_outputs=None):
-    def f(*args, **kwargs):
-
-        shared.state.begin()
-
-        with queue_lock:
-            res = func(*args, **kwargs)
-
-        shared.state.end()
-
-        return res
-
-    return modules.ui.wrap_gradio_call(f, extra_outputs=extra_outputs, add_stats=True)
 
 
 def initialize():
@@ -77,17 +53,19 @@ def initialize():
     codeformer.setup_model(cmd_opts.codeformer_models_path)
     gfpgan.setup_model(cmd_opts.gfpgan_models_path)
     shared.face_restorers.append(modules.face_restoration.FaceRestoration())
-    modelloader.load_upscalers()
 
     modules.scripts.load_scripts()
+
+    modelloader.load_upscalers()
 
     modules.sd_vae.refresh_vae_list()
     modules.sd_models.load_model()
     shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights()))
     shared.opts.onchange("sd_vae", wrap_queued_call(lambda: modules.sd_vae.reload_vae_weights()), call=False)
     shared.opts.onchange("sd_vae_as_default", wrap_queued_call(lambda: modules.sd_vae.reload_vae_weights()), call=False)
-    shared.opts.onchange("sd_hypernetwork", wrap_queued_call(lambda: modules.hypernetworks.hypernetwork.load_hypernetwork(shared.opts.sd_hypernetwork)))
+    shared.opts.onchange("sd_hypernetwork", wrap_queued_call(lambda: shared.reload_hypernetworks()))
     shared.opts.onchange("sd_hypernetwork_strength", modules.hypernetworks.hypernetwork.apply_strength)
+    shared.opts.onchange("temp_dir", ui_tempdir.on_tmpdir_changed)
 
     if cmd_opts.tls_keyfile is not None and cmd_opts.tls_keyfile is not None:
 
@@ -111,8 +89,12 @@ def initialize():
 
 
 def setup_cors(app):
-    if cmd_opts.cors_allow_origins:
+    if cmd_opts.cors_allow_origins and cmd_opts.cors_allow_origins_regex:
+        app.add_middleware(CORSMiddleware, allow_origins=cmd_opts.cors_allow_origins.split(','), allow_origin_regex=cmd_opts.cors_allow_origins_regex, allow_methods=['*'])
+    elif cmd_opts.cors_allow_origins:
         app.add_middleware(CORSMiddleware, allow_origins=cmd_opts.cors_allow_origins.split(','), allow_methods=['*'])
+    elif cmd_opts.cors_allow_origins_regex:
+        app.add_middleware(CORSMiddleware, allow_origin_regex=cmd_opts.cors_allow_origins_regex, allow_methods=['*'])
 
 
 def create_api(app):
@@ -150,9 +132,12 @@ def webui():
     initialize()
 
     while 1:
-        demo = modules.ui.create_ui(wrap_gradio_gpu_call=wrap_gradio_gpu_call)
+        if shared.opts.clean_temp_dir_at_start:
+            ui_tempdir.cleanup_tmpdr()
 
-        app, local_url, share_url = demo.launch(
+        shared.demo = modules.ui.create_ui()
+
+        app, local_url, share_url = shared.demo.launch(
             share=cmd_opts.share,
             server_name=server_name,
             server_port=cmd_opts.port,
@@ -179,9 +164,10 @@ def webui():
         if launch_api:
             create_api(app)
 
-        modules.script_callbacks.app_started_callback(demo, app)
+        modules.script_callbacks.app_started_callback(shared.demo, app)
+        modules.script_callbacks.app_started_callback(shared.demo, app)
 
-        wait_on_server(demo)
+        wait_on_server(shared.demo)
 
         sd_samplers.set_samplers()
 
@@ -192,6 +178,8 @@ def webui():
 
         print('Reloading custom scripts')
         modules.scripts.reload_scripts()
+        modelloader.load_upscalers()
+
         print('Reloading modules: modules.ui')
         importlib.reload(modules.ui)
         print('Refreshing Model List')
