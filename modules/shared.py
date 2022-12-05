@@ -580,6 +580,13 @@ mem_mon = modules.memmon.MemUsageMonitor("MemMon", device, opts)
 mem_mon.start()
 
 
-def listfiles(dirname):
+def listfiles(dirname, walk=False):
+    if walk:
+        filenames = []
+        for root, dirs, files in os.walk(dirname):
+            dirs[:] = [d for d in dirs if not d.startswith(".")]
+            filenames += [os.path.join(root, f) for f in sorted(files) if not f.startswith(".")]
+        return filenames
+
     filenames = [os.path.join(dirname, x) for x in sorted(os.listdir(dirname)) if not x.startswith(".")]
     return [file for file in filenames if os.path.isfile(file)]
