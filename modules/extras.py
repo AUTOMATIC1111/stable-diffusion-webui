@@ -55,7 +55,7 @@ class LruCache(OrderedDict):
 cached_images: LruCache = LruCache(max_size=5)
 
 
-def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_dir, show_extras_results, gfpgan_visibility, codeformer_visibility, codeformer_weight, upscaling_resize, upscaling_resize_w, upscaling_resize_h, upscaling_crop, extras_upscaler_1, extras_upscaler_2, extras_upscaler_2_visibility, upscale_first: bool):
+def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_dir, show_extras_results, use_original_name, walk_subdirs, gfpgan_visibility, codeformer_visibility, codeformer_weight, upscaling_resize, upscaling_resize_w, upscaling_resize_h, upscaling_crop, extras_upscaler_1, extras_upscaler_2, extras_upscaler_2_visibility, upscale_first: bool):
     devices.torch_gc()
 
     imageArr = []
@@ -74,7 +74,7 @@ def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_
 
         if input_dir == '':
             return outputs, "Please select an input directory.", ''
-        image_list = shared.listfiles(input_dir)
+        image_list = shared.listfiles(input_dir, walk=walk_subdirs)
         for img in image_list:
             try:
                 image = Image.open(img)
@@ -181,6 +181,7 @@ def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_
         if image is None:
             return outputs, "Please select an input image.", ''
         existing_pnginfo = image.info or {}
+        relpath = os.path.dirname(os.path.join(outpath, os.path.relpath(image_name, input_dir))) if input_dir and walk_subdirs else outpath
 
         image = image.convert("RGB")
         info = ""
@@ -188,13 +189,16 @@ def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_
         for op in extras_ops:
             image, info = op(image, info)
 
-        if opts.use_original_name_batch and image_name != None:
+        if not input_dir and outpath.startswith(input_dir):
+            raise Exception(f"recursive output path: {outpath} from input path: {input_dir}")
+
+        if use_original_name and image_name != None:
             basename = os.path.splitext(os.path.basename(image_name))[0]
         else:
             basename = ''
 
-        images.save_image(image, path=outpath, basename=basename, seed=None, prompt=None, extension=opts.samples_format, info=info, short_filename=True,
-                          no_prompt=True, grid=False, pnginfo_section_name="extras", existing_info=existing_pnginfo, forced_filename=None)
+        images.save_image(image, path=relpath, basename=basename, seed=None, prompt=None, extension=opts.samples_format, info=info, short_filename=True,
+                          no_prompt=True, grid=False, pnginfo_section_name="extras", existing_info=existing_pnginfo, forced_filename=basename if input_dir and use_original_name else None)
 
         if opts.enable_pnginfo:
             image.info = existing_pnginfo

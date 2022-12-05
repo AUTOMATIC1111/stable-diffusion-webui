@@ -1017,6 +1017,8 @@ def create_ui():
                         extras_batch_input_dir = gr.Textbox(label="Input directory", **shared.hide_dirs, placeholder="A directory on the same machine where the server is running.")
                         extras_batch_output_dir = gr.Textbox(label="Output directory", **shared.hide_dirs, placeholder="Leave blank to save images to the default path.")
                         show_extras_results = gr.Checkbox(label='Show result images', value=True)
+                        use_original_name = gr.Checkbox(label='Use original name', value=False)
+                        walk_subdirs = gr.Checkbox(label='Walk subdirectories', value=False)
 
                 submit = gr.Button('Generate', elem_id="extras_generate", variant='primary')
 
@@ -1060,6 +1062,8 @@ def create_ui():
                 extras_batch_input_dir,
                 extras_batch_output_dir,
                 show_extras_results,
+                use_original_name,
+                walk_subdirs,
                 gfpgan_visibility,
                 codeformer_visibility,
                 codeformer_weight,
