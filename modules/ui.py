@@ -74,7 +74,7 @@ css_hide_progressbar = """
 
 # Using constants for these since the variation selector isn't visible.
 # Important that they exactly match script.js for tooltip to work.
-random_symbol = '\U0001f3b2\ufe0f'  # 🎲️
+discard_symbol = '\U0000274c\ufe0f'  # ❌
 reuse_symbol = '\u267b\ufe0f'  # ♻️
 art_symbol = '\U0001f3a8'  # 🎨
 paste_symbol = '\u2199\ufe0f'  # ↙
@@ -281,8 +281,8 @@ def create_seed_inputs():
             with gr.Row(elem_id='seed_row'):
                 seed = (gr.Textbox if cmd_opts.use_textbox_seed else gr.Number)(label='Seed', value=-1)
                 seed.style(container=False)
-                random_seed = gr.Button(random_symbol, elem_id='random_seed')
                 reuse_seed = gr.Button(reuse_symbol, elem_id='reuse_seed')
+                discard_seed = gr.Button(discard_symbol, elem_id='discard_seed')
 
         with gr.Box(elem_id='subseed_show_box'):
             seed_checkbox = gr.Checkbox(label='Extra', elem_id='subseed_show', value=False)
@@ -296,8 +296,8 @@ def create_seed_inputs():
             with gr.Row(elem_id='subseed_row'):
                 subseed = gr.Number(label='Variation seed', value=-1)
                 subseed.style(container=False)
-                random_subseed = gr.Button(random_symbol, elem_id='random_subseed')
                 reuse_subseed = gr.Button(reuse_symbol, elem_id='reuse_subseed')
+                discard_subseed = gr.Button(discard_symbol, elem_id='discard_subseed')
         subseed_strength = gr.Slider(label='Variation strength', value=0.0, minimum=0, maximum=1, step=0.01)
 
     with gr.Row(visible=False) as seed_extra_row_2:
@@ -305,8 +305,8 @@ def create_seed_inputs():
         seed_resize_from_w = gr.Slider(minimum=0, maximum=2048, step=64, label="Resize seed from width", value=0)
         seed_resize_from_h = gr.Slider(minimum=0, maximum=2048, step=64, label="Resize seed from height", value=0)
 
-    random_seed.click(fn=lambda: -1, show_progress=False, inputs=[], outputs=[seed])
-    random_subseed.click(fn=lambda: -1, show_progress=False, inputs=[], outputs=[subseed])
+    discard_seed.click(fn=lambda: -1, show_progress=False, inputs=[], outputs=[seed])
+    discard_subseed.click(fn=lambda: -1, show_progress=False, inputs=[], outputs=[subseed])
 
     def change_visibility(show):
         return {comp: gr_show(show) for comp in seed_extras}
