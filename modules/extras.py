@@ -176,6 +176,7 @@ def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_
         upscale_ops.append(partial(run_upscalers_blend, step_params))
 
     extras_ops: List[Callable] = (upscale_ops + facefix_ops) if upscale_first else (facefix_ops + upscale_ops)
+    info = ""
 
     for image, image_name in zip(imageArr, imageNameArr):
         if image is None:
@@ -208,6 +209,9 @@ def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_
             outputs.append(image)
 
     devices.torch_gc()
+
+    if info == "":
+        info = "No images found."
 
     return outputs, plaintext_to_html(info), ''
 
