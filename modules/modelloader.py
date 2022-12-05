@@ -10,6 +10,22 @@ from modules.upscaler import Upscaler
 from modules.paths import script_path, models_path
 
 
+def model_places(model_path: str, command_path: str = None):
+    places = []
+
+    if command_path is not None and command_path != model_path:
+        pretrained_path = os.path.join(command_path, 'experiments/pretrained_models')
+        if os.path.exists(pretrained_path):
+            print(f"Appending path: {pretrained_path}")
+            places.append(pretrained_path)
+        elif os.path.exists(command_path):
+            places.append(command_path)
+
+    places.append(model_path)
+
+    return places
+
+
 def load_models(model_path: str, model_url: str = None, command_path: str = None, ext_filter=None, download_name=None) -> list:
     """
     A one-and done loader to try finding the desired models in specified directories.
@@ -27,17 +43,7 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
         ext_filter = []
 
     try:
-        places = []
-
-        if command_path is not None and command_path != model_path:
-            pretrained_path = os.path.join(command_path, 'experiments/pretrained_models')
-            if os.path.exists(pretrained_path):
-                print(f"Appending path: {pretrained_path}")
-                places.append(pretrained_path)
-            elif os.path.exists(command_path):
-                places.append(command_path)
-
-        places.append(model_path)
+        places = model_places(model_path=model_path, command_path=command_path)
 
         for place in places:
             if os.path.exists(place):

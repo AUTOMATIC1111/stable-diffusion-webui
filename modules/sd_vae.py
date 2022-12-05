@@ -3,19 +3,26 @@ import os
 from collections import namedtuple
 from modules import shared, devices, script_callbacks
 from modules.paths import models_path
+from modules.modelloader import model_places
 import glob
+from copy import deepcopy
+from pathlib import Path
 
 
-model_dir = "Stable-diffusion"
-model_path = os.path.abspath(os.path.join(models_path, model_dir))
-vae_dir = "VAE"
-vae_path = os.path.abspath(os.path.join(models_path, vae_dir))
+model_dir_name = "Stable-diffusion"
+model_dir = os.path.abspath(os.path.join(models_path, model_dir_name))
+model_dirs = [model_dir]
+model_dirs_paths = [Path(x) for x in model_dirs]
+vae_dir_name = "VAE"
+vae_dir = os.path.abspath(os.path.join(models_path, vae_dir_name))
+vae_dirs = model_dirs + [vae_dir]
+vae_dirs_paths = [Path(x) for x in vae_dirs]
 
 
 vae_ignore_keys = {"model_ema.decay", "model_ema.num_updates"}
 
 
-default_vae_dict = {"auto": "auto", "None": "None"}
+default_vae_dict = {"auto": "auto", "None": None}
 default_vae_list = ["auto", "None"]
 
 
@@ -28,6 +35,17 @@ first_load = True
 base_vae = None
 loaded_vae_file = None
 checkpoint_info = None
+
+
+def refresh_dirs():
+    global model_dir, model_dirs, model_dirs_paths
+    from modules.sd_models import model_path
+    model_dir = model_path
+    model_dirs = model_places(model_path=model_dir, command_path=shared.cmd_opts.ckpt_dir)
+    model_dirs_paths = [Path(x) for x in model_dirs]
+    global vae_dirs, vae_dirs_paths
+    vae_dirs = model_dirs + [vae_dir]
+    vae_dirs_paths = [Path(x) for x in vae_dirs]
 
 
 def get_base_vae(model):
@@ -57,26 +75,55 @@ def restore_base_vae(model):
 
 
 def get_filename(filepath):
-    return os.path.splitext(os.path.basename(filepath))[0]
+    if not filepath:
+        return "None"
+    path = Path(filepath)
+    for p in vae_dirs_paths:
+        if p in path.parents:
+            return os.path.relpath(filepath, str(p))
+    return os.path.basename(filepath)
 
 
-def refresh_vae_list(vae_path=vae_path, model_path=model_path):
+def search_parent(file):
+    if file is not None and os.path.isfile(file):
+        path = Path(file)
+        for p in model_dirs_paths:
+            if p in path.parents:
+                path = None
+                break
+        if path:
+            return [
+                *glob.iglob(os.path.join(str(path.parent), '**/*.vae.ckpt'), recursive=True),
+                *glob.iglob(os.path.join(str(path.parent), '**/*.vae.pt'), recursive=True)
+            ]
+    return []
+
+
+def refresh_vae_list(vae_dir=vae_dir, model_dir=model_dir):
     global vae_dict, vae_list
+    refresh_dirs()
     res = {}
-    candidates = [
-        *glob.iglob(os.path.join(model_path, '**/*.vae.ckpt'), recursive=True),
-        *glob.iglob(os.path.join(model_path, '**/*.vae.pt'), recursive=True),
-        *glob.iglob(os.path.join(vae_path, '**/*.ckpt'), recursive=True),
-        *glob.iglob(os.path.join(vae_path, '**/*.pt'), recursive=True)
+    candidates = []
+    for p in vae_dirs:
+        candidates += [
+            *glob.iglob(os.path.join(p, '**/*.vae.ckpt'), recursive=True),
+            *glob.iglob(os.path.join(p, '**/*.vae.pt'), recursive=True)
+        ]
+    candidates += [
+        *glob.iglob(os.path.join(vae_dir, '**/*.ckpt'), recursive=True),
+        *glob.iglob(os.path.join(vae_dir, '**/*.pt'), recursive=True)
     ]
+    if shared.cmd_opts.ckpt is not None:
+        candidates += search_parent(shared.cmd_opts.ckpt)
     if shared.cmd_opts.vae_path is not None and os.path.isfile(shared.cmd_opts.vae_path):
+        candidates += search_parent(shared.cmd_opts.vae_path)
         candidates.append(shared.cmd_opts.vae_path)
     for filepath in candidates:
         name = get_filename(filepath)
         res[name] = filepath
     vae_list.clear()
     vae_list.extend(default_vae_list)
-    vae_list.extend(list(res.keys()))
+    vae_list.extend(sorted(res.keys()))
     vae_dict.clear()
     vae_dict.update(res)
     vae_dict.update(default_vae_dict)
@@ -118,19 +165,29 @@ def resolve_vae(checkpoint_file=None, vae_file="auto"):
         if os.path.isfile(shared.cmd_opts.vae_path):
             vae_file = shared.cmd_opts.vae_path
             print(f"Using VAE provided as command line argument: {vae_file}")
-    # if still not found, try look for ".vae.pt" beside model
-    model_path = os.path.splitext(checkpoint_file)[0]
-    if vae_file == "auto":
-        vae_file_try = model_path + ".vae.pt"
-        if os.path.isfile(vae_file_try):
-            vae_file = vae_file_try
-            print(f"Using VAE found similar to selected model: {vae_file}")
-    # if still not found, try look for ".vae.ckpt" beside model
-    if vae_file == "auto":
-        vae_file_try = model_path + ".vae.ckpt"
-        if os.path.isfile(vae_file_try):
-            vae_file = vae_file_try
-            print(f"Using VAE found similar to selected model: {vae_file}")
+    # if still not found, try look for VAE similar to model
+    if vae_file == "auto" and checkpoint_file:
+        model_path = os.path.splitext(checkpoint_file)[0]
+        trials = [
+            model_path + ".vae.pt",
+            model_path + ".vae.ckpt"
+        ]
+        for model_dir_path in model_dirs_paths:
+            if model_dir_path in Path(checkpoint_file).parents:
+                rel_path = os.path.relpath(model_path, model_dir)
+                vae_path = os.path.join(vae_dir, rel_path)
+                trials += [
+                    vae_path + ".vae.pt",
+                    vae_path + ".vae.ckpt",
+                    vae_path + ".pt",
+                    vae_path + ".ckpt"
+                ]
+        for vae_file_try in trials:
+            if os.path.isfile(vae_file_try):
+                vae_file = vae_file_try
+                print(f"Using VAE found similar to selected model: {vae_file}")
+                break
+
     # No more fallbacks for auto
     if vae_file == "auto":
         vae_file = None
@@ -158,6 +215,7 @@ def load_vae(model, vae_file=None):
         if vae_opt not in vae_dict:
             vae_dict[vae_opt] = vae_file
             vae_list.append(vae_opt)
+            # shared.opts.data['sd_vae'] = vae_opt
 
     loaded_vae_file = vae_file
 
