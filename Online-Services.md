@@ -14,3 +14,6 @@
 
 ## SageMaker Studio Lab
    - [maintained by fractality](https://github.com/Miraculix200/StableDiffusionUI_SageMakerSL/blob/main/StableDiffusionUI_SageMakerSL.ipynb)
+
+## Hugging Face
+   - [maintained by camenduru](https://huggingface.co/spaces/camenduru/webui)
