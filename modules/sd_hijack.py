@@ -28,7 +28,7 @@ diffusionmodules_model_AttnBlock_forward = ldm.modules.diffusionmodules.model.At
 # new memory efficient cross attention blocks do not support hypernets and we already
 # have memory efficient cross attention anyway, so this disables SD2.0's memory efficient cross attention
 ldm.modules.attention.MemoryEfficientCrossAttention = ldm.modules.attention.CrossAttention
-# ldm.modules.attention.BasicTransformerBlock.ATTENTION_MODES["softmax-xformers"] = ldm.modules.attention.CrossAttention
+ldm.modules.attention.BasicTransformerBlock.ATTENTION_MODES["softmax-xformers"] = ldm.modules.attention.CrossAttention
 
 # silence new console spam from SD2
 ldm.modules.attention.print = lambda *args: None
