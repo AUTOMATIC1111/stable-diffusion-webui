@@ -230,6 +230,12 @@
 			"tags": ["script", "tab"]
 		},
 		{
+			"name": "embedding-inspector",
+			"url": "https://github.com/tkalayci71/embedding-inspector.git",
+			"description": "Inspect any token(a word) or Textual-Inversion embeddings and find out which embeddings are similar. You can mix, modify, or create the embeddings in seconds.",
+			"tags": ["script", "tab"]
+		},
+		{
 			"name": "zh_CN Localization",
 			"url": "https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN",
 			"description": "Simplified Chinese localization",
