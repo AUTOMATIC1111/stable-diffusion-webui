@@ -87,8 +87,9 @@ Docker" again, skipping the `git clone https://github.com/AUTOMATIC1111/stable-d
 launch-command below instead:
 
 ```bash
-# It's possible that you don't need "--precision full", dropping "--no-half" however crashes my drivers
 TORCH_COMMAND='pip install torch torchvision --extra-index-url https://download.pytorch.org/whl/rocm5.1.1' python launch.py --precision full --no-half
 ```
+It's possible that you don't need "--precision full", dropping "--no-half" however it may not work for everyone.
+Certain cards like the Radeon RX 6000 Series and the RX 500 Series have been will function normally without the option `--precision full --no-half`, saving plenty of vram. (noted [here](https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/5468).)
 
 Always use this new launch-command from now on, also when restarting the web UI in following runs.
