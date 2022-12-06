@@ -3,7 +3,7 @@ This is a feature showcase page for [Stable Diffusion web UI](https://github.com
 All examples are non-cherrypicked unless specified otherwise.
 
 # Stable Diffusion 2.0
-So far, only Stable Diffusion 2.0-v model is supported. To use it:
+So far, only the [768-v-ema.ckpt](https://huggingface.co/stabilityai/stable-diffusion-2/blob/main/768-v-ema.ckpt) and [512-base-ema.ckpt](https://huggingface.co/stabilityai/stable-diffusion-2-base/blob/main/512-base-ema.ckpt) models are supported. To use it:
 
 - download [768-v-ema.ckpt](https://huggingface.co/stabilityai/stable-diffusion-2/blob/main/768-v-ema.ckpt) checkpoint (from here: https://huggingface.co/stabilityai/stable-diffusion-2)
 - put it into models/Stable-Diffusion directory
@@ -12,6 +12,7 @@ So far, only Stable Diffusion 2.0-v model is supported. To use it:
 
 Train tab will most likely be broken for the 2.0 models.
 
+For the 512-base model, grab the yaml from [here](https://github.com/Stability-AI/stablediffusion/blob/main/configs/stable-diffusion/v2-inference.yaml), rename it to the model name, and place with the model.
 
 # Outpainting
 
