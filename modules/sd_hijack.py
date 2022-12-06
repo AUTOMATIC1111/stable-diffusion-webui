@@ -112,7 +112,11 @@ class StableDiffusionModelHijack:
         self.layers = flatten(m)
 
     def undo_hijack(self, m):
-        if type(m.cond_stage_model) == sd_hijack_clip.FrozenCLIPEmbedderWithCustomWords:
+
+        if shared.text_model_name == "XLMR-Large":
+            m.cond_stage_model = m.cond_stage_model.wrapped 
+
+        elif type(m.cond_stage_model) == sd_hijack_clip.FrozenCLIPEmbedderWithCustomWords:
             m.cond_stage_model = m.cond_stage_model.wrapped
 
             model_embeddings = m.cond_stage_model.transformer.text_model.embeddings
