@@ -1,5 +1,5 @@
 function gradioApp(){
-    return !!document.getElementsByTagName('gradio-app')[0].shadowRoot ? document.getElementsByTagName('gradio-app')[0].shadowRoot : document
+    return !!document.getElementsByTagName('gradio-app')[0].shadowRoot ? document.getElementsByTagName('gradio-app')[0].shadowRoot : document;
 }
 
 function get_uiCurrentTab() {
