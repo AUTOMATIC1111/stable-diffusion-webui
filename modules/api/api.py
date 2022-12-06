@@ -36,10 +36,8 @@ class Api:
         self.app = app
         self.queue_lock = queue_lock
 
-        self.app.add_api_route("/sdapi/v1/txt2img",
-                               self.text2imgapi, methods=["POST"])
-        self.app.add_api_route("/sdapi/v1/save_checkpoint",
-                               self.save_checkpoint, methods=["POST"])
+        self.app.add_api_route("/sdapi/v1/txt2img", self.text2imgapi, methods=["POST"])
+        self.app.add_api_route("/sdapi/v1/save_checkpoint", self.save_checkpoint, methods=["POST"])
 
     def text2imgapi(self, txt2imgreq: StableDiffusionProcessingAPI):
         sampler_index = sampler_to_index(txt2imgreq.sampler_index)[0]
