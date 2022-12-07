@@ -232,22 +232,23 @@ def load_model_weights(model, checkpoint_info, vae_file="auto"):
 def get_config(checkpoint_info):
     path = checkpoint_info[0]
     model_config = checkpoint_info.config
-    try:
-        checkpoint = torch.load(path)
-        c_dict = checkpoint["state_dict"]
-        v2_key = "model.diffusion_model.input_blocks.2.1.transformer_blocks.0.attn2.to_k.weight"
-        if v2_key in c_dict:
-            print(f"We have the v2 key: {c_dict[v2_key].size()}")
-            if "global_step" in checkpoint and checkpoint_info.config == shared.cmd_opts.config:
-                if checkpoint["global_step"] == 875000:
-                    model_config = os.path.join(shared.script_path, "v2-inference.yaml")
-                else:
-                    model_config = os.path.join(shared.script_path, "v2-inference-v.yaml")
-        del checkpoint
-    except Exception as e:
-        print(f"Exception: {e}")
-        traceback.print_exc()
-        pass
+    if model_config == shared.cmd_opts.config:
+        try:
+            checkpoint = torch.load(path)
+            c_dict = checkpoint["state_dict"]
+            v2_key = "cond_stage_model.model.ln_final.weight"
+            if v2_key in checkpoint or v2_key in c_dict:
+                if "global_step" in checkpoint and checkpoint_info.config == shared.cmd_opts.config:
+                    if checkpoint["global_step"] == 875000:
+                        model_config = os.path.join(shared.script_path, "v2-inference.yaml")
+                    else:
+                        model_config = os.path.join(shared.script_path, "v2-inference-v.yaml")
+                print(f"V2 Model detected, selecting model config: {model_config}")
+            del checkpoint
+        except Exception as e:
+            print(f"Exception: {e}")
+            traceback.print_exc()
+            pass
     return model_config
 
 
