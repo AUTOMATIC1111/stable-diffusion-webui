@@ -1,7 +1,9 @@
 import collections
+import json
 import os.path
 import sys
 import gc
+import traceback
 from collections import namedtuple
 import torch
 import re
@@ -230,9 +232,24 @@ def load_model_weights(model, checkpoint_info, vae_file="auto"):
 def load_model(checkpoint_info=None):
     from modules import lowvram, sd_hijack
     checkpoint_info = checkpoint_info or select_checkpoint()
+    model_path = checkpoint_info[0]
+    model_config = checkpoint_info.config
+    try:
+        checkpoint = torch.load(model_path)
+        c_dict = checkpoint["state_dict"]
+        v2_key = "model.diffusion_model.input_blocks.2.1.transformer_blocks.0.attn2.to_k.weight"
+        if v2_key in c_dict:
+            print(f"We have the v2 key: {c_dict[v2_key].size()}")
+            if checkpoint_info.config == shared.cmd_opts.config:
+                model_config = os.path.join(shared.script_path, "v2-inference-v.yaml")
+        del checkpoint
+    except Exception as e:
+        print(f"Exception: {e}")
+        traceback.print_exc()
+        pass
 
-    if checkpoint_info.config != shared.cmd_opts.config:
-        print(f"Loading config from: {checkpoint_info.config}")
+    if model_config != shared.cmd_opts.config:
+        print(f"Loading config from: {model_config}")
 
     if shared.sd_model:
         sd_hijack.model_hijack.undo_hijack(shared.sd_model)
@@ -240,7 +257,7 @@ def load_model(checkpoint_info=None):
         gc.collect()
         devices.torch_gc()
 
-    sd_config = OmegaConf.load(checkpoint_info.config)
+    sd_config = OmegaConf.load(model_config)
     
     if should_hijack_inpainting(checkpoint_info):
         # Hardcoded config for now...
