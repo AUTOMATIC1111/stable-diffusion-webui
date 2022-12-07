@@ -229,24 +229,32 @@ def load_model_weights(model, checkpoint_info, vae_file="auto"):
     sd_vae.load_vae(model, vae_file)
 
 
-def load_model(checkpoint_info=None):
-    from modules import lowvram, sd_hijack
-    checkpoint_info = checkpoint_info or select_checkpoint()
-    model_path = checkpoint_info[0]
+def get_config(checkpoint_info):
+    path = checkpoint_info[0]
     model_config = checkpoint_info.config
     try:
-        checkpoint = torch.load(model_path)
+        checkpoint = torch.load(path)
         c_dict = checkpoint["state_dict"]
         v2_key = "model.diffusion_model.input_blocks.2.1.transformer_blocks.0.attn2.to_k.weight"
         if v2_key in c_dict:
             print(f"We have the v2 key: {c_dict[v2_key].size()}")
-            if checkpoint_info.config == shared.cmd_opts.config:
-                model_config = os.path.join(shared.script_path, "v2-inference-v.yaml")
+            if "global_step" in checkpoint and checkpoint_info.config == shared.cmd_opts.config:
+                if checkpoint["global_step"] == 875000:
+                    model_config = os.path.join(shared.script_path, "v2-inference.yaml")
+                else:
+                    model_config = os.path.join(shared.script_path, "v2-inference-v.yaml")
         del checkpoint
     except Exception as e:
         print(f"Exception: {e}")
         traceback.print_exc()
         pass
+    return model_config
+
+
+def load_model(checkpoint_info=None):
+    from modules import lowvram, sd_hijack
+    checkpoint_info = checkpoint_info or select_checkpoint()
+    model_config = get_config(checkpoint_info)
 
     if model_config != shared.cmd_opts.config:
         print(f"Loading config from: {model_config}")
@@ -303,7 +311,9 @@ def reload_model_weights(sd_model=None, info=None):
     if sd_model.sd_model_checkpoint == checkpoint_info.filename:
         return
 
-    if sd_model.sd_checkpoint_info.config != checkpoint_info.config or should_hijack_inpainting(checkpoint_info) != should_hijack_inpainting(sd_model.sd_checkpoint_info):
+    model_config = get_config(checkpoint_info)
+    checkpoint_info = checkpoint_info._replace(config=model_config)
+    if sd_model.sd_checkpoint_info.config != model_config or should_hijack_inpainting(checkpoint_info) != should_hijack_inpainting(sd_model.sd_checkpoint_info):
         del sd_model
         checkpoints_loaded.clear()
         load_model(checkpoint_info)
