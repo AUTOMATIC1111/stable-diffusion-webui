@@ -9,6 +9,7 @@ import torch
 import re
 import safetensors.torch
 from omegaconf import OmegaConf
+import ldm.modules.attention
 
 from ldm.util import instantiate_from_config
 
@@ -232,12 +233,21 @@ def load_model_weights(model, checkpoint_info, vae_file="auto"):
 def get_config(checkpoint_info):
     path = checkpoint_info[0]
     model_config = checkpoint_info.config
+    is_v21 = False
     if model_config == shared.cmd_opts.config:
         try:
             checkpoint = torch.load(path)
-            c_dict = checkpoint["state_dict"]
+            c_dict = checkpoint["state_dict"] if "state_dict" in checkpoint else checkpoint
             v2_key = "cond_stage_model.model.ln_final.weight"
-            if v2_key in checkpoint or v2_key in c_dict:
+            v21_keys = ["callbacks", "lr_schedulers", "native_amp_scaling_state"]
+            for v22key in v21_keys:
+                if v22key in checkpoint:
+                    is_v21 = True
+            if is_v21:
+                # Need to set this to avoid black squares
+                if not shared.cmd_opts.no_half:
+                    os.environ["ATTN_PRECISION"] = "fp16"
+            if v2_key in c_dict:
                 if "global_step" in checkpoint and checkpoint_info.config == shared.cmd_opts.config:
                     if checkpoint["global_step"] == 875000:
                         model_config = os.path.join(shared.script_path, "v2-inference.yaml")
@@ -249,13 +259,13 @@ def get_config(checkpoint_info):
             print(f"Exception: {e}")
             traceback.print_exc()
             pass
-    return model_config
+    return model_config, is_v21
 
 
 def load_model(checkpoint_info=None):
     from modules import lowvram, sd_hijack
     checkpoint_info = checkpoint_info or select_checkpoint()
-    model_config = get_config(checkpoint_info)
+    model_config, is_v21_model = get_config(checkpoint_info)
 
     if model_config != shared.cmd_opts.config:
         print(f"Loading config from: {model_config}")
@@ -291,7 +301,11 @@ def load_model(checkpoint_info=None):
     else:
         sd_model.to(shared.device)
 
-    sd_hijack.model_hijack.hijack(sd_model)
+    if not is_v21_model:
+        sd_hijack.model_hijack.hijack(sd_model)
+    else:
+        if not shared.cmd_opts.xformers and not shared.cmd_opts.force_enable_xformers and not shared.cmd_opts.no_half:
+            ldm.modules.attention.CrossAttention.forward = sd_hijack.attention_CrossAttention_forward
 
     sd_model.eval()
     shared.sd_model = sd_model
@@ -312,7 +326,7 @@ def reload_model_weights(sd_model=None, info=None):
     if sd_model.sd_model_checkpoint == checkpoint_info.filename:
         return
 
-    model_config = get_config(checkpoint_info)
+    model_config, is_v21_model = get_config(checkpoint_info)
     checkpoint_info = checkpoint_info._replace(config=model_config)
     if sd_model.sd_checkpoint_info.config != model_config or should_hijack_inpainting(checkpoint_info) != should_hijack_inpainting(sd_model.sd_checkpoint_info):
         del sd_model
@@ -329,7 +343,11 @@ def reload_model_weights(sd_model=None, info=None):
 
     load_model_weights(sd_model, checkpoint_info)
 
-    sd_hijack.model_hijack.hijack(sd_model)
+    if not is_v21_model:
+        sd_hijack.model_hijack.hijack(sd_model)
+    else:
+        if not shared.cmd_opts.xformers and not shared.cmd_opts.force_enable_xformers and not shared.cmd_opts.no_half:
+            ldm.modules.attention.CrossAttention.forward = sd_hijack.attention_CrossAttention_forward
     script_callbacks.model_loaded_callback(sd_model)
 
     if not shared.cmd_opts.lowvram and not shared.cmd_opts.medvram:
