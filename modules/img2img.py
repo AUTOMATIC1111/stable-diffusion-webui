@@ -4,11 +4,19 @@ import sys
 import traceback
 
 import numpy as np
-from PIL import Image, ImageOps, ImageFilter, ImageEnhance, ImageChops
+from PIL import (Image,
+                 ImageOps,
+                 ImageFilter,
+                 ImageEnhance,
+                 ImageChops)
 
-from modules import devices, sd_samplers
-from modules.processing import Processed, StableDiffusionProcessingImg2Img, process_images
-from modules.shared import opts, state
+from modules import (devices,
+                     sd_samplers)
+from modules.processing import (Processed,
+                                StableDiffusionProcessingImg2Img,
+                                process_images)
+from modules.shared import (opts,
+                            state)
 import modules.shared as shared
 import modules.processing as processing
 from modules.ui import plaintext_to_html
@@ -16,7 +24,11 @@ import modules.images as images
 import modules.scripts
 
 
-def process_batch(p, input_dir, output_dir, args):
+def process_batch(p,
+        input_dir,
+        output_dir,
+        args
+):
     processing.fix_seed(p)
 
     images = shared.listfiles(input_dir)
@@ -31,7 +43,7 @@ def process_batch(p, input_dir, output_dir, args):
     state.job_count = len(images) * p.n_iter
 
     for i, image in enumerate(images):
-        state.job = f"{i+1} out of {len(images)}"
+        state.job = f"{i + 1} out of {len(images)}"
         if state.skipped:
             state.skipped = False
 
@@ -43,7 +55,9 @@ def process_batch(p, input_dir, output_dir, args):
         img = ImageOps.exif_transpose(img)
         p.init_images = [img] * p.batch_size
 
-        proc = modules.scripts.scripts_img2img.run(p, *args)
+        proc = modules.scripts.scripts_img2img.run(p,
+            *args
+        )
         if proc is None:
             proc = process_images(p)
 
@@ -55,33 +69,88 @@ def process_batch(p, input_dir, output_dir, args):
                 filename = f"{left}-{n}{right}"
 
             if not save_normally:
-                os.makedirs(output_dir, exist_ok=True)
-                processed_image.save(os.path.join(output_dir, filename))
+                os.makedirs(output_dir,
+                    exist_ok=True
+                )
+                processed_image.save(os.path.join(output_dir,
+                    filename
+                )
+                )
 
 
-def img2img(mode: int, prompt: str, negative_prompt: str, prompt_style: str, prompt_style2: str, init_img, init_img_with_mask, init_img_with_mask_orig, init_img_inpaint, init_mask_inpaint, mask_mode, steps: int, sampler_index: int, mask_blur: int, mask_alpha: float, inpainting_fill: int, restore_faces: bool, tiling: bool, n_iter: int, batch_size: int, cfg_scale: float, denoising_strength: float, seed: int, subseed: int, subseed_strength: float, seed_resize_from_h: int, seed_resize_from_w: int, seed_enable_extras: bool, height: int, width: int, resize_mode: int, inpaint_full_res: bool, inpaint_full_res_padding: int, inpainting_mask_invert: int, img2img_batch_input_dir: str, img2img_batch_output_dir: str, *args):
+def img2img(mode: int,
+        prompt: str,
+        negative_prompt: str,
+        prompt_style: str,
+        prompt_style2: str,
+        init_img,
+        init_img_with_mask,
+        init_img_with_mask_orig,
+        init_img_inpaint,
+        init_mask_inpaint,
+        mask_mode,
+        steps: int,
+        sampler_index: int,
+        mask_blur: int,
+        mask_alpha: float,
+        inpainting_fill: int,
+        restore_faces: bool,
+        tiling: bool,
+        n_iter: int,
+        batch_size: int,
+        cfg_scale: float,
+        denoising_strength: float,
+        seed: int,
+        subseed: int,
+        subseed_strength: float,
+        seed_resize_from_h: int,
+        seed_resize_from_w: int,
+        seed_enable_extras: bool,
+        height: int,
+        width: int,
+        resize_mode: int,
+        inpaint_full_res: bool,
+        inpaint_full_res_padding: int,
+        inpainting_mask_invert: int,
+        img2img_batch_input_dir: str,
+        img2img_batch_output_dir: str,
+        *args
+):
     is_inpaint = mode == 1
     is_batch = mode == 2
 
     if is_inpaint:
         # Drawn mask
         if mask_mode == 0:
-            is_mask_sketch = isinstance(init_img_with_mask, dict)
+            is_mask_sketch = isinstance(init_img_with_mask,
+                dict
+            )
             is_mask_paint = not is_mask_sketch
             if is_mask_sketch:
                 # Sketch: mask iff. not transparent
                 image, mask = init_img_with_mask["image"], init_img_with_mask["mask"]
-                alpha_mask = ImageOps.invert(image.split()[-1]).convert('L').point(lambda x: 255 if x > 0 else 0, mode='1')
-                mask = ImageChops.lighter(alpha_mask, mask.convert('L')).convert('L')
+                alpha_mask = ImageOps.invert(image.split()[-1]).convert('L').point(lambda x: 255 if x > 0 else 0,
+                    mode='1'
+                )
+                mask = ImageChops.lighter(alpha_mask,
+                    mask.convert('L')
+                ).convert('L')
             else:
                 # Color-sketch: mask iff. painted over
                 image = init_img_with_mask
                 orig = init_img_with_mask_orig or init_img_with_mask
-                pred = np.any(np.array(image) != np.array(orig), axis=-1)
-                mask = Image.fromarray(pred.astype(np.uint8) * 255, "L")
+                pred = np.any(np.array(image) != np.array(orig),
+                    axis=-1
+                              )
+                mask = Image.fromarray(pred.astype(np.uint8) * 255,
+                    "L"
+                                       )
                 mask = ImageEnhance.Brightness(mask).enhance(1 - mask_alpha / 100)
                 blur = ImageFilter.GaussianBlur(mask_blur)
-                image = Image.composite(image.filter(blur), orig, mask.filter(blur))
+                image = Image.composite(image.filter(blur),
+                    orig,
+                    mask.filter(blur)
+                )
 
             image = image.convert("RGB")
         # Uploaded mask
@@ -136,18 +205,35 @@ def img2img(mode: int, prompt: str, negative_prompt: str, prompt_style: str, pro
     p.script_args = args
 
     if shared.cmd_opts.enable_console_prompts:
-        print(f"\nimg2img: {prompt}", file=shared.progress_print_out)
+        print(f"\nimg2img: {prompt}",
+            file=shared.progress_print_out
+        )
 
     p.extra_generation_params["Mask blur"] = mask_blur
+    
+    for key, value in vars(p).items():
+        if key == "init_images" or key == "mask" or key == "sd_model":
+            continue
+        print(key, value)
 
     if is_batch:
         assert not shared.cmd_opts.hide_ui_dir_config, "Launched with --hide-ui-dir-config, batch img2img disabled"
 
-        process_batch(p, img2img_batch_input_dir, img2img_batch_output_dir, args)
+        process_batch(p,
+            img2img_batch_input_dir,
+            img2img_batch_output_dir,
+            args
+        )
 
-        processed = Processed(p, [], p.seed, "")
+        processed = Processed(p,
+            [],
+            p.seed,
+            ""
+        )
     else:
-        processed = modules.scripts.scripts_img2img.run(p, *args)
+        processed = modules.scripts.scripts_img2img.run(p,
+            *args
+        )
         if processed is None:
             processed = process_images(p)
 

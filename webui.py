@@ -32,7 +32,6 @@ from modules import modelloader
 from modules.shared import cmd_opts
 import modules.hypernetworks.hypernetwork
 
-
 if cmd_opts.server_name:
     server_name = cmd_opts.server_name
 else:
@@ -68,7 +67,6 @@ def initialize():
     shared.opts.onchange("temp_dir", ui_tempdir.on_tmpdir_changed)
 
     if cmd_opts.tls_keyfile is not None and cmd_opts.tls_keyfile is not None:
-
         try:
             if not os.path.exists(cmd_opts.tls_keyfile):
                 print("Invalid path to TLS keyfile given")
@@ -90,7 +88,9 @@ def initialize():
 
 def setup_cors(app):
     if cmd_opts.cors_allow_origins and cmd_opts.cors_allow_origins_regex:
-        app.add_middleware(CORSMiddleware, allow_origins=cmd_opts.cors_allow_origins.split(','), allow_origin_regex=cmd_opts.cors_allow_origins_regex, allow_methods=['*'])
+        app.add_middleware(CORSMiddleware, allow_origins=cmd_opts.cors_allow_origins.split(','),
+            allow_origin_regex=cmd_opts.cors_allow_origins_regex, allow_methods=['*']
+        )
     elif cmd_opts.cors_allow_origins:
         app.add_middleware(CORSMiddleware, allow_origins=cmd_opts.cors_allow_origins.split(','), allow_methods=['*'])
     elif cmd_opts.cors_allow_origins_regex:
@@ -124,8 +124,23 @@ def api_only():
 
     modules.script_callbacks.app_started_callback(None, app)
 
-    api.launch(server_name="0.0.0.0" if cmd_opts.listen else "127.0.0.1", port=cmd_opts.port if cmd_opts.port else 7861)
+    api.launch(server_name="0.0.0.0", port=cmd_opts.port if cmd_opts.port else 5001)
 
+
+# def api_and_ui():
+#     initialize()
+#
+#     app = FastAPI()
+#     setup_cors(app)
+#     app.add_middleware(GZipMiddleware, minimum_size=1000)
+#     api = create_api(app)
+#
+#     modules.script_callbacks.app_started_callback(None, app)
+#
+#     demo = modules.ui.DemoApp(api, server_name, cmd_opts.port)
+#     demo.start()
+#
+#     wait_on_server(demo)
 
 def webui():
     launch_api = cmd_opts.api
@@ -139,12 +154,13 @@ def webui():
 
         app, local_url, share_url = shared.demo.launch(
             share=cmd_opts.share,
-            server_name=server_name,
-            server_port=cmd_opts.port,
+            server_name="0.0.0.0",
+            server_port=5002,
             ssl_keyfile=cmd_opts.tls_keyfile,
             ssl_certfile=cmd_opts.tls_certfile,
             debug=cmd_opts.gradio_debug,
-            auth=[tuple(cred.split(':')) for cred in cmd_opts.gradio_auth.strip('"').split(',')] if cmd_opts.gradio_auth else None,
+            auth=[tuple(cred.split(':')) for cred in
+                  cmd_opts.gradio_auth.strip('"').split(',')] if cmd_opts.gradio_auth else None,
             inbrowser=cmd_opts.autolaunch,
             prevent_thread_lock=True
         )
@@ -162,7 +178,9 @@ def webui():
         app.add_middleware(GZipMiddleware, minimum_size=1000)
 
         if launch_api:
-            create_api(app)
+            api = create_api(app)
+            modules.script_callbacks.app_started_callback(None, app)
+            api.launch(server_name="0.0.0.0", port=5001)
 
         modules.script_callbacks.app_started_callback(shared.demo, app)
         modules.script_callbacks.app_started_callback(shared.demo, app)

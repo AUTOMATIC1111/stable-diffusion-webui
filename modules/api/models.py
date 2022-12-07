@@ -5,7 +5,7 @@ from typing_extensions import Literal
 from inflection import underscore
 from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img
 from modules.shared import sd_upscalers, opts, parser
-from typing import Dict, List
+from typing import Dict, List, Any, Optional
 
 API_NOT_ALLOWED = [
     "self",
@@ -106,7 +106,7 @@ StableDiffusionTxt2ImgProcessingAPI = PydanticModelGenerator(
 StableDiffusionImg2ImgProcessingAPI = PydanticModelGenerator(
     "StableDiffusionProcessingImg2Img",
     StableDiffusionProcessingImg2Img,
-    [{"key": "sampler_index", "type": str, "default": "Euler"}, {"key": "init_images", "type": list, "default": None}, {"key": "denoising_strength", "type": float, "default": 0.75}, {"key": "mask", "type": str, "default": None}, {"key": "include_init_images", "type": bool, "default": False, "exclude" : True}]
+    [{"key": "sampler_index", "type": str, "default": "Euler a"}, {"key": "init_images", "type": list, "default": None}, {"key": "denoising_strength", "type": float, "default": 0.75}, {"key": "mask", "type": str, "default": None}, {"key": "include_init_images", "type": bool, "default": False, "exclude" : True}]
 ).generate_model()
 
 class TextToImageResponse(BaseModel):
@@ -118,6 +118,46 @@ class ImageToImageResponse(BaseModel):
     images: List[str] = Field(default=None, title="Image", description="The generated image in base64 format.")
     parameters: dict
     info: str
+
+class Img2ImgRequest(BaseModel):
+    mode: int = 1
+    prompt: str = ""
+    negative_prompt: str = ""
+    prompt_style: str = ""
+    prompt_style2: str = ""
+    init_img: Any = None
+    init_img_with_mask: Any = None
+    init_img_with_mask_orig: Any = None
+    init_img_inpaint: Any = None
+    init_mask_inpaint: Any = None
+    mask_mode: int = 1
+    steps: int = 50
+    sampler_index: int = 0
+    mask_blur: int = 30
+    mask_alpha: float = 0
+    inpainting_fill: int = 0
+    restore_faces: bool = False
+    tiling: bool = False
+    n_iter: int = 0
+    batch_size: int = 0
+    cfg_scale: float = 7
+    denoising_strength: float = 0.7
+    seed: int = -1
+    subseed: int = 0
+    subseed_strength: float = 0
+    seed_resize_from_h: int = 0
+    seed_resize_from_w: int = 0
+    seed_enable_extras: bool = False
+    height: int = 512
+    width: int = 512
+    resize_mode: int = 0
+    inpaint_full_res: bool = False
+    inpaint_full_res_padding: int = 32
+    inpainting_mask_invert: int = 1
+    img2img_batch_input_dir: str = ""
+    img2img_batch_output_dir: str = ""
+
+
 
 class ExtrasBaseRequest(BaseModel):
     resize_mode: Literal[0, 1] = Field(default=0, title="Resize Mode", description="Sets the resize mode: 0 to upscale by upscaling_resize amount, 1 to upscale up to upscaling_resize_h x upscaling_resize_w.")

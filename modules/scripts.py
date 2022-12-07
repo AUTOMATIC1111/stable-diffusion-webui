@@ -81,7 +81,8 @@ class Script:
 
         **kwargs will have those items:
           - batch_number - index of current batch, from 0 to number of batches-1
-          - prompts - list of prompts for current batch; you can change contents of this list but changing the number of entries will likely break things
+          - prompts - list of prompts for current batch; you can change contents of this list but changing the number
+          of entries will likely break things
           - seeds - list of seeds for current batch
           - subseeds - list of subseeds for current batch
         """
@@ -101,7 +102,8 @@ class Script:
         Called before a component is created.
         Use elem_id/label fields of kwargs to figure out which component it is.
         This can be useful to inject your own components somewhere in the middle of vanilla UI.
-        You can return created components in the ui() function to add them to the list of arguments for your processing functions
+        You can return created components in the ui() function to add them to the list of arguments for your
+        processing functions
         """
 
         pass
@@ -145,7 +147,8 @@ def list_scripts(scriptdirname, extension):
     for ext in extensions.active():
         scripts_list += ext.list_files(scriptdirname, extension)
 
-    scripts_list = [x for x in scripts_list if os.path.splitext(x.path)[1].lower() == extension and os.path.isfile(x.path)]
+    scripts_list = [x for x in scripts_list if
+                    os.path.splitext(x.path)[1].lower() == extension and os.path.isfile(x.path)]
 
     return scripts_list
 
@@ -238,7 +241,8 @@ class ScriptRunner:
                 self.selectable_scripts.append(script)
 
     def setup_ui(self):
-        self.titles = [wrap_call(script.title, script.filename, "title") or f"{script.filename} [error]" for script in self.selectable_scripts]
+        self.titles = [wrap_call(script.title, script.filename, "title") or f"{script.filename} [error]" for script in
+                       self.selectable_scripts]
 
         inputs = [None]
         inputs_alwayson = [True]
@@ -268,10 +272,12 @@ class ScriptRunner:
 
             script.group = group
 
-        dropdown = gr.Dropdown(label="Script", elem_id="script_list", choices=["None"] + self.titles, value="None", type="index")
+        dropdown = gr.Dropdown(label="Script", elem_id="script_list", choices=["None"] + self.titles, value="None",
+            type="index"
+        )
         dropdown.save_to_config = True
         inputs[0] = dropdown
-
+ 
         for script in self.selectable_scripts:
             with gr.Group(visible=False) as group:
                 create_script_ui(script, inputs, inputs_alwayson)
@@ -279,7 +285,7 @@ class ScriptRunner:
             script.group = group
 
         def select_script(script_index):
-            selected_script = self.selectable_scripts[script_index - 1] if script_index>0 else None
+            selected_script = self.selectable_scripts[script_index - 1] if script_index > 0 else None
 
             return [gr.update(visible=selected_script == s) for s in self.selectable_scripts]
 
@@ -308,7 +314,7 @@ class ScriptRunner:
         if script_index == 0:
             return None
 
-        script = self.selectable_scripts[script_index-1]
+        script = self.selectable_scripts[script_index - 1]
 
         if script is None:
             return None
