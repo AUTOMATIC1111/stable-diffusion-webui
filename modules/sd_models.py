@@ -5,6 +5,7 @@ import gc
 from collections import namedtuple
 import torch
 import re
+import safetensors.torch
 from omegaconf import OmegaConf
 
 from ldm.util import instantiate_from_config
@@ -45,7 +46,7 @@ def checkpoint_tiles():
 
 def list_models():
     checkpoints_list.clear()
-    model_list = modelloader.load_models(model_path=model_path, command_path=shared.cmd_opts.ckpt_dir, ext_filter=[".ckpt"])
+    model_list = modelloader.load_models(model_path=model_path, command_path=shared.cmd_opts.ckpt_dir, ext_filter=[".ckpt", ".safetensors"])
 
     def modeltitle(path, shorthash):
         abspath = os.path.abspath(path)
@@ -143,8 +144,8 @@ def transform_checkpoint_dict_key(k):
 
 
 def get_state_dict_from_checkpoint(pl_sd):
-    if "state_dict" in pl_sd:
-        pl_sd = pl_sd["state_dict"]
+    pl_sd = pl_sd.pop("state_dict", pl_sd)
+    pl_sd.pop("state_dict", None)
 
     sd = {}
     for k, v in pl_sd.items():
@@ -157,6 +158,20 @@ def get_state_dict_from_checkpoint(pl_sd):
     pl_sd.update(sd)
 
     return pl_sd
+
+
+def read_state_dict(checkpoint_file, print_global_state=False, map_location=None):
+    _, extension = os.path.splitext(checkpoint_file)
+    if extension.lower() == ".safetensors":
+        pl_sd = safetensors.torch.load_file(checkpoint_file, device=map_location or shared.weight_load_location)
+    else:
+        pl_sd = torch.load(checkpoint_file, map_location=map_location or shared.weight_load_location)
+
+    if print_global_state and "global_step" in pl_sd:
+        print(f"Global Step: {pl_sd['global_step']}")
+
+    sd = get_state_dict_from_checkpoint(pl_sd)
+    return sd
 
 
 def load_model_weights(model, checkpoint_info, vae_file="auto"):
@@ -173,12 +188,7 @@ def load_model_weights(model, checkpoint_info, vae_file="auto"):
         # load from file
         print(f"Loading weights [{sd_model_hash}] from {checkpoint_file}")
 
-        pl_sd = torch.load(checkpoint_file, map_location=shared.weight_load_location)
-        if "global_step" in pl_sd:
-            print(f"Global Step: {pl_sd['global_step']}")
-
-        sd = get_state_dict_from_checkpoint(pl_sd)
-        del pl_sd
+        sd = read_state_dict(checkpoint_file)
         model.load_state_dict(sd, strict=False)
         del sd
         
@@ -243,6 +253,9 @@ def load_model(checkpoint_info=None):
         checkpoint_info = checkpoint_info._replace(config=checkpoint_info.config.replace(".yaml", "-inpainting.yaml"))
 
     do_inpainting_hijack()
+
+    if shared.cmd_opts.no_half:
+        sd_config.model.params.unet_config.params.use_fp16 = False
 
     sd_model = instantiate_from_config(sd_config.model)
     load_model_weights(sd_model, checkpoint_info)
