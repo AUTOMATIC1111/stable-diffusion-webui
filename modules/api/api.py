@@ -6,6 +6,7 @@ from threading import Lock
 from io import BytesIO
 from gradio.processing_utils import decode_base64_to_file
 from fastapi import APIRouter, Depends, FastAPI, HTTPException
+from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from secrets import compare_digest
 
@@ -17,7 +18,7 @@ from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusion
 from modules.extras import run_extras, run_pnginfo
 from modules.img2img import img2img
 from PIL import PngImagePlugin, Image
-from modules.sd_models import checkpoints_list
+from modules.sd_models import checkpoints_list, create_checkpoint_info, save_checkpoint_file_from_url, load_model
 from modules.realesrgan_model import get_realesrgan_models
 from typing import List
 
@@ -78,6 +79,12 @@ def encode_pil_to_base64(image):
     return base64.b64encode(bytes_data)
 
 
+class SaveCheckpointRequest(BaseModel):
+    url: str = Field(default=None, title="Checkpoint",
+        description="The checkpoint to save."
+    )
+
+
 class Api:
     def __init__(self, app: FastAPI, queue_lock: Lock):
         if shared.cmd_opts.api_auth:
@@ -126,6 +133,7 @@ class Api:
             response_model=List[str]
         )
         self.add_api_route("/sdapi/v1/artists", self.get_artists, methods=["GET"], response_model=List[ArtistItem])
+        self.add_api_route("/sdapi/v1/save_checkpoint", self.save_checkpoint, methods=["POST"])
 
     def add_api_route(self, path: str, endpoint, **kwargs):
         if shared.cmd_opts.api_auth:
@@ -142,6 +150,21 @@ class Api:
         )
 
     def text2imgapi(self, txt2imgreq: StableDiffusionTxt2ImgProcessingAPI):
+        checkpoint_filename = txt2imgreq.model_checkpoint
+        checkpoint_info = None
+
+        if checkpoint_filename is not None:
+            if checkpoint_filename.startswith("http"):
+                save_checkpoint_file_from_url(
+                    url=checkpoint_filename
+                )
+            if checkpoint_info is None:
+                checkpoint_info = create_checkpoint_info(
+                    url=checkpoint_filename
+                )
+            print("loaded new model", checkpoint_info)
+            load_model(checkpoint_info=checkpoint_info)
+
         populate = txt2imgreq.copy(update={  # Override __init__ params
             "sd_model": shared.sd_model,
             "sampler_name": validate_sampler_name(txt2imgreq.sampler_name or txt2imgreq.sampler_index),
@@ -166,6 +189,21 @@ class Api:
         return TextToImageResponse(images=b64images, parameters=vars(txt2imgreq), info=processed.js())
 
     def img2imgapi(self, img2imgreq: StableDiffusionImg2ImgProcessingAPI):
+        checkpoint_filename = img2imgreq.model_checkpoint
+        checkpoint_info = None
+
+        if checkpoint_filename is not None:
+            if checkpoint_filename.startswith("http"):
+                save_checkpoint_file_from_url(
+                    url=checkpoint_filename
+                )
+            if checkpoint_info is None:
+                checkpoint_info = create_checkpoint_info(
+                    url=checkpoint_filename
+                )
+            print("loaded new model", checkpoint_info)
+            load_model(checkpoint_info=checkpoint_info)
+
         init_images = img2imgreq.init_images
         if init_images is None:
             raise HTTPException(status_code=404, detail="Init image not found")
@@ -219,6 +257,10 @@ class Api:
             img2imgreq.mask = None
 
         return ImageToImageResponse(images=b64images, parameters=vars(img2imgreq), info=processed.js())
+
+    def save_checkpoint(self, req: SaveCheckpointRequest):
+        save_checkpoint_file_from_url(url=req.url)
+        return JSONResponse(status_code=200, content={"message": "OK"})
 
     def extras_single_image_api(self, req: ExtrasSingleImageRequest):
         reqDict = setUpscalers(req)

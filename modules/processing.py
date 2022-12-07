@@ -85,7 +85,7 @@ class StableDiffusionProcessing():
             negative_prompt: str = None, eta: float = None, do_not_reload_embeddings: bool = False,
             denoising_strength: float = 0, ddim_discretize: str = None, s_churn: float = 0.0, s_tmax: float = None,
             s_tmin: float = 0.0, s_noise: float = 1.0, override_settings: Dict[str, Any] = None,
-            sampler_index: int = None
+            sampler_index: int = None, model_checkpoint: str = None
     ):
         if sampler_index is not None:
             print("sampler_index argument for StableDiffusionProcessing does not do anything; use sampler_name",
@@ -130,6 +130,7 @@ class StableDiffusionProcessing():
         self.s_noise = s_noise or opts.s_noise
         self.override_settings = {k: v for k, v in (override_settings or {}).items() if k not in shared.restricted_opts}
         self.is_using_inpainting_conditioning = False
+        self.model_checkpoint: str = model_checkpoint
 
         if not seed_enable_extras:
             self.subseed = -1
@@ -710,7 +711,6 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                 firstphase_height_truncated = int(scale * self.height)
 
             else:
-
                 width_ratio = self.width / self.firstphase_width
                 height_ratio = self.height / self.firstphase_height
 
