@@ -14,6 +14,8 @@ Train tab will most likely be broken for the 2.0 models.
 
 For the 512-base model, grab the yaml from [here](https://github.com/Stability-AI/stablediffusion/blob/main/configs/stable-diffusion/v2-inference.yaml), rename it to the model name, and place with the model.
 
+If 2.0 or 2.1 is generating black images, enable full precision with `--no-half` or try using the `--xformers` optimization.
+
 # Outpainting
 
 Outpainting extends the original image and inpaints the created empty space.
