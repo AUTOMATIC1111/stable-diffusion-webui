@@ -99,3 +99,46 @@ conda activate automatic
 ```
 
 At this point, the instructions for the Manual installation may be applied starting at step `# clone repositories for Stable Diffusion and (optionally) CodeFormer`.
+
+
+# Alternative installation on Windows using Conda
+- Prerequisites _*(Only needed if you do not have them)*_. Assumes [Chocolatey](https://chocolatey.org/install) is installed. 
+    ```bash
+    # install git
+    choco install git
+    # install conda
+    choco install anaconda3
+    ```
+    Optional parameters: [git](https://community.chocolatey.org/packages/git), [conda](https://community.chocolatey.org/packages/anaconda3)
+- Install (warning: some files exceed multiple gigabytes, make sure you have space first)
+  1. Download as .zip and extract or use git to clone.
+        ```bash
+        git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui.git
+        ```
+  2. Launch the Anaconda prompt. It should be noted that you can use older Python versions, but you may be forced to manually remove features like cache optimization, which will degrade your performance.
+        ```bash
+        # Navigate to the git directory
+        cd "GIT\StableDiffusion"
+        # Create environment
+        conda create -n StableDiffusion python=3.10.6
+        # Activate environment
+        conda active StableDiffusion
+        # Validate environment is selected
+        conda env list
+        # Start local webserver
+        webui-user.bat
+        # Wait for "Running on local URL:  http://127.0.0.1:7860" and open that URI.
+        ```
+    3. _*(Optional)*_ Go to [CompVis](https://huggingface.co/CompVis) and download latest model, for example [1.4](https://huggingface.co/CompVis/stable-diffusion-v1-4) and unpack it to ex:
+        ```bash
+        GIT\StableDiffusion\models\Stable-diffusion
+        ```
+        after that restart the server by restarting Anaconda prompt and 
+        ```bash
+        webui-user.bat
+        ```
+- Alternative defaults worth trying out:
+    1. Try **euler a** (Ancestral Euler) with higher **Sampling Steps** ex: 40 or others with 100. 
+    2. Set "Settings > User interface > Show image creation progress every N sampling steps" to 1 and pick a deterministic **Seed** value. Can visually see how image defusion happens and record a .gif with [ScreenToGif](https://github.com/NickeManarin/ScreenToGif).
+    3. Use **Restore faces**. Generally, better results, but that quality comes at the cost of speed.
+
