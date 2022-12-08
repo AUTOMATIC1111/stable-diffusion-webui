@@ -61,6 +61,7 @@ def add_paste_fields(tabname, init_img, fields):
     # backwards compatibility for existing extensions
     import modules.ui
     if tabname == 'txt2img':
+        print(f'add_paste_fields tabname:{tabname} fields:{fields}')
         modules.ui.txt2img_paste_fields = fields
     elif tabname == 'img2img':
         modules.ui.img2img_paste_fields = fields
@@ -96,8 +97,52 @@ def create_buttons(tabs_list):
 def bind_buttons(buttons, send_image, send_generate_info):
     bind_list.append([buttons, send_image, send_generate_info])
 
+mybuttons=[]
+def bind_mybuttons(button):
+    mybuttons.append(button)
+
 
 def run_bind():
+
+    import myhelpers
+    temppf = paste_fields['txt2img']["fields"]
+    # myhelpers.paste_fields = temppf
+    # myhelpers.paste_fields_outputs = [x[0] for x in temppf]
+
+    for button in mybuttons:#目前只有一个按钮所以这样写
+        def read():
+            info_text = myhelpers.readFileAllText('info_text.txt')
+            print('read:',info_text)
+            params = parse_generation_parameters(info_text)
+            paste_fields = temppf
+            res = []
+
+            for output, key in paste_fields:
+                if callable(key):
+                    v = key(params)
+                else:
+                    v = params.get(key, None)
+
+                if v is None:
+                    res.append(gr.update())
+                elif isinstance(v, type_of_gr_update):
+                    res.append(v)
+                else:
+                    try:
+                        valtype = type(output.value)
+
+                        if valtype == bool and v == "False":
+                            val = False
+                        else:
+                            val = valtype(v)
+
+                        res.append(gr.update(value=val))
+                    except Exception:
+                        res.append(gr.update())
+            return res 
+        button.click(fn=read,inputs=None,
+        outputs=[x[0] for x in temppf],)
+
     for buttons, send_image, send_generate_info in bind_list:
         for tab in buttons:
             button = buttons[tab]
@@ -129,7 +174,7 @@ def run_bind():
                     connect_paste(button, paste_fields[tab]["fields"], send_generate_info)
 
             button.click(
-                fn=None,
+                fn=lambda : print(f"switch_to_{tab}"),
                 _js=f"switch_to_{tab}",
                 inputs=None,
                 outputs=None,
@@ -184,7 +229,7 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
     return res
 
 
-def connect_paste(button, paste_fields, input_comp, jsfunc=None):
+def connect_paste(button:gr.Button, paste_fields, input_comp, jsfunc=None):
     def paste_func(prompt):
         if not prompt and not shared.cmd_opts.hide_ui_dir_config:
             filename = os.path.join(script_path, "params.txt")
@@ -194,6 +239,8 @@ def connect_paste(button, paste_fields, input_comp, jsfunc=None):
 
         params = parse_generation_parameters(prompt)
         res = []
+
+        print(f'paste_func params:{params}\n paste_fields:{paste_fields}\n input_comp:{input_comp}')
 
         for output, key in paste_fields:
             if callable(key):
@@ -219,7 +266,7 @@ def connect_paste(button, paste_fields, input_comp, jsfunc=None):
                     res.append(gr.update())
 
         return res
-
+    
     button.click(
         fn=paste_func,
         _js=jsfunc,

@@ -485,8 +485,10 @@ def create_toprow(is_img2img):
         with gr.Column(scale=1):
             with gr.Row():
                 skip = gr.Button('Skip', elem_id=f"{id_part}_skip")
+                # space = gr.Button('', elem_id=f"{id_part}_skip2")
                 interrupt = gr.Button('Interrupt', elem_id=f"{id_part}_interrupt")
                 submit = gr.Button('Generate', elem_id=f"{id_part}_generate", variant='primary')
+                # addToQueue = gr.Button('添加队列', elem_id=f"{id_part}_添加队列", variant='primary')
 
                 skip.click(
                     fn=lambda: shared.state.skip(),
@@ -508,6 +510,13 @@ def create_toprow(is_img2img):
                 with gr.Column(scale=1, elem_id="style_neg_col"):
                     prompt_style2 = gr.Dropdown(label="Style 2", elem_id=f"{id_part}_style2_index", choices=[k for k, v in shared.prompt_styles.styles.items()], value=next(iter(shared.prompt_styles.styles.keys())))
                     prompt_style2.save_to_config = True
+
+            with gr.Row():
+                readlast = gr.Button('读取上次数值(图生图)', elem_id=f"{id_part}_读取上次数值", variant='primary')
+                parameters_copypaste.bind_mybuttons(readlast)
+                
+
+
 
     return prompt, roll, prompt_style, negative_prompt, prompt_style2, submit, button_interrogate, button_deepbooru, prompt_style_apply, save_style, paste, token_counter, token_button
 
@@ -693,7 +702,8 @@ def create_ui(wrap_gradio_gpu_call):
     parameters_copypaste.reset()
 
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
-        txt2img_prompt, roll, txt2img_prompt_style, txt2img_negative_prompt, txt2img_prompt_style2, submit, _, _, txt2img_prompt_style_apply, txt2img_save_style, txt2img_paste, token_counter, token_button = create_toprow(is_img2img=False)
+        txt2img_prompt, roll, txt2img_prompt_style, txt2img_negative_prompt, txt2img_prompt_style2, submit, _, _, \
+            txt2img_prompt_style_apply, txt2img_save_style, txt2img_paste, token_counter, token_button = create_toprow(is_img2img=False)
         dummy_component = gr.Label(visible=False)
         txt_prompt_img = gr.File(label="", elem_id="txt2img_prompt_image", file_count="single", type="bytes", visible=False)
 
@@ -777,6 +787,7 @@ def create_ui(wrap_gradio_gpu_call):
 
             txt2img_prompt.submit(**txt2img_args)
             submit.click(**txt2img_args)
+            # addToQueueButton.click(**txt2img_args)
 
             txt_prompt_img.change(
                 fn=modules.images.image_data,
@@ -844,7 +855,8 @@ def create_ui(wrap_gradio_gpu_call):
             token_button.click(fn=update_token_counter, inputs=[txt2img_prompt, steps], outputs=[token_counter])
 
     with gr.Blocks(analytics_enabled=False) as img2img_interface:
-        img2img_prompt, roll, img2img_prompt_style, img2img_negative_prompt, img2img_prompt_style2, submit, img2img_interrogate, img2img_deepbooru, img2img_prompt_style_apply, img2img_save_style, img2img_paste, token_counter, token_button = create_toprow(is_img2img=True)
+        img2img_prompt, roll, img2img_prompt_style, img2img_negative_prompt, img2img_prompt_style2, submit, img2img_interrogate, \
+            img2img_deepbooru, img2img_prompt_style_apply, img2img_save_style, img2img_paste, token_counter, token_button = create_toprow(is_img2img=True)
 
         with gr.Row(elem_id='img2img_progress_row'):
             img2img_prompt_img = gr.File(label="", elem_id="img2img_prompt_image", file_count="single", type="bytes", visible=False)
@@ -1078,6 +1090,7 @@ def create_ui(wrap_gradio_gpu_call):
                         show_extras_results = gr.Checkbox(label='Show result images', value=True)
 
                 submit = gr.Button('Generate', elem_id="extras_generate", variant='primary')
+                # submit2 = gr.Button('Generate2', elem_id="extras_generate2", variant='primary')
 
                 with gr.Tabs(elem_id="extras_resize_mode"):
                     with gr.TabItem('Scale by'):
