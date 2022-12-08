@@ -21,6 +21,8 @@ import modules.images as images
 import modules.styles
 import logging
 
+import myhelpers
+
 
 # some of those options should not be changed at all because they would break the model, so I removed them from options.
 opt_C = 4
@@ -410,7 +412,12 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration
 
     negative_prompt_text = "\nNegative prompt: " + p.negative_prompt if p.negative_prompt else ""
 
-    return f"{all_prompts[index]}{negative_prompt_text}\n{generation_params_text}".strip()
+    filetag = p.filetag
+    customTag = ''
+    if (not filetag is None) and (filetag != ''):
+        customTag = f'customTag:'+filetag
+
+    return f"{all_prompts[index]}{negative_prompt_text}\n{generation_params_text}\n{customTag}".strip()
 
 
 def process_images(p: StableDiffusionProcessing) -> Processed:

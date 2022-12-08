@@ -12,6 +12,8 @@ import time
 import traceback
 from functools import partial, reduce
 
+import myhelpers
+
 import gradio as gr
 import gradio.routes
 import gradio.utils
@@ -511,9 +513,84 @@ def create_toprow(is_img2img):
                     prompt_style2 = gr.Dropdown(label="Style 2", elem_id=f"{id_part}_style2_index", choices=[k for k, v in shared.prompt_styles.styles.items()], value=next(iter(shared.prompt_styles.styles.keys())))
                     prompt_style2.save_to_config = True
 
+    with gr.Row(elem_id="custom1"):
+        with gr.Row():
+            
+            myskip = gr.Button('跳过当前任务')
+            mystop = gr.Button('停止当前任务')
+            addtoqueue = gr.Button('强行添加到队列',variant='primary')
+            myhelpers.any.addtoqueuebtn = addtoqueue
+            
+
+            myskip.click(
+                fn=lambda: shared.state.skip(),
+                inputs=[],
+                outputs=[],
+            )
+
+            mystop.click(
+                fn=lambda: shared.state.interrupt(),
+                inputs=[],
+                outputs=[],
+            )
+
+
+            filetag = gr.Textbox(label="文件名写入自定义标签")
+            
+            def fn(text):
+                myhelpers.any.filetag = text
+
+            filetag.change(fn=fn,inputs=[filetag])
+            myhelpers.any.filetagTextbox = filetag
+
+    with gr.Row(elem_id="custom2"):
+        if not is_img2img:
             with gr.Row():
-                readlast = gr.Button('读取上次数值(图生图)', elem_id=f"{id_part}_读取上次数值", variant='primary')
-                parameters_copypaste.bind_mybuttons(readlast)
+                
+                readlast = gr.Button('读取上次数值',variant='primary')
+                histroyBtn = gr.Button('载入历史记录',variant='primary')
+                refreshhistroyBtn = gr.Button('刷新历史记录',variant='primary')
+                dic = myhelpers.readJson('txt2img_histroy.json')
+                histroy = gr.Dropdown(label="标签历史记录", choices=[k for k in dic])
+                myhelpers.any.histroyDropdown = histroy
+                def fn(text):
+                    myhelpers.any.histroy_select_text = text
+
+                histroy.change(fn=fn,inputs=[histroy],)
+
+                def histroyBtnbindfunc(paste_fields, parse_text_and_return_res):
+                    temppf = paste_fields['txt2img']["fields"]
+                    def load():
+                        dic = myhelpers.readJson('txt2img_histroy.json')
+                        text = myhelpers.any.histroy_select_text
+                        if text is None:return []
+                        text = dic.get(text,'')
+                        if text == '':return []
+                        return parse_text_and_return_res(text, temppf)
+
+                    histroyBtn.click(fn=load,inputs=None,
+                    outputs=[x[0] for x in temppf],)
+            
+                parameters_copypaste.add_to_my_bind_funcs(histroyBtnbindfunc)
+
+                def refreshhistroy():
+                    dic = myhelpers.readJson('txt2img_histroy.json')
+                    return gr.Dropdown.update(choices=[k for k in dic])
+
+                refreshhistroyBtn.click(fn=refreshhistroy, outputs=histroy)
+
+                def bindfunc(paste_fields, parse_text_and_return_res):
+                    temppf = paste_fields['txt2img']["fields"]
+                    print('bind readlast button')
+                    def f():
+                        info_text = myhelpers.readFileAllText('info_text.txt')
+                        return parse_text_and_return_res(info_text, temppf)
+
+                    readlast.click(fn=f,inputs=None,
+                    outputs=[x[0] for x in temppf],)
+                parameters_copypaste.add_to_my_bind_funcs(bindfunc)
+            
+
                 
 
 
@@ -786,8 +863,16 @@ def create_ui(wrap_gradio_gpu_call):
             )
 
             txt2img_prompt.submit(**txt2img_args)
+            # preprocess_txt_action(f"txt2img_prompt.value:{txt2img_prompt.value}")
             submit.click(**txt2img_args)
-            # addToQueueButton.click(**txt2img_args)
+
+
+            # def f():
+            #     pass
+            # txt2img_args['fn']=f
+
+            # myhelpers.any.addtoqueuebtn.click(**txt2img_args)
+
 
             txt_prompt_img.change(
                 fn=modules.images.image_data,

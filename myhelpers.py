@@ -12,15 +12,19 @@ orig_stdout = sys.stdout
 
 # paste_fields=[]
 # paste_fields_outputs=[]
+class _Any:
+    pass
 
+any = _Any()
 
+def loadJson(filename:str)->dict:
+    text = readFileAllText(filename)
+    if text == '': return {}
+    return json.loads(text) 
 
-def loadJson(filename):
-    return json.loads(readFileAllText(filename)) 
+def readJson(fn:str):return loadJson(fn)
 
-def readJson(fn):return loadJson(fn)
-
-def saveJson(dict,fn):
+def saveJson(dict:dict,fn:str):
     saveFileAllText(fn,json.dumps(dict))
 
 def getFilePath(f=__file__):

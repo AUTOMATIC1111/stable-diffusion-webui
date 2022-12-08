@@ -97,51 +97,52 @@ def create_buttons(tabs_list):
 def bind_buttons(buttons, send_image, send_generate_info):
     bind_list.append([buttons, send_image, send_generate_info])
 
-mybuttons=[]
-def bind_mybuttons(button):
-    mybuttons.append(button)
+import myhelpers
+
+
+
+my_bind_funcs = []
+def add_to_my_bind_funcs(func):
+    my_bind_funcs.append(func)
+
+def run_my_bind_funcs():
+    for func in my_bind_funcs:
+        func(paste_fields,parse_text_and_return_res)
+
+def parse_text_and_return_res(info_text,paste_fields):
+    params = parse_generation_parameters(info_text)
+    res = []
+    for output, key in paste_fields:
+        if callable(key):
+            v = key(params)
+        else:
+            v = params.get(key, None)
+
+        if v is None:
+            res.append(gr.update())
+        elif isinstance(v, type_of_gr_update):
+            res.append(v)
+        else:
+            try:
+                valtype = type(output.value)
+
+                if valtype == bool and v == "False":
+                    val = False
+                else:
+                    val = valtype(v)
+
+                res.append(gr.update(value=val))
+            except Exception:
+                res.append(gr.update())
+    return res 
 
 
 def run_bind():
 
-    import myhelpers
-    temppf = paste_fields['txt2img']["fields"]
-    # myhelpers.paste_fields = temppf
-    # myhelpers.paste_fields_outputs = [x[0] for x in temppf]
+    
+    run_my_bind_funcs()
 
-    for button in mybuttons:#目前只有一个按钮所以这样写
-        def read():
-            info_text = myhelpers.readFileAllText('info_text.txt')
-            print('read:',info_text)
-            params = parse_generation_parameters(info_text)
-            paste_fields = temppf
-            res = []
 
-            for output, key in paste_fields:
-                if callable(key):
-                    v = key(params)
-                else:
-                    v = params.get(key, None)
-
-                if v is None:
-                    res.append(gr.update())
-                elif isinstance(v, type_of_gr_update):
-                    res.append(v)
-                else:
-                    try:
-                        valtype = type(output.value)
-
-                        if valtype == bool and v == "False":
-                            val = False
-                        else:
-                            val = valtype(v)
-
-                        res.append(gr.update(value=val))
-                    except Exception:
-                        res.append(gr.update())
-            return res 
-        button.click(fn=read,inputs=None,
-        outputs=[x[0] for x in temppf],)
 
     for buttons, send_image, send_generate_info in bind_list:
         for tab in buttons:
@@ -199,7 +200,7 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
 
     done_with_prompt = False
 
-    *lines, lastline = x.strip().split("\n")
+    *lines, lastline, customtagline = x.strip().split("\n")
     if not re_params.match(lastline):
         lines.append(lastline)
         lastline = ''
@@ -240,7 +241,7 @@ def connect_paste(button:gr.Button, paste_fields, input_comp, jsfunc=None):
         params = parse_generation_parameters(prompt)
         res = []
 
-        print(f'paste_func params:{params}\n paste_fields:{paste_fields}\n input_comp:{input_comp}')
+        # print(f'paste_func params:{params}\n paste_fields:{paste_fields}\n input_comp:{input_comp}')
 
         for output, key in paste_fields:
             if callable(key):
