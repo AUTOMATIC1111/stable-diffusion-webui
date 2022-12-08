@@ -795,7 +795,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         for img in self.init_images:
             image = img.convert("RGB")
 
-            if crop_region is None:
+            if crop_region is None and self.resize_mode != 3:
                 image = images.resize_image(self.resize_mode, image, self.width, self.height)
 
             if image_mask is not None:
@@ -804,6 +804,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
                 self.overlay_images.append(image_masked.convert('RGBA'))
 
+            # crop_region is not none iif we are doing inpaint full res
             if crop_region is not None:
                 image = image.crop(crop_region)
                 image = images.resize_image(2, image, self.width, self.height)
@@ -839,6 +840,9 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         image = image.to(shared.device)
 
         self.init_latent = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(image))
+
+        if self.resize_mode == 3:
+            self.init_latent = torch.nn.functional.interpolate(self.init_latent, size=(self.height // opt_f, self.width // opt_f), mode="bilinear")
 
         if image_mask is not None:
             init_mask = latent_mask
