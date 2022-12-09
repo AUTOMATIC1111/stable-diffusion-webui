@@ -249,7 +249,7 @@ def get_config(checkpoint_info):
                     os.environ["ATTN_PRECISION"] = "fp16"
             if v2_key in c_dict:
                 if "global_step" in checkpoint and checkpoint_info.config == shared.cmd_opts.config:
-                    if checkpoint["global_step"] == 875000:
+                    if checkpoint["global_step"] == 875000 or checkpoint["global_step"] == 220000:
                         model_config = os.path.join(shared.script_path, "v2-inference.yaml")
                     else:
                         model_config = os.path.join(shared.script_path, "v2-inference-v.yaml")
@@ -301,11 +301,8 @@ def load_model(checkpoint_info=None):
     else:
         sd_model.to(shared.device)
 
-    if not is_v21_model:
-        sd_hijack.model_hijack.hijack(sd_model)
-    else:
-        if not shared.cmd_opts.xformers and not shared.cmd_opts.force_enable_xformers and not shared.cmd_opts.no_half:
-            ldm.modules.attention.CrossAttention.forward = sd_hijack.attention_CrossAttention_forward
+    if not shared.cmd_opts.xformers and not shared.cmd_opts.force_enable_xformers and not shared.cmd_opts.no_half:
+        ldm.modules.attention.CrossAttention.forward = sd_hijack.attention_CrossAttention_forward
 
     sd_model.eval()
     shared.sd_model = sd_model
@@ -343,11 +340,9 @@ def reload_model_weights(sd_model=None, info=None):
 
     load_model_weights(sd_model, checkpoint_info)
 
-    if not is_v21_model:
-        sd_hijack.model_hijack.hijack(sd_model)
-    else:
-        if not shared.cmd_opts.xformers and not shared.cmd_opts.force_enable_xformers and not shared.cmd_opts.no_half:
-            ldm.modules.attention.CrossAttention.forward = sd_hijack.attention_CrossAttention_forward
+    if not shared.cmd_opts.xformers and not shared.cmd_opts.force_enable_xformers and not shared.cmd_opts.no_half:
+        ldm.modules.attention.CrossAttention.forward = sd_hijack.attention_CrossAttention_forward
+
     script_callbacks.model_loaded_callback(sd_model)
 
     if not shared.cmd_opts.lowvram and not shared.cmd_opts.medvram:
