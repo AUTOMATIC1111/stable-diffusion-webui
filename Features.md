@@ -16,6 +16,8 @@ For the 512-base model, grab the yaml from [here](https://github.com/Stability-A
 
 If 2.0 or 2.1 is generating black images, enable full precision with `--no-half` or try using the `--xformers` optimization.
 
+_**Note:**_ SD 2.0 and 2.1 are more sensitive to FP16 numerical instability (as noted by themselves in https://github.com/Stability-AI/stablediffusion/commit/c12d960d1ee4f9134c2516862ef991ec52d3f59e) due to their new cross attention module.
+
 # Outpainting
 
 Outpainting extends the original image and inpaints the created empty space.
@@ -106,7 +108,7 @@ You can find the feature at the bottom, under Script -> Prompt matrix.
 
 # Color Sketch
 
-Basic coloring tool for img2img. To use this feature, enable with **--gradio-img2img-tool color-sketch** in commandline args. Sending from txt2img will currently cause the browser to severely lag, so upload the image instead. Chromium-based browsers support a dropper tool. (see picture)
+Basic coloring tool for img2img. To use this feature in img2img, enable with `--gradio-img2img-tool color-sketch` in commandline args. To use this feature in inpainting mode, enable with `--gradio-inpaint-tool color-sketch`. Chromium-based browsers support a dropper tool. (see picture)
 
 ![dropper](https://user-images.githubusercontent.com/98228077/196140222-54bc71ad-2746-4c38-8075-5c53fbcde2a9.png)
 
