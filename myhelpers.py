@@ -9,6 +9,7 @@ import asyncio
 import json
 
 orig_stdout = sys.stdout
+servertag = ''
 
 # paste_fields=[]
 # paste_fields_outputs=[]
@@ -24,8 +25,14 @@ def loadJson(filename:str)->dict:
 
 def readJson(fn:str):return loadJson(fn)
 
+def readJsonWithTag(fn:str):
+    return readJson(f'{servertag}{fn}')
+
 def saveJson(dict:dict,fn:str):
     saveFileAllText(fn,json.dumps(dict))
+
+def saveJsonWithTag(dict:dict,fn:str):
+    saveJson(dict,f'{servertag}{fn}')
 
 def getFilePath(f=__file__):
     """获取当前脚本的路径"""
@@ -86,6 +93,10 @@ def readFileAllText(filename, encoding="utf-8"):
     except:
         return ''
 
+def readFileAllTextWithTag(filename, encoding="utf-8"):
+    return readFileAllText(f'{servertag}{filename}',
+    encoding)
+
 def readAllBytes(filename):
     with open(filename, "rb") as fh:
       return fh.read()
@@ -95,6 +106,8 @@ def saveFileAllText(filename:str, text:str, encoding="utf-8"):
         file.write(text)
         file.flush()
 
+def saveFileAllTextWithTag(filename:str, text:str, encoding="utf-8"):    
+    saveFileAllText(f'{servertag}{filename}',text,encoding)
 
 
 def getfilenameWithoutExt(fn):

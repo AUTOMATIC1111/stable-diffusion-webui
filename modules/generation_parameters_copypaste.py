@@ -61,7 +61,7 @@ def add_paste_fields(tabname, init_img, fields):
     # backwards compatibility for existing extensions
     import modules.ui
     if tabname == 'txt2img':
-        print(f'add_paste_fields tabname:{tabname} fields:{fields}')
+        # print(f'add_paste_fields tabname:{tabname} fields:{fields}')
         modules.ui.txt2img_paste_fields = fields
     elif tabname == 'img2img':
         modules.ui.img2img_paste_fields = fields
@@ -199,8 +199,14 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
     negative_prompt = ""
 
     done_with_prompt = False
-
-    *lines, lastline, customtagline = x.strip().split("\n")
+    rawlines = x.strip().split("\n")
+    customtag = ''
+    *lines, lastline, customtagline = rawlines
+    if not 'custom' in customtagline:
+        *lines, lastline = rawlines
+    else:
+        customtag = customtagline.lower().replace('customtag:','')
+        
     if not re_params.match(lastline):
         lines.append(lastline)
         lastline = ''
@@ -218,6 +224,7 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
 
     res["Prompt"] = prompt
     res["Negative prompt"] = negative_prompt
+    res["customtag"] = customtag
 
     for k, v in re_param.findall(lastline):
         m = re_imagesize.match(v)

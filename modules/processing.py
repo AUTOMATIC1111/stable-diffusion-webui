@@ -412,7 +412,9 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration
 
     negative_prompt_text = "\nNegative prompt: " + p.negative_prompt if p.negative_prompt else ""
 
-    filetag = p.filetag
+    filetag = None
+    if hasattr(p,'filetag'):
+        filetag = p.filetag
     customTag = ''
     if (not filetag is None) and (filetag != ''):
         customTag = f'customTag:'+filetag

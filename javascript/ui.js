@@ -112,6 +112,16 @@ function create_submit_args(args){
 function submit(){
     requestProgress('txt2img')
 
+    //这里的修改不会修改python中的值
+    // var filetag_Textbox = gradioApp().getElementById('filetag_Textbox')
+    // var textboxs = filetag_Textbox.querySelectorAll('textarea')
+    // textboxs[0].value = ''
+
+    
+    setTimeout(function(){
+        gradioApp().getElementById('refreshhistroyBtn').click()
+    },100)
+
     return create_submit_args(arguments)
 }
 
@@ -119,7 +129,7 @@ function submit_img2img(){
     requestProgress('img2img')
 
     res = create_submit_args(arguments)
-
+    
     res[0] = get_tab_index('mode_img2img')
 
     return res
@@ -141,6 +151,8 @@ function apply_settings(jsdata){
 
     return jsdata
 }
+
+let loadedLastCheck = false
 
 onUiUpdate(function(){
 	if(Object.keys(opts).length != 0) return;
@@ -179,6 +191,18 @@ onUiUpdate(function(){
 		img2img_textarea = gradioApp().querySelector("#img2img_prompt > label > textarea");
 		img2img_textarea?.addEventListener("input", () => update_token_counter("img2img_token_button"));
 	}
+
+    // if(!loadedLastCheck){
+    //     var autoloadlastvalueCheckbox = gradioApp().getElementById('autoloadlastvalueCheckbox')
+    //     if(autoloadlastvalueCheckbox==null)return;
+    //     checkbox = autoloadlastvalueCheckbox.querySelectorAll('input')[0]
+        
+    //     if(checkbox.value=='on'){
+    //         console.log("checkbox.value:"+checkbox.value)
+    //         gradioApp().getElementById('readlastbtn').click()
+    //     }
+    //     loadedLastCheck = true
+    // }
 })
 
 let txt2img_textarea, img2img_textarea = undefined;
@@ -211,3 +235,4 @@ function restart_reload(){
 
     return []
 }
+

@@ -80,7 +80,11 @@ def initialize():
 
     modules.sd_vae.refresh_vae_list()
     modules.sd_models.load_model()
-    shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights()))
+
+    def f():
+        modules.sd_models.reload_model_weights()
+
+    shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(f))
     shared.opts.onchange("sd_vae", wrap_queued_call(lambda: modules.sd_vae.reload_vae_weights()), call=False)
     shared.opts.onchange("sd_hypernetwork", wrap_queued_call(lambda: modules.hypernetworks.hypernetwork.load_hypernetwork(shared.opts.sd_hypernetwork)))
     shared.opts.onchange("sd_hypernetwork_strength", modules.hypernetworks.hypernetwork.apply_strength)
@@ -127,6 +131,7 @@ def wait_on_server(demo=None):
             time.sleep(0.5)
             break
 
+import myhelpers
 
 def api_only():
     initialize()
@@ -137,14 +142,14 @@ def api_only():
     api = create_api(app)
 
     modules.script_callbacks.app_started_callback(None, app)
-
+    myhelpers.servertag = 'server_'+str(cmd_opts.port if cmd_opts.port != None else 7860)
     api.launch(server_name="0.0.0.0" if cmd_opts.listen else "127.0.0.1", port=cmd_opts.port if cmd_opts.port else 7861)
 
 
 def webui():
     launch_api = cmd_opts.api
     initialize()
-
+    myhelpers.servertag = 'server_'+str(cmd_opts.port if cmd_opts.port != None else 7860)
     while 1:
         demo = modules.ui.create_ui(wrap_gradio_gpu_call=wrap_gradio_gpu_call)
 

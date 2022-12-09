@@ -8,6 +8,7 @@ import random
 import subprocess as sp
 import sys
 import tempfile
+import threading
 import time
 import traceback
 from functools import partial, reduce
@@ -46,6 +47,7 @@ import modules.textual_inversion.ui
 import modules.hypernetworks.ui
 from modules.generation_parameters_copypaste import image_from_url_text
 
+import myhelpers
 # this is a fix for Windows users. Without it, javascript files will be served with text/html content-type and the browser will not show any UI
 mimetypes.init()
 mimetypes.add_type('application/javascript', '.js')
@@ -58,6 +60,7 @@ if not cmd_opts.share and not cmd_opts.listen:
 if cmd_opts.ngrok != None:
     import modules.ngrok as ngrok
     print('ngrok authtoken detected, trying to connect...')
+    myhelpers.servertag = 'server_'+str(cmd_opts.port if cmd_opts.port != None else 7860)
     ngrok.connect(cmd_opts.ngrok, cmd_opts.port if cmd_opts.port != None else 7860, cmd_opts.ngrok_region)
 
 
@@ -518,10 +521,12 @@ def create_toprow(is_img2img):
             
             myskip = gr.Button('跳过当前任务')
             mystop = gr.Button('停止当前任务')
-            addtoqueue = gr.Button('强行添加到队列',variant='primary')
-            myhelpers.any.addtoqueuebtn = addtoqueue
+            # addtoqueue = gr.Button('再添加一个任务',variant='primary',visible=False)
+            filetag = gr.Textbox(label="文件名写入自定义标签",elem_id='filetag_Textbox')
+            cleattagbtn = gr.Button('cleattagbtn',elem_id='cleattagbtn',visible=False)
             
-
+            # myhelpers.any.addtoqueuebtn = addtoqueue
+            
             myskip.click(
                 fn=lambda: shared.state.skip(),
                 inputs=[],
@@ -534,34 +539,57 @@ def create_toprow(is_img2img):
                 outputs=[],
             )
 
+            cleattagbtn.click(
+                fn=lambda : '',
+                outputs=filetag,
+            )
 
-            filetag = gr.Textbox(label="文件名写入自定义标签")
-            
-            def fn(text):
-                myhelpers.any.filetag = text
-
-            filetag.change(fn=fn,inputs=[filetag])
             myhelpers.any.filetagTextbox = filetag
 
     with gr.Row(elem_id="custom2"):
         if not is_img2img:
             with gr.Row():
-                
-                readlast = gr.Button('读取上次数值',variant='primary')
+
+                # def getautoloadlastvalue():
+                #     mysettingdic = myhelpers.readJsonWithTag("mysetting.json")
+                #     return mysettingdic.get('autoloadlastvalue',False)
+
+                # autoloadlastvalueCheckbox = gr.Checkbox(label='AutoLoadLastValue',
+                # elem_id='autoloadlastvalueCheckbox',
+                # value=getautoloadlastvalue,interactive=True)
+
+                readlast = gr.Button('读取上次数值',variant='primary',
+                elem_id='readlastbtn')
                 histroyBtn = gr.Button('载入历史记录',variant='primary')
-                refreshhistroyBtn = gr.Button('刷新历史记录',variant='primary')
-                dic = myhelpers.readJson('txt2img_histroy.json')
-                histroy = gr.Dropdown(label="标签历史记录", choices=[k for k in dic])
+                
+                deleteselectbtn = gr.Button('删除选中记录')
+                dic = myhelpers.readJsonWithTag('txt2img_histroy.json')
+                
+                # with gr.Row():
+                histroy = gr.Dropdown(label="Histroy", choices=[k for k in dic])
+                refreshhistroyBtn = gr.Button('刷新历史记录',
+                elem_id='refreshhistroyBtn')
+
                 myhelpers.any.histroyDropdown = histroy
+
                 def fn(text):
                     myhelpers.any.histroy_select_text = text
 
                 histroy.change(fn=fn,inputs=[histroy],)
 
+                # def f(value):
+                #     dic = myhelpers.readJsonWithTag("mysetting.json")
+                #     dic['autoloadlastvalue'] = value
+                #     myhelpers.saveJsonWithTag(dic, "mysetting.json")
+
+                # autoloadlastvalueCheckbox.change(fn=f,
+                # inputs=autoloadlastvalueCheckbox,
+                # )
+
                 def histroyBtnbindfunc(paste_fields, parse_text_and_return_res):
                     temppf = paste_fields['txt2img']["fields"]
                     def load():
-                        dic = myhelpers.readJson('txt2img_histroy.json')
+                        dic = myhelpers.readJsonWithTag('txt2img_histroy.json')
                         text = myhelpers.any.histroy_select_text
                         if text is None:return []
                         text = dic.get(text,'')
@@ -574,16 +602,23 @@ def create_toprow(is_img2img):
                 parameters_copypaste.add_to_my_bind_funcs(histroyBtnbindfunc)
 
                 def refreshhistroy():
-                    dic = myhelpers.readJson('txt2img_histroy.json')
+                    dic = myhelpers.readJsonWithTag('txt2img_histroy.json')
                     return gr.Dropdown.update(choices=[k for k in dic])
 
                 refreshhistroyBtn.click(fn=refreshhistroy, outputs=histroy)
+
+                def deletehistroy(selected):
+                    dic = myhelpers.readJsonWithTag('txt2img_histroy.json')
+                    del dic[selected]
+                    myhelpers.saveJsonWithTag(dict=dic,fn='txt2img_histroy.json')
+                    return gr.Dropdown.update(choices=[k for k in dic]) 
+                deleteselectbtn.click(fn=deletehistroy,inputs=histroy,outputs=histroy)
 
                 def bindfunc(paste_fields, parse_text_and_return_res):
                     temppf = paste_fields['txt2img']["fields"]
                     print('bind readlast button')
                     def f():
-                        info_text = myhelpers.readFileAllText('info_text.txt')
+                        info_text = myhelpers.readFileAllTextWithTag('info_text.txt')
                         return parse_text_and_return_res(info_text, temppf)
 
                     readlast.click(fn=f,inputs=None,
@@ -852,7 +887,7 @@ def create_ui(wrap_gradio_gpu_call):
                     denoising_strength,
                     firstphase_width,
                     firstphase_height,
-                ] + custom_inputs,
+                ] + custom_inputs+[myhelpers.any.filetagTextbox],
 
                 outputs=[
                     txt2img_gallery,
@@ -866,10 +901,16 @@ def create_ui(wrap_gradio_gpu_call):
             # preprocess_txt_action(f"txt2img_prompt.value:{txt2img_prompt.value}")
             submit.click(**txt2img_args)
 
+            # 尝试使用线程去启动但是还是不能再次点击,目前还搞不懂原理
+            # oldffn = txt2img_args['fn']
+            # def mywrapcall(*args, **kwargs):
+            #     print('添加到队列')
+            #     t = threading.Thread(target=oldffn, args=args,kwargs=kwargs)
+            #     t.run()
+            #     return None
 
-            # def f():
-            #     pass
-            # txt2img_args['fn']=f
+            # txt2img_args['fn']=mywrapcall
+            # del txt2img_args['outputs']
 
             # myhelpers.any.addtoqueuebtn.click(**txt2img_args)
 
@@ -922,6 +963,7 @@ def create_ui(wrap_gradio_gpu_call):
                 (hr_options, lambda d: gr.Row.update(visible="Denoising strength" in d)),
                 (firstphase_width, "First pass size-1"),
                 (firstphase_height, "First pass size-2"),
+                (myhelpers.any.filetagTextbox,'customtag'),
                 *modules.scripts.scripts_txt2img.infotext_fields
             ]
             parameters_copypaste.add_paste_fields("txt2img", None, txt2img_paste_fields)
@@ -1753,9 +1795,12 @@ def create_ui(wrap_gradio_gpu_call):
             outputs=[text_settings, result],
         )
 
+        #模型UI在这里
         for i, k, item in quicksettings_list:
             component = component_dict[k]
-
+            print(f'--- {k} {component}')
+            if k=='sd_model_checkpoint':#todo
+                pass
             component.change(
                 fn=lambda value, k=k: run_settings_single(value, key=k),
                 inputs=[component],
