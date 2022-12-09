@@ -236,6 +236,12 @@
 			"tags": ["script", "tab"]
 		},
 		{
+			"name": "Infinity Grid Generator",
+			"url": "https://github.com/mcmonkeyprojects/sd-infinity-grid-generator-script.git",
+			"description": "Build a yaml file with your chosen parameters, and generate infinite-dimensional grids. Built-in ability to add description text to fields. See readme for usage details.",
+			"tags": ["script"]
+		},
+		{
 			"name": "zh_CN Localization",
 			"url": "https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN",
 			"description": "Simplified Chinese localization",
