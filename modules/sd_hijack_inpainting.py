@@ -324,12 +324,11 @@ def should_hijack_inpainting(checkpoint_info):
 
 def do_inpainting_hijack():
     # most of this stuff seems to no longer be needed because it is already included into SD2.0
-    # LatentInpaintDiffusion remains because SD2.0's LatentInpaintDiffusion can't be loaded without specifying a checkpoint
     # p_sample_plms is needed because PLMS can't work with dicts as conditionings
     # this file should be cleaned up later if weverything tuens out to work fine
 
     # ldm.models.diffusion.ddpm.get_unconditional_conditioning = get_unconditional_conditioning
-    ldm.models.diffusion.ddpm.LatentInpaintDiffusion = LatentInpaintDiffusion
+    # ldm.models.diffusion.ddpm.LatentInpaintDiffusion = LatentInpaintDiffusion
 
     # ldm.models.diffusion.ddim.DDIMSampler.p_sample_ddim = p_sample_ddim
     # ldm.models.diffusion.ddim.DDIMSampler.sample = sample_ddim
