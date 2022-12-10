@@ -245,7 +245,7 @@
 			"name": "NSFW checker",
 			"url": "https://github.com/AUTOMATIC1111/stable-diffusion-webui-nsfw-censor.git",
 			"description": "Replaces NSFW images with black.",
-			"tags": []
+			"tags": ["script"]
 		},
 		{
 			"name": "zh_CN Localization",
