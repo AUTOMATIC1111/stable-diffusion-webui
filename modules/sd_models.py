@@ -227,6 +227,8 @@ def load_model_weights(model, checkpoint_info, vae_file="auto"):
     model.sd_model_checkpoint = checkpoint_file
     model.sd_checkpoint_info = checkpoint_info
 
+    sd_vae.delete_base_vae()
+    sd_vae.clear_loaded_vae()
     vae_file = sd_vae.resolve_vae(checkpoint_file, vae_file=vae_file)
     sd_vae.load_vae(model, vae_file)
 
