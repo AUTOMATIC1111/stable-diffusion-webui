@@ -77,6 +77,7 @@ def integrate_settings_paste_fields(component_dict):
         'inpainting_mask_weight': 'Conditional mask weight',
         'sd_model_checkpoint': 'Model hash',
         'eta_noise_seed_delta': 'ENSD',
+        'initial_noise_multiplier': 'Noise multiplier',
     }
     settings_paste_fields = [
         (component_dict[k], lambda d, k=k, v=v: ui.apply_setting(k, d.get(v, None)))
