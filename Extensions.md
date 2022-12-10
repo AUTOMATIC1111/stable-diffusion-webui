@@ -214,3 +214,15 @@ https://github.com/AUTOMATIC1111/stable-diffusion-webui-tokenizer
 Adds a tab that lets you preview how CLIP model would tokenize your text.
 
 ![about](https://user-images.githubusercontent.com/20920490/200113798-50b55f5a-45db-4b6f-93c0-ae6be75e5788.png)
+
+## Push Folder to 🤗 Hugging Face
+
+https://github.com/camenduru/stable-diffusion-webui-huggingface
+
+![Push Folder to Hugging Face](https://user-images.githubusercontent.com/54370274/206870375-1fed697c-ae29-4b64-92fd-b624a690eac7.jpg)
+
+To install it, clone the repo into the `extensions` directory and restart the web ui:
+
+`git clone https://github.com/camenduru/stable-diffusion-webui-huggingface`
+
+`pip install huggingface-hub`
