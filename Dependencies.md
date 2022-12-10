@@ -23,3 +23,13 @@ ESRGAN models such as those from the [Model Database](https://upscale.wiki/wiki/
 A file will be loaded as a model if it has `.pth` extension, and it will show up with its name in the UI.
 
 > Note: RealESRGAN models are not ESRGAN models, they are not compatible. Do not download RealESRGAN models. Do not place RealESRGAN into the directory with ESRGAN models.
+
+## .yaml files for sd 2.x models
+
+- 768-v-ema.ckpt [config](https://raw.githubusercontent.com/Stability-AI/stablediffusion/main/configs/stable-diffusion/v2-inference-v.yaml))
+
+- 512-base-ema.ckpt [config](https://raw.githubusercontent.com/Stability-AI/stablediffusion/main/configs/stable-diffusion/v2-inference.yaml)
+
+- 512-depth-ema.ckpt [config](https://raw.githubusercontent.com/Stability-AI/stablediffusion/main/configs/stable-diffusion/v2-midas-inference.yaml)
+
+Download config .yaml file and store it in same folder as .ckpt with the same name.
