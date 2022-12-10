@@ -242,6 +242,12 @@
 			"tags": ["script"]
 		},
 		{
+			"name": "NSFW checker",
+			"url": "https://github.com/AUTOMATIC1111/stable-diffusion-webui-nsfw-censor.git",
+			"description": "Replaces NSFW images with black.",
+			"tags": [""]
+		},
+		{
 			"name": "zh_CN Localization",
 			"url": "https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN",
 			"description": "Simplified Chinese localization",
