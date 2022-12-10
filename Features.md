@@ -3,20 +3,30 @@ This is a feature showcase page for [Stable Diffusion web UI](https://github.com
 All examples are non-cherrypicked unless specified otherwise.
 
 # Stable Diffusion 2.0
-So far, only the [768-v-ema.ckpt](https://huggingface.co/stabilityai/stable-diffusion-2/blob/main/768-v-ema.ckpt) and [512-base-ema.ckpt](https://huggingface.co/stabilityai/stable-diffusion-2-base/blob/main/512-base-ema.ckpt) models are supported. To use it:
+## Basic models
+Models are supported: 768-v-ema.ckpt ([checkpoint](https://huggingface.co/stabilityai/stable-diffusion-2/blob/main/768-v-ema.ckpt), [config](https://raw.githubusercontent.com/Stability-AI/stablediffusion/main/configs/stable-diffusion/v2-inference-v.yaml)) and 512-base-ema.ckpt ([model](https://huggingface.co/stabilityai/stable-diffusion-2-base/blob/main/512-base-ema.ckpt), [checkpoint](https://raw.githubusercontent.com/Stability-AI/stablediffusion/main/configs/stable-diffusion/v2-inference.yaml)). 2.1 checkpoints should also work.
 
-- download [768-v-ema.ckpt](https://huggingface.co/stabilityai/stable-diffusion-2/blob/main/768-v-ema.ckpt) checkpoint (from here: https://huggingface.co/stabilityai/stable-diffusion-2)
+- download the checkpoint (from here: https://huggingface.co/stabilityai/stable-diffusion-2)
 - put it into models/Stable-Diffusion directory
-- grab [config](https://raw.githubusercontent.com/Stability-AI/stablediffusion/main/configs/stable-diffusion/v2-inference-v.yaml) from SD2.0 repository and put it into same place as the checkpoint, renaming it to have same filename (ie if your checkpoint is named `768-v-ema.ckpt`, the config should be named `768-v-ema.yaml`)
+- grab the config from SD2.0 repository and put it into same place as the checkpoint, renaming it to have same filename (i.e. if your checkpoint is named `768-v-ema.ckpt`, the config should be named `768-v-ema.yaml`)
 - select the new checkpoint from the UI
 
 Train tab will most likely be broken for the 2.0 models.
 
-For the 512-base model, grab the yaml from [here](https://github.com/Stability-AI/stablediffusion/blob/main/configs/stable-diffusion/v2-inference.yaml), rename it to the model name, and place with the model.
-
 If 2.0 or 2.1 is generating black images, enable full precision with `--no-half` or try using the `--xformers` optimization.
 
 _**Note:**_ SD 2.0 and 2.1 are more sensitive to FP16 numerical instability (as noted by themselves in https://github.com/Stability-AI/stablediffusion/commit/c12d960d1ee4f9134c2516862ef991ec52d3f59e) due to their new cross attention module.
+
+## Depth-guided model
+[More info](https://github.com/Stability-AI/stablediffusion#depth-conditional-stable-diffusion). [PR](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/5542).
+Instructions:
+- download the [512-depth-ema.ckpt](https://huggingface.co/stabilityai/stable-diffusion-2-depth) checkpoint
+- place it in models/Stable-diffusion
+- grab the [config](https://raw.githubusercontent.com/Stability-AI/stablediffusion/main/configs/stable-diffusion/v2-midas-inference.yaml) and place it in the same folder as the checkpoint
+- rename the config to `512-depth-ema.yaml`
+- select the new checkpoint from the UI
+
+The depth-guided model will only work in img2img tab.
 
 # Outpainting
 
