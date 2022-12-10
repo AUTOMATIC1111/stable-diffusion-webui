@@ -88,7 +88,7 @@ function checkBrackets(evt) {
   if(counterElt.title != '') {
     counterElt.style = 'color: #FF5555;';
   } else {
-    counterElt.style = 'color: #55FF55;';
+    counterElt.style = 'color: #000;';
   }
 }
 
