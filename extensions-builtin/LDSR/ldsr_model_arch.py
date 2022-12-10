@@ -110,7 +110,8 @@ class LDSR:
         down_sample_method = 'Lanczos'
 
         gc.collect()
-        torch.cuda.empty_cache()
+        if torch.cuda.is_available:
+            torch.cuda.empty_cache()
 
         im_og = image
         width_og, height_og = im_og.size
@@ -147,7 +148,9 @@ class LDSR:
 
         del model
         gc.collect()
-        torch.cuda.empty_cache()
+        if torch.cuda.is_available:
+            torch.cuda.empty_cache()
+
         return a
 
 
@@ -162,7 +165,7 @@ def get_cond(selected_path):
     c = rearrange(c, '1 c h w -> 1 h w c')
     c = 2. * c - 1.
 
-    c = c.to(torch.device("cuda"))
+    c = c.to(shared.device)
     example["LR_image"] = c
     example["image"] = c_up
 
