@@ -11,7 +11,7 @@ import modules.textual_inversion.textual_inversion
 from modules import prompt_parser, devices, sd_hijack_optimizations, shared, sd_hijack_checkpoint
 from modules.hypernetworks import hypernetwork
 from modules.shared import opts, device, cmd_opts
-from modules import sd_hijack_clip, sd_hijack_open_clip
+from modules import sd_hijack_clip, sd_hijack_open_clip, sd_hijack_unet
 
 from modules.sd_hijack_optimizations import invokeAI_mps_available
 
@@ -35,11 +35,12 @@ ldm.modules.attention.BasicTransformerBlock.ATTENTION_MODES["softmax-xformers"] 
 ldm.modules.attention.print = lambda *args: None
 ldm.modules.diffusionmodules.model.print = lambda *args: None
 
+
 def apply_optimizations():
     undo_optimizations()
 
     ldm.modules.diffusionmodules.model.nonlinearity = silu
-    ldm.modules.diffusionmodules.openaimodel.UNetModel.forward = sd_hijack_optimizations.patched_unet_forward
+    ldm.modules.diffusionmodules.openaimodel.th = sd_hijack_unet.th
 
     if cmd_opts.force_enable_xformers or (cmd_opts.xformers and shared.xformers_available and torch.version.cuda and (6, 0) <= torch.cuda.get_device_capability(shared.device) <= (9, 0)):
         print("Applying xformers cross attention optimization.")
