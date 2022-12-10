@@ -1,16 +1,10 @@
-import math
-import os
-import sys
-import traceback
 import torch
-import numpy as np
-from torch import einsum
 from torch.nn.functional import silu
 
 import modules.textual_inversion.textual_inversion
-from modules import prompt_parser, devices, sd_hijack_optimizations, shared, sd_hijack_checkpoint
+from modules import devices, sd_hijack_optimizations, shared, sd_hijack_checkpoint
 from modules.hypernetworks import hypernetwork
-from modules.shared import opts, device, cmd_opts
+from modules.shared import cmd_opts
 from modules import sd_hijack_clip, sd_hijack_open_clip, sd_hijack_unet
 
 from modules.sd_hijack_optimizations import invokeAI_mps_available

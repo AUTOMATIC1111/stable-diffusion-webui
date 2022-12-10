@@ -5,15 +5,12 @@ import importlib
 
 import torch
 from torch import einsum
-import torch.nn.functional as F
 
 from ldm.util import default
 from einops import rearrange
 
 from modules import shared
 from modules.hypernetworks import hypernetwork
-
-from ldm.modules.diffusionmodules.util import timestep_embedding
 
 
 if shared.cmd_opts.xformers or shared.cmd_opts.force_enable_xformers:
