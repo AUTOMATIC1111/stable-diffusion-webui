@@ -403,15 +403,16 @@ def create_toprow(is_img2img):
             paste = gr.Button(value=paste_symbol, elem_id="paste")
             save_style = gr.Button(value=save_style_symbol, elem_id="style_create")
             prompt_style_apply = gr.Button(value=apply_style_symbol, elem_id="style_apply")
-
-            clear_prompt_button = gr.Button(
-                value=clear_prompt_symbol,
-                elem_id="clear_prompt",
-                visible=opts.clear_prompt_visible
-            )
-
+            clear_prompt_button = gr.Button(value=clear_prompt_symbol, elem_id=f"{id_part}_clear_prompt")
             token_counter = gr.HTML(value="<span></span>", elem_id=f"{id_part}_token_counter")
             token_button = gr.Button(visible=False, elem_id=f"{id_part}_token_button")
+
+            clear_prompt_button.click(
+                fn=lambda *x: x,
+                _js="confirm_clear_prompt",
+                inputs=[prompt, negative_prompt],
+                outputs=[prompt, negative_prompt],
+            )
 
         button_interrogate = None
         button_deepbooru = None
@@ -447,7 +448,7 @@ def create_toprow(is_img2img):
                     prompt_style2 = gr.Dropdown(label="Style 2", elem_id=f"{id_part}_style2_index", choices=[k for k, v in shared.prompt_styles.styles.items()], value=next(iter(shared.prompt_styles.styles.keys())))
                     prompt_style2.save_to_config = True
 
-    return prompt, roll, prompt_style, negative_prompt, prompt_style2, submit, button_interrogate, button_deepbooru, prompt_style_apply, save_style, paste, token_counter, token_button, clear_prompt_button
+    return prompt, roll, prompt_style, negative_prompt, prompt_style2, submit, button_interrogate, button_deepbooru, prompt_style_apply, save_style, paste, token_counter, token_button
 
 
 def setup_progressbar(progressbar, preview, id_part, textinfo=None):
@@ -634,7 +635,7 @@ def create_ui():
     modules.scripts.scripts_txt2img.initialize_scripts(is_img2img=False)
 
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
-        txt2img_prompt, roll, txt2img_prompt_style, txt2img_negative_prompt, txt2img_prompt_style2, submit, _, _,txt2img_prompt_style_apply, txt2img_save_style, txt2img_paste, token_counter, token_button, clear_prompt_button = create_toprow(is_img2img=False)
+        txt2img_prompt, roll, txt2img_prompt_style, txt2img_negative_prompt, txt2img_prompt_style2, submit, _, _,txt2img_prompt_style_apply, txt2img_save_style, txt2img_paste, token_counter, token_button = create_toprow(is_img2img=False)
 
         dummy_component = gr.Label(visible=False)
         txt_prompt_img = gr.File(label="", elem_id="txt2img_prompt_image", file_count="single", type="bytes", visible=False)
@@ -686,7 +687,6 @@ def create_ui():
 
             connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
             connect_reuse_seed(subseed, reuse_subseed, generation_info, dummy_component, is_subseed=True)
-            connect_clear_prompt(clear_prompt_button)
 
             txt2img_args = dict(
                 fn=wrap_gradio_gpu_call(modules.txt2img.txt2img),
@@ -793,7 +793,7 @@ def create_ui():
     modules.scripts.scripts_img2img.initialize_scripts(is_img2img=True)
 
     with gr.Blocks(analytics_enabled=False) as img2img_interface:
-        img2img_prompt, roll, img2img_prompt_style, img2img_negative_prompt, img2img_prompt_style2, submit, img2img_interrogate, img2img_deepbooru, img2img_prompt_style_apply, img2img_save_style, img2img_paste,token_counter, token_button, clear_prompt_button = create_toprow(is_img2img=True)
+        img2img_prompt, roll, img2img_prompt_style, img2img_negative_prompt, img2img_prompt_style2, submit, img2img_interrogate, img2img_deepbooru, img2img_prompt_style_apply, img2img_save_style, img2img_paste,token_counter, token_button = create_toprow(is_img2img=True)
 
 
         with gr.Row(elem_id='img2img_progress_row'):
@@ -884,7 +884,6 @@ def create_ui():
 
             connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
             connect_reuse_seed(subseed, reuse_subseed, generation_info, dummy_component, is_subseed=True)
-            connect_clear_prompt(clear_prompt_button)
 
             img2img_prompt_img.change(
                 fn=modules.images.image_data,

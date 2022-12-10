@@ -131,44 +131,13 @@ function ask_for_style_name(_, prompt_text, negative_prompt_text) {
     return [name_, prompt_text, negative_prompt_text]
 }
 
-// returns css id for currently selected tab in ui
-function selected_tab_id() {
-    tabs = gradioApp().querySelectorAll('#tabs div.tabitem')
-
-    for(var tab = 0; tab < tabs.length; tab++) {
-        if (tabs[tab].style.display != "none") return tabs[tab].id
-
+function confirm_clear_prompt(prompt, negative_prompt) {
+    if(confirm("Delete prompt?")) {
+        prompt = ""
+        negative_prompt = ""
     }
 
-}
-
-function clear_prompt() {
-
-if(confirm("Delete prompt?")) {
-
-    let pos_prompt = gradioApp().querySelector("#txt2img_prompt > label > textarea");
-    let neg_prompt = gradioApp().querySelector("#txt2img_neg_prompt > label > textarea");
-
-    if (selected_tab_id() == "tab_txt2img") {
-    } else {
-        pos_prompt = gradioApp().querySelector("#img2img_prompt > label > textarea");
-        neg_prompt = gradioApp().querySelector("#img2img_neg_prompt > label > textarea");
-    }
-
-    pos_prompt.value = ""
-    neg_prompt.value = ""
-
-    //update prompt values on server-side
-    pos_prompt.dispatchEvent(
-        new Event("input", {bubbles: true})
-    )
-    neg_prompt.dispatchEvent(
-        new Event("input", {bubbles: true})
-    )
-
-    return true
-} else return false
-
+    return [prompt, negative_prompt]
 }
 
 

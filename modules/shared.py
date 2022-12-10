@@ -401,7 +401,6 @@ options_templates.update(options_section(('ui', "User interface"), {
     "js_modal_lightbox": OptionInfo(True, "Enable full page image viewer"),
     "js_modal_lightbox_initially_zoomed": OptionInfo(True, "Show images zoomed in by default in full page image viewer"),
     "show_progress_in_title": OptionInfo(True, "Show generation progress in window title."),
-    "clear_prompt_visible": OptionInfo(True, "Show clear prompt button"),
     'quicksettings': OptionInfo("sd_model_checkpoint", "Quicksettings list"),
     'localization': OptionInfo("None", "Localization (requires restart)", gr.Dropdown, lambda: {"choices": ["None"] + list(localization.localizations.keys())}, refresh=lambda: localization.list_localizations(cmd_opts.localizations_dir)),
 }))
