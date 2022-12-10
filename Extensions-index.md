@@ -4,7 +4,8 @@
 		"script": "a general extension that adds functionality",
 		"localization": "a localization extension that translates web ui into another language",
 		"tab": "adds a tab",
-		"ads": "contains ads"
+		"ads": "contains ads",
+		"installed": "an extension that is already installed"
 	},
 	"extensions": [
 		{
