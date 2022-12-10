@@ -1,5 +1,6 @@
 transformers==4.19.2
 diffusers==0.3.0
+accelerate==0.12.0
 basicsr==1.4.2
 gfpgan==1.3.8
 gradio==3.9
@@ -24,3 +25,5 @@ kornia==0.6.7
 lark==1.1.2
 inflection==0.5.1
 GitPython==3.1.27
+torchsde==0.2.5
+safetensors==0.2.5

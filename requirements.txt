@@ -1,3 +1,4 @@
+accelerate
 basicsr
 diffusers
 fairscale==0.4.4
@@ -27,3 +28,6 @@ kornia
 lark
 inflection
 GitPython
+torchsde
+safetensors
+psutil; sys_platform == 'darwin'

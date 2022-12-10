@@ -10,9 +10,9 @@ import numpy as np
 import modules.scripts as scripts
 import gradio as gr
 
-from modules import images
+from modules import images, sd_samplers
 from modules.hypernetworks import hypernetwork
-from modules.processing import process_images, Processed, get_correct_sampler, StableDiffusionProcessingTxt2Img
+from modules.processing import process_images, Processed, StableDiffusionProcessingTxt2Img
 from modules.shared import opts, cmd_opts, state
 import modules.shared as shared
 import modules.sd_samplers
@@ -58,29 +58,19 @@ def apply_order(p, x, xs):
         prompt_tmp += part
         prompt_tmp += x[idx]
     p.prompt = prompt_tmp + p.prompt
-    
-
-def build_samplers_dict(p):
-    samplers_dict = {}
-    for i, sampler in enumerate(get_correct_sampler(p)):
-        samplers_dict[sampler.name.lower()] = i
-        for alias in sampler.aliases:
-            samplers_dict[alias.lower()] = i
-    return samplers_dict
 
 
 def apply_sampler(p, x, xs):
-    sampler_index = build_samplers_dict(p).get(x.lower(), None)
-    if sampler_index is None:
+    sampler_name = sd_samplers.samplers_map.get(x.lower(), None)
+    if sampler_name is None:
         raise RuntimeError(f"Unknown sampler: {x}")
 
-    p.sampler_index = sampler_index
+    p.sampler_name = sampler_name
 
 
 def confirm_samplers(p, xs):
-    samplers_dict = build_samplers_dict(p)
     for x in xs:
-        if x.lower() not in samplers_dict.keys():
+        if x.lower() not in sd_samplers.samplers_map:
             raise RuntimeError(f"Unknown sampler: {x}")
 
 
@@ -393,6 +383,6 @@ class Script(scripts.Script):
             )
 
         if opts.grid_save:
-            images.save_image(processed.images[0], p.outpath_grids, "xy_grid", prompt=p.prompt, seed=processed.seed, grid=True, p=p)
+            images.save_image(processed.images[0], p.outpath_grids, "xy_grid", extension=opts.grid_format, prompt=p.prompt, seed=processed.seed, grid=True, p=p)
 
         return processed

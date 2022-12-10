@@ -8,8 +8,8 @@ function set_theme(theme){
 }
 
 function selected_gallery_index(){
-    var buttons = gradioApp().querySelectorAll('[style="display: block;"].tabitem .gallery-item')
-    var button = gradioApp().querySelector('[style="display: block;"].tabitem .gallery-item.\\!ring-2')
+    var buttons = gradioApp().querySelectorAll('[style="display: block;"].tabitem div[id$=_gallery] .gallery-item')
+    var button = gradioApp().querySelector('[style="display: block;"].tabitem div[id$=_gallery] .gallery-item.\\!ring-2')
 
     var result = -1
     buttons.forEach(function(v, i){ if(v==button) { result = i } })
