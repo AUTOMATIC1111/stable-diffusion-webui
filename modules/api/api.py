@@ -157,12 +157,7 @@ class Api:
         args.pop('include_init_images', None)  # this is meant to be done by "exclude": True in model, but it's for a reason that I cannot determine.
         p = StableDiffusionProcessingImg2Img(**args)
 
-        imgs = []
-        for img in init_images:
-            img = decode_base64_to_image(img)
-            imgs = [img] * p.batch_size
-
-        p.init_images = imgs
+        p.init_images = [decode_base64_to_image(x) for x in init_images]
 
         shared.state.begin()
 
