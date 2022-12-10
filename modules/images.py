@@ -501,30 +501,39 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     image = params.image
     fullfn = params.filename
     info = params.pnginfo.get(pnginfo_section_name, None)
+
+    def _atomically_save_image(image_to_save, filename_without_extension, extension):
+        # save image with .tmp extension to avoid race condition when another process detects new image in the directory
+        temp_file_path = filename_without_extension + ".tmp"
+        image_format = Image.registered_extensions()[extension]
+
+        if extension.lower() == '.png':
+            pnginfo_data = PngImagePlugin.PngInfo()
+            if opts.enable_pnginfo:
+                for k, v in params.pnginfo.items():
+                    pnginfo_data.add_text(k, str(v))
+
+            image_to_save.save(temp_file_path, format=image_format, quality=opts.jpeg_quality, pnginfo=pnginfo_data)
+
+        elif extension.lower() in (".jpg", ".jpeg", ".webp"):
+            image_to_save.save(temp_file_path, format=image_format, quality=opts.jpeg_quality)
+
+            if opts.enable_pnginfo and info is not None:
+                exif_bytes = piexif.dump({
+                    "Exif": {
+                        piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(info or "", encoding="unicode")
+                    },
+                })
+
+                piexif.insert(exif_bytes, temp_file_path)
+        else:
+            image_to_save.save(temp_file_path, format=image_format, quality=opts.jpeg_quality)
+
+        # atomically rename the file with correct extension
+        os.replace(temp_file_path, filename_without_extension + extension)
+
     fullfn_without_extension, extension = os.path.splitext(params.filename)
-
-    def exif_bytes():
-        return piexif.dump({
-            "Exif": {
-                piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(info or "", encoding="unicode")
-            },
-        })
-
-    if extension.lower() == '.png':
-        pnginfo_data = PngImagePlugin.PngInfo()
-        if opts.enable_pnginfo:
-            for k, v in params.pnginfo.items():
-                pnginfo_data.add_text(k, str(v))
-
-        image.save(fullfn, quality=opts.jpeg_quality, pnginfo=pnginfo_data)
-
-    elif extension.lower() in (".jpg", ".jpeg", ".webp"):
-        image.save(fullfn, quality=opts.jpeg_quality)
-
-        if opts.enable_pnginfo and info is not None:
-            piexif.insert(exif_bytes(), fullfn)
-    else:
-        image.save(fullfn, quality=opts.jpeg_quality)
+    _atomically_save_image(image, fullfn_without_extension, extension)
 
     image.already_saved_as = fullfn
 
@@ -538,9 +547,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
         elif oversize:
             image = image.resize((image.width * target_side_length // image.height, target_side_length), LANCZOS)
 
-        image.save(fullfn_without_extension + ".jpg", quality=opts.jpeg_quality)
-        if opts.enable_pnginfo and info is not None:
-            piexif.insert(exif_bytes(), fullfn_without_extension + ".jpg")
+        _atomically_save_image(image, fullfn_without_extension, ".jpg")
 
     if opts.save_txt and info is not None:
         txt_fullfn = f"{fullfn_without_extension}.txt"
