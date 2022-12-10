@@ -157,7 +157,7 @@ def run_extensions_installers(settings_file):
         run_extension_installer(os.path.join(dir_extensions, dirname_extension))
 
 
-def prepare_enviroment():
+def prepare_environment():
     torch_command = os.environ.get('TORCH_COMMAND', "pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 --extra-index-url https://download.pytorch.org/whl/cu113")
     requirements_file = os.environ.get('REQS_FILE', "requirements_versions.txt")
     commandline_args = os.environ.get('COMMANDLINE_ARGS', "")
@@ -291,5 +291,5 @@ def start():
 
 
 if __name__ == "__main__":
-    prepare_enviroment()
+    prepare_environment()
     start()
