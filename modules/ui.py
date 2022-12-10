@@ -22,7 +22,7 @@ import numpy as np
 from PIL import Image, PngImagePlugin
 
 
-from modules import sd_hijack, sd_models, localization, script_callbacks, ui_extensions
+from modules import sd_hijack, sd_models, localization, script_callbacks, ui_extensions, processing
 from modules.paths import script_path
 
 from modules.shared import opts, cmd_opts, restricted_opts
@@ -89,6 +89,9 @@ refresh_symbol = '\U0001f504'  # 🔄
 save_style_symbol = '\U0001f4be'  # 💾
 apply_style_symbol = '\U0001f4cb'  # 📋
 
+
+taskqueue_lock = threading.Lock()
+taskqueque = []
 
 def plaintext_to_html(text):
     text = "<p>" + "<br>\n".join([f"{html.escape(x)}" for x in text.split('\n')]) + "</p>"
@@ -259,6 +262,15 @@ def calc_time_left(progress, threshold, label, force_display):
         else:
             return ""
 
+def has_job():
+    return shared.state.job_count > 0 or shared.state.sampling_steps > 0
+
+def get_progress_str():
+    jobstr = '' if shared.state.job_count==0 else f' 总体:{shared.state.job_no}/{shared.state.job_count}'
+    return f'{shared.state.sampling_step}/{shared.state.sampling_steps}{jobstr}'
+
+def refresh_queueText():
+    return f'排队中:{len(taskqueque)} '+ (f'进行中:{get_progress_str()} ' if has_job() else '')
 
 def check_progress_call(id_part):
     if shared.state.job_count == 0:
@@ -493,8 +505,7 @@ def create_toprow(is_img2img):
                 # space = gr.Button('', elem_id=f"{id_part}_skip2")
                 interrupt = gr.Button('Interrupt', elem_id=f"{id_part}_interrupt")
                 submit = gr.Button('Generate', elem_id=f"{id_part}_generate", variant='primary')
-                # addToQueue = gr.Button('添加队列', elem_id=f"{id_part}_添加队列", variant='primary')
-
+                
                 skip.click(
                     fn=lambda: shared.state.skip(),
                     inputs=[],
@@ -516,16 +527,33 @@ def create_toprow(is_img2img):
                     prompt_style2 = gr.Dropdown(label="Style 2", elem_id=f"{id_part}_style2_index", choices=[k for k, v in shared.prompt_styles.styles.items()], value=next(iter(shared.prompt_styles.styles.keys())))
                     prompt_style2.save_to_config = True
 
+    with gr.Row(elem_id="customtag"):
+        filetag = gr.Textbox(label="文件名写入自定义标签",elem_id='filetag_Textbox')
+        myhelpers.any.filetagTextbox = filetag
+
     with gr.Row(elem_id="custom1"):
         with gr.Row():
+
+            refreshinjstimerbtn = gr.Button('refreshinjstimerbtn', elem_id='refreshinjstimerbtn', visible=False)
+            
             
             myskip = gr.Button('跳过当前任务')
-            mystop = gr.Button('停止当前任务')
-            # addtoqueue = gr.Button('再添加一个任务',variant='primary',visible=False)
-            filetag = gr.Textbox(label="文件名写入自定义标签",elem_id='filetag_Textbox')
-            cleattagbtn = gr.Button('cleattagbtn',elem_id='cleattagbtn',visible=False)
+            mystop = gr.Button('停止当前任务',visible=False)
+            # refreshbtn = gr.Button('刷新队列',elem_id='update_queue_label_btn',visible=False)
+            addtoqueue = gr.Button('添加到任务队列',variant='primary')
+            myhelpers.any.queueText = gr.Label(label='队列信息', 
+            value=refresh_queueText,)
             
-            # myhelpers.any.addtoqueuebtn = addtoqueue
+            cleattagbtn = gr.Button('cleattag',elem_id='cleattagbtn')
+            
+            myhelpers.any.addtoqueuebtn = addtoqueue
+
+            def refreshinjstimer():
+                return refresh_queueText()
+            
+            refreshinjstimerbtn.click(fn=refreshinjstimer, outputs=[myhelpers.any.queueText])
+
+            # refreshbtn.click(fn=refreshinjstimerfunc, outputs=myhelpers.any.queueText)
             
             myskip.click(
                 fn=lambda: shared.state.skip(),
@@ -544,7 +572,7 @@ def create_toprow(is_img2img):
                 outputs=filetag,
             )
 
-            myhelpers.any.filetagTextbox = filetag
+            
 
     with gr.Row(elem_id="custom2"):
         if not is_img2img:
@@ -558,15 +586,15 @@ def create_toprow(is_img2img):
                 # elem_id='autoloadlastvalueCheckbox',
                 # value=getautoloadlastvalue,interactive=True)
 
-                readlast = gr.Button('读取上次数值',variant='primary',
+                readlast = gr.Button('读取上次数值',
                 elem_id='readlastbtn')
-                histroyBtn = gr.Button('载入历史记录',variant='primary')
+                histroyBtn = gr.Button('载入历史记录')
                 
                 deleteselectbtn = gr.Button('删除选中记录')
                 dic = myhelpers.readJsonWithTag('txt2img_histroy.json')
                 
                 # with gr.Row():
-                histroy = gr.Dropdown(label="Histroy", choices=[k for k in dic])
+                histroy = gr.Dropdown(label="Histroy", choices=myhelpers.getDictKeyByReverse(dic))
                 refreshhistroyBtn = gr.Button('刷新历史记录',
                 elem_id='refreshhistroyBtn')
 
@@ -603,15 +631,17 @@ def create_toprow(is_img2img):
 
                 def refreshhistroy():
                     dic = myhelpers.readJsonWithTag('txt2img_histroy.json')
-                    return gr.Dropdown.update(choices=[k for k in dic])
+                    return gr.Dropdown.update(choices=myhelpers.getDictKeyByReverse(dic))
 
                 refreshhistroyBtn.click(fn=refreshhistroy, outputs=histroy)
 
                 def deletehistroy(selected):
                     dic = myhelpers.readJsonWithTag('txt2img_histroy.json')
+                    if not selected in dic:
+                        return gr.Dropdown.update(choices=myhelpers.getDictKeyByReverse(dic))  
                     del dic[selected]
                     myhelpers.saveJsonWithTag(dict=dic,fn='txt2img_histroy.json')
-                    return gr.Dropdown.update(choices=[k for k in dic]) 
+                    return gr.Dropdown.update(choices=myhelpers.getDictKeyByReverse(dic)) 
                 deleteselectbtn.click(fn=deletehistroy,inputs=histroy,outputs=histroy)
 
                 def bindfunc(paste_fields, parse_text_and_return_res):
@@ -805,7 +835,7 @@ Requested path was: {f}
                 return result_gallery, generation_info if tabname != "extras" else html_info_x, html_info
 
 
-def create_ui(wrap_gradio_gpu_call):
+def create_ui(wrap_gradio_gpu_call,wrap_queued_call):
     import modules.img2img
     import modules.txt2img
 
@@ -864,8 +894,19 @@ def create_ui(wrap_gradio_gpu_call):
             connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
             connect_reuse_seed(subseed, reuse_subseed, generation_info, dummy_component, is_subseed=True)
 
+            def mywrap_to_saveinfotext(*args, **kwargs):
+                filetag = args[-1]
+                info_text = processing.create_infotext2(*args,**kwargs)   
+                myhelpers.saveFileAllTextWithTag('info_text.txt', info_text)
+                if (not filetag is None) and (filetag != ''):
+                    dic = myhelpers.readJsonWithTag('txt2img_histroy.json')
+                    dic[filetag] = info_text
+                    myhelpers.saveJsonWithTag(dict=dic,fn='txt2img_histroy.json')
+                f = wrap_gradio_gpu_call(modules.txt2img.txt2img)
+                return f(*args, **kwargs)
+
             txt2img_args = dict(
-                fn=wrap_gradio_gpu_call(modules.txt2img.txt2img),
+                fn=mywrap_to_saveinfotext,
                 _js="submit",
                 inputs=[
                     txt2img_prompt,
@@ -901,18 +942,84 @@ def create_ui(wrap_gradio_gpu_call):
             # preprocess_txt_action(f"txt2img_prompt.value:{txt2img_prompt.value}")
             submit.click(**txt2img_args)
 
-            # 尝试使用线程去启动但是还是不能再次点击,目前还搞不懂原理
-            # oldffn = txt2img_args['fn']
-            # def mywrapcall(*args, **kwargs):
-            #     print('添加到队列')
-            #     t = threading.Thread(target=oldffn, args=args,kwargs=kwargs)
-            #     t.run()
-            #     return None
 
-            # txt2img_args['fn']=mywrapcall
-            # del txt2img_args['outputs']
+            wrappedtxt2imgf = wrap_queued_call(modules.txt2img.txt2img)
 
-            # myhelpers.any.addtoqueuebtn.click(**txt2img_args)
+
+            
+
+            def task_loop():
+                while 1:
+                    time.sleep(1)
+                    task = None
+                    with taskqueue_lock:
+                        if len(taskqueque) > 0:
+                            task = taskqueque[0]
+                            del taskqueque[0]
+                    if not task is None:
+                        taskid = task['taskid']
+                        print(f'开始执行任务{taskid} 剩余数量{len(taskqueque)}')
+                        task['task']()
+                
+
+            threading.Thread(target=task_loop).start()
+
+            myhelpers.any.taskid = 0
+                
+            def mywrap(*args, **kwargs):
+                filetag = args[-1]
+                info_text = processing.create_infotext2(*args, **kwargs)
+                myhelpers.saveFileAllTextWithTag('info_text.txt', info_text)
+                dic = myhelpers.readJsonWithTag('txt2img_histroy.json')
+                if (not filetag is None) and (filetag != ''):
+                    dic[filetag] = info_text
+                    myhelpers.saveJsonWithTag(
+                        dict=dic, fn='txt2img_histroy.json')
+
+                with taskqueue_lock:
+                    def task():
+                        wrappedtxt2imgf(*args,**kwargs)
+                    myhelpers.any.taskid+=1
+                    taskqueque.append(dict(taskid=myhelpers.any.taskid,task=task))
+                    print(f'添加到队列 {myhelpers.any.taskid} 当前队列长度{len(taskqueque)}')
+
+                return [
+                    refresh_queueText(),
+                    gr.Dropdown.update(choices=myhelpers.getDictKeyByReverse(dic)),
+                    ]
+
+            queue_args = dict(
+                fn=mywrap,
+                inputs=[
+                    txt2img_prompt,
+                    txt2img_negative_prompt,
+                    txt2img_prompt_style,
+                    txt2img_prompt_style2,
+                    steps,
+                    sampler_index,
+                    restore_faces,
+                    tiling,
+                    batch_count,
+                    batch_size,
+                    cfg_scale,
+                    seed,
+                    subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox,
+                    height,
+                    width,
+                    enable_hr,
+                    denoising_strength,
+                    firstphase_width,
+                    firstphase_height,
+                ] + custom_inputs+[myhelpers.any.filetagTextbox],
+
+                outputs=[
+                    myhelpers.any.queueText,
+                    myhelpers.any.histroyDropdown,
+                ],
+                show_progress=False,
+            )
+
+            myhelpers.any.addtoqueuebtn.click(**queue_args)
 
 
             txt_prompt_img.change(

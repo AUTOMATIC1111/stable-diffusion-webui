@@ -7,6 +7,7 @@ from typing import List
 import shutil 
 import asyncio
 import json
+from modules.shared import opts
 
 orig_stdout = sys.stdout
 servertag = ''
@@ -17,6 +18,11 @@ class _Any:
     pass
 
 any = _Any()
+
+def getDictKeyByReverse(dic:dict):
+    keys = [k for k in dic]
+    keys.reverse()
+    return keys
 
 def loadJson(filename:str)->dict:
     text = readFileAllText(filename)
@@ -29,6 +35,7 @@ def readJsonWithTag(fn:str):
     return readJson(f'{servertag}{fn}')
 
 def saveJson(dict:dict,fn:str):
+    # print(f'saveJson fn:{fn} dic:{dict}')
     saveFileAllText(fn,json.dumps(dict))
 
 def saveJsonWithTag(dict:dict,fn:str):

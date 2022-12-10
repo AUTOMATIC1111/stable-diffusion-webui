@@ -421,6 +421,53 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration
 
     return f"{all_prompts[index]}{negative_prompt_text}\n{generation_params_text}\n{customTag}".strip()
 
+def create_infotext2(
+    prompt: str, negative_prompt: str, prompt_style: str, prompt_style2: str, 
+steps: int, sampler_index: int, restore_faces: bool, tiling: bool, n_iter: int, 
+batch_size: int, cfg_scale: float, seed: int, subseed: int, subseed_strength: float, 
+seed_resize_from_h: int, seed_resize_from_w: int, seed_enable_extras: bool, 
+height: int, width: int, enable_hr: bool, denoising_strength: float, firstphase_width: int, 
+firstphase_height: int, *args):
+
+    *args,filetag = args
+    args = tuple(args)
+
+    p = StableDiffusionProcessingTxt2Img(
+        sd_model=shared.sd_model,
+        outpath_samples=opts.outdir_samples or opts.outdir_txt2img_samples,
+        outpath_grids=opts.outdir_grids or opts.outdir_txt2img_grids,
+        prompt=prompt,
+        styles=[prompt_style, prompt_style2],
+        negative_prompt=negative_prompt,
+        seed=seed,
+        subseed=subseed,
+        subseed_strength=subseed_strength,
+        seed_resize_from_h=seed_resize_from_h,
+        seed_resize_from_w=seed_resize_from_w,
+        seed_enable_extras=seed_enable_extras,
+        sampler_index=sampler_index,
+        batch_size=batch_size,
+        n_iter=n_iter,
+        steps=steps,
+        cfg_scale=cfg_scale,
+        width=width,
+        height=height,
+        restore_faces=restore_faces,
+        tiling=tiling,
+        enable_hr=enable_hr,
+        denoising_strength=denoising_strength if enable_hr else None,
+        firstphase_width=firstphase_width if enable_hr else None,
+        firstphase_height=firstphase_height if enable_hr else None,
+    )
+
+    
+    p.scripts = modules.scripts.scripts_txt2img
+    p.script_args = args
+
+    if (not filetag is None) and (filetag != ''):
+        p.filetag = filetag
+    return create_infotext(p, [prompt], [seed], [subseed], {})
+
 
 def process_images(p: StableDiffusionProcessing) -> Processed:
     stored_opts = {k: opts.data[k] for k in p.override_settings.keys()}

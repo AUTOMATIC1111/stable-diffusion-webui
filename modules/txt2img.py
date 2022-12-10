@@ -17,7 +17,7 @@ height: int, width: int, enable_hr: bool, denoising_strength: float, firstphase_
 firstphase_height: int, *args):
 
 
-    print('call txt2img')
+    print(f'call txt2img batch_size:{batch_size} n_iter:{n_iter}')
     *args,filetag = args
     args = tuple(args)
     
@@ -55,14 +55,6 @@ firstphase_height: int, *args):
 
     if (not filetag is None) and (filetag != ''):
         p.filetag = filetag
-    
-    info_text = processing.create_infotext(p, [prompt], [seed], [subseed], {})
-    myhelpers.saveFileAllTextWithTag('info_text.txt', info_text)
-
-    if (not filetag is None) and (filetag != ''):
-        dic = myhelpers.readJsonWithTag('txt2img_histroy.json')
-        dic[filetag] = info_text
-        myhelpers.saveJsonWithTag(dict=dic,fn='txt2img_histroy.json')
 
     if cmd_opts.enable_console_prompts:
         print(f"\ntxt2img: {prompt}", file=shared.progress_print_out)
@@ -72,8 +64,6 @@ firstphase_height: int, *args):
     if processed is None:
         processed = process_images(p)
 
-    
-    # print('save:',info_text)
 
     p.close()
 

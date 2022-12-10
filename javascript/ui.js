@@ -236,3 +236,12 @@ function restart_reload(){
     return []
 }
 
+let refreshinjstimerbtn
+
+setInterval(() => {
+    if (refreshinjstimerbtn==null){
+        refreshinjstimerbtn = gradioApp().getElementById('refreshinjstimerbtn')
+    }
+    if (refreshinjstimerbtn==null)return
+    refreshinjstimerbtn.click()
+}, 5000);

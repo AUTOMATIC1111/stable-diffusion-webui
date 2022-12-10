@@ -11,8 +11,8 @@ dir_extensions = "extensions"
 python = sys.executable
 git = os.environ.get('GIT', "git")
 index_url = os.environ.get('INDEX_URL', "")
-install_requirements = os.environ.get('INSTALL_REQUIREMENTS', "true")
-GIT_CLONE = os.environ.get('GIT_CLONE', "true")
+install_requirements = os.environ.get('INSTALL_REQUIREMENTS', "false")
+GIT_CLONE = os.environ.get('GIT_CLONE', "false")
 
 
 def extract_arg(args, name):

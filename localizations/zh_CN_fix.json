@@ -29,6 +29,7 @@
     "Run": "运行",
     "Skip": "跳过",
     "AutoLoadLastValue": "自动加载上次的数值",
+    "cleattag": "清除当前标签",
     "Histroy": "历史记录",
     "Interrupt": "中止",
     "Generate": "生成",
