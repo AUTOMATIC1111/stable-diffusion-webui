@@ -396,6 +396,7 @@ options_templates.update(options_section(('ui', "User interface"), {
     "add_model_name_to_info": OptionInfo(False, "Add model name to generation information"),
     "disable_weights_auto_swap": OptionInfo(False, "When reading generation parameters from text into UI (from PNG info or pasted text), do not change the selected model/checkpoint."),
     "send_seed": OptionInfo(True, "Send seed when sending prompt or image to other interface"),
+    "send_size": OptionInfo(True, "Send size when sending prompt or image to another interface"),
     "font": OptionInfo("", "Font for image grids that have text"),
     "js_modal_lightbox": OptionInfo(True, "Enable full page image viewer"),
     "js_modal_lightbox_initially_zoomed": OptionInfo(True, "Show images zoomed in by default in full page image viewer"),
