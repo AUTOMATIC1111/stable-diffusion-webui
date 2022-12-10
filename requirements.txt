@@ -1,6 +1,5 @@
 accelerate
 basicsr
-diffusers
 fairscale==0.4.4
 fonts
 font-roboto
