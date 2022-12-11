@@ -330,8 +330,8 @@ def create_threshold_inputs(is_img2img: bool = False):
     threshold_extras = []
     with gr.Row(visible=False) as threshold_extra_row_1:
         threshold_extras.append(threshold_extra_row_1)
-        mimic_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='Mimic Scale', value=7.0)
-        threshold_percentile = gr.Slider(minimum=0, maximum=1, step=0.005, label='Threshold percentile', value=0.995)
+        mimic_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='Mimic Scale', value=7.5)
+        threshold_percentile = gr.Slider(minimum=0, maximum=1, step=0.001, label='Threshold percentile', value=0.999)
 
     def change_visibility(show):
         return {comp: gr_show(show) for comp in threshold_extras}

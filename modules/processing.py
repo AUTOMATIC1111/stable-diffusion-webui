@@ -451,7 +451,7 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration
         "Eta": (None if p.sampler is None or p.sampler.eta == p.sampler.default_eta else p.sampler.eta),
         "Clip skip": None if clip_skip <= 1 else clip_skip,
         "ENSD": None if opts.eta_noise_seed_delta == 0 else opts.eta_noise_seed_delta,
-        "Mimic CFG Scale": None if p.mimic_scale == 0 else p.mimic_scale,
+        "Mimic CFG scale": None if p.mimic_scale == 0 else p.mimic_scale,
         "Threshold percentile": None if p.threshold_percentile >= 1 else p.threshold_percentile,
     }
 
