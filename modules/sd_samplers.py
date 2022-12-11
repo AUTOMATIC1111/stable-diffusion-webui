@@ -354,13 +354,13 @@ class CFGDenoiser(torch.nn.Module):
             x_out[-uncond.shape[0]:] = self.inner_model(x_in[-uncond.shape[0]:], sigma_in[-uncond.shape[0]:], cond={"c_crossattn": [uncond], "c_concat": [image_cond_in[-uncond.shape[0]:]]})
 
         denoised_uncond = x_out[-uncond.shape[0]:]
-        denoised = torch.clone(denoised_uncond)
+        if threshold_enable:
+            denoised[i] = self._dynthresh(x_out[:-uncond.shape[0]], denoised_uncond, cond_scale, 1, mimic_scale, threshold_percentile)
+        else:
+            denoised = torch.clone(denoised_uncond)
 
-        for i, conds in enumerate(conds_list):
-            for cond_index, weight in conds:
-                if threshold_enable:
-                    denoised[i] = self._dynthresh(x_out[cond_index], denoised_uncond[i], cond_scale, weight, mimic_scale, threshold_percentile)
-                else:
+            for i, conds in enumerate(conds_list):
+                for cond_index, weight in conds:
                     denoised[i] += (x_out[cond_index] - denoised_uncond[i]) * (weight * cond_scale)
 
         if self.mask is not None:
