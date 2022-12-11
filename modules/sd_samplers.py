@@ -288,19 +288,27 @@ class CFGDenoiser(torch.nn.Module):
         self.init_latent = None
         self.step = 0
 
-    def _dynthresh(self, cond, uncond, cond_scale, weight, mimic_scale, threshold_percentile):
-        diff = cond - uncond
-        dynthresh_target = uncond + diff * mimic_scale
+    def _dynthresh(self, cond, uncond, cond_scale, conds_list, mimic_scale, threshold_percentile):
+        # uncond shape is (batch, 4, height, width)
+        conds_per_batch = cond.shape[0] / uncond.shape[0]
+        assert conds_per_batch == int(conds_per_batch), "Expected # of conds per batch to be constant across batches"
+        cond_stacked = cond.reshape((-1, int(conds_per_batch)) + uncond.shape[1:])
+        diff = cond_stacked - uncond.unsqueeze(1)
+        # conds_list shape is (batch, cond, 2)
+        weights = torch.tensor(conds_list).select(2, 1)
+        weights = weights.reshape(*weights.shape, 1, 1, 1).to(diff.device)
+        diff_weighted = (diff * weights).sum(1)
+        dynthresh_target = uncond + diff_weighted * mimic_scale
         
         dt_flattened = dynthresh_target.flatten(2)
         dt_means = dt_flattened.mean(dim=2).unsqueeze(2)
-        dt_recentered = dt_flattened-dt_means
+        dt_recentered = dt_flattened - dt_means
         dt_max = dt_recentered.abs().max(dim=2).values.unsqueeze(2)
 
-        ut = uncond + diff * cond_scale * weight
+        ut = uncond + diff_weighted * cond_scale
         ut_flattened = ut.flatten(2)
         ut_means = ut_flattened.mean(dim=2).unsqueeze(2)
-        ut_centered = ut_flattened-ut_means
+        ut_centered = ut_flattened - ut_means
 
         ut_q = torch.quantile(ut_centered.abs(), threshold_percentile, dim=2).unsqueeze(2)
         s = torch.maximum(ut_q, dt_max)
@@ -308,7 +316,7 @@ class CFGDenoiser(torch.nn.Module):
         t_normalized = t_clamped / s
         t_renormalized = t_normalized * dt_max
 
-        uncentered = t_renormalized+ut_means
+        uncentered = t_renormalized + ut_means
         unflattened = uncentered.unflatten(2, dynthresh_target.shape[2:])
         return unflattened
 
@@ -355,7 +363,7 @@ class CFGDenoiser(torch.nn.Module):
 
         denoised_uncond = x_out[-uncond.shape[0]:]
         if threshold_enable:
-            denoised[i] = self._dynthresh(x_out[:-uncond.shape[0]], denoised_uncond, cond_scale, 1, mimic_scale, threshold_percentile)
+            denoised[i] = self._dynthresh(x_out[:-uncond.shape[0]], denoised_uncond, cond_scale, conds_list, mimic_scale, threshold_percentile)
         else:
             denoised = torch.clone(denoised_uncond)
 
