@@ -1,0 +1,489 @@
+3.1.8
+=====
+
+recalculate bits used after all flags created (sometimes needed when a custom
+`__new__` is in place.
+
+
+3.1.7
+=====
+
+update flag creation to (possibly) add bitwise operator methods to newly
+created flags
+
+update extend_enum() to work with 3.11 flags
+
+
+3.1.6
+=====
+
+Update `dir()` on mixed enums to include mixed data type methods and
+attributes.
+
+Rename `enum_property` to `property` to match stdlib.  Recommended usage is
+`aenum.property` (prefix with module name).
+
+Remove quadritic creation behavior.
+
+
+BREAKING CHANGE BUG FIX that won't affect most people
+
+Enums with a custom `__new__` that:
+
+- use the enum machinery to generate the values; AND
+- have keyword arguments set to a default (like `None`)
+
+will fail to generate a missing value.  To fix: remove the default value and
+instead specify it on the member creation line.
+
+BREAKING CHANGE
+
+In Python 3.11 the `str()` of mixed enums will now match its `format()` which
+will be the normal `str()` of the data type -- so for an IntEnum you'll see
+`5` instead of `Perm.R|X`.  This affects IntEnum, StrEnum, and IntFlag.
+
+
+3.1.5
+=====
+
+fix support of `auto()` kwds
+
+
+3.1.3
+=====
+
+rename `aenum.property` to `aenum.enum_property`
+
+fix `enum_property` to work with `_init_` attributes
+
+
+3.1.2
+=====
+
+fix `extend_enum()` for unhashable values
+
+
+3.1.1
+=====
+
+fix `extend_enum()` for most cases
+
+
+3.1.0
+=====
+
+AddValue is similar to the old AutoNumber: it will always activate, but
+uses _generate_next_value_ to get the next value (so the user has some
+control over the return data type instead of always getting an int).
+
+
+BREAKING CHANGES
+
+AutoValue is gone.  It was superflous and its removal simplified the code.
+Simply put the fields needed in an `_init_` and `_generate_next_value_`
+will be called to supply the missing values (this is probably already what
+is happening).
+
+
+
+3.0.0
+=====
+
+standard Enum usage is unchanged
+
+BREAKING CHANGES
+
+Enum
+- the more esoteric method of creating Enums have been modified or removed
+  - AutoNumber setting is gone, inherit from AutoNumberEnum instead
+  - creating members without specifying anything is removed (if you don't
+    know what this means, you weren't doing it)
+
+Flag
+- unique flags are canonical (i.e. flags with powers of two values such as
+  1, 2, 4, 8, 16, etc.)
+- non-unique flags are aliases (i.e. values such as 3 or 7)
+- iteration of Flag and flag members only uses canonical flags
+
+
+ENHANCEMENTS
+
+Member creation has been redone to match Python 3.10's methods.  This also
+allows all supported Pythons (2.7, 3.3+) to use the __set_name__ and
+__init_subclass__ protocols (more robustly than in aenum 2.2.5)
+
+
+CHANGES
+
+enum_property() has been renamed to property() (old name still available, but
+deprecated).
+
+bin() replacement shows negative integers in twos-complement
+
+
+
+
+2.2.5
+=====
+
+call __init_subclass__ after members have been added, and in Pythons < 3.6
+call __set_name__ in Pythons < 3.6
+do not convert/disallow private names
+add iteration/len support to NamedConstant
+
+
+2.2.4
+=====
+
+add support to Constant to retrieve members by value
+
+    --> class K(Constant):
+    ...     one = 1
+    ...     two = 2
+
+    --> K.one
+    <K.one: 1>
+
+    --> K(1)
+    <K.one: 1>
+
+add pickle/deepcopy support to Constant
+
+add support for Constant to use other Constant values
+  (resulting members /are not/ the same)
+
+    --> class C(Constant)
+    ...     one = K.one
+    ...     three = 3
+
+    --> C.one == K.one
+    True
+
+    --> C.one is K.one
+    False
+
+AutoNumber and auto() now work together
+
+Enum members are now added to the class as enum_property, which supports
+unshadowing of parent class attributes when called on an Enum member:
+
+    --> class StrEnum(str, Enum):
+    ...     lower = 'lower'
+    ...     upper = 'upper'
+    ...     mixed = 'mixed'
+    
+    --> StrEnum.lower
+    <StrEnum.lower: 'lower'>
+
+    --> StrEnum.lower.upper()
+    'LOWER'
+
+    --> StrEnum.upper
+    <StrEnum.upper: 'upper'>
+
+    --> StrEnum.upper.upper()
+    'UPPER'
+
+
+2.2.3
+=====
+
+use members' type's methods __str__, __repr__, __format__, and
+__reduce_ex__ if directly assigned in Enum class body; i.e.:
+
+    --> class Color(str, Enum):
+    ...     red = 'red'
+    ...     green = 'green'
+    ...     blue = 'blue'
+    ...     __str__ = str.__str__
+
+    --> print(repr(Color.green))
+    <Color.green: 'green'>
+
+    --> print(Color.green)
+    green
+
+
+2.2.2
+=====
+
+replace _RouteClassAttributeToGetattr with enum_property (it is still
+available as an alias)
+
+support constant() and auto() being used together:
+
+    --> class Fruit(Flag):
+    ...    _order_ = 'apple banana lemon orange'
+    ...    apple = auto()
+    ...    banana = auto()
+    ...    lemon = auto()
+    ...    orange = auto()
+    ...    CitrusTypes = constant(lemon | orange)
+
+    --> list(Fruit)
+    [Fruit.apple, Fruit.banana, Fruit.lemon, Fruit.orange]
+
+    --> list(Fruit.CitrusTypes)
+    [Fruit.orange, Fruit.lemon]
+
+    --> Fruit.orange in Fruit.CitrusTypes
+    True
+
+
+2.2.1
+=====
+
+allow Enums to be called without a value
+
+    class Color(Enum):
+        black = 0
+        red = 1
+        green = 2
+        blue = 3
+        #
+        @classmethod
+        def _missing_value_(cls, value):
+            if value is no_arg:
+                return cls.black
+
+    >>> Color()
+    <Color.black: 0>
+
+allow Enum name use while constructing Enum (Python 3.4+ only)
+
+    --> class Color(Enum):
+    ...     _order_ = 'BLACK WHITE'
+    ...     BLACK = Color('black', '#000')
+    ...     WHITE = Color('white', '#fff')
+    ...     #
+    ...     def __init__(self, label, hex):
+    ...         self.label = label
+    ...         self.hex = hex
+
+
+2.2.0
+=====
+
+BREAKING CHANGE
+---------------
+In Python 3+ classes defined inside an Enum no longer become members by
+default; in Python 2 they still become members, but see below.
+
+For cross-compatibility and full control two decorators are provided:
+
+- @member  --> forces item to become a member
+- @nonmember  --> excludes item from becoming a member
+
+So to have an Enum that behaves the same in Python 2 and 3, use the
+decorators (and other compatibility shims):
+
+    class Color(Enum):
+
+        _order_ = 'red green blue'
+
+        red = 1
+        green = 2
+        blue = 3
+
+        @nonmember
+        class Shades(Enum):
+
+            _order_ = 'light medium dark'
+
+            light = 1
+            medium = 2
+            dark = 3
+
+
+2.1.4
+=====
+
+EnumMeta:
+- change __member_new__ to __new_member__ (as the stdlib enum does)
+- assign member name to enum() instances (an Enum helper for defining members)
+- handle empty iterables when using functional API
+- make auto() work with previous enum members
+- keep searching mixins until base class is found
+
+Enum:
+- fix bug in Flag checks (ensure it is a Flag before checking the name)
+- add multiple mixin support
+- do not allow blank names (functional API)
+- raise TypeError if _missing_* returns wrong type
+- fix __format__ to honor custom __str__
+
+extend_enum:
+- support stdlib Enums
+- use _generate_next_value_ if value not provided
+
+general:
+- standardize exception formatting
+- use getfullargspec() in Python 3 (avoids deprecation warnings)
+
+
+2.1.2
+=====
+
+when order is callable, save it for subclass use
+
+
+2.1.1
+=====
+
+correctly raise TypeError for non-Enum containment checks
+support combining names with | for Flag key access
+support _order_ being a callable
+
+
+2.1.0
+=====
+
+support Flags being combined with other data types:
+- add _create_pseudo_member_values_ 
+- add default __new__ and temporary _init_ 
+
+
+2.0.10
+======
+
+ensure _ignore_ is set when _settings_ specified in body which includes
+AutoValue
+
+make Flag members iterable
+
+
+2.0.9
+=====
+
+fix missing comma in __all__
+fix extend_enum with custom __new__ methods
+fix MultiValue with AutoNumber without _init_
+
+
+2.0.8
+=====
+
+extend_enum now handles aliases and multivalues correctly
+
+
+2.0.7
+=====
+
+support mixin types with extend_enum
+init and AutoNumber can now work together
+add test for new Enum using EnumMeta
+add tests for variations of multivalue and init
+prevent deletion of NamedConstant.constant
+
+
+2.0.6
+=====
+
+constants cannot be deleted (they already couldn't be changed)
+constants can be used to define other constants
+
+
+2.0.5
+=====
+
+_init_ and MultiValue can now work together
+
+
+2.0.4
+=====
+
+_init_ and AutoValue (and _generate_next_value_) can now work together to
+supply missing values even when some of the required values per member are
+absent
+
+
+2.0.3
+=====
+
+add _missing_value_ and _missing_name_ methods, deprecate _missing_
+make enum instances comparable
+
+
+2.0.2
+=====
+
+both EnumMeta.__getattr__ and Enum.__new__ fall back to _missing_
+
+
+2.0.1
+=====
+
+auto() now works with other data types
+AutoNumber supports legacy Enums (fixed regression)
+
+
+2.0.0
+=====
+
+Flag and IntFlag added.
+
+
+1.4.7
+=====
+
+fix %-interpolation bug
+defined SqlLiteEnum only if sqlite exists
+support pyflakes
+
+
+1.4.6
+=====
+
+version numbering error
+
+
+1.4.5
+=====
+
+revert AutoNumberEnum to custom __new__ instead of AutoNumber
+use _ignore_ to shield against AutoNumber magic
+inherit start and init settings from base Enums
+
+
+1.4.4
+=====
+
+enabled export as a decorator
+enabled _order_ to replace __order__
+enabled python2 support for settings, init, and start
+
+
+1.4.3
+=====
+
+support _ignore_ for dynamically creating class bodies
+
+
+1.4.2
+=====
+
+MultiValue, NoAlias, Unique, and init now work with Python 2
+
+
+1.4.1
+=====
+
+Py3: added Enum creation flags: Auto, MultiValue, NoAlias, Unique
+
+fixed extend_enum to honor Enum flags
+
+
+1.4.0
+=====
+
+When possible aenum inherits from Python's own enum.
+
+Breaking change: enum members now default to evaluating as True to maintain
+compatibility with the stdlib.
+
+Add your own __bool__ (__nonzero__ in Python 2) if need this behavior:
+
+    def __bool__(self):
+        return bool(self.value)
+    __nonzero__ = __bool__
+
