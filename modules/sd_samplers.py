@@ -237,7 +237,7 @@ class VanillaStableDiffusionSampler:
         
         return num_steps
 
-    def sample_img2img(self, p, x, noise, conditioning, unconditional_conditioning, steps=None, image_conditioning=None, mimic_scale=None, threshold_percentile=None, threshold_enable=False):
+    def sample_img2img(self, p, x, noise, conditioning, unconditional_conditioning, steps=None, image_conditioning=None, mimic_scale=None, threshold_enable=False):
         steps, t_enc = setup_img2img_steps(p, steps)
         steps = self.adjust_steps_if_invalid(p, steps)
         self.initialize(p)
@@ -259,7 +259,7 @@ class VanillaStableDiffusionSampler:
 
         return samples
 
-    def sample(self, p, x, conditioning, unconditional_conditioning, steps=None, image_conditioning=None, mimic_scale=None, threshold_percentile=None, threshold_enable=False):
+    def sample(self, p, x, conditioning, unconditional_conditioning, steps=None, image_conditioning=None, mimic_scale=None, threshold_enable=False):
         self.initialize(p)
 
         self.init_latent = None
@@ -288,7 +288,7 @@ class CFGDenoiser(torch.nn.Module):
         self.init_latent = None
         self.step = 0
 
-    def _dynthresh(self, cond, uncond, cond_scale, conds_list, mimic_scale, threshold_percentile):
+    def _dynthresh(self, cond, uncond, cond_scale, conds_list, mimic_scale):
         # uncond shape is (batch, 4, height, width)
         conds_per_batch = cond.shape[0] / uncond.shape[0]
         assert conds_per_batch == int(conds_per_batch), "Expected # of conds per batch to be constant across batches"
@@ -310,7 +310,7 @@ class CFGDenoiser(torch.nn.Module):
         ut_means = ut_flattened.mean(dim=2).unsqueeze(2)
         ut_centered = ut_flattened - ut_means
 
-        ut_q = torch.quantile(ut_centered.abs(), threshold_percentile, dim=2).unsqueeze(2)
+        ut_q = torch.quantile(ut_centered.abs(), opts.dynamic_threshold_percentile, dim=2).unsqueeze(2)
         s = torch.maximum(ut_q, dt_max)
         t_clamped = ut_centered.clamp(-s, s)
         t_normalized = t_clamped / s
@@ -320,7 +320,7 @@ class CFGDenoiser(torch.nn.Module):
         unflattened = uncentered.unflatten(2, dynthresh_target.shape[2:])
         return unflattened
 
-    def forward(self, x, sigma, uncond, cond, cond_scale, image_cond, mimic_scale, threshold_percentile, threshold_enable):
+    def forward(self, x, sigma, uncond, cond, cond_scale, image_cond, mimic_scale, threshold_enable):
         if state.interrupted or state.skipped:
             raise InterruptedException
 
@@ -363,7 +363,7 @@ class CFGDenoiser(torch.nn.Module):
 
         denoised_uncond = x_out[-uncond.shape[0]:]
         if threshold_enable:
-            denoised[i] = self._dynthresh(x_out[:-uncond.shape[0]], denoised_uncond, cond_scale, conds_list, mimic_scale, threshold_percentile)
+            denoised[i] = self._dynthresh(x_out[:-uncond.shape[0]], denoised_uncond, cond_scale, conds_list, mimic_scale)
         else:
             denoised = torch.clone(denoised_uncond)
 
@@ -479,7 +479,7 @@ class KDiffusionSampler:
 
         return extra_params_kwargs
 
-    def sample_img2img(self, p, x, noise, conditioning, unconditional_conditioning, steps=None, image_conditioning=None, mimic_scale=None, threshold_percentile=None, threshold_enable=False):
+    def sample_img2img(self, p, x, noise, conditioning, unconditional_conditioning, steps=None, image_conditioning=None, mimic_scale=None, threshold_enable=False):
         steps, t_enc = setup_img2img_steps(p, steps)
 
         if p.sampler_noise_scheduler_override:
@@ -514,13 +514,12 @@ class KDiffusionSampler:
             'uncond': unconditional_conditioning, 
             'cond_scale': p.cfg_scale,
             'mimic_scale': mimic_scale,
-            'threshold_percentile': threshold_percentile,
             'threshold_enable': threshold_enable,
         }, disable=False, callback=self.callback_state, **extra_params_kwargs))
 
         return samples
 
-    def sample(self, p, x, conditioning, unconditional_conditioning, steps=None, image_conditioning=None, mimic_scale=None, threshold_percentile=None, threshold_enable=False):
+    def sample(self, p, x, conditioning, unconditional_conditioning, steps=None, image_conditioning=None, mimic_scale=None, threshold_enable=False):
         steps = steps or p.steps
 
         if p.sampler_noise_scheduler_override:
@@ -548,7 +547,6 @@ class KDiffusionSampler:
             'uncond': unconditional_conditioning, 
             'cond_scale': p.cfg_scale,
             'mimic_scale': mimic_scale,
-            'threshold_percentile': threshold_percentile,
             'threshold_enable': threshold_enable,
         }, disable=False, callback=self.callback_state, **extra_params_kwargs))
 

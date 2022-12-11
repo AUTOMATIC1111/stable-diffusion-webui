@@ -369,6 +369,7 @@ options_templates.update(options_section(('sd', "Stable Diffusion"), {
     "comma_padding_backtrack": OptionInfo(20, "Increase coherency by padding from the last comma within n tokens when using more than 75 tokens", gr.Slider, {"minimum": 0, "maximum": 74, "step": 1 }),
     'CLIP_stop_at_last_layers': OptionInfo(1, "Clip skip", gr.Slider, {"minimum": 1, "maximum": 12, "step": 1}),
     "random_artist_categories": OptionInfo([], "Allowed categories for random artists selection when using the Roll button", gr.CheckboxGroup, {"choices": artist_db.categories()}),
+    "dynamic_threshold_percentile": OptionInfo(0.999, "For latent fix, the top percentile of latents to clamp (ex: 0.999 means the top 0.1% is clamped)", gr.Slider, {"minimum": 0.9, "maximum": 1.0, "step": 0.0005})
 }))
 
 options_templates.update(options_section(('interrogate', "Interrogate Options"), {
