@@ -265,32 +265,28 @@ class CFGDenoiser(torch.nn.Module):
         self.step = 0
 
     def _dynthresh(self, cond, uncond, cond_scale, weight, mimic_scale, threshold_percentile):
-        scale_factor = 0.18215 # todo: get from sd model config
         diff = cond - uncond
-
         dynthresh_target = uncond + diff * mimic_scale
-        dt_unscaled = dynthresh_target / scale_factor
-        dt_flattened = dt_unscaled.flatten(2)
+        
+        dt_flattened = dynthresh_target.flatten(2)
         dt_means = dt_flattened.mean(dim=2).unsqueeze(2)
         dt_recentered = dt_flattened-dt_means
-        dt_q = torch.quantile(dt_recentered.abs(), threshold_percentile, dim=2)
+        dt_max = dt_recentered.abs().max(dim=2).values.unsqueeze(2)
 
         ut = uncond + diff * cond_scale * weight
-        ut_unscaled = ut / scale_factor
-        ut_flattened = ut_unscaled.flatten(2)
+        ut_flattened = ut.flatten(2)
         ut_means = ut_flattened.mean(dim=2).unsqueeze(2)
         ut_centered = ut_flattened-ut_means
-        ut_q = torch.quantile(ut_centered.abs(), threshold_percentile, dim=2)
-        ut_q = torch.maximum(ut_q, dt_q)
-        q_ratio = ut_q / dt_q
-        q_ratio = q_ratio.unsqueeze(2).expand(*ut_centered.shape)
-        t = ut_centered / q_ratio
 
-        uncentered = t+ut_means
+        ut_q = torch.quantile(ut_centered.abs(), threshold_percentile, dim=2).unsqueeze(2)
+        s = torch.maximum(ut_q, dt_max)
+        t_clamped = ut_centered.clamp(-s, s)
+        t_normalized = t_clamped / s
+        t_renormalized = t_normalized * dt_max
+
+        uncentered = t_renormalized+ut_means
         unflattened = uncentered.unflatten(2, dynthresh_target.shape[2:])
-        scaled = unflattened * scale_factor
-        
-        return scaled
+        return unflattened
 
     def forward(self, x, sigma, uncond, cond, cond_scale, image_cond, mimic_scale, threshold_percentile, threshold_enable):
         if state.interrupted or state.skipped:
