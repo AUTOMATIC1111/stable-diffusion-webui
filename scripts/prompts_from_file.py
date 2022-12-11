@@ -83,12 +83,13 @@ def cmdargs(line):
 
 
 def load_prompt_file(file):
-    if (file is None):
+    if file is None:
         lines = []
     else:
         lines = [x.strip() for x in file.decode('utf8', errors='ignore').split("\n")]
 
     return None, "\n".join(lines), gr.update(lines=7)
+
 
 class Script(scripts.Script):
     def title(self):
@@ -96,6 +97,7 @@ class Script(scripts.Script):
 
     def ui(self, is_img2img):
         checkbox_iterate = gr.Checkbox(label="Iterate seed every line", value=False)
+        checkbox_iterate_batch = gr.Checkbox(label="Use same random seed for all lines", value=False)
 
         prompt_txt = gr.Textbox(label="List of prompt inputs", lines=1)
         file = gr.File(label="Upload prompt inputs", type='bytes')
@@ -106,9 +108,9 @@ class Script(scripts.Script):
         # We don't shrink back to 1, because that causes the control to ignore [enter], and it may
         # be unclear to the user that shift-enter is needed.
         prompt_txt.change(lambda tb: gr.update(lines=7) if ("\n" in tb) else gr.update(lines=2), inputs=[prompt_txt], outputs=[prompt_txt])
-        return [checkbox_iterate, file, prompt_txt]
+        return [checkbox_iterate, checkbox_iterate_batch, prompt_txt]
 
-    def run(self, p, checkbox_iterate, file, prompt_txt: str):
+    def run(self, p, checkbox_iterate, checkbox_iterate_batch, prompt_txt: str):
         lines = [x.strip() for x in prompt_txt.splitlines()]
         lines = [x for x in lines if len(x) > 0]
 
@@ -137,12 +139,14 @@ class Script(scripts.Script):
             jobs.append(args)
 
         print(f"Will process {len(lines)} lines in {job_count} jobs.")
-        if (checkbox_iterate and p.seed == -1):
+        if (checkbox_iterate or checkbox_iterate_batch) and p.seed == -1:
             p.seed = int(random.randrange(4294967294))
 
         state.job_count = job_count
 
         images = []
+        all_prompts = []
+        infotexts = []
         for n, args in enumerate(jobs):
             state.job = f"{state.job_no + 1} out of {state.job_count}"
 
@@ -153,8 +157,9 @@ class Script(scripts.Script):
             proc = process_images(copy_p)
             images += proc.images
             
-            if (checkbox_iterate):
+            if checkbox_iterate:
                 p.seed = p.seed + (p.batch_size * p.n_iter)
+            all_prompts += proc.all_prompts
+            infotexts += proc.infotexts
 
-
-        return Processed(p, images, p.seed, "")
+        return Processed(p, images, p.seed, "", all_prompts=all_prompts, infotexts=infotexts)

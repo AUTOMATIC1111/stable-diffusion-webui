@@ -22,8 +22,8 @@ class Script(scripts.Script):
             return None
 
         pixels = gr.Slider(label="Pixels to expand", minimum=8, maximum=256, step=8, value=128)
-        mask_blur = gr.Slider(label='Mask blur', minimum=0, maximum=64, step=1, value=4, visible=False)
-        inpainting_fill = gr.Radio(label='Masked content', choices=['fill', 'original', 'latent noise', 'latent nothing'], value='fill', type="index", visible=False)
+        mask_blur = gr.Slider(label='Mask blur', minimum=0, maximum=64, step=1, value=4)
+        inpainting_fill = gr.Radio(label='Masked content', choices=['fill', 'original', 'latent noise', 'latent nothing'], value='fill', type="index")
         direction = gr.CheckboxGroup(label="Outpainting direction", choices=['left', 'right', 'up', 'down'], value=['left', 'right', 'up', 'down'])
 
         return [pixels, mask_blur, inpainting_fill, direction]

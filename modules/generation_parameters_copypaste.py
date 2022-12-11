@@ -2,6 +2,8 @@ import base64
 import io
 import os
 import re
+from pathlib import Path
+
 import gradio as gr
 from modules.shared import script_path
 from modules import shared
@@ -17,6 +19,11 @@ paste_fields = {}
 bind_list = []
 
 
+def reset():
+    paste_fields.clear()
+    bind_list.clear()
+
+
 def quote(text):
     if ',' not in str(text):
         return text
@@ -30,9 +37,8 @@ def quote(text):
 def image_from_url_text(filedata):
     if type(filedata) == dict and filedata["is_file"]:
         filename = filedata["name"]
-        tempdir = os.path.normpath(tempfile.gettempdir())
-        normfn = os.path.normpath(filename)
-        assert normfn.startswith(tempdir), 'trying to open image file not in temporary directory'
+        is_in_right_dir = any(Path(temp_dir).resolve() in Path(filename).resolve().parents for temp_dir in shared.demo.temp_dirs)
+        assert is_in_right_dir, 'trying to open image file outside of allowed directories'
 
         return Image.open(filename)
 
@@ -66,8 +72,12 @@ def integrate_settings_paste_fields(component_dict):
 
     settings_map = {
         'sd_hypernetwork': 'Hypernet',
+        'sd_hypernetwork_strength': 'Hypernet strength',
         'CLIP_stop_at_last_layers': 'Clip skip',
+        'inpainting_mask_weight': 'Conditional mask weight',
         'sd_model_checkpoint': 'Model hash',
+        'eta_noise_seed_delta': 'ENSD',
+        'initial_noise_multiplier': 'Noise multiplier',
     }
     settings_paste_fields = [
         (component_dict[k], lambda d, k=k, v=v: ui.apply_setting(k, d.get(v, None)))
@@ -112,8 +122,7 @@ def run_bind():
 
             if send_generate_info and paste_fields[tab]["fields"] is not None:
                 if send_generate_info in paste_fields:
-                    paste_field_names = ['Prompt', 'Negative prompt', 'Steps', 'Face restoration', 'Size-1', 'Size-2'] + (["Seed"] if shared.opts.send_seed else [])
-
+                    paste_field_names = ['Prompt', 'Negative prompt', 'Steps', 'Face restoration'] +  (['Size-1', 'Size-2'] if shared.opts.send_size else []) + (["Seed"] if shared.opts.send_seed else [])
                     button.click(
                         fn=lambda *x: x,
                         inputs=[field for field, name in paste_fields[send_generate_info]["fields"] if name in paste_field_names],
@@ -174,6 +183,10 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
             res[k+"-2"] = m.group(2)
         else:
             res[k] = v
+
+    # Missing CLIP skip means it was set to 1 (the default)
+    if "Clip skip" not in res:
+        res["Clip skip"] = "1"
 
     return res
 

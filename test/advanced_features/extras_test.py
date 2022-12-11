@@ -1,7 +1,5 @@
 import unittest
-import requests
-from gradio.processing_utils import encode_pil_to_base64
-from PIL import Image
+
 
 class TestExtrasWorking(unittest.TestCase):
     def setUp(self):
@@ -13,8 +11,8 @@ class TestExtrasWorking(unittest.TestCase):
             "codeformer_visibility": 0,
             "codeformer_weight": 0,
             "upscaling_resize": 2,
-            "upscaling_resize_w": 512,
-            "upscaling_resize_h": 512,
+            "upscaling_resize_w": 128,
+            "upscaling_resize_h": 128,
             "upscaling_crop": True,
             "upscaler_1": "None",
             "upscaler_2": "None",
@@ -22,8 +20,10 @@ class TestExtrasWorking(unittest.TestCase):
             "image": ""
             }
 
+
 class TestExtrasCorrectness(unittest.TestCase):
     pass
+
 
 if __name__ == "__main__":
     unittest.main()
