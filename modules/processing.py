@@ -13,13 +13,15 @@ from skimage import exposure
 from typing import Any, Dict, List, Optional
 
 import modules.sd_hijack
-from modules import devices, prompt_parser, masking, sd_samplers, lowvram, generation_parameters_copypaste
+from modules import devices, prompt_parser, masking, sd_samplers, lowvram, generation_parameters_copypaste, script_callbacks
 from modules.sd_hijack import model_hijack
 from modules.shared import opts, cmd_opts, state
 import modules.shared as shared
 import modules.face_restoration
 import modules.images as images
 import modules.styles
+import modules.sd_models as sd_models
+import modules.sd_vae as sd_vae
 import logging
 from ldm.data.util import AddMiDaS
 from ldm.models.diffusion.ddpm import LatentDepth2ImageDiffusion
@@ -454,8 +456,10 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
 
     try:
         for k, v in p.override_settings.items():
-            setattr(opts, k, v)  # we don't call onchange for simplicity which makes changing model impossible
-            if k == 'sd_hypernetwork': shared.reload_hypernetworks()  # make onchange call for changing hypernet since it is relatively fast to load on-change, while SD models are not
+            setattr(opts, k, v)
+            if k == 'sd_hypernetwork': shared.reload_hypernetworks()  # make onchange call for changing hypernet
+            if k == 'sd_model_checkpoint': sd_models.reload_model_weights()  # make onchange call for changing SD model
+            if k == 'sd_vae': sd_vae.reload_vae_weights()  # make onchange call for changing VAE
 
         res = process_images_inner(p)
 
@@ -463,6 +467,8 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
         for k, v in stored_opts.items():
             setattr(opts, k, v)
             if k == 'sd_hypernetwork': shared.reload_hypernetworks()
+            if k == 'sd_model_checkpoint': sd_models.reload_model_weights()
+            if k == 'sd_vae': sd_vae.reload_vae_weights()
 
     return res
 
@@ -571,9 +577,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
             devices.torch_gc()
 
-            if opts.filter_nsfw:
-                import modules.safety as safety
-                x_samples_ddim = modules.safety.censor_batch(x_samples_ddim)
+            if p.scripts is not None:
+                p.scripts.postprocess_batch(p, x_samples_ddim, batch_number=n)
 
             for i, x_sample in enumerate(x_samples_ddim):
                 x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
