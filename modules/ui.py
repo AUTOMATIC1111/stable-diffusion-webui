@@ -316,7 +316,7 @@ def create_seed_inputs():
 
     return seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox
 
-def create_threshold_inputs(is_img2img: bool = False):
+def create_cfg_inputs(is_img2img: bool = False):
     with gr.Row(elem_id='cfg_row'):
         if is_img2img:
             with gr.Group():
@@ -337,7 +337,7 @@ def create_threshold_inputs(is_img2img: bool = False):
 
     threshold_checkbox.change(change_visibility, show_progress=False, inputs=[threshold_checkbox], outputs=threshold_extras)
 
-    return cfg_scale, denoising_strength, mimic_scale,  threshold_checkbox
+    return cfg_scale, denoising_strength, mimic_scale, threshold_checkbox, threshold_extra_row_1
 
 
 
@@ -698,7 +698,7 @@ def create_ui():
                     batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1)
                     batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1)
 
-                cfg_scale, _, mimic_scale, threshold_checkbox = create_threshold_inputs()
+                cfg_scale, _, mimic_scale, threshold_checkbox, threshold_row = create_cfg_inputs()
 
                 seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox = create_seed_inputs()
 
@@ -796,6 +796,9 @@ def create_ui():
                 (hr_options, lambda d: gr.Row.update(visible="Denoising strength" in d)),
                 (firstphase_width, "First pass size-1"),
                 (firstphase_height, "First pass size-2"),
+                (mimic_scale, "Mimic CFG scale"),
+                (threshold_checkbox, lambda d: "Threshold percentile" in d),
+                (threshold_row, lambda d: gr.Row.update(visible="Threshold percentile" in d)),
                 *modules.scripts.scripts_txt2img.infotext_fields
             ]
             parameters_copypaste.add_paste_fields("txt2img", None, txt2img_paste_fields)
@@ -894,7 +897,7 @@ def create_ui():
                     batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1)
                     batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1)
 
-                cfg_scale, denoising_strength, mimic_scale, threshold_checkbox = create_threshold_inputs(is_img2img=True)
+                cfg_scale, denoising_strength, mimic_scale, threshold_checkbox, threshold_row = create_cfg_inputs(is_img2img=True)
 
                 seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox = create_seed_inputs()
 
@@ -1046,6 +1049,9 @@ def create_ui():
                 (seed_resize_from_h, "Seed resize from-2"),
                 (denoising_strength, "Denoising strength"),
                 (mask_blur, "Mask blur"),
+                (mimic_scale, "Mimic CFG scale"),
+                (threshold_checkbox, lambda d: "Threshold percentile" in d),
+                (threshold_row, lambda d: gr.Row.update(visible="Threshold percentile" in d)),
                 *modules.scripts.scripts_img2img.infotext_fields
             ]
             parameters_copypaste.add_paste_fields("img2img", init_img, img2img_paste_fields)
