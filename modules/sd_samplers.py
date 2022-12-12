@@ -363,7 +363,7 @@ class CFGDenoiser(torch.nn.Module):
 
         denoised_uncond = x_out[-uncond.shape[0]:]
         if threshold_enable:
-            denoised[i] = self._dynthresh(x_out[:-uncond.shape[0]], denoised_uncond, cond_scale, conds_list, mimic_scale)
+            denoised = self._dynthresh(x_out[:-uncond.shape[0]], denoised_uncond, cond_scale, conds_list, mimic_scale)
         else:
             denoised = torch.clone(denoised_uncond)
 
