@@ -137,7 +137,7 @@ def webui():
 
         shared.demo = modules.ui.create_ui()
 
-        app, local_url, share_url = shared.demo.launch(
+        app, local_url, share_url = shared.demo.queue(default_enabled=False).launch(
             share=cmd_opts.share,
             server_name=server_name,
             server_port=cmd_opts.port,

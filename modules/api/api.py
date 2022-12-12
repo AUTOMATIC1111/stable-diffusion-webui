@@ -156,7 +156,6 @@ class Api:
         args = vars(populate)
         args.pop('include_init_images', None)  # this is meant to be done by "exclude": True in model, but it's for a reason that I cannot determine.
         p = StableDiffusionProcessingImg2Img(**args)
-
         imgs = []
         for img in init_images:
             img_ = decode_base64_to_image(img)

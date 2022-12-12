@@ -13,15 +13,20 @@ from skimage import exposure
 from typing import Any, Dict, List, Optional
 
 import modules.sd_hijack
-from modules import devices, prompt_parser, masking, sd_samplers, lowvram, generation_parameters_copypaste
+from modules import devices, prompt_parser, masking, sd_samplers, lowvram, generation_parameters_copypaste, script_callbacks
 from modules.sd_hijack import model_hijack
 from modules.shared import opts, cmd_opts, state
 import modules.shared as shared
 import modules.face_restoration
 import modules.images as images
 import modules.styles
+import modules.sd_models as sd_models
+import modules.sd_vae as sd_vae
 import logging
+from ldm.data.util import AddMiDaS
+from ldm.models.diffusion.ddpm import LatentDepth2ImageDiffusion
 
+from einops import repeat, rearrange
 
 # some of those options should not be changed at all because they would break the model, so I removed them from options.
 opt_C = 4
@@ -150,11 +155,26 @@ class StableDiffusionProcessing():
 
         return image_conditioning
 
-    def img2img_image_conditioning(self, source_image, latent_image, image_mask = None):
-        if self.sampler.conditioning_key not in {'hybrid', 'concat'}:
-            # Dummy zero conditioning if we're not using inpainting model.
-            return latent_image.new_zeros(latent_image.shape[0], 5, 1, 1)
+    def depth2img_image_conditioning(self, source_image):
+        # Use the AddMiDaS helper to Format our source image to suit the MiDaS model
+        transformer = AddMiDaS(model_type="dpt_hybrid")
+        transformed = transformer({"jpg": rearrange(source_image[0], "c h w -> h w c")})
+        midas_in = torch.from_numpy(transformed["midas_in"][None, ...]).to(device=shared.device)
+        midas_in = repeat(midas_in, "1 ... -> n ...", n=self.batch_size)
 
+        conditioning_image = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(source_image))
+        conditioning = torch.nn.functional.interpolate(
+            self.sd_model.depth_model(midas_in),
+            size=conditioning_image.shape[2:],
+            mode="bicubic",
+            align_corners=False,
+        )
+
+        (depth_min, depth_max) = torch.aminmax(conditioning)
+        conditioning = 2. * (conditioning - depth_min) / (depth_max - depth_min) - 1.
+        return conditioning
+
+    def inpainting_image_conditioning(self, source_image, latent_image, image_mask = None):
         self.is_using_inpainting_conditioning = True
 
         # Handle the different mask inputs
@@ -190,6 +210,18 @@ class StableDiffusionProcessing():
         image_conditioning = image_conditioning.to(shared.device).type(self.sd_model.dtype)
 
         return image_conditioning
+
+    def img2img_image_conditioning(self, source_image, latent_image, image_mask=None):
+        # HACK: Using introspection as the Depth2Image model doesn't appear to uniquely
+        # identify itself with a field common to all models. The conditioning_key is also hybrid.
+        if isinstance(self.sd_model, LatentDepth2ImageDiffusion):
+            return self.depth2img_image_conditioning(source_image)
+
+        if self.sampler.conditioning_key in {'hybrid', 'concat'}:
+            return self.inpainting_image_conditioning(source_image, latent_image, image_mask=image_mask)
+
+        # Dummy zero conditioning if we're not using inpainting or depth model.
+        return latent_image.new_zeros(latent_image.shape[0], 5, 1, 1)
 
     def init(self, all_prompts, all_seeds, all_subseeds):
         pass
@@ -424,8 +456,10 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
 
     try:
         for k, v in p.override_settings.items():
-            setattr(opts, k, v)  # we don't call onchange for simplicity which makes changing model impossible
-            if k == 'sd_hypernetwork': shared.reload_hypernetworks()  # make onchange call for changing hypernet since it is relatively fast to load on-change, while SD models are not
+            setattr(opts, k, v)
+            if k == 'sd_hypernetwork': shared.reload_hypernetworks()  # make onchange call for changing hypernet
+            if k == 'sd_model_checkpoint': sd_models.reload_model_weights()  # make onchange call for changing SD model
+            if k == 'sd_vae': sd_vae.reload_vae_weights()  # make onchange call for changing VAE
 
         res = process_images_inner(p)
 
@@ -433,6 +467,8 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
         for k, v in stored_opts.items():
             setattr(opts, k, v)
             if k == 'sd_hypernetwork': shared.reload_hypernetworks()
+            if k == 'sd_model_checkpoint': sd_models.reload_model_weights()
+            if k == 'sd_vae': sd_vae.reload_vae_weights()
 
     return res
 
@@ -541,9 +577,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
             devices.torch_gc()
 
-            if opts.filter_nsfw:
-                import modules.safety as safety
-                x_samples_ddim = modules.safety.censor_batch(x_samples_ddim)
+            if p.scripts is not None:
+                p.scripts.postprocess_batch(p, x_samples_ddim, batch_number=n)
 
             for i, x_sample in enumerate(x_samples_ddim):
                 x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
@@ -733,8 +768,9 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
 class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
     sampler = None
+    
+    def __init__(self, init_images: list=None, resize_mode: int=0, denoising_strength: float=0.75, mask: Any=None, mask_blur: int=4, inpainting_fill: int=0, inpaint_full_res: bool=True, inpaint_full_res_padding: int=0, inpainting_mask_invert: int=0, white_background: bool=False,initial_noise_multiplier: float = None,**kwargs):
 
-    def __init__(self, init_images: list=None, resize_mode: int=0, denoising_strength: float=0.75, mask: Any=None, mask_blur: int=4, inpainting_fill: int=0, inpaint_full_res: bool=True, inpaint_full_res_padding: int=0, inpainting_mask_invert: int=0, white_background: bool=False,**kwargs):
         super().__init__(**kwargs)
 
         self.init_images:list[Image.Image] = init_images
@@ -749,6 +785,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         self.inpaint_full_res = inpaint_full_res
         self.inpaint_full_res_padding = inpaint_full_res_padding
         self.inpainting_mask_invert = inpainting_mask_invert
+        self.initial_noise_multiplier = opts.initial_noise_multiplier if initial_noise_multiplier is None else initial_noise_multiplier
         self.mask = None
         self.nmask = None
         self.image_conditioning = None
@@ -868,6 +905,10 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
     def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
         x = create_random_tensors([opt_C, self.height // opt_f, self.width // opt_f], seeds=seeds, subseeds=subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
+
+        if self.initial_noise_multiplier != 1.0:
+            self.extra_generation_params["Noise multiplier"] = self.initial_noise_multiplier
+            x *= self.initial_noise_multiplier
 
         samples = self.sampler.sample_img2img(self, self.init_latent, x, conditioning, unconditional_conditioning, image_conditioning=self.image_conditioning)
 

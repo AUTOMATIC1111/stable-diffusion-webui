@@ -131,6 +131,15 @@ function ask_for_style_name(_, prompt_text, negative_prompt_text) {
     return [name_, prompt_text, negative_prompt_text]
 }
 
+function confirm_clear_prompt(prompt, negative_prompt) {
+    if(confirm("Delete prompt?")) {
+        prompt = ""
+        negative_prompt = ""
+    }
+
+    return [prompt, negative_prompt]
+}
+
 
 
 opts = {}

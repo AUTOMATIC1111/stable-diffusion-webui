@@ -77,6 +77,7 @@ def integrate_settings_paste_fields(component_dict):
         'inpainting_mask_weight': 'Conditional mask weight',
         'sd_model_checkpoint': 'Model hash',
         'eta_noise_seed_delta': 'ENSD',
+        'initial_noise_multiplier': 'Noise multiplier',
     }
     settings_paste_fields = [
         (component_dict[k], lambda d, k=k, v=v: ui.apply_setting(k, d.get(v, None)))
@@ -121,8 +122,7 @@ def run_bind():
 
             if send_generate_info and paste_fields[tab]["fields"] is not None:
                 if send_generate_info in paste_fields:
-                    paste_field_names = ['Prompt', 'Negative prompt', 'Steps', 'Face restoration', 'Size-1', 'Size-2'] + (["Seed"] if shared.opts.send_seed else [])
-
+                    paste_field_names = ['Prompt', 'Negative prompt', 'Steps', 'Face restoration'] +  (['Size-1', 'Size-2'] if shared.opts.send_size else []) + (["Seed"] if shared.opts.send_seed else [])
                     button.click(
                         fn=lambda *x: x,
                         inputs=[field for field, name in paste_fields[send_generate_info]["fields"] if name in paste_field_names],

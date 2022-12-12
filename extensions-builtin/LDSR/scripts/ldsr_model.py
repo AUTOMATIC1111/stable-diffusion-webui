@@ -7,7 +7,7 @@ from basicsr.utils.download_util import load_file_from_url
 from modules.upscaler import Upscaler, UpscalerData
 from ldsr_model_arch import LDSR
 from modules import shared, script_callbacks
-import sd_hijack_autoencoder
+import sd_hijack_autoencoder, sd_hijack_ddpm_v1
 
 
 class UpscalerLDSR(Upscaler):
@@ -59,6 +59,7 @@ def on_ui_settings():
     import gradio as gr
 
     shared.opts.add_option("ldsr_steps", shared.OptionInfo(100, "LDSR processing steps. Lower = faster", gr.Slider, {"minimum": 1, "maximum": 200, "step": 1}, section=('upscaling', "Upscaling")))
+    shared.opts.add_option("ldsr_cached", shared.OptionInfo(False, "Cache LDSR model in memory", gr.Checkbox, {"interactive": True}, section=('upscaling', "Upscaling")))
 
 
 script_callbacks.on_ui_settings(on_ui_settings)
