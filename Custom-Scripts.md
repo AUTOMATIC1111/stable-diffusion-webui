@@ -399,6 +399,17 @@ Adds the ability to use proper variable dropout rate, like 0.05. Also fixes issu
 
 Adds creating beta-hypernetwork(dropout), and beta-training which allows automatic cosine annealing, and no-crop usage of original images.
 
+## Config-Presets
+https://github.com/Zyin055/Config-Presets
+
+Quickly change settings in the txt2img and img2img tabs using a configurable dropdown of preset values.
+
+<details><summary>Example: (Click to expand:)</summary>
+
+<img src="https://camo.githubusercontent.com/fd878bf6e95b5b4d4bc95e1aef7d3253a5cd3832c65e97de942455572ee3e561/68747470733a2f2f692e696d6775722e636f6d2f4231654d5741772e6a7067" width="512" height="146" />
+
+</details>
+
 
 ## Saving steps of the sampling process
 
