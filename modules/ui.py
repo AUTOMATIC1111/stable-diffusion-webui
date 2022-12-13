@@ -72,7 +72,7 @@ css_hide_progressbar = """
 .meta-text-center { display:none!important; }
 """
 
-# Using constants for these since the variation selector isn't visible
+# Using constants for these since the variation selector isn't visible.
 # Important that they exactly match script.js for tooltip to work.
 random_symbol = '\U0001f3b2\ufe0f'  # 🎲️
 reuse_symbol = '\u267b\ufe0f'  # ♻️
@@ -660,6 +660,29 @@ def create_ui():
                 with gr.Group():
                     width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512)
                     height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512)
+                    
+                    def adjustWidth(width, height):
+                        if opts.aspect_ratio != "None":
+                            w_ratio, h_ratio = opts.aspect_ratio.split(":")
+                            width = int(height * int(w_ratio)/int(h_ratio))
+                        return gr.update(value=width)
+
+                    def adjustHeight(width, height):
+                        if opts.aspect_ratio != "None":
+                            w_ratio, h_ratio = opts.aspect_ratio.split(":")
+                            height = int(width * int(h_ratio)/int(w_ratio))
+                        return gr.update(value=height)
+
+                    height.change(
+                        fn = adjustWidth,
+                        inputs=[width, height],
+                        outputs=width
+                    )
+                    width.change(
+                        fn = adjustHeight,
+                        inputs=[width, height],
+                        outputs=height
+                    )
 
                 with gr.Row():
                     restore_faces = gr.Checkbox(label='Restore faces', value=False, visible=len(shared.face_restorers) > 1)
