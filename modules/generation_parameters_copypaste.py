@@ -213,6 +213,9 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
     if "Clip skip" not in res:
         res["Clip skip"] = "1"
 
+    if "Hypernet strength" not in res:
+        res["Hypernet strength"] = "1"
+
     if "Hypernet" in res:
         hypernet_name = res["Hypernet"]
         hypernet_hash = res.get("Hypernet hash", None)
