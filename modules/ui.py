@@ -72,7 +72,7 @@ css_hide_progressbar = """
 .meta-text-center { display:none!important; }
 """
 
-# Using constants for these since the variation selector isn't visible.
+# Using constants for these since the variation selector isn't visible
 # Important that they exactly match script.js for tooltip to work.
 random_symbol = '\U0001f3b2\ufe0f'  # 🎲️
 reuse_symbol = '\u267b\ufe0f'  # ♻️
