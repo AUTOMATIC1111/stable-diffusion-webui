@@ -146,7 +146,7 @@ def find_hypernetwork_key(hypernet_name, hypernet_hash=None):
     Example: an infotext provides "Hypernet: ke-ta" and "Hypernet hash: 1234abcd". For the "Hypernet" config
     parameter this means there should be an entry that looks like "ke-ta-10000(1234abcd)" to set it to.
 
-    If the infotext has no hash, then a hypernet with the same name and the most steps will be selected instead.
+    If the infotext has no hash, then a hypernet with the same name will be selected instead.
     """
     hypernet_name = hypernet_name.lower()
     if hypernet_hash is not None:
