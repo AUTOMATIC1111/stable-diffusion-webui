@@ -319,7 +319,7 @@ class LatentInpaintDiffusion(LatentDiffusion):
 
 
 def should_hijack_inpainting(checkpoint_info):
-    return str(checkpoint_info.filename).endswith("inpainting.ckpt") and not checkpoint_info.config.endswith("inpainting.yaml")
+    return (str(checkpoint_info.filename).endswith("inpainting.ckpt") or str(checkpoint_info.filename).endswith("inpainting.safetensors")) and not checkpoint_info.config.endswith("inpainting.yaml")
 
 
 def do_inpainting_hijack():
