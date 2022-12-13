@@ -401,6 +401,7 @@ options_templates.update(options_section(('ui', "User interface"), {
     "js_modal_lightbox_initially_zoomed": OptionInfo(True, "Show images zoomed in by default in full page image viewer"),
     "show_progress_in_title": OptionInfo(True, "Show generation progress in window title."),
     'quicksettings': OptionInfo("sd_model_checkpoint", "Quicksettings list"),
+    "aspect_ratio": OptionInfo("None", "Fix width/height to aspect ratio", gr.Dropdown, lambda: {"choices": aspect_ratios}),
     'localization': OptionInfo("None", "Localization (requires restart)", gr.Dropdown, lambda: {"choices": ["None"] + list(localization.localizations.keys())}, refresh=lambda: localization.list_localizations(cmd_opts.localizations_dir)),
 }))
 
@@ -542,6 +543,7 @@ clip_model = None
 
 progress_print_out = sys.stdout
 
+aspect_ratios = ["None", "1:1", "2:3", "3:2", "3:4", "4:3", "9:16", "16:9"]
 
 class TotalTQDM:
     def __init__(self):
