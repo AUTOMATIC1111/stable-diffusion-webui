@@ -249,6 +249,12 @@
 			"tags": ["script"]
 		},
 		{
+			"name": "Config-Presets",
+			"url": "https://github.com/Zyin055/Config-Presets.git",
+			"description": "Adds a configurable dropdown to allow you to change UI preset settings in the txt2img and img2img tabs.",
+			"tags": ["script"]
+		},
+		{
 			"name": "zh_CN Localization",
 			"url": "https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN",
 			"description": "Simplified Chinese localization",
