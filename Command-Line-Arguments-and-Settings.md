@@ -2,7 +2,7 @@
 The recommended way to customize how the program is run is editing `webui-user.bat` (Windows) and `webui-user.sh` (Linux):
 - `set PYTHON` allows for setting a custom Python path
     - Example: `set PYTHON=b:/soft/Python310/Python.exe`
-- `set VENV_DIR` allows you to chooser the directory for the virtual environment. Default is `venv`. Special value `-` runs the script without creating virtual environment.
+- `set VENV_DIR` allows you to choose the directory for the virtual environment. Default is `venv`. Special value `-` runs the script without creating virtual environment.
     - Example: `set VENV_DIR=C:\run\var\run` will create venv in the `C:\run\var\run` directory.
     - Example: `set VENV_DIR=-` runs the program using the system's python
 - `set COMMANDLINE_ARGS` setting the command line arguments `webui.py` is ran with
