@@ -5,7 +5,7 @@
 - When starting the program for the first time, the path to python interpreter is displayed. If this is not the python you installed, you can specify full path in the `webui-user` script; see [Running with custom parameters](Run-with-Custom-Parameters).
 - If the desired version of Python is not in PATH, modify the line `set PYTHON=python` in `webui-user.bat` with the full path to the python executable.
     - Example: `set PYTHON=B:\soft\Python310\python.exe`
-- instaler requirements from `requirements_versions.txt`, which lists versions for modules specifically compatible with Python 3.10.6. If this doesn't work with other versions of Python, setting the custom parameter `set REQS_FILE=requirements.txt` may help.
+- Installer requirements from `requirements_versions.txt`, which lists versions for modules specifically compatible with Python 3.10.6. If this doesn't work with other versions of Python, setting the custom parameter `set REQS_FILE=requirements.txt` may help.
 
 # Low VRAM Video-cards
 When running on video cards with a low amount of VRAM (<=4GB), out of memory errors may arise.
