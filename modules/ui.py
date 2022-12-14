@@ -537,8 +537,8 @@ def create_toprow(is_img2img):
             refreshinjstimerbtn = gr.Button('refreshinjstimerbtn', elem_id='refreshinjstimerbtn', visible=False)
             
             
-            myskip = gr.Button('跳过当前任务')
-            mystop = gr.Button('停止当前任务',visible=False)
+            myskip = gr.Button('跳过单个任务')
+            mystop = gr.Button('跳过一组任务')
             # refreshbtn = gr.Button('刷新队列',elem_id='update_queue_label_btn',visible=False)
             addtoqueue = gr.Button('添加到任务队列',variant='primary')
             myhelpers.any.queueText = gr.Label(label='队列信息', 
