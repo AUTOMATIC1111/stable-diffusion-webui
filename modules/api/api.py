@@ -161,7 +161,7 @@ class Api:
             img_ = decode_base64_to_image(img)
             if img_.mode=="RGBA":
                 img_.load()  # needed for split()
-                background = Image.new('RGB', img_.size, (255,255,255) if p.white_background else (0,0,0))
+                background = Image.new('RGB', img_.size, self.transparent_color)
                 background.paste(img_, mask=img_.split()[3])  # 3 is the alpha channel
                 img_=background
             else:

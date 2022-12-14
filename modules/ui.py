@@ -865,7 +865,7 @@ def create_ui():
                 with gr.Row():
                     restore_faces = gr.Checkbox(label='Restore faces', value=False, visible=len(shared.face_restorers) > 1)
                     tiling = gr.Checkbox(label='Tiling', value=False)
-                    white_background=gr.Checkbox(label='White Background', value=False)
+                    transparent_color=gr.ColorPicker(label='Change transparency to color', value="#000000")
 
                 with gr.Row():
                     batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1)
@@ -947,7 +947,7 @@ def create_ui():
                     inpainting_mask_invert,
                     img2img_batch_input_dir,
                     img2img_batch_output_dir,
-                    white_background,
+                    transparent_color,
                 ] + custom_inputs,
                 outputs=[
                     img2img_gallery,
