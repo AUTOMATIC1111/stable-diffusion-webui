@@ -3,7 +3,6 @@ import threading
 import time
 import importlib
 import signal
-import threading
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
@@ -55,24 +54,6 @@ def wrap_gradio_gpu_call(func, extra_outputs=None):
 
     return modules.ui.wrap_gradio_call(f, extra_outputs=extra_outputs, add_stats=True)
 
-# def wrap_gradio_gpu_call2(func, extra_outputs=None, do_before_begin = None):
-#     def f(*args, **kwargs):
-
-#         if not do_before_begin is None:
-#             do_before_begin()
-
-#         shared.state.begin()
-
-#         with queue_lock:
-#             res = func(*args, **kwargs)
-
-#         shared.state.end()
-
-#         return res
-
-#     return modules.ui.wrap_gradio_call(f, extra_outputs=extra_outputs, add_stats=True)
-
-
 def initialize():
     extensions.list_extensions()
     localization.list_localizations(cmd_opts.localizations_dir)
@@ -95,6 +76,7 @@ def initialize():
     modules.sd_models.load_model()
 
     def f():
+        print('reload_model_weights')
         modules.sd_models.reload_model_weights()
 
     shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(f))

@@ -266,7 +266,7 @@ def has_job():
     return shared.state.job_count > 0 or shared.state.sampling_steps > 0
 
 def get_progress_str():
-    jobstr = '' if shared.state.job_count==0 else f' 总体:{shared.state.job_no}/{shared.state.job_count}'
+    jobstr = '' if shared.state.job_count==0 else f' 总体:{shared.state.job_no+1}/{shared.state.job_count}'
     return f'{shared.state.sampling_step}/{shared.state.sampling_steps}{jobstr}'
 
 def refresh_queueText():
@@ -959,7 +959,11 @@ def create_ui(wrap_gradio_gpu_call,wrap_queued_call):
                     if not task is None:
                         taskid = task['taskid']
                         print(f'开始执行任务{taskid} 剩余数量{len(taskqueque)}')
-                        task['task']()
+                        try:
+                            task['task']()
+                            shared.state.job_count = 0
+                        except Exception as e:
+                            print(f'发错了错误 {e}\ninfo_text:{task["info_text"]}')
                 
 
             threading.Thread(target=task_loop).start()
@@ -980,7 +984,11 @@ def create_ui(wrap_gradio_gpu_call,wrap_queued_call):
                     def task():
                         wrappedtxt2imgf(*args,**kwargs)
                     myhelpers.any.taskid+=1
-                    taskqueque.append(dict(taskid=myhelpers.any.taskid,task=task))
+                    taskqueque.append(dict(
+                        taskid=myhelpers.any.taskid,
+                        task=task,
+                        info_text=info_text,
+                        ))
                     print(f'添加到队列 {myhelpers.any.taskid} 当前队列长度{len(taskqueque)}')
 
                 return [
@@ -1402,6 +1410,8 @@ def create_ui(wrap_gradio_gpu_call,wrap_queued_call):
                 html2 = gr.HTML()
                 with gr.Row():
                     buttons = parameters_copypaste.create_buttons(["txt2img", "img2img", "inpaint", "extras"])
+                    gr.Button('拷贝到剪贴板').click(lambda:print('拷贝到剪贴板'),
+                    _js = 'copyToClipboard', inputs=generation_info)
                 parameters_copypaste.bind_buttons(buttons, image, generation_info)
 
         image.change(
@@ -1409,6 +1419,23 @@ def create_ui(wrap_gradio_gpu_call,wrap_queued_call):
             inputs=[image],
             outputs=[html, generation_info, html2],
         )
+
+    with gr.Blocks(analytics_enabled=False) as txtinfo_interface:
+        with gr.Row().style(equal_height=False):
+            _TextArea = gr.TextArea(label='')
+            _btn = gr.Button("从文本生成")
+            def f(paste_fields, parse_text_and_return_res):
+                    temppf = paste_fields['txt2img']["fields"]
+                    def load(text):
+                        return parse_text_and_return_res(text, temppf)
+
+                    _btn.click(
+                        fn=load,inputs=_TextArea,
+                        _js=f"switch_to_txt2img",
+                        outputs=[x[0] for x in temppf],
+                    )
+            
+            parameters_copypaste.add_to_my_bind_funcs(f)
 
     with gr.Blocks(analytics_enabled=False) as modelmerger_interface:
         with gr.Row().style(equal_height=False):
@@ -1748,7 +1775,7 @@ def create_ui(wrap_gradio_gpu_call,wrap_queued_call):
 
         if oldval != value:
             if opts.data_labels[key].onchange is not None:
-                opts.data_labels[key].onchange()
+                opts.data_labels[key].onchange() #选择模型后在这里重载模型
 
         opts.save(shared.config_filename)
 
@@ -1852,6 +1879,7 @@ def create_ui(wrap_gradio_gpu_call,wrap_queued_call):
         (img2img_interface, "img2img", "img2img"),
         (extras_interface, "Extras", "extras"),
         (pnginfo_interface, "PNG Info", "pnginfo"),
+        (txtinfo_interface, "文本信息", "txtinfo"),
         (modelmerger_interface, "Checkpoint Merger", "modelmerger"),
         (train_interface, "Train", "ti"),
     ]

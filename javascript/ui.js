@@ -245,3 +245,8 @@ setInterval(() => {
     if (refreshinjstimerbtn==null)return
     refreshinjstimerbtn.click()
 }, 5000);
+
+function copyToClipboard(){
+    console.log(arguments[0])
+    navigator.clipboard.writeText(arguments[0]);
+}
