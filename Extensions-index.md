@@ -255,6 +255,12 @@
 			"tags": ["script"]
 		},
 		{
+			"name": "Just Patch It Already!",
+			"url": "https://github.com/d8ahazard/sd_auto_fix.git",
+			"description": "Fixing things that won't otherwise get fixed, like not having to manually copy and rename a yaml file every time I create a new checkpoint, or the 'safe' unpickler.",
+			"tags": ["script"]
+		},
+		{
 			"name": "zh_CN Localization",
 			"url": "https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN",
 			"description": "Simplified Chinese localization",
