@@ -122,7 +122,7 @@ At this point, the instructions for the Manual installation may be applied start
         # Create environment
         conda create -n StableDiffusion python=3.10.6
         # Activate environment
-        conda active StableDiffusion
+        conda activate StableDiffusion
         # Validate environment is selected
         conda env list
         # Start local webserver
