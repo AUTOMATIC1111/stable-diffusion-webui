@@ -188,7 +188,7 @@ def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_
         for op in extras_ops:
             image, info = op(image, info)
 
-        if opts.use_original_name_batch and image_name != None:
+        if opts.use_original_name_batch and image_name is not None:
             basename = os.path.splitext(os.path.basename(image_name))[0]
         else:
             basename = ''
