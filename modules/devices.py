@@ -110,8 +110,8 @@ def autocast(disable=False):
 orig_tensor_to = torch.Tensor.to
 def tensor_to_fix(self, *args, **kwargs):
     if self.device.type != 'mps' and \
-       ((len(args) > 0 and isinstance(args[0], torch.device) and args[0].type == 'mps') or \
-       (isinstance(kwargs.get('device'), torch.device) and kwargs['device'].type == 'mps')):
+       ((len(args) > 0 and isinstance(args[0], torch.device) and args[0].type == 'mps') or
+        (isinstance(kwargs.get('device'), torch.device) and kwargs['device'].type == 'mps')):
         self = self.contiguous()
     return orig_tensor_to(self, *args, **kwargs)
 
