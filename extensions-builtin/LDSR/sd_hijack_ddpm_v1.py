@@ -600,6 +600,7 @@ class LatentDiffusionV1(DDPMV1):
         """
         :param x: img of size (bs, c, h, w)
         :return: n img crops of size (n, bs, c, kernel_size[0], kernel_size[1])
+        @param x:
         @param kernel_size:
         @param stride:
         @param uf:

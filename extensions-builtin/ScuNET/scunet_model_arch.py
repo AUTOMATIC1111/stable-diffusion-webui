@@ -39,6 +39,7 @@ class WMSA(nn.Module):
             shift: shift parameters in CyclicShift.
         Returns:
             attn_mask: should be (1 1 w p p),
+            @param shift:
             @param h:
             @param w:
             @param p:

@@ -464,6 +464,16 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
             The full path of the saved imaged.
         txt_fullfn (`str` or None):
             If a text file is saved for this image, this will be its full path. Otherwise None.
+            @param image:
+            @param path:
+            @param basename:
+            @param extension:
+            @param info:
+            @param no_prompt:
+            @param p:
+            @param existing_info:
+            @param forced_filename:
+            @param save_to_dirs:
             @param seed:
             @param prompt:
             @param short_filename:
