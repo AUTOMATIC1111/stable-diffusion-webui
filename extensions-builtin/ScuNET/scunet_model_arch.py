@@ -39,6 +39,9 @@ class WMSA(nn.Module):
             shift: shift parameters in CyclicShift.
         Returns:
             attn_mask: should be (1 1 w p p),
+            @param h:
+            @param w:
+            @param p:
         """
         # supporting square.
         attn_mask = torch.zeros(h, w, p, p, p, p, dtype=torch.bool, device=self.relative_position_params.device)

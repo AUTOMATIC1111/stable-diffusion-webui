@@ -451,6 +451,12 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
             The full path of the saved imaged.
         txt_fullfn (`str` or None):
             If a text file is saved for this image, this will be its full path. Otherwise None.
+            @param seed:
+            @param prompt:
+            @param short_filename:
+            @param grid:
+            @param pnginfo_section_name:
+            @param suffix:
     """
     namegen = FilenameGenerator(p, seed, prompt, image)
 
