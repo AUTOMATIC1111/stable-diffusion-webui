@@ -201,7 +201,7 @@ class Api:
         return ExtrasBatchImagesResponse(images=list(map(encode_pil_to_base64, result[0])), html_info=result[1])
 
     def pnginfoapi(self, req: PNGInfoRequest):
-        if(not req.image.strip()):
+        if not req.image.strip():
             return PNGInfoResponse(info="")
 
         result = run_pnginfo(decode_base64_to_image(req.image.strip()))
@@ -267,7 +267,7 @@ class Api:
         options = {}
         for key in shared.opts.data.keys():
             metadata = shared.opts.data_labels.get(key)
-            if(metadata is not None):
+            if metadata is not None:
                 options.update({key: shared.opts.data.get(key, shared.opts.data_labels.get(key).default)})
             else:
                 options.update({key: shared.opts.data.get(key, None)})

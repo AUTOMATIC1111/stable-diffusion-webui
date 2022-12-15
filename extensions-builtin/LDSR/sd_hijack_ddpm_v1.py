@@ -938,7 +938,7 @@ class LatentDiffusionV1(DDPMV1):
                 # as we are operating on latents, we need the factor from the original image size to the
                 # spatial latent size to properly rescale the crops for regenerating the bbox annotations
                 num_downs = self.first_stage_model.encoder.num_resolutions - 1
-                rescale_latent = 2 ** (num_downs)
+                rescale_latent = 2 ** num_downs
 
                 # get top left postions of patches as conforming for the bbbox tokenizer, therefore we
                 # need to rescale the tl patch coordinates to be in between (0,1)

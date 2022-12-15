@@ -123,7 +123,7 @@ def extract_image_data_embed(image):
     data_block_lower = xor_block(data_block_lower)
     data_block_upper = xor_block(data_block_upper)
 
-    data_block = (data_block_upper << 4) | (data_block_lower)
+    data_block = (data_block_upper << 4) | data_block_lower
     data_block = data_block.flatten().tobytes()
 
     data = zlib.decompress(data_block)
@@ -162,11 +162,11 @@ def caption_image_overlay(srcimage, title, footerLeft, footerMid, footerRight, t
     draw.text((padding, padding), title, anchor='lt', font=font, fill=(255, 255, 255, 230))
 
     _, _, w, h = draw.textbbox((0, 0), footerLeft, font=font)
-    fontsize_left = min(int(fontsize * (((image.size[0]/3)-(padding))/w)), 72)
+    fontsize_left = min(int(fontsize * (((image.size[0]/3) - padding) / w)), 72)
     _, _, w, h = draw.textbbox((0, 0), footerMid, font=font)
-    fontsize_mid = min(int(fontsize * (((image.size[0]/3)-(padding))/w)), 72)
+    fontsize_mid = min(int(fontsize * (((image.size[0]/3) - padding) / w)), 72)
     _, _, w, h = draw.textbbox((0, 0), footerRight, font=font)
-    fontsize_right = min(int(fontsize * (((image.size[0]/3)-(padding))/w)), 72)
+    fontsize_right = min(int(fontsize * (((image.size[0]/3) - padding) / w)), 72)
 
     font = ImageFont.truetype(textfont, min(fontsize_left, fontsize_mid, fontsize_right))
 

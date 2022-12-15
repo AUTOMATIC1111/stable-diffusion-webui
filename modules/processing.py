@@ -73,7 +73,7 @@ def apply_overlay(image, paste_loc, index, overlays):
     return image
 
 
-class StableDiffusionProcessing():
+class StableDiffusionProcessing:
     """
     The first set of paramaters: sd_models -> do_not_reload_embeddings represent the minimum required to create a StableDiffusionProcessing
     """

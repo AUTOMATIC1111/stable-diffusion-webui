@@ -239,7 +239,7 @@ def image_entropy_points(im, settings):
         crop = im.crop(tuple(crop_current))
         e = image_entropy(crop)
 
-        if (e > e_max):
+        if e > e_max:
           e_max = e
           crop_best = list(crop_current)
 

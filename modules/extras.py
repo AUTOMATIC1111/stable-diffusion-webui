@@ -101,7 +101,7 @@ def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_
             res = Image.blend(image, res, gfpgan_visibility)
 
         info += f"GFPGAN visibility:{round(gfpgan_visibility, 2)}\n"
-        return (res, info)
+        return res, info
 
     def run_codeformer(image: Image.Image, info: str) -> Tuple[Image.Image, str]:
         restored_img = modules.codeformer_model.codeformer.restore(np.array(image, dtype=np.uint8), w=codeformer_weight)
@@ -111,7 +111,7 @@ def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_
             res = Image.blend(image, res, codeformer_visibility)
 
         info += f"CodeFormer w: {round(codeformer_weight, 2)}, CodeFormer visibility:{round(codeformer_visibility, 2)}\n"
-        return (res, info)
+        return res, info
 
     def upscale(image, scaler_index, resize, mode, resize_w, resize_h, crop):
         upscaler = shared.sd_upscalers[scaler_index]
@@ -129,7 +129,7 @@ def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_
             upscaling_resize = max(upscaling_resize_w/image.width, upscaling_resize_h/image.height)
             crop_info = " (crop)" if upscaling_crop else ""
             info += f"Resize to: {upscaling_resize_w:g}x{upscaling_resize_h:g}{crop_info}\n"
-        return (image, info)
+        return image, info
 
     @dataclass
     class UpscaleParams:
@@ -157,7 +157,7 @@ def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_
                 blended_result = res
             else:
                 blended_result = Image.blend(blended_result, res, upscaler.blend_alpha)
-        return (blended_result, info)
+        return blended_result, info
 
     # Build a list of operations to run
     facefix_ops: List[Callable] = []
