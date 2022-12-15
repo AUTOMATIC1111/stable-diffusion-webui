@@ -1,24 +1,23 @@
 import datetime
-import sys
-import traceback
-
-import pytz
 import io
+import json
 import math
 import os
-from collections import namedtuple
 import re
+import string
+import sys
+import traceback
+from collections import namedtuple
 
 import numpy as np
 import piexif
 import piexif.helper
+import pytz
 from PIL import Image, ImageFont, ImageDraw, PngImagePlugin
 from fonts.ttf import Roboto
-import string
-import json
 
 from modules import sd_samplers, shared, script_callbacks
-from modules.shared import opts, cmd_opts
+from modules.shared import opts
 
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
 
@@ -94,8 +93,10 @@ def combine_grid(grid):
         r = r.astype(np.uint8)
         return Image.fromarray(r, 'L')
 
-    mask_w = make_mask_image(np.arange(grid.overlap, dtype=np.float32).reshape((1, grid.overlap)).repeat(grid.tile_h, axis=0))
-    mask_h = make_mask_image(np.arange(grid.overlap, dtype=np.float32).reshape((grid.overlap, 1)).repeat(grid.image_w, axis=1))
+    mask_w = make_mask_image(
+        np.arange(grid.overlap, dtype=np.float32).reshape((1, grid.overlap)).repeat(grid.tile_h, axis=0))
+    mask_h = make_mask_image(
+        np.arange(grid.overlap, dtype=np.float32).reshape((grid.overlap, 1)).repeat(grid.image_w, axis=1))
 
     combined_image = Image.new("RGB", (grid.image_w, grid.image_h))
     for y, h, row in grid.tiles:
@@ -138,10 +139,12 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts):
 
     def draw_texts(drawing, draw_x, draw_y, lines):
         for i, line in enumerate(lines):
-            drawing.multiline_text((draw_x, draw_y + line.size[1] / 2), line.text, font=fnt, fill=color_active if line.is_active else color_inactive, anchor="mm", align="center")
+            drawing.multiline_text((draw_x, draw_y + line.size[1] / 2), line.text, font=fnt,
+                                   fill=color_active if line.is_active else color_inactive, anchor="mm", align="center")
 
             if not line.is_active:
-                drawing.line((draw_x - line.size[0] // 2, draw_y + line.size[1] // 2, draw_x + line.size[0] // 2, draw_y + line.size[1] // 2), fill=color_inactive, width=4)
+                drawing.line((draw_x - line.size[0] // 2, draw_y + line.size[1] // 2, draw_x + line.size[0] // 2,
+                              draw_y + line.size[1] // 2), fill=color_inactive, width=4)
 
             draw_y += line.size[1] + line_spacing
 
@@ -212,8 +215,10 @@ def draw_prompt_matrix(im, width, height, all_prompts):
     prompts_horiz = prompts[:boundary]
     prompts_vert = prompts[boundary:]
 
-    hor_texts = [[GridAnnotation(x, is_active=pos & (1 << i) != 0) for i, x in enumerate(prompts_horiz)] for pos in range(1 << len(prompts_horiz))]
-    ver_texts = [[GridAnnotation(x, is_active=pos & (1 << i) != 0) for i, x in enumerate(prompts_vert)] for pos in range(1 << len(prompts_vert))]
+    hor_texts = [[GridAnnotation(x, is_active=pos & (1 << i) != 0) for i, x in enumerate(prompts_horiz)] for pos in
+                 range(1 << len(prompts_horiz))]
+    ver_texts = [[GridAnnotation(x, is_active=pos & (1 << i) != 0) for i, x in enumerate(prompts_vert)] for pos in
+                 range(1 << len(prompts_vert))]
 
     return draw_grid_annotations(im, width, height, hor_texts, ver_texts)
 
@@ -265,11 +270,13 @@ def resize_image(resize_mode, im, width, height):
         if ratio < src_ratio:
             fill_height = height // 2 - src_h // 2
             res.paste(resized.resize((width, fill_height), box=(0, 0, width, 0)), box=(0, 0))
-            res.paste(resized.resize((width, fill_height), box=(0, resized.height, width, resized.height)), box=(0, fill_height + src_h))
+            res.paste(resized.resize((width, fill_height), box=(0, resized.height, width, resized.height)),
+                      box=(0, fill_height + src_h))
         elif ratio > src_ratio:
             fill_width = width // 2 - src_w // 2
             res.paste(resized.resize((fill_width, height), box=(0, 0, 0, height)), box=(0, 0))
-            res.paste(resized.resize((fill_width, height), box=(resized.width, 0, resized.width, height)), box=(fill_width + src_w, 0))
+            res.paste(resized.resize((fill_width, height), box=(resized.width, 0, resized.width, height)),
+                      box=(fill_width + src_w, 0))
 
     return res
 
@@ -299,16 +306,19 @@ def sanitize_filename_part(text, replace_spaces=True):
 class FilenameGenerator:
     replacements = {
         'seed': lambda self: self.seed if self.seed is not None else '',
-        'steps': lambda self:  self.p and self.p.steps,
+        'steps': lambda self: self.p and self.p.steps,
         'cfg': lambda self: self.p and self.p.cfg_scale,
         'width': lambda self: self.image.width,
         'height': lambda self: self.image.height,
-        'styles': lambda self: self.p and sanitize_filename_part(", ".join([style for style in self.p.styles if not style == "None"]) or "None", replace_spaces=False),
+        'styles': lambda self: self.p and sanitize_filename_part(
+            ", ".join([style for style in self.p.styles if not style == "None"]) or "None", replace_spaces=False),
         'sampler': lambda self: self.p and sanitize_filename_part(self.p.sampler_name, replace_spaces=False),
         'model_hash': lambda self: getattr(self.p, "sd_model_hash", shared.sd_model.sd_model_hash),
-        'model_name': lambda self: sanitize_filename_part(shared.sd_model.sd_checkpoint_info.model_name, replace_spaces=False),
+        'model_name': lambda self: sanitize_filename_part(shared.sd_model.sd_checkpoint_info.model_name,
+                                                          replace_spaces=False),
         'date': lambda self: datetime.datetime.now().strftime('%Y-%m-%d'),
-        'datetime': lambda self, *args: self.datetime(*args),  # accepts formats: [datetime], [datetime<Format>], [datetime<Format><Time Zone>]
+        'datetime': lambda self, *args: self.datetime(*args),
+        # accepts formats: [datetime], [datetime<Format>], [datetime<Format><Time Zone>]
         'job_timestamp': lambda self: getattr(self.p, "job_timestamp", shared.state.job_timestamp),
         'prompt': lambda self: sanitize_filename_part(self.prompt),
         'prompt_no_styles': lambda self: self.prompt_no_style(),
@@ -410,7 +420,8 @@ def get_next_sequence_number(path, basename):
     prefix_length = len(basename)
     for p in os.listdir(path):
         if p.startswith(basename):
-            l = os.path.splitext(p[prefix_length:])[0].split('-')  # splits the filename (removing the basename first if one is defined, so the sequence number is always the first element)
+            l = os.path.splitext(p[prefix_length:])[0].split(
+                '-')  # splits the filename (removing the basename first if one is defined, so the sequence number is always the first element)
             try:
                 result = max(int(l[0]), result)
             except ValueError:
@@ -419,7 +430,9 @@ def get_next_sequence_number(path, basename):
     return result + 1
 
 
-def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None, forced_filename=None, suffix="", save_to_dirs=None):
+def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False,
+               no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None,
+               forced_filename=None, suffix="", save_to_dirs=None):
     """Save an image.
 
     Args:

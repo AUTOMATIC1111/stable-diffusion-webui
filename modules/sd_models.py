@@ -1,17 +1,17 @@
 import collections
-import os.path
-import sys
 import gc
-from collections import namedtuple
-import torch
+import os.path
 import re
-import safetensors.torch
-from omegaconf import OmegaConf
+import sys
+from collections import namedtuple
 from os import mkdir
 from urllib import request
-import ldm.modules.midas as midas
 
+import ldm.modules.midas as midas
+import safetensors.torch
+import torch
 from ldm.util import instantiate_from_config
+from omegaconf import OmegaConf
 
 from modules import shared, modelloader, devices, script_callbacks, sd_vae
 from modules.paths import models_path
@@ -42,15 +42,16 @@ def setup_model():
     enable_midas_autodownload()
 
 
-def checkpoint_tiles(): 
-    convert = lambda name: int(name) if name.isdigit() else name.lower() 
-    alphanumeric_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)] 
-    return sorted([x.title for x in checkpoints_list.values()], key = alphanumeric_key)
+def checkpoint_tiles():
+    convert = lambda name: int(name) if name.isdigit() else name.lower()
+    alphanumeric_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
+    return sorted([x.title for x in checkpoints_list.values()], key=alphanumeric_key)
 
 
 def list_models():
     checkpoints_list.clear()
-    model_list = modelloader.load_models(model_path=model_path, command_path=shared.cmd_opts.ckpt_dir, ext_filter=[".ckpt", ".safetensors"])
+    model_list = modelloader.load_models(model_path=model_path, command_path=shared.cmd_opts.ckpt_dir,
+                                         ext_filter=[".ckpt", ".safetensors"])
 
     def modeltitle(path, shorthash):
         abspath = os.path.abspath(path)
@@ -76,7 +77,8 @@ def list_models():
         checkpoints_list[title] = CheckpointInfo(cmd_ckpt, title, h, short_model_name, shared.cmd_opts.config)
         shared.opts.data['sd_model_checkpoint'] = title
     elif cmd_ckpt is not None and cmd_ckpt != shared.default_sd_model_file:
-        print(f"Checkpoint in --ckpt argument not found (Possible it was moved to {model_path}: {cmd_ckpt}", file=sys.stderr)
+        print(f"Checkpoint in --ckpt argument not found (Possible it was moved to {model_path}: {cmd_ckpt}",
+              file=sys.stderr)
     for filename in model_list:
         h = model_hash(filename)
         title, short_model_name = modeltitle(filename, h)
@@ -90,7 +92,8 @@ def list_models():
 
 
 def get_closet_checkpoint_match(searchString):
-    applicable = sorted([info for info in checkpoints_list.values() if searchString in info.title], key = lambda x:len(x.title))
+    applicable = sorted([info for info in checkpoints_list.values() if searchString in info.title],
+                        key=lambda x: len(x.title))
     if len(applicable) > 0:
         return applicable[0]
     return None
@@ -122,7 +125,9 @@ def select_checkpoint():
         print(f" - directory {model_path}", file=sys.stderr)
         if shared.cmd_opts.ckpt_dir is not None:
             print(f" - directory {os.path.abspath(shared.cmd_opts.ckpt_dir)}", file=sys.stderr)
-        print(f"Can't run without a checkpoint. Find and place a .ckpt file into any of those locations. The program will exit.", file=sys.stderr)
+        print(
+            f"Can't run without a checkpoint. Find and place a .ckpt file into any of those locations. The program will exit.",
+            file=sys.stderr)
         exit(1)
 
     checkpoint_info = next(iter(checkpoints_list.values()))
@@ -195,7 +200,7 @@ def load_model_weights(model, checkpoint_info, vae_file="auto"):
         sd = read_state_dict(checkpoint_file)
         model.load_state_dict(sd, strict=False)
         del sd
-        
+
         if cache_enabled:
             # cache newly loaded model
             checkpoints_loaded[checkpoint_info] = model.state_dict().copy()
@@ -220,7 +225,7 @@ def load_model_weights(model, checkpoint_info, vae_file="auto"):
 
     # clean up cache if limit is reached
     if cache_enabled:
-        while len(checkpoints_loaded) > shared.opts.sd_checkpoint_cache + 1: # we need to count the current model
+        while len(checkpoints_loaded) > shared.opts.sd_checkpoint_cache + 1:  # we need to count the current model
             checkpoints_loaded.popitem(last=False)  # LRU
 
     model.sd_model_hash = sd_model_hash
@@ -266,7 +271,7 @@ def enable_midas_autodownload():
         if not os.path.exists(path):
             if not os.path.exists(midas_path):
                 mkdir(midas_path)
-    
+
             print(f"Downloading midas model weights for {model_type} to {path}")
             request.urlretrieve(midas_urls[model_type], path)
             print(f"{model_type} downloaded")
@@ -274,6 +279,7 @@ def enable_midas_autodownload():
         return midas.api.load_model_inner(model_type)
 
     midas.api.load_model = load_model_wrapper
+
 
 def load_model(checkpoint_info=None):
     from modules import lowvram, sd_hijack
@@ -289,7 +295,7 @@ def load_model(checkpoint_info=None):
         devices.torch_gc()
 
     sd_config = OmegaConf.load(checkpoint_info.config)
-    
+
     if should_hijack_inpainting(checkpoint_info):
         # Hardcoded config for now...
         sd_config.model.target = "ldm.models.diffusion.ddpm.LatentInpaintDiffusion"
@@ -327,14 +333,15 @@ def load_model(checkpoint_info=None):
 def reload_model_weights(sd_model=None, info=None):
     from modules import lowvram, devices, sd_hijack
     checkpoint_info = info or select_checkpoint()
- 
+
     if not sd_model:
         sd_model = shared.sd_model
 
     if sd_model.sd_model_checkpoint == checkpoint_info.filename:
         return
 
-    if sd_model.sd_checkpoint_info.config != checkpoint_info.config or should_hijack_inpainting(checkpoint_info) != should_hijack_inpainting(sd_model.sd_checkpoint_info):
+    if sd_model.sd_checkpoint_info.config != checkpoint_info.config or should_hijack_inpainting(
+            checkpoint_info) != should_hijack_inpainting(sd_model.sd_checkpoint_info):
         del sd_model
         checkpoints_loaded.clear()
         load_model(checkpoint_info)

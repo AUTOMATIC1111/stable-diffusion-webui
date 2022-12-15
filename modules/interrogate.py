@@ -1,11 +1,10 @@
 import os
+import re
 import sys
 import traceback
 from collections import namedtuple
-import re
 
 import torch
-
 from torchvision import transforms
 from torchvision.transforms.functional import InterpolationMode
 
@@ -52,7 +51,9 @@ class InterrogateModels:
             download_name='model_base_caption_capfilt_large.pth',
         )
 
-        blip_model = models.blip.blip_decoder(pretrained=files[0], image_size=blip_image_eval_size, vit='base', med_config=os.path.join(paths.paths["BLIP"], "configs", "med_config.json"))
+        blip_model = models.blip.blip_decoder(pretrained=files[0], image_size=blip_image_eval_size, vit='base',
+                                              med_config=os.path.join(paths.paths["BLIP"], "configs",
+                                                                      "med_config.json"))
         blip_model.eval()
 
         return blip_model
@@ -120,7 +121,7 @@ class InterrogateModels:
         similarity /= image_features.shape[0]
 
         top_probs, top_labels = similarity.cpu().topk(top_count, dim=-1)
-        return [(text_array[top_labels[0][i].numpy()], (top_probs[0][i].numpy()*100)) for i in range(top_count)]
+        return [(text_array[top_labels[0][i].numpy()], (top_probs[0][i].numpy() * 100)) for i in range(top_count)]
 
     def generate_caption(self, pil_image):
         gpu_image = transforms.Compose([
@@ -130,7 +131,10 @@ class InterrogateModels:
         ])(pil_image).unsqueeze(0).type(self.dtype).to(devices.device_interrogate)
 
         with torch.no_grad():
-            caption = self.blip_model.generate(gpu_image, sample=False, num_beams=shared.opts.interrogate_clip_num_beams, min_length=shared.opts.interrogate_clip_min_length, max_length=shared.opts.interrogate_clip_max_length)
+            caption = self.blip_model.generate(gpu_image, sample=False,
+                                               num_beams=shared.opts.interrogate_clip_num_beams,
+                                               min_length=shared.opts.interrogate_clip_min_length,
+                                               max_length=shared.opts.interrogate_clip_max_length)
 
         return caption[0]
 
@@ -167,7 +171,7 @@ class InterrogateModels:
                     matches = self.rank(image_features, items, top_count=topn)
                     for match, score in matches:
                         if shared.opts.interrogate_return_ranks:
-                            res += f", ({match}:{score/100:.3f})"
+                            res += f", ({match}:{score / 100:.3f})"
                         else:
                             res += ", " + match
 

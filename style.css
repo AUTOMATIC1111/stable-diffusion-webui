@@ -10,7 +10,7 @@
     height: 0px;
 }
 
-#sh{
+#sh {
     min-width: 2em;
     min-height: 2em;
     max-width: 2em;
@@ -20,10 +20,12 @@
     padding-right: 0.25em;
     margin: 0.1em 0;
     opacity: 0%;
-    cursor: default;	
+    cursor: default;
 }
 
-.output-html p {margin: 0 0.5em;}
+.output-html p {
+    margin: 0 0.5em;
+}
 
 .row > *,
 .row > .gr-form > * {
@@ -36,7 +38,7 @@
     color: #444;
 }
 
-.performance p{
+.performance p {
     display: inline-block;
 }
 
@@ -57,7 +59,7 @@
     }
 }
 
-#txt2img_gallery img, #img2img_gallery img{
+#txt2img_gallery img, #img2img_gallery img {
     object-fit: scale-down;
 }
 
@@ -73,42 +75,42 @@
     margin-right: auto;
 }
 
-#random_seed, #random_subseed, #reuse_seed, #reuse_subseed, #open_folder{
+#random_seed, #random_subseed, #reuse_seed, #reuse_subseed, #open_folder {
     min-width: auto;
     flex-grow: 0;
     padding-left: 0.25em;
     padding-right: 0.25em;
 }
 
-#hidden_element{
+#hidden_element {
     display: none;
 }
 
-#seed_row, #subseed_row{
+#seed_row, #subseed_row {
     gap: 0.5rem;
 }
 
-#subseed_show_box{
+#subseed_show_box {
     min-width: auto;
     flex-grow: 0;
 }
 
-#subseed_show_box > div{
+#subseed_show_box > div {
     border: 0;
     height: 100%;
 }
 
-#subseed_show{
+#subseed_show {
     min-width: auto;
     flex-grow: 0;
     padding: 0;
 }
 
-#subseed_show label{
+#subseed_show label {
     height: 100%;
 }
 
-#roll_col{
+#roll_col {
     min-width: unset !important;
     flex-grow: 0 !important;
     padding: 0.4em 0;
@@ -125,56 +127,57 @@
     margin: 0.1em 0;
 }
 
-#interrogate_col{
+#interrogate_col {
     min-width: 0 !important;
     max-width: 8em !important;
 }
-#interrogate, #deepbooru{
+
+#interrogate, #deepbooru {
     margin: 0em 0.25em 0.9em 0.25em;
     min-width: 8em;
     max-width: 8em;
 }
 
-#style_pos_col, #style_neg_col{
+#style_pos_col, #style_neg_col {
     min-width: 8em !important;
 }
 
-#txt2img_style_index, #txt2img_style2_index, #img2img_style_index, #img2img_style2_index{
+#txt2img_style_index, #txt2img_style2_index, #img2img_style_index, #img2img_style2_index {
     margin-top: 1em;
 }
 
-.gr-form{
+.gr-form {
     background: transparent;
 }
 
-.my-4{
+.my-4 {
     margin-top: 0;
     margin-bottom: 0;
 }
 
-#toprow div{
+#toprow div {
     border: none;
     gap: 0;
     background: transparent;
 }
 
-#resize_mode{
+#resize_mode {
     flex: 1.5;
 }
 
-button{
+button {
     align-self: stretch !important;
 }
 
-.overflow-hidden, .gr-panel{
+.overflow-hidden, .gr-panel {
     overflow: visible !important;
 }
 
-#x_type, #y_type{
+#x_type, #y_type {
     max-width: 10em;
 }
 
-#txt2img_preview, #img2img_preview, #ti_preview{
+#txt2img_preview, #img2img_preview, #ti_preview {
     position: absolute;
     width: 320px;
     left: 0;
@@ -200,11 +203,11 @@ button{
     }
 }
 
-#txt2img_preview div.left-0.top-0, #img2img_preview div.left-0.top-0, #ti_preview div.left-0.top-0{
+#txt2img_preview div.left-0.top-0, #img2img_preview div.left-0.top-0, #ti_preview div.left-0.top-0 {
     display: none;
 }
 
-fieldset span.text-gray-500, .gr-block.gr-box span.text-gray-500,  label.block span{
+fieldset span.text-gray-500, .gr-block.gr-box span.text-gray-500, label.block span {
     position: absolute;
     top: -0.6em;
     line-height: 1.2em;
@@ -219,107 +222,107 @@ fieldset span.text-gray-500, .gr-block.gr-box span.text-gray-500,  label.block s
     z-index: 300;
 }
 
-.dark fieldset span.text-gray-500, .dark .gr-block.gr-box span.text-gray-500, .dark label.block span{
+.dark fieldset span.text-gray-500, .dark .gr-block.gr-box span.text-gray-500, .dark label.block span {
     background-color: rgb(31, 41, 55);
     border-top: 1px solid rgb(55 65 81);
     border-left: 1px solid rgb(55 65 81);
     border-right: 1px solid rgb(55 65 81);
 }
 
-#settings fieldset span.text-gray-500, #settings .gr-block.gr-box span.text-gray-500, #settings label.block span{
+#settings fieldset span.text-gray-500, #settings .gr-block.gr-box span.text-gray-500, #settings label.block span {
     position: relative;
     border: none;
     margin-right: 8em;
 }
 
-.gr-panel div.flex-col div.justify-between label span{
+.gr-panel div.flex-col div.justify-between label span {
     margin: 0;
 }
 
-#settings .gr-panel div.flex-col div.justify-between div{
+#settings .gr-panel div.flex-col div.justify-between div {
     position: relative;
     z-index: 200;
 }
 
-input[type="range"]{
+input[type="range"] {
     margin: 0.5em 0 -0.3em 0;
 }
 
-#txt2img_sampling label{
+#txt2img_sampling label {
     padding-left: 0.6em;
     padding-right: 0.6em;
 }
 
 #mask_bug_info {
-  text-align: center;
-  display: block;
-  margin-top: -0.75em;
-  margin-bottom: -0.75em;
+    text-align: center;
+    display: block;
+    margin-top: -0.75em;
+    margin-bottom: -0.75em;
 }
 
-#txt2img_negative_prompt, #img2img_negative_prompt{
+#txt2img_negative_prompt, #img2img_negative_prompt {
 }
 
 /* gradio 3.8 adds opacity to progressbar which makes it blink; disable it here */
 .transition.opacity-20 {
-  opacity: 1 !important;
+    opacity: 1 !important;
 }
 
 /* more gradio's garbage cleanup */
 .min-h-\[4rem\] {
-  min-height: unset !important;
+    min-height: unset !important;
 }
 
-#txt2img_progressbar, #img2img_progressbar, #ti_progressbar{
-  position: absolute;
-  z-index: 1000;
-  right: 0;
-  padding-left: 5px;
-  padding-right: 5px;
-  display: block;
+#txt2img_progressbar, #img2img_progressbar, #ti_progressbar {
+    position: absolute;
+    z-index: 1000;
+    right: 0;
+    padding-left: 5px;
+    padding-right: 5px;
+    display: block;
 }
 
-#txt2img_progress_row, #img2img_progress_row{
-  margin-bottom: 10px;
-  margin-top: -18px;
+#txt2img_progress_row, #img2img_progress_row {
+    margin-bottom: 10px;
+    margin-top: -18px;
 }
 
-.progressDiv{
-  width: 100%;
-  height: 20px;
-  background: #b4c0cc;
-  border-radius: 8px;
+.progressDiv {
+    width: 100%;
+    height: 20px;
+    background: #b4c0cc;
+    border-radius: 8px;
 }
 
-.dark .progressDiv{
-  background: #424c5b;
+.dark .progressDiv {
+    background: #424c5b;
 }
 
-.progressDiv .progress{
-  width: 0%;
-  height: 20px;
-  background: #0060df;
-  color: white;
-  font-weight: bold;
-  line-height: 20px;
-  padding: 0 8px 0 0;
-  text-align: right;
-  border-radius: 8px;
+.progressDiv .progress {
+    width: 0%;
+    height: 20px;
+    background: #0060df;
+    color: white;
+    font-weight: bold;
+    line-height: 20px;
+    padding: 0 8px 0 0;
+    text-align: right;
+    border-radius: 8px;
 }
 
-#lightboxModal{
-  display: none;
-  position: fixed;
-  z-index: 1001;
-  padding-top: 100px;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  overflow: auto;
-  background-color: rgba(20, 20, 20, 0.95);
-  user-select: none;
-  -webkit-user-select: none;
+#lightboxModal {
+    display: none;
+    position: fixed;
+    z-index: 1001;
+    padding-top: 100px;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(20, 20, 20, 0.95);
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 .modalControls {
@@ -332,7 +335,7 @@ input[type="range"]{
     right: 0;
     padding: 16px;
     gap: 16px;
-    background-color: rgba(0,0,0,0.2);
+    background-color: rgba(0, 0, 0, 0.2);
 }
 
 .modalClose {
@@ -351,13 +354,13 @@ input[type="range"]{
     grid-area: tile;
 }
 
-.modalClose, 
+.modalClose,
 .modalZoom,
 .modalTileImage {
-  color: white;
-  font-size: 35px;
-  font-weight: bold;
-  cursor: pointer;
+    color: white;
+    font-size: 35px;
+    font-weight: bold;
+    cursor: pointer;
 }
 
 .modalSave {
@@ -374,9 +377,9 @@ input[type="range"]{
 .modalSave:focus,
 .modalZoom:hover,
 .modalZoom:focus {
-  color: #999;
-  text-decoration: none;
-  cursor: pointer;
+    color: #999;
+    text-decoration: none;
+    cursor: pointer;
 }
 
 #modalImage {
@@ -394,93 +397,93 @@ input[type="range"]{
 
 .modalPrev,
 .modalNext {
-  cursor: pointer;
-  position: absolute;
-  top: 50%;
-  width: auto;
-  padding: 16px;
-  margin-top: -50px;
-  color: white;
-  font-weight: bold;
-  font-size: 20px;
-  transition: 0.6s ease;
-  border-radius: 0 3px 3px 0;
-  user-select: none;
-  -webkit-user-select: none;
+    cursor: pointer;
+    position: absolute;
+    top: 50%;
+    width: auto;
+    padding: 16px;
+    margin-top: -50px;
+    color: white;
+    font-weight: bold;
+    font-size: 20px;
+    transition: 0.6s ease;
+    border-radius: 0 3px 3px 0;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 .modalNext {
-  right: 0;
-  border-radius: 3px 0 0 3px;
+    right: 0;
+    border-radius: 3px 0 0 3px;
 }
 
 .modalPrev:hover,
 .modalNext:hover {
-  background-color: rgba(0, 0, 0, 0.8);
+    background-color: rgba(0, 0, 0, 0.8);
 }
 
-#imageARPreview{
-    position:absolute;
-    top:0px;
-    left:0px;
-    border:2px solid red;
-    background:rgba(255, 0, 0, 0.3);
+#imageARPreview {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    border: 2px solid red;
+    background: rgba(255, 0, 0, 0.3);
     z-index: 900;
-    pointer-events:none;
-    display:none
+    pointer-events: none;
+    display: none
 }
 
-#txt2img_interrupt, #img2img_interrupt{
-  position: absolute;
-  width: 50%;
-  height: 72px;
-  background: #b4c0cc;
-  border-radius: 0px;
-  display: none;
+#txt2img_interrupt, #img2img_interrupt {
+    position: absolute;
+    width: 50%;
+    height: 72px;
+    background: #b4c0cc;
+    border-radius: 0px;
+    display: none;
 }
 
-#txt2img_skip, #img2img_skip{
-  position: absolute;
-  width: 50%;
-  right: 0px;
-  height: 72px;
-  background: #b4c0cc;
-  border-radius: 0px;
-  display: none;
+#txt2img_skip, #img2img_skip {
+    position: absolute;
+    width: 50%;
+    right: 0px;
+    height: 72px;
+    background: #b4c0cc;
+    border-radius: 0px;
+    display: none;
 }
 
 .red {
-	color: red;
+    color: red;
 }
 
 .gallery-item {
     --tw-bg-opacity: 0 !important;
 }
 
-#context-menu{
-    z-index:9999;
-    position:absolute;
-    display:block;
-    padding:0px 0;
-    border:2px solid #a55000;
-    border-radius:8px;
-    box-shadow:1px 1px 2px #CE6400;
+#context-menu {
+    z-index: 9999;
+    position: absolute;
+    display: block;
+    padding: 0px 0;
+    border: 2px solid #a55000;
+    border-radius: 8px;
+    box-shadow: 1px 1px 2px #CE6400;
     width: 200px;
 }
 
-.context-menu-items{
+.context-menu-items {
     list-style: none;
     margin: 0;
     padding: 0;
 }
 
-.context-menu-items a{
-    display:block;
-    padding:5px;
-    cursor:pointer;
+.context-menu-items a {
+    display: block;
+    padding: 5px;
+    cursor: pointer;
 }
 
-.context-menu-items a:hover{
+.context-menu-items a:hover {
     background: #a55000;
 }
 
@@ -488,20 +491,20 @@ input[type="range"]{
     gap: 0.4em;
 }
 
-#quicksettings > div{
+#quicksettings > div {
     border: none;
     background: none;
     flex: unset;
     gap: 0.5em;
 }
 
-#quicksettings > div > div{
+#quicksettings > div > div {
     max-width: 32em;
     min-width: 24em;
     padding: 0;
 }
 
-#refresh_sd_model_checkpoint, #refresh_sd_vae, #refresh_sd_hypernetwork, #refresh_train_hypernetwork_name, #refresh_train_embedding_name, #refresh_localization{
+#refresh_sd_model_checkpoint, #refresh_sd_vae, #refresh_sd_hypernetwork, #refresh_train_hypernetwork_name, #refresh_train_embedding_name, #refresh_localization {
     max-width: 2.5em;
     min-width: 2.5em;
     height: 2.4em;
@@ -517,24 +520,24 @@ canvas[key="mask"] {
 
 
 /* gradio 3.4.1 stuff for editable scrollbar values */
-.gr-box > div > div > input.gr-text-input{
+.gr-box > div > div > input.gr-text-input {
     position: absolute;
     right: 0.5em;
     top: -0.6em;
     z-index: 200;
     width: 8em;
 }
+
 #quicksettings .gr-box > div > div > input.gr-text-input {
-  top: -1.12em;
+    top: -1.12em;
 }
 
-.row.gr-compact{
+.row.gr-compact {
     overflow: visible;
 }
 
 #img2img_image, #img2img_image > .h-60, #img2img_image > .h-60 > div, #img2img_image > .h-60 > div > img,
-img2maskimg, #img2maskimg > .h-60, #img2maskimg > .h-60 > div, #img2maskimg > .h-60 > div > img
-{
+img2maskimg, #img2maskimg > .h-60, #img2maskimg > .h-60 > div, #img2maskimg > .h-60 > div > img {
     height: 480px !important;
     max-height: 480px !important;
     min-height: 480px !important;
@@ -542,28 +545,28 @@ img2maskimg, #img2maskimg > .h-60, #img2maskimg > .h-60 > div, #img2maskimg > .h
 
 /* Extensions */
 
-#tab_extensions table{
+#tab_extensions table {
     border-collapse: collapse;
 }
 
-#tab_extensions table td, #tab_extensions table th{
+#tab_extensions table td, #tab_extensions table th {
     border: 1px solid #ccc;
     padding: 0.25em 0.5em;
 }
 
-#tab_extensions table input[type="checkbox"]{
+#tab_extensions table input[type="checkbox"] {
     margin-right: 0.5em;
 }
 
-#tab_extensions button{
+#tab_extensions button {
     max-width: 16em;
 }
 
-#tab_extensions input[disabled="disabled"]{
+#tab_extensions input[disabled="disabled"] {
     opacity: 0.5;
 }
 
-.extension-tag{
+.extension-tag {
     font-weight: bold;
     font-size: 95%;
 }
@@ -578,15 +581,18 @@ Then, you will need to add the RTL counterpart only if needed in the rtl section
     :host {
         direction: rtl;
     }
+
     select, .file-preview, .gr-text-input, .output-html:has(.performance), #ti_progress {
         direction: ltr;
     }
+
     #script_list > label > select,
     #x_type > label > select,
     #y_type > label > select {
         direction: rtl;
     }
-    .gr-radio, .gr-checkbox{
+
+    .gr-radio, .gr-checkbox {
         margin-left: 0.25em;
     }
 
@@ -595,53 +601,66 @@ Then, you will need to add the RTL counterpart only if needed in the rtl section
         margin-right: unset;
         margin-left: 0;
     }
+
     .justify-center.overflow-x-scroll {
         justify-content: right;
     }
+
     .justify-center.overflow-x-scroll button:first-of-type {
         margin-left: unset;
         margin-right: auto;
     }
+
     .justify-center.overflow-x-scroll button:last-of-type {
         margin-right: unset;
         margin-left: auto;
     }
-    #settings fieldset span.text-gray-500, #settings .gr-block.gr-box span.text-gray-500, #settings label.block span{
+
+    #settings fieldset span.text-gray-500, #settings .gr-block.gr-box span.text-gray-500, #settings label.block span {
         margin-right: unset;
         margin-left: 8em;
     }
-    #txt2img_progressbar, #img2img_progressbar, #ti_progressbar{
+
+    #txt2img_progressbar, #img2img_progressbar, #ti_progressbar {
         right: unset;
         left: 0;
     }
-    .progressDiv .progress{
+
+    .progressDiv .progress {
         padding: 0 0 0 8px;
         text-align: left;
     }
-    #lightboxModal{
+
+    #lightboxModal {
         left: unset;
         right: 0;
     }
-    .modalPrev, .modalNext{
+
+    .modalPrev, .modalNext {
         border-radius: 3px 0 0 3px;
     }
+
     .modalNext {
         right: unset;
         left: 0;
         border-radius: 0 3px 3px 0;
     }
-    #imageARPreview{
-        left:unset;
-        right:0px;
+
+    #imageARPreview {
+        left: unset;
+        right: 0px;
     }
-    #txt2img_skip, #img2img_skip{
+
+    #txt2img_skip, #img2img_skip {
         right: unset;
         left: 0px;
     }
-    #context-menu{
-        box-shadow:-1px 1px 2px #CE6400;
+
+    #context-menu {
+        box-shadow: -1px 1px 2px #CE6400;
     }
-    .gr-box > div > div > input.gr-text-input{
+
+    .gr-box > div > div > input.gr-text-input {
         right: unset;
         left: 0.5em;
     }

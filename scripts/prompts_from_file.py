@@ -1,17 +1,14 @@
 import copy
-import math
-import os
 import random
+import shlex
 import sys
 import traceback
-import shlex
 
-import modules.scripts as scripts
 import gradio as gr
 
+import modules.scripts as scripts
 from modules.processing import Processed, process_images
-from PIL import Image
-from modules.shared import opts, cmd_opts, state
+from modules.shared import state
 
 
 def process_string_tag(tag):
@@ -71,9 +68,9 @@ def cmdargs(line):
         func = prompt_tags.get(tag, None)
         assert func, f'unknown commandline option: {arg}'
 
-        assert pos+1 < len(args), f'missing argument for command line option {arg}'
+        assert pos + 1 < len(args), f'missing argument for command line option {arg}'
 
-        val = args[pos+1]
+        val = args[pos + 1]
 
         res[tag] = func(val)
 
@@ -107,7 +104,8 @@ class Script(scripts.Script):
         # We start at one line. When the text changes, we jump to seven lines, or two lines if no \n.
         # We don't shrink back to 1, because that causes the control to ignore [enter], and it may
         # be unclear to the user that shift-enter is needed.
-        prompt_txt.change(lambda tb: gr.update(lines=7) if ("\n" in tb) else gr.update(lines=2), inputs=[prompt_txt], outputs=[prompt_txt])
+        prompt_txt.change(lambda tb: gr.update(lines=7) if ("\n" in tb) else gr.update(lines=2), inputs=[prompt_txt],
+                          outputs=[prompt_txt])
         return [checkbox_iterate, checkbox_iterate_batch, prompt_txt]
 
     def run(self, p, checkbox_iterate, checkbox_iterate_batch, prompt_txt: str):
@@ -156,7 +154,7 @@ class Script(scripts.Script):
 
             proc = process_images(copy_p)
             images += proc.images
-            
+
             if checkbox_iterate:
                 p.seed = p.seed + (p.batch_size * p.n_iter)
             all_prompts += proc.all_prompts

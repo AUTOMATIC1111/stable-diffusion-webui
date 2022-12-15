@@ -18,7 +18,7 @@ class TestExtrasWorking(unittest.TestCase):
             "upscaler_2": "None",
             "extras_upscaler_2_visibility": 0,
             "image": ""
-            }
+        }
 
 
 class TestExtrasCorrectness(unittest.TestCase):

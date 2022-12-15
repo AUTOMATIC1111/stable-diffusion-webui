@@ -1,16 +1,18 @@
 import glob
+import importlib
 import os
 import shutil
-import importlib
 from urllib.parse import urlparse
 
 from basicsr.utils.download_util import load_file_from_url
+
 from modules import shared
-from modules.upscaler import Upscaler
 from modules.paths import script_path, models_path
+from modules.upscaler import Upscaler
 
 
-def load_models(model_path: str, model_url: str = None, command_path: str = None, ext_filter=None, download_name=None) -> list:
+def load_models(model_path: str, model_url: str = None, command_path: str = None, ext_filter=None,
+                download_name=None) -> list:
     """
     A one-and done loader to try finding the desired models in specified directories.
 

@@ -4,14 +4,13 @@ from __future__ import annotations
 import csv
 import os
 import os.path
-import typing
-import collections.abc as abc
-import tempfile
 import shutil
+import tempfile
+import typing
 
 if typing.TYPE_CHECKING:
     # Only import this when code is being type-checked, it doesn't have any effect at runtime
-    from .processing import StableDiffusionProcessing
+    pass
 
 
 class PromptStyle(typing.NamedTuple):
@@ -73,7 +72,7 @@ class StyleDatabase:
             # and collections.NamedTuple has explicit documentation for accessing _fields. Same goes for _asdict()
             writer = csv.DictWriter(file, fieldnames=PromptStyle._fields)
             writer.writeheader()
-            writer.writerows(style._asdict() for k,     style in self.styles.items())
+            writer.writerows(style._asdict() for k, style in self.styles.items())
 
         # Always keep a backup file around
         if os.path.exists(path):

@@ -1,23 +1,23 @@
+import csv
+import random
+import re
 from collections import namedtuple
 from copy import copy
-from itertools import permutations, chain
-import random
-import csv
 from io import StringIO
-from PIL import Image
+from itertools import permutations, chain
+
+import gradio as gr
 import numpy as np
+from PIL import Image
 
 import modules.scripts as scripts
-import gradio as gr
-
+import modules.sd_models
+import modules.sd_samplers
+import modules.shared as shared
 from modules import images, sd_samplers
 from modules.hypernetworks import hypernetwork
 from modules.processing import process_images, Processed, StableDiffusionProcessingTxt2Img
-from modules.shared import opts, cmd_opts, state
-import modules.shared as shared
-import modules.sd_samplers
-import modules.sd_models
-import re
+from modules.shared import opts, state
 
 
 def apply_field(field):
@@ -143,9 +143,9 @@ def str_permutations(x):
     """dummy function for specifying it in AxisOption's type when you want to get a list of permutations"""
     return x
 
+
 AxisOption = namedtuple("AxisOption", ["label", "type", "apply", "format_value", "confirm"])
 AxisOptionImg2Img = namedtuple("AxisOptionImg2Img", ["label", "type", "apply", "format_value", "confirm"])
-
 
 axis_options = [
     AxisOption("Nothing", str, do_nothing, format_nothing, None),
@@ -181,7 +181,7 @@ def draw_xy_grid(p, xs, ys, x_labels, y_labels, cell, draw_legend, include_lone_
 
     processed_result = None
     cell_mode = "P"
-    cell_size = (1,1)
+    cell_size = (1, 1)
 
     state.job_count = len(xs) * len(ys) * p.n_iter
 
@@ -189,12 +189,12 @@ def draw_xy_grid(p, xs, ys, x_labels, y_labels, cell, draw_legend, include_lone_
         for ix, x in enumerate(xs):
             state.job = f"{ix + iy * len(xs) + 1} out of {len(xs) * len(ys)}"
 
-            processed:Processed = cell(x, y)
+            processed: Processed = cell(x, y)
             try:
                 # this dereference will throw an exception if the image was not processed
                 # (this happens in cases such as if the user stops the process from the UI)
                 processed_image = processed.images[0]
-                
+
                 if processed_result is None:
                     # Use our first valid processed result as a template container to hold our full results
                     processed_result = copy(processed)
@@ -229,7 +229,7 @@ class SharedSettingsStackHelper(object):
         self.CLIP_stop_at_last_layers = opts.CLIP_stop_at_last_layers
         self.hypernetwork = opts.sd_hypernetwork
         self.model = shared.sd_model
-  
+
     def __exit__(self, exc_type, exc_value, tb):
         modules.sd_models.reload_model_weights(self.model)
 
@@ -240,26 +240,32 @@ class SharedSettingsStackHelper(object):
 
 
 re_range = re.compile(r"\s*([+-]?\s*\d+)\s*-\s*([+-]?\s*\d+)(?:\s*\(([+-]\d+)\s*\))?\s*")
-re_range_float = re.compile(r"\s*([+-]?\s*\d+(?:.\d*)?)\s*-\s*([+-]?\s*\d+(?:.\d*)?)(?:\s*\(([+-]\d+(?:.\d*)?)\s*\))?\s*")
+re_range_float = re.compile(
+    r"\s*([+-]?\s*\d+(?:.\d*)?)\s*-\s*([+-]?\s*\d+(?:.\d*)?)(?:\s*\(([+-]\d+(?:.\d*)?)\s*\))?\s*")
 
 re_range_count = re.compile(r"\s*([+-]?\s*\d+)\s*-\s*([+-]?\s*\d+)(?:\s*\[(\d+)\s*\])?\s*")
-re_range_count_float = re.compile(r"\s*([+-]?\s*\d+(?:.\d*)?)\s*-\s*([+-]?\s*\d+(?:.\d*)?)(?:\s*\[(\d+(?:.\d*)?)\s*\])?\s*")
+re_range_count_float = re.compile(
+    r"\s*([+-]?\s*\d+(?:.\d*)?)\s*-\s*([+-]?\s*\d+(?:.\d*)?)(?:\s*\[(\d+(?:.\d*)?)\s*\])?\s*")
+
 
 class Script(scripts.Script):
     def title(self):
         return "X/Y plot"
 
     def ui(self, is_img2img):
-        current_axis_options = [x for x in axis_options if type(x) == AxisOption or type(x) == AxisOptionImg2Img and is_img2img]
+        current_axis_options = [x for x in axis_options if
+                                type(x) == AxisOption or type(x) == AxisOptionImg2Img and is_img2img]
 
         with gr.Row():
-            x_type = gr.Dropdown(label="X type", choices=[x.label for x in current_axis_options], value=current_axis_options[1].label, type="index", elem_id="x_type")
+            x_type = gr.Dropdown(label="X type", choices=[x.label for x in current_axis_options],
+                                 value=current_axis_options[1].label, type="index", elem_id="x_type")
             x_values = gr.Textbox(label="X values", lines=1)
 
         with gr.Row():
-            y_type = gr.Dropdown(label="Y type", choices=[x.label for x in current_axis_options], value=current_axis_options[0].label, type="index", elem_id="y_type")
+            y_type = gr.Dropdown(label="Y type", choices=[x.label for x in current_axis_options],
+                                 value=current_axis_options[0].label, type="index", elem_id="y_type")
             y_values = gr.Textbox(label="Y values", lines=1)
-        
+
         draw_legend = gr.Checkbox(label='Draw legend', value=True)
         include_lone_images = gr.Checkbox(label='Include Separate Images', value=False)
         no_fixed_seeds = gr.Checkbox(label='Keep -1 for seeds', value=False)
@@ -287,15 +293,15 @@ class Script(scripts.Script):
                     mc = re_range_count.fullmatch(val)
                     if m is not None:
                         start = int(m.group(1))
-                        end = int(m.group(2))+1
+                        end = int(m.group(2)) + 1
                         step = int(m.group(3)) if m.group(3) is not None else 1
 
                         valslist_ext += list(range(start, end, step))
                     elif mc is not None:
                         start = int(mc.group(1))
-                        end   = int(mc.group(2))
-                        num   = int(mc.group(3)) if mc.group(3) is not None else 1
-                        
+                        end = int(mc.group(2))
+                        num = int(mc.group(3)) if mc.group(3) is not None else 1
+
                         valslist_ext += [int(x) for x in np.linspace(start=start, stop=end, num=num).tolist()]
                     else:
                         valslist_ext.append(val)
@@ -315,9 +321,9 @@ class Script(scripts.Script):
                         valslist_ext += np.arange(start, end + step, step).tolist()
                     elif mc is not None:
                         start = float(mc.group(1))
-                        end   = float(mc.group(2))
-                        num   = int(mc.group(3)) if mc.group(3) is not None else 1
-                        
+                        end = float(mc.group(2))
+                        num = int(mc.group(3)) if mc.group(3) is not None else 1
+
                         valslist_ext += np.linspace(start=start, stop=end, num=num).tolist()
                     else:
                         valslist_ext.append(val)
@@ -341,8 +347,9 @@ class Script(scripts.Script):
         ys = process_axis(y_opt, y_values)
 
         def fix_axis_seeds(axis_opt, axis_list):
-            if axis_opt.label in ['Seed','Var. seed']:
-                return [int(random.randrange(4294967294)) if val is None or val == '' or val == -1 else val for val in axis_list]
+            if axis_opt.label in ['Seed', 'Var. seed']:
+                return [int(random.randrange(4294967294)) if val is None or val == '' or val == -1 else val for val in
+                        axis_list]
             else:
                 return axis_list
 
@@ -360,7 +367,8 @@ class Script(scripts.Script):
         if isinstance(p, StableDiffusionProcessingTxt2Img) and p.enable_hr:
             total_steps *= 2
 
-        print(f"X/Y plot will create {len(xs) * len(ys) * p.n_iter} images on a {len(xs)}x{len(ys)} grid. (Total steps to process: {total_steps * p.n_iter})")
+        print(
+            f"X/Y plot will create {len(xs) * len(ys) * p.n_iter} images on a {len(xs)}x{len(ys)} grid. (Total steps to process: {total_steps * p.n_iter})")
         shared.total_tqdm.updateTotal(total_steps * p.n_iter)
 
         def cell(x, y):
@@ -383,6 +391,7 @@ class Script(scripts.Script):
             )
 
         if opts.grid_save:
-            images.save_image(processed.images[0], p.outpath_grids, "xy_grid", extension=opts.grid_format, prompt=p.prompt, seed=processed.seed, grid=True, p=p)
+            images.save_image(processed.images[0], p.outpath_grids, "xy_grid", extension=opts.grid_format,
+                              prompt=p.prompt, seed=processed.seed, grid=True, p=p)
 
         return processed

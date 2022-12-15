@@ -1,18 +1,16 @@
-import contextlib
 import os
 
 import numpy as np
 import torch
 from PIL import Image
 from basicsr.utils.download_util import load_file_from_url
+from swinir_model_arch import SwinIR as net
+from swinir_model_arch_v2 import Swin2SR as net2
 from tqdm import tqdm
 
 from modules import modelloader, devices, script_callbacks, shared
-from modules.shared import cmd_opts, opts
-from swinir_model_arch import SwinIR as net
-from swinir_model_arch_v2 import Swin2SR as net2
+from modules.shared import opts
 from modules.upscaler import Upscaler, UpscalerData
-
 
 device_swinir = devices.get_device_for('swinir')
 
@@ -59,17 +57,17 @@ class UpscalerSwinIR(Upscaler):
             return None
         if filename.endswith(".v2.pth"):
             model = net2(
-            upscale=scale,
-            in_chans=3,
-            img_size=64,
-            window_size=8,
-            img_range=1.0,
-            depths=[6, 6, 6, 6, 6, 6],
-            embed_dim=180,
-            num_heads=[6, 6, 6, 6, 6, 6],
-            mlp_ratio=2,
-            upsampler="nearest+conv",
-            resi_connection="1conv",
+                upscale=scale,
+                in_chans=3,
+                img_size=64,
+                window_size=8,
+                img_range=1.0,
+                depths=[6, 6, 6, 6, 6, 6],
+                embed_dim=180,
+                num_heads=[6, 6, 6, 6, 6, 6],
+                mlp_ratio=2,
+                upsampler="nearest+conv",
+                resi_connection="1conv",
             )
             params = None
         else:
@@ -106,7 +104,6 @@ def upscale(
 ):
     tile = tile or opts.SWIN_tile
     tile_overlap = tile_overlap or opts.SWIN_tile_overlap
-
 
     img = np.array(img)
     img = img[:, :, ::-1]
@@ -165,8 +162,13 @@ def inference(img, model, tile, tile_overlap, window_size, scale):
 def on_ui_settings():
     import gradio as gr
 
-    shared.opts.add_option("SWIN_tile", shared.OptionInfo(192, "Tile size for all SwinIR.", gr.Slider, {"minimum": 16, "maximum": 512, "step": 16}, section=('upscaling', "Upscaling")))
-    shared.opts.add_option("SWIN_tile_overlap", shared.OptionInfo(8, "Tile overlap, in pixels for SwinIR. Low values = visible seam.", gr.Slider, {"minimum": 0, "maximum": 48, "step": 1}, section=('upscaling', "Upscaling")))
+    shared.opts.add_option("SWIN_tile", shared.OptionInfo(192, "Tile size for all SwinIR.", gr.Slider,
+                                                          {"minimum": 16, "maximum": 512, "step": 16},
+                                                          section=('upscaling', "Upscaling")))
+    shared.opts.add_option("SWIN_tile_overlap",
+                           shared.OptionInfo(8, "Tile overlap, in pixels for SwinIR. Low values = visible seam.",
+                                             gr.Slider, {"minimum": 0, "maximum": 48, "step": 1},
+                                             section=('upscaling', "Upscaling")))
 
 
 script_callbacks.on_ui_settings(on_ui_settings)

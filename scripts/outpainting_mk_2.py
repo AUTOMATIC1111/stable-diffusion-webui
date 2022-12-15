@@ -1,15 +1,14 @@
 import math
 
+import gradio as gr
 import numpy as np
 import skimage
-
-import modules.scripts as scripts
-import gradio as gr
 from PIL import Image, ImageDraw
 
-from modules import images, processing, devices
+import modules.scripts as scripts
+from modules import images
 from modules.processing import Processed, process_images
-from modules.shared import opts, cmd_opts, state
+from modules.shared import opts, state
 
 
 # this function is taken from https://github.com/parlance-zz/g-diffuser-bot
@@ -54,7 +53,8 @@ def get_matched_noise(_np_src_image, np_mask_rgb, noise_q=1, color_variation=0.0
             if mode == 0:
                 window[:, y] = np.exp(-(x ** 2 + fy ** 2) * std)
             else:
-                window[:, y] = (1 / ((x ** 2 + 1.) * (fy ** 2 + 1.))) ** (std / 3.14)  # hey wait a minute that's not gaussian
+                window[:, y] = (1 / ((x ** 2 + 1.) * (fy ** 2 + 1.))) ** (
+                            std / 3.14)  # hey wait a minute that's not gaussian
 
         return window
 
@@ -79,7 +79,8 @@ def get_matched_noise(_np_src_image, np_mask_rgb, noise_q=1, color_variation=0.0
 
     windowed_image = _np_src_image * (1. - _get_masked_window_rgb(np_mask_grey))
     windowed_image /= np.max(windowed_image)
-    windowed_image += np.average(_np_src_image) * np_mask_rgb  # / (1.-np.average(np_mask_rgb))  # rather than leave the masked area black, we get better results from fft by filling the average unmasked color
+    windowed_image += np.average(
+        _np_src_image) * np_mask_rgb  # / (1.-np.average(np_mask_rgb))  # rather than leave the masked area black, we get better results from fft by filling the average unmasked color
 
     src_fft = _fft2(windowed_image)  # get feature statistics from masked src img
     src_dist = np.absolute(src_fft)
@@ -100,7 +101,8 @@ def get_matched_noise(_np_src_image, np_mask_rgb, noise_q=1, color_variation=0.0
         noise_fft[:, :, c] *= noise_window
     noise_rgb = np.real(_ifft2(noise_fft))
     shaped_noise_fft = _fft2(noise_rgb)
-    shaped_noise_fft[:, :, :] = np.absolute(shaped_noise_fft[:, :, :]) ** 2 * (src_dist ** noise_q) * src_phase  # perform the actual shaping
+    shaped_noise_fft[:, :, :] = np.absolute(shaped_noise_fft[:, :, :]) ** 2 * (
+                src_dist ** noise_q) * src_phase  # perform the actual shaping
 
     brightness_variation = 0.  # color_variation # todo: temporarily tieing brightness variation to color variation for now
     contrast_adjusted_np_src = _np_src_image[:] * (brightness_variation + 1.) - brightness_variation * 2.
@@ -109,13 +111,13 @@ def get_matched_noise(_np_src_image, np_mask_rgb, noise_q=1, color_variation=0.0
     shaped_noise = np.real(_ifft2(shaped_noise_fft))
     shaped_noise -= np.min(shaped_noise)
     shaped_noise /= np.max(shaped_noise)
-    shaped_noise[img_mask, :] = skimage.exposure.match_histograms(shaped_noise[img_mask, :] ** 1., contrast_adjusted_np_src[ref_mask, :], channel_axis=1)
+    shaped_noise[img_mask, :] = skimage.exposure.match_histograms(shaped_noise[img_mask, :] ** 1.,
+                                                                  contrast_adjusted_np_src[ref_mask, :], channel_axis=1)
     shaped_noise = _np_src_image[:] * (1. - np_mask_rgb) + shaped_noise * np_mask_rgb
 
     matched_noise = shaped_noise[:]
 
     return np.clip(matched_noise, 0., 1.)
-
 
 
 class Script(scripts.Script):
@@ -129,12 +131,15 @@ class Script(scripts.Script):
         if not is_img2img:
             return None
 
-        info = gr.HTML("<p style=\"margin-bottom:0.75em\">Recommended settings: Sampling Steps: 80-100, Sampler: Euler a, Denoising strength: 0.8</p>")
+        info = gr.HTML(
+            "<p style=\"margin-bottom:0.75em\">Recommended settings: Sampling Steps: 80-100, Sampler: Euler a, Denoising strength: 0.8</p>")
 
         pixels = gr.Slider(label="Pixels to expand", minimum=8, maximum=256, step=8, value=128)
         mask_blur = gr.Slider(label='Mask blur', minimum=0, maximum=64, step=1, value=8)
-        direction = gr.CheckboxGroup(label="Outpainting direction", choices=['left', 'right', 'up', 'down'], value=['left', 'right', 'up', 'down'])
-        noise_q = gr.Slider(label="Fall-off exponent (lower=higher detail)", minimum=0.0, maximum=4.0, step=0.01, value=1.0)
+        direction = gr.CheckboxGroup(label="Outpainting direction", choices=['left', 'right', 'up', 'down'],
+                                     value=['left', 'right', 'up', 'down'])
+        noise_q = gr.Slider(label="Fall-off exponent (lower=higher detail)", minimum=0.0, maximum=4.0, step=0.01,
+                            value=1.0)
         color_variation = gr.Slider(label="Color variation", minimum=0.0, maximum=1.0, step=0.01, value=0.05)
 
         return [info, pixels, mask_blur, direction, noise_q, color_variation]
@@ -145,7 +150,7 @@ class Script(scripts.Script):
         process_width = p.width
         process_height = p.height
 
-        p.mask_blur = mask_blur*4
+        p.mask_blur = mask_blur * 4
         p.inpaint_full_res = False
         p.inpainting_fill = 1
         p.do_not_save_samples = True
@@ -238,7 +243,9 @@ class Script(scripts.Script):
                 initial_seed_and_info[1] = proc.info
 
             for n in range(count):
-                output_images[n].paste(proc.images[n], (0 if is_left else output_images[n].width - proc.images[n].width, 0 if is_top else output_images[n].height - proc.images[n].height))
+                output_images[n].paste(proc.images[n], (0 if is_left else output_images[n].width - proc.images[n].width,
+                                                        0 if is_top else output_images[n].height - proc.images[
+                                                            n].height))
                 output_images[n] = output_images[n].crop((0, 0, res_w, res_h))
 
             return output_images
@@ -246,7 +253,8 @@ class Script(scripts.Script):
         batch_count = p.n_iter
         batch_size = p.batch_size
         p.n_iter = 1
-        state.job_count = batch_count * ((1 if left > 0 else 0) + (1 if right > 0 else 0) + (1 if up > 0 else 0) + (1 if down > 0 else 0))
+        state.job_count = batch_count * (
+                    (1 if left > 0 else 0) + (1 if right > 0 else 0) + (1 if up > 0 else 0) + (1 if down > 0 else 0))
         all_processed_images = []
 
         for i in range(batch_count):
@@ -278,6 +286,7 @@ class Script(scripts.Script):
                 images.save_image(img, p.outpath_samples, "", res.seed, p.prompt, opts.grid_format, info=res.info, p=p)
 
         if opts.grid_save and not unwanted_grid_because_of_img_count:
-            images.save_image(combined_grid_image, p.outpath_grids, "grid", res.seed, p.prompt, opts.grid_format, info=res.info, short_filename=not opts.grid_extended_filename, grid=True, p=p)
+            images.save_image(combined_grid_image, p.outpath_grids, "grid", res.seed, p.prompt, opts.grid_format,
+                              info=res.info, short_filename=not opts.grid_extended_filename, grid=True, p=p)
 
         return res

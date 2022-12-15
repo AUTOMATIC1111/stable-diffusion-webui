@@ -3,12 +3,12 @@
 titles = {
     "Sampling steps": "How many times to improve the generated image iteratively; higher values take longer; very low values can produce bad results",
     "Sampling method": "Which algorithm to use to produce the image",
-	"GFPGAN": "Restore low quality faces using GFPGAN neural network",
-	"Euler a": "Euler Ancestral - very creative, each can get a completely different picture depending on step count, setting steps to higher than 30-40 does not help",
-	"DDIM": "Denoising Diffusion Implicit Models - best at inpainting",
+    "GFPGAN": "Restore low quality faces using GFPGAN neural network",
+    "Euler a": "Euler Ancestral - very creative, each can get a completely different picture depending on step count, setting steps to higher than 30-40 does not help",
+    "DDIM": "Denoising Diffusion Implicit Models - best at inpainting",
 
-	"Batch count": "How many batches of images to create",
-	"Batch size": "How many image to create in a single batch",
+    "Batch count": "How many batches of images to create",
+    "Batch size": "How many image to create in a single batch",
     "CFG Scale": "Classifier Free Guidance Scale - how strongly the image should conform to prompt - lower values produce more creative results",
     "Seed": "A value that determines the output of random number generator - if you create an image with same parameters and seed as another image, you'll get the same result",
     "\u{1f3b2}\ufe0f": "Set seed to -1, which will cause a new random number to be used every time",
@@ -100,33 +100,33 @@ titles = {
 }
 
 
-onUiUpdate(function(){
-	gradioApp().querySelectorAll('span, button, select, p').forEach(function(span){
-		tooltip = titles[span.textContent];
+onUiUpdate(function () {
+    gradioApp().querySelectorAll('span, button, select, p').forEach(function (span) {
+        tooltip = titles[span.textContent];
 
-		if(!tooltip){
-		    tooltip = titles[span.value];
-		}
+        if (!tooltip) {
+            tooltip = titles[span.value];
+        }
 
-		if(!tooltip){
-			for (const c of span.classList) {
-				if (c in titles) {
-					tooltip = titles[c];
-					break;
-				}
-			}
-		}
+        if (!tooltip) {
+            for (const c of span.classList) {
+                if (c in titles) {
+                    tooltip = titles[c];
+                    break;
+                }
+            }
+        }
 
-		if(tooltip){
-			span.title = tooltip;
-		}
-	})
+        if (tooltip) {
+            span.title = tooltip;
+        }
+    })
 
-	gradioApp().querySelectorAll('select').forEach(function(select){
-	    if (select.onchange != null) return;
+    gradioApp().querySelectorAll('select').forEach(function (select) {
+        if (select.onchange != null) return;
 
-	    select.onchange = function(){
+        select.onchange = function () {
             select.title = titles[select.value] || "";
-	    }
-	})
+        }
+    })
 })

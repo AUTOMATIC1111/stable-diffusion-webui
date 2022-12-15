@@ -1,15 +1,12 @@
 import math
-from collections import namedtuple
-from copy import copy
-import random
 
-import modules.scripts as scripts
 import gradio as gr
 
-from modules import images
-from modules.processing import process_images, Processed
-from modules.shared import opts, cmd_opts, state
+import modules.scripts as scripts
 import modules.sd_samplers
+from modules import images
+from modules.processing import process_images
+from modules.shared import opts, state
 
 
 def draw_xy_grid(xs, ys, x_label, y_label, cell):
@@ -59,7 +56,8 @@ class Script(scripts.Script):
         prompt_matrix_parts = original_prompt.split("|")
         combination_count = 2 ** (len(prompt_matrix_parts) - 1)
         for combination_num in range(combination_count):
-            selected_prompts = [text.strip().strip(',') for n, text in enumerate(prompt_matrix_parts[1:]) if combination_num & (1 << n)]
+            selected_prompts = [text.strip().strip(',') for n, text in enumerate(prompt_matrix_parts[1:]) if
+                                combination_num & (1 << n)]
 
             if put_at_start:
                 selected_prompts = selected_prompts + [prompt_matrix_parts[0]]
@@ -85,6 +83,7 @@ class Script(scripts.Script):
         processed.infotexts.insert(0, processed.infotexts[0])
 
         if opts.grid_save:
-            images.save_image(processed.images[0], p.outpath_grids, "prompt_matrix", extension=opts.grid_format, prompt=original_prompt, seed=processed.seed, grid=True, p=p)
+            images.save_image(processed.images[0], p.outpath_grids, "prompt_matrix", extension=opts.grid_format,
+                              prompt=original_prompt, seed=processed.seed, grid=True, p=p)
 
         return processed

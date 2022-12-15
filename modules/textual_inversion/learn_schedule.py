@@ -33,8 +33,8 @@ class LearnScheduleIterator:
                     return
             assert self.rates
         except (ValueError, AssertionError):
-            raise Exception('Invalid learning rate schedule. It should be a number or, for example, like "0.001:100, 0.00001:1000, 1e-5:10000" to have lr of 0.001 until step 100, 0.00001 until 1000, and 1e-5 until 10000.')
-
+            raise Exception(
+                'Invalid learning rate schedule. It should be a number or, for example, like "0.001:100, 0.00001:1000, 1e-5:10000" to have lr of 0.001 until step 100, 0.00001 until 1000, and 1e-5 until 10000.')
 
     def __iter__(self):
         return self
@@ -50,7 +50,7 @@ class LearnScheduleIterator:
 class LearnRateScheduler:
     def __init__(self, learn_rate, max_steps, cur_step=0, verbose=True):
         self.schedules = LearnScheduleIterator(learn_rate, max_steps, cur_step)
-        (self.learn_rate,  self.end_step) = next(self.schedules)
+        (self.learn_rate, self.end_step) = next(self.schedules)
         self.verbose = verbose
 
         if self.verbose:
@@ -73,4 +73,3 @@ class LearnRateScheduler:
 
         for pg in optimizer.param_groups:
             pg['lr'] = self.learn_rate
-

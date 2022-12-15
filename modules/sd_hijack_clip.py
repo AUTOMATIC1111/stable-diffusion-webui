@@ -47,7 +47,9 @@ class FrozenCLIPEmbedderWithCustomWordsBase(torch.nn.Module):
 
                 if token == self.comma_token:
                     last_comma = len(remade_tokens)
-                elif opts.comma_padding_backtrack != 0 and max(len(remade_tokens), 1) % 75 == 0 and last_comma != -1 and len(remade_tokens) - last_comma <= opts.comma_padding_backtrack:
+                elif opts.comma_padding_backtrack != 0 and max(len(remade_tokens),
+                                                               1) % 75 == 0 and last_comma != -1 and len(
+                        remade_tokens) - last_comma <= opts.comma_padding_backtrack:
                     last_comma += 1
                     reloc_tokens = remade_tokens[last_comma:]
                     reloc_mults = multipliers[last_comma:]
@@ -99,7 +101,8 @@ class FrozenCLIPEmbedderWithCustomWordsBase(torch.nn.Module):
             if line in cache:
                 remade_tokens, fixes, multipliers = cache[line]
             else:
-                remade_tokens, fixes, multipliers, current_token_count = self.tokenize_line(line, used_custom_terms, hijack_comments)
+                remade_tokens, fixes, multipliers, current_token_count = self.tokenize_line(line, used_custom_terms,
+                                                                                            hijack_comments)
                 token_count = max(current_token_count, token_count)
 
                 cache[line] = (remade_tokens, fixes, multipliers)
@@ -138,7 +141,8 @@ class FrozenCLIPEmbedderWithCustomWordsBase(torch.nn.Module):
                 while i < len(tokens):
                     token = tokens[i]
 
-                    embedding, embedding_length_in_tokens = self.hijack.embedding_db.find_embedding_at_position(tokens, i)
+                    embedding, embedding_length_in_tokens = self.hijack.embedding_db.find_embedding_at_position(tokens,
+                                                                                                                i)
 
                     mult_change = self.token_mults.get(token) if opts.enable_emphasis else None
                     if mult_change is not None:
@@ -161,7 +165,8 @@ class FrozenCLIPEmbedderWithCustomWordsBase(torch.nn.Module):
                     ovf = remade_tokens[maxlen - 2:]
                     overflowing_words = [vocab.get(int(x), "") for x in ovf]
                     overflowing_text = self.wrapped.tokenizer.convert_tokens_to_string(''.join(overflowing_words))
-                    hijack_comments.append(f"Warning: too many input tokens; some ({len(overflowing_words)}) have been truncated:\n{overflowing_text}\n")
+                    hijack_comments.append(
+                        f"Warning: too many input tokens; some ({len(overflowing_words)}) have been truncated:\n{overflowing_text}\n")
 
                 token_count = len(remade_tokens)
                 remade_tokens = remade_tokens + [id_end] * (maxlen - 2 - len(remade_tokens))
@@ -179,14 +184,17 @@ class FrozenCLIPEmbedderWithCustomWordsBase(torch.nn.Module):
     def forward(self, text):
         use_old = opts.use_old_emphasis_implementation
         if use_old:
-            batch_multipliers, remade_batch_tokens, used_custom_terms, hijack_comments, hijack_fixes, token_count = self.process_text_old(text)
+            batch_multipliers, remade_batch_tokens, used_custom_terms, hijack_comments, hijack_fixes, token_count = self.process_text_old(
+                text)
         else:
-            batch_multipliers, remade_batch_tokens, used_custom_terms, hijack_comments, hijack_fixes, token_count = self.process_text(text)
+            batch_multipliers, remade_batch_tokens, used_custom_terms, hijack_comments, hijack_fixes, token_count = self.process_text(
+                text)
 
         self.hijack.comments += hijack_comments
 
         if len(used_custom_terms) > 0:
-            self.hijack.comments.append("Used embeddings: " + ", ".join([f'{word} [{checksum}]' for word, checksum in used_custom_terms]))
+            self.hijack.comments.append(
+                "Used embeddings: " + ", ".join([f'{word} [{checksum}]' for word, checksum in used_custom_terms]))
 
         if use_old:
             self.hijack.fixes = hijack_fixes
@@ -235,7 +243,7 @@ class FrozenCLIPEmbedderWithCustomWordsBase(torch.nn.Module):
         if self.id_end != self.id_pad:
             for batch_pos in range(len(remade_batch_tokens)):
                 index = remade_batch_tokens[batch_pos].index(self.id_end)
-                tokens[batch_pos, index+1:tokens.shape[1]] = self.id_pad
+                tokens[batch_pos, index + 1:tokens.shape[1]] = self.id_pad
 
         z = self.encode_with_transformers(tokens)
 
@@ -257,7 +265,8 @@ class FrozenCLIPEmbedderWithCustomWords(FrozenCLIPEmbedderWithCustomWordsBase):
         self.comma_token = [v for k, v in self.tokenizer.get_vocab().items() if k == ',</w>'][0]
 
         self.token_mults = {}
-        tokens_with_parens = [(k, v) for k, v in self.tokenizer.get_vocab().items() if '(' in k or ')' in k or '[' in k or ']' in k]
+        tokens_with_parens = [(k, v) for k, v in self.tokenizer.get_vocab().items() if
+                              '(' in k or ')' in k or '[' in k or ']' in k]
         for text, ident in tokens_with_parens:
             mult = 1.0
             for c in text:
@@ -295,7 +304,8 @@ class FrozenCLIPEmbedderWithCustomWords(FrozenCLIPEmbedderWithCustomWordsBase):
 
     def encode_embedding_init_text(self, init_text, nvpt):
         embedding_layer = self.wrapped.transformer.text_model.embeddings
-        ids = self.wrapped.tokenizer(init_text, max_length=nvpt, return_tensors="pt", add_special_tokens=False)["input_ids"]
+        ids = self.wrapped.tokenizer(init_text, max_length=nvpt, return_tensors="pt", add_special_tokens=False)[
+            "input_ids"]
         embedded = embedding_layer.token_embedding.wrapped(ids.to(devices.device)).squeeze(0)
 
         return embedded

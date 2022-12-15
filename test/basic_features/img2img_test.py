@@ -1,7 +1,8 @@
 import unittest
+
 import requests
-from gradio.processing_utils import encode_pil_to_base64
 from PIL import Image
+from gradio.processing_utils import encode_pil_to_base64
 
 
 class TestImg2ImgWorking(unittest.TestCase):
@@ -41,7 +42,7 @@ class TestImg2ImgWorking(unittest.TestCase):
             "override_settings": {},
             "sampler_index": "Euler a",
             "include_init_images": False
-            }
+        }
 
     def test_img2img_simple_performed(self):
         self.assertEqual(requests.post(self.url_img2img, json=self.simple_img2img).status_code, 200)

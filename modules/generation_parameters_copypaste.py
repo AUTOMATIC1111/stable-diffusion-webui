@@ -5,10 +5,10 @@ import re
 from pathlib import Path
 
 import gradio as gr
-from modules.shared import script_path
-from modules import shared
-import tempfile
 from PIL import Image
+
+from modules import shared
+from modules.shared import script_path
 
 re_param_code = r'\s*([\w ]+):\s*("(?:\\|\"|[^\"])+"|[^,]*)(?:,|$)'
 re_param = re.compile(re_param_code)
@@ -37,7 +37,8 @@ def quote(text):
 def image_from_url_text(filedata):
     if type(filedata) == dict and filedata["is_file"]:
         filename = filedata["name"]
-        is_in_right_dir = any(Path(temp_dir).resolve() in Path(filename).resolve().parents for temp_dir in shared.demo.temp_dirs)
+        is_in_right_dir = any(
+            Path(temp_dir).resolve() in Path(filename).resolve().parents for temp_dir in shared.demo.temp_dirs)
         assert is_in_right_dir, 'trying to open image file outside of allowed directories'
 
         return Image.open(filename)
@@ -96,7 +97,7 @@ def create_buttons(tabs_list):
     return buttons
 
 
-#if send_generate_info is a tab name, mean generate_info comes from the params fields of the tab
+# if send_generate_info is a tab name, mean generate_info comes from the params fields of the tab
 def bind_buttons(buttons, send_image, send_generate_info):
     bind_list.append([buttons, send_image, send_generate_info])
 
@@ -122,10 +123,13 @@ def run_bind():
 
             if send_generate_info and paste_fields[tab]["fields"] is not None:
                 if send_generate_info in paste_fields:
-                    paste_field_names = ['Prompt', 'Negative prompt', 'Steps', 'Face restoration'] +  (['Size-1', 'Size-2'] if shared.opts.send_size else []) + (["Seed"] if shared.opts.send_seed else [])
+                    paste_field_names = ['Prompt', 'Negative prompt', 'Steps', 'Face restoration'] + (
+                        ['Size-1', 'Size-2'] if shared.opts.send_size else []) + (
+                                            ["Seed"] if shared.opts.send_seed else [])
                     button.click(
                         fn=lambda *x: x,
-                        inputs=[field for field, name in paste_fields[send_generate_info]["fields"] if name in paste_field_names],
+                        inputs=[field for field, name in paste_fields[send_generate_info]["fields"] if
+                                name in paste_field_names],
                         outputs=[field for field, name in paste_fields[tab]["fields"] if name in paste_field_names],
                     )
                 else:
@@ -179,8 +183,8 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
     for k, v in re_param.findall(lastline):
         m = re_imagesize.match(v)
         if m is not None:
-            res[k+"-1"] = m.group(1)
-            res[k+"-2"] = m.group(2)
+            res[k + "-1"] = m.group(1)
+            res[k + "-2"] = m.group(2)
         else:
             res[k] = v
 
@@ -233,5 +237,3 @@ def connect_paste(button, paste_fields, input_comp, jsfunc=None):
         inputs=[input_comp],
         outputs=[x[0] for x in paste_fields],
     )
-
-

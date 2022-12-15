@@ -6,10 +6,10 @@ import PIL.Image
 import numpy as np
 import torch
 from basicsr.utils.download_util import load_file_from_url
+from scunet_model_arch import SCUNet as net
 
 import modules.upscaler
 from modules import devices, modelloader
-from scunet_model_arch import SCUNet as net
 
 
 class UpscalerScuNET(modules.upscaler.Upscaler):
@@ -84,4 +84,3 @@ class UpscalerScuNET(modules.upscaler.Upscaler):
         model = model.to(device)
 
         return model
-

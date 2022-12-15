@@ -55,20 +55,23 @@ def setup_model(dirname):
                 if self.net is not None and self.face_helper is not None:
                     self.net.to(devices.device_codeformer)
                     return self.net, self.face_helper
-                model_paths = modelloader.load_models(model_path, model_url, self.cmd_dir, download_name='codeformer-v0.1.0.pth')
+                model_paths = modelloader.load_models(model_path, model_url, self.cmd_dir,
+                                                      download_name='codeformer-v0.1.0.pth')
                 if len(model_paths) != 0:
                     ckpt_path = model_paths[0]
                 else:
                     print("Unable to load codeformer model.")
                     return None, None
-                net = net_class(dim_embd=512, codebook_size=1024, n_head=8, n_layers=9, connect_list=['32', '64', '128', '256']).to(devices.device_codeformer)
+                net = net_class(dim_embd=512, codebook_size=1024, n_head=8, n_layers=9,
+                                connect_list=['32', '64', '128', '256']).to(devices.device_codeformer)
                 checkpoint = torch.load(ckpt_path)['params_ema']
                 net.load_state_dict(checkpoint)
                 net.eval()
 
                 if hasattr(retinaface, 'device'):
                     retinaface.device = devices.device_codeformer
-                face_helper = FaceRestoreHelper(1, face_size=512, crop_ratio=(1, 1), det_model='retinaface_resnet50', save_ext='png', use_parse=True, device=devices.device_codeformer)
+                face_helper = FaceRestoreHelper(1, face_size=512, crop_ratio=(1, 1), det_model='retinaface_resnet50',
+                                                save_ext='png', use_parse=True, device=devices.device_codeformer)
 
                 self.net = net
                 self.face_helper = face_helper
@@ -103,7 +106,8 @@ def setup_model(dirname):
 
                     try:
                         with torch.no_grad():
-                            output = self.net(cropped_face_t, w=w if w is not None else shared.opts.code_former_weight, adain=True)[0]
+                            output = self.net(cropped_face_t, w=w if w is not None else shared.opts.code_former_weight,
+                                              adain=True)[0]
                             restored_face = tensor2img(output, rgb2bgr=True, min_max=(-1, 1))
                         del output
                         torch.cuda.empty_cache()
@@ -120,7 +124,9 @@ def setup_model(dirname):
                 restored_img = restored_img[:, :, ::-1]
 
                 if original_resolution != restored_img.shape[0:2]:
-                    restored_img = cv2.resize(restored_img, (0, 0), fx=original_resolution[1]/restored_img.shape[1], fy=original_resolution[0]/restored_img.shape[0], interpolation=cv2.INTER_LINEAR)
+                    restored_img = cv2.resize(restored_img, (0, 0), fx=original_resolution[1] / restored_img.shape[1],
+                                              fy=original_resolution[0] / restored_img.shape[0],
+                                              interpolation=cv2.INTER_LINEAR)
 
                 self.face_helper.clean_all()
 
@@ -140,4 +146,4 @@ def setup_model(dirname):
         print("Error setting up CodeFormer:", file=sys.stderr)
         print(traceback.format_exc(), file=sys.stderr)
 
-   # sys.path = stored_sys_path
+# sys.path = stored_sys_path

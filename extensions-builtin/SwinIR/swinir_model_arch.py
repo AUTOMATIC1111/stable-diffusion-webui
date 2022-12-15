@@ -4,6 +4,7 @@
 # -----------------------------------------------------------------------------------
 
 import math
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -803,7 +804,7 @@ class SwinIR(nn.Module):
     def forward(self, x):
         H, W = x.shape[2:]
         x = self.check_image_size(x)
-        
+
         self.mean = self.mean.type_as(x)
         x = (x - self.mean) * self.img_range
 
@@ -835,7 +836,7 @@ class SwinIR(nn.Module):
 
         x = x / self.img_range + self.mean
 
-        return x[:, :, :H*self.upscale, :W*self.upscale]
+        return x[:, :, :H * self.upscale, :W * self.upscale]
 
     def flops(self):
         flops = 0

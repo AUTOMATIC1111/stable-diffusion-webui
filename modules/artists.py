@@ -1,5 +1,5 @@
-import os.path
 import csv
+import os.path
 from collections import namedtuple
 
 Artist = namedtuple("Artist", ['name', 'weight', 'category'])

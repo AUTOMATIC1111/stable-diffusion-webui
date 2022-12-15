@@ -7,10 +7,10 @@ import torch
 import torchvision
 from PIL import Image
 from einops import rearrange, repeat
-from omegaconf import OmegaConf
-
 from ldm.models.diffusion.ddim import DDIMSampler
 from ldm.util import instantiate_from_config, ismap
+from omegaconf import OmegaConf
+
 from modules import shared, sd_hijack
 
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -40,7 +40,7 @@ class LDSR:
             if shared.cmd_opts.opt_channelslast:
                 model = model.to(memory_format=torch.channels_last)
 
-            sd_hijack.model_hijack.hijack(model) # apply optimization
+            sd_hijack.model_hijack.hijack(model)  # apply optimization
             model.eval()
 
             if shared.opts.ldsr_cached:
@@ -128,11 +128,11 @@ class LDSR:
             im_og = im_og.resize((width_downsampled_pre, height_downsampled_pre), Image.LANCZOS)
         else:
             print(f"Down sample rate is 1 from {target_scale} / 4 (Not downsampling)")
-        
+
         # pad width and height to multiples of 64, pads with the edge values of image to avoid artifacts
         pad_w, pad_h = np.max(((2, 2), np.ceil(np.array(im_og.size) / 64).astype(int)), axis=0) * 64 - im_og.size
         im_padded = Image.fromarray(np.pad(np.array(im_og), ((0, pad_h), (0, pad_w), (0, 0)), mode='edge'))
-        
+
         logs = self.run(model["model"], im_padded, diffusion_steps, eta)
 
         sample = logs["sample"]
@@ -191,7 +191,8 @@ def convsample_ddim(model, cond, steps, shape, eta=1.0, callback=None, normals_s
 
 
 @torch.no_grad()
-def make_convolutional_sample(batch, model, custom_steps=None, eta=1.0, quantize_x0=False, custom_shape=None, temperature=1., noise_dropout=0., corrector=None,
+def make_convolutional_sample(batch, model, custom_steps=None, eta=1.0, quantize_x0=False, custom_shape=None,
+                              temperature=1., noise_dropout=0., corrector=None,
                               corrector_kwargs=None, x_T=None, ddim_use_x0_pred=False):
     log = dict()
 
@@ -228,7 +229,8 @@ def make_convolutional_sample(batch, model, custom_steps=None, eta=1.0, quantize
         sample, intermediates = convsample_ddim(model, c, steps=custom_steps, shape=z.shape,
                                                 eta=eta,
                                                 quantize_x0=quantize_x0, mask=None, x0=z0,
-                                                temperature=temperature, score_corrector=corrector, corrector_kwargs=corrector_kwargs,
+                                                temperature=temperature, score_corrector=corrector,
+                                                corrector_kwargs=corrector_kwargs,
                                                 x_t=x_T)
         t1 = time.time()
 

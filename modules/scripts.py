@@ -5,8 +5,8 @@ from collections import namedtuple
 
 import gradio as gr
 
-from modules.processing import StableDiffusionProcessing
 from modules import shared, paths, script_callbacks, extensions, script_loading
+from modules.processing import StableDiffusionProcessing
 
 AlwaysVisible = object()
 
@@ -156,7 +156,8 @@ def list_scripts(scriptdirname, extension):
     for ext in extensions.active():
         scripts_list += ext.list_files(scriptdirname, extension)
 
-    scripts_list = [x for x in scripts_list if os.path.splitext(x.path)[1].lower() == extension and os.path.isfile(x.path)]
+    scripts_list = [x for x in scripts_list if
+                    os.path.splitext(x.path)[1].lower() == extension and os.path.isfile(x.path)]
 
     return scripts_list
 
@@ -249,7 +250,8 @@ class ScriptRunner:
                 self.selectable_scripts.append(script)
 
     def setup_ui(self):
-        self.titles = [wrap_call(script.title, script.filename, "title") or f"{script.filename} [error]" for script in self.selectable_scripts]
+        self.titles = [wrap_call(script.title, script.filename, "title") or f"{script.filename} [error]" for script in
+                       self.selectable_scripts]
 
         inputs = [None]
         inputs_alwayson = [True]
@@ -279,7 +281,8 @@ class ScriptRunner:
 
             script.group = group
 
-        dropdown = gr.Dropdown(label="Script", elem_id="script_list", choices=["None"] + self.titles, value="None", type="index")
+        dropdown = gr.Dropdown(label="Script", elem_id="script_list", choices=["None"] + self.titles, value="None",
+                               type="index")
         dropdown.save_to_config = True
         inputs[0] = dropdown
 
@@ -290,7 +293,7 @@ class ScriptRunner:
             script.group = group
 
         def select_script(script_index):
-            selected_script = self.selectable_scripts[script_index - 1] if script_index>0 else None
+            selected_script = self.selectable_scripts[script_index - 1] if script_index > 0 else None
 
             return [gr.update(visible=selected_script == s) for s in self.selectable_scripts]
 
@@ -319,7 +322,7 @@ class ScriptRunner:
         if script_index == 0:
             return None
 
-        script = self.selectable_scripts[script_index-1]
+        script = self.selectable_scripts[script_index - 1]
 
         if script is None:
             return None

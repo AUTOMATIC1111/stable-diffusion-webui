@@ -1,5 +1,6 @@
 from pyngrok import ngrok, conf, exception
 
+
 def connect(token, port, region):
     account = None
     if token == None:
@@ -23,4 +24,4 @@ def connect(token, port, region):
               f'Your token: {token}, get the right one on https://dashboard.ngrok.com/get-started/your-authtoken')
     else:
         print(f'ngrok connected to localhost:{port}! URL: {public_url}\n'
-               'You can use this link after the launch is complete.')
+              'You can use this link after the launch is complete.')

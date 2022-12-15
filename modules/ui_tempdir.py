@@ -3,11 +3,9 @@ import tempfile
 from collections import namedtuple
 
 import gradio as gr
-
 from PIL import PngImagePlugin
 
 from modules import shared
-
 
 Savedfile = namedtuple("Savedfile", ["name"])
 

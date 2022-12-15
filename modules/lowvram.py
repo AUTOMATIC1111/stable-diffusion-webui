@@ -1,4 +1,5 @@
 import torch
+
 from modules import devices
 
 module_in_gpu = None

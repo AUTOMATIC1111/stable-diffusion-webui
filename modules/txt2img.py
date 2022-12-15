@@ -1,14 +1,17 @@
 import modules.scripts
-from modules import sd_samplers
-from modules.processing import StableDiffusionProcessing, Processed, StableDiffusionProcessingTxt2Img, \
-    StableDiffusionProcessingImg2Img, process_images
-from modules.shared import opts, cmd_opts
 import modules.shared as shared
-import modules.processing as processing
+from modules import sd_samplers
+from modules.processing import StableDiffusionProcessingTxt2Img, \
+    process_images
+from modules.shared import opts, cmd_opts
 from modules.ui import plaintext_to_html
 
 
-def txt2img(prompt: str, negative_prompt: str, prompt_style: str, prompt_style2: str, steps: int, sampler_index: int, restore_faces: bool, tiling: bool, n_iter: int, batch_size: int, cfg_scale: float, seed: int, subseed: int, subseed_strength: float, seed_resize_from_h: int, seed_resize_from_w: int, seed_enable_extras: bool, height: int, width: int, enable_hr: bool, denoising_strength: float, firstphase_width: int, firstphase_height: int, *args):
+def txt2img(prompt: str, negative_prompt: str, prompt_style: str, prompt_style2: str, steps: int, sampler_index: int,
+            restore_faces: bool, tiling: bool, n_iter: int, batch_size: int, cfg_scale: float, seed: int, subseed: int,
+            subseed_strength: float, seed_resize_from_h: int, seed_resize_from_w: int, seed_enable_extras: bool,
+            height: int, width: int, enable_hr: bool, denoising_strength: float, firstphase_width: int,
+            firstphase_height: int, *args):
     p = StableDiffusionProcessingTxt2Img(
         sd_model=shared.sd_model,
         outpath_samples=opts.outdir_samples or opts.outdir_txt2img_samples,

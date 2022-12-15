@@ -7,8 +7,8 @@ from PIL import Image
 from basicsr.utils.download_util import load_file_from_url
 from realesrgan import RealESRGANer
 
-from modules.upscaler import Upscaler, UpscalerData
 from modules.shared import cmd_opts, opts
+from modules.upscaler import Upscaler, UpscalerData
 
 
 class UpscalerRealESRGAN(Upscaler):
@@ -89,21 +89,24 @@ def get_realesrgan_models(scaler):
                 path="https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesr-general-x4v3.pth",
                 scale=4,
                 upscaler=scaler,
-                model=lambda: SRVGGNetCompact(num_in_ch=3, num_out_ch=3, num_feat=64, num_conv=32, upscale=4, act_type='prelu')
+                model=lambda: SRVGGNetCompact(num_in_ch=3, num_out_ch=3, num_feat=64, num_conv=32, upscale=4,
+                                              act_type='prelu')
             ),
             UpscalerData(
                 name="R-ESRGAN General WDN 4xV3",
                 path="https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesr-general-wdn-x4v3.pth",
                 scale=4,
                 upscaler=scaler,
-                model=lambda: SRVGGNetCompact(num_in_ch=3, num_out_ch=3, num_feat=64, num_conv=32, upscale=4, act_type='prelu')
+                model=lambda: SRVGGNetCompact(num_in_ch=3, num_out_ch=3, num_feat=64, num_conv=32, upscale=4,
+                                              act_type='prelu')
             ),
             UpscalerData(
                 name="R-ESRGAN AnimeVideo",
                 path="https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesr-animevideov3.pth",
                 scale=4,
                 upscaler=scaler,
-                model=lambda: SRVGGNetCompact(num_in_ch=3, num_out_ch=3, num_feat=64, num_conv=16, upscale=4, act_type='prelu')
+                model=lambda: SRVGGNetCompact(num_in_ch=3, num_out_ch=3, num_feat=64, num_conv=16, upscale=4,
+                                              act_type='prelu')
             ),
             UpscalerData(
                 name="R-ESRGAN 4x+",

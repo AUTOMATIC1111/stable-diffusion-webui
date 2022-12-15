@@ -38,7 +38,8 @@ def gfpgann():
         return None
     if hasattr(facexlib.detection.retinaface, 'device'):
         facexlib.detection.retinaface.device = devices.device_gfpgan
-    model = gfpgan_constructor(model_path=model_file, upscale=1, arch='clean', channel_multiplier=2, bg_upsampler=None, device=devices.device_gfpgan)
+    model = gfpgan_constructor(model_path=model_file, upscale=1, arch='clean', channel_multiplier=2, bg_upsampler=None,
+                               device=devices.device_gfpgan)
     loaded_gfpgan_model = model
 
     return model
@@ -58,7 +59,8 @@ def gfpgan_fix_faces(np_image):
     send_model_to(model, devices.device_gfpgan)
 
     np_image_bgr = np_image[:, :, ::-1]
-    cropped_faces, restored_faces, gfpgan_output_bgr = model.enhance(np_image_bgr, has_aligned=False, only_center_face=False, paste_back=True)
+    cropped_faces, restored_faces, gfpgan_output_bgr = model.enhance(np_image_bgr, has_aligned=False,
+                                                                     only_center_face=False, paste_back=True)
     np_image = gfpgan_output_bgr[:, :, ::-1]
 
     model.face_helper.clean_all()

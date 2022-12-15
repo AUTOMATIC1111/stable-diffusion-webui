@@ -1,28 +1,23 @@
 from __future__ import annotations
-import math
+
 import os
-import sys
-import traceback
+from dataclasses import dataclass
+from functools import partial
+from typing import Callable, List, OrderedDict, Tuple
 
+import gradio as gr
 import numpy as np
-from PIL import Image
-
+import safetensors.torch
 import torch
 import tqdm
+from PIL import Image
 
-from typing import Callable, List, OrderedDict, Tuple
-from functools import partial
-from dataclasses import dataclass
-
-from modules import processing, shared, images, devices, sd_models, sd_samplers
-from modules.shared import opts
-import modules.gfpgan_model
-from modules.ui import plaintext_to_html
 import modules.codeformer_model
-import piexif
-import piexif.helper
-import gradio as gr
-import safetensors.torch
+import modules.gfpgan_model
+from modules import shared, images, devices, sd_models
+from modules.shared import opts
+from modules.ui import plaintext_to_html
+
 
 class LruCache(OrderedDict):
     @dataclass(frozen=True)
@@ -55,7 +50,10 @@ class LruCache(OrderedDict):
 cached_images: LruCache = LruCache(max_size=5)
 
 
-def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_dir, show_extras_results, gfpgan_visibility, codeformer_visibility, codeformer_weight, upscaling_resize, upscaling_resize_w, upscaling_resize_h, upscaling_crop, extras_upscaler_1, extras_upscaler_2, extras_upscaler_2_visibility, upscale_first: bool):
+def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_dir, show_extras_results,
+               gfpgan_visibility, codeformer_visibility, codeformer_weight, upscaling_resize, upscaling_resize_w,
+               upscaling_resize_h, upscaling_crop, extras_upscaler_1, extras_upscaler_2, extras_upscaler_2_visibility,
+               upscale_first: bool):
     devices.torch_gc()
 
     imageArr = []
@@ -64,7 +62,7 @@ def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_
     outputs = []
 
     if extras_mode == 1:
-        #convert file to pillow image
+        # convert file to pillow image
         for img in image_folder:
             image = Image.open(img)
             imageArr.append(image)
@@ -126,7 +124,7 @@ def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_
         # Actual crop happens in run_upscalers_blend, this just sets upscaling_resize and adds info text
         nonlocal upscaling_resize
         if resize_mode == 1:
-            upscaling_resize = max(upscaling_resize_w/image.width, upscaling_resize_h/image.height)
+            upscaling_resize = max(upscaling_resize_w / image.width, upscaling_resize_h / image.height)
             crop_info = " (crop)" if upscaling_crop else ""
             info += f"Resize to: {upscaling_resize_w:g}x{upscaling_resize_h:g}{crop_info}\n"
         return image, info
@@ -192,19 +190,22 @@ def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_
         else:
             basename = ''
 
-        images.save_image(image, path=outpath, basename=basename, seed=None, prompt=None, extension=opts.samples_format, info=info, short_filename=True,
-                          no_prompt=True, grid=False, pnginfo_section_name="extras", existing_info=existing_pnginfo, forced_filename=None)
+        images.save_image(image, path=outpath, basename=basename, seed=None, prompt=None, extension=opts.samples_format,
+                          info=info, short_filename=True,
+                          no_prompt=True, grid=False, pnginfo_section_name="extras", existing_info=existing_pnginfo,
+                          forced_filename=None)
 
         if opts.enable_pnginfo:
             image.info = existing_pnginfo
             image.info["extras"] = info
 
-        if extras_mode != 2 or show_extras_results :
+        if extras_mode != 2 or show_extras_results:
             outputs.append(image)
 
     devices.torch_gc()
 
     return outputs, plaintext_to_html(info), ''
+
 
 def clear_cache():
     cached_images.clear()
@@ -224,7 +225,7 @@ def run_pnginfo(image):
 <p><b>{plaintext_to_html(str(key))}</b></p>
 <p>{plaintext_to_html(str(text))}</p>
 </div>
-""".strip()+"\n"
+""".strip() + "\n"
 
     if len(info) == 0:
         message = "Nothing found in the image."
@@ -233,7 +234,8 @@ def run_pnginfo(image):
     return '', geninfo, info
 
 
-def run_modelmerger(primary_model_name, secondary_model_name, tertiary_model_name, interp_method, multiplier, save_as_half, custom_name, checkpoint_format):
+def run_modelmerger(primary_model_name, secondary_model_name, tertiary_model_name, interp_method, multiplier,
+                    save_as_half, custom_name, checkpoint_format):
     def weighted_sum(theta0, theta1, alpha):
         return ((1 - alpha) * theta0) + (alpha * theta1)
 
@@ -255,7 +257,8 @@ def run_modelmerger(primary_model_name, secondary_model_name, tertiary_model_nam
     theta_func1, theta_func2 = theta_funcs[interp_method]
 
     if theta_func1 and not tertiary_model_info:
-        return ["Failed: Interpolation method requires a tertiary model."] + [gr.Dropdown.update(choices=sd_models.checkpoint_tiles()) for _ in range(4)]
+        return ["Failed: Interpolation method requires a tertiary model."] + [
+            gr.Dropdown.update(choices=sd_models.checkpoint_tiles()) for _ in range(4)]
 
     print(f"Loading {secondary_model_info.filename}...")
     theta_1 = sd_models.read_state_dict(secondary_model_info.filename, map_location='cpu')
@@ -288,9 +291,11 @@ def run_modelmerger(primary_model_name, secondary_model_name, tertiary_model_nam
             # have another 4 channels for unmasked picture's latent space, plus one channel for mask, for a total of 9
             if a.shape != b.shape and a.shape[0:1] + a.shape[2:] == b.shape[0:1] + b.shape[2:]:
                 if a.shape[1] == 4 and b.shape[1] == 9:
-                    raise RuntimeError("When merging inpainting model with a normal one, A must be the inpainting model.")
+                    raise RuntimeError(
+                        "When merging inpainting model with a normal one, A must be the inpainting model.")
 
-                assert a.shape[1] == 9 and b.shape[1] == 4, f"Bad dimensions for merged layer {key}: A={a.shape}, B={b.shape}"
+                assert a.shape[1] == 9 and b.shape[
+                    1] == 4, f"Bad dimensions for merged layer {key}: A={a.shape}, B={b.shape}"
 
                 theta_0[key][:, 0:4, :, :] = theta_func2(a[:, 0:4, :, :], b, multiplier)
                 result_is_inpainting_model = True
@@ -311,10 +316,10 @@ def run_modelmerger(primary_model_name, secondary_model_name, tertiary_model_nam
     ckpt_dir = shared.cmd_opts.ckpt_dir or sd_models.model_path
 
     filename = \
-        primary_model_info.model_name + '_' + str(round(1-multiplier, 2)) + '-' + \
+        primary_model_info.model_name + '_' + str(round(1 - multiplier, 2)) + '-' + \
         secondary_model_info.model_name + '_' + str(round(multiplier, 2)) + '-' + \
         interp_method.replace(" ", "_") + \
-        '-merged.' +  \
+        '-merged.' + \
         ("inpainting." if result_is_inpainting_model else "") + \
         checkpoint_format
 
@@ -333,4 +338,5 @@ def run_modelmerger(primary_model_name, secondary_model_name, tertiary_model_nam
     sd_models.list_models()
 
     print("Checkpoint saved.")
-    return ["Checkpoint saved to " + output_modelname] + [gr.Dropdown.update(choices=sd_models.checkpoint_tiles()) for _ in range(4)]
+    return ["Checkpoint saved to " + output_modelname] + [gr.Dropdown.update(choices=sd_models.checkpoint_tiles()) for _
+                                                          in range(4)]

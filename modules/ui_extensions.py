@@ -1,3 +1,4 @@
+import html
 import json
 import os.path
 import shutil
@@ -6,12 +7,9 @@ import time
 import traceback
 
 import git
-
 import gradio as gr
-import html
 
 from modules import extensions, shared, paths
-
 
 available_extensions = {"extensions": []}
 
@@ -128,7 +126,8 @@ def install_extension_from_url(dirname, url):
     assert not os.path.exists(target_dir), f'Extension directory already exists: {target_dir}'
 
     normalized_url = normalize_git_url(url)
-    assert len([x for x in extensions.extensions if normalize_git_url(x.remote) == normalized_url]) == 0, 'Extension with this URL is already installed'
+    assert len([x for x in extensions.extensions if
+                normalize_git_url(x.remote) == normalized_url]) == 0, 'Extension with this URL is already installed'
 
     tmpdir = os.path.join(paths.script_path, "tmp", dirname)
 
@@ -179,7 +178,8 @@ def refresh_available_extensions_for_tags(hide_tags):
 
 def refresh_available_extensions_from_data(hide_tags):
     extlist = available_extensions["extensions"]
-    installed_extension_urls = {normalize_git_url(extension.remote): extension.name for extension in extensions.extensions}
+    installed_extension_urls = {normalize_git_url(extension.remote): extension.name for extension in
+                                extensions.extensions}
 
     tags = available_extensions.get("tags", {})
     tags_to_hide = set(hide_tags)
@@ -215,7 +215,8 @@ def refresh_available_extensions_from_data(hide_tags):
 
         install_code = f"""<input onclick="install_extension_from_index(this, '{html.escape(url)}')" type="button" value="{"Install" if not existing else "Installed"}" {"disabled=disabled" if existing else ""} class="gr-button gr-button-lg gr-button-secondary">"""
 
-        tags_text = ", ".join([f"<span class='extension-tag' title='{tags.get(x, '')}'>{x}</span>" for x in extension_tags])
+        tags_text = ", ".join(
+            [f"<span class='extension-tag' title='{tags.get(x, '')}'>{x}</span>" for x in extension_tags])
 
         code += f"""
             <tr>
@@ -246,12 +247,13 @@ def create_ui():
     with gr.Blocks(analytics_enabled=False) as ui:
         with gr.Tabs(elem_id="tabs_extensions") as tabs:
             with gr.TabItem("Installed"):
-
                 with gr.Row():
                     apply = gr.Button(value="Apply and restart UI", variant="primary")
                     check = gr.Button(value="Check for updates")
-                    extensions_disabled_list = gr.Text(elem_id="extensions_disabled_list", visible=False).style(container=False)
-                    extensions_update_list = gr.Text(elem_id="extensions_update_list", visible=False).style(container=False)
+                    extensions_disabled_list = gr.Text(elem_id="extensions_disabled_list", visible=False).style(
+                        container=False)
+                    extensions_update_list = gr.Text(elem_id="extensions_update_list", visible=False).style(
+                        container=False)
 
                 extensions_table = gr.HTML(lambda: extension_table())
 
@@ -272,24 +274,30 @@ def create_ui():
             with gr.TabItem("Available"):
                 with gr.Row():
                     refresh_available_extensions_button = gr.Button(value="Load from:", variant="primary")
-                    available_extensions_index = gr.Text(value="https://raw.githubusercontent.com/wiki/AUTOMATIC1111/stable-diffusion-webui/Extensions-index.md", label="Extension index URL").style(container=False)
+                    available_extensions_index = gr.Text(
+                        value="https://raw.githubusercontent.com/wiki/AUTOMATIC1111/stable-diffusion-webui/Extensions-index.md",
+                        label="Extension index URL").style(container=False)
                     extension_to_install = gr.Text(elem_id="extension_to_install", visible=False)
                     install_extension_button = gr.Button(elem_id="install_extension_button", visible=False)
 
                 with gr.Row():
-                    hide_tags = gr.CheckboxGroup(value=["ads", "localization", "installed"], label="Hide extensions with tags", choices=["script", "ads", "localization", "installed"])
+                    hide_tags = gr.CheckboxGroup(value=["ads", "localization", "installed"],
+                                                 label="Hide extensions with tags",
+                                                 choices=["script", "ads", "localization", "installed"])
 
                 install_result = gr.HTML()
                 available_extensions_table = gr.HTML()
 
                 refresh_available_extensions_button.click(
-                    fn=modules.ui.wrap_gradio_call(refresh_available_extensions, extra_outputs=[gr.update(), gr.update(), gr.update()]),
+                    fn=modules.ui.wrap_gradio_call(refresh_available_extensions,
+                                                   extra_outputs=[gr.update(), gr.update(), gr.update()]),
                     inputs=[available_extensions_index, hide_tags],
                     outputs=[available_extensions_index, available_extensions_table, hide_tags, install_result],
                 )
 
                 install_extension_button.click(
-                    fn=modules.ui.wrap_gradio_call(install_extension_from_index, extra_outputs=[gr.update(), gr.update()]),
+                    fn=modules.ui.wrap_gradio_call(install_extension_from_index,
+                                                   extra_outputs=[gr.update(), gr.update()]),
                     inputs=[extension_to_install, hide_tags],
                     outputs=[available_extensions_table, extensions_table, install_result],
                 )

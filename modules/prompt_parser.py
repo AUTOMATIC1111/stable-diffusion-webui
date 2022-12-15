@@ -1,6 +1,7 @@
 import re
 from collections import namedtuple
 from typing import List
+
 import lark
 
 # a prompt like this: "fantasy landscape with a [mountain:lake:0.25] and [an oak:a christmas tree:0.75][ in foreground::0.6][ in background:0.25] [shoddy:masterful:0.5]"
@@ -23,6 +24,7 @@ WHITESPACE: /\s+/
 plain: /([^\\\[\]():|]|\\.)+/
 %import common.SIGNED_NUMBER -> NUMBER
 """)
+
 
 def get_learned_conditioning_prompt_schedules(prompts, steps):
     """
@@ -53,6 +55,7 @@ def get_learned_conditioning_prompt_schedules(prompts, steps):
 
     def collect_steps(steps, tree):
         l = [steps]
+
         class CollectSteps(lark.Visitor):
             def scheduled(self, tree):
                 tree.children[-1] = float(tree.children[-1])
@@ -60,8 +63,10 @@ def get_learned_conditioning_prompt_schedules(prompts, steps):
                     tree.children[-1] *= steps
                 tree.children[-1] = min(steps, int(tree.children[-1]))
                 l.append(tree.children[-1])
+
             def alternate(self, tree):
-                l.extend(range(1, steps+1))
+                l.extend(range(1, steps + 1))
+
         CollectSteps().visit(tree)
         return sorted(set(l))
 
@@ -70,8 +75,10 @@ def get_learned_conditioning_prompt_schedules(prompts, steps):
             def scheduled(self, args):
                 before, after, _, when = args
                 yield before or () if step <= when else after
+
             def alternate(self, args):
-                yield next(args[(step - 1)%len(args)])
+                yield next(args[(step - 1) % len(args)])
+
             def start(self, args):
                 def flatten(x):
                     if type(x) == str:
@@ -79,12 +86,16 @@ def get_learned_conditioning_prompt_schedules(prompts, steps):
                     else:
                         for gen in x:
                             yield from flatten(gen)
+
                 return ''.join(flatten(args))
+
             def plain(self, args):
                 yield args[0].value
+
             def __default__(self, data, children, meta):
                 for child in children:
                     yield from child
+
         return AtStep().transform(tree)
 
     def get_schedule(prompt):
@@ -150,6 +161,7 @@ def get_learned_conditioning(model, prompts, steps):
 re_AND = re.compile(r"\bAND\b")
 re_weight = re.compile(r"^(.*?)(?:\s*:\s*([-+]?(?:\d+\.?|\d*\.\d+)))?\s*$")
 
+
 def get_multicond_prompt_list(prompts):
     res_indexes = []
 
@@ -190,6 +202,7 @@ class MulticondLearnedConditioning:
     def __init__(self, shape, batch):
         self.shape: tuple = shape  # the shape field is needed to send this object to DDIM/PLMS
         self.batch: List[List[ComposableScheduledPromptConditioning]] = batch
+
 
 def get_multicond_learned_conditioning(model, prompts, steps) -> MulticondLearnedConditioning:
     """same as get_learned_conditioning, but returns a list of ScheduledPromptConditioning along with the weight objects for each prompt.
@@ -359,8 +372,10 @@ def parse_prompt_attention(text):
 
     return res
 
+
 if __name__ == "__main__":
     import doctest
+
     doctest.testmod(optionflags=doctest.NORMALIZE_WHITESPACE)
 else:
     import torch  # doctest faster

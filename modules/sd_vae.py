@@ -1,30 +1,26 @@
-import torch
-import os
-from collections import namedtuple
-from modules import shared, devices, script_callbacks
-from modules.paths import models_path
 import glob
+import os
 from copy import deepcopy
 
+import torch
+
+from modules import shared, devices, script_callbacks
+from modules.paths import models_path
 
 model_dir = "Stable-diffusion"
 model_path = os.path.abspath(os.path.join(models_path, model_dir))
 vae_dir = "VAE"
 vae_path = os.path.abspath(os.path.join(models_path, vae_dir))
 
-
 vae_ignore_keys = {"model_ema.decay", "model_ema.num_updates"}
-
 
 default_vae_dict = {"auto": "auto", "None": None, None: None}
 default_vae_list = ["auto", "None"]
-
 
 default_vae_values = [default_vae_dict[x] for x in default_vae_list]
 vae_dict = dict(default_vae_dict)
 vae_list = list(default_vae_list)
 first_load = True
-
 
 base_vae = None
 loaded_vae_file = None
@@ -176,9 +172,11 @@ def _load_vae_dict(model, vae_dict_1):
     model.first_stage_model.load_state_dict(vae_dict_1)
     model.first_stage_model.to(devices.dtype_vae)
 
+
 def clear_loaded_vae():
     global loaded_vae_file
     loaded_vae_file = None
+
 
 def reload_vae_weights(sd_model=None, vae_file="auto"):
     from modules import lowvram, devices, sd_hijack

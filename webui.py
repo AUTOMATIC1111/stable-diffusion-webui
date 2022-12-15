@@ -1,37 +1,31 @@
-import os
-import threading
-import time
 import importlib
+import os
 import signal
-import threading
+import time
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 
-from modules.call_queue import wrap_queued_call, queue_lock, wrap_gradio_gpu_call
-from modules.paths import script_path
-
-from modules import shared, devices, sd_samplers, upscaler, extensions, localization, ui_tempdir
 import modules.codeformer_model as codeformer
 import modules.extras
 import modules.face_restoration
 import modules.gfpgan_model as gfpgan
+import modules.hypernetworks.hypernetwork
 import modules.img2img
-
 import modules.lowvram
 import modules.paths
+import modules.script_callbacks
 import modules.scripts
 import modules.sd_hijack
 import modules.sd_models
 import modules.sd_vae
 import modules.txt2img
-import modules.script_callbacks
-
 import modules.ui
 from modules import modelloader
+from modules import shared, sd_samplers, upscaler, extensions, localization, ui_tempdir
+from modules.call_queue import wrap_queued_call, queue_lock
 from modules.shared import cmd_opts
-import modules.hypernetworks.hypernetwork
-
 
 if cmd_opts.server_name:
     server_name = cmd_opts.server_name
@@ -90,7 +84,8 @@ def initialize():
 
 def setup_cors(app):
     if cmd_opts.cors_allow_origins and cmd_opts.cors_allow_origins_regex:
-        app.add_middleware(CORSMiddleware, allow_origins=cmd_opts.cors_allow_origins.split(','), allow_origin_regex=cmd_opts.cors_allow_origins_regex, allow_methods=['*'])
+        app.add_middleware(CORSMiddleware, allow_origins=cmd_opts.cors_allow_origins.split(','),
+                           allow_origin_regex=cmd_opts.cors_allow_origins_regex, allow_methods=['*'])
     elif cmd_opts.cors_allow_origins:
         app.add_middleware(CORSMiddleware, allow_origins=cmd_opts.cors_allow_origins.split(','), allow_methods=['*'])
     elif cmd_opts.cors_allow_origins_regex:
@@ -144,7 +139,8 @@ def webui():
             ssl_keyfile=cmd_opts.tls_keyfile,
             ssl_certfile=cmd_opts.tls_certfile,
             debug=cmd_opts.gradio_debug,
-            auth=[tuple(cred.split(':')) for cred in cmd_opts.gradio_auth.strip('"').split(',')] if cmd_opts.gradio_auth else None,
+            auth=[tuple(cred.split(':')) for cred in
+                  cmd_opts.gradio_auth.strip('"').split(',')] if cmd_opts.gradio_auth else None,
             inbrowser=cmd_opts.autolaunch,
             prevent_thread_lock=True
         )

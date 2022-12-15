@@ -1,8 +1,9 @@
-import sys, os, shlex
 import contextlib
+
 import torch
-from modules import errors
 from packaging import version
+
+from modules import errors
 
 
 # has_mps is only available in nightly pytorch (for now) and macOS 12.3+.
@@ -72,7 +73,6 @@ def enable_tf32():
         torch.backends.cudnn.allow_tf32 = True
 
 
-
 errors.run(enable_tf32, "Enabling TF32")
 
 cpu = torch.device("cpu")
@@ -108,16 +108,20 @@ def autocast(disable=False):
 
 # MPS workaround for https://github.com/pytorch/pytorch/issues/79383
 orig_tensor_to = torch.Tensor.to
+
+
 def tensor_to_fix(self, *args, **kwargs):
     if self.device.type != 'mps' and \
-       ((len(args) > 0 and isinstance(args[0], torch.device) and args[0].type == 'mps') or
-        (isinstance(kwargs.get('device'), torch.device) and kwargs['device'].type == 'mps')):
+            ((len(args) > 0 and isinstance(args[0], torch.device) and args[0].type == 'mps') or
+             (isinstance(kwargs.get('device'), torch.device) and kwargs['device'].type == 'mps')):
         self = self.contiguous()
     return orig_tensor_to(self, *args, **kwargs)
 
 
 # MPS workaround for https://github.com/pytorch/pytorch/issues/80800 
 orig_layer_norm = torch.nn.functional.layer_norm
+
+
 def layer_norm_fix(*args, **kwargs):
     if len(args) > 0 and isinstance(args[0], torch.Tensor) and args[0].device.type == 'mps':
         args = list(args)

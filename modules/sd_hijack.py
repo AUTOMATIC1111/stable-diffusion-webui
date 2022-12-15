@@ -1,20 +1,18 @@
+import ldm.models.diffusion.ddim
+import ldm.models.diffusion.plms
+import ldm.modules.attention
+import ldm.modules.diffusionmodules.model
+import ldm.modules.diffusionmodules.openaimodel
+import ldm.modules.encoders.modules
 import torch
 from torch.nn.functional import silu
 
 import modules.textual_inversion.textual_inversion
 from modules import devices, sd_hijack_optimizations, shared, sd_hijack_checkpoint
-from modules.hypernetworks import hypernetwork
-from modules.shared import cmd_opts
 from modules import sd_hijack_clip, sd_hijack_open_clip, sd_hijack_unet
-
+from modules.hypernetworks import hypernetwork
 from modules.sd_hijack_optimizations import invokeAI_mps_available
-
-import ldm.modules.attention
-import ldm.modules.diffusionmodules.model
-import ldm.modules.diffusionmodules.openaimodel
-import ldm.models.diffusion.ddim
-import ldm.models.diffusion.plms
-import ldm.modules.encoders.modules
+from modules.shared import cmd_opts
 
 attention_CrossAttention_forward = ldm.modules.attention.CrossAttention.forward
 diffusionmodules_model_nonlinearity = ldm.modules.diffusionmodules.model.nonlinearity
@@ -36,16 +34,19 @@ def apply_optimizations():
     ldm.modules.diffusionmodules.model.nonlinearity = silu
     ldm.modules.diffusionmodules.openaimodel.th = sd_hijack_unet.th
 
-    if cmd_opts.force_enable_xformers or (cmd_opts.xformers and shared.xformers_available and torch.version.cuda and (6, 0) <= torch.cuda.get_device_capability(shared.device) <= (9, 0)):
+    if cmd_opts.force_enable_xformers or (cmd_opts.xformers and shared.xformers_available and torch.version.cuda and (
+    6, 0) <= torch.cuda.get_device_capability(shared.device) <= (9, 0)):
         print("Applying xformers cross attention optimization.")
         ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.xformers_attention_forward
         ldm.modules.diffusionmodules.model.AttnBlock.forward = sd_hijack_optimizations.xformers_attnblock_forward
     elif cmd_opts.opt_split_attention_v1:
         print("Applying v1 cross attention optimization.")
         ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.split_cross_attention_forward_v1
-    elif not cmd_opts.disable_opt_split_attention and (cmd_opts.opt_split_attention_invokeai or not torch.cuda.is_available()):
+    elif not cmd_opts.disable_opt_split_attention and (
+            cmd_opts.opt_split_attention_invokeai or not torch.cuda.is_available()):
         if not invokeAI_mps_available and shared.device.type == 'mps':
-            print("The InvokeAI cross attention optimization for MPS requires the psutil package which is not installed.")
+            print(
+                "The InvokeAI cross attention optimization for MPS requires the psutil package which is not installed.")
             print("Applying v1 cross attention optimization.")
             ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.split_cross_attention_forward_v1
         else:
@@ -68,6 +69,7 @@ def fix_checkpoint():
     ldm.modules.diffusionmodules.openaimodel.ResBlock.forward = sd_hijack_checkpoint.ResBlock_forward
     ldm.modules.diffusionmodules.openaimodel.AttentionBlock.forward = sd_hijack_checkpoint.AttentionBlock_forward
 
+
 class StableDiffusionModelHijack:
     fixes = None
     comments = []
@@ -83,7 +85,8 @@ class StableDiffusionModelHijack:
             model_embeddings.token_embedding = EmbeddingsWithFixes(model_embeddings.token_embedding, self)
             m.cond_stage_model = sd_hijack_clip.FrozenCLIPEmbedderWithCustomWords(m.cond_stage_model, self)
         elif type(m.cond_stage_model) == ldm.modules.encoders.modules.FrozenOpenCLIPEmbedder:
-            m.cond_stage_model.model.token_embedding = EmbeddingsWithFixes(m.cond_stage_model.model.token_embedding, self)
+            m.cond_stage_model.model.token_embedding = EmbeddingsWithFixes(m.cond_stage_model.model.token_embedding,
+                                                                           self)
             m.cond_stage_model = sd_hijack_open_clip.FrozenOpenCLIPEmbedderWithCustomWords(m.cond_stage_model, self)
 
         self.clip = m.cond_stage_model
@@ -130,7 +133,6 @@ class StableDiffusionModelHijack:
     def tokenize(self, text):
         _, remade_batch_tokens, _, _, _, token_count = self.clip.process_text([text])
         return remade_batch_tokens[0], token_count, sd_hijack_clip.get_target_prompt_token_count(token_count)
-
 
 
 class EmbeddingsWithFixes(torch.nn.Module):
