@@ -89,7 +89,7 @@
 		{
 			"name": "Unprompted",
 			"url": "https://github.com/ThereforeGames/unprompted",
-			"description": "Allows you to include various shortcodes in your prompts. You can pull text from files, set up your own variables, process text through conditional functions, and so much more - it's like wildcards on steroids.",
+			"description": "Allows you to include various shortcodes in your prompts. You can pull text from files, set up your own variables, process text through conditional functions, and so much more - it's like wildcards on steroids. It now includes txt2img2img and txt2mask custom-script features.",
 			"tags": ["script", "ads"]
 		},
 		{
@@ -252,12 +252,6 @@
 			"name": "Config-Presets",
 			"url": "https://github.com/Zyin055/Config-Presets.git",
 			"description": "Adds a configurable dropdown to allow you to change UI preset settings in the txt2img and img2img tabs.",
-			"tags": ["script"]
-		},
-		{
-			"name": "Just Patch It Already!",
-			"url": "https://github.com/d8ahazard/sd_auto_fix.git",
-			"description": "Fixing things that won't otherwise get fixed, like not having to manually copy and rename a yaml file every time I create a new checkpoint, or the 'safe' unpickler.",
 			"tags": ["script"]
 		},
 		{
