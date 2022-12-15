@@ -364,7 +364,7 @@ def create_random_tensors(shape, seeds, subseeds=None, subseed_strength=0.0, see
 
     for i, seed in enumerate(seeds):
         noise_shape = shape if seed_resize_from_h <= 0 or seed_resize_from_w <= 0 else (
-        shape[0], seed_resize_from_h // 8, seed_resize_from_w // 8)
+            shape[0], seed_resize_from_h // 8, seed_resize_from_w // 8)
 
         subnoise = None
         if subseeds is not None:

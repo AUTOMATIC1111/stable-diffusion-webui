@@ -191,7 +191,7 @@ class Script(scripts.Script):
                                                           seed_resize_from_w=p.seed_resize_from_w, p=p)
 
             combined_noise = ((1 - randomness) * rec_noise + randomness * rand_noise) / (
-                        (randomness ** 2 + (1 - randomness) ** 2) ** 0.5)
+                    (randomness ** 2 + (1 - randomness) ** 2) ** 0.5)
 
             sampler = sd_samplers.create_sampler(p.sampler_name, p.sd_model)
 

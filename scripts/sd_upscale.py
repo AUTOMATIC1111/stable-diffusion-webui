@@ -88,7 +88,7 @@ class Script(scripts.Script):
             for y, h, row in grid.tiles:
                 for tiledata in row:
                     tiledata[2] = work_results[image_index] if image_index < len(work_results) else Image.new("RGB", (
-                    p.width, p.height))
+                        p.width, p.height))
                     image_index += 1
 
             combined_image = images.combine_grid(grid)
