@@ -168,8 +168,7 @@ def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_
     upscale_ops += [run_prepare_crop] if resize_mode == 1 else []
 
     if upscaling_resize != 0:
-        step_params: List[UpscaleParams] = []
-        step_params.append(UpscaleParams(upscaler_idx=extras_upscaler_1, blend_alpha=1.0))
+        step_params: List[UpscaleParams] = [UpscaleParams(upscaler_idx=extras_upscaler_1, blend_alpha=1.0)]
         if extras_upscaler_2 != 0 and extras_upscaler_2_visibility > 0:
             step_params.append(UpscaleParams(upscaler_idx=extras_upscaler_2, blend_alpha=extras_upscaler_2_visibility))
 

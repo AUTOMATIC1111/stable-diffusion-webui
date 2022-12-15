@@ -54,9 +54,7 @@ def crop_image(im, settings):
 
   crop = [x1, y1, x2, y2]
 
-  results = []
-
-  results.append(im.crop(tuple(crop)))
+  results = [im.crop(tuple(crop))]
 
   if settings.annotate_image:
     d = ImageDraw.Draw(im_debug)
