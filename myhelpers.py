@@ -19,6 +19,13 @@ class _Any:
 
 any = _Any()
 
+class MyUI:
+    def __init__(self) -> None:
+        self.refreshinjstimerbtn = None
+
+txt2img = MyUI()
+img2img = MyUI()
+
 def getDictKeyByReverse(dic:dict):
     keys = [k for k in dic]
     keys.reverse()

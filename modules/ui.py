@@ -93,6 +93,10 @@ apply_style_symbol = '\U0001f4cb'  # 📋
 taskqueue_lock = threading.Lock()
 taskqueque = []
 
+outputs_queue_lock = threading.Lock()
+outputs_taskqueque = []
+
+
 def plaintext_to_html(text):
     text = "<p>" + "<br>\n".join([f"{html.escape(x)}" for x in text.split('\n')]) + "</p>"
     return text
@@ -266,6 +270,7 @@ def has_job():
     return shared.state.job_count > 0 or shared.state.sampling_steps > 0
 
 def get_progress_str():
+    if shared.state.job_count == 0:return ""
     jobstr = '' if shared.state.job_count==0 else f' 总体:{shared.state.job_no+1}/{shared.state.job_count}'
     return f'{shared.state.sampling_step}/{shared.state.sampling_steps}{jobstr}'
 
@@ -309,7 +314,6 @@ def check_progress_call(id_part):
         textinfo_result = gr.HTML.update(value=shared.state.textinfo, visible=True)
     else:
         textinfo_result = gr_show(False)
-
     return f"<span id='{id_part}_progress_span' style='display: none'>{time.time()}</span><p>{progressbar}</p>", preview_visibility, image, textinfo_result
 
 
@@ -465,6 +469,8 @@ def update_token_counter(text, steps):
 def create_toprow(is_img2img):
     id_part = "img2img" if is_img2img else "txt2img"
 
+    myui = myhelpers.txt2img if not is_img2img else myhelpers.img2img
+
     with gr.Row(elem_id="toprow"):
         with gr.Column(scale=6):
             with gr.Row():
@@ -534,15 +540,15 @@ def create_toprow(is_img2img):
     with gr.Row(elem_id="custom1"):
         with gr.Row():
 
-            refreshinjstimerbtn = gr.Button('refreshinjstimerbtn', elem_id='refreshinjstimerbtn', visible=False)
-            
+            refreshinjstimerbtn = gr.Button('refreshinjstimerbtn', elem_id=f'{id_part}_refreshinjstimerbtn', visible=False)
+            myui.refreshinjstimerbtn = refreshinjstimerbtn
             
             myskip = gr.Button('跳过单个任务')
             mystop = gr.Button('跳过一组任务')
             # refreshbtn = gr.Button('刷新队列',elem_id='update_queue_label_btn',visible=False)
-            addtoqueue = gr.Button('添加到任务队列',variant='primary')
+            addtoqueue = gr.Button('添加到任务队列',variant='primary',visible=not is_img2img)
             myhelpers.any.queueText = gr.Label(label='队列信息', 
-            value=refresh_queueText,)
+            value='等待刷新',)
             
             cleattagbtn = gr.Button('cleattag',elem_id='cleattagbtn')
             
@@ -894,6 +900,9 @@ def create_ui(wrap_gradio_gpu_call,wrap_queued_call):
             connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
             connect_reuse_seed(subseed, reuse_subseed, generation_info, dummy_component, is_subseed=True)
 
+            lastoutout = myhelpers._Any()
+            lastoutout.outputs = None
+
             def mywrap_to_saveinfotext(*args, **kwargs):
                 filetag = args[-1]
                 info_text = processing.create_infotext2(*args,**kwargs)   
@@ -903,7 +912,8 @@ def create_ui(wrap_gradio_gpu_call,wrap_queued_call):
                     dic[filetag] = info_text
                     myhelpers.saveJsonWithTag(dict=dic,fn='txt2img_histroy.json')
                 f = wrap_gradio_gpu_call(modules.txt2img.txt2img)
-                return f(*args, **kwargs)
+                lastoutout.outputs = f(*args, **kwargs)
+                return lastoutout.outputs
 
             txt2img_args = dict(
                 fn=mywrap_to_saveinfotext,
@@ -943,10 +953,23 @@ def create_ui(wrap_gradio_gpu_call,wrap_queued_call):
             submit.click(**txt2img_args)
 
 
-            wrappedtxt2imgf = wrap_queued_call(modules.txt2img.txt2img)
+            wrappedtxt2imgf = wrap_gradio_gpu_call(modules.txt2img.txt2img)
 
 
+            refreshinjstimerbtn:gr.Button = myhelpers.txt2img.refreshinjstimerbtn
             
+            def refreshinjstimerbtnf():
+                with outputs_queue_lock:
+                    if len(outputs_taskqueque)>0:
+                        lastoutout.outputs = outputs_taskqueque[0]
+                        del outputs_taskqueque[0]
+                if lastoutout.outputs:
+                    return lastoutout.outputs
+                return [gr.update()]*3
+            refreshinjstimerbtn.click(fn=refreshinjstimerbtnf,outputs=[
+                txt2img_gallery,
+                generation_info,
+                html_info])
 
             def task_loop():
                 while 1:
@@ -960,8 +983,10 @@ def create_ui(wrap_gradio_gpu_call,wrap_queued_call):
                         taskid = task['taskid']
                         print(f'开始执行任务{taskid} 剩余数量{len(taskqueque)}')
                         try:
-                            task['task']()
-                            shared.state.job_count = 0
+                            r_args = task['task']()
+                            print(f'任务结束{taskid} 剩余数量{len(taskqueque)}')
+                            with outputs_queue_lock:
+                                outputs_taskqueque.append(r_args)
                         except Exception as e:
                             print(f'发错了错误 {e}\ninfo_text:{task["info_text"]}')
                 
@@ -982,7 +1007,7 @@ def create_ui(wrap_gradio_gpu_call,wrap_queued_call):
 
                 with taskqueue_lock:
                     def task():
-                        wrappedtxt2imgf(*args,**kwargs)
+                        return wrappedtxt2imgf(*args,**kwargs)
                     myhelpers.any.taskid+=1
                     taskqueque.append(dict(
                         taskid=myhelpers.any.taskid,

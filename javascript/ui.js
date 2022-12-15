@@ -236,15 +236,16 @@ function restart_reload(){
     return []
 }
 
-let refreshinjstimerbtn
-
 setInterval(() => {
-    if (refreshinjstimerbtn==null){
-        refreshinjstimerbtn = gradioApp().getElementById('refreshinjstimerbtn')
+    var txt2img_refreshinjstimerbtn = gradioApp().getElementById('txt2img_refreshinjstimerbtn')
+    if (txt2img_refreshinjstimerbtn!=null){
+        txt2img_refreshinjstimerbtn.click()
     }
-    if (refreshinjstimerbtn==null)return
-    refreshinjstimerbtn.click()
-}, 5000);
+    var img2img_refreshinjstimerbtn = gradioApp().getElementById('img2img_refreshinjstimerbtn')
+    if (img2img_refreshinjstimerbtn!=null){
+        img2img_refreshinjstimerbtn.click()
+    }
+}, 6000);
 
 function copyToClipboard(){
     console.log(arguments[0])
