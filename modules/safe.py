@@ -1,17 +1,15 @@
 # this code is adapted from the script contributed by anon from /h/
 
-import io
-import pickle
+import _codecs
 import collections
+import pickle
+import re
 import sys
 import traceback
-
-import torch
-import numpy
-import _codecs
 import zipfile
-import re
 
+import numpy
+import torch
 
 # PyTorch 1.13 and later have _TypedStorage renamed to TypedStorage
 TypedStorage = torch.storage.TypedStorage if hasattr(torch.storage, 'TypedStorage') else torch.storage._TypedStorage
@@ -20,6 +18,15 @@ TypedStorage = torch.storage.TypedStorage if hasattr(torch.storage, 'TypedStorag
 def encode(*args):
     out = _codecs.encode(*args)
     return out
+
+
+# Users can create new keys here if needed.
+extras_dict = {
+    "yolo": [],
+    'torch.nn.modules': ['Conv', 'Conv2d', 'BatchNorm2d', "SiLU", "MaxPool2d", "Upsample", "ModuleList"],
+    "models.common": ["C3", "Bottleneck", "SPPF", "Concat", "Conv"],
+    "numpy.core.multiarray": ["_reconstruct"]
+}
 
 
 class RestrictedUnpickler(pickle.Unpickler):
@@ -39,9 +46,10 @@ class RestrictedUnpickler(pickle.Unpickler):
             return getattr(collections, name)
         if module == 'torch._utils' and name in ['_rebuild_tensor_v2', '_rebuild_parameter']:
             return getattr(torch._utils, name)
-        if module == 'torch' and name in ['FloatStorage', 'HalfStorage', 'IntStorage', 'LongStorage', 'DoubleStorage', 'ByteStorage']:
+        if module == 'torch' and name in ['FloatStorage', 'HalfStorage', 'IntStorage', 'LongStorage', 'DoubleStorage',
+                                          'ByteStorage', 'BFloat16Storage']:
             return getattr(torch, name)
-        if module == 'torch.nn.modules.container' and name in ['ParameterDict']:
+        if module == 'torch.nn.modules.container' and name in ['ParameterDict', 'Sequential']:
             return getattr(torch.nn.modules.container, name)
         if module == 'numpy.core.multiarray' and name == 'scalar':
             return numpy.core.multiarray.scalar
@@ -57,6 +65,9 @@ class RestrictedUnpickler(pickle.Unpickler):
             return pytorch_lightning.callbacks.model_checkpoint.ModelCheckpoint
         if module == "__builtin__" and name == 'set':
             return set
+        for key in extras_dict:
+            if module in key and name in extras_dict[module] or len(extras_dict[module] == 0):
+                return super().find_class(name, module)
 
         # Forbid everything else.
         raise Exception(f"global '{module}/{name}' is forbidden")
@@ -64,13 +75,18 @@ class RestrictedUnpickler(pickle.Unpickler):
 
 # Regular expression that accepts 'dirname/version', 'dirname/data.pkl', and 'dirname/data/<number>'
 allowed_zip_names_re = re.compile(r"^([^/]+)/((data/\d+)|version|(data\.pkl))$")
+
+# Allow users to append custom names here if needed
+extra_zip_names = []
 data_pkl_re = re.compile(r"^([^/]+)/data\.pkl$")
+
 
 def check_zip_filenames(filename, names):
     for name in names:
         if allowed_zip_names_re.match(name):
             continue
-
+        if name in extra_zip_names:
+            continue
         raise Exception(f"bad file inside {filename}: {name}")
 
 
@@ -80,7 +96,7 @@ def check_pt(filename, extra_handler):
         # new pytorch format is a zip file
         with zipfile.ZipFile(filename) as z:
             check_zip_filenames(filename, z.namelist())
-            
+
             # find filename of data.pkl in zip file: '<directory name>/data.pkl'
             data_pkl_filenames = [f for f in z.namelist() if data_pkl_re.match(f)]
             if len(data_pkl_filenames) == 0:
@@ -138,7 +154,9 @@ def load_with_extra(filename, extra_handler=None, *args, **kwargs):
         print(f"Error verifying pickled file from {filename}:", file=sys.stderr)
         print(traceback.format_exc(), file=sys.stderr)
         print(f"-----> !!!! The file is most likely corrupted !!!! <-----", file=sys.stderr)
-        print(f"You can skip this check with --disable-safe-unpickle commandline argument, but that is not going to help you.\n\n", file=sys.stderr)
+        print(
+            f"You can skip this check with --disable-safe-unpickle commandline argument, but that is not going to help you.\n\n",
+            file=sys.stderr)
         return None
 
     except Exception:
