@@ -1,10 +1,10 @@
 # this file is copied from CodeFormer repository. Please see comment in modules/codeformer_model.py
 
-'''
+"""
 VQGAN code, adapted from the original created by the Unleashing Transformers authors:
 https://github.com/samb-t/unleashing-transformers/blob/master/models/vqgan.py
 
-'''
+"""
 import numpy as np
 import torch
 import torch.nn as nn
