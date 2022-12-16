@@ -494,6 +494,9 @@ class KDiffusionSampler:
 
         x = x * sigmas[0]
 
+        if self.funcname == "sample_dpm_2_ancestral": # workaround dpm2 a issue
+            sigmas = torch.cat([sigmas[:-2], sigmas[-1:]])
+
         extra_params_kwargs = self.initialize(p)
         if 'sigma_min' in inspect.signature(self.func).parameters:
             extra_params_kwargs['sigma_min'] = self.model_wrap.sigmas[0].item()
