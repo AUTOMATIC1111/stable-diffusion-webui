@@ -171,6 +171,7 @@ def create_api(app):
 def wait_on_server(demo=None):
     while 1:
         time.sleep(0.5)
+        modules.script_callbacks.app_polling_callback(None, demo)
         if shared.state.need_restart:
             shared.state.need_restart = False
             time.sleep(0.5)
