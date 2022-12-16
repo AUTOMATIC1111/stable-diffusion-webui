@@ -494,7 +494,7 @@ class KDiffusionSampler:
 
         x = x * sigmas[0]
 
-        if self.funcname == "sample_dpm_2_ancestral": # workaround dpm2 a issue
+        if self.funcname in ['sample_dpm_2_ancestral', 'sample_dpm_2']:
             sigmas = torch.cat([sigmas[:-2], sigmas[-1:]])
 
         extra_params_kwargs = self.initialize(p)
