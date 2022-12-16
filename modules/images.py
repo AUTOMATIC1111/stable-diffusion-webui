@@ -556,6 +556,15 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     else:
         txt_fullfn = None
 
+    if opts.save_hydrus and prompt is not None:
+        txt_hydrus = f"{fullfn}.txt"
+        with open(txt_hydrus, "w", encoding="utf8") as file:
+            model_name = sanitize_filename_part(shared.sd_model.sd_checkpoint_info.model_name, replace_spaces=False),
+            file.write("stable diffusion" + "\n")
+            file.write("sbmodel:" + model_name[0] + "\n")
+            file.write("sbmodelhash:" + shared.sd_model.sd_model_hash + "\n")
+            file.write(prompt.replace(", ", "\n"))
+
     script_callbacks.image_saved_callback(params)
 
     return fullfn, txt_fullfn
