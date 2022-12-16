@@ -1,83 +1,71 @@
 function gradioApp() {
-    const gradioShadowRoot = document.getElementsByTagName('gradio-app')[0].shadowRoot
-    return !!gradioShadowRoot ? gradioShadowRoot : document;
+    const gradioShadowRoot = document.getElementsByTagName('gradio-app')[0].shadowRoot;
+    return gradioShadowRoot || document;
 }
 
-function get_uiCurrentTab() {
-    return gradioApp().querySelector('.tabs button:not(.border-transparent)')
+function getUICurrentTab() {
+    return gradioApp().querySelector('.tabs button:not(.border-transparent)');
 }
 
-function get_uiCurrentTabContent() {
-    return gradioApp().querySelector('.tabitem[id^=tab_]:not([style*="display: none"])')
+function getUICurrentTabContent() {
+    return gradioApp().querySelector('.tabitem[id^=tab_]:not([style*="display: none"])');
 }
 
-uiUpdateCallbacks = []
-uiTabChangeCallbacks = []
-let uiCurrentTab = null
+let uiUpdateCallbacks = [];
+let uiTabChangeCallbacks = [];
+let uiCurrentTab = null;
 
-function onUiUpdate(callback){
-    uiUpdateCallbacks.push(callback)
-}
-function onUiTabChange(callback){
-    uiTabChangeCallbacks.push(callback)
+function onUiUpdate(callback) {
+    uiUpdateCallbacks.push(callback);
 }
 
-function runCallback(x, m){
-    try {
-        x(m)
-    } catch (e) {
-        (console.error || console.log).call(console, e.message, e);
-    }
-}
-function executeCallbacks(queue, m) {
-    queue.forEach(function(x){runCallback(x, m)})
+function onUiTabChange(callback) {
+    uiTabChangeCallbacks.push(callback);
 }
 
-document.addEventListener("DOMContentLoaded", function() {
-    var mutationObserver = new MutationObserver(function(m){
-        executeCallbacks(uiUpdateCallbacks, m);
-        const newTab = get_uiCurrentTab();
-        if ( newTab && ( newTab !== uiCurrentTab ) ) {
+function executeCallbacks(queue, message) {
+    queue.forEach(function(callback) {
+        try {
+            callback(message);
+        } catch (error) {
+            (console.error || console.log).call(console, error.message, error);
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const mutationObserver = new MutationObserver(function(mutations) {
+        executeCallbacks(uiUpdateCallbacks, mutations);
+        const newTab = getUICurrentTab();
+        if (newTab && newTab !== uiCurrentTab) {
             uiCurrentTab = newTab;
             executeCallbacks(uiTabChangeCallbacks);
         }
     });
-    mutationObserver.observe( gradioApp(), { childList:true, subtree:true })
+    mutationObserver.observe(gradioApp(), { childList: true, subtree: true });
 });
 
-/**
- * Add a ctrl+enter as a shortcut to start a generation
- */
- document.addEventListener('keydown', function(e) {
-    var handled = false;
-    if (e.key !== undefined) {
-        if((e.key == "Enter" && (e.metaKey || e.ctrlKey || e.altKey))) handled = true;
-    } else if (e.keyCode !== undefined) {
-        if((e.keyCode == 13 && (e.metaKey || e.ctrlKey || e.altKey))) handled = true;
-    }
-    if (handled) {
-        button = get_uiCurrentTabContent().querySelector('button[id$=_generate]');
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Enter' && (event.metaKey || event.ctrlKey || event.altKey)) {
+        const button = getUICurrentTabContent().querySelector('button[id$=_generate]');
         if (button) {
             button.click();
         }
-        e.preventDefault();
+        event.preventDefault();
     }
-})
+});
 
-/**
- * checks that a UI element is not in another hidden element or tab content
- */
-function uiElementIsVisible(el) {
-    let isVisible = !el.closest('.\\!hidden');
-    if ( ! isVisible ) {
+function uiElementIsVisible(element) {
+    let isVisible = !element.closest('.\\!hidden');
+    if (!isVisible) {
         return false;
     }
 
-    while( isVisible = el.closest('.tabitem')?.style.display !== 'none' ) {
-        if ( ! isVisible ) {
+    while ((isVisible = element.closest('.tabitem')?.style.display !== 'none')) {
+        if (!isVisible) {
             return false;
-        } else if ( el.parentElement ) {
-            el = el.parentElement
+        } else if (element.parentElement) {
+            element = element.parentElement;
         } else {
             break;
         }
