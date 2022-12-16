@@ -22,6 +22,7 @@ any = _Any()
 class MyUI:
     def __init__(self) -> None:
         self.refreshinjstimerbtn = None
+        self.refreshImageInfoBtn = None
 
 txt2img = MyUI()
 img2img = MyUI()

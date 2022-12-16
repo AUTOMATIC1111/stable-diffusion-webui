@@ -543,7 +543,10 @@ def create_toprow(is_img2img):
             myskip = gr.Button('跳过单个任务')
             mystop = gr.Button('跳过一组任务')
 
-            refreshinjstimerbtn = gr.Button('刷新状态', elem_id=f'{id_part}_refreshinjstimerbtn', visible=True)
+            refreshinjstimerbtn = gr.Button('refreshinjstimerbtn', 
+            elem_id=f'{id_part}_refreshinjstimerbtn', visible=False)
+
+            refreshImageInfoBtn = gr.Button('刷新最新结果图片')
            
             
             
@@ -556,6 +559,7 @@ def create_toprow(is_img2img):
             
             myhelpers.any.addtoqueuebtn = addtoqueue
             myui.refreshinjstimerbtn = refreshinjstimerbtn
+            myui.refreshImageInfoBtn = refreshImageInfoBtn
 
             def refreshinjstimer():
                 return refresh_queueText()
@@ -957,9 +961,9 @@ def create_ui(wrap_gradio_gpu_call,wrap_queued_call):
             wrappedtxt2imgf = wrap_gradio_gpu_call(modules.txt2img.txt2img)
 
 
-            refreshinjstimerbtn:gr.Button = myhelpers.txt2img.refreshinjstimerbtn
+            refreshImageInfoBtn:gr.Button = myhelpers.txt2img.refreshImageInfoBtn
             
-            def refreshinjstimerbtnf():
+            def refreshFunc():
                 with outputs_queue_lock:
                     if len(outputs_taskqueque)>0:
                         lastoutout.outputs = outputs_taskqueque[0]
@@ -967,7 +971,7 @@ def create_ui(wrap_gradio_gpu_call,wrap_queued_call):
                 if lastoutout.outputs:
                     return lastoutout.outputs
                 return [gr.update()]*3
-            refreshinjstimerbtn.click(fn=refreshinjstimerbtnf,outputs=[
+            refreshImageInfoBtn.click(fn=refreshFunc,outputs=[
                 txt2img_gallery,
                 generation_info,
                 html_info])
