@@ -287,6 +287,7 @@ options_templates.update(options_section(('saving-images', "Saving images/grids"
     "enable_pnginfo": OptionInfo(True, "Save text information about generation parameters as chunks to png files"),
     "save_txt": OptionInfo(False, "Create a text file next to every image with generation parameters."),
     "save_hydrus": OptionInfo(False, "Create a hydrus tag file next to every image with generation parameters."),
+    "save_hydrus_raw": OptionInfo(False, "Save hydrus tags without stripping attention"),
     "save_images_before_face_restoration": OptionInfo(False, "Save a copy of image before doing face restoration."),
     "save_images_before_highres_fix": OptionInfo(False, "Save a copy of image before applying highres fix."),
     "save_images_before_color_correction": OptionInfo(False, "Save a copy of image before applying color correction to img2img results"),

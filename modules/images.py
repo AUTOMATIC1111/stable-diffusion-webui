@@ -19,6 +19,7 @@ import json
 
 from modules import sd_samplers, shared, script_callbacks
 from modules.shared import opts, cmd_opts
+from modules.prompt_parser import parse_prompt_attention
 
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
 
@@ -563,7 +564,13 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
             file.write("stable diffusion" + "\n")
             file.write("sbmodel:" + model_name[0] + "\n")
             file.write("sbmodelhash:" + shared.sd_model.sd_model_hash + "\n")
-            file.write(prompt.replace(", ", "\n"))
+
+            if opts.save_hydrus_raw:
+                file.write(prompt.replace(", ", "\n"))
+            else:
+                for weights in map(lambda x: parse_prompt_attention(x), prompt.split(', ')):
+                    tag = "".join(map(lambda x: x[0], weights))
+                    file.write(tag + "\n")
 
     script_callbacks.image_saved_callback(params)
 
