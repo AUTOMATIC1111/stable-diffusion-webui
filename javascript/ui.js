@@ -236,16 +236,16 @@ function restart_reload(){
     return []
 }
 
-// setInterval(() => {
-//     var txt2img_refreshinjstimerbtn = gradioApp().getElementById('txt2img_refreshinjstimerbtn')
-//     if (txt2img_refreshinjstimerbtn!=null){
-//         txt2img_refreshinjstimerbtn.click()
-//     }
-//     var img2img_refreshinjstimerbtn = gradioApp().getElementById('img2img_refreshinjstimerbtn')
-//     if (img2img_refreshinjstimerbtn!=null){
-//         img2img_refreshinjstimerbtn.click()
-//     }
-// }, 6000);
+setInterval(() => {
+    var txt2img_refreshinjstimerbtn = gradioApp().getElementById('txt2img_refreshinjstimerbtn')
+    if (txt2img_refreshinjstimerbtn!=null){
+        txt2img_refreshinjstimerbtn.click()
+    }
+    var img2img_refreshinjstimerbtn = gradioApp().getElementById('img2img_refreshinjstimerbtn')
+    if (img2img_refreshinjstimerbtn!=null){
+        img2img_refreshinjstimerbtn.click()
+    }
+}, 60000);
 
 function copyToClipboard(){
     console.log(arguments[0])

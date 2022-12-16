@@ -543,14 +543,14 @@ def create_toprow(is_img2img):
             myskip = gr.Button('跳过单个任务')
             mystop = gr.Button('跳过一组任务')
 
-            refreshinjstimerbtn = gr.Button('刷新状态', elem_id=f'{id_part}_refreshinjstimerbtn', visible=False)
+            refreshinjstimerbtn = gr.Button('刷新状态', elem_id=f'{id_part}_refreshinjstimerbtn', visible=True)
            
             
             
             # refreshbtn = gr.Button('刷新队列',elem_id='update_queue_label_btn',visible=False)
             addtoqueue = gr.Button('添加到任务队列',variant='primary',visible=not is_img2img)
             myhelpers.any.queueText = gr.Label(label='队列信息', 
-            value='等待刷新',)
+            value=refresh_queueText,)
             
             cleattagbtn = gr.Button('cleattag',elem_id='cleattagbtn')
             
@@ -561,8 +561,6 @@ def create_toprow(is_img2img):
                 return refresh_queueText()
             
             refreshinjstimerbtn.click(fn=refreshinjstimer, outputs=[myhelpers.any.queueText])
-
-            # refreshbtn.click(fn=refreshinjstimerfunc, outputs=myhelpers.any.queueText)
             
             myskip.click(
                 fn=lambda: shared.state.skip(),
