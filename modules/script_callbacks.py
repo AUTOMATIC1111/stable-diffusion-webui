@@ -63,6 +63,7 @@ callback_map = dict(
     callbacks_cfg_denoiser=[],
     callbacks_before_component=[],
     callbacks_after_component=[],
+    callbacks_on_polling=[],
 )
 
 
@@ -78,6 +79,12 @@ def app_started_callback(demo: Optional[Blocks], app: FastAPI):
         except Exception:
             report_exception(c, 'app_started_callback')
 
+def app_polling_callback(demo: Optional[Blocks], app: FastAPI):
+    for c in callback_map['callbacks_on_polling']:
+        try:
+            c.callback()
+        except Exception:
+            report_exception(c, 'callbacks_on_polling')
 
 def model_loaded_callback(sd_model):
     for c in callback_map['callbacks_model_loaded']:
@@ -182,6 +189,11 @@ def on_app_started(callback):
     """register a function to be called when the webui started, the gradio `Block` component and
     fastapi `FastAPI` object are passed as the arguments"""
     add_callback(callback_map['callbacks_app_started'], callback)
+
+
+def on_polling(callback):
+    """register a function to be called on each polling of the server."""
+    add_callback(callback_map['callbacks_on_polling'], callback)
 
 
 def on_model_loaded(callback):
