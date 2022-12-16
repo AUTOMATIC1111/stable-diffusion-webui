@@ -173,6 +173,7 @@ def wait_on_server(demo=None):
         time.sleep(0.5)
         modules.script_callbacks.app_polling_callback(None, demo)
         if shared.state.need_restart:
+            modules.script_callbacks.app_reload_callback(None, demo)
             shared.state.need_restart = False
             time.sleep(0.5)
             demo.close()
