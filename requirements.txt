@@ -1,10 +1,12 @@
 accelerate
 basicsr
+diffusers
 fairscale==0.4.4
 fonts
 font-roboto
 gfpgan
 gradio==3.9
+httpcore==0.15
 invisible-watermark
 numpy
 omegaconf
@@ -17,7 +19,6 @@ realesrgan
 scikit-image>=0.19
 timm==0.4.12
 transformers==4.19.2
-torch
 einops
 jsonmerge
 clean-fid
@@ -29,4 +30,3 @@ inflection
 GitPython
 torchsde
 safetensors
-psutil; sys_platform == 'darwin'
