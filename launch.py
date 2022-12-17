@@ -14,6 +14,58 @@ python = sys.executable
 git = os.environ.get('GIT', "git")
 index_url = os.environ.get('INDEX_URL', "")
 
+def check_gpu():
+    # First, check if the `lspci` command is available
+    if not os.system("which lspci > /dev/null") == 0:
+        # If the `lspci` command is not available, try the `system_profiler` command
+        # on macOS, or the `dxdiag` command on Windows
+        if os.name == "nt":
+            # On Windows, run the `dxdiag` command and check the output for the "Card name" field
+            # Create the dxdiag.txt file
+            os.system("dxdiag /t dxdiag.txt")
+
+            # Read the dxdiag.txt file
+            with open("dxdiag.txt", "r") as f:
+                output = f.read()
+
+            if "Card name" in output:
+                card_name_start = output.index("Card name: ") + len("Card name: ")
+                card_name_end = output.index("\n", card_name_start)
+                card_name = output[card_name_start:card_name_end]
+            else:
+                card_name = "Unknown"
+            print(f"Card name: {card_name}")
+            os.remove("dxdiag.txt")
+            if "AMD" in card_name:
+                return "AMD"
+            elif "Intel" in card_name:
+                return "Intel"
+            elif "NVIDIA" in card_name:
+                return "NVIDIA"
+            else:
+                return "Unknown"
+    else:
+        # If the `lspci` command is available, use it to get the GPU vendor and model information
+        output = os.popen("lspci | grep -i vga").read()
+        if "AMD" in output:
+            return "AMD"
+        elif "Intel" in output:
+            return "Intel"
+        elif "NVIDIA" in output:
+            return "NVIDIA"
+        else:
+            return "Unknown"
+
+# Get the GPU vendor and the operating system
+gpu = check_gpu()
+if os.name == "posix":
+    os_name = platform.uname().system
+else:
+    os_name = os.name
+
+# Print the GPU vendor and the operating system
+print(f"GPU: {gpu}")
+print(f"Operating System: {os_name}")
 
 def extract_arg(args, name):
     return [x for x in args if x != name], name in args
@@ -158,7 +210,10 @@ def run_extensions_installers(settings_file):
 
 
 def prepare_environment():
-    torch_command = os.environ.get('TORCH_COMMAND', "pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 --extra-index-url https://download.pytorch.org/whl/cu113")
+    if gpu == "AMD" and os_name !="nt":
+        torch_command = os.environ.get('TORCH_COMMAND', "pip install torch torchvision --extra-index-url https://download.pytorch.org/whl/rocm5.2")
+    else:
+        torch_command = os.environ.get('TORCH_COMMAND', "pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 --extra-index-url https://download.pytorch.org/whl/cu113")
     requirements_file = os.environ.get('REQS_FILE', "requirements_versions.txt")
     commandline_args = os.environ.get('COMMANDLINE_ARGS', "")
 
