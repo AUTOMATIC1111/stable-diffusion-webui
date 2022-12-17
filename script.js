@@ -60,15 +60,11 @@ function uiElementIsVisible(element) {
     if (!isVisible) {
         return false;
     }
-
-    while ((isVisible = element.closest('.tabitem')?.style.display !== 'none')) {
-        if (!isVisible) {
-            return false;
-        } else if (element.parentElement) {
-            element = element.parentElement;
-        } else {
-            break;
-        }
+  
+    while ((element = element.closest('.tabitem'))) {
+      if (window.getComputedStyle(element).display === 'none') {
+        return false;
+      }
     }
-    return isVisible;
-}
+    return true;
+}  
