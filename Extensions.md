@@ -226,3 +226,108 @@ To install it, clone the repo into the `extensions` directory and restart the we
 `git clone https://github.com/camenduru/stable-diffusion-webui-huggingface`
 
 `pip install huggingface-hub`
+
+## StylePile
+https://github.com/some9000/StylePile
+			
+An easy way to mix and match elements to prompts that affect the style of the result.
+## Latent Mirroring
+https://github.com/dfaker/SD-latent-mirroring
+
+Applies mirroring and flips to the latent images to produce anything from subtle balanced compositions to perfect reflections
+
+## Embeddings editor
+https://github.com/CodeExplode/stable-diffusion-webui-embedding-editor
+
+Allows you to manually edit textual inversion embeddings using sliders.
+## seed travel
+https://github.com/yownas/seed_travel.git
+
+Small script for AUTOMATIC1111/stable-diffusion-webui to create images that exists between seeds.
+## shift-attention
+https://github.com/yownas/shift-attention.git
+
+Generate a sequence of images shifting attention in the prompt. This script enables you to give a range to the weight of tokens in a prompt and then generate a sequence of images stepping from the first one to the second.
+## prompt travel
+https://github.com/Kahsolt/stable-diffusion-webui-prompt-travel
+
+Extension script for AUTOMATIC1111/stable-diffusion-webui to travel between prompts in latent space.
+
+## Detection Detailer
+https://github.com/dustysys/ddetailer
+
+An object detection and auto-mask extension for Stable Diffusion web UI.
+## conditioning-highres-fix
+https://github.com/klimaleksus/stable-diffusion-webui-conditioning-highres-fix
+
+This is Extension for rewriting Inpainting conditioning mask strength value relative to Denoising strength at runtime. This is useful for Inpainting models such as sd-v1-5-inpainting.ckpt
+## Randomize
+https://github.com/stysmmaker/stable-diffusion-webui-randomize
+
+Allows for random parameters during txt2img generation. This script is processed for all generations, regardless of the script selected, meaning this script will function with others as well, such as AUTOMATIC1111/stable-diffusion-webui-wildcards.
+## Auto TLS-HTTPS
+https://github.com/papuSpartan/stable-diffusion-webui-auto-tls-https
+
+Allows you to easily, or even completely automatically start using HTTPS.
+## DreamArtist
+https://github.com/7eu7d7/DreamArtist-sd-webui-extension
+
+Towards Controllable One-Shot Text-to-Image Generation via Contrastive Prompt-Tuning.
+## WD 1.4 Tagger
+https://github.com/toriato/stable-diffusion-webui-wd14-tagger
+
+Uses a trained model file, produces WD 1.4 Tags. Model link - https://mega.nz/file/ptA2jSSB#G4INKHQG2x2pGAVQBn-yd_U5dMgevGF8YYM9CR_R1SY
+## booru2prompt
+https://github.com/Malisius/booru2prompt
+
+This SD extension allows you to turn posts from various image boorus into stable diffusion prompts. It does so by pulling a list of tags down from their API. You can copy-paste in a link to the post you want yourself, or use the built-in search feature to do it all without leaving SD.
+## Merge Board
+https://github.com/bbc-mc/sdweb-merge-board
+
+Multiple lane merge support(up to 10). Save and Load your merging combination as Recipes, which is simple text.
+## Depth Maps
+https://github.com/thygate/stable-diffusion-webui-depthmap-script
+
+Creates depthmaps from the generated images. The result can be viewed on 3D or holographic devices like VR headsets or lookingglass display, used in Render or Game- Engines on a plane with a displacement modifier, and maybe even 3D printed.
+
+## multi-subject-render
+https://github.com/Extraltodeus/multi-subject-render
+
+It is a depth aware extension that can help to create multiple complex subjects on a single image. It generates a background, then multiple foreground subjects, cuts their backgrounds after a depth analysis, paste them onto the background and finally does an img2img for a clean finish.
+
+## depthmap2mask
+https://github.com/Extraltodeus/depthmap2mask
+
+Create masks for img2img based on a depth estimation made by MiDaS.
+## Visualize Cross-Attention
+https://github.com/benkyoujouzu/stable-diffusion-webui-visualize-cross-attention-extension
+
+Generates highlighted sectors of a submitted input image, based on input prompts. Use with tokenizer extension. See the readme for more info.
+## DAAM
+https://github.com/kousw/stable-diffusion-webui-daam
+
+DAAM stands for Diffusion Attentive Attribution Maps. Enter the attention text (must be a string contained in the prompt) and run. An overlapping image with a heatmap for each attention will be generated along with the original image.
+## Prompt Gallery
+https://github.com/dr413677671/PromptGallery-stable-diffusion-webui
+
+Build a yaml file filled with prompts of your character, hit generate, and quickly preview them by their word attributes and modifiers.
+## embedding-inspector
+https://github.com/tkalayci71/embedding-inspector
+
+Inspect any token(a word) or Textual-Inversion embeddings and find out which embeddings are similar. You can mix, modify, or create the embeddings in seconds.
+## Infinity Grid Generator
+https://github.com/mcmonkeyprojects/sd-infinity-grid-generator-script
+
+Build a yaml file with your chosen parameters, and generate infinite-dimensional grids. Built-in ability to add description text to fields. See readme for usage details.
+## NSFW checker
+https://github.com/AUTOMATIC1111/stable-diffusion-webui-nsfw-censor
+
+Replaces NSFW images with black.
+## Config-Presets
+https://github.com/Zyin055/Config-Presets
+
+Adds a configurable dropdown to allow you to change UI preset settings in the txt2img and img2img tabs.
+## DH Patch
+https://github.com/d8ahazard/sd_auto_fix
+
+Random patches by D8ahazard. Auto-load config YAML files for v2, 2.1 models; patch latent-diffusion to fix attention on 2.1 models (black boxes without no-half), whatever else I come up with.
