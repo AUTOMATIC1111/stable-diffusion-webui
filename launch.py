@@ -7,6 +7,7 @@ import shlex
 import platform
 import argparse
 import json
+from PIL import Image
 
 dir_repos = "repositories"
 dir_extensions = "extensions"
