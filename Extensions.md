@@ -74,7 +74,7 @@ You can also use the same wildcard twice
 ## Dreambooth
 https://github.com/d8ahazard/sd_dreambooth_extension
 
-Dreambooth in the UI. Refer to the project readme for tuning and configuration requirements.
+Dreambooth in the UI. Refer to the project readme for tuning and configuration requirements. Includes [LoRA](https://github.com/cloneofsimo/lora) (Low Rank Adaptation)
 
 Based on ShivamShiaro's repo.
 
@@ -404,24 +404,25 @@ https://github.com/OedoSoldier/enhanced-img2img
 An extension with support for batched and better inpainting.
 
 ## WIP
-https://github.com/sdwebui-w-horde/sd-webui-stable-horde-worker
+https://github.com/sdwebui-w-horde/sd-webui-stable-horde-worker \
 https://github.com/space-nuko/sd-promptbook
 
 ## Test
-https://github.com/benkyoujouzu/stable-diffusion-webui-print-processed-prompt-extension
-https://github.com/mix1009/model-keyword
-https://github.com/bbc-mc/merge-percentage-visualize
-https://github.com/152334H/sd-webui-whisper
-https://github.com/bbc-mc/sdweb-xyplus
-https://github.com/zero01101/openOutpaint-webUI-extension
-https://github.com/Merramore/stable-diffusion-webui-extension-DirectML
-https://github.com/64617/pony-diffusion-webui
-https://github.com/Le-Chat-BottE/file-download-extension
-https://github.com/stysmmaker/stable-diffusion-webui-send-to-hydrus
-https://github.com/sayoonarachu/sd_prompt_gen
-https://github.com/liuhongboCM/stable-diffusion-webui-generate-forever https://github.com/LunaOn/stable-diffusion-webui-generate-forever
-https://github.com/CodeExplode/stable-diffusion-webui-finetuning-tokens
-https://github.com/bbc-mc/uiTweaks_txt2img_prompt-controll-btn
+https://gitlab.com/azamshato/simula \
+https://github.com/benkyoujouzu/stable-diffusion-webui-print-processed-prompt-extension \
+https://github.com/mix1009/model-keyword \
+https://github.com/bbc-mc/merge-percentage-visualize \
+https://github.com/152334H/sd-webui-whisper \
+https://github.com/bbc-mc/sdweb-xyplus \
+https://github.com/zero01101/openOutpaint-webUI-extension \
+https://github.com/Merramore/stable-diffusion-webui-extension-DirectML \
+https://github.com/64617/pony-diffusion-webui \
+https://github.com/Le-Chat-BottE/file-download-extension \
+https://github.com/stysmmaker/stable-diffusion-webui-send-to-hydrus \
+https://github.com/sayoonarachu/sd_prompt_gen \
+https://github.com/liuhongboCM/stable-diffusion-webui-generate-forever \
+https://github.com/CodeExplode/stable-diffusion-webui-finetuning-tokens \
+https://github.com/bbc-mc/uiTweaks_txt2img_prompt-controll-btn \
 https://github.com/auto-webui-extensions-and-scripts/auto-backup
 
 https://github.com/mayurdhagiya/Smart-Toilet
