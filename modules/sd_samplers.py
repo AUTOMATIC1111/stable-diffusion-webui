@@ -454,6 +454,9 @@ class KDiffusionSampler:
         else:
             sigmas = self.model_wrap.get_sigmas(steps)
 
+        if self.funcname in ['sample_dpm_2_ancestral', 'sample_dpm_2']:
+            sigmas = torch.cat([sigmas[:-2], sigmas[-1:]])
+
         sigma_sched = sigmas[steps - t_enc - 1:]
         xi = x + noise * sigma_sched[0]
         
