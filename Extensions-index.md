@@ -189,6 +189,12 @@
 			"tags": ["script", "tab"]
 		},
 		{
+			"name": "Gelbooru Prompt",
+			"url": "https://github.com/antis0007/sd-webui-gelbooru-prompt.git",
+			"description": "Extension that gets tags for saved gelbooru images in AUTOMATIC1111's Stable Diffusion webui",
+			"tags": ["script"]
+		},
+		{
 			"name": "Merge Board",
 			"url": "https://github.com/bbc-mc/sdweb-merge-board.git",
 			"description": "Multiple lane merge support(up to 10). Save and Load your merging combination as Recipes, which is simple text.",
@@ -249,6 +255,12 @@
 			"tags": ["script"]
 		},
 		{
+			"name": "Diffusion Defender",
+			"url": "https://github.com/WildBanjos/DiffusionDefender.git",
+			"description": "Prompt blacklist, find and replace, for semi-private and public instances.",
+			"tags": ["script"]
+		},
+		{
 			"name": "Config-Presets",
 			"url": "https://github.com/Zyin055/Config-Presets.git",
 			"description": "Adds a configurable dropdown to allow you to change UI preset settings in the txt2img and img2img tabs.",
@@ -269,7 +281,7 @@
 {
 			"name": "Riffusion",
 			"url": "https://github.com/enlyth/sd-webui-riffusion",
-			"description": "Produces an audio sample after generation, playable within gradio. Meant for use with the Riffusion model.",
+			"description": "Produces an audio sample after generation, playable within gradio. Meant for use with the Riffusion model. See readme for interpolation technique.",
 			"tags": ["script"]
 		},
 		{
@@ -330,6 +342,12 @@
 			"name": "no_NO Localization",
 			"url": "https://github.com/Cyanz83/stable-diffusion-webui-localization-no_NO",
 			"description": "Norwegian localization",
+			"tags": ["localization"]
+		},
+		{
+			"name": "ru_RU Localization",
+			"url": "https://github.com/ProfaneServitor/stable-diffusion-webui-localization-ru_RU",
+			"description": "Russian localization",
 			"tags": ["localization"]
 		},
 		{
