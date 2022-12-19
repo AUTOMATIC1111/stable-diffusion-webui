@@ -254,10 +254,22 @@
 			"description": "Adds a configurable dropdown to allow you to change UI preset settings in the txt2img and img2img tabs.",
 			"tags": ["script"]
 		},
+		{
+			"name": "Preset Utilities",
+			"url": "https://github.com/Gerschel/sd_web_ui_preset_utils.git",
+			"description": "Preset utility tool for ui. End Goal: compatibility with other custom scripts (to a limit)",
+			"tags": ["script"]
+		},
 {
 			"name": "DH Patch",
 			"url": "https://github.com/d8ahazard/sd_auto_fix",
 			"description": "Random patches by D8ahazard. Auto-load config YAML files for v2, 2.1 models; patch latent-diffusion to fix attention on 2.1 models (black boxes without no-half), whatever else I come up with.",
+			"tags": ["script"]
+		},
+{
+			"name": "Riffusion",
+			"url": "https://github.com/enlyth/sd-webui-riffusion",
+			"description": "Produces an audio sample after generation, playable within gradio. Meant for use with the Riffusion model.",
 			"tags": ["script"]
 		},
 		{
