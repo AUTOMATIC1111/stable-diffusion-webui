@@ -306,6 +306,14 @@ This SD extension allows you to turn posts from various image boorus into stable
 
 ![image](https://user-images.githubusercontent.com/98228077/208331612-dad61ef7-33dd-4008-9cc7-06b0b0a7cb6d.png)
 
+also see:\
+https://github.com/stysmmaker/stable-diffusion-webui-booru-prompt
+
+## gelbooru-prompt
+https://github.com/antis0007/sd-webui-gelbooru-prompt
+
+Fetch tags with image hash. Updates planned.
+
 ## Merge Board
 https://github.com/bbc-mc/sdweb-merge-board
 
@@ -313,6 +321,8 @@ Multiple lane merge support(up to 10). Save and Load your merging combination as
 
 ![image](https://user-images.githubusercontent.com/98228077/208331651-09a0d70e-1906-4f80-8bc1-faf3c0ca8fad.png)
 
+also see:\
+https://github.com/Maurdekye/model-kitchen
 ## Depth Maps
 https://github.com/thygate/stable-diffusion-webui-depthmap-script
 
@@ -373,7 +383,45 @@ Adds a configurable dropdown to allow you to change UI preset settings in the tx
 
 ![image](https://user-images.githubusercontent.com/98228077/208332322-24339554-0274-4add-88a7-d33bba1e3823.png)
 
+## Preset Utilities
+https://github.com/Gerschel/sd_web_ui_preset_utils
+
+Preset tool for UI. Planned support for some other custom scripts.
+
 ## DH Patch
 https://github.com/d8ahazard/sd_auto_fix
 
 Random patches by D8ahazard. Auto-load config YAML files for v2, 2.1 models; patch latent-diffusion to fix attention on 2.1 models (black boxes without no-half), whatever else I come up with.
+
+## Riffusion
+https://github.com/enlyth/sd-webui-riffusion
+
+Use Riffusion model to produce music in gradio, see readme for interpolation technique.
+
+## Enhanced-img2img
+https://github.com/OedoSoldier/enhanced-img2img
+
+An extension with support for batched and better inpainting.
+
+## WIP
+https://github.com/sdwebui-w-horde/sd-webui-stable-horde-worker
+https://github.com/space-nuko/sd-promptbook
+
+## Test
+https://github.com/benkyoujouzu/stable-diffusion-webui-print-processed-prompt-extension
+https://github.com/mix1009/model-keyword
+https://github.com/bbc-mc/merge-percentage-visualize
+https://github.com/152334H/sd-webui-whisper
+https://github.com/bbc-mc/sdweb-xyplus
+https://github.com/zero01101/openOutpaint-webUI-extension
+https://github.com/Merramore/stable-diffusion-webui-extension-DirectML
+https://github.com/64617/pony-diffusion-webui
+https://github.com/Le-Chat-BottE/file-download-extension
+https://github.com/stysmmaker/stable-diffusion-webui-send-to-hydrus
+https://github.com/sayoonarachu/sd_prompt_gen
+https://github.com/liuhongboCM/stable-diffusion-webui-generate-forever https://github.com/LunaOn/stable-diffusion-webui-generate-forever
+https://github.com/CodeExplode/stable-diffusion-webui-finetuning-tokens
+https://github.com/bbc-mc/uiTweaks_txt2img_prompt-controll-btn
+https://github.com/auto-webui-extensions-and-scripts/auto-backup
+
+https://github.com/mayurdhagiya/Smart-Toilet
