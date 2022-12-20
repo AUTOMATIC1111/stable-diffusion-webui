@@ -230,7 +230,7 @@ class StableDiffusionProcessing():
     def init(self, all_prompts, all_seeds, all_subseeds):
         pass
 
-    def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
+    def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts, negative_prompts):
         raise NotImplementedError()
 
     def close(self):
@@ -250,8 +250,10 @@ class Processed:
         self.width = p.width
         self.height = p.height
         self.sampler_name = p.sampler_name
+        self.sampler_name_hr = p.sampler_name_hr
         self.cfg_scale = p.cfg_scale
         self.steps = p.steps
+        self.steps_hr = p.steps_hr
         self.batch_size = p.batch_size
         self.restore_faces = p.restore_faces
         self.face_restoration_model = opts.face_restoration_model if p.restore_faces else None
@@ -298,8 +300,10 @@ class Processed:
             "width": self.width,
             "height": self.height,
             "sampler_name": self.sampler_name,
+            "sampler_name_hr": self.sampler_name_hr,
             "cfg_scale": self.cfg_scale,
             "steps": self.steps,
+            "steps_hr": self.steps_hr,
             "batch_size": self.batch_size,
             "restore_faces": self.restore_faces,
             "face_restoration_model": self.face_restoration_model,
@@ -426,7 +430,9 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration
 
     generation_params = {
         "Steps": p.steps,
+        "First Pass Steps": p.steps_hr,
         "Sampler": p.sampler_name,
+        "First Pass Sampler": p.sampler_name_hr,
         "CFG scale": p.cfg_scale,
         "Seed": all_seeds[index],
         "Face restoration": (opts.face_restoration_model if p.restore_faces else None),
@@ -572,7 +578,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 shared.state.job = f"Batch {n+1} out of {p.n_iter}"
 
             with devices.autocast():
-                samples_ddim = p.sample(conditioning=c, unconditional_conditioning=uc, seeds=seeds, subseeds=subseeds, subseed_strength=p.subseed_strength, prompts=prompts)
+                samples_ddim = p.sample(conditioning=c, unconditional_conditioning=uc, seeds=seeds, subseeds=subseeds, subseed_strength=p.subseed_strength, prompts=prompts, negative_prompts=negative_prompts)
 
             x_samples_ddim = [decode_first_stage(p.sd_model, samples_ddim[i:i+1].to(dtype=devices.dtype_vae))[0].cpu() for i in range(samples_ddim.size(0))]
             x_samples_ddim = torch.stack(x_samples_ddim).float()
@@ -657,7 +663,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
     sampler = None
 
-    def __init__(self, enable_hr: bool=False, denoising_strength: float=0.75, firstphase_width: int=0, firstphase_height: int=0, **kwargs):
+    def __init__(self, enable_hr: bool=False, denoising_strength: float=0.75, firstphase_width: int=0, firstphase_height: int=0, sampler_name_hr: str="", steps_hr: int=0, **kwargs):
         super().__init__(**kwargs)
         self.enable_hr = enable_hr
         self.denoising_strength = denoising_strength
@@ -665,6 +671,10 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         self.firstphase_height = firstphase_height
         self.truncate_x = 0
         self.truncate_y = 0
+        self.sampler_name_hr = sampler_name_hr
+        self.steps_hr = steps_hr
+        if self.enable_hr:
+            self.extra_generation_params["First pass size"] = f"{self.firstphase_width}x{self.firstphase_height}"
 
     def init(self, all_prompts, all_seeds, all_subseeds):
         if self.enable_hr:
@@ -672,8 +682,6 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                 state.job_count = self.n_iter * 2
             else:
                 state.job_count = state.job_count * 2
-
-            self.extra_generation_params["First pass size"] = f"{self.firstphase_width}x{self.firstphase_height}"
 
             if self.firstphase_width == 0 or self.firstphase_height == 0:
                 desired_pixel_count = 512 * 512
@@ -699,16 +707,19 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             self.truncate_x = int(self.firstphase_width - firstphase_width_truncated) // opt_f
             self.truncate_y = int(self.firstphase_height - firstphase_height_truncated) // opt_f
 
-    def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
-        self.sampler = sd_samplers.create_sampler(self.sampler_name, self.sd_model)
-
+    def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts, negative_prompts=None):
         if not self.enable_hr:
+            self.sampler = sd_samplers.create_sampler(self.sampler_name, self.sd_model)
             x = create_random_tensors([opt_C, self.height // opt_f, self.width // opt_f], seeds=seeds, subseeds=subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
             samples = self.sampler.sample(self, x, conditioning, unconditional_conditioning, image_conditioning=self.txt2img_image_conditioning(x))
             return samples
 
+        uc_hr = prompt_parser.get_learned_conditioning(self.sd_model, negative_prompts, self.steps_hr)
+        c_hr = prompt_parser.get_multicond_learned_conditioning(self.sd_model, prompts, self.steps_hr)
+
+        self.sampler = sd_samplers.create_sampler(self.sampler_name_hr, self.sd_model)
         x = create_random_tensors([opt_C, self.firstphase_height // opt_f, self.firstphase_width // opt_f], seeds=seeds, subseeds=subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
-        samples = self.sampler.sample(self, x, conditioning, unconditional_conditioning, image_conditioning=self.txt2img_image_conditioning(x, self.firstphase_width, self.firstphase_height))
+        samples = self.sampler.sample(self, x, c_hr, uc_hr, image_conditioning=self.txt2img_image_conditioning(x, self.firstphase_width, self.firstphase_height), steps=self.steps_hr)
 
         samples = samples[:, :, self.truncate_y//2:samples.shape[2]-self.truncate_y//2, self.truncate_x//2:samples.shape[3]-self.truncate_x//2]
 
@@ -907,7 +918,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
         self.image_conditioning = self.img2img_image_conditioning(image, self.init_latent, image_mask)
 
-    def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
+    def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts, negative_prompts):
         x = create_random_tensors([opt_C, self.height // opt_f, self.width // opt_f], seeds=seeds, subseeds=subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
 
         if self.initial_noise_multiplier != 1.0:

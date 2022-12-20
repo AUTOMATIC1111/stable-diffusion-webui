@@ -670,10 +670,13 @@ def create_ui():
                     tiling = gr.Checkbox(label='Tiling', value=False)
                     enable_hr = gr.Checkbox(label='Highres. fix', value=False)
 
-                with gr.Row(visible=False) as hr_options:
-                    firstphase_width = gr.Slider(minimum=0, maximum=1024, step=8, label="Firstpass width", value=0)
-                    firstphase_height = gr.Slider(minimum=0, maximum=1024, step=8, label="Firstpass height", value=0)
-                    denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.7)
+                with gr.Group(visible=False) as hr_options:
+                    steps_hr = gr.Slider(minimum=1, maximum=150, step=1, label="Firstpass Steps", value=20)
+                    sampler_index_hr = gr.Radio(label='Firstpass Sampling method', elem_id="txt2img_sampling_hr", choices=[x.name for x in samplers], value=samplers[0].name, type="index")
+                    with gr.Row():
+                        firstphase_width = gr.Slider(minimum=0, maximum=2048, step=8, label="Firstpass width", value=0)
+                        firstphase_height = gr.Slider(minimum=0, maximum=2048, step=8, label="Firstpass height", value=0)
+                        denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.7)
 
                 with gr.Row(equal_height=True):
                     batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1)
@@ -715,6 +718,8 @@ def create_ui():
                     denoising_strength,
                     firstphase_width,
                     firstphase_height,
+                    sampler_index_hr,
+                    steps_hr,
                 ] + custom_inputs,
 
                 outputs=[
@@ -776,6 +781,8 @@ def create_ui():
                 (hr_options, lambda d: gr.Row.update(visible="Denoising strength" in d)),
                 (firstphase_width, "First pass size-1"),
                 (firstphase_height, "First pass size-2"),
+                (sampler_index_hr, "First Pass Sampler"),
+                (steps_hr, "First Pass Steps"),
                 *modules.scripts.scripts_txt2img.infotext_fields
             ]
             parameters_copypaste.add_paste_fields("txt2img", None, txt2img_paste_fields)
