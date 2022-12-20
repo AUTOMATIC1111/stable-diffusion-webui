@@ -34,6 +34,7 @@ def create_hypernetwork(name, enable_sizes, overwrite_old, layer_structure=None,
     hypernet.save(fn)
 
     shared.reload_hypernetworks()
+    shared.reload_clip_model()
 
     return gr.Dropdown.update(choices=sorted([x for x in shared.hypernetworks.keys()])), f"Created: {fn}", ""
 

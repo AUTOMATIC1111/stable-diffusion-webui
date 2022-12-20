@@ -2,18 +2,28 @@ from collections import namedtuple, deque
 import numpy as np
 from math import floor
 import torch
+from torch import Tensor, FloatTensor, uint8, enable_grad
+from torch.nn import functional as F
+from torchvision import transforms
 import tqdm
 from PIL import Image
 import inspect
 import k_diffusion.sampling
+from k_diffusion.external import CompVisDenoiser, CompVisVDenoiser
 import torchsde._brownian.brownian_interval
 import ldm.models.diffusion.ddim
 import ldm.models.diffusion.plms
+from ldm.models.diffusion.ddpm import LatentDiffusion
+import open_clip
+from open_clip import CLIP as OpenCLIP
 from modules import prompt_parser, devices, processing, images
+from einops import rearrange
 
 from modules.shared import opts, cmd_opts, state
 import modules.shared as shared
 from modules.script_callbacks import CFGDenoiserParams, cfg_denoiser_callback
+from typing import List, Tuple, Protocol, Optional
+from kornia import augmentation as KA
 
 
 SamplerData = namedtuple('SamplerData', ['name', 'constructor', 'aliases', 'options'])
@@ -37,6 +47,7 @@ samplers_k_diffusion = [
     ('DPM++ 2M Karras', 'sample_dpmpp_2m', ['k_dpmpp_2m_ka'], {'scheduler': 'karras'}),
     ('DPM++ SDE Karras', 'sample_dpmpp_sde', ['k_dpmpp_sde_ka'], {'scheduler': 'karras'}),
 ]
+samplers_k_diffusion_set = { label for label, funcname, aliases, options in samplers_k_diffusion }
 
 samplers_data_k_diffusion = [
     SamplerData(label, lambda model, funcname=funcname: KDiffusionSampler(funcname, model), aliases, options)
@@ -128,6 +139,149 @@ def store_latent(decoded):
     if opts.show_progress_every_n_steps > 0 and shared.state.sampling_step % opts.show_progress_every_n_steps == 0:
         if not shared.parallel_processing_allowed:
             shared.state.current_image = sample_to_image(decoded)
+
+
+class DiffusionModel(Protocol):
+    def __call__(self, x: Tensor, sigma: Tensor, **kwargs) -> Tensor: ...
+    def decode_first_stage(self, latents: Tensor) -> Tensor: ...
+    def differentiable_decode_first_stage(self, latents: Tensor) -> Tensor: ...
+    def encode_first_stage(self, pixels: Tensor) -> Tensor: ...
+    def get_first_stage_encoding(self, encoded: Tensor) -> Tensor: ...
+
+
+class DiffusionModelMixin(DiffusionModel):
+    inner_model: DiffusionModel
+
+    def decode_first_stage(self, latents: Tensor) -> Tensor:
+        return self.inner_model.decode_first_stage(latents)
+
+    def differentiable_decode_first_stage(self, latents: Tensor) -> Tensor:
+        return self.inner_model.differentiable_decode_first_stage(latents)
+
+    def encode_first_stage(self, pixels: Tensor) -> Tensor:
+        return self.inner_model.encode_first_stage(pixels)
+
+    def get_first_stage_encoding(self, encoded: Tensor) -> Tensor:
+        return self.inner_model.get_first_stage_encoding(encoded)
+
+
+class BaseModelWrapper(torch.nn.Module, DiffusionModelMixin):
+    inner_model: DiffusionModel
+
+    def __init__(self, inner_model: DiffusionModel):
+        super().__init__()
+        self.inner_model = inner_model
+        DiffusionModelMixin.__init__(self)
+
+
+# workaround until k-diffusion introduces official base model wrapper,
+# to make the wrapper forward all method calls to the wrapped model
+# https://github.com/crowsonkb/k-diffusion/pull/23#issuecomment-1239937951
+class CompVisDenoiserWrapper(CompVisDenoiser, DiffusionModelMixin):
+    inner_model: DiffusionModel
+
+    def __init__(self, model: DiffusionModel, quantize=False):
+        CompVisDenoiser.__init__(self, model, quantize=quantize)
+        DiffusionModelMixin.__init__(self)
+
+
+class CompVisVDenoiserWrapper(CompVisVDenoiser, DiffusionModelMixin):
+    inner_model: DiffusionModel
+
+    def __init__(self, model: DiffusionModel, quantize=False):
+        CompVisVDenoiser.__init__(self, model, quantize=quantize)
+        DiffusionModelMixin.__init__(self)
+
+
+def spherical_dist_loss(x: Tensor, y: Tensor) -> Tensor:
+    x = F.normalize(x, dim=-1)
+    y = F.normalize(y, dim=-1)
+    return (x - y).norm(dim=-1).div(2).arcsin().pow(2).mul(2)
+
+
+def differentiable_decode_first_stage(self, z, predict_cids=False, force_not_quantize=False):
+    if predict_cids:
+        if z.dim() == 4:
+            z = torch.argmax(z.exp(), dim=1).long()
+        z = self.first_stage_model.quantize.get_codebook_entry(z, shape=None)
+        z = rearrange(z, 'b h w c -> b c h w').contiguous()
+
+    z = 1. / self.scale_factor * z
+    return self.first_stage_model.decode(z)
+
+LatentDiffusion.differentiable_decode_first_stage = differentiable_decode_first_stage
+
+
+class ClipGuidedDenoiser(BaseModelWrapper):
+    clip_model: OpenCLIP
+    clip_augmentations: bool
+    clip_guidance_scale: float
+    clip_normalize: transforms.Normalize
+    clip_size: Tuple[int, int]
+    aug: Optional[KA.RandomAffine]
+    def __init__(
+        self,
+        model: DiffusionModel,
+        clip_model: OpenCLIP,
+        clip_augmentations: bool,
+        clip_guidance_scale: float,
+    ):
+        super().__init__(model)
+        self.clip_model = clip_model
+        self.clip_size = clip_model.visual.image_size
+        self.clip_augmentations = clip_augmentations
+        self.clip_guidance_scale = clip_guidance_scale
+        self.clip_normalize = transforms.Normalize(mean=clip_model.visual.image_mean, std=clip_model.visual.image_std)
+        self.aug = KA.RandomAffine(0, (1/14, 1/14), p=1, padding_mode='border') if clip_augmentations else None
+
+    @enable_grad()
+    def forward(self, x: Tensor, sigma: Tensor, target_embed: Tensor, **kwargs) -> Tensor:
+        x = x.detach().requires_grad_()
+        denoised: Tensor = self.inner_model(x, sigma, **kwargs)
+        cond_grad: Tensor = self.cond_fn(x, denoised=denoised, target_embed=target_embed).detach()
+        ndim = x.ndim
+        del x
+        cond_denoised: Tensor = denoised.detach() + cond_grad * k_diffusion.utils.append_dims(sigma**2, ndim)
+        return cond_denoised
+
+    def cond_fn(self, x: Tensor, denoised: Tensor, target_embed: Tensor) -> Tensor:
+        device = denoised.device
+        decoded: Tensor = self.inner_model.differentiable_decode_first_stage(denoised)
+        del denoised
+        renormalized: Tensor = decoded.add(1).div(2)
+        del decoded
+        if self.clip_augmentations:
+            # this particular approach to augmentation crashes on MPS (Metal Performance Shaders, macOS), so we transfer to CPU (for now)
+            # :27:11: error: invalid input tensor shapes, indices shape and updates shape must be equal
+            # -:27:11: note: see current operation: %25 = "mps.scatter_along_axis"(%23, %arg3, %24, %1) {mode = 6 : i32} : (tensor<786432xf32>, tensor<512xf32>, tensor<262144xi32>, tensor<i32>) -> tensor<786432xf32>
+            # TODO: this approach (from k-diffusion example) produces just the one augmentation,
+            #       whereas diffusers approach is to use many and sum their losses. should we?
+            renormalized = self.aug(renormalized.cpu()).to(device) if device.type == 'mps' else self.aug(renormalized)
+        clamped: Tensor = renormalized.clamp(0, 1)
+        del renormalized
+        image_embed: Tensor = self.get_image_embed(clamped)
+        del clamped
+        # TODO: does this do the right thing for multi-sample?
+        # TODO: do we want .mean() here or .sum()? or both?
+        #       k-diffusion example used just .sum(), but k-diff was single-aug. maybe that was for multi-sample?
+        #       whereas diffusers uses .mean() (this seemed to be over a single number, but maybe when you have multiple samples it becomes the mean of the loss over your n samples?),
+        #       then uses sum() (which for multi-aug would sum the losses of each aug)
+        loss: Tensor = spherical_dist_loss(image_embed, target_embed).sum() * self.clip_guidance_scale
+        del image_embed
+        # TODO: does this do the right thing for multi-sample?
+        grad: Tensor = -torch.autograd.grad(loss, x)[0]
+        return grad
+
+    def get_image_embed(self, x: Tensor) -> Tensor:
+        if x.shape[2:4] != self.clip_size:
+            # k-diffusion example used a bicubic resize, via resize_right library
+            # x = resize(x, out_shape=clip_size, pad_mode='reflect')
+            # but diffusers' bilinear resize produced a nicer bear
+            x = transforms.Resize(self.clip_size)(x)
+        x: Tensor = self.clip_normalize(x)
+        x: FloatTensor = self.clip_model.encode_image(x).float()
+
+        return F.normalize(x)
 
 
 class InterruptedException(BaseException):
@@ -237,7 +391,7 @@ class VanillaStableDiffusionSampler:
         
         return num_steps
 
-    def sample_img2img(self, p, x, noise, conditioning, unconditional_conditioning, steps=None, image_conditioning=None):
+    def sample_img2img(self, p, x, noise, conditioning, unconditional_conditioning, steps=None, image_conditioning=None, clip_target_embed=None):
         steps, t_enc = setup_img2img_steps(p, steps)
         steps = self.adjust_steps_if_invalid(p, steps)
         self.initialize(p)
@@ -255,11 +409,11 @@ class VanillaStableDiffusionSampler:
             unconditional_conditioning = {"c_concat": [image_conditioning], "c_crossattn": [unconditional_conditioning]}
             
             
-        samples = self.launch_sampling(t_enc + 1, lambda: self.sampler.decode(x1, conditioning, t_enc, unconditional_guidance_scale=p.cfg_scale, unconditional_conditioning=unconditional_conditioning))
+        samples = self.launch_sampling(t_enc + 1, lambda: self.sampler.decode(x1, conditioning, t_enc, unconditional_guidance_scale=p.cfg_scale, unconditional_conditioning=unconditional_conditioning), clip_target_embed=clip_target_embed)
 
         return samples
 
-    def sample(self, p, x, conditioning, unconditional_conditioning, steps=None, image_conditioning=None):
+    def sample(self, p, x, conditioning, unconditional_conditioning, steps=None, image_conditioning=None, clip_target_embed=None):
         self.initialize(p)
 
         self.init_latent = None
@@ -279,10 +433,9 @@ class VanillaStableDiffusionSampler:
         return samples_ddim
 
 
-class CFGDenoiser(torch.nn.Module):
+class CFGDenoiser(BaseModelWrapper):
     def __init__(self, model):
-        super().__init__()
-        self.inner_model = model
+        super().__init__(model)
         self.mask = None
         self.nmask = None
         self.init_latent = None
@@ -386,9 +539,9 @@ torchsde._brownian.brownian_interval._randn = torchsde_randn
 
 class KDiffusionSampler:
     def __init__(self, funcname, sd_model):
-        denoiser = k_diffusion.external.CompVisVDenoiser if sd_model.parameterization == "v" else k_diffusion.external.CompVisDenoiser
+        denoiser = CompVisVDenoiserWrapper if sd_model.parameterization == "v" else CompVisDenoiserWrapper
 
-        self.model_wrap = denoiser(sd_model, quantize=shared.opts.enable_quantization)
+        self.model_wrap = denoiser(sd_model, quantize=opts.enable_quantization)
         self.funcname = funcname
         self.func = getattr(k_diffusion.sampling, self.funcname)
         self.extra_params = sampler_extra_params.get(funcname, [])
@@ -401,6 +554,15 @@ class KDiffusionSampler:
         self.last_latent = None
 
         self.conditioning_key = sd_model.model.conditioning_key
+
+        if opts.clip_guidance:
+            self.model_wrap_cfg = ClipGuidedDenoiser(
+                model=self.model_wrap_cfg,
+                clip_model=shared.clip_model,
+                clip_augmentations=False,
+                clip_guidance_scale=opts.clip_guidance_scale
+            )
+
 
     def callback_state(self, d):
         step = d['i']
@@ -444,7 +606,7 @@ class KDiffusionSampler:
 
         return extra_params_kwargs
 
-    def sample_img2img(self, p, x, noise, conditioning, unconditional_conditioning, steps=None, image_conditioning=None):
+    def sample_img2img(self, p, x, noise, conditioning, unconditional_conditioning, steps=None, image_conditioning=None, clip_target_embed=None):
         steps, t_enc = setup_img2img_steps(p, steps)
 
         if p.sampler_noise_scheduler_override:
@@ -473,16 +635,20 @@ class KDiffusionSampler:
         self.model_wrap_cfg.init_latent = x
         self.last_latent = x
 
-        samples = self.launch_sampling(t_enc + 1, lambda: self.func(self.model_wrap_cfg, xi, extra_args={
-            'cond': conditioning, 
-            'image_cond': image_conditioning, 
-            'uncond': unconditional_conditioning, 
-            'cond_scale': p.cfg_scale
-        }, disable=False, callback=self.callback_state, **extra_params_kwargs))
+        extra_args = {
+            'cond': conditioning,
+            'image_cond': image_conditioning,
+            'uncond': unconditional_conditioning,
+            'cond_scale': p.cfg_scale,
+        }
+        if opts.clip_guidance:
+            extra_args['target_embed'] = clip_target_embed
+
+        samples = self.launch_sampling(t_enc + 1, lambda: self.func(self.model_wrap_cfg, xi, extra_args=extra_args, disable=False, callback=self.callback_state, **extra_params_kwargs))
 
         return samples
 
-    def sample(self, p, x, conditioning, unconditional_conditioning, steps=None, image_conditioning = None):
+    def sample(self, p, x, conditioning, unconditional_conditioning, steps=None, image_conditioning=None, clip_target_embed=None):
         steps = steps or p.steps
 
         if p.sampler_noise_scheduler_override:
@@ -503,13 +669,17 @@ class KDiffusionSampler:
         else:
             extra_params_kwargs['sigmas'] = sigmas
 
+        extra_args = {
+            'cond': conditioning,
+            'image_cond': image_conditioning,
+            'uncond': unconditional_conditioning,
+            'cond_scale': p.cfg_scale,
+        }
+        if opts.clip_guidance:
+            extra_args['target_embed'] = clip_target_embed
+
         self.last_latent = x
-        samples = self.launch_sampling(steps, lambda: self.func(self.model_wrap_cfg, x, extra_args={
-            'cond': conditioning, 
-            'image_cond': image_conditioning, 
-            'uncond': unconditional_conditioning, 
-            'cond_scale': p.cfg_scale
-        }, disable=False, callback=self.callback_state, **extra_params_kwargs))
+        samples = self.launch_sampling(steps, lambda: self.func(self.model_wrap_cfg, x, extra_args=extra_args, disable=False, callback=self.callback_state, **extra_params_kwargs))
 
         return samples
 

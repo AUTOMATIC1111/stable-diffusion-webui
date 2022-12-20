@@ -7,6 +7,7 @@ import time
 
 import gradio as gr
 import tqdm
+import open_clip
 
 import modules.artists
 import modules.interrogate
@@ -132,6 +133,17 @@ def reload_hypernetworks():
 
     hypernetworks = hypernetwork.list_hypernetworks(cmd_opts.hypernetwork_dir)
     hypernetwork.load_hypernetwork(opts.sd_hypernetwork)
+
+
+clip_model = None
+
+
+def reload_clip_model():
+    global clip_model, device
+    name, pretrained = opts.clip_guidance_model.split(", ")
+    print(f"Loading CLIP model: {name}, pretrained={pretrained}")
+    clip_model = open_clip.create_model(name, pretrained, device=device)
+    clip_model.requires_grad_(False)
 
 
 class State:
@@ -369,6 +381,9 @@ options_templates.update(options_section(('sd', "Stable Diffusion"), {
     "comma_padding_backtrack": OptionInfo(20, "Increase coherency by padding from the last comma within n tokens when using more than 75 tokens", gr.Slider, {"minimum": 0, "maximum": 74, "step": 1 }),
     'CLIP_stop_at_last_layers': OptionInfo(1, "Clip skip", gr.Slider, {"minimum": 1, "maximum": 12, "step": 1}),
     "random_artist_categories": OptionInfo([], "Allowed categories for random artists selection when using the Roll button", gr.CheckboxGroup, {"choices": artist_db.categories()}),
+    "clip_guidance": OptionInfo(True, "Clip guidance"),
+    "clip_guidance_scale": OptionInfo(500, "Clip guidance scale", gr.Slider, {"minimum": 0, "maximum": 10000, "step": 10 }),
+    "clip_guidance_model": OptionInfo("ViT-B-32, laion2b_s34b_b79k", "OpenCLIP model to use for Clip guidance", gr.Dropdown, lambda: {"choices": [f"{name}, {pretrained}" for name, pretrained in open_clip.list_pretrained()]}, refresh=reload_clip_model),
 }))
 
 options_templates.update(options_section(('interrogate', "Interrogate Options"), {

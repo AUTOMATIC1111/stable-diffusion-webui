@@ -5,12 +5,14 @@ import sys
 import warnings
 
 import torch
+from torch.nn import functional as F
 import numpy as np
 from PIL import Image, ImageFilter, ImageOps
 import random
 import cv2
 from skimage import exposure
 from typing import Any, Dict, List, Optional
+import open_clip
 
 import modules.sd_hijack
 from modules import devices, prompt_parser, masking, sd_samplers, lowvram, generation_parameters_copypaste, script_callbacks
@@ -128,10 +130,10 @@ class StableDiffusionProcessing():
 
         self.scripts = None
         self.script_args = None
-        self.all_prompts = None
-        self.all_negative_prompts = None
-        self.all_seeds = None
-        self.all_subseeds = None
+        self.all_prompts: Optional[List[str]] = None
+        self.all_negative_prompts: Optional[List[str]] = None
+        self.all_seeds: Optional[List[int]] = None
+        self.all_subseeds: Optional[List[int]] = None
 
     def txt2img_image_conditioning(self, x, width=None, height=None):
         if self.sampler.conditioning_key not in {'hybrid', 'concat'}:
@@ -226,7 +228,7 @@ class StableDiffusionProcessing():
     def init(self, all_prompts, all_seeds, all_subseeds):
         pass
 
-    def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
+    def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts, clip_target_embed):
         raise NotImplementedError()
 
     def close(self):
@@ -556,6 +558,17 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 uc = prompt_parser.get_learned_conditioning(shared.sd_model, negative_prompts, p.steps)
                 c = prompt_parser.get_multicond_learned_conditioning(shared.sd_model, prompts, p.steps)
 
+            clip_target_embed = None
+            if opts.clip_guidance:
+                assert p.sampler_name in sd_samplers.samplers_k_diffusion_set, "CLIP guidance only supported for K-Diffusion samplers"
+                assert len(c.batch) == 1, "CLIP guidance only implemented for single-sample, single-condition scenario"
+                assert len(uc) == 1, "CLIP guidance only implemented for single-sample, single-condition scenario"
+                clip_tokens = open_clip.tokenize(prompts[0]).to(shared.device)
+                clip_encoded = shared.clip_model.encode_text(clip_tokens).to(shared.device)
+                clip_target_embed = F.normalize(clip_encoded.float())
+                del clip_tokens
+                del clip_encoded
+
             if len(model_hijack.comments) > 0:
                 for comment in model_hijack.comments:
                     comments[comment] = 1
@@ -564,7 +577,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 shared.state.job = f"Batch {n+1} out of {p.n_iter}"
 
             with devices.autocast():
-                samples_ddim = p.sample(conditioning=c, unconditional_conditioning=uc, seeds=seeds, subseeds=subseeds, subseed_strength=p.subseed_strength, prompts=prompts)
+                samples_ddim = p.sample(conditioning=c, unconditional_conditioning=uc, seeds=seeds, subseeds=subseeds, subseed_strength=p.subseed_strength, prompts=prompts, clip_target_embed=clip_target_embed)
 
             x_samples_ddim = [decode_first_stage(p.sd_model, samples_ddim[i:i+1].to(dtype=devices.dtype_vae))[0].cpu() for i in range(samples_ddim.size(0))]
             x_samples_ddim = torch.stack(x_samples_ddim).float()
@@ -691,12 +704,12 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             self.truncate_x = int(self.firstphase_width - firstphase_width_truncated) // opt_f
             self.truncate_y = int(self.firstphase_height - firstphase_height_truncated) // opt_f
 
-    def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
+    def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts, clip_target_embed):
         self.sampler = sd_samplers.create_sampler(self.sampler_name, self.sd_model)
 
         if not self.enable_hr:
             x = create_random_tensors([opt_C, self.height // opt_f, self.width // opt_f], seeds=seeds, subseeds=subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
-            samples = self.sampler.sample(self, x, conditioning, unconditional_conditioning, image_conditioning=self.txt2img_image_conditioning(x))
+            samples = self.sampler.sample(self, x, conditioning, unconditional_conditioning, image_conditioning=self.txt2img_image_conditioning(x), clip_target_embed=clip_target_embed)
             return samples
 
         x = create_random_tensors([opt_C, self.firstphase_height // opt_f, self.firstphase_width // opt_f], seeds=seeds, subseeds=subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
@@ -761,7 +774,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         x = None
         devices.torch_gc()
 
-        samples = self.sampler.sample_img2img(self, samples, noise, conditioning, unconditional_conditioning, steps=self.steps, image_conditioning=image_conditioning)
+        samples = self.sampler.sample_img2img(self, samples, noise, conditioning, unconditional_conditioning, steps=self.steps, image_conditioning=image_conditioning, clip_target_embed=clip_target_embed)
 
         return samples
 
@@ -895,14 +908,14 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
         self.image_conditioning = self.img2img_image_conditioning(image, self.init_latent, image_mask)
 
-    def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
+    def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts, clip_target_embed):
         x = create_random_tensors([opt_C, self.height // opt_f, self.width // opt_f], seeds=seeds, subseeds=subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
 
         if self.initial_noise_multiplier != 1.0:
             self.extra_generation_params["Noise multiplier"] = self.initial_noise_multiplier
             x *= self.initial_noise_multiplier
 
-        samples = self.sampler.sample_img2img(self, self.init_latent, x, conditioning, unconditional_conditioning, image_conditioning=self.image_conditioning)
+        samples = self.sampler.sample_img2img(self, self.init_latent, x, conditioning, unconditional_conditioning, image_conditioning=self.image_conditioning, clip_target_embed=clip_target_embed)
 
         if self.mask is not None:
             samples = samples * self.nmask + self.init_latent * self.mask
