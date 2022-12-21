@@ -282,6 +282,12 @@
 			"name": "Riffusion",
 			"url": "https://github.com/enlyth/sd-webui-riffusion",
 			"description": "Produces an audio sample after generation, playable within gradio. Meant for use with the Riffusion model. See readme for interpolation technique.",
+			"tags": ["script", "tab"]
+		},
+{
+			"name": "Save Intermediate Images",
+			"url": "https://github.com/AlUlkesh/sd_save_intermediate_images",
+			"description": "See PR https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/5464",
 			"tags": ["script"]
 		},
 		{
