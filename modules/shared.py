@@ -394,7 +394,7 @@ options_templates.update(options_section(('sd', "Stable Diffusion"), {
     'CLIP_stop_at_last_layers': OptionInfo(1, "Clip skip", gr.Slider, {"minimum": 1, "maximum": 12, "step": 1}),
     "random_artist_categories": OptionInfo([], "Allowed categories for random artists selection when using the Roll button", gr.CheckboxGroup, {"choices": artist_db.categories()}),
     "clip_guidance": OptionInfo(True, "Clip guidance"),
-    "clip_guidance_scale": OptionInfo(500, "Clip guidance scale", gr.Slider, {"minimum": 0, "maximum": 1000, "step": 10 }),
+    "clip_guidance_scale": OptionInfo(500.0, "Clip guidance scale", gr.Slider, {"minimum": 0.0, "maximum": 1000.0, "step": 10.0 }),
     "clip_guidance_prompt": OptionInfo("", "Clip guidance prompt (leave empty to use image prompt)"),
     "clip_guidance_model": OptionInfo("ViT-B-32|laion2b_s34b_b79k", "OpenCLIP model to use for Clip guidance", gr.Dropdown, lambda: {"choices": [f"{name}|{pretrained}" for name, pretrained in open_clip.list_pretrained()]}),
 }))
