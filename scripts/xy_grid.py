@@ -110,8 +110,18 @@ def confirm_hypernetworks(p, xs):
             raise RuntimeError(f"Unknown hypernetwork: {x}")
 
 
+def apply_clip_guidance_model(p, x, xs):
+    opts.data["clip_guidance_model"] = x
+    shared.reload_clip_model()
+
+
 def apply_clip_skip(p, x, xs):
     opts.data["CLIP_stop_at_last_layers"] = x
+
+
+def apply_clip_guidance_scale(p, x, xs):
+    opts.data["clip_guidance_scale"] = x
+    opts.data["clip_guidance"] = x > 0
 
 
 def format_value_add_label(p, opt, x):
@@ -168,6 +178,8 @@ axis_options = [
     AxisOption("Clip skip", int, apply_clip_skip, format_value_add_label, None),
     AxisOption("Denoising", float, apply_field("denoising_strength"), format_value_add_label, None),
     AxisOption("Cond. Image Mask Weight", float, apply_field("inpainting_mask_weight"), format_value_add_label, None),
+    AxisOption("CLIP Guidance Scale", float, apply_clip_guidance_scale, format_value_add_label, None),
+    AxisOption("CLIP Guidance Model", str, apply_clip_guidance_model, format_value, None),
 ]
 
 
@@ -227,6 +239,9 @@ def draw_xy_grid(p, xs, ys, x_labels, y_labels, cell, draw_legend, include_lone_
 class SharedSettingsStackHelper(object):
     def __enter__(self):
         self.CLIP_stop_at_last_layers = opts.CLIP_stop_at_last_layers
+        self.clip_guidance = opts.clip_guidance
+        self.clip_guidance_scale = opts.clip_guidance_scale
+        self.clip_guidance_model = opts.clip_guidance_model
         self.hypernetwork = opts.sd_hypernetwork
         self.model = shared.sd_model
   
@@ -237,6 +252,11 @@ class SharedSettingsStackHelper(object):
         hypernetwork.apply_strength()
 
         opts.data["CLIP_stop_at_last_layers"] = self.CLIP_stop_at_last_layers
+        opts.data["clip_guidance"] = self.clip_guidance
+        opts.data["clip_guidance_scale"] = self.clip_guidance_scale
+        opts.data["clip_guidance_model"] = self.clip_guidance_model
+
+        shared.reload_clip_model()
 
 
 re_range = re.compile(r"\s*([+-]?\s*\d+)\s*-\s*([+-]?\s*\d+)(?:\s*\(([+-]\d+)\s*\))?\s*")

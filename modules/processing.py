@@ -563,7 +563,10 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 assert p.sampler_name in sd_samplers.samplers_k_diffusion_set, "CLIP guidance only supported for K-Diffusion samplers"
                 assert len(c.batch) == 1, "CLIP guidance only implemented for single-sample, single-condition scenario"
                 assert len(uc) == 1, "CLIP guidance only implemented for single-sample, single-condition scenario"
-                clip_tokens = open_clip.tokenize(prompts[0]).to(shared.device)
+                clip_prompt = opts.clip_guidance_prompt
+                if not clip_prompt.strip():
+                    clip_prompt = prompts[0]
+                clip_tokens = open_clip.tokenize(clip_prompt).to(shared.device)
                 clip_encoded = shared.clip_model.encode_text(clip_tokens).to(shared.device)
                 clip_target_embed = F.normalize(clip_encoded.float())
                 del clip_tokens

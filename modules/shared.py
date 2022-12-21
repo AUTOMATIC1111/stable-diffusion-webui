@@ -140,7 +140,7 @@ clip_model = None
 
 def reload_clip_model():
     global clip_model, device
-    name, pretrained = opts.clip_guidance_model.split(", ")
+    name, pretrained = opts.clip_guidance_model.split("|")
     print(f"Loading CLIP model: {name}, pretrained={pretrained}")
     clip_model = open_clip.create_model(name, pretrained, device=device)
     clip_model.requires_grad_(False)
@@ -383,7 +383,8 @@ options_templates.update(options_section(('sd', "Stable Diffusion"), {
     "random_artist_categories": OptionInfo([], "Allowed categories for random artists selection when using the Roll button", gr.CheckboxGroup, {"choices": artist_db.categories()}),
     "clip_guidance": OptionInfo(True, "Clip guidance"),
     "clip_guidance_scale": OptionInfo(500, "Clip guidance scale", gr.Slider, {"minimum": 0, "maximum": 1000, "step": 10 }),
-    "clip_guidance_model": OptionInfo("ViT-B-32, laion2b_s34b_b79k", "OpenCLIP model to use for Clip guidance", gr.Dropdown, lambda: {"choices": [f"{name}, {pretrained}" for name, pretrained in open_clip.list_pretrained()]}),
+    "clip_guidance_prompt": OptionInfo("", "Clip guidance prompt (leave empty to use image prompt)"),
+    "clip_guidance_model": OptionInfo("ViT-B-32|laion2b_s34b_b79k", "OpenCLIP model to use for Clip guidance", gr.Dropdown, lambda: {"choices": [f"{name}|{pretrained}" for name, pretrained in open_clip.list_pretrained()]}),
 }))
 
 options_templates.update(options_section(('interrogate', "Interrogate Options"), {
