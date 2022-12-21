@@ -10,10 +10,12 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from secrets import compare_digest
 
 import modules.shared as shared
-from modules import sd_samplers, deepbooru
+from modules import sd_samplers, deepbooru, sd_hijack
 from modules.api.models import *
 from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img, process_images
 from modules.extras import run_extras, run_pnginfo
+from modules.textual_inversion.textual_inversion import create_embedding, train_embedding
+from modules.textual_inversion.preprocess import preprocess
 from PIL import PngImagePlugin,Image
 from modules.sd_models import checkpoints_list
 from modules.realesrgan_model import get_realesrgan_models
@@ -80,6 +82,7 @@ class Api:
         self.add_api_route("/sdapi/v1/extra-single-image", self.extras_single_image_api, methods=["POST"], response_model=ExtrasSingleImageResponse)
         self.add_api_route("/sdapi/v1/extra-batch-images", self.extras_batch_images_api, methods=["POST"], response_model=ExtrasBatchImagesResponse)
         self.add_api_route("/sdapi/v1/png-info", self.pnginfoapi, methods=["POST"], response_model=PNGInfoResponse)
+        self.add_api_route("/sdapi/v1/train", self.trainapi, methods=["POST"], response_model=TrainResponse)
         self.add_api_route("/sdapi/v1/progress", self.progressapi, methods=["GET"], response_model=ProgressResponse)
         self.add_api_route("/sdapi/v1/interrogate", self.interrogateapi, methods=["POST"])
         self.add_api_route("/sdapi/v1/interrupt", self.interruptapi, methods=["POST"])
@@ -199,6 +202,39 @@ class Api:
             result = run_extras(extras_mode=1, image="", input_dir="", output_dir="", **reqDict)
 
         return ExtrasBatchImagesResponse(images=list(map(encode_pil_to_base64, result[0])), html_info=result[1])
+
+    def trainapi(self, trainreq: TrainRequest):
+        if trainreq.operation == 'create_embedding':
+            try:
+                filename = create_embedding(**trainreq.create_embedding) # create empty embedding
+                sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings() # reload embeddings so new one can be immediately used
+                return TrainResponse(info = "create embedding filename: {filename}".format(filename = filename))
+            except AssertionError as msg:
+                return TrainResponse(info = "create embedding error: {msg}".format(msg = msg))
+        elif trainreq.operation == 'create_hypernetwork':
+            # TBD **trainreq.create_hypernetwork
+            return TrainResponse(info = "create hypernetwork error: not yet implemented")
+        elif trainreq.operation == 'preprocess':
+            try:
+                shared.state.time_start = time.time() # preprocess does not automatically set time_start so it breaks progress api
+                preprocess(**trainreq.preprocess) # quick operation unless blip/booru interrogation is enabled
+                return TrainResponse(info = 'preprocess complete')
+            except KeyError as msg:
+                return TrainResponse(info = "preprocess error: invalid token: {msg}".format(msg = msg))
+            except AssertionError as msg:
+                return TrainResponse(info = "preprocess error: {msg}".format(msg = msg))
+            except FileNotFoundError as msg:
+                return TrainResponse(info = 'preprocess error: {msg}'.format(msg = msg))
+        elif trainreq.operation == 'train_embedding':
+            try:
+                shared.state.time_start = time.time() # preprocess does not automatically set time_start so it breaks progress api
+                embedding, filename = train_embedding(**trainreq.train_embedding) # can take a long time to complete
+                return TrainResponse(info = "train embedding complete: filename: {filename}".format(filename = filename))
+            except AssertionError as msg:
+                return TrainResponse(info = "train embedding error: {msg}".format(msg = msg))
+        elif trainreq.operation == 'train_hypernetwork':
+            # TBD **trainreq.train_hypernetwork
+            return TrainResponse(info = "train hypernetwork error: not yet implemented")
 
     def pnginfoapi(self, req: PNGInfoRequest):
         if(not req.image.strip()):

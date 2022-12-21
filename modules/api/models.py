@@ -137,6 +137,14 @@ class ExtrasBaseRequest(BaseModel):
 class ExtraBaseResponse(BaseModel):
     html_info: str = Field(title="HTML info", description="A series of HTML tags containing the process info.")
 
+class TrainRequest(BaseModel):
+    operation: Literal['create_embedding', 'create_hypernetwork', 'preprocess', 'train_embedding', 'train_hypernetwork'] = Field(default="", title="Train operation", description="Train operation")
+    create_embedding: dict
+    create_hypernetwork: dict
+    preprocess: dict
+    train_embedding: dict
+    train_hypernetwork: dict
+
 class ExtrasSingleImageRequest(ExtrasBaseRequest):
     image: str = Field(default="", title="Image", description="Image to work on, must be a Base64 string containing the image's data.")
 
@@ -158,6 +166,9 @@ class PNGInfoRequest(BaseModel):
 
 class PNGInfoResponse(BaseModel):
     info: str = Field(title="Image info", description="A string with all the info the image had")
+
+class TrainResponse(BaseModel):
+    info: str = Field(title="Train info", description="Generic info string")
 
 class ProgressRequest(BaseModel):
     skip_current_image: bool = Field(default=False, title="Skip current image", description="Skip current image serialization")
