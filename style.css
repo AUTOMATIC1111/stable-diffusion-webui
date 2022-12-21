@@ -129,10 +129,26 @@
     min-width: 0 !important;
     max-width: 8em !important;
 }
+
+#promptist_col{
+    min-width: 0 !important;
+    max-width: 14em !important;
+}
+
 #interrogate, #deepbooru{
     margin: 0em 0.25em 0.9em 0.25em;
     min-width: 8em;
     max-width: 8em;
+}
+
+#promptist{
+    margin: 0em 0.25em 0.9em 0.25em;
+    min-width: 14em;
+    max-width: 14em;
+}
+
+#promptist_slider{
+    min-height: 4em;
 }
 
 #style_pos_col, #style_neg_col{

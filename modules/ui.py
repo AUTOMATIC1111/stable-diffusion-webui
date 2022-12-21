@@ -268,24 +268,34 @@ def apply_styles(prompt, prompt_neg, style1_name, style2_name):
     return [gr.Textbox.update(value=prompt), gr.Textbox.update(value=prompt_neg), gr.Dropdown.update(value="None"), gr.Dropdown.update(value="None")]
 
 def load_prompter():
-        prompter_model = AutoModelForCausalLM.from_pretrained("microsoft/Promptist").to("cuda")
+        prompter_model = AutoModelForCausalLM.from_pretrained("microsoft/Promptist")
         tokenizer = AutoTokenizer.from_pretrained("gpt2")
         tokenizer.pad_token = tokenizer.eos_token
         tokenizer.padding_side = "left"
         return prompter_model, tokenizer
 
 
-def promptist(givenPrompt):
+def promptist(givenPrompt, promptistSeed, promptistResult):
     prompter_model, prompter_tokenizer = load_prompter()
 
-    input_ids = prompter_tokenizer(givenPrompt.strip()+" Rephrase:", return_tensors="pt").input_ids.to("cuda")
+    input_ids = prompter_tokenizer(givenPrompt.strip()+" Rephrase:", return_tensors="pt").input_ids
     eos_id = prompter_tokenizer.eos_token_id
-    # Just use 1 beam and get 1 output, this is much, much, much faster than 8 beams and 8 outputs and we're only using the first.
-    outputs = prompter_model.generate(input_ids, do_sample=False, max_new_tokens=75, num_beams=1, num_return_sequences=1, eos_token_id=eos_id, pad_token_id=eos_id, length_penalty=-1.0)
+    outputs = prompter_model.generate(input_ids, do_sample=False, max_new_tokens=75, num_beams=promptistSeed, num_return_sequences=promptistSeed, eos_token_id=eos_id, pad_token_id=eos_id, length_penalty=-1.0)
     output_texts = prompter_tokenizer.batch_decode(outputs, skip_special_tokens=True)
-    res = output_texts[0].replace(givenPrompt+" Rephrase:", "").strip()
+    res = output_texts[promptistResult].replace(givenPrompt+" Rephrase:", "").strip()
 
     return gr_show(True) if res is None else res
+
+# def promptist_batch(givenPrompt, batchSize):
+#     prompter_model, prompter_tokenizer = load_prompter()
+
+#     input_ids = prompter_tokenizer(givenPrompt.strip()+" Rephrase:", return_tensors="pt").input_ids
+#     eos_id = prompter_tokenizer.eos_token_id
+#     outputs = prompter_model.generate(input_ids, do_sample=False, max_new_tokens=75, num_beams=batchSize, num_return_sequences=batchSize, eos_token_id=eos_id, pad_token_id=eos_id, length_penalty=-1.0)
+#     output_texts = prompter_tokenizer.batch_decode(outputs, skip_special_tokens=True)
+#     res = output_texts[0].replace(givenPrompt+" Rephrase:", "").strip()
+
+#     return gr_show(True) if res is None else res
 
 def interrogate(image):
     prompt = shared.interrogator.interrogate(image)
@@ -439,14 +449,18 @@ def create_toprow(is_img2img):
         button_interrogate = None
         button_deepbooru = None
         button_promptist = None
+        slider_promptist_seed = None
+        slider_promptist_result = None
         
         if is_img2img:
             with gr.Column(scale=1, elem_id="interrogate_col"):
                 button_interrogate = gr.Button('Interrogate\nCLIP', elem_id="interrogate")
                 button_deepbooru = gr.Button('Interrogate\nDeepBooru', elem_id="deepbooru")
         else:
-            with gr.Column(scale=1, elem_id="interrogate_col"):
+            with gr.Column(scale=3, elem_id="promptist_col"):
                 button_promptist = gr.Button('Interrogate\nPromptist', elem_id="promptist")
+                slider_promptist_seed = gr.Slider(1, 28, value=1, step=1, label='Promptist Seed', elem_id="promptist_slider")
+                slider_promptist_result = gr.Slider(1, 28, value=1, step=1, label='Result Choice', elem_id="promptist_slider")
 
         with gr.Column(scale=1):
             with gr.Row():
@@ -475,7 +489,7 @@ def create_toprow(is_img2img):
                     prompt_style2 = gr.Dropdown(label="Style 2", elem_id=f"{id_part}_style2_index", choices=[k for k, v in shared.prompt_styles.styles.items()], value=next(iter(shared.prompt_styles.styles.keys())))
                     prompt_style2.save_to_config = True
 
-    return prompt, roll, prompt_style, negative_prompt, prompt_style2, submit, button_promptist, button_interrogate, button_deepbooru, prompt_style_apply, save_style, paste, token_counter, token_button
+    return prompt, roll, prompt_style, negative_prompt, prompt_style2, submit, button_promptist, slider_promptist_seed, slider_promptist_result, button_interrogate, button_deepbooru, prompt_style_apply, save_style, paste, token_counter, token_button
 
 
 def setup_progressbar(progressbar, preview, id_part, textinfo=None):
@@ -662,7 +676,7 @@ def create_ui():
     modules.scripts.scripts_txt2img.initialize_scripts(is_img2img=False)
 
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
-        txt2img_prompt, roll, txt2img_prompt_style, txt2img_negative_prompt, txt2img_prompt_style2, submit, txt2img_promptist, _, _,txt2img_prompt_style_apply, txt2img_save_style, txt2img_paste, token_counter, token_button = create_toprow(is_img2img=False)
+        txt2img_prompt, roll, txt2img_prompt_style, txt2img_negative_prompt, txt2img_prompt_style2, submit, txt2img_btn_promptist, txt2img_slider_promptist_seed, txt2img_slider_promptist_result, _, _,txt2img_prompt_style_apply, txt2img_save_style, txt2img_paste, token_counter, token_button = create_toprow(is_img2img=False)
 
         dummy_component = gr.Label(visible=False)
         txt_prompt_img = gr.File(label="", elem_id="txt2img_prompt_image", file_count="single", type="bytes", visible=False)
@@ -814,9 +828,9 @@ def create_ui():
                 height,
             ]
 
-            txt2img_promptist.click(
+            txt2img_btn_promptist.click(
                 fn=promptist,
-                inputs=[txt2img_prompt],
+                inputs=[txt2img_prompt, txt2img_slider_promptist_seed, txt2img_slider_promptist_result],
                 outputs=[txt2img_prompt],
             )
 
@@ -826,7 +840,7 @@ def create_ui():
     modules.scripts.scripts_img2img.initialize_scripts(is_img2img=True)
 
     with gr.Blocks(analytics_enabled=False) as img2img_interface:
-        img2img_prompt, roll, img2img_prompt_style, img2img_negative_prompt, img2img_prompt_style2, submit, _, img2img_interrogate, img2img_deepbooru, img2img_prompt_style_apply, img2img_save_style, img2img_paste,token_counter, token_button = create_toprow(is_img2img=True)
+        img2img_prompt, roll, img2img_prompt_style, img2img_negative_prompt, img2img_prompt_style2, submit, _, _, _, img2img_interrogate, img2img_deepbooru, img2img_prompt_style_apply, img2img_save_style, img2img_paste,token_counter, token_button = create_toprow(is_img2img=True)
 
 
         with gr.Row(elem_id='img2img_progress_row'):
