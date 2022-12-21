@@ -168,7 +168,10 @@ def get_state_dict_from_checkpoint(pl_sd):
 def read_state_dict(checkpoint_file, print_global_state=False, map_location=None):
     _, extension = os.path.splitext(checkpoint_file)
     if extension.lower() == ".safetensors":
-        pl_sd = safetensors.torch.load_file(checkpoint_file, device=map_location or shared.weight_load_location)
+        device = map_location or shared.weight_load_location
+        if device is None:
+            device = "cuda:0" if torch.cuda.is_available() else "cpu"
+        pl_sd = safetensors.torch.load_file(checkpoint_file, device=device)
     else:
         pl_sd = torch.load(checkpoint_file, map_location=map_location or shared.weight_load_location)
 
