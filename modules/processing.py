@@ -441,6 +441,8 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration
         "Conditional mask weight": getattr(p, "inpainting_mask_weight", shared.opts.inpainting_mask_weight) if p.is_using_inpainting_conditioning else None,
         "Eta": (None if p.sampler is None or p.sampler.eta == p.sampler.default_eta else p.sampler.eta),
         "Clip skip": None if clip_skip <= 1 else clip_skip,
+        "Clip guidance model": None if not opts.clip_guidance else opts.clip_guidance_model,
+        "Clip guidance scale": None if not opts.clip_guidance or opts.clip_guidance_scale <= 0 else opts.clip_guidance_scale,
         "ENSD": None if opts.eta_noise_seed_delta == 0 else opts.eta_noise_seed_delta,
     }
 
@@ -448,9 +450,10 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration
 
     generation_params_text = ", ".join([k if k == v else f'{k}: {generation_parameters_copypaste.quote(v)}' for k, v in generation_params.items() if v is not None])
 
-    negative_prompt_text = "\nNegative prompt: " + p.all_negative_prompts[index] if  p.all_negative_prompts[index] else ""
+    negative_prompt_text = "\nNegative prompt: " + p.all_negative_prompts[index] if p.all_negative_prompts[index] else ""
+    clip_guidance_prompt_text = "\nClip guidance prompt: " + opts.clip_guidance_prompt if opts.clip_guidance and opts.clip_guidance_prompt.strip() else ""
 
-    return f"{all_prompts[index]}{negative_prompt_text}\n{generation_params_text}".strip()
+    return f"{all_prompts[index]}{negative_prompt_text}{clip_guidance_prompt_text}\n{generation_params_text}".strip()
 
 
 def process_images(p: StableDiffusionProcessing) -> Processed:

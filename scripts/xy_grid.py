@@ -148,6 +148,10 @@ def format_value(p, opt, x):
     return x
 
 
+def format_value_clip_model(p, opt, x):
+    return x.replace("|", " ")
+
+
 def format_value_join_list(p, opt, x):
     return ", ".join(x)
 
@@ -190,7 +194,7 @@ axis_options = [
     AxisOption("Denoising", float, apply_field("denoising_strength"), format_value_add_label, None),
     AxisOption("Cond. Image Mask Weight", float, apply_field("inpainting_mask_weight"), format_value_add_label, None),
     AxisOption("CLIP Guidance Scale", float, apply_clip_guidance_scale, format_value_add_label, None),
-    AxisOption("CLIP Guidance Model", str, apply_clip_guidance_model, format_value, confirm_clip_guidance_models),
+    AxisOption("CLIP Guidance Model", str, apply_clip_guidance_model, format_value_clip_model, confirm_clip_guidance_models),
 ]
 
 
