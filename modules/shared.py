@@ -140,10 +140,22 @@ clip_model = None
 
 def reload_clip_model():
     global clip_model, device
+    print(f"Loading CLIP model: {opts.clip_guidance_model}")
     name, pretrained = opts.clip_guidance_model.split("|")
-    print(f"Loading CLIP model: {name}, pretrained={pretrained}")
     clip_model = open_clip.create_model(name, pretrained, device=device)
     clip_model.requires_grad_(False)
+
+
+def is_clip_model_available(clip_model):
+    split = opts.clip_guidance_model.split("|")
+    if len(split) != 2:
+        return False
+    name = split[0]
+    pretrained = split[1]
+    for other_name, other_pretrained in open_clip.list_pretrained():
+        if name == other_name and pretrained == other_pretrained:
+            return True
+    return False
 
 
 class State:

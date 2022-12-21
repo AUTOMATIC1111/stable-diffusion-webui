@@ -111,8 +111,19 @@ def confirm_hypernetworks(p, xs):
 
 
 def apply_clip_guidance_model(p, x, xs):
-    opts.data["clip_guidance_model"] = x
-    shared.reload_clip_model()
+    if x.lower() in ["", "none"]:
+        pass
+    else:
+        opts.data["clip_guidance_model"] = x
+        shared.reload_clip_model()
+
+
+def confirm_clip_guidance_models(p, xs):
+    for x in xs:
+        if x.lower() in ["", "none"]:
+            continue
+        if not shared.is_clip_model_available(x):
+            raise RuntimeError(f"Unknown CLIP model: {x}")
 
 
 def apply_clip_skip(p, x, xs):
@@ -179,7 +190,7 @@ axis_options = [
     AxisOption("Denoising", float, apply_field("denoising_strength"), format_value_add_label, None),
     AxisOption("Cond. Image Mask Weight", float, apply_field("inpainting_mask_weight"), format_value_add_label, None),
     AxisOption("CLIP Guidance Scale", float, apply_clip_guidance_scale, format_value_add_label, None),
-    AxisOption("CLIP Guidance Model", str, apply_clip_guidance_model, format_value, None),
+    AxisOption("CLIP Guidance Model", str, apply_clip_guidance_model, format_value, confirm_clip_guidance_models),
 ]
 
 
