@@ -290,6 +290,12 @@
 			"description": "See PR https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/5464",
 			"tags": ["script"]
 		},
+{
+			"name": "openOutpaint extension",
+			"url": "https://github.com/zero01101/openOutpaint-webUI-extension",
+			"description": "A tab with the full openOutpaint UI. Run with the --api flag.",
+			"tags": ["script", "tab"]
+		},
 		{
 			"name": "zh_CN Localization",
 			"url": "https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN",
