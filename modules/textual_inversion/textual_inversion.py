@@ -180,6 +180,8 @@ def create_embedding(name, num_vectors_per_token, overwrite_old, init_text='*'):
 
 
 def write_loss(log_directory, filename, step, epoch_len, values):
+    os.makedirs(log_directory, exist_ok=True) # log directory may not be created yet if save_embedding_every == 0
+
     if shared.opts.training_write_csv_every == 0:
         return
 
