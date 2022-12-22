@@ -673,6 +673,8 @@ def create_ui():
                 with gr.Group(visible=False) as hr_options:
                     steps_hr = gr.Slider(minimum=1, maximum=150, step=1, label="Firstpass Steps", value=20)
                     sampler_index_hr = gr.Radio(label='Firstpass Sampling method', elem_id="txt2img_sampling_hr", choices=[x.name for x in samplers], value=samplers[0].name, type="index")
+                    latent_upscale_hr = gr.Radio(label='Latent upscaling method', choices=["Disabled", "nearest-exact", "bilinear", "area"], value=samplers[0].name, type="value")
+                    cfg_scale_hr = gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='Firstpass CFG Scale', value=7.0)
                     with gr.Row():
                         firstphase_width = gr.Slider(minimum=0, maximum=2048, step=8, label="Firstpass width", value=0)
                         firstphase_height = gr.Slider(minimum=0, maximum=2048, step=8, label="Firstpass height", value=0)
@@ -720,6 +722,8 @@ def create_ui():
                     firstphase_height,
                     sampler_index_hr,
                     steps_hr,
+                    cfg_scale_hr,
+                    latent_upscale_hr,
                 ] + custom_inputs,
 
                 outputs=[
@@ -783,6 +787,8 @@ def create_ui():
                 (firstphase_height, "First pass size-2"),
                 (sampler_index_hr, "First Pass Sampler"),
                 (steps_hr, "First Pass Steps"),
+                (cfg_scale_hr, "First Pass CFG"),
+                (latent_upscale_hr, "Latent Upscale"),
                 *modules.scripts.scripts_txt2img.infotext_fields
             ]
             parameters_copypaste.add_paste_fields("txt2img", None, txt2img_paste_fields)

@@ -8,7 +8,7 @@ import modules.processing as processing
 from modules.ui import plaintext_to_html
 
 
-def txt2img(prompt: str, negative_prompt: str, prompt_style: str, prompt_style2: str, steps: int, sampler_index: int, restore_faces: bool, tiling: bool, n_iter: int, batch_size: int, cfg_scale: float, seed: int, subseed: int, subseed_strength: float, seed_resize_from_h: int, seed_resize_from_w: int, seed_enable_extras: bool, height: int, width: int, enable_hr: bool, denoising_strength: float, firstphase_width: int, firstphase_height: int, sampler_index_hr: str, steps_hr: int, *args):
+def txt2img(prompt: str, negative_prompt: str, prompt_style: str, prompt_style2: str, steps: int, sampler_index: int, restore_faces: bool, tiling: bool, n_iter: int, batch_size: int, cfg_scale: float, seed: int, subseed: int, subseed_strength: float, seed_resize_from_h: int, seed_resize_from_w: int, seed_enable_extras: bool, height: int, width: int, enable_hr: bool, denoising_strength: float, firstphase_width: int, firstphase_height: int, sampler_index_hr: str, steps_hr: int, cfg_scale_hr: float, latent_upscale_hr: str, *args):
     p = StableDiffusionProcessingTxt2Img(
         sd_model=shared.sd_model,
         outpath_samples=opts.outdir_samples or opts.outdir_txt2img_samples,
@@ -37,6 +37,8 @@ def txt2img(prompt: str, negative_prompt: str, prompt_style: str, prompt_style2:
         firstphase_height=firstphase_height if enable_hr else None,
         sampler_name_hr=sd_samplers.samplers[sampler_index_hr].name if enable_hr else None,
         steps_hr=steps_hr if enable_hr else None,
+        cfg_scale_hr=cfg_scale_hr if enable_hr else None,
+        latent_upscale_hr=latent_upscale_hr if enable_hr else None,
     )
 
     p.scripts = modules.scripts.scripts_txt2img
