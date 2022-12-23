@@ -169,14 +169,19 @@ def read_state_dict(checkpoint_file, print_global_state=False, map_location=None
     _, extension = os.path.splitext(checkpoint_file)
     start = datetime.datetime.now()
     device = map_location or shared.weight_load_location
+    if device is None:
+        device = "cuda:0" if torch.cuda.is_available() else "cpu"
     if extension.lower() == ".safetensors":
-        if device is None:
-            device = "cuda:0" if torch.cuda.is_available() else "cpu"
+
         pl_sd = safetensors.torch.load_file(checkpoint_file, device=device)
     else:
         pl_sd = torch.load(checkpoint_file, map_location=device)
     print(f"Loaded {checkpoint_file} in {datetime.datetime.now() - start}")
-    print(f"Using map_location {device}")
+    print(f"Using map_location {map_location}")
+    print(f"Using shared.weight_load_location {shared.weight_load_location}")
+    print(f"Using device {device}")
+
+
  
     if print_global_state and "global_step" in pl_sd:
         print(f"Global Step: {pl_sd['global_step']}")
@@ -198,9 +203,10 @@ def load_model_weights(model, checkpoint_info, vae_file="auto"):
     else:
         # load from file
         print(f"Loading weights [{sd_model_hash}] from {checkpoint_file}")
-
-        sd = read_state_dict(checkpoint_file)
         start = datetime.datetime.now()
+        sd = read_state_dict(checkpoint_file)
+        print(f"Read state dict {datetime.datetime.now() - start}")
+
         model.load_state_dict(sd, strict=False)
         print(f"Loaded state dict {datetime.datetime.now() - start}")
         del sd
@@ -371,6 +377,8 @@ def reload_model_weights(sd_model=None, info=None):
 
 
     load_model_weights(sd_model, checkpoint_info)
+    print(f"Loaded weights in {datetime.datetime.now() - start}")
+
 
     sd_hijack.model_hijack.hijack(sd_model)
     print(f"HIGHJACK stuff in {datetime.datetime.now() - start}")
