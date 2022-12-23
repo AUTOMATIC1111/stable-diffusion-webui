@@ -1,4 +1,5 @@
 import collections
+import datetime
 import os.path
 import sys
 import gc
@@ -166,14 +167,17 @@ def get_state_dict_from_checkpoint(pl_sd):
 
 def read_state_dict(checkpoint_file, print_global_state=False, map_location=None):
     _, extension = os.path.splitext(checkpoint_file)
+    start = datetime.datetime.now()
+    device = map_location or shared.weight_load_location
     if extension.lower() == ".safetensors":
-        device = map_location or shared.weight_load_location
         if device is None:
             device = "cuda:0" if torch.cuda.is_available() else "cpu"
         pl_sd = safetensors.torch.load_file(checkpoint_file, device=device)
     else:
-        pl_sd = torch.load(checkpoint_file, map_location=map_location or shared.weight_load_location)
-
+        pl_sd = torch.load(checkpoint_file, map_location=device)
+    print(f"Loaded {checkpoint_file} in {datetime.datetime.now() - start}")
+    print(f"Using map_location {device}")
+ 
     if print_global_state and "global_step" in pl_sd:
         print(f"Global Step: {pl_sd['global_step']}")
 
@@ -196,7 +200,9 @@ def load_model_weights(model, checkpoint_info, vae_file="auto"):
         print(f"Loading weights [{sd_model_hash}] from {checkpoint_file}")
 
         sd = read_state_dict(checkpoint_file)
+        start = datetime.datetime.now()
         model.load_state_dict(sd, strict=False)
+        print(f"Loaded state dict {datetime.datetime.now() - start}")
         del sd
         
         if cache_enabled:
@@ -205,6 +211,9 @@ def load_model_weights(model, checkpoint_info, vae_file="auto"):
 
         if shared.cmd_opts.opt_channelslast:
             model.to(memory_format=torch.channels_last)
+        
+            print(f"Moved to channel last {datetime.datetime.now() - start}")
+
 
         if not shared.cmd_opts.no_half:
             vae = model.first_stage_model
@@ -214,12 +223,16 @@ def load_model_weights(model, checkpoint_info, vae_file="auto"):
                 model.first_stage_model = None
 
             model.half()
+            print(f"Model half {datetime.datetime.now() - start}")
+
             model.first_stage_model = vae
 
         devices.dtype = torch.float32 if shared.cmd_opts.no_half else torch.float16
         devices.dtype_vae = torch.float32 if shared.cmd_opts.no_half or shared.cmd_opts.no_half_vae else torch.float16
 
         model.first_stage_model.to(devices.dtype_vae)
+        print(f"Model first stage to {datetime.datetime.now() - start}")
+
 
     # clean up cache if limit is reached
     if cache_enabled:
@@ -328,6 +341,7 @@ def load_model(checkpoint_info=None):
 
 
 def reload_model_weights(sd_model=None, info=None):
+    start = datetime.datetime.now()
     from modules import lowvram, devices, sd_hijack
     checkpoint_info = info or select_checkpoint()
  
@@ -343,20 +357,33 @@ def reload_model_weights(sd_model=None, info=None):
         load_model(checkpoint_info)
         return shared.sd_model
 
+    print(f"DEBUG1. in {datetime.datetime.now() - start}")
+
     if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
         lowvram.send_everything_to_cpu()
     else:
         sd_model.to(devices.cpu)
+    print(f"VRAM stuff in {datetime.datetime.now() - start}")
+
 
     sd_hijack.model_hijack.undo_hijack(sd_model)
+    print(f"UNHIGHJACK stuff in {datetime.datetime.now() - start}")
+
 
     load_model_weights(sd_model, checkpoint_info)
 
     sd_hijack.model_hijack.hijack(sd_model)
+    print(f"HIGHJACK stuff in {datetime.datetime.now() - start}")
+
     script_callbacks.model_loaded_callback(sd_model)
+    print(f"callback stuff in {datetime.datetime.now() - start}")
+
 
     if not shared.cmd_opts.lowvram and not shared.cmd_opts.medvram:
         sd_model.to(devices.device)
 
-    print(f"Weights loaded.")
+    print(f"load on device {devices.device} in {datetime.datetime.now() - start}")
+
+
+    print(f"Weights loaded. in {datetime.datetime.now() - start}")
     return sd_model
