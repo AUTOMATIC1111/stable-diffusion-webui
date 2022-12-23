@@ -16,7 +16,7 @@ A browser interface based on Gradio library for Stable Diffusion.
 - Attention
 - Loopback
 - X/Y plot
-- Textual Inversion
+- Textual Inversion    
 - Extras tab with:
   - GFPGAN, neural network that fixes faces
   - RealESRGAN, neural network upscaler
