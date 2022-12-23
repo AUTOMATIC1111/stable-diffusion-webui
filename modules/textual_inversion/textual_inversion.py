@@ -364,6 +364,8 @@ def train_embedding(embedding_name, learn_rate, batch_size, gradient_step, data_
                     "learn_rate": scheduler.learn_rate
                 })
 
+                shared.state.job = "train embedding loss {loss}".format(loss = loss_step)
+
                 if images_dir is not None and steps_done % create_image_every == 0:
                     forced_filename = f'{embedding_name}-{steps_done}'
                     last_saved_image = os.path.join(images_dir, forced_filename)
