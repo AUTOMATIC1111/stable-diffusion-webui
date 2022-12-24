@@ -140,7 +140,7 @@ class Script(scripts.Script):
                 try:
                     args = cmdargs(line)
                 except Exception:
-                    print(f"Error parsing line [line] as commandline:", file=sys.stderr)
+                    print(f"Error parsing line {line} as commandline:", file=sys.stderr)
                     print(traceback.format_exc(), file=sys.stderr)
                     args = {"prompt": line}
             else:

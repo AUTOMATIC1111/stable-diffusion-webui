@@ -208,5 +208,5 @@ def reload_vae_weights(sd_model=None, vae_file="auto"):
     if not shared.cmd_opts.lowvram and not shared.cmd_opts.medvram:
         sd_model.to(devices.device)
 
-    print(f"VAE Weights loaded.")
+    print("VAE Weights loaded.")
     return sd_model

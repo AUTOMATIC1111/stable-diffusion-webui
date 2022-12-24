@@ -382,7 +382,7 @@ class VQAutoEncoder(nn.Module):
                 self.load_state_dict(torch.load(model_path, map_location='cpu')['params'])
                 logger.info(f'vqgan is loaded from: {model_path} [params]')
             else:
-                raise ValueError(f'Wrong params!')
+                raise ValueError('Wrong params!')
 
 
     def forward(self, x):
@@ -431,7 +431,7 @@ class VQGANDiscriminator(nn.Module):
             elif 'params' in chkpt:
                 self.load_state_dict(torch.load(model_path, map_location='cpu')['params'])
             else:
-                raise ValueError(f'Wrong params!')
+                raise ValueError('Wrong params!')
 
     def forward(self, x):
         return self.main(x)

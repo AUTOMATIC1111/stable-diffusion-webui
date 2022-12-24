@@ -137,15 +137,15 @@ def load_with_extra(filename, extra_handler=None, *args, **kwargs):
     except pickle.UnpicklingError:
         print(f"Error verifying pickled file from {filename}:", file=sys.stderr)
         print(traceback.format_exc(), file=sys.stderr)
-        print(f"-----> !!!! The file is most likely corrupted !!!! <-----", file=sys.stderr)
-        print(f"You can skip this check with --disable-safe-unpickle commandline argument, but that is not going to help you.\n\n", file=sys.stderr)
+        print("-----> !!!! The file is most likely corrupted !!!! <-----", file=sys.stderr)
+        print("You can skip this check with --disable-safe-unpickle commandline argument, but that is not going to help you.\n\n", file=sys.stderr)
         return None
 
     except Exception:
         print(f"Error verifying pickled file from {filename}:", file=sys.stderr)
         print(traceback.format_exc(), file=sys.stderr)
-        print(f"\nThe file may be malicious, so the program is not going to read it.", file=sys.stderr)
-        print(f"You can skip this check with --disable-safe-unpickle commandline argument.\n\n", file=sys.stderr)
+        print("\nThe file may be malicious, so the program is not going to read it.", file=sys.stderr)
+        print("You can skip this check with --disable-safe-unpickle commandline argument.\n\n", file=sys.stderr)
         return None
 
     return unsafe_torch_load(filename, *args, **kwargs)

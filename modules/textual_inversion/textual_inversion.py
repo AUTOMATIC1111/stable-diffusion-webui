@@ -263,7 +263,7 @@ def train_embedding(embedding_name, learn_rate, batch_size, gradient_step, data_
 
     initial_step = embedding.step or 0
     if initial_step >= steps:
-        shared.state.textinfo = f"Model has already been trained beyond specified max steps"
+        shared.state.textinfo = "Model has already been trained beyond specified max steps"
         return embedding, filename
     scheduler = LearnRateScheduler(learn_rate, steps, initial_step)
 
