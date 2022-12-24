@@ -96,6 +96,7 @@ class Api:
         self.add_api_route("/sdapi/v1/prompt-styles", self.get_prompt_styles, methods=["GET"], response_model=List[PromptStyleItem])
         self.add_api_route("/sdapi/v1/artist-categories", self.get_artists_categories, methods=["GET"], response_model=List[str])
         self.add_api_route("/sdapi/v1/artists", self.get_artists, methods=["GET"], response_model=List[ArtistItem])
+        self.add_api_route("/sdapi/v1/refresh-checkpoints", self.refresh_checkpoints, methods=["POST"])
 
     def add_api_route(self, path: str, endpoint, **kwargs):
         if shared.cmd_opts.api_auth:
@@ -321,6 +322,9 @@ class Api:
 
     def get_artists(self):
         return [{"name":x[0], "score":x[1], "category":x[2]} for x in shared.artist_db.artists]
+    
+    def refresh_checkpoints(self):
+        shared.refresh_checkpoints()
 
     def launch(self, server_name, port):
         self.app.include_router(self.router)
