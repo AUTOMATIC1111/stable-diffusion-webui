@@ -4,7 +4,7 @@ import torch
 class TorchHijackForUnet:
     """
     This is torch, but with cat that resizes tensors to appropriate dimensions if they do not match;
-    this makes it possible to create pictures with dimensions that are muliples of 8 rather than 64
+    this makes it possible to create pictures with dimensions that are multiples of 8 rather than 64
     """
 
     def __getattr__(self, item):

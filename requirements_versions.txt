@@ -1,3 +1,4 @@
+blendmodes==2022
 transformers==4.19.2
 accelerate==0.12.0
 basicsr==1.4.2
@@ -26,3 +27,4 @@ inflection==0.5.1
 GitPython==3.1.27
 torchsde==0.2.5
 safetensors==0.2.5
+httpcore<=0.15

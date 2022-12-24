@@ -49,10 +49,14 @@ if not cmd_opts.share and not cmd_opts.listen:
     gradio.utils.version_check = lambda: None
     gradio.utils.get_local_ip_address = lambda: '127.0.0.1'
 
-if cmd_opts.ngrok != None:
+if cmd_opts.ngrok is not None:
     import modules.ngrok as ngrok
     print('ngrok authtoken detected, trying to connect...')
-    ngrok.connect(cmd_opts.ngrok, cmd_opts.port if cmd_opts.port != None else 7860, cmd_opts.ngrok_region)
+    ngrok.connect(
+        cmd_opts.ngrok,
+        cmd_opts.port if cmd_opts.port is not None else 7860,
+        cmd_opts.ngrok_region
+        )
 
 
 def gr_show(visible=True):
@@ -812,7 +816,7 @@ def create_ui():
 
                 with gr.Tabs(elem_id="mode_img2img") as tabs_img2img_mode:
                     with gr.TabItem('img2img', id='img2img'):
-                        init_img = gr.Image(label="Image for img2img", elem_id="img2img_image", show_label=False, source="upload", interactive=True, type="pil", tool=cmd_opts.gradio_img2img_tool).style(height=480)
+                        init_img = gr.Image(label="Image for img2img", elem_id="img2img_image", show_label=False, source="upload", interactive=True, type="pil", tool=cmd_opts.gradio_img2img_tool, image_mode="RGBA").style(height=480)
 
                     with gr.TabItem('Inpaint', id='inpaint'):
                         init_img_with_mask = gr.Image(label="Image for inpainting with mask", show_label=False, elem_id="img2maskimg", source="upload", interactive=True, type="pil", tool=cmd_opts.gradio_inpaint_tool, image_mode="RGBA").style(height=480)
@@ -853,7 +857,7 @@ def create_ui():
                         img2img_batch_output_dir = gr.Textbox(label="Output directory", **shared.hide_dirs)
 
                 with gr.Row():
-                    resize_mode = gr.Radio(label="Resize mode", elem_id="resize_mode", show_label=False, choices=["Just resize", "Crop and resize", "Resize and fill"], type="index", value="Just resize")
+                    resize_mode = gr.Radio(label="Resize mode", elem_id="resize_mode", show_label=False, choices=["Just resize", "Crop and resize", "Resize and fill", "Just resize (latent upscale)"], type="index", value="Just resize")
 
                 steps = gr.Slider(minimum=1, maximum=150, step=1, label="Sampling Steps", value=20)
                 sampler_index = gr.Radio(label='Sampling method', choices=[x.name for x in samplers_for_img2img], value=samplers_for_img2img[0].name, type="index")

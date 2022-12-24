@@ -6,6 +6,7 @@ titles = {
 	"GFPGAN": "Restore low quality faces using GFPGAN neural network",
 	"Euler a": "Euler Ancestral - very creative, each can get a completely different picture depending on step count, setting steps to higher than 30-40 does not help",
 	"DDIM": "Denoising Diffusion Implicit Models - best at inpainting",
+	"DPM adaptive": "Ignores step count - uses a number of steps determined by the CFG and resolution", 
 
 	"Batch count": "How many batches of images to create",
 	"Batch size": "How many image to create in a single batch",
@@ -17,7 +18,7 @@ titles = {
     "\u2199\ufe0f": "Read generation parameters from prompt or last generation if prompt is empty into user interface.",
     "\u{1f4c2}": "Open images output directory",
     "\u{1f4be}": "Save style",
-    "\U0001F5D1": "Clear prompt"
+    "\U0001F5D1": "Clear prompt",
     "\u{1f4cb}": "Apply selected styles to current prompt",
 
     "Inpaint a part of image": "Draw a mask over an image, and the script will regenerate the masked area with content according to prompt",

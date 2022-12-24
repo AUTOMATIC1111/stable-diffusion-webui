@@ -55,7 +55,7 @@ class LruCache(OrderedDict):
 cached_images: LruCache = LruCache(max_size=5)
 
 
-def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_dir, show_extras_results, gfpgan_visibility, codeformer_visibility, codeformer_weight, upscaling_resize, upscaling_resize_w, upscaling_resize_h, upscaling_crop, extras_upscaler_1, extras_upscaler_2, extras_upscaler_2_visibility, upscale_first: bool):
+def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_dir, show_extras_results, gfpgan_visibility, codeformer_visibility, codeformer_weight, upscaling_resize, upscaling_resize_w, upscaling_resize_h, upscaling_crop, extras_upscaler_1, extras_upscaler_2, extras_upscaler_2_visibility, upscale_first: bool, save_output: bool = True):
     devices.torch_gc()
 
     imageArr = []
@@ -188,13 +188,20 @@ def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_
         for op in extras_ops:
             image, info = op(image, info)
 
-        if opts.use_original_name_batch and image_name != None:
+        if opts.use_original_name_batch and image_name is not None:
             basename = os.path.splitext(os.path.basename(image_name))[0]
         else:
             basename = ''
 
-        images.save_image(image, path=outpath, basename=basename, seed=None, prompt=None, extension=opts.samples_format, info=info, short_filename=True,
-                          no_prompt=True, grid=False, pnginfo_section_name="extras", existing_info=existing_pnginfo, forced_filename=None)
+        if save_output:
+            # Add upscaler name as a suffix.
+            suffix = f"-{shared.sd_upscalers[extras_upscaler_1].name}" if shared.opts.use_upscaler_name_as_suffix else ""
+            # Add second upscaler if applicable.
+            if suffix and extras_upscaler_2 and extras_upscaler_2_visibility:
+                suffix += f"-{shared.sd_upscalers[extras_upscaler_2].name}"
+
+            images.save_image(image, path=outpath, basename=basename, seed=None, prompt=None, extension=opts.samples_format, info=info, short_filename=True,
+                            no_prompt=True, grid=False, pnginfo_section_name="extras", existing_info=existing_pnginfo, forced_filename=None, suffix=suffix)
 
         if opts.enable_pnginfo:
             image.info = existing_pnginfo
