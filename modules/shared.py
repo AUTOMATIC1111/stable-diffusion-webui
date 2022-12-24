@@ -171,6 +171,7 @@ class State:
             "interrupted": self.skipped,
             "job": self.job,
             "job_count": self.job_count,
+            "job_timestamp": self.job_timestamp,
             "job_no": self.job_no,
             "sampling_step": self.sampling_step,
             "sampling_steps": self.sampling_steps,
