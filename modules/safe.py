@@ -80,7 +80,7 @@ def check_pt(filename, extra_handler):
         # new pytorch format is a zip file
         with zipfile.ZipFile(filename) as z:
             check_zip_filenames(filename, z.namelist())
-            
+
             # find filename of data.pkl in zip file: '<directory name>/data.pkl'
             data_pkl_filenames = [f for f in z.namelist() if data_pkl_re.match(f)]
             if len(data_pkl_filenames) == 0:
@@ -108,7 +108,7 @@ def load(filename, *args, **kwargs):
 
 def load_with_extra(filename, extra_handler=None, *args, **kwargs):
     """
-    this functon is intended to be used by extensions that want to load models with
+    this function is intended to be used by extensions that want to load models with
     some extra classes in them that the usual unpickler would find suspicious.
 
     Use the extra_handler argument to specify a function that takes module and field name as text,

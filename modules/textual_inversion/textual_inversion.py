@@ -134,7 +134,7 @@ class EmbeddingDatabase:
 
                 process_file(fullfn, fn)
             except Exception:
-                print(f"Error loading emedding {fn}:", file=sys.stderr)
+                print(f"Error loading embedding {fn}:", file=sys.stderr)
                 print(traceback.format_exc(), file=sys.stderr)
                 continue
 
