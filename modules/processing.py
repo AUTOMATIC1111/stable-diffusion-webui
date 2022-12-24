@@ -832,7 +832,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             self.color_corrections = []
         imgs = []
         for img in self.init_images:
-            image = img.convert("RGB")
+            image = images.flatten(img, opts.img2img_background_color)
 
             if crop_region is None:
                 image = images.resize_image(self.resize_mode, image, self.width, self.height)

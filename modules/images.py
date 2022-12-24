@@ -622,3 +622,14 @@ def image_data(data):
         pass
 
     return '', None
+
+
+def flatten(img, bgcolor):
+    """replaces transparency with bgcolor (example: "#ffffff"), returning an RGB mode image with no transparency"""
+
+    if img.mode == "RGBA":
+        background = Image.new('RGBA', img.size, bgcolor)
+        background.paste(img, mask=img)
+        img = background
+
+    return img.convert('RGB')
