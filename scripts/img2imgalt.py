@@ -166,7 +166,7 @@ class Script(scripts.Script):
         if override_strength:
             p.denoising_strength = 1.0
 
-        def sample_extra(conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
+        def sample_extra(conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts, clip_target_embed):
             lat = (p.init_latent.cpu().numpy() * 10).astype(int)
 
             same_params = self.cache is not None and self.cache.cfg_scale == cfg and self.cache.steps == st \
@@ -199,7 +199,7 @@ class Script(scripts.Script):
             
             p.seed = p.seed + 1
             
-            return sampler.sample_img2img(p, p.init_latent, noise_dt, conditioning, unconditional_conditioning, image_conditioning=p.image_conditioning)
+            return sampler.sample_img2img(p, p.init_latent, noise_dt, conditioning, unconditional_conditioning, image_conditioning=p.image_conditioning, clip_target_embed=clip_target_embed)
 
         p.sample = sample_extra
 
