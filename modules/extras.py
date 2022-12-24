@@ -193,8 +193,14 @@ def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_
         else:
             basename = ''
 
+        # Add upscaler name as a suffix.
+        suffix = f"-{shared.sd_upscalers[extras_upscaler_1].name}" if shared.opts.use_upscaler_name_as_suffix else ""
+        # Add second upscaler if applicable.
+        if suffix and extras_upscaler_2 and extras_upscaler_2_visibility:
+            suffix += f"-{shared.sd_upscalers[extras_upscaler_2].name}"
+
         images.save_image(image, path=outpath, basename=basename, seed=None, prompt=None, extension=opts.samples_format, info=info, short_filename=True,
-                          no_prompt=True, grid=False, pnginfo_section_name="extras", existing_info=existing_pnginfo, forced_filename=None)
+                          no_prompt=True, grid=False, pnginfo_section_name="extras", existing_info=existing_pnginfo, forced_filename=None, suffix=suffix)
 
         if opts.enable_pnginfo:
             image.info = existing_pnginfo
