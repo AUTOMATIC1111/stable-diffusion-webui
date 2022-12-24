@@ -37,16 +37,16 @@ class RestrictedUnpickler(pickle.Unpickler):
 
         if module == 'collections' and name == 'OrderedDict':
             return getattr(collections, name)
-        if module == 'torch._utils' and name in ['_rebuild_tensor_v2', '_rebuild_parameter']:
+        if module == 'torch._utils' and name in ['_rebuild_tensor_v2', '_rebuild_parameter', '_rebuild_device_tensor_from_numpy']:
             return getattr(torch._utils, name)
-        if module == 'torch' and name in ['FloatStorage', 'HalfStorage', 'IntStorage', 'LongStorage', 'DoubleStorage', 'ByteStorage']:
+        if module == 'torch' and name in ['FloatStorage', 'HalfStorage', 'IntStorage', 'LongStorage', 'DoubleStorage', 'ByteStorage', 'float32']:
             return getattr(torch, name)
         if module == 'torch.nn.modules.container' and name in ['ParameterDict']:
             return getattr(torch.nn.modules.container, name)
-        if module == 'numpy.core.multiarray' and name == 'scalar':
-            return numpy.core.multiarray.scalar
-        if module == 'numpy' and name == 'dtype':
-            return numpy.dtype
+        if module == 'numpy.core.multiarray' and name in ['scalar', '_reconstruct']:
+            return getattr(numpy.core.multiarray, name)
+        if module == 'numpy' and name in ['dtype', 'ndarray']:
+            return getattr(numpy, name)
         if module == '_codecs' and name == 'encode':
             return encode
         if module == "pytorch_lightning.callbacks" and name == 'model_checkpoint':
@@ -80,7 +80,7 @@ def check_pt(filename, extra_handler):
         # new pytorch format is a zip file
         with zipfile.ZipFile(filename) as z:
             check_zip_filenames(filename, z.namelist())
-            
+
             # find filename of data.pkl in zip file: '<directory name>/data.pkl'
             data_pkl_filenames = [f for f in z.namelist() if data_pkl_re.match(f)]
             if len(data_pkl_filenames) == 0:
@@ -108,7 +108,7 @@ def load(filename, *args, **kwargs):
 
 def load_with_extra(filename, extra_handler=None, *args, **kwargs):
     """
-    this functon is intended to be used by extensions that want to load models with
+    this function is intended to be used by extensions that want to load models with
     some extra classes in them that the usual unpickler would find suspicious.
 
     Use the extra_handler argument to specify a function that takes module and field name as text,
