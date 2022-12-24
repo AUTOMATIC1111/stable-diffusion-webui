@@ -67,10 +67,10 @@ def encode_pil_to_base64(image):
 class Api:
     def __init__(self, app: FastAPI, queue_lock: Lock):
         if shared.cmd_opts.api_auth:
-            self.credenticals = dict()
+            self.credentials = dict()
             for auth in shared.cmd_opts.api_auth.split(","):
                 user, password = auth.split(":")
-                self.credenticals[user] = password
+                self.credentials[user] = password
 
         self.router = APIRouter()
         self.app = app
@@ -93,7 +93,7 @@ class Api:
         self.add_api_route("/sdapi/v1/hypernetworks", self.get_hypernetworks, methods=["GET"], response_model=List[HypernetworkItem])
         self.add_api_route("/sdapi/v1/face-restorers", self.get_face_restorers, methods=["GET"], response_model=List[FaceRestorerItem])
         self.add_api_route("/sdapi/v1/realesrgan-models", self.get_realesrgan_models, methods=["GET"], response_model=List[RealesrganItem])
-        self.add_api_route("/sdapi/v1/prompt-styles", self.get_promp_styles, methods=["GET"], response_model=List[PromptStyleItem])
+        self.add_api_route("/sdapi/v1/prompt-styles", self.get_prompt_styles, methods=["GET"], response_model=List[PromptStyleItem])
         self.add_api_route("/sdapi/v1/artist-categories", self.get_artists_categories, methods=["GET"], response_model=List[str])
         self.add_api_route("/sdapi/v1/artists", self.get_artists, methods=["GET"], response_model=List[ArtistItem])
 
@@ -102,9 +102,9 @@ class Api:
             return self.app.add_api_route(path, endpoint, dependencies=[Depends(self.auth)], **kwargs)
         return self.app.add_api_route(path, endpoint, **kwargs)
 
-    def auth(self, credenticals: HTTPBasicCredentials = Depends(HTTPBasic())):
-        if credenticals.username in self.credenticals:
-            if compare_digest(credenticals.password, self.credenticals[credenticals.username]):
+    def auth(self, credentials: HTTPBasicCredentials = Depends(HTTPBasic())):
+        if credentials.username in self.credentials:
+            if compare_digest(credentials.password, self.credentials[credentials.username]):
                 return True
 
         raise HTTPException(status_code=401, detail="Incorrect username or password", headers={"WWW-Authenticate": "Basic"})
@@ -239,7 +239,7 @@ class Api:
     def interrogateapi(self, interrogatereq: InterrogateRequest):
         image_b64 = interrogatereq.image
         if image_b64 is None:
-            raise HTTPException(status_code=404, detail="Image not found") 
+            raise HTTPException(status_code=404, detail="Image not found")
 
         img = decode_base64_to_image(image_b64)
         img = img.convert('RGB')
@@ -252,7 +252,7 @@ class Api:
                 processed = deepbooru.model.tag(img)
             else:
                 raise HTTPException(status_code=404, detail="Model not found")
-        
+
         return InterrogateResponse(caption=processed)
 
     def interruptapi(self):
@@ -308,7 +308,7 @@ class Api:
     def get_realesrgan_models(self):
         return [{"name":x.name,"path":x.data_path, "scale":x.scale} for x in get_realesrgan_models(None)]
 
-    def get_promp_styles(self):
+    def get_prompt_styles(self):
         styleList = []
         for k in shared.prompt_styles.styles:
             style = shared.prompt_styles.styles[k]

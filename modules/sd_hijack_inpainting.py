@@ -209,7 +209,7 @@ def p_sample_plms(self, x, c, t, index, repeat_noise=False, use_original_steps=F
         else:
             x_in = torch.cat([x] * 2)
             t_in = torch.cat([t] * 2)
-            
+
             if isinstance(c, dict):
                 assert isinstance(unconditional_conditioning, dict)
                 c_in = dict()
@@ -278,7 +278,7 @@ def p_sample_plms(self, x, c, t, index, repeat_noise=False, use_original_steps=F
     x_prev, pred_x0 = get_x_prev_and_pred_x0(e_t_prime, index)
 
     return x_prev, pred_x0, e_t
-    
+
 # =================================================================================================
 # Monkey patch LatentInpaintDiffusion to load the checkpoint with a proper config.
 # Adapted from:
@@ -325,7 +325,7 @@ def should_hijack_inpainting(checkpoint_info):
 def do_inpainting_hijack():
     # most of this stuff seems to no longer be needed because it is already included into SD2.0
     # p_sample_plms is needed because PLMS can't work with dicts as conditionings
-    # this file should be cleaned up later if weverything tuens out to work fine
+    # this file should be cleaned up later if everything turns out to work fine
 
     # ldm.models.diffusion.ddpm.get_unconditional_conditioning = get_unconditional_conditioning
     # ldm.models.diffusion.ddpm.LatentInpaintDiffusion = LatentInpaintDiffusion

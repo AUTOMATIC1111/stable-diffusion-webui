@@ -438,7 +438,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
             The directory to save the image. Note, the option `save_to_dirs` will make the image to be saved into a sub directory.
         basename (`str`):
             The base filename which will be applied to `filename pattern`.
-        seed, prompt, short_filename, 
+        seed, prompt, short_filename,
         extension (`str`):
             Image file extension, default is `png`.
         pngsectionname (`str`):
@@ -599,7 +599,7 @@ def read_info_from_image(image):
 Negative prompt: {json_info["uc"]}
 Steps: {json_info["steps"]}, Sampler: {sampler}, CFG scale: {json_info["scale"]}, Seed: {json_info["seed"]}, Size: {image.width}x{image.height}, Clip skip: 2, ENSD: 31337"""
         except Exception:
-            print(f"Error parsing NovelAI iamge generation parameters:", file=sys.stderr)
+            print(f"Error parsing NovelAI image generation parameters:", file=sys.stderr)
             print(traceback.format_exc(), file=sys.stderr)
 
     return geninfo, items
