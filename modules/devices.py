@@ -125,7 +125,16 @@ def layer_norm_fix(*args, **kwargs):
     return orig_layer_norm(*args, **kwargs)
 
 
+# MPS workaround for https://github.com/pytorch/pytorch/issues/90532
+orig_tensor_numpy = torch.Tensor.numpy
+def numpy_fix(self, *args, **kwargs):
+    if self.requires_grad:
+        self = self.detach()
+    return orig_tensor_numpy(self, *args, **kwargs)
+
+
 # PyTorch 1.13 doesn't need these fixes but unfortunately is slower and has regressions that prevent training from working
 if has_mps() and version.parse(torch.__version__) < version.parse("1.13"):
     torch.Tensor.to = tensor_to_fix
     torch.nn.functional.layer_norm = layer_norm_fix
+    torch.Tensor.numpy = numpy_fix
