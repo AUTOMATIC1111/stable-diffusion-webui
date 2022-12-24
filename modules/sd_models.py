@@ -293,12 +293,15 @@ def load_model(checkpoint_info=None):
     if should_hijack_inpainting(checkpoint_info):
         # Hardcoded config for now...
         sd_config.model.target = "ldm.models.diffusion.ddpm.LatentInpaintDiffusion"
-        sd_config.model.params.use_ema = False
         sd_config.model.params.conditioning_key = "hybrid"
         sd_config.model.params.unet_config.params.in_channels = 9
+        sd_config.model.params.finetune_keys = None
 
         # Create a "fake" config with a different name so that we know to unload it when switching models.
         checkpoint_info = checkpoint_info._replace(config=checkpoint_info.config.replace(".yaml", "-inpainting.yaml"))
+
+    if not hasattr(sd_config.model.params, "use_ema"):
+        sd_config.model.params.use_ema = False
 
     do_inpainting_hijack()
 
