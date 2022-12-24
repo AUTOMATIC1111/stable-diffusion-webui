@@ -27,6 +27,7 @@ from ldm.data.util import AddMiDaS
 from ldm.models.diffusion.ddpm import LatentDepth2ImageDiffusion
 
 from einops import repeat, rearrange
+from blendmodes.blend import blendLayers, BlendType
 
 # some of those options should not be changed at all because they would break the model, so I removed them from options.
 opt_C = 4
@@ -39,17 +40,19 @@ def setup_color_correction(image):
     return correction_target
 
 
-def apply_color_correction(correction, image):
+def apply_color_correction(correction, original_image):
     logging.info("Applying color correction.")
     image = Image.fromarray(cv2.cvtColor(exposure.match_histograms(
         cv2.cvtColor(
-            np.asarray(image),
+            np.asarray(original_image),
             cv2.COLOR_RGB2LAB
         ),
         correction,
         channel_axis=2
     ), cv2.COLOR_LAB2RGB).astype("uint8"))
-
+    
+    image = blendLayers(image, original_image, BlendType.LUMINOSITY)
+    
     return image
 
 
