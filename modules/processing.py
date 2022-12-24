@@ -846,7 +846,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
                 self.overlay_images.append(image_masked.convert('RGBA'))
 
-            # crop_region is not none iif we are doing inpaint full res
+            # crop_region is not None if we are doing inpaint full res
             if crop_region is not None:
                 image = image.crop(crop_region)
                 image = images.resize_image(2, image, self.width, self.height)
