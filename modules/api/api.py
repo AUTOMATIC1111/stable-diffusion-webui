@@ -181,7 +181,7 @@ class Api:
         reqDict['image'] = decode_base64_to_image(reqDict['image'])
 
         with self.queue_lock:
-            result = run_extras(extras_mode=0, image_folder="", input_dir="", output_dir="", **reqDict)
+            result = run_extras(extras_mode=0, image_folder="", input_dir="", output_dir="", save_output=False, **reqDict)
 
         return ExtrasSingleImageResponse(image=encode_pil_to_base64(result[0][0]), html_info=result[1])
 
@@ -197,7 +197,7 @@ class Api:
         reqDict.pop('imageList')
 
         with self.queue_lock:
-            result = run_extras(extras_mode=1, image="", input_dir="", output_dir="", **reqDict)
+            result = run_extras(extras_mode=1, image="", input_dir="", output_dir="", save_output=False, **reqDict)
 
         return ExtrasBatchImagesResponse(images=list(map(encode_pil_to_base64, result[0])), html_info=result[1])
 
@@ -322,7 +322,7 @@ class Api:
 
     def get_artists(self):
         return [{"name":x[0], "score":x[1], "category":x[2]} for x in shared.artist_db.artists]
-    
+
     def refresh_checkpoints(self):
         shared.refresh_checkpoints()
 
