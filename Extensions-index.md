@@ -219,6 +219,12 @@
 			"tags": ["script"]
 		},
 		{
+			"name": "ABG_extension",
+			"url": "https://github.com/KutsuyaYuki/ABG_extension.git",
+			"description": "Automatically remove backgrounds. Uses an onnx model fine-tuned for anime images. Runs on GPU.",
+			"tags": ["script"]
+		},
+		{
 			"name": "Visualize Cross-Attention",
 			"url": "https://github.com/benkyoujouzu/stable-diffusion-webui-visualize-cross-attention-extension.git",
 			"description": "Generates highlighted sectors of a submitted input image, based on input prompts. Use with tokenizer extension. See the readme for more info.",
