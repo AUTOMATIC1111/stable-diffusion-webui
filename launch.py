@@ -243,7 +243,7 @@ def prepare_environment():
     if not is_installed("lpips"):
         run_pip(f"install -r {os.path.join(repo_dir('CodeFormer'), 'requirements.txt')}", "requirements for CodeFormer")
 
-    run_pip(f"install -r {requirements_file}", "requirements for Web UI")
+    # run_pip(f"install -r {requirements_file}", "requirements for Web UI")
 
     run_extensions_installers(settings_file=args.ui_settings_file)
 
