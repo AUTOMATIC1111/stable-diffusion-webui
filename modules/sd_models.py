@@ -319,6 +319,7 @@ def load_model(checkpoint_info=None):
     sd_hijack.model_hijack.hijack(sd_model)
 
     sd_model.eval()
+    sd_model = torch.compile(sd_model)
     shared.sd_model = sd_model
 
     script_callbacks.model_loaded_callback(sd_model)

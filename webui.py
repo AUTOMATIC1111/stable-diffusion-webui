@@ -13,6 +13,8 @@ from modules.call_queue import wrap_queued_call, queue_lock, wrap_gradio_gpu_cal
 from modules.paths import script_path
 
 from modules import shared, devices, sd_samplers, upscaler, extensions, localization, ui_tempdir
+import torch
+torch.__version__ = torch.__version__.split('.dev')[0]  # prevent a error in codeformer below where it checks for PyTorch version in a way that does not support version strings with "dev" in them
 import modules.codeformer_model as codeformer
 import modules.extras
 import modules.face_restoration
