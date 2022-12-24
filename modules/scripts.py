@@ -36,7 +36,7 @@ class Script:
     def ui(self, is_img2img):
         """this function should create gradio UI elements. See https://gradio.app/docs/#components
         The return value should be an array of all components that are used in processing.
-        Values of those returned componenbts will be passed to run() and process() functions.
+        Values of those returned components will be passed to run() and process() functions.
         """
 
         pass
@@ -47,7 +47,7 @@ class Script:
 
         This function should return:
          - False if the script should not be shown in UI at all
-         - True if the script should be shown in UI if it's scelected in the scripts drowpdown
+         - True if the script should be shown in UI if it's selected in the scripts dropdown
          - script.AlwaysVisible if the script should be shown in UI at all times
          """
 

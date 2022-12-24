@@ -18,7 +18,7 @@ def draw_xy_grid(xs, ys, x_label, y_label, cell):
     ver_texts = [[images.GridAnnotation(y_label(y))] for y in ys]
     hor_texts = [[images.GridAnnotation(x_label(x))] for x in xs]
 
-    first_pocessed = None
+    first_processed = None
 
     state.job_count = len(xs) * len(ys)
 
@@ -27,17 +27,17 @@ def draw_xy_grid(xs, ys, x_label, y_label, cell):
             state.job = f"{ix + iy * len(xs) + 1} out of {len(xs) * len(ys)}"
 
             processed = cell(x, y)
-            if first_pocessed is None:
-                first_pocessed = processed
+            if first_processed is None:
+                first_processed = processed
 
             res.append(processed.images[0])
 
     grid = images.image_grid(res, rows=len(ys))
     grid = images.draw_grid_annotations(grid, res[0].width, res[0].height, hor_texts, ver_texts)
 
-    first_pocessed.images = [grid]
+    first_processed.images = [grid]
 
-    return first_pocessed
+    return first_processed
 
 
 class Script(scripts.Script):

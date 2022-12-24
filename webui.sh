@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #################################################
 # Please do not make any changes to this file,  #
 # change the variables in webui-user.sh instead #
