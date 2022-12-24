@@ -258,6 +258,7 @@ Small script for AUTOMATIC1111/stable-diffusion-webui to create images that exis
 https://github.com/yownas/shift-attention.git
 
 Generate a sequence of images shifting attention in the prompt. This script enables you to give a range to the weight of tokens in a prompt and then generate a sequence of images stepping from the first one to the second.
+
 ## prompt travel
 https://github.com/Kahsolt/stable-diffusion-webui-prompt-travel
 
@@ -281,10 +282,12 @@ This is Extension for rewriting Inpainting conditioning mask strength value rela
 https://github.com/stysmmaker/stable-diffusion-webui-randomize
 
 Allows for random parameters during txt2img generation. This script is processed for all generations, regardless of the script selected, meaning this script will function with others as well, such as AUTOMATIC1111/stable-diffusion-webui-wildcards.
+
 ## Auto TLS-HTTPS
 https://github.com/papuSpartan/stable-diffusion-webui-auto-tls-https
 
 Allows you to easily, or even completely automatically start using HTTPS.
+
 ## DreamArtist
 https://github.com/7eu7d7/DreamArtist-sd-webui-extension
 
@@ -341,12 +344,23 @@ It is a depth aware extension that can help to create multiple complex subjects 
 https://github.com/Extraltodeus/depthmap2mask
 
 Create masks for img2img based on a depth estimation made by MiDaS.
+
+## ABG_extension
+https://github.com/KutsuyaYuki/ABG_extension
+
+Automatically remove backgrounds. Uses an onnx model fine-tuned for anime images. Runs on GPU.
+
+| ![test](https://user-images.githubusercontent.com/98228077/209423352-e8ea64e7-8522-4c2c-9350-c7cd50c35c7c.png) |  ![00035-4190733039-cow](https://user-images.githubusercontent.com/98228077/209423400-720ddde9-258a-4e68-8a93-73b67dad714e.png) | ![00021-1317075604-samdoesarts portrait](https://user-images.githubusercontent.com/98228077/209423428-da7c68db-e7d1-45a1-b931-817de9233a67.png) | ![00025-2023077221-](https://user-images.githubusercontent.com/98228077/209423446-79e676ae-460e-4282-a591-b8b986bfd869.png) |
+| :---: | :---: | :---: | :---: |
+| ![img_-0002-3313071906-bust shot of person](https://user-images.githubusercontent.com/98228077/209423467-789c17ad-d7ed-41a9-a039-802cfcae324a.png) | ![img_-0022-4190733039-cow](https://user-images.githubusercontent.com/98228077/209423493-dcee7860-a09e-41e0-9397-715f52bdcaab.png) | ![img_-0008-1317075604-samdoesarts portrait](https://user-images.githubusercontent.com/98228077/209423521-736f33ca-aafb-4f8b-b067-14916ec6955f.png) | ![img_-0012-2023077221-](https://user-images.githubusercontent.com/98228077/209423546-31b2305a-3159-443f-8a98-4da22c29c415.png) |
+
 ## Visualize Cross-Attention
 https://github.com/benkyoujouzu/stable-diffusion-webui-visualize-cross-attention-extension
 
 ![image](https://user-images.githubusercontent.com/98228077/208332131-6acdae9a-2b25-4e71-8ab0-6e375c7c0419.png)
 
 Generates highlighted sectors of a submitted input image, based on input prompts. Use with tokenizer extension. See the readme for more info.
+
 ## DAAM
 https://github.com/kousw/stable-diffusion-webui-daam
 
@@ -376,6 +390,12 @@ Build a yaml file with your chosen parameters, and generate infinite-dimensional
 https://github.com/AUTOMATIC1111/stable-diffusion-webui-nsfw-censor
 
 Replaces NSFW images with black.
+
+## Diffusion Defender
+https://github.com/WildBanjos/DiffusionDefender
+
+Prompt blacklist, find and replace, for semi-private and public instances.
+
 ## Config-Presets
 https://github.com/Zyin055/Config-Presets
 
@@ -398,31 +418,21 @@ https://github.com/enlyth/sd-webui-riffusion
 
 Use Riffusion model to produce music in gradio, see readme for interpolation technique.
 
+## Save Intermediate Images
+https://github.com/AlUlkesh/sd_save_intermediate_images
+
+Implements saving intermediate images, with more advanced features.
+
+![image](https://user-images.githubusercontent.com/98228077/209453267-cb65adce-4e1c-45c7-93da-e0bd1020670c.png)
+
+## openOutpaint extension
+https://github.com/zero01101/openOutpaint-webUI-extension
+
+A tab with the full openOutpaint UI. Run with the --api flag.
+
+![image](https://user-images.githubusercontent.com/98228077/209453250-8bd2d766-56b5-4887-97bc-cb0e22f98dde.png)
+
 ## Enhanced-img2img
 https://github.com/OedoSoldier/enhanced-img2img
 
 An extension with support for batched and better inpainting.
-
-## WIP
-https://github.com/sdwebui-w-horde/sd-webui-stable-horde-worker \
-https://github.com/space-nuko/sd-promptbook
-
-## Test
-https://gitlab.com/azamshato/simula \
-https://github.com/benkyoujouzu/stable-diffusion-webui-print-processed-prompt-extension \
-https://github.com/mix1009/model-keyword \
-https://github.com/bbc-mc/merge-percentage-visualize \
-https://github.com/152334H/sd-webui-whisper \
-https://github.com/bbc-mc/sdweb-xyplus \
-https://github.com/zero01101/openOutpaint-webUI-extension \
-https://github.com/Merramore/stable-diffusion-webui-extension-DirectML \
-https://github.com/64617/pony-diffusion-webui \
-https://github.com/Le-Chat-BottE/file-download-extension \
-https://github.com/stysmmaker/stable-diffusion-webui-send-to-hydrus \
-https://github.com/sayoonarachu/sd_prompt_gen \
-https://github.com/liuhongboCM/stable-diffusion-webui-generate-forever \
-https://github.com/CodeExplode/stable-diffusion-webui-finetuning-tokens \
-https://github.com/bbc-mc/uiTweaks_txt2img_prompt-controll-btn \
-https://github.com/auto-webui-extensions-and-scripts/auto-backup
-
-https://github.com/mayurdhagiya/Smart-Toilet
