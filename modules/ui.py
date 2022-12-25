@@ -270,7 +270,7 @@ def apply_styles(prompt, prompt_neg, style1_name, style2_name):
 
 
 def interrogate(image):
-    prompt = shared.interrogator.interrogate(image)
+    prompt = shared.interrogator.interrogate(image.convert("RGB"))
 
     return gr_show(True) if prompt is None else prompt
 
