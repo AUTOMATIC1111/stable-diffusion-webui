@@ -175,6 +175,15 @@ class InterrogateRequest(BaseModel):
 class InterrogateResponse(BaseModel):
     caption: str = Field(default=None, title="Caption", description="The generated caption for the image.")
 
+class TrainResponse(BaseModel):
+    info: str = Field(title="Train info", description="Response string from train embedding or hypernetwork task.")
+
+class CreateResponse(BaseModel):
+    info: str = Field(title="Create info", description="Response string from create embedding or hypernetwork task.")
+
+class PreprocessResponse(BaseModel):
+    info: str = Field(title="Preprocess info", description="Response string from preprocessing task.")
+
 fields = {}
 for key, metadata in opts.data_labels.items():
     value = opts.data.get(key)

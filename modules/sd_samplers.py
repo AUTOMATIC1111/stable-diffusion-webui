@@ -9,7 +9,7 @@ import k_diffusion.sampling
 import torchsde._brownian.brownian_interval
 import ldm.models.diffusion.ddim
 import ldm.models.diffusion.plms
-from modules import prompt_parser, devices, processing, images
+from modules import prompt_parser, devices, processing, images, sd_vae_approx
 
 from modules.shared import opts, cmd_opts, state
 import modules.shared as shared
@@ -106,20 +106,32 @@ def setup_img2img_steps(p, steps=None):
     return steps, t_enc
 
 
-def single_sample_to_image(sample):
-    x_sample = processing.decode_first_stage(shared.sd_model, sample.unsqueeze(0))[0]
+approximation_indexes = {"Full": 0, "Approx NN": 1, "Approx cheap": 2}
+
+
+def single_sample_to_image(sample, approximation=None):
+    if approximation is None:
+        approximation = approximation_indexes.get(opts.show_progress_type, 0)
+
+    if approximation == 2:
+        x_sample = sd_vae_approx.cheap_approximation(sample)
+    elif approximation == 1:
+        x_sample = sd_vae_approx.model()(sample.to(devices.device, devices.dtype).unsqueeze(0))[0].detach()
+    else:
+        x_sample = processing.decode_first_stage(shared.sd_model, sample.unsqueeze(0))[0]
+
     x_sample = torch.clamp((x_sample + 1.0) / 2.0, min=0.0, max=1.0)
     x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
     x_sample = x_sample.astype(np.uint8)
     return Image.fromarray(x_sample)
 
 
-def sample_to_image(samples, index=0):
-    return single_sample_to_image(samples[index])
+def sample_to_image(samples, index=0, approximation=None):
+    return single_sample_to_image(samples[index], approximation)
 
 
-def samples_to_image_grid(samples):
-    return images.image_grid([single_sample_to_image(sample) for sample in samples])
+def samples_to_image_grid(samples, approximation=None):
+    return images.image_grid([single_sample_to_image(sample, approximation) for sample in samples])
 
 
 def store_latent(decoded):
@@ -288,6 +300,16 @@ class CFGDenoiser(torch.nn.Module):
         self.init_latent = None
         self.step = 0
 
+    def combine_denoised(self, x_out, conds_list, uncond, cond_scale):
+        denoised_uncond = x_out[-uncond.shape[0]:]
+        denoised = torch.clone(denoised_uncond)
+
+        for i, conds in enumerate(conds_list):
+            for cond_index, weight in conds:
+                denoised[i] += (x_out[cond_index] - denoised_uncond[i]) * (weight * cond_scale)
+
+        return denoised
+
     def forward(self, x, sigma, uncond, cond, cond_scale, image_cond):
         if state.interrupted or state.skipped:
             raise InterruptedException
@@ -329,12 +351,7 @@ class CFGDenoiser(torch.nn.Module):
 
             x_out[-uncond.shape[0]:] = self.inner_model(x_in[-uncond.shape[0]:], sigma_in[-uncond.shape[0]:], cond={"c_crossattn": [uncond], "c_concat": [image_cond_in[-uncond.shape[0]:]]})
 
-        denoised_uncond = x_out[-uncond.shape[0]:]
-        denoised = torch.clone(denoised_uncond)
-
-        for i, conds in enumerate(conds_list):
-            for cond_index, weight in conds:
-                denoised[i] += (x_out[cond_index] - denoised_uncond[i]) * (weight * cond_scale)
+        denoised = self.combine_denoised(x_out, conds_list, uncond, cond_scale)
 
         if self.mask is not None:
             denoised = self.init_latent * self.mask + self.nmask * denoised
