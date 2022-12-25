@@ -75,6 +75,7 @@ def integrate_settings_paste_fields(component_dict):
         'sd_hypernetwork': 'Hypernet',
         'sd_hypernetwork_strength': 'Hypernet strength',
         'CLIP_stop_at_last_layers': 'Clip skip',
+        'CLIP_skip_lerp_after_norm': 'Clip skip lerp after norm',
         'inpainting_mask_weight': 'Conditional mask weight',
         'sd_model_checkpoint': 'Model hash',
         'eta_noise_seed_delta': 'ENSD',

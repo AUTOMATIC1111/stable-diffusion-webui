@@ -264,6 +264,7 @@ class Processed:
         self.styles = p.styles
         self.job_timestamp = state.job_timestamp
         self.clip_skip = opts.CLIP_stop_at_last_layers
+        self.clip_skip_lerp_after_norm = opts.CLIP_skip_lerp_after_norm
 
         self.eta = p.eta
         self.ddim_discretize = p.ddim_discretize
@@ -422,6 +423,7 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration
     index = position_in_batch + iteration * p.batch_size
 
     clip_skip = getattr(p, 'clip_skip', opts.CLIP_stop_at_last_layers)
+    clip_skip_lerp_after_norm = getattr(p, 'clip_skip_lerp_after_norm', opts.CLIP_skip_lerp_after_norm)
 
     generation_params = {
         "Steps": p.steps,
@@ -444,6 +446,7 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration
         "Conditional mask weight": getattr(p, "inpainting_mask_weight", shared.opts.inpainting_mask_weight) if p.is_using_inpainting_conditioning else None,
         "Eta": (None if p.sampler is None or p.sampler.eta == p.sampler.default_eta else p.sampler.eta),
         "Clip skip": None if clip_skip <= 1 else clip_skip,
+        "Clip skip lerp after norm": None if clip_skip is int else clip_skip,
         "ENSD": None if opts.eta_noise_seed_delta == 0 else opts.eta_noise_seed_delta,
     }
 

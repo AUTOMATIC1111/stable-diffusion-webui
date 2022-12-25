@@ -291,12 +291,21 @@ class FrozenCLIPEmbedderWithCustomWords(FrozenCLIPEmbedderWithCustomWordsBase):
 
         if clip_skip is int:
             z = outputs.hidden_states[-clip_skip]
+            return self.wrapped.transformer.text_model.final_layer_norm(z)
+        
+        ceil = math.ceil(clip_skip)
+        floor = math.floor(clip_skip)
+        alpha = clip_skip - floor
+
+        if opts.CLIP_skip_lerp_after_norm:
+            z_ceil = outputs.hidden_states[-ceil]
+            z_floor = outputs.hidden_states[-floor]
+            z_ceil = self.wrapped.transformer.text_model.final_layer_norm(z_ceil)
+            z_floor = self.wrapped.transformer.text_model.final_layer_norm(z_floor)
+            return z_ceil * alpha + z_floor * (1 - alpha)
         else:
-            ceil = math.ceil(clip_skip)
-            floor = math.floor(clip_skip)
-            alpha = clip_skip - floor
             z = outputs.hidden_states[-ceil] * alpha + outputs.hidden_states[-floor] * (1 - alpha)
-        return self.wrapped.transformer.text_model.final_layer_norm(z)
+            return self.wrapped.transformer.text_model.final_layer_norm(z)
 
     def encode_embedding_init_text(self, init_text, nvpt):
         embedding_layer = self.wrapped.transformer.text_model.embeddings
