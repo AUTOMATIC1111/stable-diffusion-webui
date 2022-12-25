@@ -271,7 +271,7 @@ class VanillaStableDiffusionSampler:
 
         return samples
 
-    def sample(self, p, x, conditioning, unconditional_conditioning, steps=None, image_conditioning=None, mimic_scale=None, threshold_enable=False):
+    def sample(self, p, x, conditioning, unconditional_conditioning, steps=None, image_conditioning=None, mimic_scale=None, hold_enable=False):
         self.initialize(p)
 
         self.init_latent = None
@@ -332,7 +332,7 @@ class CFGDenoiser(torch.nn.Module):
         unflattened = uncentered.unflatten(2, dynthresh_target.shape[2:])
         return unflattened
 
-    def combine_denoised(self, x_out, conds_list, uncond, cond_scale, mimic_scale, threhsold_enable):
+    def combine_denoised(self, x_out, conds_list, uncond, cond_scale, mimic_scale, threshold_enable):
         denoised_uncond = x_out[-uncond.shape[0]:]
         if threshold_enable:
             denoised = self._dynthresh(x_out[:-uncond.shape[0]], denoised_uncond, cond_scale, conds_list, mimic_scale)
@@ -386,7 +386,7 @@ class CFGDenoiser(torch.nn.Module):
 
             x_out[-uncond.shape[0]:] = self.inner_model(x_in[-uncond.shape[0]:], sigma_in[-uncond.shape[0]:], cond={"c_crossattn": [uncond], "c_concat": [image_cond_in[-uncond.shape[0]:]]})
 
-        denoised = self.combine_denoised(x_out, conds_list, uncond, cond_scale, mimic_scale, threhsold_enable)
+        denoised = self.combine_denoised(x_out, conds_list, uncond, cond_scale, mimic_scale, threshold_enable)
 
         if self.mask is not None:
             denoised = self.init_latent * self.mask + self.nmask * denoised
