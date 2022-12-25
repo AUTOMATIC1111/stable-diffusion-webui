@@ -658,12 +658,17 @@ def create_ui():
 
         with gr.Row().style(equal_height=False):
             with gr.Column(variant='panel', elem_id="txt2img_settings"):
-                steps = gr.Slider(minimum=1, maximum=150, step=1, label="Sampling Steps", value=20)
-                sampler_index = gr.Radio(label='Sampling method', elem_id="txt2img_sampling", choices=[x.name for x in samplers], value=samplers[0].name, type="index")
+                with gr.Row():
+                    sampler_index = gr.Dropdown(label='Sampling method', elem_id="txt2img_sampling", choices=[x.name for x in samplers], value=samplers[0].name, type="index")
+                    steps = gr.Slider(minimum=1, maximum=150, step=1, label="Sampling Steps", value=20)
 
-                with gr.Group():
-                    width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512)
-                    height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512)
+                with gr.Row(equal_height=True):
+                    with gr.Group():
+                        batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1)
+                        batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1)
+                    with gr.Group():
+                        width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512)
+                        height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512)
 
                 with gr.Row():
                     restore_faces = gr.Checkbox(label='Restore faces', value=False, visible=len(shared.face_restorers) > 1)
@@ -674,10 +679,6 @@ def create_ui():
                     firstphase_width = gr.Slider(minimum=0, maximum=1024, step=8, label="Firstpass width", value=0)
                     firstphase_height = gr.Slider(minimum=0, maximum=1024, step=8, label="Firstpass height", value=0)
                     denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.7)
-
-                with gr.Row(equal_height=True):
-                    batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1)
-                    batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1)
 
                 cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='CFG Scale', value=7.0)
 
@@ -859,20 +860,21 @@ def create_ui():
                 with gr.Row():
                     resize_mode = gr.Radio(label="Resize mode", elem_id="resize_mode", show_label=False, choices=["Just resize", "Crop and resize", "Resize and fill", "Just resize (latent upscale)"], type="index", value="Just resize")
 
-                steps = gr.Slider(minimum=1, maximum=150, step=1, label="Sampling Steps", value=20)
-                sampler_index = gr.Radio(label='Sampling method', choices=[x.name for x in samplers_for_img2img], value=samplers_for_img2img[0].name, type="index")
+                with gr.Row():
+                    sampler_index = gr.Dropdown(label='Sampling method', choices=[x.name for x in samplers_for_img2img], value=samplers_for_img2img[0].name, type="index")
+                    steps = gr.Slider(minimum=1, maximum=150, step=1, label="Sampling Steps", value=20)
 
-                with gr.Group():
-                    width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="img2img_width")
-                    height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="img2img_height")
+                with gr.Row(equal_height=True):
+                    with gr.Group():
+                        batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1)
+                        batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1)
+                    with gr.Group():
+                        width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="img2img_width")
+                        height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="img2img_height")
 
                 with gr.Row():
                     restore_faces = gr.Checkbox(label='Restore faces', value=False, visible=len(shared.face_restorers) > 1)
                     tiling = gr.Checkbox(label='Tiling', value=False)
-
-                with gr.Row():
-                    batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1)
-                    batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1)
 
                 with gr.Group():
                     cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='CFG Scale', value=7.0)
