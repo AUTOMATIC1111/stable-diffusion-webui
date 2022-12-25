@@ -121,7 +121,6 @@ class Api:
 
     def text2imgapi(self, txt2imgreq: StableDiffusionTxt2ImgProcessingAPI):
         populate = txt2imgreq.copy(update={ # Override __init__ params
-            "sd_model": shared.sd_model,
             "sampler_name": validate_sampler_name(txt2imgreq.sampler_name or txt2imgreq.sampler_index),
             "do_not_save_samples": True,
             "do_not_save_grid": True
@@ -153,7 +152,6 @@ class Api:
             mask = decode_base64_to_image(mask)
 
         populate = img2imgreq.copy(update={ # Override __init__ params
-            "sd_model": shared.sd_model,
             "sampler_name": validate_sampler_name(img2imgreq.sampler_name or img2imgreq.sampler_index),
             "do_not_save_samples": True,
             "do_not_save_grid": True,
