@@ -26,7 +26,7 @@ class LDSR:
         global cached_ldsr_model
 
         if shared.opts.ldsr_cached and cached_ldsr_model is not None:
-            print(f"Loading model from cache")
+            print("Loading model from cache")
             model: torch.nn.Module = cached_ldsr_model
         else:
             print(f"Loading model from {self.modelPath}")

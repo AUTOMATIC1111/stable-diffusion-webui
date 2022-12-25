@@ -599,7 +599,7 @@ def read_info_from_image(image):
 Negative prompt: {json_info["uc"]}
 Steps: {json_info["steps"]}, Sampler: {sampler}, CFG scale: {json_info["scale"]}, Seed: {json_info["seed"]}, Size: {image.width}x{image.height}, Clip skip: 2, ENSD: 31337"""
         except Exception:
-            print(f"Error parsing NovelAI image generation parameters:", file=sys.stderr)
+            print("Error parsing NovelAI image generation parameters:", file=sys.stderr)
             print(traceback.format_exc(), file=sys.stderr)
 
     return geninfo, items
