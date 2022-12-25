@@ -289,10 +289,6 @@ class FrozenCLIPEmbedderWithCustomWords(FrozenCLIPEmbedderWithCustomWordsBase):
         if clip_skip == 1:
             return outputs.last_hidden_state
 
-        if clip_skip is int:
-            z = outputs.hidden_states[-clip_skip]
-            return self.wrapped.transformer.text_model.final_layer_norm(z)
-        
         ceil = math.ceil(clip_skip)
         floor = math.floor(clip_skip)
         alpha = clip_skip - floor

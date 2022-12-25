@@ -446,7 +446,7 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration
         "Conditional mask weight": getattr(p, "inpainting_mask_weight", shared.opts.inpainting_mask_weight) if p.is_using_inpainting_conditioning else None,
         "Eta": (None if p.sampler is None or p.sampler.eta == p.sampler.default_eta else p.sampler.eta),
         "Clip skip": None if clip_skip <= 1 else clip_skip,
-        "Clip skip lerp after norm": None if clip_skip is int else clip_skip_lerp_after_norm,
+        "Clip skip lerp after norm": None if clip_skip <= 1 else clip_skip_lerp_after_norm,
         "ENSD": None if opts.eta_noise_seed_delta == 0 else opts.eta_noise_seed_delta,
     }
 
