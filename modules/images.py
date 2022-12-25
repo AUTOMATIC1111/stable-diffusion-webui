@@ -136,8 +136,19 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts):
                 lines.append(word)
         return lines
 
-    def draw_texts(drawing, draw_x, draw_y, lines):
+    def get_font(fontsize):
+        try:
+            return ImageFont.truetype(opts.font or Roboto, fontsize)
+        except Exception:
+            return ImageFont.truetype(Roboto, fontsize)
+
+    def draw_texts(drawing, draw_x, draw_y, lines, initial_fnt, initial_fontsize):
         for i, line in enumerate(lines):
+            fnt = initial_fnt
+            fontsize = initial_fontsize
+            while drawing.multiline_textsize(line.text, font=fnt)[0] > line.allowed_width and fontsize > 0:
+                fontsize -= 1
+                fnt = get_font(fontsize)
             drawing.multiline_text((draw_x, draw_y + line.size[1] / 2), line.text, font=fnt, fill=color_active if line.is_active else color_inactive, anchor="mm", align="center")
 
             if not line.is_active:
@@ -148,10 +159,7 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts):
     fontsize = (width + height) // 25
     line_spacing = fontsize // 2
 
-    try:
-        fnt = ImageFont.truetype(opts.font or Roboto, fontsize)
-    except Exception:
-        fnt = ImageFont.truetype(Roboto, fontsize)
+    fnt = get_font(fontsize)
 
     color_active = (0, 0, 0)
     color_inactive = (153, 153, 153)
@@ -178,6 +186,7 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts):
         for line in texts:
             bbox = calc_d.multiline_textbbox((0, 0), line.text, font=fnt)
             line.size = (bbox[2] - bbox[0], bbox[3] - bbox[1])
+            line.allowed_width = allowed_width
 
     hor_text_heights = [sum([line.size[1] + line_spacing for line in lines]) - line_spacing for lines in hor_texts]
     ver_text_heights = [sum([line.size[1] + line_spacing for line in lines]) - line_spacing * len(lines) for lines in
@@ -194,13 +203,13 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts):
         x = pad_left + width * col + width / 2
         y = pad_top / 2 - hor_text_heights[col] / 2
 
-        draw_texts(d, x, y, hor_texts[col])
+        draw_texts(d, x, y, hor_texts[col], fnt, fontsize)
 
     for row in range(rows):
         x = pad_left / 2
         y = pad_top + height * row + height / 2 - ver_text_heights[row] / 2
 
-        draw_texts(d, x, y, ver_texts[row])
+        draw_texts(d, x, y, ver_texts[row], fnt, fontsize)
 
     return result
 
@@ -429,7 +438,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
             The directory to save the image. Note, the option `save_to_dirs` will make the image to be saved into a sub directory.
         basename (`str`):
             The base filename which will be applied to `filename pattern`.
-        seed, prompt, short_filename, 
+        seed, prompt, short_filename,
         extension (`str`):
             Image file extension, default is `png`.
         pngsectionname (`str`):
@@ -590,7 +599,7 @@ def read_info_from_image(image):
 Negative prompt: {json_info["uc"]}
 Steps: {json_info["steps"]}, Sampler: {sampler}, CFG scale: {json_info["scale"]}, Seed: {json_info["seed"]}, Size: {image.width}x{image.height}, Clip skip: 2, ENSD: 31337"""
         except Exception:
-            print(f"Error parsing NovelAI iamge generation parameters:", file=sys.stderr)
+            print("Error parsing NovelAI image generation parameters:", file=sys.stderr)
             print(traceback.format_exc(), file=sys.stderr)
 
     return geninfo, items
@@ -613,3 +622,14 @@ def image_data(data):
         pass
 
     return '', None
+
+
+def flatten(img, bgcolor):
+    """replaces transparency with bgcolor (example: "#ffffff"), returning an RGB mode image with no transparency"""
+
+    if img.mode == "RGBA":
+        background = Image.new('RGBA', img.size, bgcolor)
+        background.paste(img, mask=img)
+        img = background
+
+    return img.convert('RGB')

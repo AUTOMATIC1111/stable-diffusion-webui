@@ -10,13 +10,16 @@ import numpy as np
 import modules.scripts as scripts
 import gradio as gr
 
-from modules import images, sd_samplers
+from modules import images, paths, sd_samplers
 from modules.hypernetworks import hypernetwork
 from modules.processing import process_images, Processed, StableDiffusionProcessingTxt2Img
 from modules.shared import opts, cmd_opts, state
 import modules.shared as shared
 import modules.sd_samplers
 import modules.sd_models
+import modules.sd_vae
+import glob
+import os
 import re
 
 
@@ -114,6 +117,38 @@ def apply_clip_skip(p, x, xs):
     opts.data["CLIP_stop_at_last_layers"] = x
 
 
+def apply_upscale_latent_space(p, x, xs):
+    if x.lower().strip() != '0':
+        opts.data["use_scale_latent_for_hires_fix"] = True
+    else:
+        opts.data["use_scale_latent_for_hires_fix"] = False
+
+
+def find_vae(name: str):
+    if name.lower() in ['auto', 'none']:
+        return name
+    else:
+        vae_path = os.path.abspath(os.path.join(paths.models_path, 'VAE'))
+        found = glob.glob(os.path.join(vae_path, f'**/{name}.*pt'), recursive=True)
+        if found:
+            return found[0]
+        else:
+            return 'auto'
+
+
+def apply_vae(p, x, xs):
+    if x.lower().strip() == 'none':
+        modules.sd_vae.reload_vae_weights(shared.sd_model, vae_file='None')
+    else:
+        found = find_vae(x)
+        if found:
+            v = modules.sd_vae.reload_vae_weights(shared.sd_model, vae_file=found)
+
+
+def apply_styles(p: StableDiffusionProcessingTxt2Img, x: str, _):
+    p.styles = x.split(',')
+
+
 def format_value_add_label(p, opt, x):
     if type(x) == float:
         x = round(x, 8)
@@ -167,7 +202,10 @@ axis_options = [
     AxisOption("Eta", float, apply_field("eta"), format_value_add_label, None),
     AxisOption("Clip skip", int, apply_clip_skip, format_value_add_label, None),
     AxisOption("Denoising", float, apply_field("denoising_strength"), format_value_add_label, None),
+    AxisOption("Upscale latent space for hires.", str, apply_upscale_latent_space, format_value_add_label, None),
     AxisOption("Cond. Image Mask Weight", float, apply_field("inpainting_mask_weight"), format_value_add_label, None),
+    AxisOption("VAE", str, apply_vae, format_value_add_label, None),
+    AxisOption("Styles", str, apply_styles, format_value_add_label, None),
 ]
 
 
@@ -229,14 +267,18 @@ class SharedSettingsStackHelper(object):
         self.CLIP_stop_at_last_layers = opts.CLIP_stop_at_last_layers
         self.hypernetwork = opts.sd_hypernetwork
         self.model = shared.sd_model
+        self.use_scale_latent_for_hires_fix = opts.use_scale_latent_for_hires_fix
+        self.vae = opts.sd_vae
   
     def __exit__(self, exc_type, exc_value, tb):
         modules.sd_models.reload_model_weights(self.model)
+        modules.sd_vae.reload_vae_weights(self.model, vae_file=find_vae(self.vae))
 
         hypernetwork.load_hypernetwork(self.hypernetwork)
         hypernetwork.apply_strength()
 
         opts.data["CLIP_stop_at_last_layers"] = self.CLIP_stop_at_last_layers
+        opts.data["use_scale_latent_for_hires_fix"] = self.use_scale_latent_for_hires_fix
 
 
 re_range = re.compile(r"\s*([+-]?\s*\d+)\s*-\s*([+-]?\s*\d+)(?:\s*\(([+-]\d+)\s*\))?\s*")

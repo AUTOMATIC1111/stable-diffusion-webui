@@ -10,13 +10,17 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from secrets import compare_digest
 
 import modules.shared as shared
-from modules import sd_samplers, deepbooru
+from modules import sd_samplers, deepbooru, sd_hijack
 from modules.api.models import *
 from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img, process_images
 from modules.extras import run_extras, run_pnginfo
+from modules.textual_inversion.textual_inversion import create_embedding, train_embedding
+from modules.textual_inversion.preprocess import preprocess
+from modules.hypernetworks.hypernetwork import create_hypernetwork, train_hypernetwork
 from PIL import PngImagePlugin,Image
 from modules.sd_models import checkpoints_list
 from modules.realesrgan_model import get_realesrgan_models
+from modules import devices
 from typing import List
 
 def upscaler_to_index(name: str):
@@ -67,10 +71,10 @@ def encode_pil_to_base64(image):
 class Api:
     def __init__(self, app: FastAPI, queue_lock: Lock):
         if shared.cmd_opts.api_auth:
-            self.credenticals = dict()
+            self.credentials = dict()
             for auth in shared.cmd_opts.api_auth.split(","):
                 user, password = auth.split(":")
-                self.credenticals[user] = password
+                self.credentials[user] = password
 
         self.router = APIRouter()
         self.app = app
@@ -93,18 +97,24 @@ class Api:
         self.add_api_route("/sdapi/v1/hypernetworks", self.get_hypernetworks, methods=["GET"], response_model=List[HypernetworkItem])
         self.add_api_route("/sdapi/v1/face-restorers", self.get_face_restorers, methods=["GET"], response_model=List[FaceRestorerItem])
         self.add_api_route("/sdapi/v1/realesrgan-models", self.get_realesrgan_models, methods=["GET"], response_model=List[RealesrganItem])
-        self.add_api_route("/sdapi/v1/prompt-styles", self.get_promp_styles, methods=["GET"], response_model=List[PromptStyleItem])
+        self.add_api_route("/sdapi/v1/prompt-styles", self.get_prompt_styles, methods=["GET"], response_model=List[PromptStyleItem])
         self.add_api_route("/sdapi/v1/artist-categories", self.get_artists_categories, methods=["GET"], response_model=List[str])
         self.add_api_route("/sdapi/v1/artists", self.get_artists, methods=["GET"], response_model=List[ArtistItem])
+        self.add_api_route("/sdapi/v1/refresh-checkpoints", self.refresh_checkpoints, methods=["POST"])
+        self.add_api_route("/sdapi/v1/create/embedding", self.create_embedding, methods=["POST"], response_model=CreateResponse)
+        self.add_api_route("/sdapi/v1/create/hypernetwork", self.create_hypernetwork, methods=["POST"], response_model=CreateResponse)
+        self.add_api_route("/sdapi/v1/preprocess", self.preprocess, methods=["POST"], response_model=PreprocessResponse)
+        self.add_api_route("/sdapi/v1/train/embedding", self.train_embedding, methods=["POST"], response_model=TrainResponse)
+        self.add_api_route("/sdapi/v1/train/hypernetwork", self.train_hypernetwork, methods=["POST"], response_model=TrainResponse)
 
     def add_api_route(self, path: str, endpoint, **kwargs):
         if shared.cmd_opts.api_auth:
             return self.app.add_api_route(path, endpoint, dependencies=[Depends(self.auth)], **kwargs)
         return self.app.add_api_route(path, endpoint, **kwargs)
 
-    def auth(self, credenticals: HTTPBasicCredentials = Depends(HTTPBasic())):
-        if credenticals.username in self.credenticals:
-            if compare_digest(credenticals.password, self.credenticals[credenticals.username]):
+    def auth(self, credentials: HTTPBasicCredentials = Depends(HTTPBasic())):
+        if credentials.username in self.credentials:
+            if compare_digest(credentials.password, self.credentials[credentials.username]):
                 return True
 
         raise HTTPException(status_code=401, detail="Incorrect username or password", headers={"WWW-Authenticate": "Basic"})
@@ -180,7 +190,7 @@ class Api:
         reqDict['image'] = decode_base64_to_image(reqDict['image'])
 
         with self.queue_lock:
-            result = run_extras(extras_mode=0, image_folder="", input_dir="", output_dir="", **reqDict)
+            result = run_extras(extras_mode=0, image_folder="", input_dir="", output_dir="", save_output=False, **reqDict)
 
         return ExtrasSingleImageResponse(image=encode_pil_to_base64(result[0][0]), html_info=result[1])
 
@@ -196,7 +206,7 @@ class Api:
         reqDict.pop('imageList')
 
         with self.queue_lock:
-            result = run_extras(extras_mode=1, image="", input_dir="", output_dir="", **reqDict)
+            result = run_extras(extras_mode=1, image="", input_dir="", output_dir="", save_output=False, **reqDict)
 
         return ExtrasBatchImagesResponse(images=list(map(encode_pil_to_base64, result[0])), html_info=result[1])
 
@@ -239,7 +249,7 @@ class Api:
     def interrogateapi(self, interrogatereq: InterrogateRequest):
         image_b64 = interrogatereq.image
         if image_b64 is None:
-            raise HTTPException(status_code=404, detail="Image not found") 
+            raise HTTPException(status_code=404, detail="Image not found")
 
         img = decode_base64_to_image(image_b64)
         img = img.convert('RGB')
@@ -252,7 +262,7 @@ class Api:
                 processed = deepbooru.model.tag(img)
             else:
                 raise HTTPException(status_code=404, detail="Model not found")
-        
+
         return InterrogateResponse(caption=processed)
 
     def interruptapi(self):
@@ -308,7 +318,7 @@ class Api:
     def get_realesrgan_models(self):
         return [{"name":x.name,"path":x.data_path, "scale":x.scale} for x in get_realesrgan_models(None)]
 
-    def get_promp_styles(self):
+    def get_prompt_styles(self):
         styleList = []
         for k in shared.prompt_styles.styles:
             style = shared.prompt_styles.styles[k]
@@ -321,6 +331,92 @@ class Api:
 
     def get_artists(self):
         return [{"name":x[0], "score":x[1], "category":x[2]} for x in shared.artist_db.artists]
+
+    def refresh_checkpoints(self):
+        shared.refresh_checkpoints()
+
+    def create_embedding(self, args: dict):
+        try:
+            shared.state.begin()
+            filename = create_embedding(**args) # create empty embedding
+            sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings() # reload embeddings so new one can be immediately used
+            shared.state.end()
+            return CreateResponse(info = "create embedding filename: {filename}".format(filename = filename))
+        except AssertionError as e:
+            shared.state.end()
+            return TrainResponse(info = "create embedding error: {error}".format(error = e))
+
+    def create_hypernetwork(self, args: dict):
+        try:
+            shared.state.begin()
+            filename = create_hypernetwork(**args) # create empty embedding
+            shared.state.end()
+            return CreateResponse(info = "create hypernetwork filename: {filename}".format(filename = filename))
+        except AssertionError as e:
+            shared.state.end()
+            return TrainResponse(info = "create hypernetwork error: {error}".format(error = e))
+
+    def preprocess(self, args: dict):
+        try:
+            shared.state.begin()
+            preprocess(**args) # quick operation unless blip/booru interrogation is enabled
+            shared.state.end()
+            return PreprocessResponse(info = 'preprocess complete')
+        except KeyError as e:
+            shared.state.end()
+            return PreprocessResponse(info = "preprocess error: invalid token: {error}".format(error = e))
+        except AssertionError as e:
+            shared.state.end()
+            return PreprocessResponse(info = "preprocess error: {error}".format(error = e))
+        except FileNotFoundError as e:
+            shared.state.end()
+            return PreprocessResponse(info = 'preprocess error: {error}'.format(error = e))
+
+    def train_embedding(self, args: dict):
+        try:
+            shared.state.begin()
+            apply_optimizations = shared.opts.training_xattention_optimizations
+            error = None
+            filename = ''
+            if not apply_optimizations:
+                sd_hijack.undo_optimizations()
+            try:
+                embedding, filename = train_embedding(**args) # can take a long time to complete
+            except Exception as e:
+                error = e
+            finally:
+                if not apply_optimizations:
+                    sd_hijack.apply_optimizations()
+                shared.state.end()
+            return TrainResponse(info = "train embedding complete: filename: {filename} error: {error}".format(filename = filename, error = error))
+        except AssertionError as msg:
+            shared.state.end()
+            return TrainResponse(info = "train embedding error: {msg}".format(msg = msg))
+
+    def train_hypernetwork(self, args: dict):
+        try:
+            shared.state.begin()
+            initial_hypernetwork = shared.loaded_hypernetwork
+            apply_optimizations = shared.opts.training_xattention_optimizations
+            error = None
+            filename = ''
+            if not apply_optimizations:
+                sd_hijack.undo_optimizations()
+            try:
+                hypernetwork, filename = train_hypernetwork(*args)
+            except Exception as e:
+                error = e
+            finally:
+                shared.loaded_hypernetwork = initial_hypernetwork
+                shared.sd_model.cond_stage_model.to(devices.device)
+                shared.sd_model.first_stage_model.to(devices.device)
+                if not apply_optimizations:
+                    sd_hijack.apply_optimizations()
+                shared.state.end()
+            return TrainResponse(info = "train embedding complete: filename: {filename} error: {error}".format(filename = filename, error = error))
+        except AssertionError as msg:
+            shared.state.end()
+            return TrainResponse(info = "train embedding error: {error}".format(error = error))
 
     def launch(self, server_name, port):
         self.app.include_router(self.router)

@@ -133,7 +133,7 @@ class EmbeddingDatabase:
 
                 process_file(fullfn, fn)
             except Exception:
-                print(f"Error loading emedding {fn}:", file=sys.stderr)
+                print(f"Error loading embedding {fn}:", file=sys.stderr)
                 print(traceback.format_exc(), file=sys.stderr)
                 continue
 
@@ -194,7 +194,7 @@ def write_loss(log_directory, filename, step, epoch_len, values):
             csv_writer.writeheader()
 
         epoch = (step - 1) // epoch_len
-        epoch_step = (step - 1) % epoch_len 
+        epoch_step = (step - 1) % epoch_len
 
         csv_writer.writerow({
             "step": step,
@@ -263,16 +263,16 @@ def train_embedding(embedding_name, learn_rate, batch_size, gradient_step, data_
 
     initial_step = embedding.step or 0
     if initial_step >= steps:
-        shared.state.textinfo = f"Model has already been trained beyond specified max steps"
+        shared.state.textinfo = "Model has already been trained beyond specified max steps"
         return embedding, filename
     scheduler = LearnRateScheduler(learn_rate, steps, initial_step)
 
    # dataset loading may take a while, so input validations and early returns should be done before this
     shared.state.textinfo = f"Preparing dataset from {html.escape(data_root)}..."
     old_parallel_processing_allowed = shared.parallel_processing_allowed
-    
+
     pin_memory = shared.opts.pin_memory
-    
+
     ds = modules.textual_inversion.dataset.PersonalizedBase(data_root=data_root, width=training_width, height=training_height, repeats=shared.opts.training_image_repeats_per_epoch, placeholder_token=embedding_name, model=shared.sd_model, cond_model=shared.sd_model.cond_stage_model, device=devices.device, template_file=template_file, batch_size=batch_size, gradient_step=gradient_step, shuffle_tags=shuffle_tags, tag_drop_out=tag_drop_out, latent_sampling_method=latent_sampling_method)
 
     latent_sampling_method = ds.latent_sampling_method
@@ -295,12 +295,12 @@ def train_embedding(embedding_name, learn_rate, batch_size, gradient_step, data_
     loss_step = 0
     _loss_step = 0 #internal
 
-    
+
     last_saved_file = "<none>"
     last_saved_image = "<none>"
     forced_filename = "<none>"
     embedding_yet_to_be_embedded = False
-    
+
     pbar = tqdm.tqdm(total=steps - initial_step)
     try:
         for i in range((steps-initial_step) * gradient_step):
@@ -327,10 +327,10 @@ def train_embedding(embedding_name, learn_rate, batch_size, gradient_step, data_
                     c = shared.sd_model.cond_stage_model(batch.cond_text)
                     loss = shared.sd_model(x, c)[0] / gradient_step
                     del x
-                    
+
                     _loss_step += loss.item()
                 scaler.scale(loss).backward()
-                
+
                 # go back until we reach gradient accumulation steps
                 if (j + 1) % gradient_step != 0:
                     continue
