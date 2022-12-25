@@ -35,8 +35,9 @@ class Script(scripts.Script):
         seed = p.seed
 
         init_img = p.init_images[0]
+        init_img = images.flatten(init_img, opts.img2img_background_color)
 
-        if (upscaler.name != "None"):
+        if upscaler.name != "None":
             img = upscaler.scaler.upscale(init_img, scale_factor, upscaler.data_path)
         else:
             img = init_img
