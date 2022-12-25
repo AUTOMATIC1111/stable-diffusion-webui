@@ -200,7 +200,7 @@ axis_options = [
     AxisOption("Sigma max", float, apply_field("s_tmax"), format_value_add_label, None),
     AxisOption("Sigma noise", float, apply_field("s_noise"), format_value_add_label, None),
     AxisOption("Eta", float, apply_field("eta"), format_value_add_label, None),
-    AxisOption("Clip skip", int, apply_clip_skip, format_value_add_label, None),
+    AxisOption("Clip skip", float, apply_clip_skip, format_value_add_label, None),
     AxisOption("Denoising", float, apply_field("denoising_strength"), format_value_add_label, None),
     AxisOption("Upscale latent space for hires.", str, apply_upscale_latent_space, format_value_add_label, None),
     AxisOption("Cond. Image Mask Weight", float, apply_field("inpainting_mask_weight"), format_value_add_label, None),

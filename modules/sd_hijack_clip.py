@@ -283,15 +283,20 @@ class FrozenCLIPEmbedderWithCustomWords(FrozenCLIPEmbedderWithCustomWordsBase):
         return tokenized
 
     def encode_with_transformers(self, tokens):
-        outputs = self.wrapped.transformer(input_ids=tokens, output_hidden_states=-opts.CLIP_stop_at_last_layers)
+        clip_skip = opts.CLIP_stop_at_last_layers
+        outputs = self.wrapped.transformer(input_ids=tokens, output_hidden_states=-clip_skip)
 
-        if opts.CLIP_stop_at_last_layers > 1:
-            z = outputs.hidden_states[-opts.CLIP_stop_at_last_layers]
-            z = self.wrapped.transformer.text_model.final_layer_norm(z)
+        if clip_skip == 1:
+            return outputs.last_hidden_state
+
+        if clip_skip is int:
+            z = outputs.hidden_states[-clip_skip]
         else:
-            z = outputs.last_hidden_state
-
-        return z
+            ceil = math.ceil(clip_skip)
+            floor = math.floor(clip_skip)
+            alpha = clip_skip - floor
+            z = outputs.hidden_states[-ceil] * alpha + outputs.hidden_states[-floor] * (1 - alpha)
+        return self.wrapped.transformer.text_model.final_layer_norm(z)
 
     def encode_embedding_init_text(self, init_text, nvpt):
         embedding_layer = self.wrapped.transformer.text_model.embeddings
