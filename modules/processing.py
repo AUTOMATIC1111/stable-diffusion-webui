@@ -250,12 +250,8 @@ class Processed:
         self.width = p.width
         self.height = p.height
         self.sampler_name = p.sampler_name
-        self.sampler_name_hr = p.sampler_name_hr
         self.cfg_scale = p.cfg_scale
-        self.cfg_scale_hr = p.cfg_scale_hr
-        self.latent_upscale_hr = p.latent_upscale_hr
         self.steps = p.steps
-        self.steps_hr = p.steps_hr
         self.batch_size = p.batch_size
         self.restore_faces = p.restore_faces
         self.face_restoration_model = opts.face_restoration_model if p.restore_faces else None
@@ -302,12 +298,8 @@ class Processed:
             "width": self.width,
             "height": self.height,
             "sampler_name": self.sampler_name,
-            "sampler_name_hr": self.sampler_name_hr,
             "cfg_scale": self.cfg_scale,
-            "cfg_scale_hr": self.cfg_scale_hr,
-            "latent_upscale_hr": self.latent_upscale_hr,
             "steps": self.steps,
-            "steps_hr": self.steps_hr,
             "batch_size": self.batch_size,
             "restore_faces": self.restore_faces,
             "face_restoration_model": self.face_restoration_model,
@@ -434,12 +426,8 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration
 
     generation_params = {
         "Steps": p.steps,
-        "First Pass Steps": p.steps_hr,
         "Sampler": p.sampler_name,
-        "First Pass Sampler": p.sampler_name_hr,
         "CFG scale": p.cfg_scale,
-        "First Pass CFG": p.cfg_scale_hr,
-        "Latent Upscale": p.latent_upscale_hr,
         "Seed": all_seeds[index],
         "Face restoration": (opts.face_restoration_model if p.restore_faces else None),
         "Size": f"{p.width}x{p.height}",
@@ -683,6 +671,10 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         self.latent_upscale_hr = latent_upscale_hr
         if self.enable_hr:
             self.extra_generation_params["First pass size"] = f"{self.firstphase_width}x{self.firstphase_height}"
+            self.extra_generation_params["First Pass Steps"] = self.steps_hr
+            self.extra_generation_params["First Pass Sampler"] = self.sampler_name_hr
+            self.extra_generation_params["First Pass CFG"] = self.cfg_scale_hr
+            self.extra_generation_params["Latent Upscale"] = self.latent_upscale_hr
 
     def init(self, all_prompts, all_seeds, all_subseeds):
         if self.enable_hr:
