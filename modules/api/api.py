@@ -254,6 +254,12 @@ class Api:
         img = decode_base64_to_image(image_b64)
         img = img.convert('RGB')
 
+        shared.opts.interrogate_return_ranks = interrogatereq.return_ranks
+        shared.opts.interrogate_use_builtin_artists = interrogatereq.use_builtin_artists
+        shared.opts.interrogate_clip_num_beams = interrogatereq.clip_num_beams
+        shared.opts.interrogate_clip_min_length = interrogatereq.clip_min_length
+        shared.opts.interrogate_clip_max_length = interrogatereq.clip_max_length
+
         # Override object param
         with self.queue_lock:
             if interrogatereq.model == "clip":

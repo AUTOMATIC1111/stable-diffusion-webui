@@ -171,6 +171,11 @@ class ProgressResponse(BaseModel):
 class InterrogateRequest(BaseModel):
     image: str = Field(default="", title="Image", description="Image to work on, must be a Base64 string containing the image's data.")
     model: str = Field(default="clip", title="Model", description="The interrogate model used.")
+    return_ranks: bool = Field(default=False, title="Return ranks")
+    use_builtin_artists: bool = Field(default=False, title="Append artist name")
+    clip_num_beams: int = Field(default=1, title="Number of beams for CLiP", ge=1)
+    clip_min_length: int = Field(default=16, title="Minimum length", ge=1)
+    clip_max_length: int = Field(default=64, title="Maximum length", ge=1)
 
 class InterrogateResponse(BaseModel):
     caption: str = Field(default=None, title="Caption", description="The generated caption for the image.")
