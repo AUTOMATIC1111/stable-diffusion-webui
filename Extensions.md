@@ -249,27 +249,39 @@ Allows you to manually edit textual inversion embeddings using sliders.
 ![image](https://user-images.githubusercontent.com/98228077/208331138-cdfe8f43-78f7-499e-b746-c42355ee8d6d.png)
 
 ## seed travel
-https://github.com/yownas/seed_travel.git
+https://github.com/yownas/seed_travel
 
 Small script for AUTOMATIC1111/stable-diffusion-webui to create images that exists between seeds.
 
+<img src="https://github.com/ClashSAN/bloated-gifs/blob/main/seedtravel.gif" width="512" height="512" />
 
 ## shift-attention
-https://github.com/yownas/shift-attention.git
+https://github.com/yownas/shift-attention
 
 Generate a sequence of images shifting attention in the prompt. This script enables you to give a range to the weight of tokens in a prompt and then generate a sequence of images stepping from the first one to the second.
+
+https://user-images.githubusercontent.com/13150150/193368939-c0a57440-1955-417c-898a-ccd102e207a5.mp4
 
 ## prompt travel
 https://github.com/Kahsolt/stable-diffusion-webui-prompt-travel
 
 Extension script for AUTOMATIC1111/stable-diffusion-webui to travel between prompts in latent space.
 
+<img src="https://github.com/ClashSAN/bloated-gifs/blob/main/prompt_travel.gif" width="512" height="512" />
+
+## Sonar
+https://github.com/Kahsolt/stable-diffusion-webui-sonar
+
+Improve the generated image quality, searches for similar (yet even better!) images in the neighborhood of some known image, focuses on single prompt optimization rather than traveling between multiple prompts.
+
+![image](https://user-images.githubusercontent.com/98228077/209545702-c796a3f8-4d8c-4e2b-9b2e-920008ec2f32.png)![image](https://user-images.githubusercontent.com/98228077/209545756-31c94fec-d783-447f-8aac-4a5bba43ea15.png)
+
 ## Detection Detailer
 https://github.com/dustysys/ddetailer
 
 An object detection and auto-mask extension for Stable Diffusion web UI.
 
-![image](https://user-images.githubusercontent.com/98228077/208331343-eb272451-ef41-4bbd-90e5-ed27d0a59769.png)
+<img src="https://github.com/dustysys/ddetailer/raw/master/misc/ddetailer_example_3.gif"/>
 
 ## conditioning-highres-fix
 https://github.com/klimaleksus/stable-diffusion-webui-conditioning-highres-fix
@@ -326,6 +338,7 @@ Multiple lane merge support(up to 10). Save and Load your merging combination as
 
 also see:\
 https://github.com/Maurdekye/model-kitchen
+
 ## Depth Maps
 https://github.com/thygate/stable-diffusion-webui-depthmap-script
 
@@ -344,6 +357,8 @@ It is a depth aware extension that can help to create multiple complex subjects 
 https://github.com/Extraltodeus/depthmap2mask
 
 Create masks for img2img based on a depth estimation made by MiDaS.
+
+![image](https://user-images.githubusercontent.com/15731540/204050868-eca8db02-2193-4115-a5b8-e8f5c796e035.png)![image](https://user-images.githubusercontent.com/15731540/204050888-41b00335-50b4-4328-8cfd-8fc5e9cec78b.png)![image](https://user-images.githubusercontent.com/15731540/204050899-8757b774-f2da-4c15-bfa7-90d8270e8287.png)
 
 ## ABG_extension
 https://github.com/KutsuyaYuki/ABG_extension
@@ -378,7 +393,10 @@ Build a yaml file filled with prompts of your character, hit generate, and quick
 ## embedding-inspector
 https://github.com/tkalayci71/embedding-inspector
 
-Inspect any token(a word) or Textual-Inversion embeddings and find out which embeddings are similar. You can mix, modify, or create the embeddings in seconds.
+Inspect any token(a word) or Textual-Inversion embeddings and find out which embeddings are similar. You can mix, modify, or create the embeddings in seconds. Much more intriguing options have since been released, see [here.](https://github.com/tkalayci71/embedding-inspector#whats-new)
+
+![image](https://user-images.githubusercontent.com/98228077/209546038-3f4206bf-2c43-4d58-bf83-6318ade393f4.png)
+
 ## Infinity Grid Generator
 https://github.com/mcmonkeyprojects/sd-infinity-grid-generator-script
 
@@ -408,6 +426,8 @@ https://github.com/Gerschel/sd_web_ui_preset_utils
 
 Preset tool for UI. Planned support for some other custom scripts.
 
+![image](https://user-images.githubusercontent.com/98228077/209540881-2a870282-edb6-4c94-869b-5493cdced01f.png)
+
 ## DH Patch
 https://github.com/d8ahazard/sd_auto_fix
 
@@ -416,7 +436,9 @@ Random patches by D8ahazard. Auto-load config YAML files for v2, 2.1 models; pat
 ## Riffusion
 https://github.com/enlyth/sd-webui-riffusion
 
-Use Riffusion model to produce music in gradio, see readme for interpolation technique.
+Use Riffusion model to produce music in gradio. To replicate [original](https://www.riffusion.com/about) interpolation technique, input the [prompt travel extension](https://github.com/Kahsolt/stable-diffusion-webui-prompt-travel) output frames into the riffusion tab.
+
+![image](https://user-images.githubusercontent.com/98228077/209539460-f5c23891-b5e6-46c7-b1a5-b7440a3f031b.png)![image](https://user-images.githubusercontent.com/98228077/209539472-031e623e-f7a2-4da9-9711-8bf73d0cfe6e.png)
 
 ## Save Intermediate Images
 https://github.com/AlUlkesh/sd_save_intermediate_images
