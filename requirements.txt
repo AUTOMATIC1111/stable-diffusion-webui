@@ -1,3 +1,4 @@
+--extra-index-url https://download.pytorch.org/whl/cu117
 blendmodes
 accelerate
 basicsr
@@ -9,7 +10,7 @@ gradio==3.9
 invisible-watermark
 numpy
 omegaconf
-opencv-python
+opencv-python-headless
 requests
 piexif
 Pillow
@@ -18,7 +19,7 @@ realesrgan
 scikit-image>=0.19
 timm==0.4.12
 transformers==4.19.2
-torch
+torch==1.13.1+cu117
 einops
 jsonmerge
 clean-fid
@@ -31,3 +32,4 @@ GitPython
 torchsde
 safetensors
 psutil; sys_platform == 'darwin'
+xformers==0.0.16rc396
