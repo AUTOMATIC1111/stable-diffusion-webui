@@ -656,8 +656,9 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
 class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
     sampler = None
+    valid_latent_upscale_methods = ["nearest-exact", "bilinear", "area"]
 
-    def __init__(self, enable_hr: bool=False, denoising_strength: float=0.75, firstphase_width: int=0, firstphase_height: int=0, sampler_name_hr: str="", steps_hr: int=0, cfg_scale_hr: float=0.0, latent_upscale_hr: str="", **kwargs):
+    def __init__(self, enable_hr: bool=False, denoising_strength: float=0.75, firstphase_width: int=0, firstphase_height: int=0, sampler_name_hr: str=None, steps_hr: int=None, cfg_scale_hr: float=None, latent_upscale_hr: str=None, **kwargs):
         super().__init__(**kwargs)
         self.enable_hr = enable_hr
         self.denoising_strength = denoising_strength
@@ -669,12 +670,26 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         self.steps_hr = steps_hr
         self.cfg_scale_hr = cfg_scale_hr
         self.latent_upscale_hr = latent_upscale_hr
+
         if self.enable_hr:
             self.extra_generation_params["First pass size"] = f"{self.firstphase_width}x{self.firstphase_height}"
-            self.extra_generation_params["First Pass Steps"] = self.steps_hr
-            self.extra_generation_params["First Pass Sampler"] = self.sampler_name_hr
-            self.extra_generation_params["First Pass CFG"] = self.cfg_scale_hr
-            self.extra_generation_params["Latent Upscale"] = self.latent_upscale_hr
+            if self.steps_hr is not None:
+                self.extra_generation_params["First Pass Steps"] = self.steps_hr
+            else:
+                self.steps_hr = self.steps
+
+            if self.sampler_name_hr is not None:
+                self.extra_generation_params["First Pass Sampler"] = self.sampler_name_hr
+            else:
+                self.sampler_name_hr = self.sampler_name
+
+            if self.cfg_scale_hr is not None:
+                self.extra_generation_params["First Pass CFG"] = self.cfg_scale_hr
+            else:
+                self.cfg_scale_hr = self.cfg_scale
+
+            if self.latent_upscale_hr is not None:
+                self.extra_generation_params["Latent Upscale"] = self.latent_upscale_hr
 
     def init(self, all_prompts, all_seeds, all_subseeds):
         if self.enable_hr:
@@ -733,7 +748,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
             images.save_image(image, self.outpath_samples, "", seeds[index], prompts[index], opts.samples_format, suffix="-before-highres-fix")
 
-        if self.latent_upscale_hr in ["nearest-exact", "bilinear", "area"]:
+        if self.latent_upscale_hr in self.valid_latent_upscale_methods:
             for i in range(samples.shape[0]):
                 save_intermediate(samples, i)
 

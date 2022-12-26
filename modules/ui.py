@@ -671,14 +671,18 @@ def create_ui():
                     enable_hr = gr.Checkbox(label='Highres. fix', value=False)
 
                 with gr.Group(visible=False) as hr_options:
-                    steps_hr = gr.Slider(minimum=1, maximum=150, step=1, label="Firstpass Steps", value=20)
-                    sampler_index_hr = gr.Radio(label='Firstpass Sampling method', elem_id="txt2img_sampling_hr", choices=[x.name for x in samplers], value=samplers[0].name, type="index")
-                    latent_upscale_hr = gr.Radio(label='Latent upscaling method', choices=["Disabled", "nearest-exact", "bilinear", "area"], value=samplers[0].name, type="value")
-                    cfg_scale_hr = gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='Firstpass CFG Scale', value=7.0)
                     with gr.Row():
                         firstphase_width = gr.Slider(minimum=0, maximum=2048, step=8, label="Firstpass width", value=0)
                         firstphase_height = gr.Slider(minimum=0, maximum=2048, step=8, label="Firstpass height", value=0)
                         denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.7)
+
+                    enable_advanced_hr = gr.Checkbox(label='Firstpass Advanced Options', value=False)
+                    with gr.Group(visible=False) as advanced_hr_options:
+                        steps_hr = gr.Slider(minimum=1, maximum=150, step=1, label="Firstpass Steps", value=20)
+                        sampler_index_hr = gr.Radio(label='Firstpass Sampling method', elem_id="txt2img_sampling_hr", choices=[x.name for x in samplers], value=0, type="index")
+                        cfg_scale_hr = gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='Firstpass CFG Scale', value=7.0)
+                        latent_upscale_choices = ["Disabled", "nearest-exact", "bilinear", "area"]
+                        latent_upscale_hr = gr.Radio(label='Latent upscaling method. If disabled regular pixel space upscaling will be used.', choices=latent_upscale_choices, type="value", value=latent_upscale_choices[0])
 
                 with gr.Row(equal_height=True):
                     batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1)
@@ -720,6 +724,7 @@ def create_ui():
                     denoising_strength,
                     firstphase_width,
                     firstphase_height,
+                    enable_advanced_hr,
                     sampler_index_hr,
                     steps_hr,
                     cfg_scale_hr,
@@ -754,6 +759,12 @@ def create_ui():
                 outputs=[hr_options],
             )
 
+            enable_advanced_hr.change(
+                fn=lambda x: gr_show(x),
+                inputs=[enable_advanced_hr],
+                outputs=[advanced_hr_options],
+            )
+
             roll.click(
                 fn=roll_artist,
                 _js="update_txt2img_tokens",
@@ -785,6 +796,8 @@ def create_ui():
                 (hr_options, lambda d: gr.Row.update(visible="Denoising strength" in d)),
                 (firstphase_width, "First pass size-1"),
                 (firstphase_height, "First pass size-2"),
+                (enable_advanced_hr, lambda d: "First Pass Sampler" in d),
+                (advanced_hr_options, lambda d: gr.Row.update(visible="First Pass Sampler" in d)),
                 (sampler_index_hr, "First Pass Sampler"),
                 (steps_hr, "First Pass Steps"),
                 (cfg_scale_hr, "First Pass CFG"),
