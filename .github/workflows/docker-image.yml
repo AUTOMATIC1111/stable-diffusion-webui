@@ -26,10 +26,11 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       -
         name: Calculate short SHA
-        run: echo "SHORT_SHA=`echo ${GITHUB_SHA} | cut -c1-8`" >> $GITHUB_ENV
+        id: vars
+        run: echo "sha_short=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
       -
         name: Build and push
         uses: docker/build-push-action@v3
         with:
           push: true
-          tags: mobici/sd-server:${SHORT_SHA}
+          tags: mobici/sd-server:${{ steps.vars.outputs.sha_short }}
