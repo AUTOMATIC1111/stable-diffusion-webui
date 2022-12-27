@@ -176,6 +176,7 @@ class InterrogateRequest(BaseModel):
     clip_num_beams: int = Field(default=1, title="Number of beams for CLiP", ge=1)
     clip_min_length: int = Field(default=16, title="Minimum length", ge=1)
     clip_max_length: int = Field(default=64, title="Maximum length", ge=1)
+    deepbooru_score_threshold: float = Field(default=0.5, title="deepbooru score threshold")
 
 class InterrogateResponse(BaseModel):
     caption: str = Field(default=None, title="Caption", description="The generated caption for the image.")

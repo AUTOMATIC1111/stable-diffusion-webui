@@ -259,6 +259,7 @@ class Api:
         shared.opts.interrogate_clip_num_beams = interrogatereq.clip_num_beams
         shared.opts.interrogate_clip_min_length = interrogatereq.clip_min_length
         shared.opts.interrogate_clip_max_length = interrogatereq.clip_max_length
+        shared.opts.interrogate_deepbooru_score_threshold = interrogatereq.deepbooru_score_threshold
 
         # Override object param
         with self.queue_lock:
