@@ -424,7 +424,7 @@ Adds a configurable dropdown to allow you to change UI preset settings in the tx
 ## Preset Utilities
 https://github.com/Gerschel/sd_web_ui_preset_utils
 
-Preset tool for UI. Planned support for some other custom scripts.
+Preset tool for UI. Supports presets for some custom scripts.
 
 ![image](https://user-images.githubusercontent.com/98228077/209540881-2a870282-edb6-4c94-869b-5493cdced01f.png)
 
@@ -458,3 +458,17 @@ A tab with the full openOutpaint UI. Run with the --api flag.
 https://github.com/OedoSoldier/enhanced-img2img
 
 An extension with support for batched and better inpainting.
+
+## sd-model-preview
+https://github.com/Vetchems/sd-model-preview
+
+Allows you to create a txt file and jpg/png's with the same name as your model and have this info easily displayed for later reference in webui.
+
+![image](https://user-images.githubusercontent.com/98228077/209715309-3c523945-5345-4e3d-b1a3-14f923e1bb40.png)
+
+## model-keyword
+https://github.com/mix1009/model-keyword
+
+Inserts matching keyword(s) to the prompt automatically. Update extension to get the latest model+keyword mappings.
+
+![image](https://user-images.githubusercontent.com/98228077/209717531-e0ae74ab-b753-4ad1-99b2-e1eda3de5433.png)
