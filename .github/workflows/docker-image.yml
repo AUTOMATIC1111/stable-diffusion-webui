@@ -25,8 +25,12 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       -
+        name: Calculate short SHA
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+      -
         name: Build and push
         uses: docker/build-push-action@v3
         with:
           push: true
-          tags: mobici/sd-server:${GITHUB_SHA::6}
+          tags: mobici/sd-server:${{ steps.vars.outputs.sha_short }}
