@@ -71,7 +71,7 @@
 		{
 			"name": "Dataset Tag Editor",
 			"url": "https://github.com/toshiaki1729/stable-diffusion-webui-dataset-tag-editor",
-			"description": "Lets you edit captions in training datasets.",
+			"description": "Feature-rich UI tab that allows image viewing, search-filtering and editing.",
 			"tags": ["script", "tab"]
 		},
 		{
@@ -117,16 +117,22 @@
 			"tags": ["script", "tab"]
 		},
 		{
-			"name": "Latent Mirroring",
-			"url": "https://github.com/dfaker/SD-latent-mirroring",
-			"description": "Applies mirroring and flips to the latent images to produce anything from subtle balanced compositions to perfect reflections",
-			"tags": ["script"]
-		},
-		{
 			"name": "Embeddings editor",
 			"url": "https://github.com/CodeExplode/stable-diffusion-webui-embedding-editor.git",
 			"description": "Allows you to manually edit textual inversion embeddings using sliders.",
 			"tags": ["script", "tab"]
+		},
+		{
+			"name": "embedding-inspector",
+			"url": "https://github.com/tkalayci71/embedding-inspector.git",
+			"description": "Inspect any token(a word) or Textual-Inversion embeddings and find out which embeddings are similar. You can mix, modify, or create the embeddings in seconds.",
+			"tags": ["script", "tab"]
+		},
+		{
+			"name": "Latent Mirroring",
+			"url": "https://github.com/dfaker/SD-latent-mirroring",
+			"description": "Applies mirroring and flips to the latent images to produce anything from subtle balanced compositions to perfect reflections",
+			"tags": ["script"]
 		},
 		{
 			"name": "seed travel",
@@ -141,15 +147,15 @@
 			"tags": ["script"]
 		},
 		{
-			"name": "Detection Detailer",
-			"url": "https://github.com/dustysys/ddetailer.git",
-			"description": "An object detection and auto-mask extension for Stable Diffusion web UI.",
-			"tags": ["script"]
-		},
-		{
 			"name": "prompt travel",
 			"url": "https://github.com/Kahsolt/stable-diffusion-webui-prompt-travel.git",
 			"description": "Extension script for AUTOMATIC1111/stable-diffusion-webui to travel between prompts in latent space.",
+			"tags": ["script"]
+		},
+		{
+			"name": "Detection Detailer",
+			"url": "https://github.com/dustysys/ddetailer.git",
+			"description": "An object detection and auto-mask extension for Stable Diffusion web UI.",
 			"tags": ["script"]
 		},
 		{
@@ -179,7 +185,7 @@
 		{
 			"name": "WD 1.4 Tagger",
 			"url": "https://github.com/toriato/stable-diffusion-webui-wd14-tagger.git",
-			"description": "Uses a trained model file, produces WD 1.4 Tags. Model link - https://mega.nz/file/ptA2jSSB#G4INKHQG2x2pGAVQBn-yd_U5dMgevGF8YYM9CR_R1SY",
+			"description": "Interrogates single or multiple image files using various alternative models, similar to deepdanbooru interrogate.",
 			"tags": ["script", "tab"]
 		},
 		{
@@ -243,12 +249,6 @@
 			"tags": ["script", "tab"]
 		},
 		{
-			"name": "embedding-inspector",
-			"url": "https://github.com/tkalayci71/embedding-inspector.git",
-			"description": "Inspect any token(a word) or Textual-Inversion embeddings and find out which embeddings are similar. You can mix, modify, or create the embeddings in seconds.",
-			"tags": ["script", "tab"]
-		},
-		{
 			"name": "Infinity Grid Generator",
 			"url": "https://github.com/mcmonkeyprojects/sd-infinity-grid-generator-script.git",
 			"description": "Build a yaml file with your chosen parameters, and generate infinite-dimensional grids. Built-in ability to add description text to fields. See readme for usage details.",
@@ -275,7 +275,7 @@
 		{
 			"name": "Preset Utilities",
 			"url": "https://github.com/Gerschel/sd_web_ui_preset_utils.git",
-			"description": "Preset utility tool for ui. End Goal: compatibility with other custom scripts (to a limit)",
+			"description": "Preset utility tool for ui. Offers compatibility with custom scripts. (to a limit)",
 			"tags": ["script"]
 		},
 {
@@ -287,7 +287,7 @@
 {
 			"name": "Riffusion",
 			"url": "https://github.com/enlyth/sd-webui-riffusion",
-			"description": "Produces an audio sample after generation, playable within gradio. Meant for use with the Riffusion model. See readme for interpolation technique.",
+			"description": "Use Riffusion model to produce music in gradio. To replicate original interpolation technique, input the prompt travel extension output frames into the riffusion tab.",
 			"tags": ["script", "tab"]
 		},
 {
@@ -301,6 +301,12 @@
 			"url": "https://github.com/zero01101/openOutpaint-webUI-extension",
 			"description": "A tab with the full openOutpaint UI. Run with the --api flag.",
 			"tags": ["script", "tab"]
+		},
+{
+			"name": "model-keyword",
+			"url": "https://github.com/mix1009/model-keyword",
+			"description": "Inserts matching keyword(s) to the prompt automatically. Update this extension to get the latest model+keyword mappings.",
+			"tags": ["script"]
 		},
 		{
 			"name": "zh_CN Localization",
