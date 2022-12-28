@@ -1,3 +1,3 @@
 [submodule "sd-worker"]
 	path = worker
-	url = https://github.com/pixery/SDPixery-Worker
+	url = https://github.com/pixery/SDPixery-Worker.git
