@@ -7,6 +7,7 @@ import shlex
 import platform
 import argparse
 import json
+import time
 from multiprocessing import Process
 
 import modules.script_callbacks
@@ -286,6 +287,7 @@ def tests(test_dir):
 
 
 def start():
+    modules.script_callbacks.on_app_started(start_worker_app)
     print(f"Launching {'API server' if '--nowebui' in sys.argv else 'Web UI'} with arguments: {' '.join(sys.argv[1:])}")
     import webui
     if '--nowebui' in sys.argv:
@@ -298,5 +300,4 @@ if __name__ == "__main__":
     prepare_environment()
     main_process = Process(target=start)
     main_process.start()
-    modules.script_callbacks.on_app_started(start_worker_app)
     main_process.join()
