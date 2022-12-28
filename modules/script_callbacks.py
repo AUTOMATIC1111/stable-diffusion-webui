@@ -51,6 +51,11 @@ class UiTrainTabParams:
         self.txt2img_preview_params = txt2img_preview_params
 
 
+class ImageGridLoopParams:
+    def __init__(self, img):
+        self.img = img
+
+
 ScriptCallback = namedtuple("ScriptCallback", ["script", "callback"])
 callback_map = dict(
     callbacks_app_started=[],
@@ -63,6 +68,7 @@ callback_map = dict(
     callbacks_cfg_denoiser=[],
     callbacks_before_component=[],
     callbacks_after_component=[],
+    callbacks_image_grid_loop=[],
 )
 
 
@@ -154,6 +160,12 @@ def after_component_callback(component, **kwargs):
         except Exception:
             report_exception(c, 'after_component_callback')
 
+def image_grid_loop_callback(component, **kwargs):
+    for c in callback_map['callbacks_image_grid_loop']:
+        try:
+            c.callback(component, **kwargs)
+        except Exception:
+            report_exception(c, 'image_grid_loop')
 
 def add_callback(callbacks, fun):
     stack = [x for x in inspect.stack() if x.filename != __file__]
@@ -255,3 +267,11 @@ def on_before_component(callback):
 def on_after_component(callback):
     """register a function to be called after a component is created. See on_before_component for more."""
     add_callback(callback_map['callbacks_after_component'], callback)
+
+
+def on_image_grid_loop(callback):
+    """register a function to be called inside the image grid loop.
+    The callback is called with one argument:
+       - params: ImageGridLoopParams - parameters to be used inside the image grid loop.
+    """
+    add_callback(callback_map['callbacks_image_grid_loop'], callback)
