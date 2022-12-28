@@ -7,6 +7,10 @@ import shlex
 import platform
 import argparse
 import json
+from multiprocessing import Process
+
+import modules.script_callbacks
+from worker.main import start_worker_app
 
 dir_repos = "repositories"
 dir_extensions = "extensions"
@@ -292,4 +296,7 @@ def start():
 
 if __name__ == "__main__":
     prepare_environment()
-    start()
+    main_process = Process(target=start)
+    main_process.start()
+    modules.script_callbacks.on_app_started(start_worker_app)
+    main_process.join()
