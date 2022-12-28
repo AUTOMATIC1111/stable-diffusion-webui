@@ -3,6 +3,7 @@ import contextlib
 import torch
 from modules import errors
 from packaging import version
+import multiprocessing
 
 
 # has_mps is only available in nightly pytorch (for now) and macOS 12.3+.
@@ -40,6 +41,9 @@ def get_optimal_device():
 
     if has_mps():
         return torch.device("mps")
+
+    nproc = multiprocessing.cpu_count()
+    torch.set_num_threads(nproc)
 
     return cpu
 
