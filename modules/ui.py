@@ -40,6 +40,7 @@ from modules.sd_samplers import samplers, samplers_for_img2img
 import modules.textual_inversion.ui
 import modules.hypernetworks.ui
 from modules.generation_parameters_copypaste import image_from_url_text
+from modules.sd_vae import is_valid_vae
 
 # this is a fix for Windows users. Without it, javascript files will be served with text/html content-type and the browser will not show any UI
 mimetypes.init()
@@ -495,6 +496,9 @@ def apply_setting(key, value):
             value = ckpt_info.title
         else:
             return gr.update()
+    if key == 'sd_vae' and not is_valid_vae(value):
+        # ignore invalid vaes
+        return gr.update()
 
     comp_args = opts.data_labels[key].component_args
     if comp_args and isinstance(comp_args, dict) and comp_args.get('visible') is False:

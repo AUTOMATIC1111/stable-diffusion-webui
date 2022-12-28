@@ -449,6 +449,8 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
         "Eta": (None if p.sampler is None or p.sampler.eta == p.sampler.default_eta else p.sampler.eta),
         "Clip skip": None if clip_skip <= 1 else clip_skip,
         "ENSD": None if opts.eta_noise_seed_delta == 0 else opts.eta_noise_seed_delta,
+        "VAE": "None" if shared.loaded_vae_file is None else os.path.split(shared.loaded_vae_file)[1].removesuffix(".pt"),
+        "VAE hash": None if shared.loaded_vae_file is None else sd_models.model_hash(shared.loaded_vae_file),
     }
 
     generation_params.update(p.extra_generation_params)

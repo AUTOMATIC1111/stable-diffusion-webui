@@ -7,7 +7,7 @@ from pathlib import Path
 
 import gradio as gr
 from modules.shared import script_path
-from modules import shared, ui_tempdir
+from modules import shared, ui_tempdir, sd_vae
 import tempfile
 from PIL import Image
 
@@ -83,6 +83,7 @@ def integrate_settings_paste_fields(component_dict):
         'sd_model_checkpoint': 'Model hash',
         'eta_noise_seed_delta': 'ENSD',
         'initial_noise_multiplier': 'Noise multiplier',
+        'sd_vae': 'VAE',
     }
     settings_paste_fields = [
         (component_dict[k], lambda d, k=k, v=v: ui.apply_setting(k, d.get(v, None)))
@@ -280,6 +281,11 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
         res["Hires resize-2"] = 0
 
     restore_old_hires_fix_params(res)
+
+    if "VAE" in res:
+        vae_name = res["VAE"]
+        vae_hash = res.get("VAE hash", None)
+        res["VAE"] = sd_vae.find_vae_key(vae_name, vae_hash)
 
     return res
 

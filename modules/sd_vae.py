@@ -2,10 +2,11 @@ import torch
 import os
 import collections
 from collections import namedtuple
-from modules import shared, devices, script_callbacks
+from modules import shared, devices, script_callbacks, sd_models
 from modules.paths import models_path
 import glob
 from copy import deepcopy
+from collections import defaultdict
 
 
 model_dir = "Stable-diffusion"
@@ -24,11 +25,11 @@ default_vae_list = ["auto", "None"]
 default_vae_values = [default_vae_dict[x] for x in default_vae_list]
 vae_dict = dict(default_vae_dict)
 vae_list = list(default_vae_list)
+vae_hash_to_filename = defaultdict(list)
 first_load = True
 
 
 base_vae = None
-loaded_vae_file = None
 checkpoint_info = None
 
 checkpoints_loaded = collections.OrderedDict()
@@ -42,7 +43,7 @@ def get_base_vae(model):
 def store_base_vae(model):
     global base_vae, checkpoint_info
     if checkpoint_info != model.sd_checkpoint_info:
-        assert not loaded_vae_file, "Trying to store non-base VAE!"
+        assert not shared.loaded_vae_file, "Trying to store non-base VAE!"
         base_vae = deepcopy(model.first_stage_model.state_dict())
         checkpoint_info = model.sd_checkpoint_info
 
@@ -54,11 +55,11 @@ def delete_base_vae():
 
 
 def restore_base_vae(model):
-    global loaded_vae_file
     if base_vae is not None and checkpoint_info == model.sd_checkpoint_info:
         print("Restoring base VAE")
         _load_vae_dict(model, base_vae)
-        loaded_vae_file = None
+        shared.loaded_vae_file = None
+        shared.opts.sd_vae = "None"
     delete_base_vae()
 
 
@@ -67,7 +68,7 @@ def get_filename(filepath):
 
 
 def refresh_vae_list(vae_path=vae_path, model_path=model_path):
-    global vae_dict, vae_list
+    global vae_dict, vae_list, vae_hash_to_filename
     res = {}
     candidates = [
         *glob.iglob(os.path.join(model_path, '**/*.vae.ckpt'), recursive=True),
@@ -77,9 +78,11 @@ def refresh_vae_list(vae_path=vae_path, model_path=model_path):
     ]
     if shared.cmd_opts.vae_path is not None and os.path.isfile(shared.cmd_opts.vae_path):
         candidates.append(shared.cmd_opts.vae_path)
+    vae_hash_to_filename.clear()
     for filepath in candidates:
         name = get_filename(filepath)
         res[name] = filepath
+        vae_hash_to_filename[sd_models.model_hash(filepath)].append(name)
     vae_list.clear()
     vae_list.extend(default_vae_list)
     vae_list.extend(list(res.keys()))
@@ -148,7 +151,7 @@ def resolve_vae(checkpoint_file=None, vae_file="auto"):
 
 
 def load_vae(model, vae_file=None):
-    global first_load, vae_dict, vae_list, loaded_vae_file
+    global first_load, vae_dict, vae_list
     # save_settings = False
 
     cache_enabled = shared.opts.sd_vae_checkpoint_cache > 0
@@ -182,10 +185,9 @@ def load_vae(model, vae_file=None):
         if vae_opt not in vae_dict:
             vae_dict[vae_opt] = vae_file
             vae_list.append(vae_opt)
-    elif loaded_vae_file:
+        shared.loaded_vae_file = vae_file
+    elif shared.loaded_vae_file:
         restore_base_vae(model)
-
-    loaded_vae_file = vae_file
 
     first_load = False
 
@@ -196,8 +198,7 @@ def _load_vae_dict(model, vae_dict_1):
     model.first_stage_model.to(devices.dtype_vae)
 
 def clear_loaded_vae():
-    global loaded_vae_file
-    loaded_vae_file = None
+    shared.loaded_vae_file = None
 
 def reload_vae_weights(sd_model=None, vae_file="auto"):
     from modules import lowvram, devices, sd_hijack
@@ -209,7 +210,7 @@ def reload_vae_weights(sd_model=None, vae_file="auto"):
     checkpoint_file = checkpoint_info.filename
     vae_file = resolve_vae(checkpoint_file, vae_file=vae_file)
 
-    if loaded_vae_file == vae_file:
+    if shared.loaded_vae_file == vae_file:
         return
 
     if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
@@ -229,3 +230,22 @@ def reload_vae_weights(sd_model=None, vae_file="auto"):
 
     print("VAE Weights loaded.")
     return sd_model
+
+
+def is_valid_vae(vae_file: str):
+    return vae_file in vae_dict
+
+
+def find_vae_key(vae_name, vae_hash=None):
+    """Determines the config parameter name to use for the VAE based on the parameters in the infotext.
+       If vae_hash is provided, this function will return the name of any local VAE file that matches the hash.
+       If vae_hash is None, this function will return vae_name if any local VAE files are named vae_name
+    """
+    if vae_hash is not None and (matched := vae_hash_to_filename.get(vae_hash)):
+        if vae_name in matched or vae_name.lower() in matched:
+            return vae_name
+        return matched[0]
+    else:
+        if vae_name.lower() in [vae_filename.lower() for vae_filename in vae_list]:
+            return vae_name
+    return None

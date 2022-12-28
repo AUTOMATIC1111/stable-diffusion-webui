@@ -142,6 +142,8 @@ os.makedirs(cmd_opts.hypernetwork_dir, exist_ok=True)
 hypernetworks = {}
 loaded_hypernetwork = None
 
+loaded_vae_file = None
+
 
 def reload_hypernetworks():
     from modules.hypernetworks import hypernetwork
