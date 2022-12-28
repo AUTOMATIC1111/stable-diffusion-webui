@@ -177,10 +177,11 @@ def list_files_with_name(filename):
     return res
 
 
-def load_scripts():
+def load_scripts(clear_callbacks: bool):
     global current_basedir
     scripts_data.clear()
-    script_callbacks.clear_callbacks()
+    if clear_callbacks:
+        script_callbacks.clear_callbacks()
 
     scripts_list = list_scripts("scripts", ".py")
 
@@ -416,7 +417,7 @@ def reload_script_body_only():
 def reload_scripts():
     global scripts_txt2img, scripts_img2img
 
-    load_scripts()
+    load_scripts(clear_callbacks=True)
 
     scripts_txt2img = ScriptRunner()
     scripts_img2img = ScriptRunner()

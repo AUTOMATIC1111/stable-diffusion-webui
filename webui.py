@@ -46,7 +46,7 @@ def initialize():
 
     if cmd_opts.ui_debug_mode:
         shared.sd_upscalers = upscaler.UpscalerLanczos().scalers
-        modules.scripts.load_scripts()
+        modules.scripts.load_scripts(clear_callbacks=True)
         return
 
     modelloader.cleanup_models()
@@ -55,7 +55,7 @@ def initialize():
     gfpgan.setup_model(cmd_opts.gfpgan_models_path)
     shared.face_restorers.append(modules.face_restoration.FaceRestoration())
 
-    modules.scripts.load_scripts()
+    modules.scripts.load_scripts(clear_callbacks=False)
 
     modelloader.load_upscalers()
 
