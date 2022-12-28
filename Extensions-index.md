@@ -375,6 +375,12 @@
 			"tags": ["localization"]
 		},
 		{
+			"name": "fi_FI Localization",
+			"url": "https://github.com/otsoniemi/stable-diffusion-webui-localization-fi_FI",
+			"description": "Finnish localization",
+			"tags": ["localization"]
+		},
+		{
 			"name": "old localizations",
 			"url": "https://github.com/AUTOMATIC1111/stable-diffusion-webui-old-localizations.git",
 			"description": "Old unmaintained localizations that used to be a part of main repository",
