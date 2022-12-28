@@ -19,7 +19,8 @@ realesrgan
 scikit-image>=0.19
 timm==0.4.12
 transformers==4.19.2
-torch==1.13.1+cu117
+torch==1.13.1+cu117; sys_platform == 'linux'
+torch; sys_platform == 'darwin'
 einops
 jsonmerge
 clean-fid
