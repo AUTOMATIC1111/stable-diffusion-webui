@@ -297,6 +297,6 @@ def start():
 if __name__ == "__main__":
     prepare_environment()
     main_process = Process(target=start)
-    main_process.start()
+    main_process.start()  #
     modules.script_callbacks.on_app_started(start_worker_app)
     main_process.join()
