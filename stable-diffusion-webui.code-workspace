@@ -2,9 +2,6 @@
 	"folders": [
 		{
 			"path": "."
-		},
-		{
-			"path": "../Auto-Photoshop-StableDiffusion-Plugin"
 		}
 	],
 	"settings": {}
