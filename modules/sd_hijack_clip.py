@@ -16,6 +16,7 @@ class FrozenCLIPEmbedderWithCustomWordsBase(torch.nn.Module):
         self.wrapped = wrapped
         self.hijack = hijack
         self.id_fill = 0
+        self.id_end = 49407 
 
     def tokenize(self, texts):
         raise NotImplementedError
