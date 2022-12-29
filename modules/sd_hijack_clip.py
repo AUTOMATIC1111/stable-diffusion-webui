@@ -16,7 +16,8 @@ class FrozenCLIPEmbedderWithCustomWordsBase(torch.nn.Module):
         self.wrapped = wrapped
         self.hijack = hijack
         self.id_fill = 0
-        self.id_end = 49407 
+        self.id_start = 49406
+        self.id_end = 49407
 
     def tokenize(self, texts):
         raise NotImplementedError
@@ -83,7 +84,7 @@ class FrozenCLIPEmbedderWithCustomWordsBase(torch.nn.Module):
         prompt_target_length = get_target_prompt_token_count(token_count)
         tokens_to_add = prompt_target_length - len(remade_tokens)
 
-        remade_tokens = remade_tokens + [self.id_eot] + [self.id_fill] * (tokens_to_add - 1)
+        remade_tokens = [self.id_start] + remade_tokens + [self.id_end] + [self.id_fill] * (tokens_to_add - 2)
         multipliers = multipliers + [1.0] * tokens_to_add
 
         return remade_tokens, fixes, multipliers, token_count
@@ -166,7 +167,7 @@ class FrozenCLIPEmbedderWithCustomWordsBase(torch.nn.Module):
                     hijack_comments.append(f"Warning: too many input tokens; some ({len(overflowing_words)}) have been truncated:\n{overflowing_text}\n")
 
                 token_count = len(remade_tokens)
-                remade_tokens = [self.id_sot] + remade_tokens[:maxlen - 2] + [self.id_eot]
+                remade_tokens = [self.id_sot] + remade_tokens[:maxlen - 2] + [self.id_end]
                 remade_tokens += [self.id_fill] * (maxlen - len(remade_tokens))
                 cache[tuple_tokens] = (remade_tokens, fixes, multipliers)
 
