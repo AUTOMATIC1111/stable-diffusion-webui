@@ -472,3 +472,27 @@ https://github.com/mix1009/model-keyword
 Inserts matching keyword(s) to the prompt automatically. Update extension to get the latest model+keyword mappings.
 
 ![image](https://user-images.githubusercontent.com/98228077/209717531-e0ae74ab-b753-4ad1-99b2-e1eda3de5433.png)
+
+## Prompt Generator
+https://github.com/imrayya/stable-diffusion-webui-Prompt_Generator
+
+Adds a tab to the webui that allows the user to generate a prompt from a small base prompt. Based on [FredZhang7/distilgpt2-stable-diffusion-v2](https://huggingface.co/FredZhang7/distilgpt2-stable-diffusion-v2).
+
+![image](https://user-images.githubusercontent.com/98228077/210076951-36f5d90c-b8c4-4b12-b909-582193deeec1.png)
+
+## quick-css
+https://github.com/Gerschel/sd-web-ui-quickcss
+
+Extension for quickly selecting and applying custom.css files, for customizing look and placement of elements in ui.
+
+![image](https://user-images.githubusercontent.com/98228077/210076676-5f6a8e72-5352-4860-8f3d-468ab8e31355.png)![image](https://user-images.githubusercontent.com/98228077/210076407-1c904a6c-6913-4954-8f20-36100df99fba.png)
+
+## Test
+https://github.com/diaphragm/var2gif \
+https://github.com/Kahsolt/stable-diffusion-webui-size-travel \
+https://github.com/jmederos/keyframe-travel \
+https://github.com/InconsolableCellist/movie_stable_diffusionizer \
+https://github.com/alansmithee-johndoe/stable-diffusion-webui-gpu-cooling-interval \
+https://github.com/DrifterOfTime/sd-mvar-plot \
+https://github.com/bbc-mc/sdweb-xyplus \
+https://github.com/toshiaki1729/stable-diffusion-webui-text2prompt
