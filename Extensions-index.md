@@ -308,6 +308,18 @@
 			"description": "Inserts matching keyword(s) to the prompt automatically. Update this extension to get the latest model+keyword mappings.",
 			"tags": ["script"]
 		},
+{
+			"name": "Prompt Generator",
+			"url": "https://github.com/imrayya/stable-diffusion-webui-Prompt_Generator",
+			"description": "generate a prompt from a small base prompt using distilgpt2. Adds a tab with additional control of the model.",
+			"tags": ["script", "tab"]
+		},
+{
+			"name": "quick-css",
+			"url": "https://github.com/imrayya/stable-diffusion-webui-Prompt_Generator",
+			"description": "Extension for quickly selecting and applying custom.css files, for customizing look and placement of elements in ui.",
+			"tags": ["script", "tab"]
+		},
 		{
 			"name": "zh_CN Localization",
 			"url": "https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN",
@@ -324,6 +336,12 @@
 			"name": "ko_KR Localization",
 			"url": "https://github.com/36DB/stable-diffusion-webui-localization-ko_KR",
 			"description": "Korean localization",
+			"tags": ["localization"]
+		},
+		{
+			"name": "th_TH Localization",
+			"url": "https://github.com/econDS/thai-localization-for-Automatic-stable-diffusion-webui",
+			"description": "Thai localization",
 			"tags": ["localization"]
 		},
 		{
