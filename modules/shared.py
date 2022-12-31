@@ -168,7 +168,7 @@ class State:
     def dict(self):
         obj = {
             "skipped": self.skipped,
-            "interrupted": self.skipped,
+            "interrupted": self.interrupted,
             "job": self.job,
             "job_count": self.job_count,
             "job_no": self.job_no,
