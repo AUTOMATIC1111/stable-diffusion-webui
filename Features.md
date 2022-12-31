@@ -2,6 +2,15 @@ This is a feature showcase page for [Stable Diffusion web UI](https://github.com
 
 All examples are non-cherrypicked unless specified otherwise.
 
+
+# Alt-Diffusion
+- download the checkpoint (from here: https://drive.filen.io/d/be043c9e-a171-4356-a749-e7840dfcb67e#Z21U5JO7HE5g1fSa7kY5nSZI2dInaUHw)
+- put it into models/Stable-Diffusion directory
+- grab the config from [`configs/alt-diffusion-inference.yaml`](https://github.com/AUTOMATIC1111/stable-diffusion-webui/blob/master/configs/alt-diffusion-inference.yaml) and put it into same place as the checkpoint, renaming it to have same filename (i.e. if your checkpoint is named `ad.ckpt`, the config should be named `ad.yaml`)
+- select the new checkpoint from the UI
+
+Mechanically, Attention/emphasis mechanism (see below in features) is supported, but seems to have much less effect, probably due to how Alt-Diffusion is implemented. Clip skip is not supported, the setting is ignored.
+
 # Stable Diffusion 2.0
 ## Basic models
 Models are supported: 768-v-ema.ckpt ([model](https://huggingface.co/stabilityai/stable-diffusion-2/blob/main/768-v-ema.ckpt), [config](https://raw.githubusercontent.com/Stability-AI/stablediffusion/main/configs/stable-diffusion/v2-inference-v.yaml)) and 512-base-ema.ckpt ([model](https://huggingface.co/stabilityai/stable-diffusion-2-base/blob/main/512-base-ema.ckpt), [config](https://raw.githubusercontent.com/Stability-AI/stablediffusion/main/configs/stable-diffusion/v2-inference.yaml)). 2.1 checkpoints should also work.
