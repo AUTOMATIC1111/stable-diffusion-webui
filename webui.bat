@@ -2,6 +2,7 @@
 
 if not defined PYTHON (set PYTHON=python)
 if not defined VENV_DIR (set VENV_DIR=venv)
+if [%TRANSFORMERS_CACHE%] == [-] (set TRANSFORMERS_CACHE=cache/)
 
 set ERROR_REPORTING=FALSE
 
