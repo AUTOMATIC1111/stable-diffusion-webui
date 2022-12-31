@@ -159,7 +159,7 @@ def save_files(js_data, images, do_make_zip, index):
                     zip_file.writestr(filenames[i], f.read())
         fullfns.insert(0, zip_filepath)
 
-    return gr.File.update(value=fullfns, visible=True), '', '', plaintext_to_html(f"Saved: {filenames[0]}")
+    return gr.File.update(value=fullfns, visible=True), plaintext_to_html(f"Saved: {filenames[0]}")
 
 
 
@@ -593,6 +593,8 @@ Requested path was: {f}
 
                     with gr.Group():
                         html_info = gr.HTML()
+                        html_log = gr.HTML()
+
                         generation_info = gr.Textbox(visible=False)
                         if tabname == 'txt2img' or tabname == 'img2img':
                             generation_info_button = gr.Button(visible=False, elem_id=f"{tabname}_generation_info_button")
@@ -615,16 +617,16 @@ Requested path was: {f}
                             ],
                             outputs=[
                                 download_files,
-                                html_info,
-                                html_info,
-                                html_info,
+                                html_log,
                             ]
                         )
                 else:
                     html_info_x = gr.HTML()
                     html_info = gr.HTML()
+                    html_log = gr.HTML()
+
                 parameters_copypaste.bind_buttons(buttons, result_gallery, "txt2img" if tabname == "txt2img" else None)
-                return result_gallery, generation_info if tabname != "extras" else html_info_x, html_info
+                return result_gallery, generation_info if tabname != "extras" else html_info_x, html_info, html_log
 
 
 def create_ui():
@@ -686,14 +688,14 @@ def create_ui():
                 with gr.Group():
                     custom_inputs = modules.scripts.scripts_txt2img.setup_ui()
 
-            txt2img_gallery, generation_info, html_info = create_output_panel("txt2img", opts.outdir_txt2img_samples)
+            txt2img_gallery, generation_info, html_info, html_log = create_output_panel("txt2img", opts.outdir_txt2img_samples)
             parameters_copypaste.bind_buttons({"txt2img": txt2img_paste}, None, txt2img_prompt)
 
             connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
             connect_reuse_seed(subseed, reuse_subseed, generation_info, dummy_component, is_subseed=True)
 
             txt2img_args = dict(
-                fn=wrap_gradio_gpu_call(modules.txt2img.txt2img),
+                fn=wrap_gradio_gpu_call(modules.txt2img.txt2img, extra_outputs=[None, '', '']),
                 _js="submit",
                 inputs=[
                     txt2img_prompt,
@@ -720,7 +722,8 @@ def create_ui():
                 outputs=[
                     txt2img_gallery,
                     generation_info,
-                    html_info
+                    html_info,
+                    html_log,
                 ],
                 show_progress=False,
             )
@@ -798,7 +801,6 @@ def create_ui():
 
     with gr.Blocks(analytics_enabled=False) as img2img_interface:
         img2img_prompt, roll, img2img_prompt_style, img2img_negative_prompt, img2img_prompt_style2, submit, img2img_interrogate, img2img_deepbooru, img2img_prompt_style_apply, img2img_save_style, img2img_paste,token_counter, token_button = create_toprow(is_img2img=True)
-
 
         with gr.Row(elem_id='img2img_progress_row'):
             img2img_prompt_img = gr.File(label="", elem_id="img2img_prompt_image", file_count="single", type="bytes", visible=False)
@@ -883,7 +885,7 @@ def create_ui():
                 with gr.Group():
                     custom_inputs = modules.scripts.scripts_img2img.setup_ui()
 
-            img2img_gallery, generation_info, html_info = create_output_panel("img2img", opts.outdir_img2img_samples)
+            img2img_gallery, generation_info, html_info, html_log = create_output_panel("img2img", opts.outdir_img2img_samples)
             parameters_copypaste.bind_buttons({"img2img": img2img_paste}, None, img2img_prompt)
 
             connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
@@ -915,7 +917,7 @@ def create_ui():
             )
 
             img2img_args = dict(
-                fn=wrap_gradio_gpu_call(modules.img2img.img2img),
+                fn=wrap_gradio_gpu_call(modules.img2img.img2img, extra_outputs=[None, '', '']),
                 _js="submit_img2img",
                 inputs=[
                     dummy_component,
@@ -954,7 +956,8 @@ def create_ui():
                 outputs=[
                     img2img_gallery,
                     generation_info,
-                    html_info
+                    html_info,
+                    html_log,
                 ],
                 show_progress=False,
             )
@@ -1078,10 +1081,10 @@ def create_ui():
                 with gr.Group():
                     upscale_before_face_fix = gr.Checkbox(label='Upscale Before Restoring Faces', value=False)
 
-            result_images, html_info_x, html_info = create_output_panel("extras", opts.outdir_extras_samples)
+            result_images, html_info_x, html_info, html_log = create_output_panel("extras", opts.outdir_extras_samples)
 
         submit.click(
-            fn=wrap_gradio_gpu_call(modules.extras.run_extras),
+            fn=wrap_gradio_gpu_call(modules.extras.run_extras, extra_outputs=[None, '']),
             _js="get_extras_tab_index",
             inputs=[
                 dummy_component,
