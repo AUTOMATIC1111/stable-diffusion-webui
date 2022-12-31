@@ -570,13 +570,14 @@ Requested path was: {f}
 
             generation_info = None
             with gr.Column():
-                with gr.Row():
+                with gr.Row(elem_id=f"image_buttons_{tabname}"):
+                    open_folder_button = gr.Button(folder_symbol, elem_id="hidden_element" if shared.cmd_opts.hide_ui_dir_config else 'open_folder')
+
                     if tabname != "extras":
                         save = gr.Button('Save', elem_id=f'save_{tabname}')
+                        save_zip = gr.Button('Zip', elem_id=f'save_zip_{tabname}')
 
                     buttons = parameters_copypaste.create_buttons(["img2img", "inpaint", "extras"])
-                    button_id = "hidden_element" if shared.cmd_opts.hide_ui_dir_config else 'open_folder'
-                    open_folder_button = gr.Button(folder_symbol, elem_id=button_id)
 
                 open_folder_button.click(
                     fn=lambda: open_folder(opts.outdir_samples or outdir),
@@ -585,9 +586,6 @@ Requested path was: {f}
                 )
 
                 if tabname != "extras":
-                    with gr.Row():
-                        do_make_zip = gr.Checkbox(label="Make Zip when Save?", value=False)
-
                     with gr.Row():
                         download_files = gr.File(None, file_count="multiple", interactive=False, show_label=False, visible=False)
 
@@ -608,11 +606,11 @@ Requested path was: {f}
 
                         save.click(
                             fn=wrap_gradio_call(save_files),
-                            _js="(x, y, z, w) => [x, y, z, selected_gallery_index()]",
+                            _js="(x, y, z, w) => [x, y, false, selected_gallery_index()]",
                             inputs=[
                                 generation_info,
                                 result_gallery,
-                                do_make_zip,
+                                html_info,
                                 html_info,
                             ],
                             outputs=[
@@ -620,6 +618,22 @@ Requested path was: {f}
                                 html_log,
                             ]
                         )
+
+                        save_zip.click(
+                            fn=wrap_gradio_call(save_files),
+                            _js="(x, y, z, w) => [x, y, true, selected_gallery_index()]",
+                            inputs=[
+                                generation_info,
+                                result_gallery,
+                                html_info,
+                                html_info,
+                            ],
+                            outputs=[
+                                download_files,
+                                html_log,
+                            ]
+                        )
+
                 else:
                     html_info_x = gr.HTML()
                     html_info = gr.HTML()
