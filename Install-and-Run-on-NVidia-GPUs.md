@@ -17,6 +17,9 @@ In order to customize the installation, clone the repository into the desired lo
 bash webui.sh
 ```
 
+## Third party installation guides/scripts:
+- NixOS: https://github.com/virchau13/automatic1111-webui-nix
+
 # Almost Automatic Installation and Launch
 To install the required packages via pip without creating a virtual environment, run:
 ```bash
