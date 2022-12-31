@@ -130,14 +130,12 @@ class Api:
         if populate.sampler_name:
             populate.sampler_index = None  # prevent a warning later on
         p = StableDiffusionProcessingTxt2Img(**vars(populate))
-        # Override object param
-
-        shared.state.begin()
 
         with self.queue_lock:
+            shared.state.begin()
             processed = process_images(p)
+            shared.state.end()
 
-        shared.state.end()
 
         b64images = list(map(encode_pil_to_base64, processed.images))
 
@@ -169,12 +167,10 @@ class Api:
 
         p.init_images = [decode_base64_to_image(x) for x in init_images]
 
-        shared.state.begin()
-
         with self.queue_lock:
+            shared.state.begin()
             processed = process_images(p)
-
-        shared.state.end()
+            shared.state.end()
 
         b64images = list(map(encode_pil_to_base64, processed.images))
 
