@@ -121,7 +121,6 @@ class Api:
 
     def text2imgapi(self, txt2imgreq: StableDiffusionTxt2ImgProcessingAPI):
         populate = txt2imgreq.copy(update={ # Override __init__ params
-            "sd_model": shared.sd_model,
             "sampler_name": validate_sampler_name(txt2imgreq.sampler_name or txt2imgreq.sampler_index),
             "do_not_save_samples": True,
             "do_not_save_grid": True
@@ -129,9 +128,10 @@ class Api:
         )
         if populate.sampler_name:
             populate.sampler_index = None  # prevent a warning later on
-        p = StableDiffusionProcessingTxt2Img(**vars(populate))
 
         with self.queue_lock:
+            p = StableDiffusionProcessingTxt2Img(sd_model=shared.sd_model, **vars(populate))
+
             shared.state.begin()
             processed = process_images(p)
             shared.state.end()
@@ -151,7 +151,6 @@ class Api:
             mask = decode_base64_to_image(mask)
 
         populate = img2imgreq.copy(update={ # Override __init__ params
-            "sd_model": shared.sd_model,
             "sampler_name": validate_sampler_name(img2imgreq.sampler_name or img2imgreq.sampler_index),
             "do_not_save_samples": True,
             "do_not_save_grid": True,
@@ -163,11 +162,11 @@ class Api:
 
         args = vars(populate)
         args.pop('include_init_images', None)  # this is meant to be done by "exclude": True in model, but it's for a reason that I cannot determine.
-        p = StableDiffusionProcessingImg2Img(**args)
-
-        p.init_images = [decode_base64_to_image(x) for x in init_images]
 
         with self.queue_lock:
+            p = StableDiffusionProcessingImg2Img(sd_model=shared.sd_model, **args)
+            p.init_images = [decode_base64_to_image(x) for x in init_images]
+
             shared.state.begin()
             processed = process_images(p)
             shared.state.end()
