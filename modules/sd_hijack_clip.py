@@ -4,7 +4,6 @@ import torch
 
 from modules import prompt_parser, devices
 from modules.shared import opts
-import modules.shared as shared
 
 def get_target_prompt_token_count(token_count):
     return math.ceil(max(token_count, 1) / 75) * 75
@@ -177,9 +176,6 @@ class FrozenCLIPEmbedderWithCustomWordsBase(torch.nn.Module):
         return batch_multipliers, remade_batch_tokens, used_custom_terms, hijack_comments, hijack_fixes, token_count
 
     def forward(self, text):
-        if shared.text_model_name == "XLMR-Large":
-            return self.wrapped.encode(text)
-
         use_old = opts.use_old_emphasis_implementation
         if use_old:
             batch_multipliers, remade_batch_tokens, used_custom_terms, hijack_comments, hijack_fixes, token_count = self.process_text_old(text)
@@ -257,13 +253,13 @@ class FrozenCLIPEmbedderWithCustomWords(FrozenCLIPEmbedderWithCustomWordsBase):
     def __init__(self, wrapped, hijack):
         super().__init__(wrapped, hijack)
         self.tokenizer = wrapped.tokenizer
-        if shared.text_model_name == "XLMR-Large":
-            self.comma_token = None 
-        else :
-            self.comma_token = [v for k, v in self.tokenizer.get_vocab().items() if k == ',</w>'][0]
+
+        vocab = self.tokenizer.get_vocab()
+
+        self.comma_token = vocab.get(',</w>', None)
 
         self.token_mults = {}
-        tokens_with_parens = [(k, v) for k, v in self.tokenizer.get_vocab().items() if '(' in k or ')' in k or '[' in k or ']' in k]
+        tokens_with_parens = [(k, v) for k, v in vocab.items() if '(' in k or ')' in k or '[' in k or ']' in k]
         for text, ident in tokens_with_parens:
             mult = 1.0
             for c in text:

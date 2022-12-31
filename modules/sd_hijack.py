@@ -5,7 +5,7 @@ import modules.textual_inversion.textual_inversion
 from modules import devices, sd_hijack_optimizations, shared, sd_hijack_checkpoint
 from modules.hypernetworks import hypernetwork
 from modules.shared import cmd_opts
-from modules import sd_hijack_clip, sd_hijack_open_clip, sd_hijack_unet
+from modules import sd_hijack_clip, sd_hijack_open_clip, sd_hijack_unet, sd_hijack_xlmr, xlmr
 
 from modules.sd_hijack_optimizations import invokeAI_mps_available
 
@@ -68,6 +68,7 @@ def fix_checkpoint():
     ldm.modules.diffusionmodules.openaimodel.ResBlock.forward = sd_hijack_checkpoint.ResBlock_forward
     ldm.modules.diffusionmodules.openaimodel.AttentionBlock.forward = sd_hijack_checkpoint.AttentionBlock_forward
 
+
 class StableDiffusionModelHijack:
     fixes = None
     comments = []
@@ -79,21 +80,22 @@ class StableDiffusionModelHijack:
 
     def hijack(self, m):
 
-        if shared.text_model_name == "XLMR-Large":
+        if type(m.cond_stage_model) == xlmr.BertSeriesModelWithTransformation:
             model_embeddings = m.cond_stage_model.roberta.embeddings
             model_embeddings.token_embedding = EmbeddingsWithFixes(model_embeddings.word_embeddings, self)
-            m.cond_stage_model = sd_hijack_clip.FrozenCLIPEmbedderWithCustomWords(m.cond_stage_model, self)
-            
+            m.cond_stage_model = sd_hijack_xlmr.FrozenXLMREmbedderWithCustomWords(m.cond_stage_model, self)
+
         elif type(m.cond_stage_model) == ldm.modules.encoders.modules.FrozenCLIPEmbedder:
             model_embeddings = m.cond_stage_model.transformer.text_model.embeddings
             model_embeddings.token_embedding = EmbeddingsWithFixes(model_embeddings.token_embedding, self)
             m.cond_stage_model = sd_hijack_clip.FrozenCLIPEmbedderWithCustomWords(m.cond_stage_model, self)
-            apply_optimizations()
+
         elif type(m.cond_stage_model) == ldm.modules.encoders.modules.FrozenOpenCLIPEmbedder:
             m.cond_stage_model.model.token_embedding = EmbeddingsWithFixes(m.cond_stage_model.model.token_embedding, self)
             m.cond_stage_model = sd_hijack_open_clip.FrozenOpenCLIPEmbedderWithCustomWords(m.cond_stage_model, self)
-            apply_optimizations()
-        
+
+        apply_optimizations()
+
         self.clip = m.cond_stage_model
         
         fix_checkpoint()
@@ -109,7 +111,7 @@ class StableDiffusionModelHijack:
 
     def undo_hijack(self, m):
 
-        if shared.text_model_name == "XLMR-Large":
+        if type(m.cond_stage_model) == xlmr.BertSeriesModelWithTransformation:
             m.cond_stage_model = m.cond_stage_model.wrapped 
 
         elif type(m.cond_stage_model) == sd_hijack_clip.FrozenCLIPEmbedderWithCustomWords:
