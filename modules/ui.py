@@ -19,7 +19,7 @@ import numpy as np
 from PIL import Image, PngImagePlugin
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_gradio_call
 
-from modules import sd_hijack, sd_models, localization, script_callbacks, ui_extensions, deepbooru
+from modules import sd_hijack, sd_models, localization, script_callbacks, ui_extensions, deepbooru, ui_components
 from modules.paths import script_path
 
 from modules.shared import opts, cmd_opts, restricted_opts
@@ -532,7 +532,7 @@ def create_refresh_button(refresh_component, refresh_method, refreshed_args, ele
 
         return gr.update(**(args or {}))
 
-    refresh_button = gr.Button(value=refresh_symbol, elem_id=elem_id)
+    refresh_button = ui_components.ToolButton(value=refresh_symbol, elem_id=elem_id)
     refresh_button.click(
         fn=refresh,
         inputs=[],
@@ -1476,7 +1476,7 @@ def create_ui():
                 res = comp(label=info.label, value=fun(), elem_id=elem_id, **(args or {}))
                 create_refresh_button(res, info.refresh, info.component_args, "refresh_" + key)
             else:
-                with gr.Row(variant="compact"):
+                with ui_components.FormRow():
                     res = comp(label=info.label, value=fun(), elem_id=elem_id, **(args or {}))
                     create_refresh_button(res, info.refresh, info.component_args, "refresh_" + key)
         else:
