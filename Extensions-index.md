@@ -278,47 +278,53 @@
 			"description": "Preset utility tool for ui. Offers compatibility with custom scripts. (to a limit)",
 			"tags": ["script"]
 		},
-{
+		{
 			"name": "DH Patch",
 			"url": "https://github.com/d8ahazard/sd_auto_fix",
 			"description": "Random patches by D8ahazard. Auto-load config YAML files for v2, 2.1 models; patch latent-diffusion to fix attention on 2.1 models (black boxes without no-half), whatever else I come up with.",
 			"tags": ["script"]
 		},
-{
+		{
 			"name": "Riffusion",
 			"url": "https://github.com/enlyth/sd-webui-riffusion",
 			"description": "Use Riffusion model to produce music in gradio. To replicate original interpolation technique, input the prompt travel extension output frames into the riffusion tab.",
 			"tags": ["script", "tab"]
 		},
-{
+		{
 			"name": "Save Intermediate Images",
 			"url": "https://github.com/AlUlkesh/sd_save_intermediate_images",
 			"description": "See PR https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/5464",
 			"tags": ["script"]
 		},
-{
+		{
 			"name": "openOutpaint extension",
 			"url": "https://github.com/zero01101/openOutpaint-webUI-extension",
 			"description": "A tab with the full openOutpaint UI. Run with the --api flag.",
 			"tags": ["script", "tab"]
 		},
-{
+		{
 			"name": "model-keyword",
 			"url": "https://github.com/mix1009/model-keyword",
 			"description": "Inserts matching keyword(s) to the prompt automatically. Update this extension to get the latest model+keyword mappings.",
 			"tags": ["script"]
 		},
-{
+		{
 			"name": "Prompt Generator",
 			"url": "https://github.com/imrayya/stable-diffusion-webui-Prompt_Generator",
 			"description": "generate a prompt from a small base prompt using distilgpt2. Adds a tab with additional control of the model.",
 			"tags": ["script", "tab"]
 		},
-{
+		{
 			"name": "quick-css",
 			"url": "https://github.com/imrayya/stable-diffusion-webui-Prompt_Generator",
 			"description": "Extension for quickly selecting and applying custom.css files, for customizing look and placement of elements in ui.",
 			"tags": ["script", "tab"]
+		},
+		{
+			"name": "Add image number to grid",
+			"url": "https://github.com/AlUlkesh/sd_grid_add_image_number.git",
+			"description": "Add the image's number to its picture in the grid.",
+			"tags": ["script"]
 		},
 		{
 			"name": "zh_CN Localization",
