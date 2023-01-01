@@ -80,7 +80,6 @@ css_hide_progressbar = """
 # Important that they exactly match script.js for tooltip to work.
 random_symbol = '\U0001f3b2\ufe0f'  # 🎲️
 reuse_symbol = '\u267b\ufe0f'  # ♻️
-art_symbol = '\U0001f3a8'  # 🎨
 paste_symbol = '\u2199\ufe0f'  # ↙
 folder_symbol = '\U0001f4c2'  # 📂
 refresh_symbol = '\U0001f504'  # 🔄
@@ -232,13 +231,6 @@ def check_progress_call_initial(id_part):
     shared.state.time_left_force_display = False
 
     return check_progress_call(id_part)
-
-
-def roll_artist(prompt):
-    allowed_cats = set([x for x in shared.artist_db.categories() if len(opts.random_artist_categories)==0 or x in opts.random_artist_categories])
-    artist = random.choice([x for x in shared.artist_db.artists if x.category in allowed_cats])
-
-    return prompt + ", " + artist.name if prompt != '' else artist.name
 
 
 def visit(x, func, path=""):
@@ -403,7 +395,6 @@ def create_toprow(is_img2img):
                         )
 
         with gr.Column(scale=1, elem_id="roll_col"):
-            roll = gr.Button(value=art_symbol, elem_id="roll", visible=len(shared.artist_db.artists) > 0)
             paste = gr.Button(value=paste_symbol, elem_id="paste")
             save_style = gr.Button(value=save_style_symbol, elem_id="style_create")
             prompt_style_apply = gr.Button(value=apply_style_symbol, elem_id="style_apply")
@@ -452,7 +443,7 @@ def create_toprow(is_img2img):
                     prompt_style2 = gr.Dropdown(label="Style 2", elem_id=f"{id_part}_style2_index", choices=[k for k, v in shared.prompt_styles.styles.items()], value=next(iter(shared.prompt_styles.styles.keys())))
                     prompt_style2.save_to_config = True
 
-    return prompt, roll, prompt_style, negative_prompt, prompt_style2, submit, button_interrogate, button_deepbooru, prompt_style_apply, save_style, paste, token_counter, token_button
+    return prompt, prompt_style, negative_prompt, prompt_style2, submit, button_interrogate, button_deepbooru, prompt_style_apply, save_style, paste, token_counter, token_button
 
 
 def setup_progressbar(progressbar, preview, id_part, textinfo=None):
@@ -668,7 +659,7 @@ def create_ui():
     modules.scripts.scripts_txt2img.initialize_scripts(is_img2img=False)
 
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
-        txt2img_prompt, roll, txt2img_prompt_style, txt2img_negative_prompt, txt2img_prompt_style2, submit, _, _,txt2img_prompt_style_apply, txt2img_save_style, txt2img_paste, token_counter, token_button = create_toprow(is_img2img=False)
+        txt2img_prompt, txt2img_prompt_style, txt2img_negative_prompt, txt2img_prompt_style2, submit, _, _,txt2img_prompt_style_apply, txt2img_save_style, txt2img_paste, token_counter, token_button = create_toprow(is_img2img=False)
 
         dummy_component = gr.Label(visible=False)
         txt_prompt_img = gr.File(label="", elem_id="txt2img_prompt_image", file_count="single", type="bytes", visible=False)
@@ -771,16 +762,6 @@ def create_ui():
                 outputs=[hr_options],
             )
 
-            roll.click(
-                fn=roll_artist,
-                _js="update_txt2img_tokens",
-                inputs=[
-                    txt2img_prompt,
-                ],
-                outputs=[
-                    txt2img_prompt,
-                ]
-            )
 
             txt2img_paste_fields = [
                 (txt2img_prompt, "Prompt"),
@@ -823,7 +804,7 @@ def create_ui():
     modules.scripts.scripts_img2img.initialize_scripts(is_img2img=True)
 
     with gr.Blocks(analytics_enabled=False) as img2img_interface:
-        img2img_prompt, roll, img2img_prompt_style, img2img_negative_prompt, img2img_prompt_style2, submit, img2img_interrogate, img2img_deepbooru, img2img_prompt_style_apply, img2img_save_style, img2img_paste,token_counter, token_button = create_toprow(is_img2img=True)
+        img2img_prompt, img2img_prompt_style, img2img_negative_prompt, img2img_prompt_style2, submit, img2img_interrogate, img2img_deepbooru, img2img_prompt_style_apply, img2img_save_style, img2img_paste,token_counter, token_button = create_toprow(is_img2img=True)
 
         with gr.Row(elem_id='img2img_progress_row'):
             img2img_prompt_img = gr.File(label="", elem_id="img2img_prompt_image", file_count="single", type="bytes", visible=False)
@@ -997,18 +978,6 @@ def create_ui():
                 fn=interrogate_deepbooru,
                 inputs=[init_img],
                 outputs=[img2img_prompt],
-            )
-
-
-            roll.click(
-                fn=roll_artist,
-                _js="update_img2img_tokens",
-                inputs=[
-                    img2img_prompt,
-                ],
-                outputs=[
-                    img2img_prompt,
-                ]
             )
 
             prompts = [(txt2img_prompt, txt2img_negative_prompt), (img2img_prompt, img2img_negative_prompt)]
