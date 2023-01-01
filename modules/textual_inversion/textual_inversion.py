@@ -282,7 +282,7 @@ def train_embedding(embedding_name, learn_rate, batch_size, gradient_step, data_
         return embedding, filename
     scheduler = LearnRateScheduler(learn_rate, steps, initial_step)
 
-   # dataset loading may take a while, so input validations and early returns should be done before this
+    # dataset loading may take a while, so input validations and early returns should be done before this
     shared.state.textinfo = f"Preparing dataset from {html.escape(data_root)}..."
     old_parallel_processing_allowed = shared.parallel_processing_allowed
 
@@ -309,7 +309,6 @@ def train_embedding(embedding_name, learn_rate, batch_size, gradient_step, data_
     max_steps_per_epoch = len(ds) // batch_size - (len(ds) // batch_size) % gradient_step
     loss_step = 0
     _loss_step = 0 #internal
-
 
     last_saved_file = "<none>"
     last_saved_image = "<none>"
