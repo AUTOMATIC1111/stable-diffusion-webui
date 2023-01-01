@@ -245,11 +245,6 @@ input[type="range"]{
     margin: 0.5em 0 -0.3em 0;
 }
 
-#txt2img_sampling label{
-    padding-left: 0.6em;
-    padding-right: 0.6em;
-}
-
 #mask_bug_info {
   text-align: center;
   display: block;
@@ -501,13 +496,6 @@ input[type="range"]{
     padding: 0;
 }
 
-#refresh_sd_model_checkpoint, #refresh_sd_vae, #refresh_sd_hypernetwork, #refresh_train_hypernetwork_name, #refresh_train_embedding_name, #refresh_localization{
-    max-width: 2.5em;
-    min-width: 2.5em;
-    height: 2.4em;
-}
-
-
 canvas[key="mask"] {
     z-index: 12 !important;
     filter: invert();
@@ -567,6 +555,33 @@ img2maskimg, #img2maskimg > .h-60, #img2maskimg > .h-60 > div, #img2maskimg > .h
     font-weight: bold;
     font-size: 95%;
 }
+
+#image_buttons_txt2img button, #image_buttons_img2img button, #image_buttons_extras button{
+    min-width: auto;
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+}
+
+.gr-form{
+    background-color: white;
+}
+
+.dark .gr-form{
+    background-color: rgb(31 41 55 / var(--tw-bg-opacity));
+}
+
+.gr-button-tool{
+    max-width: 2.5em;
+    min-width: 2.5em !important;
+    height: 2.4em;
+    margin: 0.55em 0;
+}
+
+#quicksettings .gr-button-tool{
+    margin: 0;
+}
+
+
 
 /* The following handles localization for right-to-left (RTL) languages like Arabic.
 The rtl media type will only be activated by the logic in javascript/localization.js.

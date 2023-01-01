@@ -10,13 +10,17 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from secrets import compare_digest
 
 import modules.shared as shared
-from modules import sd_samplers, deepbooru
+from modules import sd_samplers, deepbooru, sd_hijack
 from modules.api.models import *
 from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img, process_images
 from modules.extras import run_extras, run_pnginfo
+from modules.textual_inversion.textual_inversion import create_embedding, train_embedding
+from modules.textual_inversion.preprocess import preprocess
+from modules.hypernetworks.hypernetwork import create_hypernetwork, train_hypernetwork
 from PIL import PngImagePlugin,Image
 from modules.sd_models import checkpoints_list
 from modules.realesrgan_model import get_realesrgan_models
+from modules import devices
 from typing import List
 
 def upscaler_to_index(name: str):
@@ -97,6 +101,11 @@ class Api:
         self.add_api_route("/sdapi/v1/artist-categories", self.get_artists_categories, methods=["GET"], response_model=List[str])
         self.add_api_route("/sdapi/v1/artists", self.get_artists, methods=["GET"], response_model=List[ArtistItem])
         self.add_api_route("/sdapi/v1/refresh-checkpoints", self.refresh_checkpoints, methods=["POST"])
+        self.add_api_route("/sdapi/v1/create/embedding", self.create_embedding, methods=["POST"], response_model=CreateResponse)
+        self.add_api_route("/sdapi/v1/create/hypernetwork", self.create_hypernetwork, methods=["POST"], response_model=CreateResponse)
+        self.add_api_route("/sdapi/v1/preprocess", self.preprocess, methods=["POST"], response_model=PreprocessResponse)
+        self.add_api_route("/sdapi/v1/train/embedding", self.train_embedding, methods=["POST"], response_model=TrainResponse)
+        self.add_api_route("/sdapi/v1/train/hypernetwork", self.train_hypernetwork, methods=["POST"], response_model=TrainResponse)
 
     def add_api_route(self, path: str, endpoint, **kwargs):
         if shared.cmd_opts.api_auth:
@@ -112,7 +121,6 @@ class Api:
 
     def text2imgapi(self, txt2imgreq: StableDiffusionTxt2ImgProcessingAPI):
         populate = txt2imgreq.copy(update={ # Override __init__ params
-            "sd_model": shared.sd_model,
             "sampler_name": validate_sampler_name(txt2imgreq.sampler_name or txt2imgreq.sampler_index),
             "do_not_save_samples": True,
             "do_not_save_grid": True
@@ -120,15 +128,14 @@ class Api:
         )
         if populate.sampler_name:
             populate.sampler_index = None  # prevent a warning later on
-        p = StableDiffusionProcessingTxt2Img(**vars(populate))
-        # Override object param
-
-        shared.state.begin()
 
         with self.queue_lock:
-            processed = process_images(p)
+            p = StableDiffusionProcessingTxt2Img(sd_model=shared.sd_model, **vars(populate))
 
-        shared.state.end()
+            shared.state.begin()
+            processed = process_images(p)
+            shared.state.end()
+
 
         b64images = list(map(encode_pil_to_base64, processed.images))
 
@@ -144,7 +151,6 @@ class Api:
             mask = decode_base64_to_image(mask)
 
         populate = img2imgreq.copy(update={ # Override __init__ params
-            "sd_model": shared.sd_model,
             "sampler_name": validate_sampler_name(img2imgreq.sampler_name or img2imgreq.sampler_index),
             "do_not_save_samples": True,
             "do_not_save_grid": True,
@@ -156,16 +162,14 @@ class Api:
 
         args = vars(populate)
         args.pop('include_init_images', None)  # this is meant to be done by "exclude": True in model, but it's for a reason that I cannot determine.
-        p = StableDiffusionProcessingImg2Img(**args)
-
-        p.init_images = [decode_base64_to_image(x) for x in init_images]
-
-        shared.state.begin()
 
         with self.queue_lock:
-            processed = process_images(p)
+            p = StableDiffusionProcessingImg2Img(sd_model=shared.sd_model, **args)
+            p.init_images = [decode_base64_to_image(x) for x in init_images]
 
-        shared.state.end()
+            shared.state.begin()
+            processed = process_images(p)
+            shared.state.end()
 
         b64images = list(map(encode_pil_to_base64, processed.images))
 
@@ -325,6 +329,89 @@ class Api:
 
     def refresh_checkpoints(self):
         shared.refresh_checkpoints()
+
+    def create_embedding(self, args: dict):
+        try:
+            shared.state.begin()
+            filename = create_embedding(**args) # create empty embedding
+            sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings() # reload embeddings so new one can be immediately used
+            shared.state.end()
+            return CreateResponse(info = "create embedding filename: {filename}".format(filename = filename))
+        except AssertionError as e:
+            shared.state.end()
+            return TrainResponse(info = "create embedding error: {error}".format(error = e))
+
+    def create_hypernetwork(self, args: dict):
+        try:
+            shared.state.begin()
+            filename = create_hypernetwork(**args) # create empty embedding
+            shared.state.end()
+            return CreateResponse(info = "create hypernetwork filename: {filename}".format(filename = filename))
+        except AssertionError as e:
+            shared.state.end()
+            return TrainResponse(info = "create hypernetwork error: {error}".format(error = e))
+
+    def preprocess(self, args: dict):
+        try:
+            shared.state.begin()
+            preprocess(**args) # quick operation unless blip/booru interrogation is enabled
+            shared.state.end()
+            return PreprocessResponse(info = 'preprocess complete')
+        except KeyError as e:
+            shared.state.end()
+            return PreprocessResponse(info = "preprocess error: invalid token: {error}".format(error = e))
+        except AssertionError as e:
+            shared.state.end()
+            return PreprocessResponse(info = "preprocess error: {error}".format(error = e))
+        except FileNotFoundError as e:
+            shared.state.end()
+            return PreprocessResponse(info = 'preprocess error: {error}'.format(error = e))
+
+    def train_embedding(self, args: dict):
+        try:
+            shared.state.begin()
+            apply_optimizations = shared.opts.training_xattention_optimizations
+            error = None
+            filename = ''
+            if not apply_optimizations:
+                sd_hijack.undo_optimizations()
+            try:
+                embedding, filename = train_embedding(**args) # can take a long time to complete
+            except Exception as e:
+                error = e
+            finally:
+                if not apply_optimizations:
+                    sd_hijack.apply_optimizations()
+                shared.state.end()
+            return TrainResponse(info = "train embedding complete: filename: {filename} error: {error}".format(filename = filename, error = error))
+        except AssertionError as msg:
+            shared.state.end()
+            return TrainResponse(info = "train embedding error: {msg}".format(msg = msg))
+
+    def train_hypernetwork(self, args: dict):
+        try:
+            shared.state.begin()
+            initial_hypernetwork = shared.loaded_hypernetwork
+            apply_optimizations = shared.opts.training_xattention_optimizations
+            error = None
+            filename = ''
+            if not apply_optimizations:
+                sd_hijack.undo_optimizations()
+            try:
+                hypernetwork, filename = train_hypernetwork(*args)
+            except Exception as e:
+                error = e
+            finally:
+                shared.loaded_hypernetwork = initial_hypernetwork
+                shared.sd_model.cond_stage_model.to(devices.device)
+                shared.sd_model.first_stage_model.to(devices.device)
+                if not apply_optimizations:
+                    sd_hijack.apply_optimizations()
+                shared.state.end()
+            return TrainResponse(info = "train embedding complete: filename: {filename} error: {error}".format(filename = filename, error = error))
+        except AssertionError as msg:
+            shared.state.end()
+            return TrainResponse(info = "train embedding error: {error}".format(error = error))
 
     def launch(self, server_name, port):
         self.app.include_router(self.router)

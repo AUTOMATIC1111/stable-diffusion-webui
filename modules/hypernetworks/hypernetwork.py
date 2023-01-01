@@ -277,7 +277,7 @@ def load_hypernetwork(filename):
             print(traceback.format_exc(), file=sys.stderr)
     else:
         if shared.loaded_hypernetwork is not None:
-            print(f"Unloading hypernetwork")
+            print("Unloading hypernetwork")
 
         shared.loaded_hypernetwork = None
 
@@ -378,6 +378,32 @@ def report_statistics(loss_info:dict):
             print(e)
 
 
+def create_hypernetwork(name, enable_sizes, overwrite_old, layer_structure=None, activation_func=None, weight_init=None, add_layer_norm=False, use_dropout=False):
+    # Remove illegal characters from name.
+    name = "".join( x for x in name if (x.isalnum() or x in "._- "))
+
+    fn = os.path.join(shared.cmd_opts.hypernetwork_dir, f"{name}.pt")
+    if not overwrite_old:
+        assert not os.path.exists(fn), f"file {fn} already exists"
+
+    if type(layer_structure) == str:
+        layer_structure = [float(x.strip()) for x in layer_structure.split(",")]
+
+    hypernet = modules.hypernetworks.hypernetwork.Hypernetwork(
+        name=name,
+        enable_sizes=[int(x) for x in enable_sizes],
+        layer_structure=layer_structure,
+        activation_func=activation_func,
+        weight_init=weight_init,
+        add_layer_norm=add_layer_norm,
+        use_dropout=use_dropout,
+    )
+    hypernet.save(fn)
+
+    shared.reload_hypernetworks()
+
+    return fn
+
 
 def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, gradient_step, data_root, log_directory, training_width, training_height, steps, shuffle_tags, tag_drop_out, latent_sampling_method, create_image_every, save_hypernetwork_every, template_file, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height):
     # images allows training previews to have infotext. Importing it at the top causes a circular import problem.
@@ -417,7 +443,7 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, gradient_step,
 
     initial_step = hypernetwork.step or 0
     if initial_step >= steps:
-        shared.state.textinfo = f"Model has already been trained beyond specified max steps"
+        shared.state.textinfo = "Model has already been trained beyond specified max steps"
         return hypernetwork, filename
 
     scheduler = LearnRateScheduler(learn_rate, steps, initial_step)
