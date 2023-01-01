@@ -45,7 +45,7 @@ def on_tmpdir_changed():
 
     os.makedirs(shared.opts.temp_dir, exist_ok=True)
 
-    shared.demo.temp_dirs = shared.demo.temp_dirs | {os.path.abspath(shared.opts.temp_dir)}
+    shared.demo.temp_file_sets[0] = shared.demo.temp_file_sets[0] | {os.path.abspath(shared.opts.temp_dir)}
 
 
 def cleanup_tmpdr():
