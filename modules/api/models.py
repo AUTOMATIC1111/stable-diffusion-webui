@@ -249,3 +249,6 @@ class ArtistItem(BaseModel):
     score: float = Field(title="Score")
     category: str = Field(title="Category")
 
+class EmbeddingsResponse(BaseModel):
+    loaded: List[str] = Field(title="Loaded", description="Embeddings loaded for the current model")
+    skipped: List[str] = Field(title="Skipped", description="Embeddings skipped for the current model (likely due to architecture incompatibility)")
