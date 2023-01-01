@@ -125,6 +125,18 @@
     margin: 0.1em 0;
 }
 
+@media screen and (min-width: 420px) {
+    #roll_col{
+        flex-direction: column;
+    }
+}
+
+@media screen and (max-width: 420px) {
+    #roll_col{
+        flex-direction: row;
+    }
+}
+
 #interrogate_col{
     min-width: 0 !important;
     max-width: 8em !important;
