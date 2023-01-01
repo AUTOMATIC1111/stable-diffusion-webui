@@ -38,7 +38,7 @@ def quote(text):
 def image_from_url_text(filedata):
     if type(filedata) == dict and filedata["is_file"]:
         filename = filedata["name"]
-        is_in_right_dir = any(Path(temp_dir).resolve() in Path(filename).resolve().parents for temp_dir in shared.demo.temp_dirs)
+        is_in_right_dir = any([filename in fileset for fileset in shared.demo.temp_file_sets])
         assert is_in_right_dir, 'trying to open image file outside of allowed directories'
 
         return Image.open(filename)
