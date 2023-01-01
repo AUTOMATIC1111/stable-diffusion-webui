@@ -32,3 +32,6 @@ notification.mp3
 /extensions
 /test/stdout.txt
 /test/stderr.txt
+
+# Ignore/omit macOS DS_Store metadata files, they're meant for local setups only, not for git.
+.DS_Store
