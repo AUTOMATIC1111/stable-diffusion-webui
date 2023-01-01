@@ -683,33 +683,34 @@ def create_ui():
                 setup_progressbar(progressbar, txt2img_preview, 'txt2img')
 
         with gr.Row().style(equal_height=False):
-            with gr.Column(variant='panel', elem_id="txt2img_settings"):
-                steps, sampler_index = create_sampler_and_steps_selection(samplers, "txt2img")
+            with gr.Accordion("Open for Settings"):
+                with gr.Column(variant='panel', elem_id="txt2img_settings"):
+                    steps, sampler_index = create_sampler_and_steps_selection(samplers, "txt2img")
 
-                with gr.Group():
-                    width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512)
-                    height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512)
+                    with gr.Group():
+                        width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512)
+                        height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512)
 
-                with gr.Row():
-                    restore_faces = gr.Checkbox(label='Restore faces', value=False, visible=len(shared.face_restorers) > 1)
-                    tiling = gr.Checkbox(label='Tiling', value=False)
-                    enable_hr = gr.Checkbox(label='Highres. fix', value=False)
+                    with gr.Row():
+                        restore_faces = gr.Checkbox(label='Restore faces', value=False, visible=len(shared.face_restorers) > 1)
+                        tiling = gr.Checkbox(label='Tiling', value=False)
+                        enable_hr = gr.Checkbox(label='Highres. fix', value=False)
 
-                with gr.Row(visible=False) as hr_options:
-                    firstphase_width = gr.Slider(minimum=0, maximum=1024, step=8, label="Firstpass width", value=0)
-                    firstphase_height = gr.Slider(minimum=0, maximum=1024, step=8, label="Firstpass height", value=0)
-                    denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.7)
+                    with gr.Row(visible=False) as hr_options:
+                        firstphase_width = gr.Slider(minimum=0, maximum=1024, step=8, label="Firstpass width", value=0)
+                        firstphase_height = gr.Slider(minimum=0, maximum=1024, step=8, label="Firstpass height", value=0)
+                        denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.7)
 
-                with gr.Row(equal_height=True):
-                    batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1)
-                    batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1)
+                    with gr.Row(equal_height=True):
+                        batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1)
+                        batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1)
 
-                cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='CFG Scale', value=7.0)
+                    cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='CFG Scale', value=7.0)
 
-                seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox = create_seed_inputs()
+                    seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox = create_seed_inputs()
 
-                with gr.Group():
-                    custom_inputs = modules.scripts.scripts_txt2img.setup_ui()
+                    with gr.Group():
+                        custom_inputs = modules.scripts.scripts_txt2img.setup_ui()
 
             txt2img_gallery, generation_info, html_info, html_log = create_output_panel("txt2img", opts.outdir_txt2img_samples)
             parameters_copypaste.bind_buttons({"txt2img": txt2img_paste}, None, txt2img_prompt)
