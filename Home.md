@@ -3,6 +3,7 @@
 - [Features](Features)
   - [Textual Inversion](Textual-Inversion)
   - [Negative prompt](Negative-prompt)
+- [Seed breaking changes](Seed-breaking-changes)
 - [Dependencies](Dependencies)
   - [Xformers](Xformers)
 - [Installation and run on NVidia GPUs](Install-and-Run-on-NVidia-GPUs)
