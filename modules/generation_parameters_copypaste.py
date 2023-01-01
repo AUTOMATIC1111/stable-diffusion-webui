@@ -93,7 +93,7 @@ def integrate_settings_paste_fields(component_dict):
 def create_buttons(tabs_list):
     buttons = {}
     for tab in tabs_list:
-        buttons[tab] = gr.Button(f"Send to {tab}")
+        buttons[tab] = gr.Button(f"Send to {tab}", elem_id=f"{tab}_tab")
     return buttons
 
 

@@ -73,7 +73,7 @@
     margin-right: auto;
 }
 
-#random_seed, #random_subseed, #reuse_seed, #reuse_subseed, #open_folder{
+[id$=_random_seed], [id$=_random_subseed], [id$=_reuse_seed], [id$=_reuse_subseed], #open_folder{
     min-width: auto;
     flex-grow: 0;
     padding-left: 0.25em;
@@ -84,27 +84,27 @@
     display: none;
 }
 
-#seed_row, #subseed_row{
+[id$=_seed_row], [id$=_subseed_row]{
     gap: 0.5rem;
 }
 
-#subseed_show_box{
+[id$=_subseed_show_box]{
     min-width: auto;
     flex-grow: 0;
 }
 
-#subseed_show_box > div{
+[id$=_subseed_show_box] > div{
     border: 0;
     height: 100%;
 }
 
-#subseed_show{
+[id$=_subseed_show]{
     min-width: auto;
     flex-grow: 0;
     padding: 0;
 }
 
-#subseed_show label{
+[id$=_subseed_show] label{
     height: 100%;
 }
 
