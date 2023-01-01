@@ -19,7 +19,7 @@ import numpy as np
 from PIL import Image, PngImagePlugin
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_gradio_call
 
-from modules import sd_hijack, sd_models, localization, script_callbacks, ui_extensions, deepbooru
+from modules import sd_hijack, sd_models, localization, script_callbacks, ui_extensions, deepbooru, ui_components
 from modules.paths import script_path
 
 from modules.shared import opts, cmd_opts, restricted_opts
@@ -80,7 +80,6 @@ css_hide_progressbar = """
 # Important that they exactly match script.js for tooltip to work.
 random_symbol = '\U0001f3b2\ufe0f'  # 🎲️
 reuse_symbol = '\u267b\ufe0f'  # ♻️
-art_symbol = '\U0001f3a8'  # 🎨
 paste_symbol = '\u2199\ufe0f'  # ↙
 folder_symbol = '\U0001f4c2'  # 📂
 refresh_symbol = '\U0001f504'  # 🔄
@@ -159,7 +158,7 @@ def save_files(js_data, images, do_make_zip, index):
                     zip_file.writestr(filenames[i], f.read())
         fullfns.insert(0, zip_filepath)
 
-    return gr.File.update(value=fullfns, visible=True), '', '', plaintext_to_html(f"Saved: {filenames[0]}")
+    return gr.File.update(value=fullfns, visible=True), plaintext_to_html(f"Saved: {filenames[0]}")
 
 
 
@@ -232,13 +231,6 @@ def check_progress_call_initial(id_part):
     shared.state.time_left_force_display = False
 
     return check_progress_call(id_part)
-
-
-def roll_artist(prompt):
-    allowed_cats = set([x for x in shared.artist_db.categories() if len(opts.random_artist_categories)==0 or x in opts.random_artist_categories])
-    artist = random.choice([x for x in shared.artist_db.artists if x.category in allowed_cats])
-
-    return prompt + ", " + artist.name if prompt != '' else artist.name
 
 
 def visit(x, func, path=""):
@@ -403,7 +395,6 @@ def create_toprow(is_img2img):
                         )
 
         with gr.Column(scale=1, elem_id="roll_col"):
-            roll = gr.Button(value=art_symbol, elem_id="roll", visible=len(shared.artist_db.artists) > 0)
             paste = gr.Button(value=paste_symbol, elem_id="paste")
             save_style = gr.Button(value=save_style_symbol, elem_id="style_create")
             prompt_style_apply = gr.Button(value=apply_style_symbol, elem_id="style_apply")
@@ -452,7 +443,7 @@ def create_toprow(is_img2img):
                     prompt_style2 = gr.Dropdown(label="Style 2", elem_id=f"{id_part}_style2_index", choices=[k for k, v in shared.prompt_styles.styles.items()], value=next(iter(shared.prompt_styles.styles.keys())))
                     prompt_style2.save_to_config = True
 
-    return prompt, roll, prompt_style, negative_prompt, prompt_style2, submit, button_interrogate, button_deepbooru, prompt_style_apply, save_style, paste, token_counter, token_button
+    return prompt, prompt_style, negative_prompt, prompt_style2, submit, button_interrogate, button_deepbooru, prompt_style_apply, save_style, paste, token_counter, token_button
 
 
 def setup_progressbar(progressbar, preview, id_part, textinfo=None):
@@ -532,7 +523,7 @@ def create_refresh_button(refresh_component, refresh_method, refreshed_args, ele
 
         return gr.update(**(args or {}))
 
-    refresh_button = gr.Button(value=refresh_symbol, elem_id=elem_id)
+    refresh_button = ui_components.ToolButton(value=refresh_symbol, elem_id=elem_id)
     refresh_button.click(
         fn=refresh,
         inputs=[],
@@ -570,13 +561,14 @@ Requested path was: {f}
 
             generation_info = None
             with gr.Column():
-                with gr.Row():
+                with gr.Row(elem_id=f"image_buttons_{tabname}"):
+                    open_folder_button = gr.Button(folder_symbol, elem_id="hidden_element" if shared.cmd_opts.hide_ui_dir_config else 'open_folder')
+
                     if tabname != "extras":
                         save = gr.Button('Save', elem_id=f'save_{tabname}')
+                        save_zip = gr.Button('Zip', elem_id=f'save_zip_{tabname}')
 
                     buttons = parameters_copypaste.create_buttons(["img2img", "inpaint", "extras"])
-                    button_id = "hidden_element" if shared.cmd_opts.hide_ui_dir_config else 'open_folder'
-                    open_folder_button = gr.Button(folder_symbol, elem_id=button_id)
 
                 open_folder_button.click(
                     fn=lambda: open_folder(opts.outdir_samples or outdir),
@@ -586,13 +578,12 @@ Requested path was: {f}
 
                 if tabname != "extras":
                     with gr.Row():
-                        do_make_zip = gr.Checkbox(label="Make Zip when Save?", value=False)
-
-                    with gr.Row():
                         download_files = gr.File(None, file_count="multiple", interactive=False, show_label=False, visible=False)
 
                     with gr.Group():
                         html_info = gr.HTML()
+                        html_log = gr.HTML()
+
                         generation_info = gr.Textbox(visible=False)
                         if tabname == 'txt2img' or tabname == 'img2img':
                             generation_info_button = gr.Button(visible=False, elem_id=f"{tabname}_generation_info_button")
@@ -606,25 +597,54 @@ Requested path was: {f}
 
                         save.click(
                             fn=wrap_gradio_call(save_files),
-                            _js="(x, y, z, w) => [x, y, z, selected_gallery_index()]",
+                            _js="(x, y, z, w) => [x, y, false, selected_gallery_index()]",
                             inputs=[
                                 generation_info,
                                 result_gallery,
-                                do_make_zip,
+                                html_info,
                                 html_info,
                             ],
                             outputs=[
                                 download_files,
-                                html_info,
-                                html_info,
-                                html_info,
+                                html_log,
                             ]
                         )
+
+                        save_zip.click(
+                            fn=wrap_gradio_call(save_files),
+                            _js="(x, y, z, w) => [x, y, true, selected_gallery_index()]",
+                            inputs=[
+                                generation_info,
+                                result_gallery,
+                                html_info,
+                                html_info,
+                            ],
+                            outputs=[
+                                download_files,
+                                html_log,
+                            ]
+                        )
+
                 else:
                     html_info_x = gr.HTML()
                     html_info = gr.HTML()
+                    html_log = gr.HTML()
+
                 parameters_copypaste.bind_buttons(buttons, result_gallery, "txt2img" if tabname == "txt2img" else None)
-                return result_gallery, generation_info if tabname != "extras" else html_info_x, html_info
+                return result_gallery, generation_info if tabname != "extras" else html_info_x, html_info, html_log
+
+
+def create_sampler_and_steps_selection(choices, tabname):
+    if opts.samplers_in_dropdown:
+        with gr.Row(elem_id=f"sampler_selection_{tabname}"):
+            sampler_index = gr.Dropdown(label='Sampling method', elem_id=f"{tabname}_sampling", choices=[x.name for x in choices], value=choices[0].name, type="index")
+            steps = gr.Slider(minimum=1, maximum=150, step=1, elem_id=f"{tabname}_steps", label="Sampling Steps", value=20)
+    else:
+        with gr.Group(elem_id=f"sampler_selection_{tabname}"):
+            steps = gr.Slider(minimum=1, maximum=150, step=1, elem_id=f"{tabname}_steps", label="Sampling Steps", value=20)
+            sampler_index = gr.Radio(label='Sampling method', elem_id=f"{tabname}_sampling", choices=[x.name for x in choices], value=choices[0].name, type="index")
+
+    return steps, sampler_index
 
 
 def create_ui():
@@ -639,13 +659,10 @@ def create_ui():
     modules.scripts.scripts_txt2img.initialize_scripts(is_img2img=False)
 
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
-        txt2img_prompt, roll, txt2img_prompt_style, txt2img_negative_prompt, txt2img_prompt_style2, submit, _, _,txt2img_prompt_style_apply, txt2img_save_style, txt2img_paste, token_counter, token_button = create_toprow(is_img2img=False)
+        txt2img_prompt, txt2img_prompt_style, txt2img_negative_prompt, txt2img_prompt_style2, submit, _, _,txt2img_prompt_style_apply, txt2img_save_style, txt2img_paste, token_counter, token_button = create_toprow(is_img2img=False)
 
         dummy_component = gr.Label(visible=False)
         txt_prompt_img = gr.File(label="", elem_id="txt2img_prompt_image", file_count="single", type="bytes", visible=False)
-
-
-
 
         with gr.Row(elem_id='txt2img_progress_row'):
             with gr.Column(scale=1):
@@ -658,8 +675,7 @@ def create_ui():
 
         with gr.Row().style(equal_height=False):
             with gr.Column(variant='panel', elem_id="txt2img_settings"):
-                steps = gr.Slider(minimum=1, maximum=150, step=1, label="Sampling Steps", value=20)
-                sampler_index = gr.Radio(label='Sampling method', elem_id="txt2img_sampling", choices=[x.name for x in samplers], value=samplers[0].name, type="index")
+                steps, sampler_index = create_sampler_and_steps_selection(samplers, "txt2img")
 
                 with gr.Group():
                     width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512)
@@ -686,14 +702,14 @@ def create_ui():
                 with gr.Group():
                     custom_inputs = modules.scripts.scripts_txt2img.setup_ui()
 
-            txt2img_gallery, generation_info, html_info = create_output_panel("txt2img", opts.outdir_txt2img_samples)
+            txt2img_gallery, generation_info, html_info, html_log = create_output_panel("txt2img", opts.outdir_txt2img_samples)
             parameters_copypaste.bind_buttons({"txt2img": txt2img_paste}, None, txt2img_prompt)
 
             connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
             connect_reuse_seed(subseed, reuse_subseed, generation_info, dummy_component, is_subseed=True)
 
             txt2img_args = dict(
-                fn=wrap_gradio_gpu_call(modules.txt2img.txt2img),
+                fn=wrap_gradio_gpu_call(modules.txt2img.txt2img, extra_outputs=[None, '', '']),
                 _js="submit",
                 inputs=[
                     txt2img_prompt,
@@ -720,7 +736,8 @@ def create_ui():
                 outputs=[
                     txt2img_gallery,
                     generation_info,
-                    html_info
+                    html_info,
+                    html_log,
                 ],
                 show_progress=False,
             )
@@ -745,16 +762,6 @@ def create_ui():
                 outputs=[hr_options],
             )
 
-            roll.click(
-                fn=roll_artist,
-                _js="update_txt2img_tokens",
-                inputs=[
-                    txt2img_prompt,
-                ],
-                outputs=[
-                    txt2img_prompt,
-                ]
-            )
 
             txt2img_paste_fields = [
                 (txt2img_prompt, "Prompt"),
@@ -797,8 +804,7 @@ def create_ui():
     modules.scripts.scripts_img2img.initialize_scripts(is_img2img=True)
 
     with gr.Blocks(analytics_enabled=False) as img2img_interface:
-        img2img_prompt, roll, img2img_prompt_style, img2img_negative_prompt, img2img_prompt_style2, submit, img2img_interrogate, img2img_deepbooru, img2img_prompt_style_apply, img2img_save_style, img2img_paste,token_counter, token_button = create_toprow(is_img2img=True)
-
+        img2img_prompt, img2img_prompt_style, img2img_negative_prompt, img2img_prompt_style2, submit, img2img_interrogate, img2img_deepbooru, img2img_prompt_style_apply, img2img_save_style, img2img_paste,token_counter, token_button = create_toprow(is_img2img=True)
 
         with gr.Row(elem_id='img2img_progress_row'):
             img2img_prompt_img = gr.File(label="", elem_id="img2img_prompt_image", file_count="single", type="bytes", visible=False)
@@ -859,8 +865,7 @@ def create_ui():
                 with gr.Row():
                     resize_mode = gr.Radio(label="Resize mode", elem_id="resize_mode", show_label=False, choices=["Just resize", "Crop and resize", "Resize and fill", "Just resize (latent upscale)"], type="index", value="Just resize")
 
-                steps = gr.Slider(minimum=1, maximum=150, step=1, label="Sampling Steps", value=20)
-                sampler_index = gr.Radio(label='Sampling method', choices=[x.name for x in samplers_for_img2img], value=samplers_for_img2img[0].name, type="index")
+                steps, sampler_index = create_sampler_and_steps_selection(samplers_for_img2img, "img2img")
 
                 with gr.Group():
                     width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="img2img_width")
@@ -883,7 +888,7 @@ def create_ui():
                 with gr.Group():
                     custom_inputs = modules.scripts.scripts_img2img.setup_ui()
 
-            img2img_gallery, generation_info, html_info = create_output_panel("img2img", opts.outdir_img2img_samples)
+            img2img_gallery, generation_info, html_info, html_log = create_output_panel("img2img", opts.outdir_img2img_samples)
             parameters_copypaste.bind_buttons({"img2img": img2img_paste}, None, img2img_prompt)
 
             connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
@@ -915,7 +920,7 @@ def create_ui():
             )
 
             img2img_args = dict(
-                fn=wrap_gradio_gpu_call(modules.img2img.img2img),
+                fn=wrap_gradio_gpu_call(modules.img2img.img2img, extra_outputs=[None, '', '']),
                 _js="submit_img2img",
                 inputs=[
                     dummy_component,
@@ -954,7 +959,8 @@ def create_ui():
                 outputs=[
                     img2img_gallery,
                     generation_info,
-                    html_info
+                    html_info,
+                    html_log,
                 ],
                 show_progress=False,
             )
@@ -972,18 +978,6 @@ def create_ui():
                 fn=interrogate_deepbooru,
                 inputs=[init_img],
                 outputs=[img2img_prompt],
-            )
-
-
-            roll.click(
-                fn=roll_artist,
-                _js="update_img2img_tokens",
-                inputs=[
-                    img2img_prompt,
-                ],
-                outputs=[
-                    img2img_prompt,
-                ]
             )
 
             prompts = [(txt2img_prompt, txt2img_negative_prompt), (img2img_prompt, img2img_negative_prompt)]
@@ -1078,10 +1072,10 @@ def create_ui():
                 with gr.Group():
                     upscale_before_face_fix = gr.Checkbox(label='Upscale Before Restoring Faces', value=False)
 
-            result_images, html_info_x, html_info = create_output_panel("extras", opts.outdir_extras_samples)
+            result_images, html_info_x, html_info, html_log = create_output_panel("extras", opts.outdir_extras_samples)
 
         submit.click(
-            fn=wrap_gradio_gpu_call(modules.extras.run_extras),
+            fn=wrap_gradio_gpu_call(modules.extras.run_extras, extra_outputs=[None, '']),
             _js="get_extras_tab_index",
             inputs=[
                 dummy_component,
@@ -1142,8 +1136,14 @@ def create_ui():
 
                 with gr.Row():
                     primary_model_name = gr.Dropdown(modules.sd_models.checkpoint_tiles(), elem_id="modelmerger_primary_model_name", label="Primary model (A)")
+                    create_refresh_button(primary_model_name, modules.sd_models.list_models, lambda: {"choices": modules.sd_models.checkpoint_tiles()}, "refresh_checkpoint_A")
+
                     secondary_model_name = gr.Dropdown(modules.sd_models.checkpoint_tiles(), elem_id="modelmerger_secondary_model_name", label="Secondary model (B)")
+                    create_refresh_button(secondary_model_name, modules.sd_models.list_models, lambda: {"choices": modules.sd_models.checkpoint_tiles()}, "refresh_checkpoint_B")
+
                     tertiary_model_name = gr.Dropdown(modules.sd_models.checkpoint_tiles(), elem_id="modelmerger_tertiary_model_name", label="Tertiary model (C)")
+                    create_refresh_button(tertiary_model_name, modules.sd_models.list_models, lambda: {"choices": modules.sd_models.checkpoint_tiles()}, "refresh_checkpoint_C")
+
                 custom_name = gr.Textbox(label="Custom Name (Optional)")
                 interp_amount = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Multiplier (M) - set to 0 to get model A', value=0.3)
                 interp_method = gr.Radio(choices=["Weighted sum", "Add difference"], value="Weighted sum", label="Interpolation Method")
@@ -1156,8 +1156,6 @@ def create_ui():
 
             with gr.Column(variant='panel'):
                 submit_result = gr.Textbox(elem_id="modelmerger_result", show_label=False)
-
-    sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings()
 
     with gr.Blocks(analytics_enabled=False) as train_interface:
         with gr.Row().style(equal_height=False):
@@ -1447,7 +1445,7 @@ def create_ui():
                 res = comp(label=info.label, value=fun(), elem_id=elem_id, **(args or {}))
                 create_refresh_button(res, info.refresh, info.component_args, "refresh_" + key)
             else:
-                with gr.Row(variant="compact"):
+                with ui_components.FormRow():
                     res = comp(label=info.label, value=fun(), elem_id=elem_id, **(args or {}))
                     create_refresh_button(res, info.refresh, info.component_args, "refresh_" + key)
         else:

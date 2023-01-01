@@ -239,7 +239,7 @@ class StableDiffusionProcessing():
 
 
 class Processed:
-    def __init__(self, p: StableDiffusionProcessing, images_list, seed=-1, info="", subseed=None, all_prompts=None, all_negative_prompts=None, all_seeds=None, all_subseeds=None, index_of_first_image=0, infotexts=None):
+    def __init__(self, p: StableDiffusionProcessing, images_list, seed=-1, info="", subseed=None, all_prompts=None, all_negative_prompts=None, all_seeds=None, all_subseeds=None, index_of_first_image=0, infotexts=None, comments=""):
         self.images = images_list
         self.prompt = p.prompt
         self.negative_prompt = p.negative_prompt
@@ -247,6 +247,7 @@ class Processed:
         self.subseed = subseed
         self.subseed_strength = p.subseed_strength
         self.info = info
+        self.comments = comments
         self.width = p.width
         self.height = p.height
         self.sampler_name = p.sampler_name
@@ -646,7 +647,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
     devices.torch_gc()
 
-    res = Processed(p, output_images, p.all_seeds[0], infotext() + "".join(["\n\n" + x for x in comments]), subseed=p.all_subseeds[0], index_of_first_image=index_of_first_image, infotexts=infotexts)
+    res = Processed(p, output_images, p.all_seeds[0], infotext(), comments="".join(["\n\n" + x for x in comments]), subseed=p.all_subseeds[0], index_of_first_image=index_of_first_image, infotexts=infotexts)
 
     if p.scripts is not None:
         p.scripts.postprocess(p, res)
