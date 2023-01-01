@@ -22,6 +22,7 @@ from modules.shared import opts, cmd_opts
 
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
 
+Image.init() # initialize once all known file format handlers
 
 def image_grid(imgs, batch_size=1, rows=None):
     if rows is None:
@@ -500,6 +501,14 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     else:
         fullfn = os.path.join(path, f"{forced_filename}.{extension}")
 
+    if existing_info is not None and 'exif' in existing_info: # we already have encoded exif data so use that as initial parameters
+        try:
+            exif_comment = piexif.load(existing_info['exif']).get("Exif", {}).get(piexif.ExifIFD.UserComment, b'')
+            existing_info['parameters'] = piexif.helper.UserComment.load(exif_comment)
+            existing_info['exif'] = None
+        except:
+            pass
+
     pnginfo = existing_info or {}
     if info is not None:
         pnginfo[pnginfo_section_name] = info
@@ -528,16 +537,15 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
             if image_to_save.mode == 'RGBA':
                 image_to_save = image_to_save.convert("RGB")
 
-            image_to_save.save(temp_file_path, format=image_format, quality=opts.jpeg_quality)
-
             if opts.enable_pnginfo and info is not None:
-                exif_bytes = piexif.dump({
-                    "Exif": {
-                        piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(info or "", encoding="unicode")
-                    },
-                })
+                exif_str = ""
+                for k, v in pnginfo.items(): # create exif string from pnginfo so its uniform between formats
+                    exif_str += str(v) if k == 'parameters' else f"\n{k}: {v}"
+                exif_bytes = piexif.dump({ "Exif": { piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(exif_str, encoding="unicode") } })
+                image_to_save.save(temp_file_path, format=image_format, quality=opts.jpeg_quality, exif = exif_bytes)
+            else:
+                image_to_save.save(temp_file_path, format=image_format, quality=opts.jpeg_quality)
 
-                piexif.insert(exif_bytes, temp_file_path)
         else:
             image_to_save.save(temp_file_path, format=image_format, quality=opts.jpeg_quality)
 
