@@ -525,6 +525,9 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
             image_to_save.save(temp_file_path, format=image_format, quality=opts.jpeg_quality, pnginfo=pnginfo_data)
 
         elif extension.lower() in (".jpg", ".jpeg", ".webp"):
+            if image_to_save.mode == 'RGBA':
+                image_to_save = image_to_save.convert("RGB")
+
             image_to_save.save(temp_file_path, format=image_format, quality=opts.jpeg_quality)
 
             if opts.enable_pnginfo and info is not None:
