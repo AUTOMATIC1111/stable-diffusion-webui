@@ -230,7 +230,7 @@ class StableDiffusionProcessing():
     def init(self, all_prompts, all_seeds, all_subseeds):
         pass
 
-    def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
+    def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts, negative_prompts):
         raise NotImplementedError()
 
     def close(self):
@@ -573,7 +573,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 shared.state.job = f"Batch {n+1} out of {p.n_iter}"
 
             with devices.autocast():
-                samples_ddim = p.sample(conditioning=c, unconditional_conditioning=uc, seeds=seeds, subseeds=subseeds, subseed_strength=p.subseed_strength, prompts=prompts)
+                samples_ddim = p.sample(conditioning=c, unconditional_conditioning=uc, seeds=seeds, subseeds=subseeds, subseed_strength=p.subseed_strength, prompts=prompts, negative_prompts=negative_prompts)
 
             x_samples_ddim = [decode_first_stage(p.sd_model, samples_ddim[i:i+1].to(dtype=devices.dtype_vae))[0].cpu() for i in range(samples_ddim.size(0))]
             x_samples_ddim = torch.stack(x_samples_ddim).float()
@@ -657,8 +657,9 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
 class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
     sampler = None
+    valid_latent_upscale_methods = ["nearest-exact", "bilinear", "area"]
 
-    def __init__(self, enable_hr: bool=False, denoising_strength: float=0.75, firstphase_width: int=0, firstphase_height: int=0, **kwargs):
+    def __init__(self, enable_hr: bool=False, denoising_strength: float=0.75, firstphase_width: int=0, firstphase_height: int=0, sampler_name_hr: str=None, steps_hr: int=None, cfg_scale_hr: float=None, latent_upscale_hr: str=None, **kwargs):
         super().__init__(**kwargs)
         self.enable_hr = enable_hr
         self.denoising_strength = denoising_strength
@@ -666,6 +667,30 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         self.firstphase_height = firstphase_height
         self.truncate_x = 0
         self.truncate_y = 0
+        self.sampler_name_hr = sampler_name_hr
+        self.steps_hr = steps_hr
+        self.cfg_scale_hr = cfg_scale_hr
+        self.latent_upscale_hr = latent_upscale_hr
+
+        if self.enable_hr:
+            self.extra_generation_params["First pass size"] = f"{self.firstphase_width}x{self.firstphase_height}"
+            if self.steps_hr is not None:
+                self.extra_generation_params["First Pass Steps"] = self.steps_hr
+            else:
+                self.steps_hr = self.steps
+
+            if self.sampler_name_hr is not None:
+                self.extra_generation_params["First Pass Sampler"] = self.sampler_name_hr
+            else:
+                self.sampler_name_hr = self.sampler_name
+
+            if self.cfg_scale_hr is not None:
+                self.extra_generation_params["First Pass CFG"] = self.cfg_scale_hr
+            else:
+                self.cfg_scale_hr = self.cfg_scale
+
+            if self.latent_upscale_hr is not None:
+                self.extra_generation_params["Latent Upscale"] = self.latent_upscale_hr
 
     def init(self, all_prompts, all_seeds, all_subseeds):
         if self.enable_hr:
@@ -673,8 +698,6 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                 state.job_count = self.n_iter * 2
             else:
                 state.job_count = state.job_count * 2
-
-            self.extra_generation_params["First pass size"] = f"{self.firstphase_width}x{self.firstphase_height}"
 
             if self.firstphase_width == 0 or self.firstphase_height == 0:
                 desired_pixel_count = 512 * 512
@@ -700,16 +723,19 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             self.truncate_x = int(self.firstphase_width - firstphase_width_truncated) // opt_f
             self.truncate_y = int(self.firstphase_height - firstphase_height_truncated) // opt_f
 
-    def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
-        self.sampler = sd_samplers.create_sampler(self.sampler_name, self.sd_model)
-
+    def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts, negative_prompts=None):
         if not self.enable_hr:
+            self.sampler = sd_samplers.create_sampler(self.sampler_name, self.sd_model)
             x = create_random_tensors([opt_C, self.height // opt_f, self.width // opt_f], seeds=seeds, subseeds=subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
-            samples = self.sampler.sample(self, x, conditioning, unconditional_conditioning, image_conditioning=self.txt2img_image_conditioning(x))
+            samples = self.sampler.sample(self, x, conditioning, unconditional_conditioning, image_conditioning=self.txt2img_image_conditioning(x), cfg_scale=self.cfg_scale)
             return samples
 
+        uc_hr = prompt_parser.get_learned_conditioning(self.sd_model, negative_prompts, self.steps_hr)
+        c_hr = prompt_parser.get_multicond_learned_conditioning(self.sd_model, prompts, self.steps_hr)
+
+        self.sampler = sd_samplers.create_sampler(self.sampler_name_hr, self.sd_model)
         x = create_random_tensors([opt_C, self.firstphase_height // opt_f, self.firstphase_width // opt_f], seeds=seeds, subseeds=subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
-        samples = self.sampler.sample(self, x, conditioning, unconditional_conditioning, image_conditioning=self.txt2img_image_conditioning(x, self.firstphase_width, self.firstphase_height))
+        samples = self.sampler.sample(self, x, c_hr, uc_hr, image_conditioning=self.txt2img_image_conditioning(x, self.firstphase_width, self.firstphase_height), steps=self.steps_hr, cfg_scale=self.cfg_scale_hr)
 
         samples = samples[:, :, self.truncate_y//2:samples.shape[2]-self.truncate_y//2, self.truncate_x//2:samples.shape[3]-self.truncate_x//2]
 
@@ -723,11 +749,11 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
             images.save_image(image, self.outpath_samples, "", seeds[index], prompts[index], opts.samples_format, suffix="-before-highres-fix")
 
-        if opts.use_scale_latent_for_hires_fix:
+        if self.latent_upscale_hr in self.valid_latent_upscale_methods:
             for i in range(samples.shape[0]):
                 save_intermediate(samples, i)
 
-            samples = torch.nn.functional.interpolate(samples, size=(self.height // opt_f, self.width // opt_f), mode="bilinear")
+            samples = torch.nn.functional.interpolate(samples, size=(self.height // opt_f, self.width // opt_f), mode=self.latent_upscale_hr)
 
             # Avoid making the inpainting conditioning unless necessary as
             # this does need some extra compute to decode / encode the image again.
@@ -770,7 +796,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         x = None
         devices.torch_gc()
 
-        samples = self.sampler.sample_img2img(self, samples, noise, conditioning, unconditional_conditioning, steps=self.steps, image_conditioning=image_conditioning)
+        samples = self.sampler.sample_img2img(self, samples, noise, conditioning, unconditional_conditioning, steps=self.steps, image_conditioning=image_conditioning, cfg_scale=self.cfg_scale)
 
         return samples
 
@@ -908,14 +934,14 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
         self.image_conditioning = self.img2img_image_conditioning(image, self.init_latent, image_mask)
 
-    def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
+    def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts, negative_prompts):
         x = create_random_tensors([opt_C, self.height // opt_f, self.width // opt_f], seeds=seeds, subseeds=subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
 
         if self.initial_noise_multiplier != 1.0:
             self.extra_generation_params["Noise multiplier"] = self.initial_noise_multiplier
             x *= self.initial_noise_multiplier
 
-        samples = self.sampler.sample_img2img(self, self.init_latent, x, conditioning, unconditional_conditioning, image_conditioning=self.image_conditioning)
+        samples = self.sampler.sample_img2img(self, self.init_latent, x, conditioning, unconditional_conditioning, image_conditioning=self.image_conditioning, cfg_scale=self.cfg_scale)
 
         if self.mask is not None:
             samples = samples * self.nmask + self.init_latent * self.mask
