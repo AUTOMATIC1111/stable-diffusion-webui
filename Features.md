@@ -336,7 +336,7 @@ is only one list - a list of artists (from `artists.csv`). You can add more list
  - create `interrogate` directory in the same place as webui
  - put text files in it with a relevant description on each line
 
-For example of what text files to use, see https://github.com/pharmapsychotic/clip-interrogator/tree/main/data.
+For example of what text files to use, see https://github.com/pharmapsychotic/clip-interrogator/tree/main/clip_interrogator/data.
 In fact, you can just take files from there and use them - just skip artists.txt because you already have a list of
 artists in `artists.csv` (or use that too, who's going to stop you). Each file adds one line of text to the final description.
 If you add ".top3." to filename, for example, `flavors.top3.txt`, the three most relevant lines from this file will be
