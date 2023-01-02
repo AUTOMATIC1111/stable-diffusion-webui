@@ -491,7 +491,7 @@ def apply_setting(key, value):
         return
 
     valtype = type(opts.data_labels[key].default)
-    oldval = opts.data[key]
+    oldval = opts.data.get(key, None)
     opts.data[key] = valtype(value) if valtype != type(None) else value
     if oldval != value and opts.data_labels[key].onchange is not None:
         opts.data_labels[key].onchange()
