@@ -103,35 +103,57 @@ def bind_buttons(buttons, send_image, send_generate_info):
     bind_list.append([buttons, send_image, send_generate_info])
 
 
+def send_image_and_dimensions(x):
+    if isinstance(x, Image.Image):
+        img = x
+    else:
+        img = image_from_url_text(x)
+
+    if shared.opts.send_size and isinstance(img, Image.Image):
+        w = img.width
+        h = img.height
+    else:
+        w = gr.update()
+        h = gr.update()
+
+    return img, w, h
+
+
 def run_bind():
-    for buttons, send_image, send_generate_info in bind_list:
+    for buttons, source_image_component, send_generate_info in bind_list:
         for tab in buttons:
             button = buttons[tab]
-            if send_image and paste_fields[tab]["init_img"]:
-                if type(send_image) == gr.Gallery:
-                    button.click(
-                        fn=lambda x: image_from_url_text(x),
-                        _js="extract_image_from_gallery",
-                        inputs=[send_image],
-                        outputs=[paste_fields[tab]["init_img"]],
-                    )
-                else:
-                    button.click(
-                        fn=lambda x: x,
-                        inputs=[send_image],
-                        outputs=[paste_fields[tab]["init_img"]],
-                    )
+            destination_image_component = paste_fields[tab]["init_img"]
+            fields = paste_fields[tab]["fields"]
 
-            if send_generate_info and paste_fields[tab]["fields"] is not None:
+            destination_width_component = next(iter([field for field, name in fields if name == "Size-1"] if fields else []), None)
+            destination_height_component = next(iter([field for field, name in fields if name == "Size-2"] if fields else []), None)
+
+            if source_image_component and destination_image_component:
+                if isinstance(source_image_component, gr.Gallery):
+                    func = send_image_and_dimensions if destination_width_component else image_from_url_text
+                    jsfunc = "extract_image_from_gallery"
+                else:
+                    func = send_image_and_dimensions if destination_width_component else lambda x: x
+                    jsfunc = None
+
+                button.click(
+                    fn=func,
+                    _js=jsfunc,
+                    inputs=[source_image_component],
+                    outputs=[destination_image_component, destination_width_component, destination_height_component] if destination_width_component else [destination_image_component],
+                )
+
+            if send_generate_info and fields is not None:
                 if send_generate_info in paste_fields:
-                    paste_field_names = ['Prompt', 'Negative prompt', 'Steps', 'Face restoration'] +  (['Size-1', 'Size-2'] if shared.opts.send_size else []) + (["Seed"] if shared.opts.send_seed else [])
+                    paste_field_names = ['Prompt', 'Negative prompt', 'Steps', 'Face restoration'] + (["Seed"] if shared.opts.send_seed else [])
                     button.click(
                         fn=lambda *x: x,
                         inputs=[field for field, name in paste_fields[send_generate_info]["fields"] if name in paste_field_names],
-                        outputs=[field for field, name in paste_fields[tab]["fields"] if name in paste_field_names],
+                        outputs=[field for field, name in fields if name in paste_field_names],
                     )
                 else:
-                    connect_paste(button, paste_fields[tab]["fields"], send_generate_info)
+                    connect_paste(button, fields, send_generate_info)
 
             button.click(
                 fn=None,
