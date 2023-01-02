@@ -297,6 +297,10 @@ def start(start_worker_when_ready: bool = True):
         webui.webui()
 
 
+def _exit(_, __):
+    exit()
+
+
 if __name__ == "__main__":
     skip_worker = False
 
@@ -304,7 +308,7 @@ if __name__ == "__main__":
         prepare_environment()
 
     if "--prepare-only" in sys.argv:
-        modules.script_callbacks.on_app_started(exit)
+        modules.script_callbacks.on_app_started(_exit)
         start(start_worker_when_ready=False)
         skip_worker = True
 
