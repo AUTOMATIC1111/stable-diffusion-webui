@@ -327,7 +327,6 @@ options_templates.update(options_section(('upscaling', "Upscaling"), {
     "ESRGAN_tile_overlap": OptionInfo(8, "Tile overlap, in pixels for ESRGAN upscalers. Low values = visible seam.", gr.Slider, {"minimum": 0, "maximum": 48, "step": 1}),
     "realesrgan_enabled_models": OptionInfo(["R-ESRGAN 4x+", "R-ESRGAN 4x+ Anime6B"], "Select which Real-ESRGAN models to show in the web UI. (Requires restart)", gr.CheckboxGroup, lambda: {"choices": realesrgan_models_names()}),
     "upscaler_for_img2img": OptionInfo(None, "Upscaler for img2img", gr.Dropdown, lambda: {"choices": [x.name for x in sd_upscalers]}),
-    "use_scale_latent_for_hires_fix": OptionInfo(False, "Upscale latent space image when doing hires. fix"),
 }))
 
 options_templates.update(options_section(('face-restoration', "Face restoration"), {
@@ -544,6 +543,12 @@ class Options:
 opts = Options()
 if os.path.exists(config_filename):
     opts.load(config_filename)
+
+latent_upscale_default_mode = "Latent"
+latent_upscale_modes = {
+    "Latent": "bilinear",
+    "Latent (nearest)": "nearest",
+}
 
 sd_upscalers = []
 

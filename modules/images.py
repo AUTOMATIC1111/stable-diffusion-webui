@@ -230,16 +230,32 @@ def draw_prompt_matrix(im, width, height, all_prompts):
     return draw_grid_annotations(im, width, height, hor_texts, ver_texts)
 
 
-def resize_image(resize_mode, im, width, height):
+def resize_image(resize_mode, im, width, height, upscaler_name=None):
+    """
+    Resizes an image with the specified resize_mode, width, and height.
+
+    Args:
+        resize_mode: The mode to use when resizing the image.
+            0: Resize the image to the specified width and height.
+            1: Resize the image to fill the specified width and height, maintaining the aspect ratio, and then center the image within the dimensions, cropping the excess.
+            2: Resize the image to fit within the specified width and height, maintaining the aspect ratio, and then center the image within the dimensions, filling empty with data from image.
+        im: The image to resize.
+        width: The width to resize the image to.
+        height: The height to resize the image to.
+        upscaler_name: The name of the upscaler to use. If not provided, defaults to opts.upscaler_for_img2img.
+    """
+
+    upscaler_name = upscaler_name or opts.upscaler_for_img2img
+
     def resize(im, w, h):
-        if opts.upscaler_for_img2img is None or opts.upscaler_for_img2img == "None" or im.mode == 'L':
+        if upscaler_name is None or upscaler_name == "None" or im.mode == 'L':
             return im.resize((w, h), resample=LANCZOS)
 
         scale = max(w / im.width, h / im.height)
 
         if scale > 1.0:
-            upscalers = [x for x in shared.sd_upscalers if x.name == opts.upscaler_for_img2img]
-            assert len(upscalers) > 0, f"could not find upscaler named {opts.upscaler_for_img2img}"
+            upscalers = [x for x in shared.sd_upscalers if x.name == upscaler_name]
+            assert len(upscalers) > 0, f"could not find upscaler named {upscaler_name}"
 
             upscaler = upscalers[0]
             im = upscaler.scaler.upscale(im, scale, upscaler.data_path)

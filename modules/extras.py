@@ -303,6 +303,8 @@ def run_modelmerger(primary_model_name, secondary_model_name, tertiary_model_nam
                 theta_0[key][:, 0:4, :, :] = theta_func2(a[:, 0:4, :, :], b, multiplier)
                 result_is_inpainting_model = True
             else:
+                assert a.shape == b.shape, f'Incompatible shapes for layer {key}: A is {a.shape}, and B is {b.shape}'
+
                 theta_0[key] = theta_func2(a, b, multiplier)
 
             if save_as_half:

@@ -59,7 +59,7 @@ class EmbeddingDatabase:
     def __init__(self, embeddings_dir):
         self.ids_lookup = {}
         self.word_embeddings = {}
-        self.skipped_embeddings = []
+        self.skipped_embeddings = {}
         self.dir_mtime = None
         self.embeddings_dir = embeddings_dir
         self.expected_shape = -1
@@ -91,7 +91,7 @@ class EmbeddingDatabase:
         self.dir_mtime = mt
         self.ids_lookup.clear()
         self.word_embeddings.clear()
-        self.skipped_embeddings = []
+        self.skipped_embeddings.clear()
         self.expected_shape = self.get_expected_shape()
 
         def process_file(path, filename):
@@ -136,7 +136,7 @@ class EmbeddingDatabase:
             if self.expected_shape == -1 or self.expected_shape == embedding.shape:
                 self.register_embedding(embedding, shared.sd_model)
             else:
-                self.skipped_embeddings.append(name)
+                self.skipped_embeddings[name] = embedding
 
         for fn in os.listdir(self.embeddings_dir):
             try:
@@ -153,7 +153,7 @@ class EmbeddingDatabase:
 
         print(f"Textual inversion embeddings loaded({len(self.word_embeddings)}): {', '.join(self.word_embeddings.keys())}")
         if len(self.skipped_embeddings) > 0:
-            print(f"Textual inversion embeddings skipped({len(self.skipped_embeddings)}): {', '.join(self.skipped_embeddings)}")
+            print(f"Textual inversion embeddings skipped({len(self.skipped_embeddings)}): {', '.join(self.skipped_embeddings.keys())}")
 
     def find_embedding_at_position(self, tokens, offset):
         token = tokens[offset]
@@ -282,7 +282,7 @@ def train_embedding(embedding_name, learn_rate, batch_size, gradient_step, data_
         return embedding, filename
     scheduler = LearnRateScheduler(learn_rate, steps, initial_step)
 
-   # dataset loading may take a while, so input validations and early returns should be done before this
+    # dataset loading may take a while, so input validations and early returns should be done before this
     shared.state.textinfo = f"Preparing dataset from {html.escape(data_root)}..."
     old_parallel_processing_allowed = shared.parallel_processing_allowed
 
@@ -309,7 +309,6 @@ def train_embedding(embedding_name, learn_rate, batch_size, gradient_step, data_
     max_steps_per_epoch = len(ds) // batch_size - (len(ds) // batch_size) % gradient_step
     loss_step = 0
     _loss_step = 0 #internal
-
 
     last_saved_file = "<none>"
     last_saved_image = "<none>"

@@ -19,7 +19,7 @@ function selected_gallery_index(){
 
 function extract_image_from_gallery(gallery){
     if(gallery.length == 1){
-        return gallery[0]
+        return [gallery[0]]
     }
 
     index = selected_gallery_index()
@@ -28,7 +28,7 @@ function extract_image_from_gallery(gallery){
         return [null]
     }
 
-    return gallery[index];
+    return [gallery[index]];
 }
 
 function args_to_array(args){
