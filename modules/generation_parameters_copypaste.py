@@ -1,5 +1,6 @@
 import base64
 import io
+import math
 import os
 import re
 from pathlib import Path
@@ -164,6 +165,35 @@ def find_hypernetwork_key(hypernet_name, hypernet_hash=None):
     return None
 
 
+def restore_old_hires_fix_params(res):
+    """for infotexts that specify old First pass size parameter, convert it into
+    width, height, and hr scale"""
+
+    firstpass_width = res.get('First pass size-1', None)
+    firstpass_height = res.get('First pass size-2', None)
+
+    if firstpass_width is None or firstpass_height is None:
+        return
+
+    firstpass_width, firstpass_height = int(firstpass_width), int(firstpass_height)
+    width = int(res.get("Size-1", 512))
+    height = int(res.get("Size-2", 512))
+
+    if firstpass_width == 0 or firstpass_height == 0:
+        # old algorithm for auto-calculating first pass size
+        desired_pixel_count = 512 * 512
+        actual_pixel_count = width * height
+        scale = math.sqrt(desired_pixel_count / actual_pixel_count)
+        firstpass_width = math.ceil(scale * width / 64) * 64
+        firstpass_height = math.ceil(scale * height / 64) * 64
+
+    hr_scale = width / firstpass_width if firstpass_width > 0 else height / firstpass_height
+
+    res['Size-1'] = firstpass_width
+    res['Size-2'] = firstpass_height
+    res['Hires upscale'] = hr_scale
+
+
 def parse_generation_parameters(x: str):
     """parses generation parameters string, the one you see in text field under the picture in UI:
 ```
@@ -220,6 +250,8 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
         hypernet_name = res["Hypernet"]
         hypernet_hash = res.get("Hypernet hash", None)
         res["Hypernet"] = find_hypernetwork_key(hypernet_name, hypernet_hash)
+
+    restore_old_hires_fix_params(res)
 
     return res
 

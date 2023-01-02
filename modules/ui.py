@@ -684,11 +684,11 @@ def create_ui():
                 with gr.Row():
                     restore_faces = gr.Checkbox(label='Restore faces', value=False, visible=len(shared.face_restorers) > 1, elem_id="txt2img_restore_faces")
                     tiling = gr.Checkbox(label='Tiling', value=False, elem_id="txt2img_tiling")
-                    enable_hr = gr.Checkbox(label='Highres. fix', value=False, elem_id="txt2img_enable_hr")
+                    enable_hr = gr.Checkbox(label='Hires. fix', value=False, elem_id="txt2img_enable_hr")
 
                 with gr.Row(visible=False) as hr_options:
-                    firstphase_width = gr.Slider(minimum=0, maximum=1024, step=8, label="Firstpass width", value=0, elem_id="txt2img_firstphase_width")
-                    firstphase_height = gr.Slider(minimum=0, maximum=1024, step=8, label="Firstpass height", value=0, elem_id="txt2img_firstphase_height")
+                    hr_upscaler = gr.Dropdown(label="Upscaler", elem_id="txt2img_hr_upscaler", choices=[*shared.latent_upscale_modes, *[x.name for x in shared.sd_upscalers]], value=shared.latent_upscale_default_mode)
+                    hr_scale = gr.Slider(minimum=1.0, maximum=4.0, step=0.05, label="Upscale by", value=2.0, elem_id="txt2img_hr_scale")
                     denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.7, elem_id="txt2img_denoising_strength")
 
                 with gr.Row(equal_height=True):
@@ -729,8 +729,8 @@ def create_ui():
                     width,
                     enable_hr,
                     denoising_strength,
-                    firstphase_width,
-                    firstphase_height,
+                    hr_scale,
+                    hr_upscaler,
                 ] + custom_inputs,
 
                 outputs=[
@@ -762,7 +762,6 @@ def create_ui():
                 outputs=[hr_options],
             )
 
-
             txt2img_paste_fields = [
                 (txt2img_prompt, "Prompt"),
                 (txt2img_negative_prompt, "Negative prompt"),
@@ -781,8 +780,8 @@ def create_ui():
                 (denoising_strength, "Denoising strength"),
                 (enable_hr, lambda d: "Denoising strength" in d),
                 (hr_options, lambda d: gr.Row.update(visible="Denoising strength" in d)),
-                (firstphase_width, "First pass size-1"),
-                (firstphase_height, "First pass size-2"),
+                (hr_scale, "Hires upscale"),
+                (hr_upscaler, "Hires upscaler"),
                 *modules.scripts.scripts_txt2img.infotext_fields
             ]
             parameters_copypaste.add_paste_fields("txt2img", None, txt2img_paste_fields)
