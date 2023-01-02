@@ -39,11 +39,14 @@ def image_grid(imgs, batch_size=1, rows=None):
 
     cols = math.ceil(len(imgs) / rows)
 
-    w, h = imgs[0].size
-    grid = Image.new('RGB', size=(cols * w, rows * h), color='black')
+    params = script_callbacks.ImageGridLoopParams(imgs, cols, rows)
+    script_callbacks.image_grid_callback(params)
 
-    for i, img in enumerate(imgs):
-        grid.paste(img, box=(i % cols * w, i // cols * h))
+    w, h = imgs[0].size
+    grid = Image.new('RGB', size=(params.cols * w, params.rows * h), color='black')
+
+    for i, img in enumerate(params.imgs):
+        grid.paste(img, box=(i % params.cols * w, i // params.cols * h))
 
     return grid
 
@@ -525,6 +528,9 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
             image_to_save.save(temp_file_path, format=image_format, quality=opts.jpeg_quality, pnginfo=pnginfo_data)
 
         elif extension.lower() in (".jpg", ".jpeg", ".webp"):
+            if image_to_save.mode == 'RGBA':
+                image_to_save = image_to_save.convert("RGB")
+
             image_to_save.save(temp_file_path, format=image_format, quality=opts.jpeg_quality)
 
             if opts.enable_pnginfo and info is not None:

@@ -135,7 +135,7 @@ class InterrogateModels:
         return caption[0]
 
     def interrogate(self, pil_image):
-        res = None
+        res = ""
 
         try:
 
