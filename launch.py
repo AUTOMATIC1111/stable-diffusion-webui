@@ -163,6 +163,7 @@ def run_extensions_installers(settings_file):
 
 
 def prepare_environment():
+    return
     torch_command = os.environ.get('TORCH_COMMAND', "pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 --extra-index-url https://download.pytorch.org/whl/cu113")
     requirements_file = os.environ.get('REQS_FILE', "requirements_versions.txt")
     commandline_args = os.environ.get('COMMANDLINE_ARGS', "")
@@ -286,8 +287,9 @@ def tests(test_dir):
     return exitcode
 
 
-def start():
-    modules.script_callbacks.on_app_started(start_worker_app)
+def start(start_worker_when_ready: bool = True):
+    if start_worker_when_ready:
+        modules.script_callbacks.on_app_started(start_worker_app)
     print(f"Launching {'API server' if '--nowebui' in sys.argv else 'Web UI'} with arguments: {' '.join(sys.argv[1:])}")
     import webui
     if '--nowebui' in sys.argv:
@@ -297,11 +299,17 @@ def start():
 
 
 if __name__ == "__main__":
+    skip_worker = False
+
     if "--no-prepare" not in sys.argv:
         prepare_environment()
-    if "--prepare-only" in sys.argv:
-        exit(0)
 
-    main_process = Process(target=start)
-    main_process.start()
-    main_process.join()
+    if "--prepare-only" in sys.argv:
+        modules.script_callbacks.on_app_started(exit)
+        start(start_worker_when_ready=False)
+        skip_worker = True
+
+    if skip_worker is True:
+        main_process = Process(target=start)
+        main_process.start()
+        main_process.join()
