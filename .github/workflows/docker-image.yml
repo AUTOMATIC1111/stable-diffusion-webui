@@ -41,5 +41,3 @@ jobs:
           context: .
           push: true
           tags: mobici/sd-server:${{ steps.vars.outputs.sha_short }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
