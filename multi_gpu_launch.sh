@@ -7,6 +7,6 @@ python3 launch.py --prepare-only --api --nowebui --listen "$@"
 
 for i in $(seq 0 "$gpu_count")
 do
-  python3 launch.py --no-prepare --api --nowebui --listen --device-id "$i" --port "$port" "$@";
+  screen -dm python3 launch.py --no-prepare --api --nowebui --listen --device-id "$i" --port "$port" "$@";
   port=$((port + 1));
 done
