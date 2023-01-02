@@ -297,7 +297,9 @@ def start():
 
 
 if __name__ == "__main__":
-    prepare_environment()
-    main_process = Process(target=start)
-    main_process.start()
-    main_process.join()
+    if "--prepare-only" in sys.argv:
+        prepare_environment()
+    else:
+        main_process = Process(target=start)
+        main_process.start()
+        main_process.join()
