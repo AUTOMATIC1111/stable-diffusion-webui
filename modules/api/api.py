@@ -330,9 +330,22 @@ class Api:
 
     def get_embeddings(self):
         db = sd_hijack.model_hijack.embedding_db
+
+        def convert_embedding(embedding):
+            return {
+                "step": embedding.step,
+                "sd_checkpoint": embedding.sd_checkpoint,
+                "sd_checkpoint_name": embedding.sd_checkpoint_name,
+                "shape": embedding.shape,
+                "vectors": embedding.vectors,
+            }
+
+        def convert_embeddings(embeddings):
+            return {embedding.name: convert_embedding(embedding) for embedding in embeddings.values()}
+
         return {
-            "loaded": sorted(db.word_embeddings.keys()),
-            "skipped": sorted(db.skipped_embeddings),
+            "loaded": convert_embeddings(db.word_embeddings),
+            "skipped": convert_embeddings(db.skipped_embeddings),
         }
 
     def refresh_checkpoints(self):
