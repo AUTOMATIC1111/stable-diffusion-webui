@@ -316,7 +316,7 @@
 		},
 		{
 			"name": "quick-css",
-			"url": "https://github.com/imrayya/stable-diffusion-webui-Prompt_Generator",
+			"url": "https://github.com/Gerschel/sd-web-ui-quickcss",
 			"description": "Extension for quickly selecting and applying custom.css files, for customizing look and placement of elements in ui.",
 			"tags": ["script", "tab"]
 		},
