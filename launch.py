@@ -312,7 +312,7 @@ if __name__ == "__main__":
         start(start_worker_when_ready=False)
         skip_worker = True
 
-    if skip_worker is True:
+    if skip_worker is False:
         main_process = Process(target=start)
         main_process.start()
         main_process.join()
