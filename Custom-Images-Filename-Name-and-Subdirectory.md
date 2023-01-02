@@ -17,7 +17,7 @@ Subdirectory can be configured under settings.
 
 `settings tab` > `Saving to a directory` > `Directory name pattern`
 
-# Pattens
+# Patterns
 Web-Ui provides several patterns that can be used as placeholders for inserting information into the filename or subdirectory,
 user can chain these patterns togetherm forming a filename that suits their use case.
 
@@ -27,6 +27,7 @@ user can chain these patterns togetherm forming a filename that suits their use 
 | `[steps]`                      | Steps                                                | 20                                                                                                                                    |
 | `[cfg]`                        | CFG scale                                            | 7                                                                                                                                     |
 | `[sampler]`                    | Sampling method                                      | Euler a                                                                                                                               |
+| `[model_name]`                 | name of the model                                    | sd-v1-4
 | `[model_hash]`                 | Hash of the model                                    | 7460a6fa                                                                                                                              |
 | `[width]`                      | Image width                                          | 512                                                                                                                                   |
 | `[height]`                     | Image hight                                          | 512                                                                                                                                   |
@@ -55,7 +56,7 @@ The Prompts and Style used for the above `[prompt]` examples
 
 Prompt:
 ```
-1gir,   white space, ((very important)), [not important], (some value:1.5), (whatever), the end
+1girl,   white space, ((very important)), [not important], (some value:1.5), (whatever), the end
 ```
 Selected Styles:
 ```
@@ -65,7 +66,7 @@ Selected Styles:
 note: the `Styles` mentioned above is referring to the two drop down menu below the generate button
 
 ### if the Prompts is too long, it will be short
-this is due to Computer has a maximum file length
+this is due to your computer having a maximum file length
 
 # Add / Remove number to filename when saving
 you can remove the prefix number 
@@ -98,7 +99,7 @@ Generally datetime down to seconds should be able to guarantee that file name is
 20221025_014350-281391998.png
 ```
 
-But with some **Custom Scripts** might generate **multiples images** using the **same seed** in a **single batch**,
+But some **Custom Scripts** might generate **multiples images** using the **same seed** in a **single batch**,
 
 in this case it is safer to also use `%f` for `Microsecond as a decimal number, zero-padded to 6 digits.`
 
@@ -112,7 +113,7 @@ in this case it is safer to also use `%f` for `Microsecond as a decimal number, 
 # Filename Pattern Examples
 
 If you're running Web-Ui on multiple machines, say on Google Colab and your own Computer, you might want to use a filename with a time as the Prefix.
-this is so that when you download the fouls you can put them in the same folde.
+this is so that when you download the files, you can put them in the same folder.
 
 Also since you don't know what time zone Google Colab is using, you would want to specify the time zone.
 ```
