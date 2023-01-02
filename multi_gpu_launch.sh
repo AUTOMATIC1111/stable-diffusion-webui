@@ -10,3 +10,5 @@ do
   screen -d -m python3 launch.py --no-prepare --api --nowebui --listen --device-id "$i" --port "$port" "$@";
   port=$((port + 1));
 done
+
+sleep infinity
