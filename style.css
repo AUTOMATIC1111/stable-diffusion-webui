@@ -509,7 +509,7 @@ canvas[key="mask"] {
     position: absolute;
     right: 0.5em;
     top: -0.6em;
-    z-index: 200;
+    z-index: 400;
     width: 8em;
 }
 #quicksettings .gr-box > div > div > input.gr-text-input {
