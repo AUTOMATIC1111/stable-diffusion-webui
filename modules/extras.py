@@ -58,6 +58,9 @@ cached_images: LruCache = LruCache(max_size=5)
 def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_dir, show_extras_results, gfpgan_visibility, codeformer_visibility, codeformer_weight, upscaling_resize, upscaling_resize_w, upscaling_resize_h, upscaling_crop, extras_upscaler_1, extras_upscaler_2, extras_upscaler_2_visibility, upscale_first: bool, save_output: bool = True):
     devices.torch_gc()
 
+    shared.state.begin()
+    shared.state.job = 'extras'
+
     imageArr = []
     # Also keep track of original file names
     imageNameArr = []
@@ -94,6 +97,7 @@ def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_
     # Extra operation definitions
 
     def run_gfpgan(image: Image.Image, info: str) -> Tuple[Image.Image, str]:
+        shared.state.job = 'extras-gfpgan'
         restored_img = modules.gfpgan_model.gfpgan_fix_faces(np.array(image, dtype=np.uint8))
         res = Image.fromarray(restored_img)
 
@@ -104,6 +108,7 @@ def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_
         return (res, info)
 
     def run_codeformer(image: Image.Image, info: str) -> Tuple[Image.Image, str]:
+        shared.state.job = 'extras-codeformer'
         restored_img = modules.codeformer_model.codeformer.restore(np.array(image, dtype=np.uint8), w=codeformer_weight)
         res = Image.fromarray(restored_img)
 
@@ -114,6 +119,7 @@ def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_
         return (res, info)
 
     def upscale(image, scaler_index, resize, mode, resize_w, resize_h, crop):
+        shared.state.job = 'extras-upscale'
         upscaler = shared.sd_upscalers[scaler_index]
         res = upscaler.scaler.upscale(image, resize, upscaler.data_path)
         if mode == 1 and crop:
@@ -180,6 +186,9 @@ def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_
     for image, image_name in zip(imageArr, imageNameArr):
         if image is None:
             return outputs, "Please select an input image.", ''
+
+        shared.state.textinfo = f'Processing image {image_name}'
+        
         existing_pnginfo = image.info or {}
 
         image = image.convert("RGB")
@@ -193,6 +202,10 @@ def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_
         else:
             basename = ''
 
+        if opts.enable_pnginfo: # append info before save
+            image.info = existing_pnginfo
+            image.info["extras"] = info
+
         if save_output:
             # Add upscaler name as a suffix.
             suffix = f"-{shared.sd_upscalers[extras_upscaler_1].name}" if shared.opts.use_upscaler_name_as_suffix else ""
@@ -202,10 +215,6 @@ def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_
 
             images.save_image(image, path=outpath, basename=basename, seed=None, prompt=None, extension=opts.samples_format, info=info, short_filename=True,
                             no_prompt=True, grid=False, pnginfo_section_name="extras", existing_info=existing_pnginfo, forced_filename=None, suffix=suffix)
-
-        if opts.enable_pnginfo:
-            image.info = existing_pnginfo
-            image.info["extras"] = info
 
         if extras_mode != 2 or show_extras_results :
             outputs.append(image)
