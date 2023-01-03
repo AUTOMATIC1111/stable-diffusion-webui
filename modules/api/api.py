@@ -68,22 +68,23 @@ def encode_pil_to_base64(image):
         bytes_data = output_bytes.getvalue()
     return base64.b64encode(bytes_data)
 
-def init_api_middleware(app: FastAPI):
+def api_middleware(app: FastAPI):
     @app.middleware("http")
     async def log_and_time(req: Request, call_next):
         ts = time.time()
         res: Response = await call_next(req)
         duration = str(round(time.time() - ts, 4))
         res.headers["X-Process-Time"] = duration
-        if shared.cmd_opts.api_log:
-            print('API {t} {code} {prot}/{ver} {method} {p} {cli} {duration}'.format(
+        endpoint = req.scope.get('path', 'err')
+        if shared.cmd_opts.api_log and endpoint.startswith('/sdapi'):
+            print('API {t} {code} {prot}/{ver} {method} {endpoint} {cli} {duration}'.format(
                 t = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
                 code = res.status_code,
                 ver = req.scope.get('http_version', '0.0'),
                 cli = req.scope.get('client', ('0:0.0.0', 0))[0],
                 prot = req.scope.get('scheme', 'err'),
                 method = req.scope.get('method', 'err'),
-                p = req.scope.get('path', 'err'),
+                endpoint = endpoint,
                 duration = duration,
             ))
         return res
