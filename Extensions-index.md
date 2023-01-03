@@ -209,7 +209,7 @@
 		{
 			"name": "Depth Maps",
 			"url": "https://github.com/thygate/stable-diffusion-webui-depthmap-script.git",
-			"description": "Creates depthmaps from the generated images. The result can be viewed on 3D or holographic devices like VR headsets or lookingglass display, used in Render or Game- Engines on a plane with a displacement modifier, and maybe even 3D printed.",
+			"description": "Depth Maps, Stereo Image, 3D Mesh and Video generator extension.",
 			"tags": ["script"]
 		},
 		{
