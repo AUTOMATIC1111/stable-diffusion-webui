@@ -188,6 +188,17 @@ onUiUpdate(function(){
 		img2img_textarea = gradioApp().querySelector("#img2img_prompt > label > textarea");
 		img2img_textarea?.addEventListener("input", () => update_token_counter("img2img_token_button"));
 	}
+
+    show_all_pages = gradioApp().getElementById('settings_show_all_pages')
+    settings_tabs = gradioApp().querySelector('#settings div')
+    if(show_all_pages && settings_tabs){
+        settings_tabs.appendChild(show_all_pages)
+        show_all_pages.onclick = function(){
+            gradioApp().querySelectorAll('#settings > div').forEach(function(elem){
+                elem.style.display = "block";
+            })
+        }
+    }
 })
 
 let txt2img_textarea, img2img_textarea = undefined;
