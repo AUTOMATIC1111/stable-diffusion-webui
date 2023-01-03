@@ -1489,40 +1489,33 @@ def create_ui():
         return gr.update(value=value), opts.dumpjson()
 
     with gr.Blocks(analytics_enabled=False) as settings_interface:
-        settings_submit = gr.Button(value="Apply settings", variant='primary', elem_id="settings_submit")
-        result = gr.HTML()
+        with gr.Row():
+            settings_submit = gr.Button(value="Apply settings", variant='primary', elem_id="settings_submit")
+            restart_gradio = gr.Button(value='Restart UI', variant='primary', elem_id="settings_restart_gradio")
 
-        settings_cols = 3
-        items_per_col = int(len(opts.data_labels) * 0.9 / settings_cols)
+        result = gr.HTML(elem_id="settings_result")
 
         quicksettings_names = [x.strip() for x in opts.quicksettings.split(",")]
         quicksettings_names = set(x for x in quicksettings_names if x != 'quicksettings')
 
         quicksettings_list = []
 
-        cols_displayed = 0
-        items_displayed = 0
         previous_section = None
-        column = None
-        with gr.Row(elem_id="settings").style(equal_height=False):
+        current_tab = None
+        with gr.Tabs(elem_id="settings"):
             for i, (k, item) in enumerate(opts.data_labels.items()):
                 section_must_be_skipped = item.section[0] is None
 
                 if previous_section != item.section and not section_must_be_skipped:
-                    if cols_displayed < settings_cols and (items_displayed >= items_per_col or previous_section is None):
-                        if column is not None:
-                            column.__exit__()
+                    elem_id, text = item.section
 
-                        column = gr.Column(variant='panel')
-                        column.__enter__()
+                    if current_tab is not None:
+                        current_tab.__exit__()
 
-                        items_displayed = 0
-                        cols_displayed += 1
+                    current_tab = gr.TabItem(elem_id="settings_{}".format(elem_id), label=text)
+                    current_tab.__enter__()
 
                     previous_section = item.section
-
-                    elem_id, text = item.section
-                    gr.HTML(elem_id="settings_header_text_{}".format(elem_id), value='<h1 class="gr-button-lg">{}</h1>'.format(text))
 
                 if k in quicksettings_names and not shared.cmd_opts.freeze_settings:
                     quicksettings_list.append((i, k, item))
@@ -1533,15 +1526,14 @@ def create_ui():
                     component = create_setting_component(k)
                     component_dict[k] = component
                     components.append(component)
-                    items_displayed += 1
 
-        with gr.Row():
-            request_notifications = gr.Button(value='Request browser notifications', elem_id="request_notifications")
-            download_localization = gr.Button(value='Download localization template', elem_id="download_localization")
+            if current_tab is not None:
+                current_tab.__exit__()
 
-        with gr.Row():
-            reload_script_bodies = gr.Button(value='Reload custom script bodies (No ui updates, No restart)', variant='secondary', elem_id="settings_reload_script_bodies")
-            restart_gradio = gr.Button(value='Restart Gradio and Refresh components (Custom Scripts, ui.py, js and css only)', variant='primary', elem_id="settings_restart_gradio")
+            with gr.TabItem("Actions"):
+                request_notifications = gr.Button(value='Request browser notifications', elem_id="request_notifications")
+                download_localization = gr.Button(value='Download localization template', elem_id="download_localization")
+                reload_script_bodies = gr.Button(value='Reload custom script bodies (No ui updates, No restart)', variant='secondary', elem_id="settings_reload_script_bodies")
 
         request_notifications.click(
             fn=lambda: None,
@@ -1577,9 +1569,6 @@ def create_ui():
             inputs=[],
             outputs=[],
         )
-
-        if column is not None:
-            column.__exit__()
 
     interfaces = [
         (txt2img_interface, "txt2img", "txt2img"),

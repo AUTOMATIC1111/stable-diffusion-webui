@@ -241,6 +241,33 @@ fieldset span.text-gray-500, .gr-block.gr-box span.text-gray-500,  label.block s
     z-index: 200;
 }
 
+#settings{
+    display: block;
+}
+
+#settings > div{
+    border: none;
+    margin-left: 10em;
+}
+
+#settings > div.flex-wrap{
+    float: left;
+    display: block;
+    margin-left: 0;
+    width: 10em;
+}
+
+#settings > div.flex-wrap button{
+    display: block;
+    border: none;
+    text-align: left;
+}
+
+#settings_result{
+    height: 1.4em;
+    margin: 0 1.2em;
+}
+
 input[type="range"]{
     margin: 0.5em 0 -0.3em 0;
 }
