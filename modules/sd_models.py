@@ -20,7 +20,7 @@ from modules.sd_hijack_inpainting import do_inpainting_hijack, should_hijack_inp
 model_dir = "Stable-diffusion"
 model_path = os.path.abspath(os.path.join(models_path, model_dir))
 
-CheckpointInfo = namedtuple("CheckpointInfo", ['filename', 'title', 'hash', 'model_name', 'config'])
+CheckpointInfo = namedtuple("CheckpointInfo", ['filename', 'title', 'hash', 'hash_v1', 'model_name', 'config'])
 checkpoints_list = {}
 checkpoints_loaded = collections.OrderedDict()
 
@@ -33,6 +33,8 @@ try:
 except Exception:
     pass
 
+model_hash_versions = [1, 2]
+default_model_hash_version = 1
 
 def setup_model():
     if not os.path.exists(model_path):
@@ -72,13 +74,15 @@ def list_models():
     cmd_ckpt = shared.cmd_opts.ckpt
     if os.path.exists(cmd_ckpt):
         h = model_hash(cmd_ckpt)
+        h_v1 = h if shared.opts.model_hash_version == 1 else model_hash(cmd_ckpt, version=1) # backward compatibility
         title, short_model_name = modeltitle(cmd_ckpt, h)
-        checkpoints_list[title] = CheckpointInfo(cmd_ckpt, title, h, short_model_name, shared.cmd_opts.config)
+        checkpoints_list[title] = CheckpointInfo(cmd_ckpt, title, h, h_v1, short_model_name, shared.cmd_opts.config)
         shared.opts.data['sd_model_checkpoint'] = title
     elif cmd_ckpt is not None and cmd_ckpt != shared.default_sd_model_file:
         print(f"Checkpoint in --ckpt argument not found (Possible it was moved to {model_path}: {cmd_ckpt}", file=sys.stderr)
     for filename in model_list:
         h = model_hash(filename)
+        h_v1 = h if shared.opts.model_hash_version == 1 else model_hash(filename, version=1) # backward compatibility
         title, short_model_name = modeltitle(filename, h)
 
         basename, _ = os.path.splitext(filename)
@@ -86,25 +90,55 @@ def list_models():
         if not os.path.exists(config):
             config = shared.cmd_opts.config
 
-        checkpoints_list[title] = CheckpointInfo(filename, title, h, short_model_name, config)
+        checkpoints_list[title] = CheckpointInfo(filename, title, h, h_v1, short_model_name, config)
 
 
 def get_closet_checkpoint_match(searchString):
+
+    # search by hash
+
+    model_hashes = [h.strip() for h in searchString.split('|') if re.search(r"^[a-fA-F0-9]{8}$", h.strip())]
+
+    applicable = sorted([i for i in [[info for info in checkpoints_list.values() if h in info.hash or h in info.hash_v1] for h in model_hashes] if len(i) > 0], key = lambda x:len(x))
+    if len(applicable) > 0:
+        return applicable[0][0]
+
+    # search by title
+
     applicable = sorted([info for info in checkpoints_list.values() if searchString in info.title], key = lambda x:len(x.title))
     if len(applicable) > 0:
         return applicable[0]
     return None
 
 
-def model_hash(filename):
-    try:
-        with open(filename, "rb") as file:
-            import hashlib
-            m = hashlib.sha256()
+def model_hash(filename, version=None):
+    if not version:
+        version = shared.opts.model_hash_version or default_model_hash_version
 
-            file.seek(0x100000)
-            m.update(file.read(0x10000))
-            return m.hexdigest()[0:8]
+    import hashlib
+    try:
+        hash_list = []
+
+        if version == 2:
+            import zipfile
+
+            file = zipfile.ZipFile(filename, "r")
+            m = hashlib.sha256()
+            for info in file.infolist():
+                if info.filename.startswith("archive"):
+                    m.update(bytes.fromhex('{:08x}'.format(info.CRC & 0xFFFFFFFF)))
+
+            hash_list.append(m.hexdigest())
+
+        if version == 1 or shared.opts.show_old_model_hash:
+            with open(filename, "rb") as file:
+                m = hashlib.sha256()
+
+                file.seek(0x100000)
+                m.update(file.read(0x10000))
+                hash_list.append(m.hexdigest())
+
+        return '|'.join([h[0:8] for h in hash_list])
     except FileNotFoundError:
         return 'NOFILE'
 
@@ -125,6 +159,15 @@ def select_checkpoint():
             print(f" - directory {os.path.abspath(shared.cmd_opts.ckpt_dir)}", file=sys.stderr)
         print("Can't run without a checkpoint. Find and place a .ckpt file into any of those locations. The program will exit.", file=sys.stderr)
         exit(1)
+
+    # model hash backward compatibility
+    if model_checkpoint is not None:
+        m = re.search(r'\[([a-f0-9|]+)\]$', model_checkpoint)
+        if m:
+            checkpoint_info = get_closet_checkpoint_match(m.group(1))
+            if checkpoint_info is not None:
+                print(f"Checkpoint {model_checkpoint} not found; loading fallback {checkpoint_info.title}", file=sys.stderr)
+                return checkpoint_info
 
     checkpoint_info = next(iter(checkpoints_list.values()))
     if model_checkpoint is not None:

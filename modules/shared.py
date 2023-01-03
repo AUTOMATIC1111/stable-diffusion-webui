@@ -413,6 +413,8 @@ options_templates.update(options_section(('ui', "User interface"), {
     "do_not_show_images": OptionInfo(False, "Do not show any images in results for web"),
     "add_model_hash_to_info": OptionInfo(True, "Add model hash to generation information"),
     "add_model_name_to_info": OptionInfo(False, "Add model name to generation information"),
+    "model_hash_version": OptionInfo(sd_models.default_model_hash_version, "Model hash version (requires restart)", gr.Dropdown, lambda: {"choices": sd_models.model_hash_versions}),
+    "show_old_model_hash": OptionInfo(False, "Show the old model hash along with the model hash (requires restart)"),
     "disable_weights_auto_swap": OptionInfo(False, "When reading generation parameters from text into UI (from PNG info or pasted text), do not change the selected model/checkpoint."),
     "send_seed": OptionInfo(True, "Send seed when sending prompt or image to other interface"),
     "send_size": OptionInfo(True, "Send size when sending prompt or image to another interface"),
