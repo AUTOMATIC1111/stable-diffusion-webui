@@ -1536,6 +1536,8 @@ def create_ui():
                 download_localization = gr.Button(value='Download localization template', elem_id="download_localization")
                 reload_script_bodies = gr.Button(value='Reload custom script bodies (No ui updates, No restart)', variant='secondary', elem_id="settings_reload_script_bodies")
 
+            gr.Button(value="Show all pages", elem_id="settings_show_all_pages")
+
         request_notifications.click(
             fn=lambda: None,
             inputs=[],
