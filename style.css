@@ -74,7 +74,8 @@
 }
 
 [id$=_random_seed], [id$=_random_subseed], [id$=_reuse_seed], [id$=_reuse_subseed], #open_folder{
-    min-width: auto;
+    min-width: 2.3em;
+    height: 2.5em;
     flex-grow: 0;
     padding-left: 0.25em;
     padding-right: 0.25em;
@@ -86,6 +87,7 @@
 
 [id$=_seed_row], [id$=_subseed_row]{
     gap: 0.5rem;
+    padding: 0.6em;
 }
 
 [id$=_subseed_show_box]{
@@ -206,34 +208,30 @@ button{
 
 fieldset span.text-gray-500, .gr-block.gr-box span.text-gray-500,  label.block span{
     position: absolute;
-    top: -0.6em;
+    top: -0.5em;
     line-height: 1.2em;
-    padding: 0 0.5em;
-    margin: 0;
+    padding: 0;
+    margin: 0 0.5em;
 
     background-color: white;
-    border-top: 1px solid #eee;
-    border-left: 1px solid #eee;
-    border-right: 1px solid #eee;
+    box-shadow: 0 0 5px 5px white;
 
     z-index: 300;
 }
 
 .dark fieldset span.text-gray-500, .dark .gr-block.gr-box span.text-gray-500, .dark label.block span{
     background-color: rgb(31, 41, 55);
-    border-top: 1px solid rgb(55 65 81);
-    border-left: 1px solid rgb(55 65 81);
-    border-right: 1px solid rgb(55 65 81);
+    box-shadow: 0 0 5px 5px rgb(31, 41, 55);
+}
+
+#txt2img_column_batch, #img2img_column_batch{
+    min-width: min(13.5em, 100%) !important;
 }
 
 #settings fieldset span.text-gray-500, #settings .gr-block.gr-box span.text-gray-500, #settings label.block span{
     position: relative;
     border: none;
     margin-right: 8em;
-}
-
-.gr-panel div.flex-col div.justify-between label span{
-    margin: 0;
 }
 
 #settings .gr-panel div.flex-col div.justify-between div{
@@ -608,6 +606,15 @@ img2maskimg, #img2maskimg > .h-60, #img2maskimg > .h-60 > div, #img2maskimg > .h
     margin: 0;
 }
 
+
+#img2img_settings > div.gr-form, #txt2img_settings > div.gr-form {
+    padding-top: 0.9em;
+}
+
+#img2img_settings div.gr-form .gr-form, #txt2img_settings div.gr-form .gr-form{
+    border: none;
+    padding-bottom: 0.5em;
+}
 
 
 /* The following handles localization for right-to-left (RTL) languages like Arabic.
