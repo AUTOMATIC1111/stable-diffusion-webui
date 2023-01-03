@@ -37,7 +37,10 @@ def quote(text):
 
 
 def image_from_url_text(filedata):
-    if type(filedata) == dict and filedata["is_file"]:
+    if type(filedata) == list and len(filedata) > 0 and type(filedata[0]) == dict and filedata[0].get("is_file", False):
+        filedata = filedata[0]
+
+    if type(filedata) == dict and filedata.get("is_file", False):
         filename = filedata["name"]
         is_in_right_dir = ui_tempdir.check_tmp_file(shared.demo, filename)
         assert is_in_right_dir, 'trying to open image file outside of allowed directories'
