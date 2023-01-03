@@ -644,6 +644,13 @@ def create_sampler_and_steps_selection(choices, tabname):
     return steps, sampler_index
 
 
+def ordered_ui_categories():
+    user_order = {x.strip(): i for i, x in enumerate(shared.opts.ui_reorder.split(","))}
+
+    for i, category in sorted(enumerate(shared.ui_reorder_categories), key=lambda x: user_order.get(x[1], x[0] + 1000)):
+        yield category
+
+
 def create_ui():
     import modules.img2img
     import modules.txt2img
@@ -672,32 +679,48 @@ def create_ui():
 
         with gr.Row().style(equal_height=False):
             with gr.Column(variant='panel', elem_id="txt2img_settings"):
-                steps, sampler_index = create_sampler_and_steps_selection(samplers, "txt2img")
+                for category in ordered_ui_categories():
+                    if category == "sampler":
+                        steps, sampler_index = create_sampler_and_steps_selection(samplers, "txt2img")
 
-                with FormRow():
-                    with gr.Column(elem_id="txt2img_column_size", scale=4):
-                        width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="txt2img_width")
-                        height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="txt2img_height")
-                    with gr.Column(elem_id="txt2img_column_batch"):
-                        batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1, elem_id="txt2img_batch_count")
-                        batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1, elem_id="txt2img_batch_size")
+                    elif category == "dimensions":
+                        with FormRow():
+                            with gr.Column(elem_id="txt2img_column_size", scale=4):
+                                width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="txt2img_width")
+                                height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="txt2img_height")
 
-                cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='CFG Scale', value=7.0, elem_id="txt2img_cfg_scale")
+                            if opts.dimensions_and_batch_together:
+                                with gr.Column(elem_id="txt2img_column_batch"):
+                                    batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1, elem_id="txt2img_batch_count")
+                                    batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1, elem_id="txt2img_batch_size")
 
-                seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox = create_seed_inputs('txt2img')
+                    elif category == "cfg":
+                        cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='CFG Scale', value=7.0, elem_id="txt2img_cfg_scale")
 
-                with FormRow(elem_id="txt2img_checkboxes"):
-                    restore_faces = gr.Checkbox(label='Restore faces', value=False, visible=len(shared.face_restorers) > 1, elem_id="txt2img_restore_faces")
-                    tiling = gr.Checkbox(label='Tiling', value=False, elem_id="txt2img_tiling")
-                    enable_hr = gr.Checkbox(label='Hires. fix', value=False, elem_id="txt2img_enable_hr")
+                    elif category == "seed":
+                        seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox = create_seed_inputs('txt2img')
 
-                with FormRow(visible=False) as hr_options:
-                    hr_upscaler = gr.Dropdown(label="Upscaler", elem_id="txt2img_hr_upscaler", choices=[*shared.latent_upscale_modes, *[x.name for x in shared.sd_upscalers]], value=shared.latent_upscale_default_mode)
-                    hr_scale = gr.Slider(minimum=1.0, maximum=4.0, step=0.05, label="Upscale by", value=2.0, elem_id="txt2img_hr_scale")
-                    denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.7, elem_id="txt2img_denoising_strength")
+                    elif category == "checkboxes":
+                        with FormRow(elem_id="txt2img_checkboxes"):
+                            restore_faces = gr.Checkbox(label='Restore faces', value=False, visible=len(shared.face_restorers) > 1, elem_id="txt2img_restore_faces")
+                            tiling = gr.Checkbox(label='Tiling', value=False, elem_id="txt2img_tiling")
+                            enable_hr = gr.Checkbox(label='Hires. fix', value=False, elem_id="txt2img_enable_hr")
 
-                with FormGroup(elem_id="txt2img_script_container"):
-                    custom_inputs = modules.scripts.scripts_txt2img.setup_ui()
+                    elif category == "hires_fix":
+                        with FormRow(visible=False, elem_id="txt2img_hires_fix") as hr_options:
+                            hr_upscaler = gr.Dropdown(label="Upscaler", elem_id="txt2img_hr_upscaler", choices=[*shared.latent_upscale_modes, *[x.name for x in shared.sd_upscalers]], value=shared.latent_upscale_default_mode)
+                            hr_scale = gr.Slider(minimum=1.0, maximum=4.0, step=0.05, label="Upscale by", value=2.0, elem_id="txt2img_hr_scale")
+                            denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.7, elem_id="txt2img_denoising_strength")
+
+                    elif category == "batch":
+                        if not opts.dimensions_and_batch_together:
+                            with FormRow(elem_id="txt2img_column_batch"):
+                                batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1, elem_id="txt2img_batch_count")
+                                batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1, elem_id="txt2img_batch_size")
+
+                    elif category == "scripts":
+                        with FormGroup(elem_id="txt2img_script_container"):
+                            custom_inputs = modules.scripts.scripts_txt2img.setup_ui()
 
             txt2img_gallery, generation_info, html_info, html_log = create_output_panel("txt2img", opts.outdir_txt2img_samples)
             parameters_copypaste.bind_buttons({"txt2img": txt2img_paste}, None, txt2img_prompt)
@@ -865,28 +888,43 @@ def create_ui():
                 with FormRow():
                     resize_mode = gr.Radio(label="Resize mode", elem_id="resize_mode", choices=["Just resize", "Crop and resize", "Resize and fill", "Just resize (latent upscale)"], type="index", value="Just resize")
 
-                steps, sampler_index = create_sampler_and_steps_selection(samplers_for_img2img, "img2img")
+                for category in ordered_ui_categories():
+                    if category == "sampler":
+                        steps, sampler_index = create_sampler_and_steps_selection(samplers_for_img2img, "img2img")
 
-                with FormRow():
-                    with gr.Column(elem_id="img2img_column_size", scale=4):
-                        width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="img2img_width")
-                        height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="img2img_height")
-                    with gr.Column(elem_id="img2img_column_batch"):
-                        batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1, elem_id="img2img_batch_count")
-                        batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1, elem_id="img2img_batch_size")
+                    elif category == "dimensions":
+                        with FormRow():
+                            with gr.Column(elem_id="img2img_column_size", scale=4):
+                                width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="img2img_width")
+                                height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="img2img_height")
 
-                with FormGroup():
-                    cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='CFG Scale', value=7.0, elem_id="img2img_cfg_scale")
-                    denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.75, elem_id="img2img_denoising_strength")
+                            if opts.dimensions_and_batch_together:
+                                with gr.Column(elem_id="img2img_column_batch"):
+                                    batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1, elem_id="img2img_batch_count")
+                                    batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1, elem_id="img2img_batch_size")
 
-                seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox = create_seed_inputs('img2img')
+                    elif category == "cfg":
+                        with FormGroup():
+                            cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='CFG Scale', value=7.0, elem_id="img2img_cfg_scale")
+                            denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.75, elem_id="img2img_denoising_strength")
 
-                with FormRow(elem_id="img2img_checkboxes"):
-                    restore_faces = gr.Checkbox(label='Restore faces', value=False, visible=len(shared.face_restorers) > 1, elem_id="img2img_restore_faces")
-                    tiling = gr.Checkbox(label='Tiling', value=False, elem_id="img2img_tiling")
+                    elif category == "seed":
+                        seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox = create_seed_inputs('img2img')
 
-                with FormGroup(elem_id="img2img_script_container"):
-                    custom_inputs = modules.scripts.scripts_img2img.setup_ui()
+                    elif category == "checkboxes":
+                        with FormRow(elem_id="img2img_checkboxes"):
+                            restore_faces = gr.Checkbox(label='Restore faces', value=False, visible=len(shared.face_restorers) > 1, elem_id="img2img_restore_faces")
+                            tiling = gr.Checkbox(label='Tiling', value=False, elem_id="img2img_tiling")
+
+                    elif category == "batch":
+                        if not opts.dimensions_and_batch_together:
+                            with FormRow(elem_id="img2img_column_batch"):
+                                batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1, elem_id="img2img_batch_count")
+                                batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1, elem_id="img2img_batch_size")
+
+                    elif category == "scripts":
+                        with FormGroup(elem_id="img2img_script_container"):
+                            custom_inputs = modules.scripts.scripts_img2img.setup_ui()
 
             img2img_gallery, generation_info, html_info, html_log = create_output_panel("img2img", opts.outdir_img2img_samples)
             parameters_copypaste.bind_buttons({"img2img": img2img_paste}, None, img2img_prompt)
