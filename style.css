@@ -208,20 +208,20 @@ button{
 
 fieldset span.text-gray-500, .gr-block.gr-box span.text-gray-500,  label.block span{
     position: absolute;
-    top: -0.5em;
+    top: -0.7em;
     line-height: 1.2em;
     padding: 0;
     margin: 0 0.5em;
 
     background-color: white;
-    box-shadow: 0 0 5px 5px white;
+    box-shadow:  6px 0 6px 0px white, -6px 0 6px 0px white;
 
     z-index: 300;
 }
 
 .dark fieldset span.text-gray-500, .dark .gr-block.gr-box span.text-gray-500, .dark label.block span{
     background-color: rgb(31, 41, 55);
-    box-shadow: 0 0 5px 5px rgb(31, 41, 55);
+    box-shadow: 6px 0 6px 0px rgb(31, 41, 55), -6px 0 6px 0px rgb(31, 41, 55);
 }
 
 #txt2img_column_batch, #img2img_column_batch{
