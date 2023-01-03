@@ -1529,8 +1529,10 @@ def create_ui():
 
     with gr.Blocks(analytics_enabled=False) as settings_interface:
         with gr.Row():
-            settings_submit = gr.Button(value="Apply settings", variant='primary', elem_id="settings_submit")
-            restart_gradio = gr.Button(value='Restart UI', variant='primary', elem_id="settings_restart_gradio")
+            with gr.Column(scale=6):
+                settings_submit = gr.Button(value="Apply settings", variant='primary', elem_id="settings_submit")
+            with gr.Column():
+                restart_gradio = gr.Button(value='Reload UI', variant='primary', elem_id="settings_restart_gradio")
 
         result = gr.HTML(elem_id="settings_result")
 
@@ -1573,6 +1575,11 @@ def create_ui():
                 request_notifications = gr.Button(value='Request browser notifications', elem_id="request_notifications")
                 download_localization = gr.Button(value='Download localization template', elem_id="download_localization")
                 reload_script_bodies = gr.Button(value='Reload custom script bodies (No ui updates, No restart)', variant='secondary', elem_id="settings_reload_script_bodies")
+
+            if os.path.exists("html/licenses.html"):
+                with open("html/licenses.html", encoding="utf8") as file:
+                    with gr.TabItem("Licenses"):
+                        gr.HTML(file.read(), elem_id="licenses")
 
             gr.Button(value="Show all pages", elem_id="settings_show_all_pages")
 
@@ -1658,6 +1665,10 @@ def create_ui():
 
         if os.path.exists(os.path.join(script_path, "notification.mp3")):
             audio_notification = gr.Audio(interactive=False, value=os.path.join(script_path, "notification.mp3"), elem_id="audio_notification", visible=False)
+
+        if os.path.exists("html/footer.html"):
+            with open("html/footer.html", encoding="utf8") as file:
+                gr.HTML(file.read(), elem_id="footer")
 
         text_settings = gr.Textbox(elem_id="settings_json", value=lambda: opts.dumpjson(), visible=False)
         settings_submit.click(
