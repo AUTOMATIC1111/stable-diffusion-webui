@@ -1,0 +1,11 @@
+version: "3.0"
+services:
+  automatic1111:
+    build:
+      context: ../
+      dockerfile: ./build/Automatic.dockerfile
+    restart: always
+    volumes:
+      - type: bind
+        source: /home/worker/venv
+        target: /home/venv/
