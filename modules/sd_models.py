@@ -305,9 +305,6 @@ def load_model(checkpoint_info=None):
         sd_config.model.params.unet_config.params.in_channels = 9
         sd_config.model.params.finetune_keys = None
 
-        # Create a "fake" config with a different name so that we know to unload it when switching models.
-        checkpoint_info = checkpoint_info._replace(config=checkpoint_config.replace(".yaml", "-inpainting.yaml"))
-
     if not hasattr(sd_config.model.params, "use_ema"):
         sd_config.model.params.use_ema = False
 
