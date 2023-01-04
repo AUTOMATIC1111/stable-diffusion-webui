@@ -162,16 +162,14 @@ def save_files(js_data, images, do_make_zip, index):
     return gr.File.update(value=fullfns, visible=True), plaintext_to_html(f"Saved: {filenames[0]}")
 
 
-
-
-def calc_time_left(progress, threshold, label, force_display, showTime):
+def calc_time_left(progress, threshold, label, force_display, show_eta):
     if progress == 0:
         return ""
     else:
         time_since_start = time.time() - shared.state.time_start
         eta = (time_since_start/progress)
         eta_relative = eta-time_since_start
-        if (eta_relative > threshold and showTime) or force_display:
+        if (eta_relative > threshold and show_eta) or force_display:
             if eta_relative > 3600:
                 return label + time.strftime('%H:%M:%S', time.gmtime(eta_relative))
             elif eta_relative > 60:
@@ -194,9 +192,9 @@ def check_progress_call(id_part):
         progress += 1 / shared.state.job_count * shared.state.sampling_step / shared.state.sampling_steps
 
     # Show progress percentage and time left at the same moment, and base it also on steps done
-    showPBText = progress >= 0.01 or shared.state.sampling_step >= 10
+    show_eta = progress >= 0.01 or shared.state.sampling_step >= 10
 
-    time_left = calc_time_left( progress, 1, " ETA: ", shared.state.time_left_force_display, showPBText )
+    time_left = calc_time_left(progress, 1, " ETA: ", shared.state.time_left_force_display, show_eta)
     if time_left != "":
         shared.state.time_left_force_display = True
 
@@ -204,7 +202,7 @@ def check_progress_call(id_part):
 
     progressbar = ""
     if opts.show_progressbar:
-        progressbar = f"""<div class='progressDiv'><div class='progress' style="overflow:visible;width:{progress * 100}%;white-space:nowrap;">{"&nbsp;" * 2 + str(int(progress*100))+"%" + time_left if showPBText else ""}</div></div>"""
+        progressbar = f"""<div class='progressDiv'><div class='progress' style="overflow:visible;width:{progress * 100}%;white-space:nowrap;">{"&nbsp;" * 2 + str(int(progress*100))+"%" + time_left if show_eta else ""}</div></div>"""
 
     image = gr_show(False)
     preview_visibility = gr_show(False)
