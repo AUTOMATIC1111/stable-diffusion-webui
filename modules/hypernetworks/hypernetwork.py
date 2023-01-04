@@ -417,6 +417,7 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, gradient_step,
     shared.loaded_hypernetwork = Hypernetwork()
     shared.loaded_hypernetwork.load(path)
 
+    shared.state.job = "train-hypernetwork"
     shared.state.textinfo = "Initializing hypernetwork training..."
     shared.state.job_count = steps
 
