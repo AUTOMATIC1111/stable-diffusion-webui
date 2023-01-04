@@ -228,6 +228,8 @@ def load_model_weights(model, checkpoint_info, vae_file="auto"):
     model.sd_model_checkpoint = checkpoint_file
     model.sd_checkpoint_info = checkpoint_info
 
+    model.logvar = model.logvar.to(devices.device)  # fix for training
+
     sd_vae.delete_base_vae()
     sd_vae.clear_loaded_vae()
     vae_file = sd_vae.resolve_vae(checkpoint_file, vae_file=vae_file)
@@ -322,9 +324,12 @@ def load_model(checkpoint_info=None):
     sd_model.eval()
     shared.sd_model = sd_model
 
+    sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings(force_reload=True)  # Reload embeddings after model load as they may or may not fit the model
+
     script_callbacks.model_loaded_callback(sd_model)
 
     print("Model loaded.")
+
     return sd_model
 
 

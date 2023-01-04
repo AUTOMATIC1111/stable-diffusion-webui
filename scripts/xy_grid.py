@@ -202,7 +202,7 @@ axis_options = [
     AxisOption("Eta", float, apply_field("eta"), format_value_add_label, None),
     AxisOption("Clip skip", int, apply_clip_skip, format_value_add_label, None),
     AxisOption("Denoising", float, apply_field("denoising_strength"), format_value_add_label, None),
-    AxisOption("Upscale latent space for hires.", str, apply_upscale_latent_space, format_value_add_label, None),
+    AxisOption("Hires upscaler", str, apply_field("hr_upscaler"), format_value_add_label, None),
     AxisOption("Cond. Image Mask Weight", float, apply_field("inpainting_mask_weight"), format_value_add_label, None),
     AxisOption("VAE", str, apply_vae, format_value_add_label, None),
     AxisOption("Styles", str, apply_styles, format_value_add_label, None),
@@ -267,7 +267,6 @@ class SharedSettingsStackHelper(object):
         self.CLIP_stop_at_last_layers = opts.CLIP_stop_at_last_layers
         self.hypernetwork = opts.sd_hypernetwork
         self.model = shared.sd_model
-        self.use_scale_latent_for_hires_fix = opts.use_scale_latent_for_hires_fix
         self.vae = opts.sd_vae
   
     def __exit__(self, exc_type, exc_value, tb):
@@ -278,7 +277,6 @@ class SharedSettingsStackHelper(object):
         hypernetwork.apply_strength()
 
         opts.data["CLIP_stop_at_last_layers"] = self.CLIP_stop_at_last_layers
-        opts.data["use_scale_latent_for_hires_fix"] = self.use_scale_latent_for_hires_fix
 
 
 re_range = re.compile(r"\s*([+-]?\s*\d+)\s*-\s*([+-]?\s*\d+)(?:\s*\(([+-]\d+)\s*\))?\s*")

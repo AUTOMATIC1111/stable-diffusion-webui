@@ -239,7 +239,7 @@ class StableDiffusionProcessing():
 
 
 class Processed:
-    def __init__(self, p: StableDiffusionProcessing, images_list, seed=-1, info="", subseed=None, all_prompts=None, all_negative_prompts=None, all_seeds=None, all_subseeds=None, index_of_first_image=0, infotexts=None):
+    def __init__(self, p: StableDiffusionProcessing, images_list, seed=-1, info="", subseed=None, all_prompts=None, all_negative_prompts=None, all_seeds=None, all_subseeds=None, index_of_first_image=0, infotexts=None, comments=""):
         self.images = images_list
         self.prompt = p.prompt
         self.negative_prompt = p.negative_prompt
@@ -247,6 +247,7 @@ class Processed:
         self.subseed = subseed
         self.subseed_strength = p.subseed_strength
         self.info = info
+        self.comments = comments
         self.width = p.width
         self.height = p.height
         self.sampler_name = p.sampler_name
@@ -646,7 +647,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
     devices.torch_gc()
 
-    res = Processed(p, output_images, p.all_seeds[0], infotext() + "".join(["\n\n" + x for x in comments]), subseed=p.all_subseeds[0], index_of_first_image=index_of_first_image, infotexts=infotexts)
+    res = Processed(p, output_images, p.all_seeds[0], infotext(), comments="".join(["\n\n" + x for x in comments]), subseed=p.all_subseeds[0], index_of_first_image=index_of_first_image, infotexts=infotexts)
 
     if p.scripts is not None:
         p.scripts.postprocess(p, res)
@@ -657,14 +658,18 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
     sampler = None
 
-    def __init__(self, enable_hr: bool=False, denoising_strength: float=0.75, firstphase_width: int=0, firstphase_height: int=0, **kwargs):
+    def __init__(self, enable_hr: bool = False, denoising_strength: float = 0.75, firstphase_width: int = 0, firstphase_height: int = 0, hr_scale: float = 2.0, hr_upscaler: str = None, **kwargs):
         super().__init__(**kwargs)
         self.enable_hr = enable_hr
         self.denoising_strength = denoising_strength
-        self.firstphase_width = firstphase_width
-        self.firstphase_height = firstphase_height
-        self.truncate_x = 0
-        self.truncate_y = 0
+        self.hr_scale = hr_scale
+        self.hr_upscaler = hr_upscaler
+
+        if firstphase_width != 0 or firstphase_height != 0:
+            print("firstphase_width/firstphase_height no longer supported; use hr_scale", file=sys.stderr)
+            self.hr_scale = self.width / firstphase_width
+            self.width = firstphase_width
+            self.height = firstphase_height
 
     def init(self, all_prompts, all_seeds, all_subseeds):
         if self.enable_hr:
@@ -673,47 +678,29 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             else:
                 state.job_count = state.job_count * 2
 
-            self.extra_generation_params["First pass size"] = f"{self.firstphase_width}x{self.firstphase_height}"
-
-            if self.firstphase_width == 0 or self.firstphase_height == 0:
-                desired_pixel_count = 512 * 512
-                actual_pixel_count = self.width * self.height
-                scale = math.sqrt(desired_pixel_count / actual_pixel_count)
-                self.firstphase_width = math.ceil(scale * self.width / 64) * 64
-                self.firstphase_height = math.ceil(scale * self.height / 64) * 64
-                firstphase_width_truncated = int(scale * self.width)
-                firstphase_height_truncated = int(scale * self.height)
-
-            else:
-
-                width_ratio = self.width / self.firstphase_width
-                height_ratio = self.height / self.firstphase_height
-
-                if width_ratio > height_ratio:
-                    firstphase_width_truncated = self.firstphase_width
-                    firstphase_height_truncated = self.firstphase_width * self.height / self.width
-                else:
-                    firstphase_width_truncated = self.firstphase_height * self.width / self.height
-                    firstphase_height_truncated = self.firstphase_height
-
-            self.truncate_x = int(self.firstphase_width - firstphase_width_truncated) // opt_f
-            self.truncate_y = int(self.firstphase_height - firstphase_height_truncated) // opt_f
+            self.extra_generation_params["Hires upscale"] = self.hr_scale
+            if self.hr_upscaler is not None:
+                self.extra_generation_params["Hires upscaler"] = self.hr_upscaler
 
     def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
         self.sampler = sd_samplers.create_sampler(self.sampler_name, self.sd_model)
 
+        latent_scale_mode = shared.latent_upscale_modes.get(self.hr_upscaler, None) if self.hr_upscaler is not None else shared.latent_upscale_modes.get(shared.latent_upscale_default_mode, "nearest")
+        if self.enable_hr and latent_scale_mode is None:
+            assert len([x for x in shared.sd_upscalers if x.name == self.hr_upscaler]) > 0, f"could not find upscaler named {self.hr_upscaler}"
+
+        x = create_random_tensors([opt_C, self.height // opt_f, self.width // opt_f], seeds=seeds, subseeds=subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
+        samples = self.sampler.sample(self, x, conditioning, unconditional_conditioning, image_conditioning=self.txt2img_image_conditioning(x))
+
         if not self.enable_hr:
-            x = create_random_tensors([opt_C, self.height // opt_f, self.width // opt_f], seeds=seeds, subseeds=subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
-            samples = self.sampler.sample(self, x, conditioning, unconditional_conditioning, image_conditioning=self.txt2img_image_conditioning(x))
             return samples
 
-        x = create_random_tensors([opt_C, self.firstphase_height // opt_f, self.firstphase_width // opt_f], seeds=seeds, subseeds=subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
-        samples = self.sampler.sample(self, x, conditioning, unconditional_conditioning, image_conditioning=self.txt2img_image_conditioning(x, self.firstphase_width, self.firstphase_height))
+        target_width = int(self.width * self.hr_scale)
+        target_height = int(self.height * self.hr_scale)
 
-        samples = samples[:, :, self.truncate_y//2:samples.shape[2]-self.truncate_y//2, self.truncate_x//2:samples.shape[3]-self.truncate_x//2]
-
-        """saves image before applying hires fix, if enabled in options; takes as an argument either an image or batch with latent space images"""
         def save_intermediate(image, index):
+            """saves image before applying hires fix, if enabled in options; takes as an argument either an image or batch with latent space images"""
+
             if not opts.save or self.do_not_save_samples or not opts.save_images_before_highres_fix:
                 return
 
@@ -722,11 +709,11 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
             images.save_image(image, self.outpath_samples, "", seeds[index], prompts[index], opts.samples_format, suffix="-before-highres-fix")
 
-        if opts.use_scale_latent_for_hires_fix:
+        if latent_scale_mode is not None:
             for i in range(samples.shape[0]):
                 save_intermediate(samples, i)
 
-            samples = torch.nn.functional.interpolate(samples, size=(self.height // opt_f, self.width // opt_f), mode="bilinear")
+            samples = torch.nn.functional.interpolate(samples, size=(target_height // opt_f, target_width // opt_f), mode=latent_scale_mode)
 
             # Avoid making the inpainting conditioning unless necessary as
             # this does need some extra compute to decode / encode the image again.
@@ -746,7 +733,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
                 save_intermediate(image, i)
 
-                image = images.resize_image(0, image, self.width, self.height)
+                image = images.resize_image(0, image, target_width, target_height, upscaler_name=self.hr_upscaler)
                 image = np.array(image).astype(np.float32) / 255.0
                 image = np.moveaxis(image, 2, 0)
                 batch_images.append(image)
@@ -763,7 +750,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
         self.sampler = sd_samplers.create_sampler(self.sampler_name, self.sd_model)
 
-        noise = create_random_tensors(samples.shape[1:], seeds=seeds, subseeds=subseeds, subseed_strength=subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
+        noise = create_random_tensors(samples.shape[1:], seeds=seeds, subseeds=subseeds, subseed_strength=subseed_strength, p=self)
 
         # GC now before running the next img2img to prevent running out of memory
         x = None

@@ -73,8 +73,9 @@
     margin-right: auto;
 }
 
-#random_seed, #random_subseed, #reuse_seed, #reuse_subseed, #open_folder{
-    min-width: auto;
+[id$=_random_seed], [id$=_random_subseed], [id$=_reuse_seed], [id$=_reuse_subseed], #open_folder{
+    min-width: 2.3em;
+    height: 2.5em;
     flex-grow: 0;
     padding-left: 0.25em;
     padding-right: 0.25em;
@@ -84,27 +85,28 @@
     display: none;
 }
 
-#seed_row, #subseed_row{
+[id$=_seed_row], [id$=_subseed_row]{
     gap: 0.5rem;
+    padding: 0.6em;
 }
 
-#subseed_show_box{
+[id$=_subseed_show_box]{
     min-width: auto;
     flex-grow: 0;
 }
 
-#subseed_show_box > div{
+[id$=_subseed_show_box] > div{
     border: 0;
     height: 100%;
 }
 
-#subseed_show{
+[id$=_subseed_show]{
     min-width: auto;
     flex-grow: 0;
     padding: 0;
 }
 
-#subseed_show label{
+[id$=_subseed_show] label{
     height: 100%;
 }
 
@@ -206,24 +208,24 @@ button{
 
 fieldset span.text-gray-500, .gr-block.gr-box span.text-gray-500,  label.block span{
     position: absolute;
-    top: -0.6em;
+    top: -0.7em;
     line-height: 1.2em;
-    padding: 0 0.5em;
-    margin: 0;
+    padding: 0;
+    margin: 0 0.5em;
 
     background-color: white;
-    border-top: 1px solid #eee;
-    border-left: 1px solid #eee;
-    border-right: 1px solid #eee;
+    box-shadow:  6px 0 6px 0px white, -6px 0 6px 0px white;
 
     z-index: 300;
 }
 
 .dark fieldset span.text-gray-500, .dark .gr-block.gr-box span.text-gray-500, .dark label.block span{
     background-color: rgb(31, 41, 55);
-    border-top: 1px solid rgb(55 65 81);
-    border-left: 1px solid rgb(55 65 81);
-    border-right: 1px solid rgb(55 65 81);
+    box-shadow: 6px 0 6px 0px rgb(31, 41, 55), -6px 0 6px 0px rgb(31, 41, 55);
+}
+
+#txt2img_column_batch, #img2img_column_batch{
+    min-width: min(13.5em, 100%) !important;
 }
 
 #settings fieldset span.text-gray-500, #settings .gr-block.gr-box span.text-gray-500, #settings label.block span{
@@ -232,22 +234,40 @@ fieldset span.text-gray-500, .gr-block.gr-box span.text-gray-500,  label.block s
     margin-right: 8em;
 }
 
-.gr-panel div.flex-col div.justify-between label span{
-    margin: 0;
-}
-
 #settings .gr-panel div.flex-col div.justify-between div{
     position: relative;
     z-index: 200;
 }
 
-input[type="range"]{
-    margin: 0.5em 0 -0.3em 0;
+#settings{
+    display: block;
 }
 
-#txt2img_sampling label{
-    padding-left: 0.6em;
-    padding-right: 0.6em;
+#settings > div{
+    border: none;
+    margin-left: 10em;
+}
+
+#settings > div.flex-wrap{
+    float: left;
+    display: block;
+    margin-left: 0;
+    width: 10em;
+}
+
+#settings > div.flex-wrap button{
+    display: block;
+    border: none;
+    text-align: left;
+}
+
+#settings_result{
+    height: 1.4em;
+    margin: 0 1.2em;
+}
+
+input[type="range"]{
+    margin: 0.5em 0 -0.3em 0;
 }
 
 #mask_bug_info {
@@ -501,13 +521,6 @@ input[type="range"]{
     padding: 0;
 }
 
-#refresh_sd_model_checkpoint, #refresh_sd_vae, #refresh_sd_hypernetwork, #refresh_train_hypernetwork_name, #refresh_train_embedding_name, #refresh_localization{
-    max-width: 2.5em;
-    min-width: 2.5em;
-    height: 2.4em;
-}
-
-
 canvas[key="mask"] {
     z-index: 12 !important;
     filter: invert();
@@ -521,7 +534,7 @@ canvas[key="mask"] {
     position: absolute;
     right: 0.5em;
     top: -0.6em;
-    z-index: 200;
+    z-index: 400;
     width: 8em;
 }
 #quicksettings .gr-box > div > div > input.gr-text-input {
@@ -566,6 +579,53 @@ img2maskimg, #img2maskimg > .h-60, #img2maskimg > .h-60 > div, #img2maskimg > .h
 .extension-tag{
     font-weight: bold;
     font-size: 95%;
+}
+
+#image_buttons_txt2img button, #image_buttons_img2img button, #image_buttons_extras button{
+    min-width: auto;
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+}
+
+.gr-form{
+    background-color: white;
+}
+
+.dark .gr-form{
+    background-color: rgb(31 41 55 / var(--tw-bg-opacity));
+}
+
+.gr-button-tool{
+    max-width: 2.5em;
+    min-width: 2.5em !important;
+    height: 2.4em;
+    margin: 0.55em 0;
+}
+
+#quicksettings .gr-button-tool{
+    margin: 0;
+}
+
+
+#img2img_settings > div.gr-form, #txt2img_settings > div.gr-form {
+    padding-top: 0.9em;
+}
+
+#img2img_settings div.gr-form .gr-form, #txt2img_settings div.gr-form .gr-form{
+    border: none;
+    padding-bottom: 0.5em;
+}
+
+footer {
+    display: none !important;
+}
+
+#footer{
+    text-align: center;
+}
+
+#footer div{
+    display: inline-block;
 }
 
 /* The following handles localization for right-to-left (RTL) languages like Arabic.
