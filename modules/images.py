@@ -22,6 +22,8 @@ from modules.shared import opts, cmd_opts
 
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
 
+Image.init() # initialize once all known file format handlers
+
 
 def image_grid(imgs, batch_size=1, rows=None):
     if rows is None:
