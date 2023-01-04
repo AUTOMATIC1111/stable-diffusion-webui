@@ -214,12 +214,13 @@ class State:
 
     """sets self.current_image from self.current_latent if enough sampling steps have been made after the last call to this"""
     def set_current_image(self):
+        if not parallel_processing_allowed:
+            return
+
         if self.sampling_step - self.current_image_sampling_step >= opts.show_progress_every_n_steps and opts.show_progress_every_n_steps > 0:
             self.do_set_current_image()
 
     def do_set_current_image(self):
-        if not parallel_processing_allowed:
-            return
         if self.current_latent is None:
             return
 
@@ -230,6 +231,7 @@ class State:
             self.current_image = modules.sd_samplers.sample_to_image(self.current_latent)
 
         self.current_image_sampling_step = self.sampling_step
+
 
 state = State()
 
