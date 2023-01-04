@@ -1,10 +1,13 @@
 import base64
 import io
+import math
 import os
 import re
+from pathlib import Path
+
 import gradio as gr
 from modules.shared import script_path
-from modules import shared
+from modules import shared, ui_tempdir
 import tempfile
 from PIL import Image
 
@@ -12,6 +15,7 @@ re_param_code = r'\s*([\w ]+):\s*("(?:\\|\"|[^\"])+"|[^,]*)(?:,|$)'
 re_param = re.compile(re_param_code)
 re_params = re.compile(r"^(?:" + re_param_code + "){3,}$")
 re_imagesize = re.compile(r"^(\d+)x(\d+)$")
+re_hypernet_hash = re.compile("\(([0-9a-f]+)\)$")
 type_of_gr_update = type(gr.update())
 paste_fields = {}
 bind_list = []
@@ -33,11 +37,13 @@ def quote(text):
 
 
 def image_from_url_text(filedata):
-    if type(filedata) == dict and filedata["is_file"]:
+    if type(filedata) == list and len(filedata) > 0 and type(filedata[0]) == dict and filedata[0].get("is_file", False):
+        filedata = filedata[0]
+
+    if type(filedata) == dict and filedata.get("is_file", False):
         filename = filedata["name"]
-        tempdir = os.path.normpath(tempfile.gettempdir())
-        normfn = os.path.normpath(filename)
-        assert normfn.startswith(tempdir), 'trying to open image file not in temporary directory'
+        is_in_right_dir = ui_tempdir.check_tmp_file(shared.demo, filename)
+        assert is_in_right_dir, 'trying to open image file outside of allowed directories'
 
         return Image.open(filename)
 
@@ -73,7 +79,10 @@ def integrate_settings_paste_fields(component_dict):
         'sd_hypernetwork': 'Hypernet',
         'sd_hypernetwork_strength': 'Hypernet strength',
         'CLIP_stop_at_last_layers': 'Clip skip',
+        'inpainting_mask_weight': 'Conditional mask weight',
         'sd_model_checkpoint': 'Model hash',
+        'eta_noise_seed_delta': 'ENSD',
+        'initial_noise_multiplier': 'Noise multiplier',
     }
     settings_paste_fields = [
         (component_dict[k], lambda d, k=k, v=v: ui.apply_setting(k, d.get(v, None)))
@@ -88,7 +97,7 @@ def integrate_settings_paste_fields(component_dict):
 def create_buttons(tabs_list):
     buttons = {}
     for tab in tabs_list:
-        buttons[tab] = gr.Button(f"Send to {tab}")
+        buttons[tab] = gr.Button(f"Send to {tab}", elem_id=f"{tab}_tab")
     return buttons
 
 
@@ -97,36 +106,57 @@ def bind_buttons(buttons, send_image, send_generate_info):
     bind_list.append([buttons, send_image, send_generate_info])
 
 
+def send_image_and_dimensions(x):
+    if isinstance(x, Image.Image):
+        img = x
+    else:
+        img = image_from_url_text(x)
+
+    if shared.opts.send_size and isinstance(img, Image.Image):
+        w = img.width
+        h = img.height
+    else:
+        w = gr.update()
+        h = gr.update()
+
+    return img, w, h
+
+
 def run_bind():
-    for buttons, send_image, send_generate_info in bind_list:
+    for buttons, source_image_component, send_generate_info in bind_list:
         for tab in buttons:
             button = buttons[tab]
-            if send_image and paste_fields[tab]["init_img"]:
-                if type(send_image) == gr.Gallery:
-                    button.click(
-                        fn=lambda x: image_from_url_text(x),
-                        _js="extract_image_from_gallery",
-                        inputs=[send_image],
-                        outputs=[paste_fields[tab]["init_img"]],
-                    )
+            destination_image_component = paste_fields[tab]["init_img"]
+            fields = paste_fields[tab]["fields"]
+
+            destination_width_component = next(iter([field for field, name in fields if name == "Size-1"] if fields else []), None)
+            destination_height_component = next(iter([field for field, name in fields if name == "Size-2"] if fields else []), None)
+
+            if source_image_component and destination_image_component:
+                if isinstance(source_image_component, gr.Gallery):
+                    func = send_image_and_dimensions if destination_width_component else image_from_url_text
+                    jsfunc = "extract_image_from_gallery"
                 else:
-                    button.click(
-                        fn=lambda x: x,
-                        inputs=[send_image],
-                        outputs=[paste_fields[tab]["init_img"]],
-                    )
+                    func = send_image_and_dimensions if destination_width_component else lambda x: x
+                    jsfunc = None
 
-            if send_generate_info and paste_fields[tab]["fields"] is not None:
+                button.click(
+                    fn=func,
+                    _js=jsfunc,
+                    inputs=[source_image_component],
+                    outputs=[destination_image_component, destination_width_component, destination_height_component] if destination_width_component else [destination_image_component],
+                )
+
+            if send_generate_info and fields is not None:
                 if send_generate_info in paste_fields:
-                    paste_field_names = ['Prompt', 'Negative prompt', 'Steps', 'Face restoration', 'Size-1', 'Size-2'] + (["Seed"] if shared.opts.send_seed else [])
-
+                    paste_field_names = ['Prompt', 'Negative prompt', 'Steps', 'Face restoration'] + (["Seed"] if shared.opts.send_seed else [])
                     button.click(
                         fn=lambda *x: x,
                         inputs=[field for field, name in paste_fields[send_generate_info]["fields"] if name in paste_field_names],
-                        outputs=[field for field, name in paste_fields[tab]["fields"] if name in paste_field_names],
+                        outputs=[field for field, name in fields if name in paste_field_names],
                     )
                 else:
-                    connect_paste(button, paste_fields[tab]["fields"], send_generate_info)
+                    connect_paste(button, fields, send_generate_info)
 
             button.click(
                 fn=None,
@@ -134,6 +164,59 @@ def run_bind():
                 inputs=None,
                 outputs=None,
             )
+
+
+def find_hypernetwork_key(hypernet_name, hypernet_hash=None):
+    """Determines the config parameter name to use for the hypernet based on the parameters in the infotext.
+
+    Example: an infotext provides "Hypernet: ke-ta" and "Hypernet hash: 1234abcd". For the "Hypernet" config
+    parameter this means there should be an entry that looks like "ke-ta-10000(1234abcd)" to set it to.
+
+    If the infotext has no hash, then a hypernet with the same name will be selected instead.
+    """
+    hypernet_name = hypernet_name.lower()
+    if hypernet_hash is not None:
+        # Try to match the hash in the name
+        for hypernet_key in shared.hypernetworks.keys():
+            result = re_hypernet_hash.search(hypernet_key)
+            if result is not None and result[1] == hypernet_hash:
+                return hypernet_key
+    else:
+        # Fall back to a hypernet with the same name
+        for hypernet_key in shared.hypernetworks.keys():
+            if hypernet_key.lower().startswith(hypernet_name):
+                return hypernet_key
+
+    return None
+
+
+def restore_old_hires_fix_params(res):
+    """for infotexts that specify old First pass size parameter, convert it into
+    width, height, and hr scale"""
+
+    firstpass_width = res.get('First pass size-1', None)
+    firstpass_height = res.get('First pass size-2', None)
+
+    if firstpass_width is None or firstpass_height is None:
+        return
+
+    firstpass_width, firstpass_height = int(firstpass_width), int(firstpass_height)
+    width = int(res.get("Size-1", 512))
+    height = int(res.get("Size-2", 512))
+
+    if firstpass_width == 0 or firstpass_height == 0:
+        # old algorithm for auto-calculating first pass size
+        desired_pixel_count = 512 * 512
+        actual_pixel_count = width * height
+        scale = math.sqrt(desired_pixel_count / actual_pixel_count)
+        firstpass_width = math.ceil(scale * width / 64) * 64
+        firstpass_height = math.ceil(scale * height / 64) * 64
+
+    hr_scale = width / firstpass_width if firstpass_width > 0 else height / firstpass_height
+
+    res['Size-1'] = firstpass_width
+    res['Size-2'] = firstpass_height
+    res['Hires upscale'] = hr_scale
 
 
 def parse_generation_parameters(x: str):
@@ -180,6 +263,20 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
             res[k+"-2"] = m.group(2)
         else:
             res[k] = v
+
+    # Missing CLIP skip means it was set to 1 (the default)
+    if "Clip skip" not in res:
+        res["Clip skip"] = "1"
+
+    if "Hypernet strength" not in res:
+        res["Hypernet strength"] = "1"
+
+    if "Hypernet" in res:
+        hypernet_name = res["Hypernet"]
+        hypernet_hash = res.get("Hypernet hash", None)
+        res["Hypernet"] = find_hypernetwork_key(hypernet_name, hypernet_hash)
+
+    restore_old_hires_fix_params(res)
 
     return res
 

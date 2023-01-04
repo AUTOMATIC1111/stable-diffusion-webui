@@ -1,4 +1,3 @@
-import contextlib
 import os
 import sys
 import traceback
@@ -11,10 +10,9 @@ from torchvision import transforms
 from torchvision.transforms.functional import InterpolationMode
 
 import modules.shared as shared
-from modules import devices, paths, lowvram
+from modules import devices, paths, lowvram, modelloader
 
 blip_image_eval_size = 384
-blip_model_url = 'https://storage.googleapis.com/sfr-vision-language-research/BLIP/models/model_base_caption_capfilt_large.pth'
 clip_model_name = 'ViT-L/14'
 
 Category = namedtuple("Category", ["name", "topn", "items"])
@@ -47,7 +45,14 @@ class InterrogateModels:
     def load_blip_model(self):
         import models.blip
 
-        blip_model = models.blip.blip_decoder(pretrained=blip_model_url, image_size=blip_image_eval_size, vit='base', med_config=os.path.join(paths.paths["BLIP"], "configs", "med_config.json"))
+        files = modelloader.load_models(
+            model_path=os.path.join(paths.models_path, "BLIP"),
+            model_url='https://storage.googleapis.com/sfr-vision-language-research/BLIP/models/model_base_caption_capfilt_large.pth',
+            ext_filter=[".pth"],
+            download_name='model_base_caption_capfilt_large.pth',
+        )
+
+        blip_model = models.blip.blip_decoder(pretrained=files[0], image_size=blip_image_eval_size, vit='base', med_config=os.path.join(paths.paths["BLIP"], "configs", "med_config.json"))
         blip_model.eval()
 
         return blip_model
@@ -130,8 +135,9 @@ class InterrogateModels:
         return caption[0]
 
     def interrogate(self, pil_image):
-        res = None
-
+        res = ""
+        shared.state.begin()
+        shared.state.job = 'interrogate'
         try:
 
             if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
@@ -148,8 +154,7 @@ class InterrogateModels:
 
             clip_image = self.clip_preprocess(pil_image).unsqueeze(0).type(self.dtype).to(devices.device_interrogate)
 
-            precision_scope = torch.autocast if shared.cmd_opts.precision == "autocast" else contextlib.nullcontext
-            with torch.no_grad(), precision_scope("cuda"):
+            with torch.no_grad(), devices.autocast():
                 image_features = self.clip_model.encode_image(clip_image).type(self.dtype)
 
                 image_features /= image_features.norm(dim=-1, keepdim=True)
@@ -168,10 +173,11 @@ class InterrogateModels:
                             res += ", " + match
 
         except Exception:
-            print(f"Error interrogating", file=sys.stderr)
+            print("Error interrogating", file=sys.stderr)
             print(traceback.format_exc(), file=sys.stderr)
             res += "<error>"
 
         self.unload()
+        shared.state.end()
 
         return res

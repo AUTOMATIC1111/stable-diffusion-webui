@@ -18,7 +18,7 @@ def create_embedding(name, initialization_text, nvpt, overwrite_old):
 def preprocess(*args):
     modules.textual_inversion.preprocess.preprocess(*args)
 
-    return "Preprocessing finished.", ""
+    return f"Preprocessing {'interrupted' if shared.state.interrupted else 'finished'}.", ""
 
 
 def train_embedding(*args):

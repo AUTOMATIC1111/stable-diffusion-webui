@@ -15,6 +15,7 @@ import piexif.helper
 from PIL import Image, ImageFont, ImageDraw, PngImagePlugin
 from fonts.ttf import Roboto
 import string
+import json
 
 from modules import sd_samplers, shared, script_callbacks
 from modules.shared import opts, cmd_opts
@@ -38,11 +39,14 @@ def image_grid(imgs, batch_size=1, rows=None):
 
     cols = math.ceil(len(imgs) / rows)
 
-    w, h = imgs[0].size
-    grid = Image.new('RGB', size=(cols * w, rows * h), color='black')
+    params = script_callbacks.ImageGridLoopParams(imgs, cols, rows)
+    script_callbacks.image_grid_callback(params)
 
-    for i, img in enumerate(imgs):
-        grid.paste(img, box=(i % cols * w, i // cols * h))
+    w, h = imgs[0].size
+    grid = Image.new('RGB', size=(params.cols * w, params.rows * h), color='black')
+
+    for i, img in enumerate(params.imgs):
+        grid.paste(img, box=(i % params.cols * w, i // params.cols * h))
 
     return grid
 
@@ -135,8 +139,19 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts):
                 lines.append(word)
         return lines
 
-    def draw_texts(drawing, draw_x, draw_y, lines):
+    def get_font(fontsize):
+        try:
+            return ImageFont.truetype(opts.font or Roboto, fontsize)
+        except Exception:
+            return ImageFont.truetype(Roboto, fontsize)
+
+    def draw_texts(drawing, draw_x, draw_y, lines, initial_fnt, initial_fontsize):
         for i, line in enumerate(lines):
+            fnt = initial_fnt
+            fontsize = initial_fontsize
+            while drawing.multiline_textsize(line.text, font=fnt)[0] > line.allowed_width and fontsize > 0:
+                fontsize -= 1
+                fnt = get_font(fontsize)
             drawing.multiline_text((draw_x, draw_y + line.size[1] / 2), line.text, font=fnt, fill=color_active if line.is_active else color_inactive, anchor="mm", align="center")
 
             if not line.is_active:
@@ -147,10 +162,7 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts):
     fontsize = (width + height) // 25
     line_spacing = fontsize // 2
 
-    try:
-        fnt = ImageFont.truetype(opts.font or Roboto, fontsize)
-    except Exception:
-        fnt = ImageFont.truetype(Roboto, fontsize)
+    fnt = get_font(fontsize)
 
     color_active = (0, 0, 0)
     color_inactive = (153, 153, 153)
@@ -177,6 +189,7 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts):
         for line in texts:
             bbox = calc_d.multiline_textbbox((0, 0), line.text, font=fnt)
             line.size = (bbox[2] - bbox[0], bbox[3] - bbox[1])
+            line.allowed_width = allowed_width
 
     hor_text_heights = [sum([line.size[1] + line_spacing for line in lines]) - line_spacing for lines in hor_texts]
     ver_text_heights = [sum([line.size[1] + line_spacing for line in lines]) - line_spacing * len(lines) for lines in
@@ -193,13 +206,13 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts):
         x = pad_left + width * col + width / 2
         y = pad_top / 2 - hor_text_heights[col] / 2
 
-        draw_texts(d, x, y, hor_texts[col])
+        draw_texts(d, x, y, hor_texts[col], fnt, fontsize)
 
     for row in range(rows):
         x = pad_left / 2
         y = pad_top + height * row + height / 2 - ver_text_heights[row] / 2
 
-        draw_texts(d, x, y, ver_texts[row])
+        draw_texts(d, x, y, ver_texts[row], fnt, fontsize)
 
     return result
 
@@ -217,16 +230,32 @@ def draw_prompt_matrix(im, width, height, all_prompts):
     return draw_grid_annotations(im, width, height, hor_texts, ver_texts)
 
 
-def resize_image(resize_mode, im, width, height):
+def resize_image(resize_mode, im, width, height, upscaler_name=None):
+    """
+    Resizes an image with the specified resize_mode, width, and height.
+
+    Args:
+        resize_mode: The mode to use when resizing the image.
+            0: Resize the image to the specified width and height.
+            1: Resize the image to fill the specified width and height, maintaining the aspect ratio, and then center the image within the dimensions, cropping the excess.
+            2: Resize the image to fit within the specified width and height, maintaining the aspect ratio, and then center the image within the dimensions, filling empty with data from image.
+        im: The image to resize.
+        width: The width to resize the image to.
+        height: The height to resize the image to.
+        upscaler_name: The name of the upscaler to use. If not provided, defaults to opts.upscaler_for_img2img.
+    """
+
+    upscaler_name = upscaler_name or opts.upscaler_for_img2img
+
     def resize(im, w, h):
-        if opts.upscaler_for_img2img is None or opts.upscaler_for_img2img == "None" or im.mode == 'L':
+        if upscaler_name is None or upscaler_name == "None" or im.mode == 'L':
             return im.resize((w, h), resample=LANCZOS)
 
         scale = max(w / im.width, h / im.height)
 
         if scale > 1.0:
-            upscalers = [x for x in shared.sd_upscalers if x.name == opts.upscaler_for_img2img]
-            assert len(upscalers) > 0, f"could not find upscaler named {opts.upscaler_for_img2img}"
+            upscalers = [x for x in shared.sd_upscalers if x.name == upscaler_name]
+            assert len(upscalers) > 0, f"could not find upscaler named {upscaler_name}"
 
             upscaler = upscalers[0]
             im = upscaler.scaler.upscale(im, scale, upscaler.data_path)
@@ -303,8 +332,9 @@ class FilenameGenerator:
         'width': lambda self: self.image.width,
         'height': lambda self: self.image.height,
         'styles': lambda self: self.p and sanitize_filename_part(", ".join([style for style in self.p.styles if not style == "None"]) or "None", replace_spaces=False),
-        'sampler': lambda self: self.p and sanitize_filename_part(sd_samplers.samplers[self.p.sampler_index].name, replace_spaces=False),
+        'sampler': lambda self: self.p and sanitize_filename_part(self.p.sampler_name, replace_spaces=False),
         'model_hash': lambda self: getattr(self.p, "sd_model_hash", shared.sd_model.sd_model_hash),
+        'model_name': lambda self: sanitize_filename_part(shared.sd_model.sd_checkpoint_info.model_name, replace_spaces=False),
         'date': lambda self: datetime.datetime.now().strftime('%Y-%m-%d'),
         'datetime': lambda self, *args: self.datetime(*args),  # accepts formats: [datetime], [datetime<Format>], [datetime<Format><Time Zone>]
         'job_timestamp': lambda self: getattr(self.p, "job_timestamp", shared.state.job_timestamp),
@@ -427,7 +457,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
             The directory to save the image. Note, the option `save_to_dirs` will make the image to be saved into a sub directory.
         basename (`str`):
             The base filename which will be applied to `filename pattern`.
-        seed, prompt, short_filename, 
+        seed, prompt, short_filename,
         extension (`str`):
             Image file extension, default is `png`.
         pngsectionname (`str`):
@@ -499,30 +529,44 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     image = params.image
     fullfn = params.filename
     info = params.pnginfo.get(pnginfo_section_name, None)
+
+    def _atomically_save_image(image_to_save, filename_without_extension, extension):
+        # save image with .tmp extension to avoid race condition when another process detects new image in the directory
+        temp_file_path = filename_without_extension + ".tmp"
+        image_format = Image.registered_extensions()[extension]
+
+        if extension.lower() == '.png':
+            pnginfo_data = PngImagePlugin.PngInfo()
+            if opts.enable_pnginfo:
+                for k, v in params.pnginfo.items():
+                    pnginfo_data.add_text(k, str(v))
+
+            image_to_save.save(temp_file_path, format=image_format, quality=opts.jpeg_quality, pnginfo=pnginfo_data)
+
+        elif extension.lower() in (".jpg", ".jpeg", ".webp"):
+            if image_to_save.mode == 'RGBA':
+                image_to_save = image_to_save.convert("RGB")
+
+            image_to_save.save(temp_file_path, format=image_format, quality=opts.jpeg_quality)
+
+            if opts.enable_pnginfo and info is not None:
+                exif_bytes = piexif.dump({
+                    "Exif": {
+                        piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(info or "", encoding="unicode")
+                    },
+                })
+
+                piexif.insert(exif_bytes, temp_file_path)
+        else:
+            image_to_save.save(temp_file_path, format=image_format, quality=opts.jpeg_quality)
+
+        # atomically rename the file with correct extension
+        os.replace(temp_file_path, filename_without_extension + extension)
+
     fullfn_without_extension, extension = os.path.splitext(params.filename)
+    _atomically_save_image(image, fullfn_without_extension, extension)
 
-    def exif_bytes():
-        return piexif.dump({
-            "Exif": {
-                piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(info or "", encoding="unicode")
-            },
-        })
-
-    if extension.lower() == '.png':
-        pnginfo_data = PngImagePlugin.PngInfo()
-        if opts.enable_pnginfo:
-            for k, v in params.pnginfo.items():
-                pnginfo_data.add_text(k, str(v))
-
-        image.save(fullfn, quality=opts.jpeg_quality, pnginfo=pnginfo_data)
-
-    elif extension.lower() in (".jpg", ".jpeg", ".webp"):
-        image.save(fullfn, quality=opts.jpeg_quality)
-
-        if opts.enable_pnginfo and info is not None:
-            piexif.insert(exif_bytes(), fullfn)
-    else:
-        image.save(fullfn, quality=opts.jpeg_quality)
+    image.already_saved_as = fullfn
 
     target_side_length = 4000
     oversize = image.width > target_side_length or image.height > target_side_length
@@ -534,9 +578,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
         elif oversize:
             image = image.resize((image.width * target_side_length // image.height, target_side_length), LANCZOS)
 
-        image.save(fullfn_without_extension + ".jpg", quality=opts.jpeg_quality)
-        if opts.enable_pnginfo and info is not None:
-            piexif.insert(exif_bytes(), fullfn_without_extension + ".jpg")
+        _atomically_save_image(image, fullfn_without_extension, ".jpg")
 
     if opts.save_txt and info is not None:
         txt_fullfn = f"{fullfn_without_extension}.txt"
@@ -550,10 +592,45 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     return fullfn, txt_fullfn
 
 
+def read_info_from_image(image):
+    items = image.info or {}
+
+    geninfo = items.pop('parameters', None)
+
+    if "exif" in items:
+        exif = piexif.load(items["exif"])
+        exif_comment = (exif or {}).get("Exif", {}).get(piexif.ExifIFD.UserComment, b'')
+        try:
+            exif_comment = piexif.helper.UserComment.load(exif_comment)
+        except ValueError:
+            exif_comment = exif_comment.decode('utf8', errors="ignore")
+
+        items['exif comment'] = exif_comment
+        geninfo = exif_comment
+
+        for field in ['jfif', 'jfif_version', 'jfif_unit', 'jfif_density', 'dpi', 'exif',
+                      'loop', 'background', 'timestamp', 'duration']:
+            items.pop(field, None)
+
+    if items.get("Software", None) == "NovelAI":
+        try:
+            json_info = json.loads(items["Comment"])
+            sampler = sd_samplers.samplers_map.get(json_info["sampler"], "Euler a")
+
+            geninfo = f"""{items["Description"]}
+Negative prompt: {json_info["uc"]}
+Steps: {json_info["steps"]}, Sampler: {sampler}, CFG scale: {json_info["scale"]}, Seed: {json_info["seed"]}, Size: {image.width}x{image.height}, Clip skip: 2, ENSD: 31337"""
+        except Exception:
+            print("Error parsing NovelAI image generation parameters:", file=sys.stderr)
+            print(traceback.format_exc(), file=sys.stderr)
+
+    return geninfo, items
+
+
 def image_data(data):
     try:
         image = Image.open(io.BytesIO(data))
-        textinfo = image.text["parameters"]
+        textinfo, _ = read_info_from_image(image)
         return textinfo, None
     except Exception:
         pass
@@ -567,3 +644,14 @@ def image_data(data):
         pass
 
     return '', None
+
+
+def flatten(img, bgcolor):
+    """replaces transparency with bgcolor (example: "#ffffff"), returning an RGB mode image with no transparency"""
+
+    if img.mode == "RGBA":
+        background = Image.new('RGBA', img.size, bgcolor)
+        background.paste(img, mask=img)
+        img = background
+
+    return img.convert('RGB')

@@ -71,10 +71,13 @@ class MemUsageMonitor(threading.Thread):
     def read(self):
         if not self.disabled:
             free, total = torch.cuda.mem_get_info()
+            self.data["free"] = free
             self.data["total"] = total
 
             torch_stats = torch.cuda.memory_stats(self.device)
+            self.data["active"] = torch_stats["active.all.current"]
             self.data["active_peak"] = torch_stats["active_bytes.all.peak"]
+            self.data["reserved"] = torch_stats["reserved_bytes.all.current"]
             self.data["reserved_peak"] = torch_stats["reserved_bytes.all.peak"]
             self.data["system_peak"] = total - self.data["min_free"]
 

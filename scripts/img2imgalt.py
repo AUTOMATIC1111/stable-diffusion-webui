@@ -157,7 +157,7 @@ class Script(scripts.Script):
     def run(self, p, _, override_sampler, override_prompt, original_prompt, original_negative_prompt, override_steps, st, override_strength, cfg, randomness, sigma_adjustment):
         # Override
         if override_sampler:
-            p.sampler_index = [sampler.name for sampler in sd_samplers.samplers].index("Euler")
+            p.sampler_name = "Euler"
         if override_prompt:
             p.prompt = original_prompt
             p.negative_prompt = original_negative_prompt
@@ -166,8 +166,7 @@ class Script(scripts.Script):
         if override_strength:
             p.denoising_strength = 1.0
 
-
-        def sample_extra(conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength):
+        def sample_extra(conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
             lat = (p.init_latent.cpu().numpy() * 10).astype(int)
 
             same_params = self.cache is not None and self.cache.cfg_scale == cfg and self.cache.steps == st \
@@ -192,7 +191,7 @@ class Script(scripts.Script):
             
             combined_noise = ((1 - randomness) * rec_noise + randomness * rand_noise) / ((randomness**2 + (1-randomness)**2) ** 0.5)
             
-            sampler = sd_samplers.create_sampler_with_index(sd_samplers.samplers, p.sampler_index, p.sd_model)
+            sampler = sd_samplers.create_sampler(p.sampler_name, p.sd_model)
 
             sigmas = sampler.model_wrap.get_sigmas(p.steps)
             
