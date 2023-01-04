@@ -410,6 +410,18 @@ class Script(scripts.Script):
 
             return process_images(pc)
 
+        if not x_opt.label == 'Nothing':
+            p.extra_generation_params["XY Plot X Type"] = x_opt.label
+            p.extra_generation_params["XY Plot X Values"] = '{' + x_values + '}'
+            if x_opt.label in ["Seed","Var. seed"] and not no_fixed_seeds:
+                p.extra_generation_params["XY Plot Fixed X Values"] = '{' + ", ".join([str(x) for x in xs])+ '}'
+
+        if not y_opt.label == 'Nothing':
+            p.extra_generation_params["XY Plot Y Type"] = y_opt.label
+            p.extra_generation_params["XY Plot Y Values"] = '{' + y_values + '}'
+            if y_opt.label in ["Seed","Var. seed"] and not no_fixed_seeds:
+                p.extra_generation_params["XY Plot Fixed Y Values"] = '{' + ", ".join([str(y) for y in ys])+ '}'
+
         with SharedSettingsStackHelper():
             processed = draw_xy_grid(
                 p,
