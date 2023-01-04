@@ -426,6 +426,22 @@ Large picture's dimensions are controlled by three sliders: "Scale by" multiplie
 * If "Resize height to" is 0, "Resize width to" is calculated from width and height.
 * If both "Resize width to" and "Resize height to" are non-zero, image is upscaled to be at least those dimensions, and some parts are cropped.
 
+## Upscalers
+
+A dropdown allows you to to select the kind of upscaler to use for resizing the image. In addition to all upscalers you have available on extras tab, there is an option to upscale a latent space image, which is what stable diffusion works with internally - for a 3x512x512 RGB image, its latent space representation would be 4x64x64. To see what each latent space upscaler does, you can set Denoising strength to 0 and Hires steps to 1 - you'll get a very good approximation of that stable diffusion would be working with on upscaled image.
+
+Below are examples of how different latent upscale modes look. 
+
+| Original                     |
+|------------------------------|
+| ![00084-2395363541](https://user-images.githubusercontent.com/20920490/210657893-0660c637-9f26-405e-83c9-3030e45fd5b0.png) | 
+
+| Latent, Latent (antialiased)                     | Latent (bicubic), Latent (bicubic, antialiased) | Latent (nearest)            |
+|------------------------------|------------------------------|------------------------------|
+| ![00071-2395363541](https://user-images.githubusercontent.com/20920490/210658048-d90ae87d-4534-4ca4-878b-9aaa4f43f901.png) | ![00073-2395363541](https://user-images.githubusercontent.com/20920490/210658501-c6a64c58-9343-470a-9f0b-6ae76c806725.png) | ![00077-2395363541](https://user-images.githubusercontent.com/20920490/210658607-ac5b5f30-af6a-4158-b968-9d1fdd6faf50.png) |
+
+Antialiased variations were PRd in by a contributor and seem to be the same as non-antialiased.
+
 # Composable Diffusion
 
 A method to allow the combination of multiple prompts.
