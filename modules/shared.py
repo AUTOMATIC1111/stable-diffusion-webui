@@ -153,6 +153,7 @@ class State:
     job = ""
     job_no = 0
     job_count = 0
+    processing_has_refined_job_count = False
     job_timestamp = '0'
     sampling_step = 0
     sampling_steps = 0
@@ -194,6 +195,7 @@ class State:
     def begin(self):
         self.sampling_step = 0
         self.job_count = -1
+        self.processing_has_refined_job_count = False
         self.job_no = 0
         self.job_timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
         self.current_latent = None
@@ -608,7 +610,7 @@ class TotalTQDM:
             return
         if self._tqdm is None:
             self.reset()
-        self._tqdm.total=new_total
+        self._tqdm.total = new_total
 
     def clear(self):
         if self._tqdm is not None:

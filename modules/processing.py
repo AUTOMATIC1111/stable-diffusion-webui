@@ -685,10 +685,13 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
     def init(self, all_prompts, all_seeds, all_subseeds):
         if self.enable_hr:
-            if state.job_count == -1:
-                state.job_count = self.n_iter * 2
-            else:
+            if not state.processing_has_refined_job_count:
+                if state.job_count == -1:
+                    state.job_count = self.n_iter
+
+                shared.total_tqdm.updateTotal((self.steps + (self.hr_second_pass_steps or self.steps)) * state.job_count)
                 state.job_count = state.job_count * 2
+                state.processing_has_refined_job_count = True
 
             if self.hr_resize_x == 0 and self.hr_resize_y == 0:
                 self.extra_generation_params["Hires upscale"] = self.hr_scale
