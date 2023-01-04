@@ -1,11 +1,12 @@
 import base64
 import io
 import time
+import datetime
 import uvicorn
 from threading import Lock
 from io import BytesIO
 from gradio.processing_utils import decode_base64_to_file
-from fastapi import APIRouter, Depends, FastAPI, HTTPException
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request, Response
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from secrets import compare_digest
 
@@ -67,6 +68,27 @@ def encode_pil_to_base64(image):
         bytes_data = output_bytes.getvalue()
     return base64.b64encode(bytes_data)
 
+def api_middleware(app: FastAPI):
+    @app.middleware("http")
+    async def log_and_time(req: Request, call_next):
+        ts = time.time()
+        res: Response = await call_next(req)
+        duration = str(round(time.time() - ts, 4))
+        res.headers["X-Process-Time"] = duration
+        endpoint = req.scope.get('path', 'err')
+        if shared.cmd_opts.api_log and endpoint.startswith('/sdapi'):
+            print('API {t} {code} {prot}/{ver} {method} {endpoint} {cli} {duration}'.format(
+                t = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
+                code = res.status_code,
+                ver = req.scope.get('http_version', '0.0'),
+                cli = req.scope.get('client', ('0:0.0.0', 0))[0],
+                prot = req.scope.get('scheme', 'err'),
+                method = req.scope.get('method', 'err'),
+                endpoint = endpoint,
+                duration = duration,
+            ))
+        return res
+
 
 class Api:
     def __init__(self, app: FastAPI, queue_lock: Lock):
@@ -78,6 +100,7 @@ class Api:
 
         self.router = APIRouter()
         self.app = app
+        init_api_middleware(self.app)
         self.queue_lock = queue_lock
         self.add_api_route("/sdapi/v1/txt2img", self.text2imgapi, methods=["POST"], response_model=TextToImageResponse)
         self.add_api_route("/sdapi/v1/img2img", self.img2imgapi, methods=["POST"], response_model=ImageToImageResponse)
