@@ -547,16 +547,20 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
             if image_to_save.mode == 'RGBA':
                 image_to_save = image_to_save.convert("RGB")
 
-            image_to_save.save(temp_file_path, format=image_format, quality=opts.jpeg_quality)
+            if opts.enable_pnginfo:
+                info_copy = params.pnginfo.copy()
+                exif_str = info_copy.pop('parameters', '') # try to use params from pnginfo
+                exif_old = info_copy.pop('exif', None)
+                if exif_old is not None and exif_str == '': # if we dont have params, load whatever is in exif
+                    exif_comment = piexif.load(existing_info['exif']).get("Exif", {}).get(piexif.ExifIFD.UserComment, b'')
+                    exif_str = piexif.helper.UserComment.load(exif_comment)
+                for k, v in info_copy.items(): # and append anything else left in pnginfo such as extras
+                    exif_str += f"\n{k}: {v}"
+                exif_bytes = piexif.dump({ "Exif": { piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(exif_str, encoding="unicode") } })
+                image_to_save.save(temp_file_path, format=image_format, quality=opts.jpeg_quality, exif=exif_bytes) # save once instead of injecting exif later
+            else:
+                image_to_save.save(temp_file_path, format=image_format, quality=opts.jpeg_quality)
 
-            if opts.enable_pnginfo and info is not None:
-                exif_bytes = piexif.dump({
-                    "Exif": {
-                        piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(info or "", encoding="unicode")
-                    },
-                })
-
-                piexif.insert(exif_bytes, temp_file_path)
         else:
             image_to_save.save(temp_file_path, format=image_format, quality=opts.jpeg_quality)
 
