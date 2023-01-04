@@ -51,6 +51,13 @@ class UiTrainTabParams:
         self.txt2img_preview_params = txt2img_preview_params
 
 
+class ImageGridLoopParams:
+    def __init__(self, imgs, cols, rows):
+        self.imgs = imgs
+        self.cols = cols
+        self.rows = rows
+
+
 ScriptCallback = namedtuple("ScriptCallback", ["script", "callback"])
 callback_map = dict(
     callbacks_app_started=[],
@@ -61,6 +68,9 @@ callback_map = dict(
     callbacks_before_image_saved=[],
     callbacks_image_saved=[],
     callbacks_cfg_denoiser=[],
+    callbacks_before_component=[],
+    callbacks_after_component=[],
+    callbacks_image_grid=[],
 )
 
 
@@ -135,6 +145,30 @@ def cfg_denoiser_callback(params: CFGDenoiserParams):
             c.callback(params)
         except Exception:
             report_exception(c, 'cfg_denoiser_callback')
+
+
+def before_component_callback(component, **kwargs):
+    for c in callback_map['callbacks_before_component']:
+        try:
+            c.callback(component, **kwargs)
+        except Exception:
+            report_exception(c, 'before_component_callback')
+
+
+def after_component_callback(component, **kwargs):
+    for c in callback_map['callbacks_after_component']:
+        try:
+            c.callback(component, **kwargs)
+        except Exception:
+            report_exception(c, 'after_component_callback')
+
+
+def image_grid_callback(params: ImageGridLoopParams):
+    for c in callback_map['callbacks_image_grid']:
+        try:
+            c.callback(params)
+        except Exception:
+            report_exception(c, 'image_grid')
 
 
 def add_callback(callbacks, fun):
@@ -220,3 +254,28 @@ def on_cfg_denoiser(callback):
         - params: CFGDenoiserParams - parameters to be passed to the inner model and sampling state details.
     """
     add_callback(callback_map['callbacks_cfg_denoiser'], callback)
+
+
+def on_before_component(callback):
+    """register a function to be called before a component is created.
+    The callback is called with arguments:
+        - component - gradio component that is about to be created.
+        - **kwargs - args to gradio.components.IOComponent.__init__ function
+
+    Use elem_id/label fields of kwargs to figure out which component it is.
+    This can be useful to inject your own components somewhere in the middle of vanilla UI.
+    """
+    add_callback(callback_map['callbacks_before_component'], callback)
+
+
+def on_after_component(callback):
+    """register a function to be called after a component is created. See on_before_component for more."""
+    add_callback(callback_map['callbacks_after_component'], callback)
+
+
+def on_image_grid(callback):
+    """register a function to be called before making an image grid.
+    The callback is called with one argument:
+       - params: ImageGridLoopParams - parameters to be used for grid creation. Can be modified.
+    """
+    add_callback(callback_map['callbacks_image_grid'], callback)

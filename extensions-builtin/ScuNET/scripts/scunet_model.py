@@ -9,7 +9,7 @@ from basicsr.utils.download_util import load_file_from_url
 
 import modules.upscaler
 from modules import devices, modelloader
-from modules.scunet_model_arch import SCUNet as net
+from scunet_model_arch import SCUNet as net
 
 
 class UpscalerScuNET(modules.upscaler.Upscaler):
@@ -49,12 +49,12 @@ class UpscalerScuNET(modules.upscaler.Upscaler):
         if model is None:
             return img
 
-        device = devices.device_scunet
+        device = devices.get_device_for('scunet')
         img = np.array(img)
         img = img[:, :, ::-1]
         img = np.moveaxis(img, 2, 0) / 255
         img = torch.from_numpy(img).float()
-        img = devices.mps_contiguous_to(img.unsqueeze(0), device)
+        img = img.unsqueeze(0).to(device)
 
         with torch.no_grad():
             output = model(img)
@@ -66,7 +66,7 @@ class UpscalerScuNET(modules.upscaler.Upscaler):
         return PIL.Image.fromarray(output, 'RGB')
 
     def load_model(self, path: str):
-        device = devices.device_scunet
+        device = devices.get_device_for('scunet')
         if "http" in path:
             filename = load_file_from_url(url=self.model_url, model_dir=self.model_path, file_name="%s.pth" % self.name,
                                           progress=True)

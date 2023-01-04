@@ -1,4 +1,5 @@
 import modules.scripts
+from modules import sd_samplers
 from modules.processing import StableDiffusionProcessing, Processed, StableDiffusionProcessingTxt2Img, \
     StableDiffusionProcessingImg2Img, process_images
 from modules.shared import opts, cmd_opts
@@ -7,7 +8,7 @@ import modules.processing as processing
 from modules.ui import plaintext_to_html
 
 
-def txt2img(prompt: str, negative_prompt: str, prompt_style: str, prompt_style2: str, steps: int, sampler_index: int, restore_faces: bool, tiling: bool, n_iter: int, batch_size: int, cfg_scale: float, seed: int, subseed: int, subseed_strength: float, seed_resize_from_h: int, seed_resize_from_w: int, seed_enable_extras: bool, height: int, width: int, enable_hr: bool, denoising_strength: float, firstphase_width: int, firstphase_height: int, *args):
+def txt2img(prompt: str, negative_prompt: str, prompt_style: str, prompt_style2: str, steps: int, sampler_index: int, restore_faces: bool, tiling: bool, n_iter: int, batch_size: int, cfg_scale: float, seed: int, subseed: int, subseed_strength: float, seed_resize_from_h: int, seed_resize_from_w: int, seed_enable_extras: bool, height: int, width: int, enable_hr: bool, denoising_strength: float, hr_scale: float, hr_upscaler: str, *args):
     p = StableDiffusionProcessingTxt2Img(
         sd_model=shared.sd_model,
         outpath_samples=opts.outdir_samples or opts.outdir_txt2img_samples,
@@ -21,7 +22,7 @@ def txt2img(prompt: str, negative_prompt: str, prompt_style: str, prompt_style2:
         seed_resize_from_h=seed_resize_from_h,
         seed_resize_from_w=seed_resize_from_w,
         seed_enable_extras=seed_enable_extras,
-        sampler_index=sampler_index,
+        sampler_name=sd_samplers.samplers[sampler_index].name,
         batch_size=batch_size,
         n_iter=n_iter,
         steps=steps,
@@ -32,8 +33,8 @@ def txt2img(prompt: str, negative_prompt: str, prompt_style: str, prompt_style2:
         tiling=tiling,
         enable_hr=enable_hr,
         denoising_strength=denoising_strength if enable_hr else None,
-        firstphase_width=firstphase_width if enable_hr else None,
-        firstphase_height=firstphase_height if enable_hr else None,
+        hr_scale=hr_scale,
+        hr_upscaler=hr_upscaler,
     )
 
     p.scripts = modules.scripts.scripts_txt2img
@@ -58,4 +59,4 @@ def txt2img(prompt: str, negative_prompt: str, prompt_style: str, prompt_style2:
     if opts.do_not_show_images:
         processed.images = []
 
-    return processed.images, generation_info_js, plaintext_to_html(processed.info)
+    return processed.images, generation_info_js, plaintext_to_html(processed.info), plaintext_to_html(processed.comments)

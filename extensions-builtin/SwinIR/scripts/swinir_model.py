@@ -7,15 +7,14 @@ from PIL import Image
 from basicsr.utils.download_util import load_file_from_url
 from tqdm import tqdm
 
-from modules import modelloader, devices
+from modules import modelloader, devices, script_callbacks, shared
 from modules.shared import cmd_opts, opts
-from modules.swinir_model_arch import SwinIR as net
-from modules.swinir_model_arch_v2 import Swin2SR as net2
+from swinir_model_arch import SwinIR as net
+from swinir_model_arch_v2 import Swin2SR as net2
 from modules.upscaler import Upscaler, UpscalerData
 
-precision_scope = (
-    torch.autocast if cmd_opts.precision == "autocast" else contextlib.nullcontext
-)
+
+device_swinir = devices.get_device_for('swinir')
 
 
 class UpscalerSwinIR(Upscaler):
@@ -42,7 +41,7 @@ class UpscalerSwinIR(Upscaler):
         model = self.load_model(model_file)
         if model is None:
             return img
-        model = model.to(devices.device_swinir)
+        model = model.to(device_swinir, dtype=devices.dtype)
         img = upscale(img, model)
         try:
             torch.cuda.empty_cache()
@@ -94,25 +93,27 @@ class UpscalerSwinIR(Upscaler):
             model.load_state_dict(pretrained_model[params], strict=True)
         else:
             model.load_state_dict(pretrained_model, strict=True)
-        if not cmd_opts.no_half:
-            model = model.half()
         return model
 
 
 def upscale(
         img,
         model,
-        tile=opts.SWIN_tile,
-        tile_overlap=opts.SWIN_tile_overlap,
+        tile=None,
+        tile_overlap=None,
         window_size=8,
         scale=4,
 ):
+    tile = tile or opts.SWIN_tile
+    tile_overlap = tile_overlap or opts.SWIN_tile_overlap
+
+
     img = np.array(img)
     img = img[:, :, ::-1]
     img = np.moveaxis(img, 2, 0) / 255
     img = torch.from_numpy(img).float()
-    img = devices.mps_contiguous_to(img.unsqueeze(0), devices.device_swinir)
-    with torch.no_grad(), precision_scope("cuda"):
+    img = img.unsqueeze(0).to(device_swinir, dtype=devices.dtype)
+    with torch.no_grad(), devices.autocast():
         _, _, h_old, w_old = img.size()
         h_pad = (h_old // window_size + 1) * window_size - h_old
         w_pad = (w_old // window_size + 1) * window_size - w_old
@@ -139,8 +140,8 @@ def inference(img, model, tile, tile_overlap, window_size, scale):
     stride = tile - tile_overlap
     h_idx_list = list(range(0, h - tile, stride)) + [h - tile]
     w_idx_list = list(range(0, w - tile, stride)) + [w - tile]
-    E = torch.zeros(b, c, h * sf, w * sf, dtype=torch.half, device=devices.device_swinir).type_as(img)
-    W = torch.zeros_like(E, dtype=torch.half, device=devices.device_swinir)
+    E = torch.zeros(b, c, h * sf, w * sf, dtype=devices.dtype, device=device_swinir).type_as(img)
+    W = torch.zeros_like(E, dtype=devices.dtype, device=device_swinir)
 
     with tqdm(total=len(h_idx_list) * len(w_idx_list), desc="SwinIR tiles") as pbar:
         for h_idx in h_idx_list:
@@ -159,3 +160,13 @@ def inference(img, model, tile, tile_overlap, window_size, scale):
     output = E.div_(W)
 
     return output
+
+
+def on_ui_settings():
+    import gradio as gr
+
+    shared.opts.add_option("SWIN_tile", shared.OptionInfo(192, "Tile size for all SwinIR.", gr.Slider, {"minimum": 16, "maximum": 512, "step": 16}, section=('upscaling', "Upscaling")))
+    shared.opts.add_option("SWIN_tile_overlap", shared.OptionInfo(8, "Tile overlap, in pixels for SwinIR. Low values = visible seam.", gr.Slider, {"minimum": 0, "maximum": 48, "step": 1}, section=('upscaling', "Upscaling")))
+
+
+script_callbacks.on_ui_settings(on_ui_settings)

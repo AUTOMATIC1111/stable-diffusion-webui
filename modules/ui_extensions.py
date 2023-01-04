@@ -9,6 +9,8 @@ import git
 
 import gradio as gr
 import html
+import shutil
+import errno
 
 from modules import extensions, shared, paths
 
@@ -17,7 +19,7 @@ available_extensions = {"extensions": []}
 
 
 def check_access():
-    assert not shared.cmd_opts.disable_extension_access, "extension access disabed because of commandline flags"
+    assert not shared.cmd_opts.disable_extension_access, "extension access disabled because of command line flags"
 
 
 def apply_and_restart(disable_list, update_list):
@@ -36,9 +38,9 @@ def apply_and_restart(disable_list, update_list):
             continue
 
         try:
-            ext.pull()
+            ext.fetch_and_reset_hard()
         except Exception:
-            print(f"Error pulling updates for {ext.name}:", file=sys.stderr)
+            print(f"Error getting updates for {ext.name}:", file=sys.stderr)
             print(traceback.format_exc(), file=sys.stderr)
 
     shared.opts.disabled_extensions = disabled
@@ -78,6 +80,12 @@ def extension_table():
     """
 
     for ext in extensions.extensions:
+        remote = ""
+        if ext.is_builtin:
+            remote = "built-in"
+        elif ext.remote:
+            remote = f"""<a href="{html.escape(ext.remote or '')}" target="_blank">{html.escape("built-in" if ext.is_builtin else ext.remote or '')}</a>"""
+
         if ext.can_update:
             ext_status = f"""<label><input class="gr-check-radio gr-checkbox" name="update_{html.escape(ext.name)}" checked="checked" type="checkbox">{html.escape(ext.status)}</label>"""
         else:
@@ -86,7 +94,7 @@ def extension_table():
         code += f"""
             <tr>
                 <td><label><input class="gr-check-radio gr-checkbox" name="enable_{html.escape(ext.name)}" type="checkbox" {'checked="checked"' if ext.enabled else ''}>{html.escape(ext.name)}</label></td>
-                <td><a href="{html.escape(ext.remote or '')}" target="_blank">{html.escape(ext.remote or '')}</a></td>
+                <td>{remote}</td>
                 <td{' class="extension_status"' if ext.remote is not None else ''}>{ext_status}</td>
             </tr>
     """
@@ -132,7 +140,21 @@ def install_extension_from_url(dirname, url):
         repo = git.Repo.clone_from(url, tmpdir)
         repo.remote().fetch()
 
-        os.rename(tmpdir, target_dir)
+        try:
+            os.rename(tmpdir, target_dir)
+        except OSError as err:
+            # TODO what does this do on windows? I think it'll be a different error code but I don't have a system to check it
+            # Shouldn't cause any new issues at least but we probably want to handle it there too.
+            if err.errno == errno.EXDEV:
+                # Cross device link, typical in docker or when tmp/ and extensions/ are on different file systems
+                # Since we can't use a rename, do the slower but more versitile shutil.move()
+                shutil.move(tmpdir, target_dir)
+            else:
+                # Something else, not enough free space, permissions, etc.  rethrow it so that it gets handled.
+                raise(err)
+
+        import launch
+        launch.run_extension_installer(target_dir)
 
         extensions.list_extensions()
         return [extension_table(), html.escape(f"Installed into {target_dir}. Use Installed tab to restart.")]
@@ -197,11 +219,12 @@ def refresh_available_extensions_from_data(hide_tags):
         if url is None:
             continue
 
+        existing = installed_extension_urls.get(normalize_git_url(url), None)
+        extension_tags = extension_tags + ["installed"] if existing else extension_tags
+
         if len([x for x in extension_tags if x in tags_to_hide]) > 0:
             hidden += 1
             continue
-
-        existing = installed_extension_urls.get(normalize_git_url(url), None)
 
         install_code = f"""<input onclick="install_extension_from_index(this, '{html.escape(url)}')" type="button" value="{"Install" if not existing else "Installed"}" {"disabled=disabled" if existing else ""} class="gr-button gr-button-lg gr-button-secondary">"""
 
@@ -213,7 +236,11 @@ def refresh_available_extensions_from_data(hide_tags):
                 <td>{html.escape(description)}</td>
                 <td>{install_code}</td>
             </tr>
-    """
+        
+        """
+
+        for tag in [x for x in extension_tags if x not in tags]:
+            tags[tag] = tag
 
     code += """
         </tbody>
@@ -263,7 +290,7 @@ def create_ui():
                     install_extension_button = gr.Button(elem_id="install_extension_button", visible=False)
 
                 with gr.Row():
-                    hide_tags = gr.CheckboxGroup(value=["ads", "localization"], label="Hide extensions with tags", choices=["script", "ads", "localization"])
+                    hide_tags = gr.CheckboxGroup(value=["ads", "localization", "installed"], label="Hide extensions with tags", choices=["script", "ads", "localization", "installed"])
 
                 install_result = gr.HTML()
                 available_extensions_table = gr.HTML()

@@ -3,7 +3,7 @@ global_progressbars = {}
 galleries = {}
 galleryObservers = {}
 
-// this tracks laumnches of window.setTimeout for progressbar to prevent starting a new timeout when the previous is still running
+// this tracks launches of window.setTimeout for progressbar to prevent starting a new timeout when the previous is still running
 timeoutIds = {}
 
 function check_progressbar(id_part, id_progressbar, id_progressbar_span, id_skip, id_interrupt, id_preview, id_gallery){
@@ -20,21 +20,21 @@ function check_progressbar(id_part, id_progressbar, id_progressbar_span, id_skip
 
     var skip = id_skip ? gradioApp().getElementById(id_skip) : null
     var interrupt = gradioApp().getElementById(id_interrupt)
-    
+
     if(opts.show_progress_in_title && progressbar && progressbar.offsetParent){
         if(progressbar.innerText){
-            let newtitle = 'Stable Diffusion - ' + progressbar.innerText
+            let newtitle = '[' + progressbar.innerText.trim() + '] Stable Diffusion';
             if(document.title != newtitle){
-                document.title =  newtitle;          
+                document.title =  newtitle;
             }
         }else{
             let newtitle = 'Stable Diffusion'
             if(document.title != newtitle){
-                document.title =  newtitle;          
+                document.title =  newtitle;
             }
         }
     }
-    
+
 	if(progressbar!= null && progressbar != global_progressbars[id_progressbar]){
 	    global_progressbars[id_progressbar] = progressbar
 
@@ -63,7 +63,7 @@ function check_progressbar(id_part, id_progressbar, id_progressbar_span, id_skip
                         skip.style.display = "none"
                     }
                     interrupt.style.display = "none"
-			
+
                     //disconnect observer once generation finished, so user can close selected image if they want
                     if (galleryObservers[id_gallery]) {
                         galleryObservers[id_gallery].disconnect();
@@ -92,14 +92,26 @@ function check_gallery(id_gallery){
             if (prevSelectedIndex !== -1 && galleryButtons.length>prevSelectedIndex && !galleryBtnSelected) {
                 // automatically re-open previously selected index (if exists)
                 activeElement = gradioApp().activeElement;
+                let scrollX = window.scrollX;
+                let scrollY = window.scrollY;
 
                 galleryButtons[prevSelectedIndex].click();
                 showGalleryImage();
 
+                // When the gallery button is clicked, it gains focus and scrolls itself into view
+                // We need to scroll back to the previous position
+                setTimeout(function (){
+                    window.scrollTo(scrollX, scrollY);
+                }, 50);
+
                 if(activeElement){
                     // i fought this for about an hour; i don't know why the focus is lost or why this helps recover it
-                    // if somenoe has a better solution please by all means
-                    setTimeout(function() { activeElement.focus() }, 1);
+                    // if someone has a better solution please by all means
+                    setTimeout(function (){
+                        activeElement.focus({
+                            preventScroll: true // Refocus the element that was focused before the gallery was opened without scrolling to it
+                        })
+                    }, 1);
                 }
             }
         })

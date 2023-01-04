@@ -1,9 +1,10 @@
-function gradioApp(){
-    return document.getElementsByTagName('gradio-app')[0].shadowRoot;
+function gradioApp() {
+    const gradioShadowRoot = document.getElementsByTagName('gradio-app')[0].shadowRoot
+    return !!gradioShadowRoot ? gradioShadowRoot : document;
 }
 
 function get_uiCurrentTab() {
-    return gradioApp().querySelector('.tabs button:not(.border-transparent)')
+    return gradioApp().querySelector('#tabs button:not(.border-transparent)')
 }
 
 function get_uiCurrentTabContent() {
