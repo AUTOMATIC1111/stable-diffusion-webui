@@ -173,7 +173,7 @@ def read_state_dict(checkpoint_file, print_global_state=False, map_location=None
     if extension.lower() == ".safetensors":
         device = map_location or shared.weight_load_location
         if device is None:
-            device = "cuda:0" if torch.cuda.is_available() else "cpu"
+            device = devices.get_cuda_device_string() if torch.cuda.is_available() else "cpu"
         pl_sd = safetensors.torch.load_file(checkpoint_file, device=device)
     else:
         pl_sd = torch.load(checkpoint_file, map_location=map_location or shared.weight_load_location)
