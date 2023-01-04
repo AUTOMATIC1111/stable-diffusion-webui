@@ -100,7 +100,6 @@ class Api:
 
         self.router = APIRouter()
         self.app = app
-        init_api_middleware(self.app)
         self.queue_lock = queue_lock
         self.add_api_route("/sdapi/v1/txt2img", self.text2imgapi, methods=["POST"], response_model=TextToImageResponse)
         self.add_api_route("/sdapi/v1/img2img", self.img2imgapi, methods=["POST"], response_model=ImageToImageResponse)
