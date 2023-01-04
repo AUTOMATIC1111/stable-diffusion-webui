@@ -1290,6 +1290,10 @@ def create_ui():
                     with gr.Row():
                         embedding_learn_rate = gr.Textbox(label='Embedding Learning rate', placeholder="Embedding Learning rate", value="0.005", elem_id="train_embedding_learn_rate")
                         hypernetwork_learn_rate = gr.Textbox(label='Hypernetwork Learning rate', placeholder="Hypernetwork Learning rate", value="0.00001", elem_id="train_hypernetwork_learn_rate")
+                    
+                    with gr.Row():
+                        clip_grad_mode = gr.Dropdown(value="disabled", label="Gradient Clipping", choices=["disabled", "value", "norm"])
+                        clip_grad_value = gr.Textbox(placeholder="Gradient clip value", value="0.1", show_label=False)
 
                     batch_size = gr.Number(label='Batch size', value=1, precision=0, elem_id="train_batch_size")
                     gradient_step = gr.Number(label='Gradient accumulation steps', value=1, precision=0, elem_id="train_gradient_step")
@@ -1402,6 +1406,8 @@ def create_ui():
                 training_width,
                 training_height,
                 steps,
+                clip_grad_mode,
+                clip_grad_value,
                 shuffle_tags,
                 tag_drop_out,
                 latent_sampling_method,
@@ -1431,6 +1437,8 @@ def create_ui():
                 training_width,
                 training_height,
                 steps,
+                clip_grad_mode,
+                clip_grad_value,
                 shuffle_tags,
                 tag_drop_out,
                 latent_sampling_method,
