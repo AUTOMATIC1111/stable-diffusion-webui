@@ -1,3 +1,28 @@
+.container {
+    max-width: 100%;
+}
+
+#txt2img_token_counter {
+    height: 0px;
+}
+
+#img2img_token_counter {
+    height: 0px;
+}
+
+#sh{
+    min-width: 2em;
+    min-height: 2em;
+    max-width: 2em;
+    max-height: 2em;
+    flex-grow: 0;
+    padding-left: 0.25em;
+    padding-right: 0.25em;
+    margin: 0.1em 0;
+    opacity: 0%;
+    cursor: default;	
+}
+
 .output-html p {margin: 0 0.5em;}
 
 .row > *,
@@ -9,9 +34,10 @@
 .performance {
     font-size: 0.85em;
     color: #444;
-    display: flex;
-    justify-content: space-between;
-    white-space: nowrap;
+}
+
+.performance p{
+    display: inline-block;
 }
 
 .performance .time {
@@ -19,8 +45,6 @@
 }
 
 .performance .vram {
-    margin-left: 0;
-    text-align: right;
 }
 
 #txt2img_generate, #img2img_generate {
@@ -49,8 +73,9 @@
     margin-right: auto;
 }
 
-#random_seed, #random_subseed, #reuse_seed, #reuse_subseed, #open_folder{
-    min-width: auto;
+[id$=_random_seed], [id$=_random_subseed], [id$=_reuse_seed], [id$=_reuse_subseed], #open_folder{
+    min-width: 2.3em;
+    height: 2.5em;
     flex-grow: 0;
     padding-left: 0.25em;
     padding-right: 0.25em;
@@ -60,27 +85,28 @@
     display: none;
 }
 
-#seed_row, #subseed_row{
+[id$=_seed_row], [id$=_subseed_row]{
     gap: 0.5rem;
+    padding: 0.6em;
 }
 
-#subseed_show_box{
+[id$=_subseed_show_box]{
     min-width: auto;
     flex-grow: 0;
 }
 
-#subseed_show_box > div{
+[id$=_subseed_show_box] > div{
     border: 0;
     height: 100%;
 }
 
-#subseed_show{
+[id$=_subseed_show]{
     min-width: auto;
     flex-grow: 0;
     padding: 0;
 }
 
-#subseed_show label{
+[id$=_subseed_show] label{
     height: 100%;
 }
 
@@ -90,7 +116,7 @@
     padding: 0.4em 0;
 }
 
-#roll, #paste{
+#roll_col > button {
     min-width: 2em;
     min-height: 2em;
     max-width: 2em;
@@ -101,9 +127,14 @@
     margin: 0.1em 0;
 }
 
-#style_apply, #style_create, #interrogate{
-    margin: 0.75em 0.25em 0.25em 0.25em;
-    min-width: 3em;
+#interrogate_col{
+    min-width: 0 !important;
+    max-width: 8em !important;
+}
+#interrogate, #deepbooru{
+    margin: 0em 0.25em 0.9em 0.25em;
+    min-width: 8em;
+    max-width: 8em;
 }
 
 #style_pos_col, #style_neg_col{
@@ -137,18 +168,6 @@ button{
     align-self: stretch !important;
 }
 
-#prompt, #negative_prompt{
-    border: none !important;
-}
-#prompt textarea, #negative_prompt textarea{
-    border: none !important;
-}
-
-
-#img2maskimg .h-60{
-    height: 30rem;
-}
-
 .overflow-hidden, .gr-panel{
     overflow: visible !important;
 }
@@ -157,7 +176,7 @@ button{
     max-width: 10em;
 }
 
-#txt2img_preview, #img2img_preview{
+#txt2img_preview, #img2img_preview, #ti_preview{
     position: absolute;
     width: 320px;
     left: 0;
@@ -172,55 +191,47 @@ button{
 }
 
 @media screen and (min-width: 768px) {
-    #txt2img_preview, #img2img_preview {
+    #txt2img_preview, #img2img_preview, #ti_preview {
         position: absolute;
     }
 }
 
 @media screen and (max-width: 767px) {
-    #txt2img_preview, #img2img_preview {
+    #txt2img_preview, #img2img_preview, #ti_preview {
         position: relative;
     }
 }
 
-#txt2img_preview div.left-0.top-0, #img2img_preview div.left-0.top-0{
+#txt2img_preview div.left-0.top-0, #img2img_preview div.left-0.top-0, #ti_preview div.left-0.top-0{
     display: none;
 }
 
 fieldset span.text-gray-500, .gr-block.gr-box span.text-gray-500,  label.block span{
     position: absolute;
-    top: -0.6em;
+    top: -0.7em;
     line-height: 1.2em;
-    padding: 0 0.5em;
-    margin: 0;
+    padding: 0;
+    margin: 0 0.5em;
 
     background-color: white;
-    border-top: 1px solid #eee;
-    border-left: 1px solid #eee;
-    border-right: 1px solid #eee;
+    box-shadow:  6px 0 6px 0px white, -6px 0 6px 0px white;
+
+    z-index: 300;
 }
 
 .dark fieldset span.text-gray-500, .dark .gr-block.gr-box span.text-gray-500, .dark label.block span{
     background-color: rgb(31, 41, 55);
-    border-top: 1px solid rgb(55 65 81);
-    border-left: 1px solid rgb(55 65 81);
-    border-right: 1px solid rgb(55 65 81);
+    box-shadow: 6px 0 6px 0px rgb(31, 41, 55), -6px 0 6px 0px rgb(31, 41, 55);
+}
+
+#txt2img_column_batch, #img2img_column_batch{
+    min-width: min(13.5em, 100%) !important;
 }
 
 #settings fieldset span.text-gray-500, #settings .gr-block.gr-box span.text-gray-500, #settings label.block span{
     position: relative;
     border: none;
-}
-
-.gr-panel div.flex-col div.justify-between label span{
-    margin: 0;
-}
-
-.gr-panel div.flex-col div.justify-between div{
-  position: absolute;
-  top: -0.1em;
-  right: 1em;
-  padding: 0 0.5em;
+    margin-right: 8em;
 }
 
 #settings .gr-panel div.flex-col div.justify-between div{
@@ -228,13 +239,35 @@ fieldset span.text-gray-500, .gr-block.gr-box span.text-gray-500,  label.block s
     z-index: 200;
 }
 
-input[type="range"]{
-    margin: 0.5em 0 -0.3em 0;
+#settings{
+    display: block;
 }
 
-#txt2img_sampling label{
-    padding-left: 0.6em;
-    padding-right: 0.6em;
+#settings > div{
+    border: none;
+    margin-left: 10em;
+}
+
+#settings > div.flex-wrap{
+    float: left;
+    display: block;
+    margin-left: 0;
+    width: 10em;
+}
+
+#settings > div.flex-wrap button{
+    display: block;
+    border: none;
+    text-align: left;
+}
+
+#settings_result{
+    height: 1.4em;
+    margin: 0 1.2em;
+}
+
+input[type="range"]{
+    margin: 0.5em 0 -0.3em 0;
 }
 
 #mask_bug_info {
@@ -247,7 +280,17 @@ input[type="range"]{
 #txt2img_negative_prompt, #img2img_negative_prompt{
 }
 
-#txt2img_progressbar, #img2img_progressbar{
+/* gradio 3.8 adds opacity to progressbar which makes it blink; disable it here */
+.transition.opacity-20 {
+  opacity: 1 !important;
+}
+
+/* more gradio's garbage cleanup */
+.min-h-\[4rem\] {
+  min-height: unset !important;
+}
+
+#txt2img_progressbar, #img2img_progressbar, #ti_progressbar{
   position: absolute;
   z-index: 1000;
   right: 0;
@@ -295,12 +338,14 @@ input[type="range"]{
   height: 100%;
   overflow: auto;
   background-color: rgba(20, 20, 20, 0.95);
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .modalControls {
     display: grid;
-    grid-template-columns: 32px auto 1fr 32px;
-    grid-template-areas: "zoom tile space close";
+    grid-template-columns: 32px 32px 32px 1fr 32px;
+    grid-template-areas: "zoom tile save space close";
     position: absolute;
     top: 0;
     left: 0;
@@ -318,6 +363,10 @@ input[type="range"]{
     grid-area: zoom;
 }
 
+.modalSave {
+    grid-area: save;
+}
+
 .modalTileImage {
     grid-area: tile;
 }
@@ -331,8 +380,18 @@ input[type="range"]{
   cursor: pointer;
 }
 
+.modalSave {
+    color: white;
+    font-size: 28px;
+    margin-top: 8px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
 .modalClose:hover,
 .modalClose:focus,
+.modalSave:hover,
+.modalSave:focus,
 .modalZoom:hover,
 .modalZoom:focus {
   color: #999;
@@ -393,13 +452,257 @@ input[type="range"]{
 
 #txt2img_interrupt, #img2img_interrupt{
   position: absolute;
-  width: 100%;
+  width: 50%;
   height: 72px;
   background: #b4c0cc;
-  border-radius: 8px;
+  border-radius: 0px;
+  display: none;
+}
+
+#txt2img_skip, #img2img_skip{
+  position: absolute;
+  width: 50%;
+  right: 0px;
+  height: 72px;
+  background: #b4c0cc;
+  border-radius: 0px;
   display: none;
 }
 
 .red {
 	color: red;
+}
+
+.gallery-item {
+    --tw-bg-opacity: 0 !important;
+}
+
+#context-menu{
+    z-index:9999;
+    position:absolute;
+    display:block;
+    padding:0px 0;
+    border:2px solid #a55000;
+    border-radius:8px;
+    box-shadow:1px 1px 2px #CE6400;
+    width: 200px;
+}
+
+.context-menu-items{
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.context-menu-items a{
+    display:block;
+    padding:5px;
+    cursor:pointer;
+}
+
+.context-menu-items a:hover{
+    background: #a55000;
+}
+
+#quicksettings {
+    gap: 0.4em;
+}
+
+#quicksettings > div{
+    border: none;
+    background: none;
+    flex: unset;
+    gap: 0.5em;
+}
+
+#quicksettings > div > div{
+    max-width: 32em;
+    min-width: 24em;
+    padding: 0;
+}
+
+canvas[key="mask"] {
+    z-index: 12 !important;
+    filter: invert();
+    mix-blend-mode: multiply;
+    pointer-events: none;
+}
+
+
+/* gradio 3.4.1 stuff for editable scrollbar values */
+.gr-box > div > div > input.gr-text-input{
+    position: absolute;
+    right: 0.5em;
+    top: -0.6em;
+    z-index: 400;
+    width: 8em;
+}
+#quicksettings .gr-box > div > div > input.gr-text-input {
+  top: -1.12em;
+}
+
+.row.gr-compact{
+    overflow: visible;
+}
+
+#img2img_image, #img2img_image > .h-60, #img2img_image > .h-60 > div, #img2img_image > .h-60 > div > img,
+img2maskimg, #img2maskimg > .h-60, #img2maskimg > .h-60 > div, #img2maskimg > .h-60 > div > img
+{
+    height: 480px !important;
+    max-height: 480px !important;
+    min-height: 480px !important;
+}
+
+/* Extensions */
+
+#tab_extensions table{
+    border-collapse: collapse;
+}
+
+#tab_extensions table td, #tab_extensions table th{
+    border: 1px solid #ccc;
+    padding: 0.25em 0.5em;
+}
+
+#tab_extensions table input[type="checkbox"]{
+    margin-right: 0.5em;
+}
+
+#tab_extensions button{
+    max-width: 16em;
+}
+
+#tab_extensions input[disabled="disabled"]{
+    opacity: 0.5;
+}
+
+.extension-tag{
+    font-weight: bold;
+    font-size: 95%;
+}
+
+#image_buttons_txt2img button, #image_buttons_img2img button, #image_buttons_extras button{
+    min-width: auto;
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+}
+
+.gr-form{
+    background-color: white;
+}
+
+.dark .gr-form{
+    background-color: rgb(31 41 55 / var(--tw-bg-opacity));
+}
+
+.gr-button-tool{
+    max-width: 2.5em;
+    min-width: 2.5em !important;
+    height: 2.4em;
+    margin: 0.55em 0;
+}
+
+#quicksettings .gr-button-tool{
+    margin: 0;
+}
+
+
+#img2img_settings > div.gr-form, #txt2img_settings > div.gr-form {
+    padding-top: 0.9em;
+}
+
+#img2img_settings div.gr-form .gr-form, #txt2img_settings div.gr-form .gr-form{
+    border: none;
+    padding-bottom: 0.5em;
+}
+
+footer {
+    display: none !important;
+}
+
+#footer{
+    text-align: center;
+}
+
+#footer div{
+    display: inline-block;
+}
+
+/* The following handles localization for right-to-left (RTL) languages like Arabic.
+The rtl media type will only be activated by the logic in javascript/localization.js.
+If you change anything above, you need to make sure it is RTL compliant by just running
+your changes through converters like https://cssjanus.github.io/ or https://rtlcss.com/.
+Then, you will need to add the RTL counterpart only if needed in the rtl section below.*/
+@media rtl {
+    /* this part was added manually */
+    :host {
+        direction: rtl;
+    }
+    select, .file-preview, .gr-text-input, .output-html:has(.performance), #ti_progress {
+        direction: ltr;
+    }
+    #script_list > label > select,
+    #x_type > label > select,
+    #y_type > label > select {
+        direction: rtl;
+    }
+    .gr-radio, .gr-checkbox{
+        margin-left: 0.25em;
+    }
+
+    /* automatically generated with few manual modifications */
+    .performance .time {
+        margin-right: unset;
+        margin-left: 0;
+    }
+    .justify-center.overflow-x-scroll {
+        justify-content: right;
+    }
+    .justify-center.overflow-x-scroll button:first-of-type {
+        margin-left: unset;
+        margin-right: auto;
+    }
+    .justify-center.overflow-x-scroll button:last-of-type {
+        margin-right: unset;
+        margin-left: auto;
+    }
+    #settings fieldset span.text-gray-500, #settings .gr-block.gr-box span.text-gray-500, #settings label.block span{
+        margin-right: unset;
+        margin-left: 8em;
+    }
+    #txt2img_progressbar, #img2img_progressbar, #ti_progressbar{
+        right: unset;
+        left: 0;
+    }
+    .progressDiv .progress{
+        padding: 0 0 0 8px;
+        text-align: left;
+    }
+    #lightboxModal{
+        left: unset;
+        right: 0;
+    }
+    .modalPrev, .modalNext{
+        border-radius: 3px 0 0 3px;
+    }
+    .modalNext {
+        right: unset;
+        left: 0;
+        border-radius: 0 3px 3px 0;
+    }
+    #imageARPreview{
+        left:unset;
+        right:0px;
+    }
+    #txt2img_skip, #img2img_skip{
+        right: unset;
+        left: 0px;
+    }
+    #context-menu{
+        box-shadow:-1px 1px 2px #CE6400;
+    }
+    .gr-box > div > div > input.gr-text-input{
+        right: unset;
+        left: 0.5em;
+    }
 }

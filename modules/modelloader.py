@@ -5,7 +5,6 @@ import importlib
 from urllib.parse import urlparse
 
 from basicsr.utils.download_util import load_file_from_url
-
 from modules import shared
 from modules.upscaler import Upscaler
 from modules.paths import script_path, models_path
@@ -43,7 +42,7 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
         for place in places:
             if os.path.exists(place):
                 for file in glob.iglob(place + '**/**', recursive=True):
-                    full_path = os.path.join(place, file)
+                    full_path = file
                     if os.path.isdir(full_path):
                         continue
                     if len(ext_filter) != 0:
@@ -83,9 +82,13 @@ def cleanup_models():
     src_path = models_path
     dest_path = os.path.join(models_path, "Stable-diffusion")
     move_files(src_path, dest_path, ".ckpt")
+    move_files(src_path, dest_path, ".safetensors")
     src_path = os.path.join(root_path, "ESRGAN")
     dest_path = os.path.join(models_path, "ESRGAN")
     move_files(src_path, dest_path)
+    src_path = os.path.join(models_path, "BSRGAN")
+    dest_path = os.path.join(models_path, "ESRGAN")
+    move_files(src_path, dest_path, ".pth")
     src_path = os.path.join(root_path, "gfpgan")
     dest_path = os.path.join(models_path, "GFPGAN")
     move_files(src_path, dest_path)
@@ -120,21 +123,45 @@ def move_files(src_path: str, dest_path: str, ext_filter: str = None):
         pass
 
 
-def load_upscalers():
-    datas = []
+builtin_upscaler_classes = []
+forbidden_upscaler_classes = set()
+
+
+def list_builtin_upscalers():
+    load_upscalers()
+
+    builtin_upscaler_classes.clear()
+    builtin_upscaler_classes.extend(Upscaler.__subclasses__())
+
+
+def forbid_loaded_nonbuiltin_upscalers():
     for cls in Upscaler.__subclasses__():
+        if cls not in builtin_upscaler_classes:
+            forbidden_upscaler_classes.add(cls)
+
+
+def load_upscalers():
+    # We can only do this 'magic' method to dynamically load upscalers if they are referenced,
+    # so we'll try to import any _model.py files before looking in __subclasses__
+    modules_dir = os.path.join(shared.script_path, "modules")
+    for file in os.listdir(modules_dir):
+        if "_model.py" in file:
+            model_name = file.replace("_model.py", "")
+            full_model = f"modules.{model_name}_model"
+            try:
+                importlib.import_module(full_model)
+            except:
+                pass
+
+    datas = []
+    commandline_options = vars(shared.cmd_opts)
+    for cls in Upscaler.__subclasses__():
+        if cls in forbidden_upscaler_classes:
+            continue
+
         name = cls.__name__
-        module_name = cls.__module__
-        module = importlib.import_module(module_name)
-        class_ = getattr(module, name)
-        cmd_name = f"{name.lower().replace('upscaler', '')}-models-path"
-        opt_string = None
-        try:
-            opt_string = shared.opts.__getattr__(cmd_name)
-        except:
-            pass
-        scaler = class_(opt_string)
-        for child in scaler.scalers:
-            datas.append(child)
+        cmd_name = f"{name.lower().replace('upscaler', '')}_models_path"
+        scaler = cls(commandline_options.get(cmd_name, None))
+        datas += scaler.scalers
 
     shared.sd_upscalers = datas

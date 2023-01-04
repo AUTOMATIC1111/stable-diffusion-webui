@@ -1,5 +1,6 @@
 __pycache__
 *.ckpt
+*.safetensors
 *.pth
 /ESRGAN/*
 /SwinIR/*
@@ -17,6 +18,7 @@ __pycache__
 /webui.settings.bat
 /embeddings
 /styles.csv
+/params.txt
 /styles.csv.bak
 /webui-user.bat
 /webui-user.sh
@@ -25,3 +27,8 @@ __pycache__
 /.idea
 notification.mp3
 /SwinIR
+/textual_inversion
+.vscode
+/extensions
+/test/stdout.txt
+/test/stderr.txt

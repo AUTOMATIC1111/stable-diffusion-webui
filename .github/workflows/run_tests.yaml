@@ -1,0 +1,31 @@
+name: Run basic features tests on CPU with empty SD model
+
+on:
+  - push
+  - pull_request
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.10.6
+      - uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: ${{ runner.os }}-pip-
+      - name: Run tests
+        run: python launch.py --tests basic_features --no-half --disable-opt-split-attention --use-cpu all --skip-torch-cuda-test
+      - name: Upload main app stdout-stderr
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: stdout-stderr
+          path: |
+            test/stdout.txt
+            test/stderr.txt
