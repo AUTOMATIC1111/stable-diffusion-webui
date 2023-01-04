@@ -705,7 +705,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                 return
 
             if not isinstance(image, Image.Image):
-                image = sd_samplers.sample_to_image(image, index)
+                image = sd_samplers.sample_to_image(image, index, approximation=0)
 
             images.save_image(image, self.outpath_samples, "", seeds[index], prompts[index], opts.samples_format, suffix="-before-highres-fix")
 
