@@ -1,4 +1,4 @@
-// various functions for interation with ui.py not large enough to warrant putting them in separate files
+// various functions for interaction with ui.py not large enough to warrant putting them in separate files
 
 function set_theme(theme){
     gradioURL = window.location.href
