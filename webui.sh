@@ -1,8 +1,17 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #################################################
 # Please do not make any changes to this file,  #
 # change the variables in webui-user.sh instead #
 #################################################
+
+# If run from macOS, load defaults from webui-macos-env.sh
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    if [[ -f webui-macos-env.sh ]]
+        then
+        source ./webui-macos-env.sh
+    fi
+fi
+
 # Read variables from webui-user.sh
 # shellcheck source=/dev/null
 if [[ -f webui-user.sh ]]
@@ -46,6 +55,18 @@ then
     LAUNCH_SCRIPT="launch.py"
 fi
 
+# this script cannot be run as root by default
+can_run_as_root=0
+
+# read any command line flags to the webui.sh script
+while getopts "f" flag > /dev/null 2>&1
+do
+    case ${flag} in
+        f) can_run_as_root=1;;
+        *) break;;
+    esac
+done
+
 # Disable sentry logging
 export ERROR_REPORTING=FALSE
 
@@ -61,7 +82,7 @@ printf "\e[1m\e[34mTested on Debian 11 (Bullseye)\e[0m"
 printf "\n%s\n" "${delimiter}"
 
 # Do not run as root
-if [[ $(id -u) -eq 0 ]]
+if [[ $(id -u) -eq 0 && can_run_as_root -eq 0 ]]
 then
     printf "\n%s\n" "${delimiter}"
     printf "\e[1m\e[31mERROR: This script must not be launched as root, aborting...\e[0m"
@@ -102,15 +123,14 @@ then
     exit 1
 fi
 
-printf "\n%s\n" "${delimiter}"
-printf "Clone or update stable-diffusion-webui"
-printf "\n%s\n" "${delimiter}"
 cd "${install_dir}"/ || { printf "\e[1m\e[31mERROR: Can't cd to %s/, aborting...\e[0m" "${install_dir}"; exit 1; }
 if [[ -d "${clone_dir}" ]]
 then
     cd "${clone_dir}"/ || { printf "\e[1m\e[31mERROR: Can't cd to %s/%s/, aborting...\e[0m" "${install_dir}" "${clone_dir}"; exit 1; }
-    "${GIT}" pull
 else
+    printf "\n%s\n" "${delimiter}"
+    printf "Clone stable-diffusion-webui"
+    printf "\n%s\n" "${delimiter}"
     "${GIT}" clone https://github.com/AUTOMATIC1111/stable-diffusion-webui.git "${clone_dir}"
     cd "${clone_dir}"/ || { printf "\e[1m\e[31mERROR: Can't cd to %s/%s/, aborting...\e[0m" "${install_dir}" "${clone_dir}"; exit 1; }
 fi
@@ -135,7 +155,15 @@ else
     exit 1
 fi
 
-printf "\n%s\n" "${delimiter}"
-printf "Launching launch.py..."
-printf "\n%s\n" "${delimiter}"
-"${python_cmd}" "${LAUNCH_SCRIPT}" "$@"
+if [[ ! -z "${ACCELERATE}" ]] && [ ${ACCELERATE}="True" ] && [ -x "$(command -v accelerate)" ]
+then
+    printf "\n%s\n" "${delimiter}"
+    printf "Accelerating launch.py..."
+    printf "\n%s\n" "${delimiter}"
+    accelerate launch --num_cpu_threads_per_process=6 "${LAUNCH_SCRIPT}" "$@"
+else
+    printf "\n%s\n" "${delimiter}"
+    printf "Launching launch.py..."
+    printf "\n%s\n" "${delimiter}"
+    "${python_cmd}" "${LAUNCH_SCRIPT}" "$@"
+fi

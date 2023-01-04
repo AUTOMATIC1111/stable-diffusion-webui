@@ -3,31 +3,16 @@ import os
 import re
 
 import gradio as gr
+import modules.hypernetworks.hypernetwork
+from modules import devices, sd_hijack, shared
 
-import modules.textual_inversion.textual_inversion
-import modules.textual_inversion.preprocess
-from modules import sd_hijack, shared, devices
-from modules.hypernetworks import hypernetwork
+not_available = ["hardswish", "multiheadattention"]
+keys = list(x for x in modules.hypernetworks.hypernetwork.HypernetworkModule.activation_dict.keys() if x not in not_available)
 
+def create_hypernetwork(name, enable_sizes, overwrite_old, layer_structure=None, activation_func=None, weight_init=None, add_layer_norm=False, use_dropout=False):
+    filename = modules.hypernetworks.hypernetwork.create_hypernetwork(name, enable_sizes, overwrite_old, layer_structure, activation_func, weight_init, add_layer_norm, use_dropout)
 
-def create_hypernetwork(name, enable_sizes, layer_structure=None, add_layer_norm=False):
-    fn = os.path.join(shared.cmd_opts.hypernetwork_dir, f"{name}.pt")
-    assert not os.path.exists(fn), f"file {fn} already exists"
-
-    if type(layer_structure) == str:
-        layer_structure = tuple(map(int, re.sub(r'\D', '', layer_structure)))
-
-    hypernet = modules.hypernetworks.hypernetwork.Hypernetwork(
-        name=name,
-        enable_sizes=[int(x) for x in enable_sizes],
-        layer_structure=layer_structure,
-        add_layer_norm=add_layer_norm,
-    )
-    hypernet.save(fn)
-
-    shared.reload_hypernetworks()
-
-    return gr.Dropdown.update(choices=sorted([x for x in shared.hypernetworks.keys()])), f"Created: {fn}", ""
+    return gr.Dropdown.update(choices=sorted([x for x in shared.hypernetworks.keys()])), f"Created: {filename}", ""
 
 
 def train_hypernetwork(*args):

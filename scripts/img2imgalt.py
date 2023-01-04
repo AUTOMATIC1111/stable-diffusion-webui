@@ -34,6 +34,9 @@ def find_noise_for_image(p, cond, uncond, cfg_scale, steps):
         sigma_in = torch.cat([sigmas[i] * s_in] * 2)
         cond_in = torch.cat([uncond, cond])
 
+        image_conditioning = torch.cat([p.image_conditioning] * 2)
+        cond_in = {"c_concat": [image_conditioning], "c_crossattn": [cond_in]}
+
         c_out, c_in = [K.utils.append_dims(k, x_in.ndim) for k in dnw.get_scalings(sigma_in)]
         t = dnw.sigma_to_t(sigma_in)
 
@@ -77,6 +80,9 @@ def find_noise_for_image_sigma_adjustment(p, cond, uncond, cfg_scale, steps):
         x_in = torch.cat([x] * 2)
         sigma_in = torch.cat([sigmas[i - 1] * s_in] * 2)
         cond_in = torch.cat([uncond, cond])
+
+        image_conditioning = torch.cat([p.image_conditioning] * 2)
+        cond_in = {"c_concat": [image_conditioning], "c_crossattn": [cond_in]}
 
         c_out, c_in = [K.utils.append_dims(k, x_in.ndim) for k in dnw.get_scalings(sigma_in)]
 
@@ -151,7 +157,7 @@ class Script(scripts.Script):
     def run(self, p, _, override_sampler, override_prompt, original_prompt, original_negative_prompt, override_steps, st, override_strength, cfg, randomness, sigma_adjustment):
         # Override
         if override_sampler:
-            p.sampler_index = [sampler.name for sampler in sd_samplers.samplers].index("Euler")
+            p.sampler_name = "Euler"
         if override_prompt:
             p.prompt = original_prompt
             p.negative_prompt = original_negative_prompt
@@ -160,8 +166,7 @@ class Script(scripts.Script):
         if override_strength:
             p.denoising_strength = 1.0
 
-
-        def sample_extra(conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength):
+        def sample_extra(conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
             lat = (p.init_latent.cpu().numpy() * 10).astype(int)
 
             same_params = self.cache is not None and self.cache.cfg_scale == cfg and self.cache.steps == st \
@@ -186,7 +191,7 @@ class Script(scripts.Script):
             
             combined_noise = ((1 - randomness) * rec_noise + randomness * rand_noise) / ((randomness**2 + (1-randomness)**2) ** 0.5)
             
-            sampler = sd_samplers.create_sampler_with_index(sd_samplers.samplers, p.sampler_index, p.sd_model)
+            sampler = sd_samplers.create_sampler(p.sampler_name, p.sd_model)
 
             sigmas = sampler.model_wrap.get_sigmas(p.steps)
             
@@ -194,7 +199,7 @@ class Script(scripts.Script):
             
             p.seed = p.seed + 1
             
-            return sampler.sample_img2img(p, p.init_latent, noise_dt, conditioning, unconditional_conditioning)
+            return sampler.sample_img2img(p, p.init_latent, noise_dt, conditioning, unconditional_conditioning, image_conditioning=p.image_conditioning)
 
         p.sample = sample_extra
 

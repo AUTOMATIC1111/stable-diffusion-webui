@@ -5,6 +5,7 @@ import zlib
 from PIL import Image, PngImagePlugin, ImageDraw, ImageFont
 from fonts.ttf import Roboto
 import torch
+from modules.shared import opts
 
 
 class EmbeddingEncoder(json.JSONEncoder):
@@ -133,7 +134,7 @@ def caption_image_overlay(srcimage, title, footerLeft, footerMid, footerRight, t
     from math import cos
 
     image = srcimage.copy()
-
+    fontsize = 32
     if textfont is None:
         try:
             textfont = ImageFont.truetype(opts.font or Roboto, fontsize)
@@ -150,7 +151,7 @@ def caption_image_overlay(srcimage, title, footerLeft, footerMid, footerRight, t
     image = Image.alpha_composite(image.convert('RGBA'), gradient.resize(image.size))
 
     draw = ImageDraw.Draw(image)
-    fontsize = 32
+
     font = ImageFont.truetype(textfont, fontsize)
     padding = 10
 

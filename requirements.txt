@@ -1,16 +1,19 @@
+blendmodes
+accelerate
 basicsr
-diffusers
 fairscale==0.4.4
 fonts
 font-roboto
 gfpgan
-gradio==3.5
+gradio==3.15.0
 invisible-watermark
 numpy
 omegaconf
+opencv-contrib-python
+requests
 piexif
 Pillow
-pytorch_lightning
+pytorch_lightning==1.7.7
 realesrgan
 scikit-image>=0.19
 timm==0.4.12
@@ -24,3 +27,7 @@ torchdiffeq
 kornia
 lark
 inflection
+GitPython
+torchsde
+safetensors
+psutil; sys_platform == 'darwin'
