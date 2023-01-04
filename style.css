@@ -616,6 +616,17 @@ img2maskimg, #img2maskimg > .h-60, #img2maskimg > .h-60 > div, #img2maskimg > .h
     padding-bottom: 0.5em;
 }
 
+footer {
+    display: none !important;
+}
+
+#footer{
+    text-align: center;
+}
+
+#footer div{
+    display: inline-block;
+}
 
 /* The following handles localization for right-to-left (RTL) languages like Arabic.
 The rtl media type will only be activated by the logic in javascript/localization.js.

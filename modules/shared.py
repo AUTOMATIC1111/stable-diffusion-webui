@@ -14,7 +14,7 @@ import modules.interrogate
 import modules.memmon
 import modules.styles
 import modules.devices as devices
-from modules import localization, sd_vae, extensions, script_loading
+from modules import localization, sd_vae, extensions, script_loading, errors
 from modules.paths import models_path, script_path, sd_path
 
 
@@ -494,7 +494,12 @@ class Options:
             return False
 
         if self.data_labels[key].onchange is not None:
-            self.data_labels[key].onchange()
+            try:
+                self.data_labels[key].onchange()
+            except Exception as e:
+                errors.display(e, f"changing setting {key} to {value}")
+                setattr(self, key, oldval)
+                return False
 
         return True
 
