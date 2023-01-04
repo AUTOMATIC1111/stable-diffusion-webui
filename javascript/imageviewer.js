@@ -149,7 +149,7 @@ function showGalleryImage() {
                     e.style.cursor='pointer'
                     e.style.userSelect='none'
                     e.addEventListener('mousedown', function (evt) {
-                        if(!opts.js_modal_lightbox) return;
+                        if(!opts.js_modal_lightbox || evt.button != 0) return;
                         modalZoomSet(gradioApp().getElementById('modalImage'), opts.js_modal_lightbox_initially_zoomed)
                         showModal(evt)
                     }, true);
