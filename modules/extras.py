@@ -19,8 +19,6 @@ from modules.shared import opts
 import modules.gfpgan_model
 from modules.ui import plaintext_to_html
 import modules.codeformer_model
-import piexif
-import piexif.helper
 import gradio as gr
 import safetensors.torch
 
