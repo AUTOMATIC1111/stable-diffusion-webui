@@ -17,10 +17,12 @@ class Script(scripts.Script):
         return is_img2img
 
     def ui(self, is_img2img):
+        elem_prefix = ('i2i' if is_img2img else 't2i') + '_script_sd_upscale_'
+        
         info = gr.HTML("<p style=\"margin-bottom:0.75em\">Will upscale the image by the selected scale factor; use width and height sliders to set tile size</p>")
-        overlap = gr.Slider(minimum=0, maximum=256, step=16, label='Tile overlap', value=64)
-        scale_factor = gr.Slider(minimum=1.0, maximum=4.0, step=0.05, label='Scale Factor', value=2.0)
-        upscaler_index = gr.Radio(label='Upscaler', choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name, type="index")
+        overlap = gr.Slider(minimum=0, maximum=256, step=16, label='Tile overlap', value=64, elem_id=elem_prefix + "overlap")
+        scale_factor = gr.Slider(minimum=1.0, maximum=4.0, step=0.05, label='Scale Factor', value=2.0, elem_id=elem_prefix + "scale_factor")
+        upscaler_index = gr.Radio(label='Upscaler', choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name, type="index", elem_id=elem_prefix + "upscaler_index")
 
         return [info, overlap, upscaler_index, scale_factor]
 

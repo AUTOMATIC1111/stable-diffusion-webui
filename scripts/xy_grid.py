@@ -292,18 +292,19 @@ class Script(scripts.Script):
 
     def ui(self, is_img2img):
         current_axis_options = [x for x in axis_options if type(x) == AxisOption or type(x) == AxisOptionImg2Img and is_img2img]
+        elem_prefix = ('i2i' if is_img2img else 't2i') + '_script_xy_grid_'
 
         with gr.Row():
-            x_type = gr.Dropdown(label="X type", choices=[x.label for x in current_axis_options], value=current_axis_options[1].label, type="index", elem_id="x_type")
-            x_values = gr.Textbox(label="X values", lines=1)
+            x_type = gr.Dropdown(label="X type", choices=[x.label for x in current_axis_options], value=current_axis_options[1].label, type="index", elem_id=elem_prefix + "x_type")
+            x_values = gr.Textbox(label="X values", lines=1, elem_id=elem_prefix + "x_values")
 
         with gr.Row():
-            y_type = gr.Dropdown(label="Y type", choices=[x.label for x in current_axis_options], value=current_axis_options[0].label, type="index", elem_id="y_type")
-            y_values = gr.Textbox(label="Y values", lines=1)
+            y_type = gr.Dropdown(label="Y type", choices=[x.label for x in current_axis_options], value=current_axis_options[0].label, type="index", elem_id=elem_prefix + "y_type")
+            y_values = gr.Textbox(label="Y values", lines=1, elem_id=elem_prefix + "y_values")
         
-        draw_legend = gr.Checkbox(label='Draw legend', value=True)
-        include_lone_images = gr.Checkbox(label='Include Separate Images', value=False)
-        no_fixed_seeds = gr.Checkbox(label='Keep -1 for seeds', value=False)
+        draw_legend = gr.Checkbox(label='Draw legend', value=True, elem_id=elem_prefix + "draw_legend")
+        include_lone_images = gr.Checkbox(label='Include Separate Images', value=False, elem_id=elem_prefix + "include_lone_images")
+        no_fixed_seeds = gr.Checkbox(label='Keep -1 for seeds', value=False, elem_id=elem_prefix + "no_fixed_seeds")
 
         return [x_type, x_values, y_type, y_values, draw_legend, include_lone_images, no_fixed_seeds]
 
