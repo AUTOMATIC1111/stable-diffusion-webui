@@ -136,6 +136,7 @@ class StableDiffusionProcessing():
         self.all_negative_prompts = None
         self.all_seeds = None
         self.all_subseeds = None
+        self.iteration = 0
 
     def txt2img_image_conditioning(self, x, width=None, height=None):
         if self.sampler.conditioning_key not in {'hybrid', 'concat'}:
@@ -544,6 +545,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             state.job_count = p.n_iter
 
         for n in range(p.n_iter):
+            p.iteration = n
+
             if state.skipped:
                 state.skipped = False
 
@@ -707,7 +710,8 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             if not isinstance(image, Image.Image):
                 image = sd_samplers.sample_to_image(image, index, approximation=0)
 
-            images.save_image(image, self.outpath_samples, "", seeds[index], prompts[index], opts.samples_format, suffix="-before-highres-fix")
+            info = create_infotext(self, self.all_prompts, self.all_seeds, self.all_subseeds, [], iteration=self.iteration, position_in_batch=index)
+            images.save_image(image, self.outpath_samples, "", seeds[index], prompts[index], opts.samples_format, info=info, suffix="-before-highres-fix")
 
         if latent_scale_mode is not None:
             for i in range(samples.shape[0]):
