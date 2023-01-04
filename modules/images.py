@@ -447,14 +447,6 @@ def get_next_sequence_number(path, basename):
     return result + 1
 
 
-def truncate_fullpath(full_path, encoding='utf-8'):
-    dir_name, full_name = os.path.split(full_path)
-    file_name, file_ext = os.path.splitext(full_name)
-    max_length = os.statvfs(dir_name).f_namemax
-    file_name_truncated = file_name.encode(encoding)[:max_length - len(file_ext)].decode(encoding, 'ignore')
-    return os.path.join(dir_name , file_name_truncated + file_ext)
-
-
 def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None, forced_filename=None, suffix="", save_to_dirs=None):
     """Save an image.
 
@@ -495,7 +487,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
 
     if save_to_dirs:
         dirname = namegen.apply(opts.directories_filename_pattern or "[prompt_words]").lstrip(' ').rstrip('\\ /')
-        path = truncate_fullpath(os.path.join(path, dirname))
+        path = os.path.join(path, dirname)
 
     os.makedirs(path, exist_ok=True)
 
@@ -519,13 +511,13 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
             fullfn = None
             for i in range(500):
                 fn = f"{basecount + i:05}" if basename == '' else f"{basename}-{basecount + i:04}"
-                fullfn = truncate_fullpath(os.path.join(path, f"{fn}{file_decoration}.{extension}"))
+                fullfn = os.path.join(path, f"{fn}{file_decoration}.{extension}")
                 if not os.path.exists(fullfn):
                     break
         else:
-            fullfn = truncate_fullpath(os.path.join(path, f"{file_decoration}.{extension}"))
+            fullfn = os.path.join(path, f"{file_decoration}.{extension}")
     else:
-        fullfn = truncate_fullpath(os.path.join(path, f"{forced_filename}.{extension}"))
+        fullfn = os.path.join(path, f"{forced_filename}.{extension}")
 
     pnginfo = existing_info or {}
     if info is not None:
