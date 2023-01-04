@@ -148,7 +148,7 @@ function showGalleryImage() {
                 if(e && e.parentElement.tagName == 'DIV'){
                     e.style.cursor='pointer'
                     e.style.userSelect='none'
-                    e.addEventListener('click', function (evt) {
+                    e.addEventListener('mousedown', function (evt) {
                         if(!opts.js_modal_lightbox) return;
                         modalZoomSet(gradioApp().getElementById('modalImage'), opts.js_modal_lightbox_initially_zoomed)
                         showModal(evt)
