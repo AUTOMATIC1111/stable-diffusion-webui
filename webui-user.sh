@@ -4,7 +4,7 @@
 #########################################################
 
 # Install directory without trailing slash
-install_dir="/home"
+install_dir="/home/automatic1111"
 
 # Name of the subdirectory
 clone_dir="stable-diffusion-webui"
@@ -19,7 +19,7 @@ clone_dir="stable-diffusion-webui"
 #export GIT="git"
 
 # python3 venv without trailing slash (defaults to ${install_dir}/${clone_dir}/venv)
-venv_dir="/home/venv"
+venv_dir="/home/automatic1111/venv"
 
 # script to launch to start the app
 #export LAUNCH_SCRIPT="launch.py"
