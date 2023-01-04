@@ -683,16 +683,9 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         self.truncate_x = 0
         self.truncate_y = 0
 
+
     def init(self, all_prompts, all_seeds, all_subseeds):
         if self.enable_hr:
-            if not state.processing_has_refined_job_count:
-                if state.job_count == -1:
-                    state.job_count = self.n_iter
-
-                shared.total_tqdm.updateTotal((self.steps + (self.hr_second_pass_steps or self.steps)) * state.job_count)
-                state.job_count = state.job_count * 2
-                state.processing_has_refined_job_count = True
-
             if self.hr_resize_x == 0 and self.hr_resize_y == 0:
                 self.extra_generation_params["Hires upscale"] = self.hr_scale
                 self.hr_upscale_to_x = int(self.width * self.hr_scale)
@@ -721,6 +714,22 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
                     self.truncate_x = (self.hr_upscale_to_x - target_w) // opt_f
                     self.truncate_y = (self.hr_upscale_to_y - target_h) // opt_f
+
+            # special case: the user has chosen to do nothing
+            if self.hr_upscale_to_x == self.width and self.hr_upscale_to_y == self.height:
+                self.enable_hr = False
+                self.denoising_strength = None
+                self.extra_generation_params.pop("Hires upscale", None)
+                self.extra_generation_params.pop("Hires resize", None)
+                return
+
+            if not state.processing_has_refined_job_count:
+                if state.job_count == -1:
+                    state.job_count = self.n_iter
+
+                shared.total_tqdm.updateTotal((self.steps + (self.hr_second_pass_steps or self.steps)) * state.job_count)
+                state.job_count = state.job_count * 2
+                state.processing_has_refined_job_count = True
 
             if self.hr_second_pass_steps:
                 self.extra_generation_params["Hires steps"] = self.hr_second_pass_steps
