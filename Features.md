@@ -410,13 +410,21 @@ See more advanced example below. On step 8, the chain loops back from "man" to "
 
 Prompt editing was first implemented by Doggettx in [this myspace.com post](https://www.reddit.com/r/StableDiffusion/comments/xas2os/simple_prompt2prompt_implementation_with_prompt/).
 
-# Highres. fix
-A convenience option to partially render your image at a lower resolution, upscale it, and then add details at a high resolution. By default, txt2img  makes horrible images at very high resolutions, and this makes it possible to avoid using the small picture's composition. Enabled by checking the "Highres. fix" checkbox on the txt2img page.
+# Hires. fix
+A convenience option to partially render your image at a lower resolution, upscale it, and then add details at a high resolution. By default, txt2img  makes horrible images at very high resolutions, and this makes it possible to avoid using the small picture's composition. Enabled by checking the "Hires. fix" checkbox on the txt2img page.
 
 | Without                      | With                |
 |-------------------------------|---------------------------------|
 | ![00262-836728130](https://user-images.githubusercontent.com/20920490/191177752-ad983e62-8e1c-4197-8f3b-3165a6a6c31d.png) | ![00261-836728130](https://user-images.githubusercontent.com/20920490/191177785-395a951e-0d2e-4db7-9645-4c5af9321772.png) |
 | ![00345-950170121](https://user-images.githubusercontent.com/20920490/191178018-25dcd98d-6c45-4c31-ab7a-3de6c51c52e3.png) | ![00341-950170121](https://user-images.githubusercontent.com/20920490/191178048-3eba3db4-e5be-4617-9bfe-2cb36cebaafc.png) |
+
+Small picture is rendered at whatever resolution you set using width/height sliders.
+Large picture's dimensions are controlled by three sliders: "Scale by" multiplier (Hires upscale), "Resize width to" and/or "Resize height to" (Hires resize).
+
+* If "Resize width to" and "Resize height to" are 0, "Scale by" is used.
+* If "Resize width to" is 0, "Resize height to" is calculated from width and height.
+* If "Resize height to" is 0, "Resize width to" is calculated from width and height.
+* If both "Resize width to" and "Resize height to" are non-zero, image is upscaled to be at least those dimensions, and some parts are cropped.
 
 # Composable Diffusion
 
