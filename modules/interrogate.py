@@ -136,7 +136,8 @@ class InterrogateModels:
 
     def interrogate(self, pil_image):
         res = ""
-
+        shared.state.begin()
+        shared.state.job = 'interrogate'
         try:
 
             if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
@@ -177,5 +178,6 @@ class InterrogateModels:
             res += "<error>"
 
         self.unload()
+        shared.state.end()
 
         return res

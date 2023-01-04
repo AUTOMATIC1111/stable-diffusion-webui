@@ -245,6 +245,7 @@ def train_embedding(embedding_name, learn_rate, batch_size, gradient_step, data_
     create_image_every = create_image_every or 0
     validate_train_inputs(embedding_name, learn_rate, batch_size, gradient_step, data_root, template_file, steps, save_embedding_every, create_image_every, log_directory, name="embedding")
 
+    shared.state.job = "train-embedding"
     shared.state.textinfo = "Initializing textual inversion training..."
     shared.state.job_count = steps
 
