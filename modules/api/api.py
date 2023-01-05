@@ -11,10 +11,10 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from secrets import compare_digest
 
 import modules.shared as shared
-from modules import sd_samplers, deepbooru, sd_hijack
+from modules import sd_samplers, deepbooru, sd_hijack, images
 from modules.api.models import *
 from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img, process_images
-from modules.extras import run_extras, run_pnginfo
+from modules.extras import run_extras
 from modules.textual_inversion.textual_inversion import create_embedding, train_embedding
 from modules.textual_inversion.preprocess import preprocess
 from modules.hypernetworks.hypernetwork import create_hypernetwork, train_hypernetwork
@@ -233,9 +233,17 @@ class Api:
         if(not req.image.strip()):
             return PNGInfoResponse(info="")
 
-        result = run_pnginfo(decode_base64_to_image(req.image.strip()))
+        image = decode_base64_to_image(req.image.strip())
+        if image is None:
+            return PNGInfoResponse(info="")
 
-        return PNGInfoResponse(info=result[1])
+        geninfo, items = images.read_info_from_image(image)
+        if geninfo is None:
+            geninfo = ""
+
+        items = {**{'parameters': geninfo}, **items}
+
+        return PNGInfoResponse(info=geninfo, items=items)
 
     def progressapi(self, req: ProgressRequest = Depends()):
         # copy from check_progress_call of ui.py

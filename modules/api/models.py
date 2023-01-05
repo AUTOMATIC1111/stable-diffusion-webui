@@ -157,7 +157,8 @@ class PNGInfoRequest(BaseModel):
     image: str = Field(title="Image", description="The base64 encoded PNG image")
 
 class PNGInfoResponse(BaseModel):
-    info: str = Field(title="Image info", description="A string with all the info the image had")
+    info: str = Field(title="Image info", description="A string with the parameters used to generate the image")
+    items: dict = Field(title="Items", description="An object containing all the info the image had")
 
 class ProgressRequest(BaseModel):
     skip_current_image: bool = Field(default=False, title="Skip current image", description="Skip current image serialization")
