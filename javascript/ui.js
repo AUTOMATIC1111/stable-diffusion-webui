@@ -1,4 +1,4 @@
-// various functions for interation with ui.py not large enough to warrant putting them in separate files
+// various functions for interaction with ui.py not large enough to warrant putting them in separate files
 
 function set_theme(theme){
     gradioURL = window.location.href
@@ -19,7 +19,7 @@ function selected_gallery_index(){
 
 function extract_image_from_gallery(gallery){
     if(gallery.length == 1){
-        return gallery[0]
+        return [gallery[0]]
     }
 
     index = selected_gallery_index()
@@ -28,7 +28,7 @@ function extract_image_from_gallery(gallery){
         return [null]
     }
 
-    return gallery[index];
+    return [gallery[index]];
 }
 
 function args_to_array(args){
@@ -188,6 +188,17 @@ onUiUpdate(function(){
 		img2img_textarea = gradioApp().querySelector("#img2img_prompt > label > textarea");
 		img2img_textarea?.addEventListener("input", () => update_token_counter("img2img_token_button"));
 	}
+
+    show_all_pages = gradioApp().getElementById('settings_show_all_pages')
+    settings_tabs = gradioApp().querySelector('#settings div')
+    if(show_all_pages && settings_tabs){
+        settings_tabs.appendChild(show_all_pages)
+        show_all_pages.onclick = function(){
+            gradioApp().querySelectorAll('#settings > div').forEach(function(elem){
+                elem.style.display = "block";
+            })
+        }
+    }
 })
 
 let txt2img_textarea, img2img_textarea = undefined;

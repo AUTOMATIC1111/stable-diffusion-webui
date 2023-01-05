@@ -10,7 +10,7 @@ import numpy as np
 import modules.scripts as scripts
 import gradio as gr
 
-from modules import images, paths, sd_samplers
+from modules import images, paths, sd_samplers, processing
 from modules.hypernetworks import hypernetwork
 from modules.processing import process_images, Processed, StableDiffusionProcessingTxt2Img
 from modules.shared import opts, cmd_opts, state
@@ -202,7 +202,7 @@ axis_options = [
     AxisOption("Eta", float, apply_field("eta"), format_value_add_label, None),
     AxisOption("Clip skip", int, apply_clip_skip, format_value_add_label, None),
     AxisOption("Denoising", float, apply_field("denoising_strength"), format_value_add_label, None),
-    AxisOption("Upscale latent space for hires.", str, apply_upscale_latent_space, format_value_add_label, None),
+    AxisOption("Hires upscaler", str, apply_field("hr_upscaler"), format_value_add_label, None),
     AxisOption("Cond. Image Mask Weight", float, apply_field("inpainting_mask_weight"), format_value_add_label, None),
     AxisOption("VAE", str, apply_vae, format_value_add_label, None),
     AxisOption("Styles", str, apply_styles, format_value_add_label, None),
@@ -267,7 +267,6 @@ class SharedSettingsStackHelper(object):
         self.CLIP_stop_at_last_layers = opts.CLIP_stop_at_last_layers
         self.hypernetwork = opts.sd_hypernetwork
         self.model = shared.sd_model
-        self.use_scale_latent_for_hires_fix = opts.use_scale_latent_for_hires_fix
         self.vae = opts.sd_vae
   
     def __exit__(self, exc_type, exc_value, tb):
@@ -278,7 +277,6 @@ class SharedSettingsStackHelper(object):
         hypernetwork.apply_strength()
 
         opts.data["CLIP_stop_at_last_layers"] = self.CLIP_stop_at_last_layers
-        opts.data["use_scale_latent_for_hires_fix"] = self.use_scale_latent_for_hires_fix
 
 
 re_range = re.compile(r"\s*([+-]?\s*\d+)\s*-\s*([+-]?\s*\d+)(?:\s*\(([+-]\d+)\s*\))?\s*")
@@ -286,6 +284,7 @@ re_range_float = re.compile(r"\s*([+-]?\s*\d+(?:.\d*)?)\s*-\s*([+-]?\s*\d+(?:.\d
 
 re_range_count = re.compile(r"\s*([+-]?\s*\d+)\s*-\s*([+-]?\s*\d+)(?:\s*\[(\d+)\s*\])?\s*")
 re_range_count_float = re.compile(r"\s*([+-]?\s*\d+(?:.\d*)?)\s*-\s*([+-]?\s*\d+(?:.\d*)?)(?:\s*\[(\d+(?:.\d*)?)\s*\])?\s*")
+
 
 class Script(scripts.Script):
     def title(self):
@@ -383,7 +382,7 @@ class Script(scripts.Script):
         ys = process_axis(y_opt, y_values)
 
         def fix_axis_seeds(axis_opt, axis_list):
-            if axis_opt.label in ['Seed','Var. seed']:
+            if axis_opt.label in ['Seed', 'Var. seed']:
                 return [int(random.randrange(4294967294)) if val is None or val == '' or val == -1 else val for val in axis_list]
             else:
                 return axis_list
@@ -405,12 +404,33 @@ class Script(scripts.Script):
         print(f"X/Y plot will create {len(xs) * len(ys) * p.n_iter} images on a {len(xs)}x{len(ys)} grid. (Total steps to process: {total_steps * p.n_iter})")
         shared.total_tqdm.updateTotal(total_steps * p.n_iter)
 
+        grid_infotext = [None]
+
         def cell(x, y):
             pc = copy(p)
             x_opt.apply(pc, x, xs)
             y_opt.apply(pc, y, ys)
 
-            return process_images(pc)
+            res = process_images(pc)
+
+            if grid_infotext[0] is None:
+                pc.extra_generation_params = copy(pc.extra_generation_params)
+
+                if x_opt.label != 'Nothing':
+                    pc.extra_generation_params["X Type"] = x_opt.label
+                    pc.extra_generation_params["X Values"] = x_values
+                    if x_opt.label in ["Seed", "Var. seed"] and not no_fixed_seeds:
+                        pc.extra_generation_params["Fixed X Values"] = ", ".join([str(x) for x in xs])
+
+                if y_opt.label != 'Nothing':
+                    pc.extra_generation_params["Y Type"] = y_opt.label
+                    pc.extra_generation_params["Y Values"] = y_values
+                    if y_opt.label in ["Seed", "Var. seed"] and not no_fixed_seeds:
+                        pc.extra_generation_params["Fixed Y Values"] = ", ".join([str(y) for y in ys])
+
+                grid_infotext[0] = processing.create_infotext(pc, pc.all_prompts, pc.all_seeds, pc.all_subseeds)
+
+            return res
 
         with SharedSettingsStackHelper():
             processed = draw_xy_grid(
@@ -425,6 +445,6 @@ class Script(scripts.Script):
             )
 
         if opts.grid_save:
-            images.save_image(processed.images[0], p.outpath_grids, "xy_grid", extension=opts.grid_format, prompt=p.prompt, seed=processed.seed, grid=True, p=p)
+            images.save_image(processed.images[0], p.outpath_grids, "xy_grid", info=grid_infotext[0], extension=opts.grid_format, prompt=p.prompt, seed=processed.seed, grid=True, p=p)
 
         return processed
