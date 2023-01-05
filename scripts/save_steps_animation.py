@@ -1,0 +1,1 @@
+/home/vlado/dev/sd-extensions/scripts/save_steps_animation.py
