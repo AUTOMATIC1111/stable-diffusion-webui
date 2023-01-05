@@ -41,10 +41,12 @@ class StyleDatabase:
     def __init__(self, path: str):
         self.no_style = PromptStyle("None", "", "")
         self.styles = {"None": self.no_style}
+        self.refresh_styles(path)
 
+    def refresh_styles(self, path):
         if not os.path.exists(path):
             return
-
+        self.styles = {"None": self.no_style}
         with open(path, "r", encoding="utf-8-sig", newline='') as file:
             reader = csv.DictReader(file)
             for row in reader:
@@ -52,6 +54,7 @@ class StyleDatabase:
                 prompt = row["prompt"] if "prompt" in row else row["text"]
                 negative_prompt = row.get("negative_prompt", "")
                 self.styles[row["name"]] = PromptStyle(row["name"], prompt, negative_prompt)
+        print(f"Refreshed {len(self.styles)} styles.")
 
     def get_style_prompts(self, styles):
         return [self.styles.get(x, self.no_style).prompt for x in styles]
