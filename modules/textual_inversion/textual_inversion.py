@@ -298,7 +298,7 @@ def train_embedding(embedding_name, learn_rate, batch_size, gradient_step, data_
         torch.nn.utils.clip_grad_norm_ if clip_grad_mode == "norm" else \
         None
     if clip_grad:
-        clip_grad_sched = LearnRateScheduler(clip_grad_value, steps, ititial_step, verbose=False)
+        clip_grad_sched = LearnRateScheduler(clip_grad_value, steps, initial_step, verbose=False)
     # dataset loading may take a while, so input validations and early returns should be done before this
     shared.state.textinfo = f"Preparing dataset from {html.escape(data_root)}..."
     old_parallel_processing_allowed = shared.parallel_processing_allowed
