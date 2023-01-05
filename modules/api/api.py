@@ -11,7 +11,7 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from secrets import compare_digest
 
 import modules.shared as shared
-from modules import sd_samplers, deepbooru, sd_hijack, images
+from modules import sd_samplers, deepbooru, sd_hijack, images, scripts, ui
 from modules.api.models import *
 from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img, process_images
 from modules.extras import run_extras
@@ -28,8 +28,13 @@ def upscaler_to_index(name: str):
     try:
         return [x.name.lower() for x in shared.sd_upscalers].index(name.lower())
     except:
-        raise HTTPException(status_code=400, detail=f"Invalid upscaler, needs to be on of these: {' , '.join([x.name for x in sd_upscalers])}")
+        raise HTTPException(status_code=400, detail=f"Invalid upscaler, needs to be one of these: {' , '.join([x.name for x in sd_upscalers])}")
 
+def script_name_to_index(name, scripts):
+    try:
+        return [script.title().lower() for script in scripts].index(name.lower())
+    except:
+        raise HTTPException(status_code=422, detail=f"Script '{name}' not found")
 
 def validate_sampler_name(name):
     config = sd_samplers.all_samplers_map.get(name, None)
@@ -170,6 +175,14 @@ class Api:
         if init_images is None:
             raise HTTPException(status_code=404, detail="Init image not found")
 
+        if img2imgreq.script_name is not None:
+            if scripts.scripts_img2img.scripts == []:
+                scripts.scripts_img2img.initialize_scripts(True)
+                ui.create_ui()
+
+            script_idx = script_name_to_index(img2imgreq.script_name, scripts.scripts_img2img.selectable_scripts)
+            script = scripts.scripts_img2img.selectable_scripts[script_idx]
+
         mask = img2imgreq.mask
         if mask:
             mask = decode_base64_to_image(mask)
@@ -186,13 +199,21 @@ class Api:
 
         args = vars(populate)
         args.pop('include_init_images', None)  # this is meant to be done by "exclude": True in model, but it's for a reason that I cannot determine.
+        args.pop('script_name', None)
 
         with self.queue_lock:
             p = StableDiffusionProcessingImg2Img(sd_model=shared.sd_model, **args)
             p.init_images = [decode_base64_to_image(x) for x in init_images]
 
             shared.state.begin()
-            processed = process_images(p)
+            if 'script' in locals():
+                p.outpath_grids = opts.outdir_img2img_grids
+                p.outpath_samples = opts.outdir_img2img_samples
+                p.script_args = [script_idx + 1] + [None] * (script.args_from - 1) + p.script_args
+                processed = scripts.scripts_img2img.run(p, *p.script_args)
+            else:
+                processed = process_images(p)
+
             shared.state.end()
 
         b64images = list(map(encode_pil_to_base64, processed.images))
