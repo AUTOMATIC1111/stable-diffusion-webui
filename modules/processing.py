@@ -466,12 +466,16 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
     try:
         for k, v in p.override_settings.items():
             setattr(opts, k, v)
-            if k == 'sd_hypernetwork': shared.reload_hypernetworks()  # make onchange call for changing hypernet
-            if k == 'sd_model_checkpoint': sd_models.reload_model_weights()  # make onchange call for changing SD model
-            if k == 'sd_vae': sd_vae.reload_vae_weights()  # make onchange call for changing VAE
+            if k == 'sd_hypernetwork':
+                shared.reload_hypernetworks()  # make onchange call for changing hypernet
 
-        # Assign sd_model here to ensure that it reflects the model after any changes
-        p.sd_model = shared.sd_model
+            if k == 'sd_model_checkpoint':
+                sd_models.reload_model_weights()  # make onchange call for changing SD model
+                p.sd_model = shared.sd_model
+
+            if k == 'sd_vae':
+                sd_vae.reload_vae_weights()  # make onchange call for changing VAE
+
         res = process_images_inner(p)
 
     finally:
