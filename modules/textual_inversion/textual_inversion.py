@@ -149,18 +149,19 @@ class EmbeddingDatabase:
             else:
                 self.skipped_embeddings[name] = embedding
 
-        for fn in os.listdir(self.embeddings_dir):
-            try:
-                fullfn = os.path.join(self.embeddings_dir, fn)
+        for root, dirs, fns in os.walk(self.embeddings_dir):
+            for fn in fns:
+                try:
+                    fullfn = os.path.join(root, fn)
 
-                if os.stat(fullfn).st_size == 0:
+                    if os.stat(fullfn).st_size == 0:
+                        continue
+
+                    process_file(fullfn, fn)
+                except Exception:
+                    print(f"Error loading embedding {fn}:", file=sys.stderr)
+                    print(traceback.format_exc(), file=sys.stderr)
                     continue
-
-                process_file(fullfn, fn)
-            except Exception:
-                print(f"Error loading embedding {fn}:", file=sys.stderr)
-                print(traceback.format_exc(), file=sys.stderr)
-                continue
 
         print(f"Textual inversion embeddings loaded({len(self.word_embeddings)}): {', '.join(self.word_embeddings.keys())}")
         if len(self.skipped_embeddings) > 0:
