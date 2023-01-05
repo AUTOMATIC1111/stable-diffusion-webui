@@ -487,6 +487,11 @@ Extension for quickly selecting and applying custom.css files, for customizing l
 
 ![image](https://user-images.githubusercontent.com/98228077/210076676-5f6a8e72-5352-4860-8f3d-468ab8e31355.png)![image](https://user-images.githubusercontent.com/98228077/210076407-1c904a6c-6913-4954-8f20-36100df99fba.png)
 
+## Model Converter
+https://github.com/Akegarasu/sd-webui-model-converter
+
+Model convert extension, supports convert fp16/bf16 no-ema/ema-only safetensors.
+
 ## Test
 https://github.com/diaphragm/var2gif \
 https://github.com/Kahsolt/stable-diffusion-webui-size-travel \
