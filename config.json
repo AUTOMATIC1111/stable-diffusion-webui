@@ -56,7 +56,7 @@
     "training_image_repeats_per_epoch": 1,
     "training_write_csv_every": 100.0,
     "training_xattention_optimizations": true,
-    "sd_model_checkpoint": "unstable-photoreal-v5.ckpt [358923a7]",
+    "sd_model_checkpoint": "zeipher-f222.ckpt [44bf0551]",
     "sd_checkpoint_cache": 0,
     "sd_vae": "vae-ft-mse-840000-ema-pruned",
     "sd_vae_as_default": false,
