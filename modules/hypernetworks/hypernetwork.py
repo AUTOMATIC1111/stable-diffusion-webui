@@ -401,7 +401,33 @@ def create_hypernetwork(name, enable_sizes, overwrite_old, layer_structure=None,
     hypernet.save(fn)
 
     shared.reload_hypernetworks()
+# Note: textual_inversion.py has a nearly identical function of the same name.
+def save_settings_to_file(initial_step, num_of_dataset_images, hypernetwork_name, layer_structure, activation_func, weight_init, add_layer_norm, use_dropout, learn_rate, batch_size, data_root, log_directory, training_width, training_height, steps, create_image_every, save_hypernetwork_every, template_file, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height):
+    checkpoint = sd_models.select_checkpoint()
+    model_name = checkpoint.model_name
+    model_hash = '[{}]'.format(checkpoint.hash)
+    # Starting index of preview-related arguments.
+    border_index = 19
 
+    # Get a list of the argument names, excluding default argument.
+    sig = inspect.signature(save_settings_to_file)
+    arg_names = [p.name for p in sig.parameters.values() if p.default == p.empty]
+    
+    # Create a list of the argument names to include in the settings string.
+    names = arg_names[:border_index]  # Include all arguments up until the preview-related ones.
+
+    # Include preview-related arguments if applicable.
+    if preview_from_txt2img:
+        names.extend(arg_names[border_index:])
+
+    # Build the settings string.
+    settings_str = "datetime : " + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + "\n"
+    for name in names:
+        value = locals()[name]
+        settings_str += f"{name}: {value}\n"
+
+    with open(os.path.join(log_directory, 'settings.txt'), "a+") as fout:
+        fout.write(settings_str + "\n\n")
 
 def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, gradient_step, data_root, log_directory, training_width, training_height, steps, clip_grad_mode, clip_grad_value, shuffle_tags, tag_drop_out, latent_sampling_method, create_image_every, save_hypernetwork_every, template_file, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height):
     # images allows training previews to have infotext. Importing it at the top causes a circular import problem.
@@ -457,7 +483,10 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, gradient_step,
     pin_memory = shared.opts.pin_memory
 
     ds = modules.textual_inversion.dataset.PersonalizedBase(data_root=data_root, width=training_width, height=training_height, repeats=shared.opts.training_image_repeats_per_epoch, placeholder_token=hypernetwork_name, model=shared.sd_model, cond_model=shared.sd_model.cond_stage_model, device=devices.device, template_file=template_file, include_cond=True, batch_size=batch_size, gradient_step=gradient_step, shuffle_tags=shuffle_tags, tag_drop_out=tag_drop_out, latent_sampling_method=latent_sampling_method)
-    
+
+    if shared.opts.save_training_settings_to_txt:
+        save_settings_to_file(initial_step, len(ds), hypernetwork_name, hypernetwork.layer_structure, hypernetwork.activation_func, hypernetwork.weight_init, hypernetwork.add_layer_norm, hypernetwork.use_dropout, learn_rate, batch_size, data_root, log_directory, training_width, training_height, steps, create_image_every, save_hypernetwork_every, template_file, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height)
+
     latent_sampling_method = ds.latent_sampling_method
 
     dl = modules.textual_inversion.dataset.PersonalizedDataLoader(ds, latent_sampling_method=latent_sampling_method, batch_size=ds.batch_size, pin_memory=pin_memory)
