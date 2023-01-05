@@ -112,7 +112,7 @@ class Script(scripts.Script):
         return "Prompts from file or textbox"
 
     def ui(self, is_img2img):
-        elem_prefix = ('i2i' if is_img2img else 't2i') + '_script_prompt_from_file_'
+        elem_prefix = ('img2img' if is_img2img else 'txt2txt') + '_script_prompt_from_file_'
         
         checkbox_iterate = gr.Checkbox(label="Iterate seed every line", value=False, elem_id=elem_prefix + "checkbox_iterate")
         checkbox_iterate_batch = gr.Checkbox(label="Use same random seed for all lines", value=False, elem_id=elem_prefix + "checkbox_iterate_batch")

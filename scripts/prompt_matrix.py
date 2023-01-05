@@ -45,7 +45,7 @@ class Script(scripts.Script):
         return "Prompt matrix"
 
     def ui(self, is_img2img):
-        elem_prefix = ('i2i' if is_img2img else 't2i') + '_script_prompt_matrix_'
+        elem_prefix = ('img2img' if is_img2img else 'txt2txt') + '_script_prompt_matrix_'
         
         put_at_start = gr.Checkbox(label='Put variable parts at start of prompt', value=False, elem_id=elem_prefix + "put_at_start")
         different_seeds = gr.Checkbox(label='Use different seed for each picture', value=False, elem_id=elem_prefix + "different_seeds")

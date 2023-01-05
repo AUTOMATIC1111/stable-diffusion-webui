@@ -292,7 +292,7 @@ class Script(scripts.Script):
 
     def ui(self, is_img2img):
         current_axis_options = [x for x in axis_options if type(x) == AxisOption or type(x) == AxisOptionImg2Img and is_img2img]
-        elem_prefix = ('i2i' if is_img2img else 't2i') + '_script_xy_grid_'
+        elem_prefix = ('img2img' if is_img2img else 'txt2txt') + '_script_xy_grid_'
 
         with gr.Row():
             x_type = gr.Dropdown(label="X type", choices=[x.label for x in current_axis_options], value=current_axis_options[1].label, type="index", elem_id=elem_prefix + "x_type")

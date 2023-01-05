@@ -126,7 +126,7 @@ class Script(scripts.Script):
         return is_img2img
 
     def ui(self, is_img2img):
-        elem_prefix = ('i2i' if is_img2img else 't2i') + '_script_i2i_alternative_test_'
+        elem_prefix = 'script_i2i_alternative_test_'
         
         info = gr.Markdown('''
         * `CFG Scale` should be 2 or lower.

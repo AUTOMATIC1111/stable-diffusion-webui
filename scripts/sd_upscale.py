@@ -17,7 +17,7 @@ class Script(scripts.Script):
         return is_img2img
 
     def ui(self, is_img2img):
-        elem_prefix = ('i2i' if is_img2img else 't2i') + '_script_sd_upscale_'
+        elem_prefix = 'script_sd_upscale_'
         
         info = gr.HTML("<p style=\"margin-bottom:0.75em\">Will upscale the image by the selected scale factor; use width and height sliders to set tile size</p>")
         overlap = gr.Slider(minimum=0, maximum=256, step=16, label='Tile overlap', value=64, elem_id=elem_prefix + "overlap")

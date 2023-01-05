@@ -14,7 +14,7 @@ class Script(scripts.Script):
         return cmd_opts.allow_code
 
     def ui(self, is_img2img):
-        elem_prefix = ('i2i' if is_img2img else 't2i') + '_script_custom_code_'
+        elem_prefix = ('img2img' if is_img2img else 'txt2txt') + '_script_custom_code_'
         
         code = gr.Textbox(label="Python code", lines=1, elem_id=elem_prefix + "code")
 

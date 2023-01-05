@@ -129,7 +129,7 @@ class Script(scripts.Script):
         if not is_img2img:
             return None
 
-        elem_prefix = ('i2i' if is_img2img else 't2i') + '_script_outpainting_mk_2_'
+        elem_prefix = 'script_outpainting_mk_2_'
         
         info = gr.HTML("<p style=\"margin-bottom:0.75em\">Recommended settings: Sampling Steps: 80-100, Sampler: Euler a, Denoising strength: 0.8</p>")
 

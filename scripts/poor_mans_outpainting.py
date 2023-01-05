@@ -21,7 +21,7 @@ class Script(scripts.Script):
         if not is_img2img:
             return None
 
-        elem_prefix = ('i2i' if is_img2img else 't2i') + '_script_poor_mans_outpainting_'
+        elem_prefix = 'script_poor_mans_outpainting_'
         
         pixels = gr.Slider(label="Pixels to expand", minimum=8, maximum=256, step=8, value=128, elem_id=elem_prefix + "pixels")
         mask_blur = gr.Slider(label='Mask blur', minimum=0, maximum=64, step=1, value=4, elem_id=elem_prefix + "mask_blur")

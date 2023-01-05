@@ -17,7 +17,7 @@ class Script(scripts.Script):
         return is_img2img
 
     def ui(self, is_img2img):
-        elem_prefix = ('i2i' if is_img2img else 't2i') + '_script_loopback_'
+        elem_prefix = 'script_loopback_'
         
         loops = gr.Slider(minimum=1, maximum=32, step=1, label='Loops', value=4, elem_id=elem_prefix + "loops")
         denoising_strength_change_factor = gr.Slider(minimum=0.9, maximum=1.1, step=0.01, label='Denoising strength change factor', value=1, elem_id=elem_prefix + "denoising_strength_change_factor")
