@@ -124,6 +124,7 @@ def preprocess_work(process_src, process_dst, process_width, process_height, pre
 
     files = listfiles(src)
 
+    shared.state.job = "preprocess"
     shared.state.textinfo = "Preprocessing..."
     shared.state.job_count = len(files)
 

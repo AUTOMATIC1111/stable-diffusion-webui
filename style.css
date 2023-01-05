@@ -611,7 +611,7 @@ img2maskimg, #img2maskimg > .h-60, #img2maskimg > .h-60 > div, #img2maskimg > .h
     padding-top: 0.9em;
 }
 
-#img2img_settings div.gr-form .gr-form, #txt2img_settings div.gr-form .gr-form{
+#img2img_settings div.gr-form .gr-form, #txt2img_settings div.gr-form .gr-form, #train_tabs div.gr-form .gr-form{
     border: none;
     padding-bottom: 0.5em;
 }

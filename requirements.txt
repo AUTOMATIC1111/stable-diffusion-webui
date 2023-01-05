@@ -9,7 +9,7 @@ gradio==3.15.0
 invisible-watermark
 numpy
 omegaconf
-opencv-python
+opencv-contrib-python
 requests
 piexif
 Pillow

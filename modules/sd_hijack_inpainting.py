@@ -97,8 +97,11 @@ def p_sample_plms(self, x, c, t, index, repeat_noise=False, use_original_steps=F
 
 
 def should_hijack_inpainting(checkpoint_info):
+    from modules import sd_models
+
     ckpt_basename = os.path.basename(checkpoint_info.filename).lower()
-    cfg_basename = os.path.basename(checkpoint_info.config).lower()
+    cfg_basename = os.path.basename(sd_models.find_checkpoint_config(checkpoint_info)).lower()
+
     return "inpainting" in ckpt_basename and not "inpainting" in cfg_basename
 
 
