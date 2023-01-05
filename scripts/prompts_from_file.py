@@ -13,7 +13,6 @@ from modules import sd_samplers
 from modules.processing import Processed, process_images
 from PIL import Image
 from modules.shared import opts, cmd_opts, state
-import re
 
 
 def process_string_tag(tag):
@@ -111,11 +110,6 @@ def load_prompt_file(file):
 class Script(scripts.Script):
     def title(self):
         return "Prompts from file or textbox"
-
-    def elem_id(self, item_id):
-        gen_elem_id = ('img2img' if self.is_img2img else 'txt2txt') + '_script_' + re.sub(r'\s', '_', self.title().lower()) + '_' + item_id
-        gen_elem_id = re.sub(r'[^a-z_0-9]', '', gen_elem_id)
-        return gen_elem_id
 
     def ui(self, is_img2img):       
         checkbox_iterate = gr.Checkbox(label="Iterate seed every line", value=False, elem_id=self.elem_id("checkbox_iterate"))

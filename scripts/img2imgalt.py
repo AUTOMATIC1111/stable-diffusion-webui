@@ -16,7 +16,6 @@ import k_diffusion as K
 from PIL import Image
 from torch import autocast
 from einops import rearrange, repeat
-import re
 
 
 def find_noise_for_image(p, cond, uncond, cfg_scale, steps):
@@ -122,11 +121,6 @@ class Script(scripts.Script):
 
     def title(self):
         return "img2img alternative test"
-
-    def elem_id(self, item_id):
-        gen_elem_id = ('img2img' if self.is_img2img else 'txt2txt') + '_script_' + re.sub(r'\s', '_', self.title().lower()) + '_' + item_id
-        gen_elem_id = re.sub(r'[^a-z_0-9]', '', gen_elem_id)
-        return gen_elem_id
 
     def show(self, is_img2img):
         return is_img2img

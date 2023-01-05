@@ -7,17 +7,11 @@ from PIL import Image
 from modules import processing, shared, sd_samplers, images, devices
 from modules.processing import Processed
 from modules.shared import opts, cmd_opts, state
-import re
 
 
 class Script(scripts.Script):
     def title(self):
         return "SD upscale"
-
-    def elem_id(self, item_id):
-        gen_elem_id = ('img2img' if self.is_img2img else 'txt2txt') + '_script_' + re.sub(r'\s', '_', self.title().lower()) + '_' + item_id
-        gen_elem_id = re.sub(r'[^a-z_0-9]', '', gen_elem_id)
-        return gen_elem_id
 
     def show(self, is_img2img):
         return is_img2img

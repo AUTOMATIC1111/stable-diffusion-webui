@@ -10,7 +10,6 @@ from modules import images
 from modules.processing import process_images, Processed
 from modules.shared import opts, cmd_opts, state
 import modules.sd_samplers
-import re
 
 
 def draw_xy_grid(xs, ys, x_label, y_label, cell):
@@ -44,11 +43,6 @@ def draw_xy_grid(xs, ys, x_label, y_label, cell):
 class Script(scripts.Script):
     def title(self):
         return "Prompt matrix"
-
-    def elem_id(self, item_id):
-        gen_elem_id = ('img2img' if self.is_img2img else 'txt2txt') + '_script_' + re.sub(r'\s', '_', self.title().lower()) + '_' + item_id
-        gen_elem_id = re.sub(r'[^a-z_0-9]', '', gen_elem_id)
-        return gen_elem_id
 
     def ui(self, is_img2img):        
         put_at_start = gr.Checkbox(label='Put variable parts at start of prompt', value=False, elem_id=self.elem_id("put_at_start"))
