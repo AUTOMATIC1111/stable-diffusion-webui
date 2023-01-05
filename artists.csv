@@ -204,13 +204,13 @@ Gabriele Münter,0.7690926,scribbles
 David Inshaw,0.76905304,scribbles
 Maurice Sendak,0.7690118,cartoon
 Harry Clarke,0.7688428,cartoon
-Howardena Pindell,0.7686921,n
+Howardena Pindell,0.7686921,fineart
 Jamie Hewlett,0.7680373,scribbles
 Steve Ditko,0.76725733,scribbles
 Annie Soudain,0.7671485,scribbles
 Albert Gleizes,0.76658314,scribbles
 Henry Fuseli,0.69147265,fineart
-Alain Laboile,0.67634284,c
+Alain Laboile,0.67634284,nudity
 Albrecht Altdorfer,0.7663378,fineart
 Jack Butler Yeats,0.7661406,fineart
 Yue Minjun,0.76583517,scribbles
@@ -416,7 +416,7 @@ Shotaro Ishinomori,0.7292093,anime
 Hope Gangloff,0.729082,scribbles
 Vivian Maier,0.72897506,digipa-high-impact
 Alex Andreev,0.6442978,digipa-high-impact
-Julie Blackmon,0.72862685,c
+Julie Blackmon,0.72862685,fineart
 Arthur Melville,0.7286146,fineart
 Henri Michaux,0.599607,fineart
 William Steig,0.7283096,scribbles
@@ -631,7 +631,7 @@ Francesco Guardi,0.70682615,fineart
 Jean-Honoré Fragonard,0.6518248,fineart
 Brice Marden,0.70673287,digipa-high-impact
 Charles-Amédée-Philippe van Loo,0.6725916,fineart
-Mati Klarwein,0.7066092,n
+Mati Klarwein,0.7066092,fineart
 Gerard ter Borch,0.706589,fineart
 Dan Hillier,0.48966256,digipa-med-impact
 Federico Barocci,0.682664,fineart
@@ -696,7 +696,7 @@ Peter Paul Rubens,0.65745676,fineart
 Eugène Boudin,0.70001304,fineart
 Charles Willson Peale,0.66907954,fineart
 Brian Mashburn,0.63395154,digipa-high-impact
-Barkley L. Hendricks,0.69986427,n
+Barkley L. Hendricks,0.69986427,fineart
 Yoshiyuki Tomino,0.6998095,anime
 Guido Reni,0.6416875,fineart
 Lynd Ward,0.69958556,fineart
@@ -777,7 +777,7 @@ Giovanni Paolo Pannini,0.6802902,fineart
 Carl Barks,0.6923666,cartoon
 Fritz Bultman,0.6318746,fineart
 Salomon van Ruysdael,0.690313,fineart
-Carrie Mae Weems,0.6645416,n
+Carrie Mae Weems,0.6645416,fineart
 Agostino Arrivabene,0.61166185,fineart
 Gustave Boulanger,0.655797,fineart
 Henry Justice Ford,0.51214355,fareast
@@ -821,7 +821,6 @@ Jamie Baldridge,0.6546651,digipa-high-impact
 Max Beckmann,0.6884731,scribbles
 Cornelis van Haarlem,0.6677613,fineart
 Edward Hopper,0.6884258,special
-Barkley Hendricks,0.6883637,n
 Patrick Dougherty,0.688321,digipa-high-impact
 Karol Bak,0.6367705,fineart
 Pierre Puvis de Chavannes,0.6880703,fineart
@@ -886,7 +885,7 @@ Anthony van Dyck,0.6577681,fineart
 Neil Welliver,0.68297863,nudity
 Robert McCall,0.68294585,fineart
 Sandra Chevrier,0.68284667,scribbles
-Yinka Shonibare,0.68256056,n
+Yinka Shonibare,0.68256056,fineart
 Arthur Tress,0.6301861,digipa-high-impact
 Richard McGuire,0.6820089,scribbles
 Anni Albers,0.65708244,digipa-high-impact
@@ -1129,14 +1128,14 @@ Akira Toriyama,0.6635002,anime
 Gregory Crewdson,0.59810174,digipa-high-impact
 Helene Schjerfbeck,0.66333634,fineart
 Antonio Mancini,0.6631618,fineart
-Zanele Muholi,0.58554715,n
+Zanele Muholi,0.58554715,fineart
 Balthasar van der Ast,0.66294503,fineart
 Toei Animations,0.6629127,anime
 Arthur Quartley,0.6628106,fineart
 Diego Rivera,0.6625808,fineart
 Hendrik van Steenwijk II,0.6623777,fineart
 James Tissot,0.6623415,fineart
-Kehinde Wiley,0.66218376,n
+Kehinde Wiley,0.66218376,fineart
 Chiharu Shiota,0.6621249,digipa-high-impact
 George Grosz,0.6620224,fineart
 Peter De Seve,0.6616659,cartoon
@@ -1362,7 +1361,7 @@ Federico Zuccari,0.6425021,fineart
 Mike Mignola,0.642346,cartoon
 Cecily Brown,0.6421981,fineart
 Brian K. Vaughan,0.64147836,cartoon
-RETNA (Marquis Lewis),0.47963,n
+RETNA (Marquis Lewis),0.47963,special
 Klaus Janson,0.64129144,cartoon
 Alessandro Galli Bibiena,0.6412889,fineart
 Jeremy Lipking,0.64123213,fineart
@@ -1381,7 +1380,7 @@ Antonio Galli Bibiena,0.6399247,digipa-high-impact
 Eduard von Grützner,0.6397164,fineart
 Bunny Yeager,0.5455078,digipa-high-impact
 Adolphe Willette,0.6396935,fineart
-Wangechi Mutu,0.6394607,n
+Wangechi Mutu,0.6394607,fineart
 Peter Milligan,0.6391612,digipa-high-impact
 Dalí,0.45400402,digipa-low-impact
 Élisabeth Vigée Le Brun,0.6388982,fineart
@@ -1601,7 +1600,7 @@ Marc Davis,0.61837333,cartoon
 Cerith Wyn Evans,0.61829346,digipa-high-impact
 George Wyllie,0.61829203,fineart
 George Luks,0.6182724,fineart
-William-Adolphe Bouguereau,0.618265,c
+William-Adolphe Bouguereau,0.618265,fineart
 Grigoriy Myasoyedov,0.61801606,fineart
 Hashimoto Gahō,0.61795104,fineart
 Charles Ragland Bunnell,0.61772746,fineart
@@ -1652,7 +1651,7 @@ Ludwig Mies van der Rohe,0.6126692,fineart
 Dali,0.5928694,nudity
 Shinji Aramaki,0.61246127,anime
 Giovanni Fattori,0.59544694,fineart
-Bapu,0.6122084,c
+Bapu,0.6122084,fineart
 Raphael Lacoste,0.5539114,digipa-high-impact
 Scarlett Hooft Graafland,0.6119631,digipa-high-impact
 Rene Laloux,0.61190474,fineart
@@ -1981,14 +1980,14 @@ Arnold Schoenberg,0.56520367,fineart
 Inoue Naohisa,0.5809933,fareast
 Elfriede Lohse-Wächtler,0.58097905,fineart
 Alex Ross,0.42460668,digipa-low-impact
-Robert Irwin,0.58078,c
+Robert Irwin,0.58078,fineart
 Charles Angrand,0.58077514,fineart
 Anne Nasmyth,0.54221964,fineart
 Henri Bellechose,0.5773891,fineart
 De Hirsh Margules,0.58059025,fineart
 Hiromitsu Takahashi,0.5805599,fareast
 Ilya Kuvshinov,0.5805521,special
-Cassius Marcellus Coolidge,0.5805516,c
+Cassius Marcellus Coolidge,0.5805516,fineart
 Dorothy Burroughes,0.5804835,fineart
 Emanuel de Witte,0.58027405,fineart
 George Herbert Baker,0.5799624,digipa-high-impact
@@ -2116,7 +2115,7 @@ Hilda Annetta Walker,0.5675261,digipa-high-impact
 Harvey Pratt,0.51314723,digipa-med-impact
 Jean Bourdichon,0.5670543,fineart
 Noriyoshi Ohrai,0.56690073,fineart
-Kadir Nelson,0.5669006,n
+Kadir Nelson,0.5669006,fineart
 Ilya Ostroukhov,0.5668801,fineart
 Eugène Brands,0.56681967,fineart
 Achille Leonardi,0.56674325,fineart
@@ -2179,7 +2178,7 @@ Auguste Mambour,0.5604873,fineart
 Sean Yoro,0.5601486,digipa-high-impact
 Sheilah Beckett,0.55995446,digipa-high-impact
 Eugene Tertychnyi,0.5598978,fineart
-Dr. Seuss,0.5597466,c
+Dr. Seuss,0.5597466,cartoon
 Adolf Wölfli,0.5372333,digipa-high-impact
 Enrique Tábara,0.559323,fineart
 Dionisio Baixeras Verdaguer,0.5590695,fineart
@@ -2233,7 +2232,7 @@ Francesco Cozza,0.5155097,digipa-med-impact
 Bill Watterson,0.5542879,digipa-high-impact
 Mark Keathley,0.4824056,fineart
 Béni Ferenczy,0.55405354,digipa-high-impact
-Amadou Opa Bathily,0.5536976,n
+Amadou Opa Bathily,0.5536976,fineart
 Giuseppe Antonio Petrini,0.55340284,fineart
 Enzo Cucchi,0.55331933,digipa-high-impact
 Adolf Schrödter,0.55316544,fineart
@@ -2390,7 +2389,7 @@ Bob Byerley,0.5375774,fineart
 A.B. Frost,0.5375025,fineart
 Jaya Suberg,0.5372893,digipa-high-impact
 Josh Keyes,0.53654516,digipa-high-impact
-Juliana Huxtable,0.5364195,n
+Juliana Huxtable,0.5364195,fineart
 Everett Warner,0.53641814,digipa-high-impact
 Hugh Kretschmer,0.45171157,digipa-low-impact
 Arnold Blanch,0.535774,fineart
@@ -2538,7 +2537,7 @@ John Whitcomb,0.51523805,digipa-med-impact
 Dorothy King,0.5150925,digipa-med-impact
 Richard S. Johnson,0.51500344,fineart
 Aniello Falcone,0.51475304,digipa-med-impact
-Henning Jakob Henrik Lund,0.5147134,c
+Henning Jakob Henrik Lund,0.5147134,fineart
 Robert M Cunningham,0.5144858,digipa-med-impact
 Nick Knight,0.51447505,digipa-med-impact
 David Chipperfield,0.51424,digipa-med-impact
@@ -2654,7 +2653,7 @@ Elaine Duillo,0.49474388,digipa-med-impact
 Anne Said,0.49473995,digipa-med-impact
 Istvan Banyai,0.4947369,digipa-med-impact
 Bouchta El Hayani,0.49455142,digipa-med-impact
-Chinwe Chukwuogo-Roy,0.49445248,n
+Chinwe Chukwuogo-Roy,0.49445248,fineart
 George Claessen,0.49412063,digipa-med-impact
 Axel Törneman,0.49401706,digipa-med-impact
 Avigdor Arikha,0.49384058,digipa-med-impact
@@ -2858,7 +2857,7 @@ Abraham Mintchine,0.46088243,digipa-high-impact
 Alexander Carse,0.46078917,digipa-low-impact
 Doc Hammer,0.46075988,digipa-low-impact
 Yuumei,0.46072406,digipa-low-impact
-Teophilus Tetteh,0.46064255,n
+Teophilus Tetteh,0.46064255,fineart
 Bess Hamiti,0.46062252,digipa-low-impact
 Ceferí Olivé,0.46058378,digipa-low-impact
 Enrique Grau,0.46046937,digipa-low-impact
@@ -2955,7 +2954,7 @@ Adam Szentpétery,0.4434548,fineart
 Gene Davis,0.44343877,digipa-low-impact
 Fei Danxu,0.4433627,fareast
 Andrei Kolkoutine,0.44328922,digipa-low-impact
-Bruce Onobrakpeya,0.42588046,n
+Bruce Onobrakpeya,0.42588046,fineart
 Christoph Amberger,0.38912287,digipa-low-impact
 "Fred Mitchell,",0.4432277,digipa-low-impact
 Klaus Burgle,0.44295216,digipa-low-impact
