@@ -1696,7 +1696,9 @@ def create_ui():
 
         if os.path.exists("html/footer.html"):
             with open("html/footer.html", encoding="utf8") as file:
-                gr.HTML(file.read(), elem_id="footer")
+                footer = file.read()
+                footer = footer.format(versions=versions_html())
+                gr.HTML(footer, elem_id="footer")
 
         text_settings = gr.Textbox(elem_id="settings_json", value=lambda: opts.dumpjson(), visible=False)
         settings_submit.click(
@@ -1857,3 +1859,30 @@ def reload_javascript():
 
 if not hasattr(shared, 'GradioTemplateResponseOriginal'):
     shared.GradioTemplateResponseOriginal = gradio.routes.templates.TemplateResponse
+
+
+def versions_html():
+    import torch
+    import launch
+
+    python_version = ".".join([str(x) for x in sys.version_info[0:3]])
+    commit = launch.commit_hash()
+    short_commit = commit[0:8]
+
+    if shared.xformers_available:
+        import xformers
+        xformers_version = xformers.__version__
+    else:
+        xformers_version = "N/A"
+
+    return f"""
+python: <span title="{sys.version}">{python_version}</span>
+ • 
+torch: {torch.__version__}
+ • 
+xformers: {xformers_version}
+ • 
+gradio: {gr.__version__}
+ • 
+commit: <a href="https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/{commit}">{short_commit}</a>
+"""

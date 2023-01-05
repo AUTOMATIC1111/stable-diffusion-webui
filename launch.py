@@ -13,6 +13,21 @@ dir_extensions = "extensions"
 python = sys.executable
 git = os.environ.get('GIT', "git")
 index_url = os.environ.get('INDEX_URL', "")
+stored_commit_hash = None
+
+
+def commit_hash():
+    global stored_commit_hash
+
+    if stored_commit_hash is not None:
+        return stored_commit_hash
+
+    try:
+        stored_commit_hash = run(f"{git} rev-parse HEAD").strip()
+    except Exception:
+        stored_commit_hash = "<none>"
+
+    return stored_commit_hash
 
 
 def extract_arg(args, name):
@@ -194,10 +209,7 @@ def prepare_environment():
     xformers = '--xformers' in sys.argv
     ngrok = '--ngrok' in sys.argv
 
-    try:
-        commit = run(f"{git} rev-parse HEAD").strip()
-    except Exception:
-        commit = "<none>"
+    commit = commit_hash()
 
     print(f"Python {sys.version}")
     print(f"Commit hash: {commit}")
