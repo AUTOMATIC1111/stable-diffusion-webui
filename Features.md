@@ -102,13 +102,13 @@ The masked content field determines content is placed to put into the masked reg
 |-------------------------------------------------|-------------------------------------------------|-----------------------------------------------------|---------------------------------------------------------|-----------------------------------------------------------|
 | ![](images/inpainting-initial-content-mask.png) | ![](images/inpainting-initial-content-fill.png) | ![](images/inpainting-initial-content-original.png) | ![](images/inpainting-initial-content-latent-noise.png) | ![](images/inpainting-initial-content-latent-nothing.png) |
 
-## Inpaint at full resolution
-Normally, inpainting resizes the image to the target resolution specified in the UI. With Inpaint at full resolution
+## Inpaint area
+Normally, inpainting resizes the image to the target resolution specified in the UI. With `Inpaint area: Only masked`
 enabled, only the masked region is resized, and after processing it is pasted back to the original picture.
-This allows you to work with large pictures and allows you to render the inpainted object at a much larger resolution.
+This allows you to work with large pictures and render the inpainted object at a much larger resolution.
 
 
-| Input                               | Inpaint normal                   | Inpaint at whole resolution       |
+| Input                               | Inpaint area: Whole picture                   | Inpaint area: Only masked       |
 |-------------------------------------|----------------------------------|-----------------------------------|
 | ![](images/inpaint-whole-mask.png)  | ![](images/inpaint-whole-no.png) | ![](images/inpaint-whole-yes.png) |
 
