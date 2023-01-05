@@ -451,3 +451,8 @@ class Script(scripts.Script):
 
         return Processed(p, proc.images, p.seed, "")
 ```
+
+## Model Converter
+https://github.com/Akegarasu/sd-webui-model-converter
+
+Model convert script, supports convert fp16/bf16 no-ema/ema-only safetensors.
