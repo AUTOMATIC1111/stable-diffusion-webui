@@ -97,8 +97,9 @@ sampler_extra_params = {
 
 def setup_img2img_steps(p, steps=None):
     if opts.img2img_fix_steps or steps is not None:
-        steps = int((steps or p.steps) / min(p.denoising_strength, 0.999)) if p.denoising_strength > 0 else 0
-        t_enc = p.steps - 1
+        requested_steps = (steps or p.steps)
+        steps = int(requested_steps / min(p.denoising_strength, 0.999)) if p.denoising_strength > 0 else 0
+        t_enc = requested_steps - 1
     else:
         steps = p.steps
         t_enc = int(min(p.denoising_strength, 0.999) * steps)
@@ -462,6 +463,13 @@ class KDiffusionSampler:
         return extra_params_kwargs
 
     def get_sigmas(self, p, steps):
+        discard_next_to_last_sigma = self.config is not None and self.config.options.get('discard_next_to_last_sigma', False)
+        if opts.always_discard_next_to_last_sigma and not discard_next_to_last_sigma:
+            discard_next_to_last_sigma = True
+            p.extra_generation_params["Discard penultimate sigma"] = True
+
+        steps += 1 if discard_next_to_last_sigma else 0
+
         if p.sampler_noise_scheduler_override:
             sigmas = p.sampler_noise_scheduler_override(steps)
         elif self.config is not None and self.config.options.get('scheduler', None) == 'karras':
@@ -471,7 +479,7 @@ class KDiffusionSampler:
         else:
             sigmas = self.model_wrap.get_sigmas(steps)
 
-        if self.config is not None and self.config.options.get('discard_next_to_last_sigma', False):
+        if discard_next_to_last_sigma:
             sigmas = torch.cat([sigmas[:-2], sigmas[-1:]])
 
         return sigmas

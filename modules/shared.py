@@ -153,6 +153,7 @@ class State:
     job = ""
     job_no = 0
     job_count = 0
+    processing_has_refined_job_count = False
     job_timestamp = '0'
     sampling_step = 0
     sampling_steps = 0
@@ -194,6 +195,7 @@ class State:
     def begin(self):
         self.sampling_step = 0
         self.job_count = -1
+        self.processing_has_refined_job_count = False
         self.job_no = 0
         self.job_timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
         self.current_latent = None
@@ -440,6 +442,7 @@ options_templates.update(options_section(('sampler-params', "Sampler parameters"
     's_tmin':  OptionInfo(0.0, "sigma tmin",  gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     's_noise': OptionInfo(1.0, "sigma noise", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     'eta_noise_seed_delta': OptionInfo(0, "Eta noise seed delta", gr.Number, {"precision": 0}),
+    'always_discard_next_to_last_sigma': OptionInfo(False, "Always discard next-to-last sigma"),
 }))
 
 options_templates.update(options_section((None, "Hidden options"), {
@@ -608,7 +611,7 @@ class TotalTQDM:
             return
         if self._tqdm is None:
             self.reset()
-        self._tqdm.total=new_total
+        self._tqdm.total = new_total
 
     def clear(self):
         if self._tqdm is not None:

@@ -560,7 +560,7 @@ Requested path was: {f}
             generation_info = None
             with gr.Column():
                 with gr.Row(elem_id=f"image_buttons_{tabname}"):
-                    open_folder_button = gr.Button(folder_symbol, elem_id="hidden_element" if shared.cmd_opts.hide_ui_dir_config else 'open_folder')
+                    open_folder_button = gr.Button(folder_symbol, elem_id="hidden_element" if shared.cmd_opts.hide_ui_dir_config else f'open_folder_{tabname}')
 
                     if tabname != "extras":
                         save = gr.Button('Save', elem_id=f'save_{tabname}')
@@ -576,13 +576,13 @@ Requested path was: {f}
 
                 if tabname != "extras":
                     with gr.Row():
-                        download_files = gr.File(None, file_count="multiple", interactive=False, show_label=False, visible=False)
+                        download_files = gr.File(None, file_count="multiple", interactive=False, show_label=False, visible=False, elem_id=f'download_files_{tabname}')
 
                     with gr.Group():
-                        html_info = gr.HTML()
-                        html_log = gr.HTML()
+                        html_info = gr.HTML(elem_id=f'html_info_{tabname}')
+                        html_log = gr.HTML(elem_id=f'html_log_{tabname}')
 
-                        generation_info = gr.Textbox(visible=False)
+                        generation_info = gr.Textbox(visible=False, elem_id=f'generation_info_{tabname}')
                         if tabname == 'txt2img' or tabname == 'img2img':
                             generation_info_button = gr.Button(visible=False, elem_id=f"{tabname}_generation_info_button")
                             generation_info_button.click(
@@ -624,9 +624,9 @@ Requested path was: {f}
                         )
 
                 else:
-                    html_info_x = gr.HTML()
-                    html_info = gr.HTML()
-                    html_log = gr.HTML()
+                    html_info_x = gr.HTML(elem_id=f'html_info_x_{tabname}')
+                    html_info = gr.HTML(elem_id=f'html_info_{tabname}')
+                    html_log = gr.HTML(elem_id=f'html_log_{tabname}')
 
                 parameters_copypaste.bind_buttons(buttons, result_gallery, "txt2img" if tabname == "txt2img" else None)
                 return result_gallery, generation_info if tabname != "extras" else html_info_x, html_info, html_log
@@ -1696,7 +1696,9 @@ def create_ui():
 
         if os.path.exists("html/footer.html"):
             with open("html/footer.html", encoding="utf8") as file:
-                gr.HTML(file.read(), elem_id="footer")
+                footer = file.read()
+                footer = footer.format(versions=versions_html())
+                gr.HTML(footer, elem_id="footer")
 
         text_settings = gr.Textbox(elem_id="settings_json", value=lambda: opts.dumpjson(), visible=False)
         settings_submit.click(
@@ -1857,3 +1859,30 @@ def reload_javascript():
 
 if not hasattr(shared, 'GradioTemplateResponseOriginal'):
     shared.GradioTemplateResponseOriginal = gradio.routes.templates.TemplateResponse
+
+
+def versions_html():
+    import torch
+    import launch
+
+    python_version = ".".join([str(x) for x in sys.version_info[0:3]])
+    commit = launch.commit_hash()
+    short_commit = commit[0:8]
+
+    if shared.xformers_available:
+        import xformers
+        xformers_version = xformers.__version__
+    else:
+        xformers_version = "N/A"
+
+    return f"""
+python: <span title="{sys.version}">{python_version}</span>
+ • 
+torch: {torch.__version__}
+ • 
+xformers: {xformers_version}
+ • 
+gradio: {gr.__version__}
+ • 
+commit: <a href="https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/{commit}">{short_commit}</a>
+"""
