@@ -326,6 +326,12 @@
 			"description": "Add the image's number to its picture in the grid.",
 			"tags": ["script"]
 		},
+                {
+			"name": "Model Converter",
+			"url": "https://github.com/Akegarasu/sd-webui-model-converter",
+			"description": "Convert models to fp16/bf16 no-ema/ema-only safetensors.",
+			"tags": ["script", "tab"]
+		},
 		{
 			"name": "zh_CN Localization",
 			"url": "https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN",
