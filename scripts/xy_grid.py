@@ -290,21 +290,25 @@ class Script(scripts.Script):
     def title(self):
         return "X/Y plot"
 
+    def elem_id(self, item_id):
+        gen_elem_id = ('img2img' if self.is_img2img else 'txt2txt') + '_script_' + re.sub(r'\s', '_', self.title().lower()) + '_' + item_id
+        gen_elem_id = re.sub(r'[^a-z_0-9]', '', gen_elem_id)
+        return gen_elem_id
+
     def ui(self, is_img2img):
         current_axis_options = [x for x in axis_options if type(x) == AxisOption or type(x) == AxisOptionImg2Img and is_img2img]
-        elem_prefix = ('img2img' if is_img2img else 'txt2txt') + '_script_xy_grid_'
 
         with gr.Row():
-            x_type = gr.Dropdown(label="X type", choices=[x.label for x in current_axis_options], value=current_axis_options[1].label, type="index", elem_id=elem_prefix + "x_type")
-            x_values = gr.Textbox(label="X values", lines=1, elem_id=elem_prefix + "x_values")
+            x_type = gr.Dropdown(label="X type", choices=[x.label for x in current_axis_options], value=current_axis_options[1].label, type="index", elem_id=self.elem_id("x_type"))
+            x_values = gr.Textbox(label="X values", lines=1, elem_id=self.elem_id("x_values"))
 
         with gr.Row():
-            y_type = gr.Dropdown(label="Y type", choices=[x.label for x in current_axis_options], value=current_axis_options[0].label, type="index", elem_id=elem_prefix + "y_type")
-            y_values = gr.Textbox(label="Y values", lines=1, elem_id=elem_prefix + "y_values")
+            y_type = gr.Dropdown(label="Y type", choices=[x.label for x in current_axis_options], value=current_axis_options[0].label, type="index", elem_id=self.elem_id("y_type"))
+            y_values = gr.Textbox(label="Y values", lines=1, elem_id=self.elem_id("y_values"))
         
-        draw_legend = gr.Checkbox(label='Draw legend', value=True, elem_id=elem_prefix + "draw_legend")
-        include_lone_images = gr.Checkbox(label='Include Separate Images', value=False, elem_id=elem_prefix + "include_lone_images")
-        no_fixed_seeds = gr.Checkbox(label='Keep -1 for seeds', value=False, elem_id=elem_prefix + "no_fixed_seeds")
+        draw_legend = gr.Checkbox(label='Draw legend', value=True, elem_id=self.elem_id("draw_legend"))
+        include_lone_images = gr.Checkbox(label='Include Separate Images', value=False, elem_id=self.elem_id("include_lone_images"))
+        no_fixed_seeds = gr.Checkbox(label='Keep -1 for seeds', value=False, elem_id=self.elem_id("no_fixed_seeds"))
 
         return [x_type, x_values, y_type, y_values, draw_legend, include_lone_images, no_fixed_seeds]
 

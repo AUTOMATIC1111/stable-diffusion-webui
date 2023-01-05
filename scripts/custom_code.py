@@ -3,20 +3,23 @@ import gradio as gr
 
 from modules.processing import Processed
 from modules.shared import opts, cmd_opts, state
+import re
 
 class Script(scripts.Script):
 
     def title(self):
         return "Custom code"
 
+    def elem_id(self, item_id):
+        gen_elem_id = ('img2img' if self.is_img2img else 'txt2txt') + '_script_' + re.sub(r'\s', '_', self.title().lower()) + '_' + item_id
+        gen_elem_id = re.sub(r'[^a-z_0-9]', '', gen_elem_id)
+        return gen_elem_id
 
     def show(self, is_img2img):
         return cmd_opts.allow_code
 
     def ui(self, is_img2img):
-        elem_prefix = ('img2img' if is_img2img else 'txt2txt') + '_script_custom_code_'
-        
-        code = gr.Textbox(label="Python code", lines=1, elem_id=elem_prefix + "code")
+        code = gr.Textbox(label="Python code", lines=1, elem_id=self.elem_id("code"))
 
         return [code]
 

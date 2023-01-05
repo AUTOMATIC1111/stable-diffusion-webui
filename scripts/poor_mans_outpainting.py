@@ -7,12 +7,17 @@ from PIL import Image, ImageDraw
 from modules import images, processing, devices
 from modules.processing import Processed, process_images
 from modules.shared import opts, cmd_opts, state
-
+import re
 
 
 class Script(scripts.Script):
     def title(self):
         return "Poor man's outpainting"
+
+    def elem_id(self, item_id):
+        gen_elem_id = ('img2img' if self.is_img2img else 'txt2txt') + '_script_' + re.sub(r'\s', '_', self.title().lower()) + '_' + item_id
+        gen_elem_id = re.sub(r'[^a-z_0-9]', '', gen_elem_id)
+        return gen_elem_id
 
     def show(self, is_img2img):
         return is_img2img
@@ -20,13 +25,11 @@ class Script(scripts.Script):
     def ui(self, is_img2img):
         if not is_img2img:
             return None
-
-        elem_prefix = 'script_poor_mans_outpainting_'
         
-        pixels = gr.Slider(label="Pixels to expand", minimum=8, maximum=256, step=8, value=128, elem_id=elem_prefix + "pixels")
-        mask_blur = gr.Slider(label='Mask blur', minimum=0, maximum=64, step=1, value=4, elem_id=elem_prefix + "mask_blur")
-        inpainting_fill = gr.Radio(label='Masked content', choices=['fill', 'original', 'latent noise', 'latent nothing'], value='fill', type="index", elem_id=elem_prefix + "inpainting_fill")
-        direction = gr.CheckboxGroup(label="Outpainting direction", choices=['left', 'right', 'up', 'down'], value=['left', 'right', 'up', 'down'], elem_id=elem_prefix + "direction")
+        pixels = gr.Slider(label="Pixels to expand", minimum=8, maximum=256, step=8, value=128, elem_id=self.elem_id("pixels"))
+        mask_blur = gr.Slider(label='Mask blur', minimum=0, maximum=64, step=1, value=4, elem_id=self.elem_id("mask_blur"))
+        inpainting_fill = gr.Radio(label='Masked content', choices=['fill', 'original', 'latent noise', 'latent nothing'], value='fill', type="index", elem_id=self.elem_id("inpainting_fill"))
+        direction = gr.CheckboxGroup(label="Outpainting direction", choices=['left', 'right', 'up', 'down'], value=['left', 'right', 'up', 'down'], elem_id=self.elem_id("direction"))
 
         return [pixels, mask_blur, inpainting_fill, direction]
 

@@ -16,6 +16,7 @@ import k_diffusion as K
 from PIL import Image
 from torch import autocast
 from einops import rearrange, repeat
+import re
 
 
 def find_noise_for_image(p, cond, uncond, cfg_scale, steps):
@@ -122,30 +123,33 @@ class Script(scripts.Script):
     def title(self):
         return "img2img alternative test"
 
+    def elem_id(self, item_id):
+        gen_elem_id = ('img2img' if self.is_img2img else 'txt2txt') + '_script_' + re.sub(r'\s', '_', self.title().lower()) + '_' + item_id
+        gen_elem_id = re.sub(r'[^a-z_0-9]', '', gen_elem_id)
+        return gen_elem_id
+
     def show(self, is_img2img):
         return is_img2img
 
-    def ui(self, is_img2img):
-        elem_prefix = 'script_i2i_alternative_test_'
-        
+    def ui(self, is_img2img):     
         info = gr.Markdown('''
         * `CFG Scale` should be 2 or lower.
         ''')
 
-        override_sampler = gr.Checkbox(label="Override `Sampling method` to Euler?(this method is built for it)", value=True, elem_id=elem_prefix + "override_sampler")
+        override_sampler = gr.Checkbox(label="Override `Sampling method` to Euler?(this method is built for it)", value=True, elem_id=self.elem_id("override_sampler"))
 
-        override_prompt = gr.Checkbox(label="Override `prompt` to the same value as `original prompt`?(and `negative prompt`)", value=True, elem_id=elem_prefix + "override_prompt")
-        original_prompt = gr.Textbox(label="Original prompt", lines=1, elem_id=elem_prefix + "original_prompt")
-        original_negative_prompt = gr.Textbox(label="Original negative prompt", lines=1, elem_id=elem_prefix + "original_negative_prompt")
+        override_prompt = gr.Checkbox(label="Override `prompt` to the same value as `original prompt`?(and `negative prompt`)", value=True, elem_id=self.elem_id("override_prompt"))
+        original_prompt = gr.Textbox(label="Original prompt", lines=1, elem_id=self.elem_id("original_prompt"))
+        original_negative_prompt = gr.Textbox(label="Original negative prompt", lines=1, elem_id=self.elem_id("original_negative_prompt"))
 
-        override_steps = gr.Checkbox(label="Override `Sampling Steps` to the same value as `Decode steps`?", value=True, elem_id=elem_prefix + "override_steps")
-        st = gr.Slider(label="Decode steps", minimum=1, maximum=150, step=1, value=50, elem_id=elem_prefix + "st")
+        override_steps = gr.Checkbox(label="Override `Sampling Steps` to the same value as `Decode steps`?", value=True, elem_id=self.elem_id("override_steps"))
+        st = gr.Slider(label="Decode steps", minimum=1, maximum=150, step=1, value=50, elem_id=self.elem_id("st"))
 
-        override_strength = gr.Checkbox(label="Override `Denoising strength` to 1?", value=True, elem_id=elem_prefix + "override_strength")
+        override_strength = gr.Checkbox(label="Override `Denoising strength` to 1?", value=True, elem_id=self.elem_id("override_strength"))
 
-        cfg = gr.Slider(label="Decode CFG scale", minimum=0.0, maximum=15.0, step=0.1, value=1.0, elem_id=elem_prefix + "cfg")
-        randomness = gr.Slider(label="Randomness", minimum=0.0, maximum=1.0, step=0.01, value=0.0, elem_id=elem_prefix + "randomness")
-        sigma_adjustment = gr.Checkbox(label="Sigma adjustment for finding noise for image", value=False, elem_id=elem_prefix + "sigma_adjustment")
+        cfg = gr.Slider(label="Decode CFG scale", minimum=0.0, maximum=15.0, step=0.1, value=1.0, elem_id=self.elem_id("cfg"))
+        randomness = gr.Slider(label="Randomness", minimum=0.0, maximum=1.0, step=0.01, value=0.0, elem_id=self.elem_id("randomness"))
+        sigma_adjustment = gr.Checkbox(label="Sigma adjustment for finding noise for image", value=False, elem_id=self.elem_id("sigma_adjustment"))
 
         return [
             info, 

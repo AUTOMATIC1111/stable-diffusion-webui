@@ -8,19 +8,24 @@ from modules import processing, shared, sd_samplers, images
 from modules.processing import Processed
 from modules.sd_samplers import samplers
 from modules.shared import opts, cmd_opts, state
+import re
+
 
 class Script(scripts.Script):
     def title(self):
         return "Loopback"
 
+    def elem_id(self, item_id):
+        gen_elem_id = ('img2img' if self.is_img2img else 'txt2txt') + '_script_' + re.sub(r'\s', '_', self.title().lower()) + '_' + item_id
+        gen_elem_id = re.sub(r'[^a-z_0-9]', '', gen_elem_id)
+        return gen_elem_id
+
     def show(self, is_img2img):
         return is_img2img
 
-    def ui(self, is_img2img):
-        elem_prefix = 'script_loopback_'
-        
-        loops = gr.Slider(minimum=1, maximum=32, step=1, label='Loops', value=4, elem_id=elem_prefix + "loops")
-        denoising_strength_change_factor = gr.Slider(minimum=0.9, maximum=1.1, step=0.01, label='Denoising strength change factor', value=1, elem_id=elem_prefix + "denoising_strength_change_factor")
+    def ui(self, is_img2img):        
+        loops = gr.Slider(minimum=1, maximum=32, step=1, label='Loops', value=4, elem_id=self.elem_id("loops"))
+        denoising_strength_change_factor = gr.Slider(minimum=0.9, maximum=1.1, step=0.01, label='Denoising strength change factor', value=1, elem_id=self.elem_id("denoising_strength_change_factor"))
 
         return [loops, denoising_strength_change_factor]
 
