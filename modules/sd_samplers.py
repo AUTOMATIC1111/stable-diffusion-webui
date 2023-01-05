@@ -463,6 +463,9 @@ class KDiffusionSampler:
         return extra_params_kwargs
 
     def get_sigmas(self, p, steps):
+        disc = opts.always_discard_next_to_last_sigma or (self.config is not None and self.config.options.get('discard_next_to_last_sigma', False))
+        steps += 1 if disc else 0
+
         if p.sampler_noise_scheduler_override:
             sigmas = p.sampler_noise_scheduler_override(steps)
         elif self.config is not None and self.config.options.get('scheduler', None) == 'karras':
@@ -472,7 +475,7 @@ class KDiffusionSampler:
         else:
             sigmas = self.model_wrap.get_sigmas(steps)
 
-        if self.config is not None and self.config.options.get('discard_next_to_last_sigma', False):
+        if disc:
             sigmas = torch.cat([sigmas[:-2], sigmas[-1:]])
 
         return sigmas
