@@ -8,7 +8,7 @@ Here's how old and new settings correspond to each other:
 | Size: 1024x1024                           | Size: 512x512, Hires upscale: 2.0                                                               |
 | Size: 1280x1024, First pass size: 640x512 | Size: 640x512, Hires upscale: 2.0; Alternatively Size: 640x512, Hires resize: 1280x1024                                                               |
 | Size: 1024x1280, First pass size: 0x0     | Size: 512x576 (auto-calcualted if you use old infotext - paste it into prompt and use ↙️ button), Hires upscale: 2.0                     |
-| Size: 1024x512, First pass size: 512x512  | Size: 512x512, Hires resize: 1280x1024 |
+| Size: 1024x512, First pass size: 512x512  | Size: 512x512, Hires resize: 1024x512 |
 
 # 2023-01-01 - Karras sigma min/max
 Some of discussion is here: [PR](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/4373)
