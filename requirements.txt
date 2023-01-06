@@ -32,3 +32,4 @@ torch
 torchdiffeq
 torchsde
 transformers
+filetype
