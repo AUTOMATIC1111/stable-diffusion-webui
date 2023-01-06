@@ -290,7 +290,6 @@ class ScriptRunner:
             script.group = group
 
         dropdown = gr.Dropdown(label="Script", elem_id="script_list", choices=["None"] + self.titles, value="None", type="index")
-        dropdown.save_to_config = True
         inputs[0] = dropdown
 
         for script in self.selectable_scripts:
