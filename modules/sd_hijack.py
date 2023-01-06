@@ -50,7 +50,7 @@ def apply_optimizations():
         print("Applying v1 cross attention optimization.")
         ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.split_cross_attention_forward_v1
         optimization_method = 'V1'
-    elif not cmd_opts.disable_opt_split_attention and (cmd_opts.opt_split_attention_invokeai or not torch.cuda.is_available()):
+    elif not cmd_opts.disable_opt_split_attention and (cmd_opts.opt_split_attention_invokeai or not cmd_opts.opt_split_attention and not torch.cuda.is_available()):
         print("Applying cross attention optimization (InvokeAI).")
         ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.split_cross_attention_forward_invokeAI
         optimization_method = 'InvokeAI'
