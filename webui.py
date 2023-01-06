@@ -187,12 +187,14 @@ def webui():
 
         sd_samplers.set_samplers()
 
+        modules.script_callbacks.script_unloaded_callback()
         extensions.list_extensions()
 
         localization.list_localizations(cmd_opts.localizations_dir)
 
         modelloader.forbid_loaded_nonbuiltin_upscalers()
         modules.scripts.reload_scripts()
+        modules.script_callbacks.model_loaded_callback(shared.sd_model)
         modelloader.load_upscalers()
 
         for module in [module for name, module in sys.modules.items() if name.startswith("modules.ui")]:
