@@ -332,6 +332,12 @@
 			"description": "Convert models to fp16/bf16 no-ema/ema-only safetensors.",
 			"tags": ["script", "tab"]
 		},
+                {
+			"name": "Kohya-ss Additional Networks",
+			"url": "https://github.com/kohya-ss/sd-webui-additional-networks.git",
+			"description": "Allows the Web UI to use networks (LoRA) trained by their scripts to generate images.",
+			"tags": ["script"]
+		},
 		{
 			"name": "zh_CN Localization",
 			"url": "https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN",
