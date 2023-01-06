@@ -216,6 +216,7 @@ def split_cross_attention_forward_invokeAI(self, x, context=None, mask=None):
 
 
 # Based on Birch-san's modified implementation of sub-quadratic attention from https://github.com/Birch-san/diffusers/pull/1
+# The sub_quad_attention_forward function is under the MIT License listed under Memory Efficient Attention in the Licenses section of the web UI interface
 def sub_quad_attention_forward(self, x, context=None, mask=None):
     assert mask is None, "attention-mask not currently implemented for SubQuadraticCrossAttnProcessor."
 
