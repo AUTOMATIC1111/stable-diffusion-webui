@@ -1,14 +1,25 @@
+# defaults
 __pycache__
+/params.txt
+
+# all models
 *.ckpt
 *.safetensors
 *.pth
 *.pt
 *.bin
-/params.txt
 
-/repositories/*
-/embeddings/*
-/extensions/*
-/outputs/*
+# all dynamic stuff
+/repositories/**/*
+/extensions/**/*
+/outputs/**/*
 /models/**/*
+/train/log/**/*
 /tmp
+
+# unexcluded so folders get created
+!/repositories/.placeholder
+!/extensions/.placeholder
+!/outputs/.placeholder
+!/models/.placeholder
+!/localizations/.placeholder
