@@ -28,13 +28,15 @@ function Start-Venv {
     if (Test-Path -Path "$VENV_DIR\Scripts\$python") {
         Activate-Venv
     } else {
-        $PYTHON_FULLNAME = & $PYTHON -c "import sys; print(sys.executable)"
-        Write-Output "Creating venv in directory $VENV_DIR using python $PYTHON_FULLNAME"
-        Invoke-Expression "$PYTHON_FULLNAME -m venv $VENV_DIR > tmp/stdout.txt 2> tmp/stderr.txt"
-        if ($LASTEXITCODE -eq 0) {
-            Activate-Venv
-        } else {
+		$global:LASTEXITCODE = 0
+		try {
+			$PYTHON_FULLNAME = & $PYTHON -c "import sys; print(sys.executable)"
+			Write-Output "Creating venv in directory $VENV_DIR using $PYTHON_FULLNAME"
+			Invoke-Expression "& '$PYTHON_FULLNAME' -m venv $VENV_DIR"
+			Activate-Venv
+		} Catch {
             Write-Output "Unable to create venv in directory $VENV_DIR"
+			Write-Output $_
         }
     }
 }
