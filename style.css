@@ -555,7 +555,7 @@ img2maskimg, #img2maskimg > .h-60, #img2maskimg > .h-60 > div, #img2maskimg > .h
 
 /* Extensions */
 
-#tab_extensions table{
+#tab_extensions table``{
     border-collapse: collapse;
 }
 
@@ -579,6 +579,15 @@ img2maskimg, #img2maskimg > .h-60, #img2maskimg > .h-60 > div, #img2maskimg > .h
 .extension-tag{
     font-weight: bold;
     font-size: 95%;
+}
+
+#available_extensions .info{
+    margin: 0;
+}
+
+#available_extensions .date_added{
+    opacity: 0.85;
+    font-size: 90%;
 }
 
 #image_buttons_txt2img button, #image_buttons_img2img button, #image_buttons_extras button{

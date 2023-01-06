@@ -550,6 +550,8 @@ Requested path was: {f}
                 os.startfile(path)
             elif platform.system() == "Darwin":
                 sp.Popen(["open", path])
+            elif "microsoft-standard-WSL2" in platform.uname().release:
+                sp.Popen(["wsl-open", path])
             else:
                 sp.Popen(["xdg-open", path])
 
