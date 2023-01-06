@@ -96,6 +96,7 @@
 			"name": "training-picker",
 			"url": "https://github.com/Maurdekye/training-picker",
 			"description": "Adds a tab to the webui that allows the user to automatically extract keyframes from video, and manually extract 512x512 crops of those frames for use in model training.",
+			"added": "2022-11-06",
 			"tags": ["script"]
 		},
 		{
