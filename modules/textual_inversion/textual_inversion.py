@@ -18,6 +18,8 @@ from modules.textual_inversion.learn_schedule import LearnRateScheduler
 from modules.textual_inversion.image_embedding import (embedding_to_b64, embedding_from_b64,
                                                        insert_image_data_embed, extract_image_data_embed,
                                                        caption_image_overlay)
+from modules.textual_inversion.logging import save_settings_to_file
+
 
 class Embedding:
     def __init__(self, vec, name, step=None):
@@ -231,25 +233,6 @@ def write_loss(log_directory, filename, step, epoch_len, values):
             **values,
         })
 
-# Note: hypernetwork.py has a nearly identical function of the same name. 
-def save_settings_to_file(model_name, model_hash, initial_step, num_of_dataset_images, embedding_name, vectors_per_token, learn_rate, batch_size, data_root, log_directory, training_width, training_height, steps, create_image_every, save_embedding_every, template_file, save_image_with_stored_embedding, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height):
-    # Starting index of preview-related arguments.
-    border_index = 18
-    # Get a list of the argument names.
-    arg_names = inspect.getfullargspec(save_settings_to_file).args    
-    # Create a list of the argument names to include in the settings string.
-    names = arg_names[:border_index]  # Include all arguments up until the preview-related ones.
-    if preview_from_txt2img:
-        names.extend(arg_names[border_index:])  # Include preview-related arguments if applicable.
-    # Build the settings string.
-    settings_str = "datetime : " + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + "\n"
-    for name in names:
-        if name != 'log_directory': # It's useless and redundant to save log_directory.
-            value = locals()[name]
-            settings_str += f"{name}: {value}\n"
-    # Create or append to the file.
-    with open(os.path.join(log_directory, 'settings.txt'), "a+") as fout:
-        fout.write(settings_str + "\n\n")
 
 def validate_train_inputs(model_name, learn_rate, batch_size, gradient_step, data_root, template_file, steps, save_model_every, create_image_every, log_directory, name="embedding"):
     assert model_name, f"{name} not selected"
@@ -330,7 +313,7 @@ def train_embedding(embedding_name, learn_rate, batch_size, gradient_step, data_
     ds = modules.textual_inversion.dataset.PersonalizedBase(data_root=data_root, width=training_width, height=training_height, repeats=shared.opts.training_image_repeats_per_epoch, placeholder_token=embedding_name, model=shared.sd_model, cond_model=shared.sd_model.cond_stage_model, device=devices.device, template_file=template_file, batch_size=batch_size, gradient_step=gradient_step, shuffle_tags=shuffle_tags, tag_drop_out=tag_drop_out, latent_sampling_method=latent_sampling_method)
 
     if shared.opts.save_training_settings_to_txt:
-            save_settings_to_file(checkpoint.model_name, '[{}]'.format(checkpoint.hash), initial_step, len(ds), embedding_name, len(embedding.vec), learn_rate, batch_size, data_root, log_directory, training_width, training_height, steps, create_image_every, save_embedding_every, template_file, save_image_with_stored_embedding, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height)
+        save_settings_to_file(log_directory, {**dict(model_name=checkpoint.model_name, model_hash=checkpoint.hash, num_of_dataset_images=len(ds), num_vectors_per_token=len(embedding.vec)), **locals()})
 
     latent_sampling_method = ds.latent_sampling_method
 
