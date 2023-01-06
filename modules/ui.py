@@ -260,7 +260,7 @@ def calc_resolution_hires(x, y, scale):
     scaled_x = int(x * scale // 8) * 8
     scaled_y = int(y * scale // 8) * 8
     
-    return "<p style='margin: -1em 0em 0.7em 1.35em'>Upscaled Resolution: "+str(scaled_x)+"x"+str(scaled_y)+"</p>"
+    return "<p style='margin: -1em 0em 0.7em 1.35em'>Upscaled resolution: "+str(scaled_x)+"x"+str(scaled_y)+"</p>"
 
 def apply_styles(prompt, prompt_neg, style1_name, style2_name):
     prompt = shared.prompt_styles.apply_styles_to_prompt(prompt, [style1_name, style2_name])
