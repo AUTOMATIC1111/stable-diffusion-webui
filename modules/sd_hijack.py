@@ -6,7 +6,7 @@ from modules import devices, sd_hijack_optimizations, shared, sd_hijack_checkpoi
 from modules.hypernetworks import hypernetwork
 from modules.shared import cmd_opts
 from modules import sd_hijack_clip, sd_hijack_open_clip, sd_hijack_unet, sd_hijack_xlmr, xlmr
-
+torch.backends.cuda.matmul.allow_tf32 = True
 from modules.sd_hijack_optimizations import invokeAI_mps_available
 
 import ldm.modules.attention
