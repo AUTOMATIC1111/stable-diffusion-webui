@@ -1343,6 +1343,7 @@ def create_ui():
                     template_file = gr.Textbox(label='Prompt template file', value=os.path.join(script_path, "textual_inversion_templates", "style_filewords.txt"), elem_id="train_template_file")
                     training_width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="train_training_width")
                     training_height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="train_training_height")
+                    varsize = gr.Checkbox(label="Ignore dimension settings and do not resize images", value=False, elem_id="train_varsize")
                     steps = gr.Number(label='Max steps', value=100000, precision=0, elem_id="train_steps")
 
                     with FormRow():
@@ -1449,6 +1450,7 @@ def create_ui():
                 log_directory,
                 training_width,
                 training_height,
+                varsize,
                 steps,
                 clip_grad_mode,
                 clip_grad_value,
@@ -1480,6 +1482,7 @@ def create_ui():
                 log_directory,
                 training_width,
                 training_height,
+                varsize,
                 steps,
                 clip_grad_mode,
                 clip_grad_value,
