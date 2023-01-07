@@ -827,7 +827,7 @@ def create_ui():
     modules.scripts.scripts_img2img.initialize_scripts(is_img2img=True)
 
     with gr.Blocks(analytics_enabled=False) as img2img_interface:
-        img2img_prompt, img2img_prompt_style, img2img_negative_prompt, img2img_prompt_style2, submit, img2img_interrogate, img2img_deepbooru, img2img_prompt_style_apply, img2img_refresh_style, img2img_save_style, img2img_paste,token_counter, token_button = create_toprow(is_img2img=True)
+        img2img_prompt, img2img_prompt_style, img2img_negative_prompt, img2img_prompt_style2, submit, img2img_interrogate, img2img_deepbooru, img2img_prompt_style_apply, img2img_save_style, img2img_refresh_style, img2img_paste,token_counter, token_button = create_toprow(is_img2img=True)
 
         with gr.Row(elem_id='img2img_progress_row'):
             img2img_prompt_img = gr.File(label="", elem_id="img2img_prompt_image", file_count="single", type="bytes", visible=False)
