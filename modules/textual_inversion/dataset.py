@@ -46,6 +46,8 @@ class PersonalizedBase(Dataset):
         assert data_root, 'dataset directory not specified'
         assert os.path.isdir(data_root), "Dataset directory doesn't exist"
         assert os.listdir(data_root), "Dataset directory is empty"
+        if varsize:
+            assert batch_size == 1, 'variable img size must have batch size 1'
 
         self.image_paths = [os.path.join(data_root, file_path) for file_path in os.listdir(data_root)]
 
@@ -61,8 +63,6 @@ class PersonalizedBase(Dataset):
                 image = Image.open(path).convert('RGB')
                 if not varsize:
                     image = image.resize((width, height), PIL.Image.BICUBIC)
-                else:
-                    assert batch_size == 1, 'variable img size must have batch size 1'
             except Exception:
                 continue
 
