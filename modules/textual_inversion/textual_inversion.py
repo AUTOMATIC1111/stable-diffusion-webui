@@ -451,8 +451,8 @@ def train_embedding(embedding_name, learn_rate, batch_size, gradient_step, data_
                     else:
                         p.prompt = batch.cond_text[0]
                         p.steps = 20
-                        p.width = training_width
-                        p.height = training_height
+                        p.width = batch.img_shape[0][0]
+                        p.height = batch.img_shape[0][1]
 
                     preview_text = p.prompt
 
