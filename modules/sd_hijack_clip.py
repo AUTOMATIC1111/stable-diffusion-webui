@@ -147,7 +147,7 @@ class FrozenCLIPEmbedderWithCustomWordsBase(torch.nn.Module):
                 chunk.multipliers += [weight] * emb_len
                 position += embedding_length_in_tokens
 
-        if len(chunk.tokens) > 0:
+        if len(chunk.tokens) > 0 or len(chunks) == 0:
             next_chunk()
 
         return chunks, token_count
