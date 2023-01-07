@@ -725,14 +725,8 @@ def create_ui():
                                 hr_resize_x = gr.Slider(minimum=0, maximum=2048, step=8, label="Resize width to", value=0, elem_id="txt2img_hr_resize_x")
                                 hr_resize_y = gr.Slider(minimum=0, maximum=2048, step=8, label="Resize height to", value=0, elem_id="txt2img_hr_resize_y")
                             
-                            with FormRow(elem_id="txt2img_hires_fix_row3"):        
-                                hr_final_resolution = gr.Textbox(value=calc_resolution_hires(width.value, height.value, hr_scale.value), 
-                                    elem_id="txtimg_hr_finalres", 
-                                    label="Upscaled resolution",
-                                    interactive=False)
-                                hr_scale.change(fn=calc_resolution_hires, inputs=[width, height, hr_scale], outputs=hr_final_resolution, show_progress=False)
-                                width.change(fn=calc_resolution_hires, inputs=[width, height, hr_scale], outputs=hr_final_resolution, show_progress=False)
-                                height.change(fn=calc_resolution_hires, inputs=[width, height, hr_scale], outputs=hr_final_resolution, show_progress=False)
+                            with FormRow(elem_id="txt2img_hires_fix_row3"):
+                                hr_final_resolution = gr.Textbox(value="", elem_id="txtimg_hr_finalres", label="Upscaled resolution", interactive=False)
 
                     elif category == "batch":
                         if not opts.dimensions_and_batch_together:
@@ -743,6 +737,10 @@ def create_ui():
                     elif category == "scripts":
                         with FormGroup(elem_id="txt2img_script_container"):
                             custom_inputs = modules.scripts.scripts_txt2img.setup_ui()
+
+            hr_scale.change(fn=calc_resolution_hires, inputs=[width, height, hr_scale], outputs=hr_final_resolution, show_progress=False)
+            width.change(fn=calc_resolution_hires, inputs=[width, height, hr_scale], outputs=hr_final_resolution, show_progress=False)
+            height.change(fn=calc_resolution_hires, inputs=[width, height, hr_scale], outputs=hr_final_resolution, show_progress=False)
 
             txt2img_gallery, generation_info, html_info, html_log = create_output_panel("txt2img", opts.outdir_txt2img_samples)
             parameters_copypaste.bind_buttons({"txt2img": txt2img_paste}, None, txt2img_prompt)
