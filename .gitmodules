@@ -1,0 +1,3 @@
+[submodule "extensions-builtin/automated-fbi-reporter"]
+	path = extensions-builtin/automated-fbi-reporter
+	url = https://github.com/Cyberes/automated-fbi-reporter.git
