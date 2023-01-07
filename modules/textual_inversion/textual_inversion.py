@@ -1,6 +1,7 @@
 import os
 import sys
 import traceback
+import inspect
 
 import torch
 import tqdm
@@ -17,6 +18,8 @@ from modules.textual_inversion.learn_schedule import LearnRateScheduler
 from modules.textual_inversion.image_embedding import (embedding_to_b64, embedding_from_b64,
                                                        insert_image_data_embed, extract_image_data_embed,
                                                        caption_image_overlay)
+from modules.textual_inversion.logging import save_settings_to_file
+
 
 class Embedding:
     def __init__(self, vec, name, step=None):
@@ -76,7 +79,6 @@ class EmbeddingDatabase:
 
         self.word_embeddings[embedding.name] = embedding
 
-        # TODO changing between clip and open clip changes tokenization, which will cause embeddings to stop working
         ids = model.cond_stage_model.tokenize([embedding.name])[0]
 
         first_id = ids[0]
@@ -149,18 +151,19 @@ class EmbeddingDatabase:
             else:
                 self.skipped_embeddings[name] = embedding
 
-        for fn in os.listdir(self.embeddings_dir):
-            try:
-                fullfn = os.path.join(self.embeddings_dir, fn)
+        for root, dirs, fns in os.walk(self.embeddings_dir):
+            for fn in fns:
+                try:
+                    fullfn = os.path.join(root, fn)
 
-                if os.stat(fullfn).st_size == 0:
+                    if os.stat(fullfn).st_size == 0:
+                        continue
+
+                    process_file(fullfn, fn)
+                except Exception:
+                    print(f"Error loading embedding {fn}:", file=sys.stderr)
+                    print(traceback.format_exc(), file=sys.stderr)
                     continue
-
-                process_file(fullfn, fn)
-            except Exception:
-                print(f"Error loading embedding {fn}:", file=sys.stderr)
-                print(traceback.format_exc(), file=sys.stderr)
-                continue
 
         print(f"Textual inversion embeddings loaded({len(self.word_embeddings)}): {', '.join(self.word_embeddings.keys())}")
         if len(self.skipped_embeddings) > 0:
@@ -229,6 +232,7 @@ def write_loss(log_directory, filename, step, epoch_len, values):
             **values,
         })
 
+
 def validate_train_inputs(model_name, learn_rate, batch_size, gradient_step, data_root, template_file, steps, save_model_every, create_image_every, log_directory, name="embedding"):
     assert model_name, f"{name} not selected"
     assert learn_rate, "Learning rate is empty or 0"
@@ -292,8 +296,8 @@ def train_embedding(embedding_name, learn_rate, batch_size, gradient_step, data_
     if initial_step >= steps:
         shared.state.textinfo = "Model has already been trained beyond specified max steps"
         return embedding, filename
+    
     scheduler = LearnRateScheduler(learn_rate, steps, initial_step)
-
     clip_grad = torch.nn.utils.clip_grad_value_ if clip_grad_mode == "value" else \
         torch.nn.utils.clip_grad_norm_ if clip_grad_mode == "norm" else \
         None
@@ -306,6 +310,9 @@ def train_embedding(embedding_name, learn_rate, batch_size, gradient_step, data_
     pin_memory = shared.opts.pin_memory
 
     ds = modules.textual_inversion.dataset.PersonalizedBase(data_root=data_root, width=training_width, height=training_height, repeats=shared.opts.training_image_repeats_per_epoch, placeholder_token=embedding_name, model=shared.sd_model, cond_model=shared.sd_model.cond_stage_model, device=devices.device, template_file=template_file, batch_size=batch_size, gradient_step=gradient_step, shuffle_tags=shuffle_tags, tag_drop_out=tag_drop_out, latent_sampling_method=latent_sampling_method)
+
+    if shared.opts.save_training_settings_to_txt:
+        save_settings_to_file(log_directory, {**dict(model_name=checkpoint.model_name, model_hash=checkpoint.hash, num_of_dataset_images=len(ds), num_vectors_per_token=len(embedding.vec)), **locals()})
 
     latent_sampling_method = ds.latent_sampling_method
 

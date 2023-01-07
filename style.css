@@ -555,7 +555,7 @@ img2maskimg, #img2maskimg > .h-60, #img2maskimg > .h-60 > div, #img2maskimg > .h
 
 /* Extensions */
 
-#tab_extensions table{
+#tab_extensions table``{
     border-collapse: collapse;
 }
 
@@ -579,6 +579,15 @@ img2maskimg, #img2maskimg > .h-60, #img2maskimg > .h-60 > div, #img2maskimg > .h
 .extension-tag{
     font-weight: bold;
     font-size: 95%;
+}
+
+#available_extensions .info{
+    margin: 0;
+}
+
+#available_extensions .date_added{
+    opacity: 0.85;
+    font-size: 90%;
 }
 
 #image_buttons_txt2img button, #image_buttons_img2img button, #image_buttons_extras button{
@@ -631,6 +640,23 @@ footer {
 #footer .versions{
     font-size: 85%;
     opacity: 0.85;
+}
+
+#txtimg_hr_finalres{
+    min-height: 0 !important;
+    padding: .625rem .75rem;
+    margin-left: -0.75em
+
+}
+
+#txtimg_hr_finalres .resolution{
+    font-weight: bold;
+}
+
+#txt2img_checkboxes > div > div{
+    flex: 0;
+    white-space: nowrap;
+    min-width: auto;
 }
 
 /* The following handles localization for right-to-left (RTL) languages like Arabic.

@@ -133,8 +133,26 @@ def numpy_fix(self, *args, **kwargs):
     return orig_tensor_numpy(self, *args, **kwargs)
 
 
-# PyTorch 1.13 doesn't need these fixes but unfortunately is slower and has regressions that prevent training from working
-if has_mps() and version.parse(torch.__version__) < version.parse("1.13"):
-    torch.Tensor.to = tensor_to_fix
-    torch.nn.functional.layer_norm = layer_norm_fix
-    torch.Tensor.numpy = numpy_fix
+# MPS workaround for https://github.com/pytorch/pytorch/issues/89784
+orig_cumsum = torch.cumsum
+orig_Tensor_cumsum = torch.Tensor.cumsum
+def cumsum_fix(input, cumsum_func, *args, **kwargs):
+    if input.device.type == 'mps':
+        output_dtype = kwargs.get('dtype', input.dtype)
+        if any(output_dtype == broken_dtype for broken_dtype in [torch.bool, torch.int8, torch.int16, torch.int64]):
+            return cumsum_func(input.cpu(), *args, **kwargs).to(input.device)
+    return cumsum_func(input, *args, **kwargs)
+
+
+if has_mps():
+    if version.parse(torch.__version__) < version.parse("1.13"):
+        # PyTorch 1.13 doesn't need these fixes but unfortunately is slower and has regressions that prevent training from working
+        torch.Tensor.to = tensor_to_fix
+        torch.nn.functional.layer_norm = layer_norm_fix
+        torch.Tensor.numpy = numpy_fix
+    elif version.parse(torch.__version__) > version.parse("1.13.1"):
+        if not torch.Tensor([1,2]).to(torch.device("mps")).equal(torch.Tensor([1,1]).to(torch.device("mps")).cumsum(0, dtype=torch.int16)):
+            torch.cumsum = lambda input, *args, **kwargs: ( cumsum_fix(input, orig_cumsum, *args, **kwargs) )
+            torch.Tensor.cumsum = lambda self, *args, **kwargs: ( cumsum_fix(self, orig_Tensor_cumsum, *args, **kwargs) )
+        orig_narrow = torch.narrow
+        torch.narrow = lambda *args, **kwargs: ( orig_narrow(*args, **kwargs).clone() )
