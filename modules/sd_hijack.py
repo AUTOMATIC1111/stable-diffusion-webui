@@ -150,10 +150,10 @@ class StableDiffusionModelHijack:
     def clear_comments(self):
         self.comments = []
 
-    def tokenize(self, text):
-        _, remade_batch_tokens, _, _, _, token_count = self.clip.process_text([text])
+    def get_prompt_lengths(self, text):
+        _, token_count = self.clip.process_texts([text])
 
-        return remade_batch_tokens[0], token_count, sd_hijack_clip.get_target_prompt_token_count(token_count)
+        return token_count, self.clip.get_target_prompt_token_count(token_count)
 
 
 class EmbeddingsWithFixes(torch.nn.Module):

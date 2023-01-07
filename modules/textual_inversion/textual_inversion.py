@@ -79,7 +79,6 @@ class EmbeddingDatabase:
 
         self.word_embeddings[embedding.name] = embedding
 
-        # TODO changing between clip and open clip changes tokenization, which will cause embeddings to stop working
         ids = model.cond_stage_model.tokenize([embedding.name])[0]
 
         first_id = ids[0]
