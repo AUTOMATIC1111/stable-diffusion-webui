@@ -55,8 +55,8 @@
     "dataset_filename_join_string": " ",
     "training_image_repeats_per_epoch": 1,
     "training_write_csv_every": 100.0,
-    "training_xattention_optimizations": true,
-    "sd_model_checkpoint": "zeipher-f222.ckpt [44bf0551]",
+    "training_xattention_optimizations": false,
+    "sd_model_checkpoint": "sd-v15-runwayml-inpainting.ckpt [3e16efc8]",
     "sd_checkpoint_cache": 0,
     "sd_vae": "vae-ft-mse-840000-ema-pruned",
     "sd_vae_as_default": false,
@@ -148,5 +148,6 @@
     "dimensions_and_batch_together": true,
     "ui_reorder": "sampler, dimensions, cfg, seed, checkboxes, hires_fix, batch, scripts",
     "always_discard_next_to_last_sigma": false,
-    "clip_models_path": "models/CLIP"
+    "clip_models_path": "models/CLIP",
+    "save_training_settings_to_txt": true
 }
