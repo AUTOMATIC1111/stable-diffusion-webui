@@ -37,6 +37,8 @@ def quote(text):
 
 
 def image_from_url_text(filedata):
+    if filedata == None: return None
+
     if type(filedata) == list and len(filedata) > 0 and type(filedata[0]) == dict and filedata[0].get("is_file", False):
         filedata = filedata[0]
 
@@ -55,9 +57,10 @@ def image_from_url_text(filedata):
 
     if filedata.startswith("data:image/png;base64,"):
         filedata = filedata[len("data:image/png;base64,"):]
-
-    filedata = base64.decodebytes(filedata.encode('utf-8'))
-    image = Image.open(io.BytesIO(filedata))
+        filedata = base64.decodebytes(filedata)
+    
+    filedata = filedata.encode('utf-8')
+    image = Image.open(filedata)
     return image
 
 
