@@ -1,7 +1,7 @@
 name: Feature request
 description: Suggest an idea for this project
 title: "[Feature Request]: "
-labels: ["suggestion"]
+labels: ["enhancement"]
 
 body:
   - type: checkboxes

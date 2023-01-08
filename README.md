@@ -1,9 +1,7 @@
 # Stable Diffusion web UI
 A browser interface based on Gradio library for Stable Diffusion.
 
-![](txt2img_Screenshot.png)
-
-Check the [custom scripts](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Custom-Scripts) wiki page for extra scripts developed by users.
+![](screenshot.png)
 
 ## Features
 [Detailed feature showcase with images](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Features):
@@ -97,9 +95,8 @@ Alternatively, use online services (like Google Colab):
 1. Install [Python 3.10.6](https://www.python.org/downloads/windows/), checking "Add Python to PATH"
 2. Install [git](https://git-scm.com/download/win).
 3. Download the stable-diffusion-webui repository, for example by running `git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui.git`.
-4. Place `model.ckpt` in the `models` directory (see [dependencies](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Dependencies) for where to get it).
-5. _*(Optional)*_ Place `GFPGANv1.4.pth` in the base directory, alongside `webui.py` (see [dependencies](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Dependencies) for where to get it).
-6. Run `webui-user.bat` from Windows Explorer as normal, non-administrator, user.
+4. Place stable diffusion checkpoint (`model.ckpt`) in the `models/Stable-diffusion` directory (see [dependencies](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Dependencies) for where to get it).
+5. Run `webui-user.bat` from Windows Explorer as normal, non-administrator, user.
 
 ### Automatic Installation on Linux
 1. Install the dependencies:
@@ -141,6 +138,7 @@ Licenses for borrowed code can be found in `Settings -> Licenses` screen, and al
 - Ideas for optimizations - https://github.com/basujindal/stable-diffusion
 - Cross Attention layer optimization - Doggettx - https://github.com/Doggettx/stable-diffusion, original idea for prompt editing.
 - Cross Attention layer optimization - InvokeAI, lstein - https://github.com/invoke-ai/InvokeAI (originally http://github.com/lstein/stable-diffusion)
+- Sub-quadratic Cross Attention layer optimization - Alex Birch (https://github.com/Birch-san/diffusers/pull/1), Amin Rezaei (https://github.com/AminRezaei0x443/memory-efficient-attention)
 - Textual Inversion - Rinon Gal - https://github.com/rinongal/textual_inversion (we're not using his code, but we are using his ideas).
 - Idea for SD upscale - https://github.com/jquesnelle/txt2imghd
 - Noise generation for outpainting mk2 - https://github.com/parlance-zz/g-diffuser-bot
