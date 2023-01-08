@@ -642,6 +642,23 @@ footer {
     opacity: 0.85;
 }
 
+#txtimg_hr_finalres{
+    min-height: 0 !important;
+    padding: .625rem .75rem;
+    margin-left: -0.75em
+
+}
+
+#txtimg_hr_finalres .resolution{
+    font-weight: bold;
+}
+
+#txt2img_checkboxes > div > div{
+    flex: 0;
+    white-space: nowrap;
+    min-width: auto;
+}
+
 /* The following handles localization for right-to-left (RTL) languages like Arabic.
 The rtl media type will only be activated by the logic in javascript/localization.js.
 If you change anything above, you need to make sure it is RTL compliant by just running

@@ -711,7 +711,6 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         self.truncate_x = 0
         self.truncate_y = 0
 
-
     def init(self, all_prompts, all_seeds, all_subseeds):
         if self.enable_hr:
             if self.hr_resize_x == 0 and self.hr_resize_y == 0:
