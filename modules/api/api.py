@@ -148,14 +148,20 @@ class Api:
 
         raise HTTPException(status_code=401, detail="Incorrect username or password", headers={"WWW-Authenticate": "Basic"})
 
-    def text2imgapi(self, txt2imgreq: StableDiffusionTxt2ImgProcessingAPI):
-        if txt2imgreq.script_name is not None:
-            if scripts.scripts_txt2img.scripts == []:
-                scripts.scripts_txt2img.initialize_scripts(False)
-                ui.create_ui()
+    def get_script(self, script_name, script_runner):
+        if script_name is None:
+            return None, None
 
-            script_idx = script_name_to_index(txt2imgreq.script_name, scripts.scripts_txt2img.selectable_scripts)
-            script = scripts.scripts_txt2img.selectable_scripts[script_idx]
+        if not script_runner.scripts:
+            script_runner.initialize_scripts(False)
+            ui.create_ui()
+
+        script_idx = script_name_to_index(script_name, script_runner.selectable_scripts)
+        script = script_runner.selectable_scripts[script_idx]
+        return script, script_idx
+
+    def text2imgapi(self, txt2imgreq: StableDiffusionTxt2ImgProcessingAPI):
+        script, script_idx = self.get_script(txt2imgreq.script_name, scripts.scripts_txt2img)
 
         populate = txt2imgreq.copy(update={ # Override __init__ params
             "sampler_name": validate_sampler_name(txt2imgreq.sampler_name or txt2imgreq.sampler_index),
@@ -173,7 +179,7 @@ class Api:
             p = StableDiffusionProcessingTxt2Img(sd_model=shared.sd_model, **args)
 
             shared.state.begin()
-            if 'script' in locals():
+            if script is not None:
                 p.outpath_grids = opts.outdir_txt2img_grids
                 p.outpath_samples = opts.outdir_txt2img_samples
                 p.script_args = [script_idx + 1] + [None] * (script.args_from - 1) + p.script_args
@@ -181,7 +187,6 @@ class Api:
             else:
                 processed = process_images(p)
             shared.state.end()
-
 
         b64images = list(map(encode_pil_to_base64, processed.images))
 
@@ -192,13 +197,7 @@ class Api:
         if init_images is None:
             raise HTTPException(status_code=404, detail="Init image not found")
 
-        if img2imgreq.script_name is not None:
-            if scripts.scripts_img2img.scripts == []:
-                scripts.scripts_img2img.initialize_scripts(True)
-                ui.create_ui()
-
-            script_idx = script_name_to_index(img2imgreq.script_name, scripts.scripts_img2img.selectable_scripts)
-            script = scripts.scripts_img2img.selectable_scripts[script_idx]
+        script, script_idx = self.get_script(img2imgreq.script_name, scripts.scripts_img2img)
 
         mask = img2imgreq.mask
         if mask:
@@ -223,7 +222,7 @@ class Api:
             p.init_images = [decode_base64_to_image(x) for x in init_images]
 
             shared.state.begin()
-            if 'script' in locals():
+            if script is not None:
                 p.outpath_grids = opts.outdir_img2img_grids
                 p.outpath_samples = opts.outdir_img2img_samples
                 p.script_args = [script_idx + 1] + [None] * (script.args_from - 1) + p.script_args
