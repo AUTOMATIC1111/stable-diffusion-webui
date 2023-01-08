@@ -109,6 +109,10 @@ class EmbeddingDatabase:
             ext = ext.upper()
 
             if ext in ['.PNG', '.WEBP', '.JXL', '.AVIF']:
+                _, second_ext = os.path.splitext(name)
+                if second_ext.upper() == '.PREVIEW':
+                    return
+
                 embed_image = Image.open(path)
                 if hasattr(embed_image, 'text') and 'sd-ti-embedding' in embed_image.text:
                     data = embedding_from_b64(embed_image.text['sd-ti-embedding'])
