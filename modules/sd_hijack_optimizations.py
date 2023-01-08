@@ -52,7 +52,13 @@ def split_cross_attention_forward_v1(self, x, context=None, mask=None):
     q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> (b h) n d', h=h), (q_in, k_in, v_in))
     del q_in, k_in, v_in
 
-    r1 = torch.zeros(q.shape[0], q.shape[1], v.shape[2], device=q.device)
+    dtype = q.dtype
+    if shared.cmd_opts.upcastattn:
+        q = q.float()
+        k = k.float()
+        v = v.float()
+
+    r1 = torch.zeros(q.shape[0], q.shape[1], v.shape[2], device=q.device, dtype=q.dtype)
     for i in range(0, q.shape[0], 2):
         end = i + 2
         s1 = einsum('b i d, b j d -> b i j', q[i:end], k[i:end])
@@ -64,6 +70,8 @@ def split_cross_attention_forward_v1(self, x, context=None, mask=None):
         r1[i:end] = einsum('b i j, b j d -> b i d', s2, v[i:end])
         del s2
     del q, k, v
+
+    r1 = r1.to(dtype)
 
     r2 = rearrange(r1, '(b h) n d -> b n (h d)', h=h)
     del r1
@@ -81,6 +89,11 @@ def split_cross_attention_forward(self, x, context=None, mask=None):
     context_k, context_v = hypernetwork.apply_hypernetwork(shared.loaded_hypernetwork, context)
     k_in = self.to_k(context_k)
     v_in = self.to_v(context_v)
+
+    dtype = q_in.dtype
+    if shared.cmd_opts.upcastattn:
+        q_in = q_in.float()
+        k_in = k_in.float()
 
     k_in *= self.scale
 
@@ -121,6 +134,8 @@ def split_cross_attention_forward(self, x, context=None, mask=None):
         del s2
 
     del q, k, v
+
+    r1 = r1.to(dtype)
 
     r2 = rearrange(r1, '(b h) n d -> b n (h d)', h=h)
     del r1
@@ -204,12 +219,20 @@ def split_cross_attention_forward_invokeAI(self, x, context=None, mask=None):
     context = default(context, x)
 
     context_k, context_v = hypernetwork.apply_hypernetwork(shared.loaded_hypernetwork, context)
-    k = self.to_k(context_k) * self.scale
+    k = self.to_k(context_k)
     v = self.to_v(context_v)
     del context, context_k, context_v, x
 
+    dtype = q.dtype
+    if shared.cmd_opts.upcastattn:
+        q = q.float()
+        k = k.float()
+
+    k *= self.scale
+
     q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> (b h) n d', h=h), (q, k, v))
     r = einsum_op(q, k, v)
+    r = r.to(dtype)
     return self.to_out(rearrange(r, '(b h) n d -> b n (h d)', h=h))
 
 # -- End of code from https://github.com/invoke-ai/InvokeAI --
@@ -234,7 +257,14 @@ def sub_quad_attention_forward(self, x, context=None, mask=None):
     k = k.unflatten(-1, (h, -1)).transpose(1,2).flatten(end_dim=1)
     v = v.unflatten(-1, (h, -1)).transpose(1,2).flatten(end_dim=1)
 
+    dtype = q.dtype
+    if shared.cmd_opts.upcastattn:
+        q = q.float()
+        k = k.float()
+
     x = sub_quad_attention(q, k, v, q_chunk_size=shared.cmd_opts.sub_quad_q_chunk_size, kv_chunk_size=shared.cmd_opts.sub_quad_kv_chunk_size, chunk_threshold=shared.cmd_opts.sub_quad_chunk_threshold, use_checkpoint=self.training)
+
+    x = x.to(dtype)
 
     x = x.unflatten(0, (-1, h)).transpose(1,2).flatten(start_dim=2)
 
@@ -290,7 +320,15 @@ def xformers_attention_forward(self, x, context=None, mask=None):
 
     q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> b n h d', h=h), (q_in, k_in, v_in))
     del q_in, k_in, v_in
+
+    dtype = q.dtype
+    if shared.cmd_opts.upcastattn:
+        q = q.float()
+        k = k.float()
+
     out = xformers.ops.memory_efficient_attention(q, k, v, attn_bias=None)
+
+    out = out.to(dtype)
 
     out = rearrange(out, 'b n h d -> b n (h d)', h=h)
     return self.to_out(out)
