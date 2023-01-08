@@ -151,7 +151,7 @@ class Api:
     def text2imgapi(self, txt2imgreq: StableDiffusionTxt2ImgProcessingAPI):
         if txt2imgreq.script_name is not None:
             if scripts.scripts_txt2img.scripts == []:
-                scripts.scripts_txt2img.initialize_scripts(True)
+                scripts.scripts_txt2img.initialize_scripts(False)
                 ui.create_ui()
 
             script_idx = script_name_to_index(txt2imgreq.script_name, scripts.scripts_txt2img.selectable_scripts)
