@@ -1,8 +1,12 @@
 import torch
-import ldm.models.diffusion.ddpm
-import ldm.modules.diffusionmodules.openaimodel
+from packaging import version
 
 from modules import devices, shared
+
+import ldm.models.diffusion.ddpm
+import ldm.modules.diffusionmodules.openaimodel
+import ldm.modules.diffusionmodules.util
+import ldm.modules.attention
 
 
 class TorchHijackForUnet:
@@ -56,3 +60,22 @@ def timestep_embedding(*args, **kwargs):
 
 
 ldm.modules.diffusionmodules.openaimodel.timestep_embedding = timestep_embedding
+
+
+orig_GroupNorm32_forward = ldm.modules.diffusionmodules.util.GroupNorm32.forward
+def GroupNorm32_forward(self, *args, **kwargs):
+    if shared.cmd_opts.precision == "upcast" and devices.dtype == torch.float32 and devices.dtype_unet == torch.float16:
+        return orig_GroupNorm32_forward(self.to(devices.dtype), *args, **kwargs)
+
+
+orig_GEGLU_forward = ldm.modules.attention.GEGLU.forward
+def GEGLU_forward(self, x):
+    if shared.cmd_opts.precision == "upcast" and devices.dtype == torch.float32 and devices.dtype_unet == torch.float16:
+        return orig_GEGLU_forward(self.to(devices.dtype), x.to(devices.dtype)).to(devices.dtype_unet)
+    else:
+        return orig_GEGLU_forward(self, x)
+
+
+if version.parse(torch.__version__) <= version.parse("1.13.1"):
+    ldm.modules.diffusionmodules.util.GroupNorm32.forward = GroupNorm32_forward
+    ldm.modules.attention.GEGLU.forward = GEGLU_forward
