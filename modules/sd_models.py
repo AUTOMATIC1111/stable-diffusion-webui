@@ -220,8 +220,9 @@ def load_model_weights(model, checkpoint_info, vae_file="auto"):
             model.half()
             model.first_stage_model = vae
 
-        devices.dtype = torch.float32 if shared.cmd_opts.no_half else torch.float16
+        devices.dtype = torch.float32 if shared.cmd_opts.no_half or shared.cmd_opts.precision == "upcast" else torch.float16
         devices.dtype_vae = torch.float32 if shared.cmd_opts.no_half or shared.cmd_opts.no_half_vae else torch.float16
+        devices.dtype_unet = model.model.diffusion_model.dtype
 
         model.first_stage_model.to(devices.dtype_vae)
 
@@ -315,6 +316,8 @@ def load_model(checkpoint_info=None):
 
     if shared.cmd_opts.no_half:
         sd_config.model.params.unet_config.params.use_fp16 = False
+    elif shared.cmd_opts.precision == "upcast":
+        sd_config.model.params.unet_config.params.use_fp16 = True
 
     sd_model = instantiate_from_config(sd_config.model)
 

@@ -1,4 +1,8 @@
 import torch
+import k_diffusion
+import ldm.modules.diffusionmodules.openaimodel
+
+from modules import devices, shared
 
 
 class TorchHijackForUnet:
@@ -28,3 +32,29 @@ class TorchHijackForUnet:
 
 
 th = TorchHijackForUnet()
+
+
+def get_eps_or_v(self, x, t, cond, *args, **kwargs):
+    if shared.cmd_opts.precision == "upcast" and devices.dtype == torch.float32 and devices.dtype_unet == torch.float16:
+        cond['c_crossattn'] = [y.to(devices.dtype_unet) for y in cond['c_crossattn']]
+        cond['c_concat'] = [y.to(devices.dtype_unet) for y in cond['c_concat']]
+        return self.inner_model.apply_model(x.to(devices.dtype_unet), t.to(devices.dtype_unet), cond, *args, **kwargs).to(devices.dtype)
+    else:
+        return self.inner_model.apply_model(x, t, cond, *args, **kwargs)
+
+
+k_diffusion.external.CompVisDenoiser.get_eps = get_eps_or_v
+k_diffusion.external.CompVisVDenoiser.get_v = get_eps_or_v
+
+
+orig_timestep_embedding = ldm.modules.diffusionmodules.openaimodel.timestep_embedding
+
+
+def timestep_embedding(*args, **kwargs):
+    if shared.cmd_opts.precision == "upcast" and devices.dtype == torch.float32 and devices.dtype_unet == torch.float16:
+        return orig_timestep_embedding(*args, **kwargs).to(devices.dtype_unet)
+    else:
+        return orig_timestep_embedding(*args, **kwargs)
+
+
+ldm.modules.diffusionmodules.openaimodel.timestep_embedding = timestep_embedding
