@@ -208,20 +208,20 @@ button{
 
 fieldset span.text-gray-500, .gr-block.gr-box span.text-gray-500,  label.block span{
     position: absolute;
-    top: -0.5em;
+    top: -0.7em;
     line-height: 1.2em;
     padding: 0;
     margin: 0 0.5em;
 
     background-color: white;
-    box-shadow: 0 0 5px 5px white;
+    box-shadow:  6px 0 6px 0px white, -6px 0 6px 0px white;
 
     z-index: 300;
 }
 
 .dark fieldset span.text-gray-500, .dark .gr-block.gr-box span.text-gray-500, .dark label.block span{
     background-color: rgb(31, 41, 55);
-    box-shadow: 0 0 5px 5px rgb(31, 41, 55);
+    box-shadow: 6px 0 6px 0px rgb(31, 41, 55), -6px 0 6px 0px rgb(31, 41, 55);
 }
 
 #txt2img_column_batch, #img2img_column_batch{
@@ -512,13 +512,24 @@ input[type="range"]{
     border: none;
     background: none;
     flex: unset;
-    gap: 0.5em;
+    gap: 1em;
 }
 
 #quicksettings > div > div{
     max-width: 32em;
     min-width: 24em;
     padding: 0;
+}
+
+#quicksettings > div > div > div > div > label > span {
+    position: relative;
+    margin-right: 9em;
+    margin-bottom: -1em;
+}
+
+#quicksettings > div > div > label > span {
+    position: relative;
+    margin-bottom: -1em;
 }
 
 canvas[key="mask"] {
@@ -555,7 +566,7 @@ img2maskimg, #img2maskimg > .h-60, #img2maskimg > .h-60 > div, #img2maskimg > .h
 
 /* Extensions */
 
-#tab_extensions table{
+#tab_extensions table``{
     border-collapse: collapse;
 }
 
@@ -579,6 +590,15 @@ img2maskimg, #img2maskimg > .h-60, #img2maskimg > .h-60 > div, #img2maskimg > .h
 .extension-tag{
     font-weight: bold;
     font-size: 95%;
+}
+
+#available_extensions .info{
+    margin: 0;
+}
+
+#available_extensions .date_added{
+    opacity: 0.85;
+    font-size: 90%;
 }
 
 #image_buttons_txt2img button, #image_buttons_img2img button, #image_buttons_extras button{
@@ -611,11 +631,44 @@ img2maskimg, #img2maskimg > .h-60, #img2maskimg > .h-60 > div, #img2maskimg > .h
     padding-top: 0.9em;
 }
 
-#img2img_settings div.gr-form .gr-form, #txt2img_settings div.gr-form .gr-form{
+#img2img_settings div.gr-form .gr-form, #txt2img_settings div.gr-form .gr-form, #train_tabs div.gr-form .gr-form{
     border: none;
     padding-bottom: 0.5em;
 }
 
+footer {
+    display: none !important;
+}
+
+#footer{
+    text-align: center;
+}
+
+#footer div{
+    display: inline-block;
+}
+
+#footer .versions{
+    font-size: 85%;
+    opacity: 0.85;
+}
+
+#txtimg_hr_finalres{
+    min-height: 0 !important;
+    padding: .625rem .75rem;
+    margin-left: -0.75em
+
+}
+
+#txtimg_hr_finalres .resolution{
+    font-weight: bold;
+}
+
+#txt2img_checkboxes > div > div{
+    flex: 0;
+    white-space: nowrap;
+    min-width: auto;
+}
 
 /* The following handles localization for right-to-left (RTL) languages like Arabic.
 The rtl media type will only be activated by the logic in javascript/localization.js.

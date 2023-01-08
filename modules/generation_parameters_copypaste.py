@@ -7,7 +7,7 @@ from pathlib import Path
 
 import gradio as gr
 from modules.shared import script_path
-from modules import shared
+from modules import shared, ui_tempdir
 import tempfile
 from PIL import Image
 
@@ -37,9 +37,12 @@ def quote(text):
 
 
 def image_from_url_text(filedata):
-    if type(filedata) == dict and filedata["is_file"]:
+    if type(filedata) == list and len(filedata) > 0 and type(filedata[0]) == dict and filedata[0].get("is_file", False):
+        filedata = filedata[0]
+
+    if type(filedata) == dict and filedata.get("is_file", False):
         filename = filedata["name"]
-        is_in_right_dir = any([filename in fileset for fileset in shared.demo.temp_file_sets])
+        is_in_right_dir = ui_tempdir.check_tmp_file(shared.demo, filename)
         assert is_in_right_dir, 'trying to open image file outside of allowed directories'
 
         return Image.open(filename)
@@ -209,11 +212,10 @@ def restore_old_hires_fix_params(res):
         firstpass_width = math.ceil(scale * width / 64) * 64
         firstpass_height = math.ceil(scale * height / 64) * 64
 
-    hr_scale = width / firstpass_width if firstpass_width > 0 else height / firstpass_height
-
     res['Size-1'] = firstpass_width
     res['Size-2'] = firstpass_height
-    res['Hires upscale'] = hr_scale
+    res['Hires resize-1'] = width
+    res['Hires resize-2'] = height
 
 
 def parse_generation_parameters(x: str):
@@ -272,6 +274,10 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
         hypernet_name = res["Hypernet"]
         hypernet_hash = res.get("Hypernet hash", None)
         res["Hypernet"] = find_hypernetwork_key(hypernet_name, hypernet_hash)
+
+    if "Hires resize-1" not in res:
+        res["Hires resize-1"] = 0
+        res["Hires resize-2"] = 0
 
     restore_old_hires_fix_params(res)
 
