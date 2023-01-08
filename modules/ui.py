@@ -927,6 +927,7 @@ def create_ui():
 
                 with FormRow():
                     resize_mode = gr.Radio(label="Resize mode", elem_id="resize_mode", choices=["Just resize", "Crop and resize", "Resize and fill", "Just resize (latent upscale)"], type="index", value="Just resize")
+                    latent_upscale_mode = gr.Dropdown(label='Latent method', elem_id="latent_mode", choices=list(shared.latent_upscale_modes.keys()), value=list(shared.latent_upscale_modes.keys())[0], type="index")
 
                 for category in ordered_ui_categories():
                     if category == "sampler":
@@ -1028,6 +1029,7 @@ def create_ui():
                     height,
                     width,
                     resize_mode,
+                    latent_upscale_mode,
                     inpaint_full_res,
                     inpaint_full_res_padding,
                     inpainting_mask_invert,

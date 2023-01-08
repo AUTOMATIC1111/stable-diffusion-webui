@@ -849,11 +849,12 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
     sampler = None
 
-    def __init__(self, init_images: list = None, resize_mode: int = 0, denoising_strength: float = 0.75, mask: Any = None, mask_blur: int = 4, inpainting_fill: int = 0, inpaint_full_res: bool = True, inpaint_full_res_padding: int = 0, inpainting_mask_invert: int = 0, initial_noise_multiplier: float = None, **kwargs):
+    def __init__(self, init_images: list = None, resize_mode: int = 0, denoising_strength: float = 0.75, mask: Any = None, mask_blur: int = 4, inpainting_fill: int = 0, inpaint_full_res: bool = True, inpaint_full_res_padding: int = 0, inpainting_mask_invert: int = 0, initial_noise_multiplier: float = None, latent_upscale_mode: int = 0, **kwargs):
         super().__init__(**kwargs)
 
         self.init_images = init_images
         self.resize_mode: int = resize_mode
+        self.latent_upscale_mode: int = latent_upscale_mode
         self.denoising_strength: float = denoising_strength
         self.init_latent = None
         self.image_mask = mask
@@ -958,7 +959,10 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         self.init_latent = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(image))
 
         if self.resize_mode == 3:
-            self.init_latent = torch.nn.functional.interpolate(self.init_latent, size=(self.height // opt_f, self.width // opt_f), mode="bilinear")
+            # self.init_latent = torch.nn.functional.interpolate(self.init_latent, size=(self.height // opt_f, self.width // opt_f), mode="bilinear")
+            latent_scale_mode_key = list(shared.latent_upscale_modes.keys())[self.latent_upscale_mode] if (self.latent_upscale_mode is not None and self.latent_upscale_mode < len(shared.latent_upscale_modes)) else "Latent"
+            latent_scale_mode = shared.latent_upscale_modes.get(latent_scale_mode_key, None)
+            self.init_latent = torch.nn.functional.interpolate(self.init_latent, size=(self.height // opt_f, self.width // opt_f), mode=latent_scale_mode["mode"], antialias=latent_scale_mode["antialias"])
 
         if image_mask is not None:
             init_mask = latent_mask
