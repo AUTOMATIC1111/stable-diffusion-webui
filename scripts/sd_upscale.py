@@ -25,6 +25,8 @@ class Script(scripts.Script):
         return [info, overlap, upscaler_index, scale_factor]
 
     def run(self, p, _, overlap, upscaler_index, scale_factor):
+        if isinstance(upscaler_index, str):
+            upscaler_index = [x.name.lower() for x in shared.sd_upscalers].index(upscaler_index.lower())
         processing.fix_seed(p)
         upscaler = shared.sd_upscalers[upscaler_index]
 
