@@ -66,6 +66,8 @@ orig_GroupNorm32_forward = ldm.modules.diffusionmodules.util.GroupNorm32.forward
 def GroupNorm32_forward(self, *args, **kwargs):
     if shared.cmd_opts.precision == "upcast" and devices.dtype == torch.float32 and devices.dtype_unet == torch.float16:
         return orig_GroupNorm32_forward(self.to(devices.dtype), *args, **kwargs)
+    else:
+        return orig_GroupNorm32_forward(self, *args, **kwargs)
 
 
 orig_GEGLU_forward = ldm.modules.attention.GEGLU.forward
