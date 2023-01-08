@@ -42,7 +42,7 @@ parser.add_argument("--lowram", action='store_true', help="load stable diffusion
 parser.add_argument("--always-batch-cond-uncond", action='store_true', help="disables cond/uncond batching that is enabled to save memory with --medvram or --lowvram")
 parser.add_argument("--unload-gfpgan", action='store_true', help="does not do anything.")
 parser.add_argument("--precision", type=str, help="evaluate at this precision", choices=["upcast", "full", "autocast"], default="autocast")
-parser.add_argument("--upcastattn", action='store_true', help="upcast cross attention layer optimization calculations. Required for using Stable Diffusion 2.1 without --no-half.")
+parser.add_argument("--upcast-attn", action='store_true', help="upcast cross attention layer optimization calculations. Required for using Stable Diffusion 2.1 without --no-half.")
 parser.add_argument("--share", action='store_true', help="use share=True for gradio and make the UI accessible through their site")
 parser.add_argument("--ngrok", type=str, help="ngrok authtoken, alternative to gradio --share", default=None)
 parser.add_argument("--ngrok-region", type=str, help="The region in which ngrok should start.", default="us")

@@ -53,7 +53,7 @@ def split_cross_attention_forward_v1(self, x, context=None, mask=None):
     del q_in, k_in, v_in
 
     dtype = q.dtype
-    if shared.cmd_opts.upcastattn:
+    if shared.cmd_opts.upcast_attn:
         q = q.float()
         k = k.float()
         v = v.float()
@@ -91,7 +91,7 @@ def split_cross_attention_forward(self, x, context=None, mask=None):
     v_in = self.to_v(context_v)
 
     dtype = q_in.dtype
-    if shared.cmd_opts.upcastattn:
+    if shared.cmd_opts.upcast_attn:
         q_in = q_in.float()
         k_in = k_in.float()
 
@@ -224,7 +224,7 @@ def split_cross_attention_forward_invokeAI(self, x, context=None, mask=None):
     del context, context_k, context_v, x
 
     dtype = q.dtype
-    if shared.cmd_opts.upcastattn:
+    if shared.cmd_opts.upcast_attn:
         q = q.float()
         k = k.float()
 
@@ -258,7 +258,7 @@ def sub_quad_attention_forward(self, x, context=None, mask=None):
     v = v.unflatten(-1, (h, -1)).transpose(1,2).flatten(end_dim=1)
 
     dtype = q.dtype
-    if shared.cmd_opts.upcastattn:
+    if shared.cmd_opts.upcast_attn:
         q = q.float()
         k = k.float()
 
@@ -322,7 +322,7 @@ def xformers_attention_forward(self, x, context=None, mask=None):
     del q_in, k_in, v_in
 
     dtype = q.dtype
-    if shared.cmd_opts.upcastattn:
+    if shared.cmd_opts.upcast_attn:
         q = q.float()
         k = k.float()
 
