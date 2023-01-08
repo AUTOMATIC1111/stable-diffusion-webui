@@ -43,3 +43,11 @@ import launch
 if not launch.is_installed("aitextgen"):
     launch.run_pip("install aitextgen==0.6.0", "requirements for MagicPrompt")
 ```
+
+## Minor tips
+### Adding extra textual inversion dirs
+This code goes into extension's script:
+```python
+path = os.path.join(modules.scripts.basedir(), "embeddings")
+modules.sd_hijack.model_hijack.embedding_db.add_embedding_dir(path)
+```
