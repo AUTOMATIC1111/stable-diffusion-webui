@@ -266,7 +266,7 @@ def train_embedding(embedding_name, learn_rate, batch_size, gradient_step, data_
 
     filename = os.path.join(shared.cmd_opts.embeddings_dir, f'{embedding_name}.pt')
 
-    log_directory = os.path.join(log_directory, datetime.datetime.now().strftime("%Y-%m-%d"), embedding_name)
+    log_directory = os.path.join(log_directory, embedding_name)
     unload = shared.opts.unload_models_when_training
 
     if save_embedding_every > 0:
@@ -421,7 +421,7 @@ def train_embedding(embedding_name, learn_rate, batch_size, gradient_step, data_
                     save_embedding(embedding, optimizer, checkpoint, embedding_name_every, last_saved_file, remove_cached_checksum=True)
                     embedding_yet_to_be_embedded = True
 
-                write_loss(log_directory, "textual_inversion_loss.csv", embedding.step, steps_per_epoch, {
+                write_loss(log_directory, "train.csv", embedding.step, steps_per_epoch, {
                     "loss": f"{loss_step:.7f}",
                     "learn_rate": scheduler.learn_rate
                 })
