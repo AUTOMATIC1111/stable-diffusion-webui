@@ -1,7 +1,7 @@
 # Pull requests
 To contribute, clone the repository, make your changes, commit and push to your clone, and submit a pull request.
 
-* if you adding a lot of code, consider making it an [extension](Extensions) instead.
+* if you are adding a lot of code, **consider making it an [extension](Extensions) instead**.
 * do not add multiple unrelated things in same PR.
 * make sure that your changes do not break anything by running [tests](Tests).
 * do not submit PRs where you just take existing lines and reformat them without changing what they do.
