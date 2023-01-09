@@ -58,14 +58,19 @@ class LearnRateScheduler:
 
         self.finished = False
 
-    def apply(self, optimizer, step_number):
+    def step(self, step_number):
         if step_number < self.end_step:
-            return
+            return False
 
         try:
             (self.learn_rate, self.end_step) = next(self.schedules)
-        except Exception:
+        except StopIteration:
             self.finished = True
+            return False
+        return True
+
+    def apply(self, optimizer, step_number):
+        if not self.step(step_number):
             return
 
         if self.verbose:

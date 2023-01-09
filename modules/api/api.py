@@ -1,24 +1,25 @@
 import base64
 import io
 import time
+import datetime
 import uvicorn
 from threading import Lock
 from io import BytesIO
 from gradio.processing_utils import decode_base64_to_file
-from fastapi import APIRouter, Depends, FastAPI, HTTPException
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request, Response
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from secrets import compare_digest
 
 import modules.shared as shared
-from modules import sd_samplers, deepbooru, sd_hijack
+from modules import sd_samplers, deepbooru, sd_hijack, images, scripts, ui
 from modules.api.models import *
 from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img, process_images
-from modules.extras import run_extras, run_pnginfo
+from modules.extras import run_extras
 from modules.textual_inversion.textual_inversion import create_embedding, train_embedding
 from modules.textual_inversion.preprocess import preprocess
 from modules.hypernetworks.hypernetwork import create_hypernetwork, train_hypernetwork
 from PIL import PngImagePlugin,Image
-from modules.sd_models import checkpoints_list
+from modules.sd_models import checkpoints_list, find_checkpoint_config
 from modules.realesrgan_model import get_realesrgan_models
 from modules import devices
 from typing import List
@@ -28,8 +29,13 @@ def upscaler_to_index(name: str):
     try:
         return [x.name.lower() for x in shared.sd_upscalers].index(name.lower())
     except:
-        raise HTTPException(status_code=400, detail=f"Invalid upscaler, needs to be on of these: {' , '.join([x.name for x in sd_upscalers])}")
+        raise HTTPException(status_code=400, detail=f"Invalid upscaler, needs to be one of these: {' , '.join([x.name for x in sd_upscalers])}")
 
+def script_name_to_index(name, scripts):
+    try:
+        return [script.title().lower() for script in scripts].index(name.lower())
+    except:
+        raise HTTPException(status_code=422, detail=f"Script '{name}' not found")
 
 def validate_sampler_name(name):
     config = sd_samplers.all_samplers_map.get(name, None)
@@ -68,6 +74,27 @@ def encode_pil_to_base64(image):
         bytes_data = output_bytes.getvalue()
     return base64.b64encode(bytes_data)
 
+def api_middleware(app: FastAPI):
+    @app.middleware("http")
+    async def log_and_time(req: Request, call_next):
+        ts = time.time()
+        res: Response = await call_next(req)
+        duration = str(round(time.time() - ts, 4))
+        res.headers["X-Process-Time"] = duration
+        endpoint = req.scope.get('path', 'err')
+        if shared.cmd_opts.api_log and endpoint.startswith('/sdapi'):
+            print('API {t} {code} {prot}/{ver} {method} {endpoint} {cli} {duration}'.format(
+                t = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
+                code = res.status_code,
+                ver = req.scope.get('http_version', '0.0'),
+                cli = req.scope.get('client', ('0:0.0.0', 0))[0],
+                prot = req.scope.get('scheme', 'err'),
+                method = req.scope.get('method', 'err'),
+                endpoint = endpoint,
+                duration = duration,
+            ))
+        return res
+
 
 class Api:
     def __init__(self, app: FastAPI, queue_lock: Lock):
@@ -80,6 +107,7 @@ class Api:
         self.router = APIRouter()
         self.app = app
         self.queue_lock = queue_lock
+        api_middleware(self.app)
         self.add_api_route("/sdapi/v1/txt2img", self.text2imgapi, methods=["POST"], response_model=TextToImageResponse)
         self.add_api_route("/sdapi/v1/img2img", self.img2imgapi, methods=["POST"], response_model=ImageToImageResponse)
         self.add_api_route("/sdapi/v1/extra-single-image", self.extras_single_image_api, methods=["POST"], response_model=ExtrasSingleImageResponse)
@@ -122,7 +150,21 @@ class Api:
 
         raise HTTPException(status_code=401, detail="Incorrect username or password", headers={"WWW-Authenticate": "Basic"})
 
+    def get_script(self, script_name, script_runner):
+        if script_name is None:
+            return None, None
+
+        if not script_runner.scripts:
+            script_runner.initialize_scripts(False)
+            ui.create_ui()
+
+        script_idx = script_name_to_index(script_name, script_runner.selectable_scripts)
+        script = script_runner.selectable_scripts[script_idx]
+        return script, script_idx
+
     def text2imgapi(self, txt2imgreq: StableDiffusionTxt2ImgProcessingAPI):
+        script, script_idx = self.get_script(txt2imgreq.script_name, scripts.scripts_txt2img)
+
         populate = txt2imgreq.copy(update={ # Override __init__ params
             "sampler_name": validate_sampler_name(txt2imgreq.sampler_name or txt2imgreq.sampler_index),
             "do_not_save_samples": True,
@@ -132,13 +174,21 @@ class Api:
         if populate.sampler_name:
             populate.sampler_index = None  # prevent a warning later on
 
+        args = vars(populate)
+        args.pop('script_name', None)
+
         with self.queue_lock:
-            p = StableDiffusionProcessingTxt2Img(sd_model=shared.sd_model, **vars(populate))
+            p = StableDiffusionProcessingTxt2Img(sd_model=shared.sd_model, **args)
 
             shared.state.begin()
-            processed = process_images(p)
+            if script is not None:
+                p.outpath_grids = opts.outdir_txt2img_grids
+                p.outpath_samples = opts.outdir_txt2img_samples
+                p.script_args = [script_idx + 1] + [None] * (script.args_from - 1) + p.script_args
+                processed = scripts.scripts_txt2img.run(p, *p.script_args)
+            else:
+                processed = process_images(p)
             shared.state.end()
-
 
         b64images = list(map(encode_pil_to_base64, processed.images))
 
@@ -148,6 +198,8 @@ class Api:
         init_images = img2imgreq.init_images
         if init_images is None:
             raise HTTPException(status_code=404, detail="Init image not found")
+
+        script, script_idx = self.get_script(img2imgreq.script_name, scripts.scripts_img2img)
 
         mask = img2imgreq.mask
         if mask:
@@ -165,13 +217,20 @@ class Api:
 
         args = vars(populate)
         args.pop('include_init_images', None)  # this is meant to be done by "exclude": True in model, but it's for a reason that I cannot determine.
+        args.pop('script_name', None)
 
         with self.queue_lock:
             p = StableDiffusionProcessingImg2Img(sd_model=shared.sd_model, **args)
             p.init_images = [decode_base64_to_image(x) for x in init_images]
 
             shared.state.begin()
-            processed = process_images(p)
+            if script is not None:
+                p.outpath_grids = opts.outdir_img2img_grids
+                p.outpath_samples = opts.outdir_img2img_samples
+                p.script_args = [script_idx + 1] + [None] * (script.args_from - 1) + p.script_args
+                processed = scripts.scripts_img2img.run(p, *p.script_args)
+            else:
+                processed = process_images(p)
             shared.state.end()
 
         b64images = list(map(encode_pil_to_base64, processed.images))
@@ -212,9 +271,17 @@ class Api:
         if(not req.image.strip()):
             return PNGInfoResponse(info="")
 
-        result = run_pnginfo(decode_base64_to_image(req.image.strip()))
+        image = decode_base64_to_image(req.image.strip())
+        if image is None:
+            return PNGInfoResponse(info="")
 
-        return PNGInfoResponse(info=result[1])
+        geninfo, items = images.read_info_from_image(image)
+        if geninfo is None:
+            geninfo = ""
+
+        items = {**{'parameters': geninfo}, **items}
+
+        return PNGInfoResponse(info=geninfo, items=items)
 
     def progressapi(self, req: ProgressRequest = Depends()):
         # copy from check_progress_call of ui.py
@@ -305,7 +372,7 @@ class Api:
         return upscalers
 
     def get_sd_models(self):
-        return [{"title":x.title, "model_name":x.model_name, "hash":x.hash, "filename": x.filename, "config": x.config} for x in checkpoints_list.values()]
+        return [{"title":x.title, "model_name":x.model_name, "hash":x.hash, "filename": x.filename, "config": find_checkpoint_config(x)} for x in checkpoints_list.values()]
 
     def get_hypernetworks(self):
         return [{"name": name, "path": shared.hypernetworks[name]} for name in shared.hypernetworks]
