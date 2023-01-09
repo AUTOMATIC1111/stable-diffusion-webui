@@ -41,8 +41,8 @@ th = TorchHijackForUnet()
 orig_apply_model = ldm.models.diffusion.ddpm.LatentDiffusion.apply_model
 def apply_model(self, x_noisy, t, cond, **kwargs):
     if devices.unet_needs_upcast:
-        cond['c_crossattn'] = [y.to(devices.dtype_unet) for y in cond['c_crossattn']]
-        cond['c_concat'] = [y.to(devices.dtype_unet) for y in cond['c_concat']]
+        for y in cond.keys():
+            cond[y] = [x.to(devices.dtype_unet) if isinstance(x, torch.Tensor) else x for x in cond[y]]
         return orig_apply_model(self, x_noisy.to(devices.dtype_unet), t.to(devices.dtype_unet), cond, **kwargs).to(devices.dtype)
     else:
         return orig_apply_model(self, x_noisy, t, cond, **kwargs)
