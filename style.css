@@ -512,13 +512,24 @@ input[type="range"]{
     border: none;
     background: none;
     flex: unset;
-    gap: 0.5em;
+    gap: 1em;
 }
 
 #quicksettings > div > div{
     max-width: 32em;
     min-width: 24em;
     padding: 0;
+}
+
+#quicksettings > div > div > div > div > label > span {
+    position: relative;
+    margin-right: 9em;
+    margin-bottom: -1em;
+}
+
+#quicksettings > div > div > label > span {
+    position: relative;
+    margin-bottom: -1em;
 }
 
 canvas[key="mask"] {
@@ -657,6 +668,10 @@ footer {
     flex: 0;
     white-space: nowrap;
     min-width: auto;
+}
+
+.inactive{
+    opacity: 0.5;
 }
 
 /* The following handles localization for right-to-left (RTL) languages like Arabic.
