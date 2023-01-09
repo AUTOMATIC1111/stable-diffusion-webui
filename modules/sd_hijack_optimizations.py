@@ -95,7 +95,7 @@ def split_cross_attention_forward(self, x, context=None, mask=None):
         q_in = q_in.float()
         k_in = k_in.float()
 
-    k_in *= self.scale
+    k_in = k_in * self.scale
 
     del context, x
 
@@ -228,7 +228,7 @@ def split_cross_attention_forward_invokeAI(self, x, context=None, mask=None):
         q = q.float()
         k = k.float()
 
-    k *= self.scale
+    k = k * self.scale
 
     q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> (b h) n d', h=h), (q, k, v))
     r = einsum_op(q, k, v)
