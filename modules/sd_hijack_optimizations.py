@@ -54,9 +54,7 @@ def split_cross_attention_forward_v1(self, x, context=None, mask=None):
 
     dtype = q.dtype
     if shared.cmd_opts.upcast_attn:
-        q = q.float()
-        k = k.float()
-        v = v.float()
+        q, k, v = q.float(), k.float(), v.float()
 
     r1 = torch.zeros(q.shape[0], q.shape[1], v.shape[2], device=q.device, dtype=q.dtype)
     for i in range(0, q.shape[0], 2):
@@ -92,8 +90,7 @@ def split_cross_attention_forward(self, x, context=None, mask=None):
 
     dtype = q_in.dtype
     if shared.cmd_opts.upcast_attn:
-        q_in = q_in.float()
-        k_in = k_in.float()
+        q_in, k_in = q_in.float(), k_in.float()
 
     k_in = k_in * self.scale
 
@@ -225,8 +222,7 @@ def split_cross_attention_forward_invokeAI(self, x, context=None, mask=None):
 
     dtype = q.dtype
     if shared.cmd_opts.upcast_attn:
-        q = q.float()
-        k = k.float()
+        q, k = q.float(), k.float()
 
     k = k * self.scale
 
@@ -259,8 +255,7 @@ def sub_quad_attention_forward(self, x, context=None, mask=None):
 
     dtype = q.dtype
     if shared.cmd_opts.upcast_attn:
-        q = q.float()
-        k = k.float()
+        q, k = q.float(), k.float()
 
     x = sub_quad_attention(q, k, v, q_chunk_size=shared.cmd_opts.sub_quad_q_chunk_size, kv_chunk_size=shared.cmd_opts.sub_quad_kv_chunk_size, chunk_threshold=shared.cmd_opts.sub_quad_chunk_threshold, use_checkpoint=self.training)
 
@@ -323,8 +318,7 @@ def xformers_attention_forward(self, x, context=None, mask=None):
 
     dtype = q.dtype
     if shared.cmd_opts.upcast_attn:
-        q = q.float()
-        k = k.float()
+        q, k = q.float(), k.float()
 
     out = xformers.ops.memory_efficient_attention(q, k, v, attn_bias=None)
 
