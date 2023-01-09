@@ -24,7 +24,7 @@ div.gradio-container.dark > div.w-full.flex.flex-col.min-h-screen > div { backgr
 .dark .gr-form { border-radius: 0; border-width: 0; }
 .dark .gr-check-radio { background-color: var(--inactive-color); border-width: 0; border-radius: 2px; box-shadow: 2px 2px 3px #111111; }
 .dark .gr-check-radio:checked { background-color: var(--highlight-color); }
-.dark .gr-button { border-radius: 0; font-weight: normal; box-shadow: 2px 2px 3px #111111; font-size: 0.9rem; min-width: 32px; }
+.dark .gr-button { border-radius: 0; font-weight: normal; box-shadow: 2px 2px 3px #111111; font-size: 0.9rem; min-width: 42px; min-height: 42px; }
 .dark .gr-box { border-radius: 0; background-color: #222222; box-shadow: 2px 2px 3px #111111; border-width: 0; padding-bottom: 12px; }
 .dark .dark\:bg-gray-900 { background-color: black; }
 .dark .bg-white { color: lightyellow; border-radius: 0; }
@@ -36,6 +36,8 @@ div.gradio-container.dark > div.w-full.flex.flex-col.min-h-screen > div { backgr
 .px-4 { padding-lefT: 1rem; padding-right: 1rem; }
 .py-6 { padding-bottom: 0; }
 .overflow-hidden .flex .flex-col .relative col .gap-4 { min-width: var(--left-column); max-width: var(--left-column); } /* this is a problematic one */
+.rounded-lg { border-radius: 0; }
+.p-2 { padding: 0 }
 
 /* automatic style classes */
 .progressDiv .progress { background: var(--highlight-color); border-radius: 2px; }
@@ -49,7 +51,7 @@ div.gradio-container.dark > div.w-full.flex.flex-col.min-h-screen > div { backgr
 #img2img_neg_prompt > label > textarea { font-size: 1.2rem; }
 #txt2img_generate, #img2img_generate, #txt2img_interrupt, #img2img_interrupt, #txt2img_skip, #img2img_skip { margin-top: 10px; min-height: 2rem; height: 63px; }
 #txt2img_interrupt, #img2img_interrupt, #txt2img_skip, #img2img_skip { background-color: var(--inactive-color); }
-#txt2img_gallery { background: black; }
+#txt2img_gallery, #img2img_gallery, #extras_gallery { background: black; }
 #tab_extensions table { background-color: #222222; }
 #style_pos_col, #style_neg_col, #roll_col { display: none; }
 #interrogate_col { margin-top: 10px; }
@@ -57,3 +59,5 @@ div.gradio-container.dark > div.w-full.flex.flex-col.min-h-screen > div { backgr
 #save-animation { border-radius: 0 !important; margin-bottom: 16px; background-color: #111111; }
 #open_folder_txt2img, #open_folder_img2img, #open_folder_extras { display: none }
 #footer { display: none; }
+#txt2img_seed_row { padding: 0; margin-top: 8px; }
+#txt2img_subseed_show { min-width: 74px; padding: 0 0 0 6px;}

@@ -1,6 +1,6 @@
 {
     "txt2img/Prompt/visible": true,
-    "txt2img/Prompt/value": "photorealistic, high detailed, sharp focus, depth of field",
+    "txt2img/Prompt/value": "photorealistic, high detailed, sharp focus, depth of field, 4k",
     "txt2img/Negative prompt/visible": true,
     "txt2img/Negative prompt/value": "foggy, blurry, blurred, duplicate, ugly, mutilated, mutation, mutated, out of frame, bad anatomy, disfigured, deformed, censored, low res, watermark, text, poorly drawn face, signature",
     "txt2img/Style 1/value": "None",
