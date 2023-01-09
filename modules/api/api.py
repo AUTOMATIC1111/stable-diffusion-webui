@@ -467,26 +467,24 @@ class Api:
             return TrainResponse(info = "train embedding error: {error}".format(error = error))
 
     def get_memory(self):
-        def gb(val: float):
-            return round(val / 1024 / 1024 / 1024, 2)
         try:
             import os, psutil
             process = psutil.Process(os.getpid())
-            res = process.memory_info()
-            ram_total = 100 * res.rss / process.memory_percent()
-            ram = { 'free': gb(ram_total - res.rss), 'used': gb(res.rss), 'total': gb(ram_total) }
+            res = process.memory_info() # only rss is cross-platform guaranteed so we dont rely on other values
+            ram_total = 100 * res.rss / process.memory_percent() # and total memory is calculated as actual value is not cross-platform safe
+            ram = { 'free': ram_total - res.rss, 'used': res.rss, 'total': ram_total }
         except Exception as err:
             ram = { 'error': f'{err}' }
         try:
             import torch
             if torch.cuda.is_available():
                 s = torch.cuda.mem_get_info()
-                system = { 'free': gb(s[0]), 'used': gb(s[1] - s[0]), 'total': gb(s[1]) }
+                system = { 'free': s[0], 'used': s[1] - s[0], 'total': s[1] }
                 s = dict(torch.cuda.memory_stats(shared.device))
-                allocated = { 'current': gb(s['allocated_bytes.all.current']), 'peak': gb(s['allocated_bytes.all.peak']) }
-                reserved = { 'current': gb(s['reserved_bytes.all.current']), 'peak': gb(s['reserved_bytes.all.peak']) }
-                active = { 'current': gb(s['active_bytes.all.current']), 'peak': gb(s['active_bytes.all.peak']) }
-                inactive = { 'current': gb(s['inactive_split_bytes.all.current']), 'peak': gb(s['inactive_split_bytes.all.peak']) }
+                allocated = { 'current': s['allocated_bytes.all.current'], 'peak': s['allocated_bytes.all.peak'] }
+                reserved = { 'current': s['reserved_bytes.all.current'], 'peak': s['reserved_bytes.all.peak'] }
+                active = { 'current': s['active_bytes.all.current'], 'peak': s['active_bytes.all.peak'] }
+                inactive = { 'current': s['inactive_split_bytes.all.current'], 'peak': s['inactive_split_bytes.all.peak'] }
                 warnings = { 'retries': s['num_alloc_retries'], 'oom': s['num_ooms'] }
                 cuda = {
                     'system': system,
