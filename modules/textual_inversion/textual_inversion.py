@@ -255,13 +255,11 @@ def write_loss(log_directory, filename, step, epoch_len, values):
 
     if step % shared.opts.training_write_csv_every != 0:
         return
-    write_csv_header = False if os.path.exists(os.path.join(log_directory, filename)) else True
 
-    with open(os.path.join(log_directory, filename), "a+", newline='') as fout:
+    with open(os.path.join(log_directory, filename), "w", newline='') as fout:
         csv_writer = csv.DictWriter(fout, fieldnames=["step", "epoch", "epoch_step", *(values.keys())])
 
-        if write_csv_header:
-            csv_writer.writeheader()
+        csv_writer.writeheader()
 
         epoch = (step - 1) // epoch_len
         epoch_step = (step - 1) % epoch_len
