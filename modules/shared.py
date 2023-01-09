@@ -89,6 +89,7 @@ parser.add_argument("--api-auth", type=str, help='Set authentication for API lik
 parser.add_argument("--api-log", action='store_true', help="use api-log=True to enable logging of all API requests")
 parser.add_argument("--nowebui", action='store_true', help="use api=True to launch the API instead of the webui")
 parser.add_argument("--ui-debug-mode", action='store_true', help="Don't load model to quickly launch UI")
+parser.add_argument("--load_gpu",  action='store_true', help="Force loading model in GPU memory")
 parser.add_argument("--device-id", type=str, help="Select the default CUDA device to use (export CUDA_VISIBLE_DEVICES=0,1,etc might be needed before)", default=None)
 parser.add_argument("--administrator", action='store_true', help="Administrator rights", default=False)
 parser.add_argument("--cors-allow-origins", type=str, help="Allowed CORS origin(s) in the form of a comma-separated list (no spaces)", default=None)
@@ -131,7 +132,12 @@ devices.device, devices.device_interrogate, devices.device_gfpgan, devices.devic
     (devices.cpu if any(y in cmd_opts.use_cpu for y in [x, 'all']) else devices.get_optimal_device() for x in ['sd', 'interrogate', 'gfpgan', 'esrgan', 'codeformer'])
 
 device = devices.device
-weight_load_location = None if cmd_opts.lowram else "cpu"
+if cmd_opts.lowram:
+    weight_load_location = None
+elif cmd_opts.load_gpu:
+    weight_load_location = device
+else:
+    weight_load_location = "cpu"
 
 batch_cond_uncond = cmd_opts.always_batch_cond_uncond or not (cmd_opts.lowvram or cmd_opts.medvram)
 parallel_processing_allowed = not cmd_opts.lowvram and not cmd_opts.medvram
