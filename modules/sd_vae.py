@@ -3,7 +3,7 @@ import safetensors.torch
 import os
 import collections
 from collections import namedtuple
-from modules import shared, devices, script_callbacks
+from modules import shared, devices, script_callbacks, sd_models
 from modules.paths import models_path
 import glob
 from copy import deepcopy
@@ -172,13 +172,8 @@ def load_vae(model, vae_file=None):
             assert os.path.isfile(vae_file), f"VAE file doesn't exist: {vae_file}"
             print(f"Loading VAE weights from: {vae_file}")
             store_base_vae(model)
-            _, extension = os.path.splitext(vae_file)
-            if extension.lower() == ".safetensors":
-                vae_ckpt = safetensors.torch.load_file(vae_file, device=shared.weight_load_location)
-            else:
-                vae_ckpt = torch.load(vae_file, map_location=shared.weight_load_location)
-            if "state_dict" in vae_ckpt:
-                vae_ckpt = vae_ckpt["state_dict"]
+
+            vae_ckpt = sd_models.read_state_dict(vae_file, map_location=shared.weight_load_location)
             vae_dict_1 = {k: v for k, v in vae_ckpt.items() if k[0:4] != "loss" and k not in vae_ignore_keys}
             _load_vae_dict(model, vae_dict_1)
 
@@ -210,9 +205,11 @@ def _load_vae_dict(model, vae_dict_1):
     model.first_stage_model.load_state_dict(vae_dict_1)
     model.first_stage_model.to(devices.dtype_vae)
 
+
 def clear_loaded_vae():
     global loaded_vae_file
     loaded_vae_file = None
+
 
 def reload_vae_weights(sd_model=None, vae_file="auto"):
     from modules import lowvram, devices, sd_hijack
