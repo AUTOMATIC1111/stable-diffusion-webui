@@ -69,7 +69,7 @@ Use `--port xxxx` to make the server listen on a specific port, xxxx being the w
 --opt-split-attention | None | False 		| force-enables Doggettx's cross-attention layer optimization. By default, it's on for cuda enabled systems. |
 --opt-split-attention-invokeai | None | False			| force-enables InvokeAI's cross-attention layer optimization. By default, it's on when cuda is unavailable. |
 --opt-split-attention-v1 | None | False 				| enable older version of split attention optimization that does not consume all the VRAM it can find |
---opt-channelslast | None | False    					| change memory type for stable diffusion to channels last |
+--opt-channelslast | None | False    					| Enable alternative layout for 4d tensors, may result in faster inference **only** on Nvidia cards with Tensor cores (16xx and higher) |
 --disable-opt-split-attention | None | False 			| force-disables cross-attention layer optimization |
 --use-cpu | {all, sd, interrogate, gfpgan, bsrgan, esrgan, scunet, codeformer} | None | use CPU as torch device for specified modules |
 --no-half     | None | False         				 | do not switch the model to 16-bit floats |
