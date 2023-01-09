@@ -12,6 +12,11 @@ If you are making changes to used libraries or the installation script, you must
 # Code style
 I mostly follow code style suggested by PyCharm, with the exception of disabled line length limit.
 
+# Quirks
+* `webui.user.bat` is never to be edited
+* `requirements_versions.txt` is for python 3.10.6
+* `requirements.txt` is for people running on colabs and whatnot using python 3.7
+
 # Gradio
 Gradio at some point wanted to add this section to shill their project in the contributing section, which I didn't have at the time, so here it is now.
 
