@@ -223,6 +223,7 @@ def load_model_weights(model, checkpoint_info, vae_file="auto"):
         devices.dtype = torch.float32 if shared.cmd_opts.no_half or shared.cmd_opts.precision == "upcast" else torch.float16
         devices.dtype_vae = torch.float32 if shared.cmd_opts.no_half or shared.cmd_opts.no_half_vae else torch.float16
         devices.dtype_unet = model.model.diffusion_model.dtype
+        devices.unet_needs_upcast = True if shared.cmd_opts.precision == "upcast" and devices.dtype == torch.float32 and devices.dtype_unet == torch.float16 else False
 
         model.first_stage_model.to(devices.dtype_vae)
 

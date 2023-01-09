@@ -40,7 +40,7 @@ th = TorchHijackForUnet()
 
 orig_apply_model = ldm.models.diffusion.ddpm.LatentDiffusion.apply_model
 def apply_model(self, x_noisy, t, cond, **kwargs):
-    if shared.cmd_opts.precision == "upcast" and devices.dtype == torch.float32 and devices.dtype_unet == torch.float16:
+    if devices.unet_needs_upcast:
         cond['c_crossattn'] = [y.to(devices.dtype_unet) for y in cond['c_crossattn']]
         cond['c_concat'] = [y.to(devices.dtype_unet) for y in cond['c_concat']]
         return orig_apply_model(self, x_noisy.to(devices.dtype_unet), t.to(devices.dtype_unet), cond, **kwargs).to(devices.dtype)
@@ -53,7 +53,7 @@ ldm.models.diffusion.ddpm.LatentDiffusion.apply_model = apply_model
 
 orig_timestep_embedding = ldm.modules.diffusionmodules.openaimodel.timestep_embedding
 def timestep_embedding(*args, **kwargs):
-    if shared.cmd_opts.precision == "upcast" and devices.dtype == torch.float32 and devices.dtype_unet == torch.float16:
+    if devices.unet_needs_upcast:
         return orig_timestep_embedding(*args, **kwargs).to(devices.dtype_unet)
     else:
         return orig_timestep_embedding(*args, **kwargs)
@@ -64,7 +64,7 @@ ldm.modules.diffusionmodules.openaimodel.timestep_embedding = timestep_embedding
 
 orig_GroupNorm32_forward = ldm.modules.diffusionmodules.util.GroupNorm32.forward
 def GroupNorm32_forward(self, *args, **kwargs):
-    if shared.cmd_opts.precision == "upcast" and devices.dtype == torch.float32 and devices.dtype_unet == torch.float16:
+    if devices.unet_needs_upcast:
         return orig_GroupNorm32_forward(self.to(devices.dtype), *args, **kwargs)
     else:
         return orig_GroupNorm32_forward(self, *args, **kwargs)
@@ -72,7 +72,7 @@ def GroupNorm32_forward(self, *args, **kwargs):
 
 orig_GEGLU_forward = ldm.modules.attention.GEGLU.forward
 def GEGLU_forward(self, x):
-    if shared.cmd_opts.precision == "upcast" and devices.dtype == torch.float32 and devices.dtype_unet == torch.float16:
+    if devices.unet_needs_upcast:
         return orig_GEGLU_forward(self.to(devices.dtype), x.to(devices.dtype)).to(devices.dtype_unet)
     else:
         return orig_GEGLU_forward(self, x)
