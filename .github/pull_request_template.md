@@ -18,8 +18,8 @@ More technical discussion about your changes go here, plus anything that a maint
 
 List the environment you have developed / tested this on. As per the contributing page, changes should be able to work on Windows out of the box.
  - OS: [e.g. Windows, Linux]
- - Browser [e.g. chrome, safari]
- - Graphics card [e.g. NVIDIA RTX 2080 8GB, AMD RX 6600 8GB]
+ - Browser: [e.g. chrome, safari]
+ - Graphics card: [e.g. NVIDIA RTX 2080 8GB, AMD RX 6600 8GB]
 
 **Screenshots or videos of your changes**
 
