@@ -10,7 +10,7 @@
 #clone_dir="stable-diffusion-webui"
 
 # Commandline arguments for webui.py, for example: export COMMANDLINE_ARGS="--medvram --opt-split-attention"
-#export COMMANDLINE_ARGS=""
+export COMMANDLINE_ARGS="--api --opt-split-attention --listen"
 
 # python3 executable
 #python_cmd="python3"
@@ -41,6 +41,6 @@
 #export BLIP_COMMIT_HASH=""
 
 # Uncomment to enable accelerated launch
-#export ACCELERATE="True"
+export ACCELERATE="True"
 
 ###########################################

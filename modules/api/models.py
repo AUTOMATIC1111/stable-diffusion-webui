@@ -175,6 +175,9 @@ class InterrogateRequest(BaseModel):
 class InterrogateResponse(BaseModel):
     caption: str = Field(default=None, title="Caption", description="The generated caption for the image.")
 
+class TokenCountResponse(BaseModel):
+    count: str = Field(default=None, title="Count", description="The number of tokens in the string.")
+
 class TrainResponse(BaseModel):
     info: str = Field(title="Train info", description="Response string from train embedding or hypernetwork task.")
 

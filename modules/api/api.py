@@ -22,6 +22,7 @@ from modules.sd_models import checkpoints_list
 from modules.realesrgan_model import get_realesrgan_models
 from modules import devices
 from typing import List
+from modules.ui import count_tokens
 
 def upscaler_to_index(name: str):
     try:
@@ -107,6 +108,7 @@ class Api:
         self.add_api_route("/sdapi/v1/preprocess", self.preprocess, methods=["POST"], response_model=PreprocessResponse)
         self.add_api_route("/sdapi/v1/train/embedding", self.train_embedding, methods=["POST"], response_model=TrainResponse)
         self.add_api_route("/sdapi/v1/train/hypernetwork", self.train_hypernetwork, methods=["POST"], response_model=TrainResponse)
+        self.add_api_route("/sdapi/v1/token_count", count_tokens, methods=["POST"], response_model=TokenCountResponse)
 
     def add_api_route(self, path: str, endpoint, **kwargs):
         if shared.cmd_opts.api_auth:
