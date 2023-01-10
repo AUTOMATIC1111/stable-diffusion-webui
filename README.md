@@ -149,5 +149,4 @@ Licenses for borrowed code can be found in `Settings -> Licenses` screen, and al
 - Security advice - RyotaK
 - Initial Gradio script - posted on 4chan by an Anonymous user. Thank you Anonymous user.
 - Sampling in float32 precision from a float16 UNet - marunine for the idea, Birch-san for the example Diffusers implementation (https://github.com/Birch-san/diffusers-play/tree/92feee6)
-- Idea to upcast attention to use Stable Diffusion 2.1 for inference with a float16 UNet - Diffusers (https://github.com/huggingface/diffusers/pull/1590)
 - (You)
