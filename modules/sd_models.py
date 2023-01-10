@@ -14,7 +14,7 @@ import ldm.modules.midas as midas
 
 from ldm.util import instantiate_from_config
 
-from modules import shared, modelloader, devices, script_callbacks, sd_vae, sd_disable_initialization
+from modules import shared, modelloader, devices, script_callbacks, sd_vae, sd_disable_initialization, errors
 from modules.paths import models_path
 from modules.sd_hijack_inpainting import do_inpainting_hijack, should_hijack_inpainting
 
@@ -333,7 +333,11 @@ def load_model(checkpoint_info=None):
 
     timer = Timer()
 
-    with sd_disable_initialization.DisableInitialization():
+    try:
+        with sd_disable_initialization.DisableInitialization():
+            sd_model = instantiate_from_config(sd_config.model)
+    except Exception as e:
+        print('Failed to create model quickly; will retry using slow method.', file=sys.stderr)
         sd_model = instantiate_from_config(sd_config.model)
 
     elapsed_create = timer.elapsed()
