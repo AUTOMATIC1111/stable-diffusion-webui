@@ -666,5 +666,9 @@
     "customscript/additional_networks.py/img2img/Weight 5/value": 1,
     "customscript/additional_networks.py/img2img/Weight 5/minimum": -1.0,
     "customscript/additional_networks.py/img2img/Weight 5/maximum": 2.0,
-    "customscript/additional_networks.py/img2img/Weight 5/step": 0.05
+    "customscript/additional_networks.py/img2img/Weight 5/step": 0.05,
+    "train/Prompt template/visible": true,
+    "train/Prompt template/value": "subject_filewords.txt",
+    "train/Do not resize images/visible": true,
+    "train/Do not resize images/value": false
 }
