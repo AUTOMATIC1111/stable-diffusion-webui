@@ -3,9 +3,10 @@ from collections import namedtuple
 
 import torch
 
-from modules import prompt_parser, devices, sd_hijack
+from modules import prompt_parser, devices, sd_hijack, shared
 from modules.shared import opts
 
+import transformers.models.clip.modeling_clip
 
 class PromptChunk:
     """
@@ -306,3 +307,20 @@ class FrozenCLIPEmbedderWithCustomWords(FrozenCLIPEmbedderWithCustomWordsBase):
         embedded = embedding_layer.token_embedding.wrapped(ids.to(embedding_layer.token_embedding.wrapped.weight.device)).squeeze(0)
 
         return embedded
+
+def bmm(self, input, mat2, *args, **kwargs):
+    if input.dtype == torch.float32 and mat2.dtype == torch.float16 and not self.hijack_needed:
+        try:
+            r = torch.bmm(input, mat2, *args, **kwargs)
+            transformers.models.clip.modeling_clip.torch = torch
+            return r
+        except:
+            hijack_needed = True
+            return bmm(self, input, mat2, *args, **kwargs)
+    elif input.dtype == torch.float32 and mat2.dtype == torch.float16:
+        return torch.bmm(input, mat2.float(), *args, **kwargs).to(mat2.dtype)
+    return torch.bmm(input, mat2, *args, **kwargs)
+        
+
+if devices.device.type != 'mps':
+    transformers.models.clip.modeling_clip.torch = shared.GenericHijack(torch, {'bmm': bmm}, {'hijack_needed': None})
