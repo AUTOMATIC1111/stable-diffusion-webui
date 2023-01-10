@@ -1,3 +1,9 @@
+### The ***original source*** of this wiki is the developer of stable-diffusion-webui: **AUTOMATIC1111**.
+
+If you need additional assistance or resources, you can always refer to the official AUTOMATIC1111'a GitHub repository: [https://github.com/AUTOMATIC1111/stable-diffusion-webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui)
+
+---
+
 # Stable Diffusion web UI
 A browser interface based on Gradio library for Stable Diffusion.
 
