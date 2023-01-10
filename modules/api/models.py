@@ -262,5 +262,5 @@ class EmbeddingsResponse(BaseModel):
     skipped: Dict[str, EmbeddingItem] = Field(title="Skipped", description="Embeddings skipped for the current model (likely due to architecture incompatibility)")
 
 class MemoryResponse(BaseModel):
-    ram: dict[str, str] | dict[str, float] = Field(title="RAM", description="System memory stats")
-    cuda: dict[str, str] | dict[str, dict] = Field(title="CUDA", description="nVidia CUDA memory stats")
+    ram: dict = Field(title="RAM", description="System memory stats")
+    cuda: dict = Field(title="CUDA", description="nVidia CUDA memory stats")
