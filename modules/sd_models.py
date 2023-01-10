@@ -49,6 +49,9 @@ def checkpoint_tiles():
 
 
 def find_checkpoint_config(info):
+    if info is None:
+        return shared.cmd_opts.config
+
     config = os.path.splitext(info.filename)[0] + ".yaml"
     if os.path.exists(config):
         return config
@@ -345,14 +348,16 @@ def reload_model_weights(sd_model=None, info=None):
 
     if not sd_model:
         sd_model = shared.sd_model
+    if sd_model is None: # previous model load failed
+        current_checkpoint_info = None
+    else:
+        current_checkpoint_info = sd_model.sd_checkpoint_info
+        if sd_model.sd_model_checkpoint == checkpoint_info.filename:
+            return
 
-    current_checkpoint_info = sd_model.sd_checkpoint_info
     checkpoint_config = find_checkpoint_config(current_checkpoint_info)
 
-    if sd_model.sd_model_checkpoint == checkpoint_info.filename:
-        return
-
-    if checkpoint_config != find_checkpoint_config(checkpoint_info) or should_hijack_inpainting(checkpoint_info) != should_hijack_inpainting(sd_model.sd_checkpoint_info):
+    if current_checkpoint_info is None or checkpoint_config != find_checkpoint_config(checkpoint_info) or should_hijack_inpainting(checkpoint_info) != should_hijack_inpainting(sd_model.sd_checkpoint_info):
         del sd_model
         checkpoints_loaded.clear()
         load_model(checkpoint_info)
