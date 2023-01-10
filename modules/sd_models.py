@@ -24,6 +24,7 @@ model_path = os.path.abspath(os.path.join(models_path, model_dir))
 CheckpointInfo = namedtuple("CheckpointInfo", ['filename', 'title', 'hash', 'model_name'])
 checkpoints_list = {}
 checkpoints_loaded = collections.OrderedDict()
+enumerated_configs = [] # updated with any config that matches model file when loading a model
 
 try:
     # this silences the annoying "Some weights of the model checkpoint were not used when initializing..." message at start.
@@ -49,15 +50,41 @@ def checkpoint_tiles():
     return sorted([x.title for x in checkpoints_list.values()], key = alphanumeric_key)
 
 
+def set_checkpoint_config(config: str):
+    abspath = os.path.abspath(config) 
+    relpath = os.path.relpath(abspath, os.path.join(shared.script_path, 'configs')) if not config.startswith(os.path.pathsep) else abspath
+    shared.opts.data['sd_model_config'] = relpath
+    pass
+
+
 def find_checkpoint_config(info):
+    def get_current_config():
+        dir = os.path.dirname(shared.opts.data['sd_model_config'])
+        if len(dir) == 0: # using short config name
+            return os.path.join('configs', shared.opts.data['sd_model_config'])
+        else: # using config path
+            return shared.opts.data['sd_model_config']
+
     if info is None:
-        return shared.cmd_opts.config
+        return get_current_config()
 
     config = os.path.splitext(info.filename)[0] + ".yaml"
     if os.path.exists(config):
+        if not config in enumerated_configs:
+            enumerated_configs.append(config)
         return config
 
-    return shared.cmd_opts.config
+    return get_current_config()
+
+
+def list_checkpoint_configs():
+    from pathlib import Path
+    config_dir = Path(os.path.join(shared.script_path, 'configs'))
+    config_list = sorted([os.path.basename(f) for f in list(config_dir.glob('*.yaml'))])
+    if shared.cmd_opts.config is not None and not shared.cmd_opts.config in config_list:
+        config_list.append(shared.cmd_opts.config)
+    config_list = config_list + enumerated_configs
+    return config_list
 
 
 def list_models():
@@ -305,8 +332,9 @@ def load_model(checkpoint_info=None):
     checkpoint_info = checkpoint_info or select_checkpoint()
     checkpoint_config = find_checkpoint_config(checkpoint_info)
 
-    if checkpoint_config != shared.cmd_opts.config:
+    if shared.sd_model is None or checkpoint_config != find_checkpoint_config(shared.sd_model.sd_checkpoint_info):
         print(f"Loading config from: {checkpoint_config}")
+        set_checkpoint_config(checkpoint_config)
 
     if shared.sd_model:
         sd_hijack.model_hijack.undo_hijack(shared.sd_model)
@@ -380,9 +408,7 @@ def reload_model_weights(sd_model=None, info=None):
         if sd_model.sd_model_checkpoint == checkpoint_info.filename:
             return
 
-    checkpoint_config = find_checkpoint_config(current_checkpoint_info)
-
-    if current_checkpoint_info is None or checkpoint_config != find_checkpoint_config(checkpoint_info) or should_hijack_inpainting(checkpoint_info) != should_hijack_inpainting(sd_model.sd_checkpoint_info):
+    if current_checkpoint_info is None or find_checkpoint_config(current_checkpoint_info) != find_checkpoint_config(checkpoint_info) or should_hijack_inpainting(checkpoint_info) != should_hijack_inpainting(sd_model.sd_checkpoint_info):
         del sd_model
         checkpoints_loaded.clear()
         load_model(checkpoint_info)

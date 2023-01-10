@@ -14,7 +14,7 @@ import modules.interrogate
 import modules.memmon
 import modules.styles
 import modules.devices as devices
-from modules import localization, sd_vae, extensions, script_loading, errors
+from modules import localization, sd_vae, sd_models, extensions, script_loading, errors
 from modules.paths import models_path, script_path, sd_path
 
 
@@ -22,6 +22,7 @@ demo = None
 
 sd_model_file = os.path.join(script_path, 'model.ckpt')
 default_sd_model_file = sd_model_file
+default_sd_config_file = 'v1-inference.yaml'
 parser = argparse.ArgumentParser()
 parser.add_argument("--config", type=str, default=os.path.join(script_path, "configs/v1-inference.yaml"), help="path to config which constructs model",)
 parser.add_argument("--ckpt", type=str, default=sd_model_file, help="path to checkpoint of stable diffusion model; if specified, this checkpoint will be added to the list of checkpoints and loaded",)
@@ -377,6 +378,7 @@ options_templates.update(options_section(('training', "Training"), {
 
 options_templates.update(options_section(('sd', "Stable Diffusion"), {
     "sd_model_checkpoint": OptionInfo(None, "Stable Diffusion checkpoint", gr.Dropdown, lambda: {"choices": list_checkpoint_tiles()}, refresh=refresh_checkpoints),
+    "sd_model_config": OptionInfo(default_sd_config_file, "Stable Diffusion configs", gr.Dropdown, lambda: {"choices": sd_models.list_checkpoint_configs()}, refresh=sd_models.list_checkpoint_configs),
     "sd_checkpoint_cache": OptionInfo(0, "Checkpoints to cache in RAM", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
     "sd_vae_checkpoint_cache": OptionInfo(0, "VAE Checkpoints to cache in RAM", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
     "sd_vae": OptionInfo("auto", "SD VAE", gr.Dropdown, lambda: {"choices": sd_vae.vae_list}, refresh=sd_vae.refresh_vae_list),
@@ -591,6 +593,9 @@ sd_upscalers = []
 sd_model = None
 
 clip_model = None
+
+if cmd_opts.config is not None:
+    opts.data['sd_model_config'] = cmd_opts.config
 
 progress_print_out = sys.stdout
 
