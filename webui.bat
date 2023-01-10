@@ -1,7 +1,7 @@
 @echo off
 
 if not defined PYTHON (set PYTHON=python)
-if not defined VENV_DIR (set VENV_DIR=venv)
+if not defined VENV_DIR (set VENV_DIR=%~dp0\venv)
 
 set ERROR_REPORTING=FALSE
 
@@ -26,7 +26,7 @@ echo Unable to create venv in directory %VENV_DIR%
 goto :show_stdout_stderr
 
 :activate_venv
-set PYTHON="%~dp0%VENV_DIR%\Scripts\Python.exe"
+set PYTHON="%VENV_DIR%\Scripts\Python.exe"
 echo venv %PYTHON%
 if [%ACCELERATE%] == ["True"] goto :accelerate
 goto :launch
@@ -35,7 +35,7 @@ goto :launch
 
 :accelerate
 echo "Checking for accelerate"
-set ACCELERATE="%~dp0%VENV_DIR%\Scripts\accelerate.exe"
+set ACCELERATE="%VENV_DIR%\Scripts\accelerate.exe"
 if EXIST %ACCELERATE% goto :accelerate_launch
 
 :launch
