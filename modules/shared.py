@@ -4,7 +4,6 @@ import json
 import os
 import sys
 import time
-from types import MethodType
 
 from PIL import Image
 import gradio as gr
@@ -636,24 +635,3 @@ mem_mon.start()
 def listfiles(dirname):
     filenames = [os.path.join(dirname, x) for x in sorted(os.listdir(dirname)) if not x.startswith(".")]
     return [file for file in filenames if os.path.isfile(file)]
-
-
-# Generic hijack, Takes an object, a dictionary of attributes to remap, and optionally a dictonary of names/values to initialize
-class GenericHijack:
-    def __init__(self, origObject, remapDict, *args):
-        self.__origObject = origObject
-        self.__remapDict = remapDict
-        for key in remapDict.keys():
-            remapDict[key] = MethodType(remapDict[key], self)
-        if args:
-            for key in args[0].keys():
-                setattr(self, key, args[0][key])
-
-    def __getattr__(self, item):
-        if item in self.__remapDict.keys():
-            return self.__remapDict[item]
-
-        if hasattr(self.__origObject, item):
-            return getattr(self.__origObject, item)
-
-        raise AttributeError("'{}' object has no attribute '{}'".format(type(self).__name__, item))

@@ -362,6 +362,33 @@ class CFGDenoiser(torch.nn.Module):
         return denoised
 
 
+class TorchHijack:
+    def __init__(self, sampler_noises):
+        # Using a deque to efficiently receive the sampler_noises in the same order as the previous index-based
+        # implementation.
+        self.sampler_noises = deque(sampler_noises)
+
+    def __getattr__(self, item):
+        if item == 'randn_like':
+            return self.randn_like
+
+        if hasattr(torch, item):
+            return getattr(torch, item)
+
+        raise AttributeError("'{}' object has no attribute '{}'".format(type(self).__name__, item))
+
+    def randn_like(self, x):
+        if self.sampler_noises:
+            noise = self.sampler_noises.popleft()
+            if noise.shape == x.shape:
+                return noise
+
+        if x.device.type == 'mps':
+            return torch.randn_like(x, device=devices.cpu).to(x.device)
+        else:
+            return torch.randn_like(x)
+
+
 # MPS fix for randn in torchsde
 def torchsde_randn(size, dtype, device, seed):
     if device.type == 'mps':
@@ -423,20 +450,7 @@ class KDiffusionSampler:
         self.model_wrap.step = 0
         self.eta = p.eta or opts.eta_ancestral
 
-        def randn_like(self, x):
-            if self.sampler_noises:
-                noise = self.sampler_noises.popleft()
-                if noise.shape == x.shape:
-                    return noise
-        
-            if x.device.type == 'mps':
-                return torch.randn_like(x, device=devices.cpu).to(x.device)
-            else:
-                return torch.randn_like(x)
-
-        # Using a deque to efficiently receive the sampler_noises in the same order as the previous index-based
-        # implementation.
-        k_diffusion.sampling.torch = shared.GenericHijack(torch, {'randn_like': randn_like}, {'sampler_noises': deque(self.sampler_noises if self.sampler_noises is not None else [])})
+        k_diffusion.sampling.torch = TorchHijack(self.sampler_noises if self.sampler_noises is not None else [])
 
         extra_params_kwargs = {}
         for param_name in self.extra_params:
