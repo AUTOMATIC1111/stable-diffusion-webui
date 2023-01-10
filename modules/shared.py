@@ -97,6 +97,7 @@ parser.add_argument("--cors-allow-origins-regex", type=str, help="Allowed CORS o
 parser.add_argument("--tls-keyfile", type=str, help="Partially enables TLS, requires --tls-certfile to fully function", default=None)
 parser.add_argument("--tls-certfile", type=str, help="Partially enables TLS, requires --tls-keyfile to fully function", default=None)
 parser.add_argument("--server-name", type=str, help="Sets hostname of server", default=None)
+parser.add_argument("--img-output-dir", type=str, help="Sets the output directory for images", default=None)
 
 script_loading.preload_extensions(extensions.extensions_dir, parser)
 script_loading.preload_extensions(extensions.extensions_builtin_dir, parser)
@@ -324,15 +325,15 @@ options_templates.update(options_section(('saving-images', "Saving images/grids"
     "clean_temp_dir_at_start": OptionInfo(False, "Cleanup non-default temporary directory when starting webui"),
 
 }))
-
+img_output_dir: str = cmd_opts.img_output_dir or "outputs/"
 options_templates.update(options_section(('saving-paths', "Paths for saving"), {
     "outdir_samples": OptionInfo("", "Output directory for images; if empty, defaults to three directories below", component_args=hide_dirs),
-    "outdir_txt2img_samples": OptionInfo("outputs/txt2img-images", 'Output directory for txt2img images', component_args=hide_dirs),
-    "outdir_img2img_samples": OptionInfo("outputs/img2img-images", 'Output directory for img2img images', component_args=hide_dirs),
-    "outdir_extras_samples": OptionInfo("outputs/extras-images", 'Output directory for images from extras tab', component_args=hide_dirs),
+    "outdir_txt2img_samples": OptionInfo(img_output_dir + "txt2img-images", 'Output directory for txt2img images', component_args=hide_dirs),
+    "outdir_img2img_samples": OptionInfo(img_output_dir + "img2img-images", 'Output directory for img2img images', component_args=hide_dirs),
+    "outdir_extras_samples": OptionInfo(img_output_dir + "extras-images", 'Output directory for images from extras tab', component_args=hide_dirs),
     "outdir_grids": OptionInfo("", "Output directory for grids; if empty, defaults to two directories below", component_args=hide_dirs),
-    "outdir_txt2img_grids": OptionInfo("outputs/txt2img-grids", 'Output directory for txt2img grids', component_args=hide_dirs),
-    "outdir_img2img_grids": OptionInfo("outputs/img2img-grids", 'Output directory for img2img grids', component_args=hide_dirs),
+    "outdir_txt2img_grids": OptionInfo(img_output_dir + "txt2img-grids", 'Output directory for txt2img grids', component_args=hide_dirs),
+    "outdir_img2img_grids": OptionInfo(img_output_dir + "img2img-grids", 'Output directory for img2img grids', component_args=hide_dirs),
     "outdir_save": OptionInfo("log/images", "Directory for saving images using the Save button", component_args=hide_dirs),
 }))
 
