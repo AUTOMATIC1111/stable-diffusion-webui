@@ -315,7 +315,7 @@ def bmm(self, input, mat2, *args, **kwargs):
             transformers.models.clip.modeling_clip.torch = torch
             return r
         except:
-            hijack_needed = True
+            self.hijack_needed = True
             return bmm(self, input, mat2, *args, **kwargs)
     elif input.dtype == torch.float32 and mat2.dtype == torch.float16:
         return torch.bmm(input, mat2.float(), *args, **kwargs).to(mat2.dtype)
