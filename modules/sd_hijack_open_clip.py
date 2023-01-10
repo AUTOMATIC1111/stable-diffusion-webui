@@ -24,7 +24,7 @@ class FrozenOpenCLIPEmbedderWithCustomWords(sd_hijack_clip.FrozenCLIPEmbedderWit
         return tokenized
 
     def encode_with_transformers(self, tokens):
-        # set self.wrapped.layer_idx here according to opts.CLIP_stop_at_last_layers
+        self.wrapped.layer_idx = opts.CLIP_stop_at_last_layers
         z = self.wrapped.encode_with_transformer(tokens)
 
         return z
