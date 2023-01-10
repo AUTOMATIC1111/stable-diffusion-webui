@@ -1,4 +1,4 @@
-### The ***original source*** of this wiki is the developer of stable-diffusion-webui: **AUTOMATIC1111**.
+### The ***original source*** of this repo is the developer of stable-diffusion-webui: **AUTOMATIC1111**.
 
 If you need additional assistance or resources, you can always refer to the official AUTOMATIC1111'a GitHub repository: [https://github.com/AUTOMATIC1111/stable-diffusion-webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui)
 
