@@ -1,3 +1,14 @@
+# 2023-01-23 - Alternating words syntax bugfix
+If you used alternating words syntax bugfix with emphasis before 97ff69eff338c6641f4abf430bf5ac112c1775e0, the program would incorrectly replace emphasized part with just `(`. So, `[a|(b:1.1)]`, rather than becoming a sequence of
+
+`a` -> `(b:1.1)` -> `a` -> `(b:1.1)` -> ...
+
+becomes
+
+`a` -> `(` -> `a` -> `(` -> ...
+
+The bug was fixed. If you need to reproduce old seeds, put the opening parenthesis into your prompt yourself (`[a|\(]`)
+
 # 2023-01-03 - Hires fix rework
 Rather than using width/height to specify target resolution, width/height is used to specify first pass resolution, and resulting resolution is either set using "Scale by" multiplier (Hires upscale), or directly using "Resize width to" and/or "Resize height to" (Hires resize).
 
