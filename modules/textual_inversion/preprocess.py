@@ -135,13 +135,18 @@ def preprocess_work(process_src, process_dst, process_width, process_height, pre
     params.process_caption_deepbooru = process_caption_deepbooru
     params.preprocess_txt_action = preprocess_txt_action
 
-    for index, imagefile in enumerate(tqdm.tqdm(files)):
+    pbar = tqdm.tqdm(files)
+    for index, imagefile in enumerate(pbar):
         params.subindex = 0
         filename = os.path.join(src, imagefile)
         try:
             img = Image.open(filename).convert("RGB")
         except Exception:
             continue
+
+        description = f"Preprocessing [Image {index}/{len(files)}]"
+        pbar.set_description(description)
+        shared.state.textinfo = description
 
         params.src = filename
 
