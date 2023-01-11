@@ -3,6 +3,11 @@ from collections import namedtuple
 from typing import List
 import lark
 
+try:
+    from modules.shared import opts
+except:
+    pass
+
 # a prompt like this: "fantasy landscape with a [mountain:lake:0.25] and [an oak:a christmas tree:0.75][ in foreground::0.6][ in background:0.25] [shoddy:masterful:0.5]"
 # will be represented with prompt_schedule like this (assuming steps=100):
 # [25, 'fantasy landscape with a mountain and an oak in foreground shoddy']
@@ -49,6 +54,8 @@ def get_learned_conditioning_prompt_schedules(prompts, steps):
     [[5, 'a  c'], [10, 'a {b|d{ c']]
     >>> g("((a][:b:c [d:3]")
     [[3, '((a][:b:c '], [10, '((a][:b:c d']]
+    >>> g("[a|(b:1.1)]")
+    [[1, 'a'], [2, '(b:1.1)'], [3, 'a'], [4, '(b:1.1)'], [5, 'a'], [6, '(b:1.1)'], [7, 'a'], [8, '(b:1.1)'], [9, 'a'], [10, '(b:1.1)']]
     """
 
     def collect_steps(steps, tree):
@@ -84,7 +91,13 @@ def get_learned_conditioning_prompt_schedules(prompts, steps):
                 yield args[0].value
             def __default__(self, data, children, meta):
                 for child in children:
-                    yield from child
+                    try:
+                        if opts.use_old_prompt_parser_default_step_transformer:
+                            yield from child
+                        else:
+                            yield child
+                    except:
+                        yield child
         return AtStep().transform(tree)
 
     def get_schedule(prompt):
