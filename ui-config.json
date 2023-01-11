@@ -670,5 +670,7 @@
     "train/Prompt template/visible": true,
     "train/Prompt template/value": "subject_filewords.txt",
     "train/Do not resize images/visible": true,
-    "train/Do not resize images/value": false
+    "train/Do not resize images/value": false,
+    "train/Enter hypernetwork Dropout structure (or empty). Recommended : 0~0.35 incrementing sequence: 0, 0.05, 0.15/visible": true,
+    "train/Enter hypernetwork Dropout structure (or empty). Recommended : 0~0.35 incrementing sequence: 0, 0.05, 0.15/value": "0, 0, 0"
 }

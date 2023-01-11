@@ -50,13 +50,13 @@
     "multiple_tqdm": true,
     "unload_models_when_training": true,
     "pin_memory": true,
-    "save_optimizer_state": true,
+    "save_optimizer_state": false,
     "dataset_filename_word_regex": "",
     "dataset_filename_join_string": " ",
     "training_image_repeats_per_epoch": 1,
     "training_write_csv_every": 10.0,
     "training_xattention_optimizations": false,
-    "sd_model_checkpoint": "sd21-hot-fantasy.safetensors [651c7c98]",
+    "sd_model_checkpoint": "sd-v15-runwayml.ckpt [81761151]",
     "sd_checkpoint_cache": 0,
     "sd_vae": "vae-ft-mse-840000-ema-pruned",
     "sd_vae_as_default": false,
@@ -151,5 +151,6 @@
     "ui_reorder": "sampler, dimensions, cfg, seed, checkboxes, hires_fix, batch, scripts",
     "always_discard_next_to_last_sigma": false,
     "clip_models_path": "models/CLIP",
-    "save_training_settings_to_txt": true
+    "save_training_settings_to_txt": true,
+    "use_old_hires_fix_width_height": false
 }
