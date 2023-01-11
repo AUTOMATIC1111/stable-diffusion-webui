@@ -333,6 +333,7 @@ def load_model(checkpoint_info=None):
 
     timer = Timer()
 
+    sd_model = None
     try:
         with sd_disable_initialization.DisableInitialization():
             sd_model = instantiate_from_config(sd_config.model)
