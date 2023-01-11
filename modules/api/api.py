@@ -286,7 +286,7 @@ class Api:
         # copy from check_progress_call of ui.py
 
         if shared.state.job_count == 0:
-            return ProgressResponse(progress=0, eta_relative=0, state=shared.state.dict())
+            return ProgressResponse(progress=0, eta_relative=0, state=shared.state.dict(), textinfo=shared.state.textinfo)
 
         # avoid dividing zero
         progress = 0.01
@@ -308,7 +308,7 @@ class Api:
         if shared.state.current_image and not req.skip_current_image:
             current_image = encode_pil_to_base64(shared.state.current_image)
 
-        return ProgressResponse(progress=progress, eta_relative=eta_relative, state=shared.state.dict(), current_image=current_image)
+        return ProgressResponse(progress=progress, eta_relative=eta_relative, state=shared.state.dict(), current_image=current_image, textinfo=shared.state.textinfo)
 
     def interrogateapi(self, interrogatereq: InterrogateRequest):
         image_b64 = interrogatereq.image
