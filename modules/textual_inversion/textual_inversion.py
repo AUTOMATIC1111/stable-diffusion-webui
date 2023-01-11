@@ -9,6 +9,7 @@ import tqdm
 import html
 import datetime
 import csv
+import safetensors.torch
 
 from PIL import Image, PngImagePlugin
 
@@ -150,6 +151,8 @@ class EmbeddingDatabase:
                 name = data.get('name', name)
         elif ext in ['.BIN', '.PT']:
             data = torch.load(path, map_location="cpu")
+        elif ext in ['.SAFETENSORS']:
+            data = safetensors.torch.load_file(path, device="cpu")
         else:
             return
 
