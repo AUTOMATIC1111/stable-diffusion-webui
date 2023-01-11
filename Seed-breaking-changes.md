@@ -1,5 +1,5 @@
 # 2023-01-23 - Alternating words syntax bugfix
-If you used alternating words syntax bugfix with emphasis before 97ff69eff338c6641f4abf430bf5ac112c1775e0, the program would incorrectly replace emphasized part with just `(`. So, `[a|(b:1.1)]`, rather than becoming a sequence of
+If you used alternating words syntax bugfix with emphasis before [97ff69ef](https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/97ff69eff338c6641f4abf430bf5ac112c1775e0), the program would incorrectly replace emphasized part with just `(`. So, `[a|(b:1.1)]`, rather than becoming a sequence of
 
 `a` -> `(b:1.1)` -> `a` -> `(b:1.1)` -> ...
 
