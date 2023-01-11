@@ -492,6 +492,14 @@ https://github.com/Akegarasu/sd-webui-model-converter
 
 Model convert extension, supports convert fp16/bf16 no-ema/ema-only safetensors.
 
+# Stable Horde
+
+## Stable Horde Worker
+https://github.com/sdwebui-w-horde/sd-webui-stable-horde-worker
+
+Produce images for other users using your compute. Enter a display name here: https://stablehorde.net/register
+You will get an api key. In webui settings, enter display name and api key in stable horde section, and tick the `enable` box to get it running.
+
 ## Test
 https://github.com/diaphragm/var2gif \
 https://github.com/Kahsolt/stable-diffusion-webui-size-travel \
