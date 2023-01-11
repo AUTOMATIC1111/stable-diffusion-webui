@@ -393,6 +393,20 @@
 			"added": "2023-01-06",
 			"tags": ["script"]
 		},
+        {
+			"name": "Ultimate SD Upscale",
+			"url": "https://github.com/Coyote-A/ultimate-upscale-for-automatic1111.git",
+			"description": "More advanced options for SD Upscale, less artifacts than original using higher denoise ratio (0.3-0.5).",
+			"added": "2023-01-10",
+			"tags": ["script"]
+		},
+        {
+			"name": "Stable Horde Worker",
+			"url": "https://github.com/sdwebui-w-horde/sd-webui-stable-horde-worker.git",
+			"description": "Worker Client for Stable Horde. Please see https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Extensions#stable-horde-worker for additional instructions.",
+			"added": "2023-01-10",
+			"tags": ["script"]
+		},
 		{
 			"name": "zh_CN Localization",
 			"url": "https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN",
