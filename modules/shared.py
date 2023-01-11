@@ -400,7 +400,6 @@ options_templates.update(options_section(('compatibility', "Compatibility"), {
     "use_old_emphasis_implementation": OptionInfo(False, "Use old emphasis implementation. Can be useful to reproduce old seeds."),
     "use_old_karras_scheduler_sigmas": OptionInfo(False, "Use old karras scheduler sigmas (0.1 to 10)."),
     "use_old_hires_fix_width_height": OptionInfo(False, "For hires fix, use width/height sliders to set final resolution rather than first pass (disables Upscale by, Resize width/height to)."),
-    "use_old_prompt_parser_default_step_transformer": OptionInfo(False, "Use old prompt parser default step transformer. In particular, alternating words that contained emphasis were not parsed correctly. Useful to reproduce old seeds."),
 }))
 
 options_templates.update(options_section(('interrogate', "Interrogate Options"), {
