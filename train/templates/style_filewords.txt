@@ -1,6 +1,1 @@
 photo of [filewords], art by [name]
-picture of [filewords], art by [name]
-rendering of [filewords], art by [name]
-cropped photo of [filewords], art by [name]
-pencil sketch of [filewords], art by [name]
-painting of [filewords], art by [name]
