@@ -3,11 +3,6 @@ from collections import namedtuple
 from typing import List
 import lark
 
-try:
-    from modules.shared import opts
-except:
-    pass
-
 # a prompt like this: "fantasy landscape with a [mountain:lake:0.25] and [an oak:a christmas tree:0.75][ in foreground::0.6][ in background:0.25] [shoddy:masterful:0.5]"
 # will be represented with prompt_schedule like this (assuming steps=100):
 # [25, 'fantasy landscape with a mountain and an oak in foreground shoddy']
@@ -91,13 +86,7 @@ def get_learned_conditioning_prompt_schedules(prompts, steps):
                 yield args[0].value
             def __default__(self, data, children, meta):
                 for child in children:
-                    try:
-                        if opts.use_old_prompt_parser_default_step_transformer:
-                            yield from child
-                        else:
-                            yield child
-                    except:
-                        yield child
+                    yield child
         return AtStep().transform(tree)
 
     def get_schedule(prompt):
