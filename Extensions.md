@@ -253,7 +253,9 @@ https://github.com/yownas/seed_travel
 
 Small script for AUTOMATIC1111/stable-diffusion-webui to create images that exists between seeds.
 
+<details><summary>Example: (Click to expand:)</summary>
 <img src="https://github.com/ClashSAN/bloated-gifs/blob/main/seedtravel.gif" width="512" height="512" />
+</details>
 
 ## shift-attention
 https://github.com/yownas/shift-attention
@@ -267,7 +269,9 @@ https://github.com/Kahsolt/stable-diffusion-webui-prompt-travel
 
 Extension script for AUTOMATIC1111/stable-diffusion-webui to travel between prompts in latent space.
 
+<details><summary>Example: (Click to expand:)</summary>
 <img src="https://github.com/ClashSAN/bloated-gifs/blob/main/prompt_travel.gif" width="512" height="512" />
+</details>
 
 ## Sonar
 https://github.com/Kahsolt/stable-diffusion-webui-sonar
@@ -445,6 +449,9 @@ https://github.com/AlUlkesh/sd_save_intermediate_images
 
 Implements saving intermediate images, with more advanced features.
 
+![badex](https://user-images.githubusercontent.com/98228077/211706803-f747691d-cca8-4692-90ef-f6a2859ed5cb.jpg)
+![goodex](https://user-images.githubusercontent.com/98228077/211706801-fc593dbf-67c4-4983-8a80-c88355ffeba2.jpg)
+
 ![image](https://user-images.githubusercontent.com/98228077/209453267-cb65adce-4e1c-45c7-93da-e0bd1020670c.png)
 
 ## openOutpaint extension
@@ -500,20 +507,25 @@ https://github.com/sdwebui-w-horde/sd-webui-stable-horde-worker
 Produce images for other users using your compute. 
 
 ### Instructions:
+tested with: \
+webui commit - 9cfd10cdefc7b2966b8e42fbb0e05735967cf87b \
+extension commit - 6184f96dd99d03cc8b3f8c4c133e08ae07ce074f
+
 
 Enter a display name here: https://stablehorde.net/register
 You will get an api key. 
 
-Download a known model by Stable Horde: such as [this](https://huggingface.co/Linaqruf/anything-v3.0/blob/main/Anything-V3.0-pruned.ckpt) specifically.
+Download a known model by Stable Horde: such as [this](https://huggingface.co/Linaqruf/anything-v3.0/blob/main/Anything-V3.0-pruned.ckpt) specifically. You will find a list here: https://raw.githubusercontent.com/Sygil-Dev/nataili-model-reference/main/db.json
 
-In webui settings, enter display name(worker name) and api key in stable horde section. Next, enter the name of your model: `Anything Diffusion`
+In webui settings, enter display name(worker name) and api key in stable horde section. Next, enter the correct registered name of your model: `Anything Diffusion`
 
 Tick the `enable` box to get it running.
 
+![Screenshot](https://user-images.githubusercontent.com/98228077/211707522-233a02ac-6c91-4d6d-a78b-264a2ab3a84b.png)
+
+It's highly recommended to set your `Max Pixels` to below your maximum, especially for low vram users, or users will not get their picture due to your OOM errors. It seems the client takes a little extra vram to use, but it will still run this fine on a 4gb gpu in f16 mode. For my tests, 768x768(589824) is the maximum, but noticing a user keeps getting OOM, it was set to 512x512(262144)
 
 It's highly recommended to run with just `--xformers` argument for the best speed settings, since this does not do batches.
 
-It's highly recommended to set your `Max Pixels` to below your maximum, especially for low vram users, or users will not get their picture due to your OOM errors. It seems the client takes a little extra vram to use, but It will still run this fine on a 4gb gpu in f16 mode. 
-
-Note: Other users prompts are visible in your log.
+Note: Other users prompts are visible in your log. Their images generated are not visible or saved to your pc.
 
