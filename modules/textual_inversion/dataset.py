@@ -28,13 +28,11 @@ class DatasetEntry:
 
 
 class PersonalizedBase(Dataset):
-    def __init__(self, data_root, width, height, repeats, flip_p=0.5, placeholder_token="*", model=None, cond_model=None, device=None, template_file=None, include_cond=False, batch_size=1, gradient_step=1, shuffle_tags=False, tag_drop_out=0, latent_sampling_method='once'):
+    def __init__(self, data_root, width, height, repeats, flip_p=0.5, placeholder_token="*", model=None, cond_model=None, device=None, template_file=None, include_cond=False, batch_size=1, gradient_step=1, shuffle_tags=False, tag_drop_out=0, latent_sampling_method='once', varsize=False):
         re_word = re.compile(shared.opts.dataset_filename_word_regex) if len(shared.opts.dataset_filename_word_regex) > 0 else None
 
         self.placeholder_token = placeholder_token
 
-        self.width = width
-        self.height = height
         self.flip = transforms.RandomHorizontalFlip(p=flip_p)
 
         self.dataset = []
@@ -47,9 +45,9 @@ class PersonalizedBase(Dataset):
         assert data_root, 'dataset directory not specified'
         assert os.path.isdir(data_root), "Dataset directory doesn't exist"
         assert os.listdir(data_root), "Dataset directory is empty"
+        assert batch_size == 1 or not varsize, 'variable img size must have batch size 1'
 
         self.image_paths = [os.path.join(data_root, file_path) for file_path in os.listdir(data_root)]
-
 
         self.shuffle_tags = shuffle_tags
         self.tag_drop_out = tag_drop_out
@@ -59,7 +57,9 @@ class PersonalizedBase(Dataset):
             if shared.state.interrupted:
                 raise Exception("interrupted")
             try:
-                image = Image.open(path).convert('RGB').resize((self.width, self.height), PIL.Image.BICUBIC)
+                image = Image.open(path).convert('RGB')
+                if not varsize:
+                    image = image.resize((width, height), PIL.Image.BICUBIC)
             except Exception:
                 continue
 

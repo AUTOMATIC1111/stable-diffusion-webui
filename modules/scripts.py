@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import traceback
 from collections import namedtuple
@@ -127,6 +128,15 @@ class Script:
     def describe(self):
         """unused"""
         return ""
+
+    def elem_id(self, item_id):
+        """helper function to generate id for a HTML element, constructs final id out of script name, tab and user-supplied item_id"""
+
+        need_tabname = self.show(True) == self.show(False)
+        tabname = ('img2img' if self.is_img2img else 'txt2txt') + "_" if need_tabname else ""
+        title = re.sub(r'[^a-z_0-9]', '', re.sub(r'\s', '_', self.title().lower()))
+
+        return f'script_{tabname}{title}_{item_id}'
 
 
 current_basedir = paths.script_path
@@ -280,7 +290,6 @@ class ScriptRunner:
             script.group = group
 
         dropdown = gr.Dropdown(label="Script", elem_id="script_list", choices=["None"] + self.titles, value="None", type="index")
-        dropdown.save_to_config = True
         inputs[0] = dropdown
 
         for script in self.selectable_scripts:

@@ -13,6 +13,21 @@ dir_extensions = "extensions"
 python = sys.executable
 git = os.environ.get('GIT', "git")
 index_url = os.environ.get('INDEX_URL', "")
+stored_commit_hash = None
+
+
+def commit_hash():
+    global stored_commit_hash
+
+    if stored_commit_hash is not None:
+        return stored_commit_hash
+
+    try:
+        stored_commit_hash = run(f"{git} rev-parse HEAD").strip()
+    except Exception:
+        stored_commit_hash = "<none>"
+
+    return stored_commit_hash
 
 
 def extract_arg(args, name):
@@ -194,10 +209,7 @@ def prepare_environment():
     xformers = '--xformers' in sys.argv
     ngrok = '--ngrok' in sys.argv
 
-    try:
-        commit = run(f"{git} rev-parse HEAD").strip()
-    except Exception:
-        commit = "<none>"
+    commit = commit_hash()
 
     print(f"Python {sys.version}")
     print(f"Commit hash: {commit}")
@@ -270,6 +282,7 @@ def tests(test_dir):
 
     print(f"Launching Web UI in another process for testing with arguments: {' '.join(sys.argv[1:])}")
 
+    os.environ['COMMANDLINE_ARGS'] = ""
     with open('test/stdout.txt', "w", encoding="utf8") as stdout, open('test/stderr.txt', "w", encoding="utf8") as stderr:
         proc = subprocess.Popen([sys.executable, *sys.argv], stdout=stdout, stderr=stderr)
 
