@@ -296,6 +296,6 @@ def on_ui_tabs():
                 refresh_full.click(refresh_info_full, inputs = [], outputs = [state, memory, models, hypernetworks, embeddings, skipped, model, vae, timestamp, json])
                 interrupt = gr.Button('Send interrupt')
                 interrupt.click(shared.state.interrupt, inputs = [], outputs = [])
-    return (info_tab, 'Info', 'info_tab'),
+    return (info_tab, 'System Info', 'info_tab'),
 
 script_callbacks.on_ui_tabs(on_ui_tabs)

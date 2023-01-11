@@ -1604,11 +1604,11 @@ def create_ui():
         )
 
     interfaces = [
-        (txt2img_interface, "Text", "txt2img"),
-        (img2img_interface, "Image", "img2img"),
-        (extras_interface, "Upscale", "extras"),
+        (txt2img_interface, "From Text", "txt2img"),
+        (img2img_interface, "From Image", "img2img"),
+        (extras_interface, "Process", "extras"),
         (pnginfo_interface, "Image Info", "pnginfo"),
-        # (modelmerger_interface, "Checkpoint Merger", "modelmerger"),
+        (modelmerger_interface, "Checkpoint Merger", "modelmerger"),
         (train_interface, "Train", "ti"),
     ]
 

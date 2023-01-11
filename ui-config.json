@@ -672,5 +672,7 @@
     "train/Do not resize images/visible": true,
     "train/Do not resize images/value": false,
     "train/Enter hypernetwork Dropout structure (or empty). Recommended : 0~0.35 incrementing sequence: 0, 0.05, 0.15/visible": true,
-    "train/Enter hypernetwork Dropout structure (or empty). Recommended : 0~0.35 incrementing sequence: 0, 0.05, 0.15/value": "0, 0, 0"
+    "train/Enter hypernetwork Dropout structure (or empty). Recommended : 0~0.35 incrementing sequence: 0, 0.05, 0.15/value": "0, 0, 0",
+    "modelmerger/Copy config from/visible": true,
+    "modelmerger/Copy config from/value": "A, B or C"
 }

@@ -52,7 +52,6 @@ class PersonalizedBase(Dataset):
         self.shuffle_tags = shuffle_tags
         self.tag_drop_out = tag_drop_out
 
-        print("Preparing dataset...")
         for path in tqdm.tqdm(self.image_paths):
             if shared.state.interrupted:
                 raise Exception("interrupted")
@@ -110,6 +109,8 @@ class PersonalizedBase(Dataset):
             del latent_sample
 
         self.length = len(self.dataset)
+        print(f"Dataset ready with {self.length} images")
+
         assert self.length > 0, "No images have been found in the dataset."
         self.batch_size = min(batch_size, self.length)
         self.gradient_step = min(gradient_step, self.length // self.batch_size)
