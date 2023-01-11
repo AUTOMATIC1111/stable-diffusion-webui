@@ -358,6 +358,17 @@ def load_model(checkpoint_info=None):
     sd_hijack.model_hijack.hijack(sd_model)
 
     sd_model.eval()
+
+    """
+    try:
+        t0 = time.time()
+        sd_model = torch.compile(sd_model, mode="max-autotune", fullgraph=True)
+        t1 = time.time()
+        print(f"Model compiled in {round(t1 - t0, 2)} sec")
+    except Exception as err:
+        print(f"Model compile not supported: {err}")
+    """
+
     shared.sd_model = sd_model
 
     sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings(force_reload=True)  # Reload embeddings after model load as they may or may not fit the model

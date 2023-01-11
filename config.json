@@ -48,7 +48,7 @@
     "memmon_poll_rate": 1,
     "samples_log_stdout": false,
     "multiple_tqdm": true,
-    "unload_models_when_training": true,
+    "unload_models_when_training": false,
     "pin_memory": true,
     "save_optimizer_state": false,
     "dataset_filename_word_regex": "",
