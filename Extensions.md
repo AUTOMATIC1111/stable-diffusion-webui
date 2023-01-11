@@ -331,7 +331,7 @@ https://github.com/stysmmaker/stable-diffusion-webui-booru-prompt
 ## gelbooru-prompt
 https://github.com/antis0007/sd-webui-gelbooru-prompt
 
-Fetch tags with image hash. Updates planned.
+Fetch tags using your image's hash.
 
 ## Merge Board
 https://github.com/bbc-mc/sdweb-merge-board
@@ -494,10 +494,20 @@ Extension for quickly selecting and applying custom.css files, for customizing l
 
 ![image](https://user-images.githubusercontent.com/98228077/210076676-5f6a8e72-5352-4860-8f3d-468ab8e31355.png)![image](https://user-images.githubusercontent.com/98228077/210076407-1c904a6c-6913-4954-8f20-36100df99fba.png)
 
+## Add image number to grid
+https://github.com/AlUlkesh/sd_grid_add_image_number
+
+Add the image's number to its picture in the grid.
+
 ## Model Converter
 https://github.com/Akegarasu/sd-webui-model-converter
 
 Model convert extension, supports convert fp16/bf16 no-ema/ema-only safetensors.
+
+## Kohya-ss Additional Networks
+https://github.com/kohya-ss/sd-webui-additional-networks
+
+Allows the Web UI to use networks (LoRA) trained by their scripts to generate images.
 
 # Stable Horde
 
@@ -507,25 +517,28 @@ https://github.com/sdwebui-w-horde/sd-webui-stable-horde-worker
 Produce images for other users using your compute. 
 
 ### Instructions:
-tested with: \
-webui commit - 9cfd10cdefc7b2966b8e42fbb0e05735967cf87b \
-extension commit - 6184f96dd99d03cc8b3f8c4c133e08ae07ce074f
+<details><summary>tested with: (Click to expand:)</summary>
 
+- [commit version for webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/9cfd10cdefc7b2966b8e42fbb0e05735967cf87b) 
+- [commit version for extension](https://github.com/sdwebui-w-horde/sd-webui-stable-horde-worker/commit/6184f96dd99d03cc8b3f8c4c133e08ae07ce074f)
+</details>
 
-Enter a display name here: https://stablehorde.net/register
+1. Enter a display name here: https://stablehorde.net/register \
 You will get an api key. 
 
-Download a known model by Stable Horde: such as [this](https://huggingface.co/Linaqruf/anything-v3.0/blob/main/Anything-V3.0-pruned.ckpt) specifically. You will find a list here: https://raw.githubusercontent.com/Sygil-Dev/nataili-model-reference/main/db.json
+2. Download a known model by Stable Horde: such as [this](https://huggingface.co/Linaqruf/anything-v3.0/blob/main/Anything-V3.0-pruned.ckpt). You will find a list of compatible models [here.](https://raw.githubusercontent.com/Sygil-Dev/nataili-model-reference/main/db.json)
 
-In webui settings, enter display name(worker name) and api key in stable horde section. Next, enter the correct registered name of your model: `Anything Diffusion`
+3. In webui settings, enter display name(worker name) and api key in stable horde section. Next, enter the correct registered name of your model: `Anything Diffusion`
 
-Tick the `enable` box to get it running.
+4. Tick the `enable` box and click apply settings to get it running.
 
 ![Screenshot](https://user-images.githubusercontent.com/98228077/211707522-233a02ac-6c91-4d6d-a78b-264a2ab3a84b.png)
 
-It's highly recommended to set your `Max Pixels` to below your maximum, especially for low vram users, or users will not get their picture due to your OOM errors. It seems the client takes a little extra vram to use, but it will still run this fine on a 4gb gpu in f16 mode. For my tests, 768x768(589824) is the maximum, but noticing a user keeps getting OOM, it was set to 512x512(262144)
+- It's highly recommended to set your `Max Pixels` to below your maximum, especially for low vram users, or users will not get their picture due to your OOM errors. 
 
-It's highly recommended to run with just `--xformers` argument for the best speed settings, since this does not do batches.
+- It seems the client takes a little extra vram to use, but it will still run this fine on a 4gb gpu in f16 mode. For my tests, 768x768(589824) is the maximum, but noticing a user keeps getting OOM, it was set to 512x512(262144)
+
+- It's highly recommended to run with just `--xformers` argument for the best speed settings, since this does not do batches.
 
 Note: Other users prompts are visible in your log. Their images generated are not visible or saved to your pc.
 
