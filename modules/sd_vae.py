@@ -1,8 +1,9 @@
 import torch
+import safetensors.torch
 import os
 import collections
 from collections import namedtuple
-from modules import shared, devices, script_callbacks
+from modules import shared, devices, script_callbacks, sd_models
 from modules.paths import models_path
 import glob
 from copy import deepcopy
@@ -72,8 +73,10 @@ def refresh_vae_list(vae_path=vae_path, model_path=model_path):
     candidates = [
         *glob.iglob(os.path.join(model_path, '**/*.vae.ckpt'), recursive=True),
         *glob.iglob(os.path.join(model_path, '**/*.vae.pt'), recursive=True),
+        *glob.iglob(os.path.join(model_path, '**/*.vae.safetensors'), recursive=True),
         *glob.iglob(os.path.join(vae_path, '**/*.ckpt'), recursive=True),
-        *glob.iglob(os.path.join(vae_path, '**/*.pt'), recursive=True)
+        *glob.iglob(os.path.join(vae_path, '**/*.pt'), recursive=True),
+        *glob.iglob(os.path.join(vae_path, '**/*.safetensors'), recursive=True),
     ]
     if shared.cmd_opts.vae_path is not None and os.path.isfile(shared.cmd_opts.vae_path):
         candidates.append(shared.cmd_opts.vae_path)
@@ -137,6 +140,12 @@ def resolve_vae(checkpoint_file=None, vae_file="auto"):
         if os.path.isfile(vae_file_try):
             vae_file = vae_file_try
             print(f"Using VAE found similar to selected model: {vae_file}")
+    # if still not found, try look for ".vae.safetensors" beside model
+    if vae_file == "auto":
+        vae_file_try = model_path + ".vae.safetensors"
+        if os.path.isfile(vae_file_try):
+            vae_file = vae_file_try
+            print(f"Using VAE found similar to selected model: {vae_file}")
     # No more fallbacks for auto
     if vae_file == "auto":
         vae_file = None
@@ -163,8 +172,9 @@ def load_vae(model, vae_file=None):
             assert os.path.isfile(vae_file), f"VAE file doesn't exist: {vae_file}"
             print(f"Loading VAE weights from: {vae_file}")
             store_base_vae(model)
-            vae_ckpt = torch.load(vae_file, map_location=shared.weight_load_location)
-            vae_dict_1 = {k: v for k, v in vae_ckpt["state_dict"].items() if k[0:4] != "loss" and k not in vae_ignore_keys}
+
+            vae_ckpt = sd_models.read_state_dict(vae_file, map_location=shared.weight_load_location)
+            vae_dict_1 = {k: v for k, v in vae_ckpt.items() if k[0:4] != "loss" and k not in vae_ignore_keys}
             _load_vae_dict(model, vae_dict_1)
 
             if cache_enabled:
@@ -195,9 +205,11 @@ def _load_vae_dict(model, vae_dict_1):
     model.first_stage_model.load_state_dict(vae_dict_1)
     model.first_stage_model.to(devices.dtype_vae)
 
+
 def clear_loaded_vae():
     global loaded_vae_file
     loaded_vae_file = None
+
 
 def reload_vae_weights(sd_model=None, vae_file="auto"):
     from modules import lowvram, devices, sd_hijack

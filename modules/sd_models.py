@@ -2,6 +2,7 @@ import collections
 import os.path
 import sys
 import gc
+import time
 from collections import namedtuple
 import torch
 import re
@@ -13,7 +14,7 @@ import ldm.modules.midas as midas
 
 from ldm.util import instantiate_from_config
 
-from modules import shared, modelloader, devices, script_callbacks, sd_vae
+from modules import shared, modelloader, devices, script_callbacks, sd_vae, sd_disable_initialization, errors
 from modules.paths import models_path
 from modules.sd_hijack_inpainting import do_inpainting_hijack, should_hijack_inpainting
 
@@ -49,6 +50,9 @@ def checkpoint_tiles():
 
 
 def find_checkpoint_config(info):
+    if info is None:
+        return shared.cmd_opts.config
+
     config = os.path.splitext(info.filename)[0] + ".yaml"
     if os.path.exists(config):
         return config
@@ -58,7 +62,7 @@ def find_checkpoint_config(info):
 
 def list_models():
     checkpoints_list.clear()
-    model_list = modelloader.load_models(model_path=model_path, command_path=shared.cmd_opts.ckpt_dir, ext_filter=[".ckpt", ".safetensors"])
+    model_list = modelloader.load_models(model_path=model_path, command_path=shared.cmd_opts.ckpt_dir, ext_filter=[".ckpt", ".safetensors"], ext_blacklist=[".vae.safetensors"])
 
     def modeltitle(path, shorthash):
         abspath = os.path.abspath(path)
@@ -285,6 +289,17 @@ def enable_midas_autodownload():
     midas.api.load_model = load_model_wrapper
 
 
+class Timer:
+    def __init__(self):
+        self.start = time.time()
+
+    def elapsed(self):
+        end = time.time()
+        res = end - self.start
+        self.start = end
+        return res
+
+
 def load_model(checkpoint_info=None):
     from modules import lowvram, sd_hijack
     checkpoint_info = checkpoint_info or select_checkpoint()
@@ -316,9 +331,24 @@ def load_model(checkpoint_info=None):
     if shared.cmd_opts.no_half:
         sd_config.model.params.unet_config.params.use_fp16 = False
 
-    sd_model = instantiate_from_config(sd_config.model)
+    timer = Timer()
+
+    sd_model = None
+    try:
+        with sd_disable_initialization.DisableInitialization():
+            sd_model = instantiate_from_config(sd_config.model)
+    except Exception as e:
+        pass
+
+    if sd_model is None:
+        print('Failed to create model quickly; will retry using slow method.', file=sys.stderr)
+        sd_model = instantiate_from_config(sd_config.model)
+
+    elapsed_create = timer.elapsed()
 
     load_model_weights(sd_model, checkpoint_info)
+
+    elapsed_load_weights = timer.elapsed()
 
     if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
         lowvram.setup_for_low_vram(sd_model, shared.cmd_opts.medvram)
@@ -334,7 +364,9 @@ def load_model(checkpoint_info=None):
 
     script_callbacks.model_loaded_callback(sd_model)
 
-    print("Model loaded.")
+    elapsed_the_rest = timer.elapsed()
+
+    print(f"Model loaded in {elapsed_create + elapsed_load_weights + elapsed_the_rest:.1f}s ({elapsed_create:.1f}s create model, {elapsed_load_weights:.1f}s load weights).")
 
     return sd_model
 
@@ -345,14 +377,16 @@ def reload_model_weights(sd_model=None, info=None):
 
     if not sd_model:
         sd_model = shared.sd_model
+    if sd_model is None:  # previous model load failed
+        current_checkpoint_info = None
+    else:
+        current_checkpoint_info = sd_model.sd_checkpoint_info
+        if sd_model.sd_model_checkpoint == checkpoint_info.filename:
+            return
 
-    current_checkpoint_info = sd_model.sd_checkpoint_info
     checkpoint_config = find_checkpoint_config(current_checkpoint_info)
 
-    if sd_model.sd_model_checkpoint == checkpoint_info.filename:
-        return
-
-    if checkpoint_config != find_checkpoint_config(checkpoint_info) or should_hijack_inpainting(checkpoint_info) != should_hijack_inpainting(sd_model.sd_checkpoint_info):
+    if current_checkpoint_info is None or checkpoint_config != find_checkpoint_config(checkpoint_info) or should_hijack_inpainting(checkpoint_info) != should_hijack_inpainting(sd_model.sd_checkpoint_info):
         del sd_model
         checkpoints_loaded.clear()
         load_model(checkpoint_info)
@@ -364,6 +398,8 @@ def reload_model_weights(sd_model=None, info=None):
         sd_model.to(devices.cpu)
 
     sd_hijack.model_hijack.undo_hijack(sd_model)
+
+    timer = Timer()
 
     try:
         load_model_weights(sd_model, checkpoint_info)
@@ -378,6 +414,8 @@ def reload_model_weights(sd_model=None, info=None):
         if not shared.cmd_opts.lowvram and not shared.cmd_opts.medvram:
             sd_model.to(devices.device)
 
-    print("Weights loaded.")
+    elapsed = timer.elapsed()
+
+    print(f"Weights loaded in {elapsed:.1f}s.")
 
     return sd_model

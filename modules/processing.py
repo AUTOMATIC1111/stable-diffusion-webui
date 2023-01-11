@@ -687,6 +687,18 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
     return res
 
 
+def old_hires_fix_first_pass_dimensions(width, height):
+    """old algorithm for auto-calculating first pass size"""
+
+    desired_pixel_count = 512 * 512
+    actual_pixel_count = width * height
+    scale = math.sqrt(desired_pixel_count / actual_pixel_count)
+    width = math.ceil(scale * width / 64) * 64
+    height = math.ceil(scale * height / 64) * 64
+
+    return width, height
+
+
 class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
     sampler = None
 
@@ -703,16 +715,26 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         self.hr_upscale_to_y = hr_resize_y
 
         if firstphase_width != 0 or firstphase_height != 0:
-            print("firstphase_width/firstphase_height no longer supported; use hr_scale", file=sys.stderr)
-            self.hr_scale = self.width / firstphase_width
+            self.hr_upscale_to_x = self.width
+            self.hr_upscale_to_y = self.height
             self.width = firstphase_width
             self.height = firstphase_height
 
         self.truncate_x = 0
         self.truncate_y = 0
+        self.applied_old_hires_behavior_to = None
 
     def init(self, all_prompts, all_seeds, all_subseeds):
         if self.enable_hr:
+            if opts.use_old_hires_fix_width_height and self.applied_old_hires_behavior_to != (self.width, self.height):
+                self.hr_resize_x = self.width
+                self.hr_resize_y = self.height
+                self.hr_upscale_to_x = self.width
+                self.hr_upscale_to_y = self.height
+
+                self.width, self.height = old_hires_fix_first_pass_dimensions(self.width, self.height)
+                self.applied_old_hires_behavior_to = (self.width, self.height)
+
             if self.hr_resize_x == 0 and self.hr_resize_y == 0:
                 self.extra_generation_params["Hires upscale"] = self.hr_scale
                 self.hr_upscale_to_x = int(self.width * self.hr_scale)

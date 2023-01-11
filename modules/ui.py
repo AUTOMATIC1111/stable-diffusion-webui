@@ -37,7 +37,7 @@ from modules import prompt_parser
 from modules.images import save_image
 from modules.sd_hijack import model_hijack
 from modules.sd_samplers import samplers, samplers_for_img2img
-import modules.textual_inversion.ui
+from modules.textual_inversion import textual_inversion
 import modules.hypernetworks.ui
 from modules.generation_parameters_copypaste import image_from_url_text
 
@@ -162,79 +162,6 @@ def save_files(js_data, images, do_make_zip, index):
     return gr.File.update(value=fullfns, visible=True), plaintext_to_html(f"Saved: {filenames[0]}")
 
 
-def calc_time_left(progress, threshold, label, force_display, show_eta):
-    if progress == 0:
-        return ""
-    else:
-        time_since_start = time.time() - shared.state.time_start
-        eta = (time_since_start/progress)
-        eta_relative = eta-time_since_start
-        if (eta_relative > threshold and show_eta) or force_display:
-            if eta_relative > 3600:
-                return label + time.strftime('%H:%M:%S', time.gmtime(eta_relative))
-            elif eta_relative > 60:
-                return label + time.strftime('%M:%S',  time.gmtime(eta_relative))
-            else:
-                return label + time.strftime('%Ss',  time.gmtime(eta_relative))
-        else:
-            return ""
-
-
-def check_progress_call(id_part):
-    if shared.state.job_count == 0:
-        return "", gr_show(False), gr_show(False), gr_show(False)
-
-    progress = 0
-
-    if shared.state.job_count > 0:
-        progress += shared.state.job_no / shared.state.job_count
-    if shared.state.sampling_steps > 0:
-        progress += 1 / shared.state.job_count * shared.state.sampling_step / shared.state.sampling_steps
-
-    # Show progress percentage and time left at the same moment, and base it also on steps done
-    show_eta = progress >= 0.01 or shared.state.sampling_step >= 10
-
-    time_left = calc_time_left(progress, 1, " ETA: ", shared.state.time_left_force_display, show_eta)
-    if time_left != "":
-        shared.state.time_left_force_display = True
-
-    progress = min(progress, 1)
-
-    progressbar = ""
-    if opts.show_progressbar:
-        progressbar = f"""<div class='progressDiv'><div class='progress' style="overflow:visible;width:{progress * 100}%;white-space:nowrap;">{"&nbsp;" * 2 + str(int(progress*100))+"%" + time_left if show_eta else ""}</div></div>"""
-
-    image = gr_show(False)
-    preview_visibility = gr_show(False)
-
-    if opts.show_progress_every_n_steps != 0:
-        shared.state.set_current_image()
-        image = shared.state.current_image
-
-        if image is None:
-            image = gr.update(value=None)
-        else:
-            preview_visibility = gr_show(True)
-
-    if shared.state.textinfo is not None:
-        textinfo_result = gr.HTML.update(value=shared.state.textinfo, visible=True)
-    else:
-        textinfo_result = gr_show(False)
-
-    return f"<span id='{id_part}_progress_span' style='display: none'>{time.time()}</span><p>{progressbar}</p>", preview_visibility, image, textinfo_result
-
-
-def check_progress_call_initial(id_part):
-    shared.state.job_count = -1
-    shared.state.current_latent = None
-    shared.state.current_image = None
-    shared.state.textinfo = None
-    shared.state.time_start = time.time()
-    shared.state.time_left_force_display = False
-
-    return check_progress_call(id_part)
-
-
 def visit(x, func, path=""):
     if hasattr(x, 'children'):
         for c in x.children:
@@ -267,7 +194,7 @@ def calc_resolution_hires(enable, width, height, hr_scale, hr_resize_x, hr_resiz
     with devices.autocast():
         p.init([""], [0], [0])
 
-    return f"resize: from <span class='resolution'>{width}x{height}</span> to <span class='resolution'>{p.hr_upscale_to_x}x{p.hr_upscale_to_y}</span>"
+    return f"resize: from <span class='resolution'>{p.width}x{p.height}</span> to <span class='resolution'>{p.hr_resize_x or p.hr_upscale_to_x}x{p.hr_resize_y or p.hr_upscale_to_y}</span>"
 
 
 def apply_styles(prompt, prompt_neg, style1_name, style2_name):
@@ -456,25 +383,10 @@ def create_toprow(is_img2img):
     return prompt, prompt_style, negative_prompt, prompt_style2, submit, button_interrogate, button_deepbooru, prompt_style_apply, save_style, paste, token_counter, token_button
 
 
-def setup_progressbar(progressbar, preview, id_part, textinfo=None):
-    if textinfo is None:
-        textinfo = gr.HTML(visible=False)
+def setup_progressbar(*args, **kwargs):
+    import modules.ui_progress
 
-    check_progress = gr.Button('Check progress', elem_id=f"{id_part}_check_progress", visible=False)
-    check_progress.click(
-        fn=lambda: check_progress_call(id_part),
-        show_progress=False,
-        inputs=[],
-        outputs=[progressbar, preview, preview, textinfo],
-    )
-
-    check_progress_initial = gr.Button('Check progress (first)', elem_id=f"{id_part}_check_progress_initial", visible=False)
-    check_progress_initial.click(
-        fn=lambda: check_progress_call_initial(id_part),
-        show_progress=False,
-        inputs=[],
-        outputs=[progressbar, preview, preview, textinfo],
-    )
+    modules.ui_progress.setup_progressbar(*args, **kwargs)
 
 
 def apply_setting(key, value):
@@ -745,15 +657,20 @@ def create_ui():
                             custom_inputs = modules.scripts.scripts_txt2img.setup_ui()
 
             hr_resolution_preview_inputs = [enable_hr, width, height, hr_scale, hr_resize_x, hr_resize_y]
-            hr_resolution_preview_args = dict(
-                fn=calc_resolution_hires,
-                inputs=hr_resolution_preview_inputs,
-                outputs=[hr_final_resolution],
-                show_progress=False
-            )
-
             for input in hr_resolution_preview_inputs:
-                input.change(**hr_resolution_preview_args)
+                input.change(
+                    fn=calc_resolution_hires,
+                    inputs=hr_resolution_preview_inputs,
+                    outputs=[hr_final_resolution],
+                    show_progress=False,
+                )
+                input.change(
+                    None,
+                    _js="onCalcResolutionHires",
+                    inputs=hr_resolution_preview_inputs,
+                    outputs=[],
+                    show_progress=False,
+                )
 
             txt2img_gallery, generation_info, html_info, html_log = create_output_panel("txt2img", opts.outdir_txt2img_samples)
             parameters_copypaste.bind_buttons({"txt2img": txt2img_paste}, None, txt2img_prompt)
@@ -1212,7 +1129,7 @@ def create_ui():
             with gr.Column(variant='panel'):
                 gr.HTML(value="<p>A merger of the two checkpoints will be generated in your <b>checkpoint</b> directory.</p>")
 
-                with gr.Row():
+                with FormRow():
                     primary_model_name = gr.Dropdown(modules.sd_models.checkpoint_tiles(), elem_id="modelmerger_primary_model_name", label="Primary model (A)")
                     create_refresh_button(primary_model_name, modules.sd_models.list_models, lambda: {"choices": modules.sd_models.checkpoint_tiles()}, "refresh_checkpoint_A")
 
@@ -1226,11 +1143,13 @@ def create_ui():
                 interp_amount = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Multiplier (M) - set to 0 to get model A', value=0.3, elem_id="modelmerger_interp_amount")
                 interp_method = gr.Radio(choices=["Weighted sum", "Add difference"], value="Weighted sum", label="Interpolation Method", elem_id="modelmerger_interp_method")
 
-                with gr.Row():
+                with FormRow():
                     checkpoint_format = gr.Radio(choices=["ckpt", "safetensors"], value="ckpt", label="Checkpoint format", elem_id="modelmerger_checkpoint_format")
                     save_as_half = gr.Checkbox(value=False, label="Save as float16", elem_id="modelmerger_save_as_half")
 
-                modelmerger_merge = gr.Button(elem_id="modelmerger_merge", label="Merge", variant='primary')
+                config_source = gr.Radio(choices=["A, B or C", "B", "C", "Don't"], value="A, B or C", label="Copy config from", type="index", elem_id="modelmerger_config_method")
+
+                modelmerger_merge = gr.Button(elem_id="modelmerger_merge", value="Merge", variant='primary')
 
             with gr.Column(variant='panel'):
                 submit_result = gr.Textbox(elem_id="modelmerger_result", show_label=False)
@@ -1263,6 +1182,7 @@ def create_ui():
                     new_hypernetwork_initialization_option = gr.Dropdown(value = "Normal", label="Select Layer weights initialization. Recommended: Kaiming for relu-like, Xavier for sigmoid-like, Normal otherwise", choices=["Normal", "KaimingUniform", "KaimingNormal", "XavierUniform", "XavierNormal"], elem_id="train_new_hypernetwork_initialization_option")
                     new_hypernetwork_add_layer_norm = gr.Checkbox(label="Add layer normalization", elem_id="train_new_hypernetwork_add_layer_norm")
                     new_hypernetwork_use_dropout = gr.Checkbox(label="Use dropout", elem_id="train_new_hypernetwork_use_dropout")
+                    new_hypernetwork_dropout_structure = gr.Textbox("0, 0, 0", label="Enter hypernetwork Dropout structure (or empty). Recommended : 0~0.35 incrementing sequence: 0, 0.05, 0.15", placeholder="1st and last digit must be 0 and values should be between 0 and 1. ex:'0, 0.01, 0'")
                     overwrite_old_hypernetwork = gr.Checkbox(value=False, label="Overwrite Old Hypernetwork", elem_id="train_overwrite_old_hypernetwork")
 
                     with gr.Row():
@@ -1317,6 +1237,9 @@ def create_ui():
                         outputs=[process_focal_crop_row],
                     )
 
+                def get_textual_inversion_template_names():
+                    return sorted([x for x in textual_inversion.textual_inversion_templates])
+
                 with gr.Tab(label="Train"):
                     gr.HTML(value="<p style='margin-bottom: 0.7em'>Train an embedding or Hypernetwork; you must specify a directory with a set of 1:1 ratio images <a href=\"https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Textual-Inversion\" style=\"font-weight:bold;\">[wiki]</a></p>")
                     with FormRow():
@@ -1340,9 +1263,14 @@ def create_ui():
 
                     dataset_directory = gr.Textbox(label='Dataset directory', placeholder="Path to directory with input images", elem_id="train_dataset_directory")
                     log_directory = gr.Textbox(label='Log directory', placeholder="Path to directory where to write outputs", value="textual_inversion", elem_id="train_log_directory")
-                    template_file = gr.Textbox(label='Prompt template file', value=os.path.join(script_path, "textual_inversion_templates", "style_filewords.txt"), elem_id="train_template_file")
+
+                    with FormRow():
+                        template_file = gr.Dropdown(label='Prompt template', value="style_filewords.txt", elem_id="train_template_file", choices=get_textual_inversion_template_names())
+                        create_refresh_button(template_file, textual_inversion.list_textual_inversion_templates, lambda: {"choices": get_textual_inversion_template_names()}, "refrsh_train_template_file")
+
                     training_width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="train_training_width")
                     training_height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="train_training_height")
+                    varsize = gr.Checkbox(label="Do not resize images", value=False, elem_id="train_varsize")
                     steps = gr.Number(label='Max steps', value=100000, precision=0, elem_id="train_steps")
 
                     with FormRow():
@@ -1401,7 +1329,8 @@ def create_ui():
                 new_hypernetwork_activation_func,
                 new_hypernetwork_initialization_option,
                 new_hypernetwork_add_layer_norm,
-                new_hypernetwork_use_dropout
+                new_hypernetwork_use_dropout,
+                new_hypernetwork_dropout_structure
             ],
             outputs=[
                 train_hypernetwork_name,
@@ -1449,6 +1378,7 @@ def create_ui():
                 log_directory,
                 training_width,
                 training_height,
+                varsize,
                 steps,
                 clip_grad_mode,
                 clip_grad_value,
@@ -1480,6 +1410,7 @@ def create_ui():
                 log_directory,
                 training_width,
                 training_height,
+                varsize,
                 steps,
                 clip_grad_mode,
                 clip_grad_value,
@@ -1774,6 +1705,7 @@ def create_ui():
                 save_as_half,
                 custom_name,
                 checkpoint_format,
+                config_source,
             ],
             outputs=[
                 submit_result,

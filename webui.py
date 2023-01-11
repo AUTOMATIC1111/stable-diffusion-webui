@@ -33,6 +33,7 @@ import modules.sd_models
 import modules.sd_vae
 import modules.txt2img
 import modules.script_callbacks
+import modules.textual_inversion.textual_inversion
 
 import modules.ui
 from modules import modelloader
@@ -66,6 +67,8 @@ def initialize():
     modelloader.load_upscalers()
 
     modules.sd_vae.refresh_vae_list()
+
+    modules.textual_inversion.textual_inversion.list_textual_inversion_templates()
 
     try:
         modules.sd_models.load_model()
