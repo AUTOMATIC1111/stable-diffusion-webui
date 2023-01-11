@@ -7,6 +7,8 @@ To contribute, clone the repository, make your changes, commit and push to your 
 * do not submit PRs where you just take existing lines and reformat them without changing what they do.
 * if you are submitting a bug fix, there must be a way for me to reproduce the bug.
 
+There is a discord channel for development of the webui: [link](https://discord.gg/z38ZKR3w). Join if you want to talk about a PR in real time. Don't join if you're not involved in development.
+
 If you are making changes to used libraries or the installation script, you must verify them to work on default Windows installation from scratch. If you cannot test if it works (due to your OS or anything else), do not make those changes (with possible exception of changes that explicitly are guarded from being executed on Windows by `if`s or something else).
 
 # Code style
