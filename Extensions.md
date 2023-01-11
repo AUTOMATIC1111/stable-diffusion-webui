@@ -497,15 +497,23 @@ Model convert extension, supports convert fp16/bf16 no-ema/ema-only safetensors.
 ## Stable Horde Worker
 https://github.com/sdwebui-w-horde/sd-webui-stable-horde-worker
 
-Produce images for other users using your compute. Enter a display name here: https://stablehorde.net/register
-You will get an api key. In webui settings, enter display name and api key in stable horde section, and tick the `enable` box to get it running.
+Produce images for other users using your compute. 
 
-## Test
-https://github.com/diaphragm/var2gif \
-https://github.com/Kahsolt/stable-diffusion-webui-size-travel \
-https://github.com/jmederos/keyframe-travel \
-https://github.com/InconsolableCellist/movie_stable_diffusionizer \
-https://github.com/alansmithee-johndoe/stable-diffusion-webui-gpu-cooling-interval \
-https://github.com/DrifterOfTime/sd-mvar-plot \
-https://github.com/bbc-mc/sdweb-xyplus \
-https://github.com/toshiaki1729/stable-diffusion-webui-text2prompt
+### Instructions:
+
+Enter a display name here: https://stablehorde.net/register
+You will get an api key. 
+
+Download a known model by Stable Horde: such as [this](https://huggingface.co/Linaqruf/anything-v3.0/blob/main/Anything-V3.0-pruned.ckpt) specifically.
+
+In webui settings, enter display name(worker name) and api key in stable horde section. Next, enter the name of your model: `Anything Diffusion`
+
+Tick the `enable` box to get it running.
+
+
+It's highly recommended to run with just `--xformers` argument for the best speed settings, since this does not do batches.
+
+It's highly recommended to set your `Max Pixels` to below your maximum, especially for low vram users, or users will not get their picture due to your OOM errors. It seems the client takes a little extra vram to use, but It will still run this fine on a 4gb gpu in f16 mode. 
+
+Note: Other users prompts are visible in your log.
+
