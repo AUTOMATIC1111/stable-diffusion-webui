@@ -59,38 +59,34 @@ def process_batch(p, input_dir, output_dir, args):
                 processed_image.save(os.path.join(output_dir, filename))
 
 
-def img2img(mode: int, prompt: str, negative_prompt: str, prompt_style: str, prompt_style2: str, init_img, init_img_with_mask, init_img_with_mask_orig, init_img_inpaint, init_mask_inpaint, mask_mode, steps: int, sampler_index: int, mask_blur: int, mask_alpha: float, inpainting_fill: int, restore_faces: bool, tiling: bool, n_iter: int, batch_size: int, cfg_scale: float, denoising_strength: float, seed: int, subseed: int, subseed_strength: float, seed_resize_from_h: int, seed_resize_from_w: int, seed_enable_extras: bool, height: int, width: int, resize_mode: int, inpaint_full_res: bool, inpaint_full_res_padding: int, inpainting_mask_invert: int, img2img_batch_input_dir: str, img2img_batch_output_dir: str, *args):
-    is_inpaint = mode == 1
-    is_batch = mode == 2
+def img2img(mode: int, prompt: str, negative_prompt: str, prompt_style: str, prompt_style2: str, init_img, sketch, init_img_with_mask, inpaint_color_sketch, inpaint_color_sketch_orig, init_img_inpaint, init_mask_inpaint, steps: int, sampler_index: int, mask_blur: int, mask_alpha: float, inpainting_fill: int, restore_faces: bool, tiling: bool, n_iter: int, batch_size: int, cfg_scale: float, denoising_strength: float, seed: int, subseed: int, subseed_strength: float, seed_resize_from_h: int, seed_resize_from_w: int, seed_enable_extras: bool, height: int, width: int, resize_mode: int, inpaint_full_res: bool, inpaint_full_res_padding: int, inpainting_mask_invert: int, img2img_batch_input_dir: str, img2img_batch_output_dir: str, *args):
+    is_batch = mode == 5
 
-    if is_inpaint:
-        # Drawn mask
-        if mask_mode == 0:
-            is_mask_sketch = isinstance(init_img_with_mask, dict)
-            is_mask_paint = not is_mask_sketch
-            if is_mask_sketch:
-                # Sketch: mask iff. not transparent
-                image, mask = init_img_with_mask["image"], init_img_with_mask["mask"]
-                alpha_mask = ImageOps.invert(image.split()[-1]).convert('L').point(lambda x: 255 if x > 0 else 0, mode='1')
-                mask = ImageChops.lighter(alpha_mask, mask.convert('L')).convert('L')
-            else:
-                # Color-sketch: mask iff. painted over
-                image = init_img_with_mask
-                orig = init_img_with_mask_orig or init_img_with_mask
-                pred = np.any(np.array(image) != np.array(orig), axis=-1)
-                mask = Image.fromarray(pred.astype(np.uint8) * 255, "L")
-                mask = ImageEnhance.Brightness(mask).enhance(1 - mask_alpha / 100)
-                blur = ImageFilter.GaussianBlur(mask_blur)
-                image = Image.composite(image.filter(blur), orig, mask.filter(blur))
-
-            image = image.convert("RGB")
-        # Uploaded mask
-        else:
-            image = init_img_inpaint
-            mask = init_mask_inpaint
-    # No mask
+    if mode == 0:  # img2img
+        image = init_img.convert("RGB")
+        mask = None
+    elif mode == 1:  # img2img sketch
+        image = sketch.convert("RGB")
+        mask = None
+    elif mode == 2:  # inpaint
+        image, mask = init_img_with_mask["image"], init_img_with_mask["mask"]
+        alpha_mask = ImageOps.invert(image.split()[-1]).convert('L').point(lambda x: 255 if x > 0 else 0, mode='1')
+        mask = ImageChops.lighter(alpha_mask, mask.convert('L')).convert('L')
+        image = image.convert("RGB")
+    elif mode == 3:  # inpaint sketch
+        image = inpaint_color_sketch
+        orig = inpaint_color_sketch_orig or inpaint_color_sketch
+        pred = np.any(np.array(image) != np.array(orig), axis=-1)
+        mask = Image.fromarray(pred.astype(np.uint8) * 255, "L")
+        mask = ImageEnhance.Brightness(mask).enhance(1 - mask_alpha / 100)
+        blur = ImageFilter.GaussianBlur(mask_blur)
+        image = Image.composite(image.filter(blur), orig, mask.filter(blur))
+        image = image.convert("RGB")
+    elif mode == 4:  # inpaint upload mask
+        image = init_img_inpaint
+        mask = init_mask_inpaint
     else:
-        image = init_img
+        image = None
         mask = None
 
     # Use the EXIF orientation of photos taken by smartphones.
