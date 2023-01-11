@@ -619,7 +619,9 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, gradient_step,
                 epoch_num = hypernetwork.step // steps_per_epoch
                 epoch_step = hypernetwork.step % steps_per_epoch
 
-                pbar.set_description(f"[Epoch {epoch_num}: {epoch_step+1}/{steps_per_epoch}]loss: {loss_step:.7f}")
+                description = f"Training hypernetwork [Epoch {epoch_num}: {epoch_step+1}/{steps_per_epoch}]loss: {loss_step:.7f}"
+                pbar.set_description(description)
+                shared.state.textinfo = description
                 if hypernetwork_dir is not None and steps_done % save_hypernetwork_every == 0:
                     # Before saving, change name to match current checkpoint.
                     hypernetwork_name_every = f'{hypernetwork_name}-{steps_done}'
