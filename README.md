@@ -43,4 +43,5 @@ I'm currently using **PyTorch 2.0-nightly** compiled with **CUDA 11.8** and with
 
 ## Docs
 
-Everything is in [Wiki](https://github.com/vladmandic/automatic/wiki)
+Everything is in [Wiki](https://github.com/vladmandic/automatic/wiki)  
+Except my current [TODO](TODO.md)  

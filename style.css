@@ -44,9 +44,6 @@
     margin-right: 0;
 }
 
-.performance .vram {
-}
-
 #txt2img_generate, #img2img_generate {
     min-height: 4.5em;
 }
@@ -275,9 +272,6 @@ input[type="range"]{
   display: block;
   margin-top: -0.75em;
   margin-bottom: -0.75em;
-}
-
-#txt2img_negative_prompt, #img2img_negative_prompt{
 }
 
 /* gradio 3.8 adds opacity to progressbar which makes it blink; disable it here */
@@ -568,7 +562,7 @@ canvas[key="mask"] {
 
 /* Extensions */
 
-#tab_extensions table``{
+#tab_extensions table {
     border-collapse: collapse;
 }
 
