@@ -480,6 +480,7 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
             
                 with devices.autocast():
                     x = batch.latent_sample.to(devices.device, non_blocking=pin_memory)
+                    w = batch.weight.to(devices.device, non_blocking=pin_memory)
                     c = shared.sd_model.cond_stage_model(batch.cond_text)
 
                     if is_training_inpainting_model:
@@ -490,7 +491,7 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
                     else:
                         cond = c
 
-                    loss = shared.sd_model(x, cond)[0] / gradient_step
+                    loss = shared.sd_model.weighted_forward(x, cond, w)[0] / gradient_step
                     del x
 
                     _loss_step += loss.item()

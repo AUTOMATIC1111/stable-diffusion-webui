@@ -640,13 +640,14 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
                 
                 with devices.autocast():
                     x = batch.latent_sample.to(devices.device, non_blocking=pin_memory)
+                    w = batch.weight.to(devices.device, non_blocking=pin_memory)
                     if tag_drop_out != 0 or shuffle_tags:
                         shared.sd_model.cond_stage_model.to(devices.device)
                         c = shared.sd_model.cond_stage_model(batch.cond_text).to(devices.device, non_blocking=pin_memory)
                         shared.sd_model.cond_stage_model.to(devices.cpu)
                     else:
                         c = stack_conds(batch.cond).to(devices.device, non_blocking=pin_memory)
-                    loss = shared.sd_model(x, c)[0] / gradient_step
+                    loss = shared.sd_model.weighted_forward(x, c, w)[0] / gradient_step
                     del x
                     del c
 
