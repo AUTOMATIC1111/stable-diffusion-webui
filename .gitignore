@@ -2,6 +2,7 @@ __pycache__
 *.ckpt
 *.safetensors
 *.pth
+custom.css
 /ESRGAN/*
 /SwinIR/*
 /repositories
