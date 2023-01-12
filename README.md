@@ -2,7 +2,7 @@
 
 *Heavily opinionated custom fork of* <https://github.com/AUTOMATIC1111/stable-diffusion-webui>  
 
-![](wiki/images/README.jpg)
+![](ui-screenshot.jpg)
 
 <br>
 
