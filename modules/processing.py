@@ -531,15 +531,15 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
     def infotext(iteration=0, position_in_batch=0):
         return create_infotext(p, p.all_prompts, p.all_seeds, p.all_subseeds, comments, iteration, position_in_batch)
 
-    with open(os.path.join(shared.script_path, "params.txt"), "w", encoding="utf8") as file:
-        processed = Processed(p, [], p.seed, "")
-        file.write(processed.infotext(p, 0))
-
     if os.path.exists(cmd_opts.embeddings_dir) and not p.do_not_reload_embeddings:
         model_hijack.embedding_db.load_textual_inversion_embeddings()
 
     if p.scripts is not None:
         p.scripts.process(p)
+
+    with open(os.path.join(shared.script_path, "params.txt"), "w", encoding="utf8") as file:
+        processed = Processed(p, [], p.seed, "")
+        file.write(processed.infotext(p, 0))
 
     infotexts = []
     output_images = []
