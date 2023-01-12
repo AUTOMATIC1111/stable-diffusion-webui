@@ -41,6 +41,10 @@ class TestTxt2ImgWorking(unittest.TestCase):
         self.simple_txt2img["negative_prompt"] = "example negative prompt"
         self.assertEqual(requests.post(self.url_txt2img, json=self.simple_txt2img).status_code, 200)
 
+    def test_txt2img_with_complex_prompt_performed(self):
+        self.simple_txt2img["prompt"] = "((emphasis)), (emphasis1:1.1), [to:1], [from::2], [from:to:0.3], [alt|alt1]"
+        self.assertEqual(requests.post(self.url_txt2img, json=self.simple_txt2img).status_code, 200)
+
     def test_txt2img_not_square_image_performed(self):
         self.simple_txt2img["height"] = 128
         self.assertEqual(requests.post(self.url_txt2img, json=self.simple_txt2img).status_code, 200)
@@ -53,6 +57,10 @@ class TestTxt2ImgWorking(unittest.TestCase):
         self.simple_txt2img["tiling"] = True
         self.assertEqual(requests.post(self.url_txt2img, json=self.simple_txt2img).status_code, 200)
 
+    def test_txt2img_with_restore_faces_performed(self):
+        self.simple_txt2img["restore_faces"] = True
+        self.assertEqual(requests.post(self.url_txt2img, json=self.simple_txt2img).status_code, 200)
+
     def test_txt2img_with_vanilla_sampler_performed(self):
         self.simple_txt2img["sampler_index"] = "PLMS"
         self.assertEqual(requests.post(self.url_txt2img, json=self.simple_txt2img).status_code, 200)
@@ -61,6 +69,10 @@ class TestTxt2ImgWorking(unittest.TestCase):
 
     def test_txt2img_multiple_batches_performed(self):
         self.simple_txt2img["n_iter"] = 2
+        self.assertEqual(requests.post(self.url_txt2img, json=self.simple_txt2img).status_code, 200)
+
+    def test_txt2img_batch_performed(self):
+        self.simple_txt2img["batch_size"] = 2
         self.assertEqual(requests.post(self.url_txt2img, json=self.simple_txt2img).status_code, 200)
 
 

@@ -2,12 +2,14 @@ import os
 import sys
 import traceback
 import inspect
+from collections import namedtuple
 
 import torch
 import tqdm
 import html
 import datetime
 import csv
+import safetensors.torch
 
 from PIL import Image, PngImagePlugin
 
@@ -15,10 +17,24 @@ from modules import shared, devices, sd_hijack, processing, sd_models, images, s
 import modules.textual_inversion.dataset
 from modules.textual_inversion.learn_schedule import LearnRateScheduler
 
-from modules.textual_inversion.image_embedding import (embedding_to_b64, embedding_from_b64,
-                                                       insert_image_data_embed, extract_image_data_embed,
-                                                       caption_image_overlay)
+from modules.textual_inversion.image_embedding import embedding_to_b64, embedding_from_b64, insert_image_data_embed, extract_image_data_embed, caption_image_overlay
 from modules.textual_inversion.logging import save_settings_to_file
+
+
+TextualInversionTemplate = namedtuple("TextualInversionTemplate", ["name", "path"])
+textual_inversion_templates = {}
+
+
+def list_textual_inversion_templates():
+    textual_inversion_templates.clear()
+
+    for root, dirs, fns in os.walk(shared.cmd_opts.textual_inversion_templates_dir):
+        for fn in fns:
+            path = os.path.join(root, fn)
+
+            textual_inversion_templates[fn] = TextualInversionTemplate(fn, path)
+
+    return textual_inversion_templates
 
 
 class Embedding:
@@ -135,6 +151,8 @@ class EmbeddingDatabase:
                 name = data.get('name', name)
         elif ext in ['.BIN', '.PT']:
             data = torch.load(path, map_location="cpu")
+        elif ext in ['.SAFETENSORS']:
+            data = safetensors.torch.load_file(path, device="cpu")
         else:
             return
 
@@ -274,7 +292,7 @@ def write_loss(log_directory, filename, step, epoch_len, values):
         })
 
 
-def validate_train_inputs(model_name, learn_rate, batch_size, gradient_step, data_root, template_file, steps, save_model_every, create_image_every, log_directory, name="embedding"):
+def validate_train_inputs(model_name, learn_rate, batch_size, gradient_step, data_root, template_file, template_filename, steps, save_model_every, create_image_every, log_directory, name="embedding"):
     assert model_name, f"{name} not selected"
     assert learn_rate, "Learning rate is empty or 0"
     assert isinstance(batch_size, int), "Batch size must be integer"
@@ -284,8 +302,9 @@ def validate_train_inputs(model_name, learn_rate, batch_size, gradient_step, dat
     assert data_root, "Dataset directory is empty"
     assert os.path.isdir(data_root), "Dataset directory doesn't exist"
     assert os.listdir(data_root), "Dataset directory is empty"
-    assert template_file, "Prompt template file is empty"
-    assert os.path.isfile(template_file), "Prompt template file doesn't exist"
+    assert template_filename, "Prompt template file not selected"
+    assert template_file, f"Prompt template file {template_filename} not found"
+    assert os.path.isfile(template_file.path), f"Prompt template file {template_filename} doesn't exist"
     assert steps, "Max steps is empty or 0"
     assert isinstance(steps, int), "Max steps must be integer"
     assert steps > 0, "Max steps must be positive"
@@ -297,10 +316,12 @@ def validate_train_inputs(model_name, learn_rate, batch_size, gradient_step, dat
         assert log_directory, "Log directory is empty"
 
 
-def train_embedding(embedding_name, learn_rate, batch_size, gradient_step, data_root, log_directory, training_width, training_height, steps, clip_grad_mode, clip_grad_value, shuffle_tags, tag_drop_out, latent_sampling_method, create_image_every, save_embedding_every, template_file, save_image_with_stored_embedding, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height):
+def train_embedding(embedding_name, learn_rate, batch_size, gradient_step, data_root, log_directory, training_width, training_height, varsize, steps, clip_grad_mode, clip_grad_value, shuffle_tags, tag_drop_out, latent_sampling_method, create_image_every, save_embedding_every, template_filename, save_image_with_stored_embedding, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height):
     save_embedding_every = save_embedding_every or 0
     create_image_every = create_image_every or 0
-    validate_train_inputs(embedding_name, learn_rate, batch_size, gradient_step, data_root, template_file, steps, save_embedding_every, create_image_every, log_directory, name="embedding")
+    template_file = textual_inversion_templates.get(template_filename, None)
+    validate_train_inputs(embedding_name, learn_rate, batch_size, gradient_step, data_root, template_file, template_filename, steps, save_embedding_every, create_image_every, log_directory, name="embedding")
+    template_file = template_file.path
 
     shared.state.job = "train-embedding"
     shared.state.textinfo = "Initializing textual inversion training..."
@@ -351,7 +372,7 @@ def train_embedding(embedding_name, learn_rate, batch_size, gradient_step, data_
 
     pin_memory = shared.opts.pin_memory
 
-    ds = modules.textual_inversion.dataset.PersonalizedBase(data_root=data_root, width=training_width, height=training_height, repeats=shared.opts.training_image_repeats_per_epoch, placeholder_token=embedding_name, model=shared.sd_model, cond_model=shared.sd_model.cond_stage_model, device=devices.device, template_file=template_file, batch_size=batch_size, gradient_step=gradient_step, shuffle_tags=shuffle_tags, tag_drop_out=tag_drop_out, latent_sampling_method=latent_sampling_method)
+    ds = modules.textual_inversion.dataset.PersonalizedBase(data_root=data_root, width=training_width, height=training_height, repeats=shared.opts.training_image_repeats_per_epoch, placeholder_token=embedding_name, model=shared.sd_model, cond_model=shared.sd_model.cond_stage_model, device=devices.device, template_file=template_file, batch_size=batch_size, gradient_step=gradient_step, shuffle_tags=shuffle_tags, tag_drop_out=tag_drop_out, latent_sampling_method=latent_sampling_method, varsize=varsize)
 
     if shared.opts.save_training_settings_to_txt:
         save_settings_to_file(log_directory, {**dict(model_name=checkpoint.model_name, model_hash=checkpoint.hash, num_of_dataset_images=len(ds), num_vectors_per_token=len(embedding.vec)), **locals()})
@@ -455,7 +476,9 @@ def train_embedding(embedding_name, learn_rate, batch_size, gradient_step, data_
                 epoch_num = embedding.step // steps_per_epoch
                 epoch_step = embedding.step % steps_per_epoch
 
-                pbar.set_description(f"[Epoch {epoch_num}: {epoch_step+1}/{steps_per_epoch}]loss: {loss_step:.7f}")
+                description = f"Training textual inversion [Epoch {epoch_num}: {epoch_step+1}/{steps_per_epoch}]loss: {loss_step:.7f}"
+                pbar.set_description(description)
+                shared.state.textinfo = description
                 if embedding_dir is not None and steps_done % save_embedding_every == 0:
                     # Before saving, change name to match current checkpoint.
                     embedding_name_every = f'{embedding_name}-{steps_done}'

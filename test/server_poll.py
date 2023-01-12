@@ -15,7 +15,7 @@ def run_tests(proc, test_dir):
                 break
     if proc.poll() is None:
         if test_dir is None:
-            test_dir = ""
+            test_dir = "test"
         suite = unittest.TestLoader().discover(test_dir, pattern="*_test.py", top_level_dir="test")
         result = unittest.TextTestRunner(verbosity=2).run(suite)
         return len(result.failures) + len(result.errors)

@@ -198,10 +198,10 @@ def restore_old_hires_fix_params(res):
     firstpass_height = res.get('First pass size-2', None)
 
     if shared.opts.use_old_hires_fix_width_height:
-        hires_width = int(res.get("Hires resize-1", None))
-        hires_height = int(res.get("Hires resize-2", None))
+        hires_width = int(res.get("Hires resize-1", 0))
+        hires_height = int(res.get("Hires resize-2", 0))
 
-        if hires_width is not None and hires_height is not None:
+        if hires_width and hires_height:
             res['Size-1'] = hires_width
             res['Size-2'] = hires_height
             return
