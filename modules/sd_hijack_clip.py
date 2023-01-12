@@ -6,6 +6,8 @@ import torch
 from modules import prompt_parser, devices, sd_hijack
 from modules.shared import opts
 
+import transformers.models.clip.modeling_clip
+
 
 class PromptChunk:
     """
@@ -306,3 +308,13 @@ class FrozenCLIPEmbedderWithCustomWords(FrozenCLIPEmbedderWithCustomWordsBase):
         embedded = embedding_layer.token_embedding.wrapped(ids.to(embedding_layer.token_embedding.wrapped.weight.device)).squeeze(0)
 
         return embedded
+
+orig_build_causal_attention_mask = transformers.models.clip.modeling_clip.CLIPTextTransformer._build_causal_attention_mask
+def build_causal_attention_mask(self, *args, **kwargs):
+    if devices.unet_needs_upcast:
+        return orig_build_causal_attention_mask(self, *args, **kwargs).to(devices.dtype_unet)
+    else:
+        return orig_build_causal_attention_mask(self, *args, **kwargs)
+
+
+transformers.models.clip.modeling_clip.CLIPTextTransformer._build_causal_attention_mask = build_causal_attention_mask

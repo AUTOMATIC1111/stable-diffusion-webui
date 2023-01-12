@@ -79,6 +79,8 @@ cpu = torch.device("cpu")
 device = device_interrogate = device_gfpgan = device_esrgan = device_codeformer = None
 dtype = torch.float16
 dtype_vae = torch.float16
+dtype_unet = torch.float16
+unet_needs_upcast = False
 
 
 def randn(seed, shape):
@@ -100,7 +102,7 @@ def autocast(disable=False):
     if disable:
         return contextlib.nullcontext()
 
-    if dtype == torch.float32 or shared.cmd_opts.precision == "full":
+    if dtype == torch.float32 or shared.cmd_opts.precision == "full" or shared.cmd_opts.precision == "upcast":
         return contextlib.nullcontext()
 
     return torch.autocast("cuda")
