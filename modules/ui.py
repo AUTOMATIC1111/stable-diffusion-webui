@@ -1620,11 +1620,11 @@ def create_ui():
             continue
 
         with open(cssfile, "r", encoding="utf8") as file:
-            css += file.read() + "\n"
+            css += file.read()
 
     if os.path.exists(os.path.join(script_path, "user.css")):
         with open(os.path.join(script_path, "user.css"), "r", encoding="utf8") as file:
-            css += file.read() + "\n"
+            css += file.read()
 
     if not cmd_opts.no_progressbar_hiding:
         css += css_hide_progressbar
