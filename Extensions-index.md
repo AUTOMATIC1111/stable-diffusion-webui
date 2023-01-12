@@ -64,6 +64,13 @@
 			"added": "2022-11-01",
 			"tags": ["script", "tab"]
 		},
+        {
+			"name": "Animator",
+			"url": "https://github.com/Animator-Anon/animator_extension",
+			"description": "A basic img2img script that will dump frames and build a video file. Suitable for creating interesting zoom-in warping movies. This is intended to be a versatile toolset to help you automate some img2img tasks.",
+			"added": "2023-01-11",
+			"tags": ["script", "tab"]
+		},
 		{
 			"name": "Artists to study",
 			"url": "https://github.com/camenduru/stable-diffusion-webui-artists-to-study",
@@ -403,9 +410,16 @@
         {
 			"name": "Stable Horde Worker",
 			"url": "https://github.com/sdwebui-w-horde/sd-webui-stable-horde-worker.git",
-			"description": "Worker Client for Stable Horde. Please see https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Extensions#stable-horde-worker for additional instructions.",
+			"description": "Worker Client for Stable Horde. Generate pictures for other users with your PC. Please see https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Extensions#stable-horde-worker for additional instructions.",
 			"added": "2023-01-10",
 			"tags": ["script"]
+		},
+        {
+			"name": "Stable Horde Client",
+			"url": "https://github.com/natanjunges/stable-diffusion-webui-stable-horde.git",
+			"description": "Stable Horde Client. Generate pictures using other user's PC.",
+			"added": "2023-01-11",
+			"tags": ["script", "tab"]
 		},
 		{
 			"name": "zh_CN Localization",
