@@ -127,8 +127,6 @@
     "s_noise": 1.0,
     "eta_noise_seed_delta": 0,
     "disabled_extensions": [
-        "embedding-inspector",
-        "openOutpaint-webUI-extension",
         "sdweb-merge-board",
         "roll-artist"
     ],
