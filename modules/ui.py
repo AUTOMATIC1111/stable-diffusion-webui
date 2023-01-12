@@ -1628,6 +1628,10 @@ def create_ui():
 
     if not cmd_opts.no_progressbar_hiding:
         css += css_hide_progressbar
+        
+    with open(os.path.join(script_path, "custom.css"), "w", encoding="utf8") as file:
+         file.write(css)
+         file.close()
 
     interfaces += script_callbacks.ui_tabs_callback()
     interfaces += [(settings_interface, "Settings", "settings")]
@@ -1635,7 +1639,7 @@ def create_ui():
     extensions_interface = ui_extensions.create_ui()
     interfaces += [(extensions_interface, "Extensions", "extensions")]
 
-    with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion") as demo:
+    with gr.Blocks(css=os.path.join(script_path, "custom.css"), analytics_enabled=False, title="Stable Diffusion") as demo:
         with gr.Row(elem_id="quicksettings"):
             for i, k, item in sorted(quicksettings_list, key=lambda x: quicksettings_names.get(x[1], x[0])):
                 component = create_setting_component(k, is_quicksettings=True)
