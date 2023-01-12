@@ -51,18 +51,6 @@ https://github.com/memes-forever/Stable-diffusion-webui-video
 
 Using img2img, generates pictures one after another.
 
-## Seed Travel
-https://github.com/yownas/seed_travel
-
-Pick two (or more) seeds and generate a sequence of images interpolating between them. Optionally, let it create a video of the result.
-
-Example of what you can do with it:
-https://www.youtube.com/watch?v=4c71iUclY4U
-
-<details><summary>Another example by a user:</summary>
-<img src="https://github.com/ClashSAN/bloated-gifs/blob/main/seedtravel.gif" width="512" height="512" />
-</details>
-
 ## Advanced Seed Blending
 https://github.com/amotile/stable-diffusion-backend/tree/master/src/process/implementations/automatic1111_scripts
 
@@ -124,13 +112,6 @@ coffe mug in shape of a heart | <img src="https://user-images.githubusercontent.
 | Headphones | <img src="https://user-images.githubusercontent.com/7210708/193376238-5c4d4a8f-1f06-4ba4-b780-d2fa2e794eda.png" width=40%/> | <img src="https://user-images.githubusercontent.com/7210708/193376255-80e25271-6313-4bff-a98e-ba3ae48538ca.svg" width=30%/> |
 
 </details>
-
-## Shift Attention
-https://github.com/yownas/shift-attention
-
-Generate a sequence of images shifting attention in the prompt.
-
-This script enables you to give a range to the weight of tokens in a prompt and then generate a sequence of images stepping from the first one to the second.
 
 ## Loopback and Superimpose
 https://github.com/DiceOwl/StableDiffusionStuff
@@ -195,15 +176,6 @@ applies symmetry to the image every n steps and sends the result further to img2
 <img src="https://user-images.githubusercontent.com/83316072/196016119-0a03664b-c3e4-49f0-81ac-a9e719b24bd1.png" width="624" height="312" />
 </details>
 
-## SD-latent-mirroring
-https://github.com/dfaker/SD-latent-mirroring
-
-Applies mirroring and flips to the latent images to produce anything from subtle balanced compositions to perfect reflections
-
-<details><summary>Example: (Click to expand:)</summary>
-<img src="https://user-images.githubusercontent.com/35278260/199627881-6f62a227-3a6c-4470-9c18-2ed8bc57194c.png" width="624" height="312" />
-</details>
-
 ## txt2palette
 https://github.com/1ort/txt2palette
 
@@ -213,14 +185,6 @@ Generate palettes by text description. This script takes the generated images an
 <img src="https://user-images.githubusercontent.com/83316072/199360686-62f0f5ec-ed3d-4c0f-95b4-af9c67d1e248.png" width="352" height="312" />
 </details>
 
-
-## StylePile
-https://github.com/some9000/StylePile
-
-An easy way to mix and match elements to prompts that affect the style of the result.
-<details><summary>Example: (Click to expand:)</summary>
-<img src="https://user-images.githubusercontent.com/17021558/199468444-99e78027-1889-4bec-b97b-25f801e33c0a.jpg" width="960" height="120" />
-</details>
 
 ## XYZ Plot Script
 https://github.com/xrpgame/xyz_plot_script
@@ -263,15 +227,6 @@ Custom script for AUTOMATIC1111's stable-diffusion-webui that adds more features
 Example images: Prompt: "darth vader riding a bicycle, modifier"; X: Multitool: "Prompt S/R: bicycle, motorcycle | CFG scale: 7.5, 10 | Prompt S/R Placeholder: modifier, 4k, artstation"; Y: Multitool: "Sampler: Euler, Euler a | Steps: 20, 50" 
 
 </details>
-
-
-
-## Booru tag autocompletion
-https://github.com/DominikDoom/a1111-sd-webui-tagcomplete
-
-Displays autocompletion hints for tags from "image booru" boards such as Danbooru. Uses local tag CSV files and includes a config for customization.
-
-Also supports completion for [wildcards](https://github.com/adieyal/sd-dynamic-prompts#wildcard-files)
 
 ## Embedding to PNG
 https://github.com/dfaker/embedding-to-png-script
@@ -338,15 +293,6 @@ Generate mosaics from images. The script cuts the image into tiles and processes
 <img src="https://user-images.githubusercontent.com/83316072/200170569-0e7131e4-1da8-4caf-9cd9-5b785c9d21b0.png" width="758" height="312" />
 </details>
 
-## Depth Maps
-https://github.com/thygate/stable-diffusion-webui-depthmap-script
-
-This script is an addon for [AUTOMATIC1111's Stable Diffusion Web UI](https://github.com/AUTOMATIC1111/stable-diffusion-webui) that creates `depthmaps` from the generated images. The result can be viewed on 3D or holographic devices like VR headsets or [lookingglass](https://lookingglassfactory.com/) display, used in Render- or Game- Engines on a plane with a displacement modifier, and maybe even 3D printed.
-
-<details><summary>Example: (Click to expand:)</summary>
-<img src="https://github.com/thygate/stable-diffusion-webui-depthmap-script/raw/main/examples.png" width="780" height="312" />
-</details>
-
 ## Test my prompt
 https://github.com/Extraltodeus/test_my_prompt
 
@@ -398,18 +344,6 @@ Adds the ability to apply Hypernetwork Structure, as defining it in .hns file. s
 Adds the ability to use proper variable dropout rate, like 0.05. Also fixes issues with using hypernetwork right after training.
 
 Adds creating beta-hypernetwork(dropout), and beta-training which allows automatic cosine annealing, and no-crop usage of original images.
-
-## Config-Presets
-https://github.com/Zyin055/Config-Presets-Script-OLD-
-
-Quickly change settings in the txt2img and img2img tabs using a configurable dropdown of preset values.
-
-<details><summary>Example: (Click to expand:)</summary>
-
-<img src="https://camo.githubusercontent.com/fd878bf6e95b5b4d4bc95e1aef7d3253a5cd3832c65e97de942455572ee3e561/68747470733a2f2f692e696d6775722e636f6d2f4231654d5741772e6a7067" width="512" height="146" />
-
-</details>
-
 
 ## Saving steps of the sampling process
 
