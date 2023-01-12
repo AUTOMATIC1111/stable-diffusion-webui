@@ -122,7 +122,7 @@ def _get_attention_scores_no_kv_chunking(
     )
     attn_probs = attn_scores.softmax(dim=-1)
     del attn_scores
-    hidden_states_slice = torch.bmm(attn_probs, value)
+    hidden_states_slice = torch.bmm(attn_probs, value.to(attn_probs.dtype)).to(value.dtype)
     return hidden_states_slice
 
 class ScannedChunk(NamedTuple):
