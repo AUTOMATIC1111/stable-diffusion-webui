@@ -43,7 +43,4 @@ I'm currently using **PyTorch 2.0-nightly** compiled with **CUDA 11.8** and with
 
 ## Docs
 
-- **TBD**: Currently hosted in <https://github.com/vladmandic/generative-art/tree/main/docs>
-- [Original WIKI](wiki)
-- [Original README](docs/README.md)
-- [Original Feature Showcase](docs/feature-showcase)
+Everything is in [Wiki](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki)
