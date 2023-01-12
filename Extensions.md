@@ -542,3 +542,9 @@ You will get an api key.
 
 Note: Other users prompts are visible in your log. Their images generated are not visible or saved to your pc.
 
+### Hypernetwork-Monkeypatch-Extension
+https://github.com/aria1th/Hypernetwork-MonkeyPatch-Extension
+
+Extension that provides additional training features for hypernetwork training, and supports multiple hypernetworks.
+
+![image](https://user-images.githubusercontent.com/35677394/212069329-7f3d427f-efad-4424-8dca-4bec010ea429.png)
