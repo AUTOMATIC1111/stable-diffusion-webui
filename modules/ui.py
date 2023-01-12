@@ -1631,6 +1631,7 @@ def create_ui():
         
     with open(os.path.join(script_path, "custom.css"), "w", encoding="utf8") as file:
          file.write(css)
+         file.close()
 
     interfaces += script_callbacks.ui_tabs_callback()
     interfaces += [(settings_interface, "Settings", "settings")]
