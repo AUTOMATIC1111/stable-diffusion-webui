@@ -1,5 +1,6 @@
 function gradioApp() {
-    const gradioShadowRoot = document.getElementsByTagName('gradio-app')[0].shadowRoot
+    const elems = document.getElementsByTagName('gradio-app')
+    const gradioShadowRoot = elems.length == 0 ? null : elems[0].shadowRoot
     return !!gradioShadowRoot ? gradioShadowRoot : document;
 }
 
