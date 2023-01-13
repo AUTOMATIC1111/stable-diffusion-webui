@@ -52,12 +52,26 @@ Tech that can be integrated as part of the core workflow...
   - <https://github.com/AUTOMATIC1111/stable-diffusion-webui/discussions/2670#discussioncomment-4372336>
   - <https://github.com/AUTOMATIC1111/stable-diffusion-webui/discussions/2670#discussioncomment-4582025>
 
+# Experimental
+
+Cool stuff that is not integrated anywhere...
+
+- Bunch of stuff:<https://pharmapsychotic.com/tools.html>
+- [TensorRT](https://www.photoroom.com/tech/stable-diffusion-25-percent-faster-and-save-seconds/)
+- [KLMC2 Animation](https://colab.research.google.com/github/dmarx/notebooks/blob/main/Stable_Diffusion_KLMC2_Animation.ipynb)
+- [Disco Diffusion](https://colab.research.google.com/github/alembics/disco-diffusion/blob/main/Disco_Diffusion.ipynb)
+- [Video Killed the Radio Star](https://colab.research.google.com/github/dmarx/video-killed-the-radio-star/blob/main/Video_Killed_The_Radio_Star_Defusion.ipynb)
+
 # External
 
 Ideas that can be value-added to core tech...
 
 - Prevalent colors to interrogate
 - Auto-Sort inputs by face recognition
+- Use semantic segmentation to remove background from inputs
 - Auto-filter training inputs based 
 - Auto-filter training inputs based on blur  
   <https://pyimagesearch.com/2020/06/15/opencv-fast-fourier-transform-fft-for-blur-detection-in-images-and-video-streams/>
+
+if shared.opts.training_enable_tensorboard and shared.opts.training_tensorboard_save_images:
+clip_grad_mode
