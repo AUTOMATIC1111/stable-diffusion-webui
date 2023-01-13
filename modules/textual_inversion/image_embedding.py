@@ -76,10 +76,10 @@ def insert_image_data_embed(image, data):
     next_size = data_np_low.shape[0] + (h-(data_np_low.shape[0] % h))
     next_size = next_size + ((h*d)-(next_size % (h*d)))
 
-    data_np_low.resize(next_size)
+    data_np_low = np.resize(data_np_low, next_size)
     data_np_low = data_np_low.reshape((h, -1, d))
 
-    data_np_high.resize(next_size)
+    data_np_high = np.resize(data_np_high, next_size)
     data_np_high = data_np_high.reshape((h, -1, d))
 
     edge_style = list(data['string_to_param'].values())[0].cpu().detach().numpy().tolist()[0][:1024]
