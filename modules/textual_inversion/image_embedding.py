@@ -5,6 +5,7 @@ import zlib
 from PIL import Image, PngImagePlugin, ImageDraw, ImageFont
 from fonts.ttf import Roboto
 import torch
+from modules.shared import opts
 
 
 class EmbeddingEncoder(json.JSONEncoder):
@@ -75,10 +76,10 @@ def insert_image_data_embed(image, data):
     next_size = data_np_low.shape[0] + (h-(data_np_low.shape[0] % h))
     next_size = next_size + ((h*d)-(next_size % (h*d)))
 
-    data_np_low.resize(next_size)
+    data_np_low = np.resize(data_np_low, next_size)
     data_np_low = data_np_low.reshape((h, -1, d))
 
-    data_np_high.resize(next_size)
+    data_np_high = np.resize(data_np_high, next_size)
     data_np_high = data_np_high.reshape((h, -1, d))
 
     edge_style = list(data['string_to_param'].values())[0].cpu().detach().numpy().tolist()[0][:1024]
@@ -133,7 +134,7 @@ def caption_image_overlay(srcimage, title, footerLeft, footerMid, footerRight, t
     from math import cos
 
     image = srcimage.copy()
-
+    fontsize = 32
     if textfont is None:
         try:
             textfont = ImageFont.truetype(opts.font or Roboto, fontsize)
@@ -150,7 +151,7 @@ def caption_image_overlay(srcimage, title, footerLeft, footerMid, footerRight, t
     image = Image.alpha_composite(image.convert('RGBA'), gradient.resize(image.size))
 
     draw = ImageDraw.Draw(image)
-    fontsize = 32
+
     font = ImageFont.truetype(textfont, fontsize)
     padding = 10
 

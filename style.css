@@ -73,8 +73,9 @@
     margin-right: auto;
 }
 
-#random_seed, #random_subseed, #reuse_seed, #reuse_subseed, #open_folder{
-    min-width: auto;
+[id$=_random_seed], [id$=_random_subseed], [id$=_reuse_seed], [id$=_reuse_subseed], #open_folder{
+    min-width: 2.3em;
+    height: 2.5em;
     flex-grow: 0;
     padding-left: 0.25em;
     padding-right: 0.25em;
@@ -84,27 +85,28 @@
     display: none;
 }
 
-#seed_row, #subseed_row{
+[id$=_seed_row], [id$=_subseed_row]{
     gap: 0.5rem;
+    padding: 0.6em;
 }
 
-#subseed_show_box{
+[id$=_subseed_show_box]{
     min-width: auto;
     flex-grow: 0;
 }
 
-#subseed_show_box > div{
+[id$=_subseed_show_box] > div{
     border: 0;
     height: 100%;
 }
 
-#subseed_show{
+[id$=_subseed_show]{
     min-width: auto;
     flex-grow: 0;
     padding: 0;
 }
 
-#subseed_show label{
+[id$=_subseed_show] label{
     height: 100%;
 }
 
@@ -114,7 +116,7 @@
     padding: 0.4em 0;
 }
 
-#roll, #paste, #style_create, #style_apply{
+#roll_col > button {
     min-width: 2em;
     min-height: 2em;
     max-width: 2em;
@@ -206,24 +208,24 @@ button{
 
 fieldset span.text-gray-500, .gr-block.gr-box span.text-gray-500,  label.block span{
     position: absolute;
-    top: -0.6em;
+    top: -0.7em;
     line-height: 1.2em;
-    padding: 0 0.5em;
-    margin: 0;
+    padding: 0;
+    margin: 0 0.5em;
 
     background-color: white;
-    border-top: 1px solid #eee;
-    border-left: 1px solid #eee;
-    border-right: 1px solid #eee;
+    box-shadow:  6px 0 6px 0px white, -6px 0 6px 0px white;
 
     z-index: 300;
 }
 
 .dark fieldset span.text-gray-500, .dark .gr-block.gr-box span.text-gray-500, .dark label.block span{
     background-color: rgb(31, 41, 55);
-    border-top: 1px solid rgb(55 65 81);
-    border-left: 1px solid rgb(55 65 81);
-    border-right: 1px solid rgb(55 65 81);
+    box-shadow: 6px 0 6px 0px rgb(31, 41, 55), -6px 0 6px 0px rgb(31, 41, 55);
+}
+
+#txt2img_column_batch, #img2img_column_batch{
+    min-width: min(13.5em, 100%) !important;
 }
 
 #settings fieldset span.text-gray-500, #settings .gr-block.gr-box span.text-gray-500, #settings label.block span{
@@ -232,22 +234,40 @@ fieldset span.text-gray-500, .gr-block.gr-box span.text-gray-500,  label.block s
     margin-right: 8em;
 }
 
-.gr-panel div.flex-col div.justify-between label span{
-    margin: 0;
-}
-
 #settings .gr-panel div.flex-col div.justify-between div{
     position: relative;
     z-index: 200;
 }
 
-input[type="range"]{
-    margin: 0.5em 0 -0.3em 0;
+#settings{
+    display: block;
 }
 
-#txt2img_sampling label{
-    padding-left: 0.6em;
-    padding-right: 0.6em;
+#settings > div{
+    border: none;
+    margin-left: 10em;
+}
+
+#settings > div.flex-wrap{
+    float: left;
+    display: block;
+    margin-left: 0;
+    width: 10em;
+}
+
+#settings > div.flex-wrap button{
+    display: block;
+    border: none;
+    text-align: left;
+}
+
+#settings_result{
+    height: 1.4em;
+    margin: 0 1.2em;
+}
+
+input[type="range"]{
+    margin: 0.5em 0 -0.3em 0;
 }
 
 #mask_bug_info {
@@ -258,6 +278,16 @@ input[type="range"]{
 }
 
 #txt2img_negative_prompt, #img2img_negative_prompt{
+}
+
+/* gradio 3.8 adds opacity to progressbar which makes it blink; disable it here */
+.transition.opacity-20 {
+  opacity: 1 !important;
+}
+
+/* more gradio's garbage cleanup */
+.min-h-\[4rem\] {
+  min-height: unset !important;
 }
 
 #txt2img_progressbar, #img2img_progressbar, #ti_progressbar{
@@ -314,8 +344,8 @@ input[type="range"]{
 
 .modalControls {
     display: grid;
-    grid-template-columns: 32px auto 1fr 32px;
-    grid-template-areas: "zoom tile space close";
+    grid-template-columns: 32px 32px 32px 1fr 32px;
+    grid-template-areas: "zoom tile save space close";
     position: absolute;
     top: 0;
     left: 0;
@@ -333,6 +363,10 @@ input[type="range"]{
     grid-area: zoom;
 }
 
+.modalSave {
+    grid-area: save;
+}
+
 .modalTileImage {
     grid-area: tile;
 }
@@ -346,8 +380,18 @@ input[type="range"]{
   cursor: pointer;
 }
 
+.modalSave {
+    color: white;
+    font-size: 28px;
+    margin-top: 8px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
 .modalClose:hover,
 .modalClose:focus,
+.modalSave:hover,
+.modalSave:focus,
 .modalZoom:hover,
 .modalZoom:focus {
   color: #999;
@@ -468,7 +512,7 @@ input[type="range"]{
     border: none;
     background: none;
     flex: unset;
-    gap: 0.5em;
+    gap: 1em;
 }
 
 #quicksettings > div > div{
@@ -477,12 +521,16 @@ input[type="range"]{
     padding: 0;
 }
 
-#refresh_sd_model_checkpoint, #refresh_sd_hypernetwork, #refresh_train_hypernetwork_name, #refresh_train_embedding_name, #refresh_localization{
-    max-width: 2.5em;
-    min-width: 2.5em;
-    height: 2.4em;
+#quicksettings > div > div > div > div > label > span {
+    position: relative;
+    margin-right: 9em;
+    margin-bottom: -1em;
 }
 
+#quicksettings > div > div > label > span {
+    position: relative;
+    margin-bottom: -1em;
+}
 
 canvas[key="mask"] {
     z-index: 12 !important;
@@ -497,7 +545,7 @@ canvas[key="mask"] {
     position: absolute;
     right: 0.5em;
     top: -0.6em;
-    z-index: 200;
+    z-index: 400;
     width: 8em;
 }
 #quicksettings .gr-box > div > div > input.gr-text-input {
@@ -509,9 +557,200 @@ canvas[key="mask"] {
 }
 
 #img2img_image, #img2img_image > .h-60, #img2img_image > .h-60 > div, #img2img_image > .h-60 > div > img,
-img2maskimg, #img2maskimg > .h-60, #img2maskimg > .h-60 > div, #img2maskimg > .h-60 > div > img
+#img2img_sketch, #img2img_sketch > .h-60, #img2img_sketch > .h-60 > div, #img2img_sketch > .h-60 > div > img,
+#img2maskimg, #img2maskimg > .h-60, #img2maskimg > .h-60 > div, #img2maskimg > .h-60 > div > img,
+#inpaint_sketch, #inpaint_sketch > .h-60, #inpaint_sketch > .h-60 > div, #inpaint_sketch > .h-60 > div > img
 {
     height: 480px !important;
     max-height: 480px !important;
     min-height: 480px !important;
+}
+
+/* Extensions */
+
+#tab_extensions table``{
+    border-collapse: collapse;
+}
+
+#tab_extensions table td, #tab_extensions table th{
+    border: 1px solid #ccc;
+    padding: 0.25em 0.5em;
+}
+
+#tab_extensions table input[type="checkbox"]{
+    margin-right: 0.5em;
+}
+
+#tab_extensions button{
+    max-width: 16em;
+}
+
+#tab_extensions input[disabled="disabled"]{
+    opacity: 0.5;
+}
+
+.extension-tag{
+    font-weight: bold;
+    font-size: 95%;
+}
+
+#available_extensions .info{
+    margin: 0;
+}
+
+#available_extensions .date_added{
+    opacity: 0.85;
+    font-size: 90%;
+}
+
+#image_buttons_txt2img button, #image_buttons_img2img button, #image_buttons_extras button{
+    min-width: auto;
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+}
+
+.gr-form{
+    background-color: white;
+}
+
+.dark .gr-form{
+    background-color: rgb(31 41 55 / var(--tw-bg-opacity));
+}
+
+.gr-button-tool{
+    max-width: 2.5em;
+    min-width: 2.5em !important;
+    height: 2.4em;
+    margin: 0.55em 0;
+}
+
+#quicksettings .gr-button-tool{
+    margin: 0;
+}
+
+
+#img2img_settings > div.gr-form, #txt2img_settings > div.gr-form {
+    padding-top: 0.9em;
+}
+
+#img2img_settings div.gr-form .gr-form, #txt2img_settings div.gr-form .gr-form, #train_tabs div.gr-form .gr-form{
+    border: none;
+    padding-bottom: 0.5em;
+}
+
+footer {
+    display: none !important;
+}
+
+#footer{
+    text-align: center;
+}
+
+#footer div{
+    display: inline-block;
+}
+
+#footer .versions{
+    font-size: 85%;
+    opacity: 0.85;
+}
+
+#txtimg_hr_finalres{
+    min-height: 0 !important;
+    padding: .625rem .75rem;
+    margin-left: -0.75em
+
+}
+
+#txtimg_hr_finalres .resolution{
+    font-weight: bold;
+}
+
+#txt2img_checkboxes > div > div{
+    flex: 0;
+    white-space: nowrap;
+    min-width: auto;
+}
+
+.inactive{
+    opacity: 0.5;
+}
+
+/* The following handles localization for right-to-left (RTL) languages like Arabic.
+The rtl media type will only be activated by the logic in javascript/localization.js.
+If you change anything above, you need to make sure it is RTL compliant by just running
+your changes through converters like https://cssjanus.github.io/ or https://rtlcss.com/.
+Then, you will need to add the RTL counterpart only if needed in the rtl section below.*/
+@media rtl {
+    /* this part was added manually */
+    :host {
+        direction: rtl;
+    }
+    select, .file-preview, .gr-text-input, .output-html:has(.performance), #ti_progress {
+        direction: ltr;
+    }
+    #script_list > label > select,
+    #x_type > label > select,
+    #y_type > label > select {
+        direction: rtl;
+    }
+    .gr-radio, .gr-checkbox{
+        margin-left: 0.25em;
+    }
+
+    /* automatically generated with few manual modifications */
+    .performance .time {
+        margin-right: unset;
+        margin-left: 0;
+    }
+    .justify-center.overflow-x-scroll {
+        justify-content: right;
+    }
+    .justify-center.overflow-x-scroll button:first-of-type {
+        margin-left: unset;
+        margin-right: auto;
+    }
+    .justify-center.overflow-x-scroll button:last-of-type {
+        margin-right: unset;
+        margin-left: auto;
+    }
+    #settings fieldset span.text-gray-500, #settings .gr-block.gr-box span.text-gray-500, #settings label.block span{
+        margin-right: unset;
+        margin-left: 8em;
+    }
+    #txt2img_progressbar, #img2img_progressbar, #ti_progressbar{
+        right: unset;
+        left: 0;
+    }
+    .progressDiv .progress{
+        padding: 0 0 0 8px;
+        text-align: left;
+    }
+    #lightboxModal{
+        left: unset;
+        right: 0;
+    }
+    .modalPrev, .modalNext{
+        border-radius: 3px 0 0 3px;
+    }
+    .modalNext {
+        right: unset;
+        left: 0;
+        border-radius: 0 3px 3px 0;
+    }
+    #imageARPreview{
+        left:unset;
+        right:0px;
+    }
+    #txt2img_skip, #img2img_skip{
+        right: unset;
+        left: 0px;
+    }
+    #context-menu{
+        box-shadow:-1px 1px 2px #CE6400;
+    }
+    .gr-box > div > div > input.gr-text-input{
+        right: unset;
+        left: 0.5em;
+    }
 }

@@ -9,11 +9,19 @@ function dropReplaceImage( imgWrap, files ) {
         return;
     }
 
+    const tmpFile = files[0];
+
     imgWrap.querySelector('.modify-upload button + button, .touch-none + div button + button')?.click();
     const callback = () => {
         const fileInput = imgWrap.querySelector('input[type="file"]');
         if ( fileInput ) {
-            fileInput.files = files;
+            if ( files.length === 0 ) {
+                files = new DataTransfer();
+                files.items.add(tmpFile);
+                fileInput.files = files.files;
+            } else {
+                fileInput.files = files;
+            }
             fileInput.dispatchEvent(new Event('change'));   
         }
     };
@@ -43,7 +51,7 @@ function dropReplaceImage( imgWrap, files ) {
 window.document.addEventListener('dragover', e => {
     const target = e.composedPath()[0];
     const imgWrap = target.closest('[data-testid="image"]');
-    if ( !imgWrap && target.placeholder.indexOf("Prompt") == -1) {
+    if ( !imgWrap && target.placeholder && target.placeholder.indexOf("Prompt") == -1) {
         return;
     }
     e.stopPropagation();
