@@ -509,7 +509,26 @@ https://github.com/kohya-ss/sd-webui-additional-networks
 
 Allows the Web UI to use networks (LoRA) trained by their scripts to generate images.
 
+## Ultimate SD Upscaler
+https://github.com/Coyote-A/ultimate-upscale-for-automatic1111
+
+More advanced options for SD Upscale, less artifacts than original using higher denoise ratio (0.3-0.5).
+
+## Hypernetwork-Monkeypatch-Extension
+https://github.com/aria1th/Hypernetwork-MonkeyPatch-Extension
+
+Extension that provides additional training features for hypernetwork training, and supports multiple hypernetworks.
+
+![image](https://user-images.githubusercontent.com/35677394/212069329-7f3d427f-efad-4424-8dca-4bec010ea429.png)
+
 # Stable Horde
+
+## Stable Horde Client
+https://github.com/natanjunges/stable-diffusion-webui-stable-horde
+
+Generate pictures using other user's PC. You should be able to recieve images from the stable horde with anonymous `0000000000` api key, however it is recommended to get your own - https://stablehorde.net/register
+
+Note: Retrieving Images may take 2 minutes or more, especially if you have no kudos. 
 
 ## Stable Horde Worker
 https://github.com/sdwebui-w-horde/sd-webui-stable-horde-worker
@@ -542,9 +561,4 @@ You will get an api key.
 
 Note: Other users prompts are visible in your log. Their images generated are not visible or saved to your pc.
 
-### Hypernetwork-Monkeypatch-Extension
-https://github.com/aria1th/Hypernetwork-MonkeyPatch-Extension
 
-Extension that provides additional training features for hypernetwork training, and supports multiple hypernetworks.
-
-![image](https://user-images.githubusercontent.com/35677394/212069329-7f3d427f-efad-4424-8dca-4bec010ea429.png)
