@@ -184,6 +184,13 @@
 			"tags": ["script"]
 		},
 		{
+			"name": "Sonar",
+			"url": "https://github.com/Kahsolt/stable-diffusion-webui-sonar.git",
+			"description": "Improve the generated image quality, searches for similar (yet even better!) images in the neighborhood of some known image, focuses on single prompt optimization rather than traveling between multiple prompts.",
+			"added": "2023-01-12",
+			"tags": ["script"]
+		},
+		{
 			"name": "Detection Detailer",
 			"url": "https://github.com/dustysys/ddetailer.git",
 			"description": "An object detection and auto-mask extension for Stable Diffusion web UI.",
@@ -419,6 +426,13 @@
 			"url": "https://github.com/natanjunges/stable-diffusion-webui-stable-horde.git",
 			"description": "Stable Horde Client. Generate pictures using other user's PC.",
 			"added": "2023-01-11",
+			"tags": ["script", "tab"]
+		},
+        {
+			"name": "Hypernetwork-Monkeypatch-Extension",
+			"url": "https://github.com/aria1th/Hypernetwork-MonkeyPatch-Extension.git",
+			"description": "Extension that provides additional training features for hypernetwork training, and supports multiple hypernetworks.",
+			"added": "2023-01-12",
 			"tags": ["script", "tab"]
 		},
 		{
