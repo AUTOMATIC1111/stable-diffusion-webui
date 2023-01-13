@@ -156,6 +156,13 @@
 			"tags": ["script", "tab"]
 		},
 		{
+			"name": "Asymmetric Tiling",
+			"url": "https://github.com/tjm35/asymmetric-tiling-sd-webui.git",
+			"description": "An always visible script extension to configure seamless image tiling independently for the X and Y axes.",
+			"added": "2023-01-13",
+			"tags": ["script"]
+		},
+		{
 			"name": "Latent Mirroring",
 			"url": "https://github.com/dfaker/SD-latent-mirroring",
 			"description": "Applies mirroring and flips to the latent images to produce anything from subtle balanced compositions to perfect reflections",
@@ -195,6 +202,13 @@
 			"url": "https://github.com/dustysys/ddetailer.git",
 			"description": "An object detection and auto-mask extension for Stable Diffusion web UI.",
 			"added": "2022-11-09",
+			"tags": ["script"]
+		},
+		{
+			"name": "Batch Face Swap",
+			"url": "https://github.com/kex0/batch-face-swap.git",
+			"description": "Automaticaly detects faces and replaces them.",
+			"added": "2023-01-13",
 			"tags": ["script"]
 		},
 		{
@@ -393,7 +407,7 @@
 			"added": "2023-01-01",
 			"tags": ["script"]
 		},
-                {
+        {
 			"name": "Model Converter",
 			"url": "https://github.com/Akegarasu/sd-webui-model-converter",
 			"description": "Convert models to fp16/bf16 no-ema/ema-only safetensors.",
@@ -407,14 +421,14 @@
 			"added": "2023-01-06",
 			"tags": ["script"]
 		},
-                {
+        {
 			"name": "Ultimate SD Upscale",
 			"url": "https://github.com/Coyote-A/ultimate-upscale-for-automatic1111.git",
 			"description": "More advanced options for SD Upscale, less artifacts than original using higher denoise ratio (0.3-0.5).",
 			"added": "2023-01-10",
 			"tags": ["script"]
 		},
-                {
+        {
 			"name": "Stable Horde Worker",
 			"url": "https://github.com/sdwebui-w-horde/sd-webui-stable-horde-worker.git",
 			"description": "Worker Client for Stable Horde. Generate pictures for other users with your PC. Please see https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Extensions#stable-horde-worker for additional instructions.",
@@ -428,17 +442,17 @@
 			"added": "2023-01-11",
 			"tags": ["script", "tab"]
 		},
-                {
+        {
 			"name": "Hypernetwork-Monkeypatch-Extension",
 			"url": "https://github.com/aria1th/Hypernetwork-MonkeyPatch-Extension.git",
-			"description": "Extension that provides additional training features for hypernetwork training, and supports multiple hypernetworks.",
+			"description": "Extension that provides additional training features for hypernetwork training, and supports merging multiple hypernetworks.",
 			"added": "2023-01-12",
 			"tags": ["script", "tab"]
 		},
-                {
-			"name": "Multiple hypernetworks",
+        {
+			"name": "Multiple Hypernetworks",
 			"url": "https://github.com/antis0007/sd-webui-multiple-hypernetworks.git",
-			"description": "Extension that allows the use of multiple hypernetworks at once.",
+			"description": "Adds the ability to apply multiple hypernetworks at once. Apply multiple hypernetworks sequentially, with different weights.",
 			"added": "2023-01-13",
 			"tags": ["script"]
 		},
