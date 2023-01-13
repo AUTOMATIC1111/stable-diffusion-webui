@@ -521,6 +521,13 @@ Extension that provides additional training features for hypernetwork training, 
 
 ![image](https://user-images.githubusercontent.com/35677394/212069329-7f3d427f-efad-4424-8dca-4bec010ea429.png)
 
+## Multiple hypernetworks 
+https://github.com/antis0007/sd-webui-multiple-hypernetworks
+
+Extension that allows the use of multiple hypernetworks at once
+
+![image](https://user-images.githubusercontent.com/32306715/212293588-a8b4d1e9-4099-4a2e-a61a-f549a70f6096.png)
+
 # Stable Horde
 
 ## Stable Horde Client
