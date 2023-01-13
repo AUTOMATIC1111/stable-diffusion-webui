@@ -445,7 +445,7 @@
         {
 			"name": "Hypernetwork-Monkeypatch-Extension",
 			"url": "https://github.com/aria1th/Hypernetwork-MonkeyPatch-Extension.git",
-			"description": "Extension that provides additional training features for hypernetwork training, and supports merging multiple hypernetworks.",
+			"description": "Extension that provides additional training features for hypernetwork training, and supports multiple hypernetworks.",
 			"added": "2023-01-12",
 			"tags": ["script", "tab"]
 		},
@@ -455,6 +455,13 @@
 			"description": "Adds the ability to apply multiple hypernetworks at once. Apply multiple hypernetworks sequentially, with different weights.",
 			"added": "2023-01-13",
 			"tags": ["script"]
+		},
+        {
+			"name": "Merge Block Weighted",
+			"url": "https://github.com/bbc-mc/sdweb-merge-block-weighted-gui.git",
+			"description": "Merge models with separate rate for each 25 U-Net block (input, middle, output).",
+			"added": "2023-01-13",
+			"tags": ["script", "tab"]
 		},
 		{
 			"name": "zh_CN Localization",
