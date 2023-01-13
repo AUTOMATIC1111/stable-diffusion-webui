@@ -24,7 +24,6 @@ from statistics import stdev, mean
 
 optimizer_dict = {optim_name : cls_obj for optim_name, cls_obj in inspect.getmembers(torch.optim, inspect.isclass) if optim_name != "Optimizer"}
 
-
 class HypernetworkModule(torch.nn.Module):
     multiplier = 1.0
     activation_dict = {
@@ -498,6 +497,9 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, gradient_step,
     if clip_grad:
         clip_grad_sched = LearnRateScheduler(clip_grad_value, steps, initial_step, verbose=False)
 
+    if shared.opts.training_enable_tensorboard:
+        tensorboard_writer = textual_inversion.tensorboard_setup(log_directory)
+
     # dataset loading may take a while, so input validations and early returns should be done before this
     shared.state.textinfo = f"Preparing dataset from {html.escape(data_root)}..."
 
@@ -632,6 +634,14 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, gradient_step,
                     save_hypernetwork(hypernetwork, checkpoint, hypernetwork_name, last_saved_file)
                     hypernetwork.optimizer_state_dict = None  # dereference it after saving, to save memory.
 
+
+
+                if shared.opts.training_enable_tensorboard:
+                    epoch_num = hypernetwork.step // len(ds)
+                    epoch_step = hypernetwork.step - (epoch_num * len(ds)) + 1
+
+                    textual_inversion.tensorboard_add(tensorboard_writer, loss=mean_loss, global_step=hypernetwork.step, step=epoch_step, learn_rate=scheduler.learn_rate, epoch_num=epoch_num)
+
                 textual_inversion.write_loss(log_directory, "hypernetwork_loss.csv", hypernetwork.step, steps_per_epoch, {
                     "loss": f"{loss_step:.7f}",
                     "learn_rate": scheduler.learn_rate
@@ -673,6 +683,9 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, gradient_step,
 
                     processed = processing.process_images(p)
                     image = processed.images[0] if len(processed.images) > 0 else None
+                    
+                    if shared.opts.training_enable_tensorboard and shared.opts.training_tensorboard_save_images:
+                        textual_inversion.tensorboard_add_image(tensorboard_writer, f"Validation at epoch {epoch_num}", image, hypernetwork.step)
 
                     if unload:
                         shared.sd_model.cond_stage_model.to(devices.cpu)

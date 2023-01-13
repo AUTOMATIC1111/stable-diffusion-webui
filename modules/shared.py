@@ -373,6 +373,9 @@ options_templates.update(options_section(('training', "Training"), {
     "training_image_repeats_per_epoch": OptionInfo(1, "Number of repeats for a single input image per epoch; used only for displaying epoch number", gr.Number, {"precision": 0}),
     "training_write_csv_every": OptionInfo(500, "Save an csv containing the loss to log directory every N steps, 0 to disable"),
     "training_xattention_optimizations": OptionInfo(False, "Use cross attention optimizations while training"),
+    "training_enable_tensorboard": OptionInfo(False, "Enable tensorboard logging."),
+    "training_tensorboard_save_images": OptionInfo(False, "Save generated images within tensorboard."),
+    "training_tensorboard_flush_every": OptionInfo(120, "How often, in seconds, to flush the pending tensorboard events and summaries to disk."),
 }))
 
 options_templates.update(options_section(('sd', "Stable Diffusion"), {

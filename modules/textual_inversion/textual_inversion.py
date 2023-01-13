@@ -12,6 +12,7 @@ import csv
 import safetensors.torch
 
 from PIL import Image, PngImagePlugin
+from torch.utils.tensorboard import SummaryWriter
 
 from modules import shared, devices, sd_hijack, processing, sd_models, images, sd_samplers
 import modules.textual_inversion.dataset
@@ -294,6 +295,30 @@ def write_loss(log_directory, filename, step, epoch_len, values):
             **values,
         })
 
+def tensorboard_setup(log_directory):
+    os.makedirs(os.path.join(log_directory, "tensorboard"), exist_ok=True)
+    return SummaryWriter(
+            log_dir=os.path.join(log_directory, "tensorboard"),
+            flush_secs=shared.opts.training_tensorboard_flush_every)
+
+def tensorboard_add(tensorboard_writer, loss, global_step, step, learn_rate, epoch_num):
+    tensorboard_add_scaler(tensorboard_writer, "Loss/train", loss, global_step)
+    tensorboard_add_scaler(tensorboard_writer, f"Loss/train/epoch-{epoch_num}", loss, step)
+    tensorboard_add_scaler(tensorboard_writer, "Learn rate/train", learn_rate, global_step)
+    tensorboard_add_scaler(tensorboard_writer, f"Learn rate/train/epoch-{epoch_num}", learn_rate, step)
+
+def tensorboard_add_scaler(tensorboard_writer, tag, value, step):
+    tensorboard_writer.add_scalar(tag=tag, 
+        scalar_value=value, global_step=step)
+
+def tensorboard_add_image(tensorboard_writer, tag, pil_image, step):
+    # Convert a pil image to a torch tensor
+    img_tensor = torch.as_tensor(np.array(pil_image, copy=True))
+    img_tensor = img_tensor.view(pil_image.size[1], pil_image.size[0], 
+        len(pil_image.getbands()))
+    img_tensor = img_tensor.permute((2, 0, 1))
+                
+    tensorboard_writer.add_image(tag, img_tensor, global_step=step)
 
 def validate_train_inputs(model_name, learn_rate, batch_size, gradient_step, data_root, template_file, template_filename, steps, save_model_every, create_image_every, log_directory, name="embedding"):
     assert model_name, f"{name} not selected"
@@ -372,6 +397,9 @@ def train_embedding(embedding_name, learn_rate, batch_size, gradient_step, data_
     # dataset loading may take a while, so input validations and early returns should be done before this
     shared.state.textinfo = f"Preparing dataset from {html.escape(data_root)}..."
     old_parallel_processing_allowed = shared.parallel_processing_allowed
+    
+    if shared.opts.training_enable_tensorboard:
+        tensorboard_writer = tensorboard_setup(log_directory)
 
     pin_memory = shared.opts.pin_memory
 
@@ -534,6 +562,9 @@ def train_embedding(embedding_name, learn_rate, batch_size, gradient_step, data_
                         shared.state.current_image = image
                         last_saved_image, last_text_info = images.save_image(image, images_dir, "", p.seed, p.prompt, shared.opts.samples_format, processed.infotexts[0], p=p, forced_filename=forced_filename, save_to_dirs=False)
                         last_saved_image += f", prompt: {preview_text}"
+
+                        if shared.opts.training_enable_tensorboard and shared.opts.training_tensorboard_save_images:
+                            tensorboard_add_image(tensorboard_writer, f"Validation at epoch {epoch_num}", image, embedding.step)
 
                     if save_image_with_stored_embedding and os.path.exists(last_saved_file) and embedding_yet_to_be_embedded:
 
