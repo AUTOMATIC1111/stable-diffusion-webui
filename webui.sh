@@ -165,5 +165,11 @@ else
     printf "\n%s\n" "${delimiter}"
     printf "Launching launch.py..."
     printf "\n%s\n" "${delimiter}"
-    exec "${python_cmd}" "${LAUNCH_SCRIPT}" "$@"
+    gpu_info=$(lspci | grep VGA)
+    if echo "$gpu_info" | grep -q "AMD"
+    then
+        HSA_OVERRIDE_GFX_VERSION=10.3.0 exec "${python_cmd}" "${LAUNCH_SCRIPT}" "$@"
+    else
+        exec "${python_cmd}" "${LAUNCH_SCRIPT}" "$@"
+    fi
 fi
