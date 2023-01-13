@@ -295,7 +295,8 @@ This is Extension for rewriting Inpainting conditioning mask strength value rela
 ![image](https://user-images.githubusercontent.com/98228077/208331374-5a271cf3-cfac-449b-9e09-c63ddc9ca03a.png)
 
 ## Randomize
-https://github.com/stysmmaker/stable-diffusion-webui-randomize
+~~https://github.com/stysmmaker/stable-diffusion-webui-randomize~~
+fork: https://github.com/innightwolfsleep/stable-diffusion-webui-randomize
 
 Allows for random parameters during txt2img generation. This script is processed for all generations, regardless of the script selected, meaning this script will function with others as well, such as AUTOMATIC1111/stable-diffusion-webui-wildcards.
 
