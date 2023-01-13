@@ -11,6 +11,7 @@ import datetime
 import csv
 import safetensors.torch
 
+import numpy as np
 from PIL import Image, PngImagePlugin
 from torch.utils.tensorboard import SummaryWriter
 
