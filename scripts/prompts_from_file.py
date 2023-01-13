@@ -146,7 +146,7 @@ class Script(scripts.Script):
             else:
                 args = {"prompt": line}
 
-            n_iter = args.get("n_iter", 1)
+            n_iter = args.get("n_iter", p.n_iter)
             if n_iter != 1:
                 job_count += n_iter
             else:
