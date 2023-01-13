@@ -282,7 +282,7 @@ def run_modelmerger(primary_model_name, secondary_model_name, tertiary_model_nam
         return ((1 - alpha) * theta0) + (alpha * theta1)
 
     def get_difference(theta1, theta2):
-        return theta1 - theta2
+        return (theta1 + theta2)*0.5
 
     def add_difference(theta0, theta1_2_diff, alpha):
         return theta0 + (alpha * theta1_2_diff)
@@ -294,7 +294,7 @@ def run_modelmerger(primary_model_name, secondary_model_name, tertiary_model_nam
 
     theta_funcs = {
         "Weighted sum": (None, weighted_sum),
-        "Add difference": (get_difference, add_difference),
+        "Add difference": (get_difference, weighted_sum),
     }
     theta_func1, theta_func2 = theta_funcs[interp_method]
 
