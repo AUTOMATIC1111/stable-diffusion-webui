@@ -479,7 +479,7 @@ def train_embedding(embedding_name, learn_rate, batch_size, gradient_step, data_
                 epoch_num = embedding.step // steps_per_epoch
                 epoch_step = embedding.step % steps_per_epoch
 
-                description = f"Training textual inversion [Epoch {epoch_num}: {epoch_step+1}/{steps_per_epoch}]loss: {loss_step:.7f}"
+                description = f"Training textual inversion [Epoch {epoch_num}: {epoch_step+1}/{steps_per_epoch}] loss: {loss_step:.7f}"
                 pbar.set_description(description)
                 shared.state.textinfo = description
                 if embedding_dir is not None and steps_done % save_embedding_every == 0:
