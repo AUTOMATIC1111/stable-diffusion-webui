@@ -219,13 +219,6 @@
 			"tags": ["script"]
 		},
 		{
-			"name": "Randomize",
-			"url": "https://github.com/stysmmaker/stable-diffusion-webui-randomize.git",
-			"description": "Allows for random parameters during txt2img generation. This script is processed for all generations, regardless of the script selected, meaning this script will function with others as well, such as AUTOMATIC1111/stable-diffusion-webui-wildcards",
-			"added": "2022-11-11",
-			"tags": ["script"]
-		},
-		{
 			"name": "Auto TLS-HTTPS",
 			"url": "https://github.com/papuSpartan/stable-diffusion-webui-auto-tls-https.git",
 			"description": "Allows you to easily, or even completely automatically start using HTTPS.",
