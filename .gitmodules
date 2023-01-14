@@ -1,0 +1,3 @@
+[submodule "extensions-builtin/sd-extension-system-info"]
+	path = extensions-builtin/sd-extension-system-info
+	url = https://github.com/vladmandic/sd-extension-system-info
