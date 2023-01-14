@@ -52,7 +52,7 @@ def check_progress_call(id_part):
     image = gr.update(visible=False)
     preview_visibility = gr.update(visible=False)
 
-    if opts.show_progress_every_n_steps != 0:
+    if opts.live_previews_enable:
         shared.state.set_current_image()
         image = shared.state.current_image
 

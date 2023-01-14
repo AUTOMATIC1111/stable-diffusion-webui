@@ -138,7 +138,7 @@ def samples_to_image_grid(samples, approximation=None):
 def store_latent(decoded):
     state.current_latent = decoded
 
-    if opts.show_progress_every_n_steps > 0 and shared.state.sampling_step % opts.show_progress_every_n_steps == 0:
+    if opts.live_previews_enable and opts.show_progress_every_n_steps > 0 and shared.state.sampling_step % opts.show_progress_every_n_steps == 0:
         if not shared.parallel_processing_allowed:
             shared.state.current_image = sample_to_image(decoded)
 
@@ -243,7 +243,7 @@ class VanillaStableDiffusionSampler:
         self.nmask = p.nmask if hasattr(p, 'nmask') else None
 
     def adjust_steps_if_invalid(self, p, num_steps):
-        if  (self.config.name == 'DDIM' and p.ddim_discretize == 'uniform') or (self.config.name == 'PLMS'):
+        if (self.config.name == 'DDIM' and p.ddim_discretize == 'uniform') or (self.config.name == 'PLMS'):
             valid_step = 999 / (1000 // num_steps)
             if valid_step == floor(valid_step):
                 return int(valid_step) + 1
@@ -266,8 +266,7 @@ class VanillaStableDiffusionSampler:
         if image_conditioning is not None:
             conditioning = {"c_concat": [image_conditioning], "c_crossattn": [conditioning]}
             unconditional_conditioning = {"c_concat": [image_conditioning], "c_crossattn": [unconditional_conditioning]}
-            
-            
+
         samples = self.launch_sampling(t_enc + 1, lambda: self.sampler.decode(x1, conditioning, t_enc, unconditional_guidance_scale=p.cfg_scale, unconditional_conditioning=unconditional_conditioning))
 
         return samples
@@ -352,6 +351,11 @@ class CFGDenoiser(torch.nn.Module):
 
             x_out[-uncond.shape[0]:] = self.inner_model(x_in[-uncond.shape[0]:], sigma_in[-uncond.shape[0]:], cond={"c_crossattn": [uncond], "c_concat": [image_cond_in[-uncond.shape[0]:]]})
 
+        if opts.live_preview_content == "Prompt":
+            store_latent(x_out[0:uncond.shape[0]])
+        elif opts.live_preview_content == "Negative prompt":
+            store_latent(x_out[-uncond.shape[0]:])
+
         denoised = self.combine_denoised(x_out, conds_list, uncond, cond_scale)
 
         if self.mask is not None:
@@ -423,7 +427,8 @@ class KDiffusionSampler:
     def callback_state(self, d):
         step = d['i']
         latent = d["denoised"]
-        store_latent(latent)
+        if opts.live_preview_content == "Combined":
+            store_latent(latent)
         self.last_latent = latent
 
         if self.stop_at is not None and step > self.stop_at:
