@@ -114,6 +114,7 @@
     min-width: unset !important;
     flex-grow: 0 !important;
     padding: 0.4em 0;
+    gap: 0;
 }
 
 #roll_col > button {
@@ -141,8 +142,12 @@
     min-width: 8em !important;
 }
 
-#txt2img_style_index, #txt2img_style2_index, #img2img_style_index, #img2img_style2_index{
+#txt2img_styles, #img2img_styles{
     margin-top: 1em;
+}
+
+#txt2img_styles ul, #img2img_styles ul{
+    max-height: 35em;
 }
 
 .gr-form{
@@ -154,10 +159,14 @@
     margin-bottom: 0;
 }
 
-#toprow div{
+#toprow div.gr-box, #toprow div.gr-form{
     border: none;
     gap: 0;
     background: transparent;
+    box-shadow: none;
+}
+#toprow div{
+    gap: 0;
 }
 
 #resize_mode{
@@ -615,7 +624,7 @@ canvas[key="mask"] {
     max-width: 2.5em;
     min-width: 2.5em !important;
     height: 2.4em;
-    margin: 0.55em 0;
+    margin: 1.6em 0 0 0;
 }
 
 #quicksettings .gr-button-tool{
