@@ -168,7 +168,10 @@ else
     gpu_info=$(lspci | grep VGA)
     if echo "$gpu_info" | grep -q "AMD"
     then
-	export TORCH_COMMAND="pip install torch torchvision --extra-index-url https://download.pytorch.org/whl/rocm5.2"
+        if [ -z ${TORCH_COMMAND+x} ]
+        then	    
+            export TORCH_COMMAND="pip install torch torchvision --extra-index-url https://download.pytorch.org/whl/rocm5.2"
+        fi
         HSA_OVERRIDE_GFX_VERSION=10.3.0 exec "${python_cmd}" "${LAUNCH_SCRIPT}" "$@"
     else
         exec "${python_cmd}" "${LAUNCH_SCRIPT}" "$@"
