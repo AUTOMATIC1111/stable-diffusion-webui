@@ -20,7 +20,7 @@
     padding-right: 0.25em;
     margin: 0.1em 0;
     opacity: 0%;
-    cursor: default;	
+    cursor: default;
 }
 
 .output-html p {margin: 0 0.5em;}
@@ -221,7 +221,10 @@ fieldset span.text-gray-500, .gr-block.gr-box span.text-gray-500,  label.block s
 
 .dark fieldset span.text-gray-500, .dark .gr-block.gr-box span.text-gray-500, .dark label.block span{
     background-color: rgb(31, 41, 55);
-    box-shadow: 6px 0 6px 0px rgb(31, 41, 55), -6px 0 6px 0px rgb(31, 41, 55);
+    box-shadow: none;
+    border: 1px solid rgba(128, 128, 128, 0.1);
+    border-radius: 6px;
+    padding: 0.1em 0.5em;
 }
 
 #txt2img_column_batch, #img2img_column_batch{
@@ -371,7 +374,7 @@ input[type="range"]{
     grid-area: tile;
 }
 
-.modalClose, 
+.modalClose,
 .modalZoom,
 .modalTileImage {
   color: white;
@@ -509,26 +512,17 @@ input[type="range"]{
 }
 
 #quicksettings > div{
-    border: none;
-    background: none;
-    flex: unset;
-    gap: 1em;
-}
-
-#quicksettings > div > div{
-    max-width: 32em;
+    max-width: 24em;
     min-width: 24em;
     padding: 0;
+    border: none;
+    box-shadow: none;
+    background: none;
 }
 
-#quicksettings > div > div > div > div > label > span {
+#quicksettings > div > div > div > label > span {
     position: relative;
     margin-right: 9em;
-    margin-bottom: -1em;
-}
-
-#quicksettings > div > div > label > span {
-    position: relative;
     margin-bottom: -1em;
 }
 
@@ -666,7 +660,10 @@ footer {
     font-weight: bold;
 }
 
-#txt2img_checkboxes > div > div{
+#txt2img_checkboxes, #img2img_checkboxes{
+    margin-bottom: 0.5em;
+}
+#txt2img_checkboxes > div > div, #img2img_checkboxes > div > div{
     flex: 0;
     white-space: nowrap;
     min-width: auto;
@@ -674,6 +671,30 @@ footer {
 
 .inactive{
     opacity: 0.5;
+}
+
+.gr-compact {
+    border: none;
+    padding-top: 1em;
+}
+
+.dark .gr-compact{
+    background-color: rgb(31 41 55 / var(--tw-bg-opacity));
+    margin-left: 0.8em;
+}
+
+.gr-compact > *{
+    margin-top: 0.5em !important;
+}
+
+.gr-compact .gr-block, .gr-compact .gr-form{
+    border: none;
+    box-shadow: none;
+}
+
+.gr-compact .gr-box{
+    border-radius: .5rem !important;
+    border-width: 1px !important;
 }
 
 /* The following handles localization for right-to-left (RTL) languages like Arabic.

@@ -605,7 +605,7 @@ def create_ui():
                 setup_progressbar(progressbar, txt2img_preview, 'txt2img')
 
         with gr.Row().style(equal_height=False):
-            with gr.Column(variant='panel', elem_id="txt2img_settings"):
+            with gr.Column(variant='compact', elem_id="txt2img_settings"):
                 for category in ordered_ui_categories():
                     if category == "sampler":
                         steps, sampler_index = create_sampler_and_steps_selection(samplers, "txt2img")
@@ -794,7 +794,7 @@ def create_ui():
                 setup_progressbar(progressbar, img2img_preview, 'img2img')
 
         with FormRow().style(equal_height=False):
-            with gr.Column(variant='panel', elem_id="img2img_settings"):
+            with gr.Column(variant='compact', elem_id="img2img_settings"):
                 with gr.Tabs(elem_id="mode_img2img"):
                     with gr.TabItem('img2img', id='img2img', elem_id="img2img_img2img_tab") as tab_img2img:
                         init_img = gr.Image(label="Image for img2img", elem_id="img2img_image", show_label=False, source="upload", interactive=True, type="pil", tool="editor", image_mode="RGBA").style(height=480)
@@ -1026,7 +1026,7 @@ def create_ui():
 
     with gr.Blocks(analytics_enabled=False) as extras_interface:
         with gr.Row().style(equal_height=False):
-            with gr.Column(variant='panel'):
+            with gr.Column(variant='compact'):
                 with gr.Tabs(elem_id="mode_extras"):
                     with gr.TabItem('Single Image', elem_id="extras_single_tab"):
                         extras_image = gr.Image(label="Source", source="upload", interactive=True, type="pil", elem_id="extras_image")
@@ -1127,8 +1127,8 @@ def create_ui():
 
     with gr.Blocks(analytics_enabled=False) as modelmerger_interface:
         with gr.Row().style(equal_height=False):
-            with gr.Column(variant='panel'):
-                gr.HTML(value="<p>A merger of the two checkpoints will be generated in your <b>checkpoint</b> directory.</p>")
+            with gr.Column(variant='compact'):
+                gr.HTML(value="<p style='margin-bottom: 2.5em'>A merger of the two checkpoints will be generated in your <b>checkpoint</b> directory.</p>")
 
                 with FormRow():
                     primary_model_name = gr.Dropdown(modules.sd_models.checkpoint_tiles(), elem_id="modelmerger_primary_model_name", label="Primary model (A)")
@@ -1150,7 +1150,8 @@ def create_ui():
 
                 config_source = gr.Radio(choices=["A, B or C", "B", "C", "Don't"], value="A, B or C", label="Copy config from", type="index", elem_id="modelmerger_config_method")
 
-                modelmerger_merge = gr.Button(elem_id="modelmerger_merge", value="Merge", variant='primary')
+                with gr.Row():
+                    modelmerger_merge = gr.Button(elem_id="modelmerger_merge", value="Merge", variant='primary')
 
             with gr.Column(variant='panel'):
                 submit_result = gr.Textbox(elem_id="modelmerger_result", show_label=False)
