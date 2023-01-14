@@ -125,24 +125,21 @@ def apply_upscale_latent_space(p, x, xs):
 
 
 def find_vae(name: str):
-    if name.lower() in ['auto', 'none']:
-        return name
+    if name.lower() in ['auto', 'automatic']:
+        return modules.sd_vae.unspecified
+    if name.lower() == 'none':
+        return None
     else:
-        vae_path = os.path.abspath(os.path.join(paths.models_path, 'VAE'))
-        found = glob.glob(os.path.join(vae_path, f'**/{name}.*pt'), recursive=True)
-        if found:
-            return found[0]
+        choices = [x for x in sorted(modules.sd_vae.vae_dict, key=lambda x: len(x)) if name.lower().strip() in x.lower()]
+        if len(choices) == 0:
+            print(f"No VAE found for {name}; using automatic")
+            return modules.sd_vae.unspecified
         else:
-            return 'auto'
+            return modules.sd_vae.vae_dict[choices[0]]
 
 
 def apply_vae(p, x, xs):
-    if x.lower().strip() == 'none':
-        modules.sd_vae.reload_vae_weights(shared.sd_model, vae_file='None')
-    else:
-        found = find_vae(x)
-        if found:
-            v = modules.sd_vae.reload_vae_weights(shared.sd_model, vae_file=found)
+    modules.sd_vae.reload_vae_weights(shared.sd_model, vae_file=find_vae(x))
 
 
 def apply_styles(p: StableDiffusionProcessingTxt2Img, x: str, _):
@@ -271,7 +268,9 @@ class SharedSettingsStackHelper(object):
   
     def __exit__(self, exc_type, exc_value, tb):
         modules.sd_models.reload_model_weights(self.model)
-        modules.sd_vae.reload_vae_weights(self.model, vae_file=find_vae(self.vae))
+
+        opts.data["sd_vae"] = self.vae
+        modules.sd_vae.reload_vae_weights(self.model)
 
         hypernetwork.load_hypernetwork(self.hypernetwork)
         hypernetwork.apply_strength()
