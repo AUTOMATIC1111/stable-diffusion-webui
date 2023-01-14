@@ -54,7 +54,7 @@ class CheckpointInfo:
             checkpoint_alisases[id] = self
 
     def calculate_shorthash(self):
-        self.sha256 = hashes.sha256(self.filename, self.title)
+        self.sha256 = hashes.sha256(self.filename, "checkpoint/" + self.title)
         self.shorthash = self.sha256[0:10]
 
         if self.shorthash not in self.ids:
