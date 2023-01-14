@@ -125,7 +125,7 @@ def list_models():
 def get_closet_checkpoint_match(search_string):
     checkpoint_info = checkpoint_alisases.get(search_string, None)
     if checkpoint_info is not None:
-        return
+        return checkpoint_info
 
     found = sorted([info for info in checkpoints_list.values() if search_string in info.title], key=lambda x: len(x.title))
     if found:

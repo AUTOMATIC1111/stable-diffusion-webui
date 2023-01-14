@@ -361,6 +361,7 @@ options_templates.update(options_section(('system', "System"), {
     "memmon_poll_rate": OptionInfo(8, "VRAM usage polls per second during generation. Set to 0 to disable.", gr.Slider, {"minimum": 0, "maximum": 40, "step": 1}),
     "samples_log_stdout": OptionInfo(False, "Always print all generation info to standard output"),
     "multiple_tqdm": OptionInfo(True, "Add a second progress bar to the console that shows progress for an entire job."),
+    "print_hypernet_extra": OptionInfo(False, "Print extra hypernetwork information to console."),
 }))
 
 options_templates.update(options_section(('training', "Training"), {
