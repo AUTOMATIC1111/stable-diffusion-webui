@@ -1,2 +1,0 @@
-def preload(parser):
-  pass
