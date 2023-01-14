@@ -31,6 +31,8 @@ def check_gpu():
                 return "NVIDIA"
             else:
                 return "Unknown"
+        else:
+                return "Unknown"
     else:
         # If the `lspci` command is available, use it to get the GPU vendor and model information
         output = os.popen("lspci | grep -i vga").read()
