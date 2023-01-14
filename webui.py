@@ -83,6 +83,7 @@ def initialize():
     shared.opts.onchange("sd_vae_as_default", wrap_queued_call(lambda: modules.sd_vae.reload_vae_weights()), call=False)
     shared.opts.onchange("sd_hypernetwork", wrap_queued_call(lambda: shared.reload_hypernetworks()))
     shared.opts.onchange("sd_hypernetwork_strength", modules.hypernetworks.hypernetwork.apply_strength)
+    shared.opts.onchange("sd_pluggable", wrap_queued_call(lambda: shared.reload_pluggables()))
     shared.opts.onchange("temp_dir", ui_tempdir.on_tmpdir_changed)
 
     if cmd_opts.tls_keyfile is not None and cmd_opts.tls_keyfile is not None:

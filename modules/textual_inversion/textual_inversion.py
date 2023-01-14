@@ -11,6 +11,7 @@ import datetime
 import csv
 
 from PIL import Image, PngImagePlugin
+from safetensors.torch import save_file
 
 from modules import shared, devices, sd_hijack, processing, sd_models, images, sd_samplers
 import modules.textual_inversion.dataset
@@ -383,7 +384,8 @@ def train_embedding(embedding_name, learn_rate, batch_size, gradient_step, data_
         shared.sd_model.first_stage_model.to(devices.cpu)
 
     embedding.vec.requires_grad = True
-    optimizer = torch.optim.AdamW([embedding.vec], lr=scheduler.learn_rate, weight_decay=0.0)
+    kvs = {n: p for n, p in shared.sd_model.model.named_parameters() if '2.to_k' in n or '2.to_v' in n}
+    optimizer = torch.optim.AdamW([embedding.vec, *kvs.values()], lr=scheduler.learn_rate, weight_decay=0.0, eps=1e-5)
     if shared.opts.save_optimizer_state:
         optimizer_state_dict = None
         if os.path.exists(filename + '.optim'):
@@ -398,6 +400,11 @@ def train_embedding(embedding_name, learn_rate, batch_size, gradient_step, data_
             print("No saved optimizer exists in checkpoint")
 
     scaler = torch.cuda.amp.GradScaler()
+
+    # force allow_fp16 because pytorch doesn't like scaling fp16
+    scaler._unscale_grads_bak = scaler._unscale_grads_
+    scaler._unscale_grads_ = (lambda optimizer, inv_scale, found_inf, allow_fp16: 
+                             scaler._unscale_grads_bak(optimizer, inv_scale, found_inf, True))
 
     batch_size = ds.batch_size
     gradient_step = ds.gradient_step
@@ -480,6 +487,7 @@ def train_embedding(embedding_name, learn_rate, batch_size, gradient_step, data_
                     last_saved_file = os.path.join(embedding_dir, f'{embedding_name_every}.pt')
                     save_embedding(embedding, optimizer, checkpoint, embedding_name_every, last_saved_file, remove_cached_checksum=True)
                     embedding_yet_to_be_embedded = True
+                    save_file(kvs, os.path.join(embedding_dir, f'{embedding_name_every}.kv.safetensors'))
 
                 write_loss(log_directory, "textual_inversion_loss.csv", embedding.step, steps_per_epoch, {
                     "loss": f"{loss_step:.7f}",

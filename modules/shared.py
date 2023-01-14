@@ -35,6 +35,7 @@ parser.add_argument("--max-batch-count", type=int, default=16, help="maximum bat
 parser.add_argument("--embeddings-dir", type=str, default=os.path.join(script_path, 'embeddings'), help="embeddings directory for textual inversion (default: embeddings)")
 parser.add_argument("--textual-inversion-templates-dir", type=str, default=os.path.join(script_path, 'textual_inversion_templates'), help="directory with textual inversion templates")
 parser.add_argument("--hypernetwork-dir", type=str, default=os.path.join(models_path, 'hypernetworks'), help="hypernetwork directory")
+parser.add_argument("--pluggable-dir", type=str, default=os.path.join(models_path, 'pluggables'), help="pluggable weights directory")
 parser.add_argument("--localizations-dir", type=str, default=os.path.join(script_path, 'localizations'), help="localizations directory")
 parser.add_argument("--allow-code", action='store_true', help="allow custom script execution from webui")
 parser.add_argument("--medvram", action='store_true', help="enable stable diffusion model optimizations for sacrificing a little speed for low VRM usage")
@@ -140,9 +141,10 @@ xformers_available = False
 config_filename = cmd_opts.ui_settings_file
 
 os.makedirs(cmd_opts.hypernetwork_dir, exist_ok=True)
+os.makedirs(cmd_opts.pluggable_dir, exist_ok=True)
 hypernetworks = {}
 loaded_hypernetwork = None
-
+pluggables = {}
 
 def reload_hypernetworks():
     from modules.hypernetworks import hypernetwork
@@ -151,6 +153,12 @@ def reload_hypernetworks():
     hypernetworks = hypernetwork.list_hypernetworks(cmd_opts.hypernetwork_dir)
     hypernetwork.load_hypernetwork(opts.sd_hypernetwork)
 
+def reload_pluggables():
+    from modules.pluggable import list_pluggables, load_pluggable
+    global pluggables
+
+    pluggables = list_pluggables(cmd_opts.pluggable_dir)
+    load_pluggable(opts.sd_pluggable)
 
 class State:
     skipped = False
@@ -383,6 +391,7 @@ options_templates.update(options_section(('sd', "Stable Diffusion"), {
     "sd_vae_as_default": OptionInfo(False, "Ignore selected VAE for stable diffusion checkpoints that have their own .vae.pt next to them"),
     "sd_hypernetwork": OptionInfo("None", "Hypernetwork", gr.Dropdown, lambda: {"choices": ["None"] + [x for x in hypernetworks.keys()]}, refresh=reload_hypernetworks),
     "sd_hypernetwork_strength": OptionInfo(1.0, "Hypernetwork strength", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.001}),
+    "sd_pluggable": OptionInfo("None", "Pluggable weights", gr.Dropdown, lambda: {"choices": ["None"] + [x for x in pluggables.keys()]}, refresh=reload_pluggables),
     "inpainting_mask_weight": OptionInfo(1.0, "Inpainting conditioning mask strength", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     "initial_noise_multiplier": OptionInfo(1.0, "Noise multiplier for img2img", gr.Slider, {"minimum": 0.5, "maximum": 1.5, "step": 0.01 }),
     "img2img_color_correction": OptionInfo(False, "Apply color correction to img2img results to match original colors."),
