@@ -407,7 +407,7 @@ def train_embedding(embedding_name, learn_rate, batch_size, gradient_step, data_
     ds = modules.textual_inversion.dataset.PersonalizedBase(data_root=data_root, width=training_width, height=training_height, repeats=shared.opts.training_image_repeats_per_epoch, placeholder_token=embedding_name, model=shared.sd_model, cond_model=shared.sd_model.cond_stage_model, device=devices.device, template_file=template_file, batch_size=batch_size, gradient_step=gradient_step, shuffle_tags=shuffle_tags, tag_drop_out=tag_drop_out, latent_sampling_method=latent_sampling_method, varsize=varsize)
 
     if shared.opts.save_training_settings_to_txt:
-        save_settings_to_file(log_directory, {**dict(model_name=checkpoint.model_name, model_hash=checkpoint.hash, num_of_dataset_images=len(ds), num_vectors_per_token=len(embedding.vec)), **locals()})
+        save_settings_to_file(log_directory, {**dict(model_name=checkpoint.model_name, model_hash=checkpoint.shorthash, num_of_dataset_images=len(ds), num_vectors_per_token=len(embedding.vec)), **locals()})
 
     latent_sampling_method = ds.latent_sampling_method
 
@@ -584,7 +584,7 @@ def train_embedding(embedding_name, learn_rate, batch_size, gradient_step, data_
 
                         checkpoint = sd_models.select_checkpoint()
                         footer_left = checkpoint.model_name
-                        footer_mid = '[{}]'.format(checkpoint.hash)
+                        footer_mid = '[{}]'.format(checkpoint.shorthash)
                         footer_right = '{}v {}s'.format(vectorSize, steps_done)
 
                         captioned_image = caption_image_overlay(image, title, footer_left, footer_mid, footer_right)
@@ -626,7 +626,7 @@ def save_embedding(embedding, optimizer, checkpoint, embedding_name, filename, r
     old_sd_checkpoint_name = embedding.sd_checkpoint_name if hasattr(embedding, "sd_checkpoint_name") else None
     old_cached_checksum = embedding.cached_checksum if hasattr(embedding, "cached_checksum") else None
     try:
-        embedding.sd_checkpoint = checkpoint.hash
+        embedding.sd_checkpoint = checkpoint.shorthash
         embedding.sd_checkpoint_name = checkpoint.model_name
         if remove_cached_checksum:
             embedding.cached_checksum = None
