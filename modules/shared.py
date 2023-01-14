@@ -116,6 +116,7 @@ restricted_opts = {
 }
 
 ui_reorder_categories = [
+    "masking",
     "sampler",
     "dimensions",
     "cfg",
