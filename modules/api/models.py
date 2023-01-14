@@ -224,7 +224,8 @@ class UpscalerItem(BaseModel):
 class SDModelItem(BaseModel):
     title: str = Field(title="Title")
     model_name: str = Field(title="Model Name")
-    hash: str = Field(title="Hash")
+    hash: Optional[str] = Field(title="Short hash")
+    sha256: Optional[str] = Field(title="sha256 hash")
     filename: str = Field(title="Filename")
     config: str = Field(title="Config file")
 

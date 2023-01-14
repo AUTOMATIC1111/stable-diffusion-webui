@@ -509,7 +509,7 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, gradient_step,
 
     if shared.opts.save_training_settings_to_txt:
         saved_params = dict(
-            model_name=checkpoint.model_name, model_hash=checkpoint.hash, num_of_dataset_images=len(ds),
+            model_name=checkpoint.model_name, model_hash=checkpoint.shorthash, num_of_dataset_images=len(ds),
             **{field: getattr(hypernetwork, field) for field in ['layer_structure', 'activation_func', 'weight_init', 'add_layer_norm', 'use_dropout', ]}
         )
         logging.save_settings_to_file(log_directory, {**saved_params, **locals()})
@@ -737,7 +737,7 @@ def save_hypernetwork(hypernetwork, checkpoint, hypernetwork_name, filename):
     old_sd_checkpoint = hypernetwork.sd_checkpoint if hasattr(hypernetwork, "sd_checkpoint") else None
     old_sd_checkpoint_name = hypernetwork.sd_checkpoint_name if hasattr(hypernetwork, "sd_checkpoint_name") else None
     try:
-        hypernetwork.sd_checkpoint = checkpoint.hash
+        hypernetwork.sd_checkpoint = checkpoint.shorthash
         hypernetwork.sd_checkpoint_name = checkpoint.model_name
         hypernetwork.name = hypernetwork_name
         hypernetwork.save(filename)
