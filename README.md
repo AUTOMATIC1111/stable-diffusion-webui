@@ -34,9 +34,9 @@ Fork does differ in few things:
 Only Python library which is not auto-updated is `PyTorch` itself as that is very system specific  
 I'm currently using **PyTorch 2.0-nightly** compiled with **CUDA 11.8** and with **Triton** optimizations:
 
-> pip3 install --pre torch torchvision torchaudio torchtriton --extra-index-url https://download.pytorch.org/whl/nightly/cu118  
+> pip3 install --pre torch torchvision torchaudio torchtriton --extra-index-url https://download.pytorch.org/whl/nightly/cu118 --force 
 > pip show torch  
-> 2.0.0.dev20230111+cu118  
+> 2.0.0.dev20230113+cu118  
 
 
 <br>

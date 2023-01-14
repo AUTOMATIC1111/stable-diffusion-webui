@@ -103,6 +103,15 @@ class StableDiffusionModelHijack:
             m.cond_stage_model.model.token_embedding = EmbeddingsWithFixes(m.cond_stage_model.model.token_embedding, self)
             m.cond_stage_model = sd_hijack_open_clip.FrozenOpenCLIPEmbedderWithCustomWords(m.cond_stage_model, self)
 
+        try:
+            import time
+            t0 = time.time()
+            m = torch.compile(m, mode="max-autotune", fullgraph=True)
+            t1 = time.time()
+            print(f"Model compiled in {round(t1 - t0, 2)} sec")
+        except Exception as err:
+            print(f"Model compile not supported: {err}")
+
         self.optimization_method = apply_optimizations()
 
         self.clip = m.cond_stage_model

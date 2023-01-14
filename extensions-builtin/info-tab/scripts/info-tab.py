@@ -30,6 +30,10 @@ def get_cuda():
         except Exception as e:
             return { 'error': e }
 
+def get_uptime():
+    s = vars(shared.state)
+    return time.strftime('%c', time.localtime(s.get('server_start', time.time())))
+
 def get_state():
     s = vars(shared.state)
     flags = 'skipped ' if s.get('skipped', False) else ''
@@ -193,6 +197,7 @@ def get_full_data():
     data = {
         'date': datetime.datetime.now().strftime('%c'),
         'timestamp': datetime.datetime.now().strftime('%X'),
+        'uptime': get_uptime(),
         'version': get_version(),
         'model': get_model(),
         'vae': get_vae(),
@@ -247,6 +252,7 @@ def on_ui_tabs():
                 with gr.Box():
                     with gr.Row():
                         with gr.Column():
+                            gr.Textbox(data['uptime'], label = 'Server start time', lines = 1)
                             gr.Textbox(dict2text(data['version']), label = 'Version', lines = len(data['version']))
                         with gr.Column():
                             model = gr.Textbox(dict2text(data['model']), label = 'Model', lines = len(data['model']))

@@ -31,7 +31,6 @@ Things I'm looking into...
 
 Stuff to be fixed...
 
-- Model switch memory leak
 - Torch 2.0 model compile
 
 Tech that can be integrated as part of the core workflow...
@@ -62,6 +61,11 @@ Cool stuff that is not integrated anywhere...
 - [Disco Diffusion](https://colab.research.google.com/github/alembics/disco-diffusion/blob/main/Disco_Diffusion.ipynb)
 - [Video Killed the Radio Star](https://colab.research.google.com/github/dmarx/video-killed-the-radio-star/blob/main/Video_Killed_The_Radio_Star_Defusion.ipynb)
 
+# SDAPI
+
+- Support TLS
+- Support auth
+
 # External
 
 Ideas that can be value-added to core tech...
@@ -69,9 +73,7 @@ Ideas that can be value-added to core tech...
 - Prevalent colors to interrogate
 - Auto-Sort inputs by face recognition
 - Use semantic segmentation to remove background from inputs
-- Auto-filter training inputs based 
 - Auto-filter training inputs based on blur  
   <https://pyimagesearch.com/2020/06/15/opencv-fast-fourier-transform-fft-for-blur-detection-in-images-and-video-streams/>
 
-if shared.opts.training_enable_tensorboard and shared.opts.training_tensorboard_save_images:
-clip_grad_mode
+/home/vlado/dev/sd-extensions/api/losschart.py:48: RuntimeWarning: More than 20 figures have been opened. Figures created through the pyplot interface (`matplotlib.pyplot.figure`) are retained until explicitly closed and may consume too much memory. (To control this warning, see the rcParam `figure.max_open_warning`). Consider using `matplotlib.pyplot.close()`.
