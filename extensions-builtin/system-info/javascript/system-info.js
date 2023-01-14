@@ -4,7 +4,7 @@ let loaded = false;
 let interval;
 
 function refresh() {
-  const btn = gradioApp().getElementById('info_tab_refresh_btn') // we could cache this dom element
+  const btn = gradioApp().getElementById('system_info_tab_refresh_btn') // we could cache this dom element
   if (!btn) return // but ui may get destroyed
   btn.click() // actual refresh is done from python code we just trigger it but simulating button click
 }
@@ -22,7 +22,7 @@ function onVisible() { // start refresh interval tab is when visible
 
 function initLoading() { // triggered on gradio change to monitor when ui gets sufficiently constructed
   if (loaded) return
-  const block = gradioApp().getElementById('info_tab');
+  const block = gradioApp().getElementById('system_info_tab');
   if (!block) return
   intersectionObserver = new IntersectionObserver((entries) => {
     if (entries[0].intersectionRatio <= 0) onHidden();

@@ -246,8 +246,8 @@ def refresh_info_full():
 
 def on_ui_tabs():
     get_full_data()
-    with gr.Blocks(analytics_enabled = False) as info_tab:
-        with gr.Row(elem_id = 'info_tab'):
+    with gr.Blocks(analytics_enabled = False) as system_info_tab:
+        with gr.Row(elem_id = 'system_info_tab'):
             with gr.Column(scale = 9):
                 with gr.Box():
                     with gr.Row():
@@ -295,13 +295,13 @@ def on_ui_tabs():
                         data.pop('schedulers', None)
                         json = gr.JSON(data)
             with gr.Column(scale = 1, min_width = 120):
-                timestamp = gr.Text(data['timestamp'], label = '', elem_id = 'info_tab_last_update')
-                refresh_quick = gr.Button('Refresh state', elem_id = 'info_tab_refresh_btn', visible = False).style(full_width = False) # quick refresh is used from js interval
+                timestamp = gr.Text(data['timestamp'], label = '', elem_id = 'system_info_tab_last_update')
+                refresh_quick = gr.Button('Refresh state', elem_id = 'system_info_tab_refresh_btn', visible = False).style(full_width = False) # quick refresh is used from js interval
                 refresh_quick.click(refresh_info_quick, inputs = [], outputs = [state, memory, timestamp, json])
-                refresh_full = gr.Button('Refresh data').style(full_width = False)
+                refresh_full = gr.Button('Refresh data', elem_id = 'system_info_tab_refresh_full_btn').style(full_width = False)
                 refresh_full.click(refresh_info_full, inputs = [], outputs = [state, memory, models, hypernetworks, embeddings, skipped, model, vae, timestamp, json])
-                interrupt = gr.Button('Send interrupt')
+                interrupt = gr.Button('Send interrupt', elem_id = 'system_info_tab_interrupt_btn')
                 interrupt.click(shared.state.interrupt, inputs = [], outputs = [])
-    return (info_tab, 'System Info', 'info_tab'),
+    return (system_info_tab, 'System Info', 'system_info_tab'),
 
 script_callbacks.on_ui_tabs(on_ui_tabs)

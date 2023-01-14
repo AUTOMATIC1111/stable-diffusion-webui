@@ -18,16 +18,16 @@ All other information is updated once upon WebUI load and can be force refreshed
 - Versions of critical libraries
 - Versions of dependent repositories
 
-  ![screenshot](info-tab.jpg)
+  ![screenshot](system-info.jpg)
 
 ## Models
 - Models
 - Hypernetworks
 - Embeddings
 
-  ![screenshot](info-tab-models.jpg)
+  ![screenshot](system-info-models.jpg)
 
 ## Info Object
 - System object is available as JSON for quick passing of information
 
-  ![screenshot](info-tab-json.jpg)
+  ![screenshot](system-info-json.jpg)
