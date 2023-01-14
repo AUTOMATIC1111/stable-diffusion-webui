@@ -458,6 +458,7 @@ options_templates.update(options_section(('sampler-params', "Sampler parameters"
 
 options_templates.update(options_section((None, "Hidden options"), {
     "disabled_extensions": OptionInfo([], "Disable those extensions"),
+    "sd_checkpoint_hash": OptionInfo("", "SHA256 hash of the current checkpoint"),
 }))
 
 options_templates.update()

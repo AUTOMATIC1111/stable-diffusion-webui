@@ -14,6 +14,7 @@ function get_uiCurrentTabContent() {
 
 uiUpdateCallbacks = []
 uiTabChangeCallbacks = []
+optionsChangedCallbacks = []
 let uiCurrentTab = null
 
 function onUiUpdate(callback){
@@ -21,6 +22,9 @@ function onUiUpdate(callback){
 }
 function onUiTabChange(callback){
     uiTabChangeCallbacks.push(callback)
+}
+function onOptionsChanged(callback){
+    optionsChangedCallbacks.push(callback)
 }
 
 function runCallback(x, m){

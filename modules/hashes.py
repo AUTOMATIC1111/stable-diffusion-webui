@@ -42,23 +42,35 @@ def calculate_sha256(filename):
     return hash_sha256.hexdigest()
 
 
-def sha256(filename, title):
+def sha256_from_cache(filename, title):
     hashes = cache("hashes")
     ondisk_mtime = os.path.getmtime(filename)
 
-    if title in hashes:
-        cached_sha256 = hashes[title].get("sha256", None)
-        cached_mtime = hashes[title].get("mtime", 0)
+    if title not in hashes:
+        return None
 
-        if ondisk_mtime <= cached_mtime and cached_sha256 is not None:
-            return cached_sha256
+    cached_sha256 = hashes[title].get("sha256", None)
+    cached_mtime = hashes[title].get("mtime", 0)
+
+    if ondisk_mtime > cached_mtime or cached_sha256 is None:
+        return None
+
+    return cached_sha256
+
+
+def sha256(filename, title):
+    hashes = cache("hashes")
+
+    sha256_value = sha256_from_cache(filename, title)
+    if sha256_value is not None:
+        return sha256_value
 
     print(f"Calculating sha256 for {filename}: ", end='')
     sha256_value = calculate_sha256(filename)
     print(f"{sha256_value}")
 
     hashes[title] = {
-        "mtime": ondisk_mtime,
+        "mtime": os.path.getmtime(filename),
         "sha256": sha256_value,
     }
 

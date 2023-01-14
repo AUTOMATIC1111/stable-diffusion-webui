@@ -44,9 +44,11 @@ class CheckpointInfo:
         self.title = name
         self.model_name = os.path.splitext(name.replace("/", "_").replace("\\", "_"))[0]
         self.hash = model_hash(filename)
-        self.ids = [self.hash, self.model_name, self.title, f'{name} [{self.hash}]']
-        self.shorthash = None
-        self.sha256 = None
+
+        self.sha256 = hashes.sha256_from_cache(self.filename, "checkpoint/" + self.title)
+        self.shorthash = self.sha256[0:10] if self.sha256 else None
+
+        self.ids = [self.hash, self.model_name, self.title, f'{name} [{self.hash}]'] + ([self.shorthash, self.sha256] if self.shorthash else [])
 
     def register(self):
         checkpoints_list[self.title] = self
@@ -269,6 +271,7 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, vae_file="auto"):
     model.sd_model_hash = sd_model_hash
     model.sd_model_checkpoint = checkpoint_info.filename
     model.sd_checkpoint_info = checkpoint_info
+    shared.opts.data["sd_checkpoint_hash"] = checkpoint_info.sha256
 
     model.logvar = model.logvar.to(devices.device)  # fix for training
 
