@@ -7,3 +7,6 @@
 [submodule "extensions-builtin/sd-extension-image-browser"]
 	path = extensions-builtin/sd-extension-image-browser
 	url = https://github.com/yfszzx/stable-diffusion-webui-images-browser
+[submodule "extensions-builtin/sd-extension-steps-animation"]
+	path = extensions-builtin/sd-extension-steps-animation
+	url = https://github.com/vladmandic/sd-extension-steps-animation
