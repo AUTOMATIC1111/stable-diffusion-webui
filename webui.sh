@@ -168,7 +168,7 @@ else
     gpu_info=$(lspci | grep VGA)
     if echo "$gpu_info" | grep -q "AMD"
     then
-        if [ -z ${TORCH_COMMAND+x} ]
+        if [[ -z "${TORCH_COMMAND}" ]]
         then	    
             export TORCH_COMMAND="pip install torch torchvision --extra-index-url https://download.pytorch.org/whl/rocm5.2"
         fi
