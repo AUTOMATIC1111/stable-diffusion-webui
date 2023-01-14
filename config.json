@@ -58,7 +58,7 @@
     "training_xattention_optimizations": false,
     "sd_model_checkpoint": "sd-v15-runwayml.ckpt",
     "sd_checkpoint_cache": 0,
-    "sd_vae": "vae-ft-mse-840000-ema-pruned",
+    "sd_vae": "vae-ft-mse-840000-ema-pruned.ckpt",
     "sd_vae_as_default": false,
     "sd_hypernetwork": "None",
     "sd_hypernetwork_strength": 1.0,
@@ -157,5 +157,8 @@
     "training_enable_tensorboard": true,
     "training_tensorboard_save_images": true,
     "training_tensorboard_flush_every": 60.0,
-    "sd_checkpoint_hash": "cc6cb27103417325ff94f52b7a5d2dde45a7515b25c255d8e396c90014281516"
+    "sd_checkpoint_hash": "cc6cb27103417325ff94f52b7a5d2dde45a7515b25c255d8e396c90014281516",
+    "print_hypernet_extra": false,
+    "live_previews_enable": true,
+    "live_preview_content": "Prompt"
 }

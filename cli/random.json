@@ -1,0 +1,31 @@
+{
+  "prompts": [
+    "<style> of <embedding> <place>, high detailed, by <artist>, <suffix>"
+  ],
+  "negative": [
+    "watermark, fog, clouds, blurry, duplicate, deformed, mutation"
+  ],
+  "places": [
+    "standing in the city", "on a spaceship", "in fantasy landscape", "on a shore", "in a forest", "in winter wonderland"
+  ],
+  "embeddings": [
+    "man", "man next to a beautiful girl", "man next to a car", "beautiful girl", "sexy naked girl", "cute girl holding a flower", "beautiful robot",
+    "young korean girl with medium-length white hair", "monster", "pin up girl",
+    "man vlado", "beutiful girl ana", "man lee", "beautiful girl abby"
+  ],
+  "artists": [
+    "John Salminen", "Greg Rutkowski", "Akihiko Yoshida", "Alejandro Burdisio", "Artgerm", "Patrick Brown", "Walt Disney", "Neal Adams", "Jeremy Chong",
+    "Chris Rallis", "Roy Lichtenstein", "Claude Monet", "Jon Whitcomb", "Pablo Picasso", "Raymond Leech", "Tom Lovell", "Noriyoshi Ohrai", "Shingei",
+    "Helmut Newton", "Maciej Kuciara", "Daniel F. Gerhartz", "Stephan Martinière", "Magali Villeneuve", "Carne Griffiths", "Alberto Seveso",
+    "Vincent Van Gogh", "WLOP", "Frank Xavier Leyendecker", "Peter Lindbergh", "Nick Gentry", "Howard Chandler Christy", "Raphael", "Henri Matisse"
+  ],
+  "styles": [
+    "illustration", "painting", "portrait", "photograph", "drawing", "sketch", "pencil sketch", "3d render", "cartoon", "anime", "scribbles", "pop art",
+    "ink painting", "steampunk illustration", "dc comics illustration", "marvel comics", "vray render", "photoillustration", "pixar", "marble sculpture",
+    "bronze sculpture", "christmas theme"
+  ],
+  "suffixes": [
+    "cinematic lighting", "artstation", "fineart", "cinematic", "photorealistic", "soft light", "sharp focus", "bokeh", "dreamlike", "semirealism",
+    "colorful", "black and white", "intricate", "elegant"
+  ]
+}

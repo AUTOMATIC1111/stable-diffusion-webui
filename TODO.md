@@ -44,6 +44,8 @@ Tech that can be integrated as part of the core workflow...
 - [Use scripts from API](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/6469)
 - [Aesthetic Gradients](https://github.com/AUTOMATIC1111/stable-diffusion-webui-aesthetic-gradients)
 - [Latent blending](https://github.com/lunarring/latentblending/)
+- [Face swap](https://github.com/kex0/batch-face-swap)
+- [Animator extension](https://github.com/Animator-Anon/animator_extension)
 - [LORA](https://github.com/cloneofsimo/lora)
   - <https://github.com/kohya-ss/sd-webui-additional-networks>
   - <https://github.com/kohya-ss/sd-scripts>
