@@ -326,8 +326,14 @@ def run_modelmerger(primary_model_name, secondary_model_name, tertiary_model_nam
 
     print("Merging...")
 
+    chckpoint_dict_skip_on_merge = ["cond_stage_model.transformer.text_model.embeddings.position_ids"]
+
     for key in tqdm.tqdm(theta_0.keys()):
         if 'model' in key and key in theta_1:
+
+            if key in chckpoint_dict_skip_on_merge:
+                continue
+
             a = theta_0[key]
             b = theta_1[key]
 
@@ -352,6 +358,10 @@ def run_modelmerger(primary_model_name, secondary_model_name, tertiary_model_nam
     # I believe this part should be discarded, but I'll leave it for now until I am sure
     for key in theta_1.keys():
         if 'model' in key and key not in theta_0:
+
+            if key in chckpoint_dict_skip_on_merge:
+                continue
+
             theta_0[key] = theta_1[key]
             if save_as_half:
                 theta_0[key] = theta_0[key].half()
