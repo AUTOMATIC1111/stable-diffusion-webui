@@ -95,7 +95,7 @@ def resolve_vae(checkpoint_file):
         return shared.cmd_opts.vae_path, 'from commandline argument'
 
     vae_near_checkpoint = find_vae_near_checkpoint(checkpoint_file)
-    if vae_near_checkpoint is not None and (shared.opts.sd_vae_as_default or shared.opts.sd_vae == "auto"):
+    if vae_near_checkpoint is not None and (shared.opts.sd_vae_as_default or shared.opts.sd_vae == "Automatic"):
         return vae_near_checkpoint, 'found near the checkpoint'
 
     if shared.opts.sd_vae == "None":
