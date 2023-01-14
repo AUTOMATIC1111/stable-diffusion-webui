@@ -224,7 +224,7 @@ def read_state_dict(checkpoint_file, print_global_state=False, map_location=None
     return sd
 
 
-def load_model_weights(model, checkpoint_info: CheckpointInfo, vae_file="auto"):
+def load_model_weights(model, checkpoint_info: CheckpointInfo):
     sd_model_hash = checkpoint_info.calculate_shorthash()
 
     cache_enabled = shared.opts.sd_checkpoint_cache > 0
@@ -277,8 +277,8 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, vae_file="auto"):
 
     sd_vae.delete_base_vae()
     sd_vae.clear_loaded_vae()
-    vae_file = sd_vae.resolve_vae(checkpoint_info.filename, vae_file=vae_file)
-    sd_vae.load_vae(model, vae_file)
+    vae_file, vae_source = sd_vae.resolve_vae(checkpoint_info.filename)
+    sd_vae.load_vae(model, vae_file, vae_source)
 
 
 def enable_midas_autodownload():
