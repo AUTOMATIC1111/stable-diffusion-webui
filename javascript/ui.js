@@ -45,10 +45,27 @@ function switch_to_txt2img(){
     return args_to_array(arguments);
 }
 
-function switch_to_img2img(){
+function switch_to_img2img_tab(no){
     gradioApp().querySelector('#tabs').querySelectorAll('button')[1].click();
-    gradioApp().getElementById('mode_img2img').querySelectorAll('button')[0].click();
+    gradioApp().getElementById('mode_img2img').querySelectorAll('button')[no].click();
+}
+function switch_to_img2img(){
+    switch_to_img2img_tab(0);
+    return args_to_array(arguments);
+}
 
+function switch_to_sketch(){
+    switch_to_img2img_tab(1);
+    return args_to_array(arguments);
+}
+
+function switch_to_inpaint(){
+    switch_to_img2img_tab(2);
+    return args_to_array(arguments);
+}
+
+function switch_to_inpaint_sketch(){
+    switch_to_img2img_tab(3);
     return args_to_array(arguments);
 }
 

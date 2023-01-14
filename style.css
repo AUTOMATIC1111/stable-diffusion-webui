@@ -676,6 +676,24 @@ footer {
     opacity: 0.5;
 }
 
+#mode_img2img > div > div{
+    gap: 0 !important;
+}
+
+[id*='img2img_copy_to_'] {
+    border: none;
+}
+
+[id*='img2img_copy_to_'] > button {
+}
+
+[id*='img2img_label_copy_to_'] {
+    font-size: 1.0em;
+    font-weight: bold;
+    text-align: center;
+    line-height: 2.4em;
+}
+
 /* The following handles localization for right-to-left (RTL) languages like Arabic.
 The rtl media type will only be activated by the logic in javascript/localization.js.
 If you change anything above, you need to make sure it is RTL compliant by just running
