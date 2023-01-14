@@ -1,3 +1,6 @@
 [submodule "extensions-builtin/sd-extension-system-info"]
 	path = extensions-builtin/sd-extension-system-info
 	url = https://github.com/vladmandic/sd-extension-system-info
+[submodule "extensions-builtin/sd-extension-aesthetic-scorer"]
+	path = extensions-builtin/sd-extension-aesthetic-scorer
+	url = https://github.com/vladmandic/sd-extension-aesthetic-scorer
