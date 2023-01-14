@@ -1,26 +1,34 @@
-# defaults
 __pycache__
-/params.txt
-
-# all models
 *.ckpt
 *.safetensors
 *.pth
-*.pt
-*.bin
-*.optim
-
-# all dynamic stuff
-/repositories/**/*
-/extensions/**/*
-/outputs/**/*
-/models/**/*
-/train/log/**/*
+/ESRGAN/*
+/SwinIR/*
+/repositories
+/venv
 /tmp
-
-# unexcluded so folders get created
-!/repositories/.placeholder
-!/extensions/.placeholder
-!/outputs/.placeholder
-!/models/.placeholder
-!/localizations/.placeholder
+/model.ckpt
+/models/**/*
+/GFPGANv1.3.pth
+/gfpgan/weights/*.pth
+/ui-config.json
+/outputs
+/config.json
+/log
+/webui.settings.bat
+/embeddings
+/styles.csv
+/params.txt
+/styles.csv.bak
+/webui-user.bat
+/webui-user.sh
+/interrogate
+/user.css
+/.idea
+notification.mp3
+/SwinIR
+/textual_inversion
+.vscode
+/extensions
+/test/stdout.txt
+/test/stderr.txt
