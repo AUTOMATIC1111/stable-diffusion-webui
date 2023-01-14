@@ -18,9 +18,6 @@ __pycache__
 /train/log/**/*
 /tmp
 
-# subrepos
-/extensions-builtin-sd-extension-system-info
-
 # unexcluded so folders get created
 !/repositories/.placeholder
 !/extensions/.placeholder
