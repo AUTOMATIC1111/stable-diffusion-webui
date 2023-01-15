@@ -32,9 +32,8 @@ Things I'm looking into...
 Stuff to be fixed...
 
 - Torch 2.0 model compile
-- Add DeepSpeed support
+- Add DeepSpeed support for training (`accelerate config`)
 - Reconnect WebUI
-- Model reload performance
 
 Tech that can be integrated as part of the core workflow...
 

@@ -1,14 +1,16 @@
 # defaults
 __pycache__
 /params.txt
+/cache.json
 
-# all models
+# all models and temp files
 *.ckpt
 *.safetensors
 *.pth
 *.pt
 *.bin
 *.optim
+*.lock
 
 # all dynamic stuff
 /repositories/**/*

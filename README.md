@@ -20,8 +20,9 @@ Fork adds extra functionality:
 
 Fork does differ in few things:
 
-- Different start script  
+- Additional simplified start script  
   > ./automatic.sh  
+  Existing `webui.sh` still exists for fresh installs to auto-install dependencies, etc.  
 - Drops compatibility with `python` **3.7** and requires **3.10**  
 - Updated **Python** libraries to latest known compatible versions  
   e.g. `accelerate`, `transformers`, `numpy`, etc.  
@@ -35,14 +36,10 @@ Fork does differ in few things:
 - Modified training templates  
 
 Only Python library which is not auto-updated is `PyTorch` itself as that is very system specific  
-I'm currently using **PyTorch 2.0-nightly** compiled with **CUDA 11.8** and with **Triton** optimizations:
+For some Torch optimizations notes, see Wiki
 
-> pip3 install --pre torch torchvision torchaudio torchtriton --extra-index-url https://download.pytorch.org/whl/nightly/cu118 --force 
-> pip show torch  
-> 2.0.0.dev20230113+cu118  
-
-- Fork is compatible with regular **PyTorch 1.13**,  
-  But if you're using **PyTorch 2.0** models will be auto-compiled and optimized on load using `max-tune`  
+Fork is compatible with regular **PyTorch 1.13** as well as pre-release of **PyTorch 2.0**  
+See [Wiki](https://github.com/vladmandic/automatic/wiki) for **Torch** optimization notes
 
 
 <br>
