@@ -208,7 +208,7 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
 
             setTimeout(() => {
                 fun(id_task, res.id_live_preview);
-            }, 500)
+            }, opts.live_preview_refresh_period || 500)
         }, function(){
             removeProgressBar()
         })
