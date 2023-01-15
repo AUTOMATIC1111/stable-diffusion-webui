@@ -356,7 +356,7 @@ def create_toprow(is_img2img):
                 button_deepbooru = gr.Button('Interrogate\nDeepBooru', elem_id="deepbooru")
 
         with gr.Column(scale=1):
-            with gr.Row():
+            with gr.Row(elem_id=f"{id_part}_generate_box"):
                 skip = gr.Button('Skip', elem_id=f"{id_part}_skip")
                 interrupt = gr.Button('Interrupt', elem_id=f"{id_part}_interrupt")
                 submit = gr.Button('Generate', elem_id=f"{id_part}_generate", variant='primary')
@@ -384,9 +384,7 @@ def create_toprow(is_img2img):
 
 
 def setup_progressbar(*args, **kwargs):
-    import modules.ui_progress
-
-    modules.ui_progress.setup_progressbar(*args, **kwargs)
+    pass
 
 
 def apply_setting(key, value):
@@ -479,8 +477,8 @@ Requested path was: {f}
             else:
                 sp.Popen(["xdg-open", path])
 
-    with gr.Column(variant='panel'):
-            with gr.Group():
+    with gr.Column(variant='panel', elem_id=f"{tabname}_results"):
+            with gr.Group(elem_id=f"{tabname}_gallery_container"):
                 result_gallery = gr.Gallery(label='Output', show_label=False, elem_id=f"{tabname}_gallery").style(grid=4)
 
             generation_info = None
@@ -595,15 +593,6 @@ def create_ui():
         dummy_component = gr.Label(visible=False)
         txt_prompt_img = gr.File(label="", elem_id="txt2img_prompt_image", file_count="single", type="bytes", visible=False)
 
-        with gr.Row(elem_id='txt2img_progress_row'):
-            with gr.Column(scale=1):
-                pass
-
-            with gr.Column(scale=1):
-                progressbar = gr.HTML(elem_id="txt2img_progressbar")
-                txt2img_preview = gr.Image(elem_id='txt2img_preview', visible=False)
-                setup_progressbar(progressbar, txt2img_preview, 'txt2img')
-
         with gr.Row().style(equal_height=False):
             with gr.Column(variant='panel', elem_id="txt2img_settings"):
                 for category in ordered_ui_categories():
@@ -682,6 +671,7 @@ def create_ui():
                 fn=wrap_gradio_gpu_call(modules.txt2img.txt2img, extra_outputs=[None, '', '']),
                 _js="submit",
                 inputs=[
+                    dummy_component,
                     txt2img_prompt,
                     txt2img_negative_prompt,
                     txt2img_prompt_style,
@@ -782,16 +772,7 @@ def create_ui():
     with gr.Blocks(analytics_enabled=False) as img2img_interface:
         img2img_prompt, img2img_prompt_style, img2img_negative_prompt, img2img_prompt_style2, submit, img2img_interrogate, img2img_deepbooru, img2img_prompt_style_apply, img2img_save_style, img2img_paste,token_counter, token_button = create_toprow(is_img2img=True)
 
-        with gr.Row(elem_id='img2img_progress_row'):
-            img2img_prompt_img = gr.File(label="", elem_id="img2img_prompt_image", file_count="single", type="bytes", visible=False)
-
-            with gr.Column(scale=1):
-                pass
-
-            with gr.Column(scale=1):
-                progressbar = gr.HTML(elem_id="img2img_progressbar")
-                img2img_preview = gr.Image(elem_id='img2img_preview', visible=False)
-                setup_progressbar(progressbar, img2img_preview, 'img2img')
+        img2img_prompt_img = gr.File(label="", elem_id="img2img_prompt_image", file_count="single", type="bytes", visible=False)
 
         with FormRow().style(equal_height=False):
             with gr.Column(variant='panel', elem_id="img2img_settings"):
@@ -958,6 +939,7 @@ def create_ui():
                 fn=wrap_gradio_gpu_call(modules.img2img.img2img, extra_outputs=[None, '', '']),
                 _js="submit_img2img",
                 inputs=[
+                    dummy_component,
                     dummy_component,
                     img2img_prompt,
                     img2img_negative_prompt,
@@ -1335,15 +1317,11 @@ def create_ui():
 
                 script_callbacks.ui_train_tabs_callback(params)
 
-            with gr.Column():
-                progressbar = gr.HTML(elem_id="ti_progressbar")
+            with gr.Column(elem_id='ti_gallery_container'):
                 ti_output = gr.Text(elem_id="ti_output", value="", show_label=False)
-
                 ti_gallery = gr.Gallery(label='Output', show_label=False, elem_id='ti_gallery').style(grid=4)
-                ti_preview = gr.Image(elem_id='ti_preview', visible=False)
                 ti_progress = gr.HTML(elem_id="ti_progress", value="")
                 ti_outcome = gr.HTML(elem_id="ti_error", value="")
-                setup_progressbar(progressbar, ti_preview, 'ti', textinfo=ti_progress)
 
         create_embedding.click(
             fn=modules.textual_inversion.ui.create_embedding,
@@ -1384,6 +1362,7 @@ def create_ui():
             fn=wrap_gradio_gpu_call(modules.textual_inversion.ui.preprocess, extra_outputs=[gr.update()]),
             _js="start_training_textual_inversion",
             inputs=[
+                dummy_component,
                 process_src,
                 process_dst,
                 process_width,
@@ -1411,6 +1390,7 @@ def create_ui():
             fn=wrap_gradio_gpu_call(modules.textual_inversion.ui.train_embedding, extra_outputs=[gr.update()]),
             _js="start_training_textual_inversion",
             inputs=[
+                dummy_component,
                 train_embedding_name,
                 embedding_learn_rate,
                 batch_size,
@@ -1443,6 +1423,7 @@ def create_ui():
             fn=wrap_gradio_gpu_call(modules.hypernetworks.ui.train_hypernetwork, extra_outputs=[gr.update()]),
             _js="start_training_textual_inversion",
             inputs=[
+                dummy_component,
                 train_hypernetwork_name,
                 hypernetwork_learn_rate,
                 batch_size,

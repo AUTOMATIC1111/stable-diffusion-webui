@@ -126,18 +126,41 @@ function create_submit_args(args){
     return res
 }
 
-function submit(){
-    requestProgress('txt2img')
+function showSubmitButtons(tabname, show){
+    gradioApp().getElementById(tabname+'_interrupt').style.display = show ? "none" : "block"
+    gradioApp().getElementById(tabname+'_skip').style.display = show ? "none" : "block"
+}
 
-    return create_submit_args(arguments)
+function submit(){
+    rememberGallerySelection('txt2img_gallery')
+    showSubmitButtons('txt2img', false)
+
+    var id = randomId()
+    requestProgress(id, gradioApp().getElementById('txt2img_gallery_container'), gradioApp().getElementById('txt2img_gallery'), function(){
+        showSubmitButtons('txt2img', true)
+
+    })
+
+    var res = create_submit_args(arguments)
+
+    res[0] = id
+
+    return res
 }
 
 function submit_img2img(){
-    requestProgress('img2img')
+    rememberGallerySelection('img2img_gallery')
+    showSubmitButtons('img2img', false)
 
-    res = create_submit_args(arguments)
+    var id = randomId()
+    requestProgress(id, gradioApp().getElementById('img2img_gallery_container'), gradioApp().getElementById('img2img_gallery'), function(){
+        showSubmitButtons('img2img', true)
+    })
 
-    res[0] = get_tab_index('mode_img2img')
+    var res = create_submit_args(arguments)
+
+    res[0] = id
+    res[1] = get_tab_index('mode_img2img')
 
     return res
 }
