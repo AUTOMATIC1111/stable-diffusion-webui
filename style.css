@@ -511,7 +511,7 @@ input[type="range"]{
 #quicksettings > div{
     border: none;
     background: none;
-    flex: unset;
+/*  flex: unset;	*/
     gap: 1em;
 }
 
