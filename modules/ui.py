@@ -357,8 +357,8 @@ def create_toprow(is_img2img):
 
         with gr.Column(scale=1):
             with gr.Row(elem_id=f"{id_part}_generate_box"):
-                skip = gr.Button('Skip', elem_id=f"{id_part}_skip")
                 interrupt = gr.Button('Interrupt', elem_id=f"{id_part}_interrupt")
+                skip = gr.Button('Skip', elem_id=f"{id_part}_skip")
                 submit = gr.Button('Generate', elem_id=f"{id_part}_generate", variant='primary')
 
                 skip.click(

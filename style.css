@@ -480,12 +480,12 @@ input[type="range"]{
 }
 
 #txt2img_interrupt, #img2img_interrupt{
-    right: 0;
-    border-radius: 0 0.5rem 0.5rem 0;
-}
-#txt2img_skip, #img2img_skip{
     left: 0;
     border-radius: 0.5rem 0 0 0.5rem;
+}
+#txt2img_skip, #img2img_skip{
+    right: 0;
+    border-radius: 0 0.5rem 0.5rem 0;
 }
 
 .red {
