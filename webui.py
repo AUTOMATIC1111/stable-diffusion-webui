@@ -78,6 +78,8 @@ def initialize():
         print("Stable diffusion model failed to load, exiting", file=sys.stderr)
         exit(1)
 
+    shared.opts.data["sd_model_checkpoint"] = shared.sd_model.sd_checkpoint_info.title
+
     shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights()))
     shared.opts.onchange("sd_vae", wrap_queued_call(lambda: modules.sd_vae.reload_vae_weights()), call=False)
     shared.opts.onchange("sd_vae_as_default", wrap_queued_call(lambda: modules.sd_vae.reload_vae_weights()), call=False)

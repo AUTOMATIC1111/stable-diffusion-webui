@@ -45,16 +45,33 @@ function switch_to_txt2img(){
     return args_to_array(arguments);
 }
 
-function switch_to_img2img(){
+function switch_to_img2img_tab(no){
     gradioApp().querySelector('#tabs').querySelectorAll('button')[1].click();
-    gradioApp().getElementById('mode_img2img').querySelectorAll('button')[0].click();
+    gradioApp().getElementById('mode_img2img').querySelectorAll('button')[no].click();
+}
+function switch_to_img2img(){
+    switch_to_img2img_tab(0);
+    return args_to_array(arguments);
+}
 
+function switch_to_sketch(){
+    switch_to_img2img_tab(1);
+    return args_to_array(arguments);
+}
+
+function switch_to_inpaint(){
+    switch_to_img2img_tab(2);
+    return args_to_array(arguments);
+}
+
+function switch_to_inpaint_sketch(){
+    switch_to_img2img_tab(3);
     return args_to_array(arguments);
 }
 
 function switch_to_inpaint(){
     gradioApp().querySelector('#tabs').querySelectorAll('button')[1].click();
-    gradioApp().getElementById('mode_img2img').querySelectorAll('button')[1].click();
+    gradioApp().getElementById('mode_img2img').querySelectorAll('button')[2].click();
 
     return args_to_array(arguments);
 }
@@ -143,14 +160,6 @@ function confirm_clear_prompt(prompt, negative_prompt) {
 
 
 opts = {}
-function apply_settings(jsdata){
-    console.log(jsdata)
-
-    opts = JSON.parse(jsdata)
-
-    return jsdata
-}
-
 onUiUpdate(function(){
 	if(Object.keys(opts).length != 0) return;
 
@@ -160,7 +169,7 @@ onUiUpdate(function(){
     textarea = json_elem.querySelector('textarea')
     jsdata = textarea.value
     opts = JSON.parse(jsdata)
-
+    executeCallbacks(optionsChangedCallbacks);
 
     Object.defineProperty(textarea, 'value', {
         set: function(newValue) {
@@ -171,6 +180,8 @@ onUiUpdate(function(){
             if (oldValue != newValue) {
                 opts = JSON.parse(textarea.value)
             }
+
+            executeCallbacks(optionsChangedCallbacks);
         },
         get: function() {
             var valueProp = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value');
@@ -199,6 +210,19 @@ onUiUpdate(function(){
             })
         }
     }
+})
+
+
+onOptionsChanged(function(){
+    elem = gradioApp().getElementById('sd_checkpoint_hash')
+    sd_checkpoint_hash = opts.sd_checkpoint_hash || ""
+    shorthash = sd_checkpoint_hash.substr(0,10)
+
+	if(elem && elem.textContent != shorthash){
+	    elem.textContent = shorthash
+	    elem.title = sd_checkpoint_hash
+	    elem.href = "https://google.com/search?q=" + sd_checkpoint_hash
+	}
 })
 
 let txt2img_textarea, img2img_textarea = undefined;

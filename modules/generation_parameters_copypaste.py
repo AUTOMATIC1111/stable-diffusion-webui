@@ -7,7 +7,7 @@ from pathlib import Path
 
 import gradio as gr
 from modules.shared import script_path
-from modules import shared, ui_tempdir
+from modules import shared, ui_tempdir, script_callbacks
 import tempfile
 from PIL import Image
 
@@ -298,6 +298,7 @@ def connect_paste(button, paste_fields, input_comp, jsfunc=None):
                     prompt = file.read()
 
         params = parse_generation_parameters(prompt)
+        script_callbacks.infotext_pasted_callback(prompt, params)
         res = []
 
         for output, key in paste_fields:

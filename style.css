@@ -557,7 +557,9 @@ canvas[key="mask"] {
 }
 
 #img2img_image, #img2img_image > .h-60, #img2img_image > .h-60 > div, #img2img_image > .h-60 > div > img,
-img2maskimg, #img2maskimg > .h-60, #img2maskimg > .h-60 > div, #img2maskimg > .h-60 > div > img
+#img2img_sketch, #img2img_sketch > .h-60, #img2img_sketch > .h-60 > div, #img2img_sketch > .h-60 > div > img,
+#img2maskimg, #img2maskimg > .h-60, #img2maskimg > .h-60 > div, #img2maskimg > .h-60 > div > img,
+#inpaint_sketch, #inpaint_sketch > .h-60, #inpaint_sketch > .h-60 > div, #inpaint_sketch > .h-60 > div > img
 {
     height: 480px !important;
     max-height: 480px !important;
@@ -672,6 +674,24 @@ footer {
 
 .inactive{
     opacity: 0.5;
+}
+
+#mode_img2img > div > div{
+    gap: 0 !important;
+}
+
+[id*='img2img_copy_to_'] {
+    border: none;
+}
+
+[id*='img2img_copy_to_'] > button {
+}
+
+[id*='img2img_label_copy_to_'] {
+    font-size: 1.0em;
+    font-weight: bold;
+    text-align: center;
+    line-height: 2.4em;
 }
 
 /* The following handles localization for right-to-left (RTL) languages like Arabic.
