@@ -140,7 +140,7 @@ def store_latent(decoded):
 
     if opts.live_previews_enable and opts.show_progress_every_n_steps > 0 and shared.state.sampling_step % opts.show_progress_every_n_steps == 0:
         if not shared.parallel_processing_allowed:
-            shared.state.current_image = sample_to_image(decoded)
+            shared.state.assign_current_image(sample_to_image(decoded))
 
 
 class InterruptedException(BaseException):

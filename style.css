@@ -305,26 +305,42 @@ input[type="range"]{
 }
 
 .progressDiv{
-  width: 100%;
-  height: 20px;
-  background: #b4c0cc;
-  border-radius: 8px;
+    position: absolute;
+    height: 20px;
+    top: -20px;
+    background: #b4c0cc;
+    border-radius: 8px !important;
 }
 
 .dark .progressDiv{
-  background: #424c5b;
+    background: #424c5b;
 }
 
 .progressDiv .progress{
-  width: 0%;
-  height: 20px;
-  background: #0060df;
-  color: white;
-  font-weight: bold;
-  line-height: 20px;
-  padding: 0 8px 0 0;
-  text-align: right;
-  border-radius: 8px;
+    width: 0%;
+    height: 20px;
+    background: #0060df;
+    color: white;
+    font-weight: bold;
+    line-height: 20px;
+    padding: 0 8px 0 0;
+    text-align: right;
+    border-radius: 8px;
+    overflow: visible;
+    white-space: nowrap;
+}
+
+.livePreview{
+    position: absolute;
+    z-index: 300;
+    background-color: white;
+    margin: -4px;
+}
+
+.livePreview img{
+    object-fit: contain;
+    width: 100%;
+    height: 100%;
 }
 
 #lightboxModal{
@@ -450,23 +466,25 @@ input[type="range"]{
     display:none
 }
 
-#txt2img_interrupt, #img2img_interrupt{
-  position: absolute;
-  width: 50%;
-  height: 72px;
-  background: #b4c0cc;
-  border-radius: 0px;
-  display: none;
+#txt2img_generate_box, #img2img_generate_box{
+    position: relative;
 }
 
+#txt2img_interrupt, #img2img_interrupt, #txt2img_skip, #img2img_skip{
+    position: absolute;
+    width: 50%;
+    height: 100%;
+    background: #b4c0cc;
+    display: none;
+}
+
+#txt2img_interrupt, #img2img_interrupt{
+    right: 0;
+    border-radius: 0 0.5rem 0.5rem 0;
+}
 #txt2img_skip, #img2img_skip{
-  position: absolute;
-  width: 50%;
-  right: 0px;
-  height: 72px;
-  background: #b4c0cc;
-  border-radius: 0px;
-  display: none;
+    left: 0;
+    border-radius: 0.5rem 0 0 0.5rem;
 }
 
 .red {

@@ -34,6 +34,7 @@ import modules.sd_vae
 import modules.txt2img
 import modules.script_callbacks
 import modules.textual_inversion.textual_inversion
+import modules.progress
 
 import modules.ui
 from modules import modelloader
@@ -180,6 +181,8 @@ def webui():
         setup_cors(app)
 
         app.add_middleware(GZipMiddleware, minimum_size=1000)
+
+        modules.progress.setup_progress_api(app)
 
         if launch_api:
             create_api(app)
