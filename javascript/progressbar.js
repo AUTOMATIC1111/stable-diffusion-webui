@@ -139,8 +139,6 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
 
     var fun = function(id_task, id_live_preview){
         request("/internal/progress", {"id_task": id_task, "id_live_preview": id_live_preview}, function(res){
-            console.log(res)
-
             if(res.completed){
                 removeProgressBar()
                 return
@@ -184,15 +182,15 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
 
 
             if(res.live_preview){
+
+                var rect = gallery.getBoundingClientRect()
+                if(rect.width){
+                    livePreview.style.width = rect.width + "px"
+                    livePreview.style.height = rect.height + "px"
+                }
+
                 var img = new Image();
                 img.onload = function() {
-                    var rect = gallery.getBoundingClientRect()
-                    if(rect.width){
-                        livePreview.style.width = rect.width + "px"
-                        livePreview.style.height = rect.height + "px"
-                    }
-
-                    livePreview.innerHTML = ''
                     livePreview.appendChild(img)
                     if(livePreview.childElementCount > 2){
                         livePreview.removeChild(livePreview.firstElementChild)
@@ -208,7 +206,7 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
 
             setTimeout(() => {
                 fun(id_task, res.id_live_preview);
-            }, 500)
+            }, opts.live_preview_refresh_period || 500)
         }, function(){
             removeProgressBar()
         })
