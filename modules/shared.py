@@ -171,6 +171,7 @@ class State:
     time_start = None
     need_restart = False
     server_start = None
+    is_hr_pass = False
 
     def skip(self):
         self.skipped = True
@@ -196,6 +197,7 @@ class State:
             "job_no": self.job_no,
             "sampling_step": self.sampling_step,
             "sampling_steps": self.sampling_steps,
+            "is_hr_pass":self.is_hr_pass,
         }
 
         return obj
@@ -214,12 +216,14 @@ class State:
         self.interrupted = False
         self.textinfo = None
         self.time_start = time.time()
+        self.is_hr_pass = False
 
         devices.torch_gc()
 
     def end(self):
         self.job = ""
         self.job_count = 0
+        self.is_hr_pass = False
 
         devices.torch_gc()
 
