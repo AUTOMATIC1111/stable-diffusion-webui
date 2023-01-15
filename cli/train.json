@@ -13,6 +13,7 @@
       "init_text": "*"
   },
   "preprocess": {
+      "id_task": 0,
       "process_src": "",
       "process_dst": "",
       "process_width": 512,
@@ -31,10 +32,11 @@
       "overlap_ratio": 0.2
   },
   "train_embedding": {
+      "id_task": 0,
       "embedding_name": "",
-      "learn_rate": "0.010:10, 0.008:20, 0.006:40, 0.004:80, 0.002:120, 0.001:160, 0.0005:200",
+      "learn_rate": "0.010:10, 0.008:50, 0.006:100, 0.004:200, 0.002:300, 0.001:400, 0.0005:500",
       "batch_size": 2,
-      "steps": 200,
+      "steps": 500,
       "data_root": "",
       "log_directory": "train/log",
       "template_filename": "subject_filewords.txt",

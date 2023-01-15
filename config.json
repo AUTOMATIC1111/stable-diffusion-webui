@@ -158,5 +158,6 @@
     "images_history_pages_perload": 20.0,
     "inspiration_max_samples": 4,
     "inspiration_rows_num": 4,
-    "inspiration_cols_num": 6
+    "inspiration_cols_num": 6,
+    "live_preview_refresh_period": 1000
 }

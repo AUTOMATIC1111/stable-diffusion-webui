@@ -82,6 +82,7 @@ def plot(logdir: str, name: str):
     # learning rate
     ax2 = ax1.twinx()
     ax2.set_ylabel('learning rate'.upper(), color='cyan')
+    ax2.set_ylim(0, 0.011)
     ax2.plot(step, rate, color='cyan', linewidth=3, linestyle='dashed')
     ax2.tick_params(axis='y', labelcolor='cyan')
 
