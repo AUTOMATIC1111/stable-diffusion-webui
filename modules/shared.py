@@ -223,7 +223,6 @@ class State:
     def end(self):
         self.job = ""
         self.job_count = 0
-        self.is_hr_pass = False
 
         devices.torch_gc()
 
