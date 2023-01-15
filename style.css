@@ -337,6 +337,10 @@ input[type="range"]{
     margin: -4px;
 }
 
+.dark .livePreview{
+    background-color: rgb(17 24 39 / var(--tw-bg-opacity));
+}
+
 .livePreview img{
     position: absolute;
     object-fit: contain;
