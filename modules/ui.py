@@ -795,19 +795,39 @@ def create_ui():
 
         with FormRow().style(equal_height=False):
             with gr.Column(variant='panel', elem_id="img2img_settings"):
+                copy_image_buttons = []
+                copy_image_destinations = {}
+
+                def add_copy_image_controls(tab_name, elem):
+                    with gr.Row(variant="compact", elem_id=f"img2img_copy_to_{tab_name}"):
+                        gr.HTML("Copy image to: ", elem_id=f"img2img_label_copy_to_{tab_name}")
+
+                        for title, name in zip(['img2img', 'sketch', 'inpaint', 'inpaint sketch'], ['img2img', 'sketch', 'inpaint', 'inpaint_sketch']):
+                            if name == tab_name:
+                                gr.Button(title, interactive=False)
+                                copy_image_destinations[name] = elem
+                                continue
+
+                            button = gr.Button(title)
+                            copy_image_buttons.append((button, name, elem))
+
                 with gr.Tabs(elem_id="mode_img2img"):
                     with gr.TabItem('img2img', id='img2img', elem_id="img2img_img2img_tab") as tab_img2img:
                         init_img = gr.Image(label="Image for img2img", elem_id="img2img_image", show_label=False, source="upload", interactive=True, type="pil", tool="editor", image_mode="RGBA").style(height=480)
+                        add_copy_image_controls('img2img', init_img)
 
                     with gr.TabItem('Sketch', id='img2img_sketch', elem_id="img2img_img2img_sketch_tab") as tab_sketch:
                         sketch = gr.Image(label="Image for img2img", elem_id="img2img_sketch", show_label=False, source="upload", interactive=True, type="pil", tool="color-sketch", image_mode="RGBA").style(height=480)
+                        add_copy_image_controls('sketch', sketch)
 
                     with gr.TabItem('Inpaint', id='inpaint', elem_id="img2img_inpaint_tab") as tab_inpaint:
                         init_img_with_mask = gr.Image(label="Image for inpainting with mask", show_label=False, elem_id="img2maskimg", source="upload", interactive=True, type="pil", tool="sketch", image_mode="RGBA").style(height=480)
+                        add_copy_image_controls('inpaint', init_img_with_mask)
 
                     with gr.TabItem('Inpaint sketch', id='inpaint_sketch', elem_id="img2img_inpaint_sketch_tab") as tab_inpaint_color:
                         inpaint_color_sketch = gr.Image(label="Color sketch inpainting", show_label=False, elem_id="inpaint_sketch", source="upload", interactive=True, type="pil", tool="color-sketch", image_mode="RGBA").style(height=480)
                         inpaint_color_sketch_orig = gr.State(None)
+                        add_copy_image_controls('inpaint_sketch', inpaint_color_sketch)
 
                         def update_orig(image, state):
                             if image is not None:
@@ -824,9 +844,28 @@ def create_ui():
 
                     with gr.TabItem('Batch', id='batch', elem_id="img2img_batch_tab") as tab_batch:
                         hidden = '<br>Disabled when launched with --hide-ui-dir-config.' if shared.cmd_opts.hide_ui_dir_config else ''
-                        gr.HTML(f"<p class=\"text-gray-500\">Process images in a directory on the same machine where the server is running.<br>Use an empty output directory to save pictures normally instead of writing to the output directory.{hidden}</p>")
+                        gr.HTML(f"<p style='padding-bottom: 1em;' class=\"text-gray-500\">Process images in a directory on the same machine where the server is running.<br>Use an empty output directory to save pictures normally instead of writing to the output directory.{hidden}</p>")
                         img2img_batch_input_dir = gr.Textbox(label="Input directory", **shared.hide_dirs, elem_id="img2img_batch_input_dir")
                         img2img_batch_output_dir = gr.Textbox(label="Output directory", **shared.hide_dirs, elem_id="img2img_batch_output_dir")
+
+                def copy_image(img):
+                    if isinstance(img, dict) and 'image' in img:
+                        return img['image']
+
+                    return img
+
+                for button, name, elem in copy_image_buttons:
+                    button.click(
+                        fn=copy_image,
+                        inputs=[elem],
+                        outputs=[copy_image_destinations[name]],
+                    )
+                    button.click(
+                        fn=lambda: None,
+                        _js="switch_to_"+name.replace(" ", "_"),
+                        inputs=[],
+                        outputs=[],
+                    )
 
                 with FormGroup(elem_id="inpaint_controls", visible=False) as inpaint_controls:
                     with FormRow():
@@ -855,6 +894,7 @@ def create_ui():
                         inputs=[],
                         outputs=[inpaint_controls, mask_alpha],
                     )
+
 
                 with FormRow():
                     resize_mode = gr.Radio(label="Resize mode", elem_id="resize_mode", choices=["Just resize", "Crop and resize", "Resize and fill", "Just resize (latent upscale)"], type="index", value="Just resize")

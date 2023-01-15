@@ -174,6 +174,7 @@ class State:
     textinfo = None
     time_start = None
     need_restart = False
+    server_start = None
 
     def skip(self):
         self.skipped = True
@@ -247,6 +248,7 @@ class State:
 
 
 state = State()
+state.server_start = time.time()
 
 artist_db = modules.artists.ArtistsDatabase(os.path.join(script_path, 'artists.csv'))
 

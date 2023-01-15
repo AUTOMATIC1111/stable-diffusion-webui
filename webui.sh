@@ -165,5 +165,15 @@ else
     printf "\n%s\n" "${delimiter}"
     printf "Launching launch.py..."
     printf "\n%s\n" "${delimiter}"
-    exec "${python_cmd}" "${LAUNCH_SCRIPT}" "$@"
+    gpu_info=$(lspci | grep VGA)
+    if echo "$gpu_info" | grep -q "AMD"
+    then
+        if [[ -z "${TORCH_COMMAND}" ]]
+        then	    
+            export TORCH_COMMAND="pip install torch torchvision --extra-index-url https://download.pytorch.org/whl/rocm5.2"
+        fi
+        HSA_OVERRIDE_GFX_VERSION=10.3.0 exec "${python_cmd}" "${LAUNCH_SCRIPT}" "$@"
+    else
+        exec "${python_cmd}" "${LAUNCH_SCRIPT}" "$@"
+    fi
 fi
