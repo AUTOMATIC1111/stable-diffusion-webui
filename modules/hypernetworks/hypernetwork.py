@@ -644,7 +644,7 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
                 if shared.opts.training_enable_tensorboard:
                     epoch_num = hypernetwork.step // len(ds)
                     epoch_step = hypernetwork.step - (epoch_num * len(ds)) + 1
-
+                    mean_loss = sum(sum(x) for x in loss_dict.values()) / sum(len(x) for x in loss_dict.values())
                     textual_inversion.tensorboard_add(tensorboard_writer, loss=mean_loss, global_step=hypernetwork.step, step=epoch_step, learn_rate=scheduler.learn_rate, epoch_num=epoch_num)
 
                 textual_inversion.write_loss(log_directory, "hypernetwork_loss.csv", hypernetwork.step, steps_per_epoch, {
