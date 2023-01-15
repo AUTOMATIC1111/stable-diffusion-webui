@@ -177,6 +177,8 @@ Recommended parameters for upscaling:
 # Infinite prompt length
 Typing past standard 75 tokens that Stable Diffusion usually accepts increases prompt size limit from 75 to 150. Typing past that increases prompt size further. This is done by breaking the prompt into chunks of 75 tokens, processing each independently using CLIP's Transformers neural network, and then concatenating the result before feeding into the next component of stable diffusion, the Unet.
 
+For example, a prompt with 120 tokens would be separated into two chunks: first with 75 tokens, second with 45. Both would be padded to 75 tokens and extended with start/end tokens to 77. After passing those two chunks though CLIP, we'll have two tensors with shape of `(1, 77, 768)`. Concatenating those results in `(1, 154, 768)` tensor that is then passed to Unet without issue.
+
 ## BREAK keyword
 Adding a `BREAK` keyword (must be uppercase) fills the current chunks with padding characters. Adding more text after `BREAK` text will start a new chunk.
 
