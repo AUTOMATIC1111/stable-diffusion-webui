@@ -333,7 +333,7 @@ input[type="range"]{
 .livePreview{
     position: absolute;
     z-index: 300;
-    background-color: white;
+    background-color: transparent;
     margin: -4px;
 }
 
