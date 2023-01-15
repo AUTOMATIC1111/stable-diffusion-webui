@@ -848,35 +848,6 @@ def create_ui():
                         outputs=[],
                     )
 
-                with FormGroup(elem_id="inpaint_controls", visible=False) as inpaint_controls:
-                    with FormRow():
-                        mask_blur = gr.Slider(label='Mask blur', minimum=0, maximum=64, step=1, value=4, elem_id="img2img_mask_blur")
-                        mask_alpha = gr.Slider(label="Mask transparency", visible=False, elem_id="img2img_mask_alpha")
-
-                    with FormRow():
-                        inpainting_mask_invert = gr.Radio(label='Mask mode', choices=['Inpaint masked', 'Inpaint not masked'], value='Inpaint masked', type="index", elem_id="img2img_mask_mode")
-
-                    with FormRow():
-                        inpainting_fill = gr.Radio(label='Masked content', choices=['fill', 'original', 'latent noise', 'latent nothing'], value='original', type="index", elem_id="img2img_inpainting_fill")
-
-                    with FormRow():
-                        with gr.Column():
-                            inpaint_full_res = gr.Radio(label="Inpaint area", choices=["Whole picture", "Only masked"], type="index", value="Whole picture", elem_id="img2img_inpaint_full_res")
-
-                        with gr.Column(scale=4):
-                            inpaint_full_res_padding = gr.Slider(label='Only masked padding, pixels', minimum=0, maximum=256, step=4, value=32, elem_id="img2img_inpaint_full_res_padding")
-
-                def select_img2img_tab(tab):
-                    return gr.update(visible=tab in [2, 3, 4]), gr.update(visible=tab == 3),
-
-                for i, elem in enumerate([tab_img2img, tab_sketch, tab_inpaint, tab_inpaint_color, tab_inpaint_upload, tab_batch]):
-                    elem.select(
-                        fn=lambda tab=i: select_img2img_tab(tab),
-                        inputs=[],
-                        outputs=[inpaint_controls, mask_alpha],
-                    )
-
-
                 with FormRow():
                     resize_mode = gr.Radio(label="Resize mode", elem_id="resize_mode", choices=["Just resize", "Crop and resize", "Resize and fill", "Just resize (latent upscale)"], type="index", value="Just resize")
 
@@ -917,6 +888,35 @@ def create_ui():
                     elif category == "scripts":
                         with FormGroup(elem_id="img2img_script_container"):
                             custom_inputs = modules.scripts.scripts_img2img.setup_ui()
+
+                    elif category == "masking":
+                        with FormGroup(elem_id="inpaint_controls", visible=False) as inpaint_controls:
+                            with FormRow():
+                                mask_blur = gr.Slider(label='Mask blur', minimum=0, maximum=64, step=1, value=4, elem_id="img2img_mask_blur")
+                                mask_alpha = gr.Slider(label="Mask transparency", visible=False, elem_id="img2img_mask_alpha")
+
+                            with FormRow():
+                                inpainting_mask_invert = gr.Radio(label='Mask mode', choices=['Inpaint masked', 'Inpaint not masked'], value='Inpaint masked', type="index", elem_id="img2img_mask_mode")
+
+                            with FormRow():
+                                inpainting_fill = gr.Radio(label='Masked content', choices=['fill', 'original', 'latent noise', 'latent nothing'], value='original', type="index", elem_id="img2img_inpainting_fill")
+
+                            with FormRow():
+                                with gr.Column():
+                                    inpaint_full_res = gr.Radio(label="Inpaint area", choices=["Whole picture", "Only masked"], type="index", value="Whole picture", elem_id="img2img_inpaint_full_res")
+
+                                with gr.Column(scale=4):
+                                    inpaint_full_res_padding = gr.Slider(label='Only masked padding, pixels', minimum=0, maximum=256, step=4, value=32, elem_id="img2img_inpaint_full_res_padding")
+
+                            def select_img2img_tab(tab):
+                                return gr.update(visible=tab in [2, 3, 4]), gr.update(visible=tab == 3),
+
+                            for i, elem in enumerate([tab_img2img, tab_sketch, tab_inpaint, tab_inpaint_color, tab_inpaint_upload, tab_batch]):
+                                elem.select(
+                                    fn=lambda tab=i: select_img2img_tab(tab),
+                                    inputs=[],
+                                    outputs=[inpaint_controls, mask_alpha],
+                                )
 
             img2img_gallery, generation_info, html_info, html_log = create_output_panel("img2img", opts.outdir_img2img_samples)
             parameters_copypaste.bind_buttons({"img2img": img2img_paste}, None, img2img_prompt)
