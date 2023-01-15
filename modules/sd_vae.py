@@ -107,7 +107,7 @@ def resolve_vae(checkpoint_file):
     if vae_from_options is not None:
         return vae_from_options, 'specified in settings'
 
-    if is_automatic:
+    if not is_automatic:
         print(f"Couldn't find VAE named {shared.opts.sd_vae}; using None instead")
 
     return None, None
