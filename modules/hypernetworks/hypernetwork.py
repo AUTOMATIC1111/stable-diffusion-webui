@@ -561,7 +561,7 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
     _loss_step = 0 #internal
     # size = len(ds.indexes)
     # loss_dict = defaultdict(lambda : deque(maxlen = 1024))
-    loss_logging = []
+    loss_logging = deque(maxlen=len(ds) * 3)  # this should be configurable parameter, this is 3 * epoch(dataset size)
     # losses = torch.zeros((size,))
     # previous_mean_losses = [0]
     # previous_mean_loss = 0
@@ -602,7 +602,6 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
                     else:
                         c = stack_conds(batch.cond).to(devices.device, non_blocking=pin_memory)
                     loss = shared.sd_model(x, c)[0] / gradient_step
-                    loss_logging.append(loss.item())
                     del x
                     del c
 
@@ -612,7 +611,7 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
                 # go back until we reach gradient accumulation steps
                 if (j + 1) % gradient_step != 0:
                     continue
-
+                loss_logging.append(_loss_step)
                 if clip_grad:
                     clip_grad(weights, clip_grad_sched.learn_rate)
                 
@@ -690,9 +689,6 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
 
                     processed = processing.process_images(p)
                     image = processed.images[0] if len(processed.images) > 0 else None
-                    
-                    if shared.opts.training_enable_tensorboard and shared.opts.training_tensorboard_save_images:
-                        textual_inversion.tensorboard_add_image(tensorboard_writer, f"Validation at epoch {epoch_num}", image, hypernetwork.step)
 
                     if unload:
                         shared.sd_model.cond_stage_model.to(devices.cpu)
@@ -703,7 +699,10 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
                     hypernetwork.train()
                     if image is not None:
                         shared.state.assign_current_image(image)
-
+                        if shared.opts.training_enable_tensorboard and shared.opts.training_tensorboard_save_images:
+                            textual_inversion.tensorboard_add_image(tensorboard_writer,
+                                                                    f"Validation at epoch {epoch_num}", image,
+                                                                    hypernetwork.step)
                         last_saved_image, last_text_info = images.save_image(image, images_dir, "", p.seed, p.prompt, shared.opts.samples_format, processed.infotexts[0], p=p, forced_filename=forced_filename, save_to_dirs=False)
                         last_saved_image += f", prompt: {preview_text}"
 
