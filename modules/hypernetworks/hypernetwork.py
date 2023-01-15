@@ -561,6 +561,7 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
     _loss_step = 0 #internal
     # size = len(ds.indexes)
     # loss_dict = defaultdict(lambda : deque(maxlen = 1024))
+    loss_logging = []
     # losses = torch.zeros((size,))
     # previous_mean_losses = [0]
     # previous_mean_loss = 0
@@ -601,6 +602,7 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
                     else:
                         c = stack_conds(batch.cond).to(devices.device, non_blocking=pin_memory)
                     loss = shared.sd_model(x, c)[0] / gradient_step
+                    loss_logging.append(loss.item())
                     del x
                     del c
 
@@ -644,7 +646,7 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
                 if shared.opts.training_enable_tensorboard:
                     epoch_num = hypernetwork.step // len(ds)
                     epoch_step = hypernetwork.step - (epoch_num * len(ds)) + 1
-                    mean_loss = sum(sum(x) for x in loss_dict.values()) / sum(len(x) for x in loss_dict.values())
+                    mean_loss = sum(loss_logging) / len(loss_logging)
                     textual_inversion.tensorboard_add(tensorboard_writer, loss=mean_loss, global_step=hypernetwork.step, step=epoch_step, learn_rate=scheduler.learn_rate, epoch_num=epoch_num)
 
                 textual_inversion.write_loss(log_directory, "hypernetwork_loss.csv", hypernetwork.step, steps_per_epoch, {
