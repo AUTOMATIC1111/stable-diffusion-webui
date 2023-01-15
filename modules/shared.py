@@ -116,7 +116,7 @@ restricted_opts = {
 }
 
 ui_reorder_categories = [
-    "masking",
+    "inpaint",
     "sampler",
     "dimensions",
     "cfg",
