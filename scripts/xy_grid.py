@@ -23,6 +23,9 @@ import os
 import re
 
 
+up_down_arrow_symbol = "\u2195\ufe0f"
+
+
 def apply_field(field):
     def fun(p, x, xs):
         setattr(p, field, x)
@@ -293,16 +296,27 @@ class Script(scripts.Script):
         current_axis_options = [x for x in axis_options if type(x) == AxisOption or type(x) == AxisOptionImg2Img and is_img2img]
 
         with gr.Row():
-            x_type = gr.Dropdown(label="X type", choices=[x.label for x in current_axis_options], value=current_axis_options[1].label, type="index", elem_id=self.elem_id("x_type"))
-            x_values = gr.Textbox(label="X values", lines=1, elem_id=self.elem_id("x_values"))
+            with gr.Column(scale=1, elem_id="xy_grid_button_column"):
+                swap_axes_button = gr.Button(value=up_down_arrow_symbol, elem_id="xy_grid_swap_axes")
+            with gr.Column(scale=19):
+                with gr.Row():
+                    x_type = gr.Dropdown(label="X type", choices=[x.label for x in current_axis_options], value=current_axis_options[1].label, type="index", elem_id=self.elem_id("x_type"))
+                    x_values = gr.Textbox(label="X values", lines=1, elem_id=self.elem_id("x_values"))
 
-        with gr.Row():
-            y_type = gr.Dropdown(label="Y type", choices=[x.label for x in current_axis_options], value=current_axis_options[0].label, type="index", elem_id=self.elem_id("y_type"))
-            y_values = gr.Textbox(label="Y values", lines=1, elem_id=self.elem_id("y_values"))
+                with gr.Row():
+                    y_type = gr.Dropdown(label="Y type", choices=[x.label for x in current_axis_options], value=current_axis_options[0].label, type="index", elem_id=self.elem_id("y_type"))
+                    y_values = gr.Textbox(label="Y values", lines=1, elem_id=self.elem_id("y_values"))
         
         draw_legend = gr.Checkbox(label='Draw legend', value=True, elem_id=self.elem_id("draw_legend"))
         include_lone_images = gr.Checkbox(label='Include Separate Images', value=False, elem_id=self.elem_id("include_lone_images"))
         no_fixed_seeds = gr.Checkbox(label='Keep -1 for seeds', value=False, elem_id=self.elem_id("no_fixed_seeds"))
+
+        def swap_axes(x_type, x_values, y_type, y_values):
+            nonlocal current_axis_options
+            return current_axis_options[y_type].label, y_values, current_axis_options[x_type].label, x_values
+
+        swap_args = [x_type, x_values, y_type, y_values]
+        swap_axes_button.click(swap_axes, inputs=swap_args, outputs=swap_args)
 
         return [x_type, x_values, y_type, y_values, draw_legend, include_lone_images, no_fixed_seeds]
 

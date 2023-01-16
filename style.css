@@ -717,6 +717,16 @@ footer {
     line-height: 2.4em;
 }
 
+#xy_grid_button_column {
+    min-width: 38px !important;
+}
+
+#xy_grid_button_column button {
+    height: 100%;
+    margin-bottom: 0.7em;
+    margin-left: 1em;
+}
+
 /* The following handles localization for right-to-left (RTL) languages like Arabic.
 The rtl media type will only be activated by the logic in javascript/localization.js.
 If you change anything above, you need to make sure it is RTL compliant by just running
