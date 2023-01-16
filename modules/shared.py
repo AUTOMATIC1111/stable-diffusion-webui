@@ -451,6 +451,7 @@ options_templates.update(options_section(('ui', "User interface"), {
 }))
 
 options_templates.update(options_section(('ui', "Live previews"), {
+    "show_progressbar": OptionInfo(True, "Show progressbar"),
     "live_previews_enable": OptionInfo(True, "Show live previews of the created image"),
     "show_progress_grid": OptionInfo(True, "Show previews of all images generated in a batch as a grid"),
     "show_progress_every_n_steps": OptionInfo(10, "Show new live preview image every N sampling steps. Set to -1 to show after completion of batch.", gr.Slider, {"minimum": -1, "maximum": 32, "step": 1}),
