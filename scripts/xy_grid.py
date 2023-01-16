@@ -406,6 +406,9 @@ class Script(scripts.Script):
         grid_infotext = [None]
 
         def cell(x, y):
+            if shared.state.interrupted:
+                return Processed(p, [], p.seed, "")
+
             pc = copy(p)
             x_opt.apply(pc, x, xs)
             y_opt.apply(pc, y, ys)
