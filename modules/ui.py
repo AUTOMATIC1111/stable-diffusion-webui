@@ -1249,6 +1249,7 @@ def create_ui():
 
                     with FormRow():
                         embedding_learn_rate = gr.Textbox(label='Embedding Learning rate', placeholder="Embedding Learning rate", value="0.005", elem_id="train_embedding_learn_rate")
+                        kv_learn_rate = gr.Textbox(label='KV Learning rate', placeholder="KV Learning rate", value="1e-5", elem_id="train_kv_learn_rate")
                         hypernetwork_learn_rate = gr.Textbox(label='Hypernetwork Learning rate', placeholder="Hypernetwork Learning rate", value="0.00001", elem_id="train_hypernetwork_learn_rate")
                     
                     with FormRow():
@@ -1388,6 +1389,7 @@ def create_ui():
                 template_file,
                 save_image_with_stored_embedding,
                 preview_from_txt2img,
+                kv_learn_rate,
                 *txt2img_preview_params,
             ],
             outputs=[

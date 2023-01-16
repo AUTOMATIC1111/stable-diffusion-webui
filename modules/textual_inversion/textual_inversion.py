@@ -314,7 +314,7 @@ def validate_train_inputs(model_name, learn_rate, batch_size, gradient_step, dat
         assert log_directory, "Log directory is empty"
 
 
-def train_embedding(embedding_name, learn_rate, batch_size, gradient_step, data_root, log_directory, training_width, training_height, varsize, steps, clip_grad_mode, clip_grad_value, shuffle_tags, tag_drop_out, latent_sampling_method, create_image_every, save_embedding_every, template_filename, save_image_with_stored_embedding, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height):
+def train_embedding(embedding_name, learn_rate, batch_size, gradient_step, data_root, log_directory, training_width, training_height, varsize, steps, clip_grad_mode, clip_grad_value, shuffle_tags, tag_drop_out, latent_sampling_method, create_image_every, save_embedding_every, template_filename, save_image_with_stored_embedding, preview_from_txt2img, kv_learn_rate, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height):
     save_embedding_every = save_embedding_every or 0
     create_image_every = create_image_every or 0
     template_file = textual_inversion_templates.get(template_filename, None)
@@ -359,6 +359,7 @@ def train_embedding(embedding_name, learn_rate, batch_size, gradient_step, data_
         return embedding, filename
     
     scheduler = LearnRateScheduler(learn_rate, steps, initial_step)
+    kv_scheduler = LearnRateScheduler(kv_learn_rate, steps, initial_step)
     clip_grad = torch.nn.utils.clip_grad_value_ if clip_grad_mode == "value" else \
         torch.nn.utils.clip_grad_norm_ if clip_grad_mode == "norm" else \
         None
@@ -385,7 +386,10 @@ def train_embedding(embedding_name, learn_rate, batch_size, gradient_step, data_
 
     embedding.vec.requires_grad = True
     kvs = {n: p for n, p in shared.sd_model.model.named_parameters() if '2.to_k' in n or '2.to_v' in n}
-    optimizer = torch.optim.AdamW([embedding.vec, *kvs.values()], lr=scheduler.learn_rate, weight_decay=0.0, eps=1e-5)
+    optimizer = torch.optim.AdamW([
+        {'params': embedding.vec, 'lr': scheduler.learn_rate},
+        {'params': kvs.values(), 'lr': kv_scheduler.learn_rate},
+    ], weight_decay=0.0, eps=1e-5)
     if shared.opts.save_optimizer_state:
         optimizer_state_dict = None
         if os.path.exists(filename + '.optim'):
@@ -433,7 +437,7 @@ def train_embedding(embedding_name, learn_rate, batch_size, gradient_step, data_
                 # works as a drop_last=True for gradient accumulation
                 if j == max_steps_per_epoch:
                     break
-                scheduler.apply(optimizer, embedding.step)
+                # scheduler.apply(optimizer, embedding.step)
                 if scheduler.finished:
                     break
                 if shared.state.interrupted:
