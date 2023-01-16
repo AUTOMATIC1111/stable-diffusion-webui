@@ -644,7 +644,7 @@ canvas[key="mask"] {
     max-width: 2.5em;
     min-width: 2.5em !important;
     height: 2.4em;
-    margin: 0.55em 0;
+    margin: 0.55em 0.7em 0.55em 0;
 }
 
 #quicksettings .gr-button-tool{
@@ -715,16 +715,6 @@ footer {
     font-weight: bold;
     text-align: center;
     line-height: 2.4em;
-}
-
-#xy_grid_button_column {
-    min-width: 38px !important;
-}
-
-#xy_grid_button_column button {
-    height: 100%;
-    margin-bottom: 0.7em;
-    margin-left: 1em;
 }
 
 /* The following handles localization for right-to-left (RTL) languages like Arabic.
