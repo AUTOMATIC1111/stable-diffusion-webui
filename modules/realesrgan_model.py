@@ -25,6 +25,9 @@ class UpscalerRealESRGAN(Upscaler):
             scalers = self.load_models(path)
             for scaler in scalers:
                 if scaler.name in opts.realesrgan_enabled_models:
+                    local_data_path = load_file_from_url(url=scaler.data_path, model_dir=self.model_path)
+                    if os.path.exists(local_data_path):
+                        scaler.data_path = local_data_path
                     self.scalers.append(scaler)
 
         except Exception:
