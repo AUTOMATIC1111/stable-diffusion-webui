@@ -63,6 +63,9 @@ if cmd_opts.ngrok is not None:
 def gr_show(visible=True):
     return {"visible": visible, "__type__": "update"}
 
+def gr_change_sampler_choices(new_choices):
+    return {"choices": [x.name for x in new_choices], "__type__": "update"}
+
 
 sample_img2img = "assets/stable-samples/img2img/sketch-mountains-input.jpg"
 sample_img2img = sample_img2img if os.path.exists(sample_img2img) else None
@@ -720,9 +723,16 @@ def create_ui():
             )
 
             enable_hr.change(
-                fn=lambda x: gr_show(x),
+                fn=lambda x: (gr_show(x), gr_change_sampler_choices(samplers_for_img2img if x else samplers)),
                 inputs=[enable_hr],
-                outputs=[hr_options],
+                outputs=[hr_options, sampler_index],
+                show_progress = False,
+            )
+
+            sampler_index.change(
+                fn=lambda x: gr_show(samplers[x].name != "PLMS"),
+                inputs=[sampler_index],
+                outputs=[enable_hr],
                 show_progress = False,
             )
 
