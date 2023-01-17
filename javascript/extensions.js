@@ -29,7 +29,7 @@ function install_extension_from_index(button, url){
 
     textarea = gradioApp().querySelector('#extension_to_install textarea')
     textarea.value = url
-	textarea.dispatchEvent(new Event("input", { bubbles: true }))
+    updateInput(textarea)
 
     gradioApp().querySelector('#install_extension_button').click()
 }
