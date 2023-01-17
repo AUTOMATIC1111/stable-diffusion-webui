@@ -113,6 +113,9 @@ class NansException(Exception):
 def test_for_nans(x, where):
     from modules import shared
 
+    if shared.cmd_opts.disable_nan_check:
+        return
+
     if not torch.all(torch.isnan(x)).item():
         return
 
