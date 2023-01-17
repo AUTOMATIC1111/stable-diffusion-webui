@@ -288,6 +288,13 @@
 			"added": "2022-12-24",
 			"tags": ["script"]
 		},
+        {
+			"name": "Depth Image I/O",
+			"url": "https://github.com/AnonymousCervine/depth-image-io-for-SDWebui.git",
+			"description": "An extension to allow managing custom depth inputs to Stable Diffusion depth2img models.",
+			"added": "2023-01-17",
+			"tags": ["script"]
+		},
 		{
 			"name": "Visualize Cross-Attention",
 			"url": "https://github.com/benkyoujouzu/stable-diffusion-webui-visualize-cross-attention-extension.git",
@@ -454,6 +461,13 @@
 			"url": "https://github.com/bbc-mc/sdweb-merge-block-weighted-gui.git",
 			"description": "Merge models with separate rate for each 25 U-Net block (input, middle, output).",
 			"added": "2023-01-13",
+			"tags": ["script", "tab"]
+		},
+        {
+			"name": "haku-img",
+			"url": "https://github.com/KohakuBlueleaf/a1111-sd-webui-haku-img.git",
+			"description": "Image utils extension. Blend images, get sketch from image, edit coloring, blur an image. You can use it to make some cool effects with i2i.",
+			"added": "2023-01-17",
 			"tags": ["script", "tab"]
 		},
 		{
