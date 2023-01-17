@@ -1226,6 +1226,7 @@ def create_ui():
                         process_flip = gr.Checkbox(label='Create flipped copies', elem_id="train_process_flip")
                         process_split = gr.Checkbox(label='Split oversized images', elem_id="train_process_split")
                         process_focal_crop = gr.Checkbox(label='Auto focal point crop', elem_id="train_process_focal_crop")
+                        process_multicrop = gr.Checkbox(label='Auto-sized crop', elem_id="train_process_multicrop")
                         process_caption = gr.Checkbox(label='Use BLIP for caption', elem_id="train_process_caption")
                         process_caption_deepbooru = gr.Checkbox(label='Use deepbooru for caption', visible=True, elem_id="train_process_caption_deepbooru")
 
@@ -1238,7 +1239,19 @@ def create_ui():
                         process_focal_crop_entropy_weight = gr.Slider(label='Focal point entropy weight', value=0.15, minimum=0.0, maximum=1.0, step=0.05, elem_id="train_process_focal_crop_entropy_weight")
                         process_focal_crop_edges_weight = gr.Slider(label='Focal point edges weight', value=0.5, minimum=0.0, maximum=1.0, step=0.05, elem_id="train_process_focal_crop_edges_weight")
                         process_focal_crop_debug = gr.Checkbox(label='Create debug image', elem_id="train_process_focal_crop_debug")
-
+                    
+                    with gr.Column(visible=False) as process_multicrop_col:
+                        gr.Markdown('Each image is center-cropped with an automatically chosen width and height.')
+                        with gr.Row():
+                            process_multicrop_mindim = gr.Slider(minimum=64, maximum=2048, step=8, label="Dimension lower bound", value=384, elem_id="train_process_multicrop_mindim")
+                            process_multicrop_maxdim = gr.Slider(minimum=64, maximum=2048, step=8, label="Dimension upper bound", value=768, elem_id="train_process_multicrop_maxdim")
+                        with gr.Row():
+                            process_multicrop_minarea = gr.Slider(minimum=64*64, maximum=2048*2048, step=1, label="Area lower bound", value=64*64, elem_id="train_process_multicrop_minarea")
+                            process_multicrop_maxarea = gr.Slider(minimum=64*64, maximum=2048*2048, step=1, label="Area upper bound", value=640*640, elem_id="train_process_multicrop_maxarea")
+                        with gr.Row():
+                            process_multicrop_objective = gr.Radio(["Maximize area", "Minimize error"], value="Maximize area", label="Resizing objective", elem_id="train_process_multicrop_objective")
+                            process_multicrop_threshold = gr.Slider(minimum=0, maximum=1, step=0.01, label="Error threshold", value=0.1, elem_id="train_process_multicrop_threshold")
+   
                     with gr.Row():
                         with gr.Column(scale=3):
                             gr.HTML(value="")
@@ -1258,6 +1271,12 @@ def create_ui():
                         fn=lambda show: gr_show(show),
                         inputs=[process_focal_crop],
                         outputs=[process_focal_crop_row],
+                    )
+
+                    process_multicrop.change(
+                        fn=lambda show: gr_show(show),
+                        inputs=[process_multicrop],
+                        outputs=[process_multicrop_col],
                     )
 
                 def get_textual_inversion_template_names():
@@ -1379,6 +1398,13 @@ def create_ui():
                 process_focal_crop_entropy_weight,
                 process_focal_crop_edges_weight,
                 process_focal_crop_debug,
+                process_multicrop,
+                process_multicrop_mindim,
+                process_multicrop_maxdim,
+                process_multicrop_minarea,
+                process_multicrop_maxarea,
+                process_multicrop_objective,
+                process_multicrop_threshold,
             ],
             outputs=[
                 ti_output,
