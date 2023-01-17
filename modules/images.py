@@ -605,8 +605,9 @@ def read_info_from_image(image):
         except ValueError:
             exif_comment = exif_comment.decode('utf8', errors="ignore")
 
-        items['exif comment'] = exif_comment
-        geninfo = exif_comment
+        if exif_comment:
+            items['exif comment'] = exif_comment
+            geninfo = exif_comment
 
         for field in ['jfif', 'jfif_version', 'jfif_unit', 'jfif_density', 'dpi', 'exif',
                       'loop', 'background', 'timestamp', 'duration']:
