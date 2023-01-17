@@ -11,11 +11,8 @@
 When running on video cards with a low amount of VRAM (<=4GB), out of memory errors may arise.
 Various optimizations may be enabled through command line arguments, sacrificing some/a lot of speed in favor of using less VRAM:
 - If you have 4GB VRAM and want to make 512x512 (or maybe up to 640x640) images, use `--medvram`.
-- If you have 4GB VRAM and want to make 512x512 images, but you get an out of memory error with `--medvram`, use `--medvram --opt-split-attention` instead.
-- If you have 4GB VRAM and want to make 512x512 images, and you still get an out of memory error, use `--lowvram --always-batch-cond-uncond --opt-split-attention` instead.
-- If you have 4GB VRAM and want to make images larger than you can with `--medvram`, use  `--lowvram --opt-split-attention`.
-- If you have more VRAM and want to make larger images than you can usually make (for example 1024x1024 instead of 512x512), use `--medvram --opt-split-attention`. You can use `--lowvram` also but the effect will likely be barely noticeable.
-- Otherwise, do not use any of those.
+- If you have 4GB VRAM and want to make 512x512 images, but you get an out of memory error with `--medvram`, use `--lowvram --always-batch-cond-uncond` instead.
+- If you have 4GB VRAM and want to make images larger than you can with `--medvram`, use  `--lowvram`.
 
 # Green or Black screen
 Video cards
