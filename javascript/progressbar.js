@@ -106,6 +106,19 @@ function formatTime(secs){
     }
 }
 
+function setTitle(progress){
+    var title = 'Stable Diffusion'
+
+    if(opts.show_progress_in_title && progress){
+        title = '[' + progress.trim() + '] ' + title;
+    }
+
+    if(document.title != title){
+        document.title =  title;
+    }
+}
+
+
 function randomId(){
     return "task(" + Math.random().toString(36).slice(2, 7) + Math.random().toString(36).slice(2, 7) + Math.random().toString(36).slice(2, 7)+")"
 }
@@ -133,6 +146,7 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
     parentGallery.insertBefore(livePreview, gallery)
 
     var removeProgressBar = function(){
+        setTitle("")
         parentProgressbar.removeChild(divProgress)
         parentGallery.removeChild(livePreview)
         atEnd()
@@ -165,6 +179,7 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
                 progressText += " " + res.textinfo
             }
 
+            setTitle(progressText)
             divInner.textContent = progressText
 
             var elapsedFromStart = (new Date() - dateStart) / 1000
