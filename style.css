@@ -686,7 +686,7 @@ footer {
 #txt2img_checkboxes, #img2img_checkboxes{
     margin-bottom: 0.5em;
 }
-#txt2img_checkboxes > div > div, #img2img_checkboxes > div > div{
+#txt2img_checkboxes > div, #img2img_checkboxes > div{
     flex: 0;
     white-space: nowrap;
     min-width: auto;
