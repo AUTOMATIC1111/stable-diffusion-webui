@@ -14,14 +14,11 @@ Things I'm actively investigating...
 
 Need to study more to determine best out-of-the-box settings:
 - Experiment with multiple init words: same as number of vectors
-  - --init person,woman,girl,model
 - Impact of Codeformer
 - Impact of Hires fix:
   - e.g 25 steps and denoising strength 0.25-0.7
-- Possible use of Gradient accumulation
-  - num-images / batch-size
-- Different learning-rates
-  - monitor convergence in chart train.png
+- Gradient accumulation
+- Dynamic learning-rates
 
 # Ideas
 
@@ -31,11 +28,8 @@ Things I'm looking into...
 
 Stuff to be fixed...
 
-- Torch 2.0 model compile
-- Accelerate test
-- Add DeepSpeed support for training (`accelerate config`)
+- Torch 2.0 model compile / Accelerate test
 - Reconnect WebUI
-- Check init words in embeddings
 
 Tech that can be integrated as part of the core workflow...
 
@@ -50,6 +44,7 @@ Tech that can be integrated as part of the core workflow...
 - [Latent blending](https://github.com/lunarring/latentblending/)
 - [Face swap](https://github.com/kex0/batch-face-swap)
 - [Animator extension](https://github.com/Animator-Anon/animator_extension)
+- [Custom Diffusion](https://github.com/guaneec/custom-diffusion-webui)
 - [LORA](https://github.com/cloneofsimo/lora)
   - <https://github.com/kohya-ss/sd-webui-additional-networks>
   - <https://github.com/kohya-ss/sd-scripts>

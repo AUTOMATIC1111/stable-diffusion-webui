@@ -19,6 +19,7 @@ __pycache__
 /models/**/*
 /train/log/**/*
 /tmp
+/log
 
 # unexcluded so folders get created
 !/repositories/.placeholder

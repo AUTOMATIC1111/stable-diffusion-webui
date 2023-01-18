@@ -25,7 +25,7 @@ div.gradio-container.dark > div.w-full.flex.flex-col.min-h-screen > div { backgr
 .dark .gr-check-radio { background-color: var(--inactive-color); border-width: 0; border-radius: 2px; box-shadow: 2px 2px 3px #111111; }
 .dark .gr-check-radio:checked { background-color: var(--highlight-color); }
 .dark .gr-button { border-radius: 0; font-weight: normal; box-shadow: 2px 2px 3px #111111; font-size: 0.9rem; min-width: 42px; min-height: 42px; }
-.dark .gr-box { border-radius: 0; background-color: #222222; box-shadow: 2px 2px 3px #111111; border-width: 0; padding-bottom: 12px; }
+.dark .gr-box { border-radius: 0 !important; background-color: #222222; box-shadow: 2px 2px 3px #111111; border-width: 0; padding-bottom: 12px; }
 .dark .dark\:bg-gray-900 { background-color: black; }
 .dark .bg-white { color: lightyellow; border-radius: 0; }
 .dark fieldset span.text-gray-500, .dark .gr-block.gr-box span.text-gray-500, .dark label.block span { background-color: #222222; padding: 0 12px 0 12px; }
@@ -37,14 +37,14 @@ div.gradio-container.dark > div.w-full.flex.flex-col.min-h-screen > div { backgr
 .py-6 { padding-bottom: 0; }
 .overflow-hidden .flex .flex-col .relative col .gap-4 { min-width: var(--left-column); max-width: var(--left-column); } /* this is a problematic one */
 .rounded-lg { border-radius: 0; }
-.p-2 { padding: 0 }
+.p-2 { padding: 0; }
 
 /* automatic style classes */
 .progressDiv .progress { background: var(--highlight-color); border-radius: 2px; }
 .gallery-item { box-shadow: none !important; }
 
 /* gradio elements overrides */
-#txt2img_settings, #img2img_settings { min-width: var(--left-column); max-width: var(--left-column); }
+#txt2img_settings, #img2img_settings { min-width: var(--left-column); max-width: var(--left-column); background-color: #111111; }
 #txt2img_prompt > label > textarea { font-size: 1.2rem; }
 #txt2img_neg_prompt > label > textarea { font-size: 1.2rem; }
 #img2img_prompt > label > textarea { font-size: 1.2rem; }
@@ -57,7 +57,10 @@ div.gradio-container.dark > div.w-full.flex.flex-col.min-h-screen > div { backgr
 #interrogate_col { margin-top: 10px; }
 #txt2img_progress_row > div { min-width: var(--left-column); max-width: var(--left-column); }
 #save-animation { border-radius: 0 !important; margin-bottom: 16px; background-color: #111111; }
-#open_folder_txt2img, #open_folder_img2img, #open_folder_extras { display: none }
+#open_folder_txt2img, #open_folder_img2img, #open_folder_extras { display: none; }
 #footer { display: none; }
 #txt2img_seed_row { padding: 0; margin-top: 8px; }
-#txt2img_subseed_show { min-width: 74px; padding: 0 0 0 6px;}
+#txt2img_subseed_show { min-width: 74px; padding: 0 0 0 6px; }
+#txtimg_hr_finalres { max-width: 200px; }
+#refresh_txt2img_styles, #refresh_img2img_styles { display: none; }
+#img2img_label_copy_to_img2img { font-weight: normal; }

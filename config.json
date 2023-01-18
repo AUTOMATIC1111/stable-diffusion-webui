@@ -139,6 +139,7 @@
     "eta_noise_seed_delta": 0,
     "always_discard_next_to_last_sigma": false,
     "disabled_extensions": [
+        "openOutpaint-webUI-extension",
         "sdweb-merge-board",
         "ScuNET",
         "roll-artist"
@@ -159,5 +160,6 @@
     "inspiration_max_samples": 4,
     "inspiration_rows_num": 4,
     "inspiration_cols_num": 6,
-    "live_preview_refresh_period": 1000
+    "live_preview_refresh_period": 1000,
+    "show_progressbar": true
 }

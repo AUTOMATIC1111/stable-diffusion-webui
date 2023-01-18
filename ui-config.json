@@ -730,5 +730,9 @@
     "customscript/steps_animation.py/img2img/Path for intermediate files/visible": true,
     "customscript/steps_animation.py/img2img/Path for intermediate files/value": "intermediate",
     "customscript/steps_animation.py/img2img/Path for output animation file/visible": true,
-    "customscript/steps_animation.py/img2img/Path for output animation file/value": "animation"
+    "customscript/steps_animation.py/img2img/Path for output animation file/value": "animation",
+    "txt2img/Styles/visible": false,
+    "txt2img/Styles/value": [],
+    "img2img/Styles/visible": false,
+    "img2img/Styles/value": []
 }
