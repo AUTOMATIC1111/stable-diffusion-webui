@@ -538,10 +538,6 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
     if p.scripts is not None:
         p.scripts.process(p)
 
-    with open(os.path.join(shared.script_path, "params.txt"), "w", encoding="utf8") as file:
-        processed = Processed(p, [], p.seed, "")
-        file.write(processed.infotext(p, 0))
-
     infotexts = []
     output_images = []
 
@@ -571,6 +567,10 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
     with torch.no_grad(), p.sd_model.ema_scope():
         with devices.autocast():
             p.init(p.all_prompts, p.all_seeds, p.all_subseeds)
+
+        with open(os.path.join(shared.script_path, "params.txt"), "w", encoding="utf8") as file:
+            processed = Processed(p, [], p.seed, "")
+            file.write(processed.infotext(p, 0))
 
         if state.job_count == -1:
             state.job_count = p.n_iter
