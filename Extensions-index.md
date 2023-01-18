@@ -407,67 +407,74 @@
 			"added": "2023-01-01",
 			"tags": ["script"]
 		},
-        {
+		{
 			"name": "Model Converter",
 			"url": "https://github.com/Akegarasu/sd-webui-model-converter",
 			"description": "Convert models to fp16/bf16 no-ema/ema-only safetensors.",
 			"added": "2023-01-05",
 			"tags": ["script", "tab"]
 		},
-        {
+		{
 			"name": "Kohya-ss Additional Networks",
 			"url": "https://github.com/kohya-ss/sd-webui-additional-networks.git",
 			"description": "Allows the Web UI to use networks (LoRA) trained by their scripts to generate images.",
 			"added": "2023-01-06",
 			"tags": ["script"]
 		},
-        {
+		{
 			"name": "Ultimate SD Upscale",
 			"url": "https://github.com/Coyote-A/ultimate-upscale-for-automatic1111.git",
 			"description": "More advanced options for SD Upscale, less artifacts than original using higher denoise ratio (0.3-0.5).",
 			"added": "2023-01-10",
 			"tags": ["script"]
 		},
-        {
+		{
 			"name": "Stable Horde Worker",
 			"url": "https://github.com/sdwebui-w-horde/sd-webui-stable-horde-worker.git",
 			"description": "Worker Client for Stable Horde. Generate pictures for other users with your PC. Please see https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Extensions#stable-horde-worker for additional instructions.",
 			"added": "2023-01-10",
 			"tags": ["script"]
 		},
-        {
+		{
 			"name": "Stable Horde Client",
 			"url": "https://github.com/natanjunges/stable-diffusion-webui-stable-horde.git",
 			"description": "Stable Horde Client. Generate pictures using other user's PC.",
 			"added": "2023-01-11",
 			"tags": ["script", "tab"]
 		},
-        {
+		{
 			"name": "Hypernetwork-Monkeypatch-Extension",
 			"url": "https://github.com/aria1th/Hypernetwork-MonkeyPatch-Extension.git",
 			"description": "Extension that provides additional training features for hypernetwork training, and supports multiple hypernetworks.",
 			"added": "2023-01-12",
 			"tags": ["script", "tab"]
 		},
-        {
+		{
 			"name": "Multiple Hypernetworks",
 			"url": "https://github.com/antis0007/sd-webui-multiple-hypernetworks.git",
 			"description": "Adds the ability to apply multiple hypernetworks at once. Apply multiple hypernetworks sequentially, with different weights.",
 			"added": "2023-01-13",
 			"tags": ["script"]
 		},
-        {
+		{
 			"name": "Merge Block Weighted",
 			"url": "https://github.com/bbc-mc/sdweb-merge-block-weighted-gui.git",
 			"description": "Merge models with separate rate for each 25 U-Net block (input, middle, output).",
 			"added": "2023-01-13",
 			"tags": ["script", "tab"]
 		},
-        {
+		{
 			"name": "haku-img",
 			"url": "https://github.com/KohakuBlueleaf/a1111-sd-webui-haku-img.git",
 			"description": "Image utils extension. Blend images, get sketch from image, edit coloring, blur an image. You can use it to make some cool effects with i2i.",
 			"added": "2023-01-17",
+			"tags": ["script", "tab"]
+		},
+		{
+			"name": "Promptgen",
+			"url": "https://github.com/AUTOMATIC1111/stable-diffusion-webui-promptgen",
+			"description": "Use transformers models to generate prompts.",
+			"added": "2023-01-18",
 			"tags": ["script", "tab"]
 		},
 		{
