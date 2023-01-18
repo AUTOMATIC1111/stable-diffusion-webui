@@ -41,6 +41,10 @@ from modules.textual_inversion import textual_inversion
 import modules.hypernetworks.ui
 from modules.generation_parameters_copypaste import image_from_url_text
 
+# filter user-warnings as many are generated in upstream libraries and cannot be addressed in webui
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning)
+
 # this is a fix for Windows users. Without it, javascript files will be served with text/html content-type and the browser will not show any UI
 mimetypes.init()
 mimetypes.add_type('application/javascript', '.js')
