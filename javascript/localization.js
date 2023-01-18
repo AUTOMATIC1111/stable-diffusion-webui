@@ -11,7 +11,7 @@ ignore_ids_for_localization={
     train_embedding: 'OPTION',
     train_hypernetwork: 'OPTION',
     txt2img_styles: 'OPTION',
-    img2img_styles 'OPTION',
+    img2img_styles: 'OPTION',
     setting_random_artist_categories: 'SPAN',
     setting_face_restoration_model: 'SPAN',
     setting_realesrgan_enabled_models: 'SPAN',
