@@ -11,6 +11,7 @@ import tempfile
 import time
 import traceback
 from functools import partial, reduce
+import warnings
 
 import gradio as gr
 import gradio.routes
@@ -40,6 +41,8 @@ from modules.sd_samplers import samplers, samplers_for_img2img
 from modules.textual_inversion import textual_inversion
 import modules.hypernetworks.ui
 from modules.generation_parameters_copypaste import image_from_url_text
+
+warnings.filterwarnings("default" if opts.show_warnings else "ignore", category=UserWarning)
 
 # this is a fix for Windows users. Without it, javascript files will be served with text/html content-type and the browser will not show any UI
 mimetypes.init()
@@ -417,17 +420,16 @@ def apply_setting(key, value):
     return value
 
 
-def update_generation_info(args):
-    generation_info, html_info, img_index = args
+def update_generation_info(generation_info, html_info, img_index):
     try:
         generation_info = json.loads(generation_info)
         if img_index < 0 or img_index >= len(generation_info["infotexts"]):
-            return html_info
-        return plaintext_to_html(generation_info["infotexts"][img_index])
+            return html_info, gr.update()
+        return plaintext_to_html(generation_info["infotexts"][img_index]), gr.update()
     except Exception:
         pass
     # if the json parse or anything else fails, just return the old html_info
-    return html_info
+    return html_info, gr.update()
 
 
 def create_refresh_button(refresh_component, refresh_method, refreshed_args, elem_id):
@@ -508,10 +510,9 @@ Requested path was: {f}
                             generation_info_button = gr.Button(visible=False, elem_id=f"{tabname}_generation_info_button")
                             generation_info_button.click(
                                 fn=update_generation_info,
-                                _js="(x, y) => [x, y, selected_gallery_index()]",
-                                inputs=[generation_info, html_info],
-                                outputs=[html_info],
-                                preprocess=False
+                                _js="function(x, y, z){ console.log(x, y, z); return [x, y, selected_gallery_index()] }",
+                                inputs=[generation_info, html_info, html_info],
+                                outputs=[html_info, html_info],
                             )
 
                         save.click(
@@ -526,7 +527,8 @@ Requested path was: {f}
                             outputs=[
                                 download_files,
                                 html_log,
-                            ]
+                            ],
+                            show_progress=False,
                         )
 
                         save_zip.click(
@@ -588,7 +590,7 @@ def create_ui():
         txt2img_prompt, txt2img_prompt_styles, txt2img_negative_prompt, submit, _, _,txt2img_prompt_style_apply, txt2img_save_style, txt2img_paste, token_counter, token_button = create_toprow(is_img2img=False)
 
         dummy_component = gr.Label(visible=False)
-        txt_prompt_img = gr.File(label="", elem_id="txt2img_prompt_image", file_count="single", type="bytes", visible=False)
+        txt_prompt_img = gr.File(label="", elem_id="txt2img_prompt_image", file_count="single", type="binary", visible=False)
 
         with gr.Row().style(equal_height=False):
             with gr.Column(variant='compact', elem_id="txt2img_settings"):
@@ -768,7 +770,7 @@ def create_ui():
     with gr.Blocks(analytics_enabled=False) as img2img_interface:
         img2img_prompt, img2img_prompt_styles, img2img_negative_prompt, submit, img2img_interrogate, img2img_deepbooru, img2img_prompt_style_apply, img2img_save_style, img2img_paste,token_counter, token_button = create_toprow(is_img2img=True)
 
-        img2img_prompt_img = gr.File(label="", elem_id="img2img_prompt_image", file_count="single", type="bytes", visible=False)
+        img2img_prompt_img = gr.File(label="", elem_id="img2img_prompt_image", file_count="single", type="binary", visible=False)
 
         with FormRow().style(equal_height=False):
             with gr.Column(variant='compact', elem_id="img2img_settings"):
@@ -1768,7 +1770,10 @@ def create_ui():
             if saved_value is None:
                 ui_settings[key] = getattr(obj, field)
             elif condition and not condition(saved_value):
-                print(f'Warning: Bad ui setting value: {key}: {saved_value}; Default value "{getattr(obj, field)}" will be used instead.')
+                pass
+
+                # this warning is generally not useful;
+                # print(f'Warning: Bad ui setting value: {key}: {saved_value}; Default value "{getattr(obj, field)}" will be used instead.')
             else:
                 setattr(obj, field, saved_value)
                 if init_field is not None:

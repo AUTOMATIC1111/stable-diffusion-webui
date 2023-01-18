@@ -299,9 +299,8 @@ input[type="range"]{
 }
 
 /* more gradio's garbage cleanup */
-.min-h-\[4rem\] {
-  min-height: unset !important;
-}
+.min-h-\[4rem\] { min-height: unset !important; }
+.min-h-\[6rem\] { min-height: unset !important; }
 
 .progressDiv{
     position: absolute;

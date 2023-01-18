@@ -12,7 +12,7 @@ import torch
 import tqdm
 from einops import rearrange, repeat
 from ldm.util import default
-from modules import devices, processing, sd_models, shared, sd_samplers, hashes
+from modules import devices, processing, sd_models, shared, sd_samplers, hashes, sd_hijack_checkpoint
 from modules.textual_inversion import textual_inversion, logging
 from modules.textual_inversion.learn_schedule import LearnRateScheduler
 from torch import einsum
@@ -575,6 +575,8 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
 
     pbar = tqdm.tqdm(total=steps - initial_step)
     try:
+        sd_hijack_checkpoint.add()
+
         for i in range((steps-initial_step) * gradient_step):
             if scheduler.finished:
                 break
@@ -724,6 +726,9 @@ Last saved image: {html.escape(last_saved_image)}<br/>
         pbar.close()
         hypernetwork.eval()
         #report_statistics(loss_dict)
+        sd_hijack_checkpoint.remove()
+
+
 
     filename = os.path.join(shared.cmd_opts.hypernetwork_dir, f'{hypernetwork_name}.pt')
     hypernetwork.optimizer_name = optimizer_name
