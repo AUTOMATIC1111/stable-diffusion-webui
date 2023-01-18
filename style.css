@@ -530,7 +530,7 @@ input[type="range"]{
     gap: 0.4em;
 }
 
-#quicksettings > div{
+#quicksettings > div, #quicksettings > fieldset{
     max-width: 24em;
     min-width: 24em;
     padding: 0;
