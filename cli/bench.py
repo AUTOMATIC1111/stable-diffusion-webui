@@ -7,9 +7,12 @@ import json
 import asyncio
 import base64
 import io
-import sdapi
-from util import Map, log
+import sys
 from PIL import Image
+
+sys.path.append(os.path.join(os.path.dirname(__file__), 'modules'))
+import modules.sdapi as sdapi
+from modules.util import Map, log
 
 options = Map({
     'restore_faces': False,
@@ -38,7 +41,10 @@ async def txt2img():
         return -1
     if 'error' in data:
         return -1
-    info = Map(json.loads(data['info']))
+    if 'info' in data:
+        info = Map(json.loads(data['info']))
+    else:
+        return 0
     log.debug({ 'info': info })
     for i in range(len(data['images'])):
         data['images'][i] = Image.open(io.BytesIO(base64.b64decode(data['images'][i].split(',',1)[0])))
@@ -100,6 +106,7 @@ async def main():
             await asyncio.sleep(10)
             cpu, gpu = memstats()
             log.info({ 'batch': batch[i], 'result': 'error', 'gpu': gpu, 'oom': oom > 0 })
+            break
     if oom > 0:
         log.info({ 'benchmark': 'ended with oom so you should probably restart your automatic server now' })
     await sdapi.close()

@@ -27,12 +27,12 @@ def wrap(text: str, font: ImageFont.ImageFont, length: int):
     return '\n'.join(lines)
 
 
-def grid(images, labels = None, width = 0, height = 0): # pylint: disable=redefined-outer-name
-    if params.horizontal:
+def grid(images, labels = None, width = 0, height = 0, border = 0, square = False, horizontal = False, vertical = False): # pylint: disable=redefined-outer-name
+    if horizontal:
         rows = 1
-    elif params.vertical:
+    elif vertical:
         rows = len(images)
-    elif params.square:
+    elif square:
         rows = round(math.sqrt(len(images)))
     else:
         rows = math.floor(math.sqrt(len(images)))
@@ -40,13 +40,13 @@ def grid(images, labels = None, width = 0, height = 0): # pylint: disable=redefi
     size = [0, 0]
     if width == 0:
         w = max([i.size[0] for i in images])
-        size[0] = cols * w + cols * params.border
+        size[0] = cols * w + cols * border
     else:
         size[0] = width
         w = round(width / cols)
     if height == 0:
         h = max([i.size[1] for i in images])
-        size[1] = rows * h + rows * params.border
+        size[1] = rows * h + rows * border
     else:
         size[1] = height
         h = round(height / rows)
@@ -54,8 +54,8 @@ def grid(images, labels = None, width = 0, height = 0): # pylint: disable=redefi
     image = Image.new('RGB', size = size, color = 'black') # pylint: disable=redefined-outer-name
     font = ImageFont.truetype('DejaVuSansMono', round(w / 20))
     for i, img in enumerate(images): # pylint: disable=redefined-outer-name
-        x = (i % cols * w) + (i % cols * params.border)
-        y = (i // cols * h) + (i // cols * params.border)
+        x = (i % cols * w) + (i % cols * border)
+        y = (i // cols * h) + (i // cols * border)
         img.thumbnail((w, h), Image.HAMMING)
         image.paste(img, box=(x, y))
         if labels is not None and len(images) == len(labels):
@@ -108,7 +108,15 @@ if __name__ == '__main__':
             labels.append(fp.stem)
     # log.info({ 'folder': path.parent, 'labels': labels })
     if len(images) > 0:
-        image = grid(images, labels, params.width, params.height)
+        image = grid(
+            images = images,
+            labels = labels,
+            width = params.width,
+            height = params.height,
+            border = params.border,
+            square = params.square,
+            horizontal = params.horizontal,
+            vertical = params.vertical)
         image.save(output, 'JPEG', optimize = True, quality = 60)
         log.info({ 'grid': { 'file': output, 'size': list(image.size) } })
     else:

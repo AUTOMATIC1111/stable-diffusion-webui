@@ -26,13 +26,16 @@ import pathlib
 import secrets
 import time
 import sys
-from random import randrange
 
+from random import randrange
 from PIL import Image
 from PIL.ExifTags import TAGS
 from PIL.TiffImagePlugin import ImageFileDirectory_v2
-from sdapi import close, get, interrupt, post, session
-from util import Map, log
+
+sys.path.append(os.path.join(os.path.dirname(__file__), 'modules'))
+from modules.sdapi import close, get, interrupt, post, session
+from modules.util import Map, log
+
 
 sd = {}
 random = {}
@@ -312,7 +315,7 @@ async def main():
         dynamic = prompt(params)
         if params.beautify:
             try:
-                from promptist import beautify # pylint: disable=import-outside-toplevel
+                from modules.promptist import beautify # pylint: disable=import-outside-toplevel
                 sd.generate.prompt = beautify(dynamic)
             except Exception as e:
                 log.error({ 'beautify': e })

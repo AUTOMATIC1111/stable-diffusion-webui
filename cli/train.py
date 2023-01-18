@@ -20,17 +20,20 @@ import pathlib
 import time
 import json
 from pathlib import Path
-
 import filetype
-from ffmpeg import extract
-from sdapi import close, get, interrupt, post, progress, session
-from util import Map, log
-from losschart import plot
 from PIL import Image
 
-images = []
-use_pbar = False
+sys.path.append(os.path.join(os.path.dirname(__file__), 'modules'))
+from modules.util import Map, log
+from modules.losschart import plot
+from modules.ffmpeg import extract
+from modules.lossrate import gen_loss_rate_str
+from modules.sdapi import close, get, interrupt, post, progress, session
+from modules.process import process_images
+from modules.grid import grid
 
+
+images = []
 args = {}
 options = None
 cmdflags = None
@@ -68,14 +71,14 @@ async def captions(docs: list):
 async def cleanup(params):
     if params.nocleanup:
         return
-    log.info({ 'cleanup deleting preprocessed images': params.dst })
+    log.info({ 'preprocess cleanup': params.dst })
     for f in Path(params.dst).glob('*.png'):
         f.unlink()
     for f in Path(params.dst).glob('*.txt'):
         f.unlink()
 
 
-async def preprocess(params):
+async def preprocess_builtin(params):
     global images # pylint: disable=global-statement
     log.debug({ 'preprocess start' })
     if os.path.isdir(params.dst):
@@ -88,64 +91,90 @@ async def preprocess(params):
         else:
             log.error({ 'preprocess output folder already exists': params.dst })
             return 0
-    if os.path.isdir(params.src):
-        files = [os.path.join(params.src, f) for f in os.listdir(params.src) if os.path.isfile(os.path.join(params.src, f))]
-        candidates = [f for f in files if filetype.is_image(f)]
-        not_images = [f for f in files if (not filetype.is_image(f) and not f.endswith('.txt'))]
-        images = []
-        low_res = []
-        for f in candidates:
-            img = Image.open(f)
-            mp = (img.size[0] * img.size[1]) / 1024 / 1024
-            if mp < 1 or img.size[0] < 512 or img.size[1] < 512:
-                low_res.append(f)
-                os.rename(f, f + '.skip')
-            else:
-                images.append(f)
-        log.debug({ 'preprocess skipping': not_images })
-        log.debug({ 'preprocess low res': low_res })
-        args.preprocess.process_src = params.src
-        args.preprocess.process_dst = params.dst
-        log.debug({ 'preprocess args': args.preprocess })
-        _res = await post('/sdapi/v1/preprocess', json = args.preprocess)
-        processed = [os.path.join(params.dst, f) for f in os.listdir(params.dst) if os.path.isfile(os.path.join(params.dst, f))]
-        processed_imgs = [f for f in processed if f.endswith('.png')]
-        processed_docs = [f for f in processed if f.endswith('.txt')]
-        log.info({ 'preprocess': {
-            'source': params.src,
-            'destination': params.dst,
-            'files': len(files),
-            'images': len(images),
-            'processed': len(processed_imgs),
-            'captions': len(processed_docs),
-            'skipped': len(not_images),
-            'low-res': len(low_res) }
-        })
-        if len(processed_docs) > 0:
-            await captions(processed_docs)
-        return len(processed_imgs)
-    elif os.path.isfile(params.src):
+    files = [os.path.join(params.src, f) for f in os.listdir(params.src) if os.path.isfile(os.path.join(params.src, f))]
+    candidates = [f for f in files if filetype.is_image(f)]
+    not_images = [f for f in files if (not filetype.is_image(f) and not f.endswith('.txt'))]
+    images = []
+    low_res = []
+    for f in candidates:
+        img = Image.open(f)
+        mp = (img.size[0] * img.size[1]) / 1024 / 1024
+        if mp < 1 or img.size[0] < 512 or img.size[1] < 512:
+            low_res.append(f)
+            os.rename(f, f + '.skip')
+        else:
+            images.append(f)
+    log.debug({ 'preprocess skipping': not_images })
+    log.debug({ 'preprocess low res': low_res })
+    args.preprocess.process_src = params.src
+    args.preprocess.process_dst = params.dst
+    log.debug({ 'preprocess args': args.preprocess })
+    _res = await post('/sdapi/v1/preprocess', json = args.preprocess)
+    processed = [os.path.join(params.dst, f) for f in os.listdir(params.dst) if os.path.isfile(os.path.join(params.dst, f))]
+    processed_imgs = [f for f in processed if f.endswith('.png')]
+    processed_docs = [f for f in processed if f.endswith('.txt')]
+    log.info({ 'preprocess': {
+        'source': params.src,
+        'destination': params.dst,
+        'files': len(files),
+        'images': len(images),
+        'processed': len(processed_imgs),
+        'captions': len(processed_docs),
+        'skipped': len(not_images),
+        'low-res': len(low_res) }
+    })
+    if len(processed_docs) > 0:
+        await captions(processed_docs)
+    return len(processed_imgs)
+
+
+async def preprocess(params):
+    global images # pylint: disable=global-statement
+    res = 0
+    if os.path.isfile(params.src):
         if not filetype.is_video(params.src):
             kind = filetype.guess(params.src)
             log.error({ 'preprocess error': { 'not a valid movie file': params.src, 'guess': kind } })
         else:
             extract_dst = os.path.join(params.dst, 'extract')
             log.debug({ 'preprocess args': args.extract_video })
-            images = extract(params.src, extract_dst, rate = args.extract_video.rate, fps = args.extract_video.fps, start = args.extract_video.skipstart, end = args.extract_video.skipend) # extract keyframes from movie
+            images = extract(params.src, extract_dst, rate = args.extract_video.rate, fps = args.extract_video.fps, start = args.extract_video.vstart, end = args.extract_video.vend) # extract keyframes from movie
             if images > 0:
                 params.src = extract_dst
-                processed_count = await preprocess(params) # call again but now with keyframes
-                return processed_count
+                res = await preprocess(params) # call again but now with keyframes
             else:
                 log.error({ 'preprocess video extract': 'no images' })
-                return 0
+    elif os.path.isdir(params.src):
+        if params.preprocess == 'builtin':
+            res = preprocess_builtin(params)
+        if params.preprocess == 'custom':
+            t0 = time.perf_counter()
+            args.preprocess.process_src = params.src
+            args.preprocess.process_dst = params.dst
+            process_images(src = params.src, dst = params.dst)
+            i = [os.path.join(params.dst, f) for f in os.listdir(params.dst) if os.path.isfile(os.path.join(params.dst, f)) and filetype.is_image(os.path.join(params.dst, f))]
+            images = [Image.open(img) for img in i]
+            t1 = time.perf_counter()
+            log.info({ 'preprocess': { 'source': params.src, 'destination': params.dst, 'images': len(images), 'time': round(t1 - t0, 2) } })
+            res = len(images)
+        else:
+            args.preprocess.process_dst = params.src
+            i = [os.path.join(params.src, f) for f in os.listdir(params.src) if os.path.isfile(os.path.join(params.src, f)) and filetype.is_image(os.path.join(params.src, f))]
+            images = [Image.open(img) for img in i]
+            res = len(images)
     else:
         log.error({ 'preprocess error': { 'not a valid input': params.src } })
-        return 0
+    if len(images) > 0:
+        img = grid(images, labels = None, width = 2048, height = 2048, border = 8, square = True)
+        logdir = os.path.abspath(os.path.join(cmdflags['embeddings_dir'], '../train/log'))
+        fn = os.path.join(logdir, params.name + '-inputs.jpg')
+        img.save(fn)
+        log.info({ 'preprocess input grid': fn })
+    return res
 
 
 async def check(params):
-    log.debug({ 'setting options' })
+    log.info({ 'checking server options' })
     global options # pylint: disable=global-statement
     options = await get('/sdapi/v1/options')
 
@@ -228,16 +257,16 @@ async def train(params):
     log.debug({ 'train start' })
     args.train_embedding.embedding_name = params.name
     args.train_embedding.data_root = args.preprocess.process_dst
-    if params.accumulation > -1:
-        args.train_embedding.gradient_step = params.accumulation
-    log.info({ 'train': {
+    log.info({ 'train embedding': {
         'name': params.name,
         'source': args.preprocess.process_dst,
         'steps': args.train_embedding.steps,
         'batch': args.train_embedding.batch_size,
-        'accumulation': args.train_embedding.gradient_step,
-        'learning-rate': args.train_embedding.learn_rate }
+        'gradient-step': args.train_embedding.gradient_step,
+        'sampling': args.train_embedding.latent_sampling_method,
+        'epoch-size': args.train_embedding.batch_size * args.train_embedding.gradient_step }
     })
+    log.info({ 'learn-rate': args.train_embedding.learn_rate })
     log.debug({ 'train args': args.train_embedding })
     res = await post('/sdapi/v1/train/embedding', args.train_embedding)
     log.debug({ 'train end': res.info })
@@ -250,14 +279,11 @@ async def pipeline(params):
     # interrupt
     await interrupt()
 
-    # preproceess
-    if not params.skippreprocess:
-        num = await preprocess(params)
-        if num == 0:
-            log.warning({ 'preprocess': 'no resulting images'})
-            return
-    else:
-        args.preprocess.process_dst = params.src
+    # preprocess
+    num = await preprocess(params)
+    if num == 0:
+        log.warning({ 'preprocess': 'no resulting images'})
+        return
 
     # create embedding
     name = await create(params)
@@ -336,17 +362,20 @@ async def main():
     parser.add_argument("--src", type = str, required = True, help = "source image folder or movie file")
     parser.add_argument("--init", type = str, default = "person", required = False, help = "initialization class, default: %(default)s")
     parser.add_argument("--dst", type = str, default = "/tmp", required = False, help = "destination image folder for processed images, default: %(default)s")
-    parser.add_argument("--steps", type = int, default = -1, required = False, help = "training steps, default: %(default)s")
-    parser.add_argument("--vectors", type = int, default = -1, required = False, help = "number of vectors per token, default: dynamic")
-    parser.add_argument("--batch", type = int, default = -1, required = False, help = "batch size, default: %(default)s")
+    parser.add_argument("--steps", type = int, default = 250, required = False, help = "training steps, default: %(default)s")
+    parser.add_argument("--vectors", type = int, default = -1, required = False, help = "number of vectors per token, default: dynamic based on number of input images")
+    parser.add_argument("--batch", type = int, default = 1, required = False, help = "batch size, default: %(default)s")
     parser.add_argument("--rate", type = str, default = "", required = False, help = "learning rate, default: dynamic")
-    parser.add_argument("--accumulation", type = int, default = 10, required = False, help = "accumulate gradient over n steps, default: dynamic")
-    parser.add_argument("--type", choices = ['subject', 'style'], default = 'subject', required = False, help = "subject or style, default: %(default)s")
+    parser.add_argument("--rstart", type = float, default = 0.05, required = False, help = "starting learn rate if using dynamic rate, default: %(default)s")
+    parser.add_argument("--rend", type = float, default = 0.0001, required = False, help = "ending learn rate if using dynamic rate, default: %(default)s")
+    parser.add_argument("--rdescend", type = float, default = 2, required = False, help = "learn rate descend power when using dynamic rate, default: %(default)s")
+    parser.add_argument("--grad", type = int, default = 20, required = False, help = "accumulate gradient over n images, default: : %(default)s")
+    parser.add_argument("--type", type = str, default = 'subject', required = False, help = "training type: subject/style/unknown, default: %(default)s")
     parser.add_argument('--overwrite', default = False, action='store_true', help = "overwrite existing embedding, default: %(default)s")
+    parser.add_argument("--vstart", type = float, default = 0, required = False, help = "if processing video skip first n seconds, default: %(default)s")
+    parser.add_argument("--vend", type = float, default = 0, required = False, help = "if processing video skip last n seconds, default: %(default)s")
     parser.add_argument('--skipcaption', default = False, action='store_true', help = "do not auto-generate captions, default: %(default)s")
-    parser.add_argument('--skippreprocess', default = False, action='store_true', help = "skip preprocessing, default: %(default)s")
-    parser.add_argument("--skipstart", type = float, default = -1, required = False, help = "if processing video skip first n seconds, default: %(default)s")
-    parser.add_argument("--skipend", type = float, default = -1, required = False, help = "if processing video skip last n seconds, default: %(default)s")
+    parser.add_argument('--preprocess', type = str, choices=['builtin', 'custom', 'none'], default = 'custom', help = "preprocessing type, default: %(default)s")
     parser.add_argument('--nocleanup', default = False, action='store_true', help = "skip cleanup after completion, default: %(default)s")
     parser.add_argument('--debug', default = False, action='store_true', help = "print extra debug information, default: %(default)s")
     params = parser.parse_args()
@@ -377,34 +406,58 @@ async def main():
     else:
         log.error({ 'config file not found': params.config})
         exit()
-    if params.skipstart > -1:
-        args.extract_video.skipstart = params.skipstart
-    if params.skipend > -1:
-        args.extract_video.skipend = params.skipend
+    if params.vstart > 0:
+        args.extract_video.vstart = params.vstart
+    if params.vend > 0:
+        args.extract_video.vend = params.vend
     if params.steps > -1:
         args.train_embedding.steps = params.steps
     if params.batch > -1:
         args.train_embedding.batch_size = params.batch
     if params.rate != '':
         args.train_embedding.learn_rate = params.rate
+    if params.grad > -1:
+        args.train_embedding.gradient_step = params.grad
+    epoch_size = args.train_embedding.batch_size * args.train_embedding.gradient_step
+    if args.train_embedding.create_image_every == -1:
+        args.train_embedding.create_image_every = epoch_size
+    if args.train_embedding.save_embedding_every == -1:
+        args.train_embedding.save_embedding_every = epoch_size
+    if args.train_embedding.learn_rate == -1:
+        loss_args = {
+            "steps": args.train_embedding.steps,
+            "step": epoch_size,
+            "loss_start": params.rstart,
+            "loss_end": params.rend,
+            "loss_type": 'power',
+            "power": params.rdescend
+        }
+        args.train_embedding.learn_rate = gen_loss_rate_str(**loss_args)
+        log.debug({ 'learning rate': args.train_embedding.learn_rate, 'params': loss_args })
     if params.type == 'subject':
         if params.skipcaption:
             args.train_embedding.template_filename = 'subject.txt'
             args.preprocess.process_caption = False
         else:
             args.train_embedding.template_filename = 'subject_filewords.txt'
-    if params.type == 'style':
+    elif params.type == 'style':
         if params.skipcaption:
             args.train_embedding.template_filename = 'style.txt'
             args.preprocess.process_caption = False
         else:
             args.train_embedding.template_filename = 'style_filewords.txt'
+    else:
+        if params.skipcaption:
+            args.train_embedding.template_filename = 'unknown.txt'
+            args.preprocess.process_caption = False
+        else:
+            args.train_embedding.template_filename = 'unknown_filewords.txt'
     if params.name == 'auto':
         params.name = pathlib.PurePath(params.src).name
         log.info({ 'training name': params.name })
     if params.dst == "/tmp":
         params.dst = os.path.join("/tmp/train", params.name)
-    log.info({ 'args': params.__dict__ })
+    log.debug({ 'args': params.__dict__ })
     params.src = os.path.abspath(params.src)
     params.dst = os.path.abspath(params.dst)
     try:
@@ -421,7 +474,7 @@ async def main():
     return
 
 if __name__ == "__main__": # create & train test embedding when used from cli
-    log.info({ 'train embedding' })
+    log.info({ 'train script' })
     try:
         asyncio.run(main())
     except KeyboardInterrupt:

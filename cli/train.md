@@ -16,7 +16,9 @@
 
 ## Train
 
-> train.py --name laurentaylor-v4 --src ~/generative/Input/laurentaylor/ --init person,woman,girl,model --overwrite
+    sdapi.py interrupt
+    rm -rf /tmp/train/ ~/dev/automatic/embeddings/rebeccagivens-v6.pt ~/dev/automatic/train/log/rebeccagivens-v6*
+    train.py --name rebeccagivens-v6 --src ~/generative/Input/rebeccagivens/ --init person,woman,girl,model --overwrite
 
 ## Prompt
 

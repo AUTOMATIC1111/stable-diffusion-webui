@@ -23,6 +23,8 @@ Fork does differ in few things:
 - Additional simplified start script  
   > ./automatic.sh  
   Existing `webui.sh` still exists for fresh installs to auto-install dependencies, etc.  
+- Additional simplified install script  
+  > ./install.sh  
 - Drops compatibility with `python` **3.7** and requires **3.10**  
 - Updated **Python** libraries to latest known compatible versions  
   e.g. `accelerate`, `transformers`, `numpy`, etc.  

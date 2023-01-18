@@ -1,7 +1,9 @@
 accelerate
 basicsr
+clean-fid
+einops
 fairscale
-fonts
+filetype
 font-roboto
 fonts
 gfpgan
@@ -10,6 +12,7 @@ invisible-watermark
 jsonmerge
 kornia
 lark
+mediapipe
 numpy
 omegaconf
 opencv-contrib-python
@@ -17,13 +20,6 @@ piexif
 Pillow
 pytorch_lightning
 realesrgan
-scikit-image
-timm
-transformers
-torch
-einops
-jsonmerge
-clean-fid
 resize-right
 safetensors
 scikit-image
@@ -32,4 +28,3 @@ torch
 torchdiffeq
 torchsde
 transformers
-filetype

@@ -58,23 +58,36 @@ def resultsync(req: requests.Response):
 async def get(endpoint: str, json: dict = None):
     global sess # pylint: disable=global-statement
     sess = sess if sess is not None else await session()
-    async with sess.get(url = endpoint, json = json) as req:
-        res = await result(req)
-        return res
+    try:
+        async with sess.get(url = endpoint, json = json) as req:
+            res = await result(req)
+            return res
+    except Exception as err:
+        log.error({ 'session': err })
+        return {}
 
 
 def getsync(endpoint: str, json: dict = None):
-    req = requests.get(f'{sd_url}{endpoint}', json = json) # pylint: disable=missing-timeout
-    res = resultsync(req)
-    return res
+    try:
+        req = requests.get(f'{sd_url}{endpoint}', json = json) # pylint: disable=missing-timeout
+        res = resultsync(req)
+        return res
+    except Exception as err:
+        log.error({ 'session': err })
+        return {}
+    
 
 
 async def post(endpoint: str, json: dict = None):
     global sess # pylint: disable=global-statement
     sess = sess if sess is not None else await session()
-    async with sess.post(url = endpoint, json = json) as req:
-        res = await result(req)
-        return res
+    try:
+        async with sess.post(url = endpoint, json = json) as req:
+            res = await result(req)
+            return res
+    except Exception as err:
+        log.error({ 'session': err })
+        return {}
 
 
 def postsync(endpoint: str, json: dict = None):

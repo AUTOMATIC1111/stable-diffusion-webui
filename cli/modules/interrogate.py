@@ -11,7 +11,7 @@ import asyncio
 import filetype
 from PIL import Image
 from util import log, Map
-import sdapi
+import sdapi as sdapi
 
 
 def decode(encoding):

@@ -32,8 +32,10 @@ Things I'm looking into...
 Stuff to be fixed...
 
 - Torch 2.0 model compile
+- Accelerate test
 - Add DeepSpeed support for training (`accelerate config`)
 - Reconnect WebUI
+- Check init words in embeddings
 
 Tech that can be integrated as part of the core workflow...
 
@@ -80,4 +82,7 @@ Ideas that can be value-added to core tech...
 - Auto-filter training inputs based on blur  
   <https://pyimagesearch.com/2020/06/15/opencv-fast-fourier-transform-fft-for-blur-detection-in-images-and-video-streams/>
 
-/home/vlado/dev/sd-extensions/api/losschart.py:48: RuntimeWarning: More than 20 figures have been opened. Figures created through the pyplot interface (`matplotlib.pyplot.figure`) are retained until explicitly closed and may consume too much memory. (To control this warning, see the rcParam `figure.max_open_warning`). Consider using `matplotlib.pyplot.close()`.
+
+> mix-gtm-ultimateblend-v1.safetensors
+> hentaimodel-grapefruit.v23.safetensors
+> mix-hassanblend-v15.ckpt
