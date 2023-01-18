@@ -7,23 +7,31 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.10.6', '3.10', '3.7']
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
-      - name: Set up Python 3.10
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.10.6
+          python-version: ${{ matrix.python-version }}
           cache: pip
           cache-dependency-path: |
             **/requirements*txt
       - name: Run tests
-        run: python launch.py --tests --no-half --disable-opt-split-attention --use-cpu all --skip-torch-cuda-test
+        run: |
+          if [ ${{ matrix.python-version }} = 3.7 ]; then
+            export REQS_FILE=requirements.txt
+          fi
+          python launch.py --tests --no-half --disable-opt-split-attention --use-cpu all --skip-torch-cuda-test
       - name: Upload main app stdout-stderr
         uses: actions/upload-artifact@v3
         if: always()
         with:
-          name: stdout-stderr
+          name: stdout-stderr-${{ matrix.python-version }}
           path: |
             test/stdout.txt
             test/stderr.txt
