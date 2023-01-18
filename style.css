@@ -148,6 +148,7 @@
 
 #txt2img_styles ul, #img2img_styles ul{
     max-height: 35em;
+    z-index: 2000;
 }
 
 .gr-form{
