@@ -369,6 +369,11 @@ def tests(test_dir):
 
 def start():
     print(f"Launching {'API server' if '--nowebui' in sys.argv else 'Web UI'} with arguments: {' '.join(sys.argv[1:])}")
+
+    #Do this before Torch is loaded
+    if '--deterministic-training' in sys.argv:
+        os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
+
     import webui
     if '--nowebui' in sys.argv:
         webui.api_only()

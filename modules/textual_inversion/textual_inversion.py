@@ -2,9 +2,11 @@ import os
 import sys
 import traceback
 import inspect
+import random
 from collections import namedtuple
 
 import torch
+import numpy as np
 import tqdm
 import html
 import datetime
@@ -351,6 +353,32 @@ def validate_train_inputs(model_name, learn_rate, batch_size, gradient_step, dat
         assert log_directory, "Log directory is empty"
 
 
+def set_deterministic():
+    state = {
+        'use_deterministic_algorithms': torch.are_deterministic_algorithms_enabled(),
+        'cudnn_deterministic': torch.backends.cudnn.deterministic,
+        'cudnn_benchmarks': torch.backends.cudnn.benchmark,
+    }
+
+    torch.use_deterministic_algorithms(True)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
+    set_deterministic_seed(0)
+
+    return state
+
+def reset_deterministic(state):
+    torch.use_deterministic_algorithms(state['use_deterministic_algorithms'])
+    torch.backends.cudnn.deterministic = state['cudnn_deterministic']
+    torch.backends.cudnn.benchmark = state['cudnn_benchmarks']
+
+def set_deterministic_seed(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+
 def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_step, data_root, log_directory, training_width, training_height, varsize, steps, clip_grad_mode, clip_grad_value, shuffle_tags, tag_drop_out, latent_sampling_method, use_weight, create_image_every, save_embedding_every, template_filename, save_image_with_stored_embedding, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height):
     save_embedding_every = save_embedding_every or 0
     create_image_every = create_image_every or 0
@@ -407,6 +435,9 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
     
     if shared.opts.training_enable_tensorboard:
         tensorboard_writer = tensorboard_setup(log_directory)
+
+    if shared.cmd_opts.deterministic_training:
+        old_deterministic_state = set_deterministic()
 
     pin_memory = shared.opts.pin_memory
 
@@ -474,6 +505,9 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
                     break
                 if shared.state.interrupted:
                     break
+
+                if shared.cmd_opts.deterministic_training:
+                    set_deterministic_seed(embedding.step * gradient_step + j)
 
                 if clip_grad:
                     clip_grad_sched.step(embedding.step)
@@ -632,6 +666,9 @@ Last saved image: {html.escape(last_saved_image)}<br/>
         shared.sd_model.first_stage_model.to(devices.device)
         shared.parallel_processing_allowed = old_parallel_processing_allowed
         sd_hijack_checkpoint.remove()
+
+        if shared.cmd_opts.deterministic_training:
+            reset_deterministic(old_deterministic_state)
 
     return embedding, filename
 

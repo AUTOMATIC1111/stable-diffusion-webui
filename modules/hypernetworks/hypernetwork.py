@@ -6,9 +6,11 @@ import os
 import sys
 import traceback
 import inspect
+import random
 
 import modules.textual_inversion.dataset
 import torch
+import numpy as np
 import tqdm
 from einops import rearrange, repeat
 from ldm.util import default
@@ -552,6 +554,9 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
     # dataset loading may take a while, so input validations and early returns should be done before this
     shared.state.textinfo = f"Preparing dataset from {html.escape(data_root)}..."
 
+    if shared.cmd_opts.deterministic_training:
+        old_deterministic_state = set_deterministic()
+
     pin_memory = shared.opts.pin_memory
 
     ds = modules.textual_inversion.dataset.PersonalizedBase(data_root=data_root, width=training_width, height=training_height, repeats=shared.opts.training_image_repeats_per_epoch, placeholder_token=hypernetwork_name, model=shared.sd_model, cond_model=shared.sd_model.cond_stage_model, device=devices.device, template_file=template_file, include_cond=True, batch_size=batch_size, gradient_step=gradient_step, shuffle_tags=shuffle_tags, tag_drop_out=tag_drop_out, latent_sampling_method=latent_sampling_method, varsize=varsize, use_weight=use_weight)
@@ -634,6 +639,9 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
                     break
                 if shared.state.interrupted:
                     break
+
+                if shared.cmd_opts.deterministic_training:
+                    set_deterministic_seed(embedding.step * gradient_step + j)
 
                 if clip_grad:
                     clip_grad_sched.step(hypernetwork.step)
@@ -780,6 +788,9 @@ Last saved image: {html.escape(last_saved_image)}<br/>
         sd_hijack_checkpoint.remove()
 
 
+
+        if shared.cmd_opts.deterministic_training:
+            reset_deterministic(old_deterministic_state)
 
     filename = os.path.join(shared.cmd_opts.hypernetwork_dir, f'{hypernetwork_name}.pt')
     hypernetwork.optimizer_name = optimizer_name
