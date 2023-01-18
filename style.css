@@ -290,26 +290,12 @@ input[type="range"]{
   min-height: unset !important;
 }
 
-#txt2img_progressbar, #img2img_progressbar, #ti_progressbar{
-  position: absolute;
-  z-index: 1000;
-  right: 0;
-  padding-left: 5px;
-  padding-right: 5px;
-  display: block;
-}
-
-#txt2img_progress_row, #img2img_progress_row{
-  margin-bottom: 10px;
-  margin-top: -18px;
-}
-
 .progressDiv{
     position: absolute;
     height: 20px;
     top: -20px;
     background: #b4c0cc;
-    border-radius: 8px !important;
+    border-radius: 3px !important;
 }
 
 .dark .progressDiv{
@@ -325,9 +311,10 @@ input[type="range"]{
     line-height: 20px;
     padding: 0 8px 0 0;
     text-align: right;
-    border-radius: 8px;
+    border-radius: 3px;
     overflow: visible;
     white-space: nowrap;
+    padding: 0 0.5em;
 }
 
 .livePreview{
