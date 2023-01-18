@@ -106,6 +106,19 @@ function formatTime(secs){
     }
 }
 
+function setTitle(progress){
+    var title = 'Stable Diffusion'
+
+    if(opts.show_progress_in_title && progress){
+        title = '[' + progress.trim() + '] ' + title;
+    }
+
+    if(document.title != title){
+        document.title =  title;
+    }
+}
+
+
 function randomId(){
     return "task(" + Math.random().toString(36).slice(2, 7) + Math.random().toString(36).slice(2, 7) + Math.random().toString(36).slice(2, 7)+")"
 }
@@ -117,23 +130,27 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
     var dateStart = new Date()
     var wasEverActive = false
     var parentProgressbar = progressbarContainer.parentNode
-    var parentGallery = gallery.parentNode
+    var parentGallery = gallery ? gallery.parentNode : null
 
     var divProgress = document.createElement('div')
     divProgress.className='progressDiv'
+    divProgress.style.display = opts.show_progressbar ? "" : "none"
     var divInner = document.createElement('div')
     divInner.className='progress'
 
     divProgress.appendChild(divInner)
     parentProgressbar.insertBefore(divProgress, progressbarContainer)
 
-    var livePreview = document.createElement('div')
-    livePreview.className='livePreview'
-    parentGallery.insertBefore(livePreview, gallery)
+    if(parentGallery){
+        var livePreview = document.createElement('div')
+        livePreview.className='livePreview'
+        parentGallery.insertBefore(livePreview, gallery)
+    }
 
     var removeProgressBar = function(){
+        setTitle("")
         parentProgressbar.removeChild(divProgress)
-        parentGallery.removeChild(livePreview)
+        if(parentGallery) parentGallery.removeChild(livePreview)
         atEnd()
     }
 
@@ -153,6 +170,7 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
             progressText = ""
 
             divInner.style.width = ((res.progress || 0) * 100.0) + '%'
+            divInner.style.background = res.progress ? "" : "transparent"
 
             if(res.progress > 0){
                 progressText = ((res.progress || 0) * 100.0).toFixed(0) + '%'
@@ -160,8 +178,13 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
 
             if(res.eta){
                 progressText += " ETA: " + formatTime(res.eta)
-            } else if(res.textinfo){
-                progressText += " " + res.textinfo
+            }
+
+
+            setTitle(progressText)
+
+            if(res.textinfo && res.textinfo.indexOf("\n") == -1){
+                progressText = res.textinfo + " " + progressText
             }
 
             divInner.textContent = progressText
@@ -181,8 +204,7 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
             }
 
 
-            if(res.live_preview){
-
+            if(res.live_preview && gallery){
                 var rect = gallery.getBoundingClientRect()
                 if(rect.width){
                     livePreview.style.width = rect.width + "px"

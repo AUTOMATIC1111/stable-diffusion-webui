@@ -95,6 +95,7 @@ class UpscalerData:
     def __init__(self, name: str, path: str, upscaler: Upscaler = None, scale: int = 4, model=None):
         self.name = name
         self.data_path = path
+        self.local_data_path = path
         self.scaler = upscaler
         self.scale = scale
         self.model = model

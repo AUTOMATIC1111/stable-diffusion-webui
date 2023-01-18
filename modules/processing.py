@@ -94,7 +94,7 @@ def txt2img_image_conditioning(sd_model, x, width, height):
     return image_conditioning
 
 
-class StableDiffusionProcessing():
+class StableDiffusionProcessing:
     """
     The first set of paramaters: sd_models -> do_not_reload_embeddings represent the minimum required to create a StableDiffusionProcessing
     """
@@ -102,7 +102,6 @@ class StableDiffusionProcessing():
         if sampler_index is not None:
             print("sampler_index argument for StableDiffusionProcessing does not do anything; use sampler_name", file=sys.stderr)
 
-        self.sd_model = sd_model
         self.outpath_samples: str = outpath_samples
         self.outpath_grids: str = outpath_grids
         self.prompt: str = prompt
@@ -155,6 +154,10 @@ class StableDiffusionProcessing():
         self.all_seeds = None
         self.all_subseeds = None
         self.iteration = 0
+
+    @property
+    def sd_model(self):
+        return shared.sd_model
 
     def txt2img_image_conditioning(self, x, width=None, height=None):
         self.is_using_inpainting_conditioning = self.sd_model.model.conditioning_key in {'hybrid', 'concat'}
@@ -236,7 +239,6 @@ class StableDiffusionProcessing():
         raise NotImplementedError()
 
     def close(self):
-        self.sd_model = None
         self.sampler = None
 
 
@@ -471,7 +473,6 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
 
             if k == 'sd_model_checkpoint':
                 sd_models.reload_model_weights()  # make onchange call for changing SD model
-                p.sd_model = shared.sd_model
 
             if k == 'sd_vae':
                 sd_vae.reload_vae_weights()  # make onchange call for changing VAE
@@ -608,6 +609,9 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 samples_ddim = p.sample(conditioning=c, unconditional_conditioning=uc, seeds=seeds, subseeds=subseeds, subseed_strength=p.subseed_strength, prompts=prompts)
 
             x_samples_ddim = [decode_first_stage(p.sd_model, samples_ddim[i:i+1].to(dtype=devices.dtype_vae))[0].cpu() for i in range(samples_ddim.size(0))]
+            for x in x_samples_ddim:
+                devices.test_for_nans(x, "vae")
+
             x_samples_ddim = torch.stack(x_samples_ddim).float()
             x_samples_ddim = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
 
