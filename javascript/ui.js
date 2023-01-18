@@ -109,6 +109,13 @@ function get_extras_tab_index(){
     return [get_tab_index('mode_extras'), get_tab_index('extras_resize_mode'), ...args]
 }
 
+function get_img2img_tab_index() {
+    let res = args_to_array(arguments)
+    res.splice(-2)
+    res[0] = get_tab_index('mode_img2img')
+    return res
+}
+
 function create_submit_args(args){
     res = []
     for(var i=0;i<args.length;i++){

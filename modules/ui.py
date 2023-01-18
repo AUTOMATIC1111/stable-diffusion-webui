@@ -204,9 +204,31 @@ def apply_styles(prompt, prompt_neg, style1_name, style2_name):
     return [gr.Textbox.update(value=prompt), gr.Textbox.update(value=prompt_neg), gr.Dropdown.update(value="None"), gr.Dropdown.update(value="None")]
 
 
+def process_interrogate(interrogation_function, mode, ii_input_dir, ii_output_dir, *ii_singles):
+    if mode in {0, 1, 3, 4}:
+        return [interrogation_function(ii_singles[mode]), None]
+    elif mode == 2:
+        return [interrogation_function(ii_singles[mode]["image"]), None]
+    elif mode == 5:
+        assert not shared.cmd_opts.hide_ui_dir_config, "Launched with --hide-ui-dir-config, batch img2img disabled"
+        images = shared.listfiles(ii_input_dir)
+        print(f"Will process {len(images)} images.")
+        if ii_output_dir != "":
+            os.makedirs(ii_output_dir, exist_ok=True)
+        else:
+            ii_output_dir = ii_input_dir
+
+        for image in images:
+            img = Image.open(image)
+            filename = os.path.basename(image)
+            left, _ = os.path.splitext(filename)
+            print(interrogation_function(img), file=open(os.path.join(ii_output_dir, left + ".txt"), 'a'))
+
+        return [gr_show(True), None]
+
+
 def interrogate(image):
     prompt = shared.interrogator.interrogate(image.convert("RGB"))
-
     return gr_show(True) if prompt is None else prompt
 
 
@@ -983,19 +1005,33 @@ def create_ui():
                 show_progress=False,
             )
 
+            interrogate_args = dict(
+                _js="get_img2img_tab_index",
+                inputs=[
+                    dummy_component,
+                    img2img_batch_input_dir,
+                    img2img_batch_output_dir,
+                    init_img,
+                    sketch,
+                    init_img_with_mask,
+                    inpaint_color_sketch,
+                    init_img_inpaint,
+                ],
+                outputs=[img2img_prompt, dummy_component],
+                show_progress=False,
+            )
+
             img2img_prompt.submit(**img2img_args)
             submit.click(**img2img_args)
 
             img2img_interrogate.click(
-                fn=interrogate,
-                inputs=[init_img],
-                outputs=[img2img_prompt],
+                fn=lambda *args : process_interrogate(interrogate, *args),
+                **interrogate_args,
             )
 
             img2img_deepbooru.click(
-                fn=interrogate_deepbooru,
-                inputs=[init_img],
-                outputs=[img2img_prompt],
+                fn=lambda *args : process_interrogate(interrogate_deepbooru, *args),
+                **interrogate_args,
             )
 
             prompts = [(txt2img_prompt, txt2img_negative_prompt), (img2img_prompt, img2img_negative_prompt)]
