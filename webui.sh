@@ -165,7 +165,7 @@ else
     printf "\n%s\n" "${delimiter}"
     printf "Launching launch.py..."
     printf "\n%s\n" "${delimiter}"
-    gpu_info=$(lspci | grep VGA)
+    gpu_info=$(lspci 2>/dev/null | grep VGA)
     if echo "$gpu_info" | grep -q "AMD"
     then
         if [[ -z "${TORCH_COMMAND}" ]]

@@ -81,8 +81,13 @@ function request(url, data, handler, errorHandler){
     xhr.onreadystatechange = function () {
         if (xhr.readyState === 4) {
             if (xhr.status === 200) {
-                var js = JSON.parse(xhr.responseText);
-                handler(js)
+                try {
+                    var js = JSON.parse(xhr.responseText);
+                    handler(js)
+                } catch (error) {
+                    console.error(error);
+                    errorHandler()
+                }
             } else{
                 errorHandler()
             }
@@ -155,7 +160,7 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
     }
 
     var fun = function(id_task, id_live_preview){
-        request("/internal/progress", {"id_task": id_task, "id_live_preview": id_live_preview}, function(res){
+        request("./internal/progress", {"id_task": id_task, "id_live_preview": id_live_preview}, function(res){
             if(res.completed){
                 removeProgressBar()
                 return

@@ -20,7 +20,7 @@ import numpy as np
 from PIL import Image, PngImagePlugin
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_gradio_call
 
-from modules import sd_hijack, sd_models, localization, script_callbacks, ui_extensions, deepbooru
+from modules import sd_hijack, sd_models, localization, script_callbacks, ui_extensions, deepbooru, sd_vae
 from modules.ui_components import FormRow, FormGroup, ToolButton, FormHTML
 from modules.paths import script_path
 
@@ -439,7 +439,7 @@ def apply_setting(key, value):
         opts.data_labels[key].onchange()
 
     opts.save(shared.config_filename)
-    return value
+    return getattr(opts, key)
 
 
 def update_generation_info(generation_info, html_info, img_index):
@@ -595,6 +595,16 @@ def ordered_ui_categories():
 
     for i, category in sorted(enumerate(shared.ui_reorder_categories), key=lambda x: user_order.get(x[1], x[0] * 2 + 0)):
         yield category
+
+
+def get_value_for_setting(key):
+    value = getattr(opts, key)
+
+    info = opts.data_labels[key]
+    args = info.component_args() if callable(info.component_args) else info.component_args or {}
+    args = {k: v for k, v in args.items() if k not in {'precision'}}
+
+    return gr.update(value=value, **args)
 
 
 def create_ui():
@@ -1185,7 +1195,7 @@ def create_ui():
             with gr.Column(variant='compact'):
                 gr.HTML(value="<p style='margin-bottom: 2.5em'>A merger of the two checkpoints will be generated in your <b>checkpoint</b> directory.</p>")
 
-                with FormRow():
+                with FormRow(elem_id="modelmerger_models"):
                     primary_model_name = gr.Dropdown(modules.sd_models.checkpoint_tiles(), elem_id="modelmerger_primary_model_name", label="Primary model (A)")
                     create_refresh_button(primary_model_name, modules.sd_models.list_models, lambda: {"choices": modules.sd_models.checkpoint_tiles()}, "refresh_checkpoint_A")
 
@@ -1197,19 +1207,27 @@ def create_ui():
 
                 custom_name = gr.Textbox(label="Custom Name (Optional)", elem_id="modelmerger_custom_name")
                 interp_amount = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Multiplier (M) - set to 0 to get model A', value=0.3, elem_id="modelmerger_interp_amount")
-                interp_method = gr.Radio(choices=["Weighted sum", "Add difference"], value="Weighted sum", label="Interpolation Method", elem_id="modelmerger_interp_method")
+                interp_method = gr.Radio(choices=["No interpolation", "Weighted sum", "Add difference"], value="Weighted sum", label="Interpolation Method", elem_id="modelmerger_interp_method")
 
                 with FormRow():
                     checkpoint_format = gr.Radio(choices=["ckpt", "safetensors"], value="ckpt", label="Checkpoint format", elem_id="modelmerger_checkpoint_format")
                     save_as_half = gr.Checkbox(value=False, label="Save as float16", elem_id="modelmerger_save_as_half")
 
-                config_source = gr.Radio(choices=["A, B or C", "B", "C", "Don't"], value="A, B or C", label="Copy config from", type="index", elem_id="modelmerger_config_method")
+                with FormRow():
+                    with gr.Column():
+                        config_source = gr.Radio(choices=["A, B or C", "B", "C", "Don't"], value="A, B or C", label="Copy config from", type="index", elem_id="modelmerger_config_method")
+
+                    with gr.Column():
+                        with FormRow():
+                            bake_in_vae = gr.Dropdown(choices=["None"] + list(sd_vae.vae_dict), value="None", label="Bake in VAE", elem_id="modelmerger_bake_in_vae")
+                            create_refresh_button(bake_in_vae, sd_vae.refresh_vae_list, lambda: {"choices": ["None"] + list(sd_vae.vae_dict)}, "modelmerger_refresh_bake_in_vae")
 
                 with gr.Row():
                     modelmerger_merge = gr.Button(elem_id="modelmerger_merge", value="Merge", variant='primary')
 
-            with gr.Column(variant='panel'):
-                submit_result = gr.Textbox(elem_id="modelmerger_result", show_label=False)
+            with gr.Column(variant='compact', elem_id="modelmerger_results_container"):
+                with gr.Group(elem_id="modelmerger_results_panel"):
+                    modelmerger_result = gr.HTML(elem_id="modelmerger_result", show_label=False)
 
     with gr.Blocks(analytics_enabled=False) as train_interface:
         with gr.Row().style(equal_height=False):
@@ -1260,6 +1278,7 @@ def create_ui():
                         process_flip = gr.Checkbox(label='Create flipped copies', elem_id="train_process_flip")
                         process_split = gr.Checkbox(label='Split oversized images', elem_id="train_process_split")
                         process_focal_crop = gr.Checkbox(label='Auto focal point crop', elem_id="train_process_focal_crop")
+                        process_multicrop = gr.Checkbox(label='Auto-sized crop', elem_id="train_process_multicrop")
                         process_caption = gr.Checkbox(label='Use BLIP for caption', elem_id="train_process_caption")
                         process_caption_deepbooru = gr.Checkbox(label='Use deepbooru for caption', visible=True, elem_id="train_process_caption_deepbooru")
 
@@ -1272,7 +1291,19 @@ def create_ui():
                         process_focal_crop_entropy_weight = gr.Slider(label='Focal point entropy weight', value=0.15, minimum=0.0, maximum=1.0, step=0.05, elem_id="train_process_focal_crop_entropy_weight")
                         process_focal_crop_edges_weight = gr.Slider(label='Focal point edges weight', value=0.5, minimum=0.0, maximum=1.0, step=0.05, elem_id="train_process_focal_crop_edges_weight")
                         process_focal_crop_debug = gr.Checkbox(label='Create debug image', elem_id="train_process_focal_crop_debug")
-
+                    
+                    with gr.Column(visible=False) as process_multicrop_col:
+                        gr.Markdown('Each image is center-cropped with an automatically chosen width and height.')
+                        with gr.Row():
+                            process_multicrop_mindim = gr.Slider(minimum=64, maximum=2048, step=8, label="Dimension lower bound", value=384, elem_id="train_process_multicrop_mindim")
+                            process_multicrop_maxdim = gr.Slider(minimum=64, maximum=2048, step=8, label="Dimension upper bound", value=768, elem_id="train_process_multicrop_maxdim")
+                        with gr.Row():
+                            process_multicrop_minarea = gr.Slider(minimum=64*64, maximum=2048*2048, step=1, label="Area lower bound", value=64*64, elem_id="train_process_multicrop_minarea")
+                            process_multicrop_maxarea = gr.Slider(minimum=64*64, maximum=2048*2048, step=1, label="Area upper bound", value=640*640, elem_id="train_process_multicrop_maxarea")
+                        with gr.Row():
+                            process_multicrop_objective = gr.Radio(["Maximize area", "Minimize error"], value="Maximize area", label="Resizing objective", elem_id="train_process_multicrop_objective")
+                            process_multicrop_threshold = gr.Slider(minimum=0, maximum=1, step=0.01, label="Error threshold", value=0.1, elem_id="train_process_multicrop_threshold")
+   
                     with gr.Row():
                         with gr.Column(scale=3):
                             gr.HTML(value="")
@@ -1292,6 +1323,12 @@ def create_ui():
                         fn=lambda show: gr_show(show),
                         inputs=[process_focal_crop],
                         outputs=[process_focal_crop_row],
+                    )
+
+                    process_multicrop.change(
+                        fn=lambda show: gr_show(show),
+                        inputs=[process_multicrop],
+                        outputs=[process_multicrop_col],
                     )
 
                 def get_textual_inversion_template_names():
@@ -1413,6 +1450,13 @@ def create_ui():
                 process_focal_crop_entropy_weight,
                 process_focal_crop_edges_weight,
                 process_focal_crop_debug,
+                process_multicrop,
+                process_multicrop_mindim,
+                process_multicrop_maxdim,
+                process_multicrop_minarea,
+                process_multicrop_maxarea,
+                process_multicrop_objective,
+                process_multicrop_threshold,
             ],
             outputs=[
                 ti_output,
@@ -1566,7 +1610,7 @@ def create_ui():
 
         opts.save(shared.config_filename)
 
-        return gr.update(value=value), opts.dumpjson()
+        return get_value_for_setting(key), opts.dumpjson()
 
     with gr.Blocks(analytics_enabled=False) as settings_interface:
         with gr.Row():
@@ -1738,7 +1782,7 @@ def create_ui():
         component_keys = [k for k in opts.data_labels.keys() if k in component_dict]
 
         def get_settings_values():
-            return [getattr(opts, key) for key in component_keys]
+            return [get_value_for_setting(key) for key in component_keys]
 
         demo.load(
             fn=get_settings_values,
@@ -1753,12 +1797,15 @@ def create_ui():
                 print("Error loading/saving model file:", file=sys.stderr)
                 print(traceback.format_exc(), file=sys.stderr)
                 modules.sd_models.list_models()  # to remove the potentially missing models from the list
-                return [f"Error merging checkpoints: {e}"] + [gr.Dropdown.update(choices=modules.sd_models.checkpoint_tiles()) for _ in range(4)]
+                return [*[gr.Dropdown.update(choices=modules.sd_models.checkpoint_tiles()) for _ in range(4)], f"Error merging checkpoints: {e}"]
             return results
 
+        modelmerger_merge.click(fn=lambda: '', inputs=[], outputs=[modelmerger_result])
         modelmerger_merge.click(
-            fn=modelmerger,
+            fn=wrap_gradio_gpu_call(modelmerger, extra_outputs=lambda: [gr.update() for _ in range(4)]),
+            _js='modelmerger',
             inputs=[
+                dummy_component,
                 primary_model_name,
                 secondary_model_name,
                 tertiary_model_name,
@@ -1768,13 +1815,14 @@ def create_ui():
                 custom_name,
                 checkpoint_format,
                 config_source,
+                bake_in_vae,
             ],
             outputs=[
-                submit_result,
                 primary_model_name,
                 secondary_model_name,
                 tertiary_model_name,
                 component_dict['sd_model_checkpoint'],
+                modelmerger_result,
             ]
         )
 

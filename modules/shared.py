@@ -20,10 +20,11 @@ from modules.paths import models_path, script_path, sd_path
 
 demo = None
 
+sd_default_config = os.path.join(script_path, "configs/v1-inference.yaml")
 sd_model_file = os.path.join(script_path, 'model.ckpt')
 default_sd_model_file = sd_model_file
 parser = argparse.ArgumentParser()
-parser.add_argument("--config", type=str, default=os.path.join(script_path, "configs/v1-inference.yaml"), help="path to config which constructs model",)
+parser.add_argument("--config", type=str, default=sd_default_config, help="path to config which constructs model",)
 parser.add_argument("--ckpt", type=str, default=sd_model_file, help="path to checkpoint of stable diffusion model; if specified, this checkpoint will be added to the list of checkpoints and loaded",)
 parser.add_argument("--ckpt-dir", type=str, default=None, help="Path to directory with stable diffusion checkpoints")
 parser.add_argument("--vae-dir", type=str, default=None, help="Path to directory with VAE files")
@@ -453,7 +454,7 @@ options_templates.update(options_section(('ui', "User interface"), {
     "js_modal_lightbox_initially_zoomed": OptionInfo(True, "Show images zoomed in by default in full page image viewer"),
     "show_progress_in_title": OptionInfo(True, "Show generation progress in window title."),
     "samplers_in_dropdown": OptionInfo(True, "Use dropdown for sampler selection instead of radio group"),
-    "dimensions_and_batch_together": OptionInfo(True, "Show Witdth/Height and Batch sliders in same row"),
+    "dimensions_and_batch_together": OptionInfo(True, "Show Width/Height and Batch sliders in same row"),
     'quicksettings': OptionInfo("sd_model_checkpoint", "Quicksettings list"),
     'ui_reorder': OptionInfo(", ".join(ui_reorder_categories), "txt2img/img2img UI item order"),
     'localization': OptionInfo("None", "Localization (requires restart)", gr.Dropdown, lambda: {"choices": ["None"] + list(localization.localizations.keys())}, refresh=lambda: localization.list_localizations(cmd_opts.localizations_dir)),

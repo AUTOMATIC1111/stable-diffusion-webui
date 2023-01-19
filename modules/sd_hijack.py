@@ -69,6 +69,13 @@ def undo_optimizations():
     ldm.modules.diffusionmodules.model.AttnBlock.forward = diffusionmodules_model_AttnBlock_forward
 
 
+def fix_checkpoint():
+    """checkpoints are now added and removed in embedding/hypernet code, since torch doesn't want
+    checkpoints to be added when not training (there's a warning)"""
+
+    pass
+
+
 class StableDiffusionModelHijack:
     fixes = None
     comments = []
