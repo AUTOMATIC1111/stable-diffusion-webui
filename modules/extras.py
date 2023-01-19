@@ -307,13 +307,12 @@ def run_modelmerger(primary_model_name, secondary_model_name, tertiary_model_nam
     }
     theta_func1, theta_func2 = theta_funcs[interp_method]
 
-    tertiary_model_info = None
     if theta_func1 and not tertiary_model_name:
         shared.state.textinfo = "Failed: Interpolation method requires a tertiary model."
         shared.state.end()
         return [f"Failed: Interpolation method ({interp_method}) requires a tertiary model."] + [gr.Dropdown.update(choices=sd_models.checkpoint_tiles()) for _ in range(4)]
-    else:
-        tertiary_model_info = sd_models.checkpoints_list.get(tertiary_model_name, None)
+    
+    tertiary_model_info = sd_models.checkpoints_list[tertiary_model_name] if theta_func1 else None
 
     result_is_inpainting_model = False
 
