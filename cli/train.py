@@ -276,7 +276,10 @@ async def train(params):
     })
     log.info({ 'learn-rate': args.train_embedding.learn_rate })
     log.debug({ 'train args': args.train_embedding })
+    t0 = time.time()
     res = await post('/sdapi/v1/train/embedding', args.train_embedding)
+    t1 = time.time()
+    log.info({ 'train embedding finished': round(t1 - t0) })
     log.debug({ 'train end': res.info })
     return
 
@@ -316,6 +319,9 @@ async def monitor(params):
     while True:
         await asyncio.sleep(10)
         res = await progress()
+        if not 'state' in res:
+            log.info({ 'monitor disconnected': res })
+            break
         if (res.state.job_count == params.steps and res.state.job_no >= res.state.job_count) or (res.eta_relative < 0) or (res.interrupted) or (res.state.job_count == 0): # need exit case if interrupted or failed
             if res.interrupted:
                 log.info({ 'monitor interrupted': { 'embedding': params.name } })
