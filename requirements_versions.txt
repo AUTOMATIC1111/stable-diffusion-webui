@@ -7,6 +7,7 @@ gradio==3.16.2
 numpy==1.23.5
 omegaconf==2.2.3
 Pillow==9.4.0
+protobuf==3.20.3
 pytorch_lightning==1.7.7
 realesrgan==0.3.0
 scikit-image==0.19.2
