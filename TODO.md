@@ -13,12 +13,9 @@ Things I'm actively investigating...
 ## Embeddings
 
 Need to study more to determine best out-of-the-box settings:
-- Experiment with multiple init words: same as number of vectors
 - Impact of Codeformer
 - Impact of Hires fix:
   - e.g 25 steps and denoising strength 0.25-0.7
-- Gradient accumulation
-- Dynamic learning-rates
 
 ## SDAPI
 
@@ -68,4 +65,3 @@ Cool stuff that is not integrated anywhere...
 - Bunch of stuff:<https://pharmapsychotic.com/tools.html>
 - Prevalent colors to interrogate
 - Auto-Sort inputs by face recognition
-- Use semantic segmentation to remove background from inputs

@@ -244,11 +244,19 @@ async def create(params):
         log.info({ 'deleting existing embedding': { 'name': params.name } })
         os.remove(params.name)
     args.create_embedding.name = params.name
+    words = params.init.split(',')
+    if len(words) > vectors:
+        params.init = ','.join(words[:vectors])
+        log.warning({ 'create embedding init words cut': params.init })
     args.create_embedding.init_text = params.init
     args.create_embedding.num_vectors_per_token = vectors
     log.debug({ 'create args': args.create_embedding })
     res = await post('/sdapi/v1/create/embedding', args.create_embedding)
-    log.info({ 'create embedding': { 'name': params.name, 'init': params.init, 'vectors': vectors, 'message': res.info } })
+    if 'info' in res:
+        log.info({ 'create embedding': { 'name': params.name, 'init': params.init, 'vectors': vectors, 'message': res.info } })
+    else:
+        log.error({ 'create failed:', res })
+        return None
     log.debug({ 'create end' })
     return params.name
 

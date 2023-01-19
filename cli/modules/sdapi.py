@@ -81,7 +81,10 @@ def getsync(endpoint: str, json: dict = None):
 
 async def post(endpoint: str, json: dict = None):
     global sess # pylint: disable=global-statement
-    sess = sess if sess is not None else await session()
+    # sess = sess if sess is not None else await session()
+    if sess and not sess.closed:
+        await sess.close()
+    sess = await session()
     try:
         async with sess.post(url = endpoint, json = json) as req:
             res = await result(req)
