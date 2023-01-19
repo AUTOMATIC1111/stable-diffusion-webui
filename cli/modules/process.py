@@ -20,6 +20,8 @@ from sdapi import postsync
 params = Map({
     'src': '', # source folder
     'dst': '', # destination folder
+    'extract_face': True, # extract face from image
+    'extract_body': True, # extract face from image
     'clear_dst': True, # remove all files from destination at the start
     'target_size': 512, # target resolution
     'square_images': True, # should output images be squared
@@ -34,6 +36,10 @@ params = Map({
     'body_pad': 0.2,  # pad body image percentage
     'body_model': 2, # body model to use 0/low 1/medium 2/high
     'body_blur_score': 1.6, # max score for body blur detection
+    'segmentation_face': True, # segmentation enabled
+    'segmentation_body': False, # segmentation enabled
+    'segmentation_model': 0, # segmentation model 0/general 1/landscape
+    'segmentation_background': (192, 192, 192), # segmentation background color
     'interrogate_model': 'clip' # interrogate model
 })
 
@@ -52,7 +58,21 @@ def detect_blur(image):
     return mean
 
 
+def segmentation(image):
+    with mp.solutions.selfie_segmentation.SelfieSegmentation(model_selection=params.segmentation_model) as selfie_segmentation:
+        data = np.array(image)
+        results = selfie_segmentation.process(data)
+        condition = np.stack((results.segmentation_mask,) * 3, axis=-1) > 0.1
+        background = np.zeros(data.shape, dtype=np.uint8)
+        background[:] = params.segmentation_background
+        data = np.where(condition, data, background) # consider using a joint bilateral filter instead of pure combine
+        segmented = Image.fromarray(data)
+        return segmented
+
+
 def extract_face(img):
+    if not params.extract_face:
+        return None, True
     if img.mode == 'RGBA':
         img = img.convert('RGB')
     scale = max(img.size[0], img.size[1]) / params.target_size
@@ -80,6 +100,8 @@ def extract_face(img):
     if params.square_images:
         squared = Image.new('RGB', (params.target_size, params.target_size))
         squared.paste(cropped, (0, 0))
+        if params.segmentation_face:
+           squared = segmentation(squared)
     else:
         squared = cropped
     blur = detect_blur(squared)
@@ -93,6 +115,8 @@ def extract_face(img):
 
 
 def extract_body(img):
+    if not params.extract_body:
+        return None, True
     if img.mode == 'RGBA':
         img = img.convert('RGB')
     scale = max(img.size[0], img.size[1]) / params.target_size
@@ -122,6 +146,8 @@ def extract_body(img):
     if params.square_images:
         squared = Image.new('RGB', (params.target_size, params.target_size))
         squared.paste(cropped, (0, 0))
+        if params.segmentation_body:
+           squared = segmentation(squared)
     else:
         squared = cropped
     blur = detect_blur(squared)
