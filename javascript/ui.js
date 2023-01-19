@@ -176,8 +176,6 @@ function modelmerger(){
     var id = randomId()
     requestProgress(id, gradioApp().getElementById('modelmerger_results_panel'), null, function(){})
 
-    gradioApp().getElementById('modelmerger_result').innerHTML = ''
-
     var res = create_submit_args(arguments)
     res[0] = id
     return res
