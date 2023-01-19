@@ -128,7 +128,8 @@
         "PLMS",
         "DPM++ 2S a",
         "DPM++ SDE Karras",
-        "DPM2 a Karras"
+        "DPM2 a Karras",
+        "LMS Karras"
     ],
     "eta_ddim": 0.0,
     "eta_ancestral": 1.0,

@@ -29,7 +29,14 @@
       "process_focal_crop_edges_weight": 0.5,
       "process_focal_crop_debug": false,
       "split_threshold": 0.5,
-      "overlap_ratio": 0.2
+      "overlap_ratio": 0.2,
+      "process_multicrop": null,
+      "process_multicrop_mindim": null,
+      "process_multicrop_maxdim": null,
+      "process_multicrop_minarea": null,
+      "process_multicrop_maxarea": null,
+      "process_multicrop_objective": null,
+      "process_multicrop_threshold": null
   },
   "train_embedding": {
       "id_task": 0,

@@ -16,6 +16,10 @@ from util import log, Map
 import sdapi as sdapi
 
 
+stats = { 'captions': {}, 'keywords': {} }
+exclude = ['a', 'in', 'on', 'out', 'at', 'the', 'and', 'with', 'next', 'to', 'it', 'for', 'of', 'into', 'that']
+
+
 def decode(encoding):
     if encoding.startswith("data:image/"):
         encoding = encoding.split(";")[1].split(",")[1]
@@ -25,11 +29,20 @@ def decode(encoding):
 def encode(f):
     image = Image.open(f)
     exif = image.getexif()
+    if image.mode == 'RGBA':
+        image = image.convert('RGB')
     with io.BytesIO() as stream:
         image.save(stream, 'JPEG', exif = exif)
         values = stream.getvalue()
         encoded = base64.b64encode(values).decode()
         return encoded
+
+
+def print_summary():
+    captions = dict(sorted(stats['captions'].items(), key=lambda x:x[1], reverse=True))
+    log.info({ 'caption stats': captions })
+    keywords = dict(sorted(stats['keywords'].items(), key=lambda x:x[1], reverse=True))
+    log.info({ 'keyword stats': keywords })
 
 
 async def interrogate(f):
@@ -41,7 +54,6 @@ async def interrogate(f):
     # run clip
     json.model = 'clip'
     res = await sdapi.post('/sdapi/v1/interrogate', json)
-    # res = sdapi.postsync('/sdapi/v1/interrogate', json)
     caption = ""
     style = ""
     if 'caption' in res:
@@ -50,18 +62,22 @@ async def interrogate(f):
         if ', by' in caption:
             style = caption.split(', by')[1].strip()
             log.info({ 'interrogate style': style })
+        for word in caption.split(' '):
+            if word not in exclude:
+                stats['captions'][word] = stats['captions'][word] + 1 if word in stats['captions'] else 1
     else:
         log.error({ 'interrogate clip error': res })
     # run booru
     json.model = 'deepdanbooru'
     res = await sdapi.post('/sdapi/v1/interrogate', json)
-    # res = sdapi.postsync('/sdapi/v1/interrogate', json)
     keywords = {}
     if 'caption' in res:
         for term in res.caption.split(', '):
             term = term.replace('(', '').replace(')', '').split(':')
             keywords[term[0]] = term[1]
         keywords = dict(sorted(keywords.items(), key=lambda x:x[1], reverse=True))
+        for word in keywords.items():
+            stats['keywords'][word[0]] = stats['keywords'][word[0]] + 1 if word[0] in stats['keywords'] else 1
         log.info({ 'interrogate keywords': keywords })
     else:
         log.error({ 'interrogate booru error': res })
@@ -80,12 +96,13 @@ async def main():
             elif os.path.isdir(arg):
                 for root, _dirs, files in os.walk(arg):
                     for f in files:
-                        await interrogate(os.path.join(root, f))
+                        caption, keywords, _style = await interrogate(os.path.join(root, f))
             else:
                 log.error({ 'interrogate unknown file type': arg })
         else:
             log.error({ 'interrogate file missing': arg })
     await sdapi.close()
+    print_summary()
 
 
 if __name__ == "__main__":

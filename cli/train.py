@@ -264,18 +264,37 @@ async def create(params):
 async def train(params):
     log.debug({ 'train start' })
     args.train_embedding.embedding_name = params.name
-    args.train_embedding.data_root = args.preprocess.process_dst
+
     imgs = [f for f in os.listdir(args.preprocess.process_dst) if os.path.isfile(os.path.join(args.preprocess.process_dst, f)) and filetype.is_image(os.path.join(args.preprocess.process_dst, f))]
+    args.train_embedding.data_root = args.preprocess.process_dst
     if len(imgs) == 0:
         log.error({ 'train no input images in folder': args.preprocess.process_dst })
         return
+
     if params.grad == -1:
-        grad = (len(imgs) // args.train_embedding.batch_size)
-        args.train_embedding.gradient_step = max(grad, 30)
+        args.train_embedding.gradient_step = len(imgs) // args.train_embedding.batch_size
         log.info({ 'dynamic gradient step': args.train_embedding.gradient_step })
         if params.steps == -1:
-            args.train_embedding.steps = 5000 // args.train_embedding.gradient_step
+            args.train_embedding.steps = params.maxsteps // args.train_embedding.gradient_step
             log.info({ 'dynamic steps': args.train_embedding.steps })
+    
+    epoch_size = args.train_embedding.batch_size * args.train_embedding.gradient_step
+    if args.train_embedding.create_image_every == -1:
+        args.train_embedding.create_image_every = args.train_embedding.steps // 10
+    if args.train_embedding.save_embedding_every == -1:
+        args.train_embedding.save_embedding_every = args.train_embedding.steps // 10
+    if args.train_embedding.learn_rate == -1:
+        loss_args = {
+            "steps": args.train_embedding.steps,
+            "step": epoch_size,
+            "loss_start": params.rstart,
+            "loss_end": params.rend,
+            "loss_type": 'power',
+            "power": params.rdescend
+        }
+        args.train_embedding.learn_rate = gen_loss_rate_str(**loss_args)
+        log.debug({ 'learning rate': args.train_embedding.learn_rate, 'params': loss_args })
+
     log.info({ 'train embedding': {
         'name': params.name,
         'source': args.preprocess.process_dst,
@@ -284,7 +303,7 @@ async def train(params):
         'batch': args.train_embedding.batch_size,
         'gradient-step': args.train_embedding.gradient_step,
         'sampling': args.train_embedding.latent_sampling_method,
-        'epoch-size': args.train_embedding.batch_size * args.train_embedding.gradient_step }
+        'epoch-size': epoch_size }
     })
     log.info({ 'learn-rate': args.train_embedding.learn_rate })
     log.debug({ 'train args': args.train_embedding })
@@ -389,11 +408,12 @@ async def main():
     parser.add_argument("--init", type = str, default = "person", required = False, help = "initialization class, default: %(default)s")
     parser.add_argument("--dst", type = str, default = "/tmp", required = False, help = "destination image folder for processed images, default: %(default)s")
     parser.add_argument("--steps", type = int, default = -1, required = False, help = "training steps, default: %(default)s")
+    parser.add_argument("--maxsteps", type = int, default = 2500, required = False, help = "max training steps used when dynamic gradient is active, default: %(default)s")
     parser.add_argument("--vectors", type = int, default = -1, required = False, help = "number of vectors per token, default: dynamic based on number of input images")
     parser.add_argument("--batch", type = int, default = 1, required = False, help = "batch size, default: %(default)s")
     parser.add_argument("--rate", type = str, default = "", required = False, help = "learning rate, default: dynamic")
     parser.add_argument("--rstart", type = float, default = 0.01, required = False, help = "starting learn rate if using dynamic rate, default: %(default)s")
-    parser.add_argument("--rend", type = float, default = 0.0001, required = False, help = "ending learn rate if using dynamic rate, default: %(default)s")
+    parser.add_argument("--rend", type = float, default = 0.0005, required = False, help = "ending learn rate if using dynamic rate, default: %(default)s")
     parser.add_argument("--rdescend", type = float, default = 2, required = False, help = "learn rate descend power when using dynamic rate, default: %(default)s")
     parser.add_argument("--grad", type = int, default = -1, required = False, help = "accumulate gradient over n images, default: : %(default)s")
     parser.add_argument("--type", type = str, default = 'subject', required = False, help = "training type: subject/style/unknown, default: %(default)s")
@@ -444,22 +464,6 @@ async def main():
         args.train_embedding.learn_rate = params.rate
     if params.grad > -1:
         args.train_embedding.gradient_step = params.grad
-    epoch_size = args.train_embedding.batch_size * args.train_embedding.gradient_step
-    if args.train_embedding.create_image_every == -1:
-        args.train_embedding.create_image_every = epoch_size
-    if args.train_embedding.save_embedding_every == -1:
-        args.train_embedding.save_embedding_every = epoch_size
-    if args.train_embedding.learn_rate == -1:
-        loss_args = {
-            "steps": args.train_embedding.steps,
-            "step": epoch_size,
-            "loss_start": params.rstart,
-            "loss_end": params.rend,
-            "loss_type": 'power',
-            "power": params.rdescend
-        }
-        args.train_embedding.learn_rate = gen_loss_rate_str(**loss_args)
-        log.debug({ 'learning rate': args.train_embedding.learn_rate, 'params': loss_args })
     if params.type == 'subject':
         if params.skipcaption:
             args.train_embedding.template_filename = 'subject.txt'

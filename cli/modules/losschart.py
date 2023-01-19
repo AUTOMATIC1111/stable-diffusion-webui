@@ -34,7 +34,8 @@ def plot(logdir: str, name: str):
 
     step, loss, rate = plt.np.loadtxt(f, delimiter = ',', skiprows = 1, usecols = [0, 3, 4], unpack = True)
     d = settings(logdir, name)
-    window = d.get('gradient_step', 1) * d.get('batch_size', 1)
+    # window = d.get('gradient_step', 1) * d.get('batch_size', 1)
+    window = d.get('save_embedding_every', 1)
     try:
         log.debug({ 'loss plot': name, 'output': img, 'data': f, 'records': len(step) })
     except:

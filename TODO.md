@@ -1,10 +1,8 @@
-# Merge repos
+# Publish extensions
 
-- Move sd-extensions/scripts/save-steps-animation script to automatic/extensions-builtin
-- Move sd-extensions/api to automatic/cli
-- [https://github.com/vladmandic/automatic]
-- [https://github.com/vladmandic/sd-extensions]
-- [https://github.com/vladmandic/generative-art]
+- `sd-extension-aesthetic-scorer`
+- `sd-extension-steps-animation`
+- `sd-extension-system-info`
 
 # Investigating
 
@@ -16,6 +14,7 @@ Need to study more to determine best out-of-the-box settings:
 - Impact of Codeformer
 - Impact of Hires fix:
   - e.g 25 steps and denoising strength 0.25-0.7
+- Impact of non-square target resolution
 
 ## SDAPI
 
