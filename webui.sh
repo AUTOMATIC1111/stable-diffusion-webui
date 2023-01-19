@@ -105,10 +105,14 @@ fi
 
 # Check prerequisites
 gpu_info=$(lspci 2>/dev/null | grep VGA)
-if echo "$gpu_info" | grep -qE "Navi (1|2)"
-then
-    export HSA_OVERRIDE_GFX_VERSION=10.3.0
-fi
+case "$gpu_info" in
+    *"Navi 1"*|*"Navi 2"*) export HSA_OVERRIDE_GFX_VERSION=10.3.0
+    ;;
+    *"Renoir"*) export HSA_OVERRIDE_GFX_VERSION=9.0.0
+    ;;
+    *) 
+    ;;
+esac
 if echo "$gpu_info" | grep -q "AMD" && [[ -z "${TORCH_COMMAND}" ]]
 then
     export TORCH_COMMAND="pip install torch torchvision --extra-index-url https://download.pytorch.org/whl/rocm5.2"
