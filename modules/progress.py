@@ -67,10 +67,13 @@ def progressapi(req: ProgressRequest):
 
     progress = 0
 
-    if shared.state.job_count > 0:
-        progress += shared.state.job_no / shared.state.job_count
-    if shared.state.sampling_steps > 0:
-        progress += 1 / shared.state.job_count * shared.state.sampling_step / shared.state.sampling_steps
+    job_count, job_no = shared.state.job_count, shared.state.job_no
+    sampling_steps, sampling_step = shared.state.sampling_steps, shared.state.sampling_step
+
+    if job_count > 0:
+        progress += job_no / job_count
+    if sampling_steps > 0:
+        progress += 1 / job_count * sampling_step / sampling_steps
 
     progress = min(progress, 1)
 
