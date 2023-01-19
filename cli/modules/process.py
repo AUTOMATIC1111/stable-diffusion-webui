@@ -1,17 +1,33 @@
 #!/bin/env python
 """
-process images
+process people images
+- check image resolution
+- runs detection of face and body
+- extracts crop and performs checks:
+    - visible: is face or body detected
+    - in frame: for face based on box, for body based on number of visible keypoints
+    - resolution: is cropped image still of sufficient resolution
+    - blur: is image sharp enough
+    - similarity: compares image to all previously processed images to see if its unique enough
+- images are resized and optionally squared
+- face additionally runs through semantic segmentation to remove background
+- if image passes checks  
+  image padded and saved as extracted image
+- body requires that face is detected and in-frame,  
+  but does not have to pass all other checks as body performs its own checks
+- runs clip interrogation on extracted images to generate filewords
 """
 import os
 import sys
 import io
-import shutil
+import filetype
 import base64
 import pathlib
 
 import numpy as np
 import mediapipe as mp
 from PIL import Image, ImageOps
+from skimage.metrics import structural_similarity as ssim
 
 from util import log, Map
 from sdapi import postsync
@@ -26,7 +42,7 @@ params = Map({
     'target_size': 512, # target resolution
     'square_images': True, # should output images be squared
     'blur_samplesize': 60, # sample size to use for blur detection
-    'face_score': 0.6, # min face detection score
+    'face_score': 0.7, # min face detection score
     'face_pad': 0.05, # pad face image percentage
     'face_model': 1, # which face model to use 0/close-up 1/standard
     'face_blur_score': 1.2, # max score for face blur detection
@@ -40,6 +56,8 @@ params = Map({
     'segmentation_body': False, # segmentation enabled
     'segmentation_model': 0, # segmentation model 0/general 1/landscape
     'segmentation_background': (192, 192, 192), # segmentation background color
+    'similarity_score': 0.6, # maximum similarity score before image is discarded
+    'similarity_size': 64, # base similarity detection on reduced images
     'interrogate_model': 'clip' # interrogate model
 })
 
@@ -56,6 +74,20 @@ def detect_blur(image):
     magnitude = np.log(np.abs(recon))
     mean = round(np.mean(magnitude), 2)
     return mean
+
+
+images = []
+def detect_simmilar(image):
+    img = image.resize((params.similarity_size, params.similarity_size))
+    img = ImageOps.grayscale(img)
+    data = np.array(img)
+    similarity = 0
+    for i in images:
+        val = ssim(data, i, data_range=255, channel_axis=None, gradient=False, full=False)
+        if val > similarity:
+            similarity = val
+    images.append(data)
+    return similarity
 
 
 def segmentation(image):
@@ -78,11 +110,15 @@ def extract_face(img):
     scale = max(img.size[0], img.size[1]) / params.target_size
     resized = img.copy()
     resized.thumbnail((params.target_size, params.target_size), Image.HAMMING)
+
     with mp.solutions.face_detection.FaceDetection(min_detection_confidence=params.face_score, model_selection=params.face_model) as face:
         results = face.process(np.array(resized))
     if results.detections is None:
         return None, False
     box = results.detections[0].location_data.relative_bounding_box
+    if box.xmin < 0 or box.ymin < 0 or (box.width - box.xmin) > 1 or (box.height - box.ymin) > 1:
+        log.warning({ 'extract face': 'out of frame' })
+        return None, False
     x = (box.xmin - params.face_pad / 2) * resized.width
     y = (box.ymin - params.face_pad / 2)* resized.height
     w = (box.width + params.face_pad) * resized.width
@@ -97,6 +133,7 @@ def extract_face(img):
         log.warning({ 'extract face': 'low resolution', 'size': [cropped.size[0], cropped.size[1]] })
         return None, True
     cropped.thumbnail((params.target_size, params.target_size), Image.HAMMING)
+
     if params.square_images:
         squared = Image.new('RGB', (params.target_size, params.target_size))
         squared.paste(cropped, (0, 0))
@@ -104,12 +141,18 @@ def extract_face(img):
            squared = segmentation(squared)
     else:
         squared = cropped
+
     blur = detect_blur(squared)
     if blur > params.face_blur_score:
         log.warning({ 'extract face': 'blur check fail', 'blur': blur })
         return None, True
     else:
         log.info({ 'extract face blur': blur })
+
+    similarity = detect_simmilar(squared)
+    if similarity > params.similarity_score:
+        log.warning({ 'extract face': 'similarity check fail', 'score': similarity })
+        return None, True
 
     return squared, True
 
@@ -143,6 +186,7 @@ def extract_body(img):
         log.warning({ 'extract body': 'low resolution', 'size': [cropped.size[0], cropped.size[1]] })
         return None, True
     cropped.thumbnail((params.target_size, params.target_size), Image.HAMMING)
+
     if params.square_images:
         squared = Image.new('RGB', (params.target_size, params.target_size))
         squared.paste(cropped, (0, 0))
@@ -150,12 +194,19 @@ def extract_body(img):
            squared = segmentation(squared)
     else:
         squared = cropped
+
     blur = detect_blur(squared)
     if blur > params.body_blur_score:
         log.warning({ 'extract body': 'blur check fail', 'blur': blur })
         return None, True
     else:
         log.info({ 'extract body blur': blur })
+
+    similarity = detect_simmilar(squared)
+    if similarity > params.similarity_score:
+        log.warning({ 'extract body': 'similarity check fail', 'score': similarity })
+        return None, True
+
     return squared, True
 
 
@@ -235,7 +286,9 @@ def process_images(src: str, dst: str, args = None):
     else:
         if os.path.isdir(dst) and params.clear_dst:
             log.warning({ 'clear dst': dst })
-            shutil.rmtree(dst) 
+            i = [os.path.join(dst, f) for f in os.listdir(dst) if os.path.isfile(os.path.join(dst, f)) and filetype.is_image(os.path.join(dst, f))]
+            for f in i:
+                os.remove(f)
         pathlib.Path(dst).mkdir(parents=True, exist_ok=True)
         for root, _sub_dirs, files in os.walk(src):
             for f in files:
@@ -248,6 +301,7 @@ if __name__ == '__main__':
     dst = sys.argv.pop(0)
     params.dst = dst
     log.info({ 'processing': params })
+    pathlib.Path(dst).mkdir(parents=True, exist_ok=True)
     for loc in sys.argv:
         if os.path.isfile(loc):
             process_file(loc, dst)

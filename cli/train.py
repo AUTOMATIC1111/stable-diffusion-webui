@@ -265,9 +265,21 @@ async def train(params):
     log.debug({ 'train start' })
     args.train_embedding.embedding_name = params.name
     args.train_embedding.data_root = args.preprocess.process_dst
+    imgs = [f for f in os.listdir(args.preprocess.process_dst) if os.path.isfile(os.path.join(args.preprocess.process_dst, f)) and filetype.is_image(os.path.join(args.preprocess.process_dst, f))]
+    if len(imgs) == 0:
+        log.error({ 'train no input images in folder': args.preprocess.process_dst })
+        return
+    if params.grad == -1:
+        grad = (len(imgs) // args.train_embedding.batch_size)
+        args.train_embedding.gradient_step = max(grad, 30)
+        log.info({ 'dynamic gradient step': args.train_embedding.gradient_step })
+        if params.steps == -1:
+            args.train_embedding.steps = 5000 // args.train_embedding.gradient_step
+            log.info({ 'dynamic steps': args.train_embedding.steps })
     log.info({ 'train embedding': {
         'name': params.name,
         'source': args.preprocess.process_dst,
+        'images': len(imgs),
         'steps': args.train_embedding.steps,
         'batch': args.train_embedding.batch_size,
         'gradient-step': args.train_embedding.gradient_step,
@@ -376,14 +388,14 @@ async def main():
     parser.add_argument("--src", type = str, required = True, help = "source image folder or movie file")
     parser.add_argument("--init", type = str, default = "person", required = False, help = "initialization class, default: %(default)s")
     parser.add_argument("--dst", type = str, default = "/tmp", required = False, help = "destination image folder for processed images, default: %(default)s")
-    parser.add_argument("--steps", type = int, default = 250, required = False, help = "training steps, default: %(default)s")
+    parser.add_argument("--steps", type = int, default = -1, required = False, help = "training steps, default: %(default)s")
     parser.add_argument("--vectors", type = int, default = -1, required = False, help = "number of vectors per token, default: dynamic based on number of input images")
     parser.add_argument("--batch", type = int, default = 1, required = False, help = "batch size, default: %(default)s")
     parser.add_argument("--rate", type = str, default = "", required = False, help = "learning rate, default: dynamic")
     parser.add_argument("--rstart", type = float, default = 0.01, required = False, help = "starting learn rate if using dynamic rate, default: %(default)s")
     parser.add_argument("--rend", type = float, default = 0.0001, required = False, help = "ending learn rate if using dynamic rate, default: %(default)s")
     parser.add_argument("--rdescend", type = float, default = 2, required = False, help = "learn rate descend power when using dynamic rate, default: %(default)s")
-    parser.add_argument("--grad", type = int, default = 20, required = False, help = "accumulate gradient over n images, default: : %(default)s")
+    parser.add_argument("--grad", type = int, default = -1, required = False, help = "accumulate gradient over n images, default: : %(default)s")
     parser.add_argument("--type", type = str, default = 'subject', required = False, help = "training type: subject/style/unknown, default: %(default)s")
     parser.add_argument('--overwrite', default = False, action='store_true', help = "overwrite existing embedding, default: %(default)s")
     parser.add_argument("--vstart", type = float, default = 0, required = False, help = "if processing video skip first n seconds, default: %(default)s")

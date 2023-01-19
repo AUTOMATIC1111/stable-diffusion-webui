@@ -22,8 +22,7 @@
 
 ## Prompt
 
-    a medium shot photo of "dreamkelly", extremely detailed 8k wallpaper, intricate, high detail, dramatic, modelshoot style
-
+    a medium shot photo of "kelly", extremely detailed 8k wallpaper, intricate, high detail, dramatic, modelshoot style
 
 ## Gen
 

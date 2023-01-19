@@ -16,13 +16,15 @@ def probe(src: str):
     cmd = f"ffprobe -hide_banner -loglevel 0 -print_format json -show_format -show_streams {src}"
     result = subprocess.run(cmd, shell = True, capture_output = True, text = True, check = True)
     data = json.loads(result.stdout)
-    i = [x for x in data['streams'] if x["codec_type"] == "video"][0]
+    stream = [x for x in data['streams'] if x["codec_type"] == "video"][0]
+    format = data['format'] if 'format' in data else {}
+    res = {**stream, **format}
     video = Map({
-        'codec': i['codec_name']+'/'+i['codec_tag_string'],
-        'resolution': [int(i['width']), int(i['height'])],
-        'duration': float(i['duration']),
-        'frames': int(i['nb_frames']),
-        'bitrate': round(float(i['bit_rate']) / 1024),
+        'codec': res.get('codec_name', 'unknown') + '/' + res.get('codec_tag_string', ''),
+        'resolution': [int(res.get('width', 0)), int(res.get('height', 0))],
+        'duration': float(res.get('duration', 0)),
+        'frames': int(res.get('nb_frames', 0)),
+        'bitrate': round(float(res.get('bit_rate', 0)) / 1024),
     })
     return video
 

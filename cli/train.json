@@ -2,9 +2,9 @@
   "training_model": "sd-v15-runwayml.ckpt",
   "extract_video": {
     "rate": 0,
-    "fps": 2,
-    "skipstart": 0,
-    "skipend": 0
+    "fps": 5,
+    "vstart": 0,
+    "vend": 0
   },
   "create_embedding": {
       "name": "test",

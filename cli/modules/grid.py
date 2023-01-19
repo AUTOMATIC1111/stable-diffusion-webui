@@ -77,6 +77,7 @@ if __name__ == '__main__':
     parser.add_argument("--width", type = int, default = 0, required = False, help = "fixed grid width")
     parser.add_argument("--height", type = int, default = 0, required = False, help = "fixed grid height")
     parser.add_argument("--border", type = int, default = 0, required = False, help = "image border")
+    parser.add_argument('--nolabels', default = False, action='store_true', help = "do not print image labels")
     parser.add_argument('--debug', default = False, action='store_true', help = "print extra debug information")
     parser.add_argument('output', type = str)
     parser.add_argument('input', type = str, nargs = '*')
@@ -106,7 +107,8 @@ if __name__ == '__main__':
             # img.verify()
             images.append(img)
             fp = Path(file)
-            labels.append(fp.stem)
+            if not params.nolabels:
+                labels.append(fp.stem)
     # log.info({ 'folder': path.parent, 'labels': labels })
     if len(images) > 0:
         image = grid(
