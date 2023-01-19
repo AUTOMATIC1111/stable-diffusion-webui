@@ -631,7 +631,7 @@ As a source of inspiration:
 
 # Tweaks
 
-## Ignore last layers of CLIP model
+## Clip Skip
 This is a slider in settings, and it controls how early the processing of prompt by CLIP network should be stopped.
 
 A more detailed explanation:
