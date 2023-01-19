@@ -8,8 +8,10 @@ import base64
 import sys
 import os
 import asyncio
+
 import filetype
 from PIL import Image
+
 from util import log, Map
 import sdapi as sdapi
 

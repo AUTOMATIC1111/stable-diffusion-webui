@@ -161,5 +161,6 @@
     "inspiration_rows_num": 4,
     "inspiration_cols_num": 6,
     "live_preview_refresh_period": 1000,
-    "show_progressbar": true
+    "show_progressbar": true,
+    "show_warnings": false
 }

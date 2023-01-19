@@ -6,11 +6,15 @@ model from: <https://huggingface.co/FredZhang7/distilgpt2-stable-diffusion-v2>
 
 import logging
 import argparse
+
 from transformers import GPT2Tokenizer, GPT2LMHeadModel
+
 from util import log
+
 
 tokenizer = None
 model = None
+
 
 def prompt(text: str, temp: float = 0.9, top: int = 8, penalty: float = 1.2, alpha: float = 0.6, num: int = 5, length: int = 80):
     global tokenizer, model # pylint: disable=global-statement

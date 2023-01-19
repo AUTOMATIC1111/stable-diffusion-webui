@@ -13,6 +13,7 @@ import filetype
 from PIL import Image, ImageDraw, ImageFont
 from util import log
 
+
 params = None
 
 

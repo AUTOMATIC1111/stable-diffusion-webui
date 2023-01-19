@@ -16,10 +16,10 @@ import logging
 import math
 import os
 import sys
-import pathlib
 import time
 import json
-from pathlib import Path
+from pathlib import Path, PurePath
+
 import filetype
 from PIL import Image
 
@@ -383,7 +383,7 @@ async def main():
         log.setLevel(logging.DEBUG)
         log.debug({ 'debug': True })
     log.debug({ 'args': params.__dict__ })
-    home = pathlib.Path(sys.argv[0]).parent
+    home = Path(sys.argv[0]).parent
     global args # pylint: disable=global-statement
     if os.path.isfile(params.config):
         try:
@@ -453,7 +453,7 @@ async def main():
         else:
             args.train_embedding.template_filename = 'unknown_filewords.txt'
     if params.name == 'auto':
-        params.name = pathlib.PurePath(params.src).name
+        params.name = PurePath(params.src).name
         log.info({ 'training name': params.name })
     if params.dst == "/tmp":
         params.dst = os.path.join("/tmp/train", params.name)

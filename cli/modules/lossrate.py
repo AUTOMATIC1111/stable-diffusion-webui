@@ -5,13 +5,16 @@ auto-generate learn-rate
 import io
 import math
 import logging
+
 import numpy as np
 from PIL import Image, ImageFont, ImageDraw
 from matplotlib import pyplot as plt
+
 from util import log, Map
 
 
 loss_types = ['linear', 'log', 'linalg', 'power']
+
 
 def gen_steps(steps, step):
     return [x for x in range(1, steps + step) if x % step == 0]

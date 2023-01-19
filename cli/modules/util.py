@@ -5,8 +5,10 @@ generic helper methods
 
 import logging
 
+
 logging.basicConfig(level = logging.INFO, format = '%(asctime)s %(levelname)s: %(message)s')
 log = logging.getLogger("sd")
+
 
 class Map(dict):
     def __init__(self, *args, **kwargs):
@@ -44,6 +46,7 @@ class Map(dict):
     def __delitem__(self, key):
         super(Map, self).__delitem__(key)
         del self.__dict__[key]
+
 
 if __name__ == "__main__":
     pass

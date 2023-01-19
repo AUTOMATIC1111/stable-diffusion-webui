@@ -6,11 +6,14 @@ import sys
 import json
 import pathlib
 import logging
+
 import torch
 import numpy as np
 from PIL import Image, ImageFont, ImageDraw
 from matplotlib import pyplot as plt
+
 from util import log, Map
+
 
 def settings(logdir: str, name: str):
     filename = os.path.join(logdir, name, 'settings.json')

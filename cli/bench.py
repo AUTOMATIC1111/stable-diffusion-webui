@@ -2,17 +2,20 @@
 """
 sd api txt2img benchmark
 """
-import time
-import json
 import asyncio
 import base64
 import io
+import json
+import os
 import sys
+import time
+
 from PIL import Image
 
 sys.path.append(os.path.join(os.path.dirname(__file__), 'modules'))
 import modules.sdapi as sdapi
 from modules.util import Map, log
+
 
 options = Map({
     'restore_faces': False,
@@ -28,9 +31,11 @@ options = Map({
     'height': 512
 })
 
+
 # batch = [1, 1, 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128]
 batch = [1, 1, 2, 4, 8, 12, 16]
 oom = 0
+
 
 async def txt2img():
     t0 = time.perf_counter()
@@ -52,6 +57,7 @@ async def txt2img():
     t1 = time.perf_counter()
     return t1 - t0
 
+
 def memstats():
     mem = sdapi.getsync('/sdapi/v1/memory')
     cpu = mem.get('ram', 'unavailable')
@@ -68,8 +74,10 @@ def memstats():
         gpu.pop('events')
     return cpu, gpu
 
+
 def gb(val: float):
     return round(val / 1024 / 1024 / 1024, 2)
+
 
 async def main():
     log.info({ 'benchmark': { 'batch-sizes': batch } })
@@ -110,6 +118,7 @@ async def main():
     if oom > 0:
         log.info({ 'benchmark': 'ended with oom so you should probably restart your automatic server now' })
     await sdapi.close()
+
 
 if __name__ == '__main__':
     try:

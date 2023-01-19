@@ -4,20 +4,21 @@ helper methods that creates HTTP session with managed connection pool
 provides async HTTP get/post methods and several helper methods
 """
 
+import aiohttp
 import asyncio
 import logging
+import requests
 import sys
 
-import aiohttp
-import requests
 from util import Map, log
+
 
 sd_url = "http://127.0.0.1:7860" # automatic1111 api url root
 use_session = True
 timeout = aiohttp.ClientTimeout(total = None, sock_connect = 10, sock_read = None) # default value is 5 minutes, we need longer for training
-
 sess = None
 quiet = False
+
 
 async def result(req):
     if req.status != 200:

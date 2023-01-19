@@ -8,9 +8,11 @@ import io
 import shutil
 import base64
 import pathlib
+
 import numpy as np
 import mediapipe as mp
 from PIL import Image, ImageOps
+
 from util import log, Map
 from sdapi import postsync
 
