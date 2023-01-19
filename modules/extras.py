@@ -287,10 +287,19 @@ def run_modelmerger(primary_model_name, secondary_model_name, tertiary_model_nam
     def add_difference(theta0, theta1_2_diff, alpha):
         return theta0 + (alpha * theta1_2_diff)
 
+    if not primary_model_name:
+        shared.state.textinfo = "Failed: Merging requires a primary model."
+        shared.state.end()
+        return ["Failed: Merging requires a primary model."] + [gr.Dropdown.update(choices=sd_models.checkpoint_tiles()) for _ in range(4)]
+
     primary_model_info = sd_models.checkpoints_list[primary_model_name]
+
+    if not secondary_model_name:
+        shared.state.textinfo = "Failed: Merging requires a secondary model."
+        shared.state.end()
+        return ["Failed: Merging requires a secondary model."] + [gr.Dropdown.update(choices=sd_models.checkpoint_tiles()) for _ in range(4)]
+    
     secondary_model_info = sd_models.checkpoints_list[secondary_model_name]
-    tertiary_model_info = sd_models.checkpoints_list.get(tertiary_model_name, None)
-    result_is_inpainting_model = False
 
     theta_funcs = {
         "Weighted sum": (None, weighted_sum),
@@ -298,10 +307,14 @@ def run_modelmerger(primary_model_name, secondary_model_name, tertiary_model_nam
     }
     theta_func1, theta_func2 = theta_funcs[interp_method]
 
-    if theta_func1 and not tertiary_model_info:
+    if theta_func1 and not tertiary_model_name:
         shared.state.textinfo = "Failed: Interpolation method requires a tertiary model."
         shared.state.end()
-        return ["Failed: Interpolation method requires a tertiary model."] + [gr.Dropdown.update(choices=sd_models.checkpoint_tiles()) for _ in range(4)]
+        return [f"Failed: Interpolation method ({interp_method}) requires a tertiary model."] + [gr.Dropdown.update(choices=sd_models.checkpoint_tiles()) for _ in range(4)]
+    
+    tertiary_model_info = sd_models.checkpoints_list[tertiary_model_name] if theta_func1 else None
+
+    result_is_inpainting_model = False
 
     shared.state.textinfo = f"Loading {secondary_model_info.filename}..."
     print(f"Loading {secondary_model_info.filename}...")
