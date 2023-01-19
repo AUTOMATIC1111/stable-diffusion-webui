@@ -737,6 +737,11 @@ footer {
     line-height: 2.4em;
 }
 
+#modelmerger_results_container{
+    margin-top: 1em;
+    overflow: visible;
+}
+
 /* The following handles localization for right-to-left (RTL) languages like Arabic.
 The rtl media type will only be activated by the logic in javascript/localization.js.
 If you change anything above, you need to make sure it is RTL compliant by just running

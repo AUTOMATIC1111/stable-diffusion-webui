@@ -72,7 +72,7 @@ def progressapi(req: ProgressRequest):
 
     if job_count > 0:
         progress += job_no / job_count
-    if sampling_steps > 0:
+    if sampling_steps > 0 and job_count > 0:
         progress += 1 / job_count * sampling_step / sampling_steps
 
     progress = min(progress, 1)

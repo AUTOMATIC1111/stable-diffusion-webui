@@ -172,6 +172,17 @@ function submit_img2img(){
     return res
 }
 
+function modelmerger(){
+    var id = randomId()
+    requestProgress(id, gradioApp().getElementById('modelmerger_results_panel'), null, function(){})
+
+    gradioApp().getElementById('modelmerger_result').innerHTML = ''
+
+    var res = create_submit_args(arguments)
+    res[0] = id
+    return res
+}
+
 
 function ask_for_style_name(_, prompt_text, negative_prompt_text) {
     name_ = prompt('Style name:')
