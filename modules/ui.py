@@ -1771,8 +1771,17 @@ def create_ui():
 
         component_keys = [k for k in opts.data_labels.keys() if k in component_dict]
 
+        def get_value_for_setting(key):
+            value = getattr(opts, key)
+
+            info = opts.data_labels[key]
+            args = info.component_args() if callable(info.component_args) else info.component_args or {}
+            args = {k: v for k, v in args.items() if k not in {'precision'}}
+
+            return gr.update(value=value, **args)
+
         def get_settings_values():
-            return [getattr(opts, key) for key in component_keys]
+            return [get_value_for_setting(key) for key in component_keys]
 
         demo.load(
             fn=get_settings_values,
