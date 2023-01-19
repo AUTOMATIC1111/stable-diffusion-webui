@@ -104,6 +104,12 @@ then
 fi
 
 # Check prerequisites
+gpu_info=$(lspci 2>/dev/null | grep VGA)
+if echo "$gpu_info" | grep -q "Navi"
+then
+    export HSA_OVERRIDE_GFX_VERSION=10.3.0
+fi
+
 for preq in "${GIT}" "${python_cmd}"
 do
     if ! hash "${preq}" &>/dev/null
@@ -165,20 +171,9 @@ else
     printf "\n%s\n" "${delimiter}"
     printf "Launching launch.py..."
     printf "\n%s\n" "${delimiter}"
-    gpu_info=$(lspci 2>/dev/null | grep VGA)
-    if echo "$gpu_info" | grep -q "AMD"
+    if echo "$gpu_info" | grep -q "AMD" && [[ -z "${TORCH_COMMAND}" ]]
     then
-        if [[ -z "${TORCH_COMMAND}" ]]
-        then	    
-            export TORCH_COMMAND="pip install torch torchvision --extra-index-url https://download.pytorch.org/whl/rocm5.2"
-        fi
-        if echo "$gpu_info" | grep -q "Navi"
-        then
-            HSA_OVERRIDE_GFX_VERSION=10.3.0 exec "${python_cmd}" "${LAUNCH_SCRIPT}" "$@"
-        else
-            exec "${python_cmd}" "${LAUNCH_SCRIPT}" "$@"
-        fi
-    else
-        exec "${python_cmd}" "${LAUNCH_SCRIPT}" "$@"
-    fi
+        export TORCH_COMMAND="pip install torch torchvision --extra-index-url https://download.pytorch.org/whl/rocm5.2"
+    fi        
+    exec "${python_cmd}" "${LAUNCH_SCRIPT}" "$@"
 fi
