@@ -109,6 +109,9 @@ case "$gpu_info" in
     *"Navi 1"*|*"Navi 2"*) export HSA_OVERRIDE_GFX_VERSION=10.3.0
     ;;
     *"Renoir"*) export HSA_OVERRIDE_GFX_VERSION=9.0.0
+        printf "\n%s\n" "${delimiter}"
+		printf "Make sure to have at least 4GB of VRAM and 10GB of RAM or enable cpu mode: --use-cpu all --no-half"
+		printf "\n%s\n" "${delimiter}"
     ;;
     *) 
     ;;
