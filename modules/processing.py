@@ -538,10 +538,6 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
     if p.scripts is not None:
         p.scripts.process(p)
 
-    with open(os.path.join(shared.script_path, "params.txt"), "w", encoding="utf8") as file:
-        processed = Processed(p, [], p.seed, "")
-        file.write(processed.infotext(p, 0))
-
     infotexts = []
     output_images = []
 
@@ -571,6 +567,10 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
     with torch.no_grad(), p.sd_model.ema_scope():
         with devices.autocast():
             p.init(p.all_prompts, p.all_seeds, p.all_subseeds)
+
+        with open(os.path.join(shared.script_path, "params.txt"), "w", encoding="utf8") as file:
+            processed = Processed(p, [], p.seed, "")
+            file.write(processed.infotext(p, 0))
 
         if state.job_count == -1:
             state.job_count = p.n_iter
@@ -857,7 +857,8 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
         shared.state.nextjob()
 
-        self.sampler = sd_samplers.create_sampler(self.sampler_name, self.sd_model)
+        img2img_sampler_name = self.sampler_name if self.sampler_name != 'PLMS' else 'DDIM'  # PLMS does not support img2img so we just silently switch ot DDIM
+        self.sampler = sd_samplers.create_sampler(img2img_sampler_name, self.sd_model)
 
         samples = samples[:, :, self.truncate_y//2:samples.shape[2]-(self.truncate_y+1)//2, self.truncate_x//2:samples.shape[3]-(self.truncate_x+1)//2]
 
