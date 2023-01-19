@@ -105,7 +105,7 @@ fi
 
 # Check prerequisites
 gpu_info=$(lspci 2>/dev/null | grep VGA)
-if echo "$gpu_info" | grep -q "Navi"
+if echo "$gpu_info" | grep -qE "Navi (1|2)"
 then
     export HSA_OVERRIDE_GFX_VERSION=10.3.0
 fi
