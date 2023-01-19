@@ -124,12 +124,12 @@ def center_crop(image: Image, w: int, h: int):
 def multicrop_pic(image: Image, mindim, maxdim, minarea, maxarea, objective, threshold):
     iw, ih = image.size
     err = lambda w, h: 1-(lambda x: x if x < 1 else 1/x)(iw/ih/(w/h))
-    w, h = max(((w, h) for w in range(mindim, maxdim+1, 64) for h in range(mindim, maxdim+1, 64)
+    wh = max(((w, h) for w in range(mindim, maxdim+1, 64) for h in range(mindim, maxdim+1, 64)
         if minarea <= w * h <= maxarea and err(w, h) <= threshold),
         key= lambda wh: (wh[0]*wh[1], -err(*wh))[::1 if objective=='Maximize area' else -1],
         default=None
     )
-    return center_crop(image, w, h)
+    return wh and center_crop(image, *wh)
     
 
 def preprocess_work(process_src, process_dst, process_width, process_height, preprocess_txt_action, process_flip, process_split, process_caption, process_caption_deepbooru=False, split_threshold=0.5, overlap_ratio=0.2, process_focal_crop=False, process_focal_crop_face_weight=0.9, process_focal_crop_entropy_weight=0.3, process_focal_crop_edges_weight=0.5, process_focal_crop_debug=False, process_multicrop=None, process_multicrop_mindim=None, process_multicrop_maxdim=None, process_multicrop_minarea=None, process_multicrop_maxarea=None, process_multicrop_objective=None, process_multicrop_threshold=None):
