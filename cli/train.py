@@ -366,7 +366,7 @@ async def main():
     parser.add_argument("--vectors", type = int, default = -1, required = False, help = "number of vectors per token, default: dynamic based on number of input images")
     parser.add_argument("--batch", type = int, default = 1, required = False, help = "batch size, default: %(default)s")
     parser.add_argument("--rate", type = str, default = "", required = False, help = "learning rate, default: dynamic")
-    parser.add_argument("--rstart", type = float, default = 0.02, required = False, help = "starting learn rate if using dynamic rate, default: %(default)s")
+    parser.add_argument("--rstart", type = float, default = 0.01, required = False, help = "starting learn rate if using dynamic rate, default: %(default)s")
     parser.add_argument("--rend", type = float, default = 0.0001, required = False, help = "ending learn rate if using dynamic rate, default: %(default)s")
     parser.add_argument("--rdescend", type = float, default = 2, required = False, help = "learn rate descend power when using dynamic rate, default: %(default)s")
     parser.add_argument("--grad", type = int, default = 20, required = False, help = "accumulate gradient over n images, default: : %(default)s")
