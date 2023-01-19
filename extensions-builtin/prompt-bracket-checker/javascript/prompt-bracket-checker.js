@@ -93,10 +93,12 @@ function checkBrackets(evt) {
 }
 
 var shadowRootLoaded = setInterval(function() {
-  var shadowTextArea = document.querySelector('gradio-app').shadowRoot.querySelectorAll('#txt2img_prompt > label > textarea');
-  if(shadowTextArea.length < 1) {
-      return false;
-  }
+  var sahdowRoot = document.querySelector('gradio-app').shadowRoot;
+  if(! sahdowRoot)  return false;
+
+  var shadowTextArea = sahdowRoot.querySelectorAll('#txt2img_prompt > label > textarea');
+  if(shadowTextArea.length < 1)  return false;
+
 
   clearInterval(shadowRootLoaded);
 

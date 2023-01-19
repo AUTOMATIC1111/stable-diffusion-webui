@@ -81,8 +81,13 @@ function request(url, data, handler, errorHandler){
     xhr.onreadystatechange = function () {
         if (xhr.readyState === 4) {
             if (xhr.status === 200) {
-                var js = JSON.parse(xhr.responseText);
-                handler(js)
+                try {
+                    var js = JSON.parse(xhr.responseText);
+                    handler(js)
+                } catch (error) {
+                    console.error(error);
+                    errorHandler()
+                }
             } else{
                 errorHandler()
             }
