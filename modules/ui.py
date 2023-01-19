@@ -439,7 +439,7 @@ def apply_setting(key, value):
         opts.data_labels[key].onchange()
 
     opts.save(shared.config_filename)
-    return value
+    return getattr(opts, key)
 
 
 def update_generation_info(generation_info, html_info, img_index):
@@ -595,6 +595,16 @@ def ordered_ui_categories():
 
     for i, category in sorted(enumerate(shared.ui_reorder_categories), key=lambda x: user_order.get(x[1], x[0] * 2 + 0)):
         yield category
+
+
+def get_value_for_setting(key):
+    value = getattr(opts, key)
+
+    info = opts.data_labels[key]
+    args = info.component_args() if callable(info.component_args) else info.component_args or {}
+    args = {k: v for k, v in args.items() if k not in {'precision'}}
+
+    return gr.update(value=value, **args)
 
 
 def create_ui():
@@ -1600,7 +1610,7 @@ def create_ui():
 
         opts.save(shared.config_filename)
 
-        return gr.update(value=value), opts.dumpjson()
+        return get_value_for_setting(key), opts.dumpjson()
 
     with gr.Blocks(analytics_enabled=False) as settings_interface:
         with gr.Row():
@@ -1770,15 +1780,6 @@ def create_ui():
             )
 
         component_keys = [k for k in opts.data_labels.keys() if k in component_dict]
-
-        def get_value_for_setting(key):
-            value = getattr(opts, key)
-
-            info = opts.data_labels[key]
-            args = info.component_args() if callable(info.component_args) else info.component_args or {}
-            args = {k: v for k, v in args.items() if k not in {'precision'}}
-
-            return gr.update(value=value, **args)
 
         def get_settings_values():
             return [get_value_for_setting(key) for key in component_keys]
