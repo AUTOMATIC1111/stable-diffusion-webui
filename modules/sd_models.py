@@ -400,17 +400,23 @@ def load_model(checkpoint_info=None):
 
     sd_hijack.model_hijack.hijack(sd_model)
 
-    sd_model.eval()
+    if shared.cmd_opts.compile is not None:
+        try:
+            import time
+            import torch._dynamo as dynamo # must be imported explicitly or namespace is not found
+            torch._dynamo.config.verbose=True
+            torch.backends.cudnn.benchmark = True
+            t0 = time.time()
+            # script = sd_model.model.to_torchscript(method="trace")
+            # script = torch.jit.script(sd_model.model.eval())
+            # sd_model.model = torch.compile(script, backend=shared.cmd_opts.compile)
+            sd_model.model = torch.compile(sd_model, backend=shared.cmd_opts.compile)
+            t1 = time.time()
+            print(f"Model compiled using backend {shared.cmd_opts.compile} in {round(t1 - t0, 2)} sec")
+        except Exception as err:
+            print(f"Model compile not supported: {err}")
 
-    """
-    try:
-        t0 = time.time()
-        sd_model = torch.compile(sd_model, mode="max-autotune", fullgraph=True)
-        t1 = time.time()
-        print(f"Model compiled in {round(t1 - t0, 2)} sec")
-    except Exception as err:
-        print(f"Model compile not supported: {err}")
-    """
+    sd_model.eval()
 
     shared.sd_model = sd_model
 
