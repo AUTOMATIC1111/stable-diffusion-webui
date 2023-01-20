@@ -4,16 +4,10 @@
 // Counts open and closed brackets (round, square, curly) in the prompt and negative prompt text boxes in the txt2img and img2img tabs.
 // If there's a mismatch, the keyword counter turns red and if you hover on it, a tooltip tells you what's wrong.
 
-function checkBrackets(evt) {
-  textArea = evt.target;
-  tabName = evt.target.parentElement.parentElement.id.split("_")[0];
-  counterElt = document.querySelector('gradio-app').shadowRoot.querySelector('#' + tabName + '_token_counter');
-
-  promptName = evt.target.parentElement.parentElement.id.includes('neg') ? ' negative' : '';
-
-  errorStringParen  = '(' + tabName + promptName + ' prompt) - Different number of opening and closing parentheses detected.\n';
-  errorStringSquare = '[' + tabName + promptName + ' prompt] - Different number of opening and closing square brackets detected.\n';
-  errorStringCurly  = '{' + tabName + promptName + ' prompt} - Different number of opening and closing curly brackets detected.\n';
+function checkBrackets(evt, textArea, counterElt) {
+  errorStringParen  = '(...) - Different number of opening and closing parentheses detected.\n';
+  errorStringSquare = '[...] - Different number of opening and closing square brackets detected.\n';
+  errorStringCurly  = '{...} - Different number of opening and closing curly brackets detected.\n';
 
   openBracketRegExp = /\(/g;
   closeBracketRegExp = /\)/g;
@@ -86,24 +80,31 @@ function checkBrackets(evt) {
   }
 
   if(counterElt.title != '') {
-    counterElt.style = 'color: #FF5555;';
+    counterElt.classList.add('error');
   } else {
-    counterElt.style = '';
+    counterElt.classList.remove('error');
   }
 }
 
+function setupBracketChecking(id_prompt, id_counter){
+    var textarea = gradioApp().querySelector("#" + id_prompt + " > label > textarea");
+    var counter = gradioApp().getElementById(id_counter)
+    textarea.addEventListener("input", function(evt){
+        checkBrackets(evt, textarea, counter)
+    });
+}
+
 var shadowRootLoaded = setInterval(function() {
-  var sahdowRoot = document.querySelector('gradio-app').shadowRoot;
-  if(! sahdowRoot)  return false;
+    var shadowRoot = document.querySelector('gradio-app').shadowRoot;
+    if(! shadowRoot)  return false;
 
-  var shadowTextArea = sahdowRoot.querySelectorAll('#txt2img_prompt > label > textarea');
-  if(shadowTextArea.length < 1)  return false;
+    var shadowTextArea = shadowRoot.querySelectorAll('#txt2img_prompt > label > textarea');
+    if(shadowTextArea.length < 1)  return false;
 
+    clearInterval(shadowRootLoaded);
 
-  clearInterval(shadowRootLoaded);
-
-  document.querySelector('gradio-app').shadowRoot.querySelector('#txt2img_prompt').onkeyup = checkBrackets;
-  document.querySelector('gradio-app').shadowRoot.querySelector('#txt2img_neg_prompt').onkeyup = checkBrackets;
-  document.querySelector('gradio-app').shadowRoot.querySelector('#img2img_prompt').onkeyup = checkBrackets;
-  document.querySelector('gradio-app').shadowRoot.querySelector('#img2img_neg_prompt').onkeyup = checkBrackets;
+    setupBracketChecking('txt2img_prompt', 'txt2img_token_counter')
+    setupBracketChecking('txt2img_neg_prompt', 'txt2img_negative_token_counter')
+    setupBracketChecking('img2img_prompt', 'imgimg_token_counter')
+    setupBracketChecking('img2img_neg_prompt', 'img2img_negative_token_counter')
 }, 1000);
