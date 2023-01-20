@@ -145,6 +145,7 @@
 #interrogate_col{
     min-width: 0 !important;
     max-width: 8em !important;
+    margin-right: 1em;
 }
 #interrogate, #deepbooru{
     margin: 0em 0.25em 0.9em 0.25em;
