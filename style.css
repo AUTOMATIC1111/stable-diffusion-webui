@@ -2,12 +2,26 @@
     max-width: 100%;
 }
 
-#txt2img_token_counter {
-    height: 0px;
+.token-counter{
+    position: absolute;
+    display: inline-block;
+    right: 2em;
+    min-width: 0 !important;
+    width: auto;
+    z-index: 100;
 }
 
-#img2img_token_counter {
-    height: 0px;
+.token-counter.error span{
+    box-shadow: 0 0 0.0 0.3em rgba(255,0,0,0.15), inset 0 0 0.6em rgba(255,0,0,0.075);
+    border: 2px solid rgba(255,0,0,0.4) !important;
+}
+
+.token-counter div{
+    display: inline;
+}
+
+.token-counter span{
+    padding: 0.1em 0.75em;
 }
 
 #sh{
@@ -113,7 +127,7 @@
 #roll_col{
     min-width: unset !important;
     flex-grow: 0 !important;
-    padding: 0.4em 0;
+    padding: 0 1em 0 0;
     gap: 0;
 }
 
@@ -158,16 +172,6 @@
 .my-4{
     margin-top: 0;
     margin-bottom: 0;
-}
-
-#toprow div.gr-box, #toprow div.gr-form{
-    border: none;
-    gap: 0;
-    background: transparent;
-    box-shadow: none;
-}
-#toprow div{
-    gap: 0;
 }
 
 #resize_mode{
@@ -706,6 +710,14 @@ footer {
     opacity: 0.5;
 }
 
+[id*='_prompt_container']{
+    gap: 0;
+}
+
+[id*='_prompt_container'] > div{
+    margin: -0.4em 0 0 0;
+}
+
 .gr-compact {
     border: none;
 }
@@ -715,8 +727,11 @@ footer {
     margin-left: 0.8em;
 }
 
+.gr-compact{
+    overflow: visible;
+}
+
 .gr-compact > *{
-    margin-top: 0.5em !important;
 }
 
 .gr-compact .gr-block, .gr-compact .gr-form{

@@ -230,14 +230,26 @@ onUiUpdate(function(){
 
     json_elem.parentElement.style.display="none"
 
-	if (!txt2img_textarea) {
-		txt2img_textarea = gradioApp().querySelector("#txt2img_prompt > label > textarea");
-		txt2img_textarea?.addEventListener("input", () => update_token_counter("txt2img_token_button"));
-	}
-	if (!img2img_textarea) {
-		img2img_textarea = gradioApp().querySelector("#img2img_prompt > label > textarea");
-		img2img_textarea?.addEventListener("input", () => update_token_counter("img2img_token_button"));
-	}
+    function registerTextarea(id, id_counter, id_button){
+        var prompt = gradioApp().getElementById(id)
+        var counter = gradioApp().getElementById(id_counter)
+        var textarea = gradioApp().querySelector("#" + id + " > label > textarea");
+
+        if(counter.parentElement == prompt.parentElement){
+            return
+        }
+
+        prompt.parentElement.insertBefore(counter, prompt)
+        counter.classList.add("token-counter")
+        prompt.parentElement.style.position = "relative"
+
+		textarea.addEventListener("input", () => update_token_counter(id_button));
+    }
+
+    registerTextarea('txt2img_prompt', 'txt2img_token_counter', 'txt2img_token_button')
+    registerTextarea('txt2img_neg_prompt', 'txt2img_negative_token_counter', 'txt2img_negative_token_button')
+    registerTextarea('img2img_prompt', 'img2img_token_counter', 'img2img_token_button')
+    registerTextarea('img2img_neg_prompt', 'img2img_negative_token_counter', 'img2img_negative_token_button')
 
     show_all_pages = gradioApp().getElementById('settings_show_all_pages')
     settings_tabs = gradioApp().querySelector('#settings div')
@@ -249,6 +261,7 @@ onUiUpdate(function(){
             })
         }
     }
+
 })
 
 
