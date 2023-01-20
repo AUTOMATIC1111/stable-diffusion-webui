@@ -146,7 +146,7 @@ async def preprocess(params):
                 log.error({ 'preprocess video extract': 'no images' })
     elif os.path.isdir(params.src):
         if params.preprocess == 'builtin':
-            res = preprocess_builtin(params)
+            res = await preprocess_builtin(params)
         if params.preprocess == 'custom':
             t0 = time.perf_counter()
             args.preprocess.process_src = params.src
@@ -273,12 +273,14 @@ async def train(params):
 
     if params.grad == -1:
         args.train_embedding.gradient_step = len(imgs) // args.train_embedding.batch_size
+        divisor = args.train_embedding.gradient_step // 60
+        args.train_embedding.gradient_step = args.train_embedding.gradient_step // (1 + divisor)
         log.info({ 'dynamic gradient step': args.train_embedding.gradient_step })
         if params.steps == -1:
             args.train_embedding.steps = params.maxsteps // args.train_embedding.gradient_step
             log.info({ 'dynamic steps': args.train_embedding.steps })
-    
-    epoch_size = args.train_embedding.batch_size * args.train_embedding.gradient_step
+
+    epoch_size = args.train_embedding.batch_size * args.train_embedding.gradient_step  
     if args.train_embedding.create_image_every == -1:
         args.train_embedding.create_image_every = args.train_embedding.steps // 10
     if args.train_embedding.save_embedding_every == -1:
