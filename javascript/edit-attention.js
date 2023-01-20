@@ -1,6 +1,6 @@
 addEventListener('keydown', (event) => {
 	let target = event.originalTarget || event.composedPath()[0];
-	if (!target.matches("#toprow textarea.gr-text-input[placeholder]")) return;
+	if (!target.matches("[id*='_toprow'] textarea.gr-text-input[placeholder]")) return;
 	if (! (event.metaKey || event.ctrlKey)) return;
 
 
