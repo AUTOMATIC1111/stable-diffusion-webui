@@ -278,7 +278,7 @@ async def train(params):
         log.info({ 'dynamic gradient step': args.train_embedding.gradient_step })
         if params.steps == -1:
             args.train_embedding.steps = params.maxsteps // args.train_embedding.gradient_step
-            log.info({ 'dynamic steps': args.train_embedding.steps })
+            log.info({ 'dynamic steps': args.train_embedding.steps, 'estimated total steps': args.train_embedding.steps * args.train_embedding.gradient_step * args.train_embedding.batch_size })
 
     epoch_size = args.train_embedding.batch_size * args.train_embedding.gradient_step  
     if args.train_embedding.create_image_every == -1:
@@ -313,7 +313,7 @@ async def train(params):
     t0 = time.time()
     res = await post('/sdapi/v1/train/embedding', args.train_embedding)
     t1 = time.time()
-    log.info({ 'train embedding finished': round(t1 - t0) })
+    log.info({ 'train embedding finished': { 'name': params.name, 'time': round(t1 - t0) } })
     log.debug({ 'train end': res.info })
     return
 
@@ -349,9 +349,10 @@ async def monitor(params):
     step = 0
     t0 = time.perf_counter()
     t1 = time.perf_counter()
+    log.info({' starting monitor': t0 })
     finished = 0
     while True:
-        await asyncio.sleep(10)
+        await asyncio.sleep(params.monitor)
         res = await progress()
         if not 'state' in res:
             log.info({ 'monitor disconnected': res })
@@ -426,6 +427,7 @@ async def main():
     parser.add_argument('--skipcaption', default = False, action='store_true', help = "do not auto-generate captions, default: %(default)s")
     parser.add_argument('--preprocess', type = str, choices=['builtin', 'custom', 'none'], default = 'custom', help = "preprocessing type, default: %(default)s")
     parser.add_argument('--nocleanup', default = False, action='store_true', help = "skip cleanup after completion, default: %(default)s")
+    parser.add_argument("--monitor", type = int, default = 30, required = False, help = "progress monitor frequency, default: : %(default)s")
     parser.add_argument('--debug', default = False, action='store_true', help = "print extra debug information, default: %(default)s")
     params = parser.parse_args()
     if params.debug:
