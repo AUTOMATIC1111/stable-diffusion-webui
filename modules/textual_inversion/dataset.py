@@ -6,7 +6,6 @@ from PIL import Image
 from torch.utils.data import Dataset, DataLoader, Sampler
 from torchvision import transforms
 from collections import defaultdict
-from random import shuffle, choices
 
 import random
 import tqdm
@@ -167,23 +166,85 @@ class GroupedBatchSampler(Sampler):
         b = self.batch_size
 
         for g in self.groups:
-            shuffle(g)
+            random.shuffle(g)
 
         batches = []
         for g in self.groups:
             batches.extend(g[i*b:(i+1)*b] for i in range(len(g) // b))
         for _ in range(self.n_rand_batches):
-            rand_group = choices(self.groups, self.probs)[0]
-            batches.append(choices(rand_group, k=b))
+            rand_group = random.choices(self.groups, self.probs)[0]
+            batches.append(random.choices(rand_group, k=b))
 
-        shuffle(batches)
+        random.shuffle(batches)
 
         yield from batches
+
+def greedy_pack(tails, b):
+    '''inefficient suboptimal packing of remainders from each bucket'''
+    by_len = defaultdict(list)
+    for t in tails:
+        by_len[len(t)].append(t)
+    n = sum(len(t) for t in tails) // b
+    superbatches = []
+    for _ in range(n):
+        to_pick = b
+        superbatch = []
+        while to_pick:
+            for k, v in sorted(by_len.items(), reverse=True):
+                # try pick longest
+                if k <= to_pick:
+                    to_pick -= k
+                    superbatch.append(v.pop())
+                    if not v:
+                        del(by_len[k])
+                    break
+            else:
+                # can't find any so split a group
+                maxlen = max(by_len)
+                tail = by_len[maxlen].pop()
+                if not by_len[maxlen]:
+                    del by_len[maxlen]
+                superbatch.append(tail[:to_pick])
+                by_len[len(tail[to_pick:])].append(tail[to_pick:])
+                to_pick = 0
+        superbatches.append(superbatch)
+    return superbatches
+
+class VariableBatchSampler(Sampler):
+    def __init__(self, data_source: PersonalizedBase, batch_size: int):
+        self.n = len(data_source)
+        self.groups = data_source.groups
+        self.batch_size = batch_size
+    
+    def __iter__(self):
+        b = self.batch_size
+        dropped = set(random.sample(range(self.n), self.n % b))
+        groups = [[x for x in g if x not in dropped] for g in self.groups]
+        for g in groups:
+            random.shuffle(g)
+        superbatches = []
+        for g in groups:
+            superbatches.extend([g[i*b:(i+1)*b]] for i in range(len(g) // b))
+        tails = [g[-(len(g) % b):] for g in groups if len(g) % b != 0]
+        random.shuffle(tails)
+        superbatches.extend(greedy_pack(tails, b))
+        random.shuffle(superbatches)
+        yield from [batch for superbatch in superbatches for batch in superbatch]
+
+def group_batches(batches, batch_size):
+    m, superbatch = 0, []
+    for batch in batches:
+        superbatch.append(batch)
+        m += len(batch)
+        assert m <= batch_size
+        if m == batch_size:
+            yield superbatch
+            m, superbatch = 0, []
 
 
 class PersonalizedDataLoader(DataLoader):
     def __init__(self, dataset, latent_sampling_method="once", batch_size=1, pin_memory=False):
-        super(PersonalizedDataLoader, self).__init__(dataset, batch_sampler=GroupedBatchSampler(dataset, batch_size), pin_memory=pin_memory)
+        super(PersonalizedDataLoader, self).__init__(dataset, batch_sampler=VariableBatchSampler(dataset, batch_size), pin_memory=pin_memory)
         if latent_sampling_method == "random":
             self.collate_fn = collate_wrapper_random
         else:
@@ -197,6 +258,9 @@ class BatchLoader:
         self.latent_sample = torch.stack([entry.latent_sample for entry in data]).squeeze(1)
         #self.emb_index = [entry.emb_index for entry in data]
         #print(self.latent_sample.device)
+    
+    def __len__(self):
+        return len(self.cond)
 
     def pin_memory(self):
         self.latent_sample = self.latent_sample.pin_memory()

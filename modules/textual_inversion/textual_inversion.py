@@ -459,7 +459,7 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
                 break
             if shared.state.interrupted:
                 break
-            for j, batch in enumerate(dl):
+            for j, superbatch in enumerate(modules.textual_inversion.dataset.group_batches(dl, batch_size)):
                 # works as a drop_last=True for gradient accumulation
                 if j == max_steps_per_epoch:
                     break
@@ -473,21 +473,22 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
                     clip_grad_sched.step(embedding.step)
             
                 with devices.autocast():
-                    x = batch.latent_sample.to(devices.device, non_blocking=pin_memory)
-                    c = shared.sd_model.cond_stage_model(batch.cond_text)
+                    for batch in superbatch:
+                        x = batch.latent_sample.to(devices.device, non_blocking=pin_memory)
+                        c = shared.sd_model.cond_stage_model(batch.cond_text)
 
-                    if is_training_inpainting_model:
-                        if img_c is None:
-                            img_c = processing.txt2img_image_conditioning(shared.sd_model, c, training_width, training_height)
+                        if is_training_inpainting_model:
+                            if img_c is None:
+                                img_c = processing.txt2img_image_conditioning(shared.sd_model, c, training_width, training_height)
 
-                        cond = {"c_concat": [img_c], "c_crossattn": [c]}
-                    else:
-                        cond = c
+                            cond = {"c_concat": [img_c], "c_crossattn": [c]}
+                        else:
+                            cond = c
 
-                    loss = shared.sd_model(x, cond)[0] / gradient_step
-                    del x
+                        loss = shared.sd_model(x, cond)[0] / gradient_step * len(batch) / batch_size
+                        del x
 
-                    _loss_step += loss.item()
+                        _loss_step += loss.item()
                 scaler.scale(loss).backward()
 
                 # go back until we reach gradient accumulation steps

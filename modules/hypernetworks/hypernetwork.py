@@ -582,7 +582,7 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
                 break
             if shared.state.interrupted:
                 break
-            for j, batch in enumerate(dl):
+            for j, superbatch in enumerate(modules.textual_inversion.dataset.group_batches(dl, batch_size)):
                 # works as a drop_last=True for gradient accumulation
                 if j == max_steps_per_epoch:
                     break
@@ -596,18 +596,19 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
                     clip_grad_sched.step(hypernetwork.step)
                 
                 with devices.autocast():
-                    x = batch.latent_sample.to(devices.device, non_blocking=pin_memory)
-                    if tag_drop_out != 0 or shuffle_tags:
-                        shared.sd_model.cond_stage_model.to(devices.device)
-                        c = shared.sd_model.cond_stage_model(batch.cond_text).to(devices.device, non_blocking=pin_memory)
-                        shared.sd_model.cond_stage_model.to(devices.cpu)
-                    else:
-                        c = stack_conds(batch.cond).to(devices.device, non_blocking=pin_memory)
-                    loss = shared.sd_model(x, c)[0] / gradient_step
-                    del x
-                    del c
+                    for batch in superbatch:
+                        x = batch.latent_sample.to(devices.device, non_blocking=pin_memory)
+                        if tag_drop_out != 0 or shuffle_tags:
+                            shared.sd_model.cond_stage_model.to(devices.device)
+                            c = shared.sd_model.cond_stage_model(batch.cond_text).to(devices.device, non_blocking=pin_memory)
+                            shared.sd_model.cond_stage_model.to(devices.cpu)
+                        else:
+                            c = stack_conds(batch.cond).to(devices.device, non_blocking=pin_memory)
+                        loss = shared.sd_model(x, c)[0] / gradient_step * len(batch) / batch_size
+                        del x
+                        del c
 
-                    _loss_step += loss.item()
+                        _loss_step += loss.item()
                 scaler.scale(loss).backward()
                 
                 # go back until we reach gradient accumulation steps
