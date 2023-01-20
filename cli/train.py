@@ -288,14 +288,15 @@ async def train(params):
     if args.train_embedding.learn_rate == -1:
         loss_args = {
             "steps": args.train_embedding.steps,
-            "step": epoch_size,
+            "step": args.train_embedding.create_image_every,
             "loss_start": params.rstart,
             "loss_end": params.rend,
             "loss_type": 'power',
             "power": params.rdescend
         }
         args.train_embedding.learn_rate = gen_loss_rate_str(**loss_args)
-        log.debug({ 'learning rate': args.train_embedding.learn_rate, 'params': loss_args })
+        log.info({ 'dynamic learn-rate': loss_args })
+        log.debug({ 'learn rate': args.train_embedding.learn_rate, 'params': loss_args })
 
     log.info({ 'train embedding': {
         'name': params.name,
@@ -413,7 +414,7 @@ async def main():
     parser.add_argument("--maxsteps", type = int, default = 2500, required = False, help = "max training steps used when dynamic gradient is active, default: %(default)s")
     parser.add_argument("--vectors", type = int, default = -1, required = False, help = "number of vectors per token, default: dynamic based on number of input images")
     parser.add_argument("--batch", type = int, default = 1, required = False, help = "batch size, default: %(default)s")
-    parser.add_argument("--rate", type = str, default = "", required = False, help = "learning rate, default: dynamic")
+    parser.add_argument("--rate", type = str, default = "", required = False, help = "learn rate, default: dynamic")
     parser.add_argument("--rstart", type = float, default = 0.01, required = False, help = "starting learn rate if using dynamic rate, default: %(default)s")
     parser.add_argument("--rend", type = float, default = 0.0005, required = False, help = "ending learn rate if using dynamic rate, default: %(default)s")
     parser.add_argument("--rdescend", type = float, default = 2, required = False, help = "learn rate descend power when using dynamic rate, default: %(default)s")

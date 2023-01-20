@@ -57,7 +57,7 @@
     "training_image_repeats_per_epoch": 1,
     "training_write_csv_every": 1.0,
     "training_xattention_optimizations": false,
-    "training_enable_tensorboard": true,
+    "training_enable_tensorboard": false,
     "training_tensorboard_save_images": false,
     "training_tensorboard_flush_every": 120,
     "sd_model_checkpoint": "sd-v15-runwayml.ckpt [cc6cb27103]",

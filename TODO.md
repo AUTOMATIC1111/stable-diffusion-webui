@@ -59,6 +59,7 @@ Tech that can be integrated as part of the core workflow...
 - [VIDM: video implicit diffusion models](https://github.com/MKFMIKU/vidm)
 - [Tune-a-Video](https://github.com/showlab/Tune-A-Video)
 - [Animator extension](https://github.com/Animator-Anon/animator_extension)
+- [Prompt travel](https://github.com/Kahsolt/stable-diffusion-webui-prompt-travel)
 - [KLMC2 animation](https://colab.research.google.com/github/dmarx/notebooks/blob/main/Stable_Diffusion_KLMC2_Animation.ipynb)
 - [Disco diffusion](https://colab.research.google.com/github/alembics/disco-diffusion/blob/main/Disco_Diffusion.ipynb)
 - [Video killed the radio star](https://colab.research.google.com/github/dmarx/video-killed-the-radio-star/blob/main/Video_Killed_The_Radio_Star_Defusion.ipynb)
@@ -69,5 +70,6 @@ Cool stuff that is not integrated anywhere...
 
 - [TensorRT](https://www.photoroom.com/tech/stable-diffusion-25-percent-faster-and-save-seconds/)
 - Bunch of stuff:<https://pharmapsychotic.com/tools.html>
+- [Google frame interpolation](https://github.com/google-research/frame-interpolation)
 - Prevalent colors to interrogate
 - Auto-Sort inputs by face recognition
