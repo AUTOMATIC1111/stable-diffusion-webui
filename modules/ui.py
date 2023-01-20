@@ -1190,10 +1190,19 @@ def create_ui():
             outputs=[html, generation_info, html2],
         )
 
+    def update_interp_description(value):
+        interp_description_css = "<p style='margin-bottom: 2.5em'>{}</p>"
+        interp_descriptions = {
+            "No interpolation": interp_description_css.format("No interpolation will be used. Requires one model; A. Allows for format conversion and VAE baking."),
+            "Weighted sum": interp_description_css.format("A weighted sum will be used for interpolation. Requires two models; A and B. The result is calculated as A * (1 - M) + B * M"),
+            "Add difference": interp_description_css.format("The difference between the last two models will be added to the first. Requires three models; A, B and C. The result is calculated as A + (B - C) * M")
+        }
+        return interp_descriptions[value]
+
     with gr.Blocks(analytics_enabled=False) as modelmerger_interface:
         with gr.Row().style(equal_height=False):
             with gr.Column(variant='compact'):
-                gr.HTML(value="<p style='margin-bottom: 2.5em'>A merger of the two checkpoints will be generated in your <b>checkpoint</b> directory.</p>")
+                interp_description = gr.HTML(value=update_interp_description("Weighted sum"), elem_id="modelmerger_interp_description")
 
                 with FormRow(elem_id="modelmerger_models"):
                     primary_model_name = gr.Dropdown(modules.sd_models.checkpoint_tiles(), elem_id="modelmerger_primary_model_name", label="Primary model (A)")
@@ -1208,6 +1217,7 @@ def create_ui():
                 custom_name = gr.Textbox(label="Custom Name (Optional)", elem_id="modelmerger_custom_name")
                 interp_amount = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Multiplier (M) - set to 0 to get model A', value=0.3, elem_id="modelmerger_interp_amount")
                 interp_method = gr.Radio(choices=["No interpolation", "Weighted sum", "Add difference"], value="Weighted sum", label="Interpolation Method", elem_id="modelmerger_interp_method")
+                interp_method.change(fn=update_interp_description, inputs=[interp_method], outputs=[interp_description])
 
                 with FormRow():
                     checkpoint_format = gr.Radio(choices=["ckpt", "safetensors"], value="ckpt", label="Checkpoint format", elem_id="modelmerger_checkpoint_format")
@@ -1902,6 +1912,9 @@ def create_ui():
     if not error_loading and (not os.path.exists(ui_config_file) or settings_count != len(ui_settings)):
         with open(ui_config_file, "w", encoding="utf8") as file:
             json.dump(ui_settings, file, indent=4)
+
+    # Required as a workaround for change() event not triggering when loading values from ui-config.json
+    interp_description.value = update_interp_description(interp_method.value)
 
     return demo
 
