@@ -532,7 +532,7 @@ Requested path was: {f}
                             generation_info_button = gr.Button(visible=False, elem_id=f"{tabname}_generation_info_button")
                             generation_info_button.click(
                                 fn=update_generation_info,
-                                _js="function(x, y, z){ console.log(x, y, z); return [x, y, selected_gallery_index()] }",
+                                _js="function(x, y, z){ return [x, y, selected_gallery_index()] }",
                                 inputs=[generation_info, html_info, html_info],
                                 outputs=[html_info, html_info],
                             )
