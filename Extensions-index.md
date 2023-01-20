@@ -472,10 +472,17 @@
 		},
 		{
 			"name": "Promptgen",
-			"url": "https://github.com/AUTOMATIC1111/stable-diffusion-webui-promptgen",
+			"url": "https://github.com/AUTOMATIC1111/stable-diffusion-webui-promptgen.git",
 			"description": "Use transformers models to generate prompts.",
 			"added": "2023-01-18",
 			"tags": ["script", "tab"]
+		},
+		{
+			"name": "Discord Rich Presence",
+			"url": "https://github.com/kabachuha/discord-rpc-for-automatic1111-webui.git",
+			"description": "Provides connection to Discord PRC, showing a fancy table in the user profile.",
+			"added": "2023-01-23",
+			"tags": ["script"]
 		},
 		{
 			"name": "zh_CN Localization",
