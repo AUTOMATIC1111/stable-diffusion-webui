@@ -401,11 +401,12 @@ def load_model(checkpoint_info=None):
     sd_hijack.model_hijack.hijack(sd_model)
 
     if shared.cmd_opts.compile is not None:
+        if torch.cuda.is_available():
+            torch.backends.cudnn.benchmark = True
         try:
             import time
             import torch._dynamo as dynamo # must be imported explicitly or namespace is not found
             torch._dynamo.config.verbose=True
-            torch.backends.cudnn.benchmark = True
             t0 = time.time()
             # script = sd_model.model.to_torchscript(method="trace")
             # script = torch.jit.script(sd_model.model.eval())
