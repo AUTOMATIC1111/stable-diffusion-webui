@@ -26,7 +26,7 @@ class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
                 "filename": embedding.filename,
                 "preview": preview,
                 "prompt": json.dumps(embedding.name),
-                "local_preview": path + ".preview.png",
+                "local_preview": path + ".png",
             }
 
     def allowed_directories_for_previews(self):
