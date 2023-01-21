@@ -228,17 +228,17 @@ def process_interrogate(interrogation_function, mode, ii_input_dir, ii_output_di
             left, _ = os.path.splitext(filename)
             print(interrogation_function(img), file=open(os.path.join(ii_output_dir, left + ".txt"), 'a'))
 
-        return [gr_show(True), None]
+        return [gr.update(), None]
 
 
 def interrogate(image):
     prompt = shared.interrogator.interrogate(image.convert("RGB"))
-    return gr_show(True) if prompt is None else prompt
+    return gr.update() if prompt is None else prompt
 
 
 def interrogate_deepbooru(image):
     prompt = deepbooru.model.tag(image)
-    return gr_show(True) if prompt is None else prompt
+    return gr.update() if prompt is None else prompt
 
 
 def create_seed_inputs(target_interface):
@@ -1039,19 +1039,18 @@ def create_ui():
                     init_img_inpaint,
                 ],
                 outputs=[img2img_prompt, dummy_component],
-                show_progress=False,
             )
 
             img2img_prompt.submit(**img2img_args)
             submit.click(**img2img_args)
 
             img2img_interrogate.click(
-                fn=lambda *args : process_interrogate(interrogate, *args),
+                fn=lambda *args: process_interrogate(interrogate, *args),
                 **interrogate_args,
             )
 
             img2img_deepbooru.click(
-                fn=lambda *args : process_interrogate(interrogate_deepbooru, *args),
+                fn=lambda *args: process_interrogate(interrogate_deepbooru, *args),
                 **interrogate_args,
             )
 

@@ -49,7 +49,6 @@ A browser interface based on Gradio library for Stable Diffusion.
 - Running arbitrary python code from UI (must run with --allow-code to enable)
 - Mouseover hints for most UI elements
 - Possible to change defaults/mix/max/step values for UI elements via text config
-- Random artist button
 - Tiling support, a checkbox to create images that can be tiled like textures
 - Progress bar and live image generation preview
 - Negative prompt, an extra text field that allows you to list what you don't want to see in generated image
