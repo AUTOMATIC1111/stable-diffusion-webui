@@ -561,7 +561,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         cache[0] = (required_prompts, steps)
         return cache[1]
 
-    p.all_prompts, extra_network_data = extra_networks.parse_prompts(p.all_prompts)
+    _, extra_network_data = extra_networks.parse_prompts(p.all_prompts[0:1])
 
     with torch.no_grad(), p.sd_model.ema_scope():
         with devices.autocast():
@@ -592,6 +592,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
             if len(prompts) == 0:
                 break
+
+            prompts, _ = extra_networks.parse_prompts(prompts)
 
             if p.scripts is not None:
                 p.scripts.process_batch(p, batch_number=n, prompts=prompts, seeds=seeds, subseeds=subseeds)
