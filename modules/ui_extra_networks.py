@@ -54,7 +54,7 @@ class ExtraNetworksPage:
 
         args = {
             "preview_html": "style='background-image: url(" + json.dumps(preview) + ")'" if preview else '',
-            "prompt": json.dumps(item["prompt"]),
+            "prompt": item["prompt"],
             "tabname": json.dumps(tabname),
             "local_preview": json.dumps(item["local_preview"]),
             "name": item["name"],
