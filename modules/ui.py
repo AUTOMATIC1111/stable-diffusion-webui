@@ -1897,7 +1897,7 @@ def create_ui():
 
         if type(x) == gr.Dropdown:
             def check_dropdown(val):
-                if x.multiselect:
+                if getattr(x, 'multiselect', False):
                     return all([value in x.choices for value in val])
                 else:
                     return val in x.choices
