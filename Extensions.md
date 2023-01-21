@@ -529,21 +529,21 @@ Extension that allows the use of multiple hypernetworks at once
 
 ![image](https://user-images.githubusercontent.com/32306715/212293588-a8b4d1e9-4099-4a2e-a61a-f549a70f6096.png)
 
-# Stable Horde
+## Stable Horde
 
-## Stable Horde Client
+### Stable Horde Client
 https://github.com/natanjunges/stable-diffusion-webui-stable-horde
 
 Generate pictures using other user's PC. You should be able to recieve images from the stable horde with anonymous `0000000000` api key, however it is recommended to get your own - https://stablehorde.net/register
 
 Note: Retrieving Images may take 2 minutes or more, especially if you have no kudos. 
 
-## Stable Horde Worker
+### Stable Horde Worker
 https://github.com/sdwebui-w-horde/sd-webui-stable-horde-worker
 
 Produce images for other users using your compute. 
 
-### Instructions:
+#### Instructions:
 <details><summary>tested with: (Click to expand:)</summary>
 
 - [commit version for webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/9cfd10cdefc7b2966b8e42fbb0e05735967cf87b) 
@@ -569,4 +569,50 @@ You will get an api key.
 
 Note: Other users prompts are visible in your log. Their images generated are not visible or saved to your pc.
 
+## Aesthetic Scorer
 
+Uses existing CLiP model with an additional small pretrained to calculate perceived aesthetic score of an image  
+
+Enable or disable via `Settings` -> `Aesthetic scorer`  
+
+This is an *"invisible"* extension, it runs in the background before any image save and  
+appends **`score`** as *PNG info section* and/or *EXIF comments* field
+
+### Notes
+
+- Configuration via **Settings** &rarr; **Aesthetic scorer**  
+  ![screenshot](https://raw.githubusercontent.com/vladmandic/sd-extension-aesthetic-scorer/main/aesthetic-scorer.jpg)
+- Extension obeys existing **Move VAE and CLiP to RAM** settings
+- Models will be auto-downloaded upon first usage (small)
+- Score values are `0..10`  
+- Supports both `CLiP-ViT-L/14` and `CLiP-ViT-B/16`
+- Cross-platform!
+
+## Steps Animation
+
+Extension to create animation sequence from denoised intermediate steps  
+Registers a script in **txt2img** and **img2img** tabs
+
+Creating animation has minimum impact on overall performance as it does not require separate runs  
+except adding overhead of saving each intermediate step as image plus few seconds to actually create movie file  
+
+Supports **color** and **motion** interpolation to achieve animation of desired duration from any number of interim steps  
+Resulting movie fiels are typically very small (*~1MB being average*) due to optimized codec settings  
+
+![screenshot](https://raw.githubusercontent.com/vladmandic/sd-extension-steps-animation/main/steps-animation.jpg)
+
+### Example
+
+https://user-images.githubusercontent.com/57876960/212490617-f0444799-50e5-485e-bc5d-9c24a9146d38.mp4
+
+## System Info
+
+Creates a top-level **System Info** tab in Automatic WebUI with 
+
+*Note*:
+- State & memory info are auto-updated every second if tab is visible  
+  (no updates are performed when tab is not visible)  
+- All other information is updated once upon WebUI load and  
+  can be force refreshed if required  
+
+![screenshot](https://raw.githubusercontent.com/vladmandic/sd-extension-system-info/main/system-info.jpg)
