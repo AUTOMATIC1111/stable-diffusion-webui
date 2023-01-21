@@ -484,6 +484,27 @@
 			"added": "2023-01-23",
 			"tags": ["script"]
 		},
+    {
+			"name": "Steps Animation",
+			"url": "https://github.com/vladmandic/sd-extension-steps-animation",
+			"description": "Create animation sequence from denoised intermediate steps.",
+			"added": "2023-01-21",
+			"tags": ["script"]
+		},
+		{
+			"name": "Aesthetic Scorer",
+			"url": "https://github.com/vladmandic/sd-extension-aesthetic-scorer",
+			"description": "Uses existing CLiP model with an additional small pretrained model to calculate perceived aesthetic score of an image.",
+			"added": "2023-01-21",
+			"tags": ["script"]
+		},
+		{
+			"name": "System Info",
+			"url": "https://github.com/vladmandic/sd-extension-system-info",
+			"description": "System Info tab for WebUI which shows realtime information of the server.",
+			"added": "2023-01-21",
+			"tags": ["script", "tab"]
+		},
 		{
 			"name": "zh_CN Localization",
 			"url": "https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN",
