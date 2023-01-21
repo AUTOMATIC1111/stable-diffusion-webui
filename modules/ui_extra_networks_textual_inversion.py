@@ -1,3 +1,4 @@
+import json
 import os
 
 from modules import ui_extra_networks, sd_hijack
@@ -24,7 +25,7 @@ class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
                 "name": embedding.name,
                 "filename": embedding.filename,
                 "preview": preview,
-                "prompt": embedding.name,
+                "prompt": json.dumps(embedding.name),
                 "local_preview": path + ".preview.png",
             }
 
