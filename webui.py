@@ -8,6 +8,7 @@ import re
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
+from starlette.staticfiles import StaticFiles
 
 from modules import import_hook, errors, extra_networks
 from modules import extra_networks_hypernet, ui_extra_networks_hypernets, ui_extra_networks_textual_inversion
@@ -195,6 +196,7 @@ def webui():
         setup_cors(app)
 
         app.add_middleware(GZipMiddleware, minimum_size=1000)
+        app.mount("/statica", StaticFiles(directory=os.path.join(script_path, 'statica')), name="statica")
 
         modules.progress.setup_progress_api(app)
 
