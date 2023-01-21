@@ -10,7 +10,6 @@ import sys
 import tempfile
 import time
 import traceback
-from collections import OrderedDict
 from functools import partial, reduce
 import warnings
 
