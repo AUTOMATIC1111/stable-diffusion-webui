@@ -589,7 +589,7 @@ canvas[key="mask"] {
 
 /* Extensions */
 
-#tab_extensions table``{
+#tab_extensions table{
     border-collapse: collapse;
 }
 
@@ -716,6 +716,10 @@ footer {
 }
 #txt2img_hires_fix{
     margin-left: -0.8em;
+}
+
+#img2img_copy_to_img2img, #img2img_copy_to_sketch, #img2img_copy_to_inpaint, #img2img_copy_to_inpaint_sketch{
+    margin-left: 0em;
 }
 
 .inactive{
