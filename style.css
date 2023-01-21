@@ -132,13 +132,6 @@
 }
 
 #roll_col > button {
-    min-width: 2em;
-    min-height: 2em;
-    max-width: 2em;
-    max-height: 2em;
-    flex-grow: 0;
-    padding-left: 0.25em;
-    padding-right: 0.25em;
     margin: 0.1em 0;
 }
 
@@ -146,9 +139,10 @@
     min-width: 0 !important;
     max-width: 8em !important;
     margin-right: 1em;
+    gap: 0;
 }
 #interrogate, #deepbooru{
-    margin: 0em 0.25em 0.9em 0.25em;
+    margin: 0em 0.25em 0.5em 0.25em;
     min-width: 8em;
     max-width: 8em;
 }
@@ -157,8 +151,17 @@
     min-width: 8em !important;
 }
 
+#txt2img_styles_row, #img2img_styles_row{
+    gap: 0.25em;
+    margin-top: 0.5em;
+}
+
+#txt2img_styles_row > button, #img2img_styles_row > button{
+    margin: 0;
+}
+
 #txt2img_styles, #img2img_styles{
-    margin-top: 1em;
+    padding: 0;
 }
 
 #txt2img_styles ul, #img2img_styles ul{
@@ -635,16 +638,20 @@ canvas[key="mask"] {
     background-color: rgb(31 41 55 / var(--tw-bg-opacity));
 }
 
-.gr-button-tool{
+.gr-button-tool, .gr-button-tool-top{
     max-width: 2.5em;
     min-width: 2.5em !important;
     height: 2.4em;
+}
+
+.gr-button-tool{
+    margin: 0.6em 0em 0.55em 0;
+}
+
+.gr-button-tool-top, #settings .gr-button-tool{
     margin: 1.6em 0.7em 0.55em 0;
 }
 
-#tab_modelmerger .gr-button-tool{
-    margin: 0.6em 0em 0.55em 0;
-}
 
 #modelmerger_results_container{
     margin-top: 1em;
@@ -763,81 +770,88 @@ footer {
     line-height: 2.4em;
 }
 
-/* The following handles localization for right-to-left (RTL) languages like Arabic.
-The rtl media type will only be activated by the logic in javascript/localization.js.
-If you change anything above, you need to make sure it is RTL compliant by just running
-your changes through converters like https://cssjanus.github.io/ or https://rtlcss.com/.
-Then, you will need to add the RTL counterpart only if needed in the rtl section below.*/
-@media rtl {
-    /* this part was added manually */
-    :host {
-        direction: rtl;
-    }
-    select, .file-preview, .gr-text-input, .output-html:has(.performance), #ti_progress {
-        direction: ltr;
-    }
-    #script_list > label > select,
-    #x_type > label > select,
-    #y_type > label > select {
-        direction: rtl;
-    }
-    .gr-radio, .gr-checkbox{
-        margin-left: 0.25em;
-    }
-
-    /* automatically generated with few manual modifications */
-    .performance .time {
-        margin-right: unset;
-        margin-left: 0;
-    }
-    .justify-center.overflow-x-scroll {
-        justify-content: right;
-    }
-    .justify-center.overflow-x-scroll button:first-of-type {
-        margin-left: unset;
-        margin-right: auto;
-    }
-    .justify-center.overflow-x-scroll button:last-of-type {
-        margin-right: unset;
-        margin-left: auto;
-    }
-    #settings fieldset span.text-gray-500, #settings .gr-block.gr-box span.text-gray-500, #settings label.block span{
-        margin-right: unset;
-        margin-left: 8em;
-    }
-    #txt2img_progressbar, #img2img_progressbar, #ti_progressbar{
-        right: unset;
-        left: 0;
-    }
-    .progressDiv .progress{
-        padding: 0 0 0 8px;
-        text-align: left;
-    }
-    #lightboxModal{
-        left: unset;
-        right: 0;
-    }
-    .modalPrev, .modalNext{
-        border-radius: 3px 0 0 3px;
-    }
-    .modalNext {
-        right: unset;
-        left: 0;
-        border-radius: 0 3px 3px 0;
-    }
-    #imageARPreview{
-        left:unset;
-        right:0px;
-    }
-    #txt2img_skip, #img2img_skip{
-        right: unset;
-        left: 0px;
-    }
-    #context-menu{
-        box-shadow:-1px 1px 2px #CE6400;
-    }
-    .gr-box > div > div > input.gr-text-input{
-        right: unset;
-        left: 0.5em;
-    }
+#txt2img_extra_networks, #img2img_extra_networks{
+    margin-top: -1em;
 }
+
+.extra-networks > div > [id *= '_extra_']{
+    margin: 0.3em;
+}
+
+.extra-network-cards .nocards{
+    margin: 1.25em 0.5em 0.5em 0.5em;
+}
+
+.extra-network-cards .nocards h1{
+    font-size: 1.5em;
+    margin-bottom: 1em;
+}
+
+.extra-network-cards .nocards li{
+    margin-left: 0.5em;
+}
+
+.extra-network-cards .card{
+    display: inline-block;
+    margin: 0.5em;
+    width: 16em;
+    height: 24em;
+    box-shadow: 0 0 5px rgba(128, 128, 128, 0.5);
+    border-radius: 0.2em;
+    position: relative;
+
+    background-size: auto 100%;
+    background-position: center;
+    overflow: hidden;
+    cursor: pointer;
+
+    background-image: url('./file=html/card-no-preview.png')
+}
+
+.extra-network-cards .card:hover{
+    box-shadow: 0 0 2px 0.3em rgba(0, 128, 255, 0.35);
+}
+
+.extra-network-cards .card .actions .additional{
+    display: none;
+}
+
+.extra-network-cards .card .actions{
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 0.5em;
+    color: white;
+    background: rgba(0,0,0,0.5);
+    box-shadow: 0 0 0.25em 0.25em rgba(0,0,0,0.5);
+    text-shadow: 0 0 0.2em black;
+}
+
+.extra-network-cards .card .actions:hover{
+    box-shadow: 0 0 0.75em 0.75em rgba(0,0,0,0.5) !important;
+}
+
+.extra-network-cards .card .actions .name{
+    font-size: 1.7em;
+    font-weight: bold;
+    line-break: anywhere;
+}
+
+.extra-network-cards .card .actions:hover .additional{
+    display: block;
+}
+
+.extra-network-cards .card ul{
+    margin: 0.25em 0 0.75em 0.25em;
+    cursor: unset;
+}
+
+.extra-network-cards .card ul a{
+    cursor: pointer;
+}
+
+.extra-network-cards .card ul a:hover{
+    color: red;
+}
+

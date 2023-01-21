@@ -50,6 +50,7 @@ class Embedding:
         self.sd_checkpoint = None
         self.sd_checkpoint_name = None
         self.optimizer_state_dict = None
+        self.filename = None
 
     def save(self, filename):
         embedding_data = {
@@ -182,6 +183,7 @@ class EmbeddingDatabase:
         embedding.sd_checkpoint_name = data.get('sd_checkpoint_name', None)
         embedding.vectors = vec.shape[0]
         embedding.shape = vec.shape[-1]
+        embedding.filename = path
 
         if self.expected_shape == -1 or self.expected_shape == embedding.shape:
             self.register_embedding(embedding, shared.sd_model)

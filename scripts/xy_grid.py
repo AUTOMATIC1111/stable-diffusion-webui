@@ -11,7 +11,6 @@ import modules.scripts as scripts
 import gradio as gr
 
 from modules import images, paths, sd_samplers, processing, sd_models, sd_vae
-from modules.hypernetworks import hypernetwork
 from modules.processing import process_images, Processed, StableDiffusionProcessingTxt2Img
 from modules.shared import opts, cmd_opts, state
 import modules.shared as shared
@@ -92,28 +91,6 @@ def confirm_checkpoints(p, xs):
     for x in xs:
         if modules.sd_models.get_closet_checkpoint_match(x) is None:
             raise RuntimeError(f"Unknown checkpoint: {x}")
-
-
-def apply_hypernetwork(p, x, xs):
-    if x.lower() in ["", "none"]:
-        name = None
-    else:
-        name = hypernetwork.find_closest_hypernetwork_name(x)
-        if not name:
-            raise RuntimeError(f"Unknown hypernetwork: {x}")
-    hypernetwork.load_hypernetwork(name)
-
-
-def apply_hypernetwork_strength(p, x, xs):
-    hypernetwork.apply_strength(x)
-
-
-def confirm_hypernetworks(p, xs):
-    for x in xs:
-        if x.lower() in ["", "none"]:
-            continue
-        if not hypernetwork.find_closest_hypernetwork_name(x):
-            raise RuntimeError(f"Unknown hypernetwork: {x}")
 
 
 def apply_clip_skip(p, x, xs):
@@ -208,8 +185,6 @@ axis_options = [
     AxisOption("Prompt order", str_permutations, apply_order, format_value=format_value_join_list),
     AxisOption("Sampler", str, apply_sampler, format_value=format_value, confirm=confirm_samplers, choices=lambda: [x.name for x in sd_samplers.samplers]),
     AxisOption("Checkpoint name", str, apply_checkpoint, format_value=format_value, confirm=confirm_checkpoints, cost=1.0, choices=lambda: list(sd_models.checkpoints_list)),
-    AxisOption("Hypernetwork", str, apply_hypernetwork, format_value=format_value, confirm=confirm_hypernetworks, cost=0.2, choices=lambda: list(shared.hypernetworks)),
-    AxisOption("Hypernet str.", float, apply_hypernetwork_strength),
     AxisOption("Sigma Churn", float, apply_field("s_churn")),
     AxisOption("Sigma min", float, apply_field("s_tmin")),
     AxisOption("Sigma max", float, apply_field("s_tmax")),
@@ -291,16 +266,12 @@ def draw_xy_grid(p, xs, ys, x_labels, y_labels, cell, draw_legend, include_lone_
 class SharedSettingsStackHelper(object):
     def __enter__(self):
         self.CLIP_stop_at_last_layers = opts.CLIP_stop_at_last_layers
-        self.hypernetwork = opts.sd_hypernetwork
         self.vae = opts.sd_vae
   
     def __exit__(self, exc_type, exc_value, tb):
         opts.data["sd_vae"] = self.vae
         modules.sd_models.reload_model_weights()
         modules.sd_vae.reload_vae_weights()
-
-        hypernetwork.load_hypernetwork(self.hypernetwork)
-        hypernetwork.apply_strength()
 
         opts.data["CLIP_stop_at_last_layers"] = self.CLIP_stop_at_last_layers
 

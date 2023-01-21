@@ -9,16 +9,18 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 
-from modules import import_hook, errors
+from modules import import_hook, errors, extra_networks
+from modules import extra_networks_hypernet, ui_extra_networks_hypernets, ui_extra_networks_textual_inversion
 from modules.call_queue import wrap_queued_call, queue_lock, wrap_gradio_gpu_call
 from modules.paths import script_path
 
 import torch
+
 # Truncate version number of nightly/local build of PyTorch to not cause exceptions with CodeFormer or Safetensors
 if ".dev" in torch.__version__ or "+git" in torch.__version__:
     torch.__version__ = re.search(r'[\d.]+[\d]', torch.__version__).group(0)
 
-from modules import shared, devices, sd_samplers, upscaler, extensions, localization, ui_tempdir
+from modules import shared, devices, sd_samplers, upscaler, extensions, localization, ui_tempdir, ui_extra_networks
 import modules.codeformer_model as codeformer
 import modules.extras
 import modules.face_restoration
@@ -84,9 +86,16 @@ def initialize():
     shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights()))
     shared.opts.onchange("sd_vae", wrap_queued_call(lambda: modules.sd_vae.reload_vae_weights()), call=False)
     shared.opts.onchange("sd_vae_as_default", wrap_queued_call(lambda: modules.sd_vae.reload_vae_weights()), call=False)
-    shared.opts.onchange("sd_hypernetwork", wrap_queued_call(lambda: shared.reload_hypernetworks()))
-    shared.opts.onchange("sd_hypernetwork_strength", modules.hypernetworks.hypernetwork.apply_strength)
     shared.opts.onchange("temp_dir", ui_tempdir.on_tmpdir_changed)
+
+    shared.reload_hypernetworks()
+
+    ui_extra_networks.intialize()
+    ui_extra_networks.register_page(ui_extra_networks_textual_inversion.ExtraNetworksPageTextualInversion())
+    ui_extra_networks.register_page(ui_extra_networks_hypernets.ExtraNetworksPageHypernetworks())
+
+    extra_networks.initialize()
+    extra_networks.register_extra_network(extra_networks_hypernet.ExtraNetworkHypernet())
 
     if cmd_opts.tls_keyfile is not None and cmd_opts.tls_keyfile is not None:
 
@@ -208,6 +217,15 @@ def webui():
             importlib.reload(module)
 
         modules.sd_models.list_models()
+
+        shared.reload_hypernetworks()
+
+        ui_extra_networks.intialize()
+        ui_extra_networks.register_page(ui_extra_networks_textual_inversion.ExtraNetworksPageTextualInversion())
+        ui_extra_networks.register_page(ui_extra_networks_hypernets.ExtraNetworksPageHypernetworks())
+
+        extra_networks.initialize()
+        extra_networks.register_extra_network(extra_networks_hypernet.ExtraNetworkHypernet())
 
 
 if __name__ == "__main__":

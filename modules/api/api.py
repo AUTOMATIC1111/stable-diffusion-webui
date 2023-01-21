@@ -480,7 +480,7 @@ class Api:
     def train_hypernetwork(self, args: dict):
         try:
             shared.state.begin()
-            initial_hypernetwork = shared.loaded_hypernetwork
+            shared.loaded_hypernetworks = []
             apply_optimizations = shared.opts.training_xattention_optimizations
             error = None
             filename = ''
@@ -491,16 +491,15 @@ class Api:
             except Exception as e:
                 error = e
             finally:
-                shared.loaded_hypernetwork = initial_hypernetwork
                 shared.sd_model.cond_stage_model.to(devices.device)
                 shared.sd_model.first_stage_model.to(devices.device)
                 if not apply_optimizations:
                     sd_hijack.apply_optimizations()
                 shared.state.end()
-            return TrainResponse(info = "train embedding complete: filename: {filename} error: {error}".format(filename = filename, error = error))
+            return TrainResponse(info="train embedding complete: filename: {filename} error: {error}".format(filename=filename, error=error))
         except AssertionError as msg:
             shared.state.end()
-            return TrainResponse(info = "train embedding error: {error}".format(error = error))
+            return TrainResponse(info="train embedding error: {error}".format(error=error))
 
     def get_memory(self):
         try:
