@@ -1919,46 +1919,40 @@ def create_ui():
 
 
 def reload_javascript():
-    javascript_files = OrderedDict()
-    with open(os.path.join(script_path, "script.js"), "r", encoding="utf8") as jsfile:
-        contents = jsfile.read()
-        javascript_files["script.js"] = [contents]
-
     scripts_list = modules.scripts.list_scripts("javascript", ".js")
-
+    js_files = []
     for basedir, filename, path in scripts_list:
-        with open(path, "r", encoding="utf8") as jsfile:
-            contents = jsfile.read()
-            javascript_files[filename] = [contents]
+        path = path[len(script_path) + 1:]
+        js_files.append(path)
 
+    inline = [f"{localization.localization_js(shared.opts.localization)};"]
     if cmd_opts.theme is not None:
-        javascript_files["theme.js"] = [f"set_theme('{cmd_opts.theme}');"]
+        inline.append(f"set_theme('{cmd_opts.theme}');", )
 
-    javascript_files["localization.js"] = [f"{localization.localization_js(shared.opts.localization)}"]
-
-    compiled_name = "webui-compiled.js"
-    head = f"""
-    <script src=/statica/{compiled_name}?{int(time.time())} type="text/javascript"></script>
-    """
+    t = int(time.time())
+    head = [
+        f"""
+            <script type="text/javascript" src="file=./script.js?{t}"></script>
+    """.strip()
+    ]
+    inline_code = "\n".join(inline)
+    head.append(f"""
+        <script type="text/javascript">
+        {inline_code}
+        </script>
+        """.strip())
+    for file in js_files:
+        head.append(f"""
+        <script type="text/javascript" src="file={file}?{t}"></script>
+        """.strip())
 
     def template_response(*args, **kwargs):
         res = shared.GradioTemplateResponseOriginal(*args, **kwargs)
+        head_inject = "\n".join(head)
         res.body = res.body.replace(
-            b'</head>', f'{head}</head>'.encode("utf8"))
+            b'</head>', f'{head_inject}</head>'.encode("utf8"))
         res.init_headers()
         return res
-
-    for k in javascript_files:
-        javascript_files[k] = "\n".join(javascript_files[k])
-
-    # make static_path if not exists
-    statica_path = os.path.join(script_path, 'statica')
-    if not os.path.exists(statica_path):
-        os.mkdir(statica_path)
-
-    javascript_out = "\n\n\n".join([f"// <!-- {k} -->\n\n{v}" for k, v in javascript_files.items()])
-    with open(os.path.join(script_path, "statica", compiled_name), "w", encoding="utf8") as jsfile:
-        jsfile.write(javascript_out)
 
     gradio.routes.templates.TemplateResponse = template_response
 
