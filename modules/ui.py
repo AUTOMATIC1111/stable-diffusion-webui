@@ -1923,7 +1923,6 @@ def reload_javascript():
     with open(os.path.join(script_path, "script.js"), "r", encoding="utf8") as jsfile:
         contents = jsfile.read()
         javascript_files["script.js"] = [contents]
-        # javascript = f'<script>{contents}</script>'
 
     scripts_list = modules.scripts.list_scripts("javascript", ".js")
 
@@ -1931,13 +1930,10 @@ def reload_javascript():
         with open(path, "r", encoding="utf8") as jsfile:
             contents = jsfile.read()
             javascript_files[filename] = [contents]
-            # javascript += f"\n<!-- {filename} --><script>{contents}</script>"
 
     if cmd_opts.theme is not None:
         javascript_files["theme.js"] = [f"set_theme('{cmd_opts.theme}');"]
-        # javascript += f"\n<script>set_theme('{cmd_opts.theme}');</script>\n"
 
-    # javascript += f"\n<script>{localization.localization_js(shared.opts.localization)}</script>"
     javascript_files["localization.js"] = [f"{localization.localization_js(shared.opts.localization)}"]
 
     compiled_name = "webui-compiled.js"
