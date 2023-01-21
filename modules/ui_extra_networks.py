@@ -25,7 +25,7 @@ class ExtraNetworksPage:
     def refresh(self):
         pass
 
-    def create_html(self, tabname, view = 'cards'):
+    def create_html(self, tabname, view=shared.opts.extra_networks_default_view):
         items_html = ''
 
         for item in self.list_items():
@@ -111,7 +111,7 @@ def create_ui(container, button, tabname):
     filter = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", visible=False)
     button_refresh = gr.Button('Refresh', elem_id=tabname+"_extra_refresh")
     button_close = gr.Button('Close', elem_id=tabname+"_extra_close")
-    ui.view_dropdown = gr.Dropdown(['cards', 'thumbs'], elem_id=tabname+"_extra_view", label="View as", value='cards')
+    ui.view_dropdown = gr.Dropdown(['cards', 'thumbs'], elem_id=tabname+"_extra_view", label="View as", value=lambda: shared.opts.extra_networks_default_view)
 
     ui.button_save_preview = gr.Button('Save preview', elem_id=tabname+"_save_preview", visible=False)
     ui.preview_target_filename = gr.Textbox('Preview save filename', elem_id=tabname+"_preview_filename", visible=False)
@@ -119,7 +119,7 @@ def create_ui(container, button, tabname):
     button.click(fn=lambda: gr.update(visible=True), inputs=[], outputs=[container])
     button_close.click(fn=lambda: gr.update(visible=False), inputs=[], outputs=[container])
 
-    def refresh(view='cards'):
+    def refresh(view):
         res = []
 
         for pg in ui.stored_extra_pages:
@@ -142,7 +142,7 @@ def path_is_parent(parent_path, child_path):
 
 
 def setup_ui(ui, gallery):
-    def save_preview(index, images, filename, view='cards'):
+    def save_preview(index, images, filename, view):
         if len(images) == 0:
             print("There is no image in gallery to save as a preview.")
             return [page.create_html(ui.tabname) for page in ui.stored_extra_pages]
