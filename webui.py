@@ -169,6 +169,9 @@ def webui():
 
         shared.demo = modules.ui.create_ui()
 
+        if cmd_opts.gradio_queue:
+            shared.demo.queue(64)
+
         app, local_url, share_url = shared.demo.launch(
             share=cmd_opts.share,
             server_name=server_name,
