@@ -532,6 +532,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
     if os.path.exists(cmd_opts.embeddings_dir) and not p.do_not_reload_embeddings:
         model_hijack.embedding_db.load_textual_inversion_embeddings()
 
+    _, extra_network_data = extra_networks.parse_prompts(p.all_prompts[0:1])
+
     if p.scripts is not None:
         p.scripts.process(p)
 
@@ -560,8 +562,6 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
         cache[0] = (required_prompts, steps)
         return cache[1]
-
-    _, extra_network_data = extra_networks.parse_prompts(p.all_prompts[0:1])
 
     with torch.no_grad(), p.sd_model.ema_scope():
         with devices.autocast():
