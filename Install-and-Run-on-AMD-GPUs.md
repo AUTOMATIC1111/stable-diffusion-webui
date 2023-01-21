@@ -1,3 +1,5 @@
+(For linux only.)
+
 # Automatic Installation
 
 (As of [1/15/23](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/6709) you can just run webui-user.sh and pytorch+rocm should be automatically installed for you.)
