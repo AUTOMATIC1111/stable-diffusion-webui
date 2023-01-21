@@ -864,8 +864,8 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
         img2img_sampler_name = self.sampler_name if self.sampler_name != 'PLMS' else 'DDIM'  # PLMS does not support img2img so we just silently switch ot DDIM
 
-        if self.hr_sampler != 0 and sd_samplers.samplers[self.hr_sampler].name != 'PLMS':
-            img2img_sampler_name = sd_samplers.samplers[self.hr_sampler].name
+        if self.hr_sampler != 0 and self.hr_sampler != 'PLMS':
+            img2img_sampler_name = self.hr_sampler
 
         self.sampler = sd_samplers.create_sampler(img2img_sampler_name, self.sd_model)
 

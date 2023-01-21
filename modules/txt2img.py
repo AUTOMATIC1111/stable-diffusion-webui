@@ -39,7 +39,7 @@ def txt2img(id_task: str, prompt: str, negative_prompt: str, prompt_styles, step
         hr_resize_x=hr_resize_x,
         hr_resize_y=hr_resize_y,
         hr_sampler=sd_samplers.samplers[hr_sampler_index].name
-        if hr_sampler_index != 0 else sd_samplers.samplers[sampler_index].name
+        if hr_sampler_index != 0 else 0
     )
 
     p.scripts = modules.scripts.scripts_txt2img
