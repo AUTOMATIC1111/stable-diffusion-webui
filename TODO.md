@@ -11,15 +11,16 @@ Things I'm actively investigating...
 ## Embeddings
 
 Need to study more to determine best out-of-the-box settings:
-- Impact of Codeformer
+- Train object
+- Train style
 - Impact of Hires fix:
   - e.g 25 steps and denoising strength 0.25-0.7
 - Impact of non-square target resolution
 
-## SDAPI
+## Hypernetworks
 
-- Support TLS
-- Support auth
+## LORA
+
 
 # Ideas
 
@@ -29,7 +30,6 @@ Things I'm looking into...
 
 Stuff to be fixed...
 
-- Torch 2.0 model compile / Accelerate test
 - Reconnect WebUI
 
 Tech that can be integrated as part of the core workflow...
@@ -51,7 +51,6 @@ Tech that can be integrated as part of the core workflow...
   - <https://github.com/AUTOMATIC1111/stable-diffusion-webui/discussions/2670#discussioncomment-4372336>
   - <https://github.com/AUTOMATIC1111/stable-diffusion-webui/discussions/2670#discussioncomment-4582025>
 
-
 ## Video Generation
 
 - [Deforum](https://github.com/deforum-art/deforum-for-automatic1111-webui)
@@ -60,7 +59,8 @@ Tech that can be integrated as part of the core workflow...
 - [Tune-a-Video](https://github.com/showlab/Tune-A-Video)
 - [Animator extension](https://github.com/Animator-Anon/animator_extension)
 - [Prompt travel](https://github.com/Kahsolt/stable-diffusion-webui-prompt-travel)
-- [KLMC2 animation](https://colab.research.google.com/github/dmarx/notebooks/blob/main/Stable_Diffusion_KLMC2_Animation.ipynb)
+- [KLMC2 animation](https://colab.research.google.com/github/dmarx/notebooks/blob/main/Stable_Diffusion_KLMC2_Animation.ipynb) 
+- [BOAAB-limit animation](https://colab.research.google.com/drive/17kesyBVqubV_Zzchf2XoR-7MHk5jxTuo?usp=sharing) <https://www.ajayjain.net/journey>
 - [Disco diffusion](https://colab.research.google.com/github/alembics/disco-diffusion/blob/main/Disco_Diffusion.ipynb)
 - [Video killed the radio star](https://colab.research.google.com/github/dmarx/video-killed-the-radio-star/blob/main/Video_Killed_The_Radio_Star_Defusion.ipynb)
 - [Seed travel](https://github.com/yownas/seed_travel)
@@ -74,3 +74,10 @@ Cool stuff that is not integrated anywhere...
 - Bunch of stuff:<https://pharmapsychotic.com/tools.html>
 - Prevalent colors to interrogate
 - Auto-Sort inputs by face recognition
+
+## Lee
+
+- Impact of non-square image sizes
+- Model vs embedding
+- Monitor MEM when switching models
+- Emulate model shoot using img2img

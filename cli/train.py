@@ -181,17 +181,20 @@ async def check(params):
     options['training_xattention_optimizations'] = False
     options['training_image_repeats_per_epoch'] = 1
 
-    log.debug({ 'check model': args.training_model })
-    if len(args.training_model) > 0 and not options['sd_model_checkpoint'].startswith(args.training_model):
-        models = await get('/sdapi/v1/sd-models')
-        models = [obj["title"] for obj in models]
-        found = [i for i in models if i.startswith(args.training_model)]
-        if len(found) == 0:
-            log.error({ 'model not found': args.training_model, 'available': models })
-            exit()
-        else:
-            log.warning({ 'switching model': found[0] })
-        options['sd_model_checkpoint'] = found[0]
+    if params.skipmodel:
+        log.info({ 'using model': options['sd_model_checkpoint'] })
+    else:
+        log.debug({ 'check model': args.training_model })
+        if len(args.training_model) > 0 and not options['sd_model_checkpoint'].startswith(args.training_model):
+            models = await get('/sdapi/v1/sd-models')
+            models = [obj["title"] for obj in models]
+            found = [i for i in models if i.startswith(args.training_model)]
+            if len(found) == 0:
+                log.error({ 'model not found': args.training_model, 'available': models })
+                exit()
+            else:
+                log.warning({ 'switching model': found[0] })
+            options['sd_model_checkpoint'] = found[0]
 
     log.debug({ 'check embedding': params.name })
     global cmdflags # pylint: disable=global-statement
@@ -425,6 +428,7 @@ async def main():
     parser.add_argument("--vstart", type = float, default = 0, required = False, help = "if processing video skip first n seconds, default: %(default)s")
     parser.add_argument("--vend", type = float, default = 0, required = False, help = "if processing video skip last n seconds, default: %(default)s")
     parser.add_argument('--skipcaption', default = False, action='store_true', help = "do not auto-generate captions, default: %(default)s")
+    parser.add_argument('--skipmodel', default = False, action='store_true', help = "skip model validation and switch, default: %(default)s")
     parser.add_argument('--preprocess', type = str, choices=['builtin', 'custom', 'none'], default = 'custom', help = "preprocessing type, default: %(default)s")
     parser.add_argument('--nocleanup', default = False, action='store_true', help = "skip cleanup after completion, default: %(default)s")
     parser.add_argument("--monitor", type = int, default = 30, required = False, help = "progress monitor frequency, default: : %(default)s")

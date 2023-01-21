@@ -11,6 +11,8 @@ __pycache__
 *.bin
 *.optim
 *.lock
+*.zip
+*.rar
 
 # all dynamic stuff
 /repositories/**/*
@@ -20,6 +22,7 @@ __pycache__
 /train/log/**/*
 /tmp
 /log
+/cert
 
 # unexcluded so folders get created
 !/repositories/.placeholder
