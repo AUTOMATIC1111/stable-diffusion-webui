@@ -1,10 +1,9 @@
 from modules import extra_networks
-from modules.hypernetworks import hypernetwork
+import lora
 
-
-class ExtraNetworkHypernet(extra_networks.ExtraNetwork):
+class ExtraNetworkLora(extra_networks.ExtraNetwork):
     def __init__(self):
-        super().__init__('hypernet')
+        super().__init__('lora')
 
     def activate(self, p, params_list):
         names = []
@@ -15,7 +14,7 @@ class ExtraNetworkHypernet(extra_networks.ExtraNetwork):
             names.append(params.items[0])
             multipliers.append(float(params.items[1]) if len(params.items) > 1 else 1.0)
 
-        hypernetwork.load_hypernetworks(names, multipliers)
+        lora.load_loras(names, multipliers)
 
     def deactivate(self, p):
         pass

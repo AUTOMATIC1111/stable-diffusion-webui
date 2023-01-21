@@ -165,6 +165,8 @@ def webui():
         if shared.opts.clean_temp_dir_at_start:
             ui_tempdir.cleanup_tmpdr()
 
+        modules.script_callbacks.before_ui_callback()
+
         shared.demo = modules.ui.create_ui()
 
         app, local_url, share_url = shared.demo.launch(

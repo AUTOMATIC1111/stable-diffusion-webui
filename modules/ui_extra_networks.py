@@ -10,7 +10,7 @@ extra_pages = []
 
 
 def register_page(page):
-    """registers extra networks page for the UI; recommend doing it in on_app_started() callback for extensions"""
+    """registers extra networks page for the UI; recommend doing it in on_before_ui() callback for extensions"""
 
     extra_pages.append(page)
 

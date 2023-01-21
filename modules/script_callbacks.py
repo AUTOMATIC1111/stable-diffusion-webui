@@ -73,6 +73,7 @@ callback_map = dict(
     callbacks_image_grid=[],
     callbacks_infotext_pasted=[],
     callbacks_script_unloaded=[],
+    callbacks_before_ui=[],
 )
 
 
@@ -187,6 +188,14 @@ def script_unloaded_callback():
             c.callback()
         except Exception:
             report_exception(c, 'script_unloaded')
+
+
+def before_ui_callback():
+    for c in reversed(callback_map['callbacks_before_ui']):
+        try:
+            c.callback()
+        except Exception:
+            report_exception(c, 'before_ui')
 
 
 def add_callback(callbacks, fun):
@@ -313,3 +322,9 @@ def on_script_unloaded(callback):
     the script did should be reverted here"""
 
     add_callback(callback_map['callbacks_script_unloaded'], callback)
+
+
+def on_before_ui(callback):
+    """register a function to be called before the UI is created."""
+
+    add_callback(callback_map['callbacks_before_ui'], callback)
