@@ -715,6 +715,8 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
                         do_not_save_samples=True,
                     )
 
+                    p.disable_extra_networks = True
+
                     if preview_from_txt2img:
                         p.prompt = preview_prompt
                         p.negative_prompt = preview_negative_prompt
