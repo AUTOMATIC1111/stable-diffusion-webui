@@ -22,6 +22,9 @@ Fork does differ in few things:
 
 - Additional simplified start script  
   > ./automatic.sh  
+  > ./secure.sh  
+  
+  Use `secure.sh` if you want to startup with username/password auth enabled and listen on global IP  
   Existing `webui.sh` still exists for fresh installs to auto-install dependencies, etc.  
 - Additional simplified install script  
   > ./install.sh  
