@@ -2,8 +2,24 @@
 function setupExtraNetworksForTab(tabname){
     gradioApp().querySelector('#'+tabname+'_extra_tabs').classList.add('extra-networks')
 
-    gradioApp().querySelector('#'+tabname+'_extra_tabs > div').appendChild(gradioApp().getElementById(tabname+'_extra_refresh'))
-    gradioApp().querySelector('#'+tabname+'_extra_tabs > div').appendChild(gradioApp().getElementById(tabname+'_extra_close'))
+    var tabs = gradioApp().querySelector('#'+tabname+'_extra_tabs > div')
+    var search = gradioApp().querySelector('#'+tabname+'_extra_search textarea')
+    var refresh = gradioApp().getElementById(tabname+'_extra_refresh')
+    var close = gradioApp().getElementById(tabname+'_extra_close')
+
+    search.classList.add('search')
+    tabs.appendChild(search)
+    tabs.appendChild(refresh)
+    tabs.appendChild(close)
+
+    search.addEventListener("input", function(evt){
+        searchTerm = search.value
+
+        gradioApp().querySelectorAll('#'+tabname+'_extra_tabs div.card').forEach(function(elem){
+            text = elem.querySelector('.name').textContent
+            elem.style.display = text.indexOf(searchTerm) == -1 ? "none" : ""
+        })
+    });
 }
 
 var activePromptTextarea = {};

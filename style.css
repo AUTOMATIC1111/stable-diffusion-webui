@@ -774,6 +774,14 @@ footer {
     margin: 0.3em;
 }
 
+
+
+#txt2img_extra_networks .search, #img2img_extra_networks .search{
+    display: inline-block;
+    max-width: 16em;
+    margin: 0.3em;
+}
+
 .extra-network-cards .nocards{
     margin: 1.25em 0.5em 0.5em 0.5em;
 }

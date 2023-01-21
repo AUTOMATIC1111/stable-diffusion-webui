@@ -18,6 +18,7 @@ def register_page(page):
 class ExtraNetworksPage:
     def __init__(self, title):
         self.title = title
+        self.name = title.lower()
         self.card_page = shared.html("extra-networks-card.html")
         self.allow_negative_prompt = False
 
@@ -34,7 +35,11 @@ class ExtraNetworksPage:
             dirs = "".join([f"<li>{x}</li>" for x in self.allowed_directories_for_previews()])
             items_html = shared.html("extra-networks-no-cards.html").format(dirs=dirs)
 
-        res = "<div class='extra-network-cards'>" + items_html + "</div>"
+        res = f"""
+<div id='{tabname}_{self.name}_cards' class='extra-network-cards'>
+{items_html}
+</div>
+"""
 
         return res
 
@@ -81,13 +86,14 @@ def create_ui(container, button, tabname):
     ui.tabname = tabname
 
     with gr.Tabs(elem_id=tabname+"_extra_tabs") as tabs:
-        button_refresh = gr.Button('Refresh', elem_id=tabname+"_extra_refresh")
-        button_close = gr.Button('Close', elem_id=tabname+"_extra_close")
-
         for page in ui.stored_extra_pages:
             with gr.Tab(page.title):
                 page_elem = gr.HTML(page.create_html(ui.tabname))
                 ui.pages.append(page_elem)
+
+    filter = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", visible=False)
+    button_refresh = gr.Button('Refresh', elem_id=tabname+"_extra_refresh")
+    button_close = gr.Button('Close', elem_id=tabname+"_extra_close")
 
     ui.button_save_preview = gr.Button('Save preview', elem_id=tabname+"_save_preview", visible=False)
     ui.preview_target_filename = gr.Textbox('Preview save filename', elem_id=tabname+"_preview_filename", visible=False)
