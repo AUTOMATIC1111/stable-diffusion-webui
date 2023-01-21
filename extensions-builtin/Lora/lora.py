@@ -179,7 +179,10 @@ def list_available_loras():
 
     os.makedirs(lora_dir, exist_ok=True)
 
-    candidates = glob.glob(os.path.join(lora_dir, '**/*.pt'), recursive=True) + glob.glob(os.path.join(lora_dir, '**/*.safetensors'), recursive=True)
+    candidates = \
+        glob.glob(os.path.join(lora_dir, '**/*.pt'), recursive=True) + \
+        glob.glob(os.path.join(lora_dir, '**/*.safetensors'), recursive=True) + \
+        glob.glob(os.path.join(lora_dir, '**/*.ckpt'), recursive=True)
 
     for filename in sorted(candidates):
         if os.path.isdir(filename):
@@ -195,4 +198,3 @@ available_loras = {}
 loaded_loras = []
 
 list_available_loras()
-
