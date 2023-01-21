@@ -722,6 +722,10 @@ footer {
     margin-left: 0em;
 }
 
+#axis_options {
+    margin-left: 0em;
+}
+
 .inactive{
     opacity: 0.5;
 }
