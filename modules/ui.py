@@ -1918,24 +1918,38 @@ def create_ui():
 
 
 def reload_javascript():
-    with open(os.path.join(script_path, "script.js"), "r", encoding="utf8") as jsfile:
-        javascript = f'<script>{jsfile.read()}</script>'
-
     scripts_list = modules.scripts.list_scripts("javascript", ".js")
-
+    js_files = []
     for basedir, filename, path in scripts_list:
-        with open(path, "r", encoding="utf8") as jsfile:
-            javascript += f"\n<!-- {filename} --><script>{jsfile.read()}</script>"
+        path = path[len(script_path) + 1:]
+        js_files.append(path)
 
+    inline = [f"{localization.localization_js(shared.opts.localization)};"]
     if cmd_opts.theme is not None:
-        javascript += f"\n<script>set_theme('{cmd_opts.theme}');</script>\n"
+        inline.append(f"set_theme('{cmd_opts.theme}');", )
 
-    javascript += f"\n<script>{localization.localization_js(shared.opts.localization)}</script>"
+    t = int(time.time())
+    head = [
+        f"""
+            <script type="text/javascript" src="file=./script.js?{t}"></script>
+    """.strip()
+    ]
+    inline_code = "\n".join(inline)
+    head.append(f"""
+        <script type="text/javascript">
+        {inline_code}
+        </script>
+        """.strip())
+    for file in js_files:
+        head.append(f"""
+        <script type="text/javascript" src="file={file}?{t}"></script>
+        """.strip())
 
     def template_response(*args, **kwargs):
         res = shared.GradioTemplateResponseOriginal(*args, **kwargs)
+        head_inject = "\n".join(head)
         res.body = res.body.replace(
-            b'</head>', f'{javascript}</head>'.encode("utf8"))
+            b'</head>', f'{head_inject}</head>'.encode("utf8"))
         res.init_headers()
         return res
 
