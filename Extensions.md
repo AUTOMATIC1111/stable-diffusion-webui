@@ -601,9 +601,7 @@ Resulting movie fiels are typically very small (*~1MB being average*) due to opt
 
 ![screenshot](https://raw.githubusercontent.com/vladmandic/sd-extension-steps-animation/main/steps-animation.jpg)
 
-### Example
-
-https://user-images.githubusercontent.com/57876960/212490617-f0444799-50e5-485e-bc5d-9c24a9146d38.mp4
+### [Example](https://user-images.githubusercontent.com/57876960/212490617-f0444799-50e5-485e-bc5d-9c24a9146d38.mp4)
 
 ## System Info
 
