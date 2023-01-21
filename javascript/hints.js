@@ -107,7 +107,8 @@ titles = {
     "Hires steps": "Number of sampling steps for upscaled picture. If 0, uses same as for original.",
     "Upscale by": "Adjusts the size of the image by multiplying the original width and height by the selected value. Ignored if either Resize width to or Resize height to are non-zero.",
     "Resize width to": "Resizes image to this width. If 0, width is inferred from either of two nearby sliders.",
-    "Resize height to": "Resizes image to this height. If 0, height is inferred from either of two nearby sliders."
+    "Resize height to": "Resizes image to this height. If 0, height is inferred from either of two nearby sliders.",
+    "Multiplier for extra networks": "When adding extra network such as Hypernetwork or Lora to prompt, use this multiplier for it."
 }
 
 

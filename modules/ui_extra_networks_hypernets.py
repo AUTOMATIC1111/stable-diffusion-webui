@@ -1,3 +1,4 @@
+import json
 import os
 
 from modules import shared, ui_extra_networks
@@ -25,7 +26,7 @@ class ExtraNetworksPageHypernetworks(ui_extra_networks.ExtraNetworksPage):
                 "name": name,
                 "filename": path,
                 "preview": preview,
-                "prompt": f"<hypernet:{name}:1.0>",
+                "prompt": json.dumps(f"<hypernet:{name}:") + " + opts.extra_networks_default_multiplier + " + json.dumps(">"),
                 "local_preview": path + ".png",
             }
 
