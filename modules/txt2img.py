@@ -38,7 +38,7 @@ def txt2img(id_task: str, prompt: str, negative_prompt: str, prompt_styles, step
         hr_second_pass_steps=hr_second_pass_steps,
         hr_resize_x=hr_resize_x,
         hr_resize_y=hr_resize_y,
-        hr_sampler=sd_samplers.samplers[hr_sampler_index - 1].name
+        hr_sampler=sd_samplers.samplers_for_img2img[hr_sampler_index - 1].name
         if hr_sampler_index != 0 else '---'
     )
 

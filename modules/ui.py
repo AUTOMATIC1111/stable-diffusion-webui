@@ -673,7 +673,7 @@ def create_ui():
                                 hr_resize_y = gr.Slider(minimum=0, maximum=2048, step=8, label="Resize height to", value=0, elem_id="txt2img_hr_resize_y")
 
                             with FormRow(elem_id="txt2img_hires_fix_row3", variant="compact"):
-                                hr_sampler_index = gr.Dropdown(label='Hires sampling method', elem_id=f"hr_sampler", choices=["---"] + [x.name for x in samplers], value="---", type="index")
+                                hr_sampler_index = gr.Dropdown(label='Hires sampling method', elem_id=f"hr_sampler", choices=["---"] + [x.name for x in samplers_for_img2img], value="---", type="index")
 
                     elif category == "batch":
                         if not opts.dimensions_and_batch_together:

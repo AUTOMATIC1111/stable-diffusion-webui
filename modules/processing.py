@@ -866,8 +866,6 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
         if self.hr_sampler == '---':
             pass
-        elif self.hr_sampler == 'PLMS':
-            img2img_sampler_name = 'DDIM'
         else:
             img2img_sampler_name = self.hr_sampler
 
