@@ -75,6 +75,7 @@ css_hide_progressbar = """
 .wrap .m-12::before { content:"Loading..." }
 .wrap .z-20 svg { display:none!important; }
 .wrap .z-20::before { content:"Loading..." }
+.wrap.cover-bg .z-20::before { content:"" }
 .progress-bar { display:none!important; }
 .meta-text { display:none!important; }
 .meta-text-center { display:none!important; }
