@@ -710,7 +710,7 @@ def old_hires_fix_first_pass_dimensions(width, height):
 class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
     sampler = None
 
-    def __init__(self, enable_hr: bool = False, denoising_strength: float = 0.75, firstphase_width: int = 0, firstphase_height: int = 0, hr_scale: float = 2.0, hr_upscaler: str = None, hr_second_pass_steps: int = 0, hr_resize_x: int = 0, hr_resize_y: int = 0, hr_sampler: int | str = 0, **kwargs):
+    def __init__(self, enable_hr: bool = False, denoising_strength: float = 0.75, firstphase_width: int = 0, firstphase_height: int = 0, hr_scale: float = 2.0, hr_upscaler: str = None, hr_second_pass_steps: int = 0, hr_resize_x: int = 0, hr_resize_y: int = 0, hr_sampler: str = '---', **kwargs):
         super().__init__(**kwargs)
         self.enable_hr = enable_hr
         self.denoising_strength = denoising_strength
@@ -864,7 +864,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
         img2img_sampler_name = self.sampler_name if self.sampler_name != 'PLMS' else 'DDIM'  # PLMS does not support img2img so we just silently switch ot DDIM
 
-        if self.hr_sampler == 0:
+        if self.hr_sampler == '---':
             pass
         elif self.hr_sampler == 'PLMS':
             img2img_sampler_name = 'DDIM'
