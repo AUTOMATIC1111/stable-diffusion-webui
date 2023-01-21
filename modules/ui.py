@@ -349,29 +349,12 @@ def create_toprow(is_img2img):
             with gr.Row():
                 with gr.Column(scale=80):
                     with gr.Row():
-                        prompt = gr.Textbox(label="Prompt", elem_id=f"{id_part}_prompt", show_label=False, lines=2, placeholder="Prompt (press Ctrl+Enter or Alt+Enter to generate)")
+                        prompt = gr.Textbox(label="Prompt", elem_id=f"{id_part}_prompt", show_label=False, lines=3, placeholder="Prompt (press Ctrl+Enter or Alt+Enter to generate)")
 
             with gr.Row():
                 with gr.Column(scale=80):
                     with gr.Row():
                         negative_prompt = gr.Textbox(label="Negative prompt", elem_id=f"{id_part}_neg_prompt", show_label=False, lines=2, placeholder="Negative prompt (press Ctrl+Enter or Alt+Enter to generate)")
-
-        with gr.Column(scale=1, elem_id="roll_col"):
-            paste = ToolButton(value=paste_symbol, elem_id="paste")
-            clear_prompt_button = ToolButton(value=clear_prompt_symbol, elem_id=f"{id_part}_clear_prompt")
-            extra_networks_button = ToolButton(value=extra_networks_symbol, elem_id=f"{id_part}_extra_networks")
-
-            token_counter = gr.HTML(value="<span></span>", elem_id=f"{id_part}_token_counter")
-            token_button = gr.Button(visible=False, elem_id=f"{id_part}_token_button")
-            negative_token_counter = gr.HTML(value="<span></span>", elem_id=f"{id_part}_negative_token_counter")
-            negative_token_button = gr.Button(visible=False, elem_id=f"{id_part}_negative_token_button")
-
-            clear_prompt_button.click(
-                fn=lambda *x: x,
-                _js="confirm_clear_prompt",
-                inputs=[prompt, negative_prompt],
-                outputs=[prompt, negative_prompt],
-            )
 
         button_interrogate = None
         button_deepbooru = None
@@ -380,7 +363,7 @@ def create_toprow(is_img2img):
                 button_interrogate = gr.Button('Interrogate\nCLIP', elem_id="interrogate")
                 button_deepbooru = gr.Button('Interrogate\nDeepBooru', elem_id="deepbooru")
 
-        with gr.Column(scale=1):
+        with gr.Column(scale=1, elem_id=f"{id_part}_actions_column"):
             with gr.Row(elem_id=f"{id_part}_generate_box"):
                 interrupt = gr.Button('Interrupt', elem_id=f"{id_part}_interrupt")
                 skip = gr.Button('Skip', elem_id=f"{id_part}_skip")
@@ -398,12 +381,28 @@ def create_toprow(is_img2img):
                     outputs=[],
                 )
 
+            with gr.Row(elem_id=f"{id_part}_tools"):
+                paste = ToolButton(value=paste_symbol, elem_id="paste")
+                clear_prompt_button = ToolButton(value=clear_prompt_symbol, elem_id=f"{id_part}_clear_prompt")
+                extra_networks_button = ToolButton(value=extra_networks_symbol, elem_id=f"{id_part}_extra_networks")
+                prompt_style_apply = ToolButton(value=apply_style_symbol, elem_id=f"{id_part}_style_apply")
+                save_style = ToolButton(value=save_style_symbol, elem_id=f"{id_part}_style_create")
+
+                token_counter = gr.HTML(value="<span></span>", elem_id=f"{id_part}_token_counter")
+                token_button = gr.Button(visible=False, elem_id=f"{id_part}_token_button")
+                negative_token_counter = gr.HTML(value="<span></span>", elem_id=f"{id_part}_negative_token_counter")
+                negative_token_button = gr.Button(visible=False, elem_id=f"{id_part}_negative_token_button")
+
+                clear_prompt_button.click(
+                    fn=lambda *x: x,
+                    _js="confirm_clear_prompt",
+                    inputs=[prompt, negative_prompt],
+                    outputs=[prompt, negative_prompt],
+                )
+
             with gr.Row(elem_id=f"{id_part}_styles_row"):
                 prompt_styles = gr.Dropdown(label="Styles", elem_id=f"{id_part}_styles", choices=[k for k, v in shared.prompt_styles.styles.items()], value=[], multiselect=True)
                 create_refresh_button(prompt_styles, shared.prompt_styles.reload, lambda: {"choices": [k for k, v in shared.prompt_styles.styles.items()]}, f"refresh_{id_part}_styles")
-
-                prompt_style_apply = ToolButton(value=apply_style_symbol, elem_id="style_apply")
-                save_style = ToolButton(value=save_style_symbol, elem_id="style_create")
 
     return prompt, prompt_styles, negative_prompt, submit, button_interrogate, button_deepbooru, prompt_style_apply, save_style, paste, extra_networks_button, token_counter, token_button, negative_token_counter, negative_token_button
 

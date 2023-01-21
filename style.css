@@ -124,15 +124,12 @@
     height: 100%;
 }
 
-#roll_col{
-    min-width: unset !important;
-    flex-grow: 0 !important;
-    padding: 0 1em 0 0;
+#txt2img_actions_column, #img2img_actions_column{
     gap: 0;
 }
 
-#roll_col > button {
-    margin: 0.1em 0;
+#txt2img_tools, #img2img_tools{
+    gap: 0.4em;
 }
 
 #interrogate_col{
@@ -153,7 +150,6 @@
 
 #txt2img_styles_row, #img2img_styles_row{
     gap: 0.25em;
-    margin-top: 0.5em;
 }
 
 #txt2img_styles_row > button, #img2img_styles_row > button{
@@ -162,6 +158,10 @@
 
 #txt2img_styles, #img2img_styles{
     padding: 0;
+}
+
+#txt2img_styles > label > div, #img2img_styles > label > div{
+    min-height: 3.2em;
 }
 
 #txt2img_styles ul, #img2img_styles ul{
@@ -768,10 +768,6 @@ footer {
     font-weight: bold;
     text-align: center;
     line-height: 2.4em;
-}
-
-#txt2img_extra_networks, #img2img_extra_networks{
-    margin-top: -1em;
 }
 
 .extra-networks > div > [id *= '_extra_']{

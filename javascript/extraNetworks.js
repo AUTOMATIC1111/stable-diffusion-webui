@@ -6,49 +6,42 @@ function setupExtraNetworksForTab(tabname){
     gradioApp().querySelector('#'+tabname+'_extra_tabs > div').appendChild(gradioApp().getElementById(tabname+'_extra_close'))
 }
 
-var activePromptTextarea = null;
-var activePositivePromptTextarea = null;
+var activePromptTextarea = {};
 
 function setupExtraNetworks(){
     setupExtraNetworksForTab('txt2img')
     setupExtraNetworksForTab('img2img')
 
-    function registerPrompt(id, isNegative){
+    function registerPrompt(tabname, id){
         var textarea = gradioApp().querySelector("#" + id + " > label > textarea");
 
-        if (activePromptTextarea == null){
-            activePromptTextarea = textarea
-        }
-        if (activePositivePromptTextarea == null && ! isNegative){
-            activePositivePromptTextarea = textarea
+        if (! activePromptTextarea[tabname]){
+            activePromptTextarea[tabname] = textarea
         }
 
 		textarea.addEventListener("focus", function(){
-            activePromptTextarea = textarea;
-            if(! isNegative)  activePositivePromptTextarea = textarea;
+            activePromptTextarea[tabname] = textarea;
 		});
     }
 
-    registerPrompt('txt2img_prompt')
-    registerPrompt('txt2img_neg_prompt', true)
-    registerPrompt('img2img_prompt')
-    registerPrompt('img2img_neg_prompt', true)
+    registerPrompt('txt2img', 'txt2img_prompt')
+    registerPrompt('txt2img', 'txt2img_neg_prompt')
+    registerPrompt('img2img', 'img2img_prompt')
+    registerPrompt('img2img', 'img2img_neg_prompt')
 }
 
 onUiLoaded(setupExtraNetworks)
 
-function cardClicked(textToAdd, allowNegativePrompt){
-    textarea = allowNegativePrompt ? activePromptTextarea : activePositivePromptTextarea
+function cardClicked(tabname, textToAdd, allowNegativePrompt){
+    var textarea = allowNegativePrompt ? activePromptTextarea[tabname] : gradioApp().querySelector("#" + tabname + "_prompt > label > textarea")
 
     textarea.value = textarea.value + " " + textToAdd
     updateInput(textarea)
-
-    return false
 }
 
 function saveCardPreview(event, tabname, filename){
-    textarea = gradioApp().querySelector("#" + tabname + '_preview_filename  > label > textarea')
-    button = gradioApp().getElementById(tabname + '_save_preview')
+    var textarea = gradioApp().querySelector("#" + tabname + '_preview_filename  > label > textarea')
+    var button = gradioApp().getElementById(tabname + '_save_preview')
 
     textarea.value = filename
     updateInput(textarea)

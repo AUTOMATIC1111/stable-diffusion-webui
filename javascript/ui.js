@@ -203,8 +203,8 @@ onUiUpdate(function(){
 	json_elem = gradioApp().getElementById('settings_json')
 	if(json_elem == null) return;
 
-    textarea = json_elem.querySelector('textarea')
-    jsdata = textarea.value
+    var textarea = json_elem.querySelector('textarea')
+    var jsdata = textarea.value
     opts = JSON.parse(jsdata)
     executeCallbacks(optionsChangedCallbacks);
 
