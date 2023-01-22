@@ -635,7 +635,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             with devices.autocast():
                 if type(p) == StableDiffusionProcessingTxt2Img:
                     if p.enable_hr:
-                        if p.hr_prompts != '':
+                        if p.hr_prompt != '':
                             samples_ddim = p.sample(conditioning=c, unconditional_conditioning=uc, hr_conditioning=hr_c, hr_unconditional_conditioning=hr_uc, seeds=seeds, subseeds=subseeds, subseed_strength=p.subseed_strength, prompts=prompts)
                         else:
                             samples_ddim = p.sample(conditioning=c, unconditional_conditioning=uc, hr_conditioning=c,
