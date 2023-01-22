@@ -7,6 +7,9 @@ import shlex
 import platform
 import argparse
 import json
+import shutil
+import urllib.request
+import zipfile
 
 dir_repos = "repositories"
 dir_extensions = "extensions"
@@ -175,11 +178,39 @@ def run_extensions_installers(settings_file):
     for dirname_extension in list_extensions(settings_file):
         run_extension_installer(os.path.join(dir_extensions, dirname_extension))
 
+def cuda_nn_update(torch_dir):
+
+    # Updates CUDA binaries to resolve NVIDIA 4x00 series CUDA not working with older torch CUDA binaries
+    if os.path.exists("C:\\Program Files\\NVIDIA Corporation\\"):
+
+        cuda_nn_package = os.environ.get('CUDA_NN_WINDOWS_PACKAGE', 'https://developer.download.nvidia.com/compute/redist/cudnn/v8.7.0/local_installers/11.8/cudnn-windows-x86_64-8.7.0.84_cuda11-archive.zip')
+        cuda_nn_ref_filename = "cuda_dnn.zip"
+
+        # Download the zip file
+        urllib.request.urlretrieve(cuda_nn_package, cuda_nn_ref_filename)
+        
+        # Get absolute destination path
+        torch_dest_path = os.path.abspath(torch_dir)
+        if not os.path.exists(torch_dest_path):
+            os.makedirs(torch_dest_path)
+
+        # Open the zip file
+        with zipfile.ZipFile(cuda_nn_ref_filename, 'r') as zip_file:
+            # Extract only dll files
+            for file in zip_file.namelist():
+                if file.endswith('.dll'):
+                    # copy file (taken from zipfile's extract)
+                    filename = os.path.basename(file)
+                    source = zip_file.open(file)
+                    target = open(os.path.join(torch_dest_path, filename), "wb")
+                    with source, target:
+                        shutil.copyfileobj(source, target)
+        os.remove(cuda_nn_ref_filename)
 
 def prepare_environment():
     global skip_install
 
-    torch_command = os.environ.get('TORCH_COMMAND', "pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 --extra-index-url https://download.pytorch.org/whl/cu113")
+    torch_command = os.environ.get('TORCH_COMMAND', "pip install torch==1.13.1+cu117 torchvision==0.14.1+cu117 --extra-index-url https://download.pytorch.org/whl/cu117")
     requirements_file = os.environ.get('REQS_FILE', "requirements_versions.txt")
     commandline_args = os.environ.get('COMMANDLINE_ARGS', "")
 
@@ -187,7 +218,8 @@ def prepare_environment():
     clip_package = os.environ.get('CLIP_PACKAGE', "git+https://github.com/openai/CLIP.git@d50d76daa670286dd6cacf3bcd80b5e4823fc8e1")
     openclip_package = os.environ.get('OPENCLIP_PACKAGE', "git+https://github.com/mlfoundations/open_clip.git@bb6e834e9c70d9c27d0dc3ecedeebeaeb1ffad6b")
 
-    xformers_windows_package = os.environ.get('XFORMERS_WINDOWS_PACKAGE', 'https://github.com/C43H66N12O12S2/stable-diffusion-webui/releases/download/f/xformers-0.0.14.dev0-cp310-cp310-win_amd64.whl')
+	# Note: torch13 may break Dreambooth
+    xformers_windows_package = os.environ.get('XFORMERS_WINDOWS_PACKAGE', 'https://github.com/C43H66N12O12S2/stable-diffusion-webui/releases/download/torch13/xformers-0.0.14.dev0-cp310-cp310-win_amd64.whl')
 
     stable_diffusion_repo = os.environ.get('STABLE_DIFFUSION_REPO', "https://github.com/Stability-AI/stablediffusion.git")
     taming_transformers_repo = os.environ.get('TAMING_TRANSFORMERS_REPO', "https://github.com/CompVis/taming-transformers.git")
@@ -223,6 +255,7 @@ def prepare_environment():
     
     if not is_installed("torch") or not is_installed("torchvision"):
         run(f'"{python}" -m {torch_command}', "Installing torch and torchvision", "Couldn't install torch")
+        cuda_nn_update("venv\\Lib\\site-packages\\torch\\lib\\")
 
     if not skip_torch_cuda_test:
         run_python("import torch; assert torch.cuda.is_available(), 'Torch is not able to use GPU; add --skip-torch-cuda-test to COMMANDLINE_ARGS variable to disable this check'")
