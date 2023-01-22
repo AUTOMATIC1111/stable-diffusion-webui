@@ -415,7 +415,7 @@ async def main():
     parser.add_argument("--init", type = str, default = "person", required = False, help = "initialization class, default: %(default)s")
     parser.add_argument("--dst", type = str, default = "/tmp", required = False, help = "destination image folder for processed images, default: %(default)s")
     parser.add_argument("--steps", type = int, default = -1, required = False, help = "training steps, default: %(default)s")
-    parser.add_argument("--maxsteps", type = int, default = 2500, required = False, help = "max training steps used when dynamic gradient is active, default: %(default)s")
+    parser.add_argument("--maxsteps", type = int, default = 5000, required = False, help = "max training steps used when dynamic gradient is active, default: %(default)s")
     parser.add_argument("--vectors", type = int, default = -1, required = False, help = "number of vectors per token, default: dynamic based on number of input images")
     parser.add_argument("--batch", type = int, default = 1, required = False, help = "batch size, default: %(default)s")
     parser.add_argument("--rate", type = str, default = "", required = False, help = "learn rate, default: dynamic")
