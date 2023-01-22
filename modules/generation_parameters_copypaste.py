@@ -58,9 +58,10 @@ def image_from_url_text(filedata):
 
     if filedata.startswith("data:image/png;base64,"):
         filedata = filedata[len("data:image/png;base64,"):]
-
-    filedata = base64.decodebytes(filedata.encode('utf-8'))
-    image = Image.open(io.BytesIO(filedata))
+        filedata = base64.decodebytes(filedata.encode('utf-8'))
+        image = Image.open(io.BytesIO(filedata))
+    else:
+        image = Image.open(filedata)
     return image
 
 
