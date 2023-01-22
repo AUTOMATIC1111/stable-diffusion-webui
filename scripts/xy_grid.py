@@ -11,7 +11,6 @@ import modules.scripts as scripts
 import gradio as gr
 
 from modules import images, paths, sd_samplers, processing, sd_models, sd_vae
-from modules.hypernetworks import hypernetwork
 from modules.processing import process_images, Processed, StableDiffusionProcessingTxt2Img
 from modules.shared import opts, cmd_opts, state
 import modules.shared as shared
@@ -94,28 +93,6 @@ def confirm_checkpoints(p, xs):
             raise RuntimeError(f"Unknown checkpoint: {x}")
 
 
-def apply_hypernetwork(p, x, xs):
-    if x.lower() in ["", "none"]:
-        name = None
-    else:
-        name = hypernetwork.find_closest_hypernetwork_name(x)
-        if not name:
-            raise RuntimeError(f"Unknown hypernetwork: {x}")
-    hypernetwork.load_hypernetwork(name)
-
-
-def apply_hypernetwork_strength(p, x, xs):
-    hypernetwork.apply_strength(x)
-
-
-def confirm_hypernetworks(p, xs):
-    for x in xs:
-        if x.lower() in ["", "none"]:
-            continue
-        if not hypernetwork.find_closest_hypernetwork_name(x):
-            raise RuntimeError(f"Unknown hypernetwork: {x}")
-
-
 def apply_clip_skip(p, x, xs):
     opts.data["CLIP_stop_at_last_layers"] = x
 
@@ -188,10 +165,14 @@ class AxisOption:
         self.confirm = confirm
         self.cost = cost
         self.choices = choices
-        self.is_img2img = False
 
 
 class AxisOptionImg2Img(AxisOption):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.is_img2img = True
+
+class AxisOptionTxt2Img(AxisOption):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.is_img2img = False
@@ -206,10 +187,9 @@ axis_options = [
     AxisOption("CFG Scale", float, apply_field("cfg_scale")),
     AxisOption("Prompt S/R", str, apply_prompt, format_value=format_value),
     AxisOption("Prompt order", str_permutations, apply_order, format_value=format_value_join_list),
-    AxisOption("Sampler", str, apply_sampler, format_value=format_value, confirm=confirm_samplers, choices=lambda: [x.name for x in sd_samplers.samplers]),
+    AxisOptionTxt2Img("Sampler", str, apply_sampler, format_value=format_value, confirm=confirm_samplers, choices=lambda: [x.name for x in sd_samplers.samplers]),
+    AxisOptionImg2Img("Sampler", str, apply_sampler, format_value=format_value, confirm=confirm_samplers, choices=lambda: [x.name for x in sd_samplers.samplers_for_img2img]),
     AxisOption("Checkpoint name", str, apply_checkpoint, format_value=format_value, confirm=confirm_checkpoints, cost=1.0, choices=lambda: list(sd_models.checkpoints_list)),
-    AxisOption("Hypernetwork", str, apply_hypernetwork, format_value=format_value, confirm=confirm_hypernetworks, cost=0.2, choices=lambda: list(shared.hypernetworks)),
-    AxisOption("Hypernet str.", float, apply_hypernetwork_strength),
     AxisOption("Sigma Churn", float, apply_field("s_churn")),
     AxisOption("Sigma min", float, apply_field("s_tmin")),
     AxisOption("Sigma max", float, apply_field("s_tmax")),
@@ -217,8 +197,8 @@ axis_options = [
     AxisOption("Eta", float, apply_field("eta")),
     AxisOption("Clip skip", int, apply_clip_skip),
     AxisOption("Denoising", float, apply_field("denoising_strength")),
-    AxisOption("Hires upscaler", str, apply_field("hr_upscaler"), choices=lambda: [x.name for x in shared.sd_upscalers]),
-    AxisOption("Cond. Image Mask Weight", float, apply_field("inpainting_mask_weight")),
+    AxisOptionTxt2Img("Hires upscaler", str, apply_field("hr_upscaler"), choices=lambda: [*shared.latent_upscale_modes, *[x.name for x in shared.sd_upscalers]]),
+    AxisOptionImg2Img("Cond. Image Mask Weight", float, apply_field("inpainting_mask_weight")),
     AxisOption("VAE", str, apply_vae, cost=0.7, choices=lambda: list(sd_vae.vae_dict)),
     AxisOption("Styles", str, apply_styles, choices=lambda: list(shared.prompt_styles.styles)),
 ]
@@ -291,16 +271,12 @@ def draw_xy_grid(p, xs, ys, x_labels, y_labels, cell, draw_legend, include_lone_
 class SharedSettingsStackHelper(object):
     def __enter__(self):
         self.CLIP_stop_at_last_layers = opts.CLIP_stop_at_last_layers
-        self.hypernetwork = opts.sd_hypernetwork
         self.vae = opts.sd_vae
   
     def __exit__(self, exc_type, exc_value, tb):
         opts.data["sd_vae"] = self.vae
         modules.sd_models.reload_model_weights()
         modules.sd_vae.reload_vae_weights()
-
-        hypernetwork.load_hypernetwork(self.hypernetwork)
-        hypernetwork.apply_strength()
 
         opts.data["CLIP_stop_at_last_layers"] = self.CLIP_stop_at_last_layers
 
@@ -317,17 +293,17 @@ class Script(scripts.Script):
         return "X/Y plot"
 
     def ui(self, is_img2img):
-        current_axis_options = [x for x in axis_options if type(x) == AxisOption or x.is_img2img and is_img2img]
+        self.current_axis_options = [x for x in axis_options if type(x) == AxisOption or x.is_img2img == is_img2img]
 
         with gr.Row():
             with gr.Column(scale=19):
                 with gr.Row():
-                    x_type = gr.Dropdown(label="X type", choices=[x.label for x in current_axis_options], value=current_axis_options[1].label, type="index", elem_id=self.elem_id("x_type"))
+                    x_type = gr.Dropdown(label="X type", choices=[x.label for x in self.current_axis_options], value=self.current_axis_options[1].label, type="index", elem_id=self.elem_id("x_type"))
                     x_values = gr.Textbox(label="X values", lines=1, elem_id=self.elem_id("x_values"))
                     fill_x_button = ToolButton(value=fill_values_symbol, elem_id="xy_grid_fill_x_tool_button", visible=False)
 
                 with gr.Row():
-                    y_type = gr.Dropdown(label="Y type", choices=[x.label for x in current_axis_options], value=current_axis_options[0].label, type="index", elem_id=self.elem_id("y_type"))
+                    y_type = gr.Dropdown(label="Y type", choices=[x.label for x in self.current_axis_options], value=self.current_axis_options[0].label, type="index", elem_id=self.elem_id("y_type"))
                     y_values = gr.Textbox(label="Y values", lines=1, elem_id=self.elem_id("y_values"))
                     fill_y_button = ToolButton(value=fill_values_symbol, elem_id="xy_grid_fill_y_tool_button", visible=False)
 
@@ -338,21 +314,20 @@ class Script(scripts.Script):
             swap_axes_button = gr.Button(value="Swap axes", elem_id="xy_grid_swap_axes_button")
 
         def swap_axes(x_type, x_values, y_type, y_values):
-            nonlocal current_axis_options
-            return current_axis_options[y_type].label, y_values, current_axis_options[x_type].label, x_values
+            return self.current_axis_options[y_type].label, y_values, self.current_axis_options[x_type].label, x_values
 
         swap_args = [x_type, x_values, y_type, y_values]
         swap_axes_button.click(swap_axes, inputs=swap_args, outputs=swap_args)
 
         def fill(x_type):
-            axis = axis_options[x_type]
+            axis = self.current_axis_options[x_type]
             return ", ".join(axis.choices()) if axis.choices else gr.update()
 
         fill_x_button.click(fn=fill, inputs=[x_type], outputs=[x_values])
         fill_y_button.click(fn=fill, inputs=[y_type], outputs=[y_values])
 
         def select_axis(x_type):
-            return gr.Button.update(visible=axis_options[x_type].choices is not None)
+            return gr.Button.update(visible=self.current_axis_options[x_type].choices is not None)
 
         x_type.change(fn=select_axis, inputs=[x_type], outputs=[fill_x_button])
         y_type.change(fn=select_axis, inputs=[y_type], outputs=[fill_y_button])
@@ -427,10 +402,10 @@ class Script(scripts.Script):
 
             return valslist
 
-        x_opt = axis_options[x_type]
+        x_opt = self.current_axis_options[x_type]
         xs = process_axis(x_opt, x_values)
 
-        y_opt = axis_options[y_type]
+        y_opt = self.current_axis_options[y_type]
         ys = process_axis(y_opt, y_values)
 
         def fix_axis_seeds(axis_opt, axis_list):

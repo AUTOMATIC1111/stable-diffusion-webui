@@ -196,8 +196,6 @@ function confirm_clear_prompt(prompt, negative_prompt) {
     return [prompt, negative_prompt]
 }
 
-
-
 opts = {}
 onUiUpdate(function(){
 	if(Object.keys(opts).length != 0) return;
@@ -205,8 +203,8 @@ onUiUpdate(function(){
 	json_elem = gradioApp().getElementById('settings_json')
 	if(json_elem == null) return;
 
-    textarea = json_elem.querySelector('textarea')
-    jsdata = textarea.value
+    var textarea = json_elem.querySelector('textarea')
+    var jsdata = textarea.value
     opts = JSON.parse(jsdata)
     executeCallbacks(optionsChangedCallbacks);
 
@@ -239,11 +237,14 @@ onUiUpdate(function(){
             return
         }
 
+
         prompt.parentElement.insertBefore(counter, prompt)
         counter.classList.add("token-counter")
         prompt.parentElement.style.position = "relative"
 
-		textarea.addEventListener("input", () => update_token_counter(id_button));
+		textarea.addEventListener("input", function(){
+		    update_token_counter(id_button);
+		});
     }
 
     registerTextarea('txt2img_prompt', 'txt2img_token_counter', 'txt2img_token_button')
@@ -261,9 +262,7 @@ onUiUpdate(function(){
             })
         }
     }
-
 })
-
 
 onOptionsChanged(function(){
     elem = gradioApp().getElementById('sd_checkpoint_hash')

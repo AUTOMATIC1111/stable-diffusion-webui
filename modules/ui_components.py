@@ -11,6 +11,16 @@ class ToolButton(gr.Button, gr.components.FormComponent):
         return "button"
 
 
+class ToolButtonTop(gr.Button, gr.components.FormComponent):
+    """Small button with single emoji as text, with extra margin at top, fits inside gradio forms"""
+
+    def __init__(self, **kwargs):
+        super().__init__(variant="tool-top", **kwargs)
+
+    def get_block_name(self):
+        return "button"
+
+
 class FormRow(gr.Row, gr.components.FormComponent):
     """Same as gr.Row but fits inside gradio forms"""
 
