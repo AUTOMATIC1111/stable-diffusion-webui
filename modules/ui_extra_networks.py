@@ -98,11 +98,11 @@ def pages_in_preferred_order(pages):
 def create_ui(container, button, tabname):
     ui = ExtraNetworksUi()
     ui.pages = []
-    ui.stored_extra_pages = extra_pages.copy()
+    ui.stored_extra_pages = pages_in_preferred_order(extra_pages.copy())
     ui.tabname = tabname
 
     with gr.Tabs(elem_id=tabname+"_extra_tabs") as tabs:
-        for page in pages_in_preferred_order(ui.stored_extra_pages):
+        for page in ui.stored_extra_pages:
             with gr.Tab(page.title):
                 page_elem = gr.HTML(page.create_html(ui.tabname))
                 ui.pages.append(page_elem)
