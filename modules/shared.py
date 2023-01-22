@@ -20,14 +20,12 @@ from modules.paths import models_path, script_path, sd_path
 
 demo = None
 
-sd_default_config = os.path.join(script_path, "configs/v1-inference.yaml")
 sd_model_file = os.path.join(script_path, 'model.ckpt')
 default_sd_model_file = sd_model_file
 parser = argparse.ArgumentParser()
-parser.add_argument("--config", type=str, default=sd_default_config, help="path to config which constructs model",)
+parser.add_argument("--config", type=str, default=os.path.join(script_path, "configs/v1-inference.yaml"), help="path to config which constructs model",)
 parser.add_argument("--ckpt", type=str, default=sd_model_file, help="path to checkpoint of stable diffusion model; if specified, this checkpoint will be added to the list of checkpoints and loaded",)
 parser.add_argument("--ckpt-dir", type=str, default=None, help="Path to directory with stable diffusion checkpoints")
-parser.add_argument("--vae-dir", type=str, default=None, help="Path to directory with VAE files")
 parser.add_argument("--gfpgan-dir", type=str, help="GFPGAN directory", default=('./src/gfpgan' if os.path.exists('./src/gfpgan') else './GFPGAN'))
 parser.add_argument("--gfpgan-model", type=str, help="GFPGAN model file name", default=None)
 parser.add_argument("--no-half", action='store_true', help="do not switch the model to 16-bit floats")
@@ -35,7 +33,7 @@ parser.add_argument("--no-half-vae", action='store_true', help="do not switch th
 parser.add_argument("--no-progressbar-hiding", action='store_true', help="do not hide progressbar in gradio UI (we hide it because it slows down ML if you have hardware acceleration in browser)")
 parser.add_argument("--max-batch-count", type=int, default=16, help="maximum batch count value for the UI")
 parser.add_argument("--embeddings-dir", type=str, default=os.path.join(script_path, 'embeddings'), help="embeddings directory for textual inversion (default: embeddings)")
-parser.add_argument("--textual-inversion-templates-dir", type=str, default=os.path.join(script_path, 'train/templates'), help="directory with textual inversion templates")
+parser.add_argument("--textual-inversion-templates-dir", type=str, default=os.path.join(script_path, 'textual_inversion_templates'), help="directory with textual inversion templates")
 parser.add_argument("--hypernetwork-dir", type=str, default=os.path.join(models_path, 'hypernetworks'), help="hypernetwork directory")
 parser.add_argument("--localizations-dir", type=str, default=os.path.join(script_path, 'localizations'), help="localizations directory")
 parser.add_argument("--allow-code", action='store_true', help="allow custom script execution from webui")
@@ -93,7 +91,6 @@ parser.add_argument("--api-auth", type=str, help='Set authentication for API lik
 parser.add_argument("--api-log", action='store_true', help="use api-log=True to enable logging of all API requests")
 parser.add_argument("--nowebui", action='store_true', help="use api=True to launch the API instead of the webui")
 parser.add_argument("--ui-debug-mode", action='store_true', help="Don't load model to quickly launch UI")
-parser.add_argument("--load_gpu",  action='store_true', help="Force loading model in GPU memory")
 parser.add_argument("--device-id", type=str, help="Select the default CUDA device to use (export CUDA_VISIBLE_DEVICES=0,1,etc might be needed before)", default=None)
 parser.add_argument("--administrator", action='store_true', help="Administrator rights", default=False)
 parser.add_argument("--cors-allow-origins", type=str, help="Allowed CORS origin(s) in the form of a comma-separated list (no spaces)", default=None)
@@ -101,7 +98,6 @@ parser.add_argument("--cors-allow-origins-regex", type=str, help="Allowed CORS o
 parser.add_argument("--tls-keyfile", type=str, help="Partially enables TLS, requires --tls-certfile to fully function", default=None)
 parser.add_argument("--tls-certfile", type=str, help="Partially enables TLS, requires --tls-keyfile to fully function", default=None)
 parser.add_argument("--server-name", type=str, help="Sets hostname of server", default=None)
-parser.add_argument("--compile", type=str, help="Use Torch Dynamo compile with specified backend", default=None)
 
 script_loading.preload_extensions(extensions.extensions_dir, parser)
 script_loading.preload_extensions(extensions.extensions_builtin_dir, parser)
@@ -138,12 +134,7 @@ devices.device, devices.device_interrogate, devices.device_gfpgan, devices.devic
     (devices.cpu if any(y in cmd_opts.use_cpu for y in [x, 'all']) else devices.get_optimal_device() for x in ['sd', 'interrogate', 'gfpgan', 'esrgan', 'codeformer'])
 
 device = devices.device
-if cmd_opts.lowram:
-    weight_load_location = None
-elif cmd_opts.load_gpu:
-    weight_load_location = device
-else:
-    weight_load_location = "cpu"
+weight_load_location = None if cmd_opts.lowram else "cpu"
 
 batch_cond_uncond = cmd_opts.always_batch_cond_uncond or not (cmd_opts.lowvram or cmd_opts.medvram)
 parallel_processing_allowed = not cmd_opts.lowvram and not cmd_opts.medvram
@@ -378,7 +369,6 @@ options_templates.update(options_section(('face-restoration', "Face restoration"
 }))
 
 options_templates.update(options_section(('system', "System"), {
-    "show_warnings": OptionInfo(False, "Show warnings in console."),
     "memmon_poll_rate": OptionInfo(8, "VRAM usage polls per second during generation. Set to 0 to disable.", gr.Slider, {"minimum": 0, "maximum": 40, "step": 1}),
     "samples_log_stdout": OptionInfo(False, "Always print all generation info to standard output"),
     "multiple_tqdm": OptionInfo(True, "Add a second progress bar to the console that shows progress for an entire job."),
@@ -455,7 +445,7 @@ options_templates.update(options_section(('ui', "User interface"), {
     "js_modal_lightbox_initially_zoomed": OptionInfo(True, "Show images zoomed in by default in full page image viewer"),
     "show_progress_in_title": OptionInfo(True, "Show generation progress in window title."),
     "samplers_in_dropdown": OptionInfo(True, "Use dropdown for sampler selection instead of radio group"),
-    "dimensions_and_batch_together": OptionInfo(True, "Show Width/Height and Batch sliders in same row"),
+    "dimensions_and_batch_together": OptionInfo(True, "Show Witdth/Height and Batch sliders in same row"),
     'quicksettings': OptionInfo("sd_model_checkpoint", "Quicksettings list"),
     'ui_reorder': OptionInfo(", ".join(ui_reorder_categories), "txt2img/img2img UI item order"),
     'localization': OptionInfo("None", "Localization (requires restart)", gr.Dropdown, lambda: {"choices": ["None"] + list(localization.localizations.keys())}, refresh=lambda: localization.list_localizations(cmd_opts.localizations_dir)),
