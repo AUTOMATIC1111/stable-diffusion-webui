@@ -293,17 +293,17 @@ class Script(scripts.Script):
         return "X/Y plot"
 
     def ui(self, is_img2img):
-        current_axis_options = [x for x in axis_options if type(x) == AxisOption or x.is_img2img == is_img2img]
+        self.current_axis_options = [x for x in axis_options if type(x) == AxisOption or x.is_img2img == is_img2img]
 
         with gr.Row():
             with gr.Column(scale=19):
                 with gr.Row():
-                    x_type = gr.Dropdown(label="X type", choices=[x.label for x in current_axis_options], value=current_axis_options[1].label, type="index", elem_id=self.elem_id("x_type"))
+                    x_type = gr.Dropdown(label="X type", choices=[x.label for x in self.current_axis_options], value=self.current_axis_options[1].label, type="index", elem_id=self.elem_id("x_type"))
                     x_values = gr.Textbox(label="X values", lines=1, elem_id=self.elem_id("x_values"))
                     fill_x_button = ToolButton(value=fill_values_symbol, elem_id="xy_grid_fill_x_tool_button", visible=False)
 
                 with gr.Row():
-                    y_type = gr.Dropdown(label="Y type", choices=[x.label for x in current_axis_options], value=current_axis_options[0].label, type="index", elem_id=self.elem_id("y_type"))
+                    y_type = gr.Dropdown(label="Y type", choices=[x.label for x in self.current_axis_options], value=self.current_axis_options[0].label, type="index", elem_id=self.elem_id("y_type"))
                     y_values = gr.Textbox(label="Y values", lines=1, elem_id=self.elem_id("y_values"))
                     fill_y_button = ToolButton(value=fill_values_symbol, elem_id="xy_grid_fill_y_tool_button", visible=False)
 
@@ -314,21 +314,20 @@ class Script(scripts.Script):
             swap_axes_button = gr.Button(value="Swap axes", elem_id="xy_grid_swap_axes_button")
 
         def swap_axes(x_type, x_values, y_type, y_values):
-            nonlocal current_axis_options
-            return current_axis_options[y_type].label, y_values, current_axis_options[x_type].label, x_values
+            return self.current_axis_options[y_type].label, y_values, self.current_axis_options[x_type].label, x_values
 
         swap_args = [x_type, x_values, y_type, y_values]
         swap_axes_button.click(swap_axes, inputs=swap_args, outputs=swap_args)
 
         def fill(x_type):
-            axis = current_axis_options[x_type]
+            axis = self.current_axis_options[x_type]
             return ", ".join(axis.choices()) if axis.choices else gr.update()
 
         fill_x_button.click(fn=fill, inputs=[x_type], outputs=[x_values])
         fill_y_button.click(fn=fill, inputs=[y_type], outputs=[y_values])
 
         def select_axis(x_type):
-            return gr.Button.update(visible=current_axis_options[x_type].choices is not None)
+            return gr.Button.update(visible=self.current_axis_options[x_type].choices is not None)
 
         x_type.change(fn=select_axis, inputs=[x_type], outputs=[fill_x_button])
         y_type.change(fn=select_axis, inputs=[y_type], outputs=[fill_y_button])
@@ -403,10 +402,10 @@ class Script(scripts.Script):
 
             return valslist
 
-        x_opt = axis_options[x_type]
+        x_opt = self.current_axis_options[x_type]
         xs = process_axis(x_opt, x_values)
 
-        y_opt = axis_options[y_type]
+        y_opt = self.current_axis_options[y_type]
         ys = process_axis(y_opt, y_values)
 
         def fix_axis_seeds(axis_opt, axis_list):
