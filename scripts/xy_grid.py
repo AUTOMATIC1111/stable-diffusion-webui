@@ -184,6 +184,7 @@ axis_options = [
     AxisOption("Var. seed", int, apply_field("subseed")),
     AxisOption("Var. strength", float, apply_field("subseed_strength")),
     AxisOption("Steps", int, apply_field("steps")),
+    AxisOptionTxt2Img("Hires steps", int, apply_field("hr_second_pass_steps")),
     AxisOption("CFG Scale", float, apply_field("cfg_scale")),
     AxisOption("Prompt S/R", str, apply_prompt, format_value=format_value),
     AxisOption("Prompt order", str_permutations, apply_order, format_value=format_value_join_list),
@@ -427,10 +428,21 @@ class Script(scripts.Script):
             total_steps = p.steps * len(xs) * len(ys)
 
         if isinstance(p, StableDiffusionProcessingTxt2Img) and p.enable_hr:
-            total_steps *= 2
+            if x_opt.label == "Hires steps":
+                total_steps += sum(xs) * len(ys)
+            elif y_opt.label == "Hires steps":
+                total_steps += sum(ys) * len(xs)
+            elif p.hr_second_pass_steps:
+                total_steps += p.hr_second_pass_steps * len(xs) * len(ys)
+            else:
+                total_steps *= 2
 
-        print(f"X/Y plot will create {len(xs) * len(ys) * p.n_iter} images on a {len(xs)}x{len(ys)} grid. (Total steps to process: {total_steps * p.n_iter})")
-        shared.total_tqdm.updateTotal(total_steps * p.n_iter)
+        total_steps *= p.n_iter
+
+        image_cell_count = p.n_iter * p.batch_size
+        cell_console_text = f"; {image_cell_count} images per cell" if image_cell_count > 1 else ""
+        print(f"X/Y plot will create {len(xs) * len(ys) * image_cell_count} images on a {len(xs)}x{len(ys)} grid{cell_console_text}. (Total steps to process: {total_steps})")
+        shared.total_tqdm.updateTotal(total_steps)
 
         grid_infotext = [None]
 
