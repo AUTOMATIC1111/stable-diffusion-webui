@@ -79,6 +79,22 @@ class ExtraNetworksUi:
         self.tabname = None
 
 
+def pages_in_preferred_order(pages):
+    tab_order = [x.lower().strip() for x in shared.opts.ui_extra_networks_tab_reorder.split(",")]
+
+    def tab_name_score(name):
+        name = name.lower()
+        for i, possible_match in enumerate(tab_order):
+            if possible_match in name:
+                return i
+
+        return len(pages)
+
+    tab_scores = {page.name: (tab_name_score(page.name), original_index) for original_index, page in enumerate(pages)}
+
+    return sorted(pages, key=lambda x: tab_scores[x.name])
+
+
 def create_ui(container, button, tabname):
     ui = ExtraNetworksUi()
     ui.pages = []
@@ -86,7 +102,7 @@ def create_ui(container, button, tabname):
     ui.tabname = tabname
 
     with gr.Tabs(elem_id=tabname+"_extra_tabs") as tabs:
-        for page in ui.stored_extra_pages:
+        for page in pages_in_preferred_order(ui.stored_extra_pages):
             with gr.Tab(page.title):
                 page_elem = gr.HTML(page.create_html(ui.tabname))
                 ui.pages.append(page_elem)
