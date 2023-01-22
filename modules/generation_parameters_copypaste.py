@@ -256,6 +256,9 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
         if line.startswith("Hires prompt:"):
             res["Hires prompt"] = line[1:][:-1]
 
+        if line.startswith("Hires negative prompt:"):
+            res["Hires negative prompt"] = line[1:][:-1]
+
         if done_with_prompt:
             negative_prompt += ("" if negative_prompt == "" else "\n") + line
         else:
