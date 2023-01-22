@@ -267,9 +267,10 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
             res[k+"-2"] = m.group(2)
         else:
             res[k] = v
-        if k.startswith("Hires prompt:"):
+
+        if k.startswith("Hires prompt"):
             res["Hires prompt"] = v[1:][:-1]
-        elif k.startswith("Hires negative prompt:"):
+        elif k.startswith("Hires negative prompt"):
             res["Hires negative prompt"] = v[1:][:-1]
 
     # Missing CLIP skip means it was set to 1 (the default)
