@@ -765,5 +765,7 @@
     "train/Error threshold/value": 0.1,
     "train/Error threshold/minimum": 0,
     "train/Error threshold/maximum": 1,
-    "train/Error threshold/step": 0.01
+    "train/Error threshold/step": 0.01,
+    "modelmerger/Discard weights with matching name/visible": true,
+    "modelmerger/Discard weights with matching name/value": ""
 }

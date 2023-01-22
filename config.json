@@ -141,8 +141,7 @@
     "always_discard_next_to_last_sigma": false,
     "disabled_extensions": [
         "sdweb-merge-board",
-        "ScuNET",
-        "roll-artist"
+        "ScuNET"
     ],
     "sd_checkpoint_hash": "cc6cb27103417325ff94f52b7a5d2dde45a7515b25c255d8e396c90014281516",
     "ldsr_steps": 100,
@@ -162,5 +161,9 @@
     "inspiration_cols_num": 6,
     "live_preview_refresh_period": 1000,
     "show_progressbar": true,
-    "show_warnings": false
+    "show_warnings": false,
+    "extra_networks_default_multiplier": 1,
+    "keyedit_precision_attention": 0.1,
+    "keyedit_precision_extra": 0.05,
+    "ui_extra_networks_tab_reorder": ""
 }
