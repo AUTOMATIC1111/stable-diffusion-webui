@@ -6,10 +6,11 @@ import logging
 from PIL import Image
 
 from util import Map, log
-from sdapi import postsync
+from sdapi import getsync, postsync
 
+mask = 'preview-body.jpg'
 template = 'photo of "{name}", {suffix}, high detailed, skin texture, facing camera, 135mm, shot on dslr, 4k, modelshoot style'
-opt = {
+img2img_options = {
     'prompt': None,
     'negative_prompt': '',
     'init_images': [],
@@ -32,11 +33,12 @@ def encode(f):
         return encoded
 
 def img2img(name: str, suffix: str):
-    opt['prompt'] = template.format(name = name, suffix = suffix)
-    log.info({ 'preview prompt': opt['prompt'] })
-    log.info({ 'preview options': opt })
-    opt['init_images'].append(encode('sillouethe.jpg'))
-    data = postsync('/sdapi/v1/img2img', opt)
+    options = getsync('/sdapi/v1/options')
+    img2img_options['prompt'] = template.format(name = name, suffix = suffix)
+    log.info({ 'preview prompt': img2img_options['prompt'] })
+    log.info({ 'preview options': img2img_options })
+    img2img_options['init_images'].append(encode(mask))
+    data = postsync('/sdapi/v1/img2img', img2img_options)
     if 'error' in data:
         log.error({ 'preview': data['error'], 'reason': data['reason'] })
         return
@@ -47,10 +49,9 @@ def img2img(name: str, suffix: str):
         return
     obj = data.copy()
     del obj['images']
-    log.info({ 'preview response': obj })
-    for b64 in data['images']:
-        image = Image.open(io.BytesIO(base64.b64decode(b64.split(",",1)[0])))
-        image.save('test.jpg')
+    log.info({ 'preview': { 'model': options["sd_model_checkpoint"], 'seed': obj['info']['seed'] } })
+    image = Image.open(io.BytesIO(base64.b64decode(data['images'][0].split(",",1)[0])))
+    image.save('test.jpg')
 
 if __name__ == "__main__":
     # log.setLevel(logging.DEBUG)
