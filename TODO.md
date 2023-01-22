@@ -81,3 +81,8 @@ Cool stuff that is not integrated anywhere...
 - Model vs embedding
 - Monitor MEM when switching models
 - Emulate model shoot using img2img
+
+## TODO
+
+- `--gradio-queue`
+- LORA
