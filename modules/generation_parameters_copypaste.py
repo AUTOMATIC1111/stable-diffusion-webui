@@ -269,9 +269,9 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
             res[k] = v
 
         if k.startswith("Hires prompt"):
-            res["Hires prompt"] = v[1:][:-1]
+            res["Hires prompt"] = v[1:][:-1].replace(';', ',')
         elif k.startswith("Hires negative prompt"):
-            res["Hires negative prompt"] = v[1:][:-1]
+            res["Hires negative prompt"] = v[1:][:-1].replace(';', ',')
 
     # Missing CLIP skip means it was set to 1 (the default)
     if "Clip skip" not in res:
