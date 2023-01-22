@@ -800,6 +800,8 @@ def create_ui():
                 (hr_resize_x, "Hires resize-1"),
                 (hr_resize_y, "Hires resize-2"),
                 (hr_sampler_index, "Hires sampling method"),
+                (hr_prompt, "Hires prompt"),
+                (hr_negative_prompt, "Hires negative prompt"),
                 *modules.scripts.scripts_txt2img.infotext_fields
             ]
             parameters_copypaste.add_paste_fields("txt2img", None, txt2img_paste_fields)
