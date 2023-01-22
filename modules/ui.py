@@ -678,10 +678,10 @@ def create_ui():
                             with FormRow(elem_id="txt2img_hires_fix_row4", variant="compact"):
                                 with gr.Column(scale=80):
                                     with gr.Row():
-                                        hr_prompt = gr.Textbox(label="Prompt", elem_id=f"hires_prompt", show_label=False, lines=3, placeholder="Prompt that will be used for hires fix pass")
+                                        hr_prompt = gr.Textbox(label="Prompt", elem_id=f"hires_prompt", show_label=False, lines=3, placeholder="Prompt that will be used for hires fix pass (leave it blank to use the same prompt as in initial txt2img gen)")
                                 with gr.Column(scale=80):
                                     with gr.Row():
-                                        hr_negative_prompt = gr.Textbox(label="Negative prompt", elem_id=f"hires_neg_prompt", show_label=False, lines=3, placeholder="Negative prompt that will be used for hires fix pass")
+                                        hr_negative_prompt = gr.Textbox(label="Negative prompt", elem_id=f"hires_neg_prompt", show_label=False, lines=3, placeholder="Negative prompt that will be used for hires fix pass (leave it blank to use the same prompt as in initial txt2img gen)")
 
                     elif category == "batch":
                         if not opts.dimensions_and_batch_together:
