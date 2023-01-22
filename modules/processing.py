@@ -517,7 +517,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         p.all_negative_prompts = p.batch_size * p.n_iter * [shared.prompt_styles.apply_negative_styles_to_prompt(p.negative_prompt, p.styles)]
 
     if type(p) == StableDiffusionProcessingTxt2Img:
-        if p.hr_enabled and p.is_hr_pass:
+        if p.enable_hr and p.is_hr_pass:
             if p.hr_prompt:
                 if type(p.prompt) == list:
                     p.all_prompts = [shared.prompt_styles.apply_styles_to_prompt(x, p.styles) for x in p.hr_prompt]
