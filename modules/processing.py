@@ -516,6 +516,23 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
     else:
         p.all_negative_prompts = p.batch_size * p.n_iter * [shared.prompt_styles.apply_negative_styles_to_prompt(p.negative_prompt, p.styles)]
 
+    if type(p) == StableDiffusionProcessingTxt2Img:
+        if p.hr_enabled and p.is_hr_pass:
+            if p.hr_prompt:
+                if type(p.prompt) == list:
+                    p.all_prompts = [shared.prompt_styles.apply_styles_to_prompt(x, p.styles) for x in p.hr_prompt]
+                else:
+                    p.all_prompts = p.batch_size * p.n_iter * [
+                        shared.prompt_styles.apply_styles_to_prompt(p.hr_prompt, p.styles)]
+
+            if p.hr_negative_prompt:
+                if type(p.negative_prompt) == list:
+                    p.all_negative_prompts = [shared.prompt_styles.apply_negative_styles_to_prompt(x, p.styles) for x in
+                                              p.hr_negative_prompt]
+                else:
+                    p.all_negative_prompts = p.batch_size * p.n_iter * [
+                        shared.prompt_styles.apply_negative_styles_to_prompt(p.hr_negative_prompt, p.styles)]
+
     if type(seed) == list:
         p.all_seeds = seed
     else:
@@ -710,7 +727,7 @@ def old_hires_fix_first_pass_dimensions(width, height):
 class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
     sampler = None
 
-    def __init__(self, enable_hr: bool = False, denoising_strength: float = 0.75, firstphase_width: int = 0, firstphase_height: int = 0, hr_scale: float = 2.0, hr_upscaler: str = None, hr_second_pass_steps: int = 0, hr_resize_x: int = 0, hr_resize_y: int = 0, hr_sampler: str = '---', **kwargs):
+    def __init__(self, enable_hr: bool = False, denoising_strength: float = 0.75, firstphase_width: int = 0, firstphase_height: int = 0, hr_scale: float = 2.0, hr_upscaler: str = None, hr_second_pass_steps: int = 0, hr_resize_x: int = 0, hr_resize_y: int = 0, hr_sampler: str = '---', hr_prompt: str = '', hr_negative_prompt: str = '', **kwargs):
         super().__init__(**kwargs)
         self.enable_hr = enable_hr
         self.denoising_strength = denoising_strength
@@ -722,6 +739,9 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         self.hr_upscale_to_x = hr_resize_x
         self.hr_upscale_to_y = hr_resize_y
         self.hr_sampler = hr_sampler
+        self.hr_prompt = hr_prompt if hr_prompt != '' else self.prompt
+        self.hr_negative_prompt = hr_negative_prompt if hr_negative_prompt != '' else self.negative_prompt
+        self.is_hr_pass = False
 
         if firstphase_width != 0 or firstphase_height != 0:
             self.hr_upscale_to_x = self.width
@@ -808,6 +828,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         if not self.enable_hr:
             return samples
 
+        self.is_hr_pass = True
         target_width = self.hr_upscale_to_x
         target_height = self.hr_upscale_to_y
 

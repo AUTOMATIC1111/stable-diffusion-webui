@@ -675,6 +675,14 @@ def create_ui():
                             with FormRow(elem_id="txt2img_hires_fix_row3", variant="compact"):
                                 hr_sampler_index = gr.Dropdown(label='Hires sampling method', elem_id=f"hr_sampler", choices=["---"] + [x.name for x in samplers_for_img2img], value="---", type="index")
 
+                            with FormRow(elem_id="txt2img_hires_fix_row4", variant="compact"):
+                                with gr.Column(scale=80):
+                                    with gr.Row():
+                                        hr_prompt = gr.Textbox(label="Prompt", elem_id=f"hires_prompt", show_label=False, lines=3, placeholder="Prompt that will be used for hires fix pass")
+                                with gr.Column(scale=80):
+                                    with gr.Row():
+                                        hr_negative_prompt = gr.Textbox(label="Negative prompt", elem_id=f"hires_neg_prompt", show_label=False, lines=3, placeholder="Negative prompt that will be used for hires fix pass")
+
                     elif category == "batch":
                         if not opts.dimensions_and_batch_together:
                             with FormRow(elem_id="txt2img_column_batch"):
@@ -734,6 +742,8 @@ def create_ui():
                     hr_resize_x,
                     hr_resize_y,
                     hr_sampler_index,
+                    hr_prompt,
+                    hr_negative_prompt,
                 ] + custom_inputs,
 
                 outputs=[
