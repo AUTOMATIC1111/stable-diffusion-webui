@@ -516,25 +516,25 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
     else:
         p.all_negative_prompts = p.batch_size * p.n_iter * [shared.prompt_styles.apply_negative_styles_to_prompt(p.negative_prompt, p.styles)]
 
-    if type(p) == StableDiffusionProcessingTxt2Img:
-        if p.enable_hr and p.is_hr_pass:
-            logging.info("Running hr pass with custom prompt")
-            if p.hr_prompt:
-                if type(p.prompt) == list:
-                    p.all_prompts = [shared.prompt_styles.apply_styles_to_prompt(x, p.styles) for x in p.hr_prompt]
-                else:
-                    p.all_prompts = p.batch_size * p.n_iter * [
-                        shared.prompt_styles.apply_styles_to_prompt(p.hr_prompt, p.styles)]
-                logging.info(p.all_prompts)
-
-            if p.hr_negative_prompt:
-                if type(p.negative_prompt) == list:
-                    p.all_negative_prompts = [shared.prompt_styles.apply_negative_styles_to_prompt(x, p.styles) for x in
-                                              p.hr_negative_prompt]
-                else:
-                    p.all_negative_prompts = p.batch_size * p.n_iter * [
-                        shared.prompt_styles.apply_negative_styles_to_prompt(p.hr_negative_prompt, p.styles)]
-                logging.info(p.all_negative_prompts)
+    # if type(p) == StableDiffusionProcessingTxt2Img:
+    #     if p.enable_hr and p.is_hr_pass:
+    #         logging.info("Running hr pass with custom prompt")
+    #         if p.hr_prompt:
+    #             if type(p.prompt) == list:
+    #                 p.all_prompts = [shared.prompt_styles.apply_styles_to_prompt(x, p.styles) for x in p.hr_prompt]
+    #             else:
+    #                 p.all_prompts = p.batch_size * p.n_iter * [
+    #                     shared.prompt_styles.apply_styles_to_prompt(p.hr_prompt, p.styles)]
+    #             logging.info(p.all_prompts)
+    #
+    #         if p.hr_negative_prompt:
+    #             if type(p.negative_prompt) == list:
+    #                 p.all_negative_prompts = [shared.prompt_styles.apply_negative_styles_to_prompt(x, p.styles) for x in
+    #                                           p.hr_negative_prompt]
+    #             else:
+    #                 p.all_negative_prompts = p.batch_size * p.n_iter * [
+    #                     shared.prompt_styles.apply_negative_styles_to_prompt(p.hr_negative_prompt, p.styles)]
+    #             logging.info(p.all_negative_prompts)
 
     if type(seed) == list:
         p.all_seeds = seed
@@ -744,7 +744,6 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         self.hr_sampler = hr_sampler
         self.hr_prompt = hr_prompt if hr_prompt != '' else self.prompt
         self.hr_negative_prompt = hr_negative_prompt if hr_negative_prompt != '' else self.negative_prompt
-        self.is_hr_pass = False
 
         if firstphase_width != 0 or firstphase_height != 0:
             self.hr_upscale_to_x = self.width
@@ -831,7 +830,9 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         if not self.enable_hr:
             return samples
 
-        self.is_hr_pass = True
+        self.prompt = self.hr_prompt
+        self.negative_prompt = self.hr_negative_prompt
+
         target_width = self.hr_upscale_to_x
         target_height = self.hr_upscale_to_y
 
