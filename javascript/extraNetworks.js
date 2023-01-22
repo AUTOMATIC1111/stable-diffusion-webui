@@ -13,10 +13,10 @@ function setupExtraNetworksForTab(tabname){
     tabs.appendChild(close)
 
     search.addEventListener("input", function(evt){
-        searchTerm = search.value
+        searchTerm = search.value.toLowerCase()
 
         gradioApp().querySelectorAll('#'+tabname+'_extra_tabs div.card').forEach(function(elem){
-            text = elem.querySelector('.name').textContent
+            text = elem.querySelector('.name').textContent.toLowerCase()
             elem.style.display = text.indexOf(searchTerm) == -1 ? "none" : ""
         })
     });
