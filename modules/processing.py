@@ -790,8 +790,8 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             if self.hr_resize_x == 0 and self.hr_resize_y == 0:
                 self.extra_generation_params["Hires upscale"] = self.hr_scale
                 self.extra_generation_params["Hires sampler"] = self.hr_sampler
-                self.extra_generation_params["Hires prompt"] = f"({self.hr_prompt})"
-                self.extra_generation_params["Hires negative prompt"] = f"({self.hr_negative_prompt})"
+                self.extra_generation_params["Hires prompt"] = f'"{self.hr_prompt}"'
+                self.extra_generation_params["Hires negative prompt"] = f'"{self.hr_negative_prompt}"'
                 self.hr_upscale_to_x = int(self.width * self.hr_scale)
                 self.hr_upscale_to_y = int(self.height * self.hr_scale)
             else:
