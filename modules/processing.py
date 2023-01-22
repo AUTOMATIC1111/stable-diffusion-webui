@@ -235,7 +235,7 @@ class StableDiffusionProcessing:
     def init(self, all_prompts, all_seeds, all_subseeds):
         pass
 
-    def sample(self, conditioning, unconditional_conditioning, hr_conditioning, hr_uconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
+    def sample(self, conditioning, unconditional_conditioning, hr_conditioning=None, hr_unconditional_conditioning=None, seeds, subseeds, subseed_strength, prompts):
         raise NotImplementedError()
 
     def close(self):
@@ -517,7 +517,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         p.all_negative_prompts = p.batch_size * p.n_iter * [shared.prompt_styles.apply_negative_styles_to_prompt(p.negative_prompt, p.styles)]
 
     if type(p) == StableDiffusionProcessingTxt2Img:
-        if p.enable_hr:
+        if p.enable_hr and p.hr_prompt != '':
             if type(p.prompt) == list:
                 p.all_hr_prompts = [shared.prompt_styles.apply_styles_to_prompt(x, p.styles) for x in p.hr_prompt]
             else:
@@ -601,7 +601,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             negative_prompts = p.all_negative_prompts[n * p.batch_size:(n + 1) * p.batch_size]
 
             if type(p) == StableDiffusionProcessingTxt2Img:
-                if p.enable_hr:
+                if p.enable_hr and p.hr_prompt != '':
                     hr_prompts = p.all_hr_prompts[n * p.batch_size:(n + 1) * p.batch_size]
                     hr_negative_prompts = p.all_negative_prompts[n * p.batch_size:(n + 1) * p.batch_size]
 
@@ -619,7 +619,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             uc = get_conds_with_caching(prompt_parser.get_learned_conditioning, negative_prompts, p.steps, cached_uc)
             c = get_conds_with_caching(prompt_parser.get_multicond_learned_conditioning, prompts, p.steps, cached_c)
             if type(p) == StableDiffusionProcessingTxt2Img:
-                if p.enable_hr:
+                if p.enable_hr and p.hr_prompt != '':
                     hr_uc = get_conds_with_caching(prompt_parser.get_learned_conditioning, hr_negative_prompts, p.steps,
                                                 cached_uc)
                     hr_c = get_conds_with_caching(prompt_parser.get_multicond_learned_conditioning, hr_prompts, p.steps,
@@ -635,7 +635,12 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             with devices.autocast():
                 if type(p) == StableDiffusionProcessingTxt2Img:
                     if p.enable_hr:
-                        samples_ddim = p.sample(conditioning=c, unconditional_conditioning=uc, hr_conditioning=hr_c, hr_unconditional_conditioning=hr_uc, seeds=seeds, subseeds=subseeds, subseed_strength=p.subseed_strength, prompts=prompts)
+                        if p.hr_prompts != '':
+                            samples_ddim = p.sample(conditioning=c, unconditional_conditioning=uc, hr_conditioning=hr_c, hr_unconditional_conditioning=hr_uc, seeds=seeds, subseeds=subseeds, subseed_strength=p.subseed_strength, prompts=prompts)
+                        else:
+                            samples_ddim = p.sample(conditioning=c, unconditional_conditioning=uc, hr_conditioning=c,
+                                                    hr_unconditional_conditioning=uc, seeds=seeds, subseeds=subseeds,
+                                                    subseed_strength=p.subseed_strength, prompts=prompts)
                     else:
                         samples_ddim = p.sample(conditioning=c, unconditional_conditioning=uc, seeds=seeds, subseeds=subseeds,
                                                 subseed_strength=p.subseed_strength, prompts=prompts)
@@ -756,8 +761,8 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         self.hr_upscale_to_x = hr_resize_x
         self.hr_upscale_to_y = hr_resize_y
         self.hr_sampler = hr_sampler
-        self.hr_prompt = hr_prompt if hr_prompt != '' else self.prompt
-        self.hr_negative_prompt = hr_negative_prompt if hr_negative_prompt != '' else self.negative_prompt
+        self.hr_prompt = hr_prompt if hr_prompt != '' else ''
+        self.hr_negative_prompt = hr_negative_prompt if hr_negative_prompt != '' else ''
         self.all_hr_prompts = None
         self.all_hr_negative_prompts = None
 
