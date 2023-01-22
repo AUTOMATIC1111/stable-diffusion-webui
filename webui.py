@@ -22,7 +22,6 @@ if ".dev" in torch.__version__ or "+git" in torch.__version__:
 
 from modules import shared, devices, sd_samplers, upscaler, extensions, localization, ui_tempdir, ui_extra_networks
 import modules.codeformer_model as codeformer
-import modules.extras
 import modules.face_restoration
 import modules.gfpgan_model as gfpgan
 import modules.img2img

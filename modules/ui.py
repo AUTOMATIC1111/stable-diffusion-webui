@@ -20,7 +20,7 @@ import numpy as np
 from PIL import Image, PngImagePlugin
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_gradio_call
 
-from modules import sd_hijack, sd_models, localization, script_callbacks, ui_extensions, deepbooru, sd_vae, extra_networks
+from modules import sd_hijack, sd_models, localization, script_callbacks, ui_extensions, deepbooru, sd_vae, extra_networks, postprocessing, ui_components
 from modules.ui_components import FormRow, FormGroup, ToolButton, FormHTML
 from modules.paths import script_path
 
@@ -95,8 +95,8 @@ extra_networks_symbol = '\U0001F3B4'  # 🎴
 
 
 def plaintext_to_html(text):
-    text = "<p>" + "<br>\n".join([f"{html.escape(x)}" for x in text.split('\n')]) + "</p>"
-    return text
+    return ui_components.plaintext_to_html(text)
+
 
 def send_gradio_gallery_to_image(x):
     if len(x) == 0:
@@ -1152,7 +1152,7 @@ def create_ui():
             result_images, html_info_x, html_info, html_log = create_output_panel("extras", opts.outdir_extras_samples)
 
         submit.click(
-            fn=wrap_gradio_gpu_call(modules.extras.run_extras, extra_outputs=[None, '']),
+            fn=wrap_gradio_gpu_call(postprocessing.run_postprocessing, extra_outputs=[None, '']),
             _js="get_extras_tab_index",
             inputs=[
                 dummy_component,
@@ -1183,7 +1183,7 @@ def create_ui():
         parameters_copypaste.add_paste_fields("extras", extras_image, None)
 
         extras_image.change(
-            fn=modules.extras.clear_cache,
+            fn=postprocessing.clear_cache,
             inputs=[], outputs=[]
         )
 
