@@ -235,7 +235,7 @@ class StableDiffusionProcessing:
     def init(self, all_prompts, all_seeds, all_subseeds):
         pass
 
-    def sample(self, conditioning, unconditional_conditioning, hr_conditioning=None, hr_unconditional_conditioning=None, seeds, subseeds, subseed_strength, prompts):
+    def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts, hr_conditioning=None, hr_unconditional_conditioning=None):
         raise NotImplementedError()
 
     def close(self):
@@ -838,7 +838,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             if self.hr_upscaler is not None:
                 self.extra_generation_params["Hires upscaler"] = self.hr_upscaler
 
-    def sample(self, conditioning, unconditional_conditioning, hr_conditioning, hr_unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
+    def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts, hr_conditioning=None, hr_unconditional_conditioning=None):
         self.sampler = sd_samplers.create_sampler(self.sampler_name, self.sd_model)
 
         latent_scale_mode = shared.latent_upscale_modes.get(self.hr_upscaler, None) if self.hr_upscaler is not None else shared.latent_upscale_modes.get(shared.latent_upscale_default_mode, "nearest")
