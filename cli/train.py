@@ -31,6 +31,7 @@ from modules.lossrate import gen_loss_rate_str
 from modules.sdapi import close, get, interrupt, post, progress, session
 from modules.process import process_images
 from modules.grid import grid
+from modules.preview import create_preview
 
 
 images = []
@@ -343,6 +344,8 @@ async def pipeline(params):
     await train(params)
 
     await plotloss(params)
+
+    create_preview(params.name, params.init)
 
     log.debug({ 'pipeline end' })
     return

@@ -18,6 +18,7 @@ __pycache__
 /repositories/**/*
 /extensions/**/*
 /outputs/**/*
+/embeddings/**/*
 /models/**/*
 /train/log/**/*
 /tmp
@@ -27,6 +28,7 @@ __pycache__
 # unexcluded so folders get created
 !/repositories/.placeholder
 !/extensions/.placeholder
+!/embeddings/.placeholder
 !/outputs/.placeholder
 !/models/.placeholder
 !/localizations/.placeholder
