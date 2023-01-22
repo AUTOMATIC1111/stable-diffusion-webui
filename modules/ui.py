@@ -1248,6 +1248,9 @@ def create_ui():
                             bake_in_vae = gr.Dropdown(choices=["None"] + list(sd_vae.vae_dict), value="None", label="Bake in VAE", elem_id="modelmerger_bake_in_vae")
                             create_refresh_button(bake_in_vae, sd_vae.refresh_vae_list, lambda: {"choices": ["None"] + list(sd_vae.vae_dict)}, "modelmerger_refresh_bake_in_vae")
 
+                with FormRow():
+                    discard_weights = gr.Textbox(value="", label="Discard weights with matching name", elem_id="modelmerger_discard_weights")
+
                 with gr.Row():
                     modelmerger_merge = gr.Button(elem_id="modelmerger_merge", value="Merge", variant='primary')
 
@@ -1838,6 +1841,7 @@ def create_ui():
                 checkpoint_format,
                 config_source,
                 bake_in_vae,
+                discard_weights,
             ],
             outputs=[
                 primary_model_name,
