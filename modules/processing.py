@@ -517,24 +517,16 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         p.all_negative_prompts = p.batch_size * p.n_iter * [shared.prompt_styles.apply_negative_styles_to_prompt(p.negative_prompt, p.styles)]
 
     if type(p) == StableDiffusionProcessingTxt2Img:
-        if p.enable_hr and p.is_hr_pass:
-            logging.info("Running hr pass with custom prompt")
-            if p.hr_prompt:
-                if type(p.prompt) == list:
-                    p.all_hr_prompts = [shared.prompt_styles.apply_styles_to_prompt(x, p.styles) for x in p.hr_prompt]
-                else:
-                    p.all_hr_prompts = p.batch_size * p.n_iter * [
-                        shared.prompt_styles.apply_styles_to_prompt(p.hr_prompt, p.styles)]
-                logging.info(p.all_prompts)
+        if p.enable_hr:
+            if type(p.prompt) == list:
+                p.all_hr_prompts = [shared.prompt_styles.apply_styles_to_prompt(x, p.styles) for x in p.hr_prompt]
+            else:
+                p.all_hr_prompts = p.batch_size * p.n_iter * [shared.prompt_styles.apply_styles_to_prompt(p.hr_prompt, p.styles)]
 
-            if p.hr_negative_prompt:
-                if type(p.negative_prompt) == list:
-                    p.all_hr_negative_prompts = [shared.prompt_styles.apply_negative_styles_to_prompt(x, p.styles) for x in
-                                              p.hr_negative_prompt]
-                else:
-                    p.all_hr_negative_prompts = p.batch_size * p.n_iter * [
-                        shared.prompt_styles.apply_negative_styles_to_prompt(p.hr_negative_prompt, p.styles)]
-                logging.info(p.all_negative_prompts)
+            if type(p.negative_prompt) == list:
+                p.all_hr_negative_prompts = [shared.prompt_styles.apply_negative_styles_to_prompt(x, p.styles) for x in p.hr_negative_prompt]
+            else:
+                p.all_hr_negative_prompts = p.batch_size * p.n_iter * [shared.prompt_styles.apply_negative_styles_to_prompt(p.hr_negative_prompt, p.styles)]
 
     if type(seed) == list:
         p.all_seeds = seed
@@ -628,9 +620,9 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             c = get_conds_with_caching(prompt_parser.get_multicond_learned_conditioning, prompts, p.steps, cached_c)
             if type(p) == StableDiffusionProcessingTxt2Img:
                 if p.enable_hr:
-                    hr_uc = get_conds_with_caching(prompt_parser.get_learned_conditioning, negative_prompts, p.steps,
+                    hr_uc = get_conds_with_caching(prompt_parser.get_learned_conditioning, hr_negative_prompts, p.steps,
                                                 cached_uc)
-                    hr_c = get_conds_with_caching(prompt_parser.get_multicond_learned_conditioning, prompts, p.steps,
+                    hr_c = get_conds_with_caching(prompt_parser.get_multicond_learned_conditioning, hr_prompts, p.steps,
                                                cached_c)
 
             if len(model_hijack.comments) > 0:
@@ -840,7 +832,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             if self.hr_upscaler is not None:
                 self.extra_generation_params["Hires upscaler"] = self.hr_upscaler
 
-    def sample(self, conditioning, unconditional_conditioning, hr_conditioning, hr_uconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
+    def sample(self, conditioning, unconditional_conditioning, hr_conditioning, hr_unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
         self.sampler = sd_samplers.create_sampler(self.sampler_name, self.sd_model)
 
         latent_scale_mode = shared.latent_upscale_modes.get(self.hr_upscaler, None) if self.hr_upscaler is not None else shared.latent_upscale_modes.get(shared.latent_upscale_default_mode, "nearest")
