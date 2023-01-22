@@ -10,3 +10,6 @@
 [submodule "wiki"]
 	path = wiki
 	url = https://github.com/vladmandic/automatic.wiki
+[submodule "extensions-builtin/sd-extension-steps-animation"]
+	path = extensions-builtin/sd-extension-steps-animation
+	url = https://github.com/vladmandic/sd-extension-steps-animation
