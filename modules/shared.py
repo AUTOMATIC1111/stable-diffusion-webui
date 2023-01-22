@@ -444,9 +444,11 @@ options_templates.update(options_section(('ui', "User interface"), {
     "show_progress_in_title": OptionInfo(True, "Show generation progress in window title."),
     "samplers_in_dropdown": OptionInfo(True, "Use dropdown for sampler selection instead of radio group"),
     "dimensions_and_batch_together": OptionInfo(True, "Show Width/Height and Batch sliders in same row"),
-    'quicksettings': OptionInfo("sd_model_checkpoint", "Quicksettings list"),
-    'ui_reorder': OptionInfo(", ".join(ui_reorder_categories), "txt2img/img2img UI item order"),
-    'localization': OptionInfo("None", "Localization (requires restart)", gr.Dropdown, lambda: {"choices": ["None"] + list(localization.localizations.keys())}, refresh=lambda: localization.list_localizations(cmd_opts.localizations_dir)),
+    "keyedit_precision_attention": OptionInfo(0.1, "Ctrl+up/down precision when editing (attention:1.1)", gr.Slider, {"minimum": 0.01, "maximum": 0.2, "step": 0.001}),
+    "keyedit_precision_extra": OptionInfo(0.05, "Ctrl+up/down precision when editing <extra networks:0.9>", gr.Slider, {"minimum": 0.01, "maximum": 0.2, "step": 0.001}),
+    "quicksettings": OptionInfo("sd_model_checkpoint", "Quicksettings list"),
+    "ui_reorder": OptionInfo(", ".join(ui_reorder_categories), "txt2img/img2img UI item order"),
+    "localization": OptionInfo("None", "Localization (requires restart)", gr.Dropdown, lambda: {"choices": ["None"] + list(localization.localizations.keys())}, refresh=lambda: localization.list_localizations(cmd_opts.localizations_dir)),
 }))
 
 options_templates.update(options_section(('ui', "Live previews"), {
