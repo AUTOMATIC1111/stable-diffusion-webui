@@ -14,6 +14,7 @@ python = sys.executable
 git = os.environ.get('GIT', "git")
 index_url = os.environ.get('INDEX_URL', "")
 stored_commit_hash = None
+skip_install = False
 
 
 def commit_hash():
@@ -89,6 +90,9 @@ def run_python(code, desc=None, errdesc=None):
 
 
 def run_pip(args, desc=None):
+    if skip_install:
+        return
+
     index_url_line = f' --index-url {index_url}' if index_url != '' else ''
     return run(f'"{python}" -m pip {args} --prefer-binary{index_url_line}', desc=f"Installing {desc}", errdesc=f"Couldn't install {desc}")
 
@@ -173,6 +177,8 @@ def run_extensions_installers(settings_file):
 
 
 def prepare_environment():
+    global skip_install
+
     torch_command = os.environ.get('TORCH_COMMAND', "pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 --extra-index-url https://download.pytorch.org/whl/cu113")
     requirements_file = os.environ.get('REQS_FILE', "requirements_versions.txt")
     commandline_args = os.environ.get('COMMANDLINE_ARGS', "")
@@ -206,6 +212,7 @@ def prepare_environment():
     sys.argv, reinstall_xformers = extract_arg(sys.argv, '--reinstall-xformers')
     sys.argv, update_check = extract_arg(sys.argv, '--update-check')
     sys.argv, run_tests, test_dir = extract_opt(sys.argv, '--tests')
+    sys.argv, skip_install = extract_arg(sys.argv, '--skip-install')
     xformers = '--xformers' in sys.argv
     ngrok = '--ngrok' in sys.argv
 
@@ -279,6 +286,8 @@ def tests(test_dir):
         sys.argv.append("./test/test_files/empty.pt")
     if "--skip-torch-cuda-test" not in sys.argv:
         sys.argv.append("--skip-torch-cuda-test")
+    if "--disable-nan-check" not in sys.argv:
+        sys.argv.append("--disable-nan-check")
 
     print(f"Launching Web UI in another process for testing with arguments: {' '.join(sys.argv[1:])}")
 

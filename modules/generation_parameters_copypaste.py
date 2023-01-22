@@ -37,6 +37,9 @@ def quote(text):
 
 
 def image_from_url_text(filedata):
+    if filedata is None:
+        return None
+
     if type(filedata) == list and len(filedata) > 0 and type(filedata[0]) == dict and filedata[0].get("is_file", False):
         filedata = filedata[0]
 
@@ -76,8 +79,6 @@ def integrate_settings_paste_fields(component_dict):
     from modules import ui
 
     settings_map = {
-        'sd_hypernetwork': 'Hypernet',
-        'sd_hypernetwork_strength': 'Hypernet strength',
         'CLIP_stop_at_last_layers': 'Clip skip',
         'inpainting_mask_weight': 'Conditional mask weight',
         'sd_model_checkpoint': 'Model hash',
@@ -272,13 +273,9 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
     if "Clip skip" not in res:
         res["Clip skip"] = "1"
 
-    if "Hypernet strength" not in res:
-        res["Hypernet strength"] = "1"
-
-    if "Hypernet" in res:
-        hypernet_name = res["Hypernet"]
-        hypernet_hash = res.get("Hypernet hash", None)
-        res["Hypernet"] = find_hypernetwork_key(hypernet_name, hypernet_hash)
+    hypernet = res.get("Hypernet", None)
+    if hypernet is not None:
+        res["Prompt"] += f"""<hypernet:{hypernet}:{res.get("Hypernet strength", "1.0")}>"""
 
     if "Hires resize-1" not in res:
         res["Hires resize-1"] = 0

@@ -12,8 +12,6 @@ class UtilsTests(unittest.TestCase):
     self.url_face_restorers = "http://localhost:7860/sdapi/v1/face-restorers"
     self.url_realesrgan_models = "http://localhost:7860/sdapi/v1/realesrgan-models"
     self.url_prompt_styles = "http://localhost:7860/sdapi/v1/prompt-styles"
-    self.url_artist_categories = "http://localhost:7860/sdapi/v1/artist-categories"
-    self.url_artists = "http://localhost:7860/sdapi/v1/artists"
     self.url_embeddings = "http://localhost:7860/sdapi/v1/embeddings"
 
   def test_options_get(self):
@@ -56,15 +54,9 @@ class UtilsTests(unittest.TestCase):
   
   def test_prompt_styles(self):
     self.assertEqual(requests.get(self.url_prompt_styles).status_code, 200)
-  
-  def test_artist_categories(self):
-    self.assertEqual(requests.get(self.url_artist_categories).status_code, 200)
-
-  def test_artists(self):
-    self.assertEqual(requests.get(self.url_artists).status_code, 200)
 
   def test_embeddings(self):
-    self.assertEqual(requests.get(self.url_artists).status_code, 200)
+    self.assertEqual(requests.get(self.url_embeddings).status_code, 200)
 
 if __name__ == "__main__":
     unittest.main()

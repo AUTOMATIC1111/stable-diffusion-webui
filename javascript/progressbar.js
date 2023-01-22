@@ -1,82 +1,25 @@
 // code related to showing and updating progressbar shown as the image is being made
-global_progressbars = {}
+
+
 galleries = {}
+storedGallerySelections = {}
 galleryObservers = {}
 
-// this tracks launches of window.setTimeout for progressbar to prevent starting a new timeout when the previous is still running
-timeoutIds = {}
-
-function check_progressbar(id_part, id_progressbar, id_progressbar_span, id_skip, id_interrupt, id_preview, id_gallery){
-    // gradio 3.8's enlightened approach allows them to create two nested div elements inside each other with same id
-    // every time you use gr.HTML(elem_id='xxx'), so we handle this here
-    var progressbar = gradioApp().querySelector("#"+id_progressbar+" #"+id_progressbar)
-    var progressbarParent
-    if(progressbar){
-        progressbarParent = gradioApp().querySelector("#"+id_progressbar)
-    } else{
-        progressbar = gradioApp().getElementById(id_progressbar)
-        progressbarParent = null
-    }
-
-    var skip = id_skip ? gradioApp().getElementById(id_skip) : null
-    var interrupt = gradioApp().getElementById(id_interrupt)
-
-    if(opts.show_progress_in_title && progressbar && progressbar.offsetParent){
-        if(progressbar.innerText){
-            let newtitle = '[' + progressbar.innerText.trim() + '] Stable Diffusion';
-            if(document.title != newtitle){
-                document.title =  newtitle;
-            }
-        }else{
-            let newtitle = 'Stable Diffusion'
-            if(document.title != newtitle){
-                document.title =  newtitle;
-            }
-        }
-    }
-
-	if(progressbar!= null && progressbar != global_progressbars[id_progressbar]){
-	    global_progressbars[id_progressbar] = progressbar
-
-        var mutationObserver = new MutationObserver(function(m){
-            if(timeoutIds[id_part]) return;
-
-            preview = gradioApp().getElementById(id_preview)
-            gallery = gradioApp().getElementById(id_gallery)
-
-            if(preview != null && gallery != null){
-                preview.style.width = gallery.clientWidth + "px"
-                preview.style.height = gallery.clientHeight + "px"
-                if(progressbarParent) progressbar.style.width = progressbarParent.clientWidth + "px"
-
-				//only watch gallery if there is a generation process going on
-                check_gallery(id_gallery);
-
-                var progressDiv = gradioApp().querySelectorAll('#' + id_progressbar_span).length > 0;
-                if(progressDiv){
-                    timeoutIds[id_part] = window.setTimeout(function() {
-                        timeoutIds[id_part] = null
-                        requestMoreProgress(id_part, id_progressbar_span, id_skip, id_interrupt)
-                    }, 500)
-                } else{
-                    if (skip) {
-                        skip.style.display = "none"
-                    }
-                    interrupt.style.display = "none"
-
-                    //disconnect observer once generation finished, so user can close selected image if they want
-                    if (galleryObservers[id_gallery]) {
-                        galleryObservers[id_gallery].disconnect();
-                        galleries[id_gallery] = null;
-                    }
-                }
-            }
-
-        });
-        mutationObserver.observe( progressbar, { childList:true, subtree:true })
-	}
+function rememberGallerySelection(id_gallery){
+    storedGallerySelections[id_gallery] = getGallerySelectedIndex(id_gallery)
 }
 
+function getGallerySelectedIndex(id_gallery){
+    let galleryButtons = gradioApp().querySelectorAll('#'+id_gallery+' .gallery-item')
+    let galleryBtnSelected = gradioApp().querySelector('#'+id_gallery+' .gallery-item.\\!ring-2')
+
+     let currentlySelectedIndex = -1
+     galleryButtons.forEach(function(v, i){ if(v==galleryBtnSelected) { currentlySelectedIndex = i } })
+
+     return currentlySelectedIndex
+}
+
+// this is a workaround for https://github.com/gradio-app/gradio/issues/2984
 function check_gallery(id_gallery){
     let gallery = gradioApp().getElementById(id_gallery)
     // if gallery has no change, no need to setting up observer again.
@@ -85,10 +28,16 @@ function check_gallery(id_gallery){
         if(galleryObservers[id_gallery]){
             galleryObservers[id_gallery].disconnect();
         }
-        let prevSelectedIndex = selected_gallery_index();
+
+        storedGallerySelections[id_gallery] = -1
+
         galleryObservers[id_gallery] = new MutationObserver(function (){
             let galleryButtons = gradioApp().querySelectorAll('#'+id_gallery+' .gallery-item')
             let galleryBtnSelected = gradioApp().querySelector('#'+id_gallery+' .gallery-item.\\!ring-2')
+            let currentlySelectedIndex = getGallerySelectedIndex(id_gallery)
+            prevSelectedIndex = storedGallerySelections[id_gallery]
+            storedGallerySelections[id_gallery] = -1
+
             if (prevSelectedIndex !== -1 && galleryButtons.length>prevSelectedIndex && !galleryBtnSelected) {
                 // automatically re-open previously selected index (if exists)
                 activeElement = gradioApp().activeElement;
@@ -120,30 +69,175 @@ function check_gallery(id_gallery){
 }
 
 onUiUpdate(function(){
-    check_progressbar('txt2img', 'txt2img_progressbar', 'txt2img_progress_span', 'txt2img_skip', 'txt2img_interrupt', 'txt2img_preview', 'txt2img_gallery')
-    check_progressbar('img2img', 'img2img_progressbar', 'img2img_progress_span', 'img2img_skip', 'img2img_interrupt', 'img2img_preview', 'img2img_gallery')
-    check_progressbar('ti', 'ti_progressbar', 'ti_progress_span', '', 'ti_interrupt', 'ti_preview', 'ti_gallery')
+    check_gallery('txt2img_gallery')
+    check_gallery('img2img_gallery')
 })
 
-function requestMoreProgress(id_part, id_progressbar_span, id_skip, id_interrupt){
-    btn = gradioApp().getElementById(id_part+"_check_progress");
-    if(btn==null) return;
-
-    btn.click();
-    var progressDiv = gradioApp().querySelectorAll('#' + id_progressbar_span).length > 0;
-    var skip = id_skip ? gradioApp().getElementById(id_skip) : null
-    var interrupt = gradioApp().getElementById(id_interrupt)
-    if(progressDiv && interrupt){
-        if (skip) {
-            skip.style.display = "block"
+function request(url, data, handler, errorHandler){
+    var xhr = new XMLHttpRequest();
+    var url = url;
+    xhr.open("POST", url, true);
+    xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+                try {
+                    var js = JSON.parse(xhr.responseText);
+                    handler(js)
+                } catch (error) {
+                    console.error(error);
+                    errorHandler()
+                }
+            } else{
+                errorHandler()
+            }
         }
-        interrupt.style.display = "block"
+    };
+    var js = JSON.stringify(data);
+    xhr.send(js);
+}
+
+function pad2(x){
+    return x<10 ? '0'+x : x
+}
+
+function formatTime(secs){
+    if(secs > 3600){
+        return pad2(Math.floor(secs/60/60)) + ":" + pad2(Math.floor(secs/60)%60) + ":" + pad2(Math.floor(secs)%60)
+    } else if(secs > 60){
+        return pad2(Math.floor(secs/60)) + ":" + pad2(Math.floor(secs)%60)
+    } else{
+        return Math.floor(secs) + "s"
     }
 }
 
-function requestProgress(id_part){
-    btn = gradioApp().getElementById(id_part+"_check_progress_initial");
-    if(btn==null) return;
+function setTitle(progress){
+    var title = 'Stable Diffusion'
 
-    btn.click();
+    if(opts.show_progress_in_title && progress){
+        title = '[' + progress.trim() + '] ' + title;
+    }
+
+    if(document.title != title){
+        document.title =  title;
+    }
+}
+
+
+function randomId(){
+    return "task(" + Math.random().toString(36).slice(2, 7) + Math.random().toString(36).slice(2, 7) + Math.random().toString(36).slice(2, 7)+")"
+}
+
+// starts sending progress requests to "/internal/progress" uri, creating progressbar above progressbarContainer element and
+// preview inside gallery element. Cleans up all created stuff when the task is over and calls atEnd.
+// calls onProgress every time there is a progress update
+function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgress){
+    var dateStart = new Date()
+    var wasEverActive = false
+    var parentProgressbar = progressbarContainer.parentNode
+    var parentGallery = gallery ? gallery.parentNode : null
+
+    var divProgress = document.createElement('div')
+    divProgress.className='progressDiv'
+    divProgress.style.display = opts.show_progressbar ? "" : "none"
+    var divInner = document.createElement('div')
+    divInner.className='progress'
+
+    divProgress.appendChild(divInner)
+    parentProgressbar.insertBefore(divProgress, progressbarContainer)
+
+    if(parentGallery){
+        var livePreview = document.createElement('div')
+        livePreview.className='livePreview'
+        parentGallery.insertBefore(livePreview, gallery)
+    }
+
+    var removeProgressBar = function(){
+        setTitle("")
+        parentProgressbar.removeChild(divProgress)
+        if(parentGallery) parentGallery.removeChild(livePreview)
+        atEnd()
+    }
+
+    var fun = function(id_task, id_live_preview){
+        request("./internal/progress", {"id_task": id_task, "id_live_preview": id_live_preview}, function(res){
+            if(res.completed){
+                removeProgressBar()
+                return
+            }
+
+            var rect = progressbarContainer.getBoundingClientRect()
+
+            if(rect.width){
+                divProgress.style.width = rect.width + "px";
+            }
+
+            progressText = ""
+
+            divInner.style.width = ((res.progress || 0) * 100.0) + '%'
+            divInner.style.background = res.progress ? "" : "transparent"
+
+            if(res.progress > 0){
+                progressText = ((res.progress || 0) * 100.0).toFixed(0) + '%'
+            }
+
+            if(res.eta){
+                progressText += " ETA: " + formatTime(res.eta)
+            }
+
+
+            setTitle(progressText)
+
+            if(res.textinfo && res.textinfo.indexOf("\n") == -1){
+                progressText = res.textinfo + " " + progressText
+            }
+
+            divInner.textContent = progressText
+
+            var elapsedFromStart = (new Date() - dateStart) / 1000
+
+            if(res.active) wasEverActive = true;
+
+            if(! res.active && wasEverActive){
+                removeProgressBar()
+                return
+            }
+
+            if(elapsedFromStart > 5 && !res.queued && !res.active){
+                removeProgressBar()
+                return
+            }
+
+
+            if(res.live_preview && gallery){
+                var rect = gallery.getBoundingClientRect()
+                if(rect.width){
+                    livePreview.style.width = rect.width + "px"
+                    livePreview.style.height = rect.height + "px"
+                }
+
+                var img = new Image();
+                img.onload = function() {
+                    livePreview.appendChild(img)
+                    if(livePreview.childElementCount > 2){
+                        livePreview.removeChild(livePreview.firstElementChild)
+                    }
+                }
+                img.src = res.live_preview;
+            }
+
+
+            if(onProgress){
+                onProgress(res)
+            }
+
+            setTimeout(() => {
+                fun(id_task, res.id_live_preview);
+            }, opts.live_preview_refresh_period || 500)
+        }, function(){
+            removeProgressBar()
+        })
+    }
+
+    fun(id_task, 0)
 }

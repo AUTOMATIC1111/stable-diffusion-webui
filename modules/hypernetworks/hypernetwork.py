@@ -12,7 +12,7 @@ import torch
 import tqdm
 from einops import rearrange, repeat
 from ldm.util import default
-from modules import devices, processing, sd_models, shared, sd_samplers, hashes
+from modules import devices, processing, sd_models, shared, sd_samplers, hashes, sd_hijack_checkpoint
 from modules.textual_inversion import textual_inversion, logging
 from modules.textual_inversion.learn_schedule import LearnRateScheduler
 from torch import einsum
@@ -25,7 +25,6 @@ from statistics import stdev, mean
 optimizer_dict = {optim_name : cls_obj for optim_name, cls_obj in inspect.getmembers(torch.optim, inspect.isclass) if optim_name != "Optimizer"}
 
 class HypernetworkModule(torch.nn.Module):
-    multiplier = 1.0
     activation_dict = {
         "linear": torch.nn.Identity,
         "relu": torch.nn.ReLU,
@@ -40,6 +39,8 @@ class HypernetworkModule(torch.nn.Module):
     def __init__(self, dim, state_dict=None, layer_structure=None, activation_func=None, weight_init='Normal',
                  add_layer_norm=False, activate_output=False, dropout_structure=None):
         super().__init__()
+
+        self.multiplier = 1.0
 
         assert layer_structure is not None, "layer_structure must not be None"
         assert layer_structure[0] == 1, "Multiplier Sequence should start with size 1!"
@@ -115,7 +116,7 @@ class HypernetworkModule(torch.nn.Module):
             state_dict[to] = x
 
     def forward(self, x):
-        return x + self.linear(x) * (HypernetworkModule.multiplier if not self.training else 1)
+        return x + self.linear(x) * (self.multiplier if not self.training else 1)
 
     def trainables(self):
         layer_structure = []
@@ -124,9 +125,6 @@ class HypernetworkModule(torch.nn.Module):
                 layer_structure += [layer.weight, layer.bias]
         return layer_structure
 
-
-def apply_strength(value=None):
-    HypernetworkModule.multiplier = value if value is not None else shared.opts.sd_hypernetwork_strength
 
 #param layer_structure : sequence used for length, use_dropout : controlling boolean, last_layer_dropout : for compatibility check.
 def parse_dropout_structure(layer_structure, use_dropout, last_layer_dropout):
@@ -191,6 +189,20 @@ class Hypernetwork:
                 layer.train(mode=mode)
                 for param in layer.parameters():
                     param.requires_grad = mode
+
+    def to(self, device):
+        for k, layers in self.layers.items():
+            for layer in layers:
+                layer.to(device)
+
+        return self
+
+    def set_multiplier(self, multiplier):
+        for k, layers in self.layers.items():
+            for layer in layers:
+                layer.multiplier = multiplier
+
+        return self
 
     def eval(self):
         for k, layers in self.layers.items():
@@ -269,11 +281,13 @@ class Hypernetwork:
             self.optimizer_state_dict = None
         if self.optimizer_state_dict:
             self.optimizer_name = optimizer_saved_dict.get('optimizer_name', 'AdamW')
-            print("Loaded existing optimizer from checkpoint")
-            print(f"Optimizer name is {self.optimizer_name}")
+            if shared.opts.print_hypernet_extra:
+                print("Loaded existing optimizer from checkpoint")
+                print(f"Optimizer name is {self.optimizer_name}")
         else:
             self.optimizer_name = "AdamW"
-            print("No saved optimizer exists in checkpoint")
+            if shared.opts.print_hypernet_extra:
+                print("No saved optimizer exists in checkpoint")
 
         for size, sd in state_dict.items():
             if type(size) == int:
@@ -306,23 +320,43 @@ def list_hypernetworks(path):
     return res
 
 
-def load_hypernetwork(filename):
-    path = shared.hypernetworks.get(filename, None)
-    # Prevent any file named "None.pt" from being loaded.
-    if path is not None and filename != "None":
-        print(f"Loading hypernetwork {filename}")
-        try:
-            shared.loaded_hypernetwork = Hypernetwork()
-            shared.loaded_hypernetwork.load(path)
+def load_hypernetwork(name):
+    path = shared.hypernetworks.get(name, None)
 
-        except Exception:
-            print(f"Error loading hypernetwork {path}", file=sys.stderr)
-            print(traceback.format_exc(), file=sys.stderr)
-    else:
-        if shared.loaded_hypernetwork is not None:
-            print("Unloading hypernetwork")
+    if path is None:
+        return None
 
-        shared.loaded_hypernetwork = None
+    hypernetwork = Hypernetwork()
+
+    try:
+        hypernetwork.load(path)
+    except Exception:
+        print(f"Error loading hypernetwork {path}", file=sys.stderr)
+        print(traceback.format_exc(), file=sys.stderr)
+        return None
+
+    return hypernetwork
+
+
+def load_hypernetworks(names, multipliers=None):
+    already_loaded = {}
+
+    for hypernetwork in shared.loaded_hypernetworks:
+        if hypernetwork.name in names:
+            already_loaded[hypernetwork.name] = hypernetwork
+
+    shared.loaded_hypernetworks.clear()
+
+    for i, name in enumerate(names):
+        hypernetwork = already_loaded.get(name, None)
+        if hypernetwork is None:
+            hypernetwork = load_hypernetwork(name)
+
+        if hypernetwork is None:
+            continue
+
+        hypernetwork.set_multiplier(multipliers[i] if multipliers else 1.0)
+        shared.loaded_hypernetworks.append(hypernetwork)
 
 
 def find_closest_hypernetwork_name(search: str):
@@ -336,18 +370,27 @@ def find_closest_hypernetwork_name(search: str):
     return applicable[0]
 
 
-def apply_hypernetwork(hypernetwork, context, layer=None):
-    hypernetwork_layers = (hypernetwork.layers if hypernetwork is not None else {}).get(context.shape[2], None)
+def apply_single_hypernetwork(hypernetwork, context_k, context_v, layer=None):
+    hypernetwork_layers = (hypernetwork.layers if hypernetwork is not None else {}).get(context_k.shape[2], None)
 
     if hypernetwork_layers is None:
-        return context, context
+        return context_k, context_v
 
     if layer is not None:
         layer.hyper_k = hypernetwork_layers[0]
         layer.hyper_v = hypernetwork_layers[1]
 
-    context_k = hypernetwork_layers[0](context)
-    context_v = hypernetwork_layers[1](context)
+    context_k = hypernetwork_layers[0](context_k)
+    context_v = hypernetwork_layers[1](context_v)
+    return context_k, context_v
+
+
+def apply_hypernetworks(hypernetworks, context, layer=None):
+    context_k = context
+    context_v = context
+    for hypernetwork in hypernetworks:
+        context_k, context_v = apply_single_hypernetwork(hypernetwork, context_k, context_v, layer)
+
     return context_k, context_v
 
 
@@ -357,7 +400,7 @@ def attention_CrossAttention_forward(self, x, context=None, mask=None):
     q = self.to_q(x)
     context = default(context, x)
 
-    context_k, context_v = apply_hypernetwork(shared.loaded_hypernetwork, context, self)
+    context_k, context_v = apply_hypernetworks(shared.loaded_hypernetworks, context, self)
     k = self.to_k(context_k)
     v = self.to_v(context_v)
 
@@ -453,7 +496,7 @@ def create_hypernetwork(name, enable_sizes, overwrite_old, layer_structure=None,
     shared.reload_hypernetworks()
 
 
-def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, gradient_step, data_root, log_directory, training_width, training_height, varsize, steps, clip_grad_mode, clip_grad_value, shuffle_tags, tag_drop_out, latent_sampling_method, create_image_every, save_hypernetwork_every, template_filename, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height):
+def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradient_step, data_root, log_directory, training_width, training_height, varsize, steps, clip_grad_mode, clip_grad_value, shuffle_tags, tag_drop_out, latent_sampling_method, create_image_every, save_hypernetwork_every, template_filename, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height):
     # images allows training previews to have infotext. Importing it at the top causes a circular import problem.
     from modules import images
 
@@ -464,8 +507,9 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, gradient_step,
     template_file = template_file.path
 
     path = shared.hypernetworks.get(hypernetwork_name, None)
-    shared.loaded_hypernetwork = Hypernetwork()
-    shared.loaded_hypernetwork.load(path)
+    hypernetwork = Hypernetwork()
+    hypernetwork.load(path)
+    shared.loaded_hypernetworks = [hypernetwork]
 
     shared.state.job = "train-hypernetwork"
     shared.state.textinfo = "Initializing hypernetwork training..."
@@ -489,7 +533,6 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, gradient_step,
     else:
         images_dir = None
 
-    hypernetwork = shared.loaded_hypernetwork
     checkpoint = sd_models.select_checkpoint()
 
     initial_step = hypernetwork.step or 0
@@ -561,6 +604,7 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, gradient_step,
     _loss_step = 0 #internal
     # size = len(ds.indexes)
     # loss_dict = defaultdict(lambda : deque(maxlen = 1024))
+    loss_logging = deque(maxlen=len(ds) * 3)  # this should be configurable parameter, this is 3 * epoch(dataset size)
     # losses = torch.zeros((size,))
     # previous_mean_losses = [0]
     # previous_mean_loss = 0
@@ -574,6 +618,8 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, gradient_step,
 
     pbar = tqdm.tqdm(total=steps - initial_step)
     try:
+        sd_hijack_checkpoint.add()
+
         for i in range((steps-initial_step) * gradient_step):
             if scheduler.finished:
                 break
@@ -610,7 +656,7 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, gradient_step,
                 # go back until we reach gradient accumulation steps
                 if (j + 1) % gradient_step != 0:
                     continue
-
+                loss_logging.append(_loss_step)
                 if clip_grad:
                     clip_grad(weights, clip_grad_sched.learn_rate)
                 
@@ -629,7 +675,6 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, gradient_step,
 
                 description = f"Training hypernetwork [Epoch {epoch_num}: {epoch_step+1}/{steps_per_epoch}]loss: {loss_step:.7f}"
                 pbar.set_description(description)
-                shared.state.textinfo = description
                 if hypernetwork_dir is not None and steps_done % save_hypernetwork_every == 0:
                     # Before saving, change name to match current checkpoint.
                     hypernetwork_name_every = f'{hypernetwork_name}-{steps_done}'
@@ -645,7 +690,7 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, gradient_step,
                 if shared.opts.training_enable_tensorboard:
                     epoch_num = hypernetwork.step // len(ds)
                     epoch_step = hypernetwork.step - (epoch_num * len(ds)) + 1
-
+                    mean_loss = sum(loss_logging) / len(loss_logging)
                     textual_inversion.tensorboard_add(tensorboard_writer, loss=mean_loss, global_step=hypernetwork.step, step=epoch_step, learn_rate=scheduler.learn_rate, epoch_num=epoch_num)
 
                 textual_inversion.write_loss(log_directory, "hypernetwork_loss.csv", hypernetwork.step, steps_per_epoch, {
@@ -670,6 +715,8 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, gradient_step,
                         do_not_save_samples=True,
                     )
 
+                    p.disable_extra_networks = True
+
                     if preview_from_txt2img:
                         p.prompt = preview_prompt
                         p.negative_prompt = preview_negative_prompt
@@ -689,9 +736,6 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, gradient_step,
 
                     processed = processing.process_images(p)
                     image = processed.images[0] if len(processed.images) > 0 else None
-                    
-                    if shared.opts.training_enable_tensorboard and shared.opts.training_tensorboard_save_images:
-                        textual_inversion.tensorboard_add_image(tensorboard_writer, f"Validation at epoch {epoch_num}", image, hypernetwork.step)
 
                     if unload:
                         shared.sd_model.cond_stage_model.to(devices.cpu)
@@ -701,7 +745,11 @@ def train_hypernetwork(hypernetwork_name, learn_rate, batch_size, gradient_step,
                         torch.cuda.set_rng_state_all(cuda_rng_state)
                     hypernetwork.train()
                     if image is not None:
-                        shared.state.current_image = image
+                        shared.state.assign_current_image(image)
+                        if shared.opts.training_enable_tensorboard and shared.opts.training_tensorboard_save_images:
+                            textual_inversion.tensorboard_add_image(tensorboard_writer,
+                                                                    f"Validation at epoch {epoch_num}", image,
+                                                                    hypernetwork.step)
                         last_saved_image, last_text_info = images.save_image(image, images_dir, "", p.seed, p.prompt, shared.opts.samples_format, processed.infotexts[0], p=p, forced_filename=forced_filename, save_to_dirs=False)
                         last_saved_image += f", prompt: {preview_text}"
 
@@ -723,6 +771,9 @@ Last saved image: {html.escape(last_saved_image)}<br/>
         pbar.close()
         hypernetwork.eval()
         #report_statistics(loss_dict)
+        sd_hijack_checkpoint.remove()
+
+
 
     filename = os.path.join(shared.cmd_opts.hypernetwork_dir, f'{hypernetwork_name}.pt')
     hypernetwork.optimizer_name = optimizer_name

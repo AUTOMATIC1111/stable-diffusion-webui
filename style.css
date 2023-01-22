@@ -2,12 +2,26 @@
     max-width: 100%;
 }
 
-#txt2img_token_counter {
-    height: 0px;
+.token-counter{
+    position: absolute;
+    display: inline-block;
+    right: 2em;
+    min-width: 0 !important;
+    width: auto;
+    z-index: 100;
 }
 
-#img2img_token_counter {
-    height: 0px;
+.token-counter.error span{
+    box-shadow: 0 0 0.0 0.3em rgba(255,0,0,0.15), inset 0 0 0.6em rgba(255,0,0,0.075);
+    border: 2px solid rgba(255,0,0,0.4) !important;
+}
+
+.token-counter div{
+    display: inline;
+}
+
+.token-counter span{
+    padding: 0.1em 0.75em;
 }
 
 #sh{
@@ -20,7 +34,7 @@
     padding-right: 0.25em;
     margin: 0.1em 0;
     opacity: 0%;
-    cursor: default;	
+    cursor: default;
 }
 
 .output-html p {margin: 0 0.5em;}
@@ -110,29 +124,22 @@
     height: 100%;
 }
 
-#roll_col{
-    min-width: unset !important;
-    flex-grow: 0 !important;
-    padding: 0.4em 0;
+#txt2img_actions_column, #img2img_actions_column{
+    gap: 0;
 }
 
-#roll_col > button {
-    min-width: 2em;
-    min-height: 2em;
-    max-width: 2em;
-    max-height: 2em;
-    flex-grow: 0;
-    padding-left: 0.25em;
-    padding-right: 0.25em;
-    margin: 0.1em 0;
+#txt2img_tools, #img2img_tools{
+    gap: 0.4em;
 }
 
 #interrogate_col{
     min-width: 0 !important;
     max-width: 8em !important;
+    margin-right: 1em;
+    gap: 0;
 }
 #interrogate, #deepbooru{
-    margin: 0em 0.25em 0.9em 0.25em;
+    margin: 0em 0.25em 0.5em 0.25em;
     min-width: 8em;
     max-width: 8em;
 }
@@ -141,8 +148,25 @@
     min-width: 8em !important;
 }
 
-#txt2img_style_index, #txt2img_style2_index, #img2img_style_index, #img2img_style2_index{
-    margin-top: 1em;
+#txt2img_styles_row, #img2img_styles_row{
+    gap: 0.25em;
+}
+
+#txt2img_styles_row > button, #img2img_styles_row > button{
+    margin: 0;
+}
+
+#txt2img_styles, #img2img_styles{
+    padding: 0;
+}
+
+#txt2img_styles > label > div, #img2img_styles > label > div{
+    min-height: 3.2em;
+}
+
+#txt2img_styles ul, #img2img_styles ul{
+    max-height: 35em;
+    z-index: 2000;
 }
 
 .gr-form{
@@ -152,12 +176,6 @@
 .my-4{
     margin-top: 0;
     margin-bottom: 0;
-}
-
-#toprow div{
-    border: none;
-    gap: 0;
-    background: transparent;
 }
 
 #resize_mode{
@@ -221,7 +239,10 @@ fieldset span.text-gray-500, .gr-block.gr-box span.text-gray-500,  label.block s
 
 .dark fieldset span.text-gray-500, .dark .gr-block.gr-box span.text-gray-500, .dark label.block span{
     background-color: rgb(31, 41, 55);
-    box-shadow: 6px 0 6px 0px rgb(31, 41, 55), -6px 0 6px 0px rgb(31, 41, 55);
+    box-shadow: none;
+    border: 1px solid rgba(128, 128, 128, 0.1);
+    border-radius: 6px;
+    padding: 0.1em 0.5em;
 }
 
 #txt2img_column_batch, #img2img_column_batch{
@@ -286,45 +307,52 @@ input[type="range"]{
 }
 
 /* more gradio's garbage cleanup */
-.min-h-\[4rem\] {
-  min-height: unset !important;
-}
-
-#txt2img_progressbar, #img2img_progressbar, #ti_progressbar{
-  position: absolute;
-  z-index: 1000;
-  right: 0;
-  padding-left: 5px;
-  padding-right: 5px;
-  display: block;
-}
-
-#txt2img_progress_row, #img2img_progress_row{
-  margin-bottom: 10px;
-  margin-top: -18px;
-}
+.min-h-\[4rem\] { min-height: unset !important; }
+.min-h-\[6rem\] { min-height: unset !important; }
 
 .progressDiv{
-  width: 100%;
-  height: 20px;
-  background: #b4c0cc;
-  border-radius: 8px;
+    position: absolute;
+    height: 20px;
+    top: -20px;
+    background: #b4c0cc;
+    border-radius: 3px !important;
 }
 
 .dark .progressDiv{
-  background: #424c5b;
+    background: #424c5b;
 }
 
 .progressDiv .progress{
-  width: 0%;
-  height: 20px;
-  background: #0060df;
-  color: white;
-  font-weight: bold;
-  line-height: 20px;
-  padding: 0 8px 0 0;
-  text-align: right;
-  border-radius: 8px;
+    width: 0%;
+    height: 20px;
+    background: #0060df;
+    color: white;
+    font-weight: bold;
+    line-height: 20px;
+    padding: 0 8px 0 0;
+    text-align: right;
+    border-radius: 3px;
+    overflow: visible;
+    white-space: nowrap;
+    padding: 0 0.5em;
+}
+
+.livePreview{
+    position: absolute;
+    z-index: 300;
+    background-color: white;
+    margin: -4px;
+}
+
+.dark .livePreview{
+    background-color: rgb(17 24 39 / var(--tw-bg-opacity));
+}
+
+.livePreview img{
+    position: absolute;
+    object-fit: contain;
+    width: 100%;
+    height: 100%;
 }
 
 #lightboxModal{
@@ -371,7 +399,7 @@ input[type="range"]{
     grid-area: tile;
 }
 
-.modalClose, 
+.modalClose,
 .modalZoom,
 .modalTileImage {
   color: white;
@@ -450,23 +478,25 @@ input[type="range"]{
     display:none
 }
 
-#txt2img_interrupt, #img2img_interrupt{
-  position: absolute;
-  width: 50%;
-  height: 72px;
-  background: #b4c0cc;
-  border-radius: 0px;
-  display: none;
+#txt2img_generate_box, #img2img_generate_box{
+    position: relative;
 }
 
+#txt2img_interrupt, #img2img_interrupt, #txt2img_skip, #img2img_skip{
+    position: absolute;
+    width: 50%;
+    height: 100%;
+    background: #b4c0cc;
+    display: none;
+}
+
+#txt2img_interrupt, #img2img_interrupt{
+    left: 0;
+    border-radius: 0.5rem 0 0 0.5rem;
+}
 #txt2img_skip, #img2img_skip{
-  position: absolute;
-  width: 50%;
-  right: 0px;
-  height: 72px;
-  background: #b4c0cc;
-  border-radius: 0px;
-  display: none;
+    right: 0;
+    border-radius: 0 0.5rem 0.5rem 0;
 }
 
 .red {
@@ -508,27 +538,18 @@ input[type="range"]{
     gap: 0.4em;
 }
 
-#quicksettings > div{
-    border: none;
-    background: none;
-    flex: unset;
-    gap: 1em;
-}
-
-#quicksettings > div > div{
-    max-width: 32em;
+#quicksettings > div, #quicksettings > fieldset{
+    max-width: 24em;
     min-width: 24em;
     padding: 0;
+    border: none;
+    box-shadow: none;
+    background: none;
 }
 
-#quicksettings > div > div > div > div > label > span {
+#quicksettings > div > div > div > label > span {
     position: relative;
     margin-right: 9em;
-    margin-bottom: -1em;
-}
-
-#quicksettings > div > div > label > span {
-    position: relative;
     margin-bottom: -1em;
 }
 
@@ -617,12 +638,30 @@ canvas[key="mask"] {
     background-color: rgb(31 41 55 / var(--tw-bg-opacity));
 }
 
-.gr-button-tool{
+.gr-button-tool, .gr-button-tool-top{
     max-width: 2.5em;
     min-width: 2.5em !important;
     height: 2.4em;
-    margin: 0.55em 0;
 }
+
+.gr-button-tool{
+    margin: 0.6em 0em 0.55em 0;
+}
+
+.gr-button-tool-top, #settings .gr-button-tool{
+    margin: 1.6em 0.7em 0.55em 0;
+}
+
+
+#modelmerger_results_container{
+    margin-top: 1em;
+    overflow: visible;
+}
+
+#modelmerger_models{
+    gap: 0;
+}
+
 
 #quicksettings .gr-button-tool{
     margin: 0;
@@ -666,91 +705,161 @@ footer {
     font-weight: bold;
 }
 
-#txt2img_checkboxes > div > div{
+#txt2img_checkboxes, #img2img_checkboxes{
+    margin-bottom: 0.5em;
+    margin-left: 0em;
+}
+#txt2img_checkboxes > div, #img2img_checkboxes > div{
     flex: 0;
     white-space: nowrap;
     min-width: auto;
+}
+#txt2img_hires_fix{
+    margin-left: -0.8em;
 }
 
 .inactive{
     opacity: 0.5;
 }
 
-/* The following handles localization for right-to-left (RTL) languages like Arabic.
-The rtl media type will only be activated by the logic in javascript/localization.js.
-If you change anything above, you need to make sure it is RTL compliant by just running
-your changes through converters like https://cssjanus.github.io/ or https://rtlcss.com/.
-Then, you will need to add the RTL counterpart only if needed in the rtl section below.*/
-@media rtl {
-    /* this part was added manually */
-    :host {
-        direction: rtl;
-    }
-    select, .file-preview, .gr-text-input, .output-html:has(.performance), #ti_progress {
-        direction: ltr;
-    }
-    #script_list > label > select,
-    #x_type > label > select,
-    #y_type > label > select {
-        direction: rtl;
-    }
-    .gr-radio, .gr-checkbox{
-        margin-left: 0.25em;
-    }
-
-    /* automatically generated with few manual modifications */
-    .performance .time {
-        margin-right: unset;
-        margin-left: 0;
-    }
-    .justify-center.overflow-x-scroll {
-        justify-content: right;
-    }
-    .justify-center.overflow-x-scroll button:first-of-type {
-        margin-left: unset;
-        margin-right: auto;
-    }
-    .justify-center.overflow-x-scroll button:last-of-type {
-        margin-right: unset;
-        margin-left: auto;
-    }
-    #settings fieldset span.text-gray-500, #settings .gr-block.gr-box span.text-gray-500, #settings label.block span{
-        margin-right: unset;
-        margin-left: 8em;
-    }
-    #txt2img_progressbar, #img2img_progressbar, #ti_progressbar{
-        right: unset;
-        left: 0;
-    }
-    .progressDiv .progress{
-        padding: 0 0 0 8px;
-        text-align: left;
-    }
-    #lightboxModal{
-        left: unset;
-        right: 0;
-    }
-    .modalPrev, .modalNext{
-        border-radius: 3px 0 0 3px;
-    }
-    .modalNext {
-        right: unset;
-        left: 0;
-        border-radius: 0 3px 3px 0;
-    }
-    #imageARPreview{
-        left:unset;
-        right:0px;
-    }
-    #txt2img_skip, #img2img_skip{
-        right: unset;
-        left: 0px;
-    }
-    #context-menu{
-        box-shadow:-1px 1px 2px #CE6400;
-    }
-    .gr-box > div > div > input.gr-text-input{
-        right: unset;
-        left: 0.5em;
-    }
+[id*='_prompt_container']{
+    gap: 0;
 }
+
+[id*='_prompt_container'] > div{
+    margin: -0.4em 0 0 0;
+}
+
+.gr-compact {
+    border: none;
+}
+
+.dark .gr-compact{
+    background-color: rgb(31 41 55 / var(--tw-bg-opacity));
+    margin-left: 0.8em;
+}
+
+.gr-compact{
+    overflow: visible;
+}
+
+.gr-compact > *{
+}
+
+.gr-compact .gr-block, .gr-compact .gr-form{
+    border: none;
+    box-shadow: none;
+}
+
+.gr-compact .gr-box{
+    border-radius: .5rem !important;
+    border-width: 1px !important;
+}
+
+#mode_img2img > div > div{
+    gap: 0 !important;
+}
+
+[id*='img2img_copy_to_'] {
+    border: none;
+}
+
+[id*='img2img_copy_to_'] > button {
+}
+
+[id*='img2img_label_copy_to_'] {
+    font-size: 1.0em;
+    font-weight: bold;
+    text-align: center;
+    line-height: 2.4em;
+}
+
+.extra-networks > div > [id *= '_extra_']{
+    margin: 0.3em;
+}
+
+
+
+#txt2img_extra_networks .search, #img2img_extra_networks .search{
+    display: inline-block;
+    max-width: 16em;
+    margin: 0.3em;
+}
+
+.extra-network-cards .nocards{
+    margin: 1.25em 0.5em 0.5em 0.5em;
+}
+
+.extra-network-cards .nocards h1{
+    font-size: 1.5em;
+    margin-bottom: 1em;
+}
+
+.extra-network-cards .nocards li{
+    margin-left: 0.5em;
+}
+
+.extra-network-cards .card{
+    display: inline-block;
+    margin: 0.5em;
+    width: 16em;
+    height: 24em;
+    box-shadow: 0 0 5px rgba(128, 128, 128, 0.5);
+    border-radius: 0.2em;
+    position: relative;
+
+    background-size: auto 100%;
+    background-position: center;
+    overflow: hidden;
+    cursor: pointer;
+
+    background-image: url('./file=html/card-no-preview.png')
+}
+
+.extra-network-cards .card:hover{
+    box-shadow: 0 0 2px 0.3em rgba(0, 128, 255, 0.35);
+}
+
+.extra-network-cards .card .actions .additional{
+    display: none;
+}
+
+.extra-network-cards .card .actions{
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 0.5em;
+    color: white;
+    background: rgba(0,0,0,0.5);
+    box-shadow: 0 0 0.25em 0.25em rgba(0,0,0,0.5);
+    text-shadow: 0 0 0.2em black;
+}
+
+.extra-network-cards .card .actions:hover{
+    box-shadow: 0 0 0.75em 0.75em rgba(0,0,0,0.5) !important;
+}
+
+.extra-network-cards .card .actions .name{
+    font-size: 1.7em;
+    font-weight: bold;
+    line-break: anywhere;
+}
+
+.extra-network-cards .card .actions:hover .additional{
+    display: block;
+}
+
+.extra-network-cards .card ul{
+    margin: 0.25em 0 0.75em 0.25em;
+    cursor: unset;
+}
+
+.extra-network-cards .card ul a{
+    cursor: pointer;
+}
+
+.extra-network-cards .card ul a:hover{
+    color: red;
+}
+

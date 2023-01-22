@@ -140,7 +140,7 @@ def store_latent(decoded):
 
     if opts.live_previews_enable and opts.show_progress_every_n_steps > 0 and shared.state.sampling_step % opts.show_progress_every_n_steps == 0:
         if not shared.parallel_processing_allowed:
-            shared.state.current_image = sample_to_image(decoded)
+            shared.state.assign_current_image(sample_to_image(decoded))
 
 
 class InterruptedException(BaseException):
@@ -350,6 +350,8 @@ class CFGDenoiser(torch.nn.Module):
                 x_out[a:b] = self.inner_model(x_in[a:b], sigma_in[a:b], cond={"c_crossattn": [tensor[a:b]], "c_concat": [image_cond_in[a:b]]})
 
             x_out[-uncond.shape[0]:] = self.inner_model(x_in[-uncond.shape[0]:], sigma_in[-uncond.shape[0]:], cond={"c_crossattn": [uncond], "c_concat": [image_cond_in[-uncond.shape[0]:]]})
+
+        devices.test_for_nans(x_out, "unet")
 
         if opts.live_preview_content == "Prompt":
             store_latent(x_out[0:uncond.shape[0]])

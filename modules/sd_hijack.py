@@ -70,9 +70,10 @@ def undo_optimizations():
 
 
 def fix_checkpoint():
-    ldm.modules.attention.BasicTransformerBlock.forward = sd_hijack_checkpoint.BasicTransformerBlock_forward
-    ldm.modules.diffusionmodules.openaimodel.ResBlock.forward = sd_hijack_checkpoint.ResBlock_forward
-    ldm.modules.diffusionmodules.openaimodel.AttentionBlock.forward = sd_hijack_checkpoint.AttentionBlock_forward
+    """checkpoints are now added and removed in embedding/hypernet code, since torch doesn't want
+    checkpoints to be added when not training (there's a warning)"""
+
+    pass
 
 
 class StableDiffusionModelHijack:
@@ -106,8 +107,6 @@ class StableDiffusionModelHijack:
         self.optimization_method = apply_optimizations()
 
         self.clip = m.cond_stage_model
-        
-        fix_checkpoint()
 
         def flatten(el):
             flattened = [flatten(children) for children in el.children()]
