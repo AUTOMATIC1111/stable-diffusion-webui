@@ -5,7 +5,8 @@
 		"localization": "a localization extension that translates web ui into another language",
 		"tab": "adds a tab",
 		"ads": "contains ads",
-		"installed": "an extension that is already installed"
+		"installed": "an extension that is already installed",
+		"extras": "an extension that adds new functionality to extras tab"
 	},
 	"extensions": [
 		{
