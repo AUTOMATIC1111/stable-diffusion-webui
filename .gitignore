@@ -20,6 +20,7 @@ __pycache__
 /outputs/**/*
 /embeddings/**/*
 /models/**/*
+/interrogate/**/*
 /train/log/**/*
 /tmp
 /log

@@ -69,11 +69,11 @@ async def captions(docs: list):
     log.info({ 'top captions': d })
 
 
-async def cleanup(params):
-    if params.nocleanup:
-        return
+async def preprocess_cleanup(params):
     log.info({ 'preprocess cleanup': params.dst })
     for f in Path(params.dst).glob('*.png'):
+        f.unlink()
+    for f in Path(params.dst).glob('*.jpg'):
         f.unlink()
     for f in Path(params.dst).glob('*.txt'):
         f.unlink()
@@ -82,16 +82,6 @@ async def cleanup(params):
 async def preprocess_builtin(params):
     global images # pylint: disable=global-statement
     log.debug({ 'preprocess start' })
-    if os.path.isdir(params.dst):
-        if params.overwrite:
-            log.info({ 'preprocess deleting existing images': params.dst })
-            for f in Path(params.dst).glob('*.png'):
-                f.unlink()
-            for f in Path(params.dst).glob('*.txt'):
-                f.unlink()
-        else:
-            log.error({ 'preprocess output folder already exists': params.dst })
-            return 0
     files = [os.path.join(params.src, f) for f in os.listdir(params.src) if os.path.isfile(os.path.join(params.src, f))]
     candidates = [f for f in files if filetype.is_image(f)]
     not_images = [f for f in files if (not filetype.is_image(f) and not f.endswith('.txt'))]
@@ -146,9 +136,15 @@ async def preprocess(params):
             else:
                 log.error({ 'preprocess video extract': 'no images' })
     elif os.path.isdir(params.src):
+        if params.overwrite:
+            preprocess_cleanup(params)
+        else:
+            log.error({ 'preprocess output folder already exists': params.dst })
+            return 0
+
         if params.preprocess == 'builtin':
             res = await preprocess_builtin(params)
-        if params.preprocess == 'custom':
+        elif params.preprocess == 'custom':
             t0 = time.perf_counter()
             args.preprocess.process_src = params.src
             args.preprocess.process_dst = params.dst
@@ -512,7 +508,8 @@ async def main():
     except Exception as e:
         log.error({ 'exception': e })
     finally:
-        await cleanup(params)
+        if not params.nocleanup:
+            await preprocess_cleanup(params)
         await close()
     return
 

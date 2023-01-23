@@ -5,6 +5,7 @@ import json
 import base64
 from pathlib import Path
 from PIL import Image
+from inspect import getsourcefile
 
 from util import Map, log
 from sdapi import getsync, postsync
@@ -38,13 +39,13 @@ def encode(f):
 def create_preview(name: str, suffix: str):
     options = getsync('/sdapi/v1/options')
     cmdflags = getsync('/sdapi/v1/cmd-flags')    
-    print(cmdflags.embeddings_dir)
     img2img_options['prompt'] = template.format(name = name, suffix = suffix)
     log.info({ 'preview prompt': img2img_options['prompt'] })
     log.debug({ 'preview options': img2img_options })
+    mask_path = os.path.join(os.path.dirname(getsourcefile(lambda:0)), mask)
     if len(img2img_options['init_images']) == 0:
         for i in range(img2img_options.batch_size):
-            img2img_options['init_images'].append(encode(mask))
+            img2img_options['init_images'].append(encode(mask_path))
     data = postsync('/sdapi/v1/img2img', img2img_options)
     if 'error' in data:
         log.error({ 'preview': data['error'], 'reason': data['reason'] })
