@@ -5,7 +5,6 @@ import mimetypes
 import os
 import platform
 import random
-import subprocess as sp
 import sys
 import tempfile
 import time

@@ -5,7 +5,7 @@ import platform
 import sys
 
 import gradio as gr
-import scipy as sp
+import subprocess as sp
 
 from modules import call_queue, shared
 from modules.generation_parameters_copypaste import image_from_url_text
