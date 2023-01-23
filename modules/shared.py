@@ -431,6 +431,10 @@ options_templates.update(options_section(('interrogate', "Interrogate Options"),
     "deepbooru_filter_tags": OptionInfo("", "filter out those tags from deepbooru output (separated by comma)"),
 }))
 
+options_templates.update(options_section(('extra_networks', "Extra Networks"), {
+    "extra_networks_default_view": OptionInfo("cards", "Default view for Extra Networks", gr.Dropdown, { "choices": ["cards", "thumbs"] }),
+}))
+
 options_templates.update(options_section(('ui', "User interface"), {
     "return_grid": OptionInfo(True, "Show grid in results for web"),
     "do_not_show_images": OptionInfo(False, "Do not show any images in results for web"),
