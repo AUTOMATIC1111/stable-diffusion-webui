@@ -53,7 +53,11 @@ def setUpscalers(req: dict):
 def decode_base64_to_image(encoding):
     if encoding.startswith("data:image/"):
         encoding = encoding.split(";")[1].split(",")[1]
-    return Image.open(BytesIO(base64.b64decode(encoding)))
+    try:
+        image = Image.open(BytesIO(base64.b64decode(encoding)))
+        return image
+    except Exception as err:
+        raise HTTPException(status_code=500, detail="Invalid encoded image")
 
 def encode_pil_to_base64(image):
     with io.BytesIO() as output_bytes:
