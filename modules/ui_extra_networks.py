@@ -3,6 +3,7 @@ import os.path
 from modules import shared
 import gradio as gr
 import json
+import html
 
 from modules.generation_parameters_copypaste import image_from_url_text
 
@@ -54,12 +55,13 @@ class ExtraNetworksPage:
         preview = item.get("preview", None)
 
         args = {
-            "preview_html": "style='background-image: url(" + json.dumps(preview) + ")'" if preview else '',
+            "preview_html": "style='background-image: url(\"" + html.escape(preview) + "\")'" if preview else '',
             "prompt": item["prompt"],
             "tabname": json.dumps(tabname),
             "local_preview": json.dumps(item["local_preview"]),
             "name": item["name"],
-            "allow_negative_prompt": "true" if self.allow_negative_prompt else "false",
+            "card_clicked": '"' + html.escape(f"""return cardClicked({json.dumps(tabname)}, {item["prompt"]}, {"true" if self.allow_negative_prompt else "false"})""") + '"',
+            "save_card_preview": '"' + html.escape(f"""return saveCardPreview(event, {json.dumps(tabname)}, {json.dumps(item["local_preview"])})""") + '"',
         }
 
         return self.card_page.format(**args)
