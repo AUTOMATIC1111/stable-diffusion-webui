@@ -25,7 +25,8 @@ class ExtraNetworksPage:
     def refresh(self):
         pass
 
-    def create_html(self, tabname, view=shared.opts.extra_networks_default_view):
+    def create_html(self, tabname):
+        view = shared.opts.extra_networks_default_view
         items_html = ''
 
         for item in self.list_items():
@@ -75,7 +76,6 @@ class ExtraNetworksUi:
 
         self.button_save_preview = None
         self.preview_target_filename = None
-        self.view_dropdown = None
 
         self.tabname = None
 
@@ -111,7 +111,6 @@ def create_ui(container, button, tabname):
     filter = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", visible=False)
     button_refresh = gr.Button('Refresh', elem_id=tabname+"_extra_refresh")
     button_close = gr.Button('Close', elem_id=tabname+"_extra_close")
-    ui.view_dropdown = gr.Dropdown(['cards', 'thumbs'], elem_id=tabname+"_extra_view", label="View as", value=lambda: shared.opts.extra_networks_default_view)
 
     ui.button_save_preview = gr.Button('Save preview', elem_id=tabname+"_save_preview", visible=False)
     ui.preview_target_filename = gr.Textbox('Preview save filename', elem_id=tabname+"_preview_filename", visible=False)
@@ -119,17 +118,16 @@ def create_ui(container, button, tabname):
     button.click(fn=lambda: gr.update(visible=True), inputs=[], outputs=[container])
     button_close.click(fn=lambda: gr.update(visible=False), inputs=[], outputs=[container])
 
-    def refresh(view):
+    def refresh():
         res = []
 
         for pg in ui.stored_extra_pages:
             pg.refresh()
-            res.append(pg.create_html(ui.tabname, view))
+            res.append(pg.create_html(ui.tabname))
 
         return res
 
-    ui.view_dropdown.change(fn=refresh, inputs=[ui.view_dropdown], outputs=ui.pages)
-    button_refresh.click(fn=refresh, inputs=[ui.view_dropdown], outputs=ui.pages)
+    button_refresh.click(fn=refresh, inputs=[], outputs=ui.pages)
 
     return ui
 
@@ -142,7 +140,7 @@ def path_is_parent(parent_path, child_path):
 
 
 def setup_ui(ui, gallery):
-    def save_preview(index, images, filename, view):
+    def save_preview(index, images, filename):
         if len(images) == 0:
             print("There is no image in gallery to save as a preview.")
             return [page.create_html(ui.tabname) for page in ui.stored_extra_pages]
@@ -164,11 +162,11 @@ def setup_ui(ui, gallery):
 
         image.save(filename)
 
-        return [page.create_html(ui.tabname, view) for page in ui.stored_extra_pages]
+        return [page.create_html(ui.tabname) for page in ui.stored_extra_pages]
 
     ui.button_save_preview.click(
         fn=save_preview,
-        _js="function(x, y, z, a){console.log(x, y, z, a); return [selected_gallery_index(), y, z, a]}",
-        inputs=[ui.preview_target_filename, gallery, ui.preview_target_filename, ui.view_dropdown],
+        _js="function(x, y, z){console.log(x, y, z); return [selected_gallery_index(), y, z]}",
+        inputs=[ui.preview_target_filename, gallery, ui.preview_target_filename],
         outputs=[*ui.pages]
     )
