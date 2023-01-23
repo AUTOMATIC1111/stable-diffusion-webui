@@ -87,7 +87,7 @@
     "interrogate_clip_num_beams": 1,
     "interrogate_clip_min_length": 32,
     "interrogate_clip_max_length": 128,
-    "interrogate_clip_dict_limit": 0.0,
+    "interrogate_clip_dict_limit": 2048.0,
     "interrogate_deepbooru_score_threshold": 0.65,
     "deepbooru_sort_alpha": false,
     "deepbooru_use_spaces": false,
@@ -165,5 +165,10 @@
     "extra_networks_default_multiplier": 1,
     "keyedit_precision_attention": 0.1,
     "keyedit_precision_extra": 0.05,
-    "ui_extra_networks_tab_reorder": ""
+    "ui_extra_networks_tab_reorder": "",
+    "interrogate_clip_skip_categories": [
+        "artists",
+        "movements",
+        "flavors"
+    ]
 }
