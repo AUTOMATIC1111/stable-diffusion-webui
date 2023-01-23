@@ -41,6 +41,7 @@ from modules.sd_samplers import samplers, samplers_for_img2img
 from modules.textual_inversion import textual_inversion
 import modules.hypernetworks.ui
 from modules.generation_parameters_copypaste import image_from_url_text
+import modules.extras
 
 warnings.filterwarnings("default" if opts.show_warnings else "ignore", category=UserWarning)
 
