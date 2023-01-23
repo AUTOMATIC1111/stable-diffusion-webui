@@ -26,6 +26,7 @@ class ExtraNetworksPage:
         pass
 
     def create_html(self, tabname):
+        view = shared.opts.extra_networks_default_view
         items_html = ''
 
         for item in self.list_items():
@@ -36,7 +37,7 @@ class ExtraNetworksPage:
             items_html = shared.html("extra-networks-no-cards.html").format(dirs=dirs)
 
         res = f"""
-<div id='{tabname}_{self.name}_cards' class='extra-network-cards'>
+<div id='{tabname}_{self.name}_cards' class='extra-network-{view}'>
 {items_html}
 </div>
 """

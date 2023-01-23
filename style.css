@@ -792,19 +792,76 @@ footer {
     display: inline-block;
     max-width: 16em;
     margin: 0.3em;
+    align-self: center;
 }
 
-.extra-network-cards .nocards{
+#txt2img_extra_view, #img2img_extra_view {
+    width: auto;
+}
+
+.extra-network-cards .nocards, .extra-network-thumbs .nocards{
     margin: 1.25em 0.5em 0.5em 0.5em;
 }
 
-.extra-network-cards .nocards h1{
+.extra-network-cards .nocards h1, .extra-network-thumbs .nocards h1{
     font-size: 1.5em;
     margin-bottom: 1em;
 }
 
-.extra-network-cards .nocards li{
+.extra-network-cards .nocards li, .extra-network-thumbs .nocards li{
     margin-left: 0.5em;
+}
+
+.extra-network-thumbs {
+    display: flex;
+    flex-flow: row wrap;
+    gap: 10px;
+}
+
+.extra-network-thumbs .card {
+    height: 6em;
+    width: 6em;
+    cursor: pointer;
+    background-image: url('./file=html/card-no-preview.png');
+    background-size: cover;
+    background-position: center center;
+    position: relative;
+}
+
+.extra-network-thumbs .card:hover .additional a {
+    display: block;
+}
+
+.extra-network-thumbs .actions .additional a {
+    background-image: url('./file=html/image-update.svg');
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center center;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 24px;
+    height: 24px;
+    display: none;
+    font-size: 0;
+    text-align: -9999;
+}
+
+.extra-network-thumbs .actions .name {
+    position: absolute;
+    bottom: 0;
+    font-size: 10px;
+    padding: 3px;
+    width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    background: rgba(0,0,0,.5);
+}
+
+.extra-network-thumbs .card:hover .actions .name {
+    white-space: normal;
+    word-break: break-all;
 }
 
 .extra-network-cards .card{
