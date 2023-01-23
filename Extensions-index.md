@@ -208,7 +208,7 @@
 		{
 			"name": "Batch Face Swap",
 			"url": "https://github.com/kex0/batch-face-swap.git",
-			"description": "Automaticaly detects faces and replaces them.",
+			"description": "Automatically detects faces and replaces them.",
 			"added": "2023-01-13",
 			"tags": ["script"]
 		},
@@ -369,7 +369,7 @@
 		{
 			"name": "Save Intermediate Images",
 			"url": "https://github.com/AlUlkesh/sd_save_intermediate_images",
-			"description": "See PR https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/5464",
+			"description": "Save intermediate images during the sampling process. You can also make videos from the intermediate images.",
 			"added": "2022-12-22",
 			"tags": ["script"]
 		},
@@ -411,7 +411,7 @@
 		{
 			"name": "Model Converter",
 			"url": "https://github.com/Akegarasu/sd-webui-model-converter",
-			"description": "Convert models to fp16/bf16 no-ema/ema-only safetensors.",
+			"description": "Convert models to fp16/bf16 no-ema/ema-only safetensors. Convert/copy/delete any parts of model: unet, text encoder(clip), vae.",
 			"added": "2023-01-05",
 			"tags": ["script", "tab"]
 		},
@@ -439,14 +439,14 @@
 		{
 			"name": "Stable Horde Client",
 			"url": "https://github.com/natanjunges/stable-diffusion-webui-stable-horde.git",
-			"description": "Stable Horde Client. Generate pictures using other user's PC.",
+			"description": "Stable Horde Client. Generate pictures using other user's PC. Useful if u have no GPU.",
 			"added": "2023-01-11",
 			"tags": ["script", "tab"]
 		},
 		{
 			"name": "Hypernetwork-Monkeypatch-Extension",
 			"url": "https://github.com/aria1th/Hypernetwork-MonkeyPatch-Extension.git",
-			"description": "Extension that provides additional training features for hypernetwork training, and supports multiple hypernetworks.",
+			"description": "Extension that provides additional training features for hypernetwork training, and supports using multiple hypernetworks for inference.",
 			"added": "2023-01-12",
 			"tags": ["script", "tab"]
 		},
@@ -467,7 +467,7 @@
 		{
 			"name": "haku-img",
 			"url": "https://github.com/KohakuBlueleaf/a1111-sd-webui-haku-img.git",
-			"description": "Image utils extension. Blend images, get sketch from image, edit coloring, blur an image. You can use it to make some cool effects with i2i.",
+			"description": "Image utils extension. Allows blending, layering, hue and color adjustments, blurring and sketch effects, and basic pixelization.",
 			"added": "2023-01-17",
 			"tags": ["script", "tab"]
 		},
@@ -482,7 +482,7 @@
 			"name": "Discord Rich Presence",
 			"url": "https://github.com/kabachuha/discord-rpc-for-automatic1111-webui.git",
 			"description": "Provides connection to Discord PRC, showing a fancy table in the user profile.",
-			"added": "2023-01-23",
+			"added": "2023-01-20",
 			"tags": ["script"]
 		},
     {
@@ -509,7 +509,7 @@
 		{
 			"name": "Pixelization",
 			"url": "https://github.com/AUTOMATIC1111/stable-diffusion-webui-pixelization.git",
-			"description": "Produce pixel art out of images in the extras tab.",
+			"description": "Using pre-trained models, produce pixel art out of images in the extras tab.",
 			"added": "2023-01-23",
 			"tags": ["script", "extras"]
 		},
