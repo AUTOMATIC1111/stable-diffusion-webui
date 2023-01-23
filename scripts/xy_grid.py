@@ -307,7 +307,7 @@ class Script(scripts.Script):
                     y_values = gr.Textbox(label="Y values", lines=1, elem_id=self.elem_id("y_values"))
                     fill_y_button = ToolButton(value=fill_values_symbol, elem_id="xy_grid_fill_y_tool_button", visible=False)
 
-        with gr.Row(variant="compact"):
+        with gr.Row(variant="compact", elem_id="axis_options"):
             draw_legend = gr.Checkbox(label='Draw legend', value=True, elem_id=self.elem_id("draw_legend"))
             include_lone_images = gr.Checkbox(label='Include Separate Images', value=False, elem_id=self.elem_id("include_lone_images"))
             no_fixed_seeds = gr.Checkbox(label='Keep -1 for seeds', value=False, elem_id=self.elem_id("no_fixed_seeds"))
