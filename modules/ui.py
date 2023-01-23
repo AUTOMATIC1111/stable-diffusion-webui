@@ -1942,10 +1942,10 @@ def reload_javascript():
     if cmd_opts.theme is not None:
         inline += f"set_theme('{cmd_opts.theme}');"
 
-    head += f'<script type="text/javascript">{inline}</script>\n'
-
     for script in modules.scripts.list_scripts("javascript", ".js"):
         head += f'<script type="text/javascript" src="file={script.path}"></script>\n'
+
+    head += f'<script type="text/javascript">{inline}</script>\n'
 
     def template_response(*args, **kwargs):
         res = shared.GradioTemplateResponseOriginal(*args, **kwargs)
