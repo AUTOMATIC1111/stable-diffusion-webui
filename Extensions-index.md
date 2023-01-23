@@ -506,6 +506,13 @@
 			"tags": ["script", "tab"]
 		},
 		{
+			"name": "Pixelization",
+			"url": "https://github.com/AUTOMATIC1111/stable-diffusion-webui-pixelization.git",
+			"description": "Produce pixel art out of images in the extras tab.",
+			"added": "2023-01-23",
+			"tags": ["script", "extras"]
+		},
+		{
 			"name": "zh_CN Localization",
 			"url": "https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN",
 			"description": "Simplified Chinese localization",
