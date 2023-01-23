@@ -22,6 +22,8 @@ from modules.sd_models import checkpoints_list, find_checkpoint_config
 from modules.realesrgan_model import get_realesrgan_models
 from modules import devices
 from typing import List
+import piexif
+import piexif.helper
 
 def upscaler_to_index(name: str):
     try:
@@ -56,18 +58,30 @@ def decode_base64_to_image(encoding):
 def encode_pil_to_base64(image):
     with io.BytesIO() as output_bytes:
 
-        # Copy any text-only metadata
-        use_metadata = False
-        metadata = PngImagePlugin.PngInfo()
-        for key, value in image.info.items():
-            if isinstance(key, str) and isinstance(value, str):
-                metadata.add_text(key, value)
-                use_metadata = True
+        if opts.samples_format.lower() == 'png':
+            use_metadata = False
+            metadata = PngImagePlugin.PngInfo()
+            for key, value in image.info.items():
+                if isinstance(key, str) and isinstance(value, str):
+                    metadata.add_text(key, value)
+                    use_metadata = True
+            image.save(output_bytes, format="PNG", pnginfo=(metadata if use_metadata else None), quality=opts.jpeg_quality)
 
-        image.save(
-            output_bytes, "PNG", pnginfo=(metadata if use_metadata else None)
-        )
+        elif opts.samples_format.lower() in ("jpg", "jpeg", "webp"):
+            parameters = image.info.get('parameters', None)
+            exif_bytes = piexif.dump({
+                "Exif": { piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(parameters or "", encoding="unicode") }
+            })
+            if opts.samples_format.lower() in ("jpg", "jpeg"):
+                image.save(output_bytes, format="JPEG", exif = exif_bytes, quality=opts.jpeg_quality)
+            else:
+                image.save(output_bytes, format="WEBP", exif = exif_bytes, quality=opts.jpeg_quality)
+
+        else:
+            raise HTTPException(status_code=500, detail="Invalid image format")
+
         bytes_data = output_bytes.getvalue()
+
     return base64.b64encode(bytes_data)
 
 def api_middleware(app: FastAPI):
