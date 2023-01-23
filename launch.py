@@ -179,15 +179,13 @@ def run_extensions_installers(settings_file):
 def prepare_environment():
     global skip_install
 
-    torch_command = os.environ.get('TORCH_COMMAND', "pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 --extra-index-url https://download.pytorch.org/whl/cu113")
+    torch_command = os.environ.get('TORCH_COMMAND', "pip install torch==1.13.1+cu117 torchvision==0.14.1+cu117 --extra-index-url https://download.pytorch.org/whl/cu117")
     requirements_file = os.environ.get('REQS_FILE', "requirements_versions.txt")
     commandline_args = os.environ.get('COMMANDLINE_ARGS', "")
 
     gfpgan_package = os.environ.get('GFPGAN_PACKAGE', "git+https://github.com/TencentARC/GFPGAN.git@8d2447a2d918f8eba5a4a01463fd48e45126a379")
     clip_package = os.environ.get('CLIP_PACKAGE', "git+https://github.com/openai/CLIP.git@d50d76daa670286dd6cacf3bcd80b5e4823fc8e1")
     openclip_package = os.environ.get('OPENCLIP_PACKAGE', "git+https://github.com/mlfoundations/open_clip.git@bb6e834e9c70d9c27d0dc3ecedeebeaeb1ffad6b")
-
-    xformers_windows_package = os.environ.get('XFORMERS_WINDOWS_PACKAGE', 'https://github.com/C43H66N12O12S2/stable-diffusion-webui/releases/download/f/xformers-0.0.14.dev0-cp310-cp310-win_amd64.whl')
 
     stable_diffusion_repo = os.environ.get('STABLE_DIFFUSION_REPO', "https://github.com/Stability-AI/stablediffusion.git")
     taming_transformers_repo = os.environ.get('TAMING_TRANSFORMERS_REPO', "https://github.com/CompVis/taming-transformers.git")
@@ -239,7 +237,7 @@ def prepare_environment():
     if (not is_installed("xformers") or reinstall_xformers) and xformers:
         if platform.system() == "Windows":
             if platform.python_version().startswith("3.10"):
-                run_pip(f"install -U -I --no-deps {xformers_windows_package}", "xformers")
+                run_pip(f"install -U -I --no-deps xformers==0.0.16rc425", "xformers")
             else:
                 print("Installation of xformers is not supported in this version of Python.")
                 print("You can also check this and build manually: https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Xformers#building-xformers-on-windows-by-duckness")
