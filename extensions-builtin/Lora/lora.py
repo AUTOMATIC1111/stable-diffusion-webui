@@ -57,6 +57,7 @@ class LoraUpDownModule:
     def __init__(self):
         self.up = None
         self.down = None
+        self.alpha = None
 
 
 def assign_lora_names_to_compvis_modules(sd_model):
@@ -165,7 +166,7 @@ def lora_forward(module, input, res):
     for lora in loaded_loras:
         module = lora.modules.get(lora_layer_name, None)
         if module is not None:
-            res = res + module.up(module.down(input)) * lora.multiplier * module.alpha / module.up.weight.shape[1]
+            res = res + module.up(module.down(input)) * lora.multiplier * (module.alpha / module.up.weight.shape[1] if module.alpha else 1.0)
 
     return res
 
