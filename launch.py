@@ -208,6 +208,7 @@ def prepare_environment():
     sys.argv, _ = extract_arg(sys.argv, '-f')
     sys.argv, skip_torch_cuda_test = extract_arg(sys.argv, '--skip-torch-cuda-test')
     sys.argv, reinstall_xformers = extract_arg(sys.argv, '--reinstall-xformers')
+    sys.argv, reinstall_torch = extract_arg(sys.argv, '--reinstall-torch')
     sys.argv, update_check = extract_arg(sys.argv, '--update-check')
     sys.argv, run_tests, test_dir = extract_opt(sys.argv, '--tests')
     sys.argv, skip_install = extract_arg(sys.argv, '--skip-install')
@@ -219,7 +220,7 @@ def prepare_environment():
     print(f"Python {sys.version}")
     print(f"Commit hash: {commit}")
     
-    if not is_installed("torch") or not is_installed("torchvision"):
+    if reinstall_torch or not is_installed("torch") or not is_installed("torchvision"):
         run(f'"{python}" -m {torch_command}', "Installing torch and torchvision", "Couldn't install torch")
 
     if not skip_torch_cuda_test:
