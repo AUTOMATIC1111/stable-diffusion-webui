@@ -1,5 +1,3 @@
-import html
-
 import gradio as gr
 
 
@@ -50,7 +48,3 @@ class FormColorPicker(gr.ColorPicker, gr.components.FormComponent):
     def get_block_name(self):
         return "colorpicker"
 
-
-def plaintext_to_html(text):
-    text = "<p>" + "<br>\n".join([f"{html.escape(x)}" for x in text.split('\n')]) + "</p>"
-    return text

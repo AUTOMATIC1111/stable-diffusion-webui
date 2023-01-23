@@ -474,6 +474,11 @@ options_templates.update(options_section(('sampler-params', "Sampler parameters"
     'always_discard_next_to_last_sigma': OptionInfo(False, "Always discard next-to-last sigma"),
 }))
 
+options_templates.update(options_section(('postprocessing', "Postprocessing"), {
+    'postprocessing_scipts_order': OptionInfo("upscale, gfpgan, codeformer", "Postprocessing operation order"),
+    'upscaling_max_images_in_cache': OptionInfo(5, "Maximum number of images in upscaling cache", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
+}))
+
 options_templates.update(options_section((None, "Hidden options"), {
     "disabled_extensions": OptionInfo([], "Disable those extensions"),
     "sd_checkpoint_hash": OptionInfo("", "SHA256 hash of the current checkpoint"),
