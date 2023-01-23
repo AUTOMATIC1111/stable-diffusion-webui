@@ -38,3 +38,17 @@ for d, must_exist, what, options in path_dirs:
         else:
             sys.path.append(d)
         paths[what] = d
+
+
+class Prioritize:
+    def __init__(self, name):
+        self.name = name
+        self.path = None
+
+    def __enter__(self):
+        self.path = sys.path.copy()
+        sys.path = [paths[self.name]] + sys.path
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        sys.path = self.path
+        self.path = None

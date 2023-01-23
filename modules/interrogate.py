@@ -83,7 +83,8 @@ class InterrogateModels:
         return self.loaded_categories
 
     def load_blip_model(self):
-        import models.blip
+        with paths.Prioritize("BLIP"):
+            import models.blip
 
         files = modelloader.load_models(
             model_path=os.path.join(paths.models_path, "BLIP"),
