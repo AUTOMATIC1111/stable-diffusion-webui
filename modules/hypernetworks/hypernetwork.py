@@ -507,6 +507,8 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
     template_file = template_file.path
 
     path = shared.hypernetworks.get(hypernetwork_name, None)
+    preview_hypernetwork_strength = 1.0
+    hypernetwork_key = f" <hypernet:{hypernetwork_name}:{preview_hypernetwork_strength}>"
     hypernetwork = Hypernetwork()
     hypernetwork.load(path)
     shared.loaded_hypernetworks = [hypernetwork]
@@ -718,7 +720,7 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
                     p.disable_extra_networks = True
 
                     if preview_from_txt2img:
-                        p.prompt = preview_prompt
+                        p.prompt = preview_prompt + hypernetwork_key
                         p.negative_prompt = preview_negative_prompt
                         p.steps = preview_steps
                         p.sampler_name = sd_samplers.samplers[preview_sampler_index].name
@@ -727,7 +729,7 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
                         p.width = preview_width
                         p.height = preview_height
                     else:
-                        p.prompt = batch.cond_text[0]
+                        p.prompt = batch.cond_text[0] + hypernetwork_key
                         p.steps = 20
                         p.width = training_width
                         p.height = training_height
@@ -743,6 +745,8 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
                     torch.set_rng_state(rng_state)
                     if torch.cuda.is_available():
                         torch.cuda.set_rng_state_all(cuda_rng_state)
+                    shared.loaded_hypernetworks.clear()
+                    shared.loaded_hypernetworks = [hypernetwork, ]
                     hypernetwork.train()
                     if image is not None:
                         shared.state.assign_current_image(image)
