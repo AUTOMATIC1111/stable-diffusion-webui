@@ -330,7 +330,7 @@ options_templates.update(options_section(('saving-images', "Saving images/grids"
     "use_original_name_batch": OptionInfo(False, "Use original name for output filename during batch process in extras tab"),
     "use_upscaler_name_as_suffix": OptionInfo(False, "Use upscaler name as filename suffix in the extras tab"),
     "save_selected_only": OptionInfo(True, "When using 'Save' button, only save a single selected image"),
-    "do_not_save_interrupted_or_skipped": OptionInfo(False, "Do not save images images when process is interrupted or skipped"),
+    "do_not_save_interrupted_or_skipped": OptionInfo(False, "Do not save images when process is interrupted or skipped"),
     "do_not_add_watermark": OptionInfo(False, "Do not add watermark to images"),
 
     "temp_dir":  OptionInfo("", "Directory for temporary images; leave empty for default"),
