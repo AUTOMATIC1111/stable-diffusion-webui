@@ -1,32 +1,12 @@
-Xformers library is an optional way to speedup your image generation.
+# Xformers
 
-There are no binaries for Windows except for one specific configuration, but you can build it yourself.
+Xformers library is an optional way to speedup your image generation. 
 
-A guide from an anonymous user, although I think it is for building on Linux:
+This optimization is only available for nvidia gpus, it speeds up image generation and lowers vram usage at the cost of producing [non-deterministic](https://github.com/AUTOMATIC1111/stable-diffusion-webui/discussions/2705#discussioncomment-4024378) results.
 
-GUIDES ON HOW TO BUILD XFORMERS
-also includes how to uncuck yourself from sm86 restriction on voldy's new commit
+If you use a Pascal, Turing, Ampere, Lovelace or Hopper card with Python 3.10, you shouldn't need to build manually. Just launch the repo with `--xformers`. A compatible wheel will be installed.
 
-1. go to the webui directory
-2. `source ./venv/bin/activate`
-3. `cd repositories`
-3. `git clone https://github.com/facebookresearch/xformers.git`
-4. `cd xformers`
-5. `git submodule update --init --recursive`
-6. `pip install -r requirements.txt`
-7. `pip install -e .`
-
-## Building xFormers on Windows by [@duckness](https://github.com/duckness)
-
-***
-
-
-### If you use a Pascal, Turing, Ampere, Lovelace or Hopper card with Python 3.10, you shouldn't need to build manually anymore. Uninstall your existing xformers and launch the repo with `--xformers`. A compatible wheel will be installed.
-
-
-
-
-***
+## Building xformers on Windows by [@duckness](https://github.com/duckness)
 
 1. [Install VS Build Tools 2022](https://visualstudio.microsoft.com/downloads/?q=build+tools#build-tools-for-visual-studio-2022), you only need `Desktop development with C++`
 
@@ -96,6 +76,13 @@ pip install xformers-0.0.14.dev0-cp310-cp310-win_amd64.whl
 
 11. Ensure that `xformers` is activated by launching `stable-diffusion-webui` with `--force-enable-xformers`
 
-## Non-deterministic / unstable / inconsistent results:
+## Building xformers on Linux (from anonymous user)
 
-Known issue. See [this](https://github.com/AUTOMATIC1111/stable-diffusion-webui/discussions/2705#discussioncomment-4024378 ) list on the discussion page.
+1. go to the webui directory
+2. `source ./venv/bin/activate`
+3. `cd repositories`
+3. `git clone https://github.com/facebookresearch/xformers.git`
+4. `cd xformers`
+5. `git submodule update --init --recursive`
+6. `pip install -r requirements.txt`
+7. `pip install -e .`
