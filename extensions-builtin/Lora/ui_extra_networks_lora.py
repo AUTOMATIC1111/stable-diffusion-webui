@@ -1,3 +1,4 @@
+import json
 import os
 import lora
 
@@ -26,10 +27,10 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
                 "name": name,
                 "filename": path,
                 "preview": preview,
-                "prompt": f"<lora:{name}:1.0>",
+                "prompt": json.dumps(f"<lora:{name}:") + " + opts.extra_networks_default_multiplier + " + json.dumps(">"),
                 "local_preview": path + ".png",
             }
 
     def allowed_directories_for_previews(self):
-        return [lora.lora_dir]
+        return [shared.cmd_opts.lora_dir]
 

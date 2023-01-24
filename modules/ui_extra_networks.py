@@ -3,6 +3,7 @@ import os.path
 from modules import shared
 import gradio as gr
 import json
+import html
 
 from modules.generation_parameters_copypaste import image_from_url_text
 
@@ -26,6 +27,7 @@ class ExtraNetworksPage:
         pass
 
     def create_html(self, tabname):
+        view = shared.opts.extra_networks_default_view
         items_html = ''
 
         for item in self.list_items():
@@ -36,7 +38,7 @@ class ExtraNetworksPage:
             items_html = shared.html("extra-networks-no-cards.html").format(dirs=dirs)
 
         res = f"""
-<div id='{tabname}_{self.name}_cards' class='extra-network-cards'>
+<div id='{tabname}_{self.name}_cards' class='extra-network-{view}'>
 {items_html}
 </div>
 """
@@ -53,12 +55,13 @@ class ExtraNetworksPage:
         preview = item.get("preview", None)
 
         args = {
-            "preview_html": "style='background-image: url(" + json.dumps(preview) + ")'" if preview else '',
-            "prompt": json.dumps(item["prompt"]),
+            "preview_html": "style='background-image: url(\"" + html.escape(preview) + "\")'" if preview else '',
+            "prompt": item["prompt"],
             "tabname": json.dumps(tabname),
             "local_preview": json.dumps(item["local_preview"]),
             "name": item["name"],
-            "allow_negative_prompt": "true" if self.allow_negative_prompt else "false",
+            "card_clicked": '"' + html.escape(f"""return cardClicked({json.dumps(tabname)}, {item["prompt"]}, {"true" if self.allow_negative_prompt else "false"})""") + '"',
+            "save_card_preview": '"' + html.escape(f"""return saveCardPreview(event, {json.dumps(tabname)}, {json.dumps(item["local_preview"])})""") + '"',
         }
 
         return self.card_page.format(**args)
@@ -79,10 +82,26 @@ class ExtraNetworksUi:
         self.tabname = None
 
 
+def pages_in_preferred_order(pages):
+    tab_order = [x.lower().strip() for x in shared.opts.ui_extra_networks_tab_reorder.split(",")]
+
+    def tab_name_score(name):
+        name = name.lower()
+        for i, possible_match in enumerate(tab_order):
+            if possible_match in name:
+                return i
+
+        return len(pages)
+
+    tab_scores = {page.name: (tab_name_score(page.name), original_index) for original_index, page in enumerate(pages)}
+
+    return sorted(pages, key=lambda x: tab_scores[x.name])
+
+
 def create_ui(container, button, tabname):
     ui = ExtraNetworksUi()
     ui.pages = []
-    ui.stored_extra_pages = extra_pages.copy()
+    ui.stored_extra_pages = pages_in_preferred_order(extra_pages.copy())
     ui.tabname = tabname
 
     with gr.Tabs(elem_id=tabname+"_extra_tabs") as tabs:

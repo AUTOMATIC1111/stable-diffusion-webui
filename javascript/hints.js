@@ -107,7 +107,10 @@ titles = {
     "Hires steps": "Number of sampling steps for upscaled picture. If 0, uses same as for original.",
     "Upscale by": "Adjusts the size of the image by multiplying the original width and height by the selected value. Ignored if either Resize width to or Resize height to are non-zero.",
     "Resize width to": "Resizes image to this width. If 0, width is inferred from either of two nearby sliders.",
-    "Resize height to": "Resizes image to this height. If 0, height is inferred from either of two nearby sliders."
+    "Resize height to": "Resizes image to this height. If 0, height is inferred from either of two nearby sliders.",
+    "Multiplier for extra networks": "When adding extra network such as Hypernetwork or Lora to prompt, use this multiplier for it.",
+    "Discard weights with matching name": "Regular expression; if weights's name matches it, the weights is not written to the resulting checkpoint. Use ^model_ema to discard EMA weights.",
+    "Extra networks tab order": "Comma-separated list of tab names; tabs listed here will appear in the extra networks UI first and in order lsited."
 }
 
 

@@ -5,7 +5,6 @@ import mimetypes
 import os
 import platform
 import random
-import subprocess as sp
 import sys
 import tempfile
 import time
@@ -20,7 +19,7 @@ import numpy as np
 from PIL import Image, PngImagePlugin
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_gradio_call
 
-from modules import sd_hijack, sd_models, localization, script_callbacks, ui_extensions, deepbooru, sd_vae, extra_networks
+from modules import sd_hijack, sd_models, localization, script_callbacks, ui_extensions, deepbooru, sd_vae, extra_networks, postprocessing, ui_components, ui_common, ui_postprocessing
 from modules.ui_components import FormRow, FormGroup, ToolButton, FormHTML
 from modules.paths import script_path
 
@@ -41,6 +40,7 @@ from modules.sd_samplers import samplers, samplers_for_img2img
 from modules.textual_inversion import textual_inversion
 import modules.hypernetworks.ui
 from modules.generation_parameters_copypaste import image_from_url_text
+import modules.extras
 
 warnings.filterwarnings("default" if opts.show_warnings else "ignore", category=UserWarning)
 
@@ -75,6 +75,7 @@ css_hide_progressbar = """
 .wrap .m-12::before { content:"Loading..." }
 .wrap .z-20 svg { display:none!important; }
 .wrap .z-20::before { content:"Loading..." }
+.wrap.cover-bg .z-20::before { content:"" }
 .progress-bar { display:none!important; }
 .meta-text { display:none!important; }
 .meta-text-center { display:none!important; }
@@ -85,7 +86,6 @@ css_hide_progressbar = """
 random_symbol = '\U0001f3b2\ufe0f'  # 🎲️
 reuse_symbol = '\u267b\ufe0f'  # ♻️
 paste_symbol = '\u2199\ufe0f'  # ↙
-folder_symbol = '\U0001f4c2'  # 📂
 refresh_symbol = '\U0001f504'  # 🔄
 save_style_symbol = '\U0001f4be'  # 💾
 apply_style_symbol = '\U0001f4cb'  # 📋
@@ -94,77 +94,13 @@ extra_networks_symbol = '\U0001F3B4'  # 🎴
 
 
 def plaintext_to_html(text):
-    text = "<p>" + "<br>\n".join([f"{html.escape(x)}" for x in text.split('\n')]) + "</p>"
-    return text
+    return ui_common.plaintext_to_html(text)
+
 
 def send_gradio_gallery_to_image(x):
     if len(x) == 0:
         return None
     return image_from_url_text(x[0])
-
-def save_files(js_data, images, do_make_zip, index):
-    import csv
-    filenames = []
-    fullfns = []
-
-    #quick dictionary to class object conversion. Its necessary due apply_filename_pattern requiring it
-    class MyObject:
-        def __init__(self, d=None):
-            if d is not None:
-                for key, value in d.items():
-                    setattr(self, key, value)
-
-    data = json.loads(js_data)
-
-    p = MyObject(data)
-    path = opts.outdir_save
-    save_to_dirs = opts.use_save_to_dirs_for_ui
-    extension: str = opts.samples_format
-    start_index = 0
-
-    if index > -1 and opts.save_selected_only and (index >= data["index_of_first_image"]):  # ensures we are looking at a specific non-grid picture, and we have save_selected_only
-
-        images = [images[index]]
-        start_index = index
-
-    os.makedirs(opts.outdir_save, exist_ok=True)
-
-    with open(os.path.join(opts.outdir_save, "log.csv"), "a", encoding="utf8", newline='') as file:
-        at_start = file.tell() == 0
-        writer = csv.writer(file)
-        if at_start:
-            writer.writerow(["prompt", "seed", "width", "height", "sampler", "cfgs", "steps", "filename", "negative_prompt"])
-
-        for image_index, filedata in enumerate(images, start_index):
-            image = image_from_url_text(filedata)
-
-            is_grid = image_index < p.index_of_first_image
-            i = 0 if is_grid else (image_index - p.index_of_first_image)
-
-            fullfn, txt_fullfn = save_image(image, path, "", seed=p.all_seeds[i], prompt=p.all_prompts[i], extension=extension, info=p.infotexts[image_index], grid=is_grid, p=p, save_to_dirs=save_to_dirs)
-
-            filename = os.path.relpath(fullfn, path)
-            filenames.append(filename)
-            fullfns.append(fullfn)
-            if txt_fullfn:
-                filenames.append(os.path.basename(txt_fullfn))
-                fullfns.append(txt_fullfn)
-
-        writer.writerow([data["prompt"], data["seed"], data["width"], data["height"], data["sampler_name"], data["cfg_scale"], data["steps"], filenames[0], data["negative_prompt"]])
-
-    # Make Zip
-    if do_make_zip:
-        zip_filepath = os.path.join(path, "images.zip")
-
-        from zipfile import ZipFile
-        with ZipFile(zip_filepath, "w") as zip_file:
-            for i in range(len(fullfns)):
-                with open(fullfns[i], mode="rb") as f:
-                    zip_file.writestr(filenames[i], f.read())
-        fullfns.insert(0, zip_filepath)
-
-    return gr.File.update(value=fullfns, visible=True), plaintext_to_html(f"Saved: {filenames[0]}")
-
 
 def visit(x, func, path=""):
     if hasattr(x, 'children'):
@@ -443,19 +379,6 @@ def apply_setting(key, value):
     opts.save(shared.config_filename)
     return getattr(opts, key)
 
-
-def update_generation_info(generation_info, html_info, img_index):
-    try:
-        generation_info = json.loads(generation_info)
-        if img_index < 0 or img_index >= len(generation_info["infotexts"]):
-            return html_info, gr.update()
-        return plaintext_to_html(generation_info["infotexts"][img_index]), gr.update()
-    except Exception:
-        pass
-    # if the json parse or anything else fails, just return the old html_info
-    return html_info, gr.update()
-
-
 def create_refresh_button(refresh_component, refresh_method, refreshed_args, elem_id):
     def refresh():
         refresh_method()
@@ -476,107 +399,7 @@ def create_refresh_button(refresh_component, refresh_method, refreshed_args, ele
 
 
 def create_output_panel(tabname, outdir):
-    def open_folder(f):
-        if not os.path.exists(f):
-            print(f'Folder "{f}" does not exist. After you create an image, the folder will be created.')
-            return
-        elif not os.path.isdir(f):
-            print(f"""
-WARNING
-An open_folder request was made with an argument that is not a folder.
-This could be an error or a malicious attempt to run code on your computer.
-Requested path was: {f}
-""", file=sys.stderr)
-            return
-
-        if not shared.cmd_opts.hide_ui_dir_config:
-            path = os.path.normpath(f)
-            if platform.system() == "Windows":
-                os.startfile(path)
-            elif platform.system() == "Darwin":
-                sp.Popen(["open", path])
-            elif "microsoft-standard-WSL2" in platform.uname().release:
-                sp.Popen(["wsl-open", path])
-            else:
-                sp.Popen(["xdg-open", path])
-
-    with gr.Column(variant='panel', elem_id=f"{tabname}_results"):
-            with gr.Group(elem_id=f"{tabname}_gallery_container"):
-                result_gallery = gr.Gallery(label='Output', show_label=False, elem_id=f"{tabname}_gallery").style(grid=4)
-
-            generation_info = None
-            with gr.Column():
-                with gr.Row(elem_id=f"image_buttons_{tabname}"):
-                    open_folder_button = gr.Button(folder_symbol, elem_id="hidden_element" if shared.cmd_opts.hide_ui_dir_config else f'open_folder_{tabname}')
-
-                    if tabname != "extras":
-                        save = gr.Button('Save', elem_id=f'save_{tabname}')
-                        save_zip = gr.Button('Zip', elem_id=f'save_zip_{tabname}')
-
-                    buttons = parameters_copypaste.create_buttons(["img2img", "inpaint", "extras"])
-
-                open_folder_button.click(
-                    fn=lambda: open_folder(opts.outdir_samples or outdir),
-                    inputs=[],
-                    outputs=[],
-                )
-
-                if tabname != "extras":
-                    with gr.Row():
-                        download_files = gr.File(None, file_count="multiple", interactive=False, show_label=False, visible=False, elem_id=f'download_files_{tabname}')
-
-                    with gr.Group():
-                        html_info = gr.HTML(elem_id=f'html_info_{tabname}')
-                        html_log = gr.HTML(elem_id=f'html_log_{tabname}')
-
-                        generation_info = gr.Textbox(visible=False, elem_id=f'generation_info_{tabname}')
-                        if tabname == 'txt2img' or tabname == 'img2img':
-                            generation_info_button = gr.Button(visible=False, elem_id=f"{tabname}_generation_info_button")
-                            generation_info_button.click(
-                                fn=update_generation_info,
-                                _js="function(x, y, z){ return [x, y, selected_gallery_index()] }",
-                                inputs=[generation_info, html_info, html_info],
-                                outputs=[html_info, html_info],
-                            )
-
-                        save.click(
-                            fn=wrap_gradio_call(save_files),
-                            _js="(x, y, z, w) => [x, y, false, selected_gallery_index()]",
-                            inputs=[
-                                generation_info,
-                                result_gallery,
-                                html_info,
-                                html_info,
-                            ],
-                            outputs=[
-                                download_files,
-                                html_log,
-                            ],
-                            show_progress=False,
-                        )
-
-                        save_zip.click(
-                            fn=wrap_gradio_call(save_files),
-                            _js="(x, y, z, w) => [x, y, true, selected_gallery_index()]",
-                            inputs=[
-                                generation_info,
-                                result_gallery,
-                                html_info,
-                                html_info,
-                            ],
-                            outputs=[
-                                download_files,
-                                html_log,
-                            ]
-                        )
-
-                else:
-                    html_info_x = gr.HTML(elem_id=f'html_info_x_{tabname}')
-                    html_info = gr.HTML(elem_id=f'html_info_{tabname}')
-                    html_log = gr.HTML(elem_id=f'html_log_{tabname}')
-
-                parameters_copypaste.bind_buttons(buttons, result_gallery, "txt2img" if tabname == "txt2img" else None)
-                return result_gallery, generation_info if tabname != "extras" else html_info_x, html_info, html_log
+    return ui_common.create_output_panel(tabname, outdir)
 
 
 def create_sampler_and_steps_selection(choices, tabname):
@@ -935,7 +758,7 @@ def create_ui():
                         seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox = create_seed_inputs('img2img')
 
                     elif category == "checkboxes":
-                        with FormRow(elem_id="img2img_checkboxes"):
+                        with FormRow(elem_id="img2img_checkboxes", variant="compact"):
                             restore_faces = gr.Checkbox(label='Restore faces', value=False, visible=len(shared.face_restorers) > 1, elem_id="img2img_restore_faces")
                             tiling = gr.Checkbox(label='Tiling', value=False, elem_id="img2img_tiling")
 
@@ -1122,86 +945,7 @@ def create_ui():
     modules.scripts.scripts_current = None
 
     with gr.Blocks(analytics_enabled=False) as extras_interface:
-        with gr.Row().style(equal_height=False):
-            with gr.Column(variant='compact'):
-                with gr.Tabs(elem_id="mode_extras"):
-                    with gr.TabItem('Single Image', elem_id="extras_single_tab"):
-                        extras_image = gr.Image(label="Source", source="upload", interactive=True, type="pil", elem_id="extras_image")
-
-                    with gr.TabItem('Batch Process', elem_id="extras_batch_process_tab"):
-                        image_batch = gr.File(label="Batch Process", file_count="multiple", interactive=True, type="file", elem_id="extras_image_batch")
-
-                    with gr.TabItem('Batch from Directory', elem_id="extras_batch_directory_tab"):
-                        extras_batch_input_dir = gr.Textbox(label="Input directory", **shared.hide_dirs, placeholder="A directory on the same machine where the server is running.", elem_id="extras_batch_input_dir")
-                        extras_batch_output_dir = gr.Textbox(label="Output directory", **shared.hide_dirs, placeholder="Leave blank to save images to the default path.", elem_id="extras_batch_output_dir")
-                        show_extras_results = gr.Checkbox(label='Show result images', value=True, elem_id="extras_show_extras_results")
-
-                submit = gr.Button('Generate', elem_id="extras_generate", variant='primary')
-
-                with gr.Tabs(elem_id="extras_resize_mode"):
-                    with gr.TabItem('Scale by', elem_id="extras_scale_by_tab"):
-                        upscaling_resize = gr.Slider(minimum=1.0, maximum=8.0, step=0.05, label="Resize", value=4, elem_id="extras_upscaling_resize")
-                    with gr.TabItem('Scale to', elem_id="extras_scale_to_tab"):
-                        with gr.Group():
-                            with gr.Row():
-                                upscaling_resize_w = gr.Number(label="Width", value=512, precision=0, elem_id="extras_upscaling_resize_w")
-                                upscaling_resize_h = gr.Number(label="Height", value=512, precision=0, elem_id="extras_upscaling_resize_h")
-                            upscaling_crop = gr.Checkbox(label='Crop to fit', value=True, elem_id="extras_upscaling_crop")
-
-                with gr.Group():
-                    extras_upscaler_1 = gr.Radio(label='Upscaler 1', elem_id="extras_upscaler_1", choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name, type="index")
-
-                with gr.Group():
-                    extras_upscaler_2 = gr.Radio(label='Upscaler 2', elem_id="extras_upscaler_2", choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name, type="index")
-                    extras_upscaler_2_visibility = gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="Upscaler 2 visibility", value=1, elem_id="extras_upscaler_2_visibility")
-
-                with gr.Group():
-                    gfpgan_visibility = gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="GFPGAN visibility", value=0, interactive=modules.gfpgan_model.have_gfpgan, elem_id="extras_gfpgan_visibility")
-
-                with gr.Group():
-                    codeformer_visibility = gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="CodeFormer visibility", value=0, interactive=modules.codeformer_model.have_codeformer, elem_id="extras_codeformer_visibility")
-                    codeformer_weight = gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="CodeFormer weight (0 = maximum effect, 1 = minimum effect)", value=0, interactive=modules.codeformer_model.have_codeformer, elem_id="extras_codeformer_weight")
-
-                with gr.Group():
-                    upscale_before_face_fix = gr.Checkbox(label='Upscale Before Restoring Faces', value=False, elem_id="extras_upscale_before_face_fix")
-
-            result_images, html_info_x, html_info, html_log = create_output_panel("extras", opts.outdir_extras_samples)
-
-        submit.click(
-            fn=wrap_gradio_gpu_call(modules.extras.run_extras, extra_outputs=[None, '']),
-            _js="get_extras_tab_index",
-            inputs=[
-                dummy_component,
-                dummy_component,
-                extras_image,
-                image_batch,
-                extras_batch_input_dir,
-                extras_batch_output_dir,
-                show_extras_results,
-                gfpgan_visibility,
-                codeformer_visibility,
-                codeformer_weight,
-                upscaling_resize,
-                upscaling_resize_w,
-                upscaling_resize_h,
-                upscaling_crop,
-                extras_upscaler_1,
-                extras_upscaler_2,
-                extras_upscaler_2_visibility,
-                upscale_before_face_fix,
-            ],
-            outputs=[
-                result_images,
-                html_info_x,
-                html_info,
-            ]
-        )
-        parameters_copypaste.add_paste_fields("extras", extras_image, None)
-
-        extras_image.change(
-            fn=modules.extras.clear_cache,
-            inputs=[], outputs=[]
-        )
+        ui_postprocessing.create_ui()
 
     with gr.Blocks(analytics_enabled=False) as pnginfo_interface:
         with gr.Row().style(equal_height=False):
@@ -1222,10 +966,19 @@ def create_ui():
             outputs=[html, generation_info, html2],
         )
 
+    def update_interp_description(value):
+        interp_description_css = "<p style='margin-bottom: 2.5em'>{}</p>"
+        interp_descriptions = {
+            "No interpolation": interp_description_css.format("No interpolation will be used. Requires one model; A. Allows for format conversion and VAE baking."),
+            "Weighted sum": interp_description_css.format("A weighted sum will be used for interpolation. Requires two models; A and B. The result is calculated as A * (1 - M) + B * M"),
+            "Add difference": interp_description_css.format("The difference between the last two models will be added to the first. Requires three models; A, B and C. The result is calculated as A + (B - C) * M")
+        }
+        return interp_descriptions[value]
+
     with gr.Blocks(analytics_enabled=False) as modelmerger_interface:
         with gr.Row().style(equal_height=False):
             with gr.Column(variant='compact'):
-                gr.HTML(value="<p style='margin-bottom: 2.5em'>A merger of the two checkpoints will be generated in your <b>checkpoint</b> directory.</p>")
+                interp_description = gr.HTML(value=update_interp_description("Weighted sum"), elem_id="modelmerger_interp_description")
 
                 with FormRow(elem_id="modelmerger_models"):
                     primary_model_name = gr.Dropdown(modules.sd_models.checkpoint_tiles(), elem_id="modelmerger_primary_model_name", label="Primary model (A)")
@@ -1240,6 +993,7 @@ def create_ui():
                 custom_name = gr.Textbox(label="Custom Name (Optional)", elem_id="modelmerger_custom_name")
                 interp_amount = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Multiplier (M) - set to 0 to get model A', value=0.3, elem_id="modelmerger_interp_amount")
                 interp_method = gr.Radio(choices=["No interpolation", "Weighted sum", "Add difference"], value="Weighted sum", label="Interpolation Method", elem_id="modelmerger_interp_method")
+                interp_method.change(fn=update_interp_description, inputs=[interp_method], outputs=[interp_description])
 
                 with FormRow():
                     checkpoint_format = gr.Radio(choices=["ckpt", "safetensors"], value="ckpt", label="Checkpoint format", elem_id="modelmerger_checkpoint_format")
@@ -1254,6 +1008,9 @@ def create_ui():
                             bake_in_vae = gr.Dropdown(choices=["None"] + list(sd_vae.vae_dict), value="None", label="Bake in VAE", elem_id="modelmerger_bake_in_vae")
                             create_refresh_button(bake_in_vae, sd_vae.refresh_vae_list, lambda: {"choices": ["None"] + list(sd_vae.vae_dict)}, "modelmerger_refresh_bake_in_vae")
 
+                with FormRow():
+                    discard_weights = gr.Textbox(value="", label="Discard weights with matching name", elem_id="modelmerger_discard_weights")
+
                 with gr.Row():
                     modelmerger_merge = gr.Button(elem_id="modelmerger_merge", value="Merge", variant='primary')
 
@@ -1265,7 +1022,7 @@ def create_ui():
         with gr.Row().style(equal_height=False):
             gr.HTML(value="<p style='margin-bottom: 0.7em'>See <b><a href=\"https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Textual-Inversion\">wiki</a></b> for detailed explanation.</p>")
 
-        with gr.Row().style(equal_height=False):
+        with gr.Row(variant="compact").style(equal_height=False):
             with gr.Tabs(elem_id="train_tabs"):
 
                 with gr.Tab(label="Create embedding"):
@@ -1844,6 +1601,7 @@ def create_ui():
                 checkpoint_format,
                 config_source,
                 bake_in_vae,
+                discard_weights,
             ],
             outputs=[
                 primary_model_name,
@@ -1931,28 +1689,27 @@ def create_ui():
         with open(ui_config_file, "w", encoding="utf8") as file:
             json.dump(ui_settings, file, indent=4)
 
+    # Required as a workaround for change() event not triggering when loading values from ui-config.json
+    interp_description.value = update_interp_description(interp_method.value)
+
     return demo
 
 
 def reload_javascript():
-    with open(os.path.join(script_path, "script.js"), "r", encoding="utf8") as jsfile:
-        javascript = f'<script>{jsfile.read()}</script>'
+    head = f'<script type="text/javascript" src="file={os.path.abspath("script.js")}"></script>\n'
 
-    scripts_list = modules.scripts.list_scripts("javascript", ".js")
-
-    for basedir, filename, path in scripts_list:
-        with open(path, "r", encoding="utf8") as jsfile:
-            javascript += f"\n<!-- {filename} --><script>{jsfile.read()}</script>"
-
+    inline = f"{localization.localization_js(shared.opts.localization)};"
     if cmd_opts.theme is not None:
-        javascript += f"\n<script>set_theme('{cmd_opts.theme}');</script>\n"
+        inline += f"set_theme('{cmd_opts.theme}');"
 
-    javascript += f"\n<script>{localization.localization_js(shared.opts.localization)}</script>"
+    for script in modules.scripts.list_scripts("javascript", ".js"):
+        head += f'<script type="text/javascript" src="file={script.path}"></script>\n'
+
+    head += f'<script type="text/javascript">{inline}</script>\n'
 
     def template_response(*args, **kwargs):
         res = shared.GradioTemplateResponseOriginal(*args, **kwargs)
-        res.body = res.body.replace(
-            b'</head>', f'{javascript}</head>'.encode("utf8"))
+        res.body = res.body.replace(b'</head>', f'{head}</head>'.encode("utf8"))
         res.init_headers()
         return res
 

@@ -57,6 +57,7 @@ class LoraUpDownModule:
     def __init__(self):
         self.up = None
         self.down = None
+        self.alpha = None
 
 
 def assign_lora_names_to_compvis_modules(sd_model):
@@ -92,6 +93,15 @@ def load_lora(name, filename):
             keys_failed_to_match.append(key_diffusers)
             continue
 
+        lora_module = lora.modules.get(key, None)
+        if lora_module is None:
+            lora_module = LoraUpDownModule()
+            lora.modules[key] = lora_module
+
+        if lora_key == "alpha":
+            lora_module.alpha = weight.item()
+            continue
+
         if type(sd_module) == torch.nn.Linear:
             module = torch.nn.Linear(weight.shape[1], weight.shape[0], bias=False)
         elif type(sd_module) == torch.nn.Conv2d:
@@ -104,17 +114,12 @@ def load_lora(name, filename):
 
         module.to(device=devices.device, dtype=devices.dtype)
 
-        lora_module = lora.modules.get(key, None)
-        if lora_module is None:
-            lora_module = LoraUpDownModule()
-            lora.modules[key] = lora_module
-
         if lora_key == "lora_up.weight":
             lora_module.up = module
         elif lora_key == "lora_down.weight":
             lora_module.down = module
         else:
-            assert False, f'Bad Lora layer name: {key_diffusers} - must end in lora_up.weight or lora_down.weight'
+            assert False, f'Bad Lora layer name: {key_diffusers} - must end in lora_up.weight, lora_down.weight or alpha'
 
     if len(keys_failed_to_match) > 0:
         print(f"Failed to match keys when loading Lora {filename}: {keys_failed_to_match}")
@@ -161,7 +166,7 @@ def lora_forward(module, input, res):
     for lora in loaded_loras:
         module = lora.modules.get(lora_layer_name, None)
         if module is not None:
-            res = res + module.up(module.down(input)) * lora.multiplier
+            res = res + module.up(module.down(input)) * lora.multiplier * (module.alpha / module.up.weight.shape[1] if module.alpha else 1.0)
 
     return res
 
@@ -177,12 +182,12 @@ def lora_Conv2d_forward(self, input):
 def list_available_loras():
     available_loras.clear()
 
-    os.makedirs(lora_dir, exist_ok=True)
+    os.makedirs(shared.cmd_opts.lora_dir, exist_ok=True)
 
     candidates = \
-        glob.glob(os.path.join(lora_dir, '**/*.pt'), recursive=True) + \
-        glob.glob(os.path.join(lora_dir, '**/*.safetensors'), recursive=True) + \
-        glob.glob(os.path.join(lora_dir, '**/*.ckpt'), recursive=True)
+        glob.glob(os.path.join(shared.cmd_opts.lora_dir, '**/*.pt'), recursive=True) + \
+        glob.glob(os.path.join(shared.cmd_opts.lora_dir, '**/*.safetensors'), recursive=True) + \
+        glob.glob(os.path.join(shared.cmd_opts.lora_dir, '**/*.ckpt'), recursive=True)
 
     for filename in sorted(candidates):
         if os.path.isdir(filename):
@@ -193,7 +198,6 @@ def list_available_loras():
         available_loras[name] = LoraOnDisk(name, filename)
 
 
-lora_dir = os.path.join(shared.models_path, "Lora")
 available_loras = {}
 loaded_loras = []
 

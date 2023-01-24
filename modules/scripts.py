@@ -7,7 +7,7 @@ from collections import namedtuple
 import gradio as gr
 
 from modules.processing import StableDiffusionProcessing
-from modules import shared, paths, script_callbacks, extensions, script_loading
+from modules import shared, paths, script_callbacks, extensions, script_loading, scripts_postprocessing
 
 AlwaysVisible = object()
 
@@ -150,8 +150,10 @@ def basedir():
     return current_basedir
 
 
-scripts_data = []
 ScriptFile = namedtuple("ScriptFile", ["basedir", "filename", "path"])
+
+scripts_data = []
+postprocessing_scripts_data = []
 ScriptClassData = namedtuple("ScriptClassData", ["script_class", "path", "basedir", "module"])
 
 
@@ -190,11 +192,22 @@ def list_files_with_name(filename):
 def load_scripts():
     global current_basedir
     scripts_data.clear()
+    postprocessing_scripts_data.clear()
     script_callbacks.clear_callbacks()
 
     scripts_list = list_scripts("scripts", ".py")
 
     syspath = sys.path
+
+    def register_scripts_from_module(module):
+        for key, script_class in module.__dict__.items():
+            if type(script_class) != type:
+                continue
+
+            if issubclass(script_class, Script):
+                scripts_data.append(ScriptClassData(script_class, scriptfile.path, scriptfile.basedir, module))
+            elif issubclass(script_class, scripts_postprocessing.ScriptPostprocessing):
+                postprocessing_scripts_data.append(ScriptClassData(script_class, scriptfile.path, scriptfile.basedir, module))
 
     for scriptfile in sorted(scripts_list):
         try:
@@ -202,11 +215,8 @@ def load_scripts():
                 sys.path = [scriptfile.basedir] + sys.path
             current_basedir = scriptfile.basedir
 
-            module = script_loading.load_module(scriptfile.path)
-
-            for key, script_class in module.__dict__.items():
-                if type(script_class) == type and issubclass(script_class, Script):
-                    scripts_data.append(ScriptClassData(script_class, scriptfile.path, scriptfile.basedir, module))
+            script_module = script_loading.load_module(scriptfile.path)
+            register_scripts_from_module(script_module)
 
         except Exception:
             print(f"Error loading script: {scriptfile.filename}", file=sys.stderr)
@@ -413,6 +423,7 @@ class ScriptRunner:
 
 scripts_txt2img = ScriptRunner()
 scripts_img2img = ScriptRunner()
+scripts_postproc = scripts_postprocessing.ScriptPostprocessingRunner()
 scripts_current: ScriptRunner = None
 
 
@@ -423,12 +434,13 @@ def reload_script_body_only():
 
 
 def reload_scripts():
-    global scripts_txt2img, scripts_img2img
+    global scripts_txt2img, scripts_img2img, scripts_postproc
 
     load_scripts()
 
     scripts_txt2img = ScriptRunner()
     scripts_img2img = ScriptRunner()
+    scripts_postproc = scripts_postprocessing.ScriptPostprocessingRunner()
 
 
 def IOComponent_init(self, *args, **kwargs):

@@ -47,3 +47,4 @@ class FormColorPicker(gr.ColorPicker, gr.components.FormComponent):
 
     def get_block_name(self):
         return "colorpicker"
+

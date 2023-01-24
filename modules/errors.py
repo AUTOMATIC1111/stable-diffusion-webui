@@ -24,6 +24,18 @@ See https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Features#stable
         """)
 
 
+already_displayed = {}
+
+
+def display_once(e: Exception, task):
+    if task in already_displayed:
+        return
+
+    display(e, task)
+
+    already_displayed[task] = 1
+
+
 def run(code, task):
     try:
         code()
