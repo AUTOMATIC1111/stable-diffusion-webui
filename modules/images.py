@@ -18,7 +18,7 @@ import string
 import json
 
 from modules import sd_samplers, shared, script_callbacks
-from modules.shared import opts, cmd_opts
+from modules.shared import opts, cmd_opts, state
 
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
 
@@ -480,6 +480,11 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
         txt_fullfn (`str` or None):
             If a text file is saved for this image, this will be its full path. Otherwise None.
     """
+    if opts.do_not_save_interrupted_or_skipped and p.__class__.__module__ != 'modules.ui_common' and (state.interrupted or state.skipped):
+        state.interrupted = False
+        state.skipped = False
+        return
+    
     namegen = FilenameGenerator(p, seed, prompt, image)
 
     if save_to_dirs is None:
