@@ -375,13 +375,15 @@ class Api:
         return [{"name": sampler[0], "aliases":sampler[2], "options":sampler[3]} for sampler in sd_samplers.all_samplers]
 
     def get_upscalers(self):
-        upscalers = []
-
-        for upscaler in shared.sd_upscalers:
-            u = upscaler.scaler
-            upscalers.append({"name":u.name, "model_name":u.model_name, "model_path":u.model_path, "model_url":u.model_url})
-
-        return upscalers
+        return [
+            {
+                "name": upscaler.name,
+                "model_name": upscaler.scaler.model_name,
+                "model_path": upscaler.data_path,
+                "scale": upscaler.scale,
+            }
+            for upscaler in shared.sd_upscalers
+        ]
 
     def get_sd_models(self):
         return [{"title": x.title, "model_name": x.model_name, "hash": x.shorthash, "sha256": x.sha256, "filename": x.filename, "config": find_checkpoint_config(x)} for x in checkpoints_list.values()]
