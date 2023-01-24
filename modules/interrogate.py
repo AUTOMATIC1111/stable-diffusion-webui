@@ -90,7 +90,7 @@ class InterrogateModels:
         sys.modules["fairscale.nn.checkpoint.checkpoint_activations"] = FakeFairscale
 
     def load_blip_model(self):
-        create_fake_fairscale()
+        self.create_fake_fairscale()
         import models.blip
 
         files = modelloader.load_models(
