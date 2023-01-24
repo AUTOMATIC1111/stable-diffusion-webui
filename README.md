@@ -18,17 +18,42 @@ Fork adds extra functionality:
   e.g. `generate`, `train`, `bench`, etc.  
   [Full list](<cli/>)
 
-Fork does differ in few things:
+Simplified start script: `automatic.sh`  
+*Existing `webui.sh` still exists for backward compatibility, fresh installs to auto-install dependencies, etc.*  
 
-- Additional simplified start script  
-  > ./automatic.sh  
-  > ./secure.sh  
-  
-  Use `secure.sh` if you want to startup with username/password auth enabled and listen on global IP  
-  Existing `webui.sh` still exists for fresh installs to auto-install dependencies, etc.  
-- Additional simplified install script  
-  > ./install.sh  
-- Drops compatibility with `python` **3.7** and requires **3.10**  
+> ./automatic.sh  
+
+- Start in default mode with optimizations enabled
+
+> ./automatic.sh env  
+
+- Print env info and exit  
+  Example:
+
+      Version: c07487a Tue Jan 24 08:04:31 2023 -0500
+      Platform: Ubuntu 22.04.1 LTS 5.15.79.1-microsoft-standard-WSL2 x86_64
+      Python 3.10.6
+      Torch: 2.0.0.dev20230118+cu118 CUDA: 11.8 cuDNN: 8700 GPU: NVIDIA GeForce RTX 3060 Arch: (8, 6)
+
+> ./automatic.sh install  
+
+- Install requirements and exit
+
+> ./automatic.sh public  
+
+- Start with listen on public IP with authentication enabled
+
+> ./automatic.sh clean  
+
+- Start with all optimizations disabled  
+  Use this for troubleshooting  
+
+<br>
+
+## Differences
+
+Fork does differ in few things:
+- Drops compatibility with `python` **3.7** and requires **3.9**  
 - Updated **Python** libraries to latest known compatible versions  
   e.g. `accelerate`, `transformers`, `numpy`, etc.  
 - Includes opinionated **System** and **Options** configuration  
