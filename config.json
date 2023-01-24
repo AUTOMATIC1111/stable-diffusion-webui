@@ -170,5 +170,8 @@
         "artists",
         "movements",
         "flavors"
-    ]
+    ],
+    "extra_networks_default_view": "cards",
+    "postprocessing_scipts_order": "upscale, gfpgan, codeformer",
+    "upscaling_max_images_in_cache": 5
 }
