@@ -53,7 +53,11 @@ def setUpscalers(req: dict):
 def decode_base64_to_image(encoding):
     if encoding.startswith("data:image/"):
         encoding = encoding.split(";")[1].split(",")[1]
-    return Image.open(BytesIO(base64.b64decode(encoding)))
+    try:
+        image = Image.open(BytesIO(base64.b64decode(encoding)))
+        return image
+    except Exception as err:
+        raise HTTPException(status_code=500, detail="Invalid encoded image")
 
 def encode_pil_to_base64(image):
     with io.BytesIO() as output_bytes:
@@ -371,13 +375,16 @@ class Api:
         return [{"name": sampler[0], "aliases":sampler[2], "options":sampler[3]} for sampler in sd_samplers.all_samplers]
 
     def get_upscalers(self):
-        upscalers = []
-
-        for upscaler in shared.sd_upscalers:
-            u = upscaler.scaler
-            upscalers.append({"name":u.name, "model_name":u.model_name, "model_path":u.model_path, "model_url":u.model_url})
-
-        return upscalers
+        return [
+            {
+                "name": upscaler.name,
+                "model_name": upscaler.scaler.model_name,
+                "model_path": upscaler.data_path,
+                "model_url": None,
+                "scale": upscaler.scale,
+            }
+            for upscaler in shared.sd_upscalers
+        ]
 
     def get_sd_models(self):
         return [{"title": x.title, "model_name": x.model_name, "hash": x.shorthash, "sha256": x.sha256, "filename": x.filename, "config": find_checkpoint_config(x)} for x in checkpoints_list.values()]
