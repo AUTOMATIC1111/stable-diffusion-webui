@@ -137,13 +137,17 @@ async def preprocess(params):
                 log.error({ 'preprocess video extract': 'no images' })
     elif os.path.isdir(params.src):
         if params.overwrite:
-            preprocess_cleanup(params)
+            await preprocess_cleanup(params)
         elif os.path.isdir(params.dst):
             log.error({ 'preprocess output folder already exists': params.dst })
             return 0
 
         if params.preprocess == 'builtin':
             res = await preprocess_builtin(params)
+            i = [os.path.join(params.dst, f) for f in os.listdir(params.dst) if os.path.isfile(os.path.join(params.dst, f)) and filetype.is_image(os.path.join(params.dst, f))]
+            images = [Image.open(img) for img in i]
+            res = len(images)
+
         elif params.preprocess == 'custom':
             t0 = time.perf_counter()
             args.preprocess.process_src = params.src
@@ -154,11 +158,13 @@ async def preprocess(params):
             t1 = time.perf_counter()
             log.info({ 'preprocess': { 'source': params.src, 'destination': params.dst, 'images': len(images), 'time': round(t1 - t0, 2) } })
             res = len(images)
+
         else:
             args.preprocess.process_dst = params.src
             i = [os.path.join(params.src, f) for f in os.listdir(params.src) if os.path.isfile(os.path.join(params.src, f)) and filetype.is_image(os.path.join(params.src, f))]
             images = [Image.open(img) for img in i]
             res = len(images)
+            
     else:
         log.error({ 'preprocess error': { 'not a valid input': params.src } })
     if len(images) > 0:
@@ -499,6 +505,17 @@ async def main():
     log.debug({ 'args': params.__dict__ })
     params.src = os.path.abspath(params.src)
     params.dst = os.path.abspath(params.dst)
+
+    await session()
+    await check(params)
+    a = asyncio.create_task(pipeline(params))
+    b = asyncio.create_task(monitor(params))
+    await asyncio.gather(a, b) # wait for both pipeline and monitor to finish
+    if not params.nocleanup:
+        await preprocess_cleanup(params)
+    await close()
+    return
+
     try:
         await session()
         await check(params)
