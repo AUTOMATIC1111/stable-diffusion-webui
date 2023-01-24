@@ -188,8 +188,6 @@ def run_extensions_installers(settings_file):
 def prepare_environment():
     global skip_install
 
-    pip_installer_location = os.environ.get('PIP_INSTALLER_LOCATION', None)
-
     torch_command = os.environ.get('TORCH_COMMAND', "pip install torch==1.13.1+cu117 torchvision==0.14.1+cu117 --extra-index-url https://download.pytorch.org/whl/cu117")
     requirements_file = os.environ.get('REQS_FILE', "requirements_versions.txt")
     commandline_args = os.environ.get('COMMANDLINE_ARGS', "")
@@ -230,9 +228,6 @@ def prepare_environment():
 
     print(f"Python {sys.version}")
     print(f"Commit hash: {commit}")
-
-    if pip_installer_location is not None and not is_installed("pip"):
-        run(f'"{python}" "{pip_installer_location}"', "Installing pip", "Couldn't install pip")
 
     if reinstall_torch or not is_installed("torch") or not is_installed("torchvision"):
         run(f'"{python}" -m {torch_command}', "Installing torch and torchvision", "Couldn't install torch", live=True)

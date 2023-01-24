@@ -9,8 +9,17 @@ set ERROR_REPORTING=FALSE
 mkdir tmp 2>NUL
 
 %PYTHON% -c "" >tmp/stdout.txt 2>tmp/stderr.txt
-if %ERRORLEVEL% == 0 goto :start_venv
+if %ERRORLEVEL% == 0 goto :check_pip
 echo Couldn't launch python
+goto :show_stdout_stderr
+
+:check_pip
+%PYTHON% -mpip --help >tmp/stdout.txt 2>tmp/stderr.txt
+if %ERRORLEVEL% == 0 goto :start_venv
+if "%PIP_INSTALLER_LOCATION%" == "" goto :show_stdout_stderr
+%PYTHON% "%PIP_INSTALLER_LOCATION%" >tmp/stdout.txt 2>tmp/stderr.txt
+if %ERRORLEVEL% == 0 goto :start_venv
+echo Couldn't install pip
 goto :show_stdout_stderr
 
 :start_venv
@@ -46,7 +55,7 @@ pause
 exit /b
 
 :accelerate_launch
-echo "Accelerating"
+echo Accelerating
 %ACCELERATE% launch --num_cpu_threads_per_process=6 launch.py
 pause
 exit /b
