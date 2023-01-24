@@ -205,9 +205,9 @@ axis_options = [
 ]
 
 
-def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend, include_lone_images, swap_axes_processing_order):
-    ver_texts = [[images.GridAnnotation(y)] for y in y_labels]
+def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend, include_lone_images, include_sub_grids, swap_axes_processing_order):
     hor_texts = [[images.GridAnnotation(x)] for x in x_labels]
+    ver_texts = [[images.GridAnnotation(y)] for y in y_labels]
     title_texts = [[images.GridAnnotation(z)] for z in z_labels]
 
     # Temporary list of all the images that are generated to be populated into the grid.
@@ -266,16 +266,21 @@ def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend
         print("Unexpected error: draw_xyz_grid failed to return even a single processed image")
         return Processed(p, [])
 
-    for i, title_text in enumerate(title_texts):
+    grids = [None] * len(zs)
+    for i in range(len(zs)):
         start_index = i * len(xs) * len(ys)
         end_index = start_index + len(xs) * len(ys)
         grid = images.image_grid(image_cache[start_index:end_index], rows=len(ys))
         if draw_legend:
             grid = images.draw_grid_annotations(grid, cell_size[0], cell_size[1], hor_texts, ver_texts)
-        if i == 0: # First position is a placeholder as mentioned above, so it can be directly replaced
-            processed_result.images[0] = grid
-        else:
-            processed_result.images.insert(i, grid)
+        
+        grids[i] = grid        
+        if include_sub_grids and len(zs) > 1:
+            processed_result.images.insert(i+1, grid)
+
+    original_grid_size = grids[0].size
+    grids = images.image_grid(grids, rows=1)
+    processed_result.images[0] = images.draw_grid_annotations(grids, original_grid_size[0], original_grid_size[1], title_texts, [[images.GridAnnotation()]])
 
     return processed_result
 
@@ -326,7 +331,8 @@ class Script(scripts.Script):
 
         with gr.Row(variant="compact", elem_id="axis_options"):
             draw_legend = gr.Checkbox(label='Draw legend', value=True, elem_id=self.elem_id("draw_legend"))
-            include_lone_images = gr.Checkbox(label='Include Separate Images', value=False, elem_id=self.elem_id("include_lone_images"))
+            include_lone_images = gr.Checkbox(label='Include Sub Images', value=False, elem_id=self.elem_id("include_lone_images"))
+            include_sub_grids = gr.Checkbox(label='Include Sub Grids', value=False, elem_id=self.elem_id("include_sub_grids"))
             no_fixed_seeds = gr.Checkbox(label='Keep -1 for seeds', value=False, elem_id=self.elem_id("no_fixed_seeds"))
             swap_xy_axes_button = gr.Button(value="Swap X/Y axes", elem_id="xy_grid_swap_axes_button")
             swap_yz_axes_button = gr.Button(value="Swap Y/Z axes", elem_id="yz_grid_swap_axes_button")
@@ -357,9 +363,9 @@ class Script(scripts.Script):
         y_type.change(fn=select_axis, inputs=[y_type], outputs=[fill_y_button])
         z_type.change(fn=select_axis, inputs=[z_type], outputs=[fill_z_button])
 
-        return [x_type, x_values, y_type, y_values, z_type, z_values, draw_legend, include_lone_images, no_fixed_seeds]
+        return [x_type, x_values, y_type, y_values, z_type, z_values, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds]
 
-    def run(self, p, x_type, x_values, y_type, y_values, z_type, z_values, draw_legend, include_lone_images, no_fixed_seeds):
+    def run(self, p, x_type, x_values, y_type, y_values, z_type, z_values, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds):
         if not no_fixed_seeds:
             modules.processing.fix_seed(p)
 
@@ -527,10 +533,11 @@ class Script(scripts.Script):
                 zs=zs,
                 x_labels=[x_opt.format_value(p, x_opt, x) for x in xs],
                 y_labels=[y_opt.format_value(p, y_opt, y) for y in ys],
-                z_labels=[y_opt.format_value(p, z_opt, z) for z in zs],
+                z_labels=[z_opt.format_value(p, z_opt, z) for z in zs],
                 cell=cell,
                 draw_legend=draw_legend,
                 include_lone_images=include_lone_images,
+                include_sub_grids=include_sub_grids,
                 swap_axes_processing_order=swap_axes_processing_order
             )
 
