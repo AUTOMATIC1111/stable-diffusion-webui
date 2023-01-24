@@ -13,7 +13,7 @@ from skimage import exposure
 from typing import Any, Dict, List, Optional
 
 import modules.sd_hijack
-from modules import devices, prompt_parser, masking, sd_samplers, lowvram, generation_parameters_copypaste, script_callbacks, extra_networks
+from modules import devices, prompt_parser, masking, sd_samplers, lowvram, generation_parameters_copypaste, script_callbacks, extra_networks, sd_vae_approx
 from modules.sd_hijack import model_hijack
 from modules.shared import opts, cmd_opts, state
 import modules.shared as shared
@@ -567,6 +567,10 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
     with torch.no_grad(), p.sd_model.ema_scope():
         with devices.autocast():
             p.init(p.all_prompts, p.all_seeds, p.all_subseeds)
+
+            if shared.opts.live_previews_enable and sd_samplers.approximation_indexes.get(shared.opts.show_progress_type, 0) == 1:
+                # preload approx nn model before sampling for a more deterministic result
+                sd_vae_approx.model()
 
             if not p.disable_extra_networks:
                 extra_networks.activate(p, extra_network_data)
