@@ -2,7 +2,6 @@ accelerate
 basicsr
 clean-fid
 einops
-fairscale
 filetype
 font-roboto
 fonts

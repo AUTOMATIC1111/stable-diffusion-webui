@@ -77,6 +77,10 @@ async def preprocess_cleanup(params):
         f.unlink()
     for f in Path(params.dst).glob('*.txt'):
         f.unlink()
+    try:
+        Path(params.dst).rmdir()
+    except Exception as err:
+        log.warning({ 'preprocess cleanup': params.dst, 'error': err })
 
 
 async def preprocess_builtin(params):
@@ -321,7 +325,7 @@ async def train(params):
     res = await post('/sdapi/v1/train/embedding', args.train_embedding)
     t1 = time.time()
     log.info({ 'train embedding finished': { 'name': params.name, 'time': round(t1 - t0) } })
-    log.debug({ 'train end': res.info })
+    log.debug({ 'train end': res.info if 'info' in res else res })
     return
 
 
@@ -506,6 +510,7 @@ async def main():
     params.src = os.path.abspath(params.src)
     params.dst = os.path.abspath(params.dst)
 
+    """
     await session()
     await check(params)
     a = asyncio.create_task(pipeline(params))
@@ -515,6 +520,7 @@ async def main():
         await preprocess_cleanup(params)
     await close()
     return
+    """
 
     try:
         await session()
