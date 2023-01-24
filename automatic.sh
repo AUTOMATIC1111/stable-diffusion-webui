@@ -69,7 +69,7 @@ if [ $MODE == public ]; then
 fi
 
 if [ $MODE == optimized ]; then
-  ARGS="$ARGS --xformers"
+  ARGS="$ARGS"
 fi
 
 exec accelerate launch $ARGS
