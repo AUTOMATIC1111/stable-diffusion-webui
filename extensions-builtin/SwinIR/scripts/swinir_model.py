@@ -145,11 +145,11 @@ def inference(img, model, tile, tile_overlap, window_size, scale):
 
     with tqdm(total=len(h_idx_list) * len(w_idx_list), desc="SwinIR tiles") as pbar:
         for h_idx in h_idx_list:
-            if state.interrupted:
+            if state.interrupted or state.skipped:
                 break
 
             for w_idx in w_idx_list:
-                if state.interrupted:
+                if state.interrupted or state.skipped:
                     break
                 
                 in_patch = img[..., h_idx: h_idx + tile, w_idx: w_idx + tile]
