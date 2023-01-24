@@ -48,9 +48,18 @@ def extract_opt(args, name):
     return args, is_present, opt
 
 
-def run(command, desc=None, errdesc=None, custom_env=None):
+def run(command, desc=None, errdesc=None, custom_env=None, live=False):
     if desc is not None:
         print(desc)
+
+    if live:
+        result = subprocess.run(command, shell=True, env=os.environ if custom_env is None else custom_env)
+        if result.returncode != 0:
+            raise RuntimeError(f"""{errdesc or 'Error running command'}.
+Command: {command}
+Error code: {result.returncode}""")
+
+        return ""
 
     result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, env=os.environ if custom_env is None else custom_env)
 
@@ -179,6 +188,8 @@ def run_extensions_installers(settings_file):
 def prepare_environment():
     global skip_install
 
+    pip_installer_location = os.environ.get('PIP_INSTALLER_LOCATION', None)
+
     torch_command = os.environ.get('TORCH_COMMAND', "pip install torch==1.13.1+cu117 torchvision==0.14.1+cu117 --extra-index-url https://download.pytorch.org/whl/cu117")
     requirements_file = os.environ.get('REQS_FILE', "requirements_versions.txt")
     commandline_args = os.environ.get('COMMANDLINE_ARGS', "")
@@ -219,9 +230,12 @@ def prepare_environment():
 
     print(f"Python {sys.version}")
     print(f"Commit hash: {commit}")
-    
+
+    if pip_installer_location is not None and not is_installed("pip"):
+        run(f'"{python}" "{pip_installer_location}"', "Installing pip", "Couldn't install pip")
+
     if reinstall_torch or not is_installed("torch") or not is_installed("torchvision"):
-        run(f'"{python}" -m {torch_command}', "Installing torch and torchvision", "Couldn't install torch")
+        run(f'"{python}" -m {torch_command}', "Installing torch and torchvision", "Couldn't install torch", live=True)
 
     if not skip_torch_cuda_test:
         run_python("import torch; assert torch.cuda.is_available(), 'Torch is not able to use GPU; add --skip-torch-cuda-test to COMMANDLINE_ARGS variable to disable this check'")
