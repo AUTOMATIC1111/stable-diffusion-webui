@@ -59,8 +59,8 @@ if [ $MODE == env ]; then
 fi
 
 if [ $MODE == clean ]; then
-  ARGS="$ARGS ----disable-opt-split-attention"
-  python launch.py "$ARGS"
+  ARGS="--disable-opt-split-attention --disable-console-progressbars --api"
+  python launch.py $ARGS
   exit 0
 fi
 
@@ -72,4 +72,4 @@ if [ $MODE == optimized ]; then
   ARGS="$ARGS --xformers"
 fi
 
-exec accelerate launch "$ARGS"
+exec accelerate launch $ARGS
