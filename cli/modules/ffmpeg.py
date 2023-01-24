@@ -13,7 +13,7 @@ from util import log, Map
 
 
 def probe(src: str):
-    cmd = f"ffprobe -hide_banner -loglevel 0 -print_format json -show_format -show_streams {src}"
+    cmd = f"ffprobe -hide_banner -loglevel 0 -print_format json -show_format -show_streams \"{src}\""
     result = subprocess.run(cmd, shell = True, capture_output = True, text = True, check = True)
     data = json.loads(result.stdout)
     stream = [x for x in data['streams'] if x["codec_type"] == "video"][0]
@@ -43,9 +43,9 @@ def extract(src: str, dst: str, rate: float = 0.015, fps: float = 0, start = 0, 
     ssend = f' -to {video.duration - end}' if start > 0 else ''
     filename = pathlib.Path(src).stem
     if rate > 0:
-        cmd = f"ffmpeg -hide_banner -y -loglevel info {ssstart} {ssend} -i {src} -filter:v \"select='gt(scene,{rate})',metadata=print\" -vsync vfr -frame_pts 1 {dst}{filename}-%05d.jpg"
+        cmd = f"ffmpeg -hide_banner -y -loglevel info {ssstart} {ssend} -i \"{src}\" -filter:v \"select='gt(scene,{rate})',metadata=print\" -vsync vfr -frame_pts 1 \"{dst}{filename}-%05d.jpg\""
     elif fps > 0:
-        cmd = f"ffmpeg -hide_banner -y -loglevel info {ssstart} {ssend} -i {src} -r {fps} -vsync vfr -frame_pts 1 {dst}{filename}-%05d.jpg"
+        cmd = f"ffmpeg -hide_banner -y -loglevel info {ssstart} {ssend} -i \"{src}\" -r {fps} -vsync vfr -frame_pts 1 \"{dst}{filename}-%05d.jpg\""
     else:
         log.error({ 'extract': 'requires either rate or fps' })
         return 0
