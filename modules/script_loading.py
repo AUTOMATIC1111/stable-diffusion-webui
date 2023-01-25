@@ -1,16 +1,14 @@
 import os
 import sys
 import traceback
+import importlib.util
 from types import ModuleType
 
 
 def load_module(path):
-    with open(path, "r", encoding="utf8") as file:
-        text = file.read()
-
-    compiled = compile(text, path, 'exec')
-    module = ModuleType(os.path.basename(path))
-    exec(compiled, module.__dict__)
+    module_spec = importlib.util.spec_from_file_location(os.path.basename(path), path)
+    module = importlib.util.module_from_spec(module_spec)
+    module_spec.loader.exec_module(module)
 
     return module
 
