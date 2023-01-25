@@ -205,26 +205,30 @@ axis_options = [
 ]
 
 
-def draw_xy_grid(p, xs, ys, x_labels, y_labels, cell, draw_legend, include_lone_images, swap_axes_processing_order):
-    ver_texts = [[images.GridAnnotation(y)] for y in y_labels]
+def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend, include_lone_images, include_sub_grids, first_axes_processed, second_axes_processed):
     hor_texts = [[images.GridAnnotation(x)] for x in x_labels]
+    ver_texts = [[images.GridAnnotation(y)] for y in y_labels]
+    title_texts = [[images.GridAnnotation(z)] for z in z_labels]
 
     # Temporary list of all the images that are generated to be populated into the grid.
     # Will be filled with empty images for any individual step that fails to process properly
-    image_cache = [None] * (len(xs) * len(ys))
+    image_cache = [None] * (len(xs) * len(ys) * len(zs))
 
     processed_result = None
     cell_mode = "P"
     cell_size = (1, 1)
 
-    state.job_count = len(xs) * len(ys) * p.n_iter
+    state.job_count = len(xs) * len(ys) * len(zs) * p.n_iter
 
-    def process_cell(x, y, ix, iy):
+    def process_cell(x, y, z, ix, iy, iz):
         nonlocal image_cache, processed_result, cell_mode, cell_size
 
-        state.job = f"{ix + iy * len(xs) + 1} out of {len(xs) * len(ys)}"
+        def index(ix, iy, iz):
+            return ix + iy * len(xs) + iz * len(xs) * len(ys)
 
-        processed: Processed = cell(x, y)
+        state.job = f"{index(ix, iy, iz) + 1} out of {len(xs) * len(ys) * len(zs)}"
+
+        processed: Processed = cell(x, y, z)
 
         try:
             # this dereference will throw an exception if the image was not processed
@@ -238,33 +242,65 @@ def draw_xy_grid(p, xs, ys, x_labels, y_labels, cell, draw_legend, include_lone_
                 cell_size = processed_image.size
                 processed_result.images = [Image.new(cell_mode, cell_size)]
 
-            image_cache[ix + iy * len(xs)] = processed_image
+            image_cache[index(ix, iy, iz)] = processed_image
             if include_lone_images:
                 processed_result.images.append(processed_image)
                 processed_result.all_prompts.append(processed.prompt)
                 processed_result.all_seeds.append(processed.seed)
                 processed_result.infotexts.append(processed.infotexts[0])
         except:
-            image_cache[ix + iy * len(xs)] = Image.new(cell_mode, cell_size)
+            image_cache[index(ix, iy, iz)] = Image.new(cell_mode, cell_size)
 
-    if swap_axes_processing_order:
+    if first_axes_processed == 'x':
         for ix, x in enumerate(xs):
-            for iy, y in enumerate(ys):
-                process_cell(x, y, ix, iy)
-    else:
+            if second_axes_processed == 'y':
+                for iy, y in enumerate(ys):
+                    for iz, z in enumerate(zs):
+                        process_cell(x, y, z, ix, iy, iz)
+            else:
+                for iz, z in enumerate(zs):
+                    for iy, y in enumerate(ys):
+                        process_cell(x, y, z, ix, iy, iz)
+    elif first_axes_processed == 'y':
         for iy, y in enumerate(ys):
-            for ix, x in enumerate(xs):
-                process_cell(x, y, ix, iy)
+            if second_axes_processed == 'x':
+                for ix, x in enumerate(xs):
+                    for iz, z in enumerate(zs):
+                        process_cell(x, y, z, ix, iy, iz)
+            else:
+                for iz, z in enumerate(zs):
+                    for ix, x in enumerate(xs):
+                        process_cell(x, y, z, ix, iy, iz)
+    elif first_axes_processed == 'z':
+        for iz, z in enumerate(zs):
+            if second_axes_processed == 'x':
+                for ix, x in enumerate(xs):
+                    for iy, y in enumerate(ys):
+                        process_cell(x, y, z, ix, iy, iz)
+            else:
+                for iy, y in enumerate(ys):
+                    for ix, x in enumerate(xs):
+                        process_cell(x, y, z, ix, iy, iz)
 
     if not processed_result:
-        print("Unexpected error: draw_xy_grid failed to return even a single processed image")
+        print("Unexpected error: draw_xyz_grid failed to return even a single processed image")
         return Processed(p, [])
 
-    grid = images.image_grid(image_cache, rows=len(ys))
-    if draw_legend:
-        grid = images.draw_grid_annotations(grid, cell_size[0], cell_size[1], hor_texts, ver_texts)
+    grids = [None] * len(zs)
+    for i in range(len(zs)):
+        start_index = i * len(xs) * len(ys)
+        end_index = start_index + len(xs) * len(ys)
+        grid = images.image_grid(image_cache[start_index:end_index], rows=len(ys))
+        if draw_legend:
+            grid = images.draw_grid_annotations(grid, cell_size[0], cell_size[1], hor_texts, ver_texts)
+        
+        grids[i] = grid        
+        if include_sub_grids and len(zs) > 1:
+            processed_result.images.insert(i+1, grid)
 
-    processed_result.images[0] = grid
+    original_grid_size = grids[0].size
+    grids = images.image_grid(grids, rows=1)
+    processed_result.images[0] = images.draw_grid_annotations(grids, original_grid_size[0], original_grid_size[1], title_texts, [[images.GridAnnotation()]])
 
     return processed_result
 
@@ -291,7 +327,7 @@ re_range_count_float = re.compile(r"\s*([+-]?\s*\d+(?:.\d*)?)\s*-\s*([+-]?\s*\d+
 
 class Script(scripts.Script):
     def title(self):
-        return "X/Y plot"
+        return "X/Y/Z plot"
 
     def ui(self, is_img2img):
         self.current_axis_options = [x for x in axis_options if type(x) == AxisOption or x.is_img2img == is_img2img]
@@ -301,24 +337,36 @@ class Script(scripts.Script):
                 with gr.Row():
                     x_type = gr.Dropdown(label="X type", choices=[x.label for x in self.current_axis_options], value=self.current_axis_options[1].label, type="index", elem_id=self.elem_id("x_type"))
                     x_values = gr.Textbox(label="X values", lines=1, elem_id=self.elem_id("x_values"))
-                    fill_x_button = ToolButton(value=fill_values_symbol, elem_id="xy_grid_fill_x_tool_button", visible=False)
+                    fill_x_button = ToolButton(value=fill_values_symbol, elem_id="xyz_grid_fill_x_tool_button", visible=False)
 
                 with gr.Row():
                     y_type = gr.Dropdown(label="Y type", choices=[x.label for x in self.current_axis_options], value=self.current_axis_options[0].label, type="index", elem_id=self.elem_id("y_type"))
                     y_values = gr.Textbox(label="Y values", lines=1, elem_id=self.elem_id("y_values"))
-                    fill_y_button = ToolButton(value=fill_values_symbol, elem_id="xy_grid_fill_y_tool_button", visible=False)
+                    fill_y_button = ToolButton(value=fill_values_symbol, elem_id="xyz_grid_fill_y_tool_button", visible=False)
+
+                with gr.Row():
+                    z_type = gr.Dropdown(label="Z type", choices=[x.label for x in self.current_axis_options], value=self.current_axis_options[0].label, type="index", elem_id=self.elem_id("z_type"))
+                    z_values = gr.Textbox(label="Z values", lines=1, elem_id=self.elem_id("z_values"))
+                    fill_z_button = ToolButton(value=fill_values_symbol, elem_id="xyz_grid_fill_z_tool_button", visible=False)
 
         with gr.Row(variant="compact", elem_id="axis_options"):
             draw_legend = gr.Checkbox(label='Draw legend', value=True, elem_id=self.elem_id("draw_legend"))
-            include_lone_images = gr.Checkbox(label='Include Separate Images', value=False, elem_id=self.elem_id("include_lone_images"))
+            include_lone_images = gr.Checkbox(label='Include Sub Images', value=False, elem_id=self.elem_id("include_lone_images"))
+            include_sub_grids = gr.Checkbox(label='Include Sub Grids', value=False, elem_id=self.elem_id("include_sub_grids"))
             no_fixed_seeds = gr.Checkbox(label='Keep -1 for seeds', value=False, elem_id=self.elem_id("no_fixed_seeds"))
-            swap_axes_button = gr.Button(value="Swap axes", elem_id="xy_grid_swap_axes_button")
+            swap_xy_axes_button = gr.Button(value="Swap X/Y axes", elem_id="xy_grid_swap_axes_button")
+            swap_yz_axes_button = gr.Button(value="Swap Y/Z axes", elem_id="yz_grid_swap_axes_button")
+            swap_xz_axes_button = gr.Button(value="Swap X/Z axes", elem_id="xz_grid_swap_axes_button")
 
-        def swap_axes(x_type, x_values, y_type, y_values):
-            return self.current_axis_options[y_type].label, y_values, self.current_axis_options[x_type].label, x_values
+        def swap_axes(axis1_type, axis1_values, axis2_type, axis2_values):
+            return self.current_axis_options[axis2_type].label, axis2_values, self.current_axis_options[axis1_type].label, axis1_values
 
-        swap_args = [x_type, x_values, y_type, y_values]
-        swap_axes_button.click(swap_axes, inputs=swap_args, outputs=swap_args)
+        xy_swap_args = [x_type, x_values, y_type, y_values]
+        swap_xy_axes_button.click(swap_axes, inputs=xy_swap_args, outputs=xy_swap_args)
+        yz_swap_args = [y_type, y_values, z_type, z_values]
+        swap_yz_axes_button.click(swap_axes, inputs=yz_swap_args, outputs=yz_swap_args)
+        xz_swap_args = [x_type, x_values, z_type, z_values]
+        swap_xz_axes_button.click(swap_axes, inputs=xz_swap_args, outputs=xz_swap_args)
 
         def fill(x_type):
             axis = self.current_axis_options[x_type]
@@ -326,16 +374,18 @@ class Script(scripts.Script):
 
         fill_x_button.click(fn=fill, inputs=[x_type], outputs=[x_values])
         fill_y_button.click(fn=fill, inputs=[y_type], outputs=[y_values])
+        fill_z_button.click(fn=fill, inputs=[z_type], outputs=[z_values])
 
         def select_axis(x_type):
             return gr.Button.update(visible=self.current_axis_options[x_type].choices is not None)
 
         x_type.change(fn=select_axis, inputs=[x_type], outputs=[fill_x_button])
         y_type.change(fn=select_axis, inputs=[y_type], outputs=[fill_y_button])
+        z_type.change(fn=select_axis, inputs=[z_type], outputs=[fill_z_button])
 
-        return [x_type, x_values, y_type, y_values, draw_legend, include_lone_images, no_fixed_seeds]
+        return [x_type, x_values, y_type, y_values, z_type, z_values, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds]
 
-    def run(self, p, x_type, x_values, y_type, y_values, draw_legend, include_lone_images, no_fixed_seeds):
+    def run(self, p, x_type, x_values, y_type, y_values, z_type, z_values, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds):
         if not no_fixed_seeds:
             modules.processing.fix_seed(p)
 
@@ -409,6 +459,9 @@ class Script(scripts.Script):
         y_opt = self.current_axis_options[y_type]
         ys = process_axis(y_opt, y_values)
 
+        z_opt = self.current_axis_options[z_type]
+        zs = process_axis(z_opt, z_values)
+
         def fix_axis_seeds(axis_opt, axis_list):
             if axis_opt.label in ['Seed', 'Var. seed']:
                 return [int(random.randrange(4294967294)) if val is None or val == '' or val == -1 else val for val in axis_list]
@@ -418,21 +471,26 @@ class Script(scripts.Script):
         if not no_fixed_seeds:
             xs = fix_axis_seeds(x_opt, xs)
             ys = fix_axis_seeds(y_opt, ys)
+            zs = fix_axis_seeds(z_opt, zs)
 
         if x_opt.label == 'Steps':
-            total_steps = sum(xs) * len(ys)
+            total_steps = sum(xs) * len(ys) * len(zs)
         elif y_opt.label == 'Steps':
-            total_steps = sum(ys) * len(xs)
+            total_steps = sum(ys) * len(xs) * len(zs)
+        elif z_opt.label == 'Steps':
+            total_steps = sum(zs) * len(xs) * len(ys)
         else:
-            total_steps = p.steps * len(xs) * len(ys)
+            total_steps = p.steps * len(xs) * len(ys) * len(zs)
 
         if isinstance(p, StableDiffusionProcessingTxt2Img) and p.enable_hr:
             if x_opt.label == "Hires steps":
-                total_steps += sum(xs) * len(ys)
+                total_steps += sum(xs) * len(ys) * len(zs)
             elif y_opt.label == "Hires steps":
-                total_steps += sum(ys) * len(xs)
+                total_steps += sum(ys) * len(xs) * len(zs)
+            elif z_opt.label == "Hires steps":
+                total_steps += sum(zs) * len(xs) * len(ys)
             elif p.hr_second_pass_steps:
-                total_steps += p.hr_second_pass_steps * len(xs) * len(ys)
+                total_steps += p.hr_second_pass_steps * len(xs) * len(ys) * len(zs)
             else:
                 total_steps *= 2
 
@@ -440,7 +498,8 @@ class Script(scripts.Script):
 
         image_cell_count = p.n_iter * p.batch_size
         cell_console_text = f"; {image_cell_count} images per cell" if image_cell_count > 1 else ""
-        print(f"X/Y plot will create {len(xs) * len(ys) * image_cell_count} images on a {len(xs)}x{len(ys)} grid{cell_console_text}. (Total steps to process: {total_steps})")
+        plural_s = 's' if len(zs) > 1 else ''
+        print(f"X/Y plot will create {len(xs) * len(ys) * len(zs) * image_cell_count} images on {len(zs)} {len(xs)}x{len(ys)} grid{plural_s}{cell_console_text}. (Total steps to process: {total_steps})")
         shared.total_tqdm.updateTotal(total_steps)
 
         grid_infotext = [None]
@@ -448,15 +507,35 @@ class Script(scripts.Script):
         # If one of the axes is very slow to change between (like SD model
         # checkpoint), then make sure it is in the outer iteration of the nested
         # `for` loop.
-        swap_axes_processing_order = x_opt.cost > y_opt.cost
+        first_axes_processed = 'x'
+        second_axes_processed = 'y'
+        if x_opt.cost > y_opt.cost and x_opt.cost > z_opt.cost:
+            first_axes_processed = 'x'
+            if y_opt.cost > z_opt.cost:
+                second_axes_processed = 'y'
+            else:
+                second_axes_processed = 'z'
+        elif y_opt.cost > x_opt.cost and y_opt.cost > z_opt.cost:
+            first_axes_processed = 'y'
+            if x_opt.cost > z_opt.cost:
+                second_axes_processed = 'x'
+            else:
+                second_axes_processed = 'z'
+        elif z_opt.cost > x_opt.cost and z_opt.cost > y_opt.cost:
+            first_axes_processed = 'z'
+            if x_opt.cost > y_opt.cost:
+                second_axes_processed = 'x'
+            else:
+                second_axes_processed = 'y'
 
-        def cell(x, y):
+        def cell(x, y, z):
             if shared.state.interrupted:
                 return Processed(p, [], p.seed, "")
 
             pc = copy(p)
             x_opt.apply(pc, x, xs)
             y_opt.apply(pc, y, ys)
+            z_opt.apply(pc, z, zs)
 
             res = process_images(pc)
 
@@ -475,24 +554,34 @@ class Script(scripts.Script):
                     if y_opt.label in ["Seed", "Var. seed"] and not no_fixed_seeds:
                         pc.extra_generation_params["Fixed Y Values"] = ", ".join([str(y) for y in ys])
 
+                if z_opt.label != 'Nothing':
+                    pc.extra_generation_params["Z Type"] = z_opt.label
+                    pc.extra_generation_params["Z Values"] = z_values
+                    if z_opt.label in ["Seed", "Var. seed"] and not no_fixed_seeds:
+                        pc.extra_generation_params["Fixed Z Values"] = ", ".join([str(z) for z in zs])
+
                 grid_infotext[0] = processing.create_infotext(pc, pc.all_prompts, pc.all_seeds, pc.all_subseeds)
 
             return res
 
         with SharedSettingsStackHelper():
-            processed = draw_xy_grid(
+            processed = draw_xyz_grid(
                 p,
                 xs=xs,
                 ys=ys,
+                zs=zs,
                 x_labels=[x_opt.format_value(p, x_opt, x) for x in xs],
                 y_labels=[y_opt.format_value(p, y_opt, y) for y in ys],
+                z_labels=[z_opt.format_value(p, z_opt, z) for z in zs],
                 cell=cell,
                 draw_legend=draw_legend,
                 include_lone_images=include_lone_images,
-                swap_axes_processing_order=swap_axes_processing_order
+                include_sub_grids=include_sub_grids,
+                first_axes_processed=first_axes_processed,
+                second_axes_processed=second_axes_processed
             )
 
         if opts.grid_save:
-            images.save_image(processed.images[0], p.outpath_grids, "xy_grid", info=grid_infotext[0], extension=opts.grid_format, prompt=p.prompt, seed=processed.seed, grid=True, p=p)
+            images.save_image(processed.images[0], p.outpath_grids, "xyz_grid", info=grid_infotext[0], extension=opts.grid_format, prompt=p.prompt, seed=processed.seed, grid=True, p=p)
 
         return processed
