@@ -132,7 +132,7 @@ def install_extension_from_url(dirname, url):
     normalized_url = normalize_git_url(url)
     assert len([x for x in extensions.extensions if normalize_git_url(x.remote) == normalized_url]) == 0, 'Extension with this URL is already installed'
 
-    tmpdir = os.path.join(paths.script_path, "tmp", dirname)
+    tmpdir = os.path.join(paths.data_path, "tmp", dirname)
 
     try:
         shutil.rmtree(tmpdir, True)

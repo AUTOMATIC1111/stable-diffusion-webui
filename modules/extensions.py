@@ -7,7 +7,7 @@ import git
 from modules import paths, shared
 
 extensions = []
-extensions_dir = os.path.join(paths.script_path, "extensions")
+extensions_dir = os.path.join(paths.data_path, "extensions")
 extensions_builtin_dir = os.path.join(paths.script_path, "extensions-builtin")
 
 

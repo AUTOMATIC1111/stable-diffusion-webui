@@ -4,8 +4,10 @@ import os.path
 
 import filelock
 
+from modules.paths import data_path
 
-cache_filename = "cache.json"
+
+cache_filename = os.path.join(data_path, "cache.json")
 cache_data = None
 
 

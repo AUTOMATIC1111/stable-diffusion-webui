@@ -6,12 +6,11 @@ import facexlib
 import gfpgan
 
 import modules.face_restoration
-from modules import shared, devices, modelloader
-from modules.paths import models_path
+from modules import paths, shared, devices, modelloader
 
 model_dir = "GFPGAN"
 user_path = None
-model_path = os.path.join(models_path, model_dir)
+model_path = os.path.join(paths.models_path, model_dir)
 model_url = "https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.4.pth"
 have_gfpgan = False
 loaded_gfpgan_model = None
