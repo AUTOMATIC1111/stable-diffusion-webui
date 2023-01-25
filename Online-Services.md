@@ -11,7 +11,7 @@
 
 ## Kaggle
    - [maintained by camenduru](https://www.kaggle.com/code/camenduru/stable-diffusion-webui-kaggle)
-
+   - [maintained by miolovers1](https://www.kaggle.com/code/miolovers1/stable-diffusion-automatic1111)
 ## SageMaker Studio Lab
    - [maintained by fractality](https://github.com/Miraculix200/StableDiffusionUI_SageMakerSL/blob/main/StableDiffusionUI_SageMakerSL.ipynb)
 
@@ -20,6 +20,6 @@
 
 ## Docker
    - [maintained by camenduru](https://github.com/camenduru/stable-diffusion-webui-docker)
-
+   - [maintained by AbdBarho](https://github.com/AbdBarho/stable-diffusion-webui-docker)
 ## Installation Guides
    - [azure-ml](https://vladiliescu.net/stable-diffusion-web-ui-on-azure-ml/) - ([commit](https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/44c46f0ed395967cd3830dd481a2db759fda5b3b))
