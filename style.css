@@ -857,6 +857,7 @@ footer {
     white-space: nowrap;
     text-overflow: ellipsis;
     background: rgba(0,0,0,.5);
+    color: white;
 }
 
 .extra-network-thumbs .card:hover .actions .name {
