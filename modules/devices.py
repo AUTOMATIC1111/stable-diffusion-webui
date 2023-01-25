@@ -108,6 +108,10 @@ def autocast(disable=False):
     return torch.autocast("cuda")
 
 
+def without_autocast(disable=False):
+    return torch.autocast("cuda", enabled=False) if torch.is_autocast_enabled() and not disable else contextlib.nullcontext()
+
+
 class NansException(Exception):
     pass
 
@@ -125,7 +129,7 @@ def test_for_nans(x, where):
         message = "A tensor with all NaNs was produced in Unet."
 
         if not shared.cmd_opts.no_half:
-            message += " This could be either because there's not enough precision to represent the picture, or because your video card does not support half type. Try using --no-half commandline argument to fix this."
+            message += " This could be either because there's not enough precision to represent the picture, or because your video card does not support half type. Try setting the \"Upcast cross attention layer to float32\" option in Settings > Stable Diffusion or using the --no-half commandline argument to fix this."
 
     elif where == "vae":
         message = "A tensor with all NaNs was produced in VAE."
