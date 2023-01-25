@@ -140,6 +140,8 @@ def initialize():
     # make the program just exit at ctrl+c without waiting for anything
     def sigint_handler(sig, frame):
         print(f'Interrupted with signal {sig} in {frame}')
+        if shared.demo is not None:
+            shared.demo.close()
         os._exit(0)
 
     signal.signal(signal.SIGINT, sigint_handler)
