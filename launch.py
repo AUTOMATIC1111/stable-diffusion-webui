@@ -17,6 +17,17 @@ stored_commit_hash = None
 skip_install = False
 
 
+def check_python_version():
+    version = sys.version_info
+    version_range = None
+    if os.name == "nt":
+        version_range = range(7, 11)
+    else:
+        version_range = range(7, 12)
+
+    assert version.major == 3 and version.minor in version_range, "Unsupported Python version, please use Python 3.10.x instead. You can download latest release as of 25th January (3.10.9) from here: https://www.python.org/downloads/release/python-3109/"
+
+
 def commit_hash():
     global stored_commit_hash
 
@@ -321,5 +332,6 @@ def start():
 
 
 if __name__ == "__main__":
+    check_python_version()
     prepare_environment()
     start()
