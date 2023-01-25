@@ -258,16 +258,24 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo):
 
         if not shared.cmd_opts.no_half:
             vae = model.first_stage_model
+            depth_model = getattr(model, 'depth_model', None)
 
             # with --no-half-vae, remove VAE from model when doing half() to prevent its weights from being converted to float16
             if shared.cmd_opts.no_half_vae:
                 model.first_stage_model = None
+            # with --upcast-sampling, don't convert the depth model weights to float16
+            if shared.cmd_opts.upcast_sampling and depth_model:
+                model.depth_model = None
 
             model.half()
             model.first_stage_model = vae
+            if depth_model:
+                model.depth_model = depth_model
 
         devices.dtype = torch.float32 if shared.cmd_opts.no_half else torch.float16
         devices.dtype_vae = torch.float32 if shared.cmd_opts.no_half or shared.cmd_opts.no_half_vae else torch.float16
+        devices.dtype_unet = model.model.diffusion_model.dtype
+        devices.unet_needs_upcast = shared.cmd_opts.upcast_sampling and devices.dtype == torch.float16 and devices.dtype_unet == torch.float16
 
         model.first_stage_model.to(devices.dtype_vae)
 
@@ -382,6 +390,8 @@ def load_model(checkpoint_info=None):
 
     if shared.cmd_opts.no_half:
         sd_config.model.params.unet_config.params.use_fp16 = False
+    elif shared.cmd_opts.upcast_sampling:
+        sd_config.model.params.unet_config.params.use_fp16 = True
 
     timer = Timer()
 

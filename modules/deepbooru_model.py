@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from modules import devices
+
 # see https://github.com/AUTOMATIC1111/TorchDeepDanbooru for more
 
 
@@ -196,7 +198,7 @@ class DeepDanbooruModel(nn.Module):
         t_358, = inputs
         t_359 = t_358.permute(*[0, 3, 1, 2])
         t_359_padded = F.pad(t_359, [2, 3, 2, 3], value=0)
-        t_360 = self.n_Conv_0(t_359_padded)
+        t_360 = self.n_Conv_0(t_359_padded.to(self.n_Conv_0.bias.dtype) if devices.unet_needs_upcast else t_359_padded)
         t_361 = F.relu(t_360)
         t_361 = F.pad(t_361, [0, 1, 0, 1], value=float('-inf'))
         t_362 = self.n_MaxPool_0(t_361)
