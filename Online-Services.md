@@ -18,5 +18,8 @@
 ## Hugging Face
    - [maintained by camenduru](https://huggingface.co/spaces/camenduru/webui)
 
+## Docker
+   - [maintained by camenduru](https://github.com/camenduru/stable-diffusion-webui-docker)
+
 ## Installation Guides
    - [azure-ml](https://vladiliescu.net/stable-diffusion-web-ui-on-azure-ml/) - ([commit](https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/44c46f0ed395967cd3830dd481a2db759fda5b3b))
