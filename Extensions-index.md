@@ -150,6 +150,13 @@
 			"tags": ["script", "tab"]
 		},
 		{
+			"name": "Randomize",
+			"url": "https://github.com/innightwolfsleep/stable-diffusion-webui-randomize",
+			"description": "Allows for random parameters during txt2img generation. This script is processed for all generations, regardless of the script selected, meaning this script will function with others as well, such as AUTOMATIC1111/stable-diffusion-webui-wildcards",
+			"added": "2022-11-11",
+			"tags": ["script"]
+		},
+		{
 			"name": "embedding-inspector",
 			"url": "https://github.com/tkalayci71/embedding-inspector.git",
 			"description": "Inspect any token(a word) or Textual-Inversion embeddings and find out which embeddings are similar. You can mix, modify, or create the embeddings in seconds.",
