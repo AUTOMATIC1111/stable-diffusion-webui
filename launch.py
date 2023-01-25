@@ -25,7 +25,10 @@ def check_python_version():
     else:
         version_range = range(7, 12)
 
-    assert version.major == 3 and version.minor in version_range, "Unsupported Python version, please use Python 3.10.x instead. You can download latest release as of 25th January (3.10.9) from here: https://www.python.org/downloads/release/python-3109/"
+    try:
+        assert version.major == 3 and version.minor in version_range, "Unsupported Python version, please use Python 3.10.x instead. You can download latest release as of 25th January (3.10.9) from here: https://www.python.org/downloads/release/python-3109/"
+    except AssertionError as e:
+        print(e)
 
 
 def commit_hash():
