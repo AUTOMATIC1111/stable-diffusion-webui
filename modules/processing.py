@@ -185,7 +185,12 @@ class StableDiffusionProcessing:
         conditioning = 2. * (conditioning - depth_min) / (depth_max - depth_min) - 1.
         return conditioning
 
-    def inpainting_image_conditioning(self, source_image, latent_image, image_mask = None):
+    def edit_image_conditioning(self, source_image):
+        conditioning_image = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(source_image))
+
+        return conditioning_image
+
+    def inpainting_image_conditioning(self, source_image, latent_image, image_mask=None):
         self.is_using_inpainting_conditioning = True
 
         # Handle the different mask inputs
@@ -227,6 +232,9 @@ class StableDiffusionProcessing:
         # identify itself with a field common to all models. The conditioning_key is also hybrid.
         if isinstance(self.sd_model, LatentDepth2ImageDiffusion):
             return self.depth2img_image_conditioning(source_image.float() if devices.unet_needs_upcast else source_image)
+
+        if self.sd_model.cond_stage_key == "edit":
+            return self.edit_image_conditioning(source_image)
 
         if self.sampler.conditioning_key in {'hybrid', 'concat'}:
             return self.inpainting_image_conditioning(source_image.float() if devices.unet_needs_upcast else source_image, latent_image, image_mask=image_mask)
