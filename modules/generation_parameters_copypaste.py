@@ -6,7 +6,7 @@ import re
 from pathlib import Path
 
 import gradio as gr
-from modules.paths import data_path, script_path
+from modules.paths import data_path
 from modules import shared, ui_tempdir, script_callbacks
 import tempfile
 from PIL import Image
