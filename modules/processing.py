@@ -568,8 +568,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         with devices.autocast():
             p.init(p.all_prompts, p.all_seeds, p.all_subseeds)
 
-            if shared.opts.live_previews_enable and sd_samplers.approximation_indexes.get(shared.opts.show_progress_type, 0) == 1:
-                # preload approx nn model before sampling for a more deterministic result
+            # for OSX, loading the model during sampling changes the generated picture, so it is loaded here
+            if shared.opts.live_previews_enable and opts.show_progress_type == "Approx NN":
                 sd_vae_approx.model()
 
             if not p.disable_extra_networks:
