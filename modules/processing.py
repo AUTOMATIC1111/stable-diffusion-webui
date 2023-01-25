@@ -172,7 +172,8 @@ class StableDiffusionProcessing:
         midas_in = torch.from_numpy(transformed["midas_in"][None, ...]).to(device=shared.device)
         midas_in = repeat(midas_in, "1 ... -> n ...", n=self.batch_size)
 
-        conditioning_image = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(source_image))
+        conditioning_image = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(source_image.to(devices.dtype_unet) if devices.unet_needs_upcast else source_image))
+        conditioning_image = conditioning_image.float() if devices.unet_needs_upcast else conditioning_image
         conditioning = torch.nn.functional.interpolate(
             self.sd_model.depth_model(midas_in),
             size=conditioning_image.shape[2:],
@@ -203,7 +204,7 @@ class StableDiffusionProcessing:
 
         # Create another latent image, this time with a masked version of the original input.
         # Smoothly interpolate between the masked and unmasked latent conditioning image using a parameter.
-        conditioning_mask = conditioning_mask.to(source_image.device).to(source_image.dtype)
+        conditioning_mask = conditioning_mask.to(device=source_image.device, dtype=source_image.dtype)
         conditioning_image = torch.lerp(
             source_image,
             source_image * (1.0 - conditioning_mask),
@@ -211,7 +212,7 @@ class StableDiffusionProcessing:
         )
 
         # Encode the new masked image using first stage of network.
-        conditioning_image = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(conditioning_image))
+        conditioning_image = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(conditioning_image.to(devices.dtype_unet) if devices.unet_needs_upcast else conditioning_image))
 
         # Create the concatenated conditioning tensor to be fed to `c_concat`
         conditioning_mask = torch.nn.functional.interpolate(conditioning_mask, size=latent_image.shape[-2:])
@@ -225,10 +226,10 @@ class StableDiffusionProcessing:
         # HACK: Using introspection as the Depth2Image model doesn't appear to uniquely
         # identify itself with a field common to all models. The conditioning_key is also hybrid.
         if isinstance(self.sd_model, LatentDepth2ImageDiffusion):
-            return self.depth2img_image_conditioning(source_image)
+            return self.depth2img_image_conditioning(source_image.float() if devices.unet_needs_upcast else source_image)
 
         if self.sampler.conditioning_key in {'hybrid', 'concat'}:
-            return self.inpainting_image_conditioning(source_image, latent_image, image_mask=image_mask)
+            return self.inpainting_image_conditioning(source_image.float() if devices.unet_needs_upcast else source_image, latent_image, image_mask=image_mask)
 
         # Dummy zero conditioning if we're not using inpainting or depth model.
         return latent_image.new_zeros(latent_image.shape[0], 5, 1, 1)
@@ -610,7 +611,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             if p.n_iter > 1:
                 shared.state.job = f"Batch {n+1} out of {p.n_iter}"
 
-            with devices.autocast():
+            with devices.autocast(disable=devices.unet_needs_upcast):
                 samples_ddim = p.sample(conditioning=c, unconditional_conditioning=uc, seeds=seeds, subseeds=subseeds, subseed_strength=p.subseed_strength, prompts=prompts)
 
             x_samples_ddim = [decode_first_stage(p.sd_model, samples_ddim[i:i+1].to(dtype=devices.dtype_vae))[0].cpu() for i in range(samples_ddim.size(0))]
@@ -988,7 +989,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
         image = torch.from_numpy(batch_images)
         image = 2. * image - 1.
-        image = image.to(shared.device)
+        image = image.to(device=shared.device, dtype=devices.dtype_unet if devices.unet_needs_upcast else None)
 
         self.init_latent = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(image))
 
