@@ -11,20 +11,18 @@ Model trained to accept inputs in different languages. More info: https://arxiv.
 - grab the config from [`configs/alt-diffusion-inference.yaml`](https://github.com/AUTOMATIC1111/stable-diffusion-webui/blob/master/configs/alt-diffusion-inference.yaml) and put it into same place as the checkpoint, renaming it to have same filename (i.e. if your checkpoint is named `ad.ckpt`, the config should be named `ad.yaml`)
 - select the new checkpoint from the UI
 
-Mechanically, attention/emphasis mechanism (see below in features) is supported, but seems to have much less effect, probably due to how Alt-Diffusion is implemented. Clip skip is not supported, the setting is ignored.
+Mechanically, attention/emphasis mechanism (see below in features) is supported, but seems to have much less effect, probably due to how Alt-Diffusion is implemented. Clip skip is not supported, the setting is ignored. It is recommended to run with `--xformers.` Adding additional memory-saving flags such as `--xformers --medvram` does not work.
 
 See the PR for more info: https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/5238
 
 # Stable Diffusion 2.0
 ## Basic models
-Models are supported: 768-v-ema.ckpt ([model](https://huggingface.co/stabilityai/stable-diffusion-2/blob/main/768-v-ema.ckpt), [config](https://raw.githubusercontent.com/Stability-AI/stablediffusion/main/configs/stable-diffusion/v2-inference-v.yaml)) and 512-base-ema.ckpt ([model](https://huggingface.co/stabilityai/stable-diffusion-2-base/blob/main/512-base-ema.ckpt), [config](https://raw.githubusercontent.com/Stability-AI/stablediffusion/main/configs/stable-diffusion/v2-inference.yaml)). 2.1 checkpoints should also work.
+Models are supported: 768-v-ema.ckpt ([model](https://huggingface.co/stabilityai/stable-diffusion-2/blob/main/768-v-ema.ckpt), [config](https://raw.githubusercontent.com/Stability-AI/stablediffusion/main/configs/stable-diffusion/v2-inference-v.yaml)) and 512-base-ema.ckpt ([model](https://huggingface.co/stabilityai/stable-diffusion-2-base/blob/main/512-base-ema.ckpt), [config](https://raw.githubusercontent.com/Stability-AI/stablediffusion/main/configs/stable-diffusion/v2-inference.yaml)). 2.1 checkpoints use the same corresponding config file, just rename them to the model name.
 
 - download the checkpoint (from here: https://huggingface.co/stabilityai/stable-diffusion-2)
 - put it into `models/Stable-Diffusion` directory
 - grab the config from SD2.0 repository and put it into same place as the checkpoint, renaming it to have same filename (i.e. if your checkpoint is named `768-v-ema.ckpt`, the config should be named `768-v-ema.yaml`)
 - select the new checkpoint from the UI
-
-Train tab will most likely be broken for the 2.0 models.
 
 If 2.0 or 2.1 is generating black images, enable full precision with `--no-half` or try using the `--xformers` optimization.
 
@@ -124,6 +122,7 @@ There are two options for masked mode:
 |------------------------------|-------------------------------|
 | ![](images/inpaint-mask.png) | ![](images/inpaint-mask2.png) |
 
+## Color Sketch
 
 # Prompt matrix
 Separate multiple prompts using the `|` character, and the system will produce an image for every combination of them.
@@ -144,9 +143,8 @@ You can find the feature at the bottom, under Script -> Prompt matrix.
 
 # Color Sketch
 
-Basic coloring tool for img2img. To use this feature in img2img, enable with `--gradio-img2img-tool color-sketch` in commandline args. To use this feature in inpainting mode, enable with `--gradio-inpaint-tool color-sketch`. Chromium-based browsers support a dropper tool. (see picture)
-
-![dropper](https://user-images.githubusercontent.com/98228077/196140222-54bc71ad-2746-4c38-8075-5c53fbcde2a9.png)
+Basic coloring tool for img2img and inpaint tabs. Chromium-based browsers support a dropper tool.
+![color-sketch_NewUI](https://user-images.githubusercontent.com/98228077/214700734-2260f6f0-0fdf-46db-a2c6-71e5ec60e43b.png)
 
 
 # Stable Diffusion upscale
@@ -553,18 +551,14 @@ display(processed.images, processed.seed, processed.info)
 ```
 
 # UI config
-You can change parameters for UI elements:
+You can change parameters for UI elements in `ui-config.json`, it is created automatically when the program first starts. Some options:
+
  - radio groups: default selection
  - sliders: default value, min, max, step
  - checkboxes: checked state
  - text and number inputs: default values
 
-The file is ui-config.json in webui dir, and it is created automatically if you don't have one when the program starts.
-
 Checkboxes that would usually expand a hidden section will not initially do so when set as UI config entries.
-
-Some settings will break processing, like step not divisible by 64 for width and height, and some, like changing the default
-function on the img2img tab, may break UI. I do not have plans to address those in near future.
 
 # ESRGAN
 It's possible to use ESRGAN models on the Extras tab, as well as in SD upscale.
