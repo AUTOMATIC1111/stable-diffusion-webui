@@ -514,6 +514,13 @@
 			"tags": ["script", "extras"]
 		},
 		{
+			"name": "Instruct-pix2pix",
+			"url": "https://github.com/Klace/stable-diffusion-webui-instruct-pix2pix.git",
+			"description": "Adds a tab with instruct-pix2pix image. editing capabilities",
+			"added": "2023-01-25",
+			"tags": ["script", "tab"]
+		},
+		{
 			"name": "zh_CN Localization",
 			"url": "https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN",
 			"description": "Simplified Chinese localization",
