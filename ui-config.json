@@ -369,7 +369,7 @@
     "customscript/save_steps_animation.py/txt2img/Duration/maximum": 120,
     "customscript/save_steps_animation.py/txt2img/Duration/step": 0.1,
     "customscript/save_steps_animation.py/txt2img/Skip steps/visible": true,
-    "customscript/save_steps_animation.py/txt2img/Skip steps/value": 5,
+    "customscript/save_steps_animation.py/txt2img/Skip steps/value": 0,
     "customscript/save_steps_animation.py/txt2img/Skip steps/minimum": 0,
     "customscript/save_steps_animation.py/txt2img/Skip steps/maximum": 100,
     "customscript/save_steps_animation.py/txt2img/Skip steps/step": 1,
