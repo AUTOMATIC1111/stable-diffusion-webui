@@ -185,7 +185,6 @@ Generate palettes by text description. This script takes the generated images an
 <img src="https://user-images.githubusercontent.com/83316072/199360686-62f0f5ec-ed3d-4c0f-95b4-af9c67d1e248.png" width="352" height="312" />
 </details>
 
-
 ## XYZ Plot Script
 https://github.com/xrpgame/xyz_plot_script
 
@@ -193,16 +192,6 @@ Generates an .html file to interactively browse the imageset. Use the scroll whe
 
 <details><summary>Example: (Click to expand:)</summary>
 <img src="https://raw.githubusercontent.com/xrpgame/xyz_plot_script/master/example1.png" width="522" height="312" />
-</details>
-
-## xyz-plot-grid
-https://github.com/Gerschel/xyz-plot-grid
-
-Place xyz_grid.py in scripts folder along side other scripts.
-Works like x/y plot, like how you would expect, but now has a z. Works like how you'd expect it to work, with grid legends as well.
-
-<details><summary>Example: (Click to expand:)</summary>
-<img src="https://github.com/Gerschel/xyz-plot-grid/raw/main/000.png" width="574" height="390" />
 </details>
 
 ## Expanded-XY-grid
