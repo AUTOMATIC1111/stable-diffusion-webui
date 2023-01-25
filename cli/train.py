@@ -78,7 +78,8 @@ async def preprocess_cleanup(params):
     for f in Path(params.dst).glob('*.txt'):
         f.unlink()
     try:
-        Path(params.dst).rmdir()
+        if os.path.isdir(params.dst):
+            Path(params.dst).rmdir()
     except Exception as err:
         log.warning({ 'preprocess cleanup': params.dst, 'error': err })
 

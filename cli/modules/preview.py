@@ -1,6 +1,10 @@
 #!/bin/env python
+"""
+create preview images from embeddings
+"""
 import os
 import io
+import sys
 import json
 import base64
 from pathlib import Path
@@ -11,12 +15,10 @@ from util import Map, log
 from sdapi import getsync, postsync
 from grid import grid
 
-# masks = ['preview-face.jpg', 'preview-body.jpg']
-mask = 'preview-body.jpg'
-template = 'photo of "{name}", {suffix}, high detailed, skin texture, facing camera, 135mm, shot on dslr, 4k, modelshoot style'
+template = 'photo of "{name}", {suffix}, high detailed, skin texture, lookin forward, facing camera, 135mm, shot on dslr, 4k, modelshoot style'
 img2img_options = Map({
     'prompt': None,
-    'negative_prompt': '',
+    'negative_prompt': 'cartoon, drawing, cgi, sketch, comic, disfigured, deformed',
     'init_images': [],
     'sampler_name': 'DPM2 Karras',
     'batch_size': 4,
@@ -40,12 +42,14 @@ def create_preview(name: str, suffix: str):
     options = getsync('/sdapi/v1/options')
     cmdflags = getsync('/sdapi/v1/cmd-flags')    
     img2img_options['prompt'] = template.format(name = name, suffix = suffix)
-    log.info({ 'preview prompt': img2img_options['prompt'] })
     log.debug({ 'preview options': img2img_options })
-    mask_path = os.path.join(os.path.dirname(getsourcefile(lambda:0)), mask)
     if len(img2img_options['init_images']) == 0:
         for i in range(img2img_options.batch_size):
-            img2img_options['init_images'].append(encode(mask_path))
+            mask = os.path.join(os.path.dirname(getsourcefile(lambda:0)), 'preview'+ str(i+1) +'.jpg')
+            if (not os.path.isfile(mask)):
+                log.error({ 'preview': 'missing preview mask' })
+                return
+            img2img_options['init_images'].append(encode(mask))
     data = postsync('/sdapi/v1/img2img', img2img_options)
     if 'error' in data:
         log.error({ 'preview': data['error'], 'reason': data['reason'] })
@@ -65,5 +69,13 @@ def create_preview(name: str, suffix: str):
 if __name__ == "__main__":
     log.info({ 'preview': 'start' })
     cmdflags = getsync('/sdapi/v1/cmd-flags')
-    for f in Path(cmdflags.embeddings_dir).glob('*.pt'):
-        create_preview(f.stem, 'person')
+    sys.argv.pop(0)
+    if len(sys.argv) == 0:
+        files = list(Path(cmdflags.embeddings_dir).glob('*.pt'))
+    else:
+        files = list(os.path.join(cmdflags.embeddings_dir, a + '.pt') for a in sys.argv if os.path.isfile(os.path.join(cmdflags.embeddings_dir, a + '.pt')))
+    files.sort(key=os.path.getctime, reverse=True)
+    log.info({ 'preview embeddings': len(files) })
+    for f in files:
+        name = Path(f).stem
+        create_preview(name, 'person')

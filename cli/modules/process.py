@@ -43,9 +43,9 @@ params = Map({
     'square_images': True, # should output images be squared
     'blur_samplesize': 60, # sample size to use for blur detection
     'face_score': 0.7, # min face detection score
-    'face_pad': 0.05, # pad face image percentage
+    'face_pad': 0.07, # pad face image percentage
     'face_model': 1, # which face model to use 0/close-up 1/standard
-    'face_blur_score': 1.2, # max score for face blur detection
+    'face_blur_score': 1.4, # max score for face blur detection
     'body_score': 0.9, # min body detection score
     'body_visibility': 0.5, # min visibility score for each detected body part
     'body_parts': 15, # min number of detected body parts with sufficient visibility
@@ -117,7 +117,7 @@ def extract_face(img):
         return None, False
     box = results.detections[0].location_data.relative_bounding_box
     if box.xmin < 0 or box.ymin < 0 or (box.width - box.xmin) > 1 or (box.height - box.ymin) > 1:
-        log.warning({ 'extract face': 'out of frame' })
+        log.info({ 'extract face': 'out of frame' })
         return None, False
     x = (box.xmin - params.face_pad / 2) * resized.width
     y = (box.ymin - params.face_pad / 2)* resized.height
@@ -130,7 +130,7 @@ def extract_face(img):
     square = [max(square[0], 0), max(square[1], 0), min(square[2], img.width), min(square[3], img.height)]
     cropped = img.crop(tuple(square))
     if cropped.size[0] < params.target_size and cropped.size[1] < params.target_size:
-        log.warning({ 'extract face': 'low resolution', 'size': [cropped.size[0], cropped.size[1]] })
+        log.info({ 'extract face': 'low resolution', 'size': [cropped.size[0], cropped.size[1]] })
         return None, True
     cropped.thumbnail((params.target_size, params.target_size), Image.HAMMING)
 
@@ -144,14 +144,14 @@ def extract_face(img):
 
     blur = detect_blur(squared)
     if blur > params.face_blur_score:
-        log.warning({ 'extract face': 'blur check fail', 'blur': blur })
+        log.info({ 'extract face': 'blur check fail', 'blur': blur })
         return None, True
     else:
-        log.info({ 'extract face blur': blur })
+        log.debug({ 'extract face blur': blur })
 
     similarity = detect_simmilar(squared)
     if similarity > params.similarity_score:
-        log.warning({ 'extract face': 'similarity check fail', 'score': similarity })
+        log.info({ 'extract face': 'similarity check fail', 'score': round(similarity, 2) })
         return None, True
 
     return squared, True
@@ -172,7 +172,7 @@ def extract_body(img):
     x = [resized.width * (i.x - params.body_pad / 2) for i in results.pose_landmarks.landmark if i.visibility > params.body_visibility]
     y = [resized.height * (i.y - params.body_pad / 2) for i in results.pose_landmarks.landmark if i.visibility > params.body_visibility]
     if len(x) < params.body_parts:
-        log.warning({ 'extract body': 'insufficient body parts', 'detected': len(x) })
+        log.info({ 'extract body': 'insufficient body parts', 'detected': len(x) })
         return None, True
     w = max(x) - min(x) + resized.width * params.body_pad
     h = max(y) - min(y) + resized.height * params.body_pad
@@ -183,7 +183,7 @@ def extract_body(img):
     square = [max(square[0], 0), max(square[1], 0), min(square[2], img.width), min(square[3], img.height)]
     cropped = img.crop(tuple(square))
     if cropped.size[0] < params.target_size and cropped.size[1] < params.target_size:
-        log.warning({ 'extract body': 'low resolution', 'size': [cropped.size[0], cropped.size[1]] })
+        log.info({ 'extract body': 'low resolution', 'size': [cropped.size[0], cropped.size[1]] })
         return None, True
     cropped.thumbnail((params.target_size, params.target_size), Image.HAMMING)
 
@@ -197,14 +197,14 @@ def extract_body(img):
 
     blur = detect_blur(squared)
     if blur > params.body_blur_score:
-        log.warning({ 'extract body': 'blur check fail', 'blur': blur })
+        log.info({ 'extract body': 'blur check fail', 'blur': blur })
         return None, True
     else:
-        log.info({ 'extract body blur': blur })
+        log.debug({ 'extract body blur': blur })
 
     similarity = detect_simmilar(squared)
     if similarity > params.similarity_score:
-        log.warning({ 'extract body': 'similarity check fail', 'score': similarity })
+        log.info({ 'extract body': 'similarity check fail', 'score': similarity })
         return None, True
 
     return squared, True
@@ -252,17 +252,19 @@ def process_file(f: str, dst: str = None):
         log.error({ 'image': f, 'error': err })
         return
 
+    image = ImageOps.exif_transpose(image) # rotate image according to EXIF orientation
+
     if image.width < 512 or image.height < 512:
-        log.warning({ 'skip low resolution': [image.width, image.height], 'file': f })
+        log.info({ 'skip low resolution': [image.width, image.height], 'file': f })
         return
-    log.info({ 'resolution': [image.width, image.height], 'mp': round((image.width * image.height) / 1024 / 1024, 1) })
+    log.debug({ 'resolution': [image.width, image.height], 'mp': round((image.width * image.height) / 1024 / 1024, 1) })
 
     face, ok = extract_face(image)
     if face is not None:
         fn = save(face, f, 'face')
         log.info({ 'extract face': fn })
     else:
-        log.warning({ 'no face': f })
+        log.debug({ 'no face': f })
 
     if not ok:
         return
@@ -272,7 +274,7 @@ def process_file(f: str, dst: str = None):
         fn = save(body, f, 'body')
         log.info({ 'extract body': fn })   
     else:
-        log.warning({ 'no body': f })
+        log.debug({ 'no body': f })
 
 
 def process_images(src: str, dst: str, args = None):
@@ -285,7 +287,7 @@ def process_images(src: str, dst: str, args = None):
         log.error({ 'process': 'not a folder', 'src': src })
     else:
         if os.path.isdir(dst) and params.clear_dst:
-            log.warning({ 'clear dst': dst })
+            log.info({ 'clear dst': dst })
             i = [os.path.join(dst, f) for f in os.listdir(dst) if os.path.isfile(os.path.join(dst, f)) and filetype.is_image(os.path.join(dst, f))]
             for f in i:
                 os.remove(f)
