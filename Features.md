@@ -35,7 +35,7 @@ Same rules for adding hypernetworks to the prompt apply as for Lora: `<hypernet:
 # Alt-Diffusion
 A model trained to accept inputs in different languages.
 
-- [Download](https://huggingface.co/ckpt/AltDiffusion-m9-safetensors/tree/main) the model and accompanying yaml file from huggingface. Click the down arrow to download.
+- [Download](https://huggingface.co/webui/AltDiffusion-m9/tree/main) the model and accompanying yaml file from huggingface. Click the down arrow to download.
 
 - Put the files into `models/Stable-Diffusion`
 
