@@ -228,9 +228,9 @@ class EmbeddingDatabase:
             self.load_from_dir(embdir)
             embdir.update()
 
-        print(f"Textual inversion embeddings loaded({len(self.word_embeddings)}): {', '.join(self.word_embeddings.keys())}")
-        if len(self.skipped_embeddings) > 0:
-            print(f"Textual inversion embeddings skipped({len(self.skipped_embeddings)}): {', '.join(self.skipped_embeddings.keys())}")
+        # print(f"Textual inversion embeddings loaded({len(self.word_embeddings)}): {', '.join(self.word_embeddings.keys())}")
+        # if len(self.skipped_embeddings) > 0:
+        #     print(f"Textual inversion embeddings skipped({len(self.skipped_embeddings)}): {', '.join(self.skipped_embeddings.keys())}")
 
     def find_embedding_at_position(self, tokens, offset):
         token = tokens[offset]
