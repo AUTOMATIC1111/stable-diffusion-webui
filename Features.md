@@ -4,16 +4,20 @@ All examples are non-cherrypicked unless specified otherwise.
 
 
 # Alt-Diffusion
-Model trained to accept inputs in different languages. More info: https://arxiv.org/abs/2211.06679
+A model trained to accept inputs in different languages.
 
-- download the checkpoint from [drive.filen.io](https://drive.filen.io/d/be043c9e-a171-4356-a749-e7840dfcb67e#Z21U5JO7HE5g1fSa7kY5nSZI2dInaUHw)
-- put it into `models/Stable-Diffusion` directory
-- grab the config from [`configs/alt-diffusion-inference.yaml`](https://github.com/AUTOMATIC1111/stable-diffusion-webui/blob/master/configs/alt-diffusion-inference.yaml) and put it into same place as the checkpoint, renaming it to have same filename (i.e. if your checkpoint is named `ad.ckpt`, the config should be named `ad.yaml`)
-- select the new checkpoint from the UI
+- [Download](https://huggingface.co/ckpt/AltDiffusion-m9-safetensors/tree/main) the model and accompanying yaml file from huggingface. Click the down arrow to download.
 
-Mechanically, attention/emphasis mechanism (see below in features) is supported, but seems to have much less effect, probably due to how Alt-Diffusion is implemented. Clip skip is not supported, the setting is ignored. It is recommended to run with `--xformers.` Adding additional memory-saving flags such as `--xformers --medvram` does not work.
+- Put the files into `models/Stable-Diffusion`
 
-See the PR for more info: https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/5238
+Additionally, you will find the .yaml file in this repository, at [`configs/alt-diffusion-inference.yaml`](https://github.com/AUTOMATIC1111/stable-diffusion-webui/blob/master/configs/alt-diffusion-inference.yaml)
+which must be renamed to match your model - eg: `ad.safetensors` and `ad.yaml`
+
+Mechanically, attention/emphasis mechanism (see below in features) is supported, but seems to have much less effect, probably due to how Alt-Diffusion is implemented. Clip skip is not supported, the setting is ignored.
+
+- It is recommended to run with `--xformers.` Adding additional memory-saving flags such as `--xformers --medvram` does not work.
+
+See [PR](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/5238) for more info.
 
 # Stable Diffusion 2.0
 ## Basic models
