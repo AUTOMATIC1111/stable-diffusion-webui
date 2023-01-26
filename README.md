@@ -91,7 +91,6 @@ A browser interface based on Gradio library for Stable Diffusion.
 - Eased resolution restriction: generated image's domension must be a multiple of 8 rather than 64
 - Now with a license!
 - Reorder elements in the UI from settings screen
-- 
 
 ## Installation and Running
 Make sure the required [dependencies](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Dependencies) are met and follow the instructions available for both [NVidia](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-NVidia-GPUs) (recommended) and [AMD](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-AMD-GPUs) GPUs.
