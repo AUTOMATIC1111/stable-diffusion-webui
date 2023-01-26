@@ -294,7 +294,9 @@ class TrainEmbeddingAPI(BaseModel):
     )
     training_width: int = Field(title="Training width", description="", default=512)
     training_height: int = Field(title="Training height", description="", default=512)
-    varsize: str = Field(title="", description="")
+    varsize: bool = Field(
+        title="Do not resize images", description="Do not resize images", default=False
+    )
     steps: int = Field(title="Max steps", description="")
     clip_grad_mode: str = Field(
         title="Gradient clipping", description="Gradient clip mode"
