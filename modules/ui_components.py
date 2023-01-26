@@ -48,3 +48,11 @@ class FormColorPicker(gr.ColorPicker, gr.components.FormComponent):
     def get_block_name(self):
         return "colorpicker"
 
+
+class DropdownMulti(gr.Dropdown):
+    """Same as gr.Dropdown but always multiselect"""
+    def __init__(self, **kwargs):
+        super().__init__(multiselect=True, **kwargs)
+
+    def get_block_name(self):
+        return "dropdown"

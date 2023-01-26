@@ -13,8 +13,8 @@ import modules.interrogate
 import modules.memmon
 import modules.styles
 import modules.devices as devices
-from modules import localization, sd_vae, extensions, script_loading, errors, ui_components
-from modules.paths import models_path, script_path, sd_path
+from modules import localization, sd_vae, extensions, script_loading, errors, ui_components, shared_items
+from modules.paths import models_path, script_path
 
 
 demo = None
@@ -264,12 +264,6 @@ interrogator = modules.interrogate.InterrogateModels("interrogate")
 
 face_restorers = []
 
-
-def realesrgan_models_names():
-    import modules.realesrgan_model
-    return [x.name for x in modules.realesrgan_model.get_realesrgan_models(None)]
-
-
 class OptionInfo:
     def __init__(self, default=None, label="", component=None, component_args=None, onchange=None, section=None, refresh=None):
         self.default = default
@@ -360,7 +354,7 @@ options_templates.update(options_section(('saving-to-dirs', "Saving to a directo
 options_templates.update(options_section(('upscaling', "Upscaling"), {
     "ESRGAN_tile": OptionInfo(192, "Tile size for ESRGAN upscalers. 0 = no tiling.", gr.Slider, {"minimum": 0, "maximum": 512, "step": 16}),
     "ESRGAN_tile_overlap": OptionInfo(8, "Tile overlap, in pixels for ESRGAN upscalers. Low values = visible seam.", gr.Slider, {"minimum": 0, "maximum": 48, "step": 1}),
-    "realesrgan_enabled_models": OptionInfo(["R-ESRGAN 4x+", "R-ESRGAN 4x+ Anime6B"], "Select which Real-ESRGAN models to show in the web UI. (Requires restart)", gr.CheckboxGroup, lambda: {"choices": realesrgan_models_names()}),
+    "realesrgan_enabled_models": OptionInfo(["R-ESRGAN 4x+", "R-ESRGAN 4x+ Anime6B"], "Select which Real-ESRGAN models to show in the web UI. (Requires restart)", gr.CheckboxGroup, lambda: {"choices": shared_items.realesrgan_models_names()}),
     "upscaler_for_img2img": OptionInfo(None, "Upscaler for img2img", gr.Dropdown, lambda: {"choices": [x.name for x in sd_upscalers]}),
 }))
 
@@ -483,7 +477,8 @@ options_templates.update(options_section(('sampler-params', "Sampler parameters"
 }))
 
 options_templates.update(options_section(('postprocessing', "Postprocessing"), {
-    'postprocessing_scipts_order': OptionInfo("upscale, gfpgan, codeformer", "Postprocessing operation order"),
+    'postprocessing_enable_in_main_ui': OptionInfo([], "Enable postprocessing operations in txt2img and img2img tabs", ui_components.DropdownMulti, lambda: {"choices": [x.name for x in shared_items.postprocessing_scripts()]}),
+    'postprocessing_operation_order': OptionInfo([], "Postprocessing operation order", ui_components.DropdownMulti, lambda: {"choices": [x.name for x in shared_items.postprocessing_scripts()]}),
     'upscaling_max_images_in_cache': OptionInfo(5, "Maximum number of images in upscaling cache", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
 }))
 
