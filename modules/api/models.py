@@ -329,9 +329,10 @@ class TrainEmbeddingAPI(BaseModel):
         description="Prompt template file",
         default="style_filewords.txt",
     )
-    save_image_with_stored_embedding: str = Field(
+    save_image_with_stored_embedding: bool = Field(
         title="Save image with embedding",
         description="Save images with embedding in PNG chunks",
+        default=True
     )
     preview_from_txt2img: bool = Field(
         title="Preview from txt2img",
