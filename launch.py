@@ -20,10 +20,10 @@ skip_install = False
 def check_python_version():
     version = sys.version_info
     version_range = None
-    if os.name == "nt":
-        version_range = range(7 + 1, 10 + 1)
-    else:
+    if platform.system() == "Linux":
         version_range = range(7 + 1, 11 + 1)
+    else:
+        version_range = range(7 + 1, 10 + 1)
 
     try:
         assert version.major == 3 and version.minor in version_range, "Unsupported Python version, please use Python 3.10.x instead. You can download latest release as of 25th January (3.10.9) from here: https://www.python.org/downloads/release/python-3109/. Please, make sure to first delete current version of Python first and delete `venv` folder inside of WebUI's folder, too."
