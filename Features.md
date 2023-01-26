@@ -20,15 +20,17 @@ A method to fine tune weights for a token in CLIP, the language model used by St
 
 ## Lora
 A method to fine tune weights for CLIP and Unet, the language model and the actual image de-noiser used by Stable Diffusion, published in 2021. [Paper](https://arxiv.org/abs/2106.09685). A good way to train Lora is to use [kohya-ss](https://github.com/kohya-ss/sd-scripts).
-Multiplier can be used to choose how strongly Lora will affect the output.
 
 Support for Lora is built-in into the Web UI, but there is an [extension](https://github.com/kohya-ss/sd-webui-additional-networks) with original implementation by kohyaa-ss.
 
 Currently, Lora networks for Stable Diffusion 2.0+ models are not supported by Web UI.
 
+Lora is added to the prompt by putting the following text into any location: `<lora:filename:multiplier>`, where `filename` is the name of file with Lora on disk, excluding extension, and `multiplier` is a number, generally from 0 to 1, that lets you choose how strongly Lora will affect the output. Lora cannot be added to the negative prompt.
+
 ## Hypernetworks
 A method to fine tune weights for CLIP and Unet, the language model and the actual image de-noiser used by Stable Diffusion, generously donated to the world by our friends at Novel AI in autumn 2022. Works in the same way as Lora except for sharing weights for some layers. Multiplier can be used to choose how strongly the hypernetwork will affect the output.
 
+Same rules for adding hypernetworks to the prompt apply as for Lora: `<hypernet:filename:multiplier>`.
 
 # Alt-Diffusion
 A model trained to accept inputs in different languages.
