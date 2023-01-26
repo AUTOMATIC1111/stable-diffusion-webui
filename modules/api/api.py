@@ -466,7 +466,7 @@ class Api:
             shared.state.end()
             return PreprocessResponse(info = 'preprocess error: {error}'.format(error = e))
 
-    def train_embedding(self, args: dict):
+    def train_embedding(self, args: TrainEmbeddingAPI):
         try:
             shared.state.begin()
             apply_optimizations = shared.opts.training_xattention_optimizations
@@ -475,7 +475,8 @@ class Api:
             if not apply_optimizations:
                 sd_hijack.undo_optimizations()
             try:
-                embedding, filename = train_embedding(**args) # can take a long time to complete
+                training_args = args.__dict__
+                embedding, filename = train_embedding(**training_args) # can take a long time to complete
             except Exception as e:
                 error = e
             finally:
