@@ -454,7 +454,7 @@ class KDiffusionSampler:
     def initialize(self, p):
         self.model_wrap_cfg.mask = p.mask if hasattr(p, 'mask') else None
         self.model_wrap_cfg.nmask = p.nmask if hasattr(p, 'nmask') else None
-        self.model_wrap.step = 0
+        self.model_wrap_cfg.step = 0
         self.eta = p.eta or opts.eta_ancestral
 
         k_diffusion.sampling.torch = TorchHijack(self.sampler_noises if self.sampler_noises is not None else [])

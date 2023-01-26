@@ -3,7 +3,7 @@ import torch
 import lora
 import extra_networks_lora
 import ui_extra_networks_lora
-from modules import script_callbacks, ui_extra_networks, extra_networks
+from modules import script_callbacks, ui_extra_networks, extra_networks, shared
 
 
 def unload():
@@ -28,3 +28,8 @@ torch.nn.Conv2d.forward = lora.lora_Conv2d_forward
 script_callbacks.on_model_loaded(lora.assign_lora_names_to_compvis_modules)
 script_callbacks.on_script_unloaded(unload)
 script_callbacks.on_before_ui(before_ui)
+
+
+shared.options_templates.update(shared.options_section(('extra_networks', "Extra Networks"), {
+    "lora_apply_to_outputs": shared.OptionInfo(False, "Apply Lora to outputs rather than inputs when possible (experimental)"),
+}))

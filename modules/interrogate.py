@@ -82,9 +82,16 @@ class InterrogateModels:
 
         return self.loaded_categories
 
+    def create_fake_fairscale(self):
+        class FakeFairscale:
+            def checkpoint_wrapper(self):
+                pass
+
+        sys.modules["fairscale.nn.checkpoint.checkpoint_activations"] = FakeFairscale
+
     def load_blip_model(self):
-        with paths.Prioritize("BLIP"):
-            import models.blip
+        self.create_fake_fairscale()
+        import models.blip
 
         files = modelloader.load_models(
             model_path=os.path.join(paths.models_path, "BLIP"),

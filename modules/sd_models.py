@@ -17,6 +17,7 @@ from ldm.util import instantiate_from_config
 from modules import shared, modelloader, devices, script_callbacks, sd_vae, sd_disable_initialization, errors, hashes
 from modules.paths import models_path
 from modules.sd_hijack_inpainting import do_inpainting_hijack, should_hijack_inpainting
+from modules.sd_hijack_ip2p import should_hijack_ip2p
 
 model_dir = "Stable-diffusion"
 model_path = os.path.abspath(os.path.join(models_path, model_dir))
@@ -257,16 +258,24 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo):
 
         if not shared.cmd_opts.no_half:
             vae = model.first_stage_model
+            depth_model = getattr(model, 'depth_model', None)
 
             # with --no-half-vae, remove VAE from model when doing half() to prevent its weights from being converted to float16
             if shared.cmd_opts.no_half_vae:
                 model.first_stage_model = None
+            # with --upcast-sampling, don't convert the depth model weights to float16
+            if shared.cmd_opts.upcast_sampling and depth_model:
+                model.depth_model = None
 
             model.half()
             model.first_stage_model = vae
+            if depth_model:
+                model.depth_model = depth_model
 
         devices.dtype = torch.float32 if shared.cmd_opts.no_half else torch.float16
         devices.dtype_vae = torch.float32 if shared.cmd_opts.no_half or shared.cmd_opts.no_half_vae else torch.float16
+        devices.dtype_unet = model.model.diffusion_model.dtype
+        devices.unet_needs_upcast = shared.cmd_opts.upcast_sampling and devices.dtype == torch.float16 and devices.dtype_unet == torch.float16
 
         model.first_stage_model.to(devices.dtype_vae)
 
@@ -365,6 +374,15 @@ def load_model(checkpoint_info=None):
         sd_config.model.params.unet_config.params.in_channels = 9
         sd_config.model.params.finetune_keys = None
 
+    if should_hijack_ip2p(checkpoint_info):
+        sd_config.model.target = "modules.models.diffusion.ddpm_edit.LatentDiffusion"
+        sd_config.model.params.conditioning_key = "hybrid"
+        sd_config.model.params.first_stage_key = "edited"
+        sd_config.model.params.cond_stage_key = "edit"
+        sd_config.model.params.image_size = 16
+        sd_config.model.params.unet_config.params.in_channels = 8
+        sd_config.model.params.unet_config.params.out_channels = 4
+
     if not hasattr(sd_config.model.params, "use_ema"):
         sd_config.model.params.use_ema = False
 
@@ -372,6 +390,8 @@ def load_model(checkpoint_info=None):
 
     if shared.cmd_opts.no_half:
         sd_config.model.params.unet_config.params.use_fp16 = False
+    elif shared.cmd_opts.upcast_sampling:
+        sd_config.model.params.unet_config.params.use_fp16 = True
 
     timer = Timer()
 
@@ -447,7 +467,7 @@ def reload_model_weights(sd_model=None, info=None):
 
     checkpoint_config = find_checkpoint_config(current_checkpoint_info)
 
-    if current_checkpoint_info is None or checkpoint_config != find_checkpoint_config(checkpoint_info) or should_hijack_inpainting(checkpoint_info) != should_hijack_inpainting(sd_model.sd_checkpoint_info):
+    if current_checkpoint_info is None or checkpoint_config != find_checkpoint_config(checkpoint_info) or should_hijack_inpainting(checkpoint_info) != should_hijack_inpainting(sd_model.sd_checkpoint_info) or should_hijack_ip2p(checkpoint_info) != should_hijack_ip2p(sd_model.sd_checkpoint_info):
         del sd_model
         checkpoints_loaded.clear()
         load_model(checkpoint_info)

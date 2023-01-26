@@ -3,17 +3,28 @@
 if not defined PYTHON (set PYTHON=python)
 if not defined VENV_DIR (set "VENV_DIR=%~dp0%venv")
 
+
 set ERROR_REPORTING=FALSE
 
 mkdir tmp 2>NUL
 
 %PYTHON% -c "" >tmp/stdout.txt 2>tmp/stderr.txt
-if %ERRORLEVEL% == 0 goto :start_venv
+if %ERRORLEVEL% == 0 goto :check_pip
 echo Couldn't launch python
+goto :show_stdout_stderr
+
+:check_pip
+%PYTHON% -mpip --help >tmp/stdout.txt 2>tmp/stderr.txt
+if %ERRORLEVEL% == 0 goto :start_venv
+if "%PIP_INSTALLER_LOCATION%" == "" goto :show_stdout_stderr
+%PYTHON% "%PIP_INSTALLER_LOCATION%" >tmp/stdout.txt 2>tmp/stderr.txt
+if %ERRORLEVEL% == 0 goto :start_venv
+echo Couldn't install pip
 goto :show_stdout_stderr
 
 :start_venv
 if ["%VENV_DIR%"] == ["-"] goto :skip_venv
+if ["%SKIP_VENV%"] == ["1"] goto :skip_venv
 
 dir "%VENV_DIR%\Scripts\Python.exe" >tmp/stdout.txt 2>tmp/stderr.txt
 if %ERRORLEVEL% == 0 goto :activate_venv
@@ -28,13 +39,13 @@ goto :show_stdout_stderr
 :activate_venv
 set PYTHON="%VENV_DIR%\Scripts\Python.exe"
 echo venv %PYTHON%
+
+:skip_venv
 if [%ACCELERATE%] == ["True"] goto :accelerate
 goto :launch
 
-:skip_venv
-
 :accelerate
-echo "Checking for accelerate"
+echo Checking for accelerate
 set ACCELERATE="%VENV_DIR%\Scripts\accelerate.exe"
 if EXIST %ACCELERATE% goto :accelerate_launch
 
@@ -44,7 +55,7 @@ pause
 exit /b
 
 :accelerate_launch
-echo "Accelerating"
+echo Accelerating
 %ACCELERATE% launch --num_cpu_threads_per_process=6 launch.py
 pause
 exit /b

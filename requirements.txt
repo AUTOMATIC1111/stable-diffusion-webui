@@ -1,7 +1,6 @@
 blendmodes
 accelerate
 basicsr
-fairscale==0.4.4
 fonts
 font-roboto
 gfpgan
@@ -17,7 +16,7 @@ pytorch_lightning==1.7.7
 realesrgan
 scikit-image>=0.19
 timm==0.4.12
-transformers==4.19.2
+transformers==4.25.1
 torch
 einops
 jsonmerge
