@@ -74,7 +74,12 @@
 #txt2img_gallery img, #img2img_gallery img{
     object-fit: scale-down;
 }
-
+#txt2img_actions_column, #img2img_actions_column {
+	margin: 0.35rem 0.75rem 0.35rem 0;	
+}
+#script_list {
+    padding: .625rem .75rem 0 .625rem;
+}
 .justify-center.overflow-x-scroll {
     justify-content: left;
 }
@@ -126,10 +131,12 @@
 
 #txt2img_actions_column, #img2img_actions_column{
     gap: 0;
+    margin-right: .75rem;
 }
 
 #txt2img_tools, #img2img_tools{
     gap: 0.4em;
+    justify-content: center;
 }
 
 #interrogate_col{
@@ -155,7 +162,9 @@
 #txt2img_styles_row > button, #img2img_styles_row > button{
     margin: 0;
 }
-
+#txt2img_styles_row {
+	margin-top: 0.3em;
+}
 #txt2img_styles, #img2img_styles{
     padding: 0;
 }
@@ -311,11 +320,11 @@ input[type="range"]{
 .min-h-\[6rem\] { min-height: unset !important; }
 
 .progressDiv{
-    position: absolute;
+    position: relative;
     height: 20px;
-    top: -20px;
     background: #b4c0cc;
     border-radius: 3px !important;
+    margin-bottom: -3px;
 }
 
 .dark .progressDiv{
@@ -535,7 +544,7 @@ input[type="range"]{
 }
 
 #quicksettings {
-    gap: 0.4em;
+    width: fit-content;
 }
 
 #quicksettings > div, #quicksettings > fieldset{
@@ -545,6 +554,7 @@ input[type="range"]{
     border: none;
     box-shadow: none;
     background: none;
+    margin-right: 10px;
 }
 
 #quicksettings > div > div > div > label > span {
@@ -567,7 +577,7 @@ canvas[key="mask"] {
     right: 0.5em;
     top: -0.6em;
     z-index: 400;
-    width: 8em;
+    width: 6em;
 }
 #quicksettings .gr-box > div > div > input.gr-text-input {
   top: -1.12em;
@@ -665,11 +675,27 @@ canvas[key="mask"] {
 
 #quicksettings .gr-button-tool{
     margin: 0;
+    border-color: unset;
+	background-color: unset;
 }
 
-
+#modelmerger_interp_description>p {
+    margin: 0!important;
+    text-align: center;
+}
+#modelmerger_interp_description {
+    margin: 0.35rem 0.75rem 1.23rem;
+}
 #img2img_settings > div.gr-form, #txt2img_settings > div.gr-form {
     padding-top: 0.9em;
+    padding-bottom: 0.9em;
+}
+#txt2img_settings {
+    padding-top: 1.16em;
+    padding-bottom: 0.9em;
+}
+#img2img_settings {
+    padding-bottom: 0.9em;
 }
 
 #img2img_settings div.gr-form .gr-form, #txt2img_settings div.gr-form .gr-form, #train_tabs div.gr-form .gr-form{
@@ -741,6 +767,8 @@ footer {
 
 .dark .gr-compact{
     background-color: rgb(31 41 55 / var(--tw-bg-opacity));
+    align-items: center;
+	margin-left: 0;
 }
 
 .gr-compact{
@@ -925,3 +953,6 @@ footer {
     color: red;
 }
 
+[id*='_prompt_container'] > div {
+	margin: 0!important;
+}
