@@ -5,9 +5,18 @@ generic helper methods
 
 import logging
 
-
-logging.basicConfig(level = logging.INFO, format = '%(asctime)s %(levelname)s: %(message)s')
+log_format = '%(asctime)s %(levelname)s: %(message)s'
+logging.basicConfig(level = logging.INFO, format = log_format)
 log = logging.getLogger("sd")
+
+
+def set_logfile(logfile):
+    fh = logging.FileHandler(logfile)
+    formatter = logging.Formatter(log_format)
+    fh.setLevel(log.getEffectiveLevel())
+    fh.setFormatter(formatter)
+    log.addHandler(fh)
+    log.info({ 'log file': logfile })
 
 
 class Map(dict):

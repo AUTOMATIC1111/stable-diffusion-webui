@@ -24,7 +24,7 @@ import filetype
 from PIL import Image
 
 sys.path.append(os.path.join(os.path.dirname(__file__), 'modules'))
-from modules.util import Map, log
+from modules.util import Map, log, set_logfile
 from modules.losschart import plot
 from modules.ffmpeg import extract
 from modules.lossrate import gen_loss_rate_str
@@ -183,9 +183,16 @@ async def preprocess(params):
 
 
 async def check(params):
-    log.info({ 'checking server options' })
     global options # pylint: disable=global-statement
     options = await get('/sdapi/v1/options')
+    global cmdflags # pylint: disable=global-statement
+    cmdflags = await get('/sdapi/v1/cmd-flags')
+
+    logdir = os.path.abspath(os.path.join(cmdflags['embeddings_dir'], '../train/log', params.name))
+    logfile = os.path.abspath(os.path.join(cmdflags['embeddings_dir'], '../train/log', params.name + '.log'))
+    set_logfile(logfile)
+
+    log.info({ 'checking server options' })
 
     options['training_xattention_optimizations'] = False
     options['training_image_repeats_per_epoch'] = 1
@@ -206,8 +213,6 @@ async def check(params):
             options['sd_model_checkpoint'] = found[0]
 
     log.debug({ 'check embedding': params.name })
-    global cmdflags # pylint: disable=global-statement
-    cmdflags = await get('/sdapi/v1/cmd-flags')
 
     lst = os.path.join(cmdflags['embeddings_dir'])
     log.debug({ 'embeddings folder': lst })
@@ -221,7 +226,6 @@ async def check(params):
             log.error({ 'embedding exists': match.name })
             await close()
             exit()
-    logdir = os.path.abspath(os.path.join(cmdflags['embeddings_dir'], '../train/log', params.name))
     f = os.path.join(logdir, 'train.csv')
     if os.path.isfile(f):
         if params.overwrite:
@@ -237,6 +241,7 @@ async def check(params):
 
     log.debug({ 'options': 'update' })
     await post('/sdapi/v1/options', options)
+
     return
 
 

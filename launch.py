@@ -148,10 +148,7 @@ def run_extension_installer(extension_dir):
         env = os.environ.copy()
         env['PYTHONPATH'] = os.path.abspath(".")
 
-        stdout = run(f'"{python}" "{path_installer}"', errdesc=f"Error running install.py for extension {extension_dir}", custom_env=env)
-        if stdout is not None:
-            print(stdout)
-
+        print(run(f'"{python}" "{path_installer}"', errdesc=f"Error running install.py for extension {extension_dir}", custom_env=env))
     except Exception as e:
         print(e, file=sys.stderr)
 
@@ -220,8 +217,8 @@ def prepare_environment():
 
     commit = commit_hash()
 
-    # print(f"Python {sys.version}")
-    # print(f"Commit hash: {commit}")
+    print(f"Python {sys.version}")
+    print(f"Commit hash: {commit}")
     
     if reinstall_torch or not is_installed("torch") or not is_installed("torchvision"):
         run(f'"{python}" -m {torch_command}', "Installing torch and torchvision", "Couldn't install torch")
@@ -270,7 +267,7 @@ def prepare_environment():
 
     if update_check:
         version_check(commit)
-
+    
     if "--exit" in sys.argv:
         print("Exiting because of --exit argument")
         exit(0)

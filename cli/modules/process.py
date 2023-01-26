@@ -276,6 +276,7 @@ def process_file(f: str, dst: str = None):
     else:
         log.debug({ 'no body': f })
 
+    image.close()
 
 def process_images(src: str, dst: str, args = None):
     params.src = src
@@ -311,9 +312,3 @@ if __name__ == '__main__':
             for root, _sub_dirs, files in os.walk(loc):
                 for f in files:
                     process_file(os.path.join(root, f), dst)
-
-"""
-- add interrogate on save
-- write final stats
-- create final grid
-"""
