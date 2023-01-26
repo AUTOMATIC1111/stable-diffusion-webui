@@ -27,6 +27,8 @@ Currently, Lora networks for Stable Diffusion 2.0+ models are not supported by W
 
 Lora is added to the prompt by putting the following text into any location: `<lora:filename:multiplier>`, where `filename` is the name of file with Lora on disk, excluding extension, and `multiplier` is a number, generally from 0 to 1, that lets you choose how strongly Lora will affect the output. Lora cannot be added to the negative prompt.
 
+The text for adding Lora to the prompt, `<lora:filename:multiplier>`, is only used to enable Lora, and is erased from prompt afterwards, so you can't do tricks with prompt editing like `[<lora:one:1.0>|<lora:two:1.0>]`. A batch with multiple different prompts will only use the Lora from the first prompt.
+
 ## Hypernetworks
 A method to fine tune weights for CLIP and Unet, the language model and the actual image de-noiser used by Stable Diffusion, generously donated to the world by our friends at Novel AI in autumn 2022. Works in the same way as Lora except for sharing weights for some layers. Multiplier can be used to choose how strongly the hypernetwork will affect the output.
 
