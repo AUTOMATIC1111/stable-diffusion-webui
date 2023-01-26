@@ -1,13 +1,16 @@
 accelerate
 aenum
 basicsr
+<<<<<<< HEAD
 fonts
+=======
 blendmodes
 clean-fid
 einops
 fairscale
 fastapi
 filetype
+>>>>>>> 92b4fbe (update requirements)
 font-roboto
 fonts
 gfpgan
@@ -24,8 +27,8 @@ omegaconf
 opencv-contrib-python
 piexif
 Pillow
-psutil
-pytorch_lightning
+<<<<<<< HEAD
+pytorch_lightning==1.7.7
 realesrgan
 scikit-image>=0.19
 timm==0.4.12
@@ -34,6 +37,19 @@ torch
 einops
 jsonmerge
 clean-fid
+resize-right
+torchdiffeq
+kornia
+lark
+inflection
+GitPython
+torchsde
+safetensors
+=======
+>>>>>>> 92b4fbe (update requirements)
+psutil
+pytorch_lightning
+realesrgan
 requests
 resize-right
 safetensors
