@@ -3,7 +3,9 @@ This is a feature showcase page for [Stable Diffusion web UI](https://github.com
 All examples are non-cherrypicked unless specified otherwise.
 
 # Extra networks
-A single button with a picture of a card on it unifies multiple extra ways to extend your generation into one UI. Find it next to the big Generate button:
+A single button with a picture of a card on it. It unifies multiple extra ways to extend your generation into one UI. 
+
+Find it next to the big Generate button:
 ![firefox_QOnhgmmSi5](https://user-images.githubusercontent.com/20920490/214776880-2fe558e1-6f63-432f-b0c6-675e1d1a0822.png)
 
 Extra networks provides a set of cards, each corresponding to a file with a part of model you either train or obtain from somewhere. Clicking the card adds the model to prompt, where it will affect generation.
@@ -36,28 +38,34 @@ Same rules for adding hypernetworks to the prompt apply as for Lora: `<hypernet:
 
 # Alt-Diffusion
 A model trained to accept inputs in different languages.
+[More info](https://arxiv.org/abs/2211.06679).
+[PR](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/5238).
+
 
 - [Download](https://huggingface.co/webui/AltDiffusion-m9/tree/main) the model and accompanying yaml file from huggingface. Click the down arrow to download.
-
 - Put the files into `models/Stable-Diffusion`
 
-Additionally, you will find the .yaml file in this repository, at [`configs/alt-diffusion-inference.yaml`](https://github.com/AUTOMATIC1111/stable-diffusion-webui/blob/master/configs/alt-diffusion-inference.yaml)
-which must be renamed to match your model - eg: `ad.safetensors` and `ad.yaml`
+<details><summary>Notes: (Click to expand:)</summary>
 
-Mechanically, attention/emphasis mechanism (see below in features) is supported, but seems to have much less effect, probably due to how Alt-Diffusion is implemented. Clip skip is not supported, the setting is ignored.
+Mechanically, attention/emphasis mechanism is supported, but seems to have much less effect, probably due to how Alt-Diffusion is implemented. 
+
+Clip skip is not supported, the setting is ignored.
 
 - It is recommended to run with `--xformers.` Adding additional memory-saving flags such as `--xformers --medvram` does not work.
 
-See [PR](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/5238) for more info.
+</details>
 
 # Stable Diffusion 2.0
-## Basic models
-Models are supported: 768-v-ema.ckpt ([model](https://huggingface.co/stabilityai/stable-diffusion-2/blob/main/768-v-ema.ckpt), [config](https://raw.githubusercontent.com/Stability-AI/stablediffusion/main/configs/stable-diffusion/v2-inference-v.yaml)) and 512-base-ema.ckpt ([model](https://huggingface.co/stabilityai/stable-diffusion-2-base/blob/main/512-base-ema.ckpt), [config](https://raw.githubusercontent.com/Stability-AI/stablediffusion/main/configs/stable-diffusion/v2-inference.yaml)). 2.1 checkpoints use the same corresponding config file, just rename them to the model name.
 
-- download the checkpoint (from here: https://huggingface.co/stabilityai/stable-diffusion-2)
-- put it into `models/Stable-Diffusion` directory
-- grab the config from SD2.0 repository and put it into same place as the checkpoint, renaming it to have same filename (i.e. if your checkpoint is named `768-v-ema.ckpt`, the config should be named `768-v-ema.yaml`)
-- select the new checkpoint from the UI
+1. Download your model and accompanying yaml file from huggingface. Click the down arrow to download.
+2. Put the files into `models/Stable-Diffusion`
+3. Rename the `.yaml` to the name of your model if not already done - eg: `sd.ckpt`, `sd.yaml`
+
+- 768 (2.0) - ([model](https://huggingface.co/stabilityai/stable-diffusion-2/blob/main/768-v-ema.ckpt), [yaml](https://raw.githubusercontent.com/Stability-AI/stablediffusion/main/configs/stable-diffusion/v2-inference-v.yaml)) 
+- 768 (2.1) - ([model+yaml](https://huggingface.co/webui/stable-diffusion-2-1/tree/main)) - `.safetensors`
+- 512 (2.0) - ([model](https://huggingface.co/stabilityai/stable-diffusion-2-base/blob/main/512-base-ema.ckpt), [yaml](https://raw.githubusercontent.com/Stability-AI/stablediffusion/main/configs/stable-diffusion/v2-inference.yaml))
+
+<details><summary>Notes: (Click to expand:)</summary>
 
 If 2.0 or 2.1 is generating black images, enable full precision with `--no-half` or try using the `--xformers` optimization.
 
@@ -76,16 +84,21 @@ On fp16: [comment](https://github.com/AUTOMATIC1111/stable-diffusion-webui/issue
 
     call webui.bat
 
-## Depth-guided model
-[More info](https://github.com/Stability-AI/stablediffusion#depth-conditional-stable-diffusion). [PR](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/5542).
-Instructions:
-- download the [512-depth-ema.ckpt](https://huggingface.co/stabilityai/stable-diffusion-2-depth) checkpoint
-- place it in models/Stable-diffusion
-- grab the [config](https://raw.githubusercontent.com/Stability-AI/stablediffusion/main/configs/stable-diffusion/v2-midas-inference.yaml) and place it in the same folder as the checkpoint
-- rename the config to `512-depth-ema.yaml`
-- select the new checkpoint from the UI
+</details>
 
-The depth-guided model will only work in img2img tab.
+## Depth Guided Model
+The depth-guided model will only work in img2img tab. 
+[More info](https://github.com/Stability-AI/stablediffusion#depth-conditional-stable-diffusion). [PR](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/5542).
+
+- 512 depth (2.0) - ([model+yaml](https://huggingface.co/webui/stable-diffusion-2-depth/tree/main)) - `.safetensors`
+- 512 depth (2.0) - ([model](https://huggingface.co/stabilityai/stable-diffusion-2-depth/tree/main), [yaml](https://raw.githubusercontent.com/Stability-AI/stablediffusion/main/configs/stable-diffusion/v2-midas-inference.yaml))
+
+## Inpainting Model SD2
+Model specifically designed for inpainting trained on SD 2.0 512 base.
+
+- 512 inpainting (2.0) - ([model+yaml](https://huggingface.co/webui/stable-diffusion-2-inpainting/tree/main)) - `.safetensors`
+
+`inpainting_mask_weight` or inpainting conditioning mask strength works on this too.
 
 # Outpainting
 
@@ -158,6 +171,9 @@ There are two options for masked mode:
 | ![](images/inpaint-mask.png) | ![](images/inpaint-mask2.png) |
 
 ## Color Sketch
+Basic coloring tool for the img2img tab. Chromium-based browsers support a dropper tool.
+![color-sketch_NewUI](https://user-images.githubusercontent.com/98228077/214700734-2260f6f0-0fdf-46db-a2c6-71e5ec60e43b.png)
+(this is on firefox)
 
 # Prompt matrix
 Separate multiple prompts using the `|` character, and the system will produce an image for every combination of them.
@@ -175,12 +191,6 @@ Another example, this time with 5 prompts and 16 variations:
 ![](images/prompt_matrix.jpg)
 
 You can find the feature at the bottom, under Script -> Prompt matrix.
-
-# Color Sketch
-
-Basic coloring tool for img2img and inpaint tabs. Chromium-based browsers support a dropper tool.
-![color-sketch_NewUI](https://user-images.githubusercontent.com/98228077/214700734-2260f6f0-0fdf-46db-a2c6-71e5ec60e43b.png)
-
 
 # Stable Diffusion upscale
 Upscale image using RealESRGAN/ESRGAN and then go through tiles of the result, improving them with img2img.
