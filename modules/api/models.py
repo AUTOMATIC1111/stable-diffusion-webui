@@ -269,7 +269,6 @@ class MemoryResponse(BaseModel):
     cuda: dict = Field(title="CUDA", description="nVidia CUDA memory stats")
 
 class TrainEmbeddingAPI(BaseModel):
-    id_task: str = Field(title="ID", description="ID Task")
     embedding_name: str = Field(
         title="Embedding Name", description="Name of the embedding"
     )
@@ -297,9 +296,9 @@ class TrainEmbeddingAPI(BaseModel):
     varsize: bool = Field(
         title="Do not resize images", description="Do not resize images", default=False
     )
-    steps: int = Field(title="Max steps", description="")
+    steps: int = Field(title="Max steps", description="", default=100000)
     clip_grad_mode: str = Field(
-        title="Gradient clipping", description="Gradient clip mode"
+        title="Gradient clipping", description="Gradient clip mode", default="disabled"
     )
     clip_grad_value: float = Field(title="", description="", default=0.1)
     shuffle_tags: bool = Field(
@@ -339,15 +338,18 @@ class TrainEmbeddingAPI(BaseModel):
         description="Read parameters (prompt, etc...) from txt2img tab when making previews",
         default=False,
     )
-    preview_prompt: str = Field(title="Preview prompt", description="")
+    preview_prompt: str = Field(title="Preview prompt", description="", default="")
     preview_negative_prompt: str = Field(
-        title="Preview negative prompt", description=""
+        title="Preview negative prompt", description="", default=""
     )
     preview_steps: int = Field(title="Preview steps", description="", default=20)
     preview_sampler_index: str = Field(
         title="Preview sampler", description="", default="Euler"
     )
-    preview_cfg_scale: float = Field(title="Preview CFG scale", description="")
-    preview_seed: float = Field(title="Preview seed", description="")
-    preview_width: int = Field(title="Preview width", description="")
-    preview_height: int = Field(title="Preview height", description="")
+    preview_cfg_scale: float = Field(
+        title="Preview CFG scale", description="", default=7.0
+    )
+    preview_seed: float = Field(title="Preview seed", description="", default=-1.0)
+    preview_width: int = Field(title="Preview width", description="", default=512)
+    preview_height: int = Field(title="Preview height", description="", default=512)
+    id_task: str = Field(title="ID Task", description="ID Task (unused)", default="")
