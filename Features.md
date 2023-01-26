@@ -2,6 +2,33 @@ This is a feature showcase page for [Stable Diffusion web UI](https://github.com
 
 All examples are non-cherrypicked unless specified otherwise.
 
+# Extra networks
+A single button with a picture of a card on it unifies multiple extra ways to extend your generation into one UI. Find it next to the big Generate button:
+![firefox_QOnhgmmSi5](https://user-images.githubusercontent.com/20920490/214776880-2fe558e1-6f63-432f-b0c6-675e1d1a0822.png)
+
+Extra networks provides a set of cards, each corresponding to a file with a part of model you either train or obtain from somewhere. Clicking the card adds the model to prompt, where it will affect generation.
+
+| Extra network     | Directory     | File types                        | How to use in prompt     |
+|-------------------|---------------|-----------------------------------|--------------------------|
+| Textual Inversion | `embeddings`  | `*.pt`, images                    | embedding's filename     |
+| Lora              | `models/Lora` | `*.pt`                            | `<lora:filename:multiplier>` |
+| Hypernetworks     | `models/hypernetworks`     | `*.pt`, `*.ckpt`, `*.safetensors` | `<hypernet:filename:multiplier>`                         |
+
+
+## Textual Inversion
+A method to fine tune weights for a token in CLIP, the language model used by Stable Diffusion, from summer 2021. [Author's site](https://textual-inversion.github.io/). Long explanation: [Textual Inversion](Textual-Inversion)
+
+## Lora
+A method to fine tune weights for CLIP and Unet, the language model and the actual image de-noiser used by Stable Diffusion, published in 2021. [Paper](https://arxiv.org/abs/2106.09685). A good way to train Lora is to use [kohya-ss](https://github.com/kohya-ss/sd-scripts).
+Multiplier can be used to choose how strongly Lora will affect the output.
+
+Support for Lora is built-in into the Web UI, but there is an [extension](https://github.com/kohya-ss/sd-webui-additional-networks) with original implementation by kohyaa-ss.
+
+Currently, Lora networks for Stable Diffusion 2.0+ models are not supported by Web UI.
+
+## Hypernetworks
+A method to fine tune weights for CLIP and Unet, the language model and the actual image de-noiser used by Stable Diffusion, generously donated to the world by our friends at Novel AI in autumn 2022. Works in the same way as Lora except for sharing weights for some layers. Multiplier can be used to choose how strongly the hypernetwork will affect the output.
+
 
 # Alt-Diffusion
 A model trained to accept inputs in different languages.
@@ -262,13 +289,6 @@ The list uses the same syntax as a line in a CSV file, so if you want to include
 - `darkness, light, green, heat` - 4 items - `darkness`, `light`, `green`, `heat`
 - `darkness, "light, green", heat` - WRONG - 4 items - `darkness`, `"light`, `green"`, `heat`
 - `darkness,"light, green",heat` - RIGHT - 3 items - `darkness`, `light, green`, `heat`
-
-# Textual Inversion
-Short explanation: place your embeddings into the `embeddings` directory, and use the filename in the prompt.
-
-Long explanation: [Textual Inversion](Textual-Inversion)
-
-![grid-0037](https://user-images.githubusercontent.com/20920490/193285770-9454c5e1-e594-463c-8be8-1488ddf2877b.png)
 
 # Resizing
 There are three options for resizing input images in img2img mode:
