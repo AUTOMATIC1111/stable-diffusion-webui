@@ -140,6 +140,7 @@
     "eta_noise_seed_delta": 0,
     "always_discard_next_to_last_sigma": false,
     "disabled_extensions": [
+        "sd-webui-additional-networks",
         "sdweb-merge-board",
         "ScuNET"
     ],
@@ -173,5 +174,8 @@
     ],
     "extra_networks_default_view": "cards",
     "postprocessing_scipts_order": "upscale, gfpgan, codeformer",
-    "upscaling_max_images_in_cache": 5
+    "upscaling_max_images_in_cache": 5,
+    "upcast_attn": false,
+    "lora_apply_to_outputs": false,
+    "outdir_ip2p_samples": "outputs/ip2p-images"
 }
