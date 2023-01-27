@@ -176,7 +176,7 @@ async def preprocess(params):
         img = grid(images, labels = None, width = 2048, height = 2048, border = 8, square = True)
         logdir = os.path.abspath(os.path.join(cmdflags['embeddings_dir'], '../train/log'))
         Path(logdir).mkdir(parents = True, exist_ok = True)
-        fn = os.path.join(logdir, params.name + '-inputs.jpg')
+        fn = os.path.join(logdir, params.name + '.inputs.jpg')
         img.save(fn)
         log.info({ 'preprocess input grid': fn })
     return res
@@ -189,7 +189,7 @@ async def check(params):
     cmdflags = await get('/sdapi/v1/cmd-flags')
 
     logdir = os.path.abspath(os.path.join(cmdflags['embeddings_dir'], '../train/log', params.name))
-    logfile = os.path.abspath(os.path.join(cmdflags['embeddings_dir'], '../train/log', params.name + '.log'))
+    logfile = os.path.abspath(os.path.join(cmdflags['embeddings_dir'], '../train/log', params.name + '.train.log'))
     set_logfile(logfile)
 
     log.info({ 'checking server options' })

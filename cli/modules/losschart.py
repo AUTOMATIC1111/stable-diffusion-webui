@@ -30,7 +30,7 @@ def plot(logdir: str, name: str):
         log.debug({ 'train log missing': f })
         return
     name = pathlib.Path(f).parent.name
-    img = os.path.join(logdir, f"{name}.png")
+    img = os.path.join(logdir, f"{name}.train.png")
 
     step, loss, rate = plt.np.loadtxt(f, delimiter = ',', skiprows = 1, usecols = [0, 3, 4], unpack = True)
     d = settings(logdir, name)
