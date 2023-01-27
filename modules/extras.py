@@ -6,7 +6,7 @@ import shutil
 import torch
 import tqdm
 
-from modules import shared, images, sd_models, sd_vae
+from modules import shared, images, sd_models, sd_vae, sd_models_config
 from modules.ui_common import plaintext_to_html
 import gradio as gr
 import safetensors.torch
@@ -37,7 +37,7 @@ def run_pnginfo(image):
 
 def create_config(ckpt_result, config_source, a, b, c):
     def config(x):
-        res = sd_models.find_checkpoint_config(x) if x else None
+        res = sd_models_config.find_checkpoint_config_near_filename(x) if x else None
         return res if res != shared.sd_default_config else None
 
     if config_source == 0:
