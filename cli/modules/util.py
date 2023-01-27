@@ -3,6 +3,7 @@
 generic helper methods
 """
 
+import string
 import logging
 
 log_format = '%(asctime)s %(levelname)s: %(message)s'
@@ -17,6 +18,14 @@ def set_logfile(logfile):
     fh.setFormatter(formatter)
     log.addHandler(fh)
     log.info({ 'log file': logfile })
+
+
+def safestring(text: str):
+    lines = []
+    for line in text.splitlines():
+        lines.append(line.translate(str.maketrans('', '', string.punctuation)).strip())
+    res = ', '.join(lines)
+    return res[:1000]
 
 
 class Map(dict):

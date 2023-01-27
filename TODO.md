@@ -47,6 +47,8 @@ Tech that can be integrated as part of the core workflow...
 - [LORA](https://github.com/cloneofsimo/lora)
   - <https://github.com/kohya-ss/sd-webui-additional-networks>
   - <https://github.com/kohya-ss/sd-scripts>
+  - <https://rentry.org/2chAI_LoRA_Dreambooth_guide_english>
+  - <https://www.reddit.com/r/StableDiffusion/comments/10ir5ax/big_comparison_of_lora_training_settings_8gb_vram/>
 - [Hypernetworks](https://civitai.com/models/4086/luisap-tutorial-hypernetwork-monkeypatch-method)
   - <https://github.com/AUTOMATIC1111/stable-diffusion-webui/discussions/2670#discussioncomment-4372336>
   - <https://github.com/AUTOMATIC1111/stable-diffusion-webui/discussions/2670#discussioncomment-4582025>
@@ -65,6 +67,7 @@ Tech that can be integrated as part of the core workflow...
 - [Video killed the radio star](https://colab.research.google.com/github/dmarx/video-killed-the-radio-star/blob/main/Video_Killed_The_Radio_Star_Defusion.ipynb)
 - [Seed travel](https://github.com/yownas/seed_travel)
 - [Google frame interpolation](https://github.com/google-research/frame-interpolation)
+- [Prompt fusion](https://github.com/ljleb/prompt-fusion-extension)
 
 ## Experimental
 

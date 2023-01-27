@@ -177,5 +177,7 @@
     "upscaling_max_images_in_cache": 5,
     "upcast_attn": false,
     "lora_apply_to_outputs": false,
-    "outdir_ip2p_samples": "outputs/ip2p-images"
+    "outdir_ip2p_samples": "outputs/ip2p-images",
+    "postprocessing_enable_in_main_ui": [],
+    "postprocessing_operation_order": []
 }

@@ -33,7 +33,7 @@ from PIL.TiffImagePlugin import ImageFileDirectory_v2
 
 sys.path.append(os.path.join(os.path.dirname(__file__), 'modules'))
 from modules.sdapi import close, get, interrupt, post, session
-from modules.util import Map, log
+from modules.util import Map, log, safestring
 
 
 sd = {}
@@ -51,7 +51,8 @@ def grid(data):
         for i, img in enumerate(data.image):
             image.paste(img, box=(i % cols * w, i // cols * h))
         short = data.info.prompt[:min(len(data.info.prompt), 96)] # limit prompt part of filename to 96 chars
-        name = '{seed:0>9}-{short}.jpg'.format(short = short, seed = data.info.all_seeds[0]) # pylint: disable=consider-using-f-string
+        name = '{seed:0>9} {short}'.format(short = short, seed = data.info.all_seeds[0]) # pylint: disable=consider-using-f-string
+        name = safestring(name) + '.jpg'
         f = os.path.join(sd.paths.root, sd.paths.grid, name)
         log.info({ 'grid': { 'name': f, 'size': image.size, 'images': len(data.image) } })
         image.save(f, 'JPEG', exif = exif(data.info, None, 'grid'), optimize = True, quality = 70)
@@ -118,7 +119,10 @@ def sampler(params, options): # find sampler
     return sd.generate.sampler_name
 
 
-async def generate(prompt = None): # pylint: disable=redefined-outer-name
+async def generate(prompt = None, options = None): # pylint: disable=redefined-outer-name
+    global sd
+    if options:
+        sd = Map(options)
     if prompt is not None:
         sd.generate.prompt = prompt
     log.info({ 'generate': sd.generate })
@@ -137,7 +141,8 @@ async def generate(prompt = None): # pylint: disable=redefined-outer-name
     for i in range(len(images)):
         b64s.append(images[i])
         images[i] = Image.open(io.BytesIO(base64.b64decode(images[i].split(',',1)[0])))
-        name = '{seed:0>9}-{short}.jpg'.format(short = short, seed = info.all_seeds[i]) # pylint: disable=consider-using-f-string
+        name = '{seed:0>9} {short}'.format(short = short, seed = info.all_seeds[i]) # pylint: disable=consider-using-f-string
+        name = safestring(name) + '.jpg'
         f = os.path.join(sd.paths.root, sd.paths.generate, name)
         names.append(f)
         log.info({ 'image': { 'name': f, 'size': images[i].size } })
