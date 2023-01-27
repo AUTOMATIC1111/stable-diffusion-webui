@@ -1,8 +1,7 @@
 model:
-  base_learning_rate: 1.0e-4
-  target: ldm.models.diffusion.ddpm.LatentDiffusion
+  base_learning_rate: 7.5e-05
+  target: ldm.models.diffusion.ddpm.LatentInpaintDiffusion
   params:
-    parameterization: "v"
     linear_start: 0.00085
     linear_end: 0.0120
     num_timesteps_cond: 1
@@ -12,29 +11,36 @@ model:
     cond_stage_key: "txt"
     image_size: 64
     channels: 4
-    cond_stage_trainable: false
-    conditioning_key: crossattn
+    cond_stage_trainable: false   # Note: different from the one we trained before
+    conditioning_key: hybrid   # important
     monitor: val/loss_simple_ema
     scale_factor: 0.18215
-    use_ema: False # we set this to false because this is an inference only config
+    finetune_keys: null
+
+    scheduler_config: # 10000 warmup steps
+      target: ldm.lr_scheduler.LambdaLinearScheduler
+      params:
+        warm_up_steps: [ 2500 ] # NOTE for resuming. use 10000 if starting from scratch
+        cycle_lengths: [ 10000000000000 ] # incredibly large number to prevent corner cases
+        f_start: [ 1.e-6 ]
+        f_max: [ 1. ]
+        f_min: [ 1. ]
 
     unet_config:
       target: ldm.modules.diffusionmodules.openaimodel.UNetModel
       params:
-        use_checkpoint: True
-        use_fp16: True
         image_size: 32 # unused
-        in_channels: 4
+        in_channels: 9  # 4 data + 4 downscaled image + 1 mask
         out_channels: 4
         model_channels: 320
         attention_resolutions: [ 4, 2, 1 ]
         num_res_blocks: 2
         channel_mult: [ 1, 2, 4, 4 ]
-        num_head_channels: 64 # need to fix for flash-attn
+        num_heads: 8
         use_spatial_transformer: True
-        use_linear_in_transformer: True
         transformer_depth: 1
-        context_dim: 1024
+        context_dim: 768
+        use_checkpoint: True
         legacy: False
 
     first_stage_config:
@@ -43,7 +49,6 @@ model:
         embed_dim: 4
         monitor: val/rec_loss
         ddconfig:
-          #attn_type: "vanilla-xformers"
           double_z: true
           z_channels: 4
           resolution: 256
@@ -62,7 +67,4 @@ model:
           target: torch.nn.Identity
 
     cond_stage_config:
-      target: ldm.modules.encoders.modules.FrozenOpenCLIPEmbedder
-      params:
-        freeze: True
-        layer: "penultimate"
+      target: ldm.modules.encoders.modules.FrozenCLIPEmbedder
