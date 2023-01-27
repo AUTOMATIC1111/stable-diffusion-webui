@@ -123,7 +123,7 @@ def apply_vae(p, x, xs):
 
 
 def apply_styles(p: StableDiffusionProcessingTxt2Img, x: str, _):
-    p.styles = x.split(',')
+    p.styles.extend(x.split(','))
 
 
 def format_value_add_label(p, opt, x):
@@ -533,6 +533,7 @@ class Script(scripts.Script):
                 return Processed(p, [], p.seed, "")
 
             pc = copy(p)
+            pc.styles = pc.styles[:]
             x_opt.apply(pc, x, xs)
             y_opt.apply(pc, y, ys)
             z_opt.apply(pc, z, zs)
