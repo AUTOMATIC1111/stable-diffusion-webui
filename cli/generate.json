@@ -8,15 +8,15 @@
   },
   "generate":
   {
-      "restore_faces": false,
+      "restore_faces": true,
       "prompt": "dynamic",
       "negative_prompt": "foggy, blurry, blurred, duplicate, ugly, mutilated, mutation, mutated, out of frame, bad anatomy, disfigured, deformed, censored, low res, watermark, text, poorly drawn face, signature",
-      "steps": 20,
+      "steps": 30,
       "batch_size": 1,
       "n_iter": 1,
       "seed": -1,
-      "sampler_name": "random",
-      "cfg_scale": 0,
+      "sampler_name": "DPM2 Karras",
+      "cfg_scale": 6,
       "width": 512,
       "height": 512
   },
@@ -32,7 +32,7 @@
   },
   "options":
   {
-      "sd_model_checkpoint": "mix-berrymix",
-      "sd_vae": "vae-ft-mse-840000-ema-pruned"
+      "sd_model_checkpoint": "sd-v15-runwayml",
+      "sd_vae": "vae-ft-mse-840000-ema-pruned.ckpt"
   }
 }

@@ -15,7 +15,7 @@ from util import Map, log
 from sdapi import getsync, postsync
 from grid import grid
 
-template = 'photo of "{name}", {suffix}, high detailed, skin texture, lookin forward, facing camera, 135mm, shot on dslr, 4k, modelshoot style'
+template = 'photo of "{name}", {suffix}, high detailed, skin texture, looking forward, facing camera, 135mm, shot on dslr, 4k, modelshoot style'
 img2img_options = Map({
     'prompt': None,
     'negative_prompt': 'cartoon, drawing, cgi, sketch, comic, disfigured, deformed',

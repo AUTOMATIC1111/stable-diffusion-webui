@@ -14,7 +14,7 @@ if [ "$PYTHON" == "" ]; then
   PYTHON=`which python`
 fi
 
-ARGS="launch.py --api --xformers --disable-console-progressbars"
+ARGS="launch.py --api --xformers --disable-console-progressbars --gradio-queue"
 # --opt-channelslast
 MODE=optimized
 
@@ -74,7 +74,7 @@ if [ $MODE == clean ]; then
 fi
 
 if [ $MODE == public ]; then
-  ARGS="$ARGS --port 8000 --gradio-auth admin:pwd --listen --enable-insecure-extension-access"
+  ARGS="$ARGS --port 7860 --gradio-auth admin:pwd --listen --enable-insecure-extension-access"
 fi
 
 if [ $MODE == optimized ]; then

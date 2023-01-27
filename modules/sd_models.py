@@ -214,13 +214,13 @@ def get_state_dict_from_checkpoint(pl_sd):
 
 def read_state_dict(checkpoint_file, print_global_state=False, map_location=None):
     _, extension = os.path.splitext(checkpoint_file)
-    device = map_location or shared.weight_load_location
-    if device is None:
-        device = devices.get_cuda_device_string() if torch.cuda.is_available() else "cpu"
     if extension.lower() == ".safetensors":
-        pl_sd = safetensors.torch.load_file(checkpoint_file, device="cpu") # safetensors cannot load into gpu directly
+        device = map_location or shared.weight_load_location
+        if device is None:
+            device = devices.get_cuda_device_string() if torch.cuda.is_available() else "cpu"
+        pl_sd = safetensors.torch.load_file(checkpoint_file, device=device)
     else:
-        pl_sd = torch.load(checkpoint_file, map_location=device)
+        pl_sd = torch.load(checkpoint_file, map_location=map_location or shared.weight_load_location)
 
     if print_global_state and "global_step" in pl_sd:
         print(f"Global Step: {pl_sd['global_step']}")
@@ -420,25 +420,7 @@ def load_model(checkpoint_info=None):
 
     sd_hijack.model_hijack.hijack(sd_model)
 
-    if shared.cmd_opts.compile is not None:
-        if torch.cuda.is_available():
-            torch.backends.cudnn.benchmark = True
-        try:
-            import time
-            import torch._dynamo as dynamo # must be imported explicitly or namespace is not found
-            torch._dynamo.config.verbose=True
-            t0 = time.time()
-            # script = sd_model.model.to_torchscript(method="trace")
-            # script = torch.jit.script(sd_model.model.eval())
-            # sd_model.model = torch.compile(script, backend=shared.cmd_opts.compile)
-            sd_model.model = torch.compile(sd_model, backend=shared.cmd_opts.compile)
-            t1 = time.time()
-            print(f"Model compiled using backend {shared.cmd_opts.compile} in {round(t1 - t0, 2)} sec")
-        except Exception as err:
-            print(f"Model compile not supported: {err}")
-
     sd_model.eval()
-
     shared.sd_model = sd_model
 
     sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings(force_reload=True)  # Reload embeddings after model load as they may or may not fit the model

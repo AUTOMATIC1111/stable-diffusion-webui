@@ -81,6 +81,7 @@ def exif(info, i = None, op = "generate"):
 
 def prompt(params): # generate dynamic prompt or use one if provided
     sd.generate.prompt = params.prompt if params.prompt != "dynamic" else secrets.choice(random.prompts)
+    sd.generate.negative_prompt = params.negative if params.negative != "dynamic" else secrets.choice(random.negative)
     embedding = params.embedding if params.embedding != 'random' else secrets.choice(random.embeddings)
     sd.generate.prompt = sd.generate.prompt.replace('<embedding>', embedding)
     artist = params.artist if params.artist != 'random' else secrets.choice(random.artists)
@@ -169,7 +170,9 @@ async def init():
     data = await get('/sdapi/v1/sd-models')
     options.models = [obj["title"] for obj in data]
     log.debug({ 'registered models': options.models })
-    found = [i for i in options.models if i.startswith(sd.options.sd_model_checkpoint)]
+    found = sd.options.sd_model_checkpoint if sd.options.sd_model_checkpoint in options.models else None
+    if found is None:
+        found = [i for i in options.models if i.startswith(sd.options.sd_model_checkpoint)]
     if len(found) == 0:
         log.error({ 'model error': sd.generate.sd_model_checkpoint, 'available': options.models})
         exit()
@@ -205,7 +208,7 @@ def args(): # parse cmd arguments
     parser.add_argument("--random", type = str, default = 'random.json', required = False, help = "prompt file with randomized sections")
     parser.add_argument("--max", type = int, default = 1, required = False, help = "maximum number of generated images")
     parser.add_argument("--prompt", type = str, default = 'dynamic', required = False, help = "prompt")
-    parser.add_argument("--negative", type = str, default = '', required = False, help = "negative prompt")
+    parser.add_argument("--negative", type = str, default = 'dynamic', required = False, help = "negative prompt")
     parser.add_argument("--artist", type = str, default = 'random', required = False, help = "artist style, used to guide dynamic prompt when prompt is not provided")
     parser.add_argument("--embedding", type = str, default = 'random', required = False, help = "use embedding, used to guide dynamic prompt when prompt is not provided")
     parser.add_argument("--style", type = str, default = 'random', required = False, help = "image style, used to guide dynamic prompt when prompt is not provided")
@@ -284,7 +287,6 @@ def args(): # parse cmd arguments
     sd.generate.seed = params.seed if params.seed > 0 else sd.generate.seed
     sd.generate.sampler_name = params.sampler if params.sampler != 'random' else sd.generate.sampler_name
     sd.generate.batch_size = params.batch if params.batch > 0 else sd.generate.batch_size
-    sd.generate.negative_prompt = params.negative if params.negative != '' else sd.generate.negative_prompt
     sd.generate.cfg_scale = params.cfg if params.cfg > 0 else sd.generate.cfg_scale
     sd.generate.n_iter = params.n if params.n > 0 else sd.generate.n_iter
     sd.generate.width = params.width if params.width > 0 else sd.generate.width
