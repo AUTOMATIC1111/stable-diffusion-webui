@@ -143,6 +143,8 @@ def test_for_nans(x, where):
     else:
         message = "A tensor with all NaNs was produced."
 
+    message += " Use --disable-nan-check commandline argument to disable this check."
+
     raise NansException(message)
 
 
