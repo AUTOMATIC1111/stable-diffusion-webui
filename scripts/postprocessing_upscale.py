@@ -104,3 +104,28 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
 
     def image_changed(self):
         upscale_cache.clear()
+
+
+class ScriptPostprocessingUpscaleSimple(ScriptPostprocessingUpscale):
+    name = "Simple Upscale"
+    order = 900
+
+    def ui(self):
+        with FormRow():
+            upscaler_name = gr.Dropdown(label='Upscaler', choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name)
+            upscale_by = gr.Slider(minimum=0.05, maximum=8.0, step=0.05, label="Upscale by", value=2)
+
+        return {
+            "upscale_by": upscale_by,
+            "upscaler_name": upscaler_name,
+        }
+
+    def process(self, pp: scripts_postprocessing.PostprocessedImage, upscale_by=2.0, upscaler_name=None):
+        if upscaler_name is None or upscaler_name == "None":
+            return
+
+        upscaler1 = next(iter([x for x in shared.sd_upscalers if x.name == upscaler_name]), None)
+        assert upscaler1, f'could not find upscaler named {upscaler_name}'
+
+        pp.image = self.upscale(pp.image, pp.info, upscaler1, 0, upscale_by, 0, 0, False)
+        pp.info[f"Postprocess upscaler"] = upscaler1.name

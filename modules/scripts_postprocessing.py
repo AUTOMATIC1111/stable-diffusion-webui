@@ -46,6 +46,8 @@ class ScriptPostprocessing:
         pass
 
 
+
+
 def wrap_call(func, filename, funcname, *args, default=None, **kwargs):
     try:
         res = func(*args, **kwargs)
@@ -68,6 +70,9 @@ class ScriptPostprocessingRunner:
             script: ScriptPostprocessing = script_class()
             script.filename = path
 
+            if script.name == "Simple Upscale":
+                continue
+
             self.scripts.append(script)
 
     def create_script_ui(self, script, inputs):
@@ -87,12 +92,11 @@ class ScriptPostprocessingRunner:
             import modules.scripts
             self.initialize_scripts(modules.scripts.postprocessing_scripts_data)
 
-        scripts_order = [x.lower().strip() for x in shared.opts.postprocessing_scipts_order.split(",")]
+        scripts_order = shared.opts.postprocessing_operation_order
 
         def script_score(name):
-            name = name.lower()
             for i, possible_match in enumerate(scripts_order):
-                if possible_match in name:
+                if possible_match == name:
                     return i
 
             return len(self.scripts)
@@ -145,3 +149,4 @@ class ScriptPostprocessingRunner:
     def image_changed(self):
         for script in self.scripts_in_preferred_order():
             script.image_changed()
+

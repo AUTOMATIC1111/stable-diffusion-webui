@@ -5,7 +5,7 @@ class CondFunc:
         self = super(CondFunc, cls).__new__(cls)
         if isinstance(orig_func, str):
             func_path = orig_func.split('.')
-            for i in range(len(func_path)-2, -1, -1):
+            for i in range(len(func_path)-1, -1, -1):
                 try:
                     resolved_obj = importlib.import_module('.'.join(func_path[:i]))
                     break
