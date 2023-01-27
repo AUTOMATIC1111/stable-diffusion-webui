@@ -439,12 +439,12 @@ def reload_model_weights(sd_model=None, info=None):
         if sd_model.sd_model_checkpoint == checkpoint_info.filename:
             return
 
-    if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
-        lowvram.send_everything_to_cpu()
-    else:
-        sd_model.to(devices.cpu)
+        if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
+            lowvram.send_everything_to_cpu()
+        else:
+            sd_model.to(devices.cpu)
 
-    sd_hijack.model_hijack.undo_hijack(sd_model)
+        sd_hijack.model_hijack.undo_hijack(sd_model)
 
     timer = Timer()
 
