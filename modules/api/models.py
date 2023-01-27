@@ -228,7 +228,7 @@ class SDModelItem(BaseModel):
     hash: Optional[str] = Field(title="Short hash")
     sha256: Optional[str] = Field(title="sha256 hash")
     filename: str = Field(title="Filename")
-    config: str = Field(title="Config file")
+    config: Optional[str] = Field(title="Config file")
 
 class HypernetworkItem(BaseModel):
     name: str = Field(title="Name")

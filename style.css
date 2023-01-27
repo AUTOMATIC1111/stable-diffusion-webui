@@ -164,7 +164,7 @@
     min-height: 3.2em;
 }
 
-#txt2img_styles ul, #img2img_styles ul{
+ul.list-none{
     max-height: 35em;
     z-index: 2000;
 }
@@ -714,9 +714,6 @@ footer {
     white-space: nowrap;
     min-width: auto;
 }
-#txt2img_hires_fix{
-    margin-left: -0.8em;
-}
 
 #img2img_copy_to_img2img, #img2img_copy_to_sketch, #img2img_copy_to_inpaint, #img2img_copy_to_inpaint_sketch{
     margin-left: 0em;
@@ -744,7 +741,6 @@ footer {
 
 .dark .gr-compact{
     background-color: rgb(31 41 55 / var(--tw-bg-opacity));
-    margin-left: 0.8em;
 }
 
 .gr-compact{

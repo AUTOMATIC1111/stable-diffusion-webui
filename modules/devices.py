@@ -34,14 +34,18 @@ def get_cuda_device_string():
     return "cuda"
 
 
-def get_optimal_device():
+def get_optimal_device_name():
     if torch.cuda.is_available():
-        return torch.device(get_cuda_device_string())
+        return get_cuda_device_string()
 
     if has_mps():
-        return torch.device("mps")
+        return "mps"
 
-    return cpu
+    return "cpu"
+
+
+def get_optimal_device():
+    return torch.device(get_optimal_device_name())
 
 
 def get_device_for(task):
@@ -138,6 +142,8 @@ def test_for_nans(x, where):
             message += " This could be because there's not enough precision to represent the picture. Try adding --no-half-vae commandline argument to fix this."
     else:
         message = "A tensor with all NaNs was produced."
+
+    message += " Use --disable-nan-check commandline argument to disable this check."
 
     raise NansException(message)
 
