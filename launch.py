@@ -18,18 +18,35 @@ skip_install = False
 
 
 def check_python_version():
-    version = sys.version_info
-    version_range = None
-    if platform.system() == "Linux":
-        version_range = range(7 + 1, 11 + 1)
-    else:
-        version_range = range(7 + 1, 10 + 1)
+    if not os.path.isfile("no_py_ver_warning"):
+        version = sys.version_info
+        version_range = None
+        if platform.system() == "Linux":
+            version_range = range(7 + 1, 11 + 1)
+        else:
+            version_range = range(7 + 1, 10 + 1)
 
-    try:
-        assert version.major == 3 and version.minor in version_range, "Unsupported Python version, please use Python 3.10.x instead. You can download latest release as of 25th January (3.10.9) from here: https://www.python.org/downloads/release/python-3109/. Please, make sure to first delete current version of Python first and delete `venv` folder inside of WebUI's folder, too."
-    except AssertionError as e:
-        print(e)
-        sys.exit(-1)
+        try:
+            assert version.major == 3 and version.minor in version_range, f"""
+=== Warning ===
+This program was tested only with 3.10 Python, but you have {version.major}.{version.minor} Python.
+If you encounter an error with "RuntimeError: Couldn't install torch." message,
+or any other error regarding unsuccessful package (library) installation,
+please downgrade (or upgrade) to the latest version of 3.10 Python
+and delete current Python and "venv" folder in WebUI's directory.
+
+You can download 3.10 Python from here: https://www.python.org/downloads/release/python-3109/
+
+You will see this warning only once, delete file "no_py_ver_warning" file to show this warning again.
+=== Warning ===
+
+Press ENTER to continue...\
+"""
+        except AssertionError as e:
+            print(e)
+            with open("no_py_ver_warning", "w"):
+                pass
+            input()
 
 
 def commit_hash():
