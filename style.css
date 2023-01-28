@@ -136,7 +136,6 @@
 
 #txt2img_tools, #img2img_tools{
     gap: 0.4em;
-    justify-content: center;
 }
 
 #interrogate_col{
