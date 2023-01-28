@@ -18,35 +18,24 @@ skip_install = False
 
 
 def check_python_version():
-    if not os.path.isfile("no_py_ver_warning"):
-        version = sys.version_info
-        version_range = None
-        if platform.system() == "Linux":
-            version_range = range(7 + 1, 11 + 1)
-        else:
-            version_range = range(7 + 1, 10 + 1)
+    version = sys.version_info
+    if platform.system() == "Windows":
+        supported_minors = [10]
+    else:
+        supported_minors = [7, 8, 9, 10, 11]
 
-        try:
-            assert version.major == 3 and version.minor in version_range, f"""
-=== Warning ===
-This program was tested only with 3.10 Python, but you have {version.major}.{version.minor} Python.
+    if not (version.major == 3 and version.minor in supported_minors):
+        import modules.errors
+
+        modules.errors.print_error_explanation(f"""
+This program is tested with 3.10.6 Python, but you have {version.major}.{version.minor}.{version.micro}.
 If you encounter an error with "RuntimeError: Couldn't install torch." message,
 or any other error regarding unsuccessful package (library) installation,
 please downgrade (or upgrade) to the latest version of 3.10 Python
 and delete current Python and "venv" folder in WebUI's directory.
 
-You can download 3.10 Python from here: https://www.python.org/downloads/release/python-3109/
-
-You will see this warning only once, delete file "no_py_ver_warning" file to show this warning again.
-=== Warning ===
-
-Press ENTER to continue...\
-"""
-        except AssertionError as e:
-            print(e)
-            with open("no_py_ver_warning", "w"):
-                pass
-            input()
+You can download 3.10 Python from here: https://www.python.org/downloads/release/python-3109/\
+""")
 
 
 def commit_hash():

@@ -33,4 +33,3 @@ notification.mp3
 /test/stdout.txt
 /test/stderr.txt
 /cache.json
-no_py_ver_warning
