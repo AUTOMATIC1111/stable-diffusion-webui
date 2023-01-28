@@ -231,12 +231,10 @@ def get_checkpoint_state_dict(checkpoint_info: CheckpointInfo, timer):
 
 
 def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer):
-    title = checkpoint_info.title
     sd_model_hash = checkpoint_info.calculate_shorthash()
     timer.record("calculate hash")
 
-    if checkpoint_info.title != title:
-        shared.opts.data["sd_model_checkpoint"] = checkpoint_info.title
+    shared.opts.data["sd_model_checkpoint"] = checkpoint_info.title
 
     if state_dict is None:
         state_dict = get_checkpoint_state_dict(checkpoint_info, timer)
