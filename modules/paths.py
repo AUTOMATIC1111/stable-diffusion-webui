@@ -6,7 +6,7 @@ import modules.safe
 script_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
 # Parse the --data-dir flag first so we can use it as a base for our other argument default values
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(add_help=False)
 parser.add_argument("--data-dir", type=str, default=os.path.dirname(os.path.dirname(os.path.realpath(__file__))), help="base path where all user data is stored",)
 cmd_opts_pre = parser.parse_known_args()[0]
 data_path = cmd_opts_pre.data_dir
