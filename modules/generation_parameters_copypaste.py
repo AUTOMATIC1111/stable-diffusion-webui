@@ -11,7 +11,7 @@ from modules import shared, ui_tempdir, script_callbacks
 import tempfile
 from PIL import Image
 
-re_param_code = r'\s*([\w ]+):\s*(\"[^\"]*\"|[^,]+)'
+re_param_code = r'\s*([\w ]+):\s*("(?:\\"[^,]|\\"|\\|[^\"])+"|[^,]*)(?:,|$)'
 re_param = re.compile(re_param_code)
 re_imagesize = re.compile(r"^(\d+)x(\d+)$")
 re_hypernet_hash = re.compile("\(([0-9a-f]+)\)$")
@@ -242,7 +242,7 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
     done_with_prompt = False
 
     *lines, lastline = x.strip().split("\n")
-    if not re_param.match(lastline):
+    if len(re_param.findall(lastline)) < 3:
         lines.append(lastline)
         lastline = ''
 
