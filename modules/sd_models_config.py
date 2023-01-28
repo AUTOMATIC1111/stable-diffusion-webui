@@ -31,7 +31,7 @@ def guess_model_config_from_state_dict(sd, filename):
     if sd2_cond_proj_weight is not None and sd2_cond_proj_weight.shape[1] == 1024:
         if diffusion_model_input.shape[1] == 9:
             return config_sd2_inpainting
-        elif re.search(re_parametrization_v, fn) or "768" in fn:
+        elif re.search(re_parametrization_v, fn):
             return config_sd2v
         else:
             return config_sd2
