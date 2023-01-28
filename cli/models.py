@@ -109,6 +109,4 @@ if __name__ == '__main__':
     parser.add_argument('--output', type = str, default = '', required = False, help = 'output directory')
     parser.add_argument('input', type = str, nargs = '*')
     params = parser.parse_args()
-    print('INPUT', params.input)
-    exit()
     asyncio.run(models(params))
