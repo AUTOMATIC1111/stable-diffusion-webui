@@ -210,6 +210,19 @@ document.addEventListener("DOMContentLoaded", function() {
     modal.id = "lightboxModal";
     modal.tabIndex = 0
     modal.addEventListener('keydown', modalKeyHandler, true)
+    window.addEventListener('gamepadconnected', (e) => {
+        console.log("Gamepad connected!")
+        const gamepad = e.gamepad;
+        setInterval(() => {
+            const xValue = gamepad.axes[0].toFixed(2);
+            if (xValue < -0.3) {
+                modalPrevImage();
+            } else if (xValue > 0.3) {
+                modalNextImage();
+            }
+
+        }, 350);
+    });
 
     const modalControls = document.createElement('div')
     modalControls.className = 'modalControls gradio-container';
