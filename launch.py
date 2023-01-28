@@ -17,6 +17,37 @@ stored_commit_hash = None
 skip_install = False
 
 
+def check_python_version():
+    is_windows = platform.system() == "Windows"
+    major = sys.version_info.major
+    minor = sys.version_info.minor
+    micro = sys.version_info.micro
+
+    if is_windows:
+        supported_minors = [10]
+    else:
+        supported_minors = [7, 8, 9, 10, 11]
+
+    if not (major == 3 and minor in supported_minors):
+        import modules.errors
+
+        modules.errors.print_error_explanation(f"""
+INCOMPATIBLE PYTHON VERSION
+
+This program is tested with 3.10.6 Python, but you have {major}.{minor}.{micro}.
+If you encounter an error with "RuntimeError: Couldn't install torch." message,
+or any other error regarding unsuccessful package (library) installation,
+please downgrade (or upgrade) to the latest version of 3.10 Python
+and delete current Python and "venv" folder in WebUI's directory.
+
+You can download 3.10 Python from here: https://www.python.org/downloads/release/python-3109/
+
+{"Alternatively, use a binary release of WebUI: https://github.com/AUTOMATIC1111/stable-diffusion-webui/releases" if is_windows else ""}
+
+Use --skip-python-version-check to suppress this warning.
+""")
+
+
 def commit_hash():
     global stored_commit_hash
 
@@ -218,6 +249,7 @@ def prepare_environment():
 
     sys.argv, _ = extract_arg(sys.argv, '-f')
     sys.argv, skip_torch_cuda_test = extract_arg(sys.argv, '--skip-torch-cuda-test')
+    sys.argv, skip_python_version_check = extract_arg(sys.argv, '--skip-python-version-check')
     sys.argv, reinstall_xformers = extract_arg(sys.argv, '--reinstall-xformers')
     sys.argv, reinstall_torch = extract_arg(sys.argv, '--reinstall-torch')
     sys.argv, update_check = extract_arg(sys.argv, '--update-check')
@@ -225,6 +257,9 @@ def prepare_environment():
     sys.argv, skip_install = extract_arg(sys.argv, '--skip-install')
     xformers = '--xformers' in sys.argv
     ngrok = '--ngrok' in sys.argv
+
+    if not skip_python_version_check:
+        check_python_version()
 
     commit = commit_hash()
 

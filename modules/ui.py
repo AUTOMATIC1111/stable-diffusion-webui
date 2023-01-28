@@ -21,7 +21,7 @@ from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_grad
 
 from modules import sd_hijack, sd_models, localization, script_callbacks, ui_extensions, deepbooru, sd_vae, extra_networks, postprocessing, ui_components, ui_common, ui_postprocessing
 from modules.ui_components import FormRow, FormGroup, ToolButton, FormHTML
-from modules.paths import script_path
+from modules.paths import script_path, data_path
 
 from modules.shared import opts, cmd_opts, restricted_opts
 
@@ -91,6 +91,7 @@ save_style_symbol = '\U0001f4be'  # 💾
 apply_style_symbol = '\U0001f4cb'  # 📋
 clear_prompt_symbol = '\U0001F5D1'  # 🗑️
 extra_networks_symbol = '\U0001F3B4'  # 🎴
+switch_values_symbol = '\U000021C5' # ⇅
 
 
 def plaintext_to_html(text):
@@ -466,6 +467,7 @@ def create_ui():
                                 height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="txt2img_height")
 
                             if opts.dimensions_and_batch_together:
+                                res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="txt2img_res_switch_btn")
                                 with gr.Column(elem_id="txt2img_column_batch"):
                                     batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1, elem_id="txt2img_batch_count")
                                     batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1, elem_id="txt2img_batch_size")
@@ -566,6 +568,8 @@ def create_ui():
 
             txt2img_prompt.submit(**txt2img_args)
             submit.click(**txt2img_args)
+
+            res_switch_btn.click(lambda w, h: (h, w), inputs=[width, height], outputs=[width, height])
 
             txt_prompt_img.change(
                 fn=modules.images.image_data,
@@ -691,9 +695,15 @@ def create_ui():
 
                     with gr.TabItem('Batch', id='batch', elem_id="img2img_batch_tab") as tab_batch:
                         hidden = '<br>Disabled when launched with --hide-ui-dir-config.' if shared.cmd_opts.hide_ui_dir_config else ''
-                        gr.HTML(f"<p style='padding-bottom: 1em;' class=\"text-gray-500\">Process images in a directory on the same machine where the server is running.<br>Use an empty output directory to save pictures normally instead of writing to the output directory.{hidden}</p>")
+                        gr.HTML(
+                            f"<p style='padding-bottom: 1em;' class=\"text-gray-500\">Process images in a directory on the same machine where the server is running." +
+                            f"<br>Use an empty output directory to save pictures normally instead of writing to the output directory." +
+                            f"<br>Add inpaint batch mask directory to enable inpaint batch processing."
+                            f"{hidden}</p>"
+                        )
                         img2img_batch_input_dir = gr.Textbox(label="Input directory", **shared.hide_dirs, elem_id="img2img_batch_input_dir")
                         img2img_batch_output_dir = gr.Textbox(label="Output directory", **shared.hide_dirs, elem_id="img2img_batch_output_dir")
+                        img2img_batch_inpaint_mask_dir = gr.Textbox(label="Inpaint batch mask directory (required for inpaint batch processing only)", **shared.hide_dirs, elem_id="img2img_batch_inpaint_mask_dir")
 
                 def copy_image(img):
                     if isinstance(img, dict) and 'image' in img:
@@ -728,6 +738,7 @@ def create_ui():
                                 height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="img2img_height")
 
                             if opts.dimensions_and_batch_together:
+                                res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="img2img_res_switch_btn")
                                 with gr.Column(elem_id="img2img_column_batch"):
                                     batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1, elem_id="img2img_batch_count")
                                     batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1, elem_id="img2img_batch_size")
@@ -838,6 +849,7 @@ def create_ui():
                     inpainting_mask_invert,
                     img2img_batch_input_dir,
                     img2img_batch_output_dir,
+                    img2img_batch_inpaint_mask_dir
                 ] + custom_inputs,
                 outputs=[
                     img2img_gallery,
@@ -865,6 +877,7 @@ def create_ui():
 
             img2img_prompt.submit(**img2img_args)
             submit.click(**img2img_args)
+            res_switch_btn.click(lambda w, h: (h, w), inputs=[width, height], outputs=[width, height])
 
             img2img_interrogate.click(
                 fn=lambda *args: process_interrogate(interrogate, *args),
@@ -1497,8 +1510,8 @@ def create_ui():
         with open(cssfile, "r", encoding="utf8") as file:
             css += file.read() + "\n"
 
-    if os.path.exists(os.path.join(script_path, "user.css")):
-        with open(os.path.join(script_path, "user.css"), "r", encoding="utf8") as file:
+    if os.path.exists(os.path.join(data_path, "user.css")):
+        with open(os.path.join(data_path, "user.css"), "r", encoding="utf8") as file:
             css += file.read() + "\n"
 
     if not cmd_opts.no_progressbar_hiding:
@@ -1679,14 +1692,14 @@ def create_ui():
 
 
 def reload_javascript():
-    head = f'<script type="text/javascript" src="file={os.path.abspath("script.js")}"></script>\n'
+    head = f'<script type="text/javascript" src="file={os.path.abspath("script.js")}?{os.path.getmtime("script.js")}"></script>\n'
 
     inline = f"{localization.localization_js(shared.opts.localization)};"
     if cmd_opts.theme is not None:
         inline += f"set_theme('{cmd_opts.theme}');"
 
     for script in modules.scripts.list_scripts("javascript", ".js"):
-        head += f'<script type="text/javascript" src="file={script.path}"></script>\n'
+        head += f'<script type="text/javascript" src="file={script.path}?{os.path.getmtime(script.path)}"></script>\n'
 
     head += f'<script type="text/javascript">{inline}</script>\n'
 

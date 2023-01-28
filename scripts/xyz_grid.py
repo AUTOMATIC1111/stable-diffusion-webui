@@ -123,7 +123,7 @@ def apply_vae(p, x, xs):
 
 
 def apply_styles(p: StableDiffusionProcessingTxt2Img, x: str, _):
-    p.styles = x.split(',')
+    p.styles.extend(x.split(','))
 
 
 def format_value_add_label(p, opt, x):
@@ -499,7 +499,7 @@ class Script(scripts.Script):
         image_cell_count = p.n_iter * p.batch_size
         cell_console_text = f"; {image_cell_count} images per cell" if image_cell_count > 1 else ""
         plural_s = 's' if len(zs) > 1 else ''
-        print(f"X/Y plot will create {len(xs) * len(ys) * len(zs) * image_cell_count} images on {len(zs)} {len(xs)}x{len(ys)} grid{plural_s}{cell_console_text}. (Total steps to process: {total_steps})")
+        print(f"X/Y/Z plot will create {len(xs) * len(ys) * len(zs) * image_cell_count} images on {len(zs)} {len(xs)}x{len(ys)} grid{plural_s}{cell_console_text}. (Total steps to process: {total_steps})")
         shared.total_tqdm.updateTotal(total_steps)
 
         grid_infotext = [None]
@@ -533,6 +533,7 @@ class Script(scripts.Script):
                 return Processed(p, [], p.seed, "")
 
             pc = copy(p)
+            pc.styles = pc.styles[:]
             x_opt.apply(pc, x, xs)
             y_opt.apply(pc, y, ys)
             z_opt.apply(pc, z, zs)

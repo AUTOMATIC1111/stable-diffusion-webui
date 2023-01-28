@@ -131,6 +131,8 @@ class StableDiffusionModelHijack:
             m.cond_stage_model.wrapped.model.token_embedding = m.cond_stage_model.wrapped.model.token_embedding.wrapped
             m.cond_stage_model = m.cond_stage_model.wrapped
 
+        undo_optimizations()
+
         self.apply_circular(False)
         self.layers = None
         self.clip = None

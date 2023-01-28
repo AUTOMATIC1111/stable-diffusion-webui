@@ -6,7 +6,7 @@ import shutil
 import torch
 import tqdm
 
-from modules import shared, images, sd_models, sd_vae
+from modules import shared, images, sd_models, sd_vae, sd_models_config
 from modules.ui_common import plaintext_to_html
 import gradio as gr
 import safetensors.torch
@@ -37,7 +37,7 @@ def run_pnginfo(image):
 
 def create_config(ckpt_result, config_source, a, b, c):
     def config(x):
-        res = sd_models.find_checkpoint_config(x) if x else None
+        res = sd_models_config.find_checkpoint_config_near_filename(x) if x else None
         return res if res != shared.sd_default_config else None
 
     if config_source == 0:
@@ -132,6 +132,7 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
     tertiary_model_info = sd_models.checkpoints_list[tertiary_model_name] if theta_func1 else None
 
     result_is_inpainting_model = False
+    result_is_instruct_pix2pix_model = False
 
     if theta_func2:
         shared.state.textinfo = f"Loading B"
@@ -185,14 +186,19 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
             if a.shape != b.shape and a.shape[0:1] + a.shape[2:] == b.shape[0:1] + b.shape[2:]:
                 if a.shape[1] == 4 and b.shape[1] == 9:
                     raise RuntimeError("When merging inpainting model with a normal one, A must be the inpainting model.")
+                if a.shape[1] == 4 and b.shape[1] == 8:
+                    raise RuntimeError("When merging instruct-pix2pix model with a normal one, A must be the instruct-pix2pix model.")
 
-                assert a.shape[1] == 9 and b.shape[1] == 4, f"Bad dimensions for merged layer {key}: A={a.shape}, B={b.shape}"
-
-                theta_0[key][:, 0:4, :, :] = theta_func2(a[:, 0:4, :, :], b, multiplier)
-                result_is_inpainting_model = True
+                if a.shape[1] == 8 and b.shape[1] == 4:#If we have an Instruct-Pix2Pix model...
+                    theta_0[key][:, 0:4, :, :] = theta_func2(a[:, 0:4, :, :], b, multiplier)#Merge only the vectors the models have in common.  Otherwise we get an error due to dimension mismatch.
+                    result_is_instruct_pix2pix_model = True
+                else:
+                    assert a.shape[1] == 9 and b.shape[1] == 4, f"Bad dimensions for merged layer {key}: A={a.shape}, B={b.shape}"
+                    theta_0[key][:, 0:4, :, :] = theta_func2(a[:, 0:4, :, :], b, multiplier)
+                    result_is_inpainting_model = True
             else:
                 theta_0[key] = theta_func2(a, b, multiplier)
-
+            
             theta_0[key] = to_half(theta_0[key], save_as_half)
 
         shared.state.sampling_step += 1
@@ -226,6 +232,7 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
 
     filename = filename_generator() if custom_name == '' else custom_name
     filename += ".inpainting" if result_is_inpainting_model else ""
+    filename += ".instruct-pix2pix" if result_is_instruct_pix2pix_model else ""
     filename += "." + checkpoint_format
 
     output_modelname = os.path.join(ckpt_dir, filename)

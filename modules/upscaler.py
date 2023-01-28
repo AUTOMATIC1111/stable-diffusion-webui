@@ -11,7 +11,6 @@ from modules import modelloader, shared
 
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
 NEAREST = (Image.Resampling.NEAREST if hasattr(Image, 'Resampling') else Image.NEAREST)
-from modules.paths import models_path
 
 
 class Upscaler:
@@ -39,7 +38,7 @@ class Upscaler:
         self.mod_scale = None
 
         if self.model_path is None and self.name:
-            self.model_path = os.path.join(models_path, self.name)
+            self.model_path = os.path.join(shared.models_path, self.name)
         if self.model_path and create_dirs:
             os.makedirs(self.model_path, exist_ok=True)
 

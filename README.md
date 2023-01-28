@@ -17,7 +17,7 @@ A browser interface based on Gradio library for Stable Diffusion.
     - a man in a (tuxedo:1.21) - alternative syntax
     - select text and press ctrl+up or ctrl+down to automatically adjust attention to selected text (code contributed by anonymous user)
 - Loopback, run img2img processing multiple times
-- X/Y plot, a way to draw a 2 dimensional plot of images with different parameters
+- X/Y/Z plot, a way to draw a 3 dimensional plot of images with different parameters
 - Textual Inversion
     - have as many embeddings as you want and use any names you like for them
     - use multiple embeddings with different numbers of vectors per token

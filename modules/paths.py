@@ -4,7 +4,15 @@ import sys
 import modules.safe
 
 script_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-models_path = os.path.join(script_path, "models")
+
+# Parse the --data-dir flag first so we can use it as a base for our other argument default values
+parser = argparse.ArgumentParser(add_help=False)
+parser.add_argument("--data-dir", type=str, default=os.path.dirname(os.path.dirname(os.path.realpath(__file__))), help="base path where all user data is stored",)
+cmd_opts_pre = parser.parse_known_args()[0]
+data_path = cmd_opts_pre.data_dir
+models_path = os.path.join(data_path, "models")
+
+# data_path = cmd_opts_pre.data
 sys.path.insert(0, script_path)
 
 # search for directory of stable diffusion in following places
