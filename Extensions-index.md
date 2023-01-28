@@ -542,6 +542,13 @@
 			"tags": ["script"]
 		},
 		{
+			"name": "cafe-aesthetic",
+			"url": "https://github.com/p1atdev/stable-diffusion-webui-cafe-aesthetic.git",
+			"description": "Pre-trained model, determines if aesthetic/non-aesthetic, does 5 different style recognition modes, and Waifu confirmation. Also has a tab with Batch processing.",
+			"added": "2023-01-28",
+			"tags": ["script", "tab"]
+		},
+		{
 			"name": "zh_CN Localization",
 			"url": "https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN",
 			"description": "Simplified Chinese localization",
