@@ -529,7 +529,10 @@ the effect is. You can choose between the two methods in settings.
 
 # Checkpoint Merger
 Guide generously donated by an anonymous benefactor.
+
 ![1674918832052087](https://user-images.githubusercontent.com/20920490/215274766-7d78df50-bb01-4e7b-84b6-04fed94b92ef.png)
+
+Full guide with other info is here: https://imgur.com/a/VjFi5uM
 
 # Saving
 Click the Save button under the output section, and generated images will be saved to a directory specified in settings;
