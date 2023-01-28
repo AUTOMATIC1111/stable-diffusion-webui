@@ -21,7 +21,7 @@ from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_grad
 
 from modules import sd_hijack, sd_models, localization, script_callbacks, ui_extensions, deepbooru, sd_vae, extra_networks, postprocessing, ui_components, ui_common, ui_postprocessing
 from modules.ui_components import FormRow, FormGroup, ToolButton, FormHTML
-from modules.paths import script_path
+from modules.paths import script_path, data_path
 
 from modules.shared import opts, cmd_opts, restricted_opts
 
@@ -1510,8 +1510,8 @@ def create_ui():
         with open(cssfile, "r", encoding="utf8") as file:
             css += file.read() + "\n"
 
-    if os.path.exists(os.path.join(script_path, "user.css")):
-        with open(os.path.join(script_path, "user.css"), "r", encoding="utf8") as file:
+    if os.path.exists(os.path.join(data_path, "user.css")):
+        with open(os.path.join(data_path, "user.css"), "r", encoding="utf8") as file:
             css += file.read() + "\n"
 
     if not cmd_opts.no_progressbar_hiding:

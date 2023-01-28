@@ -17,6 +17,7 @@ from modules import devices, prompt_parser, masking, sd_samplers, lowvram, gener
 from modules.sd_hijack import model_hijack
 from modules.shared import opts, cmd_opts, state
 import modules.shared as shared
+import modules.paths as paths
 import modules.face_restoration
 import modules.images as images
 import modules.styles
@@ -584,7 +585,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             if not p.disable_extra_networks:
                 extra_networks.activate(p, extra_network_data)
 
-        with open(os.path.join(shared.script_path, "params.txt"), "w", encoding="utf8") as file:
+        with open(os.path.join(paths.data_path, "params.txt"), "w", encoding="utf8") as file:
             processed = Processed(p, [], p.seed, "")
             file.write(processed.infotext(p, 0))
 
