@@ -286,23 +286,24 @@ def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend
         print("Unexpected error: draw_xyz_grid failed to return even a single processed image")
         return Processed(p, [])
 
-    grids = [None] * len(zs)
+    sub_grids = [None] * len(zs)
     for i in range(len(zs)):
         start_index = i * len(xs) * len(ys)
         end_index = start_index + len(xs) * len(ys)
         grid = images.image_grid(image_cache[start_index:end_index], rows=len(ys))
         if draw_legend:
             grid = images.draw_grid_annotations(grid, cell_size[0], cell_size[1], hor_texts, ver_texts)
-        
-        grids[i] = grid        
+        sub_grids[i] = grid
         if include_sub_grids and len(zs) > 1:
             processed_result.images.insert(i+1, grid)
 
-    original_grid_size = grids[0].size
-    grids = images.image_grid(grids, rows=1)
-    processed_result.images[0] = images.draw_grid_annotations(grids, original_grid_size[0], original_grid_size[1], title_texts, [[images.GridAnnotation()]])
+    sub_grid_size = sub_grids[0].size
+    z_grid = images.image_grid(sub_grids, rows=1)
+    if draw_legend:
+        z_grid = images.draw_grid_annotations(z_grid, sub_grid_size[0], sub_grid_size[1], title_texts, [[images.GridAnnotation()]])
+    processed_result.images[0] = z_grid
 
-    return processed_result
+    return processed_result, sub_grids
 
 
 class SharedSettingsStackHelper(object):
@@ -576,7 +577,7 @@ class Script(scripts.Script):
             return res
 
         with SharedSettingsStackHelper():
-            processed = draw_xyz_grid(
+            processed, sub_grids = draw_xyz_grid(
                 p,
                 xs=xs,
                 ys=ys,
@@ -591,6 +592,10 @@ class Script(scripts.Script):
                 first_axes_processed=first_axes_processed,
                 second_axes_processed=second_axes_processed
             )
+
+        if opts.grid_save and len(sub_grids) > 1:
+            for sub_grid in sub_grids:
+                images.save_image(sub_grid, p.outpath_grids, "xyz_grid", info=grid_infotext[0], extension=opts.grid_format, prompt=p.prompt, seed=processed.seed, grid=True, p=p)
 
         if opts.grid_save:
             images.save_image(processed.images[0], p.outpath_grids, "xyz_grid", info=grid_infotext[0], extension=opts.grid_format, prompt=p.prompt, seed=processed.seed, grid=True, p=p)
