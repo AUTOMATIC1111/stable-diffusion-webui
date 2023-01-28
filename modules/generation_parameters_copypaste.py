@@ -11,7 +11,7 @@ from modules import shared, ui_tempdir, script_callbacks
 import tempfile
 from PIL import Image
 
-re_param_code = r'\s*([\w ]+):\s*("(?:\\|\"|[^\"])+"|[^,]*)(?:,|$)'
+re_param_code = r'\s*([\w ]+):\s*("(?:\\"[^,]|\\"|\\|[^\"])+"|[^,]*)(?:,|$)'
 re_param = re.compile(re_param_code)
 re_params = re.compile(r"^(?:" + re_param_code + "){3,}$")
 re_imagesize = re.compile(r"^(\d+)x(\d+)$")
