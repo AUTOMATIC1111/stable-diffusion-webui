@@ -21,8 +21,10 @@ def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args):
 
     images = shared.listfiles(input_dir)
 
-    inpaint_masks = shared.listfiles(inpaint_mask_dir)
-    is_inpaint_batch = inpaint_mask_dir and len(inpaint_masks) > 0
+    is_inpaint_batch = False
+    if inpaint_mask_dir:
+        inpaint_masks = shared.listfiles(inpaint_mask_dir)
+        is_inpaint_batch = len(inpaint_masks) > 0
     if is_inpaint_batch:
         print(f"\nInpaint batch is enabled. {len(inpaint_masks)} masks found.")
 
