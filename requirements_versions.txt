@@ -1,11 +1,11 @@
 blendmodes==2022
-transformers==4.19.2
+transformers==4.25.1
 accelerate==0.12.0
 basicsr==1.4.2
 gfpgan==1.3.8
-gradio==3.9
+gradio==3.16.2
 numpy==1.23.3
-Pillow==9.2.0
+Pillow==9.4.0
 realesrgan==0.3.0
 torch
 omegaconf==2.2.3
@@ -14,7 +14,6 @@ scikit-image==0.19.2
 fonts
 font-roboto
 timm==0.6.7
-fairscale==0.4.9
 piexif==1.1.3
 einops==0.4.1
 jsonmerge==1.8.0
@@ -26,5 +25,5 @@ lark==1.1.2
 inflection==0.5.1
 GitPython==3.1.27
 torchsde==0.2.5
-safetensors==0.2.5
+safetensors==0.2.7
 httpcore<=0.15

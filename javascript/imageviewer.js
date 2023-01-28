@@ -148,9 +148,18 @@ function showGalleryImage() {
                 if(e && e.parentElement.tagName == 'DIV'){
                     e.style.cursor='pointer'
                     e.style.userSelect='none'
-                    e.addEventListener('click', function (evt) {
-                        if(!opts.js_modal_lightbox) return;
+
+                    var isFirefox = isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1
+
+                    // For Firefox, listening on click first switched to next image then shows the lightbox.
+                    // If you know how to fix this without switching to mousedown event, please.
+                    // For other browsers the event is click to make it possiblr to drag picture.
+                    var event = isFirefox ? 'mousedown' : 'click'
+
+                    e.addEventListener(event, function (evt) {
+                        if(!opts.js_modal_lightbox || evt.button != 0) return;
                         modalZoomSet(gradioApp().getElementById('modalImage'), opts.js_modal_lightbox_initially_zoomed)
+                        evt.preventDefault()
                         showModal(evt)
                     }, true);
                 }

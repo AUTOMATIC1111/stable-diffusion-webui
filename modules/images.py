@@ -39,11 +39,14 @@ def image_grid(imgs, batch_size=1, rows=None):
 
     cols = math.ceil(len(imgs) / rows)
 
-    w, h = imgs[0].size
-    grid = Image.new('RGB', size=(cols * w, rows * h), color='black')
+    params = script_callbacks.ImageGridLoopParams(imgs, cols, rows)
+    script_callbacks.image_grid_callback(params)
 
-    for i, img in enumerate(imgs):
-        grid.paste(img, box=(i % cols * w, i // cols * h))
+    w, h = imgs[0].size
+    grid = Image.new('RGB', size=(params.cols * w, params.rows * h), color='black')
+
+    for i, img in enumerate(params.imgs):
+        grid.paste(img, box=(i % params.cols * w, i // params.cols * h))
 
     return grid
 
@@ -192,7 +195,7 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts):
     ver_text_heights = [sum([line.size[1] + line_spacing for line in lines]) - line_spacing * len(lines) for lines in
                         ver_texts]
 
-    pad_top = max(hor_text_heights) + line_spacing * 2
+    pad_top = 0 if sum(hor_text_heights) == 0 else max(hor_text_heights) + line_spacing * 2
 
     result = Image.new("RGB", (im.width + pad_left, im.height + pad_top), "white")
     result.paste(im, (pad_left, pad_top))
@@ -227,16 +230,32 @@ def draw_prompt_matrix(im, width, height, all_prompts):
     return draw_grid_annotations(im, width, height, hor_texts, ver_texts)
 
 
-def resize_image(resize_mode, im, width, height):
+def resize_image(resize_mode, im, width, height, upscaler_name=None):
+    """
+    Resizes an image with the specified resize_mode, width, and height.
+
+    Args:
+        resize_mode: The mode to use when resizing the image.
+            0: Resize the image to the specified width and height.
+            1: Resize the image to fill the specified width and height, maintaining the aspect ratio, and then center the image within the dimensions, cropping the excess.
+            2: Resize the image to fit within the specified width and height, maintaining the aspect ratio, and then center the image within the dimensions, filling empty with data from image.
+        im: The image to resize.
+        width: The width to resize the image to.
+        height: The height to resize the image to.
+        upscaler_name: The name of the upscaler to use. If not provided, defaults to opts.upscaler_for_img2img.
+    """
+
+    upscaler_name = upscaler_name or opts.upscaler_for_img2img
+
     def resize(im, w, h):
-        if opts.upscaler_for_img2img is None or opts.upscaler_for_img2img == "None" or im.mode == 'L':
+        if upscaler_name is None or upscaler_name == "None" or im.mode == 'L':
             return im.resize((w, h), resample=LANCZOS)
 
         scale = max(w / im.width, h / im.height)
 
         if scale > 1.0:
-            upscalers = [x for x in shared.sd_upscalers if x.name == opts.upscaler_for_img2img]
-            assert len(upscalers) > 0, f"could not find upscaler named {opts.upscaler_for_img2img}"
+            upscalers = [x for x in shared.sd_upscalers if x.name == upscaler_name]
+            assert len(upscalers) > 0, f"could not find upscaler named {upscaler_name}"
 
             upscaler = upscalers[0]
             im = upscaler.scaler.upscale(im, scale, upscaler.data_path)
@@ -525,6 +544,9 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
             image_to_save.save(temp_file_path, format=image_format, quality=opts.jpeg_quality, pnginfo=pnginfo_data)
 
         elif extension.lower() in (".jpg", ".jpeg", ".webp"):
+            if image_to_save.mode == 'RGBA':
+                image_to_save = image_to_save.convert("RGB")
+
             image_to_save.save(temp_file_path, format=image_format, quality=opts.jpeg_quality)
 
             if opts.enable_pnginfo and info is not None:
@@ -583,8 +605,9 @@ def read_info_from_image(image):
         except ValueError:
             exif_comment = exif_comment.decode('utf8', errors="ignore")
 
-        items['exif comment'] = exif_comment
-        geninfo = exif_comment
+        if exif_comment:
+            items['exif comment'] = exif_comment
+            geninfo = exif_comment
 
         for field in ['jfif', 'jfif_version', 'jfif_unit', 'jfif_density', 'dpi', 'exif',
                       'loop', 'background', 'timestamp', 'duration']:

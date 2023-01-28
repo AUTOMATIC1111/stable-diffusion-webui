@@ -104,6 +104,23 @@ then
 fi
 
 # Check prerequisites
+gpu_info=$(lspci 2>/dev/null | grep VGA)
+case "$gpu_info" in
+    *"Navi 1"*|*"Navi 2"*) export HSA_OVERRIDE_GFX_VERSION=10.3.0
+    ;;
+    *"Renoir"*) export HSA_OVERRIDE_GFX_VERSION=9.0.0
+        printf "\n%s\n" "${delimiter}"
+        printf "Experimental support for Renoir: make sure to have at least 4GB of VRAM and 10GB of RAM or enable cpu mode: --use-cpu all --no-half"
+        printf "\n%s\n" "${delimiter}"
+    ;;
+    *) 
+    ;;
+esac
+if echo "$gpu_info" | grep -q "AMD" && [[ -z "${TORCH_COMMAND}" ]]
+then
+    export TORCH_COMMAND="pip install torch torchvision --extra-index-url https://download.pytorch.org/whl/rocm5.2"
+fi  
+
 for preq in "${GIT}" "${python_cmd}"
 do
     if ! hash "${preq}" &>/dev/null
@@ -160,10 +177,10 @@ then
     printf "\n%s\n" "${delimiter}"
     printf "Accelerating launch.py..."
     printf "\n%s\n" "${delimiter}"
-    accelerate launch --num_cpu_threads_per_process=6 "${LAUNCH_SCRIPT}" "$@"
+    exec accelerate launch --num_cpu_threads_per_process=6 "${LAUNCH_SCRIPT}" "$@"
 else
     printf "\n%s\n" "${delimiter}"
     printf "Launching launch.py..."
-    printf "\n%s\n" "${delimiter}"
-    "${python_cmd}" "${LAUNCH_SCRIPT}" "$@"
+    printf "\n%s\n" "${delimiter}"      
+    exec "${python_cmd}" "${LAUNCH_SCRIPT}" "$@"
 fi

@@ -111,12 +111,12 @@ class Script(scripts.Script):
     def title(self):
         return "Prompts from file or textbox"
 
-    def ui(self, is_img2img):
-        checkbox_iterate = gr.Checkbox(label="Iterate seed every line", value=False)
-        checkbox_iterate_batch = gr.Checkbox(label="Use same random seed for all lines", value=False)
+    def ui(self, is_img2img):       
+        checkbox_iterate = gr.Checkbox(label="Iterate seed every line", value=False, elem_id=self.elem_id("checkbox_iterate"))
+        checkbox_iterate_batch = gr.Checkbox(label="Use same random seed for all lines", value=False, elem_id=self.elem_id("checkbox_iterate_batch"))
 
-        prompt_txt = gr.Textbox(label="List of prompt inputs", lines=1)
-        file = gr.File(label="Upload prompt inputs", type='bytes')
+        prompt_txt = gr.Textbox(label="List of prompt inputs", lines=1, elem_id=self.elem_id("prompt_txt"))
+        file = gr.File(label="Upload prompt inputs", type='binary', elem_id=self.elem_id("file"))
 
         file.change(fn=load_prompt_file, inputs=[file], outputs=[file, prompt_txt, prompt_txt])
 
@@ -146,11 +146,7 @@ class Script(scripts.Script):
             else:
                 args = {"prompt": line}
 
-            n_iter = args.get("n_iter", 1)
-            if n_iter != 1:
-                job_count += n_iter
-            else:
-                job_count += 1
+            job_count += args.get("n_iter", p.n_iter)
 
             jobs.append(args)
 

@@ -1,7 +1,6 @@
 import os
 import gc
 import time
-import warnings
 
 import numpy as np
 import torch
@@ -14,8 +13,6 @@ import safetensors.torch
 from ldm.models.diffusion.ddim import DDIMSampler
 from ldm.util import instantiate_from_config, ismap
 from modules import shared, sd_hijack
-
-warnings.filterwarnings("ignore", category=UserWarning)
 
 cached_ldsr_model: torch.nn.Module = None
 

@@ -1,15 +1,14 @@
 blendmodes
 accelerate
 basicsr
-fairscale==0.4.4
 fonts
 font-roboto
 gfpgan
-gradio==3.9
+gradio==3.16.2
 invisible-watermark
 numpy
 omegaconf
-opencv-python
+opencv-contrib-python
 requests
 piexif
 Pillow
@@ -17,7 +16,7 @@ pytorch_lightning==1.7.7
 realesrgan
 scikit-image>=0.19
 timm==0.4.12
-transformers==4.19.2
+transformers==4.25.1
 torch
 einops
 jsonmerge
@@ -30,4 +29,4 @@ inflection
 GitPython
 torchsde
 safetensors
-psutil; sys_platform == 'darwin'
+psutil

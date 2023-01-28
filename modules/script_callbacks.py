@@ -2,7 +2,7 @@ import sys
 import traceback
 from collections import namedtuple
 import inspect
-from typing import Optional
+from typing import Optional, Dict, Any
 
 from fastapi import FastAPI
 from gradio import Blocks
@@ -51,6 +51,13 @@ class UiTrainTabParams:
         self.txt2img_preview_params = txt2img_preview_params
 
 
+class ImageGridLoopParams:
+    def __init__(self, imgs, cols, rows):
+        self.imgs = imgs
+        self.cols = cols
+        self.rows = rows
+
+
 ScriptCallback = namedtuple("ScriptCallback", ["script", "callback"])
 callback_map = dict(
     callbacks_app_started=[],
@@ -63,6 +70,10 @@ callback_map = dict(
     callbacks_cfg_denoiser=[],
     callbacks_before_component=[],
     callbacks_after_component=[],
+    callbacks_image_grid=[],
+    callbacks_infotext_pasted=[],
+    callbacks_script_unloaded=[],
+    callbacks_before_ui=[],
 )
 
 
@@ -155,6 +166,38 @@ def after_component_callback(component, **kwargs):
             report_exception(c, 'after_component_callback')
 
 
+def image_grid_callback(params: ImageGridLoopParams):
+    for c in callback_map['callbacks_image_grid']:
+        try:
+            c.callback(params)
+        except Exception:
+            report_exception(c, 'image_grid')
+
+
+def infotext_pasted_callback(infotext: str, params: Dict[str, Any]):
+    for c in callback_map['callbacks_infotext_pasted']:
+        try:
+            c.callback(infotext, params)
+        except Exception:
+            report_exception(c, 'infotext_pasted')
+
+
+def script_unloaded_callback():
+    for c in reversed(callback_map['callbacks_script_unloaded']):
+        try:
+            c.callback()
+        except Exception:
+            report_exception(c, 'script_unloaded')
+
+
+def before_ui_callback():
+    for c in reversed(callback_map['callbacks_before_ui']):
+        try:
+            c.callback()
+        except Exception:
+            report_exception(c, 'before_ui')
+
+
 def add_callback(callbacks, fun):
     stack = [x for x in inspect.stack() if x.filename != __file__]
     filename = stack[0].filename if len(stack) > 0 else 'unknown file'
@@ -186,7 +229,7 @@ def on_app_started(callback):
 
 def on_model_loaded(callback):
     """register a function to be called when the stable diffusion model is created; the model is
-    passed as an argument"""
+    passed as an argument; this function is also called when the script is reloaded. """
     add_callback(callback_map['callbacks_model_loaded'], callback)
 
 
@@ -255,3 +298,33 @@ def on_before_component(callback):
 def on_after_component(callback):
     """register a function to be called after a component is created. See on_before_component for more."""
     add_callback(callback_map['callbacks_after_component'], callback)
+
+
+def on_image_grid(callback):
+    """register a function to be called before making an image grid.
+    The callback is called with one argument:
+       - params: ImageGridLoopParams - parameters to be used for grid creation. Can be modified.
+    """
+    add_callback(callback_map['callbacks_image_grid'], callback)
+
+
+def on_infotext_pasted(callback):
+    """register a function to be called before applying an infotext.
+    The callback is called with two arguments:
+       - infotext: str - raw infotext.
+       - result: Dict[str, any] - parsed infotext parameters.
+    """
+    add_callback(callback_map['callbacks_infotext_pasted'], callback)
+
+
+def on_script_unloaded(callback):
+    """register a function to be called before the script is unloaded. Any hooks/hijacks/monkeying about that
+    the script did should be reverted here"""
+
+    add_callback(callback_map['callbacks_script_unloaded'], callback)
+
+
+def on_before_ui(callback):
+    """register a function to be called before the UI is created."""
+
+    add_callback(callback_map['callbacks_before_ui'], callback)

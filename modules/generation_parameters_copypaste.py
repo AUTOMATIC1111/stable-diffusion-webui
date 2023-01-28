@@ -1,12 +1,13 @@
 import base64
 import io
+import math
 import os
 import re
 from pathlib import Path
 
 import gradio as gr
-from modules.shared import script_path
-from modules import shared
+from modules.paths import data_path
+from modules import shared, ui_tempdir, script_callbacks
 import tempfile
 from PIL import Image
 
@@ -36,9 +37,15 @@ def quote(text):
 
 
 def image_from_url_text(filedata):
-    if type(filedata) == dict and filedata["is_file"]:
+    if filedata is None:
+        return None
+
+    if type(filedata) == list and len(filedata) > 0 and type(filedata[0]) == dict and filedata[0].get("is_file", False):
+        filedata = filedata[0]
+
+    if type(filedata) == dict and filedata.get("is_file", False):
         filename = filedata["name"]
-        is_in_right_dir = any(Path(temp_dir).resolve() in Path(filename).resolve().parents for temp_dir in shared.demo.temp_dirs)
+        is_in_right_dir = ui_tempdir.check_tmp_file(shared.demo, filename)
         assert is_in_right_dir, 'trying to open image file outside of allowed directories'
 
         return Image.open(filename)
@@ -72,8 +79,6 @@ def integrate_settings_paste_fields(component_dict):
     from modules import ui
 
     settings_map = {
-        'sd_hypernetwork': 'Hypernet',
-        'sd_hypernetwork_strength': 'Hypernet strength',
         'CLIP_stop_at_last_layers': 'Clip skip',
         'inpainting_mask_weight': 'Conditional mask weight',
         'sd_model_checkpoint': 'Model hash',
@@ -93,7 +98,7 @@ def integrate_settings_paste_fields(component_dict):
 def create_buttons(tabs_list):
     buttons = {}
     for tab in tabs_list:
-        buttons[tab] = gr.Button(f"Send to {tab}")
+        buttons[tab] = gr.Button(f"Send to {tab}", elem_id=f"{tab}_tab")
     return buttons
 
 
@@ -102,35 +107,57 @@ def bind_buttons(buttons, send_image, send_generate_info):
     bind_list.append([buttons, send_image, send_generate_info])
 
 
+def send_image_and_dimensions(x):
+    if isinstance(x, Image.Image):
+        img = x
+    else:
+        img = image_from_url_text(x)
+
+    if shared.opts.send_size and isinstance(img, Image.Image):
+        w = img.width
+        h = img.height
+    else:
+        w = gr.update()
+        h = gr.update()
+
+    return img, w, h
+
+
 def run_bind():
-    for buttons, send_image, send_generate_info in bind_list:
+    for buttons, source_image_component, send_generate_info in bind_list:
         for tab in buttons:
             button = buttons[tab]
-            if send_image and paste_fields[tab]["init_img"]:
-                if type(send_image) == gr.Gallery:
-                    button.click(
-                        fn=lambda x: image_from_url_text(x),
-                        _js="extract_image_from_gallery",
-                        inputs=[send_image],
-                        outputs=[paste_fields[tab]["init_img"]],
-                    )
-                else:
-                    button.click(
-                        fn=lambda x: x,
-                        inputs=[send_image],
-                        outputs=[paste_fields[tab]["init_img"]],
-                    )
+            destination_image_component = paste_fields[tab]["init_img"]
+            fields = paste_fields[tab]["fields"]
 
-            if send_generate_info and paste_fields[tab]["fields"] is not None:
+            destination_width_component = next(iter([field for field, name in fields if name == "Size-1"] if fields else []), None)
+            destination_height_component = next(iter([field for field, name in fields if name == "Size-2"] if fields else []), None)
+
+            if source_image_component and destination_image_component:
+                if isinstance(source_image_component, gr.Gallery):
+                    func = send_image_and_dimensions if destination_width_component else image_from_url_text
+                    jsfunc = "extract_image_from_gallery"
+                else:
+                    func = send_image_and_dimensions if destination_width_component else lambda x: x
+                    jsfunc = None
+
+                button.click(
+                    fn=func,
+                    _js=jsfunc,
+                    inputs=[source_image_component],
+                    outputs=[destination_image_component, destination_width_component, destination_height_component] if destination_width_component else [destination_image_component],
+                )
+
+            if send_generate_info and fields is not None:
                 if send_generate_info in paste_fields:
-                    paste_field_names = ['Prompt', 'Negative prompt', 'Steps', 'Face restoration'] +  (['Size-1', 'Size-2'] if shared.opts.send_size else []) + (["Seed"] if shared.opts.send_seed else [])
+                    paste_field_names = ['Prompt', 'Negative prompt', 'Steps', 'Face restoration'] + (["Seed"] if shared.opts.send_seed else [])
                     button.click(
                         fn=lambda *x: x,
                         inputs=[field for field, name in paste_fields[send_generate_info]["fields"] if name in paste_field_names],
-                        outputs=[field for field, name in paste_fields[tab]["fields"] if name in paste_field_names],
+                        outputs=[field for field, name in fields if name in paste_field_names],
                     )
                 else:
-                    connect_paste(button, paste_fields[tab]["fields"], send_generate_info)
+                    connect_paste(button, fields, send_generate_info)
 
             button.click(
                 fn=None,
@@ -162,6 +189,39 @@ def find_hypernetwork_key(hypernet_name, hypernet_hash=None):
                 return hypernet_key
 
     return None
+
+
+def restore_old_hires_fix_params(res):
+    """for infotexts that specify old First pass size parameter, convert it into
+    width, height, and hr scale"""
+
+    firstpass_width = res.get('First pass size-1', None)
+    firstpass_height = res.get('First pass size-2', None)
+
+    if shared.opts.use_old_hires_fix_width_height:
+        hires_width = int(res.get("Hires resize-1", 0))
+        hires_height = int(res.get("Hires resize-2", 0))
+
+        if hires_width and hires_height:
+            res['Size-1'] = hires_width
+            res['Size-2'] = hires_height
+            return
+
+    if firstpass_width is None or firstpass_height is None:
+        return
+
+    firstpass_width, firstpass_height = int(firstpass_width), int(firstpass_height)
+    width = int(res.get("Size-1", 512))
+    height = int(res.get("Size-2", 512))
+
+    if firstpass_width == 0 or firstpass_height == 0:
+        from modules import processing
+        firstpass_width, firstpass_height = processing.old_hires_fix_first_pass_dimensions(width, height)
+
+    res['Size-1'] = firstpass_width
+    res['Size-2'] = firstpass_height
+    res['Hires resize-1'] = width
+    res['Hires resize-2'] = height
 
 
 def parse_generation_parameters(x: str):
@@ -213,13 +273,15 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
     if "Clip skip" not in res:
         res["Clip skip"] = "1"
 
-    if "Hypernet strength" not in res:
-        res["Hypernet strength"] = "1"
+    hypernet = res.get("Hypernet", None)
+    if hypernet is not None:
+        res["Prompt"] += f"""<hypernet:{hypernet}:{res.get("Hypernet strength", "1.0")}>"""
 
-    if "Hypernet" in res:
-        hypernet_name = res["Hypernet"]
-        hypernet_hash = res.get("Hypernet hash", None)
-        res["Hypernet"] = find_hypernetwork_key(hypernet_name, hypernet_hash)
+    if "Hires resize-1" not in res:
+        res["Hires resize-1"] = 0
+        res["Hires resize-2"] = 0
+
+    restore_old_hires_fix_params(res)
 
     return res
 
@@ -227,12 +289,13 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
 def connect_paste(button, paste_fields, input_comp, jsfunc=None):
     def paste_func(prompt):
         if not prompt and not shared.cmd_opts.hide_ui_dir_config:
-            filename = os.path.join(script_path, "params.txt")
+            filename = os.path.join(data_path, "params.txt")
             if os.path.exists(filename):
                 with open(filename, "r", encoding="utf8") as file:
                     prompt = file.read()
 
         params = parse_generation_parameters(prompt)
+        script_callbacks.infotext_pasted_callback(prompt, params)
         res = []
 
         for output, key in paste_fields:

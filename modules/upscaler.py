@@ -11,7 +11,6 @@ from modules import modelloader, shared
 
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
 NEAREST = (Image.Resampling.NEAREST if hasattr(Image, 'Resampling') else Image.NEAREST)
-from modules.paths import models_path
 
 
 class Upscaler:
@@ -39,7 +38,7 @@ class Upscaler:
         self.mod_scale = None
 
         if self.model_path is None and self.name:
-            self.model_path = os.path.join(models_path, self.name)
+            self.model_path = os.path.join(shared.models_path, self.name)
         if self.model_path and create_dirs:
             os.makedirs(self.model_path, exist_ok=True)
 
@@ -53,10 +52,10 @@ class Upscaler:
     def do_upscale(self, img: PIL.Image, selected_model: str):
         return img
 
-    def upscale(self, img: PIL.Image, scale: int, selected_model: str = None):
+    def upscale(self, img: PIL.Image, scale, selected_model: str = None):
         self.scale = scale
-        dest_w = img.width * scale
-        dest_h = img.height * scale
+        dest_w = int(img.width * scale)
+        dest_h = int(img.height * scale)
 
         for i in range(3):
             shape = (img.width, img.height)
@@ -95,6 +94,7 @@ class UpscalerData:
     def __init__(self, name: str, path: str, upscaler: Upscaler = None, scale: int = 4, model=None):
         self.name = name
         self.data_path = path
+        self.local_data_path = path
         self.scaler = upscaler
         self.scale = scale
         self.model = model

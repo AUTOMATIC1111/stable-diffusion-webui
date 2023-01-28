@@ -32,3 +32,4 @@ notification.mp3
 /extensions
 /test/stdout.txt
 /test/stderr.txt
+/cache.json
