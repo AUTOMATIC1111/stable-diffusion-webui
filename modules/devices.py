@@ -201,6 +201,3 @@ if has_mps():
         cumsum_needs_bool_fix = not torch.BoolTensor([True,True]).to(device=torch.device("mps"), dtype=torch.int64).equal(torch.BoolTensor([True,False]).to(torch.device("mps")).cumsum(0))
         torch.cumsum = lambda input, *args, **kwargs: ( cumsum_fix(input, orig_cumsum, *args, **kwargs) )
         torch.Tensor.cumsum = lambda self, *args, **kwargs: ( cumsum_fix(self, orig_Tensor_cumsum, *args, **kwargs) )
-        orig_narrow = torch.narrow
-        torch.narrow = lambda *args, **kwargs: ( orig_narrow(*args, **kwargs).clone() )
-
