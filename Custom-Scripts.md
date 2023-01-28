@@ -320,19 +320,18 @@ Steps: 20, Sampler: DDIM, CFG scale: 7, Seed: 4288895889, Size: 512x512, Model h
 
 </details>
 
-## Multiple Hypernetworks
-https://github.com/antis0007/sd-webui-multiple-hypernetworks
+## sd_script-skippy-the-step-kangaroo
+https://github.com/FartyPants/sd_script_skippy
 
-Adds the ability to apply multiple hypernetworks at once. Overrides the hijack, optimization and CrossAttention forward functions in order to apply multiple hypernetworks sequentially, with different weights.
+Script for Automatic1111 The ultimate solution for those pesky last steps that ruin your SD generation images
 
-## Hypernetwork Structure(.hns)/Variable Dropout/ Monkey Patches
-https://github.com/aria1th/Hypernetwork-MonkeyPatch-Extension
+Imagine this: So you're watching the SD generation in your browser - image is good, good, good then on the last few steps, BOOM, it's ugly.
 
-Adds the ability to apply Hypernetwork Structure, as defining it in .hns file. see [here](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/4334) for detailed information. 
+This handy script is the remedy. It enables you to snatch incomplete generation by skipping last few steps. Works great when you have overtrained ckpt
 
-Adds the ability to use proper variable dropout rate, like 0.05. Also fixes issues with using hypernetwork right after training.
+Example: you put euler a on 25 steps, but now you can snatch image at step 19, like a ... I don't know, a puppy? The new, early image will be sent to the interface
 
-Adds creating beta-hypernetwork(dropout), and beta-training which allows automatic cosine annealing, and no-crop usage of original images.
+Here is how you test this contraption: Set Steps at 20 and move the Skip steps to 16 (that means: 20-16 = 4) - you should see a blurry image in interface that was snatched at step 4 as we skipped last 16 steps.
 
 ## Saving steps of the sampling process
 
