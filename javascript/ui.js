@@ -309,3 +309,10 @@ function updateInput(target){
 	Object.defineProperty(e, "target", {value: target})
 	target.dispatchEvent(e);
 }
+
+
+var desiredCheckpointName = null;
+function selectCheckpoint(name){
+    desiredCheckpointName = name;
+    gradioApp().getElementById('change_checkpoint').click()
+}

@@ -1560,6 +1560,14 @@ def create_ui():
                 outputs=[component, text_settings],
             )
 
+        button_set_checkpoint = gr.Button('Change checkpoint', elem_id='change_checkpoint', visible=False)
+        button_set_checkpoint.click(
+            fn=lambda value, _: run_settings_single(value, key='sd_model_checkpoint'),
+            _js="function(v){ var res = desiredCheckpointName; desiredCheckpointName = ''; return [res || v, null]; }",
+            inputs=[component_dict['sd_model_checkpoint'], dummy_component],
+            outputs=[component_dict['sd_model_checkpoint'], text_settings],
+        )
+
         component_keys = [k for k in opts.data_labels.keys() if k in component_dict]
 
         def get_settings_values():

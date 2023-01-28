@@ -20,7 +20,7 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
             preview = None
             for file in previews:
                 if os.path.isfile(file):
-                    preview = "./file=" + file.replace('\\', '/') + "?mtime=" + str(os.path.getmtime(file))
+                    preview = self.link_preview(file)
                     break
 
             yield {

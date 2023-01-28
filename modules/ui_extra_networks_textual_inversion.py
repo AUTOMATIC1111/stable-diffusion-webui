@@ -19,7 +19,7 @@ class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
 
             preview = None
             if os.path.isfile(preview_file):
-                preview = "./file=" + preview_file.replace('\\', '/') + "?mtime=" + str(os.path.getmtime(preview_file))
+                preview = self.link_preview(preview_file)
 
             yield {
                 "name": embedding.name,
