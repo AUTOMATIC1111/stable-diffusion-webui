@@ -1692,14 +1692,14 @@ def create_ui():
 
 
 def reload_javascript():
-    head = f'<script type="text/javascript" src="file={os.path.abspath("script.js")}"></script>\n'
+    head = f'<script type="text/javascript" src="file={os.path.abspath("script.js")}?{os.path.getmtime("script.js")}"></script>\n'
 
     inline = f"{localization.localization_js(shared.opts.localization)};"
     if cmd_opts.theme is not None:
         inline += f"set_theme('{cmd_opts.theme}');"
 
     for script in modules.scripts.list_scripts("javascript", ".js"):
-        head += f'<script type="text/javascript" src="file={script.path}"></script>\n'
+        head += f'<script type="text/javascript" src="file={script.path}?{os.path.getmtime(script.path)}"></script>\n'
 
     head += f'<script type="text/javascript">{inline}</script>\n'
 
