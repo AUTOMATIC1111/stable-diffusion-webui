@@ -441,7 +441,7 @@
 			"url": "https://github.com/sdwebui-w-horde/sd-webui-stable-horde-worker.git",
 			"description": "Worker Client for Stable Horde. Generate pictures for other users with your PC. Please see https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Extensions#stable-horde-worker for additional instructions.",
 			"added": "2023-01-10",
-			"tags": ["script"]
+			"tags": ["script", "tab"]
 		},
 		{
 			"name": "Stable Horde Client",
@@ -523,9 +523,23 @@
 		{
 			"name": "Instruct-pix2pix",
 			"url": "https://github.com/Klace/stable-diffusion-webui-instruct-pix2pix.git",
-			"description": "Adds a tab with instruct-pix2pix image. editing capabilities",
+			"description": "Adds a tab for doing img2img editing with the instruct-pix2pix model.",
 			"added": "2023-01-25",
 			"tags": ["script", "tab"]
+		},
+		{
+			"name": "Custom Diffusion",
+			"url": "https://github.com/guaneec/custom-diffusion-webui.git",
+			"description": "Custom Diffusion is, in short, finetuning-lite with TI, instead of tuning the whole model. Similar speed and memory requirements to TI and supposedly gives better results in less steps.",
+			"added": "2023-01-28",
+			"tags": ["script", "tab"]
+		},
+		{
+			"name": "Fusion",
+			"url": "https://github.com/ljleb/prompt-fusion-extension.git",
+			"description": "Adds prompt-travel and shift-attention-like interpolations (see exts), but during/within the sampling steps. Always-on + works w/ existing prompt-editing syntax. Various interpolation modes. See their wiki for more info.",
+			"added": "2023-01-28",
+			"tags": ["script"]
 		},
 		{
 			"name": "zh_CN Localization",
