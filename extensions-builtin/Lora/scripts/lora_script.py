@@ -10,6 +10,7 @@ from modules import script_callbacks, ui_extra_networks, extra_networks, shared
 def unload():
     torch.nn.Linear.forward = torch.nn.Linear_forward_before_lora
     torch.nn.Conv2d.forward = torch.nn.Conv2d_forward_before_lora
+    torch.nn.modules.linear.NonDynamicallyQuantizableLinear.forward = torch.nn.NonDynamicallyQuantizableLinear_forward_before_lora
 
 
 def before_ui():
@@ -23,8 +24,12 @@ if not hasattr(torch.nn, 'Linear_forward_before_lora'):
 if not hasattr(torch.nn, 'Conv2d_forward_before_lora'):
     torch.nn.Conv2d_forward_before_lora = torch.nn.Conv2d.forward
 
+if not hasattr(torch.nn, 'NonDynamicallyQuantizableLinear_forward_before_lora'):
+    torch.nn.NonDynamicallyQuantizableLinear_forward_before_lora = torch.nn.modules.linear.NonDynamicallyQuantizableLinear.forward
+
 torch.nn.Linear.forward = lora.lora_Linear_forward
 torch.nn.Conv2d.forward = lora.lora_Conv2d_forward
+torch.nn.modules.linear.NonDynamicallyQuantizableLinear.forward = lora.lora_NonDynamicallyQuantizableLinear_forward
 
 script_callbacks.on_model_loaded(lora.assign_lora_names_to_compvis_modules)
 script_callbacks.on_script_unloaded(unload)
