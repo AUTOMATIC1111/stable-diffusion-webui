@@ -119,13 +119,14 @@ def sampler(params, options): # find sampler
     return sd.generate.sampler_name
 
 
-async def generate(prompt = None, options = None): # pylint: disable=redefined-outer-name
+async def generate(prompt = None, options = None, quiet = False): # pylint: disable=redefined-outer-name
     global sd
     if options:
         sd = Map(options)
     if prompt is not None:
         sd.generate.prompt = prompt
-    log.info({ 'generate': sd.generate })
+    if not quiet:
+        log.info({ 'generate': sd.generate })
     names = []
     b64s = []
     images = []
@@ -145,7 +146,8 @@ async def generate(prompt = None, options = None): # pylint: disable=redefined-o
         name = safestring(name) + '.jpg'
         f = os.path.join(sd.paths.root, sd.paths.generate, name)
         names.append(f)
-        log.info({ 'image': { 'name': f, 'size': images[i].size } })
+        if not quiet:
+            log.info({ 'image': { 'name': f, 'size': images[i].size } })
         images[i].save(f, 'JPEG', exif = exif(info, i), optimize = True, quality = 70)
     return Map({ 'name': names, 'image': images, 'b64': b64s, 'info': info })
 
