@@ -48,10 +48,39 @@ function setupExtraNetworks(){
 
 onUiLoaded(setupExtraNetworks)
 
+var re_extranet   =    /<([^:]+:[^:]+):[\d\.]+>/;
+var re_extranet_g = /\s+<([^:]+:[^:]+):[\d\.]+>/g;
+
+function tryToRemoveExtraNetworkFromPrompt(textarea, text){
+    var m = text.match(re_extranet)
+    if(! m) return false
+
+    var partToSearch = m[1]
+    var replaced = false
+    var newTextareaText = textarea.value.replaceAll(re_extranet_g, function(found, index){
+        m = found.match(re_extranet);
+        if(m[1] == partToSearch){
+            replaced = true;
+            return ""
+        }
+        return found;
+    })
+
+    if(replaced){
+        textarea.value = newTextareaText
+        return true;
+    }
+
+    return false
+}
+
 function cardClicked(tabname, textToAdd, allowNegativePrompt){
     var textarea = allowNegativePrompt ? activePromptTextarea[tabname] : gradioApp().querySelector("#" + tabname + "_prompt > label > textarea")
 
-    textarea.value = textarea.value + " " + textToAdd
+    if(! tryToRemoveExtraNetworkFromPrompt(textarea, textToAdd)){
+        textarea.value = textarea.value + " " + textToAdd
+    }
+
     updateInput(textarea)
 }
 
