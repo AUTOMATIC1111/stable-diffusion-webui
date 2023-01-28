@@ -267,10 +267,12 @@ Example: (cherrypicked result)
 
 Original image by Anonymous user from 4chan. Thank you, Anonymous user.
 
-# X/Y plot
-Creates a grid of images with varying parameters. Select which parameters should be shared by rows and columns using
-X type and Y type fields, and input those parameters separated by comma into X values/Y values fields. For integer,
-and floating point numbers, and ranges are supported. Examples:
+# X/Y/Z plot
+Creates multiple grids of images with varying parameters. X and Y are used as the rows and columns, while the Z grid is used as a batch dimension.
+
+![xyz-grid](https://user-images.githubusercontent.com/23466035/215288902-d8e13152-ba22-443f-9cf9-44108eba36fb.png)
+
+Select which parameters should be shared by rows, columns and batch by using X type, Y type and Z Type fields, and input those parameters separated by comma into X/Y/Z values fields. For integer, and floating point numbers, and ranges are supported. Examples:
 
 - Simple ranges:
   - `1-5` = 1, 2, 3, 4, 5
@@ -281,12 +283,6 @@ and floating point numbers, and ranges are supported. Examples:
 - Ranges with the count in square brackets:
   - `1-10 [5]` = 1, 3, 5, 7, 10
   - `0.0-1.0 [6]` = 0.0, 0.2, 0.4, 0.6, 0.8, 1.0
-
-![](images/xy_grid-medusa.png)
-
-Here are the settings that create the graph above:
-
-![](images/xy_grid-medusa-ui.png)
 
 ### Prompt S/R
 Prompt S/R is one of more difficult to understand modes of operation for X/Y Plot. S/R stands for search/replace, and that's what it does - you input a list of words or phrases, it takes the first from the list and treats it as keyword, and replaces all instances of that keyword with other entries from  the list.
