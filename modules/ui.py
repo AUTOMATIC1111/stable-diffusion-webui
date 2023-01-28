@@ -93,12 +93,6 @@ clear_prompt_symbol = '\U0001F5D1'  # 🗑️
 extra_networks_symbol = '\U0001F3B4'  # 🎴
 switch_values_symbol = '\U000021C5' # ⇅
 
-def switch_width_and_height(width, height):
-    width_temp = width
-    width = height
-    height = width_temp
-    return width, height
-
 
 def plaintext_to_html(text):
     return ui_common.plaintext_to_html(text)
@@ -574,7 +568,8 @@ def create_ui():
 
             txt2img_prompt.submit(**txt2img_args)
             submit.click(**txt2img_args)
-            res_switch_btn.click(switch_width_and_height, inputs=[width, height], outputs=[width, height])
+
+            res_switch_btn.click(lambda w, h: (h, w), inputs=[width, height], outputs=[width, height])
 
             txt_prompt_img.change(
                 fn=modules.images.image_data,
@@ -882,7 +877,7 @@ def create_ui():
 
             img2img_prompt.submit(**img2img_args)
             submit.click(**img2img_args)
-            res_switch_btn.click(switch_width_and_height, inputs=[width, height], outputs=[width, height])
+            res_switch_btn.click(lambda w, h: (h, w), inputs=[width, height], outputs=[width, height])
 
             img2img_interrogate.click(
                 fn=lambda *args: process_interrogate(interrogate, *args),
