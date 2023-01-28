@@ -13,6 +13,7 @@ __pycache__
 *.lock
 *.zip
 *.rar
+*.pyc
 
 # all dynamic stuff
 /repositories/**/*

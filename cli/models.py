@@ -13,6 +13,7 @@ from modules.sdapi import get, post, close
 from modules.grid import grid
 
 
+default = 'sd-v15-runwayml.ckpt [cc6cb27103]'
 embeddings = ['blonde', 'bruntette', 'sexy', 'naked', 'mia', 'lin', 'kelly', 'hanna', 'rreid-random-v0']
 exclude = ['sd-v20', 'sd-v21', 'inpainting', 'pix2pix']
 prompt = "photo of beautiful woman <embedding>, photograph, posing, pose, high detailed, intricate, elegant, sharp focus, skin texture, looking forward, facing camera, 135mm, shot on dslr, canon 5d, 4k, modelshoot style, cinematic lighting"
@@ -69,16 +70,16 @@ async def models(params):
             models.append(short)
     log.info({ 'models preview' })
     log.info({ 'models': len(models), 'excluded': len(excluded) })
-    log.info({ 'embeddings': len(embeddings) })
-    log.info({ 'batch size': options.generate.batch_size })
+    log.info({ 'embeddings': embeddings })
     log.info({ 'total jobs': len(models) * len(embeddings) * options.generate.batch_size, 'per-model': len(embeddings) * options.generate.batch_size })
     log.info(json.dumps(options, indent=2))
-    # models = ['sd-v15-runwayml.ckpt [cc6cb27103]']
+
     for model in models:
         fn = os.path.join(params.output, model + '.jpg')
-        if os.path.exists(fn):
-            log.info({ 'model': model, 'model preview exists': fn })
+        if os.path.exists(fn) and len(params.input) == 0: # if model preview exists and not manually included
+            log.info({ 'model preview exists': model })
             continue
+        log.info({ 'model load': model })
         opt = await get('/sdapi/v1/options')
         opt['sd_model_checkpoint'] = model
         await post('/sdapi/v1/options', opt)
@@ -87,7 +88,7 @@ async def models(params):
         t0 = time.time()
         for embedding in embeddings:
             options.generate.prompt = prompt.replace('<embedding>', f'\"{embedding}\"')
-            log.info({ 'model': model, 'embedding': embedding, 'prompt': options.generate.prompt })
+            log.info({ 'model generating': model, 'embedding': embedding, 'prompt': options.generate.prompt })
             data = await generate(options = options, quiet=True)
             if 'image' in data:
                 for img in data['image']:
@@ -99,8 +100,15 @@ async def models(params):
         image = grid(images = images, labels = labels, border = 8)
         image.save(fn)
         t = t1 - t0
-        its = 1.0 * options.generate.batch_size * len(images) / t
-        log.info({ 'model': model, 'created preview': fn, 'images': len(images), 'grid': [image.width, image.height], 'time': round(t, 2), 'its': round(its, 2) })
+        its = 1.0 * options.generate.steps * len(images) / t
+        log.info({ 'model preview created': model, 'image': fn, 'images': len(images), 'grid': [image.width, image.height], 'time': round(t, 2), 'its': round(its, 2) })
+    
+    opt = await get('/sdapi/v1/options')
+    if opt['sd_model_checkpoint'] != default:
+        log.info({ 'model set default': default })
+        opt['sd_model_checkpoint'] = default
+        await post('/sdapi/v1/options', opt)
+
     await close()
 
 
