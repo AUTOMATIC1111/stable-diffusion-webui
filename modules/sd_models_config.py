@@ -10,6 +10,7 @@ sd_repo_configs_path = os.path.join(paths.paths['Stable Diffusion'], "configs", 
 config_default = shared.sd_default_config
 config_sd2 = os.path.join(sd_repo_configs_path, "v2-inference.yaml")
 config_sd2v = os.path.join(sd_repo_configs_path, "v2-inference-v.yaml")
+config_sd2_inpainting = os.path.join(sd_repo_configs_path, "v2-inpainting-inference.yaml")
 config_depth_model = os.path.join(sd_repo_configs_path, "v2-midas-inference.yaml")
 config_inpainting = os.path.join(sd_configs_path, "v1-inpainting-inference.yaml")
 config_instruct_pix2pix = os.path.join(sd_configs_path, "instruct-pix2pix.yaml")
@@ -28,7 +29,9 @@ def guess_model_config_from_state_dict(sd, filename):
         return config_depth_model
 
     if sd2_cond_proj_weight is not None and sd2_cond_proj_weight.shape[1] == 1024:
-        if re.search(re_parametrization_v, fn) or "v2-1_768" in fn:
+        if diffusion_model_input.shape[1] == 9:
+            return config_sd2_inpainting
+        elif re.search(re_parametrization_v, fn) or "768" in fn:
             return config_sd2v
         else:
             return config_sd2
