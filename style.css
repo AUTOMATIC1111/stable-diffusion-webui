@@ -156,14 +156,13 @@
 
 #txt2img_styles_row, #img2img_styles_row{
     gap: 0.25em;
+    margin-top: 0.3em;
 }
 
 #txt2img_styles_row > button, #img2img_styles_row > button{
     margin: 0;
 }
-#txt2img_styles_row {
-	margin-top: 0.3em;
-}
+
 #txt2img_styles, #img2img_styles{
     padding: 0;
 }
