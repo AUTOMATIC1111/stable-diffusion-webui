@@ -42,8 +42,8 @@ A model trained to accept inputs in different languages.
 [PR](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/5238).
 
 
-- [Download](https://huggingface.co/webui/AltDiffusion-m9/tree/main) the model and accompanying yaml file from huggingface. Click the down arrow to download.
-- Put the files into `models/Stable-Diffusion`
+- [Download](https://huggingface.co/webui/AltDiffusion-m9/tree/main) the checkpoint from huggingface. Click the down arrow to download.
+- Put the file into `models/Stable-Diffusion`
 
 <details><summary>Notes: (Click to expand:)</summary>
 
@@ -57,9 +57,8 @@ Clip skip is not supported, the setting is ignored.
 
 # Stable Diffusion 2.0
 
-1. Download your model and accompanying yaml file from huggingface. Click the down arrow to download.
-2. Put the files into `models/Stable-Diffusion`
-3. Rename the `.yaml` to the name of your model if not already done - eg: `sd.ckpt`, `sd.yaml`
+1. Download your checkpoint file from huggingface. Click the down arrow to download.
+2. Put the file into `models/Stable-Diffusion`
 
 - 768 (2.0) - ([model](https://huggingface.co/stabilityai/stable-diffusion-2/blob/main/768-v-ema.ckpt), [yaml](https://raw.githubusercontent.com/Stability-AI/stablediffusion/main/configs/stable-diffusion/v2-inference-v.yaml)) 
 - 768 (2.1) - ([model+yaml](https://huggingface.co/webui/stable-diffusion-2-1/tree/main)) - `.safetensors`
