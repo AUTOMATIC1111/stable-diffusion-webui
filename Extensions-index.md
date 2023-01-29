@@ -488,7 +488,7 @@
 		{
 			"name": "Discord Rich Presence",
 			"url": "https://github.com/kabachuha/discord-rpc-for-automatic1111-webui.git",
-			"description": "Provides connection to Discord PRC, showing a fancy table in the user profile.",
+			"description": "Provides connection to Discord RPC, showing a fancy table in the user profile.",
 			"added": "2023-01-20",
 			"tags": ["script"]
 		},
