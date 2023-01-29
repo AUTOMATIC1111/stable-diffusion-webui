@@ -16,7 +16,7 @@ function setupExtraNetworksForTab(tabname){
         searchTerm = search.value.toLowerCase()
 
         gradioApp().querySelectorAll('#'+tabname+'_extra_tabs div.card').forEach(function(elem){
-            text = elem.querySelector('.name').textContent.toLowerCase()
+            text = elem.querySelector('.name').textContent.toLowerCase() + " " + elem.querySelector('.search_term').textContent.toLowerCase()
             elem.style.display = text.indexOf(searchTerm) == -1 ? "none" : ""
         })
     });

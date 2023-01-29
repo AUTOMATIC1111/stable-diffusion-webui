@@ -50,6 +50,16 @@ class ExtraNetworksPage:
     def link_preview(self, filename):
         return "./sd_extra_networks/thumb?filename=" + urllib.parse.quote(filename.replace('\\', '/')) + "&mtime=" + str(os.path.getmtime(filename))
 
+    def search_terms_from_path(self, filename, possible_directories=None):
+        abspath = os.path.abspath(filename)
+
+        for parentdir in (possible_directories if possible_directories is not None else self.allowed_directories_for_previews()):
+            parentdir = os.path.abspath(parentdir)
+            if abspath.startswith(parentdir):
+                return abspath[len(parentdir):].replace('\\','/')
+
+        return ""
+
     def create_html(self, tabname):
         view = shared.opts.extra_networks_default_view
         items_html = ''
@@ -90,6 +100,7 @@ class ExtraNetworksPage:
             "name": item["name"],
             "card_clicked": onclick,
             "save_card_preview": '"' + html.escape(f"""return saveCardPreview(event, {json.dumps(tabname)}, {json.dumps(item["local_preview"])})""") + '"',
+            "search_term": item.get("search_term", ""),
         }
 
         return self.card_page.format(**args)

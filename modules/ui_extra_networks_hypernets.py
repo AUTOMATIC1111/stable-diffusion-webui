@@ -26,6 +26,7 @@ class ExtraNetworksPageHypernetworks(ui_extra_networks.ExtraNetworksPage):
                 "name": name,
                 "filename": path,
                 "preview": preview,
+                "search_term": self.search_terms_from_path(path),
                 "prompt": json.dumps(f"<hypernet:{name}:") + " + opts.extra_networks_default_multiplier + " + json.dumps(">"),
                 "local_preview": path + ".png",
             }
