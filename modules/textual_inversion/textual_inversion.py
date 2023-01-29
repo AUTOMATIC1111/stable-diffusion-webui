@@ -228,9 +228,9 @@ class EmbeddingDatabase:
             self.load_from_dir(embdir)
             embdir.update()
 
-        # print(f"Textual inversion embeddings loaded({len(self.word_embeddings)}): {', '.join(self.word_embeddings.keys())}")
-        # if len(self.skipped_embeddings) > 0:
-        #     print(f"Textual inversion embeddings skipped({len(self.skipped_embeddings)}): {', '.join(self.skipped_embeddings.keys())}")
+        print(f"Textual inversion embeddings loaded({len(self.word_embeddings)}): {', '.join(self.word_embeddings.keys())}")
+        if len(self.skipped_embeddings) > 0:
+            print(f"Textual inversion embeddings skipped({len(self.skipped_embeddings)}): {', '.join(self.skipped_embeddings.keys())}")
 
     def find_embedding_at_position(self, tokens, offset):
         token = tokens[offset]
@@ -278,7 +278,7 @@ def write_loss(log_directory, filename, step, epoch_len, values):
     if shared.opts.training_write_csv_every == 0:
         return
 
-    if step % epoch_len != 0:
+    if step % shared.opts.training_write_csv_every != 0:
         return
     write_csv_header = False if os.path.exists(os.path.join(log_directory, filename)) else True
 
@@ -360,7 +360,7 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
 
     filename = os.path.join(shared.cmd_opts.embeddings_dir, f'{embedding_name}.pt')
 
-    log_directory = os.path.join(log_directory, embedding_name)
+    log_directory = os.path.join(log_directory, datetime.datetime.now().strftime("%Y-%m-%d"), embedding_name)
     unload = shared.opts.unload_models_when_training
 
     if save_embedding_every > 0:
@@ -510,8 +510,9 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
                 steps_done = embedding.step + 1
 
                 epoch_num = embedding.step // steps_per_epoch
+                epoch_step = embedding.step % steps_per_epoch
 
-                description = f"Training textual inversion step {embedding.step} loss: {loss_step:.5f} lr: {scheduler.learn_rate:.5f}"
+                description = f"Training textual inversion [Epoch {epoch_num}: {epoch_step+1}/{steps_per_epoch}] loss: {loss_step:.7f}"
                 pbar.set_description(description)
                 if embedding_dir is not None and steps_done % save_embedding_every == 0:
                     # Before saving, change name to match current checkpoint.
@@ -520,7 +521,7 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
                     save_embedding(embedding, optimizer, checkpoint, embedding_name_every, last_saved_file, remove_cached_checksum=True)
                     embedding_yet_to_be_embedded = True
 
-                write_loss(log_directory, "train.csv", embedding.step, steps_per_epoch, {
+                write_loss(log_directory, "textual_inversion_loss.csv", embedding.step, steps_per_epoch, {
                     "loss": f"{loss_step:.7f}",
                     "learn_rate": scheduler.learn_rate
                 })
