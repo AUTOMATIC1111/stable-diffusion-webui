@@ -538,38 +538,65 @@ Generate pictures using other user's PC. You should be able to recieve images fr
 
 Note: Retrieving Images may take 2 minutes or more, especially if you have no kudos. 
 
-### Stable Horde Worker
+## Stable Horde Worker
 https://github.com/sdwebui-w-horde/sd-webui-stable-horde-worker
 
-Produce images for other users using your compute. 
+An unofficial [Stable Horde](https://stablehorde.net/) worker bridge as a [Stable Diffusion WebUI](https://github.com/AUTOMATIC1111/stable-diffusion-webui) extension.
 
-#### Instructions:
-<details><summary>tested with: (Click to expand:)</summary>
+### Features
 
-- [commit version for webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/9cfd10cdefc7b2966b8e42fbb0e05735967cf87b) 
-- [commit version for extension](https://github.com/sdwebui-w-horde/sd-webui-stable-horde-worker/commit/6184f96dd99d03cc8b3f8c4c133e08ae07ce074f)
-</details>
+**This extension is still WORKING IN PROGRESS**, and is not ready for production use.
 
-1. Enter a display name here: https://stablehorde.net/register \
-You will get an api key. 
+- Get jobs from Stable Horde, generate images and submit generations
+- Configurable interval between every jobs
+- Enable and disable extension whenever
+- Detect current model and fetch corresponding jobs on the fly
+- Show generation images in the Stable Diffusion WebUI
+- Save generation images with png info text to local
 
-2. Download a known model by Stable Horde: such as [this](https://huggingface.co/Linaqruf/anything-v3.0/blob/main/Anything-V3.0-pruned.ckpt). You will find a list of compatible models [here.](https://raw.githubusercontent.com/Sygil-Dev/nataili-model-reference/main/db.json)
+### Install
 
-3. In webui settings, enter display name(worker name) and api key in stable horde section. Next, enter the correct registered name of your model: `Anything Diffusion`
+- Run the following command in the root directory of your Stable Diffusion WebUI installation:
 
-4. Tick the `enable` box and click apply settings to get it running.
+  ```bash
+  git clone https://github.com/sdwebui-w-horde/sd-webui-stable-horde-worker.git extensions/stable-horde-worker
+  ```
 
-![Screenshot](https://user-images.githubusercontent.com/98228077/211707522-233a02ac-6c91-4d6d-a78b-264a2ab3a84b.png)
+- Launch the Stable Diffusion WebUI, You would see the `Stable Horde Worker` tab page.
 
-- It's highly recommended to set your `Max Pixels` to below your maximum, especially for low vram users, or users will not get their picture due to your OOM errors. 
+  ![settings](./screenshots/settings.png)
 
-- It seems the client takes a little extra vram to use, but it will still run this fine on a 4gb gpu in f16 mode. For my tests, 768x768(589824) is the maximum, but noticing a user keeps getting OOM, it was set to 512x512(262144)
+- Register an account on [Stable Horde](https://stablehorde.net/) and get your `API key` if you don't have one.
 
-- It's highly recommended to run with just `--xformers` argument for the best speed settings, since this does not do batches.
+  **Note**: the default anonymous key `00000000` is not working for a worker, you need to register an account and get your own key.
 
-Note: Other users prompts are visible in your log. Their images generated are not visible or saved to your pc.
+- Setup your `API key` here.
+- Setup `Worker name` here with a proper name.
+- Make sure `Enable` is checked.
+- Click the `Apply settings` buttons.
+
+## Merge Block Weighted",
+
+Merge models with separate rate for each 25 U-Net block (input, middle, output).
+			
+## haku-img
+https://github.com/KohakuBlueleaf/a1111-sd-webui-haku-img
+
+Image utils extension. Allows blending, layering, hue and color adjustments, blurring and sketch effects, and basic pixelization.
+
+## Promptgen
+https://github.com/AUTOMATIC1111/stable-diffusion-webui-promptgen
+
+Use transformers models to generate prompts.
+			
+
+## Discord Rich Presence
+https://github.com/kabachuha/discord-rpc-for-automatic1111-webui
+
+Provides connection to Discord PRC, showing a fancy table in the user profile.
 
 ## Aesthetic Scorer
+https://github.com/vladmandic/sd-extension-aesthetic-scorer
 
 Uses existing CLiP model with an additional small pretrained to calculate perceived aesthetic score of an image  
 
@@ -589,6 +616,7 @@ appends **`score`** as *PNG info section* and/or *EXIF comments* field
 - Cross-platform!
 
 ## Steps Animation
+https://github.com/vladmandic/sd-extension-steps-animation
 
 Extension to create animation sequence from denoised intermediate steps  
 Registers a script in **txt2img** and **img2img** tabs
@@ -604,6 +632,7 @@ Resulting movie fiels are typically very small (*~1MB being average*) due to opt
 ### [Example](https://user-images.githubusercontent.com/57876960/212490617-f0444799-50e5-485e-bc5d-9c24a9146d38.mp4)
 
 ## System Info
+https://github.com/vladmandic/sd-extension-system-info
 
 Creates a top-level **System Info** tab in Automatic WebUI with 
 
@@ -614,3 +643,28 @@ Creates a top-level **System Info** tab in Automatic WebUI with
   can be force refreshed if required  
 
 ![screenshot](https://raw.githubusercontent.com/vladmandic/sd-extension-system-info/main/system-info.jpg)
+
+## Pixelization
+https://github.com/AUTOMATIC1111/stable-diffusion-webui-pixelization
+
+Using pre-trained models, produce pixel art out of images in the extras tab.
+			
+## Instruct-pix2pix
+https://github.com/Klace/stable-diffusion-webui-instruct-pix2pix
+
+Adds a tab for doing img2img editing with the instruct-pix2pix model.
+		
+## Custom Diffusion
+https://github.com/guaneec/custom-diffusion-webui
+
+Custom Diffusion is, in short, finetuning-lite with TI, instead of tuning the whole model. Similar speed and memory requirements to TI and supposedly gives better results in less steps.
+
+## Fusion
+https://github.com/ljleb/prompt-fusion-extension
+
+Adds prompt-travel and shift-attention-like interpolations (see exts), but during/within the sampling steps. Always-on + works w/ existing prompt-editing syntax. Various interpolation modes. See their wiki for more info.
+
+## cafe-aesthetic
+https://github.com/p1atdev/stable-diffusion-webui-cafe-aesthetic
+
+Pre-trained model, determines if aesthetic/non-aesthetic, does 5 different style recognition modes, and Waifu confirmation. Also has a tab with Batch processing.
