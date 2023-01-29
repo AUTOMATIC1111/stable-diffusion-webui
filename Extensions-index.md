@@ -439,7 +439,7 @@
 		{
 			"name": "Stable Horde Worker",
 			"url": "https://github.com/sdwebui-w-horde/sd-webui-stable-horde-worker.git",
-			"description": "Worker Client for Stable Horde. Generate pictures for other users with your PC. Please see https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Extensions#stable-horde-worker for additional instructions.",
+			"description": "Worker Client for Stable Horde. Generate pictures for other users with your PC. Please see readme for additional instructions.",
 			"added": "2023-01-10",
 			"tags": ["script", "tab"]
 		},
