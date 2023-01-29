@@ -6,8 +6,7 @@ import sys
 import tqdm
 import time
 
-from modules import shared, images, deepbooru
-from modules.paths import models_path
+from modules import paths, shared, images, deepbooru
 from modules.shared import opts, cmd_opts
 from modules.textual_inversion import autocrop
 
@@ -199,7 +198,7 @@ def preprocess_work(process_src, process_dst, process_width, process_height, pre
 
             dnn_model_path = None
             try:
-                dnn_model_path = autocrop.download_and_cache_models(os.path.join(models_path, "opencv"))
+                dnn_model_path = autocrop.download_and_cache_models(os.path.join(paths.models_path, "opencv"))
             except Exception as e:
                 print("Unable to load face detection model for auto crop selection. Falling back to lower quality haar method.", e)
 

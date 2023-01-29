@@ -1,5 +1,5 @@
 blendmodes==2022
-transformers==4.19.2
+transformers==4.25.1
 accelerate==0.12.0
 basicsr==1.4.2
 gfpgan==1.3.8
@@ -14,7 +14,6 @@ scikit-image==0.19.2
 fonts
 font-roboto
 timm==0.6.7
-fairscale==0.4.9
 piexif==1.1.3
 einops==0.4.1
 jsonmerge==1.8.0

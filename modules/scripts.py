@@ -6,10 +6,14 @@ from collections import namedtuple
 
 import gradio as gr
 
-from modules.processing import StableDiffusionProcessing
 from modules import shared, paths, script_callbacks, extensions, script_loading, scripts_postprocessing
 
 AlwaysVisible = object()
+
+
+class PostprocessImageArgs:
+    def __init__(self, image):
+        self.image = image
 
 
 class Script:
@@ -65,7 +69,7 @@ class Script:
         args contains all values returned by components from ui()
         """
 
-        raise NotImplementedError()
+        pass
 
     def process(self, p, *args):
         """
@@ -96,6 +100,13 @@ class Script:
         **kwargs will have same items as process_batch, and also:
           - batch_number - index of current batch, from 0 to number of batches-1
           - images - torch tensor with all generated images, with values ranging from 0 to 1;
+        """
+
+        pass
+
+    def postprocess_image(self, p, pp: PostprocessImageArgs, *args):
+        """
+        Called for every image after it has been generated.
         """
 
         pass
@@ -247,11 +258,15 @@ class ScriptRunner:
         self.infotext_fields = []
 
     def initialize_scripts(self, is_img2img):
+        from modules import scripts_auto_postprocessing
+
         self.scripts.clear()
         self.alwayson_scripts.clear()
         self.selectable_scripts.clear()
 
-        for script_class, path, basedir, script_module in scripts_data:
+        auto_processing_scripts = scripts_auto_postprocessing.create_auto_preprocessing_script_data()
+
+        for script_class, path, basedir, script_module in auto_processing_scripts + scripts_data:
             script = script_class()
             script.filename = path
             script.is_txt2img = not is_img2img
@@ -330,9 +345,23 @@ class ScriptRunner:
             outputs=[script.group for script in self.selectable_scripts]
         )
 
+        self.script_load_ctr = 0
+        def onload_script_visibility(params):
+            title = params.get('Script', None)
+            if title:
+                title_index = self.titles.index(title)
+                visibility = title_index == self.script_load_ctr
+                self.script_load_ctr = (self.script_load_ctr + 1) % len(self.titles)
+                return gr.update(visible=visibility)
+            else:
+                return gr.update(visible=False)
+
+        self.infotext_fields.append( (dropdown, lambda x: gr.update(value=x.get('Script', 'None'))) )
+        self.infotext_fields.extend( [(script.group, onload_script_visibility) for script in self.selectable_scripts] )
+
         return inputs
 
-    def run(self, p: StableDiffusionProcessing, *args):
+    def run(self, p, *args):
         script_index = args[0]
 
         if script_index == 0:
@@ -382,6 +411,15 @@ class ScriptRunner:
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.postprocess_batch(p, *script_args, images=images, **kwargs)
+            except Exception:
+                print(f"Error running postprocess_batch: {script.filename}", file=sys.stderr)
+                print(traceback.format_exc(), file=sys.stderr)
+
+    def postprocess_image(self, p, pp: PostprocessImageArgs):
+        for script in self.alwayson_scripts:
+            try:
+                script_args = p.script_args[script.args_from:script.args_to]
+                script.postprocess_image(p, pp, *script_args)
             except Exception:
                 print(f"Error running postprocess_batch: {script.filename}", file=sys.stderr)
                 print(traceback.format_exc(), file=sys.stderr)

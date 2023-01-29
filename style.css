@@ -74,7 +74,12 @@
 #txt2img_gallery img, #img2img_gallery img{
     object-fit: scale-down;
 }
-
+#txt2img_actions_column, #img2img_actions_column {
+	margin: 0.35rem 0.75rem 0.35rem 0;	
+}
+#script_list {
+    padding: .625rem .75rem 0 .625rem;
+}
 .justify-center.overflow-x-scroll {
     justify-content: left;
 }
@@ -126,6 +131,7 @@
 
 #txt2img_actions_column, #img2img_actions_column{
     gap: 0;
+    margin-right: .75rem;
 }
 
 #txt2img_tools, #img2img_tools{
@@ -150,6 +156,7 @@
 
 #txt2img_styles_row, #img2img_styles_row{
     gap: 0.25em;
+    margin-top: 0.3em;
 }
 
 #txt2img_styles_row > button, #img2img_styles_row > button{
@@ -164,7 +171,7 @@
     min-height: 3.2em;
 }
 
-#txt2img_styles ul, #img2img_styles ul{
+ul.list-none{
     max-height: 35em;
     z-index: 2000;
 }
@@ -311,11 +318,11 @@ input[type="range"]{
 .min-h-\[6rem\] { min-height: unset !important; }
 
 .progressDiv{
-    position: absolute;
+    position: relative;
     height: 20px;
-    top: -20px;
     background: #b4c0cc;
     border-radius: 3px !important;
+    margin-bottom: -3px;
 }
 
 .dark .progressDiv{
@@ -535,7 +542,7 @@ input[type="range"]{
 }
 
 #quicksettings {
-    gap: 0.4em;
+    width: fit-content;
 }
 
 #quicksettings > div, #quicksettings > fieldset{
@@ -545,6 +552,7 @@ input[type="range"]{
     border: none;
     box-shadow: none;
     background: none;
+    margin-right: 10px;
 }
 
 #quicksettings > div > div > div > label > span {
@@ -567,7 +575,7 @@ canvas[key="mask"] {
     right: 0.5em;
     top: -0.6em;
     z-index: 400;
-    width: 8em;
+    width: 6em;
 }
 #quicksettings .gr-box > div > div > input.gr-text-input {
   top: -1.12em;
@@ -665,11 +673,27 @@ canvas[key="mask"] {
 
 #quicksettings .gr-button-tool{
     margin: 0;
+    border-color: unset;
+	background-color: unset;
 }
 
-
+#modelmerger_interp_description>p {
+    margin: 0!important;
+    text-align: center;
+}
+#modelmerger_interp_description {
+    margin: 0.35rem 0.75rem 1.23rem;
+}
 #img2img_settings > div.gr-form, #txt2img_settings > div.gr-form {
     padding-top: 0.9em;
+    padding-bottom: 0.9em;
+}
+#txt2img_settings {
+    padding-top: 1.16em;
+    padding-bottom: 0.9em;
+}
+#img2img_settings {
+    padding-bottom: 0.9em;
 }
 
 #img2img_settings div.gr-form .gr-form, #txt2img_settings div.gr-form .gr-form, #train_tabs div.gr-form .gr-form{
@@ -714,9 +738,6 @@ footer {
     white-space: nowrap;
     min-width: auto;
 }
-#txt2img_hires_fix{
-    margin-left: -0.8em;
-}
 
 #img2img_copy_to_img2img, #img2img_copy_to_sketch, #img2img_copy_to_inpaint, #img2img_copy_to_inpaint_sketch{
     margin-left: 0em;
@@ -744,7 +765,7 @@ footer {
 
 .dark .gr-compact{
     background-color: rgb(31 41 55 / var(--tw-bg-opacity));
-    margin-left: 0.8em;
+	margin-left: 0;
 }
 
 .gr-compact{
@@ -786,7 +807,13 @@ footer {
     margin: 0.3em;
 }
 
+.extra-network-subdirs{
+    padding: 0.2em 0.35em;
+}
 
+.extra-network-subdirs button{
+    margin: 0 0.15em;
+}
 
 #txt2img_extra_networks .search, #img2img_extra_networks .search{
     display: inline-block;
@@ -857,6 +884,7 @@ footer {
     white-space: nowrap;
     text-overflow: ellipsis;
     background: rgba(0,0,0,.5);
+    color: white;
 }
 
 .extra-network-thumbs .card:hover .actions .name {
@@ -928,3 +956,6 @@ footer {
     color: red;
 }
 
+[id*='_prompt_container'] > div {
+	margin: 0!important;
+}

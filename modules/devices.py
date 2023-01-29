@@ -34,14 +34,18 @@ def get_cuda_device_string():
     return "cuda"
 
 
-def get_optimal_device():
+def get_optimal_device_name():
     if torch.cuda.is_available():
-        return torch.device(get_cuda_device_string())
+        return get_cuda_device_string()
 
     if has_mps():
-        return torch.device("mps")
+        return "mps"
 
-    return cpu
+    return "cpu"
+
+
+def get_optimal_device():
+    return torch.device(get_optimal_device_name())
 
 
 def get_device_for(task):
@@ -79,6 +83,16 @@ cpu = torch.device("cpu")
 device = device_interrogate = device_gfpgan = device_esrgan = device_codeformer = None
 dtype = torch.float16
 dtype_vae = torch.float16
+dtype_unet = torch.float16
+unet_needs_upcast = False
+
+
+def cond_cast_unet(input):
+    return input.to(dtype_unet) if unet_needs_upcast else input
+
+
+def cond_cast_float(input):
+    return input.float() if unet_needs_upcast else input
 
 
 def randn(seed, shape):
@@ -106,6 +120,10 @@ def autocast(disable=False):
     return torch.autocast("cuda")
 
 
+def without_autocast(disable=False):
+    return torch.autocast("cuda", enabled=False) if torch.is_autocast_enabled() and not disable else contextlib.nullcontext()
+
+
 class NansException(Exception):
     pass
 
@@ -123,7 +141,7 @@ def test_for_nans(x, where):
         message = "A tensor with all NaNs was produced in Unet."
 
         if not shared.cmd_opts.no_half:
-            message += " This could be either because there's not enough precision to represent the picture, or because your video card does not support half type. Try using --no-half commandline argument to fix this."
+            message += " This could be either because there's not enough precision to represent the picture, or because your video card does not support half type. Try setting the \"Upcast cross attention layer to float32\" option in Settings > Stable Diffusion or using the --no-half commandline argument to fix this."
 
     elif where == "vae":
         message = "A tensor with all NaNs was produced in VAE."
@@ -132,6 +150,8 @@ def test_for_nans(x, where):
             message += " This could be because there's not enough precision to represent the picture. Try adding --no-half-vae commandline argument to fix this."
     else:
         message = "A tensor with all NaNs was produced."
+
+    message += " Use --disable-nan-check commandline argument to disable this check."
 
     raise NansException(message)
 
@@ -187,6 +207,3 @@ if has_mps():
         cumsum_needs_bool_fix = not torch.BoolTensor([True,True]).to(device=torch.device("mps"), dtype=torch.int64).equal(torch.BoolTensor([True,False]).to(torch.device("mps")).cumsum(0))
         torch.cumsum = lambda input, *args, **kwargs: ( cumsum_fix(input, orig_cumsum, *args, **kwargs) )
         torch.Tensor.cumsum = lambda self, *args, **kwargs: ( cumsum_fix(self, orig_Tensor_cumsum, *args, **kwargs) )
-        orig_narrow = torch.narrow
-        torch.narrow = lambda *args, **kwargs: ( orig_narrow(*args, **kwargs).clone() )
-

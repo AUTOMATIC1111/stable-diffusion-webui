@@ -112,6 +112,7 @@ class EmbeddingDatabase:
         self.skipped_embeddings = {}
         self.expected_shape = -1
         self.embedding_dirs = {}
+        self.previously_displayed_embeddings = ()
 
     def add_embedding_dir(self, path):
         self.embedding_dirs[path] = DirWithTextualInversionEmbeddings(path)
@@ -194,7 +195,7 @@ class EmbeddingDatabase:
         if not os.path.isdir(embdir.path):
             return
 
-        for root, dirs, fns in os.walk(embdir.path):
+        for root, dirs, fns in os.walk(embdir.path, followlinks=True):
             for fn in fns:
                 try:
                     fullfn = os.path.join(root, fn)
@@ -228,9 +229,12 @@ class EmbeddingDatabase:
             self.load_from_dir(embdir)
             embdir.update()
 
-        print(f"Textual inversion embeddings loaded({len(self.word_embeddings)}): {', '.join(self.word_embeddings.keys())}")
-        if len(self.skipped_embeddings) > 0:
-            print(f"Textual inversion embeddings skipped({len(self.skipped_embeddings)}): {', '.join(self.skipped_embeddings.keys())}")
+        displayed_embeddings = (tuple(self.word_embeddings.keys()), tuple(self.skipped_embeddings.keys()))
+        if self.previously_displayed_embeddings != displayed_embeddings:
+            self.previously_displayed_embeddings = displayed_embeddings
+            print(f"Textual inversion embeddings loaded({len(self.word_embeddings)}): {', '.join(self.word_embeddings.keys())}")
+            if len(self.skipped_embeddings) > 0:
+                print(f"Textual inversion embeddings skipped({len(self.skipped_embeddings)}): {', '.join(self.skipped_embeddings.keys())}")
 
     def find_embedding_at_position(self, tokens, offset):
         token = tokens[offset]

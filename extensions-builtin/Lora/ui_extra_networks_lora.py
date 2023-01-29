@@ -20,13 +20,14 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
             preview = None
             for file in previews:
                 if os.path.isfile(file):
-                    preview = "./file=" + file.replace('\\', '/') + "?mtime=" + str(os.path.getmtime(file))
+                    preview = self.link_preview(file)
                     break
 
             yield {
                 "name": name,
                 "filename": path,
                 "preview": preview,
+                "search_term": self.search_terms_from_path(lora_on_disk.filename),
                 "prompt": json.dumps(f"<lora:{name}:") + " + opts.extra_networks_default_multiplier + " + json.dumps(">"),
                 "local_preview": path + ".png",
             }

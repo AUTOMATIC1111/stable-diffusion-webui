@@ -1,4 +1,7 @@
+import glob
 import os.path
+import urllib.parse
+from pathlib import Path
 
 from modules import shared
 import gradio as gr
@@ -8,12 +11,31 @@ import html
 from modules.generation_parameters_copypaste import image_from_url_text
 
 extra_pages = []
+allowed_dirs = set()
 
 
 def register_page(page):
     """registers extra networks page for the UI; recommend doing it in on_before_ui() callback for extensions"""
 
     extra_pages.append(page)
+    allowed_dirs.clear()
+    allowed_dirs.update(set(sum([x.allowed_directories_for_previews() for x in extra_pages], [])))
+
+
+def add_pages_to_demo(app):
+    def fetch_file(filename: str = ""):
+        from starlette.responses import FileResponse
+
+        if not any([Path(x).resolve() in Path(filename).resolve().parents for x in allowed_dirs]):
+            raise ValueError(f"File cannot be fetched: {filename}. Must be in one of directories registered by extra pages.")
+
+        if os.path.splitext(filename)[1].lower() != ".png":
+            raise ValueError(f"File cannot be fetched: {filename}. Only png.")
+
+        # would profit from returning 304
+        return FileResponse(filename, headers={"Accept-Ranges": "bytes"})
+
+    app.add_api_route("/sd_extra_networks/thumb", fetch_file, methods=["GET"])
 
 
 class ExtraNetworksPage:
@@ -26,9 +48,43 @@ class ExtraNetworksPage:
     def refresh(self):
         pass
 
+    def link_preview(self, filename):
+        return "./sd_extra_networks/thumb?filename=" + urllib.parse.quote(filename.replace('\\', '/')) + "&mtime=" + str(os.path.getmtime(filename))
+
+    def search_terms_from_path(self, filename, possible_directories=None):
+        abspath = os.path.abspath(filename)
+
+        for parentdir in (possible_directories if possible_directories is not None else self.allowed_directories_for_previews()):
+            parentdir = os.path.abspath(parentdir)
+            if abspath.startswith(parentdir):
+                return abspath[len(parentdir):].replace('\\', '/')
+
+        return ""
+
     def create_html(self, tabname):
         view = shared.opts.extra_networks_default_view
         items_html = ''
+
+        subdirs = {}
+        for parentdir in [os.path.abspath(x) for x in self.allowed_directories_for_previews()]:
+            for x in glob.glob(os.path.join(parentdir, '**/*'), recursive=True):
+                if not os.path.isdir(x):
+                    continue
+
+                subdir = os.path.abspath(x)[len(parentdir):].replace("\\", "/")
+                while subdir.startswith("/"):
+                    subdir = subdir[1:]
+
+                subdirs[subdir] = 1
+
+        if subdirs:
+            subdirs = {"": 1, **subdirs}
+
+        subdirs_html = "".join([f"""
+<button class='gr-button gr-button-lg gr-button-secondary{" search-all" if subdir=="" else ""}' onclick='extraNetworksSearchButton("{tabname}_extra_tabs", event)'>
+{html.escape(subdir if subdir!="" else "all")}
+</button>
+""" for subdir in subdirs])
 
         for item in self.list_items():
             items_html += self.create_html_for_item(item, tabname)
@@ -38,6 +94,9 @@ class ExtraNetworksPage:
             items_html = shared.html("extra-networks-no-cards.html").format(dirs=dirs)
 
         res = f"""
+<div id='{tabname}_{self.name}_subdirs' class='extra-network-subdirs extra-network-subdirs-{view}'>
+{subdirs_html}
+</div>
 <div id='{tabname}_{self.name}_cards' class='extra-network-{view}'>
 {items_html}
 </div>
@@ -54,14 +113,19 @@ class ExtraNetworksPage:
     def create_html_for_item(self, item, tabname):
         preview = item.get("preview", None)
 
+        onclick = item.get("onclick", None)
+        if onclick is None:
+            onclick = '"' + html.escape(f"""return cardClicked({json.dumps(tabname)}, {item["prompt"]}, {"true" if self.allow_negative_prompt else "false"})""") + '"'
+
         args = {
             "preview_html": "style='background-image: url(\"" + html.escape(preview) + "\")'" if preview else '',
-            "prompt": item["prompt"],
+            "prompt": item.get("prompt", None),
             "tabname": json.dumps(tabname),
             "local_preview": json.dumps(item["local_preview"]),
             "name": item["name"],
-            "card_clicked": '"' + html.escape(f"""return cardClicked({json.dumps(tabname)}, {item["prompt"]}, {"true" if self.allow_negative_prompt else "false"})""") + '"',
+            "card_clicked": onclick,
             "save_card_preview": '"' + html.escape(f"""return saveCardPreview(event, {json.dumps(tabname)}, {json.dumps(item["local_preview"])})""") + '"',
+            "search_term": item.get("search_term", ""),
         }
 
         return self.card_page.format(**args)
@@ -117,8 +181,13 @@ def create_ui(container, button, tabname):
     ui.button_save_preview = gr.Button('Save preview', elem_id=tabname+"_save_preview", visible=False)
     ui.preview_target_filename = gr.Textbox('Preview save filename', elem_id=tabname+"_preview_filename", visible=False)
 
-    button.click(fn=lambda: gr.update(visible=True), inputs=[], outputs=[container])
-    button_close.click(fn=lambda: gr.update(visible=False), inputs=[], outputs=[container])
+    def toggle_visibility(is_visible):
+        is_visible = not is_visible
+        return is_visible, gr.update(visible=is_visible)
+
+    state_visible = gr.State(value=False)
+    button.click(fn=toggle_visibility, inputs=[state_visible], outputs=[state_visible, container])
+    button_close.click(fn=toggle_visibility, inputs=[state_visible], outputs=[state_visible, container])
 
     def refresh():
         res = []
@@ -138,7 +207,7 @@ def path_is_parent(parent_path, child_path):
     parent_path = os.path.abspath(parent_path)
     child_path = os.path.abspath(child_path)
 
-    return os.path.commonpath([parent_path]) == os.path.commonpath([parent_path, child_path])
+    return child_path.startswith(parent_path)
 
 
 def setup_ui(ui, gallery):
@@ -168,7 +237,8 @@ def setup_ui(ui, gallery):
 
     ui.button_save_preview.click(
         fn=save_preview,
-        _js="function(x, y, z){console.log(x, y, z); return [selected_gallery_index(), y, z]}",
+        _js="function(x, y, z){return [selected_gallery_index(), y, z]}",
         inputs=[ui.preview_target_filename, gallery, ui.preview_target_filename],
         outputs=[*ui.pages]
     )
+

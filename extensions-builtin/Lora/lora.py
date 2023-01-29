@@ -166,7 +166,10 @@ def lora_forward(module, input, res):
     for lora in loaded_loras:
         module = lora.modules.get(lora_layer_name, None)
         if module is not None:
-            res = res + module.up(module.down(input)) * lora.multiplier * (module.alpha / module.up.weight.shape[1] if module.alpha else 1.0)
+            if shared.opts.lora_apply_to_outputs and res.shape == input.shape:
+                res = res + module.up(module.down(res)) * lora.multiplier * (module.alpha / module.up.weight.shape[1] if module.alpha else 1.0)
+            else:
+                res = res + module.up(module.down(input)) * lora.multiplier * (module.alpha / module.up.weight.shape[1] if module.alpha else 1.0)
 
     return res
 
