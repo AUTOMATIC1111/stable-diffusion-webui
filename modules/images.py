@@ -36,6 +36,8 @@ def image_grid(imgs, batch_size=1, rows=None):
         else:
             rows = math.sqrt(len(imgs))
             rows = round(rows)
+    if rows > len(imgs):
+        rows = len(imgs)
 
     cols = math.ceil(len(imgs) / rows)
 
