@@ -60,7 +60,7 @@
     "training_enable_tensorboard": false,
     "training_tensorboard_save_images": false,
     "training_tensorboard_flush_every": 120,
-    "sd_model_checkpoint": "zeipher-f222.ckpt [9e2c6ceff3]",
+    "sd_model_checkpoint": "sd-v15-runwayml.ckpt [cc6cb27103]",
     "sd_checkpoint_cache": 0,
     "sd_vae_checkpoint_cache": 0,
     "sd_vae": "vae-ft-mse-840000-ema-pruned.ckpt",
@@ -144,7 +144,7 @@
         "sdweb-merge-board",
         "ScuNET"
     ],
-    "sd_checkpoint_hash": "cc6cb27103417325ff94f52b7a5d2dde45a7515b25c255d8e396c90014281516",
+    "sd_checkpoint_hash": "9e2c6ceff3f6d6f65c6fb0e10d8e69d772871813be647fd2ea5d06e00db33c1f",
     "ldsr_steps": 100,
     "ldsr_cached": false,
     "SWIN_tile": 192,

@@ -35,10 +35,6 @@ Simplified start script: `automatic.sh`
       Python 3.10.6
       Torch: 2.0.0.dev20230118+cu118 CUDA: 11.8 cuDNN: 8700 GPU: NVIDIA GeForce RTX 3060 Arch: (8, 6)
 
-> ./automatic.sh install  
-
-- Install requirements and exit
-
 > ./automatic.sh public  
 
 - Start with listen on public IP with authentication enabled
@@ -47,6 +43,20 @@ Simplified start script: `automatic.sh`
 
 - Start with all optimizations disabled  
   Use this for troubleshooting  
+
+<br>  
+
+## Install
+
+1. Install `PyTorch` first
+2. Clone and initialize repository
+
+> git clone --depth 1 https://github.com/vladmandic/automatic  
+> git submodule update --init --recursive  
+
+3. Install dependencies
+
+> ./automatic.sh install  
 
 <br>
 
