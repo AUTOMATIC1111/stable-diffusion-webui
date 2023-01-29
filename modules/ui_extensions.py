@@ -13,7 +13,7 @@ import shutil
 import errno
 
 from modules import extensions, shared, paths
-
+from modules.call_queue import wrap_gradio_gpu_call
 
 available_extensions = {"extensions": []}
 
@@ -50,12 +50,17 @@ def apply_and_restart(disable_list, update_list):
     shared.state.need_restart = True
 
 
-def check_updates():
+def check_updates(id_task, disable_list):
     check_access()
 
-    for ext in extensions.extensions:
-        if ext.remote is None:
-            continue
+    disabled = json.loads(disable_list)
+    assert type(disabled) == list, f"wrong disable_list data for apply_and_restart: {disable_list}"
+
+    exts = [ext for ext in extensions.extensions if ext.remote is not None and ext.name not in disabled]
+    shared.state.job_count = len(exts)
+
+    for ext in exts:
+        shared.state.textinfo = ext.name
 
         try:
             ext.check_updates()
@@ -63,7 +68,9 @@ def check_updates():
             print(f"Error checking updates for {ext.name}:", file=sys.stderr)
             print(traceback.format_exc(), file=sys.stderr)
 
-    return extension_table()
+        shared.state.nextjob()
+
+    return extension_table(), ""
 
 
 def extension_table():
@@ -132,7 +139,7 @@ def install_extension_from_url(dirname, url):
     normalized_url = normalize_git_url(url)
     assert len([x for x in extensions.extensions if normalize_git_url(x.remote) == normalized_url]) == 0, 'Extension with this URL is already installed'
 
-    tmpdir = os.path.join(paths.script_path, "tmp", dirname)
+    tmpdir = os.path.join(paths.data_path, "tmp", dirname)
 
     try:
         shutil.rmtree(tmpdir, True)
@@ -273,12 +280,13 @@ def create_ui():
         with gr.Tabs(elem_id="tabs_extensions") as tabs:
             with gr.TabItem("Installed"):
 
-                with gr.Row():
+                with gr.Row(elem_id="extensions_installed_top"):
                     apply = gr.Button(value="Apply and restart UI", variant="primary")
                     check = gr.Button(value="Check for updates")
                     extensions_disabled_list = gr.Text(elem_id="extensions_disabled_list", visible=False).style(container=False)
                     extensions_update_list = gr.Text(elem_id="extensions_update_list", visible=False).style(container=False)
 
+                info = gr.HTML()
                 extensions_table = gr.HTML(lambda: extension_table())
 
                 apply.click(
@@ -289,10 +297,10 @@ def create_ui():
                 )
 
                 check.click(
-                    fn=check_updates,
+                    fn=wrap_gradio_gpu_call(check_updates, extra_outputs=[gr.update()]),
                     _js="extensions_check",
-                    inputs=[],
-                    outputs=[extensions_table],
+                    inputs=[info, extensions_disabled_list],
+                    outputs=[extensions_table, info],
                 )
 
             with gr.TabItem("Available"):

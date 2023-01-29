@@ -15,7 +15,8 @@ import torch
 from torch import Tensor
 from torch.utils.checkpoint import checkpoint
 import math
-from typing import Optional, NamedTuple, Protocol, List
+from typing import Optional, NamedTuple, List
+
 
 def narrow_trunc(
     input: Tensor,
@@ -25,12 +26,14 @@ def narrow_trunc(
 ) -> Tensor:
     return torch.narrow(input, dim, start, length if input.shape[dim] >= start + length else input.shape[dim] - start)
 
+
 class AttnChunk(NamedTuple):
     exp_values: Tensor
     exp_weights_sum: Tensor
     max_score: Tensor
 
-class SummarizeChunk(Protocol):
+
+class SummarizeChunk:
     @staticmethod
     def __call__(
         query: Tensor,
@@ -38,13 +41,15 @@ class SummarizeChunk(Protocol):
         value: Tensor,
     ) -> AttnChunk: ...
 
-class ComputeQueryChunkAttn(Protocol):
+
+class ComputeQueryChunkAttn:
     @staticmethod
     def __call__(
         query: Tensor,
         key: Tensor,
         value: Tensor,
     ) -> Tensor: ...
+
 
 def _summarize_chunk(
     query: Tensor,
@@ -62,9 +67,10 @@ def _summarize_chunk(
     max_score, _ = torch.max(attn_weights, -1, keepdim=True)
     max_score = max_score.detach()
     exp_weights = torch.exp(attn_weights - max_score)
-    exp_values = torch.bmm(exp_weights, value)
+    exp_values = torch.bmm(exp_weights, value) if query.device.type == 'mps' else torch.bmm(exp_weights, value.to(exp_weights.dtype)).to(value.dtype)
     max_score = max_score.squeeze(-1)
     return AttnChunk(exp_values, exp_weights.sum(dim=-1), max_score)
+
 
 def _query_chunk_attention(
     query: Tensor,
@@ -106,6 +112,7 @@ def _query_chunk_attention(
     all_weights = torch.unsqueeze(chunk_weights, -1).sum(dim=0)
     return all_values / all_weights
 
+
 # TODO: refactor CrossAttention#get_attention_scores to share code with this
 def _get_attention_scores_no_kv_chunking(
     query: Tensor,
@@ -122,12 +129,14 @@ def _get_attention_scores_no_kv_chunking(
     )
     attn_probs = attn_scores.softmax(dim=-1)
     del attn_scores
-    hidden_states_slice = torch.bmm(attn_probs, value)
+    hidden_states_slice = torch.bmm(attn_probs, value) if query.device.type == 'mps' else torch.bmm(attn_probs, value.to(attn_probs.dtype)).to(value.dtype)
     return hidden_states_slice
+
 
 class ScannedChunk(NamedTuple):
     chunk_idx: int
     attn_chunk: AttnChunk
+
 
 def efficient_dot_product_attention(
     query: Tensor,

@@ -70,9 +70,10 @@ def undo_optimizations():
 
 
 def fix_checkpoint():
-    ldm.modules.attention.BasicTransformerBlock.forward = sd_hijack_checkpoint.BasicTransformerBlock_forward
-    ldm.modules.diffusionmodules.openaimodel.ResBlock.forward = sd_hijack_checkpoint.ResBlock_forward
-    ldm.modules.diffusionmodules.openaimodel.AttentionBlock.forward = sd_hijack_checkpoint.AttentionBlock_forward
+    """checkpoints are now added and removed in embedding/hypernet code, since torch doesn't want
+    checkpoints to be added when not training (there's a warning)"""
+
+    pass
 
 
 class StableDiffusionModelHijack:
@@ -106,8 +107,6 @@ class StableDiffusionModelHijack:
         self.optimization_method = apply_optimizations()
 
         self.clip = m.cond_stage_model
-        
-        fix_checkpoint()
 
         def flatten(el):
             flattened = [flatten(children) for children in el.children()]
@@ -131,6 +130,8 @@ class StableDiffusionModelHijack:
         elif type(m.cond_stage_model) == sd_hijack_open_clip.FrozenOpenCLIPEmbedderWithCustomWords:
             m.cond_stage_model.wrapped.model.token_embedding = m.cond_stage_model.wrapped.model.token_embedding.wrapped
             m.cond_stage_model = m.cond_stage_model.wrapped
+
+        undo_optimizations()
 
         self.apply_circular(False)
         self.layers = None
@@ -172,7 +173,7 @@ class EmbeddingsWithFixes(torch.nn.Module):
         vecs = []
         for fixes, tensor in zip(batch_fixes, inputs_embeds):
             for offset, embedding in fixes:
-                emb = embedding.vec
+                emb = devices.cond_cast_unet(embedding.vec)
                 emb_len = min(tensor.shape[0] - offset - 1, emb.shape[0])
                 tensor = torch.cat([tensor[0:offset + 1], emb[0:emb_len], tensor[offset + 1 + emb_len:]])
 

@@ -1,75 +1,96 @@
-addEventListener('keydown', (event) => {
+function keyupEditAttention(event){
 	let target = event.originalTarget || event.composedPath()[0];
-	if (!target.matches("#toprow textarea.gr-text-input[placeholder]")) return;
+	if (!target.matches("[id*='_toprow'] textarea.gr-text-input[placeholder]")) return;
 	if (! (event.metaKey || event.ctrlKey)) return;
 
-
-	let plus = "ArrowUp"
-	let minus = "ArrowDown"
-	if (event.key != plus && event.key != minus) return;
+	let isPlus = event.key == "ArrowUp"
+	let isMinus = event.key == "ArrowDown"
+	if (!isPlus && !isMinus) return;
 
 	let selectionStart = target.selectionStart;
 	let selectionEnd = target.selectionEnd;
-	// If the user hasn't selected anything, let's select their current parenthesis block
-	if (selectionStart === selectionEnd) {
+	let text = target.value;
+
+    function selectCurrentParenthesisBlock(OPEN, CLOSE){
+        if (selectionStart !== selectionEnd) return false;
+
 		// Find opening parenthesis around current cursor
-		const before = target.value.substring(0, selectionStart);
-		let beforeParen = before.lastIndexOf("(");
-		if (beforeParen == -1) return;
-		let beforeParenClose = before.lastIndexOf(")");
+		const before = text.substring(0, selectionStart);
+		let beforeParen = before.lastIndexOf(OPEN);
+		if (beforeParen == -1) return  false;
+		let beforeParenClose = before.lastIndexOf(CLOSE);
 		while (beforeParenClose !== -1 && beforeParenClose > beforeParen) {
-			beforeParen = before.lastIndexOf("(", beforeParen - 1);
-			beforeParenClose = before.lastIndexOf(")", beforeParenClose - 1);
+			beforeParen = before.lastIndexOf(OPEN, beforeParen - 1);
+			beforeParenClose = before.lastIndexOf(CLOSE, beforeParenClose - 1);
 		}
 
 		// Find closing parenthesis around current cursor
-		const after = target.value.substring(selectionStart);
-		let afterParen = after.indexOf(")");
-		if (afterParen == -1) return;
-		let afterParenOpen = after.indexOf("(");
+		const after = text.substring(selectionStart);
+		let afterParen = after.indexOf(CLOSE);
+		if (afterParen == -1) return  false;
+		let afterParenOpen = after.indexOf(OPEN);
 		while (afterParenOpen !== -1 && afterParen > afterParenOpen) {
-			afterParen = after.indexOf(")", afterParen + 1);
-			afterParenOpen = after.indexOf("(", afterParenOpen + 1);
+			afterParen = after.indexOf(CLOSE, afterParen + 1);
+			afterParenOpen = after.indexOf(OPEN, afterParenOpen + 1);
 		}
-		if (beforeParen === -1 || afterParen === -1) return;
+		if (beforeParen === -1 || afterParen === -1) return false;
 
 		// Set the selection to the text between the parenthesis
-		const parenContent = target.value.substring(beforeParen + 1, selectionStart + afterParen);
+		const parenContent = text.substring(beforeParen + 1, selectionStart + afterParen);
 		const lastColon = parenContent.lastIndexOf(":");
 		selectionStart = beforeParen + 1;
 		selectionEnd = selectionStart + lastColon;
 		target.setSelectionRange(selectionStart, selectionEnd);
-	}
+		return true;
+    }
+
+	// If the user hasn't selected anything, let's select their current parenthesis block
+    if(! selectCurrentParenthesisBlock('<', '>')){
+        selectCurrentParenthesisBlock('(', ')')
+    }
 
 	event.preventDefault();
 
-	if (selectionStart == 0 || target.value[selectionStart - 1] != "(") {
-		target.value = target.value.slice(0, selectionStart) +
-			"(" + target.value.slice(selectionStart, selectionEnd) + ":1.0)" +
-			target.value.slice(selectionEnd);
+    closeCharacter = ')'
+    delta = opts.keyedit_precision_attention
 
-		target.focus();
-		target.selectionStart = selectionStart + 1;
-		target.selectionEnd = selectionEnd + 1;
+    if (selectionStart > 0 && text[selectionStart - 1] == '<'){
+        closeCharacter = '>'
+        delta = opts.keyedit_precision_extra
+    } else if (selectionStart == 0 || text[selectionStart - 1] != "(") {
 
-	} else {
-		end = target.value.slice(selectionEnd + 1).indexOf(")") + 1;
-		weight = parseFloat(target.value.slice(selectionEnd + 1, selectionEnd + 1 + end));
-		if (isNaN(weight)) return;
-		if (event.key == minus) weight -= 0.1;
-		if (event.key == plus) weight += 0.1;
+        // do not include spaces at the end
+        while(selectionEnd > selectionStart && text[selectionEnd-1] == ' '){
+            selectionEnd -= 1;
+        }
+        if(selectionStart == selectionEnd){
+            return
+        }
 
-		weight = parseFloat(weight.toPrecision(12));
+        text = text.slice(0, selectionStart) + "(" + text.slice(selectionStart, selectionEnd) + ":1.0)" + text.slice(selectionEnd);
 
-		target.value = target.value.slice(0, selectionEnd + 1) +
-			weight +
-			target.value.slice(selectionEnd + 1 + end - 1);
+        selectionStart += 1;
+        selectionEnd += 1;
+    }
 
-		target.focus();
-		target.selectionStart = selectionStart;
-		target.selectionEnd = selectionEnd;
-	}
-	// Since we've modified a Gradio Textbox component manually, we need to simulate an `input` DOM event to ensure its
-	// internal Svelte data binding remains in sync.
-	target.dispatchEvent(new Event("input", { bubbles: true }));
+	end = text.slice(selectionEnd + 1).indexOf(closeCharacter) + 1;
+	weight = parseFloat(text.slice(selectionEnd + 1, selectionEnd + 1 + end));
+	if (isNaN(weight)) return;
+
+	weight += isPlus ? delta : -delta;
+	weight = parseFloat(weight.toPrecision(12));
+	if(String(weight).length == 1) weight += ".0"
+
+	text = text.slice(0, selectionEnd + 1) + weight + text.slice(selectionEnd + 1 + end - 1);
+
+	target.focus();
+	target.value = text;
+	target.selectionStart = selectionStart;
+	target.selectionEnd = selectionEnd;
+
+	updateInput(target)
+}
+
+addEventListener('keydown', (event) => {
+    keyupEditAttention(event);
 });

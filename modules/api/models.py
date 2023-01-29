@@ -168,6 +168,7 @@ class ProgressResponse(BaseModel):
     eta_relative: float = Field(title="ETA in secs")
     state: dict = Field(title="State", description="The current state snapshot")
     current_image: str = Field(default=None, title="Current image", description="The current image in base64 format. opts.show_progress_every_n_steps is required for this to work.")
+    textinfo: str = Field(default=None, title="Info text", description="Info text used by WebUI.")
 
 class InterrogateRequest(BaseModel):
     image: str = Field(default="", title="Image", description="Image to work on, must be a Base64 string containing the image's data.")
@@ -219,13 +220,15 @@ class UpscalerItem(BaseModel):
     model_name: Optional[str] = Field(title="Model Name")
     model_path: Optional[str] = Field(title="Path")
     model_url: Optional[str] = Field(title="URL")
+    scale: Optional[float] = Field(title="Scale")
 
 class SDModelItem(BaseModel):
     title: str = Field(title="Title")
     model_name: str = Field(title="Model Name")
-    hash: str = Field(title="Hash")
+    hash: Optional[str] = Field(title="Short hash")
+    sha256: Optional[str] = Field(title="sha256 hash")
     filename: str = Field(title="Filename")
-    config: str = Field(title="Config file")
+    config: Optional[str] = Field(title="Config file")
 
 class HypernetworkItem(BaseModel):
     name: str = Field(title="Name")
@@ -260,3 +263,7 @@ class EmbeddingItem(BaseModel):
 class EmbeddingsResponse(BaseModel):
     loaded: Dict[str, EmbeddingItem] = Field(title="Loaded", description="Embeddings loaded for the current model")
     skipped: Dict[str, EmbeddingItem] = Field(title="Skipped", description="Embeddings skipped for the current model (likely due to architecture incompatibility)")
+
+class MemoryResponse(BaseModel):
+    ram: dict = Field(title="RAM", description="System memory stats")
+    cuda: dict = Field(title="CUDA", description="nVidia CUDA memory stats")

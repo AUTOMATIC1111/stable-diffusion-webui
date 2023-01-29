@@ -10,7 +10,7 @@ from modules.upscaler import Upscaler
 from modules.paths import script_path, models_path
 
 
-def load_models(model_path: str, model_url: str = None, command_path: str = None, ext_filter=None, download_name=None) -> list:
+def load_models(model_path: str, model_url: str = None, command_path: str = None, ext_filter=None, download_name=None, ext_blacklist=None) -> list:
     """
     A one-and done loader to try finding the desired models in specified directories.
 
@@ -44,6 +44,8 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
                 for file in glob.iglob(place + '**/**', recursive=True):
                     full_path = file
                     if os.path.isdir(full_path):
+                        continue
+                    if ext_blacklist is not None and any([full_path.endswith(x) for x in ext_blacklist]):
                         continue
                     if len(ext_filter) != 0:
                         model_name, extension = os.path.splitext(file)

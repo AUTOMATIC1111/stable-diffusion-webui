@@ -36,6 +36,8 @@ def image_grid(imgs, batch_size=1, rows=None):
         else:
             rows = math.sqrt(len(imgs))
             rows = round(rows)
+    if rows > len(imgs):
+        rows = len(imgs)
 
     cols = math.ceil(len(imgs) / rows)
 
@@ -195,7 +197,7 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts):
     ver_text_heights = [sum([line.size[1] + line_spacing for line in lines]) - line_spacing * len(lines) for lines in
                         ver_texts]
 
-    pad_top = max(hor_text_heights) + line_spacing * 2
+    pad_top = 0 if sum(hor_text_heights) == 0 else max(hor_text_heights) + line_spacing * 2
 
     result = Image.new("RGB", (im.width + pad_left, im.height + pad_top), "white")
     result.paste(im, (pad_left, pad_top))
@@ -605,8 +607,9 @@ def read_info_from_image(image):
         except ValueError:
             exif_comment = exif_comment.decode('utf8', errors="ignore")
 
-        items['exif comment'] = exif_comment
-        geninfo = exif_comment
+        if exif_comment:
+            items['exif comment'] = exif_comment
+            geninfo = exif_comment
 
         for field in ['jfif', 'jfif_version', 'jfif_unit', 'jfif_density', 'dpi', 'exif',
                       'loop', 'background', 'timestamp', 'duration']:

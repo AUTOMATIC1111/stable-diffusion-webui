@@ -19,9 +19,21 @@ def display(e: Exception, task):
     message = str(e)
     if "copying a param with shape torch.Size([640, 1024]) from checkpoint, the shape in current model is torch.Size([640, 768])" in message:
         print_error_explanation("""
-The most likely cause of this is you are trying to load Stable Diffusion 2.0 model without specifying its connfig file.
+The most likely cause of this is you are trying to load Stable Diffusion 2.0 model without specifying its config file.
 See https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Features#stable-diffusion-20 for how to solve this.
         """)
+
+
+already_displayed = {}
+
+
+def display_once(e: Exception, task):
+    if task in already_displayed:
+        return
+
+    display(e, task)
+
+    already_displayed[task] = 1
 
 
 def run(code, task):
