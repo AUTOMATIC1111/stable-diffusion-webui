@@ -872,7 +872,8 @@ def create_ui():
                     inpainting_mask_invert,
                     img2img_batch_input_dir,
                     img2img_batch_output_dir,
-                    img2img_batch_inpaint_mask_dir
+                    img2img_batch_inpaint_mask_dir,
+                    override_settings,
                 ] + custom_inputs,
                 outputs=[
                     img2img_gallery,
@@ -961,7 +962,7 @@ def create_ui():
             parameters_copypaste.add_paste_fields("img2img", init_img, img2img_paste_fields)
             parameters_copypaste.add_paste_fields("inpaint", init_img_with_mask, img2img_paste_fields)
             parameters_copypaste.register_paste_params_button(parameters_copypaste.ParamBinding(
-                paste_button=img2img_paste, tabname="img2img", source_text_component=img2img_prompt, source_image_component=None,
+                paste_button=img2img_paste, tabname="img2img", source_text_component=img2img_prompt, source_image_component=None, override_settings_component=override_settings,
             ))
 
     modules.scripts.scripts_current = None
