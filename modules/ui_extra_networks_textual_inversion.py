@@ -25,6 +25,7 @@ class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
                 "name": embedding.name,
                 "filename": embedding.filename,
                 "preview": preview,
+                "search_term": self.search_terms_from_path(embedding.filename),
                 "prompt": json.dumps(embedding.name),
                 "local_preview": path + ".preview.png",
             }

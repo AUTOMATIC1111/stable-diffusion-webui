@@ -807,7 +807,13 @@ footer {
     margin: 0.3em;
 }
 
+.extra-network-subdirs{
+    padding: 0.2em 0.35em;
+}
 
+.extra-network-subdirs button{
+    margin: 0 0.15em;
+}
 
 #txt2img_extra_networks .search, #img2img_extra_networks .search{
     display: inline-block;

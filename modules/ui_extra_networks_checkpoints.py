@@ -14,8 +14,7 @@ class ExtraNetworksPageCheckpoints(ui_extra_networks.ExtraNetworksPage):
         shared.refresh_checkpoints()
 
     def list_items(self):
-        for name, checkpoint1 in sd_models.checkpoints_list.items():
-            checkpoint: sd_models.CheckpointInfo = checkpoint1
+        for name, checkpoint in sd_models.checkpoints_list.items():
             path, ext = os.path.splitext(checkpoint.filename)
             previews = [path + ".png", path + ".preview.png"]
 
@@ -26,13 +25,14 @@ class ExtraNetworksPageCheckpoints(ui_extra_networks.ExtraNetworksPage):
                     break
 
             yield {
-                "name": checkpoint.model_name,
+                "name": checkpoint.name_for_extra,
                 "filename": path,
                 "preview": preview,
+                "search_term": self.search_terms_from_path(checkpoint.filename),
                 "onclick": '"' + html.escape(f"""return selectCheckpoint({json.dumps(name)})""") + '"',
                 "local_preview": path + ".png",
             }
 
     def allowed_directories_for_previews(self):
-        return [shared.cmd_opts.ckpt_dir, sd_models.model_path]
+        return [v for v in [shared.cmd_opts.ckpt_dir, sd_models.model_path] if v is not None]
 
