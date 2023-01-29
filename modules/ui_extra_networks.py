@@ -66,16 +66,32 @@ class ExtraNetworksPage:
         items_html = ''
 
         subdirs = {}
+
+        # Loop through the list of allowed directories for previews
         for parentdir in [os.path.abspath(x) for x in self.allowed_directories_for_previews()]:
-            for x in glob.glob(os.path.join(parentdir, '**/*'), recursive=True):
-                if not os.path.isdir(x):
-                    continue
+            # Walk through the files in the current parent directory
+            for root, dir, files in os.walk(parentdir):
+                # Check if any of the files in the current directory have the required extension
+                if any(f.lower().endswith('.ckpt') or f.lower().endswith('.pt') or f.lower().endswith('.bin') for f in files):
+                    # Get the relative path of the file with respect to the parentdir and replace all \\ path seperators with /
+                    subdir = os.path.abspath(root)[len(parentdir):].replace("\\", "/")
 
-                subdir = os.path.abspath(x)[len(parentdir):].replace("\\", "/")
-                while subdir.startswith("/"):
-                    subdir = subdir[1:]
+                    # Remove leading and trailing "/" characters from the subdirectory path
+                    subdir = subdir.strip("/")
 
-                subdirs[subdir] = 1
+                    # If the path we are looking at isnt the root
+                    if subdir != "":
+                        # Split the subdirectory path into its individual parts
+                        subdir_parts = subdir.split("/")
+                        for i in range(len(subdir_parts)):
+                            # Rebuild the subdirectory path by concatenating the individual parts
+                            subdir = "/".join(subdir_parts[:i+1])
+                            # Add the "/" suffix to the subdirectory path if it's not already present
+                            if not subdir.endswith("/"):
+                                subdir = subdir + "/"
+                            # Add the subdirectory to the dictionary if it's not already present
+                            if subdir not in subdirs:
+                                subdirs[subdir] = 1
 
         if subdirs:
             subdirs = {"": 1, **subdirs}
