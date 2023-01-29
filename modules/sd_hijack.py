@@ -173,7 +173,7 @@ class EmbeddingsWithFixes(torch.nn.Module):
         vecs = []
         for fixes, tensor in zip(batch_fixes, inputs_embeds):
             for offset, embedding in fixes:
-                emb = embedding.vec
+                emb = devices.cond_cast_unet(embedding.vec)
                 emb_len = min(tensor.shape[0] - offset - 1, emb.shape[0])
                 tensor = torch.cat([tensor[0:offset + 1], emb[0:emb_len], tensor[offset + 1 + emb_len:]])
 

@@ -46,7 +46,7 @@ class UpscalerRealESRGAN(Upscaler):
             scale=info.scale,
             model_path=info.local_data_path,
             model=info.model(),
-            half=not cmd_opts.no_half,
+            half=not cmd_opts.no_half and not cmd_opts.upcast_sampling,
             tile=opts.ESRGAN_tile,
             tile_pad=opts.ESRGAN_tile_overlap,
         )

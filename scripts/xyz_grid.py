@@ -383,6 +383,15 @@ class Script(scripts.Script):
         y_type.change(fn=select_axis, inputs=[y_type], outputs=[fill_y_button])
         z_type.change(fn=select_axis, inputs=[z_type], outputs=[fill_z_button])
 
+        self.infotext_fields = (
+            (x_type, "X Type"),
+            (x_values, "X Values"),
+            (y_type, "Y Type"),
+            (y_values, "Y Values"),
+            (z_type, "Z Type"),
+            (z_values, "Z Values"),
+        )
+
         return [x_type, x_values, y_type, y_values, z_type, z_values, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds]
 
     def run(self, p, x_type, x_values, y_type, y_values, z_type, z_values, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds):
@@ -542,6 +551,7 @@ class Script(scripts.Script):
 
             if grid_infotext[0] is None:
                 pc.extra_generation_params = copy(pc.extra_generation_params)
+                pc.extra_generation_params['Script'] = self.title()
 
                 if x_opt.label != 'Nothing':
                     pc.extra_generation_params["X Type"] = x_opt.label
