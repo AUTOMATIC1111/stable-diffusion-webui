@@ -555,6 +555,10 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         model_hijack.embedding_db.load_textual_inversion_embeddings()
 
     _, extra_network_data = extra_networks.parse_prompts(p.all_prompts[0:1])
+    if type(p) == StableDiffusionProcessingTxt2Img:
+        if p.enable_hr and p.hr_prompt != '':
+            _, hr_extra_network_data = extra_networks.parse_prompts(p.all_hr_prompts[0:1])
+
 
     if p.scripts is not None:
         p.scripts.process(p)
@@ -594,7 +598,11 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 sd_vae_approx.model()
 
             if not p.disable_extra_networks:
-                extra_networks.activate(p, extra_network_data)
+                if type(p) == StableDiffusionProcessingTxt2Img:
+                    if p.enable_hr and p.hr_prompt != '':
+                        extra_networks.activate(p, extra_network_data + hr_extra_network_data)
+                else:
+                    extra_networks.activate(p, extra_network_data)
 
         with open(os.path.join(paths.data_path, "params.txt"), "w", encoding="utf8") as file:
             processed = Processed(p, [], p.seed, "")
@@ -745,7 +753,11 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 images.save_image(grid, p.outpath_grids, "grid", p.all_seeds[0], p.all_prompts[0], opts.grid_format, info=infotext(), short_filename=not opts.grid_extended_filename, p=p, grid=True)
 
     if not p.disable_extra_networks:
-        extra_networks.deactivate(p, extra_network_data)
+        if type(p) == StableDiffusionProcessingTxt2Img:
+            if p.enable_hr and p.hr_prompt != '':
+                extra_networks.deactivate(p, extra_network_data + hr_extra_network_data)
+        else:
+            extra_networks.deactivate(p, extra_network_data)
 
     devices.torch_gc()
 
