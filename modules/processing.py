@@ -558,7 +558,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
     if type(p) == StableDiffusionProcessingTxt2Img:
         if p.enable_hr and p.hr_prompt != '':
             _, hr_extra_network_data = extra_networks.parse_prompts(p.all_hr_prompts[0:1])
-            extra_network_data.update(hr_extra_network_data)
+            if p.all_hr_prompts != p.all_prompts:
+                extra_network_data.update(hr_extra_network_data)
 
 
     if p.scripts is not None:
