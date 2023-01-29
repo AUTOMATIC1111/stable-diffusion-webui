@@ -600,7 +600,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             if not p.disable_extra_networks:
                 if type(p) == StableDiffusionProcessingTxt2Img:
                     if p.enable_hr and p.hr_prompt != '':
-                        extra_networks.activate(p, extra_network_data + hr_extra_network_data)
+                        extra_networks.activate(p, extra_network_data | hr_extra_network_data)
                 else:
                     extra_networks.activate(p, extra_network_data)
 
@@ -755,7 +755,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
     if not p.disable_extra_networks:
         if type(p) == StableDiffusionProcessingTxt2Img:
             if p.enable_hr and p.hr_prompt != '':
-                extra_networks.deactivate(p, extra_network_data + hr_extra_network_data)
+                extra_networks.deactivate(p, extra_network_data | hr_extra_network_data)
         else:
             extra_networks.deactivate(p, extra_network_data)
 
