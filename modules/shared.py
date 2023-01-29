@@ -127,12 +127,13 @@ restricted_opts = {
 ui_reorder_categories = [
     "inpaint",
     "sampler",
+    "checkboxes",
+    "hires_fix",
     "dimensions",
     "cfg",
     "seed",
-    "checkboxes",
-    "hires_fix",
     "batch",
+    "override_settings",
     "scripts",
 ]
 
@@ -346,10 +347,10 @@ options_templates.update(options_section(('saving-paths', "Paths for saving"), {
 }))
 
 options_templates.update(options_section(('saving-to-dirs', "Saving to a directory"), {
-    "save_to_dirs": OptionInfo(False, "Save images to a subdirectory"),
-    "grid_save_to_dirs": OptionInfo(False, "Save grids to a subdirectory"),
+    "save_to_dirs": OptionInfo(True, "Save images to a subdirectory"),
+    "grid_save_to_dirs": OptionInfo(True, "Save grids to a subdirectory"),
     "use_save_to_dirs_for_ui": OptionInfo(False, "When using \"Save\" button, save images to a subdirectory"),
-    "directories_filename_pattern": OptionInfo("", "Directory name pattern", component_args=hide_dirs),
+    "directories_filename_pattern": OptionInfo("[date]", "Directory name pattern", component_args=hide_dirs),
     "directories_max_prompt_words": OptionInfo(8, "Max prompt words for [prompt_words] pattern", gr.Slider, {"minimum": 1, "maximum": 20, "step": 1, **hide_dirs}),
 }))
 
@@ -605,10 +606,36 @@ class Options:
 
         self.data_labels = {k: v for k, v in sorted(settings_items, key=lambda x: section_ids[x[1].section])}
 
+    def cast_value(self, key, value):
+        """casts an arbitrary to the same type as this setting's value with key
+        Example: cast_value("eta_noise_seed_delta", "12") -> returns 12 (an int rather than str)
+        """
+
+        if value is None:
+            return None
+
+        default_value = self.data_labels[key].default
+        if default_value is None:
+            default_value = getattr(self, key, None)
+        if default_value is None:
+            return None
+
+        expected_type = type(default_value)
+        if expected_type == bool and value == "False":
+            value = False
+        else:
+            value = expected_type(value)
+
+        return value
+
+
 
 opts = Options()
 if os.path.exists(config_filename):
     opts.load(config_filename)
+
+settings_components = None
+"""assinged from ui.py, a mapping on setting anmes to gradio components repsponsible for those settings"""
 
 latent_upscale_default_mode = "Latent"
 latent_upscale_modes = {
