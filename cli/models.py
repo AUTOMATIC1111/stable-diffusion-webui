@@ -57,32 +57,41 @@ async def models(params):
                 excluded.append(m)
                 ok = False
                 break
-        if len(params.input) > 0: # check if model is included in cmd line
-            found = m if m in params.input else None
-            if found is None:
-                found = [i for i in params.input if m.startswith(i)]
-            if len(found) == 0:
-                ok = False
-                break
         if ok:
             short = m.split(' [')[0]
             short = short.replace('.ckpt', '').replace('.safetensors', '')
             models.append(short)
+    if len(params.input) > 0: # check if model is included in cmd line
+        filtered = []
+        for m in params.input:
+            if m in models:
+                filtered.append(m)
+            else:
+                log.error({ 'model not found': m })
+                return
+        models = filtered
     log.info({ 'models preview' })
     log.info({ 'models': len(models), 'excluded': len(excluded) })
     log.info({ 'embeddings': embeddings })
+    cmdflags = await get('/sdapi/v1/cmd-flags')
+    opt = await get('/sdapi/v1/options')
+    if params.output != '':
+        dir = params.output
+    else:
+        dir = os.path.abspath(os.path.join(cmdflags['hypernetwork_dir'], '..', 'Stable-diffusion'))
+    log.info({ 'output directory': dir })
     log.info({ 'total jobs': len(models) * len(embeddings) * options.generate.batch_size, 'per-model': len(embeddings) * options.generate.batch_size })
     log.info(json.dumps(options, indent=2))
-
     for model in models:
-        fn = os.path.join(params.output, model + '.jpg')
+        fn = os.path.join(dir, model + '.png')
         if os.path.exists(fn) and len(params.input) == 0: # if model preview exists and not manually included
             log.info({ 'model preview exists': model })
             continue
         log.info({ 'model load': model })
-        opt = await get('/sdapi/v1/options')
+
         opt['sd_model_checkpoint'] = model
         await post('/sdapi/v1/options', opt)
+        opt = await get('/sdapi/v1/options')
         images = []
         labels = []
         t0 = time.time()
