@@ -1,3 +1,4 @@
+import glob
 import os.path
 import urllib.parse
 from pathlib import Path
@@ -56,13 +57,34 @@ class ExtraNetworksPage:
         for parentdir in (possible_directories if possible_directories is not None else self.allowed_directories_for_previews()):
             parentdir = os.path.abspath(parentdir)
             if abspath.startswith(parentdir):
-                return abspath[len(parentdir):].replace('\\','/')
+                return abspath[len(parentdir):].replace('\\', '/')
 
         return ""
 
     def create_html(self, tabname):
         view = shared.opts.extra_networks_default_view
         items_html = ''
+
+        subdirs = {}
+        for parentdir in [os.path.abspath(x) for x in self.allowed_directories_for_previews()]:
+            for x in glob.glob(os.path.join(parentdir, '**/*'), recursive=True):
+                if not os.path.isdir(x):
+                    continue
+
+                subdir = os.path.abspath(x)[len(parentdir):].replace("\\", "/")
+                while subdir.startswith("/"):
+                    subdir = subdir[1:]
+
+                subdirs[subdir] = 1
+
+        if subdirs:
+            subdirs = {"": 1, **subdirs}
+
+        subdirs_html = "".join([f"""
+<button class='gr-button gr-button-lg gr-button-secondary{" search-all" if subdir=="" else ""}' onclick='extraNetworksSearchButton("{tabname}_extra_tabs", event)'>
+{html.escape(subdir if subdir!="" else "all")}
+</button>
+""" for subdir in subdirs])
 
         for item in self.list_items():
             items_html += self.create_html_for_item(item, tabname)
@@ -72,6 +94,9 @@ class ExtraNetworksPage:
             items_html = shared.html("extra-networks-no-cards.html").format(dirs=dirs)
 
         res = f"""
+<div id='{tabname}_{self.name}_subdirs' class='extra-network-subdirs extra-network-subdirs-{view}'>
+{subdirs_html}
+</div>
 <div id='{tabname}_{self.name}_cards' class='extra-network-{view}'>
 {items_html}
 </div>

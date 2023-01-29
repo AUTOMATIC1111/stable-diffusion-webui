@@ -96,3 +96,12 @@ function saveCardPreview(event, tabname, filename){
     event.stopPropagation()
     event.preventDefault()
 }
+
+function extraNetworksSearchButton(tabs_id, event){
+    searchTextarea = gradioApp().querySelector("#" + tabs_id + ' > div > textarea')
+    button = event.target
+    text = button.classList.contains("search-all") ? "" : button.textContent.trim()
+
+    searchTextarea.value = text
+    updateInput(searchTextarea)
+}
