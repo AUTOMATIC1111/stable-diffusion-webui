@@ -130,7 +130,7 @@ def connect_paste_params_buttons():
             )
 
         if binding.source_text_component is not None and fields is not None:
-            connect_paste(binding.paste_button, fields, binding.source_text_component, binding.override_settings_component)
+            connect_paste(binding.paste_button, fields, binding.source_text_component, binding.override_settings_component, binding.tabname)
 
         if binding.source_tabname is not None and fields is not None:
             paste_field_names = ['Prompt', 'Negative prompt', 'Steps', 'Face restoration'] + (["Seed"] if shared.opts.send_seed else [])
@@ -325,7 +325,7 @@ def create_override_settings_dict(text_pairs):
     return res
 
 
-def connect_paste(button, paste_fields, input_comp, override_settings_component, jsfunc=None):
+def connect_paste(button, paste_fields, input_comp, override_settings_component, tabname):
     def paste_func(prompt):
         if not prompt and not shared.cmd_opts.hide_ui_dir_config:
             filename = os.path.join(data_path, "params.txt")
@@ -390,7 +390,7 @@ def connect_paste(button, paste_fields, input_comp, override_settings_component,
 
     button.click(
         fn=paste_func,
-        _js=jsfunc,
+        _js=f"recalculate_prompts_{tabname}",
         inputs=[input_comp],
         outputs=[x[0] for x in paste_fields],
     )
