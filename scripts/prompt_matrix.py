@@ -47,16 +47,23 @@ class Script(scripts.Script):
         return "Prompt matrix"
 
     def ui(self, is_img2img):
-        put_at_start = gr.Checkbox(label='Put variable parts at start of prompt',
-                                   value=False, elem_id=self.elem_id("put_at_start"))
-        different_seeds = gr.Checkbox(
-            label='Use different seed for each picture', value=False, elem_id=self.elem_id("different_seeds"))
-        # Radio buttons for selecting the prompt between positive and negative
-        prompt_type = gr.Radio(["positive", "negative"], label="Select prompt",
-                               elem_id=self.elem_id("prompt_type"), value="positive")
-        # Radio buttons for selecting the delimiter to use in the resulting prompt
-        variations_delimiter = gr.Radio(["comma", "space"], label="Select delimiter", elem_id=self.elem_id(
-            "variations_delimiter"), value="comma")
+        gr.HTML('<br />')
+        with gr.Row():
+            with gr.Column():
+                put_at_start = gr.Checkbox(label='Put variable parts at start of prompt',
+                                           value=False, elem_id=self.elem_id("put_at_start"))
+            with gr.Column():
+                # Radio buttons for selecting the prompt between positive and negative
+                prompt_type = gr.Radio(["positive", "negative"], label="Select prompt",
+                                       elem_id=self.elem_id("prompt_type"), value="positive")
+        with gr.Row():
+            with gr.Column():
+                different_seeds = gr.Checkbox(
+                    label='Use different seed for each picture', value=False, elem_id=self.elem_id("different_seeds"))
+            with gr.Column():
+                # Radio buttons for selecting the delimiter to use in the resulting prompt
+                variations_delimiter = gr.Radio(["comma", "space"], label="Select delimiter", elem_id=self.elem_id(
+                    "variations_delimiter"), value="comma")
         return [put_at_start, different_seeds, prompt_type, variations_delimiter]
 
     def run(self, p, put_at_start, different_seeds, prompt_type, variations_delimiter):
