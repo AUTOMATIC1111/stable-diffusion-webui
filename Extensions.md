@@ -593,7 +593,7 @@ Use transformers models to generate prompts.
 ## Discord Rich Presence
 https://github.com/kabachuha/discord-rpc-for-automatic1111-webui
 
-Provides connection to Discord PRC, showing a fancy table in the user profile.
+Provides connection to Discord RPC, showing a fancy table in the user profile.
 
 ## Aesthetic Scorer
 https://github.com/vladmandic/sd-extension-aesthetic-scorer
