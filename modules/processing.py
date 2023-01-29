@@ -154,6 +154,7 @@ class StableDiffusionProcessing:
         self.all_seeds = None
         self.all_subseeds = None
         self.iteration = 0
+        self.depth_images = None
 
     @property
     def sd_model(self):
@@ -165,19 +166,48 @@ class StableDiffusionProcessing:
         return txt2img_image_conditioning(self.sd_model, x, width or self.width, height or self.height)
 
     def depth2img_image_conditioning(self, source_image):
-        # Use the AddMiDaS helper to Format our source image to suit the MiDaS model
-        transformer = AddMiDaS(model_type="dpt_hybrid")
-        transformed = transformer({"jpg": rearrange(source_image[0], "c h w -> h w c")})
-        midas_in = torch.from_numpy(transformed["midas_in"][None, ...]).to(device=shared.device)
-        midas_in = repeat(midas_in, "1 ... -> n ...", n=self.batch_size)
 
-        conditioning_image = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(source_image))
-        conditioning = torch.nn.functional.interpolate(
-            self.sd_model.depth_model(midas_in),
-            size=conditioning_image.shape[2:],
-            mode="bicubic",
-            align_corners=False,
-        )
+        conditioning = None
+        try:
+            # Use depth sent as part of API request
+            # script_dir = os.path.dirname(__file__)
+            # rel_path = "../depthmap/current.png"
+            # depth_img = Image.open(os.path.join(script_dir, rel_path))
+
+            # TODO: deal with list of depth images. For now, just read the first one in list
+            depth_img = self.depth_images[0]
+            depth_img = depth_img.convert("L")
+            depth_img = np.expand_dims(depth_img, axis=0)
+            depth_img = np.expand_dims(depth_img, axis=0).repeat(self.batch_size, axis=0)
+            depth_img = torch.from_numpy(depth_img)
+            depth_img = 2. * depth_img - 1.
+            depth_img = depth_img.to(shared.device)
+
+            conditioning_image = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(source_image))
+            conditioning = torch.nn.functional.interpolate(
+                depth_img,
+                size=conditioning_image.shape[2:],
+                mode="bicubic",
+                align_corners=False,
+            )
+        except Exception as e:
+            print("--------------------")
+            print(e)
+            print("Attempt to access depth image from request failed")
+            print("Falling back on AddMiDas helper")
+            # Use the AddMiDaS helper to Format our source image to suit the MiDaS model
+            transformer = AddMiDaS(model_type="dpt_hybrid")
+            transformed = transformer({"jpg": rearrange(source_image[0], "c h w -> h w c")})
+            midas_in = torch.from_numpy(transformed["midas_in"][None, ...]).to(device=shared.device)
+            midas_in = repeat(midas_in, "1 ... -> n ...", n=self.batch_size)
+
+            conditioning_image = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(source_image))
+            conditioning = torch.nn.functional.interpolate(
+                self.sd_model.depth_model(midas_in),
+                size=conditioning_image.shape[2:],
+                mode="bicubic",
+                align_corners=False,
+            )
 
         (depth_min, depth_max) = torch.aminmax(conditioning)
         conditioning = 2. * (conditioning - depth_min) / (depth_max - depth_min) - 1.
@@ -224,6 +254,9 @@ class StableDiffusionProcessing:
         # HACK: Using introspection as the Depth2Image model doesn't appear to uniquely
         # identify itself with a field common to all models. The conditioning_key is also hybrid.
         if isinstance(self.sd_model, LatentDepth2ImageDiffusion):
+            print("--------------------")
+            print("self.sd_model is an instance of LatentDepth2ImageDiffusion")
+            print("img2img_image_conditioning is calling depth2img_image_conditioning()")
             return self.depth2img_image_conditioning(source_image)
 
         if self.sampler.conditioning_key in {'hybrid', 'concat'}:
@@ -880,7 +913,20 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
     sampler = None
 
-    def __init__(self, init_images: list = None, resize_mode: int = 0, denoising_strength: float = 0.75, mask: Any = None, mask_blur: int = 4, inpainting_fill: int = 0, inpaint_full_res: bool = True, inpaint_full_res_padding: int = 0, inpainting_mask_invert: int = 0, initial_noise_multiplier: float = None, **kwargs):
+    def __init__(
+            self,
+            init_images: list = None,
+            resize_mode: int = 0,
+            denoising_strength: float = 0.75,
+            mask: Any = None,
+            mask_blur: int = 4,
+            inpainting_fill: int = 0,
+            inpaint_full_res: bool = True,
+            inpaint_full_res_padding: int = 0,
+            inpainting_mask_invert: int = 0,
+            initial_noise_multiplier: float = None,
+            depth_images: list = [],
+            **kwargs):
         super().__init__(**kwargs)
 
         self.init_images = init_images
@@ -899,6 +945,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         self.mask = None
         self.nmask = None
         self.image_conditioning = None
+        self.depth_images = None
 
     def init(self, all_prompts, all_seeds, all_subseeds):
         self.sampler = sd_samplers.create_sampler(self.sampler_name, self.sd_model)

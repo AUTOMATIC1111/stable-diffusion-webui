@@ -1,4 +1,5 @@
 import base64
+import pdb
 import io
 import time
 import datetime
@@ -109,6 +110,7 @@ class Api:
         api_middleware(self.app)
         self.add_api_route("/sdapi/v1/txt2img", self.text2imgapi, methods=["POST"], response_model=TextToImageResponse)
         self.add_api_route("/sdapi/v1/img2img", self.img2imgapi, methods=["POST"], response_model=ImageToImageResponse)
+        self.add_api_route("/sdapi/v1/depth2img", self.depth2imgapi, methods=["POST"], response_model=ImageToImageResponse)
         self.add_api_route("/sdapi/v1/extra-single-image", self.extras_single_image_api, methods=["POST"], response_model=ExtrasSingleImageResponse)
         self.add_api_route("/sdapi/v1/extra-batch-images", self.extras_batch_images_api, methods=["POST"], response_model=ExtrasBatchImagesResponse)
         self.add_api_route("/sdapi/v1/png-info", self.pnginfoapi, methods=["POST"], response_model=PNGInfoResponse)
@@ -190,6 +192,62 @@ class Api:
         b64images = list(map(encode_pil_to_base64, processed.images))
 
         return TextToImageResponse(images=b64images, parameters=vars(txt2imgreq), info=processed.js())
+
+
+    def depth2imgapi(self, img2imgreq: StableDiffusionImg2ImgProcessingAPI):
+
+        init_images = img2imgreq.init_images
+        if init_images is None:
+            raise HTTPException(status_code=404, detail="Init image not found")
+
+        depth_images = img2imgreq.depth_images
+        if depth_images is None:
+            raise HTTPException(status_code=404, detail="Init image not found")
+
+        script, script_idx = self.get_script(img2imgreq.script_name, scripts.scripts_img2img)
+
+        mask = img2imgreq.mask
+        if mask:
+            mask = decode_base64_to_image(mask)
+
+        populate = img2imgreq.copy(update={ # Override __init__ params
+            "sampler_name": validate_sampler_name(img2imgreq.sampler_name or img2imgreq.sampler_index),
+            "do_not_save_samples": True,
+            "do_not_save_grid": True,
+            "mask": mask
+            }
+        )
+        if populate.sampler_name:
+            populate.sampler_index = None  # prevent a warning later on
+
+        args = vars(populate)
+        args.pop('include_init_images', None)  # this is meant to be done by "exclude": True in model, but it's for a reason that I cannot determine.
+        args.pop('script_name', None)
+
+        with self.queue_lock:
+            p = StableDiffusionProcessingImg2Img(sd_model=shared.sd_model, **args)
+            p.init_images = [decode_base64_to_image(x) for x in init_images]
+            p.depth_images = [decode_base64_to_image(x) for x in depth_images]
+
+            shared.state.begin()
+            if script is not None:
+                p.outpath_grids = opts.outdir_img2img_grids
+                p.outpath_samples = opts.outdir_img2img_samples
+                p.script_args = [script_idx + 1] + [None] * (script.args_from - 1) + p.script_args
+                processed = scripts.scripts_img2img.run(p, *p.script_args)
+            else:
+                processed = process_images(p)
+            shared.state.end()
+
+        b64images = list(map(encode_pil_to_base64, processed.images))
+
+        if not img2imgreq.include_init_images:
+            img2imgreq.init_images = None
+            img2imgreq.mask = None
+
+        return ImageToImageResponse(images=b64images, parameters=vars(img2imgreq), info=processed.js())
+
+
 
     def img2imgapi(self, img2imgreq: StableDiffusionImg2ImgProcessingAPI):
         init_images = img2imgreq.init_images
