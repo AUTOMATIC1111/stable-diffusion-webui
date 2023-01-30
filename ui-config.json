@@ -844,5 +844,7 @@
     "customscript/xyz_grid.py/img2img/Keep -1 for seeds/visible": true,
     "customscript/xyz_grid.py/img2img/Keep -1 for seeds/value": false,
     "img2img/Inpaint batch mask directory (required for inpaint batch processing only)/visible": true,
-    "img2img/Inpaint batch mask directory (required for inpaint batch processing only)/value": ""
+    "img2img/Inpaint batch mask directory (required for inpaint batch processing only)/value": "",
+    "txt2img/Override settings/value": null,
+    "img2img/Override settings/value": null
 }

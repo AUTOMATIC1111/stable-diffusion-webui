@@ -111,7 +111,7 @@
     "localization": "None",
     "live_previews_enable": true,
     "show_progress_grid": true,
-    "show_progress_every_n_steps": 10,
+    "show_progress_every_n_steps": 1,
     "show_progress_type": "Full",
     "live_preview_content": "Prompt",
     "hide_samplers": [
@@ -144,7 +144,7 @@
         "sdweb-merge-board",
         "ScuNET"
     ],
-    "sd_checkpoint_hash": "9e2c6ceff3f6d6f65c6fb0e10d8e69d772871813be647fd2ea5d06e00db33c1f",
+    "sd_checkpoint_hash": "cc6cb27103417325ff94f52b7a5d2dde45a7515b25c255d8e396c90014281516",
     "ldsr_steps": 100,
     "ldsr_cached": false,
     "SWIN_tile": 192,

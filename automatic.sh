@@ -14,7 +14,7 @@ if [ "$PYTHON" == "" ]; then
   PYTHON=`which python`
 fi
 
-ARGS="launch.py --api --xformers --disable-console-progressbars --gradio-queue"
+CMD="launch.py --api --xformers --disable-console-progressbars --gradio-queue --skip-version-check"
 # --opt-channelslast
 MODE=optimized
 
@@ -38,7 +38,7 @@ for i in "$@"; do
       MODE=env
       ;;
     *)
-      ARGS="$ARGS $i"
+      CMD="$CMD $i"
       ;;
   esac
   shift
@@ -68,17 +68,17 @@ if [ $MODE == env ]; then
 fi
 
 if [ $MODE == clean ]; then
-  ARGS="--disable-opt-split-attention --disable-console-progressbars --api"
-  $PYTHON launch.py $ARGS
+  CMD="--disable-opt-split-attention --disable-console-progressbars --api"
+  $PYTHON launch.py $CMD
   exit 0
 fi
 
 if [ $MODE == public ]; then
-  ARGS="$ARGS --port 7860 --gradio-auth admin:pwd --listen --enable-insecure-extension-access"
+  CMD="$CMD --port 7860 --gradio-auth admin:pwd --listen --enable-insecure-extension-access"
 fi
 
 if [ $MODE == optimized ]; then
-  ARGS="$ARGS"
+  CMD="$CMD"
 fi
 
-exec accelerate launch --no_python --num_cpu_threads_per_process=6 $PYTHON $ARGS
+exec accelerate launch --no_python --num_cpu_threads_per_process=6 $PYTHON $CMD
