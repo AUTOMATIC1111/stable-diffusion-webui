@@ -191,6 +191,28 @@ function confirm_clear_prompt(prompt, negative_prompt) {
     return [prompt, negative_prompt]
 }
 
+
+promptTokecountUpdateFuncs = {}
+
+function recalculatePromptTokens(name){
+    if(promptTokecountUpdateFuncs[name]){
+        promptTokecountUpdateFuncs[name]()
+    }
+}
+
+function recalculate_prompts_txt2img(){
+    recalculatePromptTokens('txt2img_prompt')
+    recalculatePromptTokens('txt2img_neg_prompt')
+    return args_to_array(arguments);
+}
+
+function recalculate_prompts_img2img(){
+    recalculatePromptTokens('img2img_prompt')
+    recalculatePromptTokens('img2img_neg_prompt')
+    return args_to_array(arguments);
+}
+
+
 opts = {}
 onUiUpdate(function(){
 	if(Object.keys(opts).length != 0) return;
@@ -232,14 +254,12 @@ onUiUpdate(function(){
             return
         }
 
-
         prompt.parentElement.insertBefore(counter, prompt)
         counter.classList.add("token-counter")
         prompt.parentElement.style.position = "relative"
 
-		textarea.addEventListener("input", function(){
-		    update_token_counter(id_button);
-		});
+		promptTokecountUpdateFuncs[id] = function(){ update_token_counter(id_button); }
+		textarea.addEventListener("input", promptTokecountUpdateFuncs[id]);
     }
 
     registerTextarea('txt2img_prompt', 'txt2img_token_counter', 'txt2img_token_button')
@@ -273,7 +293,7 @@ onOptionsChanged(function(){
 
 let txt2img_textarea, img2img_textarea = undefined;
 let wait_time = 800
-let token_timeout;
+let token_timeouts = {};
 
 function update_txt2img_tokens(...args) {
 	update_token_counter("txt2img_token_button")
@@ -290,9 +310,9 @@ function update_img2img_tokens(...args) {
 }
 
 function update_token_counter(button_id) {
-	if (token_timeout)
-		clearTimeout(token_timeout);
-	token_timeout = setTimeout(() => gradioApp().getElementById(button_id)?.click(), wait_time);
+	if (token_timeouts[button_id])
+		clearTimeout(token_timeouts[button_id]);
+	token_timeouts[button_id] = setTimeout(() => gradioApp().getElementById(button_id)?.click(), wait_time);
 }
 
 function restart_reload(){
@@ -308,4 +328,11 @@ function updateInput(target){
 	let e = new Event("input", { bubbles: true })
 	Object.defineProperty(e, "target", {value: target})
 	target.dispatchEvent(e);
+}
+
+
+var desiredCheckpointName = null;
+function selectCheckpoint(name){
+    desiredCheckpointName = name;
+    gradioApp().getElementById('change_checkpoint').click()
 }

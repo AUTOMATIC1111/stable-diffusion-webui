@@ -345,6 +345,20 @@ class ScriptRunner:
             outputs=[script.group for script in self.selectable_scripts]
         )
 
+        self.script_load_ctr = 0
+        def onload_script_visibility(params):
+            title = params.get('Script', None)
+            if title:
+                title_index = self.titles.index(title)
+                visibility = title_index == self.script_load_ctr
+                self.script_load_ctr = (self.script_load_ctr + 1) % len(self.titles)
+                return gr.update(visible=visibility)
+            else:
+                return gr.update(visible=False)
+
+        self.infotext_fields.append( (dropdown, lambda x: gr.update(value=x.get('Script', 'None'))) )
+        self.infotext_fields.extend( [(script.group, onload_script_visibility) for script in self.selectable_scripts] )
+
         return inputs
 
     def run(self, p, *args):
