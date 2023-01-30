@@ -22,7 +22,7 @@
 #venv_dir="venv"
 
 # script to launch to start the app
-#export LAUNCH_SCRIPT="launch.py"
+export LAUNCH_SCRIPT="launch_real.py"
 
 # install command for torch
 #export TORCH_COMMAND="pip install torch==1.12.1+cu113 --extra-index-url https://download.pytorch.org/whl/cu113"
