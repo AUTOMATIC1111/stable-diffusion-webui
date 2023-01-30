@@ -52,6 +52,9 @@ else:
 
 
 def check_versions():
+    if shared.cmd_opts.skip_version_check:
+        return
+
     expected_torch_version = "1.13.1"
 
     if version.parse(torch.__version__) < version.parse(expected_torch_version):
@@ -59,7 +62,10 @@ def check_versions():
 You are running torch {torch.__version__}.
 The program is tested to work with torch {expected_torch_version}.
 To reinstall the desired version, run with commandline flag --reinstall-torch.
-Beware that this will cause a lot of large files to be downloaded.
+Beware that this will cause a lot of large files to be downloaded, as well as
+there are reports of issues with training tab on the latest version.
+
+Use --skip-version-check commandline argument to disable this check.
         """.strip())
 
     expected_xformers_version = "0.0.16rc425"
@@ -71,6 +77,8 @@ Beware that this will cause a lot of large files to be downloaded.
 You are running xformers {xformers.__version__}.
 The program is tested to work with xformers {expected_xformers_version}.
 To reinstall the desired version, run with commandline flag --reinstall-xformers.
+
+Use --skip-version-check commandline argument to disable this check.
             """.strip())
 
 
