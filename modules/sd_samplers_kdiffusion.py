@@ -2,7 +2,7 @@ from collections import deque
 import torch
 import inspect
 import k_diffusion.sampling
-from modules import prompt_parser, devices, sd_samplers_common, sd_samplers_compvis
+from modules import prompt_parser, devices, sd_samplers_common
 
 from modules.shared import opts, state
 import modules.shared as shared
@@ -164,7 +164,6 @@ class KDiffusionSampler:
         self.sampler_noises = None
         self.stop_at = None
         self.eta = None
-        self.default_eta = 1.0
         self.config = None
         self.last_latent = None
 
@@ -199,7 +198,7 @@ class KDiffusionSampler:
         self.model_wrap_cfg.mask = p.mask if hasattr(p, 'mask') else None
         self.model_wrap_cfg.nmask = p.nmask if hasattr(p, 'nmask') else None
         self.model_wrap_cfg.step = 0
-        self.eta = p.eta or opts.eta_ancestral
+        self.eta = p.eta if p.eta is not None else opts.eta_ancestral
 
         k_diffusion.sampling.torch = TorchHijack(self.sampler_noises if self.sampler_noises is not None else [])
 
@@ -209,6 +208,9 @@ class KDiffusionSampler:
                 extra_params_kwargs[param_name] = getattr(p, param_name)
 
         if 'eta' in inspect.signature(self.func).parameters:
+            if self.eta != 1.0:
+                p.extra_generation_params["Eta"] = self.eta
+
             extra_params_kwargs['eta'] = self.eta
 
         return extra_params_kwargs

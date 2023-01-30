@@ -27,7 +27,6 @@ class VanillaStableDiffusionSampler:
         self.step = 0
         self.stop_at = None
         self.eta = None
-        self.default_eta = 0.0
         self.config = None
         self.last_latent = None
 
@@ -102,6 +101,8 @@ class VanillaStableDiffusionSampler:
 
     def initialize(self, p):
         self.eta = p.eta if p.eta is not None else shared.opts.eta_ddim
+        if self.eta != 0.0:
+            p.extra_generation_params["Eta DDIM"] = self.eta
 
         for fieldname in ['p_sample_ddim', 'p_sample_plms']:
             if hasattr(self.sampler, fieldname):

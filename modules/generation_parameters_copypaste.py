@@ -293,6 +293,8 @@ infotext_to_setting_name_mapping = [
     ('Model hash', 'sd_model_checkpoint'),
     ('ENSD', 'eta_noise_seed_delta'),
     ('Noise multiplier', 'initial_noise_multiplier'),
+    ('Eta', 'eta_ancestral'),
+    ('Eta DDIM', 'eta_ddim'),
 ]
 
 
