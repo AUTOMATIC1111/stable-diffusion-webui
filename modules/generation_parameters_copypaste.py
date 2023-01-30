@@ -295,6 +295,7 @@ infotext_to_setting_name_mapping = [
     ('Noise multiplier', 'initial_noise_multiplier'),
     ('Eta', 'eta_ancestral'),
     ('Eta DDIM', 'eta_ddim'),
+    ('Discard penultimate sigma', 'always_discard_next_to_last_sigma')
 ]
 
 
