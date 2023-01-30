@@ -62,6 +62,12 @@ if cmd_opts.ngrok is not None:
         cmd_opts.ngrok_region
         )
 
+if cmd_opts.cloudflared:
+    import modules.cloudflared as cloudflared
+    print('cloudflared detected, trying to connect...')
+    port = cmd_opts.port if cmd_opts.port is not None else 7860
+    cloudflared.start_cloudflared(port)
+
 
 def gr_show(visible=True):
     return {"visible": visible, "__type__": "update"}
