@@ -122,6 +122,8 @@ sudo pacman -S wget git python3
 bash <(wget -qO- https://raw.githubusercontent.com/AUTOMATIC1111/stable-diffusion-webui/master/webui.sh)
 ```
 
+**Note for Linux**: to customize command line options etc. copy the `webui-user-example.sh` file to `webui-user.sh` and do your changes in `webui-user.sh` (`webui.sh` will load -if found- the `webui-user.sh` before starting).
+
 ### Installation on Apple Silicon
 
 Find the instructions [here](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Installation-on-Apple-Silicon).
