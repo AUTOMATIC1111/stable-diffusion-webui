@@ -1,10 +1,18 @@
 import math
+import ldm.models.diffusion.ddim
+import ldm.models.diffusion.plms
 
 import numpy as np
 import torch
 
 from modules.shared import state
 from modules import sd_samplers_common, prompt_parser, shared
+
+
+samplers_data_compvis = [
+    sd_samplers_common.SamplerData('DDIM', lambda model: VanillaStableDiffusionSampler(ldm.models.diffusion.ddim.DDIMSampler, model), [], {}),
+    sd_samplers_common.SamplerData('PLMS', lambda model: VanillaStableDiffusionSampler(ldm.models.diffusion.plms.PLMSSampler, model), [], {}),
+]
 
 
 class VanillaStableDiffusionSampler:

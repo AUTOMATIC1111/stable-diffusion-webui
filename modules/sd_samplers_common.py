@@ -1,4 +1,4 @@
-from collections import namedtuple, deque
+from collections import namedtuple
 import numpy as np
 import torch
 from PIL import Image
@@ -64,6 +64,7 @@ class InterruptedException(BaseException):
 
 
 # MPS fix for randn in torchsde
+# XXX move this to separate file for MPS
 def torchsde_randn(size, dtype, device, seed):
     if device.type == 'mps':
         generator = torch.Generator(devices.cpu).manual_seed(int(seed))
