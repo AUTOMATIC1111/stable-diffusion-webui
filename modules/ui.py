@@ -380,6 +380,7 @@ def apply_setting(key, value):
     opts.save(shared.config_filename)
     return getattr(opts, key)
 
+
 def create_refresh_button(refresh_component, refresh_method, refreshed_args, elem_id):
     def refresh():
         refresh_method()
@@ -431,6 +432,18 @@ def get_value_for_setting(key):
     args = {k: v for k, v in args.items() if k not in {'precision'}}
 
     return gr.update(value=value, **args)
+
+
+def create_override_settings_dropdown(tabname, row):
+    dropdown = gr.Dropdown([], label="Override settings", visible=False, elem_id=f"{tabname}_override_settings", multiselect=True)
+
+    dropdown.change(
+        fn=lambda x: gr.Dropdown.update(visible=len(x) > 0),
+        inputs=[dropdown],
+        outputs=[dropdown],
+    )
+
+    return dropdown
 
 
 def create_ui():
@@ -514,6 +527,10 @@ def create_ui():
                                 batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1, elem_id="txt2img_batch_count")
                                 batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1, elem_id="txt2img_batch_size")
 
+                    elif category == "override_settings":
+                        with FormRow(elem_id="txt2img_override_settings_row") as row:
+                            override_settings = create_override_settings_dropdown('txt2img', row)
+
                     elif category == "scripts":
                         with FormGroup(elem_id="txt2img_script_container"):
                             custom_inputs = modules.scripts.scripts_txt2img.setup_ui()
@@ -535,7 +552,6 @@ def create_ui():
                 )
 
             txt2img_gallery, generation_info, html_info, html_log = create_output_panel("txt2img", opts.outdir_txt2img_samples)
-            parameters_copypaste.bind_buttons({"txt2img": txt2img_paste}, None, txt2img_prompt)
 
             connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
             connect_reuse_seed(subseed, reuse_subseed, generation_info, dummy_component, is_subseed=True)
@@ -569,6 +585,8 @@ def create_ui():
                     hr_sampler_index,
                     hr_prompt,
                     hr_negative_prompt,
+                    override_settings,
+
                 ] + custom_inputs,
 
                 outputs=[
@@ -632,6 +650,9 @@ def create_ui():
                 *modules.scripts.scripts_txt2img.infotext_fields
             ]
             parameters_copypaste.add_paste_fields("txt2img", None, txt2img_paste_fields)
+            parameters_copypaste.register_paste_params_button(parameters_copypaste.ParamBinding(
+                paste_button=txt2img_paste, tabname="txt2img", source_text_component=txt2img_prompt, source_image_component=None, override_settings_component=override_settings,
+            ))
 
             txt2img_preview_params = [
                 txt2img_prompt,
@@ -779,6 +800,10 @@ def create_ui():
                                 batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1, elem_id="img2img_batch_count")
                                 batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1, elem_id="img2img_batch_size")
 
+                    elif category == "override_settings":
+                        with FormRow(elem_id="img2img_override_settings_row") as row:
+                            override_settings = create_override_settings_dropdown('img2img', row)
+
                     elif category == "scripts":
                         with FormGroup(elem_id="img2img_script_container"):
                             custom_inputs = modules.scripts.scripts_img2img.setup_ui()
@@ -813,7 +838,6 @@ def create_ui():
                                 )
 
             img2img_gallery, generation_info, html_info, html_log = create_output_panel("img2img", opts.outdir_img2img_samples)
-            parameters_copypaste.bind_buttons({"img2img": img2img_paste}, None, img2img_prompt)
 
             connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
             connect_reuse_seed(subseed, reuse_subseed, generation_info, dummy_component, is_subseed=True)
@@ -866,7 +890,8 @@ def create_ui():
                     inpainting_mask_invert,
                     img2img_batch_input_dir,
                     img2img_batch_output_dir,
-                    img2img_batch_inpaint_mask_dir
+                    img2img_batch_inpaint_mask_dir,
+                    override_settings,
                 ] + custom_inputs,
                 outputs=[
                     img2img_gallery,
@@ -954,6 +979,9 @@ def create_ui():
             ]
             parameters_copypaste.add_paste_fields("img2img", init_img, img2img_paste_fields)
             parameters_copypaste.add_paste_fields("inpaint", init_img_with_mask, img2img_paste_fields)
+            parameters_copypaste.register_paste_params_button(parameters_copypaste.ParamBinding(
+                paste_button=img2img_paste, tabname="img2img", source_text_component=img2img_prompt, source_image_component=None, override_settings_component=override_settings,
+            ))
 
     modules.scripts.scripts_current = None
 
@@ -971,7 +999,11 @@ def create_ui():
                 html2 = gr.HTML()
                 with gr.Row():
                     buttons = parameters_copypaste.create_buttons(["txt2img", "img2img", "inpaint", "extras"])
-                parameters_copypaste.bind_buttons(buttons, image, generation_info)
+
+                for tabname, button in buttons.items():
+                    parameters_copypaste.register_paste_params_button(parameters_copypaste.ParamBinding(
+                        paste_button=button, tabname=tabname, source_text_component=generation_info, source_image_component=image,
+                    ))
 
         image.change(
             fn=wrap_gradio_call(modules.extras.run_pnginfo),
@@ -1380,6 +1412,7 @@ def create_ui():
 
     components = []
     component_dict = {}
+    shared.settings_components = component_dict
 
     script_callbacks.ui_settings_callback()
     opts.reorder()
@@ -1546,8 +1579,7 @@ def create_ui():
                 component = create_setting_component(k, is_quicksettings=True)
                 component_dict[k] = component
 
-        parameters_copypaste.integrate_settings_paste_fields(component_dict)
-        parameters_copypaste.run_bind()
+        parameters_copypaste.connect_paste_params_buttons()
 
         with gr.Tabs(elem_id="tabs") as tabs:
             for interface, label, ifid in interfaces:

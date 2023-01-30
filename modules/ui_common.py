@@ -198,5 +198,9 @@ Requested path was: {f}
                 html_info = gr.HTML(elem_id=f'html_info_{tabname}')
                 html_log = gr.HTML(elem_id=f'html_log_{tabname}')
 
-            parameters_copypaste.bind_buttons(buttons, result_gallery, "txt2img" if tabname == "txt2img" else None)
+            for paste_tabname, paste_button in buttons.items():
+                parameters_copypaste.register_paste_params_button(parameters_copypaste.ParamBinding(
+                    paste_button=paste_button, tabname=paste_tabname, source_tabname="txt2img" if tabname == "txt2img" else None, source_image_component=result_gallery
+                ))
+
             return result_gallery, generation_info if tabname != "extras" else html_info_x, html_info, html_log
