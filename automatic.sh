@@ -62,8 +62,7 @@ if [ $MODE == env ]; then
   UN=`uname -rm 2>/dev/null`
   echo "Version: $VER"
   echo "Platform: $LSB $UN"
-  $PYTHON --version
-  $PYTHON -c 'import torch; print("Torch:", torch.__version__, "CUDA:", torch.version.cuda, "cuDNN:", torch.backends.cudnn.version(), "GPU:", torch.cuda.get_device_name(torch.cuda.current_device()), "Arch:", torch.cuda.get_device_capability());'
+  $PYTHON -c 'import torch; import platform; print("Python:", platform.python_version(), "Torch:", torch.__version__, "CUDA:", torch.version.cuda, "cuDNN:", torch.backends.cudnn.version(), "GPU:", torch.cuda.get_device_name(torch.cuda.current_device()), "Arch:", torch.cuda.get_device_capability());'
   exit 0
 fi
 
