@@ -105,7 +105,8 @@ Alternatively, use online services (like Google Colab):
 2. Install [git](https://git-scm.com/download/win).
 3. Download the stable-diffusion-webui repository, for example by running `git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui.git`.
 4. Place stable diffusion checkpoint (`model.ckpt`) in the `models/Stable-diffusion` directory (see [dependencies](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Dependencies) for where to get it).
-5. Run `webui-user.bat` from Windows Explorer as normal, non-administrator, user.
+5. Copy `webui-user-example.bat` to `webui-user.bat` (to customize command line options etc.: edit `webui-user.bat`).
+6. Run `webui-user.bat` from Windows Explorer as normal, non-administrator, user.
 
 ### Automatic Installation on Linux
 1. Install the dependencies:
