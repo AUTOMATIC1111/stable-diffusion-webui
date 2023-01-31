@@ -575,7 +575,8 @@ An unofficial [Stable Horde](https://stablehorde.net/) worker bridge as a [Stabl
 - Make sure `Enable` is checked.
 - Click the `Apply settings` buttons.
 
-## Merge Block Weighted",
+## Merge Block Weighted
+https://github.com/bbc-mc/sdweb-merge-block-weighted-gui
 
 Merge models with separate rate for each 25 U-Net block (input, middle, output).
 			
