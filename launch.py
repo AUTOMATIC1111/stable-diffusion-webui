@@ -264,8 +264,8 @@ def prepare_environment():
 
     commit = commit_hash()
 
-    print(f"Python {sys.version}")
-    print(f"Commit hash: {commit}")
+    # print(f"Python {sys.version}")
+    # print(f"Commit hash: {commit}")
 
     if reinstall_torch or not is_installed("torch") or not is_installed("torchvision"):
         run(f'"{python}" -m {torch_command}', "Installing torch and torchvision", "Couldn't install torch", live=True)
