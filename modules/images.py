@@ -216,28 +216,23 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts):
 
         draw_texts(d, x, y, ver_texts[row], fnt, fontsize)
 
-    return result
+    return result, pad_left, pad_top
 
-def draw_inner_margins(im, margin, rows, cols, margin_color=(255, 255, 255)):
-    cell_width = im.width // cols
-    cell_height = im.height // rows
-
-    padded_width = im.width + (cols - 1) * margin
-    padded_height = im.height + (rows - 1) * margin
-
-    padded_im = Image.new("RGB", (padded_width, padded_height), margin_color)
-
+def draw_inner_margins(im, margin, rows, cols, pad_left, pad_top, margin_color=(255, 255, 255)):
+    if margin == 0: # Early exit, not strictly necessary
+        return im
+    cell_width = (im.width - pad_left) // cols
+    cell_height = (im.height - pad_top) // rows
+    padded_im = Image.new("RGB", (im.width + (cols - 1) * margin, im.height + (rows - 1) * margin), margin_color)
     for r in range(rows):
         for c in range(cols):
-            cell_location = (
-                c * cell_width,
-                r * cell_height,
-                (c + 1) * cell_width,
-                (r + 1) * cell_height
-            )
-            paste_location = (c * (cell_width + margin), r * (cell_height + margin))
-            padded_im.paste(im.crop(cell_location), paste_location)
-
+            cell_location = (c * cell_width + pad_left * (c != 0), 
+                             r * cell_height + pad_top * (r != 0),
+                             (c + 1) * cell_width + pad_left, 
+                             (r + 1) * cell_height + pad_top)
+            paste_location = (c * (cell_width + margin) + pad_left * (c != 0), 
+                              r * (cell_height + margin) + pad_top * (r != 0))
+            padded_im.paste(im.crop(cell_location), paste_location) 
     return padded_im
 
 def draw_prompt_matrix(im, width, height, all_prompts):
