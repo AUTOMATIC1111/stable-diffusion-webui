@@ -13,3 +13,6 @@
 [submodule "extensions-builtin/sd-extension-steps-animation"]
 	path = extensions-builtin/sd-extension-steps-animation
 	url = https://github.com/vladmandic/sd-extension-steps-animation
+[submodule "extensions-builtin/stable-diffusion-webui-images-browser"]
+	path = extensions-builtin/stable-diffusion-webui-images-browser
+	url = https://github.com/AlUlkesh/stable-diffusion-webui-images-browser
