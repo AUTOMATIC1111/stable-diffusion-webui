@@ -79,7 +79,7 @@ class Script(scripts.Script):
         processed = process_images(p)
 
         grid = images.image_grid(processed.images, p.batch_size, rows=1 << ((len(prompt_matrix_parts) - 1) // 2))
-        grid = images.draw_prompt_matrix(grid, p.width, p.height, prompt_matrix_parts)
+        grid = images.draw_prompt_matrix(grid, max(p.width, p.hr_upscale_to_x), max(p.height, p.hr_upscale_to_y), prompt_matrix_parts)
         processed.images.insert(0, grid)
         processed.index_of_first_image = 1
         processed.infotexts.insert(0, processed.infotexts[0])
