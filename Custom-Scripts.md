@@ -320,18 +320,16 @@ Steps: 20, Sampler: DDIM, CFG scale: 7, Seed: 4288895889, Size: 512x512, Model h
 
 </details>
 
-## sd_script-skippy-the-step-kangaroo
-https://github.com/FartyPants/sd_script_skippy
+## Scripts by FartyPants
+https://github.com/FartyPants/sd_web_ui_scripts
 
-Script for Automatic1111 The ultimate solution for those pesky last steps that ruin your SD generation images
+### Hallucinate
 
-Imagine this: So you're watching the SD generation in your browser - image is good, good, good then on the last few steps, BOOM, it's ugly.
+- swaps negative and positive prompts
 
-This handy script is the remedy. It enables you to snatch incomplete generation by skipping last few steps. Works great when you have overtrained ckpt
+### Mr. Negativity
 
-Example: you put euler a on 25 steps, but now you can snatch image at step 19, like a ... I don't know, a puppy? The new, early image will be sent to the interface
-
-Here is how you test this contraption: Set Steps at 20 and move the Skip steps to 16 (that means: 20-16 = 4) - you should see a blurry image in interface that was snatched at step 4 as we skipped last 16 steps.
+- more advanced script that swaps negative and positive tokens depending on Mr. negativity rage
 
 ## Saving steps of the sampling process
 
