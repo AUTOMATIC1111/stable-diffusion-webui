@@ -549,6 +549,13 @@
 			"tags": ["script", "tab"]
 		},
 		{
+			"name": "Dynamic Thresholding",
+			"url": "https://github.com/mcmonkeyprojects/sd-dynamic-thresholding.git",
+			"description": "Adds customizable dynamic thresholding to allow high CFG Scale values without the burning / 'pop art' effect.",
+			"added": "2023-02-01",
+			"tags": ["script"]
+		},
+		{
 			"name": "zh_CN Localization",
 			"url": "https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN",
 			"description": "Simplified Chinese localization",
