@@ -9,7 +9,7 @@
 3. Place stable diffusion checkpoint (model.ckpt) in the models/Stable-diffusion directory
 4. For many AMD gpus you MUST Add `--precision full` `--no-half` to `COMMANDLINE_ARGS=` in  **webui-user.sh** to avoid black squares or crashing.* 
 
-5. Run **webui-user.sh**
+5. Run **webui.sh**
 
 *Certain cards like the Radeon RX 6000 Series and the RX 500 Series will function normally without the option `--precision full --no-half`, saving plenty of vram. (noted [here](https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/5468).)
 
