@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-#################################################
-# Please do not make any changes to this file,  #
+###################################################
+# Please do not make any changes to this file,    #
 # change the variables in webui-user.bash instead #
-#################################################
+###################################################
 
 # If run from macOS, load defaults from webui-macos-env.bash
 if [[ "$OSTYPE" == "darwin"* ]]; then
