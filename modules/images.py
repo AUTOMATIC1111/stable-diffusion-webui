@@ -171,8 +171,8 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts):
 
     pad_left = 0 if sum([sum([len(line.text) for line in lines]) for lines in ver_texts]) == 0 else width * 3 // 4
 
-    cols = round(im.width / width)
-    rows = round(im.height / height)
+    cols = im.width // width
+    rows = im.height // height
 
     assert cols == len(hor_texts), f'bad number of horizontal texts: {len(hor_texts)}; must be {cols}'
     assert rows == len(ver_texts), f'bad number of vertical texts: {len(ver_texts)}; must be {rows}'
