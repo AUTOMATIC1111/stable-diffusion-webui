@@ -2,7 +2,6 @@ from collections import namedtuple
 import numpy as np
 import torch
 from PIL import Image
-import torchsde._brownian.brownian_interval
 from modules import devices, processing, images, sd_vae_approx
 
 from modules.shared import opts, state
@@ -61,18 +60,3 @@ def store_latent(decoded):
 
 class InterruptedException(BaseException):
     pass
-
-
-# MPS fix for randn in torchsde
-# XXX move this to separate file for MPS
-def torchsde_randn(size, dtype, device, seed):
-    if device.type == 'mps':
-        generator = torch.Generator(devices.cpu).manual_seed(int(seed))
-        return torch.randn(size, dtype=dtype, device=devices.cpu, generator=generator).to(device)
-    else:
-        generator = torch.Generator(device).manual_seed(int(seed))
-        return torch.randn(size, dtype=dtype, device=device, generator=generator)
-
-
-torchsde._brownian.brownian_interval._randn = torchsde_randn
-
