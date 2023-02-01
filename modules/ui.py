@@ -445,6 +445,37 @@ def create_override_settings_dropdown(tabname, row):
 
     return dropdown
 
+def select_aselect_aspect_ratio_11(width, height):
+    return select_aspect_ratio_with_param(width, height, "1:1")
+
+def select_aspect_ratio_32(width, height):
+    return select_aspect_ratio_with_param(width, height, "3:2")
+
+def select_aspect_ratio_43(width, height):
+    return select_aspect_ratio_with_param(width, height, "4:3")
+
+def select_aspect_ratio_169(width, height):
+    return select_aspect_ratio_with_param(width, height, "16:9")
+    
+def select_aspect_ratio_with_param(width, height, ar):
+    min_dim = min([width, height])
+
+    if ar == "1:1":
+        return min_dim, min_dim
+
+    if ar == "3:2":
+        m = 1.5
+    elif ar == "4:3":
+        m = 4/3
+    elif ar == "16:9":
+        m = 16/9
+
+    max_dim = round(m*min_dim)
+
+    if width < height:
+        return min_dim, max_dim
+
+    return max_dim, min_dim
 
 def create_ui():
     import modules.img2img
@@ -480,7 +511,13 @@ def create_ui():
                                 height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="txt2img_height")
 
                             if opts.dimensions_and_batch_together:
-                                res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="txt2img_res_switch_btn")
+                                with gr.Column(elem_id="img2img_column_aspect_ratio"):
+                                    with gr.Row(elem_id="img2img_row_aspect_ratio"):
+                                        res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="img2img_res_switch_btn")
+                                        ar_11_btn = ToolButton(value="1:1", elem_id="txt2img_ar_11_btn")
+                                        ar_32_btn = ToolButton(value="3:2", elem_id="txt2img_ar_32_btn")
+                                        ar_43_btn = ToolButton(value="4:3", elem_id="txt2img_ar_43_btn")
+                                        ar_169_btn = ToolButton(value="16:9", elem_id="txt2img_ar_169_btn")
                                 with gr.Column(elem_id="txt2img_column_batch"):
                                     batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1, elem_id="txt2img_batch_count")
                                     batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1, elem_id="txt2img_batch_size")
@@ -587,6 +624,10 @@ def create_ui():
             submit.click(**txt2img_args)
 
             res_switch_btn.click(lambda w, h: (h, w), inputs=[width, height], outputs=[width, height])
+            ar_11_btn.click(select_aspect_ratio_11, inputs=[width, height], outputs=[width, height])
+            ar_32_btn.click(select_aspect_ratio_32, inputs=[width, height], outputs=[width, height])
+            ar_43_btn.click(select_aspect_ratio_43, inputs=[width, height], outputs=[width, height])
+            ar_169_btn.click(select_aspect_ratio_169, inputs=[width, height], outputs=[width, height])
 
             txt_prompt_img.change(
                 fn=modules.images.image_data,
@@ -758,7 +799,13 @@ def create_ui():
                                 height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="img2img_height")
 
                             if opts.dimensions_and_batch_together:
-                                res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="img2img_res_switch_btn")
+                                with gr.Column(elem_id="img2img_column_aspect_ratio"):
+                                    with gr.Row(elem_id="img2img_row_aspect_ratio"):
+                                        res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="img2img_res_switch_btn")
+                                        ar_11_btn = ToolButton(value="1:1", elem_id="txt2img_ar_11_btn")
+                                        ar_32_btn = ToolButton(value="3:2", elem_id="txt2img_ar_32_btn")
+                                        ar_43_btn = ToolButton(value="4:3", elem_id="txt2img_ar_43_btn")
+                                        ar_169_btn = ToolButton(value="16:9", elem_id="txt2img_ar_169_btn")
                                 with gr.Column(elem_id="img2img_column_batch"):
                                     batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1, elem_id="img2img_batch_count")
                                     batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1, elem_id="img2img_batch_size")
@@ -902,6 +949,11 @@ def create_ui():
             img2img_prompt.submit(**img2img_args)
             submit.click(**img2img_args)
             res_switch_btn.click(lambda w, h: (h, w), inputs=[width, height], outputs=[width, height])
+            ar_11_btn.click(select_aspect_ratio_11, inputs=[width, height], outputs=[width, height])
+            ar_32_btn.click(select_aspect_ratio_32, inputs=[width, height], outputs=[width, height])
+            ar_43_btn.click(select_aspect_ratio_43, inputs=[width, height], outputs=[width, height])
+            ar_169_btn.click(select_aspect_ratio_169, inputs=[width, height], outputs=[width, height])
+
 
             img2img_interrogate.click(
                 fn=lambda *args: process_interrogate(interrogate, *args),
