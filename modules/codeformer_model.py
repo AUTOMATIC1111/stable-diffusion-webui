@@ -9,12 +9,15 @@ import modules.face_restoration
 import modules.shared
 from modules import shared, devices, modelloader
 from modules.paths import models_path
+from modules.shared import cmd_opts
 
 # codeformer people made a choice to include modified basicsr library to their project which makes
 # it utterly impossible to use it alongside with other libraries that also use basicsr, like GFPGAN.
 # I am making a choice to include some files from codeformer to work around this issue.
 model_dir = "Codeformer"
 model_path = os.path.join(models_path, model_dir)
+if cmd_opts.codeformer_models_path is not None and os.path.isdir(cmd_opts.codeformer_models_path):
+    model_path = cmd_opts.codeformer_models_path
 model_url = 'https://github.com/sczhou/CodeFormer/releases/download/v0.1.0/codeformer.pth'
 
 have_codeformer = False

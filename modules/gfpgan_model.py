@@ -7,10 +7,13 @@ import gfpgan
 
 import modules.face_restoration
 from modules import paths, shared, devices, modelloader
+from modules.shared import cmd_opts
 
 model_dir = "GFPGAN"
 user_path = None
 model_path = os.path.join(paths.models_path, model_dir)
+if cmd_opts.gfpgan_models_path is not None and os.path.isdir(cmd_opts.gfpgan_models_path):
+    model_path = cmd_opts.gfpgan_models_path
 model_url = "https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.4.pth"
 have_gfpgan = False
 loaded_gfpgan_model = None

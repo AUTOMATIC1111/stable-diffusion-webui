@@ -39,6 +39,22 @@ class Upscaler:
 
         if self.model_path is None and self.name:
             self.model_path = os.path.join(shared.models_path, self.name)
+            match self.name:
+                case "ESRGAN":
+                    if modules.shared.cmd_opts.esrgan_models_path is not None and os.path.isdir(modules.shared.cmd_opts.esrgan_models_path):
+                        self.model_path = modules.shared.cmd_opts.esrgan_models_path
+                case "LDSR":
+                    if modules.shared.cmd_opts.ldsr_models_path is not None and os.path.isdir(modules.shared.cmd_opts.ldsr_models_path):
+                        self.model_path = modules.shared.cmd_opts.ldsr_models_path
+                case "RealESRGAN":
+                    if modules.shared.cmd_opts.realesrgan_models_path is not None and os.path.isdir(modules.shared.cmd_opts.realesrgan_models_path):
+                        self.model_path = modules.shared.cmd_opts.realesrgan_models_path
+                case "ScuNET":
+                    if modules.shared.cmd_opts.scunet_models_path is not None and os.path.isdir(modules.shared.cmd_opts.scunet_models_path):
+                        self.model_path = modules.shared.cmd_opts.scunet_models_path
+                case "SwinIR":
+                    if modules.shared.cmd_opts.swinir_models_path is not None and os.path.isdir(modules.shared.cmd_opts.swinir_models_path):
+                        self.model_path = modules.shared.cmd_opts.swinir_models_path
         if self.model_path and create_dirs:
             os.makedirs(self.model_path, exist_ok=True)
 
