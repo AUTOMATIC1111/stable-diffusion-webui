@@ -8,7 +8,7 @@ import torch
 import modules.face_restoration
 import modules.shared
 from modules import shared, devices, modelloader
-from modules.paths import script_path, models_path
+from modules.paths import models_path
 
 # codeformer people made a choice to include modified basicsr library to their project which makes
 # it utterly impossible to use it alongside with other libraries that also use basicsr, like GFPGAN.

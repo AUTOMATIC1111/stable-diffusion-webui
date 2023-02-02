@@ -1,4 +1,5 @@
 import base64
+import html
 import io
 import math
 import os
@@ -6,24 +7,33 @@ import re
 from pathlib import Path
 
 import gradio as gr
-from modules.shared import script_path
+from modules.paths import data_path
 from modules import shared, ui_tempdir, script_callbacks
 import tempfile
 from PIL import Image
 
-re_param_code = r'\s*([\w ]+):\s*("(?:\\|\"|[^\"])+"|[^,]*)(?:,|$)'
+re_param_code = r'\s*([\w ]+):\s*("(?:\\"[^,]|\\"|\\|[^\"])+"|[^,]*)(?:,|$)'
 re_param = re.compile(re_param_code)
-re_params = re.compile(r"^(?:" + re_param_code + "){3,}$")
 re_imagesize = re.compile(r"^(\d+)x(\d+)$")
 re_hypernet_hash = re.compile("\(([0-9a-f]+)\)$")
 type_of_gr_update = type(gr.update())
+
 paste_fields = {}
-bind_list = []
+registered_param_bindings = []
+
+
+class ParamBinding:
+    def __init__(self, paste_button, tabname, source_text_component=None, source_image_component=None, source_tabname=None, override_settings_component=None):
+        self.paste_button = paste_button
+        self.tabname = tabname
+        self.source_text_component = source_text_component
+        self.source_image_component = source_image_component
+        self.source_tabname = source_tabname
+        self.override_settings_component = override_settings_component
 
 
 def reset():
     paste_fields.clear()
-    bind_list.clear()
 
 
 def quote(text):
@@ -75,26 +85,6 @@ def add_paste_fields(tabname, init_img, fields):
         modules.ui.img2img_paste_fields = fields
 
 
-def integrate_settings_paste_fields(component_dict):
-    from modules import ui
-
-    settings_map = {
-        'CLIP_stop_at_last_layers': 'Clip skip',
-        'inpainting_mask_weight': 'Conditional mask weight',
-        'sd_model_checkpoint': 'Model hash',
-        'eta_noise_seed_delta': 'ENSD',
-        'initial_noise_multiplier': 'Noise multiplier',
-    }
-    settings_paste_fields = [
-        (component_dict[k], lambda d, k=k, v=v: ui.apply_setting(k, d.get(v, None)))
-        for k, v in settings_map.items()
-    ]
-
-    for tabname, info in paste_fields.items():
-        if info["fields"] is not None:
-            info["fields"] += settings_paste_fields
-
-
 def create_buttons(tabs_list):
     buttons = {}
     for tab in tabs_list:
@@ -102,9 +92,60 @@ def create_buttons(tabs_list):
     return buttons
 
 
-#if send_generate_info is a tab name, mean generate_info comes from the params fields of the tab
 def bind_buttons(buttons, send_image, send_generate_info):
-    bind_list.append([buttons, send_image, send_generate_info])
+    """old function for backwards compatibility; do not use this, use register_paste_params_button"""
+    for tabname, button in buttons.items():
+        source_text_component = send_generate_info if isinstance(send_generate_info, gr.components.Component) else None
+        source_tabname = send_generate_info if isinstance(send_generate_info, str) else None
+
+        register_paste_params_button(ParamBinding(paste_button=button, tabname=tabname, source_text_component=source_text_component, source_image_component=send_image, source_tabname=source_tabname))
+
+
+def register_paste_params_button(binding: ParamBinding):
+    registered_param_bindings.append(binding)
+
+
+def connect_paste_params_buttons():
+    binding: ParamBinding
+    for binding in registered_param_bindings:
+        destination_image_component = paste_fields[binding.tabname]["init_img"]
+        fields = paste_fields[binding.tabname]["fields"]
+
+        destination_width_component = next(iter([field for field, name in fields if name == "Size-1"] if fields else []), None)
+        destination_height_component = next(iter([field for field, name in fields if name == "Size-2"] if fields else []), None)
+
+        if binding.source_image_component and destination_image_component:
+            if isinstance(binding.source_image_component, gr.Gallery):
+                func = send_image_and_dimensions if destination_width_component else image_from_url_text
+                jsfunc = "extract_image_from_gallery"
+            else:
+                func = send_image_and_dimensions if destination_width_component else lambda x: x
+                jsfunc = None
+
+            binding.paste_button.click(
+                fn=func,
+                _js=jsfunc,
+                inputs=[binding.source_image_component],
+                outputs=[destination_image_component, destination_width_component, destination_height_component] if destination_width_component else [destination_image_component],
+            )
+
+        if binding.source_text_component is not None and fields is not None:
+            connect_paste(binding.paste_button, fields, binding.source_text_component, binding.override_settings_component, binding.tabname)
+
+        if binding.source_tabname is not None and fields is not None:
+            paste_field_names = ['Prompt', 'Negative prompt', 'Steps', 'Face restoration'] + (["Seed"] if shared.opts.send_seed else [])
+            binding.paste_button.click(
+                fn=lambda *x: x,
+                inputs=[field for field, name in paste_fields[binding.source_tabname]["fields"] if name in paste_field_names],
+                outputs=[field for field, name in fields if name in paste_field_names],
+            )
+
+        binding.paste_button.click(
+            fn=None,
+            _js=f"switch_to_{binding.tabname}",
+            inputs=None,
+            outputs=None,
+        )
 
 
 def send_image_and_dimensions(x):
@@ -122,49 +163,6 @@ def send_image_and_dimensions(x):
 
     return img, w, h
 
-
-def run_bind():
-    for buttons, source_image_component, send_generate_info in bind_list:
-        for tab in buttons:
-            button = buttons[tab]
-            destination_image_component = paste_fields[tab]["init_img"]
-            fields = paste_fields[tab]["fields"]
-
-            destination_width_component = next(iter([field for field, name in fields if name == "Size-1"] if fields else []), None)
-            destination_height_component = next(iter([field for field, name in fields if name == "Size-2"] if fields else []), None)
-
-            if source_image_component and destination_image_component:
-                if isinstance(source_image_component, gr.Gallery):
-                    func = send_image_and_dimensions if destination_width_component else image_from_url_text
-                    jsfunc = "extract_image_from_gallery"
-                else:
-                    func = send_image_and_dimensions if destination_width_component else lambda x: x
-                    jsfunc = None
-
-                button.click(
-                    fn=func,
-                    _js=jsfunc,
-                    inputs=[source_image_component],
-                    outputs=[destination_image_component, destination_width_component, destination_height_component] if destination_width_component else [destination_image_component],
-                )
-
-            if send_generate_info and fields is not None:
-                if send_generate_info in paste_fields:
-                    paste_field_names = ['Prompt', 'Negative prompt', 'Steps', 'Face restoration'] + (["Seed"] if shared.opts.send_seed else [])
-                    button.click(
-                        fn=lambda *x: x,
-                        inputs=[field for field, name in paste_fields[send_generate_info]["fields"] if name in paste_field_names],
-                        outputs=[field for field, name in fields if name in paste_field_names],
-                    )
-                else:
-                    connect_paste(button, fields, send_generate_info)
-
-            button.click(
-                fn=None,
-                _js=f"switch_to_{tab}",
-                inputs=None,
-                outputs=None,
-            )
 
 
 def find_hypernetwork_key(hypernet_name, hypernet_hash=None):
@@ -243,7 +241,7 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
     done_with_prompt = False
 
     *lines, lastline = x.strip().split("\n")
-    if not re_params.match(lastline):
+    if len(re_param.findall(lastline)) < 3:
         lines.append(lastline)
         lastline = ''
 
@@ -262,6 +260,7 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
     res["Negative prompt"] = negative_prompt
 
     for k, v in re_param.findall(lastline):
+        v = v[1:-1] if v[0] == '"' and v[-1] == '"' else v
         m = re_imagesize.match(v)
         if m is not None:
             res[k+"-1"] = m.group(1)
@@ -286,10 +285,53 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
     return res
 
 
-def connect_paste(button, paste_fields, input_comp, jsfunc=None):
+settings_map = {}
+
+infotext_to_setting_name_mapping = [
+    ('Clip skip', 'CLIP_stop_at_last_layers', ),
+    ('Conditional mask weight', 'inpainting_mask_weight'),
+    ('Model hash', 'sd_model_checkpoint'),
+    ('ENSD', 'eta_noise_seed_delta'),
+    ('Noise multiplier', 'initial_noise_multiplier'),
+    ('Eta', 'eta_ancestral'),
+    ('Eta DDIM', 'eta_ddim'),
+    ('Discard penultimate sigma', 'always_discard_next_to_last_sigma')
+]
+
+
+def create_override_settings_dict(text_pairs):
+    """creates processing's override_settings parameters from gradio's multiselect
+
+    Example input:
+        ['Clip skip: 2', 'Model hash: e6e99610c4', 'ENSD: 31337']
+
+    Example output:
+        {'CLIP_stop_at_last_layers': 2, 'sd_model_checkpoint': 'e6e99610c4', 'eta_noise_seed_delta': 31337}
+    """
+
+    res = {}
+
+    params = {}
+    for pair in text_pairs:
+        k, v = pair.split(":", maxsplit=1)
+
+        params[k] = v.strip()
+
+    for param_name, setting_name in infotext_to_setting_name_mapping:
+        value = params.get(param_name, None)
+
+        if value is None:
+            continue
+
+        res[setting_name] = shared.opts.cast_value(setting_name, value)
+
+    return res
+
+
+def connect_paste(button, paste_fields, input_comp, override_settings_component, tabname):
     def paste_func(prompt):
         if not prompt and not shared.cmd_opts.hide_ui_dir_config:
-            filename = os.path.join(script_path, "params.txt")
+            filename = os.path.join(data_path, "params.txt")
             if os.path.exists(filename):
                 with open(filename, "r", encoding="utf8") as file:
                     prompt = file.read()
@@ -323,9 +365,35 @@ def connect_paste(button, paste_fields, input_comp, jsfunc=None):
 
         return res
 
+    if override_settings_component is not None:
+        def paste_settings(params):
+            vals = {}
+
+            for param_name, setting_name in infotext_to_setting_name_mapping:
+                v = params.get(param_name, None)
+                if v is None:
+                    continue
+
+                if setting_name == "sd_model_checkpoint" and shared.opts.disable_weights_auto_swap:
+                    continue
+
+                v = shared.opts.cast_value(setting_name, v)
+                current_value = getattr(shared.opts, setting_name, None)
+
+                if v == current_value:
+                    continue
+
+                vals[param_name] = v
+
+            vals_pairs = [f"{k}: {v}" for k, v in vals.items()]
+
+            return gr.Dropdown.update(value=vals_pairs, choices=vals_pairs, visible=len(vals_pairs) > 0)
+
+        paste_fields = paste_fields + [(override_settings_component, paste_settings)]
+
     button.click(
         fn=paste_func,
-        _js=jsfunc,
+        _js=f"recalculate_prompts_{tabname}",
         inputs=[input_comp],
         outputs=[x[0] for x in paste_fields],
     )

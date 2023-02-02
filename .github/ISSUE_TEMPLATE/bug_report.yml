@@ -37,20 +37,20 @@ body:
     id: what-should
     attributes:
       label: What should have happened?
-      description: tell what you think the normal behavior should be
+      description: Tell what you think the normal behavior should be
     validations:
       required: true
   - type: input
     id: commit
     attributes:
       label: Commit where the problem happens
-      description: Which commit are you running ? (Do not write *Latest version/repo/commit*, as this means nothing and will have changed by the time we read your issue. Rather, copy the **Commit hash** shown in the cmd/terminal when you launch the UI)
+      description: Which commit are you running ? (Do not write *Latest version/repo/commit*, as this means nothing and will have changed by the time we read your issue. Rather, copy the **Commit** link at the bottom of the UI, or from the cmd/terminal if you can't launch it.)
     validations:
       required: true
   - type: dropdown
     id: platforms
     attributes:
-      label: What platforms do you use to access UI ?
+      label: What platforms do you use to access the UI ?
       multiple: true
       options:
         - Windows
@@ -74,10 +74,27 @@ body:
     id: cmdargs
     attributes:
       label: Command Line Arguments
-      description: Are you using any launching parameters/command line arguments (modified webui-user.py) ? If yes, please write them below
+      description: Are you using any launching parameters/command line arguments (modified webui-user .bat/.sh) ? If yes, please write them below. Write "No" otherwise.
       render: Shell
+    validations:
+      required: true
+  - type: textarea
+    id: extensions
+    attributes:
+      label: List of extensions
+      description: Are you using any extensions other than built-ins? If yes, provide a list, you can copy it at "Extensions" tab. Write "No" otherwise.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Console logs
+      description: Please provide **full** cmd/terminal logs from the moment you started UI to the end of it, after your bug happened. If it's very long, provide a link to pastebin or similar service.
+      render: Shell
+    validations:
+      required: true
   - type: textarea
     id: misc
     attributes:
-      label: Additional information, context and logs
-      description: Please provide us with any relevant additional info, context or log output.
+      label: Additional information
+      description: Please provide us with any relevant additional info or context.

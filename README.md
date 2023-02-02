@@ -17,7 +17,7 @@ A browser interface based on Gradio library for Stable Diffusion.
     - a man in a (tuxedo:1.21) - alternative syntax
     - select text and press ctrl+up or ctrl+down to automatically adjust attention to selected text (code contributed by anonymous user)
 - Loopback, run img2img processing multiple times
-- X/Y plot, a way to draw a 2 dimensional plot of images with different parameters
+- X/Y/Z plot, a way to draw a 3 dimensional plot of images with different parameters
 - Textual Inversion
     - have as many embeddings as you want and use any names you like for them
     - use multiple embeddings with different numbers of vectors per token
@@ -155,6 +155,8 @@ Licenses for borrowed code can be found in `Settings -> Licenses` screen, and al
 - Idea for Composable Diffusion - https://github.com/energy-based-model/Compositional-Visual-Generation-with-Composable-Diffusion-Models-PyTorch
 - xformers - https://github.com/facebookresearch/xformers
 - DeepDanbooru - interrogator for anime diffusers https://github.com/KichangKim/DeepDanbooru
+- Sampling in float32 precision from a float16 UNet - marunine for the idea, Birch-san for the example Diffusers implementation (https://github.com/Birch-san/diffusers-play/tree/92feee6)
+- Instruct pix2pix - Tim Brooks (star), Aleksander Holynski (star), Alexei A. Efros (no star) - https://github.com/timothybrooks/instruct-pix2pix
 - Security advice - RyotaK
 - Initial Gradio script - posted on 4chan by an Anonymous user. Thank you Anonymous user.
 - (You)

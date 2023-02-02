@@ -1,6 +1,5 @@
 import os
 import sys
-import threading
 import time
 import importlib
 import signal
@@ -8,11 +7,14 @@ import re
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
+from packaging import version
 
-from modules import import_hook, errors, extra_networks
+import logging
+logging.getLogger("xformers").addFilter(lambda record: 'A matching Triton is not available' not in record.getMessage())
+
+from modules import import_hook, errors, extra_networks, ui_extra_networks_checkpoints
 from modules import extra_networks_hypernet, ui_extra_networks_hypernets, ui_extra_networks_textual_inversion
 from modules.call_queue import wrap_queued_call, queue_lock, wrap_gradio_gpu_call
-from modules.paths import script_path
 
 import torch
 
@@ -22,7 +24,6 @@ if ".dev" in torch.__version__ or "+git" in torch.__version__:
 
 from modules import shared, devices, sd_samplers, upscaler, extensions, localization, ui_tempdir, ui_extra_networks
 import modules.codeformer_model as codeformer
-import modules.extras
 import modules.face_restoration
 import modules.gfpgan_model as gfpgan
 import modules.img2img
@@ -50,7 +51,40 @@ else:
     server_name = "0.0.0.0" if cmd_opts.listen else None
 
 
+def check_versions():
+    if shared.cmd_opts.skip_version_check:
+        return
+
+    expected_torch_version = "1.13.1"
+
+    if version.parse(torch.__version__) < version.parse(expected_torch_version):
+        errors.print_error_explanation(f"""
+You are running torch {torch.__version__}.
+The program is tested to work with torch {expected_torch_version}.
+To reinstall the desired version, run with commandline flag --reinstall-torch.
+Beware that this will cause a lot of large files to be downloaded, as well as
+there are reports of issues with training tab on the latest version.
+
+Use --skip-version-check commandline argument to disable this check.
+        """.strip())
+
+    expected_xformers_version = "0.0.16rc425"
+    if shared.xformers_available:
+        import xformers
+
+        if version.parse(xformers.__version__) < version.parse(expected_xformers_version):
+            errors.print_error_explanation(f"""
+You are running xformers {xformers.__version__}.
+The program is tested to work with xformers {expected_xformers_version}.
+To reinstall the desired version, run with commandline flag --reinstall-xformers.
+
+Use --skip-version-check commandline argument to disable this check.
+            """.strip())
+
+
 def initialize():
+    check_versions()
+
     extensions.list_extensions()
     localization.list_localizations(cmd_opts.localizations_dir)
 
@@ -93,6 +127,7 @@ def initialize():
     ui_extra_networks.intialize()
     ui_extra_networks.register_page(ui_extra_networks_textual_inversion.ExtraNetworksPageTextualInversion())
     ui_extra_networks.register_page(ui_extra_networks_hypernets.ExtraNetworksPageHypernetworks())
+    ui_extra_networks.register_page(ui_extra_networks_checkpoints.ExtraNetworksPageCheckpoints())
 
     extra_networks.initialize()
     extra_networks.register_extra_network(extra_networks_hypernet.ExtraNetworkHypernet())
@@ -201,6 +236,8 @@ def webui():
         if launch_api:
             create_api(app)
 
+        ui_extra_networks.add_pages_to_demo(app)
+
         modules.script_callbacks.app_started_callback(shared.demo, app)
 
         wait_on_server(shared.demo)
@@ -228,6 +265,7 @@ def webui():
         ui_extra_networks.intialize()
         ui_extra_networks.register_page(ui_extra_networks_textual_inversion.ExtraNetworksPageTextualInversion())
         ui_extra_networks.register_page(ui_extra_networks_hypernets.ExtraNetworksPageHypernetworks())
+        ui_extra_networks.register_page(ui_extra_networks_checkpoints.ExtraNetworksPageCheckpoints())
 
         extra_networks.initialize()
         extra_networks.register_extra_network(extra_networks_hypernet.ExtraNetworkHypernet())
