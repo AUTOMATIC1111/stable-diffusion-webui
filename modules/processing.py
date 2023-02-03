@@ -186,7 +186,7 @@ class StableDiffusionProcessing:
         return conditioning
 
     def edit_image_conditioning(self, source_image):
-        conditioning_image = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(source_image))
+        conditioning_image = self.sd_model.encode_first_stage(source_image).mode()
 
         return conditioning_image
 
