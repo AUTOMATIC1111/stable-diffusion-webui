@@ -52,6 +52,7 @@ Tech that can be integrated as part of the core workflow...
 - [Hypernetworks](https://civitai.com/models/4086/luisap-tutorial-hypernetwork-monkeypatch-method)
   - <https://github.com/AUTOMATIC1111/stable-diffusion-webui/discussions/2670#discussioncomment-4372336>
   - <https://github.com/AUTOMATIC1111/stable-diffusion-webui/discussions/2670#discussioncomment-4582025>
+- [Null-text inversion](https://github.com/ouhenio/null-text-inversion-colab)
 
 ## Video Generation
 

@@ -29,7 +29,7 @@
     "outdir_grids": "",
     "outdir_txt2img_grids": "outputs/grids",
     "outdir_img2img_grids": "outputs/grids",
-    "outdir_save": "log/save",
+    "outdir_save": "outputs/save",
     "save_to_dirs": false,
     "grid_save_to_dirs": false,
     "use_save_to_dirs_for_ui": false,
@@ -111,7 +111,7 @@
     "localization": "None",
     "live_previews_enable": true,
     "show_progress_grid": true,
-    "show_progress_every_n_steps": 1,
+    "show_progress_every_n_steps": -1,
     "show_progress_type": "Full",
     "live_preview_content": "Prompt",
     "hide_samplers": [
@@ -140,6 +140,7 @@
     "eta_noise_seed_delta": 0,
     "always_discard_next_to_last_sigma": false,
     "disabled_extensions": [
+        "prompt-fusion-extension",
         "sd-webui-additional-networks",
         "sdweb-merge-board",
         "ScuNET"
@@ -180,5 +181,8 @@
     "outdir_ip2p_samples": "outputs/ip2p-images",
     "postprocessing_enable_in_main_ui": [],
     "postprocessing_operation_order": [],
-    "sd_lora": "None"
+    "sd_lora": "None",
+    "images_history_with_subdirs": false,
+    "images_copy_image": false,
+    "images_delete_recycle": false
 }

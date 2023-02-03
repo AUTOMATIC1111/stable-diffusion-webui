@@ -86,7 +86,7 @@ def initialize():
     check_versions()
 
     extensions.list_extensions()
-    localization.list_localizations(cmd_opts.localizations_dir)
+    # localization.list_localizations(cmd_opts.localizations_dir)
 
     if cmd_opts.ui_debug_mode:
         shared.sd_upscalers = upscaler.UpscalerLanczos().scalers
