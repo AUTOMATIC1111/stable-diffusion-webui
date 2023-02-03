@@ -299,6 +299,30 @@ The list uses the same syntax as a line in a CSV file, so if you want to include
 - `darkness, "light, green", heat` - WRONG - 4 items - `darkness`, `"light`, `green"`, `heat`
 - `darkness,"light, green",heat` - RIGHT - 3 items - `darkness`, `light, green`, `heat`
 
+# Prompts from file or textbox
+
+With this script it is possible to create a list of jobs which will be executed sequentially.
+
+Example input:
+
+```--prompt "photo of sunset" 
+--prompt "photo of sunset" --negative_prompt "orange, pink, red, sea, water, lake" --width 1024
+--prompt "photo of winter mountains" 
+--prompt "photo of winter mountains" --width 1024
+```
+
+Example output:
+
+![image](https://user-images.githubusercontent.com/32306715/216720287-c523b900-916b-4f39-985c-4107d4b5460d.png)
+
+Following parameters are supported:
+
+``` 
+    "sd_model", "outpath_samples", "outpath_grids", "prompt_for_display", "prompt", "negative_prompt", "styles", "seed", "subseed_strength", "subseed", 
+    "seed_resize_from_h", "seed_resize_from_w", "sampler_index", "sampler_name", "batch_size", "n_iter", "steps", "cfg_scale", "width", "height", 
+    "restore_faces", "tiling", "do_not_save_samples", "do_not_save_grid"
+```
+
 # Resizing
 There are three options for resizing input images in img2img mode:
 
