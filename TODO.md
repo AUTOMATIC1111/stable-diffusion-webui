@@ -53,6 +53,8 @@ Tech that can be integrated as part of the core workflow...
   - <https://github.com/AUTOMATIC1111/stable-diffusion-webui/discussions/2670#discussioncomment-4372336>
   - <https://github.com/AUTOMATIC1111/stable-diffusion-webui/discussions/2670#discussioncomment-4582025>
 - [Null-text inversion](https://github.com/ouhenio/null-text-inversion-colab)
+- [Custom diffusion](https://github.com/guaneec/custom-diffusion-webui)
+  - <https://www.cs.cmu.edu/~custom-diffusion/>
 
 ## Video Generation
 
