@@ -1862,6 +1862,17 @@ input:focus {
 		padding: 5px 2px 5px 5px;
 
 	}
+	
+	#txt2img_settings, 
+	#img2img_settings,
+	#txt2img_results,
+	#img2img_results,
+	.tabs > div
+	{
+		padding:0;
+		border:none;
+		
+	}
  
 }
 
