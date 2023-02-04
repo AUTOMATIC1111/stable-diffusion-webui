@@ -930,5 +930,9 @@
     "customscript/seed_travel.py/img2img/\"Hug the middle\" during interpolation/visible": true,
     "customscript/seed_travel.py/img2img/\"Hug the middle\" during interpolation/value": false,
     "customscript/seed_travel.py/img2img/Allow the default Euler a Sampling method. (Does not produce good results)/visible": true,
-    "customscript/seed_travel.py/img2img/Allow the default Euler a Sampling method. (Does not produce good results)/value": false
+    "customscript/seed_travel.py/img2img/Allow the default Euler a Sampling method. (Does not produce good results)/value": false,
+    "img2img/Image CFG Scale/value": 1.5,
+    "img2img/Image CFG Scale/minimum": 0,
+    "img2img/Image CFG Scale/maximum": 3.0,
+    "img2img/Image CFG Scale/step": 0.05
 }
