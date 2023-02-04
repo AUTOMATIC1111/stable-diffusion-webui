@@ -22,9 +22,11 @@ Use `--port xxxx` to make the server listen on a specific port, xxxx being the w
 | ---------------- | ----- | ------- | ----------- |
 | **CONFIGURATION** |
 -h, --help         | None  | False   |   				  show this help message and exit |
+--data-dir | DATA_DIR | ./ | base path where all user data is stored |
 --config    | CONFIG | configs/stable-diffusion/v1-inference.yaml   				 | path to config which constructs model |
 --ckpt 		| CKPT   | model.ckpt        				 | path to checkpoint of stable diffusion model; if specified, this checkpoint will be added to the list of checkpoints and loaded |
 --ckpt-dir 	| CKPT_DIR | None   				 | Path to directory with stable diffusion checkpoints |
+--vae-path | VAE_PATH | None  					| Path to Variational Autoencoders model |
 --gfpgan-dir| GFPGAN_DIR | GFPGAN/			 | GFPGAN directory |
 --gfpgan-model| GFPGAN_MODEL			 | GFPGAN model file name |
 --codeformer-models-path | CODEFORMER_MODELS_PATH | models/Codeformer/ | Path to directory with codeformer model file(s). |
@@ -35,9 +37,10 @@ Use `--port xxxx` to make the server listen on a specific port, xxxx being the w
 --scunet-models-path | SCUNET_MODELS_PATH | models/ScuNET | Path to directory with ScuNET model file(s). |
 --swinir-models-path | SWINIR_MODELS_PATH | models/SwinIR | Path to directory with SwinIR and SwinIR v2 model file(s). |
 --ldsr-models-path | LDSR_MODELS_PATH | models/LDSR	| Path to directory with LDSR model file(s). |
+--lora-dir | LORA_DIR | models/Lora | Path to directory with Lora networks.
 --clip-models-path | CLIP_MODELS_PATH | None | Path to directory with CLIP model file(s). |
---vae-path | VAE_PATH | None  					| Path to Variational Autoencoders model |
 --embeddings-dir | EMBEDDINGS_DIR | embeddings/		 | embeddings directory for textual inversion (default: embeddings) |
+--textual-inversion-templates-dir | TEXTUAL_INVERSION_TEMPLATES_DIR | textual_inversion_templates | directory with textual inversion templates
 --hypernetwork-dir | HYPERNETWORK_DIR | models/hypernetworks/	 | hypernetwork directory |
 --localizations-dir | LOCALIZATIONS_DIR | localizations/ | localizations directory
 --styles-file | STYLES_FILE | styles.csv 				| filename to use for styles |
@@ -54,27 +57,43 @@ Use `--port xxxx` to make the server listen on a specific port, xxxx being the w
 --enable-insecure-extension-access | None | False | enable extensions tab regardless of other options |
 --gradio-debug | None | False        					| launch gradio with --debug option |
 --gradio-auth | GRADIO_AUTH | None 				| set gradio authentication like "username:password"; or comma-delimit multiple like "u1:p1,u2:p2,u3:p3" |
---gradio-img2img-tool | {color-sketch,editor} | editor | gradio image uploader tool: can be either editor for ctopping, or color-sketch for drawing |
 --disable-console-progressbars | None | False			| do not output progressbars to console |
 --enable-console-prompts | None | False				| print prompts to console when generating with txt2img and img2img |
 --api | None | False | launch webui with API |
+--api-auth | API_AUTH | None | Set authentication for API like "username:password"; or comma-delimit multiple like "u1:p1,u2:p2,u3:p3" |
+--api-log | None | False | enable logging of all API requests |
 --nowebui | None | False | only launch the API, without the UI |
 --ui-debug-mode | None | False | Don't load model to quickly launch UI |
 --device-id | DEVICE_ID | None | Select the default CUDA device to use (export CUDA_VISIBLE_DEVICES=0,1,etc might be needed before) |
 --administrator | None | False | Administrator rights |
+--cors-allow-origins | CORS_ALLOW_ORIGINS | None | Allowed CORS origin(s) in the form of a comma-separated list (no spaces) |
+--cors-allow-origins-regex | CORS_ALLOW_ORIGINS_REGEX | None | Allowed CORS origin(s) in the form of a single regular expression |
+--tls-keyfile | TLS_KEYFILE | None | Partially enables TLS, requires --tls-certfile to fully function |
+--tls-certfile | TLS_CERTFILE | None | Partially enables TLS, requires --tls-keyfile to fully function |
+--server-name | SERVER_NAME | None | Sets hostname of server |
+--gradio-queue | None | False | Uses gradio queue; experimental option; breaks restart UI button |
+--skip-version-check | None | False | Do not check versions of torch and xformers |
+--no-hashing | None | False | disable sha256 hashing of checkpoints to help loading performance |
 | **PERFORMANCE** |
 --xformers | None | False           					| enable xformers for cross attention layers |
 --reinstall-xformers | None | False           					| force reinstall xformers. Useful for upgrading - but remove it after upgrading or you'll reinstall xformers perpetually. |
 --force-enable-xformers	| None | False				| enable xformers for cross attention layers regardless of whether the checking code thinks you can run it; ***do not make bug reports if this fails to work*** |
+--xformers-flash-attention | None | False | enable xformers with Flash Attention to improve reproducibility (supported for SD2.x or variant only)
 --opt-split-attention | None | False 		| force-enables Doggettx's cross-attention layer optimization. By default, it's on for cuda enabled systems. |
 --opt-split-attention-invokeai | None | False			| force-enables InvokeAI's cross-attention layer optimization. By default, it's on when cuda is unavailable. |
 --opt-split-attention-v1 | None | False 				| enable older version of split attention optimization that does not consume all the VRAM it can find |
+--opt-sub-quad-attention | None | False | enable memory efficient sub-quadratic cross-attention layer optimization
+--sub-quad-q-chunk-size | SUB_QUAD_Q_CHUNK_SIZE | 1024 | query chunk size for the sub-quadratic cross-attention layer optimization to use
+--sub-quad-kv-chunk-size | SUB_QUAD_KV_CHUNK_SIZE | None | kv chunk size for the sub-quadratic cross-attention layer optimization to use
+--sub-quad-chunk-threshold | SUB_QUAD_CHUNK_THRESHOLD | None | the percentage of VRAM threshold for the sub-quadratic cross-attention layer optimization to use chunking
 --opt-channelslast | None | False    					| Enable alternative layout for 4d tensors, may result in faster inference **only** on Nvidia cards with Tensor cores (16xx and higher) |
 --disable-opt-split-attention | None | False 			| force-disables cross-attention layer optimization |
+--disable-nan-check | None | False | do not check if produced images/latent spaces have nans; useful for running without a checkpoint in CI
 --use-cpu | {all, sd, interrogate, gfpgan, bsrgan, esrgan, scunet, codeformer} | None | use CPU as torch device for specified modules |
 --no-half     | None | False         				 | do not switch the model to 16-bit floats |
 --precision | {full,autocast} | autocast			 | evaluate at this precision |
 --no-half-vae | None | False         				 | do not switch the VAE model to 16-bit floats |
+--upcast-sampling | None | False | upcast sampling. No effect with --no-half. Usually produces similar results to --no-half with better performance while using less memory.
 --medvram    | None | False          				 | enable stable diffusion model optimizations for sacrificing a little speed for low VRM usage |
 --lowvram    | None | False          				 | enable stable diffusion model optimizations for sacrificing a lot of speed for very low VRM usage |
 --lowram     | None | False         				 | load stable diffusion checkpoint weights to VRAM instead of RAM
@@ -84,9 +103,11 @@ Use `--port xxxx` to make the server listen on a specific port, xxxx being the w
 --theme | None | Unset         					| open the webui with the specified theme ("light" or "dark"). If not specified, uses the default browser theme |
 --use-textbox-seed | None | False   					| use textbox for seeds in UI (no up/down, but possible to input long seeds) |
 --disable-safe-unpickle | None | False				| disable checking pytorch models for malicious code |
---ngrok | NGROK | Unset         				 | ngrok authtoken, alternative to gradio --share
---ngrok-region | NGROK_REGION | Unset			 | The region in which ngrok should start.
+--ngrok | NGROK | None         				 | ngrok authtoken, alternative to gradio --share
+--ngrok-region | NGROK_REGION | us			 | The region in which ngrok should start.
 | **DEFUNCT OPTIONS** |
 --show-negative-prompt | None | False 					| does not do anything |
 --deepdanbooru | None | False 					| does not do anything |
 --unload-gfpgan | None | False      				 | does not do anything.
+--gradio-img2img-tool | GRADIO_IMG2IMG_TOOL | None | does not do anything |
+--gradio-inpaint-tool | GRADIO_INPAINT_TOOL | None | gdoes not do anything |
