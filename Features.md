@@ -3,7 +3,7 @@ This is a feature showcase page for [Stable Diffusion web UI](https://github.com
 All examples are non-cherrypicked unless specified otherwise.
 
 # InsatructPix2Pix
-[Website](https://www.timothybrooks.com/instruct-pix2pix). [Checkpoint](http://instruct-pix2pix.eecs.berkeley.edu/instruct-pix2pix-00-22000.ckpt). The checkpoint is fully supported in img2img tab. No additional actions are required. Previously an [extension](https://github.com/Klace/stable-diffusion-webui-instruct-pix2pix) by a contributor was required to generate pictures: it's no longer required, but should still work. Most of img2img implementation is by same person.
+[Website](https://www.timothybrooks.com/instruct-pix2pix). [Checkpoint](http://instruct-pix2pix.eecs.berkeley.edu/instruct-pix2pix-00-22000.ckpt). The checkpoint is fully supported in img2img tab. No additional actions are required. Previously an [extension](https://github.com/Klace/stable-diffusion-webui-instruct-pix2pix) by a contributor was required to generate pictures: it's no longer required, but should still work. Most of img2img implementation is by the same person.
 
 To reproduce results of the original repo, use denoising of 1.0 and Euler a sampler.
 
