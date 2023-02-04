@@ -14,7 +14,7 @@ if [ "$PYTHON" == "" ]; then
   PYTHON=`which python`
 fi
 
-CMD="launch.py --api --xformers --disable-console-progressbars --gradio-queue --skip-version-check"
+CMD="launch.py --api --xformers --disable-console-progressbars --gradio-queue --skip-version-check --cors-allow-origins=http://127.0.0.1:7860"
 # --opt-channelslast
 MODE=optimized
 
@@ -51,7 +51,6 @@ echo "Platform: $LSB $UN"
 $PYTHON -c 'import torch; import platform; print("Python:", platform.python_version(), "Torch:", torch.__version__, "CUDA:", torch.version.cuda, "cuDNN:", torch.backends.cudnn.version(), "GPU:", torch.cuda.get_device_name(torch.cuda.current_device()), "Arch:", torch.cuda.get_device_capability());'
 
 if [ $MODE == install ]; then
-  $PYTHON --version
   $PYTHON -m pip --version
   echo "Installing general requirements"
   $PYTHON -m pip install --disable-pip-version-check --quiet --no-warn-conflicts --requirement requirements.txt

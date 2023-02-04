@@ -20,9 +20,9 @@
     "directories_max_prompt_words": 8,
     "disable_weights_auto_swap": false,
     "disabled_extensions": [
-        "prompt-fusion-extension",
+        "embedding-inspector",
         "sd-webui-additional-networks",
-        "sdweb-merge-board",
+        "stable-diffusion-webui-instruct-pix2pix",
         "ScuNET"
     ],
     "do_not_add_watermark": true,
@@ -36,7 +36,7 @@
     "eta_ancestral": 1.0,
     "eta_ddim": 0.0,
     "eta_noise_seed_delta": 0,
-    "export_for_4chan": true,
+    "export_for_4chan": false,
     "extra_networks_default_multiplier": 1,
     "extra_networks_default_view": "cards",
     "face_restoration_model": "CodeFormer",
@@ -160,7 +160,7 @@
     "ui_reorder": "sampler, dimensions, cfg, seed, checkboxes, hires_fix, batch, scripts",
     "unload_models_when_training": false,
     "upcast_attn": false,
-    "upscaler_for_img2img": null,
+    "upscaler_for_img2img": "SwinIR_4x",
     "upscaling_max_images_in_cache": 5,
     "use_old_emphasis_implementation": false,
     "use_old_hires_fix_width_height": false,
@@ -184,5 +184,6 @@
         "DPM++ SDE Karras",
         "DPM2 a Karras",
         "LMS Karras"
-    ]
+    ],
+    "images_logger_warning": false
 }
