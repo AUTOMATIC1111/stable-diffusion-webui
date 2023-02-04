@@ -949,5 +949,9 @@
     "customscript/postprocessing_codeformer.py/extras/CodeFormer weight (0 = max), 1 = min)/value": 0,
     "customscript/postprocessing_codeformer.py/extras/CodeFormer weight (0 = max), 1 = min)/minimum": 0.0,
     "customscript/postprocessing_codeformer.py/extras/CodeFormer weight (0 = max), 1 = min)/maximum": 1.0,
-    "customscript/postprocessing_codeformer.py/extras/CodeFormer weight (0 = max), 1 = min)/step": 0.001
+    "customscript/postprocessing_codeformer.py/extras/CodeFormer weight (0 = max), 1 = min)/step": 0.001,
+    "txt2img/Hi-res Tiling/visible": true,
+    "txt2img/Hi-res Tiling/value": false,
+    "txt2img/Hi-res tiling/visible": true,
+    "txt2img/Hi-res tiling/value": false
 }

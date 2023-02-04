@@ -34,9 +34,6 @@ for i in "$@"; do
     clean)
       MODE=clean
       ;;
-    env)
-      MODE=env
-      ;;
     *)
       CMD="$CMD $i"
       ;;
@@ -46,6 +43,13 @@ done
 
 echo "SD server: $MODE"
 
+VER=`git log -1 --pretty=format:"%h %ad"`
+LSB=`lsb_release -ds 2>/dev/null`
+UN=`uname -rm 2>/dev/null`
+echo "Version: $VER"
+echo "Platform: $LSB $UN"
+$PYTHON -c 'import torch; import platform; print("Python:", platform.python_version(), "Torch:", torch.__version__, "CUDA:", torch.version.cuda, "cuDNN:", torch.backends.cudnn.version(), "GPU:", torch.cuda.get_device_name(torch.cuda.current_device()), "Arch:", torch.cuda.get_device_capability());'
+
 if [ $MODE == install ]; then
   $PYTHON --version
   $PYTHON -m pip --version
@@ -53,16 +57,8 @@ if [ $MODE == install ]; then
   $PYTHON -m pip install --disable-pip-version-check --quiet --no-warn-conflicts --requirement requirements.txt
   echo "Installing versioned requirements"
   $PYTHON -m pip install --disable-pip-version-check --quiet --no-warn-conflicts --requirement requirements_versions.txt
-  exit 0
-fi
-
-if [ $MODE == env ]; then
-  VER=`git log -1 --pretty=format:"%h %ad"`
-  LSB=`lsb_release -ds 2>/dev/null`
-  UN=`uname -rm 2>/dev/null`
-  echo "Version: $VER"
-  echo "Platform: $LSB $UN"
-  $PYTHON -c 'import torch; import platform; print("Python:", platform.python_version(), "Torch:", torch.__version__, "CUDA:", torch.version.cuda, "cuDNN:", torch.backends.cudnn.version(), "GPU:", torch.cuda.get_device_name(torch.cuda.current_device()), "Arch:", torch.cuda.get_device_capability());'
+  echo "Updating submodules"
+  git submodule update --rebase --remote
   exit 0
 fi
 
@@ -80,4 +76,4 @@ if [ $MODE == optimized ]; then
   CMD="$CMD"
 fi
 
-exec accelerate launch --no_python --num_cpu_threads_per_process=6 $PYTHON $CMD
+exec accelerate launch --no_python --quiet --num_cpu_threads_per_process=6 $PYTHON $CMD

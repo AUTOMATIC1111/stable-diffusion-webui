@@ -1,4 +1,4 @@
-accelerate==0.15.0
+accelerate==0.16.0
 basicsr==1.4.2
 blendmodes==2022
 clean-fid==0.1.35
