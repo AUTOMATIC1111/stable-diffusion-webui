@@ -669,3 +669,8 @@ Adds prompt-travel and shift-attention-like interpolations (see exts), but durin
 https://github.com/p1atdev/stable-diffusion-webui-cafe-aesthetic
 
 Pre-trained model, determines if aesthetic/non-aesthetic, does 5 different style recognition modes, and Waifu confirmation. Also has a tab with Batch processing.
+
+## Catppuccin themes
+https://github.com/catppuccin/stable-diffusion-webui
+
+Catppuccin is a community-driven pastel theme that aims to be the middle ground between low and high contrast themes. Adds set of themes which are in compliance with catppucin guidebook.
