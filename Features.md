@@ -2,6 +2,13 @@ This is a feature showcase page for [Stable Diffusion web UI](https://github.com
 
 All examples are non-cherrypicked unless specified otherwise.
 
+# InsatructPix2Pix
+[Website](https://www.timothybrooks.com/instruct-pix2pix). [Checkpoint](http://instruct-pix2pix.eecs.berkeley.edu/instruct-pix2pix-00-22000.ckpt). The checkpoint is fully supported in img2img tab. No additional actions are required. Previously an [extension](https://github.com/Klace/stable-diffusion-webui-instruct-pix2pix) by a contributor was required to generate pictures: it's no longer required, but should still work. Most of img2img implementation is by same person.
+
+To reproduce results of the original repo, use denoising of 1.0 and Euler a sampler.
+
+![firefox_Yj09cbmDZ1](https://user-images.githubusercontent.com/20920490/216767957-3c6bf787-5b79-45df-aa9e-ce86b1d9e40f.png)
+
 # Extra networks
 A single button with a picture of a card on it. It unifies multiple extra ways to extend your generation into one UI. 
 
