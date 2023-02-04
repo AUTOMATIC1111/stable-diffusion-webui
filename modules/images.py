@@ -130,7 +130,7 @@ class GridAnnotation:
         self.size = None
 
 
-def draw_grid_annotations(im, width, height, hor_texts, ver_texts):
+def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0):
     def wrap(drawing, text, font, line_length):
         lines = ['']
         for word in text.split():
@@ -194,25 +194,28 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts):
             line.allowed_width = allowed_width
 
     hor_text_heights = [sum([line.size[1] + line_spacing for line in lines]) - line_spacing for lines in hor_texts]
-    ver_text_heights = [sum([line.size[1] + line_spacing for line in lines]) - line_spacing * len(lines) for lines in
-                        ver_texts]
+    ver_text_heights = [sum([line.size[1] + line_spacing for line in lines]) - line_spacing * len(lines) for lines in ver_texts]
 
     pad_top = 0 if sum(hor_text_heights) == 0 else max(hor_text_heights) + line_spacing * 2
 
-    result = Image.new("RGB", (im.width + pad_left, im.height + pad_top), "white")
-    result.paste(im, (pad_left, pad_top))
+    result = Image.new("RGB", (im.width + pad_left + margin * (rows-1), im.height + pad_top + margin * (cols-1)), "white")
+
+    for row in range(rows):
+        for col in range(cols):
+            cell = im.crop((width * col, height * row, width * (col+1), height * (row+1)))
+            result.paste(cell, (pad_left + (width + margin) * col, pad_top + (height + margin) * row))
 
     d = ImageDraw.Draw(result)
 
     for col in range(cols):
-        x = pad_left + width * col + width / 2
+        x = pad_left + (width + margin) * col + width / 2
         y = pad_top / 2 - hor_text_heights[col] / 2
 
         draw_texts(d, x, y, hor_texts[col], fnt, fontsize)
 
     for row in range(rows):
         x = pad_left / 2
-        y = pad_top + height * row + height / 2 - ver_text_heights[row] / 2
+        y = pad_top + (height + margin) * row + height / 2 - ver_text_heights[row] / 2
 
         draw_texts(d, x, y, ver_texts[row], fnt, fontsize)
 
