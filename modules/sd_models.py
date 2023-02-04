@@ -59,6 +59,9 @@ class CheckpointInfo:
 
     def calculate_shorthash(self):
         self.sha256 = hashes.sha256(self.filename, "checkpoint/" + self.name)
+        if self.sha256 is None:
+            return
+
         self.shorthash = self.sha256[0:10]
 
         if self.shorthash not in self.ids:
