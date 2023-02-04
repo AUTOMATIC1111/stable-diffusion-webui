@@ -1697,7 +1697,12 @@ body {
     bottom: 63px;
     pointer-events: all;
     overflow: hidden !important;
-    background-color: #1a1a1a !important;
+    /*background-color: #1a1a1a !important;*/
+	background-color: transparent !important;
+}
+
+.livePreview > img{
+	background-color: #1a1a1a !important;
 }
 
 #img2img_gallery div>div,
