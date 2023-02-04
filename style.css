@@ -1218,6 +1218,7 @@ textarea {
     min-width: unset;
     max-width: unset;
     width: 37px;
+	flex-grow: unset;
 }
 
 #img2img_actions_column>button,
@@ -1751,6 +1752,7 @@ body {
     height: calc(100vh - 296px);
     overflow-y: auto !important;
     overflow-x: hidden;
+    padding-top: 0.5em;
 }
 
 #img2img_results,
@@ -1905,6 +1907,8 @@ input:focus {
     border-left: solid 8px transparent;
 }
 
+
+
 @media screen and (-webkit-min-device-pixel-ratio:0) {
     input[type=range] {
         overflow: hidden;
@@ -1931,8 +1935,14 @@ input:focus {
     }
 }
 
+
+
+/* Firefox */
+
 input[type=range]::-moz-range-progress {
     background-color: #03d0a8;
+	height: 14px;
+	border: 1px solid #03d0a8;
 }
 
 input[type=range]::-moz-range-track {
@@ -1945,4 +1955,50 @@ input[type=range]::-ms-fill-lower {
 
 input[type=range]::-ms-fill-upper {
     background-color: #202124;
+}
+
+
+#txt2img_results,
+#img2img_results,
+#img2img_settings_scroll,
+#txt2img_settings_scroll {
+  scrollbar-color: #292a2d #1a1a1a !important;
+  scrollbar-width: thin !important;
+}
+
+
+input[type=range]{
+    width: 100%;
+}
+
+input[type=range]::-moz-range-track {
+    width: 100%;
+    background: #202124;
+    border: none;
+    border-radius: 0px;
+}
+
+input[type=range]::-moz-range-thumb {
+    border: 1px solid #03d0a8;
+    width: 14px;
+    border-radius: 0%;
+    background: #03d0a8;
+}
+
+/*hide the outline behind the border*/
+input[type=range]:-moz-focusring{
+    outline: 1px solid #03d0a8;
+    outline-offset: -1px;
+}
+
+input[type=range]:focus::-moz-range-track {
+    background: #202124;
+}
+
+input[type="number"] {
+    -moz-appearance: textfield;
+}
+input[type="number"]:hover,
+input[type="number"]:focus {
+    -moz-appearance: initial;
 }
