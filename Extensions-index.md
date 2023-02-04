@@ -551,7 +551,14 @@
 		{
 			"name": "Dynamic Thresholding",
 			"url": "https://github.com/mcmonkeyprojects/sd-dynamic-thresholding.git",
-			"description": "Adds customizable dynamic thresholding to allow high CFG Scale values without the burning / 'pop art' effect.",
+			"description": "Adds image aspect ratio selector buttons.",
+			"added": "2023-02-04",
+			"tags": ["script"]
+		},
+		{
+			"name": "Aspect Ratio selector",
+			"url": "https://github.com/alemelis/sd-webui-ar.git",
+			"description": ".",
 			"added": "2023-02-01",
 			"tags": ["script"]
 		},
