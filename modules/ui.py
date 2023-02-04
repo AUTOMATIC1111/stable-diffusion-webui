@@ -197,7 +197,7 @@ def create_seed_inputs(target_interface):
         subseed.style(container=False)
         random_subseed = gr.Button(random_symbol, elem_id=target_interface + '_random_subseed')
         reuse_subseed = gr.Button(reuse_symbol, elem_id=target_interface + '_reuse_subseed')
-        subseed_strength = gr.Slider(label='Variation strength', value=0.0, minimum=0, maximum=1, step=0.01, elem_id=target_interface + '_subseed_strength')
+        subseed_strength = gr.Slider(label='strength', value=0.0, minimum=0, maximum=1, step=0.01, elem_id=target_interface + '_subseed_strength')
 
     with FormRow(visible=False) as seed_extra_row_2:
         seed_extras.append(seed_extra_row_2)
@@ -476,8 +476,9 @@ def create_ui():
                     elif category == "dimensions":
                         with FormRow():
                             with gr.Column(elem_id="txt2img_column_size", scale=4):
-                                width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="txt2img_width")
-                                height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="txt2img_height")
+                                with FormRow(elem_id="txt2img_row_dimension"):
+                                    width = gr.Slider(minimum=128, maximum=2048, step=8, label="Width", value=512, elem_id="txt2img_width")
+                                    height = gr.Slider(minimum=128, maximum=2048, step=8, label="Height", value=512, elem_id="txt2img_height")
 
                             res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="txt2img_res_switch_btn")
                             if opts.dimensions_and_batch_together:
@@ -745,7 +746,7 @@ def create_ui():
                     )
 
                 with FormRow():
-                    resize_mode = gr.Radio(label="Resize mode", elem_id="resize_mode", choices=["Just resize", "Crop and resize", "Resize and fill", "Just resize (latent upscale)"], type="index", value="Just resize")
+                    resize_mode = gr.Radio(label="Resize mode", elem_id="resize_mode", choices=["Just resize", "Crop and resize", "Resize and fill", "Just resize"], type="index", value="Just resize")
 
                 for category in ordered_ui_categories():
                     if category == "sampler":

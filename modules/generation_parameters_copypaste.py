@@ -88,7 +88,14 @@ def add_paste_fields(tabname, init_img, fields):
 def create_buttons(tabs_list):
     buttons = {}
     for tab in tabs_list:
-        buttons[tab] = gr.Button(f"Send to {tab}", elem_id=f"{tab}_tab")
+        name = tab
+        if name == 'txt2img':
+            name = 'text'
+        elif name == 'img2img':
+            name = 'image'
+        elif name == 'extras':
+            name = 'process'
+        buttons[tab] = gr.Button(f"➠ {name}", elem_id=f"{tab}_tab")
     return buttons
 
 

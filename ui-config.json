@@ -934,5 +934,20 @@
     "img2img/Image CFG Scale/value": 1.5,
     "img2img/Image CFG Scale/minimum": 0,
     "img2img/Image CFG Scale/maximum": 3.0,
-    "img2img/Image CFG Scale/step": 0.05
+    "img2img/Image CFG Scale/step": 0.05,
+    "txt2img/strength/visible": true,
+    "txt2img/strength/value": 0.0,
+    "txt2img/strength/minimum": 0,
+    "txt2img/strength/maximum": 1,
+    "txt2img/strength/step": 0.01,
+    "img2img/strength/visible": true,
+    "img2img/strength/value": 0.0,
+    "img2img/strength/minimum": 0,
+    "img2img/strength/maximum": 1,
+    "img2img/strength/step": 0.01,
+    "customscript/postprocessing_codeformer.py/extras/CodeFormer weight (0 = max), 1 = min)/visible": true,
+    "customscript/postprocessing_codeformer.py/extras/CodeFormer weight (0 = max), 1 = min)/value": 0,
+    "customscript/postprocessing_codeformer.py/extras/CodeFormer weight (0 = max), 1 = min)/minimum": 0.0,
+    "customscript/postprocessing_codeformer.py/extras/CodeFormer weight (0 = max), 1 = min)/maximum": 1.0,
+    "customscript/postprocessing_codeformer.py/extras/CodeFormer weight (0 = max), 1 = min)/step": 0.001
 }

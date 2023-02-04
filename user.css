@@ -14,21 +14,21 @@ input[type=range]::-webkit-slider-thumb { box-shadow: 2px 2px 3px #111111; borde
 div.gradio-container.dark > div.w-full.flex.flex-col.min-h-screen > div { background-color: black; }
 
 /* gradio shadowroot */
-.gradio-container { font-family: "Segoe UI"; font-variant: small-caps; --left-column: 540px; --highlight-color: #CE6400; --inactive-color: #4E1400; }
+.gradio-container { font-family: "Segoe UI"; font-variant: small-caps; --left-column: 440px; --highlight-color: #CE6400; --inactive-color: #4E1400; }
 
 /* gradio style classes */
 .border-2 { border-width: 0; }
 .border-b-2 { border-bottom-width: 2px; border-color: var(--highlight-color) !important; padding-bottom: 2px; margin-bottom: 8px; }
 .dark .bg-gray-200, .dark .\!bg-gray-200 { background-color: transparent; }
-.dark .bg-white { color: lightyellow; border-radius: 0; }
+.dark .bg-white { color: lightyellow; border-radius: 0; background-color: var(--inactive-color); }
 .dark .dark\:bg-gray-900 { background-color: black; }
-.dark .gr-box { border-radius: 0 !important; background-color: #111111; box-shadow: 2px 2px 3px #111111; border-width: 0; padding-bottom: 12px; }
-.dark .gr-button { border-radius: 0; font-weight: normal; box-shadow: 2px 2px 3px #111111; font-size: 0.9rem; min-width: 42px; min-height: 42px; }
+.dark .gr-box { border-radius: 0 !important; background-color: #111111; box-shadow: 2px 2px 3px #111111; border-width: 0; padding: 4px; margin-bottom: 4px; }
+.dark .gr-button { border-radius: 0; font-weight: normal; box-shadow: 2px 2px 3px #111111; font-size: 0.9rem; min-width: 36px; min-height: 36px; padding: 6px; }
 .dark .gr-check-radio { background-color: var(--inactive-color); border-width: 0; border-radius: 2px; box-shadow: 2px 2px 3px #111111; }
 .dark .gr-check-radio:checked { background-color: var(--highlight-color); }
 .dark .gr-compact { border-radius: 0; background-color: black; }
 .dark .gr-form { border-radius: 0; border-width: 0; }
-.dark .gr-input { background-color: #333333 !important; }
+.dark .gr-input { background-color: #333333 !important; padding: 4px; margin: 4px; }
 .dark .gr-input-label { color: lightyellow; border-width: 0; background: transparent; padding: 2px !important; }
 .dark .gr-panel { border-radius: 0; background-color: black; }
 .dark { background-color: black; }
@@ -38,32 +38,30 @@ div.gradio-container.dark > div.w-full.flex.flex-col.min-h-screen > div { backgr
 .extra-network-cards .card:hover { transform: scale(2); transition: all 0.3s ease; z-index: 99; box-shadow: none; }
 .extra-network-cards .card .actions .name { font-weight: 400; font-size: 1.2rem; }
 .gap-2 { padding-top: 8px; }
-.gr-box > div > div > input.gr-text-input { right: 0.8rem; width: 6em; }
+.gr-box > div > div > input.gr-text-input { right: 0.8rem; width: 5em; }
 .overflow-hidden .flex .flex-col .relative col .gap-4 { min-width: var(--left-column); max-width: var(--left-column); } /* this is a problematic one */
 .p-2 { padding: 0; }
 .px-4 { padding-lefT: 1rem; padding-right: 1rem; }
 .py-6 { padding-bottom: 0; }
 .rounded-lg { border-radius: 0; }
 .tabs { background-color: black; }
+#settings > div.flex-wrap { width: 15em; }
 
 /* automatic style classes */
 .progressDiv .progress { background: var(--highlight-color); border-radius: 2px; }
 .gallery-item { box-shadow: none !important; }
+.performance { color: #888 }
 
 /* gradio elements overrides */
-#footer { display: none; }
 #img2img_label_copy_to_img2img { font-weight: normal; }
 #img2img_neg_prompt > label > textarea { font-size: 1.2rem; }
 #img2img_prompt > label > textarea { font-size: 1.2rem; }
 #interrogate, #deepbooru { margin: 0em 0 0 0.25em; }
-#open_folder_txt2img, #open_folder_img2img, #open_folder_extras { display: none; }
-#refresh_txt2img_styles, #refresh_img2img_styles { display: none; }
 #save-animation { border-radius: 0 !important; margin-bottom: 16px; background-color: #111111; }
-#style_pos_col, #style_neg_col, #roll_col { display: none; }
 #tab_extensions table { background-color: #222222; }
 #txt2img_checkboxes, #img2img_checkboxes { background-color: transparent; }
 #txt2img_gallery, #img2img_gallery, #extras_gallery { background: black; }
-#txt2img_generate, #img2img_generate, #txt2img_interrupt, #img2img_interrupt, #txt2img_skip, #img2img_skip { margin-left: 10px; min-height: 2rem; height: 63px; max-width: 200px; }
+#txt2img_generate, #img2img_generate, #txt2img_interrupt, #img2img_interrupt, #txt2img_skip, #img2img_skip { margin-left: 10px; min-height: 2rem; height: 2rem; max-width: 200px; margin-top: 12px; border: none; border-radius: 0; }
 #txt2img_interrupt, #img2img_interrupt, #txt2img_skip, #img2img_skip { background-color: var(--inactive-color); }
 #txt2img_neg_prompt > label > textarea { font-size: 1.2rem; }
 #txt2img_progress_row > div { min-width: var(--left-column); max-width: var(--left-column); }
@@ -73,3 +71,6 @@ div.gradio-container.dark > div.w-full.flex.flex-col.min-h-screen > div { backgr
 #txt2img_settings, #img2img_settings { min-width: var(--left-column); max-width: var(--left-column); background-color: #111111; margin-top: 1rem; }
 #txt2img_subseed_show { min-width: 74px; padding: 0 0 0 6px; }
 #txtimg_hr_finalres { max-width: 200px; }
+#txt2img_tools, #img2img_tools { margin-left: 8px; }
+#txt2img_checkboxes, #img2img_checkboxes { margin-bottom: 0.2em; }
+#refresh_txt2img_styles, #refresh_img2img_styles, #open_folder_txt2img, #open_folder_img2img, #open_folder_extras, #footer, #style_pos_col, #style_neg_col, #roll_col, #save_zip_txt2img, #save_zip_img2img, #extras_upscaler_2, #extras_upscaler_2_visibility, #txt2img_res_switch_btn { display: none; }
