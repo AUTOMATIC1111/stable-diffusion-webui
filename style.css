@@ -1398,9 +1398,6 @@ img2maskimg {
     min-height: unset !important;
 }
 
-div#group-seed>div {
-    margin-bottom: 0;
-}
 
 div.sub-group {
     padding: 9px 9px 0;
