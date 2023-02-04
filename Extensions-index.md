@@ -563,6 +563,13 @@
 			"tags": ["script"]
 		},
 		{
+			"name": "Catppuccin Theme",
+			"url": "https://github.com/catppuccin/stable-diffusion-webui.git",
+			"description": "Adds various custom themes",
+			"added": "2023-02-04",
+			"tags": ["script"]
+		},
+		{
 			"name": "zh_CN Localization",
 			"url": "https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN",
 			"description": "Simplified Chinese localization",
