@@ -46,7 +46,7 @@
 		},
 		{
 			"name": "Image browser",
-			"url": "https://github.com/yfszzx/stable-diffusion-webui-images-browser",
+			"url": "https://github.com/AlUlkesh/stable-diffusion-webui-images-browser.git",
 			"description": "Provides an interface to browse created images in the web browser.",
 			"added": "2022-11-01",
 			"tags": ["script", "tab"]
@@ -523,7 +523,7 @@
 		{
 			"name": "Instruct-pix2pix",
 			"url": "https://github.com/Klace/stable-diffusion-webui-instruct-pix2pix.git",
-			"description": "Adds a tab for doing img2img editing with the instruct-pix2pix model.",
+			"description": "Adds a tab for doing img2img editing with the instruct-pix2pix model. Note: No longer required. Author has integrated code to webui, use in img2img.",
 			"added": "2023-01-25",
 			"tags": ["script", "tab"]
 		},
