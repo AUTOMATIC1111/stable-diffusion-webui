@@ -872,9 +872,8 @@ def create_ui():
                                 denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.75, elem_id="img2img_denoising_strength")
                                     
 
-                        elif category == "seed":
-                            with gr.Group(elem_id="group-seed"):
-                                seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox = create_seed_inputs('img2img')
+                        elif category == "seed":                          
+                            seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox = create_seed_inputs('img2img')
 
                         elif category == "checkboxes":
                             #with FormRow(elem_id="img2img_checkboxes", variant="compact"):
