@@ -1936,7 +1936,6 @@ input:focus {
 }
 
 
-
 /* Firefox */
 
 input[type=range]::-moz-range-progress {
@@ -1946,14 +1945,6 @@ input[type=range]::-moz-range-progress {
 }
 
 input[type=range]::-moz-range-track {
-    background-color: #202124;
-}
-
-input[type=range]::-ms-fill-lower {
-    background-color: #03d0a8;
-}
-
-input[type=range]::-ms-fill-upper {
     background-color: #202124;
 }
 
@@ -2001,4 +1992,15 @@ input[type="number"] {
 input[type="number"]:hover,
 input[type="number"]:focus {
     -moz-appearance: initial;
+}
+
+
+/* IE maybe later  */
+
+input[type=range]::-ms-fill-lower {
+	background-color: #03d0a8;
+}
+
+input[type=range]::-ms-fill-upper {
+    background-color: #202124;
 }
