@@ -1,6 +1,7 @@
 import hashlib
 import json
 import os.path
+from modules import shared
 
 import filelock
 
@@ -65,11 +66,23 @@ def sha256(filename, title):
     hashes = cache("hashes")
 
     sha256_value = sha256_from_cache(filename, title)
-    if sha256_value is not None:
-        return sha256_value
+    
+    if sha256_value != "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF":
+        if sha256_value is not None:
+            return sha256_value
 
     print(f"Calculating sha256 for {filename}: ", end='')
-    sha256_value = calculate_sha256(filename)
+  
+    # Check if --no-hashing parameter was supplied, if yes then set bogus hash to save time
+    if shared.cmd_opts.no_hashing:
+        sha256_value = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
+    # Is this parameter not there but such a bogus hash exists, now calculate a real one
+    elif sha256_value == "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF":
+        sha256_value = calculate_sha256(filename)
+    # Else just proceed normally and calculate
+    else:
+        sha256_value = calculate_sha256(filename)
+    
     print(f"{sha256_value}")
 
     hashes[title] = {
