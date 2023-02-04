@@ -352,7 +352,7 @@ class KDiffusionSampler:
             'cond_scale': p.cfg_scale,
         }
 
-        if p.image_cfg_scale:
+        if hasattr(p, 'image_cfg_scale'):
             extra_args['image_cfg_scale'] = p.image_cfg_scale
 
         samples = self.launch_sampling(t_enc + 1, lambda: self.func(self.model_wrap_cfg, xi, extra_args=extra_args, disable=False, callback=self.callback_state, **extra_params_kwargs))

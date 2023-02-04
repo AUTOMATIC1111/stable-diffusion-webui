@@ -268,6 +268,7 @@ class Processed:
         self.height = p.height
         self.sampler_name = p.sampler_name
         self.cfg_scale = p.cfg_scale
+        self.image_cfg_scale = getattr(p, 'image_cfg_scale', None)
         self.steps = p.steps
         self.batch_size = p.batch_size
         self.restore_faces = p.restore_faces
