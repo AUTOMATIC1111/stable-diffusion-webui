@@ -386,7 +386,7 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, time_taken_
 
     sd_model = None
     try:
-        with sd_disable_initialization.DisableInitialization():
+        with sd_disable_initialization.DisableInitialization(disable_clip_init=shared.cmd_opts.disable_clip_init):
             sd_model = instantiate_from_config(sd_config.model)
     except Exception as e:
         pass
