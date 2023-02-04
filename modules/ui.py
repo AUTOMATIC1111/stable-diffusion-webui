@@ -429,13 +429,13 @@ def aspect_ratio_list():
 
 
 def aspect_ratio_resize(w, h, bttn_val):
-    ratio = reduce(lambda bttn_val_width, bttn_val_height: int(bttn_val_width) / int(bttn_val_height), bttn_val.split(":"))
-    if ratio < 1:
+    width, height = map(int, bttn_val.split(":"))
+    ratio = width / height
+    if w / ratio > h:
         return (round(h * ratio), h)
-    elif ratio > 1:
-        return (w, round(w * ratio))
     else:
-        return [min(w,h)] * 2
+        return (w, round(w / ratio))
+
 
 
 def get_value_for_setting(key):
