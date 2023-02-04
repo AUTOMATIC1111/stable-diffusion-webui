@@ -1846,6 +1846,22 @@ input:focus {
 	#txt2img_actions_column, #img2img_actions_column {
 		flex-basis: 100%;
 	}
+	
+	.dark .gr-block {		
+		padding: 3px;
+	}
+	
+	.gap-4 {
+		gap: 2px;
+	}
+	
+	.gr-box>div>div>input.gr-text-input {
+	
+		right: 3px;
+		top: 3px;
+		padding: 5px 2px 5px 5px;
+
+	}
  
 }
 
