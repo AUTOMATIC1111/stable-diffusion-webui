@@ -65,10 +65,11 @@ class CheckpointInfo:
         self.shorthash = self.sha256[0:10]
 
         if self.shorthash not in self.ids:
-            self.ids += [self.shorthash, self.sha256]
-            self.register()
+            self.ids += [self.shorthash, self.sha256, f'{self.name} [{self.shorthash}]']
 
+        checkpoints_list.pop(self.title)
         self.title = f'{self.name} [{self.shorthash}]'
+        self.register()
 
         return self.shorthash
 
