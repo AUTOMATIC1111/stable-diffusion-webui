@@ -1817,6 +1817,9 @@ input:focus {
     width: 12px;
 }
 
+
+/* Sliders Scrollbar */
+
 ::-webkit-scrollbar-track {
     box-shadow: inset 0 0 10px 10px #1a1a1a;
 }

@@ -20,7 +20,7 @@ from PIL import Image, PngImagePlugin
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_gradio_call
 
 from modules import sd_hijack, sd_models, localization, script_callbacks, ui_extensions, deepbooru, sd_vae, extra_networks, postprocessing, ui_components, ui_common, ui_postprocessing
-from modules.ui_components import FormRow, FormGroup, FormSubGroup, ToolButton, FormHTML
+from modules.ui_components import FormRow, FormGroup, ToolButton, FormHTML
 from modules.paths import script_path, data_path
 
 from modules.shared import opts, cmd_opts, restricted_opts
@@ -202,7 +202,7 @@ def create_seed_inputs(target_interface):
 
     #with FormRow(visible=False, elem_id=target_interface + '_subseed_row') as seed_extra_row_1:
     #with gr.Group(elem_id="group-subseed", visible=False) as seed_extra_group:
-    with FormSubGroup(elem_id=target_interface + '_subseed_row_sub-group', visible=False) as seed_extra_group:
+    with FormGroup(elem_id=target_interface + '_subseed_row_sub-group', visible=False) as seed_extra_group:
     
         seed_extras.append(seed_extra_group)
         
