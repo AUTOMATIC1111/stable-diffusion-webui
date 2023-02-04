@@ -19,3 +19,6 @@
 [submodule "extensions-builtin/sd-webui-model-converter"]
 	path = extensions-builtin/sd-webui-model-converter
 	url = https://github.com/Akegarasu/sd-webui-model-converter
+[submodule "extensions-builtin/sd-dynamic-thresholding"]
+	path = extensions-builtin/sd-dynamic-thresholding
+	url = https://github.com/mcmonkeyprojects/sd-dynamic-thresholding
