@@ -4,9 +4,6 @@ from modules.sd_hijack_utils import CondFunc
 from packaging import version
 
 
-device = None
-
-
 # has_mps is only available in nightly pytorch (for now) and macOS 12.3+.
 # check `getattr` and try it for compatibility
 def check_for_mps() -> bool:
