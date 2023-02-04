@@ -161,7 +161,7 @@ def select_checkpoint():
         print(f" - directory {model_path}", file=sys.stderr)
         if shared.cmd_opts.ckpt_dir is not None:
             print(f" - directory {os.path.abspath(shared.cmd_opts.ckpt_dir)}", file=sys.stderr)
-        print("Can't run without a checkpoint. Find and place a .ckpt file into any of those locations. The program will exit.", file=sys.stderr)
+        print("Can't run without a checkpoint. Find and place a .ckpt or .safetensors file into any of those locations. The program will exit.", file=sys.stderr)
         exit(1)
 
     checkpoint_info = next(iter(checkpoints_list.values()))
