@@ -1814,6 +1814,37 @@ input:focus {
     width: 12px;
 }
 
+@media only screen and (max-width: 1024px) {
+  /* For tablets: */
+  
+	#img2img_gallery .overflow-y-auto,
+	#txt2img_gallery .overflow-y-auto {
+		min-height: unset !important;
+		
+	}
+	
+	#img2img_settings_scroll,
+	#txt2img_settings_scroll {
+		height: auto !important;		
+	}
+
+	#img2img_results,
+	#txt2img_results {
+		max-height: unset !important;			
+	}
+	
+	#img2img_settings::before, #txt2img_settings::before {
+		display:none;
+	}
+	
+
+	#txt2img_actions_column, #img2img_actions_column {
+		flex-basis: 100%;
+	}
+ 
+}
+
+
 
 /* Sliders Scrollbar */
 
