@@ -45,6 +45,8 @@ def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args):
 
         if state.interrupted:
             break
+            
+        p.filename = os.path.basename(image)
 
         img = Image.open(image)
         # Use the EXIF orientation of photos taken by smartphones.

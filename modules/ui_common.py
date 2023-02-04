@@ -124,6 +124,7 @@ Requested path was: {f}
                 sp.Popen(["xdg-open", path])
 
     with gr.Column(variant='panel', elem_id=f"{tabname}_results"):
+           
         with gr.Group(elem_id=f"{tabname}_gallery_container"):
             result_gallery = gr.Gallery(label='Output', show_label=False, elem_id=f"{tabname}_gallery").style(grid=4)
 
@@ -148,7 +149,8 @@ Requested path was: {f}
                 with gr.Row():
                     download_files = gr.File(None, file_count="multiple", interactive=False, show_label=False, visible=False, elem_id=f'download_files_{tabname}')
 
-                with gr.Group():
+                #with gr.Group():
+                with gr.Accordion("Generation Info", open=False):
                     html_info = gr.HTML(elem_id=f'html_info_{tabname}')
                     html_log = gr.HTML(elem_id=f'html_log_{tabname}')
 

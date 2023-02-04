@@ -277,6 +277,26 @@ onUiUpdate(function(){
             })
         }
     }
+	
+	/* 
+	hack until gradio allows to add custom classes to components
+	add elem_id= your_elem_id + "sub-group"
+
+	^ matches the start
+	* matches any position
+	$ matches the end
+
+	*/
+	
+	gradioApp().querySelectorAll('[id *= "sub-group"]').forEach(function(elem){
+        elem.classList.add("sub-group");
+		console.log(elem.id);		
+    })
+	
+
+	
+
+	
 })
 
 onOptionsChanged(function(){
@@ -317,6 +337,7 @@ function update_token_counter(button_id) {
 
 function restart_reload(){
     document.body.innerHTML='<h1 style="font-family:monospace;margin-top:20%;color:lightgray;text-align:center;">Reloading...</h1>';
+	document.body.style.backgroundColor = "#1a1a1a";
     setTimeout(function(){location.reload()},2000)
 
     return []
