@@ -245,7 +245,7 @@ class KDiffusionSampler:
         self.funcname = funcname
         self.func = getattr(k_diffusion.sampling, self.funcname)
         self.extra_params = sampler_extra_params.get(funcname, [])
-        self.model_wrap_cfg = CFGDenoiser(self.model_wrap) if not shared.sd_model.cond_stage_key == "edit" else CFGDenoiserEdit(self.model_wrap)
+        self.model_wrap_cfg = CFGDenoiser(self.model_wrap)
         self.sampler_noises = None
         self.stop_at = None
         self.eta = None
@@ -280,6 +280,9 @@ class KDiffusionSampler:
         return p.steps
 
     def initialize(self, p):
+        if shared.sd_model.cond_stage_key == "edit" and getattr(p, 'image_cfg_scale', None) != 1:
+            self.model_wrap_cfg = CFGDenoiserEdit(self.model_wrap)
+
         self.model_wrap_cfg.mask = p.mask if hasattr(p, 'mask') else None
         self.model_wrap_cfg.nmask = p.nmask if hasattr(p, 'nmask') else None
         self.model_wrap_cfg.step = 0
@@ -352,7 +355,7 @@ class KDiffusionSampler:
             'cond_scale': p.cfg_scale,
         }
 
-        if hasattr(p, 'image_cfg_scale'):
+        if hasattr(p, 'image_cfg_scale') and p.image_cfg_scale != 1 and p.image_cfg_scale != None:
             extra_args['image_cfg_scale'] = p.image_cfg_scale
 
         samples = self.launch_sampling(t_enc + 1, lambda: self.func(self.model_wrap_cfg, xi, extra_args=extra_args, disable=False, callback=self.callback_state, **extra_params_kwargs))
