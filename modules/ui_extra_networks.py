@@ -26,7 +26,7 @@ def add_pages_to_demo(app):
     def fetch_file(filename: str = ""):
         from starlette.responses import FileResponse
 
-        if not any([Path(x).resolve() in Path(filename).resolve().parents for x in allowed_dirs]):
+        if not any([Path(x).absolute() in Path(filename).absolute().parents for x in allowed_dirs]):
             raise ValueError(f"File cannot be fetched: {filename}. Must be in one of directories registered by extra pages.")
 
         ext = os.path.splitext(filename)[1].lower()
