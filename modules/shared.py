@@ -325,7 +325,9 @@ options_templates.update(options_section(('saving-images', "Saving images/grids"
     "save_images_before_highres_fix": OptionInfo(False, "Save a copy of image before applying highres fix."),
     "save_images_before_color_correction": OptionInfo(False, "Save a copy of image before applying color correction to img2img results"),
     "jpeg_quality": OptionInfo(80, "Quality for saved jpeg images", gr.Slider, {"minimum": 1, "maximum": 100, "step": 1}),
-    "export_for_4chan": OptionInfo(True, "If PNG image is larger than 4MB or any dimension is larger than 4000, downscale and save copy as JPG"),
+    "export_for_4chan": OptionInfo(True, "If PNG image is larger than Downscale threshold or any dimension is larger than Target length, downscale the image to dimensions and save a copy as JPG"),
+    "img_downscale_threshold": OptionInfo(4, "Downscale threshold (MB)"),
+    "target_side_length": OptionInfo(4000, "Target length"),
 
     "use_original_name_batch": OptionInfo(True, "Use original name for output filename during batch process in extras tab"),
     "use_upscaler_name_as_suffix": OptionInfo(False, "Use upscaler name as filename suffix in the extras tab"),
