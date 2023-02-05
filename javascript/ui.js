@@ -293,7 +293,7 @@ onUiUpdate(function(){
 		//console.log(elem.id);		
     })
 	
-	gradioApp().querySelectorAll('textarea').forEach(function(elem){
+	gradioApp().querySelectorAll('#img2img_prompt textarea, #txt2img_prompt textarea').forEach(function(elem){
         elem.classList.add("input-text");
 		elem.classList.remove("gr-text-input", "gr-box");	
     })

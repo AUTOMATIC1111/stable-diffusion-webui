@@ -1828,7 +1828,8 @@ input:focus {
     border-bottom: 0 !important;
 }
 
-textarea{
+#img2img_prompt textarea, 
+#txt2img_prompt textarea{
 	overflow: hidden !important;	
 }
 
