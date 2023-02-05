@@ -33,3 +33,7 @@ notification.mp3
 /test/stdout.txt
 /test/stderr.txt
 /cache.json
+special_start_medvram.bat
+special_start_medvram.bat
+special_start_medvram ohne xformers.bat
+webui-user.bat

@@ -1,0 +1,14 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\.github",
+    "\\configs",
+    "\\extensions-builtin",
+    "\\html",
+    "\\models",
+    "\\scripts",
+    "\\test",
+    "\\textual_inversion_templates"
+  ],
+  "PreviewInSolutionExplorer": false
+}
