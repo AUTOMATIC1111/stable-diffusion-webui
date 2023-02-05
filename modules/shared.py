@@ -466,6 +466,7 @@ options_templates.update(options_section(('ui', "User interface"), {
     "quicksettings": OptionInfo("sd_model_checkpoint", "Quicksettings list"),
     "ui_reorder": OptionInfo(", ".join(ui_reorder_categories), "txt2img/img2img UI item order"),
     "aspect_ratios": OptionInfo(", ".join(aspect_ratio_defaults), "txt2img/img2img aspect ratios"),
+    "aspect_ratio_base": OptionInfo("width", "aspect ratio base dimension (width or height)"),
     "ui_extra_networks_tab_reorder": OptionInfo("", "Extra networks tab order"),
     "localization": OptionInfo("None", "Localization (requires restart)", gr.Dropdown, lambda: {"choices": ["None"] + list(localization.localizations.keys())}, refresh=lambda: localization.list_localizations(cmd_opts.localizations_dir)),
 }))

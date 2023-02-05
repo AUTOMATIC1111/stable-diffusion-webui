@@ -429,13 +429,13 @@ def aspect_ratio_list():
 
 
 def aspect_ratio_resize(w, h, bttn_val):
+    dimension = shared.opts.aspect_ratio_base
     width, height = map(int, bttn_val.split(":"))
     ratio = width / height
-    if w / ratio > h:
-        return (round(h * ratio), h)
-    else:
+    if dimension == 'width':
         return (w, round(w / ratio))
-
+    elif dimension == 'height':
+        return (round(h * ratio), h)
 
 
 def get_value_for_setting(key):
