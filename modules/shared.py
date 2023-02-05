@@ -106,7 +106,7 @@ parser.add_argument("--tls-certfile", type=str, help="Partially enables TLS, req
 parser.add_argument("--server-name", type=str, help="Sets hostname of server", default=None)
 parser.add_argument("--gradio-queue", action='store_true', help="Uses gradio queue; experimental option; breaks restart UI button")
 parser.add_argument("--skip-version-check", action='store_true', help="Do not check versions of torch and xformers")
-
+parser.add_argument("--no-hashing", action='store_true', help="disable sha256 hashing of checkpoints to help loading performance", default=False)
 
 
 script_loading.preload_extensions(extensions.extensions_dir, parser)
@@ -327,7 +327,7 @@ options_templates.update(options_section(('saving-images', "Saving images/grids"
     "jpeg_quality": OptionInfo(80, "Quality for saved jpeg images", gr.Slider, {"minimum": 1, "maximum": 100, "step": 1}),
     "export_for_4chan": OptionInfo(True, "If PNG image is larger than 4MB or any dimension is larger than 4000, downscale and save copy as JPG"),
 
-    "use_original_name_batch": OptionInfo(False, "Use original name for output filename during batch process in extras tab"),
+    "use_original_name_batch": OptionInfo(True, "Use original name for output filename during batch process in extras tab"),
     "use_upscaler_name_as_suffix": OptionInfo(False, "Use upscaler name as filename suffix in the extras tab"),
     "save_selected_only": OptionInfo(True, "When using 'Save' button, only save a single selected image"),
     "do_not_add_watermark": OptionInfo(False, "Do not add watermark to images"),

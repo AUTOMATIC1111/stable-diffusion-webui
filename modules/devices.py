@@ -1,21 +1,17 @@
-import sys, os, shlex
+import sys
 import contextlib
 import torch
 from modules import errors
-from packaging import version
+
+if sys.platform == "darwin":
+    from modules import mac_specific
 
 
-# has_mps is only available in nightly pytorch (for now) and macOS 12.3+.
-# check `getattr` and try it for compatibility
 def has_mps() -> bool:
-    if not getattr(torch, 'has_mps', False):
+    if sys.platform != "darwin":
         return False
-    try:
-        torch.zeros(1).to(torch.device("mps"))
-        return True
-    except Exception:
-        return False
-
+    else:
+        return mac_specific.has_mps
 
 def extract_device_id(args, name):
     for x in range(len(args)):
@@ -154,56 +150,3 @@ def test_for_nans(x, where):
     message += " Use --disable-nan-check commandline argument to disable this check."
 
     raise NansException(message)
-
-
-# MPS workaround for https://github.com/pytorch/pytorch/issues/79383
-orig_tensor_to = torch.Tensor.to
-def tensor_to_fix(self, *args, **kwargs):
-    if self.device.type != 'mps' and \
-       ((len(args) > 0 and isinstance(args[0], torch.device) and args[0].type == 'mps') or \
-       (isinstance(kwargs.get('device'), torch.device) and kwargs['device'].type == 'mps')):
-        self = self.contiguous()
-    return orig_tensor_to(self, *args, **kwargs)
-
-
-# MPS workaround for https://github.com/pytorch/pytorch/issues/80800 
-orig_layer_norm = torch.nn.functional.layer_norm
-def layer_norm_fix(*args, **kwargs):
-    if len(args) > 0 and isinstance(args[0], torch.Tensor) and args[0].device.type == 'mps':
-        args = list(args)
-        args[0] = args[0].contiguous()
-    return orig_layer_norm(*args, **kwargs)
-
-
-# MPS workaround for https://github.com/pytorch/pytorch/issues/90532
-orig_tensor_numpy = torch.Tensor.numpy
-def numpy_fix(self, *args, **kwargs):
-    if self.requires_grad:
-        self = self.detach()
-    return orig_tensor_numpy(self, *args, **kwargs)
-
-
-# MPS workaround for https://github.com/pytorch/pytorch/issues/89784
-orig_cumsum = torch.cumsum
-orig_Tensor_cumsum = torch.Tensor.cumsum
-def cumsum_fix(input, cumsum_func, *args, **kwargs):
-    if input.device.type == 'mps':
-        output_dtype = kwargs.get('dtype', input.dtype)
-        if output_dtype == torch.int64:
-            return cumsum_func(input.cpu(), *args, **kwargs).to(input.device)
-        elif cumsum_needs_bool_fix and output_dtype == torch.bool or cumsum_needs_int_fix and (output_dtype == torch.int8 or output_dtype == torch.int16):
-            return cumsum_func(input.to(torch.int32), *args, **kwargs).to(torch.int64)
-    return cumsum_func(input, *args, **kwargs)
-
-
-if has_mps():
-    if version.parse(torch.__version__) < version.parse("1.13"):
-        # PyTorch 1.13 doesn't need these fixes but unfortunately is slower and has regressions that prevent training from working
-        torch.Tensor.to = tensor_to_fix
-        torch.nn.functional.layer_norm = layer_norm_fix
-        torch.Tensor.numpy = numpy_fix
-    elif version.parse(torch.__version__) > version.parse("1.13.1"):
-        cumsum_needs_int_fix = not torch.Tensor([1,2]).to(torch.device("mps")).equal(torch.ShortTensor([1,1]).to(torch.device("mps")).cumsum(0))
-        cumsum_needs_bool_fix = not torch.BoolTensor([True,True]).to(device=torch.device("mps"), dtype=torch.int64).equal(torch.BoolTensor([True,False]).to(torch.device("mps")).cumsum(0))
-        torch.cumsum = lambda input, *args, **kwargs: ( cumsum_fix(input, orig_cumsum, *args, **kwargs) )
-        torch.Tensor.cumsum = lambda self, *args, **kwargs: ( cumsum_fix(self, orig_Tensor_cumsum, *args, **kwargs) )

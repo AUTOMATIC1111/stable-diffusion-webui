@@ -17,7 +17,7 @@ titles = {
     "\u2199\ufe0f": "Read generation parameters from prompt or last generation if prompt is empty into user interface.",
     "\u{1f4c2}": "Open images output directory",
     "\u{1f4be}": "Save style",
-    "\U0001F5D1": "Clear prompt",
+    "\u{1f5d1}": "Clear prompt",
     "\u{1f4cb}": "Apply selected styles to current prompt",
     "\u{1f4d2}": "Paste available values into the field",
     "\u{1f3b4}": "Show extra networks",
@@ -66,8 +66,8 @@ titles = {
 
     "Interrogate": "Reconstruct prompt from existing image and put it into the prompt field.",
 
-    "Images filename pattern": "Use following tags to define how filenames for images are chosen: [steps], [cfg], [prompt], [prompt_no_styles], [prompt_spaces], [width], [height], [styles], [sampler], [seed], [model_hash], [model_name], [prompt_words], [date], [datetime], [datetime<Format>], [datetime<Format><Time Zone>], [job_timestamp]; leave empty for default.",
-    "Directory name pattern": "Use following tags to define how subdirectories for images and grids are chosen: [steps], [cfg], [prompt], [prompt_no_styles], [prompt_spaces], [width], [height], [styles], [sampler], [seed], [model_hash], [model_name], [prompt_words], [date], [datetime], [datetime<Format>], [datetime<Format><Time Zone>], [job_timestamp]; leave empty for default.",
+    "Images filename pattern": "Use following tags to define how filenames for images are chosen: [steps], [cfg], [prompt_hash], [prompt], [prompt_no_styles], [prompt_spaces], [width], [height], [styles], [sampler], [seed], [model_hash], [model_name], [prompt_words], [date], [datetime], [datetime<Format>], [datetime<Format><Time Zone>], [job_timestamp]; leave empty for default.",
+    "Directory name pattern": "Use following tags to define how subdirectories for images and grids are chosen: [steps], [cfg],[prompt_hash], [prompt], [prompt_no_styles], [prompt_spaces], [width], [height], [styles], [sampler], [seed], [model_hash], [model_name], [prompt_words], [date], [datetime], [datetime<Format>], [datetime<Format><Time Zone>], [job_timestamp]; leave empty for default.",
     "Max prompt words": "Set the maximum number of words to be used in the [prompt_words] option; ATTENTION: If the words are too long, they may exceed the maximum length of the file path that the system can handle",
 
     "Loopback": "Process an image, use it as an input, repeat.",

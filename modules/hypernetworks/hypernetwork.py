@@ -307,7 +307,7 @@ class Hypernetwork:
     def shorthash(self):
         sha256 = hashes.sha256(self.filename, f'hypernet/{self.name}')
 
-        return sha256[0:10]
+        return sha256[0:10] if sha256 else None
 
 
 def list_hypernetworks(path):
