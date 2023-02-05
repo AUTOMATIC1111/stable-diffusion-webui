@@ -6,7 +6,7 @@ from tqdm import trange
 import modules.scripts as scripts
 import gradio as gr
 
-from modules import processing, shared, sd_samplers, prompt_parser
+from modules import processing, shared, sd_samplers, prompt_parser, sd_samplers_common
 from modules.processing import Processed
 from modules.shared import opts, cmd_opts, state
 
@@ -50,7 +50,7 @@ def find_noise_for_image(p, cond, uncond, cfg_scale, steps):
 
         x = x + d * dt
 
-        sd_samplers.store_latent(x)
+        sd_samplers_common.store_latent(x)
 
         # This shouldn't be necessary, but solved some VRAM issues
         del x_in, sigma_in, cond_in, c_out, c_in, t,
@@ -104,7 +104,7 @@ def find_noise_for_image_sigma_adjustment(p, cond, uncond, cfg_scale, steps):
         dt = sigmas[i] - sigmas[i - 1]
         x = x + d * dt
 
-        sd_samplers.store_latent(x)
+        sd_samplers_common.store_latent(x)
 
         # This shouldn't be necessary, but solved some VRAM issues
         del x_in, sigma_in, cond_in, c_out, c_in, t,
