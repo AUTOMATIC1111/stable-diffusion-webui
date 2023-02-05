@@ -1840,6 +1840,15 @@ pre {
  word-wrap: break-word;       /* Internet Explorer 5.5+ */
 }
 
+#settings .gr-button-tool {
+    align-self: flex-end !important;
+    margin-bottom: 10px;
+    margin-right: 10px;
+    min-width: 34px !important;
+    max-width: 34px;
+    height: 34px;
+}
+
 @media only screen and (max-width: 1024px) {
   /* For tablets: */
   
