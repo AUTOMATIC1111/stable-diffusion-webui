@@ -130,7 +130,7 @@ class GridAnnotation:
         self.size = None
 
 
-def draw_grid_annotations(im, width, height, hor_texts, ver_texts):
+def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0):
     def wrap(drawing, text, font, line_length):
         lines = ['']
         for word in text.split():
@@ -194,48 +194,35 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts):
             line.allowed_width = allowed_width
 
     hor_text_heights = [sum([line.size[1] + line_spacing for line in lines]) - line_spacing for lines in hor_texts]
-    ver_text_heights = [sum([line.size[1] + line_spacing for line in lines]) - line_spacing * len(lines) for lines in
-                        ver_texts]
+    ver_text_heights = [sum([line.size[1] + line_spacing for line in lines]) - line_spacing * len(lines) for lines in ver_texts]
 
     pad_top = 0 if sum(hor_text_heights) == 0 else max(hor_text_heights) + line_spacing * 2
 
-    result = Image.new("RGB", (im.width + pad_left, im.height + pad_top), "white")
-    result.paste(im, (pad_left, pad_top))
+    result = Image.new("RGB", (im.width + pad_left + margin * (cols-1), im.height + pad_top + margin * (rows-1)), "white")
+
+    for row in range(rows):
+        for col in range(cols):
+            cell = im.crop((width * col, height * row, width * (col+1), height * (row+1)))
+            result.paste(cell, (pad_left + (width + margin) * col, pad_top + (height + margin) * row))
 
     d = ImageDraw.Draw(result)
 
     for col in range(cols):
-        x = pad_left + width * col + width / 2
+        x = pad_left + (width + margin) * col + width / 2
         y = pad_top / 2 - hor_text_heights[col] / 2
 
         draw_texts(d, x, y, hor_texts[col], fnt, fontsize)
 
     for row in range(rows):
         x = pad_left / 2
-        y = pad_top + height * row + height / 2 - ver_text_heights[row] / 2
+        y = pad_top + (height + margin) * row + height / 2 - ver_text_heights[row] / 2
 
         draw_texts(d, x, y, ver_texts[row], fnt, fontsize)
 
-    return result, pad_left, pad_top
+    return result
 
-def draw_inner_margins(im, margin, rows, cols, pad_left, pad_top, margin_color=(255, 255, 255)):
-    if margin == 0: # Early exit, not strictly necessary
-        return im
-    cell_width = (im.width - pad_left) // cols
-    cell_height = (im.height - pad_top) // rows
-    padded_im = Image.new("RGB", (im.width + (cols - 1) * margin, im.height + (rows - 1) * margin), margin_color)
-    for r in range(rows):
-        for c in range(cols):
-            cell_location = (c * cell_width + pad_left * (c != 0), 
-                             r * cell_height + pad_top * (r != 0),
-                             (c + 1) * cell_width + pad_left, 
-                             (r + 1) * cell_height + pad_top)
-            paste_location = (c * (cell_width + margin) + pad_left * (c != 0), 
-                              r * (cell_height + margin) + pad_top * (r != 0))
-            padded_im.paste(im.crop(cell_location), paste_location) 
-    return padded_im
 
-def draw_prompt_matrix(im, width, height, all_prompts):
+def draw_prompt_matrix(im, width, height, all_prompts, margin=0):
     prompts = all_prompts[1:]
     boundary = math.ceil(len(prompts) / 2)
 
@@ -245,7 +232,7 @@ def draw_prompt_matrix(im, width, height, all_prompts):
     hor_texts = [[GridAnnotation(x, is_active=pos & (1 << i) != 0) for i, x in enumerate(prompts_horiz)] for pos in range(1 << len(prompts_horiz))]
     ver_texts = [[GridAnnotation(x, is_active=pos & (1 << i) != 0) for i, x in enumerate(prompts_vert)] for pos in range(1 << len(prompts_vert))]
 
-    return draw_grid_annotations(im, width, height, hor_texts, ver_texts)
+    return draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin)
 
 
 def resize_image(resize_mode, im, width, height, upscaler_name=None):

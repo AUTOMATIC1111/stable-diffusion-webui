@@ -291,10 +291,8 @@ def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend
         start_index = i * len(xs) * len(ys)
         end_index = start_index + len(xs) * len(ys)
         grid = images.image_grid(image_cache[start_index:end_index], rows=len(ys))
-        pad_left, pad_top = 0, 0
         if draw_legend:
-            grid, pad_left, pad_top = images.draw_grid_annotations(grid, cell_size[0], cell_size[1], hor_texts, ver_texts)
-        grid = images.draw_inner_margins(grid, margin_size, len(ys), len(xs), pad_left, pad_top)
+            grid = images.draw_grid_annotations(grid, cell_size[0], cell_size[1], hor_texts, ver_texts, margin_size)
         sub_grids[i] = grid
         if include_sub_grids and len(zs) > 1:
             processed_result.images.insert(i+1, grid)
@@ -302,7 +300,7 @@ def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend
     sub_grid_size = sub_grids[0].size
     z_grid = images.image_grid(sub_grids, rows=1)
     if draw_legend:
-        z_grid, _, _ = images.draw_grid_annotations(z_grid, sub_grid_size[0], sub_grid_size[1], title_texts, [[images.GridAnnotation()]])
+        z_grid = images.draw_grid_annotations(z_grid, sub_grid_size[0], sub_grid_size[1], title_texts, [[images.GridAnnotation()]])
     processed_result.images[0] = z_grid
 
     return processed_result, sub_grids

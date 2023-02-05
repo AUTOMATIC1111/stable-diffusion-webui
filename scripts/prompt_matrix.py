@@ -33,7 +33,7 @@ def draw_xy_grid(xs, ys, x_label, y_label, cell):
             res.append(processed.images[0])
 
     grid = images.image_grid(res, rows=len(ys))
-    grid, _, _ = images.draw_grid_annotations(grid, res[0].width, res[0].height, hor_texts, ver_texts)
+    grid = images.draw_grid_annotations(grid, res[0].width, res[0].height, hor_texts, ver_texts)
 
     first_processed.images = [grid]
 
@@ -100,8 +100,7 @@ class Script(scripts.Script):
         processed = process_images(p)
 
         grid = images.image_grid(processed.images, p.batch_size, rows=1 << ((len(prompt_matrix_parts) - 1) // 2))
-        grid, pad_left, pad_top = images.draw_prompt_matrix(grid, p.width, p.height, prompt_matrix_parts)
-        grid = images.draw_inner_margins(grid, margin_size, grid.height // p.height, grid.width // p.width, pad_left, pad_top)
+        grid = images.draw_prompt_matrix(grid, p.width, p.height, prompt_matrix_parts, margin_size)
         processed.images.insert(0, grid)
         processed.index_of_first_image = 1
         processed.infotexts.insert(0, processed.infotexts[0])
