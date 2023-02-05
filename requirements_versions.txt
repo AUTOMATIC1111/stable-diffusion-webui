@@ -23,4 +23,4 @@ scikit-image==0.19.3
 timm==0.6.12
 torchdiffeq==0.2.3
 torchsde==0.2.5
-transformers==4.25.1
+transformers==4.26.0

@@ -20,9 +20,6 @@
     "directories_max_prompt_words": 8,
     "disable_weights_auto_swap": false,
     "disabled_extensions": [
-        "embedding-inspector",
-        "sd-webui-additional-networks",
-        "stable-diffusion-webui-instruct-pix2pix",
         "ScuNET"
     ],
     "do_not_add_watermark": true,
@@ -134,7 +131,7 @@
     "sd_checkpoint_hash": "cc6cb27103417325ff94f52b7a5d2dde45a7515b25c255d8e396c90014281516",
     "sd_hypernetwork_strength": 1.0,
     "sd_hypernetwork": "None",
-    "sd_lora": "None",
+    "sd_lora": "",
     "sd_model_checkpoint": "sd-v15-runwayml.ckpt [cc6cb27103]",
     "sd_vae_as_default": false,
     "sd_vae_checkpoint_cache": 0,
@@ -185,5 +182,12 @@
         "DPM2 a Karras",
         "LMS Karras"
     ],
-    "images_logger_warning": false
+    "images_logger_warning": false,
+    "images_logger_debug": false,
+    "images_scan_exif": false,
+    "additional_networks_extra_lora_path": "",
+    "additional_networks_sort_models_by": "name",
+    "additional_networks_model_name_filter": "",
+    "additional_networks_xy_grid_model_metadata": "",
+    "additional_networks_hash_thread_count": 1.0
 }
