@@ -48,6 +48,20 @@ def set_last_task_result(id_job, result):
   last_task_result = result
 
 
+def restore_progress_call(task_tag):
+    if current_task is None or not current_task[5:-1].startswith(task_tag):
+
+      # image, generation_info, html_info, html_log
+      return tuple(list([None, None, None, None]))
+
+    else:
+
+      t_task = current_task
+      while t_task != last_task_id:
+        time.sleep(2.5)
+      return last_task_result
+
+
 class CurrentTaskResponse(BaseModel):
   current_task: str = Field(default=None, title="Task ID", description="id of the current progress task")
 

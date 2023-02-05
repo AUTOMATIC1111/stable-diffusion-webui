@@ -59,8 +59,8 @@ function setTitle(progress){
 }
 
 
-function randomId(){
-    return "task(" + Math.random().toString(36).slice(2, 7) + Math.random().toString(36).slice(2, 7) + Math.random().toString(36).slice(2, 7)+")"
+function randomId(prefix=null){
+    return "task(" + (prefix == null ? "" : prefix + "_") + Math.random().toString(36).slice(2, 7) + Math.random().toString(36).slice(2, 7) + Math.random().toString(36).slice(2, 7)+")"
 }
 
 // starts sending progress requests to "/internal/progress" uri, creating progressbar above progressbarContainer element and
