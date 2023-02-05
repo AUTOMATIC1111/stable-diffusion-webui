@@ -286,16 +286,74 @@ onUiUpdate(function(){
 	* matches any position
 	$ matches the end
 
-	*/
+	*/	
 	
 	gradioApp().querySelectorAll('[id *= "sub-group"]').forEach(function(elem){
         elem.classList.add("sub-group");
-		console.log(elem.id);		
+		//console.log(elem.id);		
     })
 	
-
+	gradioApp().querySelectorAll('textarea').forEach(function(elem){
+        elem.classList.add("input-text");
+		elem.classList.remove("gr-text-input", "gr-box");	
+    })
 	
+	
+	/* coming soon split view resize
+	
+	const resizer = gradioApp().getElementById('handler');
+	const leftSide = resizer.previousElementSibling;
+	const rightSide = resizer.nextElementSibling;
+	const container = gradioApp().getElementById('tab_txt2img');
 
+	var x = 0;
+	var y = 0;
+	var leftWidth = 0;
+
+
+
+	function mouseMoveHandler(e) {		
+		resizer.style.cursor = 'col-resize';
+		container.style.cursor = 'col-resize';
+
+		const dx = e.clientX - x;
+		const dy = e.clientY - y;
+
+		const newLeftWidth = ((leftWidth + dx) * 100) / resizer.parentNode.getBoundingClientRect().width;
+		leftSide.style.flexBasis  = `${newLeftWidth}%`;
+		leftSide.style.userSelect = 'none';
+		leftSide.style.pointerEvents = 'none';
+		rightSide.style.userSelect = 'none';
+		rightSide.style.pointerEvents = 'none';
+		console.log("Move");
+		
+	};
+
+	function mouseUpHandler() {
+		resizer.style.removeProperty('cursor');
+		container.style.removeProperty('cursor');
+		leftSide.style.removeProperty('user-select');
+		leftSide.style.removeProperty('pointer-events');
+		rightSide.style.removeProperty('user-select');
+		rightSide.style.removeProperty('pointer-events');
+		container.removeEventListener('mousemove', mouseMoveHandler);
+		container.removeEventListener('mouseup', mouseUpHandler);
+		console.log("Up");
+	};
+	
+	function mouseDownHandler(e) {	
+		x = e.clientX;
+		y = e.clientY;
+		leftWidth = leftSide.getBoundingClientRect().width;
+		container.addEventListener('mousemove', mouseMoveHandler);
+		container.addEventListener('mouseup', mouseUpHandler);
+		console.log("Down");
+	};
+	
+	// Attach the handler
+	resizer.addEventListener('mousedown', mouseDownHandler);
+	*/
+	
 	
 })
 
@@ -357,3 +415,5 @@ function selectCheckpoint(name){
     desiredCheckpointName = name;
     gradioApp().getElementById('change_checkpoint').click()
 }
+
+

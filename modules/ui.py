@@ -332,14 +332,14 @@ def create_toprow(is_img2img):
                         prompt_styles = gr.Dropdown(label="Styles", elem_id=f"{id_part}_styles", choices=[k for k, v in shared.prompt_styles.styles.items()], value=[], multiselect=True)
                         create_refresh_button(prompt_styles, shared.prompt_styles.reload, lambda: {"choices": [k for k, v in shared.prompt_styles.styles.items()]}, f"refresh_{id_part}_style_index")
                     with gr.Row():
-                        prompt = gr.Textbox(label="Prompt", elem_id=f"{id_part}_prompt", show_label=True, lines=7,
+                        prompt = gr.Textbox(label="Prompt", elem_id=f"{id_part}_prompt", show_label=True, lines=5,
                             placeholder="Prompt (press Ctrl+Enter or Alt+Enter to generate)"
                         )
 
             with gr.Row():
                 with gr.Column(scale=80):               
                     with gr.Row():
-                        negative_prompt = gr.Textbox(label="Negative prompt", elem_id=f"{id_part}_neg_prompt", show_label=True, lines=7,
+                        negative_prompt = gr.Textbox(label="Negative prompt", elem_id=f"{id_part}_neg_prompt", show_label=True, lines=5,
                             placeholder="Negative prompt (press Ctrl+Enter or Alt+Enter to generate)"
                         )
 
@@ -498,6 +498,7 @@ def create_ui():
         with gr.Row().style(equal_height=False):
         
             txt2img_gallery, generation_info, html_info, html_log = create_output_panel("txt2img", opts.outdir_txt2img_samples)
+            #gr.Row(elem_id="handler")
                        
             with gr.Column(variant='panel', elem_id="txt2img_settings"):                
                 
@@ -516,7 +517,7 @@ def create_ui():
                             steps, sampler_index = create_sampler_and_steps_selection(samplers, "txt2img")
 
                         elif category == "dimensions":
-                            with FormRow():                          
+                            with gr.Row():                          
                                 width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="txt2img_width")
                                 res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="txt2img_res_switch_btn")
                                 height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="txt2img_height")
@@ -848,7 +849,7 @@ def create_ui():
                             steps, sampler_index = create_sampler_and_steps_selection(samplers_for_img2img, "img2img")
 
                         elif category == "dimensions":
-                            with FormRow():
+                            with gr.Row():
 
                                 #with gr.Column(elem_id="img2img_column_size", scale=4):
                                 width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="img2img_width")                         
