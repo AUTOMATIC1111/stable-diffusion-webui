@@ -16,6 +16,7 @@ from PIL import Image, ImageFont, ImageDraw, PngImagePlugin
 from fonts.ttf import Roboto
 import string
 import json
+import hashlib
 
 from modules import sd_samplers, shared, script_callbacks
 from modules.shared import opts, cmd_opts
@@ -198,7 +199,7 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0):
 
     pad_top = 0 if sum(hor_text_heights) == 0 else max(hor_text_heights) + line_spacing * 2
 
-    result = Image.new("RGB", (im.width + pad_left + margin * (rows-1), im.height + pad_top + margin * (cols-1)), "white")
+    result = Image.new("RGB", (im.width + pad_left + margin * (cols-1), im.height + pad_top + margin * (rows-1)), "white")
 
     for row in range(rows):
         for col in range(cols):
@@ -222,7 +223,7 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0):
     return result
 
 
-def draw_prompt_matrix(im, width, height, all_prompts):
+def draw_prompt_matrix(im, width, height, all_prompts, margin=0):
     prompts = all_prompts[1:]
     boundary = math.ceil(len(prompts) / 2)
 
@@ -232,7 +233,7 @@ def draw_prompt_matrix(im, width, height, all_prompts):
     hor_texts = [[GridAnnotation(x, is_active=pos & (1 << i) != 0) for i, x in enumerate(prompts_horiz)] for pos in range(1 << len(prompts_horiz))]
     ver_texts = [[GridAnnotation(x, is_active=pos & (1 << i) != 0) for i, x in enumerate(prompts_vert)] for pos in range(1 << len(prompts_vert))]
 
-    return draw_grid_annotations(im, width, height, hor_texts, ver_texts)
+    return draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin)
 
 
 def resize_image(resize_mode, im, width, height, upscaler_name=None):
@@ -343,6 +344,7 @@ class FilenameGenerator:
         'date': lambda self: datetime.datetime.now().strftime('%Y-%m-%d'),
         'datetime': lambda self, *args: self.datetime(*args),  # accepts formats: [datetime], [datetime<Format>], [datetime<Format><Time Zone>]
         'job_timestamp': lambda self: getattr(self.p, "job_timestamp", shared.state.job_timestamp),
+        'prompt_hash': lambda self: hashlib.sha256(self.prompt.encode()).hexdigest()[0:8],
         'prompt': lambda self: sanitize_filename_part(self.prompt),
         'prompt_no_styles': lambda self: self.prompt_no_style(),
         'prompt_spaces': lambda self: sanitize_filename_part(self.prompt, replace_spaces=False),
