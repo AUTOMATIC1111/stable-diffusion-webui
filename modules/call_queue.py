@@ -37,6 +37,7 @@ def wrap_gradio_gpu_call(func, extra_outputs=None):
                 res = func(*args, **kwargs)
             finally:
                 progress.finish_task(id_task)
+                progress.set_last_task_result(id_task, res)
 
             shared.state.end()
 
