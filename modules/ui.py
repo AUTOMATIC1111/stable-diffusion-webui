@@ -428,9 +428,9 @@ def aspect_ratio_list():
     return [ratio.strip() for ratio in shared.opts.aspect_ratios.split(",")]
 
 
-def aspect_ratio_resize(w, h, bttn_val):
+def aspect_ratio_resize(w, h, ratio_string):
     dimension = shared.opts.aspect_ratio_base
-    width, height = map(int, bttn_val.split(":"))
+    width, height = map(int, ratio_string.split(":"))
     ratio = width / height
     if dimension == 'width':
         return (w, round(w / ratio))
@@ -492,12 +492,9 @@ def create_ui():
                             with gr.Column(elem_id="txt2img_column_size", scale=4):
                                 width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="txt2img_width")
                                 height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="txt2img_height")
-                                with gr.Row():
-                                    for aspect_ratio in aspect_ratio_list():
-                                        aspect_ratio_bttn = ToolButton(value=aspect_ratio, elem_id=f"txt2img_ratio_{aspect_ratio.replace(':', '_')}")
-                                        aspect_ratio_bttn.click(aspect_ratio_resize, inputs=[width, height, aspect_ratio_bttn], outputs=[width, height])
 
                             res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="txt2img_res_switch_btn")
+                            aspect_ratio_dropdown = gr.Dropdown(value="1:1", choices=aspect_ratio_list(), type="value", elem_id="txt2img_ratio", show_label=False, label="Aspect Ratio")
                             if opts.dimensions_and_batch_together:
                                 with gr.Column(elem_id="txt2img_column_batch"):
                                     batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1, elem_id="txt2img_batch_count")
@@ -605,6 +602,7 @@ def create_ui():
             submit.click(**txt2img_args)
 
             res_switch_btn.click(lambda w, h: (h, w), inputs=[width, height], outputs=[width, height])
+            aspect_ratio_dropdown.change(aspect_ratio_resize, inputs=[width, height, aspect_ratio_dropdown], outputs=[width, height])
 
             txt_prompt_img.change(
                 fn=modules.images.image_data,
@@ -774,13 +772,9 @@ def create_ui():
                             with gr.Column(elem_id="img2img_column_size", scale=4):
                                 width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="img2img_width")
                                 height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="img2img_height")
-                                with gr.Row():
-                                    for aspect_ratio in aspect_ratio_list():
-                                        aspect_ratio_bttn = ToolButton(value=aspect_ratio, elem_id=f"img2img_ratio_{aspect_ratio.replace(':', '_')}")
-                                        aspect_ratio_bttn.click(aspect_ratio_resize, inputs=[width, height, aspect_ratio_bttn], outputs=[width, height])
-
 
                             res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="img2img_res_switch_btn")
+                            aspect_ratio_dropdown = gr.Dropdown(value="1:1", choices=aspect_ratio_list(), type="value", elem_id="img2img_ratio", show_label=False, label="Aspect Ratio")
                             if opts.dimensions_and_batch_together:
                                 with gr.Column(elem_id="img2img_column_batch"):
                                     batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1, elem_id="img2img_batch_count")
@@ -928,6 +922,7 @@ def create_ui():
             img2img_prompt.submit(**img2img_args)
             submit.click(**img2img_args)
             res_switch_btn.click(lambda w, h: (h, w), inputs=[width, height], outputs=[width, height])
+            aspect_ratio_dropdown.change(aspect_ratio_resize, inputs=[width, height, aspect_ratio_dropdown], outputs=[width, height])
 
             img2img_interrogate.click(
                 fn=lambda *args: process_interrogate(interrogate, *args),
