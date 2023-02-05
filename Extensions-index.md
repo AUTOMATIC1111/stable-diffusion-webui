@@ -47,7 +47,7 @@
 		{
 			"name": "Image browser",
 			"url": "https://github.com/AlUlkesh/stable-diffusion-webui-images-browser.git",
-			"description": "Provides an interface to browse created images in the web browser.",
+			"description": "Provides an interface to browse created images in the web browser. Note: new ext. maintainer, uninstall previous ext. if needed.",
 			"added": "2022-11-01",
 			"tags": ["script", "tab"]
 		},
