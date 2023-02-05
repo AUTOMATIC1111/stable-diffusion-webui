@@ -498,7 +498,7 @@ def create_ui():
         with gr.Row().style(equal_height=False):
         
             txt2img_gallery, generation_info, html_info, html_log = create_output_panel("txt2img", opts.outdir_txt2img_samples)
-            #gr.Row(elem_id="handler")
+            gr.Row(elem_id="txt2img_splitter")
                        
             with gr.Column(variant='panel', elem_id="txt2img_settings"):                
                 
@@ -716,6 +716,7 @@ def create_ui():
         with FormRow().style(equal_height=False):
         
             img2img_gallery, generation_info, html_info, html_log = create_output_panel("img2img", opts.outdir_img2img_samples)
+            gr.Row(elem_id="img2img_splitter")
                              
             with gr.Column(variant='panel', elem_id="img2img_settings"):
 
