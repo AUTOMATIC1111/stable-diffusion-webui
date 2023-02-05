@@ -16,6 +16,7 @@ from PIL import Image, ImageFont, ImageDraw, PngImagePlugin
 from fonts.ttf import Roboto
 import string
 import json
+import hashlib
 
 from modules import sd_samplers, shared, script_callbacks
 from modules.shared import opts, cmd_opts
@@ -343,6 +344,7 @@ class FilenameGenerator:
         'date': lambda self: datetime.datetime.now().strftime('%Y-%m-%d'),
         'datetime': lambda self, *args: self.datetime(*args),  # accepts formats: [datetime], [datetime<Format>], [datetime<Format><Time Zone>]
         'job_timestamp': lambda self: getattr(self.p, "job_timestamp", shared.state.job_timestamp),
+        'prompt_hash': lambda self: hashlib.sha256(self.prompt.encode()).hexdigest()[0:8],
         'prompt': lambda self: sanitize_filename_part(self.prompt),
         'prompt_no_styles': lambda self: self.prompt_no_style(),
         'prompt_spaces': lambda self: sanitize_filename_part(self.prompt, replace_spaces=False),
