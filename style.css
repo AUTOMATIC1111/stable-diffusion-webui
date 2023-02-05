@@ -1828,6 +1828,10 @@ input:focus {
     border-bottom: 0 !important;
 }
 
+textarea{
+	overflow: hidden !important;	
+}
+
 
 @media only screen and (max-width: 1024px) {
   /* For tablets: */
