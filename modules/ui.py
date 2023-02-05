@@ -423,12 +423,14 @@ def ordered_ui_categories():
     for i, category in sorted(enumerate(shared.ui_reorder_categories), key=lambda x: user_order.get(x[1], x[0] * 2 + 0)):
         yield category
 
-
+# Aspect ratio functions
 def aspect_ratio_list():
+    """Gets aspect ratio list"""
     return [ratio.strip() for ratio in shared.opts.aspect_ratios.split(",")]
 
 
 def aspect_ratio_resize(w, h, ratio_string):
+    """Modify other slider and keep base the same, dropdown change is trigger event"""
     dimension = shared.opts.aspect_ratio_base
     width, height = map(int, ratio_string.split(":"))
     ratio = width / height
@@ -436,6 +438,18 @@ def aspect_ratio_resize(w, h, ratio_string):
         return (w, round(w / ratio))
     elif dimension == 'height':
         return (round(h * ratio), h)
+
+
+def aspect_ratio_link_resize(dim1, dim2, ratio_string, link):
+    """Modify other slider and keep base the same, slider change is event, active depending on checkbox value"""
+    width, height = map(int, ratio_string.split(":"))
+    ratio = width / height
+    
+    if link:
+        new_dim2 = round(dim1 / ratio)
+        return new_dim2
+    else:
+        return gr.Slider.update(value=dim2)
 
 
 def get_value_for_setting(key):
@@ -494,6 +508,7 @@ def create_ui():
                                 height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="txt2img_height")
 
                             res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="txt2img_res_switch_btn")
+                            aspect_ratio_link = gr.Checkbox(value=False, label="Aspect ratio 🔒", elem_id="txt2img_ratio_link")
                             aspect_ratio_dropdown = gr.Dropdown(value="1:1", choices=aspect_ratio_list(), type="value", elem_id="txt2img_ratio", show_label=False, label="Aspect Ratio")
                             if opts.dimensions_and_batch_together:
                                 with gr.Column(elem_id="txt2img_column_batch"):
@@ -602,7 +617,14 @@ def create_ui():
             submit.click(**txt2img_args)
 
             res_switch_btn.click(lambda w, h: (h, w), inputs=[width, height], outputs=[width, height])
+
+            # Aspect ratio txt2img event handlers
             aspect_ratio_dropdown.change(aspect_ratio_resize, inputs=[width, height, aspect_ratio_dropdown], outputs=[width, height])
+            if shared.opts.aspect_ratio_base == "width":
+                width.change(fn=aspect_ratio_link_resize,inputs=[width, height, aspect_ratio_dropdown, aspect_ratio_link], outputs=[height])
+            else:
+                height.change(fn=aspect_ratio_link_resize,inputs=[height, width, aspect_ratio_dropdown, aspect_ratio_link], outputs=[width])
+
 
             txt_prompt_img.change(
                 fn=modules.images.image_data,
@@ -774,6 +796,7 @@ def create_ui():
                                 height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="img2img_height")
 
                             res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="img2img_res_switch_btn")
+                            aspect_ratio_link = gr.Checkbox(value=False, label="Aspect ratio 🔒", elem_id="img2img_ratio_link")
                             aspect_ratio_dropdown = gr.Dropdown(value="1:1", choices=aspect_ratio_list(), type="value", elem_id="img2img_ratio", show_label=False, label="Aspect Ratio")
                             if opts.dimensions_and_batch_together:
                                 with gr.Column(elem_id="img2img_column_batch"):
@@ -922,7 +945,14 @@ def create_ui():
             img2img_prompt.submit(**img2img_args)
             submit.click(**img2img_args)
             res_switch_btn.click(lambda w, h: (h, w), inputs=[width, height], outputs=[width, height])
+
+            # Aspect ratio img2img event handlers
             aspect_ratio_dropdown.change(aspect_ratio_resize, inputs=[width, height, aspect_ratio_dropdown], outputs=[width, height])
+            if shared.opts.aspect_ratio_base == "width":
+                width.change(fn=aspect_ratio_link_resize,inputs=[width, height, aspect_ratio_dropdown, aspect_ratio_link], outputs=[height])
+            else:
+                height.change(fn=aspect_ratio_link_resize,inputs=[height, width, aspect_ratio_dropdown, aspect_ratio_link], outputs=[width])
+
 
             img2img_interrogate.click(
                 fn=lambda *args: process_interrogate(interrogate, *args),
