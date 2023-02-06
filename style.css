@@ -1822,10 +1822,17 @@ input:focus {
     border-radius: 0 !important;
 }
 
-#img2img_neg_prompt label, #img2img_prompt label, #txt2img_neg_prompt label, #txt2img_prompt label {
+#img2img_neg_prompt label, 
+#img2img_prompt label, 
+#txt2img_neg_prompt label, 
+#txt2img_prompt label {
 	border: 0;
 }
-#img2img_neg_prompt span, #img2img_prompt span, #txt2img_neg_prompt span, #txt2img_prompt span {
+
+#img2img_neg_prompt span, 
+#img2img_prompt span, 
+#txt2img_neg_prompt span, 
+#txt2img_prompt span {
     border-bottom: 0 !important;
 }
 
@@ -1835,12 +1842,35 @@ input:focus {
 #txt2img_neg_prompt textarea
 {
 	min-height: 37px;
-	overflow: hidden !important;	
+	/*overflow: hidden !important;	*/
 }
 
-#txt2img_results::after{
-	
+/*
+#txt2img_prompt label {
+  display: grid;
 }
+#txt2img_prompt label::after {
+  content: attr(data-replicated-value) " ";
+  white-space: pre-wrap;
+  visibility: hidden;
+}
+#txt2img_prompt label > textarea {
+  resize: none;
+  overflow: hidden;
+}
+#txt2img_prompt label > textarea,
+#txt2img_prompt label::after {
+ 
+  border: 1px solid black;
+  padding: 0.5rem;
+  font: inherit;
+  grid-area: 1 / 1 / 2 / 2;
+}
+*/
+
+
+
+
 
 pre {
  white-space: pre-wrap;       /* css-3 */

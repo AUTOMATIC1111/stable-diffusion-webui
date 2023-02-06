@@ -293,18 +293,24 @@ onUiUpdate(function(){
     })
 	
 	/* resizable textarea */
-	gradioApp().querySelectorAll('[id $= "_prompt"] textarea').forEach(function(elem){
-        elem.classList.add("input-text");
-		elem.classList.remove("gr-text-input", "gr-box");	
-    })
+	gradioApp().querySelectorAll('[id $= "_prompt"] textarea').forEach(function (elem) {
+		elem.style.boxSizing = 'border-box';
+		var offset = elem.offsetHeight - elem.clientHeight;
+		elem.addEventListener('input', function (e) {
+			e.target.style.minHeight = 'auto';
+			e.target.style.minHeight = e.target.scrollHeight + offset + 'px';
+		});
+	});
+	
 	
 	
 	/* split view resize */
-
 	gradioApp().querySelectorAll('#txt2img_splitter, #img2img_splitter').forEach((elem) => {
 		
 		elem.addEventListener("mousedown", function(e) {	
 
+			e.preventDefault();
+			
 			let resizer = e.currentTarget;
 			let leftSide = resizer.previousElementSibling;
 			let rightSide = resizer.nextElementSibling;
