@@ -89,12 +89,12 @@ Intelligent cropping, captioning, and image enhancement.
 ![image](https://user-images.githubusercontent.com/1633844/201435094-433d765c-56e8-4573-82d9-71af2b112159.png)
 
 
-## Image browser
-https://github.com/yfszzx/stable-diffusion-webui-images-browser
+## Image Browser
+https://github.com/AlUlkesh/stable-diffusion-webui-images-browser
 
-Provides an interface to browse created images in the web browser.
+Provides an interface to browse created images in the web browser, allows for sorting and filtering by EXIF data.
 
-![68747470733a2f2f73362e6a70672e636d2f323032322f31302f32342f504a6a755a742e706e67](https://user-images.githubusercontent.com/20920490/197518762-a23f3e34-f174-4275-8283-eb8d2ff65ef2.png)
+![image](https://user-images.githubusercontent.com/23466035/217083703-0845da05-3305-4f5a-af53-f3829de6a29d.png)
 
 ## Inspiration
 https://github.com/yfszzx/stable-diffusion-webui-inspiration
