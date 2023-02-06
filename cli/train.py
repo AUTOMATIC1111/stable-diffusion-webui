@@ -18,6 +18,7 @@ import os
 import sys
 import time
 import json
+import importlib
 from pathlib import Path, PurePath
 
 import filetype
@@ -25,14 +26,13 @@ from PIL import Image
 
 sys.path.append(os.path.join(os.path.dirname(__file__), 'modules'))
 from modules.util import Map, log, set_logfile
-from modules.losschart import plot
-from modules.ffmpeg import extract
-from modules.lossrate import gen_loss_rate_str
 from modules.sdapi import close, get, interrupt, post, progress, session
 from modules.process import process_images
 from modules.grid import grid
-from modules.preview import create_preview
-
+create_preview = importlib.import_module('modules.embedding-preview').create_preview
+plot = importlib.import_module('modules.train-losschart').plot
+extract = importlib.import_module('modules.video-extract').extract
+gen_loss_rate_str = importlib.import_module('modules.train-lossrate').gen_loss_rate_str
 
 images = []
 args = {}

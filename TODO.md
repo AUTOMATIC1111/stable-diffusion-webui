@@ -88,13 +88,19 @@ Cool stuff that is not integrated anywhere...
   - must run `./automatic.sh install`
   - note: this is quite a big one so some testing is reccomended after upgrade
 - non-trivial ui updates
-- added **brightness dynamic range** check to `process.py`
-- new script: `watermark.py`  
+- renamed scripts in `cli/modules` to be more descriptive  
+  if you're using old script names, update them  
+  for example, `ffmpeg.py` is now `video-extract.py`
+- updated script `process.py`
+  - new **brightness dynamic range** check  
+  - new **preview** mode to run all checks but without saving images plus print a summary at the end
+- new script: `image-watermark.py`  
   - optionally strip exif from images
   - add invisible watermark to images which persists even if user modifies image so we can always track it
-- new script: `palette.py`
+- new script: `palette-extract.py`
   - creates color palette wheel from image
   - not finished
+- updated `embedding-preview.py` so it can skip existing previews or overwrite them
 - expose variation seed in main ui
 - integrated seed travel functionality into core
 - integrated `pix2pix` functionality to standard `img2img` workflow

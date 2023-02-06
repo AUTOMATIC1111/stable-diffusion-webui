@@ -25,6 +25,7 @@ import pathlib
 import secrets
 import time
 import sys
+import importlib
 
 from random import randrange
 from PIL import Image
@@ -330,8 +331,8 @@ async def main():
         dynamic = prompt(params)
         if params.beautify:
             try:
-                from modules.promptist import beautify # pylint: disable=import-outside-toplevel
-                sd.generate.prompt = beautify(dynamic)
+                promptist = importlib.import_module('modules.promptist')
+                sd.generate.prompt = promptist.beautify(dynamic)
             except Exception as e:
                 log.error({ 'beautify': e })
         scheduler = sampler(params, options)

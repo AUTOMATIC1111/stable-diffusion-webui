@@ -62,7 +62,6 @@ def extract(src: str, dst: str, rate: float = 0.015, fps: float = 0, start = 0, 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="ffmpeg pipeline")
-    parser.add_argument("command", choices = ["extract", "animate"])
     parser.add_argument("--input", type = str, required = True, help="input")
     parser.add_argument("--output", type = str, required = True, help="output")
     parser.add_argument("--rate", type = float, default = 0, required = False, help="extraction change rate threshold")
@@ -70,5 +69,4 @@ if __name__ == "__main__":
     parser.add_argument("--skipstart", type = float, default = 1, required = False, help="skip time from start of video")
     parser.add_argument("--skipend", type = float, default = 1, required = False, help="skip time to end of video")
     params = parser.parse_args()
-    if params.command == "extract":
-        extract(src = params.input, dst = params.output, rate = params.rate, fps = params.fps, start = params.skipstart, end = params.skipend)
+    extract(src = params.input, dst = params.output, rate = params.rate, fps = params.fps, start = params.skipstart, end = params.skipend)

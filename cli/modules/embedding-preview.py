@@ -7,6 +7,7 @@ import io
 import sys
 import json
 import base64
+import argparse
 from pathlib import Path
 from PIL import Image
 from inspect import getsourcefile
@@ -45,7 +46,7 @@ def create_preview(name: str, suffix: str):
     log.debug({ 'preview options': img2img_options })
     if len(img2img_options['init_images']) == 0:
         for i in range(img2img_options.batch_size):
-            mask = os.path.join(os.path.dirname(getsourcefile(lambda:0)), 'preview'+ str(i+1) +'.jpg')
+            mask = os.path.join(os.path.dirname(getsourcefile(lambda:0)), 'preview-template'+ str(i+1) +'.jpg')
             if (not os.path.isfile(mask)):
                 log.error({ 'preview': 'missing preview mask' })
                 return
@@ -69,12 +70,32 @@ def create_preview(name: str, suffix: str):
 if __name__ == "__main__":
     log.info({ 'preview': 'start' })
     cmdflags = getsync('/sdapi/v1/cmd-flags')
-    sys.argv.pop(0)
-    if len(sys.argv) == 0:
+
+    parser = argparse.ArgumentParser(description = 'generate embeddings previews')
+    parser.add_argument('--overwrite', default = False, action='store_true', help = 'overwrite existing previews')
+    parser.add_argument('input', type=str, nargs='*')
+    params = parser.parse_args()
+
+    if len(params.input) == 0:
         files = list(Path(cmdflags.embeddings_dir).glob('*.pt'))
     else:
-        files = list(os.path.join(cmdflags.embeddings_dir, a + '.pt') for a in sys.argv if os.path.isfile(os.path.join(cmdflags.embeddings_dir, a + '.pt')))
-    files.sort(key=os.path.getctime, reverse=True)
+        files = list(os.path.join(cmdflags.embeddings_dir, a + '.pt') for a in params.input if os.path.isfile(os.path.join(cmdflags.embeddings_dir, a + '.pt')))
+    candidates = [str(f) for f in files]
+    candidates.sort(key=os.path.getctime, reverse=True)
+
+    files = []
+    for f in candidates:
+        fn = f.replace('.pt', '.preview.png')
+        if os.path.isfile(f.replace('.pt', '.preview.png')):
+            if params.overwrite:
+                log.info({ 'preview add': fn })
+                files.append(f)
+            else:
+                log.info({ 'preview skip': fn })
+        else:
+            log.info({ 'preview add': fn })
+            files.append(f)
+
     log.info({ 'preview embeddings': len(files) })
     for f in files:
         name = Path(f).stem

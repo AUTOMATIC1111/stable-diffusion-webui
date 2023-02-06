@@ -8,6 +8,7 @@ process people images
     - in frame: for face based on box, for body based on number of visible keypoints
     - resolution: is cropped image still of sufficient resolution
     - blur: is image sharp enough
+    - dynamic range: is image bright enough
     - similarity: compares image to all previously processed images to see if its unique enough
 - images are resized and optionally squared
 - face additionally runs through semantic segmentation to remove background
@@ -18,11 +19,12 @@ process people images
 - runs clip interrogation on extracted images to generate filewords
 """
 import os
-import sys
 import io
 import math
 import base64
 import pathlib
+import argparse
+import logging
 
 import filetype
 import numpy as np
@@ -48,14 +50,14 @@ params = Map({
     'face_pad': 0.07, # pad face image percentage
     'face_model': 1, # which face model to use 0/close-up 1/standard
     'face_blur_score': 1.5, # max score for face blur detection
-    'face_range_score': 0.5, # min score for face dynamic range detection
+    'face_range_score': 0.3, # min score for face dynamic range detection
     'body_score': 0.9, # min body detection score
     'body_visibility': 0.5, # min visibility score for each detected body part
     'body_parts': 15, # min number of detected body parts with sufficient visibility
     'body_pad': 0.2,  # pad body image percentage
     'body_model': 2, # body model to use 0/low 1/medium 2/high
     'body_blur_score': 1.8, # max score for body blur detection
-    'body_range_score': 0.5, # min score for body dynamic range detection
+    'body_range_score': 0.3, # min score for body dynamic range detection
     'segmentation_face': True, # segmentation enabled
     'segmentation_body': False, # segmentation enabled
     'segmentation_model': 0, # segmentation model 0/general 1/landscape
@@ -140,7 +142,7 @@ def extract_face(img):
         return None, False
     box = results.detections[0].location_data.relative_bounding_box
     if box.xmin < 0 or box.ymin < 0 or (box.width - box.xmin) > 1 or (box.height - box.ymin) > 1:
-        log.info({ 'extract face': 'out of frame' })
+        log.info({ 'process face skip': 'out of frame' })
         return None, False
     x = (box.xmin - params.face_pad / 2) * resized.width
     y = (box.ymin - params.face_pad / 2)* resized.height
@@ -153,7 +155,7 @@ def extract_face(img):
     square = [max(square[0], 0), max(square[1], 0), min(square[2], img.width), min(square[3], img.height)]
     cropped = img.crop(tuple(square))
     if cropped.size[0] < params.target_size and cropped.size[1] < params.target_size:
-        log.info({ 'extract face': 'low resolution', 'size': [cropped.size[0], cropped.size[1]] })
+        log.info({ 'process face skip': 'low resolution', 'size': [cropped.size[0], cropped.size[1]] })
         return None, True
     cropped.thumbnail((params.target_size, params.target_size), Image.HAMMING)
 
@@ -167,21 +169,21 @@ def extract_face(img):
 
     blur = detect_blur(squared)
     if blur > params.face_blur_score:
-        log.info({ 'extract face': 'blur check fail', 'blur': blur })
+        log.info({ 'process face skip': 'blur check fail', 'blur': blur })
         return None, True
     else:
-        log.debug({ 'extract face blur': blur })
+        log.debug({ 'process face blur': blur })
 
     range = detect_dynamicrange(squared)
     if range < params.face_range_score:
-        log.info({ 'extract face': 'dynamic range check fail', 'range': range })
+        log.info({ 'process face skip': 'dynamic range check fail', 'range': range })
         return None, True
     else:
-        log.debug({ 'extract face dynamic range': range })
+        log.debug({ 'process face dynamic range': range })
 
     similarity = detect_simmilar(squared)
     if similarity > params.similarity_score:
-        log.info({ 'extract face': 'similarity check fail', 'score': round(similarity, 2) })
+        log.info({ 'process face skip': 'similarity check fail', 'score': round(similarity, 2) })
         return None, True
 
     return squared, True
@@ -202,7 +204,7 @@ def extract_body(img):
     x = [resized.width * (i.x - params.body_pad / 2) for i in results.pose_landmarks.landmark if i.visibility > params.body_visibility]
     y = [resized.height * (i.y - params.body_pad / 2) for i in results.pose_landmarks.landmark if i.visibility > params.body_visibility]
     if len(x) < params.body_parts:
-        log.info({ 'extract body': 'insufficient body parts', 'detected': len(x) })
+        log.info({ 'process body skip': 'insufficient body parts', 'detected': len(x) })
         return None, True
     w = max(x) - min(x) + resized.width * params.body_pad
     h = max(y) - min(y) + resized.height * params.body_pad
@@ -213,7 +215,7 @@ def extract_body(img):
     square = [max(square[0], 0), max(square[1], 0), min(square[2], img.width), min(square[3], img.height)]
     cropped = img.crop(tuple(square))
     if cropped.size[0] < params.target_size and cropped.size[1] < params.target_size:
-        log.info({ 'extract body': 'low resolution', 'size': [cropped.size[0], cropped.size[1]] })
+        log.info({ 'process body skip': 'low resolution', 'size': [cropped.size[0], cropped.size[1]] })
         return None, True
     cropped.thumbnail((params.target_size, params.target_size), Image.HAMMING)
 
@@ -227,21 +229,21 @@ def extract_body(img):
 
     blur = detect_blur(squared)
     if blur > params.body_blur_score:
-        log.info({ 'extract body': 'blur check fail', 'blur': blur })
+        log.info({ 'process body skip': 'blur check fail', 'blur': blur })
         return None, True
     else:
-        log.debug({ 'extract body blur': blur })
+        log.debug({ 'process body blur': blur })
 
     range = detect_dynamicrange(squared)
     if range < params.body_range_score:
-        log.info({ 'extract body': 'dynamic range check fail', 'range': range })
+        log.info({ 'process body skip': 'dynamic range check fail', 'range': range })
         return None, True
     else:
-        log.debug({ 'extract body dynamic range': range })
+        log.debug({ 'process body dynamic range': range })
 
     similarity = detect_simmilar(squared)
     if similarity > params.similarity_score:
-        log.info({ 'extract body': 'similarity check fail', 'score': similarity })
+        log.info({ 'process body skip': 'similarity check fail', 'score': similarity })
         return None, True
 
     return squared, True
@@ -268,7 +270,7 @@ def interrogate(img, fn):
 
 
 i = {}
-def process_file(f: str, dst: str = None):
+def process_file(f: str, dst: str = None, preview: bool = False, offline: bool = False):
     def save(img, f, what):
         i[what] = i.get(what, 0) + 1
         if dst is None:
@@ -278,8 +280,10 @@ def process_file(f: str, dst: str = None):
         base = os.path.basename(f).split('.')[0]
         fn = os.path.join(dir, str(i[what]).rjust(3, '0') + '-' + what + '-' + base + '.jpg')
         # log.debug({ 'save': fn })
-        img.save(fn)
-        interrogate(img, fn)
+        if not preview:
+            img.save(fn)
+            if not offline:
+                interrogate(img, fn)
         return fn
 
     log.info({ 'processing': f })
@@ -287,12 +291,12 @@ def process_file(f: str, dst: str = None):
         image = Image.open(f)
     except Exception as err:
         log.error({ 'image': f, 'error': err })
-        return
+        return 0, 0
 
     image = ImageOps.exif_transpose(image) # rotate image according to EXIF orientation
 
     if image.width < 512 or image.height < 512:
-        log.info({ 'skip low resolution': [image.width, image.height], 'file': f })
+        log.info({ 'process skip': 'low resolution', 'resolution': [image.width, image.height] })
         return
     log.debug({ 'resolution': [image.width, image.height], 'mp': round((image.width * image.height) / 1024 / 1024, 1) })
 
@@ -337,15 +341,28 @@ def process_images(src: str, dst: str, args = None):
 
 if __name__ == '__main__':
     # log.setLevel(logging.DEBUG)
-    sys.argv.pop(0)
-    dst = sys.argv.pop(0)
-    params.dst = dst
+    parser = argparse.ArgumentParser(description = 'image watermarking')
+    parser.add_argument('--output', type=str, required=True, help='folder to store images')
+    parser.add_argument('--preview', default=False, action='store_true', help = "run processing but do not store results")
+    parser.add_argument('--offline', default=False, action='store_true', help = "run only processing steps that do not require running server")
+    parser.add_argument('--debug', default=False, action='store_true', help = "enable debug logging")
+    parser.add_argument('input', type=str, nargs='*')
+    args = parser.parse_args()
+    params.dst = args.output
+    if args.debug:
+        log.setLevel(logging.DEBUG)
+        log.debug({ 'debug': True })
     log.info({ 'processing': params })
-    pathlib.Path(dst).mkdir(parents=True, exist_ok=True)
-    for loc in sys.argv:
+    if not os.path.exists(params.dst) and not args.preview:
+        pathlib.Path(params.dst).mkdir(parents=True, exist_ok=True)
+    files = []
+    for loc in args.input:
         if os.path.isfile(loc):
-            process_file(loc, dst)
+            files.append(loc)
         elif os.path.isdir(loc):
-            for root, _sub_dirs, files in os.walk(loc):
-                for f in files:
-                    process_file(os.path.join(root, f), dst)
+            for root, _sub_dirs, dir in os.walk(loc):
+                for f in dir:
+                    files.append(os.path.join(root, f))
+    for f in files:
+        process_file(f, params.dst, args.preview, args.offline)
+    log.info({ 'processed': i, 'inputs': len(files) })
