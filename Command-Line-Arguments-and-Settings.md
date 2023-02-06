@@ -26,7 +26,7 @@ Use `--port xxxx` to make the server listen on a specific port, xxxx being the w
 --config    | CONFIG | configs/stable-diffusion/v1-inference.yaml   				 | path to config which constructs model |
 --ckpt 		| CKPT   | model.ckpt        				 | path to checkpoint of stable diffusion model; if specified, this checkpoint will be added to the list of checkpoints and loaded |
 --ckpt-dir 	| CKPT_DIR | None   				 | Path to directory with stable diffusion checkpoints |
---vae-path | VAE_PATH | None  					| Path to Variational Autoencoders model |
+--vae-dir | VAE_PATH | None  					| Path to Variational Autoencoders model |
 --gfpgan-dir| GFPGAN_DIR | GFPGAN/			 | GFPGAN directory |
 --gfpgan-model| GFPGAN_MODEL			 | GFPGAN model file name |
 --codeformer-models-path | CODEFORMER_MODELS_PATH | models/Codeformer/ | Path to directory with codeformer model file(s). |
