@@ -278,6 +278,8 @@ onUiUpdate(function(){
         }
     }
 	
+	
+	
 	/* 
 	hack until gradio allows to add custom classes to components
 	add elem_id= your_elem_id + "sub-group"
@@ -292,7 +294,7 @@ onUiUpdate(function(){
         elem.classList.add("sub-group");			
     })
 	
-	/* resizable textarea */
+	/* auto grow textarea */
 	gradioApp().querySelectorAll('[id $= "_prompt"] textarea').forEach(function (elem) {
 		elem.style.boxSizing = 'border-box';
 		var offset = elem.offsetHeight - elem.clientHeight;
@@ -303,8 +305,7 @@ onUiUpdate(function(){
 	});
 	
 	
-	
-	/* split view resize */
+	/* resizable split view */
 	gradioApp().querySelectorAll('#txt2img_splitter, #img2img_splitter').forEach((elem) => {
 		
 		elem.addEventListener("mousedown", function(e) {	

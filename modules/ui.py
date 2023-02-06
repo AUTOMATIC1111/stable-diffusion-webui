@@ -193,8 +193,8 @@ def create_seed_inputs(target_interface):
                 random_seed = gr.Button(random_symbol, elem_id=target_interface + '_random_seed')
                 reuse_seed = gr.Button(reuse_symbol, elem_id=target_interface + '_reuse_seed')
 
-        with gr.Box(elem_id='subseed_show_box'):
-            seed_checkbox = gr.Checkbox(label='Extra', elem_id=target_interface + '_subseed_show', value=False)
+        #with gr.Box(elem_id='subseed_show_box'):
+        seed_checkbox = gr.Checkbox(label='Extra', elem_id=target_interface + '_subseed_show', value=False)
              
 
     # Components to show/hide based on the 'Extra' checkbox
@@ -496,10 +496,10 @@ def create_ui():
 
 
         with gr.Row().style(equal_height=False):
-        
+                       
             txt2img_gallery, generation_info, html_info, html_log = create_output_panel("txt2img", opts.outdir_txt2img_samples)
             gr.Row(elem_id="txt2img_splitter")
-                       
+            
             with gr.Column(variant='panel', elem_id="txt2img_settings"):                
                 
                 submit = create_generate(is_img2img=False)
@@ -796,22 +796,17 @@ def create_ui():
                             for category in ordered_ui_categories():    
                                 if category == "inpaint":
                                     with FormGroup(elem_id="inpaint_controls", visible=False) as inpaint_controls:
-                                        with FormRow():
+                                        with gr.Row():
                                             mask_blur = gr.Slider(label='Mask blur', minimum=0, maximum=64, step=1, value=4, elem_id="img2img_mask_blur")
                                             mask_alpha = gr.Slider(label="Mask transparency", visible=False, elem_id="img2img_mask_alpha")
 
-                                        with FormRow():
-                                            inpainting_mask_invert = gr.Radio(label='Mask mode', choices=['Inpaint masked', 'Inpaint not masked'], value='Inpaint masked', type="index", elem_id="img2img_mask_mode")
-
-                                        with FormRow():
-                                            inpainting_fill = gr.Radio(label='Masked content', choices=['fill', 'original', 'latent noise', 'latent nothing'], value='original', type="index", elem_id="img2img_inpainting_fill")
-
-                                        with FormRow():
-                                            with gr.Column():
-                                                inpaint_full_res = gr.Radio(label="Inpaint area", choices=["Whole picture", "Only masked"], type="index", value="Whole picture", elem_id="img2img_inpaint_full_res")
-
-                                            with gr.Column(scale=4):
-                                                inpaint_full_res_padding = gr.Slider(label='Only masked padding, pixels', minimum=0, maximum=256, step=4, value=32, elem_id="img2img_inpaint_full_res_padding")
+                                        with gr.Row():
+                                            inpainting_mask_invert = gr.Dropdown(label='Mask mode', choices=['Inpaint masked', 'Inpaint not masked'], value='Inpaint masked', type="index", elem_id="img2img_mask_mode")
+                                            inpainting_fill = gr.Dropdown(label='Masked content', choices=['fill', 'original', 'latent noise', 'latent nothing'], value='original', type="index", elem_id="img2img_inpainting_fill")
+                                            
+                                        with gr.Row():
+                                            inpaint_full_res = gr.Dropdown(label="Inpaint area", choices=["Whole picture", "Only masked"], type="index", value="Whole picture", elem_id="img2img_inpaint_full_res")
+                                            inpaint_full_res_padding = gr.Slider(label='Only masked padding, pixels', minimum=0, maximum=256, step=4, value=32, elem_id="img2img_inpaint_full_res_padding")
 
                                         def select_img2img_tab(tab):
                                             return gr.update(visible=tab in [2, 3, 4]), gr.update(visible=tab == 3),
