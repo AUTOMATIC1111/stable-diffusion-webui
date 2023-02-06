@@ -424,6 +424,10 @@ def ordered_ui_categories():
         yield category
 
 
+def aspect_ratio_list():
+    return [ratio.strip() for ratio in shared.opts.aspect_ratios.split(",")]
+
+
 def get_value_for_setting(key):
     value = getattr(opts, key)
 
@@ -480,6 +484,7 @@ def create_ui():
                                 height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="txt2img_height")
 
                             res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="txt2img_res_switch_btn")
+                            aspect_ratio_dropdown = gr.Dropdown(value="🔓", choices=aspect_ratio_list(), interactive=True, type="value", elem_id="txt2img_ratio", show_label=False, label="Aspect Ratio")
                             if opts.dimensions_and_batch_together:
                                 with gr.Column(elem_id="txt2img_column_batch"):
                                     batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1, elem_id="txt2img_batch_count")
@@ -758,6 +763,7 @@ def create_ui():
                                 height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="img2img_height")
 
                             res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="img2img_res_switch_btn")
+                            aspect_ratio_dropdown = gr.Dropdown(value="🔓", choices=aspect_ratio_list(), interactive=True, type="value", elem_id="img2img_ratio", show_label=False, label="Aspect Ratio")
                             if opts.dimensions_and_batch_together:
                                 with gr.Column(elem_id="img2img_column_batch"):
                                     batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1, elem_id="img2img_batch_count")
