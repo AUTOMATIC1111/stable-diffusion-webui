@@ -6,6 +6,7 @@ import gradio as gr
 from pydantic import BaseModel, Field
 from typing import List
 
+from modules import call_queue
 from modules.shared import opts
 
 import modules.shared as shared
@@ -57,8 +58,9 @@ def restore_progress_call(task_tag):
     else:
 
       t_task = current_task
-      while t_task != last_task_id:
-        time.sleep(2.5)
+      with call_queue.queue_lock_condition:
+        call_queue.queue_lock_condition.wait_for(lambda: t_task == last_task_id)
+
       return last_task_result
 
 
