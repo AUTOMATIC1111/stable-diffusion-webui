@@ -3,7 +3,10 @@ aenum
 basicsr
 blendmodes
 clean-fid
+colormap
+easydev
 einops
+extcolors
 fastapi
 filetype
 font-roboto
