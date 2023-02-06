@@ -20,14 +20,16 @@ process people images
 import os
 import sys
 import io
-import filetype
+import math
 import base64
 import pathlib
 
+import filetype
 import numpy as np
 import mediapipe as mp
 from PIL import Image, ImageOps
 from skimage.metrics import structural_similarity as ssim
+from scipy.stats import beta
 
 from util import log, Map
 from sdapi import postsync
@@ -45,13 +47,15 @@ params = Map({
     'face_score': 0.7, # min face detection score
     'face_pad': 0.07, # pad face image percentage
     'face_model': 1, # which face model to use 0/close-up 1/standard
-    'face_blur_score': 1.4, # max score for face blur detection
+    'face_blur_score': 1.5, # max score for face blur detection
+    'face_range_score': 0.5, # min score for face dynamic range detection
     'body_score': 0.9, # min body detection score
     'body_visibility': 0.5, # min visibility score for each detected body part
     'body_parts': 15, # min number of detected body parts with sufficient visibility
     'body_pad': 0.2,  # pad body image percentage
     'body_model': 2, # body model to use 0/low 1/medium 2/high
-    'body_blur_score': 1.6, # max score for body blur detection
+    'body_blur_score': 1.8, # max score for body blur detection
+    'body_range_score': 0.5, # min score for body dynamic range detection
     'segmentation_face': True, # segmentation enabled
     'segmentation_body': False, # segmentation enabled
     'segmentation_model': 0, # segmentation model 0/general 1/landscape
@@ -74,6 +78,25 @@ def detect_blur(image):
     magnitude = np.log(np.abs(recon))
     mean = round(np.mean(magnitude), 2)
     return mean
+
+
+def detect_dynamicrange(image):
+    # based on <https://towardsdatascience.com/measuring-enhancing-image-quality-attributes-234b0f250e10>
+    data = np.asarray(image)
+    image = np.float32(data)
+    RGB = [0.299, 0.587, 0.114]
+    height, width = image.shape[:2]
+    brightness_image = np.sqrt(image[..., 0] ** 2 * RGB[0] + image[..., 1] ** 2 * RGB[1] + image[..., 2] ** 2 * RGB[2])
+    hist, _ = np.histogram(brightness_image, bins=256, range=(0, 255))
+    img_brightness_pmf = hist / (height * width)
+    dist = beta(2, 2)
+    ys = dist.pdf(np.linspace(0, 1, 256))
+    ref_pmf = ys / np.sum(ys)
+    dot_product = np.dot(ref_pmf, img_brightness_pmf)
+    squared_dist_a = np.sum(ref_pmf ** 2)
+    squared_dist_b = np.sum(img_brightness_pmf ** 2)
+    res = dot_product / math.sqrt(squared_dist_a * squared_dist_b)
+    return round(res, 2)
 
 
 images = []
@@ -149,6 +172,13 @@ def extract_face(img):
     else:
         log.debug({ 'extract face blur': blur })
 
+    range = detect_dynamicrange(squared)
+    if range < params.face_range_score:
+        log.info({ 'extract face': 'dynamic range check fail', 'range': range })
+        return None, True
+    else:
+        log.debug({ 'extract face dynamic range': range })
+
     similarity = detect_simmilar(squared)
     if similarity > params.similarity_score:
         log.info({ 'extract face': 'similarity check fail', 'score': round(similarity, 2) })
@@ -201,6 +231,13 @@ def extract_body(img):
         return None, True
     else:
         log.debug({ 'extract body blur': blur })
+
+    range = detect_dynamicrange(squared)
+    if range < params.body_range_score:
+        log.info({ 'extract body': 'dynamic range check fail', 'range': range })
+        return None, True
+    else:
+        log.debug({ 'extract body dynamic range': range })
 
     similarity = detect_simmilar(squared)
     if similarity > params.similarity_score:

@@ -82,21 +82,28 @@ Cool stuff that is not integrated anywhere...
 - Prevalent colors to interrogate
 - Auto-Sort inputs by face recognition
 
+## Updates
 
-core library updates:
-- run `./automatic.sh install`
-- note, this is quite a big one so some testing is reccomended after upgrade
-ui updates
-new script:
-- `cli/watermark.py` to a) strip exif from images, b) add invisible watermark to images which persists even if user modifies image so we can always track it
-expose variation seed in main ui
-integrated seed travel functionality into core
-integrated `pix2pix` functionality to standard `img2img` workflow
-- note: requires **pix2pix** model to be loaded
-integrated large `cfg scale` values fix
-tested `aesthetic gradients` training, not worth it
-updated `image browser`
-initial work on **queue management** allowing to submit multiple requests to server
-initial work on `lora` integration (hidden)
-initial work on `custom diffusion` integration (hidden)
-spent quite some time making stable-diffusion compatible with upcomming `pytorch` 2.0 release
+- core library updates:
+  - must run `./automatic.sh install`
+  - note: this is quite a big one so some testing is reccomended after upgrade
+- non-trivial ui updates
+- added **brightness dynamic range** check to `process.py`
+- new script: `watermark.py`  
+  - optionally strip exif from images
+  - add invisible watermark to images which persists even if user modifies image so we can always track it
+- new script: `palette.py`
+  - creates color palette wheel from image
+  - not finished
+- expose variation seed in main ui
+- integrated seed travel functionality into core
+- integrated `pix2pix` functionality to standard `img2img` workflow
+  - note: requires **pix2pix** model to be loaded
+- integrated large `cfg scale` values fix
+- tested `aesthetic gradients` training, not worth it
+- updated `image browser`  
+  was broken for a while and maintainer is gone
+- initial work on **queue management** allowing to submit multiple requests to server
+- initial work on `lora` integration (hidden)
+- initial work on `custom diffusion` integration (hidden)
+- spent quite some time making stable-diffusion compatible with upcomming `pytorch` 2.0 release
