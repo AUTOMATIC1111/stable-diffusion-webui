@@ -175,8 +175,6 @@
         "DPM fast",
         "DPM adaptive",
         "DPM++ 2S a Karras",
-        "DDIM",
-        "PLMS",
         "DPM++ 2S a",
         "DPM++ SDE Karras",
         "DPM2 a Karras",
