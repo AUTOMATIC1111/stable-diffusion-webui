@@ -219,18 +219,37 @@ document.addEventListener("DOMContentLoaded", function() {
     modal.id = "lightboxModal";
     modal.tabIndex = 0
     modal.addEventListener('keydown', modalKeyHandler, true)
+
+    let delay = 350//ms
     window.addEventListener('gamepadconnected', (e) => {
         console.log("Gamepad connected!")
         const gamepad = e.gamepad;
         setInterval(() => {
             const xValue = gamepad.axes[0].toFixed(2);
             if (xValue < -0.3) {
-                modalPrevImage();
+                modalPrevImage(e);
             } else if (xValue > 0.3) {
-                modalNextImage();
+                modalNextImage(e);
             }
 
-        }, 350);
+        }, delay);
+    });
+
+
+    let isScrolling = false;
+    window.addEventListener('wheel', (e) => {
+        if (isScrolling) return;
+        isScrolling = true;
+
+        if (e.deltaX <= -0.6) {
+            modalPrevImage(e);
+        } else if (e.deltaX >= 0.6) {
+            modalNextImage(e);
+        }
+
+        setTimeout(() => {
+            isScrolling = false;
+        }, delay);
     });
 
     const modalControls = document.createElement('div')
