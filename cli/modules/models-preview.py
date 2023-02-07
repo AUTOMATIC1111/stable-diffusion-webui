@@ -45,7 +45,11 @@ options = Map({
     },
     'lora': {
         'strength': 0.8,
-    }
+    },
+    'hypernetwork': {
+        'keyword': 'beautiful sexy woman',
+        'strength': 1.0,
+    },
 })
 
 
@@ -154,7 +158,7 @@ async def lora(params):
                 images.append(img)
                 labels.append(keyword)
         else:
-            log.error({ 'lora': model, 'embedding': keyword, 'error': data })
+            log.error({ 'lora': model, 'keyword': keyword, 'error': data })
         t1 = time.time()
         image = grid(images = images, labels = labels, border = 8)
         image.save(fn)
@@ -163,9 +167,46 @@ async def lora(params):
         log.info({ 'lora preview created': model, 'image': fn, 'images': len(images), 'grid': [image.width, image.height], 'time': round(t, 2), 'its': round(its, 2) })
 
 
+async def hypernetwork(params):
+    cmdflags = await get('/sdapi/v1/cmd-flags')
+    dir = cmdflags['hypernetwork_dir']
+    if not os.path.exists(dir):
+        log.error({ 'hypernetwork directory not found': dir })
+        return
+    models = [f.stem for f in Path(dir).glob('*.pt')]
+    log.info({ 'loras': len(models) })
+    for model in models:
+        fn = os.path.join(dir, model + '.png')
+        if os.path.exists(fn) and len(params.input) == 0: # if model preview exists and not manually included
+            log.info({ 'hypernetwork preview exists': model })
+            continue
+        images = []
+        labels = []
+        t0 = time.time()
+        keyword = options.hypernetwork.keyword
+        options.generate.prompt = prompt.replace('<keyword>', options.hypernetwork.keyword)
+        options.generate.prompt = options.generate.prompt.replace('<embedding>', '')
+        options.generate.prompt = f' <hypernet:{model}:{options.hypernetwork.strength}> ' + options.generate.prompt
+        log.info({ 'lora generating': model, 'keyword': keyword, 'prompt': options.generate.prompt })
+        data = await generate(options = options, quiet=True)
+        if 'image' in data:
+            for img in data['image']:
+                images.append(img)
+                labels.append(keyword)
+        else:
+            log.error({ 'hypernetwork': model, 'keyword': keyword, 'error': data })
+        t1 = time.time()
+        image = grid(images = images, labels = labels, border = 8)
+        image.save(fn)
+        t = t1 - t0
+        its = 1.0 * options.generate.steps * len(images) / t
+        log.info({ 'hypernetwork preview created': model, 'image': fn, 'images': len(images), 'grid': [image.width, image.height], 'time': round(t, 2), 'its': round(its, 2) })
+
+
 async def create_previews(params):
     await models(params)
     await lora(params)
+    await hypernetwork(params)
     await close()
 
 

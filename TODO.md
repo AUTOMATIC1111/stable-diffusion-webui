@@ -96,23 +96,28 @@ Cool stuff that is not integrated anywhere...
   - new **brightness dynamic range** check  
   - new **preview** mode to run all checks but without saving images plus print a summary at the end
 - updated scripts `models-preview.py`  
-  can generate **lora** previews as well, note that trigger keywords are inferred from model name so name models carefully  
+  - can generate **lora** previews, note that trigger keywords are inferred from model name so name models carefully  
+  - can generate **hypernetwork** previews  
 - new script: `image-watermark.py`  
   - optionally strip exif from images
   - add invisible watermark to images which persists even if user modifies image so we can always track it
 - new script: `palette-extract.py`
   - creates color palette wheel from image(s)
-- updated `embedding-preview.py` so it can skip existing previews or overwrite them
-- expose variation seed in main ui
-- integrated seed travel functionality into core
-- integrated `pix2pix` functionality to standard `img2img` workflow
-  - note: requires **pix2pix** model to be loaded
-- integrated large `cfg scale` values fix
-- tested `aesthetic gradients` training, not worth it
+- updated `embedding-preview.py`  
+  - skip existing previews or overwrite them  
+- expose variation seed in main ui  
+- integrated seed travel functionality into core  
+- integrated `pix2pix` functionality to standard `img2img` workflow  
+  - note: requires **pix2pix** model to be loaded  
+- integrated large `cfg scale` values fix  
+- tested `aesthetic gradients` training, not worth it  
 - updated `image browser`  
-  was broken for a while and maintainer is gone
-- initial work on **queue management** allowing to submit multiple requests to server
+  was broken for a while and maintainer is gone  
+- initial work on **queue management** allowing to submit multiple requests to server  
 - initial work on `lora` integration  
-  can render loras without extensions, training tbd  
-- initial work on `custom diffusion` integration (hidden)
-- spent quite some time making stable-diffusion compatible with upcomming `pytorch` 2.0 release
+  can render loras without extensions  
+  training is not yet implemented  
+- initial work on `custom diffusion` integration  
+  no testing so far  
+- spent quite some time making stable-diffusion compatible with upcomming `pytorch` 2.0 release  
+  and testing `dynamo` torch dynamic optimizer and `triton` script compiler  
