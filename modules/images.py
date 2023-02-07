@@ -577,7 +577,8 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
 
     target_side_length = 4000
     oversize = image.width > target_side_length or image.height > target_side_length
-    if opts.export_for_4chan and (oversize or os.stat(fullfn).st_size > 4 * 1024 * 1024):
+    unsupported_mode = image.mode in ['I', 'F', 'I;16', 'I;16L', 'I;16B', 'I;16N']
+    if opts.export_for_4chan and (oversize or os.stat(fullfn).st_size > 4 * 1024 * 1024) and not unsupported_mode:
         ratio = image.width / image.height
 
         if oversize and ratio > 1:
