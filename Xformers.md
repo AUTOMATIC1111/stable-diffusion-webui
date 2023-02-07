@@ -4,7 +4,9 @@ Xformers library is an optional way to speedup your image generation.
 
 This optimization is only available for nvidia gpus, it speeds up image generation and lowers vram usage at the cost of producing [non-deterministic](https://github.com/AUTOMATIC1111/stable-diffusion-webui/discussions/2705#discussioncomment-4024378) results.
 
-If you use a Pascal, Turing, Ampere, Lovelace or Hopper card with Python 3.10, you shouldn't need to build manually. Just launch the repo with `--xformers`. A compatible wheel will be installed.
+Note: Both Windows and linux should no longer need to build. On 1/23/23 webui shifted from a user-built wheel to an [official wheel](https://pypi.org/project/xformers/0.0.16rc425/#history) along with other package upgrades, shown in [this PR](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/5939/commits/c091cf1b4acd2047644d3571bcbfd81c81b4c3af)
+
+If you use a Pascal, Turing, Ampere, Lovelace or Hopper card with Python 3.10, launch the repo with `--xformers` and a compatible wheel will be installed.
 
 ## Building xformers on Windows by [@duckness](https://github.com/duckness)
 
