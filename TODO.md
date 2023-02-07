@@ -90,16 +90,18 @@ Cool stuff that is not integrated anywhere...
 - non-trivial ui updates
 - renamed scripts in `cli/modules` to be more descriptive  
   if you're using old script names, update them  
-  for example, `ffmpeg.py` is now `video-extract.py`
+  for example, `ffmpeg.py` is now `video-extract.py`  
+  also possible that there are some bugs due to broken import paths, so testing is welcome  
 - updated script `process.py`
   - new **brightness dynamic range** check  
   - new **preview** mode to run all checks but without saving images plus print a summary at the end
+- updated scripts `models-preview.py`  
+  can generate **lora** previews as well, note that trigger keywords are inferred from model name so name models carefully  
 - new script: `image-watermark.py`  
   - optionally strip exif from images
   - add invisible watermark to images which persists even if user modifies image so we can always track it
 - new script: `palette-extract.py`
-  - creates color palette wheel from image
-  - not finished
+  - creates color palette wheel from image(s)
 - updated `embedding-preview.py` so it can skip existing previews or overwrite them
 - expose variation seed in main ui
 - integrated seed travel functionality into core
@@ -110,6 +112,7 @@ Cool stuff that is not integrated anywhere...
 - updated `image browser`  
   was broken for a while and maintainer is gone
 - initial work on **queue management** allowing to submit multiple requests to server
-- initial work on `lora` integration (hidden)
+- initial work on `lora` integration  
+  can render loras without extensions, training tbd  
 - initial work on `custom diffusion` integration (hidden)
 - spent quite some time making stable-diffusion compatible with upcomming `pytorch` 2.0 release
