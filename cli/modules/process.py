@@ -38,7 +38,7 @@ from sdapi import postsync
 params = Map({
     'src': '', # source folder
     'dst': '', # destination folder
-    'format': '.png', # image format
+    'format': '.jpg', # image format
     'extract_face': True, # extract face from image
     'extract_body': True, # extract face from image
     'clear_dst': True, # remove all files from destination at the start
