@@ -78,6 +78,7 @@ Tech that can be integrated as part of the core workflow...
 Cool stuff that is not integrated anywhere...
 
 - [TensorRT](https://www.photoroom.com/tech/stable-diffusion-25-percent-faster-and-save-seconds/)
+- [GIT](https://huggingface.co/microsoft/git-large-textcaps)
 - Bunch of stuff:<https://pharmapsychotic.com/tools.html>
 - Prevalent colors to interrogate
 - Auto-Sort inputs by face recognition
@@ -112,14 +113,15 @@ Cool stuff that is not integrated anywhere...
 - integrated `pix2pix` functionality to standard `img2img` workflow  
   - note: requires **pix2pix** model to be loaded  
 - integrated large `cfg scale` values fix  
+- integrated **model converter**  
 - tested `aesthetic gradients` training, not worth it  
 - updated `image browser`  
   was broken for a while and maintainer is gone  
 - initial work on **queue management** allowing to submit multiple requests to server  
 - initial work on `lora` integration  
   can render loras without extensions  
-  can extract lora from fine-tuned model
-  training is tbd
+  can extract lora from fine-tuned model  
+  training is tbd  
 - initial work on `custom diffusion` integration  
   no testing so far  
 - spent quite some time making stable-diffusion compatible with upcomming `pytorch` 2.0 release  
