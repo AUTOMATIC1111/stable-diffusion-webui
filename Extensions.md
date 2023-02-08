@@ -674,3 +674,7 @@ Pre-trained model, determines if aesthetic/non-aesthetic, does 5 different style
 https://github.com/catppuccin/stable-diffusion-webui
 
 Catppuccin is a community-driven pastel theme that aims to be the middle ground between low and high contrast themes. Adds set of themes which are in compliance with catppucin guidebook.
+
+## Embedding Merge
+https://github.com/klimaleksus/stable-diffusion-webui-embedding-merge
+Merging Textual Inversion embeddings at runtime from string literals.

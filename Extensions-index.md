@@ -570,6 +570,13 @@
 			"tags": ["script"]
 		},
 		{
+			"name": "Embedding Merge",
+			"url": "https://github.com/klimaleksus/stable-diffusion-webui-embedding-merge",
+			"description": "Merging Textual Inversion embeddings at runtime from string literals.",
+			"added": "2023-02-09",
+			"tags": ["script", "tab"]
+		},
+		{
 			"name": "zh_CN Localization",
 			"url": "https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN",
 			"description": "Simplified Chinese localization",
