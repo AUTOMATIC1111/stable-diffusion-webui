@@ -65,7 +65,7 @@ class CFGDenoiser(torch.nn.Module):
 
         for i, conds in enumerate(conds_list):
             for cond_index, weight in conds:
-                denoised[i] += (weight * cond_scale) * (x_out[cond_index] - denoised_uncond[i]) * self.image_cfg_scale
+                denoised[i] += (weight * cond_scale) * (x_out[cond_index] - denoised_uncond[i]) * self.image_cfg_scale 
 
         return denoised
 
@@ -210,7 +210,7 @@ class KDiffusionSampler:
         self.model_wrap_cfg.mask = p.mask if hasattr(p, 'mask') else None
         self.model_wrap_cfg.nmask = p.nmask if hasattr(p, 'nmask') else None
         self.model_wrap_cfg.step = 0
-        self.model_wrap_cfg.image_cfg_scale = getattr(p, 'image_cfg_scale', 1)
+        self.model_wrap_cfg.image_cfg_scale = p.image_cfg_scale if hasattr(p, 'image_cfg_scale') else 1
         self.eta = p.eta if p.eta is not None else opts.eta_ancestral
 
         k_diffusion.sampling.torch = TorchHijack(self.sampler_noises if self.sampler_noises is not None else [])
