@@ -8,7 +8,6 @@ import argparse
 import math
 import logging
 from pathlib import Path
-
 import filetype
 from PIL import Image, ImageDraw, ImageFont
 from util import log

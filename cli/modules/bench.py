@@ -6,15 +6,10 @@ import asyncio
 import base64
 import io
 import json
-import os
-import sys
 import time
-
 from PIL import Image
-
-sys.path.append(os.path.join(os.path.dirname(__file__), 'modules'))
-import modules.sdapi as sdapi
-from modules.util import Map, log
+import sdapi as sdapi
+from util import Map, log
 
 
 options = Map({

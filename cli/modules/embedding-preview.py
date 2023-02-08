@@ -11,7 +11,6 @@ import argparse
 from pathlib import Path
 from PIL import Image
 from inspect import getsourcefile
-
 from util import Map, log
 from sdapi import getsync, postsync
 from grid import grid

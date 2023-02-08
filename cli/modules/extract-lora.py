@@ -12,11 +12,11 @@ import argparse
 import torch
 import transformers
 from tqdm import tqdm
+from util import log
 
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'modules', 'lora'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'modules', 'lora'))
 import library.model_util as model_util
 import networks.lora as lora
-from modules.util import log
 
 
 def svd(args): # pylint: disable=redefined-outer-name

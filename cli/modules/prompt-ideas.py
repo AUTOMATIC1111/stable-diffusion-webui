@@ -6,9 +6,7 @@ model from: <https://huggingface.co/FredZhang7/distilgpt2-stable-diffusion-v2>
 
 import logging
 import argparse
-
 from transformers import GPT2Tokenizer, GPT2LMHeadModel
-
 from util import log
 
 

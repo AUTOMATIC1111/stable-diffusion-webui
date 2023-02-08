@@ -121,7 +121,7 @@ Cool stuff that is not integrated anywhere...
 - initial work on `lora` integration  
   can render loras without extensions  
   can extract lora from fine-tuned model  
-  training is tbd  
+  training prototype in place in `train-lora.py`, not optimized or integrated  
 - initial work on `custom diffusion` integration  
   no testing so far  
 - spent quite some time making stable-diffusion compatible with upcomming `pytorch` 2.0 release  

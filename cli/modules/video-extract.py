@@ -8,7 +8,6 @@ import subprocess
 import pathlib
 import argparse
 import filetype
-
 from util import log, Map
 
 

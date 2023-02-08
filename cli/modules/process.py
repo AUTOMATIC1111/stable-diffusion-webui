@@ -25,14 +25,12 @@ import base64
 import pathlib
 import argparse
 import logging
-
 import filetype
 import numpy as np
 import mediapipe as mp
 from PIL import Image, ImageOps
 from skimage.metrics import structural_similarity as ssim
 from scipy.stats import beta
-
 from util import log, Map
 from sdapi import postsync
 
@@ -40,6 +38,7 @@ from sdapi import postsync
 params = Map({
     'src': '', # source folder
     'dst': '', # destination folder
+    'format': '.png', # image format
     'extract_face': True, # extract face from image
     'extract_body': True, # extract face from image
     'clear_dst': True, # remove all files from destination at the start
@@ -50,15 +49,15 @@ params = Map({
     'face_pad': 0.07, # pad face image percentage
     'face_model': 1, # which face model to use 0/close-up 1/standard
     'face_blur_score': 1.5, # max score for face blur detection
-    'face_range_score': 0.3, # min score for face dynamic range detection
+    'face_range_score': 0.2, # min score for face dynamic range detection
     'body_score': 0.9, # min body detection score
     'body_visibility': 0.5, # min visibility score for each detected body part
     'body_parts': 15, # min number of detected body parts with sufficient visibility
     'body_pad': 0.2,  # pad body image percentage
     'body_model': 2, # body model to use 0/low 1/medium 2/high
     'body_blur_score': 1.8, # max score for body blur detection
-    'body_range_score': 0.3, # min score for body dynamic range detection
-    'segmentation_face': True, # segmentation enabled
+    'body_range_score': 0.2, # min score for body dynamic range detection
+    'segmentation_face': False, # segmentation enabled
     'segmentation_body': False, # segmentation enabled
     'segmentation_model': 0, # segmentation model 0/general 1/landscape
     'segmentation_background': (192, 192, 192), # segmentation background color
@@ -263,7 +262,7 @@ def interrogate(img, fn):
     res = postsync('/sdapi/v1/interrogate', json)
     caption = res.caption if 'caption' in res else ''
     log.info({ 'interrogate': caption })
-    file = fn.replace('.jpg', '.txt')
+    file = fn.replace(params.format, '.txt')
     f = open(file, 'w')
     f.write(caption)
     f.close()
@@ -278,7 +277,7 @@ def process_file(f: str, dst: str = None, preview: bool = False, offline: bool =
         else:
             dir = dst
         base = os.path.basename(f).split('.')[0]
-        fn = os.path.join(dir, str(i[what]).rjust(3, '0') + '-' + what + '-' + base + '.jpg')
+        fn = os.path.join(dir, str(i[what]).rjust(3, '0') + '-' + what + '-' + base + params.format)
         # log.debug({ 'save': fn })
         if not preview:
             img.save(fn)
@@ -318,6 +317,7 @@ def process_file(f: str, dst: str = None, preview: bool = False, offline: bool =
         log.debug({ 'no body': f })
 
     image.close()
+    return i
 
 def process_images(src: str, dst: str, args = None):
     params.src = src
@@ -337,7 +337,7 @@ def process_images(src: str, dst: str, args = None):
         for root, _sub_dirs, files in os.walk(src):
             for f in files:
                 process_file(os.path.join(root, f), dst)
-
+    return i
 
 if __name__ == '__main__':
     # log.setLevel(logging.DEBUG)

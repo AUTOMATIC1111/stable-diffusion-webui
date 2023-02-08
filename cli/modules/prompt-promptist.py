@@ -5,9 +5,7 @@ use microsoft promptist to beautify prompt
 """
 
 import sys
-
 from transformers import AutoModelForCausalLM, AutoTokenizer
-
 from util import log
 
 

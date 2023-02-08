@@ -2,6 +2,7 @@ accelerate
 aenum
 basicsr
 blendmodes
+bitsandbytes
 clean-fid
 colormap
 easydev

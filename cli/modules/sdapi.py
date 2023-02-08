@@ -9,7 +9,6 @@ import asyncio
 import logging
 import requests
 import sys
-
 from util import Map, log
 
 

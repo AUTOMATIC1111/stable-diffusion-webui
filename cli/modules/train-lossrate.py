@@ -5,11 +5,9 @@ auto-generate learn-rate
 import io
 import math
 import logging
-
 import numpy as np
 from PIL import Image, ImageFont, ImageDraw
 from matplotlib import pyplot as plt
-
 from util import log, Map
 
 

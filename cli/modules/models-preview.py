@@ -6,13 +6,12 @@ import time
 import asyncio
 import argparse
 from pathlib import Path
+from util import Map, log
+from sdapi import get, post, close
+from grid import grid
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-sys.path.append(os.path.join(os.path.dirname(__file__), 'modules'))
 from generate import sd, generate
-from modules.util import Map, log
-from modules.sdapi import get, post, close
-from modules.grid import grid
 
 
 default = 'sd-v15-runwayml.ckpt [cc6cb27103]'

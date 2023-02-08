@@ -9,7 +9,7 @@ from imwatermark import WatermarkEncoder, WatermarkDecoder
 from PIL import Image
 from PIL.ExifTags import TAGS
 from PIL.TiffImagePlugin import ImageFileDirectory_v2
-from modules.util import log, Map
+from util import log, Map
 import piexif
 import piexif.helper
 
