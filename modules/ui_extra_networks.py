@@ -26,11 +26,12 @@ def add_pages_to_demo(app):
     def fetch_file(filename: str = ""):
         from starlette.responses import FileResponse
 
-        if not any([Path(x).resolve() in Path(filename).resolve().parents for x in allowed_dirs]):
+        if not any([Path(x).absolute() in Path(filename).absolute().parents for x in allowed_dirs]):
             raise ValueError(f"File cannot be fetched: {filename}. Must be in one of directories registered by extra pages.")
 
-        if os.path.splitext(filename)[1].lower() != ".png":
-            raise ValueError(f"File cannot be fetched: {filename}. Only png.")
+        ext = os.path.splitext(filename)[1].lower()
+        if ext not in (".png", ".jpg"):
+            raise ValueError(f"File cannot be fetched: {filename}. Only png and jpg.")
 
         # would profit from returning 304
         return FileResponse(filename, headers={"Accept-Ranges": "bytes"})

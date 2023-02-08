@@ -48,23 +48,17 @@ class Script(scripts.Script):
         gr.HTML('<br />')
         with gr.Row():
             with gr.Column():
-                put_at_start = gr.Checkbox(label='Put variable parts at start of prompt',
-                                           value=False, elem_id=self.elem_id("put_at_start"))
+                put_at_start = gr.Checkbox(label='Put variable parts at start of prompt', value=False, elem_id=self.elem_id("put_at_start"))
+                different_seeds = gr.Checkbox(label='Use different seed for each picture', value=False, elem_id=self.elem_id("different_seeds"))
             with gr.Column():
-                # Radio buttons for selecting the prompt between positive and negative
-                prompt_type = gr.Radio(["positive", "negative"], label="Select prompt",
-                                       elem_id=self.elem_id("prompt_type"), value="positive")
-        with gr.Row():
+                prompt_type = gr.Radio(["positive", "negative"], label="Select prompt", elem_id=self.elem_id("prompt_type"), value="positive")
+                variations_delimiter = gr.Radio(["comma", "space"], label="Select joining char", elem_id=self.elem_id("variations_delimiter"), value="comma")
             with gr.Column():
-                different_seeds = gr.Checkbox(
-                    label='Use different seed for each picture', value=False, elem_id=self.elem_id("different_seeds"))
-            with gr.Column():
-                # Radio buttons for selecting the delimiter to use in the resulting prompt
-                variations_delimiter = gr.Radio(["comma", "space"], label="Select delimiter", elem_id=self.elem_id(
-                    "variations_delimiter"), value="comma")
-        return [put_at_start, different_seeds, prompt_type, variations_delimiter]
+                margin_size = gr.Slider(label="Grid margins (px)", min=0, max=500, value=0, step=2, elem_id=self.elem_id("margin_size"))
 
-    def run(self, p, put_at_start, different_seeds, prompt_type, variations_delimiter):
+        return [put_at_start, different_seeds, prompt_type, variations_delimiter, margin_size]
+
+    def run(self, p, put_at_start, different_seeds, prompt_type, variations_delimiter, margin_size):
         modules.processing.fix_seed(p)
         # Raise error if promp type is not positive or negative
         if prompt_type not in ["positive", "negative"]:
@@ -106,7 +100,7 @@ class Script(scripts.Script):
         processed = process_images(p)
 
         grid = images.image_grid(processed.images, p.batch_size, rows=1 << ((len(prompt_matrix_parts) - 1) // 2))
-        grid = images.draw_prompt_matrix(grid, p.width, p.height, prompt_matrix_parts)
+        grid = images.draw_prompt_matrix(grid, p.width, p.height, prompt_matrix_parts, margin_size)
         processed.images.insert(0, grid)
         processed.index_of_first_image = 1
         processed.infotexts.insert(0, processed.infotexts[0])
