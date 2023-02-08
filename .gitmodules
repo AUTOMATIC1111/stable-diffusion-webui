@@ -29,3 +29,4 @@
 [submodule "modules/lora"]
 	path = modules/lora
 	url = https://github.com/kohya-ss/sd-scripts
+  ignore = dirty

@@ -103,10 +103,12 @@ Cool stuff that is not integrated anywhere...
   - add invisible watermark to images which persists even if user modifies image so we can always track it
 - new script: `palette-extract.py`
   - creates color palette wheel from image(s)
+- new script: `extract-lora.py`
+  - extract lora from fine-tuned model
 - updated `embedding-preview.py`  
   - skip existing previews or overwrite them  
-- expose variation seed in main ui  
-- integrated seed travel functionality into core  
+- expose **variation seed** in main ui  
+- integrated **seed travel** functionality into core  
 - integrated `pix2pix` functionality to standard `img2img` workflow  
   - note: requires **pix2pix** model to be loaded  
 - integrated large `cfg scale` values fix  
@@ -116,7 +118,8 @@ Cool stuff that is not integrated anywhere...
 - initial work on **queue management** allowing to submit multiple requests to server  
 - initial work on `lora` integration  
   can render loras without extensions  
-  training is not yet implemented  
+  can extract lora from fine-tuned model
+  training is tbd
 - initial work on `custom diffusion` integration  
   no testing so far  
 - spent quite some time making stable-diffusion compatible with upcomming `pytorch` 2.0 release  

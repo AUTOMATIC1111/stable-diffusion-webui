@@ -26,6 +26,7 @@ opencv-contrib-python
 piexif
 Pillow
 psutil
+pyngrok
 pytorch_lightning
 realesrgan
 requests

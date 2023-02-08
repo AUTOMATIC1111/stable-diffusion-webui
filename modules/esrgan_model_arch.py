@@ -414,6 +414,7 @@ class ShortcutBlock(nn.Module):
 def sequential(*args):
     """ Flatten Sequential. It unwraps nn.Sequential. """
     if len(args) == 1:
+        from collections import OrderedDict
         if isinstance(args[0], OrderedDict):
             raise NotImplementedError('sequential does not support OrderedDict input.')
         return args[0]  # No sequential is needed.

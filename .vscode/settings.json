@@ -1,0 +1,8 @@
+{
+  "python.analysis.extraPaths": [
+    "./modules/lora",
+    "./repositories/BLIP",
+    "./repositories/CodeFormer",
+    "./repositories/stable-diffusion-stability-ai"
+  ]
+}
