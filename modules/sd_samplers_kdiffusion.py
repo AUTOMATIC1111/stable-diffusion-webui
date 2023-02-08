@@ -57,7 +57,7 @@ class CFGDenoiser(torch.nn.Module):
         self.nmask = None
         self.init_latent = None
         self.step = 0
-        self.image_cfg_scale = None
+        self.image_cfg_scale = 1
 
     def combine_denoised(self, x_out, conds_list, uncond, cond_scale):
         denoised_uncond = x_out[-uncond.shape[0]:]
@@ -65,40 +65,27 @@ class CFGDenoiser(torch.nn.Module):
 
         for i, conds in enumerate(conds_list):
             for cond_index, weight in conds:
-                denoised[i] += (x_out[cond_index] - denoised_uncond[i]) * (weight * cond_scale)
+                denoised[i] += (weight * cond_scale) * (x_out[cond_index] - denoised_uncond[i]) * self.image_cfg_scale
 
         return denoised
 
-    def combine_denoised_for_edit_model(self, x_out, cond_scale):
-        out_cond, out_img_cond, out_uncond = x_out.chunk(3)
-        denoised = out_uncond + cond_scale * (out_cond - out_img_cond) + self.image_cfg_scale * (out_img_cond - out_uncond)
 
-        return denoised
 
     def forward(self, x, sigma, uncond, cond, cond_scale, image_cond):
         if state.interrupted or state.skipped:
             raise sd_samplers_common.InterruptedException
 
-        # at self.image_cfg_scale == 1.0 produced results for edit model are the same as with normal sampling,
-        # so is_edit_model is set to False to support AND composition.
-        is_edit_model = shared.sd_model.cond_stage_key == "edit" and self.image_cfg_scale is not None and self.image_cfg_scale != 1.0
-
         conds_list, tensor = prompt_parser.reconstruct_multicond_batch(cond, self.step)
         uncond = prompt_parser.reconstruct_cond_batch(uncond, self.step)
-
-        assert not is_edit_model or all([len(conds) == 1 for conds in conds_list]), "AND is not supported for InstructPix2Pix checkpoint (unless using Image CFG scale = 1.0)"
 
         batch_size = len(conds_list)
         repeats = [len(conds_list[i]) for i in range(batch_size)]
 
-        if not is_edit_model:
-            x_in = torch.cat([torch.stack([x[i] for _ in range(n)]) for i, n in enumerate(repeats)] + [x])
-            sigma_in = torch.cat([torch.stack([sigma[i] for _ in range(n)]) for i, n in enumerate(repeats)] + [sigma])
-            image_cond_in = torch.cat([torch.stack([image_cond[i] for _ in range(n)]) for i, n in enumerate(repeats)] + [image_cond])
-        else:
-            x_in = torch.cat([torch.stack([x[i] for _ in range(n)]) for i, n in enumerate(repeats)] + [x] + [x])
-            sigma_in = torch.cat([torch.stack([sigma[i] for _ in range(n)]) for i, n in enumerate(repeats)] + [sigma] + [sigma])
-            image_cond_in = torch.cat([torch.stack([image_cond[i] for _ in range(n)]) for i, n in enumerate(repeats)] + [image_cond] + [torch.zeros_like(self.init_latent)])
+
+        x_in = torch.cat([torch.stack([x[i] for _ in range(n)]) for i, n in enumerate(repeats)] + [x])
+        sigma_in = torch.cat([torch.stack([sigma[i] for _ in range(n)]) for i, n in enumerate(repeats)] + [sigma])
+        image_cond_in = torch.cat([torch.stack([image_cond[i] for _ in range(n)]) for i, n in enumerate(repeats)] + [image_cond])
+
 
         denoiser_params = CFGDenoiserParams(x_in, image_cond_in, sigma_in, state.sampling_step, state.sampling_steps)
         cfg_denoiser_callback(denoiser_params)
@@ -107,10 +94,9 @@ class CFGDenoiser(torch.nn.Module):
         sigma_in = denoiser_params.sigma
 
         if tensor.shape[1] == uncond.shape[1]:
-            if not is_edit_model:
-                cond_in = torch.cat([tensor, uncond])
-            else:
-                cond_in = torch.cat([tensor, uncond, uncond])
+
+            cond_in = torch.cat([tensor, uncond])
+
 
             if shared.batch_cond_uncond:
                 x_out = self.inner_model(x_in, sigma_in, cond={"c_crossattn": [cond_in], "c_concat": [image_cond_in]})
@@ -127,10 +113,7 @@ class CFGDenoiser(torch.nn.Module):
                 a = batch_offset
                 b = min(a + batch_size, tensor.shape[0])
 
-                if not is_edit_model:
-                    c_crossattn = [tensor[a:b]]
-                else:
-                    c_crossattn = torch.cat([tensor[a:b]], uncond)
+                c_crossattn = [tensor[a:b]]
 
                 x_out[a:b] = self.inner_model(x_in[a:b], sigma_in[a:b], cond={"c_crossattn": c_crossattn, "c_concat": [image_cond_in[a:b]]})
 
@@ -143,10 +126,8 @@ class CFGDenoiser(torch.nn.Module):
         elif opts.live_preview_content == "Negative prompt":
             sd_samplers_common.store_latent(x_out[-uncond.shape[0]:])
 
-        if not is_edit_model:
-            denoised = self.combine_denoised(x_out, conds_list, uncond, cond_scale)
-        else:
-            denoised = self.combine_denoised_for_edit_model(x_out, cond_scale)
+        denoised = self.combine_denoised(x_out, conds_list, uncond, cond_scale)
+  
 
         if self.mask is not None:
             denoised = self.init_latent * self.mask + self.nmask * denoised
@@ -229,7 +210,7 @@ class KDiffusionSampler:
         self.model_wrap_cfg.mask = p.mask if hasattr(p, 'mask') else None
         self.model_wrap_cfg.nmask = p.nmask if hasattr(p, 'nmask') else None
         self.model_wrap_cfg.step = 0
-        self.model_wrap_cfg.image_cfg_scale = getattr(p, 'image_cfg_scale', None)
+        self.model_wrap_cfg.image_cfg_scale = getattr(p, 'image_cfg_scale', 1)
         self.eta = p.eta if p.eta is not None else opts.eta_ancestral
 
         k_diffusion.sampling.torch = TorchHijack(self.sampler_noises if self.sampler_noises is not None else [])
@@ -296,7 +277,7 @@ class KDiffusionSampler:
             'cond': conditioning, 
             'image_cond': image_conditioning, 
             'uncond': unconditional_conditioning, 
-            'cond_scale': p.cfg_scale,
+            'cond_scale': p.cfg_scale
         }
 
         samples = self.launch_sampling(t_enc + 1, lambda: self.func(self.model_wrap_cfg, xi, extra_args=extra_args, disable=False, callback=self.callback_state, **extra_params_kwargs))
