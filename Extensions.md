@@ -677,4 +677,10 @@ Catppuccin is a community-driven pastel theme that aims to be the middle ground 
 
 ## Embedding Merge
 https://github.com/klimaleksus/stable-diffusion-webui-embedding-merge
+
 Merging Textual Inversion embeddings at runtime from string literals.
+
+## gif2gif
+https://github.com/LonicaMewinsky/gif2gif
+
+The purpose of this script is to accept an animated gif as input, process frames as img2img typically would, and recombine them back into an animated gif. Not intended to have extensive functionality. Referenced code from prompts_from_file.

@@ -73,6 +73,13 @@
 			"tags": ["script", "tab"]
 		},
 		{
+			"name": "gif2gif",
+			"url": "https://github.com/LonicaMewinsky/gif2gif",
+			"description": "A extension that extract a gif frame by frame for img2img generation and recombine them back into an animated gif",
+			"added": "2023-02-09",
+			"tags": ["script", "tab"]
+		},
+		{
 			"name": "Artists to study",
 			"url": "https://github.com/camenduru/stable-diffusion-webui-artists-to-study",
 			"description": "Shows a gallery of generated pictures by artists separated into categories.",
