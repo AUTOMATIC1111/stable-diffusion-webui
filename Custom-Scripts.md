@@ -371,3 +371,7 @@ class Script(scripts.Script):
 
         return Processed(p, proc.images, p.seed, "")
 ```
+## gif2gif
+https://github.com/LonicaMewinsky/gif2gif
+
+The purpose of this script is to accept an animated gif as input, process frames as img2img typically would, and recombine them back into an animated gif. Not intended to have extensive functionality. Referenced code from prompts_from_file.
