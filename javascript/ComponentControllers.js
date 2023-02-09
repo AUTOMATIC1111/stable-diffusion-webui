@@ -189,6 +189,8 @@ class SliderComponentController {
     }
     eventHandler() {
         this.element.dispatchEvent(new Event("input"));
+        this.childNumField.dispatchEvent(new Event("input"));
+        this.childRangeField.dispatchEvent(new Event("input"));
     }
     setVal(text) {
         this.updateVal(text);
