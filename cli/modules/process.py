@@ -18,8 +18,10 @@ process people images
   but does not have to pass all other checks as body performs its own checks
 - runs clip interrogation on extracted images to generate filewords
 """
+
 import os
 import io
+import json
 import math
 import base64
 import pathlib
@@ -65,6 +67,9 @@ params = Map({
     'similarity_size': 64, # base similarity detection on reduced images
     'interrogate_model': 'clip' # interrogate model
 })
+face_model = None
+body_model = None
+segmentation_model = None
 
 
 def detect_blur(image):
@@ -115,15 +120,17 @@ def detect_simmilar(image):
 
 
 def segmentation(image):
-    with mp.solutions.selfie_segmentation.SelfieSegmentation(model_selection=params.segmentation_model) as selfie_segmentation:
-        data = np.array(image)
-        results = selfie_segmentation.process(data)
-        condition = np.stack((results.segmentation_mask,) * 3, axis=-1) > 0.1
-        background = np.zeros(data.shape, dtype=np.uint8)
-        background[:] = params.segmentation_background
-        data = np.where(condition, data, background) # consider using a joint bilateral filter instead of pure combine
-        segmented = Image.fromarray(data)
-        return segmented
+    global segmentation_model
+    if segmentation_model is None:
+        segmentation_model = mp.solutions.selfie_segmentation.SelfieSegmentation(model_selection=params.segmentation_model)
+    data = np.array(image)
+    results = segmentation_model.process(data)
+    condition = np.stack((results.segmentation_mask,) * 3, axis=-1) > 0.1
+    background = np.zeros(data.shape, dtype=np.uint8)
+    background[:] = params.segmentation_background
+    data = np.where(condition, data, background) # consider using a joint bilateral filter instead of pure combine
+    segmented = Image.fromarray(data)
+    return segmented
 
 
 def extract_face(img):
@@ -135,8 +142,10 @@ def extract_face(img):
     resized = img.copy()
     resized.thumbnail((params.target_size, params.target_size), Image.HAMMING)
 
-    with mp.solutions.face_detection.FaceDetection(min_detection_confidence=params.face_score, model_selection=params.face_model) as face:
-        results = face.process(np.array(resized))
+    global face_model
+    if face_model is None:
+        face_model = mp.solutions.face_detection.FaceDetection(min_detection_confidence=params.face_score, model_selection=params.face_model)
+    results = face_model.process(np.array(resized))
     if results.detections is None:
         return None, False
     box = results.detections[0].location_data.relative_bounding_box
@@ -196,8 +205,11 @@ def extract_body(img):
     scale = max(img.size[0], img.size[1]) / params.target_size
     resized = img.copy()
     resized.thumbnail((params.target_size, params.target_size), Image.HAMMING)
-    with mp.solutions.pose.Pose(static_image_mode=True, min_detection_confidence=params.body_score, model_complexity=params.body_model) as pose:
-        results = pose.process(np.array(resized))
+
+    global body_model
+    if body_model is None:
+        body_model = mp.solutions.pose.Pose(static_image_mode=True, min_detection_confidence=params.body_score, model_complexity=params.body_model)
+    results = body_model.process(np.array(resized))
     if results.pose_landmarks is None:
         return None, False
     x = [resized.width * (i.x - params.body_pad / 2) for i in results.pose_landmarks.landmark if i.visibility > params.body_visibility]
@@ -266,9 +278,12 @@ def interrogate(img, fn):
     f = open(file, 'w')
     f.write(caption)
     f.close()
+    return caption
 
 
 i = {}
+metadata = Map({})
+
 def process_file(f: str, dst: str = None, preview: bool = False, offline: bool = False):
     def save(img, f, what):
         i[what] = i.get(what, 0) + 1
@@ -279,10 +294,12 @@ def process_file(f: str, dst: str = None, preview: bool = False, offline: bool =
         base = os.path.basename(f).split('.')[0]
         fn = os.path.join(dir, str(i[what]).rjust(3, '0') + '-' + what + '-' + base + params.format)
         # log.debug({ 'save': fn })
+        caption = ''
         if not preview:
             img.save(fn)
             if not offline:
-                interrogate(img, fn)
+                caption = interrogate(img, fn)
+        metadata[fn] = { 'caption': caption, 'tags': [] }
         return fn
 
     log.info({ 'processing': f })
@@ -317,7 +334,7 @@ def process_file(f: str, dst: str = None, preview: bool = False, offline: bool =
         log.debug({ 'no body': f })
 
     image.close()
-    return i
+    return i, metadata
 
 def process_images(src: str, dst: str, args = None):
     params.src = src
@@ -338,6 +355,19 @@ def process_images(src: str, dst: str, args = None):
             for f in files:
                 process_file(os.path.join(root, f), dst)
     return i
+
+
+def unload_models():
+    global face_model
+    if face_model is not None:
+        face_model = None
+    global body_model
+    if body_model is not None:
+        body_model = None
+    global segmentation_model
+    if segmentation_model is not None:
+        segmentation_model = None
+
 
 if __name__ == '__main__':
     # log.setLevel(logging.DEBUG)
@@ -366,3 +396,4 @@ if __name__ == '__main__':
     for f in files:
         process_file(f, params.dst, args.preview, args.offline)
     log.info({ 'processed': i, 'inputs': len(files) })
+    # print(json.dumps(metadata, indent=2))

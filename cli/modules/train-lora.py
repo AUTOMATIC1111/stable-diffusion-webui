@@ -3,16 +3,36 @@
 """
 Extract approximating LoRA by SVD from two SD models
 Based on: <https://github.com/kohya-ss/sd-scripts/blob/main/networks/train_network.py>
+
+Train LoRA with custom preprocessing, tagging and bucketing
+
+Disabled/broken:
+- `accelerate` with *dynamo* enabled
+- `xformers` due to *faketensors* requirement
+- `mem_eff_attn` due to *forwardfunc* mismatch
+- 'use_8bit_adam` due to *bitsandbyttes* CUDA errors
+
+Example:
+train-lora.py --name=ryan-faf-v0 --model=/mnt/d/Models/stable-diffusion/sd-v15-runwayml.ckpt --dir=/mnt/d/Models/lora --input=~/generative/Input/ryanreid/fuckafan --dim 4 --steps 4000
+train-lora.py --name=ryan-palmsprings-v0 --model=/mnt/d/Models/stable-diffusion/sd-v15-runwayml.ckpt --dir=/mnt/d/Models/lora --input=~/generative/Input/ryanreid/palmsprings --dim 16 --steps 6000
+train-lora.py --name=ryan-random-v0 --model=/mnt/d/Models/stable-diffusion/sd-v15-runwayml.ckpt --dir=/mnt/d/Models/lora --input=~/generative/Input/ryanreid/random --dim 16 --steps 6000
+train-lora.py --name=ryan-miami-v0 --model=/mnt/d/Models/stable-diffusion/sd-v15-runwayml.ckpt --dir=/mnt/d/Models/lora --input=~/generative/Input/ryanreid/miami --dim 64 --steps 8000
+train-lora.py --name=ryan-all-v0 --model=/mnt/d/Models/stable-diffusion/sd-v15-runwayml.ckpt --dir=/mnt/d/Models/lora --input=~/generative/Input/ryanreid/all --dim 128 --steps 10000
 """
 
 import os
+import gc
 import sys
+import json
 import argparse
 import tempfile
+import torch
 import transformers
 from pathlib import Path
-from util import log, Map
-from process import process_file
+from util import log, Map, get_memory
+from process import process_file, unload_models
+from interrogate_git import interrogate_files, unload_git
+from lora_latents import create_vae_latents, unload_vae
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'modules', 'lora'))
 from train_network import train
@@ -21,8 +41,8 @@ from train_network import train
 options = Map({
     "v2": False,
     "v_parameterization": False,
-    "pretrained_model_name_or_path": "/mnt/d/Models/stable-diffusion/sd-v15-runwayml.ckpt",
-    "train_data_dir": "/tmp/rreid/img",
+    "pretrained_model_name_or_path": "",
+    "train_data_dir": "",
     "shuffle_caption": False,
     "caption_extension": ".txt",
     "caption_extention": None,
@@ -40,12 +60,12 @@ options = Map({
     "bucket_reso_steps": 64,
     "bucket_no_upscale": False,
     "reg_data_dir": None,
-    "in_json": "/tmp/rreid/rreid.json",
+    "in_json": "",
     "dataset_repeats": 1,
-    "output_dir": "/mnt/d/Models/lora/",
-    "output_name": "lora-rreid-random-v1",
+    "output_dir": "",
+    "output_name": "",
     "save_precision": "fp16",
-    "save_every_n_epochs": 1,
+    "save_every_n_epochs": None,
     "save_n_epoch_ratio": None,
     "save_last_n_epochs": None,
     "save_last_n_epochs_state": None,
@@ -57,8 +77,8 @@ options = Map({
     "mem_eff_attn": False,
     "xformers": False,
     "vae": None,
-    "learning_rate": 1e-05,
-    "max_train_steps": 5000,
+    "learning_rate": 1e-04,
+    "max_train_steps": 8000,
     "max_train_epochs": None,
     "max_data_loader_n_workers": 8,
     "persistent_data_loader_workers": False,
@@ -86,8 +106,24 @@ options = Map({
     "network_args": None,
     "network_train_unet_only": False,
     "network_train_text_encoder_only": False,
-    "training_comment": "mood-magic"
+    "training_comment": "mood-magic",
+    "caption_dropout_rate": 0.0,
+    "caption_dropout_every_n_epochs": None,
+    "caption_tag_dropout_rate": 0.0,
 })
+
+
+def mem_stats():
+    gc.collect()
+    if torch.cuda.is_available():
+        with torch.no_grad():
+            torch.cuda.empty_cache()
+        with torch.cuda.device('cuda'):
+            torch.cuda.empty_cache()
+            torch.cuda.ipc_collect()
+    mem = get_memory()
+    log.info({ 'memory': { 'ram': mem.ram, 'gpu': mem.gpu } })
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = 'train lora')
@@ -95,9 +131,16 @@ if __name__ == '__main__':
     parser.add_argument('--input', type=str, default=None, required=True, help='input folder with training images')
     parser.add_argument('--dir', type=str, default=None, required=True, help='folder containing lora checkpoints')
     parser.add_argument('--name', type=str, default=None, required=True, help='lora name')
-    parser.add_argument('--steps', type=int, default=5000, required=False, help='training steps')
-    parser.add_argument('--dim', type=int, default=16, required=False, help='network dimension')
-    parser.add_argument("--noprocess", default = False, action='store_true', help = "skip processing and use existing input data")
+    parser.add_argument('--interim', type=int, default=0, help = 'save interim checkpoints after n epoch')
+    parser.add_argument('--noprocess', default = False, action='store_true', help = 'skip processing and use existing input data')
+    parser.add_argument('--nocaptions', default = False, action='store_true', help = 'skip creating captions and tags')
+    parser.add_argument('--nolatents', default = False, action='store_true', help = 'skip generating vae latents')
+    parser.add_argument('--gradient', type=int, default=1, required=False, help='gradient accumulation steps, default: %(default)s')
+    parser.add_argument('--steps', type=int, default=5000, required=False, help='training steps, default: %(default)s')
+    parser.add_argument('--dim', type=int, default=128, required=False, help='network dimension, default: %(default)s')
+    parser.add_argument('--lr', type=float, default=1e-04, required=False, help='model learning rate, default: %(default)s')
+    parser.add_argument('--unetlr', type=float, default=1e-04, required=False, help='unet learning rate, default: %(default)s')
+    parser.add_argument('--textlr', type=float, default=5e-05, required=False, help='text encoder learning rate, default: %(default)s')
     args = parser.parse_args()
     if not os.path.exists(args.model) or not os.path.isfile(args.model):
         log.error({ 'lora cannot find model': args.model })
@@ -113,74 +156,50 @@ if __name__ == '__main__':
     options.output_name = args.name
     options.max_train_steps = args.steps
     options.network_dim = args.dim
+    options.gradient_accumulation_steps = args.gradient
+    options.save_every_n_epochs = args.interim if args.interim > 0 else None
+    options.learning_rate = args.lr
+    options.unet_lr = args.unetlr
+    options.text_encoder_lr = args.textlr
     log.info({ 'train lora args': vars(options) })
     transformers.logging.set_verbosity_error()
+    mem_stats()
 
     if args.noprocess:
-        options.train_data_dir = args.input
+        dir = args.input
+        options.train_data_dir = dir
+        options.in_json = None
     else:
         dir = os.path.join(tempfile.gettempdir(), args.name, '10_processed')
         Path(dir).mkdir(parents=True, exist_ok=True)
-        files = []
-        json_data = {}
+
+        # preprocess
         for root, _sub_dirs, folder in os.walk(args.input):
-            for f in folder:
-                files.append(os.path.join(root, f))
+            files = [os.path.join(root, f) for f in folder]
         for f in files:
-            res = process_file(f = f, dst = dir, preview = False, offline = True)
-            
-        log.info({ 'processed': res, 'inputs': len(files) })
-        options.train_data_dir = args.input
-        dir = os.path.join(tempfile.gettempdir(), args.name)
+            res, metadata = process_file(f = f, dst = dir, preview = False, offline = True)
+        unload_models()
+        options.train_data_dir = os.path.join(tempfile.gettempdir(), args.name)
+        mem_stats()
+
+    if not args.nocaptions:
+        # interrogate
+        for root, _sub_dirs, folder in os.walk(dir):
+            files = [os.path.join(root, f) for f in folder]
+        metadata = interrogate_files(Map({ 'input': dir, 'json': '', 'tag': args.name }), files)
+        json_file = os.path.join(dir, args.name + '.json')
+        with open(json_file, "w") as outfile:
+            outfile.write(json.dumps(metadata, indent=2))
+        unload_git()
+        mem_stats()
+        options.in_json = json_file
+
+        log.info({ 'processed': res, 'inputs': len(files), 'metadata': json_file })
+
+    if not args.nolatents:
+        # create latents
+        create_vae_latents(Map({ 'input': dir, 'json': json_file }))
+        mem_stats()
 
     train(options)
-
-
-"""
-- cannot use `accelerate` with *dynamo* enabled
-- cannot use `xformers` due to *faketensors* requirement
-- cannot use `mem_eff_attn` due to *forwardfunc* mismatch
-
-TODO
-
---gradient_checkpointing
---gradient_accumulation_steps=10
---caption_extension=txt
---in_json
-
-WORKING
-
-process.py --output "/tmp/rreid/img/10_processed" /home/vlado/generative/Input/ryanreid/random --offline
-
-accelerate launch --no_python --quiet --num_cpu_threads_per_process=16 python /home/vlado/dev/automatic/modules/lora/train_network.py \
---pretrained_model_name_or_path="/mnt/d/Models/stable-diffusion/sd-v15-runwayml.ckpt" \
---train_data_dir="/tmp/rreid/img" \
---logging_dir="/tmp/rreid/logging" \
---output_dir="/mnt/d/Models/lora/" \
---output_name="lora-rreid-random-v1" \
---resolution=512,512 \
---learning_rate=1e-5 \
---unet_lr=1e-3 \
---text_encoder_lr=5e-5 \
---lr_scheduler_num_cycles=1 \
---lr_scheduler=cosine \
---max_train_steps=5000 \
---network_alpha=1 \
---network_dim=16 \
---network_module=networks.lora \
---save_every_n_epochs=1 \
---save_model_as=ckpt \
---save_precision=fp16 \
---mixed_precision=fp16 \
---seed=42 \
---train_batch_size=1 \
---cache_latents \
-
-metadata { image_key: img_md: { caption: str, tags: [] } }
-
-abs_path = glob_images(train_data_dir, image_key)
-
-}}
-
-./train-lora.py --model /mnt/d/Models/stable-diffusion/sd-v15-runwayml.ckpt --name rreid --dir /mnt/d/Models/lora --input ~/generative/Input/ryanreid/random/
-"""
+    mem_stats()

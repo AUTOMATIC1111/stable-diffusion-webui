@@ -128,7 +128,7 @@
     "save_training_settings_to_txt": true,
     "save_txt": false,
     "sd_checkpoint_cache": 0,
-    "sd_checkpoint_hash": "cc6cb27103417325ff94f52b7a5d2dde45a7515b25c255d8e396c90014281516",
+    "sd_checkpoint_hash": "9dc4131ec86df35efc444e0d0f128800f787a9547eedb75afb1fc8fa20df1cbb",
     "sd_hypernetwork_strength": 1.0,
     "sd_hypernetwork": "None",
     "sd_lora": "",
@@ -187,5 +187,6 @@
     "additional_networks_sort_models_by": "name",
     "additional_networks_model_name_filter": "",
     "additional_networks_xy_grid_model_metadata": "",
-    "additional_networks_hash_thread_count": 1.0
+    "additional_networks_hash_thread_count": 1.0,
+    "images_txt_files": false
 }

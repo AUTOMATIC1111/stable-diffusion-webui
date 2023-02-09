@@ -3,6 +3,7 @@
 generic helper methods
 """
 
+import os
 import string
 import logging
 
@@ -26,6 +27,43 @@ def safestring(text: str):
         lines.append(line.translate(str.maketrans('', '', string.punctuation)).strip())
     res = ', '.join(lines)
     return res[:1000]
+
+
+def get_memory():
+    def gb(val: float):
+        return round(val / 1024 / 1024 / 1024, 2)
+    mem = {}
+    try:
+        import psutil
+        process = psutil.Process(os.getpid())
+        res = process.memory_info()
+        ram_total = 100 * res.rss / process.memory_percent()
+        ram = { 'free': gb(ram_total - res.rss), 'used': gb(res.rss), 'total': gb(ram_total) }
+        mem.update({ 'ram': ram })
+    except Exception as e:
+        mem.update({ 'ram': e })
+    try:
+        import torch
+        if torch.cuda.is_available():
+            s = torch.cuda.mem_get_info()
+            gpu = { 'free': gb(s[0]), 'used': gb(s[1] - s[0]), 'total': gb(s[1]) }
+            s = dict(torch.cuda.memory_stats('cuda'))
+            allocated = { 'current': gb(s['allocated_bytes.all.current']), 'peak': gb(s['allocated_bytes.all.peak']) }
+            reserved = { 'current': gb(s['reserved_bytes.all.current']), 'peak': gb(s['reserved_bytes.all.peak']) }
+            active = { 'current': gb(s['active_bytes.all.current']), 'peak': gb(s['active_bytes.all.peak']) }
+            inactive = { 'current': gb(s['inactive_split_bytes.all.current']), 'peak': gb(s['inactive_split_bytes.all.peak']) }
+            warnings = { 'retries': s['num_alloc_retries'], 'oom': s['num_ooms'] }
+            mem.update({
+                'gpu': gpu,
+                'gpu-active': active,
+                'gpu-allocated': allocated,
+                'gpu-reserved': reserved,
+                'gpu-inactive': inactive,
+                'events': warnings,
+            })
+    except:
+        pass
+    return Map(mem)
 
 
 class Map(dict):
