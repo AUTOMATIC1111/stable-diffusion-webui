@@ -75,9 +75,9 @@
 		{
 			"name": "gif2gif",
 			"url": "https://github.com/LonicaMewinsky/gif2gif",
-			"description": "A extension that extract a gif frame by frame for img2img generation and recombine them back into an animated gif",
+			"description": "A script for img2img that extract a gif frame by frame for img2img generation and recombine them back into an animated gif",
 			"added": "2023-02-09",
-			"tags": ["script", "tab"]
+			"tags": ["script"]
 		},
 		{
 			"name": "Artists to study",
