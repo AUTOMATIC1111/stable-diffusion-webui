@@ -584,6 +584,13 @@
 			"tags": ["script", "tab"]
 		},
 		{
+			"name": "Embedding Merge",
+			"url": "https://github.com/klimaleksus/stable-diffusion-webui-anti-burn",
+			"description": "Smoothing generated images by skipping a few very last steps and averaging together some images before them",
+			"added": "2023-02-09",
+			"tags": ["script", "tab"]
+		},
+		{
 			"name": "zh_CN Localization",
 			"url": "https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN",
 			"description": "Simplified Chinese localization",

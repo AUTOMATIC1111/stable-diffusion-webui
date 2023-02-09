@@ -679,3 +679,8 @@ Catppuccin is a community-driven pastel theme that aims to be the middle ground 
 https://github.com/klimaleksus/stable-diffusion-webui-embedding-merge
 
 Merging Textual Inversion embeddings at runtime from string literals.
+
+## anti-burn
+https://github.com/klimaleksus/stable-diffusion-webui-anti-burn
+
+Smoothing generated images by skipping a few very last steps and averaging together some images before them
