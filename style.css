@@ -776,7 +776,7 @@ footer {
 .rounding-badge {
   display: inline-block;
   border-radius: 0px;
-  background-color: #ccc;
+  /*background-color: #ccc;*/
   cursor: pointer;
   position: absolute;
   top: -10px;

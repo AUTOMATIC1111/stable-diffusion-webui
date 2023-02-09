@@ -18,8 +18,8 @@ class AspectRatioSliderController {
         }
         //Adjust badge icon if rounding is on
         if (this.roundingSource.getVal()) {
-            this.roundingIndicatorBadge.classList.add("active");
-            this.roundingIndicatorBadge.innerText = "⚠️";
+            //this.roundingIndicatorBadge.classList.add("active");
+            this.roundingIndicatorBadge.innerText = "📏";
         }
         //Make badge clickable to toggle setting
         this.roundingIndicatorBadge.addEventListener("click", () => {
@@ -28,11 +28,11 @@ class AspectRatioSliderController {
         //Make rounding setting toggle badge text and style if setting changes
         this.roundingSource.child.addEventListener("change", () => {
             if (this.roundingSource.getVal()) {
-                this.roundingIndicatorBadge.classList.add("active");
-                this.roundingIndicatorBadge.innerText = "⚠️";
+                //this.roundingIndicatorBadge.classList.add("active");
+                this.roundingIndicatorBadge.innerText = "📏";
             }
             else {
-                this.roundingIndicatorBadge.classList.remove("active");
+                //this.roundingIndicatorBadge.classList.remove("active");
                 this.roundingIndicatorBadge.innerText = "📐";
             }
             this.adjustStepSize();
