@@ -520,6 +520,11 @@ class Script(scripts.Script):
 
         grid_infotext = [None]
 
+        state.xyz_values = {}
+        state.xyz_values["xyz_x"] = {"type": x_opt.label, "value": xs}
+        state.xyz_values["xyz_y"] = {"type": y_opt.label, "value": ys}
+        state.xyz_values["xyz_z"] = {"type": z_opt.label, "value": zs}
+
         # If one of the axes is very slow to change between (like SD model
         # checkpoint), then make sure it is in the outer iteration of the nested
         # `for` loop.
