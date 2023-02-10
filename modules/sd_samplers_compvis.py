@@ -139,7 +139,7 @@ class VanillaStableDiffusionSampler:
         self.nmask = p.nmask if hasattr(p, 'nmask') else None
 
     def adjust_steps_if_invalid(self, p, num_steps):
-        if ((self.config.name == 'DDIM' or self.config.name == "UniPC") and p.ddim_discretize == 'uniform') or (self.config.name == 'PLMS'):
+        if ((self.config.name == 'DDIM') and p.ddim_discretize == 'uniform') or (self.config.name == 'PLMS') or (self.config.name == 'UniPC'):
             valid_step = 999 / (1000 // num_steps)
             if valid_step == math.floor(valid_step):
                 return int(valid_step) + 1
