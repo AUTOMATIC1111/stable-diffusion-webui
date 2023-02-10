@@ -21,7 +21,6 @@ process people images
 
 import os
 import io
-import json
 import math
 import base64
 import pathlib
@@ -48,7 +47,7 @@ params = Map({
     'square_images': True, # should output images be squared
     'blur_samplesize': 60, # sample size to use for blur detection
     'face_score': 0.7, # min face detection score
-    'face_pad': 0.07, # pad face image percentage
+    'face_pad': 0.2, # pad face image percentage
     'face_model': 1, # which face model to use 0/close-up 1/standard
     'face_blur_score': 1.5, # max score for face blur detection
     'face_range_score': 0.2, # min score for face dynamic range detection
@@ -285,6 +284,7 @@ i = {}
 metadata = Map({})
 
 def process_file(f: str, dst: str = None, preview: bool = False, offline: bool = False):
+
     def save(img, f, what):
         i[what] = i.get(what, 0) + 1
         if dst is None:
@@ -307,13 +307,13 @@ def process_file(f: str, dst: str = None, preview: bool = False, offline: bool =
         image = Image.open(f)
     except Exception as err:
         log.error({ 'image': f, 'error': err })
-        return 0, 0
+        return 0, {}
 
     image = ImageOps.exif_transpose(image) # rotate image according to EXIF orientation
 
     if image.width < 512 or image.height < 512:
         log.info({ 'process skip': 'low resolution', 'resolution': [image.width, image.height] })
-        return
+        return 0, {}
     log.debug({ 'resolution': [image.width, image.height], 'mp': round((image.width * image.height) / 1024 / 1024, 1) })
 
     face, ok = extract_face(image)
@@ -324,7 +324,7 @@ def process_file(f: str, dst: str = None, preview: bool = False, offline: bool =
         log.debug({ 'no face': f })
 
     if not ok:
-        return
+        return 0, {}
 
     body, ok = extract_body(image)
     if body is not None:

@@ -31,7 +31,8 @@ options = Map({
     'tag': '',
     'git': True,
     'blip': True,
-    'precision': 'fp16'
+    'precision': 'fp16',
+    'model': 'git',
 })
 
 
