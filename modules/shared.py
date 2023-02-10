@@ -364,7 +364,7 @@ options_templates.update(options_section(('upscaling', "Upscaling"), {
 }))
 
 options_templates.update(options_section(('face-restoration', "Face restoration"), {
-    "face_restoration_model": OptionInfo(None, "Face restoration model", gr.Radio, lambda: {"choices": [x.name() for x in face_restorers]}),
+    "face_restoration_model": OptionInfo("CodeFormer", "Face restoration model", gr.Radio, lambda: {"choices": [x.name() for x in face_restorers]}),
     "code_former_weight": OptionInfo(0.5, "CodeFormer weight parameter; 0 = maximum effect; 1 = minimum effect", gr.Slider, {"minimum": 0, "maximum": 1, "step": 0.01}),
     "face_restoration_unload": OptionInfo(False, "Move face restoration model from VRAM into RAM after processing"),
 }))
