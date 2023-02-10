@@ -554,7 +554,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
             if image_to_save.mode == 'RGBA':
                 image_to_save = image_to_save.convert("RGB")
             elif image_to_save.mode == 'I;16':
-                image_to_save = image_to_save.point(lambda p: p * 0.0038910505836576).convert("L")
+                image_to_save = image_to_save.point(lambda p: p * 0.0038910505836576).convert("RGB" if extension.lower() == ".webp" else "L")
 
             image_to_save.save(temp_file_path, format=image_format, quality=opts.jpeg_quality)
 
