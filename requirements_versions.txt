@@ -8,7 +8,7 @@ GitPython==3.1.27
 gradio==3.16.2
 inflection==0.5.1
 jsonmerge==1.9.0
-kornia==0.6.7
+kornia==0.6.9
 lark==1.1.5
 numpy==1.23.5
 omegaconf==2.3.0

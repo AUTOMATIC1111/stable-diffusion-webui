@@ -11,13 +11,6 @@ Disabled/broken:
 - `xformers` due to *faketensors* requirement
 - `mem_eff_attn` due to *forwardfunc* mismatch
 - 'use_8bit_adam` due to *bitsandbyttes* CUDA errors
-
-Example:
-train-lora.py --name=ryan-faf-v0 --model=/mnt/d/Models/stable-diffusion/sd-v15-runwayml.ckpt --dir=/mnt/d/Models/lora --input=~/generative/Input/ryanreid/fuckafan --dim 4 --steps 4000
-train-lora.py --name=ryan-palmsprings-v0 --model=/mnt/d/Models/stable-diffusion/sd-v15-runwayml.ckpt --dir=/mnt/d/Models/lora --input=~/generative/Input/ryanreid/palmsprings --dim 16 --steps 6000
-train-lora.py --name=ryan-random-v0 --model=/mnt/d/Models/stable-diffusion/sd-v15-runwayml.ckpt --dir=/mnt/d/Models/lora --input=~/generative/Input/ryanreid/random --dim 16 --steps 6000
-train-lora.py --name=ryan-miami-v0 --model=/mnt/d/Models/stable-diffusion/sd-v15-runwayml.ckpt --dir=/mnt/d/Models/lora --input=~/generative/Input/ryanreid/miami --dim 64 --steps 8000
-train-lora.py --name=ryan-all-v0 --model=/mnt/d/Models/stable-diffusion/sd-v15-runwayml.ckpt --dir=/mnt/d/Models/lora --input=~/generative/Input/ryanreid/all --dim 128 --steps 10000
 """
 
 import os
@@ -30,9 +23,9 @@ import torch
 import transformers
 from pathlib import Path
 from util import log, Map, get_memory
-from process import process_file, unload_models
-from interrogate_git import interrogate_files, unload_git
-from lora_latents import create_vae_latents, unload_vae
+import process
+import multiinterrogate
+import lora_latents
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'modules', 'lora'))
 from train_network import train
@@ -177,8 +170,8 @@ if __name__ == '__main__':
         for root, _sub_dirs, folder in os.walk(args.input):
             files = [os.path.join(root, f) for f in folder]
         for f in files:
-            res, metadata = process_file(f = f, dst = dir, preview = False, offline = True)
-        unload_models()
+            res, metadata = process.process_file(f = f, dst = dir, preview = False, offline = True)
+        process.unload_models()
         options.train_data_dir = os.path.join(tempfile.gettempdir(), args.name)
         mem_stats()
 
@@ -186,11 +179,11 @@ if __name__ == '__main__':
         # interrogate
         for root, _sub_dirs, folder in os.walk(dir):
             files = [os.path.join(root, f) for f in folder]
-        metadata = interrogate_files(Map({ 'input': dir, 'json': '', 'tag': args.name }), files)
+        metadata = multiinterrogate.interrogate_files(Map({ 'input': dir, 'json': '', 'tag': args.name }), files)
         json_file = os.path.join(dir, args.name + '.json')
         with open(json_file, "w") as outfile:
             outfile.write(json.dumps(metadata, indent=2))
-        unload_git()
+        multiinterrogate.unload_model()
         mem_stats()
         options.in_json = json_file
 
@@ -198,7 +191,8 @@ if __name__ == '__main__':
 
     if not args.nolatents:
         # create latents
-        create_vae_latents(Map({ 'input': dir, 'json': json_file }))
+        lora_latents.create_vae_latents(Map({ 'input': dir, 'json': json_file }))
+        lora_latents.unload_vae()
         mem_stats()
 
     train(options)

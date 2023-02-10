@@ -1120,5 +1120,15 @@
     "customscript/xyz_grid.py/txt2img/Z type/value": "Nothing",
     "customscript/xyz_grid.py/txt2img/Z type/visible": true,
     "customscript/xyz_grid.py/txt2img/Z values/value": "",
-    "customscript/xyz_grid.py/txt2img/Z values/visible": true
+    "customscript/xyz_grid.py/txt2img/Z values/visible": true,
+    "customscript/dynamic_thresholding.py/txt2img/Power Scheduler Value/visible": true,
+    "customscript/dynamic_thresholding.py/txt2img/Power Scheduler Value/value": 4.0,
+    "customscript/dynamic_thresholding.py/txt2img/Power Scheduler Value/minimum": 0.0,
+    "customscript/dynamic_thresholding.py/txt2img/Power Scheduler Value/maximum": 15.0,
+    "customscript/dynamic_thresholding.py/txt2img/Power Scheduler Value/step": 0.5,
+    "customscript/dynamic_thresholding.py/img2img/Power Scheduler Value/visible": true,
+    "customscript/dynamic_thresholding.py/img2img/Power Scheduler Value/value": 4.0,
+    "customscript/dynamic_thresholding.py/img2img/Power Scheduler Value/minimum": 0.0,
+    "customscript/dynamic_thresholding.py/img2img/Power Scheduler Value/maximum": 15.0,
+    "customscript/dynamic_thresholding.py/img2img/Power Scheduler Value/step": 0.5
 }

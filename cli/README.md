@@ -39,66 +39,100 @@ Combined pipeline:
 
 ### Benchmark
 
-Benchmark your **Automatic WebUI**
+Benchmark your **Automatic WebUI**  
+Note: Requires SD API  
+
 > python modules/bench.py
 
 ### Embedding Previews
 
-Create previews of embeddings using preview templates
+Create previews of embeddings using preview templates  
+Note: Requires SD API  
+
 > python modules/embedding-preview.py
 
 ## Grid
 
-Create flexible image grids from any number of images
+Create flexible image grids from any number of images  
+Note: Offline tool  
+
 > python modiles/grid.py
 
 ### Image Watermark
 
-Create invisible image watermark and remove existing EXIF tags
+Create invisible image watermark and remove existing EXIF tags  
+Note: Offline tool  
+
 > python modules/image-watermark.py
+
 ### Interrogate
 
-Runs CLiP and Booru image interrogation
+Runs CLiP and Booru image interrogation  
+Note: Requires SD API  
+
+> python modules/interrogate.py
+
+### Multi-Interrogate
+
+Standalone implementation of GiT, CLiP and ViT image interrogation  
+Note: Offline tool  
+
 > python modules/interrogate.py
 
 ### Models Previews
 
-Create previews of models using built-in templates
+Create previews of models using built-in templates  
+Note: Requires SD API  
+
 > python modules/models-preview.py
 
 ### Palette Extract
 
-Extract color palette from image(s)
+Extract color palette from image(s)  
+Note: Offline tool  
+
 > python modules/palette-extract.py
 
 ### Image Process
 
-Run image processing to extract face/body segments and run resolution/blur/dynamic-range checks
+Run image processing to extract face/body segments and run resolution/blur/dynamic-range checks  
+Note: Offline except for interrogate to generate caption files which requires SD API  
+
 > python modules/process.py
 
 ### Prompt Ideas
 
 Generate complex prompt ideas
+Note: Offline tool  
+
 > python modules/prompt-ideas.py
 
 ### Prompt Promptist
 
 Attempts to beautify the provided prompt  
+Note: Offline tool  
+
 > python modules/promptist.py
 
 ### Training Loss-Chart
 
 Create loss-chart from training log
+Note: Offline tool, may require adjustment to train paths if used with other repos  
+
 > python modules/train-losschart.py
 
 ### Training Loss-Rate
 
 Create customizable loss rate to be used in training
+Note: Offline tool  
+
 > python modules/train-lossrate.py
 
 ### Video Extract
 
-Extract frames from video files
+Extract frames from video files  
+Note: Offline tool  
+
 > python modules/video-extract.py
 
 <br>
@@ -107,6 +141,8 @@ Extract frames from video files
 ### SDAPI
 
 Utility module that handles async communication to Automatic API endpoints  
+Note: Requires SD API  
+
 Can be used to manually execute specific commands:
 > python sdapi.py progress  
 > python sdapi.py interrupt
