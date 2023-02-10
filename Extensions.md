@@ -109,7 +109,7 @@ https://github.com/deforum-art/deforum-for-automatic1111-webui
 
 The official port of Deforum, an extensive script for 2D and 3D animations, supporting keyframable sequences, dynamic math parameters (even inside the prompts), dynamic masking, depth estimation and warping.
 
-![ui](https://user-images.githubusercontent.com/20920490/197619558-c088a329-3672-4f0a-8685-cf539996ad1e.png)
+![image](https://user-images.githubusercontent.com/98228077/217986819-67fd1e3c-b007-475c-b8c9-3bf28ee3aa67.png)
 
 ## Artists to study
 https://github.com/camenduru/stable-diffusion-webui-artists-to-study
@@ -154,20 +154,16 @@ Caption in the filenames of images can be loaded, but edited captions can only b
 
 https://github.com/Interpause/auto-sd-paint-ext
 
-Formerly known as `auto-sd-krita`.
-
 >Extension for AUTOMATIC1111's webUI with Krita Plugin (other drawing studios soon?)
 
-Outdated demo | New UI (TODO: demo image)
---- | ---
-![demo image](https://user-images.githubusercontent.com/42513874/194701722-e7a3f7eb-be4a-4f43-93a5-480835c9260f.jpg) | ![demo image 2](https://user-images.githubusercontent.com/42513874/199507299-66729f9b-3581-43a3-b5f4-57eb90b8f981.png)
+![image](https://user-images.githubusercontent.com/98228077/217986983-d23a334d-50bc-4bb1-ac8b-60f99a3b07b9.png)
 
-**Differences**
 
-- UI no longer freezes during image update
-- Inpainting layer no longer has to be manually hidden, nor use white specifically
-- UI has been improved & squeezed further
-- Scripts API is now possible
+- Optimized workflow (txt2img, img2img, inpaint, upscale) & UI design.
+- Only drawing studio plugin that exposes the Script API.
+
+See https://github.com/Interpause/auto-sd-paint-ext/issues/41 for planned developments.
+See [CHANGELOG.md](https://github.com/Interpause/auto-sd-paint-ext/blob/main/CHANGELOG.md) for the full changelog.
 
 ## training-picker
 https://github.com/Maurdekye/training-picker
@@ -450,10 +446,11 @@ https://github.com/AlUlkesh/sd_save_intermediate_images
 
 Implements saving intermediate images, with more advanced features.
 
-![badex](https://user-images.githubusercontent.com/98228077/211706803-f747691d-cca8-4692-90ef-f6a2859ed5cb.jpg)
-![goodex](https://user-images.githubusercontent.com/98228077/211706801-fc593dbf-67c4-4983-8a80-c88355ffeba2.jpg)
+![noisy](https://user-images.githubusercontent.com/98228077/211706803-f747691d-cca8-4692-90ef-f6a2859ed5cb.jpg)
+![not](https://user-images.githubusercontent.com/98228077/211706801-fc593dbf-67c4-4983-8a80-c88355ffeba2.jpg)
 
-![image](https://user-images.githubusercontent.com/98228077/209453267-cb65adce-4e1c-45c7-93da-e0bd1020670c.png)
+![image](https://user-images.githubusercontent.com/98228077/217990312-15b4eda2-858a-44b7-91a3-b34af7c487b6.png)
+
 
 ## openOutpaint extension
 https://github.com/zero01101/openOutpaint-webUI-extension
@@ -465,7 +462,10 @@ A tab with the full openOutpaint UI. Run with the --api flag.
 ## Enhanced-img2img
 https://github.com/OedoSoldier/enhanced-img2img
 
-An extension with support for batched and better inpainting.
+An extension with support for batched and better inpainting. See [readme](https://github.com/OedoSoldier/enhanced-img2img#usage) for more details.
+
+![image](https://user-images.githubusercontent.com/98228077/217990537-e8bdbc74-7210-4864-8140-a076a342c695.png)
+
 
 ## sd-model-preview
 https://github.com/Vetchems/sd-model-preview
