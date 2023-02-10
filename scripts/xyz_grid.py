@@ -126,6 +126,10 @@ def apply_styles(p: StableDiffusionProcessingTxt2Img, x: str, _):
     p.styles.extend(x.split(','))
 
 
+def apply_uni_pc_order(p, x, xs):
+    opts.data["uni_pc_order"] = min(x, p.steps - 1)
+
+
 def format_value_add_label(p, opt, x):
     if type(x) == float:
         x = round(x, 8)
@@ -202,6 +206,7 @@ axis_options = [
     AxisOptionImg2Img("Cond. Image Mask Weight", float, apply_field("inpainting_mask_weight")),
     AxisOption("VAE", str, apply_vae, cost=0.7, choices=lambda: list(sd_vae.vae_dict)),
     AxisOption("Styles", str, apply_styles, choices=lambda: list(shared.prompt_styles.styles)),
+    AxisOption("UniPC Order", int, apply_uni_pc_order, cost=0.5),
 ]
 
 
@@ -310,9 +315,11 @@ class SharedSettingsStackHelper(object):
     def __enter__(self):
         self.CLIP_stop_at_last_layers = opts.CLIP_stop_at_last_layers
         self.vae = opts.sd_vae
+        self.uni_pc_order = opts.uni_pc_order
   
     def __exit__(self, exc_type, exc_value, tb):
         opts.data["sd_vae"] = self.vae
+        opts.data["uni_pc_order"] = self.uni_pc_order
         modules.sd_models.reload_model_weights()
         modules.sd_vae.reload_vae_weights()
 

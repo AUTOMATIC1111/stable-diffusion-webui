@@ -480,6 +480,11 @@ options_templates.update(options_section(('sampler-params', "Sampler parameters"
     's_noise': OptionInfo(1.0, "sigma noise", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     'eta_noise_seed_delta': OptionInfo(0, "Eta noise seed delta", gr.Number, {"precision": 0}),
     'always_discard_next_to_last_sigma': OptionInfo(False, "Always discard next-to-last sigma"),
+    'uni_pc_variant': OptionInfo("bh1", "UniPC variant", gr.Radio, {"choices": ["bh1", "vary_coeff"]}),
+    'uni_pc_skip_type': OptionInfo("time_uniform", "UniPC skip type", gr.Radio, {"choices": ["time_uniform", "time_quadratic", "logSNR"]}),
+    'uni_pc_order': OptionInfo(3, "UniPC order (must be < sampling steps)", gr.Slider, {"minimum": 1, "maximum": 150 - 1, "step": 1}),
+    'uni_pc_thresholding': OptionInfo(False, "UniPC thresholding"),
+    'uni_pc_lower_order_final': OptionInfo(True, "UniPC lower order final"),
 }))
 
 options_templates.update(options_section(('postprocessing', "Postprocessing"), {
