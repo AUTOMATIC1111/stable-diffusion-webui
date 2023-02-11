@@ -18,7 +18,16 @@ For developing extensions, see [Developing extensions](Developing-extensions).
 
 As extensions allow the user to install and run arbitrary code, this can be used maliciously, and is disabled by default when running with options that allow remote users to connect to the server (`--share` or `--listen`) - you'll still have the UI, but trying to install anything will result in error. If you want to use those options and still be able to install extensions, use `--enable-insecure-extension-access` command line flag.
 
-# Extensions
+# Extensions Category
+* [Integration](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Extensions-Integration)
+* [UI](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Extensions-UI)
+* [Prompt / Generation parameters](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Extensions-Prompt)
+* [Generation](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Extensions-Generation)
+* [Post-Processing](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Extensions-Post-Processing)
+* [Training](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Extensions-Training)
+
+<details><summary>Extensions
+</summary>
 
 ## Aesthetic Gradients
 https://github.com/AUTOMATIC1111/stable-diffusion-webui-aesthetic-gradients
@@ -684,3 +693,4 @@ Merging Textual Inversion embeddings at runtime from string literals.
 https://github.com/klimaleksus/stable-diffusion-webui-anti-burn
 
 Smoothing generated images by skipping a few very last steps and averaging together some images before them
+</details>
