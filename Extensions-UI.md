@@ -79,4 +79,5 @@ Creates a top-level **System Info** tab in Automatic WebUI with
 https://github.com/catppuccin/stable-diffusion-webui
 
 Catppuccin is a community-driven pastel theme that aims to be the middle ground between low and high contrast themes. Adds set of themes which are in compliance with catppucin guidebook.
+![Catppuccin themes](https://raw.githubusercontent.com/catppuccin/Stable-Diffusion-Web-Ui/main/assets/res.webp)
 
