@@ -601,6 +601,13 @@
 			"tags": ["script", "tab"]
 		},
 		{
+			"name": "mine-diffusion",
+			"url": "https://github.com/fropych/mine-diffusion.git",
+			"description": "This extension converts images into blocks and creates schematics for easy importing into Minecraft using the Litematica mod.",
+			"added": "2023-02-11",
+			"tags": ["script", "tab"]
+		},
+		{
 			"name": "zh_CN Localization",
 			"url": "https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN",
 			"description": "Simplified Chinese localization",
