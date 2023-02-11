@@ -170,3 +170,8 @@ https://github.com/ljleb/prompt-fusion-extension
 
 Adds prompt-travel and shift-attention-like interpolations (see exts), but during/within the sampling steps. Always-on + works w/ existing prompt-editing syntax. Various interpolation modes. See their wiki for more info.
 
+## Prompt Translator
+https://github.com/butaixianran/Stable-Diffusion-Webui-Prompt-Translator
+
+A integrated translator for Translate prompt to English using Deepl or Baidu
+
