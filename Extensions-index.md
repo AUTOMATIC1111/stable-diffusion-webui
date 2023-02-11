@@ -6,7 +6,10 @@
 		"tab": "adds a tab",
 		"ads": "contains ads",
 		"installed": "an extension that is already installed",
-		"training": "an extension that allows for new types of training"
+		"training": "new type of training, assists with training, and/or merging related.",
+		"models": "conversion and merging related.",
+		"UI related": "an extension that enhances the display or user interface experience.",
+		"integrations": "plugins, apis, and other ML models that work/ align with user workflow."
 	},
 	"extensions": [
 		{
@@ -49,14 +52,14 @@
 			"url": "https://github.com/AlUlkesh/stable-diffusion-webui-images-browser.git",
 			"description": "Provides an interface to browse created images in the web browser. Note: new ext. maintainer, uninstall previous ext. if needed.",
 			"added": "2022-11-01",
-			"tags": ["script", "tab"]
+			"tags": ["script", "tab", "UI related"]
 		},
 		{
 			"name": "Inspiration",
 			"url": "https://github.com/yfszzx/stable-diffusion-webui-inspiration.git",
 			"description": "Randomly display the pictures of the artist's or artistic genres typical style, more pictures of this artist or genre is displayed after selecting. So you don't have to worry about how hard it is to choose the right style of art when you create.",
 			"added": "2022-11-01",
-			"tags": ["script", "tab"]
+			"tags": ["script", "tab", "UI related"]
 		},
 		{
 			"name": "Deforum",
@@ -91,28 +94,28 @@
 			"url": "https://github.com/tsngo/stable-diffusion-webui-aesthetic-image-scorer.git",
 			"description": "Calculates aesthetic score for generated images using CLIP+MLP Aesthetic Score Predictor based on Chad Scorer",
 			"added": "2022-11-01",
-			"tags": ["script"]
+			"tags": ["script", "integrations"]
 		},
 		{
 			"name": "Dataset Tag Editor",
 			"url": "https://github.com/toshiaki1729/stable-diffusion-webui-dataset-tag-editor.git",
 			"description": "Feature-rich UI tab that allows image viewing, search-filtering and editing.",
 			"added": "2022-11-01",
-			"tags": ["script", "tab"]
+			"tags": ["script", "tab", "training"]
 		},
 		{
 			"name": "auto-sd-paint-ext",
 			"url": "https://github.com/Interpause/auto-sd-paint-ext.git",
 			"description": "Krita Plugin.",
 			"added": "2022-11-04",
-			"tags": ["script"]
+			"tags": ["script", "integrations"]
 		},
 		{
 			"name": "training-picker",
 			"url": "https://github.com/Maurdekye/training-picker.git",
 			"description": "Adds a tab to the webui that allows the user to automatically extract keyframes from video, and manually extract 512x512 crops of those frames for use in model training.",
 			"added": "2022-11-06",
-			"tags": ["script"]
+			"tags": ["script", "tab", "training"]
 		},
 		{
 			"name": "Unprompted",
@@ -154,7 +157,7 @@
 			"url": "https://github.com/CodeExplode/stable-diffusion-webui-embedding-editor.git",
 			"description": "Allows you to manually edit textual inversion embeddings using sliders.",
 			"added": "2022-11-06",
-			"tags": ["script", "tab"]
+			"tags": ["script", "tab", "models"]
 		},
 		{
 			"name": "Randomize",
@@ -168,7 +171,7 @@
 			"url": "https://github.com/tkalayci71/embedding-inspector.git",
 			"description": "Inspect any token(a word) or Textual-Inversion embeddings and find out which embeddings are similar. You can mix, modify, or create the embeddings in seconds.",
 			"added": "2022-12-06",
-			"tags": ["script", "tab"]
+			"tags": ["script", "tab", "models"]
 		},
 		{
 			"name": "Asymmetric Tiling",
@@ -238,7 +241,7 @@
 			"url": "https://github.com/papuSpartan/stable-diffusion-webui-auto-tls-https.git",
 			"description": "Allows you to easily, or even completely automatically start using HTTPS.",
 			"added": "2022-11-14",
-			"tags": ["script"]
+			"tags": ["script", "integrations"]
 		},
 		{
 			"name": "DreamArtist",
@@ -252,7 +255,7 @@
 			"url": "https://github.com/toriato/stable-diffusion-webui-wd14-tagger.git",
 			"description": "Interrogates single or multiple image files using various alternative models, similar to deepdanbooru interrogate.",
 			"added": "2022-11-20",
-			"tags": ["script", "tab"]
+			"tags": ["script", "tab", "training"]
 		},
 		{
 			"name": "booru2prompt",
@@ -273,7 +276,7 @@
 			"url": "https://github.com/bbc-mc/sdweb-merge-board.git",
 			"description": "Multiple lane merge support(up to 10). Save and Load your merging combination as Recipes, which is simple text.",
 			"added": "2022-11-21",
-			"tags": ["script", "tab"]
+			"tags": ["script", "tab", "models"]
 		},
 		{
 			"name": "Depth Maps",
@@ -315,21 +318,21 @@
 			"url": "https://github.com/benkyoujouzu/stable-diffusion-webui-visualize-cross-attention-extension.git",
 			"description": "Generates highlighted sectors of a submitted input image, based on input prompts. Use with tokenizer extension. See the readme for more info.",
 			"added": "2022-11-25",
-			"tags": ["script", "tab"]
+			"tags": ["script", "tab", "integrations"]
 		},
 		{
 			"name": "DAAM",
 			"url": "https://github.com/kousw/stable-diffusion-webui-daam.git",
 			"description": "DAAM stands for Diffusion Attentive Attribution Maps. Enter the attention text (must be a string contained in the prompt) and run. An overlapping image with a heatmap for each attention will be generated along with the original image.",
 			"added": "2022-12-02",
-			"tags": ["script"]
+			"tags": ["script", "integrations"]
 		},
 		{
 			"name": "Prompt Gallery",
 			"url": "https://github.com/dr413677671/PromptGallery-stable-diffusion-webui.git",
 			"description": "Build a yaml file filled with prompts of your character, hit generate, and quickly preview them by their word attributes and modifiers.",
 			"added": "2022-12-02",
-			"tags": ["script", "tab"]
+			"tags": ["script", "tab", "UI related"]
 		},
 		{
 			"name": "Infinity Grid Generator",
@@ -343,7 +346,7 @@
 			"url": "https://github.com/AUTOMATIC1111/stable-diffusion-webui-nsfw-censor.git",
 			"description": "Replaces NSFW images with black.",
 			"added": "2022-12-10",
-			"tags": ["script"]
+			"tags": ["script", "integrations"]
 		},
 		{
 			"name": "Diffusion Defender",
@@ -357,21 +360,21 @@
 			"url": "https://github.com/Zyin055/Config-Presets.git",
 			"description": "Adds a configurable dropdown to allow you to change UI preset settings in the txt2img and img2img tabs.",
 			"added": "2022-12-13",
-			"tags": ["script"]
+			"tags": ["script", "UI related"]
 		},
 		{
 			"name": "Preset Utilities",
 			"url": "https://github.com/Gerschel/sd_web_ui_preset_utils.git",
 			"description": "Preset utility tool for ui. Offers compatibility with custom scripts. (to a limit)",
 			"added": "2022-12-19",
-			"tags": ["script"]
+			"tags": ["script", "UI related"]
 		},
 		{
 			"name": "DH Patch",
 			"url": "https://github.com/d8ahazard/sd_auto_fix.git",
 			"description": "Random patches by D8ahazard. Auto-load config YAML files for v2, 2.1 models; patch latent-diffusion to fix attention on 2.1 models (black boxes without no-half), whatever else I come up with.",
 			"added": "2022-12-16",
-			"tags": ["script"]
+			"tags": ["script", "integrations"]
 		},
 		{
 			"name": "Riffusion",
@@ -392,7 +395,7 @@
 			"url": "https://github.com/zero01101/openOutpaint-webUI-extension.git",
 			"description": "A tab with the full openOutpaint UI. Run with the --api flag.",
 			"added": "2022-12-23",
-			"tags": ["script", "tab"]
+			"tags": ["script", "tab", "integrations"]
 		},
 		{
 			"name": "model-keyword",
@@ -420,7 +423,7 @@
 			"url": "https://github.com/Gerschel/sd-web-ui-quickcss.git",
 			"description": "Extension for quickly selecting and applying custom.css files, for customizing look and placement of elements in ui.",
 			"added": "2022-12-30",
-			"tags": ["script", "tab"]
+			"tags": ["script", "tab", "UI related"]
 		},
 		{
 			"name": "Add image number to grid",
@@ -434,14 +437,14 @@
 			"url": "https://github.com/Akegarasu/sd-webui-model-converter.git",
 			"description": "Convert models to fp16/bf16 no-ema/ema-only safetensors. Convert/copy/delete any parts of model: unet, text encoder(clip), vae.",
 			"added": "2023-01-05",
-			"tags": ["script", "tab"]
+			"tags": ["script", "tab", "models"]
 		},
 		{
 			"name": "Kohya-ss Additional Networks",
 			"url": "https://github.com/kohya-ss/sd-webui-additional-networks.git",
 			"description": "Allows the Web UI to use networks (LoRA) trained by their scripts to generate images.",
 			"added": "2023-01-06",
-			"tags": ["script"]
+			"tags": ["script", "models"]
 		},
 		{
 			"name": "Ultimate SD Upscale",
@@ -455,14 +458,14 @@
 			"url": "https://github.com/sdwebui-w-horde/sd-webui-stable-horde-worker.git",
 			"description": "Worker Client for Stable Horde. Generate pictures for other users with your PC. Please see readme for additional instructions.",
 			"added": "2023-01-10",
-			"tags": ["script", "tab"]
+			"tags": ["script", "tab", "integrations"]
 		},
 		{
 			"name": "Stable Horde Client",
 			"url": "https://github.com/natanjunges/stable-diffusion-webui-stable-horde.git",
 			"description": "Stable Horde Client. Generate pictures using other user's PC. Useful if u have no GPU.",
 			"added": "2023-01-11",
-			"tags": ["script", "tab"]
+			"tags": ["script", "tab", "integrations"]
 		},
 		{
 			"name": "Hypernetwork-Monkeypatch-Extension",
@@ -483,7 +486,7 @@
 			"url": "https://github.com/bbc-mc/sdweb-merge-block-weighted-gui.git",
 			"description": "Merge models with separate rate for each 25 U-Net block (input, middle, output).",
 			"added": "2023-01-13",
-			"tags": ["script", "tab"]
+			"tags": ["script", "tab", "models"]
 		},
 		{
 			"name": "haku-img",
@@ -504,7 +507,7 @@
 			"url": "https://github.com/kabachuha/discord-rpc-for-automatic1111-webui.git",
 			"description": "Provides connection to Discord RPC, showing a fancy table in the user profile.",
 			"added": "2023-01-20",
-			"tags": ["script"]
+			"tags": ["script", "integrations"]
 		},
     {
 			"name": "Steps Animation",
@@ -518,14 +521,14 @@
 			"url": "https://github.com/vladmandic/sd-extension-aesthetic-scorer.git",
 			"description": "Uses existing CLiP model with an additional small pretrained model to calculate perceived aesthetic score of an image.",
 			"added": "2023-01-21",
-			"tags": ["script"]
+			"tags": ["script", "integrations"]
 		},
 		{
 			"name": "System Info",
 			"url": "https://github.com/vladmandic/sd-extension-system-info.git",
 			"description": "System Info tab for WebUI which shows realtime information of the server.",
 			"added": "2023-01-21",
-			"tags": ["script", "tab"]
+			"tags": ["script", "tab", "UI related"]
 		},
 		{
 			"name": "Pixelization",
@@ -560,7 +563,7 @@
 			"url": "https://github.com/p1atdev/stable-diffusion-webui-cafe-aesthetic.git",
 			"description": "Pre-trained model, determines if aesthetic/non-aesthetic, does 5 different style recognition modes, and Waifu confirmation. Also has a tab with Batch processing.",
 			"added": "2023-01-28",
-			"tags": ["script", "tab"]
+			"tags": ["script", "tab", "integrations"]
 		},
 		{
 			"name": "Dynamic Thresholding",
