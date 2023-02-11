@@ -173,5 +173,5 @@ Adds prompt-travel and shift-attention-like interpolations (see exts), but durin
 ## Prompt Translator
 https://github.com/butaixianran/Stable-Diffusion-Webui-Prompt-Translator
 
-A integrated translator for Translate prompt to English using Deepl or Baidu
+A integrated translator for translating prompts to English using Deepl or Baidu.
 

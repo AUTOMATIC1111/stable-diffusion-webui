@@ -411,7 +411,7 @@
 		{
 			"name": "Prompt Translator",
 			"url": "https://github.com/butaixianran/Stable-Diffusion-Webui-Prompt-Translator",
-			"description": "A integrated translator for Translate prompt to English using Deepl or Baidu",
+			"description": "A integrated translator for translating prompts to English using Deepl or Baidu.",
 			"added": "2023-02-11",
 			"tags": ["script", "tab"]
 		},
