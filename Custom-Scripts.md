@@ -2,6 +2,9 @@
 To install custom scripts, place them into the `scripts` directory and click the `Reload custom script` button at the bottom in the settings tab. Custom scripts will appear in the lower-left dropdown menu on the txt2img and img2img tabs after being installed. Below are some notable custom scripts created by Web UI users:
 
 # Custom Scripts from Users
+* [Prompt Scripts](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Scripts-Prompt)
+* [Generation Scripts](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Scripts-Generation)
+<details><summary>Custom Scripts from Users</summary>
 
 ## Improved prompt matrix
 https://github.com/ArrowM/auto1111-improved-prompt-matrix
@@ -375,3 +378,4 @@ class Script(scripts.Script):
 https://github.com/LonicaMewinsky/gif2gif
 
 The purpose of this script is to accept an animated gif as input, process frames as img2img typically would, and recombine them back into an animated gif. Not intended to have extensive functionality. Referenced code from prompts_from_file.
+</details>
