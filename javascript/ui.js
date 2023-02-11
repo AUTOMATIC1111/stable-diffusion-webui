@@ -280,19 +280,11 @@ onUiUpdate(function(){
 	
 	
 	
-	/* 
-	hack until gradio allows to add custom classes to components
-	add elem_id= your_elem_id + "sub-group"
-
+	/* 	
 	^ matches the start
 	* matches any position
 	$ matches the end
-
-	*/	
-	
-	gradioApp().querySelectorAll('[id $= "sub-group"]').forEach(function(elem){
-        elem.classList.add("sub-group");			
-    })
+	*/
 	
 	/* auto grow textarea */
 	gradioApp().querySelectorAll('[id $= "_prompt"] textarea').forEach(function (elem) {
@@ -302,11 +294,16 @@ onUiUpdate(function(){
 			e.target.style.minHeight = 'auto';
 			e.target.style.minHeight = e.target.scrollHeight + offset + 'px';
 		});
+		
+		elem.addEventListener('focus', function (e) {
+			e.target.style.minHeight = 'auto';
+			e.target.style.minHeight = e.target.scrollHeight + offset + 'px';
+		});
 	});
 	
 	
 	/* resizable split view */
-	gradioApp().querySelectorAll('#txt2img_splitter, #img2img_splitter').forEach((elem) => {
+	gradioApp().querySelectorAll('[id $="2img_splitter"]').forEach((elem) => {
 		
 		elem.addEventListener("mousedown", function(e) {	
 

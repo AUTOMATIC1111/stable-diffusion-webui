@@ -186,15 +186,20 @@ def create_seed_inputs(target_interface):
 
     with gr.Row(elem_id = target_interface+"_group_seed"):
         with gr.Box():
-            with gr.Row(elem_id=target_interface + '_seed_row'):
+            # use -collapse or -collapse-all
+            # always the end to remove padding and margin of all the nested containers a bit of a hack but 
+            # this is a workaround since gradio hasn't yet class style support for most of the components
+            # variants are not a choice either for rows columns 
+            # this also can help script developers to have more complex layouts
+            with gr.Row(elem_id=target_interface + '_seed_row-collapse-all'):
             
                 seed = (gr.Textbox if cmd_opts.use_textbox_seed else gr.Number)(label='Seed', value=-1, elem_id=target_interface + '_seed')
                 # #seed.style(container=False)
-                random_seed = gr.Button(random_symbol, elem_id=target_interface + '_random_seed')
-                reuse_seed = gr.Button(reuse_symbol, elem_id=target_interface + '_reuse_seed')
+                random_seed = ToolButton(value=random_symbol, elem_id=target_interface + '_random_seed')
+                reuse_seed = ToolButton(value=reuse_symbol, elem_id=target_interface + '_reuse_seed')
 
-        #with gr.Box(elem_id='subseed_show_box'):
-        seed_checkbox = gr.Checkbox(label='Extra', elem_id=target_interface + '_subseed_show', value=False)
+        with gr.Box(elem_id='subseed_show_box-collapse-all'):
+            seed_checkbox = gr.Checkbox(label='Extra', elem_id=target_interface + '_subseed_show', value=False)
              
 
     # Components to show/hide based on the 'Extra' checkbox
@@ -202,6 +207,9 @@ def create_seed_inputs(target_interface):
 
     #with FormRow(visible=False, elem_id=target_interface + '_subseed_row') as seed_extra_row_1:
     #with gr.Group(elem_id="group-subseed", visible=False) as seed_extra_group:
+    
+    # use sub-group
+    # at any place to indicate a different style already defined by the css rules
     with FormGroup(elem_id=target_interface + '_subseed_row_sub-group', visible=False) as seed_extra_group:
     
         seed_extras.append(seed_extra_group)
@@ -209,11 +217,11 @@ def create_seed_inputs(target_interface):
         with gr.Row(visible=False) as seed_extra_row_1:
             seed_extras.append(seed_extra_row_1)
             with gr.Box():
-                with gr.Row(elem_id= target_interface + '_subseed_row'):
+                with gr.Row(elem_id= target_interface + '_subseed_row-collapse-all'):
                     subseed = gr.Number(label='Variation seed', value=-1, elem_id=target_interface + '_subseed')
                     #subseed.style(container=False)
-                    random_subseed = gr.Button(random_symbol, elem_id=target_interface + '_random_subseed')
-                    reuse_subseed = gr.Button(reuse_symbol, elem_id=target_interface + '_reuse_subseed')
+                    random_subseed = ToolButton(value=random_symbol, elem_id=target_interface + '_random_subseed')
+                    reuse_subseed = ToolButton(value=reuse_symbol, elem_id=target_interface + '_reuse_subseed')
                     
             subseed_strength = gr.Slider(label='Variation strength', value=0.0, minimum=0, maximum=1, step=0.01, elem_id=target_interface + '_subseed_strength')
 
@@ -323,7 +331,7 @@ def create_generate(is_img2img):
 def create_toprow(is_img2img):
     id_part = "img2img" if is_img2img else "txt2img"
 
-    with gr.Row(elem_id=f"{id_part}_toprow", variant="compact"):
+    with gr.Row(elem_id=f"{id_part}_toprow-collapse", variant="compact"):
  
         with gr.Column(scale=6):
             with gr.Row():
@@ -331,17 +339,16 @@ def create_toprow(is_img2img):
                     with gr.Column(elem_id=f"{id_part}_styles_row"):                  
                         prompt_styles = gr.Dropdown(label="Styles", elem_id=f"{id_part}_styles", choices=[k for k, v in shared.prompt_styles.styles.items()], value=[], multiselect=True)
                         create_refresh_button(prompt_styles, shared.prompt_styles.reload, lambda: {"choices": [k for k, v in shared.prompt_styles.styles.items()]}, f"refresh_{id_part}_style_index")
-                    with gr.Row():
-                        prompt = gr.Textbox(label="Prompt", elem_id=f"{id_part}_prompt", show_label=True, lines=5,
-                            placeholder="Prompt (press Ctrl+Enter or Alt+Enter to generate)"
-                        )
+                        
+            with gr.Row():
+                prompt = gr.Textbox(label="Prompt", elem_id=f"{id_part}_prompt", show_label=True, lines=5,
+                    placeholder="Prompt (press Ctrl+Enter or Alt+Enter to generate)"
+                )
 
             with gr.Row():
-                with gr.Column(scale=80):               
-                    with gr.Row():
-                        negative_prompt = gr.Textbox(label="Negative prompt", elem_id=f"{id_part}_neg_prompt", show_label=True, lines=5,
-                            placeholder="Negative prompt (press Ctrl+Enter or Alt+Enter to generate)"
-                        )
+                negative_prompt = gr.Textbox(label="Negative prompt", elem_id=f"{id_part}_neg_prompt", show_label=True, lines=5,
+                    placeholder="Negative prompt (press Ctrl+Enter or Alt+Enter to generate)"
+                )
 
         with gr.Column(elem_id=f"{id_part}_actions_column"):
        
@@ -508,7 +515,7 @@ def create_ui():
                     with gr.Accordion("Prompt", open=True):
                         txt2img_prompt, txt2img_prompt_styles, txt2img_negative_prompt, _, _, txt2img_prompt_style_apply, txt2img_save_style, txt2img_paste, extra_networks_button, token_counter, token_button, negative_token_counter, negative_token_button = create_toprow(is_img2img=False)
                         
-                        with FormRow(variant='compact', elem_id="txt2img_extra_networks", visible=False) as extra_networks:
+                        with FormRow(variant='compact', elem_id="txt2img_extra_networks_row", visible=False) as extra_networks:
                             from modules import ui_extra_networks
                             extra_networks_ui = ui_extra_networks.create_ui(extra_networks, extra_networks_button, 'txt2img')
                     
@@ -728,7 +735,7 @@ def create_ui():
                         with gr.Accordion("Prompt", open=False):
                             img2img_prompt, img2img_prompt_styles, img2img_negative_prompt, img2img_interrogate, img2img_deepbooru, img2img_prompt_style_apply, img2img_save_style, img2img_paste, extra_networks_button, token_counter, token_button, negative_token_counter, negative_token_button = create_toprow(is_img2img=True)
                             
-                            with FormRow(variant='compact', elem_id="img2img_extra_networks", visible=False) as extra_networks:
+                            with FormRow(variant='compact', elem_id="img2img_extra_networks_row", visible=False) as extra_networks:
                                 from modules import ui_extra_networks
                                 extra_networks_ui_img2img = ui_extra_networks.create_ui(extra_networks, extra_networks_button, 'img2img')
 
@@ -795,7 +802,7 @@ def create_ui():
                                 
                             for category in ordered_ui_categories():    
                                 if category == "inpaint":
-                                    with FormGroup(elem_id="inpaint_controls", visible=False) as inpaint_controls:
+                                    with FormGroup(elem_id="inpaint_controls_sub-group-collapse", visible=False) as inpaint_controls:
                                         with gr.Row():
                                             mask_blur = gr.Slider(label='Mask blur', minimum=0, maximum=64, step=1, value=4, elem_id="img2img_mask_blur")
                                             mask_alpha = gr.Slider(label="Mask transparency", visible=False, elem_id="img2img_mask_alpha")
@@ -1847,15 +1854,13 @@ def versions_html():
         xformers_version = "N/A"
 
     return f"""
-python: <span title="{sys.version}">{python_version}</span>
- • 
-torch: {torch.__version__}
- • 
-xformers: {xformers_version}
- • 
-gradio: {gr.__version__}
- • 
-commit: <a href="https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/{commit}">{short_commit}</a>
- • 
-checkpoint: <a id="sd_checkpoint_hash">N/A</a>
+<ul class="info-ul">
+<li><span>os: </span>{sys.platform}</li>    
+<li><span>python: </span> {python_version}</li>
+<li><span>torch: </span> {torch.__version__}</li>
+<li><span>xformers: </span> {xformers_version}</li>
+<li><span>gradio: </span> {gr.__version__}</li>
+<li><span>commit: <a href="https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/{commit}"></span>{short_commit}</a></li>
+<li><span>checkpoint: </span><a id="sd_checkpoint_hash">N/A</a></li>
+</ul>
 """
