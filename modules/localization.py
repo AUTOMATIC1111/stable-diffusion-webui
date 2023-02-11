@@ -9,6 +9,7 @@ localizations = {}
 
 def list_localizations(dirname):
     localizations.clear()
+    return localizations
 
     for file in os.listdir(dirname):
         fn, ext = os.path.splitext(file)

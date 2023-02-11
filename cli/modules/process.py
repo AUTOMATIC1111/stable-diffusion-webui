@@ -20,6 +20,7 @@ process people images
 """
 
 import os
+import sys
 import io
 import math
 import base64
@@ -32,6 +33,8 @@ import mediapipe as mp
 from PIL import Image, ImageOps
 from skimage.metrics import structural_similarity as ssim
 from scipy.stats import beta
+sys.path.append(os.path.join(os.path.dirname(__file__)))
+
 from util import log, Map
 from sdapi import postsync
 
@@ -50,21 +53,24 @@ params = Map({
     'face_pad': 0.2, # pad face image percentage
     'face_model': 1, # which face model to use 0/close-up 1/standard
     'face_blur_score': 1.5, # max score for face blur detection
-    'face_range_score': 0.2, # min score for face dynamic range detection
+    'face_range_score': 0.15, # min score for face dynamic range detection
     'body_score': 0.9, # min body detection score
     'body_visibility': 0.5, # min visibility score for each detected body part
     'body_parts': 15, # min number of detected body parts with sufficient visibility
     'body_pad': 0.2,  # pad body image percentage
     'body_model': 2, # body model to use 0/low 1/medium 2/high
     'body_blur_score': 1.8, # max score for body blur detection
-    'body_range_score': 0.2, # min score for body dynamic range detection
+    'body_range_score': 0.15, # min score for body dynamic range detection
     'segmentation_face': False, # segmentation enabled
     'segmentation_body': False, # segmentation enabled
     'segmentation_model': 0, # segmentation model 0/general 1/landscape
     'segmentation_background': (192, 192, 192), # segmentation background color
-    'similarity_score': 0.6, # maximum similarity score before image is discarded
+    'similarity_score': 0.8, # maximum similarity score before image is discarded
     'similarity_size': 64, # base similarity detection on reduced images
-    'interrogate_model': 'clip' # interrogate model
+    'interrogate_model': ['clip', 'deepdanbooru'], # interrogate model
+    'tag_limit': 5, # number of tags to extract
+    'face_restore': True, # attempt to restore face quality
+    'face_upscale': True, # attempt to scale small faces
 })
 face_model = None
 body_model = None
@@ -161,6 +167,26 @@ def extract_face(img):
     square = [scale * (cx - l), scale * (cy - l), scale * (cx + l), scale * (cy + l)]
     square = [max(square[0], 0), max(square[1], 0), min(square[2], img.width), min(square[3], img.height)]
     cropped = img.crop(tuple(square))
+
+    upscale = 1
+    if params.face_restore or params.face_upscale:
+        if (cropped.size[0] < params.target_size or cropped.size[1] < params.target_size) and params.face_upscale:
+            upscale = 2
+        kwargs = Map({
+            'image': encode(cropped),
+            'upscaler_1': 'SwinIR_4x' if params.face_upscale else None,
+            'codeformer_visibility': 1.0 if params.face_restore else 0.0,
+            'codeformer_weight': 0.15 if params.face_restore else 0.0,
+            'upscaling_resize': upscale,
+        })
+        original = [cropped.size[0], cropped.size[1]]
+        res = postsync('/sdapi/v1/extra-single-image', kwargs)
+        cropped = Image.open(io.BytesIO(base64.b64decode(res['image'])))
+        kwargs.image = [cropped.size[0], cropped.size[1]]
+        upscaled = [cropped.size[0], cropped.size[1]]
+        upscale = False if upscale == 1 else { 'original': original, 'upscaled': upscaled }
+        log.info({ 'process face restore': params.face_restore, 'upscale': upscale })
+
     if cropped.size[0] < params.target_size and cropped.size[1] < params.target_size:
         log.info({ 'process face skip': 'low resolution', 'size': [cropped.size[0], cropped.size[1]] })
         return None, True
@@ -253,37 +279,51 @@ def extract_body(img):
 
     similarity = detect_simmilar(squared)
     if similarity > params.similarity_score:
-        log.info({ 'process body skip': 'similarity check fail', 'score': similarity })
+        log.info({ 'process body skip': 'similarity check fail', 'score': round(similarity, 2) })
         return None, True
 
     return squared, True
 
 
-def interrogate(img, fn):
-    def encode(f):
-        with io.BytesIO() as stream:
-            img.save(stream, 'JPEG')
-            values = stream.getvalue()
-            encoded = base64.b64encode(values).decode()
-            return encoded
+def encode(img):
+    with io.BytesIO() as stream:
+        img.save(stream, 'JPEG')
+        values = stream.getvalue()
+        encoded = base64.b64encode(values).decode()
+        return encoded
 
-    if params.interrogate_model is None or params.interrogate_model == '':
+
+def interrogate(img, fn, txt):
+    if len(params.interrogate_model) == 0:
         return
-    json = Map({ 'image': encode(img), 'model': params.interrogate_model })
-    res = postsync('/sdapi/v1/interrogate', json)
-    caption = res.caption if 'caption' in res else ''
-    log.info({ 'interrogate': caption })
-    file = fn.replace(params.format, '.txt')
-    f = open(file, 'w')
-    f.write(caption)
-    f.close()
-    return caption
+    caption = ''
+    tags = []
+    for model in params.interrogate_model:
+        json = Map({ 'image': encode(img), 'model': model })
+        res = postsync('/sdapi/v1/interrogate', json)
+        if model == 'clip':
+            caption = res.caption if 'caption' in res else ''
+            caption = caption.split(',')[0].replace('a ', '')
+        if model == 'deepdanbooru':
+            tag = res.caption if 'caption' in res else ''
+            tags = tag.split(',')
+            tags = [t.replace('(', '').replace(')', '').split(':')[0].strip() for t in tags]
+        if txt:
+            file = fn.replace(params.format, '.txt')
+            f = open(file, 'w')
+            f.write(caption)
+            f.close()
+    tags.insert(0, caption.split(' ')[0])
+    if len(tags) > params.tag_limit:
+        tags = tags[:params.tag_limit]
+    log.info({ 'interrogate': caption, 'tags': tags })
+    return caption, tags
 
 
 i = {}
 metadata = Map({})
 
-def process_file(f: str, dst: str = None, preview: bool = False, offline: bool = False):
+def process_file(f: str, dst: str = None, preview: bool = False, offline: bool = False, txt: bool = True):
 
     def save(img, f, what):
         i[what] = i.get(what, 0) + 1
@@ -298,8 +338,8 @@ def process_file(f: str, dst: str = None, preview: bool = False, offline: bool =
         if not preview:
             img.save(fn)
             if not offline:
-                caption = interrogate(img, fn)
-        metadata[fn] = { 'caption': caption, 'tags': [] }
+                caption, tags = interrogate(img, fn, txt)
+        metadata[fn] = { 'caption': caption, 'tags': tags }
         return fn
 
     log.info({ 'processing': f })

@@ -29,7 +29,7 @@ from modules.util import Map, log, set_logfile
 from modules.sdapi import close, get, interrupt, post, progress, session
 from modules.process import process_images
 from modules.grid import grid
-create_preview = importlib.import_module('modules.embedding-preview').create_preview
+create_preview = importlib.import_module('modules.preview-embeddings').create_preview
 plot = importlib.import_module('modules.train-losschart').plot
 extract = importlib.import_module('modules.video-extract').extract
 gen_loss_rate_str = importlib.import_module('modules.train-lossrate').gen_loss_rate_str
@@ -38,6 +38,82 @@ images = []
 args = {}
 options = None
 cmdflags = None
+args = Map({
+  "training_model": "sd-v15-runwayml.ckpt",
+  "extract_video": {
+    "rate": 0,
+    "fps": 5,
+    "vstart": 0,
+    "vend": 0
+  },
+  "create_embedding": {
+      "name": "test",
+      "num_vectors_per_token": 1,
+      "overwrite_old": False,
+      "init_text": "*"
+  },
+  "preprocess": {
+      "id_task": 0,
+      "process_src": "",
+      "process_dst": "",
+      "process_width": 512,
+      "process_height": 512,
+      "process_flip": False,
+      "process_split": False,
+      "process_caption": True,
+      "process_caption_deepbooru": False,
+      "preprocess_txt_action": "ignore",
+      "process_focal_crop": True,
+      "process_focal_crop_face_weight": 0.9,
+      "process_focal_crop_entropy_weight": 0.3,
+      "process_focal_crop_edges_weight": 0.5,
+      "process_focal_crop_debug": False,
+      "split_threshold": 0.5,
+      "overlap_ratio": 0.2,
+      "process_multicrop": None,
+      "process_multicrop_mindim": None,
+      "process_multicrop_maxdim": None,
+      "process_multicrop_minarea": None,
+      "process_multicrop_maxarea": None,
+      "process_multicrop_objective": None,
+      "process_multicrop_threshold": None,
+  },
+  "train_embedding": {
+      "id_task": 0,
+      "embedding_name": "",
+      "learn_rate": -1,
+      "batch_size": 1,
+      "steps": 500,
+      "data_root": "",
+      "log_directory": "train/log",
+      "template_filename": "subject_filewords.txt",
+      "gradient_step": 20,
+      "training_width": 512,
+      "training_height": 512,
+      "shuffle_tags": False,
+      "tag_drop_out": 0,
+      "clip_grad_mode": "disabled",
+      "clip_grad_value": "0.1",
+      "latent_sampling_method": "deterministic",
+      "create_image_every": -1,
+      "save_embedding_every": -1,
+      "save_image_with_stored_embedding": False,
+      "preview_from_txt2img": False,
+      "preview_prompt": "",
+      "preview_negative_prompt": "blurry, duplicate, ugly, deformed, low res, watermark, text",
+      "preview_steps": 20,
+      "preview_sampler_index": 0,
+      "preview_cfg_scale": 6,
+      "preview_seed": -1,
+      "preview_width": 512,
+      "preview_height": 512,
+      "varsize": False,
+  },
+      "create_hypernetwork": {
+  },
+      "train_hypernetwork": {
+  }
+})
 
 
 async def plotloss(params):
@@ -427,7 +503,6 @@ async def monitor(params):
 
 async def main():
     parser = argparse.ArgumentParser(description="sd train pipeline")
-    parser.add_argument("--config", type = str, default = 'train.json', required = False, help = "configuration file, default: %(default)s")
     parser.add_argument("--name", type = str, required = True, help = "embedding name, set to auto to use src folder name")
     parser.add_argument("--src", type = str, required = True, help = "source image folder or movie file")
     parser.add_argument("--init", type = str, default = "person", required = False, help = "initialization class, default: %(default)s")
@@ -458,27 +533,6 @@ async def main():
     log.debug({ 'args': params.__dict__ })
     home = Path(sys.argv[0]).parent
     global args # pylint: disable=global-statement
-    if os.path.isfile(params.config):
-        try:
-            with open(params.config, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                args = Map(data) # pylint: disable=redefined-outer-name
-                log.debug({ 'config': args })
-        except Exception as e:
-            log.error({ 'config error': params.config, 'exception': e })
-            exit()
-    elif os.path.isfile(os.path.join(home, params.config)):
-        try:
-            with open(os.path.join(home, params.config), 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                args = Map(data) # pylint: disable=redefined-outer-name
-                log.debug({ 'config': args })
-        except Exception as e:
-            log.error({ 'config error': params.config, 'exception': e })
-            exit()
-    else:
-        log.error({ 'config file not found': params.config})
-        exit()
     if params.vstart > 0:
         args.extract_video.vstart = params.vstart
     if params.vend > 0:

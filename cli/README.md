@@ -24,14 +24,26 @@ Parameters that are not specified will be randomized:
 
 ### Train
 
-End-to-end embedding training
-> python train.py
+Textual inversion embedding training
+> python train-ti.py
 
 Combined pipeline:
 1. Creates embedding  
 2. Extracts images if input is movie  
 3. Preprocesses images  
 4. Runs training  
+
+LoRA training
+> python train-lora.py
+
+Combined pipeline:
+1. Creates embedding  
+2. Extracts images if input is movie  
+3. Preprocesses images  
+4. Runs training  
+
+LoRA extract from model
+> python moidules/lora-extract.py
 
 <br>
 
@@ -49,7 +61,7 @@ Note: Requires SD API
 Create previews of embeddings using preview templates  
 Note: Requires SD API  
 
-> python modules/embedding-preview.py
+> python modules/preview-embeddings.py
 
 ## Grid
 
@@ -72,19 +84,19 @@ Note: Requires SD API
 
 > python modules/interrogate.py
 
-### Multi-Interrogate
+### Interrogate-Offline
 
 Standalone implementation of GiT, CLiP and ViT image interrogation  
 Note: Offline tool  
 
-> python modules/interrogate.py
+> python modules/interrogate-offline.py
 
 ### Models Previews
 
 Create previews of models using built-in templates  
 Note: Requires SD API  
 
-> python modules/models-preview.py
+> python modules/preview-models.py
 
 ### Palette Extract
 
@@ -146,3 +158,4 @@ Note: Requires SD API
 Can be used to manually execute specific commands:
 > python sdapi.py progress  
 > python sdapi.py interrupt
+> python sdapi.py shutdown

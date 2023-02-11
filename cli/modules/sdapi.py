@@ -34,7 +34,7 @@ async def result(req):
             res = {}
         else:
             res = Map(json)
-        log.debug({ 'request': req.status, 'url': req.url, 'reason': req.reason, 'result': res })
+        log.debug({ 'request': req.status, 'url': req.url, 'reason': req.reason })
         return res
 
 
@@ -51,7 +51,7 @@ def resultsync(req: requests.Response):
             res = {}
         else:
             res = Map(json)
-        log.debug({ 'request': req.status_code, 'url': req.url, 'reason': req.reason, 'result': res })
+        log.debug({ 'request': req.status_code, 'url': req.url, 'reason': req.reason })
         return res
 
 
@@ -128,6 +128,13 @@ async def progress():
     return res
 
 
+def shutdown():
+    try:
+        postsync('/sdapi/v1/shutdown')
+    except Exception as e:
+        log.info({ 'shutdown': e })
+
+
 async def session():
     global sess # pylint: disable=global-statement
     time = aiohttp.ClientTimeout(total = None, sock_connect = 10, sock_read = None) # default value is 5 minutes, we need longer for training
@@ -161,4 +168,6 @@ if __name__ == "__main__":
         asyncio.run(interrupt())
     if 'progress' in sys.argv:
         asyncio.run(progress())
+    if 'shutdown' in sys.argv:
+        shutdown()
     asyncio.run(close())

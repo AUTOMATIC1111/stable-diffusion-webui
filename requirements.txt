@@ -5,6 +5,7 @@ blendmodes
 bitsandbytes
 clean-fid
 colormap
+diffusers
 easydev
 einops
 extcolors

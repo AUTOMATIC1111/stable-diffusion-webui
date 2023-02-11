@@ -18,7 +18,6 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'modules', '
 import library.model_util as model_util
 import library.train_util as train_util
 
-
 warnings.filterwarnings('ignore')
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 options = Map({

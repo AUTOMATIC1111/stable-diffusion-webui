@@ -64,7 +64,7 @@
         "flavors"
     ],
     "interrogate_deepbooru_score_threshold": 0.65,
-    "interrogate_keep_models_in_memory": false,
+    "interrogate_keep_models_in_memory": true,
     "interrogate_return_ranks": true,
     "interrogate_use_builtin_artists": false,
     "jpeg_quality": 80,
@@ -188,5 +188,7 @@
     "image_browser_scan_exif": false,
     "image_browser_page_columns": 6.0,
     "image_browser_page_rows": 20.0,
-    "image_browser_pages_perload": 20.0
+    "image_browser_pages_perload": 20.0,
+    "image_browser_mod_shift": false,
+    "image_browser_mod_ctrl_shift": false
 }

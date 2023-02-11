@@ -17,15 +17,19 @@ import os
 import gc
 import sys
 import json
+import time
 import argparse
 import tempfile
 import torch
+import logging
+import importlib
 import transformers
 from pathlib import Path
-from util import log, Map, get_memory
-import process
-import multiinterrogate
-import lora_latents
+from modules.util import log, Map, get_memory
+import modules.process
+import modules.sdapi
+
+latents = importlib.import_module('modules.lora-latents')
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'modules', 'lora'))
 from train_network import train
@@ -122,19 +126,27 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = 'train lora')
     parser.add_argument('--model', type=str, default=None, required=True, help='original model to use a base for training')
     parser.add_argument('--input', type=str, default=None, required=True, help='input folder with training images')
+    parser.add_argument('--output', type=str, default=None, required=True, help='lora name')
+    parser.add_argument('--tag', type=str, default=None, required=False, help='primary tag')
     parser.add_argument('--dir', type=str, default=None, required=True, help='folder containing lora checkpoints')
-    parser.add_argument('--name', type=str, default=None, required=True, help='lora name')
     parser.add_argument('--interim', type=int, default=0, help = 'save interim checkpoints after n epoch')
     parser.add_argument('--noprocess', default = False, action='store_true', help = 'skip processing and use existing input data')
+    parser.add_argument('--notrain', default = False, action='store_true', help = 'just run processing and skip training')
     parser.add_argument('--nocaptions', default = False, action='store_true', help = 'skip creating captions and tags')
     parser.add_argument('--nolatents', default = False, action='store_true', help = 'skip generating vae latents')
+    parser.add_argument('--offline', default = False, action='store_true', help = 'do not use webui server for processing')
     parser.add_argument('--gradient', type=int, default=1, required=False, help='gradient accumulation steps, default: %(default)s')
     parser.add_argument('--steps', type=int, default=5000, required=False, help='training steps, default: %(default)s')
     parser.add_argument('--dim', type=int, default=128, required=False, help='network dimension, default: %(default)s')
+    parser.add_argument('--batch', type=int, default=1, required=False, help='batch size, default: %(default)s')
     parser.add_argument('--lr', type=float, default=1e-04, required=False, help='model learning rate, default: %(default)s')
     parser.add_argument('--unetlr', type=float, default=1e-04, required=False, help='unet learning rate, default: %(default)s')
     parser.add_argument('--textlr', type=float, default=5e-05, required=False, help='text encoder learning rate, default: %(default)s')
+    parser.add_argument('--debug', default=False, action='store_true', help = "enable debug logging")
     args = parser.parse_args()
+    if args.debug:
+        log.setLevel(logging.DEBUG)
+        log.debug({ 'debug': True })
     if not os.path.exists(args.model) or not os.path.isfile(args.model):
         log.error({ 'lora cannot find model': args.model })
         exit(1)
@@ -146,7 +158,7 @@ if __name__ == '__main__':
         log.error({ 'lora cannot find training dir': args.dir })
         exit(1)
     options.output_dir = args.dir
-    options.output_name = args.name
+    options.output_name = args.output
     options.max_train_steps = args.steps
     options.network_dim = args.dim
     options.gradient_accumulation_steps = args.gradient
@@ -154,46 +166,44 @@ if __name__ == '__main__':
     options.learning_rate = args.lr
     options.unet_lr = args.unetlr
     options.text_encoder_lr = args.textlr
+    options.train_batch_size = args.batch
     log.info({ 'train lora args': vars(options) })
     transformers.logging.set_verbosity_error()
     mem_stats()
 
-    if args.noprocess:
-        dir = args.input
-        options.train_data_dir = dir
-        options.in_json = None
-    else:
-        dir = os.path.join(tempfile.gettempdir(), args.name, '10_processed')
-        Path(dir).mkdir(parents=True, exist_ok=True)
+    dir = os.path.join(tempfile.gettempdir(), args.output, '10_processed')
+    Path(dir).mkdir(parents=True, exist_ok=True)
+    json_file = os.path.join(dir, args.output + '.json')
+    options.train_data_dir = os.path.join(tempfile.gettempdir(), args.output)
+    options.in_json = json_file
 
+    for root, _sub_dirs, folder in os.walk(args.input):
+        files = [os.path.join(root, f) for f in folder]
+    if not args.noprocess:
         # preprocess
-        for root, _sub_dirs, folder in os.walk(args.input):
-            files = [os.path.join(root, f) for f in folder]
         for f in files:
-            res, metadata = process.process_file(f = f, dst = dir, preview = False, offline = True)
-        process.unload_models()
-        options.train_data_dir = os.path.join(tempfile.gettempdir(), args.name)
+            res, metadata = modules.process.process_file(f = f, dst = dir, preview = False, offline = args.offline, txt = False)
+        modules.process.unload_models()
         mem_stats()
-
-    if not args.nocaptions:
-        # interrogate
-        for root, _sub_dirs, folder in os.walk(dir):
-            files = [os.path.join(root, f) for f in folder]
-        metadata = multiinterrogate.interrogate_files(Map({ 'input': dir, 'json': '', 'tag': args.name }), files)
-        json_file = os.path.join(dir, args.name + '.json')
+        if args.tag is not None:
+            for name, item in metadata.items():
+                item['tags'].insert(0, args.tag)
         with open(json_file, "w") as outfile:
             outfile.write(json.dumps(metadata, indent=2))
-        multiinterrogate.unload_model()
+        log.info({ 'processed': res, 'inputs': len(files), 'metadata': json_file, 'path': dir })
+    else:
+        log.info({ 'skip processing': len(files), 'metadata': json_file, 'path': dir })
+
+    if not args.notrain:
+        log.info({ 'server shutdown required': True })
+        modules.sdapi.shutdown()
+        time.sleep(1)
+
+        if not args.nolatents and json_file is not None:
+            # create latents
+            latents.create_vae_latents(Map({ 'input': dir, 'json': json_file }))
+            latents.unload_vae()
+            mem_stats()
+
+        train(options)
         mem_stats()
-        options.in_json = json_file
-
-        log.info({ 'processed': res, 'inputs': len(files), 'metadata': json_file })
-
-    if not args.nolatents:
-        # create latents
-        lora_latents.create_vae_latents(Map({ 'input': dir, 'json': json_file }))
-        lora_latents.unload_vae()
-        mem_stats()
-
-    train(options)
-    mem_stats()
