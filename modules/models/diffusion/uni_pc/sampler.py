@@ -80,10 +80,13 @@ class UniPCSampler(object):
 
         ns = NoiseScheduleVP('discrete', alphas_cumprod=self.alphas_cumprod)
 
+        # SD 1.X is "noise", SD 2.X is "v"
+        model_type = "v" if self.model.parameterization == "v" else "noise"
+
         model_fn = model_wrapper(
             lambda x, t, c: self.model.apply_model(x, t, c),
             ns,
-            model_type="noise",
+            model_type=model_type,
             guidance_type="classifier-free",
             #condition=conditioning,
             #unconditional_condition=unconditional_conditioning,
