@@ -2,7 +2,7 @@ This is a feature showcase page for [Stable Diffusion web UI](https://github.com
 
 All examples are non-cherrypicked unless specified otherwise.
 
-# InsatructPix2Pix
+# InstructPix2Pix
 [Website](https://www.timothybrooks.com/instruct-pix2pix). [Checkpoint](http://instruct-pix2pix.eecs.berkeley.edu/instruct-pix2pix-00-22000.ckpt). The checkpoint is fully supported in img2img tab. No additional actions are required. Previously an [extension](https://github.com/Klace/stable-diffusion-webui-instruct-pix2pix) by a contributor was required to generate pictures: it's no longer required, but should still work. Most of img2img implementation is by the same person.
 
 To reproduce results of the original repo, use denoising of 1.0, Euler a sampler, and edit the config in `configs/instruct-pix2pix.yaml` to say:
@@ -159,7 +159,7 @@ To use the model, you must rename the checkpoint so that its filename ends in `i
 After that just select the checkpoint as you'd usually select any checkpoint and you're good to go.
 
 ## Masked content
-The masked content field determines content is placed to put into the masked regions before they are inpainted.
+The masked content field determines content is placed to put into the masked regions before they are inpainted. This does not represent final output, it's only a look at what's going on mid-process.
 
 | mask                                            | fill                                            | original                                            | latent noise                                            | latent nothing                                            |
 |-------------------------------------------------|-------------------------------------------------|-----------------------------------------------------|---------------------------------------------------------|-----------------------------------------------------------|
@@ -323,9 +323,10 @@ With this script it is possible to create a list of jobs which will be executed 
 
 Example input:
 
-```--prompt "photo of sunset" 
---prompt "photo of sunset" --negative_prompt "orange, pink, red, sea, water, lake" --width 1024
---prompt "photo of winter mountains" 
+```
+--prompt "photo of sunset" 
+--prompt "photo of sunset" --negative_prompt "orange, pink, red, sea, water, lake" --width 1024 --height 768 --sampler_name "DPM++ 2M Karras" --steps 10 --batch_size 2 --cfg_scale 3 --seed 9
+--prompt "photo of winter mountains" --steps 7 --sampler_name "DDIM"
 --prompt "photo of winter mountains" --width 1024
 ```
 
