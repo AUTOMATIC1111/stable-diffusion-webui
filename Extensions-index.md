@@ -412,6 +412,20 @@
 			"tags": ["script", "tab"]
 		},
 		{
+			"name": "Promptgen",
+			"url": "https://github.com/AUTOMATIC1111/stable-diffusion-webui-promptgen.git",
+			"description": "Use transformers models to generate prompts.",
+			"added": "2023-01-18",
+			"tags": ["script", "tab"]
+		},
+		{
+			"name": "text2prompt",
+			"url": "https://github.com/toshiaki1729/stable-diffusion-webui-text2prompt.git",
+			"description": "Generates anime tags using databases and models for tokenizing.",
+			"added": "2023-2-11",
+			"tags": ["script", "tab"]
+		},
+		{
 			"name": "Prompt Translator",
 			"url": "https://github.com/butaixianran/Stable-Diffusion-Webui-Prompt-Translator",
 			"description": "A integrated translator for translating prompts to English using Deepl or Baidu.",
@@ -493,13 +507,6 @@
 			"url": "https://github.com/KohakuBlueleaf/a1111-sd-webui-haku-img.git",
 			"description": "Image utils extension. Allows blending, layering, hue and color adjustments, blurring and sketch effects, and basic pixelization.",
 			"added": "2023-01-17",
-			"tags": ["script", "tab"]
-		},
-		{
-			"name": "Promptgen",
-			"url": "https://github.com/AUTOMATIC1111/stable-diffusion-webui-promptgen.git",
-			"description": "Use transformers models to generate prompts.",
-			"added": "2023-01-18",
 			"tags": ["script", "tab"]
 		},
 		{
