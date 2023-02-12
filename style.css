@@ -1248,7 +1248,7 @@ min-height: 34px;
 /***************************/
 
 #context-menu {
-    z-index: 9999;
+    z-index: 99999;
     position: absolute;
     display: block;
     padding: 0;
@@ -1256,10 +1256,11 @@ min-height: 34px;
     border-radius: 0;
     box-shadow: none;
     width: 200px;
+	background-color: var(--nav-bg-color) !important;
 }
 
 .context-menu-items a:hover {
-	color:#fff;
+	color: var(--nav-bg-color);
     background-color: var(--primary-color);
 }
 
@@ -1275,9 +1276,7 @@ min-height: 34px;
     cursor: pointer;
 }
 
-.context-menu-items a:hover {
-    background-color: #a55000;
-}
+
 
 
 /************************/
