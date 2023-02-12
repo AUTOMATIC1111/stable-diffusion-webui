@@ -85,7 +85,7 @@ function switch_to_extras(){
 function get_tab_index(tabId){
     var res = 0
 
-    gradioApp().getElementById(tabId).querySelector('div').querySelectorAll('button').forEach(function(button, i){
+    gradioApp().getElementById(tabId).querySelector('div').querySelectorAll('button').forEach(function(button, i){		
         if(button.className.indexOf('bg-white') != -1)
             res = i
     })
@@ -350,6 +350,35 @@ onUiUpdate(function(){
 		})
 
 	})
+	
+	// mobile nav menu
+	const tabs_menu = gradioApp().querySelector('#tabs > div:first-child');
+	const nav_menu = gradioApp().querySelector('#nav_menu');
+	let menu_open = false;
+	function toggleNavMenu() {
+		menu_open = !menu_open;			
+		if(menu_open){
+			tabs_menu.classList.add("open");
+			nav_menu.classList.add("fixed");
+		}else{
+			tabs_menu.classList.remove("open");
+			nav_menu.classList.remove("fixed");
+		}
+	}
+		
+    nav_menu.addEventListener('click', toggleNavMenu);
+	
+	tabs_menu.addEventListener("click", function(e) {
+			e.preventDefault();
+			menu_open = false;
+			tabs_menu.classList.remove("open");
+			nav_menu.classList.remove("fixed");			
+    })
+	
+	
+	
+	
+	
 	
 	
 })

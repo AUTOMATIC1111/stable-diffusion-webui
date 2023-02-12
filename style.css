@@ -342,9 +342,131 @@
     color: var(--primary-color);
 }
 
+/* offcanvas menu */
+#tabs > div:first-child {
+    position: fixed;
+    z-index: 9999;
+    display: block;
+    width: 90%;
+    height: 100%;
+    /*background-color: black !important;*/
+    top: 0;
+    padding-top: 70px;
+    left:0;
+    max-width: 320px;
+	transform: translateX(-100%);
+	transition: all 0.25s ease 0s;
+    box-shadow: rgba(0,0,0,0)-30px 0 30px 30px;
+	overflow-y: auto;
+
+}
+
+#tabs > div:first-child.open {
+    transform: translateX(0);
+	box-shadow: rgba(0,0,0,0.4)-30px 0 30px 30px;
+}
+
+
+#tabs > div:first-child > button {
+    display: block;
+    width: 320px;
+    text-align: left;
+    background-color: transparent !important;
+    border-top: 2px !important;
+    border-left: 0;
+    border-right: 0;
+    border-radius: 0 !important;
+    border-bottom: 2px !important;
+	padding-left: 20px;
+}
+
+
+
+
+#tabs > div:first-child > button:hover{	
+
+    background-color: var(--primary-color) !important;
+	color: var(--bg-main-color) !important;
+
+}
+
+#tabs > #nav_menu {
+    z-index: 9999;
+    background-color: var(--input-bg-color);
+    position: absolute;
+    width: 38px;
+    height: 38px;
+    top: -2px;
+    left: 0;
+    border-radius: 100%;
+    cursor: pointer;
+}
+
+#tabs > #nav_menu.fixed {
+	position: fixed;
+}
+
+#tabs > #nav_menu::before {
+    content: ' ';
+    display: inline-block;
+    -webkit-mask-size: cover;
+    mask-size: cover;
+    background-color: var(--icon-color);
+    width: var(--icon-size);
+    height: var(--icon-size);
+    -webkit-mask: url(./file=html/svg/menu-line.svg) no-repeat 50% 50%;
+    mask: url(./file=html/svg/menu-line.svg) no-repeat 50% 50%;
+    cursor: pointer;
+    position: relative;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%) scale(1.0);
+    
+}
+
+#tabs > #nav_menu:hover {
+	background-color: var(--primary-color);
+}
+#tabs > #nav_menu:hover::before {
+	background-color: var(--main-bg-color);
+}
+
+/* footer to bottom of page */
+.min-h-screen > .mx-auto.container{
+	display:flex; flex-direction:column;
+	min-height: 100vh; margin:0;
+}
+
+.min-h-screen > .mx-auto.container > div{
+	
+}
+
+.min-h-screen > .mx-auto.container > div > #tabs{
+	flex:1;
+}
+
+.min-h-screen > .mx-auto.container > div > #footer{
+	 min-height:32px;
+}
+
+.min-h-screen > .mx-auto.container > div > #quicksettings{
+	 min-height:34px;
+}
+
+
+
+
+
+
+
+/* what is this find out */
+#settings_json{
+	display:none !important;
+}
+
+
 
 /* form seperator */
-
 .dark .dark\:bg-gray-700 {
     background-color: var(--panel-border-color) !important;
 }
@@ -902,6 +1024,8 @@ display:none;
 #quicksettings .gr-input {
 padding-right: 37px;
 width: auto;
+max-width: 245px;
+min-height: 34px;
 }
 
 /***************************/
@@ -1009,7 +1133,8 @@ width: auto;
 
 [id$="2img_settings_scroll"]
 {
-    height: calc(100vh - 296px);
+	/* need to calculate this */
+    height: calc(100vh - 244px);
     overflow-y: auto !important;
     overflow-x: hidden;
     padding-top: var(--outside-gap-size);
@@ -1127,7 +1252,7 @@ canvas[key=mask] {
     content: "";
     position: absolute;
     z-index: 1;
-    height: calc(100vh - 288px);
+    height: calc(100vh - 235px);
     top: calc(var(--generate-button-height) + (var(--outside-gap-size) * 2.0));
     left: 0;
     bottom: 0;
@@ -1144,7 +1269,7 @@ canvas[key=mask] {
 [id$="2img_results"]
 {
     overflow-x: hidden !important;   
-    max-height: calc(100vh - 200px);
+    max-height: calc(100vh - 151px);
     overflow-y: auto !important;
 }
 
@@ -1171,14 +1296,14 @@ canvas[key=mask] {
 {
 
     width: 100%;
-	max-height: calc(100vh - 220px) !important;
-	min-height: calc(100vh - 220px) !important;
+	max-height: calc(100vh - 170px) !important;
+	min-height: calc(100vh - 170px) !important;
     overflow-x: hidden !important;
 }
 
 [id$="2img_gallery"] .overflow-y-auto>div:first-child
 {
-    height: calc(100vh - 237px);
+    height: calc(100vh - 187px);
 }
 
 [id$="2img_gallery"] div>img
@@ -1195,7 +1320,7 @@ canvas[key=mask] {
     min-height: auto;
     width: 100%;
     min-width: 100%;
-    max-height: calc(100vh - 215px);
+    max-height: calc(100vh - 170px);
 }
 
 [id$="2img_gallery"] img+div
@@ -1215,7 +1340,7 @@ canvas[key=mask] {
 .livePreview {
     position: absolute !important;
     width: calc(100% - 18px) !important;
-    max-height: calc(100vh - 280px) !important;
+    max-height: calc(100vh - 231px) !important;
     top: 9px;
     left: 9px;
     right: 0;
