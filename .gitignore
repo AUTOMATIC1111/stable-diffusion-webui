@@ -33,14 +33,3 @@ notification.mp3
 /test/stdout.txt
 /test/stderr.txt
 /cache.json
-scripts/prompt_blending.py
-scripts/advanced_seed_blending.py
-scripts/CFG Auto.py
-scripts/CFG Schedule.py
-scripts/img2tiles.py
-scripts/interpolate.py
-scripts/loopback_superimpose.py
-models/VAE/Put VAE here.txt
-models/VAE-approx/model.pt
-models/Stable-diffusion/Put Stable Diffusion checkpoints here.txt
-models/deepbooru/Put your deepbooru release project folder here.txt
