@@ -161,3 +161,10 @@ https://github.com/grexzen/SD-Chad
 
 Rates your images.
 
+## mine-diffusion
+https://github.com/fropych/mine-diffusion
+
+This extension converts images into blocks and creates schematics for easy importing into Minecraft using the Litematica mod.
+
+![](https://github.com/fropych/mine-diffusion/blob/master/README_images/demo.gif)
+
