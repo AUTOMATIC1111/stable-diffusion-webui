@@ -33,13 +33,33 @@
 	
 	--max-padding: max(var(--outside-gap-size),var(--inside-padding-size));
 	
-	--icon-color:#6a6e72;
+	--icon-color:#caccce;
 	--icon-hover-color:#1a1a1a;
 	--icon-size:22px;
 	
 	--nav-bg-color: #202124;
 	
-	/* test theme from opera classic gx */
+	--icon-color:#caccce;
+	--icon-hover-color:#1a1a1a;
+	--icon-size:22px;
+	
+	--nav-bg-color: #0a0a0a;
+	--nav-color: #caccce;
+	--nav-hover-color: #0a0a0a;
+	
+	--input-color: #caccce;
+	--label-color: #caccce;
+	
+	/*not yet */
+	--subgroup-input-color: #fff;
+	--subgroup-label-color: #fff;
+	
+	--placeholder-color: #494c50;
+	
+	--text-color: #caccce;
+	
+
+	/* test theme inspired from opera classic gx */
 	/*
 	--main-bg-color: #121019; 
 	--primary-color: #fa1e4e;
@@ -69,7 +89,7 @@
 	--tool-button-radius: 16px;
 	
 	--generate-button-height: 70px; 
-	--cancel-color: #ef4444 ;
+	--cancel-color: #4a3e65 ;
 	
 	--max-padding: max(var(--outside-gap-size),var(--inside-padding-size));
 	
@@ -78,10 +98,103 @@
 	--icon-size:22px;
 	
 	--nav-bg-color: #09080d;
+	--nav-color: #bfb6d2;
+	--nav-hover-color: #09080d;
+	
+	--input-color: #fa1e4e;
+	--label-color: #bfb6d2;
+	
+	--subgroup-input-color: #fff;
+	--subgroup-label-color: #fff;
+	
+	--placeholder-color: #4a3e65;
+	
+	--text-color: #bfb6d2;
 	*/
+	
   
 }
 
+/* label color */
+.dark .dark\:text-gray-200 {
+    color: var(--label-color);
+}
+
+/* checkbox radio */
+.dark .text-gray-700 {
+    color: var(--input-color);
+}
+
+/* text color */
+.dark .gr-box {
+    color: var(--text-color);
+}
+
+/* input color */
+.dark .gr-input {
+    color: var(--input-color);
+}
+
+/* accordion label arrow */
+.dark {
+    color: var(--input-color);
+}
+
+.dark .gr-button {
+	color: var(--input-color);
+}
+
+.dark .gr-button-primary {
+	color: var(--input-color);
+}
+
+.dark .gr-button-secondary {
+    color: var(--input-color);
+}
+
+.dark .gr-button:hover {
+	color: var(--main-bg-color);
+}
+
+.dark .gr-button-primary:hover {
+	color: var(--main-bg-color);
+}
+
+.dark .gr-button-secondary:hover {
+    color: var(--main-bg-color);
+}
+
+/* tabs */
+.text-gray-400 {
+    color: var(--input-color);
+}
+.dark .hover\:text-gray-700:hover,
+.text-gray-400:hover {
+    color: var(--text-color);
+}
+
+/*active color*/
+.bg-white{
+	color: var(--input-color);
+}
+
+::placeholder { /* Chrome, Firefox, Opera, Safari 10.1+ */
+  color: var(--placeholder-color) !important;
+  opacity: 1.0; /* Firefox */
+}
+
+:-ms-input-placeholder { /* Internet Explorer 10-11 */
+  color: var(--placeholder-color);
+}
+
+::-ms-input-placeholder { /* Microsoft Edge */
+  color: var(--placeholder-color);
+}
+
+/* fix overwrites */
+.dark .dark\:text-white {
+    color: inherit;
+}
 
 /* icons */
 
@@ -329,13 +442,13 @@
 
 .row>*,
 .row>.gr-form>* {
-    min-width: min(120px, 100%);
+    min-width: min(70px, 100%);
     flex: 1 1 0%;
 }
 
 .performance {
     font-size: .85em;
-    color: #444;
+    color: var(--primary-color);
 }
 
 .performance p {
@@ -382,6 +495,9 @@
 .tabs>div>.bg-white {
     border: 2px solid var(--main-bg-color);
     border-bottom: 2px solid var(--primary-color);
+   
+}
+#tabs > div:first-child > button.bg-white {
     color: var(--primary-color);
 }
 
@@ -421,15 +537,17 @@
     border-radius: 0 !important;
     border-bottom: 2px !important;
 	padding-left: 20px;
+	color: var(--nav-color);
 }
 
+	
 
 
 
 #tabs > div:first-child > button:hover{	
 
     background-color: var(--primary-color) !important;
-	color: var(--bg-main-color) !important;
+	color: var(--main-bg-color) !important;
 
 }
 
@@ -597,10 +715,6 @@ div.svelte-10ogue4 #script-list {
 }
 
 .dark .gr-input {
-    --tw-border-opacity: 1;
-    border-color: rgb(55 65 81/var(--tw-border-opacity));
-    --tw-text-opacity: 1;
-    color: rgb(229 231 235/var(--tw-text-opacity));
     margin-top: 0;
     border-radius: 0;
     padding: 6px;
@@ -1302,7 +1416,7 @@ canvas[key=mask] {
     left: 0;
     bottom: 0;
     width: 100%;
-	background: linear-gradient(0deg, rgb(26 26 26), transparent 2%, transparent 98%, rgb(26 26 26) 100%);
+	background: linear-gradient(0deg, var(--main-bg-color), transparent 2%, transparent 98%, var(--main-bg-color) 100%);
 }
 
 
@@ -1389,7 +1503,7 @@ canvas[key=mask] {
     top: 9px;
     left: 9px;
     right: 0;
-    bottom: 63px;
+    bottom: 60px;
     pointer-events: all;
     overflow: hidden !important;    
 	background-color: transparent !important;
@@ -1421,28 +1535,30 @@ canvas[key=mask] {
 /***********************************/
 
 .progressDiv {
-    background-color: #141414 !important;
+    background-color: var(--main-bg-color) !important;
     border-radius: 0 !important;
-    height: 16px;
-    position: absolute;
-    z-index: 1000;
-    top: 8px;
-    width: calc(100% - 16px) !important;
-    left: 8px;
-    border: 1px solid var(--panel-border-color);
+    height: 20px;
+    position: fixed;
+    z-index: 10000;
+    top: 0px;
+    /* width: calc(100% - 16px) !important; */
+    left: 0;
+    width: 100% !important;
+    /* border: 1px solid var(--panel-border-color); */
 }
 
 .progressDiv .progress {
     width: 0%;
-    height: 14px;
+    height: 4px;
     background-color: var(--primary-color);
-    color: #fff;
-    line-height: 14px;
+    color: var(--input-color);
+    line-height: 20px;
     text-align: right;
     border-radius: 0;
     padding: 0 2px;
-    font-size: 14px;
+    font-size: 12px;
 	white-space: nowrap;
+	font-weight: 600;
 }
 
 /***********/
@@ -2371,7 +2487,7 @@ a[data-tooltip]:after, a[data-tooltip]:before {
 a[data-tooltip]:before {
   content: attr(data-tooltip);
   background-color: var(--main-bg-color);
-  color: #fff;
+  /*color: #fff;*/
   font-size: 10px;
   font-weight: bold;
   padding: 10px 15px;
@@ -2486,8 +2602,7 @@ li.coffee-circle {
     top: -20px;
     left: 50%;
     transform: translate(-90%,-100%);
-    padding: 10px 20px;
-    color: #dfe1e5;
+    padding: 10px 20px;  
     background-color: var(--main-bg-color);
     font-weight: normal;
     font-size: 14px;
