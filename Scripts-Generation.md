@@ -75,6 +75,12 @@ https://github.com/Filarius/stable-diffusion-webui/blob/master/scripts/vid2vid.p
 
 From real video, img2img the frames and stitch them together. Does not unpack frames to hard drive.
 
+## Video Loopback
+https://github.com/fishslot/video_loopback_for_webui
+
+A video2video script that tries to improve on the temporal consistency and flexibility of normal vid2vid.
+Works with any SD model without finetune, but better with a LoRA or DreamBooth for your specified character.
+
 ## Force Symmetry
 https://gist.github.com/1ort/2fe6214cf1abe4c07087aac8d91d0d8a
 

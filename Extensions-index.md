@@ -83,6 +83,13 @@
 			"tags": ["script"]
 		},
 		{
+			"name": "Video Loopback",
+			"url": "https://github.com/fishslot/video_loopback_for_webui",
+			"description": "A video2video script that tries to improve on the temporal consistency and flexibility of normal vid2vid.",
+			"added": "2023-02-13",
+			"tags": ["script"]
+		},
+		{
 			"name": "Artists to study",
 			"url": "https://github.com/camenduru/stable-diffusion-webui-artists-to-study.git",
 			"description": "Shows a gallery of generated pictures by artists separated into categories.",
