@@ -23,12 +23,9 @@ Simplified start script: `automatic.sh`
 
 > ./automatic.sh  
 
-- Start in default mode with optimizations enabled
-
-> ./automatic.sh env  
-
-- Print env info and exit  
-  Example:
+- Start in default mode with optimizations enabled  
+  Additionally print environment info during startup  
+  Example:  
 
       Version: c07487a Tue Jan 24 08:04:31 2023 -0500
       Platform: Ubuntu 22.04.1 LTS 5.15.79.1-microsoft-standard-WSL2 x86_64
@@ -81,10 +78,20 @@ For some Torch optimizations notes, see Wiki
 Fork is compatible with regular **PyTorch 1.13** as well as pre-release of **PyTorch 2.0**  
 See [Wiki](https://github.com/vladmandic/automatic/wiki) for **Torch** optimization notes
 
+<br>
+
+## Scripts
+
+This repository comes with a large collection of scripts that can be used to process inputs, train, generate, and benchmark models  
+
+As well as number of auxiliary scripts that do not rely on **WebUI**, but can be used for end-to-end solutions such as extract frames from videos, etc.  
+
+For full details see [Docs](cli/README.md)
 
 <br>
 
 ## Docs
 
-Everything is in [Wiki](https://github.com/vladmandic/automatic/wiki)  
-Except my current [TODO](TODO.md)  
+- Scripts are in [Scripts](cli/README.md)  
+- Everything else is in [Wiki](https://github.com/vladmandic/automatic/wiki)  
+- Except my current [TODO](TODO.md)  

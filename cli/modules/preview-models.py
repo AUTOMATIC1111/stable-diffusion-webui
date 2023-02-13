@@ -15,7 +15,7 @@ from generate import sd, generate
 
 
 default = 'sd-v15-runwayml.ckpt [cc6cb27103]'
-embeddings = ['blonde', 'bruntette', 'sexy', 'naked', 'mia', 'lin', 'kelly', 'hanna', 'rreid-random-v0']
+embeddings = ['blonde', 'bruntette', 'sexy', 'naked', 'ti-mia', 'ti-lin', 'ti-kelly', 'ti-hanna', 'ti-rreid-random']
 exclude = ['sd-v20', 'sd-v21', 'inpainting', 'pix2pix']
 prompt = "photo of <keyword> <embedding>, photograph, posing, pose, high detailed, intricate, elegant, sharp focus, skin texture, looking forward, facing camera, 135mm, shot on dslr, canon 5d, 4k, modelshoot style, cinematic lighting"
 options = Map({
@@ -32,6 +32,7 @@ options = Map({
         'width': 512,
         'height': 512,
     },
+    'format': '.jpg',
     'paths': {
         "root": "/mnt/c/Users/mandi/OneDrive/Generative/Generate",
         "generate": "image",
@@ -43,11 +44,11 @@ options = Map({
         "sd_vae": "vae-ft-mse-840000-ema-pruned.ckpt",
     },
     'lora': {
-        'strength': 0.8,
+        'strength': 0.9,
     },
     'hypernetwork': {
         'keyword': 'beautiful sexy woman',
-        'strength': 1.0,
+        'strength': 0.9,
     },
 })
 
@@ -91,7 +92,7 @@ async def models(params):
     log.info({ 'total jobs': len(models) * len(embeddings) * options.generate.batch_size, 'per-model': len(embeddings) * options.generate.batch_size })
     log.info(json.dumps(options, indent=2))
     for model in models:
-        fn = os.path.join(dir, model + '.png')
+        fn = os.path.join(dir, model + options.format)
         if os.path.exists(fn) and len(params.input) == 0: # if model preview exists and not manually included
             log.info({ 'model preview exists': model })
             continue
@@ -139,15 +140,18 @@ async def lora(params):
     models = [f.stem for f in models1 + models2]
     log.info({ 'loras': len(models) })
     for model in models:
-        fn = os.path.join(dir, model + '.png')
+        fn = os.path.join(dir, model + options.format)
         if os.path.exists(fn) and len(params.input) == 0: # if model preview exists and not manually included
             log.info({ 'lora preview exists': model })
             continue
         images = []
         labels = []
         t0 = time.time()
-        keyword = model.replace('-', ' ')
-        options.generate.prompt = prompt.replace('<keyword>', f'\"{keyword}\"')
+        import re
+        keywords = re.sub('\d', '', model)
+        keywords = keywords.replace('-v', ' ').replace('-', ' ').strip().split(' ')
+        keyword = '\"' + '\" \"'.join(keywords) + '\"'
+        options.generate.prompt = prompt.replace('<keyword>', keyword)
         options.generate.prompt = options.generate.prompt.replace('<embedding>', '')
         options.generate.prompt += f' <lora:{model}:{options.lora.strength}>'
         log.info({ 'lora generating': model, 'keyword': keyword, 'prompt': options.generate.prompt })
@@ -175,7 +179,7 @@ async def hypernetwork(params):
     models = [f.stem for f in Path(dir).glob('*.pt')]
     log.info({ 'loras': len(models) })
     for model in models:
-        fn = os.path.join(dir, model + '.png')
+        fn = os.path.join(dir, model + options.format)
         if os.path.exists(fn) and len(params.input) == 0: # if model preview exists and not manually included
             log.info({ 'hypernetwork preview exists': model })
             continue
@@ -186,7 +190,7 @@ async def hypernetwork(params):
         options.generate.prompt = prompt.replace('<keyword>', options.hypernetwork.keyword)
         options.generate.prompt = options.generate.prompt.replace('<embedding>', '')
         options.generate.prompt = f' <hypernet:{model}:{options.hypernetwork.strength}> ' + options.generate.prompt
-        log.info({ 'lora generating': model, 'keyword': keyword, 'prompt': options.generate.prompt })
+        log.info({ 'hypernetwork generating': model, 'keyword': keyword, 'prompt': options.generate.prompt })
         data = await generate(options = options, quiet=True)
         if 'image' in data:
             for img in data['image']:

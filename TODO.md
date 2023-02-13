@@ -72,6 +72,7 @@ Tech that can be integrated as part of the core workflow...
 - [Seed travel](https://github.com/yownas/seed_travel)
 - [Google frame interpolation](https://github.com/google-research/frame-interpolation)
 - [Prompt fusion](https://github.com/ljleb/prompt-fusion-extension)
+- [ControlNet](https://github.com/lllyasviel/ControlNet)
 
 ## Experimental
 
@@ -80,49 +81,4 @@ Cool stuff that is not integrated anywhere...
 - [TensorRT](https://www.photoroom.com/tech/stable-diffusion-25-percent-faster-and-save-seconds/)
 - [GIT](https://huggingface.co/microsoft/git-large-textcaps)
 - Bunch of stuff:<https://pharmapsychotic.com/tools.html>
-- Prevalent colors to interrogate
 - Auto-Sort inputs by face recognition
-
-## Updates
-
-- core library updates:
-  - must run `./automatic.sh install`
-  - note: this is quite a big one so some testing is reccomended after upgrade
-- non-trivial ui updates
-- renamed scripts in `cli/modules` to be more descriptive  
-  if you're using old script names, update them  
-  for example, `ffmpeg.py` is now `video-extract.py`  
-  also possible that there are some bugs due to broken import paths, so testing is welcome  
-- updated script `process.py`
-  - new **brightness dynamic range** check  
-  - new **preview** mode to run all checks but without saving images plus print a summary at the end
-- updated scripts `models-preview.py`  
-  - can generate **lora** previews, note that trigger keywords are inferred from model name so name models carefully  
-  - can generate **hypernetwork** previews  
-- new script: `image-watermark.py`  
-  - optionally strip exif from images
-  - add invisible watermark to images which persists even if user modifies image so we can always track it
-- new script: `palette-extract.py`
-  - creates color palette wheel from image(s)
-- new script: `extract-lora.py`
-  - extract lora from fine-tuned model
-- updated `embedding-preview.py`  
-  - skip existing previews or overwrite them  
-- expose **variation seed** in main ui  
-- integrated **seed travel** functionality into core  
-- integrated `pix2pix` functionality to standard `img2img` workflow  
-  - note: requires **pix2pix** model to be loaded  
-- integrated large `cfg scale` values fix  
-- integrated **model converter**  
-- tested `aesthetic gradients` training, not worth it  
-- updated `image browser`  
-  was broken for a while and maintainer is gone  
-- initial work on **queue management** allowing to submit multiple requests to server  
-- initial work on `lora` integration  
-  can render loras without extensions  
-  can extract lora from fine-tuned model  
-  training prototype in place in `train-lora.py`, not optimized or integrated  
-- initial work on `custom diffusion` integration  
-  no testing so far  
-- spent quite some time making stable-diffusion compatible with upcomming `pytorch` 2.0 release  
-  and testing `dynamo` torch dynamic optimizer and `triton` script compiler  

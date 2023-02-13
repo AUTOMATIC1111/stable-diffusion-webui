@@ -7,6 +7,7 @@ process people images
     - visible: is face or body detected
     - in frame: for face based on box, for body based on number of visible keypoints
     - resolution: is cropped image still of sufficient resolution
+    - optionaly upsample and restore face quality
     - blur: is image sharp enough
     - dynamic range: is image bright enough
     - similarity: compares image to all previously processed images to see if its unique enough
@@ -40,20 +41,29 @@ from sdapi import postsync
 
 
 params = Map({
+    # general settings, do not modify
     'src': '', # source folder
     'dst': '', # destination folder
-    'format': '.jpg', # image format
-    'extract_face': True, # extract face from image
-    'extract_body': True, # extract face from image
     'clear_dst': True, # remove all files from destination at the start
+    'format': '.jpg', # image format
     'target_size': 512, # target resolution
     'square_images': True, # should output images be squared
+    'segmentation_model': 0, # segmentation model 0/general 1/landscape
+    'segmentation_background': (192, 192, 192), # segmentation background color
     'blur_samplesize': 60, # sample size to use for blur detection
+    'similarity_size': 64, # base similarity detection on reduced images
+    # face processing settings
+    'extract_face': True, # extract face from image
     'face_score': 0.7, # min face detection score
     'face_pad': 0.2, # pad face image percentage
     'face_model': 1, # which face model to use 0/close-up 1/standard
     'face_blur_score': 1.5, # max score for face blur detection
     'face_range_score': 0.15, # min score for face dynamic range detection
+    'face_restore': True, # attempt to restore face quality
+    'face_upscale': True, # attempt to scale small faces
+    'face_segmentation': False, # segmentation enabled
+    # body processing settings
+    'extract_body': True, # extract face from image
     'body_score': 0.9, # min body detection score
     'body_visibility': 0.5, # min visibility score for each detected body part
     'body_parts': 15, # min number of detected body parts with sufficient visibility
@@ -61,16 +71,13 @@ params = Map({
     'body_model': 2, # body model to use 0/low 1/medium 2/high
     'body_blur_score': 1.8, # max score for body blur detection
     'body_range_score': 0.15, # min score for body dynamic range detection
-    'segmentation_face': False, # segmentation enabled
-    'segmentation_body': False, # segmentation enabled
-    'segmentation_model': 0, # segmentation model 0/general 1/landscape
-    'segmentation_background': (192, 192, 192), # segmentation background color
+    'body_segmentation': False, # segmentation enabled
+    # similarity detection settings
     'similarity_score': 0.8, # maximum similarity score before image is discarded
-    'similarity_size': 64, # base similarity detection on reduced images
-    'interrogate_model': ['clip', 'deepdanbooru'], # interrogate model
+    # interrogate settings
+    'interrogate_model': ['clip', 'deepdanbooru'], # interrogate models
+    'interrogate_captions': True, # write captions to file
     'tag_limit': 5, # number of tags to extract
-    'face_restore': True, # attempt to restore face quality
-    'face_upscale': True, # attempt to scale small faces
 })
 face_model = None
 body_model = None
@@ -181,6 +188,9 @@ def extract_face(img):
         })
         original = [cropped.size[0], cropped.size[1]]
         res = postsync('/sdapi/v1/extra-single-image', kwargs)
+        if 'image' not in res:
+            log.error({ 'process face': 'upscale failed' })
+            raise ValueError('upscale failed')
         cropped = Image.open(io.BytesIO(base64.b64decode(res['image'])))
         kwargs.image = [cropped.size[0], cropped.size[1]]
         upscaled = [cropped.size[0], cropped.size[1]]
@@ -195,7 +205,7 @@ def extract_face(img):
     if params.square_images:
         squared = Image.new('RGB', (params.target_size, params.target_size))
         squared.paste(cropped, (0, 0))
-        if params.segmentation_face:
+        if params.face_segmentation:
            squared = segmentation(squared)
     else:
         squared = cropped
@@ -258,7 +268,7 @@ def extract_body(img):
     if params.square_images:
         squared = Image.new('RGB', (params.target_size, params.target_size))
         squared.paste(cropped, (0, 0))
-        if params.segmentation_body:
+        if params.body_segmentation:
            squared = segmentation(squared)
     else:
         squared = cropped
@@ -293,7 +303,7 @@ def encode(img):
         return encoded
 
 
-def interrogate(img, fn, txt):
+def interrogate(img, fn):
     if len(params.interrogate_model) == 0:
         return
     caption = ''
@@ -308,7 +318,7 @@ def interrogate(img, fn, txt):
             tag = res.caption if 'caption' in res else ''
             tags = tag.split(',')
             tags = [t.replace('(', '').replace(')', '').split(':')[0].strip() for t in tags]
-        if txt:
+        if params.interrogate_captions:
             file = fn.replace(params.format, '.txt')
             f = open(file, 'w')
             f.write(caption)
@@ -323,7 +333,7 @@ def interrogate(img, fn, txt):
 i = {}
 metadata = Map({})
 
-def process_file(f: str, dst: str = None, preview: bool = False, offline: bool = False, txt: bool = True):
+def process_file(f: str, dst: str = None, preview: bool = False, offline: bool = False, txt = None):
 
     def save(img, f, what):
         i[what] = i.get(what, 0) + 1
@@ -338,7 +348,7 @@ def process_file(f: str, dst: str = None, preview: bool = False, offline: bool =
         if not preview:
             img.save(fn)
             if not offline:
-                caption, tags = interrogate(img, fn, txt)
+                caption, tags = interrogate(img, fn)
         metadata[fn] = { 'caption': caption, 'tags': tags }
         return fn
 
@@ -350,6 +360,8 @@ def process_file(f: str, dst: str = None, preview: bool = False, offline: bool =
         return 0, {}
 
     image = ImageOps.exif_transpose(image) # rotate image according to EXIF orientation
+    if txt is not None:
+        params.interrogate_captions = txt
 
     if image.width < 512 or image.height < 512:
         log.info({ 'process skip': 'low resolution', 'resolution': [image.width, image.height] })

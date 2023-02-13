@@ -1,4 +1,4 @@
-#/bin/env bash
+#!/bin/env bash
 
 TF_CPP_MIN_LOG_LEVEL=2
 FORCE_CUDA="1"
@@ -11,7 +11,7 @@ CUDA_AUTO_BOOST=1
 CUDA_DEVICE_DEFAULT_PERSISTING_L2_CACHE_PERCENTAGE_LIMIT=0
 
 if [ "$PYTHON" == "" ]; then
-  PYTHON=`which python`
+  PYTHON=$(which python)
 fi
 
 CMD="launch.py --api --xformers --disable-console-progressbars --gradio-queue --skip-version-check --cors-allow-origins=http://127.0.0.1:7860"
@@ -43,27 +43,27 @@ done
 
 echo "SD server: $MODE"
 
-VER=`git log -1 --pretty=format:"%h %ad"`
-LSB=`lsb_release -ds 2>/dev/null`
-UN=`uname -rm 2>/dev/null`
+VER=$(git log -1 --pretty=format:"%h %ad")
+LSB=$(lsb_release -ds 2>/dev/null)
+UNAME=$(uname -rm 2>/dev/null)
 echo "Version: $VER"
-echo "Platform: $LSB $UN"
-$PYTHON -c 'import torch; import platform; print("Python:", platform.python_version(), "Torch:", torch.__version__, "CUDA:", torch.version.cuda, "cuDNN:", torch.backends.cudnn.version(), "GPU:", torch.cuda.get_device_name(torch.cuda.current_device()), "Arch:", torch.cuda.get_device_capability());'
+echo "Platform: $LSB $UNAME"
+"$PYTHON" -c 'import torch; import platform; print("Python:", platform.python_version(), "Torch:", torch.__version__, "CUDA:", torch.version.cuda, "cuDNN:", torch.backends.cudnn.version(), "GPU:", torch.cuda.get_device_name(torch.cuda.current_device()), "Arch:", torch.cuda.get_device_capability());'
 
-if [ $MODE == install ]; then
-  $PYTHON -m pip --version
+if [ "$MODE" == install ]; then
+  "$PYTHON" -m pip --version
   echo "Installing general requirements"
-  $PYTHON -m pip install --disable-pip-version-check --quiet --no-warn-conflicts --requirement requirements.txt
+  "$PYTHON" -m pip install --disable-pip-version-check --quiet --no-warn-conflicts --requirement requirements.txt
   echo "Installing versioned requirements"
-  $PYTHON -m pip install --disable-pip-version-check --quiet --no-warn-conflicts --requirement requirements_versions.txt
+  "$PYTHON" -m pip install --disable-pip-version-check --quiet --no-warn-conflicts --requirement requirements_versions.txt
   echo "Updating submodules"
   git submodule update --rebase --remote
   exit 0
 fi
 
-if [ $MODE == clean ]; then
+if [ "$MODE" == clean ]; then
   CMD="--disable-opt-split-attention --disable-console-progressbars --api"
-  $PYTHON launch.py $CMD
+  "$PYTHON" launch.py $CMD
   exit 0
 fi
 
@@ -75,4 +75,4 @@ if [ $MODE == optimized ]; then
   CMD="$CMD"
 fi
 
-exec accelerate launch --no_python --quiet --num_cpu_threads_per_process=6 $PYTHON $CMD
+exec accelerate launch --no_python --quiet --num_cpu_threads_per_process=6 "$PYTHON" $CMD

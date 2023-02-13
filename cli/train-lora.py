@@ -182,12 +182,16 @@ if __name__ == '__main__':
     if not args.noprocess:
         # preprocess
         for f in files:
-            res, metadata = modules.process.process_file(f = f, dst = dir, preview = False, offline = args.offline, txt = False)
+            try:
+                res, metadata = modules.process.process_file(f = f, dst = dir, preview = False, offline = args.offline, txt = False)
+            except ValueError as e:
+                exit(1)                
         modules.process.unload_models()
         mem_stats()
         if args.tag is not None:
             for name, item in metadata.items():
                 item['tags'].insert(0, args.tag)
+                item['tags'] = ', '.join(item['tags'])
         with open(json_file, "w") as outfile:
             outfile.write(json.dumps(metadata, indent=2))
         log.info({ 'processed': res, 'inputs': len(files), 'metadata': json_file, 'path': dir })
