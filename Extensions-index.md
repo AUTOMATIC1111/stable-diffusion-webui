@@ -120,9 +120,9 @@
 		{
 			"name": "Unprompted",
 			"url": "https://github.com/ThereforeGames/unprompted.git",
-			"description": "Allows you to include various shortcodes in your prompts. You can pull text from files, set up your own variables, process text through conditional functions, and so much more - it's like wildcards on steroids. It now includes txt2img2img and txt2mask custom-script features.",
+			"description": "Allows you to include various shortcodes in your prompts. You can pull text from files, set up your own variables, process text through conditional functions, and so much more - it's like wildcards on steroids. It now includes integrations like hard-prompts made easy, ControlNet, txt2img2img and txt2mask.",
 			"added": "2022-11-04",
-			"tags": ["script", "ads"]
+			"tags": ["script", "integrations", "ads"]
 		},
 		{
 			"name": "StylePile",
