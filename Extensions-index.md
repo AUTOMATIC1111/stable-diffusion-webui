@@ -429,7 +429,7 @@
 			"name": "text2prompt",
 			"url": "https://github.com/toshiaki1729/stable-diffusion-webui-text2prompt.git",
 			"description": "Generates anime tags using databases and models for tokenizing.",
-			"added": "2023-2-11",
+			"added": "2023-02-11",
 			"tags": ["script", "tab"]
 		},
 		{
