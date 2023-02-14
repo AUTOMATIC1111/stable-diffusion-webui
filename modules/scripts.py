@@ -33,6 +33,11 @@ class Script:
     parsing infotext to set the value for the component; see ui.py's txt2img_paste_fields for an example
     """
 
+    paste_field_names = None
+    """if set in ui(), this is a list of names of infotext fields; the fields will be sent through the
+    various "Send to <X>" buttons when clicked
+    """
+
     def title(self):
         """this function should return the title of the script. This is what will be displayed in the dropdown menu."""
 
@@ -256,6 +261,7 @@ class ScriptRunner:
         self.alwayson_scripts = []
         self.titles = []
         self.infotext_fields = []
+        self.paste_field_names = []
 
     def initialize_scripts(self, is_img2img):
         from modules import scripts_auto_postprocessing
@@ -303,6 +309,9 @@ class ScriptRunner:
 
             if script.infotext_fields is not None:
                 self.infotext_fields += script.infotext_fields
+
+            if script.paste_field_names is not None:
+                self.paste_field_names += script.paste_field_names
 
             inputs += controls
             inputs_alwayson += [script.alwayson for _ in controls]
