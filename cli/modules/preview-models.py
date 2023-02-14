@@ -44,11 +44,11 @@ options = Map({
         "sd_vae": "vae-ft-mse-840000-ema-pruned.ckpt",
     },
     'lora': {
-        'strength': 0.9,
+        'strength': 1.3,
     },
     'hypernetwork': {
         'keyword': 'beautiful sexy woman',
-        'strength': 0.9,
+        'strength': 1.0,
     },
 })
 

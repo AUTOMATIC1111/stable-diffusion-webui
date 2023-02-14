@@ -34,7 +34,7 @@
     "eta_ddim": 0.0,
     "eta_noise_seed_delta": 0,
     "export_for_4chan": false,
-    "extra_networks_default_multiplier": 0.9,
+    "extra_networks_default_multiplier": 1,
     "extra_networks_default_view": "cards",
     "face_restoration_model": "CodeFormer",
     "face_restoration_unload": false,
@@ -190,5 +190,6 @@
     "image_browser_page_rows": 20.0,
     "image_browser_pages_perload": 20.0,
     "image_browser_mod_shift": false,
-    "image_browser_mod_ctrl_shift": false
+    "image_browser_mod_ctrl_shift": false,
+    "hidden_tabs": "custom diffusion utils"
 }

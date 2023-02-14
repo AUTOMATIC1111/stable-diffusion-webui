@@ -66,7 +66,7 @@ div.gradio-container.dark > div.w-full.flex.flex-col.min-h-screen > div { backgr
 #txt2img_cfg_scale { min-width: 200px; }
 #txt2img_checkboxes, #img2img_checkboxes { background-color: transparent; }
 #txt2img_checkboxes, #img2img_checkboxes { margin-bottom: 0.2em; }
-#txt2img_gallery, #img2img_gallery, #extras_gallery { background: black; padding: 0; margin: 0; object-fit: contain; box-shadow: none; }
+#txt2img_gallery, #img2img_gallery, #extras_gallery { background: black; padding: 0; margin: 0; object-fit: contain; box-shadow: none; min-height: 0; }
 #txt2img_generate, #img2img_generate, #txt2img_interrupt, #img2img_interrupt, #txt2img_skip, #img2img_skip { margin-left: 10px; min-height: 2rem; height: 2rem; max-width: 212px; margin-top: 15px; border: none; border-radius: 0; }
 #txt2img_interrupt, #img2img_interrupt, #txt2img_skip, #img2img_skip { background-color: var(--inactive-color); }
 #txt2img_neg_prompt > label > textarea { font-size: 1.2rem; background-color: black }
@@ -86,3 +86,7 @@ div.gradio-container.dark > div.w-full.flex.flex-col.min-h-screen > div { backgr
 
 /* custom elements overrides */
 #steps-animation { border-width: 0; }
+
+#txt2img_gallery, #img2img_gallery {
+  min-height: 718px;
+}

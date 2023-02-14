@@ -12,6 +12,7 @@ Fork is as close as up-to-date with origin as time allows
 All code changes are merged upstream whenever possible  
 
 Fork adds extra functionality:
+- New skin and UI layout  
 - Ships with additional **extensions**  
   e.g. `System Info`, `Steps Animation`, etc.  
 - Ships with set of **CLI** tools that rely on *SD API* for execution:  
@@ -41,6 +42,10 @@ Simplified start script: `automatic.sh`
 - Start with all optimizations disabled  
   Use this for troubleshooting  
 
+> ./automatic.sh install
+
+- Install dependencies *and* refresh extensions  
+
 <br>  
 
 ## Install
@@ -49,6 +54,7 @@ Simplified start script: `automatic.sh`
 2. Clone and initialize repository
 
 > git clone --depth 1 https://github.com/vladmandic/automatic  
+> cd automatic  
 > git submodule update --init --recursive  
 
 3. Install dependencies
