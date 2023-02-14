@@ -2,14 +2,14 @@ import cv2
 import requests
 import os
 from collections import defaultdict
-from math import log, sqrt
+from math import log, sqrt, atan2, cos, sin
 import numpy as np
 from PIL import Image, ImageDraw
 
 GREEN = "#0F0"
 BLUE = "#00F"
 RED = "#F00"
-
+CYAN = "#0FF"
 
 def crop_image(im, settings):
   """ Intelligently crop an image to the subject matter """
@@ -73,7 +73,7 @@ def crop_image(im, settings):
 def focal_point(im, settings):
     corner_points = image_corner_points(im, settings) if settings.corner_points_weight > 0 else []
     entropy_points = image_entropy_points(im, settings) if settings.entropy_points_weight > 0 else []
-    face_points = image_face_points(im, settings) if settings.face_points_weight > 0 else []
+    face_points = image_face_points(im, settings) if settings.face_points_weight > 0 or settings.torso_points_weight > 0 else []
 
     pois = []
 
@@ -82,8 +82,10 @@ def focal_point(im, settings):
       weight_pref_total += settings.corner_points_weight
     if len(entropy_points) > 0:
       weight_pref_total += settings.entropy_points_weight
-    if len(face_points) > 0:
+    if len(face_points) > 0 and settings.face_points_weight > 0:
       weight_pref_total += settings.face_points_weight
+    if len(face_points) > 0 and settings.torso_points_weight > 0:
+      weight_pref_total += settings.torso_points_weight
 
     corner_centroid = None
     if len(corner_points) > 0:
@@ -102,6 +104,18 @@ def focal_point(im, settings):
       face_centroid = centroid(face_points)
       face_centroid.weight = settings.face_points_weight / weight_pref_total 
       pois.append(face_centroid)
+
+    torso_centroid = None
+    if len(face_points) > 0 and (settings.torso_points_weight > 0):
+      torso_centroid = centroid(face_points)
+      torso_centroid.weight = settings.torso_points_weight / weight_pref_total 
+      if settings.torso_points_weight > 0:
+        face_x_distance = torso_centroid.x - im.width / 2
+        face_y_distance = torso_centroid.y - im.height / 2
+        face_direction = atan2(face_y_distance, face_x_distance)
+        torso_centroid.x -= (im.width / 2) * cos(face_direction)
+        torso_centroid.y -= (im.height / 2) * sin(face_direction)
+        pois.append(torso_centroid)
 
     average_point = poi_average(pois, settings)
 
@@ -132,6 +146,11 @@ def focal_point(im, settings):
         if len(face_points) > 1:
           for f in face_points:
             d.rectangle(f.bounding(4), outline=color)
+      if torso_centroid is not None:
+        color = CYAN
+        box = torso_centroid.bounding(max_size * torso_centroid.weight)
+        d.text((box[0], box[1]-15), "Torso: %.02f" % torso_centroid.weight, fill=color)
+        d.ellipse(box, outline=color)
 
       d.ellipse(average_point.bounding(max_size), outline=GREEN)
       
@@ -330,12 +349,13 @@ class PointOfInterest:
 
 
 class Settings:
-  def __init__(self, crop_width=512, crop_height=512, corner_points_weight=0.5, entropy_points_weight=0.5, face_points_weight=0.5, annotate_image=False, dnn_model_path=None):
+  def __init__(self, crop_width=512, crop_height=512, corner_points_weight=0.5, entropy_points_weight=0.5, face_points_weight=0.5, torso_points_weight=0.5, annotate_image=False, dnn_model_path=None):
     self.crop_width = crop_width
     self.crop_height = crop_height
     self.corner_points_weight = corner_points_weight
     self.entropy_points_weight = entropy_points_weight
     self.face_points_weight = face_points_weight
+    self.torso_points_weight = torso_points_weight
     self.annotate_image = annotate_image
     self.destop_view_image = False
     self.dnn_model_path = dnn_model_path
