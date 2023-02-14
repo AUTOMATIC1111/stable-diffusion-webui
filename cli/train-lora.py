@@ -173,7 +173,10 @@ if __name__ == '__main__':
     transformers.logging.set_verbosity_error()
     mem_stats()
 
-    dir = os.path.join(tempfile.gettempdir(), args.output, str(args.repeats) + '_processed')
+    concept = 'lora'
+    if args.tag is not None:
+        concept = args.tag.split(',')[0].strip()
+    dir = os.path.join(tempfile.gettempdir(), args.output, str(args.repeats) + '_' + concept)
     Path(dir).mkdir(parents=True, exist_ok=True)
     json_file = os.path.join(tempfile.gettempdir(), args.output, args.output + '.json')
     options.train_data_dir = os.path.join(tempfile.gettempdir(), args.output)

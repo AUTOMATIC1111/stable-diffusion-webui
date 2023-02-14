@@ -30,32 +30,22 @@ Things I'm looking into...
 
 Stuff to be fixed...
 
-- Reconnect WebUI
+- Reconnect WebUI  
+- Settings params on updates install  
 
 Tech that can be integrated as part of the core workflow...
 
-- Custom watermark
 - [Embedding mixing](https://github.com/tkalayci71/embedding-inspector)
-- [DAAM](https://github.com/kousw/stable-diffusion-webui-daam)
 - [Merge without distortion](https://github.com/ogkalu2/Merge-Stable-Diffusion-models-without-distortion)
 - [Weighted merges](https://github.com/bbc-mc/sdweb-merge-block-weighted-gui/tree/master)
-- [Prune models](https://github.com/Akegarasu/sd-webui-model-converter)
 - [Use scripts from API](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/6469)
-- [Aesthetic gradients](https://github.com/AUTOMATIC1111/stable-diffusion-webui-aesthetic-gradients)
 - [Face swap](https://github.com/kex0/batch-face-swap)
 - [Custom diffusion](https://github.com/guaneec/custom-diffusion-webui)
-- [LORA](https://github.com/cloneofsimo/lora)
-  - <https://github.com/kohya-ss/sd-webui-additional-networks>
-  - <https://github.com/kohya-ss/sd-scripts>
-  - <https://rentry.org/2chAI_LoRA_Dreambooth_guide_english>
-  - <https://www.reddit.com/r/StableDiffusion/comments/10ir5ax/big_comparison_of_lora_training_settings_8gb_vram/>
-- [Hypernetworks](https://civitai.com/models/4086/luisap-tutorial-hypernetwork-monkeypatch-method)
-  - <https://github.com/AUTOMATIC1111/stable-diffusion-webui/discussions/2670#discussioncomment-4372336>
-  - <https://github.com/AUTOMATIC1111/stable-diffusion-webui/discussions/2670#discussioncomment-4582025>
 - [Null-text inversion](https://github.com/ouhenio/null-text-inversion-colab)
 - [Custom diffusion](https://github.com/guaneec/custom-diffusion-webui)
   - <https://www.cs.cmu.edu/~custom-diffusion/>
 - [Dream artist](https://github.com/7eu7d7/DreamArtist-sd-webui-extension)
+- [ControlNet](https://github.com/lllyasviel/ControlNet)
 
 ## Video Generation
 
@@ -70,9 +60,7 @@ Tech that can be integrated as part of the core workflow...
 - [Disco diffusion](https://colab.research.google.com/github/alembics/disco-diffusion/blob/main/Disco_Diffusion.ipynb)
 - [Video killed the radio star](https://colab.research.google.com/github/dmarx/video-killed-the-radio-star/blob/main/Video_Killed_The_Radio_Star_Defusion.ipynb)
 - [Seed travel](https://github.com/yownas/seed_travel)
-- [Google frame interpolation](https://github.com/google-research/frame-interpolation)
 - [Prompt fusion](https://github.com/ljleb/prompt-fusion-extension)
-- [ControlNet](https://github.com/lllyasviel/ControlNet)
 
 ## Experimental
 
@@ -81,4 +69,3 @@ Cool stuff that is not integrated anywhere...
 - [TensorRT](https://www.photoroom.com/tech/stable-diffusion-25-percent-faster-and-save-seconds/)
 - [GIT](https://huggingface.co/microsoft/git-large-textcaps)
 - Bunch of stuff:<https://pharmapsychotic.com/tools.html>
-- Auto-Sort inputs by face recognition

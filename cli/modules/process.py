@@ -414,7 +414,7 @@ def process_images(src: str, dst: str, args = None):
         pathlib.Path(dst).mkdir(parents=True, exist_ok=True)
         for root, _sub_dirs, files in os.walk(src):
             for f in files:
-                process_file(os.path.join(root, f), dst)
+                i, _metadata = process_file(os.path.join(root, f), dst)
     return i
 
 

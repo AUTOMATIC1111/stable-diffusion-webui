@@ -379,7 +379,7 @@
     "train/Overwrite Old Embedding/visible": true,
     "train/Overwrite Old Hypernetwork/value": false,
     "train/Overwrite Old Hypernetwork/visible": true,
-    "train/Prompt template file/value": "train/templates/subject_filewords.txt",
+    "train/Prompt template file/value": "subject_filewords.txt",
     "train/Prompt template file/visible": true,
     "train/Prompt template/value": "subject_filewords.txt",
     "train/Prompt template/visible": true,

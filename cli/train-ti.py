@@ -403,10 +403,11 @@ async def train(params):
         'sampling': args.train_embedding.latent_sampling_method,
         'epoch-size': epoch_size }
     })
-    log.info({ 'learn-rate': args.train_embedding.learn_rate })
+    log.info({ 'learn rate': args.train_embedding.learn_rate })
     log.debug({ 'train args': args.train_embedding })
     t0 = time.time()
     res = await post('/sdapi/v1/train/embedding', args.train_embedding)
+    log.info({ 'train result': res })
     t1 = time.time()
     log.info({ 'train embedding finished': { 'name': params.name, 'time': round(t1 - t0) } })
     log.debug({ 'train end': res.info if 'info' in res else res })
