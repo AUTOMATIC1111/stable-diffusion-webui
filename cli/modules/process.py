@@ -432,7 +432,7 @@ def unload_models():
 
 if __name__ == '__main__':
     # log.setLevel(logging.DEBUG)
-    parser = argparse.ArgumentParser(description = 'image watermarking')
+    parser = argparse.ArgumentParser(description = 'dataset processor')
     parser.add_argument('--output', type=str, required=True, help='folder to store images')
     parser.add_argument('--preview', default=False, action='store_true', help = "run processing but do not store results")
     parser.add_argument('--offline', default=False, action='store_true', help = "run only processing steps that do not require running server")

@@ -37,10 +37,10 @@ LoRA training
 > python train-lora.py
 
 Combined pipeline:
-1. Creates embedding  
-2. Extracts images if input is movie  
-3. Preprocesses images  
-4. Runs training  
+1. Preprocesses images  
+2. Runs training  
+
+[Detailed documentation](https://github.com/vladmandic/automatic/wiki/Process.md)
 
 LoRA extract from model
 > python moidules/lora-extract.py
@@ -111,6 +111,8 @@ Run image processing to extract face/body segments and run resolution/blur/dynam
 Note: Offline except for interrogate to generate caption files which requires SD API  
 
 > python modules/process.py
+
+[Detailed documentation](https://github.com/vladmandic/automatic/wiki/Process.md)
 
 ### Prompt Ideas
 
