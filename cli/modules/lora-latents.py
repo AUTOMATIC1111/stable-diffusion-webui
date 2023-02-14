@@ -3,6 +3,7 @@
 import os
 import sys
 import json
+import pathlib
 import argparse
 import warnings
 
@@ -100,7 +101,8 @@ def create_vae_latents(params):
             image = transforms.functional.to_pil_image(img_tensor)
         else:
             image = Image.open(image_path)
-        image_key = image_path
+        image_key = os.path.basename(image_path)
+        image_key = os.path.join(os.path.basename(pathlib.Path(image_path).parent), pathlib.Path(image_path).stem)
         if image_key not in metadata:
             metadata[image_key] = {}
         reso, resized_size, ar_error = bucket_manager.select_bucket(image.width, image.height)

@@ -52,8 +52,10 @@ params = Map({
     'segmentation_background': (192, 192, 192), # segmentation background color
     'blur_samplesize': 60, # sample size to use for blur detection
     'similarity_size': 64, # base similarity detection on reduced images
+    # original image processing settings
+    'keep_original': True, # keep original image
     # face processing settings
-    'extract_face': True, # extract face from image
+    'extract_face': False, # extract face from image
     'face_score': 0.7, # min face detection score
     'face_pad': 0.2, # pad face image percentage
     'face_model': 1, # which face model to use 0/close-up 1/standard
@@ -63,7 +65,7 @@ params = Map({
     'face_upscale': True, # attempt to scale small faces
     'face_segmentation': False, # segmentation enabled
     # body processing settings
-    'extract_body': True, # extract face from image
+    'extract_body': False, # extract face from image
     'body_score': 0.9, # min body detection score
     'body_visibility': 0.5, # min visibility score for each detected body part
     'body_parts': 15, # min number of detected body parts with sufficient visibility
@@ -342,14 +344,17 @@ def process_file(f: str, dst: str = None, preview: bool = False, offline: bool =
         else:
             dir = dst
         base = os.path.basename(f).split('.')[0]
-        fn = os.path.join(dir, str(i[what]).rjust(3, '0') + '-' + what + '-' + base + params.format)
+        parent = os.path.basename(pathlib.Path(dir))
+        basename = str(i[what]).rjust(3, '0') + '-' + what + '-' + base
+        fn = basename + params.format
         # log.debug({ 'save': fn })
         caption = ''
+        tags = ''
         if not preview:
-            img.save(fn)
+            img.save(os.path.join(dir, fn))
             if not offline:
-                caption, tags = interrogate(img, fn)
-        metadata[fn] = { 'caption': caption, 'tags': tags }
+                caption, tags = interrogate(img, os.path.join(dir, fn))
+        metadata[os.path.join(parent, basename)] = { 'caption': caption, 'tags': ','.join(tags) }
         return fn
 
     log.info({ 'processing': f })
@@ -384,6 +389,10 @@ def process_file(f: str, dst: str = None, preview: bool = False, offline: bool =
         log.info({ 'extract body': fn })   
     else:
         log.debug({ 'no body': f })
+
+    if params.keep_original:
+        fn = save(image, f, 'original')
+        log.info({ 'original': fn })
 
     image.close()
     return i, metadata

@@ -135,9 +135,11 @@ if __name__ == '__main__':
     parser.add_argument('--nocaptions', default = False, action='store_true', help = 'skip creating captions and tags')
     parser.add_argument('--nolatents', default = False, action='store_true', help = 'skip generating vae latents')
     parser.add_argument('--offline', default = False, action='store_true', help = 'do not use webui server for processing')
+    parser.add_argument('--shutdown', default = False, action='store_true', help = 'shutdown webui server')
     parser.add_argument('--gradient', type=int, default=1, required=False, help='gradient accumulation steps, default: %(default)s')
     parser.add_argument('--steps', type=int, default=5000, required=False, help='training steps, default: %(default)s')
     parser.add_argument('--dim', type=int, default=128, required=False, help='network dimension, default: %(default)s')
+    parser.add_argument('--repeats', type=int, default=10, required=False, help='number of repeats per image, default: %(default)s')
     parser.add_argument('--batch', type=int, default=1, required=False, help='batch size, default: %(default)s')
     parser.add_argument('--lr', type=float, default=1e-04, required=False, help='model learning rate, default: %(default)s')
     parser.add_argument('--unetlr', type=float, default=1e-04, required=False, help='unet learning rate, default: %(default)s')
@@ -171,37 +173,32 @@ if __name__ == '__main__':
     transformers.logging.set_verbosity_error()
     mem_stats()
 
-    dir = os.path.join(tempfile.gettempdir(), args.output, '10_processed')
+    dir = os.path.join(tempfile.gettempdir(), args.output, str(args.repeats) + '_processed')
     Path(dir).mkdir(parents=True, exist_ok=True)
-    json_file = os.path.join(dir, args.output + '.json')
+    json_file = os.path.join(tempfile.gettempdir(), args.output, args.output + '.json')
     options.train_data_dir = os.path.join(tempfile.gettempdir(), args.output)
     options.in_json = json_file
 
     for root, _sub_dirs, folder in os.walk(args.input):
         files = [os.path.join(root, f) for f in folder]
+
     if not args.noprocess:
         # preprocess
         for f in files:
             try:
                 res, metadata = modules.process.process_file(f = f, dst = dir, preview = False, offline = args.offline, txt = False)
+                with open(json_file, "w") as outfile:
+                    outfile.write(json.dumps(metadata, indent=2))
             except ValueError as e:
                 exit(1)                
         modules.process.unload_models()
         mem_stats()
         if args.tag is not None:
             for name, item in metadata.items():
-                item['tags'].insert(0, args.tag)
-                item['tags'] = ', '.join(item['tags'])
+                item['caption'] = args.tag + ',' + item['caption']
+                item['tags'] = args.tag + ',' + item['tags']
         with open(json_file, "w") as outfile:
             outfile.write(json.dumps(metadata, indent=2))
-        log.info({ 'processed': res, 'inputs': len(files), 'metadata': json_file, 'path': dir })
-    else:
-        log.info({ 'skip processing': len(files), 'metadata': json_file, 'path': dir })
-
-    if not args.notrain:
-        log.info({ 'server shutdown required': True })
-        modules.sdapi.shutdown()
-        time.sleep(1)
 
         if not args.nolatents and json_file is not None:
             # create latents
@@ -209,5 +206,15 @@ if __name__ == '__main__':
             latents.unload_vae()
             mem_stats()
 
+        log.info({ 'processed': res, 'inputs': len(files), 'metadata': json_file, 'path': dir })
+    else:
+        log.info({ 'skip processing': len(files), 'metadata': json_file, 'path': dir })
+
+    if args.shutdown:
+        log.info({ 'server shutdown required': True })
+        modules.sdapi.shutdown()
+        time.sleep(1)
+
+    if not args.notrain:
         train(options)
         mem_stats()
