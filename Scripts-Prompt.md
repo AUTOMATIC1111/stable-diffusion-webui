@@ -177,3 +177,7 @@ https://github.com/FartyPants/sd_web_ui_scripts
 
 - more advanced script that swaps negative and positive tokens depending on Mr. negativity rage
 
+## Post-Face-Restore-Again
+https://github.com/butaixianran/Stable-Diffusion-Webui-Post-Face-Restore-Again
+
+Run face restore twice in one go, from extras tab.
