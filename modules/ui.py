@@ -1108,7 +1108,7 @@ def create_ui():
 
                     with gr.Row(visible=False) as process_focal_crop_row:
                         process_focal_crop_face_weight = gr.Slider(label='Face weight', value=0.9, minimum=0.0, maximum=1.0, step=0.05, elem_id="train_process_focal_crop_face_weight")
-                        process_focal_crop_face_weight = gr.Slider(label='Torso weight', value=0.1, minimum=0.0, maximum=1.0, step=0.05, elem_id="train_process_focal_crop_torso_weight")
+                        process_focal_crop_torso_weight = gr.Slider(label='Torso weight', value=0.1, minimum=0.0, maximum=1.0, step=0.05, elem_id="train_process_focal_crop_torso_weight")
                         process_focal_crop_entropy_weight = gr.Slider(label='Entropy weight', value=0.15, minimum=0.0, maximum=1.0, step=0.05, elem_id="train_process_focal_crop_entropy_weight")
                         process_focal_crop_edges_weight = gr.Slider(label='Edges weight', value=0.5, minimum=0.0, maximum=1.0, step=0.05, elem_id="train_process_focal_crop_edges_weight")
                         process_focal_crop_debug = gr.Checkbox(label='Create debug image', elem_id="train_process_focal_crop_debug")
