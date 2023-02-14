@@ -1568,7 +1568,10 @@ def create_ui():
         parameters_copypaste.connect_paste_params_buttons()
 
         with gr.Tabs(elem_id="tabs") as tabs:
+            hidden_tabs = [x.lower().strip() for x in shared.opts.hidden_tabs.split(",")]
             for interface, label, ifid in interfaces:
+                if label.lower() in hidden_tabs:
+                    continue
                 with gr.TabItem(label, id=ifid, elem_id='tab_' + ifid):
                     interface.render()
 
