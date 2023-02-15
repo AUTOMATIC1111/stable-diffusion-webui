@@ -1,4 +1,18 @@
-(For linux only.)
+# Windows
+(**In Testing**) \
+For Windows users, try this fork using **Direct-ml**. 
+* https://github.com/lshqqytiger/stable-diffusion-webui-directml
+
+make sure you have the modified repositories in `stable-diffusion-webui-directml/repositories/`:
+
+* https://github.com/lshqqytiger/k-diffusion-directml/tree/master 
+* https://github.com/lshqqytiger/stablediffusion-directml/tree/main 
+
+Place stable diffusion checkpoint (model.ckpt) in the models/Stable-diffusion directory, and double-click `webui-user.bat`. If you have 4-6gb vram, try adding these flags to `webui-user.bat` like so: 
+
+`COMMANDLINE_ARGS=--opt-sub-quad-attention --lowvram`
+
+(The rest **below are installation guides for linux** with rocm.)
 
 # Automatic Installation
 
