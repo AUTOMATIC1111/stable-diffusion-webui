@@ -113,8 +113,8 @@ def focal_point(im, settings):
         face_x_distance = torso_centroid.x - im.width / 2
         face_y_distance = torso_centroid.y - im.height / 2
         face_direction = atan2(face_y_distance, face_x_distance)
-        torso_centroid.x -= (im.width / 2) * cos(face_direction)
-        torso_centroid.y -= (im.height / 2) * sin(face_direction)
+        torso_centroid.x -= (settings.crop_width / 2) * cos(face_direction)
+        torso_centroid.y -= (settings.crop_height / 2) * sin(face_direction)
         pois.append(torso_centroid)
 
     average_point = poi_average(pois, settings)
