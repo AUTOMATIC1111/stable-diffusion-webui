@@ -387,7 +387,7 @@ https://github.com/benkyoujouzu/stable-diffusion-webui-visualize-cross-attention
 Generates highlighted sectors of a submitted input image, based on input prompts. Use with tokenizer extension. See the readme for more info.
 
 ## DAAM
-https://github.com/kousw/stable-diffusion-webui-daam
+https://github.com/toriato/stable-diffusion-webui-daam
 
 DAAM stands for Diffusion Attentive Attribution Maps. Enter the attention text (must be a string contained in the prompt) and run. An overlapping image with a heatmap for each attention will be generated along with the original image.
 
