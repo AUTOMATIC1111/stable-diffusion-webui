@@ -23,9 +23,10 @@ registered_param_bindings = []
 
 
 class ParamBinding:
-    def __init__(self, paste_button, tabname, source_text_component=None, source_image_component=None, source_tabname=None, override_settings_component=None):
+    def __init__(self, paste_button, tabname, tab_subname=None, source_text_component=None, source_image_component=None, source_tabname=None, override_settings_component=None):
         self.paste_button = paste_button
         self.tabname = tabname
+        self.tab_subname = tab_subname
         self.source_text_component = source_text_component
         self.source_image_component = source_image_component
         self.source_tabname = source_tabname
@@ -108,8 +109,13 @@ def register_paste_params_button(binding: ParamBinding):
 def connect_paste_params_buttons():
     binding: ParamBinding
     for binding in registered_param_bindings:
-        destination_image_component = paste_fields[binding.tabname]["init_img"]
-        fields = paste_fields[binding.tabname]["fields"]
+        if binding.tab_subname is None:
+            destination_tab = binding.tabname
+        else:
+            destination_tab = binding.tab_subname
+
+        destination_image_component = paste_fields[destination_tab]["init_img"]
+        fields = paste_fields[destination_tab]["fields"]
 
         destination_width_component = next(iter([field for field, name in fields if name == "Size-1"] if fields else []), None)
         destination_height_component = next(iter([field for field, name in fields if name == "Size-2"] if fields else []), None)
@@ -142,7 +148,7 @@ def connect_paste_params_buttons():
 
         binding.paste_button.click(
             fn=None,
-            _js=f"switch_to_{binding.tabname}",
+            _js=f"switch_to_{destination_tab}",
             inputs=None,
             outputs=None,
         )

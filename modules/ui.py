@@ -445,6 +445,7 @@ def create_override_settings_dropdown(tabname, row):
 
     return dropdown
 
+override_settings_dict = {}
 
 def create_ui():
     import modules.img2img
@@ -539,6 +540,8 @@ def create_ui():
                     outputs=[],
                     show_progress=False,
                 )
+
+            override_settings_dict["txt2img"] = override_settings
 
             txt2img_gallery, generation_info, html_info, html_log = create_output_panel("txt2img", opts.outdir_txt2img_samples)
 
@@ -823,6 +826,8 @@ def create_ui():
 
             img2img_gallery, generation_info, html_info, html_log = create_output_panel("img2img", opts.outdir_img2img_samples)
 
+            override_settings_dict["img2img"] = override_settings
+
             connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
             connect_reuse_seed(subseed, reuse_subseed, generation_info, dummy_component, is_subseed=True)
 
@@ -987,8 +992,13 @@ def create_ui():
                     buttons = parameters_copypaste.create_buttons(["txt2img", "img2img", "inpaint", "extras"])
 
                 for tabname, button in buttons.items():
+                    if tabname == "inpaint":
+                        tab_subname = tabname
+                        tabname = "img2img"
+                    else:
+                        tab_subname = None
                     parameters_copypaste.register_paste_params_button(parameters_copypaste.ParamBinding(
-                        paste_button=button, tabname=tabname, source_text_component=generation_info, source_image_component=image,
+                        paste_button=button, tabname=tabname, tab_subname=tab_subname, source_text_component=generation_info, source_image_component=image, override_settings_component=override_settings_dict.get(tabname),
                     ))
 
         image.change(
