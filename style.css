@@ -1,3 +1,11 @@
+/*
+Theme Name: DarkUX
+Author: anapnoe
+Author URI: https://github.com/anapnoe/stable-diffusion-webui
+Version: 1.0
+License: GNU General Public License
+*/
+
 :root, *, :before, :after
 {	
 
@@ -2826,8 +2834,8 @@ input[type=range]::-moz-range-track {
     background-color: var(--input-bg-color);
 }
 
-[id$=2img_results],
-[id$=2img_settings_scroll] 
+[id$="2img_results"],
+[id$="2img_settings_scroll"] 
 {
   scrollbar-color: var(--panel-bg-color) var(--main-bg-color) !important;
   scrollbar-width: thin !important;
