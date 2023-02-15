@@ -44,20 +44,45 @@ done
 echo "SD server: $MODE"
 
 VER=$(git log -1 --pretty=format:"%h %ad")
+URL=$(git remote get-url origin)
 LSB=$(lsb_release -ds 2>/dev/null)
 UNAME=$(uname -rm 2>/dev/null)
+MERGE=$(git log --pretty=format:"%ad %s" | grep "Merge pull" | head -1)
 echo "Version: $VER"
+echo "Repository: $URL"
+echo "Last Merge: $MERGE"
 echo "Platform: $LSB $UNAME"
 "$PYTHON" -c 'import torch; import platform; print("Python:", platform.python_version(), "Torch:", torch.__version__, "CUDA:", torch.version.cuda, "cuDNN:", torch.backends.cudnn.version(), "GPU:", torch.cuda.get_device_name(torch.cuda.current_device()), "Arch:", torch.cuda.get_device_capability());'
 
 if [ "$MODE" == install ]; then
   "$PYTHON" -m pip --version
+
   echo "Installing general requirements"
   "$PYTHON" -m pip install --disable-pip-version-check --quiet --no-warn-conflicts --requirement requirements.txt
+
   echo "Installing versioned requirements"
   "$PYTHON" -m pip install --disable-pip-version-check --quiet --no-warn-conflicts --requirement requirements_versions.txt
+
   echo "Updating submodules"
+  git submodule update --init --recursive
   git submodule update --rebase --remote
+  echo "Modules:"
+  git submodule foreach --quiet 'VER=$(git log -1 --pretty=format:"%h %ad"); URL=$(git remote get-url origin); echo "- $VER $URL"'
+
+  echo "Updating extensions"
+  echo "Extensions:"
+  ls extensions/ | while read LINE; do
+    pushd extensions/$LINE >/dev/null
+    git pull --quiet
+    VER=$(git log -1 --pretty=format:"%h %ad")
+    URL=$(git remote get-url origin)
+    popd >/dev/null
+    echo "- $VER $URL"
+  done
+
+  echo "Local changes"
+  git status --untracked=no --ignore-submodules=all --short
+
   exit 0
 fi
 

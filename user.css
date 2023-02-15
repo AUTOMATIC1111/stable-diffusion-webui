@@ -86,7 +86,3 @@ div.gradio-container.dark > div.w-full.flex.flex-col.min-h-screen > div { backgr
 
 /* custom elements overrides */
 #steps-animation { border-width: 0; }
-
-#txt2img_gallery, #img2img_gallery {
-  min-height: 718px;
-}

@@ -96,7 +96,7 @@ def svd(args): # pylint: disable=redefined-outer-name
     t2 = time.time()
 
     # make state dict for LoRA
-    lora_network_o.apply_to(text_encoder_o, unet_o, text_encoder_different, True)     # to make state dict
+    lora_network_o.apply_to(text_encoder_o, unet_o, text_encoder_different, True)
     lora_sd = lora_network_o.state_dict()
     log.info({ 'lora extracted weights': len(lora_sd), 'time': round(t2 - t1, 2) })
 

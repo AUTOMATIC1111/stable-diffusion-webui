@@ -44,7 +44,8 @@ Simplified start script: `automatic.sh`
 
 > ./automatic.sh install
 
-- Install dependencies *and* refresh extensions  
+- Installs and refreshes:  
+  dependencies, submodules, extensions  
 
 <br>  
 
@@ -55,10 +56,6 @@ Simplified start script: `automatic.sh`
 
 > git clone --depth 1 https://github.com/vladmandic/automatic  
 > cd automatic  
-> git submodule update --init --recursive  
-
-3. Install dependencies
-
 > ./automatic.sh install  
 
 <br>
@@ -77,7 +74,8 @@ Fork does differ in few things:
 - Uses simplified folder structure  
   e.g. `/train`, `/outputs/*`  
 - Modified training templates  
-- End-to-end `LoRA` training support
+- Built-in `LoRA` training  
+- Built-in `Custom Diffusion` training  
 
 Only Python library which is not auto-updated is `PyTorch` itself as that is very system specific  
 For some Torch optimizations notes, see Wiki

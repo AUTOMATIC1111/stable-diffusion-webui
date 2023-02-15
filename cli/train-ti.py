@@ -17,7 +17,6 @@ import math
 import os
 import sys
 import time
-import json
 import importlib
 from pathlib import Path, PurePath
 
@@ -109,10 +108,6 @@ args = Map({
       "preview_height": 512,
       "varsize": False,
   },
-      "create_hypernetwork": {
-  },
-      "train_hypernetwork": {
-  }
 })
 
 
@@ -573,18 +568,6 @@ async def main():
     params.src = os.path.abspath(params.src)
     params.dst = os.path.abspath(params.dst)
 
-    """
-    await session()
-    await check(params)
-    a = asyncio.create_task(pipeline(params))
-    b = asyncio.create_task(monitor(params))
-    await asyncio.gather(a, b) # wait for both pipeline and monitor to finish
-    if not params.nocleanup:
-        await preprocess_cleanup(params)
-    await close()
-    return
-    """
-
     try:
         await session()
         await check(params)
@@ -599,8 +582,8 @@ async def main():
         await close()
     return
 
-if __name__ == "__main__": # create & train test embedding when used from cli
-    log.info({ 'train script' })
+if __name__ == "__main__":
+    log.info({ 'train textual inversion' })
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
