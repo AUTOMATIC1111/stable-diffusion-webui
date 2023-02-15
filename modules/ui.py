@@ -341,12 +341,12 @@ def create_toprow(is_img2img):
                         create_refresh_button(prompt_styles, shared.prompt_styles.reload, lambda: {"choices": [k for k, v in shared.prompt_styles.styles.items()]}, f"refresh_{id_part}_style_index")
                         
             with gr.Row():
-                prompt = gr.Textbox(label="Prompt", elem_id=f"{id_part}_prompt", show_label=True, lines=5,
+                prompt = gr.Textbox(label="Prompt", elem_id=f"{id_part}_prompt", show_label=True, lines=3,
                     placeholder="Prompt (press Ctrl+Enter or Alt+Enter to generate)"
                 )
 
             with gr.Row():
-                negative_prompt = gr.Textbox(label="Negative prompt", elem_id=f"{id_part}_neg_prompt", show_label=True, lines=5,
+                negative_prompt = gr.Textbox(label="Negative prompt", elem_id=f"{id_part}_neg_prompt", show_label=True, lines=3,
                     placeholder="Negative prompt (press Ctrl+Enter or Alt+Enter to generate)"
                 )
 
@@ -496,14 +496,14 @@ def create_ui():
 
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
        
-
+        #submit = create_generate(is_img2img=False)      
+           
         dummy_component = gr.Label(visible=False)
         txt_prompt_img = gr.File(label="", elem_id="txt2img_prompt_image", file_count="single", type="binary", visible=False)
 
-
+       
 
         with gr.Row().style(equal_height=False):
-                       
             txt2img_gallery, generation_info, html_info, html_log = create_output_panel("txt2img", opts.outdir_txt2img_samples)
             gr.Row(elem_id="txt2img_splitter")
             
@@ -799,10 +799,25 @@ def create_ui():
                                 img2img_batch_input_dir = gr.Textbox(label="Input directory", **shared.hide_dirs, elem_id="img2img_batch_input_dir")
                                 img2img_batch_output_dir = gr.Textbox(label="Output directory", **shared.hide_dirs, elem_id="img2img_batch_output_dir")
                                 img2img_batch_inpaint_mask_dir = gr.Textbox(label="Inpaint batch mask directory (required for inpaint batch processing only)", **shared.hide_dirs, elem_id="img2img_batch_inpaint_mask_dir")
-                                
+                            
+                            
                             for category in ordered_ui_categories():    
-                                if category == "inpaint":
+                                if category == "inpaint":  
+                                    
+                                    with FormGroup(elem_id="dim_controls", visible=True):
+                                        with gr.Row():
+                                            resize_mode = gr.Dropdown(label="Resize mode", elem_id="resize_mode", choices=["Just resize", "Crop and resize", "Resize and fill", "Just resize (latent upscale)"], type="index", value="Just resize")
+
+                                        with gr.Row():
+                                            #with gr.Column(elem_id="img2img_column_size", scale=4):
+                                            width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="img2img_width")                         
+                                            res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="img2img_res_switch_btn")
+                                            height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="img2img_height")
+
+
+                                        
                                     with FormGroup(elem_id="inpaint_controls_sub-group-collapse", visible=False) as inpaint_controls:
+                                      
                                         with gr.Row():
                                             mask_blur = gr.Slider(label='Mask blur', minimum=0, maximum=64, step=1, value=4, elem_id="img2img_mask_blur")
                                             mask_alpha = gr.Slider(label="Mask transparency", visible=False, elem_id="img2img_mask_alpha")
@@ -844,20 +859,20 @@ def create_ui():
                             outputs=[],
                         )
 
-                    with FormRow():
-                        resize_mode = gr.Dropdown(label="Resize mode", elem_id="resize_mode", choices=["Just resize", "Crop and resize", "Resize and fill", "Just resize (latent upscale)"], type="index", value="Just resize")
+                    #with FormRow():
+                    #    resize_mode = gr.Dropdown(label="Resize mode", elem_id="resize_mode", choices=["Just resize", "Crop and resize", "Resize and fill", "Just resize (latent upscale)"], type="index", value="Just resize")
 
                     for category in ordered_ui_categories():
                         if category == "sampler":
                             steps, sampler_index = create_sampler_and_steps_selection(samplers_for_img2img, "img2img")
 
                         elif category == "dimensions":
-                            with gr.Row():
+                            #with gr.Row():
 
                                 #with gr.Column(elem_id="img2img_column_size", scale=4):
-                                width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="img2img_width")                         
-                                res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="img2img_res_switch_btn")
-                                height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="img2img_height")
+                            #    width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="img2img_width")                         
+                            #    res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="img2img_res_switch_btn")
+                            #    height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="img2img_height")
 
                             if opts.dimensions_and_batch_together:
                                

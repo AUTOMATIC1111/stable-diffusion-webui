@@ -302,7 +302,11 @@ onUiUpdate(function(){
 	});
 	
 	
-	/* resizable split view */
+	/* resizable split view */			
+	
+	const resizeEvent = window.document.createEvent('UIEvents'); 
+	resizeEvent.initUIEvent('resize', true, false, window, 0); 	
+
 	gradioApp().querySelectorAll('[id $="2img_splitter"]').forEach((elem) => {
 		
 		elem.addEventListener("mousedown", function(e) {	
@@ -310,27 +314,38 @@ onUiUpdate(function(){
 			e.preventDefault();
 			
 			let resizer = e.currentTarget;
+			let container = resizer.parentElement;
+			
+			let flexDir = window.getComputedStyle(container).getPropertyValue('flex-direction');
+		
 			let leftSide = resizer.previousElementSibling;
 			let rightSide = resizer.nextElementSibling;
-			let container = resizer.parentElement;
+			let dir = 1.0;
+			
+			if(flexDir == "row-reverse"){
+				dir = -1.0;				
+			}
 
 			let x = e.clientX;
 			let y = e.clientY;
-			let leftWidth = leftSide.getBoundingClientRect().width;			
+			let leftWidth = leftSide.getBoundingClientRect().width;		
+			
+
 			
 			function mouseMoveHandler(e) {		
 				resizer.style.cursor = 'col-resize';
 				container.style.cursor = 'col-resize';
 
-				const dx = e.clientX - x;
-				const dy = e.clientY - y;
+				const dx = (e.clientX - x)*dir;
+				const dy = (e.clientY - y)*dir;
 
-				const newLeftWidth = ((leftWidth + dx) * 100) / resizer.parentNode.getBoundingClientRect().width;
+				const newLeftWidth = ((leftWidth + dx) * 100) / container.getBoundingClientRect().width;
 				leftSide.style.flexBasis  = `${newLeftWidth}%`;
 				leftSide.style.userSelect = 'none';
 				leftSide.style.pointerEvents = 'none';
 				rightSide.style.userSelect = 'none';
 				rightSide.style.pointerEvents = 'none';
+				window.dispatchEvent(resizeEvent);		
 			}
 
 			function mouseUpHandler() {
@@ -341,45 +356,70 @@ onUiUpdate(function(){
 				rightSide.style.removeProperty('user-select');
 				rightSide.style.removeProperty('pointer-events');
 				container.removeEventListener('mousemove', mouseMoveHandler);
-				container.removeEventListener('mouseup', mouseUpHandler);		
+				container.removeEventListener('mouseup', mouseUpHandler);
+				window.dispatchEvent(resizeEvent);				
 			}
 			
 			container.addEventListener('mousemove', mouseMoveHandler);
 			container.addEventListener('mouseup', mouseUpHandler);		
 	
 		})
+		
+		let flex_reverse = false;
+		elem.addEventListener("dblclick", function(e) {	
+			flex_reverse = !flex_reverse;	
+			e.preventDefault();
+			
+			let resizer = e.currentTarget;
+			let container = resizer.parentElement;			
+			//let flexDir = window.getComputedStyle(container).getPropertyValue('flex-direction');
+
+			if(flex_reverse){
+				container.style.flexDirection = 'row-reverse';			
+			}else{
+				container.style.flexDirection = 'row';	
+			}
+		
+		})
+		
+		
 
 	})
 	
 	// mobile nav menu
 	const tabs_menu = gradioApp().querySelector('#tabs > div:first-child');
 	const nav_menu = gradioApp().querySelector('#nav_menu');
+	const gcontainer = gradioApp().querySelector('.mx-auto.container');
+	
 	let menu_open = false;
-	function toggleNavMenu() {
-		menu_open = !menu_open;			
+	function toggleNavMenu(e) {
+		menu_open = !menu_open;	
+		e.preventDefault();
+        e.stopPropagation();
+		
 		if(menu_open){
 			tabs_menu.classList.add("open");
 			nav_menu.classList.add("fixed");
+			gcontainer.addEventListener('click', toggleNavMenu);
+		
+
 		}else{
 			tabs_menu.classList.remove("open");
 			nav_menu.classList.remove("fixed");
+			gcontainer.removeEventListener('click', toggleNavMenu);
+			
 		}
-	}
 		
+		
+	}
+	
+
     nav_menu.addEventListener('click', toggleNavMenu);
 	
-	tabs_menu.addEventListener("click", function(e) {
-			e.preventDefault();
-			menu_open = false;
-			tabs_menu.classList.remove("open");
-			nav_menu.classList.remove("fixed");			
-    })
+	//const doc = document.getElementsByTagName('gradio-app')[0].shadowRoot;
 	
-	
-	
-	
-	
-	
+
+
 	
 })
 
