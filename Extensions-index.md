@@ -329,8 +329,8 @@
 		},
 		{
 			"name": "DAAM",
-			"url": "https://github.com/kousw/stable-diffusion-webui-daam.git",
-			"description": "DAAM stands for Diffusion Attentive Attribution Maps. Enter the attention text (must be a string contained in the prompt) and run. An overlapping image with a heatmap for each attention will be generated along with the original image.",
+			"url": "https://github.com/toriato/stable-diffusion-webui-daam.git",
+			"description": "DAAM stands for Diffusion Attentive Attribution Maps. Enter the attention text (must be a string contained in the prompt) and run. An overlapping image with a heatmap for each attention will be generated along with the original image. Note: new ext. maintainer, uninstall previous ext. if needed.",
 			"added": "2022-12-02",
 			"tags": ["script", "integrations"]
 		},
