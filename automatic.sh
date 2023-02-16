@@ -8,7 +8,7 @@ export CUDA_LAUNCH_BLOCKING=0
 export CUDA_CACHE_DISABLE=0
 export CUDA_AUTO_BOOST=1
 export CUDA_DEVICE_DEFAULT_PERSISTING_L2_CACHE_PERCENTAGE_LIMIT=0
-export LD_PRELOAD=libtcmalloc.so
+# export LD_PRELOAD=libtcmalloc.so
 # TORCH_CUDA_ARCH_LIST="8.6"
 
 if [ "$PYTHON" == "" ]; then
