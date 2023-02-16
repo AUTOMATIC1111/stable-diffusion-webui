@@ -624,7 +624,7 @@
         {
             "name": "sd-webui-controlnet",
             "url": "https://github.com/Mikubill/sd-webui-controlnet",
-            "description": "WebUI extension for ControlNet",
+            "description": "WebUI extension for ControlNet. Note: (WIP), so don't expect seed reproducibility - as updates may change things.",
             "added": "2023-02-15",
             "tags": ["script"]
         },
