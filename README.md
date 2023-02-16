@@ -28,10 +28,12 @@ Simplified start script: `automatic.sh`
   Additionally print environment info during startup  
   Example:  
 
-      Version: c07487a Tue Jan 24 08:04:31 2023 -0500
-      Platform: Ubuntu 22.04.1 LTS 5.15.79.1-microsoft-standard-WSL2 x86_64
-      Python 3.10.6
-      Torch: 2.0.0.dev20230118+cu118 CUDA: 11.8 cuDNN: 8700 GPU: NVIDIA GeForce RTX 3060 Arch: (8, 6)
+      Version: b0b326f3 Wed Feb 15 09:07:04 2023 -0500
+      Repository: https://github.com/vladmandic/automatic
+      Last Merge: Sun Feb 5 07:03:27 2023 -0500 Merge pull request #35 from AUTOMATIC1111/master
+      Platform: Ubuntu 22.04.1 LTS 5.15.83.1-microsoft-standard-WSL2 x86_64
+      nVIDIA: NVIDIA GeForce RTX 3060, 528.49
+      Python: 3.10.6 Torch: 2.0.0.dev20230211+cu118 CUDA: 11.8 cuDNN: 8700 GPU: NVIDIA GeForce RTX 3060 Arch: (8, 6)
 
 > ./automatic.sh public  
 
@@ -57,6 +59,25 @@ Simplified start script: `automatic.sh`
 > git clone --depth 1 https://github.com/vladmandic/automatic  
 > cd automatic  
 > ./automatic.sh install  
+
+      SD server: install
+      Installing general requirements
+      Installing versioned requirements
+      Updating submodules
+      Modules:
+      - 6c76a48 Mon Feb 13 00:03:00 2023 -0800 https://github.com/mcmonkeyprojects/sd-dynamic-thresholding
+      - a528cd5 Tue Jan 31 07:57:07 2023 -0500 https://github.com/vladmandic/sd-extension-aesthetic-scorer
+      - 7cf0e3a Tue Feb 7 07:39:40 2023 -0500 https://github.com/vladmandic/sd-extension-steps-animation
+      - b5d8e6a Thu Feb 9 15:25:18 2023 -0500 https://github.com/vladmandic/sd-extension-system-info
+      - 7a998ed Wed Feb 8 07:21:52 2023 -0500 https://github.com/Akegarasu/sd-webui-model-converter
+      - 0a5c897 Thu Feb 16 11:08:00 2023 +0100 https://github.com/yownas/seed_travel
+      - c8efd35 Mon Feb 13 21:51:25 2023 +0100 https://github.com/AlUlkesh/stable-diffusion-webui-images-browser
+      - 14d7b24 Thu Feb 16 22:35:47 2023 +0900 https://github.com/kohya-ss/sd-scripts
+      - b351828 Tue Feb 14 11:47:19 2023 -0500 https://github.com/vladmandic/automatic.wiki
+      Updating extensions
+      Extensions:
+      - e5b773a Sat Feb 11 19:38:18 2023 +0500 https://github.com/klimaleksus/stable-diffusion-webui-embedding-merge
+      - 0f3f699 Fri Dec 9 11:50:47 2022 +0800 https://github.com/yfszzx/stable-diffusion-webui-inspiration
 
 <br>
 

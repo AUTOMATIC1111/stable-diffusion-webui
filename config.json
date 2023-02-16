@@ -20,6 +20,7 @@
     "directories_max_prompt_words": 8,
     "disable_weights_auto_swap": false,
     "disabled_extensions": [
+        "openOutpaint-webUI-extension",
         "ScuNET"
     ],
     "do_not_add_watermark": true,

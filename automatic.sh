@@ -1,14 +1,15 @@
 #!/bin/env bash
 
-TF_CPP_MIN_LOG_LEVEL=2
-FORCE_CUDA="1"
-ATTN_PRECISION=fp16
-PYTORCH_CUDA_ALLOC_CONF=garbage_collection_threshold:0.9,max_split_size_mb:512
+export TF_CPP_MIN_LOG_LEVEL=2
+export FORCE_CUDA="1"
+export ATTN_PRECISION=fp16
+export PYTORCH_CUDA_ALLOC_CONF=garbage_collection_threshold:0.9,max_split_size_mb:512
+export CUDA_LAUNCH_BLOCKING=0
+export CUDA_CACHE_DISABLE=0
+export CUDA_AUTO_BOOST=1
+export CUDA_DEVICE_DEFAULT_PERSISTING_L2_CACHE_PERCENTAGE_LIMIT=0
+export LD_PRELOAD=libtcmalloc.so
 # TORCH_CUDA_ARCH_LIST="8.6"
-CUDA_LAUNCH_BLOCKING=0
-CUDA_CACHE_DISABLE=0
-CUDA_AUTO_BOOST=1
-CUDA_DEVICE_DEFAULT_PERSISTING_L2_CACHE_PERCENTAGE_LIMIT=0
 
 if [ "$PYTHON" == "" ]; then
   PYTHON=$(which python)
@@ -48,10 +49,12 @@ URL=$(git remote get-url origin)
 LSB=$(lsb_release -ds 2>/dev/null)
 UNAME=$(uname -rm 2>/dev/null)
 MERGE=$(git log --pretty=format:"%ad %s" | grep "Merge pull" | head -1)
+SMI=$(nvidia-smi --query-gpu=name,driver_version --format=csv,noheader --id=0 2>/dev/null)
 echo "Version: $VER"
 echo "Repository: $URL"
 echo "Last Merge: $MERGE"
 echo "Platform: $LSB $UNAME"
+echo "nVIDIA: $SMI"
 "$PYTHON" -c 'import torch; import platform; print("Python:", platform.python_version(), "Torch:", torch.__version__, "CUDA:", torch.version.cuda, "cuDNN:", torch.backends.cudnn.version(), "GPU:", torch.cuda.get_device_name(torch.cuda.current_device()), "Arch:", torch.cuda.get_device_capability());'
 
 if [ "$MODE" == install ]; then
@@ -66,7 +69,7 @@ if [ "$MODE" == install ]; then
   echo "Updating submodules"
   git submodule update --init --recursive
   git submodule update --rebase --remote
-  echo "Modules:"
+  echo "Submodules:"
   git submodule foreach --quiet 'VER=$(git log -1 --pretty=format:"%h %ad"); URL=$(git remote get-url origin); echo "- $VER $URL"'
 
   echo "Updating extensions"
