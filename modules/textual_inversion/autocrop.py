@@ -109,13 +109,12 @@ def focal_point(im, settings):
     if len(face_points) > 0 and (settings.torso_points_weight > 0):
       torso_centroid = centroid(face_points)
       torso_centroid.weight = settings.torso_points_weight / weight_pref_total 
-      if settings.torso_points_weight > 0:
-        face_x_distance = torso_centroid.x - im.width / 2
-        face_y_distance = torso_centroid.y - im.height / 2
-        face_direction = atan2(face_y_distance, face_x_distance)
-        torso_centroid.x -= (settings.crop_width / 2) * cos(face_direction)
-        torso_centroid.y -= (settings.crop_height / 2) * sin(face_direction)
-        pois.append(torso_centroid)
+      face_x_distance = torso_centroid.x - im.width / 2
+      face_y_distance = torso_centroid.y - im.height / 2
+      face_direction = atan2(face_y_distance, face_x_distance)
+      torso_centroid.x -= (settings.crop_width / 2) * cos(face_direction)
+      torso_centroid.y -= (settings.crop_height / 2) * sin(face_direction)
+      pois.append(torso_centroid)
 
     average_point = poi_average(pois, settings)
 
