@@ -203,11 +203,11 @@ if __name__ == '__main__':
         with open(json_file, "w") as outfile:
             outfile.write(json.dumps(metadata, indent=2))
 
-        if not args.nolatents and json_file is not None:
-            # create latents
-            latents.create_vae_latents(Map({ 'input': dir, 'json': json_file }))
-            latents.unload_vae()
-            mem_stats()
+    if not args.nolatents:
+        # create latents
+        latents.create_vae_latents(Map({ 'input': dir, 'json': json_file }))
+        latents.unload_vae()
+        mem_stats()
 
         log.info({ 'processed': res, 'inputs': len(files), 'metadata': json_file, 'path': dir })
     else:
