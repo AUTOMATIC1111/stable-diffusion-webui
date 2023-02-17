@@ -1,7 +1,8 @@
 # Windows
-(**In Testing**) \
-For Windows users, try this fork using **Direct-ml**. 
-* https://github.com/lshqqytiger/stable-diffusion-webui-directml
+(**In Testing**) 
+For Windows users, try this fork using **Direct-ml**. If you get this working, it would be nice to share here: [Discussion](https://github.com/AUTOMATIC1111/stable-diffusion-webui/discussions/7870)
+
+* https://github.com/lshqqytiger/stable-diffusion-webui-directml 
 
 make sure you have the modified repositories in `stable-diffusion-webui-directml/repositories/`:
 
