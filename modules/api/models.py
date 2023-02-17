@@ -267,3 +267,11 @@ class EmbeddingsResponse(BaseModel):
 class MemoryResponse(BaseModel):
     ram: dict = Field(title="RAM", description="System memory stats")
     cuda: dict = Field(title="CUDA", description="nVidia CUDA memory stats")
+
+class LoadModelResponse(BaseModel):
+    success: bool = Field(default=False, title="Success", description="Whether the module is loaded successfully")
+    time: float = Field(default=-1, title="Time", description="Time to load the module")
+    exception: str = Field(default="", title="Exception", description="Exception when loading the module")
+
+class LoadModelRequest(BaseModel):
+    model_name: str = Field(title="Name", description="Name of model to load")

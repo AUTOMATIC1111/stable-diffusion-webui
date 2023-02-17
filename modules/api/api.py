@@ -18,7 +18,7 @@ from modules.textual_inversion.textual_inversion import create_embedding, train_
 from modules.textual_inversion.preprocess import preprocess
 from modules.hypernetworks.hypernetwork import create_hypernetwork, train_hypernetwork
 from PIL import PngImagePlugin,Image
-from modules.sd_models import checkpoints_list
+from modules.sd_models import checkpoints_list, load_model
 from modules.sd_models_config import find_checkpoint_config_near_filename
 from modules.realesrgan_model import get_realesrgan_models
 from modules import devices
@@ -150,6 +150,7 @@ class Api:
         self.add_api_route("/sdapi/v1/train/embedding", self.train_embedding, methods=["POST"], response_model=TrainResponse)
         self.add_api_route("/sdapi/v1/train/hypernetwork", self.train_hypernetwork, methods=["POST"], response_model=TrainResponse)
         self.add_api_route("/sdapi/v1/memory", self.get_memory, methods=["GET"], response_model=MemoryResponse)
+        self.add_api_route("/sdapi/v1/load_model", self.load_exist_model, methods=["POST"], response_model=LoadModelResponse)
 
     def add_api_route(self, path: str, endpoint, **kwargs):
         if shared.cmd_opts.api_auth:
@@ -511,6 +512,18 @@ class Api:
         except AssertionError as msg:
             shared.state.end()
             return TrainResponse(info="train embedding error: {error}".format(error=error))
+
+    def load_exist_model(self, req: LoadModelRequest):
+        try:
+            name = req.model_name
+            info = checkpoints_list[name]
+            start_time = time.time()
+            load_model(info)
+            return LoadModelResponse(success=True, time=time.time() - start_time)
+        except KeyError:
+            return LoadModelResponse(exception=f"Model not found: {name}")
+        except Exception as e:
+            return LoadModelResponse(exception=str(e))
 
     def get_memory(self):
         try:
