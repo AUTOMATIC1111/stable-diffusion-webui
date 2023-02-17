@@ -58,6 +58,14 @@ class ImageGridLoopParams:
         self.rows = rows
 
 
+class InfotextPastedParams:
+    def __init__(self, infotext, params, tabname=None, source_tabname=None):
+        self.infotext = infotext
+        self.params = params
+        self.tabname = tabname
+        self.source_tabname = source_tabname
+
+
 ScriptCallback = namedtuple("ScriptCallback", ["script", "callback"])
 callback_map = dict(
     callbacks_app_started=[],
@@ -174,10 +182,10 @@ def image_grid_callback(params: ImageGridLoopParams):
             report_exception(c, 'image_grid')
 
 
-def infotext_pasted_callback(infotext: str, params: Dict[str, Any]):
+def infotext_pasted_callback(params: InfotextPastedParams):
     for c in callback_map['callbacks_infotext_pasted']:
         try:
-            c.callback(infotext, params)
+            c.callback(params)
         except Exception:
             report_exception(c, 'infotext_pasted')
 
@@ -310,9 +318,8 @@ def on_image_grid(callback):
 
 def on_infotext_pasted(callback):
     """register a function to be called before applying an infotext.
-    The callback is called with two arguments:
-       - infotext: str - raw infotext.
-       - result: Dict[str, any] - parsed infotext parameters.
+    The callback is called with one argument:
+       - params: InfotextPastedParams - parameters to be used for infotext pasted. Can be modified.
     """
     add_callback(callback_map['callbacks_infotext_pasted'], callback)
 

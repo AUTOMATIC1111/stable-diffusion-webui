@@ -988,7 +988,7 @@ def create_ui():
 
                 for tabname, button in buttons.items():
                     parameters_copypaste.register_paste_params_button(parameters_copypaste.ParamBinding(
-                        paste_button=button, tabname=tabname, source_text_component=generation_info, source_image_component=image,
+                        paste_button=button, tabname=tabname, source_text_component=generation_info, source_image_component=image, source_tabname="pnginfo",
                     ))
 
         image.change(

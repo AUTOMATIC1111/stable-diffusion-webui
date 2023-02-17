@@ -9,6 +9,8 @@ from pathlib import Path
 import gradio as gr
 from modules.paths import data_path
 from modules import shared, ui_tempdir, script_callbacks
+from modules.script_callbacks import InfotextPastedParams
+from typing import Optional
 import tempfile
 from PIL import Image
 
@@ -130,15 +132,17 @@ def connect_paste_params_buttons():
             )
 
         if binding.source_text_component is not None and fields is not None:
-            connect_paste(binding.paste_button, fields, binding.source_text_component, binding.override_settings_component, binding.tabname)
+            connect_paste(binding.paste_button, fields, binding.source_text_component, binding.override_settings_component, binding.tabname, binding.source_tabname)
 
         if binding.source_tabname is not None and fields is not None:
-            paste_field_names = ['Prompt', 'Negative prompt', 'Steps', 'Face restoration'] + (["Seed"] if shared.opts.send_seed else [])
-            binding.paste_button.click(
-                fn=lambda *x: x,
-                inputs=[field for field, name in paste_fields[binding.source_tabname]["fields"] if name in paste_field_names],
-                outputs=[field for field, name in fields if name in paste_field_names],
-            )
+            source_fields = paste_fields.get(binding.source_tabname, None) # pnginfo always transfers all fields
+            if source_fields:
+                paste_field_names = ['Prompt', 'Negative prompt', 'Steps', 'Face restoration'] + (["Seed"] if shared.opts.send_seed else [])
+                binding.paste_button.click(
+                    fn=lambda *x: x,
+                    inputs=[field for field, name in source_fields["fields"] if name in paste_field_names],
+                    outputs=[field for field, name in fields if name in paste_field_names],
+                )
 
         binding.paste_button.click(
             fn=None,
@@ -222,7 +226,7 @@ def restore_old_hires_fix_params(res):
     res['Hires resize-2'] = height
 
 
-def parse_generation_parameters(x: str):
+def parse_generation_parameters(x: str, tabname: Optional[str] = None, source_tabname: Optional[str] = None):
     """parses generation parameters string, the one you see in text field under the picture in UI:
 ```
 girl with an artist's beret, determined, blue eyes, desert scene, computer monitors, heavy makeup, by Alphonse Mucha and Charlie Bowater, ((eyeshadow)), (coquettish), detailed, intricate
@@ -282,6 +286,15 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
 
     restore_old_hires_fix_params(res)
 
+    # If the prompt is being pasted from another tab, respect the "Send
+    # seed/size to other tab" options
+    if source_tabname and source_tabname != "pnginfo":
+        if not shared.opts.send_seed:
+            res.pop("Seed", None)
+        if not shared.opts.send_size:
+            res.pop("Size-1", None)
+            res.pop("Size-2", None)
+
     return res
 
 
@@ -328,7 +341,7 @@ def create_override_settings_dict(text_pairs):
     return res
 
 
-def connect_paste(button, paste_fields, input_comp, override_settings_component, tabname):
+def connect_paste(button, paste_fields, input_comp, override_settings_component, tabname, source_tabname):
     def paste_func(prompt):
         if not prompt and not shared.cmd_opts.hide_ui_dir_config:
             filename = os.path.join(data_path, "params.txt")
@@ -336,8 +349,8 @@ def connect_paste(button, paste_fields, input_comp, override_settings_component,
                 with open(filename, "r", encoding="utf8") as file:
                     prompt = file.read()
 
-        params = parse_generation_parameters(prompt)
-        script_callbacks.infotext_pasted_callback(prompt, params)
+        params = parse_generation_parameters(prompt, source_tabname)
+        script_callbacks.infotext_pasted_callback(InfotextPastedParams(prompt, params, tabname, source_tabname))
         res = []
 
         for output, key in paste_fields:
