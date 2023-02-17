@@ -664,7 +664,7 @@ def create_ui():
             from modules import ui_extra_networks
             extra_networks_ui_img2img = ui_extra_networks.create_ui(extra_networks, extra_networks_button, 'img2img')
 
-        with FormColumn:
+        with FormColumn():
             with gr.Column(variant='compact', elem_id="img2img_settings"):
                 copy_image_buttons = []
                 copy_image_destinations = {}
