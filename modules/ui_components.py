@@ -28,6 +28,13 @@ class FormRow(gr.Row, gr.components.FormComponent):
         return "row"
 
 
+class FormColumn(gr.Column, gr.components.FormComponent):
+    """For better inpainting responsiveness"""
+
+    def get_block_name(self):
+        return "column"
+
+
 class FormGroup(gr.Group, gr.components.FormComponent):
     """Same as gr.Row but fits inside gradio forms"""
 
