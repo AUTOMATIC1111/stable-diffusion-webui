@@ -20,7 +20,7 @@ from PIL import Image, PngImagePlugin
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_gradio_call
 
 from modules import sd_hijack, sd_models, localization, script_callbacks, ui_extensions, deepbooru, sd_vae, extra_networks, postprocessing, ui_components, ui_common, ui_postprocessing
-from modules.ui_components import FormRow, FormGroup, ToolButton, FormHTML
+from modules.ui_components import FormRow, FormGroup, ToolButton, FormHTML, FormColumn
 from modules.paths import script_path, data_path
 
 from modules.shared import opts, cmd_opts, restricted_opts
@@ -664,7 +664,7 @@ def create_ui():
             from modules import ui_extra_networks
             extra_networks_ui_img2img = ui_extra_networks.create_ui(extra_networks, extra_networks_button, 'img2img')
 
-        with FormRow().style(equal_height=False):
+        with FormColumn:
             with gr.Column(variant='compact', elem_id="img2img_settings"):
                 copy_image_buttons = []
                 copy_image_destinations = {}
