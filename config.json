@@ -80,7 +80,7 @@
     "live_previews_enable": true,
     "localization": "None",
     "lora_apply_to_outputs": false,
-    "memmon_poll_rate": 8,
+    "memmon_poll_rate": 1,
     "multiple_tqdm": false,
     "n_rows": -1,
     "outdir_extras_samples": "outputs/extras",
