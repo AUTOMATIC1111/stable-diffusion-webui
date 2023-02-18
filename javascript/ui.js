@@ -191,6 +191,15 @@ function confirm_clear_prompt(prompt, negative_prompt) {
     return [prompt, negative_prompt]
 }
 
+function confirm_lock_controls() {
+    var lock_bg = gradioApp().querySelector("#tabs");
+    lock_bg.classList.toggle('bg-gray-100');
+
+    var all_ui_inputs = gradioApp().querySelectorAll('input, select, button:not(#ui_lock_controls):not(.gr-button-primary):not(.gr-button-secondary)');
+    all_ui_inputs.forEach(el => {
+        el.disabled = !el.disabled;
+    });
+}
 
 promptTokecountUpdateFuncs = {}
 

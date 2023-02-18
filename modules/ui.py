@@ -337,6 +337,15 @@ def create_toprow(is_img2img):
                     outputs=[prompt, negative_prompt],
                 )
 
+                if opts.show_lock_controls:
+                    lock_controls_button = ToolButton(value=lock_style_symbol, elem_id=f"ui_lock_controls")
+                    lock_controls_button.click(
+                        fn=None,
+                        _js="confirm_lock_controls",
+                        inputs=None,
+                        outputs=None
+                    )
+
             with gr.Row(elem_id=f"{id_part}_styles_row"):
                 prompt_styles = gr.Dropdown(label="Styles", elem_id=f"{id_part}_styles", choices=[k for k, v in shared.prompt_styles.styles.items()], value=[], multiselect=True)
                 create_refresh_button(prompt_styles, shared.prompt_styles.reload, lambda: {"choices": [k for k, v in shared.prompt_styles.styles.items()]}, f"refresh_{id_part}_styles")
