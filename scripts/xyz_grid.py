@@ -214,6 +214,8 @@ def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend
     # Will be filled with empty images for any individual step that fails to process properly
     image_cache = [None] * (len(xs) * len(ys) * len(zs))
 
+    grid_info = {'prompts':[None] * len(zs), 'seeds':[None] * len(zs), 'infotexts':[None] * len(zs)}
+
     processed_result = None
     cell_mode = "P"
     cell_size = (1, 1)
@@ -241,6 +243,15 @@ def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend
                 cell_mode = processed_image.mode
                 cell_size = processed_image.size
                 processed_result.images = [Image.new(cell_mode, cell_size)]
+                processed_result.all_prompts = [processed.prompt]
+                processed_result.all_seeds = [processed.seed]
+                processed_result.infotexts = [processed.infotexts[0]]
+
+            if include_sub_grids and grid_info['seeds'][iz] is None:
+                #Placeholder data for grids is a copy of the data for its first image:
+                grid_info['prompts'][iz] = processed.prompt
+                grid_info['seeds'][iz] = processed.seed
+                grid_info['infotexts'][iz] = processed.infotexts[0]
 
             image_cache[index(ix, iy, iz)] = processed_image
             if include_lone_images:
@@ -296,6 +307,10 @@ def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend
         sub_grids[i] = grid
         if include_sub_grids and len(zs) > 1:
             processed_result.images.insert(i+1, grid)
+            processed_result.all_prompts.insert(i+1, grid_info['prompts'][i])
+            processed_result.all_seeds.insert(i+1, grid_info['seeds'][i])
+            processed_result.infotexts.insert(i+1, grid_info['infotexts'][i])
+
 
     sub_grid_size = sub_grids[0].size
     z_grid = images.image_grid(sub_grids, rows=1)
