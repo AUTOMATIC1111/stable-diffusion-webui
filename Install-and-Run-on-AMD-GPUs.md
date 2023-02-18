@@ -9,9 +9,14 @@ make sure you have the modified repositories in `stable-diffusion-webui-directml
 * https://github.com/lshqqytiger/k-diffusion-directml/tree/master 
 * https://github.com/lshqqytiger/stablediffusion-directml/tree/main 
 
-Place stable diffusion checkpoint (model.ckpt) in the models/Stable-diffusion directory, and double-click `webui-user.bat`. If you have 4-6gb vram, try adding these flags to `webui-user.bat` like so: 
+(rename them to `k-diffusion` and `stable-diffusion-stability-ai`)
+Place any stable diffusion checkpoint (ckpt or safetensor) in the models/Stable-diffusion directory, and double-click `webui-user.bat`. If you have 4-6gb vram, try adding these flags to `webui-user.bat` like so: 
 
-`COMMANDLINE_ARGS=--opt-sub-quad-attention --lowvram`
+`COMMANDLINE_ARGS=--opt-sub-quad-attention --lowvram --disable-nan-check`
+
+You can add --autolaunch to auto open the url for you.
+
+If it looks like it is stuck when installing gfpgan or gfgan, press enter and it should continue.
 
 (The rest **below are installation guides for linux** with rocm.)
 
