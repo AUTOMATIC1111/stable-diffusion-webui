@@ -623,10 +623,24 @@
         },
         {
             "name": "sd-webui-controlnet",
-            "url": "https://github.com/Mikubill/sd-webui-controlnet",
+            "url": "https://github.com/Mikubill/sd-webui-controlnet.git",
             "description": "WebUI extension for ControlNet. Note: (WIP), so don't expect seed reproducibility - as updates may change things.",
-            "added": "2023-02-15",
+            "added": "2023-02-18",
             "tags": ["script"]
+        },
+        {
+            "name": "Latent Couple",
+            "url": "https://github.com/opparco/stable-diffusion-webui-two-shot.git",
+            "description": "An extension of the built-in Composable Diffusion, allows you to determine the region of the latent space that reflects your subprompts. Currently requires a cfg patch to run, found in the readme.",
+            "added": "2023-02-18",
+            "tags": ["script"]
+        },
+        {
+            "name": "SuperMerger",
+            "url": "https://github.com/hako-mikan/sd-webui-supermerger.git",
+            "description": "Merge and run without saving to drive. Sequential XY merge generations; extract and merge loras, bind loras to ckpt, merge block weights, and more. Some operations are RAM-heavy & diffusers is required.",
+            "added": "2023-02-18",
+            "tags": ["script", "tab", "models"]
         },
         {
             "name": "zh_CN Localization",
