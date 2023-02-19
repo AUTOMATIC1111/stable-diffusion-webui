@@ -20,4 +20,4 @@ def sd_vae_items():
 def refresh_vae_list():
     import modules.sd_vae
 
-    return modules.sd_vae.refresh_vae_list
+    modules.sd_vae.refresh_vae_list()
