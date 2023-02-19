@@ -18,7 +18,7 @@ import string
 import json
 import hashlib
 
-from modules import sd_samplers, shared, script_callbacks
+from modules import sd_samplers, shared, script_callbacks, errors
 from modules.shared import opts, cmd_opts
 
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
@@ -575,25 +575,19 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
 
     image.already_saved_as = fullfn
 
-    try:
-        target_side_length = int(opts.target_side_length)
-    except ValueError:
-        target_side_length = 4000
-    try:
-        img_downscale_threshold = float(opts.img_downscale_threshold)
-    except ValueError:
-        img_downscale_threshold = 4
-    
-    oversize = image.width > target_side_length or image.height > target_side_length
-    if opts.export_for_4chan and (oversize or os.stat(fullfn).st_size > img_downscale_threshold * 1024 * 1024):
+    oversize = image.width > opts.target_side_length or image.height > opts.target_side_length
+    if opts.export_for_4chan and (oversize or os.stat(fullfn).st_size > opts.img_downscale_threshold * 1024 * 1024):
         ratio = image.width / image.height
 
         if oversize and ratio > 1:
-            image = image.resize((target_side_length, image.height * target_side_length // image.width), LANCZOS)
+            image = image.resize((opts.target_side_length, image.height * opts.target_side_length // image.width), LANCZOS)
         elif oversize:
-            image = image.resize((image.width * target_side_length // image.height, target_side_length), LANCZOS)
+            image = image.resize((image.width * opts.target_side_length // image.height, opts.target_side_length), LANCZOS)
 
-        _atomically_save_image(image, fullfn_without_extension, ".jpg")
+        try:
+            _atomically_save_image(image, fullfn_without_extension, ".jpg")
+        except Exception as e:
+            errors.display(e, "saving image as downscaled JPG")
 
     if opts.save_txt and info is not None:
         txt_fullfn = f"{fullfn_without_extension}.txt"
