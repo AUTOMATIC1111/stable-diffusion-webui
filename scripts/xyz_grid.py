@@ -188,6 +188,7 @@ axis_options = [
     AxisOption("Steps", int, apply_field("steps")),
     AxisOptionTxt2Img("Hires steps", int, apply_field("hr_second_pass_steps")),
     AxisOption("CFG Scale", float, apply_field("cfg_scale")),
+    AxisOptionImg2Img("Image CFG Scale", float, apply_field("image_cfg_scale")),
     AxisOption("Prompt S/R", str, apply_prompt, format_value=format_value),
     AxisOption("Prompt order", str_permutations, apply_order, format_value=format_value_join_list),
     AxisOptionTxt2Img("Sampler", str, apply_sampler, format_value=format_value, confirm=confirm_samplers, choices=lambda: [x.name for x in sd_samplers.samplers]),
