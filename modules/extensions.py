@@ -2,7 +2,6 @@ import os
 import sys
 import traceback
 
-import time
 import git
 
 from modules import paths, shared
@@ -26,7 +25,6 @@ class Extension:
         self.status = ''
         self.can_update = False
         self.is_builtin = is_builtin
-        self.version = ''
 
         repo = None
         try:
@@ -42,10 +40,6 @@ class Extension:
             try:
                 self.remote = next(repo.remote().urls, None)
                 self.status = 'unknown'
-                head = repo.head.commit
-                ts = time.asctime(time.gmtime(repo.head.commit.committed_date))
-                self.version = f'{head.hexsha[:7]} ({ts})'
-
             except Exception:
                 self.remote = None
 
