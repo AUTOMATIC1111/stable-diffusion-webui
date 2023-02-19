@@ -8,7 +8,6 @@ Version: 1.0
 License: GNU General Public License
 */
 
-
 /* label color */
 .dark .dark\:text-gray-200 {
     color: var(--label-color);
@@ -1333,9 +1332,16 @@ div[data-testid="image"] input[type=range]
 	border-radius: 0 !important;
 }
 
+/*
 .dark .gr-compact {
     border-radius: 0 !important;
 }
+*/
+
+.gr-compact>*, .gr-compact .gr-box {
+    border-radius: var(--panel-border-radius) !important;
+}
+
 
 /* small tool buttons */
 .dark .dark\:bg-gray-900 {   
@@ -1874,10 +1880,12 @@ ul.list-none {
 [id$="2img_extra_refresh"],
 [id$="2img_extra_close"] 
 {
-	max-height: 32px;
+    max-height: 32px;
     margin-right: 4px;
     border: 0;
     flex-grow: 1;
+    padding-bottom: 0px !important;
+    min-height: 32px;
 }
 
 .extra-networks .search
