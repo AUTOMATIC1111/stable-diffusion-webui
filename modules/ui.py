@@ -1280,6 +1280,8 @@ def create_ui():
                         create_image_every = gr.Number(label='Save an image to log directory every N steps, 0 to disable', value=500, precision=0, elem_id="train_create_image_every")
                         save_embedding_every = gr.Number(label='Save a copy of embedding to log directory every N steps, 0 to disable', value=500, precision=0, elem_id="train_save_embedding_every")
 
+                    use_weight = gr.Checkbox(label="Use PNG alpha channel as loss weight", value=False, elem_id="use_weight")
+
                     save_image_with_stored_embedding = gr.Checkbox(label='Save images with embedding in PNG chunks', value=True, elem_id="train_save_image_with_stored_embedding")
                     preview_from_txt2img = gr.Checkbox(label='Read parameters (prompt, etc...) from txt2img tab when making previews', value=False, elem_id="train_preview_from_txt2img")
 
@@ -1393,6 +1395,7 @@ def create_ui():
                 shuffle_tags,
                 tag_drop_out,
                 latent_sampling_method,
+                use_weight,
                 create_image_every,
                 save_embedding_every,
                 template_file,
@@ -1426,6 +1429,7 @@ def create_ui():
                 shuffle_tags,
                 tag_drop_out,
                 latent_sampling_method,
+                use_weight,
                 create_image_every,
                 save_embedding_every,
                 template_file,

@@ -8,6 +8,7 @@ from modules import prompt_parser, devices, sd_samplers_common
 from modules.shared import opts, state
 import modules.shared as shared
 from modules.script_callbacks import CFGDenoiserParams, cfg_denoiser_callback
+from modules.script_callbacks import CFGDenoisedParams, cfg_denoised_callback
 
 samplers_k_diffusion = [
     ('Euler a', 'sample_euler_ancestral', ['k_euler_a', 'k_euler_ancestral'], {}),
@@ -135,6 +136,9 @@ class CFGDenoiser(torch.nn.Module):
                 x_out[a:b] = self.inner_model(x_in[a:b], sigma_in[a:b], cond={"c_crossattn": c_crossattn, "c_concat": [image_cond_in[a:b]]})
 
             x_out[-uncond.shape[0]:] = self.inner_model(x_in[-uncond.shape[0]:], sigma_in[-uncond.shape[0]:], cond={"c_crossattn": [uncond], "c_concat": [image_cond_in[-uncond.shape[0]:]]})
+
+        denoised_params = CFGDenoisedParams(x_out, state.sampling_step, state.sampling_steps)
+        cfg_denoised_callback(denoised_params)
 
         devices.test_for_nans(x_out, "unet")
 
