@@ -631,7 +631,7 @@
         {
             "name": "Latent Couple",
             "url": "https://github.com/opparco/stable-diffusion-webui-two-shot.git",
-            "description": "An extension of the built-in Composable Diffusion, allows you to determine the region of the latent space that reflects your subprompts. Currently requires a cfg patch to run, found in the readme.",
+            "description": "An extension of the built-in Composable Diffusion, allows you to determine the region of the latent space that reflects your subprompts.",
             "added": "2023-02-18",
             "tags": ["script"]
         },
