@@ -76,6 +76,10 @@ class ExtraNetworksPage:
                 while subdir.startswith("/"):
                     subdir = subdir[1:]
 
+                is_empty = len(os.listdir(x)) == 0
+                if not is_empty and not subdir.endswith("/"):
+                    subdir = subdir + "/"
+
                 subdirs[subdir] = 1
 
         if subdirs:
