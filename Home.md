@@ -24,3 +24,4 @@
   - [List of Time Zones](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/List-of-Time-Zones)
 - [API](API)
 - [Tests](Tests)
+- [Tutorials](Tutorials)
