@@ -747,6 +747,52 @@ footer {
     margin-left: 0em;
 }
 
+#txt2img_size_toolbox, #img2img_size_toolbox{
+    min-width: unset !important;
+    gap: 0;
+}
+
+#txt2img_ratio, #img2img_ratio {
+    padding: 0px;
+    min-width: unset;
+    max-width: fit-content;
+}
+#txt2img_ratio select, #img2img_ratio select{
+   -o-appearance: none;
+   -ms-appearance: none;
+   -webkit-appearance: none;
+   -moz-appearance: none;
+   appearance: none;
+   background-image: unset;
+   padding-right: unset;
+   min-width: 40px;
+   max-width: 40px;
+   min-height: 40px;
+   max-height: 40px;
+   line-height: 40px;
+   padding: 0;
+   text-align: center;
+}
+.rounding-badge {
+  display: inline-block;
+  border-radius: 0px;
+  /*background-color: #ccc;*/
+  cursor: pointer;
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 20px;
+  height: 20px;
+  padding: 1px;
+  line-height: 16px;
+  font-size: 14px;
+}
+
+.rounding-badge.active {
+  background-color: #007bff;
+  border-radius: 50%;
+}
+
 .inactive{
     opacity: 0.5;
 }
