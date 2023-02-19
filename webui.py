@@ -214,7 +214,7 @@ def webui():
             ssl_keyfile=cmd_opts.tls_keyfile,
             ssl_certfile=cmd_opts.tls_certfile,
             debug=cmd_opts.gradio_debug,
-            auth=[tuple(cred.split(':')) for cred in cmd_opts.gradio_auth.strip('"').split(',')] if cmd_opts.gradio_auth else None,
+            auth=[tuple(cred.split(':')) for cred in (cmd_opts.gradio_auth.strip('"').replace('\n','').split(',') + (open(cmd_opts.gradio_auth_path, 'r').read().strip().replace('\n','').split(',') if cmd_opts.gradio_auth_path and os.path.exists(cmd_opts.gradio_auth_path) else None))] if cmd_opts.gradio_auth or (cmd_opts.gradio_auth_path and os.path.exists(cmd_opts.gradio_auth_path)) else None,
             inbrowser=cmd_opts.autolaunch,
             prevent_thread_lock=True
         )
