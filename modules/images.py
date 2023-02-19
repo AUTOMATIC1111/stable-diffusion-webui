@@ -575,9 +575,17 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
 
     image.already_saved_as = fullfn
 
-    target_side_length = 4000
+    try:
+        target_side_length = int(opts.target_side_length)
+    except ValueError:
+        target_side_length = 4000
+    try:
+        img_downscale_threshold = float(opts.img_downscale_threshold)
+    except ValueError:
+        img_downscale_threshold = 4
+    
     oversize = image.width > target_side_length or image.height > target_side_length
-    if opts.export_for_4chan and (oversize or os.stat(fullfn).st_size > 4 * 1024 * 1024):
+    if opts.export_for_4chan and (oversize or os.stat(fullfn).st_size > img_downscale_threshold * 1024 * 1024):
         ratio = image.width / image.height
 
         if oversize and ratio > 1:
