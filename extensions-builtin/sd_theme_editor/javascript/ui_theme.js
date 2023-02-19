@@ -332,7 +332,7 @@ function initTheme() {
 		gradioApp().querySelectorAll('#ui_theme_hsv input').forEach((elem) => {
 			elem.value = 0;
 		})
-		
+		hsloffset = [0,0,0];
 		updateTheme(init_vars);		
 	})
 	
