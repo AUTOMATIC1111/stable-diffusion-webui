@@ -22,6 +22,7 @@ Use `--port xxxx` to make the server listen on a specific port, xxxx being the w
 | ---------------- | ----- | ------- | ----------- |
 | **CONFIGURATION** |
 -h, --help         | None  | False   |   				  show this help message and exit |
+--exit | | | Terminate after installation |
 --data-dir | DATA_DIR | ./ | base path where all user data is stored |
 --config    | CONFIG | configs/stable-diffusion/v1-inference.yaml   				 | path to config which constructs model |
 --ckpt 		| CKPT   | model.ckpt        				 | path to checkpoint of stable diffusion model; if specified, this checkpoint will be added to the list of checkpoints and loaded |
