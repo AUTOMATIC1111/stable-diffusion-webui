@@ -207,6 +207,14 @@ def webui():
         if cmd_opts.gradio_queue:
             shared.demo.queue(64)
 
+        gradio_auth_creds = []
+        if cmd_opts.gradio_auth:
+            gradio_auth_creds += cmd_opts.gradio_auth.strip('"').replace('\n', '').split(',')
+        if cmd_opts.gradio_auth_path:
+            with open(cmd_opts.gradio_auth_path, 'r', encoding="utf8") as file:
+                for line in file.readlines():
+                    gradio_auth_creds += [x.strip() for x in line.split(',')]
+
         app, local_url, share_url = shared.demo.launch(
             share=cmd_opts.share,
             server_name=server_name,
@@ -214,7 +222,7 @@ def webui():
             ssl_keyfile=cmd_opts.tls_keyfile,
             ssl_certfile=cmd_opts.tls_certfile,
             debug=cmd_opts.gradio_debug,
-            auth=[tuple(cred.split(':')) for cred in (cmd_opts.gradio_auth.strip('"').replace('\n','').split(',') + (open(cmd_opts.gradio_auth_path, 'r').read().strip().replace('\n','').split(',') if cmd_opts.gradio_auth_path and os.path.exists(cmd_opts.gradio_auth_path) else None))] if cmd_opts.gradio_auth or (cmd_opts.gradio_auth_path and os.path.exists(cmd_opts.gradio_auth_path)) else None,
+            auth=[tuple(cred.split(':')) for cred in gradio_auth_creds] if gradio_auth_creds else None,
             inbrowser=cmd_opts.autolaunch,
             prevent_thread_lock=True
         )
