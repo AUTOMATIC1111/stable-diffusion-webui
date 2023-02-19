@@ -8,6 +8,7 @@ from modules import prompt_parser, devices, sd_samplers_common
 from modules.shared import opts, state
 import modules.shared as shared
 from modules.script_callbacks import CFGDenoiserParams, cfg_denoiser_callback
+from modules.script_callbacks import CFGDenoisedParams, cfg_denoised_callback
 
 samplers_k_diffusion = [
     ('Euler a', 'sample_euler_ancestral', ['k_euler_a', 'k_euler_ancestral'], {}),
@@ -135,6 +136,9 @@ class CFGDenoiser(torch.nn.Module):
                 x_out[a:b] = self.inner_model(x_in[a:b], sigma_in[a:b], cond={"c_crossattn": c_crossattn, "c_concat": [image_cond_in[a:b]]})
 
             x_out[-uncond.shape[0]:] = self.inner_model(x_in[-uncond.shape[0]:], sigma_in[-uncond.shape[0]:], cond={"c_crossattn": [uncond], "c_concat": [image_cond_in[-uncond.shape[0]:]]})
+
+        denoised_params = CFGDenoisedParams(x_out, state.sampling_step, state.sampling_steps)
+        cfg_denoised_callback(denoised_params)
 
         devices.test_for_nans(x_out, "unet")
 
@@ -269,6 +273,16 @@ class KDiffusionSampler:
 
         return sigmas
 
+    def create_noise_sampler(self, x, sigmas, p):
+        """For DPM++ SDE: manually create noise sampler to enable deterministic results across different batch sizes"""
+        if shared.opts.no_dpmpp_sde_batch_determinism:
+            return None
+
+        from k_diffusion.sampling import BrownianTreeNoiseSampler
+        sigma_min, sigma_max = sigmas[sigmas > 0].min(), sigmas.max()
+        current_iter_seeds = p.all_seeds[p.iteration * p.batch_size:(p.iteration + 1) * p.batch_size]
+        return BrownianTreeNoiseSampler(x, sigma_min, sigma_max, seed=current_iter_seeds)
+
     def sample_img2img(self, p, x, noise, conditioning, unconditional_conditioning, steps=None, image_conditioning=None):
         steps, t_enc = sd_samplers_common.setup_img2img_steps(p, steps)
 
@@ -278,17 +292,23 @@ class KDiffusionSampler:
         xi = x + noise * sigma_sched[0]
         
         extra_params_kwargs = self.initialize(p)
-        if 'sigma_min' in inspect.signature(self.func).parameters:
+        parameters = inspect.signature(self.func).parameters
+
+        if 'sigma_min' in parameters:
             ## last sigma is zero which isn't allowed by DPM Fast & Adaptive so taking value before last
             extra_params_kwargs['sigma_min'] = sigma_sched[-2]
-        if 'sigma_max' in inspect.signature(self.func).parameters:
+        if 'sigma_max' in parameters:
             extra_params_kwargs['sigma_max'] = sigma_sched[0]
-        if 'n' in inspect.signature(self.func).parameters:
+        if 'n' in parameters:
             extra_params_kwargs['n'] = len(sigma_sched) - 1
-        if 'sigma_sched' in inspect.signature(self.func).parameters:
+        if 'sigma_sched' in parameters:
             extra_params_kwargs['sigma_sched'] = sigma_sched
-        if 'sigmas' in inspect.signature(self.func).parameters:
+        if 'sigmas' in parameters:
             extra_params_kwargs['sigmas'] = sigma_sched
+
+        if self.funcname == 'sample_dpmpp_sde':
+            noise_sampler = self.create_noise_sampler(x, sigmas, p)
+            extra_params_kwargs['noise_sampler'] = noise_sampler
 
         self.model_wrap_cfg.init_latent = x
         self.last_latent = x
@@ -303,7 +323,7 @@ class KDiffusionSampler:
 
         return samples
 
-    def sample(self, p, x, conditioning, unconditional_conditioning, steps=None, image_conditioning = None):
+    def sample(self, p, x, conditioning, unconditional_conditioning, steps=None, image_conditioning=None):
         steps = steps or p.steps
 
         sigmas = self.get_sigmas(p, steps)
@@ -311,13 +331,19 @@ class KDiffusionSampler:
         x = x * sigmas[0]
 
         extra_params_kwargs = self.initialize(p)
-        if 'sigma_min' in inspect.signature(self.func).parameters:
+        parameters = inspect.signature(self.func).parameters
+
+        if 'sigma_min' in parameters:
             extra_params_kwargs['sigma_min'] = self.model_wrap.sigmas[0].item()
             extra_params_kwargs['sigma_max'] = self.model_wrap.sigmas[-1].item()
-            if 'n' in inspect.signature(self.func).parameters:
+            if 'n' in parameters:
                 extra_params_kwargs['n'] = steps
         else:
             extra_params_kwargs['sigmas'] = sigmas
+
+        if self.funcname == 'sample_dpmpp_sde':
+            noise_sampler = self.create_noise_sampler(x, sigmas, p)
+            extra_params_kwargs['noise_sampler'] = noise_sampler
 
         self.last_latent = x
         samples = self.launch_sampling(steps, lambda: self.func(self.model_wrap_cfg, x, extra_args={

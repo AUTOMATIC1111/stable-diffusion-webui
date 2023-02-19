@@ -242,7 +242,7 @@ def prepare_environment():
 
     sys.argv += shlex.split(commandline_args)
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--ui-settings-file", type=str, help="filename to use for ui settings", default='config.json')
     args, _ = parser.parse_known_args(sys.argv)
 

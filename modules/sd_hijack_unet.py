@@ -44,6 +44,7 @@ def apply_model(orig_func, self, x_noisy, t, cond, **kwargs):
     with devices.autocast():
         return orig_func(self, x_noisy.to(devices.dtype_unet), t.to(devices.dtype_unet), cond, **kwargs).float()
 
+
 class GELUHijack(torch.nn.GELU, torch.nn.Module):
     def __init__(self, *args, **kwargs):
         torch.nn.GELU.__init__(self, *args, **kwargs)
@@ -52,6 +53,16 @@ class GELUHijack(torch.nn.GELU, torch.nn.Module):
             return torch.nn.GELU.forward(self.float(), x.float()).to(devices.dtype_unet)
         else:
             return torch.nn.GELU.forward(self, x)
+
+
+ddpm_edit_hijack = None
+def hijack_ddpm_edit():
+    global ddpm_edit_hijack
+    if not ddpm_edit_hijack:
+        CondFunc('modules.models.diffusion.ddpm_edit.LatentDiffusion.decode_first_stage', first_stage_sub, first_stage_cond)
+        CondFunc('modules.models.diffusion.ddpm_edit.LatentDiffusion.encode_first_stage', first_stage_sub, first_stage_cond)
+        ddpm_edit_hijack = CondFunc('modules.models.diffusion.ddpm_edit.LatentDiffusion.apply_model', apply_model, unet_needs_upcast)
+
 
 unet_needs_upcast = lambda *args, **kwargs: devices.unet_needs_upcast
 CondFunc('ldm.models.diffusion.ddpm.LatentDiffusion.apply_model', apply_model, unet_needs_upcast)
