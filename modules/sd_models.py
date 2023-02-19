@@ -107,7 +107,7 @@ def list_models():
     checkpoint_alisases.clear()
 
     cmd_ckpt = shared.cmd_opts.ckpt
-    if shared.cmd_opts.no_download_sd_model or cmd_ckpt != shared.sd_model_file:
+    if shared.cmd_opts.no_download_sd_model or cmd_ckpt != shared.sd_model_file or os.path.exists(cmd_ckpt):
         model_url = None
     else:
         model_url = "https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors"
