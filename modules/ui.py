@@ -690,9 +690,9 @@ def create_ui():
                 (hr_resize_y, "Hires resize-2"),
                 *modules.scripts.scripts_txt2img.infotext_fields
             ]
-            parameters_copypaste.add_paste_fields("txt2img", None, txt2img_paste_fields)
+            parameters_copypaste.add_paste_fields("txt2img", None, txt2img_paste_fields, override_settings)
             parameters_copypaste.register_paste_params_button(parameters_copypaste.ParamBinding(
-                paste_button=txt2img_paste, tabname="txt2img", source_text_component=txt2img_prompt, source_image_component=None, override_settings_component=override_settings,
+                paste_button=txt2img_paste, tabname="txt2img", source_text_component=txt2img_prompt, source_image_component=None,
             ))
 
             txt2img_preview_params = [
@@ -1052,10 +1052,10 @@ def create_ui():
                 (mask_blur, "Mask blur"),
                 *modules.scripts.scripts_img2img.infotext_fields
             ]
-            parameters_copypaste.add_paste_fields("img2img", init_img, img2img_paste_fields)
-            parameters_copypaste.add_paste_fields("inpaint", init_img_with_mask, img2img_paste_fields)
+            parameters_copypaste.add_paste_fields("img2img", init_img, img2img_paste_fields, override_settings)
+            parameters_copypaste.add_paste_fields("inpaint", init_img_with_mask, img2img_paste_fields, override_settings)
             parameters_copypaste.register_paste_params_button(parameters_copypaste.ParamBinding(
-                paste_button=img2img_paste, tabname="img2img", source_text_component=img2img_prompt, source_image_component=None, override_settings_component=override_settings,
+                paste_button=img2img_paste, tabname="img2img", source_text_component=img2img_prompt, source_image_component=None,
             ))
 
     modules.scripts.scripts_current = None
@@ -1872,8 +1872,8 @@ def versions_html():
     return f"""
 <ul class="info-ul">
 <li><span>os: </span>{sys.platform}</li>    
-<li><span>python: </span> {python_version}</li>
-<li><span>torch: </span> {torch.__version__}</li>
+<li><span title="{sys.version}">python: </span> {python_version}</li>
+<li><span>torch: </span>  {getattr(torch, '__long_version__',torch.__version__)}</li>
 <li><span>xformers: </span> {xformers_version}</li>
 <li><span>gradio: </span> {gr.__version__}</li>
 <li><span>commit: <a href="https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/{commit}"></span>{short_commit}</a></li>
