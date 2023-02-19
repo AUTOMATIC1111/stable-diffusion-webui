@@ -779,7 +779,7 @@ footer {
 #img2img_finalres{
     min-height: 0 !important;
     padding: .625rem .75rem;
-    margin-left: -0.75em
+    margin-left: 0.25em
 }
 
 #img2img_finalres .resolution{

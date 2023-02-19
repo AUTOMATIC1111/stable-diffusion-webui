@@ -767,7 +767,7 @@ def create_ui():
                     )
 
                 with FormRow():
-                    resize_mode = gr.Radio(label="Resize mode", elem_id="resize_mode", choices=["Just resize", "Crop and resize", "Resize and fill", "Just resize (latent upscale)"], type="index", value="Just resize")
+                    resize_mode = gr.Radio(label="Resize mode", elem_id="resize_mode", choices=["Just resize", "Crop and resize", "Resize and fill"], type="index", value="Just resize")
 
                 for category in ordered_ui_categories():
                     if category == "sampler":
@@ -797,7 +797,9 @@ def create_ui():
                             with FormRow():
                                 cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='CFG Scale', value=7.0, elem_id="img2img_cfg_scale")
                                 image_cfg_scale = gr.Slider(minimum=0, maximum=3.0, step=0.05, label='Image CFG Scale', value=1.5, elem_id="img2img_image_cfg_scale", visible=shared.sd_model and shared.sd_model.cond_stage_key == "edit")
-                            denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.75, elem_id="img2img_denoising_strength")
+                            with FormRow():
+                                upscaler = gr.Dropdown(label="Upscaler", elem_id="img2img_upscaler", choices=[*shared.latent_upscale_modes, *[x.name for x in shared.sd_upscalers]], value=shared.latent_upscale_default_mode)
+                                denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.75, elem_id="img2img_denoising_strength")
 
                     elif category == "seed":
                         seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox = create_seed_inputs('img2img')
@@ -934,6 +936,7 @@ def create_ui():
                     height,
                     width,
                     scale,
+                    upscaler,
                     resize_mode,
                     inpaint_full_res,
                     inpaint_full_res_padding,
@@ -1019,7 +1022,8 @@ def create_ui():
                 (seed, "Seed"),
                 (width, "Size-1"),
                 (height, "Size-2"),
-                (scale, "Img2Img Upscale"),
+                (scale, "Img2Img upscale"),
+                (upscaler, "Img2Img upscaler"),
                 (batch_size, "Batch size"),
                 (subseed, "Variation seed"),
                 (subseed_strength, "Variation seed strength"),
