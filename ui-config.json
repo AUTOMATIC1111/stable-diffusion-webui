@@ -1169,5 +1169,9 @@
     "train/Bake in VAE/visible": true,
     "train/Bake in VAE/value": "None",
     "train/Discard weights with matching name/visible": true,
-    "train/Discard weights with matching name/value": ""
+    "train/Discard weights with matching name/value": "",
+    "customscript/loopback.py/img2img/Append interrogated prompt at each iteration/visible": true,
+    "customscript/loopback.py/img2img/Append interrogated prompt at each iteration/value": "None",
+    "train/Use PNG alpha channel as loss weight/visible": true,
+    "train/Use PNG alpha channel as loss weight/value": false
 }

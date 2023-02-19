@@ -278,7 +278,7 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
         if depth_model:
             model.depth_model = depth_model
 
-        timer.record("apply half()")
+        timer.record("apply half")
 
     devices.dtype = torch.float32 if shared.cmd_opts.no_half else torch.float16
     devices.dtype_vae = torch.float32 if shared.cmd_opts.no_half or shared.cmd_opts.no_half_vae else torch.float16

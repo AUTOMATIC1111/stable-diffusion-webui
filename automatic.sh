@@ -8,15 +8,13 @@ export CUDA_LAUNCH_BLOCKING=0
 export CUDA_CACHE_DISABLE=0
 export CUDA_AUTO_BOOST=1
 export CUDA_DEVICE_DEFAULT_PERSISTING_L2_CACHE_PERCENTAGE_LIMIT=0
-# export LD_PRELOAD=libtcmalloc.so
-# TORCH_CUDA_ARCH_LIST="8.6"
 
 if [ "$PYTHON" == "" ]; then
   PYTHON=$(which python)
 fi
 
-CMD="launch.py --api --xformers --disable-console-progressbars --gradio-queue --skip-version-check --cors-allow-origins=http://127.0.0.1:7860"
-# --opt-channelslast
+CMD="launch.py --api --xformers --disable-console-progressbars --gradio-queue --skip-version-check --skip-install --skip-torch-cuda-test --disable-nan-check --cors-allow-origins=http://127.0.0.1:7860"
+
 MODE=optimized
 
 if [[ $(id -u) -eq 0 ]]; then
@@ -104,3 +102,7 @@ if [ $MODE == optimized ]; then
 fi
 
 exec accelerate launch --no_python --quiet --num_cpu_threads_per_process=6 "$PYTHON" $CMD
+
+# export LD_PRELOAD=libtcmalloc.so
+# TORCH_CUDA_ARCH_LIST="8.6"
+# --opt-channelslast
