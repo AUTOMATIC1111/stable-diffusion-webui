@@ -32,8 +32,8 @@ def on_ui_tabs():
                        
         #with gr.Accordion(label="Debug View", open=True):
         with gr.Row():
-            vars_text = gr.Textbox(label="Vars", elem_id="theme_vars", show_label=True, lines=7, interactive=False, visible=True)            
-            css_text = gr.Textbox(label="Css", elem_id="theme_css", show_label=True, lines=7, interactive=False, visible=True)               
+            vars_text = gr.Textbox(label="Vars", elem_id="theme_vars", show_label=True, lines=7, interactive=False, visible=False)            
+            css_text = gr.Textbox(label="Css", elem_id="theme_css", show_label=True, lines=7, interactive=False, visible=False)               
             #result_text = gr.Text(elem_id="theme_result", interactive=False, visible=False)
         
         with gr.Row():    
