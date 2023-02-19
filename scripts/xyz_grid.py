@@ -25,6 +25,8 @@ from modules.ui_components import ToolButton
 
 fill_values_symbol = "\U0001f4d2"  # 📒
 
+AxisInfo = namedtuple('AxisInfo', ['axis', 'values'])
+
 
 def apply_field(field):
     def fun(p, x, xs):
@@ -519,6 +521,10 @@ class Script(scripts.Script):
         shared.total_tqdm.updateTotal(total_steps)
 
         grid_infotext = [None]
+
+        state.xyz_plot_x = AxisInfo(x_opt, xs)
+        state.xyz_plot_y = AxisInfo(y_opt, ys)
+        state.xyz_plot_z = AxisInfo(z_opt, zs)
 
         # If one of the axes is very slow to change between (like SD model
         # checkpoint), then make sure it is in the outer iteration of the nested
