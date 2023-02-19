@@ -20,7 +20,6 @@
     "directories_max_prompt_words": 8,
     "disable_weights_auto_swap": false,
     "disabled_extensions": [
-        "openOutpaint-webUI-extension",
         "ScuNET"
     ],
     "do_not_add_watermark": true,
@@ -192,5 +191,7 @@
     "image_browser_pages_perload": 20.0,
     "image_browser_mod_shift": false,
     "image_browser_mod_ctrl_shift": false,
-    "hidden_tabs": "custom diffusion utils"
+    "hidden_tabs": [
+        "Custom Diffusion Utils"
+    ]
 }

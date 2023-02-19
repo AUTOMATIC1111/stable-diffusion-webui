@@ -1566,6 +1566,10 @@ def create_ui():
     extensions_interface = ui_extensions.create_ui()
     interfaces += [(extensions_interface, "Extensions", "extensions")]
 
+    shared.tab_names = []
+    for _interface, label, _ifid in interfaces:
+        shared.tab_names.append(label)
+
     with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion") as demo:
         with gr.Row(elem_id="quicksettings", variant="compact"):
             for i, k, item in sorted(quicksettings_list, key=lambda x: quicksettings_names.get(x[1], x[0])):
@@ -1575,9 +1579,8 @@ def create_ui():
         parameters_copypaste.connect_paste_params_buttons()
 
         with gr.Tabs(elem_id="tabs") as tabs:
-            hidden_tabs = [x.lower().strip() for x in shared.opts.hidden_tabs.split(",")]
             for interface, label, ifid in interfaces:
-                if label.lower() in hidden_tabs:
+                if label in shared.opts.hidden_tabs:
                     continue
                 with gr.TabItem(label, id=ifid, elem_id='tab_' + ifid):
                     interface.render()
@@ -1789,10 +1792,15 @@ def versions_html():
     else:
         xformers_version = "N/A"
 
+    try:
+        torch_version = torch.__long_version__
+    except:
+        torch_version = torch.__version__
+
     return f"""
 python: <span title="{sys.version}">{python_version}</span>
  • 
-torch: {torch.__version__}
+torch: {torch_version}
  • 
 xformers: {xformers_version}
  • 

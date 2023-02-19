@@ -67,8 +67,8 @@ if [ "$MODE" == install ]; then
   "$PYTHON" -m pip install --disable-pip-version-check --quiet --no-warn-conflicts --requirement requirements_versions.txt
 
   echo "Updating submodules"
-  git submodule update --init --recursive
-  git submodule update --rebase --remote
+  git submodule --quiet update --init --recursive
+  git submodule --quiet update --rebase --remote
   echo "Submodules:"
   git submodule foreach --quiet 'VER=$(git log -1 --pretty=format:"%h %ad"); URL=$(git remote get-url origin); echo "- $VER $URL"'
 
