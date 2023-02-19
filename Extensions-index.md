@@ -643,6 +643,13 @@
             "tags": ["script", "tab", "models"]
         },
         {
+            "name": "OpenPose Editor",
+            "url": "https://github.com/fkunn1326/openpose-editor.git",
+            "description": "This can add multiple pose characters, detect pose from image, save to PNG, and send to controlnet extension.",
+            "added": "2023-02-18",
+            "tags": ["script", "tab"]
+        },
+        {
             "name": "zh_CN Localization",
             "url": "https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN",
             "description": "Simplified Chinese localization",
