@@ -580,9 +580,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             if shared.opts.live_previews_enable and opts.show_progress_type == "Approx NN":
                 sd_vae_approx.model()
 
-        with open(os.path.join(paths.data_path, "params.txt"), "w", encoding="utf8") as file:
-            processed = Processed(p, [], p.seed, "")
-            file.write(processed.infotext(p, 0))
+            if not p.disable_extra_networks:
+                extra_networks.activate(p, extra_network_data)
 
         if state.job_count == -1:
             state.job_count = p.n_iter
@@ -612,6 +611,15 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
             if p.scripts is not None:
                 p.scripts.process_batch(p, batch_number=n, prompts=prompts, seeds=seeds, subseeds=subseeds)
+
+            # params.txt should be saved after scripts.process_batch, since the
+            # infotext could be modified by that callback
+            # Example: a wildcard processed by process_batch sets an extra model
+            # strength, which is saved as "Model Strength: 1.0" in the infotext
+            if n == 0:
+                with open(os.path.join(paths.data_path, "params.txt"), "w", encoding="utf8") as file:
+                    processed = Processed(p, [], p.seed, "")
+                    file.write(processed.infotext(p, 0))
 
             uc = get_conds_with_caching(prompt_parser.get_learned_conditioning, negative_prompts, p.steps, cached_uc)
             c = get_conds_with_caching(prompt_parser.get_multicond_learned_conditioning, prompts, p.steps, cached_c)
