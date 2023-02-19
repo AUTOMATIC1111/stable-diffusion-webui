@@ -26,11 +26,12 @@ def add_pages_to_demo(app):
     def fetch_file(filename: str = ""):
         from starlette.responses import FileResponse
 
-        if not any([Path(x).resolve() in Path(filename).resolve().parents for x in allowed_dirs]):
+        if not any([Path(x).absolute() in Path(filename).absolute().parents for x in allowed_dirs]):
             raise ValueError(f"File cannot be fetched: {filename}. Must be in one of directories registered by extra pages.")
 
-        if os.path.splitext(filename)[1].lower() != ".png":
-            raise ValueError(f"File cannot be fetched: {filename}. Only png.")
+        ext = os.path.splitext(filename)[1].lower()
+        if ext not in (".png", ".jpg"):
+            raise ValueError(f"File cannot be fetched: {filename}. Only png and jpg.")
 
         # would profit from returning 304
         return FileResponse(filename, headers={"Accept-Ranges": "bytes"})
@@ -75,6 +76,10 @@ class ExtraNetworksPage:
                 while subdir.startswith("/"):
                     subdir = subdir[1:]
 
+                is_empty = len(os.listdir(x)) == 0
+                if not is_empty and not subdir.endswith("/"):
+                    subdir = subdir + "/"
+
                 subdirs[subdir] = 1
 
         if subdirs:
@@ -93,11 +98,13 @@ class ExtraNetworksPage:
             dirs = "".join([f"<li>{x}</li>" for x in self.allowed_directories_for_previews()])
             items_html = shared.html("extra-networks-no-cards.html").format(dirs=dirs)
 
+        self_name_id = self.name.replace(" ", "_")
+
         res = f"""
-<div id='{tabname}_{self.name}_subdirs' class='extra-network-subdirs extra-network-subdirs-{view}'>
+<div id='{tabname}_{self_name_id}_subdirs' class='extra-network-subdirs extra-network-subdirs-{view}'>
 {subdirs_html}
 </div>
-<div id='{tabname}_{self.name}_cards' class='extra-network-{view}'>
+<div id='{tabname}_{self_name_id}_cards' class='extra-network-{view}'>
 {items_html}
 </div>
 """

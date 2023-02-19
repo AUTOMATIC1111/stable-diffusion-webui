@@ -16,8 +16,9 @@ from PIL import Image, ImageFont, ImageDraw, PngImagePlugin
 from fonts.ttf import Roboto
 import string
 import json
+import hashlib
 
-from modules import sd_samplers, shared, script_callbacks
+from modules import sd_samplers, shared, script_callbacks, errors
 from modules.shared import opts, cmd_opts
 
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
@@ -130,7 +131,7 @@ class GridAnnotation:
         self.size = None
 
 
-def draw_grid_annotations(im, width, height, hor_texts, ver_texts):
+def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0):
     def wrap(drawing, text, font, line_length):
         lines = ['']
         for word in text.split():
@@ -194,32 +195,35 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts):
             line.allowed_width = allowed_width
 
     hor_text_heights = [sum([line.size[1] + line_spacing for line in lines]) - line_spacing for lines in hor_texts]
-    ver_text_heights = [sum([line.size[1] + line_spacing for line in lines]) - line_spacing * len(lines) for lines in
-                        ver_texts]
+    ver_text_heights = [sum([line.size[1] + line_spacing for line in lines]) - line_spacing * len(lines) for lines in ver_texts]
 
     pad_top = 0 if sum(hor_text_heights) == 0 else max(hor_text_heights) + line_spacing * 2
 
-    result = Image.new("RGB", (im.width + pad_left, im.height + pad_top), "white")
-    result.paste(im, (pad_left, pad_top))
+    result = Image.new("RGB", (im.width + pad_left + margin * (cols-1), im.height + pad_top + margin * (rows-1)), "white")
+
+    for row in range(rows):
+        for col in range(cols):
+            cell = im.crop((width * col, height * row, width * (col+1), height * (row+1)))
+            result.paste(cell, (pad_left + (width + margin) * col, pad_top + (height + margin) * row))
 
     d = ImageDraw.Draw(result)
 
     for col in range(cols):
-        x = pad_left + width * col + width / 2
+        x = pad_left + (width + margin) * col + width / 2
         y = pad_top / 2 - hor_text_heights[col] / 2
 
         draw_texts(d, x, y, hor_texts[col], fnt, fontsize)
 
     for row in range(rows):
         x = pad_left / 2
-        y = pad_top + height * row + height / 2 - ver_text_heights[row] / 2
+        y = pad_top + (height + margin) * row + height / 2 - ver_text_heights[row] / 2
 
         draw_texts(d, x, y, ver_texts[row], fnt, fontsize)
 
     return result
 
 
-def draw_prompt_matrix(im, width, height, all_prompts):
+def draw_prompt_matrix(im, width, height, all_prompts, margin=0):
     prompts = all_prompts[1:]
     boundary = math.ceil(len(prompts) / 2)
 
@@ -229,7 +233,7 @@ def draw_prompt_matrix(im, width, height, all_prompts):
     hor_texts = [[GridAnnotation(x, is_active=pos & (1 << i) != 0) for i, x in enumerate(prompts_horiz)] for pos in range(1 << len(prompts_horiz))]
     ver_texts = [[GridAnnotation(x, is_active=pos & (1 << i) != 0) for i, x in enumerate(prompts_vert)] for pos in range(1 << len(prompts_vert))]
 
-    return draw_grid_annotations(im, width, height, hor_texts, ver_texts)
+    return draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin)
 
 
 def resize_image(resize_mode, im, width, height, upscaler_name=None):
@@ -340,6 +344,7 @@ class FilenameGenerator:
         'date': lambda self: datetime.datetime.now().strftime('%Y-%m-%d'),
         'datetime': lambda self, *args: self.datetime(*args),  # accepts formats: [datetime], [datetime<Format>], [datetime<Format><Time Zone>]
         'job_timestamp': lambda self: getattr(self.p, "job_timestamp", shared.state.job_timestamp),
+        'prompt_hash': lambda self: hashlib.sha256(self.prompt.encode()).hexdigest()[0:8],
         'prompt': lambda self: sanitize_filename_part(self.prompt),
         'prompt_no_styles': lambda self: self.prompt_no_style(),
         'prompt_spaces': lambda self: sanitize_filename_part(self.prompt, replace_spaces=False),
@@ -548,6 +553,8 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
         elif extension.lower() in (".jpg", ".jpeg", ".webp"):
             if image_to_save.mode == 'RGBA':
                 image_to_save = image_to_save.convert("RGB")
+            elif image_to_save.mode == 'I;16':
+                image_to_save = image_to_save.point(lambda p: p * 0.0038910505836576).convert("RGB" if extension.lower() == ".webp" else "L")
 
             image_to_save.save(temp_file_path, format=image_format, quality=opts.jpeg_quality)
 
@@ -570,17 +577,19 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
 
     image.already_saved_as = fullfn
 
-    target_side_length = 4000
-    oversize = image.width > target_side_length or image.height > target_side_length
-    if opts.export_for_4chan and (oversize or os.stat(fullfn).st_size > 4 * 1024 * 1024):
+    oversize = image.width > opts.target_side_length or image.height > opts.target_side_length
+    if opts.export_for_4chan and (oversize or os.stat(fullfn).st_size > opts.img_downscale_threshold * 1024 * 1024):
         ratio = image.width / image.height
 
         if oversize and ratio > 1:
-            image = image.resize((target_side_length, image.height * target_side_length // image.width), LANCZOS)
+            image = image.resize((opts.target_side_length, image.height * opts.target_side_length // image.width), LANCZOS)
         elif oversize:
-            image = image.resize((image.width * target_side_length // image.height, target_side_length), LANCZOS)
+            image = image.resize((image.width * opts.target_side_length // image.height, opts.target_side_length), LANCZOS)
 
-        _atomically_save_image(image, fullfn_without_extension, ".jpg")
+        try:
+            _atomically_save_image(image, fullfn_without_extension, ".jpg")
+        except Exception as e:
+            errors.display(e, "saving image as downscaled JPG")
 
     if opts.save_txt and info is not None:
         txt_fullfn = f"{fullfn_without_extension}.txt"
