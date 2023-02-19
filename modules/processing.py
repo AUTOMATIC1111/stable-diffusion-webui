@@ -543,8 +543,6 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
     if os.path.exists(cmd_opts.embeddings_dir) and not p.do_not_reload_embeddings:
         model_hijack.embedding_db.load_textual_inversion_embeddings()
 
-    _, extra_network_data = extra_networks.parse_prompts(p.all_prompts[0:1])
-
     if p.scripts is not None:
         p.scripts.process(p)
 
@@ -582,9 +580,6 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             if shared.opts.live_previews_enable and opts.show_progress_type == "Approx NN":
                 sd_vae_approx.model()
 
-            if not p.disable_extra_networks:
-                extra_networks.activate(p, extra_network_data)
-
         with open(os.path.join(paths.data_path, "params.txt"), "w", encoding="utf8") as file:
             processed = Processed(p, [], p.seed, "")
             file.write(processed.infotext(p, 0))
@@ -609,7 +604,11 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             if len(prompts) == 0:
                 break
 
-            prompts, _ = extra_networks.parse_prompts(prompts)
+            prompts, extra_network_data = extra_networks.parse_prompts(prompts)
+
+            if not p.disable_extra_networks:
+                with devices.autocast():
+                    extra_networks.activate(p, extra_network_data)
 
             if p.scripts is not None:
                 p.scripts.process_batch(p, batch_number=n, prompts=prompts, seeds=seeds, subseeds=subseeds)
