@@ -302,7 +302,7 @@ function initTheme() {
 					
 			styleobj[celem.id] = val;
 			
-			console.log(styleobj);
+			//console.log(styleobj);
 			
 			let inner_styles = "";
 			
@@ -317,6 +317,8 @@ function initTheme() {
 			const vEvent = new Event("input");
 			Object.defineProperty(vEvent, "target", {value: vars_textarea})
 			vars_textarea.dispatchEvent(vEvent);
+			
+			offsetColorsHSV(hsloffset);
 			
 		})
 	})
