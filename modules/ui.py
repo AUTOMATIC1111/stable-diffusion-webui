@@ -1779,10 +1779,15 @@ def versions_html():
     else:
         xformers_version = "N/A"
 
+    try:
+        torch_version = torch.__long_version__
+    except:
+        torch_version = torch.__version__
+
     return f"""
 python: <span title="{sys.version}">{python_version}</span>
  • 
-torch: {torch.__version__}
+torch: {torch_version}
  • 
 xformers: {xformers_version}
  • 
