@@ -323,11 +323,17 @@ function initTheme() {
 		})
 	})
 	
+
+	
 	const reset_btn = gradioApp().getElementById('theme_reset_btn');	
 	reset_btn.addEventListener("click", function(e) {
 		e.preventDefault();
 		e.stopPropagation();
-		updateTheme(init_vars);
+		gradioApp().querySelectorAll('#ui_theme_hsv input').forEach((elem) => {
+			elem.value = 0;
+		})
+		
+		updateTheme(init_vars);		
 	})
 	
 	const apply_btn = gradioApp().getElementById('theme_apply_btn');	

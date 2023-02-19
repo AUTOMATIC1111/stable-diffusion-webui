@@ -39,7 +39,7 @@ def on_ui_tabs():
             #result_text = gr.Text(elem_id="theme_result", interactive=False, visible=False)
         with gr.Accordion(label="Theme Color adjustments", open=True):   
             with gr.Row():
-                with gr.Column(scale=6): 
+                with gr.Column(scale=6, elem_id="ui_theme_hsv"): 
                     gr.Slider(elem_id="theme_hue", label='Hue', minimum=0, maximum=360, step=1)
                     gr.Slider(elem_id="theme_sat", label='Saturation', minimum=-100, maximum=100, step=1, value=0, interactive=True)
                     gr.Slider(elem_id="theme_brt", label='Lightness', minimum=-50, maximum=50, step=1, value=0, interactive=True)
