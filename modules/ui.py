@@ -1782,7 +1782,7 @@ def versions_html():
     return f"""
 python: <span title="{sys.version}">{python_version}</span>
  • 
-torch: {torch.__version__}
+torch: {getattr(torch, '__long_version__',torch.__version__)}
  • 
 xformers: {xformers_version}
  • 
