@@ -631,9 +631,9 @@ def create_ui():
                 (hr_resize_y, "Hires resize-2"),
                 *modules.scripts.scripts_txt2img.infotext_fields
             ]
-            parameters_copypaste.add_paste_fields("txt2img", None, txt2img_paste_fields)
+            parameters_copypaste.add_paste_fields("txt2img", None, txt2img_paste_fields, override_settings)
             parameters_copypaste.register_paste_params_button(parameters_copypaste.ParamBinding(
-                paste_button=txt2img_paste, tabname="txt2img", source_text_component=txt2img_prompt, source_image_component=None, override_settings_component=override_settings,
+                paste_button=txt2img_paste, tabname="txt2img", source_text_component=txt2img_prompt, source_image_component=None,
             ))
 
             txt2img_preview_params = [
@@ -963,10 +963,10 @@ def create_ui():
                 (mask_blur, "Mask blur"),
                 *modules.scripts.scripts_img2img.infotext_fields
             ]
-            parameters_copypaste.add_paste_fields("img2img", init_img, img2img_paste_fields)
-            parameters_copypaste.add_paste_fields("inpaint", init_img_with_mask, img2img_paste_fields)
+            parameters_copypaste.add_paste_fields("img2img", init_img, img2img_paste_fields, override_settings)
+            parameters_copypaste.add_paste_fields("inpaint", init_img_with_mask, img2img_paste_fields, override_settings)
             parameters_copypaste.register_paste_params_button(parameters_copypaste.ParamBinding(
-                paste_button=img2img_paste, tabname="img2img", source_text_component=img2img_prompt, source_image_component=None, override_settings_component=override_settings,
+                paste_button=img2img_paste, tabname="img2img", source_text_component=img2img_prompt, source_image_component=None,
             ))
 
     modules.scripts.scripts_current = None
@@ -1786,7 +1786,7 @@ def versions_html():
     return f"""
 python: <span title="{sys.version}">{python_version}</span>
  • 
-torch: {torch.__version__}
+torch: {getattr(torch, '__long_version__',torch.__version__)}
  • 
 xformers: {xformers_version}
  • 

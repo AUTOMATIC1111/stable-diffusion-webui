@@ -498,7 +498,7 @@ class Api:
             if not apply_optimizations:
                 sd_hijack.undo_optimizations()
             try:
-                hypernetwork, filename = train_hypernetwork(*args)
+                hypernetwork, filename = train_hypernetwork(**args)
             except Exception as e:
                 error = e
             finally:

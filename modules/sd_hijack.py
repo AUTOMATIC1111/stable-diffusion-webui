@@ -154,6 +154,8 @@ class StableDiffusionModelHijack:
             m.cond_stage_model = sd_hijack_open_clip.FrozenOpenCLIPEmbedderWithCustomWords(m.cond_stage_model, self)
 
         apply_weighted_forward(m)
+        if m.cond_stage_key == "edit":
+            sd_hijack_unet.hijack_ddpm_edit()
 
         self.optimization_method = apply_optimizations()
 
