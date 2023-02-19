@@ -38,15 +38,15 @@ class UpscalerRealESRGAN(Upscaler):
             return img
 
         info = self.load_model(path)
-        if not os.path.exists(info.data_path):
+        if not os.path.exists(info.local_data_path):
             print("Unable to load RealESRGAN model: %s" % info.name)
             return img
 
         upsampler = RealESRGANer(
             scale=info.scale,
-            model_path=info.data_path,
+            model_path=info.local_data_path,
             model=info.model(),
-            half=not cmd_opts.no_half,
+            half=not cmd_opts.no_half and not cmd_opts.upcast_sampling,
             tile=opts.ESRGAN_tile,
             tile_pad=opts.ESRGAN_tile_overlap,
         )
@@ -58,17 +58,13 @@ class UpscalerRealESRGAN(Upscaler):
 
     def load_model(self, path):
         try:
-            info = None
-            for scaler in self.scalers:
-                if scaler.data_path == path:
-                    info = scaler
+            info = next(iter([scaler for scaler in self.scalers if scaler.data_path == path]), None)
 
             if info is None:
                 print(f"Unable to find model info: {path}")
                 return None
 
-            model_file = load_file_from_url(url=info.data_path, model_dir=self.model_path, progress=True)
-            info.data_path = model_file
+            info.local_data_path = load_file_from_url(url=info.data_path, model_dir=self.model_path, progress=True)
             return info
         except Exception as e:
             print(f"Error making Real-ESRGAN models list: {e}", file=sys.stderr)

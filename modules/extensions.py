@@ -2,14 +2,17 @@ import os
 import sys
 import traceback
 
+import time
 import git
 
 from modules import paths, shared
 
 extensions = []
-extensions_dir = os.path.join(paths.script_path, "extensions")
+extensions_dir = os.path.join(paths.data_path, "extensions")
 extensions_builtin_dir = os.path.join(paths.script_path, "extensions-builtin")
 
+if not os.path.exists(extensions_dir):
+    os.makedirs(extensions_dir)
 
 def active():
     return [x for x in extensions if x.enabled]
@@ -23,6 +26,7 @@ class Extension:
         self.status = ''
         self.can_update = False
         self.is_builtin = is_builtin
+        self.version = ''
 
         repo = None
         try:
@@ -38,6 +42,10 @@ class Extension:
             try:
                 self.remote = next(repo.remote().urls, None)
                 self.status = 'unknown'
+                head = repo.head.commit
+                ts = time.asctime(time.gmtime(repo.head.commit.committed_date))
+                self.version = f'{head.hexsha[:8]} ({ts})'
+
             except Exception:
                 self.remote = None
 

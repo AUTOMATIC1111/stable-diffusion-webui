@@ -4,7 +4,7 @@ import threading
 import traceback
 import time
 
-from modules import shared
+from modules import shared, progress
 
 queue_lock = threading.Lock()
 
@@ -22,12 +22,23 @@ def wrap_queued_call(func):
 def wrap_gradio_gpu_call(func, extra_outputs=None):
     def f(*args, **kwargs):
 
-        shared.state.begin()
+        # if the first argument is a string that says "task(...)", it is treated as a job id
+        if len(args) > 0 and type(args[0]) == str and args[0][0:5] == "task(" and args[0][-1] == ")":
+            id_task = args[0]
+            progress.add_task_to_queue(id_task)
+        else:
+            id_task = None
 
         with queue_lock:
-            res = func(*args, **kwargs)
+            shared.state.begin()
+            progress.start_task(id_task)
 
-        shared.state.end()
+            try:
+                res = func(*args, **kwargs)
+            finally:
+                progress.finish_task(id_task)
+
+            shared.state.end()
 
         return res
 

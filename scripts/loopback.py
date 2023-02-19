@@ -8,6 +8,7 @@ from modules import processing, shared, sd_samplers, images
 from modules.processing import Processed
 from modules.sd_samplers import samplers
 from modules.shared import opts, cmd_opts, state
+from modules import deepbooru
 
 
 class Script(scripts.Script):
@@ -20,10 +21,11 @@ class Script(scripts.Script):
     def ui(self, is_img2img):        
         loops = gr.Slider(minimum=1, maximum=32, step=1, label='Loops', value=4, elem_id=self.elem_id("loops"))
         denoising_strength_change_factor = gr.Slider(minimum=0.9, maximum=1.1, step=0.01, label='Denoising strength change factor', value=1, elem_id=self.elem_id("denoising_strength_change_factor"))
+        append_interrogation = gr.Dropdown(label="Append interrogated prompt at each iteration", choices=["None", "CLIP", "DeepBooru"], value="None")
 
-        return [loops, denoising_strength_change_factor]
+        return [loops, denoising_strength_change_factor, append_interrogation]
 
-    def run(self, p, loops, denoising_strength_change_factor):
+    def run(self, p, loops, denoising_strength_change_factor, append_interrogation):
         processing.fix_seed(p)
         batch_count = p.n_iter
         p.extra_generation_params = {
@@ -40,6 +42,7 @@ class Script(scripts.Script):
         grids = []
         all_images = []
         original_init_image = p.init_images
+        original_prompt = p.prompt
         state.job_count = loops * batch_count
 
         initial_color_corrections = [processing.setup_color_correction(p.init_images[0])]
@@ -57,6 +60,13 @@ class Script(scripts.Script):
 
                 if opts.img2img_color_correction:
                     p.color_corrections = initial_color_corrections
+
+                if append_interrogation != "None":
+                    p.prompt = original_prompt + ", " if original_prompt != "" else ""
+                    if append_interrogation == "CLIP":
+                        p.prompt += shared.interrogator.interrogate(p.init_images[0])
+                    elif append_interrogation == "DeepBooru":
+                        p.prompt += deepbooru.model.tag(p.init_images[0])
 
                 state.job = f"Iteration {i + 1}/{loops}, batch {n + 1}/{batch_count}"
 
