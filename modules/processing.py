@@ -580,9 +580,6 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             if shared.opts.live_previews_enable and opts.show_progress_type == "Approx NN":
                 sd_vae_approx.model()
 
-            if not p.disable_extra_networks:
-                extra_networks.activate(p, extra_network_data)
-
         if state.job_count == -1:
             state.job_count = p.n_iter
 
