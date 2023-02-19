@@ -1,3 +1,6 @@
+# 2023-02-19 - deterministic DPM++ SDE across different batch sizes
+DPM++ SDE and DPM++ SDE Karras samplers used to produce different images in batches compared to single image with same parameters. PR https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/7730 fixes this. But the nature of the fix also changes what generates for single images. an option is added to compatibility settings to revert to old behavior: Do not make DPM++ SDE deterministic across different batch sizes.
+
 # 2023-01-23 - Alternating words syntax bugfix
 If you used alternating words syntax bugfix with emphasis before [97ff69ef](https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/97ff69eff338c6641f4abf430bf5ac112c1775e0), the program would incorrectly replace emphasized part with just `(`. So, `[a|(b:1.1)]`, rather than becoming a sequence of
 
