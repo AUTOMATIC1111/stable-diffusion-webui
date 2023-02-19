@@ -1,3 +1,5 @@
+:host{--main-bg-color:hsl(99deg -11% 8%);--primary-color:hsl(44deg 63% 55%);--input-bg-color:hsl(106deg -8% 12%);--input-border-color:hsl(104deg -9% 32%);--panel-bg-color:hsl(104deg -9% 20%);--panel-border-color:hsl(104deg -9% 32%);--panel-border-radius:4px;--subgroup-bg-color:hsl(99deg -11% 8%);--subgroup-input-bg-color:hsl(99deg -11% 8%);--subgroup-input-border-color:hsl(104deg -9% 32%);--subpanel-bg-color:hsl(106deg -8% 12%);--subpanel-border-color:hsl(104deg -9% 32%);--subpanel-border-radius:8px;--textarea-focus-color:hsl(56deg -30% 36%);--input-focus-color:hsl(44deg 63% 55%);--outside-gap-size:8px;--inside-padding-size:8px;--tool-button-size:34px;--tool-button-radius:16px;--generate-button-height:70px;--cancel-color:hsl(104deg -9% 32%);--max-padding:max(var(--outside-gap-size),var(--inside-padding-size));--icon-color:hsl(105deg -9% 77%);--icon-hover-color:hsl(99deg -11% 8%);--icon-size:22px;--nav-bg-color:hsl(98deg -9% 4%);--nav-color:hsl(105deg -9% 77%);--nav-hover-color:hsl(98deg -9% 4%);--input-color:hsl(44deg 63% 55%);--label-color:hsl(105deg -9% 77%);--subgroup-input-color:hsl(206deg 67% 100%);--placeholder-color:hsl(104deg -9% 32%);--text-color:hsl(105deg -9% 77%);}/*BREAKPOINT_CSS_CONTENT*/
+
 /*
 Theme Name: DarkUX
 Author: anapnoe
@@ -6,123 +8,6 @@ Version: 1.0
 License: GNU General Public License
 */
 
-:root, *, :before, :after
-{	
-
-	--main-bg-color: #1a1a1a; 
-	--primary-color: #03d0a8;
-	
-	--input-bg-color: #202124;
-	--input-border-color: #494c50;
-	--panel-bg-color: #292a2d;  
-	--panel-border-color: #494c50;
-	--panel-border-radius: 0px;
-  
-	--subgroup-bg-color: #1a1a1a;
-	--subgroup-input-bg-color: #202124;
-	--subgroup-input-border-color: #494c50;
-	
-	--subpanel-bg-color: #222325;
-	--subpanel-border-color: #494c50;	
-	--subpanel-border-radius: 8px;
-	
-	--textarea-focus-color: #5a5d60; 
-	--input-focus-color: #03d0a8;
-	
-	--outside-gap-size: 8px;
-	--inside-padding-size: 8px;
-	
-	
-	--tool-button-size: 34px;
-	--tool-button-radius: 16px;
-	
-	--generate-button-height: 70px; 
-	--cancel-color: #ef4444 ;
-	
-	--max-padding: max(var(--outside-gap-size),var(--inside-padding-size));
-	
-	--icon-color:#caccce;
-	--icon-hover-color:#1a1a1a;
-	--icon-size:22px;
-	
-	--nav-bg-color: #202124;
-	
-	--icon-color:#caccce;
-	--icon-hover-color:#1a1a1a;
-	--icon-size:22px;
-	
-	--nav-bg-color: #0a0a0a;
-	--nav-color: #caccce;
-	--nav-hover-color: #0a0a0a;
-	
-	--input-color: #caccce;
-	--label-color: #caccce;
-	
-	/*not yet */
-	--subgroup-input-color: #fff;
-	--subgroup-label-color: #fff;
-	
-	--placeholder-color: #494c50;
-	
-	--text-color: #caccce;
-	
-
-	/* test theme inspired from opera classic gx */
-	/*
-	--main-bg-color: #121019; 
-	--primary-color: #fa1e4e;
-	
-	--input-bg-color: #1c1726;
-	--input-border-color: #4a3e65;
-	--panel-bg-color: #2e273f;  
-	--panel-border-color: #4a3e65;
-	--panel-border-radius: 4px;
-  
-	--subgroup-bg-color: #121019;
-	--subgroup-input-bg-color: #13101a;
-	--subgroup-input-border-color: #4a3e65;
-	
-	--subpanel-bg-color: #1c1726;
-	--subpanel-border-color: #4a3e65;	
-	--subpanel-border-radius: 8px;
-	
-	--textarea-focus-color: #5a5d60; 
-	--input-focus-color: #fa1e4e;
-	
-	--outside-gap-size: 8px;
-	--inside-padding-size: 8px;
-	
-	
-	--tool-button-size: 34px;
-	--tool-button-radius: 16px;
-	
-	--generate-button-height: 70px; 
-	--cancel-color: #4a3e65 ;
-	
-	--max-padding: max(var(--outside-gap-size),var(--inside-padding-size));
-	
-	--icon-color:#bfb6d2;
-	--icon-hover-color:#121019;
-	--icon-size:22px;
-	
-	--nav-bg-color: #09080d;
-	--nav-color: #bfb6d2;
-	--nav-hover-color: #09080d;
-	
-	--input-color: #fa1e4e;
-	--label-color: #bfb6d2;
-	
-	--subgroup-input-color: #fff;
-	--subgroup-label-color: #fff;
-	
-	--placeholder-color: #4a3e65;
-	
-	--text-color: #bfb6d2;
-	*/
-	
-	
-  
-}
 
 /* label color */
 .dark .dark\:text-gray-200 {
@@ -213,8 +98,8 @@ License: GNU General Public License
 [id$="2img_style_apply"],
 [id$="2img_extra_networks"],
 [id$="paste"],
-[id$="interrogate"],
-[id$="deepbooru"],
+#img2img_actions_column [id$="interrogate"],
+#img2img_actions_column [id$="deepbooru"],
 [id^="open_folder"],
 [id*="2img_random"],
 [id*="2img_reuse"],
@@ -239,8 +124,8 @@ License: GNU General Public License
 [id$="2img_style_apply"]::before,
 [id$="2img_extra_networks"]::before,
 [id$="paste"]::before,
-[id$="interrogate"]::before,
-[id$="deepbooru"]::before,
+#img2img_actions_column [id$="interrogate"]::before,
+#img2img_actions_column [id$="deepbooru"]::before,
 [id^="open_folder"]::before,
 [id*="2img_random"]::before,
 [id*="2img_reuse"]::before,
@@ -273,8 +158,8 @@ License: GNU General Public License
 [id$="2img_style_apply"]:hover::before,
 [id$="2img_extra_networks"]:hover::before,
 [id$="paste"]:hover::before,
-[id$="interrogate"]:hover::before,
-[id$="deepbooru"]:hover::before,
+#img2img_actions_column [id$="interrogate"]:hover::before,
+#img2img_actions_column [id$="deepbooru"]:hover::before,
 [id^="open_folder"]:hover::before,
 [id*="2img_random"]:hover::before,
 [id*="2img_reuse"]:hover::before,
@@ -324,13 +209,13 @@ License: GNU General Public License
     mask: url(./file=html/svg/artboard-line.svg) no-repeat 50% 50%;
 }
 
-[id$="interrogate"]::before
+#img2img_actions_column [id$="interrogate"]::before
 {
     -webkit-mask: url(./file=html/svg/question-answer-line.svg) no-repeat 50% 50%;
     mask: url(./file=html/svg/question-answer-line.svg) no-repeat 50% 50%;
 }
 
-[id$="deepbooru"]::before
+#img2img_actions_column [id$="deepbooru"]::before
 {
     -webkit-mask: url(./file=html/svg/question-answer-fill.svg) no-repeat 50% 50%;
     mask: url(./file=html/svg/question-answer-fill.svg) no-repeat 50% 50%;
@@ -2234,6 +2119,16 @@ ul.list-none {
     margin: 0 1.2em;
 }
 
+#settings_ui_theme > div > div
+{
+	flex-direction: row;
+    flex-wrap: wrap;
+}
+#settings_ui_theme > div > div > div
+{
+	max-width:30%;
+}
+
 /******************/
 /* lightboxModal  */
 /******************/
@@ -2934,12 +2829,5 @@ input[type=range]::-ms-fill-upper {
     background-color: var(--input-bg-color);
 }
 
-    background-color: var(--input-bg-color);
-}
 
-
-
-
-
-
-
+/*BREAKPOINT_CSS_CONTENT*/

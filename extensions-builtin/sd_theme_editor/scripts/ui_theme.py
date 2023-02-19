@@ -1,0 +1,165 @@
+import os
+import shutil
+from pathlib import Path
+import gradio as gr
+import modules.scripts as scripts
+from modules import script_callbacks, shared
+
+basedir = scripts.basedir() 
+webui_dir = Path(basedir).parents[1]
+
+themes_folder = os.path.join(basedir, "themes") 
+javascript_folder = os.path.join(basedir, "javascript")
+webui_style_path = os.path.join(webui_dir, "style.css")
+
+def get_files(folder, file_filter=[], file_list=[], split=False):
+    file_list = [file_name if not split else os.path.splitext(file_name)[0] for file_name in os.listdir(folder) if os.path.isfile(os.path.join(folder, file_name)) and file_name not in file_filter] 
+    return file_list
+
+
+def on_ui_tabs():
+
+    with gr.Blocks(analytics_enabled=False) as ui_theme:
+       
+        with gr.Row():
+            
+            themes_dropdown = gr.Dropdown(label="Themes", interactive=True, choices=get_files(themes_folder,[".css, .txt"]), type="value")
+            save_as_filename = gr.Text(label="Save as Name")
+            apply_button = gr.Button(elem_id="theme_apply_btn", value="Apply", variant="primary")
+            reset_button = gr.Button(elem_id="theme_reset_btn", value="Reset", variant="primary")
+            save_button = gr.Button(value="Save", variant="primary")
+            #delete_button = gr.Button(value="Delete", variant="primary")
+                       
+        #with gr.Accordion(label="Debug View", open=True):
+        with gr.Row():
+            vars_text = gr.Textbox(label="Vars", elem_id="theme_vars", show_label=True, lines=7, interactive=False, visible=True)            
+            css_text = gr.Textbox(label="Css", elem_id="theme_css", show_label=True, lines=7, interactive=False, visible=True)               
+            #result_text = gr.Text(elem_id="theme_result", interactive=False, visible=False)
+        
+        with gr.Row():    
+            gr.Slider(elem_id="theme_hue", label='Hue', minimum=0, maximum=360, step=1)
+            gr.Slider(elem_id="theme_sat", label='Saturation', minimum=-100, maximum=100, step=1, value=0, interactive=True)
+            gr.Slider(elem_id="theme_brt", label='Lightness', minimum=-50, maximum=50, step=1, value=0, interactive=True)
+        with gr.Row():    
+            gr.Button(elem_id="theme_invert_btn", value="Invert", variant="primary")
+            
+    
+        with gr.Row(elem_id="ui_theme_settings"):
+        
+            with gr.Column():
+                with gr.Accordion(label="Main colors", open=True):                   
+                    gr.ColorPicker(elem_id="--main-bg-color", interactive=True, label="Background color")
+                    gr.ColorPicker(elem_id="--primary-color", label="Primary color")
+                                                              
+                with gr.Accordion(label="Focus", open=True):    
+                    gr.ColorPicker(elem_id="--textarea-focus-color", label="Textarea color")
+                    gr.ColorPicker(elem_id="--input-focus-color", label="Input color")
+
+                with gr.Accordion(label="Spacing", open=True):
+                    gr.Slider(elem_id="--outside-gap-size", label='Gap size', minimum=0, maximum=16, step=1)
+                    gr.Slider(elem_id="--inside-padding-size", label='Padding size', minimum=0, maximum=16, step=1)                      
+                               
+            #with gr.Column():    
+                with gr.Accordion(label="Panel colors", open=True):                   
+                    gr.ColorPicker(elem_id="--label-color", label="Label color")
+                    gr.ColorPicker(elem_id="--panel-bg-color", label="Background color")
+                    gr.ColorPicker(elem_id="--panel-border-color", label="Border color")
+                    gr.Slider(elem_id="--panel-border-radius", label='Border radius', minimum=0, maximum=16, step=1)
+                    
+                    gr.ColorPicker(elem_id="--input-color", label="Input text color")
+                    gr.ColorPicker(elem_id="--input-bg-color", label="Input background color")
+                    gr.ColorPicker(elem_id="--input-border-color", label="Input border color")
+            
+            with gr.Column(elem_id="theme_sub-group-collapse"): 
+            #with gr.row(elem_id="theme_sub-group-collapse"):            
+                with gr.Accordion(label="Subgroup / Panel colors", open=True):                                      
+                    gr.ColorPicker(elem_id="--subgroup-bg-color", label="Subgoup background color")
+                    
+                    #gr.ColorPicker(elem_id="--subgroup-label-color", label="Label color", value="#000000")                   
+                    gr.ColorPicker(elem_id="--subpanel-bg-color", label="Background color")
+                    gr.ColorPicker(elem_id="--subpanel-border-color", label="Border color")
+                    gr.Slider(elem_id="--subpanel-border-radius", label='Border radius', minimum=0, maximum=16, step=1)
+                    
+                    gr.ColorPicker(elem_id="--subgroup-input-color", label="Input text color")
+                    gr.ColorPicker(elem_id="--subgroup-input-bg-color", label="Input background color")
+                    gr.ColorPicker(elem_id="--subgroup-input-border-color", label="Input border color")
+                
+            #with gr.Column():    
+                with gr.Accordion(label="Navigation menu colors", open=True):
+                    gr.ColorPicker(elem_id="--nav-bg-color", label="Background color")
+                    gr.ColorPicker(elem_id="--nav-color", label="Text color")
+                    gr.ColorPicker(elem_id="--nav-hover-color", label="Hover color")
+                    
+                with gr.Accordion(label="Icon colors", open=True):
+                    gr.ColorPicker(elem_id="--icon-color", label="Text color")
+                    gr.ColorPicker(elem_id="--icon-hover-color", label="Hover color")  
+                    
+                with gr.Accordion(label="Other colors", open=True):    
+                    gr.ColorPicker(elem_id="--text-color", label="Text color")
+                    gr.ColorPicker(elem_id="--placeholder-color", label="Placeholder color")
+                    gr.ColorPicker(elem_id="--cancel-color", label="Cancel/Interrupt color")
+
+
+        def save_theme( vars_text, css_text, filename):           
+            style_data= ":host{" + vars_text + "}" + css_text          
+            with open(os.path.join(themes_folder, f"{filename}.css"), 'w') as file:                
+                file.write(vars_text)
+                file.close()
+            with open(webui_style_path, 'w') as file:                
+                file.write(style_data)
+                file.close()            
+            themes_dropdown.choices.insert(0, f"{filename}.css")
+            return gr.update(choices=themes_dropdown.choices, value=themes_dropdown.choices[0])
+ 
+        def open_theme(filename, css_text):                           
+            with open(os.path.join(themes_folder, f"{filename}"), 'r') as file:
+                vars_text=file.read()
+            no_ext=filename.rsplit('.', 1)[0]
+            #save_theme( vars_text, css_text, no_ext)
+            # shared.state.interrupt()
+            # shared.state.need_restart = True
+            return [vars_text, no_ext]
+            
+        # def delete_theme(filename):
+            # try:
+                # os.remove(os.path.join(themes_folder, filename))
+            # except FileNotFoundError:
+                # pass
+
+        # delete_button.click(
+            # fn = lambda: delete_theme()
+        # )        
+        
+        save_button.click(
+            fn=save_theme,
+            inputs=[vars_text, css_text, save_as_filename],
+            outputs=themes_dropdown
+        )
+        
+        themes_dropdown.change(
+            fn=open_theme,
+            #_js = "applyTheme",
+            inputs=[themes_dropdown, css_text],
+            outputs=[vars_text, save_as_filename]
+        )
+        
+        # apply_button.click(
+            # fn=None,
+            # _js = "applyTheme"
+        # )
+        
+        # vars_text.change(
+            # fn=None,
+            # _js = "applyTheme",
+            # inputs=[],
+            # outputs=[vars_text, css_text]
+        # )
+        
+
+        
+
+    return (ui_theme, 'Theme', 'ui_theme'),
+
+
+
+script_callbacks.on_ui_tabs(on_ui_tabs)
