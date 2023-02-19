@@ -44,7 +44,7 @@ class Extension:
                 self.status = 'unknown'
                 head = repo.head.commit
                 ts = time.asctime(time.gmtime(repo.head.commit.committed_date))
-                self.version = f'{head.hexsha[:7]} ({ts})'
+                self.version = f'{head.hexsha[:8]} ({ts})'
 
             except Exception:
                 self.remote = None
