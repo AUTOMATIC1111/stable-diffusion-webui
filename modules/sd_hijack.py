@@ -104,6 +104,9 @@ class StableDiffusionModelHijack:
             m.cond_stage_model.model.token_embedding = EmbeddingsWithFixes(m.cond_stage_model.model.token_embedding, self)
             m.cond_stage_model = sd_hijack_open_clip.FrozenOpenCLIPEmbedderWithCustomWords(m.cond_stage_model, self)
 
+        if m.cond_stage_key == "edit":
+            sd_hijack_unet.hijack_ddpm_edit()
+
         self.optimization_method = apply_optimizations()
 
         self.clip = m.cond_stage_model
