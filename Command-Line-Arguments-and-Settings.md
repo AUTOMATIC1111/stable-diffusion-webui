@@ -26,6 +26,7 @@ Use `--port xxxx` to make the server listen on a specific port, xxxx being the w
 --config    | CONFIG | configs/stable-diffusion/v1-inference.yaml   				 | path to config which constructs model |
 --ckpt 		| CKPT   | model.ckpt        				 | path to checkpoint of stable diffusion model; if specified, this checkpoint will be added to the list of checkpoints and loaded |
 --ckpt-dir 	| CKPT_DIR | None   				 | Path to directory with stable diffusion checkpoints |
+--no-download-sd-model | None | False | don't download SD1.5 model even if no model is found |
 --vae-dir | VAE_PATH | None  					| Path to Variational Autoencoders model |
 --gfpgan-dir| GFPGAN_DIR | GFPGAN/			 | GFPGAN directory |
 --gfpgan-model| GFPGAN_MODEL			 | GFPGAN model file name |
@@ -57,6 +58,7 @@ Use `--port xxxx` to make the server listen on a specific port, xxxx being the w
 --enable-insecure-extension-access | None | False | enable extensions tab regardless of other options |
 --gradio-debug | None | False        					| launch gradio with --debug option |
 --gradio-auth | GRADIO_AUTH | None 				| set gradio authentication like "username:password"; or comma-delimit multiple like "u1:p1,u2:p2,u3:p3" |
+--gradio-auth-path | GRADIO_AUTH_PATH | None | set gradio authentication file path ex. "/path/to/auth/file" same auth format as `--gradio-auth` |
 --disable-console-progressbars | None | False			| do not output progressbars to console |
 --enable-console-prompts | None | False				| print prompts to console when generating with txt2img and img2img |
 --api | None | False | launch webui with API |
