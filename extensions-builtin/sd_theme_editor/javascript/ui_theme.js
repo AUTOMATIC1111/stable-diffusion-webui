@@ -205,6 +205,7 @@ function updateTheme(vars){
 			if(val.indexOf("hsl") != -1){
 				let hsl = toHSLArray(val);
 				let hex = hslToHex(hsl[0], hsl[1], hsl[2]);	
+				elem.value = hex;
 			}else{
 				elem.value = val.split("px")[0];
 			}
