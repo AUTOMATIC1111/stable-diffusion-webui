@@ -3,7 +3,6 @@ Not just a browser interface based on Gradio library for Stable Diffusion.
 A pixel perfect design, mobile friendly, customizable interface that adds accessibility, ease of use and extended functionallity to the stable diffusion web ui.
 This project is hoping to merge with the main branch at some point in the future.
 Unfortunately this is going to take some time as the main author of the project askes for small PRs in order to aprove the changes. 
-3750 commits in two weeks, yes 24/7
 Until then you can use this repo to enjoy it, i will do my best to keep it up to date 
 
 
