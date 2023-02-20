@@ -15,16 +15,28 @@ class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
     def list_items(self):
         for embedding in sd_hijack.model_hijack.embedding_db.word_embeddings.values():
             path, ext = os.path.splitext(embedding.filename)
-            preview_file = path + ".preview.png"
+            previews = [path + ".png", path + ".preview.png"]
+            descriptions = [path + ".txt", path + ".description.txt"]
 
             preview = None
-            if os.path.isfile(preview_file):
-                preview = self.link_preview(preview_file)
+            for file in previews:
+                if os.path.isfile(file):
+                    preview = self.link_preview(file)
+                    break
+
+            description = None
+            for file in descriptions:
+                if os.path.isfile(file):
+                    with open(file, "r") as description_file:
+                        description = description_file.read()
+
+                    break
 
             yield {
                 "name": embedding.name,
                 "filename": embedding.filename,
                 "preview": preview,
+                "description": description,
                 "search_term": self.search_terms_from_path(embedding.filename),
                 "prompt": json.dumps(embedding.name),
                 "local_preview": path + ".preview.png",

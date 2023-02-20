@@ -119,6 +119,7 @@ class ExtraNetworksPage:
 
     def create_html_for_item(self, item, tabname):
         preview = item.get("preview", None)
+        description = item.get("description", None)
 
         onclick = item.get("onclick", None)
         if onclick is None:
@@ -126,6 +127,7 @@ class ExtraNetworksPage:
 
         args = {
             "preview_html": "style='background-image: url(\"" + html.escape(preview) + "\")'" if preview else '',
+            "description": '"' + html.escape(description) + '"' if description else '',
             "prompt": item.get("prompt", None),
             "tabname": json.dumps(tabname),
             "local_preview": json.dumps(item["local_preview"]),
