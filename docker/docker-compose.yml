@@ -1,0 +1,14 @@
+services:
+  stable-diffusion-webui:
+    runtime: nvidia
+    image: automatic111/stable-diffusion-webui
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
+    ports:
+      - "7860"
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    volumes:
+      - ../models:/stable-diffusion-webui/models
+    command: python3 launch.py --listen
