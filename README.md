@@ -1,7 +1,17 @@
-# Stable Diffusion web UI
-A browser interface based on Gradio library for Stable Diffusion.
+# Stable Diffusion web UI/UX
+Not just a browser interface based on Gradio library for Stable Diffusion.
+A pixel perfect design, mobile friendly, customizable interface that adds accessibility, ease of use and extended functionallity to the stable diffusion web ui.
+This project is hoping to merge with the main branch at some point in the future.
+Unfortunately this is going to take some time as the main author of the project askes for small PRs in order to aprove the changes. 
+Until then you can use this repo to enjoy it, i will do my best to keep it up to date 
+
 
 ![](screenshot.png)
+![GXTheme](https://user-images.githubusercontent.com/124302297/219995245-13d0d366-3825-4c73-8ce1-b6585e000510.png)
+![InpaintSketchFlip](https://user-images.githubusercontent.com/124302297/219995271-96253056-1a2d-48b4-b00c-38ae5260271d.png)
+![quickSettings](https://user-images.githubusercontent.com/124302297/219995294-20d9042c-4992-496d-bdb8-ab550611f003.png)
+![mobile-375px](https://user-images.githubusercontent.com/124302297/219995310-a9fa1060-a6fa-45f8-8c0f-8013220f35be.png)
+
 
 ## Features
 [Detailed feature showcase with images](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Features):
