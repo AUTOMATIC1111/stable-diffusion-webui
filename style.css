@@ -8,6 +8,11 @@ Version: 1.0
 License: GNU General Public License
 */
 
+body {
+    background-color: var(--main-bg-color) !important;
+}
+
+
 /* label color */
 .dark .dark\:text-gray-200 {
     color: var(--label-color);
@@ -412,6 +417,7 @@ License: GNU General Public License
 	transition: all 0.25s ease 0s;
     box-shadow: rgba(0,0,0,0)-30px 0 30px 30px;
 	overflow-y: auto;
+	overflow-x: hidden;
 
 }
 
@@ -437,8 +443,6 @@ License: GNU General Public License
     color: var(--nav-color);
 }
 	
-
-
 
 #tabs > div:first-child > button:hover{	
 
@@ -490,6 +494,116 @@ License: GNU General Public License
 	background-color: var(--main-bg-color);
 }
 
+/* offcanvas quicksettings menu */
+
+#quicksettings_overflow {
+   position: fixed;
+    z-index: 9999;
+    display: block;
+    width: 90%;
+    background-color: var(--main-bg-color) !important;
+    top: 70px;
+    bottom: 0px;
+    padding: 16px;
+    padding-top: 0px;
+    right: 0;
+    max-width: 480px;
+	transform: translateX(100%);
+	transition: all 0.25s ease 0s;
+    box-shadow: rgba(0,0,0,0) -30px 0 30px -30px;
+	overflow-y: auto;
+
+}
+
+#quicksettings_overflow.open {
+    transform: translateX(0);
+	box-shadow: rgba(0,0,0,0.4) -30px 0 30px -30px;
+}
+
+#quicksettings_overflow > div {
+	margin-bottom: var(--outside-gap-size);
+}
+#quicksettings_overflow > div button{
+   height:auto;
+}
+
+#quicksettings {
+    align-items: center;
+    flex-direction: row;
+    width: auto; 
+	align-self: end;
+    background: 0;
+	padding: 0;
+}
+
+#quick_row_sd_model_checkpoint {
+	margin-right:50px;
+	margin-left:50px;
+	position:relative;
+	z-index:9999;
+	
+}
+
+#quick_row_sd_model_checkpoint div {
+    border: 0;
+    background: 0;
+    padding: 0;
+}
+
+#quick_row_sd_model_checkpoint span {
+display:none;
+}
+
+#quick_row_sd_model_checkpoint .gr-input {
+padding-right: 37px;
+min-height: 34px;
+}
+
+#quick_menu {
+    z-index: 9999;
+    background-color: var(--input-bg-color);
+    position: absolute;
+    width: 38px;
+    height: 38px;
+    top: -2px;
+    right: 0;
+    border-radius: 100%;
+    cursor: pointer;
+}
+
+#quick_menu.fixed {
+	position: fixed;
+	top:22px;
+	right:16px;
+}
+
+#quick_menu::before {
+    content: ' ';
+    display: inline-block;
+    -webkit-mask-size: cover;
+    mask-size: cover;
+    background-color: var(--icon-color);
+    width: var(--icon-size);
+    height: var(--icon-size);
+    -webkit-mask: url(./file=html/svg/more-2-fill.svg) no-repeat 50% 50%;
+    mask: url(./file=html/svg/menu-line.svg) no-repeat 50% 50%;
+    cursor: pointer;
+    position: relative;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%) scale(1.0);
+    
+}
+
+#quick_menu:hover {
+	background-color: var(--primary-color);
+}
+#quick_menu:hover::before {
+	background-color: var(--main-bg-color);
+}
+
+
+
 /* footer to bottom of page */
 .min-h-screen > .mx-auto.container{
 	display:flex; 
@@ -497,6 +611,7 @@ License: GNU General Public License
 	min-height: 100vh; 
 	margin:0; 
 	min-width: 300px;
+	overflow: hidden;
 }
 
 .min-h-screen > .mx-auto.container > div{
@@ -1072,44 +1187,7 @@ textarea:focus
 
 
 
-#quicksettings {
-    align-items: center;
-    flex-direction: row;
-    width: auto; 
-	align-self: end;
-    background: 0;
-	padding: 0;
-}
 
-/* align left */
-#quicksettings {
-    align-items: center;
-    flex-direction: row;
-    width: auto;
-    /*align-self: flex-start;*/
-    background: 0;
-    padding: 0;
-    margin-left: 50px;
-}
-
-#quicksettings div {
-    border: 0;
-    background: 0;
-    padding: 0;
-}
-
-#quicksettings span {
-display:none;
-}
-
-#quicksettings .gr-input {
-padding-right: 37px;
-/*
-width: auto;
-max-width: 245px;
-*/
-min-height: 34px;
-}
 
 /***************************/
 /* Generate Interrupt Skip */

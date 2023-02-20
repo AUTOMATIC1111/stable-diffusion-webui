@@ -1652,12 +1652,20 @@ def create_ui():
     extensions_interface = ui_extensions.create_ui()
     interfaces += [(extensions_interface, "Extensions", "extensions")]
 
-    with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion") as demo:
-        with gr.Row(elem_id="quicksettings", variant="compact"):
-            for i, k, item in sorted(quicksettings_list, key=lambda x: quicksettings_names.get(x[1], x[0])):
-                component = create_setting_component(k, is_quicksettings=True)
-                component_dict[k] = component
+    with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion") as demo:      
+        with gr.Row(elem_id="quicksettings"): 
+            with gr.Row(elem_id="quick_row_sd_model_checkpoint") as qsettings_row:
+                component = create_setting_component("sd_model_checkpoint", is_quicksettings=True)
+                component_dict["sd_model_checkpoint"] = component
+            
+            with gr.Column(elem_id="quicksettings_overflow"):        
+                for i, k, item in sorted(quicksettings_list, key=lambda x: quicksettings_names.get(x[1], x[0])):
+                    if( k != "sd_model_checkpoint"):
+                        with gr.Row(elem_id=f"quick_row_{k}") as qsettings_row:                   
+                            component = create_setting_component(k, is_quicksettings=True)
+                            component_dict[k] = component
 
+        gr.Row(elem_id="quick_menu")
         parameters_copypaste.connect_paste_params_buttons()
 
         with gr.Tabs(elem_id="tabs") as tabs:

@@ -320,17 +320,12 @@ onUiUpdate(function(){
 		
 			let leftSide = resizer.previousElementSibling;
 			let rightSide = resizer.nextElementSibling;
-			let dir = 1.0;
-			
-			if(flexDir == "row-reverse"){
-				dir = -1.0;				
-			}
+
+			let dir = flexDir == "row-reverse" ? -1.0 : 1.0;
 
 			let x = e.clientX;
 			let y = e.clientY;
 			let leftWidth = leftSide.getBoundingClientRect().width;		
-			
-
 			
 			function mouseMoveHandler(e) {		
 				resizer.style.cursor = 'col-resize';
@@ -378,13 +373,23 @@ onUiUpdate(function(){
 				container.style.flexDirection = 'row-reverse';			
 			}else{
 				container.style.flexDirection = 'row';	
-			}
-		
+			}		
 		})
 		
-		
-
 	})
+	
+	
+	function disableScroll() {         
+            scrollTop = 0;//window.pageYOffset || document.documentElement.scrollTop;
+            scrollLeft = 0;//window.pageXOffset || document.documentElement.scrollLeft,
+                window.onscroll = function() {
+                    window.scrollTo(scrollLeft, scrollTop);
+                };
+        }
+          
+	function enableScroll() {
+		window.onscroll = function() {};
+	}
 	
 	// mobile nav menu
 	const tabs_menu = gradioApp().querySelector('#tabs > div:first-child');
@@ -401,24 +406,51 @@ onUiUpdate(function(){
 			tabs_menu.classList.add("open");
 			nav_menu.classList.add("fixed");
 			gcontainer.addEventListener('click', toggleNavMenu);
+			disableScroll();
 		
 
 		}else{
 			tabs_menu.classList.remove("open");
 			nav_menu.classList.remove("fixed");
 			gcontainer.removeEventListener('click', toggleNavMenu);
+			enableScroll();
 			
 		}
 		
+	}
+	
+    nav_menu.addEventListener('click', toggleNavMenu);
+	
+	// quicksettings nav menu
+	const quicksettings_overflow = gradioApp().querySelector('#quicksettings_overflow');
+	const quick_menu = gradioApp().querySelector('#quick_menu');	
+	const qparent = gradioApp().querySelector('#tabs');
+	
+	let quick_menu_open = false;
+	function toggleQuickMenu(e) {
+		quick_menu_open = !quick_menu_open;	
+		e.preventDefault();
+        e.stopPropagation();
+		
+		if(quick_menu_open){
+			quicksettings_overflow.classList.add("open");
+			quick_menu.classList.add("fixed");
+			disableScroll();
+			qparent.addEventListener('click', toggleQuickMenu);
+		
+
+		}else{
+			quicksettings_overflow.classList.remove("open");
+			quick_menu.classList.remove("fixed");
+			enableScroll();
+			qparent.removeEventListener('click', toggleQuickMenu);
+			
+		}
 		
 	}
 	
-
-    nav_menu.addEventListener('click', toggleNavMenu);
+    quick_menu.addEventListener('click', toggleQuickMenu);
 	
-	//const doc = document.getElementsByTagName('gradio-app')[0].shadowRoot;
-	
-
 
 	
 })
