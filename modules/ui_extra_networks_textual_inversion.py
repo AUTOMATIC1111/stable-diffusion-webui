@@ -1,5 +1,6 @@
 import json
 import os
+from operator import attrgetter
 
 from modules import ui_extra_networks, sd_hijack
 
@@ -13,7 +14,7 @@ class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
         sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings(force_reload=True)
 
     def list_items(self):
-        for embedding in sd_hijack.model_hijack.embedding_db.word_embeddings.values():
+        for embedding in sorted(sd_hijack.model_hijack.embedding_db.word_embeddings.values(), key=attrgetter('name')):
             path, ext = os.path.splitext(embedding.filename)
             preview_file = path + ".preview.png"
 

@@ -1,5 +1,6 @@
 import json
 import os
+from operator import itemgetter
 
 from modules import shared, ui_extra_networks
 
@@ -12,7 +13,7 @@ class ExtraNetworksPageHypernetworks(ui_extra_networks.ExtraNetworksPage):
         shared.reload_hypernetworks()
 
     def list_items(self):
-        for name, path in shared.hypernetworks.items():
+        for name, path in sorted(shared.hypernetworks.items(), key=itemgetter(0)):
             path, ext = os.path.splitext(path)
             previews = [path + ".png", path + ".preview.png"]
 

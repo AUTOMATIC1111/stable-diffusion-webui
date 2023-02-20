@@ -1,5 +1,6 @@
 import json
 import os
+from operator import itemgetter
 import lora
 
 from modules import shared, ui_extra_networks
@@ -13,7 +14,7 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
         lora.list_available_loras()
 
     def list_items(self):
-        for name, lora_on_disk in lora.available_loras.items():
+        for name, lora_on_disk in sorted(lora.available_loras.items(), key=itemgetter(0)):
             path, ext = os.path.splitext(lora_on_disk.filename)
             previews = [path + ".png", path + ".preview.png"]
 
