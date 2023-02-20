@@ -436,35 +436,38 @@ onUiUpdate(function(){
     quick_menu.addEventListener('click', toggleQuickMenu);
 	
 	// additional ui styles 
-	const ui_styles = gradioApp().querySelector('ui_styles');
-	if(!ui_styles){
-		const r = gradioApp().querySelector('style');			
-		const style = document.createElement('style');
-		style.id="ui-styles";		
-		r.appendChild(style);		
-	}
-	
 	let styleobj = {};
-	function updateOpStyles() {		
+	function updateOpStyles() {	
+
 		let ops_styles = "";	
 		for (const key in styleobj) {		
 			ops_styles += styleobj[key];
-		}		
-		ui_styles.innerHTML = ops_styles;       
+		}
+		
+		const ui_styles = gradioApp().querySelector('ui_styles');
+		if(ui_styles){
+			ui_styles.innerHTML = ops_styles; 					
+		}else{
+			const r = gradioApp().querySelector('style');			
+			const style = document.createElement('style');
+			style.id="ui-styles";
+			style.innerHTML = ops_styles; 
+			r.appendChild(style);
+		}   
 	}
 	
-	function setImagePreviewFitMethod(value) {
+	function imagePreviewFitMethod(value) {
        styleobj.ui_fit = ".livePreview img {object-fit:" + value + ";}";
 	   updateOpStyles();
 	}
 	
 	gradioApp().querySelector("#setting_live_preview_image_fit").addEventListener('click', function (e) {
 		if (e.target && e.target.matches("input[type='radio']")) {
-			setImagePreviewFitMethod(e.target.value.toLowerCase());			
+			imagePreviewFitMethod(e.target.value.toLowerCase());			
 		}
 	})
 	
-	setImagePreviewFitMethod(opts.live_preview_image_fit.toLowerCase());
+	imagePreviewFitMethod(opts.live_preview_image_fit.toLowerCase());
 	
 	/* anapnoe ui end */	
 
