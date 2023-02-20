@@ -582,9 +582,9 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
         ratio = image.width / image.height
 
         if oversize and ratio > 1:
-            image = image.resize((opts.target_side_length, image.height * opts.target_side_length // image.width), LANCZOS)
+            image = image.resize((round(opts.target_side_length), round(image.height * opts.target_side_length / image.width)), LANCZOS)
         elif oversize:
-            image = image.resize((image.width * opts.target_side_length // image.height, opts.target_side_length), LANCZOS)
+            image = image.resize((round(image.width * opts.target_side_length / image.height), round(opts.target_side_length)), LANCZOS)
 
         try:
             _atomically_save_image(image, fullfn_without_extension, ".jpg")
