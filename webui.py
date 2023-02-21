@@ -180,6 +180,7 @@ def wait_on_server(demo=None):
 
 
 def api_only():
+    time_a = time.perf_counter()
     initialize()
 
     app = FastAPI()
@@ -190,12 +191,17 @@ def api_only():
     modules.script_callbacks.app_started_callback(None, app)
 
     api.launch(server_name="0.0.0.0" if cmd_opts.listen else "127.0.0.1", port=cmd_opts.port if cmd_opts.port else 7861)
+    time_b = time.perf_counter()
+    launch_time = time_b - time_a
+    print(f"Total launch time: {launch_time:.20f} seconds")
 
 
 def webui():
+    time_a = time.perf_counter()
     launch_api = cmd_opts.api
     initialize()
 
+    launched = False
     while 1:
         if shared.opts.clean_temp_dir_at_start:
             ui_tempdir.cleanup_tmpdr()
@@ -226,6 +232,14 @@ def webui():
             inbrowser=cmd_opts.autolaunch,
             prevent_thread_lock=True
         )
+
+        if not launched:
+            launched = True
+            time_b = time.perf_counter()
+            launch_time = time_b - time_a
+            print(f"Total launch time: {launch_time:.20f} seconds")
+
+
         # after initial launch, disable --autolaunch for subsequent restarts
         cmd_opts.autolaunch = False
 
