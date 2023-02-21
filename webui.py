@@ -193,7 +193,7 @@ def api_only():
     api.launch(server_name="0.0.0.0" if cmd_opts.listen else "127.0.0.1", port=cmd_opts.port if cmd_opts.port else 7861)
     time_b = time.perf_counter()
     launch_time = time_b - time_a
-    print(f"Total launch time: {launch_time:nf} seconds")
+    print(f"Total launch time: {launch_time:.20f} seconds")
 
 
 def webui():
@@ -237,7 +237,7 @@ def webui():
             launched = True
             time_b = time.perf_counter()
             launch_time = time_b - time_a
-            print(f"Total launch time: {launch_time:nf} seconds")
+            print(f"Total launch time: {launch_time:.20f} seconds")
 
 
         # after initial launch, disable --autolaunch for subsequent restarts
