@@ -30,3 +30,6 @@
   path = modules/lora
   url = https://github.com/kohya-ss/sd-scripts
   ignore = dirty
+[submodule "extensions-builtin/clip-interrogator-ext"]
+	path = extensions-builtin/clip-interrogator-ext
+	url = https://github.com/pharmapsychotic/clip-interrogator-ext.git
