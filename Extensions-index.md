@@ -650,6 +650,13 @@
             "tags": ["script", "tab"]
         },
         {
+            "name": "Clip Interrogator",
+            "url": "https://github.com/pharmapsychotic/clip-interrogator-ext.git",
+            "description": "Clip Interrogator by pharmapsychotic ported to an extension. Features a variety of clip models and interrogate settings.",
+            "added": "2023-02-21",
+            "tags": ["script", "tab"]
+        },
+        {
             "name": "zh_CN Localization",
             "url": "https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN",
             "description": "Simplified Chinese localization",
