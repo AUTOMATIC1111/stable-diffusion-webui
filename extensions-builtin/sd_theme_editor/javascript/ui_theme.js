@@ -217,11 +217,12 @@ function updateTheme(vars){
 	if(preview_styles){
 		preview_styles.innerHTML = ':host {'+ inner_styles +'}';
 	}else{
-		const r = gradioApp().querySelector('style');			
+		
+		const r = gradioApp();		
 		const style = document.createElement('style');
 		style.id="preview-styles";
 		style.innerHTML = ':host {'+ inner_styles +'}';
-		r.appendChild(style);		
+		r.appendChild(style);
 	}
 	
 	const vars_textarea = gradioApp().querySelector('#theme_vars textarea');

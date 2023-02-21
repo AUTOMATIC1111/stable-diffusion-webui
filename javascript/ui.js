@@ -435,25 +435,22 @@ onUiUpdate(function(){
 	}	
     quick_menu.addEventListener('click', toggleQuickMenu);
 	
+	
 	// additional ui styles 
 	let styleobj = {};
-	function updateOpStyles() {	
-
+	const r = gradioApp();		
+	const style = document.createElement('style');
+	style.id="ui-styles";
+	r.appendChild(style);
+	
+	function updateOpStyles() {		
 		let ops_styles = "";	
 		for (const key in styleobj) {		
 			ops_styles += styleobj[key];
-		}
-		
-		const ui_styles = gradioApp().querySelector('ui_styles');
-		if(ui_styles){
-			ui_styles.innerHTML = ops_styles; 					
-		}else{
-			const r = gradioApp().querySelector('style');			
-			const style = document.createElement('style');
-			style.id="ui-styles";
-			style.innerHTML = ops_styles; 
-			r.appendChild(style);
-		}   
+		}	
+		const ui_styles = gradioApp().getElementById('ui-styles');		
+		ui_styles.innerHTML = ops_styles; 
+		//console.log(ui_styles);
 	}
 	
 	function imagePreviewFitMethod(value) {
@@ -469,10 +466,65 @@ onUiUpdate(function(){
 	
 	imagePreviewFitMethod(opts.live_preview_image_fit.toLowerCase());
 	
-	/* anapnoe ui end */	
 
+	//hidden ui tabs
+	let radio_html="";
+	let styletabs={};
+	const setting_ui_hidden_tabs = gradioApp().querySelector('#setting_ui_hidden_tabs textarea');
+	setting_ui_hidden_tabs.style.display = "none";
+	
+	function tabsHiddenNthMarkup() {		
+		const keys = Object.keys(styletabs);
+		setting_ui_hidden_tabs.value = "";
+		keys.forEach((key, index) => {
+			//console.log(`${key}: ${styletabs[key]} ${index}`);
+			if(styletabs[key] == true){
+				styleobj[key] = "#tabs > div > button:nth-child("+(index+1)+"){display:none;}";
+				setting_ui_hidden_tabs.value += key + ",";
+			}else{				
+				delete styleobj[key];
+			}
+		})
+		
+		const iEvent = new Event("input");		
+		Object.defineProperty(iEvent, "target", {value: setting_ui_hidden_tabs})		
+		setting_ui_hidden_tabs.dispatchEvent(iEvent);
+		
+		updateOpStyles();
+	}
+	
+	gradioApp().querySelectorAll('#tabs > div > button').forEach(function (elem) {
+		let tabvalue = elem.innerText.replace(" ", "");
+		styletabs[tabvalue] = false;
+		let checked = "";
+		if(setting_ui_hidden_tabs.value.indexOf(tabvalue) != -1){
+			styletabs[tabvalue] = true;
+			checked = "checked";
+		}		
+		radio_html += '<label class="gr-input-label flex items-center text-gray-700 text-sm space-x-2 border py-1.5 px-3 rounded-lg cursor-pointer bg-white shadow-sm checked:shadow-inner"><input type="checkbox" name="uihb" class="gr-check-radio gr-radio" '+checked+' value="'+elem.innerText+'"><span class="ml-2" title="">'+elem.innerText+'</span></label>';
+	})
+
+	let div = document.createElement("div")
+	div.id = "hidden_radio_tabs_container"
+	div.classList.add("flex", "flex-wrap", "gap-2");
+	div.innerHTML = radio_html;	
+	setting_ui_hidden_tabs.parentElement.appendChild(div);
+	tabsHiddenNthMarkup();
+	
+	gradioApp().querySelector("#hidden_radio_tabs_container").addEventListener('click', function (e) {
+		if (e.target && e.target.matches("input[type='checkbox']")) {
+			let tabvalue = e.target.value.replace(" ", "");	
+			if(e.target.checked){
+				styletabs[tabvalue] = true;				
+			}else{				
+				styletabs[tabvalue] = false;
+			}
+			tabsHiddenNthMarkup();	
+		}
+	})
 	
 	
+	/* anapnoe ui end */	
 
 	
 })
