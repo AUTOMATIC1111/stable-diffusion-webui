@@ -462,6 +462,8 @@ options_templates.update(options_section(('ui', "User interface"), {
     "quicksettings": OptionInfo("sd_model_checkpoint", "Quicksettings list"),
     "ui_reorder": OptionInfo(", ".join(ui_reorder_categories), "txt2img/img2img UI item order"),
     "ui_hidden_tabs": OptionInfo("", "Hidden Tabs"),
+    "ui_offcanvas_menu": OptionInfo(True, "Use always offcanvas menu otherwise use only on mobile"),
+    "ui_views_order": OptionInfo("row-reverse", "Interface order input/parameters | output/preview", gr.Radio, {"choices": ["row", "row-reverse"]}),
     "ui_extra_networks_tab_reorder": OptionInfo("", "Extra networks tab order"),
     "localization": OptionInfo("None", "Localization (requires restart)", gr.Dropdown, lambda: {"choices": ["None"] + list(localization.localizations.keys())}, refresh=lambda: localization.list_localizations(cmd_opts.localizations_dir)),
 }))
@@ -474,7 +476,7 @@ options_templates.update(options_section(('ui', "Live previews"), {
     "show_progress_type": OptionInfo("Approx NN", "Image creation progress preview mode", gr.Radio, {"choices": ["Full", "Approx NN", "Approx cheap"]}),
     "live_preview_content": OptionInfo("Prompt", "Live preview subject", gr.Radio, {"choices": ["Combined", "Prompt", "Negative prompt"]}),
     "live_preview_refresh_period": OptionInfo(1000, "Progressbar/preview update period, in milliseconds"),
-    "live_preview_image_fit": OptionInfo("Scale-down", "Live preview image fit method", gr.Radio, {"choices": ["Scale-down", "Contain"]})
+    "live_preview_image_fit": OptionInfo("Scale-down", "Live preview image fit method", gr.Radio, {"choices": ["Scale-down", "Contain"]}),
 }))
 
 options_templates.update(options_section(('sampler-params', "Sampler parameters"), {

@@ -391,33 +391,31 @@ onUiUpdate(function(){
           
 	function enableScroll() {
 		window.onscroll = function() {}
-	}
-	
-	function toggleMenu(isopen, icon, panel, close, owner) {
+	}	
+
+	function toggleMenu(isopen, icon, panel, func) {
 		if(isopen){
 			panel.classList.add("open");
 			icon.classList.add("fixed");
-			close.addEventListener('click', owner);
+			gradioApp().addEventListener('click', func);			
 			disableScroll();
 		}else{
 			panel.classList.remove("open");
 			icon.classList.remove("fixed");
-			close.removeEventListener('click', owner);
-			enableScroll();			
+			gradioApp().removeEventListener('click', func);
+			enableScroll();	
 		}		
 	}
 	
 	// mobile nav menu
 	const tabs_menu = gradioApp().querySelector('#tabs > div:first-child');
 	const nav_menu = gradioApp().querySelector('#nav_menu');
-	const gcontainer = gradioApp().querySelector('.mx-auto.container');
-	
 	let menu_open = false;
 	function toggleNavMenu(e) {
-		e.preventDefault();
+		//e.preventDefault();
         e.stopPropagation();
 		menu_open = !menu_open;	
-		toggleMenu(menu_open, nav_menu, tabs_menu, gcontainer, toggleNavMenu);
+		toggleMenu(menu_open, nav_menu, tabs_menu, toggleNavMenu);
 	}
     nav_menu.addEventListener('click', toggleNavMenu);
 	
@@ -425,13 +423,16 @@ onUiUpdate(function(){
 	let quick_menu_open = false;
 	const quicksettings_overflow = gradioApp().querySelector('#quicksettings_overflow');
 	const quick_menu = gradioApp().querySelector('#quick_menu');	
-	const qparent = gradioApp().querySelector('#tabs');
-
-	function toggleQuickMenu(e) {	
-		e.preventDefault();
-        e.stopPropagation();
+	function toggleQuickMenu(e) {			
 		quick_menu_open = !quick_menu_open;
-		toggleMenu(quick_menu_open, quick_menu, quicksettings_overflow, qparent, toggleQuickMenu);
+		const withinBoundaries = e.composedPath().includes(quicksettings_overflow);
+		if(!quick_menu_open && withinBoundaries){
+			quick_menu_open = true;
+		}else{
+			e.preventDefault();
+			e.stopPropagation();
+			toggleMenu(quick_menu_open, quick_menu, quicksettings_overflow, toggleQuickMenu);
+		}
 	}	
     quick_menu.addEventListener('click', toggleQuickMenu);
 	
@@ -453,19 +454,30 @@ onUiUpdate(function(){
 		//console.log(ui_styles);
 	}
 	
+	// livePreview contain - scale
 	function imagePreviewFitMethod(value) {
        styleobj.ui_fit = ".livePreview img {object-fit:" + value + ";}";
 	   updateOpStyles();
-	}
-	
+	}	
 	gradioApp().querySelector("#setting_live_preview_image_fit").addEventListener('click', function (e) {
 		if (e.target && e.target.matches("input[type='radio']")) {
 			imagePreviewFitMethod(e.target.value.toLowerCase());			
 		}
 	})
-	
 	imagePreviewFitMethod(opts.live_preview_image_fit.toLowerCase());
 	
+	// views order left - right
+	function viewportOrder(value) {
+       styleobj.ui_views_order = "[id$=_prompt_image] + div {flex-direction:" + value + ";}";
+	   updateOpStyles();
+	}
+	gradioApp().querySelector("#setting_ui_views_order").addEventListener('click', function (e) {
+		if (e.target && e.target.matches("input[type='radio']")) {
+			viewportOrder(e.target.value.toLowerCase());			
+		}
+	})
+	viewportOrder(opts.ui_views_order.toLowerCase());
+
 
 	//hidden ui tabs
 	let radio_html="";
