@@ -195,5 +195,20 @@
     "hidden_tabs": [],
     "img_downscale_threshold": 4.0,
     "target_side_length": 4000.0,
-    "no_dpmpp_sde_batch_determinism": false
+    "no_dpmpp_sde_batch_determinism": false,
+    "control_net_model_config": "/home/vlado/dev/automatic/extensions/sd-webui-controlnet/models/cldm_v15.yaml",
+    "control_net_model_adapter_config": "/home/vlado/dev/automatic/extensions/sd-webui-controlnet/models/sketch_adapter_v14.yaml",
+    "control_net_detectedmap_dir": "/home/vlado/dev/automatic/extensions/sd-webui-controlnet/detected_maps",
+    "control_net_models_path": "",
+    "control_net_max_models_num": 1,
+    "control_net_model_cache_size": 2,
+    "control_net_control_transfer": false,
+    "control_net_no_detectmap": false,
+    "control_net_detectmap_autosaving": false,
+    "control_net_only_midctrl_hires": true,
+    "control_net_allow_script_control": false,
+    "control_net_skip_img2img_processing": false,
+    "control_net_monocular_depth_optim": false,
+    "control_net_only_mid_control": false,
+    "control_net_cfg_based_guidance": false
 }
