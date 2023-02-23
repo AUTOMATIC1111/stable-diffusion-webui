@@ -25,6 +25,8 @@ from modules.ui_components import ToolButton
 
 fill_values_symbol = "\U0001f4d2"  # 📒
 
+AxisInfo = namedtuple('AxisInfo', ['axis', 'values'])
+
 
 def apply_field(field):
     def fun(p, x, xs):
@@ -186,6 +188,7 @@ axis_options = [
     AxisOption("Steps", int, apply_field("steps")),
     AxisOptionTxt2Img("Hires steps", int, apply_field("hr_second_pass_steps")),
     AxisOption("CFG Scale", float, apply_field("cfg_scale")),
+    AxisOptionImg2Img("Image CFG Scale", float, apply_field("image_cfg_scale")),
     AxisOption("Prompt S/R", str, apply_prompt, format_value=format_value),
     AxisOption("Prompt order", str_permutations, apply_order, format_value=format_value_join_list),
     AxisOptionTxt2Img("Sampler", str, apply_sampler, format_value=format_value, confirm=confirm_samplers, choices=lambda: [x.name for x in sd_samplers.samplers]),
@@ -241,6 +244,9 @@ def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend
                 cell_mode = processed_image.mode
                 cell_size = processed_image.size
                 processed_result.images = [Image.new(cell_mode, cell_size)]
+                processed_result.all_prompts = [processed.prompt]
+                processed_result.all_seeds = [processed.seed]
+                processed_result.infotexts = [processed.infotexts[0]]
 
             image_cache[index(ix, iy, iz)] = processed_image
             if include_lone_images:
@@ -358,7 +364,7 @@ class Script(scripts.Script):
                 include_lone_images = gr.Checkbox(label='Include Sub Images', value=False, elem_id=self.elem_id("include_lone_images"))
                 include_sub_grids = gr.Checkbox(label='Include Sub Grids', value=False, elem_id=self.elem_id("include_sub_grids"))
             with gr.Column():
-                margin_size = gr.Slider(label="Grid margins (px)", min=0, max=500, value=0, step=2, elem_id=self.elem_id("margin_size"))
+                margin_size = gr.Slider(label="Grid margins (px)", minimum=0, maximum=500, value=0, step=2, elem_id=self.elem_id("margin_size"))
         
         with gr.Row(variant="compact", elem_id="swap_axes"):
             swap_xy_axes_button = gr.Button(value="Swap X/Y axes", elem_id="xy_grid_swap_axes_button")
@@ -519,6 +525,10 @@ class Script(scripts.Script):
         shared.total_tqdm.updateTotal(total_steps)
 
         grid_infotext = [None]
+
+        state.xyz_plot_x = AxisInfo(x_opt, xs)
+        state.xyz_plot_y = AxisInfo(y_opt, ys)
+        state.xyz_plot_z = AxisInfo(z_opt, zs)
 
         # If one of the axes is very slow to change between (like SD model
         # checkpoint), then make sure it is in the outer iteration of the nested

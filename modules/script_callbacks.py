@@ -46,6 +46,18 @@ class CFGDenoiserParams:
         """Total number of sampling steps planned"""
 
 
+class CFGDenoisedParams:
+    def __init__(self, x, sampling_step, total_sampling_steps):
+        self.x = x
+        """Latent image representation in the process of being denoised"""
+
+        self.sampling_step = sampling_step
+        """Current Sampling step number"""
+
+        self.total_sampling_steps = total_sampling_steps
+        """Total number of sampling steps planned"""
+
+
 class UiTrainTabParams:
     def __init__(self, txt2img_preview_params):
         self.txt2img_preview_params = txt2img_preview_params
@@ -68,6 +80,7 @@ callback_map = dict(
     callbacks_before_image_saved=[],
     callbacks_image_saved=[],
     callbacks_cfg_denoiser=[],
+    callbacks_cfg_denoised=[],
     callbacks_before_component=[],
     callbacks_after_component=[],
     callbacks_image_grid=[],
@@ -148,6 +161,14 @@ def cfg_denoiser_callback(params: CFGDenoiserParams):
             c.callback(params)
         except Exception:
             report_exception(c, 'cfg_denoiser_callback')
+
+
+def cfg_denoised_callback(params: CFGDenoisedParams):
+    for c in callback_map['callbacks_cfg_denoised']:
+        try:
+            c.callback(params)
+        except Exception:
+            report_exception(c, 'cfg_denoised_callback')
 
 
 def before_component_callback(component, **kwargs):
@@ -281,6 +302,14 @@ def on_cfg_denoiser(callback):
         - params: CFGDenoiserParams - parameters to be passed to the inner model and sampling state details.
     """
     add_callback(callback_map['callbacks_cfg_denoiser'], callback)
+
+
+def on_cfg_denoised(callback):
+    """register a function to be called in the kdiffussion cfg_denoiser method after building the inner model inputs.
+    The callback is called with one argument:
+        - params: CFGDenoisedParams - parameters to be passed to the inner model and sampling state details.
+    """
+    add_callback(callback_map['callbacks_cfg_denoised'], callback)
 
 
 def on_before_component(callback):
