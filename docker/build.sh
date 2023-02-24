@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-if [ "$(which dokcer-compose)" ]; then
+if [ "$(which docker-compose)" ]; then
 	compose='docker-compose'
 else
 	compose='docker compose'

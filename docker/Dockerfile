@@ -27,4 +27,4 @@ WORKDIR "/stable-diffusion-webui/"
 VOLUME /stable-diffusion-webui/models
 VOLUME /root/.cache
 
-CMD ["python", "launch.py", "--listen"]
+CMD ["python3", "launch.py", "--listen"]
