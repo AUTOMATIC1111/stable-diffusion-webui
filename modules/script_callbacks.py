@@ -46,7 +46,7 @@ class CFGDenoiserParams:
         """Total number of sampling steps planned"""
         
         self.tensor = tensor
-        """ Encoder hidden states of condtioning"""
+        """ Encoder hidden states of conditioning"""
         
         self.uncond = uncond
         """ Encoder hidden states of unconditioning"""
