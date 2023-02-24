@@ -514,10 +514,11 @@ def create_ui():
                 with gr.Column(elem_id="txt2img_settings_scroll"):                
                     with gr.Accordion("Prompt", open=True):
                         txt2img_prompt, txt2img_prompt_styles, txt2img_negative_prompt, _, _, txt2img_prompt_style_apply, txt2img_save_style, txt2img_paste, extra_networks_button, token_counter, token_button, negative_token_counter, negative_token_button = create_toprow(is_img2img=False)
+                    
                         
-                        with FormRow(variant='compact', elem_id="txt2img_extra_networks_row", visible=False) as extra_networks:
-                            from modules import ui_extra_networks
-                            extra_networks_ui = ui_extra_networks.create_ui(extra_networks, extra_networks_button, 'txt2img')
+                    with gr.Row(elem_id="txt2img_extra_networks_row", visible=True) as extra_networks:
+                        from modules import ui_extra_networks
+                        extra_networks_ui = ui_extra_networks.create_ui(extra_networks, extra_networks_button, 'txt2img')
                     
                     #with gr.Accordion("Parameters", open=True):
                     for category in ordered_ui_categories():
@@ -735,10 +736,10 @@ def create_ui():
                     with gr.Row():
                         with gr.Accordion("Prompt", open=True):
                             img2img_prompt, img2img_prompt_styles, img2img_negative_prompt, img2img_interrogate, img2img_deepbooru, img2img_prompt_style_apply, img2img_save_style, img2img_paste, extra_networks_button, token_counter, token_button, negative_token_counter, negative_token_button = create_toprow(is_img2img=True)
-                            
-                            with FormRow(variant='compact', elem_id="img2img_extra_networks_row", visible=False) as extra_networks:
-                                from modules import ui_extra_networks
-                                extra_networks_ui_img2img = ui_extra_networks.create_ui(extra_networks, extra_networks_button, 'img2img')
+                        
+                    with gr.Row(elem_id="img2img_extra_networks_row", visible=True) as extra_networks:
+                        from modules import ui_extra_networks
+                        extra_networks_ui_img2img = ui_extra_networks.create_ui(extra_networks, extra_networks_button, 'img2img')
 
                         
                     copy_image_buttons = []
@@ -1147,7 +1148,7 @@ def create_ui():
                             with gr.Box():
                                 with gr.Row(elem_id="modelmerger_bake_in_vae_row-collapse-all"):
                                     bake_in_vae = gr.Dropdown(choices=["None"] + list(sd_vae.vae_dict), value="None", label="Bake in VAE", elem_id="modelmerger_bake_in_vae")
-                                    create_refresh_button(bake_in_vae, sd_vae.refresh_vae_list, lambda: {"choices": ["None"] + list(sd_vae.vae_dict)}, "modelmerger_refresh_bake_in_vae")
+                                    create_refresh_button(bake_in_vae, sd_vae.refresh_vae_list, lambda: {"choices": ["None"] + list(sd_vae.vae_dict)}, "refresh_modelmerger_bake_in_vae")
 
                     with FormRow():
                         discard_weights = gr.Textbox(value="", label="Discard weights with matching name", elem_id="modelmerger_discard_weights")

@@ -96,7 +96,7 @@ body {
 
 /* icons */
 
-[id*="refresh_"],
+[id^="refresh_"],
 [id$="_clear_prompt"],
 [id$="2img_style_create"],
 [id$="2img_style_apply"],
@@ -122,7 +122,7 @@ body {
 
 
 
-[id*="refresh_"]::before,
+[id^="refresh_"]::before,
 [id$="_clear_prompt"]::before,
 [id$="2img_style_create"]::before,
 [id$="2img_style_apply"]::before,
@@ -156,7 +156,7 @@ body {
     background-color: var(--primary-color);
 }
 
-[id*="refresh_"]:hover::before,
+[id^="refresh_"]:hover::before,
 [id$="_clear_prompt"]:hover::before,
 [id$="2img_style_create"]:hover::before,
 [id$="2img_style_apply"]:hover::before,
@@ -177,7 +177,8 @@ body {
     background-color: var(--icon-hover-color);
 }
 
-[id*="refresh_"]::before 
+
+[id^="refresh_"]::before 
 {
     -webkit-mask: url(./file=html/svg/refresh-line.svg) no-repeat 50% 50%;
     mask: url(./file=html/svg/refresh-line.svg) no-repeat 50% 50%;
@@ -1560,6 +1561,11 @@ canvas[key=mask] {
 .p-2 {
     padding: var(--outside-gap-size);
 }
+
+[id$="2img_extra_tabs"] ~ * {
+    display:none;
+}
+
 /****************/
 /* Results View */
 /****************/

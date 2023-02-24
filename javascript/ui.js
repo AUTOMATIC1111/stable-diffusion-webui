@@ -493,7 +493,21 @@ onUiUpdate(function(){
 	sdMaxOutputResolution(opts.sd_max_resolution);
 	
 	
-
+	function extra_networks_visibility(value){
+		gradioApp().querySelectorAll('[id$="2img_extra_networks_row"]').forEach((elem) => {
+			if(value){
+				elem.classList.remove("!hidden");		
+			}else{
+				elem.classList.add("!hidden");
+			}
+		})
+	}
+	gradioApp().querySelector("#setting_extra_networks_default_visibility input").addEventListener('click', function (e) {
+		//console.log(e.target.checked);
+		extra_networks_visibility(e.target.checked);
+	})
+	extra_networks_visibility(opts.extra_networks_default_visibility);
+	
 
 	//hidden ui tabs
 	let radio_html="";
@@ -551,7 +565,7 @@ onUiUpdate(function(){
 		}
 	})
 	
-	
+
 	/* anapnoe ui end */	
 
 	
