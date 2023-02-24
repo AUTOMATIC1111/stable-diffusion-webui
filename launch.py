@@ -7,6 +7,7 @@ import shlex
 import platform
 import argparse
 import json
+import warnings
 
 dir_repos = "repositories"
 dir_extensions = "extensions"
@@ -16,6 +17,7 @@ index_url = os.environ.get('INDEX_URL', "")
 stored_commit_hash = None
 skip_install = False
 
+warnings.filterwarnings("ignore", category=UserWarning)
 
 def check_python_version():
     is_windows = platform.system() == "Windows"

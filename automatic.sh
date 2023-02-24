@@ -84,6 +84,10 @@ if [ "$MODE" == install ]; then
   echo "Local changes"
   git status --untracked=no --ignore-submodules=all --short
 
+  echo "Starting WebUI to install internal requirements"
+  echo "Stop server once requirements are installed and start it normally"
+  exec "$PYTHON" launch.py --api
+
   exit 0
 fi
 

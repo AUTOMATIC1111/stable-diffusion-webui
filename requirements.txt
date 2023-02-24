@@ -9,6 +9,7 @@ diffusers
 easydev
 einops
 extcolors
+facexlib
 fastapi
 filetype
 font-roboto
