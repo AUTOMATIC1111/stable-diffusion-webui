@@ -1566,6 +1566,26 @@ canvas[key=mask] {
     display:none;
 }
 
+[id$="train_tabs_2img_settings"] > div:first-child {
+  margin-bottom: var(--outside-gap-size);
+}
+
+[id$="settings_2img_settings"] {
+	max-height: calc(100vh - 245px);
+    overflow-y: auto;
+}
+
+[id$="settings_2img_settings"]::before
+{
+	display:none;
+}
+
+[id$="settings_2img_settings"] button {
+	height:auto;
+}
+#settings>div {
+    padding-top:0;
+}
 /****************/
 /* Results View */
 /****************/
@@ -2648,6 +2668,10 @@ ul.list-none {
 		order:1;
 	}
 	
+	[id$="settings_2img_settings"] {
+		max-height: none;
+	}
+		
 	
 
 }

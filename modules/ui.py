@@ -1080,16 +1080,12 @@ def create_ui():
             with gr.Column(variant='panel', elem_id="png_2img_settings"):             
                 with gr.Column(elem_id="png_2img_settings_scroll"): 
                     image = gr.Image(elem_id="pnginfo_image", label="Source", source="upload", interactive=True, type="pil")
-            
-            
+                      
                 for tabname, button in buttons.items():
                     parameters_copypaste.register_paste_params_button(parameters_copypaste.ParamBinding(
                         paste_button=button, tabname=tabname, source_text_component=generation_info, source_image_component=image,
                     ))
-                
-             
-                    
-
+ 
         image.change(
             fn=wrap_gradio_call(modules.extras.run_pnginfo),
             inputs=[image],
@@ -1589,6 +1585,7 @@ def create_ui():
         current_tab = None
         current_row = None
         with gr.Tabs(elem_id="settings"):
+        
             for i, (k, item) in enumerate(opts.data_labels.items()):
                 section_must_be_skipped = item.section[0] is None
 
@@ -1597,12 +1594,12 @@ def create_ui():
 
                     if current_tab is not None:
                         current_row.__exit__()
-                        current_tab.__exit__()
+                        current_tab.__exit__()                       
 
-                    gr.Group()
+                    #gr.Group()
                     current_tab = gr.TabItem(elem_id="settings_{}".format(elem_id), label=text)
                     current_tab.__enter__()
-                    current_row = gr.Column(variant='compact')
+                    current_row = gr.Column(variant='panel', elem_id="{}_settings_2img_settings".format(elem_id))
                     current_row.__enter__()
 
                     previous_section = item.section

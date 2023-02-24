@@ -275,6 +275,9 @@ onUiUpdate(function(){
             gradioApp().querySelectorAll('#settings > div').forEach(function(elem){
                 elem.style.display = "block";
             })
+			gradioApp().querySelectorAll('#settings > div > div > div').forEach(function(elem){
+                elem.style.maxHeight  = "none";
+            })		
         }
     }
 	
