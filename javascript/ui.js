@@ -466,7 +466,7 @@ onUiUpdate(function(){
 	})
 	imagePreviewFitMethod(opts.live_preview_image_fit.toLowerCase());
 	
-	// views order left - right
+	// viewports order left - right
 	function viewportOrder(value) {
        styleobj.ui_views_order = "[id$=_prompt_image] + div {flex-direction:" + value + ";}";
 	   updateOpStyles();
@@ -477,6 +477,22 @@ onUiUpdate(function(){
 		}
 	})
 	viewportOrder(opts.ui_views_order.toLowerCase());
+	
+
+	// sd max resolution output
+	function sdMaxOutputResolution(value) {
+		gradioApp().querySelectorAll('[id$="2img_width"] input,[id$="2img_height"] input').forEach((elem) => {
+			elem.max = value;
+		})
+	}
+	gradioApp().querySelector("#setting_sd_max_resolution").addEventListener('input', function (e) {
+		let intvalue = parseInt(e.target.value);
+		intvalue = Math.min(Math.max(intvalue, 512), 16384);
+		sdMaxOutputResolution(intvalue);					
+	})	
+	sdMaxOutputResolution(opts.sd_max_resolution);
+	
+	
 
 
 	//hidden ui tabs

@@ -519,7 +519,9 @@ def create_ui():
                             from modules import ui_extra_networks
                             extra_networks_ui = ui_extra_networks.create_ui(extra_networks, extra_networks_button, 'txt2img')
                     
+                    #with gr.Accordion("Parameters", open=True):
                     for category in ordered_ui_categories():
+                    
                         if category == "sampler":
                             steps, sampler_index = create_sampler_and_steps_selection(samplers, "txt2img")
 
@@ -548,7 +550,6 @@ def create_ui():
                                 tiling = gr.Checkbox(label='Tiling', value=False, elem_id="txt2img_tiling")
                                 enable_hr = gr.Checkbox(label='Hires. fix', value=False, elem_id="txt2img_enable_hr")
                                
-
                         elif category == "hires_fix":
                             with FormGroup(visible=False, elem_id="txt2img_hires_fix_sub-group") as hr_options:
                                 #with FormRow(elem_id="txt2img_hires_fix_row1", variant="compact"):
@@ -573,11 +574,11 @@ def create_ui():
                                 with gr.Row():
                                     batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1, elem_id="txt2img_batch_count")
                                     batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1, elem_id="txt2img_batch_size")
-
+             
                         elif category == "override_settings":
                             with FormRow(elem_id="txt2img_override_settings_row") as row:                          
                                 override_settings = create_override_settings_dropdown('txt2img', row)
-
+       
                         elif category == "scripts":
                             #with FormGroup(elem_id="txt2img_script_container"):
                             with gr.Group():
@@ -732,7 +733,7 @@ def create_ui():
                 with gr.Column(elem_id="img2img_settings_scroll"):            
 
                     with gr.Row():
-                        with gr.Accordion("Prompt", open=False):
+                        with gr.Accordion("Prompt", open=True):
                             img2img_prompt, img2img_prompt_styles, img2img_negative_prompt, img2img_interrogate, img2img_deepbooru, img2img_prompt_style_apply, img2img_save_style, img2img_paste, extra_networks_button, token_counter, token_button, negative_token_counter, negative_token_button = create_toprow(is_img2img=True)
                             
                             with FormRow(variant='compact', elem_id="img2img_extra_networks_row", visible=False) as extra_networks:
@@ -756,7 +757,7 @@ def create_ui():
                                 button = gr.Button(title)
                                 copy_image_buttons.append((button, name, elem))
                                 
-                    with gr.Accordion("Image Source", open=False):
+                    with gr.Accordion("Image Source", open=True):
                         with gr.Tabs(elem_id="mode_img2img"):
                             with gr.TabItem('img2img', id='img2img', elem_id="img2img_img2img_tab") as tab_img2img:
                                 init_img = gr.Image(label="Image for img2img", elem_id="img2img_image", show_label=False, source="upload", interactive=True, type="pil", tool="editor", image_mode="RGBA").style(height=480)
@@ -1063,22 +1064,30 @@ def create_ui():
     with gr.Blocks(analytics_enabled=False) as extras_interface:
         ui_postprocessing.create_ui()
 
-    with gr.Blocks(analytics_enabled=False) as pnginfo_interface:
-        with gr.Row().style(equal_height=False):
-            with gr.Column(variant='panel'):
-                image = gr.Image(elem_id="pnginfo_image", label="Source", source="upload", interactive=True, type="pil")
-
-            with gr.Column(variant='panel'):
+    with gr.Blocks(analytics_enabled=False) as pnginfo_interface:   
+        gr.Row(elem_id="png_2img_prompt_image", visible=False)
+        with gr.Row():       
+            with gr.Column(elem_id="png_2img_results"):                
+                with gr.Row():
+                    buttons = parameters_copypaste.create_buttons(["txt2img", "img2img", "inpaint", "extras"])
+               
                 html = gr.HTML()
                 generation_info = gr.Textbox(visible=False, elem_id="pnginfo_generation_info")
                 html2 = gr.HTML()
-                with gr.Row():
-                    buttons = parameters_copypaste.create_buttons(["txt2img", "img2img", "inpaint", "extras"])
 
+            gr.Row(elem_id="png_2img_splitter")
+            with gr.Column(variant='panel', elem_id="png_2img_settings"):             
+                with gr.Column(elem_id="png_2img_settings_scroll"): 
+                    image = gr.Image(elem_id="pnginfo_image", label="Source", source="upload", interactive=True, type="pil")
+            
+            
                 for tabname, button in buttons.items():
                     parameters_copypaste.register_paste_params_button(parameters_copypaste.ParamBinding(
                         paste_button=button, tabname=tabname, source_text_component=generation_info, source_image_component=image,
                     ))
+                
+             
+                    
 
         image.change(
             fn=wrap_gradio_call(modules.extras.run_pnginfo),
@@ -1133,7 +1142,7 @@ def create_ui():
 
                 with gr.Row():
                     modelmerger_merge = gr.Button(elem_id="modelmerger_merge", value="Merge", variant='primary')
-
+            gr.Row(elem_id="modelmerger_splitter")
             with gr.Column(variant='compact', elem_id="modelmerger_results_container"):
                 with gr.Group(elem_id="modelmerger_results_panel"):
                     modelmerger_result = gr.HTML(elem_id="modelmerger_result", show_label=False)
@@ -1269,7 +1278,7 @@ def create_ui():
 
                     with FormRow():
                         template_file = gr.Dropdown(label='Prompt template', value="style_filewords.txt", elem_id="train_template_file", choices=get_textual_inversion_template_names())
-                        create_refresh_button(template_file, textual_inversion.list_textual_inversion_templates, lambda: {"choices": get_textual_inversion_template_names()}, "refrsh_train_template_file")
+                        create_refresh_button(template_file, textual_inversion.list_textual_inversion_templates, lambda: {"choices": get_textual_inversion_template_names()}, "refresh_train_template_file")
 
                     training_width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="train_training_width")
                     training_height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="train_training_height")
