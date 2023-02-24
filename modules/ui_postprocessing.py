@@ -11,7 +11,7 @@ def create_ui():
             result_images, html_info_x, html_info, html_log = ui_common.create_output_panel("extras_2img", shared.opts.outdir_extras_samples)        
         gr.Row(elem_id="extras_2img_splitter")           
         with gr.Column(variant='panel', elem_id="extras_2img_settings"):                            
-            submit = gr.Button('Generate', elem_id="extras_generate", variant='primary')        
+            submit = gr.Button('Upscale', elem_id="extras_generate", variant='primary')        
             with gr.Column(elem_id="extras_2img_settings_scroll"):   
                 with gr.Accordion("Image Source", elem_id="extras_accordion", open=True):
                     with gr.Tabs(elem_id="mode_extras"):
