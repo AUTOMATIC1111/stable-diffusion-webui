@@ -1,6 +1,6 @@
 # Windows
 (**In Testing**) 
-For Windows users, try this fork using **Direct-ml**. If you get this working, it would be nice to share here: [Discussion](https://github.com/AUTOMATIC1111/stable-diffusion-webui/discussions/7870)
+For Windows users, try this fork using **Direct-ml**. If you get this working, it would be nice to share here: [Discussion](https://github.com/lshqqytiger/stable-diffusion-webui-directml/discussions)
 
 * https://github.com/lshqqytiger/stable-diffusion-webui-directml 
 
