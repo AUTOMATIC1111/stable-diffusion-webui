@@ -1,6 +1,6 @@
 # Stable Diffusion Guide
 
-I will be going through all the tools in stable diffusion that I think is most important/useful.
+I will be going through all the tools in automatic1111's WebUI that I think is most important/useful.
 
 First start by launching auto1111 webui (if not already started) - `stable-diffusion-webui\webui-user.bat`
 
