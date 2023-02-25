@@ -1,4 +1,12 @@
-# Basic Settings for WebUI
+# Stable Diffusion Guide
+
+I will be going through all the tools in stable diffusion that I think is most important/useful.
+
+First start by launching auto1111 webui - `stable-diffusion-webui\webui-user.bat`
+
+# txt2img Generation
+
+## Basic Settings for WebUI
 
 **Positive prompt**: what you want in your image. Default for anime models `masterpiece, best quality, ultra-detailed, illustration, 1girl`
 
@@ -26,34 +34,46 @@
 - **Hires steps**: Default `0` (This means it will follow the same number of steps from the Sampling steps eg. 20)
 - **Upscale by**: Default `2` (512x512 image will become 1024x1024) (setting this value too low or too high will cause distortions)
 
-
-# txt2img Generation
-
 ## How to reproduce previously generated images
+
+You can go to the PNG info tab to check metadata of generated image files
 
 ![](How%20to%20reproduce%20generated%20image.PNG)
 
 This method will allow you to extract all the settings including the model used to generate the image from the metadata of the image file. 
 
-Do note not all generated images will have metadata as it is up to the person who generated the image to include the metadata.
+\*Do note not all generated images will have metadata as it is up to the person who generated the image to include the metadata.
 
 ## Prompt templates - Styles
+
+Prompt template are useful for saving prompts that you like. The alternative is just using the PNG info tab to extract the prompts from previous images, which IMO is better than Styles
 
 ![](Prompt%20templates.PNG)
 
 ## How to use Prompt Emphasis
 
+Prompt emphasis allows you to add more weight to a specific prompt so that generated image will look more like that prompt
+
 ![](How%20to%20use%20prompt%20emphasis.PNG)
 
 ## Usage of "AND" for spacial composition
+
+I'm unsure if I got this correct but...
+The use of `AND` to separate prompts is useful when you are trying to generate an image with 2 separate objects in space for example have 2 different characters in the same image you would use the prompt `Hutao AND Raiden` instead of the prompt `Hutao, Raiden` which would give you an image of a single girl blended between Hutao and Raiden
+
+Example:
 
 ![](Usage%20of%20AND%20for%20spacial%20composition.PNG)
 
 ## Using DeepBooru model to generate Danbooru tags from image
 
+DeepBooru is a Deep Neural Network that you can interrogate to generate danbooru tags from any image.
+
 ![](Use%20DeepBooru%20Model%20to%20convert%20image%20to%20danbooru%20tags.PNG)
 
 ## Optional - Using ChatGPT to generate prompts
+
+If you are lazy to think up your own prompts...
 
 ![](OPTIONAL%20-%20How%20to%20prompt%20with%20ChatGPT.PNG)
 
