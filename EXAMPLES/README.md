@@ -1,4 +1,4 @@
-# Stable Diffusion Guide
+# AUTOMATIC1111 WebUI Stable Diffusion Guide for beginners
 
 I will be going through all the tools in automatic1111's WebUI that I think is most important/useful.
 
