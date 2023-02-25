@@ -140,7 +140,7 @@ Prompts may use danbooru tags. Based on these, please tell me a 150-element prom
 
 ## Lora
 
-[Lora guide](/Lora/README.md)
+[Lora guide](Lora/README.md)
 
 # img2img generation
 
@@ -148,7 +148,7 @@ Image to Image generation allows for more control over the resulting image than 
 
 ## ControlNet
 
-[ControlNet & img2img guide](/img2img%20with%20controlnet/README.md)
+[ControlNet & img2img guide](img2img%20with%20controlnet/README.md)
 
 # Model Mixing/Merging
 
