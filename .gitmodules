@@ -1,0 +1,6 @@
+[submodule "extensions/a1111-sd-webui-tagcomplete"]
+	path = extensions/a1111-sd-webui-tagcomplete
+	url = https://github.com/DominikDoom/a1111-sd-webui-tagcomplete.git
+[submodule "extensions/sd-webui-controlnet"]
+	path = extensions/sd-webui-controlnet
+	url = https://github.com/Mikubill/sd-webui-controlnet.git
