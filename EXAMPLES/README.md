@@ -2,7 +2,11 @@
 
 I will be going through all the tools in stable diffusion that I think is most important/useful.
 
-First start by launching auto1111 webui - `stable-diffusion-webui\webui-user.bat`
+First start by launching auto1111 webui (if not already started) - `stable-diffusion-webui\webui-user.bat`
+
+The command prompt should show `Running on local URL:  http://127.0.0.1:7860`
+
+Copy and paste `http://127.0.0.1:7860` into your web browser
 
 # txt2img Generation
 
@@ -61,7 +65,10 @@ Prompt emphasis allows you to add more weight to a specific prompt so that gener
 ## Usage of "AND" for spacial composition
 
 I'm unsure if I got this correct but...
-The use of `AND` to separate prompts is useful when you are trying to generate an image with 2 separate objects in space for example have 2 different characters in the same image you would use the prompt `Hutao AND Raiden` instead of the prompt `Hutao, Raiden` which would give you an image of a single girl blended between Hutao and Raiden
+
+The use of `AND` to separate prompts is useful when you are trying to generate an image with 2 separate objects in space.
+
+For example, if you want 2 different characters in the same image you would use the prompt `Hutao AND Raiden` instead of the prompt `Hutao, Raiden`, because `Hutao, Raiden`would give you an image of a single girl blended between Hutao and Raiden.
 
 Example:
 
