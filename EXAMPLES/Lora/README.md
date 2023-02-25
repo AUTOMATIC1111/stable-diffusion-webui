@@ -15,7 +15,7 @@ Putting the weight high like `1` means that there is maxium effect. (The output 
 
 Experiment with a weight of `0.4` to `0.8` (sometimes if the weight is too high the output images will produce distortions or artifacts)
 
-![example](How to use Lora.PNG)
+![](How%20to%20use%20Lora.PNG)
 
 
-**Lora filepath**: `stable-diffusion-webui/models/Lora/`
+**Filepath to Lora models**: `stable-diffusion-webui/models/Lora/`
