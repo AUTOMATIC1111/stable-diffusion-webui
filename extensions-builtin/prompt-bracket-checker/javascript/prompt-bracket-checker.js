@@ -9,14 +9,14 @@ function checkBrackets(evt, textArea, counterElt) {
   errorStringSquare = '[...] - Different number of opening and closing square brackets detected.\n';
   errorStringCurly  = '{...} - Different number of opening and closing curly brackets detected.\n';
 
-  openBracketRegExp = /\(/g;
-  closeBracketRegExp = /\)/g;
+  openBracketRegExp = /(?<!\\)\(/g;
+  closeBracketRegExp = /(?<!\\)\)/g;
 
-  openSquareBracketRegExp = /\[/g;
-  closeSquareBracketRegExp = /\]/g;
+  openSquareBracketRegExp = /(?<!\\)\[/g;
+  closeSquareBracketRegExp = /(?<!\\)\]/g;
 
-  openCurlyBracketRegExp = /\{/g;
-  closeCurlyBracketRegExp = /\}/g;
+  openCurlyBracketRegExp = /(?<!\\)\{/g;
+  closeCurlyBracketRegExp = /(?<!\\)\}/g;
 
   totalOpenBracketMatches = 0;
   totalCloseBracketMatches = 0;
