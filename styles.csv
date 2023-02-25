@@ -1,0 +1,5 @@
+﻿name,prompt,negative_prompt
+AOM - pos&neg,"masterpiece, best quality, ultra-detailed, illustration, 1girl, solo,","(worst quality, low quality:1.4)"
+AOM - neg,,"(worst quality, low quality:1.4)"
+Counterfeit - neg,,"EasyNegative, extra fingers,fewer fingers,"
+AOM - neg2,,"(worst quality, low quality:1.4), (realistic, lip, nose, tooth, rouge, lipstick, eyeshadow:1.0), (dusty sunbeams:1.0),, (abs, muscular, rib:1.0), (depth of field, bokeh, blurry:1.4), (greyscale, monochrome:1.0), text, title, logo, signature"
