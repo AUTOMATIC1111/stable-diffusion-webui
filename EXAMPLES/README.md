@@ -76,8 +76,6 @@ You can send the generation parameters to txt2img tab and the UI will set all th
 
 \* Make sure all models have the hash like \[a074b8864e] beside the name, if not, swap to the model to calculate the hash. Models will not be automatically swapped if the hashes are not yet calculated.
 
-\* If all else fails, just manually swap the model manually
-
 You can use the samples I provided in `stable-diffusion-webui/EXAMPLES/txt2img/txt2img samples/`
 
 ![](How%20to%20reproduce%20generated%20image.PNG)
