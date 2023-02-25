@@ -444,7 +444,7 @@ input[type="range"]{
 
 .modalImageFullscreen {
     object-fit: contain;
-    height: 90%;
+    max-height: 90%;
 }
 
 .modalPrev,
