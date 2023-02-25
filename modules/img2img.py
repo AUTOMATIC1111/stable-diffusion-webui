@@ -17,7 +17,7 @@ import modules.images as images
 import modules.scripts
 
 
-def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args):
+def process_batch(p, input_dir, output_dir, inpaint_mask_dir, control_dir, args):
     processing.fix_seed(p)
 
     images = shared.listfiles(input_dir)
@@ -28,6 +28,13 @@ def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args):
         is_inpaint_batch = len(inpaint_masks) > 0
     if is_inpaint_batch:
         print(f"\nInpaint batch is enabled. {len(inpaint_masks)} masks found.")
+
+    is_control_batch = False
+    if control_dir:
+        control_images = shared.listfiles(control_dir)
+        is_control_batch = len(control_images) > 0
+    if is_control_batch:
+        print(f"\nControlNet batch is enabled. {len(control_images)} control images found.")
 
     print(f"Will process {len(images)} images, creating {p.n_iter * p.batch_size} new images for each.")
 
@@ -60,6 +67,15 @@ def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args):
             mask_image = Image.open(mask_image_path)
             p.image_mask = mask_image
 
+        if is_control_batch:
+            # try to find corresponding control_image for an image using simple filename matching
+            control_image_path = os.path.join(control_dir, os.path.basename(image))
+            # if not found use first one ("same control_image for all images" use-case)
+            if not control_image_path in control_images:
+                control_image_path = control_images[0]
+            control_image = Image.open(control_image_path)
+            p.image_control = control_image
+
         proc = modules.scripts.scripts_img2img.run(p, *args)
         if proc is None:
             proc = process_images(p)
@@ -78,7 +94,7 @@ def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args):
                 processed_image.save(os.path.join(output_dir, filename))
 
 
-def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_styles, init_img, sketch, init_img_with_mask, inpaint_color_sketch, inpaint_color_sketch_orig, init_img_inpaint, init_mask_inpaint, steps: int, sampler_index: int, mask_blur: int, mask_alpha: float, inpainting_fill: int, restore_faces: bool, tiling: bool, n_iter: int, batch_size: int, cfg_scale: float, image_cfg_scale: float, denoising_strength: float, seed: int, subseed: int, subseed_strength: float, seed_resize_from_h: int, seed_resize_from_w: int, seed_enable_extras: bool, height: int, width: int, resize_mode: int, inpaint_full_res: bool, inpaint_full_res_padding: int, inpainting_mask_invert: int, img2img_batch_input_dir: str, img2img_batch_output_dir: str, img2img_batch_inpaint_mask_dir: str, override_settings_texts, *args):
+def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_styles, init_img, sketch, init_img_with_mask, inpaint_color_sketch, inpaint_color_sketch_orig, init_img_inpaint, init_mask_inpaint, steps: int, sampler_index: int, mask_blur: int, mask_alpha: float, inpainting_fill: int, restore_faces: bool, tiling: bool, n_iter: int, batch_size: int, cfg_scale: float, image_cfg_scale: float, denoising_strength: float, seed: int, subseed: int, subseed_strength: float, seed_resize_from_h: int, seed_resize_from_w: int, seed_enable_extras: bool, height: int, width: int, resize_mode: int, inpaint_full_res: bool, inpaint_full_res_padding: int, inpainting_mask_invert: int, img2img_batch_input_dir: str, img2img_batch_output_dir: str, img2img_batch_inpaint_mask_dir: str, img2img_batch_control_input_dir: str, override_settings_texts, *args):
     override_settings = create_override_settings_dict(override_settings_texts)
 
     is_batch = mode == 5
@@ -162,7 +178,7 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
     if is_batch:
         assert not shared.cmd_opts.hide_ui_dir_config, "Launched with --hide-ui-dir-config, batch img2img disabled"
 
-        process_batch(p, img2img_batch_input_dir, img2img_batch_output_dir, img2img_batch_inpaint_mask_dir, args)
+        process_batch(p, img2img_batch_input_dir, img2img_batch_output_dir, img2img_batch_inpaint_mask_dir, img2img_batch_control_input_dir, args)
 
         processed = Processed(p, [], p.seed, "")
     else:

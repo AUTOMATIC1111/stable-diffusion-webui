@@ -718,12 +718,14 @@ def create_ui():
                         gr.HTML(
                             f"<p style='padding-bottom: 1em;' class=\"text-gray-500\">Process images in a directory on the same machine where the server is running." +
                             f"<br>Use an empty output directory to save pictures normally instead of writing to the output directory." +
-                            f"<br>Add inpaint batch mask directory to enable inpaint batch processing."
+                            f"<br>Add inpaint batch mask directory to enable inpaint batch processing." +
+                            f"<br>Add control batch images directory to enable ControlNet batch processing."
                             f"{hidden}</p>"
                         )
                         img2img_batch_input_dir = gr.Textbox(label="Input directory", **shared.hide_dirs, elem_id="img2img_batch_input_dir")
                         img2img_batch_output_dir = gr.Textbox(label="Output directory", **shared.hide_dirs, elem_id="img2img_batch_output_dir")
                         img2img_batch_inpaint_mask_dir = gr.Textbox(label="Inpaint batch mask directory (required for inpaint batch processing only)", **shared.hide_dirs, elem_id="img2img_batch_inpaint_mask_dir")
+                        img2img_batch_control_input_dir = gr.Textbox(label="Control batch images directory (required for control batch processing only)", **shared.hide_dirs, elem_id="img2img_batch_control_input_dir")
 
                 def copy_image(img):
                     if isinstance(img, dict) and 'image' in img:
@@ -876,6 +878,7 @@ def create_ui():
                     img2img_batch_input_dir,
                     img2img_batch_output_dir,
                     img2img_batch_inpaint_mask_dir,
+                    img2img_batch_control_input_dir,
                     override_settings,
                 ] + custom_inputs,
                 outputs=[
