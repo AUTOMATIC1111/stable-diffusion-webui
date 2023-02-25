@@ -4,7 +4,7 @@ I will be going through all the tools in stable diffusion that I think is most i
 
 First start by launching auto1111 webui (if not already started) - `stable-diffusion-webui\webui-user.bat`
 
-The command prompt should show `Running on local URL:  http://127.0.0.1:7860`
+The command prompt should show `Running on local URL:  http://127.0.0.1:7860` when it's up and running
 
 Copy and paste `http://127.0.0.1:7860` into your web browser
 
