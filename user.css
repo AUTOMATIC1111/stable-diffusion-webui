@@ -15,7 +15,7 @@ input[type=range]::-webkit-slider-thumb { box-shadow: 2px 2px 3px #111111; borde
 div.gradio-container.dark > div.w-full.flex.flex-col.min-h-screen > div { background-color: black; }
 
 /* gradio shadowroot */
-.gradio-container { font-family: "Segoe UI"; font-variant: small-caps; --left-column: 440px; --highlight-color: #CE6400; --inactive-color: #4E1400; }
+.gradio-container { font-family: "Segoe UI"; font-variant: small-caps; --left-column: 490px; --highlight-color: #CE6400; --inactive-color: #4E1400; }
 
 /* gradio style classes */
 .border-2 { border-width: 0; }
@@ -23,7 +23,7 @@ div.gradio-container.dark > div.w-full.flex.flex-col.min-h-screen > div { backgr
 .dark .bg-gray-200, .dark .\!bg-gray-200 { background-color: transparent; }
 .dark .bg-white { color: lightyellow; border-radius: 0; background-color: var(--inactive-color); }
 .dark .dark\:bg-gray-900 { background-color: black; }
-.dark .gr-box { border-radius: 0 !important; background-color: #111111; box-shadow: 2px 2px 3px #111111; border-width: 0; padding: 4px; margin: 12px 0px 12px 0px }
+.dark .gr-box { border-radius: 0 !important; background-color: #111111 !important; box-shadow: 2px 2px 3px #111111; border-width: 0; padding: 4px; margin: 12px 0px 12px 0px }
 .dark .gr-button { border-radius: 0; font-weight: normal; box-shadow: 2px 2px 3px #111111; font-size: 0.8rem; min-width: 32px; min-height: 32px; padding: 3px; margin: 3px; }
 .dark .gr-check-radio { background-color: var(--inactive-color); border-width: 0; border-radius: 2px; box-shadow: 2px 2px 3px #111111; }
 .dark .gr-check-radio:checked { background-color: var(--highlight-color); }
@@ -38,6 +38,7 @@ div.gradio-container.dark > div.w-full.flex.flex-col.min-h-screen > div { backgr
 .extra-network-cards .card { width: 10em; height: 10em; box-shadow: none; }
 .extra-network-cards .card:hover { transform: scale(2); transition: all 0.3s ease; z-index: 99; box-shadow: none; }
 .extra-network-cards .card .actions .name { font-weight: 400; font-size: 1.2rem; }
+.eta-bar { display: none !important }
 .gap-2 { padding-top: 8px; }
 .gr-box > div > div > input.gr-text-input { right: 0.5rem; width: 4em; padding: 0; }
 .overflow-hidden .flex .flex-col .relative col .gap-4 { min-width: var(--left-column); max-width: var(--left-column); } /* this is a problematic one */
@@ -86,4 +87,4 @@ div.gradio-container.dark > div.w-full.flex.flex-col.min-h-screen > div { backgr
 #refresh_txt2img_styles, #refresh_img2img_styles, #open_folder_txt2img, #open_folder_img2img, #open_folder_extras, #footer, #style_pos_col, #style_neg_col, #roll_col, #save_zip_txt2img, #save_zip_img2img, #extras_upscaler_2, #extras_upscaler_2_visibility, #txt2img_res_switch_btn, #img2img_res_switch_btn, #txt2img_seed_resize_from_w, #txt2img_seed_resize_from_h, #txt2img_subseed_show, #txt2img_reuse_seed, #txt2img_reuse_subseed, #txt2img_tiling, #img2img_subseed_show { display: none; }
 
 /* custom elements overrides */
-#steps-animation { border-width: 0; }
+#steps-animation, #controlnet { border-width: 0; }
