@@ -19,11 +19,11 @@ Copy and paste `http://127.0.0.1:7860` into your web browser
 
 **Sampling method**: I still DK how this works but it affects the output. Use Default: `DPM++ SDE Karras` or experiment with the other samplers
 
-**Sampling steps**: How many denoising steps used in the diffusion process. Just leave at `20` steps default unless you want to experiment
+**Sampling steps**: How many denoising steps used in the diffusion process. Generally the higher the number the better the image quality, but it takes longer to generate. Recommend leave at `20` steps, as the quality starts to flat line around there.
 
 **Seed**: Default `-1` (meaning you use a random new seed every generation). The random noise seed that you can use as a base for diffusion, think of it as just an image with random RGB values at every coordinate pixel, this random noise image will slowly be diffused into an artwork. Different seeds produce different images.
 
-**Batch count**: How many images you want to generate. Default `1`
+**Batch count**: How many images you want to generate in sequence when you press `generate`. Default `1`
 
 **Batch size**: Leave this at `1`. Increasing the size will also create more images also but it will eat up ALOT of VRAM. If you set too high you will get "CUDA OUT OF MEMORY ERROR"
 
@@ -34,9 +34,9 @@ Copy and paste `http://127.0.0.1:7860` into your web browser
 **Hires. fix**: A fix to the previous problem of distortion and artifacts. able to latently upscale images by x2 (VERY GOOD, but takes longer to generate image)
 
 **Default settings for hires. fix**: 
-- **Upscaler**: Just use `Latent (nearest-exact)`. I feel this is the best upscaler, unless you want to experiment with the other options.- 
-- **Hires steps**: Default `0` (This means it will follow the same number of steps from the Sampling steps eg. 20)
-- **Upscale by**: Default `2` (512x512 image will become 1024x1024) (setting this value too low or too high will cause distortions)
+- **Upscaler**: Recommend use `Latent (nearest-exact)`. I feel this is the best upscaler, unless you want to experiment with the other options.- 
+- **Hires steps**: Recommend use default `0` (This means it will follow the same number of steps from the Sampling steps eg. 20)
+- **Upscale by**: Recommend use default `2` (512x512 image will become 1024x1024) (setting this value too low or too high will cause distortions)
 
 ## How to reproduce previously generated images
 
