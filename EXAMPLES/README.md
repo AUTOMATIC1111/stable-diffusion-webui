@@ -64,7 +64,7 @@ Prompt emphasis allows you to add more weight to a specific prompt so that gener
 
 ![](How%20to%20use%20prompt%20emphasis.PNG)
 
-## Usage of "AND" for spacial composition
+## Usage of "AND" for spatial composition
 
 I'm unsure if I got this correct but...
 
