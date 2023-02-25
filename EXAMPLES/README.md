@@ -74,7 +74,7 @@ The PNG info tab allows you to check metadata of previously generated image file
 
 You can send the generation parameters to txt2img tab and the UI will set all the settings for you to produce the same image, all you need to do is press generate.
 
-\* If you are using model for the first time, be sure to swap through all models once so the hashes of the models can be calculated, models will not be automatically swapped if the hashes are not yet calculated.
+\* Make sure all models have the hash like \[a074b8864e] beside the name, if not, swap to the model to calculate the hash. Models will not be automatically swapped if the hashes are not yet calculated.
 
 You can use the samples I provided in `stable-diffusion-webui/EXAMPLES/txt2img/txt2img samples/`
 
