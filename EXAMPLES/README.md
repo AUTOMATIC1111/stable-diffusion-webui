@@ -36,7 +36,9 @@ First start by launching auto1111 webui - `stable-diffusion-webui\webui-user.bat
 
 ## How to reproduce previously generated images
 
-You can go to the PNG info tab to check metadata of generated image files
+The PNG info tab allows you to check metadata of generated image files.
+
+You can use the samples I provided in `stable-diffusion-webui/EXAMPLES/txt2img/txt2img samples/`
 
 ![](How%20to%20reproduce%20generated%20image.PNG)
 
