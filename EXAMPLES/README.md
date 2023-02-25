@@ -38,11 +38,31 @@ Copy and paste `http://127.0.0.1:7860` into your web browser
 - **Hires steps**: Recommend use default `0` (This means it will follow the same number of steps from the Sampling steps eg. 20)
 - **Upscale by**: Recommend use default `2` (512x512 image will become 1024x1024) (setting this value too low or too high will cause distortions)
 
+## Model ranking
+
+This is my personal model ranking based on my own research.
+
+1. AOM3 - Abyss orange mix 3 produces insane compositions and lighting together with a semi realistic feel
+
+2. Counterfeit - A good stylized 2D anime model, produces very artistic and good looking artworks
+
+3. dalcefoPainting - Good realistic stylized model, produces league of legends splash art style girls
+
+4. chilloutmix_Ni - Good if you like photographic realism
+
+5. neverendingDreamNED - Super versatile model capable of creating anything, good for training
+
+6. sunshinemix_sunlightmix - 2.5D anime realistic model, I personally haven't tried this but it seems good
+
+7. AnyPastel - Colorful pastelized 2D anime model
+
 ## How to reproduce previously generated images
 
 The PNG info tab allows you to check metadata of previously generated image files to extract the generation parameters.
 
 You can send the generation parameters to txt2img tab and the UI will set all the settings for you to produce the same image, all you need to do is press generate.
+
+\* If you are using model for the first time, be sure to swap through all models once so the hashes of the models can be calculated, models will not be automatically swapped if the hashes are not yet calculated.
 
 You can use the samples I provided in `stable-diffusion-webui/EXAMPLES/txt2img/txt2img samples/`
 
