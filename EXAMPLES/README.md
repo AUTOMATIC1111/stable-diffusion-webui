@@ -10,6 +10,8 @@ Copy and paste `http://127.0.0.1:7860` into your web browser
 
 # txt2img Generation
 
+Text to Image generation comprises of taking a random noisy image and diffusing it with a text prompt
+
 ## Basic Settings for WebUI
 
 **Positive prompt**: what you want in your image. Default for anime models `masterpiece, best quality, ultra-detailed, illustration, 1girl`
@@ -141,6 +143,8 @@ Prompts may use danbooru tags. Based on these, please tell me a 150-element prom
 [Lora guide](/Lora/README.md)
 
 # img2img generation
+
+Image to Image generation allows for more control over the resulting image than Text to Image generation, as the base image from which is denoised is no longer a random noisy image but is an actual image.
 
 ## ControlNet
 
