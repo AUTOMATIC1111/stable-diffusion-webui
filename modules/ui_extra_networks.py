@@ -7,12 +7,12 @@ from modules import shared
 import gradio as gr
 import json
 import html
-
+from modules.ui_components import ToolButton
 from modules.generation_parameters_copypaste import image_from_url_text
 
 extra_pages = []
 allowed_dirs = set()
-
+refresh_symbol = '\U0001f504'  # 🔄
 
 def register_page(page):
     """registers extra networks page for the UI; recommend doing it in on_before_ui() callback for extensions"""
@@ -63,7 +63,7 @@ class ExtraNetworksPage:
         return ""
 
     def create_html(self, tabname):
-        view = shared.opts.extra_networks_default_view
+        view = "cards" #shared.opts.extra_networks_default_view
         items_html = ''
 
         subdirs = {}
@@ -182,7 +182,7 @@ def create_ui(container, button, tabname):
                     ui.pages.append(page_elem)
 
         filter = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", visible=False)
-        button_refresh = gr.Button('Refresh', elem_id=tabname+"_extra_refresh")
+        button_refresh = ToolButton(value=refresh_symbol, elem_id=tabname+"_extra_refresh")                    
         button_close = gr.Button('Close', elem_id=tabname+"_extra_close")
 
         ui.button_save_preview = gr.Button('Save preview', elem_id=tabname+"_save_preview", visible=False)

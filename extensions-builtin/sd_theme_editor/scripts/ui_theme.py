@@ -59,8 +59,12 @@ def on_ui_tabs():
                         gr.ColorPicker(elem_id="--input-focus-color", label="Input color")
 
                     with gr.Accordion(label="Spacing", open=True):
-                        gr.Slider(elem_id="--outside-gap-size", label='Gap size', minimum=0, maximum=16, step=1)
-                        gr.Slider(elem_id="--inside-padding-size", label='Padding size', minimum=0, maximum=16, step=1)                      
+                        gr.Slider(elem_id="--outside-gap-size", label='Gap size', minimum=1, maximum=16, step=1, interactive=True)
+                        gr.Slider(elem_id="--inside-padding-size", label='Padding size', minimum=1, maximum=16, step=1, interactive=True)   
+                    
+                    with gr.Accordion(label="Spacing (Modile)", open=True):
+                        gr.Slider(elem_id="--mobile-outside-gap-size", label='Mobile Gap size', minimum=1, maximum=16, step=1, interactive=True)
+                        gr.Slider(elem_id="--mobile-inside-padding-size", label='Mobile Padding size', minimum=1, maximum=16, step=1, interactive=True)                            
                                     
                     with gr.Accordion(label="Panel colors", open=True):                   
                         gr.ColorPicker(elem_id="--label-color", label="Label color")

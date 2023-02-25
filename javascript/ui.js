@@ -505,11 +505,32 @@ onUiUpdate(function(){
 			}
 		})
 	}
-	gradioApp().querySelector("#setting_extra_networks_default_visibility input").addEventListener('click', function (e) {
-		//console.log(e.target.checked);
+	gradioApp().querySelector("#setting_extra_networks_default_visibility input").addEventListener('click', function (e) {		
 		extra_networks_visibility(e.target.checked);
 	})
 	extra_networks_visibility(opts.extra_networks_default_visibility);
+	
+	function extra_networks_card_size(value) {
+       styleobj.extra_networks_card_size = ":host{--extra-networks-card-size:" + value + ";}";
+	   updateOpStyles();
+	}
+	gradioApp().querySelectorAll("#setting_extra_networks_cards_size input").forEach(function (elem){
+		elem.addEventListener('input', function (e) {		
+			extra_networks_card_size(e.target.value);
+		})	
+	})
+	extra_networks_card_size(opts.extra_networks_cards_size);
+	
+	function extra_networks_cards_visible_rows(value) {		
+       styleobj.extra_networks_cards_visible_rows = ":host{--extra-networks-visible-rows:" + value + ";}";
+	   updateOpStyles();
+	}
+	gradioApp().querySelectorAll("#setting_extra_networks_cards_visible_rows input").forEach(function (elem){
+		elem.addEventListener('input', function (e) {		
+			extra_networks_cards_visible_rows(e.target.value);
+		})		
+	})
+	extra_networks_cards_visible_rows(opts.extra_networks_cards_visible_rows);
 	
 
 	//hidden ui tabs

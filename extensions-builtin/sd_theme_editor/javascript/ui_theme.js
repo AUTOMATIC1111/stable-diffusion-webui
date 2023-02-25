@@ -76,8 +76,7 @@ function hslToHex(h, s, l) {
   return `#${f(0)}${f(8)}${f(4)}`;
 }
 
-function hsl2rgb(h,s,l) 
-{
+function hsl2rgb(h,s,l) {
    let a=s*Math.min(l,1-l);
    let f= (n,k=(n+h/30)%12) => l - a*Math.max(Math.min(k-3,9-k,1),-1);
    return [f(0),f(8),f(4)];
@@ -179,6 +178,8 @@ function offsetColorsHSV(ohsl){
 	
 	const preview_styles = gradioApp().querySelector('#preview-styles');
 	preview_styles.innerHTML = ':host {'+ inner_styles +'}';
+	preview_styles.innerHTML +='@media only screen and (max-width: 860px) {:host{--outside-gap-size: var(--mobile-outside-gap-size);--inside-padding-size: var(--mobile-inside-padding-size);}}';
+
 	
 	const vars_textarea = gradioApp().querySelector('#theme_vars textarea');
 	vars_textarea.value = inner_styles;			
@@ -216,12 +217,14 @@ function updateTheme(vars){
 	
 	if(preview_styles){
 		preview_styles.innerHTML = ':host {'+ inner_styles +'}';
+		preview_styles.innerHTML +='@media only screen and (max-width: 860px) {:host{--outside-gap-size: var(--mobile-outside-gap-size);--inside-padding-size: var(--mobile-inside-padding-size);}}';
 	}else{
 		
 		const r = gradioApp();		
 		const style = document.createElement('style');
 		style.id="preview-styles";
 		style.innerHTML = ':host {'+ inner_styles +'}';
+		style.innerHTML +='@media only screen and (max-width: 860px) {:host{--outside-gap-size: var(--mobile-outside-gap-size);--inside-padding-size: var(--mobile-inside-padding-size);}}';
 		r.appendChild(style);
 	}
 	
@@ -314,6 +317,7 @@ function initTheme() {
 			
 			vars = inner_styles.split(";");			
 			preview_styles.innerHTML = ':host {'+ inner_styles +'}';
+			preview_styles.innerHTML +='@media only screen and (max-width: 860px) {:host{--outside-gap-size: var(--mobile-outside-gap-size);--inside-padding-size: var(--mobile-inside-padding-size);}}';
 
 			vars_textarea.value = inner_styles;			
 			const vEvent = new Event("input");
