@@ -1,0 +1,32 @@
+{
+    "hashes": {
+        "checkpoint/AnyPastel-fp16.safetensors": {
+            "mtime": 1677330539.607038,
+            "sha256": "f3db89e46081f0393186f5d45bfb618ddc1b15a22aaad7d0af1506ec733174b5"
+        },
+        "checkpoint/CounterfeitV25_25.safetensors": {
+            "mtime": 1677330280.9237628,
+            "sha256": "a074b8864e31b8681e40db3dfde0005df7b5309fd2a2f592a2caee59e4591cae"
+        },
+        "checkpoint/AOM3.safetensors": {
+            "mtime": 1677330155.1220882,
+            "sha256": "d124fc18f0232d7f0a2a70358cdb1288af9e1ee8596200f50f0936be59514f6d"
+        },
+        "checkpoint/chilloutmix_NiPrunedFp16Fix.safetensors": {
+            "mtime": 1677330347.695509,
+            "sha256": "59ffe2243a25c9fe137d590eb3c5c3d3273f1b4c86252da11bbdc9568773da0c"
+        },
+        "checkpoint/dalcefoPainting_2nd.safetensors": {
+            "mtime": 1677330724.8761437,
+            "sha256": "74fda0645dbc8f64cb8ba1f129fcd94998798118bcc58fc5886c3dcb2581095b"
+        },
+        "checkpoint/neverendingDreamNED_bakedVae.safetensors": {
+            "mtime": 1677330480.238212,
+            "sha256": "d8722b4a4d11b79ca25e608a02f69b7677ac760970a0bb4583d3ecd34f0757a7"
+        },
+        "checkpoint/sunshinemix_sunlightmixPruned.safetensors": {
+            "mtime": 1677330789.6066473,
+            "sha256": "4e704d22c35e182a0517b37f53ff9219bd722b0f6ebc47a8cd2cf265097d6837"
+        }
+    }
+}
