@@ -110,6 +110,8 @@ Example:
 
 DeepBooru is a Deep Neural Network that you can interrogate to generate danbooru tags from any image.
 
+In the img2img tab, drop any image into the img box, then click Interrogate DeepBooru. After the model has downloaded and performed inference, the generated prompts will show up in the prompt box
+
 ![](Use%20DeepBooru%20Model%20to%20convert%20image%20to%20danbooru%20tags.PNG)
 
 ## Optional - Using ChatGPT to generate prompts
