@@ -38,7 +38,17 @@ Copy and paste `http://127.0.0.1:7860` into your web browser
 - **Hires steps**: Recommend use default `0` (This means it will follow the same number of steps from the Sampling steps eg. 20)
 - **Upscale by**: Recommend use default `2` (512x512 image will become 1024x1024) (setting this value too low or too high will cause distortions)
 
-## Model ranking
+## Models
+
+### How to change model
+
+On the top left side of the UI you can swap models.
+
+![](change_model.png)
+
+Once you swapped to a model for the first time a hash will appear beside the model. This signifies the model's fingerprint, every model will have a unique hash.
+
+### Model ranking
 
 This is my personal model ranking based on my own research.
 
