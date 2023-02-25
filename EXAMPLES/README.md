@@ -40,7 +40,9 @@ Copy and paste `http://127.0.0.1:7860` into your web browser
 
 ## How to reproduce previously generated images
 
-The PNG info tab allows you to check metadata of generated image files.
+The PNG info tab allows you to check metadata of previously generated image files to extract the generation parameters.
+
+You can send the generation parameters to txt2img tab and the UI will set all the settings for you to produce the same image, all you need to do is press generate.
 
 You can use the samples I provided in `stable-diffusion-webui/EXAMPLES/txt2img/txt2img samples/`
 
