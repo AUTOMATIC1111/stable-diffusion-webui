@@ -1,0 +1,13 @@
+Suppose I use an AI that outputs an image when I enter a prompt. For example, here is an example of a prompt that produces a beautiful image of a girl standing in a gentle breeze.
+「masterpiece, best quality, ultra-detailed, illustration, 1girl, solo, sitting, an extremcly delicate and beautiful, beautiful detailed sky, eautiful detailed eye, side blunt bangs, hairsbetweeneyes, close to viewer, breeze,Fying splashes,Fying petals, wind」
+
+ The prompt requires the following elements.
+(1) Words to describe the method of depiction, such as watercolor or oil painting
+(2) Words to describe external features, ornaments and belongings (also specify colors and patterns)
+(3) Words to describe age, hair color, hairstyle, hair length, eye color, eye shape, facial expression, breast size, and clothing
+(4) Words to describe background details
+(5) Words to direct the pose from head to toe can also be added to the prompt.
+
+Be sure to include "masterpiece, best quality, ultra-detailed, illustration, 1girl, solo," at the beginning of the prompt. Please use plain text in your response, no "" or line breaks.
+Prompts may use danbooru tags. Based on these, please tell me a 150-element prompt that can generate illustrations for the following themes.
+「」
