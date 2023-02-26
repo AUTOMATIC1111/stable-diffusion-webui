@@ -459,24 +459,24 @@ onUiUpdate(function(){
 	
 	// livePreview contain - scale
 	function imagePreviewFitMethod(value) {
-       styleobj.ui_fit = ".livePreview img {object-fit:" + value + ";}";
-	   updateOpStyles();
+       styleobj.ui_fit = ".livePreview img {object-fit:" + value + ";}"; 
 	}	
 	gradioApp().querySelector("#setting_live_preview_image_fit").addEventListener('click', function (e) {
 		if (e.target && e.target.matches("input[type='radio']")) {
-			imagePreviewFitMethod(e.target.value.toLowerCase());			
+			imagePreviewFitMethod(e.target.value.toLowerCase());	
+			updateOpStyles();			
 		}
 	})
 	imagePreviewFitMethod(opts.live_preview_image_fit.toLowerCase());
 	
 	// viewports order left - right
 	function viewportOrder(value) {
-       styleobj.ui_views_order = "[id$=_prompt_image] + div {flex-direction:" + value + ";}";
-	   updateOpStyles();
+       styleobj.ui_views_order = "[id$=_prompt_image] + div {flex-direction:" + value + ";}";	   
 	}
 	gradioApp().querySelector("#setting_ui_views_order").addEventListener('click', function (e) {
 		if (e.target && e.target.matches("input[type='radio']")) {
-			viewportOrder(e.target.value.toLowerCase());			
+			viewportOrder(e.target.value.toLowerCase());
+			updateOpStyles();			
 		}
 	})
 	viewportOrder(opts.ui_views_order.toLowerCase());
@@ -511,23 +511,23 @@ onUiUpdate(function(){
 	extra_networks_visibility(opts.extra_networks_default_visibility);
 	
 	function extra_networks_card_size(value) {
-       styleobj.extra_networks_card_size = ":host{--extra-networks-card-size:" + value + ";}";
-	   updateOpStyles();
+       styleobj.extra_networks_card_size = ":host{--extra-networks-card-size:" + value + ";}";  
 	}
 	gradioApp().querySelectorAll("#setting_extra_networks_cards_size input").forEach(function (elem){
 		elem.addEventListener('input', function (e) {		
 			extra_networks_card_size(e.target.value);
+			updateOpStyles();
 		})	
 	})
 	extra_networks_card_size(opts.extra_networks_cards_size);
 	
 	function extra_networks_cards_visible_rows(value) {		
        styleobj.extra_networks_cards_visible_rows = ":host{--extra-networks-visible-rows:" + value + ";}";
-	   updateOpStyles();
 	}
 	gradioApp().querySelectorAll("#setting_extra_networks_cards_visible_rows input").forEach(function (elem){
 		elem.addEventListener('input', function (e) {		
 			extra_networks_cards_visible_rows(e.target.value);
+			updateOpStyles();
 		})		
 	})
 	extra_networks_cards_visible_rows(opts.extra_networks_cards_visible_rows);
@@ -556,7 +556,7 @@ onUiUpdate(function(){
 		Object.defineProperty(iEvent, "target", {value: setting_ui_hidden_tabs})		
 		setting_ui_hidden_tabs.dispatchEvent(iEvent);
 		
-		updateOpStyles();
+		//updateOpStyles();
 	}
 	
 	gradioApp().querySelectorAll('#tabs > div > button').forEach(function (elem) {
@@ -585,7 +585,8 @@ onUiUpdate(function(){
 			}else{				
 				styletabs[tabvalue] = false;
 			}
-			tabsHiddenNthMarkup();	
+			tabsHiddenNthMarkup();
+			updateOpStyles();
 		}
 	})
 	
@@ -611,8 +612,6 @@ onUiUpdate(function(){
 		Object.defineProperty(cEvent, "target", {value: settings_submit})		
 		settings_submit.dispatchEvent(cEvent);
 		//settings_submit.click();
-
-		
 		//console.log(id + " - " + checked);
 			
 	}
@@ -623,6 +622,8 @@ onUiUpdate(function(){
 			add2quickSettings(tid, e.target.checked);
 		})
 	})
+	
+	updateOpStyles();
 	
 
 	/* anapnoe ui end */	
