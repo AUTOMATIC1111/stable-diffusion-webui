@@ -657,6 +657,13 @@
             "tags": ["script", "tab"]
         },
         {
+            "name": "Composable LoRA",
+            "url": "https://github.com/opparco/stable-diffusion-webui-composable-lora.git",
+            "description": "Enables using AND keyword(composable diffusion) to limit LoRAs to subprompts. Related to Latent Couple extension.",
+            "added": "2023-02-25",
+            "tags": ["script"]
+        },
+        {
             "name": "zh_CN Localization",
             "url": "https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN",
             "description": "Simplified Chinese localization",
