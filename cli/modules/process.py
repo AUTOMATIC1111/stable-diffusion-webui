@@ -206,7 +206,7 @@ def extract_face(img):
 
     if params.square_images:
         squared = Image.new('RGB', (params.target_size, params.target_size))
-        squared.paste(cropped, (0, 0))
+        squared.paste(cropped, ((params.target_size - cropped.width) // 2, (params.target_size - cropped.height) // 2))
         if params.face_segmentation:
            squared = segmentation(squared)
     else:
@@ -269,7 +269,7 @@ def extract_body(img):
 
     if params.square_images:
         squared = Image.new('RGB', (params.target_size, params.target_size))
-        squared.paste(cropped, (0, 0))
+        squared.paste(cropped, ((params.target_size - cropped.width) // 2, (params.target_size - cropped.height) // 2))
         if params.body_segmentation:
            squared = segmentation(squared)
     else:
@@ -295,6 +295,19 @@ def extract_body(img):
         return None, True
 
     return squared, True
+
+
+def save_original(img):
+    if img.mode == 'RGBA':
+        img = img.convert('RGB')
+    resized = img.copy()
+    resized.thumbnail((params.target_size, params.target_size), Image.HAMMING)
+    if params.square_images:
+        squared = Image.new('RGB', (params.target_size, params.target_size))      
+        squared.paste(resized, ((params.target_size - resized.width) // 2, (params.target_size - resized.height) // 2))
+    else:
+        squared = resized
+    return squared
 
 
 def encode(img):
@@ -391,8 +404,9 @@ def process_file(f: str, dst: str = None, preview: bool = False, offline: bool =
         log.debug({ 'no body': f })
 
     if params.keep_original:
-        fn = save(image, f, 'original')
-        log.info({ 'original': fn })
+        resized = save_original(image)
+        fn = save(resized, f, 'original')
+        log.info({ 'keep original': fn })
 
     image.close()
     return i, metadata

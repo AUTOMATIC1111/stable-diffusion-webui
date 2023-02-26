@@ -68,6 +68,7 @@ options = Map({
     "save_last_n_epochs_state": None,
     "save_state": False,
     "resume": None,
+    "max_grad_norm": 0.0,
     "train_batch_size": 1,
     "max_token_length": None,
     "use_8bit_adam": False,
@@ -144,6 +145,7 @@ if __name__ == '__main__':
     parser.add_argument('--lr', type=float, default=1e-04, required=False, help='model learning rate, default: %(default)s')
     parser.add_argument('--unetlr', type=float, default=1e-04, required=False, help='unet learning rate, default: %(default)s')
     parser.add_argument('--textlr', type=float, default=5e-05, required=False, help='text encoder learning rate, default: %(default)s')
+    parser.add_argument('--dreambooth', default=False, action='store_true', help = "use dreambooth style training")
     parser.add_argument('--debug', default=False, action='store_true', help = "enable debug logging")
     args = parser.parse_args()
     if args.debug:
@@ -180,7 +182,11 @@ if __name__ == '__main__':
     Path(dir).mkdir(parents=True, exist_ok=True)
     json_file = os.path.join(tempfile.gettempdir(), args.output, args.output + '.json')
     options.train_data_dir = os.path.join(tempfile.gettempdir(), args.output)
-    options.in_json = json_file
+
+    if args.dreambooth:
+        options.in_json = None
+    else:
+        options.in_json = json_file
 
     for root, _sub_dirs, folder in os.walk(args.input):
         files = [os.path.join(root, f) for f in folder]
@@ -203,7 +209,7 @@ if __name__ == '__main__':
         with open(json_file, "w") as outfile:
             outfile.write(json.dumps(metadata, indent=2))
 
-    if not args.nolatents:
+    if not args.nolatents and not args.dreambooth:
         # create latents
         latents.create_vae_latents(Map({ 'input': dir, 'json': json_file }))
         latents.unload_vae()
