@@ -290,7 +290,7 @@ onUiUpdate(function(){
 	*/
 	
 	/* auto grow textarea */
-	gradioApp().querySelectorAll('[id $= "_prompt"] textarea').forEach(function (elem) {
+	gradioApp().querySelectorAll('[id $= "_prompt"] textarea, [id^="setting_"] textarea').forEach(function (elem) {
 		elem.style.boxSizing = 'border-box';
 		var offset = elem.offsetHeight - elem.clientHeight;
 		elem.addEventListener('input', function (e) {
@@ -587,6 +587,41 @@ onUiUpdate(function(){
 			}
 			tabsHiddenNthMarkup();	
 		}
+	})
+	
+	
+	const settings_submit = gradioApp().querySelector('#settings_submit');
+	
+	function add2quickSettings(id, checked){
+		const setting_quicksettings = gradioApp().querySelector('#setting_quicksettings textarea');
+		let field_settings = setting_quicksettings.value.replace(" ", "");		
+		if(checked){
+			field_settings += ","+id;
+		}else{
+			field_settings = field_settings.replaceAll(id, ",");
+		}
+		field_settings = field_settings.replace(/,{2,}/g, ',');
+		setting_quicksettings.value = field_settings;
+		
+		const iEvent = new Event("input");		
+		Object.defineProperty(iEvent, "target", {value: setting_quicksettings})		
+		setting_quicksettings.dispatchEvent(iEvent);
+		
+		const cEvent = new Event("click");//submit	
+		Object.defineProperty(cEvent, "target", {value: settings_submit})		
+		settings_submit.dispatchEvent(cEvent);
+		//settings_submit.click();
+
+		
+		//console.log(id + " - " + checked);
+			
+	}
+	gradioApp().querySelectorAll('[id^="add2quick_"]').forEach(function (elem){
+		let tid = elem.id.split('add2quick_setting_')[1];
+		let elem_input = gradioApp().querySelector('#'+elem.id+' input');
+		elem_input.addEventListener('click', function (e) {		
+			add2quickSettings(tid, e.target.checked);
+		})
 	})
 	
 

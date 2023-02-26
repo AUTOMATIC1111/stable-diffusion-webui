@@ -1519,14 +1519,26 @@ def create_ui():
 
         if info.refresh is not None:
             if is_quicksettings:
-                res = comp(label=info.label, value=fun(), elem_id=elem_id, **(args or {}))
-                create_refresh_button(res, info.refresh, info.component_args, "refresh_" + key)
+                with FormRow():
+                    with gr.Box():
+                        with gr.Row(elem_id=f'{elem_id}_row-collapse-one'):
+                            res = comp(label=info.label, value=fun(), elem_id=elem_id, **(args or {}))
+                            create_refresh_button(res, info.refresh, info.component_args, "refresh_" + key)
+                    with FormRow():
+                        gr.Checkbox(label='', elem_id=f'add2quick_{elem_id}', value=True, interactive=True)
             else:
                 with FormRow():
-                    res = comp(label=info.label, value=fun(), elem_id=elem_id, **(args or {}))
-                    create_refresh_button(res, info.refresh, info.component_args, "refresh_" + key)
+                    with gr.Box():
+                        with gr.Row(elem_id=f'{elem_id}_row-collapse-one'):
+                            res = comp(label=info.label, value=fun(), elem_id=elem_id, **(args or {}))
+                            create_refresh_button(res, info.refresh, info.component_args, "refresh_" + key)
+                    with FormRow():           
+                        gr.Checkbox(label='', elem_id=f'add2quick_{elem_id}', value=False, interactive=True)
         else:
-            res = comp(label=info.label, value=fun(), elem_id=elem_id, **(args or {}))
+            with FormRow():
+                res = comp(label=info.label, value=fun(), elem_id=elem_id, **(args or {}))
+                gr.Checkbox(label='', elem_id=f'add2quick_{elem_id}', value=is_quicksettings, interactive=True)
+               
 
         return res
 
@@ -1596,7 +1608,7 @@ def create_ui():
                         current_row.__exit__()
                         current_tab.__exit__()                       
 
-                    #gr.Group()
+                    gr.Group()
                     current_tab = gr.TabItem(elem_id="settings_{}".format(elem_id), label=text)
                     current_tab.__enter__()
                     current_row = gr.Column(variant='panel', elem_id="{}_settings_2img_settings".format(elem_id))

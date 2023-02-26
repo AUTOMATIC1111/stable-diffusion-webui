@@ -113,8 +113,80 @@ body {
     color: inherit;
 }
 
-/* icons */
+[id^="add2quick_"] {
+	min-width: unset !important;
+    max-width: 42px;
+}
 
+[id^="add2quick_"] label {
+  display: block;
+  position: relative;
+  cursor: pointer;
+  line-height: 25px;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  margin: auto !important;
+  padding: 0 !important;
+}
+
+/* Hide the browser's default checkbox */
+[id^="add2quick_"] input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+/* Create a custom checkbox */
+[id^="add2quick_"] span {
+	position: absolute;
+	top: 0;
+	left: 0;
+	height: 25px;
+	width: 25px;
+	-webkit-mask: url(./file=html/svg/menu-add-fill.svg) no-repeat 50% 50%;
+	mask: url(./file=html/svg/menu-add-fill.svg) no-repeat 50% 50%;
+	background-color: var(--input-color);
+	padding: 0;
+    margin: 0 !important;
+	opacity:0.5;
+}
+
+
+/* On mouse-over, add a grey background color */
+[id^="add2quick_"] label:hover input ~ span {
+  background-color: var(--icon-color);
+}
+
+/* When the checkbox is checked, add a blue background */
+[id^="add2quick_"] label input:checked ~ span {
+	-webkit-mask: url(./file=html/svg/menu-add-fill.svg) no-repeat 50% 50%;
+	mask: url(./file=html/svg/menu-add-fill.svg) no-repeat 50% 50%;
+	background-color: var(--icon-color);
+	opacity:1.0;
+}
+
+/* Create the checkmark/indicator (hidden when not checked) */
+[id^="add2quick_"] label span:after {
+  content: "";
+  position: absolute;
+  display: none;
+}
+
+/* Show the checkmark when checked */
+[id^="add2quick_"] label input:checked ~ span:after {
+  display: block;
+}
+
+#add2quick_setting_quicksettings{
+	display:none;
+}
+
+
+/* icons */
 [id^="refresh_"],
 [id$="_refresh"],
 [id$="_clear_prompt"],
@@ -138,7 +210,6 @@ body {
 	position: relative;
 	font-size: 0 !important;
 }
-
 
 
 [id$="_refresh"]::before,
@@ -175,6 +246,7 @@ body {
 {
     background-color: var(--primary-color);
 }
+
 [id$="_refresh"]:hover::before,
 [id^="refresh_"]:hover::before,
 [id$="_clear_prompt"]:hover::before,
@@ -300,6 +372,7 @@ body {
     -webkit-mask: url(./file=html/svg/t-box-fill.svg) no-repeat 50% 50%;
     mask: url(./file=html/svg/t-box-fill.svg) no-repeat 50% 50%;
 }
+
 
 
 
@@ -534,10 +607,11 @@ body {
 #quicksettings_overflow > div {
 	margin-bottom: var(--outside-gap-size);
 }
+/*
 #quicksettings_overflow > div button{
    height:auto;
 }
-
+*/
 #quicksettings {
     align-items: center;
     flex-direction: row;
@@ -558,8 +632,10 @@ body {
 #quick_row_sd_model_checkpoint div {
     border: 0;
     background: 0;
-    padding: 0;
+    padding: 0 !important;
 }
+
+
 
 #quick_row_sd_model_checkpoint span {
 display:none;
@@ -597,7 +673,7 @@ min-height: 34px;
     width: var(--icon-size);
     height: var(--icon-size);
     -webkit-mask: url(./file=html/svg/more-2-fill.svg) no-repeat 50% 50%;
-    mask: url(./file=html/svg/menu-line.svg) no-repeat 50% 50%;
+    mask: url(./file=html/svg/more-2-fill.svg) no-repeat 50% 50%;
     cursor: pointer;
     position: relative;
     left: 50%;
@@ -1170,7 +1246,10 @@ dark .gr-button-secondary:hover {
 	border-radius:0!important;
 	background-color:transparent!important;
 	overflow: visible !important;
+
 }
+
+
 
 
 /*[id$="-collapse-all"] div:not([class*="input"]):not(span):not(label):not([class*="gr-box"])*/
@@ -1184,10 +1263,20 @@ dark .gr-button-secondary:hover {
 
 }
 
+[id$="-collapse"] button,
+[id$="-collapse-one"] button,
 [id$="-collapse-all"] button
 {
     align-self: flex-end;
 }
+
+[id$="-collapse"] fieldset,
+[id$="-collapse-one"] fieldset,
+[id$="-collapse-all"] fieldset
+{
+   padding:0;
+}
+
 
 
 
@@ -1591,9 +1680,44 @@ canvas[key=mask] {
 	display:none;
 }
 
+[id^="setting_postprocessing"] input
+{
+	margin:0;
+	margin-right:8px;
+}
+
+#quicksettings_overflow > div >  div > div:nth-child(2),
+[id$="settings_2img_settings"] > div > div:nth-child(2)
+{
+	flex-shrink: 1 !important;
+    flex-grow: 0 !important;
+    flex-basis: 0% !important;
+    min-width: 43px;
+    position: relative;
+    margin-left: -1px;
+}
+
+#quicksettings_overflow > div >  div > div:nth-child(2) > div,
+[id$="settings_2img_settings"] > div > div:nth-child(2) > div{
+	min-width:unset !important;
+}
+
+#quicksettings_overflow > div > div,
+[id$="settings_2img_settings"] > div{
+	gap:0 !important;
+}
+
+#quick_row_sd_model_checkpoint > div > div:nth-child(2){
+	display:none;
+}
+
+
+
+/*
 [id$="settings_2img_settings"] button {
 	height:auto;
 }
+*/
 #settings>div {
     padding-top:0;
 }
@@ -1832,7 +1956,7 @@ canvas[key=mask] {
 [id$="2img_styles"] label
 {
     min-height: 34px;	
-	width: 100%;
+	width: 100% !important;
 	display: flex;
     align-items: center;
 	background-color: var(--main-bg-color);
@@ -2323,6 +2447,7 @@ ul.list-none {
 
 #tab_extensions table {
     border-collapse: collapse;
+	width: 100%;
 }
 
 #tab_extensions table td,
@@ -2338,6 +2463,10 @@ ul.list-none {
 
 #tab_extensions button {
     max-width: 16em;
+}
+
+#extensions_installed_top div{
+	display:none;
 }
 
 #tab_extensions input[disabled=disabled] {
@@ -2425,8 +2554,10 @@ ul.list-none {
 }
 
 #settings_result {
-    height: 1.4em;
-    margin: 0 1.2em;
+    height: 20px !important;
+    width: 100%;
+    text-align: center;
+	color:var(--primary-color);
 }
 
 #settings_ui_theme > div > div
@@ -2437,6 +2568,10 @@ ul.list-none {
 #settings_ui_theme > div > div > div
 {
 	max-width:30%;
+}
+
+#settings > div > .bg-white { 
+    color: var(--primary-color);
 }
 
 /******************/
@@ -2731,6 +2866,20 @@ ul.list-none {
 	[id$="settings_2img_settings"] {
 		max-height: none;
 	}
+	
+	#tab_extensions td,
+	#tab_extensions th {
+		display:none;
+	}
+	
+	#tab_extensions td:first-child,
+	#tab_extensions td:last-child,
+	#tab_extensions th:first-child,
+	#tab_extensions th:last-child
+	{
+		display:table-cell;
+	}
+		
 		
 	
 
