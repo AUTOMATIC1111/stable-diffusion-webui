@@ -1,24 +1,24 @@
 # Windows
-(**In Testing**) 
-For Windows users, try this fork using **Direct-ml**. If you get this working, it would be nice to share here: [Discussion](https://github.com/lshqqytiger/stable-diffusion-webui-directml/discussions)
+Windows+AMD support has **not** officially been made for webui, \
+but you can install lshqqytiger's fork of webui that uses **Direct-ml**. 
 
-* https://github.com/lshqqytiger/stable-diffusion-webui-directml 
+-Training currently doesn't work, yet a variety of features/extensions do, such as LoRAs and controlnet. [Discussion](https://github.com/lshqqytiger/stable-diffusion-webui-directml/discussions)
 
-make sure you have the modified repositories in `stable-diffusion-webui-directml/repositories/`:
+1. Install [Python 3.10.6](https://www.python.org/ftp/python/3.10.6/python-3.10.6-amd64.exe) (ticking **Add to PATH**), and [git](https://github.com/git-for-windows/git/releases/download/v2.39.2.windows.1/Git-2.39.2-64-bit.exe)
+2. paste this line in cmd/terminal: `git clone https://github.com/lshqqytiger/stable-diffusion-webui-directml && cd stable-diffusion-webui-directml && git submodule init && git submodule update` \
+<sup>(you can move the program folder somewhere else.)</sup> 
+3. Double-click webui-user.bat
+4. If it looks like it is stuck when installing or running, press enter in the terminal and it should continue.
+<details>
+If you have 4-6gb vram, try adding these flags to `webui-user.bat` like so: 
 
-* https://github.com/lshqqytiger/k-diffusion-directml/tree/master 
-* https://github.com/lshqqytiger/stablediffusion-directml/tree/main 
+- `COMMANDLINE_ARGS=--opt-sub-quad-attention --lowvram --disable-nan-check`
 
-(rename them to `k-diffusion` and `stable-diffusion-stability-ai`)
-Place any stable diffusion checkpoint (ckpt or safetensor) in the models/Stable-diffusion directory, and double-click `webui-user.bat`. If you have 4-6gb vram, try adding these flags to `webui-user.bat` like so: 
-
-`COMMANDLINE_ARGS=--opt-sub-quad-attention --lowvram --disable-nan-check`
-
-You can add --autolaunch to auto open the url for you.
-
-If it looks like it is stuck when installing gfpgan or gfgan, press enter and it should continue.
+- You can add --autolaunch to auto open the url for you.
+</details>
 
 (The rest **below are installation guides for linux** with rocm.)
+
 
 # Automatic Installation
 
