@@ -1713,7 +1713,7 @@ canvas[key=mask] {
 	gap:0 !important;
 }
 
-#row_setting_sd_model_checkpoint,
+#settings_sd #row_setting_sd_model_checkpoint,
 #top_row_sd_model_checkpoint > div > div:nth-child(2){
 	display:none;
 }
