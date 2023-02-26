@@ -244,6 +244,9 @@ def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend
                 cell_mode = processed_image.mode
                 cell_size = processed_image.size
                 processed_result.images = [Image.new(cell_mode, cell_size)]
+                processed_result.all_prompts = [processed.prompt]
+                processed_result.all_seeds = [processed.seed]
+                processed_result.infotexts = [processed.infotexts[0]]
 
             image_cache[index(ix, iy, iz)] = processed_image
             if include_lone_images:
