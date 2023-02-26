@@ -1,7 +1,7 @@
 import os
 import re
+import html
 import shutil
-
 
 import torch
 import tqdm
@@ -21,12 +21,7 @@ def run_pnginfo(image):
 
     info = ''
     for key, text in items.items():
-        info += f"""
-<div>
-<p><b>{plaintext_to_html(str(key))}</b></p>
-<p>{plaintext_to_html(str(text))}</p>
-</div>
-""".strip()+"\n"
+        info += f"<div><b>{html.escape(str(key))}</b>: {html.escape(str(text))}</div>"
 
     if len(info) == 0:
         message = "Nothing found in the image."

@@ -20,34 +20,38 @@ Fork adds extra functionality:
   [Full list](<cli/>)
 
 Simplified start script: `automatic.sh`  
-*Existing `webui.sh`/`webui.bat` still exist for backward compatibility, fresh installs to auto-install dependencies, etc.*  
+*Existing `webui.sh`/`webui.bat` scripts still exist for backward compatibility*  
 
 > ./automatic.sh  
 
-- Start in default mode with optimizations enabled  
-  Additionally print environment info during startup  
-  Example:  
+Start in default mode with optimizations enabled  
 
-      Version: b0b326f3 Wed Feb 15 09:07:04 2023 -0500
-      Repository: https://github.com/vladmandic/automatic
-      Last Merge: Sun Feb 5 07:03:27 2023 -0500 Merge pull request #35 from AUTOMATIC1111/master
-      Platform: Ubuntu 22.04.1 LTS 5.15.83.1-microsoft-standard-WSL2 x86_64
-      nVIDIA: NVIDIA GeForce RTX 3060, 528.49
-      Python: 3.10.6 Torch: 2.0.0.dev20230211+cu118 CUDA: 11.8 cuDNN: 8700 GPU: NVIDIA GeForce RTX 3060 Arch: (8, 6)
+    SD server: optimized
+    Version: 56f779a9 Sat Feb 25 14:04:19 2023 -0500
+    Repository: https://github.com/vladmandic/automatic
+    Last Merge: Sun Feb 19 10:11:25 2023 -0500 Merge pull request #37 from AUTOMATIC1111/master
+    System
+    - Platform: Ubuntu 22.04.1 LTS 5.15.90.1-microsoft-standard-WSL2 x86_64
+    - nVIDIA: NVIDIA GeForce RTX 3060, 528.49
+    - Python: 3.10.6 Torch: 2.0.0.dev20230224+cu118 CUDA: 11.8 cuDNN: 8700 GPU: NVIDIA GeForce RTX 3060 Arch: (8, 6)
+    Launching Web UI
 
 > ./automatic.sh public  
 
-- Start with listen on public IP with authentication enabled
+Start with listen on public IP with authentication enabled
 
 > ./automatic.sh clean  
 
-- Start with all optimizations disabled  
-  Use this for troubleshooting  
+Start with all optimizations disabled  
+Use this for troubleshooting  
 
 > ./automatic.sh install
 
-- Installs and refreshes:  
-  dependencies, submodules, extensions  
+Installs and updates to latest supported version:
+- Dependencies
+- Fixed sub-repositories
+- Extensions
+- Sub-modules
 
 <br>  
 
@@ -56,28 +60,23 @@ Simplified start script: `automatic.sh`
 1. Install `PyTorch` first
 2. Clone and initialize repository
 
-> git clone --depth 1 https://github.com/vladmandic/automatic  
+> git clone https://github.com/vladmandic/automatic  
 > cd automatic  
 > ./automatic.sh install  
 
       SD server: install
+      Version: 56f779a9 Sat Feb 25 14:04:19 2023 -0500
+      Repository: https://github.com/vladmandic/automatic
+      Last Merge: Sun Feb 19 10:11:25 2023 -0500 Merge pull request #37 from AUTOMATIC1111/master
       Installing general requirements
       Installing versioned requirements
+      Installing requirements for Web UI
       Updating submodules
-      Modules:
-      - 6c76a48 Mon Feb 13 00:03:00 2023 -0800 https://github.com/mcmonkeyprojects/sd-dynamic-thresholding
-      - a528cd5 Tue Jan 31 07:57:07 2023 -0500 https://github.com/vladmandic/sd-extension-aesthetic-scorer
-      - 7cf0e3a Tue Feb 7 07:39:40 2023 -0500 https://github.com/vladmandic/sd-extension-steps-animation
-      - b5d8e6a Thu Feb 9 15:25:18 2023 -0500 https://github.com/vladmandic/sd-extension-system-info
-      - 7a998ed Wed Feb 8 07:21:52 2023 -0500 https://github.com/Akegarasu/sd-webui-model-converter
-      - 0a5c897 Thu Feb 16 11:08:00 2023 +0100 https://github.com/yownas/seed_travel
-      - c8efd35 Mon Feb 13 21:51:25 2023 +0100 https://github.com/AlUlkesh/stable-diffusion-webui-images-browser
-      - 14d7b24 Thu Feb 16 22:35:47 2023 +0900 https://github.com/kohya-ss/sd-scripts
-      - b351828 Tue Feb 14 11:47:19 2023 -0500 https://github.com/vladmandic/automatic.wiki
       Updating extensions
-      Extensions:
-      - e5b773a Sat Feb 11 19:38:18 2023 +0500 https://github.com/klimaleksus/stable-diffusion-webui-embedding-merge
-      - 0f3f699 Fri Dec 9 11:50:47 2022 +0800 https://github.com/yfszzx/stable-diffusion-webui-inspiration
+      Updating wiki
+      Detached repos
+      Local changes
+ 
 
 <br>
 
@@ -95,8 +94,7 @@ Fork does differ in few things:
 - Uses simplified folder structure  
   e.g. `/train`, `/outputs/*`  
 - Modified training templates  
-- Built-in `LoRA` training  
-- Built-in `Custom Diffusion` training  
+- Built-in `LoRA`, `Custom Diffusion`, `Dreambooth` training  
 
 Only Python library which is not auto-updated is `PyTorch` itself as that is very system specific  
 For some Torch optimizations notes, see Wiki

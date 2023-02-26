@@ -12,7 +12,7 @@ import re
 import numpy as np
 import piexif
 import piexif.helper
-from PIL import Image, ImageFont, ImageDraw, PngImagePlugin
+from PIL import Image, ImageFont, ImageDraw, PngImagePlugin, ExifTags
 from fonts.ttf import Roboto
 import string
 import json
@@ -602,33 +602,54 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
 
     return fullfn, txt_fullfn
 
+def safe_decode_string(s: bytes):
+    remove_prefix = lambda text, prefix: text[len(prefix):] if text.startswith(prefix) else text
+    for encoding in ['utf-8', 'utf-16', 'ascii', 'latin_1', 'cp1252', 'cp437']: # try different encodings
+        try:
+            decoded = s.decode(encoding, errors="strict")
+            if all(ord(c) < 128 for c in decoded): # only allow 7-bit ascii characters
+                val = remove_prefix(decoded, 'UNICODE') # remove silly prefix added by old pnginfo/exif encoding
+                val = remove_prefix(val, 'ASCII')
+                val = re.sub(r'[\x00-\x09]', '', val) # remove remaining special characters
+                if len(val) == 0: # remove empty strings
+                    val = None
+                return val 
+        except:
+            pass
+    return None
+
 
 def read_info_from_image(image):
     items = image.info or {}
-
     geninfo = items.pop('parameters', None)
 
     if "exif" in items:
         exif = piexif.load(items["exif"])
-        exif_comment = (exif or {}).get("Exif", {}).get(piexif.ExifIFD.UserComment, b'')
-        try:
-            exif_comment = piexif.helper.UserComment.load(exif_comment)
-        except ValueError:
-            exif_comment = exif_comment.decode('utf8', errors="ignore")
+        for _key, subkey in exif.items():
+            if isinstance(subkey, dict):
+                for key, val in subkey.items():
+                    if isinstance(val, bytes): # decode bytestring
+                        val = safe_decode_string(val)
+                    if isinstance(val, tuple) and isinstance(val[0], int) and isinstance(val[1], int): # convert camera ratios
+                        val = round(val[0] / val[1], 2)
+                    if val is not None and key in ExifTags.TAGS: # add known tags
+                        items[ExifTags.TAGS[key]] = val
+                        if ExifTags.TAGS[key] == 'UserComment': # add geninfo from UserComment
+                            geninfo = val
+                    elif val is not None and key in ExifTags.GPSTAGS:
+                        items[ExifTags.GPSTAGS[key]] = val
 
-        if exif_comment:
-            items['exif comment'] = exif_comment
-            geninfo = exif_comment
+    for key, val in items.items():
+        if isinstance(val, bytes): # decode bytestring
+            items[key] = safe_decode_string(val)
 
-        for field in ['jfif', 'jfif_version', 'jfif_unit', 'jfif_density', 'dpi', 'exif',
-                      'loop', 'background', 'timestamp', 'duration']:
-            items.pop(field, None)
+    for key in ['exif', 'ExifOffset', 'JpegIFOffset', 'JpegIFByteCount', 'ExifVersion', 'icc_profile', 'jfif', 'jfif_version', 'jfif_unit', 'jfif_density', 'adobe', 'photoshop', 'loop', 'duration']: # remove unwanted tags
+        items.pop(key, None)
 
     if items.get("Software", None) == "NovelAI":
         try:
             json_info = json.loads(items["Comment"])
             sampler = sd_samplers.samplers_map.get(json_info["sampler"], "Euler a")
-
             geninfo = f"""{items["Description"]}
 Negative prompt: {json_info["uc"]}
 Steps: {json_info["steps"]}, Sampler: {sampler}, CFG scale: {json_info["scale"]}, Seed: {json_info["seed"]}, Size: {image.width}x{image.height}, Clip skip: 2, ENSD: 31337"""

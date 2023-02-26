@@ -312,15 +312,14 @@ def prepare_environment():
 
     run_pip(f"install -r {requirements_file}", "requirements for Web UI")
 
+    if "--exit" in sys.argv:
+        exit(0)
+
     run_extensions_installers(settings_file=args.ui_settings_file)
 
     if update_check:
         version_check(commit)
     
-    if "--exit" in sys.argv:
-        print("Exiting because of --exit argument")
-        exit(0)
-
     if run_tests:
         exitcode = tests(test_dir)
         exit(exitcode)
