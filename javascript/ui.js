@@ -592,18 +592,31 @@ onUiUpdate(function(){
 	
 	
 	const settings_submit = gradioApp().querySelector('#settings_submit');
+	const quick_parent = gradioApp().querySelector("#quicksettings_overflow");
 	
-	function add2quickSettings(id, checked){
+	function add2quickSettings(id, section, checked){
 		const setting_quicksettings = gradioApp().querySelector('#setting_quicksettings textarea');
 		let field_settings = setting_quicksettings.value.replace(" ", "");		
 		if(checked){
 			field_settings += ","+id;
-		}else{
+			
+			let setting_row = gradioApp().querySelector('#row_setting_'+id);
+			//setting_row.id = setting_row.id.replace("row_setting", "quick_row");
+			quick_parent.append(setting_row);
+
+		}else{			
 			field_settings = field_settings.replaceAll(id, ",");
+			
+			const setting_parent = gradioApp().querySelector("#"+section+"_settings_2img_settings");
+			let quick_row = gradioApp().querySelector('#row_setting_'+id);
+			console.log(quick_row);
+			//quick_row.id = quick_row.id.replace("quick_row","row_setting");			
+			setting_parent.append(quick_row);
+
 		}
 		field_settings = field_settings.replace(/,{2,}/g, ',');
 		setting_quicksettings.value = field_settings;
-		
+
 		const iEvent = new Event("input");		
 		Object.defineProperty(iEvent, "target", {value: setting_quicksettings})		
 		setting_quicksettings.dispatchEvent(iEvent);
@@ -612,14 +625,18 @@ onUiUpdate(function(){
 		Object.defineProperty(cEvent, "target", {value: settings_submit})		
 		settings_submit.dispatchEvent(cEvent);
 		//settings_submit.click();
-		//console.log(id + " - " + checked);
+		
+		console.log(section + " - "+ id + " - " + checked);
+		
 			
 	}
-	gradioApp().querySelectorAll('[id^="add2quick_"]').forEach(function (elem){
-		let tid = elem.id.split('add2quick_setting_')[1];
+	gradioApp().querySelectorAll('[id*="add2quick_"]').forEach(function (elem){
+		let trg = elem.id.split('_add2quick_setting_');
+		let sid = trg[0];
+		let tid = trg[1];
 		let elem_input = gradioApp().querySelector('#'+elem.id+' input');
 		elem_input.addEventListener('click', function (e) {		
-			add2quickSettings(tid, e.target.checked);
+			add2quickSettings(tid, sid, e.target.checked);
 		})
 	})
 	

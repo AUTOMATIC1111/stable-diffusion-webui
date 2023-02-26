@@ -113,12 +113,12 @@ body {
     color: inherit;
 }
 
-[id^="add2quick_"] {
+[id*="add2quick_"] {
 	min-width: unset !important;
     max-width: 42px;
 }
 
-[id^="add2quick_"] label {
+[id*="add2quick_"] label {
   display: block;
   position: relative;
   cursor: pointer;
@@ -132,7 +132,7 @@ body {
 }
 
 /* Hide the browser's default checkbox */
-[id^="add2quick_"] input {
+[id*="add2quick_"] input {
   position: absolute;
   opacity: 0;
   cursor: pointer;
@@ -141,7 +141,7 @@ body {
 }
 
 /* Create a custom checkbox */
-[id^="add2quick_"] span {
+[id*="add2quick_"] span {
 	position: absolute;
 	top: 0;
 	left: 0;
@@ -157,31 +157,37 @@ body {
 
 
 /* On mouse-over, add a grey background color */
-[id^="add2quick_"] label:hover input ~ span {
+[id*="add2quick_"] label:hover input ~ span {
   background-color: var(--icon-color);
+  opacity:1.0;
 }
 
 /* When the checkbox is checked, add a blue background */
-[id^="add2quick_"] label input:checked ~ span {
-	-webkit-mask: url(./file=html/svg/menu-add-fill.svg) no-repeat 50% 50%;
-	mask: url(./file=html/svg/menu-add-fill.svg) no-repeat 50% 50%;
+[id*="add2quick_"] label input:checked ~ span {
+	-webkit-mask: url(./file=html/svg/close-line.svg) no-repeat 50% 50%;
+	mask: url(./file=html/svg/close-line.svg) no-repeat 50% 50%;
+	background-color: var(--input-color);
+	opacity:0.5;
+}
+
+[id*="add2quick_"] label:hover input:checked ~ span {
 	background-color: var(--icon-color);
 	opacity:1.0;
 }
 
 /* Create the checkmark/indicator (hidden when not checked) */
-[id^="add2quick_"] label span:after {
+[id*="add2quick_"] label span:after {
   content: "";
   position: absolute;
   display: none;
 }
 
 /* Show the checkmark when checked */
-[id^="add2quick_"] label input:checked ~ span:after {
+[id*="add2quick_"] label input:checked ~ span:after {
   display: block;
 }
 
-#add2quick_setting_quicksettings{
+[id*="add2quick_setting_quicksettings"]{
 	display:none;
 }
 
@@ -621,7 +627,7 @@ body {
 	padding: 0;
 }
 
-#quick_row_sd_model_checkpoint {
+#top_row_sd_model_checkpoint {
 	margin-right:50px;
 	margin-left:50px;
 	position:relative;
@@ -629,7 +635,7 @@ body {
 	
 }
 
-#quick_row_sd_model_checkpoint div {
+#top_row_sd_model_checkpoint div {
     border: 0;
     background: 0;
     padding: 0 !important;
@@ -637,11 +643,11 @@ body {
 
 
 
-#quick_row_sd_model_checkpoint span {
+#top_row_sd_model_checkpoint span {
 display:none;
 }
 
-#quick_row_sd_model_checkpoint .gr-input {
+#top_row_sd_model_checkpoint .gr-input {
 padding-right: 37px;
 min-height: 34px;
 }
@@ -1686,7 +1692,7 @@ canvas[key=mask] {
 	margin-right:8px;
 }
 
-#quicksettings_overflow > div >  div > div:nth-child(2),
+#quicksettings_overflow > div > div:nth-child(2),
 [id$="settings_2img_settings"] > div > div:nth-child(2)
 {
 	flex-shrink: 1 !important;
@@ -1697,17 +1703,18 @@ canvas[key=mask] {
     margin-left: -1px;
 }
 
-#quicksettings_overflow > div >  div > div:nth-child(2) > div,
+#quicksettings_overflow > div > div:nth-child(2) > div,
 [id$="settings_2img_settings"] > div > div:nth-child(2) > div{
 	min-width:unset !important;
 }
 
-#quicksettings_overflow > div > div,
+#quicksettings_overflow > div,
 [id$="settings_2img_settings"] > div{
 	gap:0 !important;
 }
 
-#quick_row_sd_model_checkpoint > div > div:nth-child(2){
+#row_setting_sd_model_checkpoint,
+#top_row_sd_model_checkpoint > div > div:nth-child(2){
 	display:none;
 }
 

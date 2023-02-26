@@ -1495,7 +1495,7 @@ def create_ui():
             outputs=[],
         )
 
-    def create_setting_component(key, is_quicksettings=False):
+    def create_setting_component(key, section, is_quicksettings=False):
         def fun():
             return opts.data[key] if key in opts.data else opts.data_labels[key].default
 
@@ -1519,25 +1519,25 @@ def create_ui():
 
         if info.refresh is not None:
             if is_quicksettings:
-                with FormRow():
+                with FormRow(elem_id=f'row_{elem_id}'):
                     with gr.Box():
                         with gr.Row(elem_id=f'{elem_id}_row-collapse-one'):
                             res = comp(label=info.label, value=fun(), elem_id=elem_id, **(args or {}))
                             create_refresh_button(res, info.refresh, info.component_args, "refresh_" + key)
                     with FormRow():
-                        gr.Checkbox(label='', elem_id=f'add2quick_{elem_id}', value=True, interactive=True)
+                        gr.Checkbox(label='', elem_id=f'{section}_add2quick_{elem_id}', value=True, interactive=True)
             else:
-                with FormRow():
+                with FormRow(elem_id=f'row_{elem_id}'):
                     with gr.Box():
                         with gr.Row(elem_id=f'{elem_id}_row-collapse-one'):
                             res = comp(label=info.label, value=fun(), elem_id=elem_id, **(args or {}))
                             create_refresh_button(res, info.refresh, info.component_args, "refresh_" + key)
                     with FormRow():           
-                        gr.Checkbox(label='', elem_id=f'add2quick_{elem_id}', value=False, interactive=True)
+                        gr.Checkbox(label='', elem_id=f'{section}_add2quick_{elem_id}', value=False, interactive=True)
         else:
-            with FormRow():
+            with FormRow(elem_id=f'row_{elem_id}'):
                 res = comp(label=info.label, value=fun(), elem_id=elem_id, **(args or {}))
-                gr.Checkbox(label='', elem_id=f'add2quick_{elem_id}', value=is_quicksettings, interactive=True)
+                gr.Checkbox(label='', elem_id=f'{section}_add2quick_{elem_id}', value=is_quicksettings, interactive=True)
                
 
         return res
@@ -1622,7 +1622,7 @@ def create_ui():
                 elif section_must_be_skipped:
                     components.append(dummy_component)
                 else:
-                    component = create_setting_component(k)
+                    component = create_setting_component(k, elem_id)
                     component_dict[k] = component
                     components.append(component)
 
@@ -1708,16 +1708,16 @@ def create_ui():
 
     with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion") as demo:      
         with gr.Row(elem_id="quicksettings"): 
-            with gr.Row(elem_id="quick_row_sd_model_checkpoint") as qsettings_row:
-                component = create_setting_component("sd_model_checkpoint", is_quicksettings=True)
+            with gr.Row(elem_id="top_row_sd_model_checkpoint") as qsettings_row:
+                component = create_setting_component("sd_model_checkpoint", "sd", is_quicksettings=True)
                 component_dict["sd_model_checkpoint"] = component
             
             with gr.Column(elem_id="quicksettings_overflow"):        
                 for i, k, item in sorted(quicksettings_list, key=lambda x: quicksettings_names.get(x[1], x[0])):
                     if( k != "sd_model_checkpoint"):
-                        with gr.Row(elem_id=f"quick_row_{k}") as qsettings_row:                   
-                            component = create_setting_component(k, is_quicksettings=True)
-                            component_dict[k] = component
+                        #with gr.Row(elem_id=f"quick_row_{k}") as qsettings_row:                   
+                        component = create_setting_component(k, item.section[0], is_quicksettings=True)
+                        component_dict[k] = component
 
         gr.Row(elem_id="quick_menu")
         parameters_copypaste.connect_paste_params_buttons()
