@@ -4,5 +4,6 @@
     "./repositories/BLIP",
     "./repositories/CodeFormer",
     "./repositories/stable-diffusion-stability-ai"
-  ]
+  ],
+  "python.analysis.typeCheckingMode": "off"
 }

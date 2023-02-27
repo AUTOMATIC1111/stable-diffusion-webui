@@ -607,13 +607,16 @@ def safe_decode_string(s: bytes):
     for encoding in ['utf-8', 'utf-16', 'ascii', 'latin_1', 'cp1252', 'cp437']: # try different encodings
         try:
             decoded = s.decode(encoding, errors="strict")
-            if all(ord(c) < 128 for c in decoded): # only allow 7-bit ascii characters
-                val = remove_prefix(decoded, 'UNICODE') # remove silly prefix added by old pnginfo/exif encoding
-                val = remove_prefix(val, 'ASCII')
-                val = re.sub(r'[\x00-\x09]', '', val) # remove remaining special characters
-                if len(val) == 0: # remove empty strings
-                    val = None
-                return val 
+            val = remove_prefix(decoded, 'UNICODE') # remove silly prefix added by old pnginfo/exif encoding
+            val = remove_prefix(val, 'ASCII')
+            val = re.sub(r'[\x00-\x09]', '', val).strip() # remove remaining special characters
+            if len(val) > 1024: # limit string length
+                val = val[:1024]
+            if len(val) == 0: # remove empty strings
+                val = None
+            # if not all(ord(c) < 128 for c in decoded): # only allow 7-bit ascii characters
+            #    val = None
+            return val 
         except:
             pass
     return None

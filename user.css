@@ -42,7 +42,7 @@ div.gradio-container.dark > div.w-full.flex.flex-col.min-h-screen > div { backgr
 .feather .feather-image { display: none }
 .gap-2 { padding-top: 8px; }
 .gr-box > div > div > input.gr-text-input { right: 0.5rem; width: 4em; padding: 0; }
-.output-html { line-height: 1.2rem; }
+.output-html { line-height: 1.2rem; overflow-x: hidden; }
 .output-html > div { margin-bottom: 8px; }
 .overflow-hidden .flex .flex-col .relative col .gap-4 { min-width: var(--left-column); max-width: var(--left-column); } /* this is a problematic one */
 .p-2 { padding: 0; }
