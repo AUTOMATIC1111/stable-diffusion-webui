@@ -436,9 +436,7 @@ input[type="range"]{
 
 #modalImage {
     display: block;
-    margin-left: auto;
-    margin-right: auto;
-    margin-top: auto;
+    margin: auto;
     width: auto;
 }
 
