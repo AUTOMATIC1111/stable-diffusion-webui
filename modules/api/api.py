@@ -163,20 +163,26 @@ class Api:
 
         raise HTTPException(status_code=401, detail="Incorrect username or password", headers={"WWW-Authenticate": "Basic"})
 
-    def get_script(self, script_name, script_runner):
-        if script_name is None:
+    def get_selectable_script(self, script_name, script_runner):
+        if script_name is None or script_name == "":
             return None, None
-
-        if not script_runner.scripts:
-            script_runner.initialize_scripts(False)
-            ui.create_ui()
 
         script_idx = script_name_to_index(script_name, script_runner.selectable_scripts)
         script = script_runner.selectable_scripts[script_idx]
         return script, script_idx
 
+    def get_script(self, script_name, script_runner):
+        for script in script_runner.scripts:
+            if script_name.lower() == script.title().lower():
+                return script
+        return None
+
     def text2imgapi(self, txt2imgreq: StableDiffusionTxt2ImgProcessingAPI):
-        script, script_idx = self.get_script(txt2imgreq.script_name, scripts.scripts_txt2img)
+        script_runner = scripts.scripts_txt2img
+        if not script_runner.scripts:
+            script_runner.initialize_scripts(False)
+            ui.create_ui()
+        api_selectable_scripts, api_selectable_script_idx = self.get_selectable_script(txt2imgreq.script_name, script_runner)
 
         populate = txt2imgreq.copy(update={ # Override __init__ params
             "sampler_name": validate_sampler_name(txt2imgreq.sampler_name or txt2imgreq.sampler_index),
@@ -184,22 +190,59 @@ class Api:
             "do_not_save_grid": True
             }
         )
+
         if populate.sampler_name:
             populate.sampler_index = None  # prevent a warning later on
 
         args = vars(populate)
         args.pop('script_name', None)
+        args.pop('script_args', None) # will refeed them later with script_args
+        args.pop('alwayson_script_name', None)
+        args.pop('alwayson_script_args', None)
+
+        #find max idx from the scripts in runner and generate a none array to init script_args
+        last_arg_index = 1
+        for script in script_runner.scripts:
+            if last_arg_index < script.args_to:
+                last_arg_index = script.args_to
+        # None everywhere exepct position 0 to initialize script args
+        script_args = [None]*last_arg_index
+        # position 0 in script_arg is the idx+1 of the selectable script that is going to be run
+        if api_selectable_scripts:
+            script_args[api_selectable_scripts.args_from:api_selectable_scripts.args_to] = txt2imgreq.script_args
+            script_args[0] = api_selectable_script_idx + 1
+        else:
+            # if 0 then none
+            script_args[0] = 0
+
+        # Now check for always on scripts
+        if len(txt2imgreq.alwayson_script_name) > 0:
+            # always on script with no arg should always run, but if you include their name in the api request, send an empty list for there args
+            if len(txt2imgreq.alwayson_script_name) != len(txt2imgreq.alwayson_script_args):
+                raise HTTPException(status_code=422, detail=f"Number of script names and number of script arg lists doesn't match")
+
+            for alwayson_script_name, alwayson_script_args in zip(txt2imgreq.alwayson_script_name, txt2imgreq.alwayson_script_args):
+                alwayson_script = self.get_script(alwayson_script_name, script_runner)
+                if alwayson_script == None:
+                    raise HTTPException(status_code=422, detail=f"always on script {alwayson_script_name} not found")
+                # Selectable script in always on script param check
+                if alwayson_script.alwayson == False:
+                    raise HTTPException(status_code=422, detail=f"Cannot have a selectable script in the always on scripts params")
+                if alwayson_script_args != []:
+                    script_args[alwayson_script.args_from:alwayson_script.args_to] = alwayson_script_args
 
         with self.queue_lock:
             p = StableDiffusionProcessingTxt2Img(sd_model=shared.sd_model, **args)
+            p.scripts = script_runner
 
             shared.state.begin()
-            if script is not None:
+            if api_selectable_scripts != None:
+                p.script_args = script_args
                 p.outpath_grids = opts.outdir_txt2img_grids
                 p.outpath_samples = opts.outdir_txt2img_samples
-                p.script_args = [script_idx + 1] + [None] * (script.args_from - 1) + p.script_args
                 processed = scripts.scripts_txt2img.run(p, *p.script_args)
             else:
+                p.script_args = tuple(script_args)
                 processed = process_images(p)
             shared.state.end()
 
@@ -212,11 +255,15 @@ class Api:
         if init_images is None:
             raise HTTPException(status_code=404, detail="Init image not found")
 
-        script, script_idx = self.get_script(img2imgreq.script_name, scripts.scripts_img2img)
-
         mask = img2imgreq.mask
         if mask:
             mask = decode_base64_to_image(mask)
+
+        script_runner = scripts.scripts_img2img
+        if not script_runner.scripts:
+            script_runner.initialize_scripts(True)
+            ui.create_ui()
+        api_selectable_scripts, api_selectable_script_idx = self.get_selectable_script(img2imgreq.script_name, script_runner)
 
         populate = img2imgreq.copy(update={ # Override __init__ params
             "sampler_name": validate_sampler_name(img2imgreq.sampler_name or img2imgreq.sampler_index),
@@ -225,24 +272,62 @@ class Api:
             "mask": mask
             }
         )
+
         if populate.sampler_name:
             populate.sampler_index = None  # prevent a warning later on
 
         args = vars(populate)
         args.pop('include_init_images', None)  # this is meant to be done by "exclude": True in model, but it's for a reason that I cannot determine.
         args.pop('script_name', None)
+        args.pop('script_args', None) # will refeed them later with script_args
+        args.pop('alwayson_script_name', None)
+        args.pop('alwayson_script_args', None)
+
+        #find max idx from the scripts in runner and generate a none array to init script_args
+        last_arg_index = 1
+        for script in script_runner.scripts:
+            if last_arg_index < script.args_to:
+                last_arg_index = script.args_to
+        # None everywhere exepct position 0 to initialize script args
+        script_args = [None]*last_arg_index
+        # position 0 in script_arg is the idx+1 of the selectable script that is going to be run
+        if api_selectable_scripts:
+            script_args[api_selectable_scripts.args_from:api_selectable_scripts.args_to] = img2imgreq.script_args
+            script_args[0] = api_selectable_script_idx + 1
+        else:
+            # if 0 then none
+            script_args[0] = 0
+
+        # Now check for always on scripts
+        if len(img2imgreq.alwayson_script_name) > 0:
+            # always on script with no arg should always run, but if you include their name in the api request, send an empty list for there args
+            if len(img2imgreq.alwayson_script_name) != len(img2imgreq.alwayson_script_args):
+                raise HTTPException(status_code=422, detail=f"Number of script names and number of script arg lists doesn't match")
+
+            for alwayson_script_name, alwayson_script_args in zip(img2imgreq.alwayson_script_name, img2imgreq.alwayson_script_args):
+                alwayson_script = self.get_script(alwayson_script_name, script_runner)
+                if alwayson_script == None:
+                    raise HTTPException(status_code=422, detail=f"always on script {alwayson_script_name} not found")
+                # Selectable script in always on script param check
+                if alwayson_script.alwayson == False:
+                    raise HTTPException(status_code=422, detail=f"Cannot have a selectable script in the always on scripts params")
+                if alwayson_script_args != []:
+                    script_args[alwayson_script.args_from:alwayson_script.args_to] = alwayson_script_args
+
 
         with self.queue_lock:
             p = StableDiffusionProcessingImg2Img(sd_model=shared.sd_model, **args)
             p.init_images = [decode_base64_to_image(x) for x in init_images]
+            p.scripts = script_runner
 
             shared.state.begin()
-            if script is not None:
+            if api_selectable_scripts != None:
+                p.script_args = script_args
                 p.outpath_grids = opts.outdir_img2img_grids
                 p.outpath_samples = opts.outdir_img2img_samples
-                p.script_args = [script_idx + 1] + [None] * (script.args_from - 1) + p.script_args
                 processed = scripts.scripts_img2img.run(p, *p.script_args)
             else:
+                p.script_args = tuple(script_args)
                 processed = process_images(p)
             shared.state.end()
 
