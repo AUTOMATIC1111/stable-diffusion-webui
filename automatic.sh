@@ -89,12 +89,10 @@ if [ "$MODE" == install ]; then
   echo "Installing versioned requirements"
   "$PYTHON" -m pip install --disable-pip-version-check --quiet --no-warn-conflicts --requirement requirements_versions.txt
 
-  "$PYTHON" launch.py --exit
-
   echo "Updating submodules"
   git submodule --quiet update --init --recursive
-  git submodule --quiet update --rebase --remote
   git submodule --quiet foreach 'echo $sm_path' | while read LINE; do git-update $LINE ; done
+  # git submodule --quiet update --rebase --remote
   # git submodule foreach --quiet 'VER=$(git log -1 --pretty=format:"%h %ad"); BRANCH=$(git branch); URL=$(git remote get-url origin); echo "- $VER $BRANCH $URL"'
 
   echo "Updating extensions"
@@ -106,6 +104,8 @@ if [ "$MODE" == install ]; then
 
   echo "Detached repos"
   ls repositories/ | while read LINE; do git-version repositories/$LINE ; done
+
+  "$PYTHON" launch.py --exit
 
   echo "Local changes"
   git status --untracked=no --ignore-submodules=all --short
