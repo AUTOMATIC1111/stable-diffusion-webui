@@ -665,8 +665,22 @@
         },
         {
             "name": "Bilingual Localization",
-            "url": "https://github.com/journey-ad/sd-webui-bilingual-localization",
+            "url": "https://github.com/journey-ad/sd-webui-bilingual-localization.git",
             "description": "Bilingual translation, no need to worry about how to find the original button. Compatible with language pack extensions, no need to re-import.",
+            "added": "2023-02-28",
+            "tags": ["script"]
+        },
+        {
+            "name": "LoRA Block Weight",
+            "url": "https://github.com/hako-mikan/sd-webui-lora-block-weight.git",
+            "description": "Applies LoRA strength; block by block on the fly. Includes presets, weight analysis, randomization, XY plot.",
+            "added": "2023-02-28",
+            "tags": ["script"]
+        },
+        {
+            "name": "Kitchen Theme",
+            "url": "https://github.com/canisminor1990/sd-web-ui-kitchen-theme.git",
+            "description": "Custom Theme.",
             "added": "2023-02-28",
             "tags": ["script"]
         },
