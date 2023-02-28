@@ -483,6 +483,14 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             if k == 'sd_vae':
                 sd_vae.reload_vae_weights()
 
+        """
+        import torch.profiler
+        with torch.profiler.profile(activities=[torch.profiler.ProfilerActivity.CPU, torch.profiler.ProfilerActivity.CUDA], record_shapes=True, with_modules=True) as prof:
+            with torch.profiler.record_function("process_images"):
+                res = process_images_inner(p)
+        print(prof.key_averages().table(sort_by="cuda_time_total", row_limit=15))
+        """
+
         res = process_images_inner(p)
 
     finally:

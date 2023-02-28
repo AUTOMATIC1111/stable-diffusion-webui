@@ -3,6 +3,7 @@ import sys
 import threading
 import traceback
 import time
+import cProfile, pstats, io
 
 from modules import shared, progress
 
@@ -44,7 +45,6 @@ def wrap_gradio_gpu_call(func, extra_outputs=None):
 
     return wrap_gradio_call(f, extra_outputs=extra_outputs, add_stats=True)
 
-
 def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
     def f(*args, extra_outputs_array=extra_outputs, **kwargs):
         run_memmon = shared.opts.memmon_poll_rate > 0 and not shared.mem_mon.disabled and add_stats
@@ -53,7 +53,18 @@ def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
         t = time.perf_counter()
 
         try:
+            if shared.cmd_opts.profile:
+                pr = cProfile.Profile()
+                pr.enable()
             res = list(func(*args, **kwargs))
+            if shared.cmd_opts.profile:
+                pr.disable()
+                s = io.StringIO()
+                ps = pstats.Stats(pr, stream=s)
+                ps.sort_stats(pstats.SortKey.CUMULATIVE)
+                # ps.strip_dirs()
+                ps.print_stats(15)
+                print('Profile:', s.getvalue())
         except Exception as e:
             # When printing out our debug argument list, do not print out more than a MB of text
             max_debug_str_len = 131072 # (1024*1024)/8
