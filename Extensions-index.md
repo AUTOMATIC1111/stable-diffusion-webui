@@ -169,7 +169,7 @@
         {
             "name": "Randomize",
             "url": "https://github.com/innightwolfsleep/stable-diffusion-webui-randomize.git",
-            "description": "Allows for random parameters during txt2img generation. This script is processed for all generations, regardless of the script selected, meaning this script will function with others as well, such as AUTOMATIC1111/stable-diffusion-webui-wildcards",
+            "description": "Allows for random parameters during txt2img generation. This script will function with others as well. Original author: https://git.mmaker.moe/mmaker/stable-diffusion-webui-randomize",
             "added": "2022-11-11",
             "tags": ["script"]
         },
@@ -540,7 +540,7 @@
         {
             "name": "System Info",
             "url": "https://github.com/vladmandic/sd-extension-system-info.git",
-            "description": "System Info tab for WebUI which shows realtime information of the server.",
+            "description": "System Info tab for WebUI which shows realtime information of the server. Also supports sending crowdsourced inference data as an option.",
             "added": "2023-01-21",
             "tags": ["script", "tab", "UI related"]
         },
@@ -603,7 +603,7 @@
         {
             "name": "Embedding Merge",
             "url": "https://github.com/klimaleksus/stable-diffusion-webui-embedding-merge.git",
-            "description": "Merging Textual Inversion embeddings at runtime from string literals.",
+            "description": "Merging Textual Inversion embeddings at runtime from string literals. Phrases and weight values also supported.",
             "added": "2023-02-09",
             "tags": ["script", "tab"]
         },
@@ -638,7 +638,7 @@
         {
             "name": "SuperMerger",
             "url": "https://github.com/hako-mikan/sd-webui-supermerger.git",
-            "description": "Merge and run without saving to drive. Sequential XY merge generations; extract and merge loras, bind loras to ckpt, merge block weights, and more. Some operations are RAM-heavy & diffusers is required.",
+            "description": "Merge and run without saving to drive. Sequential XY merge generations; extract and merge loras, bind loras to ckpt, merge block weights, and more.",
             "added": "2023-02-18",
             "tags": ["script", "tab", "models"]
         },
@@ -659,7 +659,7 @@
         {
             "name": "Composable LoRA",
             "url": "https://github.com/opparco/stable-diffusion-webui-composable-lora.git",
-            "description": "Enables using AND keyword(composable diffusion) to limit LoRAs to subprompts. Related to Latent Couple extension.",
+            "description": "Enables using AND keyword(composable diffusion) to limit LoRAs to subprompts. Useful when paired with Latent Couple extension.",
             "added": "2023-02-25",
             "tags": ["script"]
         },
