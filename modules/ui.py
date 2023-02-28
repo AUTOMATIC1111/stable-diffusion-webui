@@ -1705,6 +1705,11 @@ def create_ui():
 
     extensions_interface = ui_extensions.create_ui()
     interfaces += [(extensions_interface, "Extensions", "extensions")]
+    
+    # it doesn't work for all tabs only for txt2img and img2img :( js to the rescue
+    # def change_tab(selected):
+        # print(selected)      
+        # return gr.Tabs.update(selected=selected)
 
     with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion") as demo:      
         with gr.Row(elem_id="quicksettings"): 
@@ -1721,10 +1726,17 @@ def create_ui():
 
         gr.Row(elem_id="quick_menu")
         parameters_copypaste.connect_paste_params_buttons()
-
+        
+ 
         with gr.Tabs(elem_id="tabs") as tabs:
             gr.Row(elem_id="nav_menu")
-            for interface, label, ifid in interfaces:
+            gr.Row(elem_id="nav_menu_header_tabs")
+            # with gr.Row(elem_id="nav_menu_header_tabs"):
+                # for interface, label, ifid in interfaces:
+                    # btn = gr.Button(label, elem_id='tab_clone_' + ifid)
+                    # btn.click(change_tab, btn, tabs)
+ 
+            for interface, label, ifid in interfaces:           
                 with gr.TabItem(label, id=ifid, elem_id='tab_' + ifid):
                     interface.render()
 

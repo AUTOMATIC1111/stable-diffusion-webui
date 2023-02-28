@@ -1718,7 +1718,30 @@ canvas[key=mask] {
 	display:none;
 }
 
+#top_row_sd_model_checkpoint {
+    margin-right: 50px;
+    margin-left: 50px;
+    max-width: 290px;
+}
 
+#nav_menu_header_tabs{
+	position:absolute;
+	height: 34px;
+	top:0;
+	left:50px;
+}
+#nav_menu_header_tabs button{
+	font-size: 14px;
+    flex: 1 1 auto;
+    flex-grow: 0;
+    min-width: unset;
+	padding-bottom: 0;
+    border: 0;
+	color:var(--nav-color);
+}
+#nav_menu_header_tabs button.bg-white{
+	color:var(--primary-color);
+}
 
 /*
 [id$="settings_2img_settings"] button {

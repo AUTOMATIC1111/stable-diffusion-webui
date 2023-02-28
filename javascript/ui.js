@@ -213,6 +213,8 @@ function recalculate_prompts_img2img(){
 }
 
 
+
+
 opts = {}
 onUiUpdate(function(){
 	if(Object.keys(opts).length != 0) return;
@@ -534,63 +536,166 @@ onUiUpdate(function(){
 	
 
 	//hidden ui tabs
-	let radio_html="";
-	let styletabs={};
+	let radio_hidden_html="";
+	let radio_header_html="";
+	let hiddentabs={};
+	let headertabs={};
 	const setting_ui_hidden_tabs = gradioApp().querySelector('#setting_ui_hidden_tabs textarea');
-	setting_ui_hidden_tabs.style.display = "none";
+	const setting_ui_header_tabs = gradioApp().querySelector('#setting_ui_header_tabs textarea');
+	const parent_header_tabs = gradioApp().querySelector('#nav_menu_header_tabs');
 	
-	function tabsHiddenNthMarkup() {		
-		const keys = Object.keys(styletabs);
+	setting_ui_hidden_tabs.style.display = "none";
+	setting_ui_header_tabs.style.display = "none";
+	
+	function tabOpsSave(setting){
+		const iEvent = new Event("input");		
+		Object.defineProperty(iEvent, "target", {value: setting})		
+		setting.dispatchEvent(iEvent);
+	}
+	
+	function tabsHiddenChange() {		
+		const keys = Object.keys(hiddentabs);
 		setting_ui_hidden_tabs.value = "";
 		keys.forEach((key, index) => {
-			//console.log(`${key}: ${styletabs[key]} ${index}`);
-			if(styletabs[key] == true){
-				styleobj[key] = "#tabs > div > button:nth-child("+(index+1)+"){display:none;}";
+			//console.log(`${key}: ${hiddentabs[key]} ${index}`);
+			if(hiddentabs[key] == true){
+				styleobj[key] = "#tabs > div:first-child > button:nth-child("+(index+1)+"){display:none;}";
 				setting_ui_hidden_tabs.value += key + ",";
-			}else{				
-				delete styleobj[key];
+			}else{								
+				styleobj[key] = "#tabs > div:first-child  > button:nth-child("+(index+1)+"){display:block;}";
 			}
 		})
 		
-		const iEvent = new Event("input");		
-		Object.defineProperty(iEvent, "target", {value: setting_ui_hidden_tabs})		
-		setting_ui_hidden_tabs.dispatchEvent(iEvent);
 		
-		//updateOpStyles();
+		tabOpsSave(setting_ui_hidden_tabs);
+		tabsHeaderChange();
+		
 	}
 	
-	gradioApp().querySelectorAll('#tabs > div > button').forEach(function (elem) {
-		let tabvalue = elem.innerText.replace(" ", "");
-		styletabs[tabvalue] = false;
-		let checked = "";
-		if(setting_ui_hidden_tabs.value.indexOf(tabvalue) != -1){
-			styletabs[tabvalue] = true;
-			checked = "checked";
-		}		
-		radio_html += '<label class="gr-input-label flex items-center text-gray-700 text-sm space-x-2 border py-1.5 px-3 rounded-lg cursor-pointer bg-white shadow-sm checked:shadow-inner"><input type="checkbox" name="uihb" class="gr-check-radio gr-radio" '+checked+' value="'+elem.innerText+'"><span class="ml-2" title="">'+elem.innerText+'</span></label>';
-	})
-
-	let div = document.createElement("div")
-	div.id = "hidden_radio_tabs_container"
-	div.classList.add("flex", "flex-wrap", "gap-2");
-	div.innerHTML = radio_html;	
-	setting_ui_hidden_tabs.parentElement.appendChild(div);
-	tabsHiddenNthMarkup();
+	function tabsHeaderChange() {		
+		const keys = Object.keys(headertabs);
+		setting_ui_header_tabs.value = "";
+		keys.forEach((key, index) => {
+			//console.log(`${key}: ${hiddentabs[key]} ${index}`);
+			let nkey = key+"_hr";
+			if(headertabs[key] == true && hiddentabs[key] == false){				
+				styleobj[nkey] = "#nav_menu_header_tabs > button:nth-child("+(index+1)+"){display:block;}";				
+				setting_ui_header_tabs.value += key + ",";
+			}else{				
+				styleobj[nkey] = "#nav_menu_header_tabs > button:nth-child("+(index+1)+"){display:none;}";
+			}
+		})
+		
+		tabOpsSave(setting_ui_header_tabs);
+	}
 	
+
+	const Observe = (sel, opt, cb) => {
+	  const Obs = new MutationObserver((m) => [...m].forEach(cb));
+	  gradioApp().querySelectorAll(sel).forEach(el => Obs.observe(el, opt));
+	}
+	
+	Observe("#tabs > div.tabitem", {
+	  attributesList: ["style"], attributeOldValue: false, }, (m) => {
+		
+		if(m.target.style.display === 'block'){
+			let idx = m.target.getAttribute("tab-item");
+			tabSelected(idx);			
+		}		
+	})
+	
+	function tabSelected(idx){
+
+		gradioApp().querySelectorAll('#tabs > div > button.bg-white').forEach(function (tab){
+			tab.classList.remove("bg-white");
+		})
+		
+		gradioApp().querySelectorAll('#tabs > div > button:nth-child('+(parseInt(idx)+1)+')').forEach(function (tab){
+			tab.classList.add("bg-white");			
+		}) 
+	}
+	
+	function navigate2Tab(idx){
+
+		gradioApp().querySelectorAll('#tabs > div.tabitem').forEach(function (tabitem, index){			
+			if(parseInt(idx) === index){
+				tabitem.style.display = "block";
+			}else{
+				tabitem.style.display = "none";
+			}			
+		})
+	}
+	
+	const maintabs = gradioApp().querySelectorAll('#tabs > div:first-child > button');
+	const tabitem = gradioApp().querySelectorAll('#tabs > div.tabitem');
+	
+	maintabs.forEach(function (elem, index) {
+		let tabvalue = elem.innerText.replaceAll(" ", "");
+		hiddentabs[tabvalue] = false;
+		headertabs[tabvalue] = false;
+		let checked_hidden = "";
+		let checked_header = "";
+		if(setting_ui_hidden_tabs.value.indexOf(tabvalue) != -1){
+			hiddentabs[tabvalue] = true;
+			checked_hidden = "checked";
+		}
+		if(setting_ui_header_tabs.value.indexOf(tabvalue) != -1){
+			headertabs[tabvalue] = true;
+			checked_header = "checked";		
+		}			
+		radio_hidden_html += '<label class="gr-input-label flex items-center text-gray-700 text-sm space-x-2 border py-1.5 px-3 rounded-lg cursor-pointer bg-white shadow-sm checked:shadow-inner"><input type="checkbox" name="uiha" class="gr-check-radio gr-radio" '+checked_hidden+' value="'+elem.innerText+'"><span class="ml-2" title="">'+elem.innerText+'</span></label>';
+		radio_header_html += '<label class="gr-input-label flex items-center text-gray-700 text-sm space-x-2 border py-1.5 px-3 rounded-lg cursor-pointer bg-white shadow-sm checked:shadow-inner"><input type="checkbox" name="uihb" class="gr-check-radio gr-radio" '+checked_header+' value="'+elem.innerText+'"><span class="ml-2" title="">'+elem.innerText+'</span></label>';
+		
+		tabitem[index].setAttribute("tab-item", index);
+		
+		let clonetab = elem.cloneNode(true);
+		clonetab.id = tabvalue+"_clone";
+		parent_header_tabs.append(clonetab);
+		clonetab.setAttribute("tab-id", index);
+		
+		clonetab.addEventListener('click', function (e) {
+			const idx = e.currentTarget.getAttribute("tab-id");
+			navigate2Tab(idx);			
+		})
+		
+	})
+	
+
+	let div = document.createElement("div");
+	div.id = "hidden_radio_tabs_container";
+	div.classList.add("flex", "flex-wrap", "gap-2");
+	div.innerHTML = radio_hidden_html;	
+	setting_ui_hidden_tabs.parentElement.appendChild(div);
+	
+	div = document.createElement("div");
+	div.id = "header_radio_tabs_container";
+	div.classList.add("flex", "flex-wrap", "gap-2");
+	div.innerHTML = radio_header_html;
+	setting_ui_header_tabs.parentElement.appendChild(div);
+	
+	
+	// hidden tabs
 	gradioApp().querySelector("#hidden_radio_tabs_container").addEventListener('click', function (e) {
 		if (e.target && e.target.matches("input[type='checkbox']")) {
-			let tabvalue = e.target.value.replace(" ", "");	
-			if(e.target.checked){
-				styletabs[tabvalue] = true;				
-			}else{				
-				styletabs[tabvalue] = false;
-			}
-			tabsHiddenNthMarkup();
+			let tabvalue = e.target.value.replaceAll(" ", "");	
+			hiddentabs[tabvalue] = e.target.checked				
+			tabsHiddenChange();			
+			updateOpStyles();
+		}
+	})
+	// header tabs
+	gradioApp().querySelector("#header_radio_tabs_container").addEventListener('click', function (e) {
+		if (e.target && e.target.matches("input[type='checkbox']")) {
+			let tabvalue = e.target.value.replaceAll(" ", "");	
+			headertabs[tabvalue] = e.target.checked;			
+			tabsHeaderChange();
 			updateOpStyles();
 		}
 	})
 	
+	tabsHiddenChange();
 	
+	// add to quick settings
 	const settings_submit = gradioApp().querySelector('#settings_submit');
 	const quick_parent = gradioApp().querySelector("#quicksettings_overflow");
 	
@@ -598,19 +703,14 @@ onUiUpdate(function(){
 		const setting_quicksettings = gradioApp().querySelector('#setting_quicksettings textarea');
 		let field_settings = setting_quicksettings.value.replace(" ", "");		
 		if(checked){
-			field_settings += ","+id;
-			
-			let setting_row = gradioApp().querySelector('#row_setting_'+id);
-			//setting_row.id = setting_row.id.replace("row_setting", "quick_row");
+			field_settings += ","+id;			
+			let setting_row = gradioApp().querySelector('#row_setting_'+id);			
 			quick_parent.append(setting_row);
-
 		}else{			
-			field_settings = field_settings.replaceAll(id, ",");
-			
+			field_settings = field_settings.replaceAll(id, ",");			
 			const setting_parent = gradioApp().querySelector("#"+section+"_settings_2img_settings");
 			let quick_row = gradioApp().querySelector('#row_setting_'+id);
-			console.log(quick_row);
-			//quick_row.id = quick_row.id.replace("quick_row","row_setting");			
+			console.log(quick_row);					
 			setting_parent.append(quick_row);
 
 		}
@@ -625,10 +725,8 @@ onUiUpdate(function(){
 		Object.defineProperty(cEvent, "target", {value: settings_submit})		
 		settings_submit.dispatchEvent(cEvent);
 		//settings_submit.click();
-		
-		console.log(section + " - "+ id + " - " + checked);
-		
-			
+
+		//console.log(section + " - "+ id + " - " + checked);
 	}
 	gradioApp().querySelectorAll('[id*="add2quick_"]').forEach(function (elem){
 		let trg = elem.id.split('_add2quick_setting_');
