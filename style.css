@@ -901,7 +901,7 @@ footer {
     border-radius: 0.2em;
     position: relative;
 
-    background-size: auto 100%;
+    background-size: contain;
     background-position: center;
     overflow: hidden;
     cursor: pointer;
