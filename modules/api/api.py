@@ -191,7 +191,7 @@ class Api:
             script_args[selectable_scripts.args_from:selectable_scripts.args_to] = request.script_args
             script_args[0] = selectable_idx + 1
         else:
-            # if 0 then none
+            # when [0] = 0 no selectable script to run
             script_args[0] = 0
 
         # Now check for always on scripts
