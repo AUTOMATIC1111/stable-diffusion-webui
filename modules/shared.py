@@ -468,7 +468,6 @@ options_templates.update(options_section(('ui', "User interface"), {
     "ui_reorder": OptionInfo(", ".join(ui_reorder_categories), "txt2img/img2img UI item order"),
     "ui_hidden_tabs": OptionInfo("", "Hidden Tabs"),
     "ui_header_tabs": OptionInfo("", "Header Tabs"),
-    "ui_offcanvas_menu": OptionInfo(True, "Use always offcanvas menu otherwise use only on mobile"),
     "ui_views_order": OptionInfo("row-reverse", "Interface order input/parameters | output/preview", gr.Radio, {"choices": ["row", "row-reverse"]}),
     "ui_extra_networks_tab_reorder": OptionInfo("", "Extra networks tab order"),
     "localization": OptionInfo("None", "Localization (requires restart)", gr.Dropdown, lambda: {"choices": ["None"] + list(localization.localizations.keys())}, refresh=lambda: localization.list_localizations(cmd_opts.localizations_dir)),
