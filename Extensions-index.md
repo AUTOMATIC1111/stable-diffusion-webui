@@ -668,7 +668,7 @@
             "url": "https://github.com/journey-ad/sd-webui-bilingual-localization",
             "description": "Bilingual translation, no need to worry about how to find the original button. Compatible with language pack extensions, no need to re-import.",
             "added": "2023-02-28",
-            "tags": ["localization"]
+            "tags": ["script"]
         },
         {
             "name": "zh_CN Localization",

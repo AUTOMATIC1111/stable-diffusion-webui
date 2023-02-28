@@ -81,3 +81,10 @@ https://github.com/catppuccin/stable-diffusion-webui
 Catppuccin is a community-driven pastel theme that aims to be the middle ground between low and high contrast themes. Adds set of themes which are in compliance with catppucin guidebook.
 ![Catppuccin themes](https://raw.githubusercontent.com/catppuccin/Stable-Diffusion-Web-Ui/main/assets/res.webp)
 
+## Bilingual Localization
+https://github.com/journey-ad/sd-webui-bilingual-localization
+
+- Bilingual translation, no need to worry about how to find the original button.
+- Compatible with language pack extensions, no need to re-import.
+![Bilingual Localization](https://user-images.githubusercontent.com/16256221/221622328-a4e46b1c-f202-4a41-9a56-3df96c823f42.png)
+
