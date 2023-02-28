@@ -664,9 +664,16 @@
             "tags": ["script"]
         },
         {
+            "name": "Bilingual Localization",
+            "url": "https://github.com/journey-ad/sd-webui-bilingual-localization",
+            "description": "Bilingual translation, no need to worry about how to find the original button. Compatible with language pack extensions, no need to re-import.",
+            "added": "2023-02-28",
+            "tags": ["localization"]
+        },
+        {
             "name": "zh_CN Localization",
             "url": "https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN",
-            "description": "Simplified Chinese localization",
+            "description": "Simplified Chinese localization, recommend using with Bilingual Localization.",
             "added": "2022-11-06",
             "tags": ["localization"]
         },
