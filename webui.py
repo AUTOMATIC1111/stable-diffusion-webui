@@ -209,11 +209,12 @@ def webui():
 
         gradio_auth_creds = []
         if cmd_opts.gradio_auth:
-            gradio_auth_creds += cmd_opts.gradio_auth.strip('"').replace('\n', '').split(',')
+            gradio_auth_creds += [x.strip() for x in cmd_opts.gradio_auth.strip('"').replace('/n', '').split(',') if x.strip()]
         if cmd_opts.gradio_auth_path:
             with open(cmd_opts.gradio_auth_path, 'r', encoding="utf8") as file:
                 for line in file.readlines():
-                    gradio_auth_creds += [x.strip() for x in line.split(',')]
+                    gradio_auth_creds += [x.strip() for x in line.split(',') if x.strip()]
+            file.close()
 
         app, local_url, share_url = shared.demo.launch(
             share=cmd_opts.share,
