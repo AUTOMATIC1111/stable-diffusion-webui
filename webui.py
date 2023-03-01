@@ -209,7 +209,7 @@ def webui():
 
         gradio_auth_creds = []
         if cmd_opts.gradio_auth:
-            gradio_auth_creds += [x.strip() for x in cmd_opts.gradio_auth.strip('"').replace('/n', '').split(',') if x.strip()]
+            gradio_auth_creds += [x.strip() for x in cmd_opts.gradio_auth.strip('"').replace('\n', '').split(',') if x.strip()]
         if cmd_opts.gradio_auth_path:
             with open(cmd_opts.gradio_auth_path, 'r', encoding="utf8") as file:
                 for line in file.readlines():
