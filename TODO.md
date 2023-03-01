@@ -35,17 +35,15 @@ Stuff to be fixed...
 
 Tech that can be integrated as part of the core workflow...
 
-- [Embedding mixing](https://github.com/tkalayci71/embedding-inspector)
 - [Merge without distortion](https://github.com/ogkalu2/Merge-Stable-Diffusion-models-without-distortion)
 - [Weighted merges](https://github.com/bbc-mc/sdweb-merge-block-weighted-gui/tree/master)
 - [Use scripts from API](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/6469)
 - [Face swap](https://github.com/kex0/batch-face-swap)
-- [Custom diffusion](https://github.com/guaneec/custom-diffusion-webui)
 - [Null-text inversion](https://github.com/ouhenio/null-text-inversion-colab)
 - [Custom diffusion](https://github.com/guaneec/custom-diffusion-webui)
   - <https://www.cs.cmu.edu/~custom-diffusion/>
 - [Dream artist](https://github.com/7eu7d7/DreamArtist-sd-webui-extension)
-- [ControlNet](https://github.com/lllyasviel/ControlNet)
+- [LoCon](https://github.com/AUTOMATIC1111/stable-diffusion-webui/discussions/8169)
 
 ## Video Generation
 
