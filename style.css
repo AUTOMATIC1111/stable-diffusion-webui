@@ -822,6 +822,11 @@ footer {
     align-self: center;
 }
 
+#txt2img_extra_networks .output-html, #img2img_extra_networks .output-html{
+    max-height: 76em;
+    overflow-y: scroll;
+}
+
 #txt2img_extra_view, #img2img_extra_view {
     width: auto;
 }
