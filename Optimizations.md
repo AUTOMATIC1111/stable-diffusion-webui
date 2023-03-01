@@ -43,7 +43,7 @@ Notes:
 - Performance with `lowvram` preset is very low below batch size 8 and by then memory savings are not that big  
 
 Other possible optimizations:
-- `PYTORCH_CUDA_ALLOC_CONF=garbage_collection_threshold:0.9,max_split_size_mb:512`  
+- adding `set PYTORCH_CUDA_ALLOC_CONF=garbage_collection_threshold:0.9,max_split_size_mb:512` in `webui-user.bat`  
   No performance impact and increases initial memory footprint a bit but reduces memory fragmentation in long runs  
 - `opt-channelslast`  
   Hit-and-miss: seems like additional slight performance increase with higher batch sizes and slower with small sizes, but differences are within margin-of-error  
