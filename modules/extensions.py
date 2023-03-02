@@ -66,7 +66,7 @@ class Extension:
 
     def check_updates(self):
         repo = git.Repo(self.path)
-        for fetch in repo.remote().fetch("--dry-run"):
+        for fetch in repo.remote().fetch(dry_run=True):
             if fetch.flags != fetch.HEAD_UPTODATE:
                 self.can_update = True
                 self.status = "behind"
