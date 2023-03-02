@@ -30,3 +30,4 @@ GitPython
 torchsde
 safetensors
 psutil
+huggingface_hub==0.12.1

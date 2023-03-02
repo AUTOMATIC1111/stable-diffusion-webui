@@ -28,3 +28,4 @@ torchsde==0.2.5
 safetensors==0.2.7
 httpcore<=0.15
 fastapi==0.90.1
+huggingface_hub==0.12.1

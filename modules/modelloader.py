@@ -8,9 +8,18 @@ from basicsr.utils.download_util import load_file_from_url
 from modules import shared
 from modules.upscaler import Upscaler
 from modules.paths import script_path, models_path
+from huggingface_hub import hf_hub_download
 
 
-def load_models(model_path: str, model_url: str = None, command_path: str = None, ext_filter=None, download_name=None, ext_blacklist=None) -> list:
+def load_models(
+    model_path: str,
+    model_url: str = None,
+    command_path: str = None,
+    ext_filter=None,
+    download_name=None,
+    ext_blacklist=None,
+    is_hf=False
+) -> list:
     """
     A one-and done loader to try finding the desired models in specified directories.
 
@@ -21,7 +30,7 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
     @param ext_filter: An optional list of filename extensions to filter by
     @return: A list of paths containing the desired model(s)
     """
-    output = []
+    output = [] 
 
     if ext_filter is None:
         ext_filter = []
@@ -58,7 +67,13 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
                         output.append(full_path)
 
         if model_url is not None and len(output) == 0:
-            if download_name is not None:
+            # In case the underlying model checkpoint is from the Hugging Face Hub,
+            # we can make use of the `huggingface_hub` client library. This way users
+            # can just specify a repo name (e.g. "andite/anything-v4.0") and
+            # the filename (`download_name` in this case).
+            if is_hf:
+                dl = hf_hub_download(model_path, download_name)
+            elif download_name is not None:
                 dl = load_file_from_url(model_url, model_path, True, download_name)
                 output.append(dl)
             else:
