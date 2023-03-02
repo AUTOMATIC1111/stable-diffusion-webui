@@ -214,7 +214,6 @@ def webui():
             with open(cmd_opts.gradio_auth_path, 'r', encoding="utf8") as file:
                 for line in file.readlines():
                     gradio_auth_creds += [x.strip() for x in line.split(',') if x.strip()]
-            file.close()
 
         app, local_url, share_url = shared.demo.launch(
             share=cmd_opts.share,
