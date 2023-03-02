@@ -714,7 +714,7 @@ body {
 
 #clone_nav_menu{
 	position:fixed;
-	z-index:99999;
+	z-index:10000;
 	left:1rem;
 	top: calc((var(--top-header-height) - 38px) / 2);
 }

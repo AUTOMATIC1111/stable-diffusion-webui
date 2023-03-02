@@ -1717,7 +1717,7 @@ def create_ui():
             gr.Row(elem_id="nav_menu_header_tabs")
                 
             with gr.Row(elem_id="quicksettings"): 
-                with gr.Row(elem_id="top_row_sd_model_checkpoint") as qsettings_row:
+                with gr.Row(elem_id="top_row_sd_model_checkpoint"):
                     component = create_setting_component("sd_model_checkpoint", "sd", is_quicksettings=True)
                     component_dict["sd_model_checkpoint"] = component
                 
@@ -1726,9 +1726,9 @@ def create_ui():
                         gr.Checkbox(label='', elem_id="quicksettings_draggable", interactive=True)
                         #ToolButton(elem_id="quicksettings_sort_asc", interactive=True)
                         #ToolButton(elem_id="quicksettings_sort_desc", interactive=True)
-                    with gr.Column(elem_id="quicksettings_overflow_container"):
+                    with gr.Column(elem_id="quicksettings_overflow_container") as qsettings_row:
                         for i, k, item in sorted(quicksettings_list, key=lambda x: quicksettings_names.get(x[1], x[0])):
-                            if( k != "sd_model_checkpoint"):
+                            if( str(k) != "sd_model_checkpoint"):
                                 #with gr.Row(elem_id=f"quick_row_{k}") as qsettings_row:                   
                                 component = create_setting_component(k, item.section[0], is_quicksettings=True)
                                 component_dict[k] = component
