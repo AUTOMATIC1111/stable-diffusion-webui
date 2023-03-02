@@ -28,6 +28,8 @@ def load_models(
     @param model_path: The location to store/find models in.
     @param command_path: A command-line argument to search for models in first.
     @param ext_filter: An optional list of filename extensions to filter by
+    @param is_hf: An optional flag to specify if the underlying model checkpoint
+        resides in the Hugging Face Hub.
     @return: A list of paths containing the desired model(s)
     """
     output = [] 
