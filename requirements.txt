@@ -1,8 +1,8 @@
 accelerate
 aenum
 basicsr
-blendmodes
 bitsandbytes
+blendmodes
 clean-fid
 colormap
 diffusers
@@ -37,7 +37,9 @@ resize-right
 safetensors
 scikit-image
 timm
+toml
 torch
 torchdiffeq
 torchsde
 transformers
+voluptuous

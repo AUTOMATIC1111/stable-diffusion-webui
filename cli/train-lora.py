@@ -42,7 +42,7 @@ options = Map({
     "train_data_dir": "",
     "shuffle_caption": False,
     "caption_extension": ".txt",
-    "caption_extention": None,
+    "caption_extention": ".txt",
     "keep_tokens": None,
     "color_aug": False,
     "flip_aug": False,
@@ -182,6 +182,7 @@ if __name__ == '__main__':
     Path(dir).mkdir(parents=True, exist_ok=True)
     json_file = os.path.join(tempfile.gettempdir(), args.output, args.output + '.json')
     options.train_data_dir = os.path.join(tempfile.gettempdir(), args.output)
+    res = None
 
     if args.dreambooth:
         options.in_json = None

@@ -67,6 +67,7 @@ def get_memory():
 
 
 class Map(dict):
+    __slots__ = ('__dict__')
     def __init__(self, *args, **kwargs):
         super(Map, self).__init__(*args, **kwargs)
         for arg in args:
