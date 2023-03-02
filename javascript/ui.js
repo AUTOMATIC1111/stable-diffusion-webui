@@ -387,8 +387,10 @@ onUiUpdate(function(){
 	
 	// menu 
 	function disableScroll() {         
-		scrollTop = 0;//window.pageYOffset || document.documentElement.scrollTop;
-		scrollLeft = 0;//window.pageXOffset || document.documentElement.scrollLeft,
+		scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+		scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+		window.scrollTo(scrollLeft, scrollTop);
+		
 		window.onscroll = function() {
 			window.scrollTo(scrollLeft, scrollTop);
 		}
@@ -397,6 +399,7 @@ onUiUpdate(function(){
 	function enableScroll() {
 		window.onscroll = function() {}
 	}	
+	
 
 	function toggleMenu(isopen, icon, panel, func) {
 		if(isopen){
@@ -412,17 +415,31 @@ onUiUpdate(function(){
 		}		
 	}
 	
+	function getPos(el) {
+		let rect=el.getBoundingClientRect();
+		return {x:rect.left,y:rect.top};
+	}
+	
 	// mobile nav menu
 	const tabs_menu = gradioApp().querySelector('#tabs > div:first-child');
 	const nav_menu = gradioApp().querySelector('#nav_menu');
+	const header = gradioApp().querySelector('#header-top');
 	let menu_open = false;
+	let z_menu = nav_menu.cloneNode(true);
+/* 	let pos = getPos(nav_menu);
+	clone.style.position = 'fixed';
+	clone.style.left = pos.x+'px';
+	clone.style.top = pos.y+'px';
+	clone.style.zIndex = 99999; */
+	z_menu.id = "clone_nav_menu";
+	header.parentElement.append(z_menu);
 	function toggleNavMenu(e) {
 		//e.preventDefault();
         e.stopPropagation();
-		menu_open = !menu_open;	
+		menu_open = !menu_open;
 		toggleMenu(menu_open, nav_menu, tabs_menu, toggleNavMenu);
 	}
-    nav_menu.addEventListener('click', toggleNavMenu);
+    z_menu.addEventListener('click', toggleNavMenu);
 	
 	// quicksettings nav menu
 	let quick_menu_open = false;
@@ -533,7 +550,6 @@ onUiUpdate(function(){
 		})		
 	})
 	extra_networks_cards_visible_rows(opts.extra_networks_cards_visible_rows);
-	
 
 	//hidden ui tabs
 	let radio_hidden_html="";
@@ -543,9 +559,12 @@ onUiUpdate(function(){
 	const setting_ui_hidden_tabs = gradioApp().querySelector('#setting_ui_hidden_tabs textarea');
 	const setting_ui_header_tabs = gradioApp().querySelector('#setting_ui_header_tabs textarea');
 	const parent_header_tabs = gradioApp().querySelector('#nav_menu_header_tabs');
-	
 	setting_ui_hidden_tabs.style.display = "none";
 	setting_ui_header_tabs.style.display = "none";
+	
+	const maintabs = gradioApp().querySelectorAll('#tabs > div:first-child > button');
+	const tabitem = gradioApp().querySelectorAll('#tabs > div.tabitem');
+	
 	
 	function tabOpsSave(setting){
 		const iEvent = new Event("input");		
@@ -596,39 +615,34 @@ onUiUpdate(function(){
 	}
 	
 	Observe("#tabs > div.tabitem", {
-	  attributesList: ["style"], attributeOldValue: false, }, (m) => {
-		
+	  attributesList: ["style"], attributeOldValue: true, }, (m) => {		
 		if(m.target.style.display === 'block'){
-			let idx = m.target.getAttribute("tab-item");
+			let idx = parseInt(m.target.getAttribute("tab-item"));
 			tabSelected(idx);			
 		}		
 	})
 	
 	function tabSelected(idx){
 
-		gradioApp().querySelectorAll('#tabs > div > button.bg-white').forEach(function (tab){
+		gradioApp().querySelectorAll('#tabs > div > button.bg-white, #nav_menu_header_tabs > button.bg-white').forEach(function (tab){
 			tab.classList.remove("bg-white");
 		})
 		
-		gradioApp().querySelectorAll('#tabs > div > button:nth-child('+(parseInt(idx)+1)+')').forEach(function (tab){
+		gradioApp().querySelectorAll('#tabs > div > button:nth-child('+(idx+1)+'), #nav_menu_header_tabs > button:nth-child('+(idx+1)+')').forEach(function (tab){
 			tab.classList.add("bg-white");			
 		}) 
 	}
 	
 	function navigate2Tab(idx){
-
 		gradioApp().querySelectorAll('#tabs > div.tabitem').forEach(function (tabitem, index){			
-			if(parseInt(idx) === index){
+			if(idx == index){
 				tabitem.style.display = "block";
 			}else{
 				tabitem.style.display = "none";
 			}			
 		})
 	}
-	
-	const maintabs = gradioApp().querySelectorAll('#tabs > div:first-child > button');
-	const tabitem = gradioApp().querySelectorAll('#tabs > div.tabitem');
-	
+
 	maintabs.forEach(function (elem, index) {
 		let tabvalue = elem.innerText.replaceAll(" ", "");
 		hiddentabs[tabvalue] = false;
@@ -654,7 +668,7 @@ onUiUpdate(function(){
 		clonetab.setAttribute("tab-id", index);
 		
 		clonetab.addEventListener('click', function (e) {
-			const idx = e.currentTarget.getAttribute("tab-id");
+			const idx = parseInt(e.currentTarget.getAttribute("tab-id"));
 			navigate2Tab(idx);			
 		})
 		
@@ -697,7 +711,7 @@ onUiUpdate(function(){
 	
 	// add to quick settings
 	const settings_submit = gradioApp().querySelector('#settings_submit');
-	const quick_parent = gradioApp().querySelector("#quicksettings_overflow");
+	const quick_parent = gradioApp().querySelector("#quicksettings_overflow_container");
 	
 	function add2quickSettings(id, section, checked){
 		const setting_quicksettings = gradioApp().querySelector('#setting_quicksettings textarea');
@@ -710,7 +724,7 @@ onUiUpdate(function(){
 			field_settings = field_settings.replaceAll(id, ",");			
 			const setting_parent = gradioApp().querySelector("#"+section+"_settings_2img_settings");
 			let quick_row = gradioApp().querySelector('#row_setting_'+id);
-			console.log(quick_row);					
+			//console.log(quick_row);					
 			setting_parent.append(quick_row);
 
 		}
@@ -725,7 +739,6 @@ onUiUpdate(function(){
 		Object.defineProperty(cEvent, "target", {value: settings_submit})		
 		settings_submit.dispatchEvent(cEvent);
 		//settings_submit.click();
-
 		//console.log(section + " - "+ id + " - " + checked);
 	}
 	gradioApp().querySelectorAll('[id*="add2quick_"]').forEach(function (elem){
@@ -738,6 +751,189 @@ onUiUpdate(function(){
 		})
 	})
 	
+	
+	
+    const container = gradioApp().querySelector("#quicksettings_overflow_container");  
+	let draggables;
+	// function that gets the element next of cursor/touch
+    function getElementAfter(container, y){
+        return draggables.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;           
+            if(offset < 0 && offset > closest.offset){
+                return { offset: offset, element: child};
+            } else {
+                return closest;
+            }       
+        }, { offset: Number.NEGATIVE_INFINITY } ).element;
+    }
+	
+	
+	let lastElemAfter;
+	let islastChild;
+	let timeout;
+	
+	function preventBehavior(e){					
+		e.stopPropagation();
+		e.preventDefault();
+		return false;
+	}
+		
+	
+	function dragOrderChange(elementAfter, isComplete, delem) {
+				
+		if(lastElemAfter !== elementAfter || islastChild){
+			if(lastElemAfter != null ){
+				lastElemAfter.classList.remove('marker-top', 'marker-bottom');
+			}
+
+			if(elementAfter == null){
+				islastChild = true;
+				lastElemAfter.classList.add('marker-bottom');
+			} else {
+				islastChild = false;
+				elementAfter.classList.add('marker-top');
+				lastElemAfter = elementAfter;
+				
+			} 
+		}
+		
+		if(isComplete){
+			
+			if(elementAfter == null){
+				container.append(delem);
+			} else {
+				container.insertBefore(delem, elementAfter);
+			}	
+			
+			let order_settings="";
+			
+			gradioApp().querySelectorAll('#quicksettings_overflow_container > div').forEach(function (el){
+				el.classList.remove('marker-top', 'marker-bottom', 'dragging');
+				order_settings += el.id.split("row_setting_")[1]+",";							
+			})
+			//console.log(order_settings);
+			const setting_quicksettings = gradioApp().querySelector('#setting_quicksettings textarea');
+			setting_quicksettings.value = order_settings;
+			const iEvent = new Event("input");		
+			Object.defineProperty(iEvent, "target", {value: setting_quicksettings})		
+			setting_quicksettings.dispatchEvent(iEvent);
+			
+			const cEvent = new Event("click");//submit	
+			Object.defineProperty(cEvent, "target", {value: settings_submit})		
+			settings_submit.dispatchEvent(cEvent);
+			
+			container.classList.remove('no-scroll');
+		}
+	}
+
+	function touchmove(e){					
+		let y = e.touches[0].clientY;
+		let elementAfter = getElementAfter(container, y);					
+		dragOrderChange(elementAfter);					
+	}
+
+	function touchstart(e){					
+		e.currentTarget.draggable = "false";
+		let target = e.currentTarget;
+		// touch should be hold for 1 second
+		timeout = setTimeout(function(){
+			target.classList.add('dragging');						
+			container.classList.add('no-scroll');
+			target.addEventListener('touchmove', touchmove);
+			container.addEventListener("touchmove", preventBehavior, {passive: false});			 											
+		}, 1000);
+		
+		target.addEventListener('touchend', touchend);
+		target.addEventListener('touchcancel', touchcancel);											  
+	}
+	
+	function touchend(e){
+		e.currentTarget.draggable = "true";
+		clearTimeout(timeout);					
+		e.currentTarget.removeEventListener('touchmove', touchmove);
+		container.removeEventListener("touchmove", preventBehavior);
+		let y = e.changedTouches[0].clientY;
+		let elementAfter = getElementAfter(container, y);					
+		dragOrderChange(elementAfter, true, e.currentTarget);				
+	}
+	
+	function touchcancel(e){
+		e.currentTarget.draggable = "true";
+		clearTimeout(timeout);
+		e.currentTarget.classList.remove('dragging');					
+		e.currentTarget.removeEventListener('touchmove', touchmove);
+		container.removeEventListener("touchmove", preventBehavior);
+	}
+	
+	function dragstart(e){
+		e.currentTarget.draggable = "false";
+		e.currentTarget.classList.add("dragging");
+	}
+	
+	function dragend(e){					
+		e.stopPropagation();
+		e.preventDefault();
+		e.currentTarget.draggable = "true";
+		let y = e.clientY;
+		let elementAfter = getElementAfter(container, y);
+		dragOrderChange(elementAfter, true, e.currentTarget);
+	} 
+
+	function dragOver(e) {					
+		e.preventDefault();
+		let y = e.clientY;
+		let elementAfter = getElementAfter(container, y);
+		dragOrderChange(elementAfter);
+	}
+
+
+	function actionQuickSettingsDraggable(checked){
+		
+
+		if(checked){
+			draggables = Array.from(gradioApp().querySelectorAll('#quicksettings_overflow_container > div:not(.dragging)'));			
+			gradioApp().addEventListener('drop', preventBehavior);
+		}else{			
+			gradioApp().removeEventListener('drop', preventBehavior);
+		}
+		
+
+		gradioApp().querySelectorAll('#quicksettings_overflow_container > div').forEach(function (elem){
+			
+			//elem.setAttribute("draggable", checked);
+			elem.draggable = checked;
+			
+			if(checked){
+							
+				elem.addEventListener('touchstart', touchstart);
+				elem.addEventListener('dragstart', dragstart);
+				elem.addEventListener('dragend', dragend);
+				elem.addEventListener('dragover', dragOver);
+				
+			}else{
+				
+				elem.removeEventListener('touchstart', touchstart, false);
+				elem.removeEventListener('touchend', touchend, false);
+				elem.removeEventListener('touchcancel', touchcancel, false);
+				elem.removeEventListener('touchmove', touchmove, false);
+				elem.removeEventListener('dragstart', dragstart, false);
+				elem.removeEventListener('dragend', dragend, false);
+				elem.removeEventListener('dragover', dragOver, false);
+
+			}
+		})
+	}
+	
+
+	gradioApp().querySelector('#quicksettings_draggable').addEventListener('click', function (e) {
+		if (e.target && e.target.matches("input[type='checkbox']")) {
+			actionQuickSettingsDraggable(e.target.checked);
+		}
+	})
+	
+
+
 	updateOpStyles();
 	
 

@@ -1711,26 +1711,33 @@ def create_ui():
         # print(selected)      
         # return gr.Tabs.update(selected=selected)
 
-    with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion") as demo:      
-        with gr.Row(elem_id="quicksettings"): 
-            with gr.Row(elem_id="top_row_sd_model_checkpoint") as qsettings_row:
-                component = create_setting_component("sd_model_checkpoint", "sd", is_quicksettings=True)
-                component_dict["sd_model_checkpoint"] = component
-            
-            with gr.Column(elem_id="quicksettings_overflow"):        
-                for i, k, item in sorted(quicksettings_list, key=lambda x: quicksettings_names.get(x[1], x[0])):
-                    if( k != "sd_model_checkpoint"):
-                        #with gr.Row(elem_id=f"quick_row_{k}") as qsettings_row:                   
-                        component = create_setting_component(k, item.section[0], is_quicksettings=True)
-                        component_dict[k] = component
-
-        gr.Row(elem_id="quick_menu")
-        parameters_copypaste.connect_paste_params_buttons()
-        
- 
-        with gr.Tabs(elem_id="tabs") as tabs:
+    with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion") as demo:  
+        with gr.Row(elem_id="header-top"):
             gr.Row(elem_id="nav_menu")
             gr.Row(elem_id="nav_menu_header_tabs")
+                
+            with gr.Row(elem_id="quicksettings"): 
+                with gr.Row(elem_id="top_row_sd_model_checkpoint") as qsettings_row:
+                    component = create_setting_component("sd_model_checkpoint", "sd", is_quicksettings=True)
+                    component_dict["sd_model_checkpoint"] = component
+                
+                with gr.Column(elem_id="quicksettings_overflow"): 
+                    with gr.Row(elem_id="quicksettings_actions"):
+                        gr.Checkbox(label='', elem_id="quicksettings_draggable", interactive=True)
+                        #ToolButton(elem_id="quicksettings_sort_asc", interactive=True)
+                        #ToolButton(elem_id="quicksettings_sort_desc", interactive=True)
+                    with gr.Column(elem_id="quicksettings_overflow_container"):
+                        for i, k, item in sorted(quicksettings_list, key=lambda x: quicksettings_names.get(x[1], x[0])):
+                            if( k != "sd_model_checkpoint"):
+                                #with gr.Row(elem_id=f"quick_row_{k}") as qsettings_row:                   
+                                component = create_setting_component(k, item.section[0], is_quicksettings=True)
+                                component_dict[k] = component
+            
+            gr.Row(elem_id="quick_menu")
+            parameters_copypaste.connect_paste_params_buttons()
+ 
+        with gr.Tabs(elem_id="tabs") as tabs:
+            
             # with gr.Row(elem_id="nav_menu_header_tabs"):
                 # for interface, label, ifid in interfaces:
                     # btn = gr.Button(label, elem_id='tab_clone_' + ifid)

@@ -14,6 +14,7 @@ License: GNU General Public License
 	--extra-networks-height: calc((var(--extra-networks-card-real-size) * var(--extra-networks-visible-rows)) + ( var(--inside-padding-size) * 2 ) );
 	--extra-networks-name-size: calc(var(--extra-networks-card-size) * 1em);
 	
+	--top-header-height:60px;
 	
 
   
@@ -29,6 +30,60 @@ License: GNU General Public License
 
 body {
     background-color: var(--main-bg-color) !important;
+}
+
+#tabs{
+	margin-top: var(--top-header-height);
+}
+
+#header-top{
+	position: fixed;
+    top: 0px;
+    left: 0;
+    right: 0;
+    z-index: 10000;
+    min-height: var(--top-header-height);
+    background-color: var(--main-bg-color);
+    /* padding: 10px; */
+    padding-left: 1rem;
+    padding-right: 1rem;
+}
+
+
+#nav_menu_header_tabs {
+    position: relative;
+    height: 34px;
+    align-self: center;
+}
+
+#quicksettings {
+    align-items: center;
+    width: auto;
+    background: 0;
+    padding: 0;
+    position: relative;
+    max-height: 34px;
+    align-self: center;
+}
+
+#top_row_sd_model_checkpoint {
+    position: absolute;
+    z-index: 9999;
+    max-width: 290px;
+    right: 0;
+}
+
+#quick_menu {
+    z-index: 9999;
+    background-color: var(--input-bg-color);
+    position: relative;
+    width: 38px;
+    height: 38px;
+    border-radius: 100%;
+    cursor: pointer;
+    min-width: unset;
+    max-width: 38px;
+    align-self: center;
 }
 
 
@@ -113,11 +168,20 @@ body {
     color: inherit;
 }
 
-[id*="add2quick_"] {
-	min-width: unset !important;
-    max-width: 42px;
+#quicksettings_actions > div{
+	background-color: transparent !important;
+    border: 0;
 }
 
+#quicksettings_actions > div > div,
+[id*="add2quick_"] {
+	min-width: unset !important;
+    flex-grow:0 !important;
+	padding: 4px;
+	border: 1px solid;
+}
+
+#quicksettings_actions > div label,
 [id*="add2quick_"] label {
   display: block;
   position: relative;
@@ -129,9 +193,12 @@ body {
   user-select: none;
   margin: auto !important;
   padding: 0 !important;
+  min-width: 25px;
+  min-height: 25px;
 }
 
 /* Hide the browser's default checkbox */
+#quicksettings_actions > div input,
 [id*="add2quick_"] input {
   position: absolute;
   opacity: 0;
@@ -141,28 +208,34 @@ body {
 }
 
 /* Create a custom checkbox */
+#quicksettings_actions > div span,
 [id*="add2quick_"] span {
 	position: absolute;
 	top: 0;
 	left: 0;
 	height: 25px;
 	width: 25px;
-	-webkit-mask: url(./file=html/svg/menu-add-fill.svg) no-repeat 50% 50%;
-	mask: url(./file=html/svg/menu-add-fill.svg) no-repeat 50% 50%;
 	background-color: var(--input-color);
 	padding: 0;
     margin: 0 !important;
 	opacity:0.5;
 }
 
+[id*="add2quick_"] span {
+	-webkit-mask: url(./file=html/svg/menu-add-fill.svg) no-repeat 50% 50%;
+	mask: url(./file=html/svg/menu-add-fill.svg) no-repeat 50% 50%;
+}
 
 /* On mouse-over, add a grey background color */
+#quicksettings_draggable label input:checked ~ span,
+#quicksettings_actions > div label:hover input ~ span,
 [id*="add2quick_"] label:hover input ~ span {
   background-color: var(--icon-color);
   opacity:1.0;
 }
 
 /* When the checkbox is checked, add a blue background */
+
 [id*="add2quick_"] label input:checked ~ span {
 	-webkit-mask: url(./file=html/svg/close-line.svg) no-repeat 50% 50%;
 	mask: url(./file=html/svg/close-line.svg) no-repeat 50% 50%;
@@ -170,12 +243,71 @@ body {
 	opacity:0.5;
 }
 
+#quicksettings_draggable span {
+	-webkit-mask: url(./file=html/svg/drag-drop-line.svg) no-repeat 50% 50%;
+	mask: url(./file=html/svg/drag-drop-line.svg) no-repeat 50% 50%;
+}
+
+#quicksettings_sort_asc span {
+	-webkit-mask: url(./file=html/svg/sort-asc.svg) no-repeat 50% 50%;
+	mask: url(./file=html/svg/sort-asc.svg) no-repeat 50% 50%;
+}
+
+#quicksettings_sort_desc span {
+	-webkit-mask: url(./file=html/svg/sort-desc.svg) no-repeat 50% 50%;
+	mask: url(./file=html/svg/sort-desc.svg) no-repeat 50% 50%;
+}
+
+#quicksettings_overflow_container > div.marker-bottom:after,
+#quicksettings_overflow_container > div.marker-top:before {
+	content: ' ';
+    display: inline-block; 	
+    background-color: var(--primary-color);
+    width: 100%;
+    height: 2px;
+    position: relative;
+	margin-top: -5px;
+}
+#quicksettings_overflow_container > div.marker-bottom:after {
+    top: 8px;
+}
+
+#quicksettings_overflow_container > div:first-child {
+    margin-top: var(--outside-gap-size);
+}
+
+#quicksettings_overflow_container.no-scroll{
+	/*overflow:hidden;
+	width:100%;*/
+}
+/* #quicksettings_actions{
+	 margin-bottom:0 !important;
+} */
+
+#quicksettings_overflow_container > div.dragging {
+   opacity:0.4 !important;
+}
+
+[draggable="true"] [id*="add2quick_"]{
+	pointer-events: none;
+}
+
+[draggable="true"] [id*="add2quick_"] label input:checked ~ span {
+	-webkit-mask: url(./file=html/svg/drag-drop-line.svg) no-repeat 50% 50%;
+	mask: url(./file=html/svg/drag-drop-line.svg) no-repeat 50% 50%;
+	background-color: var(--input-color);
+	opacity:0.5;
+}
+
+#quicksettings_actions > div label input:checked ~ span:after,
+#quicksettings_actions > div label:hover input:checked ~ span,
 [id*="add2quick_"] label:hover input:checked ~ span {
 	background-color: var(--icon-color);
 	opacity:1.0;
 }
 
 /* Create the checkmark/indicator (hidden when not checked) */
+#quicksettings_actions > div label span:after,
 [id*="add2quick_"] label span:after {
   content: "";
   position: absolute;
@@ -183,6 +315,7 @@ body {
 }
 
 /* Show the checkmark when checked */
+#quicksettings_actions > div label input:checked ~ span:after,
 [id*="add2quick_"] label input:checked ~ span:after {
   display: block;
 }
@@ -494,13 +627,13 @@ body {
 /* offcanvas menu */
 #tabs > div:first-child {
     position: fixed;
-    z-index: 9999;
+    z-index: 10000;
     display: block;
     width: 90%;
     height: 100%;
     background-color: var(--nav-bg-color) !important;
     top: 0;
-    padding-top: 70px;
+    padding-top: var(--top-header-height);
     left:0;
     max-width: 320px;
 	transform: translateX(-100%);
@@ -515,7 +648,6 @@ body {
     transform: translateX(0);
 	box-shadow: rgba(0,0,0,0.4)-30px 0 30px 30px;
 }
-
 
 #tabs > div:first-child > button {
     display: block;
@@ -541,25 +673,21 @@ body {
 
 }
 
-#tabs > #nav_menu {
+[id$="nav_menu"]{
     z-index: 9999;
     background-color: var(--input-bg-color);
-    position: absolute;
+    position: relative;
     width: 38px;
     height: 38px;
-    top: -2px;
-    left: 0;
     border-radius: 100%;
     cursor: pointer;
+    max-width: 38px;
+    min-width: unset;
+    align-self: center;
 }
 
-#tabs > #nav_menu.fixed {
-	position: fixed;
-	top:22px;
-	left:16px;
-}
 
-#tabs > #nav_menu::before {
+[id$="nav_menu"]::before {
     content: ' ';
     display: inline-block;
     -webkit-mask-size: cover;
@@ -577,11 +705,18 @@ body {
     
 }
 
-#tabs > #nav_menu:hover {
+[id$="nav_menu"]:hover {
 	background-color: var(--primary-color);
 }
-#tabs > #nav_menu:hover::before {
+[id$="nav_menu"]:hover::before {
 	background-color: var(--main-bg-color);
+}
+
+#clone_nav_menu{
+	position:fixed;
+	z-index:99999;
+	left:1rem;
+	top: calc((var(--top-header-height) - 38px) / 2);
 }
 
 /* offcanvas quicksettings menu */
@@ -592,17 +727,22 @@ body {
     display: block;
     width: 90%;
     background-color: var(--main-bg-color) !important;
-    top: 70px;
+    top: var(--top-header-height);
     bottom: 0px;
     padding: 16px;
-    padding-top: 0px;
+    /*padding-top: 0px;*/
     right: 0;
     max-width: 480px;
 	transform: translateX(100%);
 	transition: all 0.25s ease 0s;
     box-shadow: rgba(0,0,0,0) -30px 0 30px -30px;
-	overflow-y: auto;
+	overflow: hidden;
 
+}
+
+#quicksettings_overflow_container {
+	overflow-y: auto;
+	height: calc(100% - 45px);
 }
 
 #quicksettings_overflow.open {
@@ -618,22 +758,8 @@ body {
    height:auto;
 }
 */
-#quicksettings {
-    align-items: center;
-    flex-direction: row;
-    width: auto; 
-	align-self: end;
-    background: 0;
-	padding: 0;
-}
 
-#top_row_sd_model_checkpoint {
-	margin-right:50px;
-	margin-left:50px;
-	position:relative;
-	z-index:9999;
-	
-}
+
 
 #top_row_sd_model_checkpoint div {
     border: 0;
@@ -652,23 +778,7 @@ padding-right: 37px;
 min-height: 34px;
 }
 
-#quick_menu {
-    z-index: 9999;
-    background-color: var(--input-bg-color);
-    position: absolute;
-    width: 38px;
-    height: 38px;
-    top: -2px;
-    right: 0;
-    border-radius: 100%;
-    cursor: pointer;
-}
 
-#quick_menu.fixed {
-	position: fixed;
-	top:22px;
-	right:16px;
-}
 
 #quick_menu::before {
     content: ' ';
@@ -705,6 +815,7 @@ min-height: 34px;
 	margin:0; 
 	min-width: 300px;
 	overflow: hidden;
+	padding-top: 0;
 }
 
 .min-h-screen > .mx-auto.container > div{
@@ -1692,23 +1803,23 @@ canvas[key=mask] {
 	margin-right:8px;
 }
 
-#quicksettings_overflow > div > div:nth-child(2),
+#quicksettings_overflow_container > div > div:nth-child(2),
 [id$="settings_2img_settings"] > div > div:nth-child(2)
 {
 	flex-shrink: 1 !important;
     flex-grow: 0 !important;
     flex-basis: 0% !important;
-    min-width: 43px;
+    min-width: unset;
     position: relative;
     margin-left: -1px;
 }
 
-#quicksettings_overflow > div > div:nth-child(2) > div,
+#quicksettings_overflow_container > div > div:nth-child(2) > div,
 [id$="settings_2img_settings"] > div > div:nth-child(2) > div{
 	min-width:unset !important;
 }
 
-#quicksettings_overflow > div,
+#quicksettings_overflow_container > div,
 [id$="settings_2img_settings"] > div{
 	gap:0 !important;
 }
@@ -1718,30 +1829,27 @@ canvas[key=mask] {
 	display:none;
 }
 
-#top_row_sd_model_checkpoint {
-    margin-right: 50px;
-    margin-left: 50px;
-    max-width: 290px;
-}
 
-#nav_menu_header_tabs{
-	position:absolute;
-	height: 34px;
-	top:0;
-	left:50px;
-}
+
+
+
 #nav_menu_header_tabs button{
 	font-size: 14px;
     flex: 1 1 auto;
     flex-grow: 0;
     min-width: unset;
 	padding-bottom: 0;
+	padding-right: 0;
+	padding-top:0;
     border: 0;
 	color:var(--nav-color);
+	background: 0 !important;
 }
 #nav_menu_header_tabs button.bg-white{
 	color:var(--primary-color);
 }
+
+
 
 /*
 [id$="settings_2img_settings"] button {
@@ -2896,10 +3004,10 @@ ul.list-none {
 	[id$="settings_2img_settings"] {
 		max-height: none;
 	}
-	
+	#nav_menu_header_tabs,
 	#tab_extensions td,
 	#tab_extensions th {
-		display:none;
+		display:none !important;
 	}
 	
 	#tab_extensions td:first-child,
@@ -2908,6 +3016,11 @@ ul.list-none {
 	#tab_extensions th:last-child
 	{
 		display:table-cell;
+	}
+	
+	#quicksettings {
+		margin-left: 8px;
+		margin-right: 8px;
 	}
 		
 		
