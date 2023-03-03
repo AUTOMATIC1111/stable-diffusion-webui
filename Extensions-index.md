@@ -9,7 +9,13 @@
         "training": "new type of training, assists with training, and/or merging related.",
         "models": "conversion and merging related.",
         "UI related": "an extension that enhances the display or user interface experience.",
-        "integrations": "plugins, apis, and other ML models that work/ align with user workflow."
+        "prompting": "an extension assists with writing words, for prompts.",
+        "editing": "an extension that changes images, not using stable diffusion.",
+        "manipulations": "an extension that changes images with stable diffusion.",
+        "online": "An extension requires wifi to use, often API related.",
+        "animation": "an extension related to creating videos with stable diffusion.",
+        "query": "extract info from images.",
+        "science": "experimentation with stable diffusion."
     },
     "extensions": [
         {
@@ -24,14 +30,14 @@
             "url": "https://github.com/AUTOMATIC1111/stable-diffusion-webui-wildcards.git",
             "description": "Sample extension. Allows you to use __name__ syntax in your prompt to get a random line from a file named name.txt in the wildcards directory. Also see Dynamic Prompts for similar functionality.",
             "added": "2022-11-01",
-            "tags": ["script"]
+            "tags": ["script", "prompting"]
         },
         {
             "name": "Dynamic Prompts",
             "url": "https://github.com/adieyal/sd-dynamic-prompts.git",
             "description": "Implements an expressive template language for random or combinatorial prompt generation along with features to support deep wildcard directory structures.",
             "added": "2022-11-01",
-            "tags": ["script"]
+            "tags": ["script", "prompting"]
         },
         {
             "name": "Dreambooth",
@@ -45,12 +51,12 @@
             "url": "https://github.com/d8ahazard/sd_smartprocess.git",
             "description": "Smart pre-process including auto subject identification, caption subject swapping, and upscaling/facial restoration.",
             "added": "2022-11-12",
-            "tags": ["script", "tab"]
+            "tags": ["script", "tab", "editing"]
         },
         {
             "name": "Image browser",
             "url": "https://github.com/AlUlkesh/stable-diffusion-webui-images-browser.git",
-            "description": "Provides an interface to browse created images in the web browser. Note: new ext. maintainer, uninstall previous ext. if needed.",
+            "description": "Provides an interface to browse created images in the web browser.",
             "added": "2022-11-01",
             "tags": ["script", "tab", "UI related"]
         },
@@ -66,42 +72,63 @@
             "url": "https://github.com/deforum-art/deforum-for-automatic1111-webui.git",
             "description": "The official port of Deforum, an extensive script for 2D and 3D animations, supporting keyframable sequences, dynamic math parameters (even inside the prompts), dynamic masking, depth estimation and warping.",
             "added": "2022-11-01",
-            "tags": ["script", "tab"]
+            "tags": ["script", "tab", "animation"]
         },
         {
             "name": "Animator",
             "url": "https://github.com/Animator-Anon/animator_extension.git",
             "description": "A basic img2img script that will dump frames and build a video file. Suitable for creating interesting zoom-in warping movies. This is intended to be a versatile toolset to help you automate some img2img tasks.",
             "added": "2023-01-11",
-            "tags": ["script", "tab"]
+            "tags": ["script", "tab", "animation"]
         },
         {
             "name": "gif2gif",
             "url": "https://github.com/LonicaMewinsky/gif2gif.git",
             "description": "A script for img2img that extract a gif frame by frame for img2img generation and recombine them back into an animated gif",
             "added": "2023-02-09",
-            "tags": ["script"]
+            "tags": ["script", "animation"]
         },
         {
             "name": "Video Loopback",
-            "url": "https://github.com/fishslot/video_loopback_for_webui",
+            "url": "https://github.com/fishslot/video_loopback_for_webui.git",
             "description": "A video2video script that tries to improve on the temporal consistency and flexibility of normal vid2vid.",
             "added": "2023-02-13",
-            "tags": ["script"]
+            "tags": ["script", "animation"]
+        },
+        {
+            "name": "seed travel",
+            "url": "https://github.com/yownas/seed_travel.git",
+            "description": "Small script for AUTOMATIC1111/stable-diffusion-webui to create images that exists between seeds.",
+            "added": "2022-11-09",
+            "tags": ["script", "animation"]
+        },
+        {
+            "name": "shift-attention",
+            "url": "https://github.com/yownas/shift-attention.git",
+            "description": "Generate a sequence of images shifting attention in the prompt. This script enables you to give a range to the weight of tokens in a prompt and then generate a sequence of images stepping from the first one to the second.",
+            "added": "2022-11-09",
+            "tags": ["script", "animation"]
+        },
+        {
+            "name": "prompt travel",
+            "url": "https://github.com/Kahsolt/stable-diffusion-webui-prompt-travel.git",
+            "description": "Extension script for AUTOMATIC1111/stable-diffusion-webui to travel between prompts in latent space.",
+            "added": "2022-11-11",
+            "tags": ["script", "animation"]
         },
         {
             "name": "Artists to study",
             "url": "https://github.com/camenduru/stable-diffusion-webui-artists-to-study.git",
             "description": "Shows a gallery of generated pictures by artists separated into categories.",
             "added": "2022-11-01",
-            "tags": ["script", "tab"]
+            "tags": ["script", "tab", "UI related"]
         },
         {
             "name": "Aesthetic Image Scorer",
             "url": "https://github.com/tsngo/stable-diffusion-webui-aesthetic-image-scorer.git",
             "description": "Calculates aesthetic score for generated images using CLIP+MLP Aesthetic Score Predictor based on Chad Scorer",
             "added": "2022-11-01",
-            "tags": ["script", "integrations"]
+            "tags": ["script", "query"]
         },
         {
             "name": "Dataset Tag Editor",
@@ -115,7 +142,7 @@
             "url": "https://github.com/Interpause/auto-sd-paint-ext.git",
             "description": "Krita Plugin.",
             "added": "2022-11-04",
-            "tags": ["script", "integrations"]
+            "tags": ["script", "editing"]
         },
         {
             "name": "training-picker",
@@ -129,35 +156,35 @@
             "url": "https://github.com/ThereforeGames/unprompted.git",
             "description": "Allows you to include various shortcodes in your prompts. You can pull text from files, set up your own variables, process text through conditional functions, and so much more - it's like wildcards on steroids. It now includes integrations like hard-prompts made easy, ControlNet, txt2img2img and txt2mask.",
             "added": "2022-11-04",
-            "tags": ["script", "integrations", "ads"]
+            "tags": ["script", "prompting", "ads"]
         },
         {
             "name": "StylePile",
             "url": "https://github.com/some9000/StylePile.git",
             "description": "An easy way to mix and match elements to prompts that affect the style of the result.",
             "added": "2022-11-24",
-            "tags": ["script"]
+            "tags": ["script", "prompting"]
         },
         {
             "name": "Booru tag autocompletion",
             "url": "https://github.com/DominikDoom/a1111-sd-webui-tagcomplete.git",
             "description": "Displays autocompletion hints for tags from image booru boards such as Danbooru. Uses local tag CSV files and includes a config for customization.",
             "added": "2022-11-04",
-            "tags": ["script"]
+            "tags": ["script", "prompting"]
         },
         {
             "name": "novelai-2-local-prompt",
             "url": "https://github.com/animerl/novelai-2-local-prompt.git",
             "description": "Add a button to convert the prompts used in NovelAI for use in the WebUI. In addition, add a button that allows you to recall a previously used prompt.",
             "added": "2022-11-05",
-            "tags": ["script"]
+            "tags": ["script", "prompting"]
         },
         {
             "name": "tokenizer",
             "url": "https://github.com/AUTOMATIC1111/stable-diffusion-webui-tokenizer.git",
             "description": "Adds a tab that lets you preview how CLIP model would tokenize your text.",
             "added": "2022-11-05",
-            "tags": ["script", "tab"]
+            "tags": ["script", "tab", "prompting"]
         },
         {
             "name": "Embeddings editor",
@@ -171,7 +198,7 @@
             "url": "https://github.com/innightwolfsleep/stable-diffusion-webui-randomize.git",
             "description": "Allows for random parameters during txt2img generation. This script will function with others as well. Original author: https://git.mmaker.moe/mmaker/stable-diffusion-webui-randomize",
             "added": "2022-11-11",
-            "tags": ["script"]
+            "tags": ["script", "prompting"]
         },
         {
             "name": "embedding-inspector",
@@ -185,70 +212,49 @@
             "url": "https://github.com/tjm35/asymmetric-tiling-sd-webui.git",
             "description": "An always visible script extension to configure seamless image tiling independently for the X and Y axes.",
             "added": "2023-01-13",
-            "tags": ["script"]
+            "tags": ["script", "manipulations"]
         },
         {
             "name": "Latent Mirroring",
             "url": "https://github.com/dfaker/SD-latent-mirroring.git",
             "description": "Applies mirroring and flips to the latent images to produce anything from subtle balanced compositions to perfect reflections",
             "added": "2022-11-06",
-            "tags": ["script"]
-        },
-        {
-            "name": "seed travel",
-            "url": "https://github.com/yownas/seed_travel.git",
-            "description": "Small script for AUTOMATIC1111/stable-diffusion-webui to create images that exists between seeds.",
-            "added": "2022-11-09",
-            "tags": ["script"]
-        },
-        {
-            "name": "shift-attention",
-            "url": "https://github.com/yownas/shift-attention.git",
-            "description": "Generate a sequence of images shifting attention in the prompt. This script enables you to give a range to the weight of tokens in a prompt and then generate a sequence of images stepping from the first one to the second.",
-            "added": "2022-11-09",
-            "tags": ["script"]
-        },
-        {
-            "name": "prompt travel",
-            "url": "https://github.com/Kahsolt/stable-diffusion-webui-prompt-travel.git",
-            "description": "Extension script for AUTOMATIC1111/stable-diffusion-webui to travel between prompts in latent space.",
-            "added": "2022-11-11",
-            "tags": ["script"]
+            "tags": ["script", "manipulations"]
         },
         {
             "name": "Sonar",
             "url": "https://github.com/Kahsolt/stable-diffusion-webui-sonar.git",
             "description": "Improve the generated image quality, searches for similar (yet even better!) images in the neighborhood of some known image, focuses on single prompt optimization rather than traveling between multiple prompts.",
             "added": "2023-01-12",
-            "tags": ["script"]
+            "tags": ["script", "manipulations"]
         },
         {
             "name": "Detection Detailer",
             "url": "https://github.com/dustysys/ddetailer.git",
             "description": "An object detection and auto-mask extension for Stable Diffusion web UI.",
             "added": "2022-11-09",
-            "tags": ["script"]
+            "tags": ["script", "editing"]
         },
         {
             "name": "Batch Face Swap",
             "url": "https://github.com/kex0/batch-face-swap.git",
             "description": "Automatically detects faces and replaces them.",
             "added": "2023-01-13",
-            "tags": ["script"]
+            "tags": ["script", "editing"]
         },
         {
             "name": "conditioning-highres-fix",
             "url": "https://github.com/klimaleksus/stable-diffusion-webui-conditioning-highres-fix.git",
             "description": "This is Extension for rewriting Inpainting conditioning mask strength value relative to Denoising strength at runtime. This is useful for Inpainting models such as sd-v1-5-inpainting.ckpt",
             "added": "2022-11-11",
-            "tags": ["script"]
+            "tags": ["script", "prompting"]
         },
         {
             "name": "Auto TLS-HTTPS",
             "url": "https://github.com/papuSpartan/stable-diffusion-webui-auto-tls-https.git",
             "description": "Allows you to easily, or even completely automatically start using HTTPS.",
             "added": "2022-11-14",
-            "tags": ["script", "integrations"]
+            "tags": ["script"]
         },
         {
             "name": "DreamArtist",
@@ -269,14 +275,14 @@
             "url": "https://github.com/Malisius/booru2prompt.git",
             "description": "This SD extension allows you to turn posts from various image boorus into stable diffusion prompts. It does so by pulling a list of tags down from their API. You can copy-paste in a link to the post you want yourself, or use the built-in search feature to do it all without leaving SD.",
             "added": "2022-11-21",
-            "tags": ["script", "tab"]
+            "tags": ["script", "tab", "online"]
         },
         {
             "name": "Gelbooru Prompt",
             "url": "https://github.com/antis0007/sd-webui-gelbooru-prompt.git",
             "description": "Extension that gets tags for saved gelbooru images in AUTOMATIC1111's Stable Diffusion webui",
             "added": "2022-12-20",
-            "tags": ["script"]
+            "tags": ["script", "online"]
         },
         {
             "name": "Merge Board",
@@ -290,49 +296,49 @@
             "url": "https://github.com/thygate/stable-diffusion-webui-depthmap-script.git",
             "description": "Depth Maps, Stereo Image, 3D Mesh and Video generator extension.",
             "added": "2022-11-30",
-            "tags": ["script"]
+            "tags": ["script", "editing"]
         },
         {
             "name": "multi-subject-render",
             "url": "https://github.com/Extraltodeus/multi-subject-render.git",
             "description": "It is a depth aware extension that can help to create multiple complex subjects on a single image. It generates a background, then multiple foreground subjects, cuts their backgrounds after a depth analysis, paste them onto the background and finally does an img2img for a clean finish.",
             "added": "2022-11-24",
-            "tags": ["script"]
+            "tags": ["script", "editing", "manipulations"]
         },
         {
             "name": "depthmap2mask",
             "url": "https://github.com/Extraltodeus/depthmap2mask.git",
             "description": "Create masks for img2img based on a depth estimation made by MiDaS.",
             "added": "2022-11-26",
-            "tags": ["script"]
+            "tags": ["script", "editing", "manipulations"]
         },
         {
             "name": "ABG_extension",
             "url": "https://github.com/KutsuyaYuki/ABG_extension.git",
             "description": "Automatically remove backgrounds. Uses an onnx model fine-tuned for anime images. Runs on GPU.",
             "added": "2022-12-24",
-            "tags": ["script"]
+            "tags": ["script", "editing"]
         },
         {
             "name": "Depth Image I/O",
             "url": "https://github.com/AnonymousCervine/depth-image-io-for-SDWebui.git",
             "description": "An extension to allow managing custom depth inputs to Stable Diffusion depth2img models.",
             "added": "2023-01-17",
-            "tags": ["script"]
+            "tags": ["script", "manipulations"]
         },
         {
             "name": "Visualize Cross-Attention",
             "url": "https://github.com/benkyoujouzu/stable-diffusion-webui-visualize-cross-attention-extension.git",
             "description": "Generates highlighted sectors of a submitted input image, based on input prompts. Use with tokenizer extension. See the readme for more info.",
             "added": "2022-11-25",
-            "tags": ["script", "tab", "integrations"]
+            "tags": ["script", "tab", "science"]
         },
         {
             "name": "DAAM",
             "url": "https://github.com/toriato/stable-diffusion-webui-daam.git",
-            "description": "DAAM stands for Diffusion Attentive Attribution Maps. Enter the attention text (must be a string contained in the prompt) and run. An overlapping image with a heatmap for each attention will be generated along with the original image. Note: new ext. maintainer, uninstall previous ext. if needed.",
+            "description": "DAAM stands for Diffusion Attentive Attribution Maps. Enter the attention text (must be a string contained in the prompt) and run. An overlapping image with a heatmap for each attention will be generated along with the original image.",
             "added": "2022-12-02",
-            "tags": ["script", "integrations"]
+            "tags": ["script", "science"]
         },
         {
             "name": "Prompt Gallery",
@@ -346,21 +352,21 @@
             "url": "https://github.com/mcmonkeyprojects/sd-infinity-grid-generator-script.git",
             "description": "Build a yaml file with your chosen parameters, and generate infinite-dimensional grids. Built-in ability to add description text to fields. See readme for usage details.",
             "added": "2022-12-09",
-            "tags": ["script"]
+            "tags": ["script", "UI related"]
         },
         {
             "name": "NSFW checker",
             "url": "https://github.com/AUTOMATIC1111/stable-diffusion-webui-nsfw-censor.git",
             "description": "Replaces NSFW images with black.",
             "added": "2022-12-10",
-            "tags": ["script", "integrations"]
+            "tags": ["script", "prompting"]
         },
         {
             "name": "Diffusion Defender",
             "url": "https://github.com/WildBanjos/DiffusionDefender.git",
             "description": "Prompt blacklist, find and replace, for semi-private and public instances.",
             "added": "2022-12-20",
-            "tags": ["script"]
+            "tags": ["script", "prompting"]
         },
         {
             "name": "Config-Presets",
@@ -381,7 +387,7 @@
             "url": "https://github.com/d8ahazard/sd_auto_fix.git",
             "description": "Random patches by D8ahazard. Auto-load config YAML files for v2, 2.1 models; patch latent-diffusion to fix attention on 2.1 models (black boxes without no-half), whatever else I come up with.",
             "added": "2022-12-16",
-            "tags": ["script", "integrations"]
+            "tags": ["script"]
         },
         {
             "name": "Riffusion",
@@ -402,42 +408,42 @@
             "url": "https://github.com/zero01101/openOutpaint-webUI-extension.git",
             "description": "A tab with the full openOutpaint UI. Run with the --api flag.",
             "added": "2022-12-23",
-            "tags": ["script", "tab", "integrations"]
+            "tags": ["script", "tab", "UI related", "editing"]
         },
         {
             "name": "model-keyword",
             "url": "https://github.com/mix1009/model-keyword.git",
             "description": "Inserts matching keyword(s) to the prompt automatically. Update this extension to get the latest model+keyword mappings.",
             "added": "2022-12-28",
-            "tags": ["script"]
+            "tags": ["script", "prompting"]
         },
         {
             "name": "Prompt Generator",
             "url": "https://github.com/imrayya/stable-diffusion-webui-Prompt_Generator.git",
             "description": "generate a prompt from a small base prompt using distilgpt2. Adds a tab with additional control of the model.",
             "added": "2022-12-30",
-            "tags": ["script", "tab"]
+            "tags": ["script", "tab", "prompting"]
         },
         {
             "name": "Promptgen",
             "url": "https://github.com/AUTOMATIC1111/stable-diffusion-webui-promptgen.git",
             "description": "Use transformers models to generate prompts.",
             "added": "2023-01-18",
-            "tags": ["script", "tab"]
+            "tags": ["script", "tab", "prompting"]
         },
         {
             "name": "text2prompt",
             "url": "https://github.com/toshiaki1729/stable-diffusion-webui-text2prompt.git",
             "description": "Generates anime tags using databases and models for tokenizing.",
             "added": "2023-02-11",
-            "tags": ["script", "tab"]
+            "tags": ["script", "tab", "prompting"]
         },
         {
             "name": "Prompt Translator",
             "url": "https://github.com/butaixianran/Stable-Diffusion-Webui-Prompt-Translator",
             "description": "A integrated translator for translating prompts to English using Deepl or Baidu.",
             "added": "2023-02-11",
-            "tags": ["script", "tab"]
+            "tags": ["script", "tab", "prompting"]
         },
         {
             "name": "quick-css",
@@ -463,7 +469,7 @@
         {
             "name": "Kohya-ss Additional Networks",
             "url": "https://github.com/kohya-ss/sd-webui-additional-networks.git",
-            "description": "Allows the Web UI to use networks (LoRA) trained by their scripts to generate images.",
+            "description": "Allows the Web UI to use LoRAs (1.X and 2.X) to generate images. Also allows editing .safetensors networks prompt metadata.",
             "added": "2023-01-06",
             "tags": ["script", "models"]
         },
@@ -472,35 +478,35 @@
             "url": "https://github.com/Coyote-A/ultimate-upscale-for-automatic1111.git",
             "description": "More advanced options for SD Upscale, less artifacts than original using higher denoise ratio (0.3-0.5).",
             "added": "2023-01-10",
-            "tags": ["script"]
+            "tags": ["script", "editing"]
         },
         {
             "name": "Stable Horde Worker",
             "url": "https://github.com/sdwebui-w-horde/sd-webui-stable-horde-worker.git",
             "description": "Worker Client for Stable Horde. Generate pictures for other users with your PC. Please see readme for additional instructions.",
             "added": "2023-01-10",
-            "tags": ["script", "tab", "integrations"]
+            "tags": ["script", "tab", "online"]
         },
         {
             "name": "Stable Horde Client",
             "url": "https://github.com/natanjunges/stable-diffusion-webui-stable-horde.git",
             "description": "Stable Horde Client. Generate pictures using other user's PC. Useful if u have no GPU.",
             "added": "2023-01-11",
-            "tags": ["script", "tab", "integrations"]
+            "tags": ["script", "tab", "online"]
         },
         {
             "name": "Hypernetwork-Monkeypatch-Extension",
             "url": "https://github.com/aria1th/Hypernetwork-MonkeyPatch-Extension.git",
             "description": "Extension that provides additional training features for hypernetwork training. Also supports using multiple hypernetworks for inference.",
             "added": "2023-01-12",
-            "tags": ["script", "tab", "training"]
+            "tags": ["script", "tab", "training", "prompting"]
         },
         {
             "name": "Multiple Hypernetworks",
             "url": "https://github.com/antis0007/sd-webui-multiple-hypernetworks.git",
             "description": "Adds the ability to apply multiple hypernetworks at once. Apply multiple hypernetworks sequentially, with different weights.",
             "added": "2023-01-13",
-            "tags": ["script"]
+            "tags": ["script", "prompting"]
         },
         {
             "name": "Merge Block Weighted",
@@ -514,28 +520,28 @@
             "url": "https://github.com/KohakuBlueleaf/a1111-sd-webui-haku-img.git",
             "description": "Image utils extension. Allows blending, layering, hue and color adjustments, blurring and sketch effects, and basic pixelization.",
             "added": "2023-01-17",
-            "tags": ["script", "tab"]
+            "tags": ["script", "tab", "editing"]
         },
         {
             "name": "Discord Rich Presence",
             "url": "https://github.com/kabachuha/discord-rpc-for-automatic1111-webui.git",
             "description": "Provides connection to Discord RPC, showing a fancy table in the user profile.",
             "added": "2023-01-20",
-            "tags": ["script", "integrations"]
+            "tags": ["script", "online"]
         },
     {
             "name": "Steps Animation",
             "url": "https://github.com/vladmandic/sd-extension-steps-animation.git",
             "description": "Create animation sequence from denoised intermediate steps.",
             "added": "2023-01-21",
-            "tags": ["script"]
+            "tags": ["script", "animation"]
         },
         {
             "name": "Aesthetic Scorer",
             "url": "https://github.com/vladmandic/sd-extension-aesthetic-scorer.git",
             "description": "Uses existing CLiP model with an additional small pretrained model to calculate perceived aesthetic score of an image.",
             "added": "2023-01-21",
-            "tags": ["script", "integrations"]
+            "tags": ["script", "query"]
         },
         {
             "name": "System Info",
@@ -549,14 +555,14 @@
             "url": "https://github.com/AUTOMATIC1111/stable-diffusion-webui-pixelization.git",
             "description": "Using pre-trained models, produce pixel art out of images in the extras tab.",
             "added": "2023-01-23",
-            "tags": ["script"]
+            "tags": ["script", "editing"]
         },
         {
             "name": "Instruct-pix2pix",
             "url": "https://github.com/Klace/stable-diffusion-webui-instruct-pix2pix.git",
             "description": "Adds a tab for doing img2img editing with the instruct-pix2pix model. Note: No longer required. Author has integrated code to webui, use in img2img.",
             "added": "2023-01-25",
-            "tags": ["script", "tab"]
+            "tags": ["script", "tab", "prompting"]
         },
         {
             "name": "Custom Diffusion",
@@ -570,49 +576,49 @@
             "url": "https://github.com/ljleb/prompt-fusion-extension.git",
             "description": "Adds prompt-travel and shift-attention-like interpolations (see exts), but during/within the sampling steps. Always-on + works w/ existing prompt-editing syntax. Various interpolation modes. See their wiki for more info.",
             "added": "2023-01-28",
-            "tags": ["script"]
+            "tags": ["script", "manipulations"]
         },
         {
             "name": "cafe-aesthetic",
             "url": "https://github.com/p1atdev/stable-diffusion-webui-cafe-aesthetic.git",
             "description": "Pre-trained model, determines if aesthetic/non-aesthetic, does 5 different style recognition modes, and Waifu confirmation. Also has a tab with Batch processing.",
             "added": "2023-01-28",
-            "tags": ["script", "tab", "integrations"]
+            "tags": ["script", "tab", "query"]
         },
         {
             "name": "Dynamic Thresholding",
             "url": "https://github.com/mcmonkeyprojects/sd-dynamic-thresholding.git",
             "description": "Adds customizable dynamic thresholding to allow high CFG Scale values without the burning / 'pop art' effect.",
             "added": "2023-02-01",
-            "tags": ["script"]
+            "tags": ["script", "manipulations"]
         },
         {
             "name": "Aspect Ratio selector",
             "url": "https://github.com/alemelis/sd-webui-ar.git",
             "description": "Adds image aspect ratio selector buttons.",
             "added": "2023-02-04",
-            "tags": ["script"]
+            "tags": ["script", "UI related"]
         },
         {
             "name": "Catppuccin Theme",
             "url": "https://github.com/catppuccin/stable-diffusion-webui.git",
             "description": "Adds various custom themes",
             "added": "2023-02-04",
-            "tags": ["script"]
+            "tags": ["script", "UI related"]
         },
         {
             "name": "Embedding Merge",
             "url": "https://github.com/klimaleksus/stable-diffusion-webui-embedding-merge.git",
             "description": "Merging Textual Inversion embeddings at runtime from string literals. Phrases and weight values also supported.",
             "added": "2023-02-09",
-            "tags": ["script", "tab"]
+            "tags": ["script", "tab", "models", "manipulations"]
         },
         {
             "name": "anti-burn",
             "url": "https://github.com/klimaleksus/stable-diffusion-webui-anti-burn.git",
-            "description": "Smoothing generated images by skipping a few very last steps and averaging together some images before them",
+            "description": "Smoothing generated images by skipping a few very last steps and averaging together some images before them.",
             "added": "2023-02-09",
-            "tags": ["script", "tab"]
+            "tags": ["script", "manipulations"]
         },
         {
             "name": "mine-diffusion",
@@ -626,14 +632,14 @@
             "url": "https://github.com/Mikubill/sd-webui-controlnet.git",
             "description": "WebUI extension for ControlNet. Note: (WIP), so don't expect seed reproducibility - as updates may change things.",
             "added": "2023-02-18",
-            "tags": ["script"]
+            "tags": ["script", "manipulations"]
         },
         {
             "name": "Latent Couple",
             "url": "https://github.com/opparco/stable-diffusion-webui-two-shot.git",
             "description": "An extension of the built-in Composable Diffusion, allows you to determine the region of the latent space that reflects your subprompts.",
             "added": "2023-02-18",
-            "tags": ["script"]
+            "tags": ["script", "manipulations"]
         },
         {
             "name": "SuperMerger",
@@ -654,28 +660,28 @@
             "url": "https://github.com/pharmapsychotic/clip-interrogator-ext.git",
             "description": "Clip Interrogator by pharmapsychotic ported to an extension. Features a variety of clip models and interrogate settings.",
             "added": "2023-02-21",
-            "tags": ["script", "tab"]
+            "tags": ["script", "tab", "query"]
         },
         {
             "name": "Composable LoRA",
             "url": "https://github.com/opparco/stable-diffusion-webui-composable-lora.git",
             "description": "Enables using AND keyword(composable diffusion) to limit LoRAs to subprompts. Useful when paired with Latent Couple extension.",
             "added": "2023-02-25",
-            "tags": ["script"]
+            "tags": ["script", "manipulations"]
         },
         {
             "name": "LoRA Block Weight",
             "url": "https://github.com/hako-mikan/sd-webui-lora-block-weight.git",
             "description": "Applies LoRA strength; block by block on the fly. Includes presets, weight analysis, randomization, XY plot.",
             "added": "2023-02-28",
-            "tags": ["script"]
+            "tags": ["script", "models"]
         },
         {
             "name": "Kitchen Theme",
             "url": "https://github.com/canisminor1990/sd-web-ui-kitchen-theme.git",
             "description": "Custom Theme.",
             "added": "2023-02-28",
-            "tags": ["script"]
+            "tags": ["script", "UI related"]
         },
         {
             "name": "Bilingual Localization",
