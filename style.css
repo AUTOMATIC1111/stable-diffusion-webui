@@ -2152,6 +2152,7 @@ ul.list-none {
 }
 
 
+[id$="2img_override_settings"] .token,
 [id$="2img_styles"] .token
 {
     margin: 1px 1px;
@@ -2159,7 +2160,19 @@ ul.list-none {
     position: relative;
     top: 0px;
 }
+[id$="2img_styles"] .token{
+	max-height:unset;
+}
 
+[id$="2img_override_settings"] .token > div{
+	top:1px !important;
+	left:4px !important;
+}
+
+[id$="2img_override_settings"] .token span{
+	position:relative;
+	top:-2px;
+}
 /* x svg icon styles */ 
 .gr-input-label div:first-child {
     position: relative;
