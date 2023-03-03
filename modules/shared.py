@@ -445,6 +445,7 @@ options_templates.update(options_section(('extra_networks', "Extra Networks"), {
     "extra_networks_default_visibility": OptionInfo(True, "Extra Networks default visibility"),
     "extra_networks_cards_size": OptionInfo(1, "Card size for extra networks", gr.Slider, {"minimum": 0.8, "maximum": 2, "step": 0.1}),
     "extra_networks_cards_visible_rows": OptionInfo(1, "Visible card rows for extra networks", gr.Slider, {"minimum": 1, "maximum": 3, "step": 1}),
+    "extra_networks_aside": OptionInfo(True, "Extra Networks aside view"),
     
 }))
 
