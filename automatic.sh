@@ -13,7 +13,7 @@ if [ "$PYTHON" == "" ]; then
   PYTHON=$(which python)
 fi
 
-CMD="launch.py --api --xformers --disable-console-progressbars --gradio-queue --skip-version-check --skip-install --skip-torch-cuda-test --disable-nan-check --disable-safe-unpickle --cors-allow-origins=http://127.0.0.1:7860"
+CMD="launch.py --api --xformers --disable-console-progressbars --gradio-queue --skip-version-check --skip-install --skip-torch-cuda-test --disable-nan-check --theme dark --cors-allow-origins=http://127.0.0.1:7860"
 
 MODE=optimized
 
