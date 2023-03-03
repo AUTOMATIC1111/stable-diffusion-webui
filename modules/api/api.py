@@ -190,6 +190,9 @@ class Api:
         args = vars(populate)
         args.pop('script_name', None)
 
+        send_images = True if not 'do_not_send_images' in args else not args['do_not_send_images']
+        args.pop('do_not_send_images', None)
+
         with self.queue_lock:
             p = StableDiffusionProcessingTxt2Img(sd_model=shared.sd_model, **args)
 
@@ -203,7 +206,7 @@ class Api:
                 processed = process_images(p)
             shared.state.end()
 
-        b64images = list(map(encode_pil_to_base64, processed.images))
+        b64images = list(map(encode_pil_to_base64, processed.images)) if send_images else []
 
         return TextToImageResponse(images=b64images, parameters=vars(txt2imgreq), info=processed.js())
 
@@ -232,6 +235,9 @@ class Api:
         args.pop('include_init_images', None)  # this is meant to be done by "exclude": True in model, but it's for a reason that I cannot determine.
         args.pop('script_name', None)
 
+        send_images = True if not 'do_not_send_images' in args else not args['do_not_send_images']
+        args.pop('do_not_send_images', None)
+
         with self.queue_lock:
             p = StableDiffusionProcessingImg2Img(sd_model=shared.sd_model, **args)
             p.init_images = [decode_base64_to_image(x) for x in init_images]
@@ -246,7 +252,7 @@ class Api:
                 processed = process_images(p)
             shared.state.end()
 
-        b64images = list(map(encode_pil_to_base64, processed.images))
+        b64images = list(map(encode_pil_to_base64, processed.images)) if send_images else []
 
         if not img2imgreq.include_init_images:
             img2imgreq.init_images = None
