@@ -1,3 +1,21 @@
+# General Info
+
+Extensions are a more convenient form of user scripts.
+
+Extensions all exist in their own folder inside the extensions folder of webui. You can use git to install an extension like this:
+
+    git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui-aesthetic-gradients extensions/aesthetic-gradients
+
+This installs an extension from https://github.com/AUTOMATIC1111/stable-diffusion-webui-aesthetic-gradients into the extensions/aesthetic-gradients directory.
+
+Alternatively you can just copy-paste a directory into extensions.
+
+For developing extensions, see [Developing extensions](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Extensions/Developing-extensions).
+
+# Security
+
+As extensions allow the user to install and run arbitrary code, this can be used maliciously, and is disabled by default when running with options that allow remote users to connect to the server (`--share` or `--listen`) - you'll still have the UI, but trying to install anything will result in error. If you want to use those options and still be able to install extensions, use `--enable-insecure-extension-access` command line flag.
+
 ## anti-burn
 https://github.com/klimaleksus/stable-diffusion-webui-anti-burn
 
