@@ -110,7 +110,7 @@ def http_request(url, method='GET', headers=None, cookies=None, data=None, timeo
     return res
 
 
-def request_model_url(url, model_type, model_name, progress=gr.Progress()):
+def request_model_url(url, model_type, model_name, cover_url, progress=gr.Progress()):
     model = 'models'
     if not os.path.exists(model):
         os.mkdir(model)
@@ -120,7 +120,7 @@ def request_model_url(url, model_type, model_name, progress=gr.Progress()):
     if not url:
         return "cannot found url"
     try:
-        url, cover = parse_civitai_download_url(url)
+        url, cover = parse_civitai_download_url(url, cover_url)
         resp = http_request(url, timeout=30, stream=True)
         if not model_name:
             if 'Content-Disposition' in resp.headers:
@@ -138,7 +138,7 @@ def request_model_url(url, model_type, model_name, progress=gr.Progress()):
             current = 0
             progress(0, desc="starting...")
             file_size = int(resp.headers["content-length"])
-            progress.tqdm(range(file_size//chunk_size), desc='download progress')
+            progress.tqdm(range(file_size // chunk_size), desc='download progress')
             with open(filepath, 'wb') as f:
                 for chunk in resp.iter_content(chunk_size=chunk_size):
                     if chunk:
@@ -154,7 +154,7 @@ def request_model_url(url, model_type, model_name, progress=gr.Progress()):
                 # ct = resp.headers.get('Content-Type')
                 # if ct and 'image/' in ct:
                 #     ex = ct.replace('image/', '.')
-                cover_path = os.path.join(target_dir, without_ex+ex)
+                cover_path = os.path.join(target_dir, without_ex + ex)
                 with open(cover_path, 'wb') as f:
                     f.write(resp.content)
         sd_models.list_models()
@@ -163,11 +163,11 @@ def request_model_url(url, model_type, model_name, progress=gr.Progress()):
     return "ok"
 
 
-def parse_civitai_download_url(url: str) -> Tuple[str, str]:
+def parse_civitai_download_url(url: str, cover: str) -> Tuple[str, str]:
     if 'civitai' in url:
         ms = re.match('https://civitai.com/api/download/models/\d+', url)
         if ms:
-            return url, ''
+            return url, cover
         if 'civitai.com/models/' in url:
             resp = http_request(url)
             if not resp.ok:
@@ -176,41 +176,66 @@ def parse_civitai_download_url(url: str) -> Tuple[str, str]:
             ms = re.search('(api/download/models/\d+).+?Download\sLatest', text)
             if ms:
                 ms2 = re.search('https://imagecache.civitai.com.+?"', text)
-                conver_url = ms2.group(0) if ms2 else ""
+                cover = ms2.group(0) if ms2 else cover
 
-                return 'https://civitai.com/' + ms.group(1), conver_url
-    return url, ''
+            return 'https://civitai.com/' + ms.group(1), cover
+    return url, cover
 
 
 def create_upload_model_ui():
     gr.Label("你可以上传模型文件或者提供下载链接，选择模型类型并上传提示OK后完成", label=None)
     # gr.Label("You can upload the model via a local file or a specified network URL", label=None)
-    radioCtl = gr.Radio(["Stable-diffusion", "VAE", "VAE-approx", "deepbooru", "Lora"],
-                        value="Stable-diffusion",
-                        label="选择模型类型:")
-    gr.Label(None, label="1. 通过模型文件上传:")
-    uploadCtl = gr.File(label="本地上传模型文件:")
-    uploadImgCtl = gr.File(label="本地上传模型文件封面（可选）:")
-    gr.Label(None, label="2. 通过URL上传（支持civitai页面解析）:")
-    with gr.Column():
-        url_txt_ctl = gr.Textbox(label="从URL下载:", placeholder="输入下载链接，支持civitai页面地址直接解析")
-        model_name_ctl = gr.Textbox(label="自定义文件名:", placeholder="自定义模型命名（含后缀），默认使用平台命名")
-        url_img_ctl = gr.Textbox(label="从URL下载封面:", placeholder="输入封面下载链接，civitai自动解析无需手动添加")
-        img_name_ctl = gr.Textbox(label="自定义文件名:", placeholder="封面命名（含后缀）")
-        btn = gr.Button(value="开始下载")
-    result = gr.Label(label="文件上传结果:")
-    uploadCtl.upload(fn=upload_asset,
-                     inputs=[uploadCtl, radioCtl],
-                     outputs=[result],
-                     show_progress=True)
-    uploadImgCtl.upload(fn=upload_asset,
-                        inputs=[uploadCtl, radioCtl],
-                        outputs=[result],
-                        show_progress=True)
+    radio_ctl = gr.Radio(["Stable-diffusion", "VAE", "VAE-approx", "deepbooru", "Lora"],
+                         value="Stable-diffusion",
+                         label="选择模型类型:")
+    with gr.Tabs(elem_id="tabs") as tabs:
+        with gr.TabItem('模型文件上传', elem_id='tab_upload_file'):
+            gr.Label(None, label="通过模型文件上传:")
+            upload_ctl = gr.File(label="本地上传模型文件:")
+            uploadImg_ctl = gr.File(label="本地上传模型文件封面（可选）:")
+        with gr.TabItem('通过URL上传', elem_id='tab_upload_file'):
+            url_txt_ctl = gr.Textbox(label="从URL下载:", placeholder="输入下载链接，支持civitai页面地址直接解析")
+            model_name_ctl = gr.Textbox(label="自定义文件名:", placeholder="自定义模型命名（含后缀），默认使用平台命名")
+            url_img_ctl = gr.Textbox(label="从URL下载封面:", placeholder="输入封面下载链接，civitai自动解析无需手动添加")
+            btn = gr.Button(value="开始下载")
+
+    result = gr.Label(label="上传结果:")
+    upload_ctl.upload(fn=upload_asset,
+                      inputs=[upload_ctl, radio_ctl],
+                      outputs=[result],
+                      show_progress=True)
+    uploadImg_ctl.upload(fn=upload_asset,
+                         inputs=[upload_ctl, radio_ctl],
+                         outputs=[result],
+                         show_progress=True)
     btn.click(request_model_url,
-              inputs=[url_txt_ctl, radioCtl, model_name_ctl],
+              inputs=[url_txt_ctl, radio_ctl, model_name_ctl, url_img_ctl],
               outputs=[result],
               show_progress=True)
+
+    # gr.Label(None, label="1. 通过模型文件上传:")
+    # uploadCtl = gr.File(label="本地上传模型文件:")
+    # uploadImgCtl = gr.File(label="本地上传模型文件封面（可选）:")
+    # gr.Label(None, label="2. 通过URL上传（支持civitai页面解析）:")
+    # with gr.Column():
+    #     url_txt_ctl = gr.Textbox(label="从URL下载:", placeholder="输入下载链接，支持civitai页面地址直接解析")
+    #     model_name_ctl = gr.Textbox(label="自定义文件名:", placeholder="自定义模型命名（含后缀），默认使用平台命名")
+    #     url_img_ctl = gr.Textbox(label="从URL下载封面:", placeholder="输入封面下载链接，civitai自动解析无需手动添加")
+    #     img_name_ctl = gr.Textbox(label="自定义文件名:", placeholder="封面命名（含后缀）")
+    #     btn = gr.Button(value="开始下载")
+    # result = gr.Label(label="文件上传结果:")
+    # uploadCtl.upload(fn=upload_asset,
+    #                  inputs=[uploadCtl, radioCtl],
+    #                  outputs=[result],
+    #                  show_progress=True)
+    # uploadImgCtl.upload(fn=upload_asset,
+    #                     inputs=[uploadCtl, radioCtl],
+    #                     outputs=[result],
+    #                     show_progress=True)
+    # btn.click(request_model_url,
+    #           inputs=[url_txt_ctl, radioCtl, model_name_ctl],
+    #           outputs=[result],
+    #           show_progress=True)
 
 
 def append_upload_model_ui(interfaces: typing.List):
