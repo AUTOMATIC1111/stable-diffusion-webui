@@ -342,15 +342,17 @@ async def main():
             break
         stats.images += len(data.image)
         t1 = time.perf_counter()
-        avg[scheduler] = (t1 - t0) / len(data.image)
+        if len(data.image) > 0:
+            avg[scheduler] = (t1 - t0) / len(data.image)
         stats.generate += t1 - t0
         _image = grid(data)
         data = await upscale(data)
         t2 = time.perf_counter()
         stats.upscale += t2 - t1
         stats.wall += t2 - t0
-        its = sd.generate.steps / ((t1 - t0) / len(data.image))
-        log.info({ 'time' : { 'wall': round(t1 - t0), 'average': round((t1 - t0) / len(data.image)), 'upscale': round(t2 - t1), 'its': round(its, 2) } })
+        its = sd.generate.steps / ((t1 - t0) / len(data.image)) if len(data.image) > 0 else 0
+        avg_time = round((t1 - t0) / len(data.image)) if len(data.image) > 0 else 0
+        log.info({ 'time' : { 'wall': round(t1 - t0), 'average': avg_time, 'upscale': round(t2 - t1), 'its': round(its, 2) } })
         log.info({ 'generated': stats.images, 'max': params.max, 'progress': round(100 * stats.images / params.max, 1) })
         if params.max != 0 and stats.images >= params.max:
             break
