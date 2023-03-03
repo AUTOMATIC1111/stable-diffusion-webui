@@ -180,8 +180,8 @@ class Api:
 
         populate = txt2imgreq.copy(update={ # Override __init__ params
             "sampler_name": validate_sampler_name(txt2imgreq.sampler_name or txt2imgreq.sampler_index),
-            "do_not_save_samples": True,
-            "do_not_save_grid": True
+            "do_not_save_samples": True if not 'do_not_save_samples' in vars(txt2imgreq) else txt2imgreq.do_not_save_samples,
+            "do_not_save_grid": True if not 'do_not_save_grid' in vars(txt2imgreq) else txt2imgreq.do_not_save_grid,
             }
         )
         if populate.sampler_name:
@@ -220,8 +220,8 @@ class Api:
 
         populate = img2imgreq.copy(update={ # Override __init__ params
             "sampler_name": validate_sampler_name(img2imgreq.sampler_name or img2imgreq.sampler_index),
-            "do_not_save_samples": True,
-            "do_not_save_grid": True,
+            "do_not_save_samples": True if not 'do_not_save_samples' in img2imgreq else img2imgreq.do_not_save_samples,
+            "do_not_save_grid": True if not 'do_not_save_grid' in img2imgreq else img2imgreq.do_not_save_grid,
             "mask": mask
             }
         )
