@@ -74,8 +74,8 @@ def image_from_url_text(filedata):
     return image
 
 
-def add_paste_fields(tabname, init_img, fields):
-    paste_fields[tabname] = {"init_img": init_img, "fields": fields}
+def add_paste_fields(tabname, init_img, fields, override_settings_component=None):
+    paste_fields[tabname] = {"init_img": init_img, "fields": fields, "override_settings_component": override_settings_component}
 
     # backwards compatibility for existing extensions
     import modules.ui
@@ -110,6 +110,7 @@ def connect_paste_params_buttons():
     for binding in registered_param_bindings:
         destination_image_component = paste_fields[binding.tabname]["init_img"]
         fields = paste_fields[binding.tabname]["fields"]
+        override_settings_component = binding.override_settings_component or paste_fields[binding.tabname]["override_settings_component"]
 
         destination_width_component = next(iter([field for field, name in fields if name == "Size-1"] if fields else []), None)
         destination_height_component = next(iter([field for field, name in fields if name == "Size-2"] if fields else []), None)
@@ -130,7 +131,7 @@ def connect_paste_params_buttons():
             )
 
         if binding.source_text_component is not None and fields is not None:
-            connect_paste(binding.paste_button, fields, binding.source_text_component, binding.override_settings_component, binding.tabname)
+            connect_paste(binding.paste_button, fields, binding.source_text_component, override_settings_component, binding.tabname)
 
         if binding.source_tabname is not None and fields is not None:
             paste_field_names = ['Prompt', 'Negative prompt', 'Steps', 'Face restoration'] + (["Seed"] if shared.opts.send_seed else [])

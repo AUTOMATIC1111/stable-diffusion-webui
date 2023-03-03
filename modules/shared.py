@@ -81,6 +81,7 @@ parser.add_argument("--freeze-settings", action='store_true', help="disable edit
 parser.add_argument("--ui-settings-file", type=str, help="filename to use for ui settings", default=os.path.join(data_path, 'config.json'))
 parser.add_argument("--gradio-debug",  action='store_true', help="launch gradio with --debug option")
 parser.add_argument("--gradio-auth", type=str, help='set gradio authentication like "username:password"; or comma-delimit multiple like "u1:p1,u2:p2,u3:p3"', default=None)
+parser.add_argument("--gradio-auth-path", type=str, help='set gradio authentication file path ex. "/path/to/auth/file" same auth format as --gradio-auth', default=None)
 parser.add_argument("--gradio-img2img-tool", type=str, help='does not do anything')
 parser.add_argument("--gradio-inpaint-tool", type=str, help="does not do anything")
 parser.add_argument("--opt-channelslast", action='store_true', help="change memory type for stable diffusion to channels last")
@@ -107,6 +108,7 @@ parser.add_argument("--server-name", type=str, help="Sets hostname of server", d
 parser.add_argument("--gradio-queue", action='store_true', help="Uses gradio queue; experimental option; breaks restart UI button")
 parser.add_argument("--skip-version-check", action='store_true', help="Do not check versions of torch and xformers")
 parser.add_argument("--no-hashing", action='store_true', help="disable sha256 hashing of checkpoints to help loading performance", default=False)
+parser.add_argument("--no-download-sd-model", action='store_true', help="don't download SD1.5 model even if no model is found in --ckpt-dir", default=False)
 
 
 script_loading.preload_extensions(extensions.extensions_dir, parser)
@@ -325,7 +327,9 @@ options_templates.update(options_section(('saving-images', "Saving images/grids"
     "save_images_before_highres_fix": OptionInfo(False, "Save a copy of image before applying highres fix."),
     "save_images_before_color_correction": OptionInfo(False, "Save a copy of image before applying color correction to img2img results"),
     "jpeg_quality": OptionInfo(80, "Quality for saved jpeg images", gr.Slider, {"minimum": 1, "maximum": 100, "step": 1}),
-    "export_for_4chan": OptionInfo(True, "If PNG image is larger than 4MB or any dimension is larger than 4000, downscale and save copy as JPG"),
+    "export_for_4chan": OptionInfo(True, "If the saved image file size is above the limit, or its either width or height are above the limit, save a downscaled copy as JPG"),
+    "img_downscale_threshold": OptionInfo(4.0, "File size limit for the above option, MB", gr.Number),
+    "target_side_length": OptionInfo(4000, "Width/height limit for the above option, in pixels", gr.Number),
 
     "use_original_name_batch": OptionInfo(True, "Use original name for output filename during batch process in extras tab"),
     "use_upscaler_name_as_suffix": OptionInfo(False, "Use upscaler name as filename suffix in the extras tab"),
@@ -364,7 +368,7 @@ options_templates.update(options_section(('upscaling', "Upscaling"), {
 }))
 
 options_templates.update(options_section(('face-restoration', "Face restoration"), {
-    "face_restoration_model": OptionInfo(None, "Face restoration model", gr.Radio, lambda: {"choices": [x.name() for x in face_restorers]}),
+    "face_restoration_model": OptionInfo("CodeFormer", "Face restoration model", gr.Radio, lambda: {"choices": [x.name() for x in face_restorers]}),
     "code_former_weight": OptionInfo(0.5, "CodeFormer weight parameter; 0 = maximum effect; 1 = minimum effect", gr.Slider, {"minimum": 0, "maximum": 1, "step": 0.01}),
     "face_restoration_unload": OptionInfo(False, "Move face restoration model from VRAM into RAM after processing"),
 }))
@@ -414,6 +418,7 @@ options_templates.update(options_section(('sd', "Stable Diffusion"), {
 options_templates.update(options_section(('compatibility', "Compatibility"), {
     "use_old_emphasis_implementation": OptionInfo(False, "Use old emphasis implementation. Can be useful to reproduce old seeds."),
     "use_old_karras_scheduler_sigmas": OptionInfo(False, "Use old karras scheduler sigmas (0.1 to 10)."),
+    "no_dpmpp_sde_batch_determinism": OptionInfo(False, "Do not make DPM++ SDE deterministic across different batch sizes."),
     "use_old_hires_fix_width_height": OptionInfo(False, "For hires fix, use width/height sliders to set final resolution rather than first pass (disables Upscale by, Resize width/height to)."),
 }))
 

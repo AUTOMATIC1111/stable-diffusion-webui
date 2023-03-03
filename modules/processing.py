@@ -624,11 +624,11 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 break
 
             prompts, extra_network_data = extra_networks.parse_prompts(prompts)
+
             if type(p) == StableDiffusionProcessingTxt2Img:
                 if p.enable_hr and hr_prompts != prompts:
                     _, hr_extra_network_data = extra_networks.parse_prompts(hr_prompts)
                     extra_network_data.update(hr_extra_network_data)
-
 
 
             if not p.disable_extra_networks:

@@ -73,6 +73,8 @@ def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args):
 
             if not save_normally:
                 os.makedirs(output_dir, exist_ok=True)
+                if processed_image.mode == 'RGBA':
+                    processed_image = processed_image.convert("RGB")
                 processed_image.save(os.path.join(output_dir, filename))
 
 
