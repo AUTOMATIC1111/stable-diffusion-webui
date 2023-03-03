@@ -1541,6 +1541,9 @@ def create_ui():
         (train_interface, "Train", "ti"),
     ]
 
+    from .upload_model_ui import append_upload_model_ui
+    append_upload_model_ui(interfaces)
+    
     css = ""
 
     for cssfile in modules.scripts.list_files_with_name("style.css"):

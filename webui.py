@@ -204,8 +204,7 @@ def webui():
 
         shared.demo = modules.ui.create_ui()
 
-        if cmd_opts.gradio_queue:
-            shared.demo.queue(64)
+        shared.demo.queue(1)
 
         gradio_auth_creds = []
         if cmd_opts.gradio_auth:
