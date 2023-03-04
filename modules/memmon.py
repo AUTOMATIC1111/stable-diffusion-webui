@@ -1,6 +1,7 @@
 import threading
 import time
 from collections import defaultdict
+from modules import shared
 
 import torch
 
@@ -21,6 +22,7 @@ class MemUsageMonitor(threading.Thread):
         self.daemon = True
         self.run_flag = threading.Event()
         self.data = defaultdict(int)
+        self.disabled = shared.cmd_opts.disable_memory_monitor
 
         try:
             torch.cuda.mem_get_info()

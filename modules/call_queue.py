@@ -47,9 +47,13 @@ def wrap_gradio_gpu_call(func, extra_outputs=None):
 
 def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
     def f(*args, extra_outputs_array=extra_outputs, **kwargs):
-        run_memmon = shared.opts.memmon_poll_rate > 0 and not shared.mem_mon.disabled and add_stats
-        if run_memmon:
-            shared.mem_mon.monitor()
+        if not shared.cmd_opts.disable_memory_monitor:
+            run_memmon = shared.opts.memmon_poll_rate > 0 and not shared.mem_mon.disabled and add_stats
+            if run_memmon:
+                shared.mem_mon.monitor()
+        else:
+            run_memmon = False
+
         t = time.perf_counter()
 
         try:
