@@ -16,6 +16,15 @@ For developing extensions, see [Developing extensions](https://github.com/AUTOMA
 
 As extensions allow the user to install and run arbitrary code, this can be used maliciously, and is disabled by default when running with options that allow remote users to connect to the server (`--share` or `--listen`) - you'll still have the UI, but trying to install anything will result in error. If you want to use those options and still be able to install extensions, use `--enable-insecure-extension-access` command line flag.
 
+# Info
+
+Users can click the extension **name** from the index to go view the extension on github. <sup>(The page should hopefully be more comprehensive than this page.)</sup> \
+Sort by internal order to see related categories, and see tooltips for categories. 
+
+
+![image](https://user-images.githubusercontent.com/98228077/222873817-24e4e77b-d503-48d7-9303-c71ce7fb9d5c.png)
+
+
 ## anti-burn
 https://github.com/klimaleksus/stable-diffusion-webui-anti-burn
 
