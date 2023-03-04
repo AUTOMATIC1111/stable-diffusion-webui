@@ -180,8 +180,8 @@ class Api:
 
         populate = txt2imgreq.copy(update={ # Override __init__ params
             "sampler_name": validate_sampler_name(txt2imgreq.sampler_name or txt2imgreq.sampler_index),
-            "do_not_save_samples": True if not 'do_not_save_samples' in vars(txt2imgreq) else txt2imgreq.do_not_save_samples,
-            "do_not_save_grid": True if not 'do_not_save_grid' in vars(txt2imgreq) else txt2imgreq.do_not_save_grid,
+            "do_not_save_samples": txt2imgreq.do_not_save,
+            "do_not_save_grid": txt2imgreq.do_not_save,
             }
         )
         if populate.sampler_name:
@@ -190,8 +190,9 @@ class Api:
         args = vars(populate)
         args.pop('script_name', None)
 
-        send_images = True if not 'do_not_send_images' in args else not args['do_not_send_images']
-        args.pop('do_not_send_images', None)
+        send_images = True if not 'do_not_send' in args else not args['do_not_send']
+        args.pop('do_not_send', None)
+        args.pop('do_not_save', None)
 
         with self.queue_lock:
             p = StableDiffusionProcessingTxt2Img(sd_model=shared.sd_model, **args)
@@ -223,8 +224,8 @@ class Api:
 
         populate = img2imgreq.copy(update={ # Override __init__ params
             "sampler_name": validate_sampler_name(img2imgreq.sampler_name or img2imgreq.sampler_index),
-            "do_not_save_samples": True if not 'do_not_save_samples' in img2imgreq else img2imgreq.do_not_save_samples,
-            "do_not_save_grid": True if not 'do_not_save_grid' in img2imgreq else img2imgreq.do_not_save_grid,
+            "do_not_save_samples": img2imgreq.do_not_save,
+            "do_not_save_grid": img2imgreq.do_not_save,
             "mask": mask
             }
         )
@@ -234,6 +235,10 @@ class Api:
         args = vars(populate)
         args.pop('include_init_images', None)  # this is meant to be done by "exclude": True in model, but it's for a reason that I cannot determine.
         args.pop('script_name', None)
+
+        send_images = True if not 'do_not_send' in args else not args['do_not_send']
+        args.pop('do_not_send', None)
+        args.pop('do_not_save', None)
 
         send_images = True if not 'do_not_send_images' in args else not args['do_not_send_images']
         args.pop('do_not_send_images', None)
