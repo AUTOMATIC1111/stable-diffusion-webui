@@ -681,42 +681,42 @@
             "name": "Dump U-Net",
             "url": "https://github.com/hnmr293/stable-diffusion-webui-dumpunet.git",
             "description": "View different layers, observe U-Net feature maps. Image generation by giving different prompts for each block of the unet: https://note.com/kohya_ss/n/n93b7c01b0547",
-            "added": "2022-12-04",
+            "added": "2023-03-04",
             "tags": ["science"]
         },
         {
             "name": "posex",
             "url": "https://github.com/hnmr293/posex.git",
             "description": "Estimated Image Generator for Pose2Image. This extension allows moving the openpose figure in 3d space.",
-            "added": "2022-12-04",
+            "added": "2023-03-04",
             "tags": ["script"]
         },
         {
             "name": "LLuL",
             "url": "https://github.com/hnmr293/posex.git",
             "description": "Local Latent Upscaler. Target an area to selectively enhance details.",
-            "added": "2022-12-04",
+            "added": "2023-03-04",
             "tags": ["manipulations"]
         },
         {
             "name": "CFG-Schedule-for-Automatic1111-SD",
             "url": "https://github.com/guzuligo/CFG-Schedule-for-Automatic1111-SD.git",
             "description": "These scripts allow for dynamic CFG control during generation steps. With the right settings, this could help get the details of high CFG without damaging the generated image even with low denoising in img2img.",
-            "added": "2022-12-04",
+            "added": "2023-03-04",
             "tags": ["script"]
         },
         {
             "name": "a1111-sd-webui-locon",
             "url": "https://github.com/KohakuBlueleaf/a1111-sd-webui-locon.git",
             "description": "An extension for loading LoCon networks in webui.",
-            "added": "2022-12-04",
+            "added": "2023-03-04",
             "tags": ["script"]
         },
         {
             "name": "ebsynth_utility",
             "url": "https://github.com/s9roll7/ebsynth_utility.git",
             "description": "Extension for creating videos using img2img and ebsynth. Output edited videos using ebsynth. Works with ControlNet extension.",
-            "added": "2022-12-04",
+            "added": "2023-03-04",
             "tags": ["tab", "animation"]
         },
         {
