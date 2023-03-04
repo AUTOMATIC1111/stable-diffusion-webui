@@ -478,7 +478,7 @@
             "url": "https://github.com/Coyote-A/ultimate-upscale-for-automatic1111.git",
             "description": "More advanced options for SD Upscale, less artifacts than original using higher denoise ratio (0.3-0.5).",
             "added": "2023-01-10",
-            "tags": ["editing", "manipulations"]
+            "tags": ["manipulations"]
         },
         {
             "name": "Stable Horde Worker",
@@ -548,7 +548,7 @@
             "url": "https://github.com/vladmandic/sd-extension-system-info.git",
             "description": "System Info tab for WebUI which shows realtime information of the server. Also supports sending crowdsourced inference data as an option.",
             "added": "2023-01-21",
-            "tags": ["tab", "UI related"]
+            "tags": ["script", "tab"]
         },
         {
             "name": "Pixelization",
@@ -562,7 +562,7 @@
             "url": "https://github.com/Klace/stable-diffusion-webui-instruct-pix2pix.git",
             "description": "Adds a tab for doing img2img editing with the instruct-pix2pix model. Note: No longer required. Author has integrated code to webui, use in img2img.",
             "added": "2023-01-25",
-            "tags": ["tab", "prompting"]
+            "tags": ["tab"]
         },
         {
             "name": "Custom Diffusion",
@@ -625,7 +625,7 @@
             "url": "https://github.com/fropych/mine-diffusion.git",
             "description": "This extension converts images into blocks and creates schematics for easy importing into Minecraft using the Litematica mod.",
             "added": "2023-02-11",
-            "tags": ["tab"]
+            "tags": ["tab", "online"]
         },
         {
             "name": "sd-webui-controlnet",
