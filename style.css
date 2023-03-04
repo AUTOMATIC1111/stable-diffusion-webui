@@ -14,9 +14,18 @@ License: GNU General Public License
 	--extra-networks-height: calc((var(--extra-networks-card-real-size) * var(--extra-networks-visible-rows)) + ( var(--inside-padding-size) * 2 ) );
 	--extra-networks-name-size: calc(var(--extra-networks-card-size) * 1em);
 	
-	--top-header-padding-top:1rem;
-	--top-header-height:60px;
+	--top-header-padding-top:16px;
+	--top-header-padding-bottom:16px;
+	--top-header-inner-height:38px;
+	--top-header-height: calc( var(--top-header-padding-top) + var(--top-header-inner-height) + var(--top-header-padding-bottom) );
+	--container-padding:16px;
+	--footer-height: calc( 38px + (var(--container-padding) * 2) );
 	
+	--subtract-total: calc( var(--top-header-height) + var(--footer-height));
+	--container-height : calc(100vh - var(--subtract-total));
+	--container-total-height : calc( var(--container-height) - (var(--outside-gap-size) * 2) - (var(--inside-padding-size) * 2));
+	--container-height-gap : calc( var(--container-height) - (var(--outside-gap-size) * 2));
+	--container-height-pad : calc( var(--container-height) - (var(--inside-padding-size) * 2));
 
   
 
@@ -34,7 +43,8 @@ body {
 }
 
 #tabs{
-	margin-top: var(--top-header-height);
+	margin-top: calc(var(--top-header-height));
+	min-height: var(--container-height);
 }
 
 #header-top{
@@ -43,12 +53,13 @@ body {
     left: 0;
     right: 0;
     z-index: 10000;
-    min-height: var(--top-header-height);
+    min-height: var(--top-header-inner-height);
     background-color: var(--main-bg-color);
     /* padding: 10px; */
     padding-left: 1rem;
     padding-right: 1rem;
 	padding-top: var(--top-header-padding-top);
+	padding-bottom: var(--top-header-padding-bottom);
 }
 
 
@@ -56,6 +67,10 @@ body {
     position: relative;
     height: 34px;
     align-self: center;
+}
+
+.container {
+    padding: var(--container-padding);
 }
 
 #quicksettings {
@@ -725,7 +740,7 @@ body {
 	position:fixed;
 	z-index:10000;
 	left:1rem;
-	top: calc((var(--top-header-padding-top) + var(--top-header-height) - 38px) / 2);
+	top: var(--top-header-padding-top);
 }
 
 /* offcanvas quicksettings menu */
@@ -1554,7 +1569,7 @@ textarea:focus
 [id$="2img_settings_scroll"]
 {
 	/* need to calculate this */
-    height: calc(100vh - 244px);
+    height: calc(var(--container-height-gap) - var(--generate-button-height) - (var(--outside-gap-size)));
     overflow-y: auto !important;
     overflow-x: hidden;
     padding-top: var(--outside-gap-size);
@@ -1730,7 +1745,7 @@ canvas[key=mask] {
     content: "";
     position: absolute;
     z-index: 1;
-    height: calc(100vh - 235px);
+    height: calc(var(--container-height-gap) - var(--generate-button-height));
     top: calc(var(--generate-button-height) + (var(--outside-gap-size) * 2.0));
     left: 0;
     bottom: 0;
@@ -1882,7 +1897,7 @@ canvas[key=mask] {
 [id$="2img_results"]
 {
     overflow-x: hidden !important;   
-    max-height: calc(100vh - 151px);
+    max-height: calc(var(--container-height));
     overflow-y: auto !important;
 	height: 100%;	
 }
@@ -1893,7 +1908,9 @@ canvas[key=mask] {
     position: relative;	
 }
 */
-
+#tabs > div:not(:first-child){
+	padding: 0!important;
+}
 [id$="2img_gallery"].gr-box:not(.border-dashed)
 {
 	border-radius: 0!important;
@@ -1915,14 +1932,15 @@ canvas[key=mask] {
 {
 
     width: 100%;
-	max-height: calc(100vh - 170px) !important;
-	min-height: calc(100vh - 170px) !important;
+	max-height: calc(var(--container-height-gap) - 2px)!important;
+    min-height: calc(var(--container-height-gap) - 2px)!important;
     overflow-x: hidden !important;
+	
 }
 
 [id$="2img_gallery"] .overflow-y-auto>div:first-child
 {
-    height: calc(100vh - 187px);
+    height: calc(var(--container-total-height) - (var(--outside-gap-size)) - 2px);
 }
 
 [id$="2img_gallery"] div>img
@@ -1939,7 +1957,7 @@ canvas[key=mask] {
     min-height: auto;
     width: 100%;
     min-width: 100%;
-    max-height: calc(100vh - 170px);
+    max-height: calc(var(--container-height) - 4px);
 }
 
 [id$="2img_gallery"] img+div
@@ -1956,12 +1974,20 @@ canvas[key=mask] {
 /* Live preview don't mess with it */
 /***********************************/
 
+txt2img_gallery_container
+div.svelte-10ogue4>*:first-child {
+    border-top-left-radius: 0.5rem!important;
+    border-top-right-radius: 0.5rem!important;
+}
+
+
+
 .livePreview {
     position: absolute !important;
-    width: calc(100% - 18px) !important;
-    max-height: calc(100vh - 231px) !important;
-    top: 9px;
-    left: 9px;
+    width: calc(100% - (var(--outside-gap-size) * 2)) !important;
+    max-height: calc(var(--container-height-gap)) !important;
+    top: var(--outside-gap-size);
+    left: var(--outside-gap-size);
     right: 0;
     bottom: 60px;
     pointer-events: all;
@@ -2303,12 +2329,15 @@ ul.list-none {
 /*************/
 /* extra div */
 /*************/
-[id$=group_seed] > div + div
+[id$="2img_group_seed"] > div 
 {
-	flex-grow:0 !important;
+	flex-grow:8 !important;
 }
 
-
+[id$="2img_group_seed"] > div + div
+{
+	flex-grow:1 !important;
+}
 /*******************/
 /* buttons send to */
 /*******************/
@@ -3114,13 +3143,13 @@ ul.list-none {
 		border-radius: 0 !important;
 	}
 	
-	.livePreview {  
-		width: calc(100% - 10px) !important;   
-		top: 4px;
+ 	.livePreview {  
+		width: calc(100%) !important;   
+		/* top: 4px;
 		left: 5px;
-		border-radius: 0 !important;
+		border-radius: 0 !important; */ */
 		max-height: unset !important;
-	}
+	} 
 	[id$="png_2img_results"]{
 		order:1;
 	}
