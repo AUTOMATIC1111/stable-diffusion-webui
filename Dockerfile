@@ -1,4 +1,4 @@
-FROM pytorch/pytorch:1.12.0-cuda11.3-cudnn8-devel
+FROM pytorch/pytorch:1.13.1-cuda11.6-cudnn8-devel
 
 MAINTAINER wangdongming "wangdongming@dragonest.com"
 
@@ -24,12 +24,18 @@ RUN apt-get update \
         sudo \
         git-core \
 	    git-lfs \
-	    python3 \
-	    python3-pip \
-	    python3-venv \
-	    python3-opencv \
 	    libgl1 \
 	    libglib2.0-0
+
+
+#RUN ls -l /usr/bin | grep python
+#RUN bash -c "conda install python3.10; conda env list; conda activate" \
+RUN apt-get install -yq --no-install-recommends \
+	    python3-opencv
+RUN   apt-get install -yq --no-install-recommends python3.10 python3-venv
+RUN python3 -V
+RUN python3 -c "import sys; print(sys.executable)"
+RUN bash -c " conda env list; conda init"
 # 创建用户
 RUN groupadd --gid $USER_GID $USERNAME \
        && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \

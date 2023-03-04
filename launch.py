@@ -12,7 +12,7 @@ dir_repos = "repositories"
 dir_extensions = "extensions"
 python = sys.executable
 git = os.environ.get('GIT', "git")
-index_url = os.environ.get('INDEX_URL', "")
+index_url = os.environ.get('INDEX_URL', "https://pypi.tuna.tsinghua.edu.cn/simple")
 stored_commit_hash = None
 skip_install = False
 
@@ -134,7 +134,7 @@ def run_pip(args, desc=None):
         return
 
     index_url_line = f' --index-url {index_url}' if index_url != '' else ''
-    return run(f'"{python}" -m pip {args} --prefer-binary{index_url_line}', desc=f"Installing {desc}", errdesc=f"Couldn't install {desc}")
+    return run(f'"sudo {python}" -m pip {args} --prefer-binary{index_url_line}', desc=f"Installing {desc}", errdesc=f"Couldn't install {desc}")
 
 
 def check_run_python(code):
@@ -266,7 +266,7 @@ def prepare_environment():
     print(f"Commit hash: {commit}")
 
     if reinstall_torch or not is_installed("torch") or not is_installed("torchvision"):
-        run(f'"{python}" -m {torch_command}', "Installing torch and torchvision", "Couldn't install torch", live=True)
+        run(f'"{python}" -m {torch_command} -i https://pypi.tuna.tsinghua.edu.cn/simple', "Installing torch and torchvision", "Couldn't install torch", live=True)
 
     if not skip_torch_cuda_test:
         run_python("import torch; assert torch.cuda.is_available(), 'Torch is not able to use GPU; add --skip-torch-cuda-test to COMMANDLINE_ARGS variable to disable this check'")
@@ -357,5 +357,6 @@ def start():
 
 
 if __name__ == "__main__":
+    print(f"python version:{sys.version}")
     prepare_environment()
     start()
