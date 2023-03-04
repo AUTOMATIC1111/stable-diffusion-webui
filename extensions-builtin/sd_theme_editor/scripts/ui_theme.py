@@ -24,11 +24,11 @@ def on_ui_tabs():
         with gr.Row():
             with gr.Column(): 
                 with gr.Row():            
-                    themes_dropdown = gr.Dropdown(label="Themes", interactive=True, choices=get_files(themes_folder,[".css, .txt"]), type="value")
-                    save_as_filename = gr.Text(label="Save as Name")
+                    themes_dropdown = gr.Dropdown(label="Themes", elem_id="themes_drop_down", interactive=True, choices=get_files(themes_folder,[".css, .txt"]), type="value")
+                    save_as_filename = gr.Text(label="Save / Save as")
                 with gr.Row(): 
                     reset_button = gr.Button(elem_id="theme_reset_btn", value="Reset", variant="primary")
-                    apply_button = gr.Button(elem_id="theme_apply_btn", value="Apply", variant="primary")                   
+                    #apply_button = gr.Button(elem_id="theme_apply_btn", value="Apply", variant="primary")                   
                     save_button = gr.Button(value="Save", variant="primary")           
                     #delete_button = gr.Button(value="Delete", variant="primary")
                        
@@ -68,6 +68,7 @@ def on_ui_tabs():
                                     
                     with gr.Accordion(label="Panel colors", open=True):                   
                         gr.ColorPicker(elem_id="--label-color", label="Label color")
+                        gr.ColorPicker(elem_id="--frame-bg-color", label="Frame Background color")
                         gr.ColorPicker(elem_id="--panel-bg-color", label="Background color")
                         gr.ColorPicker(elem_id="--panel-border-color", label="Border color")
                         gr.Slider(elem_id="--panel-border-radius", label='Border radius', minimum=0, maximum=16, step=1)
@@ -115,8 +116,8 @@ def on_ui_tabs():
             with open(webui_style_path, 'w') as file:                
                 file.write(style_data)
                 file.close()            
-            themes_dropdown.choices.insert(0, f"{filename}.css")
-            return gr.update(choices=themes_dropdown.choices, value=themes_dropdown.choices[0])
+            themes_dropdown.choices=get_files(themes_folder,[".css, .txt"])
+            return gr.update(choices=themes_dropdown.choices, value=f"{filename}.css")
  
         def open_theme(filename, css_text):                           
             with open(os.path.join(themes_folder, f"{filename}"), 'r') as file:

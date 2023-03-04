@@ -342,17 +342,38 @@ function initTheme() {
 		updateTheme(init_vars);		
 	})
 	
+	/*
 	const apply_btn = gradioApp().getElementById('theme_apply_btn');	
 	apply_btn.addEventListener("click", function(e) {
 		e.preventDefault();
-		e.stopPropagation();		
-		//const vars_textarea = gradioApp().querySelector('#theme_vars textarea');
+		e.stopPropagation();				
 		init_css_vars = vars_textarea.value.replace(/\n|\r/g, "");		
 		vars_textarea.value = init_css_vars;
 		
 		init_vars = init_css_vars.split(";");
 		vars = init_vars;		
 		updateTheme(vars);
+	})
+	*/
+	
+	let intervalCheck;
+	function dropDownOnChange(){
+		
+		if(init_css_vars != vars_textarea.value){			
+			clearInterval(intervalCheck);
+			init_css_vars = vars_textarea.value.replace(/\n|\r/g, "");		
+			vars_textarea.value = init_css_vars;		
+			init_vars = init_css_vars.split(";");
+			vars = init_vars;		
+			updateTheme(vars);			
+		}
+		
+	}
+	
+	const drop_down = gradioApp().getElementById('themes_drop_down');	
+	drop_down.addEventListener("change", function(e) {
+		if(intervalCheck != null) clearInterval(intervalCheck);
+		intervalCheck = setInterval(dropDownOnChange, 100);
 	})
 	
 	let hsloffset = [0,0,0];
