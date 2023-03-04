@@ -312,7 +312,7 @@ def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend
     if draw_legend:
         z_grid = images.draw_grid_annotations(z_grid, sub_grid_size[0], sub_grid_size[1], title_texts, [[images.GridAnnotation()]])
     processed_result.images.insert(0, z_grid)
-    #TODO: Deeper aspects of the program rely on index 0 "grid" images only having partial information, which is not ideal.
+    #TODO: Deeper aspects of the program rely on grid info being misaligned between metadata arrays, which is not ideal.
     #processed_result.all_prompts.insert(0, processed_result.all_prompts[0])
     #processed_result.all_seeds.insert(0, processed_result.all_seeds[0])
     processed_result.infotexts.insert(0, processed_result.infotexts[0])
@@ -628,7 +628,9 @@ class Script(scripts.Script):
             # Auto-save main and sub-grids:
             grid_count = z_count + 1 if z_count > 1 else 1
             for g in range(grid_count):
-                images.save_image(processed.images[g], p.outpath_grids, "xyz_grid", info=processed.infotexts[g], extension=opts.grid_format, prompt=processed.all_prompts[g], seed=processed.all_seeds[g], grid=True, p=processed)
+                #TODO: See previous comment about intentional data misalignment.
+                adj_g = g-1 if g > 0 else g
+                images.save_image(processed.images[g], p.outpath_grids, "xyz_grid", info=processed.infotexts[g], extension=opts.grid_format, prompt=processed.all_prompts[adj_g], seed=processed.all_seeds[adj_g], grid=True, p=processed)
 
         if not include_sub_grids:
             # Done with sub-grids, drop all related information:
@@ -637,7 +639,5 @@ class Script(scripts.Script):
                 del processed.all_prompts[1]
                 del processed.all_seeds[1]
                 del processed.infotexts[1]
-
-        print(processed.images)
 
         return processed
