@@ -26,21 +26,20 @@ RUN apt-get update \
 	    git-lfs \
 	    libgl1 \
 	    libglib2.0-0
-
-
-#RUN ls -l /usr/bin | grep python
-#RUN bash -c "conda install python3.10; conda env list; conda activate" \
 RUN apt-get install -yq --no-install-recommends \
 	    python3-opencv
 RUN   apt-get install -yq --no-install-recommends python3.10 python3-venv
 RUN python3 -V
 RUN python3 -c "import sys; print(sys.executable)"
 RUN bash -c " conda env list; conda init"
+
 # 创建用户
 RUN groupadd --gid $USER_GID $USERNAME \
        && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
        && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
        && chmod 0440 /etc/sudoers.d/$USERNAME
+
+
 # 安装stable-diffusion-webui
 RUN curl -sL https://raw.githubusercontent.com/Jackstrawcd/stable-diffusion-webui/master/webui.sh | sudo -u $USERNAME env COMMANDLINE_ARGS="${BUILD_ARGS}" bash \
     && sudo -u $USERNAME python3 -m pip install xformers \
