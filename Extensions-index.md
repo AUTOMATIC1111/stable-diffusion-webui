@@ -4,6 +4,7 @@
         "script": "a general extension that adds functionality",
         "localization": "a localization extension that translates web ui into another language",
         "tab": "adds a tab",
+        "dropdown": "adds a dropbear in the ui",
         "ads": "contains ads",
         "installed": "an extension that is already installed",
         "training": "new type of training / assists with training.",
@@ -23,7 +24,7 @@
             "url": "https://github.com/AUTOMATIC1111/stable-diffusion-webui-aesthetic-gradients.git",
             "description": "Allows training an embedding from one or few pictures, specifically meant for applying styles. Also, allows use of these specific embeddings to generated images.",
             "added": "2022-11-01",
-            "tags": ["training"]
+            "tags": ["tab", "dropdown", "training"]
         },
         {
             "name": "Wildcards",
@@ -556,13 +557,6 @@
             "description": "Using pre-trained models, produce pixel art out of images in the extras tab.",
             "added": "2023-01-23",
             "tags": ["editing"]
-        },
-        {
-            "name": "Instruct-pix2pix",
-            "url": "https://github.com/Klace/stable-diffusion-webui-instruct-pix2pix.git",
-            "description": "Adds a tab for doing img2img editing with the instruct-pix2pix model. Note: No longer required. Author has integrated code to webui, use in img2img.",
-            "added": "2023-01-25",
-            "tags": ["tab"]
         },
         {
             "name": "Custom Diffusion",
