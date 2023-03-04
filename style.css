@@ -3192,6 +3192,10 @@ ul.list-none {
 		max-height: unset !important;
 	}
 	
+	[id$="2img_gallery"] div>img{
+		object-fit: contain;
+	}
+	
 	[id$="2img_gallery"] .overflow-y-auto {
 		min-height: auto !important;
 	}
@@ -3207,7 +3211,7 @@ ul.list-none {
 		
 	}
 	div.svelte-10ogue4>*:first-child.livePreview {
-		height: calc(100% - 60px - 1rem + 2px) !important;
+		height: calc(100% - 60px - var(--outside-gap-size) - 2px) !important;
 	}
 	
 	[id$="png_2img_results"]{
