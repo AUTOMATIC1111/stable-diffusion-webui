@@ -236,7 +236,7 @@ def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend
             processed_result.all_prompts = [None] * list_size
             processed_result.all_seeds = [None] * list_size
             processed_result.infotexts = [None] * list_size
-            processed_result.index_of_first_image = 0
+            processed_result.index_of_first_image = 1
 
         idx = index(ix, iy, iz)
         if processed.images:
@@ -312,8 +312,9 @@ def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend
     if draw_legend:
         z_grid = images.draw_grid_annotations(z_grid, sub_grid_size[0], sub_grid_size[1], title_texts, [[images.GridAnnotation()]])
     processed_result.images.insert(0, z_grid)
-    processed_result.all_prompts.insert(0, processed_result.all_prompts[0])
-    processed_result.all_seeds.insert(0, processed_result.all_seeds[0])
+    #TODO: Deeper aspects of the program rely on index 0 "grid" images only having partial information, which is not ideal.
+    #processed_result.all_prompts.insert(0, processed_result.all_prompts[0])
+    #processed_result.all_seeds.insert(0, processed_result.all_seeds[0])
     processed_result.infotexts.insert(0, processed_result.infotexts[0])
 
     return processed_result
@@ -636,5 +637,7 @@ class Script(scripts.Script):
                 del processed.all_prompts[1]
                 del processed.all_seeds[1]
                 del processed.infotexts[1]
+
+        print(processed.images)
 
         return processed
