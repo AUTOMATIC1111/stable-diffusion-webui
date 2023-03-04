@@ -1,4 +1,4 @@
-FROM sd-webui-env
+FROM sd-webui-env:v0.1
 
 MAINTAINER wangdongming "wangdongming@dragonest.com"
 
