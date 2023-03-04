@@ -30,6 +30,9 @@ fi
 
 for i in "$@"; do
   case $i in
+    update)
+      MODE=update
+      ;;
     install)
       MODE=install
       ;;
@@ -79,6 +82,16 @@ git-update () {
     popd >/dev/null
     git-version $1
 }
+
+if [ "$MODE" == update ]; then
+  echo "Updating main repository"
+  git-update .
+  "$PYTHON" launch.py --exit
+  echo "Local changes"
+  git status --untracked=no --ignore-submodules=all --short
+  
+  exit 0
+fi
 
 if [ "$MODE" == install ]; then
   "$PYTHON" -m pip --version

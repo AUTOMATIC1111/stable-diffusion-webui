@@ -53,6 +53,11 @@ Installs and updates to latest supported version:
 - Extensions
 - Sub-modules
 
+> ./automatic.sh update
+
+Updates the main repository to the latest version
+Recommended to run `install` after `update`
+
 <br>  
 
 ## Install

@@ -12,7 +12,7 @@
       "prompt": "dynamic",
       "negative_prompt": "foggy, blurry, blurred, duplicate, ugly, mutilated, mutation, mutated, out of frame, bad anatomy, disfigured, deformed, censored, low res, watermark, text, poorly drawn face, signature",
       "steps": 30,
-      "batch_size": 1,
+      "batch_size": 2,
       "n_iter": 1,
       "seed": -1,
       "sampler_name": "DPM2 Karras",
