@@ -1,4 +1,4 @@
-FROM pytorch/pytorch:1.13.1-cuda11.6-cudnn8-devel
+FROM sd-webui-env
 
 MAINTAINER wangdongming "wangdongming@dragonest.com"
 
@@ -28,7 +28,7 @@ RUN apt-get update \
 	    libglib2.0-0
 RUN apt-get install -yq --no-install-recommends \
 	    python3-opencv
-RUN   apt-get install -yq --no-install-recommends python3.10 python3-venv
+RUN apt-get install -yq --no-install-recommends python3.10 python3-venv
 RUN python3 -V
 RUN python3 -c "import sys; print(sys.executable)"
 RUN bash -c " conda env list; conda init"
@@ -39,7 +39,8 @@ RUN groupadd --gid $USER_GID $USERNAME \
        && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
        && chmod 0440 /etc/sudoers.d/$USERNAME
 
-
+RUN mkdir /home/$USERNAME/stable-diffusion-webui/
+RUN ls /home/$USERNAME/stable-diffusion-webui/
 # 安装stable-diffusion-webui
 RUN curl -sL https://raw.githubusercontent.com/Jackstrawcd/stable-diffusion-webui/master/webui.sh | sudo -u $USERNAME env COMMANDLINE_ARGS="${BUILD_ARGS}" bash \
     && sudo -u $USERNAME python3 -m pip install xformers \

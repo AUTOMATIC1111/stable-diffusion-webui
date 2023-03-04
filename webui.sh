@@ -150,10 +150,9 @@ else
     printf "Clone stable-diffusion-webui"
     printf "\n%s\n" "${delimiter}"
     sudo "${GIT}" clone https://github.com/Jackstrawcd/stable-diffusion-webui.git "${clone_dir}"
+    ls "${clone_dir}"
     cd "${clone_dir}"/ || { printf "\e[1m\e[31mERROR: Can't cd to %s/%s/, aborting...\e[0m" "${install_dir}" "${clone_dir}"; exit 1; }
 fi
-
-ls "${clone_dir}"
 
 printf "\n%s\n" "${delimiter}"
 printf "Create and activate python venv"
