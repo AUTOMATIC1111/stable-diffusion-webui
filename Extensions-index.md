@@ -713,6 +713,13 @@
             "tags": ["script"]
         },
         {
+            "name": "ebsynth_utility",
+            "url": "https://github.com/s9roll7/ebsynth_utility.git",
+            "description": "Extension for creating videos using img2img and ebsynth. Output edited videos using ebsynth. Works with ControlNet extension.",
+            "added": "2022-12-04",
+            "tags": ["tab", "animation"]
+        },
+        {
             "name": "zh_CN Localization",
             "url": "https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN",
             "description": "Simplified Chinese localization, recommend using with Bilingual Localization.",
