@@ -1,4 +1,4 @@
-FROM pytorch/pytorch:1.13.1-cuda11.6-cudnn8-devel
+FROM ubuntu:22.04
 
 MAINTAINER wangdongming "wangdongming@dragonest.com"
 ENV TERM linux
@@ -14,10 +14,9 @@ RUN apt-get update \
         sudo \
         git-core \
 	    git-lfs \
-	    libgl1 \
-	    libglib2.0-0
-RUN apt-get install -yq --no-install-recommends \
+	    python3 \
+	    python3-pip \
+	    python3-venv \
 	    python3-opencv
-RUN apt-get install -yq --no-install-recommends python3.10 python3-venv
 
-CMD python -V
+CMD python3 -c "import torch; print(torch.cuda.is_available())"

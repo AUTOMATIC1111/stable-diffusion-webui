@@ -1,4 +1,4 @@
-FROM sd-webui-env:v0.1
+FROM i.harbor.dragonest.net/xingzhe/sd-webui
 
 MAINTAINER wangdongming "wangdongming@dragonest.com"
 
@@ -25,13 +25,14 @@ RUN apt-get update \
         git-core \
 	    git-lfs \
 	    libgl1 \
-	    libglib2.0-0
-RUN apt-get install -yq --no-install-recommends \
-	    python3-opencv
-RUN apt-get install -yq --no-install-recommends python3.10 python3-venv
+	    libglib2.0-0\
+#        python3-opencv\
+#        python3.10\
+#        python3-pip\
+#        python3-venv
+
 RUN python3 -V
 RUN python3 -c "import sys; print(sys.executable)"
-RUN bash -c " conda env list; conda init"
 
 # 创建用户
 RUN groupadd --gid $USER_GID $USERNAME \
@@ -39,9 +40,10 @@ RUN groupadd --gid $USER_GID $USERNAME \
        && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
        && chmod 0440 /etc/sudoers.d/$USERNAME
 
-RUN mkdir /home/$USERNAME/stable-diffusion-webui/
-RUN ls /home/$USERNAME/stable-diffusion-webui/
 # 安装stable-diffusion-webui
+RUN sudo -u $USERNAME python3 -V
+# RUN pip3 install torch torchvision torchaudio -i https://pypi.tuna.tsinghua.edu.cn/simple
+
 RUN curl -sL https://raw.githubusercontent.com/Jackstrawcd/stable-diffusion-webui/master/webui.sh | sudo -u $USERNAME env COMMANDLINE_ARGS="${BUILD_ARGS}" bash \
     && sudo -u $USERNAME python3 -m pip install xformers \
     && sudo -u $USERNAME git clone https://github.com/Mikubill/sd-webui-controlnet.git /home/$USERNAME/stable-diffusion-webui/extensions/sd-webui-controlnet \
