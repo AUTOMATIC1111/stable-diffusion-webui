@@ -656,6 +656,11 @@ canvas[key="mask"] {
     margin: 0.6em 0em 0.55em 0;
 }
 
+.gr-button-extra{
+    background-color: #882572;
+    color:white
+}
+
 .gr-button-tool-top, #settings .gr-button-tool{
     margin: 1.6em 0.7em 0.55em 0;
 }
@@ -805,6 +810,7 @@ footer {
 
 .extra-networks > div > [id *= '_extra_']{
     margin: 0.3em;
+    background-color: red;
 }
 
 .extra-network-subdirs{
