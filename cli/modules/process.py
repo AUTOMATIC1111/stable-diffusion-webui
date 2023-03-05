@@ -349,7 +349,6 @@ i = {}
 metadata = Map({})
 
 def process_file(f: str, dst: str = None, preview: bool = False, offline: bool = False, txt = None):
-
     def save(img, f, what):
         i[what] = i.get(what, 0) + 1
         if dst is None:

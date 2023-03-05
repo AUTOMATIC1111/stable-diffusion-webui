@@ -196,11 +196,12 @@ if __name__ == '__main__':
         # preprocess
         for f in files:
             try:
-                res, metadata = modules.process.process_file(f = f, dst = dir, preview = False, offline = args.offline, txt = False)
-                with open(json_file, "w") as outfile:
-                    outfile.write(json.dumps(metadata, indent=2))
+                res, metadata = modules.process.process_file(f = f, dst = dir, preview = False, offline = args.offline, txt = args.dreambooth)
+                if not args.dreambooth:
+                    with open(json_file, "w") as outfile:
+                        outfile.write(json.dumps(metadata, indent=2))
             except ValueError as e:
-                exit(1)                
+                exit(1)
         modules.process.unload_models()
         mem_stats()
         if args.tag is not None:

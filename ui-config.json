@@ -1305,5 +1305,19 @@
     "customscript/xyz_grid.py/txt2img/Z type/value": "Nothing",
     "customscript/xyz_grid.py/txt2img/Z type/visible": true,
     "customscript/xyz_grid.py/txt2img/Z values/value": "",
-    "customscript/xyz_grid.py/txt2img/Z values/visible": true
+    "customscript/xyz_grid.py/txt2img/Z values/visible": true,
+    "customscript/seed_travel.py/txt2img/SSIM threshold (1.0=exact copy)/visible": true,
+    "customscript/seed_travel.py/txt2img/SSIM threshold (1.0=exact copy)/value": 0.0,
+    "customscript/seed_travel.py/txt2img/SSIM threshold (1.0=exact copy)/minimum": 0.0,
+    "customscript/seed_travel.py/txt2img/SSIM threshold (1.0=exact copy)/maximum": 1.0,
+    "customscript/seed_travel.py/txt2img/SSIM threshold (1.0=exact copy)/step": 0.01,
+    "customscript/seed_travel.py/img2img/SSIM threshold (1.0=exact copy)/visible": true,
+    "customscript/seed_travel.py/img2img/SSIM threshold (1.0=exact copy)/value": 0.0,
+    "customscript/seed_travel.py/img2img/SSIM threshold (1.0=exact copy)/minimum": 0.0,
+    "customscript/seed_travel.py/img2img/SSIM threshold (1.0=exact copy)/maximum": 1.0,
+    "customscript/seed_travel.py/img2img/SSIM threshold (1.0=exact copy)/step": 0.01,
+    "customscript/posex.py/txt2img/Send this image to ControlNet./visible": true,
+    "customscript/posex.py/txt2img/Send this image to ControlNet./value": false,
+    "customscript/posex.py/img2img/Send this image to ControlNet./visible": true,
+    "customscript/posex.py/img2img/Send this image to ControlNet./value": false
 }
