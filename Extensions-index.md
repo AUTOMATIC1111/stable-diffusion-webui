@@ -720,6 +720,13 @@
             "tags": ["tab", "animation"]
         },
         {
+            "name": "VRAM Estimator",
+            "url": "https://github.com/space-nuko/a1111-stable-diffusion-webui-vram-estimator.git",
+            "description": "Runs txt2img, img2img, highres-fix at increasing dimensions and batch sizes until OOM, and outputs data to graph.",
+            "added": "2023-03-05",
+            "tags": ["tab"]
+        },
+        {
             "name": "zh_CN Localization",
             "url": "https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN",
             "description": "Simplified Chinese localization, recommend using with Bilingual Localization.",
