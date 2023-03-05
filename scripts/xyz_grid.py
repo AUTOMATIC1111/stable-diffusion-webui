@@ -618,13 +618,17 @@ class Script(scripts.Script):
                 margin_size=margin_size
             )
 
+        if not processed.images:
+            # It broke, no further handling needed.
+            return processed
+
         z_count = len(zs)
 
         if not include_lone_images:
             # Don't need sub-images anymore, drop from list:
             processed.images = processed.images[:z_count+1]
 
-        if opts.grid_save and processed.images:
+        if opts.grid_save:
             # Auto-save main and sub-grids:
             grid_count = z_count + 1 if z_count > 1 else 1
             for g in range(grid_count):
