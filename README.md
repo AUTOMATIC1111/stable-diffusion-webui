@@ -6,7 +6,9 @@ A browser interface based on Gradio library for Stable Diffusion.
 ## Features
 [Detailed feature showcase with images](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Features):
 - Original txt2img and img2img modes
-- One click install and run script (but you still must install python and git)
+- Install python 3.10.6 [https://www.python.org/downloads/release/python-3106](Download Python 3.10.6 Official site)
+- Install git [https://git-scm.com/book/en/v2/Getting-Started-Installing-Git](Download Git for any OS, Official site)
+- One click install and run script
 - Outpainting
 - Inpainting
 - Color Sketch
