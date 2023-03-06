@@ -3,176 +3,21 @@
 # Automatic Installation
 ## Windows
 1. Install [Python 3.10.6](https://www.python.org/ftp/python/3.10.6/python-3.10.6-amd64.exe) (ticking **Add to PATH**), and [git](https://github.com/git-for-windows/git/releases/download/v2.39.2.windows.1/Git-2.39.2-64-bit.exe)
-2. Open cmd and type `git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui`
+2. Open Command Prompt from search bar, and type `git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui`
 3. Double click `webui-user.bat`
+
+Installation video in case you get stuck: \
+<sup>solves [#8229](https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/8229)</sup>
+
+
+https://user-images.githubusercontent.com/98228077/223032534-c5dd5b13-a4b6-47a7-995c-27ed8ba8b3e7.mp4
+
+
+
 
 See [Troubleshooting](Troubleshooting) section for what to do if things go wrong.
 
-#### Powershell
 
-Alternatively, here are 2 launch scripts for using powershell:
-
-<details><summary>Scripts (Click to show)</summary>
-
-#### webui.ps1
-```
-if ($env:PYTHON -eq "" -or $env:PYTHON -eq $null) {
-    $PYTHON = "Python.exe"
-} else {
-    $PYTHON = $env:PYTHON
-}
-
-if ($env:VENV_DIR -eq "" -or $env:VENV_DIR -eq $null) {
-    $VENV_DIR = "$PSScriptRoot\venv"
-} else {
-    $VENV_DIR = $env:VENV_DIR
-}
-
-if ($env:LAUNCH_SCRIPT -eq "" -or $env:LAUNCH_SCRIPT -eq $null) {
-    $LAUNCH_SCRIPT = "$PSScriptRoot\launch.py"
-} else {
-    $LAUNCH_SCRIPT = $env:LAUNCH_SCRIPT
-}
-
-$ERROR_REPORTING = $false
-
-mkdir tmp 2>$null
-
-function Start-Venv {
-    if ($VENV_DIR -eq '-') {
-        Skip-Venv
-    }
-
-    if (Test-Path -Path "$VENV_DIR\Scripts\$python") {
-        Activate-Venv
-    } else {
-        $PYTHON_FULLNAME = & $PYTHON -c "import sys; print(sys.executable)"
-        Write-Output "Creating venv in directory $VENV_DIR using python $PYTHON_FULLNAME"
-        Invoke-Expression "$PYTHON_FULLNAME -m venv $VENV_DIR > tmp/stdout.txt 2> tmp/stderr.txt"
-        if ($LASTEXITCODE -eq 0) {
-            Activate-Venv
-        } else {
-            Write-Output "Unable to create venv in directory $VENV_DIR"
-        }
-    }
-}
-
-function Activate-Venv {
-    $PYTHON = "$VENV_DIR\Scripts\Python.exe"
-    $ACTIVATE = "$VENV_DIR\Scripts\activate.bat"
-    Invoke-Expression "cmd.exe /c $ACTIVATE"
-    Write-Output "Venv set to $VENV_DIR."
-    if ($ACCELERATE -eq 'True') {
-        Check-Accelerate
-    } else {
-        Launch-App
-    }
-}
-
-function Skip-Venv {
-    Write-Output "Venv set to $VENV_DIR."
-    if ($ACCELERATE -eq 'True') {
-        Check-Accelerate
-    } else {
-        Launch-App
-    }
-}
-
-function Check-Accelerate {
-    Write-Output 'Checking for accelerate'
-    $ACCELERATE = "$VENV_DIR\Scripts\accelerate.exe"
-    if (Test-Path -Path $ACCELERATE) {
-        Accelerate-Launch
-    } else {
-        Launch-App
-    }
-}
-
-function Launch-App {
-    Write-Output "Launching with python"
-    Invoke-Expression "$PYTHON $LAUNCH_SCRIPT"
-    #pause
-    exit
-}
-
-function Accelerate-Launch {
-    Write-Output 'Accelerating'
-    Invoke-Expression "$ACCELERATE launch --num_cpu_threads_per_process=6 $LAUNCH_SCRIPT"
-    #pause
-    exit
-}
-
-
-try {
-    if(Get-Command $PYTHON){
-        Start-Venv
-    }
-} Catch {
-    Write-Output "Couldn't launch python."
-}
-```
-
-
-
-#### webui-user.ps1
-```
-[Environment]::SetEnvironmentVariable("PYTHON", "")
-[Environment]::SetEnvironmentVariable("GIT", "")
-[Environment]::SetEnvironmentVariable("VENV_DIR","")
-
-# Commandline arguments for webui.py, for example: [Environment]::SetEnvironmentVariable("COMMANDLINE_ARGS", "--medvram --opt-split-attention")
-[Environment]::SetEnvironmentVariable("COMMANDLINE_ARGS", "")
-
-# script to launch to start the app
-# [Environment]::SetEnvironmentVariable("LAUNCH_SCRIPT", "launch.py")
-
-# install command for torch
-# [Environment]::SetEnvironmentVariable("TORCH_COMMAND", "pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 --extra-index-url https://download.pytorch.org/whl/cu113")
-
-# Requirements file to use for stable-diffusion-webui
-# [Environment]::SetEnvironmentVariable("REQS_FILE", "requirements_versions.txt")
-
-# [Environment]::SetEnvironmentVariable("GFPGAN_PACKAGE", "")
-# [Environment]::SetEnvironmentVariable("CLIP_PACKAGE", "")
-# [Environment]::SetEnvironmentVariable("OPENCLIP_PACKAGE", "")
-
-# URL to a WHL if you wish to override default xformers windows
-# [Environment]::SetEnvironmentVariable("XFORMERS_WINDOWS_PACKAGE", "")
-
-# Uncomment and set to enable an alternate repository URL
-# [Environment]::SetEnvironmentVariable("STABLE_DIFFUSION_REPO", "")
-# [Environment]::SetEnvironmentVariable("TAMING_TRANSFORMERS_REPO", "")
-# [Environment]::SetEnvironmentVariable("K_DIFFUSION_REPO", "")
-# [Environment]::SetEnvironmentVariable("CODEFORMER_REPO", "")
-# [Environment]::SetEnvironmentVariable("BLIP_REPO", "")
-
-# Uncomment and set to enable a specific revision of a repository
-# [Environment]::SetEnvironmentVariable("STABLE_DIFFUSION_COMMIT_HASH", "")
-# [Environment]::SetEnvironmentVariable("TAMING_TRANSFORMERS_COMMIT_HASH", "")
-# [Environment]::SetEnvironmentVariable("K_DIFFUSION_COMMIT_HASH", "")
-# [Environment]::SetEnvironmentVariable("CODEFORMER_COMMIT_HASH", "")
-# [Environment]::SetEnvironmentVariable("BLIP_COMMIT_HASH", "")
-
-
-# Uncomment to enable accelerated launch
-# [Environment]::SetEnvironmentVariable("ACCELERATE", "True")
-
-$SCRIPT = "$PSScriptRoot\webui.ps1"
-Invoke-Expression "$SCRIPT"
-```
-
-</details>
-
-## Linux
-To install in the default directory `/home/$(whoami)/stable-diffusion-webui/`, run:
-```bash
-bash <(wget -qO- https://raw.githubusercontent.com/AUTOMATIC1111/stable-diffusion-webui/master/webui.sh)
-```
-
-In order to customize the installation, clone the repository into the desired location, change the required variables in `webui-user.sh` and run :
-```bash
-bash webui.sh
-```
 
 ## Third party installation guides/scripts:
 - NixOS: https://github.com/virchau13/automatic1111-webui-nix
