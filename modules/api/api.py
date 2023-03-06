@@ -177,14 +177,8 @@ class Api:
         return script, script_idx
     
     def get_scripts_list(self):
-        t2ilist = []
-        i2ilist = []
-   
-        for a in scripts.scripts_txt2img.titles:
-            t2ilist.append(str(a.lower()))
-
-        for b in scripts.scripts_img2img.titles:
-            i2ilist.append(str(b.lower()))
+        t2ilist = [str(title.lower()) for title in scripts.scripts_txt2img.titles]
+        i2ilist = [str(title.lower()) for title in scripts.scripts_img2img.titles]
 
         return ScriptsList(txt2img = t2ilist, img2img = i2ilist)  
 
