@@ -1,6 +1,7 @@
 import glob
 import os.path
 import urllib.parse
+from functools import lru_cache
 from pathlib import Path
 from typing import Optional
 
@@ -131,6 +132,7 @@ class ExtraNetworksPage:
             "tabname": json.dumps(tabname),
             "local_preview": json.dumps(item["local_preview"]),
             "name": item["name"],
+            "description": (item.get("description") or ""),
             "card_clicked": onclick,
             "save_card_preview": '"' + html.escape(f"""return saveCardPreview(event, {json.dumps(tabname)}, {json.dumps(item["local_preview"])})""") + '"',
             "search_term": item.get("search_term", ""),
@@ -145,6 +147,19 @@ class ExtraNetworksPage:
         for file in [path + ".png", path + ".preview.png"]:
             if os.path.isfile(file):
                 return self.link_preview(file)
+        return None
+
+    @lru_cache(maxsize=512)
+    def _find_description(self, path: str) -> Optional[str]:
+        """
+        Find and read a description file for a given path (without extension).
+        """
+        for file in [f"{path}.txt", f"{path}.description.txt"]:
+            try:
+                with open(file, "r", encoding="utf-8", errors="replace") as f:
+                    return f.read()
+            except OSError:
+                pass
         return None
 
 
