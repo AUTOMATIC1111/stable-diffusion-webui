@@ -374,7 +374,7 @@ def connect_paste(button, paste_fields, input_comp, override_settings_component,
                 v = params.get(param_name, None)
                 if v is None:
                     continue
-
+                
                 if setting_name == "sd_model_checkpoint" and shared.opts.disable_weights_auto_swap:
                     continue
 
@@ -384,7 +384,7 @@ def connect_paste(button, paste_fields, input_comp, override_settings_component,
                 if v == current_value:
                     continue
 
-                vals[param_name] = v
+                vals[param_name] = v              
 
             vals_pairs = [f"{k}: {v}" for k, v in vals.items()]
 

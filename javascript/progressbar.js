@@ -210,11 +210,11 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
 
 
             if(res.live_preview && gallery){
-                var rect = gallery.getBoundingClientRect()
-                if(rect.width){
-                    livePreview.style.width = rect.width + "px"
-                    livePreview.style.height = rect.height + "px"
-                }
+                //var rect = gallery.getBoundingClientRect()
+                //if(rect.width){
+                    //livePreview.style.width = rect.width + "px"
+                    //livePreview.style.height = rect.height + "px"
+                //}
 
                 var img = new Image();
                 img.onload = function() {

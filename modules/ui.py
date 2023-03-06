@@ -554,7 +554,7 @@ def create_ui():
                         elif category == "hires_fix":
                             with FormGroup(visible=False, elem_id="txt2img_hires_fix_sub-group") as hr_options:
                                 #with FormRow(elem_id="txt2img_hires_fix_row1", variant="compact"):
-                                with gr.Row():
+                                with gr.Row(elem_id="txt2img_hires_fix_row1"):
                                    
                                     hr_upscaler = gr.Dropdown(label="Upscaler", elem_id="txt2img_hr_upscaler", choices=[*shared.latent_upscale_modes, *[x.name for x in shared.sd_upscalers]], value=shared.latent_upscale_default_mode)
                                     hr_final_resolution = FormHTML(value="", elem_id="txtimg_hr_finalres", label="Upscaled resolution", interactive=False)
@@ -564,7 +564,7 @@ def create_ui():
                                     denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.7, elem_id="txt2img_denoising_strength")
 
                                 #with FormRow(elem_id="txt2img_hires_fix_row2", variant="compact"):
-                                with gr.Row():
+                                with gr.Row(elem_id="txt2img_hires_fix_row2"):
                                     hr_scale = gr.Slider(minimum=1.0, maximum=4.0, step=0.05, label="Upscale by", value=2.0, elem_id="txt2img_hr_scale")
                                     hr_resize_x = gr.Slider(minimum=0, maximum=2048, step=8, label="Resize width to", value=0, elem_id="txt2img_hr_resize_x")
                                     hr_resize_y = gr.Slider(minimum=0, maximum=2048, step=8, label="Resize height to", value=0, elem_id="txt2img_hr_resize_y")
@@ -1617,7 +1617,7 @@ def create_ui():
                     previous_section = item.section
 
                 if k in quicksettings_names and not shared.cmd_opts.freeze_settings:
-                    quicksettings_list.append((i, k, item))
+                    quicksettings_list.append((i, k, item))                   
                     components.append(dummy_component)
                 elif section_must_be_skipped:
                     components.append(dummy_component)
@@ -1718,8 +1718,8 @@ def create_ui():
                 
             with gr.Row(elem_id="quicksettings"): 
                 with gr.Row(elem_id="top_row_sd_model_checkpoint"):
-                    component = create_setting_component("sd_model_checkpoint", "sd", is_quicksettings=True)
-                    component_dict["sd_model_checkpoint"] = component
+                    sd_model_checkpoint = create_setting_component("sd_model_checkpoint", "sd", is_quicksettings=True)
+                    component_dict['sd_model_checkpoint'] = sd_model_checkpoint
                 
                 with gr.Column(elem_id="quicksettings_overflow"): 
                     with gr.Row(elem_id="quicksettings_actions"):
@@ -1729,13 +1729,14 @@ def create_ui():
                     with gr.Column(elem_id="quicksettings_overflow_container") as qsettings_row:
                         for i, k, item in sorted(quicksettings_list, key=lambda x: quicksettings_names.get(x[1], x[0])):
                             if( str(k) != "sd_model_checkpoint"):
-                                #with gr.Row(elem_id=f"quick_row_{k}") as qsettings_row:                   
+                            #with gr.Row(elem_id=f"quick_row_{k}") as qsettings_row:                   
                                 component = create_setting_component(k, item.section[0], is_quicksettings=True)
                                 component_dict[k] = component
             
             gr.Row(elem_id="extra_networks_menu")
             gr.Row(elem_id="quick_menu")
-            parameters_copypaste.connect_paste_params_buttons()
+        
+        parameters_copypaste.connect_paste_params_buttons()
  
         with gr.Tabs(elem_id="tabs") as tabs:
             
@@ -1764,7 +1765,7 @@ def create_ui():
 
         for i, k, item in quicksettings_list:
             component = component_dict[k]
-
+            
             component.change(
                 fn=lambda value, k=k: run_settings_single(value, key=k),
                 inputs=[component],
@@ -1779,6 +1780,12 @@ def create_ui():
 
         button_set_checkpoint = gr.Button('Change checkpoint', elem_id='change_checkpoint', visible=False)
         button_set_checkpoint.click(
+            fn=lambda value, _: run_settings_single(value, key='sd_model_checkpoint'),
+            _js="function(v){ var res = desiredCheckpointName; desiredCheckpointName = ''; return [res || v, null]; }",
+            inputs=[component_dict['sd_model_checkpoint'], dummy_component],
+            outputs=[component_dict['sd_model_checkpoint'], text_settings],
+        )
+        sd_model_checkpoint.change(
             fn=lambda value, _: run_settings_single(value, key='sd_model_checkpoint'),
             _js="function(v){ var res = desiredCheckpointName; desiredCheckpointName = ''; return [res || v, null]; }",
             inputs=[component_dict['sd_model_checkpoint'], dummy_component],

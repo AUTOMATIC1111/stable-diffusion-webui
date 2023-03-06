@@ -690,8 +690,7 @@ onUiUpdate(function(){
 	}
 	
 	function navTabClicked(e){
-		const idx = parseInt(e.currentTarget.getAttribute("tab-id"));
-		console.log(idx);
+		const idx = parseInt(e.currentTarget.getAttribute("tab-id"));		
 		navigate2TabItem(idx);
 	}
 	
@@ -760,33 +759,44 @@ onUiUpdate(function(){
 	// add - remove quicksettings
 	const settings_submit = gradioApp().querySelector('#settings_submit');
 	const quick_parent = gradioApp().querySelector("#quicksettings_overflow_container");
+	const setting_quicksettings = gradioApp().querySelector('#setting_quicksettings textarea');
+	function saveQuickSettings(){
+		const iEvent = new Event("input");		
+		Object.defineProperty(iEvent, "target", {value: setting_quicksettings})		
+		setting_quicksettings.dispatchEvent(iEvent);		
+		const cEvent = new Event("click");//submit	
+		Object.defineProperty(cEvent, "target", {value: settings_submit})		
+		settings_submit.dispatchEvent(cEvent);
+		//console.log(setting_quicksettings.value);
+	}
 	
-	function add2quickSettings(id, section, checked){
-		const setting_quicksettings = gradioApp().querySelector('#setting_quicksettings textarea');
+	/* 	
+	function addModelCheckpoint(){
+		if(setting_quicksettings.value.indexOf("sd_model_checkpoint") === -1){
+			setting_quicksettings.value += ",sd_model_checkpoint";
+		}
+		saveQuickSettings();
+	} 
+	*/
+
+	function add2quickSettings(id, section, checked){		
 		let field_settings = setting_quicksettings.value.replace(" ", "");		
 		if(checked){
 			field_settings += ","+id;			
 			let setting_row = gradioApp().querySelector('#row_setting_'+id);			
 			quick_parent.append(setting_row);
+			setting_row.classList.add("warning");			
 		}else{			
 			field_settings = field_settings.replaceAll(id, ",");			
 			const setting_parent = gradioApp().querySelector("#"+section+"_settings_2img_settings");
-			let quick_row = gradioApp().querySelector('#row_setting_'+id);
-			//console.log(quick_row);					
+			let quick_row = gradioApp().querySelector('#row_setting_'+id);					
 			setting_parent.append(quick_row);
-
+			quick_row.classList.remove("warning");
 		}
 		field_settings = field_settings.replace(/,{2,}/g, ',');
 		setting_quicksettings.value = field_settings;
-
-		const iEvent = new Event("input");		
-		Object.defineProperty(iEvent, "target", {value: setting_quicksettings})		
-		setting_quicksettings.dispatchEvent(iEvent);
-		
-		const cEvent = new Event("click");//submit	
-		Object.defineProperty(cEvent, "target", {value: settings_submit})		
-		settings_submit.dispatchEvent(cEvent);
-		//settings_submit.click();
+		//addModelCheckpoint();
+		saveQuickSettings();
 		//console.log(section + " - "+ id + " - " + checked);
 	}
 	gradioApp().querySelectorAll('[id*="add2quick_"]').forEach(function (elem){
@@ -798,6 +808,33 @@ onUiUpdate(function(){
 			add2quickSettings(tid, sid, e.target.checked);
 		})
 	})
+	/*
+	gradioApp().querySelectorAll("#quicksettings_overflow_container input[type='range']").forEach(function (elem,i){
+		
+		let clone_range = elem.cloneNode(true);
+		clone_range.id = elem.id+"_clone";
+		let parent = elem.parentElement;
+		parent.append(clone_range);
+		elem.style.display = "none";	
+		
+		clone_range.addEventListener('change', function (e) {					
+			let range = e.target;
+			let rid = range.id.split("_clone")[0];
+			let n_range = range.parentElement.querySelector("#"+rid);
+			let n_num = range.parentElement.querySelector("input[type=number]");
+			n_range.value = e.target.value;
+			n_num.value = e.target.value;
+			//const iEvent = new Event("input");		
+			//Object.defineProperty(iEvent, "target", {value: n_range})		
+			//n_range.dispatchEvent(iEvent);		
+		})
+	})
+	*/
+	
+	
+	//addModelCheckpoint();
+	
+	//selectCheckpoint
 	
 	
 	// draggable reordable quicksettings
@@ -1011,11 +1048,30 @@ function update_token_counter(button_id) {
 
 function restart_reload(){
 	
-
+	let bg_color = getComputedStyle(gradioApp().querySelector(".container")).getPropertyValue('--main-bg-color');
+	let primary_color = getComputedStyle(gradioApp().querySelector(".icon-info")).getPropertyValue('--primary-color');
+	let panel_color = getComputedStyle(gradioApp().querySelector(".dark .gr-box")).getPropertyValue('--panel-bg-color');
 	
-	//document.html.innerHTML +='<style id="cool">body{background-color:#550000!important;}</style> ';
-	document.body.style.backgroundColor = "#1a1a1a";
-    document.body.innerHTML='<h1 style="font-family:monospace;margin-top:20%;color:lightgray;text-align:center;">Reloading...</h1>';	
+	localStorage.setItem("bg_color", bg_color);
+	localStorage.setItem("primary_color", primary_color);
+	localStorage.setItem("panel_color", panel_color);
+	
+	if(localStorage.hasOwnProperty('bg_color')){
+		bg_color = localStorage.getItem("bg_color");
+		primary_color = localStorage.getItem("primary_color");
+		panel_color = localStorage.getItem("panel_color");	
+	}
+	
+	document.body.style.backgroundColor = bg_color;
+
+	let style = document.createElement('style');
+	style.type = 'text/css';
+	style.innerHTML = '.loader{position:absolute;top:50vh;left:50vw;height:60px;width:160px;margin:0;-webkit-transform:translate(-50%,-50%);transform:translate(-50%,-50%)} .circles{position:absolute;left:-5px;top:0;height:60px;width:180px} .circles span{position:absolute;top:25px;height:12px;width:12px;border-radius:12px;background-color:'+panel_color+'} .circles span.one{right:80px} .circles span.two{right:40px} .circles span.three{right:0px} .circles{-webkit-animation:animcircles 0.5s infinite linear;animation:animcircles 0.5s infinite linear} @-webkit-keyframes animcircles{0%{-webkit-transform:translate(0px,0px);transform:translate(0px,0px)}100%{-webkit-transform:translate(-40px,0px);transform:translate(-40px,0px)}} @keyframes animcircles{0%{-webkit-transform:translate(0px,0px);transform:translate(0px,0px)}100%{-webkit-transform:translate(-40px,0px);transform:translate(-40px,0px)}} .pacman{position:absolute;left:0;top:0;height:60px;width:60px} .pacman .eye{position:absolute;top:10px;left:30px;height:7px;width:7px;border-radius:7px;background-color:'+bg_color+'} .pacman span{position:absolute;top:0;left:0;height:60px;width:60px} .pacman span::before{content:"";position:absolute;left:0;height:30px;width:60px;background-color:'+primary_color+'} .pacman .top::before{top:0;border-radius:60px 60px 0px 0px} .pacman .bottom::before{bottom:0;border-radius:0px 0px 60px 60px} .pacman .left::before{bottom:0;height:60px;width:30px;border-radius:60px 0px 0px 60px} .pacman .top{-webkit-animation:animtop 0.5s infinite;animation:animtop 0.5s infinite} @-webkit-keyframes animtop{0%,100%{-webkit-transform:rotate(0deg);transform:rotate(0deg)}50%{-webkit-transform:rotate(-45deg);transform:rotate(-45deg)}} @keyframes animtop{0%,100%{-webkit-transform:rotate(0deg);transform:rotate(0deg)}50%{-webkit-transform:rotate(-45deg);transform:rotate(-45deg)}} .pacman .bottom{-webkit-animation:animbottom 0.5s infinite;animation:animbottom 0.5s infinite} @-webkit-keyframes animbottom{0%,100%{-webkit-transform:rotate(0deg);transform:rotate(0deg)}50%{-webkit-transform:rotate(45deg);transform:rotate(45deg)}} @keyframes animbottom{0%,100%{-webkit-transform:rotate(0deg);transform:rotate(0deg)}50%{-webkit-transform:rotate(45deg);transform:rotate(45deg)}}';
+	
+	document.getElementsByTagName('head')[0].appendChild(style);
+    document.body.innerHTML='<div class="loader"><div class="circles"><span class="one"></span><span class="two"></span><span class="three"></span></div><div class="pacman"><span class="top"></span><span class="bottom"></span><span class="left"></span><div class="eye"></div></div></div>';
+	
+
     setTimeout(function(){location.reload()},2000)
 
     return []
@@ -1037,3 +1093,19 @@ function selectCheckpoint(name){
 }
 
 
+document.addEventListener('readystatechange', function (e) {		
+	document.body.style.display = "none";
+	if(localStorage.hasOwnProperty('bg_color')){
+		document.getElementsByTagName("html")[0].style.backgroundColor = localStorage.getItem("bg_color");
+		document.body.style.backgroundColor = localStorage.getItem("bg_color");
+	}
+})
+
+window.onload = function() {
+	//document.getElementsByTagName("html")[0].style.backgroundColor = localStorage.getItem("bg_color");
+	//document.body.style.backgroundColor = localStorage.getItem("bg_color");
+
+	//document.body.style.display = "none";	
+	setTimeout(function(){document.body.style.display = "block";},100)
+
+}
