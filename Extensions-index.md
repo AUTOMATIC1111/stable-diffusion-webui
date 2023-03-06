@@ -693,7 +693,7 @@
         },
         {
             "name": "LLuL",
-            "url": "https://github.com/hnmr293/posex.git",
+            "url": "https://github.com/hnmr293/sd-webui-llul.git",
             "description": "Local Latent Upscaler. Target an area to selectively enhance details.",
             "added": "2023-03-04",
             "tags": ["manipulations"]
