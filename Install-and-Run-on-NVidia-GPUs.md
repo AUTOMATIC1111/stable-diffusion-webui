@@ -9,8 +9,11 @@
 Installation video in case you get stuck: \
 <sup>solves [#8229](https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/8229)</sup>
 
+<details><summary>Video: (Click to expand:)</summary>
 
 https://user-images.githubusercontent.com/98228077/223032534-c5dd5b13-a4b6-47a7-995c-27ed8ba8b3e7.mp4
+
+</details>
 
 
 
