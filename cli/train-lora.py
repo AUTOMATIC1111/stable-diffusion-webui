@@ -14,6 +14,7 @@ Disabled/broken:
 """
 
 import os
+import re
 import gc
 import sys
 import json
@@ -127,12 +128,13 @@ def mem_stats():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = 'train lora')
-    parser.add_argument('--model', type=str, default=None, required=True, help='original model to use a base for training')
-    parser.add_argument('--input', type=str, default=None, required=True, help='input folder with training images')
-    parser.add_argument('--output', type=str, default=None, required=True, help='lora name')
+    parser.add_argument('--model', type=str, default=None, required=False, help='original model to use a base for training, default: active model')
+    parser.add_argument('--input', '--dataset', type=str, default=None, required=True, help='input folder with training images')
+    parser.add_argument('--output', '--lora', type=str, default=None, required=True, help='lora name')
     parser.add_argument('--tag', type=str, default=None, required=False, help='primary tag')
-    parser.add_argument('--dir', type=str, default=None, required=True, help='folder containing lora checkpoints')
+    parser.add_argument('--dir', type=str, default=None, required=False, help='folder containing lora checkpoints')
     parser.add_argument('--interim', type=int, default=0, help = 'save interim checkpoints after n epoch')
+    parser.add_argument('--process', type=str, default='original', required=True, help='list of processing steps: original,face,body,blur,range,upscale,restore')
     parser.add_argument('--noprocess', default = False, action='store_true', help = 'skip processing and use existing input data')
     parser.add_argument('--notrain', default = False, action='store_true', help = 'just run processing and skip training')
     parser.add_argument('--nocaptions', default = False, action='store_true', help = 'skip creating captions and tags')
@@ -152,19 +154,30 @@ if __name__ == '__main__':
     parser.add_argument('--locon', default=False, action='store_true', help = "use locon style training")
     parser.add_argument('--debug', default=False, action='store_true', help = "enable debug logging")
     args = parser.parse_args()
+    defaults = Map({ 'options': {}, 'flags': {} }) if args.offline else Map(modules.sdapi.options())
+
     if args.debug:
         log.setLevel(logging.DEBUG)
         log.debug({ 'debug': True })
+    if args.model is None:
+        args.model = defaults.options.get('sd_model_checkpoint', None)
+        args.model = args.model.split(' [')[0] if args.model is not None else None
+    if args.dir is None:
+        args.dir = defaults.flags.get('lora_dir', None)
+    if not os.path.isabs(args.model) and args.dir is not None and not os.path.exists(args.model):
+        args.model = os.path.abspath(os.path.join(args.dir, os.pardir, 'Stable-diffusion', args.model))
+    if args.dir is None:
+        args.dir = os.path.join(args.input, 'lora')
     if not os.path.exists(args.model) or not os.path.isfile(args.model):
         log.error({ 'lora cannot find model': args.model })
         exit(1)
-    options.pretrained_model_name_or_path = args.model
     if not os.path.exists(args.input) or not os.path.isdir(args.input):
         log.error({ 'lora cannot find training dir': args.input })
         exit(1)
     if not os.path.exists(args.dir) or not os.path.isdir(args.dir):
         log.error({ 'lora cannot find training dir': args.dir })
         exit(1)
+    options.pretrained_model_name_or_path = args.model
     options.output_dir = args.dir
     options.output_name = args.output
     options.max_train_steps = args.steps
@@ -200,9 +213,15 @@ if __name__ == '__main__':
 
     if not args.noprocess:
         # preprocess
+        processing_options = args.process.split(',')
+        processing_options = [opt.strip() for opt in re.split(',| ', args.process)]
+        log.info({ 'processing options': processing_options })
+
+        if os.path.exists(json_file):
+            os.remove(json_file)
         for f in files:
             try:
-                res, metadata = modules.process.process_file(f = f, dst = dir, preview = False, offline = args.offline, txt = args.dreambooth)
+                res, metadata = modules.process.process_file(f = f, dst = dir, preview = False, offline = args.offline, txt = args.dreambooth, tag = args.tag, opts = processing_options)
                 if not args.dreambooth:
                     with open(json_file, "w") as outfile:
                         outfile.write(json.dumps(metadata, indent=2))
@@ -210,12 +229,6 @@ if __name__ == '__main__':
                 exit(1)
         modules.process.unload_models()
         mem_stats()
-        if args.tag is not None:
-            for name, item in metadata.items():
-                item['caption'] = args.tag + ',' + item['caption']
-                item['tags'] = args.tag + ',' + item['tags']
-        with open(json_file, "w") as outfile:
-            outfile.write(json.dumps(metadata, indent=2))
 
     if not args.nolatents and not args.dreambooth:
         # create latents

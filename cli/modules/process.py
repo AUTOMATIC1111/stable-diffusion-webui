@@ -53,25 +53,29 @@ params = Map({
     'blur_samplesize': 60, # sample size to use for blur detection
     'similarity_size': 64, # base similarity detection on reduced images
     # original image processing settings
-    'keep_original': True, # keep original image
+    'keep_original': False, # keep original image
     # face processing settings
     'extract_face': False, # extract face from image
     'face_score': 0.7, # min face detection score
-    'face_pad': 0.2, # pad face image percentage
+    'face_pad': 0.1, # pad face image percentage
     'face_model': 1, # which face model to use 0/close-up 1/standard
+    'face_blur': False, # check for body blur
     'face_blur_score': 1.5, # max score for face blur detection
+    'face_range': False, # check for body blur
     'face_range_score': 0.15, # min score for face dynamic range detection
-    'face_restore': True, # attempt to restore face quality
-    'face_upscale': True, # attempt to scale small faces
+    'face_restore': False, # attempt to restore face quality
+    'face_upscale': False, # attempt to scale small faces
     'face_segmentation': False, # segmentation enabled
     # body processing settings
-    'extract_body': False, # extract face from image
+    'extract_body': False, # extract body from image
     'body_score': 0.9, # min body detection score
     'body_visibility': 0.5, # min visibility score for each detected body part
     'body_parts': 15, # min number of detected body parts with sufficient visibility
     'body_pad': 0.2,  # pad body image percentage
     'body_model': 2, # body model to use 0/low 1/medium 2/high
+    'body_blur': False, # check for body blur
     'body_blur_score': 1.8, # max score for body blur detection
+    'face_range': False, # check for body blur
     'body_range_score': 0.15, # min score for body dynamic range detection
     'body_segmentation': False, # segmentation enabled
     # similarity detection settings
@@ -212,19 +216,21 @@ def extract_face(img):
     else:
         squared = cropped
 
-    blur = detect_blur(squared)
-    if blur > params.face_blur_score:
-        log.info({ 'process face skip': 'blur check fail', 'blur': blur })
-        return None, True
-    else:
-        log.debug({ 'process face blur': blur })
+    if params.face_blur:
+        blur = detect_blur(squared)
+        if blur > params.face_blur_score:
+            log.info({ 'process face skip': 'blur check fail', 'blur': blur })
+            return None, True
+        else:
+            log.debug({ 'process face blur': blur })
 
-    range = detect_dynamicrange(squared)
-    if range < params.face_range_score:
-        log.info({ 'process face skip': 'dynamic range check fail', 'range': range })
-        return None, True
-    else:
-        log.debug({ 'process face dynamic range': range })
+    if params.face_range:
+        range = detect_dynamicrange(squared)
+        if range < params.face_range_score:
+            log.info({ 'process face skip': 'dynamic range check fail', 'range': range })
+            return None, True
+        else:
+            log.debug({ 'process face dynamic range': range })
 
     similarity = detect_simmilar(squared)
     if similarity > params.similarity_score:
@@ -275,19 +281,21 @@ def extract_body(img):
     else:
         squared = cropped
 
-    blur = detect_blur(squared)
-    if blur > params.body_blur_score:
-        log.info({ 'process body skip': 'blur check fail', 'blur': blur })
-        return None, True
-    else:
-        log.debug({ 'process body blur': blur })
+    if params.body_blur:
+        blur = detect_blur(squared)
+        if blur > params.body_blur_score:
+            log.info({ 'process body skip': 'blur check fail', 'blur': blur })
+            return None, True
+        else:
+            log.debug({ 'process body blur': blur })
 
-    range = detect_dynamicrange(squared)
-    if range < params.body_range_score:
-        log.info({ 'process body skip': 'dynamic range check fail', 'range': range })
-        return None, True
-    else:
-        log.debug({ 'process body dynamic range': range })
+    if params.body_range:
+        range = detect_dynamicrange(squared)
+        if range < params.body_range_score:
+            log.info({ 'process body skip': 'dynamic range check fail', 'range': range })
+            return None, True
+        else:
+            log.debug({ 'process body dynamic range': range })
 
     similarity = detect_simmilar(squared)
     if similarity > params.similarity_score:
@@ -318,7 +326,7 @@ def encode(img):
         return encoded
 
 
-def interrogate(img, fn):
+def interrogate(img, fn, intag = None):
     if len(params.interrogate_model) == 0:
         return
     caption = ''
@@ -329,16 +337,22 @@ def interrogate(img, fn):
         if model == 'clip':
             caption = res.caption if 'caption' in res else ''
             caption = caption.split(',')[0].replace('a ', '')
+            if intag is not None:
+                caption = intag + ', ' + caption
         if model == 'deepdanbooru':
             tag = res.caption if 'caption' in res else ''
             tags = tag.split(',')
             tags = [t.replace('(', '').replace(')', '').split(':')[0].strip() for t in tags]
+            if intag is not None:
+                for t in intag.split(',')[::-1]:
+                    tags.insert(0, t.strip())
         if params.interrogate_captions:
             file = fn.replace(params.format, '.txt')
             f = open(file, 'w')
             f.write(caption)
             f.close()
-    tags.insert(0, caption.split(' ')[0])
+    pos = 0 if len(tags) == 0 else 1
+    tags.insert(pos, caption.split(' ')[1])
     if len(tags) > params.tag_limit:
         tags = tags[:params.tag_limit]
     log.info({ 'interrogate': caption, 'tags': tags })
@@ -348,7 +362,8 @@ def interrogate(img, fn):
 i = {}
 metadata = Map({})
 
-def process_file(f: str, dst: str = None, preview: bool = False, offline: bool = False, txt = None):
+# entry point when used as module
+def process_file(f: str, dst: str = None, preview: bool = False, offline: bool = False, txt = None, tag = None, opts = []):
     def save(img, f, what):
         i[what] = i.get(what, 0) + 1
         if dst is None:
@@ -365,9 +380,27 @@ def process_file(f: str, dst: str = None, preview: bool = False, offline: bool =
         if not preview:
             img.save(os.path.join(dir, fn))
             if not offline:
-                caption, tags = interrogate(img, os.path.join(dir, fn))
+                caption, tags = interrogate(img, os.path.join(dir, fn), tag)
         metadata[os.path.join(parent, basename)] = { 'caption': caption, 'tags': ','.join(tags) }
         return fn
+
+    # overrides
+    if 'original' in opts:
+        params.keep_original = True
+    if 'face' in opts:
+        params.extract_face = True
+    if 'body' in opts:
+        params.extract_body = True
+    if 'blur' in opts:
+        params.face_blur = True
+        params.body_blur = True
+    if 'range' in opts:
+        params.face_range = True
+        params.body_range = True
+    if 'upscale' in opts:
+        params.face_upscale = True
+    if 'restore' in opts:
+        params.face_restore = True
 
     log.info({ 'processing': f })
     try:

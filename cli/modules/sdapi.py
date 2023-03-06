@@ -4,11 +4,12 @@ helper methods that creates HTTP session with managed connection pool
 provides async HTTP get/post methods and several helper methods
 """
 
+import sys
+import json
 import aiohttp
 import asyncio
 import logging
 import requests
-import sys
 from util import Map, log
 
 
@@ -128,6 +129,12 @@ async def progress():
     return res
 
 
+def options():
+    options = getsync('/sdapi/v1/options')
+    flags = getsync('/sdapi/v1/cmd-flags')
+    return { 'options': options, 'flags': flags }
+
+
 def shutdown():
     try:
         postsync('/sdapi/v1/shutdown')
@@ -168,6 +175,12 @@ if __name__ == "__main__":
         asyncio.run(interrupt())
     if 'progress' in sys.argv:
         asyncio.run(progress())
+    if 'options' in sys.argv:
+        opt = options()
+        log.debug({ 'options' })
+        print(json.dumps(opt['options'], indent = 2))
+        log.debug({ 'cmd-flags' })
+        print(json.dumps(opt['flags'], indent = 2))
     if 'shutdown' in sys.argv:
         shutdown()
     asyncio.run(close())
