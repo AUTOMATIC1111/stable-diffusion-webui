@@ -19,5 +19,11 @@ def setup():
         print(f"install extentsion:{basename}")
         install_extension_from_url(None, url)
 
+def safety_setup():
+    try:
+        setup()
+    except Exception as ex:
+        print(ex)
+
 if __name__ == '__main__':
     setup()

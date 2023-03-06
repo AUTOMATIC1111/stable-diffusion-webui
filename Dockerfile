@@ -1,11 +1,12 @@
 # FROM i.harbor.dragonest.net/xingzhe/sd-webui
-FROM pytorch/pytorch:1.13.1-cuda11.6-cudnn8-devel
+FROM sd-webui-env:v0.1
 
 MAINTAINER wangdongming "wangdongming@dragonest.com"
 
 ENV TERM linux
 ENV APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE DontWarn
 ENV DEBIAN_FRONTEND noninteractive
+ENV CRYPTOGRAPHY_DONT_BUILD_RUST=1
 
 ARG TZ=Asia/Shanghai
 ARG BUILD_ARGS
@@ -32,11 +33,12 @@ RUN apt-get update \
         python3-opencv\
         python3.10\
         python3-pip\
-        python3-venv
+        python3-venv \
+        wget
 
 RUN python3 -V
 #RUN python3 -c "import sys; print(sys.executable)"
-
+RUN pip3 install --upgrade pip -i https://pypi.douban.com/simple/
 
 
 # 创建用户
@@ -71,6 +73,10 @@ RUN python3 -V
 RUN https_proxy=${HTTP_PROXY} git clone https://github.com/Jackstrawcd/stable-diffusion-webui.git ~/stable-diffusion-webui
 
 # 安装requirements
+# xformers_package = os.environ.get('XFORMERS_PACKAGE', 'xformers==0.0.16rc425')
+# gfpgan_package = os.environ.get('GFPGAN_PACKAGE', "git+https://github.com/TencentARC/GFPGAN.git@8d2447a2d918f8eba5a4a01463fd48e45126a379")
+# clip_package = os.environ.get('CLIP_PACKAGE', "git+https://github.com/openai/CLIP.git@d50d76daa670286dd6cacf3bcd80b5e4823fc8e1")
+# openclip_package = os.environ.get('OPENCLIP_PACKAGE', "git+https://github.com/mlfoundations/open_clip.git@bb6e834e9c70d9c27d0dc3ecedeebeaeb1ffad6b")
 RUN cd ~/stable-diffusion-webui  \
     && pip3 install xformers -i https://pypi.tuna.tsinghua.edu.cn/simple \
     && pip3 install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple \
@@ -81,14 +87,33 @@ RUN https_proxy=${HTTP_PROXY} git clone https://github.com/Stability-AI/stabledi
 RUN https_proxy=${HTTP_PROXY} git clone https://github.com/crowsonkb/k-diffusion.git ~/stable-diffusion-webui/repositories/k-diffusion
 RUN https_proxy=${HTTP_PROXY} git clone https://github.com/sczhou/CodeFormer.git ~/stable-diffusion-webui/repositories/CodeFormer
 RUN https_proxy=${HTTP_PROXY} git clone https://github.com/salesforce/BLIP.git ~/stable-diffusion-webui/repositories/BLIP
+
+RUN pip3 install setuptools_rust -i https://pypi.tuna.tsinghua.edu.cn/simple
+RUN pip3 install -r  ~/stable-diffusion-webui/repositories/CodeFormer/requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+RUN pip3 install -r  ~/stable-diffusion-webui/repositories/k-diffusion/requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+# RUN pip3 install -r  ~/stable-diffusion-webui/repositories/BLIP/requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+# RUN ls ~/stable-diffusion-webui/repositories/BLIP/
+#RUN pip install -e  ~/stable-diffusion-webui/repositories/k-diffusion
+RUN cd  ~/stable-diffusion-webui/repositories/stable-diffusion-stability-ai \
+    && python3 setup.py install
+#RUN ~/stable-diffusion-webui/repositories/taming-transformers  \
+#    && python3 setup.py install
+#RUN cd  ~/stable-diffusion-webui/repositories/BLIP/ && \
+#    python3 setup.py install
 # ControlNet
 RUN https_proxy=${HTTP_PROXY} git clone https://github.com/Mikubill/sd-webui-controlnet.git ~/stable-diffusion-webui/extensions/sd-webui-controlnet
 RUN https_proxy=${HTTP_PROXY} git clone https://huggingface.co/webui/ControlNet-modules-safetensors ~/stable-diffusion-webui/models/ControlNet
 RUN mkdir -p  ~/stable-diffusion-webui/stable-diffusion-webui/extensions/sd-webui-controlnet/annotator/openpose
 
-
+# 下载模型
+RUN cd  ~/stable-diffusion-webui/models/Stable-diffusion \
+    &&wget -nd -np -r  -c http://apksamba.ops.ilongyuan.cn:8000/ai/7/AI%E7%BE%8E%E6%9C%AF/%E6%89%93%E5%8C%85/models/Stable-diffusion/
 #RUN cd ~/stable-diffusion-webui/  \
 #    &&  python3 extensions/sd-webui-controlnet/install.py
+# 安装插件
+RUN pip3 install markupsafe==2.0.1 -i https://pypi.tuna.tsinghua.edu.cn/simple
+RUN cd  ~/stable-diffusion-webui \
+    && python3 install_ext.py
 
 WORKDIR ~/stable-diffusion-webui
 
