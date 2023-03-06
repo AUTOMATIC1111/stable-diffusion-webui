@@ -31,9 +31,11 @@ import modules.sdapi
 
 latents = importlib.import_module('modules.lora-latents')
 
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'modules', 'lora'))
+lora_path = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, 'modules', 'lora'))
+sys.path.append(lora_path)
+locon_path = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, 'modules', 'locon'))
+sys.path.append(locon_path)
 from train_network import train
-
 
 options = Map({
     "v2": False,
@@ -138,14 +140,16 @@ if __name__ == '__main__':
     parser.add_argument('--offline', default = False, action='store_true', help = 'do not use webui server for processing')
     parser.add_argument('--shutdown', default = False, action='store_true', help = 'shutdown webui server')
     parser.add_argument('--gradient', type=int, default=1, required=False, help='gradient accumulation steps, default: %(default)s')
-    parser.add_argument('--steps', type=int, default=5000, required=False, help='training steps, default: %(default)s')
-    parser.add_argument('--dim', type=int, default=128, required=False, help='network dimension, default: %(default)s')
+    parser.add_argument('--steps', type=int, default=4000, required=False, help='training steps, default: %(default)s')
+    parser.add_argument('--dim', type=int, default=40, required=False, help='network dimension, default: %(default)s')
     parser.add_argument('--repeats', type=int, default=10, required=False, help='number of repeats per image, default: %(default)s')
+    parser.add_argument('--alpha', type=float, default=1, required=False, help='alpha for weights scaling, default: %(default)s')
     parser.add_argument('--batch', type=int, default=1, required=False, help='batch size, default: %(default)s')
     parser.add_argument('--lr', type=float, default=1e-04, required=False, help='model learning rate, default: %(default)s')
     parser.add_argument('--unetlr', type=float, default=1e-04, required=False, help='unet learning rate, default: %(default)s')
     parser.add_argument('--textlr', type=float, default=5e-05, required=False, help='text encoder learning rate, default: %(default)s')
     parser.add_argument('--dreambooth', default=False, action='store_true', help = "use dreambooth style training")
+    parser.add_argument('--locon', default=False, action='store_true', help = "use locon style training")
     parser.add_argument('--debug', default=False, action='store_true', help = "enable debug logging")
     args = parser.parse_args()
     if args.debug:
@@ -171,6 +175,7 @@ if __name__ == '__main__':
     options.unet_lr = args.unetlr
     options.text_encoder_lr = args.textlr
     options.train_batch_size = args.batch
+    options.network_alpha = args.alpha
     log.info({ 'train lora args': vars(options) })
     transformers.logging.set_verbosity_error()
     mem_stats()
@@ -185,6 +190,7 @@ if __name__ == '__main__':
     res = None
 
     if args.dreambooth:
+        log.info({ 'using dreambooth style training': True })
         options.in_json = None
     else:
         options.in_json = json_file
@@ -226,6 +232,13 @@ if __name__ == '__main__':
         modules.sdapi.shutdown()
         time.sleep(1)
 
+    if args.locon:
+        # python3 sd-scripts/train_network.py --network_module locon.locon_kohya --network_dim "RANK_FOR_TRANSFORMER" --network_alpha "ALPHA_FOR_TRANSFORMER" --network_args "conv_dim=RANK_FOR_CONV" "conv_alpha=ALPHA_FOR_CONV" "dropout=DROPOUT_RATE"
+        # options.network_dim = 'RANK_FOR_TRANSFORMER'
+        # options.network_alpha = 'ALPHA_FOR_TRANSFORMER'
+        # options.network_args = ['conv_dim=RANK_FOR_CONV', 'conv_alpha=ALPHA_FOR_CONV', 'dropout=DROPOUT_RATE']
+        log.info({ 'using locon network': True })
+        options.network_module = 'locon.locon_kohya'
     if not args.notrain:
         train(options)
         mem_stats()
