@@ -36,3 +36,6 @@
 [submodule "extensions-builtin/sd-webui-controlnet"]
 	path = extensions-builtin/sd-webui-controlnet
 	url = https://github.com/Mikubill/sd-webui-controlnet
+[submodule "modules/locon"]
+	path = modules/locon
+	url = https://github.com/KohakuBlueleaf/LoCon
