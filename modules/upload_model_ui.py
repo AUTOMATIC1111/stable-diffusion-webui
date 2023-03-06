@@ -192,7 +192,7 @@ def create_upload_model_ui():
         with gr.TabItem('模型文件上传', elem_id='tab_upload_file'):
             gr.Label(None, label="通过模型文件上传:")
             upload_ctl = gr.File(label="本地上传模型文件:")
-            uploadImg_ctl = gr.File(label="本地上传模型文件封面（可选）:")
+            upload_img_ctl = gr.File(label="本地上传模型文件封面（可选,需要与模型文件名称一致的png格式图片）:")
         with gr.TabItem('通过URL上传', elem_id='tab_upload_file'):
             url_txt_ctl = gr.Textbox(label="从URL下载:", placeholder="输入下载链接，支持civitai页面地址直接解析")
             model_name_ctl = gr.Textbox(label="自定义文件名:", placeholder="自定义模型命名（含后缀），默认使用平台命名")
@@ -204,10 +204,10 @@ def create_upload_model_ui():
                       inputs=[upload_ctl, radio_ctl],
                       outputs=[result],
                       show_progress=True)
-    uploadImg_ctl.upload(fn=upload_asset,
-                         inputs=[upload_ctl, radio_ctl],
-                         outputs=[result],
-                         show_progress=True)
+    upload_img_ctl.upload(fn=upload_asset,
+                          inputs=[upload_img_ctl, radio_ctl],
+                          outputs=[result],
+                          show_progress=True)
     btn.click(request_model_url,
               inputs=[url_txt_ctl, radio_ctl, model_name_ctl, url_img_ctl],
               outputs=[result],
