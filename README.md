@@ -51,10 +51,6 @@ Start in default mode with optimizations enabled
     - Python: 3.10.6 Torch: 2.0.0.dev20230224+cu118 CUDA: 11.8 cuDNN: 8700 GPU: NVIDIA GeForce RTX 3060 Arch: (8, 6)
     Launching Web UI
 
-> ./automatic.sh public  
-
-Start with listen on public IP with authentication enabled
-
 > ./automatic.sh clean  
 
 Start with all optimizations disabled  
@@ -68,10 +64,20 @@ Installs and updates to latest supported version:
 - Extensions
 - Sub-modules
 
+Does not update main repository
+
 > ./automatic.sh update
 
-Updates the main repository to the latest version
-Recommended to run `install` after `update`
+Updates the main repository to the latest version  
+Recommended to run `install` after `update` to update dependencies as they may have changed  
+
+> ./automatic.sh help
+
+Print all available options
+
+> ./automatic.sh public  
+
+Start with listen on public IP with authentication enabled  
 
 <br>  
 

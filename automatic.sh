@@ -43,6 +43,9 @@ for i in "$@"; do
     clean)
       MODE=clean
       ;;
+    help)
+      MODE=help
+      ;;
     *)
       CMD="$CMD $i"
       ;;
@@ -91,6 +94,11 @@ if [ "$MODE" == update ]; then
   echo "Local changes"
   git status --untracked=no --ignore-submodules=all --short
   
+  exit 0
+fi
+
+if [ "$MODE" == help ]; then
+  "$PYTHON" webui.py --help
   exit 0
 fi
 
