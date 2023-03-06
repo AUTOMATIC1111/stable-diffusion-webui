@@ -1,8 +1,10 @@
-Before attempting to install make sure all the required [dependencies](Dependencies) are met.
+
 
 # Automatic Installation
 ## Windows
-Run `webui-user.bat` from Windows Explorer as normal, ***non-administrator***, user.
+1. Install [Python 3.10.6](https://www.python.org/ftp/python/3.10.6/python-3.10.6-amd64.exe) (ticking **Add to PATH**), and [git](https://github.com/git-for-windows/git/releases/download/v2.39.2.windows.1/Git-2.39.2-64-bit.exe)
+2. Open cmd and type `git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui`
+3. Double click `webui-user.bat`
 
 See [Troubleshooting](Troubleshooting) section for what to do if things go wrong.
 
