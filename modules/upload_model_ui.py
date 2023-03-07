@@ -120,7 +120,7 @@ def request_model_url(url, model_type, model_name, cover_url, progress=gr.Progre
     if not url:
         return "cannot found url"
     try:
-        url, cover = parse_civitai_download_url(url, cover_url)
+        url, cover = parse_download_url(url, cover_url)
         resp = http_request(url, timeout=30, stream=True)
         if not model_name:
             if 'Content-Disposition' in resp.headers:
@@ -163,7 +163,7 @@ def request_model_url(url, model_type, model_name, cover_url, progress=gr.Progre
     return "ok"
 
 
-def parse_civitai_download_url(url: str, cover: str) -> Tuple[str, str]:
+def parse_download_url(url: str, cover: str) -> Tuple[str, str]:
     if 'civitai' in url:
         ms = re.match('https://civitai.com/api/download/models/\d+', url)
         if ms:
@@ -179,6 +179,11 @@ def parse_civitai_download_url(url: str, cover: str) -> Tuple[str, str]:
                 cover = ms2.group(0) if ms2 else cover
 
             return 'https://civitai.com/' + ms.group(1), cover
+    elif 'samba' in url:
+        if not cover:
+            without_ex, _ = os.path.splitext(url)
+            return url, without_ex + '.png'
+
     return url, cover
 
 
@@ -194,9 +199,9 @@ def create_upload_model_ui():
         #     upload_ctl = gr.File(label="本地上传模型文件:")
         #     upload_img_ctl = gr.File(label="本地上传模型文件封面（可选,需要与模型文件名称一致的png格式图片）:")
         with gr.TabItem('通过URL上传', elem_id='tab_upload_file'):
-            url_txt_ctl = gr.Textbox(label="从URL下载:", placeholder="输入下载链接，支持civitai页面地址直接解析")
+            url_txt_ctl = gr.Textbox(label="从URL下载:", placeholder="输入下载链接，支持civitai,samba页面地址直接解析")
             model_name_ctl = gr.Textbox(label="自定义文件名:", placeholder="自定义模型命名（含后缀），默认使用平台命名")
-            url_img_ctl = gr.Textbox(label="从URL下载封面:", placeholder="输入封面下载链接，civitai自动解析无需手动添加")
+            url_img_ctl = gr.Textbox(label="从URL下载封面:", placeholder="输入封面下载链接，civitai自动解析无需手动添加,samba默认自动拉取同名PNG资源")
             btn = gr.Button(value="开始下载")
 
     result = gr.Label(label="上传结果:")
