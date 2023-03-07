@@ -1335,5 +1335,9 @@
     "customscript/seed_travel.py/img2img/SSIM CenterCrop% (0 to disable)/value": 0,
     "customscript/seed_travel.py/img2img/SSIM CenterCrop% (0 to disable)/minimum": 0,
     "customscript/seed_travel.py/img2img/SSIM CenterCrop% (0 to disable)/maximum": 100,
-    "customscript/seed_travel.py/img2img/SSIM CenterCrop% (0 to disable)/step": 1
+    "customscript/seed_travel.py/img2img/SSIM CenterCrop% (0 to disable)/step": 1,
+    "customscript/seed_travel.py/txt2img/SSIM minimum substep/visible": true,
+    "customscript/seed_travel.py/txt2img/SSIM minimum substep/value": 0.0001,
+    "customscript/seed_travel.py/img2img/SSIM minimum substep/visible": true,
+    "customscript/seed_travel.py/img2img/SSIM minimum substep/value": 0.0001
 }

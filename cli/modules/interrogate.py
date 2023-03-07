@@ -71,7 +71,7 @@ async def interrogate(f):
     keywords = {}
     if 'caption' in res:
         for term in res.caption.split(', '):
-            term = term.replace('(', '').replace(')', '').split(':')
+            term = term.replace('(', '').replace(')', '').replace('\\', '').split(':')
             if len(term) < 2:
                 continue
             keywords[term[0]] = term[1]

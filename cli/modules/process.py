@@ -342,7 +342,7 @@ def interrogate(img, fn, intag = None):
         if model == 'deepdanbooru':
             tag = res.caption if 'caption' in res else ''
             tags = tag.split(',')
-            tags = [t.replace('(', '').replace(')', '').split(':')[0].strip() for t in tags]
+            tags = [t.replace('(', '').replace(')', '').replace('\\', '').split(':')[0].strip() for t in tags]
             if intag is not None:
                 for t in intag.split(',')[::-1]:
                     tags.insert(0, t.strip())
@@ -385,22 +385,16 @@ def process_file(f: str, dst: str = None, preview: bool = False, offline: bool =
         return fn
 
     # overrides
-    if 'original' in opts:
-        params.keep_original = True
-    if 'face' in opts:
-        params.extract_face = True
-    if 'body' in opts:
-        params.extract_body = True
-    if 'blur' in opts:
-        params.face_blur = True
-        params.body_blur = True
-    if 'range' in opts:
-        params.face_range = True
-        params.body_range = True
-    if 'upscale' in opts:
-        params.face_upscale = True
-    if 'restore' in opts:
-        params.face_restore = True
+    if len(opts) > 0:
+        params.keep_original = True if 'original' in opts else False
+        params.extract_face = True if 'face' in opts else False
+        params.extract_body = True if 'body' in opts else False
+        params.face_blur = True if 'blur' in opts else False
+        params.body_blur = True if 'blur' in opts else False
+        params.face_range = True if 'range' in opts else False
+        params.body_range = True if 'range' in opts else False
+        params.face_upscale = True if 'upscale' in opts else False
+        params.face_restore = True if 'upscale' in opts else False
 
     log.info({ 'processing': f })
     try:
