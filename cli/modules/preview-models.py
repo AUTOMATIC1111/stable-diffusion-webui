@@ -44,7 +44,7 @@ options = Map({
         "sd_vae": "vae-ft-mse-840000-ema-pruned.ckpt",
     },
     'lora': {
-        'strength': 1.3,
+        'strength': 1.0,
     },
     'hypernetwork': {
         'keyword': 'beautiful sexy woman',
@@ -123,7 +123,7 @@ async def models(params):
         log.info({ 'model preview created': model, 'image': fn, 'images': len(images), 'grid': [image.width, image.height], 'time': round(t, 2), 'its': round(its, 2) })
     
     opt = await get('/sdapi/v1/options')
-    if opt['sd_model_checkpoint'] != default:
+    if opt['sd_model_checkpoint'] != default and not params.fixed:
         log.info({ 'model set default': default })
         opt['sd_model_checkpoint'] = default
         await post('/sdapi/v1/options', opt)
@@ -216,6 +216,7 @@ async def create_previews(params):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = 'generate model previews')
     parser.add_argument('--output', type = str, default = '', required = False, help = 'output directory')
+    parser.add_argument('--fixed', default = False, action='store_true', help = "do not change model")
     parser.add_argument('input', type = str, nargs = '*')
     params = parser.parse_args()
     asyncio.run(create_previews(params))

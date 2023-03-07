@@ -83,8 +83,11 @@ Start with listen on public IP with authentication enabled
 
 ## Install
 
-1. Install `Python`, `Git` and `PyTorch` first
-2. Clone and initialize repository
+1. Install `Python`, `Git`  
+2. Install `PyTorch` and `Xformers`  
+   See [Wiki](wiki/Torch%20Optimizations.md) for details
+   If you don't want to use `xformers`, edit `automatic.sh` as they are enabled by default
+3. Clone and initialize repository  
 
 > git clone https://github.com/vladmandic/automatic  
 > cd automatic  

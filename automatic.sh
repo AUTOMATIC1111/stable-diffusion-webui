@@ -13,8 +13,8 @@ if [ "$PYTHON" == "" ]; then
   PYTHON=$(which python)
 fi
 
-CMD="launch.py --api --xformers --disable-console-progressbars --gradio-queue --skip-version-check --skip-install --skip-torch-cuda-test --disable-nan-check --theme dark --cors-allow-origins=http://127.0.0.1:7860"
-# CMD="launch.py --api --opt-sdp-attention --disable-console-progressbars --gradio-queue --skip-version-check --skip-install --skip-torch-cuda-test --disable-nan-check --theme dark --cors-allow-origins=http://127.0.0.1:7860"
+# Note: Some defaults are changed in shared.py
+CMD="launch.py --xformers --skip-install --skip-torch-cuda-test --cors-allow-origins=http://127.0.0.1:7860"
 
 MODE=optimized
 
@@ -154,3 +154,4 @@ exec accelerate launch --no_python --quiet --num_cpu_threads_per_process=6 "$PYT
 # export LD_PRELOAD=libtcmalloc.so
 # TORCH_CUDA_ARCH_LIST="8.6"
 # --opt-channelslast
+# --opt-sdp-attention
