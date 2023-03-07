@@ -214,8 +214,8 @@ def webui():
                 for line in file.readlines():
                     gradio_auth_creds += [x.strip() for x in line.split(',')]
 
-        from install_ext import safety_setup
-        safety_setup()
+        # from install_ext import safety_setup
+        # safety_setup()
 
         app, local_url, share_url = shared.demo.launch(
             share=cmd_opts.share,
