@@ -651,6 +651,7 @@ def create_ui():
             negative_token_button.click(fn=wrap_queued_call(update_token_counter), inputs=[txt2img_negative_prompt, steps], outputs=[negative_token_counter])
 
             ui_extra_networks.setup_ui(extra_networks_ui, txt2img_gallery)
+            modules.script_callbacks.after_ui_callback()
 
     modules.scripts.scripts_current = modules.scripts.scripts_img2img
     modules.scripts.scripts_img2img.initialize_scripts(is_img2img=True)
@@ -968,6 +969,8 @@ def create_ui():
             parameters_copypaste.register_paste_params_button(parameters_copypaste.ParamBinding(
                 paste_button=img2img_paste, tabname="img2img", source_text_component=img2img_prompt, source_image_component=None,
             ))
+
+        modules.script_callbacks.after_ui_callback()
 
     modules.scripts.scripts_current = None
 
