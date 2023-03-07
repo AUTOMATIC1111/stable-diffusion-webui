@@ -808,6 +808,7 @@ onUiUpdate(function(){
 			add2quickSettings(tid, sid, e.target.checked);
 		})
 	})
+	
 	/*
 	gradioApp().querySelectorAll("#quicksettings_overflow_container input[type='range']").forEach(function (elem,i){
 		
@@ -849,7 +850,63 @@ onUiUpdate(function(){
 		e.preventDefault();
 		return false;
 	}
+
+	const pnginfo = gradioApp().querySelector("#tab_pnginfo"); 
+	function forwardFromPngInfo(){
+		if(selectedTabItemId == "tab_txt2img"){
+			pnginfo.querySelector('#txt2img_tab').click();
+			const img_src = pnginfo.querySelector('img');
+			const gallery_parent = gradioApp().querySelector('#txt2img_gallery_container');
+			const live_preview = gallery_parent.querySelector('.livePreview');
+			if(live_preview){
+				live_preview.innerHTML = '<img width="'+img_src.width+'" height="'+img_src.height+'" src="'+ img_src.src +'">';
+			}else{
+				const div = document.createElement("div");				
+				div.classList.add("livePreview", "dropPreview");
+				div.innerHTML = '<img width="'+img_src.width+'" height="'+img_src.height+'" src="'+ img_src.src +'">';
+				gallery_parent.prepend(div);
+			}			
+		}else if(selectedTabItemId == "tab_img2img"){
+			pnginfo.querySelector('#img2img_tab').click();
+		}
+	}
 	
+	function fetchPngInfoData(files){
+		const oldFetch = window.fetch;
+		window.fetch = async (input, options) => {
+			const response = await oldFetch(input, options);
+			if( 'run/predict/' === input ) {	
+				if(response.ok){									
+					window.fetch = oldFetch;
+					setTimeout(function() { forwardFromPngInfo(); }, 500);
+				}
+			}
+			return response;
+		}; 
+		
+		const fileInput = gradioApp().querySelector('#pnginfo_image input[type="file"]');		 
+		if(fileInput.files != files){					
+			fileInput.files = files;
+			fileInput.dispatchEvent(new Event('change'));			
+		}		
+	}
+
+	function drop2View(e){					
+		e.stopPropagation();
+		e.preventDefault();
+		const files = e.dataTransfer.files;
+		if ( ! isValidImageList( files ) ) {
+			return;
+		}
+		const data_image = gradioApp().querySelector('#pnginfo_image [data-testid="image"]');		
+		data_image.querySelector('.modify-upload button + button, .touch-none + div button + button')?.click();	
+		setTimeout(function() { fetchPngInfoData(files); }, 1000);
+	}
+			
+	gradioApp().querySelectorAll('[id$="2img_results"]').forEach((elem) => {		
+		elem.addEventListener('drop', drop2View);
+	})
+
 	// function that gets the element next of cursor/touch
     function getElementAfter(container, y){
         return draggables.reduce((closest, child) => {
@@ -967,10 +1024,10 @@ onUiUpdate(function(){
 
 	function actionQuickSettingsDraggable(checked){		
 		if(checked){
-			draggables = Array.from(gradioApp().querySelectorAll('#quicksettings_overflow_container > div:not(.dragging)'));			
-			gradioApp().addEventListener('drop', preventBehavior);
+			draggables = Array.from(gradioApp().querySelectorAll('#quicksettings_overflow_container > div:not(.dragging)'));						
+			gradioApp().addEventListener('drop', preventBehavior);			
 		}else{			
-			gradioApp().removeEventListener('drop', preventBehavior);
+			gradioApp().removeEventListener('drop', preventBehavior);			
 		}
 		
 		gradioApp().querySelectorAll('#quicksettings_overflow_container > div').forEach(function (elem){

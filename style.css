@@ -2017,7 +2017,7 @@ canvas[key=mask] {
     bottom: 0;
     pointer-events: all;
     overflow: hidden !important;    
-	/*background-color: transparent !important;*/
+	background-color: var(--main-bg-color);
 	z-index: 300;
 	box-sizing: border-box;
 	padding: var(--processing-border);
@@ -2049,7 +2049,7 @@ div.svelte-10ogue4>*:first-child.livePreview {
 }
 
 	
-.livePreview::before {
+.livePreview:not(.dropPreview)::before {
 	content: '';
 	position: absolute;
 	z-index: -2;
@@ -2076,6 +2076,26 @@ div.svelte-10ogue4>*:first-child.livePreview {
 	background: var(--main-bg-color);
 	border-radius: 0;
 	
+}
+
+.livePreview::before {
+	content: '';
+	position: absolute;
+	z-index: -2;
+	left: -50%;
+	top: -50%;
+	width: 200%;
+	height: 200%;
+	background-color: var(--main-bg-color);
+	background-repeat: no-repeat;
+	background-position: 0 0;
+	background-image: conic-gradient(transparent, var(--primary-color), transparent 30%);
+	animation: rotate 4s linear infinite;
+}
+
+.livePreview.dropPreview::before,
+.livePreview.dropPreview::after {	
+	display:none;
 }
 
 
@@ -3057,6 +3077,12 @@ ul.list-none {
 }
 
 
+.transition {
+  -webkit-transition: none !important;
+  -moz-transition: none !important;
+  -o-transition: none !important;
+  transition: none !important;
+}
 
 
 
@@ -3210,21 +3236,40 @@ ul.list-none {
 	.livePreview img{
 		object-position:top;
 		border-radius: 0 !important;
+		position: relative;
+		width: 100%;
+
 	}
 	
+	.livePreview img:nth-child(2){
+		position:absolute;
+		top: var(--processing-border);
+		left: var(--processing-border);
+		width: calc(100% - var(--processing-double-border));
+	}
+	
+	.livePreview.init,
+	.livePreview:not(.init) + div{  
+		display:none;
+	}
+	
+	
  	.livePreview {  
-		width: calc(100% - (var(--outside-gap-size) * 2)) !important;   
+		/*width: calc(100% - (var(--outside-gap-size) * 2)) !important; */  
 		max-height: unset !important;
-		bottom:60px;
-		
+		/*bottom:60px;*/
+		position: relative !important;
+		left: 0;
+		top: 0;
+		width: auto !important;
 	}
 	div.svelte-10ogue4>*:first-child.livePreview {
 		/*height: calc(100% - 60px - var(--outside-gap-size) - 2px) !important;*/
-		height: auto !important;
+		/*height: auto !important;*/
 	}
 	
 	div.svelte-10ogue4>*:first-child.livePreview > img {		
-		height: auto !important;
+		/*height: auto !important;*/
 	}
 	
 	[id$="png_2img_results"]{

@@ -147,12 +147,16 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
     parentProgressbar.insertBefore(divProgress, progressbarContainer)
 
     if(parentGallery){
-        var livePreview = document.createElement('div')
-        livePreview.className='livePreview'
-        parentGallery.insertBefore(livePreview, gallery)
+		var livePreview = gradioApp().querySelector('.livePreview');
+		if(!livePreview){
+			livePreview = document.createElement('div')
+			livePreview.classList.add("livePreview", "init")
+			parentGallery.insertBefore(livePreview, gallery)
+		}
+		livePreview.classList.remove("dropPreview");
     }
 
-    var removeProgressBar = function(){
+    var removeProgressBar = function(){		
         setTitle("")
         parentProgressbar.removeChild(divProgress)
         if(parentGallery) parentGallery.removeChild(livePreview)
@@ -215,15 +219,20 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
                     //livePreview.style.width = rect.width + "px"
                     //livePreview.style.height = rect.height + "px"
                 //}
+				
+				livePreview.classList.remove("init")
 
                 var img = new Image();
                 img.onload = function() {
+					img.width = img.naturalWidth;
+					img.height = img.naturalHeight;
                     livePreview.appendChild(img)
                     if(livePreview.childElementCount > 2){
                         livePreview.removeChild(livePreview.firstElementChild)
                     }
                 }
                 img.src = res.live_preview;
+				
             }
 
 
