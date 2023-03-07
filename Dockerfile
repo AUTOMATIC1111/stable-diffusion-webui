@@ -106,9 +106,9 @@ RUN https_proxy=${HTTP_PROXY} git clone https://huggingface.co/webui/ControlNet-
 RUN https_proxy=${HTTP_PROXY} git clone https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN ~/stable-diffusion-webui/extensions/stable-diffusion-webui-localization-zh_CN
 RUN mkdir -p  ~/stable-diffusion-webui/stable-diffusion-webui/extensions/sd-webui-controlnet/annotator/openpose
 
-# 下载模型
-RUN cd  ~/stable-diffusion-webui/models/Stable-diffusion \
-    &&wget -nd -np -r  -c http://apksamba.ops.ilongyuan.cn:8000/ai/7/AI%E7%BE%8E%E6%9C%AF/%E6%89%93%E5%8C%85/models/Stable-diffusion/
+# 下载模型(默认不下载)
+#RUN cd  ~/stable-diffusion-webui/models/Stable-diffusion \
+#    &&wget -nd -np -r  -c http://apksamba.ops.ilongyuan.cn:8000/ai/7/AI%E7%BE%8E%E6%9C%AF/%E6%89%93%E5%8C%85/models/Stable-diffusion/
 #RUN cd ~/stable-diffusion-webui/  \
 #    &&  python3 extensions/sd-webui-controlnet/install.py
 # 确定OPEN_CLIP 和arkupsafe版本

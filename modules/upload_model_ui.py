@@ -183,16 +183,16 @@ def parse_civitai_download_url(url: str, cover: str) -> Tuple[str, str]:
 
 
 def create_upload_model_ui():
-    gr.Label("你可以上传模型文件或者提供下载链接，选择模型类型并上传提示OK后完成", label=None)
+    gr.Label("你可以提供下载链接(本地文件需先上传服务器并提供外网访问URL)，选择模型类型并上传提示OK后完成", label=None)
     # gr.Label("You can upload the model via a local file or a specified network URL", label=None)
     radio_ctl = gr.Radio(["Stable-diffusion", "VAE", "VAE-approx", "deepbooru", "Lora"],
                          value="Stable-diffusion",
                          label="选择模型类型:")
     with gr.Tabs(elem_id="tabs") as tabs:
-        with gr.TabItem('模型文件上传', elem_id='tab_upload_file'):
-            gr.Label(None, label="通过模型文件上传:")
-            upload_ctl = gr.File(label="本地上传模型文件:")
-            upload_img_ctl = gr.File(label="本地上传模型文件封面（可选,需要与模型文件名称一致的png格式图片）:")
+        # with gr.TabItem('模型文件上传', elem_id='tab_upload_file'):
+        #     gr.Label(None, label="通过模型文件上传:")
+        #     upload_ctl = gr.File(label="本地上传模型文件:")
+        #     upload_img_ctl = gr.File(label="本地上传模型文件封面（可选,需要与模型文件名称一致的png格式图片）:")
         with gr.TabItem('通过URL上传', elem_id='tab_upload_file'):
             url_txt_ctl = gr.Textbox(label="从URL下载:", placeholder="输入下载链接，支持civitai页面地址直接解析")
             model_name_ctl = gr.Textbox(label="自定义文件名:", placeholder="自定义模型命名（含后缀），默认使用平台命名")
@@ -200,19 +200,19 @@ def create_upload_model_ui():
             btn = gr.Button(value="开始下载")
 
     result = gr.Label(label="上传结果:")
-    upload_ctl.upload(fn=upload_asset,
-                      inputs=[upload_ctl, radio_ctl],
-                      outputs=[result],
-                      show_progress=True)
-    upload_ctl.change(
-        inputs=[upload_ctl, radio_ctl],
-        outputs=[result],
-        show_progress=True)
-
-    upload_img_ctl.upload(fn=upload_asset,
-                          inputs=[upload_img_ctl, radio_ctl],
-                          outputs=[result],
-                          show_progress=True)
+    # upload_ctl.upload(fn=upload_asset,
+    #                   inputs=[upload_ctl, radio_ctl],
+    #                   outputs=[result],
+    #                   show_progress=True)
+    # upload_ctl.change(
+    #     inputs=[upload_ctl, radio_ctl],
+    #     outputs=[result],
+    #     show_progress=True)
+    #
+    # upload_img_ctl.upload(fn=upload_asset,
+    #                       inputs=[upload_img_ctl, radio_ctl],
+    #                       outputs=[result],
+    #                       show_progress=True)
     btn.click(request_model_url,
               inputs=[url_txt_ctl, radio_ctl, model_name_ctl, url_img_ctl],
               outputs=[result],
