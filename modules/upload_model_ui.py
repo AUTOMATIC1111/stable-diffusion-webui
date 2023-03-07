@@ -204,6 +204,11 @@ def create_upload_model_ui():
                       inputs=[upload_ctl, radio_ctl],
                       outputs=[result],
                       show_progress=True)
+    upload_ctl.change(
+        inputs=[upload_ctl, radio_ctl],
+        outputs=[result],
+        show_progress=True)
+
     upload_img_ctl.upload(fn=upload_asset,
                           inputs=[upload_img_ctl, radio_ctl],
                           outputs=[result],
@@ -213,29 +218,6 @@ def create_upload_model_ui():
               outputs=[result],
               show_progress=True)
 
-    # gr.Label(None, label="1. 通过模型文件上传:")
-    # uploadCtl = gr.File(label="本地上传模型文件:")
-    # uploadImgCtl = gr.File(label="本地上传模型文件封面（可选）:")
-    # gr.Label(None, label="2. 通过URL上传（支持civitai页面解析）:")
-    # with gr.Column():
-    #     url_txt_ctl = gr.Textbox(label="从URL下载:", placeholder="输入下载链接，支持civitai页面地址直接解析")
-    #     model_name_ctl = gr.Textbox(label="自定义文件名:", placeholder="自定义模型命名（含后缀），默认使用平台命名")
-    #     url_img_ctl = gr.Textbox(label="从URL下载封面:", placeholder="输入封面下载链接，civitai自动解析无需手动添加")
-    #     img_name_ctl = gr.Textbox(label="自定义文件名:", placeholder="封面命名（含后缀）")
-    #     btn = gr.Button(value="开始下载")
-    # result = gr.Label(label="文件上传结果:")
-    # uploadCtl.upload(fn=upload_asset,
-    #                  inputs=[uploadCtl, radioCtl],
-    #                  outputs=[result],
-    #                  show_progress=True)
-    # uploadImgCtl.upload(fn=upload_asset,
-    #                     inputs=[uploadCtl, radioCtl],
-    #                     outputs=[result],
-    #                     show_progress=True)
-    # btn.click(request_model_url,
-    #           inputs=[url_txt_ctl, radioCtl, model_name_ctl],
-    #           outputs=[result],
-    #           show_progress=True)
 
 
 def append_upload_model_ui(interfaces: typing.List):

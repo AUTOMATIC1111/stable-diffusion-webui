@@ -112,7 +112,7 @@ RUN cd  ~/stable-diffusion-webui/models/Stable-diffusion \
 #RUN cd ~/stable-diffusion-webui/  \
 #    &&  python3 extensions/sd-webui-controlnet/install.py
 # 确定OPEN_CLIP 和arkupsafe版本
-RUN pip3 install Werkzeug==2.2.2 open_clip_torch>=2.16.0 markupsafe==2.0.1 -i https://pypi.tuna.tsinghua.edu.cn/simple
+RUN pip3 install Werkzeug==2.1.0 open_clip_torch==2.16.0 markupsafe==2.0.1 -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 WORKDIR ~/stable-diffusion-webui
 
