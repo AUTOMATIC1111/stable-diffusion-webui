@@ -16,54 +16,178 @@ For developing extensions, see [Developing extensions](https://github.com/AUTOMA
 
 As extensions allow the user to install and run arbitrary code, this can be used maliciously, and is disabled by default when running with options that allow remote users to connect to the server (`--share` or `--listen`) - you'll still have the UI, but trying to install anything will result in error. If you want to use those options and still be able to install extensions, use `--enable-insecure-extension-access` command line flag.
 
-# Info
+# Extensions
 
-Users can click the extension **name** from the index to go view the extension on github. <sup>(The page should hopefully be more comprehensive than this page.)</sup> \
-Sort by internal order to see related categories, and see tooltips for categories. 
+## Lora Block Weight
+
+Lora is a powerful tool, but it is sometimes difficult to use and can affect areas that you do not want it to affect. This script allows you to set the weights block-by-block. Using this script, you may be able to get the image you want.
+
+Used in conjunction with the XY plot, it is possible to examine the impact of each level of the hierarchy.
+
+![image](https://user-images.githubusercontent.com/98228077/223573538-d8fdb00d-6c49-47ec-af63-cea691f515d4.png)
+
+Included Presets:
+
+```
+NOT:0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 
+ALL:1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1 
+INS:1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+IND:1,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0
+INALL:1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0
+MIDD:1,0,0,0,1,1,1,1,1,1,1,1,1,0,0,0,0,0
+OUTD:1,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0
+OUTS:1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1
+OUTALL:1,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1
+```
+
+## Kitchen Theme
+https://github.com/canisminor1990/sd-web-ui-kitchen-theme
+
+A custom theme for webui.
+
+![image](https://user-images.githubusercontent.com/98228077/223572989-e51eb877-74f4-41ec-8204-233221f2e981.png)
 
 
-![image](https://user-images.githubusercontent.com/98228077/222873817-24e4e77b-d503-48d7-9303-c71ce7fb9d5c.png)
+## Bilingual Localization
+https://github.com/journey-ad/sd-webui-bilingual-localization
 
+Bilingual translation, no need to worry about how to find the original button. Compatible with language pack extensions, no need to re-import. 
+
+![image](https://user-images.githubusercontent.com/98228077/223564624-61594e71-d1dd-4f32-9293-9697b07a7735.png)
+
+## Composable Lora
+https://github.com/opparco/stable-diffusion-webui-composable-lora
+
+Enables using AND keyword(composable diffusion) to limit LoRAs to subprompts. Useful when paired with Latent Couple extension.
+
+## Clip Interrogator
+https://github.com/pharmapsychotic/clip-interrogator-ext
+
+Clip Interrogator by pharmapsychotic ported to an extension. Features a variety of clip models and interrogate settings.
+
+![image](https://user-images.githubusercontent.com/98228077/223572478-093030bf-e25e-42c0-b621-597515deaf69.png)
+
+## Latent-Couple
+https://github.com/opparco/stable-diffusion-webui-two-shot
+
+An extension of the built-in Composable Diffusion, allows you to determine the region of the latent space that reflects your subprompts.
+
+![image](https://user-images.githubusercontent.com/98228077/223571685-95a300f9-b768-4bca-96d4-684aadae9863.png)
+
+
+## OpenPose Editor
+https://github.com/fkunn1326/openpose-editor
+
+This can add multiple pose characters, detect pose from image, save to PNG, and send to controlnet extension.
+
+![image](https://user-images.githubusercontent.com/98228077/223571127-6c107bd8-7ca4-4774-bdb8-41930863fdcc.png)
+
+
+## SuperMerger
+https://github.com/hako-mikan/sd-webui-supermerger
+
+Merge and run without saving to drive. Sequential XY merge generations; extract and merge loras, bind loras to ckpt, merge block weights, and more.
+
+![image](https://user-images.githubusercontent.com/98228077/223570729-d25ca5c4-a434-42fd-b85d-7e16a7af1fc8.png)
+
+## Prompt Translator
+https://github.com/butaixianran/Stable-Diffusion-Webui-Prompt-Translator
+
+A integrated translator for translating prompts to English using Deepl or Baidu.
+
+![image](https://user-images.githubusercontent.com/98228077/223565541-43f618ea-e009-41b5-880c-7360a9ebec5f.png)
+
+## Video Loopback
+https://github.com/fishslot/video_loopback_for_webui
+
+https://user-images.githubusercontent.com/122792358/218375476-a4116c74-5a9a-41e2-970a-c3cc09f796ae.mp4
+
+## Mine Diffusion
+https://github.com/fropych/mine-diffusion
+
+This extension converts images into blocks and creates schematics for easy importing into Minecraft using the Litematica mod.
+
+<details><summary>Example: (Click to expand:)</summary>
+
+![](https://github.com/fropych/mine-diffusion/blob/master/README_images/demo.gif)
+
+</details>
 
 ## anti-burn
 https://github.com/klimaleksus/stable-diffusion-webui-anti-burn
 
-Smoothing generated images by skipping a few very last steps and averaging together some images before them
+Smoothing generated images by skipping a few very last steps and averaging together some images before them.
+
+![image](https://user-images.githubusercontent.com/98228077/223562829-1abe8eed-dca5-4891-88e2-6714966e02bc.png)
 
 ## Embedding Merge
 https://github.com/klimaleksus/stable-diffusion-webui-embedding-merge
 
 Merging Textual Inversion embeddings at runtime from string literals.
 
-## Catppuccin themes
-https://github.com/catppuccin/stable-diffusion-webui
+![image](https://user-images.githubusercontent.com/98228077/223562706-af7cc1e6-7b6c-4069-a89f-8087a2dba4da.png)
 
-Catppuccin is a community-driven pastel theme that aims to be the middle ground between low and high contrast themes. Adds set of themes which are in compliance with catppucin guidebook.
+## gif2gif
+
+The purpose of this script is to accept an animated gif as input, process frames as img2img typically would, and recombine them back into an animated gif. Intended to provide a fun, fast, gif-to-gif workflow that supports new models and methods such as Controlnet and InstructPix2Pix. Drop in a gif and go. Referenced code from prompts_from_file.
+
+<details><summary>Example: (Click to expand:)</summary>
+
+![](https://user-images.githubusercontent.com/93007558/216803715-81dfc9e6-8c9a-47d5-9879-27acfac34eb8.gif)
+
+</details>
 
 ## cafe-aesthetic
 https://github.com/p1atdev/stable-diffusion-webui-cafe-aesthetic
 
 Pre-trained model, determines if aesthetic/non-aesthetic, does 5 different style recognition modes, and Waifu confirmation. Also has a tab with Batch processing.
 
-## Fusion
-https://github.com/ljleb/prompt-fusion-extension
+![image](https://user-images.githubusercontent.com/98228077/223562229-cba2db0a-3368-4f13-9456-ebe2053c01a3.png)
 
-Adds prompt-travel and shift-attention-like interpolations (see exts), but during/within the sampling steps. Always-on + works w/ existing prompt-editing syntax. Various interpolation modes. See their wiki for more info.
+
+## Catppuccin themes
+https://github.com/catppuccin/stable-diffusion-webui
+
+Catppuccin is a community-driven pastel theme that aims to be the middle ground between low and high contrast themes. Adds set of themes which are in compliance with catppucin guidebook.
+
+![image](https://user-images.githubusercontent.com/98228077/223562461-13ec3132-4734-4787-a161-b2c408646835.png)
+
+
+## Dynamic Thresholding
+Dynamic Thresholding Adds customizable dynamic thresholding to allow high CFG Scale values without the burning / 'pop art' effect.
+
+Adds customizable dynamic thresholding to allow high CFG Scale values without the burning / 'pop art' effect.
+
 
 ## Custom Diffusion
 https://github.com/guaneec/custom-diffusion-webui
 
 Custom Diffusion is, in short, finetuning-lite with TI, instead of tuning the whole model. Similar speed and memory requirements to TI and supposedly gives better results in less steps.
 
+
+## Fusion
+https://github.com/ljleb/prompt-fusion-extension
+
+Adds prompt-travel and shift-attention-like interpolations (see exts), but during/within the sampling steps. Always-on + works w/ existing prompt-editing syntax. Various interpolation modes. See their wiki for more info.
+
+<details><summary>Example: (Click to expand:)</summary>
+
+![](https://user-images.githubusercontent.com/32277961/214725976-b72bafc6-0c5d-4491-9c95-b73da41da082.gif)
+
+</details>
+
 ## Pixelization
 https://github.com/AUTOMATIC1111/stable-diffusion-webui-pixelization
 
 Using pre-trained models, produce pixel art out of images in the extras tab.
+
+![image](https://user-images.githubusercontent.com/98228077/223563687-cb0eb3fe-0fce-4822-8170-20b719f394fa.png)
+
 			
 ## Instruct-pix2pix
 https://github.com/Klace/stable-diffusion-webui-instruct-pix2pix
 
-Adds a tab for doing img2img editing with the instruct-pix2pix model.
+Adds a tab for doing img2img editing with the instruct-pix2pix model. The author added the feature to webui, so this doesn't need to be used.
 
 ## System Info
 https://github.com/vladmandic/sd-extension-system-info
@@ -127,17 +251,23 @@ https://github.com/AUTOMATIC1111/stable-diffusion-webui-promptgen
 
 Use transformers models to generate prompts.
 
+![image](https://user-images.githubusercontent.com/98228077/223561862-27815193-acfd-47cb-ae67-fcc435b2c875.png)
+
 
 ## haku-img
 https://github.com/KohakuBlueleaf/a1111-sd-webui-haku-img
 
 Image utils extension. Allows blending, layering, hue and color adjustments, blurring and sketch effects, and basic pixelization.
 
+![image](https://user-images.githubusercontent.com/98228077/223561769-294ee4fa-f857-4dc9-afbf-dfe953e8c6ad.png)
+
 
 ## Merge Block Weighted
 https://github.com/bbc-mc/sdweb-merge-block-weighted-gui
 
 Merge models with separate rate for each 25 U-Net block (input, middle, output).
+
+![image](https://user-images.githubusercontent.com/98228077/223561099-c9cb6fab-c3c6-42fb-92fd-6811474d073c.png)
 
 
 ## Stable Horde Worker
@@ -183,7 +313,7 @@ An unofficial [Stable Horde](https://stablehorde.net/) worker bridge as a [Stabl
 ### Stable Horde Client
 https://github.com/natanjunges/stable-diffusion-webui-stable-horde
 
-Generate pictures using other user's PC. You should be able to recieve images from the stable horde with anonymous `0000000000` api key, however it is recommended to get your own - https://stablehorde.net/register
+Generate pictures using other user's PC. You should be able to receive images from the stable horde with anonymous `0000000000` api key, however it is recommended to get your own - https://stablehorde.net/register
 
 Note: Retrieving Images may take 2 minutes or more, especially if you have no kudos.
 
@@ -207,6 +337,9 @@ Extension that provides additional training features for hypernetwork training, 
 ## Ultimate SD Upscaler
 https://github.com/Coyote-A/ultimate-upscale-for-automatic1111
 
+![image](https://user-images.githubusercontent.com/98228077/223559884-5498d495-c5f3-4068-8711-f9f31fb2d435.png)
+
+
 More advanced options for SD Upscale, less artifacts than original using higher denoise ratio (0.3-0.5).
 
 
@@ -218,7 +351,8 @@ Model convert extension, supports convert fp16/bf16 no-ema/ema-only safetensors.
 ## Kohya-ss Additional Networks
 https://github.com/kohya-ss/sd-webui-additional-networks
 
-Allows the Web UI to use networks (LoRA) trained by their scripts to generate images.
+Allows the Web UI to use networks (LoRA) trained by their scripts to generate images. Edit safetensors prompt and additional metadata, and use 2.X LoRAs.
+![image](https://user-images.githubusercontent.com/98228077/223559083-9a5dc069-f73e-48d2-a22c-4db7b983ea40.png)
 
 
 ## Add image number to grid
