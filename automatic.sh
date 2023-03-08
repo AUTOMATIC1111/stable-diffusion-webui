@@ -93,6 +93,7 @@ if [ "$MODE" == update ]; then
   "$PYTHON" launch.py --exit
   echo "Local changes"
   git status --untracked=no --ignore-submodules=all --short
+  echo "Note: To update any new dependencies or submodules, run 'automatic.sh install'"
   
   exit 0
 fi
