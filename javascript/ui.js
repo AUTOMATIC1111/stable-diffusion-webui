@@ -808,34 +808,53 @@ onUiUpdate(function(){
 			add2quickSettings(tid, sid, e.target.checked);
 		})
 	})
-	
-	/*
-	gradioApp().querySelectorAll("#quicksettings_overflow_container input[type='range']").forEach(function (elem,i){
-		
-		let clone_range = elem.cloneNode(true);
-		clone_range.id = elem.id+"_clone";
-		let parent = elem.parentElement;
-		parent.append(clone_range);
-		elem.style.display = "none";	
-		
-		clone_range.addEventListener('change', function (e) {					
-			let range = e.target;
-			let rid = range.id.split("_clone")[0];
-			let n_range = range.parentElement.querySelector("#"+rid);
-			let n_num = range.parentElement.querySelector("input[type=number]");
-			n_range.value = e.target.value;
-			n_num.value = e.target.value;
-			//const iEvent = new Event("input");		
-			//Object.defineProperty(iEvent, "target", {value: n_range})		
-			//n_range.dispatchEvent(iEvent);		
-		})
-	})
-	*/
-	
-	
 	//addModelCheckpoint();
 	
-	//selectCheckpoint
+	// performant dispatch for gradio's range slider and input number fields
+	function ui_performant_gradio_input_components(sel){
+		let selectors = sel.split(",");
+		selectors.push("#quicksettings_overflow_container");
+		selectors = selectors.filter(e => e);
+		for (let i = 0; i < selectors.length; i++) {
+			selectors[i] = selectors[i]+" input[type='number']";
+		}
+		let input_selectors = selectors.join(",");
+		
+		gradioApp().querySelectorAll(input_selectors).forEach(function (elem){
+			let parent = elem.parentElement;
+			let label = parent.querySelector("label");
+			
+			let clone_num = elem.cloneNode(true);			
+			parent.append(clone_num);
+			elem.style.display = "none";
+			
+			clone_num.addEventListener('change', function (e) {			
+				elem.value = clone_num.value;
+				updateInput(elem);
+			})			
+			
+			if(label){				
+				let comp_range = parent.parentElement.parentElement.querySelector("input[type='range']");
+				let clone_range = comp_range.cloneNode(true);
+				clone_range.id = comp_range.id+"_clone";		
+				comp_range.parentElement.append(clone_range);
+				comp_range.style.display = "none";
+
+				clone_range.addEventListener('input', function (e) {								
+					clone_num.value = e.target.value;	
+				})
+				clone_range.addEventListener('change', function (e) {
+					elem.value = clone_range.value;
+					updateInput(elem);	
+				})				
+				clone_num.addEventListener('input', function (e) {								
+					clone_range.value = e.target.value;	
+				})								
+			}
+					
+		})
+	}	
+	ui_performant_gradio_input_components(opts.ui_performant_gradio_input_components);
 	
 	
 	// draggable reordable quicksettings
