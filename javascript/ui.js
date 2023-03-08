@@ -533,8 +533,19 @@ onUiUpdate(function(){
 		ui_styles.innerHTML = ops_styles; 
 		//console.log(ui_styles);
 	}
+	// generated image fit contain - scale
+	function imageGeneratedFitMethod(value) {
+       styleobj.ui_view_fit = "[id$='2img_gallery'] div>img {object-fit:" + value + ";}"; 
+	}	
+	gradioApp().querySelector("#setting_ui_output_image_fit").addEventListener('click', function (e) {
+		if (e.target && e.target.matches("input[type='radio']")) {
+			imageGeneratedFitMethod(e.target.value.toLowerCase());	
+			updateOpStyles();			
+		}
+	})
+	imageGeneratedFitMethod(opts.ui_output_image_fit.toLowerCase());
 	
-	// livePreview contain - scale
+	// livePreview fit contain - scale
 	function imagePreviewFitMethod(value) {
        styleobj.ui_fit = ".livePreview img {object-fit:" + value + ";}"; 
 	}	
@@ -804,9 +815,11 @@ onUiUpdate(function(){
 		let sid = trg[0];
 		let tid = trg[1];
 		let elem_input = gradioApp().querySelector('#'+elem.id+' input');
-		elem_input.addEventListener('click', function (e) {		
-			add2quickSettings(tid, sid, e.target.checked);
-		})
+		if(elem_input){
+			elem_input.addEventListener('click', function (e) {		
+				add2quickSettings(tid, sid, e.target.checked);
+			})
+		}
 	})
 	//addModelCheckpoint();
 	

@@ -3084,10 +3084,11 @@ ul.list-none {
   transition: none !important;
 }
 
+/*
 #ui_theme_settings > div{
 	max-width:120px;
 }
-
+*/
 /*********************/
 /* Mobile breakpoint */
 /*********************/
