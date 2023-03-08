@@ -1571,6 +1571,19 @@ def create_ui():
             for i, k, item in sorted(quicksettings_list, key=lambda x: quicksettings_names.get(x[1], x[0])):
                 component = create_setting_component(k, is_quicksettings=True)
                 component_dict[k] = component
+            gradio.HTML("""
+                  <div style="display: flex;justify-content: flex-start;lign-items: center;height: 40px;" > 
+                    <div style="height: 40px;line-height: 40px;margin-left:20px;">常用工具站:</div>
+                    <a href="https://civitai.com/" style="display:flex;justify-content: flex-start;align-items: center;margin-left:10px;">
+                        <img src="https://civitai.com/favicon.ico" width="22" height="22" style="color:blue;margin-right:2px;"/>
+                        <span>CivitAI</span>
+                    </a>
+                    <a href="https://aitag.top/" style="display:flex;justify-content: flex-start;align-items: center;margin-left:10px;">
+                        <img src="https://aitag.top/vite.svg" width="22" height="22" style="color:blue;margin-right:2px"/>
+                        <span>魔咒百科</span>
+                    </a>
+                </div>
+                """)
 
         parameters_copypaste.connect_paste_params_buttons()
 

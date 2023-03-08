@@ -146,6 +146,8 @@ def request_model_url(url, model_type, model_name, cover_url, progress=gr.Progre
                         current += chunk_size
                     for i in progress:
                         break
+        else:
+            raise Exception("response error:" + resp.text)
         if cover:
             without_ex, ex = os.path.splitext(model_name)
             resp = http_request(cover, timeout=30)
@@ -157,6 +159,8 @@ def request_model_url(url, model_type, model_name, cover_url, progress=gr.Progre
                 cover_path = os.path.join(target_dir, without_ex + ex)
                 with open(cover_path, 'wb') as f:
                     f.write(resp.content)
+            else:
+                raise Exception("response error:" + resp.text)
         sd_models.list_models()
     except Exception as err:
         return f"download failed:{err}"
@@ -222,7 +226,6 @@ def create_upload_model_ui():
               inputs=[url_txt_ctl, radio_ctl, model_name_ctl, url_img_ctl],
               outputs=[result],
               show_progress=True)
-
 
 
 def append_upload_model_ui(interfaces: typing.List):
