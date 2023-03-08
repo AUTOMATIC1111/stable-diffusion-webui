@@ -1732,10 +1732,10 @@ def create_ui():
                             #with gr.Row(elem_id=f"quick_row_{k}") as qsettings_row:                   
                                 component = create_setting_component(k, item.section[0], is_quicksettings=True)
                                 component_dict[k] = component
-            
+            gr.Row(elem_id="theme_menu")
             gr.Row(elem_id="extra_networks_menu")
             gr.Row(elem_id="quick_menu")
-        
+
         parameters_copypaste.connect_paste_params_buttons()
  
         with gr.Tabs(elem_id="tabs") as tabs:

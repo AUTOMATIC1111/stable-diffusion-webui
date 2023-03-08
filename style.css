@@ -748,7 +748,6 @@ body {
 }
 
 /* offcanvas quicksettings menu */
-
 #quicksettings_overflow {
    position: fixed;
     z-index: 9999;
@@ -781,6 +780,7 @@ body {
 #quicksettings_overflow > div {
 	margin-bottom: var(--outside-gap-size);
 }
+
 /*
 #quicksettings_overflow > div button{
    height:auto;
@@ -806,7 +806,6 @@ padding-right: 37px;
 min-height: 34px;
 }
 
-
 #extra_networks_menu::before,
 #quick_menu::before {
     content: ' ';
@@ -829,11 +828,13 @@ min-height: 34px;
 	-webkit-mask: url(./file=html/svg/stack-line.svg) no-repeat 50% 50%;
     mask: url(./file=html/svg/stack-line.svg) no-repeat 50% 50%;
 }
+
 #extra_networks_menu.fixed,
 #extra_networks_menu:hover,
 #quick_menu:hover {
 	background-color: var(--primary-color);
 }
+
 #extra_networks_menu.fixed::before,
 #extra_networks_menu:hover::before,
 #quick_menu:hover::before {
@@ -1907,6 +1908,10 @@ canvas[key=mask] {
 #settings>div {
     padding-top:0;
 }
+
+#settings > div > .bg-white { 
+    color: var(--primary-color);
+}
 /****************/
 /* Results View */
 /****************/
@@ -2495,8 +2500,6 @@ ul.list-none {
 	box-shadow: rgba(0,0,0,0.4) -30px 0 30px -30px;
 }
 
-
-
 [id$="2img_extra_networks_row"].aside > div:first-child
 {
 	border: 0 !important;
@@ -2936,19 +2939,6 @@ ul.list-none {
 	color:var(--primary-color);
 }
 
-#settings_ui_theme > div > div
-{
-	flex-direction: row;
-    flex-wrap: wrap;
-}
-#settings_ui_theme > div > div > div
-{
-	max-width:30%;
-}
-
-#settings > div > .bg-white { 
-    color: var(--primary-color);
-}
 
 /******************/
 /* lightboxModal  */
@@ -3084,11 +3074,8 @@ ul.list-none {
   transition: none !important;
 }
 
-/*
-#ui_theme_settings > div{
-	max-width:120px;
-}
-*/
+
+
 /*********************/
 /* Mobile breakpoint */
 /*********************/
