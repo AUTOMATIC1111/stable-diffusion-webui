@@ -335,6 +335,10 @@ https://github.com/LonicaMewinsky/gif2gif
 
 The purpose of this script is to accept an animated gif as input, process frames as img2img typically would, and recombine them back into an animated gif. Not intended to have extensive functionality. Referenced code from prompts_from_file.
 
+## Post-Face-Restore-Again
+https://github.com/butaixianran/Stable-Diffusion-Webui-Post-Face-Restore-Again
+
+Run face restore twice in one go, from extras tab.
 
 ## Saving steps of the sampling process
 (Example Script) \
