@@ -18,6 +18,26 @@ As extensions allow the user to install and run arbitrary code, this can be used
 
 # Extensions
 
+## MultiDiffusion with Tiled VAE
+https://github.com/pkuliyi2015/multidiffusion-upscaler-for-automatic1111
+
+### MultiDiffusion
+
+- txt2img panorama generation, as mentioned in MultiDiffusion.
+- It can cooperate with ControlNet to produce wide images with control.
+
+Panorama Example:
+Before: [click for the raw image](https://github.com/pkuliyi2015/multidiffusion-upscaler-for-automatic1111/blob/docs/imgs/ancient_city_origin.jpeg)
+After: [click for the raw image](https://github.com/pkuliyi2015/multidiffusion-upscaler-for-automatic1111/blob/docs/imgs/ancient_city.jpeg)
+
+ControlNet Canny Output: https://github.com/pkuliyi2015/multidiffusion-upscaler-for-automatic1111/raw/docs/imgs/yourname.jpeg?raw=true
+
+### Tiled Vae
+
+The `vae_optimize.py` script is a wild hack that splits the image into tiles, encodes each tile separately, and merges the result back together. This process allows the VAE to work with giant images on limited VRAM (~10 GB for 8K images!).
+
+Remove --lowvram and --medvram to enjoy!
+
 ## VRAM Estimator
 https://github.com/space-nuko/a1111-stable-diffusion-webui-vram-estimator
 
