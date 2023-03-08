@@ -1,10 +1,6 @@
 # Installing and Using Custom Scripts
 To install custom scripts, place them into the `scripts` directory and click the `Reload custom script` button at the bottom in the settings tab. Custom scripts will appear in the lower-left dropdown menu on the txt2img and img2img tabs after being installed. Below are some notable custom scripts created by Web UI users:
 
-# Custom Scripts from Users
-* [Prompt Scripts](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Scripts-Prompt)
-* [Generation Scripts](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Scripts-Generation)
-<details><summary>Custom Scripts from Users</summary>
 
 ## Improved prompt matrix
 https://github.com/ArrowM/auto1111-improved-prompt-matrix
@@ -334,8 +330,14 @@ https://github.com/FartyPants/sd_web_ui_scripts
 
 - more advanced script that swaps negative and positive tokens depending on Mr. negativity rage
 
-## Saving steps of the sampling process
+## gif2gif
+https://github.com/LonicaMewinsky/gif2gif
 
+The purpose of this script is to accept an animated gif as input, process frames as img2img typically would, and recombine them back into an animated gif. Not intended to have extensive functionality. Referenced code from prompts_from_file.
+
+
+## Saving steps of the sampling process
+(Example Script) \
 This script will save steps of the sampling process to a directory.
 ```python
 import os.path
@@ -374,8 +376,3 @@ class Script(scripts.Script):
 
         return Processed(p, proc.images, p.seed, "")
 ```
-## gif2gif
-https://github.com/LonicaMewinsky/gif2gif
-
-The purpose of this script is to accept an animated gif as input, process frames as img2img typically would, and recombine them back into an animated gif. Not intended to have extensive functionality. Referenced code from prompts_from_file.
-</details>
