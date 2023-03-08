@@ -727,6 +727,13 @@
             "tags": ["tab"]
         },
         {
+            "name": "MultiDiffusion with Tiled VAE",
+            "url": "https://github.com/pkuliyi2015/multidiffusion-upscaler-for-automatic1111.git",
+            "description": "Seamless Image Fusion, along with vram efficient tiled vae script.",
+            "added": "2023-03-08",
+            "tags": ["manipulations"]
+        },
+        {
             "name": "zh_CN Localization",
             "url": "https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN",
             "description": "Simplified Chinese localization, recommend using with Bilingual Localization.",
