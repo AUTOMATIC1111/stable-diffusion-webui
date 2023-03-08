@@ -18,6 +18,55 @@ As extensions allow the user to install and run arbitrary code, this can be used
 
 # Extensions
 
+## VRAM Estimator
+https://github.com/space-nuko/a1111-stable-diffusion-webui-vram-estimator
+
+Runs txt2img, img2img, highres-fix at increasing dimensions and batch sizes until OOM, and outputs data to graph.
+
+![image](https://user-images.githubusercontent.com/98228077/223624383-545aeb31-c001-4ba6-bdb8-23e688130b8f.png)
+
+## Dump U-Net
+https://github.com/hnmr293/stable-diffusion-webui-dumpunet
+
+View different layers, observe U-Net feature maps. Allows Image generation by giving different prompts for each block of the unet: https://note.com/kohya_ss/n/n93b7c01b0547
+
+![image](https://user-images.githubusercontent.com/98228077/223624012-2df926d5-d4c4-44bc-a04f-bed15d43b88f.png)
+
+## posex
+https://github.com/hnmr293/posex
+
+Estimated Image Generator for Pose2Image. This extension allows moving the openpose figure in 3d space.
+
+![image](https://user-images.githubusercontent.com/98228077/223622234-26907947-a723-4671-ae42-60a0011bfda2.png)
+
+	
+## LLuL
+https://github.com/hnmr293/sd-webui-llul
+
+Local Latent Upscaler. Target an area to selectively enhance details.
+
+https://user-images.githubusercontent.com/120772120/221390831-9fbccdf8-5898-4515-b988-d6733e8af3f1.mp4
+
+
+## CFG-Schedule-for-Automatic1111-SD
+https://github.com/guzuligo/CFG-Schedule-for-Automatic1111-SD
+
+These 2 scripts allow for dynamic CFG control during generation steps. With the right settings, this could help get the details of high CFG without damaging the generated image even with low denoising in img2img.
+
+See their [wiki](https://github.com/guzuligo/CFG-Schedule-for-Automatic1111-SD/wiki/CFG-Auto-script) on how to use.
+
+## a1111-sd-webui-locon
+https://github.com/KohakuBlueleaf/a1111-sd-webui-locon
+An extension for loading LoCon networks in webui.
+
+## ebsynth_utility
+https://github.com/s9roll7/ebsynth_utility
+
+Extension for creating videos using img2img and ebsynth. Output edited videos using ebsynth. Works with ControlNet extension.
+
+![image](https://user-images.githubusercontent.com/98228077/223622872-0575abe9-9a53-4614-b9a5-1333f0b34733.png)
+
+
 ## Lora Block Weight
 
 Lora is a powerful tool, but it is sometimes difficult to use and can affect areas that you do not want it to affect. This script allows you to set the weights block-by-block. Using this script, you may be able to get the image you want.
