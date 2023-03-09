@@ -54,19 +54,16 @@ Once you swapped to a model for the first time a hash will appear beside the mod
 
 This is my personal model ranking based on my own research.
 
-1. AOM3 - Abyss orange mix 3 produces insane compositions and lighting together with a semi realistic feel
+1. AOM - Abyss orange mix U-net block merged model - insane japanese technology, produces semi-realistic anime feel
 
-2. Counterfeit - A good stylized 2D anime model, produces very artistic and good looking artworks
+2. dalcefoPainting - Good realistic stylized model, produces league of legends splash art style
 
-3. dalcefoPainting - Good realistic stylized model, produces league of legends splash art style girls
+3. counterfeit - A good stylized 2D anime model, produces very artistic and good looking artworks
 
-4. chilloutmix_Ni - Good if you like photographic realism
+4. neverendingDreamNED - Super versatile model capable of creating anything, good for training
 
-5. neverendingDreamNED - Super versatile model capable of creating anything, good for training
+5. anythingV4.5 - Good generalized anime model
 
-6. sunshinemix_sunlightmix - 2.5D anime realistic model, I personally haven't tried this but it seems good
-
-7. AnyPastel - Colorful pastelized 2D anime model
 
 ## How to reproduce previously generated images
 
@@ -129,9 +126,10 @@ Suppose I use an AI that outputs an image when I enter a prompt. For example, he
  The prompt requires the following elements.
 (1) Words to describe the method of depiction, such as watercolor or oil painting
 (2) Words to describe external features, ornaments and belongings (also specify colors and patterns)
-(3) Words to describe age, hair color, hairstyle, hair length, eye color, eye shape, facial expression, breast size, and clothing
+(3) Words to describe age, gender, hair color, hairstyle, hair length, eye color, eye shape, facial expression, and clothing
 (4) Words to describe background details
 (5) Words to direct the pose from head to toe can also be added to the prompt.
+(6) Words to describe the camera shot e.g. (portrait, full body, upper body, close-up, cowboy shot, dutch angle)
 
 Be sure to include "masterpiece, best quality, ultra-detailed, illustration, 1girl, solo," at the beginning of the prompt. Please use plain text in your response, no "" or line breaks.
 Prompts may use danbooru tags. Based on these, please tell me a 150-element prompt that can generate illustrations for the following themes.
@@ -193,7 +191,7 @@ img2img (ControlNet)      |  inpainting (ControlNet) | img2img (normal)
 
 # Model Mixing/Merging
 
-The logic behind model mixing is to create an "inbetween" of multiple models, for example if you want to combine and 2D Anime model with a realistic 3D model to get a 2.5D model you would mix both of them together. There are other purposes as well if you want to go more in depth.
+The logic behind model mixing is to create an "inbetween" of multiple models, for example if you want to combine and 2D Anime model with a realistic 3D model to get a 2.5D model you would mix both of them together. There is also U-net block merge which is more complicated.
 
 ![](215274766-7d78df50-bb01-4e7b-84b6-04fed94b92ef.png)
 
