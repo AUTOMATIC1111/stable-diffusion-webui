@@ -283,10 +283,6 @@ def create_toprow(is_img2img):
 
     with gr.Row(elem_id=f"{id_part}_toprow", variant="compact"):
         with gr.Column(elem_id=f"{id_part}_prompt_container", scale=100):
-            with gr.Row():
-                with gr.Column(scale=100):
-                    with gr.Row():
-                        extra_networks_button = ExtraButton(value="Model & Network Library", elem_id=f"{id_part}_extra_networks")
                         
             with gr.Row():
                 with gr.Column(scale=100):
@@ -346,6 +342,10 @@ def create_toprow(is_img2img):
                             outputs=[],
                         )
 
+            with gr.Row():
+                with gr.Column(scale=100):
+                    with gr.Row():
+                        extra_networks_button = ExtraButton(value="Model & Network Library", elem_id=f"{id_part}_extra_networks")
 
 
     return prompt, prompt_styles, negative_prompt, submit, button_interrogate, button_deepbooru, prompt_style_apply, save_style, paste, extra_networks_button, token_counter, token_button, negative_token_counter, negative_token_button
