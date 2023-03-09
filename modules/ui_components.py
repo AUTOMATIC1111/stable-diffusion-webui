@@ -10,6 +10,14 @@ class ToolButton(gr.Button, gr.components.FormComponent):
     def get_block_name(self):
         return "button"
 
+class ExtraButton(gr.Button, gr.components.FormComponent):
+    """extra button for extra networs"""
+
+    def __init__(self, **kwargs):
+        super().__init__(variant="extra", **kwargs)
+
+    def get_block_name(self):
+        return "button"
 
 class ToolButtonTop(gr.Button, gr.components.FormComponent):
     """Small button with single emoji as text, with extra margin at top, fits inside gradio forms"""

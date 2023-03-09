@@ -20,7 +20,7 @@ from PIL import Image, PngImagePlugin
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_gradio_call
 
 from modules import sd_hijack, sd_models, localization, script_callbacks, ui_extensions, deepbooru, sd_vae, extra_networks, postprocessing, ui_components, ui_common, ui_postprocessing
-from modules.ui_components import FormRow, FormGroup, ToolButton, FormHTML
+from modules.ui_components import FormRow, FormGroup, ToolButton, FormHTML, ExtraButton
 from modules.paths import script_path, data_path
 
 from modules.shared import opts, cmd_opts, restricted_opts
@@ -282,64 +282,71 @@ def create_toprow(is_img2img):
     id_part = "img2img" if is_img2img else "txt2img"
 
     with gr.Row(elem_id=f"{id_part}_toprow", variant="compact"):
-        with gr.Column(elem_id=f"{id_part}_prompt_container", scale=6):
+        with gr.Column(elem_id=f"{id_part}_prompt_container", scale=100):
             with gr.Row():
-                with gr.Column(scale=80):
+                with gr.Column(scale=100):
+                    with gr.Row():
+                        extra_networks_button = ExtraButton(value="Model & Network Library", elem_id=f"{id_part}_extra_networks")
+                        
+            with gr.Row():
+                with gr.Column(scale=100):
                     with gr.Row():
                         prompt = gr.Textbox(label="Prompt", elem_id=f"{id_part}_prompt", show_label=False, lines=3, placeholder="Prompt (press Ctrl+Enter or Alt+Enter to generate)")
 
-            with gr.Row():
-                with gr.Column(scale=80):
+                with gr.Column(scale=100):
                     with gr.Row():
-                        negative_prompt = gr.Textbox(label="Negative prompt", elem_id=f"{id_part}_neg_prompt", show_label=False, lines=2, placeholder="Negative prompt (press Ctrl+Enter or Alt+Enter to generate)")
+                        negative_prompt = gr.Textbox(label="Negative prompt", elem_id=f"{id_part}_neg_prompt", show_label=False, lines=3, placeholder="Negative prompt (press Ctrl+Enter or Alt+Enter to generate)")
 
-        button_interrogate = None
-        button_deepbooru = None
-        if is_img2img:
-            with gr.Column(scale=1, elem_id="interrogate_col"):
-                button_interrogate = gr.Button('Interrogate\nCLIP', elem_id="interrogate")
-                button_deepbooru = gr.Button('Interrogate\nDeepBooru', elem_id="deepbooru")
+            button_interrogate = None
+            button_deepbooru = None
+        
+            with gr.Row():
+                with gr.Column(elem_id=f"{id_part}_tools"):
+                    with gr.Row():
+                        prompt_styles = gr.Dropdown(label="Styles", elem_id=f"{id_part}_styles", choices=[k for k, v in shared.prompt_styles.styles.items()], value=[], multiselect=True)
+                        create_refresh_button(prompt_styles, shared.prompt_styles.reload, lambda: {"choices": [k for k, v in shared.prompt_styles.styles.items()]}, f"refresh_{id_part}_styles")
 
-        with gr.Column(scale=1, elem_id=f"{id_part}_actions_column"):
-            with gr.Row(elem_id=f"{id_part}_generate_box"):
-                interrupt = gr.Button('Interrupt', elem_id=f"{id_part}_interrupt")
-                skip = gr.Button('Skip', elem_id=f"{id_part}_skip")
-                submit = gr.Button('Generate', elem_id=f"{id_part}_generate", variant='primary')
+                        paste = ToolButton(value=paste_symbol, elem_id="paste")
+                        clear_prompt_button = ToolButton(value=clear_prompt_symbol, elem_id=f"{id_part}_clear_prompt")
+                
+                        prompt_style_apply = ToolButton(value=apply_style_symbol, elem_id=f"{id_part}_style_apply")
+                        save_style = ToolButton(value=save_style_symbol, elem_id=f"{id_part}_style_create")
 
-                skip.click(
-                    fn=lambda: shared.state.skip(),
-                    inputs=[],
-                    outputs=[],
-                )
+                        token_counter = gr.HTML(value="<span></span>", elem_id=f"{id_part}_token_counter")
+                        token_button = gr.Button(visible=False, elem_id=f"{id_part}_token_button")
+                        negative_token_counter = gr.HTML(value="<span></span>", elem_id=f"{id_part}_negative_token_counter")
+                        negative_token_button = gr.Button(visible=False, elem_id=f"{id_part}_negative_token_button")
 
-                interrupt.click(
-                    fn=lambda: shared.state.interrupt(),
-                    inputs=[],
-                    outputs=[],
-                )
+                    clear_prompt_button.click(
+                        fn=lambda *x: x,
+                        _js="confirm_clear_prompt",
+                        inputs=[prompt, negative_prompt],
+                        outputs=[prompt, negative_prompt],
+                    )
+                if is_img2img:
+                    with gr.Column(scale=1, elem_id="interrogate_col"):
+                        button_interrogate = gr.Button('Interrogate\nCLIP', elem_id="interrogate")
+                        button_deepbooru = gr.Button('Interrogate\nDeepBooru', elem_id="deepbooru")
 
-            with gr.Row(elem_id=f"{id_part}_tools"):
-                paste = ToolButton(value=paste_symbol, elem_id="paste")
-                clear_prompt_button = ToolButton(value=clear_prompt_symbol, elem_id=f"{id_part}_clear_prompt")
-                extra_networks_button = ToolButton(value=extra_networks_symbol, elem_id=f"{id_part}_extra_networks")
-                prompt_style_apply = ToolButton(value=apply_style_symbol, elem_id=f"{id_part}_style_apply")
-                save_style = ToolButton(value=save_style_symbol, elem_id=f"{id_part}_style_create")
+                with gr.Column(scale=1, elem_id=f"{id_part}_actions_column"):
+                    with gr.Row(elem_id=f"{id_part}_generate_box"):
+                        interrupt = gr.Button('Interrupt', elem_id=f"{id_part}_interrupt")
+                        skip = gr.Button('Skip', elem_id=f"{id_part}_skip")
+                        submit = gr.Button('Generate', elem_id=f"{id_part}_generate", variant='primary')
 
-                token_counter = gr.HTML(value="<span></span>", elem_id=f"{id_part}_token_counter")
-                token_button = gr.Button(visible=False, elem_id=f"{id_part}_token_button")
-                negative_token_counter = gr.HTML(value="<span></span>", elem_id=f"{id_part}_negative_token_counter")
-                negative_token_button = gr.Button(visible=False, elem_id=f"{id_part}_negative_token_button")
+                        skip.click(
+                            fn=lambda: shared.state.skip(),
+                            inputs=[],
+                            outputs=[],
+                        )
 
-                clear_prompt_button.click(
-                    fn=lambda *x: x,
-                    _js="confirm_clear_prompt",
-                    inputs=[prompt, negative_prompt],
-                    outputs=[prompt, negative_prompt],
-                )
+                        interrupt.click(
+                            fn=lambda: shared.state.interrupt(),
+                            inputs=[],
+                            outputs=[],
+                        )
 
-            with gr.Row(elem_id=f"{id_part}_styles_row"):
-                prompt_styles = gr.Dropdown(label="Styles", elem_id=f"{id_part}_styles", choices=[k for k, v in shared.prompt_styles.styles.items()], value=[], multiselect=True)
-                create_refresh_button(prompt_styles, shared.prompt_styles.reload, lambda: {"choices": [k for k, v in shared.prompt_styles.styles.items()]}, f"refresh_{id_part}_styles")
+
 
     return prompt, prompt_styles, negative_prompt, submit, button_interrogate, button_deepbooru, prompt_style_apply, save_style, paste, extra_networks_button, token_counter, token_button, negative_token_counter, negative_token_button
 
