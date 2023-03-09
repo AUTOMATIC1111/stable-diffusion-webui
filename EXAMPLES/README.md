@@ -19,9 +19,9 @@ Text to Image generation comprises of taking a random noisy image and diffusing 
 **Negative prompt**: what you don't want in your image. Default `(worst quality, low quality:1.4)`
 
 
-**Sampling method**: I still DK how this works but it affects the output. Use Default: `DPM++ SDE Karras` or experiment with the other samplers
+**Sampling method**: Different samplers have different effects on the resultant image, some samplers are more creative and some more consistent, some samplers take longer to generate the image, some take shorter time. Generally, I only recommend using 2 samplers, `DPM++ SDE Karras` and `DPM++ 2M Karras`. SDE has better quality overall, but 2M is much faster.
 
-**Sampling steps**: How many denoising steps used in the diffusion process. Generally the higher the number the better the image quality, but it takes longer to generate. Recommend leave at `20` steps, as the quality starts to flat line around there.
+**Sampling steps**: How many denoising steps used in the diffusion process. Generally the higher the number the better the image quality, but it takes longer to generate. Recommend leave at `20` steps, as the quality starts to flat line around there. `50` steps for the best quality
 
 **Seed**: Default `-1` (meaning you use a random new seed every generation). The random noise seed that you can use as a base for diffusion, think of it as just an image with random RGB values at every coordinate pixel, this random noise image will slowly be diffused into an artwork. Different seeds produce different images.
 
@@ -31,9 +31,9 @@ Text to Image generation comprises of taking a random noisy image and diffusing 
 
 **CFG scale**: Default: `8`. how much you want your image to conform with your prompt - the high the number the more it will follow the prompt
 
-**Width & Height**: Default `512x512`. Output image dimensions. Normally set at least one side to a length between 512 & 768, the other side can be larger. If the resolution is too high, distortion and artifacts will appear in the image. If you set too high you will get "CUDA OUT OF MEMORY ERROR"
+**Width & Height**: Default `512x512`. Output image dimensions. If the resolution is too high, distortion and artifacts will appear in the image. If you set even higher you will get "CUDA OUT OF MEMORY ERROR". Basically, your graphics card ran out of VRAM.
 
-**Hires. fix**: A fix to the previous problem of distortion and artifacts. able to latently upscale images by x2 (VERY GOOD, but takes longer to generate image)
+**Hires. fix**: A fix to the previous problem of distortion and artifacts at high resolutions by generating an image at lower resolution then upscaling the image. (Bad thing about this is takes much longer to generate image and uses more VRAM)
 
 **Default settings for hires. fix**: 
 - **Upscaler**: Recommend use `Latent (nearest-exact)`. I feel this is the best upscaler, unless you want to experiment with the other options.- 
@@ -60,7 +60,7 @@ This is my personal model ranking based on my own research.
 
 3. counterfeit - A good stylized 2D anime model, produces very artistic and good looking artworks
 
-4. neverendingDreamNED - Super versatile model capable of creating anything, good for training
+4. neverendingDreamNED - Super versatile model capable of creating anything - realistic, anime, starwars, fantasy...
 
 5. anythingV4.5 - Good generalized anime model
 
