@@ -135,6 +135,7 @@ Requested path was: {f}
                 if tabname != "extras":
                     save = gr.Button('Save', elem_id=f'save_{tabname}')
                     save_zip = gr.Button('Zip', elem_id=f'save_zip_{tabname}')
+                    flip_img = gr.Button('Flip', elem_id=f'flip_img_{tabname}')
 
                 buttons = parameters_copypaste.create_buttons(["img2img", "inpaint", "extras"])
 
@@ -191,6 +192,11 @@ Requested path was: {f}
                             download_files,
                             html_log,
                         ]
+                    )
+
+                    flip_img.click(
+                        fn=lambda x: None,
+                        _js="(x) => { flip_gallery_images(); return 1; }"
                     )
 
             else:
