@@ -2,6 +2,9 @@
 # FROM i.harbor.dragonest.net/xingzhe/sd-webui
 
 # build dockerbase/Dockerfile first
+# run cmd:
+# nvidia-docker run -p 7860:7860 -it -v /data/apksamba/sd/models:/root/stable-diffusion-webui/models i.harbor.dragonest.net/xingzhe/sd-webui/sd-webui:v0.7 /bin/bash
+# nvidia-docker run -d -p 7860:7860 -v /data/apksamba/sd/models:/root/stable-diffusion-webui/models i.harbor.dragonest.net/xingzhe/sd-webui/sd-webui:v0.8
 FROM i.harbor.dragonest.net/xingzhe/sd-webui/sd-webui-env:v0.1
 
 MAINTAINER wangdongming "wangdongming@dragonest.com"
@@ -81,9 +84,9 @@ RUN https_proxy=${HTTP_PROXY} git clone https://github.com/Jackstrawcd/stable-di
 # clip_package = os.environ.get('CLIP_PACKAGE', "git+https://github.com/openai/CLIP.git@d50d76daa670286dd6cacf3bcd80b5e4823fc8e1")
 # openclip_package = os.environ.get('OPENCLIP_PACKAGE', "git+https://github.com/mlfoundations/open_clip.git@bb6e834e9c70d9c27d0dc3ecedeebeaeb1ffad6b")
 RUN cd ~/stable-diffusion-webui  \
-    && pip3 install xformers -i https://pypi.tuna.tsinghua.edu.cn/simple \
-    && pip3 install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple \
-    && pip3 install -r requirements_versions.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+    && pip3 install xformers -i https://nexus.ops.dragonest.com/repository/ly_pip_all/simple \
+    && pip3 install -r requirements.txt -i https://nexus.ops.dragonest.com/repository/ly_pip_all/simple \
+    && pip3 install -r requirements_versions.txt -i https://nexus.ops.dragonest.com/repository/ly_pip_all/simple
 # repositories
 RUN https_proxy=${HTTP_PROXY} git clone https://github.com/CompVis/taming-transformers.git ~/stable-diffusion-webui/repositories/taming-transformers
 RUN https_proxy=${HTTP_PROXY} git clone https://github.com/Stability-AI/stablediffusion.git ~/stable-diffusion-webui/repositories/stable-diffusion-stability-ai
@@ -107,17 +110,24 @@ RUN cd  ~/stable-diffusion-webui/repositories/stable-diffusion-stability-ai \
 RUN https_proxy=${HTTP_PROXY} git clone https://github.com/Mikubill/sd-webui-controlnet.git ~/stable-diffusion-webui/extensions/sd-webui-controlnet
 RUN https_proxy=${HTTP_PROXY} git clone https://huggingface.co/webui/ControlNet-modules-safetensors ~/stable-diffusion-webui/models/ControlNet
 RUN https_proxy=${HTTP_PROXY} git clone https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN ~/stable-diffusion-webui/extensions/stable-diffusion-webui-localization-zh_CN
+RUN https_proxy=${HTTP_PROXY} git clone https://github.com/toriato/stable-diffusion-webui-wd14-tagger.git ~/stable-diffusion-webui/extensions/tagger
+RUN https_proxy=${HTTP_PROXY} git clone https://github.com/yfszzx/stable-diffusion-webui-images-browser ~/stable-diffusion-webui/extensions/images-browser
+RUN https_proxy=${HTTP_PROXY} git clone https://github.com/fkunn1326/openpose-editor.git ~/stable-diffusion-webui/extensions/openpose-editor
+RUN https_proxy=${HTTP_PROXY} git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui-aesthetic-gradients ~/stable-diffusion-webui/extensions/aesthetic-gradients
+RUN https_proxy=${HTTP_PROXY} git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui-promptgen ~/stable-diffusion-webui/extensions/stable-diffusion-webui-promptgen
 RUN mkdir -p  ~/stable-diffusion-webui/stable-diffusion-webui/extensions/sd-webui-controlnet/annotator/openpose
 RUN echo "{\"localization\": \"zh_CN\"}" >  ~/stable-diffusion-webui/config.json
+
 # 下载模型(默认不下载)
 #RUN cd  ~/stable-diffusion-webui/models/Stable-diffusion \
 #    &&wget -nd -np -r  -c http://apksamba.ops.ilongyuan.cn:8000/ai/7/AI%E7%BE%8E%E6%9C%AF/%E6%89%93%E5%8C%85/models/Stable-diffusion/
 #RUN cd ~/stable-diffusion-webui/  \
 #    &&  python3 extensions/sd-webui-controlnet/install.py
 # 确定OPEN_CLIP 和arkupsafe版本
-RUN pip3 install basicsr Werkzeug==2.1.0 open_clip_torch==2.16.0 markupsafe==2.0.1 -i https://pypi.tuna.tsinghua.edu.cn/simple
+RUN pip3 install basicsr Werkzeug==2.1.0 open_clip_torch==2.16.0 markupsafe==2.0.1 -i https://nexus.ops.dragonest.com/repository/ly_pip_all/simple
 
 
 WORKDIR ~/stable-diffusion-webui
-# -v /home/dock/Downloads:/usr/Downloads
-CMD bash -c "cd ~/stable-diffusion-webui; python3 -u webui.py --server-name 0.0.0.0 --xformers --enable-insecure-extension-access"
+
+# 启动时必须将models下面的一些必要文件挂载进去，例如：VAE-approx/models.pt
+CMD bash -c "cd ~/stable-diffusion-webui; python3 -u webui.py --server-name 0.0.0.0 --xformers --enable-insecure-extension-access>>nohup.out"

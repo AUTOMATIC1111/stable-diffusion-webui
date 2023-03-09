@@ -281,7 +281,13 @@ def webui():
         extra_networks.register_extra_network(extra_networks_hypernet.ExtraNetworkHypernet())
 
 
+def check_resource():
+    from scripts.pull_repo_res import pull_code_former_weights
+    pull_code_former_weights()
+
+
 if __name__ == "__main__":
+    check_resource()
     if cmd_opts.nowebui:
         api_only()
     else:

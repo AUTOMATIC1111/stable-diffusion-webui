@@ -167,6 +167,6 @@ def load_upscalers():
         name = cls.__name__
         cmd_name = f"{name.lower().replace('upscaler', '')}_models_path"
         scaler = cls(commandline_options.get(cmd_name, None))
-        datas += scaler.scalers
+        datas += [sc for sc in scaler.scalers if not str(sc.name).startswith('tmp')]
 
     shared.sd_upscalers = datas
