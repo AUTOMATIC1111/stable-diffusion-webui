@@ -739,6 +739,18 @@ footer {
     min-width: auto;
 }
 
+#txt2img_column_res_change_buttons {
+    flex: 0;
+    gap: 0;
+    min-width: auto!important;
+    flex-grow: unset!important;
+}
+
+#txt2img_res_change_forward_btn, #txt2img_res_change_backward_btn {
+    margin: 0;
+    height: 0.125rem;
+}
+
 #img2img_copy_to_img2img, #img2img_copy_to_sketch, #img2img_copy_to_inpaint, #img2img_copy_to_inpaint_sketch{
     margin-left: 0em;
 }

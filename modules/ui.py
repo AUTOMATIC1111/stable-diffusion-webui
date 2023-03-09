@@ -92,6 +92,8 @@ apply_style_symbol = '\U0001f4cb'  # 📋
 clear_prompt_symbol = '\U0001F5D1'  # 🗑️
 extra_networks_symbol = '\U0001F3B4'  # 🎴
 switch_values_symbol = '\U000021C5' # ⇅
+res_change_up_symbol = '\u25B2'  # ▲
+res_change_down_symbol = '\u25BC'  # ▼
 
 
 def plaintext_to_html(text):
@@ -479,7 +481,10 @@ def create_ui():
                                 width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="txt2img_width")
                                 height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="txt2img_height")
 
-                            res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="txt2img_res_switch_btn")
+                            with gr.Column(elem_id="txt2img_column_res_change_buttons", min_width=0):
+                                res_change_forward_btn = ToolButton(value=res_change_up_symbol, elem_id="txt2img_res_change_forward_btn")
+                                res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="txt2img_res_switch_btn")
+                                res_change_backward_btn = ToolButton(value=res_change_down_symbol, elem_id="txt2img_res_change_backward_btn")
                             if opts.dimensions_and_batch_together:
                                 with gr.Column(elem_id="txt2img_column_batch"):
                                     batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1, elem_id="txt2img_batch_count")
@@ -586,7 +591,9 @@ def create_ui():
             txt2img_prompt.submit(**txt2img_args)
             submit.click(**txt2img_args)
 
+            res_change_forward_btn.click(lambda w, h: (int((w * (h + 8)) / h), int(h + 8)), inputs=[width, height], outputs=[width, height])
             res_switch_btn.click(lambda w, h: (h, w), inputs=[width, height], outputs=[width, height])
+            res_change_backward_btn.click(lambda w, h: (int((w * (h - 8)) / h), int(h - 8)), inputs=[width, height], outputs=[width, height])
 
             txt_prompt_img.change(
                 fn=modules.images.image_data,
@@ -757,7 +764,10 @@ def create_ui():
                                 width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="img2img_width")
                                 height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="img2img_height")
 
-                            res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="img2img_res_switch_btn")
+                            with gr.Column(elem_id="txt2img_column_res_change_buttons", min_width=0):
+                                res_change_forward_btn = ToolButton(value=res_change_up_symbol, elem_id="txt2img_res_change_forward_btn")
+                                res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="txt2img_res_switch_btn")
+                                res_change_backward_btn = ToolButton(value=res_change_down_symbol, elem_id="txt2img_res_change_backward_btn")
                             if opts.dimensions_and_batch_together:
                                 with gr.Column(elem_id="img2img_column_batch"):
                                     batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1, elem_id="img2img_batch_count")
@@ -904,7 +914,9 @@ def create_ui():
 
             img2img_prompt.submit(**img2img_args)
             submit.click(**img2img_args)
+            res_change_forward_btn.click(lambda w, h: (int((w * (h + 8)) / h), int(h + 8)), inputs=[width, height], outputs=[width, height])
             res_switch_btn.click(lambda w, h: (h, w), inputs=[width, height], outputs=[width, height])
+            res_change_backward_btn.click(lambda w, h: (int((w * (h - 8)) / h), int(h - 8)), inputs=[width, height], outputs=[width, height])
 
             img2img_interrogate.click(
                 fn=lambda *args: process_interrogate(interrogate, *args),
