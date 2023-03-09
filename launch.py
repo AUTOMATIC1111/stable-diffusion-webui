@@ -165,7 +165,7 @@ def git_pull_recursive(dir):
     for subdir, _, _ in os.walk(dir):
         if os.path.exists(os.path.join(subdir, '.git')):
             try:
-                output = subprocess.check_output(['git', '-C', subdir, 'pull'])
+                output = subprocess.check_output(['git', '-C', subdir, 'pull', '--autostash'])
                 print(f"Pulled changes for repository in '{subdir}':\n{output.decode('utf-8').strip()}\n")
             except subprocess.CalledProcessError as e:
                 print(f"Couldn't perform 'git pull' on repository in '{subdir}':\n{e.output.decode('utf-8').strip()}\n")
