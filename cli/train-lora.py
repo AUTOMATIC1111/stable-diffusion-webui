@@ -35,8 +35,8 @@ latents = importlib.import_module('modules.lora-latents')
 
 lora_path = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, 'modules', 'lora'))
 sys.path.append(lora_path)
-locon_path = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, 'modules', 'locon'))
-sys.path.append(locon_path)
+lycoris_path = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, 'modules', 'lycoris'))
+sys.path.append(lycoris_path)
 from train_network import train
 
 options = Map({
@@ -152,7 +152,7 @@ if __name__ == '__main__':
     parser.add_argument('--unetlr', type=float, default=1e-04, required=False, help='unet learning rate, default: %(default)s')
     parser.add_argument('--textlr', type=float, default=5e-05, required=False, help='text encoder learning rate, default: %(default)s')
     parser.add_argument('--dreambooth', default=False, action='store_true', help = "use dreambooth style training")
-    parser.add_argument('--locon', default=False, action='store_true', help = "use locon style training")
+    parser.add_argument('--lycoris', default=False, action='store_true', help = "use lycoris style training")
     parser.add_argument('--debug', default=False, action='store_true', help = "enable debug logging")
     args = parser.parse_args()
     defaults = Map({ 'options': {}, 'flags': {} }) if args.offline else Map(modules.sdapi.options())
@@ -267,13 +267,13 @@ if __name__ == '__main__':
         modules.sdapi.shutdown()
         time.sleep(1)
 
-    if args.locon:
+    if args.lycoris:
         # python3 sd-scripts/train_network.py --network_module locon.locon_kohya --network_dim "RANK_FOR_TRANSFORMER" --network_alpha "ALPHA_FOR_TRANSFORMER" --network_args "conv_dim=RANK_FOR_CONV" "conv_alpha=ALPHA_FOR_CONV" "dropout=DROPOUT_RATE"
         # options.network_dim = 'RANK_FOR_TRANSFORMER'
         # options.network_alpha = 'ALPHA_FOR_TRANSFORMER'
         # options.network_args = ['conv_dim=RANK_FOR_CONV', 'conv_alpha=ALPHA_FOR_CONV', 'dropout=DROPOUT_RATE']
-        log.info({ 'using locon network': True })
-        options.network_module = 'locon.locon_kohya'
+        log.info({ 'using lycoris network': True })
+        options.network_module = 'lycoris.kohya'
     if not args.notrain:
         train(options)
         mem_stats()
