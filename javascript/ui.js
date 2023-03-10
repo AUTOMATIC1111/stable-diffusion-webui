@@ -991,9 +991,14 @@ onUiUpdate(function(){
 		})	
 	}
 	
-	gradioApp().querySelectorAll("#tab_pnginfo #png_2img_results button").forEach(function (elem){			
+	gradioApp().querySelectorAll("#tab_pnginfo #png_2img_results button, [id$='2img_actions_column'] #paste").forEach(function (elem){			
 		elem.addEventListener('click', function (e) {
-			const button_id = e.target.id.split("_")[0];
+			let button_id;
+			if(e.target.id == "paste"){
+				button_id = e.target.nextElementSibling.id.split("_")[0];
+			}else{
+				button_id = e.target.id.split("_")[0];
+			}
 			setTimeout(function() { update_performant_inputs(button_id); }, 500);		
 		})	
 	})			
