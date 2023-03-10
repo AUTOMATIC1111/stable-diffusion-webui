@@ -11,7 +11,7 @@ To contribute, clone the repository, make your changes, commit and push to your 
 <details><summary>This is a discord for development only, NOT for tech support.
 </summary><blockquote>
 
-[Dev discoed](https://discord.gg/WG2nzq3YEH)  
+[Dev discord](https://discord.gg/WG2nzq3YEH)  
 </details></blockquote></details>
 
 If you are making changes to used libraries or the installation script, you must verify them to work on default Windows installation from scratch. If you cannot test if it works (due to your OS or anything else), do not make those changes (with possible exception of changes that explicitly are guarded from being executed on Windows by `if`s or something else).
