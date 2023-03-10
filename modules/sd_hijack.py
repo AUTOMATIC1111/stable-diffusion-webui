@@ -47,10 +47,12 @@ def apply_optimizations():
     elif cmd_opts.opt_sdp_no_mem_attention and can_use_sdp:
         print("Applying scaled dot product cross attention optimization (without memory efficient attention).")
         ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.scaled_dot_product_no_mem_attention_forward
+        ldm.modules.diffusionmodules.model.AttnBlock.forward = sd_hijack_optimizations.sdp_no_mem_attnblock_forward
         optimization_method = 'sdp-no-mem'
     elif cmd_opts.opt_sdp_attention and can_use_sdp:
         print("Applying scaled dot product cross attention optimization.")
         ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.scaled_dot_product_attention_forward
+        ldm.modules.diffusionmodules.model.AttnBlock.forward = sd_hijack_optimizations.sdp_attnblock_forward
         optimization_method = 'sdp'
     elif cmd_opts.opt_sub_quad_attention:
         print("Applying sub-quadratic cross attention optimization.")
