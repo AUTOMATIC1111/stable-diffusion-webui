@@ -10,7 +10,7 @@ import json
 import re
 import types
 import typing
-
+import traceback
 import requests
 import shutil
 import os
@@ -144,9 +144,10 @@ def request_model_url(url, model_type, model_name, cover_url, progress=gr.Progre
                     if chunk:
                         f.write(chunk)
                         current += chunk_size
+                    # 迭代一次
                     for i in progress:
-                        if i >= current:
-                            break
+                        break
+
         else:
             raise Exception("response error:" + resp.text)
         if cover:
@@ -164,6 +165,7 @@ def request_model_url(url, model_type, model_name, cover_url, progress=gr.Progre
                 raise Exception("response error:" + resp.text)
         sd_models.list_models()
     except Exception as err:
+        traceback.print_exc()
         return f"download failed:{err}"
     return "ok"
 
