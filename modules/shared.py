@@ -471,8 +471,9 @@ options_templates.update(options_section(('ui', "User interface"), {
     "ui_header_tabs": OptionInfo("", "Header Tabs"),
     "ui_views_order": OptionInfo("row-reverse", "Interface order input/parameters | output/preview", gr.Radio, {"choices": ["row", "row-reverse"]}),
     "ui_extra_networks_tab_reorder": OptionInfo("", "Extra networks tab order"),
-    "ui_performant_gradio_input_components": OptionInfo("", "Performant gradio input components. Use css selectors"),
+    "ui_performant_gradio_input_components": OptionInfo("", "Performant gradio components is enabled for all main tabs and scripts. Use css selectors only for extensions that have their own tab"),
     "ui_output_image_fit": OptionInfo("Scale-down", "Generated image fit method", gr.Radio, {"choices": ["Scale-down", "Contain"]}),
+    "ui_show_range_ticks": OptionInfo(True, "Show ticks for range sliders"),
     "localization": OptionInfo("None", "Localization (requires restart)", gr.Dropdown, lambda: {"choices": ["None"] + list(localization.localizations.keys())}, refresh=lambda: localization.list_localizations(cmd_opts.localizations_dir)),
 }))
 

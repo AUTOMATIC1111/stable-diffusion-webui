@@ -30,6 +30,8 @@ License: GNU General Public License
 
 	--processing-border : 2px;
 	--processing-border-double: var(--processing-border) * 2;
+	
+	--slider-bg-overlay : transparent;
 
   
 
@@ -1201,7 +1203,16 @@ input
 /***********************/
 /* Accordion */
 /***********************/
-
+/*
+.dark .dark\:hover\:border-gray-600>div.cursor-pointer {
+	background-color: var(--panel-bg-color);
+    border-radius: var(--panel-border-radius);
+}
+.dark .dark\:hover\:border-gray-600:hover>div.cursor-pointer {
+	background-color: var(--primary-color)!important;
+    border-radius: var(--panel-border-radius);
+}
+*/
 
 .dark .dark\:hover\:border-gray-600:hover {
     border: 1px solid var(--primary-color)!important;
@@ -1214,6 +1225,7 @@ input
 	padding-top: var(--max-padding) !important;
 	padding-bottom: var(--max-padding) !important;
     width: auto !important;
+	
 }
 
 .dark .dark\:hover\:border-gray-600>div.cursor-pointer+div {   
@@ -2938,6 +2950,9 @@ ul.list-none {
     text-align: center;
 	color:var(--primary-color);
 }
+#settings_sd #row_setting_sd_model_checkpoint{
+	display:none;
+}
 
 
 /******************/
@@ -3613,7 +3628,17 @@ li.coffee-circle {
         -webkit-appearance: none;
         background-color: var(--input-bg-color);
         border: 1px solid var(--input-border-color);
+		position:relative;
     }
+	input[type=range]::after {
+		content: '';
+		position: absolute;
+		height: 13px;
+		background-image: var(--slider-bg-overlay);
+		opacity: 0.15;
+		width: 100%;
+	}
+	
 
     input[type=range]::-webkit-slider-runnable-track {
         height: 14px;
@@ -3623,12 +3648,12 @@ li.coffee-circle {
     }
 
     input[type=range]::-webkit-slider-thumb {
-        width: 14px;
+        width: 0px;
         -webkit-appearance: none;
         height: 14px;
         cursor: ew-resize;
         background-color: var(--primary-color);
-        box-shadow: -1024px 0 0 1024px var(--primary-color);
+        box-shadow: -1024px 0 0 1024px var(--primary-color);		
     }
 	
 	[id$="_sub-group"] input[type=range]
@@ -3653,6 +3678,15 @@ input[type=range]::-moz-range-track {
     background-color: var(--input-bg-color);
 }
 
+input[type=range]::after:: {
+	content: '';
+	position: absolute;
+	height: 13px;
+	background-image: var(--slider-bg-overlay);
+	opacity: 0.15;
+	width: 100%;
+}
+
 [id$="2img_results"],
 [id$="2img_settings_scroll"] 
 {
@@ -3670,13 +3704,20 @@ input[type=range]::-moz-range-track {
     background-color: var(--input-bg-color);
     border: none;
     border-radius: 0px;
+
+	position: relative;
+	height: 100%;
+	background-image: var(--slider-bg-overlay);
+	opacity: 0.15;
+	width: 100%;
 }
 
 input[type=range]::-moz-range-thumb {
-    border: 1px solid var(--primary-color);
-    width: 14px;
+    border: 0px solid var(--primary-color);
+    width: 0px;
     border-radius: 0%;
     background-color: var(--primary-color);
+
 }
 
 /*hide the outline behind the border*/
