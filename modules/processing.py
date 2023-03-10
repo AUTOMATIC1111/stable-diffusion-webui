@@ -615,7 +615,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                         hr_prompts, hr_negative_prompts = prompts, negative_prompts
                     else:
                         hr_prompts = p.all_hr_prompts[n * p.batch_size:(n + 1) * p.batch_size]
-                        hr_negative_prompts = p.all_negative_prompts[n * p.batch_size:(n + 1) * p.batch_size]
+                        hr_negative_prompts = p.all_hr_negative_prompts[n * p.batch_size:(n + 1) * p.batch_size]
 
             seeds = p.all_seeds[n * p.batch_size:(n + 1) * p.batch_size]
             subseeds = p.all_subseeds[n * p.batch_size:(n + 1) * p.batch_size]
