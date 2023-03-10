@@ -1318,12 +1318,12 @@ input
 	flex-grow: 0;
 }
 
-[id*="2img_seed"] input,
-[id*="2img_subseed"] input{
+[id*="2img_seed"] input[type=number],
+[id*="2img_subseed"] input[type=number]{
 	display:none;
 }
-[id*="2img_seed"] input.hidden,
-[id*="2img_subseed"] input.hidden{
+[id*="2img_seed"] input[type=number].hidden,
+[id*="2img_subseed"] input[type=number].hidden{
 	display:block !important;
 }
 
