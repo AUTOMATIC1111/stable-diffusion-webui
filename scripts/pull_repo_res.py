@@ -7,6 +7,8 @@
 # @Software: Hifive
 # 拉取Codeformer weights等文件。
 import os
+import shutil
+
 import requests
 
 
@@ -52,3 +54,9 @@ def pull_code_former_weights():
                         current += chunk_size
         else:
             raise Exception(f"cannot download code former weight, url:{url}")
+
+
+def try_find_cache_json_file():
+    file_path = "models/cache.json"
+    if os.path.isfile(file_path):
+        shutil.copy(file_path, "cache.json")

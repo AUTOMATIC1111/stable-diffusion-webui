@@ -291,6 +291,7 @@ def options_section(section_identifier, options_dict):
 
 def list_checkpoint_tiles():
     import modules.sd_models
+    print('list_checkpoint_tiles')
     return modules.sd_models.checkpoint_tiles()
 
 

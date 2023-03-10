@@ -206,16 +206,10 @@ def webui():
 
         shared.demo.queue(64)
 
-        gradio_auth_creds = []
-        if cmd_opts.gradio_auth:
-            gradio_auth_creds += cmd_opts.gradio_auth.strip('"').replace('\n', '').split(',')
-        if cmd_opts.gradio_auth_path:
-            with open(cmd_opts.gradio_auth_path, 'r', encoding="utf8") as file:
-                for line in file.readlines():
-                    gradio_auth_creds += [x.strip() for x in line.split(',')]
-
         # from install_ext import safety_setup
         # safety_setup()
+
+        from modules.user import authorization
 
         app, local_url, share_url = shared.demo.launch(
             share=cmd_opts.share,
@@ -224,7 +218,8 @@ def webui():
             ssl_keyfile=cmd_opts.tls_keyfile,
             ssl_certfile=cmd_opts.tls_certfile,
             debug=cmd_opts.gradio_debug,
-            auth=[tuple(cred.split(':')) for cred in gradio_auth_creds] if gradio_auth_creds else None,
+            auth=authorization,
+            auth_message="行者AI",
             inbrowser=cmd_opts.autolaunch,
             prevent_thread_lock=True
         )
@@ -282,8 +277,9 @@ def webui():
 
 
 def check_resource():
-    from scripts.pull_repo_res import pull_code_former_weights
+    from scripts.pull_repo_res import pull_code_former_weights, try_find_cache_json_file
     pull_code_former_weights()
+    try_find_cache_json_file()
 
 
 if __name__ == "__main__":

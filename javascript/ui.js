@@ -133,6 +133,8 @@ function showSubmitButtons(tabname, show){
     gradioApp().getElementById(tabname+'_skip').style.display = show ? "none" : "block"
 }
 
+
+
 function submit(){
     rememberGallerySelection('txt2img_gallery')
     showSubmitButtons('txt2img', false)

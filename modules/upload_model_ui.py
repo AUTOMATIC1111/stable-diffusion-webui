@@ -145,7 +145,8 @@ def request_model_url(url, model_type, model_name, cover_url, progress=gr.Progre
                         f.write(chunk)
                         current += chunk_size
                     for i in progress:
-                        break
+                        if i >= current:
+                            break
         else:
             raise Exception("response error:" + resp.text)
         if cover:
