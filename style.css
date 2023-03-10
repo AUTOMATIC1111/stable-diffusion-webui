@@ -1317,6 +1317,16 @@ input
     max-width: unset;
 	flex-grow: 0;
 }
+
+[id*="2img_seed"] input,
+[id*="2img_subseed"] input{
+	display:none;
+}
+[id*="2img_seed"] input.hidden,
+[id*="2img_subseed"] input.hidden{
+	display:block !important;
+}
+
 /*
 button
 {

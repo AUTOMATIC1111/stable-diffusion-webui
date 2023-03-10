@@ -912,8 +912,8 @@ onUiUpdate(function(){
 			let clone_num = elem.cloneNode(true);
 			clone_num.id = "num_clone_"+index;
 			clone_num.value = elem.value;	
-			parent.append(clone_num);
-			elem.style.display = "none";
+			parent.append(clone_num);			
+			elem.classList.add("hidden");
 			
 			clone_num.addEventListener('change', function (e) {			
 				elem.value = clone_num.value;
@@ -925,8 +925,8 @@ onUiUpdate(function(){
 				let clone_range = comp_range.cloneNode(true);
 				clone_range.id = comp_range.id+"_clone";
 				clone_range.value = comp_range.value;					
-				comp_range.parentElement.append(clone_range);
-				comp_range.style.display = "none";
+				comp_range.parentElement.append(clone_range);				
+				comp_range.classList.add("hidden");
 
 				clone_range.addEventListener('input', function (e) {								
 					clone_num.value = e.target.value;	
