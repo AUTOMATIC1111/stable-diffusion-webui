@@ -22,7 +22,7 @@ class ExtraNetworksPageHypernetworks(ui_extra_networks.ExtraNetworksPage):
                 "description": self.find_description(path),
                 "search_term": self.search_terms_from_path(path),
                 "prompt": json.dumps(f"<hypernet:{name}:") + " + opts.extra_networks_default_multiplier + " + json.dumps(">"),
-                "local_preview": path + ".png",
+                "local_preview": f"{path}.preview.{shared.opts.samples_format}",
             }
 
     def allowed_directories_for_previews(self):

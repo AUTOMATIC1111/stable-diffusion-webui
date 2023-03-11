@@ -1,7 +1,7 @@
 import json
 import os
 
-from modules import ui_extra_networks, sd_hijack
+from modules import ui_extra_networks, sd_hijack, shared
 
 
 class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
@@ -22,7 +22,7 @@ class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
                 "description": self.find_description(path),
                 "search_term": self.search_terms_from_path(embedding.filename),
                 "prompt": json.dumps(embedding.name),
-                "local_preview": path + ".preview.png",
+                "local_preview": f"{path}.preview.{shared.opts.samples_format}",
             }
 
     def allowed_directories_for_previews(self):
