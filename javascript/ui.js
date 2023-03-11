@@ -1100,7 +1100,7 @@ onUiUpdate(function(){
 		const fileInput = gradioApp().querySelector('#pnginfo_image input[type="file"]');		 
 		if(fileInput.files != files){					
 			fileInput.files = files;
-			//fileInput.dispatchEvent(new Event('change'));			
+			fileInput.dispatchEvent(new Event('change'));			
 		}		
 	}
 
