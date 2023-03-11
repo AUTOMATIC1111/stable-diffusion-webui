@@ -473,6 +473,30 @@ def xformers_attnblock_forward(self, x):
     except NotImplementedError:
         return cross_attention_attnblock_forward(self, x)
 
+def sdp_attnblock_forward(self, x):
+    h_ = x
+    h_ = self.norm(h_)
+    q = self.q(h_)
+    k = self.k(h_)
+    v = self.v(h_)
+    b, c, h, w = q.shape
+    q, k, v = map(lambda t: rearrange(t, 'b c h w -> b (h w) c'), (q, k, v))
+    dtype = q.dtype
+    if shared.opts.upcast_attn:
+        q, k = q.float(), k.float()
+    q = q.contiguous()
+    k = k.contiguous()
+    v = v.contiguous()
+    out = torch.nn.functional.scaled_dot_product_attention(q, k, v, dropout_p=0.0, is_causal=False)
+    out = out.to(dtype)
+    out = rearrange(out, 'b (h w) c -> b c h w', h=h)
+    out = self.proj_out(out)
+    return x + out
+
+def sdp_no_mem_attnblock_forward(self, x):
+    with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=True, enable_mem_efficient=False):
+        return sdp_attnblock_forward(self, x)
+
 def sub_quad_attnblock_forward(self, x):
     h_ = x
     h_ = self.norm(h_)

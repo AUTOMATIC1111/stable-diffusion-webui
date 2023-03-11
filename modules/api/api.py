@@ -150,6 +150,7 @@ class Api:
         self.add_api_route("/sdapi/v1/train/embedding", self.train_embedding, methods=["POST"], response_model=TrainResponse)
         self.add_api_route("/sdapi/v1/train/hypernetwork", self.train_hypernetwork, methods=["POST"], response_model=TrainResponse)
         self.add_api_route("/sdapi/v1/memory", self.get_memory, methods=["GET"], response_model=MemoryResponse)
+        self.add_api_route("/sdapi/v1/scripts", self.get_scripts_list, methods=["GET"], response_model=ScriptsList)
 
     def add_api_route(self, path: str, endpoint, **kwargs):
         if shared.cmd_opts.api_auth:
@@ -174,36 +175,44 @@ class Api:
         script_idx = script_name_to_index(script_name, script_runner.selectable_scripts)
         script = script_runner.selectable_scripts[script_idx]
         return script, script_idx
+    
+    def get_scripts_list(self):
+        t2ilist = [str(title.lower()) for title in scripts.scripts_txt2img.titles]
+        i2ilist = [str(title.lower()) for title in scripts.scripts_img2img.titles]
+
+        return ScriptsList(txt2img = t2ilist, img2img = i2ilist)  
 
     def text2imgapi(self, txt2imgreq: StableDiffusionTxt2ImgProcessingAPI):
         script, script_idx = self.get_script(txt2imgreq.script_name, scripts.scripts_txt2img)
 
-        populate = txt2imgreq.copy(update={ # Override __init__ params
+        populate = txt2imgreq.copy(update={  # Override __init__ params
             "sampler_name": validate_sampler_name(txt2imgreq.sampler_name or txt2imgreq.sampler_index),
-            "do_not_save_samples": True,
-            "do_not_save_grid": True
-            }
-        )
+            "do_not_save_samples": not txt2imgreq.save_images,
+            "do_not_save_grid": not txt2imgreq.save_images,
+        })
         if populate.sampler_name:
             populate.sampler_index = None  # prevent a warning later on
 
         args = vars(populate)
         args.pop('script_name', None)
 
+        send_images = args.pop('send_images', True)
+        args.pop('save_images', None)
+
         with self.queue_lock:
             p = StableDiffusionProcessingTxt2Img(sd_model=shared.sd_model, **args)
+            p.outpath_grids = opts.outdir_txt2img_grids
+            p.outpath_samples = opts.outdir_txt2img_samples
 
             shared.state.begin()
             if script is not None:
-                p.outpath_grids = opts.outdir_txt2img_grids
-                p.outpath_samples = opts.outdir_txt2img_samples
                 p.script_args = [script_idx + 1] + [None] * (script.args_from - 1) + p.script_args
                 processed = scripts.scripts_txt2img.run(p, *p.script_args)
             else:
                 processed = process_images(p)
             shared.state.end()
 
-        b64images = list(map(encode_pil_to_base64, processed.images))
+        b64images = list(map(encode_pil_to_base64, processed.images)) if send_images else []
 
         return TextToImageResponse(images=b64images, parameters=vars(txt2imgreq), info=processed.js())
 
@@ -218,13 +227,12 @@ class Api:
         if mask:
             mask = decode_base64_to_image(mask)
 
-        populate = img2imgreq.copy(update={ # Override __init__ params
+        populate = img2imgreq.copy(update={  # Override __init__ params
             "sampler_name": validate_sampler_name(img2imgreq.sampler_name or img2imgreq.sampler_index),
-            "do_not_save_samples": True,
-            "do_not_save_grid": True,
-            "mask": mask
-            }
-        )
+            "do_not_save_samples": not img2imgreq.save_images,
+            "do_not_save_grid": not img2imgreq.save_images,
+            "mask": mask,
+        })
         if populate.sampler_name:
             populate.sampler_index = None  # prevent a warning later on
 
@@ -232,21 +240,24 @@ class Api:
         args.pop('include_init_images', None)  # this is meant to be done by "exclude": True in model, but it's for a reason that I cannot determine.
         args.pop('script_name', None)
 
+        send_images = args.pop('send_images', True)
+        args.pop('save_images', None)
+
         with self.queue_lock:
             p = StableDiffusionProcessingImg2Img(sd_model=shared.sd_model, **args)
             p.init_images = [decode_base64_to_image(x) for x in init_images]
+            p.outpath_grids = opts.outdir_img2img_grids
+            p.outpath_samples = opts.outdir_img2img_samples
 
             shared.state.begin()
             if script is not None:
-                p.outpath_grids = opts.outdir_img2img_grids
-                p.outpath_samples = opts.outdir_img2img_samples
                 p.script_args = [script_idx + 1] + [None] * (script.args_from - 1) + p.script_args
                 processed = scripts.scripts_img2img.run(p, *p.script_args)
             else:
                 processed = process_images(p)
             shared.state.end()
 
-        b64images = list(map(encode_pil_to_base64, processed.images))
+        b64images = list(map(encode_pil_to_base64, processed.images)) if send_images else []
 
         if not img2imgreq.include_init_images:
             img2imgreq.init_images = None

@@ -130,12 +130,42 @@ class ExtraNetworksPage:
             "tabname": json.dumps(tabname),
             "local_preview": json.dumps(item["local_preview"]),
             "name": item["name"],
+            "description": (item.get("description") or ""),
             "card_clicked": onclick,
             "save_card_preview": '"' + html.escape(f"""return saveCardPreview(event, {json.dumps(tabname)}, {json.dumps(item["local_preview"])})""") + '"',
             "search_term": item.get("search_term", ""),
         }
 
         return self.card_page.format(**args)
+
+    def find_preview(self, path):
+        """
+        Find a preview PNG for a given path (without extension) and call link_preview on it.
+        """
+
+        preview_extensions = ["png", "jpg", "webp"]
+        if shared.opts.samples_format not in preview_extensions:
+            preview_extensions.append(shared.opts.samples_format)
+
+        potential_files = sum([[path + "." + ext, path + ".preview." + ext] for ext in preview_extensions], [])
+
+        for file in potential_files:
+            if os.path.isfile(file):
+                return self.link_preview(file)
+
+        return None
+
+    def find_description(self, path):
+        """
+        Find and read a description file for a given path (without extension).
+        """
+        for file in [f"{path}.txt", f"{path}.description.txt"]:
+            try:
+                with open(file, "r", encoding="utf-8", errors="replace") as f:
+                    return f.read()
+            except OSError:
+                pass
+        return None
 
 
 def intialize():
