@@ -734,6 +734,13 @@
             "tags": ["manipulations"]
         },
         {
+            "name": "3D Model Loader",
+            "url": "https://github.com/jtydhr88/sd-3dmodel-loader.git",
+            "description": "Koad your 3D model/animation inside webui, then send screenshot to txt2img or img2img to ControlNet.",
+            "added": "2023-03-11",
+            "tags": ["tab"]
+        },
+        {
             "name": "zh_CN Localization",
             "url": "https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN",
             "description": "Simplified Chinese localization, recommend using with Bilingual Localization.",
