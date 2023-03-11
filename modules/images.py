@@ -512,6 +512,9 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
             file_decoration = "-" + file_decoration
 
         file_decoration = namegen.apply(file_decoration) + suffix
+        if hasattr(os, 'statvfs'):
+            max_name_len = os.statvfs(path).f_namemax
+            file_decoration = file_decoration[:max_name_len - 5]
 
         if add_number:
             basecount = get_next_sequence_number(path, basename)
