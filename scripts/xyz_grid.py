@@ -433,7 +433,7 @@ class Script(scripts.Script):
             if opt.label == 'Nothing':
                 return [0]
 
-            valslist = [x.strip() for x in chain.from_iterable(csv.reader(StringIO(vals))) if x]
+            valslist = [x.strip() for x in chain.from_iterable(csv.reader(StringIO(vals)))]
 
             if opt.type == int:
                 valslist_ext = []
@@ -498,12 +498,6 @@ class Script(scripts.Script):
 
         z_opt = self.current_axis_options[z_type]
         zs = process_axis(z_opt, z_values)
-
-        # this could be moved to common code, but unlikely to be ever triggered anywhere else
-        Image.MAX_IMAGE_PIXELS = opts.img_max_size_mp * 1000000 * 1.1 # allow 10% overhead for margins and legend
-        grid_mp = round(len(xs) * len(ys) * len(zs) * p.width * p.height / 1000000)
-        if grid_mp > opts.img_max_size_mp:
-            return Processed(p, [], p.seed, info=f'Error: Resulting grid would be too large ({grid_mp} MPixels) (max configured size is {opts.img_max_size_mp} MPixels)')
 
         def fix_axis_seeds(axis_opt, axis_list):
             if axis_opt.label in ['Seed', 'Var. seed']:
