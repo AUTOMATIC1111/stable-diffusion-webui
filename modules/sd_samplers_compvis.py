@@ -129,6 +129,19 @@ class VanillaStableDiffusionSampler:
         if self.eta != 0.0:
             p.extra_generation_params["Eta DDIM"] = self.eta
 
+        if self.is_unipc:
+            keys = [
+                ('UniPC variant', 'uni_pc_variant'),
+                ('UniPC skip type', 'uni_pc_skip_type'),
+                ('UniPC order', 'uni_pc_order'),
+                ('UniPC lower order final', 'uni_pc_lower_order_final'),
+            ]
+
+            for name, key in keys:
+                v = getattr(shared.opts, key)
+                if v != shared.opts.get_default(key):
+                    p.extra_generation_params[name] = v
+
         for fieldname in ['p_sample_ddim', 'p_sample_plms']:
             if hasattr(self.sampler, fieldname):
                 setattr(self.sampler, fieldname, self.p_sample_ddim_hook)
@@ -137,6 +150,7 @@ class VanillaStableDiffusionSampler:
 
         self.mask = p.mask if hasattr(p, 'mask') else None
         self.nmask = p.nmask if hasattr(p, 'nmask') else None
+
 
     def adjust_steps_if_invalid(self, p, num_steps):
         if ((self.config.name == 'DDIM') and p.ddim_discretize == 'uniform') or (self.config.name == 'PLMS') or (self.config.name == 'UniPC'):
