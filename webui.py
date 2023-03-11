@@ -87,7 +87,7 @@ def initialize():
     check_versions()
 
     extensions.list_extensions()
-    # localization.list_localizations(cmd_opts.localizations_dir)
+    localization.list_localizations(cmd_opts.localizations_dir)
 
     if cmd_opts.ui_debug_mode:
         shared.sd_upscalers = upscaler.UpscalerLanczos().scalers
@@ -205,7 +205,7 @@ def webui():
         shared.demo = modules.ui.create_ui()
 
         if cmd_opts.gradio_queue:
-            shared.demo.queue(64, status_update_rate='auto', api_open=True)
+            shared.demo.queue(64)
 
         gradio_auth_creds = []
         if cmd_opts.gradio_auth:
@@ -224,9 +224,7 @@ def webui():
             debug=cmd_opts.gradio_debug,
             auth=[tuple(cred.split(':')) for cred in gradio_auth_creds] if gradio_auth_creds else None,
             inbrowser=cmd_opts.autolaunch,
-            prevent_thread_lock=True,
-            max_threads=64,
-            # quiet=True
+            prevent_thread_lock=True
         )
         # after initial launch, disable --autolaunch for subsequent restarts
         cmd_opts.autolaunch = False
