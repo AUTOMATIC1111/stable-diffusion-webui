@@ -6,6 +6,7 @@ titles = {
 	"GFPGAN": "Restore low quality faces using GFPGAN neural network",
 	"Euler a": "Euler Ancestral - very creative, each can get a completely different picture depending on step count, setting steps higher than 30-40 does not help",
 	"DDIM": "Denoising Diffusion Implicit Models - best at inpainting",
+	"UniPC": "Unified Predictor-Corrector Framework for Fast Sampling of Diffusion Models",
 	"DPM adaptive": "Ignores step count - uses a number of steps determined by the CFG and resolution", 
 
 	"Batch count": "How many batches of images to create (has no impact on generation performance or VRAM usage)",

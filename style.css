@@ -3379,6 +3379,7 @@ footer {
 	display: flex;
 }
 
+
 .footer-links > li > div,
 .footer-links > li > a {
     position: absolute;
@@ -3531,6 +3532,9 @@ a[data-tooltip][data-position=bottom]:after {
 .tooltip-html i {
 	position: relative;
     display: block;
+
+.extra-network-thumbs .card:hover .additional a {
+    display: inline-block;
 }
 
 .tooltip-html .icon-info {	 
@@ -3779,6 +3783,22 @@ input[type=range]::-ms-fill-lower {
 
 input[type=range]::-ms-fill-upper {
     background-color: var(--input-bg-color);
+}
+
+
+.extra-network-cards .card .actions .description {
+    display: block;
+    max-height: 3em;
+    white-space: pre-wrap;
+    line-height: 1.1;
+}
+
+.extra-network-cards .card .actions .description:hover {
+    max-height: none;
+}
+
+.extra-network-cards .card .actions:hover .additional{
+    display: block;
 }
 
 

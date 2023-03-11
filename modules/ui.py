@@ -1710,6 +1710,11 @@ def create_ui():
     # def change_tab(selected):
         # print(selected)      
         # return gr.Tabs.update(selected=selected)
+    
+    shared.tab_names = []
+    for _interface, label, _ifid in interfaces:
+        shared.tab_names.append(label)
+        
 
     with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion") as demo:  
         with gr.Row(elem_id="header-top"):
@@ -1736,16 +1741,21 @@ def create_ui():
             gr.Row(elem_id="extra_networks_menu")
             gr.Row(elem_id="quick_menu")
 
+
         parameters_copypaste.connect_paste_params_buttons()
  
         with gr.Tabs(elem_id="tabs") as tabs:
+
             
             # with gr.Row(elem_id="nav_menu_header_tabs"):
                 # for interface, label, ifid in interfaces:
                     # btn = gr.Button(label, elem_id='tab_clone_' + ifid)
                     # btn.click(change_tab, btn, tabs)
  
-            for interface, label, ifid in interfaces:           
+            for interface, label, ifid in interfaces:
+                if label in shared.opts.hidden_tabs:
+                    continue
+
                 with gr.TabItem(label, id=ifid, elem_id='tab_' + ifid):
                     interface.render()
 
@@ -1932,6 +1942,9 @@ def reload_javascript():
 
     for script in modules.scripts.list_scripts("javascript", ".js"):
         head += f'<script type="text/javascript" src="file={script.path}?{os.path.getmtime(script.path)}"></script>\n'
+
+    for script in modules.scripts.list_scripts("javascript", ".mjs"):
+        head += f'<script type="module" src="file={script.path}?{os.path.getmtime(script.path)}"></script>\n'
 
     head += f'<script type="text/javascript">{inline}</script>\n'
 

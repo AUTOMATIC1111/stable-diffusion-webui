@@ -556,7 +556,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
             elif image_to_save.mode == 'I;16':
                 image_to_save = image_to_save.point(lambda p: p * 0.0038910505836576).convert("RGB" if extension.lower() == ".webp" else "L")
 
-            image_to_save.save(temp_file_path, format=image_format, quality=opts.jpeg_quality)
+            image_to_save.save(temp_file_path, format=image_format, quality=opts.jpeg_quality, lossless=opts.webp_lossless)
 
             if opts.enable_pnginfo and info is not None:
                 exif_bytes = piexif.dump({
