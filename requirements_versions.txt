@@ -9,7 +9,7 @@ Pillow==9.4.0
 realesrgan==0.3.0
 torch
 omegaconf==2.2.3
-pytorch_lightning==1.7.6
+pytorch_lightning==1.9.4
 scikit-image==0.19.2
 fonts
 font-roboto
