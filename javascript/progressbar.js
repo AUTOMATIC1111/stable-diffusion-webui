@@ -139,8 +139,7 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
 
     var divProgress = document.createElement('div')
     divProgress.className='progressDiv'
-    divProgress.id = 'progressbar'
-    divProgress.style.display = opts.show_progressbar ? "block" : "none"
+    divProgress.style.display = opts.show_progressbar ? "" : "none"
     var divInner = document.createElement('div')
     divInner.className='progress'
 

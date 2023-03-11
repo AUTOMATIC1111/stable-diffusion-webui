@@ -17,7 +17,7 @@ class ExtraNetworksPageCheckpoints(ui_extra_networks.ExtraNetworksPage):
         checkpoint: sd_models.CheckpointInfo
         for name, checkpoint in sd_models.checkpoints_list.items():
             path, ext = os.path.splitext(checkpoint.filename)
-            previews = [path + ".png", path + ".preview.png", path + ".jpg", path + ".preview.jpg", path + ".jpeg", path + ".preview.jpeg", path + ".webp", path + ".preview.webp"]
+            previews = [path + ".png", path + ".preview.png"]
 
             preview = None
             for file in previews:
@@ -31,8 +31,7 @@ class ExtraNetworksPageCheckpoints(ui_extra_networks.ExtraNetworksPage):
                 "preview": preview,
                 "search_term": self.search_terms_from_path(checkpoint.filename) + " " + (checkpoint.sha256 or ""),
                 "onclick": '"' + html.escape(f"""return selectCheckpoint({json.dumps(name)})""") + '"',
-                "local_preview": f"{path}.{shared.opts.samples_format}",
-
+                "local_preview": path + ".png",
             }
 
     def allowed_directories_for_previews(self):
