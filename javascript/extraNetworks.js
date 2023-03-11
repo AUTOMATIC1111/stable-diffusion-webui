@@ -5,12 +5,10 @@ function setupExtraNetworksForTab(tabname){
     var tabs = gradioApp().querySelector('#'+tabname+'_extra_tabs > div')
     var search = gradioApp().querySelector('#'+tabname+'_extra_search textarea')
     var refresh = gradioApp().getElementById(tabname+'_extra_refresh')
-    var close = gradioApp().getElementById(tabname+'_extra_close')
 
     search.classList.add('search')
     tabs.appendChild(search)
     tabs.appendChild(refresh)
-    tabs.appendChild(close)
 
     search.addEventListener("input", function(evt){
         searchTerm = search.value.toLowerCase()
