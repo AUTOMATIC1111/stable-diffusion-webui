@@ -1,12 +1,26 @@
-## webui-user
-The recommended way to customize how the program is run is editing `webui-user.bat` (Windows) and `webui-user.sh` (Linux):
-- `set PYTHON` allows for setting a custom Python path
-    - Example: `set PYTHON=b:/soft/Python310/Python.exe`
-- `set VENV_DIR` allows you to choose the directory for the virtual environment. Default is `venv`. Special value `-` runs the script without creating virtual environment.
-    - Example: `set VENV_DIR=C:\run\var\run` will create venv in the `C:\run\var\run` directory.
-    - Example: `set VENV_DIR=-` runs the program using the system's python
-- `set COMMANDLINE_ARGS` setting the command line arguments `webui.py` is ran with
-    - Example: `set COMMANDLINE_ARGS=--ckpt a.ckpt` uses the model `a.ckpt` instead of `model.ckpt`
+## Environment variables
+
+| name                   | description                                                                                                                               |
+|------------------------|-------------------------------------------------------------------------------------------------------------------------------------------|
+| PYTHON                 | sets a custom path for Python executable                                                                                                  |
+| VENV_DIR               | specifies the path for the virtual environment. Default is `venv`. Special value `-` runs the script without creating virtual environment |
+| COMMANDLINE_ARGS       | additional commandline arguments for the main program                                                                                     |
+| IGNORE_CMD_ARGS_ERRORS | set to anything to make the program not exit with an error if an unedxpected commandline argument is encountered                          |
+| REQS_FILE              | name of requirements.txt file with dependencies that wuill be installed when `launch.py` is run. Defaults to `requirements_versions.txt`  |
+| TORCH_COMMAND          | command for installing pytorch                                                                                                            |
+| INDEX_URL              | --index-url parameter for pip                                                                                                             |
+| TRANSFORMERS_CACHE     | path to where transformers library will download and keep its files related to the CLIP model                                             |
+
+
+### webui-user
+The recommended way to specify environment variables is by editing `webui-user.bat` (Windows) and `webui-user.sh` (Linux):
+- `set VARNAME=VALUE` for Windows
+- `export VARNAME="VALUE"` for Linux
+
+For example, in Windows:
+```
+set COMMANDLINE_ARGS=--allow-code --xformers --skip-torch-cuda-test --no-half-vae --api --ckpt-dir A:\\stable-diffusion-checkpoints 
+```
 
 ## Command Line Arguments
 ### Running online
