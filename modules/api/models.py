@@ -283,3 +283,7 @@ class EmbeddingsResponse(BaseModel):
 class MemoryResponse(BaseModel):
     ram: dict = Field(title="RAM", description="System memory stats")
     cuda: dict = Field(title="CUDA", description="nVidia CUDA memory stats")
+
+class ScriptsList(BaseModel):
+    txt2img: list = Field(default=None,title="Txt2img", description="Titles of scripts (txt2img)")
+    img2img: list = Field(default=None,title="Img2img", description="Titles of scripts (img2img)")
