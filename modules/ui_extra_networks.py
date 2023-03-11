@@ -142,7 +142,11 @@ class ExtraNetworksPage:
         """
         Find a preview PNG for a given path (without extension) and call link_preview on it.
         """
-        for file in [path + ".png", path + ".preview.png"]:
+
+        preview_extensions = ["png", "jpg", "webp"]
+        potential_files = sum([[path + "." + ext, path + ".preview." + ext] for ext in preview_extensions], [])
+
+        for file in potential_files:
             if os.path.isfile(file):
                 return self.link_preview(file)
 
