@@ -140,10 +140,12 @@ class VanillaStableDiffusionSampler:
 
     def adjust_steps_if_invalid(self, p, num_steps):
         if ((self.config.name == 'DDIM') and p.ddim_discretize == 'uniform') or (self.config.name == 'PLMS') or (self.config.name == 'UniPC'):
+            if self.config.name == 'UniPC' and num_steps < shared.opts.uni_pc_order:
+                num_steps = shared.opts.uni_pc_order
             valid_step = 999 / (1000 // num_steps)
             if valid_step == math.floor(valid_step):
                 return int(valid_step) + 1
-        
+
         return num_steps
 
     def sample_img2img(self, p, x, noise, conditioning, unconditional_conditioning, steps=None, image_conditioning=None):
