@@ -23,7 +23,7 @@ Fork adds extra functionality:
 - [ControlNet](https://github.com/Mikubill/sd-webui-controlnet)
 - [Image Browser](https://github.com/AlUlkesh/stable-diffusion-webui-images-browser)
 - [LORA](https://github.com/kohya-ss/sd-scripts) (both training and inference)
-- [LoCon](https://github.com/KohakuBlueleaf/LoCon) (both training and inference)
+- [LyCORIS](https://github.com/KohakuBlueleaf/LyCORIS) (both training and inference)
 - [Model Converter](https://github.com/Akegarasu/sd-webui-model-converter)
 - [CLiP Interrogator](https://github.com/pharmapsychotic/clip-interrogator-ext)
 - [Dynamic Thresholding](https://github.com/mcmonkeyprojects/sd-dynamic-thresholding)
@@ -128,10 +128,9 @@ Fork does differ in few things:
 - Built-in `LoRA`, `LyCORIS`, `Custom Diffusion`, `Dreambooth` training  
 
 Only Python library which is not auto-updated is `PyTorch` itself as that is very system specific  
-For some Torch optimizations notes, see Wiki
 
-Fork is compatible with regular **PyTorch 1.13** as well as pre-release of **PyTorch 2.0**  
-See [Wiki](https://github.com/vladmandic/automatic/wiki) for **Torch** optimization notes
+Fork is compatible with regular **PyTorch 1.13** as well as pre-releases of **PyTorch** **2.0** and **2.1**  
+See [Wiki](https://github.com/vladmandic/automatic/wiki/Torch-Optimizations) for **Torch** optimization notes
 
 <br>
 
