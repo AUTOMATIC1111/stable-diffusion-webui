@@ -15,8 +15,7 @@ import modules.styles
 import modules.devices as devices
 from modules import localization, extensions, script_loading, errors, ui_components, shared_items
 from modules.paths import models_path, script_path, data_path
-
-
+from modules.generation_parameters_copypaste import infotext_to_setting_name_mapping
 demo = None
 
 sd_configs_path = os.path.join(script_path, "configs")
@@ -304,6 +303,7 @@ def list_samplers():
     return modules.sd_samplers.all_samplers
 
 
+
 hide_dirs = {"visible": not cmd_opts.hide_ui_dir_config}
 
 options_templates = {}
@@ -414,6 +414,7 @@ options_templates.update(options_section(('sd', "Stable Diffusion"), {
     "CLIP_stop_at_last_layers": OptionInfo(1, "Clip skip", gr.Slider, {"minimum": 1, "maximum": 12, "step": 1}),
     "upcast_attn": OptionInfo(False, "Upcast cross attention layer to float32"),
     "sd_max_resolution": OptionInfo(2048, "Max resolution output for txt2img and img2img"),
+    "ignore_overrides": OptionInfo([], "Ignore Overrides", gr.CheckboxGroup, lambda: {"choices": [x[0] for x in infotext_to_setting_name_mapping]}),
     
 }))
 

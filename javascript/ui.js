@@ -292,9 +292,16 @@ onUiUpdate(function(){
 	* matches any position
 	$ matches the end
 	*/
+	/* anapnoe ui start	*/
 	
 	/* auto grow textarea */
-	gradioApp().querySelectorAll('[id $= "_prompt"] textarea, [id^="setting_"] textarea').forEach(function (elem) {
+	function autoGrowPromptTextarea(){
+		gradioApp().querySelectorAll('[id$="_prompt"] textarea').forEach(function (elem) {
+			elem.focus();			
+		});
+	}
+	
+	gradioApp().querySelectorAll('[id$="_prompt"] textarea, [id^="setting_"] textarea').forEach(function (elem) {
 		elem.style.boxSizing = 'border-box';
 		var offset = elem.offsetHeight - elem.clientHeight;
 		elem.addEventListener('input', function (e) {
@@ -308,10 +315,8 @@ onUiUpdate(function(){
 		});
 	});
 	
-	
-	/* anapnoe ui start	*/
+
 	/* resizable split view */
-	
 	const resizeEvent = window.document.createEvent('UIEvents'); 
 	resizeEvent.initUIEvent('resize', true, false, window, 0); 	
 
@@ -980,7 +985,52 @@ onUiUpdate(function(){
 		e.preventDefault();
 		return false;
 	}
-
+	let sdCheckpointModels = [];
+	function getSdCheckpointModels(){
+		gradioApp().querySelectorAll("#quicksettings #setting_sd_model_checkpoint option").forEach(function (elem, i){
+			sdCheckpointModels[i] = elem.value;
+		})
+	}
+	getSdCheckpointModels();
+	
+	function remove_overrides(){	
+		let checked_overrides = [];
+		gradioApp().querySelectorAll("#setting_ignore_overrides input").forEach(function (elem, i){
+			if(elem.checked){
+				checked_overrides[i] = elem.nextElementSibling.innerHTML;
+			}			
+		})
+		//console.log(checked_overrides);
+		gradioApp().querySelectorAll("[id$='2img_override_settings'] .token").forEach(function (token){
+			let token_arr = token.querySelector("span").innerHTML.split(":");
+			let token_name = token_arr[0];
+			let token_value = token_arr[1];
+			token_value = token_value.replaceAll(" ", "");	
+			
+			if(token_name.indexOf("Model hash") != -1){
+				const info_label = gradioApp().querySelector("[id$='2img_override_settings'] label span");
+				info_label.innerHTML = "Override settings MDL: unknown";
+				for (let m=0; m<sdCheckpointModels.length; m++) {						
+					let m_str = sdCheckpointModels[m];					
+					if(m_str.indexOf(token_value) != -1 ){
+						info_label.innerHTML = "Override settings <i>MDL: " +  m_str.split("[")[0] + "</i>";
+						break;
+					}
+				}	
+			}
+			if(checked_overrides.indexOf(token_name) != -1){				
+				token.querySelector(".token-remove").click();
+				gradioApp().querySelector("[id$='2img_override_settings']").classList.add("show");				
+			}else{
+				// maybe we add them again, for now we can select and add the removed tokens manually from the drop down
+			}			
+		})
+	}
+	gradioApp().querySelector("#setting_ignore_overrides").addEventListener('click', function (e) {
+		setTimeout(function() { remove_overrides(); }, 100);		
+	})
+	
+	
 	function update_performant_inputs(tab){
 		let input_selectors = "#tab_"+ tab + " [id^='num_clone']:is(input[type='number'])";
 		//console.log(input_selectors);
@@ -988,7 +1038,9 @@ onUiUpdate(function(){
 			let elem_source = elem.previousElementSibling;		
 			elem.value = elem_source.value;
 			updateInput(elem);	
-		})	
+		})
+		remove_overrides();		
+		autoGrowPromptTextarea();
 	}
 	
 	gradioApp().querySelectorAll("#tab_pnginfo #png_2img_results button, [id$='2img_actions_column'] #paste").forEach(function (elem){			
@@ -1021,6 +1073,14 @@ onUiUpdate(function(){
 		}else if(selectedTabItemId == "tab_img2img"){
 			pnginfo.querySelector('#img2img_tab').click();		
 		}
+		
+		/* const test = gradioApp().querySelector('#txt2img_gallery_container img');
+		new PanZoom( test,{
+			minScale: 1.0,
+			maxScale: 10.0,
+			zoomFactor: 0.1,
+			zoomConstraintContent: true
+		}); */
 		//setTimeout(function() { update_performant_inputs(button_id.split("_")[0]); }, 100);
 	}
 	
@@ -1213,6 +1273,8 @@ onUiUpdate(function(){
 	
 
 	updateOpStyles();
+	
+	
 
 
 	/* anapnoe ui end */	

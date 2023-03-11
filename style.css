@@ -2302,21 +2302,40 @@ ul.list-none {
 	max-height:unset;
 }
 
+[id$="2img_override_settings"] .token{
+	max-height: 30px;
+    min-height: 30px;
+    padding: 3px 10px 3px 0;
+}
+
 [id$="2img_override_settings"] .token > div{
 	top:1px !important;
 	left:4px !important;
+}
+
+[id$="2img_override_settings"] div > input,
+[id$="2img_override_settings"] .token + div > input{
+	margin: 0;
+    margin-right: 8px;
+    border-right: 1px solid var(--panel-border-color);
+    min-height: 32px;
 }
 
 [id$="2img_override_settings"] .token span{
 	position:relative;
 	top:-2px;
 }
+.show{
+	display:block !important;
+}
+
 /* x svg icon styles */ 
 .gr-input-label div:first-child {
     position: relative;
     top: 0px;
     left: 2px;
 }
+
 
 
 /**********/
@@ -3697,6 +3716,9 @@ input[type=range]::after:: {
 	width: 100%;
 }
 
+#quicksettings_overflow_container,
+#theme_overflow_container,
+[id$="2img_checkpoints_cards"],
 [id$="2img_results"],
 [id$="2img_settings_scroll"] 
 {
