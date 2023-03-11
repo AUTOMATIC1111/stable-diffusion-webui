@@ -71,7 +71,7 @@ echo "- nVIDIA: $SMI"
 
 git-version () {
     pushd $1 >/dev/null
-    BRANCH=$(git branch | tail -1 | awk '{print $NF}')
+    BRANCH=$(git branch | grep -E 'main|master' | tail -1 | awk '{print $NF}')
     VER=$(git log -1 --pretty=format:"%h %ad")
     URL=$(git remote get-url origin)
     popd >/dev/null
@@ -80,7 +80,7 @@ git-version () {
 
 git-update () {
     pushd $1 >/dev/null
-    BRANCH=$(git branch | tail -1 | awk '{print $NF}')
+    BRANCH=$(git branch | grep -E 'main|master' | tail -1 | awk '{print $NF}')
     git checkout --quiet $BRANCH
     git pull --quiet --rebase --autostash
     popd >/dev/null
