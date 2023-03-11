@@ -114,6 +114,7 @@ Fork does differ in few things:
 - Drops compatibility with `python` **3.7** and requires **3.9**  
   Recommended is **Python 3.10**  
   Note that **Python 3.11** or **3.12** are NOT supported  
+- Drops localizations  
 - Updated **Python** libraries to latest known compatible versions  
   e.g. `accelerate`, `transformers`, `numpy`, etc.  
 - Includes opinionated **System** and **Options** configuration  

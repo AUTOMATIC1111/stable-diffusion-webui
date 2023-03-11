@@ -3,6 +3,7 @@ import sys
 import time
 import importlib
 import signal
+import warnings
 import re
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -17,6 +18,9 @@ from modules import paths, timer, import_hook, errors
 startup_timer = timer.Timer()
 
 import torch
+import pytorch_lightning # pytorch_lightning re-enables warnings on import so import once to disable them
+warnings.filterwarnings(action="ignore", category=DeprecationWarning)
+
 startup_timer.record("import torch")
 
 import gradio

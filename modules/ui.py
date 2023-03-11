@@ -42,8 +42,6 @@ import modules.hypernetworks.ui
 from modules.generation_parameters_copypaste import image_from_url_text
 import modules.extras
 
-warnings.filterwarnings("default" if opts.show_warnings else "ignore", category=UserWarning)
-
 # this is a fix for Windows users. Without it, javascript files will be served with text/html content-type and the browser will not show any UI
 mimetypes.init()
 mimetypes.add_type('application/javascript', '.js')
@@ -1784,11 +1782,9 @@ if not hasattr(shared, 'GradioTemplateResponseOriginal'):
 
 def versions_html():
     import torch
-    import launch
+    from launch import commit_hash
 
     python_version = ".".join([str(x) for x in sys.version_info[0:3]])
-    commit = launch.commit_hash()
-    short_commit = commit[0:8]
 
     if shared.xformers_available:
         import xformers
@@ -1810,7 +1806,7 @@ xformers: {xformers_version}
  • 
 gradio: {gr.__version__}
  • 
-commit: <a href="https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/{commit}">{short_commit}</a>
+commit: <a href="https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/{commit_hash()}">{commit_hash()[0:8]}</a>
  • 
 checkpoint: <a id="sd_checkpoint_hash">N/A</a>
 """

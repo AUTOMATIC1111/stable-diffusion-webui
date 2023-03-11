@@ -71,7 +71,7 @@ class UniPCSampler(object):
         # sampling
         C, H, W = shape
         size = (batch_size, C, H, W)
-        print(f'Data shape for UniPC sampling is {size}')
+        # print(f'Data shape for UniPC sampling is {size}')
 
         device = self.model.betas.device
         if x_T is None:

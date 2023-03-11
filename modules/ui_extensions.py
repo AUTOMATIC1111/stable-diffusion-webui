@@ -158,8 +158,8 @@ def install_extension_from_url(dirname, url):
                 # Something else, not enough free space, permissions, etc.  rethrow it so that it gets handled.
                 raise(err)
 
-        import launch
-        launch.run_extension_installer(target_dir)
+        from launch import run_extension_installer
+        run_extension_installer(target_dir)
 
         extensions.list_extensions()
         return [extension_table(), html.escape(f"Installed into {target_dir}. Use Installed tab to restart.")]

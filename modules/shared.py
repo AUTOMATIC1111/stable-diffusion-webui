@@ -5,7 +5,6 @@ import os
 import sys
 import time
 
-from PIL import Image
 import gradio as gr
 import tqdm
 
@@ -48,6 +47,7 @@ parser.add_argument("--always-batch-cond-uncond", action='store_true', help="dis
 parser.add_argument("--unload-gfpgan", action='store_true', help="does not do anything.")
 parser.add_argument("--precision", type=str, help="evaluate at this precision", choices=["full", "autocast"], default="autocast")
 parser.add_argument("--upcast-sampling", action='store_true', help="upcast sampling. No effect with --no-half. Usually produces similar results to --no-half with better performance while using less memory.")
+parser.add_argument("--profile", action='store_true', help="run profiler")
 parser.add_argument("--share", action='store_true', help="use share=True for gradio and make the UI accessible through their site")
 parser.add_argument("--ngrok", type=str, help="ngrok authtoken, alternative to gradio --share", default=None)
 parser.add_argument("--ngrok-region", type=str, help="The region in which ngrok should start.", default="us")
@@ -688,7 +688,7 @@ class TotalTQDM:
 
     def reset(self):
         self._tqdm = tqdm.tqdm(
-            desc="Total progress",
+            desc="Total",
             total=state.job_count * state.sampling_steps,
             position=1,
             file=progress_print_out
@@ -710,6 +710,7 @@ class TotalTQDM:
 
     def clear(self):
         if self._tqdm is not None:
+            self._tqdm.refresh()
             self._tqdm.close()
             self._tqdm = None
 

@@ -17,7 +17,8 @@ index_url = os.environ.get('INDEX_URL', "")
 stored_commit_hash = None
 skip_install = False
 
-warnings.filterwarnings("ignore", category=UserWarning)
+warnings.filterwarnings(action="ignore", category=UserWarning)
+warnings.filterwarnings(action="ignore", category=DeprecationWarning)
 
 def check_python_version():
     is_windows = platform.system() == "Windows"
@@ -28,7 +29,7 @@ def check_python_version():
     if is_windows:
         supported_minors = [10]
     else:
-        supported_minors = [7, 8, 9, 10, 11]
+        supported_minors = [9, 10, 11]
 
     if not (major == 3 and minor in supported_minors):
         import modules.errors
