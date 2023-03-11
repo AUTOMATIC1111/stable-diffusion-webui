@@ -178,29 +178,27 @@ class Api:
     def text2imgapi(self, txt2imgreq: StableDiffusionTxt2ImgProcessingAPI):
         script, script_idx = self.get_script(txt2imgreq.script_name, scripts.scripts_txt2img)
 
-        populate = txt2imgreq.copy(update={ # Override __init__ params
+        populate = txt2imgreq.copy(update={  # Override __init__ params
             "sampler_name": validate_sampler_name(txt2imgreq.sampler_name or txt2imgreq.sampler_index),
-            "do_not_save_samples": txt2imgreq.do_not_save,
-            "do_not_save_grid": txt2imgreq.do_not_save,
-            }
-        )
+            "do_not_save_samples": not txt2imgreq.save_images,
+            "do_not_save_grid": not txt2imgreq.save_images,
+        })
         if populate.sampler_name:
             populate.sampler_index = None  # prevent a warning later on
 
         args = vars(populate)
         args.pop('script_name', None)
 
-        send_images = True if not 'do_not_send' in args else not args['do_not_send']
-        args.pop('do_not_send', None)
-        args.pop('do_not_save', None)
+        send_images = args.pop('send_images', True)
+        args.pop('save_images', None)
 
         with self.queue_lock:
             p = StableDiffusionProcessingTxt2Img(sd_model=shared.sd_model, **args)
+            p.outpath_grids = opts.outdir_txt2img_grids
+            p.outpath_samples = opts.outdir_txt2img_samples
 
             shared.state.begin()
             if script is not None:
-                p.outpath_grids = opts.outdir_txt2img_grids
-                p.outpath_samples = opts.outdir_txt2img_samples
                 p.script_args = [script_idx + 1] + [None] * (script.args_from - 1) + p.script_args
                 processed = scripts.scripts_txt2img.run(p, *p.script_args)
             else:
@@ -222,13 +220,12 @@ class Api:
         if mask:
             mask = decode_base64_to_image(mask)
 
-        populate = img2imgreq.copy(update={ # Override __init__ params
+        populate = img2imgreq.copy(update={  # Override __init__ params
             "sampler_name": validate_sampler_name(img2imgreq.sampler_name or img2imgreq.sampler_index),
-            "do_not_save_samples": img2imgreq.do_not_save,
-            "do_not_save_grid": img2imgreq.do_not_save,
-            "mask": mask
-            }
-        )
+            "do_not_save_samples": not img2imgreq.save_images,
+            "do_not_save_grid": not img2imgreq.save_images,
+            "mask": mask,
+        })
         if populate.sampler_name:
             populate.sampler_index = None  # prevent a warning later on
 
@@ -236,21 +233,17 @@ class Api:
         args.pop('include_init_images', None)  # this is meant to be done by "exclude": True in model, but it's for a reason that I cannot determine.
         args.pop('script_name', None)
 
-        send_images = True if not 'do_not_send' in args else not args['do_not_send']
-        args.pop('do_not_send', None)
-        args.pop('do_not_save', None)
-
-        send_images = True if not 'do_not_send_images' in args else not args['do_not_send_images']
-        args.pop('do_not_send_images', None)
+        send_images = args.pop('send_images', True)
+        args.pop('save_images', None)
 
         with self.queue_lock:
             p = StableDiffusionProcessingImg2Img(sd_model=shared.sd_model, **args)
             p.init_images = [decode_base64_to_image(x) for x in init_images]
+            p.outpath_grids = opts.outdir_img2img_grids
+            p.outpath_samples = opts.outdir_img2img_samples
 
             shared.state.begin()
             if script is not None:
-                p.outpath_grids = opts.outdir_img2img_grids
-                p.outpath_samples = opts.outdir_img2img_samples
                 p.script_args = [script_idx + 1] + [None] * (script.args_from - 1) + p.script_args
                 processed = scripts.scripts_img2img.run(p, *p.script_args)
             else:

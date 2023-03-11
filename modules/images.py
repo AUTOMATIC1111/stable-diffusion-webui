@@ -489,9 +489,6 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     """
     namegen = FilenameGenerator(p, seed, prompt, image)
 
-    if path is None: # set default path to avoid errors when functions are triggered manually or via api and param is not set
-        path = opts.outdir_save
-
     if save_to_dirs is None:
         save_to_dirs = (grid and opts.grid_save_to_dirs) or (not grid and opts.save_to_dirs and not no_prompt)
 
