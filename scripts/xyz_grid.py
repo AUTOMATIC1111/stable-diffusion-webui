@@ -485,10 +485,9 @@ class Script(scripts.Script):
         zs = process_axis(z_opt, z_values)
 
         # this could be moved to common code, but unlikely to be ever triggered anywhere else
-        Image.MAX_IMAGE_PIXELS = opts.img_max_size_mp * 1000000 * 1.1 # allow 10% overhead for margins and legend
+        Image.MAX_IMAGE_PIXELS = opts.img_max_size_mp * 1.1 # allow 10% overhead for margins and legend
         grid_mp = round(len(xs) * len(ys) * len(zs) * p.width * p.height / 1000000)
-        if grid_mp > opts.img_max_size_mp:
-            return Processed(p, [], p.seed, info=f'Error: Resulting grid would be too large ({grid_mp} MPixels) (max configured size is {opts.img_max_size_mp} MPixels)')
+        assert grid_mp < opts.img_max_size_mp, f'Error: Resulting grid would be too large ({grid_mp} MPixels) (max configured size is {opts.img_max_size_mp} MPixels)'
 
         def fix_axis_seeds(axis_opt, axis_list):
             if axis_opt.label in ['Seed', 'Var. seed']:
