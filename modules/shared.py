@@ -116,7 +116,10 @@ parser.add_argument("--no-download-sd-model", action='store_true', help="don't d
 script_loading.preload_extensions(extensions.extensions_dir, parser)
 script_loading.preload_extensions(extensions.extensions_builtin_dir, parser)
 
-cmd_opts = parser.parse_args()
+if os.environ.get('IGNORE_CMD_ARGS_ERRORS', None) is None:
+    cmd_opts = parser.parse_args()
+else:
+    cmd_opts, _ = parser.parse_known_args()
 
 restricted_opts = {
     "samples_filename_pattern",
