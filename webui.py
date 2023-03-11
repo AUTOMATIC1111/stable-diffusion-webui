@@ -183,13 +183,16 @@ def initialize():
     signal.signal(signal.SIGINT, sigint_handler)
 
 
-def setup_cors(app):
+def setup_middleware(app):
+    app.middleware_stack = None # reset current middleware to allow modifying user provided list
+    app.add_middleware(GZipMiddleware, minimum_size=1000)
     if cmd_opts.cors_allow_origins and cmd_opts.cors_allow_origins_regex:
         app.add_middleware(CORSMiddleware, allow_origins=cmd_opts.cors_allow_origins.split(','), allow_origin_regex=cmd_opts.cors_allow_origins_regex, allow_methods=['*'], allow_credentials=True, allow_headers=['*'])
     elif cmd_opts.cors_allow_origins:
         app.add_middleware(CORSMiddleware, allow_origins=cmd_opts.cors_allow_origins.split(','), allow_methods=['*'], allow_credentials=True, allow_headers=['*'])
     elif cmd_opts.cors_allow_origins_regex:
         app.add_middleware(CORSMiddleware, allow_origin_regex=cmd_opts.cors_allow_origins_regex, allow_methods=['*'], allow_credentials=True, allow_headers=['*'])
+    app.build_middleware_stack() # rebuild middleware stack on-the-fly
 
 
 def create_api(app):
@@ -213,8 +216,7 @@ def api_only():
     initialize()
 
     app = FastAPI()
-    setup_cors(app)
-    app.add_middleware(GZipMiddleware, minimum_size=1000)
+    setup_middleware(app)
     api = create_api(app)
 
     modules.script_callbacks.app_started_callback(None, app)
@@ -271,9 +273,7 @@ def webui():
         # running its code. We disable this here. Suggested by RyotaK.
         app.user_middleware = [x for x in app.user_middleware if x.cls.__name__ != 'CORSMiddleware']
 
-        setup_cors(app)
-
-        app.add_middleware(GZipMiddleware, minimum_size=1000)
+        setup_middleware(app)
 
         modules.progress.setup_progress_api(app)
 
