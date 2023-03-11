@@ -268,10 +268,6 @@ if __name__ == '__main__':
         time.sleep(1)
 
     if args.lycoris:
-        # python3 sd-scripts/train_network.py --network_module locon.locon_kohya --network_dim "RANK_FOR_TRANSFORMER" --network_alpha "ALPHA_FOR_TRANSFORMER" --network_args "conv_dim=RANK_FOR_CONV" "conv_alpha=ALPHA_FOR_CONV" "dropout=DROPOUT_RATE"
-        # options.network_dim = 'RANK_FOR_TRANSFORMER'
-        # options.network_alpha = 'ALPHA_FOR_TRANSFORMER'
-        # options.network_args = ['conv_dim=RANK_FOR_CONV', 'conv_alpha=ALPHA_FOR_CONV', 'dropout=DROPOUT_RATE']
         log.info({ 'using lycoris network': True })
         options.network_module = 'lycoris.kohya'
     if not args.notrain:

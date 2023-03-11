@@ -124,7 +124,7 @@ Fork does differ in few things:
 - Uses simplified folder structure  
   e.g. `/train`, `/outputs/*`  
 - Modified training templates  
-- Built-in `LoRA`, `Custom Diffusion`, `Dreambooth` training  
+- Built-in `LoRA`, `LyCORIS`, `Custom Diffusion`, `Dreambooth` training  
 
 Only Python library which is not auto-updated is `PyTorch` itself as that is very system specific  
 For some Torch optimizations notes, see Wiki

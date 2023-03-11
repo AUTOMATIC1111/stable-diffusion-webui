@@ -3,6 +3,8 @@
     "./modules/lora",
     "./repositories/BLIP",
     "./repositories/CodeFormer",
+    "./repositories/k-diffusion",
+    "./repositories/taming-transformers",
     "./repositories/stable-diffusion-stability-ai"
   ],
   "python.analysis.typeCheckingMode": "off"
