@@ -1711,9 +1711,10 @@ def create_ui():
         # print(selected)      
         # return gr.Tabs.update(selected=selected)
     
-    shared.tab_names = []
-    for _interface, label, _ifid in interfaces:
-        shared.tab_names.append(label)
+    
+    # shared.tab_names = []
+    # for _interface, label, _ifid in interfaces:
+        # shared.tab_names.append(label)
         
 
     with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion") as demo:  
@@ -1745,17 +1746,15 @@ def create_ui():
         parameters_copypaste.connect_paste_params_buttons()
  
         with gr.Tabs(elem_id="tabs") as tabs:
-
-            
             # with gr.Row(elem_id="nav_menu_header_tabs"):
                 # for interface, label, ifid in interfaces:
                     # btn = gr.Button(label, elem_id='tab_clone_' + ifid)
                     # btn.click(change_tab, btn, tabs)
  
             for interface, label, ifid in interfaces:
-                if label in shared.opts.hidden_tabs:
-                    continue
-
+                # if label in shared.opts.hidden_tabs:
+                    # continue
+                    
                 with gr.TabItem(label, id=ifid, elem_id='tab_' + ifid):
                     interface.render()
 

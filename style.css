@@ -3804,7 +3804,9 @@ input[type=range]::-ms-fill-upper {
     display: block;
 }
 
-
+#setting_hidden_tabs{
+	display:none !important;
+}
 
 
 /*BREAKPOINT_CSS_CONTENT*/
