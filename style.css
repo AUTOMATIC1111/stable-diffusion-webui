@@ -856,7 +856,7 @@ footer {
 }
 
 .extra-network-thumbs .card:hover .additional a {
-    display: block;
+    display: inline-block;
 }
 
 .extra-network-thumbs .actions .additional a {
