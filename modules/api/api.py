@@ -149,6 +149,7 @@ class Api:
         self.add_api_route("/sdapi/v1/preprocess", self.preprocess, methods=["POST"], response_model=PreprocessResponse)
         self.add_api_route("/sdapi/v1/train/embedding", self.train_embedding, methods=["POST"], response_model=TrainResponse)
         self.add_api_route("/sdapi/v1/train/hypernetwork", self.train_hypernetwork, methods=["POST"], response_model=TrainResponse)
+        self.add_api_route("/sdapi/v1/shutdown", self.shutdown, methods=["POST"])
         self.add_api_route("/sdapi/v1/memory", self.get_memory, methods=["GET"], response_model=MemoryResponse)
         self.add_api_route("/sdapi/v1/scripts", self.get_scripts_list, methods=["GET"], response_model=ScriptsList)
 
@@ -522,6 +523,16 @@ class Api:
         except AssertionError as msg:
             shared.state.end()
             return TrainResponse(info="train embedding error: {error}".format(error=error))
+
+    def shutdown(self):
+        print('shutdown request received')
+        # from modules.shared import demo
+        # demo.close()
+        # time.sleep(0.5)
+        # import sys
+        # sys.exit(0)
+        import os
+        os._exit(0)
 
     def get_memory(self):
         try:
