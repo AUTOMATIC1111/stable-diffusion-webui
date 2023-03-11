@@ -23,13 +23,14 @@ registered_param_bindings = []
 
 
 class ParamBinding:
-    def __init__(self, paste_button, tabname, source_text_component=None, source_image_component=None, source_tabname=None, override_settings_component=None):
+    def __init__(self, paste_button, tabname, source_text_component=None, source_image_component=None, source_tabname=None, override_settings_component=None, paste_field_names=[]):
         self.paste_button = paste_button
         self.tabname = tabname
         self.source_text_component = source_text_component
         self.source_image_component = source_image_component
         self.source_tabname = source_tabname
         self.override_settings_component = override_settings_component
+        self.paste_field_names = paste_field_names
 
 
 def reset():
@@ -134,7 +135,7 @@ def connect_paste_params_buttons():
             connect_paste(binding.paste_button, fields, binding.source_text_component, override_settings_component, binding.tabname)
 
         if binding.source_tabname is not None and fields is not None:
-            paste_field_names = ['Prompt', 'Negative prompt', 'Steps', 'Face restoration'] + (["Seed"] if shared.opts.send_seed else [])
+            paste_field_names = ['Prompt', 'Negative prompt', 'Steps', 'Face restoration'] + (["Seed"] if shared.opts.send_seed else []) + binding.paste_field_names
             binding.paste_button.click(
                 fn=lambda *x: x,
                 inputs=[field for field, name in paste_fields[binding.source_tabname]["fields"] if name in paste_field_names],
