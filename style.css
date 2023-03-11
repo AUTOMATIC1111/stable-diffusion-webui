@@ -3390,6 +3390,7 @@ footer {
     fill: var(--primary-color);
 }
 
+
 .footer-links > li:last-child {
   position: absolute;
   top: 0;
@@ -3532,10 +3533,12 @@ a[data-tooltip][data-position=bottom]:after {
 .tooltip-html i {
 	position: relative;
     display: block;
-
+}
+/*
 .extra-network-thumbs .card:hover .additional a {
     display: inline-block;
 }
+*/
 
 .tooltip-html .icon-info {	 
     fill: var(--primary-color);
