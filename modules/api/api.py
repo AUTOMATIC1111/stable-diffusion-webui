@@ -195,22 +195,17 @@ class Api:
             script_args[0] = 0
 
         # Now check for always on scripts
-        if request.alwayson_script_name and (len(request.alwayson_script_name) > 0):
-            # always on script with no arg should always run, but if you include their name in the api request, send an empty list for there args
-            if not request.alwayson_script_args:
-                raise HTTPException(status_code=422, detail=f"Script {request.alwayson_script_name} has no arg list")
-            if len(request.alwayson_script_name) != len(request.alwayson_script_args):
-                raise HTTPException(status_code=422, detail=f"Number of script names and number of script arg lists doesn't match")
-
-            for alwayson_script_name, alwayson_script_args in zip(request.alwayson_script_name, request.alwayson_script_args):
+        if request.alwayson_scripts and (len(request.alwayson_scripts) > 0):
+            for alwayson_script_name in request.alwayson_scripts.keys():
                 alwayson_script = self.get_script(alwayson_script_name, script_runner)
                 if alwayson_script == None:
                     raise HTTPException(status_code=422, detail=f"always on script {alwayson_script_name} not found")
                 # Selectable script in always on script param check
                 if alwayson_script.alwayson == False:
                     raise HTTPException(status_code=422, detail=f"Cannot have a selectable script in the always on scripts params")
-                if alwayson_script_args != []:
-                    script_args[alwayson_script.args_from:alwayson_script.args_to] = alwayson_script_args
+                # always on script with no arg should always run so you don't really need to add them to the requests
+                if "args" in request.alwayson_scripts[alwayson_script_name]:
+                    script_args[alwayson_script.args_from:alwayson_script.args_to] = request.alwayson_scripts[alwayson_script_name]["args"]
         return script_args
 
     def text2imgapi(self, txt2imgreq: StableDiffusionTxt2ImgProcessingAPI):
@@ -226,15 +221,13 @@ class Api:
             "do_not_save_grid": True
             }
         )
-
         if populate.sampler_name:
             populate.sampler_index = None  # prevent a warning later on
 
         args = vars(populate)
         args.pop('script_name', None)
         args.pop('script_args', None) # will refeed them to the pipeline directly after initializing them
-        args.pop('alwayson_script_name', None)
-        args.pop('alwayson_script_args', None)
+        args.pop('alwayson_scripts', None)
 
         script_args = self.init_script_args(txt2imgreq, selectable_scripts, selectable_script_idx, script_runner)
 
@@ -279,7 +272,6 @@ class Api:
             "mask": mask
             }
         )
-
         if populate.sampler_name:
             populate.sampler_index = None  # prevent a warning later on
 
@@ -287,8 +279,7 @@ class Api:
         args.pop('include_init_images', None)  # this is meant to be done by "exclude": True in model, but it's for a reason that I cannot determine.
         args.pop('script_name', None)
         args.pop('script_args', None)  # will refeed them to the pipeline directly after initializing them
-        args.pop('alwayson_script_name', None)
-        args.pop('alwayson_script_args', None)
+        args.pop('alwayson_scripts', None)
 
         script_args = self.init_script_args(img2imgreq, selectable_scripts, selectable_script_idx, script_runner)
 
