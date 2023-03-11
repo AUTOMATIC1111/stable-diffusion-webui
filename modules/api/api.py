@@ -150,6 +150,7 @@ class Api:
         self.add_api_route("/sdapi/v1/train/embedding", self.train_embedding, methods=["POST"], response_model=TrainResponse)
         self.add_api_route("/sdapi/v1/train/hypernetwork", self.train_hypernetwork, methods=["POST"], response_model=TrainResponse)
         self.add_api_route("/sdapi/v1/memory", self.get_memory, methods=["GET"], response_model=MemoryResponse)
+        self.add_api_route("/sdapi/v1/scripts", self.get_scripts_list, methods=["GET"], response_model=ScriptsList)
 
     def add_api_route(self, path: str, endpoint, **kwargs):
         if shared.cmd_opts.api_auth:
@@ -170,6 +171,12 @@ class Api:
         script_idx = script_name_to_index(script_name, script_runner.selectable_scripts)
         script = script_runner.selectable_scripts[script_idx]
         return script, script_idx
+    
+    def get_scripts_list(self):
+        t2ilist = [str(title.lower()) for title in scripts.scripts_txt2img.titles]
+        i2ilist = [str(title.lower()) for title in scripts.scripts_img2img.titles]
+
+        return ScriptsList(txt2img = t2ilist, img2img = i2ilist)  
 
     def get_script(self, script_name, script_runner):
         if script_name is None or script_name == "":
@@ -215,12 +222,11 @@ class Api:
             ui.create_ui()
         selectable_scripts, selectable_script_idx = self.get_selectable_script(txt2imgreq.script_name, script_runner)
 
-        populate = txt2imgreq.copy(update={ # Override __init__ params
+        populate = txt2imgreq.copy(update={  # Override __init__ params
             "sampler_name": validate_sampler_name(txt2imgreq.sampler_name or txt2imgreq.sampler_index),
-            "do_not_save_samples": True,
-            "do_not_save_grid": True
-            }
-        )
+            "do_not_save_samples": not txt2imgreq.save_images,
+            "do_not_save_grid": not txt2imgreq.save_images,
+        })
         if populate.sampler_name:
             populate.sampler_index = None  # prevent a warning later on
 
@@ -231,22 +237,25 @@ class Api:
 
         script_args = self.init_script_args(txt2imgreq, selectable_scripts, selectable_script_idx, script_runner)
 
+        send_images = args.pop('send_images', True)
+        args.pop('save_images', None)
+
         with self.queue_lock:
             p = StableDiffusionProcessingTxt2Img(sd_model=shared.sd_model, **args)
             p.scripts = script_runner
+            p.outpath_grids = opts.outdir_txt2img_grids
+            p.outpath_samples = opts.outdir_txt2img_samples
 
             shared.state.begin()
             if selectable_scripts != None:
                 p.script_args = script_args
-                p.outpath_grids = opts.outdir_txt2img_grids
-                p.outpath_samples = opts.outdir_txt2img_samples
                 processed = scripts.scripts_txt2img.run(p, *p.script_args) # Need to pass args as list here
             else:
                 p.script_args = tuple(script_args) # Need to pass args as tuple here
                 processed = process_images(p)
             shared.state.end()
 
-        b64images = list(map(encode_pil_to_base64, processed.images))
+        b64images = list(map(encode_pil_to_base64, processed.images)) if send_images else []
 
         return TextToImageResponse(images=b64images, parameters=vars(txt2imgreq), info=processed.js())
 
@@ -267,11 +276,10 @@ class Api:
 
         populate = img2imgreq.copy(update={ # Override __init__ params
             "sampler_name": validate_sampler_name(img2imgreq.sampler_name or img2imgreq.sampler_index),
-            "do_not_save_samples": True,
-            "do_not_save_grid": True,
-            "mask": mask
-            }
-        )
+            "do_not_save_samples": not img2imgreq.save_images,
+            "do_not_save_grid": not img2imgreq.save_images,
+            "mask": mask,
+        })
         if populate.sampler_name:
             populate.sampler_index = None  # prevent a warning later on
 
@@ -283,23 +291,26 @@ class Api:
 
         script_args = self.init_script_args(img2imgreq, selectable_scripts, selectable_script_idx, script_runner)
 
+        send_images = args.pop('send_images', True)
+        args.pop('save_images', None)
+
         with self.queue_lock:
             p = StableDiffusionProcessingImg2Img(sd_model=shared.sd_model, **args)
             p.init_images = [decode_base64_to_image(x) for x in init_images]
             p.scripts = script_runner
+            p.outpath_grids = opts.outdir_img2img_grids
+            p.outpath_samples = opts.outdir_img2img_samples
 
             shared.state.begin()
             if selectable_scripts != None:
                 p.script_args = script_args
-                p.outpath_grids = opts.outdir_img2img_grids
-                p.outpath_samples = opts.outdir_img2img_samples
                 processed = scripts.scripts_img2img.run(p, *p.script_args) # Need to pass args as list here
             else:
                 p.script_args = tuple(script_args) # Need to pass args as tuple here
                 processed = process_images(p)
             shared.state.end()
 
-        b64images = list(map(encode_pil_to_base64, processed.images))
+        b64images = list(map(encode_pil_to_base64, processed.images)) if send_images else []
 
         if not img2imgreq.include_init_images:
             img2imgreq.init_images = None

@@ -78,7 +78,7 @@ function cardClicked(tabname, textToAdd, allowNegativePrompt){
     var textarea = allowNegativePrompt ? activePromptTextarea[tabname] : gradioApp().querySelector("#" + tabname + "_prompt > label > textarea")
 
     if(! tryToRemoveExtraNetworkFromPrompt(textarea, textToAdd)){
-        textarea.value = textarea.value + " " + textToAdd
+        textarea.value = textarea.value + opts.extra_networks_add_text_separator + textToAdd
     }
 
     updateInput(textarea)

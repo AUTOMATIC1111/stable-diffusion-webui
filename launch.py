@@ -161,7 +161,17 @@ def git_clone(url, dir, name, commithash=None):
     if commithash is not None:
         run(f'"{git}" -C "{dir}" checkout {commithash}', None, "Couldn't checkout {name}'s hash: {commithash}")
 
-        
+
+def git_pull_recursive(dir):
+    for subdir, _, _ in os.walk(dir):
+        if os.path.exists(os.path.join(subdir, '.git')):
+            try:
+                output = subprocess.check_output([git, '-C', subdir, 'pull', '--autostash'])
+                print(f"Pulled changes for repository in '{subdir}':\n{output.decode('utf-8').strip()}\n")
+            except subprocess.CalledProcessError as e:
+                print(f"Couldn't perform 'git pull' on repository in '{subdir}':\n{e.output.decode('utf-8').strip()}\n")
+
+
 def version_check(commit):
     try:
         import requests
@@ -247,6 +257,7 @@ def prepare_environment():
     args, _ = parser.parse_known_args(sys.argv)
 
     sys.argv, _ = extract_arg(sys.argv, '-f')
+    sys.argv, update_all_extensions = extract_arg(sys.argv, '--update-all-extensions')
     sys.argv, skip_torch_cuda_test = extract_arg(sys.argv, '--skip-torch-cuda-test')
     sys.argv, skip_python_version_check = extract_arg(sys.argv, '--skip-python-version-check')
     sys.argv, reinstall_xformers = extract_arg(sys.argv, '--reinstall-xformers')
@@ -312,6 +323,9 @@ def prepare_environment():
 
     if update_check:
         version_check(commit)
+
+    if update_all_extensions:
+        git_pull_recursive(dir_extensions)
     
     if "--exit" in sys.argv:
         print("Exiting because of --exit argument")
