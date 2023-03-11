@@ -939,6 +939,17 @@ footer {
     line-break: anywhere;
 }
 
+.extra-network-cards .card .actions .description {
+    display: block;
+    max-height: 3em;
+    white-space: pre-wrap;
+    line-height: 1.1;
+}
+
+.extra-network-cards .card .actions .description:hover {
+    max-height: none;
+}
+
 .extra-network-cards .card .actions:hover .additional{
     display: block;
 }
