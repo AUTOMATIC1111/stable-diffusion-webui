@@ -19,8 +19,8 @@ class ExtraNetworksPageCheckpoints(ui_extra_networks.ExtraNetworksPage):
             yield {
                 "name": checkpoint.name_for_extra,
                 "filename": path,
-                "preview": self._find_preview(path),
-                "description": self._find_description(path),
+                "preview": self.find_preview(path),
+                "description": self.find_description(path),
                 "search_term": self.search_terms_from_path(checkpoint.filename) + " " + (checkpoint.sha256 or ""),
                 "onclick": '"' + html.escape(f"""return selectCheckpoint({json.dumps(name)})""") + '"',
                 "local_preview": path + ".png",

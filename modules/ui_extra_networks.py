@@ -1,9 +1,7 @@
 import glob
 import os.path
 import urllib.parse
-from functools import lru_cache
 from pathlib import Path
-from typing import Optional
 
 from modules import shared
 import gradio as gr
@@ -140,17 +138,17 @@ class ExtraNetworksPage:
 
         return self.card_page.format(**args)
 
-    def _find_preview(self, path: str) -> Optional[str]:
+    def find_preview(self, path):
         """
         Find a preview PNG for a given path (without extension) and call link_preview on it.
         """
         for file in [path + ".png", path + ".preview.png"]:
             if os.path.isfile(file):
                 return self.link_preview(file)
+
         return None
 
-    @lru_cache(maxsize=512)
-    def _find_description(self, path: str) -> Optional[str]:
+    def find_description(self, path):
         """
         Find and read a description file for a given path (without extension).
         """
