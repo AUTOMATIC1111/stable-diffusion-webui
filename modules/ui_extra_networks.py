@@ -76,6 +76,10 @@ class ExtraNetworksPage:
                 while subdir.startswith("/"):
                     subdir = subdir[1:]
 
+                is_empty = len(os.listdir(x)) == 0
+                if not is_empty and not subdir.endswith("/"):
+                    subdir = subdir + "/"
+
                 subdirs[subdir] = 1
 
         if subdirs:
@@ -94,11 +98,13 @@ class ExtraNetworksPage:
             dirs = "".join([f"<li>{x}</li>" for x in self.allowed_directories_for_previews()])
             items_html = shared.html("extra-networks-no-cards.html").format(dirs=dirs)
 
+        self_name_id = self.name.replace(" ", "_")
+
         res = f"""
-<div id='{tabname}_{self.name}_subdirs' class='extra-network-subdirs extra-network-subdirs-{view}'>
+<div id='{tabname}_{self_name_id}_subdirs' class='extra-network-subdirs extra-network-subdirs-{view}'>
 {subdirs_html}
 </div>
-<div id='{tabname}_{self.name}_cards' class='extra-network-{view}'>
+<div id='{tabname}_{self_name_id}_cards' class='extra-network-{view}'>
 {items_html}
 </div>
 """

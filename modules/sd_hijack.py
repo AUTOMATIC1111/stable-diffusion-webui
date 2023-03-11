@@ -1,5 +1,6 @@
 import torch
 from torch.nn.functional import silu
+from types import MethodType
 
 import modules.textual_inversion.textual_inversion
 from modules import devices, sd_hijack_optimizations, shared, sd_hijack_checkpoint
@@ -76,6 +77,54 @@ def fix_checkpoint():
     pass
 
 
+def weighted_loss(sd_model, pred, target, mean=True):
+    #Calculate the weight normally, but ignore the mean
+    loss = sd_model._old_get_loss(pred, target, mean=False)
+    
+    #Check if we have weights available
+    weight = getattr(sd_model, '_custom_loss_weight', None)
+    if weight is not None:
+        loss *= weight
+    
+    #Return the loss, as mean if specified
+    return loss.mean() if mean else loss
+
+def weighted_forward(sd_model, x, c, w, *args, **kwargs):
+    try:
+        #Temporarily append weights to a place accessible during loss calc
+        sd_model._custom_loss_weight = w
+        
+        #Replace 'get_loss' with a weight-aware one. Otherwise we need to reimplement 'forward' completely
+        #Keep 'get_loss', but don't overwrite the previous old_get_loss if it's already set
+        if not hasattr(sd_model, '_old_get_loss'):
+            sd_model._old_get_loss = sd_model.get_loss
+        sd_model.get_loss = MethodType(weighted_loss, sd_model)
+
+        #Run the standard forward function, but with the patched 'get_loss'
+        return sd_model.forward(x, c, *args, **kwargs)
+    finally:
+        try:
+            #Delete temporary weights if appended
+            del sd_model._custom_loss_weight
+        except AttributeError as e:
+            pass
+            
+        #If we have an old loss function, reset the loss function to the original one
+        if hasattr(sd_model, '_old_get_loss'):
+            sd_model.get_loss = sd_model._old_get_loss
+            del sd_model._old_get_loss
+
+def apply_weighted_forward(sd_model):
+    #Add new function 'weighted_forward' that can be called to calc weighted loss
+    sd_model.weighted_forward = MethodType(weighted_forward, sd_model)
+
+def undo_weighted_forward(sd_model):
+    try:
+        del sd_model.weighted_forward
+    except AttributeError as e:
+        pass
+
+
 class StableDiffusionModelHijack:
     fixes = None
     comments = []
@@ -103,6 +152,10 @@ class StableDiffusionModelHijack:
         elif type(m.cond_stage_model) == ldm.modules.encoders.modules.FrozenOpenCLIPEmbedder:
             m.cond_stage_model.model.token_embedding = EmbeddingsWithFixes(m.cond_stage_model.model.token_embedding, self)
             m.cond_stage_model = sd_hijack_open_clip.FrozenOpenCLIPEmbedderWithCustomWords(m.cond_stage_model, self)
+
+        apply_weighted_forward(m)
+        if m.cond_stage_key == "edit":
+            sd_hijack_unet.hijack_ddpm_edit()
 
         self.optimization_method = apply_optimizations()
 
@@ -132,6 +185,7 @@ class StableDiffusionModelHijack:
             m.cond_stage_model = m.cond_stage_model.wrapped
 
         undo_optimizations()
+        undo_weighted_forward(m)
 
         self.apply_circular(False)
         self.layers = None

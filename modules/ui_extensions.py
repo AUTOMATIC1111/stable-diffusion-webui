@@ -80,6 +80,7 @@ def extension_table():
             <tr>
                 <th><abbr title="Use checkbox to enable the extension; it will be enabled or disabled when you click apply button">Extension</abbr></th>
                 <th>URL</th>
+                <th><abbr title="Extension version">Version</abbr></th>
                 <th><abbr title="Use checkbox to mark the extension for update; it will be updated when you click apply button">Update</abbr></th>
             </tr>
         </thead>
@@ -87,11 +88,7 @@ def extension_table():
     """
 
     for ext in extensions.extensions:
-        remote = ""
-        if ext.is_builtin:
-            remote = "built-in"
-        elif ext.remote:
-            remote = f"""<a href="{html.escape(ext.remote or '')}" target="_blank">{html.escape("built-in" if ext.is_builtin else ext.remote or '')}</a>"""
+        remote = f"""<a href="{html.escape(ext.remote or '')}" target="_blank">{html.escape("built-in" if ext.is_builtin else ext.remote or '')}</a>"""
 
         if ext.can_update:
             ext_status = f"""<label><input class="gr-check-radio gr-checkbox" name="update_{html.escape(ext.name)}" checked="checked" type="checkbox">{html.escape(ext.status)}</label>"""
@@ -102,6 +99,7 @@ def extension_table():
             <tr>
                 <td><label><input class="gr-check-radio gr-checkbox" name="enable_{html.escape(ext.name)}" type="checkbox" {'checked="checked"' if ext.enabled else ''}>{html.escape(ext.name)}</label></td>
                 <td>{remote}</td>
+                <td>{ext.version}</td>
                 <td{' class="extension_status"' if ext.remote is not None else ''}>{ext_status}</td>
             </tr>
     """
