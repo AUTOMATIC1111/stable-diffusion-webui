@@ -106,8 +106,8 @@ class CFGDenoiser(torch.nn.Module):
         x_in = denoiser_params.x
         image_cond_in = denoiser_params.image_cond
         sigma_in = denoiser_params.sigma
-        tensor = denoiser_params.tensor
-        uncond = denoiser_params.uncond
+        tensor = denoiser_params.text_cond
+        uncond = denoiser_params.text_uncond
 
         if tensor.shape[1] == uncond.shape[1]:
             if not is_edit_model:
