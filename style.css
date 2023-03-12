@@ -907,10 +907,41 @@ footer {
     cursor: pointer;
 
     background-image: url('./file=html/card-no-preview.png')
+
+    transition-property: transform;
+	transition-timing-function: cubic-bezier(.4,0,.2,1);
+    transition-duration: .5s;
+    transform: rotateX(0) rotateY(12deg);
+
 }
 
 .extra-network-cards .card:hover{
     box-shadow: 0 0 2px 0.3em rgba(0, 128, 255, 0.35);
+
+    transform-style: preserve-3d;
+	animation: hovering 5s ease infinite;
+}
+
+@keyframes hovering {
+	0% {
+		transform: rotateX(0) rotateY(12deg)
+	}
+
+	25% {
+		transform: rotateX(12deg) rotateY(0)
+	}
+
+	50% {
+		transform: rotateX(0) rotateY(-12deg)
+	}
+
+	75% {
+		transform: rotateX(-12deg) rotateY(0)
+	}
+
+	to {
+		transform: rotateX(0) rotateY(12deg)
+	}
 }
 
 .extra-network-cards .card .actions .additional{
