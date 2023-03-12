@@ -7,6 +7,11 @@ import shlex
 import platform
 import argparse
 import json
+try:
+    from modules.paths import script_path, data_path
+except ModuleNotFoundError:
+    script_path = os.path.dirname(__file__)
+    data_path = os.getcwd()
 
 dir_repos = "repositories"
 dir_extensions = "extensions"
@@ -122,7 +127,7 @@ def is_installed(package):
 
 
 def repo_dir(name):
-    return os.path.join(dir_repos, name)
+    return os.path.join(script_path, dir_repos, name)
 
 
 def run_python(code, desc=None, errdesc=None):
@@ -215,7 +220,7 @@ def list_extensions(settings_file):
 
     disabled_extensions = set(settings.get('disabled_extensions', []))
 
-    return [x for x in os.listdir(dir_extensions) if x not in disabled_extensions]
+    return [x for x in os.listdir(os.path.join(data_path, dir_extensions)) if x not in disabled_extensions]
 
 
 def run_extensions_installers(settings_file):
@@ -306,7 +311,7 @@ def prepare_environment():
     if not is_installed("pyngrok") and ngrok:
         run_pip("install pyngrok", "ngrok")
 
-    os.makedirs(dir_repos, exist_ok=True)
+    os.makedirs(os.path.join(script_path, dir_repos), exist_ok=True)
 
     git_clone(stable_diffusion_repo, repo_dir('stable-diffusion-stability-ai'), "Stable Diffusion", stable_diffusion_commit_hash)
     git_clone(taming_transformers_repo, repo_dir('taming-transformers'), "Taming Transformers", taming_transformers_commit_hash)
@@ -317,7 +322,7 @@ def prepare_environment():
     if not is_installed("lpips"):
         run_pip(f"install -r {os.path.join(repo_dir('CodeFormer'), 'requirements.txt')}", "requirements for CodeFormer")
 
-    run_pip(f"install -r {requirements_file}", "requirements for Web UI")
+    run_pip(f"install -r {os.path.join(script_path, requirements_file)}", "requirements for Web UI")
 
     run_extensions_installers(settings_file=args.ui_settings_file)
 
@@ -325,7 +330,7 @@ def prepare_environment():
         version_check(commit)
 
     if update_all_extensions:
-        git_pull_recursive(dir_extensions)
+        git_pull_recursive(os.path.join(data_path, dir_extensions))
     
     if "--exit" in sys.argv:
         print("Exiting because of --exit argument")
@@ -341,7 +346,7 @@ def tests(test_dir):
         sys.argv.append("--api")
     if "--ckpt" not in sys.argv:
         sys.argv.append("--ckpt")
-        sys.argv.append("./test/test_files/empty.pt")
+        sys.argv.append(os.path.join(script_path, "test/test_files/empty.pt"))
     if "--skip-torch-cuda-test" not in sys.argv:
         sys.argv.append("--skip-torch-cuda-test")
     if "--disable-nan-check" not in sys.argv:
@@ -350,7 +355,7 @@ def tests(test_dir):
     print(f"Launching Web UI in another process for testing with arguments: {' '.join(sys.argv[1:])}")
 
     os.environ['COMMANDLINE_ARGS'] = ""
-    with open('test/stdout.txt', "w", encoding="utf8") as stdout, open('test/stderr.txt', "w", encoding="utf8") as stderr:
+    with open(os.path.join(script_path, 'test/stdout.txt'), "w", encoding="utf8") as stdout, open(os.path.join(script_path, 'test/stderr.txt'), "w", encoding="utf8") as stderr:
         proc = subprocess.Popen([sys.executable, *sys.argv], stdout=stdout, stderr=stderr)
 
     import test.server_poll
