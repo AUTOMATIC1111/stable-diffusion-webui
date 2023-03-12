@@ -31,6 +31,18 @@ function extract_image_from_gallery(gallery){
     return [gallery[index]];
 }
 
+function flip_images(gallery_name) {
+    let imgs = gradioApp().getElementById(`${gallery_name}_gallery`).querySelectorAll('img')
+    for (let i = 0; i < imgs.length; i++) {
+        imgs[i].classList.toggle('flipped_h')
+    }
+}
+
+function flip_gallery_images() {
+    flip_images('txt2img')
+    flip_images('img2img')
+}
+
 function args_to_array(args){
     res = []
     for(var i=0;i<args.length;i++){
