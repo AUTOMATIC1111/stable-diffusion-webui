@@ -748,6 +748,13 @@
             "tags": ["tab"]
         },
         {
+            "name": "Panorama Viewer",
+            "url": "https://github.com/GeorgLegato/sd-webui-panorama-viewer.git",
+            "description": "Provides a tab to display equirectangular images in interactive 3d-view.",
+            "added": "2023-03-11",
+            "tags": ["tab"]
+        },
+        {
             "name": "zh_CN Localization",
             "url": "https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN",
             "description": "Simplified Chinese localization, recommend using with Bilingual Localization.",
