@@ -449,6 +449,15 @@ class Script(scripts.Script):
                 return [0]
 
             valslist = [x.strip() for x in chain.from_iterable(csv.reader(StringIO(vals))) if x]
+            pattern = re.compile(r'\S*\[([0-9]|\.)+-([0-9]|\.)+]\+([0-9]|\.)+$')
+            if len(valslist) == 1 and pattern.search(valslist[0]) is not None:
+                tmp = valslist[0].split('[', maxsplit=1)
+                tmp = [tmp[0], *re.split(r'\[|-|]\+', tmp[1])]
+                nums = list(map(float, tmp[1:]))
+                nums = np.round(np.arange(nums[0], nums[1] + nums[2], nums[2]), 2)
+                if len(nums) > 20:
+                    print('Prompt sequence too long')
+                valslist = list(map(lambda x: f'{tmp[0]}{x}', nums[:20]))
 
             if opt.type == int:
                 valslist_ext = []
