@@ -970,3 +970,7 @@ footer {
 [id*='_prompt_container'] > div {
 	margin: 0!important;
 }
+
+.flipped_h {
+    transform: scaleX(-1)
+}
