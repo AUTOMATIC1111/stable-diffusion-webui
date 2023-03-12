@@ -158,20 +158,6 @@ def str_permutations(x):
     return x
 
 
-def apply_face_restore(p, opt, x):
-    opt = opt.lower()
-    if opt == 'codeformer':
-        is_active = True
-        p.face_restoration_model = 'CodeFormer'
-    elif opt == 'gfpgan':
-        is_active = True
-        p.face_restoration_model = 'GFPGAN'
-    else:
-        is_active = opt in ('true', 'yes', 'y', '1')
-
-    p.restore_faces = is_active
-
-
 class AxisOption:
     def __init__(self, label, type, apply, format_value=format_value_add_label, confirm=None, cost=0.0, choices=None):
         self.label = label
@@ -219,7 +205,6 @@ axis_options = [
     AxisOptionImg2Img("Cond. Image Mask Weight", float, apply_field("inpainting_mask_weight")),
     AxisOption("VAE", str, apply_vae, cost=0.7, choices=lambda: list(sd_vae.vae_dict)),
     AxisOption("Styles", str, apply_styles, choices=lambda: list(shared.prompt_styles.styles)),
-    AxisOption("Face restore", str, apply_face_restore, format_value=format_value),
 ]
 
 
