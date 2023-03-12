@@ -7,11 +7,14 @@ import shlex
 import platform
 import argparse
 import json
-try:
-    from modules.paths import script_path, data_path
-except ModuleNotFoundError:
-    script_path = os.path.dirname(__file__)
-    data_path = os.getcwd()
+
+parser = argparse.ArgumentParser(add_help=False)
+parser.add_argument("--ui-settings-file", type=str, default='config.json')
+parser.add_argument("--data-dir", type=str, default=os.path.dirname(os.path.realpath(__file__)))
+args, _ = parser.parse_known_args(sys.argv)
+
+script_path = os.path.dirname(__file__)
+data_path = os.getcwd()
 
 dir_repos = "repositories"
 dir_extensions = "extensions"
@@ -256,10 +259,6 @@ def prepare_environment():
     blip_commit_hash = os.environ.get('BLIP_COMMIT_HASH', "48211a1594f1321b00f14c9f7a5b4813144b2fb9")
 
     sys.argv += shlex.split(commandline_args)
-
-    parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument("--ui-settings-file", type=str, help="filename to use for ui settings", default='config.json')
-    args, _ = parser.parse_known_args(sys.argv)
 
     sys.argv, _ = extract_arg(sys.argv, '-f')
     sys.argv, update_all_extensions = extract_arg(sys.argv, '--update-all-extensions')
