@@ -1760,6 +1760,9 @@ def reload_javascript():
     for script in modules.scripts.list_scripts("javascript", ".js"):
         head += f'<script type="text/javascript" src="file={script.path}?{os.path.getmtime(script.path)}"></script>\n'
 
+    for script in modules.scripts.list_scripts("javascript", ".cjs"):
+        head += f'<script type="text/javascript" src="file={script.path}?{os.path.getmtime(script.path)}"></script>\n'
+
     for script in modules.scripts.list_scripts("javascript", ".mjs"):
         head += f'<script type="module" src="file={script.path}?{os.path.getmtime(script.path)}"></script>\n'
 
