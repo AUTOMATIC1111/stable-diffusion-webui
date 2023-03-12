@@ -218,13 +218,13 @@ def create_ui(container, button, tabname):
         ui.button_save_preview = gr.Button('Save preview', elem_id=tabname+"_save_preview", visible=False)
         ui.preview_target_filename = gr.Textbox('Preview save filename', elem_id=tabname+"_preview_filename", visible=False)
 
+
     def toggle_visibility(is_visible):
         is_visible = not is_visible
         return is_visible, gr.update(visible=is_visible)
 
     state_visible = gr.State(value=True)
     button.click(fn=toggle_visibility, inputs=[state_visible], outputs=[state_visible, container])
-    button_close.click(fn=toggle_visibility, inputs=[state_visible], outputs=[state_visible, container])
 
     def refresh():
         res = []
