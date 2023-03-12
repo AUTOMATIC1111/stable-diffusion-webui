@@ -319,9 +319,11 @@ def prepare_environment():
     git_clone(blip_repo, repo_dir('BLIP'), "BLIP", blip_commit_hash)
 
     if not is_installed("lpips"):
-        run_pip(f"install -r {os.path.join(repo_dir('CodeFormer'), 'requirements.txt')}", "requirements for CodeFormer")
+        run_pip(f"install -r \"{os.path.join(repo_dir('CodeFormer'), 'requirements.txt')}\"", "requirements for CodeFormer")
 
-    run_pip(f"install -r {os.path.join(script_path, requirements_file)}", "requirements for Web UI")
+    if not os.path.isfile(requirements_file):
+        requirements_file = os.path.join(script_path, requirements_file)
+    run_pip(f"install -r \"{requirements_file}\"", "requirements for Web UI")
 
     run_extensions_installers(settings_file=args.ui_settings_file)
 
