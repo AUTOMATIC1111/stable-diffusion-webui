@@ -436,9 +436,7 @@ input[type="range"]{
 
 #modalImage {
     display: block;
-    margin-left: auto;
-    margin-right: auto;
-    margin-top: auto;
+    margin: auto;
     width: auto;
 }
 
@@ -856,7 +854,7 @@ footer {
 }
 
 .extra-network-thumbs .card:hover .additional a {
-    display: block;
+    display: inline-block;
 }
 
 .extra-network-thumbs .actions .additional a {
@@ -937,6 +935,17 @@ footer {
     font-size: 1.7em;
     font-weight: bold;
     line-break: anywhere;
+}
+
+.extra-network-cards .card .actions .description {
+    display: block;
+    max-height: 3em;
+    white-space: pre-wrap;
+    line-height: 1.1;
+}
+
+.extra-network-cards .card .actions .description:hover {
+    max-height: none;
 }
 
 .extra-network-cards .card .actions:hover .additional{

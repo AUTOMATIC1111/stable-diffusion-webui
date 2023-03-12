@@ -597,6 +597,9 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             seeds = p.all_seeds[n * p.batch_size:(n + 1) * p.batch_size]
             subseeds = p.all_subseeds[n * p.batch_size:(n + 1) * p.batch_size]
 
+            if p.scripts is not None:
+                p.scripts.before_process_batch(p, batch_number=n, prompts=prompts, seeds=seeds, subseeds=subseeds)
+
             if len(prompts) == 0:
                 break
 
@@ -888,7 +891,9 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
         shared.state.nextjob()
 
-        img2img_sampler_name = self.sampler_name if self.sampler_name != 'PLMS' else 'DDIM'  # PLMS does not support img2img so we just silently switch ot DDIM
+        img2img_sampler_name = self.sampler_name
+        if self.sampler_name in ['PLMS', 'UniPC']:  # PLMS/UniPC do not support img2img so we just silently switch to DDIM
+            img2img_sampler_name = 'DDIM'
         self.sampler = sd_samplers.create_sampler(img2img_sampler_name, self.sd_model)
 
         samples = samples[:, :, self.truncate_y//2:samples.shape[2]-(self.truncate_y+1)//2, self.truncate_x//2:samples.shape[3]-(self.truncate_x+1)//2]

@@ -1,7 +1,9 @@
+import os
 import unittest
 import requests
 from gradio.processing_utils import encode_pil_to_base64
 from PIL import Image
+from modules.paths import script_path
 
 class TestExtrasWorking(unittest.TestCase):
     def setUp(self):
@@ -19,7 +21,7 @@ class TestExtrasWorking(unittest.TestCase):
             "upscaler_1": "None",
             "upscaler_2": "None",
             "extras_upscaler_2_visibility": 0,
-            "image": encode_pil_to_base64(Image.open(r"test/test_files/img2img_basic.png"))
+            "image": encode_pil_to_base64(Image.open(os.path.join(script_path, r"test/test_files/img2img_basic.png")))
             }
 
     def test_simple_upscaling_performed(self):
@@ -31,7 +33,7 @@ class TestPngInfoWorking(unittest.TestCase):
     def setUp(self):
         self.url_png_info = "http://localhost:7860/sdapi/v1/extra-single-image"
         self.png_info = {
-            "image": encode_pil_to_base64(Image.open(r"test/test_files/img2img_basic.png"))
+            "image": encode_pil_to_base64(Image.open(os.path.join(script_path, r"test/test_files/img2img_basic.png")))
         }
 
     def test_png_info_performed(self):
@@ -42,7 +44,7 @@ class TestInterrogateWorking(unittest.TestCase):
     def setUp(self):
         self.url_interrogate = "http://localhost:7860/sdapi/v1/extra-single-image"
         self.interrogate = {
-            "image": encode_pil_to_base64(Image.open(r"test/test_files/img2img_basic.png")),
+            "image": encode_pil_to_base64(Image.open(os.path.join(script_path, r"test/test_files/img2img_basic.png"))),
             "model": "clip"
         }
 
