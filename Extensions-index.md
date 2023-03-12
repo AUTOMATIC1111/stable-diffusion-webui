@@ -755,6 +755,13 @@
             "tags": ["tab"]
         },
         {
+            "name": "db-storage1111",
+            "url": "https://github.com/takoyaro/db-storage1111.git",
+            "description": "Store images on a MongoDB instance from Colab.",
+            "added": "2023-03-11",
+            "tags": ["online"]
+        },
+        {
             "name": "zh_CN Localization",
             "url": "https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN",
             "description": "Simplified Chinese localization, recommend using with Bilingual Localization.",
