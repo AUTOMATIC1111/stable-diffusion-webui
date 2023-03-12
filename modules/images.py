@@ -512,9 +512,6 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
             file_decoration = "-" + file_decoration
 
         file_decoration = namegen.apply(file_decoration) + suffix
-        if hasattr(os, 'statvfs'):
-            max_name_len = os.statvfs(path).f_namemax
-            file_decoration = file_decoration[:max_name_len - 5]
 
         if add_number:
             basecount = get_next_sequence_number(path, basename)
@@ -576,6 +573,10 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
         os.replace(temp_file_path, filename_without_extension + extension)
 
     fullfn_without_extension, extension = os.path.splitext(params.filename)
+    if hasattr(os, 'statvfs'):
+        max_name_len = os.statvfs(path).f_namemax
+        fullfn_without_extension = fullfn_without_extension[:max_name_len - len(extension)]
+        params.filename = fullfn_without_extension + extension
     _atomically_save_image(image, fullfn_without_extension, extension)
 
     image.already_saved_as = fullfn
