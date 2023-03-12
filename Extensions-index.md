@@ -757,9 +757,9 @@
         {
             "name": "db-storage1111",
             "url": "https://github.com/takoyaro/db-storage1111.git",
-            "description": "Store images on a MongoDB instance from Colab.",
-            "added": "2023-03-11",
-            "tags": ["online"]
+            "description": "Allows to store pictures and their metadata in a database. (supports MongoDB)",
+            "added": "2023-03-12",
+            "tags": ["script"]
         },
         {
             "name": "zh_CN Localization",
