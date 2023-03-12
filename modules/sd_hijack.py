@@ -36,42 +36,53 @@ def apply_optimizations():
     ldm.modules.diffusionmodules.openaimodel.th = sd_hijack_unet.th
     
     optimization_method = None
-
+    methods = []
     can_use_sdp = hasattr(torch.nn.functional, "scaled_dot_product_attention") and callable(getattr(torch.nn.functional, "scaled_dot_product_attention")) # not everyone has torch 2.x to use sdp
 
     if cmd_opts.force_enable_xformers or (cmd_opts.xformers and shared.xformers_available and torch.version.cuda and (6, 0) <= torch.cuda.get_device_capability(shared.device) <= (9, 0)):
         print("Applying xformers cross attention optimization.")
         ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.xformers_attention_forward
         ldm.modules.diffusionmodules.model.AttnBlock.forward = sd_hijack_optimizations.xformers_attnblock_forward
-        optimization_method = 'xformers'
-    elif cmd_opts.opt_sdp_no_mem_attention and can_use_sdp:
-        print("Applying scaled dot product cross attention optimization (without memory efficient attention).")
+        methods.append('xformers')
+    elif cmd_opts.xformers:
+        print('Warning: specified --xformers but it is disabled or not available.')
+
+    if cmd_opts.opt_sdp_no_mem_attention and can_use_sdp:
         ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.scaled_dot_product_no_mem_attention_forward
         ldm.modules.diffusionmodules.model.AttnBlock.forward = sd_hijack_optimizations.sdp_no_mem_attnblock_forward
-        optimization_method = 'sdp-no-mem'
-    elif cmd_opts.opt_sdp_attention and can_use_sdp:
-        print("Applying scaled dot product cross attention optimization.")
+        methods.append('sdp-no-mem')
+    elif cmd_opts.opt_sdp_no_mem_attention:
+        print('Warning: specified --opt-sdp-no-mem-attention but it is not available.')
+    
+    if cmd_opts.opt_sdp_attention and can_use_sdp:
         ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.scaled_dot_product_attention_forward
         ldm.modules.diffusionmodules.model.AttnBlock.forward = sd_hijack_optimizations.sdp_attnblock_forward
-        optimization_method = 'sdp'
-    elif cmd_opts.opt_sub_quad_attention:
-        print("Applying sub-quadratic cross attention optimization.")
-        ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.sub_quad_attention_forward
-        ldm.modules.diffusionmodules.model.AttnBlock.forward = sd_hijack_optimizations.sub_quad_attnblock_forward
-        optimization_method = 'sub-quadratic'
-    elif cmd_opts.opt_split_attention_v1:
-        print("Applying v1 cross attention optimization.")
+        methods.append('sdp')
+    elif cmd_opts.opt_sdp_attention:
+        print('Warning: specified --opt-sdp-no-mem-attention but it is not available.')
+    
+    if cmd_opts.opt_split_attention_v1:
         ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.split_cross_attention_forward_v1
-        optimization_method = 'V1'
-    elif not cmd_opts.disable_opt_split_attention and (cmd_opts.opt_split_attention_invokeai or not cmd_opts.opt_split_attention and not torch.cuda.is_available()):
-        print("Applying cross attention optimization (InvokeAI).")
+        methods.append('V1')
+
+    if not cmd_opts.disable_opt_split_attention and (cmd_opts.opt_split_attention_invokeai or not cmd_opts.opt_split_attention and not torch.cuda.is_available()):
         ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.split_cross_attention_forward_invokeAI
-        optimization_method = 'InvokeAI'
-    elif not cmd_opts.disable_opt_split_attention and (cmd_opts.opt_split_attention or torch.cuda.is_available()):
-        print("Applying cross attention optimization (Doggettx).")
+        methods.append('InvokeAI')
+    elif cmd_opts.opt_split_attention_invokeai:
+        print('Warning: specified --opt-split-attention-invokeai but it is disabled or unavailable.')
+
+    if not cmd_opts.disable_opt_split_attention and (cmd_opts.opt_split_attention or torch.cuda.is_available()):
         ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.split_cross_attention_forward
         ldm.modules.diffusionmodules.model.AttnBlock.forward = sd_hijack_optimizations.cross_attention_attnblock_forward
-        optimization_method = 'Doggettx'
+        methods.append('Doggettx')
+    elif cmd_opts.opt_split_attention:
+        print('Warning: specified --opt-split-attention but it is disabled or unavailable.')
+
+    if len(methods) > 0:
+        optimization_method = methods[0]
+        print("Applying cross attention optimization: %s" % optimization_method)
+        if len(methods) > 1:
+            print('Warning: multiple optimization methods specified, ignoring: %s' % ', '.join(methods[1:]))
 
     return optimization_method
 
