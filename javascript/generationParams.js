@@ -8,10 +8,12 @@ onUiUpdate(function(){
 	if (!img2img_gallery) {
 		img2img_gallery = attachGalleryListeners("img2img")
 	}
+	/*
 	if (!modal) {
 		modal = gradioApp().getElementById('lightboxModal')
 		modalObserver.observe(modal,  { attributes : true, attributeFilter : ['style'] });
 	}
+	*/
 });
 
 let modalObserver = new MutationObserver(function(mutations) {

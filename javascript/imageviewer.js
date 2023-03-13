@@ -1,4 +1,5 @@
 // A full size 'lightbox' preview modal shown when left clicking on gallery previews
+/*
 function closeModal() {
     gradioApp().getElementById("lightboxModal").style.display = "none";
 }
@@ -282,4 +283,123 @@ document.addEventListener("DOMContentLoaded", function() {
 
     document.body.appendChild(modalFragment);
 
+});
+*/
+
+//called from progressbar
+function showGalleryImage() {
+	//need to clean up the old code 
+}
+
+let like;
+let tile;
+let slide = 0;
+let gallery = [];
+let fullImg_src;
+
+function tile_handler(event) {
+	
+	const current_tile_state = !gallery[slide].tile;
+    gallery[slide].tile = current_tile_state;
+    this.classList.toggle("on");
+    
+    const spl_img = document.querySelector("#spotlight .spl-pane img");
+	const spl_pane = spl_img.parentElement;
+	
+    if(current_tile_state){ 
+		spl_pane.classList.add("hide");
+        spl_pane.style.setProperty('background-image', `url(${spl_img.src})`);
+		spl_pane.style.setProperty('background-position', "center");		
+    } else {		
+		spl_pane.classList.remove("hide");
+        spl_pane.style.setProperty('background-image', 'none');
+		Spotlight.autofit(true);
+    }
+}
+
+function like_handler(event){
+ 
+    const current_like_state = !gallery[slide].like;
+    gallery[slide].like = current_like_state;
+    this.classList.toggle("on");
+  
+    if(current_like_state){
+      // add to favorites ...
+    }
+    else{
+      // remove from favorites ...
+    }
+}
+function createGallerySpotlight(src) {
+	
+	slide = 0;
+	gallery = [];
+	
+	gradioApp().querySelectorAll('.grid img.w-full.object-contain').forEach(function (elem, i){
+		elem.setAttribute("gal-id", i);
+		if(src == elem.src) slide = (i+1);
+		gallery[i] = {
+			src: elem.src,
+			like: false,
+			tile:false
+		}
+	})
+	
+	const options = {
+		
+		class: "sd-gallery",
+		index: slide,
+		//control: ["like","page","theme","fullscreen","autofit","zoom-in","zoom-out","close","download","play","prev","next"],
+		control: ["tile","like","page","fullscreen","autofit","zoom-in","zoom-out","close","download","prev","next"],
+		//animation: animation,
+		//onshow: function(index){
+			//like = Spotlight.addControl("like", handler);
+		//},		
+		onchange: function(index, options){
+			slide = index - 1;
+			like.classList.toggle("on", gallery[slide].like);
+			tile.classList.toggle("on", gallery[slide].tile);
+		},		
+		onclose: function(index){
+			//Spotlight.removeControl("like");
+			gradioApp().querySelector('.grid .gallery-item:nth-child('+(slide+1)+')').click();		
+		}
+	};
+	
+	//assign(options, modifier);
+	Spotlight.show(gallery, options);
+}
+
+
+function fullImg_click_handler(e){					
+	e.stopPropagation();
+	e.preventDefault();
+	createGallerySpotlight(fullImg_src);
+}
+
+onUiUpdate(function() {
+	
+	const fullImg_preview = gradioApp().querySelector('.modify-upload + img.w-full.object-contain');	
+	if(opts.js_modal_lightbox && fullImg_preview ) {
+		//console.log("GALLERY UPDATED");
+		fullImg_src = fullImg_preview.src;
+		fullImg_preview.removeEventListener('click', fullImg_click_handler );
+		fullImg_preview.addEventListener('click', fullImg_click_handler, true );//bubbling phase	
+	}
+})
+
+document.addEventListener("DOMContentLoaded", function() {
+	
+	const head = document.head;
+	const link = document.createElement("link");
+
+	link.type = "text/css";
+	link.rel = "stylesheet";
+	link.href = "file=html/spotlight.css";
+	head.appendChild(link);
+	
+	Spotlight.init();
+	like = Spotlight.addControl("like", like_handler);
+	tile = Spotlight.addControl("tile", tile_handler);
+	
 });
