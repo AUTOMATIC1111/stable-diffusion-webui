@@ -2,6 +2,7 @@
  * temporary fix for https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/668
  * @see https://github.com/gradio-app/gradio/issues/1721
  */
+ /*
 window.addEventListener( 'resize', () => imageMaskResize());
 function imageMaskResize() {
     const canvases = gradioApp().querySelectorAll('#img2maskimg .touch-none canvas');
@@ -43,3 +44,29 @@ function imageMaskResize() {
  }
   
  onUiUpdate(() => imageMaskResize());
+ */
+ 
+let img2img_tab_index = 0;
+onUiUpdate(function() {
+	const img2img_tab = gradioApp().querySelector('#img2img_img2img_tab');
+	if(img2img_tab){
+		const current_img2img_tab_index = get_img2img_tab_index()[0];
+		//if(img2img_tab_index != current_img2img_tab_index){
+			//console.log(current_img2img_tab_index);
+			img2img_tab_index = current_img2img_tab_index;
+			const parent_img2img_tab_img = gradioApp().querySelector('#mode_img2img > div:nth-child('+(img2img_tab_index+2)+') div[data-testid="image"] > div');		
+			const img2img_tab_img = parent_img2img_tab_img.querySelector('img');			
+			if(img2img_tab_img){			
+				parent_img2img_tab_img.style.flexGrow = "0";				
+				img2img_tab_img.onload = function() {
+					let w = this.naturalWidth; 
+					let h = this.naturalHeight; 
+					parent_img2img_tab_img.style.width = `${w}px`;
+					parent_img2img_tab_img.style.height = `${h}px`;
+				}
+			}else{
+				parent_img2img_tab_img.style.flexGrow = "1";
+			}
+		//}
+	}
+})

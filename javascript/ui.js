@@ -353,7 +353,7 @@ onUiUpdate(function(){
 				leftSide.style.pointerEvents = 'none';
 				rightSide.style.userSelect = 'none';
 				rightSide.style.pointerEvents = 'none';
-				window.dispatchEvent(resizeEvent);		
+				//window.dispatchEvent(resizeEvent);		
 			}
 
 			function mouseUpHandler() {
@@ -365,7 +365,7 @@ onUiUpdate(function(){
 				rightSide.style.removeProperty('pointer-events');
 				container.removeEventListener('mousemove', mouseMoveHandler);
 				container.removeEventListener('mouseup', mouseUpHandler);
-				window.dispatchEvent(resizeEvent);				
+				//window.dispatchEvent(resizeEvent);				
 			}
 			
 			container.addEventListener('mousemove', mouseMoveHandler);

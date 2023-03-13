@@ -1664,15 +1664,27 @@ div[data-testid="image"]{
 	position: relative;
     max-height: 50vh;
 	height:auto;
-	background-color: var(--main-bg-color);
+	background-color: var(--main-bg-color) !important;
+	display: flex;
 }
-
+/*
 div[data-testid="image"] > div
 {
 	position: relative;
     max-height: 50vh;
 	height:auto;
 	background-color: var(--main-bg-color);
+}
+*/
+div[data-testid="image"] > div {
+    position: relative;
+    max-height: 50vh;
+    background-color: var(--main-bg-color);
+    object-fit: contain;
+    width: fit-content!important;
+    height: fit-content !important;
+    margin: auto;
+	flex-grow:1;
 }
 
 div[data-testid="image"] img
@@ -1682,23 +1694,40 @@ div[data-testid="image"] img
 	background-color: var(--main-bg-color);
 }
 
+/*
 div[data-testid="image"] .touch-none {
 	width: 100% !important;
     height: auto !important;
 	position: absolute !important;
 	top: unset !important;
     left: unset !important;
+}*/
+div[data-testid="image"] .touch-none {
+	position: absolute !important;
 }
 
+/*
 canvas {
     object-fit: contain !important;
     max-height: 50vh !important;
     width: 100% !important;
+
     height: auto !important;
     position: absolute !important;
     top: 0 !important;
     left: 0 !important;	
 }
+*/
+
+canvas {
+    width: 100% !important;
+    height: 100% !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+}
+
+
 
 
 #dim_controls > div:last-child{
