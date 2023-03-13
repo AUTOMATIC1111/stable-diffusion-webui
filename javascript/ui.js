@@ -901,7 +901,7 @@ onUiUpdate(function(){
 	// performant dispatch for gradio's range slider and input number fields
 	function ui_performant_gradio_input_components(sel){
 		let selectors = sel.split(",");
-		selectors.push("#quicksettings_overflow_container", "#tab_txt2img", "#tab_img2img", "#tab_extras", "#tab_modelmerger", "#tab_ti");
+		selectors.push("#quicksettings_overflow_container");//, "#tab_txt2img", "#tab_img2img", "#tab_extras", "#tab_modelmerger", "#tab_ti");
 		selectors = selectors.filter(e => e);
 		for (let i = 0; i < selectors.length; i++) {
 			selectors[i] = selectors[i]+" input[type='number']";
@@ -952,8 +952,8 @@ onUiUpdate(function(){
 	// step ticks for performant input range
 	function ui_show_range_ticks(value, interactive){
 		if(value){
-			//const range_selectors = "input[type='range']"; 
-			const range_selectors = "[id$='_clone']:is(input[type='range'])";
+			const range_selectors = "input[type='range']"; 
+			//const range_selectors = "[id$='_clone']:is(input[type='range'])";
 			gradioApp().querySelectorAll(range_selectors).forEach(function (elem){
 				let spacing = ((elem.step / ( elem.max - elem.min )) * 100.0);	
 				let tsp = 'max(3px, calc('+spacing+'% - 2px))';
@@ -1275,11 +1275,8 @@ onUiUpdate(function(){
 	updateOpStyles();
 	
 	
-
-
 	/* anapnoe ui end */	
 
-	
 })
 
 onOptionsChanged(function(){
