@@ -220,37 +220,10 @@ document.addEventListener("DOMContentLoaded", function() {
     modal.tabIndex = 0
     modal.addEventListener('keydown', modalKeyHandler, true)
 
-    let delay = 350//ms
-    window.addEventListener('gamepadconnected', (e) => {
-        console.log("Gamepad connected!")
-        const gamepad = e.gamepad;
-        setInterval(() => {
-            const xValue = gamepad.axes[0].toFixed(2);
-            if (xValue < -0.3) {
-                modalPrevImage(e);
-            } else if (xValue > 0.3) {
-                modalNextImage(e);
-            }
-
-        }, delay);
-    });
-
-
-    let isScrolling = false;
-    window.addEventListener('wheel', (e) => {
-        if (isScrolling) return;
-        isScrolling = true;
-
-        if (e.deltaX <= -0.6) {
-            modalPrevImage(e);
-        } else if (e.deltaX >= 0.6) {
-            modalNextImage(e);
-        }
-
-        setTimeout(() => {
-            isScrolling = false;
-        }, delay);
-    });
+    // detect gamepads and enable related functionality
+    let gamepadScript = document.createElement('script');
+    gamepadScript.src = 'imageviewerGamepad.js';
+    document.body.appendChild(gamepadScript);
 
     const modalControls = document.createElement('div')
     modalControls.className = 'modalControls gradio-container';
