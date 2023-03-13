@@ -1032,7 +1032,7 @@
     "customscript/save_steps_animation.py/img2img/Skip steps/maximum": 100,
     "customscript/save_steps_animation.py/img2img/Skip steps/minimum": 0,
     "customscript/save_steps_animation.py/img2img/Skip steps/step": 1,
-    "customscript/save_steps_animation.py/img2img/Skip steps/value": 5,
+    "customscript/save_steps_animation.py/img2img/Skip steps/value": 0,
     "customscript/save_steps_animation.py/img2img/Skip steps/visible": true,
     "customscript/save_steps_animation.py/txt2img/Codec/value": "x264",
     "customscript/save_steps_animation.py/txt2img/Codec/visible": true,

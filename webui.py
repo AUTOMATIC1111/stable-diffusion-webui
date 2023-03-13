@@ -289,7 +289,10 @@ def webui():
 
         print(f"Startup time: {startup_timer.summary()}.")
 
-        wait_on_server(shared.demo)
+        try:
+            wait_on_server(shared.demo)
+        except KeyboardInterrupt as e:
+            pass
         print('Restarting UI...')
 
         startup_timer.reset()

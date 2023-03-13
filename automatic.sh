@@ -1,12 +1,14 @@
 #!/bin/env bash
 
 export TF_CPP_MIN_LOG_LEVEL=2
+export ACCELERATE="True"
 export FORCE_CUDA="1"
 export ATTN_PRECISION=fp16
 export PYTORCH_CUDA_ALLOC_CONF=garbage_collection_threshold:0.9,max_split_size_mb:512
 export CUDA_LAUNCH_BLOCKING=0
 export CUDA_CACHE_DISABLE=0
 export CUDA_AUTO_BOOST=1
+export CUDA_MODULE_LOADING="LAZY"
 export CUDA_DEVICE_DEFAULT_PERSISTING_L2_CACHE_PERCENTAGE_LIMIT=0
 
 if [ "$PYTHON" == "" ]; then
@@ -151,6 +153,7 @@ if [ $MODE == optimized ]; then
 fi
 
 exec accelerate launch --no_python --quiet --num_cpu_threads_per_process=6 "$PYTHON" $CMD
+# exec "$PYTHON" $CMD
 
 # export LD_PRELOAD=libtcmalloc.so
 # TORCH_CUDA_ARCH_LIST="8.6"

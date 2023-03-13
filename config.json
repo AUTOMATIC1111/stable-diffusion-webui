@@ -132,7 +132,7 @@
     "localization": "None",
     "lora_apply_to_outputs": false,
     "memmon_poll_rate": 1,
-    "multiple_tqdm": true,
+    "multiple_tqdm": false,
     "n_rows": -1,
     "no_dpmpp_sde_batch_determinism": false,
     "outdir_extras_samples": "outputs/extras",

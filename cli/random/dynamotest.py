@@ -94,10 +94,4 @@ Inference-only backends:
     dynamo.optimize("ofi") - Uses Torchscript optimize_for_inference
     dynamo.optimize("fx2trt") - Uses Nvidia TensorRT for inference optimizations
     dynamo.optimize("onnxrt") - Uses ONNXRT for inference on CPU/GPU
-Results:
-    "default": 4.247040033340454,
-    "ofi": 3.820032000541687,
-    "aot_cudagraphs": 6.460927963256836,
-    "inductor": RuntimeError: CUDA: Error- no device
-    "fx2trt": ImportError: libtorch_cuda_cu.so: cannot open shared object file: No such file or directory
 """
