@@ -290,24 +290,35 @@ def webui():
         wait_on_server(shared.demo)
         print('Restarting UI...')
 
+        startup_timer.reset()
+
         sd_samplers.set_samplers()
 
         modules.script_callbacks.script_unloaded_callback()
         extensions.list_extensions()
+        startup_timer.record("list extensions")
 
         localization.list_localizations(cmd_opts.localizations_dir)
 
         modelloader.forbid_loaded_nonbuiltin_upscalers()
         modules.scripts.reload_scripts()
+        startup_timer.record("load scripts")
+
         modules.script_callbacks.model_loaded_callback(shared.sd_model)
+        startup_timer.record("model loaded callback")
+
         modelloader.load_upscalers()
+        startup_timer.record("load upscalers")
 
         for module in [module for name, module in sys.modules.items() if name.startswith("modules.ui")]:
             importlib.reload(module)
+        startup_timer.record("reload script modules")
 
         modules.sd_models.list_models()
+        startup_timer.record("list SD models")
 
         shared.reload_hypernetworks()
+        startup_timer.record("reload hypernetworks")
 
         ui_extra_networks.intialize()
         ui_extra_networks.register_page(ui_extra_networks_textual_inversion.ExtraNetworksPageTextualInversion())
@@ -316,6 +327,7 @@ def webui():
 
         extra_networks.initialize()
         extra_networks.register_extra_network(extra_networks_hypernet.ExtraNetworkHypernet())
+        startup_timer.record("initialize extra networks")
 
 
 if __name__ == "__main__":
