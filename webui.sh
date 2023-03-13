@@ -6,18 +6,19 @@
 
 # If run from macOS, load defaults from webui-macos-env.sh
 if [[ "$OSTYPE" == "darwin"* ]]; then
-    if [[ -f "$(dirname $0)/webui-macos-env.sh" ]]
+    if [[ -f webui-macos-env.sh ]]
         then
-        source "$(dirname $0)/webui-macos-env.sh"
+        source ./webui-macos-env.sh
     fi
 fi
 
 # Read variables from webui-user.sh
 # shellcheck source=/dev/null
-if [[ -f "$(dirname $0)/webui-user.sh" ]]
+if [[ -f webui-user.sh ]]
 then
-    source "$(dirname $0)/webui-user.sh"
+    source ./webui-user.sh
 fi
+
 # Set defaults
 # Install directory without trailing slash
 if [[ -z "${install_dir}" ]]
@@ -46,12 +47,12 @@ fi
 # python3 venv without trailing slash (defaults to ${install_dir}/${clone_dir}/venv)
 if [[ -z "${venv_dir}" ]]
 then
-    venv_dir="${install_dir}/${clone_dir}/venv"
+    venv_dir="venv"
 fi
 
 if [[ -z "${LAUNCH_SCRIPT}" ]]
 then
-    LAUNCH_SCRIPT="${install_dir}/${clone_dir}/launch.py"
+    LAUNCH_SCRIPT="launch.py"
 fi
 
 # this script cannot be run as root by default
@@ -139,23 +140,22 @@ then
     exit 1
 fi
 
-if [[ ! -d "${install_dir}/${clone_dir}" ]]
+cd "${install_dir}"/ || { printf "\e[1m\e[31mERROR: Can't cd to %s/, aborting...\e[0m" "${install_dir}"; exit 1; }
+if [[ -d "${clone_dir}" ]]
 then
+    cd "${clone_dir}"/ || { printf "\e[1m\e[31mERROR: Can't cd to %s/%s/, aborting...\e[0m" "${install_dir}" "${clone_dir}"; exit 1; }
+else
     printf "\n%s\n" "${delimiter}"
     printf "Clone stable-diffusion-webui"
     printf "\n%s\n" "${delimiter}"
-    mkdir -p "${install_dir}"
-    "${GIT}" clone https://github.com/AUTOMATIC1111/stable-diffusion-webui.git "${install_dir}/${clone_dir}"
+    "${GIT}" clone https://github.com/AUTOMATIC1111/stable-diffusion-webui.git "${clone_dir}"
+    cd "${clone_dir}"/ || { printf "\e[1m\e[31mERROR: Can't cd to %s/%s/, aborting...\e[0m" "${install_dir}" "${clone_dir}"; exit 1; }
 fi
 
 printf "\n%s\n" "${delimiter}"
 printf "Create and activate python venv"
 printf "\n%s\n" "${delimiter}"
-# Make venv_dir absolute
-if [[ "${venv_dir}" != /* ]]
-then
-    venv_dir="${install_dir}/${clone_dir}/${venv_dir}"
-fi
+cd "${install_dir}"/"${clone_dir}"/ || { printf "\e[1m\e[31mERROR: Can't cd to %s/%s/, aborting...\e[0m" "${install_dir}" "${clone_dir}"; exit 1; }
 if [[ ! -d "${venv_dir}" ]]
 then
     "${python_cmd}" -m venv "${venv_dir}"
