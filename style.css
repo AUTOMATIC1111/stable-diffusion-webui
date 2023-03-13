@@ -344,9 +344,11 @@ body {
   display: block;
 }
 
+#ui_add2quick_setting_hidden_tabs,
 [id*="add2quick_setting_quicksettings"]{
 	display:none;
 }
+
 
 
 /* icons */
@@ -1317,7 +1319,7 @@ input
     max-width: unset;
 	flex-grow: 0;
 }
-
+/*
 [id*="2img_seed"] input[type=number],
 [id*="2img_subseed"] input[type=number]{
 	display:none;
@@ -1326,7 +1328,7 @@ input
 [id*="2img_subseed"] input[type=number].hidden{
 	display:block !important;
 }
-
+*/
 /*
 button
 {
@@ -3805,6 +3807,14 @@ input[type=range]::-ms-fill-upper {
 #setting_hidden_tabs{
 	display:none !important;
 }
+
+#txt2img_results .modify-upload + img.w-full.object-contain{
+	cursor: pointer;
+}
+
+
+
+
 
 
 /*BREAKPOINT_CSS_CONTENT*/
