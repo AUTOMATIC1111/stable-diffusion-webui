@@ -53,6 +53,7 @@ onUiUpdate(function() {
 		const current_img2img_tab_index = get_img2img_tab_index()[0];
 		//if(img2img_tab_index != current_img2img_tab_index){
 			//console.log(current_img2img_tab_index);
+			if(current_img2img_tab_index > 3) return;
 			img2img_tab_index = current_img2img_tab_index;
 			const parent_img2img_tab_img = gradioApp().querySelector('#mode_img2img > div:nth-child('+(img2img_tab_index+2)+') div[data-testid="image"] > div');		
 			const img2img_tab_img = parent_img2img_tab_img.querySelector('img');			
