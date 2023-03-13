@@ -54,11 +54,11 @@ Once you swapped to a model for the first time a hash will appear beside the mod
 
 This is my personal model ranking based on my own research.
 
-1. AOM - Abyss orange mix U-net block merged model - insane japanese technology, produces semi-realistic anime feel
+1. counterfeitV2.5 - A good painterly style 2D anime model, produces very artistic and good looking artworks. good thing about this mode is that it's a trained checkpoint rather than than a merge making it less messy.
 
 2. dalcefoPainting - Good realistic stylized model, produces league of legends splash art style
 
-3. counterfeit - A good stylized 2D anime model, produces very artistic and good looking artworks
+3. AOM - Abyss orange mix U-net block merged model - produces semi-realistic 3D anime feel with realistic backgrounds
 
 4. neverendingDreamNED - Super versatile model capable of creating anything - realistic, anime, starwars, fantasy...
 
