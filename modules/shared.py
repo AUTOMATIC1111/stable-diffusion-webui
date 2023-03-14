@@ -5,7 +5,6 @@ import os
 import sys
 import time
 
-from PIL import Image
 import gradio as gr
 import tqdm
 

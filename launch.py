@@ -7,6 +7,7 @@ import shlex
 import platform
 import argparse
 import json
+import modules.shared # pylint: disable=unused-import
 
 dir_repos = "repositories"
 dir_extensions = "extensions"
