@@ -127,7 +127,7 @@ RUN echo "{\"localization\": \"zh_CN\"}" >  ~/stable-diffusion-webui/config.json
 RUN pip3 install basicsr Werkzeug==2.1.0 open_clip_torch==2.16.0 markupsafe==2.0.1 -i https://nexus.ops.dragonest.com/repository/ly_pip_all/simple
 
 
-WORKDIR ~/stable-diffusion-webui
+WORKDIR /root/stable-diffusion-webui
 
 # 启动时必须将models下面的一些必要文件挂载进去，例如：VAE-approx/models.pt
-CMD bash -c "cd ~/stable-diffusion-webui; python3 -u webui.py --server-name 0.0.0.0 --xformers --enable-insecure-extension-access>>nohup.out"
+CMD bash -c "cd /root/stable-diffusion-webui; python3 -u webui.py --server-name 0.0.0.0 --xformers --enable-insecure-extension-access>>nohup.out"
