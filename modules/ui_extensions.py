@@ -279,7 +279,7 @@ def create_ui():
             with gr.TabItem("Installed"):
 
                 with gr.Row(elem_id="extensions_installed_top"):
-                    apply = gr.Button(value="Apply and restart UI", variant="primary")
+                    apply = gr.Button(value="Apply and restart UI", variant="primary", visible=False)
                     check = gr.Button(value="Check for updates")
                     extensions_disabled_list = gr.Text(elem_id="extensions_disabled_list", visible=False).style(container=False)
                     extensions_update_list = gr.Text(elem_id="extensions_update_list", visible=False).style(container=False)

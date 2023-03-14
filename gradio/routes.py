@@ -195,7 +195,7 @@ class App(FastAPI):
                 not callable(app.auth)
                 and username in app.auth
                 and app.auth[username] == password
-            ) or (callable(app.auth) and app.auth.__call__(username, password)):
+            ) or (callable(app.auth) and app.auth(username, password)):
                 token = secrets.token_urlsafe(16)
                 for tk, u in app.tokens.items():
                     app.expired_users[u] = now

@@ -8,6 +8,8 @@
 import json
 import os
 import time
+import typing
+
 from tools.mysql import MySQLClient
 
 
@@ -24,9 +26,9 @@ def authorization(user, password):
 
 
 def find_users_from_models(username, password) -> bool:
-    host = os.getenv('MysqlHost', '')
-    user = os.getenv('MysqlUser', '')
-    pwd = os.getenv('MysqlPass', '')
+    host = os.getenv('MysqlHost', '172.16.241.104')
+    user = os.getenv('MysqlUser', 'root')
+    pwd = os.getenv('MysqlPass', 'jE%r__hk&2OB')
     db = os.getenv('MysqlDB', 'draw-ai')
     port = os.getenv('MysqlPort', 3306)
 
@@ -36,6 +38,9 @@ def find_users_from_models(username, password) -> bool:
             if res:
                 expire = res.get('expire', -1)
                 if 0 == expire or expire > time.time():
+                    endpoint = os.getenv("Endpoint")
+                    if endpoint and res.get('endpoint'):
+                        return endpoint == res['endpoint']
                     return True
-
     return False
+
