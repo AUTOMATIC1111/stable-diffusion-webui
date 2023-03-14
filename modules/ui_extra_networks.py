@@ -30,8 +30,8 @@ def add_pages_to_demo(app):
             raise ValueError(f"File cannot be fetched: {filename}. Must be in one of directories registered by extra pages.")
 
         ext = os.path.splitext(filename)[1].lower()
-        if ext not in (".png", ".jpg"):
-            raise ValueError(f"File cannot be fetched: {filename}. Only png and jpg.")
+        if ext not in (".png", ".jpg", ".webp"):
+            raise ValueError(f"File cannot be fetched: {filename}. Only png and jpg and webp.")
 
         # would profit from returning 304
         return FileResponse(filename, headers={"Accept-Ranges": "bytes"})

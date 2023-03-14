@@ -225,7 +225,7 @@ def read_metadata_from_safetensors(filename):
         res = {}
         for k, v in json_obj.get("__metadata__", {}).items():
             res[k] = v
-            if isinstance(v, str) and v[0] == '{':
+            if isinstance(v, str) and v[0:1] == '{':
                 try:
                     res[k] = json.loads(v)
                 except Exception as e:
