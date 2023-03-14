@@ -8,6 +8,7 @@ import platform
 import argparse
 import json
 import modules.shared
+fix_modules_shared_lint = modules.shared # fix linting error
 
 dir_repos = "repositories"
 dir_extensions = "extensions"
