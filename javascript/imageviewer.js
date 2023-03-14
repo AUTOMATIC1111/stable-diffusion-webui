@@ -325,41 +325,45 @@ function tile_zoom_out(event){
 	tile_zoom_update(-1);
 }
 
-function removeTileEventListeners(){
-	if(spl_pane){
-		spl_pane.removeEventListener("wheel", tile_wheel);
-		spl_zoom_out.removeEventListener("click", tile_zoom_out);
-		spl_zoom_in.removeEventListener("click", tile_zoom_in);
-	}
+function removeTile(){
+
+	spl_pane.removeEventListener("wheel", tile_wheel);
+	spl_zoom_out.removeEventListener("click", tile_zoom_out);
+	spl_zoom_in.removeEventListener("click", tile_zoom_in);
+	
+	spl_pane.classList.remove("hide");
+	spl_pane.style.setProperty('background-image', 'none');
+	Spotlight.zoom(0.0);
+	
 }
 
-function addTileEventListeners(){
+function addTile(spl_img){
 	spl_pane.addEventListener("wheel", tile_wheel);
 	spl_zoom_out.addEventListener("click", tile_zoom_out);
 	spl_zoom_in.addEventListener("click", tile_zoom_in);
+	
+	const current_tile_state_size = gallery[slide].tile_size;
+	spl_pane.classList.add("hide");	
+	spl_pane.style.setProperty('background-position', "center");
+	spl_pane.style.setProperty('background-size', current_tile_state_size+"%");
+	if(spl_img){
+		spl_pane.style.setProperty('background-image', `url(${spl_img.src})`);
+	}
+	
 }
 
 function tile_handler(event) {
 	
 	const current_tile_state = !gallery[slide].tile;	
     gallery[slide].tile = current_tile_state;
-	const current_tile_state_size = gallery[slide].tile_size;
+	
     this.classList.toggle("on");
 
-	const spl_img = document.querySelector("#spotlight .spl-pane img");
-	
-    if(current_tile_state){				
-		spl_pane.classList.add("hide");
-        spl_pane.style.setProperty('background-image', `url(${spl_img.src})`);
-		spl_pane.style.setProperty('background-position', "center");
-		spl_pane.style.setProperty('background-size', current_tile_state_size+"%");
-		addTileEventListeners();
-    } else {	
-		spl_pane.classList.remove("hide");
-        spl_pane.style.setProperty('background-image', 'none');
-		Spotlight.zoom(0.0);
-		removeTileEventListeners();	
-		
+    if(current_tile_state){	
+		const spl_img = document.querySelector("#spotlight .spl-pane img");
+		addTile(spl_img);
+    } else {			
+		removeTile();	
     }
 }
 function like_handler(event){
@@ -420,9 +424,9 @@ function createGallerySpotlight(src) {
 			spl_zoom_in = document.querySelector("#spotlight .spl-zoom-in");
 			
 			if(current_tile_state){
-				addTileEventListeners();
+				addTile();
 			}else{
-				removeTileEventListeners();	
+				removeTile();	
 			}
 
 		},		
