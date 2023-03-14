@@ -296,27 +296,78 @@ let tile;
 let slide = 0;
 let gallery = [];
 let fullImg_src;
+let control = ["like","tile","page","fullscreen","autofit","zoom-in","zoom-out","close","download","prev","next"];
+
+let img_browser;
+let img_file_name;
+
+
+let spl_pane;
+let spl_zoom_out;
+let spl_zoom_in;
+
+
+function tile_zoom_update(val){
+	let current_tile_state_size = gallery[slide].tile_size;
+	current_tile_state_size += (val * 5);
+	current_tile_state_size = Math.max(5, Math.min(100,current_tile_state_size));
+	spl_pane.style.setProperty('background-size', current_tile_state_size+"%");
+	gallery[slide].tile_size = current_tile_state_size;	
+}
+
+function wheel_listener(event){
+	let delta = event["deltaY"];
+	delta = (delta < 0 ? 1 : delta ? -1 : 0) * 0.5;
+	tile_zoom_update(delta);
+}
+function tile_zoom_in(event){
+	tile_zoom_update(1);
+}
+function tile_zoom_out(event){
+	tile_zoom_update(-1);
+}
+
+function removeTileEventListeners(){
+	if(spl_pane){
+		spl_pane.removeEventListener("wheel", wheel_listener);
+		spl_zoom_out.removeEventListener("click", tile_zoom_out);
+		spl_zoom_in.removeEventListener("click", tile_zoom_in);
+	}
+	return true;
+}
 
 function tile_handler(event) {
 	
-	const current_tile_state = !gallery[slide].tile;
+	const current_tile_state = !gallery[slide].tile;	
     gallery[slide].tile = current_tile_state;
+	const current_tile_state_size = gallery[slide].tile_size;
     this.classList.toggle("on");
-    
-    const spl_img = document.querySelector("#spotlight .spl-pane img");
-	const spl_pane = spl_img.parentElement;
+	
+	// remove last referrer listeners from previous pane
+	removeTileEventListeners();
+	
+	const spl_img = document.querySelector("#spotlight .spl-pane img");
+	spl_pane = spl_img.parentElement;
+	spl_zoom_out = document.querySelector("#spotlight .spl-zoom-out");
+	spl_zoom_in = document.querySelector("#spotlight .spl-zoom-in");
 	
     if(current_tile_state){ 
 		spl_pane.classList.add("hide");
         spl_pane.style.setProperty('background-image', `url(${spl_img.src})`);
-		spl_pane.style.setProperty('background-position', "center");		
+		spl_pane.style.setProperty('background-position', "center");
+		spl_pane.style.setProperty('background-size', current_tile_state_size+"%");
+		spl_pane.removeEventListener("wheel", wheel_listener);
+		spl_pane.addEventListener("wheel", wheel_listener);
+		spl_zoom_out.addEventListener("click", tile_zoom_out);
+		spl_zoom_in.addEventListener("click", tile_zoom_in);
+		
     } else {		
 		spl_pane.classList.remove("hide");
         spl_pane.style.setProperty('background-image', 'none');
-		Spotlight.autofit(true);
+		Spotlight.zoom(0.0);
+		removeTileEventListeners();
     }
 }
-
 function like_handler(event){
  
     const current_like_state = !gallery[slide].like;
@@ -324,7 +375,9 @@ function like_handler(event){
     this.classList.toggle("on");
   
     if(current_like_state){
-      // add to favorites ...
+		// add to favorites ...
+		//img_file_name.value = gallery[slide].src;
+		//console.log(gallery[slide].src);
     }
     else{
       // remove from favorites ...
@@ -335,13 +388,15 @@ function createGallerySpotlight(src) {
 	slide = 0;
 	gallery = [];
 	
-	gradioApp().querySelectorAll('.grid img.w-full.object-contain').forEach(function (elem, i){
+	
+	gradioApp().querySelectorAll("#"+selectedTabItemId+' .grid img.w-full.object-contain').forEach(function (elem, i){
 		elem.setAttribute("gal-id", i);
 		if(src == elem.src) slide = (i+1);
 		gallery[i] = {
 			src: elem.src,
 			like: false,
-			tile:false
+			tile:false,
+			tile_size: 50
 		}
 	})
 	
@@ -350,15 +405,17 @@ function createGallerySpotlight(src) {
 		class: "sd-gallery",
 		index: slide,
 		//control: ["like","page","theme","fullscreen","autofit","zoom-in","zoom-out","close","download","play","prev","next"],
-		control: ["tile","like","page","fullscreen","autofit","zoom-in","zoom-out","close","download","prev","next"],
+		control: control,
 		//animation: animation,
 		//onshow: function(index){
 			//like = Spotlight.addControl("like", handler);
 		//},		
 		onchange: function(index, options){
 			slide = index - 1;
-			like.classList.toggle("on", gallery[slide].like);
 			tile.classList.toggle("on", gallery[slide].tile);
+			//if(img_browser){
+				like.classList.toggle("on", gallery[slide].like);
+			//}
 		},		
 		onclose: function(index){
 			//Spotlight.removeControl("like");
@@ -368,8 +425,8 @@ function createGallerySpotlight(src) {
 	
 	//assign(options, modifier);
 	Spotlight.show(gallery, options);
+	
 }
-
 
 function fullImg_click_handler(e){					
 	e.stopPropagation();
@@ -377,15 +434,43 @@ function fullImg_click_handler(e){
 	createGallerySpotlight(fullImg_src);
 }
 
-onUiUpdate(function() {
-	
-	const fullImg_preview = gradioApp().querySelector('.modify-upload + img.w-full.object-contain');	
+let intervalUiUpdateIViewer;
+function onUiUpdateIViewer(){
+	clearInterval(intervalUiUpdateIViewer);
+	//update_performant_inputs(selectedTabItemId);
+	const fullImg_preview = gradioApp().querySelector("#"+selectedTabItemId+' .modify-upload + img.w-full.object-contain');	
 	if(opts.js_modal_lightbox && fullImg_preview ) {
 		//console.log("GALLERY UPDATED");
 		fullImg_src = fullImg_preview.src;
 		fullImg_preview.removeEventListener('click', fullImg_click_handler );
-		fullImg_preview.addEventListener('click', fullImg_click_handler, true );//bubbling phase	
+		fullImg_preview.addEventListener('click', fullImg_click_handler, true );//bubbling phase
+		
+		/*
+		// this is an idea to integrate image browser extension seamlesly, 
+		// without the need to change to the image browser tab extension users will be able to review images after generation
+		// and add them to favorites or delete the ones that don't like on the spot
+		const img_browser = gradioApp().querySelector('[id$="2img_images_history"]');
+		const tbname = selectedTabItemId.split("_")[1];
+		if(img_browser && tbname ==("txt2img" || "img2img")){
+			const images_history = gradioApp().querySelector('[id$="'+tbname+'_images_history"]');
+			const history_button_panel = images_history.querySelector('[id$="'+tbname+'_images_history_button_panel"]');
+			const labels = images_history.querySelectorAll('label.block span');
+			for(let i=0;i<labels.length;i++){
+				//console.log(labels[i].innerHTML)
+				if(labels[i].innerHTML == 'File Name'){
+					img_file_name = labels[i].parentElement.querySelector("textarea");
+					console.log(img_file_name.value);
+					break;
+				}
+			}
+		}
+		*/
 	}
+}
+
+onUiUpdate(function() {
+	if(intervalUiUpdateIViewer != null) clearInterval(intervalUiUpdateIViewer);
+	intervalUiUpdateIViewer = setInterval(onUiUpdateIViewer, 500);
 })
 
 document.addEventListener("DOMContentLoaded", function() {
@@ -399,7 +484,9 @@ document.addEventListener("DOMContentLoaded", function() {
 	head.appendChild(link);
 	
 	Spotlight.init();
-	like = Spotlight.addControl("like", like_handler);
+	
 	tile = Spotlight.addControl("tile", tile_handler);
+	like = Spotlight.addControl("like", like_handler);
+	
 	
 });

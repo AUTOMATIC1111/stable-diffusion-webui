@@ -127,6 +127,12 @@
 .spl-pane.hide img {
   display:none !important;
 }
+.spl-pane.hide {
+    background-size: 100%;
+    transition: background-size 0.65s cubic-bezier(0.3, 1, 0.3, 1) !important;
+    will-change: background-size !important;
+    transform: translate(0, 0) !important;
+}
 .spl-header {
   position: absolute;
   top: 0;
