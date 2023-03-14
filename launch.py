@@ -7,6 +7,7 @@ import shlex
 import platform
 import argparse
 import json
+import modules.shared
 
 dir_repos = "repositories"
 dir_extensions = "extensions"
