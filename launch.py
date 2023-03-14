@@ -7,7 +7,11 @@ import shlex
 import platform
 import argparse
 import json
-import modules.shared # pylint: disable=unused-import
+try:
+    import modules.shared # pylint: disable=unused-import
+except:
+    # import fails on first execution before pip installed all the modules
+    pass
 
 dir_repos = "repositories"
 dir_extensions = "extensions"
