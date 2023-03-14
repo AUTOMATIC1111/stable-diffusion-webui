@@ -173,7 +173,7 @@
     "save_training_settings_to_txt": true,
     "save_txt": false,
     "sd_checkpoint_cache": 0,
-    "sd_checkpoint_hash": "7b58853a2f8435c51dedd82f0a1e5571851919a7b230d473afd45a41dec3debe",
+    "sd_checkpoint_hash": "cc6cb27103417325ff94f52b7a5d2dde45a7515b25c255d8e396c90014281516",
     "sd_hypernetwork_strength": 1.0,
     "sd_hypernetwork": "None",
     "sd_lora": "",

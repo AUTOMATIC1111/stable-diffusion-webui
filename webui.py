@@ -243,7 +243,7 @@ def webui():
         startup_timer.record("create ui")
 
         if cmd_opts.gradio_queue:
-            shared.demo.queue(64)
+            shared.demo.queue(16)
 
         gradio_auth_creds = []
         if cmd_opts.gradio_auth:
@@ -264,7 +264,11 @@ def webui():
             inbrowser=cmd_opts.autolaunch,
             prevent_thread_lock=True
         )
-        # after initial launch, disable --autolaunch for subsequent restarts
+        # app is instance of FastAPI server
+        # shared.demo.server is instance of gradio class which inherits from uvicorn.Server
+        # shared.demo.config is instance of uvicorn.Config
+        # shared.demo.app is instance of ASGIApp
+
         cmd_opts.autolaunch = False
 
         startup_timer.record("gradio launch")
