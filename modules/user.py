@@ -24,9 +24,9 @@ def authorization(user, password):
 
 
 def find_users_from_models(username, password) -> bool:
-    host = os.getenv('MysqlHost', '172.16.241.104')
-    user = os.getenv('MysqlUser', 'root')
-    pwd = os.getenv('MysqlPass', 'jE%r__hk&2OB')
+    host = os.getenv('MysqlHost', '')
+    user = os.getenv('MysqlUser', '')
+    pwd = os.getenv('MysqlPass', '')
     db = os.getenv('MysqlDB', 'draw-ai')
     port = os.getenv('MysqlPort', 3306)
 
