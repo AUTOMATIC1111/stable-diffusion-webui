@@ -301,11 +301,9 @@ let control = ["like","tile","page","fullscreen","autofit","zoom-in","zoom-out",
 let img_browser;
 let img_file_name;
 
-
 let spl_pane;
 let spl_zoom_out;
 let spl_zoom_in;
-
 
 function tile_zoom_update(val){
 	let current_tile_state_size = gallery[slide].tile_size;
@@ -315,7 +313,7 @@ function tile_zoom_update(val){
 	gallery[slide].tile_size = current_tile_state_size;	
 }
 
-function wheel_listener(event){
+function tile_wheel(event){
 	let delta = event["deltaY"];
 	delta = (delta < 0 ? 1 : delta ? -1 : 0) * 0.5;
 	tile_zoom_update(delta);
@@ -329,11 +327,16 @@ function tile_zoom_out(event){
 
 function removeTileEventListeners(){
 	if(spl_pane){
-		spl_pane.removeEventListener("wheel", wheel_listener);
+		spl_pane.removeEventListener("wheel", tile_wheel);
 		spl_zoom_out.removeEventListener("click", tile_zoom_out);
 		spl_zoom_in.removeEventListener("click", tile_zoom_in);
 	}
-	return true;
+}
+
+function addTileEventListeners(){
+	spl_pane.addEventListener("wheel", tile_wheel);
+	spl_zoom_out.addEventListener("click", tile_zoom_out);
+	spl_zoom_in.addEventListener("click", tile_zoom_in);
 }
 
 function tile_handler(event) {
@@ -342,30 +345,21 @@ function tile_handler(event) {
     gallery[slide].tile = current_tile_state;
 	const current_tile_state_size = gallery[slide].tile_size;
     this.classList.toggle("on");
-	
-	// remove last referrer listeners from previous pane
-	removeTileEventListeners();
-	
+
 	const spl_img = document.querySelector("#spotlight .spl-pane img");
-	spl_pane = spl_img.parentElement;
-	spl_zoom_out = document.querySelector("#spotlight .spl-zoom-out");
-	spl_zoom_in = document.querySelector("#spotlight .spl-zoom-in");
 	
-    if(current_tile_state){ 
+    if(current_tile_state){				
 		spl_pane.classList.add("hide");
         spl_pane.style.setProperty('background-image', `url(${spl_img.src})`);
 		spl_pane.style.setProperty('background-position', "center");
 		spl_pane.style.setProperty('background-size', current_tile_state_size+"%");
-		spl_pane.removeEventListener("wheel", wheel_listener);
-		spl_pane.addEventListener("wheel", wheel_listener);
-		spl_zoom_out.addEventListener("click", tile_zoom_out);
-		spl_zoom_in.addEventListener("click", tile_zoom_in);
-		
-    } else {		
+		addTileEventListeners();
+    } else {	
 		spl_pane.classList.remove("hide");
         spl_pane.style.setProperty('background-image', 'none');
 		Spotlight.zoom(0.0);
-		removeTileEventListeners();
+		removeTileEventListeners();	
+		
     }
 }
 function like_handler(event){
@@ -383,6 +377,8 @@ function like_handler(event){
       // remove from favorites ...
     }
 }
+
+
 function createGallerySpotlight(src) {
 	
 	slide = 0;
@@ -415,7 +411,20 @@ function createGallerySpotlight(src) {
 			tile.classList.toggle("on", gallery[slide].tile);
 			//if(img_browser){
 				like.classList.toggle("on", gallery[slide].like);
+				
 			//}
+			
+			const current_tile_state = gallery[slide].tile;
+			spl_pane = document.querySelector("#spotlight .spl-pane:nth-child("+index+")");
+			spl_zoom_out = document.querySelector("#spotlight .spl-zoom-out");
+			spl_zoom_in = document.querySelector("#spotlight .spl-zoom-in");
+			
+			if(current_tile_state){
+				addTileEventListeners();
+			}else{
+				removeTileEventListeners();	
+			}
+
 		},		
 		onclose: function(index){
 			//Spotlight.removeControl("like");
