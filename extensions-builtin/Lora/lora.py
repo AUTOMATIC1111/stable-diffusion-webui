@@ -3,7 +3,9 @@ import os
 import re
 import torch
 
-from modules import shared, devices, sd_models
+from modules import shared, devices, sd_models, errors
+
+metadata_tags_order = {"ss_sd_model_name": 1, "ss_resolution": 2, "ss_clip_skip": 3, "ss_num_train_images": 10, "ss_tag_frequency": 20}
 
 re_digits = re.compile(r"\d+")
 re_unet_down_blocks = re.compile(r"lora_unet_down_blocks_(\d+)_attentions_(\d+)_(.+)")
@@ -43,6 +45,23 @@ class LoraOnDisk:
     def __init__(self, name, filename):
         self.name = name
         self.filename = filename
+        self.metadata = {}
+
+        _, ext = os.path.splitext(filename)
+        if ext.lower() == ".safetensors":
+            try:
+                self.metadata = sd_models.read_metadata_from_safetensors(filename)
+            except Exception as e:
+                errors.display(e, f"reading lora {filename}")
+
+        if self.metadata:
+            m = {}
+            for k, v in sorted(self.metadata.items(), key=lambda x: metadata_tags_order.get(x[0], 999)):
+                m[k] = v
+
+            self.metadata = m
+
+        self.ssmd_cover_images = self.metadata.pop('ssmd_cover_images', None)  # those are cover images and they are too big to display in UI as text
 
 
 class LoraModule:

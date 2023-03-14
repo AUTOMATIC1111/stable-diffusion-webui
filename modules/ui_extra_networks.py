@@ -30,8 +30,8 @@ def add_pages_to_demo(app):
             raise ValueError(f"File cannot be fetched: {filename}. Must be in one of directories registered by extra pages.")
 
         ext = os.path.splitext(filename)[1].lower()
-        if ext not in (".png", ".jpg"):
-            raise ValueError(f"File cannot be fetched: {filename}. Only png and jpg.")
+        if ext not in (".png", ".jpg", ".webp"):
+            raise ValueError(f"File cannot be fetched: {filename}. Only png and jpg and webp.")
 
         # would profit from returning 304
         return FileResponse(filename, headers={"Accept-Ranges": "bytes"})
@@ -124,6 +124,12 @@ class ExtraNetworksPage:
         if onclick is None:
             onclick = '"' + html.escape(f"""return cardClicked({json.dumps(tabname)}, {item["prompt"]}, {"true" if self.allow_negative_prompt else "false"})""") + '"'
 
+        metadata_button = ""
+        metadata = item.get("metadata")
+        if metadata:
+            metadata_onclick = '"' + html.escape(f"""extraNetworksShowMetadata({json.dumps(metadata)}); return false;""") + '"'
+            metadata_button = f"<div class='metadata-button' title='Show metadata' onclick={metadata_onclick}></div>"
+
         args = {
             "preview_html": "style='background-image: url(\"" + html.escape(preview) + "\")'" if preview else '',
             "prompt": item.get("prompt", None),
@@ -134,6 +140,7 @@ class ExtraNetworksPage:
             "card_clicked": onclick,
             "save_card_preview": '"' + html.escape(f"""return saveCardPreview(event, {json.dumps(tabname)}, {json.dumps(item["local_preview"])})""") + '"',
             "search_term": item.get("search_term", ""),
+            "metadata_button": metadata_button,
         }
 
         return self.card_page.format(**args)
