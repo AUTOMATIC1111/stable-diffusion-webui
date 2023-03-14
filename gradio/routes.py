@@ -198,7 +198,7 @@ class App(FastAPI):
                 and app.auth[username] == password
             ) or (callable(app.auth) and app.auth.__call__(username, password)):
                 token = secrets.token_urlsafe(16)
-                for tk, u in app.tokens:
+                for tk, u in app.tokens.items():
                     app.expired_users[u] = now
                 app.tokens = {token: username}
                 response = RedirectResponse(url="/", status_code=status.HTTP_302_FOUND)

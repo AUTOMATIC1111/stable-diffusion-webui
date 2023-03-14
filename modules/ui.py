@@ -939,7 +939,7 @@ def create_ui():
                 )
 
             token_button.click(fn=update_token_counter, inputs=[img2img_prompt, steps], outputs=[token_counter])
-            negative_token_button.click(fn=wrap_queued_call(update_token_counter), inputs=[txt2img_negative_prompt, steps], outputs=[negative_token_counter])
+            negative_token_button.click(fn=wrap_queued_call(update_token_counter), inputs=[img2img_negative_prompt, steps], outputs=[negative_token_counter])
 
             ui_extra_networks.setup_ui(extra_networks_ui_img2img, img2img_gallery)
 
@@ -1566,6 +1566,10 @@ def create_ui():
     extensions_interface = ui_extensions.create_ui()
     interfaces += [(extensions_interface, "Extensions", "extensions")]
 
+    shared.tab_names = []
+    for _interface, label, _ifid in interfaces:
+        shared.tab_names.append(label)
+
     with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion") as demo:
         with gr.Row(elem_id="quicksettings", variant="compact"):
             for i, k, item in sorted(quicksettings_list, key=lambda x: quicksettings_names.get(x[1], x[0])):
@@ -1582,9 +1586,9 @@ def create_ui():
                             <img src="https://aitag.top/vite.svg" width="22" height="22" style="color:blue;margin-right:2px"/>
                             <span>魔咒百科</span>
                         </a>
-                        <a href="https://huggingface.co/front/assets/huggingface_logo-noborder.svg" style="display:flex;justify-content: flex-start;align-items: center;margin-left:10px;">
-                            <img src="https://huggingface.co/spaces/hysts/DeepDanbooru" width="22" height="22" style="color:blue;margin-right:2px"/>
-                            <span>TAG探测</span>
+                        <a href="https://huggingface.co/spaces/hysts/DeepDanbooru" style="display:flex;justify-content: flex-start;align-items: center;margin-left:10px;">
+                            <img src="https://huggingface.co/front/assets/huggingface_logo-noborder.svg" width="22" height="22" style="color:blue;margin-right:2px"/>
+                            <span>探测</span>
                         </a>
                 </div>
                 """)
@@ -1593,6 +1597,8 @@ def create_ui():
 
         with gr.Tabs(elem_id="tabs") as tabs:
             for interface, label, ifid in interfaces:
+                if label in shared.opts.hidden_tabs:
+                    continue
                 with gr.TabItem(label, id=ifid, elem_id='tab_' + ifid):
                     interface.render()
 
@@ -1765,7 +1771,8 @@ def create_ui():
 
 
 def reload_javascript():
-    head = f'<script type="text/javascript" src="file={os.path.abspath("script.js")}?{os.path.getmtime("script.js")}"></script>\n'
+    script_js = os.path.join(script_path, "script.js")
+    head = f'<script type="text/javascript" src="file={os.path.abspath(script_js)}?{os.path.getmtime(script_js)}"></script>\n'
 
     inline = f"{localization.localization_js(shared.opts.localization)};"
     if cmd_opts.theme is not None:
@@ -1773,6 +1780,9 @@ def reload_javascript():
 
     for script in modules.scripts.list_scripts("javascript", ".js"):
         head += f'<script type="text/javascript" src="file={script.path}?{os.path.getmtime(script.path)}"></script>\n'
+
+    for script in modules.scripts.list_scripts("javascript", ".mjs"):
+        head += f'<script type="module" src="file={script.path}?{os.path.getmtime(script.path)}"></script>\n'
 
     head += f'<script type="text/javascript">{inline}</script>\n'
 
