@@ -5,12 +5,10 @@ function setupExtraNetworksForTab(tabname){
     var tabs = gradioApp().querySelector('#'+tabname+'_extra_tabs > div')
     var search = gradioApp().querySelector('#'+tabname+'_extra_search textarea')
     var refresh = gradioApp().getElementById(tabname+'_extra_refresh')
-    var close = gradioApp().getElementById(tabname+'_extra_close')
 
     search.classList.add('search')
     tabs.appendChild(search)
     tabs.appendChild(refresh)
-    tabs.appendChild(close)
 
     search.addEventListener("input", function(evt){
         searchTerm = search.value.toLowerCase()
@@ -78,7 +76,7 @@ function cardClicked(tabname, textToAdd, allowNegativePrompt){
     var textarea = allowNegativePrompt ? activePromptTextarea[tabname] : gradioApp().querySelector("#" + tabname + "_prompt > label > textarea")
 
     if(! tryToRemoveExtraNetworkFromPrompt(textarea, textToAdd)){
-        textarea.value = textarea.value + " " + textToAdd
+        textarea.value = textarea.value + opts.extra_networks_add_text_separator + textToAdd
     }
 
     updateInput(textarea)
@@ -104,4 +102,40 @@ function extraNetworksSearchButton(tabs_id, event){
 
     searchTextarea.value = text
     updateInput(searchTextarea)
+}
+
+var globalPopup = null;
+var globalPopupInner = null;
+function popup(contents){
+    if(! globalPopup){
+        globalPopup = document.createElement('div')
+        globalPopup.onclick = function(){ globalPopup.style.display = "none"; };
+        globalPopup.classList.add('global-popup');
+
+        var close = document.createElement('div')
+        close.classList.add('global-popup-close');
+        close.onclick = function(){ globalPopup.style.display = "none"; };
+        close.title = "Close";
+        globalPopup.appendChild(close)
+
+        globalPopupInner = document.createElement('div')
+        globalPopupInner.onclick = function(event){ event.stopPropagation(); return false; };
+        globalPopupInner.classList.add('global-popup-inner');
+        globalPopup.appendChild(globalPopupInner)
+
+        gradioApp().appendChild(globalPopup);
+    }
+
+    globalPopupInner.innerHTML = '';
+    globalPopupInner.appendChild(contents);
+
+    globalPopup.style.display = "flex";
+}
+
+function extraNetworksShowMetadata(text){
+    elem = document.createElement('pre')
+    elem.classList.add('popup-metadata');
+    elem.textContent = text;
+
+    popup(elem);
 }

@@ -8,6 +8,14 @@ import platform
 import argparse
 import json
 
+parser = argparse.ArgumentParser(add_help=False)
+parser.add_argument("--ui-settings-file", type=str, default='config.json')
+parser.add_argument("--data-dir", type=str, default=os.path.dirname(os.path.realpath(__file__)))
+args, _ = parser.parse_known_args(sys.argv)
+
+script_path = os.path.dirname(__file__)
+data_path = os.getcwd()
+
 dir_repos = "repositories"
 dir_extensions = "extensions"
 python = sys.executable
@@ -122,7 +130,7 @@ def is_installed(package):
 
 
 def repo_dir(name):
-    return os.path.join(dir_repos, name)
+    return os.path.join(script_path, dir_repos, name)
 
 
 def run_python(code, desc=None, errdesc=None):
@@ -161,7 +169,17 @@ def git_clone(url, dir, name, commithash=None):
     if commithash is not None:
         run(f'"{git}" -C "{dir}" checkout {commithash}', None, "Couldn't checkout {name}'s hash: {commithash}")
 
-        
+
+def git_pull_recursive(dir):
+    for subdir, _, _ in os.walk(dir):
+        if os.path.exists(os.path.join(subdir, '.git')):
+            try:
+                output = subprocess.check_output([git, '-C', subdir, 'pull', '--autostash'])
+                print(f"Pulled changes for repository in '{subdir}':\n{output.decode('utf-8').strip()}\n")
+            except subprocess.CalledProcessError as e:
+                print(f"Couldn't perform 'git pull' on repository in '{subdir}':\n{e.output.decode('utf-8').strip()}\n")
+
+
 def version_check(commit):
     try:
         import requests
@@ -205,7 +223,7 @@ def list_extensions(settings_file):
 
     disabled_extensions = set(settings.get('disabled_extensions', []))
 
-    return [x for x in os.listdir(dir_extensions) if x not in disabled_extensions]
+    return [x for x in os.listdir(os.path.join(data_path, dir_extensions)) if x not in disabled_extensions]
 
 
 def run_extensions_installers(settings_file):
@@ -242,11 +260,8 @@ def prepare_environment():
 
     sys.argv += shlex.split(commandline_args)
 
-    parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument("--ui-settings-file", type=str, help="filename to use for ui settings", default='config.json')
-    args, _ = parser.parse_known_args(sys.argv)
-
     sys.argv, _ = extract_arg(sys.argv, '-f')
+    sys.argv, update_all_extensions = extract_arg(sys.argv, '--update-all-extensions')
     sys.argv, skip_torch_cuda_test = extract_arg(sys.argv, '--skip-torch-cuda-test')
     sys.argv, skip_python_version_check = extract_arg(sys.argv, '--skip-python-version-check')
     sys.argv, reinstall_xformers = extract_arg(sys.argv, '--reinstall-xformers')
@@ -295,7 +310,7 @@ def prepare_environment():
     if not is_installed("pyngrok") and ngrok:
         run_pip("install pyngrok", "ngrok")
 
-    os.makedirs(dir_repos, exist_ok=True)
+    os.makedirs(os.path.join(script_path, dir_repos), exist_ok=True)
 
     git_clone(stable_diffusion_repo, repo_dir('stable-diffusion-stability-ai'), "Stable Diffusion", stable_diffusion_commit_hash)
     git_clone(taming_transformers_repo, repo_dir('taming-transformers'), "Taming Transformers", taming_transformers_commit_hash)
@@ -304,14 +319,19 @@ def prepare_environment():
     git_clone(blip_repo, repo_dir('BLIP'), "BLIP", blip_commit_hash)
 
     if not is_installed("lpips"):
-        run_pip(f"install -r {os.path.join(repo_dir('CodeFormer'), 'requirements.txt')}", "requirements for CodeFormer")
+        run_pip(f"install -r \"{os.path.join(repo_dir('CodeFormer'), 'requirements.txt')}\"", "requirements for CodeFormer")
 
-    run_pip(f"install -r {requirements_file}", "requirements for Web UI")
+    if not os.path.isfile(requirements_file):
+        requirements_file = os.path.join(script_path, requirements_file)
+    run_pip(f"install -r \"{requirements_file}\"", "requirements for Web UI")
 
     run_extensions_installers(settings_file=args.ui_settings_file)
 
     if update_check:
         version_check(commit)
+
+    if update_all_extensions:
+        git_pull_recursive(os.path.join(data_path, dir_extensions))
     
     if "--exit" in sys.argv:
         print("Exiting because of --exit argument")
@@ -327,7 +347,7 @@ def tests(test_dir):
         sys.argv.append("--api")
     if "--ckpt" not in sys.argv:
         sys.argv.append("--ckpt")
-        sys.argv.append("./test/test_files/empty.pt")
+        sys.argv.append(os.path.join(script_path, "test/test_files/empty.pt"))
     if "--skip-torch-cuda-test" not in sys.argv:
         sys.argv.append("--skip-torch-cuda-test")
     if "--disable-nan-check" not in sys.argv:
@@ -336,7 +356,7 @@ def tests(test_dir):
     print(f"Launching Web UI in another process for testing with arguments: {' '.join(sys.argv[1:])}")
 
     os.environ['COMMANDLINE_ARGS'] = ""
-    with open('test/stdout.txt', "w", encoding="utf8") as stdout, open('test/stderr.txt', "w", encoding="utf8") as stderr:
+    with open(os.path.join(script_path, 'test/stdout.txt'), "w", encoding="utf8") as stdout, open(os.path.join(script_path, 'test/stderr.txt'), "w", encoding="utf8") as stderr:
         proc = subprocess.Popen([sys.executable, *sys.argv], stdout=stdout, stderr=stderr)
 
     import test.server_poll
