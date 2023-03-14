@@ -86,10 +86,6 @@ def load_lora(name, filename):
 
     for key_diffusers, weight in sd.items():
         fullkey = convert_diffusers_name_to_compvis(key_diffusers)
-        if '.' not in fullkey:
-            print('invalid extension for lora file:', fullkey)
-            continue
-
         key, lora_key = fullkey.split(".", 1)
 
         sd_module = shared.sd_model.lora_layer_mapping.get(key, None)
