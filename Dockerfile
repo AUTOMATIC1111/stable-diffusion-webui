@@ -4,7 +4,7 @@
 # build dockerbase/Dockerfile first
 # run cmd:
 # nvidia-docker run -p 7860:7860 -it -v /data/apksamba/sd/models:/root/stable-diffusion-webui/models i.harbor.dragonest.net/xingzhe/sd-webui/sd-webui:v0.7 /bin/bash
-# nvidia-docker run -d -p 7860:7860 -v /data/apksamba/sd/models:/root/stable-diffusion-webui/models i.harbor.dragonest.net/xingzhe/sd-webui/sd-webui:v0.8
+# nvidia-docker run -d -p 7860:7860 -v /data/apksamba/sd/models:/root/stable-diffusion-webui/models --env-file /data/apksamba/sd/env.dev i.harbor.dragonest.net/xingzhe/sd-webui/sd-webui:v0.10
 FROM i.harbor.dragonest.net/xingzhe/sd-webui/sd-webui-env:v0.1
 
 MAINTAINER wangdongming "wangdongming@dragonest.com"
