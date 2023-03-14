@@ -3019,7 +3019,7 @@ ul.list-none {
 /* lightboxModal  */
 /******************/
 
-
+/*
 #lightboxModal {
     display: none;
     position: fixed;
@@ -3167,6 +3167,7 @@ ul.list-none {
 .modalPrev:hover {
     background-color: rgba(0, 0, 0, .8);
 }
+*/
 
 #imageARPreview {
     position: absolute;
@@ -3419,7 +3420,6 @@ footer {
 	width:auto;*/
 }
 
-
 .footer-wrapper{
 	display:flex;
 }
@@ -3444,6 +3444,26 @@ footer {
     float: left;
     /*background: var(--panel-bg-color);*/
     border-radius: 100%;
+    position: relative;
+	display: flex;
+}
+
+
+.footer-links > li > div,
+.footer-links > li > a {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 24px;
+    fill: var(--primary-color);
+}
+
+
+.footer-links > li:last-child {
+  position: absolute;
+  top: 0;
+  right: 0;
 }
 
 .extra-networks > div > [id *= '_extra_']{
@@ -3519,25 +3539,6 @@ footer {
     position: relative;
 	display: flex;
 }
-
-
-.footer-links > li > div,
-.footer-links > li > a {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 24px;
-    fill: var(--primary-color);
-}
-
-
-.footer-links > li:last-child {
-  position: absolute;
-  top: 0;
-  right: 0;
-}
-
 
 
 a[data-tooltip].top:before, a[data-tooltip].top:after {
@@ -3949,7 +3950,7 @@ input[type=range]::-ms-fill-upper {
 	display:none !important;
 }
 
-#txt2img_results .modify-upload + img.w-full.object-contain{
+[id$="2img_results"] .modify-upload + img.w-full.object-contain{
 	cursor: pointer;
 }
 
