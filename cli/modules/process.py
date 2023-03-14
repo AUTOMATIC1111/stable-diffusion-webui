@@ -75,7 +75,7 @@ params = Map({
     'body_model': 2, # body model to use 0/low 1/medium 2/high
     'body_blur': False, # check for body blur
     'body_blur_score': 1.8, # max score for body blur detection
-    'face_range': False, # check for body blur
+    'body_range': False, # check for body blur
     'body_range_score': 0.15, # min score for body dynamic range detection
     'body_segmentation': False, # segmentation enabled
     # similarity detection settings
@@ -394,7 +394,7 @@ def process_file(f: str, dst: str = None, preview: bool = False, offline: bool =
         params.face_range = True if 'range' in opts else False
         params.body_range = True if 'range' in opts else False
         params.face_upscale = True if 'upscale' in opts else False
-        params.face_restore = True if 'upscale' in opts else False
+        params.face_restore = True if 'restore' in opts else False
 
     log.info({ 'processing': f })
     try:
