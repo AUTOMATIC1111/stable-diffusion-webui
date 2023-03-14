@@ -7,6 +7,7 @@ import shlex
 import platform
 import argparse
 import json
+import modules.shared
 
 dir_repos = "repositories"
 dir_extensions = "extensions"
@@ -213,9 +214,10 @@ def list_extensions(settings_file):
     except Exception as e:
         print(e, file=sys.stderr)
 
+    extensions = set(settings.get('extensions_order', []) + os.listdir(dir_extensions))
     disabled_extensions = set(settings.get('disabled_extensions', []))
 
-    return [x for x in os.listdir(dir_extensions) if x not in disabled_extensions]
+    return [x for x in extensions if x not in disabled_extensions]
 
 
 def run_extensions_installers(settings_file):
