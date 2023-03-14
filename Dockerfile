@@ -125,7 +125,7 @@ RUN echo "{\"localization\": \"zh_CN\"}" >  ~/stable-diffusion-webui/config.json
 #    &&  python3 extensions/sd-webui-controlnet/install.py
 # 确定OPEN_CLIP 和arkupsafe版本
 RUN pip3 install basicsr Werkzeug==2.1.0 open_clip_torch==2.16.0 markupsafe==2.0.1 -i https://nexus.ops.dragonest.com/repository/ly_pip_all/simple
-
+RUN pip3 uninstall gradio -y
 
 WORKDIR /root/stable-diffusion-webui
 

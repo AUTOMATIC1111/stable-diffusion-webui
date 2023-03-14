@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en" style="margin: 0; padding: 0; min-height: 100%">
+	<head>
+		<meta charset="utf-8" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1, shrink-to-fit=no, maximum-scale=1"
+		/>
+
+		
+		<meta property="og:url" content="https://gradio.app/" />
+		<meta property="og:type" content="website" />
+		<meta property="og:image" content="{{ config['thumbnail'] or '' }}" />
+		<meta property="og:title" content="{{ config['title'] or '' }}" />
+		<meta
+			property="og:description"
+			content="{{ config['simple_description'] or '' }}"
+		/>
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:creator" content="@teamGradio" />
+		<meta name="twitter:title" content="{{ config['title'] or '' }}" />
+		<meta
+			name="twitter:description"
+			content="{{ config['simple_description'] or '' }}"
+		/>
+		<meta name="twitter:image" content="{{ config['thumbnail'] or '' }}" />
+
+		<script>
+			window.dataLayer = window.dataLayer || [];
+			function gtag() {
+				dataLayer.push(arguments);
+			}
+			gtag("js", new Date());
+			gtag("config", "UA-156449732-1");
+			window.__gradio_mode__ = "app";
+		</script>
+
+		<script>window.gradio_config = {{ config | toorjson }};</script>
+
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link
+			rel="preconnect"
+			href="https://fonts.gstatic.com"
+			crossorigin="anonymous"
+		/>
+		<link
+			href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600&display=swap"
+			rel="stylesheet"
+		/>
+		<link
+			href="https://fonts.googleapis.com/css?family=IBM Plex Mono"
+			rel="stylesheet"
+		/>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/iframe-resizer/4.3.1/iframeResizer.contentWindow.min.js"></script>
+		<script type="module" crossorigin src="https://gradio.s3-us-west-2.amazonaws.com/3.16.2/assets/index.98155427.js"></script>
+		
+	</head>
+
+	<body style="width: 100%; margin: 0; padding: 0; height: 100%">
+		<gradio-app control_page_title="true">
+			<div
+				id="root"
+				style="display: flex; flex-direction: column; flex-grow: 1"
+			></div>
+		</gradio-app>
+		<script>
+			const ce = document.getElementsByTagName("gradio-app");
+			if (ce[0]) {
+				ce[0].addEventListener("domchange", () => {
+					document.body.style.padding = "0";
+				});
+				document.body.style.padding = "0";
+			}
+		</script>
+	</body>
+</html>

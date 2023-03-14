@@ -6,7 +6,9 @@
 # @File    : user.py
 # @Software: Hifive
 import json
-import os.path
+import os
+import time
+from tools.mysql import MySQLClient
 
 
 def authorization(user, password):
@@ -21,16 +23,19 @@ def authorization(user, password):
     return find_users_from_models(user, password)
 
 
-def find_users_from_models(user, password) -> bool:
-    cfg = 'models/user.json'
-    if os.path.isfile(cfg):
-        with open(cfg) as f:
-            lines = f.readlines()
-            try:
-                d = json.loads("".join(lines))
-                if user in d:
-                    return d[user] == password
-            except:
-                return False
-    return False
+def find_users_from_models(username, password) -> bool:
+    host = os.getenv('MysqlHost', '172.16.241.104')
+    user = os.getenv('MysqlUser', '')
+    pwd = os.getenv('MysqlPass', '')
+    db = os.getenv('MysqlDB', 'draw-ai')
+    port = os.getenv('MysqlPort', 3306)
 
+    if host:
+        with MySQLClient(host, db, user, pwd, port) as cli:
+            res = cli.query("SELECT * FROM user WHERE username=%s AND password=%s", (username, password))
+            if res:
+                expire = res.get('expire', -1)
+                if 0 == expire or expire > time.time():
+                    return True
+
+    return False

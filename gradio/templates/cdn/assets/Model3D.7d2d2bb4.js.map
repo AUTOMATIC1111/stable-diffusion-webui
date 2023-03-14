@@ -1,0 +1,1 @@
+{"version":3,"file":"Model3D.7d2d2bb4.js","sources":["../../../../ui/packages/app/src/components/Dataset/ExampleComponents/Model3D.svelte"],"sourcesContent":["<script lang=\"ts\">\n\timport type { Value } from \"../../Model3D/types\";\n\texport let value: Value;\n</script>\n\n<div class=\"gr-sample-3d\">{value}</div>\n"],"names":[],"mappings":"yJAK2B,0CAA3B,mCAA2B,kDAHf"}
