@@ -454,6 +454,7 @@ options_templates.update(options_section(('extra_networks', "Extra Networks"), {
 
 options_templates.update(options_section(('ui', "User interface"), {
     "return_grid": OptionInfo(True, "Show grid in results for web"),
+    "show_lock_controls": OptionInfo(False, "Show a lock button that disables UI controls"),
     "do_not_show_images": OptionInfo(False, "Do not show any images in results for web"),
     "add_model_hash_to_info": OptionInfo(True, "Add model hash to generation information"),
     "add_model_name_to_info": OptionInfo(True, "Add model name to generation information"),

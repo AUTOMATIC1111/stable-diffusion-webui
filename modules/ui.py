@@ -88,6 +88,7 @@ reuse_symbol = '\u267b\ufe0f'  # ♻️
 paste_symbol = '\u2199\ufe0f'  # ↙
 refresh_symbol = '\U0001f504'  # 🔄
 save_style_symbol = '\U0001f4be'  # 💾
+lock_style_symbol = '\U0001F512'  # 🔒
 apply_style_symbol = '\U0001f4cb'  # 📋
 clear_prompt_symbol = '\U0001F5D1'  # 🗑️
 extra_networks_symbol = '\U0001F3B4'  # 🎴
@@ -336,6 +337,15 @@ def create_toprow(is_img2img):
                     inputs=[prompt, negative_prompt],
                     outputs=[prompt, negative_prompt],
                 )
+
+                if opts.show_lock_controls:
+                    lock_controls_button = ToolButton(value=lock_style_symbol, elem_id=f"ui_lock_controls")
+                    lock_controls_button.click(
+                        fn=None,
+                        _js="confirm_lock_controls",
+                        inputs=None,
+                        outputs=None
+                    )
 
             with gr.Row(elem_id=f"{id_part}_styles_row"):
                 prompt_styles = gr.Dropdown(label="Styles", elem_id=f"{id_part}_styles", choices=[k for k, v in shared.prompt_styles.styles.items()], value=[], multiselect=True)
