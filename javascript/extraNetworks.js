@@ -103,3 +103,39 @@ function extraNetworksSearchButton(tabs_id, event){
     searchTextarea.value = text
     updateInput(searchTextarea)
 }
+
+var globalPopup = null;
+var globalPopupInner = null;
+function popup(contents){
+    if(! globalPopup){
+        globalPopup = document.createElement('div')
+        globalPopup.onclick = function(){ globalPopup.style.display = "none"; };
+        globalPopup.classList.add('global-popup');
+
+        var close = document.createElement('div')
+        close.classList.add('global-popup-close');
+        close.onclick = function(){ globalPopup.style.display = "none"; };
+        close.title = "Close";
+        globalPopup.appendChild(close)
+
+        globalPopupInner = document.createElement('div')
+        globalPopupInner.onclick = function(event){ event.stopPropagation(); return false; };
+        globalPopupInner.classList.add('global-popup-inner');
+        globalPopup.appendChild(globalPopupInner)
+
+        gradioApp().appendChild(globalPopup);
+    }
+
+    globalPopupInner.innerHTML = '';
+    globalPopupInner.appendChild(contents);
+
+    globalPopup.style.display = "flex";
+}
+
+function extraNetworksShowMetadata(text){
+    elem = document.createElement('pre')
+    elem.classList.add('popup-metadata');
+    elem.textContent = text;
+
+    popup(elem);
+}
