@@ -3035,6 +3035,46 @@ ul.list-none {
     -webkit-user-select: none;
 }
 
+.popup-metadata{
+    color: black;
+    background: white;
+    display: inline-block;
+    padding: 1em;
+    white-space: pre-wrap;
+}
+
+.global-popup{
+    display: flex;
+    position: fixed;
+    z-index: 1001;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(20, 20, 20, 0.95);
+}
+
+
+.global-popup-close:before {
+    content: "×";
+}
+
+.global-popup-close{
+    position: fixed;
+    right: 0.25em;
+    top: 0;
+    cursor: pointer;
+    color: white;
+    font-size: 32pt;
+}
+
+.global-popup-inner{
+    display: inline-block;
+    margin: auto;
+    padding: 2em;
+}
+
 .modalControls {
     display: grid;
     grid-template-columns: 32px 32px 32px 1fr 32px;
@@ -3404,6 +3444,78 @@ footer {
     float: left;
     /*background: var(--panel-bg-color);*/
     border-radius: 100%;
+}
+
+.extra-networks > div > [id *= '_extra_']{
+    margin: 0.3em;
+}
+
+.extra-network-subdirs{
+    padding: 0.2em 0.35em;
+}
+
+.extra-network-subdirs button{
+    margin: 0 0.15em;
+}
+
+#txt2img_extra_networks .search, #img2img_extra_networks .search{
+    display: inline-block;
+    max-width: 16em;
+    margin: 0.3em;
+    align-self: center;
+}
+
+#txt2img_extra_view, #img2img_extra_view {
+    width: auto;
+}
+
+.extra-network-cards .nocards, .extra-network-thumbs .nocards{
+    margin: 1.25em 0.5em 0.5em 0.5em;
+}
+
+.extra-network-cards .nocards h1, .extra-network-thumbs .nocards h1{
+    font-size: 1.5em;
+    margin-bottom: 1em;
+}
+
+.extra-network-cards .nocards li, .extra-network-thumbs .nocards li{
+    margin-left: 0.5em;
+}
+
+
+.extra-network-cards .card .metadata-button:before, .extra-network-thumbs .card .metadata-button:before{
+    content: "🛈";
+}
+.extra-network-cards .card .metadata-button, .extra-network-thumbs .card .metadata-button{
+    display: none;
+    position: absolute;
+    right: 0;
+    color: white;
+    text-shadow: 2px 2px 3px black;
+    padding: 0.25em;
+    font-size: 22pt;
+}
+.extra-network-cards .card:hover .metadata-button, .extra-network-thumbs .card:hover .metadata-button{
+    display: inline-block;
+}
+.extra-network-cards .card .metadata-button:hover, .extra-network-thumbs .card .metadata-button:hover{
+    color: red;
+}
+
+
+.extra-network-thumbs {
+    display: flex;
+    flex-flow: row wrap;
+    gap: 10px;
+}
+
+.extra-network-thumbs .card {
+    height: 6em;
+    width: 6em;
+    cursor: pointer;
+    background-image: url('./file=html/card-no-preview.png');
+    background-size: cover;
+    background-position: center center;
     position: relative;
 	display: flex;
 }
