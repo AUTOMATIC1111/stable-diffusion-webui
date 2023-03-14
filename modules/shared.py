@@ -366,6 +366,7 @@ options_templates.update(options_section(('saving-to-dirs', "Saving to a directo
     "use_save_to_dirs_for_ui": OptionInfo(False, "When using \"Save\" button, save images to a subdirectory"),
     "directories_filename_pattern": OptionInfo("[date]", "Directory name pattern", component_args=hide_dirs),
     "directories_max_prompt_words": OptionInfo(8, "Max prompt words for [prompt_words] pattern", gr.Slider, {"minimum": 1, "maximum": 20, "step": 1, **hide_dirs}),
+    "interrupted_save_action": OptionInfo("Save", "Action for output when generation interrupted", gr.Radio, {"choices": ["Save", "Save to Subfolder", "Delete"]}),
 }))
 
 options_templates.update(options_section(('upscaling', "Upscaling"), {

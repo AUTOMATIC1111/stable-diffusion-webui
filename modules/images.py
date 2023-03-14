@@ -667,3 +667,11 @@ def flatten(img, bgcolor):
         img = background
 
     return img.convert('RGB')
+
+def get_output_path(save_path, was_interrupted):
+    if was_interrupted:
+        if opts.interrupted_save_action == "Delete":
+            save_path = None
+        elif opts.interrupted_save_action == "Save to Subfolder":
+            save_path = os.path.join(save_path, "interrupted")
+    return save_path

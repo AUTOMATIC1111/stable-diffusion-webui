@@ -654,13 +654,16 @@ class Script(scripts.Script):
             # Don't need sub-images anymore, drop from list:
             processed.images = processed.images[:z_count+1]
 
-        if opts.grid_save:
+        was_interrupted = any(x for x in processed.interrupted)
+        save_path = images.get_output_path(p.outpath_grids, was_interrupted)
+
+        if opts.grid_save and save_path is not None:
             # Auto-save main and sub-grids:
             grid_count = z_count + 1 if z_count > 1 else 1
             for g in range(grid_count):
                 #TODO: See previous comment about intentional data misalignment.
                 adj_g = g-1 if g > 0 else g
-                images.save_image(processed.images[g], p.outpath_grids, "xyz_grid", info=processed.infotexts[g], extension=opts.grid_format, prompt=processed.all_prompts[adj_g], seed=processed.all_seeds[adj_g], grid=True, p=processed)
+                images.save_image(processed.images[g], save_path, "xyz_grid", info=processed.infotexts[g], extension=opts.grid_format, prompt=processed.all_prompts[adj_g], seed=processed.all_seeds[adj_g], grid=True, p=processed)
 
         if not include_sub_grids:
             # Done with sub-grids, drop all related information:

@@ -255,7 +255,7 @@ class StableDiffusionProcessing:
 
 
 class Processed:
-    def __init__(self, p: StableDiffusionProcessing, images_list, seed=-1, info="", subseed=None, all_prompts=None, all_negative_prompts=None, all_seeds=None, all_subseeds=None, index_of_first_image=0, infotexts=None, comments=""):
+    def __init__(self, p: StableDiffusionProcessing, images_list, seed=-1, info="", subseed=None, all_prompts=None, all_negative_prompts=None, all_seeds=None, all_subseeds=None, index_of_first_image=0, infotexts=None, comments="", interrupted=None):
         self.images = images_list
         self.prompt = p.prompt
         self.negative_prompt = p.negative_prompt
@@ -301,6 +301,7 @@ class Processed:
         self.all_seeds = all_seeds or p.all_seeds or [self.seed]
         self.all_subseeds = all_subseeds or p.all_subseeds or [self.subseed]
         self.infotexts = infotexts or [info]
+        self.interrupted = interrupted or [False]
 
     def js(self):
         obj = {
@@ -337,7 +338,7 @@ class Processed:
         return json.dumps(obj)
 
     def infotext(self, p: StableDiffusionProcessing, index):
-        return create_infotext(p, self.all_prompts, self.all_seeds, self.all_subseeds, comments=[], position_in_batch=index % self.batch_size, iteration=index // self.batch_size)
+        return create_infotext(p, self.all_prompts, self.all_seeds, self.all_subseeds, comments=[], position_in_batch=index % self.batch_size, iteration=index // self.batch_size, interrupted=self.interrupted[index])
 
 
 # from https://discuss.pytorch.org/t/help-regarding-slerp-function-for-generative-model-sampling/32475/3
@@ -437,7 +438,7 @@ def fix_seed(p):
     p.subseed = get_fixed_seed(p.subseed)
 
 
-def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iteration=0, position_in_batch=0):
+def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iteration=0, position_in_batch=0, interrupted=False):
     index = position_in_batch + iteration * p.batch_size
 
     clip_skip = getattr(p, 'clip_skip', opts.CLIP_stop_at_last_layers)
@@ -459,6 +460,7 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
         "Conditional mask weight": getattr(p, "inpainting_mask_weight", shared.opts.inpainting_mask_weight) if p.is_using_inpainting_conditioning else None,
         "Clip skip": None if clip_skip <= 1 else clip_skip,
         "ENSD": None if opts.eta_noise_seed_delta == 0 else opts.eta_noise_seed_delta,
+        "Generation state": "Interrupted" if interrupted else None
     }
 
     generation_params.update(p.extra_generation_params)
@@ -537,8 +539,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
     else:
         p.all_subseeds = [int(subseed) + x for x in range(len(p.all_prompts))]
 
-    def infotext(iteration=0, position_in_batch=0):
-        return create_infotext(p, p.all_prompts, p.all_seeds, p.all_subseeds, comments, iteration, position_in_batch)
+    def infotext(iteration=0, position_in_batch=0, interrupted=False):
+        return create_infotext(p, p.all_prompts, p.all_seeds, p.all_subseeds, comments, iteration, position_in_batch, interrupted)
 
     if os.path.exists(cmd_opts.embeddings_dir) and not p.do_not_reload_embeddings:
         model_hijack.embedding_db.load_textual_inversion_embeddings()
@@ -548,6 +550,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
     infotexts = []
     output_images = []
+    interrupted = []
 
     cached_uc = [None, None]
     cached_c = [None, None]
@@ -655,9 +658,19 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
                 x_sample = x_sample.astype(np.uint8)
 
+                was_interrupted = False
+                if state.interrupted:
+                    was_interrupted = "interrupted"
+                elif state.skipped:
+                    was_interrupted = "skipped"
+                interrupted.append(was_interrupted)
+                save_path = images.get_output_path(p.outpath_samples, was_interrupted)
+
+                text = infotext(n, i, was_interrupted)
+
                 if p.restore_faces:
-                    if opts.save and not p.do_not_save_samples and opts.save_images_before_face_restoration:
-                        images.save_image(Image.fromarray(x_sample), p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, info=infotext(n, i), p=p, suffix="-before-face-restoration")
+                    if opts.save and not p.do_not_save_samples and opts.save_images_before_face_restoration and save_path is not None:
+                        images.save_image(Image.fromarray(x_sample), save_path, "", seeds[i], prompts[i], opts.samples_format, info=text, p=p, suffix="-before-face-restoration")
 
                     devices.torch_gc()
 
@@ -672,17 +685,16 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     image = pp.image
 
                 if p.color_corrections is not None and i < len(p.color_corrections):
-                    if opts.save and not p.do_not_save_samples and opts.save_images_before_color_correction:
+                    if opts.save and not p.do_not_save_samples and opts.save_images_before_color_correction and save_path is not None:
                         image_without_cc = apply_overlay(image, p.paste_to, i, p.overlay_images)
-                        images.save_image(image_without_cc, p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, info=infotext(n, i), p=p, suffix="-before-color-correction")
+                        images.save_image(image_without_cc, save_path, "", seeds[i], prompts[i], opts.samples_format, info=text, p=p, suffix="-before-color-correction")
                     image = apply_color_correction(p.color_corrections[i], image)
 
                 image = apply_overlay(image, p.paste_to, i, p.overlay_images)
 
-                if opts.samples_save and not p.do_not_save_samples:
-                    images.save_image(image, p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, info=infotext(n, i), p=p)
+                if opts.samples_save and not p.do_not_save_samples and save_path is not None:
+                    images.save_image(image, save_path, "", seeds[i], prompts[i], opts.samples_format, info=text, p=p)
 
-                text = infotext(n, i)
                 infotexts.append(text)
                 if opts.enable_pnginfo:
                     image.info["parameters"] = text
@@ -696,9 +708,12 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
         p.color_corrections = None
 
+        was_interrupted = state.interrupted or state.skipped
+        save_path = images.get_output_path(p.outpath_grids, was_interrupted)
+
         index_of_first_image = 0
         unwanted_grid_because_of_img_count = len(output_images) < 2 and opts.grid_only_if_multiple
-        if (opts.return_grid or opts.grid_save) and not p.do_not_save_grid and not unwanted_grid_because_of_img_count:
+        if (opts.return_grid or opts.grid_save) and not p.do_not_save_grid and not unwanted_grid_because_of_img_count and save_path is not None:
             grid = images.image_grid(output_images, p.batch_size)
 
             if opts.return_grid:
@@ -710,14 +725,14 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 index_of_first_image = 1
 
             if opts.grid_save:
-                images.save_image(grid, p.outpath_grids, "grid", p.all_seeds[0], p.all_prompts[0], opts.grid_format, info=infotext(), short_filename=not opts.grid_extended_filename, p=p, grid=True)
+                images.save_image(grid, save_path, "grid", p.all_seeds[0], p.all_prompts[0], opts.grid_format, info=infotext(), short_filename=not opts.grid_extended_filename, p=p, grid=True)
 
     if not p.disable_extra_networks:
         extra_networks.deactivate(p, extra_network_data)
 
     devices.torch_gc()
 
-    res = Processed(p, output_images, p.all_seeds[0], infotext(), comments="".join(["\n\n" + x for x in comments]), subseed=p.all_subseeds[0], index_of_first_image=index_of_first_image, infotexts=infotexts)
+    res = Processed(p, output_images, p.all_seeds[0], infotext(), comments="".join(["\n\n" + x for x in comments]), subseed=p.all_subseeds[0], index_of_first_image=index_of_first_image, infotexts=infotexts, interrupted=interrupted)
 
     if p.scripts is not None:
         p.scripts.postprocess(p, res)
@@ -843,13 +858,16 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         def save_intermediate(image, index):
             """saves image before applying hires fix, if enabled in options; takes as an argument either an image or batch with latent space images"""
 
-            if not opts.save or self.do_not_save_samples or not opts.save_images_before_highres_fix:
+            was_interrupted = state.interrupted or state.skipped
+            save_path = images.get_output_path(self.outpath_samples, was_interrupted)
+
+            if not opts.save or self.do_not_save_samples or not opts.save_images_before_highres_fix or save_path is None:
                 return
 
             if not isinstance(image, Image.Image):
                 image = sd_samplers.sample_to_image(image, index, approximation=0)
 
-            info = create_infotext(self, self.all_prompts, self.all_seeds, self.all_subseeds, [], iteration=self.iteration, position_in_batch=index)
+            info = create_infotext(self, self.all_prompts, self.all_seeds, self.all_subseeds, [], iteration=self.iteration, position_in_batch=index, interrupted=was_interrupted)
             images.save_image(image, self.outpath_samples, "", seeds[index], prompts[index], opts.samples_format, info=info, suffix="-before-highres-fix")
 
         if latent_scale_mode is not None:

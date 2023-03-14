@@ -2,6 +2,7 @@ import math
 from collections import namedtuple
 from copy import copy
 import random
+import os.path
 
 import modules.scripts as scripts
 import gradio as gr
@@ -105,7 +106,10 @@ class Script(scripts.Script):
         processed.index_of_first_image = 1
         processed.infotexts.insert(0, processed.infotexts[0])
 
-        if opts.grid_save:
-            images.save_image(processed.images[0], p.outpath_grids, "prompt_matrix", extension=opts.grid_format, prompt=original_prompt, seed=processed.seed, grid=True, p=p)
+        was_interrupted = any(x for x in processed.interrupted)
+        save_path = images.get_output_path(p.outpath_grids, was_interrupted)
+
+        if opts.grid_save and save_path is not None:
+            images.save_image(processed.images[0], save_path, "prompt_matrix", extension=opts.grid_format, prompt=original_prompt, seed=processed.seed, grid=True, p=p)
 
         return processed
