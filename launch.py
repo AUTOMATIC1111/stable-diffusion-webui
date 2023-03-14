@@ -7,8 +7,7 @@ import shlex
 import platform
 import argparse
 import json
-import modules.shared
-fix_modules_shared_lint = modules.shared # fix linting error
+import modules.shared # pylint: disable=unused-import
 
 dir_repos = "repositories"
 dir_extensions = "extensions"
