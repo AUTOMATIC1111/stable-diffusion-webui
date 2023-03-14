@@ -47,6 +47,7 @@ def pull_code_former_weights():
             continue
         if os.path.isfile(nfs):
             shutil.copyfile(nfs, filepath)
+            continue
         resp = requests.get(url, timeout=10)
         if resp.ok:
             chunk_size = 512
