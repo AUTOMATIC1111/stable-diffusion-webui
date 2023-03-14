@@ -26,7 +26,6 @@ stored_commit_hash = None
 skip_install = False
 
 warnings.filterwarnings(action="ignore", category=UserWarning)
-warnings.filterwarnings(action="ignore", category=DeprecationWarning)
 
 def check_python_version():
     is_windows = platform.system() == "Windows"
