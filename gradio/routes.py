@@ -201,8 +201,8 @@ class App(FastAPI):
             # if username in app.expired_users:
             #     raise HTTPException(status_code=403, detail="资源被占用，请稍后登录.")
 
-            auth_res = app.auth(username, password)
-            auth = auth_res > 0 if isinstance(auth_res, int) else auth_res
+            expire_time_or_auth = app.auth(username, password)
+            auth = expire_time_or_auth >= 0 if isinstance(expire_time_or_auth, int) else expire_time_or_auth
             if (
                     not callable(app.auth)
                     and username in app.auth
@@ -214,7 +214,10 @@ class App(FastAPI):
                 app.tokens = {token: username}
                 base_path = "/" + os.getenv("Endpoint", "")
                 response = RedirectResponse(url=base_path, status_code=status.HTTP_302_FOUND)
-                exp = auth_res if isinstance(auth_res, int) else 3600*4
+                exp = expire_time_or_auth - int(time.time()) if isinstance(expire_time_or_auth,
+                                                                           int) and expire_time_or_auth > 0 else 3600 * 4
+                if exp > 24 * 3600:
+                    exp = 24 * 3600
 
                 response.set_cookie(key="access-token", value=token, httponly=True, expires=exp)
                 app.current_token = token
@@ -301,6 +304,7 @@ class App(FastAPI):
                 if app.auth is None or not (user is None):
                     return True
                 return False
+
             if not is_front_file() and not check_token():
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated"

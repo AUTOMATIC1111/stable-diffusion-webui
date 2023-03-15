@@ -40,12 +40,11 @@ def find_users_from_models(username, password) -> int:
                     expire = res.get('expire', -1)
                     if 0 == expire or expire > time.time():
                         endpoint = os.getenv("Endpoint")
-                        cookie = res.get('cookie', 900)
                         if endpoint and res.get('endpoint'):
                             if endpoint != res['endpoint']:
-                                return 0
-                        return cookie
+                                return -1
+                        return expire
             except Exception:
-                return 0
-    return 0
+                return -1
+    return -1
 
