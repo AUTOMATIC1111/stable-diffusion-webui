@@ -141,22 +141,11 @@ def install_extension_from_url(dirname, url):
 
     try:
         shutil.rmtree(tmpdir, True)
-
-        repo = git.Repo.clone_from(url, tmpdir)
-        repo.remote().fetch()
-
-        try:
-            os.rename(tmpdir, target_dir)
-        except OSError as err:
-            # TODO what does this do on windows? I think it'll be a different error code but I don't have a system to check it
-            # Shouldn't cause any new issues at least but we probably want to handle it there too.
-            if err.errno == errno.EXDEV:
-                # Cross device link, typical in docker or when tmp/ and extensions/ are on different file systems
-                # Since we can't use a rename, do the slower but more versitile shutil.move()
-                shutil.move(tmpdir, target_dir)
-            else:
-                # Something else, not enough free space, permissions, etc.  rethrow it so that it gets handled.
-                raise(err)
+        with git.Repo.clone_from(url, tmpdir) as repo:
+            repo.remote().fetch()
+            for submodule in repo.submodules:
+                submodule.update()
+        os.rename(tmpdir, target_dir)
 
         import launch
         launch.run_extension_installer(target_dir)
