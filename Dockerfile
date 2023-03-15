@@ -113,6 +113,8 @@ RUN https_proxy=${HTTP_PROXY} git clone https://github.com/dtlnor/stable-diffusi
 RUN https_proxy=${HTTP_PROXY} git clone https://github.com/toriato/stable-diffusion-webui-wd14-tagger.git ~/stable-diffusion-webui/extensions/tagger
 RUN https_proxy=${HTTP_PROXY} git clone https://github.com/yfszzx/stable-diffusion-webui-images-browser ~/stable-diffusion-webui/extensions/images-browser
 RUN https_proxy=${HTTP_PROXY} git clone https://github.com/fkunn1326/openpose-editor.git ~/stable-diffusion-webui/extensions/openpose-editor
+RUN https_proxy=${HTTP_PROXY} git clone https://github.com/hnmr293/posex ~/stable-diffusion-webui/extensions/posex
+RUN https_proxy=${HTTP_PROXY} git clone https://jihulab.com/hunter0725/stable-diffusion-webui-tokenizer ~/stable-diffusion-webui/extensions/stable-diffusion-webui-tokenizer
 # RUN https_proxy=${HTTP_PROXY} git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui-aesthetic-gradients ~/stable-diffusion-webui/extensions/aesthetic-gradients
 RUN https_proxy=${HTTP_PROXY} git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui-promptgen ~/stable-diffusion-webui/extensions/stable-diffusion-webui-promptgen
 RUN mkdir -p  ~/stable-diffusion-webui/stable-diffusion-webui/extensions/sd-webui-controlnet/annotator/openpose
