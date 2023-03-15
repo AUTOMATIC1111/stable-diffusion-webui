@@ -151,7 +151,7 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
         override_settings=override_settings,
     )
 
-    p.scripts = modules.scripts.scripts_txt2img
+    p.scripts = modules.scripts.scripts_img2img
     p.script_args = args
 
     if shared.cmd_opts.enable_console_prompts:
