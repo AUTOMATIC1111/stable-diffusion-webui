@@ -220,11 +220,6 @@ document.addEventListener("DOMContentLoaded", function() {
     modal.tabIndex = 0
     modal.addEventListener('keydown', modalKeyHandler, true)
 
-    // detect gamepads and enable related functionality
-    let gamepadScript = document.createElement('script');
-    gamepadScript.src = 'imageviewerGamepad.js';
-    document.body.appendChild(gamepadScript);
-
     const modalControls = document.createElement('div')
     modalControls.className = 'modalControls gradio-container';
     modal.append(modalControls);
