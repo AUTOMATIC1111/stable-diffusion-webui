@@ -34,6 +34,7 @@ pytorch_lightning
 realesrgan
 requests
 resize-right
+rich
 safetensors
 scikit-image
 timm

@@ -1431,5 +1431,15 @@
     "img2img/Threshold B/maximum": 1024,
     "img2img/Threshold B/step": 1,
     "img2img/Resize Mode/visible": true,
-    "img2img/Resize Mode/value": "Scale to Fit (Inner Fit)"
+    "img2img/Resize Mode/value": "Scale to Fit (Inner Fit)",
+    "customscript/seed_travel.py/txt2img/Desired min SSIM threshold (% of threshold)/visible": true,
+    "customscript/seed_travel.py/txt2img/Desired min SSIM threshold (% of threshold)/value": 75,
+    "customscript/seed_travel.py/txt2img/Desired min SSIM threshold (% of threshold)/minimum": 0,
+    "customscript/seed_travel.py/txt2img/Desired min SSIM threshold (% of threshold)/maximum": 100,
+    "customscript/seed_travel.py/txt2img/Desired min SSIM threshold (% of threshold)/step": 1,
+    "customscript/seed_travel.py/img2img/Desired min SSIM threshold (% of threshold)/visible": true,
+    "customscript/seed_travel.py/img2img/Desired min SSIM threshold (% of threshold)/value": 75,
+    "customscript/seed_travel.py/img2img/Desired min SSIM threshold (% of threshold)/minimum": 0,
+    "customscript/seed_travel.py/img2img/Desired min SSIM threshold (% of threshold)/maximum": 100,
+    "customscript/seed_travel.py/img2img/Desired min SSIM threshold (% of threshold)/step": 1
 }

@@ -140,7 +140,7 @@ if [ "$MODE" == install ]; then
 fi
 
 if [ "$MODE" == clean ]; then
-  CMD="--disable-opt-split-attention --disable-console-progressbars --api"
+  CMD="--disable-opt-split-attention"
   "$PYTHON" launch.py $CMD
   exit 0
 fi
@@ -153,8 +153,8 @@ if [ $MODE == optimized ]; then
   CMD="$CMD"
 fi
 
-exec accelerate launch --no_python --quiet --num_cpu_threads_per_process=6 "$PYTHON" $CMD
-# exec "$PYTHON" $CMD
+# exec accelerate launch --no_python --quiet --num_cpu_threads_per_process=6 "$PYTHON" $CMD
+exec "$PYTHON" $CMD
 
 # export LD_PRELOAD=libtcmalloc.so
 # TORCH_CUDA_ARCH_LIST="8.6"

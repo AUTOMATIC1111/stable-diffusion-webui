@@ -372,7 +372,16 @@ def tests(test_dir):
 
 
 def start():
-    print(f"Launching {'API server' if '--nowebui' in sys.argv else 'Web UI'} with arguments: {' '.join(sys.argv[1:])}")
+    print(f"Launching server with arguments: {' '.join(sys.argv[1:])}")
+
+    try:
+        from rich.traceback import install
+        from rich.console import Console
+        console = Console()
+        install(show_locals=True, max_frames=2, extra_lines=1, word_wrap=False, width=min([console.width, 200]))
+    except:
+        pass # if rich is not installed do nothing
+
     import webui
     if '--nowebui' in sys.argv:
         webui.api_only()

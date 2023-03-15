@@ -179,7 +179,7 @@ def initialize():
 
     # make the program just exit at ctrl+c without waiting for anything
     def sigint_handler(sig, frame):
-        print(f'Interrupted with signal {sig} in {frame}')
+        print('Exiting')
         os._exit(0)
 
     signal.signal(signal.SIGINT, sigint_handler)
@@ -262,8 +262,11 @@ def webui():
             debug=cmd_opts.gradio_debug,
             auth=[tuple(cred.split(':')) for cred in gradio_auth_creds] if gradio_auth_creds else None,
             inbrowser=cmd_opts.autolaunch,
-            prevent_thread_lock=True
+            prevent_thread_lock=True,
         )
+        for dep in shared.demo.dependencies:
+            dep['show_progress'] = False  # disable gradio css animation on component update
+
         # app is instance of FastAPI server
         # shared.demo.server is instance of gradio class which inherits from uvicorn.Server
         # shared.demo.config is instance of uvicorn.Config
@@ -293,10 +296,7 @@ def webui():
 
         print(f"Startup time: {startup_timer.summary()}.")
 
-        try:
-            wait_on_server(shared.demo)
-        except KeyboardInterrupt as e:
-            pass
+        wait_on_server(shared.demo)
         print('Restarting UI...')
 
         startup_timer.reset()
