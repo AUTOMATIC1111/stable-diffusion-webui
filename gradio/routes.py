@@ -91,6 +91,15 @@ templates.env.filters["toorjson"] = toorjson
 # Auth
 ###########
 
+class SessionInfo:
+
+    def __init__(self, username, exp):
+        self.exp = exp + time.time()
+        self.username = username
+
+    def expired(self) -> bool:
+        return self.exp > time.time()
+
 
 class App(FastAPI):
     """
@@ -182,7 +191,7 @@ class App(FastAPI):
                 return RedirectResponse(url="/", status_code=status.HTTP_302_FOUND)
             # 清除过期
             now = time.time()
-            expired_users = app.expired_users.keys()
+            expired_users = list(app.expired_users.keys())
             for u in expired_users:
                 t = app.expired_users.get(u, now)
                 if now - t > 600:
@@ -191,17 +200,21 @@ class App(FastAPI):
             if username in app.expired_users:
                 raise HTTPException(status_code=403, detail="资源被占用，请稍后登录.")
 
+            auth_res = app.auth(username, password)
+            auth = auth_res > 0 if isinstance(auth_res, int) else auth_res
             if (
-                not callable(app.auth)
-                and username in app.auth
-                and app.auth[username] == password
-            ) or (callable(app.auth) and app.auth(username, password)):
+                    not callable(app.auth)
+                    and username in app.auth
+                    and app.auth[username] == password
+            ) or (callable(app.auth) and auth):
                 token = secrets.token_urlsafe(16)
                 for tk, u in app.tokens.items():
                     app.expired_users[u] = now
                 app.tokens = {token: username}
                 response = RedirectResponse(url="/", status_code=status.HTTP_302_FOUND)
-                response.set_cookie(key="access-token", value=token, httponly=True, expires=24*3600)
+                exp = auth_res if isinstance(auth_res, int) else 3600*4
+
+                response.set_cookie(key="access-token", value=token, httponly=True, expires=exp)
                 app.current_token = token
                 return response
             else:
@@ -271,8 +284,25 @@ class App(FastAPI):
             else:
                 return FileResponse(blocks.favicon_path)
 
-        @app.get("/file={path:path}", dependencies=[Depends(login_check)])
+        @app.get("/file={path:path}")
         async def file(path: str, request: fastapi.Request):
+            _, ex = os.path.splitext(path)
+            ex = ex.lower()
+
+            def is_front_file():
+                front_files = {'.js', '.html', '.css', '.htm'}
+                return ex in front_files
+
+            def check_token():
+                token = request.cookies.get("access-token", "")
+                user = app.tokens.get(token)
+                if app.auth is None or not (user is None):
+                    return True
+                return False
+            if not is_front_file() and not check_token():
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated"
+                )
             abs_path = str(Path(path).resolve())
             blocks = app.get_blocks()
             if utils.validate_url(path):
@@ -318,10 +348,10 @@ class App(FastAPI):
             return {"success": True}
 
         async def run_predict(
-            body: PredictBody,
-            request: Request | List[Request],
-            fn_index_inferred: int,
-            username: str = Depends(get_current_user),
+                body: PredictBody,
+                request: Request | List[Request],
+                fn_index_inferred: int,
+                username: str = Depends(get_current_user),
         ):
             if hasattr(body, "session_hash"):
                 if body.session_hash not in app.state_holder:
@@ -384,10 +414,10 @@ class App(FastAPI):
         @app.post("/api/{api_name}", dependencies=[Depends(login_check)])
         @app.post("/api/{api_name}/", dependencies=[Depends(login_check)])
         async def predict(
-            api_name: str,
-            body: PredictBody,
-            request: fastapi.Request,
-            username: str = Depends(get_current_user),
+                api_name: str,
+                body: PredictBody,
+                request: fastapi.Request,
+                username: str = Depends(get_current_user),
         ):
             fn_index_inferred = None
             if body.fn_index is None:
@@ -405,7 +435,7 @@ class App(FastAPI):
             else:
                 fn_index_inferred = body.fn_index
             if not app.get_blocks().api_open and app.get_blocks().queue_enabled_for_fn(
-                fn_index_inferred
+                    fn_index_inferred
             ):
                 if f"Bearer {app.queue_token}" != request.headers.get("Authorization"):
                     raise HTTPException(
@@ -435,8 +465,8 @@ class App(FastAPI):
 
         @app.websocket("/queue/join")
         async def join_queue(
-            websocket: WebSocket,
-            token: Optional[str] = Depends(ws_login_check),
+                websocket: WebSocket,
+                token: Optional[str] = Depends(ws_login_check),
         ):
             blocks = app.get_blocks()
             if app.auth is not None and token is None:
@@ -524,10 +554,10 @@ def safe_join(directory: str, path: str) -> str | None:
         return directory
 
     if (
-        any(sep in filename for sep in _os_alt_seps)
-        or os.path.isabs(filename)
-        or filename == ".."
-        or filename.startswith("../")
+            any(sep in filename for sep in _os_alt_seps)
+            or os.path.isabs(filename)
+            or filename == ".."
+            or filename.startswith("../")
     ):
         return None
     return posixpath.join(directory, filename)
@@ -617,10 +647,10 @@ class Request:
 
 @document()
 def mount_gradio_app(
-    app: fastapi.FastAPI,
-    blocks: gradio.Blocks,
-    path: str,
-    gradio_api_url: str | None = None,
+        app: fastapi.FastAPI,
+        blocks: gradio.Blocks,
+        path: str,
+        gradio_api_url: str | None = None,
 ) -> fastapi.FastAPI:
     """Mount a gradio.Blocks to an existing FastAPI application.
 

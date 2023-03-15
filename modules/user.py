@@ -25,22 +25,27 @@ def authorization(user, password):
     return find_users_from_models(user, password)
 
 
-def find_users_from_models(username, password) -> bool:
-    host = os.getenv('MysqlHost', '')
-    user = os.getenv('MysqlUser', '')
-    pwd = os.getenv('MysqlPass', '')
+def find_users_from_models(username, password) -> int:
+    host = os.getenv('MysqlHost', '172.16.241.104')
+    user = os.getenv('MysqlUser', 'root')
+    pwd = os.getenv('MysqlPass', 'jE%r__hk&2OB')
     db = os.getenv('MysqlDB', 'draw-ai')
     port = os.getenv('MysqlPort', 3306)
 
     if host:
         with MySQLClient(host, db, user, pwd, port) as cli:
-            res = cli.query("SELECT * FROM user WHERE username=%s AND password=%s", (username, password))
-            if res:
-                expire = res.get('expire', -1)
-                if 0 == expire or expire > time.time():
-                    endpoint = os.getenv("Endpoint")
-                    if endpoint and res.get('endpoint'):
-                        return endpoint == res['endpoint']
-                    return True
-    return False
+            try:
+                res = cli.query("SELECT * FROM user WHERE username=%s AND password=%s", (username, password))
+                if res:
+                    expire = res.get('expire', -1)
+                    if 0 == expire or expire > time.time():
+                        endpoint = os.getenv("Endpoint")
+                        cookie = res.get('cookie', 900)
+                        if endpoint and res.get('endpoint'):
+                            if endpoint != res['endpoint']:
+                                return 0
+                        return cookie
+            except Exception:
+                return 0
+    return 0
 
