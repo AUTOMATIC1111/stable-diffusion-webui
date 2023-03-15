@@ -80,7 +80,7 @@ def extract_opt(args, name):
 
 
 def run(command, desc=None, errdesc=None, custom_env=None, live=False):
-    if desc is not None:
+    if desc:
         print(desc)
 
     if live:
