@@ -196,9 +196,9 @@ class App(FastAPI):
                 t = app.expired_users.get(u, now)
                 if now - t > 600:
                     del app.expired_users[u]
-
-            if username in app.expired_users:
-                raise HTTPException(status_code=403, detail="资源被占用，请稍后登录.")
+            #
+            # if username in app.expired_users:
+            #     raise HTTPException(status_code=403, detail="资源被占用，请稍后登录.")
 
             auth_res = app.auth(username, password)
             auth = auth_res > 0 if isinstance(auth_res, int) else auth_res
