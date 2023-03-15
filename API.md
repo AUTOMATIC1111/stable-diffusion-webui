@@ -14,7 +14,7 @@ The basic ones I'm interested in are these two. Let's just focus only on ` /sdap
 ------
 
 - So that's the backend. The API basically says what's available, what it's asking for, and where to send it. Now moving onto the frontend, I'll start with constructing a payload with the parameters I want. An example can be:
-```
+```py
 payload = {
     "prompt": "maltese puppy",
     "steps": 5
@@ -23,7 +23,7 @@ payload = {
 I can put in as few or as many parameters as I want in the payload. The API will use the defaults for anything I don't set.
 
 - After that, I can send it to the API
-```
+```py
 response = requests.post(url=f'http://127.0.0.1:7860/sdapi/v1/txt2img', json=payload)
 ```
 Again, this URL needs to match the web ui's URL.
@@ -34,13 +34,13 @@ If we execute this code, the web ui will generate an image based on the payload.
 - After the backend does its thing, the API sends the response back in a variable that was assigned above: `response`. The response contains three entries; "images", "parameters", and "info", and I have to find some way to get the information from these entries.
 - First, I put this line `r = response.json()` to make it easier to work with the response.
 - "images" is the generated image, which is what I want mostly. There's no link or anything; it's a giant string of random characters, apparently we have to decode it. This is how I do it:
-```
+```py
 for i in r['images']:
     image = Image.open(io.BytesIO(base64.b64decode(i.split(",",1)[0])))
 ```
 - With that, we have an image in the `image` variable that we can work with, for example saving it with `image.save('output.png')`.
 - "parameters" shows what was sent to the API, which could be useful, but what I want in this case is "info". I use it to insert metadata into the image, so I can drop it into web ui PNG Info. For that, I can access the `/sdapi/v1/png-info` API. I'll need to feed the image I got above into it.
-```
+```py
 png_payload = {
         "image": "data:image/png;base64," + i
     }
@@ -51,7 +51,7 @@ After that, I can get the information with `response2.json().get("info")`
 ------
 
 A sample code that should work can look like this:
-```
+```py
 import json
 import requests
 import io
@@ -98,7 +98,7 @@ The purpose of this endpoint is to override the web ui settings for a single req
 
 You can expand the tab and the API will provide a list. There are a few ways you can add this value to your payload, but this is how I do it. I'll demonstrate with "filter_nsfw", and "CLIP_stop_at_last_layers".
 
-```
+```py
 payload = {
     "prompt": "cirno",
     "steps": 20
@@ -124,7 +124,7 @@ So in this case, when I send the payload, I should get a "cirno" at 20 steps, wi
 
 For certain settings or situations, you may want your changes to stay. For that you can post to the `/sdapi/v1/options` API endpoint
 We can use what we learned so far and set up the code easily for this. Here is an example:
-```
+```py
 url = "http://127.0.0.1:7860"
 
 option_payload = {
