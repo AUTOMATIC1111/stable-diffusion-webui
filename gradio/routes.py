@@ -309,6 +309,7 @@ class App(FastAPI):
             blocks = app.get_blocks()
             if utils.validate_url(path):
                 return RedirectResponse(url=path, status_code=status.HTTP_302_FOUND)
+
             in_app_dir = Path(app.cwd).resolve() in Path(path).resolve().parents
             created_by_app = str(Path(path).resolve()) in set().union(
                 *blocks.temp_file_sets

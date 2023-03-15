@@ -1592,9 +1592,6 @@ def create_ui():
                             <span>探测</span>
                         </a>
                         
-                        # <span style="display:flex;justify-content: flex-start;align-items: center;margin-right:10px;">
-                        #     行者AI美术专业版 EA
-                        # </span>
                 </div>
                 """)
 
