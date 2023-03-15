@@ -201,7 +201,7 @@ class App(FastAPI):
                     app.expired_users[u] = now
                 app.tokens = {token: username}
                 response = RedirectResponse(url="/", status_code=status.HTTP_302_FOUND)
-                response.set_cookie(key="access-token", value=token, httponly=True)
+                response.set_cookie(key="access-token", value=token, httponly=True, expires=24*3600)
                 app.current_token = token
                 return response
             else:
