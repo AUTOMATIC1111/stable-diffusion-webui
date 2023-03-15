@@ -184,8 +184,7 @@ def parse_download_url(url: str, cover: str) -> Tuple[str, str]:
             if ms:
                 ms2 = re.search('https://imagecache.civitai.com.+?"', text)
                 cover = ms2.group(0) if ms2 else cover
-
-            return 'https://civitai.com/' + ms.group(1), cover
+                return 'https://civitai.com/' + ms.group(1), cover
     elif 'samba' in url:
         if not cover:
             without_ex, _ = os.path.splitext(url)
