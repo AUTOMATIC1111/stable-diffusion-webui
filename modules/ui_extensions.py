@@ -1,6 +1,5 @@
 import json
 import os.path
-import shutil
 import sys
 import time
 import traceback
@@ -10,7 +9,6 @@ import git
 import gradio as gr
 import html
 import shutil
-import errno
 
 from modules import extensions, shared, paths
 from modules.call_queue import wrap_gradio_gpu_call
