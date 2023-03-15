@@ -188,7 +188,8 @@ class App(FastAPI):
         def login(form_data: OAuth2PasswordRequestForm = Depends()):
             username, password = form_data.username, form_data.password
             if app.auth is None:
-                return RedirectResponse(url="/", status_code=status.HTTP_302_FOUND)
+                base_path = "/" + os.getenv("Endpoint", "") + "/"
+                return RedirectResponse(url=base_path, status_code=status.HTTP_302_FOUND)
             # 清除过期
             now = time.time()
             expired_users = list(app.expired_users.keys())
@@ -211,7 +212,8 @@ class App(FastAPI):
                 for tk, u in app.tokens.items():
                     app.expired_users[u] = now
                 app.tokens = {token: username}
-                response = RedirectResponse(url="/", status_code=status.HTTP_302_FOUND)
+                base_path = "/" + os.getenv("Endpoint", "") + "/"
+                response = RedirectResponse(url=base_path, status_code=status.HTTP_302_FOUND)
                 exp = auth_res if isinstance(auth_res, int) else 3600*4
 
                 response.set_cookie(key="access-token", value=token, httponly=True, expires=exp)

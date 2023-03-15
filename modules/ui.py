@@ -1572,6 +1572,7 @@ def create_ui():
 
     with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion") as demo:
         with gr.Row(elem_id="quicksettings", variant="compact"):
+
             for i, k, item in sorted(quicksettings_list, key=lambda x: quicksettings_names.get(x[1], x[0])):
                 component = create_setting_component(k, is_quicksettings=True)
                 component_dict[k] = component
@@ -1590,6 +1591,10 @@ def create_ui():
                             <img src="https://huggingface.co/front/assets/huggingface_logo-noborder.svg" width="22" height="22" style="color:blue;margin-right:2px"/>
                             <span>探测</span>
                         </a>
+                        
+                        # <span style="display:flex;justify-content: flex-start;align-items: center;margin-right:10px;">
+                        #     行者AI美术专业版 EA
+                        # </span>
                 </div>
                 """)
 
