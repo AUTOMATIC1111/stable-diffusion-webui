@@ -215,9 +215,9 @@ class App(FastAPI):
                 base_path = "/" + os.getenv("Endpoint", "")
                 response = RedirectResponse(url=base_path, status_code=status.HTTP_302_FOUND)
                 exp = expire_time_or_auth - int(time.time()) if isinstance(expire_time_or_auth,
-                                                                           int) and expire_time_or_auth > 0 else 3600 * 4
-                if exp > 24 * 3600:
-                    exp = 24 * 3600
+                                                                           int) and expire_time_or_auth > 0 else 3600 * 24
+                if exp > 24 * 3600 * 2:
+                    exp = 24 * 3600 * 2
 
                 response.set_cookie(key="access-token", value=token, httponly=True, expires=exp)
                 app.current_token = token
